@@ -1,0 +1,49 @@
+Lwt: lightweight thread library for Objective Caml
+
+--------------------------------------------------------------------------
+
+This library is part of the Ocsigen project. See:
+
+  http://ocsigen.org/lwt
+
+--------------------------------------------------------------------------
+
+Requirements:
+
+ * ocaml with ocamlbuild (>= 3.10.0)
+ * findlib
+ * ocamlssl (>= 0.4.0) (ocamlssl needs openssl) (>= 0.4.1 for MacOS)
+
+If ocaml/findlib/ocamlssl... are not installed on your computer, you
+can use GODI to install them automatically. See:
+
+  http://godi.camlcity.org/godi/index.html
+
+They might also be available through your distribution.
+
+--------------------------------------------------------------------------
+
+Instructions:
+
+ * run "make" to compile everything
+ * run "make install" as root to install compiled libraries
+ * run "make uninstall" as root to uninstall them
+
+HTML documentation is generated in _build/lwt.docdir/, but is not
+installed by default.
+
+Have a look at the Makefile for more details.
+
+--------------------------------------------------------------------------
+
+Authors:
+
+ * Jérôme Vouillon
+ * Vincent Balat
+ * Nataliya Guts
+ * Pierre Clairambault
+ * Stéphane Glondu
+
+See each source file for copyright information, and COPYING for license.
+
+--------------------------------------------------------------------------
