@@ -27,10 +27,10 @@ DESTDIR := $(shell $(OCAMLFIND) printconf destdir)/$(NAME)
 NAME := lwt
 VERSION := $(shell head -n 1 VERSION)
 
-ARCHIVE_BYTE := $(NAME).cma
-ARCHIVE_OPT := $(NAME).cmxa
-TOINSTALL = $(wildcard *.mli _build/*.cmi) \
-  $(wildcard _build/*.cma _build/*.cmx* _build/*.a)
+ARCHIVE_BYTE := src/$(NAME).cma
+ARCHIVE_OPT := src/$(NAME).cmxa
+TOINSTALL = $(wildcard src/*.mli _build/src/*.cmi) \
+  $(wildcard _build/src/*.cma _build/src/*.cmx* _build/src/*.a)
 
 all: META byte opt doc
 
@@ -41,7 +41,7 @@ opt:
 	$(OCAMLBUILD) $(ARCHIVE_OPT)
 
 doc:
-	$(OCAMLBUILD) lwt.docdir/index.html
+	$(OCAMLBUILD) src/lwt.docdir/index.html
 
 examples:
 	$(MAKE) -C examples
@@ -61,7 +61,7 @@ uninstall:
 
 clean:
 	$(OCAMLBUILD) -clean
-	-rm -Rf *~ *.bak $(NAME)-*.tar.gz META
+	-rm -Rf *~ src/*~ $(NAME)-*.tar.gz META
 	$(MAKE) -C examples clean
 
 
