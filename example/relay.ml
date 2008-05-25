@@ -40,16 +40,17 @@ let new_socket () = Lwt_unix.socket Unix.PF_INET Unix.SOCK_STREAM 0
 let local_addr num = Unix.ADDR_INET (Unix.inet_addr_any, num)
 
 let _ =
-  Lwt_unix.run
-    ((* Initialize the listening address *)
-     new_socket () >>= (fun listening_socket ->
-     Unix.setsockopt listening_socket Unix.SO_REUSEADDR true;
-     Unix.bind listening_socket (local_addr listening_port);
-     Unix.listen listening_socket 1024;
-     (* Wait for a connection *)
-     Lwt_unix.accept listening_socket >>= (fun (inp, _) ->
-     (* Connect to the destination port *)
-     new_socket () >>= (fun out ->
-     Lwt_unix.connect out (local_addr dest_port) >>= (fun () ->
-     (* Start relaying *)
-     Lwt.choose [relay inp out; relay out inp])))))
+  Lwt_unix.run begin
+    (* Initialize the listening address *)
+    let listening_socket = new_socket () in
+    Lwt_unix.setsockopt listening_socket Unix.SO_REUSEADDR true;
+    Lwt_unix.bind listening_socket (local_addr listening_port);
+    Lwt_unix.listen listening_socket 1024;
+    (* Wait for a connection *)
+    Lwt_unix.accept listening_socket >>= fun (inp, _) ->
+    (* Connect to the destination port *)
+    let out = new_socket () in
+    Lwt_unix.connect out (local_addr dest_port) >>= fun () ->
+    (* Start relaying *)
+    Lwt.choose [relay inp out; relay out inp]
+  end
