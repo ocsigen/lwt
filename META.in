@@ -1,4 +1,4 @@
 requires = "unix,ssl"
-version = "0.1"
+version = "@VERSION@"
 archive(byte) = "lwt.cma"
 archive(native) = "lwt.cmxa"
