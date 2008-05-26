@@ -1,3 +1,4 @@
+description = "Lightweight thread library for OCaml"
 requires = "unix,ssl"
 version = "@VERSION@"
 archive(byte) = "lwt.cma"
