@@ -1,0 +1,11 @@
+= Development version =
+
+  * Adding module {{{Lwt_pool}}} for creating pools (for example pools
+    of connections)
+  * Adding a few functions in {{{Lwt_chan}}}
+  * Fixing bugs in {{{Lwt_util.map_serial}}} and
+    {{{Lwt_util.iter_serial}}}
+
+= 1.0.0 (and before) =
+
+  * See Ocsigen changelog
