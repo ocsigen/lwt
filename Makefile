@@ -27,21 +27,22 @@ DESTDIR := $(shell $(OCAMLFIND) printconf destdir)/$(NAME)
 NAME := lwt
 VERSION := $(shell head -n 1 VERSION)
 
-ARCHIVE_BYTE := src/$(NAME).cma
-ARCHIVE_OPT := src/$(NAME).cmxa
-TOINSTALL = $(wildcard src/*.mli _build/src/*.cmi) \
-  $(wildcard _build/src/*.cma _build/src/*.cmx* _build/src/*.a)
+ARCHIVES_BYTE := $(patsubst %.mllib,%.cma,$(wildcard src/*.mllib))
+ARCHIVES_OPT := $(ARCHIVES_BYTE:.cma=.cmxa)
+TOINSTALL = $(wildcard $(ARCHIVES_BYTE) $(ARCHIVES_OPT)) \
+  $(wildcard src/*.mli _build/src/*.cmi _build/src/*.cma) \
+  $(wildcard _build/src/*.cmx* _build/src/*.a)
 
 all: META byte opt doc
 
 byte:
-	$(OCAMLBUILD) $(ARCHIVE_BYTE)
+	$(OCAMLBUILD) $(ARCHIVES_BYTE)
 
 opt:
-	$(OCAMLBUILD) $(ARCHIVE_OPT)
+	$(OCAMLBUILD) $(ARCHIVES_OPT)
 
 doc:
-	$(OCAMLBUILD) src/lwt.docdir/index.html
+	$(OCAMLBUILD) lwt.docdir/index.html
 
 examples:
 	$(MAKE) -C examples

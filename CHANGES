@@ -5,6 +5,9 @@
   * Adding a few functions in {{{Lwt_chan}}}
   * Fixing bugs in {{{Lwt_util.map_serial}}} and
     {{{Lwt_util.iter_serial}}}
+  * Putting {{{Lwt_preemptive}}}, {{{Lwt_lib}}} and {{{Lwt_ssl}}} in
+    separate libraries and findlib subpackages so that lwt.cma depends
+    only on unix.cma.
 
 = 1.0.0 (and before) =
 

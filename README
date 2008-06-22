@@ -29,7 +29,7 @@ Instructions:
  * run "make install" as root to install compiled libraries
  * run "make uninstall" as root to uninstall them
 
-HTML documentation is generated in _build/src/lwt.docdir/, but is not
+HTML documentation is generated in _build/lwt.docdir/, but is not
 installed by default.
 
 Have a look at the Makefile for more details.

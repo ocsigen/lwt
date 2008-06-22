@@ -1,5 +1,26 @@
-description = "Lightweight thread library for OCaml"
-requires = "unix,ssl"
+description = "Lightweight thread library for OCaml (core library)"
+requires = "unix"
 version = "@VERSION@"
 archive(byte) = "lwt.cma"
 archive(native) = "lwt.cmxa"
+
+package "preemptive" (
+  description = "Preemptive threads support for Lwt"
+  requires = "threads,lwt"
+  archive(mt,byte) = "lwt_preemptive.cma"
+  archive(mt,native) = "lwt_preemptive.cmxa"
+)
+
+package "ssl" (
+  description = "SSL support for Lwt"
+  requires = "ssl,lwt"
+  archive(byte) = "lwt_ssl.cma"
+  archive(native) = "lwt_ssl.cmxa"
+)
+
+package "extra" (
+  description = "Unix functions for Lwt using Lwt_preemptive"
+  requires = "lwt.preemptive"
+  archive(mt,byte) = "lwt_extra.cma"
+  archive(mt,native) = "lwt_extra.cmxa"
+)
