@@ -43,7 +43,7 @@ let make_in_channel = make_channel
 let close_in = close_channel
 
 let in_channel_of_descr ch =
-  let close _ = Lwt.return (Lwt_unix.close ch) in
+  let close _ = try Lwt.return (Lwt_unix.close ch) with e -> Lwt.fail e in
   make_in_channel ~close (Lwt_unix.read ch)
 
 let open_in_gen mode perm name =
@@ -174,7 +174,7 @@ let make_out_channel = make_channel
 let close_out = close_channel
 
 let out_channel_of_descr ch =
-  let close _ = Lwt.return (Lwt_unix.close ch) in
+  let close _ = try Lwt.return (Lwt_unix.close ch) with e -> Lwt.fail e in
   make_out_channel ~close (Lwt_unix.write ch)
 
 let open_out_gen mode perm name =
