@@ -231,7 +231,14 @@ let output_string oc s = unsafe_output oc s 0 (String.length s)
 
 let output_value oc v = output_string oc (Marshal.to_string v [])
 
-let output_char oc c = unsafe_output oc (String.make 1 c) 0 1
+let rec output_char oc c =
+  let curr = oc.curr in
+  if curr < String.length oc.buf then begin
+    oc.buf.[curr] <- c;
+    oc.curr <- curr + 1;
+    Lwt.return ()
+  end else
+    Lwt.bind (flush_partial oc) (fun _ -> output_char oc c)
 
 let output_binary_int ch i =
   let output = String.create 4 in
