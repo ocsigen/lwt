@@ -27,7 +27,7 @@ exception Task_failed
 let minthreads : int ref = ref 0
 let maxthreads : int ref = ref 0
 
-let maxthreadqueued = ref 100
+let maxthreadqueued = ref 1000
 
 let get_max_number_of_threads_queued () = !maxthreadqueued
 let set_max_number_of_threads_queued n = maxthreadqueued := n

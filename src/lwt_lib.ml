@@ -33,7 +33,7 @@ exception Not_in_table
 
 module WeakHashtbl = Make(
   struct
-    type t = string*(Unix.host_entry Lwt.t)*float
+    type t = string * (Unix.host_entry Lwt.t) * float
     let equal = (fun (a,b,c) -> fun (a',b',c') -> a=a')
     let hash = fun (a,b,c) -> Hashtbl.hash a
   end
