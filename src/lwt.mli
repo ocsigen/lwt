@@ -107,6 +107,18 @@ val finalize : (unit -> 'a t) -> (unit -> unit t) -> 'a t
      (** [finalize f g] returns the same result as [f ()] whether it fails
          or not. In both cases, [g ()] is executed after [f]. *)
 
+(** State of a thread: *)
+type 'a state =
+  | Return of 'a
+      (** The thread which has successfully terminated *)
+  | Fail of exn
+      (** The thread raised an exception *)
+  | Sleep
+      (** The thread is sleeping *)
+
+val state : 'a t -> 'a state
+  (** [state t] returns the state of a thread *)
+
 (**/**)
 
 (* The functions below are probably not useful for the casual user.

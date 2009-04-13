@@ -22,7 +22,7 @@
  * 02111-1307, USA.
  *)
 
-type 'a state =
+type 'a thread_state =
   | Return of 'a
       (* [Return v] a terminated thread which has successfully
          terminated with the value [v] *)
@@ -38,7 +38,7 @@ type 'a state =
   | Repr of 'a t
       (* [Repr t] a thread which behaves the same as [t] *)
 
-and 'a t = 'a state ref
+and 'a t = 'a thread_state ref
 
 (* The list of waiters is represented by a doubly-linked list because
    we want the following operations:
@@ -258,3 +258,18 @@ let finalize f g =
   try_bind f
     (fun x -> g () >>= fun () -> return x)
     (fun e -> g () >>= fun () -> fail e)
+
+module State = struct
+  type 'a state =
+    | Return of 'a
+    | Fail of exn
+    | Sleep
+end
+
+let state t = match !(repr t) with
+  | Return v -> State.Return v
+  | Fail exn -> State.Fail exn
+  | Sleep _ -> State.Sleep
+  | Repr _ -> assert false
+
+include State
