@@ -3,6 +3,7 @@
 # Makefile
 # Copyright (C) 2008 Stéphane Glondu
 # Laboratoire PPS - CNRS Université Paris Diderot
+#               2009 Jérémie Dimino
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as
@@ -24,16 +25,24 @@ OCAMLFIND := ocamlfind
 OCAMLBUILD := ocamlbuild
 DESTDIR := $(shell $(OCAMLFIND) printconf destdir)/$(NAME)
 
+# Use classic-display when compiling under a terminal which do not
+# support ANSI sequence
+ifeq ($(TERM),dumb)
+OCAMLBUILD += -classic-display
+endif
+
 NAME := lwt
 VERSION := $(shell head -n 1 VERSION)
 
+DOC = lwt.docdir/index.html
 ARCHIVES_BYTE := $(patsubst %.mllib,%.cma,$(wildcard src/*.mllib))
 ARCHIVES_OPT := $(ARCHIVES_BYTE:.cma=.cmxa)
 TOINSTALL = $(wildcard $(ARCHIVES_BYTE) $(ARCHIVES_OPT)) \
   $(wildcard src/*.mli _build/src/*.cmi _build/src/*.cma) \
   $(wildcard _build/src/*.cmx* _build/src/*.a)
 
-all: META byte opt doc
+all:
+	$(OCAMLBUILD) META $(ARCHIVES_BYTE) $(ARCHIVE_OPT) $(DOC)
 
 byte:
 	$(OCAMLBUILD) $(ARCHIVES_BYTE)
@@ -42,27 +51,24 @@ opt:
 	$(OCAMLBUILD) $(ARCHIVES_OPT)
 
 doc:
-	$(OCAMLBUILD) lwt.docdir/index.html
+	$(OCAMLBUILD) $(DOC)
 
 examples:
 	$(MAKE) -C examples
-
-META: VERSION META.in
-	sed -e 's/@VERSION@/$(VERSION)/' META.in > META
 
 dist:
 	DARCS_REPO=$(PWD) darcs dist -d $(NAME)-$(VERSION)
 
 install:
 	mkdir -p "$(DESTDIR)"
-	$(OCAMLFIND) install $(NAME) -destdir "$(DESTDIR)" META $(TOINSTALL)
+	$(OCAMLFIND) install $(NAME) -destdir "$(DESTDIR)" _build/META $(TOINSTALL)
 
 uninstall:
 	$(OCAMLFIND) remove $(NAME) -destdir "$(DESTDIR)"
 
 clean:
 	$(OCAMLBUILD) -clean
-	-rm -Rf *~ src/*~ $(NAME)-*.tar.gz META
+	-rm -Rf *~ src/*~ $(NAME)-*.tar.gz
 	$(MAKE) -C examples clean
 
 
