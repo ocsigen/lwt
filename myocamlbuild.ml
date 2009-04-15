@@ -165,6 +165,15 @@ let _ =
           (fun syntax -> flag_all_stages_except_link ("syntax_" ^ syntax) (S[A"-syntax"; A syntax]))
           syntaxes;
 
+        (* +---------+
+           | C stubs |
+           +---------+ *)
+
+        flag ["link"; "ocaml"; "byte"] & A "-custom";
+        dep ["link"; "ocaml"; "use_stubs"] ["src/liblwt_stubs.a"];
+        flag ["link"; "library"; "ocaml"; "use_stubs"] & S[A"-cclib"; A"-llwt_stubs"];
+        flag ["link"; "library"; "ocaml"; "byte"; "use_stubs"] & S[A"-dllib"; A"-llwt_stubs"];
+
         (* +-------+
            | Other |
            +-------+ *)

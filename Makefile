@@ -42,7 +42,7 @@ TOINSTALL = $(wildcard $(ARCHIVES_BYTE) $(ARCHIVES_OPT)) \
   $(wildcard _build/src/*.cmx* _build/src/*.a)
 
 all:
-	$(OCAMLBUILD) META $(ARCHIVES_BYTE) $(ARCHIVE_OPT) $(DOC)
+	$(OCAMLBUILD) META $(ARCHIVES_BYTE) $(ARCHIVES_OPT) $(DOC)
 
 byte:
 	$(OCAMLBUILD) $(ARCHIVES_BYTE)

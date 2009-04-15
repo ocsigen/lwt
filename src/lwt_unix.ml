@@ -272,26 +272,35 @@ let stdin = lazy(of_unix_file_descr Unix.stdin)
 let stdout = lazy(of_unix_file_descr Unix.stdout)
 let stderr = lazy(of_unix_file_descr Unix.stderr)
 
+external lwt_unix_read : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_read"
+external lwt_unix_write : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_write"
+
 let read ch buf pos len =
-  try
-    check_descriptor ch;
-    if windows_hack then raise (Unix.Unix_error (Unix.EAGAIN, "", ""));
-    Lwt.return (Unix.read ch.fd buf pos len)
-  with
-    Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK), _, _) ->
-      register_action inputs ch (fun () -> Unix.read ch.fd buf pos len)
-  | e ->
-      Lwt.fail e
+  if pos < 0 || len < 0 || pos > String.length buf - len then
+    invalid_arg "Lwt_unix.read"
+  else
+    try
+      check_descriptor ch;
+      if windows_hack then raise (Unix.Unix_error (Unix.EAGAIN, "", ""));
+      Lwt.return (lwt_unix_read ch.fd buf pos len)
+    with
+        Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK), _, _) ->
+          register_action inputs ch (fun () -> lwt_unix_read ch.fd buf pos len)
+      | e ->
+          Lwt.fail e
 
 let write ch buf pos len =
-  try
-    check_descriptor ch;
-    Lwt.return (Unix.write ch.fd buf pos len)
-  with
-    Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK), _, _) ->
-      register_action outputs ch (fun () -> Unix.write ch.fd buf pos len)
-  | e ->
-      Lwt.fail e
+  if pos < 0 || len < 0 || pos > String.length buf - len then
+    invalid_arg "Lwt_unix.write"
+  else
+    try
+      check_descriptor ch;
+      Lwt.return (lwt_unix_write ch.fd buf pos len)
+    with
+        Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK), _, _) ->
+          register_action outputs ch (fun () -> lwt_unix_write ch.fd buf pos len)
+      | e ->
+          Lwt.fail e
 
 let wait_read ch = register_action inputs ch (fun () -> ())
 let wait_write ch = register_action outputs ch (fun () -> ())
@@ -336,7 +345,7 @@ let check_socket ch =
        try ignore (Unix.getpeername ch.fd) with
          Unix.Unix_error (Unix.ENOTCONN, _, _) ->
            (* Get the socket error *)
-           ignore (Unix.read ch.fd " " 0 1))
+           ignore (lwt_unix_read ch.fd " " 0 1))
 
 let connect ch addr =
   try

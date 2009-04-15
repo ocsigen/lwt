@@ -3,6 +3,9 @@
 <src/lwt_ssl.ml*>: pkg_ssl
 <src/*.ml*>: pkg_unix
 
+# Stubs
+<src/lwt.cm{x,}a>: use_stubs
+
 # Syntax extensions
 <syntax/pa_monad.ml>: syntax_camlp4o, pkg_camlp4, pkg_camlp4.quotations.r, pkg_camlp4.extend
 <src/*.ml>: syntax_camlp4o, pkg_camlp4, pa_monad
