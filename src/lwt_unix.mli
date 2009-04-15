@@ -129,20 +129,3 @@ val outputs_length : unit -> int
 val wait_children_length : unit -> int
 val get_new_sleeps : unit -> int
 val sleep_queue_size : unit -> int
-
-(*XXX*)
-(*
-val open_process_in: string -> Lwt_chan.in_channel Lwt.t
-val open_process_out: string -> out_channel Lwt.t
-val open_process: string -> (in_channel * out_channel) Lwt.t
-val open_process_full:
-  string -> string array ->
-  (in_channel * out_channel * in_channel) Lwt.t
-val close_process_in: in_channel -> Unix.process_status Lwt.t
-val close_process_out: out_channel -> Unix.process_status Lwt.t
-val close_process:
-  in_channel * out_channel -> Unix.process_status Lwt.t
-val close_process_full:
-  in_channel * out_channel * in_channel ->
-  Unix.process_status Lwt.t
-*)

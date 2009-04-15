@@ -9,4 +9,5 @@ Lwt_util
 Lwt_exit_hook
 Lwt_gc
 Lwt_io
+Lwt_process
 Pqueue
