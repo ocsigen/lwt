@@ -268,6 +268,10 @@ let unix_file_descr ch = ch.fd
 
 let of_unix_file_descr fd = mk_ch fd
 
+let stdin = lazy(of_unix_file_descr Unix.stdin)
+let stdout = lazy(of_unix_file_descr Unix.stdout)
+let stderr = lazy(of_unix_file_descr Unix.stderr)
+
 let read ch buf pos len =
   try
     check_descriptor ch;

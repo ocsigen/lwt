@@ -23,9 +23,10 @@
 
 (** Module [Lwt_chan]: cooperative, [Pervasives]-like, I/O functions *)
 
+(** Note: the {!Lwt_io} module deprecates this module. *)
 
 (** {2 Cooperative input channels} *)
-type in_channel
+type in_channel = Lwt_io.ic
 
 val in_channel_of_descr : Lwt_unix.file_descr -> in_channel
 
@@ -49,7 +50,7 @@ val close_in : in_channel -> unit Lwt.t
 
 (** {2 Cooperative output channels} *)
 
-type out_channel
+type out_channel = Lwt_io.oc
 
 val out_channel_of_descr : Lwt_unix.file_descr -> out_channel
 
