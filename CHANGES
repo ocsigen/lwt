@@ -1,5 +1,17 @@
 = Development version =
 
+  * Adding modules:
+    * {{{Lwt_gc}}} for using {{{finalise}}} without {{{Lwt_unix.run}}}
+    * {{{Lwt_exit_hook}}}: convenient way to deal with at_exit functions
+    * {{{Lwt_io}}}: a new implementation of buffered channels with
+      more features and better handling of concurrent access
+    * {{{Lwt_process}}}: helpers to spawn processes and communicate with them
+  * Adding a syntax extension {{{pa_lwt}}} to handle anonymous bind
+    and adding sugars for catching errors (ticker #6)
+  * Adding C stubs to reimplement {{{Unix.read}}} and {{{Unix.write}}}
+    with assumption of non-blocking behaviour
+  * Adding more functions/helpers in {{{Lwt}}}
+  * Fixing memory leaks in {{{Lwt.choose}}}
   * Bugfix in {{{Lwt_chan.close_*}}} (ticket #66).
 
 = 1.1.0 =
