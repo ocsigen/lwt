@@ -34,7 +34,8 @@ open Ocamlbuild_plugin
 
    - byte-code-file is the byte-code for the syntax extension
 *)
-let intern_syntaxes = [ ("pa_monad", "syntax/pa_monad.cmo") ]
+let intern_syntaxes = [ ("pa_monad", "syntax/pa_monad.cmo");
+                        ("pa_lwt", "syntax/pa_lwt.cmo") ]
 
 (* +-----------+
    | Ocamlfind |
@@ -188,7 +189,9 @@ let _ =
         and prod = "lwt.odocl" in
         rule "lwt_doc" ~prod ~deps
           (fun _ _ -> Echo(List.map (sprintf "src/%s\n")
-                             (List.concat (List.map string_list_of_file deps)), prod));
+                             (List.concat (List.map string_list_of_file deps))
+                           @ ["syntax/Pa_lwt\n"],
+                           prod));
 
         (* The default "thread" tag is not compatible with ocamlfind.
            Indeed, the default rules add the "threads.cma" or

@@ -160,7 +160,12 @@ let rec bind t f =
         res
     | Repr _ ->
         assert false
-let (>>=) = bind
+let (>>=) t f = bind t f
+let (=<<) f t = bind t f
+
+let map f t = bind t (fun x -> return (f x))
+let (>|=) t f = map f t
+let (=|<) f t = map f t
 
 let rec catch_rec t f =
   match !(repr t) with

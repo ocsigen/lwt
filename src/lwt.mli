@@ -60,13 +60,26 @@ val bind : 'a t -> ('a -> 'b t) -> 'b t
           The result of a thread can be bound several time. *)
 
 val (>>=) : 'a t -> ('a -> 'b t) -> 'b t
-      (** [t >>= f] is an alternative notation for [bind t f]. *)
+  (** [t >>= f] is an alternative notation for [bind t f]. *)
+
+val (=<<) : ('a -> 'b t) -> 'a t -> 'b t
+  (** [f =<< t = t >>= f] *)
+
+val map : ('a -> 'b) -> 'a t -> 'b t
+  (** [map f m] map the result of a thread. This is the same as [bind
+      m (fun x -> return (f x))] *)
+
+val (>|=) : 'a t -> ('a -> 'b) -> 'b t
+  (** [m >|= f = map f m] *)
+
+val (=|<) : ('a -> 'b) -> 'a t -> 'b t
+  (** [f =|< m = map f m] *)
 
 val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
-      (** [catch t f] is a thread that behaves as the thread [t ()] if
-          this thread succeeds.  If the thread [t ()] fails with some
-          exception, [catch t f] behaves as the application of [f] to
-          this exception. *)
+  (** [catch t f] is a thread that behaves as the thread [t ()] if
+      this thread succeeds.  If the thread [t ()] fails with some
+      exception, [catch t f] behaves as the application of [f] to
+      this exception. *)
 
 val try_bind : (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
      (** [try_bind t f g] behaves as [bind (t ()) f] if [t] does not fail.

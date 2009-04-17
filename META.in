@@ -1,3 +1,5 @@
+# -*- conf -*-
+
 description = "Lightweight thread library for OCaml (core library)"
 requires = "unix"
 version = "@VERSION@"
@@ -23,4 +25,11 @@ package "extra" (
   requires = "lwt.preemptive"
   archive(mt,byte) = "lwt_extra.cma"
   archive(mt,native) = "lwt_extra.cmxa"
+)
+
+package "syntax" (
+  description = "Syntactic sugars for Lwt"
+  requires = "camlp4"
+  archive(syntax,preprocessor) = "pa_lwt.cmo"
+  archive(syntax,toploop) = "pa_lwt.cmo"
 )

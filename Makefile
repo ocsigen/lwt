@@ -35,14 +35,16 @@ NAME := lwt
 VERSION := $(shell head -n 1 VERSION)
 
 DOC = lwt.docdir/index.html
+SYNTAX = syntax/pa_lwt.cmo
 ARCHIVES_BYTE := $(patsubst %.mllib,%.cma,$(wildcard src/*.mllib))
 ARCHIVES_OPT := $(ARCHIVES_BYTE:.cma=.cmxa)
 TOINSTALL = $(wildcard $(ARCHIVES_BYTE) $(ARCHIVES_OPT)) \
   $(wildcard src/*.mli _build/src/*.cmi _build/src/*.cma) \
-  $(wildcard _build/src/*.cmx* _build/src/*.a)
+  $(wildcard _build/src/*.cmx* _build/src/*.a) \
+  $(wildcard _build/src/*.so) _build/syntax/pa_lwt.cmo
 
 all:
-	$(OCAMLBUILD) META $(ARCHIVES_BYTE) $(ARCHIVES_OPT) $(DOC)
+	$(OCAMLBUILD) META $(ARCHIVES_BYTE) $(ARCHIVES_OPT) $(SYNTAX) $(DOC)
 
 byte:
 	$(OCAMLBUILD) $(ARCHIVES_BYTE)
