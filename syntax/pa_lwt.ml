@@ -62,11 +62,11 @@ EXTEND Gram
       [ [ "try_lwt"; e = sequence; c = cases; f = finally ->
             begin match c, f with
               | None, None ->
-                  Loc.raise _loc (Failure "``try_lwt'' blocks must have at least a ``with'' part or a ``finally'' part")
+                  <:expr< Lwt.catch (fun _ -> $e$) (fun e -> Lwt.fail e) >>
               | Some c, None ->
                   <:expr< Lwt.catch (fun _ -> $e$) (function $c$) >>
               | None, Some f ->
-                  <:expr< Lwt.finalize (fun _ -> $e$) (fun _ -> $f$) >>
+                  <:expr< Lwt.finalize (fun _ -> $e$) (fun _ -> (begin $f$ end)) >>
               | Some c, Some f ->
                   <:expr< Lwt.try_bind (fun _ -> $e$)
                             (fun __pa_lwt_x -> Lwt.bind (begin $f$ end) (fun () -> Lwt.return __pa_lwt_x))
