@@ -225,13 +225,14 @@ let rec flush_total oc =
     return ()
 
 let safe_flush_total oc =
-  catch
-    (fun _ -> flush_total oc)
-    (fun _ -> return ())
+  try_lwt
+    flush_total oc
+  with
+      _ -> return ()
 
 let rec auto_flush oc =
   let wrapper = oc.main in
-  Lwt_unix.yield () >>= fun _ -> match wrapper.state with
+  Lwt_unix.yield () >> match wrapper.state with
     | Busy_primitive | Busy_atomic _ ->
         (* The channel is used, wait again *)
         auto_flush oc
@@ -240,12 +241,13 @@ let rec auto_flush oc =
         if Queue.is_empty oc.main.queued then begin
           oc.auto_flushing <- false;
           wrapper.state <- Busy_primitive;
-          safe_flush_total oc >>= fun _ ->
+          safe_flush_total oc >> begin
             if wrapper.state = Busy_primitive then
               wrapper.state <- Idle;
             if not (Queue.is_empty wrapper.queued) then
               wakeup (Queue.pop wrapper.queued) ();
             return ()
+          end
         end else
           (* Some operations are queued, wait again: *)
           auto_flush oc
@@ -291,10 +293,11 @@ let unlock wrapper = match wrapper.state with
 let primitive f wrapper = match wrapper.state with
   | Idle ->
       wrapper.state <- Busy_primitive;
-      finalize (fun _ -> f wrapper.channel)
-        (fun _ ->
-           unlock wrapper;
-           return ())
+      try_lwt
+        f wrapper.channel
+      finally
+        unlock wrapper;
+        return ()
 
   | Busy_primitive | Busy_atomic _ ->
       let w = wait () in
@@ -309,10 +312,11 @@ let primitive f wrapper = match wrapper.state with
 
            | Idle ->
                wrapper.state <- Busy_primitive;
-               finalize (fun _ -> f wrapper.channel)
-                 (fun _ ->
-                    unlock wrapper;
-                    return ())
+               try_lwt
+                 f wrapper.channel
+               finally
+                 unlock wrapper;
+                 return ()
 
            | Invalid ->
                fail (invalid_channel wrapper.channel)
@@ -333,12 +337,13 @@ let atomic f wrapper = match wrapper.state with
                           channel = wrapper.channel;
                           queued = Queue.create () } in
       wrapper.state <- Busy_atomic tmp_wrapper;
-      finalize (fun _ -> f tmp_wrapper)
-          (fun _ ->
-           (* The temporary wrapper is no more valid: *)
-           tmp_wrapper.state <- Invalid;
-           unlock wrapper;
-           return ())
+      try_lwt
+        f tmp_wrapper
+      finally
+        (* The temporary wrapper is no more valid: *)
+        tmp_wrapper.state <- Invalid;
+        unlock wrapper;
+        return ()
 
   | Busy_primitive | Busy_atomic _ ->
       let w = wait () in
@@ -356,11 +361,12 @@ let atomic f wrapper = match wrapper.state with
                                    channel = wrapper.channel;
                                    queued = Queue.create () } in
                wrapper.state <- Busy_atomic tmp_wrapper;
-               finalize (fun _ -> f tmp_wrapper)
-                 (fun _ ->
-                    tmp_wrapper.state <- Invalid;
-                    unlock wrapper;
-                    return ())
+               try_lwt
+                 f tmp_wrapper
+               finally
+                 tmp_wrapper.state <- Invalid;
+                 unlock wrapper;
+                 return ()
 
            | Invalid ->
                fail (invalid_channel wrapper.channel)
@@ -397,19 +403,19 @@ let close wrapper = match wrapper.channel.mode with
   | Output ->
       (* Performs all pending action, flush the buffer, then close
          it: *)
-      catch
-        (fun _ ->
-           primitive
-             (fun ch ->
-                perform
-                  if ch.mode = Output then
-                    safe_flush_total wrapper.channel
-                  else
-                    return ();
-                  abort wrapper)
-             wrapper)
-        (fun _ ->
-           abort wrapper)
+      try_lwt
+        primitive
+          (fun ch ->
+             perform
+               if ch.mode = Output then
+                 safe_flush_total wrapper.channel
+               else
+                 return ();
+               abort wrapper)
+          wrapper
+      with
+          _ ->
+            abort wrapper
 
 (* Avoid confusion with the [close] argument of [make]: *)
 let alias_to_close = close
@@ -434,7 +440,7 @@ let make ?(auto_flush=true) ?buffer_size ?(close=return) ?(seek=no_seek) ~mode p
              | Input -> 0
              | Output -> String.length buffer);
     perform_io = perform_io;
-    close = Lazy.lazy_from_fun (fun _ -> try close () with e -> fail e);
+    close = lazy(try_lwt close ());
     abort = wait ();
     main = wrapper;
     auto_flush = auto_flush;
@@ -548,14 +554,13 @@ struct
   let get_byte ic = get_char ic >>= fun ch -> return (Char.code ch)
 
   let peek_char ic =
-    catch
-      (fun _ ->
-         get_char ic >>= fun ch -> return (Some ch))
-      (function
-         | End_of_file ->
-             return None
-         | exn ->
-             fail exn)
+    try_lwt
+      get_char ic >>= fun ch -> return (Some ch)
+    with
+      | End_of_file ->
+          return None
+      | exn ->
+          fail exn
 
   let unsafe_get ic str ofs len =
     let avail = ic.max - ic.ptr in
@@ -610,7 +615,7 @@ struct
 
   let get_string ic len =
     let str = String.create len in
-    unsafe_get_exactly ic str 0 len >>= fun _ -> return str
+    unsafe_get_exactly ic str 0 len >> return str
 
   let rec add_line_rec ic cr_read buf =
     peek_char ic >>= function
@@ -669,7 +674,7 @@ struct
       String.unsafe_set oc.buffer ptr ch;
       return ()
     end else
-      flush_partial oc >>= fun _ -> put_char oc ch
+      flush_partial oc >> put_char oc ch
 
   let put_byte oc x = put_char oc (Char.unsafe_chr x)
 
@@ -682,7 +687,7 @@ struct
     end else begin
       String.unsafe_blit str ofs oc.buffer oc.ptr avail;
       oc.ptr <- oc.length;
-      flush_partial oc >>= fun _ ->
+      flush_partial oc >>
         let len = len - avail in
         if oc.ptr = 0 then begin
           if len = 0 then
@@ -730,7 +735,7 @@ struct
     unsafe_put_exactly oc str 0 (String.length str)
 
   let put_line oc str =
-    put_string oc str >>= fun _ -> put_char oc '\n'
+    put_string oc str >> put_char oc '\n'
 
   let put_value oc ?(flags=[]) x =
     put_string oc (Marshal.to_string x flags)
@@ -754,7 +759,7 @@ struct
 
   let rec put_block_unsafe oc size f =
     if oc.max - oc.ptr < size then
-      flush_partial oc >>= fun _ -> put_block_unsafe oc size f
+      flush_partial oc >> put_block_unsafe oc size f
     else begin
       let ptr = oc.ptr in
       oc.ptr <- ptr + size;
@@ -1084,16 +1089,16 @@ let open_file ?buffer_size ?flags ?perm ~mode filename =
     | None, Output ->
         0o666
   in
-  catch
-    (fun _ -> return (of_unix_fd ?buffer_size ~mode (Unix.openfile filename flags perm)))
-    fail
+  try_lwt
+    return (of_unix_fd ?buffer_size ~mode (Unix.openfile filename flags perm))
 
 let with_file ?buffer_size ?flags ?perm ~mode filename f =
   (perform
      ic <-- open_file ?buffer_size ?flags ?perm ~mode filename;
-     finalize
-       (fun _ -> f ic)
-       (fun _ -> close ic))
+     try_lwt
+       f ic
+     finally
+       close ic)
 
 let file_length filename = with_file ~mode:input filename length
 
@@ -1108,28 +1113,26 @@ let open_connection ?buffer_size sockaddr =
     else
       return ()
   in
-  Lwt.catch
-    (fun _ ->
-       perform
-         Lwt_unix.connect fd sockaddr;
-         let _ = try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> () in
-         return (make ?buffer_size
-                   ~close:(fun _ -> close Unix.SHUTDOWN_RECEIVE)
-                   ~mode:input (Lwt_unix.read fd),
-                 make ?buffer_size
-                   ~close:(fun _ -> close Unix.SHUTDOWN_SEND)
-                   ~mode:output (Lwt_unix.write fd)))
-    (fun exn ->
-       perform
+  try_lwt
+    (perform
+       Lwt_unix.connect fd sockaddr;
+       let _ = try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> () in
+       return (make ?buffer_size
+                 ~close:(fun _ -> close Unix.SHUTDOWN_RECEIVE)
+                 ~mode:input (Lwt_unix.read fd),
+               make ?buffer_size
+                 ~close:(fun _ -> close Unix.SHUTDOWN_SEND)
+                 ~mode:output (Lwt_unix.write fd)))
+  with
+    exn ->
+      (perform
          close_fd fd;
          fail exn)
 
 let with_connection ?buffer_size sockaddr f =
   (perform
      (ic, oc) <-- open_connection sockaddr;
-     finalize
-       (fun _ -> f (ic, oc))
-       (fun _ ->
-          perform
-            close ic;
-            close oc))
+     try_lwt
+       f (ic, oc)
+     finally
+       close ic >> close oc)

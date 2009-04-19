@@ -109,14 +109,17 @@ let append node =
 
 let exec node =
   remove node;
-  catch node.hook (fun _ -> return ())
+  try_lwt
+    node.hook ()
+  with
+     _ -> return ()
 
 let ensure_termination t =
   if Lwt.state t = Lwt.Sleep then begin
     let hook = make (fun _ -> t) in
     prepend hook;
     (* Remove the hook when t has terminated *)
-    ignore (finalize (fun _ -> t) (fun _ -> remove hook; return ()))
+    ignore (try_lwt t finally remove hook; return ())
   end
 
 let rec call_hooks _ = match !first with
