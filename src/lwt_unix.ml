@@ -3,6 +3,7 @@
  * Module Lwt_unix
  * Copyright (C) 2005-2008 Jérôme Vouillon
  * Laboratoire PPS - CNRS Université Paris Diderot
+ *                    2009 Jérémie Dimino
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -21,29 +22,24 @@
  * 02111-1307, USA.
  *)
 
-(*
-Non-blocking I/O and select does not (fully) work under Windows.
-The libray therefore does not use them under Windows, and will
-therefore have the following limitations:
-- No read will be performed while there are some threads ready to run
-  or waiting to write;
-- When a read is pending, everything else will be blocked: [sleep]
-  will not terminate and other reads will not be performed before
-  this read terminates;
-- A write on a socket or a pipe can block the execution of the program
-  if the data are never consumed at the other end of the connection.
-  In particular, if both ends use this library and write at the same
-  time, this could result in a dead-lock.
-- [connect] is blocking
-*)
-let windows_hack = Sys.os_type <> "Unix"
+(* +----------+
+   | Sleepers |
+   +----------+ *)
 
 module SleepQueue =
   Pqueue.Make (struct
     type t = float * unit Lwt.t
     let compare (t, _) (t', _) = compare t t'
   end)
+
+(* Threads waiting for a timeout to expire: *)
 let sleep_queue = ref SleepQueue.empty
+
+(* Sleepers added since the last iteration of the main loop:
+
+   They are not added immediatly to the main sleep queue in order to
+   prevent them from being wakeup immediatly by [restart_threads].
+*)
 let new_sleeps = ref []
 
 let sleep d =
@@ -54,32 +50,30 @@ let sleep d =
 
 let yield () = sleep 0.
 
-let get_time t =
-  if !t = -1. then t := Unix.gettimeofday ();
-  !t
-
 let in_the_past now t =
-  t = 0. || t <= get_time now
+  t = 0. || t <= Lazy.force now
 
+(* We use a lazy-value for [now] to avoid one system call if not
+   needed: *)
 let rec restart_threads now =
-  match
-    try Some (SleepQueue.find_min !sleep_queue) with Not_found -> None
-  with
-    Some (time, thr) when in_the_past now time ->
-      sleep_queue := SleepQueue.remove_min !sleep_queue;
-      Lwt.wakeup thr ();
-      restart_threads now
-  | _ ->
-      ()
+  match SleepQueue.lookup_min !sleep_queue with
+    | Some(time, thr) when in_the_past now time ->
+        sleep_queue := SleepQueue.remove_min !sleep_queue;
+        Lwt.wakeup thr ();
+        restart_threads now
+    | _ ->
+        ()
 
-(****)
+(* +--------------------------+
+   | File descriptor wrappers |
+   +--------------------------+ *)
 
 type state = Open | Closed | Aborted of exn
 
 type file_descr = { fd : Unix.file_descr; mutable state: state }
 
 let mk_ch fd =
-  if not windows_hack then Unix.set_nonblock fd;
+  Unix.set_nonblock fd;
   { fd = fd; state = Open }
 
 let check_descriptor ch =
@@ -91,7 +85,9 @@ let check_descriptor ch =
   | Closed ->
       raise (Unix.Unix_error (Unix.EBADF, "check_descriptor", ""))
 
-(****)
+(* +-----------------------------+
+   | Actions on file descriptors |
+   +-----------------------------+ *)
 
 module FdMap =
   Map.Make (struct type t = Unix.file_descr let compare = compare end)
@@ -167,93 +163,72 @@ let perform_actions set fd =
   with Not_found ->
     ()
 
-let active_descriptors set = FdMap.fold (fun key _ l -> key :: l) !set []
+let active_descriptors set acc = FdMap.fold (fun key _ acc -> key :: acc) !set acc
 
 let blocked_thread_count set =
   FdMap.fold (fun key (_, l) c -> List.length !l + c) !set 0
 
-(****)
+(* +------------+
+   | Event loop |
+   +------------+ *)
+
+let run = Lwt_main.run
 
 let wait_children = ref []
 
 let child_exited = ref false
 let _ =
-  if not windows_hack then
-    ignore (Sys.signal Sys.sigchld
-              (Sys.Signal_handle (fun _ -> child_exited := true)))
+  Sys.signal Sys.sigchld
+    (Sys.Signal_handle (fun _ -> child_exited := true))
 
-let bad_fd fd =
-  try ignore (Unix.LargeFile.fstat fd); false with
-    Unix.Unix_error (_, _, _) ->
-      true
+let select_filter now select set_r set_w set_e timeout =
+  (* Transfer all sleepers added since the last iteration to the main
+     sleep queue: *)
+  sleep_queue :=
+    List.fold_left
+      (fun q e -> SleepQueue.add e q) !sleep_queue !new_sleeps;
+  new_sleeps := [];
+  let (now, set_r, set_w, set_e) as result =
+    select
+      (active_descriptors inputs set_r)
+      (active_descriptors outputs set_w)
+      set_e
+      (Lwt_main.min_timeout
+         timeout
+         (match SleepQueue.lookup_min !sleep_queue with
+            | None -> None
+            | Some(0.0, _) -> Some 0.0
+            | Some(time, _) -> Some(max 0.0 (time -. (Lazy.force now)))))
+  in
+  (* Restart threads waiting for a timeout: *)
+  restart_threads now;
+  (* Restart threads waiting on a file descriptors: *)
+  List.iter (fun fd -> perform_actions inputs fd) set_r;
+  List.iter (fun fd -> perform_actions outputs fd) set_w;
+  (* Restart threads waiting for a child to exit: *)
+  if !child_exited then begin
+    child_exited := false;
+    let l = !wait_children in
+    wait_children := [];
+    List.iter
+      (fun ((cont, flags, pid) as e) ->
+         try
+           let (pid', _) as v = Unix.waitpid flags pid in
+           if pid' = 0 then
+             wait_children := e :: !wait_children
+           else
+             Lwt.wakeup cont v
+         with e ->
+           Lwt.wakeup_exn cont e)
+      l
+  end;
+  result
 
-let rec run thread =
-  match Lwt.poll thread with
-    Some v ->
-      v
-  | None ->
-      sleep_queue :=
-        List.fold_left
-          (fun q e -> SleepQueue.add e q) !sleep_queue !new_sleeps;
-      new_sleeps := [];
-      let next_event =
-        try
-          let (time, _) = SleepQueue.find_min !sleep_queue in Some time
-        with Not_found ->
-          None
-      in
-      let now = ref (-1.) in
-      let delay =
-        match next_event with
-          None      -> -1.
-        | Some 0.   -> 0.
-        | Some time -> max 0. (time -. get_time now)
-      in
-      let infds = active_descriptors inputs in
-      let outfds = active_descriptors outputs in
-      let (readers, writers, _) =
-        if windows_hack then
-          let writers = outfds in
-          let readers =
-            if delay = 0. || writers <> [] then [] else infds in
-          (readers, writers, [])
-        else if infds = [] && outfds = [] && delay = 0. then
-          ([], [], [])
-        else
-          try
-            let (readers, writers, _) as res =
-              Unix.select infds outfds [] delay in
-            if delay > 0. && !now <> -1. && readers = [] && writers = [] then
-              now := !now +. delay;
-            res
-          with
-            Unix.Unix_error (Unix.EINTR, _, _) ->
-              ([], [], [])
-          | Unix.Unix_error (Unix.EBADF, _, _) ->
-              (List.filter bad_fd infds, List.filter bad_fd outfds, [])
-      in
-      restart_threads now;
-      List.iter (fun fd -> perform_actions inputs fd) readers;
-      List.iter (fun fd -> perform_actions outputs fd) writers;
-      if !child_exited then begin
-        child_exited := false;
-        let l = !wait_children in
-        wait_children := [];
-        List.iter
-          (fun ((cont, flags, pid) as e) ->
-             try
-               let (pid', _) as v = Unix.waitpid flags pid in
-               if pid' = 0 then
-                 wait_children := e :: !wait_children
-               else
-                 Lwt.wakeup cont v
-             with e ->
-               Lwt.wakeup_exn cont e)
-          l
-      end;
-      run thread
+let _ = Lwt_main.add_hook (ref select_filter) Lwt_main.select_filters
 
-(****)
+(* +--------------+
+   | System calls |
+   +--------------+ *)
 
 let set_state ch st =
   ch.state <- st;
@@ -281,7 +256,6 @@ let read ch buf pos len =
   else
     try
       check_descriptor ch;
-      if windows_hack then raise (Unix.Unix_error (Unix.EAGAIN, "", ""));
       Lwt.return (lwt_unix_read ch.fd buf pos len)
     with
         Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK), _, _) ->
@@ -366,7 +340,7 @@ let _waitpid flags pid =
     Lwt.fail e
 
 let waitpid flags pid =
-  if List.mem Unix.WNOHANG flags || windows_hack then
+  if List.mem Unix.WNOHANG flags then
     _waitpid flags pid
   else
     let flags = Unix.WNOHANG :: flags in
@@ -410,7 +384,9 @@ let set_close_on_exec ch =
   check_descriptor ch;
   Unix.set_close_on_exec ch.fd
 
-(****)
+(* +------+
+   | Misc |
+   +------+ *)
 
 (* Monitoring functions *)
 let inputs_length () = blocked_thread_count inputs

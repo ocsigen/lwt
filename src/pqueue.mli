@@ -36,6 +36,7 @@ module type S =
     val add: elt -> t -> t
     val union: t -> t -> t
     val find_min: t -> elt
+    val lookup_min: t -> elt option
     val remove_min: t -> t
     val size: t -> int
   end

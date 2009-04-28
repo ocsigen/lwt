@@ -32,16 +32,7 @@ val yield : unit -> unit Lwt.t
           terminates. *)
 
 val run : 'a Lwt.t -> 'a
-      (** [run t] lets the thread [t] run until it terminates.  It
-          evaluates to the return value of [t], or raise the exception
-          associated to [t] if [t] fails.
-
-          You should avoid using [run] inside threads:
-          - The calling threads will not resume before [run]
-            returns.
-          - Successive invocations of [run] are serialized: an
-            invocation of [run] will not terminate before all
-            subsequent invocations are terminated. *)
+      (** Same as {!Lwt_main.run} *)
 
 (****)
 

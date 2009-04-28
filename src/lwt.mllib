@@ -6,8 +6,8 @@ Lwt_throttle
 Lwt_timeout
 Lwt_unix
 Lwt_util
-Lwt_exit_hook
 Lwt_gc
 Lwt_io
 Lwt_process
+Lwt_main
 Pqueue

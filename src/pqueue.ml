@@ -36,6 +36,7 @@ module type S =
     val add: elt -> t -> t
     val union: t -> t -> t
     val find_min: t -> elt
+    val lookup_min: t -> elt option
     val remove_min: t -> t
     val size: t -> int
   end
@@ -81,6 +82,9 @@ module Make(Ord: OrderedType) : (S with type elt = Ord.t) =
           let x = find_min ts in
           let c = Ord.compare (root t) x in
           if c < 0 then root t else x
+
+    let lookup_min t =
+      try Some(find_min t) with Not_found -> None
 
     let rec get_min =
       function

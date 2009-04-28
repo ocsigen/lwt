@@ -20,9 +20,16 @@
  * 02111-1307, USA.
  *)
 
+let ensure_termination t =
+  if Lwt.state t = Lwt.Sleep then begin
+    let hook = ref (fun _ -> t) in
+    Lwt_main.add_hook hook Lwt_main.exit_hooks;
+    (* Remove the hook when t has terminated *)
+    ignore (try_lwt t finally Lwt_main.remove_hook hook Lwt_main.exit_hooks; Lwt.return ())
+  end
+
 let finaliser f x =
-  (* Ensure the termination of the finaliser: *)
-  Lwt_exit_hook.ensure_termination (f x)
+  ensure_termination (f x)
 
 let finalise f = Gc.finalise (finaliser f)
 
@@ -41,7 +48,7 @@ let foe_exit f weak _ =
 (* Finaliser for a finalise_or_exit *)
 let foe_finalise f hook weak x =
   (* Remove the exit hook, it is not needed anymore *)
-  Lwt_exit_hook.remove hook;
+  Lwt_main.remove_hook hook Lwt_main.exit_hooks;
   (* This should not be necessary, i am just paranoid: *)
   Weak.set weak 0 None;
   (* Finally call the real finaliser: *)
@@ -52,6 +59,6 @@ let finalise_or_exit f x =
      being garbage collected: *)
   let weak = Weak.create 1 in
   Weak.set weak 0 (Some x);
-  let hook = Lwt_exit_hook.make (foe_exit f weak) in
-  Lwt_exit_hook.prepend hook;
+  let hook = ref (foe_exit f weak) in
+  Lwt_main.add_hook hook Lwt_main.exit_hooks;
   Gc.finalise (foe_finalise f hook weak) x
