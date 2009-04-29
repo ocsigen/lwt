@@ -64,6 +64,7 @@ let packages = [
   (* Other packages we want to use *)
   "unix";
   "ssl";
+  "lablgtk2";
 ]
 
 (* List of syntaxes *)
@@ -116,6 +117,47 @@ let get_version _ =
   match string_list_of_file "VERSION" with
     | version :: _ -> version
     | _ -> failwith "invalid VERSION file"
+
+(* +---------+
+   | C stubs |
+   +---------+ *)
+
+let pkg_config =
+  let binary = lazy
+    (try
+       Command.search_in_path "pkg-config"
+     with
+         Not_found ->
+           failwith "The program ``pkg-config'' is required but not found, please intall it")
+  in
+  fun flags package ->
+    let binary = Lazy.force binary in
+    with_temp_file "lwt" "pkg-config"
+      (fun tmp ->
+         Command.execute ~quiet:true & Cmd(S[A binary; A("--" ^ flags); A package; Sh ">"; A tmp]);
+         List.map (fun arg -> A arg) (string_list_of_file tmp))
+
+let define_stubs name =
+  let tag = sprintf "use_%s_stubs" name in
+  dep ["link"; "ocaml"; tag] [sprintf "src/liblwt_%s_stubs.a" name];
+  flag ["link"; "library"; "ocaml"; tag] & S[A"-cclib"; A(sprintf "-llwt_%s_stubs" name)];
+  flag ["link"; "library"; "ocaml"; "byte"; tag] & S[A"-dllib"; A(sprintf "-llwt_%s_stubs" name)]
+
+let define_c_library ~name ~c_name =
+  let tag = sprintf "use_C_%s" name in
+
+  (* Get flags for using pkg-config: *)
+  let opt = pkg_config "cflags" c_name and lib = pkg_config "libs" c_name in
+
+  (* Add flags for linking with the C library: *)
+  flag ["ocamlmklib"; "c"; tag] & S lib;
+
+  (* C stubs using the C library must be compiled with the library
+     specifics flags: *)
+  flag ["c"; "compile"; tag] & S(List.map (fun arg -> S[A"-ccopt"; arg]) opt);
+
+  (* OCaml llibraries must depends on the C library: *)
+  flag ["link"; "ocaml"; tag] & S(List.map (fun arg -> S[A"-cclib"; arg]) lib)
 
 let _ =
   dispatch begin function
@@ -170,9 +212,55 @@ let _ =
            | C stubs |
            +---------+ *)
 
-        dep ["link"; "ocaml"; "use_stubs"] ["src/liblwt_stubs.a"];
-        flag ["link"; "library"; "ocaml"; "use_stubs"] & S[A"-cclib"; A"-llwt_stubs"];
-        flag ["link"; "library"; "ocaml"; "byte"; "use_stubs"] & S[A"-dllib"; A"-llwt_stubs"];
+        define_stubs "unix";
+        define_stubs "glib";
+        define_c_library ~name:"glib" ~c_name:"glib-2.0";
+
+        (* +----------------------+
+           | C stubs for Lwt_glib |
+           +----------------------+ *)
+
+        (* Search 'pkg-config': *)
+        let pkg_config = try
+          Command.search_in_path "pkg-config"
+        with
+            Not_found ->
+              failwith "The program ``pkg-config'' is required but not found, please intall it"
+        in
+        let get_args cmd =
+          with_temp_file "ocaml-usb" "pkg-config"
+            (fun tmp ->
+               Command.execute ~quiet:true & Cmd(S[cmd; Sh ">"; A tmp]);
+               List.map (fun arg -> A arg) (string_list_of_file tmp))
+        in
+
+        (* Get flags for glib-2.0 using pkg-config: *)
+        let usb_opt = get_args & S[A pkg_config; A"--cflags"; A"glib-2.0"]
+        and usb_lib = get_args & S[A pkg_config; A"--libs"; A"glib-2.0"] in
+
+        (* Dependency for automatic compliation of C stubs: *)
+        dep ["link"; "ocaml"; "use_glib_stubs"] ["src/liblwt_glib_stubs.a"];
+
+        (* Link code using glib C stubs with '-llwt_glib_stubs': *)
+        flag ["link"; "library"; "ocaml"; "use_glib_stubs"] & S[A"-cclib"; A"-llwt_glib_stubs"];
+
+        (* For libraries add also a '-dllib' option for automatic
+           addition of '-cclib -llwt_glib_stubs' when using the
+           library: *)
+        flag ["link"; "library"; "ocaml"; "byte"; "use_glib_stubs"] & S[A"-dllib"; A"-llwt_glib_stubs"];
+
+        (* Add flags for linking with the C library libusb: *)
+        flag ["ocamlmklib"; "c"; "use_libusb"] & S usb_lib;
+
+        let ccopt = S(List.map (fun arg -> S[A"-ccopt"; arg]) usb_opt)
+        and cclib = S(List.map (fun arg -> S[A"-cclib"; arg]) usb_lib) in
+
+        (* C stubs using libusb must be compiled with libusb specifics
+           flags: *)
+        flag ["c"; "compile"; "use_C_glib"] & ccopt;
+
+        (* OCaml llibraries must depends on the C library libusb: *)
+        flag ["link"; "ocaml"; "use_C_glib"] & cclib;
 
         (* +-------+
            | Other |

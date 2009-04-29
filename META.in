@@ -27,6 +27,13 @@ package "extra" (
   archive(mt,native) = "lwt_extra.cmxa"
 )
 
+package "glib" (
+  description = "Glib integration"
+  requires = "lwt,lablgtk2"
+  archive(byte) = "lwt_glib.cma"
+  archive(native) = "lwt_glib.cmxa"
+)
+
 package "syntax" (
   description = "Syntactic sugars for Lwt"
   requires = "camlp4"

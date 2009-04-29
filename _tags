@@ -1,12 +1,37 @@
-# Libraries
+# -*- conf -*-
+
+# +-------------------------+
+# | External ocaml packages |
+# +-------------------------+
+
 <src/lwt_preemptive.ml*>: pkg_threads
 <src/lwt_ssl.ml*>: pkg_ssl
+<src/lwt_glib.ml*>: pkg_lablgtk2
 <src/*.ml*>: pkg_unix
 
-# Stubs
-<src/lwt.cm{x,}a>: use_stubs
+# +-------------------+
+# | Syntax extensions |
+# +-------------------+
 
-# Syntax extensions
 <syntax/pa_monad.ml>: syntax_camlp4o, pkg_camlp4, pkg_camlp4.quotations.r, pkg_camlp4.extend
 <syntax/pa_lwt.ml>: syntax_camlp4o, pkg_camlp4, pkg_camlp4.quotations.o, pkg_camlp4.extend
 <src/*.ml>: syntax_camlp4o, pkg_camlp4, pa_monad, pa_lwt
+
+# +---------+
+# | C stubs |
+# +---------+
+
+# Tags description:
+#
+# * "use_XXX_stubs" is for files using the stubs for XXX,
+#   i.e. "src/lwt_XXX_stubs.c"
+#
+# * "use_C_XXX" is for files using the C library "XXX"
+
+# Ocaml libraries use C stubs and must depend on C libraries:
+<src/lwt.cm{x,}a>: use_unix_stubs
+<src/lwt_glib.cm{x,}a>: use_glib_stubs, use_C_glic
+
+# C stubs use C libraries:
+<src/liblwt_glib_stubs.*>: use_C_glib
+<src/lwt_glib_stubs.*>: use_C_glib
