@@ -68,6 +68,8 @@ install:
 uninstall:
 	$(OCAMLFIND) remove $(NAME) -destdir "$(DESTDIR)"
 
+reinstall: uninstall install
+
 clean:
 	$(OCAMLBUILD) -clean
 	-rm -Rf *~ src/*~ $(NAME)-*.tar.gz

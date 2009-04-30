@@ -34,8 +34,7 @@ open Ocamlbuild_plugin
 
    - byte-code-file is the byte-code for the syntax extension
 *)
-let intern_syntaxes = [ ("pa_monad", "syntax/pa_monad.cmo");
-                        ("pa_lwt", "syntax/pa_lwt.cmo") ]
+let intern_syntaxes = [ ("pa_lwt", "syntax/pa_lwt.cmo") ]
 
 (* +-----------+
    | Ocamlfind |

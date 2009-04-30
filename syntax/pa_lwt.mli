@@ -24,57 +24,100 @@
 
 (** This extension add the following sugars:
 
-    {[
-      try_lwt
-        <expr>
-      with
-        <branches>
-    ]},
+    - anonymous bind:
 
-    {[
-      try_lwt
-        <expr>
-      finally
-        <expr>
-    ]}
+      {[
+         put_string stdio "Hello, " >>
+         put_string stdio "world!" >>
+         x := 1;
+         sleep 1.0 >>
+         return 1
+      ]}
+
+    - lwt-binding:
+
+      {[
+         lwt ch = get_char stdin in
+         code
+      ]}
+
+      is the same as [bind (get_char stdin) (fun ch -> code)]
+
+      Moreover it supports parallel binding:
+
+      {[
+         lwt x = do_something1 ()
+         and y = do_something2 in
+         code
+      ]}
+
+      will let [do_something1 ()] and [do_something2 ()] runs then
+      bind their result to [x] and [y]. It is the same as:
+
+      {[
+         let t1 = do_something1
+         and t2 = do_something2 in
+         bind t1 (fun x -> bind t2 (fun y -> code))
+      ]}
+
+    - exception catching:
+
+      {[
+         try_lwt
+           <expr>
+      ]},
+
+      {[
+         try_lwt
+           <expr>
+         with
+           <branches>
+      ]},
+
+      {[
+         try_lwt
+           <expr>
+         finally
+           <expr>
+       ]}
 
     and:
 
-    {[
-      try_lwt
-        <expr>
-      with
-        <branches>
-      finally
-        <expr>
-    ]}
+      {[
+         try_lwt
+           <expr>
+         with
+           <branches>
+         finally
+           <expr>
+      ]}
 
     For example:
 
-    {[
-      try_lwt
-        f x
-      with
-        | Failure msg ->
-            prerr_endline msg;
-            return ()
-    ]}
-
-    is expanded to:
-
-    {[
-      catch (fun _ -> f x)
-        (function
+      {[
+         try_lwt
+           f x
+         with
            | Failure msg ->
                prerr_endline msg;
                return ()
-           | exn ->
-               Lwt.fail exn)
-    ]}
+      ]}
+
+    is expanded to:
+
+      {[
+         catch (fun _ -> f x)
+           (function
+              | Failure msg ->
+                  prerr_endline msg;
+                  return ()
+              | exn ->
+                  Lwt.fail exn)
+      ]}
 
     Note that the [exn -> Lwt.fail exn] branch is automatically addedd
     when needed.
 
-    It also inline the anonymous bind [>>], to make it usable with
-    lwt.
+    The construction [try_lwt <expr>] just catch regular exception
+    into lwt exception. i.e. it is the same as [catch (fun _ -> <expr>) fail].
 *)

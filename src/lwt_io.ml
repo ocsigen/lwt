@@ -182,27 +182,26 @@ let perform_io ch = match ch.main.state with
             (size, ch.length - size)
         | Output ->
             (0, ch.ptr) in
-      (perform
-         n <-- choose [ch.abort; ch.perform_io ch.buffer ptr len];
-         (* Never trust user functions... *)
-         if n < 0 || n > len then
-           fail (Failure (Printf.sprintf "Lwt_io: invalid result of the [%s] function(request=%d,result=%d)"
-                            (match ch.mode with Input -> "read" | Output -> "write") len n))
-         else begin
-           (* Update the global offset: *)
-           ch.offset <- Int64.add ch.offset (Int64.of_int n);
-           (* Update buffer positions: *)
-           begin match ch.mode with
-             | Input ->
-                 ch.max <- ch.max + n
-             | Output ->
-                 (* Shift remaining data: *)
-                 let len = len - n in
-                 String.unsafe_blit ch.buffer ptr ch.buffer 0 len;
-                 ch.ptr <- len
-           end;
-           return n
-         end)
+      lwt n = choose [ch.abort; ch.perform_io ch.buffer ptr len] in
+      (* Never trust user functions... *)
+      if n < 0 || n > len then
+        fail (Failure (Printf.sprintf "Lwt_io: invalid result of the [%s] function(request=%d,result=%d)"
+                         (match ch.mode with Input -> "read" | Output -> "write") len n))
+      else begin
+        (* Update the global offset: *)
+        ch.offset <- Int64.add ch.offset (Int64.of_int n);
+        (* Update buffer positions: *)
+        begin match ch.mode with
+          | Input ->
+              ch.max <- ch.max + n
+          | Output ->
+              (* Shift remaining data: *)
+              let len = len - n in
+              String.unsafe_blit ch.buffer ptr ch.buffer 0 len;
+              ch.ptr <- len
+        end;
+        return n
+      end
 
   | Closed ->
       fail (closed_channel ch)
@@ -218,9 +217,8 @@ let flush_partial = perform_io
 
 let rec flush_total oc =
   if oc.ptr > 0 then
-    (perform
-       flush_partial oc;
-       flush_total oc)
+    flush_partial oc >>
+    flush_total oc
   else
     return ()
 
@@ -302,27 +300,26 @@ let primitive f wrapper = match wrapper.state with
   | Busy_primitive | Busy_atomic _ ->
       let w = wait () in
       Queue.push w wrapper.queued;
-      (perform
-         w;
-         match wrapper.state with
-           | Closed ->
-               (* The channel has been closed while we were waiting *)
-               unlock wrapper;
-               fail (closed_channel wrapper.channel)
+      w >> begin match wrapper.state with
+        | Closed ->
+            (* The channel has been closed while we were waiting *)
+            unlock wrapper;
+            fail (closed_channel wrapper.channel)
 
-           | Idle ->
-               wrapper.state <- Busy_primitive;
-               try_lwt
-                 f wrapper.channel
-               finally
-                 unlock wrapper;
-                 return ()
+        | Idle ->
+            wrapper.state <- Busy_primitive;
+            try_lwt
+              f wrapper.channel
+            finally
+              unlock wrapper;
+            return ()
 
-           | Invalid ->
-               fail (invalid_channel wrapper.channel)
+        | Invalid ->
+            fail (invalid_channel wrapper.channel)
 
-           | Busy_primitive | Busy_atomic _ ->
-               assert false)
+        | Busy_primitive | Busy_atomic _ ->
+            assert false
+      end
 
   | Closed ->
       fail (closed_channel wrapper.channel)
@@ -348,31 +345,30 @@ let atomic f wrapper = match wrapper.state with
   | Busy_primitive | Busy_atomic _ ->
       let w = wait () in
       Queue.push w wrapper.queued;
-      (perform
-         w;
-         match wrapper.state with
-           | Closed ->
-               (* The channel has been closed while we were waiting *)
-               unlock wrapper;
-               fail (closed_channel wrapper.channel)
+      w >> begin match wrapper.state with
+        | Closed ->
+            (* The channel has been closed while we were waiting *)
+            unlock wrapper;
+            fail (closed_channel wrapper.channel)
 
-           | Idle ->
-               let tmp_wrapper = { state = Idle;
-                                   channel = wrapper.channel;
-                                   queued = Queue.create () } in
-               wrapper.state <- Busy_atomic tmp_wrapper;
-               try_lwt
-                 f tmp_wrapper
-               finally
-                 tmp_wrapper.state <- Invalid;
-                 unlock wrapper;
-                 return ()
+        | Idle ->
+            let tmp_wrapper = { state = Idle;
+                                channel = wrapper.channel;
+                                queued = Queue.create () } in
+            wrapper.state <- Busy_atomic tmp_wrapper;
+            try_lwt
+              f tmp_wrapper
+            finally
+              tmp_wrapper.state <- Invalid;
+              unlock wrapper;
+              return ()
 
-           | Invalid ->
-               fail (invalid_channel wrapper.channel)
+        | Invalid ->
+            fail (invalid_channel wrapper.channel)
 
-           | Busy_primitive | Busy_atomic _ ->
-               assert false)
+        | Busy_primitive | Busy_atomic _ ->
+            assert false
+      end
 
   | Closed ->
       fail (closed_channel wrapper.channel)
@@ -406,12 +402,11 @@ let close wrapper = match wrapper.channel.mode with
       try_lwt
         primitive
           (fun ch ->
-             perform
-               if ch.mode = Output then
-                 safe_flush_total wrapper.channel
-               else
-                 return ();
-               abort wrapper)
+             if ch.mode = Output then
+               safe_flush_total wrapper.channel
+             else
+               return () >>
+             abort wrapper)
           wrapper
       with
           _ ->
@@ -653,13 +648,12 @@ struct
 
   let get_value ic =
     let header = String.create 20 in
-    (perform
-       unsafe_get_exactly ic header 0 20;
-       let bsize = Marshal.data_size header 0 in
-       let buffer = String.create (20 + bsize) in
-       let _ = String.unsafe_blit header 0 buffer 0 20 in
-       unsafe_get_exactly ic buffer 20 bsize;
-       return (Marshal.from_string buffer 0))
+    unsafe_get_exactly ic header 0 20 >>
+    let bsize = Marshal.data_size header 0 in
+    let buffer = String.create (20 + bsize) in
+    let _ = String.unsafe_blit header 0 buffer 0 20 in
+    unsafe_get_exactly ic buffer 20 bsize >>
+    return (Marshal.from_string buffer 0)
 
   (* +---------+
      | Outputs |
@@ -782,20 +776,17 @@ struct
               put_block_unsafe ch size f
 
   let direct_access ch f =
-    (perform
-       (len, x) <-- (if ch.ptr < ch.max then
-                       f ch.buffer ch.ptr (ch.max - ch.ptr)
-                     else
-                       (perform
-                          perform_io ch;
-                          f ch.buffer ch.ptr (ch.max - ch.ptr)));
-       if len < 0 || len > ch.max - ch.ptr then
-         fail (Failure(Printf.sprintf "Lwt_io.direct_access: invalid result of [f]: result = %d, ptr = %d, max = %d"
-                         len ch.ptr ch.max))
-       else begin
-         ch.ptr <- ch.ptr + len;
-         return x
-       end)
+    lwt len, x = if ch.ptr < ch.max then
+                   f ch.buffer ch.ptr (ch.max - ch.ptr)
+                 else
+                   perform_io ch >> f ch.buffer ch.ptr (ch.max - ch.ptr) in
+    if len < 0 || len > ch.max - ch.ptr then
+      fail (Failure(Printf.sprintf "Lwt_io.direct_access: invalid result of [f]: result = %d, ptr = %d, max = %d"
+                      len ch.ptr ch.max))
+    else begin
+      ch.ptr <- ch.ptr + len;
+      return x
+    end
 
   module Make_number_io(Byte_order : Byte_order.S) =
   struct
@@ -929,40 +920,35 @@ struct
      +---------------+ *)
 
   let seek ch pos =
-    (perform
-       offset <-- ch.seek pos Unix.SEEK_SET;
-       if offset <> pos then
-         fail (Sys_error "Lwt_io.set_pos: seek failed")
-       else
-         return ())
+    lwt offset = ch.seek pos Unix.SEEK_SET in
+    if offset <> pos then
+      fail (Sys_error "Lwt_io.set_pos: seek failed")
+    else
+      return ()
 
   let set_pos ch pos = match ch.mode with
     | Output ->
-        (perform
-           flush_total ch;
-           seek ch pos;
-           let _ = ch.offset <- pos in
-           return ())
+        flush_total ch >>
+        seek ch pos >>
+        let _ = ch.offset <- pos in
+        return ()
     | Input ->
         let current = Int64.sub ch.offset (Int64.of_int (ch.max - ch.ptr)) in
         if pos >= current && pos <= ch.offset then begin
           ch.ptr <- ch.max - (Int64.to_int (Int64.sub ch.offset pos));
           return ()
-        end else
-          (perform
-             seek ch pos;
-             let _ =
-               ch.offset <- pos;
-               ch.ptr <- 0;
-               ch.max <- 0
-             in
-             return ())
+        end else begin
+          seek ch pos >>
+          ch.offset <- pos;
+          ch.ptr <- 0;
+          ch.max <- 0;
+          return ()
+        end
 
   let length ch =
-    (perform
-       len <-- ch.seek 0L Unix.SEEK_END;
-       seek ch ch.offset;
-       return len)
+    lwt len = ch.seek 0L Unix.SEEK_END in
+    seek ch ch.offset >>
+    return len
 end
 
 (* +----------------------+
@@ -1093,12 +1079,11 @@ let open_file ?buffer_size ?flags ?perm ~mode filename =
     return (of_unix_fd ?buffer_size ~mode (Unix.openfile filename flags perm))
 
 let with_file ?buffer_size ?flags ?perm ~mode filename f =
-  (perform
-     ic <-- open_file ?buffer_size ?flags ?perm ~mode filename;
-     try_lwt
-       f ic
-     finally
-       close ic)
+  lwt ic = open_file ?buffer_size ?flags ?perm ~mode filename in
+  try_lwt
+    f ic
+  finally
+    close ic
 
 let file_length filename = with_file ~mode:input filename length
 
@@ -1114,25 +1099,21 @@ let open_connection ?buffer_size sockaddr =
       return ()
   in
   try_lwt
-    (perform
-       Lwt_unix.connect fd sockaddr;
-       let _ = try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> () in
-       return (make ?buffer_size
-                 ~close:(fun _ -> close Unix.SHUTDOWN_RECEIVE)
-                 ~mode:input (Lwt_unix.read fd),
-               make ?buffer_size
-                 ~close:(fun _ -> close Unix.SHUTDOWN_SEND)
-                 ~mode:output (Lwt_unix.write fd)))
+    Lwt_unix.connect fd sockaddr >>
+    (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
+    return (make ?buffer_size
+              ~close:(fun _ -> close Unix.SHUTDOWN_RECEIVE)
+              ~mode:input (Lwt_unix.read fd),
+            make ?buffer_size
+              ~close:(fun _ -> close Unix.SHUTDOWN_SEND)
+              ~mode:output (Lwt_unix.write fd))
   with
     exn ->
-      (perform
-         close_fd fd;
-         fail exn)
+      close_fd fd >> fail exn
 
 let with_connection ?buffer_size sockaddr f =
-  (perform
-     (ic, oc) <-- open_connection sockaddr;
-     try_lwt
-       f (ic, oc)
-     finally
-       close ic >> close oc)
+  lwt ic, oc = open_connection sockaddr in
+  try_lwt
+    f (ic, oc)
+  finally
+    close ic >> close oc

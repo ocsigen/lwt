@@ -47,6 +47,25 @@ let gen_catch mc =
     let _loc = Ast.loc_of_match_case mc in
     <:match_case< $mc$ | exn -> Lwt.fail exn >>
 
+let gen_binding l =
+  let rec aux n = function
+    | [] ->
+        assert false
+    | [(_loc, p, e)] ->
+        <:binding< $lid:"__pa_lwt_" ^ string_of_int n$ = $e$ >>
+    | (_loc, p, e) :: l ->
+        <:binding< $lid:"__pa_lwt_" ^ string_of_int n$ = $e$ and $aux (n + 1) l$ >>
+  in
+  aux 0 l
+
+let gen_bind l e =
+  let rec aux n = function
+    | [] -> e
+    | (_loc, p, e) :: l ->
+        <:expr< bind $lid:"__pa_lwt_" ^ string_of_int n$ (fun $p$ -> $aux (n + 1) l$) >>
+  in
+  aux 0 l
+
 EXTEND Gram
   GLOBAL: expr;
 
@@ -57,6 +76,11 @@ EXTEND Gram
     finally:
       [ [ "finally"; f = sequence -> Some f
         | -> None ] ];
+
+    letb_binding:
+      [ [ b1 = SELF; "and"; b2 = SELF -> b1 @ b2
+        | p = patt; "="; e = expr -> [(_loc, p, e)]
+        ] ];
 
     expr: LEVEL "top"
       [ [ "try_lwt"; e = sequence; c = cases; f = finally ->
@@ -73,17 +97,19 @@ EXTEND Gram
                             (fun __pa_lwt_e -> Lwt.bind (begin $f$ end) (fun () -> match __pa_lwt_e with $c$))
                   >>
             end
+        | "lwt"; l = letb_binding; "in"; e = SELF ->
+            <:expr< let $gen_binding l$ in $gen_bind l e$ >>
+        | a = SELF; "__LWT_ANONYMOUS_BIND__"; b = sequence ->
+            <:expr< bind (begin $a$ end) (fun _ -> begin $b$ end) >>
         ] ];
 END
 
-(* Replace the anonymous bind [x >> y] by [x >>= fun _ -> y] *)
-let map_anonymous_bind = object
-  inherit Ast.map as super
-  method expr e = match super#expr e with
-    | <:expr@_loc< $lid:f$ $a$ $b$ >> when f = ">>" -> <:expr< bind $a$ (fun _ -> $b$) >>
-    | e -> e
-end
-
 let _ =
-  AstFilters.register_str_item_filter map_anonymous_bind#str_item;
-  AstFilters.register_topphrase_filter map_anonymous_bind#str_item
+  (* <hack> *)
+  Gram.Token.Filter.define_filter (Gram.get_filter ())
+    (fun filters stream ->
+       filters (Stream.from (fun _ ->
+                               match Stream.next stream with
+                                 | (SYMBOL ">>", loc) -> Some(KEYWORD "__LWT_ANONYMOUS_BIND__", loc)
+                                 | x -> Some x)))
+  (* </hack> *)

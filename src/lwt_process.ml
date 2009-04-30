@@ -63,11 +63,7 @@ class process_in ?env cmd =
   let pid = spawn cmd env Unix.stdin stdout_w Unix.stderr [stdout_r] in
   let stdout = Lwt_io.of_unix_fd ~mode:Lwt_io.input stdout_r
   and w = Lwt_unix.waitpid [] pid in
-  let close = lazy
-    (perform
-       Lwt_io.close stdout;
-       (pid, ret) <-- w;
-       return ret) in
+  let close = lazy(Lwt_io.close stdout >> w >|= snd) in
 object
   method pid = pid
   method close = Lazy.force close
@@ -79,11 +75,7 @@ class process_out ?env cmd =
   let pid = spawn cmd env stdin_r Unix.stdout Unix.stderr [stdin_w] in
   let stdin = Lwt_io.of_unix_fd ~mode:Lwt_io.output stdin_w
   and w = Lwt_unix.waitpid [] pid in
-  let close = lazy
-    (perform
-       Lwt_io.close stdin;
-       (pid, ret) <-- w;
-       return ret) in
+  let close = lazy (Lwt_io.close stdin >> w >|= snd) in
 object
   method pid = pid
   method close = Lazy.force close
@@ -97,12 +89,7 @@ class process ?env cmd =
   let stdin = Lwt_io.of_unix_fd ~mode:Lwt_io.output stdin_w
   and stdout = Lwt_io.of_unix_fd ~mode:Lwt_io.input stdout_r
   and w = Lwt_unix.waitpid [] pid in
-  let close = lazy
-    (perform
-       Lwt_io.close stdin;
-       Lwt_io.close stdout;
-       (pid, ret) <-- w;
-       return ret) in
+  let close = lazy(Lwt_io.close stdin <&> Lwt_io.close stdout >> w >|= snd) in
 object
   method pid = pid
   method close = Lazy.force close
@@ -119,12 +106,7 @@ class process_full ?env cmd =
   and stdout = Lwt_io.of_unix_fd ~mode:Lwt_io.input stdout_r
   and stderr = Lwt_io.of_unix_fd ~mode:Lwt_io.input stderr_r
   and w = Lwt_unix.waitpid [] pid in
-  let close = lazy
-    (perform
-       Lwt_io.close stdin;
-       Lwt_io.close stdout;
-       (pid, ret) <-- w;
-       return ret) in
+  let close = lazy(Lwt_io.close stdin <&> Lwt_io.close stdout >> w >|= snd) in
 object
   method pid = pid
   method close = Lazy.force close
@@ -163,12 +145,8 @@ let get_status_output cmd =
       | _ ->
           loop ()
   in
-  (perform
-     loop ();
-     status <-- p#close;
-     return (status, Buffer.contents buf))
+  loop () >>
+  lwt status = p#close in
+  return (status, Buffer.contents buf)
 
-let get_output cmd =
-  (perform
-     (status, output) <-- get_status_output cmd;
-     return output)
+let get_output cmd = get_status_output cmd >|= snd
