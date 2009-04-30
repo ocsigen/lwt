@@ -41,9 +41,9 @@ val run : 'a Lwt.t -> 'a
 
 type file_descr
 
-val stdin : file_descr Lazy.t
-val stdout : file_descr Lazy.t
-val stderr : file_descr Lazy.t
+val stdin : file_descr
+val stdout : file_descr
+val stderr : file_descr
 
 val read : file_descr -> string -> int -> int -> int Lwt.t
 val write : file_descr -> string -> int -> int -> int Lwt.t

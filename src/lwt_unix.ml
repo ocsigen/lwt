@@ -243,9 +243,9 @@ let unix_file_descr ch = ch.fd
 
 let of_unix_file_descr fd = mk_ch fd
 
-let stdin = lazy(of_unix_file_descr Unix.stdin)
-let stdout = lazy(of_unix_file_descr Unix.stdout)
-let stderr = lazy(of_unix_file_descr Unix.stderr)
+let stdin = of_unix_file_descr Unix.stdin
+let stdout = of_unix_file_descr Unix.stdout
+let stderr = of_unix_file_descr Unix.stderr
 
 external lwt_unix_read : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_read"
 external lwt_unix_write : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_write"

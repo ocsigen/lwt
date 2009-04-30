@@ -5,6 +5,8 @@ requires = "unix"
 version = "@VERSION@"
 archive(byte) = "lwt.cma"
 archive(native) = "lwt.cmxa"
+archive(toploop,byte) += "top_lwt.cmo"
+archive(toploop,native) += "top_lwt.cmx"
 
 package "preemptive" (
   description = "Preemptive threads support for Lwt"

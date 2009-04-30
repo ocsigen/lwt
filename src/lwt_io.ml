@@ -1056,12 +1056,12 @@ let null =
 
 let of_fd_no_close ~mode fd =
   make
-    ~seek:(fun pos cmd -> return (Unix.LargeFile.lseek (Lwt_unix.unix_file_descr (Lazy.force fd)) pos cmd))
+    ~seek:(fun pos cmd -> return (Unix.LargeFile.lseek (Lwt_unix.unix_file_descr fd) pos cmd))
     ~mode (match mode with
              | Input ->
-                 (fun buf ofs len -> Lwt_unix.read (Lazy.force fd) buf ofs len)
+                 (fun buf ofs len -> Lwt_unix.read fd buf ofs len)
              | Output ->
-                 (fun buf ofs len -> Lwt_unix.write (Lazy.force fd) buf ofs len))
+                 (fun buf ofs len -> Lwt_unix.write fd buf ofs len))
 
 (* Do not close standard ios on close, otherwise uncaught exceptions
    will not be printed *)
