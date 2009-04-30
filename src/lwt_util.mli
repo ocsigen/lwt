@@ -21,14 +21,6 @@
  * 02111-1307, USA.
  *)
 
-(** {2 Concurrency} *)
-
-val join : unit Lwt.t list -> unit Lwt.t
-    (** [join l] wait for all threads in [l] to terminate.
-        If fails if one of the threads fail. *)
-
-(****)
-
 (** {2 Lists iterators} *)
 
 val iter : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
@@ -78,3 +70,8 @@ val run_in_region : region -> int -> (unit -> 'a Lwt.t) -> 'a Lwt.t
       (** [run_in_region reg size f] execute the thread produced by the
           function [f] in the region [reg]. The thread is not started
           before some room is available in the region. *)
+
+(**/**)
+
+val join : unit Lwt.t list -> unit Lwt.t
+    (** Same as [Lwt.join] *)

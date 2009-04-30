@@ -259,6 +259,45 @@ let choose l =
     end l;
     res
 
+let join l =
+  let res = wait ()
+    (* Number of threads still sleeping: *)
+  and sleeping = ref 0
+    (* The list of nodes used for the waiter: *)
+  and nodes = ref [] in
+  (* Handle the termination of one threads: *)
+  let handle t = match !(repr t) with
+    | Fail exn ->
+        (* The thread has failed, exit immediatly without waiting for
+           other threads *)
+        List.iter junk_waiter !nodes;
+        connect res t
+    | _ ->
+        decr sleeping;
+        (* Everybody has finished, we can wakeup the result: *)
+        if !sleeping = 0 then connect res t
+  in
+  let rec bind_sleepers = function
+    | [] ->
+        (* If no thread is sleeping, returns now: *)
+        if !sleeping = 0 then res := Return ();
+        res
+    | t :: l -> match !(repr t) with
+        | Fail exn ->
+            (* One of the thread has already failed, fail now *)
+            t
+        | Sleep waiters ->
+            incr sleeping;
+            nodes := new_waiter waiters handle :: !nodes;
+            bind_sleepers l
+        | _ ->
+            bind_sleepers l
+  in
+  bind_sleepers l
+
+let ( <?> ) t1 t2 = choose [t1; t2]
+let ( <&> ) t1 t2 = join [t1; t2]
+
 let finalize f g =
   try_bind f
     (fun x -> g () >>= fun () -> return x)

@@ -91,6 +91,16 @@ val choose : 'a t list -> 'a t
           If several threads are already terminated, one is choosen
           at random. *)
 
+val join : unit t list -> unit t
+      (** [join l] wait for all threads in [l] to terminate.
+          If fails if one of the threads fail. *)
+
+val ( <?> ) : 'a t -> 'a t -> 'a t
+      (** [t <?> t'] is the same as [choose [t; t']] *)
+
+val ( <&> ) : unit t -> unit t -> unit t
+      (** [t <&> t'] is the same as [join [t; t']] *)
+
 val ignore_result : 'a t -> unit
       (** [ignore_result t] start the thread [t] and ignores its result
           value if the thread terminates sucessfully.  However, if the

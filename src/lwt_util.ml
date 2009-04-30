@@ -84,7 +84,7 @@ let rec fold_left f a = function
   | [] -> return a
   | b::l -> f a b >>= fun v -> fold_left f v l
 
-let join l = iter (fun x -> x) l
+let join = Lwt.join
 
 type region =
   { mutable size : int;
