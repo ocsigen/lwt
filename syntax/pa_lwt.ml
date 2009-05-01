@@ -99,17 +99,17 @@ EXTEND Gram
             end
         | "lwt"; l = letb_binding; "in"; e = SELF ->
             <:expr< let $gen_binding l$ in $gen_bind l e$ >>
-        | a = SELF; "__LWT_ANONYMOUS_BIND__"; b = sequence ->
-            <:expr< bind (begin $a$ end) (fun _ -> begin $b$ end) >>
         ] ];
 END
 
+(* Replace the anonymous bind [x >> y] by [x >>= fun _ -> y] *)
+let map_anonymous_bind = object
+  inherit Ast.map as super
+  method expr e = match super#expr e with
+    | <:expr@_loc< $lid:f$ $a$ $b$ >> when f = ">>" -> <:expr< bind $a$ (fun _ -> $b$) >>
+    | e -> e
+end
+
 let _ =
-  (* <hack> *)
-  Gram.Token.Filter.define_filter (Gram.get_filter ())
-    (fun filters stream ->
-       filters (Stream.from (fun _ ->
-                               match Stream.next stream with
-                                 | (SYMBOL ">>", loc) -> Some(KEYWORD "__LWT_ANONYMOUS_BIND__", loc)
-                                 | x -> Some x)))
-  (* </hack> *)
+  AstFilters.register_str_item_filter map_anonymous_bind#str_item;
+  AstFilters.register_topphrase_filter map_anonymous_bind#str_item

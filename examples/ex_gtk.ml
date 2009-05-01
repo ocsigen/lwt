@@ -10,7 +10,7 @@ let num = ref 0
 let _ =
   Lwt_glib.init ();
   let window = GWindow.window ~border_width:10 () in
-  let _ = window#event#connect#delete ~callback:(fun _ -> true)
+  let _ = window#event#connect#delete ~callback:(fun _ -> false)
   and _ = window#connect#destroy ~callback:Lwt_glib.quit in
 
   let box = GPack.vbox ~packing:window#add () in

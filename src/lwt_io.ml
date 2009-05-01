@@ -217,8 +217,7 @@ let flush_partial = perform_io
 
 let rec flush_total oc =
   if oc.ptr > 0 then
-    flush_partial oc >>
-    flush_total oc
+    flush_partial oc >> flush_total oc
   else
     return ()
 
@@ -403,10 +402,9 @@ let close wrapper = match wrapper.channel.mode with
         primitive
           (fun ch ->
              if ch.mode = Output then
-               safe_flush_total wrapper.channel
-             else
-               return () >>
-             abort wrapper)
+               safe_flush_total wrapper.channel >> abort wrapper
+              else
+                abort wrapper)
           wrapper
       with
           _ ->
@@ -649,11 +647,11 @@ struct
   let get_value ic =
     let header = String.create 20 in
     unsafe_get_exactly ic header 0 20 >>
-    let bsize = Marshal.data_size header 0 in
-    let buffer = String.create (20 + bsize) in
-    let _ = String.unsafe_blit header 0 buffer 0 20 in
-    unsafe_get_exactly ic buffer 20 bsize >>
-    return (Marshal.from_string buffer 0)
+      let bsize = Marshal.data_size header 0 in
+      let buffer = String.create (20 + bsize) in
+      let _ = String.unsafe_blit header 0 buffer 0 20 in
+      unsafe_get_exactly ic buffer 20 bsize >>
+        return (Marshal.from_string buffer 0)
 
   (* +---------+
      | Outputs |
@@ -937,18 +935,17 @@ struct
         if pos >= current && pos <= ch.offset then begin
           ch.ptr <- ch.max - (Int64.to_int (Int64.sub ch.offset pos));
           return ()
-        end else begin
-          seek ch pos >>
-          ch.offset <- pos;
-          ch.ptr <- 0;
-          ch.max <- 0;
-          return ()
-        end
+        end else
+          seek ch pos >> begin
+            ch.offset <- pos;
+            ch.ptr <- 0;
+            ch.max <- 0;
+            return ()
+          end
 
   let length ch =
     lwt len = ch.seek 0L Unix.SEEK_END in
-    seek ch ch.offset >>
-    return len
+    seek ch ch.offset >> return len
 end
 
 (* +----------------------+
@@ -1099,14 +1096,15 @@ let open_connection ?buffer_size sockaddr =
       return ()
   in
   try_lwt
-    Lwt_unix.connect fd sockaddr >>
-    (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
-    return (make ?buffer_size
-              ~close:(fun _ -> close Unix.SHUTDOWN_RECEIVE)
-              ~mode:input (Lwt_unix.read fd),
-            make ?buffer_size
-              ~close:(fun _ -> close Unix.SHUTDOWN_SEND)
-              ~mode:output (Lwt_unix.write fd))
+    Lwt_unix.connect fd sockaddr >> begin
+      (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
+      return (make ?buffer_size
+                ~close:(fun _ -> close Unix.SHUTDOWN_RECEIVE)
+                ~mode:input (Lwt_unix.read fd),
+              make ?buffer_size
+                ~close:(fun _ -> close Unix.SHUTDOWN_SEND)
+                ~mode:output (Lwt_unix.write fd))
+    end
   with
     exn ->
       close_fd fd >> fail exn
