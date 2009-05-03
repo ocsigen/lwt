@@ -109,6 +109,7 @@ val pipe : ?buffer_size : int -> unit -> ic * oc
 
 val make :
   ?auto_flush : bool ->
+  ?encoding : Encoding.t ->
   ?buffer_size : int ->
   ?close : (unit -> unit Lwt.t) ->
   ?seek : (int64 -> Unix.seek_command -> int64 Lwt.t) ->
@@ -123,6 +124,9 @@ val make :
       want. Set it to [false] to disable this behaviour. This
       parameter is not used if [mode = input].
 
+      @param encoding is the channel encoding, for text
+      input/output. It defaults to [Encoding.system].
+
       @param buffer_size is the size of the internal buffer. It is not
       used if [buffer] is provided.
 
@@ -134,6 +138,19 @@ val make :
       @param mode is either {!input} or {!output}
 
       @param perform_io is the read or write function. *)
+
+val encoding : 'a channel -> Encoding.t
+  (** [encoding ch] returns the encoding of [ch] *)
+
+val set_encoding : 'a channel -> Encoding.t -> unit
+  (** [set_encoding ch enc] change the encoding used by [ch] to [enc] *)
+
+val fallback : oc -> (Text.t -> Text.t option) ref
+  (** [fallback oc] is a function used for character that can not be
+      encoded in the channel encoding. *)
+
+val default_fallback : Text.t -> Text.t option
+  (** The default fallback function. *)
 
 val of_fd : ?buffer_size : int -> mode : 'a mode -> Lwt_unix.file_descr -> 'a channel
   (** [of_fd ~mode ~fd] creates a channel from a file descriptor *)
@@ -204,37 +221,45 @@ val get_pos : 'a channel -> int64
 val length : 'a channel -> int64 Lwt.t
   (** Returns the length of the channel in bytes *)
 
-(** {6 Input} *)
+(** {6 Text input} *)
 
-val get_char : ic -> char Lwt.t
-  (** [get_char ic] reads one char from [ic] *)
+val read_char : ic -> Text.t Lwt.t
+  (** [read_char ic] reads one unicode character from [ic]. Raises
+      [End_of_file] on end-of-file. *)
 
-val get_byte : ic -> int Lwt.t
-  (** [get_byte ic] reads one characters and returns its code *)
+val read_text : ic -> int -> Text.t Lwt.t
+  (** [read_text ic int] reads up to [len] characters from [ic]. On
+      end-of-file it returns the empty text [""] *)
 
-val peek_char : ic -> char option Lwt.t
-  (** [peek_char ic] reads one character and returns [None] if the end
-      of input is reached *)
+val read_line : ic -> Text.t Lwt.t
+  (** [read_line ic] reads one complete line from [ic] and returns it
+      without the end of line. End of line is either ["\n"] or
+      ["\r\n"] *)
 
-val get_string : ic -> int -> string Lwt.t
-  (** [get_string ic len] reads a string of length (in bytes) exactly
-      [len] from [ic] *)
+(** {6 Text output} *)
 
-val get_line : ic -> string Lwt.t
-  (** [get_line ic] read one complete line from [ic], and returns it
-      without the end of line. End of line is either: ["\n"],
-      ["\r\n"], or the end-of-input.
+val write_char : oc -> Text.t -> unit Lwt.t
+  (** [write_char oc ch] outputs [ch] on [oc] *)
 
-      If end-of-input is already reached before reading any
-      characters, it fails with [End_of_file]. *)
+val write_text : oc -> Text.t -> unit Lwt.t
+  (** [write_text oc txt] outputs [txt] on [oc]. *)
 
-val peek_line : ic -> string option Lwt.t
-  (** [peek_line ic] same as [get_line] but do not raises
-      [End_of_file] *)
+val write_line : oc -> Text.t -> unit Lwt.t
+  (** [write_line oc txt] outputs [txt] on [oc] followed by a
+      newline. *)
 
-val add_line : ic -> Buffer.t -> bool Lwt.t
-  (** [add_line ic buf] add one line to [buf] and returns wether
-      end-of-input is reached *)
+(** {6 Binary input} *)
+
+val get_byte : ic -> char Lwt.t
+  (** [get_byte ic] reads one byte from [ic] *)
+
+val peek_byte : ic -> char option Lwt.t
+  (** [peek_byte ic] reads one byte and returns [None] if the end of
+      input is reached *)
+
+val get_bytes : ic -> int -> string Lwt.t
+  (** [get_string ic len] reads at most [len] bytes from [ic]. Returns
+      [""] if the end of input is reached. *)
 
 val get : ic -> string -> int -> int -> int Lwt.t
   (** [get ic buffer offset length] reads up to [length] characters,
@@ -251,7 +276,7 @@ val get_exactly : ic -> string -> int -> int -> unit Lwt.t
 val get_value : ic -> 'a Lwt.t
   (** [get_value ic] reads a marshaled value from [ic] *)
 
-(** {6 Output} *)
+(** {6 Binary output} *)
 
 val force_flush : oc -> unit Lwt.t
   (** [force_flush oc] performs all pending writes on [oc] *)
@@ -260,19 +285,11 @@ val flush : oc -> unit Lwt.t
   (** [flush oc] does nothing if the channel is auto-flushed, and
       executes [force_flush] if not *)
 
-val put_char : oc -> char -> unit Lwt.t
-  (** [put_char oc ch] writes [ch] to [oc] *)
+val put_byte : oc -> char -> unit Lwt.t
+  (** [put_byte oc ch] writes [ch] to [oc] *)
 
-val put_byte : oc -> int -> unit Lwt.t
-  (** [put_byte oc x] writes [x] as one character. [x] is taken
-      modulo [256] *)
-
-val put_string : oc -> string -> unit Lwt.t
-  (** [put_string oc str] outputs [str] to [oc] *)
-
-val put_line : oc -> string -> unit Lwt.t
-  (** [put_line oc str] outputs [str] to [oc], then outputs a
-      newline *)
+val put_bytes : oc -> string -> unit Lwt.t
+  (** [put_bytes oc str] outputs [str] to [oc] *)
 
 val put : oc -> string -> int -> int -> int Lwt.t
   (** [put oc buffer offset length] writes up to [length] bytes to

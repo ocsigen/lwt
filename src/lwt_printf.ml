@@ -24,14 +24,14 @@ open Lwt
 open Lwt_io
 
 let fprintf oc fmt =
-  Printf.ksprintf (fun str -> put_string oc (Text.encode ~fallback:"?" str)) fmt
+  Printf.ksprintf (write_text oc) fmt
 
 let fprintln oc fmt =
   Printf.ksprintf (fun str ->
                      atomic
                        (fun oc ->
-                          put_string oc (Text.encode ~fallback:"?" str)
-                          >> put_string oc (Text.encode (if Lwt_term.raw_mode () then "\r\n" else "\n")))
+                          write_text oc str;
+                          >> write_text oc (if Lwt_term.raw_mode () then "\r\n" else "\n"))
                        oc) fmt
 
 let printf fmt = fprintf stdout fmt

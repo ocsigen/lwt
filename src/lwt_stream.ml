@@ -74,8 +74,6 @@ let of_text txt =
   in
   ref(lazy(get (Text.pointer_l txt)))
 
-let of_channel ch = from (fun _ -> Lwt_io.peek_char ch)
-
 let clone s = ref !s
 
 let peek s = Lazy.force !s >|= function
@@ -437,6 +435,3 @@ let encode ?(encoding=Encoding.system) s =
       return(Cons(buf.[pos], lazy(loop (pos + 1) count)))
   in
   make next
-
-let standard = of_channel Lwt_io.stdin
-let standard_text = decode standard

@@ -50,8 +50,8 @@ let close_fd fd =
    | Types |
    +-------+ *)
 
-type input
-type output
+type input = Encoding.decoder
+type output = Encoding.encoder
 
 type 'a mode = Input | Output
 
@@ -126,6 +126,15 @@ and 'mode _channel = {
 
   mutable offset : int64;
   (* Number of bytes really read/written *)
+
+  mutable encoding : Encoding.t;
+  (* The channel encoding *)
+
+  mutable coder : 'mode;
+  (* The encoder or decoder of the channel *)
+
+  fallback : (Text.t -> Text.t option) ref;
+  (* The fallback character of the channel *)
 }
 
 type ic = input channel
@@ -146,6 +155,24 @@ let cast_oc wrapper =
     (Obj.magic (wrapper : 'a channel) : output channel)
   else
     invalid_arg "Lwt_io.cast_oc"
+
+(* +---------------------------+
+   | Default fallback function |
+   +---------------------------+ *)
+
+let default_fallback ch =
+  let code = Text.code ch in
+  (* Box drawings: *)
+  if code >= 0x2500 && code <= 0x2570 then
+    let code = code - 0x2500 in
+    if List.mem code [0x00; 0x01; 0x04; 0x05; 0x08; 0x09; 0x4c; 0x4d; 0x50] then
+      Some "-"
+    else if List.mem code [0x02; 0x03; 0x06; 0x07; 0x0a; 0x0b; 0x4e; 0x4f; 0x51] then
+      Some "|"
+    else
+      Some "+"
+  else
+    Some "?"
 
 (* +----------------------------------+
    | Creations, closing, locking, ... |
@@ -416,7 +443,7 @@ let alias_to_close = close
 let no_seek pos cmd =
   fail (Failure "Lwt_io.seek: seek not supported on this channel")
 
-let make ?(auto_flush=true) ?buffer_size ?(close=return) ?(seek=no_seek) ~mode perform_io =
+let make ?(auto_flush=true) ?(encoding=Encoding.system) ?buffer_size ?(close=return) ?(seek=no_seek) ~mode perform_io =
   let buffer =
     String.create (match buffer_size with
                      | None ->
@@ -441,6 +468,13 @@ let make ?(auto_flush=true) ?buffer_size ?(close=return) ?(seek=no_seek) ~mode p
     mode = mode;
     seek = (fun pos cmd -> try seek pos cmd with e -> fail e);
     offset = 0L;
+    fallback = ref default_fallback;
+    encoding = encoding;
+    coder = match mode with
+        (* Justification: we use Obj.magic because we do not have
+           GADTs: *)
+      | Input -> Obj.magic (Encoding.decoder encoding)
+      | Output -> Obj.magic (Encoding.encoder encoding);
   } and wrapper = {
     state = Idle;
     channel = ch;
@@ -461,6 +495,17 @@ let of_fd ?buffer_size ~mode fd =
 
 let of_unix_fd ?buffer_size ~mode fd =
   of_fd ?buffer_size ~mode (Lwt_unix.of_unix_file_descr fd)
+
+let encoding ch = ch.channel.encoding
+
+let set_encoding ch enc =
+  let coder = match ch.channel.mode with
+    | Input -> Obj.magic (Encoding.decoder enc)
+    | Output -> Obj.magic (Encoding.encoder enc) in
+  ch.channel.encoding <- enc;
+  ch.channel.coder <- coder
+
+let fallback ch = ch.channel.fallback
 
 (* +------------+
    | Byte-order |
@@ -529,26 +574,143 @@ struct
      without protection regarding locking, they are wrapped after into
      safe operations. *)
 
-  (* +--------+
-     | Inputs |
-     +--------+ *)
+  (* +------------+
+     | Text input |
+     +------------+ *)
 
-  let rec get_char ic =
+  let rec read_char ic =
     let ptr = ic.ptr in
     if ptr = ic.max then
       refill ic >>= function
         | 0 -> fail End_of_file
-        | _ -> get_char ic
+        | _ -> read_char ic
+    else
+      match Encoding.decode ic.coder ic.buffer ic.ptr (ic.max - ic.ptr) with
+        | Encoding.Dec_ok(code, count) ->
+            ic.ptr <- ic.ptr + count;
+            return (Text.char code)
+        | Encoding.Dec_need_more ->
+            refill ic >>= begin function
+              | 0 -> fail (Failure "Lwt_io.read_char: unterminated multibyte sequence")
+              | _ -> read_char ic
+            end
+        | Encoding.Dec_error ->
+            fail (Failure "Lwt_io.read_char: cannot decode multibyte sequence")
+
+  let read_text ic len =
+    if len = 1 then
+      try
+        read_char ic
+      with
+        | End_of_file ->
+            return ""
+    else
+      let buf = Buffer.create len in
+      let rec loop = function
+        | 0 ->
+            return (Buffer.contents buf)
+        | len ->
+            try_bind (fun _ -> read_char ic)
+              (fun ch -> Buffer.add_string buf ch; loop (len - 1))
+              (function
+                 | End_of_file -> return (Buffer.contents buf)
+                 | e -> fail e)
+      in
+      loop len
+
+  let read_line ic =
+    let buf = Buffer.create 128 in
+    let rec loop cr_read =
+      try_bind (fun _ -> read_char ic)
+        (function
+           | "\n" ->
+               return(Buffer.contents buf)
+           | "\r" ->
+               if cr_read then Buffer.add_char buf '\r';
+               loop true
+           | ch ->
+               if cr_read then Buffer.add_char buf '\r';
+               Buffer.add_string buf ch;
+               loop false)
+        (function
+           | End_of_file ->
+               if cr_read then Buffer.add_char buf '\r';
+               return(Buffer.contents buf)
+           | exn ->
+               fail exn)
+    in
+    read_char ic >>= function
+      | "\r" -> loop true
+      | ch -> Buffer.add_string buf ch; loop false
+
+  (* +-------------+
+     | Text output |
+     +-------------+ *)
+
+  let rec write_code oc code =
+    match Encoding.encode oc.coder oc.buffer oc.ptr (oc.max - oc.ptr) code with
+      | Encoding.Enc_ok count ->
+          oc.ptr <- oc.ptr + count;
+          return true
+      | Encoding.Enc_need_more ->
+          flush_partial oc >> write_code oc code
+      | Encoding.Enc_error ->
+          return false
+
+  let write_text_no_fallback oc txt =
+    let rec loop ptr = match Text.next ptr with
+      | None ->
+          return ()
+      | Some(ch, ptr) ->
+          write_code oc (Text.code ch) >>= function
+            | false ->
+                fail (Failure "Lwt_io: cannot encode character")
+            | true ->
+                loop ptr
+    in
+    loop (Text.pointer_l txt)
+
+  let write_char oc ch =
+    write_code oc (Text.code ch) >>= function
+      | true ->
+          return ()
+      | false ->
+          match !(oc.fallback) ch with
+            | None ->
+                fail (Failure "Lwt_io: cannot encode character")
+            | Some txt ->
+                write_text_no_fallback oc txt
+
+  let write_text oc txt =
+    let rec loop ptr = match Text.next ptr with
+      | None ->
+          return ()
+      | Some(ch, ptr) ->
+          write_char oc ch >> loop ptr
+    in
+    loop (Text.pointer_l txt)
+
+  let write_line oc txt =
+    write_text oc txt >> write_char oc "\n"
+
+  (* +--------------+
+     | Binary input |
+     +--------------+ *)
+
+  let rec get_byte ic =
+    let ptr = ic.ptr in
+    if ptr = ic.max then
+      refill ic >>= function
+        | 0 -> fail End_of_file
+        | _ -> get_byte ic
     else begin
       ic.ptr <- ptr + 1;
       return (String.unsafe_get ic.buffer ptr)
     end
 
-  let get_byte ic = get_char ic >>= fun ch -> return (Char.code ch)
-
-  let peek_char ic =
+  let peek_byte ic =
     try_lwt
-      get_char ic >>= fun ch -> return (Some ch)
+      get_byte ic >>= fun ch -> return (Some ch)
     with
       | End_of_file ->
           return None
@@ -606,43 +768,13 @@ struct
         unsafe_get_exactly ic str ofs len
     end
 
-  let get_string ic len =
+  let get_bytes ic len =
     let str = String.create len in
-    unsafe_get_exactly ic str 0 len >> return str
-
-  let rec add_line_rec ic cr_read buf =
-    peek_char ic >>= function
-      | None ->
-          if cr_read then Buffer.add_char buf '\r';
-          return true
-      | Some '\n' ->
-          return false
-      | Some '\r' ->
-          if cr_read then Buffer.add_char buf '\r';
-          add_line_rec ic true buf
-      | Some ch ->
-          if cr_read then Buffer.add_char buf '\r';
-          Buffer.add_char buf ch;
-          add_line_rec ic false buf
-
-  let add_line ic buf =
-    add_line_rec ic false buf
-
-  let peek_line ic =
-    let buf = Buffer.create 128 in
-    add_line ic buf >>= function
-      | true ->
-          return None
-      | false ->
-          return (Some (Buffer.contents buf))
-
-  let get_line ic =
-    let buf = Buffer.create 128 in
-    add_line ic buf >>= function
-      | true ->
-          fail End_of_file
-      | false ->
-          return (Buffer.contents buf)
+    lwt real_len = unsafe_get ic str 0 len in
+    if real_len < len then
+      return (String.sub str 0 real_len)
+    else
+      return str
 
   let get_value ic =
     let header = String.create 20 in
@@ -653,22 +785,20 @@ struct
       unsafe_get_exactly ic buffer 20 bsize >>
         return (Marshal.from_string buffer 0)
 
-  (* +---------+
-     | Outputs |
-     +---------+ *)
+  (* +---------------+
+     | Binary output |
+     +---------------+ *)
 
   let force_flush = flush_total
 
-  let rec put_char oc ch =
+  let rec put_byte oc ch =
     let ptr = oc.ptr in
     if ptr < oc.length then begin
       oc.ptr <- ptr + 1;
       String.unsafe_set oc.buffer ptr ch;
       return ()
     end else
-      flush_partial oc >> put_char oc ch
-
-  let put_byte oc x = put_char oc (Char.unsafe_chr x)
+      flush_partial oc >> put_byte oc ch
 
   let rec unsafe_put oc str ofs len =
     let avail = oc.length - oc.ptr in
@@ -723,14 +853,11 @@ struct
         unsafe_put_exactly oc str ofs len
     end
 
-  let put_string oc str =
+  let put_bytes oc str =
     unsafe_put_exactly oc str 0 (String.length str)
 
-  let put_line oc str =
-    put_string oc str >> put_char oc '\n'
-
   let put_value oc ?(flags=[]) x =
-    put_string oc (Marshal.to_string x flags)
+    put_bytes oc (Marshal.to_string x flags)
 
   (* +------------------+
      | Low-level access |
@@ -952,13 +1079,12 @@ end
    | Primitive operations |
    +----------------------+ *)
 
-let get_char ic = primitive Primitives.get_char ic
+let read_char ic = primitive Primitives.read_char ic
+let read_text ic len = primitive (fun ic -> Primitives.read_text ic len) ic
+let read_line ic = primitive Primitives.read_line ic
 let get_byte ic = primitive Primitives.get_byte ic
-let peek_char ic = primitive Primitives.peek_char ic
-let get_string ic len = primitive (fun ic -> Primitives.get_string ic len) ic
-let get_line ic = primitive Primitives.get_line ic
-let peek_line ic = primitive Primitives.peek_line ic
-let add_line ic buf = primitive (fun ic -> Primitives.add_line ic buf) ic
+let peek_byte ic = primitive Primitives.peek_byte ic
+let get_bytes ic len = primitive (fun ic -> Primitives.get_bytes ic len) ic
 let get ic str ofs len = primitive (fun ic -> Primitives.get ic str ofs len) ic
 let get_exactly ic str ofs len = primitive (fun ic -> Primitives.get_exactly ic str ofs len) ic
 let get_value ic = primitive Primitives.get_value ic
@@ -970,10 +1096,11 @@ let flush oc =
   else
     force_flush oc
 
-let put_char oc ch = primitive (fun oc -> Primitives.put_char oc ch) oc
+let write_char oc txt = primitive (fun oc -> Primitives.write_char oc txt) oc
+let write_text oc txt = primitive (fun oc -> Primitives.write_text oc txt) oc
+let write_line oc txt = primitive (fun oc -> Primitives.write_line oc txt) oc
 let put_byte oc x = primitive (fun oc -> Primitives.put_byte oc x) oc
-let put_string oc str = primitive (fun oc -> Primitives.put_string oc str) oc
-let put_line oc str = primitive (fun oc -> Primitives.put_line oc str) oc
+let put_bytes oc str = primitive (fun oc -> Primitives.put_bytes oc str) oc
 let put oc str ofs len = primitive (fun oc -> Primitives.put oc str ofs len) oc
 let put_exactly oc str ofs len = primitive (fun oc -> Primitives.put_exactly oc str ofs len) oc
 let put_value oc ?flags x = primitive (fun oc -> Primitives.put_value oc ?flags x) oc

@@ -93,11 +93,11 @@ let get_command _ = get_key () >|= function
    the previous line: *)
 let rec beginning_of_line = function
   | 0 ->
-      put_char stdout '\r'
+      write_char stdout "\r"
   | 1 ->
-      put_string stdout "\027[F"
+      write_text stdout "\027[F"
   | n ->
-      put_string stdout "\027[F" >> beginning_of_line (n - 1)
+      write_text stdout "\027[F" >> beginning_of_line (n - 1)
 
 (* +-----------------+
    | Readline engine |
@@ -115,18 +115,18 @@ let print_words oc cols words =
   let column_width = cols / columns in
   Lwt_util.fold_left
     (fun column word ->
-       put_string oc word >>
+       write_text oc word >>
          if column < columns then
            let len = Text.length word in
            if len < column_width then
-             repeat (fun _ -> put_char oc ' ') (column_width - len) >> return (column + 1)
+             repeat (fun _ -> write_char oc " ") (column_width - len) >> return (column + 1)
            else
              return (column + 1)
          else
-           put_string oc "\r\n" >> return 0)
+           write_text oc "\r\n" >> return 0)
     0 words >>= function
       | 0 -> return ()
-      | _ -> put_string oc "\r\n"
+      | _ -> write_text oc "\r\n"
 
 type state = {
   before : Text.t;
@@ -169,20 +169,20 @@ let real_readline prompt history complete =
   let rec loop state =
     print state >> get_command () >>= process_command state
   and print state =
-    let { Lwt_term.columns = col } = Lwt_term.size () in
+    let { columns = col } = size () in
     let before = render col (prompt @ [Reset; Text state.before]) in
     let total = render col (prompt @ [Reset; Text state.before; Text state.after]) in
     let total' = total @ [Text(String.make (max 0 (!length - styled_length total)) ' ')] in
     beginning_of_line !height_before
-    >> Lwt_term.print total'
+    >> cprint total'
     >> beginning_of_line (compute_height col (styled_length total'))
-    >> Lwt_term.print before
+    >> cprint before
     >> begin
       height_before := compute_height col (styled_length before);
       length := styled_length total;
       if Text.ends_with state.before "\n" then begin
         incr height_before;
-        Lwt_term.print [Text "\r\n"]
+        cprint [Text "\r\n"]
       end else
         return ()
     end
@@ -225,17 +225,17 @@ let real_readline prompt history complete =
               let state = { state with before = before; after = after } in
               print state >> t_command >>= process_command state
           | `Completion (Possibilities words) ->
-              put_string stdout "\r\n"
-              >> let { Lwt_term.columns = col } = Lwt_term.size () in print_words stdout col words
-              >> put_char stdout '\n'
+              write_text stdout "\r\n"
+              >> let { columns = col } = size () in print_words stdout col words
+              >> write_char stdout "\n"
               >> print state
               >> t_command >>= process_command state
         end
 
     | Accept_line ->
-        let { Lwt_term.columns = col } = Lwt_term.size ()
+        let { columns = col } = size ()
         and line = state.before ^ state.after in
-        Lwt_term.println (render col [Text state.after])
+        cprintln (render col [Text state.after])
         >> return line
 
     | Kill_line ->
@@ -297,22 +297,23 @@ let real_readline prompt history complete =
          hist_after = [] }
 
 let readline ?(history=[]) ?(complete=fun _ -> return No_completion) prompt =
-  Lwt_term.with_raw_mode (fun _ -> real_readline prompt history complete)
+  with_raw_mode (fun _ -> real_readline prompt history complete)
 
 (* +---------+
    | History |
    +---------+ *)
 
-let put_line oc str =
-  put_string oc str >> put_char oc '\000'
-
 let save_history name history =
- with_file ~mode:output name (fun oc -> Lwt_util.iter_serial (put_line oc) history)
+ with_file ~mode:output name
+   (fun oc ->
+      Lwt_util.iter_serial
+        (fun line -> write_text oc line >> write_char oc "\000")
+        history)
 
-let get_line ic =
+let read_line ic =
   let buf = Buffer.create 42 in
   let rec loop = function
-    | '\000' ->
+    | "" | "\000" ->
         let str = Buffer.contents buf in
         begin match Text.check str with
           | Some _ ->
@@ -320,17 +321,17 @@ let get_line ic =
           | None ->
               return(Some str)
         end
-    | c ->
-        peek_char ic >>= function
-          | None -> loop '\000'
-          | Some c -> Buffer.add_char buf c; loop c
+    | ch ->
+        lwt ch = read_text ic 1 in
+        Buffer.add_string buf ch;
+        loop ch
   in
-  peek_char ic >>= function
-    | None -> return None
-    | Some c -> loop c
+  read_text ic 1 >>= function
+    | "" -> return None
+    | ch -> Buffer.add_string buf ch; loop ch
 
 let rec load_lines ic =
-  get_line ic >>= function
+  read_line ic >>= function
     | Some line ->
         lwt lines = load_lines ic in
         return (line :: lines)

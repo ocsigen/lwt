@@ -52,14 +52,14 @@ let cursor_visible = ref true
 
 let show_cursor _ =
   cursor_visible := true;
-  put_string stdout "\x1B[?25h"
+  write_text stdout "\x1B[?25h"
 
 let hide_cursor _ =
   cursor_visible := false;
-  put_string stdout "\x1B[?25h"
+  write_text stdout "\x1B[?25h"
 
 let clear_screen _ =
-  put_string stdout "\027[2J\027[H"
+  write_text stdout "\027[2J\027[H"
 
 (* Restore terminal mode on exit: *)
 let cleanup () =
@@ -371,8 +371,12 @@ let decode_key ch =
             Not_found -> Key ch
         end
 
+let standard_input = Lwt_stream.from (fun _ -> Lwt_io.read_text Lwt_io.stdin 1 >|= function
+                                        | "" -> None
+                                        | ch -> Some ch)
+
 let get_key () =
-  with_raw_mode (fun _ -> parse_key_raw Lwt_stream.standard_text >|= decode_key)
+  with_raw_mode (fun _ -> parse_key_raw standard_input >|= decode_key)
 
 (* +--------+
    | Styles |
@@ -412,16 +416,16 @@ module Codes = struct
 end
 
 let set_color num (r, g, b) =
-  put_string stdout (Printf.sprintf "\027]4;%d;rgb:%02x/%02x/%02x;\027\\" num r g b)
+  write_text stdout (Printf.sprintf "\027]4;%d;rgb:%02x/%02x/%02x;\027\\" num r g b)
 
 let set_colors l =
   atomic
     (fun oc ->
-       put_string oc "\027]4;"
+       write_text oc "\027]4;"
        >> Lwt_util.iter_serial
          (fun (num, (r, g, b)) ->
-            put_string oc (Printf.sprintf "%d;rgb:%02x/%02x/%02x;\027\\" num r g b)) l
-       >> put_string oc ";\027\\") stdout
+            write_text oc (Printf.sprintf "%d;rgb:%02x/%02x/%02x;\027\\" num r g b)) l
+       >> write_text oc ";\027\\") stdout
 
 (* +-----------+
    | Rendering |
@@ -601,34 +605,32 @@ let styled_length st =
 let stdout_is_atty = lazy(Unix.isatty Unix.stdout)
 let stderr_is_atty = lazy(Unix.isatty Unix.stderr)
 
-let put_text oc txt = put_string oc (Text.encode ~fallback:"?" txt)
-
-let print st =
+let cprint st =
   if Lazy.force stdout_is_atty then
-    put_text stdout (apply_styles st)
+    write_text stdout (apply_styles st)
   else
-    put_text stdout (strip_styles st)
+    write_text stdout (strip_styles st)
 
-let eprint st =
+let ecprint st =
   if Lazy.force stderr_is_atty then
-    put_text stderr (apply_styles st)
+    write_text stderr (apply_styles st)
   else
-    put_text stderr (strip_styles st)
+    write_text stderr (strip_styles st)
 
-let println st =
+let cprintln st =
   atomic (fun oc ->
             (if Lazy.force stdout_is_atty then
-               put_text oc (apply_styles st)
+               write_text oc (apply_styles st)
              else
-               put_text oc (strip_styles st))
-            >> put_text oc "\027[0m"
-            >> put_text oc (if raw_mode () then "\r\n" else "\n")) stdout
+               write_text oc (strip_styles st))
+            >> write_text oc "\027[0m"
+            >> write_text oc (if raw_mode () then "\r\n" else "\n")) stdout
 
-let eprintln st =
+let ecprintln st =
   atomic (fun oc ->
             (if Lazy.force stderr_is_atty then
-               put_text oc (apply_styles st)
+               write_text oc (apply_styles st)
              else
-               put_text oc (strip_styles st))
-            >> put_text oc "\027[0m"
-            >> put_text oc (if raw_mode () then "\r\n" else "\n")) stderr
+               write_text oc (strip_styles st))
+            >> write_text oc "\027[0m"
+            >> write_text oc (if raw_mode () then "\r\n" else "\n")) stderr

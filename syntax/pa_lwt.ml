@@ -97,7 +97,7 @@ EXTEND Gram
                             (fun __pa_lwt_e -> Lwt.bind (begin $f$ end) (fun () -> match __pa_lwt_e with $c$))
                   >>
             end
-        | "lwt"; l = letb_binding; "in"; e = SELF ->
+        | "lwt"; l = letb_binding; "in"; e = expr LEVEL ";" ->
             <:expr< let $gen_binding l$ in $gen_bind l e$ >>
         ] ];
 END

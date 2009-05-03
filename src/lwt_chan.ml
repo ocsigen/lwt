@@ -27,13 +27,15 @@ open Lwt_io
 type in_channel = ic
 type out_channel = oc
 
+let encoding = "ISO-8859-1"
+
 let in_channel_of_descr fd = of_fd ~mode:Lwt_io.input fd
-let make_in_channel ?close read = make ~mode:Lwt_io.input ?close read
-let input_line = get_line
+let make_in_channel ?close read = make ~mode:Lwt_io.input ~encoding ?close read
+let input_line = read_line
 let input_value = get_value
 let input = get
 let really_input = get_exactly
-let input_char = get_char
+let input_char = get_byte
 let input_binary_int = LE.get_int
 let open_in_gen flags perm fname =
   in_channel_of_descr (Lwt_unix.of_unix_file_descr (Unix.openfile fname flags perm))
@@ -47,12 +49,12 @@ let out_channel_of_descr fd =
     ~seek:(fun pos cmd -> Lwt.return (Unix.LargeFile.lseek (Lwt_unix.unix_file_descr fd) pos cmd))
     ~mode:Lwt_io.output
     (Lwt_unix.write fd)
-let make_out_channel ?close write = make ~auto_flush:false ~mode:Lwt_io.output ?close write
+let make_out_channel ?close write = make ~auto_flush:false ~mode:Lwt_io.output ~encoding ?close write
 let output = put_exactly
 let flush = force_flush
-let output_string = put_string
+let output_string = put_bytes
 let output_value oc v = put_value oc v
-let output_char = put_char
+let output_char = put_byte
 let output_binary_int = LE.put_int
 let open_out_gen flags perm fname =
   out_channel_of_descr (Lwt_unix.of_unix_file_descr (Unix.openfile fname flags perm))

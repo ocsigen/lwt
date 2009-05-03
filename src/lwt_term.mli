@@ -146,6 +146,9 @@ val sequence_mapping : (Text.t * key) list
 val decode_key : Text.t -> key
   (** Decode a key. *)
 
+val standard_input : Text.t Lwt_stream.t
+  (** The input stream used by [get_key] *)
+
 val get_key : unit -> key Lwt.t
   (** Get and decode a key from {!Lwt_stream.standard_text} *)
 
@@ -219,20 +222,20 @@ val styled_length : styled_text -> int
       [styled_length st = Text.length (strip_styles st)]
   *)
 
-val print : styled_text -> unit Lwt.t
-  (** [print st] prints the given styled text on standard output. If
+val cprint : styled_text -> unit Lwt.t
+  (** [cprint st] prints the given styled text on standard output. If
       stdout is not a tty, then styles are stripped.
 
       The text is encoded to the system encoding before being
       output. *)
 
-val eprint : styled_text -> unit Lwt.t
+val ecprint : styled_text -> unit Lwt.t
   (** Same as [print] but prints on stderr. *)
 
-val println : styled_text -> unit Lwt.t
+val cprintln : styled_text -> unit Lwt.t
   (** [println st] prints [st], then reset styles and print a newline *)
 
-val eprintln : styled_text -> unit Lwt.t
+val ecprintln : styled_text -> unit Lwt.t
   (** Same as [println] but prints on stderr *)
 
 (** {6 Rendering} *)

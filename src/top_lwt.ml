@@ -107,7 +107,7 @@ let read_input_non_interactive prompt buffer len =
     if i = len then
       return (i, false)
     else
-      peek_char stdin >>= function
+      peek_byte stdin >>= function
         | Some c ->
             buffer.[i] <- c;
             if c = '\n' then
@@ -117,7 +117,7 @@ let read_input_non_interactive prompt buffer len =
         | None ->
             return (i, true)
   in
-  Lwt_main.run (put_string stdout prompt >> loop 0)
+  Lwt_main.run (write_text stdout prompt >> loop 0)
 
 let _ =
   if Unix.isatty Unix.stdin then begin
@@ -129,10 +129,10 @@ let _ =
     let { columns = col } = size () in
     let space = (col - 4 - len) / 2 in
     Lwt_main.run
-      (println [Foreground col_border; Text(Text.repeat space "─");
-                Text "┬─"; Text(Text.repeat len "─"); Text "─┬"; Text(Text.repeat (col - 4 - len - space) "─")]
-       >> println [Text(Text.repeat space " "); Foreground col_border; Text "│ "; Foreground col_txt; Text txt;
-                   Foreground col_border; Text " │"]
-       >> println [Text(Text.repeat space " "); Foreground col_border; Text "└─"; Text(Text.repeat len "─"); Text "─┘"])
+      (cprintln [Foreground col_border; Text(Text.repeat space "─");
+                 Text "┬─"; Text(Text.repeat len "─"); Text "─┬"; Text(Text.repeat (col - 4 - len - space) "─")]
+       >> cprintln [Text(Text.repeat space " "); Foreground col_border; Text "│ "; Foreground col_txt; Text txt;
+                    Foreground col_border; Text " │"]
+       >> cprintln [Text(Text.repeat space " "); Foreground col_border; Text "└─"; Text(Text.repeat len "─"); Text "─┘"])
   end else
     Toploop.read_interactive_input := read_input_non_interactive

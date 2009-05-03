@@ -25,12 +25,6 @@
 type 'a t
   (** Type of a stream holding values of type ['a] *)
 
-val standard : char t
-  (** The standard input channel *)
-
-val standard_text : Text.t t
-  (** The standard input channel, decoded using system encoding. *)
-
 (** Naming convention: in this module all function taking a function
     which is applied to all element of the streams are suffixed by:
 
@@ -55,10 +49,6 @@ val of_string : string -> char t
 val of_text : Text.t -> Text.t t
   (** [of_text txt] creates a stream returning all unicode characters
       of [txt] *)
-
-val of_channel : Lwt_io.ic -> char t
-  (** [of_channel ch] creates a stream returning all characters
-      read from [ch] *)
 
 val decode : ?encoding : Encoding.t -> char t -> Text.t t
   (** [decode ?encoding s] decode the given stream using [encoding], witch
