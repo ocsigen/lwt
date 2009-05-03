@@ -7,7 +7,7 @@
 <src/lwt_preemptive.ml*>: pkg_threads
 <src/lwt_ssl.ml*>: pkg_ssl
 <src/lwt_glib.ml*>: pkg_lablgtk2
-<src/*.ml*>: pkg_unix
+<src/*.ml*>: pkg_unix, pkg_encoding
 
 # +-------------------+
 # | Syntax extensions |

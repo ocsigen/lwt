@@ -64,6 +64,7 @@ let packages = [
   "unix";
   "ssl";
   "lablgtk2";
+  "encoding";
 ]
 
 (* List of syntaxes *)

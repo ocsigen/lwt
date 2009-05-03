@@ -11,4 +11,7 @@ Lwt_io
 Lwt_process
 Lwt_main
 Lwt_stream
+Lwt_term
+Lwt_readline
+Lwt_printf
 Pqueue

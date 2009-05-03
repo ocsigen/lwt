@@ -34,8 +34,9 @@ and 'a lazy_list = 'a node Lwt.t Lazy.t
 
 type 'a t = 'a lazy_list ref
 
-let of_lazy_list l = ref l
-let to_lazy_list s = !s
+let of_lazy_list = ref
+let get_lazy_list = ( ! )
+let set_lazy_list = ( := )
 
 let make f = ref(Lazy.lazy_from_fun f)
 
@@ -62,6 +63,16 @@ let of_string s =
       return (Cons(s.[i], lazy(get (i + 1))))
   in
   ref(lazy(get 0))
+
+let of_text txt =
+  let rec get ptr =
+    match Text.next ptr with
+      | None ->
+          return Nil
+      | Some(ch, ptr) ->
+          return (Cons(ch, lazy(get ptr)))
+  in
+  ref(lazy(get (Text.pointer_l txt)))
 
 let of_channel ch = from (fun _ -> Lwt_io.peek_char ch)
 
@@ -380,47 +391,52 @@ let choose streams =
   in
   ref(lazy(next (List.rev_map source streams)))
 
-let parse_utf8 s =
-  let buf = String.create 4 in
-  let rec next _ =
+let decode ?(encoding=Encoding.system) s =
+  let decoder = Encoding.decoder encoding and buf = String.create 16 in
+  let rec aux pos l =
+    match Encoding.decode decoder buf 0 pos with
+      | Encoding.Dec_ok(code, _) ->
+          s := l;
+          return(Cons(Text.char code, lazy_from_fun next))
+      | Encoding.Dec_error ->
+          fail (Failure "Lwt_stream.decode: invalid sequence in stream")
+      | Encoding.Dec_need_more ->
+          Lazy.force l >>= function
+            | Cons(x, l) ->
+                buf.[pos] <- x;
+                aux (pos + 1) l
+            | Nil ->
+                fail (Failure "Lwt_stream.decode: unterminated sequence in stream")
+  and next _ =
     Lazy.force !s >>= function
-      | Cons(c, l) ->
-          buf.[0] <- c;
-          let n = Char.code c in
-          if n land 0x80 = 0 then begin
-            s := l;
-            return (Cons(String.sub buf 0 1, lazy_from_fun next))
-          end else if n land 0xe0 = 0xc0 then
-            trail 0x80 (n land 0x1f) 2 1 l
-          else if n land 0xf0 = 0xe0 then
-            trail 0x800 (n land 0x0f) 3 1 l
-          else if n land 0xf8 = 0xf0 then
-            trail 0x10000 (n land 0x07) 4 1 l
-          else
-            fail (Failure "cannot decode utf-8: invalid start of sequence")
+      | Cons(x, l) ->
+          buf.[0] <- x;
+          aux 1 l
       | Nil ->
           return Nil
-  and trail minimum acc len i l =
-    if i = len then
-      if acc < minimum then
-        fail (Failure "cannot decode utf-8: overlong sequence")
-      else begin
-        s := l;
-        return (Cons(String.sub buf 0 len, lazy_from_fun next))
-      end
+  in
+  make next
+
+let encode ?(encoding=Encoding.system) s =
+  let encoder = Encoding.encoder encoding and buf = String.create 16 in
+  let rec next _ =
+    Lazy.force !s >>= function
+      | Nil ->
+          return Nil
+      | Cons(x, l) ->
+          match Encoding.encode encoder buf 0 16 (Text.code x) with
+            | Encoding.Enc_ok count ->
+                s := l;
+                loop 0 count
+            | _ ->
+                fail (Failure "Lwt_stream.encode: cannot encode character")
+  and loop pos count =
+    if pos = count then
+      next ()
     else
-      Lazy.force l >>= function
-        | Cons(c, l) ->
-            buf.[i] <- c;
-            let n = Char.code c in
-            if n land 0xc0 = 0x80 then
-              trail minimum ((acc lsl 6) lor (n land 0x3f)) len (i + 1) l
-            else
-              fail (Failure "cannot decode utf-8: unterminated sequence")
-        | Nil ->
-            fail (Failure "cannot decode utf-8: unterminated sequence")
+      return(Cons(buf.[pos], lazy(loop (pos + 1) count)))
   in
   make next
 
 let standard = of_channel Lwt_io.stdin
-let standard_utf8 = parse_utf8 standard
+let standard_text = decode standard

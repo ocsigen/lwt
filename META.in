@@ -1,7 +1,7 @@
 # -*- conf -*-
 
 description = "Lightweight thread library for OCaml (core library)"
-requires = "unix"
+requires = "unix,encoding"
 version = "@VERSION@"
 archive(byte) = "lwt.cma"
 archive(native) = "lwt.cmxa"

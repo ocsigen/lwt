@@ -28,8 +28,8 @@ type 'a t
 val standard : char t
   (** The standard input channel *)
 
-val standard_utf8 : string t
-  (** The standard input channel, in UTF-8 *)
+val standard_text : Text.t t
+  (** The standard input channel, decoded using system encoding. *)
 
 (** Naming convention: in this module all function taking a function
     which is applied to all element of the streams are suffixed by:
@@ -52,18 +52,22 @@ val of_string : string -> char t
   (** [of_string str] creates a stream returning all characters of
       [str] *)
 
+val of_text : Text.t -> Text.t t
+  (** [of_text txt] creates a stream returning all unicode characters
+      of [txt] *)
+
 val of_channel : Lwt_io.ic -> char t
   (** [of_channel ch] creates a stream returning all characters
       read from [ch] *)
 
-val parse_utf8 : char t -> string t
-  (** [parse_utf8 s] parse UTF-8 encoded characters from [st]. The
-      resulting streams returns all unicode characters encoded in UTF-8.
+val decode : ?encoding : Encoding.t -> char t -> Text.t t
+  (** [decode ?encoding s] decode the given stream using [encoding], witch
+      defaults to [Encoding.system].
 
       For example:
 
       {[
-        # let st = Lwt_stream.parse_utf8 (Lwt_stream.of_string "Jérémie");;
+        # let st = Lwt_stream.decode ~encoding:"UTF-8" (Lwt_stream.of_string "Jérémie");;
         val st : string Lwt_stream.t = <abstr>
         # Lwt_main.run (Lwt_stream.nget max_int st);;
         \- : string list = ["J"; "é"; "r"; "é"; "m"; "i"; "e"]
@@ -72,6 +76,10 @@ val parse_utf8 : char t -> string t
       When an invalid sequence is encountered, [Failure] is raised, and the
       beginning of the invalid sequence is not consummed.
   *)
+
+val encode : ?encoding : Encoding.t -> Text.t t -> char t
+  (** [encode ?encoding s] encode the given stream using [encoding], witch
+      defaults to [Encoding.system] *)
 
 val clone : 'a t -> 'a t
   (** [clone st] clone the given stream. Operations on each stream
@@ -208,5 +216,8 @@ and 'a lazy_list = 'a node Lwt.t Lazy.t
 val of_lazy_list : 'a lazy_list -> 'a t
   (** [of_lazy_list st] creates a stream from a lazy-list *)
 
-val to_lazy_list : 'a t -> 'a lazy_list
-  (** [to_lazy_list ll] returns the internal lazy-list of a stream *)
+val get_lazy_list : 'a t -> 'a lazy_list
+  (** [get_lazy_list ll] returns the internal lazy-list of a stream *)
+
+val set_lazy_list : 'a t -> 'a lazy_list -> unit
+  (** [set_lazy_list ll] sets the internal lazy-list of a stream *)

@@ -20,9 +20,15 @@
  * 02111-1307, USA.
  */
 
+#include <caml/alloc.h>
+#include <caml/fail.h>
 #include <caml/mlvalues.h>
 #include <caml/memory.h>
 #include <caml/unixsupport.h>
+
+/* +------------+
+   | Read/write |
+   +------------+ */
 
 /* This code is a simplified version of the default unix_write and
    unix_read functions of caml.
@@ -49,3 +55,24 @@ CAMLprim value lwt_unix_read(value fd, value buf, value ofs, value len)
   if (ret == -1) uerror("lwt_unix_read", Nothing);
   CAMLreturn(Val_int(ret));
 }
+
+/* +----------------+
+   | Terminal sizes |
+   +----------------+ */
+
+#include <sys/ioctl.h>
+#include <termios.h>
+
+CAMLprim value lwt_unix_term_size(value fd) {
+  CAMLparam1(fd);
+
+  struct winsize size;
+  if (ioctl(Int_val(fd), TIOCGWINSZ, &size) < 0)
+    caml_failwith("ioctl(TIOCGWINSZ)");
+
+  value result = caml_alloc_tuple(2);
+  Field(result, 0) = Val_int(size.ws_row);
+  Field(result, 1) = Val_int(size.ws_col);
+  CAMLreturn(result);
+}
+
