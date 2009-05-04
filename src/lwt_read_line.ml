@@ -58,7 +58,7 @@ type command =
   | Forward_char
   | Set_mark
 
-let get_command _ = get_key () >|= function
+let get_command _ = read_key () >|= function
   | Key_up -> History_previous
   | Key_down -> History_next
   | Key_left -> Backward_char
@@ -297,7 +297,10 @@ let real_read_line prompt history complete =
          hist_after = [] }
 
 let read_line ?(history=[]) ?(complete=fun _ -> return No_completion) prompt =
-  with_raw_mode (fun _ -> real_read_line prompt history complete)
+  if Lazy.force stdin_is_atty || Lazy.force stdout_is_atty then
+    with_raw_mode (fun _ -> real_read_line prompt history complete)
+  else
+    Lwt_io.read_line stdin
 
 (* +---------+
    | History |

@@ -64,4 +64,5 @@ val read_line :
   ?complete : (edition_state -> completion_result Lwt.t) ->
   Lwt_term.styled_text -> Text.t Lwt.t
   (** [readline ?history ?complete prompt] inputs some text from the
-      user. *)
+      user. If input is not a terminal, it defaults to
+      [Lwt_io.read_line Lwt_io.stdin] *)

@@ -153,9 +153,9 @@ val decode_key : Text.t -> key
   (** Decode a key. *)
 
 val standard_input : Text.t Lwt_stream.t
-  (** The input stream used by [get_key] *)
+  (** The input stream used by [read_key] *)
 
-val get_key : unit -> key Lwt.t
+val read_key : unit -> key Lwt.t
   (** Get and decode a key from {!Lwt_stream.standard_text} *)
 
 (** {6 Styles} *)
@@ -262,3 +262,9 @@ val render : point array array -> string
   (** Convert an offscreen array to a string which just need to be
       output. It contains all escape sequence to go to the top-left
       corner, and set colors. *)
+
+(**/**)
+
+val stdin_is_atty : bool Lazy.t
+val stdout_is_atty : bool Lazy.t
+val stderr_is_atty : bool Lazy.t

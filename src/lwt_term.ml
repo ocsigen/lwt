@@ -27,6 +27,10 @@ open Lwt_io
    | Terminal mode |
    +---------------+ *)
 
+let stdin_is_atty = lazy(Unix.isatty Unix.stdin)
+let stdout_is_atty = lazy(Unix.isatty Unix.stdout)
+let stderr_is_atty = lazy(Unix.isatty Unix.stderr)
+
 type state =
   | Normal
   | Raw of Unix.terminal_io
@@ -377,7 +381,7 @@ let standard_input = Lwt_stream.from (fun _ -> Lwt_io.read_text Lwt_io.stdin 1 >
                                         | "" -> None
                                         | ch -> Some ch)
 
-let get_key () =
+let read_key () =
   with_raw_mode (fun _ -> parse_key_raw standard_input >|= decode_key)
 
 (* +--------+
@@ -604,9 +608,6 @@ let styled_length st =
   in
   loop 0 st
 
-let stdout_is_atty = lazy(Unix.isatty Unix.stdout)
-let stderr_is_atty = lazy(Unix.isatty Unix.stderr)
-
 let printc st =
   if Lazy.force stdout_is_atty then
     write_text stdout (apply_styles st)
@@ -619,20 +620,14 @@ let eprintc st =
   else
     write_text stderr (strip_styles st)
 
-let printlc st =
-  atomic (fun oc ->
-            (if Lazy.force stdout_is_atty then
-               write_text oc (apply_styles st)
-             else
-               write_text oc (strip_styles st))
-            >> write_text oc "\027[0m"
-            >> write_text oc (if raw_mode () then "\r\n" else "\n")) stdout
+let fprintlc oc is_atty st =
+  if Lazy.force is_atty then
+    atomic (fun oc ->
+              write_text oc (apply_styles st)
+              >> write_text oc "\027[0m"
+              >> write_text oc (if raw_mode () then "\r\n" else "\n")) oc
+  else
+    write_line oc (strip_styles st)
 
-let eprintlc st =
-  atomic (fun oc ->
-            (if Lazy.force stderr_is_atty then
-               write_text oc (apply_styles st)
-             else
-               write_text oc (strip_styles st))
-            >> write_text oc "\027[0m"
-            >> write_text oc (if raw_mode () then "\r\n" else "\n")) stderr
+let printlc st = fprintlc stdout stdout_is_atty st
+let eprintlc st = fprintlc stderr stderr_is_atty st

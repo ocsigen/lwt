@@ -61,24 +61,23 @@ let close = Lwt_io.close
 
 let print = write_text stdout
 let eprint = write_text stderr
-let fprintl oc txt =
-  Lwt_io.atomic
-    (fun oc ->
-       write_text stdout txt >>
-         write_text oc (if Lwt_term.raw_mode () then "\r\n" else "\n")) oc
-let printl txt = fprintl stdout txt
-let eprintl txt = fprintl stderr txt
 
-let fprintf oc fmt =
-  Printf.ksprintf (write_text oc) fmt
+let fprintl oc is_atty txt =
+  if Lazy.force is_atty then
+    Lwt_io.atomic
+      (fun oc ->
+         write_text oc txt
+         >> write_text oc (if Lwt_term.raw_mode () then "\r\n" else "\n")) oc
+  else
+    write_line oc txt
 
-let fprintlf oc fmt =
-  Printf.ksprintf (fprintl oc) fmt
+let printl txt = fprintl stdout Lwt_term.stdout_is_atty txt
+let eprintl txt = fprintl stderr Lwt_term.stderr_is_atty txt
 
-let printf fmt = fprintf stdout fmt
-let printlf fmt = fprintlf stdout fmt
-let eprintf fmt = fprintf stderr fmt
-let eprintlf fmt = fprintlf stderr fmt
+let printf fmt = Printf.ksprintf print fmt
+let printlf fmt = Printf.ksprintf printl fmt
+let eprintf fmt = Printf.ksprintf eprint fmt
+let eprintlf fmt = Printf.ksprintf eprintl fmt
 
 (* +-----------------+
    | Styled printing |
