@@ -1,6 +1,6 @@
 (* Lightweight thread library for Objective Caml
  * http://www.ocsigen.org/lwt
- * Module Lwt_term
+ * Module Lwt_read_line
  * Copyright (C) 2009 Jérémie Dimino
  *
  * This program is free software; you can redistribute it and/or modify
@@ -59,7 +59,7 @@ val load_history : string -> history Lwt.t
 
 (** {6 Readline} *)
 
-val readline :
+val read_line :
   ?history : history ->
   ?complete : (edition_state -> completion_result Lwt.t) ->
   Lwt_term.styled_text -> Text.t Lwt.t

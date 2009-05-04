@@ -24,9 +24,7 @@
 
    readline + let threads runs while reading user input. *)
 
-open Lwt
-open Lwt_io
-open Lwt_term
+open Lwt_pervasives
 
 (* +------------+
    | Completion |
@@ -68,16 +66,16 @@ let get_directive txt =
 
 let complete (before, after) =
   let before', word = split_last_word before in
-  return (Lwt_readline.complete before' word after
+  return (Lwt_read_line.complete before' word after
             (match get_directive before with
                | Some dir ->
                    Hashtbl.fold (fun k v l -> k :: l) Toploop.directive_table []
                | None ->
                    keywords))
 
-(* +------------------+
-   | Readline wrapper |
-   +------------------+ *)
+(* +-------------------+
+   | Read-line wrapper |
+   +-------------------+ *)
 
 let history = ref []
 let input = ref ""
@@ -85,11 +83,12 @@ let pos = ref 0
 
 let rec read_input prompt buffer len =
   if !pos = String.length !input then begin
-    let sprompt = if prompt = "  " then [Foreground blue; Text "> "] else [Foreground yellow; Text prompt] in
-    input := Lwt_main.run
-      (lwt l = Lwt_readline.readline ~complete ~history:(!history) sprompt in
-       force_flush stdout >> return l);
-    if Text.strip !input <> "" then history := !input :: !history;
+    let sprompt = if prompt = "  " then [fg blue; text "> "] else [fg yellow; text prompt] in
+    let txt = Lwt_main.run
+      (lwt l = Lwt_read_line.read_line ~complete ~history:(!history) sprompt in
+       Lwt_io.force_flush stdout >> return l) in
+    if Text.strip txt <> "" then history := txt :: !history;
+    input := txt ^ "\n";
     pos := 0;
     read_input prompt buffer len
   end else begin
@@ -107,7 +106,7 @@ let read_input_non_interactive prompt buffer len =
     if i = len then
       return (i, false)
     else
-      peek_byte stdin >>= function
+      Lwt_io.peek_byte stdin >>= function
         | Some c ->
             buffer.[i] <- c;
             if c = '\n' then
@@ -120,19 +119,21 @@ let read_input_non_interactive prompt buffer len =
   Lwt_main.run (write_text stdout prompt >> loop 0)
 
 let _ =
+  (* If input is a tty, use interactive read-line and display and
+     welcome message: *)
   if Unix.isatty Unix.stdin then begin
     Toploop.read_interactive_input := read_input;
 
     let txt = "Welcome to the new Lwt powered OCaml toplevel!" in
     let col_border = cyan and col_txt = yellow in
     let len = Text.length txt in
-    let { columns = col } = size () in
+    let col = Lwt_term.columns () in
     let space = (col - 4 - len) / 2 in
+    let rep n txt = text (Text.repeat n txt) in
     Lwt_main.run
-      (cprintln [Foreground col_border; Text(Text.repeat space "─");
-                 Text "┬─"; Text(Text.repeat len "─"); Text "─┬"; Text(Text.repeat (col - 4 - len - space) "─")]
-       >> cprintln [Text(Text.repeat space " "); Foreground col_border; Text "│ "; Foreground col_txt; Text txt;
-                    Foreground col_border; Text " │"]
-       >> cprintln [Text(Text.repeat space " "); Foreground col_border; Text "└─"; Text(Text.repeat len "─"); Text "─┘"])
+      (cprintln [fg col_border; rep space "─"; text "┬─"; rep len "─"; text "─┬"; rep (col - 4 - len - space) "─"] >>
+         cprintln [rep space " "; fg col_border; text "│ "; fg col_txt; text txt; fg col_border; text " │"] >>
+         cprintln [rep space " "; fg col_border; text "└─"; rep len "─"; text "─┘"])
   end else
+    (* Otherwise fallback to classic non-interactive mode: *)
     Toploop.read_interactive_input := read_input_non_interactive

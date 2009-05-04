@@ -64,6 +64,7 @@ class process_in : ?env : string array -> command -> object
 end
 
 val process_in : ?env : string array -> command -> process_in
+val with_process_in : ?env : string array -> command -> (process_in -> 'a Lwt.t) -> 'a Lwt.t
 
 class process_out : ?env : string array -> command -> object
   inherit process_common
@@ -73,6 +74,7 @@ class process_out : ?env : string array -> command -> object
 end
 
 val process_out : ?env : string array -> command -> process_out
+val with_process_out : ?env : string array -> command -> (process_out -> 'a Lwt.t) -> 'a Lwt.t
 
 class process : ?env : string array -> command -> object
   inherit process_common
@@ -82,6 +84,7 @@ class process : ?env : string array -> command -> object
 end
 
 val process : ?env : string array -> command -> process
+val with_process : ?env : string array -> command -> (process -> 'a Lwt.t) -> 'a Lwt.t
 
 class process_full : ?env : string array -> command -> object
   inherit process_common
@@ -92,3 +95,4 @@ class process_full : ?env : string array -> command -> object
 end
 
 val process_full : ?env : string array -> command -> process_full
+val with_process_full : ?env : string array -> command -> (process_full -> 'a Lwt.t) -> 'a Lwt.t

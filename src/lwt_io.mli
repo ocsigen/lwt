@@ -165,7 +165,7 @@ val open_file :
   ?flags : Unix.open_flag list ->
   ?perm : Unix.file_perm ->
   mode : 'a mode ->
-  string -> 'a channel Lwt.t
+  string -> 'a channel
   (** [open_file ?buffer_size ?flags ?perm ~mode filename] open a file *)
 
 val with_file :
@@ -225,7 +225,11 @@ val length : 'a channel -> int64 Lwt.t
 
 val read_char : ic -> Text.t Lwt.t
   (** [read_char ic] reads one unicode character from [ic]. Raises
-      [End_of_file] on end-of-file. *)
+      [End_of_file] on end of input. *)
+
+val peek_char : ic -> Text.t option Lwt.t
+  (** Same as [read_char] but do not raise [End_of_file] on
+      end of input. *)
 
 val read_text : ic -> int -> Text.t Lwt.t
   (** [read_text ic int] reads up to [len] characters from [ic]. On
@@ -235,6 +239,10 @@ val read_line : ic -> Text.t Lwt.t
   (** [read_line ic] reads one complete line from [ic] and returns it
       without the end of line. End of line is either ["\n"] or
       ["\r\n"] *)
+
+val peek_line : ic -> Text.t option Lwt.t
+  (** Same as [read_line] but do not raise [End_of_file] on
+      end of input. *)
 
 (** {6 Text output} *)
 

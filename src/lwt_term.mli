@@ -54,6 +54,12 @@ type size = {
 val size : unit -> size
   (** [size ()] returns the current size of the terminal. *)
 
+val columns : unit -> int
+  (** [columns () = (size ()).columns] *)
+
+val lines : unit -> int
+  (** [lines () = (size ()).lines] *)
+
 (** {6 Keys} *)
 
 val parse_key_raw : Text.t Lwt_stream.t -> Text.t Lwt.t

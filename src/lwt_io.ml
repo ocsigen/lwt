@@ -597,6 +597,15 @@ struct
         | Encoding.Dec_error ->
             fail (Failure "Lwt_io.read_char: cannot decode multibyte sequence")
 
+  let peek_char ic =
+    try_lwt
+      read_char ic >>= fun ch -> return (Some ch)
+    with
+      | End_of_file ->
+          return None
+      | exn ->
+          fail exn
+
   let read_text ic len =
     if len = 1 then
       try
@@ -642,6 +651,15 @@ struct
     read_char ic >>= function
       | "\r" -> loop true
       | ch -> Buffer.add_string buf ch; loop false
+
+  let peek_line ic =
+    try_lwt
+      read_line ic >>= fun ch -> return (Some ch)
+    with
+      | End_of_file ->
+          return None
+      | exn ->
+          fail exn
 
   (* +-------------+
      | Text output |
@@ -1080,8 +1098,10 @@ end
    +----------------------+ *)
 
 let read_char ic = primitive Primitives.read_char ic
+let peek_char ic = primitive Primitives.peek_char ic
 let read_text ic len = primitive (fun ic -> Primitives.read_text ic len) ic
 let read_line ic = primitive Primitives.read_line ic
+let peek_line ic = primitive Primitives.peek_line ic
 let get_byte ic = primitive Primitives.get_byte ic
 let peek_byte ic = primitive Primitives.peek_byte ic
 let get_bytes ic len = primitive (fun ic -> Primitives.get_bytes ic len) ic
@@ -1199,11 +1219,10 @@ let open_file ?buffer_size ?flags ?perm ~mode filename =
     | None, Output ->
         0o666
   in
-  try_lwt
-    return (of_unix_fd ?buffer_size ~mode (Unix.openfile filename flags perm))
+  of_unix_fd ?buffer_size ~mode (Unix.openfile filename flags perm)
 
 let with_file ?buffer_size ?flags ?perm ~mode filename f =
-  lwt ic = open_file ?buffer_size ?flags ?perm ~mode filename in
+  let ic = open_file ?buffer_size ?flags ?perm ~mode filename in
   try_lwt
     f ic
   finally

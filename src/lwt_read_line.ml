@@ -1,6 +1,6 @@
 (* Lightweight thread library for Objective Caml
  * http://www.ocsigen.org/lwt
- * Module Lwt_term
+ * Module Lwt_read_line
  * Copyright (C) 2009 Jérémie Dimino
  *
  * This program is free software; you can redistribute it and/or modify
@@ -99,9 +99,9 @@ let rec beginning_of_line = function
   | n ->
       write_text stdout "\027[F" >> beginning_of_line (n - 1)
 
-(* +-----------------+
-   | Readline engine |
-   +-----------------+ *)
+(* +------------------+
+   | Read-line engine |
+   +------------------+ *)
 
 let rec repeat f n =
   if n <= 0 then
@@ -164,12 +164,12 @@ let compute_height columns len =
   else
     (len - 1) / columns
 
-let real_readline prompt history complete =
+let real_read_line prompt history complete =
   let height_before = ref 0 and length = ref 0 in
   let rec loop state =
     print state >> get_command () >>= process_command state
   and print state =
-    let { columns = col } = size () in
+    let col = Lwt_term.columns () in
     let before = render col (prompt @ [Reset; Text state.before]) in
     let total = render col (prompt @ [Reset; Text state.before; Text state.after]) in
     let total' = total @ [Text(String.make (max 0 (!length - styled_length total)) ' ')] in
@@ -226,7 +226,7 @@ let real_readline prompt history complete =
               print state >> t_command >>= process_command state
           | `Completion (Possibilities words) ->
               write_text stdout "\r\n"
-              >> let { columns = col } = size () in print_words stdout col words
+              >> let col = Lwt_term.columns () in print_words stdout col words
               >> write_char stdout "\n"
               >> print state
               >> t_command >>= process_command state
@@ -296,8 +296,8 @@ let real_readline prompt history complete =
          hist_before = history;
          hist_after = [] }
 
-let readline ?(history=[]) ?(complete=fun _ -> return No_completion) prompt =
-  with_raw_mode (fun _ -> real_readline prompt history complete)
+let read_line ?(history=[]) ?(complete=fun _ -> return No_completion) prompt =
+  with_raw_mode (fun _ -> real_read_line prompt history complete)
 
 (* +---------+
    | History |
@@ -310,7 +310,7 @@ let save_history name history =
         (fun line -> write_text oc line >> write_char oc "\000")
         history)
 
-let read_line ic =
+let load_line ic =
   let buf = Buffer.create 42 in
   let rec loop = function
     | "" | "\000" ->
@@ -331,7 +331,7 @@ let read_line ic =
     | ch -> Buffer.add_string buf ch; loop ch
 
 let rec load_lines ic =
-  read_line ic >>= function
+  load_line ic >>= function
     | Some line ->
         lwt lines = load_lines ic in
         return (line :: lines)
@@ -339,13 +339,14 @@ let rec load_lines ic =
         return []
 
 let load_history name =
-  try_bind (fun _ -> open_file ~mode:input name)
-    (fun ic ->
-       try_lwt
-         load_lines ic
-       finally
-         close ic)
-    (fun _ -> return [])
+  match try Some(open_file ~mode:input name) with _ -> None with
+    | Some ic ->
+        try_lwt
+          load_lines ic
+        finally
+          close ic
+    | None ->
+        return []
 
 (* +------+
    | Misc |

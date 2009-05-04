@@ -120,6 +120,18 @@ let process_out ?env cmd = new process_out ?env cmd
 let process ?env cmd = new process ?env cmd
 let process_full ?env cmd = new process_full ?env cmd
 
+let make_with backend ?env cmd f =
+  let process = backend ?env cmd in
+  try_lwt
+    f process
+  finally
+    process#close >> return ()
+
+let with_process_in ?env cmd f = make_with process_in ?env cmd f
+let with_process_out ?env cmd f = make_with process_out ?env cmd f
+let with_process ?env cmd f = make_with process ?env cmd f
+let with_process_full ?env cmd f = make_with process_full ?env cmd f
+
 let get_status (prog, args) =
   match Unix.fork () with
     | 0 ->
