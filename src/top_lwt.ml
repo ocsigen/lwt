@@ -82,24 +82,28 @@ let input = ref ""
 let pos = ref 0
 
 let rec read_input prompt buffer len =
-  if !pos = String.length !input then begin
-    let sprompt = if prompt = "  " then [fg blue; text "> "] else [fg yellow; text prompt] in
-    let txt = Lwt_main.run
-      (lwt l = Lwt_read_line.read_line ~complete ~history:(!history) sprompt in
-       Lwt_io.force_flush stdout >> return l) in
-    if Text.strip txt <> "" then history := txt :: !history;
-    input := txt ^ "\n";
-    pos := 0;
-    read_input prompt buffer len
-  end else begin
-    let i = ref 0 in
-    while !i < len && !pos < String.length !input do
-      buffer.[!i] <- (!input).[!pos];
-      incr i;
-      incr pos
-    done;
-    (!i, false)
-  end
+  try
+    if !pos = String.length !input then begin
+      let sprompt = if prompt = "  " then [fg blue; text "> "] else [fg yellow; text prompt] in
+      let txt = Lwt_main.run
+        (lwt l = Lwt_read_line.read_line ~complete ~history:(!history) sprompt in
+         Lwt_io.force_flush stdout >> return l) in
+      if Text.strip txt <> "" then history := txt :: !history;
+      input := txt ^ "\n";
+      pos := 0;
+      read_input prompt buffer len
+    end else begin
+      let i = ref 0 in
+      while !i < len && !pos < String.length !input do
+        buffer.[!i] <- (!input).[!pos];
+        incr i;
+        incr pos
+      done;
+      (!i, false)
+    end
+  with
+    | Lwt_read_line.Interrupt ->
+        (0, true)
 
 let read_input_non_interactive prompt buffer len =
   let rec loop i =

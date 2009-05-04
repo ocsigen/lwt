@@ -179,6 +179,19 @@ let rec junk_while_s f s =
     | Nil ->
         return ()
 
+let rec junk_old s =
+  let t = Lazy.force !s in
+  match Lwt.state t with
+    | Return(Cons(_, l)) ->
+        s := l;
+        junk_old s
+    | Return Nil ->
+        return ()
+    | Fail e ->
+        fail e
+    | Sleep ->
+        return ()
+
 let is_empty s = Lazy.force !s >|= function
   | Cons _ -> false
   | Nil -> true

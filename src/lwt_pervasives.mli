@@ -171,3 +171,7 @@ val lines_of_process : Lwt_process.command -> Text.t Lwt_stream.t
 val lines_to_process : ?sep : Text.t -> Lwt_process.command -> Text.t Lwt_stream.t -> unit Lwt.t
   (** [lines_to_process cmd lines] run [cmd] and send it all lines of
       [lines] *)
+
+(** {6 Misc} *)
+
+val sleep : float -> unit Lwt.t

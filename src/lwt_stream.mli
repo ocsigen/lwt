@@ -132,6 +132,14 @@ val junk_while_s : ('a -> bool Lwt.t) -> 'a t -> unit Lwt.t
   (** [junk_while f st] removes all elements at the beginning of the
       streams which satisfy [f]. *)
 
+val junk_old : 'a t -> unit Lwt.t
+  (** [junk_old st] removes all elements that are ready to be read
+      without yeilding from [st].
+
+      For example the [read_password] function of [Lwt_read_line] use
+      that to junk key previously typed by the user.
+  *)
+
 val is_empty : 'a t -> bool Lwt.t
   (** [is_empty enum] returns wether the given stream is empty *)
 

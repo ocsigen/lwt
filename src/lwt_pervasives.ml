@@ -141,3 +141,9 @@ let lines_of_process cmd =
                          pr#close >> return None
                      | x ->
                          return x)
+
+(* +------+
+   | Misc |
+   +------+ *)
+
+let sleep = Lwt_unix.sleep
