@@ -414,7 +414,7 @@ module Codes = struct
   let inverse = 7
   let hidden = 8
   let foreground col = 30 + col
-  let background col = 30 + col
+  let background col = 40 + col
 end
 
 let set_color num (r, g, b) =
@@ -607,19 +607,19 @@ let styled_length st =
 let stdout_is_atty = lazy(Unix.isatty Unix.stdout)
 let stderr_is_atty = lazy(Unix.isatty Unix.stderr)
 
-let cprint st =
+let printc st =
   if Lazy.force stdout_is_atty then
     write_text stdout (apply_styles st)
   else
     write_text stdout (strip_styles st)
 
-let ecprint st =
+let eprintc st =
   if Lazy.force stderr_is_atty then
     write_text stderr (apply_styles st)
   else
     write_text stderr (strip_styles st)
 
-let cprintln st =
+let printlc st =
   atomic (fun oc ->
             (if Lazy.force stdout_is_atty then
                write_text oc (apply_styles st)
@@ -628,7 +628,7 @@ let cprintln st =
             >> write_text oc "\027[0m"
             >> write_text oc (if raw_mode () then "\r\n" else "\n")) stdout
 
-let ecprintln st =
+let eprintlc st =
   atomic (fun oc ->
             (if Lazy.force stderr_is_atty then
                write_text oc (apply_styles st)

@@ -61,31 +61,33 @@ let close = Lwt_io.close
 
 let print = write_text stdout
 let eprint = write_text stderr
+let fprintl oc txt =
+  Lwt_io.atomic
+    (fun oc ->
+       write_text stdout txt >>
+         write_text oc (if Lwt_term.raw_mode () then "\r\n" else "\n")) oc
+let printl txt = fprintl stdout txt
+let eprintl txt = fprintl stderr txt
 
 let fprintf oc fmt =
   Printf.ksprintf (write_text oc) fmt
 
-let fprintln oc fmt =
-  Printf.ksprintf (fun str ->
-                     Lwt_io.atomic
-                       (fun oc ->
-                          write_text oc str;
-                          >> write_text oc (if Lwt_term.raw_mode () then "\r\n" else "\n"))
-                       oc) fmt
+let fprintlf oc fmt =
+  Printf.ksprintf (fprintl oc) fmt
 
 let printf fmt = fprintf stdout fmt
-let println fmt = fprintln stdout fmt
+let printlf fmt = fprintlf stdout fmt
 let eprintf fmt = fprintf stderr fmt
-let eprintln fmt = fprintln stderr fmt
+let eprintlf fmt = fprintlf stderr fmt
 
 (* +-----------------+
    | Styled printing |
    +-----------------+ *)
 
-let cprint = Lwt_term.cprint
-let ecprint = Lwt_term.ecprint
-let cprintln = Lwt_term.cprintln
-let ecprintln = Lwt_term.ecprintln
+let printc = Lwt_term.printc
+let eprintc = Lwt_term.eprintc
+let printlc = Lwt_term.printlc
+let eprintlc = Lwt_term.eprintlc
 
 let textf fmt = Printf.ksprintf (fun txt -> Lwt_term.Text txt) fmt
 let text txt = Lwt_term.Text txt

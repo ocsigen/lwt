@@ -131,9 +131,9 @@ let _ =
     let space = (col - 4 - len) / 2 in
     let rep n txt = text (Text.repeat n txt) in
     Lwt_main.run
-      (cprintln [fg col_border; rep space "─"; text "┬─"; rep len "─"; text "─┬"; rep (col - 4 - len - space) "─"] >>
-         cprintln [rep space " "; fg col_border; text "│ "; fg col_txt; text txt; fg col_border; text " │"] >>
-         cprintln [rep space " "; fg col_border; text "└─"; rep len "─"; text "─┘"])
+      (printlc [fg col_border; rep space "─"; text "┬─"; rep len "─"; text "─┬"; rep (col - 4 - len - space) "─"] >>
+       printlc [rep space " "; fg col_border; text "│ "; fg col_txt; text txt; fg col_border; text " │"] >>
+       printlc [rep space " "; fg col_border; text "└─"; rep len "─"; text "─┘"])
   end else
     (* Otherwise fallback to classic non-interactive mode: *)
     Toploop.read_interactive_input := read_input_non_interactive

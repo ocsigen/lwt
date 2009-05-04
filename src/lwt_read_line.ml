@@ -174,15 +174,15 @@ let real_read_line prompt history complete =
     let total = render col (prompt @ [Reset; Text state.before; Text state.after]) in
     let total' = total @ [Text(String.make (max 0 (!length - styled_length total)) ' ')] in
     beginning_of_line !height_before
-    >> cprint total'
+    >> printc total'
     >> beginning_of_line (compute_height col (styled_length total'))
-    >> cprint before
+    >> printc before
     >> begin
       height_before := compute_height col (styled_length before);
       length := styled_length total;
       if Text.ends_with state.before "\n" then begin
         incr height_before;
-        cprint [Text "\r\n"]
+        printc [Text "\r\n"]
       end else
         return ()
     end
@@ -235,7 +235,7 @@ let real_read_line prompt history complete =
     | Accept_line ->
         let { columns = col } = size ()
         and line = state.before ^ state.after in
-        cprintln (render col [Text state.after])
+        printlc (render col [Text state.after])
         >> return line
 
     | Kill_line ->

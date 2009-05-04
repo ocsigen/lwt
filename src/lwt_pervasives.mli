@@ -80,31 +80,37 @@ val write_line : Lwt_io.oc -> Text.t -> unit Lwt.t
 val print : Text.t -> unit Lwt.t
   (** [print txt = write_text stdout txt] *)
 
-val printf : ('a, unit, Text.t, unit Lwt.t) format4 -> 'a
-  (** [printf fmt ...] creates a text using the format string [fmt]
-      and outputs it to stdout. *)
-
-val println : ('a, unit, Text.t, unit Lwt.t) format4 -> 'a
-  (** Same as {!printf} but also prints a newline after the text.
+val printl : Text.t -> unit Lwt.t
+  (** Same as [print] but also prints a newline after the text.
 
       If the terminal is in raw mode it use "\r\n" as newline,
       otherwise it uses "\n". *)
 
+val printf : ('a, unit, Text.t, unit Lwt.t) format4 -> 'a
+  (** [printf fmt ...] creates a text using the format string [fmt]
+      and outputs it to stdout. *)
+
+val printlf : ('a, unit, Text.t, unit Lwt.t) format4 -> 'a
+  (** Same as {!printf} but also prints a newline after the text. *)
+
 val eprint : Text.t -> unit Lwt.t
-  (** Same as {!print} but prints on stdout *)
+  (** Same as {!print} but prints on stderr *)
+
+val eprintl : Text.t -> unit Lwt.t
+  (** Same as {!print} but prints on stderr *)
 
 val eprintf : ('a, unit, Text.t, unit Lwt.t) format4 -> 'a
   (** Same as {!printf} but prints on stderr *)
 
-val eprintln : ('a, unit, Text.t, unit Lwt.t) format4 -> 'a
-  (** Same as {!println} but prints on stderr *)
+val eprintlf : ('a, unit, Text.t, unit Lwt.t) format4 -> 'a
+  (** Same as {!printlf} but prints on stderr *)
 
 (** {6 Styled printing} *)
 
-val cprint : Lwt_term.styled_text -> unit Lwt.t
-val ecprint : Lwt_term.styled_text -> unit Lwt.t
-val cprintln : Lwt_term.styled_text -> unit Lwt.t
-val ecprintln : Lwt_term.styled_text -> unit Lwt.t
+val printc : Lwt_term.styled_text -> unit Lwt.t
+val eprintc : Lwt_term.styled_text -> unit Lwt.t
+val printlc : Lwt_term.styled_text -> unit Lwt.t
+val eprintlc : Lwt_term.styled_text -> unit Lwt.t
 
 val textf : ('a, unit, string, Lwt_term.styled_text_instruction) format4 -> 'a
   (** [textf fmt] formats a texts with [fmt] and returns

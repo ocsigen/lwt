@@ -228,21 +228,22 @@ val styled_length : styled_text -> int
       [styled_length st = Text.length (strip_styles st)]
   *)
 
-val cprint : styled_text -> unit Lwt.t
-  (** [cprint st] prints the given styled text on standard output. If
+val printc : styled_text -> unit Lwt.t
+  (** [printc st] prints the given styled text on standard output. If
       stdout is not a tty, then styles are stripped.
 
       The text is encoded to the system encoding before being
       output. *)
 
-val ecprint : styled_text -> unit Lwt.t
-  (** Same as [print] but prints on stderr. *)
+val eprintc : styled_text -> unit Lwt.t
+  (** Same as [printc] but prints on stderr. *)
 
-val cprintln : styled_text -> unit Lwt.t
-  (** [println st] prints [st], then reset styles and print a newline *)
+val printlc : styled_text -> unit Lwt.t
+  (** [printlc st] prints [st], then reset styles and prints a
+      newline *)
 
-val ecprintln : styled_text -> unit Lwt.t
-  (** Same as [println] but prints on stderr *)
+val eprintlc : styled_text -> unit Lwt.t
+  (** Same as [printlc] but prints on stderr *)
 
 (** {6 Rendering} *)
 
