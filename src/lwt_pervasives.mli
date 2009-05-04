@@ -51,6 +51,7 @@ val stderr : Lwt_io.oc
 
 val open_file :
   ?buffer_size : int ->
+  ?encoding : Encoding.t ->
   ?flags : Unix.open_flag list ->
   ?perm : Unix.file_perm ->
   mode : 'a Lwt_io.mode ->
@@ -58,6 +59,7 @@ val open_file :
 
 val with_file :
   ?buffer_size : int ->
+  ?encoding : Encoding.t ->
   ?flags : Unix.open_flag list ->
   ?perm : Unix.file_perm ->
   mode : 'a Lwt_io.mode ->

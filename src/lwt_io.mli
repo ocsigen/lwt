@@ -147,21 +147,20 @@ val set_encoding : 'a channel -> Encoding.t -> unit
 
 val fallback : oc -> (Text.t -> Text.t option) ref
   (** [fallback oc] is a function used for character that can not be
-      encoded in the channel encoding. *)
+      encoded in the channel encoding. It defaults to
+      [Text.to_ascii] *)
 
-val default_fallback : Text.t -> Text.t option
-  (** The default fallback function. *)
-
-val of_fd : ?buffer_size : int -> mode : 'a mode -> Lwt_unix.file_descr -> 'a channel
+val of_fd : ?buffer_size : int -> ?encoding : Encoding.t -> mode : 'a mode -> Lwt_unix.file_descr -> 'a channel
   (** [of_fd ~mode ~fd] creates a channel from a file descriptor *)
 
-val of_unix_fd : ?buffer_size : int -> mode : 'a mode -> Unix.file_descr -> 'a channel
+val of_unix_fd : ?buffer_size : int -> ?encoding : Encoding.t -> mode : 'a mode -> Unix.file_descr -> 'a channel
   (** [of_unix_fd ~mode ~fd] is a short-hand for:
 
       [of_fd (Lwt_unix.of_unix_file_descr fd)] *)
 
 val open_file :
   ?buffer_size : int ->
+  ?encoding : Encoding.t ->
   ?flags : Unix.open_flag list ->
   ?perm : Unix.file_perm ->
   mode : 'a mode ->
@@ -170,6 +169,7 @@ val open_file :
 
 val with_file :
   ?buffer_size : int ->
+  ?encoding : Encoding.t ->
   ?flags : Unix.open_flag list ->
   ?perm : Unix.file_perm ->
   mode : 'a mode ->
@@ -177,10 +177,10 @@ val with_file :
   (** [open_file ?buffer_size ?flags ?perm ~mode filename f] open a file and pass
       the channel to [f] *)
 
-val open_connection : ?buffer_size : int -> Unix.sockaddr -> (ic * oc) Lwt.t
+val open_connection : ?buffer_size : int -> ?encoding : Encoding.t -> Unix.sockaddr -> (ic * oc) Lwt.t
   (** [open_connection ?buffer_size ~mode addr] *)
 
-val with_connection : ?buffer_size : int -> Unix.sockaddr -> (ic * oc -> 'a Lwt.t) -> 'a Lwt.t
+val with_connection : ?buffer_size : int -> ?encoding : Encoding.t -> Unix.sockaddr -> (ic * oc -> 'a Lwt.t) -> 'a Lwt.t
   (** [open_connection ?buffer_size ~mode addr] *)
 
 val close : 'a channel -> unit Lwt.t

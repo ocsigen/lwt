@@ -156,24 +156,6 @@ let cast_oc wrapper =
   else
     invalid_arg "Lwt_io.cast_oc"
 
-(* +---------------------------+
-   | Default fallback function |
-   +---------------------------+ *)
-
-let default_fallback ch =
-  let code = Text.code ch in
-  (* Box drawings: *)
-  if code >= 0x2500 && code <= 0x2570 then
-    let code = code - 0x2500 in
-    if List.mem code [0x00; 0x01; 0x04; 0x05; 0x08; 0x09; 0x4c; 0x4d; 0x50] then
-      Some "-"
-    else if List.mem code [0x02; 0x03; 0x06; 0x07; 0x0a; 0x0b; 0x4e; 0x4f; 0x51] then
-      Some "|"
-    else
-      Some "+"
-  else
-    Some "?"
-
 (* +----------------------------------+
    | Creations, closing, locking, ... |
    +----------------------------------+ *)
@@ -468,7 +450,7 @@ let make ?(auto_flush=true) ?(encoding=Encoding.system) ?buffer_size ?(close=ret
     mode = mode;
     seek = (fun pos cmd -> try seek pos cmd with e -> fail e);
     offset = 0L;
-    fallback = ref default_fallback;
+    fallback = ref (fun txt -> Some(Text.to_ascii txt));
     encoding = encoding;
     coder = match mode with
         (* Justification: we use Obj.magic because we do not have
@@ -483,9 +465,10 @@ let make ?(auto_flush=true) ?(encoding=Encoding.system) ?buffer_size ?(close=ret
   Lwt_gc.finalise_or_exit alias_to_close wrapper;
   wrapper
 
-let of_fd ?buffer_size ~mode fd =
+let of_fd ?buffer_size ?encoding ~mode fd =
   make
     ?buffer_size
+    ?encoding
     ~close:(fun _ -> close_fd fd)
     ~seek:(fun pos cmd -> return (Unix.LargeFile.lseek (Lwt_unix.unix_file_descr fd) pos cmd))
     ~mode
@@ -493,8 +476,8 @@ let of_fd ?buffer_size ~mode fd =
        | Input -> Lwt_unix.read fd
        | Output -> Lwt_unix.write fd)
 
-let of_unix_fd ?buffer_size ~mode fd =
-  of_fd ?buffer_size ~mode (Lwt_unix.of_unix_file_descr fd)
+let of_unix_fd ?buffer_size ?encoding ~mode fd =
+  of_fd ?buffer_size ?encoding ~mode (Lwt_unix.of_unix_file_descr fd)
 
 let encoding ch = ch.channel.encoding
 
@@ -1203,7 +1186,7 @@ let pipe ?buffer_size _ =
   let fd_r, fd_w = Lwt_unix.pipe () in
   (of_fd ?buffer_size ~mode:input fd_r, of_fd ?buffer_size ~mode:output fd_w)
 
-let open_file ?buffer_size ?flags ?perm ~mode filename =
+let open_file ?buffer_size ?encoding ?flags ?perm ~mode filename =
   let flags = match flags, mode with
     | Some l, _ ->
         l
@@ -1219,9 +1202,9 @@ let open_file ?buffer_size ?flags ?perm ~mode filename =
     | None, Output ->
         0o666
   in
-  of_unix_fd ?buffer_size ~mode (Unix.openfile filename flags perm)
+  of_unix_fd ?buffer_size ?encoding ~mode (Unix.openfile filename flags perm)
 
-let with_file ?buffer_size ?flags ?perm ~mode filename f =
+let with_file ?buffer_size ?encoding ?flags ?perm ~mode filename f =
   let ic = open_file ?buffer_size ?flags ?perm ~mode filename in
   try_lwt
     f ic
@@ -1230,7 +1213,7 @@ let with_file ?buffer_size ?flags ?perm ~mode filename f =
 
 let file_length filename = with_file ~mode:input filename length
 
-let open_connection ?buffer_size sockaddr =
+let open_connection ?buffer_size ?encoding sockaddr =
   let fd = Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0 in
   let ref_count = ref 2 in
   let close mode =
@@ -1255,7 +1238,7 @@ let open_connection ?buffer_size sockaddr =
     exn ->
       close_fd fd >> fail exn
 
-let with_connection ?buffer_size sockaddr f =
+let with_connection ?buffer_size ?encoding sockaddr f =
   lwt ic, oc = open_connection sockaddr in
   try_lwt
     f (ic, oc)
