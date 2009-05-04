@@ -1,13 +1,24 @@
 ===== Development version =====
 
   * Adding modules:
+    * {{{Lwt_stream}}}: lwt-aware version of the {{{Stream}}} module
     * {{{Lwt_gc}}} for using {{{finalise}}} without {{{Lwt_unix.run}}}
-    * {{{Lwt_exit_hook}}}: convenient way to deal with at_exit functions
     * {{{Lwt_io}}}: a new implementation of buffered channels with
       more features and better handling of concurrent access
     * {{{Lwt_process}}}: helpers to spawn processes and communicate with them
-  * Adding a syntax extension {{{pa_lwt}}} to handle anonymous bind
-    and adding sugars for catching errors (ticker #6)
+    * {{{Lwt_main}}} for abstracting the main loop and allow replacement by
+      a custom main loop
+    * {{{Lwt_glib}}} for integration into the glib main event loop
+    * {{{Lwt_term}}} for interaction with the terminal
+    * {{{Lwt_read_line}}} for interactive user input
+    * {{{Lwt_pervasives}}} containing aliases and helper
+  * Adding a syntax extension {{{pa_lwt}}}:
+    * handles anonymous bind {{{a >> b}}}
+    * adds sugars for catching errors (ticker #6)
+    * adds a syntatic sugar for a parallel let-binding construction
+  * Top-level integration:
+    * threads can runs while reading user input
+    * line editing support
   * Adding C stubs to reimplement {{{Unix.read}}} and {{{Unix.write}}}
     with assumption of non-blocking behaviour
   * Adding more functions/helpers in {{{Lwt}}}
