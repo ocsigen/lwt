@@ -25,33 +25,72 @@
 type command = string * string array
     (** A command is a program name with a list of arguments *)
 
-val sh : string -> command
+val shell : string -> command
   (** A command executed with ["/bin/sh"] *)
 
-(** {6 Simple commands} *)
+(** {6 High-level functions} *)
 
-(** These functions are similar to the ones of the python [commands]
-    module: *)
+val exec : ?env : string array -> command -> Unix.process_status Lwt.t
+  (** [exec command] execute [command] and returns its exit status. *)
 
-val get_output : command -> string Lwt.t
-  (** [get_output command] executes [command] and returns its outputs *)
+(** {8 Receiving} *)
 
-val get_status : command -> Unix.process_status Lwt.t
-  (** [get_status command] executes [command] and returns its exit
-      status *)
+val recv_bytes : ?env : string array -> command -> string Lwt.t
+  (** [recv_bytes ?env command] runs [command] and returns its
+      output *)
 
-val get_status_output : command -> (Unix.process_status * string) Lwt.t
-  (** [get_status_output command] executes [command] and returns its
-      exits status and outputs *)
+val recv_text : ?env : string array -> command -> Text.t Lwt.t
+  (** [recv_text ?env command] runs [command] and returns its
+      output *)
 
-val map : command -> Text.t -> Text.t Lwt.t
-  (** [map command txt] launch [command], feed it with [txt], and
-      returns its outputs. *)
+val recv_line : ?env : string array -> command -> Text.t Lwt.t
+  (** [recv_line ?env command] runs [command] and returns its first
+      output line *)
 
-(** {6 Piped-commands} *)
+val recv_lines : ?env : string array -> command -> Text.t Lwt_stream.t
+  (** [recv_lines ?env command] runs [command] and returns its output
+      as a stream of lines *)
 
-(** Common processes operations *)
-class type process_common = object
+(** {8 Sending} *)
+
+val send_bytes : ?env : string array -> command -> string -> Unix.process_status Lwt.t
+  (** [send_bytes ?env command bytes] runs [command] and send it
+      [bytes] *)
+
+val send_text : ?env : string array -> command -> Text.t -> Unix.process_status Lwt.t
+  (** [send_text ?env command text] runs [command] and send it
+      [text] *)
+
+val send_line : ?env : string array -> command -> Text.t -> Unix.process_status Lwt.t
+  (** [send_line ?env command line] runs [command] and send it
+      [line] *)
+
+val send_lines : ?env : string array -> ?sep : Text.t -> command -> Text.t Lwt_stream.t -> Unix.process_status Lwt.t
+  (** [send_lines ?env command lines] runs [command] and send it all
+      lines of [lines] *)
+
+(** {8 Mapping} *)
+
+val map_bytes : ?env : string array -> command -> string -> string Lwt.t
+  (** [map_bytes ?env command bytes] runs [command], send it [bytes]
+      and returns its output *)
+
+val map_text : ?env : string array -> command -> Text.t -> Text.t Lwt.t
+  (** [map_text ?env command txt] runs [command], send it [txt] and
+      reads its output. *)
+
+val map_line : ?env : string array -> command -> Text.t -> Text.t Lwt.t
+  (** Same as [map_text] but use {!Lwt_io.write_line} and
+      {!Lwt_io.read_line} *)
+
+val map_lines : ?env : string array -> ?sep : Text.t -> command -> Text.t Lwt_stream.t -> Text.t Lwt_stream.t
+  (** [map_lines ?env command ?sep lines] runs [command] send it all
+      lines of [lines], and returns its outputs as a stream of
+      lines *)
+
+(** {6 Spawning processes} *)
+
+class process_none : ?env : string array -> command -> object
   method pid : int
     (** Pid of the sub-process *)
 
@@ -60,8 +99,11 @@ class type process_common = object
         channels used to communicate with the process *)
 end
 
+val process_none : ?env : string array -> command -> process_none
+val with_process_none : ?env : string array -> command -> (process_none -> 'a Lwt.t) -> 'a Lwt.t
+
 class process_in : ?env : string array -> command -> object
-  inherit process_common
+  inherit process_none
 
   method stdout : Lwt_io.ic
     (** The standard output of the process *)
@@ -71,7 +113,7 @@ val process_in : ?env : string array -> command -> process_in
 val with_process_in : ?env : string array -> command -> (process_in -> 'a Lwt.t) -> 'a Lwt.t
 
 class process_out : ?env : string array -> command -> object
-  inherit process_common
+  inherit process_none
 
   method stdin : Lwt_io.oc
     (** The standard input of the process *)
@@ -81,7 +123,7 @@ val process_out : ?env : string array -> command -> process_out
 val with_process_out : ?env : string array -> command -> (process_out -> 'a Lwt.t) -> 'a Lwt.t
 
 class process : ?env : string array -> command -> object
-  inherit process_common
+  inherit process_none
 
   method stdin : Lwt_io.oc
   method stdout : Lwt_io.ic
@@ -91,7 +133,7 @@ val process : ?env : string array -> command -> process
 val with_process : ?env : string array -> command -> (process -> 'a Lwt.t) -> 'a Lwt.t
 
 class process_full : ?env : string array -> command -> object
-  inherit process_common
+  inherit process_none
 
   method stdin : Lwt_io.oc
   method stdout : Lwt_io.ic

@@ -1155,6 +1155,11 @@ module BE = Make_number_io(Byte_order.BE)
    | Other |
    +-------+ *)
 
+let read_lines ic = Lwt_stream.from (fun _ -> peek_line ic)
+
+let write_lines ?(sep="\n") oc lines =
+  Lwt_stream.iter_s (fun line -> atomic (fun oc -> write_text oc line >> write_text oc sep) oc) lines
+
 let zero =
   make
     ~mode:input

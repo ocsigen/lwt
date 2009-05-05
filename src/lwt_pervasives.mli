@@ -72,10 +72,12 @@ val peek_char : Lwt_io.ic -> Text.t option Lwt.t
 val read_text : Lwt_io.ic -> int -> Text.t Lwt.t
 val read_line : Lwt_io.ic -> Text.t Lwt.t
 val peek_line : Lwt_io.ic -> Text.t option Lwt.t
+val read_lines : Lwt_io.ic -> Text.t Lwt_stream.t
 
 val write_char : Lwt_io.oc -> Text.t -> unit Lwt.t
 val write_text : Lwt_io.oc -> Text.t -> unit Lwt.t
 val write_line : Lwt_io.oc -> Text.t -> unit Lwt.t
+val write_lines : ?sep : Text.t -> Lwt_io.oc -> Text.t Lwt_stream.t -> unit Lwt.t
 
 (** {6 Printing facilities} *)
 
@@ -145,17 +147,6 @@ val default : Lwt_term.color
 
 (** {6 Stream utilities} *)
 
-val lines_of_channel : ?auto_close : bool -> Lwt_io.ic -> Text.t Lwt_stream.t
-  (** [lines_of_channel ?auto_close ch] returns a streams holding all
-      lines of [ch].
-
-      @param auto_close tell whether automatically closing the channel
-      on end-of-file. It defaults to [true] *)
-
-val lines_to_channel : ?sep : Text.t -> Lwt_io.oc -> Text.t Lwt_stream.t -> unit Lwt.t
-  (** [lines_to_channel ?sep ch lines] writes all lines of [lines] to
-      [ch], separated by [sep], which defaults to ["\n"] *)
-
 val lines_of_file : string -> Text.t Lwt_stream.t
   (** [lines_of_file filename] open [filename] and returns the stream
       of all its lines *)
@@ -163,14 +154,6 @@ val lines_of_file : string -> Text.t Lwt_stream.t
 val lines_to_file : ?sep : Text.t -> string -> Text.t Lwt_stream.t -> unit Lwt.t
   (** [lines_to_file ?sep filename lines] writes all lines of [lines]
       to [filename] *)
-
-val lines_of_process : Lwt_process.command -> Text.t Lwt_stream.t
-  (** [lines_of_process cmd] run [cmd] and returns its output as a
-      stream of lines *)
-
-val lines_to_process : ?sep : Text.t -> Lwt_process.command -> Text.t Lwt_stream.t -> unit Lwt.t
-  (** [lines_to_process cmd lines] run [cmd] and send it all lines of
-      [lines] *)
 
 (** {6 Misc} *)
 

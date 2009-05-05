@@ -50,9 +50,11 @@ let peek_char = Lwt_io.peek_char
 let read_text = Lwt_io.read_text
 let read_line = Lwt_io.read_line
 let peek_line = Lwt_io.peek_line
+let read_lines = Lwt_io.read_lines
 let write_char = Lwt_io.write_char
 let write_text = Lwt_io.write_text
 let write_line = Lwt_io.write_line
+let write_lines = Lwt_io.write_lines
 let close = Lwt_io.close
 
 (* +----------+
@@ -114,33 +116,15 @@ let default = Lwt_term.default
    | Stream utilities |
    +------------------+ *)
 
-let lines_of_channel ?(auto_close=true) ic =
-  Lwt_stream.from (fun _ -> peek_line ic >>= function
+let lines_of_file filename =
+  let oc = open_file ~mode:input filename in
+  Lwt_stream.from (fun _ -> peek_line oc >>= function
                      | None ->
-                         if auto_close then
-                           Lwt_io.close ic >> return None
-                         else
-                           return None
-                     | x ->
-                         return x)
+                         close oc >> return None
+                     | some ->
+                         return some)
 
-let lines_to_channel ?(sep="\n") oc lines =
-  Lwt_stream.iter_s (fun line -> Lwt_io.atomic (fun oc -> write_text oc line >> write_text oc sep) oc) lines
-
-let lines_of_file filename = lines_of_channel (open_file ~mode:input filename)
-
-let lines_to_file ?sep filename lines = with_file ~mode:output filename (fun oc -> lines_to_channel ?sep oc lines)
-
-let lines_to_process ?sep cmd lines =
-  Lwt_process.with_process_out cmd (fun process -> lines_to_channel ?sep process#stdin lines)
-
-let lines_of_process cmd =
-  let pr = Lwt_process.process_in cmd in
-  Lwt_stream.from (fun _ -> peek_line pr#stdout >>= function
-                     | None ->
-                         pr#close >> return None
-                     | x ->
-                         return x)
+let lines_to_file ?sep filename lines = with_file ~mode:output filename (fun oc -> write_lines ?sep oc lines)
 
 (* +------+
    | Misc |

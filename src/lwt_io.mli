@@ -244,6 +244,9 @@ val peek_line : ic -> Text.t option Lwt.t
   (** Same as [read_line] but do not raise [End_of_file] on
       end of input. *)
 
+val read_lines : ic -> Text.t Lwt_stream.t
+  (** Returns a stream of all the lines of the given input channel *)
+
 (** {6 Text output} *)
 
 val write_char : oc -> Text.t -> unit Lwt.t
@@ -255,6 +258,10 @@ val write_text : oc -> Text.t -> unit Lwt.t
 val write_line : oc -> Text.t -> unit Lwt.t
   (** [write_line oc txt] outputs [txt] on [oc] followed by a
       newline. *)
+
+val write_lines : ?sep : Text.t -> oc -> Text.t Lwt_stream.t -> unit Lwt.t
+  (** [write_lines ?sep oc lines] writes all lines of [lines] to
+      [oc], separated by [sep] which defaults to ["\n"] *)
 
 (** {6 Binary input} *)
 
