@@ -44,6 +44,10 @@ val get_status_output : command -> (Unix.process_status * string) Lwt.t
   (** [get_status_output command] executes [command] and returns its
       exits status and outputs *)
 
+val map : command -> Text.t -> Text.t Lwt.t
+  (** [map command txt] launch [command], feed it with [txt], and
+      returns its outputs. *)
+
 (** {6 Piped-commands} *)
 
 (** Common processes operations *)

@@ -162,3 +162,11 @@ let get_status_output cmd =
   return (status, Buffer.contents buf)
 
 let get_output cmd = get_status_output cmd >|= snd
+
+let map cmd txt =
+  let pr = process cmd in
+  Lwt_io.write_line pr#stdin txt >>
+  Lwt_io.close pr#stdin >>
+  lwt txt = Lwt_io.read_line pr#stdout in
+  pr#close >>
+  return txt

@@ -103,10 +103,13 @@ val read_password :
 
 val read_keyword :
   ?history : history ->
+  ?case_sensitive : bool ->
   prompt -> (Text.t * 'value) list -> 'value Lwt.t
   (** [read_keyword ?history prompt keywords] reads one word which is
       a member of [words]. And returns which keyword the user
-      choosed. *)
+      choosed.
+
+      [case_sensitive] default to [false]. *)
 
 val read_yes_no : ?history : history -> prompt -> bool Lwt.t
   (** [read_yes_no ?history prompt] is the same as:
@@ -115,3 +118,120 @@ val read_yes_no : ?history : history -> prompt -> bool Lwt.t
         read_keyword ?history prompt [("yes", true); ("y", true); ("no", false); ("n", false)]
       ]}
   *)
+
+(** {6 Low-level interaction} *)
+
+(** This part allow you to implements your own read-line function, or
+    just to use the readline engine in another context (message box,
+    ...). *)
+
+(** Readline commands *)
+module Command : sig
+
+  (** Type of all read-line function: *)
+  type t =
+    | Nop
+        (** Command which do nothing. Unknown keys maps to this commands. *)
+    | Char of Text.t
+        (** Any printable character. *)
+    | Backward_delete_char
+    | Forward_delete_char
+    | Beginning_of_line
+    | End_of_line
+    | Complete
+    | Kill_line
+    | Accept_line
+    | Backward_delete_word
+    | Forward_delete_word
+    | History_next
+    | History_previous
+    | Break
+    | Clear_screen
+    | Insert
+    | Refresh
+    | Backward_char
+    | Forward_char
+    | Set_mark
+    | Yank
+    | Kill_ring_save
+
+  val to_string : t -> string
+    (** [to_string cmd] returns a string representation of a command *)
+
+  val of_key : Lwt_term.key -> t
+    (** [of_key key] returns the command to which a key is mapped. *)
+end
+
+(** Engine *)
+module Engine : sig
+
+  (** Note: this part know nothing about rendering or completion. *)
+
+  (** State when the user is doing selection: *)
+  type selection_state = {
+    sel_text : Text.t;
+    (** The whole input text on which the selection is working *)
+    sel_mark : Text.pointer;
+    (** Pointer to the mark *)
+    sel_cursor : Text.pointer;
+    (** Pointer to the text position *)
+  }
+
+  (** The engine mode: *)
+  type mode =
+    | Edition of edition_state
+        (** The user is typing some text *)
+    | Selection of selection_state
+        (** The user is selecting some text *)
+
+  (** An engine state: *)
+  type state = {
+    mode : mode;
+    history : history * history;
+    (** Cursor to the history position. *)
+  }
+
+  val init : history -> state
+    (** [init history] return a initial state using the given
+        history *)
+
+  val reset : state -> state
+    (** [reset state] reset the given state, if the user was doing a
+        selection, it is canceled *)
+
+  val update : state -> ?clipboard : clipboard -> Command.t -> state
+    (** [update state clipboard command] update an engine state by
+        processing the given command. It returns the new state, and
+        may have the side effect of changing the clipboard contents.
+
+        [clipboard] defaults to the global clipboard.
+    *)
+
+  val edition_state : state -> edition_state
+    (** Returns the edition state of a state, whatever its mode is. *)
+
+  val all_input : state -> Text.t
+    (** Returns the current complete user input. *)
+end
+
+(** Rendering to the terminal *)
+module Terminal : sig
+
+  type state
+    (** State of rendering *)
+
+  val init : state
+    (** Initial state *)
+
+  val draw : ?map_text : (Text.t -> Text.t) -> state -> Engine.state -> prompt -> state Lwt.t
+    (** [draw ?map_text state engine_state prompt] erase previous
+        printed text, draw the new one, and return a new state for
+        future redrawing.
+
+        [map_text] is a function used to map user input before
+        printing it, for example to hide passwords. *)
+
+  val last_draw : ?map_text : (Text.t -> Text.t) -> state -> Engine.state -> prompt -> unit Lwt.t
+    (** Draw for the last time, i.e. the cursor is left after the text
+        and not at current position. *)
+end
