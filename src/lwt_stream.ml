@@ -385,6 +385,41 @@ let split s = (map fst (clone s), map snd (clone s))
 let partition f s = (filter f s, filter (fun x -> not (f x)) (clone s))
 let partition_s f s = (filter_s f s, filter_s (fun x -> f x >|= not) (clone s))
 
+let append s1 s2 =
+  let rec next1 _ =
+    Lazy.force !s1 >>= function
+      | Cons(x, l) ->
+          s1 := l;
+          return (Cons(x, lazy_from_fun next1))
+      | Nil ->
+          next2 ()
+  and next2 _ =
+    Lazy.force !s2 >>= function
+      | Cons(x, l) ->
+          s2 := l;
+          return (Cons(x, lazy_from_fun next2))
+      | Nil ->
+          return Nil
+  in
+  make next1
+
+let concat s_top =
+  let rec next _ =
+    Lazy.force !s_top >>= function
+      | Cons(x_top, l_top) ->
+          Lazy.force !x_top >>= begin function
+            | Cons(x, l) ->
+                x_top := l;
+                return (Cons(x, lazy_from_fun next))
+            | Nil ->
+                s_top := l_top;
+                next ()
+          end
+      | Nil ->
+          return Nil
+  in
+  make next
+
 let choose streams =
   let source s = (s, Lazy.force !s >|= fun n -> (s, n)) in
   let rec next = function

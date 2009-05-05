@@ -196,8 +196,15 @@ val find_map_s : ('a -> 'b option Lwt.t) -> 'a t -> 'b option Lwt.t
   (** [find f s] find and map at the same time. *)
 
 val combine : 'a t -> 'b t -> ('a * 'b) t
-  (** [combine e1 e2] combine two streams. The stream will ends when
+  (** [combine s1 s2] combine two streams. The stream will ends when
       the first stream ends. *)
+
+val append : 'a t -> 'a t -> 'a t
+  (** [append s1 s2] returns a stream which returns all elements of
+      [s1], then all elements of [s2] *)
+
+val concat : 'a t t -> 'a t
+  (** [concat st] returns the concatenation of all streams of [st]. *)
 
 (** {6 Stream as lazy-list} *)
 

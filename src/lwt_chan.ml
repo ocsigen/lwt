@@ -22,6 +22,7 @@
  * 02111-1307, USA.
  *)
 
+open Lwt
 open Lwt_io
 
 type in_channel = ic
@@ -31,7 +32,26 @@ let encoding = "ISO-8859-1"
 
 let in_channel_of_descr fd = of_fd ~mode:Lwt_io.input fd
 let make_in_channel ?close read = make ~mode:Lwt_io.input ~encoding ?close read
-let input_line = read_line
+
+let input_line ic =
+  let rec loop buf =
+    get_byte_opt ic >>= function
+      | None | Some '\n' ->
+          return (Buffer.contents buf)
+      | Some byte ->
+          Buffer.add_char buf byte;
+          loop buf
+  in
+  get_byte_opt ic >>= function
+    | Some '\n' ->
+        return ""
+    | Some byte ->
+        let buf = Buffer.create 128 in
+        Buffer.add_char buf byte;
+        loop buf
+    | None ->
+        fail End_of_file
+
 let input_value = get_value
 let input = get
 let really_input = get_exactly
@@ -52,7 +72,7 @@ let out_channel_of_descr fd =
 let make_out_channel ?close write = make ~auto_flush:false ~mode:Lwt_io.output ~encoding ?close write
 let output = put_exactly
 let flush = force_flush
-let output_string = put_bytes
+let output_string = put_byte_array
 let output_value oc v = put_value oc v
 let output_char = put_byte
 let output_binary_int = LE.put_int

@@ -178,118 +178,120 @@ let get_output cmd = get_status_output cmd >|= snd
 
 let exec ?env cmd = (process_none ?env cmd)#close
 
-let read_all_bytes ic =
-  let buf = Buffer.create 512 in
-  let rec loop _ =
-    lwt b = Lwt_io.get_byte ic in
-    Buffer.add_char buf b;
-    loop ()
-  in
-  try
-    loop ()
-  with
-    | End_of_file ->
-        return (Buffer.contents buf)
+(* Make a stream from the output of a command: *)
+let make_stream f pr =
+  let ic = pr#stdout in
+  Lwt_stream.from (fun _ ->
+                     try_lwt
+                       f ic >|= fun x -> Some x
+                     with
+                       | End_of_file ->
+                           Lwt_io.close ic >> return None)
 
-let read_all_text ic =
-  let buf = Buffer.create 512 in
-  let rec loop _ =
-    lwt ch = Lwt_io.read_char ic in
-    Buffer.add_string buf ch;
-    loop ()
-  in
-  try
-    loop ()
-  with
-    | End_of_file ->
-        return (Buffer.contents buf)
+let recv_bytes pr = make_stream Lwt_io.get_byte pr
+let recv_chars pr = make_stream Lwt_io.read_char pr
+let recv_lines pr = make_stream Lwt_io.read_line pr
 
-let recv_bytes ?env cmd =
-  let pr = process_in ?env cmd in
+let recv_byte_array pr =
   try_lwt
-    read_all_bytes pr#stdout
+    Lwt_io.get_byte_array pr#stdout
   finally
-    pr#close >> return ()
+    Lwt_io.close pr#stdout >> return ()
 
-let recv_text ?env cmd =
-  let pr = process_in ?env cmd in
-  try_lwt
-    read_all_text pr#stdout
-  finally
-    pr#close >> return ()
-
-let recv_line ?env cmd =
-  let pr = process_in ?env cmd in
+let recv_line pr =
   try_lwt
     Lwt_io.read_line pr#stdout
   finally
-    pr#close >> return ()
+    Lwt_io.close pr#stdout >> return ()
 
-let recv_lines ?env cmd =
-  let pr = process_in ?env cmd in
-  Lwt_stream.from (fun _ -> Lwt_io.peek_line pr#stdout >>= function
-                     | None ->
-                         pr#close >> return None
-                     | some ->
-                         return some)
-
-let send_bytes ?env cmd bytes =
-  let pr = process_out ?env cmd in
+let recv_text pr =
   try_lwt
-    Lwt_io.put_bytes pr#stdin bytes >> pr#close
+    Lwt_io.read pr#stdout
   finally
-    pr#close >> return ()
+    Lwt_io.close pr#stdout >> return ()
 
-let send_text ?env cmd text =
-  let pr = process_out ?env cmd in
+(* Receiving *)
+
+let pget_byte_array ?env cmd =
+  recv_byte_array (process_in ?env cmd)
+
+let pget_bytes ?env cmd =
+  recv_bytes (process_in ?env cmd)
+
+let pread ?env cmd =
+  recv_text (process_in ?env cmd)
+
+let pread_chars ?env cmd =
+  recv_chars (process_in ?env cmd)
+
+let pread_line ?env cmd =
+  recv_line (process_in ?env cmd)
+
+let pread_lines ?env cmd =
+  recv_lines (process_in ?env cmd)
+
+(* Sending *)
+
+let send f pr data =
   try_lwt
-    Lwt_io.write_text pr#stdin text >> pr#close
+    f pr#stdin data >> pr#close
   finally
-    pr#close >> return ()
+    Lwt_io.close pr#stdin >> return ()
 
-let send_line ?env cmd line =
-  let pr = process_out ?env cmd in
-  try_lwt
-    Lwt_io.write_line pr#stdin line >> pr#close
-  finally
-    pr#close >> return ()
+let pput_byte_array ?env cmd byte_array =
+  send Lwt_io.put_byte_array (process_out ?env cmd) byte_array
 
-let send_lines ?env ?sep cmd lines =
-  let pr = process_out ?env cmd in
-  try_lwt
-    Lwt_io.write_lines ?sep pr#stdin lines >> pr#close
-  finally
-    pr#close >> return ()
+let pput_bytes ?env cmd byte_stream =
+  send Lwt_io.put_bytes (process_out ?env cmd) byte_stream
 
-let map_bytes ?env cmd bytes =
-  let pr = process ?env cmd in
-  try_lwt
-    Lwt_io.put_bytes pr#stdin bytes >> Lwt_io.close pr#stdin >> read_all_bytes pr#stdout
-  finally
-    pr#close >> return ()
+let pwrite ?env cmd text =
+  send Lwt_io.write (process_out ?env cmd) text
 
-let map_text ?env cmd text =
-  let pr = process ?env cmd in
-  try_lwt
-    Lwt_io.write_text pr#stdin text >> Lwt_io.close pr#stdin >> read_all_text pr#stdout
-  finally
-    pr#close >> return ()
+let pwrite_chars ?env cmd chars =
+  send Lwt_io.write_chars (process_out ?env cmd) chars
 
-let map_line ?env cmd line =
-  let pr = process ?env cmd in
-  try_lwt
-    Lwt_io.write_line pr#stdin line >> Lwt_io.close pr#stdin >> Lwt_io.read_line pr#stdout
-  finally
-    pr#close >> return ()
+let pwrite_line ?env cmd line =
+  send Lwt_io.write_line (process_out ?env cmd) line
 
-let map_lines ?env ?sep cmd lines =
-  let pr = process ?env cmd in
+let pwrite_lines ?env ?sep cmd lines =
+  send (Lwt_io.write_lines ?sep) (process_out ?env cmd) lines
+
+(* Mapping *)
+
+(* Dump something to a command: *)
+let dump f pr data =
+  let oc = pr#stdin in
   ignore_result (try_lwt
-                   Lwt_io.write_lines ?sep pr#stdin lines
+                   f oc data
                  finally
-                   pr#close >> return ());
-  Lwt_stream.from (fun _ -> Lwt_io.peek_line pr#stdout >>= function
-                     | None ->
-                         pr#close >> return None
-                     | some ->
-                         return some)
+                   Lwt_io.close oc)
+
+let pmap_byte_array ?env cmd byte_array =
+  let pr = process ?env cmd in
+  dump Lwt_io.put_byte_array pr byte_array;
+  recv_byte_array pr
+
+let pmap_bytes ?env cmd byte_stream =
+  let pr = process ?env cmd in
+  dump Lwt_io.put_bytes pr byte_stream;
+  recv_bytes pr
+
+let pmap ?env cmd text =
+  let pr = process ?env cmd in
+  dump Lwt_io.write pr text;
+  recv_text pr
+
+let pmap_chars ?env cmd chars =
+  let pr = process ?env cmd in
+  dump Lwt_io.write_chars pr chars;
+  recv_chars pr
+
+let pmap_line ?env cmd line =
+  let pr = process ?env cmd in
+  dump Lwt_io.write_line pr line;
+  recv_line pr
+
+let pmap_lines ?env ?sep cmd lines =
+  let pr = process ?env cmd in
+  dump (Lwt_io.write_lines ?sep) pr lines;
+  recv_lines pr

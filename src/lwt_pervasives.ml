@@ -46,13 +46,15 @@ let stderr = Lwt_io.stderr
 let open_file = Lwt_io.open_file
 let with_file = Lwt_io.with_file
 let read_char = Lwt_io.read_char
-let peek_char = Lwt_io.peek_char
-let read_text = Lwt_io.read_text
+let read_char_opt = Lwt_io.read_char_opt
+let read_chars = Lwt_io.read_chars
+let read = Lwt_io.read
 let read_line = Lwt_io.read_line
-let peek_line = Lwt_io.peek_line
+let read_line_opt = Lwt_io.read_line_opt
 let read_lines = Lwt_io.read_lines
 let write_char = Lwt_io.write_char
-let write_text = Lwt_io.write_text
+let write_chars = Lwt_io.write_chars
+let write = Lwt_io.write
 let write_line = Lwt_io.write_line
 let write_lines = Lwt_io.write_lines
 let close = Lwt_io.close
@@ -61,15 +63,15 @@ let close = Lwt_io.close
    | Printing |
    +----------+ *)
 
-let print = write_text stdout
-let eprint = write_text stderr
+let print txt = write stdout txt
+let eprint txt = write stderr txt
 
 let fprintl oc is_atty txt =
   if Lazy.force is_atty then
     Lwt_io.atomic
       (fun oc ->
-         write_text oc txt
-         >> write_text oc (if Lwt_term.raw_mode () then "\r\n" else "\n")) oc
+         write oc txt
+         >> write oc (if Lwt_term.raw_mode () then "\r\n" else "\n")) oc
   else
     write_line oc txt
 
@@ -112,22 +114,41 @@ let cyan = Lwt_term.cyan
 let white = Lwt_term.white
 let default = Lwt_term.default
 
-(* +------------------+
-   | Stream utilities |
-   +------------------+ *)
+(* +----------------+
+   | File utilities |
+   +----------------+ *)
+
+type file_name = Text.t
+
+let make_stream f ic =
+  Lwt_stream.from (fun _ ->
+                     try_lwt
+                       f ic >|= fun x -> Some x
+                     with
+                       | End_of_file ->
+                           close ic >> return None)
 
 let lines_of_file filename =
-  let oc = open_file ~mode:input filename in
-  Lwt_stream.from (fun _ -> peek_line oc >>= function
-                     | None ->
-                         close oc >> return None
-                     | some ->
-                         return some)
+  make_stream Lwt_io.read_line (open_file ~mode:input filename)
 
-let lines_to_file ?sep filename lines = with_file ~mode:output filename (fun oc -> write_lines ?sep oc lines)
+let lines_to_file ?sep filename lines =
+  with_file ~mode:output filename (fun oc -> Lwt_io.write_lines ?sep oc lines)
+
+let chars_of_file filename =
+  make_stream Lwt_io.read_char (open_file ~mode:input filename)
+
+let chars_to_file filename chars =
+  with_file ~mode:output filename (fun oc -> Lwt_io.write_chars oc chars)
+
+let bytes_of_file filename =
+  make_stream Lwt_io.get_byte (open_file ~mode:input filename)
+
+let bytes_to_file filename bytes =
+  with_file ~mode:output filename (fun oc -> Lwt_io.put_bytes oc bytes)
 
 (* +------+
    | Misc |
    +------+ *)
 
 let sleep = Lwt_unix.sleep
+let yield = Lwt_unix.yield

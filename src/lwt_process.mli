@@ -22,6 +22,22 @@
 
 (** Process management *)
 
+(** This modules allow you to spawn processes and communicate with them.
+
+    It follows the same naming conventions as the ones of {!Lwt_io},
+    plus:
+
+    - functions for spawning a processes and reading its output are prefixed with {b pread} or {b pget}
+    - functions for spawning a processes and writing to its intput are prefixed with {b pwrite} or {b pput}
+    - functions for spawning a processes, writing to its input and reading its output start with {b pmap}
+
+    For example if you want to compress a byte-stream using [gzip]:
+
+    {[
+      let compress bytes = Lwt_process.pmap_bytes ("gzip", [|"gzip"; "-c"|]) bytes
+    ]}
+*)
+
 type command = string * string array
     (** A command is a program name with a list of arguments *)
 
@@ -35,58 +51,30 @@ val exec : ?env : string array -> command -> Unix.process_status Lwt.t
 
 (** {8 Receiving} *)
 
-val recv_bytes : ?env : string array -> command -> string Lwt.t
-  (** [recv_bytes ?env command] runs [command] and returns its
-      output *)
-
-val recv_text : ?env : string array -> command -> Text.t Lwt.t
-  (** [recv_text ?env command] runs [command] and returns its
-      output *)
-
-val recv_line : ?env : string array -> command -> Text.t Lwt.t
-  (** [recv_line ?env command] runs [command] and returns its first
-      output line *)
-
-val recv_lines : ?env : string array -> command -> Text.t Lwt_stream.t
-  (** [recv_lines ?env command] runs [command] and returns its output
-      as a stream of lines *)
+val pget_byte_array : ?env : string array -> command -> string Lwt.t
+val pget_bytes : ?env : string array -> command -> char Lwt_stream.t
+val pread : ?env : string array -> command -> Text.t Lwt.t
+val pread_chars : ?env : string array -> command -> Text.t Lwt_stream.t
+val pread_line : ?env : string array -> command -> Text.t Lwt.t
+val pread_lines : ?env : string array -> command -> Text.t Lwt_stream.t
 
 (** {8 Sending} *)
 
-val send_bytes : ?env : string array -> command -> string -> Unix.process_status Lwt.t
-  (** [send_bytes ?env command bytes] runs [command] and send it
-      [bytes] *)
-
-val send_text : ?env : string array -> command -> Text.t -> Unix.process_status Lwt.t
-  (** [send_text ?env command text] runs [command] and send it
-      [text] *)
-
-val send_line : ?env : string array -> command -> Text.t -> Unix.process_status Lwt.t
-  (** [send_line ?env command line] runs [command] and send it
-      [line] *)
-
-val send_lines : ?env : string array -> ?sep : Text.t -> command -> Text.t Lwt_stream.t -> Unix.process_status Lwt.t
-  (** [send_lines ?env command lines] runs [command] and send it all
-      lines of [lines] *)
+val pput_byte_array : ?env : string array -> command -> string -> Unix.process_status Lwt.t
+val pput_bytes : ?env : string array -> command -> char Lwt_stream.t -> Unix.process_status Lwt.t
+val pwrite : ?env : string array -> command -> Text.t -> Unix.process_status Lwt.t
+val pwrite_chars : ?env : string array -> command -> Text.t Lwt_stream.t -> Unix.process_status Lwt.t
+val pwrite_line : ?env : string array -> command -> Text.t -> Unix.process_status Lwt.t
+val pwrite_lines : ?env : string array -> ?sep : Text.t -> command -> Text.t Lwt_stream.t -> Unix.process_status Lwt.t
 
 (** {8 Mapping} *)
 
-val map_bytes : ?env : string array -> command -> string -> string Lwt.t
-  (** [map_bytes ?env command bytes] runs [command], send it [bytes]
-      and returns its output *)
-
-val map_text : ?env : string array -> command -> Text.t -> Text.t Lwt.t
-  (** [map_text ?env command txt] runs [command], send it [txt] and
-      reads its output. *)
-
-val map_line : ?env : string array -> command -> Text.t -> Text.t Lwt.t
-  (** Same as [map_text] but use {!Lwt_io.write_line} and
-      {!Lwt_io.read_line} *)
-
-val map_lines : ?env : string array -> ?sep : Text.t -> command -> Text.t Lwt_stream.t -> Text.t Lwt_stream.t
-  (** [map_lines ?env command ?sep lines] runs [command] send it all
-      lines of [lines], and returns its outputs as a stream of
-      lines *)
+val pmap_byte_array : ?env : string array -> command -> string -> string Lwt.t
+val pmap_bytes : ?env : string array -> command -> char Lwt_stream.t -> char Lwt_stream.t
+val pmap : ?env : string array -> command -> Text.t -> Text.t Lwt.t
+val pmap_chars : ?env : string array -> command -> Text.t Lwt_stream.t -> Text.t Lwt_stream.t
+val pmap_line : ?env : string array -> command -> Text.t -> Text.t Lwt.t
+val pmap_lines : ?env : string array -> ?sep : Text.t -> command -> Text.t Lwt_stream.t -> Text.t Lwt_stream.t
 
 (** {6 Spawning processes} *)
 

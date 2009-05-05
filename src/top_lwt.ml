@@ -110,7 +110,7 @@ let read_input_non_interactive prompt buffer len =
     if i = len then
       return (i, false)
     else
-      Lwt_io.peek_byte stdin >>= function
+      Lwt_io.get_byte_opt stdin >>= function
         | Some c ->
             buffer.[i] <- c;
             if c = '\n' then
@@ -120,7 +120,7 @@ let read_input_non_interactive prompt buffer len =
         | None ->
             return (i, true)
   in
-  Lwt_main.run (write_text stdout prompt >> loop 0)
+  Lwt_main.run (write stdout prompt >> loop 0)
 
 let _ =
   (* If input is a tty, use interactive read-line and display and

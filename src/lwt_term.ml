@@ -56,14 +56,14 @@ let cursor_visible = ref true
 
 let show_cursor _ =
   cursor_visible := true;
-  write_text stdout "\x1B[?25h"
+  write stdout "\x1B[?25h"
 
 let hide_cursor _ =
   cursor_visible := false;
-  write_text stdout "\x1B[?25h"
+  write stdout "\x1B[?25h"
 
 let clear_screen _ =
-  write_text stdout "\027[2J\027[H"
+  write stdout "\027[2J\027[H"
 
 (* Restore terminal mode on exit: *)
 let cleanup () =
@@ -377,9 +377,7 @@ let decode_key ch =
             Not_found -> Key ch
         end
 
-let standard_input = Lwt_stream.from (fun _ -> Lwt_io.read_text Lwt_io.stdin 1 >|= function
-                                        | "" -> None
-                                        | ch -> Some ch)
+let standard_input = Lwt_io.read_chars Lwt_io.stdin
 
 let read_key () =
   with_raw_mode (fun _ -> parse_key_raw standard_input >|= decode_key)
@@ -422,16 +420,16 @@ module Codes = struct
 end
 
 let set_color num (r, g, b) =
-  write_text stdout (Printf.sprintf "\027]4;%d;rgb:%02x/%02x/%02x;\027\\" num r g b)
+  write stdout (Printf.sprintf "\027]4;%d;rgb:%02x/%02x/%02x;\027\\" num r g b)
 
 let set_colors l =
   atomic
     (fun oc ->
-       write_text oc "\027]4;"
+       write oc "\027]4;"
        >> Lwt_util.iter_serial
          (fun (num, (r, g, b)) ->
-            write_text oc (Printf.sprintf "%d;rgb:%02x/%02x/%02x;\027\\" num r g b)) l
-       >> write_text oc ";\027\\") stdout
+            write oc (Printf.sprintf "%d;rgb:%02x/%02x/%02x;\027\\" num r g b)) l
+       >> write oc ";\027\\") stdout
 
 (* +-----------+
    | Rendering |
@@ -610,22 +608,22 @@ let styled_length st =
 
 let printc st =
   if Lazy.force stdout_is_atty then
-    write_text stdout (apply_styles st)
+    write stdout (apply_styles st)
   else
-    write_text stdout (strip_styles st)
+    write stdout (strip_styles st)
 
 let eprintc st =
   if Lazy.force stderr_is_atty then
-    write_text stderr (apply_styles st)
+    write stderr (apply_styles st)
   else
-    write_text stderr (strip_styles st)
+    write stderr (strip_styles st)
 
 let fprintlc oc is_atty st =
   if Lazy.force is_atty then
     atomic (fun oc ->
-              write_text oc (apply_styles st)
-              >> write_text oc "\027[0m"
-              >> write_text oc (if raw_mode () then "\r\n" else "\n")) oc
+              write oc (apply_styles st)
+              >> write oc "\027[0m"
+              >> write oc (if raw_mode () then "\r\n" else "\n")) oc
   else
     write_line oc (strip_styles st)
 

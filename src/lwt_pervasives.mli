@@ -42,6 +42,9 @@ val (<&>) : unit Lwt.t -> unit Lwt.t -> unit Lwt.t
 
 (** {6 IOs} *)
 
+(** These definitions are the same as the ones from the {!Lwt_io}
+    module: *)
+
 val input : Lwt_io.input Lwt_io.mode
 val output : Lwt_io.output Lwt_io.mode
 
@@ -68,21 +71,23 @@ val with_file :
 val close : 'a Lwt_io.channel -> unit Lwt.t
 
 val read_char : Lwt_io.ic -> Text.t Lwt.t
-val peek_char : Lwt_io.ic -> Text.t option Lwt.t
-val read_text : Lwt_io.ic -> int -> Text.t Lwt.t
+val read_char_opt : Lwt_io.ic -> Text.t option Lwt.t
+val read_chars : Lwt_io.ic -> Text.t Lwt_stream.t
+val read : ?count : int -> Lwt_io.ic -> Text.t Lwt.t
 val read_line : Lwt_io.ic -> Text.t Lwt.t
-val peek_line : Lwt_io.ic -> Text.t option Lwt.t
+val read_line_opt : Lwt_io.ic -> Text.t option Lwt.t
 val read_lines : Lwt_io.ic -> Text.t Lwt_stream.t
 
 val write_char : Lwt_io.oc -> Text.t -> unit Lwt.t
-val write_text : Lwt_io.oc -> Text.t -> unit Lwt.t
+val write_chars : Lwt_io.oc -> Text.t Lwt_stream.t -> unit Lwt.t
+val write : Lwt_io.oc -> Text.t -> unit Lwt.t
 val write_line : Lwt_io.oc -> Text.t -> unit Lwt.t
 val write_lines : ?sep : Text.t -> Lwt_io.oc -> Text.t Lwt_stream.t -> unit Lwt.t
 
 (** {6 Printing facilities} *)
 
 val print : Text.t -> unit Lwt.t
-  (** [print txt = write_text stdout txt] *)
+  (** [print txt = write stdout txt] *)
 
 val printl : Text.t -> unit Lwt.t
   (** Same as [print] but also prints a newline after the text.
@@ -145,16 +150,20 @@ val cyan : Lwt_term.color
 val white : Lwt_term.color
 val default : Lwt_term.color
 
-(** {6 Stream utilities} *)
+(** {6 File utilities} *)
 
-val lines_of_file : string -> Text.t Lwt_stream.t
-  (** [lines_of_file filename] open [filename] and returns the stream
-      of all its lines *)
+type file_name = Text.t
 
-val lines_to_file : ?sep : Text.t -> string -> Text.t Lwt_stream.t -> unit Lwt.t
-  (** [lines_to_file ?sep filename lines] writes all lines of [lines]
-      to [filename] *)
+val lines_of_file : file_name -> Text.t Lwt_stream.t
+val lines_to_file : ?sep : Text.t -> file_name -> Text.t Lwt_stream.t -> unit Lwt.t
+
+val chars_of_file : file_name -> Text.t Lwt_stream.t
+val chars_to_file : file_name -> Text.t Lwt_stream.t -> unit Lwt.t
+
+val bytes_of_file : file_name -> char Lwt_stream.t
+val bytes_to_file : file_name -> char Lwt_stream.t -> unit Lwt.t
 
 (** {6 Misc} *)
 
 val sleep : float -> unit Lwt.t
+val yield : unit -> unit Lwt.t

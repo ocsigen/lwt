@@ -341,7 +341,7 @@ let print_words oc cols words =
   let column_width = cols / columns in
   Lwt_util.fold_left
     (fun column word ->
-       write_text oc word >>
+       write oc word >>
          if column < columns then
            let len = Text.length word in
            if len < column_width then
@@ -349,10 +349,10 @@ let print_words oc cols words =
            else
              return (column + 1)
          else
-           write_text oc "\r\n" >> return 0)
+           write oc "\r\n" >> return 0)
     0 words >>= function
       | 0 -> return ()
-      | _ -> write_text oc "\r\n"
+      | _ -> write oc "\r\n"
 
 module Terminal =
 struct
@@ -379,9 +379,9 @@ struct
     | 0 ->
         write_char stdout "\r"
     | 1 ->
-        write_text stdout "\027[F"
+        write stdout "\027[F"
     | n ->
-        write_text stdout "\027[F" >> beginning_of_line (n - 1)
+        write stdout "\027[F" >> beginning_of_line (n - 1)
 
   (* Replace "\n" by padding to the end of line in a styled text.
 
@@ -526,7 +526,7 @@ let read_line ?(history=[]) ?(complete=fun _ -> return No_completion) ?(clipboar
               lwt render_state = Terminal.draw render_state engine_state prompt in
               t_command >>= process_command render_state engine_state
           | `Completion(Possibilities words) ->
-                write_text stdout "\r\n"
+                write stdout "\r\n"
                 >> print_words stdout (Lwt_term.columns ()) words
                 >> write_char stdout "\n"
                 >> (lwt render_state = Terminal.draw render_state engine_state prompt in
@@ -669,35 +669,32 @@ let save_history name history =
  with_file ~mode:output name
    (fun oc ->
       Lwt_util.iter_serial
-        (fun line -> write_text oc line >> write_char oc "\000")
+        (fun line -> write oc line >> write_char oc "\000")
         history)
 
 let load_line ic =
   let buf = Buffer.create 42 in
-  let rec loop = function
-    | "" | "\000" ->
-        let str = Buffer.contents buf in
-        begin match Text.check str with
-          | Some _ ->
-              fail (Failure "invalid UTF-8 strings in history")
-          | None ->
-              return(Some str)
-        end
-    | ch ->
-        lwt ch = read_text ic 1 in
-        Buffer.add_string buf ch;
-        loop ch
+  let rec loop () =
+    read_char_opt ic >>= function
+      | None | Some "\000" ->
+          return (`Line(Buffer.contents buf))
+      | Some ch ->
+          Buffer.add_string buf ch;
+          loop ()
   in
-  read_text ic 1 >>= function
-    | "" -> return None
-    | ch -> Buffer.add_string buf ch; loop ch
+  read_char_opt ic >>= function
+    | None -> return `End_of_file
+    | Some "\000" -> return `Empty
+    | Some ch -> Buffer.add_string buf ch; loop ()
 
 let rec load_lines ic =
   load_line ic >>= function
-    | Some line ->
+    | `Line line ->
         lwt lines = load_lines ic in
         return (line :: lines)
-    | None ->
+    | `Empty ->
+        load_lines ic
+    | `End_of_file ->
         return []
 
 let load_history name =

@@ -580,35 +580,57 @@ struct
         | Encoding.Dec_error ->
             fail (Failure "Lwt_io.read_char: cannot decode multibyte sequence")
 
-  let peek_char ic =
+  let read_char_opt ic =
     try_lwt
-      read_char ic >>= fun ch -> return (Some ch)
+      read_char ic >|= fun ch -> Some ch
     with
       | End_of_file ->
           return None
       | exn ->
           fail exn
 
-  let read_text ic len =
-    if len = 1 then
-      try
-        read_char ic
-      with
-        | End_of_file ->
-            return ""
-    else
-      let buf = Buffer.create len in
-      let rec loop = function
-        | 0 ->
-            return (Buffer.contents buf)
-        | len ->
-            try_bind (fun _ -> read_char ic)
-              (fun ch -> Buffer.add_string buf ch; loop (len - 1))
-              (function
-                 | End_of_file -> return (Buffer.contents buf)
-                 | e -> fail e)
-      in
-      loop len
+  let rec read_all ic buf =
+    lwt ch = read_char ic in
+    Buffer.add_string buf ch;
+    read_all ic buf
+
+  let rec read_count ic buf = function
+    | 0 ->
+        return (Buffer.contents buf)
+    | n ->
+        lwt ch = read_char ic in
+        Buffer.add_string buf ch;
+        read_count ic buf (n - 1)
+
+  let read count ic = match count with
+    | None ->
+        let buf = Buffer.create 512 in
+        begin
+          try_lwt
+            read_all ic buf
+          with
+            | End_of_file ->
+                return (Buffer.contents buf)
+        end
+    | Some 0 ->
+        return ""
+    | Some 1 ->
+        begin
+          try_lwt
+            read_char ic
+          with
+            | End_of_file ->
+                return ""
+        end
+    | Some len ->
+        let buf = Buffer.create len in
+        begin
+          try_lwt
+            read_count ic buf len
+          with
+            | End_of_file ->
+                return (Buffer.contents buf)
+        end
 
   let read_line ic =
     let buf = Buffer.create 128 in
@@ -635,9 +657,9 @@ struct
       | "\r" -> loop true
       | ch -> Buffer.add_string buf ch; loop false
 
-  let peek_line ic =
+  let read_line_opt ic =
     try_lwt
-      read_line ic >>= fun ch -> return (Some ch)
+      read_line ic >|= fun ch -> Some ch
     with
       | End_of_file ->
           return None
@@ -658,18 +680,15 @@ struct
       | Encoding.Enc_error ->
           return false
 
-  let write_text_no_fallback oc txt =
-    let rec loop ptr = match Text.next ptr with
-      | None ->
-          return ()
-      | Some(ch, ptr) ->
-          write_code oc (Text.code ch) >>= function
-            | false ->
-                fail (Failure "Lwt_io: cannot encode character")
-            | true ->
-                loop ptr
-    in
-    loop (Text.pointer_l txt)
+  let rec write_no_fallback oc ptr = match Text.next ptr with
+    | None ->
+        return ()
+    | Some(ch, ptr) ->
+        write_code oc (Text.code ch) >>= function
+          | false ->
+              fail (Failure "Lwt_io: cannot encode character")
+          | true ->
+              write_no_fallback oc ptr
 
   let write_char oc ch =
     write_code oc (Text.code ch) >>= function
@@ -680,19 +699,19 @@ struct
             | None ->
                 fail (Failure "Lwt_io: cannot encode character")
             | Some txt ->
-                write_text_no_fallback oc txt
+                write_no_fallback oc (Text.pointer_l txt)
 
-  let write_text oc txt =
-    let rec loop ptr = match Text.next ptr with
-      | None ->
-          return ()
-      | Some(ch, ptr) ->
-          write_char oc ch >> loop ptr
-    in
-    loop (Text.pointer_l txt)
+  let rec write_all oc ptr = match Text.next ptr with
+    | None ->
+        return ()
+    | Some(ch, ptr) ->
+        write_char oc ch >> write_all oc ptr
+
+  let write oc txt =
+    write_all oc (Text.pointer_l txt)
 
   let write_line oc txt =
-    write_text oc txt >> write_char oc "\n"
+    write oc txt >> write_char oc "\n"
 
   (* +--------------+
      | Binary input |
@@ -709,9 +728,9 @@ struct
       return (String.unsafe_get ic.buffer ptr)
     end
 
-  let peek_byte ic =
+  let get_byte_opt ic =
     try_lwt
-      get_byte ic >>= fun ch -> return (Some ch)
+      get_byte ic >|= fun ch -> Some ch
     with
       | End_of_file ->
           return None
@@ -769,13 +788,32 @@ struct
         unsafe_get_exactly ic str ofs len
     end
 
-  let get_bytes ic len =
-    let str = String.create len in
-    lwt real_len = unsafe_get ic str 0 len in
-    if real_len < len then
-      return (String.sub str 0 real_len)
-    else
-      return str
+  let rec get_all ic buf =
+    Buffer.add_substring buf ic.buffer ic.ptr (ic.max - ic.ptr);
+    refill ic >>= function
+      | 0 ->
+          fail End_of_file
+      | n ->
+          get_all ic buf
+
+  let get_byte_array count ic =
+    match count with
+      | None ->
+          let buf = Buffer.create 512 in
+          begin
+            try_lwt
+              get_all ic buf
+            with
+              | End_of_file ->
+                  return (Buffer.contents buf)
+          end
+      | Some len ->
+          let str = String.create len in
+          lwt real_len = unsafe_get ic str 0 len in
+          if real_len < len then
+            return (String.sub str 0 real_len)
+          else
+            return str
 
   let get_value ic =
     let header = String.create 20 in
@@ -854,11 +892,11 @@ struct
         unsafe_put_exactly oc str ofs len
     end
 
-  let put_bytes oc str =
+  let put_byte_array oc str =
     unsafe_put_exactly oc str 0 (String.length str)
 
   let put_value oc ?(flags=[]) x =
-    put_bytes oc (Marshal.to_string x flags)
+    put_byte_array oc (Marshal.to_string x flags)
 
   (* +------------------+
      | Low-level access |
@@ -1081,13 +1119,13 @@ end
    +----------------------+ *)
 
 let read_char ic = primitive Primitives.read_char ic
-let peek_char ic = primitive Primitives.peek_char ic
-let read_text ic len = primitive (fun ic -> Primitives.read_text ic len) ic
+let read_char_opt ic = primitive Primitives.read_char_opt ic
+let read ?count ic = primitive (fun ic -> Primitives.read count ic) ic
 let read_line ic = primitive Primitives.read_line ic
-let peek_line ic = primitive Primitives.peek_line ic
+let read_line_opt ic = primitive Primitives.read_line_opt ic
 let get_byte ic = primitive Primitives.get_byte ic
-let peek_byte ic = primitive Primitives.peek_byte ic
-let get_bytes ic len = primitive (fun ic -> Primitives.get_bytes ic len) ic
+let get_byte_opt ic = primitive Primitives.get_byte_opt ic
+let get_byte_array ?count ic = primitive (fun ic -> Primitives.get_byte_array count ic) ic
 let get ic str ofs len = primitive (fun ic -> Primitives.get ic str ofs len) ic
 let get_exactly ic str ofs len = primitive (fun ic -> Primitives.get_exactly ic str ofs len) ic
 let get_value ic = primitive Primitives.get_value ic
@@ -1100,10 +1138,10 @@ let flush oc =
     force_flush oc
 
 let write_char oc txt = primitive (fun oc -> Primitives.write_char oc txt) oc
-let write_text oc txt = primitive (fun oc -> Primitives.write_text oc txt) oc
+let write oc txt = primitive (fun oc -> Primitives.write oc txt) oc
 let write_line oc txt = primitive (fun oc -> Primitives.write_line oc txt) oc
 let put_byte oc x = primitive (fun oc -> Primitives.put_byte oc x) oc
-let put_bytes oc str = primitive (fun oc -> Primitives.put_bytes oc str) oc
+let put_byte_array oc str = primitive (fun oc -> Primitives.put_byte_array oc str) oc
 let put oc str ofs len = primitive (fun oc -> Primitives.put oc str ofs len) oc
 let put_exactly oc str ofs len = primitive (fun oc -> Primitives.put_exactly oc str ofs len) oc
 let put_value oc ?flags x = primitive (fun oc -> Primitives.put_value oc ?flags x) oc
@@ -1155,10 +1193,12 @@ module BE = Make_number_io(Byte_order.BE)
    | Other |
    +-------+ *)
 
-let read_lines ic = Lwt_stream.from (fun _ -> peek_line ic)
-
-let write_lines ?(sep="\n") oc lines =
-  Lwt_stream.iter_s (fun line -> atomic (fun oc -> write_text oc line >> write_text oc sep) oc) lines
+let read_chars ic = Lwt_stream.from (fun _ -> read_char_opt ic)
+let read_lines ic = Lwt_stream.from (fun _ -> read_line_opt ic)
+let write_chars oc chars = Lwt_stream.iter_s (fun ch -> write_char oc ch) chars
+let write_lines ?(sep="\n") oc lines = Lwt_stream.iter_s (fun line -> atomic (fun oc -> write oc line >> write oc sep) oc) lines
+let get_bytes ic = Lwt_stream.from (fun _ -> get_byte_opt ic)
+let put_bytes oc bytes = Lwt_stream.iter_s (fun byte -> put_byte oc byte) bytes
 
 let zero =
   make
