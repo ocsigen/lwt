@@ -64,7 +64,7 @@ let get_directive txt =
   else
     None
 
-let complete (before, after) =
+let complete (before, after) abort_completion =
   let before', word = split_last_word before in
   return (Lwt_read_line.complete before' word after
             (match get_directive before with

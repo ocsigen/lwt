@@ -42,6 +42,8 @@ type completion_result =
   | Complete_with of edition_state
   | Possibilities of Text.t list
 
+type completion = edition_state -> unit Lwt.t -> completion_result Lwt.t
+
 let common_prefix a b =
   let lena = String.length a and lenb = String.length b in
   let rec loop i =
@@ -492,7 +494,7 @@ open Command
 
 let read_command () = read_key () >|= Command.of_key
 
-let read_line ?(history=[]) ?(complete=fun _ -> return No_completion) ?(clipboard=clipboard) prompt =
+let read_line ?(history=[]) ?(complete=fun _ _ -> return No_completion) ?(clipboard=clipboard) prompt =
   let rec process_command render_state engine_state = function
     | Clear_screen ->
         clear_screen () >> redraw Terminal.init engine_state
@@ -510,14 +512,16 @@ let read_line ?(history=[]) ?(complete=fun _ -> return No_completion) ?(clipboar
 
     | Complete ->
         let engine_state = Engine.reset engine_state in
-        let t_complete = complete (Engine.edition_state engine_state)
+        let abort_completion = wait () in
+        let t_complete = complete (Engine.edition_state engine_state) abort_completion
         and t_command = read_command () in
         (* Let the completion and user input run in parallel: *)
         choose [(t_complete >>= fun c -> return (`Completion c));
                 (t_command >>= fun c -> return (`Command c))]
         >>= begin function
           | `Command command ->
-              (* The user continued to type, drop completion *)
+              (* The user continued to type, drop completion: *)
+              wakeup abort_completion ();
               process_command render_state engine_state command
           | `Completion No_completion ->
               t_command >>= process_command render_state engine_state

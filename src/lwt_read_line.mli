@@ -38,10 +38,44 @@ type prompt = Lwt_term.styled_text
 
 (** {8 Completion} *)
 
+(** Result of a completion function: *)
 type completion_result =
   | No_completion
   | Complete_with of edition_state
   | Possibilities of Text.t list
+
+type completion = edition_state -> unit Lwt.t -> completion_result Lwt.t
+      (** Type of a completion function. It takes the current edition
+          state and a sleeping thread.
+
+          This threads is wakeup if the user continue typing text, to
+          inform you that you can abort completion now.
+
+          For example suppose that your completion functions try to
+          list the contents of a big folder (you know, like when you press
+          TAB-TAB on the terminal and you shell stupidly hangs for 30
+          seconds), since this can takes a long time, here is what you
+          can do:
+
+          {[
+             (* Raise [Exit] to exit the completion: *)
+             let abort_thread = abort_thread >>= fun _ -> fail Exit in
+             let rec loop_over_files () =
+               (* Either wait for the completion to be aborted,
+                  or to receive the next file of the directory: *)
+               lwt file = Lwt.choose [abort_thread; get_next_file ()] in
+               <do something with file>
+               loop_over_files ()
+             in
+             try_lwt
+               open_directory ()
+               loop_over_files ()
+             finally
+               close_directory ()
+          ]}
+
+          So if the user wants to abort completion this will be done
+          in a graceful way. *)
 
 val complete : Text.t -> Text.t -> Text.t -> Text.t list -> completion_result
   (** [complete before word after words] basic completion
@@ -78,7 +112,7 @@ val clipboard : clipboard
 
 val read_line :
   ?history : history ->
-  ?complete : (edition_state -> completion_result Lwt.t) ->
+  ?complete : completion ->
   ?clipboard : clipboard ->
   prompt -> Text.t Lwt.t
   (** [readline ?history ?complete prompt] inputs some text from the
