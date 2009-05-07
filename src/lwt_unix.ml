@@ -314,14 +314,22 @@ let accept ch =
     Lwt.fail e
 
 let accept_n ch n =
-  let iter_accept acc = function
-    0 -> List.rev acc
-  | n ->
-      try
-        let (s, addr) = Unix.accept ch.fd in
-        iter_accept ((mk_ch s, addr)::acc) (n-1)
-      with
-        Unix.EAGAIN -> [] in
+  let rec iter_accept acc = function
+    | 0 ->
+        List.rev acc
+    | n ->
+        match
+          try
+            Some(Unix.accept ch.fd)
+          with
+            | Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _) ->
+                None
+        with
+          | Some(s, addr) ->
+              iter_accept ((mk_ch s, addr) :: acc) (n - 1)
+          | None ->
+              List.rev acc
+  in
   try
     check_descriptor ch;
     register_action inputs ch
