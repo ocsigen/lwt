@@ -22,7 +22,7 @@
 
 (** Pervasives definitions *)
 
-(** This modules defines aliases to function to other modules of Lwt,
+(** This modules defines aliases to functions of other modules of Lwt,
     plus some helpers. *)
 
 (** {6 Basic thread creation/manipulation and operators} *)

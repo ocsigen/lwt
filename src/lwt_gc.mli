@@ -27,19 +27,9 @@
     finaliser. *)
 
 val finalise : ('a -> unit Lwt.t) -> 'a -> unit
-  (** [finalise f x] call [f x] when [x] is garbage collected. It is a
-      short-hand for:
-
-      {[
-        Gc.finalise g x
-      ]}
-
-      where:
-
-      {[
-        let g x = Lwt_exit_hook.ensure_termination (f x)
-      ]}
-  *)
+  (** [finalise f x] calls [f x] when [x] is garbage collected. If [f
+      x] yields, then Lwt will waits for its termination at the end of
+      the program. *)
 
 val finalise_or_exit : ('a -> unit Lwt.t) -> 'a -> unit
   (** [finalise_or_exit f x] call [f x] when [x] is garbage collected

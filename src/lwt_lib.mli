@@ -19,15 +19,26 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *)
 
-val getaddrinfo :
-    string ->
-    string -> Unix.getaddrinfo_option list -> Unix.addr_info list Lwt.t
-(** Cooperative getaddrinfo with cache (using Lwt_preemptive.detach) *)
+(** Cooperative unix system calls *)
+
+(** This module transform non-cooperative functions of the standard
+    library into cooperative ones by launching them into system
+    threads.
+
+    Indeed, lots of functions of the [Unix] modules, corresponding to
+    functions of the standard C library may take times to
+    complete. For example [gethostbyname] may use DNS resolution,
+    users informations may be stored in a ldap database, ...
+
+    Since these functions are implemented (in the standard C library)
+    using blocking IOs, if you use them directly, you program may
+    hang. *)
+
+val getaddrinfo : string -> string -> Unix.getaddrinfo_option list -> Unix.addr_info list Lwt.t
+  (** Cooperative getaddrinfo with cache (using Lwt_preemptive.detach) *)
 
 val gethostbyname : string -> Unix.host_entry Lwt.t
-(** Cooperative gethostbyname with cache (using Lwt_preemptive.detach) *)
+  (** Cooperative gethostbyname with cache (using Lwt_preemptive.detach) *)
 
-
-val getnameinfo : Unix.sockaddr -> Unix.getnameinfo_option list ->
-  Unix.name_info Lwt.t
-(** Cooperative getnameinfo with cache (using Lwt_preemptive.detach) *)
+val getnameinfo : Unix.sockaddr -> Unix.getnameinfo_option list -> Unix.name_info Lwt.t
+  (** Cooperative getnameinfo with cache (using Lwt_preemptive.detach) *)

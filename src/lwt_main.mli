@@ -22,22 +22,26 @@
 
 (** Main loop and event queue *)
 
+(** This module controls the ``main-loop'' of Lwt. *)
+
 (** {6 Running a thread} *)
 
 val run : 'a Lwt.t -> 'a
-  (** [run t] lets the thread [t] run until it terminates. It
-      evaluates to the return value of [t], or raise the exception
-      associated to [t] if [t] fails.
+  (** [run t] calls the Lwt scheduler repeatedly until [t] terminates,
+      then returns the value returned by the thread. It [t] fails with
+      an exception, this exception is raised.
 
-      You should avoid using [run] inside threads:
+      Note that you should avoid using [run] inside threads
       - The calling threads will not resume before [run]
         returns.
       - Successive invocations of [run] are serialized: an
         invocation of [run] will not terminate before all
-        subsequent invocations are terminated.
-  *)
+        subsequent invocations are terminated. *)
 
 (** {6 Hooks} *)
+
+(** Hooks are function that are called at a point of the program to
+    handle an event or collect informations. *)
 
 type 'a hook = 'a ref
     (** Type of a ``hook'' containing a value of type ['a], which is
@@ -62,13 +66,18 @@ val exit_hooks : (unit -> unit Lwt.t) hooks
 
 (** {6 Low-level control of event loop} *)
 
-(** The rest of this file is not for casual users, you must not use
-    them unless you know what you are doing.
+(** The rest of this file is for advanced users. You must have a good
+    understanding on how Lwt works to use it.
 
-    It is aimed for those who wants to ``wrap'' external libraries to
-    play well with lwt. For an example on how to do that you can have
-    a look at [ocaml-usb] which is a rather simple wrapper around
-    [libusb].
+    This part has two purpose:
+    - integration of external libraries which are not ``Lwt-aware''
+      but are ``main-loop'' aware, or more generally which support
+      asynchronous IOs.
+      If you want an example on how to do that, you can have a look at
+      the [ocaml-usb] library which integrates the C library [libusb] into
+      Lwt.
+    - replace the default main-loop implementation (which is just
+      a wrapper around select) by another one.
 *)
 
 type fd_set = Unix.file_descr list
@@ -93,16 +102,10 @@ val default_select : select
 
 val default_iteration : unit -> unit
   (** The default iteration function. It just apply all select filters
-      on [default_select] the call the resulting select function. *)
+      on [default_select], the, call the resulting select function. *)
 
 val main_loop_iteration : (unit -> unit) ref
-  (** The function doing one step of the main loop.
-
-      /!\ WARNING /!\
-
-      You must be very careful if you change this functions. It is
-      aimed to integrate libraries such as gtk defining their own
-      main-loop. *)
+  (** The function doing one step of the main loop. *)
 
 (** {6 Utils} *)
 

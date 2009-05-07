@@ -22,9 +22,14 @@
 
 (** Glib integration *)
 
+(** This modules is intended to allow the use of Lwt in GTK
+    applications. It integrates the Lwt scheduler into the glib main
+    loop so light-weight threadscan run while GTK is running. *)
+
 val init : ?setlocale:bool -> unit -> unit
-  (** Integrates lwt into the glib main loop. This have the side
-      effect of calling [GMain.init] *)
+  (** Initialises glib and integrates the Lwt scheduler into the glib
+      main loop. *)
 
 val quit : unit -> unit
-  (** Call [GMain.quit] and reset the old behaviour *)
+  (** Calls [GMain.quit] and remove the Lwt scheduler from the glib
+      main loop *)
