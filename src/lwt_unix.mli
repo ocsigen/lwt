@@ -66,6 +66,7 @@ val socketpair :
 val bind : file_descr -> Unix.sockaddr -> unit
 val listen : file_descr -> int -> unit
 val accept : file_descr -> (file_descr * Unix.sockaddr) Lwt.t
+val accept_n : file_descr -> int -> ((file_descr * Unix.sockaddr) list) Lwt.t
 val connect : file_descr -> Unix.sockaddr -> unit Lwt.t
 val shutdown : file_descr -> Unix.shutdown_command -> unit
 val close : file_descr -> unit

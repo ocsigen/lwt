@@ -313,6 +313,22 @@ let accept ch =
   with e ->
     Lwt.fail e
 
+let accept_n ch n =
+  let iter_accept acc = function
+    0 -> List.rev acc
+  | n ->
+      try
+        let (s, addr) = Unix.accept ch.fd in
+        iter_accept ((mk_ch s, addr)::acc) (n-1)
+      with
+        Unix.EAGAIN -> [] in
+  try
+    check_descriptor ch;
+    register_action inputs ch
+      (fun () -> iter_accept [] n)
+  with e ->
+    Lwt.fail e
+
 let check_socket ch =
   register_action outputs ch
     (fun () ->
