@@ -36,9 +36,9 @@ open Ocamlbuild_plugin
 *)
 let intern_syntaxes = [ ("pa_lwt", "syntax/pa_lwt.cmo") ]
 
-(* +-----------+
-   | Ocamlfind |
-   +-----------+ *)
+(* +-----------------------------------------------------------------+
+   | Ocamlfind                                                       |
+   +-----------------------------------------------------------------+ *)
 
 (* Packages we want to use in the program *)
 let packages = [
@@ -76,9 +76,9 @@ let syntaxes = [
   "camlp4r"
 ]
 
-(* +-------+
-   | Utils |
-   +-------+ *)
+(* +-----------------------------------------------------------------+
+   | Utils                                                           |
+   +-----------------------------------------------------------------+ *)
 
 (* Given the tag [tag] add the command line options [f] to all stages
    of compilatiopn but linking *)
@@ -93,23 +93,6 @@ let flag_all_stages tag f =
   flag_all_stages_except_link tag f;
   flag ["ocaml"; "link"; tag] f
 
-(* Define a internal library with required depency. File using it
-   (like samples) must be tagged with "use_name".
-
-   For example if the library sources are in the directory "src", and
-   samples in directory "samples", you can have in myocamlbuild.ml:
-
-     define_lib ~dir:"src" "foo"
-
-   and in the _tags file:
-
-     <samples/**/*>: use_foo
-*)
-let define_lib ?dir name =
-  ocaml_lib ?dir name;
-  dep ["ocaml"; "byte"; "use_" ^ name] [name ^ ".cma"];
-  dep ["ocaml"; "native"; "use_" ^ name] [name ^ ".cmxa"]
-
 let substitute env text =
   List.fold_left (fun text (patt, repl) -> String.subst patt repl text) text env
 
@@ -118,9 +101,9 @@ let get_version _ =
     | version :: _ -> version
     | _ -> failwith "invalid VERSION file"
 
-(* +---------+
-   | C stubs |
-   +---------+ *)
+(* +-----------------------------------------------------------------+
+   | C stubs                                                         |
+   +-----------------------------------------------------------------+ *)
 
 let pkg_config =
   let binary = lazy
@@ -173,11 +156,10 @@ let _ =
         Options.ocamldoc := ocamlfind "ocamldoc"
 
     | After_rules ->
-        define_lib ~dir:"src" "lwt";
 
-        (* +-------------------+
-           | Internal syntaxes |
-           +-------------------+ *)
+        (* +---------------------------------------------------------+
+           | Internal syntaxes                                       |
+           +---------------------------------------------------------+ *)
 
         List.iter
           (fun (tag, file) ->
@@ -188,9 +170,9 @@ let _ =
              dep ["ocaml"; "ocamldep"; tag] [file])
           intern_syntaxes;
 
-        (* +-----------------+
-           | Ocamlfind stuff |
-           +-----------------+ *)
+        (* +---------------------------------------------------------+
+           | Ocamlfind stuff                                         |
+           +---------------------------------------------------------+ *)
 
         (* When one link an OCaml binary, one should use -linkpkg *)
         flag ["ocaml"; "link"; "program"] & A"-linkpkg";
@@ -208,17 +190,17 @@ let _ =
           (fun syntax -> flag_all_stages_except_link ("syntax_" ^ syntax) (S[A"-syntax"; A syntax]))
           syntaxes;
 
-        (* +---------+
-           | C stubs |
-           +---------+ *)
+        (* +---------------------------------------------------------+
+           | C stubs                                                 |
+           +---------------------------------------------------------+ *)
 
         define_stubs "unix";
         define_stubs "glib";
         define_c_library ~name:"glib" ~c_name:"glib-2.0";
 
-        (* +----------------------+
-           | C stubs for Lwt_glib |
-           +----------------------+ *)
+        (* +---------------------------------------------------------+
+           | C stubs for Lwt_glib                                    |
+           +---------------------------------------------------------+ *)
 
         (* Search 'pkg-config': *)
         let pkg_config = try
@@ -262,9 +244,9 @@ let _ =
         (* OCaml llibraries must depends on the C library libusb: *)
         flag ["link"; "ocaml"; "use_C_glib"] & cclib;
 
-        (* +-------+
-           | Other |
-           +-------+ *)
+        (* +---------------------------------------------------------+
+           | Other                                                   |
+           +---------------------------------------------------------+ *)
 
         (* Generation of "META" *)
         rule "META" ~deps:["META.in"; "VERSION"] ~prod:"META"

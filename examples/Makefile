@@ -1,18 +1,37 @@
-all: relay start_editor show_keys ex_gtk
+# Makefile
+# --------
+# Copyright : (c) 2009, Jeremie Dimino <jeremie@dimino.org>
+# Licence   : BSD3
+#
+# This file is a part of Lwt.
 
-OCAMLC = ocamlfind ocamlc
+include ../utils/utils.mk
 
-relay: relay.ml
-	$(OCAMLC) -o relay -linkpkg -package lwt relay.ml -cclib -s
+HAVE_LWT := $(call have_package,lwt)
+HAVE_LWT_GLIB := $(call have_package,lwt.glib)
 
-start_editor : editor.ml
-	$(OCAMLC) -o start_editor -linkpkg -package lwt editor.ml -cclib -s
+ifeq ($(HAVE_LWT),)
+  $(error You need to install Lwt before compiling examples!)
+endif
 
-show_keys: show_keys.ml
-	$(OCAMLC) -o show_keys -linkpkg -syntax camlp4o -package lwt,lwt.syntax show_keys.ml
+EXAMPLES := relay start_editor show_keys parallelize $(if $(HAVE_LWT_GLIB),ex_gtk)
+EXAMPLES_BYTE := $(patsubst %,%.byte,$(EXAMPLES))
+EXAMPLES_NATIVE := $(patsubst %,%.native,$(EXAMPLES))
 
-ex_gtk: ex_gtk.ml
-	$(OCAMLC) -o ex_gtk -linkpkg -package lwt.glib ex_gtk.ml
+best:
+	$(OCAMLBUILD) $(if $(HAVE_NATIVE),$(EXAMPLES_NATIVE),$(EXAMPLES_BYTE))
+
+all:
+	$(OCAMLBUILD) $(EXAMPLES_BYTE) $(EXAMPLES_NATIVE)
+
+byte:
+	$(OCAMLBUILD) $(EXAMPLES_BYTE)
+
+native:
+	$(OCAMLBUILD) $(EXAMPLES_NATIVE)
 
 clean:
-	-rm -f *.cmi *.cmo *~ relay start_editor ex_gtk show_keys
+	$(OCAMLBUILD) -clean
+	rm -f *~
+
+.PHONY: best all byte native clean

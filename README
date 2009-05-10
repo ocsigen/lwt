@@ -10,9 +10,11 @@ This library is part of the Ocsigen project. See:
 
 Requirements:
 
- * ocaml with ocamlbuild (>= 3.10.0)
+ * ocaml with ocamlbuild (>= 3.11.0)
  * findlib
- * ocamlssl (>= 0.4.0) (ocamlssl needs openssl) (>= 0.4.1 for MacOS)
+ * ocaml-text
+ * [optionnal] ocamlssl (>= 0.4.0) (ocamlssl needs openssl) (>= 0.4.1 for MacOS)
+ * [optionnal] lablgtk2, glib-2.0 developpement files and pkg-config
 
 If ocaml/findlib/ocamlssl... are not installed on your computer, you
 can use GODI to install them automatically. See:

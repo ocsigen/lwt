@@ -1,0 +1,3 @@
+# -*- conf -*-
+<*>: syntax_camlp4o, pkg_lwt, pkg_lwt.syntax
+<ex_gtk.*>: pkg_lwt.glib

@@ -21,36 +21,53 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-OCAMLFIND := ocamlfind
-OCAMLBUILD := ocamlbuild
-DESTDIR := $(shell $(OCAMLFIND) printconf destdir)/$(NAME)
+include utils/utils.mk
 
-# Use classic-display when compiling under a terminal which do not
-# support ANSI sequence
-ifeq ($(TERM),dumb)
-OCAMLBUILD += -classic-display
-endif
+# +------------------------------------------------------------------+
+# | Configuration                                                    |
+# +------------------------------------------------------------------+
 
+# General project parameters:
 NAME := lwt
 VERSION := $(shell head -n 1 VERSION)
+DESTDIR := $(shell $(OCAMLFIND) printconf destdir)
 
-DOC = lwt.docdir/index.html
-SYNTAX = syntax/pa_lwt.cmo
-ARCHIVES_BYTE := $(patsubst %.mllib,%.cma,$(wildcard src/*.mllib)) src/top_lwt.cmo
-ARCHIVES_OPT := $(patsubst %.mllib,%.cmxa,$(wildcard src/*.mllib)) src/top_lwt.cmx
-TOINSTALL = $(wildcard $(ARCHIVES_BYTE) $(ARCHIVES_OPT)) \
-  $(wildcard src/*.mli _build/src/*.cmi _build/src/*.cma) \
-  $(wildcard _build/src/*.cmx* _build/src/*.a) \
-  $(wildcard _build/src/*.so) _build/syntax/pa_lwt.cmo _build/src/top_lwt.cmo
+# Context dependent options:
+HAVE_THREADS := $(call have_package,threads)
+HAVE_SSL := $(call have_package,ssl)
+HAVE_GLIB := $(and $(call have_package,lablgtk2),$(call exec,pkg-config glib-2.0))
+
+DOC := lwt.docdir/index.html
+
+# Libraries to build:
+LIBRARIES := lwt top_lwt \
+	$(if $(HAVE_THREADS),lwt_preemptive lwt_extra) \
+	$(if $(HAVE_SSL),lwt_ssl) \
+	$(if $(HAVE_GLIB),lwt_glib)
+
+ARCHIVES_BYTE := $(patsubst %,src/%.cma,$(LIBRARIES)) syntax/pa_lwt.cmo
+ARCHIVES_NATIVE := $(patsubst %,src/%.cmxa,$(LIBRARIES))
+
+# +------------------------------------------------------------------+
+# | Rules                                                            |
+# +------------------------------------------------------------------+
 
 all:
-	$(OCAMLBUILD) META $(ARCHIVES_BYTE) $(ARCHIVES_OPT) $(SYNTAX) $(DOC)
+	$(info +--[ compilation options ]----------+)
+	$(info | native compilation:           $(call yes_no,$(HAVE_NATIVE) ) |)
+	$(info | preemptive threads support:   $(call yes_no,$(HAVE_THREADS)) |)
+	$(info | ssl support:                  $(call yes_no,$(HAVE_SSL)    ) |)
+	$(info | glib support:                 $(call yes_no,$(HAVE_GLIB)   ) |)
+	$(info +-----------------------------------+)
+	$(OCAMLBUILD) META $(ARCHIVES_BYTE) $(if $(HAVE_NATIVE),$(ARCHIVES_NATIVE)) $(DOC)
 
 byte:
 	$(OCAMLBUILD) $(ARCHIVES_BYTE)
 
-opt:
-	$(OCAMLBUILD) $(ARCHIVES_OPT)
+native:
+	$(OCAMLBUILD) $(ARCHIVES_NATIVE)
+
+opt: native
 
 doc:
 	$(OCAMLBUILD) $(DOC)
@@ -63,7 +80,15 @@ dist:
 
 install:
 	mkdir -p "$(DESTDIR)"
-	$(OCAMLFIND) install $(NAME) -destdir "$(DESTDIR)" _build/META $(TOINSTALL)
+	$(OCAMLFIND) install $(NAME) -destdir "$(DESTDIR)" _build/META \
+	  $(wildcard _build/src/*.mli) \
+	  $(wildcard _build/src/*.cmi) \
+	  $(wildcard _build/src/*.cmx) \
+	  $(wildcard _build/src/*.cma) \
+	  $(wildcard _build/src/*.cmxa) \
+	  $(wildcard _build/src/*.so) \
+	  $(wildcard _build/src/*.a) \
+	  _build/syntax/pa_lwt.cmo
 
 uninstall:
 	$(OCAMLFIND) remove $(NAME) -destdir "$(DESTDIR)"
@@ -72,8 +97,8 @@ reinstall: uninstall install
 
 clean:
 	$(OCAMLBUILD) -clean
-	-rm -Rf *~ src/*~ $(NAME)-*.tar.gz
+	rm -Rf *~ src/*~ $(NAME)-*.tar.gz
 	$(MAKE) -C examples clean
 
 
-.PHONY: all byte opt examples install uninstall clean
+.PHONY: sanitize all byte native opt examples install uninstall clean
