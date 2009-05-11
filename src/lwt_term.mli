@@ -182,7 +182,22 @@ val blue : color
 val magenta : color
 val cyan : color
 val white : color
-val default : color
+
+(** {8 Light colors} *)
+
+(** Note: these colors are not supposed to works on all terminals, but
+    in practice it works with all modern ones. By the way, using
+    standard colors + bold mode will give the same result as using a
+    light color. *)
+
+val lblack : color
+val lred : color
+val lgreen : color
+val lyellow : color
+val lblue : color
+val lmagenta : color
+val lcyan : color
+val lwhite : color
 
 (** {8 Character styles} *)
 

@@ -23,9 +23,9 @@
 open Lwt
 open Lwt_io
 
-(* +---------------+
-   | Terminal mode |
-   +---------------+ *)
+(* +-----------------------------------------------------------------+
+   | Terminal mode                                                   |
+   +-----------------------------------------------------------------+ *)
 
 let stdin_is_atty = lazy(Unix.isatty Unix.stdin)
 let stdout_is_atty = lazy(Unix.isatty Unix.stdout)
@@ -134,9 +134,9 @@ let with_raw_mode f =
           | None ->
               fail (Failure "Lwt_term.with_raw_mode: input is not a tty")
 
-(* +-----------------------+
-   | Terminal informations |
-   +-----------------------+ *)
+(* +-----------------------------------------------------------------+
+   | Terminal informations                                           |
+   +-----------------------------------------------------------------+ *)
 
 type size = {
   lines : int;
@@ -149,9 +149,9 @@ let size () = lwt_unix_term_size Unix.stdin
 let columns () = (size ()).columns
 let lines () = (size ()).lines
 
-(* +------------+
-   | Keys input |
-   +------------+ *)
+(* +-----------------------------------------------------------------+
+   | Keys input                                                      |
+   +-----------------------------------------------------------------+ *)
 
 exception Exit_sequence
 
@@ -382,9 +382,9 @@ let standard_input = Lwt_io.read_chars Lwt_io.stdin
 let read_key () =
   with_raw_mode (fun _ -> parse_key_raw standard_input >|= decode_key)
 
-(* +--------+
-   | Styles |
-   +--------+ *)
+(* +-----------------------------------------------------------------+
+   | Styles                                                          |
+   +-----------------------------------------------------------------+ *)
 
 type color = int
 
@@ -397,6 +397,14 @@ let blue = 4
 let magenta = 5
 let cyan = 6
 let white = 7
+let lblack = black + 8
+let lred = red + 8
+let lgreen = green + 8
+let lyellow = yellow + 8
+let lblue = blue + 8
+let lmagenta = magenta + 8
+let lcyan = cyan + 8
+let lwhite = white + 8
 
 type style = {
   bold : bool;
@@ -431,9 +439,9 @@ let set_colors l =
             write oc (Printf.sprintf "%d;rgb:%02x/%02x/%02x;\027\\" num r g b)) l
        >> write oc ";\027\\") stdout
 
-(* +-----------+
-   | Rendering |
-   +-----------+ *)
+(* +-----------------------------------------------------------------+
+   | Rendering                                                       |
+   +-----------------------------------------------------------------+ *)
 
 type point = {
   char : string;
@@ -505,9 +513,9 @@ let render m =
   Buffer.add_string buf "\027[0m";
   Buffer.contents buf
 
-(* +-------------+
-   | Styled text |
-   +-------------+ *)
+(* +-----------------------------------------------------------------+
+   | Styled text                                                     |
+   +-----------------------------------------------------------------+ *)
 
 open Printf
 

@@ -148,7 +148,14 @@ val blue : Lwt_term.color
 val magenta : Lwt_term.color
 val cyan : Lwt_term.color
 val white : Lwt_term.color
-val default : Lwt_term.color
+val lblack : Lwt_term.color
+val lred : Lwt_term.color
+val lgreen : Lwt_term.color
+val lyellow : Lwt_term.color
+val lblue : Lwt_term.color
+val lmagenta : Lwt_term.color
+val lcyan : Lwt_term.color
+val lwhite : Lwt_term.color
 
 (** {6 File utilities} *)
 

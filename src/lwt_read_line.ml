@@ -33,9 +33,9 @@ let clipboard = ref ""
 
 exception Interrupt
 
-(* +------------+
-   | Completion |
-   +------------+ *)
+(* +-----------------------------------------------------------------+
+   | Completion                                                      |
+   +-----------------------------------------------------------------+ *)
 
 type completion_result =
   | No_completion
@@ -67,9 +67,9 @@ let complete before word after words =
         else
           Possibilities(List.sort compare (word :: words))
 
-(* +----------+
-   | Commands |
-   +----------+ *)
+(* +-----------------------------------------------------------------+
+   | Commands                                                        |
+   +-----------------------------------------------------------------+ *)
 
 module Command =
 struct
@@ -174,9 +174,9 @@ struct
     | _ -> Nop
 end
 
-(* +------------------+
-   | Read-line engine |
-   +------------------+ *)
+(* +-----------------------------------------------------------------+
+   | Read-line engine                                                |
+   +-----------------------------------------------------------------+ *)
 
 module Engine =
 struct
@@ -327,9 +327,9 @@ struct
           end
 end
 
-(* +-----------+
-   | Rendering |
-   +-----------+ *)
+(* +-----------------------------------------------------------------+
+   | Rendering                                                       |
+   +-----------------------------------------------------------------+ *)
 
 let rec repeat f n =
   if n <= 0 then
@@ -486,9 +486,9 @@ struct
     >> printlc (prepare_for_display (Lwt_term.columns ()) (prompt @ [Reset; Text(map_text(all_input engine_state))]))
 end
 
-(* +----------------------+
-   | High-level functions |
-   +----------------------+ *)
+(* +-----------------------------------------------------------------+
+   | High-level functions                                            |
+   +-----------------------------------------------------------------+ *)
 
 open Command
 
@@ -665,9 +665,9 @@ let read_keyword ?(history=[]) ?(case_sensitive=false) prompt keywords =
 let read_yes_no ?history prompt =
   read_keyword ?history prompt [("yes", true); ("y", true); ("no", false); ("n", false)]
 
-(* +---------+
-   | History |
-   +---------+ *)
+(* +-----------------------------------------------------------------+
+   | History                                                         |
+   +-----------------------------------------------------------------+ *)
 
 let save_history name history =
  with_file ~mode:output name

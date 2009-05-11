@@ -26,9 +26,9 @@
 #include <caml/memory.h>
 #include <caml/unixsupport.h>
 
-/* +------------+
-   | Read/write |
-   +------------+ */
+/* +-----------------------------------------------------------------+
+   | Read/write                                                      |
+   +-----------------------------------------------------------------+ */
 
 /* This code is a simplified version of the default unix_write and
    unix_read functions of caml.
@@ -56,9 +56,9 @@ CAMLprim value lwt_unix_read(value fd, value buf, value ofs, value len)
   CAMLreturn(Val_int(ret));
 }
 
-/* +----------------+
-   | Terminal sizes |
-   +----------------+ */
+/* +-----------------------------------------------------------------+
+   | Terminal sizes                                                  |
+   +-----------------------------------------------------------------+ */
 
 #if defined(__MINGW32__)
 

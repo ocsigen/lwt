@@ -22,9 +22,9 @@
  * 02111-1307, USA.
  *)
 
-(* +----------+
-   | Sleepers |
-   +----------+ *)
+(* +-----------------------------------------------------------------+
+   | Sleepers                                                        |
+   +-----------------------------------------------------------------+ *)
 
 module SleepQueue =
   Pqueue.Make (struct
@@ -64,9 +64,9 @@ let rec restart_threads now =
     | _ ->
         ()
 
-(* +--------------------------+
-   | File descriptor wrappers |
-   +--------------------------+ *)
+(* +-----------------------------------------------------------------+
+   | File descriptor wrappers                                        |
+   +-----------------------------------------------------------------+ *)
 
 type state = Open | Closed | Aborted of exn
 
@@ -85,9 +85,9 @@ let check_descriptor ch =
   | Closed ->
       raise (Unix.Unix_error (Unix.EBADF, "check_descriptor", ""))
 
-(* +-----------------------------+
-   | Actions on file descriptors |
-   +-----------------------------+ *)
+(* +-----------------------------------------------------------------+
+   | Actions on file descriptors                                     |
+   +-----------------------------------------------------------------+ *)
 
 module FdMap =
   Map.Make (struct type t = Unix.file_descr let compare = compare end)
@@ -168,9 +168,9 @@ let active_descriptors set acc = FdMap.fold (fun key _ acc -> key :: acc) !set a
 let blocked_thread_count set =
   FdMap.fold (fun key (_, l) c -> List.length !l + c) !set 0
 
-(* +------------+
-   | Event loop |
-   +------------+ *)
+(* +-----------------------------------------------------------------+
+   | Event loop                                                      |
+   +-----------------------------------------------------------------+ *)
 
 let run = Lwt_main.run
 
@@ -226,9 +226,9 @@ let select_filter now select set_r set_w set_e timeout =
 
 let _ = Lwt_main.add_hook (ref select_filter) Lwt_main.select_filters
 
-(* +--------------+
-   | System calls |
-   +--------------+ *)
+(* +-----------------------------------------------------------------+
+   | System calls                                                    |
+   +-----------------------------------------------------------------+ *)
 
 let set_state ch st =
   ch.state <- st;
@@ -408,9 +408,9 @@ let set_close_on_exec ch =
   check_descriptor ch;
   Unix.set_close_on_exec ch.fd
 
-(* +------+
-   | Misc |
-   +------+ *)
+(* +-----------------------------------------------------------------+
+   | Misc                                                            |
+   +-----------------------------------------------------------------+ *)
 
 (* Monitoring functions *)
 let inputs_length () = blocked_thread_count inputs

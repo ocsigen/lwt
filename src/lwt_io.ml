@@ -46,9 +46,9 @@ let close_fd fd =
   with
       exn -> fail exn
 
-(* +-------+
-   | Types |
-   +-------+ *)
+(* +-----------------------------------------------------------------+
+   | Types                                                           |
+   +-----------------------------------------------------------------+ *)
 
 type input = Encoding.decoder
 type output = Encoding.encoder
@@ -156,9 +156,9 @@ let cast_oc wrapper =
   else
     invalid_arg "Lwt_io.cast_oc"
 
-(* +----------------------------------+
-   | Creations, closing, locking, ... |
-   +----------------------------------+ *)
+(* +-----------------------------------------------------------------+
+   | Creations, closing, locking, ...                                |
+   +-----------------------------------------------------------------+ *)
 
 let get_pos wrapper =
   let ch = wrapper.channel in
@@ -490,9 +490,9 @@ let set_encoding ch enc =
 
 let fallback ch = ch.channel.fallback
 
-(* +------------+
-   | Byte-order |
-   +------------+ *)
+(* +-----------------------------------------------------------------+
+   | Byte-order                                                      |
+   +-----------------------------------------------------------------+ *)
 
 module Byte_order =
 struct
@@ -557,9 +557,9 @@ struct
      without protection regarding locking, they are wrapped after into
      safe operations. *)
 
-  (* +------------+
-     | Text input |
-     +------------+ *)
+  (* +---------------------------------------------------------------+
+     | Text input                                                    |
+     +---------------------------------------------------------------+ *)
 
   let rec read_char ic =
     let ptr = ic.ptr in
@@ -666,9 +666,9 @@ struct
       | exn ->
           fail exn
 
-  (* +-------------+
-     | Text output |
-     +-------------+ *)
+  (* +---------------------------------------------------------------+
+     | Text output                                                   |
+     +---------------------------------------------------------------+ *)
 
   let rec write_code oc code =
     match Encoding.encode oc.coder oc.buffer oc.ptr (oc.max - oc.ptr) code with
@@ -713,9 +713,9 @@ struct
   let write_line oc txt =
     write oc txt >> write_char oc "\n"
 
-  (* +--------------+
-     | Binary input |
-     +--------------+ *)
+  (* +---------------------------------------------------------------+
+     | Binary input                                                  |
+     +---------------------------------------------------------------+ *)
 
   let rec get_byte ic =
     let ptr = ic.ptr in
@@ -824,9 +824,9 @@ struct
       unsafe_get_exactly ic buffer 20 bsize >>
         return (Marshal.from_string buffer 0)
 
-  (* +---------------+
-     | Binary output |
-     +---------------+ *)
+  (* +---------------------------------------------------------------+
+     | Binary output                                                 |
+     +---------------------------------------------------------------+ *)
 
   let force_flush = flush_total
 
@@ -898,9 +898,9 @@ struct
   let put_value oc ?(flags=[]) x =
     put_byte_array oc (Marshal.to_string x flags)
 
-  (* +------------------+
-     | Low-level access |
-     +------------------+ *)
+  (* +---------------------------------------------------------------+
+     | Low-level access                                              |
+     +---------------------------------------------------------------+ *)
 
   let rec get_block_unsafe ic size f =
     if ic.max - ic.ptr < size then
@@ -956,9 +956,9 @@ struct
   struct
     open Byte_order
 
-    (* +-----------------+
-       | Reading numbers |
-       +-----------------+ *)
+    (* +-------------------------------------------------------------+
+       | Reading numbers                                             |
+       +-------------------------------------------------------------+ *)
 
     let get buffer ptr = Char.code (String.unsafe_get buffer ptr)
 
@@ -1031,9 +1031,9 @@ struct
     let get_float32 ic = get_int32 ic >>= fun x -> return (Int32.float_of_bits x)
     let get_float64 ic = get_int64 ic >>= fun x -> return (Int64.float_of_bits x)
 
-    (* +-----------------+
-       | Writing numbers |
-       +-----------------+ *)
+    (* +-------------------------------------------------------------+
+       | Writing numbers                                             |
+       +-------------------------------------------------------------+ *)
 
     let set buffer ptr x = String.unsafe_set buffer ptr (Char.unsafe_chr x)
 
@@ -1079,9 +1079,9 @@ struct
     let put_float64 oc v = put_int64 oc (Int64.bits_of_float v)
   end
 
-  (* +---------------+
-     | Random access |
-     +---------------+ *)
+  (* +---------------------------------------------------------------+
+     | Random access                                                 |
+     +---------------------------------------------------------------+ *)
 
   let seek ch pos =
     lwt offset = ch.seek pos Unix.SEEK_SET in
@@ -1114,9 +1114,9 @@ struct
     seek ch ch.offset >> return len
 end
 
-(* +----------------------+
-   | Primitive operations |
-   +----------------------+ *)
+(* +-----------------------------------------------------------------+
+   | Primitive operations                                            |
+   +-----------------------------------------------------------------+ *)
 
 let read_char ic = primitive Primitives.read_char ic
 let read_char_opt ic = primitive Primitives.read_char_opt ic
@@ -1189,9 +1189,9 @@ end
 module LE = Make_number_io(Byte_order.LE)
 module BE = Make_number_io(Byte_order.BE)
 
-(* +-------+
-   | Other |
-   +-------+ *)
+(* +-----------------------------------------------------------------+
+   | Other                                                           |
+   +-----------------------------------------------------------------+ *)
 
 let read_chars ic = Lwt_stream.from (fun _ -> read_char_opt ic)
 let read_lines ic = Lwt_stream.from (fun _ -> read_line_opt ic)

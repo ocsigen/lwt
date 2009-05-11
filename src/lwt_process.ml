@@ -26,9 +26,9 @@ type command = string * string array
 
 let shell cmd = ("/bin/sh", [| "/bin/sh"; "-c"; cmd |])
 
-(* +------------------+
-   | Spawing commands |
-   +------------------+ *)
+(* +-----------------------------------------------------------------+
+   | Spawing commands                                                |
+   +-----------------------------------------------------------------+ *)
 
 let fd_move fd1 fd2 =
   Unix.dup2 fd1 fd2;
@@ -172,9 +172,9 @@ let get_status_output cmd =
 
 let get_output cmd = get_status_output cmd >|= snd
 
-(* +----------------------+
-   | High-level functions |
-   +----------------------+ *)
+(* +-----------------------------------------------------------------+
+   | High-level functions                                            |
+   +-----------------------------------------------------------------+ *)
 
 let exec ?env cmd = (process_none ?env cmd)#close
 
