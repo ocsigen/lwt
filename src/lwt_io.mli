@@ -361,12 +361,8 @@ val get_value : ic -> 'a Lwt.t
 
 (** {6 Binary output} *)
 
-val force_flush : oc -> unit Lwt.t
-  (** [force_flush oc] performs all pending writes on [oc] *)
-
 val flush : oc -> unit Lwt.t
-  (** [flush oc] does nothing if the channel is auto-flushed, and
-      executes [force_flush] if not *)
+  (** [flush oc] performs all pending writes on [oc] *)
 
 val put_byte : oc -> char -> unit Lwt.t
   (** [put_byte oc byte] outputs [byte] to [oc] *)

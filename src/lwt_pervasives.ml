@@ -58,6 +58,7 @@ let write = Lwt_io.write
 let write_line = Lwt_io.write_line
 let write_lines = Lwt_io.write_lines
 let close = Lwt_io.close
+let flush = Lwt_io.flush
 
 (* +-----------------------------------------------------------------+
    | Printing                                                        |

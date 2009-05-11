@@ -828,7 +828,7 @@ struct
      | Binary output                                                 |
      +---------------------------------------------------------------+ *)
 
-  let force_flush = flush_total
+  let flush = flush_total
 
   let rec put_byte oc ch =
     let ptr = oc.ptr in
@@ -1130,12 +1130,7 @@ let get ic str ofs len = primitive (fun ic -> Primitives.get ic str ofs len) ic
 let get_exactly ic str ofs len = primitive (fun ic -> Primitives.get_exactly ic str ofs len) ic
 let get_value ic = primitive Primitives.get_value ic
 
-let force_flush oc = primitive Primitives.force_flush oc
-let flush oc =
-  if oc.channel.auto_flush then
-    return ()
-  else
-    force_flush oc
+let flush oc = primitive Primitives.flush oc
 
 let write_char oc txt = primitive (fun oc -> Primitives.write_char oc txt) oc
 let write oc txt = primitive (fun oc -> Primitives.write oc txt) oc

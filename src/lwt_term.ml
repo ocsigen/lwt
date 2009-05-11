@@ -60,7 +60,7 @@ let show_cursor _ =
 
 let hide_cursor _ =
   cursor_visible := false;
-  write stdout "\x1B[?25h"
+  write stdout "\x1B[?25l"
 
 let clear_screen _ =
   write stdout "\027[2J\027[H"
@@ -93,7 +93,7 @@ let leave_raw_mode () =
           assert false
       | Raw attr ->
           state := Normal;
-          (Lwt_io.force_flush Lwt_io.stdout <&> Lwt_io.force_flush Lwt_io.stderr) >> begin
+          (Lwt_io.flush Lwt_io.stdout <&> Lwt_io.flush Lwt_io.stderr) >> begin
             set_attr attr;
             return ()
           end
@@ -111,7 +111,7 @@ let with_raw_mode f =
               incr raw_count;
               state := Raw attr;
               (* Flush the output before modifying terminal mode: *)
-              (Lwt_io.force_flush Lwt_io.stdout <&> Lwt_io.force_flush Lwt_io.stderr) >> begin
+              (Lwt_io.flush Lwt_io.stdout <&> Lwt_io.flush Lwt_io.stderr) >> begin
                 set_attr {
                   attr with
                     (* Inspired from Python-3.0/Lib/tty.py: *)

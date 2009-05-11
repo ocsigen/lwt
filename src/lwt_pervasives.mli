@@ -84,6 +84,8 @@ val write : Lwt_io.oc -> Text.t -> unit Lwt.t
 val write_line : Lwt_io.oc -> Text.t -> unit Lwt.t
 val write_lines : ?sep : Text.t -> Lwt_io.oc -> Text.t Lwt_stream.t -> unit Lwt.t
 
+val flush : Lwt_io.oc -> unit Lwt.t
+
 (** {6 Printing facilities} *)
 
 val print : Text.t -> unit Lwt.t

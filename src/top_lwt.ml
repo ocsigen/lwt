@@ -87,7 +87,7 @@ let rec read_input prompt buffer len =
       let sprompt = if prompt = "  " then [fg blue; text "> "] else [fg yellow; text prompt] in
       let txt = Lwt_main.run
         (lwt l = Lwt_read_line.read_line ~complete ~history:(!history) sprompt in
-         Lwt_io.force_flush stdout >> return l) in
+         Lwt_io.flush stdout >> return l) in
       if Text.strip txt <> "" then history := txt :: !history;
       input := txt ^ "\n";
       pos := 0;

@@ -71,7 +71,7 @@ let out_channel_of_descr fd =
     (Lwt_unix.write fd)
 let make_out_channel ?close write = make ~auto_flush:false ~mode:Lwt_io.output ~encoding ?close write
 let output = put_exactly
-let flush = force_flush
+let flush = flush
 let output_string = put_byte_array
 let output_value oc v = put_value oc v
 let output_char = put_byte
