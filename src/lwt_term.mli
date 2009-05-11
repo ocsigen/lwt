@@ -273,10 +273,8 @@ type point = {
 val blank : point
   (** A space with default color and styles *)
 
-val render : point array array -> string
-  (** Convert an offscreen array to a string which just need to be
-      output. It contains all escape sequence to go to the top-left
-      corner, and set colors. *)
+val render : point array array -> unit Lwt.t
+  (** Render an offscreen array to the terminal. *)
 
 (**/**)
 

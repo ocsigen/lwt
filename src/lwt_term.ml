@@ -469,49 +469,57 @@ let rec add_int buf = function
       Buffer.add_char buf (Char.unsafe_chr (48 + (n mod 10)))
 
 let render m =
-  let buf = Buffer.create (80 * 25 + 42) in
-  (* Go to the top-left corner and reset attributes: *)
-  Buffer.add_string buf "\027[H\027[0m";
-  let style = ref blank.style in
-  for y = 0 to Array.length m - 1 do
-    for x = 0 to Array.length m.(y) - 1 do
-      let pt = m.(y).(x) in
-      if pt.style <> !style then begin
-        Buffer.add_string buf "\027[0";
-        let mode n = function
-          | true ->
-              Buffer.add_char buf ';';
-              Buffer.add_string buf (string_of_int n)
-          | false ->
+  let buf = Buffer.create 80 and style = ref blank.style in
+  let rec loop y =
+    if y < Array.length m then begin
+      Buffer.clear buf;
+      for x = 0 to Array.length m.(y) - 1 do
+        let pt = m.(y).(x) in
+        if pt.style <> !style then begin
+          Buffer.add_string buf "\027[0";
+          let mode n = function
+            | true ->
+                Buffer.add_char buf ';';
+                add_int buf n
+            | false ->
+                ()
+          and color f col =
+            if col = default then
               ()
-        and color f col =
-          if col = default then
-            ()
-          else if col < 8 then begin
-            Buffer.add_char buf ';';
-            add_int buf (f col)
-          end else begin
-            Buffer.add_char buf ';';
-            add_int buf (f 8);
-            Buffer.add_string buf ";5;";
-            add_int buf col;
-          end
-        in
-        mode Codes.bold pt.style.bold;
-        mode Codes.underlined pt.style.underlined;
-        mode Codes.blink pt.style.blink;
-        mode Codes.inverse pt.style.inverse;
-        mode Codes.hidden pt.style.hidden;
-        color Codes.foreground pt.style.foreground;
-        color Codes.background pt.style.background;
-        Buffer.add_char buf 'm';
-        style := pt.style
-      end;
-      Buffer.add_string buf pt.char
-    done
-  done;
-  Buffer.add_string buf "\027[0m";
-  Buffer.contents buf
+            else if col < 8 then begin
+              Buffer.add_char buf ';';
+              add_int buf (f col)
+            end else begin
+              Buffer.add_char buf ';';
+              add_int buf (f 8);
+              Buffer.add_string buf ";5;";
+              add_int buf col;
+            end
+          in
+          mode Codes.bold pt.style.bold;
+          mode Codes.underlined pt.style.underlined;
+          mode Codes.blink pt.style.blink;
+          mode Codes.inverse pt.style.inverse;
+          mode Codes.hidden pt.style.hidden;
+          color Codes.foreground pt.style.foreground;
+          color Codes.background pt.style.background;
+          Buffer.add_char buf 'm';
+          style := pt.style
+        end;
+        Buffer.add_string buf pt.char
+      done;
+      (* Flush at each line because some terminal behave strangly: *)
+      write stdout (Buffer.contents buf) >> flush stdout >> loop (y + 1)
+    end else
+      return ()
+  in
+  flush stdout >>
+    (* Go to the top-left corner and reset attributes: *)
+    write stdout "\027[H\027[0m" >>
+    loop 0 >>
+    write stdout "\027[0m" >>
+    flush stdout
+
 
 (* +-----------------------------------------------------------------+
    | Styled text                                                     |
