@@ -156,7 +156,7 @@ val standard_input : Text.t Lwt_stream.t
   (** The input stream used by [read_key] *)
 
 val read_key : unit -> key Lwt.t
-  (** Get and decode a key from {!Lwt_stream.standard_text} *)
+  (** Get and decode a key from {!standard_input} *)
 
 (** {6 Styles} *)
 

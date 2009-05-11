@@ -153,7 +153,9 @@ let _ =
         Options.ocamlc   := ocamlfind "ocamlc";
         Options.ocamlopt := ocamlfind "ocamlopt";
         Options.ocamldep := ocamlfind "ocamldep";
-        Options.ocamldoc := ocamlfind "ocamldoc"
+        (* FIXME: sometimes ocamldoc say that elements are not found
+           even if they are present: *)
+        Options.ocamldoc := S[A"ocamlfind"; A"ocamldoc"; A"-hide-warnings"]
 
     | After_rules ->
 
@@ -258,7 +260,11 @@ let _ =
         and prod = "lwt.odocl" in
         rule "lwt_doc" ~prod ~deps
           (fun _ _ -> Echo(List.map (sprintf "src/%s\n")
-                             (List.concat (List.map string_list_of_file deps))
+                             (* Filter deprecated modules: *)
+                             (List.filter (function
+                                             | "Lwt_chan" -> false
+                                             | _ -> true)
+                                (List.concat (List.map string_list_of_file deps)))
                            @ ["syntax/Pa_lwt\n"],
                            prod));
 
