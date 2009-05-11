@@ -174,7 +174,11 @@ val make :
       parameter is not used if [mode = input].
 
       @param encoding is the channel encoding, for text
-      input/output. It defaults to [Encoding.system].
+      input/output. It defaults to [Encoding.system ^ "//TRANSLIT"].
+      The ["//TRANSLIT"] suffix means that characters that cannot be
+      encoded are approximated. You can also use the ["//IGNORE"]
+      suffix which means that these characters are discarded. Note
+      that the suffix is not returned by {!encoding}.
 
       @param buffer_size is the size of the internal buffer. It is not
       used if [buffer] is provided.
@@ -195,11 +199,6 @@ val encoding : 'a channel -> Encoding.t
 
 val set_encoding : 'a channel -> Encoding.t -> unit
   (** [set_encoding ch enc] change the encoding used by [ch] to [enc] *)
-
-val fallback : oc -> (Text.t -> Text.t option) ref
-  (** [fallback oc] is a function used for character that can not be
-      encoded in the channel encoding. It defaults to
-      [Text.to_ascii] *)
 
 val of_fd : ?buffer_size : int -> ?encoding : Encoding.t -> mode : 'a mode -> Lwt_unix.file_descr -> 'a channel
   (** [of_fd ~mode ~fd] creates a channel from a file descriptor *)

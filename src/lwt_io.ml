@@ -132,9 +132,6 @@ and 'mode _channel = {
 
   mutable coder : 'mode;
   (* The encoder or decoder of the channel *)
-
-  fallback : (Text.t -> Text.t option) ref;
-  (* The fallback character of the channel *)
 }
 
 type ic = input channel
@@ -425,7 +422,11 @@ let alias_to_close = close
 let no_seek pos cmd =
   fail (Failure "Lwt_io.seek: seek not supported on this channel")
 
-let make ?(auto_flush=true) ?(encoding=Encoding.system) ?buffer_size ?(close=return) ?(seek=no_seek) ~mode perform_io =
+let encoding_name name = match Text.split ~sep:"//" name with
+  | main :: _ -> main
+  | _ -> name
+
+let make ?(auto_flush=true) ?(encoding=Encoding.system ^ "//TRANSLIT") ?buffer_size ?(close=return) ?(seek=no_seek) ~mode perform_io =
   let buffer =
     String.create (match buffer_size with
                      | None ->
@@ -450,8 +451,7 @@ let make ?(auto_flush=true) ?(encoding=Encoding.system) ?buffer_size ?(close=ret
     mode = mode;
     seek = (fun pos cmd -> try seek pos cmd with e -> fail e);
     offset = 0L;
-    fallback = ref (fun txt -> Some(Text.to_ascii txt));
-    encoding = encoding;
+    encoding = encoding_name encoding;
     coder = match mode with
         (* Justification: we use Obj.magic because we do not have
            GADTs: *)
@@ -485,10 +485,8 @@ let set_encoding ch enc =
   let coder = match ch.channel.mode with
     | Input -> Obj.magic (Encoding.decoder enc)
     | Output -> Obj.magic (Encoding.encoder enc) in
-  ch.channel.encoding <- enc;
+  ch.channel.encoding <- encoding_name enc;
   ch.channel.coder <- coder
-
-let fallback ch = ch.channel.fallback
 
 (* +-----------------------------------------------------------------+
    | Byte-order                                                      |
@@ -674,32 +672,14 @@ struct
     match Encoding.encode oc.coder oc.buffer oc.ptr (oc.max - oc.ptr) code with
       | Encoding.Enc_ok count ->
           oc.ptr <- oc.ptr + count;
-          return true
+          return ()
       | Encoding.Enc_need_more ->
           flush_partial oc >> write_code oc code
       | Encoding.Enc_error ->
-          return false
-
-  let rec write_no_fallback oc ptr = match Text.next ptr with
-    | None ->
-        return ()
-    | Some(ch, ptr) ->
-        write_code oc (Text.code ch) >>= function
-          | false ->
-              fail (Failure "Lwt_io: cannot encode character")
-          | true ->
-              write_no_fallback oc ptr
+          fail (Failure "Lwt_io: cannot encode character")
 
   let write_char oc ch =
-    write_code oc (Text.code ch) >>= function
-      | true ->
-          return ()
-      | false ->
-          match !(oc.fallback) ch with
-            | None ->
-                fail (Failure "Lwt_io: cannot encode character")
-            | Some txt ->
-                write_no_fallback oc (Text.pointer_l txt)
+    write_code oc (Text.code ch)
 
   let rec write_all oc ptr = match Text.next ptr with
     | None ->
