@@ -60,10 +60,37 @@ CAMLprim value lwt_unix_read(value fd, value buf, value ofs, value len)
    | Terminal sizes |
    +----------------+ */
 
+#if defined(__MINGW32__)
+
+#include <windows.h>
+#include <wincon.h>
+
+CAMLprim value lwt_unix_term_size(value fd)
+{
+  CAMLparam1(fd);
+  HANDLE handle;
+  CONSOLE_SCREEN_BUFFER_INFO info;
+
+  hConOut = GetStdHandle(STD_OUTPUT_HANDLE);
+  if (hConOut == INVALID_HANDLE_VALUE)
+    caml_failwith("GetStdHandle");
+
+  if (!GetConsoleScreenBufferInfo(hConOut, &scr))
+    caml_failwith("GetConsoleScreenBufferInfo");
+
+  value result = caml_alloc_tuple(2);
+  Field(result, 0) = Val_int(scr.dwSize.X);
+  Field(result, 1) = Val_int(scr.dwSize.Y);
+  CAMLreturn(result);
+}
+
+#else
+
 #include <sys/ioctl.h>
 #include <termios.h>
 
-CAMLprim value lwt_unix_term_size(value fd) {
+CAMLprim value lwt_unix_term_size(value fd)
+{
   CAMLparam1(fd);
 
   struct winsize size;
@@ -76,3 +103,4 @@ CAMLprim value lwt_unix_term_size(value fd) {
   CAMLreturn(result);
 }
 
+#endif
