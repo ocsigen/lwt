@@ -259,6 +259,9 @@ val atomic : ('a channel -> 'b Lwt.t) -> ('a channel -> 'b Lwt.t)
 val file_length : string -> int64 Lwt.t
   (** Returns the length of a file *)
 
+val buffered : 'a channel -> int
+  (** [buffered oc] returns the number of bytes in the buffer *)
+
 (** {6 Random access} *)
 
 val set_pos : 'a channel -> int64 -> unit Lwt.t

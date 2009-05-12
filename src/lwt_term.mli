@@ -43,6 +43,10 @@ val hide_cursor : unit -> unit Lwt.t
 val clear_screen : unit -> unit Lwt.t
   (** [clear_screen ()] clears the entire screen *)
 
+val write_sequence : Lwt_io.oc -> Text.t -> unit Lwt.t
+  (** [write_sequence oc seq] writes a sequence in a reliable way on a
+      channel *)
+
 (** {6 Terminal informations} *)
 
 (** Terminal sizes: *)
@@ -168,9 +172,6 @@ val set_color : color -> int * int * int -> unit Lwt.t
   (** [set_color num (red, green, blue)] sets the three components of
       the color number [num] *)
 
-val set_colors : (color * (int * int * int)) list -> unit Lwt.t
-  (** [set_colors cols] sets multiples colors at the same time *)
-
 (** {8 Standard colors} *)
 
 val default : color
@@ -232,9 +233,6 @@ type styled_text = styled_text_instruction list
 
 val strip_styles : styled_text -> Text.t
   (** Drop all styles *)
-
-val apply_styles : styled_text -> Text.t
-  (** Replace all styles by their escape sequence. *)
 
 val styled_length : styled_text -> int
   (** Returns the length (in unicode character) of the given styled

@@ -31,6 +31,16 @@ let stdin_is_atty = lazy(Unix.isatty Unix.stdin)
 let stdout_is_atty = lazy(Unix.isatty Unix.stdout)
 let stderr_is_atty = lazy(Unix.isatty Unix.stderr)
 
+let write_sequence oc seq =
+  Lwt_io.atomic (fun oc ->
+                   (* Most terminals have a small command buffer, and
+                      will have a bad reaction if the writing yield in
+                      the middle of an escape sequence: *)
+                   if Lwt_io.buffered oc >= 1024 then
+                     flush oc >> write oc seq
+                   else
+                     write oc seq) oc
+
 type state =
   | Normal
   | Raw of Unix.terminal_io
@@ -56,14 +66,14 @@ let cursor_visible = ref true
 
 let show_cursor _ =
   cursor_visible := true;
-  write stdout "\x1B[?25h"
+  write_sequence stdout "\x1B[?25h"
 
 let hide_cursor _ =
   cursor_visible := false;
-  write stdout "\x1B[?25l"
+  write_sequence stdout "\x1B[?25l"
 
 let clear_screen _ =
-  write stdout "\027[2J\027[H"
+  write_sequence stdout "\027[2J\027[H"
 
 (* Restore terminal mode on exit: *)
 let cleanup () =
@@ -428,16 +438,7 @@ module Codes = struct
 end
 
 let set_color num (r, g, b) =
-  write stdout (Printf.sprintf "\027]4;%d;rgb:%02x/%02x/%02x;\027\\" num r g b)
-
-let set_colors l =
-  atomic
-    (fun oc ->
-       write oc "\027]4;"
-       >> Lwt_util.iter_serial
-         (fun (num, (r, g, b)) ->
-            write oc (Printf.sprintf "%d;rgb:%02x/%02x/%02x;\027\\" num r g b)) l
-       >> write oc ";\027\\") stdout
+  write_sequence stdout (Printf.sprintf "\027]4;%d;rgb:%02x/%02x/%02x;\027\\" num r g b)
 
 (* +-----------------------------------------------------------------+
    | Rendering                                                       |
@@ -469,57 +470,61 @@ let rec add_int buf = function
       Buffer.add_char buf (Char.unsafe_chr (48 + (n mod 10)))
 
 let render m =
-  let buf = Buffer.create 80 and style = ref blank.style in
-  let rec loop y =
-    if y < Array.length m then begin
-      Buffer.clear buf;
-      for x = 0 to Array.length m.(y) - 1 do
-        let pt = m.(y).(x) in
-        if pt.style <> !style then begin
-          Buffer.add_string buf "\027[0";
-          let mode n = function
-            | true ->
-                Buffer.add_char buf ';';
-                add_int buf n
-            | false ->
-                ()
-          and color f col =
-            if col = default then
-              ()
-            else if col < 8 then begin
-              Buffer.add_char buf ';';
-              add_int buf (f col)
-            end else begin
-              Buffer.add_char buf ';';
-              add_int buf (f 8);
-              Buffer.add_string buf ";5;";
-              add_int buf col;
-            end
-          in
-          mode Codes.bold pt.style.bold;
-          mode Codes.underlined pt.style.underlined;
-          mode Codes.blink pt.style.blink;
-          mode Codes.inverse pt.style.inverse;
-          mode Codes.hidden pt.style.hidden;
-          color Codes.foreground pt.style.foreground;
-          color Codes.background pt.style.background;
-          Buffer.add_char buf 'm';
-          style := pt.style
-        end;
-        Buffer.add_string buf pt.char
-      done;
-      (* Flush at each line because some terminal behave strangly: *)
-      write stdout (Buffer.contents buf) >> flush stdout >> loop (y + 1)
-    end else
-      return ()
-  in
-  flush stdout >>
+  let buf = Buffer.create 16 in
+  Lwt_io.atomic begin fun oc ->
+    let rec loop_y y last_style =
+      if y < Array.length m then
+        let rec loop_x x last_style =
+          if x < Array.length m.(y) then
+            let pt = m.(y).(x) in
+            begin
+              if pt.style <> last_style then begin
+                Buffer.clear buf;
+                Buffer.add_string buf "\027[0";
+                let mode n = function
+                  | true ->
+                      Buffer.add_char buf ';';
+                      add_int buf n
+                  | false ->
+                      ()
+                and color f col =
+                  if col = default then
+                    ()
+                  else if col < 8 then begin
+                    Buffer.add_char buf ';';
+                    add_int buf (f col)
+                  end else begin
+                    Buffer.add_char buf ';';
+                    add_int buf (f 8);
+                    Buffer.add_string buf ";5;";
+                    add_int buf col;
+                  end
+                in
+                mode Codes.bold pt.style.bold;
+                mode Codes.underlined pt.style.underlined;
+                mode Codes.blink pt.style.blink;
+                mode Codes.inverse pt.style.inverse;
+                mode Codes.hidden pt.style.hidden;
+                color Codes.foreground pt.style.foreground;
+                color Codes.background pt.style.background;
+                Buffer.add_char buf 'm';
+                write_sequence oc (Buffer.contents buf)
+              end else
+                return ()
+            end >>
+              write_char oc pt.char >> loop_x (x + 1) pt.style
+          else
+            loop_y (y + 1) last_style
+        in
+        loop_x 0 last_style
+      else
+        return ()
+    in
     (* Go to the top-left corner and reset attributes: *)
-    write stdout "\027[H\027[0m" >>
-    loop 0 >>
-    write stdout "\027[0m" >>
-    flush stdout
-
+    write_sequence oc "\027[H\027[0m" >>
+      loop_y 0 blank.style >>
+      write_sequence oc "\027[0m"
+  end stdout
 
 (* +-----------------------------------------------------------------+
    | Styled text                                                     |
@@ -547,48 +552,56 @@ let strip_styles st =
                | _ -> ()) st;
   Buffer.contents buf
 
-let apply_styles st =
-  let buf = Buffer.create 42
+let write_styled oc st =
+  let buf = Buffer.create 16
 
   (* Pendings style codes: *)
   and codes = Queue.create () in
 
   (* Output pending codes using only one escape sequence: *)
   let output_pendings () =
-    if Queue.is_empty codes then
-      ()
-    else begin
-      Buffer.add_string buf "\027[";
-      add_int buf (Queue.take codes);
-      Queue.iter (fun code ->
-                    Buffer.add_char buf ';';
-                    add_int buf code) codes;
-      Queue.clear codes;
-      Buffer.add_char buf 'm'
-    end
+    Buffer.clear buf;
+    Buffer.add_string buf "\027[";
+    add_int buf (Queue.take codes);
+    Queue.iter (fun code ->
+                  Buffer.add_char buf ';';
+                  add_int buf code) codes;
+    Queue.clear codes;
+    Buffer.add_char buf 'm';
+    write_sequence oc (Buffer.contents buf)
   in
 
   let rec loop = function
     | [] ->
-        output_pendings ();
-        Buffer.contents buf
+        if not (Queue.is_empty codes) then
+          output_pendings ()
+        else
+          return ()
     | instr :: rest ->
-        begin match instr with
+        match instr with
           | Text t  ->
-              output_pendings ();
-              Buffer.add_string buf t
+              if not (Queue.is_empty codes) then
+                output_pendings () >> write oc t >> loop rest
+              else
+                write oc t >> loop rest
           | Reset ->
-              Queue.add 0 codes
+              Queue.add 0 codes;
+              loop rest
           | Bold ->
-              Queue.add Codes.bold codes
+              Queue.add Codes.bold codes;
+              loop rest
           | Underlined ->
-              Queue.add Codes.underlined codes
+              Queue.add Codes.underlined codes;
+              loop rest
           | Blink ->
-              Queue.add Codes.blink codes
+              Queue.add Codes.blink codes;
+              loop rest
           | Inverse ->
-              Queue.add Codes.inverse codes
+              Queue.add Codes.inverse codes;
+              loop rest
           | Hidden ->
-              Queue.add Codes.hidden codes
+              Queue.add Codes.hidden codes;
+              loop rest
           | Foreground col ->
               if col = default then
                 Queue.add (Codes.foreground 9) codes
@@ -598,7 +611,8 @@ let apply_styles st =
                 Queue.add (Codes.foreground 8) codes;
                 Queue.add 5 codes;
                 Queue.add col codes
-              end
+              end;
+              loop rest
           | Background col ->
               if col = default then
                 Queue.add (Codes.background 9) codes
@@ -608,9 +622,8 @@ let apply_styles st =
                 Queue.add (Codes.background 8) codes;
                 Queue.add 5 codes;
                 Queue.add col codes
-              end
-        end;
-        loop rest
+              end;
+              loop rest
   in
   loop st
 
@@ -624,21 +637,21 @@ let styled_length st =
 
 let printc st =
   if Lazy.force stdout_is_atty then
-    write stdout (apply_styles st)
+    Lwt_io.atomic (fun oc -> write_styled oc st) stdout
   else
     write stdout (strip_styles st)
 
 let eprintc st =
   if Lazy.force stderr_is_atty then
-    write stderr (apply_styles st)
+    Lwt_io.atomic (fun oc -> write_styled oc st) stderr
   else
     write stderr (strip_styles st)
 
 let fprintlc oc is_atty st =
   if Lazy.force is_atty then
     atomic (fun oc ->
-              write oc (apply_styles st)
-              >> write oc "\027[0m"
+              write_styled oc st
+              >> write_sequence oc "\027[0m"
               >> write oc (if raw_mode () then "\r\n" else "\n")) oc
   else
     write_line oc (strip_styles st)

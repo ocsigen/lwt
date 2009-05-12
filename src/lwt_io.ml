@@ -488,6 +488,11 @@ let set_encoding ch enc =
   ch.channel.encoding <- encoding_name enc;
   ch.channel.coder <- coder
 
+let buffered ch =
+  match ch.channel.mode with
+    | Input -> ch.channel.max - ch.channel.ptr
+    | Output -> ch.channel.ptr
+
 (* +-----------------------------------------------------------------+
    | Byte-order                                                      |
    +-----------------------------------------------------------------+ *)
