@@ -10,12 +10,12 @@
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following
+ * disclaimer in the documentation and/or other materials provided
+ * with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY METAWEB TECHNOLOGIES ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -39,6 +39,23 @@
     {{:http://eigenclass.org/hiki.rb?cmd=view&p=lightweight-threads-with-lwt}Comparing lightweight threads (eigenclass.org)} *)
 
 type 'a t
+    (** The type of a mailbox variable. Mailbox variables are used to
+        communicate values between threads in a synchronous way. The
+        type parameter specifies the type of the value propagated from
+        {put} to {take}. *)
+
 val create : unit -> 'a t
+    (** [create ()] creates a new mailbox variable. *)
+
 val put : 'a t -> 'a -> unit
+    (** [put mvar value] puts a value into a mailbox variable. This value
+        will remain in the mailbox until {take} is called to remove it, or
+        until a new value is {put} (replacing the old value). If another
+        thread is awaiting a value (has called {take}) then the awaiting
+        thread will be awoken and will receive the value that was deposited. *)
+
 val take : 'a t -> 'a Lwt.t
+    (** [take mvar] will take any currently available value from the
+        mailbox variable. If no value is currently available, the current
+        thread will block, awaiting a value to be {put} by another thread. *)
+

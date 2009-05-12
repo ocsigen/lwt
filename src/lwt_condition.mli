@@ -10,12 +10,12 @@
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following
+ * disclaimer in the documentation and/or other materials provided
+ * with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY METAWEB TECHNOLOGIES ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -36,7 +36,26 @@
     for notification. *)
 
 type 'a t
+    (** Condition variable type. The type parameter denotes the type of
+        value propagated from notifier to waiter. Condition variables should
+        be used in conjunction with {Lwt_monitor.t} to synchronize
+        notifications. *)
+
 val create : unit -> 'a t
+    (** [create ()] creates a new condition variable. *)
+
 val wait : 'a t -> 'a Lwt.t
+    (** [wait condvar] waits for a condition notification to occur.
+        When the awaited condition is notified, the value parameter passed
+        to {notify} is returned. *)
+
 val notify : 'a t -> 'a -> unit
+    (** [notify condvar value] notifies that a condition is ready. A single
+        waiting thread will be awoken and will receive the notification value
+        which will be returned from {wait}. Note that condition notification
+        is not "sticky", i.e. if there is no waiter when {notify} is called,
+        the notification will be missed and the value discarded. *)
+
 val notify_all : 'a t -> 'a -> unit
+    (** [notify_all condvar value] notifies all waiting threads. Each will
+        be awoken in turn and will receive the same notification value. *)
