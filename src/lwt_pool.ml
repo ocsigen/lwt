@@ -19,13 +19,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *)
 
+open Lwt
+
 (*
-XXX What if create fails
 XXX Close after some timeout
 ...
 *)
-
-let (>>=) = Lwt.bind
 
 type 'a t =
   { create : unit -> 'a Lwt.t;
@@ -43,32 +42,50 @@ let create m ?(check = fun _ f -> f true) create =
     list = Queue.create ();
     waiters = Queue.create () }
 
+let create_member p =
+  try_lwt
+    lwt mem = p.create () in
+    p.count <- p.count + 1;
+    return mem
+  with exn ->
+    (* create failed, so don't increment count *)
+    fail exn
+
 let acquire p =
   try
-    Lwt.return (Queue.take p.list)
+    return (Queue.take p.list)
   with Queue.Empty ->
-    if p.count < p.max then begin
-      p.count <- p.count + 1;
-      p.create ()
-    end else begin
-      let r = Lwt.wait () in
+    if p.count < p.max then
+      create_member p
+    else begin
+      let r = wait () in
       Queue.push r p.waiters;
       r
     end
 
 let release p c =
   try
-    Lwt.wakeup (Queue.take p.waiters) c
+    wakeup (Queue.take p.waiters) c
   with Queue.Empty ->
     Queue.push c p.list
 
 let checked_release p c =
-  p.check c (fun ok ->
-  if ok then release p c else
-  ignore (p.create () >>= fun c -> release p c; Lwt.return ()))
+  p.check c begin fun ok ->
+    if ok then
+      release p c
+    else
+      ignore (p.count <- p.count - 1;
+              lwt c = create_member p in
+              release p c;
+              return ())
+  end
 
 let use p f =
-  acquire p >>= fun c ->
-  Lwt.catch
-    (fun () -> f c >>= fun r -> release p c; Lwt.return r)
-    (fun e -> checked_release p c; Lwt.fail e)
+  lwt c = acquire p in
+  try_lwt
+    lwt r = f c in
+    release p c;
+    return r
+  with e ->
+    checked_release p c;
+    fail e
