@@ -243,9 +243,17 @@ let unix_file_descr ch = ch.fd
 
 let of_unix_file_descr fd = mk_ch fd
 
-let stdin = of_unix_file_descr Unix.stdin
-let stdout = of_unix_file_descr Unix.stdout
-let stderr = of_unix_file_descr Unix.stderr
+(* Try to create a file descriptor from a unix file descriptor, but
+   does not fail if set_nonblock fail: *)
+let of_fd_maybe fd =
+  try
+    of_unix_file_descr Unix.stdin
+  with _ ->
+    { fd = fd; state = Closed }
+
+let stdin = of_fd_maybe Unix.stdin
+let stdout = of_fd_maybe Unix.stdout
+let stderr = of_fd_maybe Unix.stderr
 
 external lwt_unix_read : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_read"
 external lwt_unix_write : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_write"
