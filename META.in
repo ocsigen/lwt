@@ -3,12 +3,14 @@
 description = "Lightweight thread library for OCaml (core library)"
 requires = "unix,text"
 version = "@VERSION@"
+exists_if = "lwt.cmo,lwt.cmx,lwt.cmxs"
 archive(byte) = "lwt.cma"
 archive(native) = "lwt.cmxa"
 archive(toploop,byte) += "top_lwt.cma"
 archive(toploop,native) += "top_lwt.cmxa"
 
 package "preemptive" (
+  exists_if = "lwt_preemptive.cma,lwt_preemptive.cmxa,lwt_preemptive.cmxs"
   description = "Preemptive threads support for Lwt"
   requires = "threads,lwt"
   archive(mt,byte) = "lwt_preemptive.cma"
@@ -16,6 +18,7 @@ package "preemptive" (
 )
 
 package "ssl" (
+  exists_if = "lwt_ssl.cma,lwt_ssl.cmxa,lwt_ssl.cmxs"
   description = "SSL support for Lwt"
   requires = "ssl,lwt"
   archive(byte) = "lwt_ssl.cma"
@@ -23,6 +26,7 @@ package "ssl" (
 )
 
 package "extra" (
+  exists_if = "lwt_extra.cma,lwt_extra.cmxa,lwt_extra.cmxs"
   description = "Unix functions for Lwt using Lwt_preemptive"
   requires = "lwt.preemptive"
   archive(mt,byte) = "lwt_extra.cma"
@@ -30,6 +34,7 @@ package "extra" (
 )
 
 package "glib" (
+  exists_if = "lwt_glib.cma,lwt_glib.cmxa,lwt_glib.cmxs"
   description = "Glib integration"
   requires = "lwt,lablgtk2"
   archive(byte) = "lwt_glib.cma"
@@ -37,6 +42,7 @@ package "glib" (
 )
 
 package "syntax" (
+  exists_if = "pa_lwt.cmo"
   description = "Syntactic sugars for Lwt"
   requires = "camlp4"
   archive(syntax,preprocessor) = "pa_lwt.cmo"
