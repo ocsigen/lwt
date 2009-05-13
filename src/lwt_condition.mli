@@ -38,7 +38,7 @@
 type 'a t
     (** Condition variable type. The type parameter denotes the type of
         value propagated from notifier to waiter. Condition variables should
-        be used in conjunction with {Lwt_monitor.t} to synchronize
+        be used in conjunction with [Lwt_monitor.t] to synchronize
         notifications. *)
 
 val create : unit -> 'a t
@@ -47,13 +47,13 @@ val create : unit -> 'a t
 val wait : 'a t -> 'a Lwt.t
     (** [wait condvar] waits for a condition notification to occur.
         When the awaited condition is notified, the value parameter passed
-        to {notify} is returned. *)
+        to [notify] is returned. *)
 
 val notify : 'a t -> 'a -> unit
     (** [notify condvar value] notifies that a condition is ready. A single
         waiting thread will be awoken and will receive the notification value
-        which will be returned from {wait}. Note that condition notification
-        is not "sticky", i.e. if there is no waiter when {notify} is called,
+        which will be returned from [wait]. Note that condition notification
+        is not "sticky", i.e. if there is no waiter when [notify] is called,
         the notification will be missed and the value discarded. *)
 
 val notify_all : 'a t -> 'a -> unit

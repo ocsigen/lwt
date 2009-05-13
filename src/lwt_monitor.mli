@@ -45,10 +45,10 @@ val create : unit -> t
 val lock : t -> unit Lwt.t
     (** [lock mon] locks a monitor to gain exclusive access to a
         shared resource. If the monitor is currently locked by another
-        thread, the thread calling {lock} will block until the monitor
+        thread, the thread calling [lock] will block until the monitor
         is unlocked.  Note that a monitor must not be "re-entered",
-        i.e. {lock} called more than once without an intervening
-        {unlock} call. *)
+        i.e. [lock] called more than once without an intervening
+        [unlock] call. *)
 
 val unlock : t -> unit
     (** [unlock mon] unlocks a monitor. This releases exclusive access
@@ -58,34 +58,34 @@ val unlock : t -> unit
 val with_lock : t -> (unit -> 'a Lwt.t) -> 'a Lwt.t
     (** [with_lock mon f] is used to lock a monitor within a block scope.
         The function [f ()] is called with the monitor locked, and its
-        result is returned from the call to {with_lock}. If an exception
+        result is returned from the call to [with_lock]. If an exception
         is raised from f, the monitor is also unlocked before the scope of
-        {with_lock} is exited. *)
+        [with_lock] is exited. *)
 
 val wait : t -> 'a Lwt_condition.t -> 'a Lwt.t
     (** [wait mon condvar] will cause the current thread to block,
         awaiting notification for a condition variable, condvar. The
         calling thread be within the monitor (must have previously
-        called {lock} or be within the scope of {with_lock}). The
+        called [lock] or be within the scope of [with_lock]). The
         monitor is temporarily unlocked until the condition is
         notified. Upon notification, the monitor is re-locked before
-        {wait} returns and the thread's activity is resumed. When the
+        [wait] returns and the thread's activity is resumed. When the
         awaited condition is notified, the value parameter passed to
-        {notify} is returned. *)
+        [notify] is returned. *)
 
 val notify : t -> 'a Lwt_condition.t -> 'a -> unit
     (** [notify mon condvar value] notifies that a condition is
         ready. A single waiting thread will be awoken and will receive
-        the notification value which will be returned from {wait}. The
+        the notification value which will be returned from [wait]. The
         calling thread be within the monitor (must have previously
-        called {lock} or be within the scope of {with_lock}). Note
+        called [lock] or be within the scope of [with_lock]). Note
         that condition notification is not "sticky", i.e. if there is
-        no waiter when {notify} is called, the notification will be
+        no waiter when [notify] is called, the notification will be
         missed and the value discarded. *)
 
 val notify_all : t -> 'a Lwt_condition.t -> 'a -> unit
     (** [notify_all mon condvar value] notifies all waiting
         threads. Each will be awoken in turn and will receive the same
         notification value. The calling thread be within the monitor
-        (must have previously called {lock} or be within the scope of
-        {with_lock}). *)
+        (must have previously called [lock] or be within the scope of
+        [with_lock]). *)
