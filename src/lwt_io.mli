@@ -90,6 +90,10 @@
     For function returning a stream, elements are read as there are
     requested. *)
 
+exception Channel_closed of string
+  (** Exception raised whan a channel is closed. The parameter is a
+      description of the channel. *)
+
 (** {6 Types} *)
 
 type 'mode channel

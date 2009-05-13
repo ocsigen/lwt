@@ -22,6 +22,8 @@
 
 open Lwt
 
+exception Channel_closed of string
+
 (* Minimum size for buffers: *)
 let min_buffer_size = 16
 
@@ -169,7 +171,7 @@ let name ch = match ch.mode with
   | Input -> "input"
   | Output -> "output"
 
-let closed_channel ch = Sys_error(Printf.sprintf "closed %s channel" (name ch))
+let closed_channel ch = Channel_closed(name ch)
 let invalid_channel ch = Failure(Printf.sprintf "temporary atomic %s channel no more valid" (name ch))
 
 (* Flush/refill the buffer. No race condition could happen because

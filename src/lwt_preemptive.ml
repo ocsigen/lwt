@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *)
 
-open Lwt;;
+open Lwt
 
 exception Task_failed
 
@@ -36,7 +36,7 @@ let finishedpipe =
   let (in_fd, out_fd) = Lwt_unix.pipe_in () in
   Lwt_unix.set_close_on_exec in_fd;
   Unix.set_close_on_exec out_fd;
-  (Lwt_chan.in_channel_of_descr in_fd, Unix.out_channel_of_descr out_fd)
+  (Lwt_io.of_fd ~mode:Lwt_io.input in_fd, Unix.out_channel_of_descr out_fd)
 
 let pipelock = Mutex.create ()
 
@@ -132,36 +132,38 @@ let detach (f : 'a -> 'b) (args : 'a) : 'b Lwt.t =
 
 let dispatch errlog =
   let rec aux () =
-    (catch
-       (fun () ->
-         Lwt_chan.input_line (fst finishedpipe) >>=
-         (fun v ->
-           let n = int_of_string v in
-
-           ignore (
-           (* Here we want to do the recursive call as soon as possible
-              (and before the wakeup)
-              because if Lwt_unix.run is called by the waiters of the
-              thread beeing awoken,
-              and if that run wants to use detach,
-              the pipe won't be available, and the run will never finish ...
-              and block the other run
-              (remember that an invocation of [run] will not terminate
-              before all subsequent invocations are terminated)
-            *)
-           Lwt_unix.yield () >>= fun () ->
-             wakeup !pool.(n).client ();
-             return ());
-           return ()))
-
-       (fun e ->
-          errlog
-            ("Internal error in lwt_preemptive.ml (read failed on the pipe) "^
-               Printexc.to_string e ^" - Please check if Lwt_preemptive is initialized and that lwt_preemptive.cmo is linked only once. Otherwise, please report the bug");
-         return ())
-    ) >>= (fun () -> aux ())
-  in aux ()
-
+    begin
+      try_lwt
+        lwt n = int_of_string =|< Lwt_chan.input_line (fst finishedpipe) in
+        ignore begin
+          (* Here we want to do the recursive call as soon as possible
+             (and before the wakeup)
+             because if Lwt_unix.run is called by the waiters of the
+             thread beeing awoken,
+             and if that run wants to use detach,
+             the pipe won't be available, and the run will never finish ...
+             and block the other run
+             (remember that an invocation of [run] will not terminate
+             before all subsequent invocations are terminated)
+          *)
+          Lwt_unix.yield () >> begin
+            wakeup !pool.(n).client ();
+            return ()
+          end
+        end;
+        return `continue
+      with
+        | Lwt_io.Channel_closed _ ->
+            return `break
+        | e ->
+            errlog
+              ("Internal error in lwt_preemptive.ml (read failed on the pipe) "^
+                 Printexc.to_string e ^" - Please check if Lwt_preemptive is initialized and that lwt_preemptive.cmo is linked only once. Otherwise, please report the bug");
+            fail e
+   end >>= function
+     | `continue -> aux ()
+     | `break -> return ()
+ in aux ()
 
 let initthread =
   let def = Lwt.return () in

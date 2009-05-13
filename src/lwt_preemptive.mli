@@ -29,7 +29,7 @@
 val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
 
 
-val init : int -> int -> (string -> unit) -> 'a Lwt.t
+val init : int -> int -> (string -> unit) -> unit Lwt.t
 (** Should be called only once at the begining of the process.
     Arguments are: minimum number of threads, maximum number of threads
     and the function to log errors.
