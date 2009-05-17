@@ -158,6 +158,8 @@ let _ =
         Options.ocamldoc := S[A"ocamlfind"; A"ocamldoc"; A"-hide-warnings"]
 
     | After_rules ->
+        Pathname.define_context "src" [ "src/private" ];
+        Pathname.define_context "src/private" [ "src" ];
 
         (* +---------------------------------------------------------+
            | Internal syntaxes                                       |
@@ -263,7 +265,7 @@ let _ =
                              (* Filter deprecated modules: *)
                              (List.filter (function
                                              | "Lwt_chan" -> false
-                                             | _ -> true)
+                                             | s -> not (String.is_prefix "private" s))
                                 (List.concat (List.map string_list_of_file deps)))
                            @ ["syntax/Pa_lwt\n"],
                            prod));
