@@ -52,8 +52,8 @@ let printlf fmt = Printf.ksprintf printl fmt
 
 let eprint txt = Lwt_text.write Lwt_text.stderr txt
 let eprintl txt = Lwt_text.write_line Lwt_text.stderr txt
-let eprintf fmt = Printf.ksprintf print fmt
-let eprintlf fmt = Printf.ksprintf printl fmt
+let eprintf fmt = Printf.ksprintf eprint fmt
+let eprintlf fmt = Printf.ksprintf eprintl fmt
 
 (* +-----------------------------------------------------------------+
    | Styled printing                                                 |
