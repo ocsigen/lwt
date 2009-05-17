@@ -35,8 +35,7 @@ and 'a lazy_list = 'a node Lwt.t Lazy.t
 type 'a t = 'a lazy_list ref
 
 let of_lazy_list = ref
-let get_lazy_list = ( ! )
-let set_lazy_list = ( := )
+let to_lazy_list = ( ! )
 
 let make f = ref(Lazy.lazy_from_fun f)
 
@@ -483,3 +482,9 @@ let encode ?(encoding=Encoding.system) s =
       return(Cons(buf.[pos], lazy(loop (pos + 1) count)))
   in
   make next
+
+let parse s f =
+  let s' = clone s in
+  lwt x = f s' in
+  s := !s';
+  return x

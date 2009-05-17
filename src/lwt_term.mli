@@ -43,7 +43,7 @@ val hide_cursor : unit -> unit Lwt.t
 val clear_screen : unit -> unit Lwt.t
   (** [clear_screen ()] clears the entire screen *)
 
-val write_sequence : Lwt_io.oc -> Text.t -> unit Lwt.t
+val write_sequence : Lwt_text.output_channel -> Text.t -> unit Lwt.t
   (** [write_sequence oc seq] writes a sequence in a reliable way on a
       channel *)
 
@@ -157,7 +157,7 @@ val decode_key : Text.t -> key
   (** Decode a key. *)
 
 val standard_input : Text.t Lwt_stream.t
-  (** The input stream used by [read_key] *)
+  (** The input stream used by {!read_key} *)
 
 val read_key : unit -> key Lwt.t
   (** Get and decode a key from {!standard_input} *)

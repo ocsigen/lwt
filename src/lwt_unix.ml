@@ -247,7 +247,7 @@ let of_unix_file_descr fd = mk_ch fd
    does not fail if set_nonblock fail: *)
 let of_fd_maybe fd =
   try
-    of_unix_file_descr Unix.stdin
+    of_unix_file_descr fd
   with _ ->
     { fd = fd; state = Closed }
 

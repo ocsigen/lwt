@@ -82,7 +82,7 @@ val complete : Text.t -> Text.t -> Text.t -> Text.t list -> completion_result
       functions. [words] is a list of possible completions for
       [word]. *)
 
-val print_words : Lwt_io.oc -> int -> string list -> unit Lwt.t
+val print_words : Lwt_text.output_channel -> int -> string list -> unit Lwt.t
   (** [print_words oc columns strs] pretty-prints a list of words. *)
 
 (** {8 History} *)

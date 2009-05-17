@@ -21,7 +21,7 @@
  *)
 
 open Lwt
-open Lwt_io
+open Lwt_text
 
 (* +-----------------------------------------------------------------+
    | Terminal mode                                                   |
@@ -32,11 +32,11 @@ let stdout_is_atty = lazy(Unix.isatty Unix.stdout)
 let stderr_is_atty = lazy(Unix.isatty Unix.stderr)
 
 let write_sequence oc seq =
-  Lwt_io.atomic (fun oc ->
+  Lwt_text.atomic (fun oc ->
                    (* Most terminals have a small command buffer, and
                       will have a bad reaction if the writing yield in
                       the middle of an escape sequence: *)
-                   if Lwt_io.buffered oc >= 1024 then
+                   if Lwt_io.buffered (Lwt_text.byte_channel oc) >= 1024 then
                      flush oc >> write oc seq
                    else
                      write oc seq) oc
@@ -103,10 +103,8 @@ let leave_raw_mode () =
           assert false
       | Raw attr ->
           state := Normal;
-          (Lwt_io.flush Lwt_io.stdout <&> Lwt_io.flush Lwt_io.stderr) >> begin
-            set_attr attr;
-            return ()
-          end
+          set_attr attr;
+          return ()
   else
     return ()
 
@@ -120,27 +118,22 @@ let with_raw_mode f =
           | Some attr ->
               incr raw_count;
               state := Raw attr;
-              (* Flush the output before modifying terminal mode: *)
-              (Lwt_io.flush Lwt_io.stdout <&> Lwt_io.flush Lwt_io.stderr) >> begin
-                set_attr {
-                  attr with
-                    (* Inspired from Python-3.0/Lib/tty.py: *)
-                    Unix.c_brkint = false;
-                    Unix.c_icrnl = false;
-                    Unix.c_inpck = false;
-                    Unix.c_istrip = false;
-                    Unix.c_ixon = false;
-                    Unix.c_opost = false;
-                    Unix.c_csize = 8;
-                    Unix.c_parenb = false;
-                    Unix.c_echo = false;
-                    Unix.c_icanon = false;
-                    Unix.c_isig = false;
-                    Unix.c_vmin = 1;
-                    Unix.c_vtime = 0
-                };
-                try_lwt f () finally leave_raw_mode ()
-              end
+              set_attr {
+                attr with
+                  (* Inspired from Python-3.0/Lib/tty.py: *)
+                  Unix.c_brkint = false;
+                  Unix.c_inpck = false;
+                  Unix.c_istrip = false;
+                  Unix.c_ixon = false;
+                  Unix.c_csize = 8;
+                  Unix.c_parenb = false;
+                  Unix.c_echo = false;
+                  Unix.c_icanon = false;
+                  Unix.c_isig = false;
+                  Unix.c_vmin = 1;
+                  Unix.c_vtime = 0
+              };
+              try_lwt f () finally leave_raw_mode ()
           | None ->
               fail (Failure "Lwt_term.with_raw_mode: input is not a tty")
 
@@ -168,34 +161,25 @@ exception Exit_sequence
 let parse_escape st =
   let buf = Buffer.create 10 in
   Buffer.add_char buf '\027';
-  let s = ref(Lwt_stream.get_lazy_list st) in
   (* Read one character and add it to [buf]: *)
   let get () =
-    match Lwt.state (Lazy.force !s) with
+    match Lwt.state (Lwt_stream.get st) with
       | Sleep ->
           (* If the rest is not immediatly available, conclude that
              this is not an escape sequence but just the escape key: *)
           fail Exit_sequence
       | Fail exn ->
           fail exn
-      | Return Lwt_stream.Nil ->
+      | Return None ->
           fail Exit_sequence
-      | Return(Lwt_stream.Cons(ch, l)) ->
+      | Return(Some ch) ->
           (* Is it an ascii character ? *)
           if String.length ch = 1 then begin
-            s := l;
             Buffer.add_string buf ch;
             return ch.[0]
           end else
             (* If it is not, then this is not an escape sequence: *)
             fail Exit_sequence
-
-  (* Called when the end-of-sequence is detected: *)
-  and finish () =
-    (* Update the stream: *)
-    Lwt_stream.set_lazy_list st !s;
-    (* Returns the complete sequence: *)
-    return (Buffer.contents buf)
   in
 
   (* Sometimes sequences starts with several escape characters: *)
@@ -214,19 +198,19 @@ let parse_escape st =
             | '0' .. '9' | ';' ->
                 loop ()
             | ch ->
-                finish ()
+                return (Buffer.contents buf)
         in
         loop ()
 
     | ch ->
-        finish ()
+        return (Buffer.contents buf)
 
 let parse_key_raw st =
   Lwt_stream.next st >>= function
     | "\027" ->
         begin
           try_lwt
-            parse_escape st
+            Lwt_stream.parse st parse_escape
           with
               Exit_sequence -> return "\027"
         end
@@ -371,7 +355,7 @@ let decode_key ch =
   if ch = "" then invalid_arg "Lwt_term.decode_key";
   match ch with
     | "\x09" -> Key_tab
-    | "\x0d" -> Key_enter
+    | "\x0a" -> Key_enter
     | "\x1b" -> Key_escape
     | "\x7f" -> Key_backspace
     | ch when String.length ch = 1 ->
@@ -387,7 +371,7 @@ let decode_key ch =
             Not_found -> Key ch
         end
 
-let standard_input = Lwt_io.read_chars Lwt_io.stdin
+let standard_input = Lwt_text.read_chars Lwt_text.stdin
 
 let read_key () =
   with_raw_mode (fun _ -> parse_key_raw standard_input >|= decode_key)
@@ -471,7 +455,7 @@ let rec add_int buf = function
 
 let render m =
   let buf = Buffer.create 16 in
-  Lwt_io.atomic begin fun oc ->
+  Lwt_text.atomic begin fun oc ->
     let rec loop_y y last_style =
       if y < Array.length m then
         let rec loop_x x last_style =
@@ -637,13 +621,13 @@ let styled_length st =
 
 let printc st =
   if Lazy.force stdout_is_atty then
-    Lwt_io.atomic (fun oc -> write_styled oc st) stdout
+    atomic (fun oc -> write_styled oc st) stdout
   else
     write stdout (strip_styles st)
 
 let eprintc st =
   if Lazy.force stderr_is_atty then
-    Lwt_io.atomic (fun oc -> write_styled oc st) stderr
+    atomic (fun oc -> write_styled oc st) stderr
   else
     write stderr (strip_styles st)
 
@@ -651,8 +635,8 @@ let fprintlc oc is_atty st =
   if Lazy.force is_atty then
     atomic (fun oc ->
               write_styled oc st
-              >> write_sequence oc "\027[0m"
-              >> write oc (if raw_mode () then "\r\n" else "\n")) oc
+              >> write_sequence oc "\027[m"
+              >> write_char oc "\n") oc
   else
     write_line oc (strip_styles st)
 

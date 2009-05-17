@@ -36,24 +36,23 @@ let check_buffer_size fun_name buffer_size =
     ()
 
 let default_buffer_size = ref 4096
-let get_default_buffer_size _ = !default_buffer_size
-let set_default_buffer_size size =
-  check_buffer_size "set_default_buffer_size" size;
-  default_buffer_size := size
 
 let close_fd fd =
   try
     Lwt_unix.close fd;
     return ()
-  with
-      exn -> fail exn
+  with exn ->
+    fail exn
 
 (* +-----------------------------------------------------------------+
    | Types                                                           |
    +-----------------------------------------------------------------+ *)
 
-type input = Encoding.decoder
-type output = Encoding.encoder
+type byte = char
+type byte_array = string
+
+type input
+type output
 
 type 'a mode = Input | Output
 
@@ -105,9 +104,6 @@ and 'mode _channel = {
   (* Thread which is wakeup with an exception when the channel is
      closed. *)
 
-  auto_flush : bool;
-  (* Is auto-flushing enabled ? *)
-
   mutable auto_flushing : bool;
   (* Wether the auto-flusher is currently running or not *)
 
@@ -128,38 +124,25 @@ and 'mode _channel = {
 
   mutable offset : int64;
   (* Number of bytes really read/written *)
-
-  mutable encoding : Encoding.t;
-  (* The channel encoding *)
-
-  mutable coder : 'mode;
-  (* The encoder or decoder of the channel *)
 }
 
-type ic = input channel
-type oc = output channel
+type input_channel = input channel
+type output_channel = output channel
+
+type direct_access = {
+  da_buffer : byte_array;
+  mutable da_ptr : int;
+  mutable da_max : int;
+  da_perform : unit -> int Lwt.t;
+}
 
 let mode wrapper = wrapper.channel.mode
-
-external cast : 'a channel -> unit channel = "%identity"
-
-let cast_ic wrapper =
-  if wrapper.channel.mode = Input then
-    (Obj.magic (wrapper : 'a channel) : input channel)
-  else
-    invalid_arg "Lwt_io.cast_ic"
-
-let cast_oc wrapper =
-  if wrapper.channel.mode = Output then
-    (Obj.magic (wrapper : 'a channel) : output channel)
-  else
-    invalid_arg "Lwt_io.cast_oc"
 
 (* +-----------------------------------------------------------------+
    | Creations, closing, locking, ...                                |
    +-----------------------------------------------------------------+ *)
 
-let get_pos wrapper =
+let position wrapper =
   let ch = wrapper.channel in
   match ch.mode with
     | Input ->
@@ -274,7 +257,6 @@ let unlock wrapper = match wrapper.state with
       (* Launches the auto-flusher: *)
       let ch = wrapper.channel in
       if (ch.mode = Output &&
-          ch.auto_flush &&
           (* Launch the auto-flusher only for the main wrapper: *)
           ch.main == wrapper &&
           (* Do not launch two auto-flusher: *)
@@ -424,11 +406,7 @@ let alias_to_close = close
 let no_seek pos cmd =
   fail (Failure "Lwt_io.seek: seek not supported on this channel")
 
-let encoding_name name = match Text.split ~sep:"//" name with
-  | main :: _ -> main
-  | _ -> name
-
-let make ?(auto_flush=true) ?(encoding=Encoding.system ^ "//TRANSLIT") ?buffer_size ?(close=return) ?(seek=no_seek) ~mode perform_io =
+let make ?buffer_size ?(close=return) ?(seek=no_seek) ~mode perform_io =
   let buffer =
     String.create (match buffer_size with
                      | None ->
@@ -448,17 +426,10 @@ let make ?(auto_flush=true) ?(encoding=Encoding.system ^ "//TRANSLIT") ?buffer_s
     close = lazy(try_lwt close ());
     abort = wait ();
     main = wrapper;
-    auto_flush = auto_flush;
     auto_flushing = false;
     mode = mode;
     seek = (fun pos cmd -> try seek pos cmd with e -> fail e);
     offset = 0L;
-    encoding = encoding_name encoding;
-    coder = match mode with
-        (* Justification: we use Obj.magic because we do not have
-           GADTs: *)
-      | Input -> Obj.magic (Encoding.decoder encoding)
-      | Output -> Obj.magic (Encoding.encoder encoding);
   } and wrapper = {
     state = Idle;
     channel = ch;
@@ -467,10 +438,9 @@ let make ?(auto_flush=true) ?(encoding=Encoding.system ^ "//TRANSLIT") ?buffer_s
   Lwt_gc.finalise_or_exit alias_to_close wrapper;
   wrapper
 
-let of_fd ?buffer_size ?encoding ~mode fd =
+let of_fd ?buffer_size ~mode fd =
   make
     ?buffer_size
-    ?encoding
     ~close:(fun _ -> close_fd fd)
     ~seek:(fun pos cmd -> return (Unix.LargeFile.lseek (Lwt_unix.unix_file_descr fd) pos cmd))
     ~mode
@@ -478,17 +448,8 @@ let of_fd ?buffer_size ?encoding ~mode fd =
        | Input -> Lwt_unix.read fd
        | Output -> Lwt_unix.write fd)
 
-let of_unix_fd ?buffer_size ?encoding ~mode fd =
-  of_fd ?buffer_size ?encoding ~mode (Lwt_unix.of_unix_file_descr fd)
-
-let encoding ch = ch.channel.encoding
-
-let set_encoding ch enc =
-  let coder = match ch.channel.mode with
-    | Input -> Obj.magic (Encoding.decoder enc)
-    | Output -> Obj.magic (Encoding.encoder enc) in
-  ch.channel.encoding <- encoding_name enc;
-  ch.channel.coder <- coder
+let of_unix_fd ?buffer_size ~mode fd =
+  of_fd ?buffer_size ~mode (Lwt_unix.of_unix_file_descr fd)
 
 let buffered ch =
   match ch.channel.mode with
@@ -499,7 +460,7 @@ let buffered ch =
    | Byte-order                                                      |
    +-----------------------------------------------------------------+ *)
 
-module Byte_order =
+module ByteOrder =
 struct
   module type S = sig
     val pos16_0 : int
@@ -563,168 +524,30 @@ struct
      safe operations. *)
 
   (* +---------------------------------------------------------------+
-     | Text input                                                    |
+     | Reading                                                       |
      +---------------------------------------------------------------+ *)
 
-  let rec read_char ic =
+  let rec read_byte ic =
     let ptr = ic.ptr in
     if ptr = ic.max then
       refill ic >>= function
         | 0 -> fail End_of_file
-        | _ -> read_char ic
-    else
-      match Encoding.decode ic.coder ic.buffer ic.ptr (ic.max - ic.ptr) with
-        | Encoding.Dec_ok(code, count) ->
-            ic.ptr <- ic.ptr + count;
-            return (Text.char code)
-        | Encoding.Dec_need_more ->
-            refill ic >>= begin function
-              | 0 -> fail (Failure "Lwt_io.read_char: unterminated multibyte sequence")
-              | _ -> read_char ic
-            end
-        | Encoding.Dec_error ->
-            fail (Failure "Lwt_io.read_char: cannot decode multibyte sequence")
-
-  let read_char_opt ic =
-    try_lwt
-      read_char ic >|= fun ch -> Some ch
-    with
-      | End_of_file ->
-          return None
-      | exn ->
-          fail exn
-
-  let rec read_all ic buf =
-    lwt ch = read_char ic in
-    Buffer.add_string buf ch;
-    read_all ic buf
-
-  let rec read_count ic buf = function
-    | 0 ->
-        return (Buffer.contents buf)
-    | n ->
-        lwt ch = read_char ic in
-        Buffer.add_string buf ch;
-        read_count ic buf (n - 1)
-
-  let read count ic = match count with
-    | None ->
-        let buf = Buffer.create 512 in
-        begin
-          try_lwt
-            read_all ic buf
-          with
-            | End_of_file ->
-                return (Buffer.contents buf)
-        end
-    | Some 0 ->
-        return ""
-    | Some 1 ->
-        begin
-          try_lwt
-            read_char ic
-          with
-            | End_of_file ->
-                return ""
-        end
-    | Some len ->
-        let buf = Buffer.create len in
-        begin
-          try_lwt
-            read_count ic buf len
-          with
-            | End_of_file ->
-                return (Buffer.contents buf)
-        end
-
-  let read_line ic =
-    let buf = Buffer.create 128 in
-    let rec loop cr_read =
-      try_bind (fun _ -> read_char ic)
-        (function
-           | "\n" ->
-               return(Buffer.contents buf)
-           | "\r" ->
-               if cr_read then Buffer.add_char buf '\r';
-               loop true
-           | ch ->
-               if cr_read then Buffer.add_char buf '\r';
-               Buffer.add_string buf ch;
-               loop false)
-        (function
-           | End_of_file ->
-               if cr_read then Buffer.add_char buf '\r';
-               return(Buffer.contents buf)
-           | exn ->
-               fail exn)
-    in
-    read_char ic >>= function
-      | "\r" -> loop true
-      | ch -> Buffer.add_string buf ch; loop false
-
-  let read_line_opt ic =
-    try_lwt
-      read_line ic >|= fun ch -> Some ch
-    with
-      | End_of_file ->
-          return None
-      | exn ->
-          fail exn
-
-  (* +---------------------------------------------------------------+
-     | Text output                                                   |
-     +---------------------------------------------------------------+ *)
-
-  let rec write_code oc code =
-    match Encoding.encode oc.coder oc.buffer oc.ptr (oc.max - oc.ptr) code with
-      | Encoding.Enc_ok count ->
-          oc.ptr <- oc.ptr + count;
-          return ()
-      | Encoding.Enc_need_more ->
-          flush_partial oc >> write_code oc code
-      | Encoding.Enc_error ->
-          fail (Failure "Lwt_io: cannot encode character")
-
-  let write_char oc ch =
-    write_code oc (Text.code ch)
-
-  let rec write_all oc ptr = match Text.next ptr with
-    | None ->
-        return ()
-    | Some(ch, ptr) ->
-        write_char oc ch >> write_all oc ptr
-
-  let write oc txt =
-    write_all oc (Text.pointer_l txt)
-
-  let write_line oc txt =
-    write oc txt >> write_char oc "\n"
-
-  (* +---------------------------------------------------------------+
-     | Binary input                                                  |
-     +---------------------------------------------------------------+ *)
-
-  let rec get_byte ic =
-    let ptr = ic.ptr in
-    if ptr = ic.max then
-      refill ic >>= function
-        | 0 -> fail End_of_file
-        | _ -> get_byte ic
+        | _ -> read_byte ic
     else begin
       ic.ptr <- ptr + 1;
       return (String.unsafe_get ic.buffer ptr)
     end
 
-  let get_byte_opt ic =
+  let read_byte_opt ic =
     try_lwt
-      get_byte ic >|= fun ch -> Some ch
+      read_byte ic >|= fun ch -> Some ch
     with
       | End_of_file ->
           return None
       | exn ->
           fail exn
 
-  let unsafe_get ic str ofs len =
+  let unsafe_read_into ic str ofs len =
     let avail = ic.max - ic.ptr in
     if avail > 0 then begin
       let len = min len avail in
@@ -740,20 +563,20 @@ struct
         return len
     end
 
-  let get ic str ofs len =
+  let read_into ic str ofs len =
     if ofs < 0 || len < 0 || ofs + len > String.length str then
       fail (Invalid_argument (Printf.sprintf
-                                "Lwt_io.get(ofs=%d,len=%d,str_len=%d)"
+                                "Lwt_io.read_into(ofs=%d,len=%d,str_len=%d)"
                                 ofs len (String.length str)))
     else begin
       if len = 0 then
         return 0
       else
-        unsafe_get ic str ofs len
+        unsafe_read_into ic str ofs len
     end
 
-  let rec unsafe_get_exactly ic str ofs len =
-    unsafe_get ic str ofs len >>= function
+  let rec unsafe_read_into_exactly ic str ofs len =
+    unsafe_read_into ic str ofs len >>= function
       | 0 ->
           fail End_of_file
       | n ->
@@ -761,72 +584,72 @@ struct
           if len = 0 then
             return ()
           else
-            unsafe_get_exactly ic str (ofs + n) len
+            unsafe_read_into_exactly ic str (ofs + n) len
 
-  let get_exactly ic str ofs len =
+  let read_into_exactly ic str ofs len =
     if ofs < 0 || len < 0 || ofs + len > String.length str then
       fail (Invalid_argument (Printf.sprintf
-                                "Lwt_io.get_exactly(ofs=%d,len=%d,str_len=%d)"
+                                "Lwt_io.read_into_exactly(ofs=%d,len=%d,str_len=%d)"
                                 ofs len (String.length str)))
     else begin
       if len = 0 then
         return ()
       else
-        unsafe_get_exactly ic str ofs len
+        unsafe_read_into_exactly ic str ofs len
     end
 
-  let rec get_all ic buf =
+  let rec read_all ic buf =
     Buffer.add_substring buf ic.buffer ic.ptr (ic.max - ic.ptr);
     refill ic >>= function
       | 0 ->
           fail End_of_file
       | n ->
-          get_all ic buf
+          read_all ic buf
 
-  let get_byte_array count ic =
+  let read_byte_array count ic =
     match count with
       | None ->
           let buf = Buffer.create 512 in
           begin
             try_lwt
-              get_all ic buf
+              read_all ic buf
             with
               | End_of_file ->
                   return (Buffer.contents buf)
           end
       | Some len ->
           let str = String.create len in
-          lwt real_len = unsafe_get ic str 0 len in
+          lwt real_len = unsafe_read_into ic str 0 len in
           if real_len < len then
             return (String.sub str 0 real_len)
           else
             return str
 
-  let get_value ic =
+  let read_value ic =
     let header = String.create 20 in
-    unsafe_get_exactly ic header 0 20 >>
+    unsafe_read_into_exactly ic header 0 20 >>
       let bsize = Marshal.data_size header 0 in
       let buffer = String.create (20 + bsize) in
       let _ = String.unsafe_blit header 0 buffer 0 20 in
-      unsafe_get_exactly ic buffer 20 bsize >>
+      unsafe_read_into_exactly ic buffer 20 bsize >>
         return (Marshal.from_string buffer 0)
 
   (* +---------------------------------------------------------------+
-     | Binary output                                                 |
+     | Writing                                                       |
      +---------------------------------------------------------------+ *)
 
   let flush = flush_total
 
-  let rec put_byte oc ch =
+  let rec write_byte oc ch =
     let ptr = oc.ptr in
     if ptr < oc.length then begin
       oc.ptr <- ptr + 1;
       String.unsafe_set oc.buffer ptr ch;
       return ()
     end else
-      flush_partial oc >> put_byte oc ch
+      flush_partial oc >> write_byte oc ch
 
-  let rec unsafe_put oc str ofs len =
+  let rec unsafe_write_from oc str ofs len =
     let avail = oc.length - oc.ptr in
     if avail >= len then begin
       String.unsafe_blit str ofs oc.buffer oc.ptr len;
@@ -842,69 +665,69 @@ struct
             return 0
           else
             (* Everything has been written, try to write more: *)
-            unsafe_put oc str (ofs + avail) len
+            unsafe_write_from oc str (ofs + avail) len
         end else
           (* Not everything has been written, just what is remaining: *)
           return len
     end
 
-  let put oc str ofs len =
+  let write_from oc str ofs len =
     if ofs < 0 || len < 0 || ofs + len > String.length str then
       fail (Invalid_argument (Printf.sprintf
-                                "Lwt_io.put(ofs=%d,len=%d,str_len=%d)"
+                                "Lwt_io.write_from(ofs=%d,len=%d,str_len=%d)"
                                 ofs len (String.length str)))
     else begin
       if len = 0 then
         return 0
       else
-        unsafe_put oc str ofs len >>= fun remaining -> return (len - remaining)
+        unsafe_write_from oc str ofs len >>= fun remaining -> return (len - remaining)
     end
 
-  let rec unsafe_put_exactly oc str ofs len =
-    unsafe_put oc str ofs len >>= function
+  let rec unsafe_write_from_exactly oc str ofs len =
+    unsafe_write_from oc str ofs len >>= function
       | 0 ->
           return ()
       | n ->
-          unsafe_put_exactly oc str (ofs + len - n) n
+          unsafe_write_from_exactly oc str (ofs + len - n) n
 
-  let put_exactly oc str ofs len =
+  let write_from_exactly oc str ofs len =
     if ofs < 0 || len < 0 || ofs + len > String.length str then
       fail (Invalid_argument (Printf.sprintf
-                                "Lwt_io.put_exactly(ofs=%d,len=%d,str_len=%d)"
+                                "Lwt_io.write_from_exactly(ofs=%d,len=%d,str_len=%d)"
                                 ofs len (String.length str)))
     else begin
       if len = 0 then
         return ()
       else
-        unsafe_put_exactly oc str ofs len
+        unsafe_write_from_exactly oc str ofs len
     end
 
-  let put_byte_array oc str =
-    unsafe_put_exactly oc str 0 (String.length str)
+  let write_byte_array oc str =
+    unsafe_write_from_exactly oc str 0 (String.length str)
 
-  let put_value oc ?(flags=[]) x =
-    put_byte_array oc (Marshal.to_string x flags)
+  let write_value oc ?(flags=[]) x =
+    write_byte_array oc (Marshal.to_string x flags)
 
   (* +---------------------------------------------------------------+
      | Low-level access                                              |
      +---------------------------------------------------------------+ *)
 
-  let rec get_block_unsafe ic size f =
+  let rec read_block_unsafe ic size f =
     if ic.max - ic.ptr < size then
       refill ic >>= function
         | 0 ->
             fail End_of_file
         | _ ->
-            get_block_unsafe ic size f
+            read_block_unsafe ic size f
     else begin
       let ptr = ic.ptr in
       ic.ptr <- ptr + size;
       f ic.buffer ptr
     end
 
-  let rec put_block_unsafe oc size f =
+  let rec write_block_unsafe oc size f =
     if oc.max - oc.ptr < size then
-      flush_partial oc >> put_block_unsafe oc size f
+      flush_partial oc >> write_block_unsafe oc size f
     else begin
       let ptr = oc.ptr in
       oc.ptr <- ptr + size;
@@ -922,26 +745,44 @@ struct
       end else
         match ch.mode with
           | Input ->
-              get_block_unsafe ch size f
+              read_block_unsafe ch size f
           | Output ->
-              put_block_unsafe ch size f
+              write_block_unsafe ch size f
+
+  let perform token da ch =
+    if !token then begin
+      if da.da_max <> ch.max || da.da_ptr < ch.ptr || da.da_ptr > ch.max then
+        fail (Invalid_argument "Lwt_io.direct_access.perform")
+      else begin
+        ch.ptr <- da.da_ptr;
+        lwt count = perform_io ch in
+        da.da_ptr <- ch.ptr;
+        da.da_max <- ch.max;
+        return count
+      end
+    end else
+      fail (Failure "Lwt_io.direct_access.perform: this function can not be called outside Lwt_io.direct_access")
 
   let direct_access ch f =
-    lwt len, x = if ch.ptr < ch.max then
-                   f ch.buffer ch.ptr (ch.max - ch.ptr)
-                 else
-                   perform_io ch >> f ch.buffer ch.ptr (ch.max - ch.ptr) in
-    if len < 0 || len > ch.max - ch.ptr then
-      fail (Failure(Printf.sprintf "Lwt_io.direct_access: invalid result of [f]: result = %d, ptr = %d, max = %d"
-                      len ch.ptr ch.max))
+    let token = ref true in
+    let rec da = {
+      da_ptr = ch.ptr;
+      da_max = ch.max;
+      da_buffer = ch.buffer;
+      da_perform = (fun _ -> perform token da ch);
+    } in
+    lwt x = f da in
+    token := false;
+    if da.da_max <> ch.max || da.da_ptr < ch.ptr || da.da_ptr > ch.max then
+      fail (Failure "Lwt_io.direct_access: invalid result of [f]")
     else begin
-      ch.ptr <- ch.ptr + len;
+      ch.ptr <- da.da_ptr;
       return x
     end
 
-  module Make_number_io(Byte_order : Byte_order.S) =
+  module MakeNumberIO(ByteOrder : ByteOrder.S) =
   struct
-    open Byte_order
+    open ByteOrder
 
     (* +-------------------------------------------------------------+
        | Reading numbers                                             |
@@ -949,8 +790,8 @@ struct
 
     let get buffer ptr = Char.code (String.unsafe_get buffer ptr)
 
-    let get_int ic =
-      get_block_unsafe ic 4
+    let read_int ic =
+      read_block_unsafe ic 4
         (fun buffer ptr ->
            let v0 = get buffer (ptr + pos32_0)
            and v1 = get buffer (ptr + pos32_1)
@@ -962,8 +803,8 @@ struct
            else
              return (v - (1 lsl 32)))
 
-    let get_int16 ic =
-      get_block_unsafe ic 2
+    let read_int16 ic =
+      read_block_unsafe ic 2
         (fun buffer ptr ->
            let v0 = get buffer (ptr + pos16_0)
            and v1 = get buffer (ptr + pos16_1) in
@@ -973,8 +814,8 @@ struct
            else
              return (v - (1 lsl 16)))
 
-    let get_int32 ic =
-      get_block_unsafe ic 4
+    let read_int32 ic =
+      read_block_unsafe ic 4
         (fun buffer ptr ->
            let v0 = get buffer (ptr + pos32_0)
            and v1 = get buffer (ptr + pos32_1)
@@ -988,8 +829,8 @@ struct
                         (Int32.shift_left (Int32.of_int v2) 16)
                         (Int32.shift_left (Int32.of_int v3) 24))))
 
-    let get_int64 ic =
-      get_block_unsafe ic 8
+    let read_int64 ic =
+      read_block_unsafe ic 8
         (fun buffer ptr ->
            let v0 = get buffer (ptr + pos64_0)
            and v1 = get buffer (ptr + pos64_1)
@@ -1015,8 +856,8 @@ struct
                            (Int64.shift_left (Int64.of_int v6) 48)
                            (Int64.shift_left (Int64.of_int v7) 56)))))
 
-    let get_float32 ic = get_int32 ic >>= fun x -> return (Int32.float_of_bits x)
-    let get_float64 ic = get_int64 ic >>= fun x -> return (Int64.float_of_bits x)
+    let read_float32 ic = read_int32 ic >>= fun x -> return (Int32.float_of_bits x)
+    let read_float64 ic = read_int64 ic >>= fun x -> return (Int64.float_of_bits x)
 
     (* +-------------------------------------------------------------+
        | Writing numbers                                             |
@@ -1024,8 +865,8 @@ struct
 
     let set buffer ptr x = String.unsafe_set buffer ptr (Char.unsafe_chr x)
 
-    let put_int oc v =
-      put_block_unsafe oc 4
+    let write_int oc v =
+      write_block_unsafe oc 4
         (fun buffer ptr ->
            set buffer (ptr + pos32_0) v;
            set buffer (ptr + pos32_1) (v lsr 8);
@@ -1033,15 +874,15 @@ struct
            set buffer (ptr + pos32_3) (v asr 24);
            return ())
 
-    let put_int16 oc v =
-      put_block_unsafe oc 2
+    let write_int16 oc v =
+      write_block_unsafe oc 2
         (fun buffer ptr ->
            set buffer (ptr + pos16_0) v;
            set buffer (ptr + pos16_1) (v lsr 8);
            return ())
 
-    let put_int32 oc v =
-      put_block_unsafe oc 4
+    let write_int32 oc v =
+      write_block_unsafe oc 4
         (fun buffer ptr ->
            set buffer (ptr + pos32_0) (Int32.to_int v);
            set buffer (ptr + pos32_1) (Int32.to_int (Int32.shift_right v 8));
@@ -1049,8 +890,8 @@ struct
            set buffer (ptr + pos32_3) (Int32.to_int (Int32.shift_right v 24));
            return ())
 
-    let put_int64 oc v =
-      put_block_unsafe oc 8
+    let write_int64 oc v =
+      write_block_unsafe oc 8
         (fun buffer ptr ->
            set buffer (ptr + pos64_0) (Int64.to_int v);
            set buffer (ptr + pos64_1) (Int64.to_int (Int64.shift_right v 8));
@@ -1062,8 +903,8 @@ struct
            set buffer (ptr + pos64_7) (Int64.to_int (Int64.shift_right v 56));
            return ())
 
-    let put_float32 oc v = put_int32 oc (Int32.bits_of_float v)
-    let put_float64 oc v = put_int64 oc (Int64.bits_of_float v)
+    let write_float32 oc v = write_int32 oc (Int32.bits_of_float v)
+    let write_float64 oc v = write_int64 oc (Int64.bits_of_float v)
   end
 
   (* +---------------------------------------------------------------+
@@ -1077,7 +918,7 @@ struct
     else
       return ()
 
-  let set_pos ch pos = match ch.mode with
+  let set_position ch pos = match ch.mode with
     | Output ->
         flush_total ch >>
         seek ch pos >>
@@ -1105,82 +946,70 @@ end
    | Primitive operations                                            |
    +-----------------------------------------------------------------+ *)
 
-let read_char ic = primitive Primitives.read_char ic
-let read_char_opt ic = primitive Primitives.read_char_opt ic
-let read ?count ic = primitive (fun ic -> Primitives.read count ic) ic
-let read_line ic = primitive Primitives.read_line ic
-let read_line_opt ic = primitive Primitives.read_line_opt ic
-let get_byte ic = primitive Primitives.get_byte ic
-let get_byte_opt ic = primitive Primitives.get_byte_opt ic
-let get_byte_array ?count ic = primitive (fun ic -> Primitives.get_byte_array count ic) ic
-let get ic str ofs len = primitive (fun ic -> Primitives.get ic str ofs len) ic
-let get_exactly ic str ofs len = primitive (fun ic -> Primitives.get_exactly ic str ofs len) ic
-let get_value ic = primitive Primitives.get_value ic
+let read_byte ic = primitive Primitives.read_byte ic
+let read_byte_opt ic = primitive Primitives.read_byte_opt ic
+let read_byte_array ?count ic = primitive (fun ic -> Primitives.read_byte_array count ic) ic
+let read_into ic str ofs len = primitive (fun ic -> Primitives.read_into ic str ofs len) ic
+let read_into_exactly ic str ofs len = primitive (fun ic -> Primitives.read_into_exactly ic str ofs len) ic
+let read_value ic = primitive Primitives.read_value ic
 
 let flush oc = primitive Primitives.flush oc
 
-let write_char oc txt = primitive (fun oc -> Primitives.write_char oc txt) oc
-let write oc txt = primitive (fun oc -> Primitives.write oc txt) oc
-let write_line oc txt = primitive (fun oc -> Primitives.write_line oc txt) oc
-let put_byte oc x = primitive (fun oc -> Primitives.put_byte oc x) oc
-let put_byte_array oc str = primitive (fun oc -> Primitives.put_byte_array oc str) oc
-let put oc str ofs len = primitive (fun oc -> Primitives.put oc str ofs len) oc
-let put_exactly oc str ofs len = primitive (fun oc -> Primitives.put_exactly oc str ofs len) oc
-let put_value oc ?flags x = primitive (fun oc -> Primitives.put_value oc ?flags x) oc
+let write_byte oc x = primitive (fun oc -> Primitives.write_byte oc x) oc
+let write_byte_array oc str = primitive (fun oc -> Primitives.write_byte_array oc str) oc
+let write_from oc str ofs len = primitive (fun oc -> Primitives.write_from oc str ofs len) oc
+let write_from_exactly oc str ofs len = primitive (fun oc -> Primitives.write_from_exactly oc str ofs len) oc
+let write_value oc ?flags x = primitive (fun oc -> Primitives.write_value oc ?flags x) oc
 
 let block ch size f = primitive (fun ch -> Primitives.block ch size f) ch
 let direct_access ch f = primitive (fun ch -> Primitives.direct_access ch f) ch
 
-let set_pos ch pos = primitive (fun ch -> Primitives.set_pos ch pos) ch
+let set_position ch pos = primitive (fun ch -> Primitives.set_position ch pos) ch
 let length ch = primitive Primitives.length ch
 
-module type Number_io = sig
-  val get_int : ic -> int Lwt.t
-  val get_int16 : ic -> int Lwt.t
-  val get_int32 : ic -> int32 Lwt.t
-  val get_int64 : ic -> int64 Lwt.t
-  val get_float32 : ic -> float Lwt.t
-  val get_float64 : ic -> float Lwt.t
-  val put_int : oc -> int -> unit Lwt.t
-  val put_int16 : oc -> int -> unit Lwt.t
-  val put_int32 : oc -> int32 -> unit Lwt.t
-  val put_int64 : oc -> int64 -> unit Lwt.t
-  val put_float32 : oc -> float -> unit Lwt.t
-  val put_float64 : oc -> float -> unit Lwt.t
+module type NumberIO = sig
+  val read_int : input_channel -> int Lwt.t
+  val read_int16 : input_channel -> int Lwt.t
+  val read_int32 : input_channel -> int32 Lwt.t
+  val read_int64 : input_channel -> int64 Lwt.t
+  val read_float32 : input_channel -> float Lwt.t
+  val read_float64 : input_channel -> float Lwt.t
+  val write_int : output_channel -> int -> unit Lwt.t
+  val write_int16 : output_channel -> int -> unit Lwt.t
+  val write_int32 : output_channel -> int32 -> unit Lwt.t
+  val write_int64 : output_channel -> int64 -> unit Lwt.t
+  val write_float32 : output_channel -> float -> unit Lwt.t
+  val write_float64 : output_channel -> float -> unit Lwt.t
 end
 
-module Make_number_io(Byte_order : Byte_order.S) =
+module MakeNumberIO(ByteOrder : ByteOrder.S) =
 struct
-  module Primitives = Primitives.Make_number_io(Byte_order)
+  module Primitives = Primitives.MakeNumberIO(ByteOrder)
 
-  let get_int ic = primitive Primitives.get_int ic
-  let get_int16 ic = primitive Primitives.get_int16 ic
-  let get_int32 ic = primitive Primitives.get_int32 ic
-  let get_int64 ic = primitive Primitives.get_int64 ic
-  let get_float32 ic = primitive Primitives.get_float32 ic
-  let get_float64 ic = primitive Primitives.get_float64 ic
+  let read_int ic = primitive Primitives.read_int ic
+  let read_int16 ic = primitive Primitives.read_int16 ic
+  let read_int32 ic = primitive Primitives.read_int32 ic
+  let read_int64 ic = primitive Primitives.read_int64 ic
+  let read_float32 ic = primitive Primitives.read_float32 ic
+  let read_float64 ic = primitive Primitives.read_float64 ic
 
-  let put_int oc x = primitive (fun oc -> Primitives.put_int oc x) oc
-  let put_int16 oc x = primitive (fun oc -> Primitives.put_int16 oc x) oc
-  let put_int32 oc x = primitive (fun oc -> Primitives.put_int32 oc x) oc
-  let put_int64 oc x = primitive (fun oc -> Primitives.put_int64 oc x) oc
-  let put_float32 oc x = primitive (fun oc -> Primitives.put_float32 oc x) oc
-  let put_float64 oc x = primitive (fun oc -> Primitives.put_float64 oc x) oc
+  let write_int oc x = primitive (fun oc -> Primitives.write_int oc x) oc
+  let write_int16 oc x = primitive (fun oc -> Primitives.write_int16 oc x) oc
+  let write_int32 oc x = primitive (fun oc -> Primitives.write_int32 oc x) oc
+  let write_int64 oc x = primitive (fun oc -> Primitives.write_int64 oc x) oc
+  let write_float32 oc x = primitive (fun oc -> Primitives.write_float32 oc x) oc
+  let write_float64 oc x = primitive (fun oc -> Primitives.write_float64 oc x) oc
 end
 
-module LE = Make_number_io(Byte_order.LE)
-module BE = Make_number_io(Byte_order.BE)
+module LE = MakeNumberIO(ByteOrder.LE)
+module BE = MakeNumberIO(ByteOrder.BE)
 
 (* +-----------------------------------------------------------------+
    | Other                                                           |
    +-----------------------------------------------------------------+ *)
 
-let read_chars ic = Lwt_stream.from (fun _ -> read_char_opt ic)
-let read_lines ic = Lwt_stream.from (fun _ -> read_line_opt ic)
-let write_chars oc chars = Lwt_stream.iter_s (fun ch -> write_char oc ch) chars
-let write_lines ?(sep="\n") oc lines = Lwt_stream.iter_s (fun line -> atomic (fun oc -> write oc line >> write oc sep) oc) lines
-let get_bytes ic = Lwt_stream.from (fun _ -> get_byte_opt ic)
-let put_bytes oc bytes = Lwt_stream.iter_s (fun byte -> put_byte oc byte) bytes
+let read_bytes ic = Lwt_stream.from (fun _ -> read_byte_opt ic)
+let write_bytes oc chars = Lwt_stream.iter_s (fun ch -> write_byte oc ch) chars
 
 let zero =
   make
@@ -1213,7 +1042,7 @@ let pipe ?buffer_size _ =
   let fd_r, fd_w = Lwt_unix.pipe () in
   (of_fd ?buffer_size ~mode:input fd_r, of_fd ?buffer_size ~mode:output fd_w)
 
-let open_file ?buffer_size ?encoding ?flags ?perm ~mode filename =
+let open_file ?buffer_size ?flags ?perm ~mode filename =
   let flags = match flags, mode with
     | Some l, _ ->
         l
@@ -1229,9 +1058,9 @@ let open_file ?buffer_size ?encoding ?flags ?perm ~mode filename =
     | None, Output ->
         0o666
   in
-  of_unix_fd ?buffer_size ?encoding ~mode (Unix.openfile filename flags perm)
+  of_unix_fd ?buffer_size ~mode (Unix.openfile filename flags perm)
 
-let with_file ?buffer_size ?encoding ?flags ?perm ~mode filename f =
+let with_file ?buffer_size ?flags ?perm ~mode filename f =
   let ic = open_file ?buffer_size ?flags ?perm ~mode filename in
   try_lwt
     f ic
@@ -1240,7 +1069,7 @@ let with_file ?buffer_size ?encoding ?flags ?perm ~mode filename f =
 
 let file_length filename = with_file ~mode:input filename length
 
-let open_connection ?buffer_size ?encoding sockaddr =
+let open_connection ?buffer_size sockaddr =
   let fd = Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0 in
   let ref_count = ref 2 in
   let close mode =
@@ -1265,9 +1094,14 @@ let open_connection ?buffer_size ?encoding sockaddr =
     exn ->
       close_fd fd >> fail exn
 
-let with_connection ?buffer_size ?encoding sockaddr f =
+let with_connection ?buffer_size sockaddr f =
   lwt ic, oc = open_connection sockaddr in
   try_lwt
     f (ic, oc)
   finally
     close ic >> close oc
+
+let set_default_buffer_size size =
+  check_buffer_size "set_default_buffer_size" size;
+  default_buffer_size := size
+let default_buffer_size _ = !default_buffer_size

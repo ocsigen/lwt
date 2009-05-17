@@ -18,4 +18,5 @@ Lwt_monitor
 Lwt_queue
 Lwt_mvar
 Lwt_condition
+Lwt_text
 private/Pqueue

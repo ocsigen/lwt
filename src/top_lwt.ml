@@ -87,7 +87,7 @@ let rec read_input prompt buffer len =
       let sprompt = if prompt = "  " then [fg blue; text "> "] else [fg yellow; text prompt] in
       let txt = Lwt_main.run
         (lwt l = Lwt_read_line.read_line ~complete ~history:(!history) sprompt in
-         Lwt_io.flush stdout >> return l) in
+         Lwt_text.flush Lwt_text.stdout >> return l) in
       if Text.strip txt <> "" then history := txt :: !history;
       input := txt ^ "\n";
       pos := 0;
@@ -110,7 +110,7 @@ let read_input_non_interactive prompt buffer len =
     if i = len then
       return (i, false)
     else
-      Lwt_io.get_byte_opt stdin >>= function
+      Lwt_io.read_byte_opt Lwt_io.stdin >>= function
         | Some c ->
             buffer.[i] <- c;
             if c = '\n' then
@@ -120,7 +120,7 @@ let read_input_non_interactive prompt buffer len =
         | None ->
             return (i, true)
   in
-  Lwt_main.run (write stdout prompt >> loop 0)
+  Lwt_main.run (Lwt_io.write_byte_array Lwt_io.stdout prompt >> loop 0)
 
 let _ =
   (* If input is a tty, use interactive read-line and display and
@@ -140,4 +140,4 @@ let _ =
        printlc [rep space " "; fg col_border; text "└─"; rep len "─"; text "─┘"])
   end else
     (* Otherwise fallback to classic non-interactive mode: *)
-    Toploop.read_interactive_input := read_input_non_interactive
+    Toploop.read_interactive_input := read_input_non_interactive;

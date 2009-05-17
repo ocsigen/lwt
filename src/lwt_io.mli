@@ -20,75 +20,15 @@
  * 02111-1307, USA.
  *)
 
-(** Input/output channels *)
+(** Buffered byte channels *)
 
-(** {10 Definition}
-
-    A {b channel} is a high-level object for performing IOs. It allow
-    to read and write things from the outside worlds in an efficient
+(** A {b channel} is a high-level object for performing IOs. It allow
+    to read/write things from/to the outside worlds in an efficient
     way, by minimising the number of system calls.
 
     An {b output channel} is a channel that can be used to send data
     and an {b input channel} is a channel that can used to receive
-    data.
-
-    A channels also know about {b character encodings}. This means
-    that it know how to encode it when sending it to the outside world
-    and how to decode it when receiving it from the outside world. By
-    default the encoding of the system is used. For example, you can
-    try this in the toplevel:
-
-    {[
-      # Encoding.system;;
-      \- : Encoding.t = "UTF-8"
-      # Lwt_io.encoding stdout;;
-      \- : Encoding.t = "UTF-8"
-    ]}
-
-    It is always possible to use a channel for text IOs, or for binary
-    IOs. You can mix the two but you must know what you are doing.
-
-    Here is an example of text output:
-
-    {[
-      # let oc = open_file ~mode:output "some-file";;
-      \- : Lwt_io.oc = <abstr>
-      # run& write_line oc "Hello, world!";;
-      \- : unit = ()
-      # run& close oc;;
-      \- : unit = ()
-    ]}
-
-    And text output:
-
-    {[
-      # let oc = open_file ~mode:output "file.data";;
-      \- : Lwt_io.oc = <abstr>
-      # run& Lwt_io.put_bytes oc buffer;;
-      \- : unit = ()
-      # run& close oc;;
-      \- : unit = ()
-    ]}
-
-    {10 Naming convention}
-
-    Function names follow some rules, which are also used in other
-    modules of Lwt such as {!Lwt_process}.
-
-    These rules are:
-
-    - functions for reading text starts with {b read}
-    - functions for writing text starts with {b write}
-    - functions for binary input starts with {b get}
-    - functions for binary output starts with {b put}
-    - functions returning/taking a stream use the plural form
-
-    For example, {!read_char} is for reading a character, {!get_byte}
-    is for reading a byte, {!write_lines} is for writing a stream of
-    lines to an output.
-
-    For function returning a stream, elements are read as there are
-    requested. *)
+    data. *)
 
 exception Channel_closed of string
   (** Exception raised whan a channel is closed. The parameter is a
@@ -97,7 +37,7 @@ exception Channel_closed of string
 (** {6 Types} *)
 
 type 'mode channel
-  (** Type of buffered channels *)
+  (** Type of buffered byte channels *)
 
 type input
   (** Input mode *)
@@ -124,65 +64,57 @@ val output : output mode
      | Output : output mode
 *)
 
-type ic = input channel
+type input_channel = input channel
     (** Type of input channels *)
 
-type oc = output channel
+type output_channel = output channel
     (** Type of output channels *)
 
 val mode : 'a channel -> 'a mode
   (** [mode ch] returns the mode of a channel *)
 
+type byte = char
+    (** Type of bytes *)
+
+type byte_array = string
+    (** Type of sequence of bytes *)
+
 (** {6 Well-known instances} *)
 
-val stdin : ic
-  (** The standard input *)
+val stdin : input_channel
+  (** The standard input, it reads data from {!Lwt_unix.stdin} *)
 
-val stdout : oc
-  (** The standard output *)
+val stdout : output_channel
+  (** The standard output, it writes data to {!Lwt_unix.stdout} *)
 
-val stderr : oc
-  (** The standard output for error messages *)
+val stderr : output_channel
+  (** The standard output for error messages, it writes data to
+      {!Lwt_unix.stderr} *)
 
 (** Note: [stdout] and [stderr] are auto-flushed *)
 
-val zero : ic
+val zero : input_channel
   (** Inputs which returns always ['\x00'] *)
 
-val null : oc
+val null : output_channel
   (** Output which drops everything *)
 
 (** {6 Channels creation/manipulation} *)
 
-val pipe : ?buffer_size : int -> unit -> ic * oc
+val pipe : ?buffer_size : int -> unit -> input_channel * output_channel
   (** [pipe ?buffer_size ()] creates a pipe.
 
       All data written to the writing side of the pipe can be read on
       the reading side. *)
 
 val make :
-  ?auto_flush : bool ->
-  ?encoding : Encoding.t ->
   ?buffer_size : int ->
   ?close : (unit -> unit Lwt.t) ->
   ?seek : (int64 -> Unix.seek_command -> int64 Lwt.t) ->
-  mode : 'a mode ->
-  (string -> int -> int -> int Lwt.t) -> 'a channel
-  (** [make ?auto_flush ?buffer_size ?close ~mode perform_io] is the
+  mode : 'mode mode ->
+  (string -> int -> int -> int Lwt.t) -> 'mode channel
+  (** [make ?buffer_size ?close ~mode perform_io] is the
       main function for creating new channels.
-
-      @param auto_flush tell wether the channel is
-      ``auto-flushed''. Lwt is able to automatically flush the buffer
-      before the program goes into idle, which is generally what we
-      want. Set it to [false] to disable this behaviour. This
-      parameter is not used if [mode = input].
-
-      @param encoding is the channel encoding, for text
-      input/output. It defaults to [Encoding.system ^ "//TRANSLIT"].
-      The ["//TRANSLIT"] suffix means that characters that cannot be
-      encoded are approximated. You can also use the ["//IGNORE"]
-      suffix which means that these characters are discarded. Note
-      that the suffix is not returned by {!encoding}.
 
       @param buffer_size is the size of the internal buffer. It is not
       used if [buffer] is provided.
@@ -198,23 +130,16 @@ val make :
       when more input is needed or when the buffer need to be
       flushed. *)
 
-val encoding : 'a channel -> Encoding.t
-  (** [encoding ch] returns the encoding of [ch] *)
-
-val set_encoding : 'a channel -> Encoding.t -> unit
-  (** [set_encoding ch enc] change the encoding used by [ch] to [enc] *)
-
-val of_fd : ?buffer_size : int -> ?encoding : Encoding.t -> mode : 'a mode -> Lwt_unix.file_descr -> 'a channel
+val of_fd : ?buffer_size : int -> mode : 'mode mode -> Lwt_unix.file_descr -> 'mode channel
   (** [of_fd ~mode ~fd] creates a channel from a file descriptor *)
 
-val of_unix_fd : ?buffer_size : int -> ?encoding : Encoding.t -> mode : 'a mode -> Unix.file_descr -> 'a channel
+val of_unix_fd : ?buffer_size : int -> mode : 'mode mode -> Unix.file_descr -> 'mode channel
   (** [of_unix_fd ~mode ~fd] is a short-hand for:
 
       [of_fd (Lwt_unix.of_unix_file_descr fd)] *)
 
 val open_file :
   ?buffer_size : int ->
-  ?encoding : Encoding.t ->
   ?flags : Unix.open_flag list ->
   ?perm : Unix.file_perm ->
   mode : 'a mode ->
@@ -223,19 +148,18 @@ val open_file :
 
 val with_file :
   ?buffer_size : int ->
-  ?encoding : Encoding.t ->
   ?flags : Unix.open_flag list ->
   ?perm : Unix.file_perm ->
   mode : 'a mode ->
   string -> ('a channel -> 'b Lwt.t) -> 'b Lwt.t
-  (** [open_file ?buffer_size ?flags ?perm ~mode filename f] open a file and pass
-      the channel to [f] *)
+  (** [with_file ?buffer_size ?flags ?perm ~mode filename f] open a
+      file and pass the channel to [f] *)
 
-val open_connection : ?buffer_size : int -> ?encoding : Encoding.t -> Unix.sockaddr -> (ic * oc) Lwt.t
+val open_connection : ?buffer_size : int -> Unix.sockaddr -> (input_channel * output_channel) Lwt.t
   (** [open_connection ?buffer_size ~mode addr] *)
 
-val with_connection : ?buffer_size : int -> ?encoding : Encoding.t -> Unix.sockaddr -> (ic * oc -> 'a Lwt.t) -> 'a Lwt.t
-  (** [open_connection ?buffer_size ~mode addr] *)
+val with_connection : ?buffer_size : int -> Unix.sockaddr -> (input_channel * output_channel -> 'a Lwt.t) -> 'a Lwt.t
+  (** [with_connection ?buffer_size ~mode addr f] *)
 
 val close : 'a channel -> unit Lwt.t
   (** [close ch] closes the given channel: wait for all pending
@@ -266,130 +190,81 @@ val file_length : string -> int64 Lwt.t
 val buffered : 'a channel -> int
   (** [buffered oc] returns the number of bytes in the buffer *)
 
+val flush : output_channel -> unit Lwt.t
+  (** [flush oc] performs all pending writes on [oc] *)
+
 (** {6 Random access} *)
 
-val set_pos : 'a channel -> int64 -> unit Lwt.t
-  (** [set_pos ch pos] Sets the position in the output channel. This
-      does not work if the channel do not support random access. *)
+val position : 'a channel -> int64
+  (** [position ch] Returns the current position in the channel. *)
 
-val get_pos : 'a channel -> int64
-  (** [get_pos ch] Returns the current position in the channel. *)
+val set_position : 'a channel -> int64 -> unit Lwt.t
+  (** [set_position ch pos] Sets the position in the output channel. This
+      does not work if the channel do not support random access. *)
 
 val length : 'a channel -> int64 Lwt.t
   (** Returns the length of the channel in bytes *)
 
-(** {6 Text input} *)
+(** {6 Reading} *)
 
-val read_char : ic -> Text.t Lwt.t
-  (** [read_char ic] reads one unicode character from [ic].
+val read_byte : input_channel -> byte Lwt.t
+  (** [read_byte ic] reads the next byte of [ic].
+
+      @raise End_of_file if the end of the file is reached *)
+
+val read_byte_opt : input_channel -> byte option Lwt.t
+  (** Same as {!read_byte} but do not raises [End_of_file] on end of
+      input *)
+
+val read_bytes : input_channel -> byte Lwt_stream.t
+  (** [read_bytes ic] returns a stream holding all bytes of [ic] *)
+
+val read_byte_array : ?count : int -> input_channel -> byte_array Lwt.t
+  (** [read_byte_array ?count is] reads at most [len] bytes from
+      [ic]. It returns [""] if the end of input is reached. If [count]
+      is not specified, it reads all bytes until the end of input. *)
+
+val read_into : input_channel -> string -> int -> int -> int Lwt.t
+  (** [get ic buffer offset length] reads up to [length] bytes, stores
+      them in [buffer] at offset [offset], and returns the number of
+      bytes read.
+
+      Note: [read_into] does not raise [End_of_file], it returns a
+      length of [0] instead. *)
+
+val read_into_exactly : input_channel -> string -> int -> int -> unit Lwt.t
+  (** [read_into_exactly ic buffer offset length] reads exactly
+      [length] bytes and stores them in [buffer] at offset [offset].
 
       @raise End_of_file on end of input *)
 
-val read_char_opt : ic -> Text.t option Lwt.t
-  (** Same as [read_char] but do not raises [End_of_file] on end of
-      input *)
+val read_value : input_channel -> 'a Lwt.t
+  (** [read_value ic] reads a marshaled value from [ic] *)
 
-val read_chars : ic -> Text.t Lwt_stream.t
-  (** [read_chars ic] returns a stream holding all characters of
-      [ic] *)
+(** {6 Writing} *)
 
-val read : ?count : int -> ic -> Text.t Lwt.t
-  (** [read ?count ic] reads up to [count] characters from [ic]. On
-      end-of-file it returns the empty text [""].
+val write_byte : output_channel -> byte -> unit Lwt.t
+  (** [write_byte oc byte] writes [byte] on [oc] *)
 
-      If [count] is not specified it reads all characters until the
-      end of the file. *)
+val write_byte_array : output_channel -> byte_array -> unit Lwt.t
+  (** [write_byte_array oc byte_array] writes all bytes of
+      [byte_array] on [oc] *)
 
-val read_line : ic -> Text.t Lwt.t
-  (** [read_line ic] reads one complete line from [ic] and returns it
-      without the end of line. End of line is either ["\n"] or
-      ["\r\n"] *)
+val write_bytes : output_channel -> byte Lwt_stream.t -> unit Lwt.t
+  (** [write_bytes oc bytes] writes all bytes contained hold by
+      [bytes] on [oc] *)
 
-val read_line_opt : ic -> Text.t option Lwt.t
-  (** Same as [read_line] but do not raise [End_of_file] on end of
-      input. *)
+val write_from : output_channel -> string -> int -> int -> int Lwt.t
+  (** [write_from oc buffer offset length] writes up to [length] bytes
+      to [oc], from [buffer] at offset [offset] and returns the number
+      of bytes actually written *)
 
-val read_lines : ic -> Text.t Lwt_stream.t
-  (** Returns a stream holding all lines of the given input channel *)
+val write_from_exactly : output_channel -> string -> int -> int -> unit Lwt.t
+  (** [write_from_exactly oc buffer offset length] writes all [length]
+      bytes from [buffer] at offset [offset] to [oc] *)
 
-(** {6 Text output} *)
-
-val write_char : oc -> Text.t -> unit Lwt.t
-  (** [write_char oc ch] outputs [ch] on [oc] *)
-
-val write : oc -> Text.t -> unit Lwt.t
-  (** [write oc txt] writes [txt] on [oc] *)
-
-val write_chars : oc -> Text.t Lwt_stream.t -> unit Lwt.t
-  (** [write_chars oc st] writes all characters of [st] to [oc] *)
-
-val write_line : oc -> Text.t -> unit Lwt.t
-  (** [write_line oc txt] outputs [txt] on [oc] followed by a
-      newline. *)
-
-val write_lines : ?sep : Text.t -> oc -> Text.t Lwt_stream.t -> unit Lwt.t
-  (** [write_lines ?sep oc lines] writes all lines of [lines] to [oc],
-      separated by [sep] which defaults to ["\n"] *)
-
-(** {6 Binary input} *)
-
-val get_byte : ic -> char Lwt.t
-  (** [get_byte ic] reads one byte from [ic] *)
-
-val get_byte_opt : ic -> char option Lwt.t
-  (** Same as {!get_byte} but do not raises [End_of_file] on end of
-      input *)
-
-val get_byte_array : ?count : int -> ic -> string Lwt.t
-  (** [get_byte_array ?count ic] reads at most [len] bytes from
-      [ic]. Returns [""] if the end of input is reached. If [count] is
-      not specified, it reads all bytes until the end of input. *)
-
-val get : ic -> string -> int -> int -> int Lwt.t
-  (** [get ic buffer offset length] reads up to [length] characters,
-      stores them in [buffer] at offset [offset], and returns the
-      number of characters read.
-
-      Note: [get] do not raises [End_of_file], it returns a length of
-      [0] instead. *)
-
-val get_exactly : ic -> string -> int -> int -> unit Lwt.t
-  (** [get_exactly ic buffer offset length] reads exactly [length]
-      characters and stores them in [buffer] at offset [offset].
-
-      @raise End_of_file on end of input *)
-
-val get_bytes : ic -> char Lwt_stream.t
-  (** [get_bytes ic] returns a stream holding all bytes of [ic] *)
-
-val get_value : ic -> 'a Lwt.t
-  (** [get_value ic] reads a marshaled value from [ic] *)
-
-(** {6 Binary output} *)
-
-val flush : oc -> unit Lwt.t
-  (** [flush oc] performs all pending writes on [oc] *)
-
-val put_byte : oc -> char -> unit Lwt.t
-  (** [put_byte oc byte] outputs [byte] to [oc] *)
-
-val put_byte_array : oc -> string -> unit Lwt.t
-  (** [put_bytes oc byte_array] outputs [byte_array] to [oc] *)
-
-val put : oc -> string -> int -> int -> int Lwt.t
-  (** [put oc buffer offset length] writes up to [length] bytes to
-      [oc], from [buffer] at offset [offset] and returns the number of
-      bytes actually written *)
-
-val put_exactly : oc -> string -> int -> int -> unit Lwt.t
-  (** [put oc buffer offset length] writes all [length] bytes from
-      [buffer] at offset [offset] to [oc] *)
-
-val put_bytes : oc -> char Lwt_stream.t -> unit Lwt.t
-  (** [put_bytes oc st] writes all bytes of [st] to [oc] *)
-
-val put_value : oc -> ?flags : Marshal.extern_flags list -> 'a -> unit Lwt.t
-  (** [put_value oc ?flags x] marshals the value [x] to [oc] *)
+val write_value : output_channel -> ?flags : Marshal.extern_flags list -> 'a -> unit Lwt.t
+  (** [write_value oc ?flags x] marshals the value [x] to [oc] *)
 
 (** {6 Low-level access to the internal buffer} *)
 
@@ -398,112 +273,76 @@ val block : 'a channel  -> int -> (string -> int -> 'b Lwt.t) -> 'b Lwt.t
       offset. The buffer contains [size] bytes at [offset]. [f] may
       reads or writes these bytes.
 
-      @param size must verify [0 <= size <= 16] *)
+      @param size must verify [0 <= size <= 256] *)
 
-val direct_access : 'a channel -> (string -> int -> int -> (int * 'b) Lwt.t) -> 'b Lwt.t
-  (** [direct_access ch f] pass to [f] the internal buffer [buf], an
-      offset [ofs] and a length [len]. [f] can read/write up to [len]
-      bytes from/to [buf] at [ofs] and must returns how many bytes
-      have been read/write. *)
+(** Informations for accessing directly to the internal buffer of a
+    channel: *)
+type direct_access = {
+  da_buffer : byte_array;
+  (** The internal buffer *)
+  mutable da_ptr : int;
+  (** The pointer to:
+      - the beginning of free space for output channels
+      - the beginning of data for input channels *)
+  mutable da_max : int;
+  (** The maximum offset *)
+  da_perform : unit -> int Lwt.t;
+  (** - for input channels:
+        refill the buffer and returns how many bytes have been read
+      - for output channels:
+        flush partially the buffer and returns how many bytes have been written *)
+}
+
+val direct_access : 'a channel -> (direct_access -> 'b Lwt.t) -> 'b Lwt.t
+  (** [direct_access ch f] pass to [f] a {!direct_access}
+      structure. [f] must use it and update [da_ptr] to reflect how
+      many bytes have been read/written. *)
 
 (** {6 Input/output of integers} *)
 
-module Byte_order : sig
-  module type S = sig
-
-    (** {8 Position of bits in a 16-bits number} *)
-
-    val pos16_0 : int
-    val pos16_1 : int
-
-    (** {8 Position of bits in a 32-bits number} *)
-
-    val pos32_0 : int
-    val pos32_1 : int
-    val pos32_2 : int
-    val pos32_3 : int
-
-    (** {8 Position of bits in a 32-bits number} *)
-
-    val pos64_0 : int
-    val pos64_1 : int
-    val pos64_2 : int
-    val pos64_3 : int
-    val pos64_4 : int
-    val pos64_5 : int
-    val pos64_6 : int
-    val pos64_7 : int
-  end
-
-  module LE : S
-    (** Little-endian byte-order *)
-
-  module BE : S
-    (** Big-endian byte-order *)
-end
-
 (** Reading/writing integers *)
-module type Number_io = sig
+module type NumberIO = sig
 
   (** {8 Reading} *)
 
-  val get_int : ic -> int Lwt.t
+  val read_int : input_channel -> int Lwt.t
     (** Reads a 32-bits integer as an ocaml int *)
 
-  val get_int16 : ic -> int Lwt.t
-  val get_int32 : ic -> int32 Lwt.t
-  val get_int64 : ic -> int64 Lwt.t
+  val read_int16 : input_channel -> int Lwt.t
+  val read_int32 : input_channel -> int32 Lwt.t
+  val read_int64 : input_channel -> int64 Lwt.t
 
-  val get_float32 : ic -> float Lwt.t
+  val read_float32 : input_channel -> float Lwt.t
     (** Reads an IEEE single precision floating point value *)
 
-  val get_float64 : ic -> float Lwt.t
+  val read_float64 : input_channel -> float Lwt.t
     (** Reads an IEEE double precision floating point value *)
 
   (** {8 Writing} *)
 
-  val put_int : oc -> int -> unit Lwt.t
+  val write_int : output_channel -> int -> unit Lwt.t
     (** Writes an ocaml int as a 32-bits integer *)
 
-  val put_int16 : oc -> int -> unit Lwt.t
-  val put_int32 : oc -> int32 -> unit Lwt.t
-  val put_int64 : oc -> int64 -> unit Lwt.t
+  val write_int16 : output_channel -> int -> unit Lwt.t
+  val write_int32 : output_channel -> int32 -> unit Lwt.t
+  val write_int64 : output_channel -> int64 -> unit Lwt.t
 
-  val put_float32 : oc -> float -> unit Lwt.t
+  val write_float32 : output_channel -> float -> unit Lwt.t
     (** Writes an IEEE single precision floating point value *)
 
-  val put_float64 : oc -> float -> unit Lwt.t
+  val write_float64 : output_channel -> float -> unit Lwt.t
     (** Writes an IEEE double precision floating point value *)
 end
 
-module Make_number_io(Byte_order : Byte_order.S) : Number_io
-  (** Create number readers/Writers from the given byte-order *)
-
-module LE : Number_io
+module LE : NumberIO
   (** Reading/writing of integers in little-endian *)
 
-module BE : Number_io
+module BE : NumberIO
   (** Reading/writing of integers in big-endian *)
 
 (** {6 Misc} *)
 
-(** Note: the three following functions are only needed because of the
-    lack of GADTs: *)
-
-external cast : 'a channel -> unit channel = "%identity"
-  (** [cast ch] cast a channel to an unknown channel. *)
-
-val cast_ic : 'a channel -> ic
-  (** [cast_ic ch] cast a channel to an input channel.
-
-      @raise Invalid_argument if [ch] is not an input channel. *)
-
-val cast_oc : 'a channel -> oc
-  (** [cast_oc ch] cast a channel to an output channel.
-
-      @raise Invalid_argument if [ch] is not an output channel. *)
-
-val get_default_buffer_size : unit -> int
+val default_buffer_size : unit -> int
   (** Return the default size for buffers. Channels that are created
       without specific size use this one. *)
 

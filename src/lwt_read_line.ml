@@ -21,7 +21,7 @@
  *)
 
 open Lwt
-open Lwt_io
+open Lwt_text
 open Lwt_term
 
 type edition_state = Text.t * Text.t
@@ -161,6 +161,7 @@ struct
     | Key_control 'd' -> Break
     | Key_control 'e' -> End_of_line
     | Key_control 'i' -> Complete
+    | Key_control 'j' -> Accept_line
     | Key_control 'k' -> Kill_line
     | Key_control 'l' -> Clear_screen
     | Key_control 'm' -> Accept_line
@@ -351,10 +352,10 @@ let print_words oc cols words =
            else
              return (column + 1)
          else
-           write oc "\r\n" >> return 0)
+           write oc "\n" >> return 0)
     0 words >>= function
       | 0 -> return ()
-      | _ -> write oc "\r\n"
+      | _ -> write oc "\n"
 
 module Terminal =
 struct
@@ -530,7 +531,7 @@ let read_line ?(history=[]) ?(complete=fun _ _ -> return No_completion) ?(clipbo
               lwt render_state = Terminal.draw render_state engine_state prompt in
               t_command >>= process_command render_state engine_state
           | `Completion(Possibilities words) ->
-                write stdout "\r\n"
+                write_char stdout "\n"
                 >> print_words stdout (Lwt_term.columns ()) words
                 >> write_char stdout "\n"
                 >> (lwt render_state = Terminal.draw render_state engine_state prompt in
@@ -555,7 +556,7 @@ let read_line ?(history=[]) ?(complete=fun _ _ -> return No_completion) ?(clipbo
   if Lazy.force stdin_is_atty && Lazy.force stdout_is_atty then
     with_raw_mode (fun _ -> redraw Terminal.init (Engine.init history))
   else
-    Lwt_io.read_line stdin
+    write stdout (strip_styles prompt) >> Lwt_text.read_line stdin
 
 let read_password ?(clipboard=clipboard) ?(style=`text "*") prompt =
   (* Choose a mapping text function according to style: *)
@@ -655,7 +656,8 @@ let read_keyword ?(history=[]) ?(case_sensitive=false) prompt keywords =
   if Lazy.force stdin_is_atty && Lazy.force stdout_is_atty then
     with_raw_mode (fun _ -> redraw Terminal.init (Engine.init history))
   else
-    lwt txt = Lwt_io.read_line stdin in
+    lwt _ = write stdout (strip_styles prompt) in
+    lwt txt = Lwt_text.read_line stdin in
     match assoc txt keywords with
       | Some value ->
           return value
@@ -670,11 +672,11 @@ let read_yes_no ?history prompt =
    +-----------------------------------------------------------------+ *)
 
 let save_history name history =
- with_file ~mode:output name
-   (fun oc ->
-      Lwt_util.iter_serial
-        (fun line -> write oc line >> write_char oc "\000")
-        history)
+  with_file ~mode:Lwt_io.output name
+    (fun oc ->
+       Lwt_util.iter_serial
+         (fun line -> write oc line >> write_char oc "\000")
+         history)
 
 let load_line ic =
   let buf = Buffer.create 42 in
@@ -702,7 +704,7 @@ let rec load_lines ic =
         return []
 
 let load_history name =
-  match try Some(open_file ~mode:input name) with _ -> None with
+  match try Some(open_file ~mode:Lwt_io.input name) with _ -> None with
     | Some ic ->
         try_lwt
           load_lines ic

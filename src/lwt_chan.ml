@@ -25,24 +25,22 @@
 open Lwt
 open Lwt_io
 
-type in_channel = ic
-type out_channel = oc
-
-let encoding = "ISO-8859-1"
+type in_channel = Lwt_io.input_channel
+type out_channel = Lwt_io.output_channel
 
 let in_channel_of_descr fd = of_fd ~mode:Lwt_io.input fd
-let make_in_channel ?close read = make ~mode:Lwt_io.input ~encoding ?close read
+let make_in_channel ?close read = make ~mode:Lwt_io.input ?close read
 
 let input_line ic =
   let rec loop buf =
-    get_byte_opt ic >>= function
+    read_byte_opt ic >>= function
       | None | Some '\n' ->
           return (Buffer.contents buf)
       | Some byte ->
           Buffer.add_char buf byte;
           loop buf
   in
-  get_byte_opt ic >>= function
+  read_byte_opt ic >>= function
     | Some '\n' ->
         return ""
     | Some byte ->
@@ -52,32 +50,23 @@ let input_line ic =
     | None ->
         fail End_of_file
 
-let input_value = get_value
-let input = get
-let really_input = get_exactly
-let input_char = get_byte
-let input_binary_int = LE.get_int
-let open_in_gen flags perm fname =
-  in_channel_of_descr (Lwt_unix.of_unix_file_descr (Unix.openfile fname flags perm))
-let open_in fname =
-  open_in_gen [Unix.O_RDONLY; Unix.O_NONBLOCK] 0 fname
+let input_value = read_value
+let input = read_into
+let really_input = read_into_exactly
+let input_char = read_byte
+let input_binary_int = LE.read_int
+let open_in_gen flags perm fname = open_file ~flags ~perm ~mode:Lwt_io.input fname
+let open_in fname = open_file ~mode:Lwt_io.input fname
 let close_in = close
-let out_channel_of_descr fd =
-  make
-    ~auto_flush:false
-    ~close:(fun _ -> try Lwt_unix.close fd; Lwt.return () with e -> Lwt.fail e)
-    ~seek:(fun pos cmd -> Lwt.return (Unix.LargeFile.lseek (Lwt_unix.unix_file_descr fd) pos cmd))
-    ~mode:Lwt_io.output
-    (Lwt_unix.write fd)
-let make_out_channel ?close write = make ~auto_flush:false ~mode:Lwt_io.output ~encoding ?close write
-let output = put_exactly
+let out_channel_of_descr fd = of_fd ~mode:Lwt_io.output fd
+let make_out_channel ?close write = make ~mode:Lwt_io.output ?close write
+let output = write_from_exactly
 let flush = flush
-let output_string = put_byte_array
-let output_value oc v = put_value oc v
-let output_char = put_byte
-let output_binary_int = LE.put_int
-let open_out_gen flags perm fname =
-  out_channel_of_descr (Lwt_unix.of_unix_file_descr (Unix.openfile fname flags perm))
-let open_out fname = open_out_gen [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_TRUNC; Unix.O_NONBLOCK] 0o666 fname
+let output_string = write_byte_array
+let output_value oc v = write_value oc v
+let output_char = write_byte
+let output_binary_int = LE.write_int
+let open_out_gen flags perm fname = open_file ~flags ~perm ~mode:Lwt_io.output fname
+let open_out fname = open_file ~mode:Lwt_io.output fname
 let close_out = close
 let open_connection sockaddr = open_connection sockaddr

@@ -48,44 +48,6 @@ val (<&>) : unit Lwt.t -> unit Lwt.t -> unit Lwt.t
 val input : Lwt_io.input Lwt_io.mode
 val output : Lwt_io.output Lwt_io.mode
 
-val stdin : Lwt_io.ic
-val stdout : Lwt_io.oc
-val stderr : Lwt_io.oc
-
-val open_file :
-  ?buffer_size : int ->
-  ?encoding : Encoding.t ->
-  ?flags : Unix.open_flag list ->
-  ?perm : Unix.file_perm ->
-  mode : 'a Lwt_io.mode ->
-  string -> 'a Lwt_io.channel
-
-val with_file :
-  ?buffer_size : int ->
-  ?encoding : Encoding.t ->
-  ?flags : Unix.open_flag list ->
-  ?perm : Unix.file_perm ->
-  mode : 'a Lwt_io.mode ->
-  string -> ('a Lwt_io.channel -> 'b Lwt.t) -> 'b Lwt.t
-
-val close : 'a Lwt_io.channel -> unit Lwt.t
-
-val read_char : Lwt_io.ic -> Text.t Lwt.t
-val read_char_opt : Lwt_io.ic -> Text.t option Lwt.t
-val read_chars : Lwt_io.ic -> Text.t Lwt_stream.t
-val read : ?count : int -> Lwt_io.ic -> Text.t Lwt.t
-val read_line : Lwt_io.ic -> Text.t Lwt.t
-val read_line_opt : Lwt_io.ic -> Text.t option Lwt.t
-val read_lines : Lwt_io.ic -> Text.t Lwt_stream.t
-
-val write_char : Lwt_io.oc -> Text.t -> unit Lwt.t
-val write_chars : Lwt_io.oc -> Text.t Lwt_stream.t -> unit Lwt.t
-val write : Lwt_io.oc -> Text.t -> unit Lwt.t
-val write_line : Lwt_io.oc -> Text.t -> unit Lwt.t
-val write_lines : ?sep : Text.t -> Lwt_io.oc -> Text.t Lwt_stream.t -> unit Lwt.t
-
-val flush : Lwt_io.oc -> unit Lwt.t
-
 (** {6 Printing facilities} *)
 
 val print : Text.t -> unit Lwt.t
@@ -164,7 +126,7 @@ val lwhite : Lwt_term.color
 type file_name = Text.t
 
 val lines_of_file : file_name -> Text.t Lwt_stream.t
-val lines_to_file : ?sep : Text.t -> file_name -> Text.t Lwt_stream.t -> unit Lwt.t
+val lines_to_file : file_name -> Text.t Lwt_stream.t -> unit Lwt.t
 
 val chars_of_file : file_name -> Text.t Lwt_stream.t
 val chars_to_file : file_name -> Text.t Lwt_stream.t -> unit Lwt.t

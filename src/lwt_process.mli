@@ -1,5 +1,5 @@
 (* Lightweight thread library for Objective Caml
- * http://www.ocsigen.org/lwt
+ * http://www.output_channelsigen.org/lwt
  * Module Lwt_process
  * Copyright (C) 2009 Jérémie Dimino
  *
@@ -22,21 +22,7 @@
 
 (** Process management *)
 
-(** This modules allow you to spawn processes and communicate with them.
-
-    It follows the same naming conventions as the ones of {!Lwt_io},
-    plus:
-
-    - functions for spawning a processes and reading its output are prefixed with {b pread} or {b pget}
-    - functions for spawning a processes and writing to its intput are prefixed with {b pwrite} or {b pput}
-    - functions for spawning a processes, writing to its input and reading its output start with {b pmap}
-
-    For example if you want to compress a byte-stream using [gzip]:
-
-    {[
-      let compress bytes = Lwt_process.pmap_bytes ("gzip", [|"gzip"; "-c"|]) bytes
-    ]}
-*)
+(** This modules allow you to spawn processes and communicate with them. *)
 
 type command = string * string array
     (** A command is a program name with a list of arguments *)
@@ -51,8 +37,8 @@ val exec : ?env : string array -> command -> Unix.process_status Lwt.t
 
 (** {8 Receiving} *)
 
-val pget_byte_array : ?env : string array -> command -> string Lwt.t
-val pget_bytes : ?env : string array -> command -> char Lwt_stream.t
+val pread_byte_array : ?env : string array -> command -> string Lwt.t
+val pread_bytes : ?env : string array -> command -> char Lwt_stream.t
 val pread : ?env : string array -> command -> Text.t Lwt.t
 val pread_chars : ?env : string array -> command -> Text.t Lwt_stream.t
 val pread_line : ?env : string array -> command -> Text.t Lwt.t
@@ -60,12 +46,12 @@ val pread_lines : ?env : string array -> command -> Text.t Lwt_stream.t
 
 (** {8 Sending} *)
 
-val pput_byte_array : ?env : string array -> command -> string -> Unix.process_status Lwt.t
-val pput_bytes : ?env : string array -> command -> char Lwt_stream.t -> Unix.process_status Lwt.t
-val pwrite : ?env : string array -> command -> Text.t -> Unix.process_status Lwt.t
-val pwrite_chars : ?env : string array -> command -> Text.t Lwt_stream.t -> Unix.process_status Lwt.t
-val pwrite_line : ?env : string array -> command -> Text.t -> Unix.process_status Lwt.t
-val pwrite_lines : ?env : string array -> ?sep : Text.t -> command -> Text.t Lwt_stream.t -> Unix.process_status Lwt.t
+val pwrite_byte_array : ?env : string array -> command -> string -> unit Lwt.t
+val pwrite_bytes : ?env : string array -> command -> char Lwt_stream.t -> unit Lwt.t
+val pwrite : ?env : string array -> command -> Text.t -> unit Lwt.t
+val pwrite_chars : ?env : string array -> command -> Text.t Lwt_stream.t -> unit Lwt.t
+val pwrite_line : ?env : string array -> command -> Text.t -> unit Lwt.t
+val pwrite_lines : ?env : string array -> command -> Text.t Lwt_stream.t -> unit Lwt.t
 
 (** {8 Mapping} *)
 
@@ -74,7 +60,7 @@ val pmap_bytes : ?env : string array -> command -> char Lwt_stream.t -> char Lwt
 val pmap : ?env : string array -> command -> Text.t -> Text.t Lwt.t
 val pmap_chars : ?env : string array -> command -> Text.t Lwt_stream.t -> Text.t Lwt_stream.t
 val pmap_line : ?env : string array -> command -> Text.t -> Text.t Lwt.t
-val pmap_lines : ?env : string array -> ?sep : Text.t -> command -> Text.t Lwt_stream.t -> Text.t Lwt_stream.t
+val pmap_lines : ?env : string array -> command -> Text.t Lwt_stream.t -> Text.t Lwt_stream.t
 
 (** {6 Spawning processes} *)
 
@@ -87,46 +73,46 @@ class process_none : ?env : string array -> command -> object
         channels used to communicate with the process *)
 end
 
-val process_none : ?env : string array -> command -> process_none
+val open_process_none : ?env : string array -> command -> process_none
 val with_process_none : ?env : string array -> command -> (process_none -> 'a Lwt.t) -> 'a Lwt.t
 
 class process_in : ?env : string array -> command -> object
   inherit process_none
 
-  method stdout : Lwt_io.ic
+  method stdout : Lwt_io.input_channel
     (** The standard output of the process *)
 end
 
-val process_in : ?env : string array -> command -> process_in
+val open_process_in : ?env : string array -> command -> process_in
 val with_process_in : ?env : string array -> command -> (process_in -> 'a Lwt.t) -> 'a Lwt.t
 
 class process_out : ?env : string array -> command -> object
   inherit process_none
 
-  method stdin : Lwt_io.oc
+  method stdin : Lwt_io.output_channel
     (** The standard input of the process *)
 end
 
-val process_out : ?env : string array -> command -> process_out
+val open_process_out : ?env : string array -> command -> process_out
 val with_process_out : ?env : string array -> command -> (process_out -> 'a Lwt.t) -> 'a Lwt.t
 
 class process : ?env : string array -> command -> object
   inherit process_none
 
-  method stdin : Lwt_io.oc
-  method stdout : Lwt_io.ic
+  method stdin : Lwt_io.output_channel
+  method stdout : Lwt_io.input_channel
 end
 
-val process : ?env : string array -> command -> process
+val open_process : ?env : string array -> command -> process
 val with_process : ?env : string array -> command -> (process -> 'a Lwt.t) -> 'a Lwt.t
 
 class process_full : ?env : string array -> command -> object
   inherit process_none
 
-  method stdin : Lwt_io.oc
-  method stdout : Lwt_io.ic
-  method stderr : Lwt_io.ic
+  method stdin : Lwt_io.output_channel
+  method stdout : Lwt_io.input_channel
+  method stderr : Lwt_io.input_channel
 end
 
-val process_full : ?env : string array -> command -> process_full
+val open_process_full : ?env : string array -> command -> process_full
 val with_process_full : ?env : string array -> command -> (process_full -> 'a Lwt.t) -> 'a Lwt.t

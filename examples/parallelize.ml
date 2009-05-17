@@ -10,6 +10,7 @@
 
 open Lwt_pervasives
 open Lwt_process
+open Lwt_text
 
 (* Reads one command, launch it and waits for when it termination,
    then start again: *)
@@ -18,7 +19,7 @@ let rec launch () =
     | None ->
         return ()
     | Some line ->
-        exec (shell line) >> launch ()
+        exec (shell (Text.encode line)) >> launch ()
 
 (* Creates the initial <N> threads, where <N> is the number of
    CPUs: *)

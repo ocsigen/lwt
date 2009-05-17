@@ -206,6 +206,13 @@ val append : 'a t -> 'a t -> 'a t
 val concat : 'a t t -> 'a t
   (** [concat st] returns the concatenation of all streams of [st]. *)
 
+(** {6 Parsing} *)
+
+val parse : 'a t -> ('a t -> 'b Lwt.t) -> 'b Lwt.t
+  (** [parse st f] parsses to [f] a copy of [st]. If [f] fails, [st]
+      is left unchanged, otherwise [st] is set to the state of the
+      stream passed to [f]. *)
+
 (** {6 Stream as lazy-list} *)
 
 (** Streams are internally represented by a lazy-list. *)
@@ -221,8 +228,5 @@ and 'a lazy_list = 'a node Lwt.t Lazy.t
 val of_lazy_list : 'a lazy_list -> 'a t
   (** [of_lazy_list st] creates a stream from a lazy-list *)
 
-val get_lazy_list : 'a t -> 'a lazy_list
-  (** [get_lazy_list ll] returns the internal lazy-list of a stream *)
-
-val set_lazy_list : 'a t -> 'a lazy_list -> unit
-  (** [set_lazy_list ll] sets the internal lazy-list of a stream *)
+val to_lazy_list : 'a t -> 'a lazy_list
+  (** [to_lazy_list ll] returns the internal lazy-list of a stream *)
