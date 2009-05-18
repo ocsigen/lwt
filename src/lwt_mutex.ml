@@ -23,25 +23,27 @@
 
 open Lwt
 
-type t = { mutable locked : bool; mutable waiting : unit Lwt.t list  }
+type t = { mutable locked : bool; mutable waiters : unit Lwt.t Queue.t  }
 
-let create () = { locked = false; waiting = [] }
+let create () = { locked = false; waiters = Queue.create () }
 
 let rec lock m =
   if m.locked then begin
     let res = Lwt.wait () in
-    m.waiting <- res :: m.waiting;
-    res >> lock m
+    Queue.add res m.waiters;
+    res
   end else begin
     m.locked <- true;
     Lwt.return ()
   end
 
 let unlock m =
-  let w = m.waiting in
-  m.waiting <- [];
-  m.locked <- false;
-  List.iter (fun t -> Lwt.wakeup t ()) w
+  if m.locked then begin
+    if Queue.is_empty m.waiters then
+      m.locked <- false
+    else
+      Lwt.wakeup (Queue.take m.waiters) ()
+  end
 
 let with_lock m f =
   lock m >> begin
