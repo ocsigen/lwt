@@ -1,7 +1,9 @@
 
 (* Show code of key pressed *)
 
-open Lwt_pervasives
+open Lwt_unix
+open Lwt
+open Lwt_text
 
 let rec loop () =
   lwt raw_key = Lwt_term.parse_key_raw Lwt_term.standard_input in

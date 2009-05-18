@@ -46,31 +46,6 @@ val of_string : string -> char t
   (** [of_string str] creates a stream returning all characters of
       [str] *)
 
-val of_text : Text.t -> Text.t t
-  (** [of_text txt] creates a stream returning all unicode characters
-      of [txt] *)
-
-val decode : ?encoding : Encoding.t -> char t -> Text.t t
-  (** [decode ?encoding s] decode the given stream using [encoding], witch
-      defaults to [Encoding.system].
-
-      For example:
-
-      {[
-        # let st = Lwt_stream.decode ~encoding:"UTF-8" (Lwt_stream.of_string "Jérémie");;
-        val st : string Lwt_stream.t = <abstr>
-        # Lwt_main.run (Lwt_stream.nget max_int st);;
-        \- : string list = ["J"; "é"; "r"; "é"; "m"; "i"; "e"]
-      ]}
-
-      When an invalid sequence is encountered, [Failure] is raised, and the
-      beginning of the invalid sequence is not consummed.
-  *)
-
-val encode : ?encoding : Encoding.t -> Text.t t -> char t
-  (** [encode ?encoding s] encode the given stream using [encoding], witch
-      defaults to [Encoding.system] *)
-
 val clone : 'a t -> 'a t
   (** [clone st] clone the given stream. Operations on each stream
       will not affect the other.

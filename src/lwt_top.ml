@@ -1,6 +1,6 @@
 (* Lightweight thread library for Objective Caml
  * http://www.ocsigen.org/lwt
- * Module Top_lwt
+ * Module Lwt_top
  * Copyright (C) 2009 Jérémie Dimino
  *
  * This program is free software; you can redistribute it and/or modify
@@ -24,7 +24,10 @@
 
    readline + let threads runs while reading user input. *)
 
-open Lwt_pervasives
+open Lwt_unix
+open Lwt
+open Lwt_text
+open Lwt_term
 
 (* +-----------------------------------------------------------------+
    | Completion                                                      |
@@ -110,7 +113,7 @@ let read_input_non_interactive prompt buffer len =
     if i = len then
       return (i, false)
     else
-      Lwt_io.read_byte_opt Lwt_io.stdin >>= function
+      Lwt_io.read_char_opt Lwt_io.stdin >>= function
         | Some c ->
             buffer.[i] <- c;
             if c = '\n' then
@@ -120,7 +123,7 @@ let read_input_non_interactive prompt buffer len =
         | None ->
             return (i, true)
   in
-  Lwt_main.run (Lwt_io.write_byte_array Lwt_io.stdout prompt >> loop 0)
+  Lwt_main.run (Lwt_io.write Lwt_io.stdout prompt >> loop 0)
 
 let _ =
   (* If input is a tty, use interactive read-line and display and

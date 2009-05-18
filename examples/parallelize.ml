@@ -8,9 +8,10 @@
 (* Reads commands from standard input and launch them in parallel,
    using as many processes as the number of CPUs. *)
 
-open Lwt_pervasives
+open Lwt_unix
+open Lwt
+open Lwt_io
 open Lwt_process
-open Lwt_text
 
 (* Reads one command, launch it and waits for when it termination,
    then start again: *)
@@ -19,7 +20,7 @@ let rec launch () =
     | None ->
         return ()
     | Some line ->
-        exec (shell (Text.encode line)) >> launch ()
+        exec (shell line) >> launch ()
 
 (* Creates the initial <N> threads, where <N> is the number of
    CPUs: *)

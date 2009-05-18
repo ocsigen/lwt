@@ -278,3 +278,38 @@ let stdout = make Lwt_io.stdout
 let stderr = make Lwt_io.stderr
 let null = make Lwt_io.null
 let zero = make Lwt_io.zero
+
+let fprint oc txt = write oc txt
+let fprintl oc txt = write_line oc txt
+let fprintf oc fmt = Printf.ksprintf (fun txt -> write oc txt) fmt
+let fprintlf oc fmt = Printf.ksprintf (fun txt -> write_line oc txt) fmt
+
+let print txt = write stdout txt
+let printl txt = write_line stdout txt
+let printf fmt = Printf.ksprintf print fmt
+let printlf fmt = Printf.ksprintf printl fmt
+
+let eprint txt = write stderr txt
+let eprintl txt = write_line stderr txt
+let eprintf fmt = Printf.ksprintf eprint fmt
+let eprintlf fmt = Printf.ksprintf eprintl fmt
+
+let make_stream f ic =
+  Lwt_stream.from (fun _ ->
+                     try_lwt
+                       f ic >|= fun x -> Some x
+                     with
+                       | End_of_file ->
+                           close ic >> return None)
+
+let lines_of_file filename =
+  make_stream read_line (open_file ~mode:input filename)
+
+let lines_to_file filename lines =
+  with_file ~mode:output filename (fun oc -> write_lines oc lines)
+
+let chars_of_file filename =
+  make_stream read_char (open_file ~mode:input filename)
+
+let chars_to_file filename chars =
+  with_file ~mode:output filename (fun oc -> write_chars oc chars)

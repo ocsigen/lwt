@@ -529,6 +529,17 @@ type styled_text_instruction =
 
 type styled_text = styled_text_instruction list
 
+let textf fmt = Printf.ksprintf (fun txt -> Text txt) fmt
+let text txt = Text txt
+let reset = Reset
+let bold = Bold
+let underlined = Underlined
+let blink = Blink
+let inverse = Inverse
+let hidden = Hidden
+let fg col = Foreground col
+let bg col = Background col
+
 let strip_styles st =
   let buf = Buffer.create 42 in
   List.iter (function

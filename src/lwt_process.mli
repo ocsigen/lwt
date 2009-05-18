@@ -37,30 +37,24 @@ val exec : ?env : string array -> command -> Unix.process_status Lwt.t
 
 (** {8 Receiving} *)
 
-val pread_byte_array : ?env : string array -> command -> string Lwt.t
-val pread_bytes : ?env : string array -> command -> char Lwt_stream.t
-val pread : ?env : string array -> command -> Text.t Lwt.t
-val pread_chars : ?env : string array -> command -> Text.t Lwt_stream.t
-val pread_line : ?env : string array -> command -> Text.t Lwt.t
-val pread_lines : ?env : string array -> command -> Text.t Lwt_stream.t
+val pread : ?env : string array -> command -> string Lwt.t
+val pread_chars : ?env : string array -> command -> char Lwt_stream.t
+val pread_line : ?env : string array -> command -> string Lwt.t
+val pread_lines : ?env : string array -> command -> string Lwt_stream.t
 
 (** {8 Sending} *)
 
-val pwrite_byte_array : ?env : string array -> command -> string -> unit Lwt.t
-val pwrite_bytes : ?env : string array -> command -> char Lwt_stream.t -> unit Lwt.t
-val pwrite : ?env : string array -> command -> Text.t -> unit Lwt.t
-val pwrite_chars : ?env : string array -> command -> Text.t Lwt_stream.t -> unit Lwt.t
-val pwrite_line : ?env : string array -> command -> Text.t -> unit Lwt.t
-val pwrite_lines : ?env : string array -> command -> Text.t Lwt_stream.t -> unit Lwt.t
+val pwrite : ?env : string array -> command -> string -> unit Lwt.t
+val pwrite_chars : ?env : string array -> command -> char Lwt_stream.t -> unit Lwt.t
+val pwrite_line : ?env : string array -> command -> string -> unit Lwt.t
+val pwrite_lines : ?env : string array -> command -> string Lwt_stream.t -> unit Lwt.t
 
 (** {8 Mapping} *)
 
-val pmap_byte_array : ?env : string array -> command -> string -> string Lwt.t
-val pmap_bytes : ?env : string array -> command -> char Lwt_stream.t -> char Lwt_stream.t
-val pmap : ?env : string array -> command -> Text.t -> Text.t Lwt.t
-val pmap_chars : ?env : string array -> command -> Text.t Lwt_stream.t -> Text.t Lwt_stream.t
-val pmap_line : ?env : string array -> command -> Text.t -> Text.t Lwt.t
-val pmap_lines : ?env : string array -> command -> Text.t Lwt_stream.t -> Text.t Lwt_stream.t
+val pmap : ?env : string array -> command -> string -> string Lwt.t
+val pmap_chars : ?env : string array -> command -> char Lwt_stream.t -> char Lwt_stream.t
+val pmap_line : ?env : string array -> command -> string -> string Lwt.t
+val pmap_lines : ?env : string array -> command -> string Lwt_stream.t -> string Lwt_stream.t
 
 (** {6 Spawning processes} *)
 

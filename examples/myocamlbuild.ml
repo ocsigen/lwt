@@ -36,6 +36,7 @@ let packages = [
   "lwt.extra";
   "lwt.ssl";
   "lwt.glib";
+  "lwt.text";
 
   (* Syntax extensions: *)
   "camlp4";

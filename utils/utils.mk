@@ -42,7 +42,6 @@ HAVE_FINDLIB := $(call exec,$(OCAMLFIND) printconf)
 HAVE_BYTE := $(call exec,$(OCAMLFIND) ocamlc -version)
 HAVE_NATIVE := $(call exec,$(OCAMLFIND) ocamlopt -version)
 HAVE_OCAMLBUILD := $(call exec,$(OCAMLBUILD) -version)
-HAVE_OCAML_TEXT:= $(call have_package,text)
 
 ifeq ($(HAVE_FINDLIB),)
   MISSING := yes
@@ -52,11 +51,6 @@ endif
 ifeq ($(HAVE_BYTE),)
   MISSING := yes
   $(warning ocamlc is missing!)
-endif
-
-ifeq ($(HAVE_OCAML_TEXT),)
-  MISSING := yes
-  $(warning ocaml-text is missing!)
 endif
 
 ifeq ($(HAVE_OCAMLBUILD),)

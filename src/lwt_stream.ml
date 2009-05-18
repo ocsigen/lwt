@@ -63,16 +63,6 @@ let of_string s =
   in
   ref(lazy(get 0))
 
-let of_text txt =
-  let rec get ptr =
-    match Text.next ptr with
-      | None ->
-          return Nil
-      | Some(ch, ptr) ->
-          return (Cons(ch, lazy(get ptr)))
-  in
-  ref(lazy(get (Text.pointer_l txt)))
-
 let clone s = ref !s
 
 let peek s = Lazy.force !s >|= function
@@ -435,53 +425,6 @@ let choose streams =
                 next streams
   in
   ref(lazy(next (List.rev_map source streams)))
-
-let decode ?(encoding=Encoding.system) s =
-  let decoder = Encoding.decoder encoding and buf = String.create 16 in
-  let rec aux pos l =
-    match Encoding.decode decoder buf 0 pos with
-      | Encoding.Dec_ok(code, _) ->
-          s := l;
-          return(Cons(Text.char code, lazy_from_fun next))
-      | Encoding.Dec_error ->
-          fail (Failure "Lwt_stream.decode: invalid sequence in stream")
-      | Encoding.Dec_need_more ->
-          Lazy.force l >>= function
-            | Cons(x, l) ->
-                buf.[pos] <- x;
-                aux (pos + 1) l
-            | Nil ->
-                fail (Failure "Lwt_stream.decode: unterminated sequence in stream")
-  and next _ =
-    Lazy.force !s >>= function
-      | Cons(x, l) ->
-          buf.[0] <- x;
-          aux 1 l
-      | Nil ->
-          return Nil
-  in
-  make next
-
-let encode ?(encoding=Encoding.system) s =
-  let encoder = Encoding.encoder encoding and buf = String.create 16 in
-  let rec next _ =
-    Lazy.force !s >>= function
-      | Nil ->
-          return Nil
-      | Cons(x, l) ->
-          match Encoding.encode encoder buf 0 16 (Text.code x) with
-            | Encoding.Enc_ok count ->
-                s := l;
-                loop 0 count
-            | _ ->
-                fail (Failure "Lwt_stream.encode: cannot encode character")
-  and loop pos count =
-    if pos = count then
-      next ()
-    else
-      return(Cons(buf.[pos], lazy(loop (pos + 1) count)))
-  in
-  make next
 
 let parse s f =
   let s' = clone s in

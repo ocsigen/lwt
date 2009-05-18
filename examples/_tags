@@ -1,3 +1,5 @@
 # -*- conf -*-
 <*>: syntax_camlp4o, pkg_lwt, pkg_lwt.syntax
 <ex_gtk.*>: pkg_lwt.glib
+<show_keys.*>: pkg_lwt.text
+<parallelize.*>: pkg_lwt.text

@@ -16,11 +16,13 @@
 (* Load Lwt syntactic sugars: *)
 #require "lwt.syntax";;
 
-(* Load the Lwt package, with line-editing support :) *)
-#require "lwt";;
+(* Load the lwt.top package, with line-editing support :) *)
+#require "lwt.top";;
 
 (* Open useful Lwt modules for scripting: *)
-open Lwt_pervasives;;
+open Lwt_unix;;
+open Lwt;;
+open Lwt_io;;
 open Lwt_process;;
 
 (* Useful definitions for interactive use of Lwt, so you can write:

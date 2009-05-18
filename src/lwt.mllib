@@ -11,12 +11,8 @@ Lwt_io
 Lwt_process
 Lwt_main
 Lwt_stream
-Lwt_term
-Lwt_read_line
-Lwt_pervasives
 Lwt_monitor
 Lwt_queue
 Lwt_mvar
 Lwt_condition
-Lwt_text
 private/Pqueue

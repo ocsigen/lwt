@@ -48,9 +48,6 @@ let close_fd fd =
    | Types                                                           |
    +-----------------------------------------------------------------+ *)
 
-type byte = char
-type byte_array = string
-
 type input
 type output
 
@@ -130,7 +127,7 @@ type input_channel = input channel
 type output_channel = output channel
 
 type direct_access = {
-  da_buffer : byte_array;
+  da_buffer : string;
   mutable da_ptr : int;
   mutable da_max : int;
   da_perform : unit -> int Lwt.t;
@@ -527,20 +524,54 @@ struct
      | Reading                                                       |
      +---------------------------------------------------------------+ *)
 
-  let rec read_byte ic =
+  let rec read_char ic =
     let ptr = ic.ptr in
     if ptr = ic.max then
       refill ic >>= function
         | 0 -> fail End_of_file
-        | _ -> read_byte ic
+        | _ -> read_char ic
     else begin
       ic.ptr <- ptr + 1;
       return (String.unsafe_get ic.buffer ptr)
     end
 
-  let read_byte_opt ic =
+  let read_char_opt ic =
     try_lwt
-      read_byte ic >|= fun ch -> Some ch
+      read_char ic >|= fun ch -> Some ch
+    with
+      | End_of_file ->
+          return None
+      | exn ->
+          fail exn
+
+  let read_line ic =
+    let buf = Buffer.create 128 in
+    let rec loop cr_read =
+      try_bind (fun _ -> read_char ic)
+        (function
+           | '\n' ->
+               return(Buffer.contents buf)
+           | '\r' ->
+               if cr_read then Buffer.add_char buf '\r';
+               loop true
+           | ch ->
+               if cr_read then Buffer.add_char buf '\r';
+               Buffer.add_char buf ch;
+               loop false)
+        (function
+           | End_of_file ->
+               if cr_read then Buffer.add_char buf '\r';
+               return(Buffer.contents buf)
+           | exn ->
+               fail exn)
+    in
+    read_char ic >>= function
+      | '\r' -> loop true
+      | ch -> Buffer.add_char buf ch; loop false
+
+  let read_line_opt ic =
+    try_lwt
+      read_line ic >|= fun ch -> Some ch
     with
       | End_of_file ->
           return None
@@ -606,7 +637,7 @@ struct
       | n ->
           read_all ic buf
 
-  let read_byte_array count ic =
+  let read count ic =
     match count with
       | None ->
           let buf = Buffer.create 512 in
@@ -640,14 +671,14 @@ struct
 
   let flush = flush_total
 
-  let rec write_byte oc ch =
+  let rec write_char oc ch =
     let ptr = oc.ptr in
     if ptr < oc.length then begin
       oc.ptr <- ptr + 1;
       String.unsafe_set oc.buffer ptr ch;
       return ()
     end else
-      flush_partial oc >> write_byte oc ch
+      flush_partial oc >> write_char oc ch
 
   let rec unsafe_write_from oc str ofs len =
     let avail = oc.length - oc.ptr in
@@ -702,11 +733,14 @@ struct
         unsafe_write_from_exactly oc str ofs len
     end
 
-  let write_byte_array oc str =
+  let write oc str =
     unsafe_write_from_exactly oc str 0 (String.length str)
 
+  let write_line oc str =
+    unsafe_write_from_exactly oc str 0 (String.length str) >> write_char oc '\n'
+
   let write_value oc ?(flags=[]) x =
-    write_byte_array oc (Marshal.to_string x flags)
+    write oc (Marshal.to_string x flags)
 
   (* +---------------------------------------------------------------+
      | Low-level access                                              |
@@ -946,17 +980,20 @@ end
    | Primitive operations                                            |
    +-----------------------------------------------------------------+ *)
 
-let read_byte ic = primitive Primitives.read_byte ic
-let read_byte_opt ic = primitive Primitives.read_byte_opt ic
-let read_byte_array ?count ic = primitive (fun ic -> Primitives.read_byte_array count ic) ic
+let read_char ic = primitive Primitives.read_char ic
+let read_char_opt ic = primitive Primitives.read_char_opt ic
+let read_line ic = primitive Primitives.read_line ic
+let read_line_opt ic = primitive Primitives.read_line_opt ic
+let read ?count ic = primitive (fun ic -> Primitives.read count ic) ic
 let read_into ic str ofs len = primitive (fun ic -> Primitives.read_into ic str ofs len) ic
 let read_into_exactly ic str ofs len = primitive (fun ic -> Primitives.read_into_exactly ic str ofs len) ic
 let read_value ic = primitive Primitives.read_value ic
 
 let flush oc = primitive Primitives.flush oc
 
-let write_byte oc x = primitive (fun oc -> Primitives.write_byte oc x) oc
-let write_byte_array oc str = primitive (fun oc -> Primitives.write_byte_array oc str) oc
+let write_char oc x = primitive (fun oc -> Primitives.write_char oc x) oc
+let write oc str = primitive (fun oc -> Primitives.write oc str) oc
+let write_line oc x = primitive (fun oc -> Primitives.write_line oc x) oc
 let write_from oc str ofs len = primitive (fun oc -> Primitives.write_from oc str ofs len) oc
 let write_from_exactly oc str ofs len = primitive (fun oc -> Primitives.write_from_exactly oc str ofs len) oc
 let write_value oc ?flags x = primitive (fun oc -> Primitives.write_value oc ?flags x) oc
@@ -1008,8 +1045,10 @@ module BE = MakeNumberIO(ByteOrder.BE)
    | Other                                                           |
    +-----------------------------------------------------------------+ *)
 
-let read_bytes ic = Lwt_stream.from (fun _ -> read_byte_opt ic)
-let write_bytes oc chars = Lwt_stream.iter_s (fun ch -> write_byte oc ch) chars
+let read_chars ic = Lwt_stream.from (fun _ -> read_char_opt ic)
+let write_chars oc chars = Lwt_stream.iter_s (fun char -> write_char oc char) chars
+let read_lines ic = Lwt_stream.from (fun _ -> read_line_opt ic)
+let write_lines oc lines = Lwt_stream.iter_s (fun line -> write_line oc line) lines
 
 let zero =
   make
@@ -1038,9 +1077,26 @@ let stdin = of_fd_no_close input Lwt_unix.stdin
 let stdout = of_fd_no_close output Lwt_unix.stdout
 let stderr = of_fd_no_close output Lwt_unix.stderr
 
+let fprint oc txt = write oc txt
+let fprintl oc txt = write_line oc txt
+let fprintf oc fmt = Printf.ksprintf (fun txt -> write oc txt) fmt
+let fprintlf oc fmt = Printf.ksprintf (fun txt -> write_line oc txt) fmt
+
+let print txt = write stdout txt
+let printl txt = write_line stdout txt
+let printf fmt = Printf.ksprintf print fmt
+let printlf fmt = Printf.ksprintf printl fmt
+
+let eprint txt = write stderr txt
+let eprintl txt = write_line stderr txt
+let eprintf fmt = Printf.ksprintf eprint fmt
+let eprintlf fmt = Printf.ksprintf eprintl fmt
+
 let pipe ?buffer_size _ =
   let fd_r, fd_w = Lwt_unix.pipe () in
   (of_fd ?buffer_size ~mode:input fd_r, of_fd ?buffer_size ~mode:output fd_w)
+
+type file_name = string
 
 let open_file ?buffer_size ?flags ?perm ~mode filename =
   let flags = match flags, mode with
@@ -1100,6 +1156,26 @@ let with_connection ?buffer_size sockaddr f =
     f (ic, oc)
   finally
     close ic >> close oc
+
+let make_stream f ic =
+  Lwt_stream.from (fun _ ->
+                     try_lwt
+                       f ic >|= fun x -> Some x
+                     with
+                       | End_of_file ->
+                           close ic >> return None)
+
+let lines_of_file filename =
+  make_stream read_line (open_file ~mode:input filename)
+
+let lines_to_file filename lines =
+  with_file ~mode:output filename (fun oc -> write_lines oc lines)
+
+let chars_of_file filename =
+  make_stream read_char (open_file ~mode:input filename)
+
+let chars_to_file filename chars =
+  with_file ~mode:output filename (fun oc -> write_chars oc chars)
 
 let set_default_buffer_size size =
   check_buffer_size "set_default_buffer_size" size;

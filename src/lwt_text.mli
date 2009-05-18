@@ -24,40 +24,24 @@
 
 (** This modules implements {b text channel}s. A {b text channel} is
     basically a {b byte channel} (as in {!Lwt_io}) plus a {b character
-    encoding}. *)
+    encoding}.
+
+    It has almost the same interface as {!Lwt_io} except that it
+    uses [Text.t] in place of [string] and [char]
+*)
+
+open Lwt_io
 
 (** {6 Types} *)
 
 type 'mode channel
   (** Type of a text channel *)
 
-type input_channel = Lwt_io.input channel
+type input_channel = input channel
     (** Type of a text input channel *)
 
-type output_channel = Lwt_io.output channel
+type output_channel = output channel
     (** Type of a text output channel *)
-
-(** {6 Standard channels} *)
-
-val stdin : input_channel
-  (** The standard input, it reads data from {!Lwt_io.stdin} *)
-
-val stdout : output_channel
-  (** The standard output, it writes data to {!Lwt_io.stdout} *)
-
-val stderr : output_channel
-  (** The standard output for error messages, it writes data to
-      {!Lwt_io.stderr} *)
-
-(** Note: [stdout] and [stderr] are auto-flushed *)
-
-val zero : input_channel
-  (** Inputs which returns always ['\x00']. It reads data from
-      {!Lwt_io.zero} *)
-
-val null : output_channel
-  (** Output which drops everything. It writes data to
-      {!Lwt_io.null} *)
 
 (** {6 Creation/manipulation} *)
 
@@ -82,86 +66,61 @@ val byte_channel : 'a channel -> 'a Lwt_io.channel
 val encoding : 'a channel -> Encoding.t
   (** [encoding ch] returns the character encoding of a channel. *)
 
+val flush : output_channel -> unit Lwt.t
+  (** Flush the underlying byte channel *)
+
+val close : 'a channel -> unit Lwt.t
+  (** Close the underlying byte channel *)
+
+(** {6 Lwt_io like values} *)
+
+val atomic : ('a channel -> 'b Lwt.t) -> ('a channel -> 'b Lwt.t)
+val stdin : input_channel
+val stdout : output_channel
+val stderr : output_channel
+val zero : input_channel
+val null : output_channel
+val read_char : input_channel -> Text.t Lwt.t
+val read_char_opt : input_channel -> Text.t option Lwt.t
+val read_chars : input_channel -> Text.t Lwt_stream.t
+val read_line : input_channel -> Text.t Lwt.t
+val read_line_opt : input_channel -> Text.t option Lwt.t
+val read_lines : input_channel -> Text.t Lwt_stream.t
+val read : ?count : int -> input_channel -> Text.t Lwt.t
+val write_char : output_channel -> Text.t -> unit Lwt.t
+val write_chars : output_channel -> Text.t Lwt_stream.t -> unit Lwt.t
+val write : output_channel -> Text.t -> unit Lwt.t
+val write_line : output_channel -> Text.t -> unit Lwt.t
+val write_lines : output_channel -> Text.t Lwt_stream.t -> unit Lwt.t
 val open_file :
   ?buffer_size : int ->
   ?strict : bool ->
   ?encoding : Encoding.t ->
   ?flags : Unix.open_flag list ->
   ?perm : Unix.file_perm ->
-  mode : 'a Lwt_io.mode ->
-  string -> 'a channel
-
+  mode : 'a mode ->
+  file_name -> 'a channel
 val with_file :
   ?buffer_size : int ->
   ?strict : bool ->
   ?encoding : Encoding.t ->
   ?flags : Unix.open_flag list ->
   ?perm : Unix.file_perm ->
-  mode : 'a Lwt_io.mode ->
-  string -> ('a channel -> 'b Lwt.t) -> 'b Lwt.t
-
-val close : 'a channel -> unit Lwt.t
-  (** [close ch = Lwt_io.close (byte_channel ch)] *)
-
-val flush : output_channel -> unit Lwt.t
-  (** [flush ch = Lwt_io.flush (byte_channel ch)] *)
-
-val atomic : ('a channel -> 'b Lwt.t) -> ('a channel -> 'b Lwt.t)
-  (** [atomic f] transforms a sequence of io operations into one
-      single atomic io operation. *)
-
-(** {6 Reading} *)
-
-val read_char : input_channel -> Text.t Lwt.t
-  (** [read_char ic] reads the next character of [ic].
-
-      @raise End_of_file if the end of the file is reached *)
-
-val read_char_opt : input_channel -> Text.t option Lwt.t
-  (** Same as {!read_char} but do not raises [End_of_file] on end of
-      input *)
-
-val read_chars : input_channel -> Text.t Lwt_stream.t
-  (** [read_chars ic] returns a stream holding all characters of [ic] *)
-
-val read : ?count : int -> input_channel -> Text.t Lwt.t
-  (** [read ?count ic] reads at most [len] characters from [ic]. It
-      returns [""] if the end of input is reached. If [count] is not
-      specified, it reads all characters until the end of input. *)
-
-val read_line : input_channel -> Text.t Lwt.t
-  (** [read_line ic] reads one complete line from [ic] and returns it
-      without the end of line. End of line is either ["\n"] or
-      ["\r\n"].
-
-      If the end of line is reached before reading any character,
-      [End_of_file] is reached. If it is reached before reading an end
-      of line but characters have already been read, they are
-      returned. *)
-
-val read_line_opt : input_channel -> Text.t option Lwt.t
-  (** Same as [read_line] but do not raise [End_of_file] on end of
-      input. *)
-
-val read_lines : input_channel -> Text.t Lwt_stream.t
-  (** [read_lines ic] returns a stream holding all lines of [ic] *)
-
-(** {6 Writing} *)
-
-val write_char : output_channel -> Text.t -> unit Lwt.t
-  (** [write_char oc char] writes [char] on [oc] *)
-
-val write : output_channel -> Text.t -> unit Lwt.t
-  (** [write oc text] writes all characters of [text] on [oc] *)
-
-val write_chars : output_channel -> Text.t Lwt_stream.t -> unit Lwt.t
-  (** [write_bytes oc chars] writes all characters contained hold by
-      [chars] on [oc] *)
-
-val write_line : output_channel -> Text.t -> unit Lwt.t
-  (** [write_line oc txt] writes [txt] on [oc] followed by a
-      newline. *)
-
-val write_lines : output_channel -> Text.t Lwt_stream.t -> unit Lwt.t
-  (** [write_lines oc lines] writes all lines of [lines] on [oc],
-      separated by newline characters. *)
+  mode : 'a mode ->
+  file_name -> ('a channel -> 'b Lwt.t) -> 'b Lwt.t
+val lines_of_file : file_name -> Text.t Lwt_stream.t
+val lines_to_file : file_name -> Text.t Lwt_stream.t -> unit Lwt.t
+val chars_of_file : file_name -> Text.t Lwt_stream.t
+val chars_to_file : file_name -> Text.t Lwt_stream.t -> unit Lwt.t
+val fprint : output_channel -> Text.t -> unit Lwt.t
+val fprintl : output_channel -> Text.t -> unit Lwt.t
+val fprintf : output_channel -> ('a, unit, Text.t, unit Lwt.t) format4 -> 'a
+val fprintlf : output_channel -> ('a, unit, Text.t, unit Lwt.t) format4 -> 'a
+val print : Text.t -> unit Lwt.t
+val printl : Text.t -> unit Lwt.t
+val printf : ('a, unit, Text.t, unit Lwt.t) format4 -> 'a
+val printlf : ('a, unit, Text.t, unit Lwt.t) format4 -> 'a
+val eprint : Text.t -> unit Lwt.t
+val eprintl : Text.t -> unit Lwt.t
+val eprintf : ('a, unit, Text.t, unit Lwt.t) format4 -> 'a
+val eprintlf : ('a, unit, Text.t, unit Lwt.t) format4 -> 'a

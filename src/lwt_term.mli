@@ -231,6 +231,23 @@ type styled_text_instruction =
 type styled_text = styled_text_instruction list
     (** A styled text is a list of instructions *)
 
+val textf : ('a, unit, string, styled_text_instruction) format4 -> 'a
+  (** [textf fmt] formats a texts with [fmt] and returns [Text txt] *)
+
+val text : Text.t -> styled_text_instruction
+val reset : styled_text_instruction
+val bold : styled_text_instruction
+val underlined : styled_text_instruction
+val blink : styled_text_instruction
+val inverse : styled_text_instruction
+val hidden : styled_text_instruction
+
+val fg : color -> styled_text_instruction
+  (** [fg col = Foreground col] *)
+
+val bg : color -> styled_text_instruction
+  (** [bg col = Background col] *)
+
 val strip_styles : styled_text -> Text.t
   (** Drop all styles *)
 

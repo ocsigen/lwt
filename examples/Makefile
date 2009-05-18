@@ -9,12 +9,13 @@ include ../utils/utils.mk
 
 HAVE_LWT := $(call have_package,lwt)
 HAVE_LWT_GLIB := $(call have_package,lwt.glib)
+HAVE_LWT_TEXT := $(call have_package,lwt.text)
 
 ifeq ($(HAVE_LWT),)
   $(error You need to install Lwt before compiling examples!)
 endif
 
-EXAMPLES := relay start_editor show_keys parallelize $(if $(HAVE_LWT_GLIB),ex_gtk)
+EXAMPLES := relay start_editor show_keys $(if $(HAVE_LWT_TEXT),parallelize) $(if $(HAVE_LWT_GLIB),ex_gtk)
 EXAMPLES_BYTE := $(patsubst %,%.byte,$(EXAMPLES))
 EXAMPLES_NATIVE := $(patsubst %,%.native,$(EXAMPLES))
 

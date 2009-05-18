@@ -1,13 +1,11 @@
 # -*- conf -*-
 
 description = "Lightweight thread library for OCaml (core library)"
-requires = "unix,text"
+requires = "unix"
 version = "@VERSION@"
 exists_if = "lwt.cmo,lwt.cmx,lwt.cmxs"
 archive(byte) = "lwt.cma"
 archive(native) = "lwt.cmxa"
-archive(toploop,byte) += "top_lwt.cma"
-archive(toploop,native) += "top_lwt.cmxa"
 
 package "preemptive" (
   exists_if = "lwt_preemptive.cma,lwt_preemptive.cmxa,lwt_preemptive.cmxs"
@@ -33,6 +31,14 @@ package "extra" (
   archive(mt,native) = "lwt_extra.cmxa"
 )
 
+package "text" (
+  exists_if = "lwt_text.cma,lwt_text.cmxa,lwt_text.cmxs"
+  description = "Text utilities"
+  requires = "text,lwt"
+  archive(byte) = "lwt_text.cma"
+  archive(native) = "lwt_text.cmxa"
+)
+
 package "glib" (
   exists_if = "lwt_glib.cma,lwt_glib.cmxa,lwt_glib.cmxs"
   description = "Glib integration"
@@ -47,4 +53,12 @@ package "syntax" (
   requires = "camlp4"
   archive(syntax,preprocessor) = "pa_lwt.cmo"
   archive(syntax,toploop) = "pa_lwt.cmo"
+)
+
+package "top" (
+  exists_if = "lwt_top.cma,lwt_top.cmxa,lwt_top.cmxs"
+  description = "Line-editing in the toplevel"
+  requires = "lwt.text"
+  archive(toploop,byte) = "lwt_top.cma"
+  archive(toploop,native) = "lwt_top.cmxa"
 )

@@ -147,64 +147,42 @@ let with_process_full ?env cmd f = make_with open_process_full ?env cmd f
 
 let exec ?env cmd = (open_process_none ?env cmd)#close
 
-let recv_bytes pr =
+let recv_chars pr =
   let ic = pr#stdout in
   Lwt_stream.from (fun _ ->
                      try_lwt
-                       Lwt_io.read_byte ic >|= fun x -> Some x
+                       Lwt_io.read_char ic >|= fun x -> Some x
                      with
                        | End_of_file ->
                            Lwt_io.close ic >> return None)
 
-let recv_chars pr =
-  let ic = Lwt_text.make pr#stdout in
-  Lwt_stream.from (fun _ ->
-                     try_lwt
-                       Lwt_text.read_char ic >|= fun x -> Some x
-                     with
-                       | End_of_file ->
-                           Lwt_text.close ic >> return None)
-
 let recv_lines pr =
-  let ic = Lwt_text.make pr#stdout in
+  let ic = pr#stdout in
   Lwt_stream.from (fun _ ->
                      try_lwt
-                       Lwt_text.read_line ic >|= fun x -> Some x
+                       Lwt_io.read_line ic >|= fun x -> Some x
                      with
                        | End_of_file ->
-                           Lwt_text.close ic >> return None)
+                           Lwt_io.close ic >> return None)
 
-let recv_byte_array pr =
+let recv pr =
   let ic = pr#stdout in
   try_lwt
-    Lwt_io.read_byte_array ic
+    Lwt_io.read ic
   finally
     Lwt_io.close ic >> return ()
 
 let recv_line pr =
-  let ic = Lwt_text.make pr#stdout in
+  let ic = pr#stdout in
   try_lwt
-    Lwt_text.read_line ic
+    Lwt_io.read_line ic
   finally
-    Lwt_text.close ic >> return ()
-
-let recv_text pr =
-  let ic = Lwt_text.make pr#stdout in
-  try_lwt
-    Lwt_text.read ic
-  finally
-    Lwt_text.close ic >> return ()
+    Lwt_io.close ic >> return ()
 
 (* Receiving *)
 
-let pread_byte_array ?env cmd =
-  recv_byte_array (open_process_in ?env cmd)
-
-let pread_bytes ?env cmd =
-  recv_bytes (open_process_in ?env cmd)
-
 let pread ?env cmd =
-  recv_text (open_process_in ?env cmd)
+  recv (open_process_in ?env cmd)
 
 let pread_chars ?env cmd =
   recv_chars (open_process_in ?env cmd)
@@ -217,81 +195,51 @@ let pread_lines ?env cmd =
 
 (* Sending *)
 
-let sendb f pr data =
+let send f pr data =
   let oc = pr#stdin in
   try_lwt
     f oc data
   finally
     Lwt_io.close oc >> return ()
 
-let sendt f pr data =
-  let oc = Lwt_text.make pr#stdin in
-  try_lwt
-    f oc data
-  finally
-    Lwt_text.close oc >> return ()
-
-let pwrite_byte_array ?env cmd byte_array =
-  sendb Lwt_io.write_byte_array (open_process_out ?env cmd) byte_array
-
-let pwrite_bytes ?env cmd byte_stream =
-  sendb Lwt_io.write_bytes (open_process_out ?env cmd) byte_stream
-
 let pwrite ?env cmd text =
-  sendt Lwt_text.write (open_process_out ?env cmd) text
+  send Lwt_io.write (open_process_out ?env cmd) text
 
 let pwrite_chars ?env cmd chars =
-  sendt Lwt_text.write_chars (open_process_out ?env cmd) chars
+  send Lwt_io.write_chars (open_process_out ?env cmd) chars
 
 let pwrite_line ?env cmd line =
-  sendt Lwt_text.write_line (open_process_out ?env cmd) line
+  send Lwt_io.write_line (open_process_out ?env cmd) line
 
 let pwrite_lines ?env cmd lines =
-  sendt Lwt_text.write_lines (open_process_out ?env cmd) lines
+  send Lwt_io.write_lines (open_process_out ?env cmd) lines
 
 (* Mapping *)
 
 (* Dump something to a command: *)
-let dumpb f pr data =
+let dump f pr data =
   let oc = pr#stdin in
   ignore_result (try_lwt
                    f oc data
                  finally
                    Lwt_io.close oc)
 
-let dumpt f pr data =
-  let oc = Lwt_text.make pr#stdin in
-  ignore_result (try_lwt
-                   f oc data
-                 finally
-                   Lwt_text.close oc)
-
-let pmap_byte_array ?env cmd byte_array =
-  let pr = open_process ?env cmd in
-  dumpb Lwt_io.write_byte_array pr byte_array;
-  recv_byte_array pr
-
-let pmap_bytes ?env cmd byte_stream =
-  let pr = open_process ?env cmd in
-  dumpb Lwt_io.write_bytes pr byte_stream;
-  recv_bytes pr
-
 let pmap ?env cmd text =
   let pr = open_process ?env cmd in
-  dumpt Lwt_text.write pr text;
-  recv_text pr
+  dump Lwt_io.write pr text;
+  recv pr
 
 let pmap_chars ?env cmd chars =
   let pr = open_process ?env cmd in
-  dumpt Lwt_text.write_chars pr chars;
+  dump Lwt_io.write_chars pr chars;
   recv_chars pr
 
 let pmap_line ?env cmd line =
   let pr = open_process ?env cmd in
-  dumpt Lwt_text.write_line pr line;
+  dump Lwt_io.write_line pr line;
   recv_line pr
 
 let pmap_lines ?env cmd lines =
   let pr = open_process ?env cmd in
-  dumpt Lwt_text.write_lines pr lines;
+  dump Lwt_io.write_lines pr lines;
   recv_lines pr
