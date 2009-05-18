@@ -632,23 +632,17 @@ struct
 
   let rec read_all ic buf =
     Buffer.add_substring buf ic.buffer ic.ptr (ic.max - ic.ptr);
+    ic.ptr <- ic.max;
     refill ic >>= function
       | 0 ->
-          fail End_of_file
+          return (Buffer.contents buf)
       | n ->
           read_all ic buf
 
   let read count ic =
     match count with
       | None ->
-          let buf = Buffer.create 512 in
-          begin
-            try_lwt
-              read_all ic buf
-            with
-              | End_of_file ->
-                  return (Buffer.contents buf)
-          end
+          read_all ic (Buffer.create 512)
       | Some len ->
           let str = String.create len in
           lwt real_len = unsafe_read_into ic str 0 len in
