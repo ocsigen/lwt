@@ -327,7 +327,10 @@ val open_file :
   file_name -> 'a channel
   (** [open_file ?buffer_size ?flags ?perm ~mode filename] open the
       file with name [filename] and returns a channel for
-      reading/writing it. *)
+      reading/writing it.
+
+      @raise Sys_error on error
+  *)
 
 val with_file :
   ?buffer_size : int ->
@@ -344,7 +347,10 @@ val open_connection : ?buffer_size : int -> Unix.sockaddr -> (input_channel * ou
       the given address and returns two channels for using it.
 
       The connection is completly closed when you close both
-      channels. *)
+      channels.
+
+      @raise Sys_error on error
+  *)
 
 val with_connection : ?buffer_size : int -> Unix.sockaddr -> (input_channel * output_channel -> 'a Lwt.t) -> 'a Lwt.t
   (** [with_connection ?buffer_size ~mode addr f] open a connection to

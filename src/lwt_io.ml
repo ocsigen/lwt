@@ -1115,7 +1115,10 @@ let open_file ?buffer_size ?flags ?perm ~mode filename =
     | None, Output ->
         0o666
   in
-  of_unix_fd ?buffer_size ~mode (Unix.openfile filename flags perm)
+  try
+    of_unix_fd ?buffer_size ~mode (Unix.openfile filename flags perm)
+  with Unix.Unix_error(error, _, _) ->
+    raise (Sys_error(Unix.error_message error))
 
 let with_file ?buffer_size ?flags ?perm ~mode filename f =
   let ic = open_file ?buffer_size ?flags ?perm ~mode filename in
@@ -1127,29 +1130,31 @@ let with_file ?buffer_size ?flags ?perm ~mode filename f =
 let file_length filename = with_file ~mode:input filename length
 
 let open_connection ?buffer_size sockaddr =
-  let fd = Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0 in
-  let ref_count = ref 2 in
-  let close mode =
-    Lwt_unix.shutdown fd mode;
-    decr ref_count;
-    if !ref_count = 0 then
-      close_fd fd
-    else
-      return ()
-  in
   try_lwt
-    Lwt_unix.connect fd sockaddr >> begin
-      (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
-      return (make ?buffer_size
-                ~close:(fun _ -> close Unix.SHUTDOWN_RECEIVE)
-                ~mode:input (Lwt_unix.read fd),
-              make ?buffer_size
-                ~close:(fun _ -> close Unix.SHUTDOWN_SEND)
-                ~mode:output (Lwt_unix.write fd))
-    end
-  with
-    exn ->
+    let fd = Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0 in
+    let ref_count = ref 2 in
+    let close mode =
+      Lwt_unix.shutdown fd mode;
+      decr ref_count;
+      if !ref_count = 0 then
+        close_fd fd
+      else
+        return ()
+    in
+    try_lwt
+      Lwt_unix.connect fd sockaddr >> begin
+        (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
+        return (make ?buffer_size
+                  ~close:(fun _ -> close Unix.SHUTDOWN_RECEIVE)
+                  ~mode:input (Lwt_unix.read fd),
+                make ?buffer_size
+                  ~close:(fun _ -> close Unix.SHUTDOWN_SEND)
+                  ~mode:output (Lwt_unix.write fd))
+      end
+    with exn ->
       close_fd fd >> fail exn
+  with Unix.Unix_error(error, _, _) ->
+    fail (Sys_error(Unix.error_message error))
 
 let with_connection ?buffer_size sockaddr f =
   lwt ic, oc = open_connection sockaddr in

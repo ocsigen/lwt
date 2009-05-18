@@ -35,27 +35,30 @@ let fd_move fd1 fd2 =
   Unix.close fd1
 
 let spawn (prog, args) env stdin stdout stderr toclose =
-  match Unix.fork() with
-    | 0 ->
-        if stdin <> Unix.stdin then fd_move stdin Unix.stdin;
-        if stdout <> Unix.stdout then fd_move stdout Unix.stdout;
-        if stderr <> Unix.stdout then fd_move stderr Unix.stderr;
-        List.iter Unix.close toclose;
-        begin
-          try
-            match env with
-              | None ->
-                  Unix.execvp prog args
-              | Some env ->
-                  Unix.execvpe prog args env
-          with
-              _ -> exit 127
-        end
-    | id ->
-        if stdin <> Unix.stdin then Unix.close stdin;
-        if stdout <> Unix.stdout then Unix.close stdout;
-        if stderr <> Unix.stderr then Unix.close stderr;
-        id
+  try
+    match Unix.fork() with
+      | 0 ->
+          if stdin <> Unix.stdin then fd_move stdin Unix.stdin;
+          if stdout <> Unix.stdout then fd_move stdout Unix.stdout;
+          if stderr <> Unix.stdout then fd_move stderr Unix.stderr;
+          List.iter Unix.close toclose;
+          begin
+            try
+              match env with
+                | None ->
+                    Unix.execvp prog args
+                | Some env ->
+                    Unix.execvpe prog args env
+            with _ ->
+              exit 127
+          end
+      | id ->
+          if stdin <> Unix.stdin then Unix.close stdin;
+          if stdout <> Unix.stdout then Unix.close stdout;
+          if stderr <> Unix.stderr then Unix.close stderr;
+          id
+  with Unix.Unix_error(error, _, _) ->
+    raise (Sys_error(Unix.error_message error))
 
 class process_none ?env cmd =
   let pid = spawn cmd env Unix.stdin Unix.stdout Unix.stderr [] in
