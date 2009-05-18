@@ -185,6 +185,7 @@ struct
     in
     read_char da strict decoder >>= function
       | "\r" -> loop true
+      | "\n" -> return ""
       | ch -> Buffer.add_string buf ch; loop false
 
   let read_line_opt da strict decoder =

@@ -567,6 +567,7 @@ struct
     in
     read_char ic >>= function
       | '\r' -> loop true
+      | '\n' -> return ""
       | ch -> Buffer.add_char buf ch; loop false
 
   let read_line_opt ic =
