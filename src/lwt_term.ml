@@ -31,16 +31,6 @@ let stdin_is_atty = lazy(Unix.isatty Unix.stdin)
 let stdout_is_atty = lazy(Unix.isatty Unix.stdout)
 let stderr_is_atty = lazy(Unix.isatty Unix.stderr)
 
-let write_sequence oc seq =
-  Lwt_text.atomic (fun oc ->
-                   (* Most terminals have a small command buffer, and
-                      will have a bad reaction if the writing yield in
-                      the middle of an escape sequence: *)
-                   if Lwt_io.buffered (Lwt_text.byte_channel oc) >= 1024 then
-                     flush oc >> write oc seq
-                   else
-                     write oc seq) oc
-
 type state =
   | Normal
   | Raw of Unix.terminal_io
@@ -66,14 +56,14 @@ let cursor_visible = ref true
 
 let show_cursor _ =
   cursor_visible := true;
-  write_sequence stdout "\x1B[?25h"
+  write stdout "\x1B[?25h"
 
 let hide_cursor _ =
   cursor_visible := false;
-  write_sequence stdout "\x1B[?25l"
+  write stdout "\x1B[?25l"
 
 let clear_screen _ =
-  write_sequence stdout "\027[2J\027[H"
+  write stdout "\027[2J\027[H"
 
 (* Restore terminal mode on exit: *)
 let cleanup () =
@@ -422,7 +412,7 @@ module Codes = struct
 end
 
 let set_color num (r, g, b) =
-  write_sequence stdout (Printf.sprintf "\027]4;%d;rgb:%02x/%02x/%02x;\027\\" num r g b)
+  write stdout (Printf.sprintf "\027]4;%d;rgb:%02x/%02x/%02x;\027\\" num r g b)
 
 (* +-----------------------------------------------------------------+
    | Rendering                                                       |
@@ -492,7 +482,7 @@ let render m =
                 color Codes.foreground pt.style.foreground;
                 color Codes.background pt.style.background;
                 Buffer.add_char buf 'm';
-                write_sequence oc (Buffer.contents buf)
+                write oc (Buffer.contents buf)
               end else
                 return ()
             end >>
@@ -505,9 +495,9 @@ let render m =
         return ()
     in
     (* Go to the top-left corner and reset attributes: *)
-    write_sequence oc "\027[H\027[0m" >>
+    write oc "\027[H\027[0m" >>
       loop_y 0 blank.style >>
-      write_sequence oc "\027[0m"
+      write oc "\027[0m"
   end stdout
 
 (* +-----------------------------------------------------------------+
@@ -563,7 +553,7 @@ let write_styled oc st =
                   add_int buf code) codes;
     Queue.clear codes;
     Buffer.add_char buf 'm';
-    write_sequence oc (Buffer.contents buf)
+    write oc (Buffer.contents buf)
   in
 
   let rec loop = function
@@ -646,7 +636,7 @@ let fprintlc oc is_atty st =
   if Lazy.force is_atty then
     atomic (fun oc ->
               write_styled oc st
-              >> write_sequence oc "\027[m"
+              >> write oc "\027[m"
               >> write_char oc "\n") oc
   else
     write_line oc (strip_styles st)

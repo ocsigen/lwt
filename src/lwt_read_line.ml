@@ -382,9 +382,9 @@ struct
     | 0 ->
         write_char stdout "\r"
     | 1 ->
-        write_sequence stdout "\027[F"
+        write stdout "\027[F"
     | n ->
-        write_sequence stdout "\027[F" >> beginning_of_line (n - 1)
+        write stdout "\027[F" >> beginning_of_line (n - 1)
 
   (* Replace "\n" by padding to the end of line in a styled text.
 

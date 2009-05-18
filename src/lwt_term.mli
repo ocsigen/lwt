@@ -43,10 +43,6 @@ val hide_cursor : unit -> unit Lwt.t
 val clear_screen : unit -> unit Lwt.t
   (** [clear_screen ()] clears the entire screen *)
 
-val write_sequence : Lwt_text.output_channel -> Text.t -> unit Lwt.t
-  (** [write_sequence oc seq] writes a sequence in a reliable way on a
-      channel *)
-
 (** {6 Terminal informations} *)
 
 (** Terminal sizes: *)
