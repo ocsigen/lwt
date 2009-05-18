@@ -185,7 +185,7 @@ let perform_io ch = match ch.main.state with
           | Output ->
               (* Shift remaining data: *)
               let len = len - n in
-              String.unsafe_blit ch.buffer ptr ch.buffer 0 len;
+              String.unsafe_blit ch.buffer n ch.buffer 0 len;
               ch.ptr <- len
         end;
         return n
