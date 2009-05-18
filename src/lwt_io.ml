@@ -1183,6 +1183,45 @@ let chars_of_file filename =
 let chars_to_file filename chars =
   with_file ~mode:output filename (fun oc -> write_chars oc chars)
 
+let hexdump_stream oc stream =
+  let buf = Buffer.create 80 in
+  let rec loop num =
+    Lwt_stream.nget 16 stream >>= function
+      | [] ->
+          return ()
+      | l ->
+          Buffer.clear buf;
+          Printf.bprintf buf "%08x|  " num;
+          let rec bytes pos = function
+            | [] ->
+                blanks pos
+            | x :: l ->
+                if pos = 8 then Buffer.add_char buf ' ';
+                Printf.bprintf buf "%02x " (Char.code x);
+                bytes (pos + 1) l
+          and blanks pos =
+            if pos < 16 then begin
+              if pos = 8 then
+                Buffer.add_string buf "    "
+              else
+                Buffer.add_string buf "   ";
+              blanks (pos + 1)
+            end
+          in
+          bytes 0 l;
+          Buffer.add_string buf " |";
+          List.iter (fun ch -> Buffer.add_char buf (if ch >= '\x20' && ch <= '\x7e' then ch else '.')) l;
+          Buffer.add_string buf "|\n";
+          lwt _ = write oc (Buffer.contents buf) in
+          if List.length l = 16 then
+            loop (num + 16)
+          else
+            return ()
+  in
+  loop 0
+
+let hexdump oc buf = hexdump_stream oc (Lwt_stream.of_string buf)
+
 let set_default_buffer_size size =
   check_buffer_size "set_default_buffer_size" size;
   default_buffer_size := size
