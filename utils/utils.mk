@@ -46,7 +46,7 @@ endif
 
 # Execute the given command and return "yes" if it succeeds, and the
 # empty string if it fails:
-exec = $(shell $(1) &> /dev/null && echo -n yes)
+exec = $(shell $(1) &> /dev/null && echo -n yes || true)
 
 # Check for the presence of an ocaml package installed with findlib:
 have_package = $(call exec,$(OCAMLFIND) query $(1))
@@ -77,6 +77,10 @@ endif
 ifeq ($(HAVE_OCAMLBUILD),)
   MISSING := yes
   $(warning ocamlbuild is missing!)
+endif
+
+ifeq ($(HAVE_OCAMLOPT),)
+  OCAMLBUILD += -byte-plugin
 endif
 
 ifeq ($(MISSING),yes)
