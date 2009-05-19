@@ -6,6 +6,7 @@
        {{{Lwt_unix.run}}}
     ** {{{Lwt_io}}}: a new implementation of buffered channels with
        more features and better handling of concurrent access
+    ** {{{Lwt_text}}}: implementation of text channels
     ** {{{Lwt_process}}}: helpers to spawn processes and communicate
        with them
     ** {{{Lwt_main}}} for abstracting the main loop and allowing
@@ -13,7 +14,6 @@
     ** {{{Lwt_glib}}} for integration into the glib main event loop
     ** {{{Lwt_term}}} for interaction with the terminal
     ** {{{Lwt_read_line}}} for interactive user input
-    ** {{{Lwt_pervasives}}} containing aliases and helpers
   * Adding a syntax extension {{{pa_lwt}}}:
     ** handles anonymous bind {{{a >> b}}}
     ** adds syntactic sugar for catching errors (ticket #6)
