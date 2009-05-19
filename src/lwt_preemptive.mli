@@ -3,6 +3,7 @@
  * Module lwt_preemptive.ml
  * Copyright (C) 2005 Nataliya Guts, Vincent Balat, Jérôme Vouillon
  * Laboratoire PPS - CNRS Université Paris Diderot
+ *               2009 Jérémie Dimino
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,29 +22,54 @@
  *)
 
 (** This module allows to mix preemptive threads with [Lwt]
-   cooperative threads. It maintains an extensible pool of preemptive
-   threads to with you can detach computations.
- *)
+    cooperative threads. It maintains an extensible pool of preemptive
+    threads to with you can detach computations. *)
 
-(** detaches a computation to a preemptive thread. *)
 val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
-
+  (** detaches a computation to a preemptive thread. *)
 
 val init : int -> int -> (string -> unit) -> unit Lwt.t
-(** Should be called only once at the begining of the process.
-    Arguments are: minimum number of threads, maximum number of threads
-    and the function to log errors.
-*)
+  (** [init min max log] initialises this module. i.e. it launches the
+      minimum number of preemptive threads and starts the {b
+      dispatcher}.
+
+      @param min is the minimum number of threads
+      @param max is the maximum number of threads
+      @param log is used to log error messages
+
+      It returns the {b dispatcher} thread, which never returns (it
+      returns only on internal errors).
+
+      If {!Lwt_preemptive} has already been initialised, this call
+      only modify bounds and the log function, and return the dispatcher
+      thread. *)
+
+val simple_init : unit -> unit Lwt.t
+  (** [simple_init ()] does a {i simple initialization}. i.e. with
+      default parameters if the library is not yet initialised.
+
+      It returns the dispatcher thread.
+
+      Note: this function is automatically called {!detach}. *)
+
+val get_bounds : unit -> int * int
+  (** [get_bounds ()] returns the minimum and the maximum number of
+      preemptive threads. *)
+
+val set_bounds : int * int -> unit
+  (** [set_bounds (min, max)] set the minimum and the maximum number
+      of preemptive threads. *)
 
 val set_max_number_of_threads_queued : int -> unit
-(** Sets the size of the waiting queue, if no more threads are available *)
+  (** Sets the size of the waiting queue, if no more preemptive
+      threads are available. When the queue is full, {!detach} will
+      sleep until a thread is available. *)
 
 val get_max_number_of_threads_queued : unit -> int
-(** Returns the size of the waiting queue, if no more threads are available *)
+  (** Returns the size of the waiting queue, if no more threads are
+      available *)
 
 (**/**)
 val nbthreads : unit -> int
 val nbthreadsbusy : unit -> int
 val nbthreadsqueued : unit -> int
-
-
