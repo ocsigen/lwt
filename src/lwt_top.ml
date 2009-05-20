@@ -81,6 +81,12 @@ let complete (before, after) abort_completion =
    +-----------------------------------------------------------------+ *)
 
 let history = ref []
+
+let _ =
+  let hist_name = Filename.concat (try Unix.getenv "HOME" with _ -> "") ".lwt-top-history" in
+  Lwt_main.add_hook (ref (fun _ -> Lwt_read_line.save_history hist_name !history)) Lwt_main.exit_hooks;
+  history := Lwt_main.run (Lwt_read_line.load_history hist_name)
+
 let input = ref ""
 let pos = ref 0
 
