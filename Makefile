@@ -45,7 +45,8 @@ LIBRARIES := lwt \
 	$(if $(HAVE_THREADS),lwt_preemptive lwt_extra) \
 	$(if $(HAVE_SSL),lwt_ssl) \
 	$(if $(HAVE_GLIB),lwt_glib) \
-	$(if $(HAVE_TEXT),lwt_text lwt_top)
+	$(if $(HAVE_TEXT),lwt_text lwt_top) \
+	simple_top
 
 ARCHIVES_BYTE := $(patsubst %,src/%.cma,$(LIBRARIES)) syntax/pa_lwt.cmo
 ARCHIVES_NATIVE := $(patsubst %,src/%.cmxa,$(LIBRARIES))

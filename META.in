@@ -6,6 +6,8 @@ version = "@VERSION@"
 exists_if = "lwt.cmo,lwt.cmx,lwt.cmxs"
 archive(byte) = "lwt.cma"
 archive(native) = "lwt.cmxa"
+archive(toploop,byte) += "simple_top.cma"
+archive(toploop,native) += "simple_top.cmxa"
 
 package "preemptive" (
   exists_if = "lwt_preemptive.cma,lwt_preemptive.cmxa,lwt_preemptive.cmxs"
