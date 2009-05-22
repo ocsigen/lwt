@@ -90,6 +90,11 @@ val print_words : Lwt_text.output_channel -> int -> string list -> unit Lwt.t
 type history = Text.t list
     (** Type of an history *)
 
+val add_entry : Text.t -> history -> history
+  (** [add_entry line history] returns the history [history] plus
+      [line] at the beginning. If [line] already appears at the
+      beginning or contains only spaces, it is discarded. *)
+
 val save_history : string -> history -> unit Lwt.t
   (** [save_history filename history] saves [history] to
       [filename]. History is saved by separating lines with a null

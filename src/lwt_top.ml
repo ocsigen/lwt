@@ -97,7 +97,7 @@ let rec read_input prompt buffer len =
       let txt = Lwt_main.run
         (lwt l = Lwt_read_line.read_line ~complete ~history:(!history) sprompt in
          Lwt_text.flush Lwt_text.stdout >> return l) in
-      if Text.strip txt <> "" then history := txt :: !history;
+      history := Lwt_read_line.add_entry txt !history;
       input := txt ^ "\n";
       pos := 0;
       read_input prompt buffer len

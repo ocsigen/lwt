@@ -671,6 +671,15 @@ let read_yes_no ?history prompt =
    | History                                                         |
    +-----------------------------------------------------------------+ *)
 
+let add_entry line history =
+  if Text.strip line = "" then
+    history
+  else
+    if (match history with [] -> false | x :: _ -> x = line) then
+      history
+    else
+      line :: history
+
 let save_history name history =
   with_file ~mode:Lwt_io.output name
     (fun oc ->
