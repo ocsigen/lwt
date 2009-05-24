@@ -13,5 +13,5 @@ Lwt_main
 Lwt_stream
 Lwt_monitor
 Lwt_mvar
-private/Pqueue
-private/DList
+private/Lwt_pqueue
+private/Lwt_dlist

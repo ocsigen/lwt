@@ -22,7 +22,7 @@
  * 02111-1307, USA.
  *)
 
-open DList
+open Lwt_dlist
 
 exception Canceled
 
@@ -43,7 +43,7 @@ type 'a thread_state =
   | Fail of exn
       (* [Fail exn] a terminated thread which has failed with the
          exception [exn] *)
-  | Sleep of sleep_reason * ('a t -> unit) DList.node
+  | Sleep of sleep_reason * ('a t -> unit) Lwt_dlist.node
       (* A sleeping thread with its list of waiters, which are thunk
          functions.
 
@@ -157,9 +157,9 @@ let cancel_task t = wakeup_exn t Canceled
 
 let return v = ref (Return v)
 let fail e = ref (Fail e)
-let temp f = ref (Sleep(Temp, DList.make f))
-let wait _ = ref (Sleep(Wait, DList.make ignore))
-let task _ = ref (Sleep(Task, DList.make cancel_task))
+let temp f = ref (Sleep(Temp, Lwt_dlist.make f))
+let wait _ = ref (Sleep(Wait, Lwt_dlist.make ignore))
+let task _ = ref (Sleep(Task, Lwt_dlist.make cancel_task))
 
 let on_cancel t f =
   let t = repr t in
@@ -270,7 +270,7 @@ let choose l =
     let nodes = ref [] in
     let clear t =
       (* Removes all nodes so we do not leak memory: *)
-      List.iter DList.junk !nodes;
+      List.iter Lwt_dlist.junk !nodes;
       (* This will not fail because it is called at most one time,
          since all other waiters have been removed: *)
       connect res t
@@ -292,7 +292,7 @@ let select l =
     let res = temp (fun _ -> List.iter cancel l) in
     let nodes = ref [] in
     let clear t =
-      List.iter DList.junk !nodes;
+      List.iter Lwt_dlist.junk !nodes;
       (* Cancel all other threads: *)
       List.iter cancel l;
       connect res t
@@ -317,7 +317,7 @@ let join l =
     | Fail exn ->
         (* The thread has failed, exit immediatly without waiting for
            other threads *)
-        List.iter DList.junk !nodes;
+        List.iter Lwt_dlist.junk !nodes;
         connect res t
     | _ ->
         decr sleeping;

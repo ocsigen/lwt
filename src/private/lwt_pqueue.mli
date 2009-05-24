@@ -1,6 +1,6 @@
 (* Lightweight thread library for Objective Caml
  * http://www.ocsigen.org/lwt
- * Interface Pqueue
+ * Interface Lwt_pqueue
  * Copyright (C) 1999-2004 Jérôme Vouillon
  * Laboratoire PPS - CNRS Université Paris Diderot
  *

@@ -35,10 +35,10 @@ type sleep = {
 }
 
 module SleepQueue =
-  Pqueue.Make (struct
-                 type t = sleep
-                 let compare { time = t1 } { time = t2 } = compare t1 t2
-               end)
+  Lwt_pqueue.Make (struct
+                     type t = sleep
+                     let compare { time = t1 } { time = t2 } = compare t1 t2
+                   end)
 
 (* Threads waiting for a timeout to expire: *)
 let sleep_queue = ref SleepQueue.empty
@@ -109,7 +109,7 @@ let check_descriptor ch =
 module FdMap =
   Map.Make (struct type t = Unix.file_descr let compare = compare end)
 
-type watchers = (file_descr * (unit -> unit) DList.node) FdMap.t ref
+type watchers = (file_descr * (unit -> unit) Lwt_dlist.node) FdMap.t ref
 
 let inputs = ref FdMap.empty
 let outputs = ref FdMap.empty
@@ -157,9 +157,9 @@ let rec retry_syscall set ch cont action =
 and add_action set ch cont action =
   try
     let _, actions = FdMap.find ch.fd !set in
-    DList.prepend_data (fun _ -> retry_syscall set ch cont action) actions
+    Lwt_dlist.prepend_data (fun _ -> retry_syscall set ch cont action) actions
   with Not_found ->
-    let node = DList.make (fun _ -> retry_syscall set ch cont action) in
+    let node = Lwt_dlist.make (fun _ -> retry_syscall set ch cont action) in
     set := FdMap.add ch.fd (ch, node) !set;
     node
 
@@ -168,13 +168,13 @@ let register_action set ch action =
   let node = add_action set ch res action in
   (* Unregister the action on cancel: *)
   Lwt.on_cancel res begin fun _ ->
-    if DList.is_alone node then
+    if Lwt_dlist.is_alone node then
       (* If there is no other action queued on the file-descriptor,
          remove it: *)
       set := FdMap.remove ch.fd !set
     else
       (* Otherwise, just remove the action: *)
-      DList.junk node
+      Lwt_dlist.junk node
   end;
   res
 
@@ -201,7 +201,7 @@ let perform_actions set fd =
   try
     let (ch, actions) = FdMap.find fd !set in
     set := FdMap.remove fd !set;
-    DList.iter (fun f -> f ()) actions
+    Lwt_dlist.iter (fun f -> f ()) actions
   with Not_found ->
     ()
 
@@ -209,7 +209,7 @@ let active_descriptors set acc =
   FdMap.fold (fun key _ acc -> key :: acc) !set acc
 
 let blocked_thread_count set =
-  FdMap.fold (fun key (_, l) c -> DList.count l + c) !set 0
+  FdMap.fold (fun key (_, l) c -> Lwt_dlist.count l + c) !set 0
 
 (* +-----------------------------------------------------------------+
    | Event loop                                                      |
