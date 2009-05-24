@@ -136,9 +136,8 @@ type size = {
   columns : int;
 }
 
-external lwt_unix_term_size : Unix.file_descr -> size = "lwt_unix_term_size"
+external size : unit -> size = "lwt_unix_term_size"
 
-let size () = lwt_unix_term_size Unix.stdin
 let columns () = (size ()).columns
 let lines () = (size ()).lines
 

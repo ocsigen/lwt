@@ -38,22 +38,20 @@
    (thus removing the limitation of 16KB by operation).
 */
 
-CAMLprim value lwt_unix_write(value fd, value buf, value ofs, value len)
+value lwt_unix_write(value fd, value buf, value ofs, value len)
 {
-  CAMLparam4(fd, buf, ofs, len);
   int ret;
   ret = write(Int_val(fd), &Byte(String_val(buf), Long_val(ofs)), Long_val(len));
   if (ret == -1) uerror("lwt_unix_write", Nothing);
-  CAMLreturn(Val_int(ret));
+  return Val_int(ret);
 }
 
-CAMLprim value lwt_unix_read(value fd, value buf, value ofs, value len)
+value lwt_unix_read(value fd, value buf, value ofs, value len)
 {
-  CAMLparam4(fd, buf, ofs, len);
   int ret;
   ret = read(Int_val(fd), &Byte(String_val(buf), Long_val(ofs)), Long_val(len));
   if (ret == -1) uerror("lwt_unix_read", Nothing);
-  CAMLreturn(Val_int(ret));
+  return Val_int(ret);
 }
 
 /* +-----------------------------------------------------------------+
@@ -65,9 +63,8 @@ CAMLprim value lwt_unix_read(value fd, value buf, value ofs, value len)
 #include <windows.h>
 #include <wincon.h>
 
-CAMLprim value lwt_unix_term_size(value fd)
+value lwt_unix_term_size()
 {
-  CAMLparam1(fd);
   HANDLE handle;
   CONSOLE_SCREEN_BUFFER_INFO info;
 
@@ -81,7 +78,7 @@ CAMLprim value lwt_unix_term_size(value fd)
   value result = caml_alloc_tuple(2);
   Field(result, 0) = Val_int(scr.dwSize.X);
   Field(result, 1) = Val_int(scr.dwSize.Y);
-  CAMLreturn(result);
+  return result;
 }
 
 #else
@@ -89,18 +86,16 @@ CAMLprim value lwt_unix_term_size(value fd)
 #include <sys/ioctl.h>
 #include <termios.h>
 
-CAMLprim value lwt_unix_term_size(value fd)
+value lwt_unix_term_size()
 {
-  CAMLparam1(fd);
-
   struct winsize size;
-  if (ioctl(Int_val(fd), TIOCGWINSZ, &size) < 0)
+  if (ioctl(STDIN_FILENO, TIOCGWINSZ, &size) < 0)
     caml_failwith("ioctl(TIOCGWINSZ)");
 
   value result = caml_alloc_tuple(2);
   Field(result, 0) = Val_int(size.ws_row);
   Field(result, 1) = Val_int(size.ws_col);
-  CAMLreturn(result);
+  return result;
 }
 
 #endif

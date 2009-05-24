@@ -258,16 +258,22 @@ let stderr = of_fd_maybe Unix.stderr
 external lwt_unix_read : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_read"
 external lwt_unix_write : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_write"
 
+let real_read, real_write =
+  if Sys.os_type = "Unix" then
+    lwt_unix_read, lwt_unix_write
+  else
+    Unix.read, Unix.write
+
 let read ch buf pos len =
   if pos < 0 || len < 0 || pos > String.length buf - len then
     invalid_arg "Lwt_unix.read"
   else
     try
       check_descriptor ch;
-      Lwt.return (lwt_unix_read ch.fd buf pos len)
+      Lwt.return (real_read ch.fd buf pos len)
     with
         Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK), _, _) ->
-          register_action inputs ch (fun () -> lwt_unix_read ch.fd buf pos len)
+          register_action inputs ch (fun () -> real_read ch.fd buf pos len)
       | e ->
           Lwt.fail e
 
@@ -277,10 +283,10 @@ let write ch buf pos len =
   else
     try
       check_descriptor ch;
-      Lwt.return (lwt_unix_write ch.fd buf pos len)
+      Lwt.return (real_write ch.fd buf pos len)
     with
         Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK), _, _) ->
-          register_action outputs ch (fun () -> lwt_unix_write ch.fd buf pos len)
+          register_action outputs ch (fun () -> real_write ch.fd buf pos len)
       | e ->
           Lwt.fail e
 
@@ -351,7 +357,7 @@ let check_socket ch =
        try ignore (Unix.getpeername ch.fd) with
          Unix.Unix_error (Unix.ENOTCONN, _, _) ->
            (* Get the socket error *)
-           ignore (lwt_unix_read ch.fd " " 0 1))
+           ignore (real_read ch.fd " " 0 1))
 
 let connect ch addr =
   try
