@@ -12,8 +12,6 @@ Lwt_process
 Lwt_main
 Lwt_stream
 Lwt_monitor
-Lwt_queue
 Lwt_mvar
-Lwt_condition
 private/Pqueue
 private/DList

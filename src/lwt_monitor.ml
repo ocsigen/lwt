@@ -32,45 +32,75 @@
 
 open Lwt
 
-type t = { mutable locked : bool; enter : unit Lwt_condition.t }
+module Condition =
+struct
+  type 'a t = 'a Lwt.t Queue.t
 
-let create () = { locked = false; enter = Lwt_condition.create () }
+  let wait cvar =
+    let thread = Lwt.wait () in
+    Queue.add thread cvar;
+    thread
+
+  let notify cvar arg =
+    try
+      let thread = Queue.take cvar in
+      wakeup thread arg
+    with Queue.Empty -> ()
+
+  let notify_all cvar arg =
+    try
+      while true do
+        let thread = Queue.take cvar in
+        wakeup thread arg
+      done
+    with Queue.Empty -> ()
+end
+
+type 'a condition = Condition.t
+type t = { mutable locked : bool; enter : unit Condition.t }
+
+let create () = { locked = false; enter = Condition.create () }
+let create_condition = Queue.create
 
 let rec lock m =
-  if m.locked then begin
-    Lwt_condition.wait m.enter >> lock m
-  end else begin
-    assert (not m.locked);
+  if m.locked then
+    Condition.wait m.enter >> lock m
+  else begin
     m.locked <- true;
     return ()
   end
 
 let unlock m =
-  assert (m.locked);
-  m.locked <- false;
-  Lwt_condition.notify m.enter ()
+  if m.locked then begin
+    m.locked <- false;
+    Condition.notify m.enter ()
+  end
 
 let wait m cond =
-  let t = Lwt_condition.wait cond in
+  let t = Condition.wait cond in
   unlock m;
   lwt arg = t in
-  lock m >> return arg
+  lwt () = lock m in
+  return arg
 
 let notify m cond arg =
-  assert (m.locked);
-  Lwt_condition.notify cond arg
+  if m.locked then
+    Condition.notify cond arg
+  else
+    failwith "Lwt_monitor.notify: not locked"
 
 let notify_all m cond arg =
-  assert (m.locked);
-  Lwt_condition.notify_all cond arg
+  if m.locked then
+    Condition.notify_all cond arg
+  else
+    failwith "Lwt_monitor.notify: not locked"
 
 let with_lock m thunk =
-  lock m >>
-    try_lwt
-      lwt rv = thunk () in
-      unlock m;
-      return rv
-    with exn ->
-      unlock m;
-      fail exn
-
+  lwt () = lock m in
+  try_lwt
+    lwt rv = thunk () in
+    unlock m;
+    return rv
+  with exn ->
+    unlock m;
+    fail exn

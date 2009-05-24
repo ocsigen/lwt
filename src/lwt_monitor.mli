@@ -39,6 +39,13 @@ type t
     (** The monitor type, used to synchronize the activity of threads
         around a common shared resource or critical section of code. *)
 
+type 'a condition
+    (** Condition variable type. The type parameter denotes the type of
+        value propagated from notifier to waiter. *)
+
+val create_condition : unit -> 'a condition
+    (** [create_condition ()] creates a new condition variable. *)
+
 val create : unit -> t
     (** [create ()] creates a new monitor. *)
 
