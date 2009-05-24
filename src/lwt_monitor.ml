@@ -56,10 +56,10 @@ struct
     with Queue.Empty -> ()
 end
 
-type 'a condition = Condition.t
+type 'a condition = 'a Condition.t
 type t = { mutable locked : bool; enter : unit Condition.t }
 
-let create () = { locked = false; enter = Condition.create () }
+let create () = { locked = false; enter = Queue.create () }
 let create_condition = Queue.create
 
 let rec lock m =

@@ -32,23 +32,41 @@
 
 open Lwt
 
-type 'a t = { mutable v : 'a option; mutable waiters : 'a Lwt.t list }
+type 'a t = {
+  mutable writers : unit Lwt.t Queue.t;
+  (* Threads waiting to be notified that the value they put has been
+     read *)
 
-let create () = { v = None; waiters = [] }
+  mutable readers : 'a Lwt.t Queue.t;
+  (* Threads waiting for a value *)
 
-let wait mvar =
-  let w = Lwt.wait () in
-  mvar.waiters <- w :: mvar.waiters;
-  w
+  mutable values : 'a Queue.t;
+  (* Value queued *)
+}
 
-let wake mvar v = match mvar.waiters with
-  | [] -> ()
-  | h::t -> mvar.waiters <- t; Lwt.wakeup h v
+let create () = { writers = Queue.create ();
+                  readers = Queue.create ();
+                  values = Queue.create () }
 
-let put mvar v = match mvar.waiters with
-  | [] -> mvar.v <- Some v
-  | _ -> wake mvar v
+let put mvar v =
+  if Queue.is_empty mvar.readers then begin
+    Queue.add v mvar.values;
+    if Queue.length mvar.values = 1 then
+      return ()
+    else begin
+      let w = wait () in
+      Queue.add w mvar.writers;
+      w
+    end
+  end else begin
+    wakeup (Queue.take mvar.readers) v;
+    return ()
+  end
 
-let take mvar = match mvar.v with
-  | Some v -> mvar.v <- None; return v
-  | None -> wait mvar
+let take mvar =
+  if Queue.is_empty mvar.values then begin
+    let w = wait () in
+    Queue.add w mvar.readers;
+    w
+  end else
+    return (Queue.take mvar.values)

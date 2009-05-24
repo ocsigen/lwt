@@ -39,23 +39,23 @@
     {{:http://eigenclass.org/hiki.rb?cmd=view&p=lightweight-threads-with-lwt}Comparing lightweight threads (eigenclass.org)} *)
 
 type 'a t
-    (** The type of a mailbox variable. Mailbox variables are used to
-        communicate values between threads in a synchronous way. The
-        type parameter specifies the type of the value propagated from
-        [put] to [take]. *)
+  (** The type of a mailbox variable. Mailbox variables are used to
+      communicate values between threads in a synchronous way. The
+      type parameter specifies the type of the value propagated from
+      [put] to [take]. *)
 
 val create : unit -> 'a t
-    (** [create ()] creates a new mailbox variable. *)
+  (** [create ()] creates a new mailbox variable. *)
 
-val put : 'a t -> 'a -> unit
-    (** [put mvar value] puts a value into a mailbox variable. This value
-        will remain in the mailbox until [take] is called to remove it, or
-        until a new value is [put] (replacing the old value). If another
-        thread is awaiting a value (has called [take]) then the awaiting
-        thread will be awoken and will receive the value that was deposited. *)
+val put : 'a t -> 'a -> unit Lwt.t
+  (** [put mvar value] puts a value into a mailbox variable. This
+      value will remain in the mailbox until [take] is called to
+      remove it. If the mailbox is not empty, the current thread will
+      block until it is emptied. *)
 
 val take : 'a t -> 'a Lwt.t
-    (** [take mvar] will take any currently available value from the
-        mailbox variable. If no value is currently available, the current
-        thread will block, awaiting a value to be [put] by another thread. *)
+  (** [take mvar] will take any currently available value from the
+      mailbox variable. If no value is currently available, the
+      current thread will block, awaiting a value to be [put] by
+      another thread. *)
 

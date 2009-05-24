@@ -69,7 +69,7 @@ val with_lock : t -> (unit -> 'a Lwt.t) -> 'a Lwt.t
         is raised from f, the monitor is also unlocked before the scope of
         [with_lock] is exited. *)
 
-val wait : t -> 'a Lwt_condition.t -> 'a Lwt.t
+val wait : t -> 'a condition -> 'a Lwt.t
     (** [wait mon condvar] will cause the current thread to block,
         awaiting notification for a condition variable, condvar. The
         calling thread be within the monitor (must have previously
@@ -80,7 +80,7 @@ val wait : t -> 'a Lwt_condition.t -> 'a Lwt.t
         awaited condition is notified, the value parameter passed to
         [notify] is returned. *)
 
-val notify : t -> 'a Lwt_condition.t -> 'a -> unit
+val notify : t -> 'a condition -> 'a -> unit
     (** [notify mon condvar value] notifies that a condition is
         ready. A single waiting thread will be awoken and will receive
         the notification value which will be returned from [wait]. The
@@ -90,7 +90,7 @@ val notify : t -> 'a Lwt_condition.t -> 'a -> unit
         no waiter when [notify] is called, the notification will be
         missed and the value discarded. *)
 
-val notify_all : t -> 'a Lwt_condition.t -> 'a -> unit
+val notify_all : t -> 'a condition -> 'a -> unit
     (** [notify_all mon condvar value] notifies all waiting
         threads. Each will be awoken in turn and will receive the same
         notification value. The calling thread be within the monitor
