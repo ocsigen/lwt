@@ -34,6 +34,14 @@ val yield : unit -> unit Lwt.t
 val run : 'a Lwt.t -> 'a
       (** Same as {!Lwt_main.run} *)
 
+(** {6 Timeouts} *)
+
+exception Timeout
+
+val timeout : float -> 'a Lwt.t
+  (** [timeout d] is a threads which remain suspended for [d] seconds
+      then fail with {!Timeout} *)
+
 (****)
 
 (** These functions behave as their [Unix] counterparts, but let other
@@ -111,6 +119,7 @@ val register_action : watchers -> file_descr -> (unit -> 'a) -> 'a Lwt.t
 val check_descriptor : file_descr -> unit
 (** [check_descriptor] must be called before any system call involving
     the file descriptor and before calling [register_action]. *)
+val wrap_syscall : watchers -> file_descr -> (unit -> 'a) -> 'a Lwt.t
 
 (****)
 

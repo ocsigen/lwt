@@ -22,6 +22,20 @@
  * 02111-1307, USA.
  *)
 
+open DList
+
+exception Canceled
+
+(* Reason for a thread to be a sleeping thread: *)
+type sleep_reason =
+  | Task
+      (* It is a cancealable task *)
+  | Wait
+      (* It is a thread created with [wait] *)
+  | Temp
+      (* It is a temporary thread that is meant to be later connected
+         to another one. *)
+
 type 'a thread_state =
   | Return of 'a
       (* [Return v] a terminated thread which has successfully
@@ -29,28 +43,17 @@ type 'a thread_state =
   | Fail of exn
       (* [Fail exn] a terminated thread which has failed with the
          exception [exn] *)
-  | Sleep of 'a node
+  | Sleep of sleep_reason * ('a t -> unit) DList.node
       (* A sleeping thread with its list of waiters, which are thunk
          functions.
 
-         Since doubly-linked lists cannot be empty the first node
-         always contains garbage (= [ignore]) *)
+         Since doubly-linked lists cannot be empty the first node is
+         not a real waiter, it either contains garbage (= [ignore]),
+         or the cancel function for threads created with [temp]. *)
   | Repr of 'a t
       (* [Repr t] a thread which behaves the same as [t] *)
 
 and 'a t = 'a thread_state ref
-
-(* The list of waiters is represented by a doubly-linked list because
-   we want the following operations:
-
-   - remove one element (for [choose])
-   - concatenate two lists
-   - iterate over one list *)
-and 'a node = {
-  mutable prev : 'a node;
-  func : 'a t -> unit;
-  mutable next : 'a node;
-}
 
 (* Returns the represent of a thread, updating non-direct references: *)
 let rec repr t =
@@ -63,7 +66,7 @@ let rec repr t =
 let run_waiters node t =
   let rec loop n =
     if n != node then begin
-      n.func t;
+      n.data t;
       loop n.next
     end
   in
@@ -72,7 +75,7 @@ let run_waiters node t =
 (* Creates a new waiter node containing the thunk function [f] and
    connect it before [node]. *)
 let new_waiter node f =
-  let n = { next = node; func = f; prev = node.prev } in
+  let n = { next = node; data = f; prev = node.prev } in
   node.prev.next <- n;
   node.prev <- n;
   n
@@ -87,14 +90,25 @@ let add_waiter node f = ignore (new_waiter node f)
 let restart t state caller =
   let t = repr t in
   match !t with
-    | Sleep waiters ->
+    | Sleep((Wait | Task), waiters) ->
         t := state;
         run_waiters waiters t
+    | Fail Canceled ->
+        (* Do not fail if the thread has been canceled: *)
+        ()
     | _ ->
         invalid_arg caller
 
 let wakeup t v = restart t (Return v) "wakeup"
 let wakeup_exn t e = restart t (Fail e) "wakeup_exn"
+
+let cancel t =
+  match !(repr t) with
+    | Sleep(_, waiters) ->
+        (* Call the cancel function: *)
+        waiters.data t
+    | _ ->
+        ()
 
 (* Connects the two processes [t1] and [t2] when [t2] finishes up,
    where [t1] must be a sleeping thread.
@@ -105,23 +119,23 @@ let wakeup_exn t e = restart t (Fail e) "wakeup_exn"
 let rec connect t1 t2 =
   let t1 = repr t1 and t2 = repr t2 in
   match !t1 with
-    | Sleep waiters1 ->
+    | Sleep(_, waiters1) ->
         if t1 == t2 then
           (* Do nothing if the two threads already have the same
              representation *)
           ()
         else begin
           match !t2 with
-            | Sleep waiters2 ->
-                (* If [t2] is sleeping, then makes it behave as [t1]: *)
-                t2 := Repr t1;
-                (* and add all its waiters to the waiters of [t1] (the
-                   first node of [waiters2] is skipped since it contains
-                   garbage): *)
-                waiters1.prev.next <- waiters2.next;
-                waiters2.next.prev <- waiters1.prev;
-                waiters1.prev <- waiters2.prev;
-                waiters2.prev.next <- waiters1
+            | Sleep(_, waiters2) ->
+                (* If [t2] is sleeping, then makes [t1] behave as [t2]: *)
+                t1 := Repr t2;
+                (* and add all waiters of [t1] to the waiters of [t2]
+                   (the first node of [waiters2] is skipped since it
+                   does not contains a real waiter): *)
+                waiters2.prev.next <- waiters1.next;
+                waiters1.next.prev <- waiters2.prev;
+                waiters2.prev <- waiters1.prev;
+                waiters1.prev.next <- waiters2
             | state2 ->
                 (* [t2] has already terminated, assing its state to [t1]: *)
                 t1 := state2;
@@ -139,12 +153,26 @@ let rec connect t1 t2 =
 *)
 let apply f x = try f x with e -> ref (Fail e)
 
+let cancel_task t = wakeup_exn t Canceled
+
 let return v = ref (Return v)
 let fail e = ref (Fail e)
+let temp f = ref (Sleep(Temp, DList.make f))
+let wait _ = ref (Sleep(Wait, DList.make ignore))
+let task _ = ref (Sleep(Task, DList.make cancel_task))
 
-let wait () =
-  let rec n = { prev = n; func = ignore; next = n } in
-  ref (Sleep n)
+let on_cancel t f =
+  let t = repr t in
+  match !t with
+    | Sleep(_, waiters) ->
+        add_waiter waiters (fun x ->
+                              match !(repr x) with
+                                | Fail Canceled -> f ()
+                                | _ -> ())
+    | Fail Canceled ->
+        f ()
+    | _ ->
+        ()
 
 let rec bind t f =
   match !(repr t) with
@@ -154,8 +182,8 @@ let rec bind t f =
         f v
     | Fail e ->
         fail e
-    | Sleep waiters ->
-        let res = wait () in
+    | Sleep(_, waiters) ->
+        let res = temp (fun _ -> cancel t) in
         add_waiter waiters (fun x -> connect res (bind x (apply f)));
         res
     | Repr _ ->
@@ -173,8 +201,8 @@ let rec catch_rec t f =
         t
     | Fail e ->
         f e
-    | Sleep waiters ->
-        let res = wait () in
+    | Sleep(_, waiters) ->
+        let res = temp (fun _ -> cancel t) in
         add_waiter waiters (fun x -> connect res (catch_rec x (apply f)));
         res
     | Repr _ ->
@@ -188,8 +216,8 @@ let rec try_bind_rec t f g =
         f v
     | Fail e ->
         apply g e
-    | Sleep waiters ->
-        let res = wait () in
+    | Sleep(_, waiters) ->
+        let res = temp (fun _ -> cancel t) in
         add_waiter waiters (fun x -> connect res (try_bind_rec x (apply f) g));
         res
     | Repr _ ->
@@ -199,10 +227,10 @@ let try_bind x f = try_bind_rec (apply x ()) f
 
 let poll t =
   match !(repr t) with
-    | Fail e   -> raise e
+    | Fail e -> raise e
     | Return v -> Some v
-    | Sleep _  -> None
-    | Repr _   -> assert false
+    | Sleep _ -> None
+    | Repr _ -> assert false
 
 let rec ignore_result t =
   match !(repr t) with
@@ -210,7 +238,7 @@ let rec ignore_result t =
         ()
     | Fail e ->
         raise e
-    | Sleep waiters ->
+    | Sleep(_, waiters) ->
         add_waiter waiters (fun x -> ignore_result x)
     | Repr _ ->
         assert false
@@ -229,30 +257,49 @@ let rec nth_ready l n =
           | _ ->
               x
 
-(* Removes a node from any doubly-linked list it is part of. The node
-   itself must bot be reused after that: *)
-let junk_waiter node =
-  node.prev.next <- node.next;
-  node.next.prev <- node.prev
+let ready_count l =
+  List.fold_left (fun acc x -> match !(repr x) with Sleep _ -> acc | _ -> acc + 1) 0 l
 
 let choose l =
-  let ready = List.fold_left (fun acc x -> match !(repr x) with Sleep _ -> acc | _ -> acc + 1) 0 l in
+  let ready = ready_count l in
   if ready > 0 then
     nth_ready l (Random.int ready)
   else
-    let res = wait () in
+    let res = temp (fun _ -> List.iter cancel l) in
     (* The list of nodes used for the waiter: *)
     let nodes = ref [] in
     let clear t =
       (* Removes all nodes so we do not leak memory: *)
-      List.iter junk_waiter !nodes;
+      List.iter DList.junk !nodes;
       (* This will not fail because it is called at most one time,
          since all other waiters have been removed: *)
       connect res t
     in
     List.iter begin fun t ->
       match !(repr t) with
-        | Sleep waiters ->
+        | Sleep(_, waiters) ->
+            nodes := new_waiter waiters clear :: !nodes
+        | _ ->
+            assert false
+    end l;
+    res
+
+let select l =
+  let ready = ready_count l in
+  if ready > 0 then
+    nth_ready l (Random.int ready)
+  else
+    let res = temp (fun _ -> List.iter cancel l) in
+    let nodes = ref [] in
+    let clear t =
+      List.iter DList.junk !nodes;
+      (* Cancel all other threads: *)
+      List.iter cancel l;
+      connect res t
+    in
+    List.iter begin fun t ->
+      match !(repr t) with
+        | Sleep(_, waiters) ->
             nodes := new_waiter waiters clear :: !nodes
         | _ ->
             assert false
@@ -260,7 +307,7 @@ let choose l =
     res
 
 let join l =
-  let res = wait ()
+  let res = temp (fun _ -> List.iter cancel l)
     (* Number of threads still sleeping: *)
   and sleeping = ref 0
     (* The list of nodes used for the waiter: *)
@@ -270,7 +317,7 @@ let join l =
     | Fail exn ->
         (* The thread has failed, exit immediatly without waiting for
            other threads *)
-        List.iter junk_waiter !nodes;
+        List.iter DList.junk !nodes;
         connect res t
     | _ ->
         decr sleeping;
@@ -286,7 +333,7 @@ let join l =
         | Fail exn ->
             (* One of the thread has already failed, fail now *)
             t
-        | Sleep waiters ->
+        | Sleep(_, waiters) ->
             incr sleeping;
             nodes := new_waiter waiters handle :: !nodes;
             bind_sleepers l

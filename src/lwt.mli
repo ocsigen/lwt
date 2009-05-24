@@ -142,6 +142,38 @@ type 'a state =
 val state : 'a t -> 'a state
   (** [state t] returns the state of a thread *)
 
+(** {6 Cancelling threads} *)
+
+exception Canceled
+  (** Canceled threads fails with this exception *)
+
+val task : unit -> 'a t
+  (** [task ()] creates a sleeping thread that can be canceled using
+      {!cancel} *)
+
+val on_cancel : 'a t -> (unit -> unit) -> unit
+  (** [on_cancel t f] executes [f] when [t] is canceled. This is the
+      same as catching [Canceled]. *)
+
+val cancel : 'a t -> unit
+  (** [cancel t] cancels the threads [t]. This means that the deepest
+      sleeping thread created with [task ()] to which [t] is connected
+      is wakeup with the exception {!Canceled}.
+
+      For example, in the following code:
+
+      {[
+        let w = task () in
+        cancel (w >> printl "plop")
+      ]}
+
+      [w] will be wakeup with {!Canceled}.
+  *)
+
+val select : 'a t list -> 'a t
+  (** [select l] is the same as [choose] but it cancels all sleeping
+      threads when one terminates. *)
+
 (**/**)
 
 (* The functions below are probably not useful for the casual user.

@@ -22,15 +22,23 @@
  * 02111-1307, USA.
  *)
 
+open Lwt
+
 (* +-----------------------------------------------------------------+
    | Sleepers                                                        |
    +-----------------------------------------------------------------+ *)
 
+type sleep = {
+  time : float;
+  mutable canceled : bool;
+  thread : unit Lwt.t;
+}
+
 module SleepQueue =
   Pqueue.Make (struct
-    type t = float * unit Lwt.t
-    let compare (t, _) (t', _) = compare t t'
-  end)
+                 type t = sleep
+                 let compare { time = t1 } { time = t2 } = compare t1 t2
+               end)
 
 (* Threads waiting for a timeout to expire: *)
 let sleep_queue = ref SleepQueue.empty
@@ -43,12 +51,18 @@ let sleep_queue = ref SleepQueue.empty
 let new_sleeps = ref []
 
 let sleep d =
-  let res = Lwt.wait () in
+  let res = Lwt.task () in
   let t = if d <= 0. then 0. else Unix.gettimeofday () +. d in
-  new_sleeps := (t, res) :: !new_sleeps;
+  let sleeper = { time = t; canceled = false; thread = res } in
+  new_sleeps := sleeper :: !new_sleeps;
+  Lwt.on_cancel res (fun _ -> sleeper.canceled <- false);
   res
 
 let yield () = sleep 0.
+
+exception Timeout
+
+let timeout d = sleep d >> Lwt.fail Timeout
 
 let in_the_past now t =
   t = 0. || t <= Lazy.force now
@@ -57,9 +71,12 @@ let in_the_past now t =
    needed: *)
 let rec restart_threads now =
   match SleepQueue.lookup_min !sleep_queue with
-    | Some(time, thr) when in_the_past now time ->
+    | Some{ canceled = true } ->
         sleep_queue := SleepQueue.remove_min !sleep_queue;
-        Lwt.wakeup thr ();
+        restart_threads now
+    | Some{ time = time; thread = thread } when in_the_past now time ->
+        sleep_queue := SleepQueue.remove_min !sleep_queue;
+        Lwt.wakeup thread ();
         restart_threads now
     | _ ->
         ()
@@ -78,12 +95,12 @@ let mk_ch fd =
 
 let check_descriptor ch =
   match ch.state with
-    Open ->
-      ()
-  | Aborted e ->
-      raise e
-  | Closed ->
-      raise (Unix.Unix_error (Unix.EBADF, "check_descriptor", ""))
+    | Open ->
+        ()
+    | Aborted e ->
+        raise e
+    | Closed ->
+        raise (Unix.Unix_error (Unix.EBADF, "check_descriptor", ""))
 
 (* +-----------------------------------------------------------------+
    | Actions on file descriptors                                     |
@@ -92,7 +109,7 @@ let check_descriptor ch =
 module FdMap =
   Map.Make (struct type t = Unix.file_descr let compare = compare end)
 
-type watchers = (file_descr * (unit -> unit) list ref) FdMap.t ref
+type watchers = (file_descr * (unit -> unit) DList.node) FdMap.t ref
 
 let inputs = ref FdMap.empty
 let outputs = ref FdMap.empty
@@ -101,72 +118,98 @@ exception Retry
 exception Retry_write
 exception Retry_read
 
-let find_actions set ch =
-  try
-    FdMap.find ch.fd !set
-  with Not_found ->
-    let res = (ch, ref []) in
-    set := FdMap.add ch.fd res !set;
-    res
-
 type 'a outcome =
-    Success of 'a
+  | Success of 'a
   | Exn of exn
-  | Requeued
+  | Requeued of watchers
 
-let rec wrap_syscall set ch cont action =
+(* Retry a queued syscall, [cont] is the thread to wakeup
+   if the action succeed: *)
+let rec retry_syscall set ch cont action =
   let res =
     try
       check_descriptor ch;
-      Success (action ())
+      Success(action ())
     with
-      Retry
-    | Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _)
-    | Sys_blocked_io ->
-        (* EINTR because we are catching SIG_CHLD hence the system call
-           might be interrupted to handle the signal; this lets us restart
-           the system call eventually. *)
-        add_action set ch cont action;
-        Requeued
-    | Retry_read ->
-        add_action inputs ch cont action;
-        Requeued
-    | Retry_write ->
-        add_action outputs ch cont action;
-        Requeued
-    | e ->
-        Exn e
+      | Retry
+      | Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _)
+      | Sys_blocked_io ->
+          (* EINTR because we are catching SIG_CHLD hence the system
+             call might be interrupted to handle the signal; this lets
+             us restart the system call eventually. *)
+          Requeued set
+      | Retry_read ->
+          Requeued inputs
+      | Retry_write ->
+          Requeued outputs
+      | e ->
+          Exn e
   in
   match res with
-    Success v ->
-      Lwt.wakeup cont v
-  | Exn e ->
-      Lwt.wakeup_exn cont e
-  | Requeued ->
-      ()
+    | Success v ->
+        Lwt.wakeup cont v
+    | Exn e ->
+        Lwt.wakeup_exn cont e
+    | Requeued set ->
+        ignore (add_action set ch cont action)
 
+(* Add an action on a file descriptor: *)
 and add_action set ch cont action =
-  assert (ch.state = Open);
-  let (_, actions) = find_actions set ch in
-  actions := (fun () -> wrap_syscall set ch cont action) :: !actions
+  try
+    let _, actions = FdMap.find ch.fd !set in
+    DList.prepend_data (fun _ -> retry_syscall set ch cont action) actions
+  with Not_found ->
+    let node = DList.make (fun _ -> retry_syscall set ch cont action) in
+    set := FdMap.add ch.fd (ch, node) !set;
+    node
 
 let register_action set ch action =
-  let cont = Lwt.wait () in
-  add_action set ch cont action;
-  cont
+  let res = Lwt.task () in
+  let node = add_action set ch res action in
+  (* Unregister the action on cancel: *)
+  Lwt.on_cancel res begin fun _ ->
+    if DList.is_alone node then
+      (* If there is no other action queued on the file-descriptor,
+         remove it: *)
+      set := FdMap.remove ch.fd !set
+    else
+      (* Otherwise, just remove the action: *)
+      DList.junk node
+  end;
+  res
 
+(* Wraps a system call *)
+let wrap_syscall set ch action =
+  try
+    check_descriptor ch;
+    return (action ())
+  with
+    | Retry
+    | Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _)
+    | Sys_blocked_io ->
+        (* The action could not be completed immediatly, register it: *)
+        register_action set ch action
+    | Retry_read ->
+        register_action inputs ch action
+    | Retry_write ->
+        register_action outputs ch action
+    | e ->
+        fail e
+
+(* Performs all registered actions on [fd]: *)
 let perform_actions set fd =
   try
     let (ch, actions) = FdMap.find fd !set in
     set := FdMap.remove fd !set;
-    List.iter (fun f -> f ()) !actions
+    DList.iter (fun f -> f ()) actions
   with Not_found ->
     ()
 
-let active_descriptors set acc = FdMap.fold (fun key _ acc -> key :: acc) !set acc
+let active_descriptors set acc =
+  FdMap.fold (fun key _ acc -> key :: acc) !set acc
 
 let blocked_thread_count set =
-  FdMap.fold (fun key (_, l) c -> List.length !l + c) !set 0
+  FdMap.fold (fun key (_, l) c -> DList.count l + c) !set 0
 
 (* +-----------------------------------------------------------------+
    | Event loop                                                      |
@@ -181,6 +224,16 @@ let _ =
   Sys.signal Sys.sigchld
     (Sys.Signal_handle (fun _ -> child_exited := true))
 
+let rec get_next_timeout now timeout =
+  match SleepQueue.lookup_min !sleep_queue with
+    | Some{ canceled = true } ->
+        sleep_queue := SleepQueue.remove_min !sleep_queue;
+        get_next_timeout now timeout
+    | Some{ time = time } ->
+        Lwt_main.min_timeout timeout (Some(if time = 0. then 0. else max 0. (time -. (Lazy.force now))))
+    | None ->
+        timeout
+
 let select_filter now select set_r set_w set_e timeout =
   (* Transfer all sleepers added since the last iteration to the main
      sleep queue: *)
@@ -193,12 +246,7 @@ let select_filter now select set_r set_w set_e timeout =
       (active_descriptors inputs set_r)
       (active_descriptors outputs set_w)
       set_e
-      (Lwt_main.min_timeout
-         timeout
-         (match SleepQueue.lookup_min !sleep_queue with
-            | None -> None
-            | Some(0.0, _) -> Some 0.0
-            | Some(time, _) -> Some(max 0.0 (time -. (Lazy.force now)))))
+      (get_next_timeout now timeout)
   in
   (* Restart threads waiting for a timeout: *)
   restart_threads now;
@@ -268,30 +316,16 @@ let read ch buf pos len =
   if pos < 0 || len < 0 || pos > String.length buf - len then
     invalid_arg "Lwt_unix.read"
   else
-    try
-      check_descriptor ch;
-      Lwt.return (real_read ch.fd buf pos len)
-    with
-        Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK), _, _) ->
-          register_action inputs ch (fun () -> real_read ch.fd buf pos len)
-      | e ->
-          Lwt.fail e
+    wrap_syscall inputs ch (fun _ -> real_read ch.fd buf pos len)
 
 let write ch buf pos len =
   if pos < 0 || len < 0 || pos > String.length buf - len then
     invalid_arg "Lwt_unix.write"
   else
-    try
-      check_descriptor ch;
-      Lwt.return (real_write ch.fd buf pos len)
-    with
-        Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK), _, _) ->
-          register_action outputs ch (fun () -> real_write ch.fd buf pos len)
-      | e ->
-          Lwt.fail e
+    wrap_syscall outputs ch (fun _ -> real_write ch.fd buf pos len)
 
-let wait_read ch = register_action inputs ch (fun () -> ())
-let wait_write ch = register_action outputs ch (fun () -> ())
+let wait_read ch = register_action inputs ch ignore
+let wait_write ch = register_action outputs ch ignore
 
 let pipe () =
   let (out_fd, in_fd) = Unix.pipe() in
@@ -318,88 +352,79 @@ let socketpair dom typ proto =
   (mk_ch s1, mk_ch s2)
 
 let accept ch =
-  try
-    check_descriptor ch;
-    register_action inputs ch
-      (fun () ->
-         let (s, addr) = Unix.accept ch.fd in
-         (mk_ch s, addr))
-  with e ->
-    Lwt.fail e
+  wrap_syscall inputs ch (fun _ -> let (fd, addr) = Unix.accept ch.fd in (mk_ch fd, addr))
 
 let accept_n ch n =
-  let rec iter_accept acc = function
-    | 0 ->
-        List.rev acc
-    | n ->
-        match
-          try
-            Some(Unix.accept ch.fd)
-          with
-            | Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _) ->
-                None
-        with
-          | Some(s, addr) ->
-              iter_accept ((mk_ch s, addr) :: acc) (n - 1)
-          | None ->
-              List.rev acc
-  in
-  try
-    check_descriptor ch;
-    register_action inputs ch
-      (fun () -> iter_accept [] n)
-  with e ->
-    Lwt.fail e
-
-let check_socket ch =
-  register_action outputs ch
-    (fun () ->
-       try ignore (Unix.getpeername ch.fd) with
-         Unix.Unix_error (Unix.ENOTCONN, _, _) ->
-           (* Get the socket error *)
-           ignore (real_read ch.fd " " 0 1))
+  wrap_syscall inputs ch begin fun _ ->
+    let l = ref [] in
+    begin
+      try
+        for i = 1 to n do
+          let fd, addr = Unix.accept ch.fd in
+          l := (mk_ch fd, addr) :: !l
+        done
+      with
+        | Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _) when !l <> [] ->
+            (* Ignore blocking errors if we have at least one file-descriptor: *)
+            ()
+    end;
+    List.rev !l
+  end
 
 let connect ch addr =
-  try
-    check_descriptor ch;
-    Unix.connect ch.fd addr;
-    Lwt.return ()
-  with
-    Unix.Unix_error
-      ((Unix.EINPROGRESS | Unix.EWOULDBLOCK | Unix.EAGAIN), _, _) ->
-        check_socket ch
-  | e ->
-      Lwt.fail e
+  (* [in_progress] tell wether connection has started but not
+     terminated: *)
+  let in_progress = ref false in
+  wrap_syscall outputs ch begin fun _ ->
+    if !in_progress then
+      (* If the connection is in progress, [getsockopt_error] tells
+         wether it succceed: *)
+      match Unix.getsockopt_error ch.fd with
+        | None ->
+            (* The socket is connected *)
+            ()
+        | Some err ->
+            (* An error happened: *)
+            raise (Unix.Unix_error(err, "connect", ""))
+    else
+      try
+        (* We should pass only one time here, unless the system call
+           is interrupted by a signal: *)
+        Unix.connect ch.fd addr
+      with
+        | Unix.Unix_error(Unix.EINPROGRESS, _, _) ->
+            in_progress := true
+  end
 
 let _waitpid flags pid =
-  try
-    Lwt.return (Unix.waitpid flags pid)
-  with e ->
-    Lwt.fail e
+  try_lwt
+    return (Unix.waitpid flags pid)
 
 let waitpid flags pid =
   if List.mem Unix.WNOHANG flags then
     _waitpid flags pid
   else
     let flags = Unix.WNOHANG :: flags in
-    Lwt.bind (_waitpid flags pid) (fun ((pid', _) as res) ->
+    lwt ((pid', _) as res) = _waitpid flags pid in
     if pid' <> 0 then
-      Lwt.return res
+      return res
     else
       let res = Lwt.wait () in
       wait_children := (res, flags, pid) :: !wait_children;
-      res)
+      res
 
 let wait () = waitpid [] (-1)
 
 let system cmd =
   match Unix.fork () with
-     0 -> begin try
-            Unix.execv "/bin/sh" [| "/bin/sh"; "-c"; cmd |]
-          with _ ->
-            exit 127
-          end
-  | id -> Lwt.bind (waitpid [] id) (fun (pid, status) -> Lwt.return status)
+    | 0 ->
+        begin try
+          Unix.execv "/bin/sh" [| "/bin/sh"; "-c"; cmd |]
+        with _ ->
+          exit 127
+        end
+    | id ->
+        waitpid [] id >|= snd
 
 let close ch =
   if ch.state = Closed then check_descriptor ch;
