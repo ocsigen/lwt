@@ -3,6 +3,7 @@
  * Interface Lwt_unix
  * Copyright (C) 2005-2008 Jérôme Vouillon
  * Laboratoire PPS - CNRS Université Paris Diderot
+ *                    2009 Jérémie Dimino
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -21,112 +22,276 @@
  * 02111-1307, USA.
  *)
 
-(** Module [Lwt_unix]: thread-compatible system calls *)
+(** Cooperative system calls *)
+
+(** This modules redefine system calls, as in the [Unix] module of the
+    standard library, but mapped into cooperative ones, which will not
+    block the program, letting other threads run.
+
+    The semantic of all operations is the following: if the action
+    (for example reading from a {b file descriptor}) can be performed
+    immediatly, it is done and returns immediatly, otherwise it
+    returns a sleeping threads which is wakeup when the operation
+    completes.
+
+    Moreover all sleeping threads returned by function of this modules
+    are {b concealable}, this means that you can cancel them with
+    {!Lwt.cancel}. For example if you want to read something from a {b
+    file descriptor} with a timeout, you can cancel the action after
+    the timeout and the reading will not be performed if not already
+    done.
+
+    More precisely, assuming that you have two {b file descriptor}
+    [fd1] and [fd2] and you want to read something from [fd1] or
+    exclusively from [fd2], and fail with an exception if a timeout of
+    1 second expires, without reading anything from [fd1] and [fd2],
+    even if they become readable in the future.
+
+    Then you can do:
+
+    {[
+      Lwt.select [Lwt_unix.timeout 1.0; read fd1 buf1 ofs1 len1; read fd2 buf2 ofs2 len2]
+    ]}
+
+    In this case it is guaranteed that exactly one of the three
+    operations will completes, and other will just be cancelled.
+*)
+
+(** {6 Sleeping} *)
 
 val sleep : float -> unit Lwt.t
-      (** [sleep d] is a threads which remain suspended for [d] seconds
-          (letting other threads run) and then terminates. *)
+  (** [sleep d] is a threads which remain suspended for [d] seconds
+      and then terminates. *)
+
 val yield : unit -> unit Lwt.t
-      (** [yield ()] is a threads which suspends itself (letting other
-          thread run) and then resumes as soon as possible and
-          terminates. *)
-
-val run : 'a Lwt.t -> 'a
-      (** Same as {!Lwt_main.run} *)
-
-(** {6 Timeouts} *)
+  (** [yield ()] is a threads which suspends itself and then resumes
+      as soon as possible and terminates. *)
 
 exception Timeout
+  (** Exception raised by timeout operations *)
 
 val timeout : float -> 'a Lwt.t
   (** [timeout d] is a threads which remain suspended for [d] seconds
       then fail with {!Timeout} *)
 
-(****)
+val with_timeout : float -> (unit -> 'a Lwt.t) -> 'a Lwt.t
+  (** [with_timeout d f] is a short-hand for:
 
-(** These functions behave as their [Unix] counterparts, but let other
-    threads run while waiting for the completion of the system call. *)
+      {[
+        Lwt.select [Lwt_unix.timeout d; f ()]
+      ]}
+  *)
+
+(** {6 Operation on file-descriptors} *)
 
 type file_descr
+  (** The abstract type for {b file descriptor}s. A Lwt {b file
+      descriptor} is a pair of a unix {b file descriptor} (of type
+      [Unix.file_descr]) and a {b state}.
 
-val stdin : file_descr
-val stdout : file_descr
-val stderr : file_descr
+      A {b file descriptor} may be:
 
-val read : file_descr -> string -> int -> int -> int Lwt.t
-val write : file_descr -> string -> int -> int -> int Lwt.t
+      - {b opened}, in which case it is fully usable
+      - {b closed} or {b aborted}, in which case it is no longer
+      usable
+  *)
 
-val wait_read : file_descr -> unit Lwt.t
-(** waits (without blocking other threads)
-    until there is something to read on the file descriptor *)
+(** State of a {b file descriptor} *)
+type state =
+  | Open
+      (** The {b file descriptor} is opened *)
+  | Closed
+      (** The {b file descriptor} has been closed by {!close}. It must
+          not be used for any operation. *)
+  | Aborted of exn
+      (** The {b file descriptor} has been aborted, the only operation
+          possible is {!close}, all others will fail. *)
 
-val wait_write : file_descr -> unit Lwt.t
-(** waits (without blocking other threads)
-    until it is possible to write on the file descriptor *)
-
-val pipe : unit -> file_descr * file_descr
-val pipe_in : unit -> file_descr * Unix.file_descr
-val pipe_out : unit -> Unix.file_descr * file_descr
-val socket :
-  Unix.socket_domain -> Unix.socket_type -> int -> file_descr
-val socketpair :
-  Unix.socket_domain -> Unix.socket_type -> int -> file_descr * file_descr
-val bind : file_descr -> Unix.sockaddr -> unit
-val listen : file_descr -> int -> unit
-val accept : file_descr -> (file_descr * Unix.sockaddr) Lwt.t
-val accept_n : file_descr -> int -> ((file_descr * Unix.sockaddr) list) Lwt.t
-val connect : file_descr -> Unix.sockaddr -> unit Lwt.t
-val shutdown : file_descr -> Unix.shutdown_command -> unit
-val close : file_descr -> unit
-
-val setsockopt : file_descr -> Unix.socket_bool_option -> bool -> unit
-val set_close_on_exec : file_descr -> unit
-
-val wait : unit -> (int * Unix.process_status) Lwt.t
-val waitpid : Unix.wait_flag list -> int -> (int * Unix.process_status) Lwt.t
-
-val system : string -> Unix.process_status Lwt.t
-
-(****)
-
-(** Aborting a connection *)
-
-val abort : file_descr -> exn -> unit
-      (** Makes all current and further uses of the file descriptor
-          fail with the given exception *)
-
-(****)
-
-(** File descriptor wrappings/unwrappings *)
-
-(* [of_unix_file_descr] has the side-effect of putting the file
-   descriptor in non-blocking mode. *)
+val state : file_descr -> state
+  (** [state fd] returns the state of [fd] *)
 
 val unix_file_descr : file_descr -> Unix.file_descr
-val of_unix_file_descr : Unix.file_descr -> file_descr
+  (** Returns the underlying unix {b file descriptor}. It always
+      succeed, even if the {b file descriptor}'s state is not
+      {!Open}. *)
 
-(**/**)
+val of_unix_file_descr : Unix.file_descr -> file_descr
+  (** Creates a lwt {b file descriptor} from a unix one. It has the
+      side effect of putting it into non-blocking mode *)
+
+val abort : file_descr -> exn -> unit
+  (** [abort fd exn] makes all current and further uses of the file
+      descriptor fail with the given exception. This put the {b file
+      descriptor} into the {!Aborted} state.
+
+      If the {b file descrptor} is closed, this does nothing, if it is
+      aborted, this replace the abort exception by [exn]. *)
+
+val close : file_descr -> unit
+  (** Close a {b file descriptor}. This close the underlying unix {b
+      file descriptor} and set its state to {!Closed} *)
+
+val set_close_on_exec : file_descr -> unit
+  (** Wrapper for [Unix.set_close_on_exec] *)
+
+(** {8 Standard instances} *)
+
+val stdin : file_descr
+  (** The standard {b file descriptor} for input. This one is usually
+      a terminal is the program is started from a terminal. *)
+
+val stdout : file_descr
+  (** The standard {b file descriptor} for output *)
+
+val stderr : file_descr
+  (** The standard {b file descriptor} for printing error messages *)
+
+(** {8 Reading/writing} *)
+
+val read : file_descr -> string -> int -> int -> int Lwt.t
+  (** [read fd buf ofs len] has the same semantic as [Unix.read], but
+      is cooperative *)
+
+val write : file_descr -> string -> int -> int -> int Lwt.t
+  (** [read fd buf ofs len] has the same semantic as [Unix.write], but
+      is cooperative *)
+
+val wait_read : file_descr -> unit Lwt.t
+  (** waits (without blocking other threads) until there is something
+      to read on the file descriptor *)
+
+val wait_write : file_descr -> unit Lwt.t
+  (** waits (without blocking other threads) until it is possible to
+      write on the file descriptor *)
+
+(** {8 Pipes} *)
+
+val pipe : unit -> file_descr * file_descr
+  (** [pipe ()] creates pipe using [Unix.pipe] and returns two lwt {b
+      file descriptor}s created from unix {b file_descriptor} *)
+
+val pipe_in : unit -> file_descr * Unix.file_descr
+  (** [pipe_in ()] is the same as {!pipe} but maps only the unix {b
+      file descriptor} for reading into a lwt one. The second is not
+      put into non-blocking mode. You usually want to use this before
+      forking to receive data from the child process. *)
+
+val pipe_out : unit -> Unix.file_descr * file_descr
+  (** [pipe_out ()] is the inverse of {!pipe_in}. You usually want to
+      use this before forking to send data to the child process *)
+
+(** {8 Processes} *)
+
+val wait : unit -> (int * Unix.process_status) Lwt.t
+  (** Wrapper for [Unix.wait] *)
+
+val waitpid : Unix.wait_flag list -> int -> (int * Unix.process_status) Lwt.t
+  (** Wrapper for [Unix.waitpid] *)
+
+val system : string -> Unix.process_status Lwt.t
+  (** Wrapper for [Unix.system] *)
+
+(** {6 Sockets} *)
+
+val socket : Unix.socket_domain -> Unix.socket_type -> int -> file_descr
+  (** [socket domain type proto] is the same as [Unix.socket] but maps
+      the result into a lwt {b file descriptor} *)
+
+val socketpair : Unix.socket_domain -> Unix.socket_type -> int -> file_descr * file_descr
+  (** Wrapper for [Unix.socketpair] *)
+
+val bind : file_descr -> Unix.sockaddr -> unit
+  (** Wrapper for [Unix.bind] *)
+
+val listen : file_descr -> int -> unit
+  (** Wrapper for [Unix.listen] *)
+
+val accept : file_descr -> (file_descr * Unix.sockaddr) Lwt.t
+  (** Wrapper for [Unix.accept] *)
+
+val accept_n : file_descr -> int -> ((file_descr * Unix.sockaddr) list) Lwt.t
+  (** [accept_n fd count] accepts up to [count] connection in one time.
+
+      - if no connection is available right now, it returns a sleeping
+      thread
+
+      - if more that 1 and less than [count] are available, it returns
+      all of them
+
+      - if more that [count] are available, it returns the next [count]
+
+      [accept_n] has the advantage of improving performances. If you
+      want a more detailed description, you can have a look at:
+
+      {{:http://portal.acm.org/citation.cfm?id=1247435}Acceptable strategies for improving web server performance} *)
+
+val connect : file_descr -> Unix.sockaddr -> unit Lwt.t
+  (** Wrapper for [Unix.connect] *)
+
+val shutdown : file_descr -> Unix.shutdown_command -> unit
+  (** Wrapper for [Unix.shutdown] *)
+
+val setsockopt : file_descr -> Unix.socket_bool_option -> bool -> unit
+  (** Wrapper for [Unix.setsockopt] *)
+
+(** {6 Low-level interaction} *)
 
 type watchers
+  (** Type of a set of watchers, i.e. a set of action waiting for a {b
+      file descriptor} to be readable/writable. *)
 
 exception Retry
+  (** If an action raises {!Retry}, it will be requeued until the {b
+      file descriptor} becomes readable/writable again. *)
+
 exception Retry_read
+  (** If an action raises {!Retry_read}, it will be requeued until the
+      {b file descriptor} becomes readable. *)
+
 exception Retry_write
+  (** If an action raises {!Retry_read}, it will be requeued until the
+      {b file descriptor} becomes writables. *)
 
 val inputs : watchers
+  (** The set of action waiting for a {b file descriptor} to become
+      readable *)
+
 val outputs : watchers
-val register_action : watchers -> file_descr -> (unit -> 'a) -> 'a Lwt.t
-val check_descriptor : file_descr -> unit
-(** [check_descriptor] must be called before any system call involving
-    the file descriptor and before calling [register_action]. *)
+  (** The set of action waiting for a {b file descriptor} to become
+      writable *)
+
 val wrap_syscall : watchers -> file_descr -> (unit -> 'a) -> 'a Lwt.t
+  (** [wrap_syscall set fd action] wrap an action on a {b file
+      descriptor}. It tries to execture action, and if it can not be
+      performed immediately without blocking, it is registered for
+      latter.
 
-(****)
+      In the latter case, if the thread is canceled, [action] is
+      removed from [set]. *)
 
-(* Monitoring *)
+val check_descriptor : file_descr -> unit
+  (** [check_descriptor fd] raise an exception if [fd] is not in the
+      state {!Open} *)
+
+val register_action : watchers -> file_descr -> (unit -> 'a) -> 'a Lwt.t
+  (** [register_action set fd action] registers [action] on [fd]. When
+      [fd] becomes [readable]/[writable] [action] is called.
+
+      Note:
+
+      - you must call [check_descriptor fd] before calling
+      [register_action]
+
+      - you should prefer using {!wrap_syscall}
+  *)
+
+(**/**)
 
 val inputs_length : unit -> int
 val outputs_length : unit -> int
 val wait_children_length : unit -> int
 val get_new_sleeps : unit -> int
 val sleep_queue_size : unit -> int
+
+val run : 'a Lwt.t -> 'a
+  (* Same as {!Lwt_main.run} *)
