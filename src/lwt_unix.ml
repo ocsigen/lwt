@@ -55,7 +55,7 @@ let sleep d =
   let t = if d <= 0. then 0. else Unix.gettimeofday () +. d in
   let sleeper = { time = t; canceled = false; thread = res } in
   new_sleeps := sleeper :: !new_sleeps;
-  Lwt.on_cancel res (fun _ -> sleeper.canceled <- false);
+  Lwt.on_cancel res (fun _ -> sleeper.canceled <- true);
   res
 
 let yield () = sleep 0.
