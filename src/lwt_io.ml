@@ -44,6 +44,19 @@ let close_fd fd =
   with exn ->
     fail exn
 
+let unix_call f =
+  try
+    f ()
+  with Unix.Unix_error(err, _, _) ->
+    raise (Sys_error(Unix.error_message err))
+
+
+let lwt_unix_call f =
+  try_lwt
+    f ()
+  with Unix.Unix_error(err, _, _) ->
+    fail (Sys_error(Unix.error_message err))
+
 (* +-----------------------------------------------------------------+
    | Types                                                           |
    +-----------------------------------------------------------------+ *)
@@ -170,7 +183,7 @@ let perform_io ch = match ch.main.state with
             (size, ch.length - size)
         | Output ->
             (0, ch.ptr) in
-      lwt n = choose [ch.abort; ch.perform_io ch.buffer ptr len] in
+      lwt n = choose [ch.abort; lwt_unix_call (fun _ -> ch.perform_io ch.buffer ptr len)] in
       (* Never trust user functions... *)
       if n < 0 || n > len then
         fail (Failure (Printf.sprintf "Lwt_io: invalid result of the [%s] function(request=%d,result=%d)"
@@ -941,7 +954,7 @@ struct
      +---------------------------------------------------------------+ *)
 
   let seek ch pos =
-    lwt offset = ch.seek pos Unix.SEEK_SET in
+    lwt offset = lwt_unix_call (fun _ -> ch.seek pos Unix.SEEK_SET) in
     if offset <> pos then
       fail (Sys_error "Lwt_io.set_pos: seek failed")
     else
@@ -1109,10 +1122,7 @@ let open_file ?buffer_size ?flags ?perm ~mode filename =
     | None, Output ->
         0o666
   in
-  try
-    of_unix_fd ?buffer_size ~mode (Unix.openfile filename flags perm)
-  with Unix.Unix_error(error, _, _) ->
-    raise (Sys_error(Unix.error_message error))
+  unix_call (fun _ -> of_unix_fd ?buffer_size ~mode (Unix.openfile filename flags perm))
 
 let with_file ?buffer_size ?flags ?perm ~mode filename f =
   let ic = open_file ?buffer_size ?flags ?perm ~mode filename in
@@ -1124,7 +1134,7 @@ let with_file ?buffer_size ?flags ?perm ~mode filename f =
 let file_length filename = with_file ~mode:input filename length
 
 let open_connection ?buffer_size sockaddr =
-  try_lwt
+  lwt_unix_call begin fun _ ->
     let fd = Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0 in
     let ref_count = ref 2 in
     let close mode =
@@ -1147,8 +1157,7 @@ let open_connection ?buffer_size sockaddr =
       end
     with exn ->
       close_fd fd >> fail exn
-  with Unix.Unix_error(error, _, _) ->
-    fail (Sys_error(Unix.error_message error))
+  end
 
 let with_connection ?buffer_size sockaddr f =
   lwt ic, oc = open_connection sockaddr in
