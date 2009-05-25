@@ -318,7 +318,7 @@ val eprintlf : ('a, unit, string, unit Lwt.t) format4 -> 'a
 
 val hexdump_stream : output_channel -> char Lwt_stream.t -> unit Lwt.t
   (** [hexdump_stream oc byte_stream] produces the same output as the
-      command [hexdump -C] *)
+      command [hexdump -C]. *)
 
 val hexdump : output_channel -> string -> unit Lwt.t
   (** [hexdump oc str = hexdump_stream oc (Lwt_stream.of_string str)] *)

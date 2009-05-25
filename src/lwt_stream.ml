@@ -431,3 +431,36 @@ let parse s f =
   lwt x = f s' in
   s := !s';
   return x
+
+let hexdump stream =
+  let buf = Buffer.create 80 and num = ref 0 in
+  from begin fun _ ->
+    nget 16 stream >>= function
+      | [] ->
+          return None
+      | l ->
+          Buffer.clear buf;
+          Printf.bprintf buf "%08x|  " !num;
+          num := !num + 16;
+          let rec bytes pos = function
+            | [] ->
+                blanks pos
+            | x :: l ->
+                if pos = 8 then Buffer.add_char buf ' ';
+                Printf.bprintf buf "%02x " (Char.code x);
+                bytes (pos + 1) l
+          and blanks pos =
+            if pos < 16 then begin
+              if pos = 8 then
+                Buffer.add_string buf "    "
+              else
+                Buffer.add_string buf "   ";
+              blanks (pos + 1)
+            end
+          in
+          bytes 0 l;
+          Buffer.add_string buf " |";
+          List.iter (fun ch -> Buffer.add_char buf (if ch >= '\x20' && ch <= '\x7e' then ch else '.')) l;
+          Buffer.add_char buf '|';
+          return (Some(Buffer.contents buf))
+  end

@@ -188,6 +188,21 @@ val parse : 'a t -> ('a t -> 'b Lwt.t) -> 'b Lwt.t
       is left unchanged, otherwise [st] is set to the state of the
       stream passed to [f]. *)
 
+(** {6 Misc} *)
+
+val hexdump : char t -> string t
+  (** [hexdump byte_stream] returns a stream which is the same as the
+      output of [hexdump -C].
+
+      Basically, here is a simple implementation of [hexdump -C]:
+
+      {[
+        open Lwt
+        open Lwt_io
+        let () = Lwt_main.run (write_lines stdout (Lwt_stream.hexdump (read_lines stdin)))
+      ]}
+  *)
+
 (** {6 Stream as lazy-list} *)
 
 (** Streams are internally represented by a lazy-list. *)

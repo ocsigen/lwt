@@ -124,3 +124,5 @@ val eprint : Text.t -> unit Lwt.t
 val eprintl : Text.t -> unit Lwt.t
 val eprintf : ('a, unit, Text.t, unit Lwt.t) format4 -> 'a
 val eprintlf : ('a, unit, Text.t, unit Lwt.t) format4 -> 'a
+val hexdump_stream : output_channel -> char Lwt_stream.t -> unit Lwt.t
+val hexdump : output_channel -> string -> unit Lwt.t

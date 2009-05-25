@@ -314,3 +314,6 @@ let chars_of_file filename =
 
 let chars_to_file filename chars =
   with_file ~mode:output filename (fun oc -> write_chars oc chars)
+
+let hexdump_stream oc stream = write_lines oc (Lwt_stream.hexdump stream)
+let hexdump oc buf = hexdump_stream oc (Lwt_stream.of_string buf)
