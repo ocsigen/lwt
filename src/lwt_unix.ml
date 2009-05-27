@@ -87,7 +87,7 @@ let rec restart_threads now =
    | File descriptor wrappers                                        |
    +-----------------------------------------------------------------+ *)
 
-type state = Open | Closed | Aborted of exn
+type state = Open | Closed | Aborted of exn | Lazy_use
 
 type file_descr = { fd : Unix.file_descr; mutable state: state }
 
@@ -95,7 +95,7 @@ let mk_ch fd =
   Unix.set_nonblock fd;
   { fd = fd; state = Open }
 
-let check_descriptor ch =
+let rec check_descriptor ch =
   match ch.state with
     | Open ->
         ()
@@ -103,6 +103,14 @@ let check_descriptor ch =
         raise e
     | Closed ->
         raise (Unix.Unix_error (Unix.EBADF, "check_descriptor", ""))
+    | Lazy_use ->
+        begin try
+          Unix.set_nonblock ch.fd;
+          ch.state <- Open
+        with Unix.Unix_error (Unix.EBADF, _, _) ->
+          ch.state <- Closed
+        end;
+        check_descriptor ch
 
 let state ch = ch.state
 
@@ -296,16 +304,12 @@ let unix_file_descr ch = ch.fd
 let of_unix_file_descr fd = mk_ch fd
 
 (* Try to create a file descriptor from a unix file descriptor, but
-   does not fail if set_nonblock fail: *)
-let of_fd_maybe fd =
-  try
-    of_unix_file_descr fd
-  with _ ->
-    { fd = fd; state = Closed }
+   does not put the file descriptor in non-blocking mode immediately. *)
+let of_fd_lazy fd = { fd = fd; state = Lazy_use }
 
-let stdin = of_fd_maybe Unix.stdin
-let stdout = of_fd_maybe Unix.stdout
-let stderr = of_fd_maybe Unix.stderr
+let stdin = of_fd_lazy Unix.stdin
+let stdout = of_fd_lazy Unix.stdout
+let stderr = of_fd_lazy Unix.stderr
 
 external lwt_unix_read : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_read"
 external lwt_unix_write : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_write"

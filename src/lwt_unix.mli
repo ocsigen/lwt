@@ -106,6 +106,11 @@ type state =
   | Aborted of exn
       (** The {b file descriptor} has been aborted, the only operation
           possible is {!close}, all others will fail. *)
+  | Lazy_use
+      (** The {b file descriptor} is opened but has not yet be put in
+          non-blocking mode.  (This is used for standard descriptor,
+          that should be put on non-blocking mode only if really
+          necessary.) *)
 
 val state : file_descr -> state
   (** [state fd] returns the state of [fd] *)
