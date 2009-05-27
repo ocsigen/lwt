@@ -30,43 +30,55 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************)
 
-open Lwt
+let return_unit = Lwt.return ()
 
 type 'a t = {
-  mutable writers : unit Lwt.t Queue.t;
-  (* Threads waiting to be notified that the value they put has been
-     read *)
+  mutable contents : 'a option;
+  (* Current contents *)
+
+  mutable writers : ('a * unit Lwt.t) Queue.t;
+  (* Threads waiting to put a value *)
 
   mutable readers : 'a Lwt.t Queue.t;
   (* Threads waiting for a value *)
-
-  mutable values : 'a Queue.t;
-  (* Value queued *)
 }
 
-let create () = { writers = Queue.create ();
-                  readers = Queue.create ();
-                  values = Queue.create () }
+let create_empty () =
+  { contents = None;
+    writers = Queue.create ();
+    readers = Queue.create () }
 
-let put mvar v =
-  if Queue.is_empty mvar.readers then begin
-    Queue.add v mvar.values;
-    if Queue.length mvar.values = 1 then
-      return ()
-    else begin
-      let w = wait () in
-      Queue.add w mvar.writers;
+let create v =
+  { contents = Some v;
+    writers = Queue.create ();
+    readers = Queue.create () }
+
+let rec put mvar v =
+  match mvar.contents with
+    None ->
+      begin try
+        Lwt.wakeup (Queue.take mvar.readers) v
+      with Queue.Empty ->
+        mvar.contents <- Some v
+      end;
+      return_unit
+  | Some _ ->
+      let w = Lwt.wait () in
+      Queue.push (v, w) mvar.writers;
       w
-    end
-  end else begin
-    wakeup (Queue.take mvar.readers) v;
-    return ()
-  end
 
 let take mvar =
-  if Queue.is_empty mvar.values then begin
-    let w = wait () in
-    Queue.add w mvar.readers;
-    w
-  end else
-    return (Queue.take mvar.values)
+  match mvar.contents with
+    Some v ->
+      begin try
+        let (v', w) = Queue.take mvar.writers in
+        mvar.contents <- Some v';
+        Lwt.wakeup w ()
+      with Queue.Empty ->
+        mvar.contents <- None
+      end;
+      Lwt.return v
+  | None ->
+      let w = Lwt.wait () in
+      Queue.push w mvar.readers;
+      w

@@ -44,8 +44,11 @@ type 'a t
       type parameter specifies the type of the value propagated from
       [put] to [take]. *)
 
-val create : unit -> 'a t
-  (** [create ()] creates a new mailbox variable. *)
+val create : 'a -> 'a t
+  (** [create v] creates a new mailbox variable containing value [v]. *)
+
+val create_empty : unit -> 'a t
+  (** [create ()] creates a new empty mailbox variable. *)
 
 val put : 'a t -> 'a -> unit Lwt.t
   (** [put mvar value] puts a value into a mailbox variable. This
@@ -58,4 +61,3 @@ val take : 'a t -> 'a Lwt.t
       mailbox variable. If no value is currently available, the
       current thread will block, awaiting a value to be [put] by
       another thread. *)
-
