@@ -83,7 +83,7 @@ EXTEND Gram
         ] ];
 
     expr: LEVEL "top"
-      [ [ "try_lwt"; e = sequence; c = cases; f = finally ->
+      [ [ "try_lwt"; e = expr LEVEL ";"; c = cases; f = finally ->
             begin match c, f with
               | None, None ->
                   <:expr< Lwt.catch (fun _ -> $e$) (fun e -> Lwt.fail e) >>
