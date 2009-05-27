@@ -44,11 +44,12 @@ let create m ?(check = fun _ f -> f true) create =
 
 let create_member p =
   try_lwt
+    p.count <- p.count + 1; (* must be done before p.create *)
     lwt mem = p.create () in
-    p.count <- p.count + 1;
     return mem
   with exn ->
     (* create failed, so don't increment count *)
+    p.count <- p.count - 1;
     fail exn
 
 let acquire p =
