@@ -328,8 +328,21 @@ let write ch buf pos len =
   else
     wrap_syscall outputs ch (fun _ -> real_write ch.fd buf pos len)
 
-let wait_read ch = register_action inputs ch ignore
-let wait_write ch = register_action outputs ch ignore
+let wait_read ch =
+  try_lwt
+    check_descriptor ch;
+    if Unix.select [ch.fd] [] [] 0.0 = ([], [], []) then
+      register_action inputs ch ignore
+    else
+      return ()
+
+let wait_write ch =
+  try_lwt
+    check_descriptor ch;
+    if Unix.select [] [ch.fd] [] 0.0 = ([], [], []) then
+      register_action outputs ch ignore
+    else
+      return ()
 
 let pipe () =
   let (out_fd, in_fd) = Unix.pipe() in
