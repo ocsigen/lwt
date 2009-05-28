@@ -1123,26 +1123,17 @@ let open_file ?buffer_size ?flags ?perm ~mode filename =
         0o666
   in
   unix_call (fun _ ->
-               let fd_unix = Unix.openfile filename flags perm in
-               let fd = Lwt_unix.of_unix_file_descr fd_unix in
+               let fd = Unix.openfile filename flags perm in
                (* Special handling of FIFOs: reading/writing on FIFOs
                   opened in non-blocking mode will never fail with
                   [EWOULDBLOCK] or [EAGAIN] but will returns a size of
                   [0] instead, so we need to chech that the file
                   descriptor is readable/writable before using it: *)
-               if (Unix.fstat fd_unix).Unix.st_kind = Unix.S_FIFO then
-                 make
-                   ?buffer_size
-                   ~close:(fun _ -> close_fd fd)
-                   ~seek:(fun pos cmd -> return (Unix.LargeFile.lseek (Lwt_unix.unix_file_descr fd) pos cmd))
-                   ~mode
-                   (match mode with
-                      | Input ->
-                          (fun buf ofs len -> Lwt_unix.wait_read fd >> Lwt_unix.read fd buf ofs len)
-                      | Output ->
-                          (fun buf ofs len -> Lwt_unix.wait_write fd >> Lwt_unix.write fd buf ofs len))
-               else
-                 of_fd ?buffer_size ~mode fd)
+               of_fd ?buffer_size ~mode
+                 (if (Unix.fstat fd).Unix.st_kind = Unix.S_FIFO then
+                    Lwt_unix.of_unix_file_descr_blocking fd
+                  else
+                    Lwt_unix.of_unix_file_descr fd))
 
 let with_file ?buffer_size ?flags ?perm ~mode filename f =
   let ic = open_file ?buffer_size ?flags ?perm ~mode filename in

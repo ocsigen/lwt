@@ -87,13 +87,22 @@ let rec restart_threads now =
    | File descriptor wrappers                                        |
    +-----------------------------------------------------------------+ *)
 
-type state = Open | Closed | Aborted of exn | Lazy_use
+type state = Open | Closed | Aborted of exn
 
-type file_descr = { fd : Unix.file_descr; mutable state: state }
+type file_descr = {
+  fd : Unix.file_descr;
+  (* The underlying unix file descriptor *)
+
+  mutable state: state;
+  (* The state of the file descriptor *)
+
+  mutable blocking : bool;
+  (* Is the file descriptor in blocking or non-blocking mode *)
+}
 
 let mk_ch fd =
   Unix.set_nonblock fd;
-  { fd = fd; state = Open }
+  { fd = fd; state = Open; blocking = false }
 
 let rec check_descriptor ch =
   match ch.state with
@@ -103,16 +112,11 @@ let rec check_descriptor ch =
         raise e
     | Closed ->
         raise (Unix.Unix_error (Unix.EBADF, "check_descriptor", ""))
-    | Lazy_use ->
-        begin try
-          Unix.set_nonblock ch.fd;
-          ch.state <- Open
-        with Unix.Unix_error (Unix.EBADF, _, _) ->
-          ch.state <- Closed
-        end;
-        check_descriptor ch
 
 let state ch = ch.state
+
+let readable fd = Unix.select [fd] [] [] 0.0 <> ([], [], [])
+let writable fd = Unix.select [] [fd] [] 0.0 <> ([], [], [])
 
 (* +-----------------------------------------------------------------+
    | Actions on file descriptors                                     |
@@ -194,7 +198,10 @@ let register_action set ch action =
 let wrap_syscall set ch action =
   try
     check_descriptor ch;
-    return (action ())
+    if not ch.blocking || (set == inputs && readable ch.fd) || (set == outputs && writable ch.fd) then
+      return (action ())
+    else
+      register_action set ch action
   with
     | Retry
     | Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _)
@@ -303,13 +310,11 @@ let unix_file_descr ch = ch.fd
 
 let of_unix_file_descr fd = mk_ch fd
 
-(* Try to create a file descriptor from a unix file descriptor, but
-   does not put the file descriptor in non-blocking mode immediately. *)
-let of_fd_lazy fd = { fd = fd; state = Lazy_use }
+let of_unix_file_descr_blocking fd = { fd = fd; state = Open; blocking = true }
 
-let stdin = of_fd_lazy Unix.stdin
-let stdout = of_fd_lazy Unix.stdout
-let stderr = of_fd_lazy Unix.stderr
+let stdin = of_unix_file_descr_blocking Unix.stdin
+let stdout = of_unix_file_descr_blocking Unix.stdout
+let stderr = of_unix_file_descr_blocking Unix.stderr
 
 external lwt_unix_read : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_read"
 external lwt_unix_write : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_write"
@@ -335,18 +340,18 @@ let write ch buf pos len =
 let wait_read ch =
   try_lwt
     check_descriptor ch;
-    if Unix.select [ch.fd] [] [] 0.0 = ([], [], []) then
-      register_action inputs ch ignore
-    else
+    if readable ch.fd then
       return ()
+    else
+      register_action inputs ch ignore
 
 let wait_write ch =
   try_lwt
     check_descriptor ch;
-    if Unix.select [] [ch.fd] [] 0.0 = ([], [], []) then
-      register_action outputs ch ignore
-    else
+    if writable ch.fd then
       return ()
+    else
+      register_action outputs ch ignore
 
 let pipe () =
   let (out_fd, in_fd) = Unix.pipe() in
@@ -381,11 +386,12 @@ let accept_n ch n =
     begin
       try
         for i = 1 to n do
+          if ch.blocking && not (readable ch.fd) then raise Exit;
           let fd, addr = Unix.accept ch.fd in
           l := (mk_ch fd, addr) :: !l
         done
       with
-        | Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _) when !l <> [] ->
+        | (Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _) | Exit) when !l <> [] ->
             (* Ignore blocking errors if we have at least one file-descriptor: *)
             ()
     end;

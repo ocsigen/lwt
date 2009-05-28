@@ -93,8 +93,7 @@ type file_descr
 
       - {b opened}, in which case it is fully usable
       - {b closed} or {b aborted}, in which case it is no longer
-      usable
-  *)
+      usable *)
 
 (** State of a {b file descriptor} *)
 type state =
@@ -106,11 +105,6 @@ type state =
   | Aborted of exn
       (** The {b file descriptor} has been aborted, the only operation
           possible is {!close}, all others will fail. *)
-  | Lazy_use
-      (** The {b file descriptor} is opened but has not yet be put in
-          non-blocking mode.  (This is used for standard descriptor,
-          that should be put on non-blocking mode only if really
-          necessary.) *)
 
 val state : file_descr -> state
   (** [state fd] returns the state of [fd] *)
@@ -123,6 +117,16 @@ val unix_file_descr : file_descr -> Unix.file_descr
 val of_unix_file_descr : Unix.file_descr -> file_descr
   (** Creates a lwt {b file descriptor} from a unix one. It has the
       side effect of putting it into non-blocking mode *)
+
+val of_unix_file_descr_blocking : Unix.file_descr -> file_descr
+  (** Normally [Lwt_unix] uses file descriptors in non-blocking mode,
+      but in certain cases, like for standard descriptors ({!stdin},
+      {!stdout} and {!stderr}) we do not want that.
+
+      This function do not modify the {b file descritpor} flags but
+      other operations involving it may be a bit less efficient, since
+      [Lwt_unix] will always check that the {b file descriptor} is
+      ready before using it. *)
 
 val abort : file_descr -> exn -> unit
   (** [abort fd exn] makes all current and further uses of the file
