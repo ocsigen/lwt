@@ -122,7 +122,7 @@ let blocking ch =
 let set_blocking ch blocking =
   check_descriptor ch;
   ch.blocking <- blocking;
-  if blockling then
+  if blocking then
     Unix.clear_nonblock ch.fd
   else
     Unix.set_nonblock ch.fd
