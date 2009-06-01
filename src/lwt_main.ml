@@ -22,17 +22,11 @@
 
 open Lwt
 
-type 'a hook = 'a ref
-type 'a hooks = 'a hook list ref
-
-let add_hook hook hooks = hooks := hook :: !hooks
-let remove_hook hook hooks = hooks := List.filter ((!=) hook) !hooks
-
 type fd_set = Unix.file_descr list
 type current_time = float Lazy.t
 type select = fd_set -> fd_set -> fd_set -> float option -> current_time * fd_set * fd_set * fd_set
 
-let select_filters = ref []
+let select_filters = Lwt_sequence.create ()
 
 let min_timeout a b = match a, b with
   | None, b -> b
@@ -41,7 +35,7 @@ let min_timeout a b = match a, b with
 
 let apply_filters select =
   let now = Lazy.lazy_from_fun Unix.gettimeofday in
-  List.fold_left (fun select filter -> !filter now select) select !select_filters
+  Lwt_sequence.fold_l (fun filter select -> filter now select) select_filters select
 
 let bad_fd fd =
   try ignore (Unix.LargeFile.fstat fd); false with
@@ -83,13 +77,17 @@ let rec run t =
         !main_loop_iteration ();
         run t
 
-let exit_hooks = ref []
+let exit_hooks = Lwt_sequence.create ()
 
-let rec call_hooks _ = match !exit_hooks with
-  | [] ->
-      return ()
-  | hook :: rest ->
-      exit_hooks := rest;
-      (try_lwt !hook () with _ -> return ()) >>= call_hooks
+let rec call_hooks () =
+  match Lwt_sequence.take_opt_l exit_hooks with
+    | None ->
+        return ()
+    | Some f ->
+        try_lwt
+          lwt () = f () in
+          call_hooks ()
+        with exn ->
+          call_hooks ()
 
-let _ = at_exit (fun _ -> run (call_hooks ()))
+let () = at_exit (fun () -> run (call_hooks ()))

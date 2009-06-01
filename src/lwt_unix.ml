@@ -137,7 +137,7 @@ let writable fd = Unix.select [] [fd] [] 0.0 <> ([], [], [])
 module FdMap =
   Map.Make (struct type t = Unix.file_descr let compare = compare end)
 
-type watchers = (file_descr * (unit -> unit) Lwt_dlist.node) FdMap.t ref
+type watchers = (file_descr * (unit -> unit) Lwt_sequence.t) FdMap.t ref
 
 let inputs = ref FdMap.empty
 let outputs = ref FdMap.empty
@@ -150,6 +150,14 @@ type 'a outcome =
   | Success of 'a
   | Exn of exn
   | Requeued of watchers
+
+let get_actions ch set =
+  try
+    snd (FdMap.find ch.fd !set)
+  with Not_found ->
+    let seq = Lwt_sequence.create () in
+    set := FdMap.add ch.fd (ch, seq) !set;
+    seq
 
 (* Retry a queued syscall, [cont] is the thread to wakeup
    if the action succeed: *)
@@ -179,30 +187,19 @@ let rec retry_syscall set ch cont action =
     | Exn e ->
         Lwt.wakeup_exn cont e
     | Requeued set ->
-        ignore (add_action set ch cont action)
-
-(* Add an action on a file descriptor: *)
-and add_action set ch cont action =
-  try
-    let _, actions = FdMap.find ch.fd !set in
-    Lwt_dlist.prepend_data (fun _ -> retry_syscall set ch cont action) actions
-  with Not_found ->
-    let node = Lwt_dlist.make (fun _ -> retry_syscall set ch cont action) in
-    set := FdMap.add ch.fd (ch, node) !set;
-    node
+        ignore (Lwt_sequence.add_r (fun _ -> retry_syscall set ch cont action) (get_actions ch set))
 
 let register_action set ch action =
   let res = Lwt.task () in
-  let node = add_action set ch res action in
+  let actions = get_actions ch set in
+  let node = Lwt_sequence.add_r (fun _ -> retry_syscall set ch res action) actions in
   (* Unregister the action on cancel: *)
   Lwt.on_cancel res begin fun _ ->
-    if Lwt_dlist.is_alone node then
+    Lwt_sequence.remove node;
+    if Lwt_sequence.is_empty actions then
       (* If there is no other action queued on the file-descriptor,
          remove it: *)
       set := FdMap.remove ch.fd !set
-    else
-      (* Otherwise, just remove the action: *)
-      Lwt_dlist.junk node
   end;
   res
 
@@ -232,7 +229,7 @@ let perform_actions set fd =
   try
     let (ch, actions) = FdMap.find fd !set in
     set := FdMap.remove fd !set;
-    Lwt_dlist.iter (fun f -> f ()) actions
+    List.iter (fun f -> f ()) (Lwt_sequence.fold_l (fun x l -> x :: l) actions [])
   with Not_found ->
     ()
 
@@ -240,7 +237,7 @@ let active_descriptors set acc =
   FdMap.fold (fun key _ acc -> key :: acc) !set acc
 
 let blocked_thread_count set =
-  FdMap.fold (fun key (_, l) c -> Lwt_dlist.count l + c) !set 0
+  FdMap.fold (fun key (_, l) c -> Lwt_sequence.fold_l (fun _ x -> x + 1) l 0 + c) !set 0
 
 (* +-----------------------------------------------------------------+
    | Event loop                                                      |
@@ -303,7 +300,7 @@ let select_filter now select set_r set_w set_e timeout =
   end;
   result
 
-let _ = Lwt_main.add_hook (ref select_filter) Lwt_main.select_filters
+let _ = Lwt_sequence.add_l select_filter Lwt_main.select_filters
 
 (* +-----------------------------------------------------------------+
    | System calls                                                    |

@@ -83,7 +83,7 @@ type thread = {
 let workers : thread Queue.t = Queue.create ()
 
 (* Queue of clients waiting for a worker to be available: *)
-let waiters : thread Lwt.t Queue.t = Queue.create ()
+let waiters : thread Lwt.t Lwt_sequence.t = Lwt_sequence.create ()
 
 (* Mapping from thread ids to client lwt-thread: *)
 let clients : (int, unit Lwt.t) Hashtbl.t = Hashtbl.create 16
@@ -116,10 +116,11 @@ let make_worker _ =
 
 (* Add a worker to the pool: *)
 let add_worker worker =
-  if Queue.is_empty waiters then
-    Queue.add worker workers
-  else
-    wakeup (Queue.take waiters) worker
+  match Lwt_sequence.take_opt_l waiters with
+    | None ->
+        Queue.add worker workers
+    | Some w ->
+        wakeup w worker
 
 (* Wait for worker to be available, then return it: *)
 let rec get_worker _ =
@@ -127,11 +128,10 @@ let rec get_worker _ =
     return (Queue.take workers)
   else if !threads_count < !max_threads then
     return (make_worker ())
-  else if Queue.length waiters >= !max_thread_queued then
-    Lwt_unix.sleep 1.0 >> get_worker ()
   else begin
-    let w = Lwt.wait () in
-    Queue.add w waiters;
+    let w = Lwt.task () in
+    let node = Lwt_sequence.add_r w waiters in
+    Lwt.on_cancel w (fun _ -> Lwt_sequence.remove node);
     w
   end
 
@@ -205,7 +205,7 @@ let simple_init _ =
   Lazy.force dispatcher
 
 let nbthreads _ = !threads_count
-let nbthreadsqueued _ = Queue.length waiters
+let nbthreadsqueued _ = Lwt_sequence.fold_l (fun _ x -> x + 1) waiters 1
 let nbthreadsbusy _ = !threads_count - Queue.length workers
 
 (* +-----------------------------------------------------------------+

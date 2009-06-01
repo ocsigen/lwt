@@ -36,49 +36,52 @@ type 'a t = {
   mutable contents : 'a option;
   (* Current contents *)
 
-  mutable writers : ('a * unit Lwt.t) Queue.t;
+  mutable writers : ('a * unit Lwt.t) Lwt_sequence.t;
   (* Threads waiting to put a value *)
 
-  mutable readers : 'a Lwt.t Queue.t;
+  mutable readers : 'a Lwt.t Lwt_sequence.t;
   (* Threads waiting for a value *)
 }
 
 let create_empty () =
   { contents = None;
-    writers = Queue.create ();
-    readers = Queue.create () }
+    writers = Lwt_sequence.create ();
+    readers = Lwt_sequence.create () }
 
 let create v =
   { contents = Some v;
-    writers = Queue.create ();
-    readers = Queue.create () }
+    writers = Lwt_sequence.create ();
+    readers = Lwt_sequence.create () }
 
-let rec put mvar v =
+let put mvar v =
   match mvar.contents with
-    None ->
-      begin try
-        Lwt.wakeup (Queue.take mvar.readers) v
-      with Queue.Empty ->
-        mvar.contents <- Some v
-      end;
-      return_unit
-  | Some _ ->
-      let w = Lwt.wait () in
-      Queue.push (v, w) mvar.writers;
-      w
+    | None ->
+        begin match Lwt_sequence.take_opt_l mvar.readers with
+          | None ->
+              mvar.contents <- Some v
+          | Some w ->
+              Lwt.wakeup w v
+        end;
+        return_unit
+    | Some _ ->
+        let w = Lwt.task () in
+        let node = Lwt_sequence.add_r (v, w) mvar.writers in
+        Lwt.on_cancel w (fun _ -> Lwt_sequence.remove node);
+        w
 
 let take mvar =
   match mvar.contents with
-    Some v ->
-      begin try
-        let (v', w) = Queue.take mvar.writers in
-        mvar.contents <- Some v';
-        Lwt.wakeup w ()
-      with Queue.Empty ->
-        mvar.contents <- None
-      end;
-      Lwt.return v
-  | None ->
-      let w = Lwt.wait () in
-      Queue.push w mvar.readers;
-      w
+    | Some v ->
+        begin match Lwt_sequence.take_opt_l mvar.writers with
+          | Some(v', w) ->
+              mvar.contents <- Some v';
+              Lwt.wakeup w ()
+          | None ->
+              mvar.contents <- None
+        end;
+        Lwt.return v
+    | None ->
+        let w = Lwt.task () in
+        let node = Lwt_sequence.add_r w mvar.readers in
+        Lwt.on_cancel w (fun _ -> Lwt_sequence.remove node);
+        w

@@ -95,7 +95,7 @@ and 'mode channel = {
   channel : 'mode _channel;
   (* The real channel *)
 
-  mutable queued : unit Lwt.t Queue.t;
+  mutable queued : unit Lwt.t Lwt_sequence.t;
   (* Queued operations *)
 }
 
@@ -236,16 +236,15 @@ let rec auto_flush oc =
         auto_flush oc
 
     | Idle ->
-        if Queue.is_empty oc.main.queued then begin
+        if Lwt_sequence.is_empty oc.main.queued then begin
           oc.auto_flushing <- false;
           wrapper.state <- Busy_primitive;
-          safe_flush_total oc >> begin
-            if wrapper.state = Busy_primitive then
-              wrapper.state <- Idle;
-            if not (Queue.is_empty wrapper.queued) then
-              wakeup (Queue.pop wrapper.queued) ();
-            return ()
-          end
+          lwt () = safe_flush_total oc in
+          if wrapper.state = Busy_primitive then
+            wrapper.state <- Idle;
+          if not (Lwt_sequence.is_empty wrapper.queued) then
+            wakeup (Lwt_sequence.take_l wrapper.queued) ();
+          return ()
         end else
           (* Some operations are queued, wait again: *)
           auto_flush oc
@@ -262,8 +261,8 @@ let rec auto_flush oc =
 let unlock wrapper = match wrapper.state with
   | Busy_primitive | Busy_atomic _ ->
       wrapper.state <- Idle;
-      if not (Queue.is_empty wrapper.queued) then
-        wakeup (Queue.pop wrapper.queued) ();
+      if not (Lwt_sequence.is_empty wrapper.queued) then
+        wakeup (Lwt_sequence.take_l wrapper.queued) ();
       (* Launches the auto-flusher: *)
       let ch = wrapper.channel in
       if (ch.mode = Output &&
@@ -272,15 +271,15 @@ let unlock wrapper = match wrapper.state with
           (* Do not launch two auto-flusher: *)
           not ch.auto_flushing &&
           (* Do not launch the auto-flusher if operations are queued: *)
-          Queue.is_empty wrapper.queued) then begin
+          Lwt_sequence.is_empty wrapper.queued) then begin
         ch.auto_flushing <- true;
         ignore (auto_flush ch)
       end
 
   | Closed | Invalid ->
       (* Do not change channel state if the channel has been closed *)
-      if not (Queue.is_empty wrapper.queued) then
-        wakeup (Queue.pop wrapper.queued) ()
+      if not (Lwt_sequence.is_empty wrapper.queued) then
+        wakeup (Lwt_sequence.take_l wrapper.queued) ()
 
   | Idle ->
       (* We must never unlock an unlocked channel *)
@@ -297,9 +296,11 @@ let primitive f wrapper = match wrapper.state with
         return ()
 
   | Busy_primitive | Busy_atomic _ ->
-      let w = wait () in
-      Queue.push w wrapper.queued;
-      w >> begin match wrapper.state with
+      let w = task () in
+      let node = Lwt_sequence.add_r w wrapper.queued in
+      Lwt.on_cancel w (fun _ -> Lwt_sequence.remove node);
+      lwt () = w in
+      begin match wrapper.state with
         | Closed ->
             (* The channel has been closed while we were waiting *)
             unlock wrapper;
@@ -331,7 +332,7 @@ let atomic f wrapper = match wrapper.state with
   | Idle ->
       let tmp_wrapper = { state = Idle;
                           channel = wrapper.channel;
-                          queued = Queue.create () } in
+                          queued = Lwt_sequence.create () } in
       wrapper.state <- Busy_atomic tmp_wrapper;
       try_lwt
         f tmp_wrapper
@@ -342,9 +343,11 @@ let atomic f wrapper = match wrapper.state with
         return ()
 
   | Busy_primitive | Busy_atomic _ ->
-      let w = wait () in
-      Queue.push w wrapper.queued;
-      w >> begin match wrapper.state with
+      let w = task () in
+      let node = Lwt_sequence.add_r w wrapper.queued in
+      Lwt.on_cancel w (fun _ -> Lwt_sequence.remove node);
+      lwt () = w in
+      begin match wrapper.state with
         | Closed ->
             (* The channel has been closed while we were waiting *)
             unlock wrapper;
@@ -353,7 +356,7 @@ let atomic f wrapper = match wrapper.state with
         | Idle ->
             let tmp_wrapper = { state = Idle;
                                 channel = wrapper.channel;
-                                queued = Queue.create () } in
+                                queued = Lwt_sequence.create () } in
             wrapper.state <- Busy_atomic tmp_wrapper;
             try_lwt
               f tmp_wrapper
@@ -443,7 +446,7 @@ let make ?buffer_size ?(close=return) ?(seek=no_seek) ~mode perform_io =
   } and wrapper = {
     state = Idle;
     channel = ch;
-    queued = Queue.create ();
+    queued = Lwt_sequence.create ();
   } in
   Lwt_gc.finalise_or_exit alias_to_close wrapper;
   wrapper

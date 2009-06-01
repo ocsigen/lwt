@@ -24,8 +24,6 @@
 
 (** This module controls the ``main-loop'' of Lwt. *)
 
-(** {6 Running a thread} *)
-
 val run : 'a Lwt.t -> 'a
   (** [run t] calls the Lwt scheduler repeatedly until [t] terminates,
       then returns the value returned by the thread. It [t] fails with
@@ -38,26 +36,7 @@ val run : 'a Lwt.t -> 'a
         invocation of [run] will not terminate before all
         subsequent invocations are terminated. *)
 
-(** {6 Hooks} *)
-
-(** Hooks are function that are called at a point of the program to
-    handle an event or collect informations. *)
-
-type 'a hook = 'a ref
-    (** Type of a ``hook'' containing a value of type ['a], which is
-        supposed not to be comparable using [Pervasives.compare] *)
-
-type 'a hooks = 'a hook list ref
-    (** A set of hooks. *)
-
-val add_hook : 'a hook -> 'a hooks -> unit
-  (** [add_hook hook hooks] add one hook at the beginning of a set of
-      hooks. *)
-
-val remove_hook : 'a hook -> 'a hooks -> unit
-  (** [remove_hook hook hooks] remove one hook from a set of hooks *)
-
-val exit_hooks : (unit -> unit Lwt.t) hooks
+val exit_hooks : (unit -> unit Lwt.t) Lwt_sequence.t
   (** Sets of functions executed just before the program exit.
 
       Notes:
@@ -90,7 +69,7 @@ type current_time = float Lazy.t
 type select = fd_set -> fd_set -> fd_set -> float option -> current_time * fd_set * fd_set * fd_set
   (** Type of a select-like function *)
 
-val select_filters : (current_time -> select -> select) hooks
+val select_filters : (current_time -> select -> select) Lwt_sequence.t
   (** The set of all select filters. *)
 
 val apply_filters : select -> select

@@ -23,14 +23,15 @@
 
 open Lwt
 
-type t = { mutable locked : bool; mutable waiters : unit Lwt.t Queue.t  }
+type t = { mutable locked : bool; mutable waiters : unit Lwt.t Lwt_sequence.t  }
 
-let create () = { locked = false; waiters = Queue.create () }
+let create () = { locked = false; waiters = Lwt_sequence.create () }
 
 let rec lock m =
   if m.locked then begin
-    let res = Lwt.wait () in
-    Queue.add res m.waiters;
+    let res = Lwt.task () in
+    let node = Lwt_sequence.add_r res m.waiters in
+    Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
     res
   end else begin
     m.locked <- true;
@@ -39,10 +40,10 @@ let rec lock m =
 
 let unlock m =
   if m.locked then begin
-    if Queue.is_empty m.waiters then
+    if Lwt_sequence.is_empty m.waiters then
       m.locked <- false
     else
-      Lwt.wakeup (Queue.take m.waiters) ()
+      Lwt.wakeup (Lwt_sequence.take_l m.waiters) ()
   end
 
 let with_lock m f =
