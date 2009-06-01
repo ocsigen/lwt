@@ -115,6 +115,18 @@ let rec check_descriptor ch =
 
 let state ch = ch.state
 
+let blocking ch =
+  check_descriptor ch;
+  ch.blocking
+
+let set_blocking ch blocking =
+  check_descriptor ch;
+  ch.blocking <- blocking;
+  if blockling then
+    Unix.clear_nonblock ch.fd
+  else
+    Unix.set_nonblock ch.fd
+
 let readable fd = Unix.select [fd] [] [] 0.0 <> ([], [], [])
 let writable fd = Unix.select [] [fd] [] 0.0 <> ([], [], [])
 

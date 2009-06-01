@@ -126,7 +126,18 @@ val of_unix_file_descr_blocking : Unix.file_descr -> file_descr
       This function do not modify the {b file descritpor} flags but
       other operations involving it may be a bit less efficient, since
       [Lwt_unix] will always check that the {b file descriptor} is
-      ready before using it. *)
+      ready before using it.
+
+      Note: this is not 100% safe to use file descriptors in blocking
+      mode, so you should avoid doing it. *)
+
+val blocking : file_descr -> bool
+  (** [blocking fd] returns whether [fd] is used in blocking or
+      non-blocking mode. *)
+
+val set_blocking : file_descr -> bool -> unit
+  (** [set_blocking fd b] puts [fd] in blocking or non-blocking
+      mode. *)
 
 val abort : file_descr -> exn -> unit
   (** [abort fd exn] makes all current and further uses of the file
