@@ -205,7 +205,7 @@ let simple_init _ =
   Lazy.force dispatcher
 
 let nbthreads _ = !threads_count
-let nbthreadsqueued _ = Lwt_sequence.fold_l (fun _ x -> x + 1) waiters 1
+let nbthreadsqueued _ = Lwt_sequence.fold_l (fun _ x -> x + 1) waiters 0
 let nbthreadsbusy _ = !threads_count - Queue.length workers
 
 (* +-----------------------------------------------------------------+

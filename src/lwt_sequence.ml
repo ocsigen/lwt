@@ -63,7 +63,7 @@ let create () =
   let rec seq = { prev = seq; next = seq } in
   seq
 
-let is_empty seq = seq.prev == seq.next
+let is_empty seq = seq.next == seq
 
 let add_l data seq =
   let node = { node_prev = seq; node_next = seq.next; node_data = data; node_active = true } in
