@@ -105,6 +105,14 @@ val iter_r : ('a -> unit) -> 'a t -> unit
   (** [iter_l f s] applies [f] on all elements of [s] starting from
       the right *)
 
+val iter_node_l : ('a node -> unit) -> 'a t -> unit
+  (** [iter_l f s] applies [f] on all nodes of [s] starting from
+      the left *)
+
+val iter_node_r : ('a node -> unit) -> 'a t -> unit
+  (** [iter_l f s] applies [f] on all nodes of [s] starting from
+      the right *)
+
 val fold_l : ('a -> 'b -> 'b) -> 'a t -> 'b -> 'b
   (** [fold_l f s] is:
 

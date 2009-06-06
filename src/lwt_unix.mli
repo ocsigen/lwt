@@ -200,7 +200,17 @@ val pipe_out : unit -> Unix.file_descr * file_descr
   (** [pipe_out ()] is the inverse of {!pipe_in}. You usually want to
       use this before forking to send data to the child process *)
 
-(** {8 Processes} *)
+(** {6 Signals} *)
+
+val signal : int -> < event : int React.event; stop : unit >
+  (** [signal signum] returns an object with a method [event] which is
+      the event occuring each time the signal number [signum] is
+      received by the running process.
+
+      The [stop] method is used to tell Lwt that you are no longer
+      interessed in this event. *)
+
+(** {6 Processes} *)
 
 val wait : unit -> (int * Unix.process_status) Lwt.t
   (** Wrapper for [Unix.wait] *)

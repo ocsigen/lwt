@@ -438,7 +438,7 @@ struct
             (part_before @ part_selected, part_after)
     in
 
-    let columns = Lwt_term.columns () in
+    let columns = React.S.value Lwt_term.columns in
 
     (* All the text printed before the cursor: *)
     let printed_before = prepare_for_display columns (prompt @ [Reset] @ before) in
@@ -484,7 +484,7 @@ struct
 
   let last_draw ?(map_text=fun x -> x) render_state engine_state prompt =
     beginning_of_line render_state.height_before
-    >> printlc (prepare_for_display (Lwt_term.columns ()) (prompt @ [Reset; Text(map_text(all_input engine_state))]))
+    >> printlc (prepare_for_display (React.S.value Lwt_term.columns) (prompt @ [Reset; Text(map_text(all_input engine_state))]))
 end
 
 (* +-----------------------------------------------------------------+
@@ -531,7 +531,7 @@ let read_line ?(history=[]) ?(complete=fun _ -> return No_completion) ?(clipboar
               t_command >>= process_command render_state engine_state
           | `Completion(Possibilities words) ->
                 write_char stdout "\n"
-                >> print_words stdout (Lwt_term.columns ()) words
+                >> print_words stdout (React.S.value Lwt_term.columns) words
                 >> write_char stdout "\n"
                 >> (lwt render_state = Terminal.draw render_state engine_state prompt in
                     t_command >>= process_command render_state engine_state)

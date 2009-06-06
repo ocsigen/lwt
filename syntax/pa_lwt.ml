@@ -62,7 +62,7 @@ let gen_bind l e =
   let rec aux n = function
     | [] -> e
     | (_loc, p, e) :: l ->
-        <:expr< bind $lid:"__pa_lwt_" ^ string_of_int n$ (fun $p$ -> $aux (n + 1) l$) >>
+        <:expr< Lwt.bind $lid:"__pa_lwt_" ^ string_of_int n$ (fun $p$ -> $aux (n + 1) l$) >>
   in
   aux 0 l
 

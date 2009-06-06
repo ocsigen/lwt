@@ -136,10 +136,22 @@ type size = {
   columns : int;
 }
 
-external size : unit -> size = "lwt_unix_term_size"
+external get_size : unit -> size = "lwt_unix_term_size"
+external sigwinch : unit -> int = "lwt_unix_sigwinch"
 
-let columns () = (size ()).columns
-let lines () = (size ()).lines
+let sigwinch_event =
+  try
+    Lwt_unix.signal (sigwinch ())#event
+  with _ ->
+    React.E.never
+
+let size =
+  React.S.hold
+    (try get_size () with _ -> { columns = 80; lines = 25 })
+    (React.E.map (fun _ -> get_size ()) sigwinch_event)
+
+let columns = React.S.map (fun { columns = c } -> c) size
+let lines = React.S.map (fun { lines = l } -> l) size
 
 (* +-----------------------------------------------------------------+
    | Keys input                                                      |

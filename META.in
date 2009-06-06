@@ -1,7 +1,7 @@
 # -*- conf -*-
 
 description = "Lightweight thread library for OCaml (core library)"
-requires = "unix"
+requires = "unix react"
 version = "@VERSION@"
 exists_if = "lwt.cmo,lwt.cmx,lwt.cmxs"
 archive(byte) = "lwt.cma"

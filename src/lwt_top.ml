@@ -140,7 +140,7 @@ let _ =
     let txt = "Welcome to the new Lwt powered OCaml toplevel!" in
     let col_border = cyan and col_txt = yellow in
     let len = Text.length txt in
-    let col = Lwt_term.columns () in
+    let col = React.S.value Lwt_term.columns in
     let space = (col - 4 - len) / 2 in
     let rep n txt = text (Text.repeat n txt) in
     Lwt_main.run

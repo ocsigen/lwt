@@ -65,6 +65,7 @@ let packages = [
   "ssl";
   "lablgtk2";
   "text";
+  "react";
 ]
 
 (* List of syntaxes *)

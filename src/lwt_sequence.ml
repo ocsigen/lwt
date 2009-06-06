@@ -149,6 +149,26 @@ let iter_r f seq =
   in
   loop seq.prev
 
+let iter_node_l f seq =
+  let rec loop curr =
+    if curr != seq then begin
+      let node = node_of_seq curr in
+      if node.node_active then f node;
+      loop node.node_next
+    end
+  in
+  loop seq.next
+
+let iter_node_r f seq =
+  let rec loop curr =
+    if curr != seq then begin
+      let node = node_of_seq curr in
+      if node.node_active then f node;
+      loop node.node_prev
+    end
+  in
+  loop seq.prev
+
 let fold_l f seq acc =
   let rec loop curr acc =
     if curr == seq then

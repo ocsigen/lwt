@@ -51,14 +51,14 @@ type size = {
   columns : int;
 }
 
-val size : unit -> size
-  (** [size ()] returns the current size of the terminal. *)
+val size : size React.signal
+  (** Size of the terminal. *)
 
-val columns : unit -> int
-  (** [columns () = (size ()).columns] *)
+val columns : int React.signal
+  (** Number of columns of the terminal *)
 
-val lines : unit -> int
-  (** [lines () = (size ()).lines] *)
+val lines : int React.signal
+  (** Number of lines of the terminal *)
 
 (** {6 Keys} *)
 
