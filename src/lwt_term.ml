@@ -141,7 +141,7 @@ external sigwinch : unit -> int = "lwt_unix_sigwinch"
 
 let sigwinch_event =
   try
-    Lwt_unix.signal (sigwinch ())#event
+    (Lwt_unix.signal (sigwinch ()))#event
   with _ ->
     React.E.never
 

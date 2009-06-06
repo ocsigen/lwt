@@ -131,7 +131,7 @@ value lwt_signalfd_available()
 }
 
 #define FAKE(name)                              \
-  void lwt_signal_fd##name()                    \
+  void lwt_signalfd_##name()                    \
   {                                             \
     invalid_argument("not implmented");         \
   }
