@@ -36,10 +36,10 @@ type 'a t = {
   mutable contents : 'a option;
   (* Current contents *)
 
-  mutable writers : ('a * unit Lwt.t) Lwt_sequence.t;
+  mutable writers : ('a * unit Lwt.u) Lwt_sequence.t;
   (* Threads waiting to put a value *)
 
-  mutable readers : 'a Lwt.t Lwt_sequence.t;
+  mutable readers : 'a Lwt.u Lwt_sequence.t;
   (* Threads waiting for a value *)
 }
 
@@ -64,10 +64,10 @@ let put mvar v =
         end;
         return_unit
     | Some _ ->
-        let w = Lwt.task () in
+        let (res, w) = Lwt.task () in
         let node = Lwt_sequence.add_r (v, w) mvar.writers in
-        Lwt.on_cancel w (fun _ -> Lwt_sequence.remove node);
-        w
+        Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
+        res
 
 let take mvar =
   match mvar.contents with
@@ -81,7 +81,7 @@ let take mvar =
         end;
         Lwt.return v
     | None ->
-        let w = Lwt.task () in
+        let (res, w) = Lwt.task () in
         let node = Lwt_sequence.add_r w mvar.readers in
-        Lwt.on_cancel w (fun _ -> Lwt_sequence.remove node);
-        w
+        Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
+        res

@@ -95,7 +95,7 @@ and 'mode channel = {
   channel : 'mode _channel;
   (* The real channel *)
 
-  mutable queued : unit Lwt.t Lwt_sequence.t;
+  mutable queued : unit Lwt.u Lwt_sequence.t;
   (* Queued operations *)
 }
 
@@ -110,7 +110,7 @@ and 'mode _channel = {
   (* Position of the end of data int the buffer. It is equal to
      [length] for output channels. *)
 
-  abort : int Lwt.t;
+  abort : int Lwt.t * int Lwt.u;
   (* Thread which is wakeup with an exception when the channel is
      closed. *)
 
@@ -183,7 +183,7 @@ let perform_io ch = match ch.main.state with
             (size, ch.length - size)
         | Output ->
             (0, ch.ptr) in
-      lwt n = choose [ch.abort; lwt_unix_call (fun _ -> ch.perform_io ch.buffer ptr len)] in
+      lwt n = choose [fst ch.abort; lwt_unix_call (fun _ -> ch.perform_io ch.buffer ptr len)] in
       (* Never trust user functions... *)
       if n < 0 || n > len then
         fail (Failure (Printf.sprintf "Lwt_io: invalid result of the [%s] function(request=%d,result=%d)"
@@ -296,10 +296,10 @@ let primitive f wrapper = match wrapper.state with
         return ()
 
   | Busy_primitive | Busy_atomic _ ->
-      let w = task () in
+      let (res, w) = task () in
       let node = Lwt_sequence.add_r w wrapper.queued in
-      Lwt.on_cancel w (fun _ -> Lwt_sequence.remove node);
-      lwt () = w in
+      Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
+      lwt () = res in
       begin match wrapper.state with
         | Closed ->
             (* The channel has been closed while we were waiting *)
@@ -343,10 +343,10 @@ let atomic f wrapper = match wrapper.state with
         return ()
 
   | Busy_primitive | Busy_atomic _ ->
-      let w = task () in
+      let (res, w) = task () in
       let node = Lwt_sequence.add_r w wrapper.queued in
-      Lwt.on_cancel w (fun _ -> Lwt_sequence.remove node);
-      lwt () = w in
+      Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
+      lwt () = res in
       begin match wrapper.state with
         | Closed ->
             (* The channel has been closed while we were waiting *)
@@ -391,7 +391,7 @@ let rec abort wrapper = match wrapper.state with
       wrapper.state <- Closed;
       (* Abort any current real reading/writing operation on the
          channel: *)
-      wakeup_exn wrapper.channel.abort (closed_channel wrapper.channel);
+      wakeup_exn (snd wrapper.channel.abort) (closed_channel wrapper.channel);
       Lazy.force wrapper.channel.close
 
 let close wrapper = match wrapper.channel.mode with

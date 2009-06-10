@@ -34,11 +34,11 @@ open Lwt
 
 module Condition =
 struct
-  type 'a t = 'a Lwt.t Queue.t
+  type 'a t = 'a Lwt.u Queue.t
 
   let wait cvar =
-    let thread = Lwt.wait () in
-    Queue.add thread cvar;
+    let (thread, w) = Lwt.wait () in
+    Queue.add w cvar;
     thread
 
   let notify cvar arg =

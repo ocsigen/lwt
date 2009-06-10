@@ -34,7 +34,7 @@
        You should use [catch] instead. *)
 
 
-type 'a t
+type +'a t
       (** The type of threads returning a result of type ['a]. *)
 
 val return : 'a -> 'a t
@@ -112,17 +112,21 @@ val ignore_result : 'a t -> unit
           Note that if the thread [t] yields and later fails, the
           exception will not be raised at this point in the program. *)
 
-val wait : unit -> 'a t
-      (** [wait ()] is a thread which sleeps forever (unless it is
-          resumed by one of the functions [wakeup], [wakeup_exn] below).
+type 'a u
+      (** The type of thread wakeners. *)
+
+val wait : unit -> 'a t * 'a u
+      (** [wait ()] is a pair of a thread which sleeps forever (unless
+          it is resumed by one of the functions [wakeup], [wakeup_exn]
+          below) and the corresponding wakener.
           This thread does not block the execution of the remainder of
           the program (except of course, if another thread tries to
           wait for its termination). *)
 
-val wakeup : 'a t -> 'a -> unit
+val wakeup : 'a u -> 'a -> unit
       (** [wakeup t e] makes the sleeping thread [t] terminate and
          return the value of the expression [e]. *)
-val wakeup_exn : 'a t -> exn -> unit
+val wakeup_exn : 'a u -> exn -> unit
       (** [wakeup_exn t e] makes the sleeping thread [t] fail with the
          exception [e]. *)
 
@@ -147,7 +151,7 @@ val state : 'a t -> 'a state
 exception Canceled
   (** Canceled threads fails with this exception *)
 
-val task : unit -> 'a t
+val task : unit -> 'a t * 'a u
   (** [task ()] creates a sleeping thread that can be canceled using
       {!cancel} *)
 

@@ -31,7 +31,7 @@ open Lwt
 type sleep = {
   time : float;
   mutable canceled : bool;
-  thread : unit Lwt.t;
+  thread : unit Lwt.u;
 }
 
 module SleepQueue =
@@ -51,9 +51,9 @@ let sleep_queue = ref SleepQueue.empty
 let new_sleeps = ref []
 
 let sleep d =
-  let res = Lwt.task () in
+  let (res, w) = Lwt.task () in
   let t = if d <= 0. then 0. else Unix.gettimeofday () +. d in
-  let sleeper = { time = t; canceled = false; thread = res } in
+  let sleeper = { time = t; canceled = false; thread = w } in
   new_sleeps := sleeper :: !new_sleeps;
   Lwt.on_cancel res (fun _ -> sleeper.canceled <- true);
   res
@@ -190,9 +190,10 @@ let rec retry_syscall set ch cont action =
         ignore (Lwt_sequence.add_r (fun _ -> retry_syscall set ch cont action) (get_actions ch set))
 
 let register_action set ch action =
-  let res = Lwt.task () in
+  let (res, w) = Lwt.task () in
   let actions = get_actions ch set in
-  let node = Lwt_sequence.add_r (fun _ -> retry_syscall set ch res action) actions in
+  let node =
+    Lwt_sequence.add_r (fun _ -> retry_syscall set ch w action) actions in
   (* Unregister the action on cancel: *)
   Lwt.on_cancel res begin fun _ ->
     Lwt_sequence.remove node;
@@ -548,8 +549,8 @@ let waitpid flags pid =
       return res
     else begin
       ignore (Lazy.force init_wait_pid);
-      let res = Lwt.task () in
-      let node = Lwt_sequence.add_l (res, flags, pid) wait_children in
+      let (res, w) = Lwt.task () in
+      let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
       Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
       res
     end

@@ -24,6 +24,9 @@
 
 exception Canceled
 
+type +'a t
+type -'a u
+
 (* Reason for a thread to be a sleeping thread: *)
 type sleep_reason =
   | Task
@@ -49,19 +52,25 @@ and 'a thread_state =
          - [sleep_reason] is the reason why the thread is sleeping
          - [waiters] is the list of waiters, which are thunk functions
       *)
-  | Repr of 'a t
+  | Repr of 'a thread_repr
       (* [Repr t] a thread which behaves the same as [t] *)
 
-and 'a t = 'a thread_state ref
+and 'a thread_repr = 'a thread_state ref
+
+external thread_repr : 'a t -> 'a thread_repr = "%identity"
+external thread : 'a thread_repr -> 'a t = "%identity"
+external wakener : 'a thread_repr -> 'a u = "%identity"
+external wakener_repr : 'a u -> 'a thread_repr = "%identity"
 
 (* Returns the represent of a thread, updating non-direct references: *)
-let rec repr t =
+let rec repr_rec t =
   match !t with
-    | Repr t' -> let t'' = repr t' in if t'' != t' then t := Repr t''; t''
+    | Repr t' -> let t'' = repr_rec t' in if t'' != t' then t := Repr t''; t''
     | _       -> t
+let repr t = repr_rec (thread_repr t)
 
 let run_waiters waiters t =
-  Lwt_sequence.iter_l (fun f -> f t) waiters
+  Lwt_sequence.iter_l (fun f -> f (thread t)) waiters
 
 (* Restarts a sleeping thread [t]:
 
@@ -69,7 +78,7 @@ let run_waiters waiters t =
    - set his state to the terminated state [state]
 *)
 let restart t state caller =
-  let t = repr t in
+  let t = repr_rec (wakener_repr t) in
   match !t with
     | Sleep((Wait | Task), waiters) ->
         t := state;
@@ -86,7 +95,7 @@ let wakeup_exn t e = restart t (Fail e) "wakeup_exn"
 let cancel t =
   match !(repr t) with
     | Sleep(Task, _) ->
-        wakeup_exn t Canceled
+        wakeup_exn (wakener (thread_repr t)) Canceled
     | Sleep(Temp f, _) ->
         f ()
     | _ ->
@@ -122,18 +131,20 @@ let rec connect t1 t2 =
         (* [t1] is not asleep: *)
         invalid_arg "connect"
 
+let return v = thread (ref (Return v))
+let fail e = thread (ref (Fail e))
+let temp f = thread (ref (Sleep(Temp f, Lwt_sequence.create ())))
+let wait _ =
+  let t = ref (Sleep(Wait, Lwt_sequence.create ())) in (thread t, wakener t)
+let task _ =
+  let t = ref (Sleep(Task, Lwt_sequence.create ())) in (thread t, wakener t)
+
 (* apply function, reifying explicit exceptions into the thread type
    apply: ('a -(exn)-> 'b t) -> ('a -(n)-> 'b t)
    semantically a natural transformation TE -> T, where T is the thread
    monad, which is layered over exception monad E.
 *)
-let apply f x = try f x with e -> ref (Fail e)
-
-let return v = ref (Return v)
-let fail e = ref (Fail e)
-let temp f = ref (Sleep(Temp f, Lwt_sequence.create ()))
-let wait _ = ref (Sleep(Wait, Lwt_sequence.create ()))
-let task _ = ref (Sleep(Task, Lwt_sequence.create ()))
+let apply f x = try f x with e -> fail e
 
 let new_waiter waiters f =
   Lwt_sequence.add_r f waiters
@@ -235,7 +246,7 @@ let rec nth_ready l n =
           | _ when n > 0 ->
               nth_ready rem (n - 1)
           | _ ->
-              x
+              thread x
 
 let ready_count l =
   List.fold_left (fun acc x -> match !(repr x) with Sleep _ -> acc | _ -> acc + 1) 0 l
@@ -309,7 +320,7 @@ let join l =
   let rec bind_sleepers = function
     | [] ->
         (* If no thread is sleeping, returns now: *)
-        if !sleeping = 0 then res := Return ();
+        if !sleeping = 0 then thread_repr res := Return ();
         res
     | t :: l -> match !(repr t) with
         | Fail exn ->

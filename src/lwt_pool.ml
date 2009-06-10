@@ -32,7 +32,7 @@ type 'a t =
     max : int;
     mutable count : int;
     list : 'a Queue.t;
-    waiters : 'a Lwt.t Queue.t }
+    waiters : 'a Lwt.u Queue.t }
 
 let create m ?(check = fun _ f -> f true) create =
   { max = m;
@@ -59,8 +59,8 @@ let acquire p =
     if p.count < p.max then
       create_member p
     else begin
-      let r = wait () in
-      Queue.push r p.waiters;
+      let (r, w) = wait () in
+      Queue.push w p.waiters;
       r
     end
 

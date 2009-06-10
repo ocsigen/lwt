@@ -89,7 +89,7 @@ let join = Lwt.join
 type region =
   { mutable size : int;
     mutable count : int;
-    waiters : (unit Lwt.t * int) Queue.t }
+    waiters : (unit Lwt.u * int) Queue.t }
 
 let make_region count = { size = count; count = 0; waiters = Queue.create () }
 
@@ -111,8 +111,8 @@ let run_in_region_1 reg sz thr =
 
 let run_in_region reg sz thr =
   if reg.count >= reg.size then begin
-    let res = wait () in
-    Queue.add (res, sz) reg.waiters;
+    let (res, w) = wait () in
+    Queue.add (w, sz) reg.waiters;
     res >>= (fun () -> run_in_region_1 reg sz thr)
   end else begin
     reg.count <- reg.count + sz;

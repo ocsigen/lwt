@@ -83,10 +83,10 @@ type thread = {
 let workers : thread Queue.t = Queue.create ()
 
 (* Queue of clients waiting for a worker to be available: *)
-let waiters : thread Lwt.t Lwt_sequence.t = Lwt_sequence.create ()
+let waiters : thread Lwt.u Lwt_sequence.t = Lwt_sequence.create ()
 
 (* Mapping from thread ids to client lwt-thread: *)
-let clients : (int, unit Lwt.t) Hashtbl.t = Hashtbl.create 16
+let clients : (int, unit Lwt.u) Hashtbl.t = Hashtbl.create 16
 
 (* Code executed by a worker: *)
 let rec worker_loop worker =
@@ -129,10 +129,10 @@ let rec get_worker _ =
   else if !threads_count < !max_threads then
     return (make_worker ())
   else begin
-    let w = Lwt.task () in
+    let (res, w) = Lwt.task () in
     let node = Lwt_sequence.add_r w waiters in
-    Lwt.on_cancel w (fun _ -> Lwt_sequence.remove node);
-    w
+    Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
+    res
   end
 
 (* +-----------------------------------------------------------------+
@@ -223,13 +223,14 @@ let detach f args =
       result := `Failure exn
   in
   lwt worker = get_worker () in
-  let w =  Lwt.wait () in
+  let (res, w) =  Lwt.wait () in
   Hashtbl.add clients (Thread.id worker.thread) w;
   (* Send the task to the worker: *)
   Event.sync (Event.send worker.task_channel task);
   try_lwt
     (* Wait for notification of the dispatcher: *)
-    w >> match !result with
+    res >>
+      match !result with
       | `Nothing ->
           fail (Failure "Lwt_preemptive.detach")
       | `Success v ->
