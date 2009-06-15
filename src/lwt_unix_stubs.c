@@ -26,6 +26,8 @@
 #include <caml/memory.h>
 #include <caml/unixsupport.h>
 
+#include "config.h"
+
 /* +-----------------------------------------------------------------+
    | Read/write                                                      |
    +-----------------------------------------------------------------+ */
@@ -65,11 +67,10 @@ value lwt_unix_read(value fd, value buf, value ofs, value len)
    signals.
 */
 
+#ifdef HAVE_SIGNALFD
+
 #include <signal.h>
 #include <sys/signalfd.h>
-
-/* This test whether the previous include was successfull... */
-#ifdef _SYS_SIGNALFD_H
 
 CAMLextern int caml_convert_signal_number (int);
 CAMLextern int caml_rev_convert_signal_number (int);

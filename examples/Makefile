@@ -26,31 +26,27 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-include ../utils/utils.mk
+# Tools
+OCAMLFIND := ocamlfind
+OCAMLBUILD := ocamlbuild
 
-HAVE_LWT := $(call have_package,lwt)
-HAVE_LWT_GLIB := $(call have_package,lwt.glib)
-HAVE_LWT_TEXT := $(call have_package,lwt.text)
-
-ifeq ($(HAVE_LWT),)
-  $(error You need to install Lwt before compiling examples!)
+# Use classic-display when compiling under a terminal which does not
+# support ANSI sequence:
+ifeq ($(TERM),dumb)
+OCAMLBUILD += -classic-display
 endif
 
-EXAMPLES := relay start_editor show_keys $(if $(HAVE_LWT_TEXT),parallelize) $(if $(HAVE_LWT_GLIB),ex_gtk)
-EXAMPLES_BYTE := $(patsubst %,%.byte,$(EXAMPLES))
-EXAMPLES_NATIVE := $(patsubst %,%.native,$(EXAMPLES))
-
 best:
-	$(OCAMLBUILD) $(if $(HAVE_NATIVE),$(EXAMPLES_NATIVE),$(EXAMPLES_BYTE))
+	$(OCAMLBUILD) best
 
 all:
-	$(OCAMLBUILD) $(EXAMPLES_BYTE) $(EXAMPLES_NATIVE)
+	$(OCAMLBUILD) all
 
 byte:
-	$(OCAMLBUILD) $(EXAMPLES_BYTE)
+	$(OCAMLBUILD) byte
 
 native:
-	$(OCAMLBUILD) $(EXAMPLES_NATIVE)
+	$(OCAMLBUILD) native
 
 clean:
 	$(OCAMLBUILD) -clean

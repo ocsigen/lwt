@@ -21,55 +21,39 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 # 02111-1307, USA.
 
-include utils/utils.mk
-
 # +------------------------------------------------------------------+
 # | Configuration                                                    |
 # +------------------------------------------------------------------+
+
+# Tools
+OCAMLFIND := ocamlfind
+OCAMLBUILD := ocamlbuild
+
+# Use classic-display when compiling under a terminal which does not
+# support ANSI sequence:
+ifeq ($(TERM),dumb)
+OCAMLBUILD += -classic-display
+endif
 
 # General project parameters:
 NAME := lwt
 VERSION := $(shell head -n 1 VERSION)
 DESTDIR := $(shell $(OCAMLFIND) printconf destdir)
 
-# Context dependent options:
-HAVE_THREADS := $(call have_package,threads)
-HAVE_SSL := $(call have_package,ssl)
-HAVE_GLIB := $(and $(call have_package,lablgtk2),$(call exec,pkg-config glib-2.0))
-HAVE_TEXT:= $(call have_package,text)
-
 DOC := lwt.docdir/index.html
-
-# Libraries to build:
-LIBRARIES := lwt \
-	$(if $(HAVE_THREADS),lwt_preemptive lwt_extra) \
-	$(if $(HAVE_SSL),lwt_ssl) \
-	$(if $(HAVE_GLIB),lwt_glib) \
-	$(if $(HAVE_TEXT),lwt_text lwt_top) \
-	simple_top
-
-ARCHIVES_BYTE := $(patsubst %,src/%.cma,$(LIBRARIES)) syntax/pa_lwt.cmo
-ARCHIVES_NATIVE := $(patsubst %,src/%.cmxa,$(LIBRARIES))
 
 # +------------------------------------------------------------------+
 # | Rules                                                            |
 # +------------------------------------------------------------------+
 
 all:
-	$(info +--[ compilation options ]----------+)
-	$(info | native compilation:           $(call yes_no,$(HAVE_NATIVE) ) |)
-	$(info | preemptive threads support:   $(call yes_no,$(HAVE_THREADS)) |)
-	$(info | ssl support:                  $(call yes_no,$(HAVE_SSL)    ) |)
-	$(info | glib support:                 $(call yes_no,$(HAVE_GLIB)   ) |)
-	$(info | text support:                 $(call yes_no,$(HAVE_TEXT)   ) |)
-	$(info +-----------------------------------+)
-	$(OCAMLBUILD) META $(ARCHIVES_BYTE) $(if $(HAVE_NATIVE),$(ARCHIVES_NATIVE)) $(DOC)
+	$(OCAMLBUILD) all
 
 byte:
-	$(OCAMLBUILD) META $(ARCHIVES_BYTE)
+	$(OCAMLBUILD) byte
 
 native:
-	$(OCAMLBUILD) META $(ARCHIVES_NATIVE)
+	$(OCAMLBUILD) native
 
 opt: native
 

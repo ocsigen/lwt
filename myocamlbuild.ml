@@ -25,16 +25,40 @@
 open Printf
 open Ocamlbuild_plugin
 
-(* List of syntax extensions used internally. It is a list of:
+(* +-----------------------------------------------------------------+
+   | Configuration                                                   |
+   +-----------------------------------------------------------------+ *)
 
-   (tag, byte-code-file)
+let try_exec command =
+  try
+    let _ = run_and_read command in
+    true
+  with _ ->
+    false
 
-   - tag is the tag that must be used inside the source tree (in _tags
-   files) in order to have file preprocessed with the given syntax extension
+let () =
+  if not (try_exec "ocamlfind printconf") then begin
+    prerr_endline "ocamlfind is not available, please install it";
+    exit 1
+  end
 
-   - byte-code-file is the byte-code for the syntax extension
-*)
-let intern_syntaxes = [ ("pa_lwt", "syntax/pa_lwt.cmo") ]
+let have_native = try_exec "ocamlfind ocamlopt -version"
+let have_threads = try_exec "ocamlfind query threads"
+let have_ssl = try_exec "ocamlfind query ssl"
+let have_glib = try_exec "ocamlfind query lablgtk2" && try_exec "pkg-config glib-2.0"
+let have_text = try_exec "ocamlfind query text"
+
+let () =
+  let yes_no = function true -> "yes" | false -> "no" in
+  printf "\
++--[ compilation options ]----------+
+| native compilation:           %3s |
+| preemptive threads support:   %3s |
+| ssl support:                  %3s |
+| glib support:                 %3s |
+| text support:                 %3s |
++-----------------------------------+
+%!" (yes_no have_native) (yes_no have_threads) (yes_no have_ssl) (yes_no have_glib) (yes_no have_text)
 
 (* +-----------------------------------------------------------------+
    | Ocamlfind                                                       |
@@ -106,20 +130,11 @@ let get_version _ =
    | C stubs                                                         |
    +-----------------------------------------------------------------+ *)
 
-let pkg_config =
-  let binary = lazy
-    (try
-       Command.search_in_path "pkg-config"
-     with
-         Not_found ->
-           failwith "The program ``pkg-config'' is required but not found, please intall it")
-  in
-  fun flags package ->
-    let binary = Lazy.force binary in
-    with_temp_file "lwt" "pkg-config"
-      (fun tmp ->
-         Command.execute ~quiet:true & Cmd(S[A binary; A("--" ^ flags); A package; Sh ">"; A tmp]);
-         List.map (fun arg -> A arg) (string_list_of_file tmp))
+let pkg_config flags package =
+  with_temp_file "lwt" "pkg-config"
+    (fun tmp ->
+       Command.execute ~quiet:true & Cmd(S[A "pkg-config"; A("--" ^ flags); A package; Sh ">"; A tmp]);
+       List.map (fun arg -> A arg) (string_list_of_file tmp))
 
 let define_stubs name =
   let tag = sprintf "use_%s_stubs" name in
@@ -163,6 +178,29 @@ let _ =
         Pathname.define_context "src/private" [ "src" ];
 
         (* +---------------------------------------------------------+
+           | Virtual targets                                         |
+           +---------------------------------------------------------+ *)
+
+        let libs = "lwt" :: "simple_top" :: List.concat
+          (List.map snd
+             (List.filter fst
+                [(have_threads, ["lwt_preemptive"; "lwt_extra"]);
+                 (have_ssl, ["lwt_ssl"]);
+                 (have_glib, ["lwt_glib"]);
+                 (have_text, ["lwt_text"; "lwt_top"])])) in
+
+        let byte = "syntax/pa_lwt.cmo" :: List.map (sprintf "src/%s.cma") libs
+        and native = List.map (sprintf "src/%s.cmxa") libs in
+
+        let virtual_rule name deps =
+          rule name ~stamp:name ~deps (fun _ _ -> Nop)
+        in
+
+        virtual_rule "all" & "META" :: if have_native then byte @ native else byte;
+        virtual_rule "byte" & "META" :: byte;
+        virtual_rule "native" & "META" :: native;
+
+        (* +---------------------------------------------------------+
            | Internal syntaxes                                       |
            +---------------------------------------------------------+ *)
 
@@ -173,7 +211,7 @@ let _ =
 
              (* Make them depends on the syntax extension *)
              dep ["ocaml"; "ocamldep"; tag] [file])
-          intern_syntaxes;
+          [("pa_lwt", "syntax/pa_lwt.cmo")];
 
         (* +---------------------------------------------------------+
            | Ocamlfind stuff                                         |
@@ -200,54 +238,20 @@ let _ =
            +---------------------------------------------------------+ *)
 
         define_stubs "unix";
-        define_stubs "glib";
-        define_c_library ~name:"glib" ~c_name:"glib-2.0";
 
-        (* +---------------------------------------------------------+
-           | C stubs for Lwt_glib                                    |
-           +---------------------------------------------------------+ *)
+        if have_glib then begin
+          define_stubs "glib";
+          define_c_library ~name:"glib" ~c_name:"glib-2.0"
+        end;
 
-        (* Search 'pkg-config': *)
-        let pkg_config = try
-          Command.search_in_path "pkg-config"
-        with
-            Not_found ->
-              failwith "The program ``pkg-config'' is required but not found, please intall it"
-        in
-        let get_args cmd =
-          with_temp_file "ocaml-usb" "pkg-config"
-            (fun tmp ->
-               Command.execute ~quiet:true & Cmd(S[cmd; Sh ">"; A tmp]);
-               List.map (fun arg -> A arg) (string_list_of_file tmp))
-        in
-
-        (* Get flags for glib-2.0 using pkg-config: *)
-        let usb_opt = get_args & S[A pkg_config; A"--cflags"; A"glib-2.0"]
-        and usb_lib = get_args & S[A pkg_config; A"--libs"; A"glib-2.0"] in
-
-        (* Dependency for automatic compliation of C stubs: *)
-        dep ["link"; "ocaml"; "use_glib_stubs"] ["src/liblwt_glib_stubs.a"];
-
-        (* Link code using glib C stubs with '-llwt_glib_stubs': *)
-        flag ["link"; "library"; "ocaml"; "use_glib_stubs"] & S[A"-cclib"; A"-llwt_glib_stubs"];
-
-        (* For libraries add also a '-dllib' option for automatic
-           addition of '-cclib -llwt_glib_stubs' when using the
-           library: *)
-        flag ["link"; "library"; "ocaml"; "byte"; "use_glib_stubs"] & S[A"-dllib"; A"-llwt_glib_stubs"];
-
-        (* Add flags for linking with the C library libusb: *)
-        flag ["ocamlmklib"; "c"; "use_libusb"] & S usb_lib;
-
-        let ccopt = S(List.map (fun arg -> S[A"-ccopt"; arg]) usb_opt)
-        and cclib = S(List.map (fun arg -> S[A"-cclib"; arg]) usb_lib) in
-
-        (* C stubs using libusb must be compiled with libusb specifics
-           flags: *)
-        flag ["c"; "compile"; "use_C_glib"] & ccopt;
-
-        (* OCaml llibraries must depends on the C library libusb: *)
-        flag ["link"; "ocaml"; "use_C_glib"] & cclib;
+        dep ["use_config_h"] ["src/config.h"];
+        rule "config.h" ~prod:"src/config.h"
+          (fun _ _ ->
+             Echo((if try_exec "echo '#include <sys/signalfd.h>' | cpp" then
+                     ["#define HAVE_SIGNALFD 1\n"]
+                   else
+                     []),
+                  "src/config.h"));
 
         (* +---------------------------------------------------------+
            | Other                                                   |

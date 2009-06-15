@@ -25,9 +25,30 @@
 open Printf
 open Ocamlbuild_plugin
 
-(* +-----------+
-   | Ocamlfind |
-   +-----------+ *)
+(* +-----------------------------------------------------------------+
+   | Configuration                                                   |
+   +-----------------------------------------------------------------+ *)
+
+let try_exec command =
+  try
+    let _ = run_and_read command in
+    true
+  with _ ->
+    false
+
+let () =
+  if not (try_exec "ocamlfind printconf") then begin
+    prerr_endline "ocamlfind is not available, please install it";
+    exit 1
+  end
+
+let have_native = try_exec "ocamlfind ocamlopt -version"
+let have_lwt_glib = try_exec "ocamlfind query lwt.glib"
+let have_lwt_text = try_exec "ocamlfind query lwt.text"
+
+(* +-----------------------------------------------------------------+
+   | Ocamlfind                                                       |
+   +-----------------------------------------------------------------+ *)
 
 (* Packages we want to use: *)
 let packages = [
@@ -46,9 +67,9 @@ let packages = [
 (* List of syntaxes: *)
 let syntaxes = [ "camlp4o"; "camlp4r" ]
 
-(* +-------+
-   | Utils |
-   +-------+ *)
+(* +-----------------------------------------------------------------+
+   | Utils                                                           |
+   +-----------------------------------------------------------------+ *)
 
 (* Given the tag [tag] add the command line options [f] to all stages
    of compilatiopn but linking *)
@@ -76,9 +97,30 @@ let _ =
 
     | After_rules ->
 
-        (* +-----------------+
-           | Ocamlfind stuff |
-           +-----------------+ *)
+        (* +---------------------------------------------------------+
+           | Virtual targets                                         |
+           +---------------------------------------------------------+ *)
+
+        let examples = "parallelize" :: "relay" :: "start_editor" :: List.concat
+          (List.map snd
+             (List.filter fst
+                [(have_lwt_glib, ["ex_gtk"]);
+                 (have_lwt_text, ["show_keys"])])) in
+
+        let byte = List.map (sprintf "%s.byte") examples
+        and native = List.map (sprintf "%s.native") examples in
+
+        let virtual_rule name deps =
+          rule name ~stamp:name ~deps (fun _ _ -> Nop)
+        in
+
+        virtual_rule "best" & if have_native then native else byte;
+        virtual_rule "byte" & byte;
+        virtual_rule "native" & native;
+
+        (* +---------------------------------------------------------+
+           | Ocamlfind stuff                                         |
+           +---------------------------------------------------------+ *)
 
         (* When one link an OCaml binary, one should use -linkpkg *)
         flag ["ocaml"; "link"; "program"] & A"-linkpkg";
