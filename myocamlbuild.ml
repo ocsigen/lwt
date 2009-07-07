@@ -90,6 +90,8 @@ let packages = [
   "lablgtk2";
   "text";
   "react";
+  "findlib";
+  "str";
 ]
 
 (* List of syntaxes *)

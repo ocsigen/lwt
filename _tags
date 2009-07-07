@@ -8,7 +8,9 @@
 <src/lwt_ssl.ml*>: pkg_ssl
 <src/lwt_glib.ml*>: pkg_lablgtk2
 <src/*.ml*>: pkg_unix, pkg_react
-<src/lwt_{text,term,read_line,top}.ml*>: pkg_text
+<src/lwt_{text,term,read_line,top,ocaml_completion}.ml*>: pkg_text
+<src/lwt_top.ml>: pkg_findlib
+<src/lwt_ocaml_completion.ml>: pkg_findlib
 
 # +------------------------------------------------------------------+
 # | Syntax extensions                                                |

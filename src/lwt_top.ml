@@ -33,48 +33,18 @@ open Lwt_term
    | Completion                                                      |
    +-----------------------------------------------------------------+ *)
 
-let keywords = [
-  "and"; "as"; "assert"; "begin"; "class"; "constraint"; "do";
-  "done"; "downto"; "else"; "end"; "exception"; "external"; "false";
-  "fo"; "fun"; "function"; "functo"; "if"; "in"; "include";
-  "inherit"; "initialize"; "lazy"; "let"; "match"; "method"; "module";
-  "mutable"; "new"; "object";  "of";  "open"; "private";  "rec"; "sig";
-  "struct";  "then";  "to";  "true";  "try";  "type";  "val"; "virtual";
-  "when"; "while"; "with"; "try_lwt"; "finally";
-]
-
-let split_last_word txt =
-  let rec aux ptr =
-    match Text.prev ptr with
-      | None ->
-          ("", txt)
-      | Some(ch, ptr') ->
-          if Text.is_alnum ch || ch = "_" || ch = "'" || ch = "." then
-            aux ptr'
-          else
-            (Text.chunk (Text.pointer_l txt) ptr, Text.chunk ptr (Text.pointer_r txt))
-  in
-  aux (Text.pointer_r txt)
-
-let get_directive txt =
-  let txt = Text.strip txt in
-  if txt <> "" && Text.get txt 0 = "#" then
-    let txt = Text.lchop txt in
-    if Text.for_all (fun ch -> Text.is_alnum ch || ch = "_" || ch = "'" || ch = ".") txt then
-      Some txt
+let complete state =
+  (* Find a fixpoint of completion *)
+  let rec loop comp =
+    let (before, after) = comp.Lwt_read_line.comp_state in
+    lwt comp' = Lwt_ocaml_completion.complete_input before after (Lexing.from_string before) in
+    if comp <> comp' then
+      loop comp'
     else
-      None
-  else
-    None
-
-let complete (before, after) =
-  let before', word = split_last_word before in
-  return (Lwt_read_line.complete before' word after
-            (match get_directive before with
-               | Some dir ->
-                   Hashtbl.fold (fun k v l -> k :: l) Toploop.directive_table []
-               | None ->
-                   keywords))
+      return comp
+  in
+  loop { Lwt_read_line.comp_state = state;
+         Lwt_read_line.comp_words = [] }
 
 (* +-----------------------------------------------------------------+
    | Read-line wrapper                                               |
