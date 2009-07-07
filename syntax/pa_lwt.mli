@@ -120,4 +120,28 @@
 
     The construction [try_lwt <expr>] just catch regular exception
     into lwt exception. i.e. it is the same as [catch (fun _ -> <expr>) fail].
+
+    - for loop:
+
+      {[
+        for_lwt i = <expr> to <expr> do
+          <expr>
+        done
+      ]}
+
+    and:
+
+      {[
+        for_lwt i = <expr> downto <expr> do
+          <expr>
+        done
+      ]}
+
+    - iteration over streams:
+
+      {[
+        for_lwt <patt> in <expr> do
+          <expr>
+        done
+      ]}
 *)

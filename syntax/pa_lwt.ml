@@ -99,6 +99,28 @@ EXTEND Gram
             end
         | "lwt"; l = letb_binding; "in"; e = expr LEVEL ";" ->
             <:expr< let $gen_binding l$ in $gen_bind l e$ >>
+        | "for_lwt"; id = a_LIDENT; "="; s = sequence; "to"; e = sequence; "do"; seq = do_sequence ->
+            <:expr< let __pa_lwt_max = $e$ in
+                    let rec __pa_lwt_loop $lid:id$ =
+                      if $lid:id$ > __pa_lwt_max then
+                        Lwt.return ()
+                      else
+                        Lwt.bind (begin $seq$ end) (fun () -> __pa_lwt_loop ($lid:id$ + 1))
+                    in
+                    __pa_lwt_loop $s$
+            >>
+        | "for_lwt"; id = a_LIDENT; "="; s = sequence; "downto"; e = sequence; "do"; seq = do_sequence ->
+            <:expr< let __pa_lwt_min = $e$ in
+                    let rec __pa_lwt_loop $lid:id$ =
+                      if $lid:id$ < __pa_lwt_min then
+                        Lwt.return ()
+                      else
+                        Lwt.bind (begin $seq$ end) (fun () -> __pa_lwt_loop ($lid:id$ - 1))
+                    in
+                    __pa_lwt_loop $s$
+            >>
+        | "for_lwt"; p = patt; "in"; e = sequence; "do"; seq = do_sequence ->
+            <:expr< Lwt_stream.iter (fun $p$ -> $seq$) $e$ >>
         ] ];
 END
 
