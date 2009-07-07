@@ -39,10 +39,13 @@ type prompt = Lwt_term.styled_text
 (** {8 Completion} *)
 
 (** Result of a completion function: *)
-type completion_result =
-  | No_completion
-  | Complete_with of edition_state
-  | Possibilities of Text.t list
+type completion_result = {
+  comp_state : edition_state;
+  (** The new edition state *)
+
+  comp_words : Text.t list;
+  (** A list of possibilities *)
+}
 
 type completion = edition_state -> completion_result Lwt.t
       (** Type of a completion function. It takes as argument the
@@ -52,10 +55,19 @@ type completion = edition_state -> completion_result Lwt.t
           cancelled using {!Lwt.cancel} if the user continue typing
           text. *)
 
-val complete : Text.t -> Text.t -> Text.t -> Text.t list -> completion_result
-  (** [complete before word after words] basic completion
+val lookup : Text.t -> Text.t list -> (Text.t * Text.t list)
+  (** [lookup word words] lookup for completion of [word] into
+      [words]. It returns [(prefix, possibilities)] where
+      [possibilities] are all words starting with [word] and [prefix]
+      is the longest common prefix of [words]. *)
+
+val complete : ?suffix : Text.t -> Text.t -> Text.t -> Text.t -> Text.t list -> completion_result
+  (** [complete ?suffix before word after words] basic completion
       functions. [words] is a list of possible completions for
-      [word]. *)
+      [word].
+
+      If completion succeed [suffix] is append to the resulting
+      text. It defaults to [" "]. *)
 
 val print_words : Lwt_text.output_channel -> int -> string list -> unit Lwt.t
   (** [print_words oc columns strs] pretty-prints a list of words. *)

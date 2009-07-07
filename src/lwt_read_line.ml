@@ -37,10 +37,10 @@ exception Interrupt
    | Completion                                                      |
    +-----------------------------------------------------------------+ *)
 
-type completion_result =
-  | No_completion
-  | Complete_with of edition_state
-  | Possibilities of Text.t list
+type completion_result = {
+  comp_state : edition_state;
+  comp_words : Text.t list;
+}
 
 type completion = edition_state -> completion_result Lwt.t
 
@@ -54,18 +54,22 @@ let common_prefix a b =
   in
   loop 0
 
-let complete before word after words =
+let lookup word words =
   match List.filter (fun word' -> Text.starts_with word' word) words with
     | [] ->
-        No_completion
-    | [word] ->
-        Complete_with(before ^ word ^ " ", after)
-    | word :: words ->
-        let common_prefix = List.fold_left common_prefix word words in
-        if String.length common_prefix > String.length word then
-          Complete_with(before ^ common_prefix, after)
-        else
-          Possibilities(List.sort compare (word :: words))
+        ("", [])
+    | (head :: tail) as l ->
+        (List.fold_left common_prefix head tail, l)
+
+let complete ?(suffix=" ") before word after words =
+  match lookup word words with
+    | (_, []) ->
+        { comp_state = (before ^ word, after); comp_words = [] }
+    | (_, [word]) ->
+        { comp_state = (before ^ word ^ suffix, after); comp_words = [] }
+    | (prefix, words) ->
+        { comp_state = (before ^ prefix, after);
+          comp_words = List.sort compare words }
 
 (* +-----------------------------------------------------------------+
    | Commands                                                        |
@@ -338,24 +342,49 @@ let rec repeat f n =
   else
     f () >> repeat f (n - 1)
 
-let print_words oc cols words =
-  let width = List.fold_left (fun x word -> max x (Text.length word)) 0 words + 1 in
-  let columns = max 1 (cols / width) in
-  let column_width = cols / columns in
-  Lwt_util.fold_left
-    (fun column word ->
-       write oc word >>
-         if column < columns then
-           let len = Text.length word in
-           if len < column_width then
-             repeat (fun _ -> write_char oc " ") (column_width - len) >> return (column + 1)
-           else
-             return (column + 1)
-         else
-           write oc "\n" >> return 0)
-    0 words >>= function
-      | 0 -> return ()
-      | _ -> write oc "\n"
+
+let print_words oc screen_width words = match List.filter ((<>) "") words with
+  | [] ->
+      return ()
+  | words ->
+      let max_width = List.fold_left (fun x word -> max x (Text.length word)) 0 words + 1 in
+      let count = List.length words in
+      let columns = max 1 (screen_width / max_width) in
+      let lines =
+        if count < columns then
+          1
+        else
+          let l = count / columns in
+          if columns mod count = 0 then l else l + 1
+      in
+      let column_width = screen_width / columns in
+      let m = Array.make_matrix lines columns "" in
+      let rec fill_display line column = function
+        | [] ->
+            ()
+        | word :: words ->
+            m.(line).(column) <- word;
+            let line = line + 1 in
+            if line < lines then
+              fill_display line column words
+            else
+              fill_display 0 (column + 1) words
+      in
+      fill_display 0 0 words;
+      for_lwt line = 0 to lines - 1 do
+        lwt () =
+          for_lwt column = 0 to columns - 1 do
+            let word = m.(line).(column) in
+            lwt () = write oc word in
+            let len = Text.length word in
+            if len < column_width then
+              repeat (fun _ -> write_char oc " ") (column_width - len)
+            else
+              return ()
+          done
+        in
+        write_char oc "\n"
+      done
 
 module Terminal =
 struct
@@ -495,7 +524,7 @@ open Command
 
 let read_command () = read_key () >|= Command.of_key
 
-let read_line ?(history=[]) ?(complete=fun _ -> return No_completion) ?(clipboard=clipboard) prompt =
+let read_line ?(history=[]) ?(complete=fun state -> return { comp_state = state; comp_words = [] }) ?(clipboard=clipboard) prompt =
   let rec process_command render_state engine_state = function
     | Clear_screen ->
         clear_screen () >> redraw Terminal.init engine_state
@@ -523,18 +552,17 @@ let read_line ?(history=[]) ?(complete=fun _ -> return No_completion) ?(clipboar
               (* The user continued to type, drop completion: *)
               Lwt.cancel t_complete;
               process_command render_state engine_state command
-          | `Completion No_completion ->
-              t_command >>= process_command render_state engine_state
-          | `Completion(Complete_with(before, after)) ->
+          | `Completion{ comp_state = (before, after); comp_words = [] } ->
               let engine_state = { engine_state with Engine.mode = Engine.Edition(before, after) } in
               lwt render_state = Terminal.draw render_state engine_state prompt in
               t_command >>= process_command render_state engine_state
-          | `Completion(Possibilities words) ->
-                write_char stdout "\n"
-                >> print_words stdout (React.S.value Lwt_term.columns) words
-                >> write_char stdout "\n"
-                >> (lwt render_state = Terminal.draw render_state engine_state prompt in
-                    t_command >>= process_command render_state engine_state)
+          | `Completion{ comp_state = (before, after); comp_words = words } ->
+              let engine_state = { engine_state with Engine.mode = Engine.Edition(before, after) } in
+              lwt () = write_char stdout "\n" in
+              lwt () = print_words stdout (React.S.value Lwt_term.columns) words in
+              lwt () = write_char stdout "\n" in
+              lwt render_state = Terminal.draw render_state engine_state prompt in
+              t_command >>= process_command render_state engine_state
           end
 
       | cmd ->
