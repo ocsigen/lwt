@@ -11,6 +11,8 @@
 <src/lwt_{text,term,read_line,top,ocaml_completion}.ml*>: pkg_text
 <src/lwt_top.ml>: pkg_findlib
 <src/lwt_ocaml_completion.ml>: pkg_findlib
+<src/toplevel.ml>: use_compiler_libs
+<src/toplevel.*>: pkg_unix, pkg_findlib, pkg_react, pkg_text
 
 # +------------------------------------------------------------------+
 # | Syntax extensions                                                |

@@ -8,6 +8,7 @@
 
 (* Use topfind, this is the minimum: *)
 #use "topfind";;
+(* Note: if you use lwt/toplevel.byte, you should remove this line *)
 
 (* Syntax to use, you can replace that with #camlp4r if you prefer
    revised syntax: *)

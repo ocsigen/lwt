@@ -48,6 +48,25 @@ let have_ssl = try_exec "ocamlfind query ssl"
 let have_glib = try_exec "ocamlfind query lablgtk2" && try_exec "pkg-config glib-2.0"
 let have_text = try_exec "ocamlfind query text"
 
+(* Try to find the path where compiler libraries are: *)
+let compiler_libs =
+  let stdlib = String.chomp (run_and_read "ocamlfind ocamlc -where") in
+  try
+    let path =
+      List.find Pathname.exists [
+        stdlib / "compiler-libs";
+        stdlib / "compiler-lib";
+        stdlib / ".." / "compiler-libs";
+        stdlib / ".." / "compiler-lib";
+      ]
+    in
+    path :: List.filter Pathname.exists [ path / "typing"; path / "utils"; path / "parsing" ]
+  with Not_found ->
+    []
+
+let have_toplevel =
+  (List.exists (fun path -> Pathname.exists (path / "env.cmi")) compiler_libs) && have_text
+
 let () =
   let yes_no = function true -> "yes" | false -> "no" in
   printf "\
@@ -57,8 +76,14 @@ let () =
 | ssl support:                  %3s |
 | glib support:                 %3s |
 | text support:                 %3s |
+| super toplevel:               %3s |
 +-----------------------------------+
-%!" (yes_no have_native) (yes_no have_threads) (yes_no have_ssl) (yes_no have_glib) (yes_no have_text)
+%!" (yes_no have_native)
+    (yes_no have_threads)
+    (yes_no have_ssl)
+    (yes_no have_glib)
+    (yes_no have_text)
+    (yes_no have_toplevel)
 
 (* +-----------------------------------------------------------------+
    | Ocamlfind                                                       |
@@ -112,6 +137,7 @@ let syntaxes = [
 let flag_all_stages_except_link tag f =
   flag ["ocaml"; "compile"; tag] f;
   flag ["ocaml"; "ocamldep"; tag] f;
+  flag ["ocaml"; "top"; tag] f;
   flag ["ocaml"; "doc"; tag] f
 
 (* Same as [flag_all_stages_except_link] but also flag the linking
@@ -168,9 +194,10 @@ let _ =
 
         (* override default commands by ocamlfind ones *)
         let ocamlfind x = S[A"ocamlfind"; A x] in
-        Options.ocamlc   := ocamlfind "ocamlc";
+        Options.ocamlc := ocamlfind "ocamlc";
         Options.ocamlopt := ocamlfind "ocamlopt";
         Options.ocamldep := ocamlfind "ocamldep";
+        Options.ocamlmktop := ocamlfind "ocamlmktop";
         (* FIXME: sometimes ocamldoc say that elements are not found
            even if they are present: *)
         Options.ocamldoc := S[A"ocamlfind"; A"ocamldoc"; A"-hide-warnings"]
@@ -192,6 +219,7 @@ let _ =
                  (have_text, ["lwt_text"; "lwt_top"])])) in
 
         let byte = "syntax/pa_lwt.cmo" :: List.map (sprintf "src/%s.cma") libs
+          @ if have_toplevel then ["src/toplevel.top"] else []
         and native = List.map (sprintf "src/%s.cmxa") libs in
 
         let virtual_rule name deps =
@@ -221,6 +249,7 @@ let _ =
 
         (* When one link an OCaml binary, one should use -linkpkg *)
         flag ["ocaml"; "link"; "program"] & A"-linkpkg";
+        flag ["ocaml"; "link"; "toplevel"] & A"-linkpkg";
 
         (* For each ocamlfind package one inject the -package option
            when compiling, computing dependencies, generating
@@ -234,6 +263,17 @@ let _ =
         List.iter
           (fun syntax -> flag_all_stages_except_link ("syntax_" ^ syntax) (S[A"-syntax"; A syntax]))
           syntaxes;
+
+        (* +---------------------------------------------------------+
+           | Toplevel                                                |
+           +---------------------------------------------------------+ *)
+
+        (* Add directories for compiler-libraries: *)
+        flag_all_stages "use_compiler_libs" & S(List.map (fun path -> S[A"-I"; A path]) compiler_libs);
+
+        (* Link with the toplevel library *)
+        dep ["src/toplevel.top"] ["src/lwt.cma"; "src/lwt_text.cma"; "src/lwt_top.cma"];
+        flag ["file:src/toplevel.top"] & S[A"src/lwt.cma"; A"src/lwt_text.cma"; A"src/lwt_top.cma"];
 
         (* +---------------------------------------------------------+
            | C stubs                                                 |

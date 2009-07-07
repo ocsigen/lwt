@@ -76,6 +76,7 @@ install:
 	  $(wildcard _build/src/*.cmxa) \
 	  $(wildcard _build/src/*.so) \
 	  $(wildcard _build/src/*.a) \
+	  $(wildcard _build/src/toplevel.top) \
 	  _build/syntax/pa_lwt.cmo
 
 uninstall:

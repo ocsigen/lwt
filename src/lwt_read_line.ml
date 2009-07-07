@@ -69,7 +69,7 @@ let complete ?(suffix=" ") before word after words =
         { comp_state = (before ^ word ^ suffix, after); comp_words = [] }
     | (prefix, words) ->
         { comp_state = (before ^ prefix, after);
-          comp_words = List.sort compare words }
+          comp_words = words }
 
 (* +-----------------------------------------------------------------+
    | Commands                                                        |

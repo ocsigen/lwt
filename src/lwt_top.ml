@@ -33,6 +33,8 @@ open Lwt_term
    | Completion                                                      |
    +-----------------------------------------------------------------+ *)
 
+module TextSet = Set.Make(Text)
+
 let complete state =
   (* Find a fixpoint of completion *)
   let rec loop comp =
@@ -41,7 +43,11 @@ let complete state =
     if comp <> comp' then
       loop comp'
     else
-      return comp
+      return { Lwt_read_line.comp_state = comp.Lwt_read_line.comp_state;
+               Lwt_read_line.comp_words = (TextSet.elements
+                                             ((List.fold_left
+                                                 (fun set elt -> TextSet.add elt set))
+                                                TextSet.empty comp.Lwt_read_line.comp_words)) }
   in
   loop { Lwt_read_line.comp_state = state;
          Lwt_read_line.comp_words = [] }
