@@ -441,18 +441,16 @@ let rec loop_signalfd fd buf len =
 (* List of received signals, for the classic mode: *)
 let received_signals = Queue.create ()
 
-type signal_mode = Signal_not_initialised | Signal_fd | Signal_classic
+type signal_mode = Signal_fd | Signal_classic
 
-let signal_mode = ref Signal_not_initialised
+let signal_mode = ref Signal_classic
 
-let init_signals = lazy(
+let () =
   if SignalFD.available () then begin
     let fd = SignalFD.init () and len = SignalFD.size () in
     ignore (loop_signalfd (of_unix_file_descr fd) (String.create len) len);
     signal_mode := Signal_fd
-  end else
-    signal_mode := Signal_classic
-)
+  end
 
 (* Handle the reception of a signal in classic mode *)
 let handle_signal signum =
@@ -470,8 +468,6 @@ let signal_ref signum info =
             SignalFD.del signum
         | Signal_classic ->
             Sys.set_signal signum Sys.Signal_default
-        | Signal_not_initialised ->
-            assert false
     end
   ) in
   (object
@@ -480,7 +476,6 @@ let signal_ref signum info =
    end)
 
 let signal signum =
-  Lazy.force init_signals;
   match try Some(SignalMap.find signum !signals) with Not_found -> None with
     | Some info ->
         signal_ref signum info
@@ -490,8 +485,6 @@ let signal signum =
               SignalFD.add signum
           | Signal_classic ->
               Sys.set_signal signum (Sys.Signal_handle handle_signal)
-          | Signal_not_initialised ->
-              assert false
         end;
         let event, send = React.E.create () in
         let info = { send = send; event = event; ref_count = 0 } in
@@ -518,7 +511,7 @@ let wakeup_signals () =
 
 let wait_children = Lwt_sequence.create ()
 
-let init_wait_pid = lazy(
+let child_exited =
   React.E.map begin fun _ ->
     Lwt_sequence.iter_node_l begin fun node ->
       let cont, flags, pid = Lwt_sequence.get node in
@@ -533,7 +526,6 @@ let init_wait_pid = lazy(
         Lwt.wakeup_exn cont e
     end wait_children
   end (signal Sys.sigchld)#event
-)
 
 let _waitpid flags pid =
   try_lwt
@@ -548,7 +540,6 @@ let waitpid flags pid =
     if pid' <> 0 then
       return res
     else begin
-      ignore (Lazy.force init_wait_pid);
       let (res, w) = Lwt.task () in
       let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
       Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);

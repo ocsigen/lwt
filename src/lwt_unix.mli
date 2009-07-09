@@ -325,3 +325,5 @@ val sleep_queue_size : unit -> int
 
 val run : 'a Lwt.t -> 'a
   (* Same as {!Lwt_main.run} *)
+
+val child_exited : unit React.event
