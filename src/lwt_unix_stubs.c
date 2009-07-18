@@ -92,7 +92,7 @@ value lwt_signalfd_init()
 {
   sigemptyset(&mask);
   sfd = signalfd(-1, &mask, 0);
-  if (sfd < -1)
+  if (sfd < 0)
     uerror("signalfd", Nothing);
   return Val_int(sfd);
 }

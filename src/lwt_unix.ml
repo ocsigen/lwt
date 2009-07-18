@@ -446,11 +446,14 @@ type signal_mode = Signal_fd | Signal_classic
 let signal_mode = ref Signal_classic
 
 let () =
-  if SignalFD.available () then begin
-    let fd = SignalFD.init () and len = SignalFD.size () in
-    ignore (loop_signalfd (of_unix_file_descr fd) (String.create len) len);
-    signal_mode := Signal_fd
-  end
+  try
+    if SignalFD.available () then begin
+      let fd = SignalFD.init () and len = SignalFD.size () in
+      ignore (loop_signalfd (of_unix_file_descr fd) (String.create len) len);
+      signal_mode := Signal_fd
+    end
+  with exn ->
+    ()
 
 (* Handle the reception of a signal in classic mode *)
 let handle_signal signum =
