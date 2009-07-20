@@ -82,6 +82,14 @@ EXTEND Gram
         | p = patt; "="; e = expr -> [(_loc, p, e)]
         ] ];
 
+    for_scheme:
+      [ [ "="; s = sequence; "to"; e = sequence ->
+            `CountTo(s, e)
+        | "="; s = sequence; "downto"; e = sequence ->
+            `CountDownTo(s, e)
+        | "in"; e = sequence ->
+            `IterOver(e) ] ];
+
     expr: LEVEL "top"
       [ [ "try_lwt"; e = expr LEVEL ";"; c = cases; f = finally ->
             begin match c, f with
@@ -97,30 +105,39 @@ EXTEND Gram
                             (fun __pa_lwt_e -> Lwt.bind (begin $f$ end) (fun () -> match __pa_lwt_e with $c$))
                   >>
             end
+
         | "lwt"; l = letb_binding; "in"; e = expr LEVEL ";" ->
             <:expr< let $gen_binding l$ in $gen_bind l e$ >>
-        | "for_lwt"; id = a_LIDENT; "="; s = sequence; "to"; e = sequence; "do"; seq = do_sequence ->
-            <:expr< let __pa_lwt_max = $e$ in
-                    let rec __pa_lwt_loop $lid:id$ =
-                      if $lid:id$ > __pa_lwt_max then
-                        Lwt.return ()
-                      else
-                        Lwt.bind (begin $seq$ end) (fun () -> __pa_lwt_loop ($lid:id$ + 1))
-                    in
-                    __pa_lwt_loop $s$
-            >>
-        | "for_lwt"; id = a_LIDENT; "="; s = sequence; "downto"; e = sequence; "do"; seq = do_sequence ->
-            <:expr< let __pa_lwt_min = $e$ in
-                    let rec __pa_lwt_loop $lid:id$ =
-                      if $lid:id$ < __pa_lwt_min then
-                        Lwt.return ()
-                      else
-                        Lwt.bind (begin $seq$ end) (fun () -> __pa_lwt_loop ($lid:id$ - 1))
-                    in
-                    __pa_lwt_loop $s$
-            >>
-        | "for_lwt"; p = patt; "in"; e = sequence; "do"; seq = do_sequence ->
-            <:expr< Lwt_stream.iter (fun $p$ -> $seq$) $e$ >>
+
+        | "for_lwt"; p = patt; scheme = for_scheme; "do"; seq = do_sequence ->
+            (match p, scheme with
+               | <:patt< $lid:id$ >>, `CountTo(s, e) ->
+                   <:expr< let __pa_lwt_max = $e$ in
+                           let rec __pa_lwt_loop $lid:id$ =
+                             if $lid:id$ > __pa_lwt_max then
+                               Lwt.return ()
+                             else
+                               Lwt.bind (begin $seq$ end) (fun () -> __pa_lwt_loop ($lid:id$ + 1))
+                           in
+                           __pa_lwt_loop $s$
+                   >>
+
+               | <:patt< $lid:id$ >>, `CountDownTo(s, e) ->
+                   <:expr< let __pa_lwt_min = $e$ in
+                           let rec __pa_lwt_loop $lid:id$ =
+                             if $lid:id$ < __pa_lwt_min then
+                               Lwt.return ()
+                             else
+                               Lwt.bind (begin $seq$ end) (fun () -> __pa_lwt_loop ($lid:id$ - 1))
+                           in
+                           __pa_lwt_loop $s$
+                   >>
+
+               | p, `IterOver(e) ->
+                   <:expr< Lwt_stream.iter_s (fun $p$ -> $seq$) $e$ >>
+
+               | _ ->
+                   Loc.raise _loc (Failure "syntax error"))
         ] ];
 END
 
