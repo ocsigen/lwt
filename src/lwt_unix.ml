@@ -449,10 +449,14 @@ let () =
   try
     if SignalFD.available () then begin
       let fd = SignalFD.init () and len = SignalFD.size () in
-      ignore (loop_signalfd (of_unix_file_descr fd) (String.create len) len);
-      signal_mode := Signal_fd
+      match try Some(of_unix_file_descr fd) with Unix.Unix_error(Unix.EBADF, _, _) -> None with
+        | Some fd ->
+            ignore (loop_signalfd fd (String.create len) len);
+            signal_mode := Signal_fd
+        | None ->
+            ()
     end
-  with exn ->
+  with Unix.Unix_error(Unix.ENOSYS, _, _) ->
     ()
 
 (* Handle the reception of a signal in classic mode *)
