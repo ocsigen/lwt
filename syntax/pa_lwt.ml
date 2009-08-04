@@ -145,7 +145,7 @@ END
 let map_anonymous_bind = object
   inherit Ast.map as super
   method expr e = match super#expr e with
-    | <:expr@_loc< $lid:f$ $a$ $b$ >> when f = ">>" -> <:expr< bind $a$ (fun _ -> $b$) >>
+    | <:expr@_loc< $lid:f$ $a$ $b$ >> when f = ">>" -> <:expr< Lwt.bind $a$ (fun _ -> $b$) >>
     | e -> e
 end
 

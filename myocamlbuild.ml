@@ -210,7 +210,7 @@ let _ =
            | Virtual targets                                         |
            +---------------------------------------------------------+ *)
 
-        let libs = "lwt" :: "simple_top" :: List.concat
+        let libs = "lwt" :: "lwt_withoutunix" :: "simple_top" :: List.concat
           (List.map snd
              (List.filter fst
                 [(have_threads, ["lwt_preemptive"; "lwt_extra"]);

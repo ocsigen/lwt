@@ -31,7 +31,7 @@
     The semantic of all operations is the following: if the action
     (for example reading from a {b file descriptor}) can be performed
     immediatly, it is done and returns immediatly, otherwise it
-    returns a sleeping threads which is wakeup when the operation
+    returns a sleeping threads which is waked up when the operation
     completes.
 
     Moreover all sleeping threads returned by function of this modules

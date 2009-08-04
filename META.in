@@ -64,3 +64,10 @@ package "top" (
   archive(toploop,byte) = "lwt_top.cma"
   archive(toploop,native) = "lwt_top.cmxa"
 )
+
+package "withoutunix" (
+  exists_if = "lwt_preemptive.cma,lwt_preemptive.cmxa,lwt_preemptive.cmxs"
+  description = "Preemptive threads support for Lwt"
+  archive(mt,byte) = "lwt_withoutunix.cma"
+  archive(mt,native) = "lwt_withoutunix.cmxa"
+)

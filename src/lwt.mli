@@ -125,7 +125,8 @@ val wait : unit -> 'a t * 'a u
 
 val wakeup : 'a u -> 'a -> unit
       (** [wakeup t e] makes the sleeping thread [t] terminate and
-         return the value of the expression [e]. *)
+          return the value of the expression [e]. *)
+
 val wakeup_exn : 'a u -> exn -> unit
       (** [wakeup_exn t e] makes the sleeping thread [t] fail with the
          exception [e]. *)
@@ -171,7 +172,7 @@ val cancel : 'a t -> unit
         cancel (w >> printl "plop")
       ]}
 
-      [w] will be wakeup with {!Canceled}.
+      [w] will be waked up with {!Canceled}.
   *)
 
 val select : 'a t list -> 'a t
