@@ -35,6 +35,11 @@ ifeq ($(TERM),dumb)
 OCAMLBUILD += -classic-display
 endif
 
+# Avoid compilation of native plugin if ocamlopt is not available
+ifeq ($(shell if which ocamlopt >/dev/null; then echo yes; fi),)
+OCAMLBUILD += -byte-plugin
+endif
+
 # General project parameters:
 NAME := lwt
 VERSION := $(shell head -n 1 VERSION)
