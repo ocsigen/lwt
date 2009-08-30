@@ -3,7 +3,7 @@
 description = "Lightweight thread library for OCaml (core library)"
 requires = "unix react"
 version = "@VERSION@"
-exists_if = "lwt.cmo,lwt.cmx,lwt.cmxs"
+exists_if = "lwt.cma,lwt.cmxa,lwt.cmxs"
 archive(byte) = "lwt.cma"
 archive(native) = "lwt.cmxa"
 archive(toploop,byte) += "simple_top.cma"
