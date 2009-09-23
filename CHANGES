@@ -14,18 +14,27 @@
     ** {{{Lwt_glib}}} for integration into the glib main event loop
     ** {{{Lwt_term}}} for interaction with the terminal
     ** {{{Lwt_read_line}}} for interactive user input
+    ** {{{Lwt_monitor}}}, {{{Lwt_mvar}}}: combined locks for
+       synchronization with conditional variables for notification
+    ** {{{Lwt_sequence}}}: mutable sequence of elements
   * Adding a syntax extension {{{pa_lwt}}}:
     ** handles anonymous bind {{{a >> b}}}
     ** adds syntactic sugar for catching errors (ticket #6)
     ** adds syntactic sugar for parallel let-binding construction
+    ** adds syntactic sugar for for-like loops
   * Top-level integration:
     ** threads can runs while reading user input
     ** line editing support
+  * New enhanced OCaml toplevel with some basic completion features
   * Adding C stubs to reimplement {{{Unix.read}}} and {{{Unix.write}}}
     with assumption of non-blocking behaviour
   * Adding more functions/helpers in {{{Lwt}}}
   * Fixing memory leaks in {{{Lwt.choose}}}
-  * Bugfix in {{{Lwt_chan.close_*}}} (ticket #66).
+  * Bugfix in {{{Lwt_chan.close_*}}} (ticket #66)
+  * Separate the type of threads (covariant) from the type of thread
+    wakeners (contravariant); the type of many functions related to
+    {{{Lwt.wait}}} has been changed
+  * Add cancelable threads
 
 ===== 1.1.0 =====
 
