@@ -155,8 +155,10 @@ FAKE(read)
 #include <windows.h>
 #include <wincon.h>
 
-value lwt_unix_term_size()
+CAMLprim value lwt_unix_term_size(value unit)
 {
+  CAMLparam1(unit);
+  CAMLlocal(result);
   HANDLE handle;
   CONSOLE_SCREEN_BUFFER_INFO info;
 
@@ -167,10 +169,10 @@ value lwt_unix_term_size()
   if (!GetConsoleScreenBufferInfo(hConOut, &scr))
     caml_failwith("GetConsoleScreenBufferInfo");
 
-  value result = caml_alloc_tuple(2);
-  Field(result, 0) = Val_int(scr.dwSize.X);
-  Field(result, 1) = Val_int(scr.dwSize.Y);
-  return result;
+  result = caml_alloc_tuple(2);
+  Store_field(result, 0, Val_int(scr.dwSize.X));
+  Store_field(result, 1, Val_int(scr.dwSize.Y));
+  CAMLreturn(result);
 }
 
 #else
@@ -178,16 +180,18 @@ value lwt_unix_term_size()
 #include <sys/ioctl.h>
 #include <termios.h>
 
-value lwt_unix_term_size()
+value lwt_unix_term_size(value unit)
 {
+  CAMLparam1(unit);
+  CAMLlocal1(result);
   struct winsize size;
   if (ioctl(STDIN_FILENO, TIOCGWINSZ, &size) < 0)
     caml_failwith("ioctl(TIOCGWINSZ)");
 
-  value result = caml_alloc_tuple(2);
-  Field(result, 0) = Val_int(size.ws_row);
-  Field(result, 1) = Val_int(size.ws_col);
-  return result;
+  result = caml_alloc_tuple(2);
+  Store_field(result, 0, Val_int(size.ws_row));
+  Store_field(result, 1, Val_int(size.ws_col));
+  CAMLreturn(result);
 }
 
 #endif
