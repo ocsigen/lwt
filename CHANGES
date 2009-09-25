@@ -1,4 +1,4 @@
-===== Development version =====
+===== 2.0.0 =====
 
   * Adding modules:
     ** {{{Lwt_stream}}}: lwt-aware version of the {{{Stream}}} module
