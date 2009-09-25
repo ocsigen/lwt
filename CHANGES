@@ -16,6 +16,8 @@
     ** {{{Lwt_read_line}}} for interactive user input
     ** {{{Lwt_monitor}}}, {{{Lwt_mvar}}}: combined locks for
        synchronization with conditional variables for notification
+    ** {{{Lwt_throttle}}} for limiting rate of execution
+       (e.g. for authentication procedure)
     ** {{{Lwt_sequence}}}: mutable sequence of elements
   * Adding a syntax extension {{{pa_lwt}}}:
     ** handles anonymous bind {{{a >> b}}}
@@ -35,6 +37,8 @@
     wakeners (contravariant); the type of many functions related to
     {{{Lwt.wait}}} has been changed
   * Add cancelable threads
+  * Unix-dependent part is now put in its own archive and findlib
+    package.
 
 ===== 1.1.0 =====
 
