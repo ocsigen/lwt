@@ -6,13 +6,21 @@ version = "@VERSION@"
 exists_if = "lwt.cma,lwt.cmxa,lwt.cmxs"
 archive(byte) = "lwt.cma"
 archive(native) = "lwt.cmxa"
-archive(toploop,byte) += "simple_top.cma"
-archive(toploop,native) += "simple_top.cmxa"
+
+package "unix" (
+  exists_if = "lwt_unix.cma,lwt_unix.cmxa,lwt_unix.cmxs"
+  description = "Unix support for lwt"
+  requires = "lwt"
+  archive(byte) = "lwt_unix.cma"
+  archive(native) = "lwt_unix.cmxa"
+  archive(toploop,byte) += "simple_top.cma"
+  archive(toploop,native) += "simple_top.cmxa"
+)
 
 package "preemptive" (
   exists_if = "lwt_preemptive.cma,lwt_preemptive.cmxa,lwt_preemptive.cmxs"
   description = "Preemptive threads support for Lwt"
-  requires = "threads,lwt"
+  requires = "threads,lwt,lwt.unix"
   archive(mt,byte) = "lwt_preemptive.cma"
   archive(mt,native) = "lwt_preemptive.cmxa"
 )
@@ -20,7 +28,7 @@ package "preemptive" (
 package "ssl" (
   exists_if = "lwt_ssl.cma,lwt_ssl.cmxa,lwt_ssl.cmxs"
   description = "SSL support for Lwt"
-  requires = "ssl,lwt"
+  requires = "ssl,lwt,lwt.unix"
   archive(byte) = "lwt_ssl.cma"
   archive(native) = "lwt_ssl.cmxa"
 )
@@ -36,7 +44,7 @@ package "extra" (
 package "text" (
   exists_if = "lwt_text.cma,lwt_text.cmxa,lwt_text.cmxs"
   description = "Text utilities"
-  requires = "text,lwt"
+  requires = "text,lwt,lwt.unix"
   archive(byte) = "lwt_text.cma"
   archive(native) = "lwt_text.cmxa"
 )
@@ -44,7 +52,7 @@ package "text" (
 package "glib" (
   exists_if = "lwt_glib.cma,lwt_glib.cmxa,lwt_glib.cmxs"
   description = "Glib integration"
-  requires = "lwt,lablgtk2"
+  requires = "lwt,lwt.unix,lablgtk2"
   archive(byte) = "lwt_glib.cma"
   archive(native) = "lwt_glib.cmxa"
 )
@@ -60,14 +68,7 @@ package "syntax" (
 package "top" (
   exists_if = "lwt_top.cma,lwt_top.cmxa,lwt_top.cmxs"
   description = "Line-editing in the toplevel"
-  requires = "lwt.text"
+  requires = "lwt.unix lwt.text"
   archive(toploop,byte) = "lwt_top.cma"
   archive(toploop,native) = "lwt_top.cmxa"
-)
-
-package "withoutunix" (
-  exists_if = "lwt_preemptive.cma,lwt_preemptive.cmxa,lwt_preemptive.cmxs"
-  description = "Preemptive threads support for Lwt"
-  archive(mt,byte) = "lwt_withoutunix.cma"
-  archive(mt,native) = "lwt_withoutunix.cmxa"
 )

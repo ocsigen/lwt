@@ -210,7 +210,7 @@ let _ =
            | Virtual targets                                         |
            +---------------------------------------------------------+ *)
 
-        let libs = "lwt" :: "lwt_withoutunix" :: "simple_top" :: List.concat
+        let libs = "lwt" :: "lwt_unix" :: "simple_top" :: List.concat
           (List.map snd
              (List.filter fst
                 [(have_threads, ["lwt_preemptive"; "lwt_extra"]);
@@ -272,8 +272,8 @@ let _ =
         flag_all_stages "use_compiler_libs" & S(List.map (fun path -> S[A"-I"; A path]) compiler_libs);
 
         (* Link with the toplevel library *)
-        dep ["src/toplevel.top"] ["src/lwt.cma"; "src/lwt_text.cma"; "src/lwt_top.cma"];
-        flag ["file:src/toplevel.top"] & S[A"-I"; A"src"; A"lwt.cma"; A"lwt_text.cma"; A"lwt_top.cma"];
+        dep ["src/toplevel.top"] ["src/lwt.cma"; "src/lwt_unix.cma"; "src/lwt_text.cma"; "src/lwt_top.cma"];
+        flag ["file:src/toplevel.top"] & S[A"-I"; A"src"; A"lwt.cma"; A"lwt_unix.cma"; A"lwt_text.cma"; A"lwt_top.cma"];
 
         (* +---------------------------------------------------------+
            | C stubs                                                 |

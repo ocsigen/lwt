@@ -33,7 +33,7 @@
 # * "use_C_XXX" is for files using the C library "XXX"
 
 # Ocaml libraries use C stubs and must depend on C libraries:
-<src/lwt.cm{x,}a>: use_unix_stubs
+<src/lwt_unix.cm{x,}a>: use_unix_stubs
 <src/lwt_glib.cm{x,}a>: use_glib_stubs, use_C_glic
 
 # C stubs use C libraries:

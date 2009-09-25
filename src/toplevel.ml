@@ -50,5 +50,5 @@ let list_env () =
   List.fold_left add_modules_from_directory acc !Config.load_path
 
 let () =
-  Topfind.don't_load_deeply ["lwt"; "lwt.text"; "lwt.top"];
+  Topfind.don't_load_deeply ["lwt"; "lwt.unix"; "lwt.text"; "lwt.top"];
   Lwt_ocaml_completion.list_env := list_env
