@@ -10,7 +10,7 @@ archive(native) = "lwt.cmxa"
 package "unix" (
   exists_if = "lwt_unix.cma,lwt_unix.cmxa,lwt_unix.cmxs"
   description = "Unix support for lwt"
-  requires = "lwt"
+  requires = "unix,lwt"
   archive(byte) = "lwt_unix.cma"
   archive(native) = "lwt_unix.cmxa"
   archive(toploop,byte) += "simple_top.cma"
@@ -20,7 +20,7 @@ package "unix" (
 package "preemptive" (
   exists_if = "lwt_preemptive.cma,lwt_preemptive.cmxa,lwt_preemptive.cmxs"
   description = "Preemptive threads support for Lwt"
-  requires = "threads,lwt,lwt.unix"
+  requires = "threads,lwt.unix"
   archive(mt,byte) = "lwt_preemptive.cma"
   archive(mt,native) = "lwt_preemptive.cmxa"
 )
@@ -28,7 +28,7 @@ package "preemptive" (
 package "ssl" (
   exists_if = "lwt_ssl.cma,lwt_ssl.cmxa,lwt_ssl.cmxs"
   description = "SSL support for Lwt"
-  requires = "ssl,lwt,lwt.unix"
+  requires = "ssl,lwt.unix"
   archive(byte) = "lwt_ssl.cma"
   archive(native) = "lwt_ssl.cmxa"
 )
@@ -44,7 +44,7 @@ package "extra" (
 package "text" (
   exists_if = "lwt_text.cma,lwt_text.cmxa,lwt_text.cmxs"
   description = "Text utilities"
-  requires = "text,lwt,lwt.unix"
+  requires = "text,lwt.unix"
   archive(byte) = "lwt_text.cma"
   archive(native) = "lwt_text.cmxa"
 )
@@ -52,7 +52,7 @@ package "text" (
 package "glib" (
   exists_if = "lwt_glib.cma,lwt_glib.cmxa,lwt_glib.cmxs"
   description = "Glib integration"
-  requires = "lwt,lwt.unix,lablgtk2"
+  requires = "lwt.unix,lablgtk2"
   archive(byte) = "lwt_glib.cma"
   archive(native) = "lwt_glib.cmxa"
 )
