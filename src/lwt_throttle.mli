@@ -21,6 +21,14 @@
  * 02111-1307, USA.
  *)
 
+(** Rate limiters *)
+
+(** This module defines rate limiters. A rate limiter is parametrized
+    by its limit and a maximum waiting time. The [wait] function will
+    collaboratively hang for a delay necessary to respect the
+    limit. If that delay exceeds the maximum waiting time, [wait]
+    returns [false]; otherwise it returns [true]. *)
+
 module type S = sig
   type key
   type t
