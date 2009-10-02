@@ -305,7 +305,7 @@ let _ =
              Echo([substitute [("@VERSION@", get_version ())] (read_file "META.in")], "META"));
 
         (* Generation of the lwt.odocl file *)
-        let deps = ["src/lwt_extra.mllib"; "src/lwt.mllib"; "src/lwt_preemptive.mllib"; "src/lwt_ssl.mllib"]
+        let deps = ["src/lwt.mllib"; "src/lwt_unix.mllib"; "src/lwt_preemptive.mllib"; "src/lwt_extra.mllib"; "src/lwt_ssl.mllib"]
         and prod = "lwt.odocl" in
         rule "lwt_doc" ~prod ~deps
           (fun _ _ -> Echo(List.map (sprintf "src/%s\n")
