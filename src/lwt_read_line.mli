@@ -180,6 +180,11 @@ module Command : sig
     | Set_mark
     | Yank
     | Kill_ring_save
+    | Uppercase
+    | Lowercase
+    | Capitalize
+    | Backward_word
+    | Forward_word
 
   val to_string : t -> string
     (** [to_string cmd] returns a string representation of a command *)

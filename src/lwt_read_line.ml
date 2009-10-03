@@ -101,6 +101,11 @@ struct
     | Set_mark
     | Yank
     | Kill_ring_save
+    | Uppercase
+    | Lowercase
+    | Capitalize
+    | Backward_word
+    | Forward_word
 
   let to_string = function
     | Char ch ->
@@ -147,6 +152,16 @@ struct
         "yank"
     | Kill_ring_save ->
         "kill-ring-save"
+    | Uppercase ->
+        "uppercase"
+    | Lowercase ->
+        "lowercase"
+    | Capitalize ->
+        "capitalize"
+    | Backward_word ->
+        "backward-word"
+    | Forward_word ->
+        "forward-word"
 
   let of_key = function
     | Key_up -> History_previous
@@ -175,6 +190,11 @@ struct
     | Key_control 'w' -> Kill_ring_save
     | Key_control 'y' -> Yank
     | Key_control '?' -> Backward_delete_char
+    | Key "\027u" -> Uppercase
+    | Key "\027l" -> Lowercase
+    | Key "\027c" -> Capitalize
+    | Key "\027Oc" | Key "\027[1;5C"-> Forward_word
+    | Key "\027Od" | Key "\027[1;5D"-> Backward_word
     | Key ch when Text.length ch = 1 && Text.is_print ch -> Char ch
     | _ -> Nop
 end
@@ -223,6 +243,52 @@ struct
     | Selection sel ->
         { state with mode = Edition(Text.chunk (Text.pointer_l sel.sel_text) sel.sel_cursor,
                                     Text.chunk sel.sel_cursor (Text.pointer_r sel.sel_text)) }
+
+  let split_first_word text =
+    let rec find_last ptr =
+      match Text.next ptr with
+        | Some(ch, ptr) when Text.is_alnum ch ->
+            find_last ptr
+        | _ ->
+            ptr
+    in
+    let rec find_first ptr =
+      match Text.next ptr with
+        | Some(ch, ptr') ->
+            if Text.is_alnum ch then
+              let ptr' = find_last ptr' in
+              (Text.chunk (Text.pointer_l text) ptr,
+               Text.chunk ptr ptr',
+               Text.chunk ptr' (Text.pointer_r text))
+            else
+              find_first ptr'
+        | None ->
+            (text, "", "")
+    in
+    find_first (Text.pointer_l text)
+
+  let split_last_word text =
+    let rec find_first ptr =
+      match Text.prev ptr with
+        | Some(ch, ptr) when Text.is_alnum ch ->
+            find_first ptr
+        | _ ->
+            ptr
+    in
+    let rec find_last ptr =
+      match Text.prev ptr with
+        | Some(ch, ptr') ->
+            if Text.is_alnum ch then
+              let ptr' = find_first ptr' in
+              (Text.chunk (Text.pointer_l text) ptr',
+               Text.chunk ptr' ptr,
+               Text.chunk ptr (Text.pointer_r text))
+            else
+              find_last ptr'
+        | None ->
+            (text, "", "")
+    in
+    find_last (Text.pointer_r text)
 
   let rec update state ?(clipboard=clipboard) cmd =
     (* Helpers for updating the mode state only: *)
@@ -326,6 +392,26 @@ struct
                 else
                   edition (before ^ (Text.get after 0),
                            Text.lchop after)
+
+            | Uppercase ->
+                let a, b, c = split_first_word after in
+                edition (before ^ a ^ Text.upper b, c)
+
+            | Lowercase ->
+                let a, b, c = split_first_word after in
+                edition (before ^ a ^ Text.lower b, c)
+
+            | Capitalize ->
+                let a, b, c = split_first_word after in
+                edition (before ^ a ^ Text.capitalize (Text.lower b), c)
+
+            | Backward_word ->
+                let a, b, c = split_last_word before in
+                edition (a, b ^ c ^ after)
+
+            | Forward_word ->
+                let a, b, c = split_first_word after in
+                edition (before ^ a ^ b, c)
 
             | _ ->
                 state
