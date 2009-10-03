@@ -58,6 +58,7 @@ let packages = [
   "lwt.ssl";
   "lwt.glib";
   "lwt.text";
+  "lwt.unix";
 
   (* Syntax extensions: *)
   "camlp4";
