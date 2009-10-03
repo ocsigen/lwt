@@ -116,7 +116,7 @@ class process_full ?env cmd =
   and stdout = Lwt_io.of_unix_fd ~mode:Lwt_io.input stdout_r
   and stderr = Lwt_io.of_unix_fd ~mode:Lwt_io.input stderr_r
   and w = Lwt_unix.waitpid [] pid in
-  let close = lazy(Lwt_io.close stdin <&> Lwt_io.close stdout >> w >|= snd) in
+  let close = lazy(join [Lwt_io.close stdin; Lwt_io.close stdout; Lwt_io.close stderr] >> w >|= snd) in
 object
   method pid = pid
   method close = Lazy.force close
