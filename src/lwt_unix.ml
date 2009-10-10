@@ -518,8 +518,8 @@ let wakeup_signals () =
 
 let wait_children = Lwt_sequence.create ()
 
-let child_exited =
-  React.E.map begin fun _ ->
+let () =
+  Lwt_event.always_notify begin fun _ ->
     Lwt_sequence.iter_node_l begin fun node ->
       let cont, flags, pid = Lwt_sequence.get node in
       try

@@ -19,6 +19,8 @@
     ** {{{Lwt_throttle}}} for limiting rate of execution
        (e.g. for authentication procedure)
     ** {{{Lwt_sequence}}}: mutable sequence of elements
+    ** {{{Lwt_event}}}, {{{Lwt_signal}}}: helpers for reactive
+       programming with lwt
   * Adding a syntax extension {{{pa_lwt}}}:
     ** handles anonymous bind {{{a >> b}}}
     ** adds syntactic sugar for catching errors (ticket #6)
