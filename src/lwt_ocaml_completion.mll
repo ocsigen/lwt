@@ -32,7 +32,7 @@
     "inherit"; "initializer"; "lazy"; "let"; "match"; "method"; "module";
     "mutable"; "new"; "object";  "of";  "open"; "private";  "rec"; "sig";
     "struct";  "then";  "to";  "true";  "try";  "type";  "val"; "virtual";
-    "when"; "while"; "with"; "try_lwt"; "finally"; "for_lwt";
+    "when"; "while"; "with"; "try_lwt"; "finally"; "for_lwt"; "lwt";
   ]
 
   let get_directives () =

@@ -60,14 +60,25 @@ let gen_binding l =
 
 let gen_bind l e =
   let rec aux n = function
-    | [] -> e
+    | [] ->
+        e
     | (_loc, p, e) :: l ->
         <:expr< Lwt.bind $lid:"__pa_lwt_" ^ string_of_int n$ (fun $p$ -> $aux (n + 1) l$) >>
   in
   aux 0 l
 
+let gen_top_bind _loc l =
+  let rec aux n vars = function
+    | [] ->
+        <:expr< Lwt.return ($tup:Ast.exCom_of_list (List.rev vars)$) >>
+    | (_loc, p, e) :: l ->
+        let id = "__pa_lwt_" ^ string_of_int n in
+        <:expr< Lwt.bind $lid:id$ (fun $lid:id$ -> $aux (n + 1) (<:expr< $lid:id$ >> :: vars) l$) >>
+  in
+  aux 0 [] l
+
 EXTEND Gram
-  GLOBAL: expr;
+  GLOBAL: expr str_item;
 
     cases:
       [ [ "with"; c = match_case -> Some(gen_catch c)
@@ -138,6 +149,23 @@ EXTEND Gram
 
                | _ ->
                    Loc.raise _loc (Failure "syntax error"))
+        ] ];
+
+    str_item:
+      [ [ "lwt"; l = letb_binding ->
+            match l with
+              | [(_loc, p, e)] ->
+                  <:str_item<
+                    let $p$ = Lwt_main.run $e$
+                  >>
+              | _ ->
+                  <:str_item<
+                    let $tup:Ast.paCom_of_list (List.map (fun (_loc, p, e) -> p) l)$ =
+                      Lwt_main.run begin
+                        let $gen_binding l$ in
+                        $gen_top_bind _loc l$
+                      end
+                  >>
         ] ];
 END
 
