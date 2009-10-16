@@ -36,11 +36,10 @@ ifeq ($(TERM),dumb)
 OCAMLBUILD += -classic-display
 endif
 
+all: best
+
 best:
 	$(OCAMLBUILD) best
-
-all:
-	$(OCAMLBUILD) all
 
 byte:
 	$(OCAMLBUILD) byte
