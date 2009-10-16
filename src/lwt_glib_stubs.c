@@ -36,10 +36,11 @@
 CAMLprim value lwt_glib_get_poll_bits(value unit)
 {
   CAMLparam1(unit);
-  value x = caml_alloc_tuple(3);
+  CAMLlocal1(x);
+  x = caml_alloc_tuple(3);
   Store_field(x, 0, Val_int(POLLIN));
-  Store_field(x, 0, Val_int(POLLOUT));
-  Store_field(x, 0, Val_int(POLLERR));
+  Store_field(x, 1, Val_int(POLLOUT));
+  Store_field(x, 2, Val_int(POLLERR));
   CAMLreturn(x);
 }
 
@@ -76,7 +77,7 @@ CAMLprim value lwt_glib_real_poll(value glib_ufds, value glib_nfds, value lwt_uf
 
   /* Call the old glib polling function: */
   enter_blocking_section();
-  old_poll_func(ufds, nfds, Int_val(timeout));
+  int result = old_poll_func(ufds, nfds, Int_val(timeout));
   leave_blocking_section();
 
   /* Copy back glib fds: */
@@ -85,10 +86,10 @@ CAMLprim value lwt_glib_real_poll(value glib_ufds, value glib_nfds, value lwt_uf
   /* Copy back lwt fds: */
   for(fp = ufds + Int_val(glib_nfds), l = lwt_ufds; Is_block(l); fp++, l = Field(l, 1)) {
     value poll_fd = Field(l, 0);
-    Store_field(poll_fd, 1, fp->revents);
+    Store_field(poll_fd, 1, Val_int(fp->revents));
   }
 
-  CAMLreturn(Val_unit);
+  CAMLreturn(Val_int(result));
 }
 
 /* Just a C pointer */

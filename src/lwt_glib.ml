@@ -27,7 +27,7 @@ type poll_fd = {
   mutable events : int;
 }
 
-external lwt_glib_real_poll : glib_poll_fds -> int -> poll_fd list -> int -> int -> unit = "lwt_glib_real_poll"
+external lwt_glib_real_poll : glib_poll_fds -> int -> poll_fd list -> int -> int -> int = "lwt_glib_real_poll"
 external lwt_glib_setup : unit -> unit = "lwt_glib_setup"
 external lwt_glib_reset : unit -> unit = "lwt_glib_reset"
 external lwt_glib_get_poll_bits : unit -> int * int * int = "lwt_glib_get_poll_bits"
@@ -38,13 +38,13 @@ module FdSet = Set.Make(struct type t = Unix.file_descr let compare = compare en
 
 let set_of_list l = List.fold_left (fun acc x -> FdSet.add x acc) FdSet.empty l
 
-let select glib_poll_fds glib_poll_fds_count glib_timeout set_r set_w set_e timeout =
+let select result glib_poll_fds glib_poll_fds_count glib_timeout set_r set_w set_e timeout =
   let set_r = set_of_list set_r and set_w = set_of_list set_w and set_e = set_of_list set_e in
   let poll_fds = FdSet.fold
     (fun fd acc ->
        { fd = fd;
-         events = (if FdSet.mem fd set_r then pollin else 0) land
-           (if FdSet.mem fd set_w then pollout else 0) land
+         events = (if FdSet.mem fd set_r then pollin else 0) lor
+           (if FdSet.mem fd set_w then pollout else 0) lor
            (if FdSet.mem fd set_e then pollerr else 0) } :: acc)
     (FdSet.union set_r (FdSet.union set_w set_e)) [] in
   let timeout = match timeout with
@@ -56,7 +56,7 @@ let select glib_poll_fds glib_poll_fds_count glib_timeout set_r set_w set_e time
         else
           min glib_timeout t
   in
-  lwt_glib_real_poll glib_poll_fds glib_poll_fds_count poll_fds (List.length poll_fds) timeout;
+  result := lwt_glib_real_poll glib_poll_fds glib_poll_fds_count poll_fds (List.length poll_fds) timeout;
   let set_r, set_w, set_e = List.fold_left
     (fun (set_r, set_w, set_e) { fd = fd; events = ev } ->
        ((if ev land pollin <> 0 then fd :: set_r else set_r),
@@ -66,7 +66,9 @@ let select glib_poll_fds glib_poll_fds_count glib_timeout set_r set_w set_e time
   (Lazy.lazy_from_fun Unix.gettimeofday, set_r, set_w, set_e)
 
 let select_wrapper glib_poll_fds glib_poll_fds_count glib_timeout =
-  ignore (Lwt_main.apply_filters (select glib_poll_fds glib_poll_fds_count glib_timeout) [] [] [] None)
+  let result = ref 0 in
+  ignore (Lwt_main.apply_filters (select result glib_poll_fds glib_poll_fds_count glib_timeout) [] [] [] None);
+  !result
 
 let _ = Callback.register "lwt-glib-select" select_wrapper
 
