@@ -1,3 +1,7 @@
+===== 2.0.0+dev =====
+
+  * Bugfixes in lwt.glib
+
 ===== 2.0.0 =====
 
   * Adding modules:
