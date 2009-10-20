@@ -1,5 +1,6 @@
 ===== 2.0.0+dev =====
 
+  * Bugfix in Lwt_unix.connect: it returned immediatly on EINPROGRESS
   * Bugfixes in lwt.glib
 
 ===== 2.0.0 =====

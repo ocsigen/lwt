@@ -367,7 +367,8 @@ let connect ch addr =
         Unix.connect ch.fd addr
       with
         | Unix.Unix_error(Unix.EINPROGRESS, _, _) ->
-            in_progress := true
+            in_progress := true;
+            raise Retry
   end
 
 let close ch =
