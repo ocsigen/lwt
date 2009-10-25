@@ -31,7 +31,7 @@ open Ocamlbuild_plugin
 
 let try_exec command =
   try
-    let _ = run_and_read command in
+    let () = Command.execute ~quiet:true (Cmd(S[Sh command; Sh"> /dev/null"; Sh"2> /dev/null"])) in
     true
   with _ ->
     false
