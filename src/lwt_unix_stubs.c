@@ -2,6 +2,7 @@
  * http://www.ocsigen.org/lwt
  * Module Lwt_unix_stubs
  * Copyright (C) 2009 Jérémie Dimino
+ *               2009 Mauricio Fernandez
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -61,6 +62,9 @@ value lwt_unix_read(value fd, value buf, value ofs, value len)
    | Signals                                                         |
    +-----------------------------------------------------------------+ */
 
+CAMLextern int caml_convert_signal_number (int);
+CAMLextern int caml_rev_convert_signal_number (int);
+
 /* Since version 2.6.22, linux support the [signalfd] system calls
    which create a file descriptor for receiving signals.
 
@@ -72,9 +76,6 @@ value lwt_unix_read(value fd, value buf, value ofs, value len)
 
 #include <signal.h>
 #include <sys/signalfd.h>
-
-CAMLextern int caml_convert_signal_number (int);
-CAMLextern int caml_rev_convert_signal_number (int);
 
 static sigset_t mask;
 static int sfd = -1;
@@ -200,6 +201,111 @@ value lwt_unix_sigwinch()
 {
 #ifdef SIGWINCH
   return Val_int(SIGWINCH);
+#else
+  return Val_int(0);
+#endif
+}
+
+/* +-----------------------------------------------------------------+
+   | wait4                                                           |
+   +-----------------------------------------------------------------+ */
+
+/* Some code duplicated from OCaml's otherlibs/unix/wait.c */
+
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <sys/wait.h>
+#include <caml/config.h>
+#include <caml/signals.h>
+#include <stdio.h>
+
+#if !(defined(WIFEXITED) && defined(WEXITSTATUS) && defined(WIFSTOPPED) && \
+      defined(WSTOPSIG) && defined(WTERMSIG))
+/* Assume old-style V7 status word */
+#define WIFEXITED(status) (((status) & 0xFF) == 0)
+#define WEXITSTATUS(status) (((status) >> 8) & 0xFF)
+#define WIFSTOPPED(status) (((status) & 0xFF) == 0xFF)
+#define WSTOPSIG(status) (((status) >> 8) & 0xFF)
+#define WTERMSIG(status) ((status) & 0x3F)
+#endif
+
+#define TAG_WEXITED 0
+#define TAG_WSIGNALED 1
+#define TAG_WSTOPPED 2
+
+static value alloc_process_status(int status)
+{
+  value st;
+
+  if (WIFEXITED(status)) {
+    st = alloc_small(1, TAG_WEXITED);
+    Field(st, 0) = Val_int(WEXITSTATUS(status));
+  }
+  else if (WIFSTOPPED(status)) {
+    st = alloc_small(1, TAG_WSTOPPED);
+    Field(st, 0) = Val_int(caml_rev_convert_signal_number(WSTOPSIG(status)));
+  }
+  else {
+    st = alloc_small(1, TAG_WSIGNALED);
+    Field(st, 0) = Val_int(caml_rev_convert_signal_number(WTERMSIG(status)));
+  }
+  return st;
+}
+
+static int wait_flag_table[] = {
+  WNOHANG, WUNTRACED
+};
+
+value lwt_unix_wait4(value flags, value pid_req)
+{
+  CAMLparam1(flags);
+  CAMLlocal2(times, res);
+
+  int pid, status, cv_flags;
+  cv_flags = caml_convert_flag_list(flags, wait_flag_table);
+
+#if defined(HAS_WAIT4)
+
+  struct rusage ru;
+
+  caml_enter_blocking_section();
+  pid = wait4(Int_val(pid_req), &status, cv_flags, &ru);
+  caml_leave_blocking_section();
+  if (pid == -1) uerror("wait4", Nothing);
+
+  times = alloc_small(2 * Double_wosize, Double_array_tag);
+  Store_double_field(times, 0, ru.ru_utime.tv_sec + ru.ru_utime.tv_usec / 1e6);
+  Store_double_field(times, 1, ru.ru_stime.tv_sec + ru.ru_stime.tv_usec / 1e6);
+
+#elif defined(HAS_WAITPID)
+
+  enter_blocking_section();
+  pid = waitpid(Int_val(pid_req), &status, cv_flags);
+  leave_blocking_section();
+  if (pid == -1) uerror("waitpid", Nothing);
+
+  times = alloc_small(2 * Double_wosize, Double_array_tag);
+  Store_double_field(times, 0, 0);
+  Store_double_field(times, 1, 0);
+
+#else
+
+  caml_invalid_argument("wait4 not implemented");
+
+#endif
+
+  res = caml_alloc_tuple(3);
+  Store_field(res, 0, Val_int(pid));
+  Store_field(res, 1, alloc_process_status(status));
+  Store_field(res, 2, times);
+  CAMLreturn(res);
+}
+
+value lwt_unix_has_wait4(value unit)
+{
+#ifdef HAS_WAIT4
+  return Val_int(1);
 #else
   return Val_int(0);
 #endif

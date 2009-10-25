@@ -212,11 +212,30 @@ val signal : int -> < event : int React.event; stop : unit >
 
 (** {6 Processes} *)
 
+(** Resource usages *)
+type resource_usage = {
+  ru_utime : float;
+  (** User time used *)
+
+  ru_stime : float;
+  (** System time used *)
+}
+
 val wait : unit -> (int * Unix.process_status) Lwt.t
   (** Wrapper for [Unix.wait] *)
 
 val waitpid : Unix.wait_flag list -> int -> (int * Unix.process_status) Lwt.t
   (** Wrapper for [Unix.waitpid] *)
+
+val wait4 : Unix.wait_flag list -> int -> (int * Unix.process_status * resource_usage) Lwt.t
+  (** [wait4 flags pid] returns [(pid, status, rusage)] where [(pid,
+      status)] is the same result as [Unix.waitpid flags pid], and
+      [rusage] contains accounting information about the child. *)
+
+val has_wait4 : bool
+  (** Whether the [wait4] system call is available on this system. If
+      it is not, them [wait4] will always returns [{ utime = 0.0;
+      stime = 0.0 }] as resource usages. *)
 
 val system : string -> Unix.process_status Lwt.t
   (** Wrapper for [Unix.system] *)

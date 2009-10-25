@@ -517,6 +517,13 @@ let wakeup_signals () =
    | Processes                                                       |
    +-----------------------------------------------------------------+ *)
 
+type resource_usage = { ru_utime : float; ru_stime : float }
+
+external lwt_unix_wait4 : Unix.wait_flag list -> int -> int * Unix.process_status * resource_usage = "lwt_unix_wait4"
+external lwt_unix_has_wait4 : unit -> bool = "lwt_unix_has_wait4"
+
+let has_wait4 = lwt_unix_has_wait4 ()
+
 let wait_children = Lwt_sequence.create ()
 
 let () =
@@ -524,7 +531,7 @@ let () =
     Lwt_sequence.iter_node_l begin fun node ->
       let cont, flags, pid = Lwt_sequence.get node in
       try
-        let (pid', _) as v = Unix.waitpid flags pid in
+        let (pid', _, _) as v = lwt_unix_wait4 flags pid in
         if pid' <> 0 then begin
           Lwt_sequence.remove node;
           Lwt.wakeup cont v
@@ -545,6 +552,26 @@ let waitpid flags pid =
   else
     let flags = Unix.WNOHANG :: flags in
     lwt ((pid', _) as res) = _waitpid flags pid in
+    if pid' <> 0 then
+      return res
+    else begin
+      let (res, w) = Lwt.task () in
+      let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
+      Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
+      lwt (pid, status, _) = res in
+      return (pid, status)
+    end
+
+let _wait4 flags pid =
+  try_lwt
+    return (lwt_unix_wait4 flags pid)
+
+let wait4 flags pid =
+  if List.mem Unix.WNOHANG flags then
+    _wait4 flags pid
+  else
+    let flags = Unix.WNOHANG :: flags in
+    lwt (pid', _, _) as res = _wait4 flags pid in
     if pid' <> 0 then
       return res
     else begin
