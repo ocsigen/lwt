@@ -60,54 +60,98 @@ let spawn (prog, args) env stdin stdout stderr toclose =
   with Unix.Unix_error(error, _, _) ->
     raise (Sys_error(Unix.error_message error))
 
-class process_none ?env cmd =
-  let pid = spawn cmd env Unix.stdin Unix.stdout Unix.stderr [] in
-  let w = Lwt_unix.waitpid [] pid >|= snd in
-object
+type state =
+  | Running
+  | Exited of Unix.process_status
+
+let status (pid, status, rusage) = status
+let rusage (pid, status, rusage) = rusage
+
+class virtual common timeout (w : (int * Unix.process_status * Lwt_unix.resource_usage) Lwt.t) pid =
+  let status = lazy(w >|= status) and rusage = lazy(w >|= rusage) in
+object(self)
+
+  method virtual close : Unix.process_status Lwt.t
+
   method pid = pid
-  method close = w
+
+  method state = match Lwt.poll w with
+    | None -> Running
+    | Some(pid, status, rusage) -> Exited status
+
+  method kill signum = match Lwt.poll w with
+    | None -> Unix.kill pid signum
+    | Some _ -> ()
+
+  method status = Lazy.force status
+  method rusage = Lazy.force rusage
+
+  initializer
+    match timeout with
+      | None ->
+          ()
+      | Some dt ->
+          Lwt.ignore_result begin
+            try_lwt
+              Lwt.select [Lwt_unix.timeout dt; w] >> return ()
+            with
+              | Lwt_unix.Timeout ->
+                  (try Unix.kill Sys.sigkill pid with _ -> ());
+                  (try_lwt self#close >> return () with _ -> return ())
+              | _ ->
+                  return ()
+          end
 end
 
-class process_in ?env cmd =
+class process_none ?timeout ?env cmd =
+  let pid = spawn cmd env Unix.stdin Unix.stdout Unix.stderr [] in
+  let w = Lwt_unix.wait4 [] pid in
+  let close = lazy(w >|= status) in
+object
+  inherit common timeout w pid
+  method close = Lazy.force close
+end
+
+class process_in ?timeout ?env cmd =
   let stdout_r, stdout_w = Unix.pipe () in
   let pid = spawn cmd env Unix.stdin stdout_w Unix.stderr [stdout_r] in
   let stdout = Lwt_io.of_unix_fd ~mode:Lwt_io.input stdout_r
-  and w = Lwt_unix.waitpid [] pid in
-  let close = lazy(Lwt_io.close stdout >> w >|= snd) in
+  and w = Lwt_unix.wait4 [] pid in
+  let close = lazy(Lwt_io.close stdout >> w >|= status) in
 object
-  method pid = pid
+  inherit common timeout w pid
   method close = Lazy.force close
   method stdout = stdout
 end
 
-class process_out ?env cmd =
+class process_out ?timeout ?env cmd =
   let stdin_r, stdin_w = Unix.pipe () in
   let pid = spawn cmd env stdin_r Unix.stdout Unix.stderr [stdin_w] in
   let stdin = Lwt_io.of_unix_fd ~mode:Lwt_io.output stdin_w
-  and w = Lwt_unix.waitpid [] pid in
-  let close = lazy (Lwt_io.close stdin >> w >|= snd) in
+  and w = Lwt_unix.wait4 [] pid in
+  let close = lazy (Lwt_io.close stdin >> w >|= status) in
 object
-  method pid = pid
+  inherit common timeout w pid
   method close = Lazy.force close
   method stdin = stdin
 end
 
-class process ?env cmd =
+class process ?timeout ?env cmd =
   let stdin_r, stdin_w = Unix.pipe ()
   and stdout_r, stdout_w = Unix.pipe () in
   let pid = spawn cmd env stdin_r stdout_w Unix.stderr [stdin_w; stdout_r] in
   let stdin = Lwt_io.of_unix_fd ~mode:Lwt_io.output stdin_w
   and stdout = Lwt_io.of_unix_fd ~mode:Lwt_io.input stdout_r
-  and w = Lwt_unix.waitpid [] pid in
-  let close = lazy(Lwt_io.close stdin <&> Lwt_io.close stdout >> w >|= snd) in
+  and w = Lwt_unix.wait4 [] pid in
+  let close = lazy(Lwt_io.close stdin <&> Lwt_io.close stdout >> w >|= status) in
 object
-  method pid = pid
+  inherit common timeout w pid
   method close = Lazy.force close
   method stdin = stdin
   method stdout = stdout
 end
 
-class process_full ?env cmd =
+class process_full ?timeout ?env cmd =
   let stdin_r, stdin_w = Unix.pipe ()
   and stdout_r, stdout_w = Unix.pipe ()
   and stderr_r, stderr_w = Unix.pipe () in
@@ -115,40 +159,40 @@ class process_full ?env cmd =
   let stdin = Lwt_io.of_unix_fd ~mode:Lwt_io.output stdin_w
   and stdout = Lwt_io.of_unix_fd ~mode:Lwt_io.input stdout_r
   and stderr = Lwt_io.of_unix_fd ~mode:Lwt_io.input stderr_r
-  and w = Lwt_unix.waitpid [] pid in
-  let close = lazy(join [Lwt_io.close stdin; Lwt_io.close stdout; Lwt_io.close stderr] >> w >|= snd) in
+  and w = Lwt_unix.wait4 [] pid in
+  let close = lazy(join [Lwt_io.close stdin; Lwt_io.close stdout; Lwt_io.close stderr] >> w >|= status) in
 object
-  method pid = pid
+  inherit common timeout w pid
   method close = Lazy.force close
   method stdin = stdin
   method stdout = stdout
   method stderr = stderr
 end
 
-let open_process_none ?env cmd = new process_none ?env cmd
-let open_process_in ?env cmd = new process_in ?env cmd
-let open_process_out ?env cmd = new process_out ?env cmd
-let open_process ?env cmd = new process ?env cmd
-let open_process_full ?env cmd = new process_full ?env cmd
+let open_process_none ?timeout ?env cmd = new process_none ?timeout ?env cmd
+let open_process_in ?timeout ?env cmd = new process_in ?timeout ?env cmd
+let open_process_out ?timeout ?env cmd = new process_out ?timeout ?env cmd
+let open_process ?timeout ?env cmd = new process ?timeout ?env cmd
+let open_process_full ?timeout ?env cmd = new process_full ?timeout ?env cmd
 
-let make_with backend ?env cmd f =
-  let process = backend ?env cmd in
+let make_with backend ?timeout ?env cmd f =
+  let process = backend ?timeout ?env cmd in
   try_lwt
     f process
   finally
     process#close >> return ()
 
-let with_process_none ?env cmd f = make_with open_process_none ?env cmd f
-let with_process_in ?env cmd f = make_with open_process_in ?env cmd f
-let with_process_out ?env cmd f = make_with open_process_out ?env cmd f
-let with_process ?env cmd f = make_with open_process ?env cmd f
-let with_process_full ?env cmd f = make_with open_process_full ?env cmd f
+let with_process_none ?timeout ?env cmd f = make_with open_process_none ?timeout ?env cmd f
+let with_process_in ?timeout ?env cmd f = make_with open_process_in ?timeout ?env cmd f
+let with_process_out ?timeout ?env cmd f = make_with open_process_out ?timeout ?env cmd f
+let with_process ?timeout ?env cmd f = make_with open_process ?timeout ?env cmd f
+let with_process_full ?timeout ?env cmd f = make_with open_process_full ?timeout ?env cmd f
 
 (* +-----------------------------------------------------------------+
    | High-level functions                                            |
    +-----------------------------------------------------------------+ *)
 
-let exec ?env cmd = (open_process_none ?env cmd)#close
+let exec ?timeout ?env cmd = (open_process_none ?timeout ?env cmd)#close
 
 let recv_chars pr =
   let ic = pr#stdout in
@@ -184,17 +228,17 @@ let recv_line pr =
 
 (* Receiving *)
 
-let pread ?env cmd =
-  recv (open_process_in ?env cmd)
+let pread ?timeout ?env cmd =
+  recv (open_process_in ?timeout ?env cmd)
 
-let pread_chars ?env cmd =
-  recv_chars (open_process_in ?env cmd)
+let pread_chars ?timeout ?env cmd =
+  recv_chars (open_process_in ?timeout ?env cmd)
 
-let pread_line ?env cmd =
-  recv_line (open_process_in ?env cmd)
+let pread_line ?timeout ?env cmd =
+  recv_line (open_process_in ?timeout ?env cmd)
 
-let pread_lines ?env cmd =
-  recv_lines (open_process_in ?env cmd)
+let pread_lines ?timeout ?env cmd =
+  recv_lines (open_process_in ?timeout ?env cmd)
 
 (* Sending *)
 
@@ -205,17 +249,17 @@ let send f pr data =
   finally
     Lwt_io.close oc >> return ()
 
-let pwrite ?env cmd text =
-  send Lwt_io.write (open_process_out ?env cmd) text
+let pwrite ?timeout ?env cmd text =
+  send Lwt_io.write (open_process_out ?timeout ?env cmd) text
 
-let pwrite_chars ?env cmd chars =
-  send Lwt_io.write_chars (open_process_out ?env cmd) chars
+let pwrite_chars ?timeout ?env cmd chars =
+  send Lwt_io.write_chars (open_process_out ?timeout ?env cmd) chars
 
-let pwrite_line ?env cmd line =
-  send Lwt_io.write_line (open_process_out ?env cmd) line
+let pwrite_line ?timeout ?env cmd line =
+  send Lwt_io.write_line (open_process_out ?timeout ?env cmd) line
 
-let pwrite_lines ?env cmd lines =
-  send Lwt_io.write_lines (open_process_out ?env cmd) lines
+let pwrite_lines ?timeout ?env cmd lines =
+  send Lwt_io.write_lines (open_process_out ?timeout ?env cmd) lines
 
 (* Mapping *)
 
@@ -227,22 +271,22 @@ let dump f pr data =
                  finally
                    Lwt_io.close oc)
 
-let pmap ?env cmd text =
-  let pr = open_process ?env cmd in
+let pmap ?timeout ?env cmd text =
+  let pr = open_process ?timeout ?env cmd in
   dump Lwt_io.write pr text;
   recv pr
 
-let pmap_chars ?env cmd chars =
-  let pr = open_process ?env cmd in
+let pmap_chars ?timeout ?env cmd chars =
+  let pr = open_process ?timeout ?env cmd in
   dump Lwt_io.write_chars pr chars;
   recv_chars pr
 
-let pmap_line ?env cmd line =
-  let pr = open_process ?env cmd in
+let pmap_line ?timeout ?env cmd line =
+  let pr = open_process ?timeout ?env cmd in
   dump Lwt_io.write_line pr line;
   recv_line pr
 
-let pmap_lines ?env cmd lines =
-  let pr = open_process ?env cmd in
+let pmap_lines ?timeout ?env cmd lines =
+  let pr = open_process ?timeout ?env cmd in
   dump Lwt_io.write_lines pr lines;
   recv_lines pr

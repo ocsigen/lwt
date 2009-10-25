@@ -30,77 +30,103 @@ type command = string * string array
 val shell : string -> command
   (** A command executed with ["/bin/sh"] *)
 
+(** All the following functions take an optionnal argument
+    [timeout]. If specified, after expiration, the process will be
+    sent a [Unix.sigkill] signal and channels will be closed. *)
+
 (** {6 High-level functions} *)
 
-val exec : ?env : string array -> command -> Unix.process_status Lwt.t
+val exec : ?timeout : float -> ?env : string array -> command -> Unix.process_status Lwt.t
   (** [exec command] execute [command] and returns its exit status. *)
 
 (** {8 Receiving} *)
 
-val pread : ?env : string array -> command -> string Lwt.t
-val pread_chars : ?env : string array -> command -> char Lwt_stream.t
-val pread_line : ?env : string array -> command -> string Lwt.t
-val pread_lines : ?env : string array -> command -> string Lwt_stream.t
+val pread : ?timeout : float -> ?env : string array -> command -> string Lwt.t
+val pread_chars : ?timeout : float -> ?env : string array -> command -> char Lwt_stream.t
+val pread_line : ?timeout : float -> ?env : string array -> command -> string Lwt.t
+val pread_lines : ?timeout : float -> ?env : string array -> command -> string Lwt_stream.t
 
 (** {8 Sending} *)
 
-val pwrite : ?env : string array -> command -> string -> unit Lwt.t
-val pwrite_chars : ?env : string array -> command -> char Lwt_stream.t -> unit Lwt.t
-val pwrite_line : ?env : string array -> command -> string -> unit Lwt.t
-val pwrite_lines : ?env : string array -> command -> string Lwt_stream.t -> unit Lwt.t
+val pwrite : ?timeout : float -> ?env : string array -> command -> string -> unit Lwt.t
+val pwrite_chars : ?timeout : float -> ?env : string array -> command -> char Lwt_stream.t -> unit Lwt.t
+val pwrite_line : ?timeout : float -> ?env : string array -> command -> string -> unit Lwt.t
+val pwrite_lines : ?timeout : float -> ?env : string array -> command -> string Lwt_stream.t -> unit Lwt.t
 
 (** {8 Mapping} *)
 
-val pmap : ?env : string array -> command -> string -> string Lwt.t
-val pmap_chars : ?env : string array -> command -> char Lwt_stream.t -> char Lwt_stream.t
-val pmap_line : ?env : string array -> command -> string -> string Lwt.t
-val pmap_lines : ?env : string array -> command -> string Lwt_stream.t -> string Lwt_stream.t
+val pmap : ?timeout : float -> ?env : string array -> command -> string -> string Lwt.t
+val pmap_chars : ?timeout : float -> ?env : string array -> command -> char Lwt_stream.t -> char Lwt_stream.t
+val pmap_line : ?timeout : float -> ?env : string array -> command -> string -> string Lwt.t
+val pmap_lines : ?timeout : float -> ?env : string array -> command -> string Lwt_stream.t -> string Lwt_stream.t
 
 (** {6 Spawning processes} *)
 
-class process_none : ?env : string array -> command -> object
+(** State of a sub-process *)
+type state =
+  | Running
+      (** The process is still running *)
+  | Exited of Unix.process_status
+      (** The process has exited *)
+
+class process_none : ?timeout : float -> ?env : string array -> command -> object
   method pid : int
     (** Pid of the sub-process *)
+
+  method state : state
+    (** Return the state of the process *)
+
+  method kill : int -> unit
+    (** [kill signum] sends [signum] to the process if it is still
+        running *)
+
+  method status : Unix.process_status Lwt.t
+    (** Threads which wait for the sub-process to exit then returns its
+        exit status *)
+
+  method rusage : Lwt_unix.resource_usage Lwt.t
+    (** Threads which wait for the sub-process to exit then returns
+        its resource usages *)
 
   method close : Unix.process_status Lwt.t
     (** Closes the process and returns its exit status. This close all
         channels used to communicate with the process *)
 end
 
-val open_process_none : ?env : string array -> command -> process_none
-val with_process_none : ?env : string array -> command -> (process_none -> 'a Lwt.t) -> 'a Lwt.t
+val open_process_none : ?timeout : float -> ?env : string array -> command -> process_none
+val with_process_none : ?timeout : float -> ?env : string array -> command -> (process_none -> 'a Lwt.t) -> 'a Lwt.t
 
-class process_in : ?env : string array -> command -> object
+class process_in : ?timeout : float -> ?env : string array -> command -> object
   inherit process_none
 
   method stdout : Lwt_io.input_channel
     (** The standard output of the process *)
 end
 
-val open_process_in : ?env : string array -> command -> process_in
-val with_process_in : ?env : string array -> command -> (process_in -> 'a Lwt.t) -> 'a Lwt.t
+val open_process_in : ?timeout : float -> ?env : string array -> command -> process_in
+val with_process_in : ?timeout : float -> ?env : string array -> command -> (process_in -> 'a Lwt.t) -> 'a Lwt.t
 
-class process_out : ?env : string array -> command -> object
+class process_out : ?timeout : float -> ?env : string array -> command -> object
   inherit process_none
 
   method stdin : Lwt_io.output_channel
     (** The standard input of the process *)
 end
 
-val open_process_out : ?env : string array -> command -> process_out
-val with_process_out : ?env : string array -> command -> (process_out -> 'a Lwt.t) -> 'a Lwt.t
+val open_process_out : ?timeout : float -> ?env : string array -> command -> process_out
+val with_process_out : ?timeout : float -> ?env : string array -> command -> (process_out -> 'a Lwt.t) -> 'a Lwt.t
 
-class process : ?env : string array -> command -> object
+class process : ?timeout : float -> ?env : string array -> command -> object
   inherit process_none
 
   method stdin : Lwt_io.output_channel
   method stdout : Lwt_io.input_channel
 end
 
-val open_process : ?env : string array -> command -> process
-val with_process : ?env : string array -> command -> (process -> 'a Lwt.t) -> 'a Lwt.t
+val open_process : ?timeout : float -> ?env : string array -> command -> process
+val with_process : ?timeout : float -> ?env : string array -> command -> (process -> 'a Lwt.t) -> 'a Lwt.t
 
-class process_full : ?env : string array -> command -> object
+class process_full : ?timeout : float -> ?env : string array -> command -> object
   inherit process_none
 
   method stdin : Lwt_io.output_channel
@@ -108,5 +134,5 @@ class process_full : ?env : string array -> command -> object
   method stderr : Lwt_io.input_channel
 end
 
-val open_process_full : ?env : string array -> command -> process_full
-val with_process_full : ?env : string array -> command -> (process_full -> 'a Lwt.t) -> 'a Lwt.t
+val open_process_full : ?timeout : float -> ?env : string array -> command -> process_full
+val with_process_full : ?timeout : float -> ?env : string array -> command -> (process_full -> 'a Lwt.t) -> 'a Lwt.t
