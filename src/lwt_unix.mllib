@@ -7,4 +7,5 @@ Lwt_gc
 Lwt_io
 Lwt_process
 Lwt_main
+Lwt_log
 private/Lwt_pqueue
