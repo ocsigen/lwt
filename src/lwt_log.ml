@@ -1,6 +1,6 @@
 (* Lightweight thread library for Objective Caml
  * http://www.ocsigen.org/lwt
- * Interface Lwt_log
+ * Module Lwt_log
  * Copyright (C) 2009 Jérémie Dimino
  *
  * This program is free software; you can redistribute it and/or modify
@@ -20,35 +20,44 @@
  * 02111-1307, USA.
  *)
 
-
 (* This code is an adaptation of [syslog-ocaml] *)
 
 open Lwt
 
+let program_name = Filename.basename Sys.argv.(0)
+
+(* Errors happening in this module are always logged to [stderr]: *)
+let log_failure fmt =
+  Printf.ksprintf (fun msg -> ignore_result (Lwt_io.eprintlf "%s: Lwt_log: %s" program_name msg)) fmt
+
+(* +-----------------------------------------------------------------+
+   | Types                                                           |
+   +-----------------------------------------------------------------+ *)
+
 type facility =
-    [ `Kernel
-    | `User
-    | `Mail
-    | `Daemon
-    | `Auth
-    | `Syslog
-    | `LPR
-    | `News
-    | `UUCP
-    | `Cron
-    | `Authpriv
-    | `FTP
-    | `NTP
-    | `Security
-    | `Console
-    | `Local0
-    | `Local1
-    | `Local2
-    | `Local3
-    | `Local4
-    | `Local5
-    | `Local6
-    | `Local7 ]
+  [ `Kernel
+  | `User
+  | `Mail
+  | `Daemon
+  | `Auth
+  | `Syslog
+  | `LPR
+  | `News
+  | `UUCP
+  | `Cron
+  | `Authpriv
+  | `FTP
+  | `NTP
+  | `Security
+  | `Console
+  | `Local0
+  | `Local1
+  | `Local2
+  | `Local3
+  | `Local4
+  | `Local5
+  | `Local6
+  | `Local7 ]
 
 type level =
     [ `Emergency
@@ -60,85 +69,37 @@ type level =
     | `Info
     | `Debug ]
 
-let facility_of_string s =
-  match String.lowercase s with
-    | "kern" | "kernel" -> `Kernel
-    | "user" -> `User
-    | "mail" -> `Mail
-    | "daemon" -> `Daemon
-    | "auth" -> `Auth
-    | "syslog" -> `Syslog
-    | "lpr" -> `LPR
-    | "news" -> `News
-    | "uucp" -> `UUCP
-    | "cron" -> `Cron
-    | "authpriv" -> `Authpriv
-    | "ftp" -> `FTP
-    | "ntp" -> `NTP
-    | "security" -> `Security
-    | "console" -> `Console
-    | "local0" -> `Local0
-    | "local1" -> `Local1
-    | "local2" -> `Local2
-    | "local3" -> `Local3
-    | "local4" -> `Local4
-    | "local5" -> `Local5
-    | "local6" -> `Local6
-    | "local7" -> `Local7
-    | invalid -> Printf.ksprintf failwith "Lwt_log.facility_of_string: invalid facility, %S" invalid
-
-let string_of_facility = function
-  | `Kernel -> "kernel"
-  | `User -> "user"
-  | `Mail -> "mail"
-  | `Daemon -> "daemon"
-  | `Auth -> "auth"
-  | `Syslog -> "syslog"
-  | `LPR -> "lpr"
-  | `News -> "news"
-  | `UUCP -> "uucp"
-  | `Cron -> "cron"
-  | `Authpriv -> "authpriv"
-  | `FTP -> "ftp"
-  | `NTP -> "ntp"
-  | `Security -> "security"
-  | `Console -> "console"
-  | `Local0 -> "local0"
-  | `Local1 -> "local1"
-  | `Local2 -> "local2"
-  | `Local3 -> "local3"
-  | `Local4 -> "local4"
-  | `Local5 -> "local5"
-  | `Local6 -> "local6"
-  | `Local7 -> "local7"
+(* +-----------------------------------------------------------------+
+   | Codes                                                           |
+   +-----------------------------------------------------------------+ *)
 
 
-let int_of_facility = function
-  | `Kernel -> 0 lsl 3
-  | `User -> 1 lsl 3
-  | `Mail -> 2 lsl 3
-  | `Daemon -> 3 lsl 3
-  | `Auth -> 4 lsl 3
-  | `Syslog -> 5 lsl 3
-  | `LPR -> 6 lsl 3
-  | `News -> 7 lsl 3
-  | `UUCP -> 8 lsl 3
-  | `Cron -> 9 lsl 3
-  | `Authpriv -> 10 lsl 3
-  | `FTP -> 11 lsl 3
-  | `NTP -> 12 lsl 3
-  | `Security -> 13 lsl 3
-  | `Console -> 14 lsl 3
-  | `Local0 -> 16 lsl 3
-  | `Local1 -> 17 lsl 3
-  | `Local2 -> 18 lsl 3
-  | `Local3 -> 19 lsl 3
-  | `Local4 -> 20 lsl 3
-  | `Local5 -> 21 lsl 3
-  | `Local6 -> 22 lsl 3
-  | `Local7 -> 23 lsl 3
+let facility_code = function
+  | `Kernel -> 0
+  | `User -> 1
+  | `Mail -> 2
+  | `Daemon -> 3
+  | `Auth -> 4
+  | `Syslog -> 5
+  | `LPR -> 6
+  | `News -> 7
+  | `UUCP -> 8
+  | `Cron -> 9
+  | `Authpriv -> 10
+  | `FTP -> 11
+  | `NTP -> 12
+  | `Security -> 13
+  | `Console -> 14
+  | `Local0 -> 16
+  | `Local1 -> 17
+  | `Local2 -> 18
+  | `Local3 -> 19
+  | `Local4 -> 20
+  | `Local5 -> 21
+  | `Local6 -> 22
+  | `Local7 -> 23
 
-let int_of_level = function
+let level_code = function
   | `Emergency -> 0
   | `Alert -> 1
   | `Critical -> 2
@@ -148,95 +109,24 @@ let int_of_level = function
   | `Info -> 6
   | `Debug -> 7
 
-type logger = {
-  mutable oc : Lwt_io.output_channel option;
-  mutable path : string;
-  name : string;
-  facility : int;
-  pid : bool;
-  copy_to : Lwt_io.output_channel option;
-  console : bool;
-  mutable closed : bool;
+(* +-----------------------------------------------------------------+
+   | Destination                                                     |
+   +-----------------------------------------------------------------+ *)
+
+type operations = {
+  op_add_line : facility -> level -> string -> string -> unit Lwt.t;
+  (* [op_add_line facility level name msg] adds [line] to the
+     output *)
+
+  op_close : unit -> unit Lwt.t;
+  (* [op_close ()] should free resources used for the destination *)
 }
 
-let program_name = Filename.basename Sys.argv.(0)
+type destination = unit -> operations Lwt.t
 
-(* Wait for syslog to comes up *)
-let wait_for_syslog logger =
-  let rec aux = function
-    | 0 ->
-        if logger.console then
-          ignore_result
-            (Lwt_io.eprintlf "%s: can not open the syslog socket or pipe, is syslogd running?" program_name);
-        fail (Failure "Lwt_log.wait_for_syslog")
-    | n ->
-        try
-          ignore (Unix.stat logger.path);
-          return ()
-        with Unix.Unix_error(Unix.ENOENT, _, _) ->
-          (* Wait and try again *)
-          lwt () = Lwt_unix.sleep 0.5 in
-          aux (n - 1)
-  in
-  aux 30
-
-let rec open_connection logger =
-  match (Unix.stat logger.path).Unix.st_kind with
-    | Unix.S_SOCK ->
-	let addr = Unix.ADDR_UNIX logger.path in
-        begin
-          try
-	    let fd = Lwt_unix.socket Unix.PF_UNIX Unix.SOCK_DGRAM 0 in
-	    lwt () = Lwt_unix.connect fd addr in
-            let oc = Lwt_io.of_fd ~mode:Lwt_io.output fd in
-            logger.oc <- Some oc;
-            return oc
-	  with Unix.Unix_error (Unix.EPROTOTYPE, _, _) ->
-	    (* try again with a stream socket for syslog-ng *)
-	    let fd = Lwt_unix.socket Unix.PF_UNIX Unix.SOCK_STREAM 0 in
-	    lwt () = Lwt_unix.connect fd addr in
-            let oc = Lwt_io.of_fd ~mode:Lwt_io.output fd in
-            logger.oc <- Some oc;
-            return oc
-        end
-    | Unix.S_FIFO ->
-        let oc = Lwt_io.open_file ~mode:Lwt_io.output logger.path in
-	logger.oc <- Some oc;
-        return oc
-    | _ ->
-        fail (Failure "Lwt_log.open_connection: invalid log path, not a socket or pipe")
-
-let create ?(path="/dev/log") ?(facility=`User) ?copy_to ?(console=true) ?(pid=true)
-    ?(no_delay=false) ?(name=Filename.basename Sys.argv.(0)) () =
-  let logger = {
-    oc = None;
-    path = path;
-    facility = int_of_facility facility;
-    copy_to = copy_to;
-    pid = pid;
-    name = name;
-    closed = false;
-    console = false;
-  } in
-  if no_delay then
-    open_connection logger >> return logger
-  else
-    return logger
-
-let close logger =
-  logger.closed <- true;
-  lwt () = begin
-    match logger.oc with
-      | None ->
-          return ()
-      | Some oc ->
-          Lwt_io.close oc
-  end in
-  logger.oc <- None;
-  return ()
-
-let ascdate tm  =
-  let asc_mon =
+let print_date buf =
+  let tm = Unix.localtime (Unix.time ()) in
+  let month_string =
     match tm.Unix.tm_mon with
       | 0 -> "Jan"
       | 1 -> "Feb"
@@ -252,83 +142,209 @@ let ascdate tm  =
       | 11 -> "Dec"
       | _ -> Printf.ksprintf failwith "Lwt_log.ascdate: invalid month, %d" tm.Unix.tm_mon
   in
-  Printf.sprintf "%s %02d %02d:%02d:%02d" asc_mon tm.Unix.tm_mday tm.Unix.tm_hour tm.Unix.tm_min tm.Unix.tm_sec
+  Printf.bprintf buf "%s % 2d %02d:%02d:%02d" month_string tm.Unix.tm_mday tm.Unix.tm_hour tm.Unix.tm_min tm.Unix.tm_sec
 
-let global = ref {
-  oc = None;
-  path = "/dev/log";
-  facility = int_of_facility `User;
-  copy_to = None;
-  pid = true;
-  name = program_name;
-  closed = false;
-  console = false;
+let format buf pid date name msg =
+  if date then begin
+    print_date buf;
+    Buffer.add_char buf ' '
+  end;
+  Buffer.add_string buf name;
+  if pid then Printf.bprintf buf "[%d]" (Unix.getpid ());
+  Buffer.add_string buf ": ";
+  Buffer.add_string buf msg
+
+let truncate buf max =
+  if Buffer.length buf > max then begin
+    let suffix = "<truncated>" in
+    let len_suffix = String.length suffix in
+    let str = Buffer.sub buf 0 max in
+    StringLabels.blit ~src:suffix ~src_pos:0 ~dst:str ~dst_pos:(max - len_suffix) ~len:len_suffix;
+    str
+  end else
+    Buffer.contents buf
+
+let dest_channel ?(pid=true) ?(date=true) ~close_mode ~channel () = return {
+  op_add_line = (fun facility level name msg ->
+                   let buf = Buffer.create 42 in
+                   format buf pid date name msg;
+                   Buffer.add_char buf '\n';
+                   lwt () = Lwt_io.write channel (Buffer.contents buf) in
+                   Lwt_io.flush channel);
+  op_close = match close_mode with
+    | `keep -> return
+    | `close -> (fun () -> Lwt_io.close channel)
 }
 
-let log_t ?logger ?facility ~level str =
-  (* Choose the logger *)
-  let logger = match logger with
-    | None -> !global
-    | Some logger -> logger
-  in
-  if logger.closed then
-    return ()
-  else begin
-    let msg = Buffer.create 64 in
-    let facility = match facility with
-      | Some fac -> int_of_facility fac
-      | None -> logger.facility
-    in
-    lwt oc = match logger.oc with
-      | Some oc -> return oc
-      | None -> open_connection logger
-    in
-    let levfac = facility lor (int_of_level level) and now = ascdate (Unix.localtime (Unix.time ())) in
-    Printf.bprintf msg "<%d>%.15s " levfac now;
-    let len1 = Buffer.length msg and len2 = String.length logger.name in
-    if len1 + len2 < 64 then
-      Buffer.add_string msg logger.name
-    else
-      Buffer.add_substring msg logger.name 0 (64 - len1);
-    if logger.pid then
-      Printf.bprintf msg "[%d]" (Unix.getpid());
-    if String.length logger.name > 0 then
-      Buffer.add_string msg ": ";
-    Buffer.add_string msg str;
-    let msg = ref (Buffer.contents msg) in
-    if String.length !msg > 1023 then begin
-      msg := String.sub !msg 0 1024;
-      String.blit "<truncated>" 0 !msg 1012 11
-    end;
-    logger.oc <- None;
-    lwt () =
-      try_lwt
-        Lwt_io.fprint oc !msg
-      with _ ->
-        return ()
-    in
-    match logger.copy_to with
-      | None ->
-          return ()
-      | Some oc ->
-          Lwt_io.fprintl oc !msg
-  end
+let dest_stdout = dest_channel ~channel:Lwt_io.stdout ~close_mode:`keep ~pid:false ~date:false
+let dest_stderr = dest_channel ~channel:Lwt_io.stderr ~close_mode:`keep ~pid:false ~date:false
 
-let rec log_multi_t ?logger ?facility ~level = function
-  | [] ->
+let dest_file ?(pid=true) ?(date=true) ?(mode=`append) ?(perm=0o640) ~file_name () =
+  let flags = match mode with
+    | `append ->
+        [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_APPEND; Unix.O_NONBLOCK]
+    | `truncate ->
+        [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_TRUNC; Unix.O_NONBLOCK] in
+  let oc = Lwt_io.open_file ~mode:Lwt_io.output ~flags ~perm:0o644 file_name in
+  dest_channel ~pid ~date ~close_mode:`close ~channel:oc ()
+
+let dest_syslog ?(pid=true) ?(date=true) ?(path="/dev/log") () () =
+  let path = "/dev/log" in
+  (try
+     return (Unix.stat path).Unix.st_kind
+   with Unix.Unix_error(_, _, _) ->
+     log_failure "can not open the syslog socket or pipe, is syslogd running?";
+     fail (Failure "Lwt_log.dest_syslog"))
+  >>= function
+    | Unix.S_SOCK ->
+        let open_connection socket_type =
+	  let fd = Lwt_unix.socket Unix.PF_UNIX socket_type 0 in
+	  lwt () = Lwt_unix.connect fd (Unix.ADDR_UNIX path) in
+          return {
+            op_add_line = (fun facility level name msg ->
+                             let buf = Buffer.create 42 in
+                             Printf.bprintf buf "<%d>" ((facility_code facility lsl 3) lor level_code level);
+                             format buf pid date name msg;
+                             let str = truncate buf 1024 in
+                             lwt _ = Lwt_unix.write fd str 0 (String.length str) in
+                             return ());
+            op_close = (fun () ->
+                          Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
+                          Lwt_unix.close fd;
+                          return ());
+          } in
+        begin
+          try
+            open_connection Unix.SOCK_DGRAM
+	  with Unix.Unix_error (Unix.EPROTOTYPE, _, _) ->
+	    (* Try again with a stream socket for syslog-ng *)
+            open_connection Unix.SOCK_STREAM
+        end
+    | Unix.S_FIFO ->
+        let oc = Lwt_io.open_file ~mode:Lwt_io.output path in
+        dest_channel ~channel:oc ~close_mode:`close ();
+    | _ ->
+        log_failure "%S is not a socket or a pipe" path;
+        fail (Failure "Lwt_log.odest_syslog")
+
+(* +-----------------------------------------------------------------+
+   | Loggers                                                         |
+   +-----------------------------------------------------------------+ *)
+
+exception Logger_closed
+
+type logger_info = {
+  li_levels : bool array;
+  li_name : string;
+  li_facility : facility;
+  li_destinations : operations list;
+}
+
+type logger_state =
+  | Opened of logger_info
+  | Closed
+
+type logger = logger_state ref
+
+let __unsafe_level logger num =
+  match !logger with
+    | Closed ->
+        raise Logger_closed
+    | Opened li ->
+        li.li_levels.(num)
+
+let level logger level =
+  match !logger with
+    | Closed ->
+        raise Logger_closed
+    | Opened li ->
+        li.li_levels.(level_code level)
+
+let set_level logger level value =
+  match !logger with
+    | Closed ->
+        raise Logger_closed
+    | Opened li ->
+        li.li_levels.(level_code level) <- value
+
+let close logger = match !logger with
+  | Closed ->
       return ()
-  | x :: l ->
-      lwt () = log_t ?logger ?facility ~level x in
-      log_multi_t ?logger ?facility ~level l
+  | Opened li ->
+      logger := Closed;
+      (* Close all destinations *)
+      Lwt.join (List.map (fun op -> op.op_close ()) li.li_destinations)
 
-let logf_t ?logger ?facility ~level fmt =
-  Printf.ksprintf (log_t ?logger ?facility ~level) fmt
+let create ?(facility=`User) ?(name=program_name) destinations =
+  let rec aux acc = function
+    | e :: l ->
+        lwt op =
+          try_lwt
+            e ()
+          with exn ->
+            log_failure "cannot open logging destination: %s" (Printexc.to_string exn);
+            (* Closes previously opened loggers: *)
+            lwt () = Lwt.join (List.map (fun op -> op.op_close ()) acc) in
+            fail exn
+        in
+        aux (op :: acc) l
+    | [] ->
+        return (List.rev acc)
+  in
+  lwt destinations = aux [] destinations in
+  let logger = ref (Opened {
+                      li_levels = Array.make 8 true;
+                      li_name = name;
+                      li_facility = `User;
+                      li_destinations = destinations;
+                    }) in
+  Lwt_gc.finalise_or_exit close logger;
+  return logger
+
+let default = ref (ref (Opened {
+                          li_levels = [| true; true; true; true; true; true; false; false |];
+                          li_name = program_name;
+                          li_facility = `User;
+                          li_destinations = [{ op_add_line = (fun facility level name msg ->
+                                                                let buf = Buffer.create 42 in
+                                                                format buf false false name msg;
+                                                                Buffer.add_char buf '\n';
+                                                                lwt () = Lwt_io.write Lwt_io.stderr (Buffer.contents buf) in
+                                                                Lwt_io.flush Lwt_io.stderr);
+                                               op_close  = return }];
+                        }))
+
+(* +-----------------------------------------------------------------+
+   | Logging functions                                               |
+   +-----------------------------------------------------------------+ *)
+
+let split str =
+  let len = String.length str in
+  let rec aux i =
+    if i >= len then
+      []
+    else
+      let j = try String.index_from str i '\n' with Not_found -> String.length str in
+      String.sub str i (j - i) :: aux (j + 1)
+  in
+  aux 0
 
 let log ?logger ?facility ~level str =
-  ignore_result (log_t ?logger ?facility ~level str)
-
-let log_multi ?logger ?facility ~level lines =
-  ignore_result (log_multi_t ?logger ?facility ~level lines)
+  (* Choose the logger *)
+  match match logger with None -> !(!default) | Some logger -> !logger with
+    | Closed ->
+        raise Logger_closed
+    | Opened li when li.li_levels.(level_code level) ->
+        let facility = match facility with
+          | Some facility -> facility
+          | None -> li.li_facility
+        in
+        let lines = split str in
+        List.iter
+          (fun op -> List.iter (fun line -> ignore (op.op_add_line facility level li.li_name line)) lines)
+          li.li_destinations
+    | Opened li ->
+        ()
 
 let logf ?logger ?facility ~level fmt =
   Printf.ksprintf (log ?logger ?facility ~level) fmt

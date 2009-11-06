@@ -102,7 +102,7 @@ let _ =
            | Virtual targets                                         |
            +---------------------------------------------------------+ *)
 
-        let examples = "parallelize" :: "relay" :: "start_editor" :: List.concat
+        let examples = "logging" :: "parallelize" :: "relay" :: "start_editor" :: List.concat
           (List.map snd
              (List.filter fst
                 [(have_lwt_glib, ["ex_gtk"]);
