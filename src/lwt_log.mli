@@ -186,8 +186,9 @@ val set_level : ?logger : logger -> level -> bool -> unit
 
 (** {6 Logging functions} *)
 
-val log : ?logger : logger -> ?facility : facility -> level : level -> string -> unit
-  (** [log ?facility ?level msg] log a message.
+val log : ?logger : logger -> ?facility : facility -> level : level ->
+  ('a, unit, string, unit) format4 -> 'a
+  (** [log ?logger ?facility ~level format] log a message.
 
       @param logger defaults to {!default}
       @param facility defaults to the logger defaults facility
@@ -195,8 +196,12 @@ val log : ?logger : logger -> ?facility : facility -> level : level -> string ->
 
       The resulting thread is ingored with [ignore_result]. *)
 
-val logf : ?logger : logger -> ?facility : facility -> level : level -> ('a, unit, string, unit) format4 -> 'a
-  (** Same as [log] but prints according to the given format *)
+val exn : ?logger : logger -> ?facility : facility -> ?level : level ->
+  exn -> ('a, unit, string, unit) format4 -> 'a
+  (** [exn ?logger ?facility ?level exn fmt@ logs an exception. 
+
+      @param level default to [`Error]
+  *)
 
 (**/**)
 

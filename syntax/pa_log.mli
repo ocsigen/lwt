@@ -23,17 +23,23 @@
 
 (** Logging facility.
 
-    Replace things of the form:
+    It replaces expression of the form:
 
     {[
       Log#info "x = %d" x
     ]}
 
-   in a file "foo.ml" by:
+    in a file "foo.ml" by:
 
     {[
       if Lwt_log.level !Lwt_log.default `Info then
-        Lwt_log.log "Foo:`Info x = %d" x
+        Lwt_log.log ~level:`Info "Foo: x = %d" x
+    ]}
+
+    You can also log exception with the backtrace if available:
+
+    {[
+      Log#exn exn "uncaught exception"
     ]}
 
     Note that the application must be complete. For example: [Log#info

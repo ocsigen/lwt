@@ -63,6 +63,7 @@ let packages = [
   (* Syntax extensions: *)
   "camlp4";
   "lwt.syntax";
+  "lwt.syntax.log";
 ]
 
 (* List of syntaxes: *)

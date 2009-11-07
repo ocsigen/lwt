@@ -33,13 +33,14 @@ let levels = [
   "notice";
   "info";
   "debug";
+  "exn";
 ]
 
 let level_code = function
   | "emergency" -> 0
   | "alert" -> 1
   | "critical" -> 2
-  | "error" -> 3
+  | "error" | "exn" -> 3
   | "warning" -> 4
   | "notice" -> 5
   | "info" -> 6
@@ -55,6 +56,8 @@ let rec apply e = function
 
 let split e =
   let rec aux acc = function
+    | <:expr@loc< Log#exn $exn$ $fmt$ >> ->
+        `Failure(exn, fmt, List.rev acc)
     | <:expr@loc< Log#$lid:level$ $fmt$ >> ->
         if level = "debug" && !no_debug then
           `Delete
@@ -82,7 +85,14 @@ object
           let args = List.map super#expr args and fmt = super#expr fmt in
           <:expr<
             if Lwt_log.__unsafe_level !Lwt_log.default $int:string_of_int (level_code level)$ then
-             $apply <:expr<  Lwt_log.logf ~level:$Ast.ExVrn(_loc, String.capitalize level)$ $fmt$ >> args$
+             $apply <:expr<  Lwt_log.log ~level:$Ast.ExVrn(_loc, String.capitalize level)$
+               (Pervasives.( ^^ ) $str:module_name _loc ^ ": "$ $fmt$) >> args$
+          >>
+      | `Failure(exn, fmt, args) ->
+          let args = List.map super#expr args and fmt = super#expr fmt in
+          <:expr<
+            if Lwt_log.__unsafe_level !Lwt_log.default $int:string_of_int (level_code "exn")$ then
+              $apply <:expr<  Lwt_log.exn $exn$ (Pervasives.( ^^ ) $str:module_name _loc ^ ": "$ $fmt$) >> args$
           >>
       | `Not_a_log ->
           super#expr e

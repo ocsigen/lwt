@@ -333,21 +333,45 @@ let split str =
   in
   aux 0
 
-let log ?logger ?facility ~level str =
-  match get_logger logger with
-    | Closed ->
-        raise Logger_closed
-    | Opened li when li.li_levels.(level_code level) ->
-        let facility = match facility with
-          | Some facility -> facility
-          | None -> li.li_facility
-        in
-        let lines = split str in
-        List.iter
-          (fun op -> List.iter (fun line -> ignore (op.op_add_line facility level li.li_name line)) lines)
-          li.li_destinations
-    | Opened li ->
-        ()
+let log ?logger ?facility ~level fmt =
+  Printf.ksprintf begin fun str ->
+    match get_logger logger with
+      | Closed ->
+          raise Logger_closed
+      | Opened li when li.li_levels.(level_code level) ->
+          let facility = match facility with
+            | Some facility -> facility
+            | None -> li.li_facility
+          in
+          let lines = split str in
+          List.iter
+            (fun op -> List.iter (fun line -> ignore (op.op_add_line facility level li.li_name line)) lines)
+            li.li_destinations
+      | Opened li ->
+          ()
+  end fmt
 
-let logf ?logger ?facility ~level fmt =
-  Printf.ksprintf (log ?logger ?facility ~level) fmt
+let exn ?logger ?facility ?(level=`Error) exn fmt =
+  Printf.ksprintf begin fun str ->
+    match get_logger logger with
+      | Closed ->
+          raise Logger_closed
+      | Opened li when li.li_levels.(level_code level) ->
+          let str = Printf.sprintf "%s: %s" str (Printexc.to_string exn) in
+          let str =
+            if Printexc.backtrace_status () then
+              str ^ "\nbacktrace:\n" ^ Printexc.get_backtrace ()
+            else
+              str
+          in
+          let facility = match facility with
+            | Some facility -> facility
+            | None -> li.li_facility
+          in
+          let lines = split str in
+          List.iter
+            (fun op -> List.iter (fun line -> ignore (op.op_add_line facility level li.li_name line)) lines)
+            li.li_destinations
+      | Opened li ->
+          ()
+  end fmt
