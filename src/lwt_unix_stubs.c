@@ -315,7 +315,7 @@ value lwt_unix_has_wait4(value unit)
    | Daemon                                                          |
    +-----------------------------------------------------------------+ */
 
-value lwt_unix_clear_all_fds()
+value lwt_unix_close_all_fds()
 {
   int i;
   for (i = getdtablesize(); i>=0; --i) close(i);
