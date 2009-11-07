@@ -63,6 +63,14 @@ package "syntax" (
   requires = "camlp4"
   archive(syntax,preprocessor) = "pa_lwt.cmo"
   archive(syntax,toploop) = "pa_lwt.cmo"
+
+  package "log" (
+    exists_if = "pa_log.cmo"
+    description = "Syntactic sugars for logging"
+    requires = "camlp4"
+    archive(syntax,preprocessor) = "pa_log.cmo"
+    archive(syntax,toploop) = "pa_log.cmo"
+  )
 )
 
 package "top" (

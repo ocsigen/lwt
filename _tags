@@ -18,7 +18,7 @@
 # | Syntax extensions                                                |
 # +------------------------------------------------------------------+
 
-<syntax/pa_lwt.ml>: syntax_camlp4o, pkg_camlp4, pkg_camlp4.quotations.o, pkg_camlp4.extend
+<syntax/pa_{lwt,log}.ml>: syntax_camlp4o, pkg_camlp4, pkg_camlp4.quotations.o, pkg_camlp4.extend
 <src/*.ml>: syntax_camlp4o, pkg_camlp4, pa_lwt
 
 # +------------------------------------------------------------------+

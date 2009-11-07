@@ -1,5 +1,6 @@
 ===== 2.0.0+dev =====
 
+  * Adding a syntax extension for mesage logging
   * Adding function {{{Lwt_util.daemonize}}}
   * Enhancement in {{{Lwt_process}}}
   * Adding {{{Lwt_unix.wait4}}}

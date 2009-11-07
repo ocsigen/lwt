@@ -177,11 +177,11 @@ val default : logger ref
 
       It's initial value is [create [dest_stderr]]. *)
 
-val level : logger -> level -> bool
-  (** [level logger level] returns whether the given level is
+val level : ?logger : logger -> level -> bool
+  (** [level ?logger level] returns whether the given level is
       active or not *)
 
-val set_level : logger -> level -> bool -> unit
+val set_level : ?logger : logger -> level -> bool -> unit
   (** [set_level logger level value] sets the level state *)
 
 (** {6 Logging functions} *)

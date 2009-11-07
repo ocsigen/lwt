@@ -246,27 +246,6 @@ type logger_state =
 
 type logger = logger_state ref
 
-let __unsafe_level logger num =
-  match !logger with
-    | Closed ->
-        raise Logger_closed
-    | Opened li ->
-        li.li_levels.(num)
-
-let level logger level =
-  match !logger with
-    | Closed ->
-        raise Logger_closed
-    | Opened li ->
-        li.li_levels.(level_code level)
-
-let set_level logger level value =
-  match !logger with
-    | Closed ->
-        raise Logger_closed
-    | Opened li ->
-        li.li_levels.(level_code level) <- value
-
 let close logger = match !logger with
   | Closed ->
       return ()
@@ -314,6 +293,31 @@ let default = ref (ref (Opened {
                                                op_close  = return }];
                         }))
 
+let get_logger = function
+  | None -> !(!default)
+  | Some logger -> !logger
+
+let __unsafe_level logger num =
+  match !logger with
+    | Closed ->
+        raise Logger_closed
+    | Opened li ->
+        li.li_levels.(num)
+
+let level ?logger level =
+  match get_logger logger with
+    | Closed ->
+        raise Logger_closed
+    | Opened li ->
+        li.li_levels.(level_code level)
+
+let set_level ?logger level value =
+  match get_logger logger with
+    | Closed ->
+        raise Logger_closed
+    | Opened li ->
+        li.li_levels.(level_code level) <- value
+
 (* +-----------------------------------------------------------------+
    | Logging functions                                               |
    +-----------------------------------------------------------------+ *)
@@ -330,8 +334,7 @@ let split str =
   aux 0
 
 let log ?logger ?facility ~level str =
-  (* Choose the logger *)
-  match match logger with None -> !(!default) | Some logger -> !logger with
+  match get_logger logger with
     | Closed ->
         raise Logger_closed
     | Opened li when li.li_levels.(level_code level) ->

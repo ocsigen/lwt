@@ -218,7 +218,7 @@ let _ =
                  (have_glib, ["lwt_glib"]);
                  (have_text, ["lwt_text"; "lwt_top"])])) in
 
-        let byte = "syntax/pa_lwt.cmo" :: List.map (sprintf "src/%s.cma") libs
+        let byte = "syntax/pa_lwt.cmo" :: "syntax/pa_log.cmo" :: List.map (sprintf "src/%s.cma") libs
           @ if have_toplevel then ["src/toplevel.top"] else []
         and native = List.map (sprintf "src/%s.cmxa") libs in
 
@@ -241,7 +241,8 @@ let _ =
 
              (* Make them depends on the syntax extension *)
              dep ["ocaml"; "ocamldep"; tag] [file])
-          [("pa_lwt", "syntax/pa_lwt.cmo")];
+          [("pa_lwt", "syntax/pa_lwt.cmo");
+           ("pa_log", "syntax/pa_log.cmo")];
 
         (* +---------------------------------------------------------+
            | Ocamlfind stuff                                         |
@@ -314,7 +315,7 @@ let _ =
                                              | "Lwt_chan" -> false
                                              | s -> not (String.is_prefix "private" s))
                                 (List.concat (List.map string_list_of_file deps)))
-                           @ ["syntax/Pa_lwt\n"],
+                           @ ["syntax/Pa_lwt\n"; "syntax/Pa_log"],
                            prod));
 
         (* The default "thread" tag is not compatible with ocamlfind.
