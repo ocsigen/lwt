@@ -283,6 +283,11 @@ val shutdown : file_descr -> Unix.shutdown_command -> unit
 val setsockopt : file_descr -> Unix.socket_bool_option -> bool -> unit
   (** Wrapper for [Unix.setsockopt] *)
 
+(** {6 Helpers} *)
+
+val daemonize : unit -> unit
+  (** Put the running program into a daemon *)
+
 (** {6 Low-level interaction} *)
 
 type watchers

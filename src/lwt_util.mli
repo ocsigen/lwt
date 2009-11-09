@@ -56,11 +56,6 @@ val map_serial : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
 val fold_left : ('a -> 'b -> 'a Lwt.t) -> 'a -> 'b list -> 'a Lwt.t
     (** Similar to [List.fold_left]. *)
 
-(** {2 Helpers} *)
-
-val daemonize : unit -> unit
-  (** Put the running program into a daemon *)
-  
 (****)
 
 (** {2 Regions} *)

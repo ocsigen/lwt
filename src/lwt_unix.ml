@@ -643,6 +643,22 @@ let _ = Lwt_sequence.add_l select_filter Lwt_main.select_filters
    | Misc                                                            |
    +-----------------------------------------------------------------+ *)
 
+external lwt_unix_close_all_fds : unit -> unit = "lwt_unix_close_all_fds"
+
+let daemonize () =
+  if Unix.getppid () = 1 then
+    ()
+  else begin
+    ignore (Unix.setsid ());
+    if Unix.fork () > 0 then exit 1;
+    lwt_unix_close_all_fds ();
+    let fd = Unix.openfile "/dev/null" [Unix.O_RDWR] 0o666 in
+    ignore (Unix.dup fd);
+    ignore (Unix.dup fd);
+    ignore (Unix.umask 0o027);
+    Unix.chdir "/tmp"
+  end
+
 (* Monitoring functions *)
 let inputs_length () = blocked_thread_count inputs
 let outputs_length () = blocked_thread_count outputs

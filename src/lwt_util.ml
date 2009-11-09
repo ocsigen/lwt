@@ -118,22 +118,3 @@ let run_in_region reg sz thr =
     reg.count <- reg.count + sz;
     run_in_region_1 reg sz thr
   end
-
-
-open Unix
-
-external lwt_unix_close_all_fds : unit -> unit = "lwt_unix_close_all_fds"
-
-let daemonize () =
-  if getppid () = 1 then
-    ()
-  else begin
-    ignore (setsid ());
-    if fork () > 0 then exit 1;
-    lwt_unix_close_all_fds ();
-    let fd = openfile "/dev/null" [O_RDWR] 0o666 in
-    ignore (dup fd);
-    ignore (dup fd);
-    umask 0o027;
-    chdir "/tmp"
-  end
