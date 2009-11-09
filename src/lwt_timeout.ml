@@ -75,9 +75,8 @@ let size l =
 
 let handle_exn =
   ref
-    (fun e ->
-       prerr_string "Lwt_timeout - Uncaught exception after timeout: ";
-       prerr_endline (Printexc.to_string e);
+    (fun exn ->
+       Lwt_log.exn exn "Lwt_timeout - Uncaught exception after timeout";
        exit 1)
 
 let set_exn_handler f = handle_exn := f

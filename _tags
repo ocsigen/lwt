@@ -19,7 +19,8 @@
 # +------------------------------------------------------------------+
 
 <syntax/pa_{lwt,log}.ml>: syntax_camlp4o, pkg_camlp4, pkg_camlp4.quotations.o, pkg_camlp4.extend
-<src/*.ml>: syntax_camlp4o, pkg_camlp4, pa_lwt
+<src/*.ml>: syntax_camlp4o, pkg_camlp4, pa_lwt, pa_log
+<src/lwt_io.ml>: pkg_camlp4.macro
 
 # +------------------------------------------------------------------+
 # | C stubs                                                          |

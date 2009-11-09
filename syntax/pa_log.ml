@@ -48,7 +48,14 @@ let level_code = function
   | _ -> assert false
 
 let module_name _loc =
-  String.capitalize (Filename.basename (Filename.chop_extension (Loc.file_name _loc)))
+  let file_name = Loc.file_name _loc in
+  if file_name = "" then
+    ""
+  else
+    String.capitalize (Filename.basename (try
+                                            Filename.chop_extension file_name
+                                          with Invalid_argument _ ->
+                                            file_name))
 
 let rec apply e = function
   | [] -> e
@@ -78,21 +85,29 @@ object
 
   method expr e =
     let _loc = Ast.loc_of_expr e in
+    let module_name = module_name _loc in
     match split e with
       | `Delete ->
           <:expr< >>
       | `Log(fmt, level, args) ->
           let args = List.map super#expr args and fmt = super#expr fmt in
           <:expr<
-            if Lwt_log.__unsafe_level !Lwt_log.default $int:string_of_int (level_code level)$ then
-             $apply <:expr<  Lwt_log.log ~level:$Ast.ExVrn(_loc, String.capitalize level)$
-               (Pervasives.( ^^ ) $str:module_name _loc ^ ": "$ $fmt$) >> args$
+            if Lwt_log.unsafe_level !Lwt_log.default $int:string_of_int (level_code level)$ then
+              $apply <:expr< Lwt_log.log ~level:$Ast.ExVrn(_loc, String.capitalize level)$
+                               $if module_name = "" then
+                                  fmt
+                                else
+                                  <:expr< Pervasives.( ^^ ) $str:module_name ^ ": "$ $fmt$ >> $ >> args$
           >>
       | `Failure(exn, fmt, args) ->
           let args = List.map super#expr args and fmt = super#expr fmt in
           <:expr<
-            if Lwt_log.__unsafe_level !Lwt_log.default $int:string_of_int (level_code "exn")$ then
-              $apply <:expr<  Lwt_log.exn $exn$ (Pervasives.( ^^ ) $str:module_name _loc ^ ": "$ $fmt$) >> args$
+            if Lwt_log.unsafe_level !Lwt_log.default $int:string_of_int (level_code "exn")$ then
+              $apply <:expr<  Lwt_log.exn $exn$
+                                $if module_name = "" then
+                                   fmt
+                                 else
+                                   <:expr< Pervasives.( ^^ ) $str:module_name ^ ": "$ $fmt$ >> $ >> args$
           >>
       | `Not_a_log ->
           super#expr e
@@ -102,6 +117,4 @@ let () =
   AstFilters.register_str_item_filter map#str_item;
   AstFilters.register_topphrase_filter map#str_item;
 
-  Camlp4.Options.add "-no-debug" (Arg.Set no_debug)
-    "remove all debugs"
-
+  Camlp4.Options.add "-no-debug" (Arg.Set no_debug) "remove all debugs"
