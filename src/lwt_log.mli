@@ -26,8 +26,66 @@
 (** This module provides functions to deal with logging in your
     program. It support:
 
-    You can use this module directly, or via the syntax extension
-    [lwt.syntax.log] (recommeded).
+    - logging to the syslog daemon
+    - logging to a channel (stderr, stdout, ...)
+    - logging to a file
+    - logging to multiple destination at the same time
+
+    Each logger may accept or drop a message according to its
+    logging {!level}.
+
+    Here is a simple example on how to log messages:
+
+    {[
+      (* Create a logger which will display messages on [stderr]: *)
+      lwt logger = Lwt_log.channel ~close_mode:`keet ~channel:Lwt_io.stderr () in
+
+      (* Now log something: *)
+      Lwt_log.log ~logger ~level:`Info "my pid is: %d" (Unix.getpid ())
+    ]}
+
+    You can also compose loggers:
+
+    {[
+      (* Create a logger which will send everything to the syslog daemon,
+         and all non-debug message to [stderr]: *)
+      lwt logger_1 = Lwt_log.channel ~close_mode:`kept ~channel:Lwt_io.stderr
+                       ~levels:{ Lwt_log.levels_true with Lwt_log.debug = false } ()
+      and logger_2 = Lwt_log.syslog () in
+
+      (* Combine the two logger into 1: *)
+      let logger = merge [logger_1; logger_2] in
+
+      (* This message will be sent to the syslog daemon and stderr: *)
+      Lwt_log.log ~logger ~level:`Info "debug message":
+
+      (* This message will only be sent to the syslog daemon *)
+      Lwt_log.log ~logger ~level:`Debug "debug message"
+    ]}
+
+    The [logger] argument is not mandatory, if you omit it, the
+    {!default} logger will be used instead.
+
+    Moreover, there is the syntax extension [lwt.syntax.log] which
+    allow more convenient use of loggers.
+
+    It allow the following constructions:
+
+    {[
+      Log#error format ...
+    ]}
+
+    which is translated to:
+
+    {[
+      if Lwt_log.__unsafe_level 3 then
+        Lwt_log.__unsafe_log ~level:3 (module_name ^^ format) ...
+    ]}
+
+    The advantages of the syntax extension are:
+    - it does not compute the arguments if they are not needed
+    - it adds automatically the module name to error messages
+    - it can removes debugging message at compile-time (for speedup)
 *)
 
 (** {6 Types} *)
