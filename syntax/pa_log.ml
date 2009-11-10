@@ -88,7 +88,7 @@ object
     let module_name = module_name _loc in
     match split e with
       | `Delete ->
-          <:expr< >>
+          <:expr< () >>
       | `Log(fmt, level, args) ->
           let args = List.map super#expr args and fmt = super#expr fmt in
           <:expr<
