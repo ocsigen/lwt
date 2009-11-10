@@ -64,12 +64,12 @@ let rec apply e = function
 let split e =
   let rec aux acc = function
     | <:expr@loc< Log#exn $exn$ $fmt$ >> ->
-        `Failure(exn, fmt, List.rev acc)
+        `Failure(exn, fmt, acc)
     | <:expr@loc< Log#$lid:level$ $fmt$ >> ->
         if level = "debug" && !no_debug then
           `Delete
         else if List.mem level levels then
-          `Log(fmt, level, List.rev acc)
+          `Log(fmt, level, acc)
         else
           Loc.raise loc (Failure (Printf.sprintf "invalid log level: %S" level))
     | <:expr@loc< $a$ $b$ >> ->
