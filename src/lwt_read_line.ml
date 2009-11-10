@@ -426,7 +426,8 @@ let rec repeat f n =
   if n <= 0 then
     return ()
   else
-    f () >> repeat f (n - 1)
+    lwt () = f () in
+    repeat f (n - 1)
 
 
 let print_words oc screen_width words = match List.filter ((<>) "") words with
@@ -464,7 +465,7 @@ let print_words oc screen_width words = match List.filter ((<>) "") words with
             lwt () = write oc word in
             let len = Text.length word in
             if len < column_width then
-              repeat (fun _ -> write_char oc " ") (column_width - len)
+              repeat (fun () -> write_char oc " ") (column_width - len)
             else
               return ()
           done
@@ -499,7 +500,8 @@ struct
     | 1 ->
         write stdout "\027[F"
     | n ->
-        write stdout "\027[F" >> beginning_of_line (n - 1)
+        lwt () = write stdout "\027[F" in
+        beginning_of_line (n - 1)
 
   (* Replace "\n" by padding to the end of line in a styled text.
 
@@ -572,19 +574,19 @@ struct
     let printed_total_erase = printed_total @ [Text(String.make (max 0 (render_state.length - styled_length printed_total)) ' ')] in
 
     (* Go back by the number of rows of the previous text: *)
-    beginning_of_line render_state.height_before
+    lwt () = beginning_of_line render_state.height_before in
 
     (* Prints and erase everything: *)
-    >> printc printed_total_erase
+    lwt () = printc printed_total_erase in
 
     (* Go back again to the beginning of printed text: *)
-    >> beginning_of_line (compute_height columns (styled_length printed_total_erase))
+    lwt () = beginning_of_line (compute_height columns (styled_length printed_total_erase)) in
 
     (* Prints again the text before the cursor, to put the cursor at the
        right place: *)
-    >> printc printed_before
+    lwt () = printc printed_before in
 
-    >> begin
+    begin
       (* Prints another newline to avoid having the cursor displayed at
          the end of line: *)
       if (match engine_state.mode with
@@ -592,14 +594,15 @@ struct
             | Selection sel -> match Text.prev sel.sel_cursor with
                 | Some("\n", _) -> true
                 | _ -> false) then
-        printlc [] >> return { new_render_state with height_before = new_render_state.height_before + 1 }
+        lwt () = printlc [] in
+        return { new_render_state with height_before = new_render_state.height_before + 1 }
       else
         return new_render_state
     end
 
   let last_draw ?(map_text=fun x -> x) render_state engine_state prompt =
-    beginning_of_line render_state.height_before
-    >> printlc (prepare_for_display (React.S.value Lwt_term.columns) (prompt @ [Reset; Text(map_text(all_input engine_state))]))
+    lwt () = beginning_of_line render_state.height_before in
+    printlc (prepare_for_display (React.S.value Lwt_term.columns) (prompt @ [Reset; Text(map_text(all_input engine_state))]))
 end
 
 (* +-----------------------------------------------------------------+
@@ -613,18 +616,19 @@ let read_command () = read_key () >|= Command.of_key
 let read_line ?(history=[]) ?(complete=fun state -> return { comp_state = state; comp_words = [] }) ?(clipboard=clipboard) prompt =
   let rec process_command render_state engine_state = function
     | Clear_screen ->
-        clear_screen () >> redraw Terminal.init engine_state
+        lwt () = clear_screen () in
+        redraw Terminal.init engine_state
 
     | Refresh ->
         redraw render_state engine_state
 
     | Accept_line ->
-        Terminal.last_draw render_state engine_state prompt
-        >> return (Engine.all_input engine_state)
+        lwt () = Terminal.last_draw render_state engine_state prompt in
+        return (Engine.all_input engine_state)
 
     | Break ->
-        Terminal.last_draw render_state engine_state prompt
-        >> fail Interrupt
+        lwt () = Terminal.last_draw render_state engine_state prompt in
+        fail Interrupt
 
     | Complete ->
         let engine_state = Engine.reset engine_state in
@@ -669,7 +673,8 @@ let read_line ?(history=[]) ?(complete=fun state -> return { comp_state = state;
   if Lazy.force stdin_is_atty && Lazy.force stdout_is_atty then
     with_raw_mode (fun _ -> redraw Terminal.init (Engine.init history))
   else
-    write stdout (strip_styles prompt) >> Lwt_text.read_line stdin
+    lwt () = write stdout (strip_styles prompt) in
+    Lwt_text.read_line stdin
 
 let read_password ?(clipboard=clipboard) ?(style=`text "*") prompt =
   (* Choose a mapping text function according to style: *)
@@ -679,18 +684,19 @@ let read_password ?(clipboard=clipboard) ?(style=`text "*") prompt =
     | `empty -> (fun _ -> "") in
   let rec process_command render_state engine_state = function
     | Clear_screen ->
-        clear_screen () >> redraw Terminal.init engine_state
+        lwt () = clear_screen () in
+        redraw Terminal.init engine_state
 
     | Refresh ->
         redraw render_state engine_state
 
     | Accept_line ->
-        Terminal.last_draw ~map_text render_state engine_state prompt
-        >> return (Engine.all_input engine_state)
+        lwt () = Terminal.last_draw ~map_text render_state engine_state prompt in
+        return (Engine.all_input engine_state)
 
     | Break ->
-        Terminal.last_draw ~map_text render_state engine_state prompt
-        >> fail Interrupt
+        lwt () = Terminal.last_draw ~map_text render_state engine_state prompt in
+        fail Interrupt
 
     | cmd ->
         let new_state = Engine.update engine_state ~clipboard cmd in
@@ -724,7 +730,8 @@ let read_keyword ?(history=[]) ?(case_sensitive=false) prompt keywords =
   in
   let rec process_command render_state engine_state = function
     | Clear_screen ->
-        clear_screen () >> redraw Terminal.init engine_state
+        lwt () = clear_screen () in
+        redraw Terminal.init engine_state
 
     | Refresh ->
         redraw render_state engine_state
@@ -732,15 +739,15 @@ let read_keyword ?(history=[]) ?(case_sensitive=false) prompt keywords =
     | Accept_line ->
         begin match assoc (Engine.all_input engine_state) keywords with
           | Some value ->
-              Terminal.last_draw render_state engine_state prompt
-              >> return value
+              lwt () = Terminal.last_draw render_state engine_state prompt in
+              return value
           | None ->
               loop render_state engine_state
         end
 
     | Break ->
-        Terminal.last_draw render_state engine_state prompt
-        >> fail Interrupt
+        lwt () = Terminal.last_draw render_state engine_state prompt in
+        fail Interrupt
 
     | Complete ->
         let engine_state = Engine.reset engine_state in
