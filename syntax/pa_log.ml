@@ -22,7 +22,7 @@
 
 open Camlp4.PreCast
 
-let no_debug = ref false
+let debug = ref false
 
 let levels = [
   "emergency";
@@ -66,7 +66,7 @@ let split e =
     | <:expr@loc< Log#exn $exn$ $fmt$ >> ->
         `Failure(exn, fmt, acc)
     | <:expr@loc< Log#$lid:level$ $fmt$ >> ->
-        if level = "debug" && !no_debug then
+        if level = "debug" && (not !debug) then
           `Delete
         else if List.mem level levels then
           `Log(fmt, level, acc)
@@ -117,4 +117,4 @@ let () =
   AstFilters.register_str_item_filter map#str_item;
   AstFilters.register_topphrase_filter map#str_item;
 
-  Camlp4.Options.add "-no-debug" (Arg.Set no_debug) "remove all debugs"
+  Camlp4.Options.add "-lwt-debug" (Arg.Set debug) "keep debugging message"
