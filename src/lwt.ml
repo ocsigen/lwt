@@ -132,7 +132,7 @@ let rec connect t1 t2 =
         invalid_arg "connect"
 
 let return v = thread (ref (Return v))
-let fail e = thread (ref (Fail e))
+let fail e = try raise e with e -> thread (ref (Fail e))
 let temp f = thread (ref (Sleep(Temp f, Lwt_sequence.create ())))
 let wait _ =
   let t = ref (Sleep(Wait, Lwt_sequence.create ())) in (thread t, wakener t)

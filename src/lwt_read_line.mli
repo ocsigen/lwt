@@ -146,7 +146,7 @@ val read_yes_no : ?history : history -> ?dynamic : bool -> prompt -> bool Lwt.t
   (** [read_yes_no ?history ?dynamic prompt] is the same as:
 
       {[
-        read_keyword ?history ?dynamic prompt [("yes", true); ("y", true); ("no", false); ("n", false)]
+        read_keyword ?history ?dynamic prompt [("yes", true); ("no", false)]
       ]}
   *)
 
@@ -215,7 +215,7 @@ module Engine : sig
     sel_mark : Text.pointer;
     (** Pointer to the mark *)
     sel_cursor : Text.pointer;
-    (** Pointer to the text position *)
+    (** Pointer to the cursor *)
   }
 
   (** The engine mode: *)
@@ -230,6 +230,11 @@ module Engine : sig
     mode : mode;
     history : history * history;
     (** Cursor to the history position. *)
+    completion_start : int;
+    (** For dynamic completion, it is the number of pixel to skip at
+        the beginning of the completion list. *)
+    completion_index : int;
+    (** Current position of the selection cursor *)
   }
 
   val init : history -> state
@@ -273,8 +278,7 @@ module Terminal : sig
         @param map_text is a function used to map user input before
         printing it, for example to hide passwords.
 
-        @param completion is for dynamic completion mode
-    *)
+        @param completion is for dynamic completion mode. *)
 
   val last_draw : ?map_text : (Text.t -> Text.t) -> ?completion : bool ->
     state -> Engine.state -> prompt -> unit Lwt.t

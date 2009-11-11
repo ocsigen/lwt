@@ -239,11 +239,15 @@ struct
   type state = {
     mode : mode;
     history : history * history;
+    completion_start : int;
+    completion_index : int;
   }
 
   let init history = {
     mode = Edition("", "");
     history = (history, []);
+    completion_start = 0;
+    completion_index = -1;
   }
 
   let all_input state = match state.mode with
@@ -384,6 +388,7 @@ struct
                 edition (before ^ after, "")
 
             | Kill_line ->
+                clipboard := after;
                 edition (before, "")
 
             | History_previous ->
@@ -392,7 +397,9 @@ struct
                       state
                   | (line :: hist_before, hist_after) ->
                       { mode = Edition(line, "");
-                        history = (hist_before, (before ^ after) :: hist_after) }
+                        history = (hist_before, (before ^ after) :: hist_after);
+                        completion_start = 0;
+                        completion_index = -1 }
                 end
 
             | History_next ->
@@ -401,7 +408,9 @@ struct
                       state
                   | (hist_before, line :: hist_after) ->
                       { mode = Edition(line, "");
-                        history = ((before ^ after) :: hist_before, hist_after) }
+                        history = ((before ^ after) :: hist_before, hist_after);
+                        completion_start = 0;
+                        completion_index = -1 }
                 end
 
             | Backward_char ->
@@ -437,6 +446,15 @@ struct
             | Forward_word ->
                 let a, b, c = split_first_word after in
                 edition (before ^ a ^ b, c)
+
+            | Complete_right ->
+                { state with completion_index = state.completion_index + 1 }
+
+            | Complete_left ->
+                if state.completion_index >= 0 then
+                  { state with completion_index = state.completion_index - 1 }
+                else
+                  state
 
             | _ ->
                 state
@@ -565,22 +583,39 @@ struct
     else
       (len - 1) / columns
 
-  let make_completion columns words =
-    let result = String.make columns ' ' in
-    let rec aux i = function
+  let make_completion start index columns words =
+    let rec aux ofs idx = function
       | [] ->
-          result
+          []
+      | [word] ->
+          if idx = index then
+            [Inverse; Text word; Reset]
+          else
+            [Text word]
       | word :: words ->
           let len = Text.length word in
-          if i + len >= columns + 1 then begin
-            String.blit word 0 result i (columns - i);
-            result
-          end else begin
-            String.blit word 0 result i len;
-            aux (i + len + 1) words
-          end
+          let word =
+            if ofs + len > columns then
+              String.sub word 0 (columns - ofs)
+            else
+              word
+          in
+          let len = String.length word in
+          let ofs = ofs + len in
+          if idx = index then
+            Inverse :: Text word :: Reset :: Foreground lblue ::
+              if ofs + 1 > columns then
+                []
+              else
+                Text " " :: aux (ofs + 1) (idx + 1) words
+          else
+            Text word ::
+              if ofs + 1 > columns then
+                []
+              else
+                Text " " :: aux (ofs + 1) (idx + 1) words
     in
-    aux 0 words
+    aux 0 0 words
 
   (* Render the current state on the terminal, and returns the new
      terminal rendering state: *)
@@ -612,9 +647,13 @@ struct
                                               | None ->
                                                   []
                                               | Some words ->
-                                                  [Foreground lblue; Text "\n";
-                                                   Text(Text.repeat columns "─");
-                                                   Text(make_completion columns words)])) in
+                                                  Foreground lblue
+                                                  :: Text "\n"
+                                                  :: Text(Text.repeat columns "─")
+                                                  :: make_completion
+                                                    engine_state.completion_start
+                                                    engine_state.completion_index
+                                                    columns words)) in
 
     (* The new rendering state: *)
     let new_render_state = {
@@ -867,7 +906,7 @@ let read_keyword ?(history=[]) ?(case_sensitive=false) ?(dynamic=false) prompt k
           fail (Failure "Lwt_read_line.read_keyword: invalid input")
 
 let read_yes_no ?history ?dynamic prompt =
-  read_keyword ?history ?dynamic prompt [("yes", true); ("y", true); ("no", false); ("n", false)]
+  read_keyword ?history ?dynamic prompt [("yes", true); ("no", false)]
 
 (* +-----------------------------------------------------------------+
    | History                                                         |
