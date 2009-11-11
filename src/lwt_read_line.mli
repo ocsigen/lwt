@@ -106,10 +106,14 @@ val read_line :
   ?history : history ->
   ?complete : completion ->
   ?clipboard : clipboard ->
+  ?dynamic : bool ->
   prompt -> Text.t Lwt.t
-  (** [readline ?history ?complete prompt] inputs some text from the
-      user. If input is not a terminal, it defaults to
-      [Lwt_io.read_line Lwt_io.stdin] *)
+  (** [readline ?history ?complete ?dynamic prompt] inputs some text
+      from the user. If input is not a terminal, it defaults to
+      [Lwt_io.read_line Lwt_io.stdin].
+
+      If @param dynamic is [true], then possible competions will be
+      shown to the user as he types. It default to [false]. *)
 
 val read_password :
   ?clipboard : clipboard ->
@@ -130,18 +134,19 @@ val read_password :
 val read_keyword :
   ?history : history ->
   ?case_sensitive : bool ->
+  ?dynamic : bool ->
   prompt -> (Text.t * 'value) list -> 'value Lwt.t
-  (** [read_keyword ?history prompt keywords] reads one word which is
-      a member of [words]. And returns which keyword the user
-      choosed.
+  (** [read_keyword ?history ?case_sensitive ?dynamic prompt keywords]
+      reads one word which is a member of [words]. And returns which
+      keyword the user choosed.
 
       [case_sensitive] default to [false]. *)
 
-val read_yes_no : ?history : history -> prompt -> bool Lwt.t
-  (** [read_yes_no ?history prompt] is the same as:
+val read_yes_no : ?history : history -> ?dynamic : bool -> prompt -> bool Lwt.t
+  (** [read_yes_no ?history ?dynamic prompt] is the same as:
 
       {[
-        read_keyword ?history prompt [("yes", true); ("y", true); ("no", false); ("n", false)]
+        read_keyword ?history ?dynamic prompt [("yes", true); ("y", true); ("no", false); ("n", false)]
       ]}
   *)
 
@@ -178,13 +183,18 @@ module Command : sig
     | Backward_char
     | Forward_char
     | Set_mark
-    | Yank
-    | Kill_ring_save
+    | Paste
+    | Copy
+    | Cut
     | Uppercase
     | Lowercase
     | Capitalize
     | Backward_word
     | Forward_word
+    | Complete_left
+    | Complete_right
+    | Complete_up
+    | Complete_down
 
   val to_string : t -> string
     (** [to_string cmd] returns a string representation of a command *)
@@ -254,15 +264,20 @@ module Terminal : sig
   val init : state
     (** Initial state *)
 
-  val draw : ?map_text : (Text.t -> Text.t) -> state -> Engine.state -> prompt -> state Lwt.t
-    (** [draw ?map_text state engine_state prompt] erase previous
-        printed text, draw the new one, and return a new state for
-        future redrawing.
+  val draw : ?map_text : (Text.t -> Text.t) -> ?completion : Text.t list ->
+    state -> Engine.state -> prompt -> state Lwt.t
+    (** [draw ?map_text ?completion state engine_state prompt] erase
+        previous printed text, draw the new one, and return a new
+        state for future redrawing.
 
-        [map_text] is a function used to map user input before
-        printing it, for example to hide passwords. *)
+        @param map_text is a function used to map user input before
+        printing it, for example to hide passwords.
 
-  val last_draw : ?map_text : (Text.t -> Text.t) -> state -> Engine.state -> prompt -> unit Lwt.t
+        @param completion is for dynamic completion mode
+    *)
+
+  val last_draw : ?map_text : (Text.t -> Text.t) -> ?completion : bool ->
+    state -> Engine.state -> prompt -> unit Lwt.t
     (** Draw for the last time, i.e. the cursor is left after the text
         and not at current position. *)
 end

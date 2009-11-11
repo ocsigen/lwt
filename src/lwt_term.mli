@@ -286,9 +286,3 @@ val blank : point
 
 val render : point array array -> unit Lwt.t
   (** Render an offscreen array to the terminal. *)
-
-(**/**)
-
-val stdin_is_atty : bool Lazy.t
-val stdout_is_atty : bool Lazy.t
-val stderr_is_atty : bool Lazy.t

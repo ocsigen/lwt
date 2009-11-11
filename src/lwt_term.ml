@@ -27,10 +27,6 @@ open Lwt_text
    | Terminal mode                                                   |
    +-----------------------------------------------------------------+ *)
 
-let stdin_is_atty = lazy(Unix.isatty Unix.stdin)
-let stdout_is_atty = lazy(Unix.isatty Unix.stdout)
-let stderr_is_atty = lazy(Unix.isatty Unix.stderr)
-
 type state =
   | Normal
   | Raw of Unix.terminal_io
@@ -632,25 +628,25 @@ let styled_length st =
   loop 0 st
 
 let printc st =
-  if Lazy.force stdout_is_atty then
+  if Unix.isatty Unix.stdout then
     atomic (fun oc -> write_styled oc st) stdout
   else
     write stdout (strip_styles st)
 
 let eprintc st =
-  if Lazy.force stderr_is_atty then
+  if Unix.isatty Unix.stderr then
     atomic (fun oc -> write_styled oc st) stderr
   else
     write stderr (strip_styles st)
 
-let fprintlc oc is_atty st =
-  if Lazy.force is_atty then
+let fprintlc oc fd st =
+  if Unix.isatty fd then
     atomic (fun oc ->
-              write_styled oc st
-              >> write oc "\027[m"
-              >> write_char oc "\n") oc
+              lwt () = write_styled oc st in
+              lwt () = write oc "\027[m" in
+              write_char oc "\n") oc
   else
     write_line oc (strip_styles st)
 
-let printlc st = fprintlc stdout stdout_is_atty st
-let eprintlc st = fprintlc stderr stderr_is_atty st
+let printlc st = fprintlc stdout Unix.stdout st
+let eprintlc st = fprintlc stderr Unix.stderr st

@@ -65,8 +65,6 @@ let complete ?(suffix=" ") before word after words =
   match lookup word words with
     | (_, []) ->
         { comp_state = (before ^ word, after); comp_words = [] }
-    | (_, [word]) ->
-        { comp_state = (before ^ word ^ suffix, after); comp_words = [] }
     | (prefix, words) ->
         { comp_state = (before ^ prefix, after);
           comp_words = words }
@@ -99,13 +97,18 @@ struct
     | Backward_char
     | Forward_char
     | Set_mark
-    | Yank
-    | Kill_ring_save
+    | Paste
+    | Copy
+    | Cut
     | Uppercase
     | Lowercase
     | Capitalize
     | Backward_word
     | Forward_word
+    | Complete_left
+    | Complete_right
+    | Complete_up
+    | Complete_down
 
   let to_string = function
     | Char ch ->
@@ -148,10 +151,12 @@ struct
         "forward-char"
     | Set_mark ->
         "set-mark"
-    | Yank ->
-        "yank"
-    | Kill_ring_save ->
-        "kill-ring-save"
+    | Paste ->
+        "paste"
+    | Copy ->
+        "copy"
+    | Cut ->
+        "cut"
     | Uppercase ->
         "uppercase"
     | Lowercase ->
@@ -162,6 +167,14 @@ struct
         "backward-word"
     | Forward_word ->
         "forward-word"
+    | Complete_left ->
+        "complete-left"
+    | Complete_right ->
+        "complete-right"
+    | Complete_up ->
+        "complete-up"
+    | Complete_down ->
+        "complete-down"
 
   let of_key = function
     | Key_up -> History_previous
@@ -187,8 +200,8 @@ struct
     | Key_control 'n' -> Backward_char
     | Key_control 'p' -> Forward_char
     | Key_control 'r' -> Refresh
-    | Key_control 'w' -> Kill_ring_save
-    | Key_control 'y' -> Yank
+    | Key_control 'w' -> Cut
+    | Key_control 'y' -> Paste
     | Key_control '?' -> Backward_delete_char
     | Key "\027u" -> Uppercase
     | Key "\027l" -> Lowercase
@@ -196,6 +209,12 @@ struct
     | Key "\027Oc" | Key "\027[1;5C"-> Forward_word
     | Key "\027Od" | Key "\027[1;5D"-> Backward_word
     | Key ch when Text.length ch = 1 && Text.is_print ch -> Char ch
+    | Key "\027\027[A" | Key "\027[1;3A" -> Complete_up
+    | Key "\027\027[B" | Key "\027[1;3B" -> Complete_down
+    | Key "\027\027[C" | Key "\027[1;3C" -> Complete_right
+    | Key "\027\027[D" | Key "\027[1;3D" -> Complete_left
+    | Key "\027\n" | Key "\194\141" -> Char "\n"
+    | Key "\027w" | Key "\195\183" -> Copy
     | _ -> Nop
 end
 
@@ -319,7 +338,13 @@ struct
             | End_of_line ->
                 selection { sel with sel_cursor =  Text.pointer_r sel.sel_text }
 
-            | Kill_ring_save ->
+            | Copy ->
+                let a = min sel.sel_cursor sel.sel_mark and b = max sel.sel_cursor sel.sel_mark in
+                clipboard := Text.chunk a b;
+                edition (Text.chunk (Text.pointer_l sel.sel_text) sel.sel_cursor,
+                         Text.chunk sel.sel_cursor (Text.pointer_r sel.sel_text))
+
+            | Cut ->
                 let a = min sel.sel_cursor sel.sel_mark and b = max sel.sel_cursor sel.sel_mark in
                 clipboard := Text.chunk a b;
                 edition (Text.chunk (Text.pointer_l sel.sel_text) a,
@@ -343,7 +368,7 @@ struct
                             sel_mark = ptr;
                             sel_cursor = ptr }
 
-            | Yank ->
+            | Paste ->
                 edition (before ^ !clipboard, after)
 
             | Backward_delete_char ->
@@ -505,7 +530,7 @@ struct
 
   (* Replace "\n" by padding to the end of line in a styled text.
 
-     For example with 8 columns, ["toto\ntiti"] becomes ["toto titi"].
+     For example with 5 columns, ["toto\ntiti"] becomes ["toto titi"].
 
      The goal of that is to erase all previous characters after end of
      lines. *)
@@ -519,7 +544,9 @@ struct
             (fun ch len -> match ch with
                | "\n" ->
                    let padding = columns - (len mod columns) in
-                   Buffer.add_string buf (String.make padding ' ');
+                   for i = 1 to padding do
+                     Buffer.add_char buf ' '
+                   done;
                    len + padding
                | ch ->
                    Buffer.add_string buf ch;
@@ -538,12 +565,30 @@ struct
     else
       (len - 1) / columns
 
+  let make_completion columns words =
+    let result = String.make columns ' ' in
+    let rec aux i = function
+      | [] ->
+          result
+      | word :: words ->
+          let len = Text.length word in
+          if i + len >= columns + 1 then begin
+            String.blit word 0 result i (columns - i);
+            result
+          end else begin
+            String.blit word 0 result i len;
+            aux (i + len + 1) words
+          end
+    in
+    aux 0 words
+
   (* Render the current state on the terminal, and returns the new
      terminal rendering state: *)
-  let draw ?(map_text=fun x -> x) render_state engine_state prompt =
+  let draw ?(map_text=fun x -> x) ?completion render_state engine_state prompt =
     (* Text before and after the cursor, according to the current mode: *)
     let before, after = match engine_state.mode with
-      | Edition(before, after) -> ([Text(map_text before)], [Text(map_text after)])
+      | Edition(before, after) ->
+          ([Text(map_text before)], [Text(map_text after)])
       | Selection sel ->
           let a = min sel.sel_cursor sel.sel_mark and b = max sel.sel_cursor sel.sel_mark in
           let part_before = [Text(map_text (Text.chunk (Text.pointer_l sel.sel_text) a))]
@@ -558,10 +603,18 @@ struct
     let columns = React.S.value Lwt_term.columns in
 
     (* All the text printed before the cursor: *)
-    let printed_before = prepare_for_display columns (prompt @ [Reset] @ before) in
+    let printed_before = prepare_for_display columns
+      (prompt @ [Reset] @ before) in
 
     (* The total printed text: *)
-    let printed_total = prepare_for_display columns (prompt @ [Reset] @ before @ after) in
+    let printed_total = prepare_for_display columns
+      (prompt @ [Reset] @ before @ after @ (match completion with
+                                              | None ->
+                                                  []
+                                              | Some words ->
+                                                  [Foreground lblue; Text "\n";
+                                                   Text(Text.repeat columns "─");
+                                                   Text(make_completion columns words)])) in
 
     (* The new rendering state: *)
     let new_render_state = {
@@ -586,23 +639,29 @@ struct
        right place: *)
     lwt () = printc printed_before in
 
-    begin
-      (* Prints another newline to avoid having the cursor displayed at
-         the end of line: *)
-      if (match engine_state.mode with
-            | Edition(before, after) -> Text.ends_with before "\n"
-            | Selection sel -> match Text.prev sel.sel_cursor with
-                | Some("\n", _) -> true
-                | _ -> false) then
-        lwt () = printlc [] in
-        return { new_render_state with height_before = new_render_state.height_before + 1 }
-      else
-        return new_render_state
-    end
+    (* Print a newline if we are at the end of a line; otherwise the
+       cursor will stay on the last character of the line *)
+    if (styled_length printed_before) mod columns = 0 then
+      lwt () = print "\n" in
+      return { new_render_state with height_before = new_render_state.height_before + 1 }
+    else
+      return new_render_state
 
-  let last_draw ?(map_text=fun x -> x) render_state engine_state prompt =
+  let last_draw ?(map_text=fun x -> x) ?(completion=false) render_state engine_state prompt =
+    let columns = React.S.value Lwt_term.columns in
     lwt () = beginning_of_line render_state.height_before in
-    printlc (prepare_for_display (React.S.value Lwt_term.columns) (prompt @ [Reset; Text(map_text(all_input engine_state))]))
+    lwt () = printlc (prepare_for_display
+                        columns
+                        (prompt @ [Reset; Text(map_text(all_input engine_state))] @
+                           (match completion with
+                              | false ->
+                                  []
+                              | true ->
+                                  [Text "\n\n\n"]))) in
+    if completion then
+      beginning_of_line 2
+    else
+      return ()
 end
 
 (* +-----------------------------------------------------------------+
@@ -613,7 +672,8 @@ open Command
 
 let read_command () = read_key () >|= Command.of_key
 
-let read_line ?(history=[]) ?(complete=fun state -> return { comp_state = state; comp_words = [] }) ?(clipboard=clipboard) prompt =
+let read_line ?(history=[]) ?(complete=fun state -> return { comp_state = state; comp_words = [] })
+    ?(clipboard=clipboard) ?(dynamic=false) prompt =
   let rec process_command render_state engine_state = function
     | Clear_screen ->
         lwt () = clear_screen () in
@@ -623,54 +683,69 @@ let read_line ?(history=[]) ?(complete=fun state -> return { comp_state = state;
         redraw render_state engine_state
 
     | Accept_line ->
-        lwt () = Terminal.last_draw render_state engine_state prompt in
+        lwt () = Terminal.last_draw ~completion:dynamic render_state engine_state prompt in
         return (Engine.all_input engine_state)
 
     | Break ->
-        lwt () = Terminal.last_draw render_state engine_state prompt in
+        lwt () = Terminal.last_draw ~completion:dynamic render_state engine_state prompt in
         fail Interrupt
 
     | Complete ->
-        let engine_state = Engine.reset engine_state in
-        let t_complete = complete (Engine.edition_state engine_state)
-        and t_command = read_command () in
-        (* Let the completion and user input run in parallel: *)
-        choose [(t_complete >>= fun c -> return (`Completion c));
-                (t_command >>= fun c -> return (`Command c))]
-        >>= begin function
-          | `Command command ->
-              (* The user continued to type, drop completion: *)
-              Lwt.cancel t_complete;
-              process_command render_state engine_state command
-          | `Completion{ comp_state = (before, after); comp_words = [] } ->
-              let engine_state = { engine_state with Engine.mode = Engine.Edition(before, after) } in
-              lwt render_state = Terminal.draw render_state engine_state prompt in
-              t_command >>= process_command render_state engine_state
-          | `Completion{ comp_state = (before, after); comp_words = words } ->
-              let engine_state = { engine_state with Engine.mode = Engine.Edition(before, after) } in
-              lwt () = write_char stdout "\n" in
-              lwt () = print_words stdout (React.S.value Lwt_term.columns) words in
-              lwt () = write_char stdout "\n" in
-              lwt render_state = Terminal.draw render_state engine_state prompt in
-              t_command >>= process_command render_state engine_state
-          end
-
-      | cmd ->
-          let new_state = Engine.update engine_state ~clipboard cmd in
-          (* Do not redraw if not needed: *)
-          if new_state <> engine_state then
-            redraw render_state new_state
-          else
-            loop render_state new_state
+        if dynamic then  begin
+          let engine_state = Engine.reset engine_state in
+          (* Let the completion and user input run in parallel: *)
+          select [complete (Engine.edition_state engine_state) >|= (fun c -> `Completion c);
+                  read_command () >|= (fun c -> `Command c)]
+          >>= function
+            | `Command command ->
+                process_command render_state engine_state command
+            | `Completion{ comp_words = [] } ->
+                loop render_state engine_state
+            | `Completion{ comp_state = (before, after); comp_words = word :: words } ->
+                let engine_state = { engine_state with Engine.mode = Engine.Edition(before, after) } in
+                redraw render_state engine_state
+        end else begin
+          let engine_state = Engine.reset engine_state in
+          select [complete (Engine.edition_state engine_state) >|= (fun c -> `Completion c);
+                  read_command () >|= (fun c -> `Command c)]
+          >>= function
+            | `Command command ->
+                process_command render_state engine_state command
+            | `Completion{ comp_state = (before, after); comp_words = [_] } ->
+                let engine_state = { engine_state with Engine.mode = Engine.Edition(before, after) } in
+                lwt render_state = Terminal.draw render_state engine_state prompt in
+                loop render_state engine_state
+            | `Completion{ comp_state = (before, after); comp_words = words } ->
+                let engine_state = { engine_state with Engine.mode = Engine.Edition(before, after) } in
+                lwt () = write_char stdout "\n" in
+                lwt () = print_words stdout (React.S.value Lwt_term.columns) words in
+                lwt () = write_char stdout "\n" in
+                lwt render_state = Terminal.draw render_state engine_state prompt in
+                loop render_state engine_state
+        end
+    | cmd ->
+        let new_state = Engine.update engine_state ~clipboard cmd in
+        (* Do not redraw if not needed: *)
+        if new_state <> engine_state then
+          redraw render_state new_state
+        else
+          loop render_state new_state
 
   and redraw render_state engine_state =
-    lwt render_state = Terminal.draw render_state engine_state prompt in
+    lwt completion = match dynamic with
+      | false ->
+          return None
+      | true ->
+          lwt result = complete (Engine.edition_state engine_state) in
+          return (Some result.comp_words)
+    in
+    lwt render_state = Terminal.draw ?completion render_state engine_state prompt in
     loop render_state engine_state
 
   and loop render_state engine_state =
     read_command () >>= process_command render_state engine_state
   in
-  if Lazy.force stdin_is_atty && Lazy.force stdout_is_atty then
+  if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then
     with_raw_mode (fun _ -> redraw Terminal.init (Engine.init history))
   else
     lwt () = write stdout (strip_styles prompt) in
@@ -713,12 +788,12 @@ let read_password ?(clipboard=clipboard) ?(style=`text "*") prompt =
     read_command () >>= process_command render_state engine_state
 
   in
-  if not (Lazy.force stdin_is_atty && Lazy.force stdout_is_atty) then
+  if not (Unix.isatty Unix.stdin && Unix.isatty Unix.stdout) then
     fail (Failure "Lwt_read_line.read_password: not running in a terminal")
   else
     with_raw_mode (fun _ ->  Lwt_stream.junk_old standard_input >> redraw Terminal.init (Engine.init []))
 
-let read_keyword ?(history=[]) ?(case_sensitive=false) prompt keywords =
+let read_keyword ?(history=[]) ?(case_sensitive=false) ?(dynamic=false) prompt keywords =
   let compare = if case_sensitive then Text.compare else Text.icompare in
   let rec assoc key = function
     | [] -> None
@@ -739,14 +814,14 @@ let read_keyword ?(history=[]) ?(case_sensitive=false) prompt keywords =
     | Accept_line ->
         begin match assoc (Engine.all_input engine_state) keywords with
           | Some value ->
-              lwt () = Terminal.last_draw render_state engine_state prompt in
+              lwt () = Terminal.last_draw ~completion:dynamic render_state engine_state prompt in
               return value
           | None ->
               loop render_state engine_state
         end
 
     | Break ->
-        lwt () = Terminal.last_draw render_state engine_state prompt in
+        lwt () = Terminal.last_draw ~completion:dynamic render_state engine_state prompt in
         fail Interrupt
 
     | Complete ->
@@ -767,13 +842,20 @@ let read_keyword ?(history=[]) ?(case_sensitive=false) prompt keywords =
           loop render_state new_state
 
   and redraw render_state engine_state =
-    lwt render_state = Terminal.draw render_state engine_state prompt in
+    let completion = match dynamic with
+      | false ->
+          None
+      | true ->
+          let txt, _ = Engine.edition_state engine_state in
+          Some(List.map fst (List.filter (fun (kwd, _) -> Text.starts_with kwd txt) keywords))
+    in
+    lwt render_state = Terminal.draw ?completion render_state engine_state prompt in
     loop render_state engine_state
 
   and loop render_state engine_state =
     read_command () >>= process_command render_state engine_state
   in
-  if Lazy.force stdin_is_atty && Lazy.force stdout_is_atty then
+  if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then
     with_raw_mode (fun _ -> redraw Terminal.init (Engine.init history))
   else
     lwt _ = write stdout (strip_styles prompt) in
@@ -784,8 +866,8 @@ let read_keyword ?(history=[]) ?(case_sensitive=false) prompt keywords =
       | None ->
           fail (Failure "Lwt_read_line.read_keyword: invalid input")
 
-let read_yes_no ?history prompt =
-  read_keyword ?history prompt [("yes", true); ("y", true); ("no", false); ("n", false)]
+let read_yes_no ?history ?dynamic prompt =
+  read_keyword ?history ?dynamic prompt [("yes", true); ("y", true); ("no", false); ("n", false)]
 
 (* +-----------------------------------------------------------------+
    | History                                                         |
