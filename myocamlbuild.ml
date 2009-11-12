@@ -315,7 +315,7 @@ let _ =
                                              | "Lwt_chan" -> false
                                              | s -> not (String.is_prefix "private" s))
                                 (List.concat (List.map string_list_of_file deps)))
-                           @ ["syntax/Pa_lwt\n"; "syntax/Pa_log"],
+                           @ ["src/Lwt_top"; "syntax/Pa_lwt\n"; "syntax/Pa_log"],
                            prod));
 
         (* The default "thread" tag is not compatible with ocamlfind.

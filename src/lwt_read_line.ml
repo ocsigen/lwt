@@ -37,6 +37,8 @@ exception Interrupt
    | Completion                                                      |
    +-----------------------------------------------------------------+ *)
 
+type completion_mode = [ `classic | `dynamic ]
+
 type completion_result = {
   comp_state : edition_state;
   comp_words : Text.t list;
@@ -64,7 +66,8 @@ let lookup word words =
 let complete ?(suffix=" ") before word after words =
   match lookup word words with
     | (_, []) ->
-        { comp_state = (before ^ word, after); comp_words = [] }
+        { comp_state = (before ^ word, after);
+          comp_words = [] }
     | (prefix, words) ->
         { comp_state = (before ^ prefix, after);
           comp_words = words }
@@ -84,6 +87,7 @@ struct
     | Beginning_of_line
     | End_of_line
     | Complete
+    | Meta_complete
     | Kill_line
     | Accept_line
     | Backward_delete_word
@@ -125,6 +129,8 @@ struct
         "end-of-line"
     | Complete ->
         "complete"
+    | Meta_complete ->
+        "meta-complete"
     | Kill_line ->
         "kill-line"
     | Accept_line ->
@@ -214,6 +220,7 @@ struct
     | Key "\027\027[C" | Key "\027[1;3C" -> Complete_right
     | Key "\027\027[D" | Key "\027[1;3D" -> Complete_left
     | Key "\027\n" | Key "\194\141" -> Char "\n"
+    | Key "\027\t" | Key "\194\137" -> Meta_complete
     | Key "\027w" | Key "\195\183" -> Copy
     | _ -> Nop
 end
@@ -239,6 +246,7 @@ struct
   type state = {
     mode : mode;
     history : history * history;
+    completion : Text.t list;
     completion_start : int;
     completion_index : int;
   }
@@ -246,8 +254,9 @@ struct
   let init history = {
     mode = Edition("", "");
     history = (history, []);
+    completion = [];
     completion_start = 0;
-    completion_index = -1;
+    completion_index = 0;
   }
 
   let all_input state = match state.mode with
@@ -398,8 +407,9 @@ struct
                   | (line :: hist_before, hist_after) ->
                       { mode = Edition(line, "");
                         history = (hist_before, (before ^ after) :: hist_after);
+                        completion = [];
                         completion_start = 0;
-                        completion_index = -1 }
+                        completion_index = 0 }
                 end
 
             | History_next ->
@@ -409,8 +419,9 @@ struct
                   | (hist_before, line :: hist_after) ->
                       { mode = Edition(line, "");
                         history = ((before ^ after) :: hist_before, hist_after);
+                        completion = [];
                         completion_start = 0;
-                        completion_index = -1 }
+                        completion_index = 0 }
                 end
 
             | Backward_char ->
@@ -448,10 +459,13 @@ struct
                 edition (before ^ a ^ b, c)
 
             | Complete_right ->
-                { state with completion_index = state.completion_index + 1 }
+                if state.completion_index < List.length state.completion - 1 then
+                  { state with completion_index = state.completion_index + 1 }
+                else
+                  state
 
             | Complete_left ->
-                if state.completion_index >= 0 then
+                if state.completion_index > 0 then
                   { state with completion_index = state.completion_index - 1 }
                 else
                   state
@@ -619,7 +633,7 @@ struct
 
   (* Render the current state on the terminal, and returns the new
      terminal rendering state: *)
-  let draw ?(map_text=fun x -> x) ?completion render_state engine_state prompt =
+  let draw ?(map_text=fun x -> x) ?(mode=`dynamic) ?message render_state engine_state prompt =
     (* Text before and after the cursor, according to the current mode: *)
     let before, after = match engine_state.mode with
       | Edition(before, after) ->
@@ -643,17 +657,23 @@ struct
 
     (* The total printed text: *)
     let printed_total = prepare_for_display columns
-      (prompt @ [Reset] @ before @ after @ (match completion with
-                                              | None ->
+      (prompt @ [Reset] @ before @ after @ (match message, mode with
+                                              | _, `classic ->
                                                   []
-                                              | Some words ->
+                                              | Some msg, `dynamic ->
+                                                  [Foreground lblue;
+                                                   Text "\n";
+                                                   Text(Text.repeat columns "─");
+                                                   Text msg]
+                                              | None, `dynamic ->
                                                   Foreground lblue
                                                   :: Text "\n"
                                                   :: Text(Text.repeat columns "─")
                                                   :: make_completion
                                                     engine_state.completion_start
                                                     engine_state.completion_index
-                                                    columns words)) in
+                                                    columns
+                                                    engine_state.completion)) in
 
     (* The new rendering state: *)
     let new_render_state = {
@@ -686,18 +706,18 @@ struct
     else
       return new_render_state
 
-  let last_draw ?(map_text=fun x -> x) ?(completion=false) render_state engine_state prompt =
+  let last_draw ?(map_text=fun x -> x) ?(mode=`dynamic) render_state engine_state prompt =
     let columns = React.S.value Lwt_term.columns in
     lwt () = beginning_of_line render_state.height_before in
     lwt () = printlc (prepare_for_display
                         columns
                         (prompt @ [Reset; Text(map_text(all_input engine_state))] @
-                           (match completion with
-                              | false ->
+                           (match mode with
+                              | `classic ->
                                   []
-                              | true ->
+                              | `dynamic ->
                                   [Text "\n\n\n"]))) in
-    if completion then
+    if mode = `dynamic then
       beginning_of_line 2
     else
       return ()
@@ -711,39 +731,41 @@ open Command
 
 let read_command () = read_key () >|= Command.of_key
 
+type dynamic_complete_state = {
+  dcs_start_date : float;
+  dcs_thread : completion_result Lwt.t;
+}
+
 let read_line ?(history=[]) ?(complete=fun state -> return { comp_state = state; comp_words = [] })
-    ?(clipboard=clipboard) ?(dynamic=false) prompt =
-  let rec process_command render_state engine_state = function
+    ?(clipboard=clipboard) ?(mode=`dynamic) prompt =
+  let rec process_command dcs render_state engine_state = function
     | Clear_screen ->
         lwt () = clear_screen () in
-        redraw Terminal.init engine_state
+        loop dcs Terminal.init engine_state
 
     | Refresh ->
-        redraw render_state engine_state
+        loop dcs render_state engine_state
 
     | Accept_line ->
-        lwt () = Terminal.last_draw ~completion:dynamic render_state engine_state prompt in
+        lwt () = Terminal.last_draw ~mode render_state engine_state prompt in
         return (Engine.all_input engine_state)
 
     | Break ->
-        lwt () = Terminal.last_draw ~completion:dynamic render_state engine_state prompt in
+        lwt () = Terminal.last_draw ~mode render_state engine_state prompt in
         fail Interrupt
 
     | Complete ->
-        if dynamic then  begin
-          let engine_state = Engine.reset engine_state in
-          (* Let the completion and user input run in parallel: *)
-          select [complete (Engine.edition_state engine_state) >|= (fun c -> `Completion c);
-                  read_command () >|= (fun c -> `Command c)]
-          >>= function
-            | `Command command ->
-                process_command render_state engine_state command
-            | `Completion{ comp_words = [] } ->
-                loop render_state engine_state
-            | `Completion{ comp_state = (before, after); comp_words = word :: words } ->
-                let engine_state = { engine_state with Engine.mode = Engine.Edition(before, after) } in
-                redraw render_state engine_state
-        end else begin
+        if mode = `dynamic then
+          if engine_state.Engine.completion_index >= 0 &&
+            engine_state.Engine.completion_index < List.length engine_state.Engine.completion then
+              let before, after = Engine.edition_state engine_state in
+              loop render_state { engine_state with Engine.mode =
+                  Engine.Edition(before ^ List.nth
+                                   engine_state.Engine.completion
+                                   engine_state.Engine.completion_index, after) }
+          else
+            loop render_state engine_state
+        else begin
           let engine_state = Engine.reset engine_state in
           select [complete (Engine.edition_state engine_state) >|= (fun c -> `Completion c);
                   read_command () >|= (fun c -> `Command c)]
@@ -762,30 +784,98 @@ let read_line ?(history=[]) ?(complete=fun state -> return { comp_state = state;
                 lwt render_state = Terminal.draw render_state engine_state prompt in
                 loop render_state engine_state
         end
-    | cmd ->
-        let new_state = Engine.update engine_state ~clipboard cmd in
-        (* Do not redraw if not needed: *)
-        if new_state <> engine_state then
-          redraw render_state new_state
-        else
-          loop render_state new_state
 
-  and redraw render_state engine_state =
-    lwt completion = match dynamic with
-      | false ->
-          return None
-      | true ->
-          lwt result = complete (Engine.edition_state engine_state) in
-          return (Some result.comp_words)
-    in
-    lwt render_state = Terminal.draw ?completion render_state engine_state prompt in
-    loop render_state engine_state
+    | Meta_complete ->
+        if mode = `dynamic then begin
+          if engine_state.Engine.completion_index >= 0 &&
+            engine_state.Engine.completion_index < List.length engine_state.Engine.completion then
+              let before, after = Engine.edition_state engine_state in
+              loop render_state { engine_state with
+                                    Engine.mode = Engine.Edition(before ^ List.nth
+                                                                   engine_state.Engine.completion
+                                                                   engine_state.Engine.completion_index, after) }
+          else
+            loop dcs render_state engine_state
+        end else
+          loop dcs render_state engine_state
+
+    | cmd ->
+        loop dcs render_state (Engine.update engine_state ~clipboard cmd)
+
+  (* Redraw the scene and wait for a command *)
+  and loop render_state engine_state =
+    match mode with
+      | `classic ->
+          lwt render_state = Terminal.draw ~mode render_state engine_state prompt in
+          loop render_state engine_state
+      | `dynamic ->
+          let completion_thread = complete (Engine.edition_state engine_state) in
+          match Lwt.state completion_thread with
+            | Return comp ->
+                let engine_state = { engine_state with
+                                       Engine.completion = comp.comp_words;
+                                       Engine.completion_index = begin
+                                         if engine_state.Engine.completion_index >= List.length comp.comp_words then
+                                           List.length comp.comp_words - 1
+                                         else
+                                           engine_state.Engine.completion_index
+                                       end } in
+                lwt render_state = Terminal.draw ~mode render_state engine_state prompt in
+                loop render_state engine_state
+            | Fail exn ->
+                fail exn
+            | Sleep ->
+                let engine_state = { engine_state with
+                                       Engine.completion = [];
+                                       Engine.completion_index = 0 } in
+                let read_command_thread = read_command () in
+                let start_date = Unix.time () in
+                (* [aux] wait for the completion to terminates, or for
+                   the user to type something. During this time, it
+                   displays a small animation to make the user
+                   happy. *)
+                let rec aux anim =
+                  let delta = truncate (Unix.time () -. start_date) in
+                  let seconds = delta mod 60
+                  and minutes = (delta / 60) mod 60
+                  and hours = (delta / (60 * 60)) mod 24
+                  and days = (delta / (60 * 60 * 24)) in
+                  let message =
+                    if days = 0 then
+                      Printf.sprintf "working %c %02d:%02d:%02d\r" (List.hd anim) hours minutes seconds
+                     else
+                       Printf.sprintf "working %c %d %02d:%02d:%02d\r" (List.hd anim) days hours minutes seconds
+                  in
+                  lwt render_state = Terminal.draw ~mode ~message render_state engine_state prompt in
+                  choose [read_command_thread >|= (fun cmd -> `Command cmd);
+                          completion_thread >|= (fun comp -> `Completion comp.comp_words);
+                          Lwt_unix.sleep 0.1 >> return `Timeout]
+                  >>= function
+                    | `Timeout ->
+                        aux (List.tl anim)
+                    | `Command cmd ->
+                        Lwt.cancel completion_thread;
+                        process_command render_state engine_state cmd
+                    | `Completion words ->
+                        let engine_state = { engine_state with
+                                               Engine.completion = words;
+                                               Engine.completion_index = begin
+                                                 if engine_state.Engine.completion_index >= List.length words then
+                                                   List.length words - 1
+                                                 else
+                                                   engine_state.Engine.completion_index
+                                               end } in
+                        lwt render_state = Terminal.draw ~mode render_state engine_state prompt in
+                        loop render_state engine_state
+                in
+                let rec anim = '/' :: '-' :: '\\' :: '|' :: anim in
+                aux anim
 
   and loop render_state engine_state =
     read_command () >>= process_command render_state engine_state
   in
   if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then
-    with_raw_mode (fun _ -> redraw Terminal.init (Engine.init history))
+    with_raw_mode (fun _ -> loop Terminal.init (Engine.init history))
   else
     lwt () = write stdout (strip_styles prompt) in
     Lwt_text.read_line stdin
@@ -832,7 +922,7 @@ let read_password ?(clipboard=clipboard) ?(style=`text "*") prompt =
   else
     with_raw_mode (fun _ ->  Lwt_stream.junk_old standard_input >> redraw Terminal.init (Engine.init []))
 
-let read_keyword ?(history=[]) ?(case_sensitive=false) ?(dynamic=false) prompt keywords =
+let read_keyword ?(history=[]) ?(case_sensitive=false) ?(mode=`dynamic) prompt keywords =
   let compare = if case_sensitive then Text.compare else Text.icompare in
   let rec assoc key = function
     | [] -> None
@@ -853,14 +943,14 @@ let read_keyword ?(history=[]) ?(case_sensitive=false) ?(dynamic=false) prompt k
     | Accept_line ->
         begin match assoc (Engine.all_input engine_state) keywords with
           | Some value ->
-              lwt () = Terminal.last_draw ~completion:dynamic render_state engine_state prompt in
+              lwt () = Terminal.last_draw ~mode render_state engine_state prompt in
               return value
           | None ->
               loop render_state engine_state
         end
 
     | Break ->
-        lwt () = Terminal.last_draw ~completion:dynamic render_state engine_state prompt in
+        lwt () = Terminal.last_draw ~mode render_state engine_state prompt in
         fail Interrupt
 
     | Complete ->
@@ -881,14 +971,15 @@ let read_keyword ?(history=[]) ?(case_sensitive=false) ?(dynamic=false) prompt k
           loop render_state new_state
 
   and redraw render_state engine_state =
-    let completion = match dynamic with
-      | false ->
-          None
-      | true ->
+    let completion = match mode with
+      | `classic ->
+          []
+      | `dynamic ->
           let txt, _ = Engine.edition_state engine_state in
-          Some(List.map fst (List.filter (fun (kwd, _) -> Text.starts_with kwd txt) keywords))
+          List.map fst (List.filter (fun (kwd, _) -> Text.starts_with kwd txt) keywords)
     in
-    lwt render_state = Terminal.draw ?completion render_state engine_state prompt in
+    let engine_state = { engine_state with Engine.completion = completion } in
+    lwt render_state = Terminal.draw ~mode render_state engine_state prompt in
     loop render_state engine_state
 
   and loop render_state engine_state =
@@ -905,8 +996,8 @@ let read_keyword ?(history=[]) ?(case_sensitive=false) ?(dynamic=false) prompt k
       | None ->
           fail (Failure "Lwt_read_line.read_keyword: invalid input")
 
-let read_yes_no ?history ?dynamic prompt =
-  read_keyword ?history ?dynamic prompt [("yes", true); ("no", false)]
+let read_yes_no ?history ?mode prompt =
+  read_keyword ?history ?mode prompt [("yes", true); ("no", false)]
 
 (* +-----------------------------------------------------------------+
    | History                                                         |

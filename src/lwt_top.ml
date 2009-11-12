@@ -56,6 +56,10 @@ let complete state =
    | Read-line wrapper                                               |
    +-----------------------------------------------------------------+ *)
 
+let mode = ref `dynamic
+let completion_mode () = !mode
+let set_completion_mode m = mode := m
+
 let history = ref []
 
 let _ =
@@ -71,7 +75,7 @@ let rec read_input prompt buffer len =
     if !pos = String.length !input then begin
       let sprompt = if prompt = "  " then [fg blue; text "> "] else [fg yellow; text prompt] in
       let txt = Lwt_main.run begin
-        lwt l = Lwt_read_line.read_line ~complete ~dynamic:true ~history:(!history) sprompt in
+        lwt l = Lwt_read_line.read_line ~complete ~mode:!mode ~history:(!history) sprompt in
         lwt () = Lwt_text.flush Lwt_text.stdout in
         return l
       end in

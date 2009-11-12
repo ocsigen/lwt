@@ -102,18 +102,20 @@ val clipboard : clipboard
 
 (** {6 High-level functions} *)
 
+type completion_mode = [ `classic | `dynamic ]
+
 val read_line :
   ?history : history ->
   ?complete : completion ->
   ?clipboard : clipboard ->
-  ?dynamic : bool ->
+  ?mode : completion_mode ->
   prompt -> Text.t Lwt.t
-  (** [readline ?history ?complete ?dynamic prompt] inputs some text
+  (** [readline ?history ?complete ?mode prompt] inputs some text
       from the user. If input is not a terminal, it defaults to
       [Lwt_io.read_line Lwt_io.stdin].
 
-      If @param dynamic is [true], then possible competions will be
-      shown to the user as he types. It default to [false]. *)
+      If @param mode contains the current completion mode. It default
+      to [`dynamic]. *)
 
 val read_password :
   ?clipboard : clipboard ->
@@ -134,15 +136,15 @@ val read_password :
 val read_keyword :
   ?history : history ->
   ?case_sensitive : bool ->
-  ?dynamic : bool ->
+  ?mode : completion_mode ->
   prompt -> (Text.t * 'value) list -> 'value Lwt.t
-  (** [read_keyword ?history ?case_sensitive ?dynamic prompt keywords]
+  (** [read_keyword ?history ?case_sensitive ?mode prompt keywords]
       reads one word which is a member of [words]. And returns which
       keyword the user choosed.
 
       [case_sensitive] default to [false]. *)
 
-val read_yes_no : ?history : history -> ?dynamic : bool -> prompt -> bool Lwt.t
+val read_yes_no : ?history : history -> ?mode : completion_mode -> prompt -> bool Lwt.t
   (** [read_yes_no ?history ?dynamic prompt] is the same as:
 
       {[
@@ -170,6 +172,7 @@ module Command : sig
     | Beginning_of_line
     | End_of_line
     | Complete
+    | Meta_complete
     | Kill_line
     | Accept_line
     | Backward_delete_word
@@ -230,6 +233,8 @@ module Engine : sig
     mode : mode;
     history : history * history;
     (** Cursor to the history position. *)
+    completion : Text.t list;
+    (** Possible completions for dynamic mode *)
     completion_start : int;
     (** For dynamic completion, it is the number of pixel to skip at
         the beginning of the completion list. *)
@@ -269,18 +274,19 @@ module Terminal : sig
   val init : state
     (** Initial state *)
 
-  val draw : ?map_text : (Text.t -> Text.t) -> ?completion : Text.t list ->
-    state -> Engine.state -> prompt -> state Lwt.t
-    (** [draw ?map_text ?completion state engine_state prompt] erase
+  val draw : ?map_text : (Text.t -> Text.t) -> ?mode : completion_mode ->
+    ?message : Text.t -> state -> Engine.state -> prompt -> state Lwt.t
+    (** [draw ?map_text ?dynamic state engine_state prompt] erase
         previous printed text, draw the new one, and return a new
         state for future redrawing.
 
         @param map_text is a function used to map user input before
         printing it, for example to hide passwords.
 
-        @param completion is for dynamic completion mode. *)
+        @param message is a message to display if completion is not
+        yet available. *)
 
-  val last_draw : ?map_text : (Text.t -> Text.t) -> ?completion : bool ->
+  val last_draw : ?map_text : (Text.t -> Text.t) -> ?mode : completion_mode ->
     state -> Engine.state -> prompt -> unit Lwt.t
     (** Draw for the last time, i.e. the cursor is left after the text
         and not at current position. *)
