@@ -235,9 +235,6 @@ module Engine : sig
     (** Cursor to the history position. *)
     completion : Text.t list;
     (** Possible completions for dynamic mode *)
-    completion_start : int;
-    (** For dynamic completion, it is the number of pixel to skip at
-        the beginning of the completion list. *)
     completion_index : int;
     (** Current position of the selection cursor *)
   }
