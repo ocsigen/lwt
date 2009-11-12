@@ -606,28 +606,41 @@ struct
             [Text word]
       | word :: words ->
           let len = Text.length word in
-          let word =
-            if ofs + len > columns then
-              Text.sub word 0 (columns - ofs)
-            else
-              word
-          in
-          let len = Text.length word in
           let ofs = ofs + len in
-          if idx = index then
-            Inverse :: Text word :: Reset :: Foreground lblue ::
-              if ofs + 1 > columns then
-                []
-              else
-                Text " " :: aux (ofs + 1) (idx + 1) words
+          if ofs <= columns then
+            if idx = index then
+              Inverse :: Text word :: Reset :: Foreground lblue ::
+                if ofs + 1 > columns then
+                  []
+                else
+                  Text " " :: aux (ofs + 1) (idx + 1) words
+            else
+              Text word ::
+                if ofs + 1 > columns then
+                  []
+                else
+                  Text " " :: aux (ofs + 1) (idx + 1) words
           else
-            Text word ::
-              if ofs + 1 > columns then
-                []
-              else
-                Text " " :: aux (ofs + 1) (idx + 1) words
+            []
     in
     aux 0 0 words
+
+  let rec drop count l =
+    if count = 0 then
+      l
+    else match l with
+      | [] -> []
+      | e :: l -> drop (count - 1) l
+
+  let take_rev count l =
+    let rec aux count acc l =
+      if count = 0 then
+        acc
+      else match l with
+        | [] -> acc
+        | e :: l -> aux (count - 1) (e :: acc) l
+    in
+    aux count [] l
 
   (* Render the current state on the terminal, and returns the new
      terminal rendering state: *)
@@ -653,6 +666,34 @@ struct
     let printed_before = prepare_for_display columns
       (prompt @ [Reset] @ before) in
 
+    (* Check that the completion cursor is displayed *)
+    let completion_start =
+      if mode = `dynamic then begin
+        let rec aux ofs idx words =
+          match words with
+            | [] ->
+                idx
+            | word :: words ->
+                let ofs = ofs + Text.length word + 1 in
+                if ofs <= columns then
+                  aux ofs (idx + 1) words
+                else
+                  idx
+        in
+        let idx = aux 0 render_state.completion_start
+          (drop render_state.completion_start engine_state.completion) in
+        if idx <= engine_state.completion_index then
+          idx
+        else if engine_state.completion_index < render_state.completion_start then
+          let words = take_rev (engine_state.completion_index + 1) engine_state.completion in
+          let idx = aux 0 0 words in
+          max 0 (engine_state.completion_index - idx + 1)
+        else
+          render_state.completion_start
+      end else
+        render_state.completion_start
+    in
+
     (* The total printed text: *)
     let printed_total = prepare_for_display columns
       (prompt @ [Reset] @ before @ after @ (match message, mode with
@@ -668,15 +709,15 @@ struct
                                                   :: Text "\n"
                                                   :: Text(Text.repeat columns "─")
                                                   :: make_completion
-                                                    engine_state.completion_index
+                                                    (engine_state.completion_index - completion_start)
                                                     columns
-                                                    engine_state.completion)) in
+                                                    (drop completion_start engine_state.completion))) in
 
     (* The new rendering state: *)
     let new_render_state = {
       height_before = compute_height columns (styled_length printed_before);
       length = styled_length printed_total;
-      completion_start = render_state.completion_start;
+      completion_start = completion_start;
     } in
 
     (* The total printed text with any needed spaces after to erase all

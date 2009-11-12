@@ -1,6 +1,6 @@
 (* Lightweight thread library for Objective Caml
  * http://www.ocsigen.org/lwt
- * Module Lwt_ocaml_completion
+ * Module Toplevel
  * Copyright (C) 2009 Jérémie Dimino
  *                    Pierre Chambart
  *
