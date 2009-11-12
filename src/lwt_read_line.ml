@@ -988,63 +988,122 @@ let read_keyword ?(history=[]) ?(case_sensitive=false) ?(mode=`dynamic) prompt k
         else
           assoc key l
   in
-  let rec process_command render_state engine_state = function
-    | Clear_screen ->
-        lwt () = clear_screen () in
-        redraw Terminal.init engine_state
-
-    | Refresh ->
-        redraw render_state engine_state
-
-    | Accept_line ->
-        begin match assoc (Engine.all_input engine_state) keywords with
-          | Some value ->
-              lwt () = Terminal.last_draw ~mode render_state engine_state prompt in
-              return value
-          | None ->
-              loop render_state engine_state
-        end
-
-    | Break ->
-        lwt () = Terminal.last_draw ~mode render_state engine_state prompt in
-        fail Interrupt
-
-    | Complete ->
-        let engine_state = Engine.reset engine_state in
-        let txt, _ = Engine.edition_state engine_state in
-        begin match List.filter (fun (kwd, _) -> Text.starts_with kwd txt) keywords with
-          | [(kwd, _)] ->
-              redraw render_state { engine_state with Engine.mode = Engine.Edition(kwd, "") }
-          | _ ->
-              loop render_state engine_state
-        end
-
-    | cmd ->
-        let new_state = Engine.update engine_state ~clipboard cmd in
-        if new_state <> engine_state then
-          redraw render_state new_state
-        else
-          loop render_state new_state
-
-  and redraw render_state engine_state =
-    let completion = match mode with
-      | `classic ->
-          []
-      | `dynamic ->
-          let txt, _ = Engine.edition_state engine_state in
-          List.map fst (List.filter (fun (kwd, _) -> Text.starts_with kwd txt) keywords)
-    in
-    let engine_state = { engine_state with Engine.completion = completion } in
-    lwt render_state = Terminal.draw ~mode render_state engine_state prompt in
-    loop render_state engine_state
-
-  and loop render_state engine_state =
-    read_command () >>= process_command render_state engine_state
-  in
   if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then
-    with_raw_mode (fun _ -> redraw Terminal.init (Engine.init history))
+    with_raw_mode begin fun () ->
+
+      (* Thread which is waleup with [`Accept] or [`Interrupt] when we
+         are done *)
+      let (quit_waiter : [ `Accept | `Interrupt ] Lwt.t), quit_wakener = Lwt.wait () in
+
+      (* Event which receive user input *)
+      let input, push_input = React.E.create () in
+
+      (* The engine state *)
+      let engine_state, set_engine_state = React.S.create (Engine.init history) in
+
+      (* Read continuously the input *)
+      let rec read_input () =
+        select [read_command () >|= (fun c -> `Command c);
+                (quit_waiter :> [ `Command of Command.t | `Accept | `Interrupt ] Lwt.t)] >>= function
+          | `Command command ->
+              push_input command;
+              read_input ()
+          | `Accept | `Interrupt ->
+              return ()
+      in
+
+      (* The rendering state *)
+      let render_state = ref Terminal.init in
+
+      (* Signal which forces the drawer to redraw the screen *)
+      let force_redraw, push_force_redraw = React.S.create ~eq:(fun _ _ -> false) () in
+
+      (* Mutex to prevent redrawing while redrawing a previous
+         state *)
+      let drawer_mutex = Lwt_mutex.create () in
+
+      (* The drawer. It redraw everything each time something
+         changes *)
+      let drawer = React.S.l3
+        (fun size engine_state force_redraw ->
+           ignore_result
+             (Lwt_mutex.with_lock drawer_mutex
+                (fun () ->
+                   lwt state = Terminal.draw ~mode !render_state engine_state prompt in
+                   render_state := state;
+                   return ())))
+        Lwt_term.size engine_state force_redraw
+      in
+
+      let dynamic_completion =
+        if mode = `dynamic then
+          React.S.map
+            (fun (before, after) ->
+               let { comp_words = words } = complete "" before after (List.map fst keywords) in
+               set_engine_state { React.S.value engine_state with
+                                    Engine.completion = words;
+                                    Engine.completion_index = 0 })
+            (React.S.map Engine.edition_state engine_state)
+        else
+          React.S.const ()
+      in
+
+      (* Handle user's commands *)
+      let process_input = React.E.map
+        (function
+           | Clear_screen ->
+               ignore_result (clear_screen ());
+               push_force_redraw ()
+
+           | Refresh ->
+               push_force_redraw ()
+
+           | Accept_line ->
+               let word = Engine.all_input (React.S.value engine_state) in
+               if List.exists (fun (kwd, value) -> kwd = word) keywords then
+                 wakeup quit_wakener `Accept
+
+           | Break ->
+               wakeup quit_wakener `Interrupt
+
+           | Complete ->
+               let engine_state = Engine.reset (React.S.value engine_state) in
+               let before, after = Engine.edition_state engine_state in
+               let { comp_state = (before, after) } = complete "" before after (List.map fst keywords) in
+               set_engine_state { engine_state with Engine.mode = Engine.Edition(before, after) }
+
+           | Meta_complete ->
+               let engine_state = React.S.value engine_state in
+               if mode = `dynamic
+                 && engine_state.Engine.completion_index >= 0
+                 && engine_state.Engine.completion_index < List.length engine_state.Engine.completion then
+                   let word = List.nth engine_state.Engine.completion engine_state.Engine.completion_index in
+                   set_engine_state  {
+                     engine_state with
+                       Engine.mode = Engine.Edition(word, "")
+                   }
+
+           | cmd ->
+               set_engine_state (Engine.update (React.S.value engine_state) ~clipboard cmd))
+        input
+      in
+
+      (* Launch the input reader, and wait for its termination: *)
+      lwt () = read_input () in
+      React.S.stop drawer;
+      React.S.stop dynamic_completion;
+      React.E.stop process_input;
+      (* The final drawing. It erase dynamic completion and put the cursor
+         on a new line after user input *)
+      lwt () = Terminal.last_draw ~mode !render_state (React.S.value engine_state) prompt in
+      quit_waiter >>= function
+        | `Interrupt ->
+            fail Interrupt
+        | `Accept ->
+            return (List.assoc (Engine.all_input (React.S.value engine_state)) keywords)
+    end
   else
-    lwt _ = write stdout (strip_styles prompt) in
+    lwt () = write stdout (strip_styles prompt) in
     lwt txt = Lwt_text.read_line stdin in
     match assoc txt keywords with
       | Some value ->
