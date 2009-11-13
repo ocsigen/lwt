@@ -35,22 +35,14 @@ open Lwt_term
 
 module TextSet = Set.Make(Text)
 
-let complete state =
+let complete (before, after) =
   (* Find a fixpoint of completion *)
-  let rec loop comp =
-    let (before, after) = comp.Lwt_read_line.comp_state in
-    lwt comp' = Lwt_ocaml_completion.complete_input before after (Lexing.from_string before) in
-    if comp <> comp' then
-      loop comp'
-    else
-      return { Lwt_read_line.comp_state = comp.Lwt_read_line.comp_state;
-               Lwt_read_line.comp_words = (TextSet.elements
-                                             ((List.fold_left
-                                                 (fun set elt -> TextSet.add elt set))
-                                                TextSet.empty comp.Lwt_read_line.comp_words)) }
-  in
-  loop { Lwt_read_line.comp_state = state;
-         Lwt_read_line.comp_words = [] }
+  lwt comp = Lwt_ocaml_completion.complete_input before after (Lexing.from_string before) in
+  return { Lwt_read_line.comp_state = comp.Lwt_read_line.comp_state;
+           Lwt_read_line.comp_words = (TextSet.elements
+                                         ((List.fold_left
+                                             (fun set elt -> TextSet.add elt set))
+                                            TextSet.empty comp.Lwt_read_line.comp_words)) }
 
 (* +-----------------------------------------------------------------+
    | Read-line wrapper                                               |

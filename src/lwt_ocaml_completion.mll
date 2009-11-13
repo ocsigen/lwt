@@ -88,32 +88,32 @@ rule complete_input before after = parse
   (* Completion over directives *)
   | (blank* '#' blank* as before') (maybe_ident as dir) (blank* as bl) eof
       {
-        return (match lookup dir (get_directives ()) with
-                  | (_, []) ->
-                      { comp_state = (before, after);
-                        comp_words = [] }
-                  | (_, [dir]) ->
-                      let before = before' ^ dir in
-                      (match Hashtbl.find directive_table dir with
-                         | Directive_none _ ->
-                             { comp_state = (before ^ ";;", after);
-                               comp_words = [] }
-                         | Directive_string _ ->
-                             { comp_state = (before ^ (if bl = "" then " \"" else "\""), after);
-                               comp_words = [] }
-                         | Directive_bool _ ->
-                             { comp_state = ((if bl = "" then before ^ " " else ""), after);
-                               comp_words = ["false"; "true"] }
-                         | Directive_int _ | Directive_ident _ ->
-                             { comp_state = ((if bl = "" then before ^ " " else ""), after);
-                               comp_words = ["false"; "true"] })
-                  | (prefix, words) ->
-                      if bl = "" then
-                        { comp_state = (before' ^ prefix, after);
-                          comp_words = words }
-                      else
-                        { comp_state = (before, after);
+        if Hashtbl.mem Toploop.directive_table dir then
+          return (match Hashtbl.find Toploop.directive_table dir with
+                    | Directive_none _ ->
+                        { comp_state = (before ^ ";;", after);
+                          comp_words = [] }
+                    | Directive_string _ ->
+                        { comp_state = (before ^ (if bl = "" then " \"" else "\""), after);
+                          comp_words = [] }
+                    | Directive_bool _ ->
+                        { comp_state = ((if bl = "" then before ^ " " else ""), after);
+                          comp_words = ["false"; "true"] }
+                    | Directive_int _ | Directive_ident _ ->
+                        { comp_state = ((if bl = "" then before ^ " " else ""), after);
                           comp_words = [] })
+        else
+          return (match lookup dir (get_directives ()) with
+                    | (_, []) ->
+                        { comp_state = (before, after);
+                          comp_words = [] }
+                    | (prefix, words) ->
+                        if bl = "" then
+                          { comp_state = (before' ^ prefix, after);
+                            comp_words = words }
+                        else
+                          { comp_state = (before, after);
+                            comp_words = [] })
       }
 
   (* Completion on directive argument *)
