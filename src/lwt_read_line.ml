@@ -690,11 +690,6 @@ struct
     let rec aux ofs idx = function
       | [] ->
           []
-      | [word] ->
-          if idx = index then
-            [Inverse; Text word; Reset]
-          else
-            [Text word]
       | word :: words ->
           let len = Text.length word in
           let ofs' = ofs + len in
@@ -734,6 +729,7 @@ struct
     aux count [] l
 
   let _draw render_state printed_before printed_total =
+    lwt () = hide_cursor () in
     let columns = React.S.value Lwt_term.columns in
     let printed_before = prepare_for_display columns printed_before in
     let printed_total = prepare_for_display columns printed_total in
@@ -766,8 +762,10 @@ struct
        cursor will stay on the last character of the line *)
     if (styled_length printed_before) mod columns = 0 then
       lwt () = print "\n" in
+      lwt () = show_cursor () in
       return { new_render_state with height_before = new_render_state.height_before + 1 }
     else
+      lwt () = show_cursor () in
       return new_render_state
 
   (* Render the current state on the terminal, and returns the new

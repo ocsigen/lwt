@@ -357,7 +357,7 @@ let add_date buf =
       | 11 -> "Dec"
       | _ -> Printf.ksprintf failwith "Lwt_log.ascdate: invalid month, %d" tm.Unix.tm_mon
   in
-  Printf.bprintf buf "%s % 2d %02d:%02d:%02d" month_string tm.Unix.tm_mday tm.Unix.tm_hour tm.Unix.tm_min tm.Unix.tm_sec
+  Printf.bprintf buf "%s %2d %02d:%02d:%02d" month_string tm.Unix.tm_mday tm.Unix.tm_hour tm.Unix.tm_min tm.Unix.tm_sec
 
 (* Construit ine ligne de log dans [buf]: *)
 let add_line buf pid date name msg =
