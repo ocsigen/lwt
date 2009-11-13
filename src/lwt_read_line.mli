@@ -198,6 +198,7 @@ module Command : sig
     | Complete_right
     | Complete_up
     | Complete_down
+    | Backward_search
 
   val to_string : t -> string
     (** [to_string cmd] returns a string representation of a command *)
@@ -221,12 +222,25 @@ module Engine : sig
     (** Pointer to the cursor *)
   }
 
+  (** State when searching in the history *)
+  type search_state = {
+    search_word : Text.t;
+    (** The word we are looking for *)
+    search_history : history;
+    (** Position in history. The first element is a sentence
+        containing the searched word *)
+    search_init_history : history;
+    (** The initial history, before searching for a word *)
+  }
+
   (** The engine mode: *)
   type mode =
     | Edition of edition_state
         (** The user is typing some text *)
     | Selection of selection_state
         (** The user is selecting some text *)
+    | Search of search_state
+        (** The user is searching the given word in the history *)
 
   (** An engine state: *)
   type state = {

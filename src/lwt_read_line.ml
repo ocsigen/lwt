@@ -113,6 +113,7 @@ struct
     | Complete_right
     | Complete_up
     | Complete_down
+    | Backward_search
 
   let to_string = function
     | Char ch ->
@@ -181,6 +182,8 @@ struct
         "complete-up"
     | Complete_down ->
         "complete-down"
+    | Backward_search ->
+        "backward-search"
 
   let of_key = function
     | Key_up -> History_previous
@@ -205,7 +208,7 @@ struct
     | Key_control 'm' -> Accept_line
     | Key_control 'n' -> Backward_char
     | Key_control 'p' -> Forward_char
-    | Key_control 'r' -> Refresh
+    | Key_control 'r' -> Backward_search
     | Key_control 'w' -> Cut
     | Key_control 'y' -> Paste
     | Key_control '?' -> Backward_delete_char
@@ -239,9 +242,16 @@ struct
     sel_cursor : Text.pointer;
   }
 
+  type search_state = {
+    search_word : Text.t;
+    search_history : history;
+    search_init_history : history;
+  }
+
   type mode =
     | Edition of edition_state
     | Selection of selection_state
+    | Search of search_state
 
   type state = {
     mode : mode;
@@ -258,13 +268,29 @@ struct
   }
 
   let all_input state = match state.mode with
-    | Edition(before, after) -> before ^ after
-    | Selection sel -> sel.sel_text
+    | Edition(before, after) ->
+        before ^ after
+    | Selection sel ->
+        sel.sel_text
+    | Search search ->
+        match search.search_history with
+          | [] ->
+              ""
+          | phrase :: _ ->
+              phrase
 
   let edition_state state = match state.mode with
-    | Edition(before, after) -> (before, after)
-    | Selection sel -> (Text.chunk (Text.pointer_l sel.sel_text) sel.sel_cursor,
-                        Text.chunk sel.sel_cursor (Text.pointer_r sel.sel_text))
+    | Edition(before, after) ->
+        (before, after)
+    | Selection sel ->
+        (Text.chunk (Text.pointer_l sel.sel_text) sel.sel_cursor,
+         Text.chunk sel.sel_cursor (Text.pointer_r sel.sel_text))
+    | Search search ->
+        match search.search_history with
+          | [] ->
+              ("", "")
+          | phrase :: _ ->
+              (phrase, "")
 
   (* Reset the mode to the edition mode: *)
   let reset state = match state.mode with
@@ -273,6 +299,12 @@ struct
     | Selection sel ->
         { state with mode = Edition(Text.chunk (Text.pointer_l sel.sel_text) sel.sel_cursor,
                                     Text.chunk sel.sel_cursor (Text.pointer_r sel.sel_text)) }
+    | Search search ->
+        { state with mode = Edition((match search.search_history with
+                                       | [] ->
+                                           ""
+                                       | phrase :: _ ->
+                                           phrase), "") }
 
   let split_first_word text =
     let rec find_last ptr =
@@ -322,7 +354,9 @@ struct
 
   let rec update state ?(clipboard=clipboard) cmd =
     (* Helpers for updating the mode state only: *)
-    let edition st = { state with mode = Edition st } and selection st = { state with mode = Selection st } in
+    let edition st = { state with mode = Edition st }
+    and selection st = { state with mode = Selection st }
+    and search st = { state with mode = Search st } in
     match state.mode with
       | Selection sel ->
           (* Change the cursor position: *)
@@ -466,8 +500,66 @@ struct
                 else
                   state
 
+            | Backward_search ->
+                let hist_before, hist_after = state.history in
+                let history = List.rev_append hist_after ((before ^ after) :: hist_before) in
+                search { search_word = "";
+                         search_history = history;
+                         search_init_history = history }
+
             | _ ->
                 state
+          end
+
+      | Search st ->
+          let lookup word history =
+            let word = Text.lower word in
+            let rec aux history = match history with
+              | [] ->
+                  []
+              | phrase :: rest ->
+                  if Text.contains (Text.lower phrase) word then
+                    history
+                  else
+                    aux rest
+            in
+            aux history
+          in
+
+          begin match cmd with
+            | Char ch ->
+                let word = st.search_word ^ ch in
+                search {
+                  st with
+                    search_word = word;
+                    search_history = lookup word st.search_history;
+                }
+
+            | Backward_search ->
+                search {
+                  st with
+                    search_history = match st.search_history with
+                      | [] -> []
+                      | _ :: rest -> lookup st.search_word rest
+                }
+
+            | Backward_delete_char ->
+                if st.search_word <> "" then
+                  let word = Text.rchop st.search_word in
+                  search {
+                    st with
+                      search_word = word;
+                      search_history = lookup word st.search_init_history;
+                  }
+                else
+                  search st
+
+            | cmd ->
+                let phrase = match st.search_history with
+                  | [] -> ""
+                  | phrase :: _ -> phrase
+                in
+                edition (phrase, "")
           end
 end
 
@@ -642,82 +734,16 @@ struct
     in
     aux count [] l
 
-  (* Render the current state on the terminal, and returns the new
-     terminal rendering state: *)
-  let draw ?(map_text=fun x -> x) ?(mode=`dynamic) ?message render_state engine_state prompt =
-    (* Text before and after the cursor, according to the current mode: *)
-    let before, after = match engine_state.mode with
-      | Edition(before, after) ->
-          ([Text(map_text before)], [Text(map_text after)])
-      | Selection sel ->
-          let a = min sel.sel_cursor sel.sel_mark and b = max sel.sel_cursor sel.sel_mark in
-          let part_before = [Text(map_text (Text.chunk (Text.pointer_l sel.sel_text) a))]
-          and part_selected = [Underlined; Text(map_text (Text.chunk a b)); Reset]
-          and part_after = [Text(map_text (Text.chunk (Text.pointer_r sel.sel_text) b))] in
-          if sel.sel_cursor < sel.sel_mark then
-            (part_before, part_selected @ part_after)
-          else
-            (part_before @ part_selected, part_after)
-    in
-
+  let _draw render_state printed_before printed_total =
     let columns = React.S.value Lwt_term.columns in
-
-    (* All the text printed before the cursor: *)
-    let printed_before = prepare_for_display columns
-      (Reset :: prompt @ [Reset] @ before) in
-
-    (* Check that the completion cursor is displayed *)
-    let completion_start =
-      if mode = `dynamic then begin
-        let rec aux ofs idx words =
-          match words with
-            | [] ->
-                idx
-            | word :: words ->
-                let ofs = ofs + Text.length word + 1 in
-                if ofs <= columns then
-                  aux ofs (idx + 1) words
-                else
-                  idx
-        in
-        let idx = aux 0 render_state.completion_start
-          (drop render_state.completion_start engine_state.completion) in
-        if idx <= engine_state.completion_index then
-          idx
-        else if engine_state.completion_index < render_state.completion_start then
-          let words = take_rev (engine_state.completion_index + 1) engine_state.completion in
-          let idx = aux 0 0 words in
-          max 0 (engine_state.completion_index - idx + 1)
-        else
-          render_state.completion_start
-      end else
-        render_state.completion_start
-    in
-
-    (* The total printed text: *)
-    let printed_total = prepare_for_display columns
-      (Reset :: prompt @ [Reset] @ before @ after @ (match message, mode with
-                                                       | _, `classic ->
-                                                           []
-                                                       | Some msg, `dynamic ->
-                                                           [Foreground lblue;
-                                                            Text "\n";
-                                                            Text(Text.repeat columns "─");
-                                                            Text msg]
-                                                       | None, `dynamic ->
-                                                           Foreground lblue
-                                                           :: Text "\n"
-                                                           :: Text(Text.repeat columns "─")
-                                                           :: make_completion
-                                                             (engine_state.completion_index - completion_start)
-                                                             columns
-                                                             (drop completion_start engine_state.completion))) in
+    let printed_before = prepare_for_display columns printed_before in
+    let printed_total = prepare_for_display columns printed_total in
 
     (* The new rendering state: *)
     let new_render_state = {
-      height_before = compute_height columns (styled_length printed_before);
-      length = styled_length printed_total;
-      completion_start = completion_start;
+      render_state with
+        height_before = compute_height columns (styled_length printed_before);
+        length = styled_length printed_total;
     } in
 
     (* The total printed text with any needed spaces after to erase all
@@ -744,6 +770,108 @@ struct
       return { new_render_state with height_before = new_render_state.height_before + 1 }
     else
       return new_render_state
+
+  (* Render the current state on the terminal, and returns the new
+     terminal rendering state: *)
+  let draw ?(map_text=fun x -> x) ?(mode=`dynamic) ?message render_state engine_state prompt =
+    match engine_state.mode with
+      | Search st ->
+          let printed_before = Reset :: prompt @ [Reset; Text "(reverse-i-search)'"; Text st.search_word] in
+          let printed_total = match st.search_history with
+            | [] ->
+                []
+            | phrase :: _ ->
+                let ptr_start = match Text.find phrase st.search_word with
+                  | Some ptr ->
+                      ptr
+                  | None ->
+                      (* The first phrase of st.search_history is a
+                         phrase containing st.search_word, so this
+                         case will never happen *)
+                      assert false
+                in
+                let ptr_end = Text.move (Text.length st.search_word) ptr_start in
+                printed_before @ [Text "': ";
+                                  Text(Text.chunk (Text.pointer_l phrase) ptr_start);
+                                  Underlined;
+                                  Text(Text.chunk ptr_start ptr_end);
+                                  Reset;
+                                  Text(Text.chunk ptr_end (Text.pointer_r phrase))]
+          in
+          _draw render_state printed_before printed_total
+
+      | _ ->
+          (* Text before and after the cursor, according to the current mode: *)
+          let before, after = match engine_state.mode with
+            | Edition(before, after) ->
+                ([Text(map_text before)], [Text(map_text after)])
+            | Selection sel ->
+                let a = min sel.sel_cursor sel.sel_mark and b = max sel.sel_cursor sel.sel_mark in
+                let part_before = [Text(map_text (Text.chunk (Text.pointer_l sel.sel_text) a))]
+                and part_selected = [Underlined; Text(map_text (Text.chunk a b)); Reset]
+                and part_after = [Text(map_text (Text.chunk (Text.pointer_r sel.sel_text) b))] in
+                if sel.sel_cursor < sel.sel_mark then
+                  (part_before, part_selected @ part_after)
+                else
+                  (part_before @ part_selected, part_after)
+            | Search _ ->
+                assert false
+          in
+
+          let columns = React.S.value columns in
+
+          (* Check that the completion cursor is displayed *)
+          let completion_start =
+            if mode = `dynamic then begin
+              let rec aux ofs idx words =
+                match words with
+                  | [] ->
+                      idx
+                  | word :: words ->
+                      let ofs = ofs + Text.length word + 1 in
+                      if ofs <= columns then
+                        aux ofs (idx + 1) words
+                      else
+                        idx
+              in
+              let idx = aux 0 render_state.completion_start
+                (drop render_state.completion_start engine_state.completion) in
+              if idx <= engine_state.completion_index then
+                idx
+              else if engine_state.completion_index < render_state.completion_start then
+                let words = take_rev (engine_state.completion_index + 1) engine_state.completion in
+                let idx = aux 0 0 words in
+                max 0 (engine_state.completion_index - idx + 1)
+              else
+                render_state.completion_start
+            end else
+              render_state.completion_start
+          in
+
+          (* All the text printed before the cursor: *)
+          let printed_before = Reset :: prompt @ [Reset] @ before in
+
+          (* The total printed text: *)
+          let printed_total =
+            printed_before @ after @ (match message, mode with
+                                        | _, `classic ->
+                                            []
+                                        | Some msg, `dynamic ->
+                                            [Foreground lblue;
+                                             Text "\n";
+                                             Text(Text.repeat columns "─");
+                                             Text msg]
+                                        | None, `dynamic ->
+                                            Foreground lblue
+                                            :: Text "\n"
+                                            :: Text(Text.repeat columns "─")
+                                            :: make_completion
+                                              (engine_state.completion_index - completion_start)
+                                              columns
+                                              (drop completion_start engine_state.completion)) in
+
+          lwt render_state = _draw render_state printed_before printed_total in
+          return { render_state with completion_start = completion_start }
 
   let last_draw ?(map_text=fun x -> x) ?(mode=`dynamic) render_state engine_state prompt =
     let columns = React.S.value Lwt_term.columns in
@@ -773,12 +901,6 @@ open Command
 
 let read_command () = read_key () >|= Command.of_key
 
-(* Return whether there are pending keys in the input stream *)
-let keys_pending () =
-  match Lwt.state (Lwt_stream.peek Lwt_term.standard_input) with
-    | Sleep -> false
-    | Return _ | Fail _ -> true
-
 let read_line ?(history=[]) ?(complete=fun state -> return { comp_state = state; comp_words = [] })
     ?(clipboard=clipboard) ?(mode=`dynamic) prompt =
   if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then
@@ -799,7 +921,8 @@ let read_line ?(history=[]) ?(complete=fun state -> return { comp_state = state;
 
       (* Update the [keys_peinding] signal *)
       let check_keys () =
-        set_keys_pending (Lwt.state (Lwt_stream.peek Lwt_term.standard_input) <> Sleep) in
+        set_keys_pending (Lwt.state (Lwt_stream.peek Lwt_term.standard_input) <> Sleep)
+      in
 
       (* Read continuously the input *)
       let rec read_input () =
