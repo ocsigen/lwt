@@ -574,7 +574,6 @@ let rec repeat f n =
     lwt () = f () in
     repeat f (n - 1)
 
-
 let print_words oc screen_width words = match List.filter ((<>) "") words with
   | [] ->
       return ()
@@ -698,22 +697,22 @@ struct
             [Text word]
       | word :: words ->
           let len = Text.length word in
-          let ofs = ofs + len in
-          if ofs <= columns then
+          let ofs' = ofs + len in
+          if ofs' <= columns then
             if idx = index then
               Inverse :: Text word :: Reset :: Foreground lblue ::
-                if ofs + 1 > columns then
+                if ofs' + 1 > columns then
                   []
                 else
-                  Text " " :: aux (ofs + 1) (idx + 1) words
+                  Text " " :: aux (ofs' + 1) (idx + 1) words
             else
               Text word ::
-                if ofs + 1 > columns then
+                if ofs' + 1 > columns then
                   []
                 else
-                  Text " " :: aux (ofs + 1) (idx + 1) words
+                  Text " " :: aux (ofs' + 1) (idx + 1) words
           else
-            []
+            [Text(Text.sub word 0 (columns - ofs))]
     in
     aux 0 0 words
 
