@@ -902,7 +902,7 @@ open Command
 let read_command () = read_key () >|= Command.of_key
 
 let read_line ?(history=[]) ?(complete=fun state -> return { comp_state = state; comp_words = [] })
-    ?(clipboard=clipboard) ?(mode=`dynamic) prompt =
+    ?(clipboard=clipboard) ?(mode=`dynamic) ~prompt () =
   if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then
     with_raw_mode begin fun () ->
 
@@ -952,15 +952,15 @@ let read_line ?(history=[]) ?(complete=fun state -> return { comp_state = state;
 
       (* The drawer. It redraw everything each time something
          changes *)
-      let drawer = React.S.l4
-        (fun size engine_state message force_redraw ->
+      let drawer = React.S.l5
+        (fun size engine_state message prompt force_redraw ->
            ignore_result
              (Lwt_mutex.with_lock drawer_mutex
                 (fun () ->
                    lwt state = Terminal.draw ~mode ?message !render_state engine_state prompt in
                    render_state := state;
                    return ())))
-        Lwt_term.size engine_state message force_redraw
+        Lwt_term.size engine_state message prompt force_redraw
       in
 
       let dynamic_completion_thread = ref (fail (Failure "bug")) in
@@ -1089,7 +1089,7 @@ let read_line ?(history=[]) ?(complete=fun state -> return { comp_state = state;
       React.S.stop cancel_completion;
       (* The final drawing. It erase dynamic completion and put the cursor
          on a new line after user input *)
-      lwt () = Terminal.last_draw ~mode !render_state (React.S.value engine_state) prompt in
+      lwt () = Terminal.last_draw ~mode !render_state (React.S.value engine_state) (React.S.value prompt) in
       quit_waiter >>= function
         | `Accept ->
             return (Engine.all_input (React.S.value engine_state))
@@ -1097,52 +1097,105 @@ let read_line ?(history=[]) ?(complete=fun state -> return { comp_state = state;
             fail Interrupt
     end
   else
-    lwt () = write stdout (strip_styles prompt) in
+    lwt () = write stdout (strip_styles (React.S.value prompt)) in
     Lwt_text.read_line stdin
 
-let read_password ?(clipboard=clipboard) ?(style=`text "*") prompt =
-  (* Choose a mapping text function according to style: *)
-  let map_text = match style with
-    | `text ch -> (fun txt -> Text.map (fun _ -> ch) txt)
-    | `clear -> (fun x -> x)
-    | `empty -> (fun _ -> "") in
-  let rec process_command render_state engine_state = function
-    | Clear_screen ->
-        lwt () = clear_screen () in
-        redraw Terminal.init engine_state
+let read_password ?(clipboard=clipboard) ?(style=`text "*") ~prompt () =
+  if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then
+    with_raw_mode begin fun () ->
+      lwt () = Lwt_stream.junk_old standard_input in
 
-    | Refresh ->
-        redraw render_state engine_state
+      (* Choose a mapping text function according to style: *)
+      let map_text = match style with
+        | `text ch -> (fun txt -> Text.map (fun _ -> ch) txt)
+        | `clear -> (fun x -> x)
+        | `empty -> (fun _ -> "") in
 
-    | Accept_line ->
-        lwt () = Terminal.last_draw ~map_text render_state engine_state prompt in
-        return (Engine.all_input engine_state)
+      (* Thread which is waleup with [`Accept] or [`Interrupt] when we
+         are done *)
+      let (quit_waiter : [ `Accept | `Interrupt ] Lwt.t), quit_wakener = Lwt.wait () in
 
-    | Break ->
-        lwt () = Terminal.last_draw ~map_text render_state engine_state prompt in
-        fail Interrupt
+      (* Event which receive user input *)
+      let input, push_input = React.E.create () in
 
-    | cmd ->
-        let new_state = Engine.update engine_state ~clipboard cmd in
-        if new_state <> engine_state then
-          redraw render_state new_state
-        else
-          loop render_state new_state
+      (* The engine state *)
+      let engine_state, set_engine_state = React.S.create (Engine.init []) in
 
-  and redraw render_state engine_state =
-    lwt render_state = Terminal.draw ~map_text render_state engine_state prompt in
-    loop render_state engine_state
+      (* Read continuously the input *)
+      let rec read_input () =
+        select [read_command () >|= (fun c -> `Command c);
+                (quit_waiter :> [ `Command of Command.t | `Accept | `Interrupt ] Lwt.t)] >>= function
+          | `Command command ->
+              push_input command;
+              read_input ()
+          | `Accept | `Interrupt ->
+              return ()
+      in
 
-  and loop render_state engine_state =
-    read_command () >>= process_command render_state engine_state
+      (* The rendering state *)
+      let render_state = ref Terminal.init in
 
-  in
-  if not (Unix.isatty Unix.stdin && Unix.isatty Unix.stdout) then
-    fail (Failure "Lwt_read_line.read_password: not running in a terminal")
-  else
-    with_raw_mode (fun _ ->  Lwt_stream.junk_old standard_input >> redraw Terminal.init (Engine.init []))
+      (* Signal which forces the drawer to redraw the screen *)
+      let force_redraw, push_force_redraw = React.S.create ~eq:(fun _ _ -> false) () in
 
-let read_keyword ?(history=[]) ?(case_sensitive=false) ?(mode=`dynamic) prompt keywords =
+      (* Mutex to prevent redrawing while redrawing a previous
+         state *)
+      let drawer_mutex = Lwt_mutex.create () in
+
+      (* The drawer. It redraw everything each time something
+         changes *)
+      let drawer = React.S.l4
+        (fun size engine_state prompt force_redraw ->
+           ignore_result
+             (Lwt_mutex.with_lock drawer_mutex
+                (fun () ->
+                   lwt state = Terminal.draw ~map_text !render_state engine_state prompt in
+                   render_state := state;
+                   return ())))
+        Lwt_term.size engine_state prompt force_redraw
+      in
+
+      (* Handle user's commands *)
+      let process_input = React.E.map
+        (function
+           | Clear_screen ->
+               ignore_result (clear_screen ());
+               push_force_redraw ()
+
+           | Refresh ->
+               push_force_redraw ()
+
+           | Accept_line ->
+               wakeup quit_wakener `Accept
+
+           | Break ->
+               wakeup quit_wakener `Interrupt
+
+           | Backward_search ->
+               (* Prevent searching for security reason *)
+               ()
+
+           | cmd ->
+               set_engine_state (Engine.update (React.S.value engine_state) ~clipboard cmd))
+        input
+      in
+
+      (* Launch the input reader, and wait for its termination: *)
+      lwt () = read_input () in
+      React.S.stop drawer;
+      React.E.stop process_input;
+      (* The final drawing. It erase dynamic completion and put the cursor
+         on a new line after user input *)
+      lwt () = Terminal.last_draw ~map_text !render_state (React.S.value engine_state) (React.S.value prompt) in
+      quit_waiter >>= function
+        | `Interrupt ->
+            fail Interrupt
+        | `Accept ->
+            return (Engine.all_input (React.S.value engine_state))
+    end else
+      fail (Failure "Lwt_read_line.read_password: not running in a terminal")
+
+let read_keyword ?(history=[]) ?(case_sensitive=false) ?(mode=`dynamic) ~prompt ~values () =
   let compare = if case_sensitive then Text.compare else Text.icompare in
   let rec assoc key = function
     | [] -> None
@@ -1188,22 +1241,22 @@ let read_keyword ?(history=[]) ?(case_sensitive=false) ?(mode=`dynamic) prompt k
 
       (* The drawer. It redraw everything each time something
          changes *)
-      let drawer = React.S.l3
-        (fun size engine_state force_redraw ->
+      let drawer = React.S.l4
+        (fun size engine_state prompt force_redraw ->
            ignore_result
              (Lwt_mutex.with_lock drawer_mutex
                 (fun () ->
                    lwt state = Terminal.draw ~mode !render_state engine_state prompt in
                    render_state := state;
                    return ())))
-        Lwt_term.size engine_state force_redraw
+        Lwt_term.size engine_state prompt force_redraw
       in
 
       let dynamic_completion =
         if mode = `dynamic then
           React.S.map
             (fun (before, after) ->
-               let { comp_words = words } = complete "" before after (List.map fst keywords) in
+               let { comp_words = words } = complete "" before after (List.map fst values) in
                set_engine_state { React.S.value engine_state with
                                     Engine.completion = words;
                                     Engine.completion_index = 0 })
@@ -1224,7 +1277,7 @@ let read_keyword ?(history=[]) ?(case_sensitive=false) ?(mode=`dynamic) prompt k
 
            | Accept_line ->
                let word = Engine.all_input (React.S.value engine_state) in
-               if List.exists (fun (kwd, value) -> kwd = word) keywords then
+               if List.exists (fun (kwd, value) -> kwd = word) values then
                  wakeup quit_wakener `Accept
 
            | Break ->
@@ -1233,7 +1286,7 @@ let read_keyword ?(history=[]) ?(case_sensitive=false) ?(mode=`dynamic) prompt k
            | Complete ->
                let engine_state = Engine.reset (React.S.value engine_state) in
                let before, after = Engine.edition_state engine_state in
-               let { comp_state = (before, after) } = complete "" before after (List.map fst keywords) in
+               let { comp_state = (before, after) } = complete "" before after (List.map fst values) in
                set_engine_state { engine_state with Engine.mode = Engine.Edition(before, after) }
 
            | Meta_complete ->
@@ -1259,24 +1312,28 @@ let read_keyword ?(history=[]) ?(case_sensitive=false) ?(mode=`dynamic) prompt k
       React.E.stop process_input;
       (* The final drawing. It erase dynamic completion and put the cursor
          on a new line after user input *)
-      lwt () = Terminal.last_draw ~mode !render_state (React.S.value engine_state) prompt in
+      lwt () = Terminal.last_draw ~mode !render_state (React.S.value engine_state) (React.S.value prompt) in
       quit_waiter >>= function
         | `Interrupt ->
             fail Interrupt
         | `Accept ->
-            return (List.assoc (Engine.all_input (React.S.value engine_state)) keywords)
+            match assoc (Engine.all_input (React.S.value engine_state)) values with
+              | Some value ->
+                  return value
+              | None ->
+                  assert false
     end
   else
-    lwt () = write stdout (strip_styles prompt) in
+    lwt () = write stdout (strip_styles (React.S.value prompt)) in
     lwt txt = Lwt_text.read_line stdin in
-    match assoc txt keywords with
+    match assoc txt values with
       | Some value ->
           return value
       | None ->
           fail (Failure "Lwt_read_line.read_keyword: invalid input")
 
-let read_yes_no ?history ?mode prompt =
-  read_keyword ?history ?mode prompt [("yes", true); ("no", false)]
+let read_yes_no ?history ?mode ~prompt () =
+  read_keyword ?history ?mode ~prompt ~values:[("yes", true); ("no", false)] ()
 
 (* +-----------------------------------------------------------------+
    | History                                                         |

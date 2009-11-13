@@ -109,20 +109,23 @@ val read_line :
   ?complete : completion ->
   ?clipboard : clipboard ->
   ?mode : completion_mode ->
-  prompt -> Text.t Lwt.t
-  (** [readline ?history ?complete ?mode prompt] inputs some text
+  prompt : prompt React.signal -> unit -> Text.t Lwt.t
+  (** [readline ?history ?complete ?mode ~prompt ()] inputs some text
       from the user. If input is not a terminal, it defaults to
       [Lwt_io.read_line Lwt_io.stdin].
 
       If @param mode contains the current completion mode. It default
-      to [`dynamic]. *)
+      to [`dynamic].
+
+      @param prompt is a signal so it can changes (for exmaple when
+      the terminal sizes change). *)
 
 val read_password :
   ?clipboard : clipboard ->
   ?style : [ `empty | `clear | `text of Text.t ] ->
-  prompt -> Text.t Lwt.t
-  (** [read_password ?clipboard ?clear prompt] inputs a password from
-      the user. This function fails if input is not a terminal.
+  prompt : prompt React.signal -> unit -> Text.t Lwt.t
+  (** [read_password ?clipboard ?clear ~prompt ()] inputs a password
+      from the user. This function fails if input is not a terminal.
 
       [style] tell how the password is echoed to the user:
 
@@ -137,18 +140,19 @@ val read_keyword :
   ?history : history ->
   ?case_sensitive : bool ->
   ?mode : completion_mode ->
-  prompt -> (Text.t * 'value) list -> 'value Lwt.t
-  (** [read_keyword ?history ?case_sensitive ?mode prompt keywords]
-      reads one word which is a member of [words]. And returns which
-      keyword the user choosed.
+  prompt : prompt React.signal ->
+  values :  (Text.t * 'value) list -> unit -> 'value Lwt.t
+  (** [read_keyword ?history ?case_sensitive ?mode ~prompt ~keywords
+      ()] reads one word which is a member of [words]. And returns
+      which keyword the user choosed.
 
       [case_sensitive] default to [false]. *)
 
-val read_yes_no : ?history : history -> ?mode : completion_mode -> prompt -> bool Lwt.t
-  (** [read_yes_no ?history ?dynamic prompt] is the same as:
+val read_yes_no : ?history : history -> ?mode : completion_mode -> prompt : prompt React.signal -> unit -> bool Lwt.t
+  (** [read_yes_no ?history ?dynamic prompt ()] is the same as:
 
       {[
-        read_keyword ?history ?dynamic prompt [("yes", true); ("no", false)]
+        read_keyword ?history ?dynamic prompt [("yes", true); ("no", false)] ()
       ]}
   *)
 
