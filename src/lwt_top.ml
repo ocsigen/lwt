@@ -36,7 +36,6 @@ open Lwt_term
 module TextSet = Set.Make(Text)
 
 let complete (before, after) =
-  (* Find a fixpoint of completion *)
   lwt comp = Lwt_ocaml_completion.complete_input before after (Lexing.from_string before) in
   return { Lwt_read_line.comp_state = comp.Lwt_read_line.comp_state;
            Lwt_read_line.comp_words = (TextSet.elements

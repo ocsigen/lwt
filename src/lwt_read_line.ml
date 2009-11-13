@@ -664,7 +664,7 @@ struct
 
     (* All the text printed before the cursor: *)
     let printed_before = prepare_for_display columns
-      (prompt @ [Reset] @ before) in
+      (Reset :: prompt @ [Reset] @ before) in
 
     (* Check that the completion cursor is displayed *)
     let completion_start =
@@ -696,22 +696,22 @@ struct
 
     (* The total printed text: *)
     let printed_total = prepare_for_display columns
-      (prompt @ [Reset] @ before @ after @ (match message, mode with
-                                              | _, `classic ->
-                                                  []
-                                              | Some msg, `dynamic ->
-                                                  [Foreground lblue;
-                                                   Text "\n";
-                                                   Text(Text.repeat columns "─");
-                                                   Text msg]
-                                              | None, `dynamic ->
-                                                  Foreground lblue
-                                                  :: Text "\n"
-                                                  :: Text(Text.repeat columns "─")
-                                                  :: make_completion
-                                                    (engine_state.completion_index - completion_start)
-                                                    columns
-                                                    (drop completion_start engine_state.completion))) in
+      (Reset :: prompt @ [Reset] @ before @ after @ (match message, mode with
+                                                       | _, `classic ->
+                                                           []
+                                                       | Some msg, `dynamic ->
+                                                           [Foreground lblue;
+                                                            Text "\n";
+                                                            Text(Text.repeat columns "─");
+                                                            Text msg]
+                                                       | None, `dynamic ->
+                                                           Foreground lblue
+                                                           :: Text "\n"
+                                                           :: Text(Text.repeat columns "─")
+                                                           :: make_completion
+                                                             (engine_state.completion_index - completion_start)
+                                                             columns
+                                                             (drop completion_start engine_state.completion))) in
 
     (* The new rendering state: *)
     let new_render_state = {
