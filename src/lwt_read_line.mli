@@ -36,6 +36,8 @@ type edition_state = Text.t * Text.t
 type prompt = Lwt_term.styled_text
     (** A prompt. It may contains colors. *)
 
+type text_set = Set.Make(Text).t
+
 (** {8 Completion} *)
 
 (** Result of a completion function: *)
@@ -43,7 +45,7 @@ type completion_result = {
   comp_state : edition_state;
   (** The new edition state *)
 
-  comp_words : Text.t list;
+  comp_words : text_set;
   (** A list of possibilities *)
 }
 
@@ -55,13 +57,13 @@ type completion = edition_state -> completion_result Lwt.t
           cancelled using {!Lwt.cancel} if the user continue typing
           text. *)
 
-val lookup : Text.t -> Text.t list -> (Text.t * Text.t list)
+val lookup : Text.t -> text_set -> (Text.t * text_set)
   (** [lookup word words] lookup for completion of [word] into
       [words]. It returns [(prefix, possibilities)] where
       [possibilities] are all words starting with [word] and [prefix]
-      is the longest common prefix of [words]. *)
+      is the longest common prefix of [possibilities]. *)
 
-val complete : ?suffix : Text.t -> Text.t -> Text.t -> Text.t -> Text.t list -> completion_result
+val complete : ?suffix : Text.t -> Text.t -> Text.t -> Text.t -> text_set -> completion_result
   (** [complete ?suffix before word after words] basic completion
       functions. [words] is a list of possible completions for
       [word].
@@ -93,8 +95,11 @@ val load_history : string -> history Lwt.t
 
 (** {8 Clipboards} *)
 
-type clipboard = Text.t ref
-    (** Type of a clipboard. *)
+(** Type of a clipboard. *)
+class clipboard : object
+  method set : Text.t -> unit
+  method contents : Text.t React.signal
+end
 
 val clipboard : clipboard
   (** The global clipboard. All read-line instances which do not use a
@@ -102,7 +107,15 @@ val clipboard : clipboard
 
 (** {6 High-level functions} *)
 
-type completion_mode = [ `classic | `dynamic ]
+type completion_mode = [ `classic | `real_time ]
+    (** The completion mode.
+
+        - [`classic] means that when the user hit [Tab] a list of
+          possible completions is proposed,
+
+        - [`real_time] means that possible completions are shown to
+          the user as he types, and he can navigate in them with
+          [Tab+left], [Tab+right] *)
 
 val read_line :
   ?history : history ->
@@ -115,7 +128,7 @@ val read_line :
       [Lwt_io.read_line Lwt_io.stdin].
 
       If @param mode contains the current completion mode. It default
-      to [`dynamic].
+      to [`real_time].
 
       @param prompt is a signal so it can changes (for exmaple when
       the terminal sizes change). *)
@@ -251,7 +264,7 @@ module Engine : sig
     mode : mode;
     history : history * history;
     (** Cursor to the history position. *)
-    completion : Text.t list;
+    completion : text_set;
     (** Possible completions for dynamic mode *)
     completion_index : int;
     (** Current position of the selection cursor *)
@@ -265,8 +278,8 @@ module Engine : sig
     (** [reset state] reset the given state, if the user was doing a
         selection, it is canceled *)
 
-  val update : state -> ?clipboard : clipboard -> Command.t -> state
-    (** [update state clipboard command] update an engine state by
+  val update : engine_state : state -> ?clipboard : clipboard -> command : Command.t -> unit -> state
+    (** [update ~state ?clipboard ~command ()] update an engine state by
         processing the given command. It returns the new state, and
         may have the side effect of changing the clipboard contents.
 
@@ -289,8 +302,13 @@ module Terminal : sig
   val init : state
     (** Initial state *)
 
-  val draw : ?map_text : (Text.t -> Text.t) -> ?mode : completion_mode ->
-    ?message : Text.t -> state -> Engine.state -> prompt -> state Lwt.t
+  val draw :
+    ?map_text : (Text.t -> Text.t) ->
+    ?mode : completion_mode ->
+    ?message : Text.t ->
+    render_state : state ->
+    engine_state : Engine.state ->
+    prompt : prompt -> unit -> state Lwt.t
     (** [draw ?map_text ?dynamic state engine_state prompt] erase
         previous printed text, draw the new one, and return a new
         state for future redrawing.
@@ -301,8 +319,12 @@ module Terminal : sig
         @param message is a message to display if completion is not
         yet available. *)
 
-  val last_draw : ?map_text : (Text.t -> Text.t) -> ?mode : completion_mode ->
-    state -> Engine.state -> prompt -> unit Lwt.t
+  val last_draw :
+    ?map_text : (Text.t -> Text.t) ->
+    ?mode : completion_mode ->
+    render_state : state ->
+    engine_state : Engine.state ->
+    prompt : prompt -> unit -> unit Lwt.t
     (** Draw for the last time, i.e. the cursor is left after the text
         and not at current position. *)
 end

@@ -21,29 +21,31 @@
  * 02111-1307, USA.
  *)
 
+module TextSet = Set.Make(Text)
+
 (* Returns [acc] plus all modules of [dir] *)
 let add_modules_from_directory acc dir =
   let dir = if dir = ""  then "./" else dir in
   let acc = ref acc in
   Array.iter (fun fname ->
                 if Filename.check_suffix fname ".cmi" then
-                  acc := Text.capitalize (Filename.chop_suffix fname ".cmi") :: !acc)
+                  acc := TextSet.add (Text.capitalize (Filename.chop_suffix fname ".cmi")) !acc)
     (Sys.readdir (if dir = "" then Filename.current_dir_name else dir));
   !acc
 
 let list_env () =
   let rec loop acc = function
     | Env.Env_empty -> acc
-    | Env.Env_value(summary, id, _) -> loop (Ident.name id :: acc) summary
-    | Env.Env_type(summary, id, _) -> loop (Ident.name id :: acc) summary
-    | Env.Env_exception(summary, id, _) -> loop (Ident.name id :: acc) summary
-    | Env.Env_module(summary, id, _) -> loop (Ident.name id :: acc) summary
-    | Env.Env_modtype(summary, id, _) -> loop (Ident.name id :: acc) summary
-    | Env.Env_class(summary, id, _) -> loop (Ident.name id :: acc) summary
-    | Env.Env_cltype(summary, id, _) -> loop (Ident.name id :: acc) summary
+    | Env.Env_value(summary, id, _) -> loop (TextSet.add (Ident.name id) acc) summary
+    | Env.Env_type(summary, id, _) -> loop (TextSet.add (Ident.name id) acc) summary
+    | Env.Env_exception(summary, id, _) -> loop (TextSet.add (Ident.name id) acc) summary
+    | Env.Env_module(summary, id, _) -> loop (TextSet.add (Ident.name id) acc) summary
+    | Env.Env_modtype(summary, id, _) -> loop (TextSet.add (Ident.name id) acc) summary
+    | Env.Env_class(summary, id, _) -> loop (TextSet.add (Ident.name id) acc) summary
+    | Env.Env_cltype(summary, id, _) -> loop (TextSet.add (Ident.name id) acc) summary
     | Env.Env_open(summary, path) -> loop acc summary
   in
-  let acc = [] in
+  let acc = TextSet.empty in
   (* Add names of the environment *)
   let acc = loop acc (Env.summary !Toploop.toplevel_env) in
   (* Add accessible modules *)

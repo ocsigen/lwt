@@ -36,18 +36,13 @@ open Lwt_term
 module TextSet = Set.Make(Text)
 
 let complete (before, after) =
-  lwt comp = Lwt_ocaml_completion.complete_input before after (Lexing.from_string before) in
-  return { Lwt_read_line.comp_state = comp.Lwt_read_line.comp_state;
-           Lwt_read_line.comp_words = (TextSet.elements
-                                         ((List.fold_left
-                                             (fun set elt -> TextSet.add elt set))
-                                            TextSet.empty comp.Lwt_read_line.comp_words)) }
+  Lwt_ocaml_completion.complete_input before after (Lexing.from_string before)
 
 (* +-----------------------------------------------------------------+
    | Read-line wrapper                                               |
    +-----------------------------------------------------------------+ *)
 
-let mode = ref `dynamic
+let mode = ref `real_time
 let completion_mode () = !mode
 let set_completion_mode m = mode := m
 
