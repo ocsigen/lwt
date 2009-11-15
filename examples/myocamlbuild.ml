@@ -45,6 +45,7 @@ let () =
 let have_native = try_exec "ocamlfind ocamlopt -version"
 let have_lwt_glib = try_exec "ocamlfind query lwt.glib"
 let have_lwt_text = try_exec "ocamlfind query lwt.text"
+let have_lwt_preemptive = try_exec "ocamlfind query lwt.preemptive"
 
 (* +-----------------------------------------------------------------+
    | Ocamlfind                                                       |
@@ -52,6 +53,7 @@ let have_lwt_text = try_exec "ocamlfind query lwt.text"
 
 (* Packages we want to use: *)
 let packages = [
+  "threads";
   "lwt";
   "lwt.preemptive";
   "lwt.extra";
@@ -107,7 +109,8 @@ let _ =
           (List.map snd
              (List.filter fst
                 [(have_lwt_glib, ["ex_gtk"]);
-                 (have_lwt_text, ["show_keys"])])) in
+                 (have_lwt_text, ["show_keys"; "kikoolol_prompt"]);
+                 (have_lwt_preemptive, ["minishell"])])) in
 
         let byte = List.map (sprintf "%s.byte") examples
         and native = List.map (sprintf "%s.native") examples in

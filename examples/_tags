@@ -3,3 +3,5 @@
 <ex_gtk.*>: pkg_lwt.glib
 <show_keys.*>: pkg_lwt.text
 <parallelize.*>: pkg_lwt.text
+<minishell.*>: thread, pkg_threads, pkg_lwt.preemptive, pkg_lwt.text
+<kikoolol_prompt.*>: pkg_lwt.text
