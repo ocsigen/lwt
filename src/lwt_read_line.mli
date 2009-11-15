@@ -122,38 +122,36 @@ val read_line :
   ?complete : completion ->
   ?clipboard : clipboard ->
   ?mode : completion_mode ->
-  prompt : prompt React.signal -> unit -> Text.t Lwt.t
+  prompt : prompt -> unit -> Text.t Lwt.t
   (** [readline ?history ?complete ?mode ~prompt ()] inputs some text
       from the user. If input is not a terminal, it defaults to
       [Lwt_io.read_line Lwt_io.stdin].
 
       If @param mode contains the current completion mode. It default
-      to [`real_time].
+      to [`real_time]. *)
 
-      @param prompt is a signal so it can changes (for exmaple when
-      the terminal sizes change). *)
+type password_style = [ `empty | `clear | `text of Text.t ]
+    (** Style which indicate how the password is echoed to the user:
+
+        - with [`empty] nothing is printed
+        - with [`clear] the password is displayed has it
+        - with [`text ch] all characters are replaced by [ch] *)
 
 val read_password :
   ?clipboard : clipboard ->
-  ?style : [ `empty | `clear | `text of Text.t ] ->
-  prompt : prompt React.signal -> unit -> Text.t Lwt.t
+  ?style : password_style ->
+  prompt : prompt -> unit -> Text.t Lwt.t
   (** [read_password ?clipboard ?clear ~prompt ()] inputs a password
       from the user. This function fails if input is not a terminal.
 
-      [style] tell how the password is echoed to the user:
-
-      - with [`empty] nothing is printed
-      - with [`clear] the password is displayed has it
-      - with [`text ch] all characters are replaced by [ch]
-
-      It defaults to [`text "*"].
+      @param style defaults to [`text "*"].
   *)
 
 val read_keyword :
   ?history : history ->
   ?case_sensitive : bool ->
   ?mode : completion_mode ->
-  prompt : prompt React.signal ->
+  prompt : prompt ->
   values :  (Text.t * 'value) list -> unit -> 'value Lwt.t
   (** [read_keyword ?history ?case_sensitive ?mode ~prompt ~keywords
       ()] reads one word which is a member of [words]. And returns
@@ -161,7 +159,7 @@ val read_keyword :
 
       [case_sensitive] default to [false]. *)
 
-val read_yes_no : ?history : history -> ?mode : completion_mode -> prompt : prompt React.signal -> unit -> bool Lwt.t
+val read_yes_no : ?history : history -> ?mode : completion_mode -> prompt : prompt -> unit -> bool Lwt.t
   (** [read_yes_no ?history ?dynamic prompt ()] is the same as:
 
       {[
@@ -328,3 +326,85 @@ module Terminal : sig
     (** Draw for the last time, i.e. the cursor is left after the text
         and not at current position. *)
 end
+
+(** {6 Read-line classes} *)
+
+(** Look at the "fancy_prompt.ml" example to see how to use this
+    class *)
+
+(** Basic class for all read-line ike functions. *)
+class read_line_base : history -> object
+  method prompt : prompt React.signal
+    (** The prompt. It is a signal so it can change over time. It
+        defaults to ["# "]. *)
+
+  method engine_state : Engine.state React.signal
+    (** The signal holding current engine state *)
+
+  method set_engine_state : Engine.state -> unit
+    (** Set the current engine state *)
+
+  method edition_state : edition_state React.signal
+    (** The signal holding current edition state *)
+
+  method message : Text.t option React.signal
+    (** Message to dislay while completion is being computed *)
+
+  method set_message : Text.t option -> unit
+    (** Set the current message *)
+
+  method keys_pending : bool React.signal
+    (** Signal which is [true] iff there are characters ready to be
+        read on the standard input channel *)
+
+  method clipboard : clipboard
+    (** Which clipboard to use. It default to the default clipboard *)
+
+  method mode : completion_mode
+    (** The completion mode. It default to [`real_time] *)
+
+  method map_text : Text.t -> Text.t
+    (** [map_text txt] maps [txt] before printing it default to the
+        identity. *)
+
+  method refresh : unit
+    (** Redraw current state *)
+
+  method accept : unit
+    (** Terminates line reading with acceptance *)
+
+  method interrupt : unit
+    (** Terminates line reading by user's interruption *)
+
+  method process_command : Command.t -> unit Lwt.t
+    (** Handle one command *)
+
+  method reset : unit
+    (** Reset engine state to its initial state *)
+
+  method run : Text.t Lwt.t
+    (** Start read-line, waits for termination, and returns the text
+        written by the user *)
+end
+
+(** The class for {!read_line} *)
+class read_line :
+  ?history : history ->
+  ?complete : completion ->
+  ?clipboard : clipboard ->
+  ?mode : completion_mode ->
+  prompt : prompt -> unit -> read_line_base
+
+(** The class for {!read_password} *)
+class read_password :
+  ?clipboard : clipboard ->
+  ?style : password_style ->
+  prompt : prompt -> unit -> read_line_base
+
+(** The class for {!read_keyword} *)
+class read_keyword :
+  ?history : history ->
+  ?case_sensitive : bool ->
+  ?mode : completion_mode ->
+  prompt : prompt ->
+  values :  (Text.t * 'value) list -> unit -> read_line_base

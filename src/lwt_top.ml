@@ -59,9 +59,9 @@ let pos = ref 0
 let rec read_input prompt buffer len =
   try
     if !pos = String.length !input then begin
-      let sprompt = if prompt = "  " then [fg blue; text "> "] else [fg yellow; text prompt] in
+      let prompt' = if prompt = "  " then [fg blue; text "> "] else [fg yellow; text prompt] in
       let txt = Lwt_main.run begin
-        lwt l = Lwt_read_line.read_line ~complete ~mode:!mode ~history:(!history) ~prompt:(React.S.const sprompt) () in
+        lwt l = Lwt_read_line.read_line ~complete ~mode:!mode ~history:(!history) ~prompt:prompt' () in
         lwt () = Lwt_text.flush Lwt_text.stdout in
         return l
       end in

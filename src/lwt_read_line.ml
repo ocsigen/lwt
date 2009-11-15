@@ -30,6 +30,7 @@ type text_set = TextSet.t
 type edition_state = Text.t * Text.t
 type history = Text.t list
 type prompt = Lwt_term.styled_text
+type password_style = [ `empty | `clear | `text of Text.t ]
 
 class clipboard =
   let signal, setter = React.S.create "" in
@@ -898,7 +899,7 @@ struct
 end
 
 (* +-----------------------------------------------------------------+
-   | High-level functions                                            |
+   | Basic class for all read-line like functions                    |
    +-----------------------------------------------------------------+ *)
 
 (* Note: all read-line function are written using reactive
@@ -908,11 +909,6 @@ open Command
 
 let read_command () = read_key () >|= Command.of_key
 
-let no_completion state = return {
-  comp_state = state;
-  comp_words = TextSet.empty;
-}
-
 let set_nth set n =
   let module M = struct exception Return of string end in
   try
@@ -921,312 +917,349 @@ let set_nth set n =
   with M.Return x ->
     x
 
-let read_line ?(history=[]) ?(complete=no_completion) ?(clipboard=clipboard) ?(mode=`real_time) ~prompt () =
+type close_mode = [ `Accept | `Interrupt ]
+
+class read_line_base history =
+  (* Thread which is waleup with [`Accept] or [`Interrupt] when we are
+     done: *)
+  let (quit_waiter : close_mode Lwt.t), (quit_wakener : close_mode Lwt.u) = Lwt.wait () in
+
+  (* The engine state signal *)
+  let engine_state, set_engine_state = React.S.create (Engine.init history) in
+
+  (* The signal holding the current edition state, whatever the engine
+     state is *)
+  let edition_state = React.S.map Engine.edition_state engine_state in
+
+  (* Tell whether there are pending keys in the input *)
+  let keys_pending, set_keys_pending = React.S.create false in
+
+  (* Message for dynamic completion *)
+  let message, set_message =  React.S.create None in
+
+  (* Signal which forces the drawer to redraw the screen *)
+  let force_redraw, set_force_redraw = React.S.create ~eq:(fun _ _ -> false) () in
+
+  (* The default prompt *)
+  let prompt = React.S.const [Lwt_term.Text "# "] in
+
+object(self)
+  method prompt = prompt
+  method engine_state = engine_state
+  method set_engine_state = set_engine_state
+  method edition_state = edition_state
+  method message = message
+  method set_message = set_message
+  method keys_pending = keys_pending
+  method clipboard = clipboard
+  method mode : completion_mode = `real_time
+  method map_text x = x
+  method accept = wakeup quit_wakener `Accept
+  method interrupt = wakeup quit_wakener `Interrupt
+  method refresh = set_force_redraw ()
+  method reset = self#set_engine_state (Engine.reset (React.S.value self#engine_state))
+
+  method process_command = function
+    | Clear_screen ->
+        lwt () = clear_screen () in
+        self#refresh;
+        return ()
+
+    | Refresh ->
+        self#refresh;
+        return ()
+
+    | Accept_line ->
+        self#accept;
+        return ()
+
+    | Break ->
+        self#interrupt;
+        return ()
+
+    | command ->
+        self#set_engine_state (Engine.update ~engine_state:(React.S.value engine_state) ~clipboard ~command ());
+        return ()
+
+  val mutable render_state = Terminal.init
+
+  method run =
+    (* Update the [keys_peinding] signal *)
+    let check_keys () =
+      set_keys_pending (Lwt.state (Lwt_stream.peek Lwt_term.standard_input) <> Sleep)
+    in
+
+    (* Read continuously user input *)
+    let rec loop () =
+      check_keys ();
+      select [read_command () >|= (fun c -> `Command c);
+              (quit_waiter :> [ `Command of Command.t | `Accept | `Interrupt ] Lwt.t)] >>= function
+        | `Command command ->
+            check_keys ();
+            lwt () = self#process_command command in
+            loop ()
+        | (`Accept | `Interrupt) as reason ->
+            return reason
+    in
+
+    (* Mutex to prevent drawing while already drawing a previous
+       state *)
+    let drawer_mutex = Lwt_mutex.create () in
+
+    (* The drawer. It redraw everything each time something changes *)
+    let drawer = React.S.l5
+      (fun size engine_state message prompt force_redraw ->
+         ignore_result
+           (Lwt_mutex.with_lock drawer_mutex
+              (fun () ->
+                 lwt state = Terminal.draw
+                   ~map_text:self#map_text
+                   ~mode:self#mode
+                   ?message
+                   ~render_state
+                   ~engine_state
+                   ~prompt () in
+                 render_state <- state;
+                 return ())))
+      Lwt_term.size self#engine_state self#message self#prompt force_redraw
+    in
+
+    (* Wait for termination *)
+    lwt reason = loop () in
+
+    (* Clean-up events and signals. This also make the compiler
+       happy. *)
+    React.S.stop drawer;
+
+    (* Clean-up the terminal *)
+    lwt () = Terminal.last_draw
+      ~mode:self#mode
+      ~render_state:render_state
+      ~engine_state:(React.S.value engine_state)
+      ~prompt:(React.S.value self#prompt) () in
+
+    match reason with
+      | `Accept ->
+          return (Engine.all_input (React.S.value engine_state))
+      | `Interrupt ->
+          fail Interrupt
+end
+
+(* +-----------------------------------------------------------------+
+   | Read-line functions                                             |
+   +-----------------------------------------------------------------+ *)
+
+let no_completion state = return {
+  comp_state = state;
+  comp_words = TextSet.empty;
+}
+
+class read_line ?(history=[]) ?(complete=no_completion) ?(clipboard=clipboard) ?(mode=`real_time) ~prompt () =
+  let prompt = React.S.const prompt in
+object(self)
+  inherit read_line_base history as super
+
+  method clipboard = clipboard
+  method mode = mode
+  method prompt = prompt
+
+  val mutable completion_thread = fail (Failure "bug")
+
+  method process_command = function
+    | Complete ->
+        self#reset;
+        Lwt.cancel completion_thread;
+        completion_thread <- complete (React.S.value self#edition_state);
+        ignore
+          (lwt comp = completion_thread in
+           match comp with
+             | { comp_state = (before, after); comp_words = words } when TextSet.cardinal words = 1 ->
+                 self#set_engine_state { React.S.value self#engine_state with Engine.mode = Engine.Edition(before, after) };
+                 return ()
+             | { comp_state = (before, after); comp_words = words } ->
+                 self#set_engine_state { React.S.value self#engine_state with Engine.mode = Engine.Edition(before, after) };
+                 if mode = `classic then
+                   lwt () = write_char stdout "\n" in
+                   lwt () = print_words stdout (React.S.value Lwt_term.columns) (TextSet.elements words) in
+                   write_char stdout "\n"
+                 else
+                   return ());
+        return ()
+
+    | Meta_complete ->
+        self#reset;
+        if mode = `real_time then begin
+          let engine_state = React.S.value self#engine_state in
+          let before, after = React.S.value self#edition_state in
+          let word = set_nth engine_state.Engine.completion engine_state.Engine.completion_index in
+          let ptr, idx =
+            if Text.length word > Text.length before then
+              (Text.pointer_l before, Text.length before)
+            else
+              (Text.pointer_at before (-(Text.length word)), Text.length word)
+          in
+          let rec aux ptr idx =
+            if Text.equal_at ptr (Text.sub word 0 idx) then
+              self#set_engine_state  {
+                engine_state with
+                  Engine.mode = Engine.Edition(before ^ Text.sub word idx (Text.length word - idx), after)
+              }
+            else
+              match Text.next ptr with
+                | None -> failwith "invalid completion"
+                | Some(ch, ptr) -> aux ptr (idx - 1)
+          in
+          aux ptr idx;
+        end;
+        return ()
+
+    | command ->
+        super#process_command command
+
+  val mutable dynamic_completion_thread = fail (Failure "bug")
+
+  method run =
+    let dynamic_completion =
+      if mode = `real_time then
+        React.S.map
+          (fun edition_state ->
+             (* Cancel the previous completion *)
+             Lwt.cancel dynamic_completion_thread;
+             (* Start a new one *)
+             dynamic_completion_thread <- complete edition_state;
+             ignore
+               (lwt comp = dynamic_completion_thread in
+                self#set_message None;
+                self#set_engine_state { React.S.value self#engine_state with
+                                          Engine.completion = comp.comp_words;
+                                          Engine.completion_index = 0 };
+                return ());
+             let stop_anim = dynamic_completion_thread >> return `Stop in
+             let start_date = Unix.time () in
+             (* Play an animation to make the user happy *)
+             let rec aux anim =
+               choose [stop_anim; Lwt_unix.sleep 0.1 >> return `Timeout] >>= function
+                 | `Stop ->
+                     return ()
+                 | `Timeout ->
+                     let delta = truncate (Unix.time () -. start_date) in
+                     let seconds = delta mod 60
+                     and minutes = (delta / 60) mod 60
+                     and hours = (delta / (60 * 60)) mod 24
+                     and days = (delta / (60 * 60 * 24)) in
+                     let message =
+                       if days = 0 then
+                         Printf.sprintf "working %s %02d:%02d:%02d" (List.hd anim) hours minutes seconds
+                       else
+                         Printf.sprintf "working %s %d %02d:%02d:%02d" (List.hd anim) days hours minutes seconds
+                     in
+                     self#set_message (Some message);
+                     aux (List.tl anim)
+             in
+             let rec anim = "─" :: "\\" :: "│" :: "/" :: anim in
+             ignore (aux anim))
+          (React.S.when_ (React.S.map not self#keys_pending) ("", "") self#edition_state)
+      else
+        React.S.const ()
+    in
+    (* Cancel completion on user input *)
+    let cancel_completion = React.S.map
+      (fun edition_state -> cancel completion_thread)
+      self#edition_state
+    in
+    lwt text = super#run in
+    React.S.stop dynamic_completion;
+    React.S.stop cancel_completion;
+    return text
+end
+
+let read_line ?history ?complete ?clipboard ?mode ~prompt () =
   if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then
-    with_raw_mode begin fun () ->
-
-      (* Thread which is waleup with [`Accept] or [`Interrupt] when we
-         are done *)
-      let (quit_waiter : [ `Accept | `Interrupt ] Lwt.t), quit_wakener = Lwt.wait () in
-
-      (* Event which receive user input *)
-      let input, push_input = React.E.create () in
-
-      (* The engine state *)
-      let engine_state, set_engine_state = React.S.create (Engine.init history) in
-      let edition_state = React.S.map Engine.edition_state engine_state in
-
-      (* Tell whether there are pending keys in the input *)
-      let keys_pending, set_keys_pending = React.S.create false in
-
-      (* Update the [keys_peinding] signal *)
-      let check_keys () =
-        set_keys_pending (Lwt.state (Lwt_stream.peek Lwt_term.standard_input) <> Sleep)
-      in
-
-      (* Read continuously the input *)
-      let rec read_input () =
-        check_keys ();
-        select [read_command () >|= (fun c -> `Command c);
-                (quit_waiter :> [ `Command of Command.t | `Accept | `Interrupt ] Lwt.t)] >>= function
-          | `Command command ->
-              check_keys ();
-              push_input command;
-              read_input ()
-          | `Accept | `Interrupt ->
-              return ()
-      in
-
-      (* Message for dynamic completion *)
-      let message, set_message =  React.S.create None in
-
-      (* The rendering state *)
-      let render_state = ref Terminal.init in
-
-      (* Signal which forces the drawer to redraw the screen *)
-      let force_redraw, push_force_redraw = React.S.create ~eq:(fun _ _ -> false) () in
-
-      (* Mutex to prevent redrawing while redrawing a previous
-         state *)
-      let drawer_mutex = Lwt_mutex.create () in
-
-      (* The drawer. It redraw everything each time something
-         changes *)
-      let drawer = React.S.l5
-        (fun size engine_state message prompt force_redraw ->
-           ignore_result
-             (Lwt_mutex.with_lock drawer_mutex
-                (fun () ->
-                   lwt state = Terminal.draw ~mode ?message ~render_state:!render_state ~engine_state ~prompt () in
-                   render_state := state;
-                   return ())))
-        Lwt_term.size engine_state message prompt force_redraw
-      in
-
-      let dynamic_completion_thread = ref (fail (Failure "bug")) in
-      let dynamic_completion =
-        if mode = `real_time then
-          React.S.map
-            (fun edition_state ->
-               (* Cancel the previous completion *)
-               Lwt.cancel !dynamic_completion_thread;
-               (* Start a new one *)
-               dynamic_completion_thread := complete edition_state;
-               ignore
-                 (lwt comp = !dynamic_completion_thread in
-                  set_message None;
-                  set_engine_state { React.S.value engine_state with
-                                       Engine.completion = comp.comp_words;
-                                       Engine.completion_index = 0 };
-                  return ());
-               let stop_anim = !dynamic_completion_thread >> return `Stop in
-               let start_date = Unix.time () in
-               (* Play an animation to make the user happy *)
-               let rec aux anim =
-                 choose [stop_anim; Lwt_unix.sleep 0.1 >> return `Timeout] >>= function
-                   | `Stop ->
-                       return ()
-                   | `Timeout ->
-                       let delta = truncate (Unix.time () -. start_date) in
-                       let seconds = delta mod 60
-                       and minutes = (delta / 60) mod 60
-                       and hours = (delta / (60 * 60)) mod 24
-                       and days = (delta / (60 * 60 * 24)) in
-                       let message =
-                         if days = 0 then
-                           Printf.sprintf "working %s %02d:%02d:%02d" (List.hd anim) hours minutes seconds
-                         else
-                           Printf.sprintf "working %s %d %02d:%02d:%02d" (List.hd anim) days hours minutes seconds
-                       in
-                       set_message (Some message);
-                       aux (List.tl anim)
-               in
-               let rec anim = "─" :: "\\" :: "│" :: "/" :: anim in
-               ignore (aux anim))
-            (React.S.when_ (React.S.map not keys_pending) ("", "") edition_state)
-        else
-          React.S.const ()
-      in
-
-      let completion_thread = ref (fail (Failure "bug")) in
-
-      (* Handle user's commands *)
-      let process_input = React.E.map
-        (function
-           | Clear_screen ->
-               ignore_result (clear_screen ());
-               push_force_redraw ()
-
-           | Refresh ->
-               push_force_redraw ()
-
-           | Accept_line ->
-               wakeup quit_wakener `Accept
-
-           | Break ->
-               wakeup quit_wakener `Interrupt
-
-           | Complete ->
-               let engine_state = Engine.reset (React.S.value engine_state) in
-               Lwt.cancel !completion_thread;
-               completion_thread := complete (React.S.value edition_state);
-               ignore
-                 (lwt comp = !completion_thread in
-                  match comp with
-                    | { comp_state = (before, after); comp_words = words } when TextSet.cardinal words = 1 ->
-                        set_engine_state { engine_state with Engine.mode = Engine.Edition(before, after) };
-                        return ()
-                    | { comp_state = (before, after); comp_words = words } ->
-                        set_engine_state { engine_state with Engine.mode = Engine.Edition(before, after) };
-                        if mode = `classic then
-                          lwt () = write_char stdout "\n" in
-                          lwt () = print_words stdout (React.S.value Lwt_term.columns) (TextSet.elements words) in
-                          write_char stdout "\n"
-                        else
-                          return ())
-
-           | Meta_complete ->
-               let engine_state = React.S.value engine_state in
-               if mode = `real_time
-                 && engine_state.Engine.completion_index >= 0
-                 && engine_state.Engine.completion_index < TextSet.cardinal engine_state.Engine.completion then
-                   let before, after = React.S.value edition_state in
-                   let word = set_nth engine_state.Engine.completion engine_state.Engine.completion_index in
-                   let ptr, idx =
-                     if Text.length word > Text.length before then
-                       (Text.pointer_l before, Text.length before)
-                     else
-                       (Text.pointer_at before (-(Text.length word)), Text.length word)
-                   in
-                   let rec aux ptr idx =
-                     if Text.equal_at ptr (Text.sub word 0 idx) then
-                       set_engine_state  {
-                         engine_state with
-                           Engine.mode = Engine.Edition(before ^ Text.sub word idx (Text.length word - idx), after)
-                       }
-                     else
-                       match Text.next ptr with
-                         | None -> failwith "invalid completion"
-                         | Some(ch, ptr) -> aux ptr (idx - 1)
-                   in aux ptr idx
-
-           | command ->
-               set_engine_state (Engine.update ~engine_state:(React.S.value engine_state) ~clipboard ~command ()))
-        input
-      in
-
-      (* Cancel completion on user input *)
-      let cancel_completion = React.S.map
-        (fun edition_state -> cancel !completion_thread)
-        edition_state
-      in
-
-      (* Launch the input reader, and wait for its termination: *)
-      lwt () = read_input () in
-      React.S.stop drawer;
-      React.S.stop dynamic_completion;
-      React.E.stop process_input;
-      React.S.stop cancel_completion;
-      (* The final drawing. It erase dynamic completion and put the cursor
-         on a new line after user input *)
-      lwt () = Terminal.last_draw ~mode
-        ~render_state:!render_state
-        ~engine_state:(React.S.value engine_state)
-        ~prompt:(React.S.value prompt) () in
-      quit_waiter >>= function
-        | `Accept ->
-            return (Engine.all_input (React.S.value engine_state))
-        | `Interrupt ->
-            fail Interrupt
-    end
+    with_raw_mode
+      (fun () -> (new read_line ?history ?complete ?clipboard ?mode ~prompt ())#run)
   else
-    lwt () = write stdout (strip_styles (React.S.value prompt)) in
+    lwt () = write stdout (strip_styles prompt) in
     Lwt_text.read_line stdin
 
-let read_password ?(clipboard=clipboard) ?(style=`text "*") ~prompt () =
+class read_password ?(clipboard=clipboard) ?(style:password_style=`text "*") ~prompt () =
+  let prompt = React.S.const prompt in
+  let map_text = match style with
+    | `text ch -> (fun txt -> Text.map (fun _ -> ch) txt)
+    | `clear -> (fun x -> x)
+    | `empty -> (fun _ -> "") in
+object
+  inherit read_line_base [] as super
+  method mode = `classic
+  method prompt = prompt
+  method map_text = map_text
+  method clipboard = clipboard
+  method process_command = function
+    | Backward_search ->
+        (* Prevent searching for security reason *)
+        return ()
+    | command ->
+        super#process_command command
+end
+
+let read_password ?clipboard ?style ~prompt () =
   if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then
-    with_raw_mode begin fun () ->
-      lwt () = Lwt_stream.junk_old standard_input in
+    with_raw_mode
+      (fun () ->
+         (* Remove pending keys before doing anything else *)
+         lwt () = Lwt_stream.junk_old standard_input in
+         (new read_password ?clipboard ?style ~prompt ())#run)
+  else
+    fail (Failure "Lwt_read_line.read_password: not running in a terminal")
 
-      (* Choose a mapping text function according to style: *)
-      let map_text = match style with
-        | `text ch -> (fun txt -> Text.map (fun _ -> ch) txt)
-        | `clear -> (fun x -> x)
-        | `empty -> (fun _ -> "") in
+class read_keyword ?(history=[]) ?(case_sensitive=false) ?(mode:completion_mode=`real_time) ~prompt ~values () =
+  let prompt = React.S.const prompt in
+object(self)
+  inherit read_line_base history as super
+  method prompt = prompt
 
-      (* Thread which is waleup with [`Accept] or [`Interrupt] when we
-         are done *)
-      let (quit_waiter : [ `Accept | `Interrupt ] Lwt.t), quit_wakener = Lwt.wait () in
+  method process_command = function
+    | Complete ->
+        self#reset;
+        let before, after = React.S.value self#edition_state in
+        let comp = complete "" before after (List.fold_left (fun set (k, v) -> TextSet.add k set) TextSet.empty values) in
+        self#set_engine_state { React.S.value self#engine_state with Engine.mode = Engine.Edition comp.comp_state };
+        return ()
 
-      (* Event which receive user input *)
-      let input, push_input = React.E.create () in
+    | Meta_complete ->
+        self#reset;
+        let engine_state = React.S.value self#engine_state in
+        if mode = `real_time then begin
+          let word = set_nth engine_state.Engine.completion engine_state.Engine.completion_index in
+          self#set_engine_state  {
+            engine_state with
+              Engine.mode = Engine.Edition(word, "")
+          }
+        end;
+        return ()
 
-      (* The engine state *)
-      let engine_state, set_engine_state = React.S.create (Engine.init []) in
+    | command ->
+        super#process_command command
 
-      (* Read continuously the input *)
-      let rec read_input () =
-        select [read_command () >|= (fun c -> `Command c);
-                (quit_waiter :> [ `Command of Command.t | `Accept | `Interrupt ] Lwt.t)] >>= function
-          | `Command command ->
-              push_input command;
-              read_input ()
-          | `Accept | `Interrupt ->
-              return ()
-      in
+  method run =
+    let dynamic_completion =
+      if mode = `real_time then
+        React.S.map
+          (fun (before, after) ->
+             let { comp_words = words } = complete "" before after
+               (List.fold_left (fun set (k, v) -> TextSet.add k set) TextSet.empty values) in
+             self#set_engine_state { React.S.value self#engine_state with
+                                       Engine.completion = words;
+                                       Engine.completion_index = 0 })
+          self#edition_state
+      else
+        React.S.const ()
+    in
+    lwt result = super#run in
+    React.S.stop dynamic_completion;
+    return result
+end
 
-      (* The rendering state *)
-      let render_state = ref Terminal.init in
-
-      (* Signal which forces the drawer to redraw the screen *)
-      let force_redraw, push_force_redraw = React.S.create ~eq:(fun _ _ -> false) () in
-
-      (* Mutex to prevent redrawing while redrawing a previous
-         state *)
-      let drawer_mutex = Lwt_mutex.create () in
-
-      (* The drawer. It redraw everything each time something
-         changes *)
-      let drawer = React.S.l4
-        (fun size engine_state prompt force_redraw ->
-           ignore_result
-             (Lwt_mutex.with_lock drawer_mutex
-                (fun () ->
-                   lwt state = Terminal.draw
-                     ~map_text
-                     ~render_state:!render_state
-                     ~engine_state:engine_state
-                     ~prompt () in
-                   render_state := state;
-                   return ())))
-        Lwt_term.size engine_state prompt force_redraw
-      in
-
-      (* Handle user's commands *)
-      let process_input = React.E.map
-        (function
-           | Clear_screen ->
-               ignore_result (clear_screen ());
-               push_force_redraw ()
-
-           | Refresh ->
-               push_force_redraw ()
-
-           | Accept_line ->
-               wakeup quit_wakener `Accept
-
-           | Break ->
-               wakeup quit_wakener `Interrupt
-
-           | Backward_search ->
-               (* Prevent searching for security reason *)
-               ()
-
-           | command ->
-               set_engine_state (Engine.update ~engine_state:(React.S.value engine_state) ~clipboard ~command ()))
-        input
-      in
-
-      (* Launch the input reader, and wait for its termination: *)
-      lwt () = read_input () in
-      React.S.stop drawer;
-      React.E.stop process_input;
-      (* The final drawing. It erase dynamic completion and put the cursor
-         on a new line after user input *)
-      lwt () = Terminal.last_draw
-        ~map_text
-        ~render_state:!render_state
-        ~engine_state:(React.S.value engine_state)
-        ~prompt:(React.S.value prompt) () in
-      quit_waiter >>= function
-        | `Interrupt ->
-            fail Interrupt
-        | `Accept ->
-            return (Engine.all_input (React.S.value engine_state))
-    end else
-      fail (Failure "Lwt_read_line.read_password: not running in a terminal")
-
-let read_keyword ?(history=[]) ?(case_sensitive=false) ?(mode=`real_time) ~prompt ~values () =
+let read_keyword ?history ?(case_sensitive=false) ?mode ~prompt ~values () =
   let compare = if case_sensitive then Text.compare else Text.icompare in
   let rec assoc key = function
     | [] -> None
@@ -1237,136 +1270,13 @@ let read_keyword ?(history=[]) ?(case_sensitive=false) ?(mode=`real_time) ~promp
           assoc key l
   in
   if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then
-    with_raw_mode begin fun () ->
-
-      (* Thread which is waleup with [`Accept] or [`Interrupt] when we
-         are done *)
-      let (quit_waiter : [ `Accept | `Interrupt ] Lwt.t), quit_wakener = Lwt.wait () in
-
-      (* Event which receive user input *)
-      let input, push_input = React.E.create () in
-
-      (* The engine state *)
-      let engine_state, set_engine_state = React.S.create (Engine.init history) in
-      let edition_state = React.S.map Engine.edition_state engine_state in
-
-      (* Read continuously the input *)
-      let rec read_input () =
-        select [read_command () >|= (fun c -> `Command c);
-                (quit_waiter :> [ `Command of Command.t | `Accept | `Interrupt ] Lwt.t)] >>= function
-          | `Command command ->
-              push_input command;
-              read_input ()
-          | `Accept | `Interrupt ->
-              return ()
-      in
-
-      (* The rendering state *)
-      let render_state = ref Terminal.init in
-
-      (* Signal which forces the drawer to redraw the screen *)
-      let force_redraw, push_force_redraw = React.S.create ~eq:(fun _ _ -> false) () in
-
-      (* Mutex to prevent redrawing while redrawing a previous
-         state *)
-      let drawer_mutex = Lwt_mutex.create () in
-
-      (* The drawer. It redraw everything each time something
-         changes *)
-      let drawer = React.S.l4
-        (fun size engine_state prompt force_redraw ->
-           ignore_result
-             (Lwt_mutex.with_lock drawer_mutex
-                (fun () ->
-                   lwt state = Terminal.draw
-                     ~mode
-                     ~render_state:!render_state
-                     ~engine_state:engine_state
-                     ~prompt () in
-                   render_state := state;
-                   return ())))
-        Lwt_term.size engine_state prompt force_redraw
-      in
-
-      let dynamic_completion =
-        if mode = `real_time then
-          React.S.map
-            (fun (before, after) ->
-               let { comp_words = words } = complete "" before after
-                 (List.fold_left (fun set (k, v) -> TextSet.add k set) TextSet.empty values) in
-               set_engine_state { React.S.value engine_state with
-                                    Engine.completion = words;
-                                    Engine.completion_index = 0 })
-            edition_state
-        else
-          React.S.const ()
-      in
-
-      (* Handle user's commands *)
-      let process_input = React.E.map
-        (function
-           | Clear_screen ->
-               ignore_result (clear_screen ());
-               push_force_redraw ()
-
-           | Refresh ->
-               push_force_redraw ()
-
-           | Accept_line ->
-               let word = Engine.all_input (React.S.value engine_state) in
-               if List.exists (fun (kwd, value) -> kwd = word) values then
-                 wakeup quit_wakener `Accept
-
-           | Break ->
-               wakeup quit_wakener `Interrupt
-
-           | Complete ->
-               let engine_state = Engine.reset (React.S.value engine_state) in
-               let before, after = React.S.value edition_state in
-               let { comp_state = (before, after) } = complete "" before after
-                 (List.fold_left (fun set (k, v) -> TextSet.add k set) TextSet.empty values) in
-               set_engine_state { engine_state with Engine.mode = Engine.Edition(before, after) }
-
-           | Meta_complete ->
-               let engine_state = React.S.value engine_state in
-               if mode = `real_time
-                 && engine_state.Engine.completion_index >= 0
-                 && engine_state.Engine.completion_index < TextSet.cardinal engine_state.Engine.completion then
-                   let word = set_nth engine_state.Engine.completion engine_state.Engine.completion_index in
-                   set_engine_state  {
-                     engine_state with
-                       Engine.mode = Engine.Edition(word, "")
-                   }
-
-           | command ->
-               set_engine_state (Engine.update ~engine_state:(React.S.value engine_state) ~clipboard ~command ()))
-        input
-      in
-
-      (* Launch the input reader, and wait for its termination: *)
-      lwt () = read_input () in
-      React.S.stop drawer;
-      React.S.stop dynamic_completion;
-      React.E.stop process_input;
-      (* The final drawing. It erase dynamic completion and put the cursor
-         on a new line after user input *)
-      lwt () = Terminal.last_draw
-        ~mode
-        ~render_state:!render_state
-        ~engine_state:(React.S.value engine_state)
-        ~prompt:(React.S.value prompt) () in
-      quit_waiter >>= function
-        | `Interrupt ->
-            fail Interrupt
-        | `Accept ->
-            match assoc (Engine.all_input (React.S.value engine_state)) values with
-              | Some value ->
-                  return value
-              | None ->
-                  assert false
-    end
+    lwt result = with_raw_mode
+      (fun () -> (new read_keyword ?history ~case_sensitive ?mode ~prompt ~values ())#run) in
+    match assoc result values with
+      | Some value -> return value
+      | None -> assert false
   else
-    lwt () = write stdout (strip_styles (React.S.value prompt)) in
+    lwt () = write stdout (strip_styles prompt) in
     lwt txt = Lwt_text.read_line stdin in
     match assoc txt values with
       | Some value ->
