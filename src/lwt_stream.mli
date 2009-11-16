@@ -39,12 +39,18 @@ val from : (unit -> 'a option Lwt.t) -> 'a t
       called each time more input is needed, and the stream ends when
       [f] returns [None]. *)
 
+val push_stream : unit -> ( [ `Data of 'a | `Exn of exn ] -> unit ) * 'a t
+  (** [push_stream ()] returns a new stream and a push function *)
+
 val of_list : 'a list -> 'a t
   (** [of_list l] creates a stream returns all elements of [l] *)
 
 val of_string : string -> char t
   (** [of_string str] creates a stream returning all characters of
       [str] *)
+
+val of_event : 'a React.E.t -> 'a t
+  (** [of_event e] creates a stream containing all event of [e] *)
 
 val clone : 'a t -> 'a t
   (** [clone st] clone the given stream. Operations on each stream

@@ -63,6 +63,102 @@ let of_string s =
   in
   ref(lazy(get 0))
 
+(**************************)
+(*      push streams      *)
+(**************************)
+
+module EQueue :
+sig
+  type 'a t
+  type 'a input = [ `Data of 'a | `Exn of exn]
+  val create_event : 'a React.E.t -> 'a t
+  val create : unit -> ('a input -> unit) * 'a t
+  val pop : 'a t -> 'a Lwt.t
+end =
+struct
+
+  type 'a input = [ `Data of 'a | `Exn of exn ]
+
+  type 'a content =
+    | Exn of exn
+    | No_mail
+    | Waiting of ('a Lwt.t * 'a Lwt.u)
+    | Full of 'a input Queue.t
+
+  type 'a t = 
+      { content : 'a content ref;
+	event : 'a React.E.t option (** field used to prevent garbage collection *) }
+
+  let create () =
+    let content = ref No_mail in
+    let push v =
+      match !content with
+	| Exn e -> ()
+	| No_mail ->
+	    content :=
+	      let q = Queue.create () in
+	      Queue.push v q;
+	      Full q
+	| Waiting (t,w) ->
+	    content := No_mail;
+	    ( match v with
+		| `Data v -> wakeup w v
+		| `Exn e -> wakeup_exn w e )
+	| Full q ->
+	    Queue.push v q
+    in
+    push, { content = content; event = None }
+
+  let create_event e =
+    let push,box = create () in
+    let push v = push (`Data v) in
+    let e = React.E.trace push e in
+    { box with event = Some e}
+
+  let pop b =
+    match !(b.content) with
+      | Exn e -> fail e
+      | No_mail ->
+	  let t,w = wait () in
+	  b.content := Waiting (t,w);
+	  t
+      | Waiting (t,w) ->
+	  t
+      | Full q ->
+	  let v = Queue.take q in
+	  if Queue.is_empty q
+	  then b.content := No_mail;
+	  match v with
+	    | `Data v -> return v
+	    | `Exn e -> fail e
+
+end
+
+let list_of_event event =
+  let box = EQueue.create_event event in
+  let rec next () =
+    EQueue.pop box >|= fun x -> Cons(x, lazy_from_fun next)
+  in
+  lazy (next ())
+
+let of_event event =
+  ref (list_of_event event)
+
+let push_list () =
+  let push,box = EQueue.create () in
+  let rec next () =
+    EQueue.pop box >|= fun x -> Cons(x, lazy_from_fun next)
+  in
+  push,lazy (next ())
+
+let push_stream () =
+  let push,list = push_list () in
+  push,ref (list)
+
+(**************************)
+(*    end push streams    *)
+(**************************)
+
 let clone s = ref !s
 
 let peek s = Lazy.force !s >|= function
