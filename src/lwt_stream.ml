@@ -179,6 +179,22 @@ let npeek n s =
   in
   aux 0 !s
 
+let rec get_available l =
+  match poll (Lazy.force l) with
+    | None -> []
+    | Some Nil -> []
+    | Some Cons ( h, t ) ->
+	h::(get_available t)
+
+let rec get_available_up_to l = function
+  | 0 -> []
+  | n ->
+      ( match poll (Lazy.force l) with
+	  | None -> []
+	  | Some Nil -> []
+	  | Some Cons ( h, t ) ->
+	      h::(get_available_up_to t (n-1)) )
+
 let get s = Lazy.force !s >|= function
   | Cons(x, l) -> s := l; Some x
   | Nil -> None
@@ -366,6 +382,79 @@ let filter_map_s f s =
           return Nil
   in
   make next
+
+let map_list f s =
+  let rec next acc () =
+    match acc with
+      | [] ->
+	  ( Lazy.force !s >>= function
+	      | Cons(x, l) ->
+		  s := l;
+		  begin match f x with
+		    | t::q ->
+			return (Cons(t, lazy_from_fun (next q)))
+		    | [] ->
+			next [] ()
+		  end
+	      | Nil ->
+		  return Nil )
+      | t::q -> return (Cons(t, lazy_from_fun (next q)))
+  in
+  make (next [])
+
+let map_list_s f s =
+  let rec next acc () =
+    match acc with
+      | [] ->
+	  ( Lazy.force !s >>= function
+	      | Cons(x, l) ->
+		  s := l;
+		  f x >>= begin function
+		    | t::q ->
+			return (Cons(t, lazy_from_fun (next q)))
+		    | [] ->
+			next [] ()
+		  end
+	      | Nil ->
+		  return Nil )
+      | t::q -> return (Cons(t, lazy_from_fun (next q)))
+  in
+  make (next [])
+
+let flatten s =
+  map_list ( fun l -> l ) s
+
+let map_fold f s init =
+  let rec next acc () =
+    ( Lazy.force !s >>= function
+	| Cons(x, l) ->
+	    s := l;
+	    begin match f acc x with
+	      | (Some v,acc) ->
+		  return (Cons(v, lazy_from_fun (next acc)))
+	      | (None,acc) ->
+		  next acc ()
+	    end
+	| Nil ->
+	    return Nil )
+  in
+  make (next init)
+
+let map_fold_s f s init =
+  let rec next acc () =
+    ( Lazy.force !s >>= function
+	| Cons(x, l) ->
+	    s := l;
+	    f acc x >>= begin function
+	      | (Some v,acc) ->
+		  return (Cons(v, lazy_from_fun (next acc)))
+	      | (None,acc) ->
+		  next acc ()
+	    end
+	| Nil ->
+	    return Nil )
+  in
+  make (next init)
 
 let rec fold f s acc =
   Lazy.force !s >>= function

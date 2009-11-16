@@ -159,6 +159,16 @@ val filter_map : ('a -> 'b option) -> 'a t -> 'b t
 val filter_map_s : ('a -> 'b option Lwt.t) -> 'a t -> 'b t
   (** [filter_map f st] filter and map [st] at the same time *)
 
+val map_list : ('a -> 'b list) -> 'a t -> 'b t
+val map_list_s : ('a -> 'b list Lwt.t) -> 'a t -> 'b t
+  (** [map_list f st] applies [f] on each element of [st] and flattens
+      the lists returned *)
+
+val map_fold : ('accum -> 'a -> ( 'b option * 'accum ) ) -> 'a t -> 'accum -> 'b t
+val map_fold_s : ('accum -> 'a -> ( 'b option * 'accum ) Lwt.t) -> 'a t -> 'accum -> 'b t
+  (** [map_fold f st init] maps and filter the values returned by [st] with [f]
+      using an accumulator *)
+
 val fold : ('a -> 'b -> 'b) -> 'a t -> 'b -> 'b Lwt.t
 val fold_s : ('a -> 'b -> 'b Lwt.t) -> 'a t -> 'b -> 'b Lwt.t
   (** [fold f s x] fold_like function for streams. *)
@@ -186,6 +196,9 @@ val append : 'a t -> 'a t -> 'a t
 
 val concat : 'a t t -> 'a t
   (** [concat st] returns the concatenation of all streams of [st]. *)
+
+val flatten : 'a list t -> 'a t
+  (** [flatten st = map_list (fun l -> l) st] *)
 
 (** {6 Parsing} *)
 
@@ -226,3 +239,11 @@ val of_lazy_list : 'a lazy_list -> 'a t
 
 val to_lazy_list : 'a t -> 'a lazy_list
   (** [to_lazy_list ll] returns the internal lazy-list of a stream *)
+
+val get_available : 'a lazy_list -> 'a list
+  (** [get_available l] returns all available elements of [l] without
+      blocking *)
+
+val get_available_up_to : 'a lazy_list -> int -> 'a list
+  (** [get_available_up_to l n] returns up to [n] elements of [l]
+      without blocking *)
