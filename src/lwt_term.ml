@@ -61,6 +61,20 @@ let hide_cursor _ =
 let clear_screen _ =
   write stdout "\027[2J\027[H"
 
+(* Go-up by [n] lines then to the beginning of the line. Normally
+   "\027[nF" does exactly this but for some terminal 1 need to be
+   added... By the way we can relly on the fact that all terminal
+   react the same way to "\027[F" which is to go to the beginning of
+   the previous line: *)
+let rec goto_beginning_of_line = function
+  | 0 ->
+      write_char stdout "\r"
+  | 1 ->
+      write stdout "\027[F"
+  | n ->
+      lwt () = write stdout "\027[F" in
+      goto_beginning_of_line (n - 1)
+
 (* Restore terminal mode on exit: *)
 let cleanup () =
   begin

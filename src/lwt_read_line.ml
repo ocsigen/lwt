@@ -645,27 +645,13 @@ struct
 
   let init = { length = 0; height_before = 0; completion_start = 0 }
 
-  (* Go-up by [n] lines then to the beginning of the line. Normally
-     "\027[nF" does exactly this but for some terminal 1 need to be
-     added... By the way we can relly on the fact that all terminal
-     react the same way to "\027[F" which is to go to the beginning of
-     the previous line: *)
-  let rec beginning_of_line = function
-    | 0 ->
-        write_char stdout "\r"
-    | 1 ->
-        write stdout "\027[F"
-    | n ->
-        lwt () = write stdout "\027[F" in
-        beginning_of_line (n - 1)
-
   (* Replace "\n" by padding to the end of line in a styled text.
 
      For example with 5 columns, ["toto\ntiti"] becomes ["toto titi"].
 
      The goal of that is to erase all previous characters after end of
      lines. *)
-  let prepare_for_display columns styled_text =
+  let expand_returns ~columns ~text =
     let rec loop len = function
       | [] ->
           []
@@ -686,7 +672,7 @@ struct
       | style :: l ->
           style :: loop len l
     in
-    loop 0 styled_text
+    loop 0 text
 
   (* Compute the number of row taken by a text given a number of
      columns: *)
@@ -705,7 +691,7 @@ struct
           let ofs' = ofs + len in
           if ofs' <= columns then
             if idx = index then
-              Inverse :: Text word :: Reset :: Foreground lblue ::
+              Inverse :: Text word :: Reset ::
                 if ofs' + 1 > columns then
                   []
                 else
@@ -741,8 +727,8 @@ struct
   let _draw render_state printed_before printed_total =
     lwt () = hide_cursor () in
     let columns = React.S.value Lwt_term.columns in
-    let printed_before = prepare_for_display columns printed_before in
-    let printed_total = prepare_for_display columns printed_total in
+    let printed_before = expand_returns columns printed_before in
+    let printed_total = expand_returns columns printed_total in
 
     (* The new rendering state: *)
     let new_render_state = {
@@ -756,13 +742,13 @@ struct
     let printed_total_erase = printed_total @ [Text(String.make (max 0 (render_state.length - styled_length printed_total)) ' ')] in
 
     (* Go back by the number of rows of the previous text: *)
-    lwt () = beginning_of_line render_state.height_before in
+    lwt () = goto_beginning_of_line render_state.height_before in
 
     (* Prints and erase everything: *)
     lwt () = printc printed_total_erase in
 
     (* Go back again to the beginning of printed text: *)
-    lwt () = beginning_of_line (compute_height columns (styled_length printed_total_erase)) in
+    lwt () = goto_beginning_of_line (compute_height columns (styled_length printed_total_erase)) in
 
     (* Prints again the text before the cursor, to put the cursor at the
        right place: *)
@@ -865,13 +851,11 @@ struct
                                         | _, `classic ->
                                             []
                                         | Some msg, `real_time ->
-                                            [Foreground lblue;
-                                             Text "\n";
+                                            [Text "\n";
                                              Text(Text.repeat columns "─");
                                              Text msg]
                                         | None, `real_time ->
-                                            Foreground lblue
-                                            :: Text "\n"
+                                            Text "\n"
                                             :: Text(Text.repeat columns "─")
                                             :: make_completion
                                               (engine_state.completion_index - completion_start)
@@ -883,8 +867,8 @@ struct
 
   let last_draw ?(map_text=fun x -> x) ?(mode=`real_time) ~render_state ~engine_state ~prompt () =
     let columns = React.S.value Lwt_term.columns in
-    lwt () = beginning_of_line render_state.height_before in
-    lwt () = printlc (prepare_for_display
+    lwt () = goto_beginning_of_line render_state.height_before in
+    lwt () = printlc (expand_returns
                         columns
                         (prompt @ [Reset; Text(map_text(all_input engine_state))] @
                            (match mode with
@@ -893,7 +877,7 @@ struct
                               | `real_time ->
                                   [Text "\n\n\n"]))) in
     if mode = `real_time then
-      beginning_of_line 2
+      goto_beginning_of_line 2
     else
       return ()
 end

@@ -43,6 +43,15 @@ val hide_cursor : unit -> unit Lwt.t
 val clear_screen : unit -> unit Lwt.t
   (** [clear_screen ()] clears the entire screen *)
 
+val goto_beginning_of_line : int -> unit Lwt.t
+  (** [goto_beginning_of_line n] put the cursor at the beginning of
+      the [n]th previous line.
+
+      - [goto_beginning_of_line 0] goes to the beginning of the current line
+      - [goto_beginning_of_line 1] goes to the beginning of the previous line
+      - ...
+  *)
+
 (** {6 Terminal informations} *)
 
 (** Terminal sizes: *)
