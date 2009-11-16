@@ -119,11 +119,13 @@ struct
     | Capitalize
     | Backward_word
     | Forward_word
+    | Backward_search
     | Complete_left
     | Complete_right
     | Complete_up
     | Complete_down
-    | Backward_search
+    | Complete_first
+    | Complete_last
 
   let to_string = function
     | Char ch ->
@@ -194,6 +196,10 @@ struct
         "complete-down"
     | Backward_search ->
         "backward-search"
+    | Complete_first ->
+        "complete-first"
+    | Complete_last ->
+        "complete-last"
 
   let of_key = function
     | Key_up -> History_previous
@@ -232,6 +238,8 @@ struct
     | Key "\027\027[B" | Key "\027[1;3B" -> Complete_down
     | Key "\027\027[C" | Key "\027[1;3C" -> Complete_right
     | Key "\027\027[D" | Key "\027[1;3D" -> Complete_left
+    | Key "\027\027[7~" | Key "\027[1;3H" -> Complete_first
+    | Key "\027\027[8~" | Key "\027[1;3F" -> Complete_last
     | Key "\027\n" | Key "\194\141" -> Char "\n"
     | Key "\027\t" | Key "\194\137" -> Meta_complete
     | Key "\027w" | Key "\195\183" -> Copy
@@ -510,6 +518,12 @@ struct
                 else
                   engine_state
 
+            | Complete_first ->
+                { engine_state with completion_index = 0 }
+
+            | Complete_last ->
+                { engine_state with completion_index = max (TextSet.cardinal engine_state.completion - 1) 0 }
+
             | Backward_search ->
                 let hist_before, hist_after = engine_state.history in
                 let history = List.rev_append hist_after ((before ^ after) :: hist_before) in
@@ -732,21 +746,11 @@ struct
     aux 0 words
 
   let rec drop count l =
-    if count = 0 then
+    if count <= 0 then
       l
     else match l with
       | [] -> []
       | e :: l -> drop (count - 1) l
-
-  let take_rev count l =
-    let rec aux count acc l =
-      if count = 0 then
-        acc
-      else match l with
-        | [] -> acc
-        | e :: l -> aux (count - 1) (e :: acc) l
-    in
-    aux count [] l
 
   let _draw render_state printed_before printed_total =
     lwt () = hide_cursor () in
@@ -837,30 +841,34 @@ struct
 
           let columns = React.S.value columns in
 
-          let completion = TextSet.elements engine_state.completion in
+          let completion = TextSet.elements engine_state.completion
+          and count = TextSet.cardinal engine_state.completion in
           (* Check that the completion cursor is displayed *)
           let completion_start =
-            if mode = `real_time then begin
-              let rec aux ofs idx words =
+            if mode = `real_time && completion <> [] then begin
+              (* Given a list of words and an offset, it returns the
+                 index of the last word that can be dusplayed *)
+              let rec compute_end offset index words =
                 match words with
                   | [] ->
-                      idx
+                      index - 1
                   | word :: words ->
-                      let ofs = ofs + Text.length word + 1 in
-                      if ofs <= columns then
-                        aux ofs (idx + 1) words
+                      let offset = offset + Text.length word in
+                      if offset <= columns - 1 then
+                        compute_end (offset + 1) (index + 1) words
                       else
-                        idx
+                        index - 1
               in
-              let idx = aux 0 render_state.completion_start
-                (drop render_state.completion_start completion) in
-              if idx <= engine_state.completion_index then
-                idx
-              else if engine_state.completion_index < render_state.completion_start then
-                let words = take_rev (engine_state.completion_index + 1) completion in
-                let idx = aux 0 0 words in
-                max 0 (engine_state.completion_index - idx + 1)
+              if engine_state.completion_index < render_state.completion_start then
+                (* The cursor is before the left margin *)
+                let rev_index = count - engine_state.completion_index - 1 in
+                count - compute_end 1 rev_index (drop rev_index (List.rev completion)) - 1
+              else if compute_end 1 render_state.completion_start
+                (drop render_state.completion_start completion) < engine_state.completion_index then
+                  (* The cursor is after the right margin *)
+                engine_state.completion_index
               else
+                (* The cursor points to a word which is displayed *)
                 render_state.completion_start
             end else
               render_state.completion_start
@@ -1101,8 +1109,8 @@ object(self)
 
     | Meta_complete ->
         self#reset;
-        if mode = `real_time then begin
-          let engine_state = React.S.value self#engine_state in
+        let engine_state = React.S.value self#engine_state in
+        if mode = `real_time && not (TextSet.is_empty engine_state.Engine.completion) then begin
           let before, after = React.S.value self#edition_state in
           let word = set_nth engine_state.Engine.completion engine_state.Engine.completion_index in
           let ptr, idx =
@@ -1241,12 +1249,14 @@ object(self)
     | Meta_complete ->
         self#reset;
         let engine_state = React.S.value self#engine_state in
-        if mode = `real_time then begin
-          let word = set_nth engine_state.Engine.completion engine_state.Engine.completion_index in
-          self#set_engine_state  {
-            engine_state with
-              Engine.mode = Engine.Edition(word, "")
-          }
+        if mode = `real_time && not (TextSet.is_empty engine_state.Engine.completion) then begin
+          if mode = `real_time then begin
+            let word = set_nth engine_state.Engine.completion engine_state.Engine.completion_index in
+            self#set_engine_state  {
+              engine_state with
+                Engine.mode = Engine.Edition(word, "")
+            }
+          end;
         end;
         return ()
 

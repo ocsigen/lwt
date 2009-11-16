@@ -209,11 +209,13 @@ module Command : sig
     | Capitalize
     | Backward_word
     | Forward_word
+    | Backward_search
     | Complete_left
     | Complete_right
     | Complete_up
     | Complete_down
-    | Backward_search
+    | Complete_first
+    | Complete_last
 
   val to_string : t -> string
     (** [to_string cmd] returns a string representation of a command *)
