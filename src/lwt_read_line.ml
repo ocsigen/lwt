@@ -645,12 +645,6 @@ struct
 
   let init = { length = 0; height_before = 0; completion_start = 0 }
 
-  (* Replace "\n" by padding to the end of line in a styled text.
-
-     For example with 5 columns, ["toto\ntiti"] becomes ["toto titi"].
-
-     The goal of that is to erase all previous characters after end of
-     lines. *)
   let expand_returns ~columns ~text =
     let rec loop len = function
       | [] ->
@@ -685,7 +679,7 @@ struct
   let make_completion index columns words =
     let rec aux ofs idx = function
       | [] ->
-          []
+          [Text(Text.repeat (columns - ofs) " ")]
       | word :: words ->
           let len = Text.length word in
           let ofs' = ofs + len in
@@ -695,17 +689,47 @@ struct
                 if ofs' + 1 > columns then
                   []
                 else
-                  Text " " :: aux (ofs' + 1) (idx + 1) words
+                  Text "│" :: aux (ofs' + 1) (idx + 1) words
             else
               Text word ::
                 if ofs' + 1 > columns then
                   []
                 else
-                  Text " " :: aux (ofs' + 1) (idx + 1) words
+                  Text "│" :: aux (ofs' + 1) (idx + 1) words
           else
             [Text(Text.sub word 0 (columns - ofs))]
     in
     aux 0 0 words
+
+  let make_bar delimiter columns words =
+    let buf = Buffer.create (columns * 3) in
+    let rec aux ofs = function
+      | [] ->
+          for i = ofs + 1 to columns do
+            Buffer.add_string buf "─"
+          done;
+          Buffer.contents buf
+      | word :: words ->
+          let len = Text.length word in
+          let ofs' = ofs + len in
+          if ofs' <= columns then begin
+            for i = 1 to len do
+              Buffer.add_string buf "─"
+            done;
+            if ofs' + 1 > columns then
+              Buffer.contents buf
+            else begin
+              Buffer.add_string buf delimiter;
+              aux (ofs' + 1) words
+            end
+          end else begin
+            for i = ofs + 1 to columns do
+              Buffer.add_string buf "─"
+            done;
+            Buffer.contents buf
+          end
+    in
+    aux 0 words
 
   let rec drop count l =
     if count = 0 then
@@ -845,6 +869,7 @@ struct
           (* All the text printed before the cursor: *)
           let printed_before = Reset :: prompt @ [Reset] @ before in
 
+          let completion = drop completion_start completion in
           (* The total printed text: *)
           let printed_total =
             printed_before @ after @ (match message, mode with
@@ -855,12 +880,16 @@ struct
                                              Text(Text.repeat columns "─");
                                              Text msg]
                                         | None, `real_time ->
-                                            Text "\n"
-                                            :: Text(Text.repeat columns "─")
-                                            :: make_completion
-                                              (engine_state.completion_index - completion_start)
-                                              columns
-                                              (drop completion_start completion)) in
+                                            [Text "\n";
+                                             Text "┌";
+                                             Text(make_bar "┬" (columns - 2) completion);
+                                             Text "┐";
+                                             Text "│"]
+                                            @ make_completion (engine_state.completion_index - completion_start) (columns - 2) completion
+                                            @ [Text "│";
+                                               Text "└";
+                                               Text(make_bar "┴" (columns - 2) completion);
+                                               Text "┘"]) in
 
           lwt render_state = _draw render_state printed_before printed_total in
           return { render_state with completion_start = completion_start }
@@ -875,9 +904,9 @@ struct
                               | `classic ->
                                   []
                               | `real_time ->
-                                  [Text "\n\n\n"]))) in
+                                  [Text "\n\n\n\n"]))) in
     if mode = `real_time then
-      goto_beginning_of_line 2
+      goto_beginning_of_line 3
     else
       return ()
 end
