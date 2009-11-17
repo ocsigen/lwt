@@ -40,5 +40,3 @@
 # C stubs use C libraries:
 <src/liblwt_glib_stubs.*>: use_C_glib
 <src/lwt_glib_stubs.*>: use_C_glib
-
-<src/lwt_unix_stubs.c>: use_config_h

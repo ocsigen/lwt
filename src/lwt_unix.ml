@@ -396,17 +396,6 @@ let set_close_on_exec ch =
    | Signals                                                         |
    +-----------------------------------------------------------------+ *)
 
-(* Signal file descriptor. Used only if available. *)
-module SignalFD =
-struct
-  external available : unit -> bool = "lwt_signalfd_available"
-  external add : int -> unit = "lwt_signalfd_add"
-  external del : int -> unit = "lwt_signalfd_del"
-  external size : unit -> int = "lwt_signalfd_size"
-  external init : unit -> Unix.file_descr = "lwt_signalfd_init"
-  external read : string -> int = "lwt_signalfd_read"
-end
-
 module SignalMap = Map.Make(struct type t = int let compare = compare end)
 
 (* Information about a signal being monitored: *)
@@ -424,45 +413,35 @@ type signal_info = {
 (* The set of all monitored signals: *)
 let signals : signal_info SignalMap.t ref = ref SignalMap.empty
 
-(* Read [signalfd_siginfo] structure continously from the signal file
-   descriptor and dispatch signals to event: *)
-let rec loop_signalfd fd buf len =
-  read fd buf 0 len >>= function
+(* The list of pending signals *)
+let pending_signals = Queue.create ()
+
+(* Pipe used to tell the main loop that a signal has been caught *)
+let signal_fd_reader, signal_fd_writer = pipe_in ()
+
+let wakeup_pending_signals () =
+  while not (Queue.is_empty pending_signals) do
+    let signum = Queue.pop pending_signals in
+    (SignalMap.find signum !signals).send signum
+  done
+
+(* Read and dispatch signals *)
+let rec read_signals () =
+  read signal_fd_reader (String.create 1) 0 1 >>= function
     | 0 ->
         return ()
+    | 1 ->
+        wakeup_pending_signals ();
+        read_signals ()
     | _ ->
-        let signum = SignalFD.read buf in
-        begin try
-          (SignalMap.find signum !signals).send signum
-        with Not_found ->
-          ()
-        end;
-        loop_signalfd fd buf len
+        assert false
 
-(* List of received signals, for the classic mode: *)
-let received_signals = Queue.create ()
+(* Start listenning for signals *)
+let _ = read_signals ()
 
-type signal_mode = Signal_fd | Signal_classic
-
-let signal_mode = ref Signal_classic
-
-let () =
-  try
-    if SignalFD.available () then begin
-      let fd = SignalFD.init () and len = SignalFD.size () in
-      match try Some(of_unix_file_descr fd) with Unix.Unix_error(Unix.EBADF, _, _) -> None with
-        | Some fd ->
-            ignore (loop_signalfd fd (String.create len) len);
-            signal_mode := Signal_fd
-        | None ->
-            ()
-    end
-  with Unix.Unix_error(Unix.ENOSYS, _, _) ->
-    ()
-
-(* Handle the reception of a signal in classic mode *)
 let handle_signal signum =
-  Queue.add signum received_signals
+  Queue.push signum pending_signals;
+  ignore (Unix.write signal_fd_writer " " 0 1)
 
 (* Add a reference to the given signal and return a new handle: *)
 let signal_ref signum info =
@@ -471,11 +450,7 @@ let signal_ref signum info =
     info.ref_count <- info.ref_count - 1;
     if info.ref_count = 0 then begin
       signals := SignalMap.remove signum !signals;
-      match !signal_mode with
-        | Signal_fd ->
-            SignalFD.del signum
-        | Signal_classic ->
-            Sys.set_signal signum Sys.Signal_default
+      Sys.set_signal signum Sys.Signal_default
     end
   ) in
   (object
@@ -488,30 +463,11 @@ let signal signum =
     | Some info ->
         signal_ref signum info
     | None ->
-        begin match !signal_mode with
-          | Signal_fd ->
-              SignalFD.add signum
-          | Signal_classic ->
-              Sys.set_signal signum (Sys.Signal_handle handle_signal)
-        end;
+        Sys.set_signal signum (Sys.Signal_handle handle_signal);
         let event, send = React.E.create () in
         let info = { send = send; event = event; ref_count = 0 } in
         signals := SignalMap.add signum info !signals;
         signal_ref signum info
-
-(* Wakeup signals, for the classic mode: *)
-let wakeup_signals () =
-  try
-    while true do
-      let signum = Queue.take received_signals in
-      begin try
-        (SignalMap.find signum !signals).send signum
-      with Not_found ->
-        ()
-      end
-    done
-  with Queue.Empty ->
-    ()
 
 (* +-----------------------------------------------------------------+
    | Processes                                                       |
@@ -611,10 +567,6 @@ let rec get_next_timeout now timeout =
         timeout
 
 let select_filter now select set_r set_w set_e timeout =
-  (* Restart threads waiting for a signal before doing the select,
-     because there may be blocked signal that need to be handled
-     now: *)
-  if !signal_mode = Signal_classic then wakeup_signals ();
   (* Transfer all sleepers added since the last iteration to the main
      sleep queue: *)
   sleep_queue :=
@@ -633,8 +585,9 @@ let select_filter now select set_r set_w set_e timeout =
   (* Restart threads waiting on a file descriptors: *)
   List.iter (fun fd -> perform_actions inputs fd) set_r;
   List.iter (fun fd -> perform_actions outputs fd) set_w;
-  (* Restart threads waiting for a signal: *)
-  if !signal_mode = Signal_classic then wakeup_signals ();
+  (* Wakeup signals is not needed here but this make signal delivering
+     faster: *)
+  wakeup_pending_signals ();
   result
 
 let _ = Lwt_sequence.add_l select_filter Lwt_main.select_filters

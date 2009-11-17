@@ -287,15 +287,6 @@ let _ =
           define_c_library ~name:"glib" ~c_name:"glib-2.0"
         end;
 
-        dep ["use_config_h"] ["src/config.h"];
-        rule "config.h" ~prod:"src/config.h"
-          (fun _ _ ->
-             Echo((if try_exec "echo '#include <sys/signalfd.h>' | cpp" then
-                     ["#define HAVE_SIGNALFD 1\n"]
-                   else
-                     []),
-                  "src/config.h"));
-
         (* +---------------------------------------------------------+
            | Other                                                   |
            +---------------------------------------------------------+ *)
