@@ -1150,23 +1150,18 @@ let file_length filename = with_file ~mode:input filename length
 let open_connection ?buffer_size sockaddr =
   lwt_unix_call begin fun _ ->
     let fd = Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0 in
-    let ref_count = ref 2 in
-    let close mode =
-      Lwt_unix.shutdown fd mode;
-      decr ref_count;
-      if !ref_count = 0 then
-        close_fd fd
-      else
-        return ()
-    in
+    let close = lazy begin
+      Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
+      close_fd fd
+    end in
     try_lwt
       Lwt_unix.connect fd sockaddr >> begin
         (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
         return (make ?buffer_size
-                  ~close:(fun _ -> close Unix.SHUTDOWN_RECEIVE)
+                  ~close:(fun _ -> Lazy.force close)
                   ~mode:input (Lwt_unix.read fd),
                 make ?buffer_size
-                  ~close:(fun _ -> close Unix.SHUTDOWN_SEND)
+                  ~close:(fun _ -> Lazy.force close)
                   ~mode:output (Lwt_unix.write fd))
       end
     with exn ->
