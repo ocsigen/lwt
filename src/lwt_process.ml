@@ -93,7 +93,8 @@ object(self)
       | Some dt ->
           Lwt.ignore_result begin
             try_lwt
-              Lwt.select [Lwt_unix.timeout dt; w] >> return ()
+              lwt _ = Lwt.select [Lwt_unix.timeout dt; w] in
+              return ()
             with
               | Lwt_unix.Timeout ->
                   (try Unix.kill Sys.sigkill pid with _ -> ());
@@ -180,7 +181,8 @@ let make_with backend ?timeout ?env cmd f =
   try_lwt
     f process
   finally
-    process#close >> return ()
+    lwt _ = process#close in
+    return ()
 
 let with_process_none ?timeout ?env cmd f = make_with open_process_none ?timeout ?env cmd f
 let with_process_in ?timeout ?env cmd f = make_with open_process_in ?timeout ?env cmd f
@@ -224,7 +226,7 @@ let recv_line pr =
   try_lwt
     Lwt_io.read_line ic
   finally
-    Lwt_io.close ic >> return ()
+    Lwt_io.close ic
 
 (* Receiving *)
 
@@ -247,7 +249,7 @@ let send f pr data =
   try_lwt
     f oc data
   finally
-    Lwt_io.close oc >> return ()
+    Lwt_io.close oc
 
 let pwrite ?timeout ?env cmd text =
   send Lwt_io.write (open_process_out ?timeout ?env cmd) text

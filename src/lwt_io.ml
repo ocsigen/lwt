@@ -218,7 +218,8 @@ let flush_partial = perform_io
 
 let rec flush_total oc =
   if oc.ptr > 0 then
-    flush_partial oc >> flush_total oc
+    lwt _ = flush_partial oc in
+    flush_total oc
   else
     return ()
 
@@ -230,7 +231,8 @@ let safe_flush_total oc =
 
 let rec auto_flush oc =
   let wrapper = oc.main in
-  Lwt_unix.yield () >> match wrapper.state with
+  lwt () = Lwt_unix.yield () in
+  match wrapper.state with
     | Busy_primitive | Busy_atomic _ ->
         (* The channel is used, wait again *)
         auto_flush oc
@@ -405,7 +407,8 @@ let close wrapper = match wrapper.channel.mode with
         primitive
           (fun ch ->
              if ch.mode = Output then
-               safe_flush_total wrapper.channel >> abort wrapper
+               lwt () = safe_flush_total wrapper.channel in
+               abort wrapper
               else
                 abort wrapper)
           wrapper
@@ -669,12 +672,12 @@ struct
 
   let read_value ic =
     let header = String.create 20 in
-    unsafe_read_into_exactly ic header 0 20 >>
-      let bsize = Marshal.data_size header 0 in
-      let buffer = String.create (20 + bsize) in
-      let _ = String.unsafe_blit header 0 buffer 0 20 in
-      unsafe_read_into_exactly ic buffer 20 bsize >>
-        return (Marshal.from_string buffer 0)
+    lwt () = unsafe_read_into_exactly ic header 0 20 in
+    let bsize = Marshal.data_size header 0 in
+    let buffer = String.create (20 + bsize) in
+    String.unsafe_blit header 0 buffer 0 20 ;
+    lwt () = unsafe_read_into_exactly ic buffer 20 bsize in
+    return (Marshal.from_string buffer 0)
 
   (* +---------------------------------------------------------------+
      | Writing                                                       |
@@ -689,7 +692,8 @@ struct
       String.unsafe_set oc.buffer ptr ch;
       return ()
     end else
-      flush_partial oc >> write_char oc ch
+      lwt _ = flush_partial oc in
+      write_char oc ch
 
   let rec unsafe_write_from oc str ofs len =
     let avail = oc.length - oc.ptr in
@@ -700,17 +704,18 @@ struct
     end else begin
       String.unsafe_blit str ofs oc.buffer oc.ptr avail;
       oc.ptr <- oc.length;
-      flush_partial oc >>
-        let len = len - avail in
-        if oc.ptr = 0 then begin
-          if len = 0 then
-            return 0
-          else
-            (* Everything has been written, try to write more: *)
-            unsafe_write_from oc str (ofs + avail) len
-        end else
-          (* Not everything has been written, just what is remaining: *)
-          return len
+      lwt _ = flush_partial oc in
+      let len = len - avail in
+      if oc.ptr = 0 then begin
+        if len = 0 then
+          return 0
+        else
+          (* Everything has been written, try to write more: *)
+          unsafe_write_from oc str (ofs + avail) len
+      end else
+        (* Not everything has been written, just what is
+           remaining: *)
+        return len
     end
 
   let write_from oc str ofs len =
@@ -748,7 +753,8 @@ struct
     unsafe_write_from_exactly oc str 0 (String.length str)
 
   let write_line oc str =
-    unsafe_write_from_exactly oc str 0 (String.length str) >> write_char oc '\n'
+    lwt () = unsafe_write_from_exactly oc str 0 (String.length str) in
+    write_char oc '\n'
 
   let write_value oc ?(flags=[]) x =
     write oc (Marshal.to_string x flags)
@@ -772,7 +778,8 @@ struct
 
   let rec write_block_unsafe oc size f =
     if oc.max - oc.ptr < size then
-      flush_partial oc >> write_block_unsafe oc size f
+      lwt _ = flush_partial oc in
+      write_block_unsafe oc size f
     else begin
       let ptr = oc.ptr in
       oc.ptr <- ptr + size;
@@ -965,26 +972,27 @@ struct
 
   let set_position ch pos = match ch.mode with
     | Output ->
-        flush_total ch >>
-        seek ch pos >>
-        let _ = ch.offset <- pos in
+        lwt () = flush_total ch in
+        lwt () = seek ch pos in
+        ch.offset <- pos;
         return ()
     | Input ->
         let current = Int64.sub ch.offset (Int64.of_int (ch.max - ch.ptr)) in
         if pos >= current && pos <= ch.offset then begin
           ch.ptr <- ch.max - (Int64.to_int (Int64.sub ch.offset pos));
           return ()
-        end else
-          seek ch pos >> begin
-            ch.offset <- pos;
-            ch.ptr <- 0;
-            ch.max <- 0;
-            return ()
-          end
+        end else begin
+          lwt () = seek ch pos in
+          ch.offset <- pos;
+          ch.ptr <- 0;
+          ch.max <- 0;
+          return ()
+        end
 
   let length ch =
     lwt len = ch.seek 0L Unix.SEEK_END in
-    seek ch ch.offset >> return len
+    lwt () = seek ch ch.offset in
+    return len
 end
 
 (* +-----------------------------------------------------------------+
@@ -1155,17 +1163,17 @@ let open_connection ?buffer_size sockaddr =
       close_fd fd
     end in
     try_lwt
-      Lwt_unix.connect fd sockaddr >> begin
-        (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
-        return (make ?buffer_size
-                  ~close:(fun _ -> Lazy.force close)
-                  ~mode:input (Lwt_unix.read fd),
-                make ?buffer_size
-                  ~close:(fun _ -> Lazy.force close)
-                  ~mode:output (Lwt_unix.write fd))
-      end
+      lwt () = Lwt_unix.connect fd sockaddr in
+      (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
+      return (make ?buffer_size
+                ~close:(fun _ -> Lazy.force close)
+                ~mode:input (Lwt_unix.read fd),
+              make ?buffer_size
+                ~close:(fun _ -> Lazy.force close)
+                ~mode:output (Lwt_unix.write fd))
     with exn ->
-      close_fd fd >> fail exn
+      lwt () = close_fd fd in
+      fail exn
   end
 
 let with_connection ?buffer_size sockaddr f =
@@ -1173,7 +1181,7 @@ let with_connection ?buffer_size sockaddr f =
   try_lwt
     f (ic, oc)
   finally
-    close ic >> close oc
+    close ic <&> close oc
 
 let make_stream f ic =
   Lwt_stream.from (fun _ ->
@@ -1181,7 +1189,8 @@ let make_stream f ic =
                        f ic >|= fun x -> Some x
                      with
                        | End_of_file ->
-                           close ic >> return None)
+                           lwt () = close ic in
+                           return None)
 
 let lines_of_file filename =
   make_stream read_line (open_file ~mode:input filename)

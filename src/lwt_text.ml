@@ -207,7 +207,8 @@ struct
           da.da_ptr <- da.da_ptr + count;
           return ()
       | Encoding.Enc_need_more ->
-          da.da_perform () >> write_code da encoder code
+          lwt _ = da.da_perform () in
+          write_code da encoder code
       | Encoding.Enc_error ->
           fail (Failure "Lwt_text: cannot encode character")
 
@@ -251,13 +252,15 @@ struct
       return ()
     else
       let i, code = next_code str i len in
-      write_code da encoder code >> write_all da strict encoder str i len
+      lwt () = write_code da encoder code in
+      write_all da strict encoder str i len
 
   let write da strict encoder txt =
     write_all da strict encoder txt 0 (String.length txt)
 
   let write_line da strict encoder txt =
-    write_all da strict encoder txt 0 (String.length txt) >> write_code da encoder 10
+    lwt () = write_all da strict encoder txt 0 (String.length txt) in
+    write_code da encoder 10
 end
 
 let read_char ic = direct_access ic.channel (fun da -> Primitives.read_char da ic.strict (decoder ic.coder))
@@ -301,7 +304,8 @@ let make_stream f ic =
                        f ic >|= fun x -> Some x
                      with
                        | End_of_file ->
-                           close ic >> return None)
+                           lwt () = close ic in
+                           return None)
 
 let lines_of_file filename =
   make_stream read_line (open_file ~mode:input filename)

@@ -155,22 +155,21 @@ let rec dispatch () =
            run will never finish ...  and block the other run
            (remember that an invocation of [run] will not terminate
            before all subsequent invocations are terminated) *)
-          Lwt_unix.yield () >> begin
-            let w = Hashtbl.find clients n in
-            Hashtbl.remove clients n;
-            wakeup w ();
-            return ()
-          end
-        end;
-        return `continue
-      with
-        | Channel_closed _ ->
-            return `break
-        | exn ->
-            Printf.ksprintf !error_log
-              "Internal error in lwt_preemptive.ml (read failed on the pipe) %s - Please check if Lwt_preemptive is initialized and that lwt_preemptive.cmo is linked only once. Otherwise, please report the bug"
-              (Printexc.to_string exn);
-            fail exn
+        lwt () = Lwt_unix.yield () in
+        let w = Hashtbl.find clients n in
+        Hashtbl.remove clients n;
+        wakeup w ();
+        return ()
+      end;
+      return `continue
+    with
+      | Channel_closed _ ->
+          return `break
+      | exn ->
+          Printf.ksprintf !error_log
+            "Internal error in lwt_preemptive.ml (read failed on the pipe) %s - Please check if Lwt_preemptive is initialized and that lwt_preemptive.cmo is linked only once. Otherwise, please report the bug"
+            (Printexc.to_string exn);
+          fail exn
   end >>= function
     | `continue -> dispatch ()
     | `break -> return ()

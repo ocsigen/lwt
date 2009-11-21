@@ -64,7 +64,8 @@ let create_condition = Queue.create
 
 let rec lock m =
   if m.locked then
-    Condition.wait m.enter >> lock m
+    lwt () = Condition.wait m.enter in
+    lock m
   else begin
     m.locked <- true;
     return ()

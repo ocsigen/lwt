@@ -77,12 +77,13 @@ let rec goto_beginning_of_line = function
 
 (* Restore terminal mode on exit: *)
 let cleanup () =
-  begin
+  lwt () =
     if not !cursor_visible then
       show_cursor ()
     else
       return ()
-  end >> match !state with
+  in
+  match !state with
     | Normal ->
         return ()
     | Raw saved_attr ->
@@ -472,7 +473,7 @@ let render m =
         let rec loop_x x last_style =
           if x < Array.length m.(y) then
             let pt = m.(y).(x) in
-            begin
+            lwt () =
               if pt.style <> last_style then begin
                 Buffer.clear buf;
                 Buffer.add_string buf "\027[0";
@@ -506,8 +507,9 @@ let render m =
                 write oc (Buffer.contents buf)
               end else
                 return ()
-            end >>
-              write_char oc pt.char >> loop_x (x + 1) pt.style
+            in
+            lwt () = write_char oc pt.char in
+            loop_x (x + 1) pt.style
           else
             loop_y (y + 1) last_style
         in
@@ -587,9 +589,12 @@ let write_styled oc st =
         match instr with
           | Text t  ->
               if not (Queue.is_empty codes) then
-                output_pendings () >> write oc t >> loop rest
+                lwt () = output_pendings () in
+                lwt () = write oc t in
+                loop rest
               else
-                write oc t >> loop rest
+                lwt () = write oc t in
+                loop rest
           | Reset ->
               Queue.add 0 codes;
               loop rest

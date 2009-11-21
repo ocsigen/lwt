@@ -485,7 +485,8 @@ let rec iter_s f s =
   Lazy.force !s >>= function
     | Cons(x, l) ->
         s := l;
-        f x >> iter f s
+        lwt () = f x in
+        iter f s
     | Nil ->
         return ()
 

@@ -47,10 +47,9 @@ let unlock m =
   end
 
 let with_lock m f =
-  lock m >> begin
-    try_lwt
-      f ()
-    finally
-      unlock m;
-      return ()
-  end
+  lwt () = lock m in
+  try_lwt
+    f ()
+  finally
+    unlock m;
+    return ()
