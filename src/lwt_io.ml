@@ -50,7 +50,6 @@ let unix_call f =
   with Unix.Unix_error(err, _, _) ->
     raise (Sys_error(Unix.error_message err))
 
-
 let lwt_unix_call f =
   try_lwt
     f ()
@@ -454,18 +453,20 @@ let make ?buffer_size ?(close=return) ?(seek=no_seek) ~mode perform_io =
   Lwt_gc.finalise_or_exit alias_to_close wrapper;
   wrapper
 
-let of_fd ?buffer_size ~mode fd =
+let of_fd ?buffer_size ?close ~mode fd =
   make
     ?buffer_size
-    ~close:(fun _ -> close_fd fd)
+    ~close:(match close with
+              | Some f -> f
+              | None -> (fun () -> close_fd fd))
     ~seek:(fun pos cmd -> return (Unix.LargeFile.lseek (Lwt_unix.unix_file_descr fd) pos cmd))
     ~mode
     (match mode with
        | Input -> Lwt_unix.read fd
        | Output -> Lwt_unix.write fd)
 
-let of_unix_fd ?buffer_size ~mode fd =
-  of_fd ?buffer_size ~mode (Lwt_unix.of_unix_file_descr fd)
+let of_unix_fd ?buffer_size ?close ~mode fd =
+  of_fd ?buffer_size ?close ~mode (Lwt_unix.of_unix_file_descr fd)
 
 let buffered ch =
   match ch.channel.mode with

@@ -133,13 +133,16 @@ val make :
       when more input is needed or when the buffer need to be
       flushed. *)
 
-val of_fd : ?buffer_size : int -> mode : 'mode mode -> Lwt_unix.file_descr -> 'mode channel
-  (** [of_fd ~mode ~fd] creates a channel from a file descriptor *)
+val of_fd : ?buffer_size : int -> ?close : (unit -> unit Lwt.t) -> mode : 'mode mode -> Lwt_unix.file_descr -> 'mode channel
+  (** [of_fd ?buffer_size ?close ~mode fd] creates a channel from a
+      file descriptor.
 
-val of_unix_fd : ?buffer_size : int -> mode : 'mode mode -> Unix.file_descr -> 'mode channel
-  (** [of_unix_fd ~mode ~fd] is a short-hand for:
+      @param close defaults to closing the file descriptor. *)
 
-      [of_fd (Lwt_unix.of_unix_file_descr fd)] *)
+val of_unix_fd : ?buffer_size : int -> ?close : (unit -> unit Lwt.t) -> mode : 'mode mode -> Unix.file_descr -> 'mode channel
+  (** [of_unix_fd ?buffer_size ?close ~mode fd] is a short-hand for:
+
+      [of_fd ?buffer_size ?close (Lwt_unix.of_unix_file_descr fd)] *)
 
 val close : 'a channel -> unit Lwt.t
   (** [close ch] closes the given channel: wait for all pending
