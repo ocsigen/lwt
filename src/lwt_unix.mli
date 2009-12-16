@@ -67,6 +67,10 @@ val yield : unit -> unit Lwt.t
   (** [yield ()] is a threads which suspends itself and then resumes
       as soon as possible and terminates. *)
 
+val auto_yield : float -> (unit -> unit Lwt.t)
+  (** [auto_yield timeout] returns a function [f] which will yield
+      every [timeout] seconds. *)
+
 exception Timeout
   (** Exception raised by timeout operations *)
 

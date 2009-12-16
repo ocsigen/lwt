@@ -60,6 +60,16 @@ let sleep d =
 
 let yield () = sleep 0.
 
+let auto_yield timeout =
+  let limit = ref (Unix.gettimeofday () +. timeout) in
+  fun () ->
+    let current = Unix.gettimeofday () in
+    if current >= !limit then begin
+      limit := current +. timeout;
+      yield ();
+    end else
+      return ()
+
 exception Timeout
 
 let timeout d = sleep d >> Lwt.fail Timeout
