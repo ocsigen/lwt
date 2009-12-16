@@ -454,6 +454,10 @@ let make ?buffer_size ?(close=return) ?(seek=no_seek) ~mode perform_io =
   wrapper
 
 let of_fd ?buffer_size ?close ~mode fd =
+  let perform_io = match mode with
+    | Input -> Lwt_unix.read fd
+    | Output -> Lwt_unix.write fd
+  in
   make
     ?buffer_size
     ~close:(match close with
@@ -461,9 +465,15 @@ let of_fd ?buffer_size ?close ~mode fd =
               | None -> (fun () -> close_fd fd))
     ~seek:(fun pos cmd -> return (Unix.LargeFile.lseek (Lwt_unix.unix_file_descr fd) pos cmd))
     ~mode
-    (match mode with
-       | Input -> Lwt_unix.read fd
-       | Output -> Lwt_unix.write fd)
+    (match (Unix.fstat (Lwt_unix.unix_file_descr fd)).Unix.st_kind with
+       | Unix.S_REG | Unix.S_DIR ->
+           (* Non-blocking I/Os are not possible on regular files: *)
+           let auto_yield = Lwt_unix.auto_yield 0.05 in
+           (fun str pos ofs ->
+              lwt () = auto_yield () in
+              perform_io str pos ofs)
+       | _ ->
+           perform_io)
 
 let of_unix_fd ?buffer_size ?close ~mode fd =
   of_fd ?buffer_size ?close ~mode (Lwt_unix.of_unix_file_descr fd)
