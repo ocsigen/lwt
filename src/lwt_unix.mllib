@@ -8,4 +8,5 @@ Lwt_io
 Lwt_process
 Lwt_main
 Lwt_log
+Lwt_directory
 private/Lwt_pqueue
