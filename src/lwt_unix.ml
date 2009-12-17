@@ -613,7 +613,7 @@ let daemonize () =
     ()
   else begin
     ignore (Unix.setsid ());
-    if Unix.fork () > 0 then exit 1;
+    if Unix.fork () > 0 then exit 0;
     lwt_unix_close_all_fds ();
     let fd = Unix.openfile "/dev/null" [Unix.O_RDWR] 0o666 in
     ignore (Unix.dup fd);
