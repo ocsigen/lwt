@@ -368,6 +368,10 @@ val with_connection : ?buffer_size : int -> Unix.sockaddr -> (input_channel * ou
   (** [with_connection ?buffer_size ~mode addr f] open a connection to
       the given address and passes the channels to [f] *)
 
+val establish_server : ?buffer_size : int -> Unix.sockaddr -> (input_channel * output_channel) React.event
+  (** [establich_server ?buffer_size sockaddr] creates a server which
+      will listen for incomming connections. *)
+
 val lines_of_file : file_name -> string Lwt_stream.t
   (** [lines_of_file name] returns a stream of all lines of the file
       with name [name]. The file is automatically closed when all

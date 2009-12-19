@@ -1194,6 +1194,30 @@ let with_connection ?buffer_size sockaddr f =
   finally
     close ic <&> close oc
 
+let establish_server ?buffer_size sockaddr =
+  unix_call begin fun () ->
+    let sock = Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0 in
+    Lwt_unix.setsockopt sock Unix.SO_REUSEADDR true;
+    Lwt_unix.bind sock sockaddr;
+    Lwt_unix.listen sock 5;
+    let event, push = React.E.create () in
+    let rec loop () =
+      lwt (fd, addr) = Lwt_unix.accept sock in
+      (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
+      let close = lazy begin
+        Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
+        close_fd fd
+      end in
+      push (of_fd ?buffer_size ~mode:input ~close:(fun () -> Lazy.force close) fd,
+            of_fd ?buffer_size ~mode:output ~close:(fun () -> Lazy.force close) fd);
+      loop ()
+    in
+    (* Yield here to avoid receiving a new connection before the user
+       map the event. *)
+    ignore (Lwt_unix.yield () >> loop ());
+    event
+  end
+
 let make_stream f ic =
   Lwt_stream.from (fun _ ->
                      try_lwt
