@@ -76,7 +76,7 @@ let size l =
 let handle_exn =
   ref
     (fun exn ->
-       Lwt_log.exn exn "Lwt_timeout - Uncaught exception after timeout";
+       Lwt_log.exn ~exn:exn "Lwt_timeout: Uncaught exception after timeout";
        exit 1)
 
 let set_exn_handler f = handle_exn := f

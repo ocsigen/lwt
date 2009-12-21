@@ -31,36 +31,38 @@
     - logging to a file
     - logging to multiple destination at the same time
 
-    Each logger may accept or drop a message according to its
-    logging {!level}.
+    Each logger may accept or drop a message according to its logging
+    {!level}. If a log message is emited with a logging level greater
+    or equal to the {!logger} logging level it is accepted, otherwise
+    it is discarded.
 
     Here is a simple example on how to log messages:
 
     {[
       (* Create a logger which will display messages on [stderr]: *)
-      lwt logger = Lwt_log.channel ~close_mode:`keet ~channel:Lwt_io.stderr () in
+      let logger = Lwt_log.channel ~close_mode:`keep ~channel:Lwt_io.stderr () in
 
       (* Now log something: *)
-      Lwt_log.log ~logger ~level:`Info "my pid is: %d" (Unix.getpid ())
+      Lwt_log.log ~logger ~level:Lwt_log.Info "my pid is: %d" (Unix.getpid ())
     ]}
 
-    You can also compose loggers:
+    Here is an example on how to compose loggers:
 
     {[
-      (* Create a logger which will send everything to the syslog daemon,
-         and all non-debug message to [stderr]: *)
-      lwt logger_1 = Lwt_log.channel ~close_mode:`kept ~channel:Lwt_io.stderr
-                       ~levels:{ Lwt_log.levels_true with Lwt_log.debug = false } ()
-      and logger_2 = Lwt_log.syslog () in
+      (* Logger which send all messages except debugging message to [stderr] *)
+      let logger_1 = Lwt_log.channel ~close_mode:`kept ~channel:Lwt_io.stderr ~level:Lwt_log.Info () in
+
+      (* Logger which send all messages to the syslog daemon *)
+      let logger_2 = Lwt_log.syslog () in
 
       (* Combine the two logger into 1: *)
-      let logger = merge [logger_1; logger_2] in
+      let logger = Lwt_log.merge [logger_1; logger_2] in
 
       (* This message will be sent to the syslog daemon and stderr: *)
-      Lwt_log.log ~logger ~level:`Info "debug message":
+      Lwt_log.log ~logger ~level:Lwt_log.Info "debug message":
 
       (* This message will only be sent to the syslog daemon *)
-      Lwt_log.log ~logger ~level:`Debug "debug message"
+      Lwt_log.log ~logger ~level:Lwt_log.Debug "debug message"
     ]}
 
     The [logger] argument is not mandatory, if you omit it, the
@@ -78,8 +80,8 @@
     which is translated to:
 
     {[
-      if Lwt_log.__unsafe_level 3 then
-        Lwt_log.__unsafe_log ~level:3 (module_name ^^ format) ...
+      if Lwt_log.Error >= Lwt_log.level () then
+        Lwt_log.log ~level:Lwt_log.Error (module_name ^^ format) ...
     ]}
 
     The advantages of the syntax extension are:
@@ -88,92 +90,52 @@
     - it can removes debugging message at compile-time (for speedup)
 *)
 
-(** {6 Types} *)
-
-(** The facility argument is used to specify what type of program is
-    logging the message. This lets the configuration file specify that
-    messages from different facilities will be handled differently. *)
-type facility =
-    [ `Auth
-        (** security/authorization messages (DEPRECATED Use [`Authpriv] instead) *)
-    | `Authpriv
-        (** security/authorization messages (private) *)
-    | `Cron
-        (** clock daemon (cron and at) *)
-    | `Daemon
-        (** system daemons without separate facility value *)
-    | `FTP
-        (** ftp daemon *)
-    | `Kernel
-        (** kernel messages (these can't be generated from user
-            processes) *)
-    | `Local0
-    | `Local1
-    | `Local2
-    | `Local3
-    | `Local4
-    | `Local5
-    | `Local6
-    | `Local7
-        (** reserved for local use *)
-    | `LPR
-        (** line printer subsystem *)
-    | `Mail
-        (** mail subsystem *)
-    | `News
-        (** USENET news subsystem *)
-    | `Syslog
-        (** messages generated internally by syslogd(8) *)
-    | `User
-        (** (the default) generic user-level messages *)
-    | `UUCP
-        (** UUCP subsystem *)
-    | `NTP
-        (** NTP subsystem *)
-    | `Security
-    | `Console ]
+(** {6 Log levels} *)
 
 (** This determines the importance of the message. The levels are, in
-    order of decreasing importance: *)
+    order of increasing importance: *)
 type level =
-    [ `Emergency
-        (** system is unusable *)
-    | `Alert
-        (** action must be taken immediately *)
-    | `Critical
-        (** critical conditions *)
-    | `Error
-        (** error conditions *)
-    | `Warning
-        (** warning conditions *)
-    | `Notice
-        (** normal, but significant, condition *)
-    | `Info
-        (** informational message *)
-    | `Debug
-        (** debug-level message *) ]
+  | Debug
+      (** Debugging message. They can be automatically removed byt hte
+          syntax extension. *)
+  | Info
+      (** Informational message. Suitable to be displayed when the
+          program is in verbose mode. *)
+  | Warning
+      (** Something strange happend *)
+  | Error
+      (** An error message, which should not means the end of the
+          program. *)
+  | Fatal
+      (** A fatal error happened, in most cases the program will end
+          after a fatal error. *)
 
-type levels = {
-  emergency : bool;
-  alert : bool;
-  critical : bool;
-  error : bool;
-  warning : bool;
-  notice : bool;
-  info : bool;
-  debug : bool;
-}
+val default_level : level
+  (** The default log level. It is initialised according to the
+      environment variable [LWT_LOG], which must be equal to:
 
-val levels_true : levels
-  (** All fields are [true] *)
+      - a number between [0] and [4]:
+        - [0] for {!Fatal}
+        - [1] for {!Error}
+        - [2] for {!Warning}
+        - [3] for {!Info}
+        - [4] for {!Debug}
+      - a level name (case insensitive): "debug", "info", "warning", "error", "fatal"
 
-val levels_false : levels
-  (** All fields are [false] *)
+      A level name of "debug" or level number of [4] means that
+      everyhting will be displayed. A level name of {!Fatal} or level
+      number of [0] means that only fatal error messages are
+      displayed.
+
+      If [LWT_LOG] is not defined, then it default to {!Warning}. *)
+
+(** In all the follwing function the optionnal argument [level]
+    default to {!default_level} *)
 
 (** {6 Loggers} *)
 
 (** A logger is responsible for receiving messages and send them to
-    thier destination *)
+    thier destination. *)
 
 exception Logger_closed
   (** Exception raised when trying to use a closed logger. *)
@@ -181,9 +143,16 @@ exception Logger_closed
 type logger
   (** Type of loggers *)
 
-val merge : logger list -> logger
-  (** [merge loggers] creates a new logger which send messages to all
-      the given loggers. *)
+val make : ?level : level -> output : (level -> string list -> unit Lwt.t) -> close : (unit -> unit Lwt.t) -> unit -> logger
+  (** [make ?level ~output ~close ()] creates a new logger.
+
+      @param output must output a list of lines
+      @param close lust close the logger.
+  *)
+
+val merge : ?level : level -> logger list -> logger
+  (** [merge ?level loggers] creates a new logger which send messages
+      to all the given loggers. *)
 
 val close : ?recursive : bool -> logger -> unit Lwt.t
   (** [close ?recursive logger] closes [logger]. If [recursive] is
@@ -191,76 +160,87 @@ val close : ?recursive : bool -> logger -> unit Lwt.t
       too. *)
 
 val default : logger ref
-  (** The default logger.
+  (** The default logger. Initially, it sends messages to the standard
+      output for error messages. *)
 
-      Initially it logs everything except informative and debugging
-      messages on [stderr], without the pid and the date. *)
+val level : logger -> level
+  (** [level logger] returns the logging level of [logger]. All
+      messages with a logging level inferior to this level will be
+      discarded. *)
 
-val level : ?logger : logger -> level -> bool
-  (** [level ?logger level] returns [true] iff messages with level
-      [level] are enabled *)
+val set_level : logger -> level -> unit
+  (** [set_level logger level] sets the logging level of [logger] to
+      [level] *)
 
-val set_level : ?logger : logger -> level -> bool -> unit
-  (** [set_level ?logger level value] set the enable state of the
-      given logger for the level [level] *)
+(** {6 Predefined loggers} *)
 
-type logger_maker = ?pid : bool -> ?date : bool -> ?facility : facility ->
-  ?levels : levels -> ?name : string -> unit -> logger
-  (** Type of a function which create a logger.
+type template = string
+    (** A template is for generating log messages.
 
-      @param pid tell whether the pid should be sent with each
-             messages. It defaultsto [true],
-      @param date indicatewhether the current date should be sent with
-             each message. It defaults to [true],
-      @param facility is the default facility for message which does
-             not specify one
-      @param levels give the set of enabled/disabled levels. It
-             defaults to {!levels_true}.
-      @param name defaults to the program name
+        It may contains varibles of the form [$(var)], where [var] is
+        one of:
+
+        - [date] which will be replaced with the current date
+        - [name] which will be replaced by the program name
+        - [pid] which will be replaced by the pid of the program
+        - [message] which will be replaced by the message emited
+        - [level] which will be replaced by the level
+    *)
+
+val render : buffer : Buffer.t -> template : template -> level : level -> message : string -> unit
+  (** Instantiate all variables of the given template. *)
+
+(** Syslog facility. Look at the SYSLOG(3) man page for a description
+    of syslog facilities *)
+type facility =
+    [ `Auth | `Authpriv | `Cron | `Daemon | `FTP | `Kernel
+    | `Local0 | `Local1 | `Local2 | `Local3 | `Local4 | `Local5 | `Local6 | `Local7
+    | `LPR | `Mail | `News | `Syslog | `User | `UUCP | `NTP | `Security | `Console ]
+
+val syslog : ?level : level -> ?template : template -> ?paths : string list -> facility : facility -> unit -> logger
+  (** [syslog ?level ?render ?paths ~facility ()] creates a logger which send
+      message to the system logger.
+
+      @param paths is a list of path to try for the syslogd socket. It
+             default to [\["/dev/log"; "/var/run/log"\]].
+      @param template defaults to ["$(date) $(name)[$(pid)]: $(message)"]
   *)
 
-val syslog : ?path : string -> logger_maker
-  (** The syslog daemon.
-
-      @param path is the path of the socket on which syslogd is
-      listenning. *)
-
-val file : ?mode : [ `truncate | `append ] -> ?perm : Unix.file_perm -> file_name : string -> logger_maker
-  (** [desf_file ?mode ~file_name] creates a logger which will write
-      message to [file_name].
+val file : ?level : level -> ?template : template -> ?mode : [ `truncate | `append ] -> ?perm : Unix.file_perm -> file_name : string -> unit -> logger
+  (** [desf_file ?level ?mode ?perm ~file_name ()] creates a logger
+      which will write message to [file_name].
 
       - if [mode = `truncate] then the file is truncated and
-        previous contents will be lost.
+      previous contents will be lost.
 
       - if [mode = `append], new messages will be appended at the
-        end of the file
+      end of the file
 
-      @param mode defaults to [`append] *)
+      @param mode defaults to [`append]
+      @param template defaults to ["$(date): $(message)"]
+  *)
 
-val channel : close_mode : [ `close | `keep ] -> channel : Lwt_io.output_channel -> logger_maker
-  (** [channel ~close_mode ~channel] creates a destination
+val channel : ?level : level -> ?template : template -> close_mode : [ `close | `keep ] -> channel : Lwt_io.output_channel -> unit -> logger
+  (** [channel ?level ~close_mode ~channel ()] creates a destination
       from a channel.
 
       If [close_mode = `close] then [channel] is closed when the
-      logger is closed, otherwise it is left open *)
+      logger is closed, otherwise it is left open.
+
+      @param template defaults to ["$(name): $(message)"]
+  *)
 
 (** {6 Logging functions} *)
 
-val log : ?logger : logger -> ?facility : facility -> level : level -> ('a, unit, string, unit) format4 -> 'a
-  (** [log ?logger ?facility ~level format] log a message.
+val log : ?logger : logger -> level : level -> ('a, unit, string, unit) format4 -> 'a
+  (** [log ?logger ~level format] log a message.
 
       @param logger defaults to {!default}
-      @param facility defaults to the logger's default facility
-      @param level defaults to [`Info]
+      @param level defaults to {!Info}
 
       The resulting thread is ingored with [ignore_result]. *)
 
-val exn : ?logger : logger -> ?facility : facility -> ?level : level -> exn -> ('a, unit, string, unit) format4 -> 'a
-  (** [exn ?logger ?facility ?level exn fmt@ logs an exception. 
+val exn : ?logger : logger -> ?level : level -> exn : exn -> ('a, unit, string, unit) format4 -> 'a
+  (** [exn ?logger ?level exn format] logs an exception.
 
-      @param level default to [`Error] *)
-
-(**/**)
-
-(* For the syntax extension, do not use directly! *)
-val unsafe_level : logger -> int -> bool
+      @param level default to {!Error} *)

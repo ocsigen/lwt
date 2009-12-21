@@ -25,27 +25,12 @@ open Camlp4.PreCast
 let debug = ref false
 
 let levels = [
-  "emergency";
-  "alert";
-  "critical";
+  "fatal";
   "error";
   "warning";
-  "notice";
   "info";
   "debug";
-  "exn";
 ]
-
-let level_code = function
-  | "emergency" -> 0
-  | "alert" -> 1
-  | "critical" -> 2
-  | "error" | "exn" -> 3
-  | "warning" -> 4
-  | "notice" -> 5
-  | "info" -> 6
-  | "debug" -> 7
-  | _ -> assert false
 
 let module_name _loc =
   let file_name = Loc.file_name _loc in
@@ -90,10 +75,10 @@ object
       | `Delete ->
           <:expr< () >>
       | `Log(fmt, level, args) ->
-          let args = List.map super#expr args and fmt = super#expr fmt in
+          let args = List.map super#expr args and fmt = super#expr fmt and level = String.capitalize level in
           <:expr<
-            if Lwt_log.unsafe_level !Lwt_log.default $int:string_of_int (level_code level)$ then
-              $apply <:expr< Lwt_log.log ~level:$Ast.ExVrn(_loc, String.capitalize level)$
+            if Lwt_log.$uid:level$ >= Lwt_log.level !Lwt_log.default then
+              $apply <:expr< Lwt_log.log ~level:Lwt_log.$uid:level$
                                $if module_name = "" then
                                   fmt
                                 else
@@ -102,8 +87,8 @@ object
       | `Failure(exn, fmt, args) ->
           let args = List.map super#expr args and fmt = super#expr fmt in
           <:expr<
-            if Lwt_log.unsafe_level !Lwt_log.default $int:string_of_int (level_code "exn")$ then
-              $apply <:expr<  Lwt_log.exn $exn$
+            if Lwt_log.Error >= Lwt_log.level !Lwt_log.default then
+              $apply <:expr<  Lwt_log.exn ~exn:$exn$
                                 $if module_name = "" then
                                    fmt
                                  else

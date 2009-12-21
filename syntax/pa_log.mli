@@ -33,7 +33,7 @@
 
     {[
       if Lwt_log.level !Lwt_log.default `Info then
-        Lwt_log.log ~level:`Info "Foo: x = %d" x
+        Lwt_log.log ~level:Lwt_log.Info "Foo: x = %d" x
     ]}
 
     You can also log exception with the backtrace if available:

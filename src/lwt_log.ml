@@ -31,117 +31,33 @@ let program_name = Filename.basename Sys.argv.(0)
 let log_intern fmt =
   Printf.ksprintf (fun msg -> ignore_result (Lwt_io.eprintlf "%s: Lwt_log: %s" program_name msg)) fmt
 
-(* +-----------------------------------------------------------------+
-   | Types                                                           |
-   +-----------------------------------------------------------------+ *)
-
-type facility =
-  [ `Kernel
-  | `User
-  | `Mail
-  | `Daemon
-  | `Auth
-  | `Syslog
-  | `LPR
-  | `News
-  | `UUCP
-  | `Cron
-  | `Authpriv
-  | `FTP
-  | `NTP
-  | `Security
-  | `Console
-  | `Local0
-  | `Local1
-  | `Local2
-  | `Local3
-  | `Local4
-  | `Local5
-  | `Local6
-  | `Local7 ]
-
 type level =
-    [ `Emergency
-    | `Alert
-    | `Critical
-    | `Error
-    | `Warning
-    | `Notice
-    | `Info
-    | `Debug ]
+  | Debug
+  | Info
+  | Warning
+  | Error
+  | Fatal
 
-(* +-----------------------------------------------------------------+
-   | Codes                                                           |
-   +-----------------------------------------------------------------+ *)
+let string_of_level = function
+  | Debug -> "debug"
+  | Info -> "info"
+  | Warning -> "warning"
+  | Error -> "error"
+  | Fatal -> "fatal"
 
-
-let facility_code = function
-  | `Kernel -> 0
-  | `User -> 1
-  | `Mail -> 2
-  | `Daemon -> 3
-  | `Auth -> 4
-  | `Syslog -> 5
-  | `LPR -> 6
-  | `News -> 7
-  | `UUCP -> 8
-  | `Cron -> 9
-  | `Authpriv -> 10
-  | `FTP -> 11
-  | `NTP -> 12
-  | `Security -> 13
-  | `Console -> 14
-  | `Local0 -> 16
-  | `Local1 -> 17
-  | `Local2 -> 18
-  | `Local3 -> 19
-  | `Local4 -> 20
-  | `Local5 -> 21
-  | `Local6 -> 22
-  | `Local7 -> 23
-
-let level_code = function
-  | `Emergency -> 0
-  | `Alert -> 1
-  | `Critical -> 2
-  | `Error -> 3
-  | `Warning -> 4
-  | `Notice -> 5
-  | `Info -> 6
-  | `Debug -> 7
-
-type levels = {
-  emergency : bool;
-  alert : bool;
-  critical : bool;
-  error : bool;
-  warning : bool;
-  notice : bool;
-  info : bool;
-  debug : bool;
-}
-
-let levels_true = {
-  emergency = true;
-  alert = true;
-  critical = true;
-  error = true;
-  warning = true;
-  notice = true;
-  info = true;
-  debug = true;
-}
-
-let levels_false = {
-  emergency = false;
-  alert = false;
-  critical = false;
-  error = false;
-  warning = false;
-  notice = false;
-  info = false;
-  debug = false;
-}
+let default_level =
+  try
+    match String.lowercase (Sys.getenv "LWT_LOG") with
+      | "0" | "fatal" -> Fatal
+      | "1" | "error" -> Error
+      | "2" | "warning" -> Warning
+      | "3" | "info" -> Info
+      | "4" | "debug" -> Debug
+      | str ->
+          log_intern "wrong value for LWT_LOG: %S" str;
+          Warning
+  with Not_found ->
+    Warning
 
 (* +-----------------------------------------------------------------+
    | Loggers                                                         |
@@ -150,8 +66,8 @@ let levels_false = {
 exception Logger_closed
 
 type end_point = {
-  ep_add_lines : facility -> level -> string list -> unit Lwt.t;
-  (* [add_lines facility level lines] adds [line] to the output *)
+  ep_output : level -> string list -> unit Lwt.t;
+  (* [output facility level lines] adds [line] to the output *)
 
   ep_close : unit -> unit Lwt.t;
   (* [close ()] should free resources used for the destination *)
@@ -159,11 +75,8 @@ type end_point = {
   ep_mutex : Lwt_mutex.t;
   (* Mutex used to serialize line addition *)
 
-  ep_levels : bool array;
-  (* Enabled levels *)
-
-  ep_facility : facility;
-  (* The default facility *)
+  mutable ep_level : level;
+  (* The logging level *)
 
   mutable ep_parents : merge list;
   (* Parents are the merge in which the end-point is.
@@ -195,9 +108,8 @@ and merge = {
   mutable merge_parents : merge list;
   (* Same as for end-points *)
 
-  merge_levels : int array;
-  (* [merge_levels.(i)] represents the number of children for which
-     the level [i] is enabled. *)
+  mutable merge_level : level;
+  (* The logging level of this logger *)
 
   merge_logger : logger;
   (* The logger associated with this merge-point *)
@@ -213,52 +125,26 @@ and logger_state =
 
 and logger = logger_state ref
 
-type logger_maker = ?pid : bool -> ?date : bool -> ?facility : facility ->
-  ?levels : levels -> ?name : string -> unit -> logger
-
-(* Decrement the number of children with level [level] enabled: *)
-let rec decrement_level merge level =
-  let count = merge.merge_levels.(level) in
-  merge.merge_levels.(level) <- count - 1;
-  if count = 1 then
-    (* If the enablme state has changed then update also parents: *)
-    List.iter (fun parent -> decrement_level parent level) merge.merge_parents
-
-(* Increment the number of children with level [level] enabled: *)
-let rec increment_level merge level =
-  let count = merge.merge_levels.(level) in
-  merge.merge_levels.(level) <- count + 1;
-  if count = 0 then
-    List.iter (fun parent -> increment_level parent level) merge.merge_parents
-
 let rec close_rec recursive node = match node with
   | End_point ep ->
       ep.ep_logger := Closed;
       (* Remove it from all its parents *)
-      List.iter begin fun parent ->
-        (* Remove the child from its parent *)
-        parent.merge_children <- List.filter ((!=) node) parent.merge_children;
-        (* Update levels of the parent *)
-        for i = 0 to 7 do
-          if ep.ep_levels.(i) then decrement_level parent i
-        done
-      end ep.ep_parents;
+      List.iter
+        (fun parent ->
+           (* Remove the child from its parent *)
+           parent.merge_children <- List.filter ((!=) node) parent.merge_children)
+        ep.ep_parents;
       ep.ep_close ()
   | Merge merge ->
       merge.merge_logger := Closed;
-      lwt () =
-        if recursive then
-          Lwt_util.iter (close_rec true) merge.merge_children
-        else
-          return ()
-      in
-      List.iter begin fun parent ->
-        parent.merge_children <- List.filter ((!=) node) parent.merge_children;
-        for i = 0 to 7 do
-          if merge.merge_levels.(i) <> 0 then decrement_level parent i
-        done
-      end merge.merge_parents;
-      return ()
+      List.iter
+        (fun parent ->
+           parent.merge_children <- List.filter ((!=) node) parent.merge_children)
+        merge.merge_parents;
+      if recursive then
+        Lwt_util.iter (close_rec true) merge.merge_children
+      else
+        return ()
 
 let close ?(recursive=false) logger = match !logger with
   | Closed ->
@@ -266,80 +152,64 @@ let close ?(recursive=false) logger = match !logger with
   | Opened logger ->
       close_rec recursive logger
 
-let default = ref (ref Closed)
+let _close logger = close logger
 
-let get_logger = function
-  | None -> !(!default)
-  | Some logger -> !logger
+let make ?(level=default_level) ~output ~close () =
+  let rec logger =
+    ref(Opened(End_point{ ep_output = output;
+                          ep_close = close;
+                          ep_mutex = Lwt_mutex.create ();
+                          ep_level = level;
+                          ep_parents = [];
+                          ep_logger = logger }))
+  in
+  Lwt_gc.finalise_or_exit _close logger;
+  logger
 
-let unsafe_level logger num =
-  match !logger with
-    | Closed ->
-        raise Logger_closed
-    | Opened(End_point ep) ->
-        ep.ep_levels.(num)
-    | Opened(Merge merge) ->
-        merge.merge_levels.(num) > 0
-
-let level ?logger level =
-  unsafe_level
-    (match logger with
-       | None -> !default
-       | Some logger -> logger)
-    (level_code level)
-
-let rec set_level_rec node level value = match node with
-  | End_point ep ->
-      let level = level_code level in
-      if ep.ep_levels.(level) <> value then begin
-        ep.ep_levels.(level) <- value;
-        let change_level = if value then increment_level else decrement_level in
-        List.iter (fun parent -> change_level parent level) ep.ep_parents
-      end
-  | Merge merge ->
-      List.iter (fun child -> set_level_rec node level value) merge.merge_children
-
-let set_level ?logger level value =
-  match get_logger logger with
-    | Closed ->
-        raise Logger_closed
-    | Opened node ->
-        set_level_rec node level value
-
-let merge loggers =
+let merge ?(level=default_level) loggers =
   let children = List.map (fun logger ->
                              match !logger with
                                | Opened node -> node
                                | Closed -> raise Logger_closed) loggers in
-  let levels = Array.create 8 0 in
   let rec result = ref(Opened(Merge merge))
   and merge = { merge_children = children;
                 merge_parents = [];
-                merge_levels = levels;
+                merge_level = level;
                 merge_logger = result } in
   List.iter
-    (fun child ->
-       match child with
-         | End_point ep ->
-             ep.ep_parents <- merge :: ep.ep_parents
-         | Merge merge ->
-             merge.merge_parents <- merge :: merge.merge_parents)
+    (function
+       | End_point ep ->
+           ep.ep_parents <- merge :: ep.ep_parents
+       | Merge merge ->
+           merge.merge_parents <- merge :: merge.merge_parents)
     children;
-  List.iter
-    (fun logger ->
-       for i = 0 to 7 do
-         if unsafe_level logger i then
-           levels.(i) <- levels.(i) + 1
-       done)
-    loggers;
   result
 
+let level logger =
+  match !logger with
+    | Closed ->
+        raise Logger_closed
+    | Opened(End_point ep) ->
+        ep.ep_level
+    | Opened(Merge merge) ->
+        merge.merge_level
+
+let set_level logger level =
+  match !logger with
+    | Closed ->
+        raise Logger_closed
+    | Opened(End_point ep) ->
+        ep.ep_level <- level
+    | Opened(Merge merge) ->
+        merge.merge_level <- level
+
 (* +-----------------------------------------------------------------+
-   | End-points                                                      |
+   | Templates                                                       |
    +-----------------------------------------------------------------+ *)
 
-(* Add current date to [buf]: *)
-let add_date buf =
+type template = string
+
+let date_string () =
   let tm = Unix.localtime (Unix.time ()) in
   let month_string =
     match tm.Unix.tm_mon with
@@ -357,133 +227,147 @@ let add_date buf =
       | 11 -> "Dec"
       | _ -> Printf.ksprintf failwith "Lwt_log.ascdate: invalid month, %d" tm.Unix.tm_mon
   in
-  Printf.bprintf buf "%s %2d %02d:%02d:%02d" month_string tm.Unix.tm_mday tm.Unix.tm_hour tm.Unix.tm_min tm.Unix.tm_sec
+  Printf.sprintf "%s %2d %02d:%02d:%02d" month_string tm.Unix.tm_mday tm.Unix.tm_hour tm.Unix.tm_min tm.Unix.tm_sec
 
-(* Construit ine ligne de log dans [buf]: *)
-let add_line buf pid date name msg =
-  if date then begin
-    add_date buf;
-    Buffer.add_char buf ' '
-  end;
-  Buffer.add_string buf name;
-  if pid then Printf.bprintf buf "[%d]" (Unix.getpid ());
-  Buffer.add_string buf ": ";
-  Buffer.add_string buf msg
+let render ~buffer ~template ~level ~message =
+  Buffer.add_substitute buffer
+    (function
+       | "date" -> date_string ()
+       | "name" -> program_name
+       | "pid" -> string_of_int (Unix.getpid ())
+       | "message" -> message
+       | "level" -> string_of_level level
+       | var -> Printf.ksprintf invalid_arg "Lwt_log.render_buffer: unknown variable %S" var)
+    template
 
-let truncate buf max =
-  if Buffer.length buf > max then begin
-    let suffix = "<truncated>" in
-    let len_suffix = String.length suffix in
-    let str = Buffer.sub buf 0 max in
-    StringLabels.blit ~src:suffix ~src_pos:0 ~dst:str ~dst_pos:(max - len_suffix) ~len:len_suffix;
-    str
-  end else
-    Buffer.contents buf
+(* +-----------------------------------------------------------------+
+   | Predefined loggers                                              |
+   +-----------------------------------------------------------------+ *)
 
-let array_of_levels levels = [|
-  levels.emergency;
-  levels.alert;
-  levels.critical;
-  levels.error;
-  levels.warning;
-  levels.notice;
-  levels.info;
-  levels.debug;
-|]
+let channel ?level ?(template="$(name): $(message)") ~close_mode ~channel () =
+  make ?level
+    ~output:(fun level lines ->
+               Lwt_io.atomic begin fun oc ->
+                 let buf = Buffer.create 42 in
+                 lwt () = Lwt_util.iter_serial begin fun line ->
+                   Buffer.clear buf;
+                   render ~buffer:buf ~template ~level ~message:line;
+                   Buffer.add_char buf '\n';
+                   Lwt_io.write oc (Buffer.contents buf)
+                 end lines in
+                 Lwt_io.flush oc
+               end channel)
+    ~close:(match close_mode with
+              | `keep -> return
+              | `close -> (fun () -> Lwt_io.close channel))
+    ()
 
-let channel ~close_mode ~channel
-    ?(pid=true) ?(date=true) ?(facility=`User) ?(levels=levels_true) ?(name=program_name) () =
-  let rec result = ref(Opened(End_point{
-    ep_add_lines = begin
-      fun facility level lines ->
-        lwt () = Lwt_io.atomic begin fun oc ->
-          let buf = Buffer.create 42 in
-          Lwt_util.iter_serial begin fun line ->
-            Buffer.clear buf;
-            add_line buf pid date name line;
-            Buffer.add_char buf '\n';
-            Lwt_io.write oc (Buffer.contents buf)
-          end lines
-        end channel in
-        Lwt_io.flush channel
-    end;
-    ep_close = begin
-      match close_mode with
-        | `keep -> return
-        | `close -> (fun () -> Lwt_io.close channel)
-    end;
-    ep_mutex = Lwt_mutex.create ();
-    ep_levels = array_of_levels levels;
-    ep_facility = facility;
-    ep_logger = result;
-    ep_parents = [];
-  })) in
-  Lwt_gc.finalise_or_exit close result;
-  result
+let default =
+  ref(channel ~close_mode:`keep ~channel:Lwt_io.stderr ())
 
-let () = default := channel ~close_mode:`keep ~channel:Lwt_io.stderr ~pid:false ~date:false ()
-
-let file ?(mode=`append) ?(perm=0o640) ~file_name
-    ?(pid=true) ?(date=true) ?(facility=`User) ?(levels=levels_true) ?(name=program_name) () =
+let file ?level ?(template="$(date): $(message)") ?(mode=`append) ?(perm=0o640) ~file_name () =
   let flags = match mode with
     | `append ->
         [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_APPEND; Unix.O_NONBLOCK]
     | `truncate ->
         [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_TRUNC; Unix.O_NONBLOCK] in
   let oc = Lwt_io.open_file ~mode:Lwt_io.output ~flags ~perm:0o644 file_name in
-  channel ~pid ~date ~facility ~levels ~name ~close_mode:`close ~channel:oc ()
+  channel ?level ~template ~close_mode:`close ~channel:oc ()
 
-type syslog_connection =
-  | SC_stream
-  | SC_dgram
+let level_code = function
+  | Fatal -> 0
+  | Error -> 3
+  | Warning -> 4
+  | Info -> 6
+  | Debug -> 7
+
+type facility =
+    [ `Auth | `Authpriv | `Cron | `Daemon | `FTP | `Kernel
+    | `Local0 | `Local1 | `Local2 | `Local3 | `Local4 | `Local5 | `Local6 | `Local7
+    | `LPR | `Mail | `News | `Syslog | `User | `UUCP | `NTP | `Security | `Console ]
+
+let facility_code = function
+  | `Kernel -> 0
+  | `User -> 1
+  | `Mail -> 2
+  | `Daemon -> 3
+  | `Auth -> 4
+  | `Syslog -> 5
+  | `LPR -> 6
+  | `News -> 7
+  | `UUCP -> 8
+  | `Cron -> 9
+  | `Authpriv -> 10
+  | `FTP -> 11
+  | `NTP -> 12
+  | `Security -> 13
+  | `Console -> 14
+  | `Local0 -> 16
+  | `Local1 -> 17
+  | `Local2 -> 18
+  | `Local3 -> 19
+  | `Local4 -> 20
+  | `Local5 -> 21
+  | `Local6 -> 22
+  | `Local7 -> 23
+
+type syslog_connection_type = STREAM | DGRAM
 
 let shutdown fd =
   Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
   Lwt_unix.close fd
 
-let syslog_connect path =
-  lwt kind =
-    try
-      return (Unix.stat path).Unix.st_kind
-    with Unix.Unix_error(error, _, _) ->
-      let msg = Unix.error_message error in
-      log_intern "can not stat %S: %s. Is syslogd running?" path msg;
-      fail (Sys_error msg)
-  in
-  if kind <> Unix.S_SOCK then begin
-    log_intern "%S is not a socket" path;
-    fail (Sys_error(Printf.sprintf  "%S is not a socket" path))
-  end else begin
-    (* First, we try with a dgram socket : *)
-    let fd = Lwt_unix.socket Unix.PF_UNIX Unix.SOCK_DGRAM 0 in
-    try_lwt
-      lwt () = Lwt_unix.connect fd (Unix.ADDR_UNIX path) in
-      return (SC_dgram, fd)
-    with exn ->
-      Lwt_unix.close fd;
-      match exn with
-        | Unix.Unix_error(Unix.EPROTOTYPE, _, _) ->
-            (* Then try with a stream socket: *)
-            let fd = Lwt_unix.socket Unix.PF_UNIX Unix.SOCK_STREAM 0 in
-            begin
+(* Try to find a socket in [paths]. For each path it check that the
+   file is a socket and try to establish connection in DGRAM mode then in
+   STREAM mode. *)
+let syslog_connect paths =
+  let rec loop = function
+    | [] ->
+        (* No working socket found *)
+        log_intern "no working socket found in {%s}; is syslogd running?"
+          (String.concat ", " (List.map (Printf.sprintf "\"%s\"") paths));
+        fail (Sys_error(Unix.error_message Unix.ENOENT))
+    | path :: paths ->
+        begin try
+          return (Some (Unix.stat path).Unix.st_kind)
+        with
+          | Unix.Unix_error(Unix.ENOENT, _, _) ->
+              return None
+          | Unix.Unix_error(error, _, _) ->
+              log_intern "can not stat \"%s\": %s" path (Unix.error_message error);
+              return None
+        end >>= function
+          | None ->
+              loop paths
+          | Some Unix.S_SOCK -> begin
+              (* First, we try with a dgram socket : *)
+              let fd = Lwt_unix.socket Unix.PF_UNIX Unix.SOCK_DGRAM 0 in
               try_lwt
-	        lwt () = Lwt_unix.connect fd (Unix.ADDR_UNIX path) in
-                return (SC_stream, fd)
-              with exn ->
-                Lwt_unix.close fd;
-                match exn with
-                  | Unix.Unix_error(error, _, _) ->
-                      log_intern "can not connect to %S: %s" path (Unix.error_message error);
-                      fail (Sys_error(Unix.error_message error))
-                  | _ ->
-                      assert false
+                lwt () = Lwt_unix.connect fd (Unix.ADDR_UNIX path) in
+                return (DGRAM, fd)
+              with
+                | Unix.Unix_error(Unix.EPROTOTYPE, _, _) -> begin
+                    Lwt_unix.close fd;
+                    (* Then try with a stream socket: *)
+                    let fd = Lwt_unix.socket Unix.PF_UNIX Unix.SOCK_STREAM 0 in
+                    try_lwt
+	              lwt () = Lwt_unix.connect fd (Unix.ADDR_UNIX path) in
+                      return (STREAM, fd)
+                    with Unix.Unix_error(error, _, _) ->
+                      Lwt_unix.close fd;
+                      log_intern "can not connect to \"%s\": %s" path (Unix.error_message error);
+                      loop paths
+                  end
+                | Unix.Unix_error(error, _, _) ->
+                    Lwt_unix.close fd;
+                    log_intern "can not connect to \"%s\": %s" path (Unix.error_message error);
+                    loop paths
             end
-        | Unix.Unix_error(error, _, _) ->
-            log_intern "can not connect to %S: %s" path (Unix.error_message error);
-            fail (Sys_error(Unix.error_message error))
-        | _ ->
-            assert false
-  end
+          | Some _ ->
+              log_intern "\"%s\" is not a socket" path;
+              loop paths
+  in
+  loop paths
 
 (* Write the whole contents of a string on the given file
    descriptor: *)
@@ -501,62 +385,61 @@ let write_string fd str =
   in
   aux 0
 
-let syslog ?(path="/dev/log")
-    ?(pid=true) ?(date=true) ?(facility=`User) ?(levels=levels_true) ?(name=program_name) () =
-  let sc_fd = ref None in
-  let get_sc_fd () = match !sc_fd with
+let truncate buf max =
+  if Buffer.length buf > max then begin
+    let suffix = "<truncated>" in
+    let len_suffix = String.length suffix in
+    let str = Buffer.sub buf 0 max in
+    StringLabels.blit ~src:suffix ~src_pos:0 ~dst:str ~dst_pos:(max - len_suffix) ~len:len_suffix;
+    str
+  end else
+    Buffer.contents buf
+
+let syslog ?level ?(template="$(date) $(name)[$(pid)]: $(message)") ?(paths=["/dev/log"; "/var/run/log"]) ~facility () =
+  let syslog_socket = ref None in
+  let get_syslog () = match !syslog_socket with
     | Some x ->
         return x
     | None ->
-        lwt x = syslog_connect path in
-        sc_fd := Some x;
+        lwt x = syslog_connect paths in
+        syslog_socket := Some x;
         return x
   in
-  let rec result = ref(Opened(End_point{
-                                ep_add_lines = begin
-                                  fun facility level lines ->
-                                    let buf = Buffer.create 42 in
-                                    let make_line sc msg =
-                                      Buffer.clear buf;
-                                      Printf.bprintf buf "<%d>" ((facility_code facility lsl 3) lor level_code level);
-                                      add_line buf pid date name msg;
-                                      if sc = SC_stream then Buffer.add_char buf '\x00';
-                                      Buffer.contents buf
-                                    in
-                                    let rec print sc fd = function
-                                      | [] ->
-                                          return ()
-                                      | line :: lines ->
-                                          try_lwt
-                                            lwt () = write_string fd (make_line sc line) in
-                                            print sc fd lines
-                                          with Unix.Unix_error(_, _, _) ->
-                                            (* Try to reconnect *)
-                shutdown fd;
-                sc_fd := None;
-                lwt (sc, fd) = get_sc_fd () in
-                lwt () = write_string fd (make_line sc line) in
-                print sc fd lines
-        in
-        lwt (sc, fd) = get_sc_fd () in
-        print sc fd lines
-    end;
-    ep_close = begin fun () ->
-      match !sc_fd with
-        | None ->
-            return ()
-        | Some(sc, fd) ->
-            shutdown fd;
-            return ()
-    end;
-    ep_mutex = Lwt_mutex.create ();
-    ep_levels = array_of_levels levels;
-    ep_facility = facility;
-    ep_logger = result;
-    ep_parents = [];
-  })) in
-  Lwt_gc.finalise_or_exit close result;
-  result
+  make ?level
+    ~output:(fun level lines ->
+               let buf = Buffer.create 42 in
+               let make_line socket_type msg =
+                 Buffer.clear buf;
+                 Printf.bprintf buf "<%d>" ((facility_code facility lsl 3) lor level_code level);
+                 render ~buffer:buf ~template ~level ~message:msg;
+                 if socket_type = STREAM then Buffer.add_char buf '\x00';
+                 truncate buf 1024
+               in
+               let rec print socket_type fd = function
+                 | [] ->
+                     return ()
+                 | line :: lines ->
+                     try_lwt
+                       lwt () = write_string fd (make_line socket_type line) in
+                       print socket_type fd lines
+                     with Unix.Unix_error(_, _, _) ->
+                       (* Try to reconnect *)
+                       shutdown fd;
+                       syslog_socket := None;
+                       lwt socket_type, fd = get_syslog () in
+                       lwt () = write_string fd (make_line socket_type line) in
+                       print socket_type fd lines
+               in
+               lwt socket_type, fd = get_syslog () in
+               print socket_type fd lines)
+    ~close:(fun () ->
+              match !syslog_socket with
+                | None ->
+                    return ()
+                | Some(socket_type, fd) ->
+                    shutdown fd;
+                    return ())
+    ()
 
 (* +-----------------------------------------------------------------+
    | Logging functions                                               |
@@ -573,30 +456,35 @@ let split str =
   in
   aux 0
 
-let rec log_rec node facility level lines = match node with
+let rec log_rec node level lines = match node with
   | End_point ep ->
-      if ep.ep_levels.(level_code level) then
+      if level >= ep.ep_level then
         Lwt_mutex.with_lock ep.ep_mutex
-          (fun () -> ep.ep_add_lines
-             (match facility with
-                | None -> ep.ep_facility
-                | Some facility -> facility)
-             level lines)
+          (fun () -> ep.ep_output level lines)
       else
         return ()
   | Merge merge ->
-      Lwt_util.iter (fun node -> log_rec node facility level lines) merge.merge_children
+      if level >= merge.merge_level then
+        Lwt_util.iter (fun node -> log_rec node level lines) merge.merge_children
+      else
+        return ()
 
-let log ?logger ?facility ~level fmt =
+let get_logger = function
+  | None ->
+      !(!default)
+  | Some logger ->
+      !logger
+
+let log ?logger ~level fmt =
   Printf.ksprintf begin fun message ->
     match get_logger logger with
       | Closed ->
           raise Logger_closed
       | Opened logger ->
-          ignore_result (log_rec logger facility level (split message))
+          ignore_result (log_rec logger level (split message))
   end fmt
 
-let exn ?logger ?facility ?(level=`Error) exn fmt =
+let exn ?logger ?(level=Error) ~exn fmt =
   Printf.ksprintf begin fun message ->
     match get_logger logger with
       | Closed ->
@@ -611,5 +499,5 @@ let exn ?logger ?facility ?(level=`Error) exn fmt =
             else
               message
           in
-          ignore_result (log_rec logger facility level (split message))
+          ignore_result (log_rec logger level (split message))
   end fmt

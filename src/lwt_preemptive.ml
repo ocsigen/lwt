@@ -45,7 +45,7 @@ let set_max_number_of_threads_queued n =
   max_thread_queued := n
 
 (* The function for logging errors: *)
-let error_log = ref (fun msg -> Lwt_log.log ~level:`Error "%s" msg)
+let error_log = ref (fun msg -> Lwt_log.log ~level:Lwt_log.Error "%s" msg)
 
 (* The total number of preemptive threads currently running: *)
 let threads_count = ref 0
