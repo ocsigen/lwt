@@ -222,14 +222,3 @@ value lwt_unix_has_wait4(value unit)
   return Val_int(0);
 #endif
 }
-
-/* +-----------------------------------------------------------------+
-   | Daemon                                                          |
-   +-----------------------------------------------------------------+ */
-
-value lwt_unix_close_all_fds()
-{
-  int i;
-  for (i = getdtablesize(); i>=0; --i) close(i);
-  return Val_unit;
-}

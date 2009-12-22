@@ -289,8 +289,15 @@ val setsockopt : file_descr -> Unix.socket_bool_option -> bool -> unit
 
 (** {6 Helpers} *)
 
-val daemonize : unit -> unit
-  (** Put the running program into a daemon *)
+val daemonize : ?keep_stderr : bool -> ?keep_umask : bool -> unit -> unit
+  (** Put the running program into a daemon. [stdin], [stdout] and
+      [stderr] are redirected to ["/dev/null"]. If [keep_stderr] is
+      [true], then [stderr] is left unchanged.
+
+      If [keep_umask] is [true], the umask remain unchanged, otherwise
+      it is set to [0o022].
+
+      [keep_stderr] and [keep_umask] both defaults to [false]. *)
 
 (** {6 Low-level interaction} *)
 
