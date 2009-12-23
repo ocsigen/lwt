@@ -10,3 +10,4 @@ Lwt_main
 Lwt_log
 Lwt_directory
 private/Lwt_pqueue
+private/Lwt_select

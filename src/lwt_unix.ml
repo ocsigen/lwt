@@ -137,8 +137,8 @@ let set_blocking ch blocking =
   else
     Unix.set_nonblock ch.fd
 
-let readable fd = Unix.select [fd] [] [] 0.0 <> ([], [], [])
-let writable fd = Unix.select [] [fd] [] 0.0 <> ([], [], [])
+let readable fd = Lwt_select.select [fd] [] [] 0.0 <> ([], [], [])
+let writable fd = Lwt_select.select [] [fd] [] 0.0 <> ([], [], [])
 
 (* +-----------------------------------------------------------------+
    | Actions on file descriptors                                     |

@@ -51,7 +51,7 @@ let default_select set_r set_w set_e timeout =
     else
       (* Blocking call to select: *)
       try
-        Unix.select set_r set_w set_e (match timeout with None -> -1.0 | Some t -> t)
+        Lwt_select.select set_r set_w set_e (match timeout with None -> -1.0 | Some t -> t)
       with
         | Unix.Unix_error (Unix.EINTR, _, _) ->
             ([], [], [])

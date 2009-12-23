@@ -26,7 +26,8 @@
 #include <caml/mlvalues.h>
 #include <caml/memory.h>
 #include <caml/unixsupport.h>
-#include <signal.h>
+#include <caml/signals.h>
+#include <caml/config.h>
 
 /* +-----------------------------------------------------------------+
    | Read/write                                                      |
@@ -55,6 +56,116 @@ value lwt_unix_read(value fd, value buf, value ofs, value len)
   if (ret == -1) uerror("lwt_unix_read", Nothing);
   return Val_int(ret);
 }
+
+/* +-----------------------------------------------------------------+
+   | Select                                                          |
+   +-----------------------------------------------------------------+ */
+
+#ifdef HAS_SELECT
+
+#include <sys/types.h>
+#include <sys/time.h>
+#ifdef HAS_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+#include <string.h>
+#include <unistd.h>
+
+typedef fd_set file_descr_set;
+
+static void fdlist_to_fdset(value fdlist, fd_set *fdset)
+{
+  value l;
+  for (l = fdlist; l != Val_int(0); l = Field(l, 1)) {
+    int fd = Int_val(Field(l, 0));
+    FD_SET(fd, fdset);
+  }
+}
+
+static value fdset_to_fdlist(value fdlist, fd_set *fdset)
+{
+  value l;
+  value res = Val_int(0);
+
+  Begin_roots2(l, res);
+    for (l = fdlist; l != Val_int(0); l = Field(l, 1)) {
+      int fd = Int_val(Field(l, 0));
+      if (FD_ISSET(fd, fdset)) {
+        value newres = alloc_small(2, 0);
+        Field(newres, 0) = Val_int(fd);
+        Field(newres, 1) = res;
+        res = newres;
+      }
+    }
+  End_roots();
+  return res;
+}
+
+static void fdlist_maxfd(value fdlist, int *maxfd)
+{
+  value l;
+  for (l = fdlist; l != Val_int(0); l = Field(l, 1)) {
+    int fd = Int_val(Field(l, 0));
+    if (fd > *maxfd) *maxfd = fd;
+  }
+}
+
+CAMLprim value lwt_unix_select(value readfds,
+                           value writefds,
+                           value exceptfds,
+                           value timeout)
+{
+  int maxfd;
+  double tm;
+  struct timeval tv;
+  struct timeval * tvp;
+  int retcode;
+  value res;
+
+  Begin_roots3 (readfds, writefds, exceptfds);
+    maxfd = -1;
+    fdlist_maxfd(readfds, &maxfd);
+    fdlist_maxfd(writefds, &maxfd);
+    fdlist_maxfd(exceptfds, &maxfd);
+    int num_fdset = maxfd / FD_SETSIZE + 1;
+    fd_set read[num_fdset], write[num_fdset], except[num_fdset];
+    int count = num_fdset * sizeof(fd_set);
+    memset(&read, 0, count);
+    memset(&write, 0, count);
+    memset(&except, 0, count);
+    fdlist_to_fdset(readfds, &(read[0]));
+    fdlist_to_fdset(writefds, &(write[0]));
+    fdlist_to_fdset(exceptfds, &(except[0]));
+    tm = Double_val(timeout);
+    if (tm < 0.0)
+      tvp = (struct timeval *) NULL;
+    else {
+      tv.tv_sec = (int) tm;
+      tv.tv_usec = (int) (1e6 * (tm - tv.tv_sec));
+      tvp = &tv;
+    }
+    enter_blocking_section();
+    retcode = select(maxfd + 1, &(read[0]), &(write[0]), &(except[0]), tvp);
+    leave_blocking_section();
+    if (retcode == -1) uerror("select", Nothing);
+    readfds = fdset_to_fdlist(readfds, &(read[0]));
+    writefds = fdset_to_fdlist(writefds, &(write[0]));
+    exceptfds = fdset_to_fdlist(exceptfds, &(except[0]));
+    res = alloc_small(3, 0);
+    Field(res, 0) = readfds;
+    Field(res, 1) = writefds;
+    Field(res, 2) = exceptfds;
+  End_roots();
+  return res;
+}
+
+#else
+
+CAMLprim value lwt_unix_select(value readfds, value writefds, value exceptfds,
+                               value timeout)
+{ invalid_argument("select not implemented"); }
+
+#endif
 
 /* +-----------------------------------------------------------------+
    | Terminal sizes                                                  |
@@ -125,9 +236,6 @@ value lwt_unix_sigwinch()
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
-#include <caml/config.h>
-#include <caml/signals.h>
-#include <stdio.h>
 
 CAMLextern int caml_convert_signal_number (int);
 CAMLextern int caml_rev_convert_signal_number (int);
