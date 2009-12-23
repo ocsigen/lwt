@@ -1,19 +1,20 @@
 
 let () =
-  (* Enable informative messages: *)
-  Lwt_log.set_level `Info true;
+  (* Enable all logging levels superior from [Info] to [Fatal]: *)
+  Lwt_log.set_level !Lwt_log.default Lwt_log.Info;
 
   (* A message with the default logger: *)
-  Lwt_log.log ~level:`Info "this message will appear only on stderr";
+  Lwt_log.log ~level:Lwt_log.Info "this message will appear only on stderr";
 
   (* Same as begore, but using the syntax extension: *)
   Log#info "this one too";
 
   (* A message to a custom logger, logging simultaneously to [stderr]
      and to the system logger daemon: *)
-  let logger = Lwt_log.merge [Lwt_log.channel ~close_mode:`keep ~channel:Lwt_io.stderr ~pid:false ~date:false ();
-                              Lwt_log.syslog ()] in
-  Lwt_log.log ~logger ~level:`Info "this message will appear on stderr and in '/var/log/user.log'";
+  let logger = Lwt_log.merge ~level:Lwt_log.Info
+    [Lwt_log.channel ~level:Lwt_log.Info ~close_mode:`keep ~channel:Lwt_io.stderr ();
+     Lwt_log.syslog  ~level:Lwt_log.Info ~facility:`User ()] in
+  Lwt_log.log ~logger ~level:Lwt_log.Info "this message will appear on stderr and in '/var/log/user.log'";
 
   (* Logging of exceptions: *)
   Printexc.record_backtrace true;
