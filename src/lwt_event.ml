@@ -46,3 +46,19 @@ let always_notify_p f event =
 
 let always_notify_s f event =
   ignore (notify_s f event)
+
+let _disable n _ = disable n
+
+let next ev =
+  let waiter, wakener = Lwt.task () in
+  let stop = ref ignore in
+  let notifier = notify
+    (fun x ->
+       !stop ();
+       Lwt.wakeup wakener x)
+    (React.E.once ev)
+  in
+  stop := _disable notifier;
+  Lwt.on_cancel waiter (_disable notifier);
+  Gc.finalise (_disable notifier) waiter;
+  waiter

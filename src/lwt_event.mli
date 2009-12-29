@@ -22,6 +22,9 @@
 
 (** Events utilities *)
 
+val next : 'a React.event -> 'a Lwt.t
+  (** [next ev] returns the next occurrence of [ev] *)
+
 type notifier
   (** Type of event notifiers *)
 
