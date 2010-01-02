@@ -297,7 +297,13 @@ let _ =
              Echo([substitute [("@VERSION@", get_version ())] (read_file "META.in")], "META"));
 
         (* Generation of the lwt.odocl file *)
-        let deps = ["src/lwt.mllib"; "src/lwt_unix.mllib"; "src/lwt_preemptive.mllib"; "src/lwt_extra.mllib"; "src/lwt_ssl.mllib"]
+        let deps = ["src/lwt.mllib";
+                    "src/lwt_unix.mllib";
+                    "src/lwt_preemptive.mllib";
+                    "src/lwt_extra.mllib";
+                    "src/lwt_text.mllib";
+                    "src/lwt_ssl.mllib";
+                    "src/lwt_glib.mllib"]
         and prod = "lwt.odocl" in
         rule "lwt_doc" ~prod ~deps
           (fun _ _ -> Echo(List.map (sprintf "src/%s\n")
@@ -306,7 +312,7 @@ let _ =
                                              | "Lwt_chan" -> false
                                              | s -> not (String.is_prefix "private" s))
                                 (List.concat (List.map string_list_of_file deps)))
-                           @ ["src/Lwt_top"; "syntax/Pa_lwt\n"; "syntax/Pa_log"],
+                           @ ["src/Lwt_top\n"; "syntax/Pa_lwt\n"; "syntax/Pa_log"],
                            prod));
 
         (* The default "thread" tag is not compatible with ocamlfind.
