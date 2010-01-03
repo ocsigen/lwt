@@ -917,6 +917,25 @@ struct
       goto_beginning_of_line 3
     else
       return ()
+
+  let erase ?(mode=`real_time) ~render_state ~engine_state ~prompt () =
+    let columns = React.S.value Lwt_term.columns in
+    lwt () = goto_beginning_of_line render_state.height_before in
+    lwt () = printl (Text.map (fun _ -> " ")
+                       (Lwt_term.strip_styles
+                          (expand_returns
+                             columns
+                             ((prompt @ [Text(all_input engine_state)] @
+                                 (match mode with
+                                    | `classic ->
+                                        []
+                                    | `real_time ->
+                                        [Text "\n\n\n\n"])))))) in
+    if mode = `real_time then
+      lwt () = goto_beginning_of_line 3 in
+      return init
+    else
+      return init
 end
 
 (* +-----------------------------------------------------------------+
@@ -940,7 +959,7 @@ let set_nth set n =
 
 type close_mode = [ `Accept | `Interrupt ]
 
-class read_line_base history =
+class read_line_engine history =
   (* Thread which is waleup with [`Accept] or [`Interrupt] when we are
      done: *)
   let (quit_waiter : close_mode Lwt.t), (quit_wakener : close_mode Lwt.u) = Lwt.wait () in
@@ -1003,6 +1022,16 @@ object(self)
         return ()
 
   val mutable render_state = Terminal.init
+
+  method erase =
+    lwt state = Terminal.erase
+      ~mode:self#mode
+      ~render_state
+      ~engine_state:(React.S.value self#engine_state)
+      ~prompt:(React.S.value self#prompt) ()
+    in
+    render_state <- state;
+    return ()
 
   method run =
     (* Update the [keys_peinding] signal *)
@@ -1078,7 +1107,7 @@ let no_completion state = return {
 class read_line ?(history=[]) ?(complete=no_completion) ?(clipboard=clipboard) ?(mode=`real_time) ~prompt () =
   let prompt = React.S.const prompt in
 object(self)
-  inherit read_line_base history as super
+  inherit read_line_engine history as super
 
   method clipboard = clipboard
   method mode = mode
@@ -1209,7 +1238,7 @@ class read_password ?(clipboard=clipboard) ?(style:password_style=`text "*") ~pr
     | `clear -> (fun x -> x)
     | `empty -> (fun _ -> "") in
 object
-  inherit read_line_base [] as super
+  inherit read_line_engine [] as super
   method mode = `classic
   method prompt = prompt
   method map_text = map_text
@@ -1235,7 +1264,7 @@ let read_password ?clipboard ?style ~prompt () =
 class read_keyword ?(history=[]) ?(case_sensitive=false) ?(mode:completion_mode=`real_time) ~prompt ~values () =
   let prompt = React.S.const prompt in
 object(self)
-  inherit read_line_base history as super
+  inherit read_line_engine history as super
   method prompt = prompt
 
   method process_command = function

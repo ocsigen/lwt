@@ -333,6 +333,14 @@ module Terminal : sig
     (** Draw for the last time, i.e. the cursor is left after the text
         and not at current position. *)
 
+  val erase :
+    ?mode : completion_mode ->
+    render_state : state ->
+    engine_state : Engine.state ->
+    prompt : prompt -> unit -> state Lwt.t
+    (** [erase ?mode ~render_state ~engine_state ~prompt ()] erase
+        everything (the prompt, user input, completion, ...). *)
+
   (** {6 Low-level functions} *)
 
   (** The following functions are helpers in case you want to
@@ -358,7 +366,7 @@ end
     class *)
 
 (** Basic class for all read-line ike functions. *)
-class read_line_base : history -> object
+class read_line_engine : history -> object
   method prompt : prompt React.signal
     (** The prompt. It is a signal so it can change over time. It
         defaults to ["# "]. *)
@@ -407,6 +415,10 @@ class read_line_base : history -> object
   method reset : unit
     (** Reset engine state to its initial state *)
 
+  method erase : unit Lwt.t
+    (** Erases the prompt, user imput, completion... and reset the
+        render state to the initial state. *)
+
   method run : Text.t Lwt.t
     (** Start read-line, waits for termination, and returns the text
         written by the user *)
@@ -418,13 +430,13 @@ class read_line :
   ?complete : completion ->
   ?clipboard : clipboard ->
   ?mode : completion_mode ->
-  prompt : prompt -> unit -> read_line_base
+  prompt : prompt -> unit -> read_line_engine
 
 (** The class for {!read_password} *)
 class read_password :
   ?clipboard : clipboard ->
   ?style : password_style ->
-  prompt : prompt -> unit -> read_line_base
+  prompt : prompt -> unit -> read_line_engine
 
 (** The class for {!read_keyword} *)
 class read_keyword :
@@ -432,4 +444,4 @@ class read_keyword :
   ?case_sensitive : bool ->
   ?mode : completion_mode ->
   prompt : prompt ->
-  values :  (Text.t * 'value) list -> unit -> read_line_base
+  values :  (Text.t * 'value) list -> unit -> read_line_engine
