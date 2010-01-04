@@ -76,6 +76,7 @@ let from f =
           send x;
           loop ()
   in
+  ignore (loop ());
   let stop = lazy(React.E.stop event; Lwt.wakeup quit_wakener `Quit) in
   (object
      method stop = Lazy.force stop
