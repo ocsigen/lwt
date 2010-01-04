@@ -20,6 +20,8 @@
  * 02111-1307, USA.
  *)
 
+open Lwt
+
 type notifier = unit React.event Lwt_sequence.node
 
 let notifiers = Lwt_sequence.create ()
@@ -62,3 +64,20 @@ let next ev =
   Lwt.on_cancel waiter (_disable notifier);
   Gc.finalise (_disable notifier) waiter;
   waiter
+
+let from f =
+  let quit_waiter, quit_wakener = Lwt.wait () in
+  let event, send = React.E.create () in
+  let rec loop () =
+    Lwt.select [quit_waiter; f () >|= (fun x -> `Value x)] >>= function
+      | `Quit ->
+          return ()
+      | `Value x ->
+          send x;
+          loop ()
+  in
+  let stop = lazy(React.E.stop event; Lwt.wakeup quit_wakener `Quit) in
+  (object
+     method stop = Lazy.force stop
+     method event = event
+   end)

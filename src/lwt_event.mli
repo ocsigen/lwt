@@ -22,8 +22,17 @@
 
 (** Events utilities *)
 
+(** {6 Utilities} *)
+
 val next : 'a React.event -> 'a Lwt.t
   (** [next ev] returns the next occurrence of [ev] *)
+
+val from : (unit -> 'a Lwt.t) -> < event : 'a React.event; stop : unit >
+  (** [from f] return the event which occurs each time [f] returns a
+      value. Calls to [f] are serialised. The [stop] method stops
+      the monitoring of [f]. *)
+
+(** {6 Notification} *)
 
 type notifier
   (** Type of event notifiers *)
