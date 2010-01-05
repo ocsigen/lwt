@@ -31,7 +31,7 @@ let rec read_entry dir_handle =
   else
     entry
 
-let list' ~path =
+let stream ~path =
   let dir_handle =
     try
       Unix.opendir path
@@ -40,20 +40,25 @@ let list' ~path =
   in
   let close = lazy(Unix.closedir dir_handle)
   and auto_yield = Lwt_unix.auto_yield 0.05 in
-  ((fun () -> Lazy.force close),
-   Lwt_stream.from (fun () ->
-                      lwt () = auto_yield () in
-                      try
-                        let entry = read_entry dir_handle in
-                        return (Some entry)
-                      with exn ->
-                        (try Lazy.force close with _ -> ());
-                        match exn with
-                          | End_of_file ->
-                              return None
-                          | Unix.Unix_error(code, _, _) ->
-                              fail(Sys_error(Unix.error_message code))
-                          | exn ->
-                              fail exn))
+  let stream = Lwt_stream.from begin fun () ->
+    lwt () = auto_yield () in
+    try
+      let entry = read_entry dir_handle in
+      return (Some entry)
+    with exn ->
+      (try Lazy.force close with _ -> ());
+      match exn with
+        | End_of_file ->
+            return None
+        | Unix.Unix_error(code, _, _) ->
+            fail(Sys_error(Unix.error_message code))
+        | exn ->
+            fail exn
+  end in
+  (object
+     method stream = stream
+     method stop = Lazy.force close
+   end)
 
-let list ~path = snd (list' path)
+let list ~path =
+  Lwt_stream.get_while (fun _ -> true) (stream ~path)#stream

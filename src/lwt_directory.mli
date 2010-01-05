@@ -24,10 +24,13 @@
 
 (** Asynchronous directory listing *)
 
-val list : path : string -> string Lwt_stream.t
-  (** [list dir] returns the contents of [dir] as a data stream *)
+val stream : path : string -> < stream : string Lwt_stream.t; stop : unit >
+  (** [stream ~path] returns the contents of [path] as a data
+      stream.
 
-val list' : path : string -> (unit -> unit) * string Lwt_stream.t
-  (** [list'] is the same as [list], expect it also returns a close
-      function so you can free allocated resources before reaching the
-      end of the stream. *)
+      The [stop] method should be used if you want to free resources
+      before reaching the end of the stream. *)
+
+val list : path : string -> string list Lwt.t
+  (** [list ~path] returns the contents of [path] as a list of file
+      names *)
