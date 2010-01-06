@@ -56,6 +56,11 @@ type completion_result = {
 
 type completion = edition_state -> completion_result Lwt.t
 
+let no_completion state = return {
+  comp_state = state;
+  comp_words = TextSet.empty;
+}
+
 let common_prefix a b =
   let lena = String.length a and lenb = String.length b in
   let rec loop i =
@@ -274,15 +279,11 @@ struct
   type state = {
     mode : mode;
     history : history * history;
-    completion : text_set;
-    completion_index : int;
   }
 
   let init history = {
     mode = Edition("", "");
     history = (history, []);
-    completion = TextSet.empty;
-    completion_index = 0;
   }
 
   let all_input state = match state.mode with
@@ -456,9 +457,7 @@ struct
                       engine_state
                   | (line :: hist_before, hist_after) ->
                       { mode = Edition(line, "");
-                        history = (hist_before, (before ^ after) :: hist_after);
-                        completion = TextSet.empty;
-                        completion_index = 0 }
+                        history = (hist_before, (before ^ after) :: hist_after) }
                 end
 
             | History_next ->
@@ -467,9 +466,7 @@ struct
                       engine_state
                   | (hist_before, line :: hist_after) ->
                       { mode = Edition(line, "");
-                        history = ((before ^ after) :: hist_before, hist_after);
-                        completion = TextSet.empty;
-                        completion_index = 0 }
+                        history = ((before ^ after) :: hist_before, hist_after) }
                 end
 
             | Backward_char ->
@@ -505,24 +502,6 @@ struct
             | Forward_word ->
                 let a, b, c = split_first_word after in
                 edition (before ^ a ^ b, c)
-
-            | Complete_right ->
-                if engine_state.completion_index < TextSet.cardinal engine_state.completion - 1 then
-                  { engine_state with completion_index = engine_state.completion_index + 1 }
-                else
-                  engine_state
-
-            | Complete_left ->
-                if engine_state.completion_index > 0 then
-                  { engine_state with completion_index = engine_state.completion_index - 1 }
-                else
-                  engine_state
-
-            | Complete_first ->
-                { engine_state with completion_index = 0 }
-
-            | Complete_last ->
-                { engine_state with completion_index = max (TextSet.cardinal engine_state.completion - 1) 0 }
 
             | Backward_search ->
                 let hist_before, hist_after = engine_state.history in
@@ -647,35 +626,58 @@ struct
   open Command
 
   type state = {
+    lines : int;
+    (* Number of lines printed on the screen *)
     length : int;
     (* Length in characters of the complete printed text: the prompt,
        the input before the cursor and the input after the cursor.*)
     height_before : int;
     (* The height of the complete text printed before the cursor: the
        prompt and the input before the cursor. *)
-    completion_start : int;
+    box : bool;
+    (* Tell whether a box is currently displayed *)
+    display_start : int;
     (* For dynamic completion. It is the index of the first displayed word. *)
   }
 
-  let init = { length = 0; height_before = 0; completion_start = 0 }
+  let init = { lines = 0; length = 0; height_before = 0; display_start = 0; box = false }
+
+  type box =
+    | Box_none
+    | Box_empty
+    | Box_words of text_set * int
+    | Box_message of string
 
   let expand_returns ~columns ~text =
+    (* [len] is the distance to the beginning of the line *)
     let rec loop len = function
       | [] ->
           []
       | Text text :: l ->
-          let buf = Buffer.create (Text.length text) in
+          let buf = Buffer.create (String.length text) in
           let len = Text.fold
-            (fun ch len -> match ch with
-               | "\n" ->
-                   let padding = columns - (len mod columns) in
-                   for i = 1 to padding do
-                     Buffer.add_char buf ' '
-                   done;
-                   len + padding
-               | ch ->
+            (fun ch len ->
+               if len = columns then begin
+                 (* We insert a newline character at the end of each
+                    line. This is because some terminals behave
+                    strangly when the window is resized. *)
+                 Buffer.add_char buf '\n';
+                 if ch <> "\n" then begin
                    Buffer.add_string buf ch;
-                   len + 1) text len in
+                   1
+                 end else
+                   0
+               end else
+                 match ch with
+                   | "\n" ->
+                       for i = len to columns - 1 do
+                         Buffer.add_char buf ' '
+                       done;
+                       Buffer.add_char buf '\n';
+                       0
+                   | ch ->
+                       Buffer.add_string buf ch;
+                       len + 1) text len in
           Text(Buffer.contents buf) :: loop len l
       | style :: l ->
           style :: loop len l
@@ -688,7 +690,7 @@ struct
     if len = 0 then
       0
     else
-      (len - 1) / columns
+      (len - 1) / (columns + 1)
 
   let make_completion index columns words =
     let rec aux ofs idx = function
@@ -752,49 +754,62 @@ struct
       | [] -> []
       | e :: l -> drop (count - 1) l
 
-  let _draw render_state printed_before printed_total =
-    lwt () = hide_cursor () in
-    let columns = React.S.value Lwt_term.columns in
+  let rec goto_beginning_of_line = function
+    | 0 ->
+        [Text "\r"]
+    | 1 ->
+        [Text "\027[F"]
+    | n ->
+        Text "\027[F" :: goto_beginning_of_line (n - 1)
+
+  let _draw columns render_state printed_before printed_total =
     let printed_before = expand_returns columns printed_before in
     let printed_total = expand_returns columns printed_total in
 
     (* The new rendering state: *)
     let new_render_state = {
       render_state with
+        lines = compute_height columns (styled_length printed_total);
         height_before = compute_height columns (styled_length printed_before);
         length = styled_length printed_total;
     } in
 
-    (* The total printed text with any needed spaces after to erase all
-       previous text: *)
-    let printed_total_erase = printed_total @ [Text(String.make (max 0 (render_state.length - styled_length printed_total)) ' ')] in
+    (* [true] iff the cursor is at the right margin. In this case we
+       must print a '\n' to make it appeers at the beginning on the
+       next line. *)
+    let terminate_on_right_margin = (styled_length printed_before) mod columns = 0
 
-    (* Go back by the number of rows of the previous text: *)
-    lwt () = goto_beginning_of_line render_state.height_before in
+    and remaining = max 0 (render_state.length - styled_length printed_total) in
 
-    (* Prints and erase everything: *)
-    lwt () = printc printed_total_erase in
+    let text = List.flatten [
+      (* Go back by the number of rows of the previous text: *)
+      goto_beginning_of_line render_state.height_before;
 
-    (* Go back again to the beginning of printed text: *)
-    lwt () = goto_beginning_of_line (compute_height columns (styled_length printed_total_erase)) in
+      (* Prints everything: *)
+      printed_total;
 
-    (* Prints again the text before the cursor, to put the cursor at the
-       right place: *)
-    lwt () = printc printed_before in
+      (* Erase rests of the previous input (in case the input is
+         smaller than the predecessor): *)
+      [Text(String.make remaining ' ')];
 
-    (* Print a newline if we are at the end of a line; otherwise the
-       cursor will stay on the last character of the line *)
-    if (styled_length printed_before) mod columns = 0 then
-      lwt () = print "\n" in
-      lwt () = show_cursor () in
-      return { new_render_state with height_before = new_render_state.height_before + 1 }
+      (* Go back again to the beginning of printed text: *)
+      goto_beginning_of_line (compute_height columns (styled_length printed_total + remaining));
+
+      (* Prints again the text before the cursor, to put the cursor at
+         the right place: *)
+      printed_before;
+
+      if terminate_on_right_margin then [Text "\n"] else [];
+    ] in
+
+    if terminate_on_right_margin then
+      (text, { new_render_state with height_before = new_render_state.height_before + 1 })
     else
-      lwt () = show_cursor () in
-      return new_render_state
+      (text, new_render_state)
 
   (* Render the current state on the terminal, and returns the new
      terminal rendering state: *)
-  let draw ?(map_text=fun x -> x) ?(mode=`real_time) ?message ~render_state ~engine_state ~prompt () =
+  let draw ~columns ?(map_text=fun x -> x) ?(box=Box_none) ~render_state ~engine_state ~prompt () =
     match engine_state.mode with
       | Search st ->
           let printed_before = Reset :: prompt @ [Reset; Text "(reverse-i-search)'"; Text st.search_word] in
@@ -819,7 +834,7 @@ struct
                                   Reset;
                                   Text(Text.chunk ptr_end (Text.pointer_r phrase))]
           in
-          _draw render_state printed_before printed_total
+          _draw columns render_state printed_before printed_total
 
       | _ ->
           (* Text before and after the cursor, according to the current mode: *)
@@ -839,505 +854,426 @@ struct
                 assert false
           in
 
-          let columns = React.S.value columns in
-
-          let completion = TextSet.elements engine_state.completion
-          and count = TextSet.cardinal engine_state.completion in
-          (* Check that the completion cursor is displayed *)
-          let completion_start =
-            if mode = `real_time && completion <> [] then begin
-              (* Given a list of words and an offset, it returns the
-                 index of the last word that can be dusplayed *)
-              let rec compute_end offset index words =
-                match words with
-                  | [] ->
-                      index - 1
-                  | word :: words ->
-                      let offset = offset + Text.length word in
-                      if offset <= columns - 1 then
-                        compute_end (offset + 1) (index + 1) words
-                      else
-                        index - 1
-              in
-              if engine_state.completion_index < render_state.completion_start then
-                (* The cursor is before the left margin *)
-                let rev_index = count - engine_state.completion_index - 1 in
-                count - compute_end 1 rev_index (drop rev_index (List.rev completion)) - 1
-              else if compute_end 1 render_state.completion_start
-                (drop render_state.completion_start completion) < engine_state.completion_index then
-                  (* The cursor is after the right margin *)
-                engine_state.completion_index
-              else
-                (* The cursor points to a word which is displayed *)
-                render_state.completion_start
-            end else
-              render_state.completion_start
-          in
-
           (* All the text printed before the cursor: *)
           let printed_before = Reset :: prompt @ [Reset] @ before in
 
-          let completion = drop completion_start completion in
-          (* The total printed text: *)
-          let printed_total =
-            printed_before @ after @ (match message, mode with
-                                        | _, `classic ->
-                                            []
-                                        | Some msg, `real_time ->
-                                            [Text "\n";
-                                             Text(Text.repeat columns "─");
-                                             Text msg]
-                                        | None, `real_time ->
-                                            [Text "\n";
-                                             Text "┌";
-                                             Text(make_bar "┬" (columns - 2) completion);
-                                             Text "┐";
-                                             Text "│"]
-                                            @ make_completion (engine_state.completion_index - completion_start) (columns - 2) completion
-                                            @ [Text "│";
-                                               Text "└";
-                                               Text(make_bar "┴" (columns - 2) completion);
-                                               Text "┘"]) in
+          match box with
+            | Box_none ->
+                _draw columns { render_state with box = false } printed_before (printed_before @ after)
 
-          lwt render_state = _draw render_state printed_before printed_total in
-          return { render_state with completion_start = completion_start }
+            | Box_message message ->
+                let bar = Text(Text.repeat (columns - 2) "─") in
+                let message_len = Text.length message in
+                let message = if message_len + 2 > columns then Text.sub message 0 (columns - 2) else message in
+                _draw columns { render_state with box = true } printed_before
+                  (printed_before @ after @
+                     [Text "\n";
+                      Text "┌"; bar; Text "┐";
+                      Text "│"; Text message; Text(String.make (columns - 2 - message_len) ' '); Text "│";
+                      Text "└"; bar; Text "┘"])
 
-  let last_draw ?(map_text=fun x -> x) ?(mode=`real_time) ~render_state ~engine_state ~prompt () =
-    let columns = React.S.value Lwt_term.columns in
-    lwt () = goto_beginning_of_line render_state.height_before in
-    lwt () = printlc (expand_returns
-                        columns
-                        (prompt @ [Reset; Text(map_text(all_input engine_state))] @
-                           (match mode with
-                              | `classic ->
-                                  []
-                              | `real_time ->
-                                  [Text "\n\n\n\n"]))) in
-    if mode = `real_time then
-      goto_beginning_of_line 3
-    else
-      return ()
+            | Box_empty ->
+                let bar = Text(Text.repeat (columns - 2) "─") in
+                _draw columns { render_state with box  = true } printed_before
+                  (printed_before @ after @
+                     [Text "\n";
+                      Text "┌"; bar; Text "┐";
+                      Text "│"; Text(Text.repeat (columns - 2) " "); Text "│";
+                      Text "└"; bar; Text "┘"])
 
-  let erase ?(mode=`real_time) ~render_state ~engine_state ~prompt () =
-    let columns = React.S.value Lwt_term.columns in
-    lwt () = goto_beginning_of_line render_state.height_before in
-    lwt () = printl (Text.map (fun _ -> " ")
-                       (Lwt_term.strip_styles
-                          (expand_returns
-                             columns
-                             ((prompt @ [Text(all_input engine_state)] @
-                                 (match mode with
-                                    | `classic ->
-                                        []
-                                    | `real_time ->
-                                        [Text "\n\n\n\n"])))))) in
-    if mode = `real_time then
-      lwt () = goto_beginning_of_line 3 in
-      return init
-    else
-      return init
-end
+            | Box_words(words, position) ->
+                let words = TextSet.elements words and count = TextSet.cardinal words in
 
-(* +-----------------------------------------------------------------+
-   | Basic class for all read-line like functions                    |
-   +-----------------------------------------------------------------+ *)
+                (* Sets the index of the first displayed words such
+                   that the cursor is displayed: *)
+                let display_start =
 
-(* Note: all read-line function are written using reactive
-   programming *)
+                  (* Given a list of words and an offset, it returns
+                     the index of the last word that can be
+                     dusplayed *)
+                  let rec compute_end offset index words =
+                    match words with
+                      | [] ->
+                          index - 1
+                      | word :: words ->
+                          let offset = offset + Text.length word in
+                          if offset <= columns - 1 then
+                            compute_end (offset + 1) (index + 1) words
+                          else
+                            index - 1
+                  in
 
-open Command
+                  if position < render_state.display_start then
+                    (* The cursor is before the left margin *)
+                    let rev_index = count - position - 1 in
+                    count - compute_end 1 rev_index (drop rev_index (List.rev words)) - 1
+                  else if compute_end 1 render_state.display_start (drop render_state.display_start words) < position then
+                    (* The cursor is after the right margin *)
+                    position
+                  else
+                    (* The cursor points to a word which is
+                       displayed *)
+                    render_state.display_start
+                in
 
-let read_command () = read_key () >|= Command.of_key
+                let words = drop display_start words in
+                let printed_total =
+                  printed_before @ after @
+                    [Text "\n";
+                     Text "┌"; Text(make_bar "┬" (columns - 2) words); Text "┐";
+                     Text "│"]
+                  @ make_completion (position - display_start) (columns - 2) words
+                  @ [Text "│";
+                     Text "└"; Text(make_bar "┴" (columns - 2) words); Text "┘"] in
 
-let set_nth set n =
-  let module M = struct exception Return of string end in
-  try
-    let _ = TextSet.fold (fun x n -> if n = 0 then raise (M.Return x) else n - 1) set n in
-    invalid_arg "Lwt_read_line.set_nth"
-  with M.Return x ->
-    x
+                _draw columns { render_state with display_start = display_start; box = true } printed_before printed_total
 
-type close_mode = [ `Accept | `Interrupt ]
-
-class read_line_engine history =
-  (* Thread which is waleup with [`Accept] or [`Interrupt] when we are
-     done: *)
-  let (quit_waiter : close_mode Lwt.t), (quit_wakener : close_mode Lwt.u) = Lwt.wait () in
-
-  (* The engine state signal *)
-  let engine_state, set_engine_state = React.S.create (Engine.init history) in
-
-  (* The signal holding the current edition state, whatever the engine
-     state is *)
-  let edition_state = React.S.map Engine.edition_state engine_state in
-
-  (* Tell whether there are pending keys in the input *)
-  let keys_pending, set_keys_pending = React.S.create false in
-
-  (* Message for dynamic completion *)
-  let message, set_message =  React.S.create None in
-
-  (* Signal which forces the drawer to redraw the screen *)
-  let force_redraw, set_force_redraw = React.S.create ~eq:(fun _ _ -> false) () in
-
-  (* The default prompt *)
-  let prompt = React.S.const [Lwt_term.Text "# "] in
-
-object(self)
-  method prompt = prompt
-  method engine_state = engine_state
-  method set_engine_state = set_engine_state
-  method edition_state = edition_state
-  method message = message
-  method set_message = set_message
-  method keys_pending = keys_pending
-  method clipboard = clipboard
-  method mode : completion_mode = `real_time
-  method map_text x = x
-  method accept = wakeup quit_wakener `Accept
-  method interrupt = wakeup quit_wakener `Interrupt
-  method refresh = set_force_redraw ()
-  method reset = self#set_engine_state (Engine.reset (React.S.value self#engine_state))
-
-  method process_command = function
-    | Clear_screen ->
-        lwt () = clear_screen () in
-        self#refresh;
-        return ()
-
-    | Refresh ->
-        self#refresh;
-        return ()
-
-    | Accept_line ->
-        self#accept;
-        return ()
-
-    | Break ->
-        self#interrupt;
-        return ()
-
-    | command ->
-        self#set_engine_state (Engine.update ~engine_state:(React.S.value engine_state) ~clipboard ~command ());
-        return ()
-
-  val mutable render_state = Terminal.init
-
-  method erase =
-    lwt state = Terminal.erase
-      ~mode:self#mode
-      ~render_state
-      ~engine_state:(React.S.value self#engine_state)
-      ~prompt:(React.S.value self#prompt) ()
-    in
-    render_state <- state;
-    return ()
-
-  method run =
-    (* Update the [keys_peinding] signal *)
-    let check_keys () =
-      set_keys_pending (Lwt.state (Lwt_stream.peek Lwt_term.standard_input) <> Sleep)
-    in
-
-    (* Read continuously user input *)
-    let rec loop () =
-      check_keys ();
-      select [read_command () >|= (fun c -> `Command c);
-              (quit_waiter :> [ `Command of Command.t | `Accept | `Interrupt ] Lwt.t)] >>= function
-        | `Command command ->
-            check_keys ();
-            lwt () = self#process_command command in
-            loop ()
-        | (`Accept | `Interrupt) as reason ->
-            return reason
-    in
-
-    (* Mutex to prevent drawing while already drawing a previous
-       state *)
-    let drawer_mutex = Lwt_mutex.create () in
-
-    (* The drawer. It redraw everything each time something changes *)
-    let drawer = React.S.l5
-      (fun size engine_state message prompt force_redraw ->
-         ignore_result
-           (Lwt_mutex.with_lock drawer_mutex
-              (fun () ->
-                 lwt state = Terminal.draw
-                   ~map_text:self#map_text
-                   ~mode:self#mode
-                   ?message
-                   ~render_state
-                   ~engine_state
-                   ~prompt () in
-                 render_state <- state;
-                 return ())))
-      Lwt_term.size self#engine_state self#message self#prompt force_redraw
-    in
-
-    (* Wait for termination *)
-    lwt reason = loop () in
-
-    (* Clean-up events and signals. This also make the compiler
-       happy. *)
-    React.S.stop drawer;
-
-    (* Clean-up the terminal *)
-    lwt () = Terminal.last_draw
-      ~mode:self#mode
-      ~render_state:render_state
-      ~engine_state:(React.S.value engine_state)
-      ~prompt:(React.S.value self#prompt) () in
-
-    match reason with
-      | `Accept ->
-          return (Engine.all_input (React.S.value engine_state))
-      | `Interrupt ->
-          fail Interrupt
-end
-
-(* +-----------------------------------------------------------------+
-   | Read-line functions                                             |
-   +-----------------------------------------------------------------+ *)
-
-let no_completion state = return {
-  comp_state = state;
-  comp_words = TextSet.empty;
-}
-
-class read_line ?(history=[]) ?(complete=no_completion) ?(clipboard=clipboard) ?(mode=`real_time) ~prompt () =
-  let prompt = React.S.const prompt in
-object(self)
-  inherit read_line_engine history as super
-
-  method clipboard = clipboard
-  method mode = mode
-  method prompt = prompt
-
-  val mutable completion_thread = fail (Failure "bug")
-
-  method process_command = function
-    | Complete ->
-        self#reset;
-        Lwt.cancel completion_thread;
-        completion_thread <- complete (React.S.value self#edition_state);
-        ignore
-          (lwt comp = completion_thread in
-           match comp with
-             | { comp_state = (before, after); comp_words = words } when TextSet.cardinal words = 1 ->
-                 self#set_engine_state { React.S.value self#engine_state with Engine.mode = Engine.Edition(before, after) };
-                 return ()
-             | { comp_state = (before, after); comp_words = words } ->
-                 self#set_engine_state { React.S.value self#engine_state with Engine.mode = Engine.Edition(before, after) };
-                 if mode = `classic then
-                   lwt () = write_char stdout "\n" in
-                   lwt () = print_words stdout (React.S.value Lwt_term.columns) (TextSet.elements words) in
-                   write_char stdout "\n"
-                 else
-                   return ());
-        return ()
-
-    | Meta_complete ->
-        self#reset;
-        let engine_state = React.S.value self#engine_state in
-        if mode = `real_time && not (TextSet.is_empty engine_state.Engine.completion) then begin
-          let before, after = React.S.value self#edition_state in
-          let word = set_nth engine_state.Engine.completion engine_state.Engine.completion_index in
-          let ptr, idx =
-            if Text.length word > Text.length before then
-              (Text.pointer_l before, Text.length before)
-            else
-              (Text.pointer_at before (-(Text.length word)), Text.length word)
-          in
-          let rec aux ptr idx =
-            if Text.equal_at ptr (Text.sub word 0 idx) then
-              self#set_engine_state  {
-                engine_state with
-                  Engine.mode = Engine.Edition(before ^ Text.sub word idx (Text.length word - idx), after)
-              }
-            else
-              match Text.next ptr with
-                | None -> failwith "invalid completion"
-                | Some(ch, ptr) -> aux ptr (idx - 1)
-          in
-          aux ptr idx;
-        end;
-        return ()
-
-    | command ->
-        super#process_command command
-
-  val mutable dynamic_completion_thread = fail (Failure "bug")
-
-  method run =
-    let dynamic_completion =
-      if mode = `real_time then
-        React.S.map
-          (fun edition_state ->
-             (* Cancel the previous completion *)
-             Lwt.cancel dynamic_completion_thread;
-             (* Start a new one *)
-             dynamic_completion_thread <- complete edition_state;
-             ignore
-               (lwt comp = dynamic_completion_thread in
-                self#set_message None;
-                self#set_engine_state { React.S.value self#engine_state with
-                                          Engine.completion = comp.comp_words;
-                                          Engine.completion_index = 0 };
-                return ());
-             let stop_anim = dynamic_completion_thread >> return `Stop in
-             let start_date = Unix.time () in
-             (* Play an animation to make the user happy *)
-             let rec aux anim =
-               choose [stop_anim; Lwt_unix.sleep 0.1 >> return `Timeout] >>= function
-                 | `Stop ->
-                     return ()
-                 | `Timeout ->
-                     let delta = truncate (Unix.time () -. start_date) in
-                     let seconds = delta mod 60
-                     and minutes = (delta / 60) mod 60
-                     and hours = (delta / (60 * 60)) mod 24
-                     and days = (delta / (60 * 60 * 24)) in
-                     let message =
-                       if days = 0 then
-                         Printf.sprintf "working %s %02d:%02d:%02d" (List.hd anim) hours minutes seconds
-                       else
-                         Printf.sprintf "working %s %d %02d:%02d:%02d" (List.hd anim) days hours minutes seconds
-                     in
-                     self#set_message (Some message);
-                     aux (List.tl anim)
-             in
-             let rec anim = "─" :: "\\" :: "│" :: "/" :: anim in
-             ignore (aux anim))
-          (React.S.when_ (React.S.map not self#keys_pending) ("", "") self#edition_state)
+  let last_draw ~columns ?(map_text=fun x -> x) ~render_state ~engine_state ~prompt () =
+    List.flatten [
+      goto_beginning_of_line render_state.height_before;
+      expand_returns
+        columns
+        (prompt @ [Reset; Text(map_text(all_input engine_state))]
+         @ (if render_state.box then [Text "\n\n\n\n"] else []));
+      if render_state.box then
+        goto_beginning_of_line 3
       else
-        React.S.const ()
-    in
-    (* Cancel completion on user input *)
-    let cancel_completion = React.S.map
-      (fun edition_state -> cancel completion_thread)
-      self#edition_state
-    in
-    lwt text = super#run in
-    React.S.stop dynamic_completion;
-    React.S.stop cancel_completion;
-    return text
+        [];
+    ]
+
+  let erase ~columns ~render_state () =
+    List.flatten [
+      goto_beginning_of_line render_state.height_before;
+      expand_returns columns [Text(String.make render_state.lines '\n')];
+      goto_beginning_of_line render_state.lines;
+    ]
 end
+
+(* +-----------------------------------------------------------------+
+   | Controlling a running instance                                  |
+   +-----------------------------------------------------------------+ *)
+
+module Control =
+struct
+  type 'a t = {
+    result : 'a Lwt.t;
+    send_command : Command.t -> unit;
+    hide : unit -> unit Lwt.t;
+    show : unit -> unit Lwt.t;
+  }
+
+  type prompt = Engine.state React.signal -> Lwt_term.styled_text React.signal
+
+  let fake w = { result = w;
+                 send_command = ignore;
+                 hide = return;
+                 show = return }
+
+  let result ctrl = ctrl.result
+  let send_command ctrl command = ctrl.send_command command
+  let accept ctrl = ctrl.send_command Command.Accept_line
+  let interrupt ctrl = ctrl.send_command Command.Break
+  let hide ctrl = ctrl.hide ()
+  let show ctrl = ctrl.show ()
+
+  (* +---------------------------------------------------------------+
+     | Helpers for predefined instances                              |
+     +---------------------------------------------------------------+ *)
+
+  open Command
+
+  let set_nth set n =
+    let module M = struct exception Return of string end in
+    try
+      let _ = TextSet.fold (fun x n -> if n = 0 then raise (M.Return x) else n - 1) set n in
+      invalid_arg "Lwt_read_line.set_nth"
+    with M.Return x ->
+      x
+
+  let read_command () = read_key () >|= Command.of_key
+
+  type state = {
+    render : Terminal.state;
+    engine : Engine.state;
+    box : Terminal.box;
+    prompt : Lwt_term.styled_text;
+  }
+
+  type event =
+    | Ev_command of Command.t
+    | Ev_prompt of Lwt_term.styled_text
+    | Ev_box of Terminal.box
+    | Ev_completion of completion_result
+    | Ev_screen_size_changed
+
+  (* +---------------------------------------------------------------+
+     | Read-line                                                     |
+     +---------------------------------------------------------------+ *)
+
+  let read_line ?(history=[]) ?(complete=no_completion) ?(clipboard=clipboard) ?(mode=`real_time) ~prompt () =
+    if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then begin
+      (* Signal holding the last engine state before waiting for a
+         new command: *)
+      let engine_state, set_engine_state = React.S.create (Engine.init history) in
+
+      let prompt = prompt engine_state in
+
+      let completion_thread = ref (return ()) in
+
+      (*** Events ***)
+
+      (* Events typed by the user: *)
+      let user_events = Lwt_stream.from (fun () -> read_command () >|= (fun command -> Some(Ev_command command))) in
+
+      (* Events sent by the program: *)
+      let push_event, program_events = Lwt_stream.push_stream () in
+      let push_event event = push_event (`Data event) in
+
+      (* Screan resizing *)
+      let size_events = Lwt_stream.of_event (React.E.stamp (React.S.changes Lwt_term.size) Ev_screen_size_changed) in
+
+      (* Prompt events *)
+      let prompt_events = Lwt_stream.of_event (React.E.map (fun prompt -> Ev_prompt prompt) (React.S.changes prompt)) in
+
+      (* All events  *)
+      let events = Lwt_stream.choose [user_events; program_events; size_events; prompt_events] in
+
+      (*** Box for `real_time mode ***)
+
+      let update_box =
+        match mode with
+          | `real_time ->
+              React.S.map
+                (function
+                   | { Engine.mode = Engine.Selection _ } ->
+                       push_event (Ev_box(Terminal.Box_message "<selection>"))
+                   | { Engine.mode = Engine.Search _ } ->
+                       push_event (Ev_box Terminal.Box_none)
+                   | { Engine.mode = Engine.Edition edition_state } ->
+                       completion_thread := begin
+                         lwt { comp_words = words } = complete edition_state in
+                         push_event (Ev_box(Terminal.Box_words(words, 0)));
+                         return ()
+                       end)
+                engine_state
+          | `classic ->
+              React.S.const ()
+      in
+
+      (*** Main loop ***)
+
+      (* Draw the state on the terminal and update the rendering
+         state: *)
+      let draw state =
+        let text, render_state =
+          Terminal.draw
+            ~columns:(React.S.value columns)
+            ~box:state.box
+            ~render_state:state.render
+            ~engine_state:state.engine
+            ~prompt:state.prompt
+            ()
+        in
+        lwt () = printc text in
+        return { state with render = render_state }
+      in
+
+      (* - [prev] is the last displayed state
+         - [state] is the current state *)
+      let rec loop prev state =
+        (* This may update the prompt: *)
+        set_engine_state state.engine;
+        let thread = Lwt_stream.next events in
+        match Lwt.state thread with
+          | Sleep ->
+              (* Redraw screen if the event queue is empty *)
+              lwt state = (if prev <> state then draw else return) state in
+              lwt event = thread in
+              process_event state event (loop state)
+
+          | Return event ->
+              process_event state event (loop prev)
+
+          | Fail exn ->
+              fail exn
+
+      and loop_refresh state =
+        set_engine_state state.engine;
+        let thread = Lwt_stream.next events in
+        match Lwt.state thread with
+          | Sleep ->
+              (* Redraw screen if the event queue is empty *)
+              lwt state = draw state in
+              lwt event = thread in
+              process_event state event (loop state)
+
+          | Return event ->
+              process_event state event loop_refresh
+
+          | Fail exn ->
+              fail exn
+
+      and process_event state event loop = match event with
+        | Ev_prompt prompt ->
+            loop { state with prompt = prompt }
+
+        | Ev_screen_size_changed ->
+            lwt () = printc (Terminal.erase ~columns:(React.S.value columns) ~render_state:state.render ()) in
+            loop_refresh { state with render = Terminal.init }
+
+        | Ev_box box ->
+            loop { state with box = box }
+
+        | Ev_completion comp ->
+            lwt () =
+              if TextSet.cardinal comp.comp_words > 1 && mode = `classic then
+                lwt () = write_char stdout "\n" in
+                lwt () = print_words stdout (React.S.value Lwt_term.columns) (TextSet.elements comp.comp_words) in
+                write_char stdout "\n";
+              else
+                return ()
+            in
+            loop { state with engine = { state.engine with Engine.mode = Engine.Edition comp.comp_state } }
+
+        | Ev_command command ->
+            (* Cancel completion on user input: *)
+            Lwt.cancel !completion_thread;
+
+            match command with
+              | Complete_right ->
+                  begin match state.box with
+                    | Terminal.Box_words(words, index) when index < TextSet.cardinal words - 1 ->
+                        loop { state with box = Terminal.Box_words(words, index + 1) }
+                    | _ ->
+                        loop state
+                  end
+
+              | Complete_left ->
+                  begin match state.box with
+                    | Terminal.Box_words(words, index) when index > 0 ->
+                        loop { state with box = Terminal.Box_words(words, index - 1) }
+                    | _ ->
+                        loop state
+                  end
+
+              | Complete_first ->
+                  begin match state.box with
+                    | Terminal.Box_words(words, index) ->
+                        loop { state with box = Terminal.Box_words(words, 0) }
+                    | _ ->
+                        loop state
+                  end
+
+              | Complete_last ->
+                  begin match state.box with
+                    | Terminal.Box_words(words, index) when not (TextSet.is_empty words)->
+                        loop { state with box = Terminal.Box_words(words, TextSet.cardinal words - 1) }
+                    | _ ->
+                        loop state
+                  end
+
+              | Complete ->
+                  let state = { state with engine = Engine.reset state.engine } in
+                  completion_thread := begin
+                    lwt comp = complete (Engine.edition_state state.engine) in
+                    push_event (Ev_completion comp);
+                    return ()
+                  end;
+                  loop state
+
+              | Meta_complete ->
+                  if mode = `real_time then begin
+                    let state = { state with engine = Engine.reset state.engine } in
+                    match state.box with
+                      | Terminal.Box_words(words, index) when not (TextSet.is_empty words) ->
+                          let before, after = Engine.edition_state state.engine in
+                          let word = set_nth words index in
+                          let word_len = Text.length word and before_len = Text.length before in
+                          (* [search] searches the longest suffix of
+                             [before] which is a prefix of [word]: *)
+                          let rec search ptr idx =
+                            if Text.equal_at ptr (Text.sub word 0 idx) then
+                              loop { state with engine = { state.engine with Engine.mode = Engine.Edition(before ^ Text.sub word idx (word_len - idx), after) } }
+                            else
+                              match Text.next ptr with
+                                | None -> fail (Failure "invalid completion")
+                                | Some(ch, ptr) -> search ptr (idx - 1)
+                          in
+                          if word_len > before_len then
+                            search (Text.pointer_l before) before_len
+                          else
+                            search (Text.pointer_at before (-word_len)) word_len
+                      | _ ->
+                          loop state
+                  end else
+                    loop state
+
+              | Clear_screen ->
+                  lwt () = clear_screen () in
+                  loop_refresh state
+
+              | Refresh ->
+                  loop_refresh state
+
+              | Accept_line ->
+                  return (state, `Accept)
+
+              | Break ->
+                  return (state,`Interrupt)
+
+              | command ->
+                  loop { state with engine = Engine.update ~engine_state:state.engine ~clipboard ~command () }
+
+      in
+
+      let result = with_raw_mode begin fun () ->
+
+        (* Wait for edition to terminate *)
+        lwt state, result = loop_refresh {
+          render = Terminal.init;
+          engine = React.S.value engine_state;
+          box = Terminal.Box_none;
+          prompt = React.S.value prompt;
+        } in
+
+        (* Cleanup *)
+        React.S.stop update_box;
+
+        (* Do the last draw *)
+        lwt () = printc (Terminal.last_draw
+                           ~columns:(React.S.value columns)
+                           ~render_state:state.render
+                           ~engine_state:state.engine
+                           ~prompt:state.prompt
+                           ())
+        in
+
+        match result with
+          | `Accept ->
+              return (Engine.all_input state.engine)
+          | `Interrupt ->
+              fail Interrupt
+      end in
+      {
+        result = result;
+        send_command = (fun command -> push_event (Ev_command command));
+        hide = return;
+        show = return;
+      };
+
+    end else
+      let prompt = React.S.value (prompt (React.S.const (Engine.init history))) in
+      fake (lwt () = write stdout (strip_styles prompt) in
+            Lwt_text.read_line stdin)
+end
+
+(* +-----------------------------------------------------------------+
+   | Simple calls                                                    |
+   +-----------------------------------------------------------------+ *)
 
 let read_line ?history ?complete ?clipboard ?mode ~prompt () =
-  if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then
-    with_raw_mode
-      (fun () -> (new read_line ?history ?complete ?clipboard ?mode ~prompt ())#run)
-  else
-    lwt () = write stdout (strip_styles prompt) in
-    Lwt_text.read_line stdin
-
-class read_password ?(clipboard=clipboard) ?(style:password_style=`text "*") ~prompt () =
-  let prompt = React.S.const prompt in
-  let map_text = match style with
-    | `text ch -> (fun txt -> Text.map (fun _ -> ch) txt)
-    | `clear -> (fun x -> x)
-    | `empty -> (fun _ -> "") in
-object
-  inherit read_line_engine [] as super
-  method mode = `classic
-  method prompt = prompt
-  method map_text = map_text
-  method clipboard = clipboard
-  method process_command = function
-    | Backward_search ->
-        (* Prevent searching for security reason *)
-        return ()
-    | command ->
-        super#process_command command
-end
-
-let read_password ?clipboard ?style ~prompt () =
-  if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then
-    with_raw_mode
-      (fun () ->
-         (* Remove pending keys before doing anything else *)
-         lwt () = Lwt_stream.junk_old standard_input in
-         (new read_password ?clipboard ?style ~prompt ())#run)
-  else
-    fail (Failure "Lwt_read_line.read_password: not running in a terminal")
-
-class read_keyword ?(history=[]) ?(case_sensitive=false) ?(mode:completion_mode=`real_time) ~prompt ~values () =
-  let prompt = React.S.const prompt in
-object(self)
-  inherit read_line_engine history as super
-  method prompt = prompt
-
-  method process_command = function
-    | Complete ->
-        self#reset;
-        let before, after = React.S.value self#edition_state in
-        let comp = complete "" before after (List.fold_left (fun set (k, v) -> TextSet.add k set) TextSet.empty values) in
-        self#set_engine_state { React.S.value self#engine_state with Engine.mode = Engine.Edition comp.comp_state };
-        return ()
-
-    | Meta_complete ->
-        self#reset;
-        let engine_state = React.S.value self#engine_state in
-        if mode = `real_time && not (TextSet.is_empty engine_state.Engine.completion) then begin
-          if mode = `real_time then begin
-            let word = set_nth engine_state.Engine.completion engine_state.Engine.completion_index in
-            self#set_engine_state  {
-              engine_state with
-                Engine.mode = Engine.Edition(word, "")
-            }
-          end;
-        end;
-        return ()
-
-    | command ->
-        super#process_command command
-
-  method run =
-    let dynamic_completion =
-      if mode = `real_time then
-        React.S.map
-          (fun (before, after) ->
-             let { comp_words = words } = complete "" before after
-               (List.fold_left (fun set (k, v) -> TextSet.add k set) TextSet.empty values) in
-             self#set_engine_state { React.S.value self#engine_state with
-                                       Engine.completion = words;
-                                       Engine.completion_index = 0 })
-          self#edition_state
-      else
-        React.S.const ()
-    in
-    lwt result = super#run in
-    React.S.stop dynamic_completion;
-    return result
-end
-
-let read_keyword ?history ?(case_sensitive=false) ?mode ~prompt ~values () =
-  let compare = if case_sensitive then Text.compare else Text.icompare in
-  let rec assoc key = function
-    | [] -> None
-    | (key', value) :: l ->
-        if compare key key' = 0 then
-          Some value
-        else
-          assoc key l
-  in
-  if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then
-    lwt result = with_raw_mode
-      (fun () -> (new read_keyword ?history ~case_sensitive ?mode ~prompt ~values ())#run) in
-    match assoc result values with
-      | Some value -> return value
-      | None -> assert false
-  else
-    lwt () = write stdout (strip_styles prompt) in
-    lwt txt = Lwt_text.read_line stdin in
-    match assoc txt values with
-      | Some value ->
-          return value
-      | None ->
-          fail (Failure "Lwt_read_line.read_keyword: invalid input")
-
-let read_yes_no ?history ?mode ~prompt () =
-  read_keyword ?history ?mode ~prompt ~values:[("yes", true); ("no", false)] ()
+  Control.result
+    (Control.read_line ?history ?complete ?clipboard ?mode ~prompt:(fun _ -> React.S.const prompt) ())
 
 (* +-----------------------------------------------------------------+
    | History                                                         |

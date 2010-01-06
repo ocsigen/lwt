@@ -263,6 +263,10 @@ val styled_length : styled_text -> int
       [styled_length st = Text.length (strip_styles st)]
   *)
 
+val write_styled : Lwt_text.output_channel -> styled_text -> unit Lwt.t
+  (** [write_styled oc st] writes [st] on [oc] using escape
+      sequences. *)
+
 val printc : styled_text -> unit Lwt.t
   (** [printc st] prints the given styled text on standard output. If
       stdout is not a tty, then styles are stripped.

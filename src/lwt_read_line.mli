@@ -115,7 +115,7 @@ type completion_mode = [ `classic | `real_time ]
 
         - [`real_time] means that possible completions are shown to
           the user as he types, and he can navigate in them with
-          [Tab+left], [Tab+right] *)
+          [Meta+left], [Meta+right] *)
 
 val read_line :
   ?history : history ->
@@ -125,7 +125,7 @@ val read_line :
   prompt : prompt -> unit -> Text.t Lwt.t
   (** [readline ?history ?complete ?mode ~prompt ()] inputs some text
       from the user. If input is not a terminal, it defaults to
-      [Lwt_io.read_line Lwt_io.stdin].
+      [Lwt_text.read_line Lwt_text.stdin].
 
       If @param mode contains the current completion mode. It default
       to [`real_time]. *)
@@ -136,7 +136,7 @@ type password_style = [ `empty | `clear | `text of Text.t ]
         - with [`empty] nothing is printed
         - with [`clear] the password is displayed has it
         - with [`text ch] all characters are replaced by [ch] *)
-
+(*
 val read_password :
   ?clipboard : clipboard ->
   ?style : password_style ->
@@ -166,7 +166,7 @@ val read_yes_no : ?history : history -> ?mode : completion_mode -> prompt : prom
         read_keyword ?history ?dynamic prompt [("yes", true); ("no", false)] ()
       ]}
   *)
-
+*)
 (** {6 Low-level interaction} *)
 
 (** This part allow you to implements your own read-line function, or
@@ -264,10 +264,6 @@ module Engine : sig
     mode : mode;
     history : history * history;
     (** Cursor to the history position. *)
-    completion : text_set;
-    (** Possible completions for dynamic mode *)
-    completion_index : int;
-    (** Current position of the selection cursor *)
   }
 
   val init : history -> state
@@ -304,42 +300,54 @@ module Terminal : sig
 
   (** {6 High-level functions} *)
 
-  (** The two following functions are the one used by read-line
-      functions of this module. *)
+  (** The following functions are the one used by read-line functions
+      of this module. *)
+
+  (** Box for the completion: *)
+  type box =
+    | Box_none
+        (** No box at all *)
+    | Box_empty
+        (** An empty box *)
+    | Box_words of text_set * int
+        (** [BM_words(words, position)] is a box with the given list
+            of words. [position] is the position of the selected word
+            in the list.. *)
+    | Box_message of string
+        (** A box containing only the given message *)
 
   val draw :
+    columns : int ->
     ?map_text : (Text.t -> Text.t) ->
-    ?mode : completion_mode ->
-    ?message : Text.t ->
+    ?box : box ->
     render_state : state ->
     engine_state : Engine.state ->
-    prompt : prompt -> unit -> state Lwt.t
-    (** [draw ?map_text ?dynamic state engine_state prompt] erase
-        previous printed text, draw the new one, and return a new
-        state for future redrawing.
+    prompt : prompt -> unit -> Lwt_term.styled_text * state
+    (** [draw ~column ?map_text ?bar ~render_state ~engine_state
+        prompt ()] returns [(text, state)] where [state] is the new
+        rendering state, and [text] is a text containing escape
+        sequences. When printed, it will update the displayed state.
 
         @param map_text is a function used to map user input before
-        printing it, for example to hide passwords.
-
+          printing it, for example to hide passwords.
         @param message is a message to display if completion is not
-        yet available. *)
+          yet available.
+        @param box defaults to {!Box_none}. *)
 
   val last_draw :
+    columns : int ->
     ?map_text : (Text.t -> Text.t) ->
-    ?mode : completion_mode ->
     render_state : state ->
     engine_state : Engine.state ->
-    prompt : prompt -> unit -> unit Lwt.t
+    prompt : prompt -> unit -> Lwt_term.styled_text
     (** Draw for the last time, i.e. the cursor is left after the text
         and not at current position. *)
 
-  val erase :
-    ?mode : completion_mode ->
-    render_state : state ->
-    engine_state : Engine.state ->
-    prompt : prompt -> unit -> state Lwt.t
-    (** [erase ?mode ~render_state ~engine_state ~prompt ()] erase
-        everything (the prompt, user input, completion, ...). *)
+  val erase : columns : int -> render_state : state -> unit -> Lwt_term.styled_text
+    (** [erase ~columns ~render_state ()] returns a text which will
+        erase everything (the prompt, user input, completion, ...).
+
+        After an erase, the rendering state is [init]. *)
 
   (** {6 Low-level functions} *)
 
@@ -348,100 +356,80 @@ module Terminal : sig
 
   val expand_returns : columns : int -> text : Lwt_term.styled_text -> Lwt_term.styled_text
     (** [expand_returns st] returns [st] where all ["\n"] have
-        been replaced by spaces until the end of line.
+        been replaced by spaces until the end of line, then a ["\n"].
 
         For example:
 
         {[
-          prepare_for_display ~columns:10 [Text "foo\nbar"] = [Text "foo       bar"]
+          prepare_for_display ~columns:10 [Text "foo\nbar"] = [Text "foo       \nbar"]
         ]}
 
         This allow you to clean-up previously displayed text.
     *)
 end
 
-(** {6 Read-line classes} *)
+(** {6 Advanced use} *)
 
-(** Look at the "fancy_prompt.ml" example to see how to use this
-    class *)
+(** Controlling a running read-line instance *)
+module Control : sig
 
-(** Basic class for all read-line ike functions. *)
-class read_line_engine : history -> object
-  method prompt : prompt React.signal
-    (** The prompt. It is a signal so it can change over time. It
-        defaults to ["# "]. *)
+  type 'a t
+    (** Type of a running read-line instance, returning a value of
+        type ['a] *)
 
-  method engine_state : Engine.state React.signal
-    (** The signal holding current engine state *)
+  (** {6 Control} *)
 
-  method set_engine_state : Engine.state -> unit
-    (** Set the current engine state *)
+  val result : 'a t -> 'a Lwt.t
+    (** Threads waiting for the read-line instance to terminates *)
 
-  method edition_state : edition_state React.signal
-    (** The signal holding current edition state *)
+  val send_command : 'a t -> Command.t -> unit
+    (** [send_command instance command] sends the given command to the
+        read-line instance *)
 
-  method message : Text.t option React.signal
-    (** Message to dislay while completion is being computed *)
+  val accept : 'a t -> unit
+    (** [accept instance = send_command instance Command.Accept_line] *)
 
-  method set_message : Text.t option -> unit
-    (** Set the current message *)
+  val interrupt : 'a t -> unit
+    (** [accept instance = send_command instance Command.Break] *)
 
-  method keys_pending : bool React.signal
-    (** Signal which is [true] iff there are characters ready to be
-        read on the standard input channel *)
+  val hide : 'a t -> unit Lwt.t
+    (** Hides everything (prompt, user input, completion box) until
+        {!show} is called. *)
 
-  method clipboard : clipboard
-    (** Which clipboard to use. It default to the default clipboard *)
+  val show : 'a t -> unit Lwt.t
+    (** Un-hide everything *)
 
-  method mode : completion_mode
-    (** The completion mode. It default to [`real_time] *)
+  (** {6 Creation of instances} *)
 
-  method map_text : Text.t -> Text.t
-    (** [map_text txt] maps [txt] before printing it default to the
-        identity. *)
+  type prompt = Engine.state React.signal -> Lwt_term.styled_text React.signal
+    (** The prompt a signal which may depends on the engine state *)
 
-  method refresh : unit
-    (** Redraw current state *)
+  (** Note: in case the input is not a terminal, read-line instances
+      are not controllable. i.e. {!accept}, {!refresh}, ... have no
+      effect. *)
 
-  method accept : unit
-    (** Terminates line reading with acceptance *)
+  val read_line :
+    ?history : history ->
+    ?complete : completion ->
+    ?clipboard : clipboard ->
+    ?mode : completion_mode ->
+    prompt : prompt -> unit -> Text.t t
+(*
+  val read_password :
+    ?clipboard : clipboard ->
+    ?style : password_style ->
+    prompt : prompt -> unit -> Text.t t Lwt.t
 
-  method interrupt : unit
-    (** Terminates line reading by user's interruption *)
+  val read_keyword :
+    ?history : history ->
+    ?case_sensitive : bool ->
+    ?mode : completion_mode ->
+    prompt : prompt ->
+    values :  (Text.t * 'value) list -> unit -> 'value t Lwt.t
 
-  method process_command : Command.t -> unit Lwt.t
-    (** Handle one command *)
-
-  method reset : unit
-    (** Reset engine state to its initial state *)
-
-  method erase : unit Lwt.t
-    (** Erases the prompt, user imput, completion... and reset the
-        render state to the initial state. *)
-
-  method run : Text.t Lwt.t
-    (** Start read-line, waits for termination, and returns the text
-        written by the user *)
+  val read_yes_no :
+    ?history : history ->
+    ?mode : completion_mode ->
+    prompt : prompt -> unit -> bool t Lwt.t
+*)
 end
-
-(** The class for {!read_line} *)
-class read_line :
-  ?history : history ->
-  ?complete : completion ->
-  ?clipboard : clipboard ->
-  ?mode : completion_mode ->
-  prompt : prompt -> unit -> read_line_engine
-
-(** The class for {!read_password} *)
-class read_password :
-  ?clipboard : clipboard ->
-  ?style : password_style ->
-  prompt : prompt -> unit -> read_line_engine
-
-(** The class for {!read_keyword} *)
-class read_keyword :
-  ?history : history ->
-  ?case_sensitive : bool ->
-  ?mode : completion_mode ->
-  prompt : prompt ->
-  values :  (Text.t * 'value) list -> unit -> read_line_engine
