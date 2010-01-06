@@ -1010,8 +1010,26 @@ end
    | Primitive operations                                            |
    +-----------------------------------------------------------------+ *)
 
-let read_char ic = primitive Primitives.read_char ic
-let read_char_opt ic = primitive Primitives.read_char_opt ic
+let read_char wrapper =
+  let channel = wrapper.channel in
+  let ptr = channel.ptr in
+  (* Speed-up in case a character is available in the buffer. It
+     increases performances by 10x. *)
+  if wrapper.state = Idle && ptr < channel.max then begin
+    channel.ptr <- ptr + 1;
+    return (String.unsafe_get channel.buffer ptr)
+  end else
+    primitive Primitives.read_char wrapper
+
+let read_char_opt wrapper =
+  let channel = wrapper.channel in
+  let ptr = channel.ptr in
+  if wrapper.state = Idle && ptr < channel.max then begin
+    channel.ptr <- ptr + 1;
+    return (Some(String.unsafe_get channel.buffer ptr))
+  end else
+    primitive Primitives.read_char_opt wrapper
+
 let read_line ic = primitive Primitives.read_line ic
 let read_line_opt ic = primitive Primitives.read_line_opt ic
 let read ?count ic = primitive (fun ic -> Primitives.read count ic) ic
@@ -1021,7 +1039,16 @@ let read_value ic = primitive Primitives.read_value ic
 
 let flush oc = primitive Primitives.flush oc
 
-let write_char oc x = primitive (fun oc -> Primitives.write_char oc x) oc
+let write_char wrapper x =
+  let channel = wrapper.channel in
+  let ptr = channel.ptr in
+  if wrapper.state = Idle && ptr < channel.max then begin
+    channel.ptr <- ptr + 1;
+    String.unsafe_set channel.buffer ptr x;
+    return ()
+  end else
+    primitive (fun oc -> Primitives.write_char oc x) wrapper
+
 let write oc str = primitive (fun oc -> Primitives.write oc str) oc
 let write_line oc x = primitive (fun oc -> Primitives.write_line oc x) oc
 let write_from oc str ofs len = primitive (fun oc -> Primitives.write_from oc str ofs len) oc
