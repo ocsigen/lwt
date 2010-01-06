@@ -28,6 +28,7 @@
 #include <caml/unixsupport.h>
 #include <caml/signals.h>
 #include <caml/config.h>
+#include <signal.h>
 
 /* +-----------------------------------------------------------------+
    | Read/write                                                      |
