@@ -997,6 +997,7 @@ struct
     engine : Engine.state;
     box : Terminal.box;
     prompt : Lwt_term.styled_text;
+    visible : bool;
   }
 
   type event =
@@ -1005,6 +1006,8 @@ struct
     | Ev_box of Terminal.box
     | Ev_completion of completion_result
     | Ev_screen_size_changed
+    | Ev_hide of unit Lwt.u
+    | Ev_show of unit Lwt.u
 
   (* +---------------------------------------------------------------+
      | Read-line                                                     |
@@ -1087,7 +1090,7 @@ struct
         match Lwt.state thread with
           | Sleep ->
               (* Redraw screen if the event queue is empty *)
-              lwt state = (if prev <> state then draw else return) state in
+              lwt state = (if state.visible && prev <> state then draw else return) state in
               lwt event = thread in
               process_event state event (loop state)
 
@@ -1103,7 +1106,7 @@ struct
         match Lwt.state thread with
           | Sleep ->
               (* Redraw screen if the event queue is empty *)
-              lwt state = draw state in
+              lwt state = (if state.visible then draw else return) state in
               lwt event = thread in
               process_event state event (loop state)
 
@@ -1120,6 +1123,22 @@ struct
         | Ev_screen_size_changed ->
             lwt () = printc (Terminal.erase ~columns:(React.S.value columns) ~render_state:state.render ()) in
             loop_refresh { state with render = Terminal.init }
+
+        | Ev_hide wakener ->
+            if state.visible then begin
+              lwt () = printc (Terminal.erase ~columns:(React.S.value columns) ~render_state:state.render ()) in
+              wakeup wakener ();
+              loop { state with render = Terminal.init; visible = false }
+            end else
+              loop state
+
+        | Ev_show wakener ->
+            if not state.visible then begin
+              lwt state = draw state in
+              wakeup wakener ();
+              loop { state with visible = true }
+            end else
+              loop state
 
         | Ev_box box ->
             loop { state with box = box }
@@ -1234,6 +1253,7 @@ struct
           engine = React.S.value engine_state;
           box = Terminal.Box_none;
           prompt = React.S.value prompt;
+          visible = true;
         } in
 
         (* Cleanup *)
@@ -1257,8 +1277,14 @@ struct
       {
         result = result;
         send_command = (fun command -> push_event (Ev_command command));
-        hide = return;
-        show = return;
+        hide = (fun () ->
+                  let waiter, wakener = Lwt.wait () in
+                  push_event (Ev_hide wakener);
+                  waiter);
+        show = (fun () ->
+                  let waiter, wakener = Lwt.wait () in
+                  push_event (Ev_show wakener);
+                  waiter);
       };
 
     end else
