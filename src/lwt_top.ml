@@ -61,7 +61,26 @@ let rec read_input prompt buffer len =
     if !pos = String.length !input then begin
       let prompt' = if prompt = "  " then [fg blue; text "> "] else [fg yellow; text prompt] in
       let txt = Lwt_main.run begin
-        lwt l = Lwt_read_line.read_line ~complete ~mode:!mode ~history:(!history) ~prompt:prompt' () in
+        lwt l = Lwt_read_line.Control.result
+          (Lwt_read_line.Control.make
+             ~complete
+             ~mode:!mode
+             ~history:(!history)
+             ~prompt:(fun _ -> React.S.const prompt')
+             ~filter:(fun state command ->
+                        match command with
+                          | Lwt_read_line.Command.Accept_line ->
+                              (* Do not accept the line if it does not terminates with ";;" *)
+                              let text = Lwt_read_line.Engine.all_input (Lwt_read_line.Control.engine_state state) in
+                              if Text.ends_with (Text.rstrip text) ";;" then
+                                return Lwt_read_line.Command.Accept_line
+                              else
+                                return (Lwt_read_line.Command.Char "\n")
+                          | command ->
+                              return command)
+             ~map_result:return
+             ())
+        in
         lwt () = Lwt_text.flush Lwt_text.stdout in
         return l
       end in

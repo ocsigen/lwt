@@ -107,7 +107,7 @@ val clipboard : clipboard
 
 (** {6 High-level functions} *)
 
-type completion_mode = [ `classic | `real_time ]
+type completion_mode = [ `classic | `real_time | `none ]
     (** The completion mode.
 
         - [`classic] means that when the user hit [Tab] a list of
@@ -115,7 +115,9 @@ type completion_mode = [ `classic | `real_time ]
 
         - [`real_time] means that possible completions are shown to
           the user as he types, and he can navigate in them with
-          [Meta+left], [Meta+right] *)
+          [Meta+left], [Meta+right]
+
+        - [`none] means no completion at all *)
 
 val read_line :
   ?history : history ->
@@ -136,7 +138,7 @@ type password_style = [ `empty | `clear | `text of Text.t ]
         - with [`empty] nothing is printed
         - with [`clear] the password is displayed has it
         - with [`text ch] all characters are replaced by [ch] *)
-(*
+
 val read_password :
   ?clipboard : clipboard ->
   ?style : password_style ->
@@ -166,7 +168,7 @@ val read_yes_no : ?history : history -> ?mode : completion_mode -> prompt : prom
         read_keyword ?history ?dynamic prompt [("yes", true); ("no", false)] ()
       ]}
   *)
-*)
+
 (** {6 Low-level interaction} *)
 
 (** This part allow you to implements your own read-line function, or
@@ -399,14 +401,38 @@ module Control : sig
   val show : 'a t -> unit Lwt.t
     (** Un-hide everything *)
 
-  (** {6 Creation of instances} *)
+  (** Note: in case the input is not a terminal, read-line instances
+      are not controllable. i.e. {!accept}, {!refresh}, ... have no
+      effect. *)
+
+  (** {6 Creation of read-line instances} *)
 
   type prompt = Engine.state React.signal -> Lwt_term.styled_text React.signal
     (** The prompt a signal which may depends on the engine state *)
 
-  (** Note: in case the input is not a terminal, read-line instances
-      are not controllable. i.e. {!accept}, {!refresh}, ... have no
-      effect. *)
+  type state
+    (** State of an instance *)
+
+  val engine_state : state -> Engine.state
+    (** Return the engine state of the given state *)
+
+  val render_state : state -> Terminal.state
+    (** Return the rendering state of the given state *)
+
+  val make :
+    ?history : history ->
+    ?complete : completion ->
+    ?clipboard : clipboard ->
+    ?mode : [ completion_mode | `none ] ->
+    ?map_text : (Text.t -> Text.t) ->
+    ?filter : (state -> Command.t -> Command.t Lwt.t) ->
+    map_result : (Text.t -> 'a Lwt.t) ->
+    prompt : prompt -> unit -> 'a t
+    (** Creates a new read-line instance with the given
+        parameters. [filter] is called to handle commands. You can
+        return {!Command.Nop} to drop a command. *)
+
+  (** {6 Predefined instances} *)
 
   val read_line :
     ?history : history ->
@@ -414,22 +440,21 @@ module Control : sig
     ?clipboard : clipboard ->
     ?mode : completion_mode ->
     prompt : prompt -> unit -> Text.t t
-(*
+
   val read_password :
     ?clipboard : clipboard ->
     ?style : password_style ->
-    prompt : prompt -> unit -> Text.t t Lwt.t
+    prompt : prompt -> unit -> Text.t t
 
   val read_keyword :
     ?history : history ->
     ?case_sensitive : bool ->
     ?mode : completion_mode ->
     prompt : prompt ->
-    values :  (Text.t * 'value) list -> unit -> 'value t Lwt.t
+    values :  (Text.t * 'value) list -> unit -> 'value t
 
   val read_yes_no :
     ?history : history ->
     ?mode : completion_mode ->
-    prompt : prompt -> unit -> bool t Lwt.t
-*)
+    prompt : prompt -> unit -> bool t
 end

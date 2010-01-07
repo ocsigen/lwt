@@ -22,8 +22,8 @@
 
 (** Toplevel configuration *)
 
-val completion_mode : unit -> [ `classic | `real_time ]
+val completion_mode : unit -> [ `classic | `real_time | `none ]
   (** Return the current completion mode. *)
 
-val set_completion_mode : [ `classic | `real_time ] -> unit
+val set_completion_mode : [ `classic | `real_time | `none ] -> unit
   (** Change the completion mode *)
