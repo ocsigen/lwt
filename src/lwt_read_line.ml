@@ -1025,8 +1025,14 @@ struct
 
       (*** Events ***)
 
+      let last_read_command_thread = ref (fail Exit) in
+
       (* Events typed by the user: *)
-      let user_events = Lwt_stream.from (fun () -> read_command () >|= (fun command -> Some(Ev_command command))) in
+      let user_events = Lwt_stream.from (fun () ->
+                                           let t = read_command () in
+                                           last_read_command_thread := t;
+                                           lwt command = t in
+                                           return (Some(Ev_command command))) in
 
       (* Events sent by the program: *)
       let push_event, program_events = Lwt_stream.push_stream () in
@@ -1084,15 +1090,26 @@ struct
       (* - [prev] is the last displayed state
          - [state] is the current state *)
       let rec loop prev state =
-        (* This may update the prompt: *)
-        set_engine_state state.engine;
         let thread = Lwt_stream.next events in
         match Lwt.state thread with
           | Sleep ->
-              (* Redraw screen if the event queue is empty *)
-              lwt state = (if state.visible && prev <> state then draw else return) state in
-              lwt event = thread in
-              process_event state event (loop state)
+              (* This may update the prompt and dynamic completion: *)
+              set_engine_state state.engine;
+              (* Check a second time since the last command may have
+                 created new messages: *)
+              begin match Lwt.state thread with
+                | Sleep ->
+                    (* Redraw screen if the event queue is empty *)
+                    lwt state = (if state.visible && prev <> state then draw else return) state in
+                    lwt event = thread in
+                    process_event state event (loop state)
+
+                | Return event ->
+                    process_event state event (loop prev)
+
+                | Fail exn ->
+                    fail exn
+              end
 
           | Return event ->
               process_event state event (loop prev)
@@ -1101,14 +1118,22 @@ struct
               fail exn
 
       and loop_refresh state =
-        set_engine_state state.engine;
         let thread = Lwt_stream.next events in
         match Lwt.state thread with
           | Sleep ->
-              (* Redraw screen if the event queue is empty *)
-              lwt state = (if state.visible then draw else return) state in
-              lwt event = thread in
-              process_event state event (loop state)
+              set_engine_state state.engine;
+              begin match Lwt.state thread with
+                | Sleep ->
+                    lwt state = (if state.visible then draw else return) state in
+                    lwt event = thread in
+                    process_event state event (loop state)
+
+                | Return event ->
+                    process_event state event loop_refresh
+
+                | Fail exn ->
+                    fail exn
+              end
 
           | Return event ->
               process_event state event loop_refresh
@@ -1258,6 +1283,7 @@ struct
 
         (* Cleanup *)
         React.S.stop update_box;
+        Lwt.cancel !last_read_command_thread;
 
         (* Do the last draw *)
         lwt () = printc (Terminal.last_draw

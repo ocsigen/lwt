@@ -199,20 +199,22 @@ let exec ?timeout ?env cmd = (open_process_none ?timeout ?env cmd)#close
 let recv_chars pr =
   let ic = pr#stdout in
   Lwt_stream.from (fun _ ->
-                     try_lwt
-                       Lwt_io.read_char ic >|= fun x -> Some x
-                     with
-                       | End_of_file ->
-                           Lwt_io.close ic >> return None)
+                     lwt x = Lwt_io.read_char_opt ic in
+                     if x = None then begin
+                       lwt () = Lwt_io.close ic in
+                       return x
+                     end else
+                       return x)
 
 let recv_lines pr =
   let ic = pr#stdout in
   Lwt_stream.from (fun _ ->
-                     try_lwt
-                       Lwt_io.read_line ic >|= fun x -> Some x
-                     with
-                       | End_of_file ->
-                           Lwt_io.close ic >> return None)
+                     lwt x = Lwt_io.read_line_opt ic in
+                     if x = None then begin
+                       lwt () = Lwt_io.close ic in
+                       return x
+                     end else
+                       return x)
 
 let recv pr =
   let ic = pr#stdout in

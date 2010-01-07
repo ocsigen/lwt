@@ -1247,21 +1247,21 @@ let establish_server ?buffer_size sockaddr =
 
 let make_stream f ic =
   Lwt_stream.from (fun _ ->
-                     try_lwt
-                       f ic >|= fun x -> Some x
-                     with
-                       | End_of_file ->
-                           lwt () = close ic in
-                           return None)
+                     lwt x = f ic in
+                     if x = None then
+                       lwt () = close ic in
+                       return x
+                     else
+                       return x)
 
 let lines_of_file filename =
-  make_stream read_line (open_file ~mode:input filename)
+  make_stream read_line_opt (open_file ~mode:input filename)
 
 let lines_to_file filename lines =
   with_file ~mode:output filename (fun oc -> write_lines oc lines)
 
 let chars_of_file filename =
-  make_stream read_char (open_file ~mode:input filename)
+  make_stream read_char_opt (open_file ~mode:input filename)
 
 let chars_to_file filename chars =
   with_file ~mode:output filename (fun oc -> write_chars oc chars)
