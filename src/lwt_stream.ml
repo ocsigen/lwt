@@ -111,7 +111,7 @@ struct
 
   type 'a t = {
     mutable state : 'a state;
-    event : 'a React.E.t option;
+    mutable event : 'a React.E.t option;
     (* field used to prevent garbage collection *)
   }
 
@@ -139,8 +139,8 @@ struct
   let create_event e =
     let push, box = create () in
     let push v = push (`Data v) in
-    let e = React.E.trace push e in
-    { box with event = Some e }
+    box.event <- Some (React.E.trace push e);
+    box
 
   let pop b = match b.state with
     | Exn e ->
