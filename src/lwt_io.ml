@@ -1045,7 +1045,13 @@ let write_char wrapper x =
   if wrapper.state = Idle && ptr < channel.max then begin
     channel.ptr <- ptr + 1;
     String.unsafe_set channel.buffer ptr x;
-    return ()
+    (* Fast launching of the auto flusher: *)
+    if (channel.main == wrapper && not channel.auto_flushing) then begin
+      channel.auto_flushing <- true;
+      ignore (auto_flush channel);
+      return ()
+    end else
+      return ()
   end else
     primitive (fun oc -> Primitives.write_char oc x) wrapper
 
