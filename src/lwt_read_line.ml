@@ -626,11 +626,9 @@ struct
   open Command
 
   type state = {
-    lines : int;
-    (* Number of lines printed on the screen *)
     length : int;
     (* Length in characters of the complete printed text: the prompt,
-       the input before the cursor and the input after the cursor.*)
+       the input before the cursor and the input after the cursor. *)
     height_before : int;
     (* The height of the complete text printed before the cursor: the
        prompt and the input before the cursor. *)
@@ -640,7 +638,7 @@ struct
     (* For dynamic completion. It is the index of the first displayed word. *)
   }
 
-  let init = { lines = 0; length = 0; height_before = 0; display_start = 0; box = false }
+  let init = { length = 0; height_before = 0; display_start = 0; box = false }
 
   type box =
     | Box_none
@@ -649,7 +647,6 @@ struct
     | Box_message of string
 
   let expand_returns ~columns ~text =
-    (* [len] is the distance to the beginning of the line *)
     let rec loop len = function
       | [] ->
           []
@@ -657,40 +654,21 @@ struct
           let buf = Buffer.create (String.length text) in
           let len = Text.fold
             (fun ch len ->
-               if len = columns then begin
-                 (* We insert a newline character at the end of each
-                    line. This is because some terminals behave
-                    strangly when the window is resized. *)
-                 Buffer.add_char buf '\n';
-                 if ch <> "\n" then begin
-                   Buffer.add_string buf ch;
-                   1
-                 end else
-                   0
-               end else
-                 match ch with
-                   | "\n" ->
-                       for i = len to columns - 1 do
-                         Buffer.add_char buf ' '
-                       done;
-                       Buffer.add_char buf '\n';
-                       0
-                   | ch ->
-                       Buffer.add_string buf ch;
-                       len + 1) text len in
+               match ch with
+                 | "\n" ->
+                     for i = len mod columns to columns - 1 do
+                       Buffer.add_char buf ' '
+                     done;
+                     0
+                 | _ ->
+                     Buffer.add_string buf ch;
+                     len + 1)
+            text len in
           Text(Buffer.contents buf) :: loop len l
       | style :: l ->
           style :: loop len l
     in
     loop 0 text
-
-  (* Compute the number of row taken by a text given a number of
-     columns: *)
-  let compute_height columns len =
-    if len = 0 then
-      0
-    else
-      (len - 1) / (columns + 1)
 
   let make_completion index columns words =
     let rec aux ofs idx = function
@@ -762,24 +740,35 @@ struct
     | n ->
         Text "\027[F" :: goto_beginning_of_line (n - 1)
 
+  let compute_height columns length =
+    if length = 0 then
+      0
+    else
+      let height = length / columns in
+      if length mod columns = 0 then
+        height - 1
+      else
+        height
+
   let _draw columns render_state printed_before printed_total =
-    let printed_before = expand_returns columns printed_before in
-    let printed_total = expand_returns columns printed_total in
+    let printed_before = expand_returns columns printed_before
+    and printed_total = expand_returns columns printed_total in
+    let length_before = styled_length printed_before
+    and length_total = styled_length printed_total in
 
     (* The new rendering state: *)
     let new_render_state = {
       render_state with
-        lines = compute_height columns (styled_length printed_total);
-        height_before = compute_height columns (styled_length printed_before);
-        length = styled_length printed_total;
+        height_before = compute_height columns length_before;
+        length = length_total;
     } in
 
     (* [true] iff the cursor is at the right margin. In this case we
        must print a '\n' to make it appeers at the beginning on the
        next line. *)
-    let terminate_on_right_margin = (styled_length printed_before) mod columns = 0
+    let terminate_on_right_margin = length_before mod columns = 0
 
-    and remaining = max 0 (render_state.length - styled_length printed_total) in
+    and remaining = max 0 (render_state.length - new_render_state.length) in
 
     let text = List.flatten [
       (* Go back by the number of rows of the previous text: *)
@@ -793,7 +782,7 @@ struct
       [Text(String.make remaining ' ')];
 
       (* Go back again to the beginning of printed text: *)
-      goto_beginning_of_line (compute_height columns (styled_length printed_total + remaining));
+      goto_beginning_of_line (compute_height columns (length_total + remaining));
 
       (* Prints again the text before the cursor, to put the cursor at
          the right place: *)
@@ -855,7 +844,7 @@ struct
           in
 
           (* All the text printed before the cursor: *)
-          let printed_before = Reset :: prompt @ [Reset] @ before in
+          let printed_before = List.flatten [[Reset]; prompt; [Reset]; before] in
 
           match box with
             | Box_none ->
@@ -866,20 +855,22 @@ struct
                 let message_len = Text.length message in
                 let message = if message_len + 2 > columns then Text.sub message 0 (columns - 2) else message in
                 _draw columns { render_state with box = true } printed_before
-                  (printed_before @ after @
-                     [Text "\n";
-                      Text "┌"; bar; Text "┐";
-                      Text "│"; Text message; Text(String.make (columns - 2 - message_len) ' '); Text "│";
-                      Text "└"; bar; Text "┘"])
+                  (List.flatten
+                     [printed_before; after;
+                      [Text "\n";
+                       Text "┌"; bar; Text "┐";
+                       Text "│"; Text message; Text(String.make (columns - 2 - message_len) ' '); Text "│";
+                       Text "└"; bar; Text "┘"]])
 
             | Box_empty ->
                 let bar = Text(Text.repeat (columns - 2) "─") in
                 _draw columns { render_state with box  = true } printed_before
-                  (printed_before @ after @
-                     [Text "\n";
-                      Text "┌"; bar; Text "┐";
-                      Text "│"; Text(Text.repeat (columns - 2) " "); Text "│";
-                      Text "└"; bar; Text "┘"])
+                  (List.flatten
+                     [printed_before; after;
+                      [Text "\n";
+                       Text "┌"; bar; Text "┐";
+                       Text "│"; Text(Text.repeat (columns - 2) " "); Text "│";
+                       Text "└"; bar; Text "┘"]])
 
             | Box_words(words, position) ->
                 let words = TextSet.elements words and count = TextSet.cardinal words in
@@ -917,36 +908,23 @@ struct
                 in
 
                 let words = drop display_start words in
-                let printed_total =
-                  printed_before @ after @
-                    [Text "\n";
-                     Text "┌"; Text(make_bar "┬" (columns - 2) words); Text "┐";
-                     Text "│"]
-                  @ make_completion (position - display_start) (columns - 2) words
-                  @ [Text "│";
-                     Text "└"; Text(make_bar "┴" (columns - 2) words); Text "┘"] in
+                let printed_total = List.flatten
+                  [printed_before; after;
+                   [Text "\n";
+                    Text "┌"; Text(make_bar "┬" (columns - 2) words); Text "┐";
+                    Text "│"];
+                   make_completion (position - display_start) (columns - 2) words;
+                   [Text "│";
+                    Text "└"; Text(make_bar "┴" (columns - 2) words); Text "┘"]] in
 
                 _draw columns { render_state with display_start = display_start; box = true } printed_before printed_total
 
   let last_draw ~columns ?(map_text=fun x -> x) ~render_state ~engine_state ~prompt () =
-    List.flatten [
-      goto_beginning_of_line render_state.height_before;
-      expand_returns
-        columns
-        (prompt @ [Reset; Text(map_text(all_input engine_state))]
-         @ (if render_state.box then [Text "\n\n\n\n"] else []));
-      if render_state.box then
-        goto_beginning_of_line 3
-      else
-        [];
-    ]
+    let printed = prompt @ [Reset; Text(map_text(all_input engine_state)); Text "\n"] in
+    fst (_draw columns render_state printed printed)
 
   let erase ~columns ~render_state () =
-    List.flatten [
-      goto_beginning_of_line render_state.height_before;
-      expand_returns columns [Text(String.make render_state.lines '\n')];
-      goto_beginning_of_line render_state.lines;
-    ]
+    goto_beginning_of_line render_state.height_before @ [Text "\027[J"]
 end
 
 (* +-----------------------------------------------------------------+
@@ -1017,8 +995,10 @@ struct
      | Read-line generator                                           |
      +---------------------------------------------------------------+ *)
 
+  let default_prompt _ = React.S.const [Text "# "]
+
   let make ?(history=[]) ?(complete=no_completion) ?(clipboard=clipboard) ?(mode=`real_time)
-      ?(map_text=fun x -> x) ?(filter=fun s c -> return c) ~map_result ~prompt () =
+      ?(map_text=fun x -> x) ?(filter=fun s c -> return c) ~map_result ?(prompt=default_prompt) () =
     (* Signal holding the last engine state before waiting for a new
        command: *)
     let engine_state, set_engine_state = React.S.create (Engine.init history) in
@@ -1179,15 +1159,21 @@ struct
           loop { state with box = box }
 
       | Ev_completion comp ->
-          lwt () =
-            if TextSet.cardinal comp.comp_words > 1 && mode = `classic then
-              lwt () = write_char stdout "\n" in
-              lwt () = print_words stdout (React.S.value Lwt_term.columns) (TextSet.elements comp.comp_words) in
-              write_char stdout "\n";
-            else
-              return ()
-          in
-          loop { state with engine = { state.engine with Engine.mode = Engine.Edition comp.comp_state } }
+          let state = { state with engine = { state.engine with Engine.mode = Engine.Edition comp.comp_state } } in
+          if mode = `classic && TextSet.cardinal comp.comp_words > 1 then
+            lwt () =
+              printc (Terminal.last_draw
+                        ~columns:(React.S.value columns)
+                        ~render_state:state.render
+                        ~engine_state:state.engine
+                        ~prompt:state.prompt
+                        ~map_text
+                        ())
+            in
+            lwt () = print_words stdout (React.S.value Lwt_term.columns) (TextSet.elements comp.comp_words) in
+            loop_refresh { state with render = Terminal.init }
+          else
+            loop state
 
       | Ev_command command ->
           (* Cancel completion on user input: *)
@@ -1336,14 +1322,14 @@ struct
 
   let make_prompt prompt = React.S.value (prompt (React.S.const (Engine.init [])))
 
-  let read_line ?history ?complete ?clipboard ?mode ~prompt () =
+  let read_line ?history ?complete ?clipboard ?mode ?(prompt=default_prompt) () =
     if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then
       make ?history ?complete ?clipboard ?mode ~prompt ~map_result:return ()
     else
       fake (lwt () = write stdout (strip_styles (make_prompt prompt)) in
             Lwt_text.read_line stdin)
 
-  let read_password ?clipboard ?(style:password_style=`text "*") ~prompt () =
+  let read_password ?clipboard ?(style:password_style=`text "*") ?prompt () =
     if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then
       let map_text = match style with
         | `text ch -> (fun txt -> Text.map (fun _ -> ch) txt)
@@ -1356,11 +1342,11 @@ struct
         | command ->
             return command
       in
-      make ?clipboard ~map_text ~mode:`none ~filter ~prompt ~map_result:return ()
+      make ?clipboard ~map_text ~mode:`none ~filter ?prompt ~map_result:return ()
     else
       failwith "Lwt_read_line.read_password: not running in a terminal"
 
-  let read_keyword ?history ?(case_sensitive=false) ?mode ~prompt ~values () =
+  let read_keyword ?history ?(case_sensitive=false) ?mode ?(prompt=default_prompt) ~values () =
     let compare = if case_sensitive then Text.compare else Text.icompare in
     let rec assoc key = function
       | [] -> None
@@ -1371,6 +1357,7 @@ struct
             assoc key l
     in
     if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then
+      let words = List.fold_left (fun acc (key, value) -> TextSet.add key acc) TextSet.empty values in
       let filter state = function
         | Accept_line ->
             let text = Engine.all_input state.engine in
@@ -1385,8 +1372,10 @@ struct
             return value
         | None ->
             assert false
+      and complete (before, after) =
+        return (complete "" before after words)
       in
-      make ?history ?mode ~prompt ~filter ~map_result ()
+      make ?history ?mode ~prompt ~filter ~map_result ~complete ()
     else
       fake (lwt () = write stdout (strip_styles (make_prompt prompt)) in
             lwt txt = Lwt_text.read_line stdin in
@@ -1396,27 +1385,29 @@ struct
               | None ->
                   fail (Failure "Lwt_read_line.read_keyword: invalid input"))
 
-  let read_yes_no ?history ?mode ~prompt () =
-    read_keyword ?history ?mode ~prompt ~values:[("yes", true); ("no", false)] ()
+  let read_yes_no ?history ?mode ?prompt () =
+    read_keyword ?history ?mode ?prompt ~values:[("yes", true); ("no", false)] ()
 end
 
 (* +-----------------------------------------------------------------+
    | Simple calls                                                    |
    +-----------------------------------------------------------------+ *)
 
-let read_line ?history ?complete ?clipboard ?mode ~prompt () =
+let default_prompt = [Text "# "]
+
+let read_line ?history ?complete ?clipboard ?mode ?(prompt=default_prompt) () =
   Control.result
     (Control.read_line ?history ?complete ?clipboard ?mode ~prompt:(fun _ -> React.S.const prompt) ())
 
-let read_password ?clipboard ?style ~prompt () =
+let read_password ?clipboard ?style ?(prompt=default_prompt) () =
   Control.result
     (Control.read_password ?clipboard ?style ~prompt:(fun _ -> React.S.const prompt) ())
 
-let read_keyword ?history ?case_sensitive ?mode ~prompt ~values () =
+let read_keyword ?history ?case_sensitive ?mode ?(prompt=default_prompt) ~values () =
   Control.result
     (Control.read_keyword ?history ?case_sensitive ?mode ~prompt:(fun _ -> React.S.const prompt) ~values ())
 
-let read_yes_no ?history ?mode ~prompt () =
+let read_yes_no ?history ?mode ?(prompt=default_prompt) () =
   Control.result
     (Control.read_yes_no ?history ?mode ~prompt:(fun _ -> React.S.const prompt) ())
 

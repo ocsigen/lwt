@@ -124,13 +124,15 @@ val read_line :
   ?complete : completion ->
   ?clipboard : clipboard ->
   ?mode : completion_mode ->
-  prompt : prompt -> unit -> Text.t Lwt.t
-  (** [readline ?history ?complete ?mode ~prompt ()] inputs some text
+  ?prompt : prompt -> unit -> Text.t Lwt.t
+  (** [readline ?history ?complete ?mode ?prompt ()] inputs some text
       from the user. If input is not a terminal, it defaults to
       [Lwt_text.read_line Lwt_text.stdin].
 
       If @param mode contains the current completion mode. It default
-      to [`real_time]. *)
+      to [`real_time].
+
+      @param prompt default to [Lwt_term.Text "# "] *)
 
 type password_style = [ `empty | `clear | `text of Text.t ]
     (** Style which indicate how the password is echoed to the user:
@@ -142,7 +144,7 @@ type password_style = [ `empty | `clear | `text of Text.t ]
 val read_password :
   ?clipboard : clipboard ->
   ?style : password_style ->
-  prompt : prompt -> unit -> Text.t Lwt.t
+  ?prompt : prompt -> unit -> Text.t Lwt.t
   (** [read_password ?clipboard ?clear ~prompt ()] inputs a password
       from the user. This function fails if input is not a terminal.
 
@@ -153,7 +155,7 @@ val read_keyword :
   ?history : history ->
   ?case_sensitive : bool ->
   ?mode : completion_mode ->
-  prompt : prompt ->
+  ?prompt : prompt ->
   values :  (Text.t * 'value) list -> unit -> 'value Lwt.t
   (** [read_keyword ?history ?case_sensitive ?mode ~prompt ~keywords
       ()] reads one word which is a member of [words]. And returns
@@ -161,7 +163,7 @@ val read_keyword :
 
       [case_sensitive] default to [false]. *)
 
-val read_yes_no : ?history : history -> ?mode : completion_mode -> prompt : prompt -> unit -> bool Lwt.t
+val read_yes_no : ?history : history -> ?mode : completion_mode -> ?prompt : prompt -> unit -> bool Lwt.t
   (** [read_yes_no ?history ?dynamic prompt ()] is the same as:
 
       {[
@@ -427,7 +429,7 @@ module Control : sig
     ?map_text : (Text.t -> Text.t) ->
     ?filter : (state -> Command.t -> Command.t Lwt.t) ->
     map_result : (Text.t -> 'a Lwt.t) ->
-    prompt : prompt -> unit -> 'a t
+    ?prompt : prompt -> unit -> 'a t
     (** Creates a new read-line instance with the given
         parameters. [filter] is called to handle commands. You can
         return {!Command.Nop} to drop a command. *)
@@ -439,22 +441,22 @@ module Control : sig
     ?complete : completion ->
     ?clipboard : clipboard ->
     ?mode : completion_mode ->
-    prompt : prompt -> unit -> Text.t t
+    ?prompt : prompt -> unit -> Text.t t
 
   val read_password :
     ?clipboard : clipboard ->
     ?style : password_style ->
-    prompt : prompt -> unit -> Text.t t
+    ?prompt : prompt -> unit -> Text.t t
 
   val read_keyword :
     ?history : history ->
     ?case_sensitive : bool ->
     ?mode : completion_mode ->
-    prompt : prompt ->
+    ?prompt : prompt ->
     values :  (Text.t * 'value) list -> unit -> 'value t
 
   val read_yes_no :
     ?history : history ->
     ?mode : completion_mode ->
-    prompt : prompt -> unit -> bool t
+    ?prompt : prompt -> unit -> bool t
 end
