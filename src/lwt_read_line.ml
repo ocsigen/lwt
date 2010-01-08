@@ -1047,9 +1047,35 @@ struct
                      push_event (Ev_box Terminal.Box_none)
                  | { Engine.mode = Engine.Edition edition_state } ->
                      completion_thread := begin
-                       lwt { comp_words = words } = complete edition_state in
-                       push_event (Ev_box(Terminal.Box_words(words, 0)));
-                       return ()
+                       let thread = complete edition_state >|= fun x -> `Result x in
+                       let start_date = Unix.time () in
+                       (* Animation to make the user happy: *)
+                       let rec loop anim =
+                         choose [thread; Lwt_unix.sleep 0.1 >> return `Timeout] >>= function
+                           | `Result { comp_words = words } ->
+                               push_event (Ev_box(Terminal.Box_words(words, 0)));
+                               return ()
+                           | `Timeout ->
+                               let delta = truncate (Unix.time () -. start_date) in
+                               let seconds = delta mod 60
+                               and minutes = (delta / 60) mod 60
+                               and hours = (delta / (60 * 60)) mod 24
+                               and days = (delta / (60 * 60 * 24)) in
+                               let message =
+                                 if days = 0 then
+                                   Printf.sprintf "working %s %02d:%02d:%02d" (List.hd anim) hours minutes seconds
+                                 else if days = 1 then
+                                   Printf.sprintf "working %s 1 day %02d:%02d:%02d" (List.hd anim) hours minutes seconds
+                                 else
+                                   Printf.sprintf "working %s %d days %02d:%02d:%02d" (List.hd anim) days hours minutes seconds
+                               in
+                               push_event (Ev_box(Terminal.Box_message message));
+                               loop (List.tl anim)
+                       in
+                       let rec anim = "─" :: "\\" :: "│" :: "/" :: anim in
+                       let thread = loop anim in
+                       Lwt.on_cancel thread (fun () -> push_event (Ev_box Terminal.Box_empty));
+                       thread
                      end)
               engine_state
         | `classic | `none ->
