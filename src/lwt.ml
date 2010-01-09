@@ -27,16 +27,28 @@ exception Canceled
 type +'a t
 type -'a u
 
+type cancel_list
+  (* Type of lists of threads, with possibly different types. With
+     existential types, it would be:
+
+     {[
+       type cancel_list = (exists 'a. 'a t) list
+     ]}
+  *)
+
+external make_cancel_list : 'a t list -> cancel_list = "%identity"
+external cast_cancel_list : cancel_list -> 'a t list = "%identity"
+
 (* Reason for a thread to be a sleeping thread: *)
 type sleep_reason =
   | Task
       (* It is a cancealable task *)
   | Wait
       (* It is a thread created with [wait] *)
-  | Temp of (unit -> unit)
-      (* [Temp cancel] is a temporary thread that is meant to be later
-         connected to another one. [cancel] is the function used to
-         cancel the thread. *)
+  | Temp of cancel_list
+      (* [Temp threads] is a temporary thread that is meant to be
+         later connected to another one. [threads] is the list of
+         threads to cancel when this one is cancelled. *)
 
 and 'a thread_state =
   | Return of 'a
@@ -92,12 +104,12 @@ let restart t state caller =
 let wakeup t v = restart t (Return v) "wakeup"
 let wakeup_exn t e = restart t (Fail e) "wakeup_exn"
 
-let cancel t =
+let rec cancel t =
   match !(repr t) with
     | Sleep(Task, _) ->
         wakeup_exn (wakener (thread_repr t)) Canceled
-    | Sleep(Temp f, _) ->
-        f ()
+    | Sleep(Temp l, _) ->
+        List.iter cancel (cast_cancel_list l)
     | _ ->
         ()
 
@@ -133,7 +145,7 @@ let rec connect t1 t2 =
 
 let return v = thread (ref (Return v))
 let fail e = try raise e with e -> thread (ref (Fail e))
-let temp f = thread (ref (Sleep(Temp f, Lwt_sequence.create ())))
+let temp l = thread (ref (Sleep(Temp(make_cancel_list l), Lwt_sequence.create ())))
 let wait _ =
   let t = ref (Sleep(Wait, Lwt_sequence.create ())) in (thread t, wakener t)
 let task _ =
@@ -174,7 +186,7 @@ let rec bind t f =
     | Fail e ->
         fail e
     | Sleep(_, waiters) ->
-        let res = temp (fun _ -> cancel t) in
+        let res = temp [t] in
         add_waiter waiters (fun x -> connect res (bind x (apply f)));
         res
     | Repr _ ->
@@ -193,7 +205,7 @@ let rec catch_rec t f =
     | Fail e ->
         f e
     | Sleep(_, waiters) ->
-        let res = temp (fun _ -> cancel t) in
+        let res = temp [t] in
         add_waiter waiters (fun x -> connect res (catch_rec x (apply f)));
         res
     | Repr _ ->
@@ -208,7 +220,7 @@ let rec try_bind_rec t f g =
     | Fail e ->
         apply g e
     | Sleep(_, waiters) ->
-        let res = temp (fun _ -> cancel t) in
+        let res = temp [t] in
         add_waiter waiters (fun x -> connect res (try_bind_rec x (apply f) g));
         res
     | Repr _ ->
@@ -256,7 +268,7 @@ let choose l =
   if ready > 0 then
     nth_ready l (Random.int ready)
   else begin
-    let res = temp (fun _ -> List.iter cancel l) in
+    let res = temp l in
     (* The list of nodes used for the waiter: *)
     let nodes = ref [] in
     let clear t =
@@ -281,7 +293,7 @@ let select l =
   if ready > 0 then
     nth_ready l (Random.int ready)
   else begin
-    let res = temp (fun _ -> List.iter cancel l) in
+    let res = temp l in
     let nodes = ref [] in
     let clear t =
       List.iter Lwt_sequence.remove !nodes;
@@ -300,7 +312,7 @@ let select l =
   end
 
 let join l =
-  let res = temp (fun _ -> List.iter cancel l)
+  let res = temp l
     (* Number of threads still sleeping: *)
   and sleeping = ref 0
     (* The list of nodes used for the waiter: *)
