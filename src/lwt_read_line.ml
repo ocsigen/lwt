@@ -1036,6 +1036,13 @@ struct
 
     (*** Box for `real_time mode ***)
 
+    (* Contains the last suggested completion: *)
+    let last_completion = ref None in
+
+    (* If [true], [update_box] will generate an [Ev_completion] when
+       completion is done, instead of an [Ev_box]. *)
+    let want_completion = ref false in
+
     let update_box =
       match mode with
         | `real_time ->
@@ -1046,14 +1053,20 @@ struct
                  | { Engine.mode = Engine.Search _ } ->
                      push_event (Ev_box Terminal.Box_none)
                  | { Engine.mode = Engine.Edition edition_state } ->
+                     last_completion := None;
+                     want_completion := false;
                      completion_thread := begin
                        let thread = complete edition_state >|= fun x -> `Result x in
                        let start_date = Unix.time () in
                        (* Animation to make the user happy: *)
                        let rec loop anim =
                          choose [thread; Lwt_unix.sleep 0.1 >> return `Timeout] >>= function
-                           | `Result { comp_words = words } ->
-                               push_event (Ev_box(Terminal.Box_words(words, 0)));
+                           | `Result comp ->
+                               last_completion := Some comp.comp_state;
+                               if !want_completion then
+                                 push_event (Ev_completion comp)
+                               else
+                                 push_event (Ev_box(Terminal.Box_words(comp.comp_words, 0)));
                                return ()
                            | `Timeout ->
                                let delta = truncate (Unix.time () -. start_date) in
@@ -1202,8 +1215,9 @@ struct
             loop state
 
       | Ev_command command ->
-          (* Cancel completion on user input: *)
-          Lwt.cancel !completion_thread;
+          if not (command = Complete && mode = `real_time) then
+            (* Cancel completion on user input: *)
+            Lwt.cancel !completion_thread;
 
           filter state command >>= function
             | Nop ->
@@ -1242,16 +1256,25 @@ struct
                 end
 
             | Complete ->
-                if mode <> `none then begin
-                  let state = { state with engine = Engine.reset state.engine } in
-                  completion_thread := begin
-                    lwt comp = complete (Engine.edition_state state.engine) in
-                    push_event (Ev_completion comp);
-                    return ()
-                  end;
-                  loop state
-                end else
-                  loop state
+                begin match mode with
+                  | `none ->
+                      loop state
+                  | `classic ->
+                      let state = { state with engine = Engine.reset state.engine } in
+                      completion_thread := begin
+                        lwt comp = complete (Engine.edition_state state.engine) in
+                        push_event (Ev_completion comp);
+                        return ()
+                      end;
+                      loop state
+                  | `real_time ->
+                      match !last_completion with
+                        | Some comp_state ->
+                            loop { state with engine = { state.engine with Engine.mode = Engine.Edition comp_state } }
+                        | None ->
+                            want_completion := true;
+                            loop state
+                end
 
             | Meta_complete ->
                 if mode = `real_time then begin
