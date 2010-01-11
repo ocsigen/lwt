@@ -1,0 +1,3 @@
+- file test_MODULE.ml contains tests for MODULE
+- file main_LIBRARY.ml containts all tests for the library LIBRARY
+- test.ml and test.mli contains helpers for defining tests

@@ -206,6 +206,9 @@ let _ =
         Pathname.define_context "src" [ "src/private" ];
         Pathname.define_context "src/private" [ "src" ];
 
+        (* Tests can see everything *)
+        Pathname.define_context "tests" [ "src"; "src/private" ];
+
         (* +---------------------------------------------------------+
            | Virtual targets                                         |
            +---------------------------------------------------------+ *)
@@ -229,6 +232,15 @@ let _ =
         virtual_rule "all" & "META" :: if have_native then byte @ native else byte;
         virtual_rule "byte" & "META" :: byte;
         virtual_rule "native" & "META" :: native;
+
+        let tests = ["lwt"] in
+
+        let tests = List.map (if have_native then
+                                sprintf "tests/main_%s.native"
+                              else
+                                sprintf "tests/main_%s.byte") tests in
+
+        virtual_rule "test_programs" & tests;
 
         (* +---------------------------------------------------------+
            | Internal syntaxes                                       |

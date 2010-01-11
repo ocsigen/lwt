@@ -13,14 +13,14 @@
 <src/lwt_ocaml_completion.ml>: pkg_findlib
 <src/toplevel.ml>: use_compiler_libs
 <src/toplevel.*>: pkg_unix, pkg_findlib, pkg_react, pkg_text
+<tests/*>: pkg_react, pkg_unix, use_unix_stubs
 
 # +------------------------------------------------------------------+
 # | Syntax extensions                                                |
 # +------------------------------------------------------------------+
 
 <syntax/pa_{lwt,log}.ml>: syntax_camlp4o, pkg_camlp4, pkg_camlp4.quotations.o, pkg_camlp4.extend
-<src/*.ml>: syntax_camlp4o, pkg_camlp4, pa_lwt, pa_log
-<src/lwt_io.ml>: pkg_camlp4.macro
+<{src,tests}/*.ml>: syntax_camlp4o, pkg_camlp4, pa_lwt, pa_log
 
 # +------------------------------------------------------------------+
 # | C stubs                                                          |

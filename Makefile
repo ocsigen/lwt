@@ -62,6 +62,9 @@ native:
 
 opt: native
 
+tests:
+	$(OCAMLBUILD) test_programs
+
 doc:
 	$(OCAMLBUILD) $(DOC)
 
@@ -96,4 +99,4 @@ clean:
 	$(MAKE) -C examples clean
 
 
-.PHONY: sanitize all byte native opt examples install uninstall clean
+.PHONY: sanitize all byte native opt examples install uninstall clean tests
