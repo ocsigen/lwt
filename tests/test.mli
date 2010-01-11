@@ -25,16 +25,16 @@
 type t
   (** Type of a test *)
 
-type pack
-  (** Type of a series of tests *)
+type suite
+  (** Type of a suite of tests *)
 
 val test : name : string -> run : (unit -> bool Lwt.t) -> t
   (** Defines a test. [run] must returns [true] if the test succeeded
       and [false] otherwise. *)
 
-val pack : name : string -> tests : t list -> pack
-  (** Defines a pack of tests *)
+val suite : name : string -> tests : t list -> suite
+  (** Defines a suite of tests *)
 
-val run : name : string -> packs : pack list -> unit
+val run : name : string -> suites : suite list -> unit
   (** Run all the given tests and exit the program with an exit code
       of [0] if all tests succeeded and with [1] otherwise. *)

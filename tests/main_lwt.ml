@@ -20,4 +20,8 @@
  * 02111-1307, USA.
  *)
 
-Test.run "lwt" [Test_lwt_stream.suite]
+Test.run "lwt" [
+  Test_lwt.suite;
+  Test_lwt_stream.suite;
+  Test_lwt_util.suite;
+]

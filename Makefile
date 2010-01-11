@@ -102,4 +102,4 @@ clean:
 	$(MAKE) -C examples clean
 
 
-.PHONY: sanitize all byte native opt examples install uninstall clean
+.PHONY: sanitize all byte native opt examples install uninstall clean tests
