@@ -224,6 +224,14 @@ module Command : sig
   val to_string : t -> string
     (** [to_string cmd] returns a string representation of a command *)
 
+  val of_string : string -> t
+    (** [of_string cld] tries to convert a command name to a
+        command. @raise Failure if it fails. *)
+
+  val names : (t * string) list
+    (** [names] is the list of all commands (except [Char ch]) with
+        their name. *)
+
   val of_key : Lwt_term.key -> t
     (** [of_key key] returns the command to which a key is mapped. *)
 end

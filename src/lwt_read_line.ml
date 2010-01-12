@@ -132,79 +132,68 @@ struct
     | Complete_first
     | Complete_last
 
+  let names = [
+    (Nop, "nop");
+    (Backward_delete_char, "backward-delete-char");
+    (Forward_delete_char, "forward-delete-char");
+    (Beginning_of_line, "beginning-of-line");
+    (End_of_line, "end-of-line");
+    (Complete, "complete");
+    (Meta_complete, "meta-complete");
+    (Kill_line, "kill-line");
+    (Accept_line, "accept-line");
+    (Backward_delete_word, "backward-delete-word");
+    (Forward_delete_word, "forward-delete-word");
+    (History_next, "history-next");
+    (History_previous, "history-previous");
+    (Break, "break");
+    (Clear_screen, "clear-screen");
+    (Insert, "insert");
+    (Refresh, "refresh");
+    (Backward_char, "backward-char");
+    (Forward_char, "forward-char");
+    (Set_mark, "set-mark");
+    (Paste, "paste");
+    (Copy, "copy");
+    (Cut, "cut");
+    (Uppercase, "uppercase");
+    (Lowercase, "lowercase");
+    (Capitalize, "capitalize");
+    (Backward_word, "backward-word");
+    (Forward_word, "forward-word");
+    (Complete_left, "complete-left");
+    (Complete_right, "complete-right");
+    (Complete_up, "complete-up");
+    (Complete_down, "complete-down");
+    (Backward_search, "backward-search");
+    (Complete_first, "complete-first");
+    (Complete_last, "complete-last");
+  ]
+
   let to_string = function
     | Char ch ->
         Printf.sprintf "Char %S" ch
-    | Nop ->
-        "nop"
-    | Backward_delete_char ->
-        "backward-delete-char"
-    | Forward_delete_char ->
-        "forward-delete-char"
-    | Beginning_of_line ->
-        "beginning-of-line"
-    | End_of_line ->
-        "end-of-line"
-    | Complete ->
-        "complete"
-    | Meta_complete ->
-        "meta-complete"
-    | Kill_line ->
-        "kill-line"
-    | Accept_line ->
-        "accept-line"
-    | Backward_delete_word ->
-        "backward-delete-word"
-    | Forward_delete_word ->
-        "forward-delete-word"
-    | History_next ->
-        "history-next"
-    | History_previous ->
-        "history-previous"
-    | Break ->
-        "break"
-    | Clear_screen ->
-        "clear-screen"
-    | Insert ->
-        "insert"
-    | Refresh ->
-        "refresh"
-    | Backward_char ->
-        "backward-char"
-    | Forward_char ->
-        "forward-char"
-    | Set_mark ->
-        "set-mark"
-    | Paste ->
-        "paste"
-    | Copy ->
-        "copy"
-    | Cut ->
-        "cut"
-    | Uppercase ->
-        "uppercase"
-    | Lowercase ->
-        "lowercase"
-    | Capitalize ->
-        "capitalize"
-    | Backward_word ->
-        "backward-word"
-    | Forward_word ->
-        "forward-word"
-    | Complete_left ->
-        "complete-left"
-    | Complete_right ->
-        "complete-right"
-    | Complete_up ->
-        "complete-up"
-    | Complete_down ->
-        "complete-down"
-    | Backward_search ->
-        "backward-search"
-    | Complete_first ->
-        "complete-first"
-    | Complete_last ->
-        "complete-last"
+    | command ->
+        let rec search = function
+          | (command', name) :: _ when command = command' ->
+              name
+          | _ :: rest ->
+              search rest
+          | [] ->
+              assert false
+        in
+        search names
+
+  let of_string name =
+    let rec search = function
+      | (command, name') :: _ when name = name' ->
+          command
+      | _ :: rest ->
+          search rest
+      | [] ->
+          failwith "Lwt_read_line.Command.of_stirng: cannot convert string to command"
+    in
+    search names
 
   let of_key = function
     | Key_up -> History_previous
