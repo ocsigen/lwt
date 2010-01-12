@@ -193,6 +193,7 @@ module Command : sig
     | Complete
     | Meta_complete
     | Kill_line
+    | Backward_kill_line
     | Accept_line
     | Backward_delete_word
     | Forward_delete_word

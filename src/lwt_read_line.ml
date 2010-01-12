@@ -104,6 +104,7 @@ struct
     | Complete
     | Meta_complete
     | Kill_line
+    | Backward_kill_line
     | Accept_line
     | Backward_delete_word
     | Forward_delete_word
@@ -141,6 +142,7 @@ struct
     (Complete, "complete");
     (Meta_complete, "meta-complete");
     (Kill_line, "kill-line");
+    (Backward_kill_line, "backward-kill-line");
     (Accept_line, "accept-line");
     (Backward_delete_word, "backward-delete-word");
     (Forward_delete_word, "forward-delete-word");
@@ -219,6 +221,7 @@ struct
     | Key_control 'n' -> Backward_char
     | Key_control 'p' -> Forward_char
     | Key_control 'r' -> Backward_search
+    | Key_control 'u' -> Backward_kill_line
     | Key_control 'w' -> Cut
     | Key_control 'y' -> Paste
     | Key_control '?' -> Backward_delete_char
@@ -439,6 +442,10 @@ struct
             | Kill_line ->
                 clipboard#set after;
                 edition (before, "")
+
+            | Backward_kill_line ->
+                clipboard#set before;
+                edition ("", after)
 
             | History_previous ->
                 begin match engine_state.history with
