@@ -142,7 +142,7 @@ let rec close_rec recursive node = match node with
            parent.merge_children <- List.filter ((!=) node) parent.merge_children)
         merge.merge_parents;
       if recursive then
-        Lwt_util.iter (close_rec true) merge.merge_children
+        Lwt_list.iter_p (close_rec true) merge.merge_children
       else
         return ()
 
@@ -249,7 +249,7 @@ let channel ?level ?(template="$(name): $(message)") ~close_mode ~channel () =
     ~output:(fun level lines ->
                Lwt_io.atomic begin fun oc ->
                  let buf = Buffer.create 42 in
-                 lwt () = Lwt_util.iter_serial begin fun line ->
+                 lwt () = Lwt_list.iter_s begin fun line ->
                    Buffer.clear buf;
                    render ~buffer:buf ~template ~level ~message:line;
                    Buffer.add_char buf '\n';
@@ -465,7 +465,7 @@ let rec log_rec node level lines = match node with
         return ()
   | Merge merge ->
       if level >= merge.merge_level then
-        Lwt_util.iter (fun node -> log_rec node level lines) merge.merge_children
+        Lwt_list.iter_p (fun node -> log_rec node level lines) merge.merge_children
       else
         return ()
 

@@ -1476,7 +1476,7 @@ let add_entry line history =
 let save_history name history =
   with_file ~mode:Lwt_io.output name
     (fun oc ->
-       Lwt_util.iter_serial
+       Lwt_list.iter_s
          (fun line -> write oc line >> write_char oc "\000")
          history)
 

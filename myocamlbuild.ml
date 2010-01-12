@@ -321,7 +321,7 @@ let _ =
           (fun _ _ -> Echo(List.map (sprintf "src/%s\n")
                              (* Filter deprecated modules: *)
                              (List.filter (function
-                                             | "Lwt_chan" -> false
+                                             | "Lwt_chan" | "Lwt_util" -> false
                                              | s -> not (String.is_prefix "private" s))
                                 (List.concat (List.map string_list_of_file deps)))
                            @ ["src/Lwt_top\n"; "syntax/Pa_lwt\n"; "syntax/Pa_log"],
