@@ -388,6 +388,38 @@ struct
             | Backward_char ->
                 maybe_set_cursor (Text.prev sel.sel_cursor)
 
+            | Forward_word ->
+                let rec skip ptr =
+                  match Text.next ptr with
+                    | Some(ch, ptr) ->
+                        if Text.is_alnum ch then find ptr else skip ptr
+                    | None ->
+                        ptr
+                and find ptr =
+                  match Text.next ptr with
+                    | Some(ch, ptr') ->
+                        if Text.is_alnum ch then find ptr' else ptr
+                    | None ->
+                        ptr
+                in
+                selection { sel with sel_cursor = skip sel.sel_cursor }
+
+            | Backward_word ->
+                let rec skip ptr =
+                  match Text.prev ptr with
+                    | Some(ch, ptr) ->
+                        if Text.is_alnum ch then find ptr else skip ptr
+                    | None ->
+                        ptr
+                and find ptr =
+                  match Text.prev ptr with
+                    | Some(ch, ptr') ->
+                        if Text.is_alnum ch then find ptr' else ptr
+                    | None ->
+                        ptr
+                in
+                selection { sel with sel_cursor = skip sel.sel_cursor }
+
             | Beginning_of_line ->
                 selection { sel with sel_cursor =  Text.pointer_l sel.sel_text }
 
