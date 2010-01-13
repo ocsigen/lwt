@@ -544,12 +544,11 @@ struct
 
       | Search st ->
           let lookup word history =
-            let word = Text.lower word in
             let rec aux history = match history with
               | [] ->
                   []
               | phrase :: rest ->
-                  if Text.contains (Text.lower phrase) word then
+                  if Text.contains phrase word then
                     history
                   else
                     aux rest
