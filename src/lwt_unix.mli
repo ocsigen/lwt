@@ -311,12 +311,12 @@ type io_vector = {
 val io_vector : buffer : string -> offset : int -> length : int -> io_vector
   (** Creates an io-vector *)
 
-val recv_msg : socket : file_descr -> io_vectors : io_vector list -> (int * file_descr list) Lwt.t
+val recv_msg : socket : file_descr -> io_vectors : io_vector list -> (int * Unix.file_descr list) Lwt.t
   (** [recv_msg ~socket ~io_vectors] receives data into a list of
       io-vectors, plus any file-descriptors that may accompany the
       message. *)
 
-val send_msg : socket : file_descr -> io_vectors : io_vector list -> fds : file_descr list -> int Lwt.t
+val send_msg : socket : file_descr -> io_vectors : io_vector list -> fds : Unix.file_descr list -> int Lwt.t
   (** [send_msg ~socket ~io_vectors ~fds] sends data from a list of
       io-vectors, accompanied with a list of file-descriptor. *)
 

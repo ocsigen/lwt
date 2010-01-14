@@ -337,12 +337,11 @@ let recv_msg ~socket ~io_vectors =
   let n_iovs = List.length io_vectors in
   wrap_syscall inputs socket
     (fun () ->
-       let n, fds = lwt_unix_recv_msg socket.fd n_iovs io_vectors in
-       (n, List.map mk_ch fds))
+       lwt_unix_recv_msg socket.fd n_iovs io_vectors)
 
 let send_msg ~socket ~io_vectors ~fds =
   check_io_vectors "Lwt_unix.send_msg" io_vectors;
-  let n_iovs = List.length io_vectors and n_fds = List.length fds and fds = List.map unix_file_descr fds in
+  let n_iovs = List.length io_vectors and n_fds = List.length fds in
   wrap_syscall outputs socket
     (fun () ->
        lwt_unix_send_msg socket.fd n_iovs io_vectors n_fds fds)
