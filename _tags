@@ -38,5 +38,5 @@
 <src/lwt_glib.cm{x,}a>: use_glib_stubs, use_C_glib
 
 # C stubs use C libraries:
-<src/liblwt_glib_stubs.*>: use_C_glib
-<src/lwt_glib_stubs.*>: use_C_glib
+<src/stubs/liblwt_glib_stubs.*>: use_C_glib
+<src/stubs/lwt_glib_stubs.*>: use_C_glib

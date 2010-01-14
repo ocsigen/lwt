@@ -166,7 +166,7 @@ let pkg_config flags package =
 
 let define_stubs name =
   let tag = sprintf "use_%s_stubs" name in
-  dep ["link"; "ocaml"; tag] [sprintf "src/liblwt_%s_stubs.a" name];
+  dep ["link"; "ocaml"; tag] [sprintf "src/stubs/liblwt_%s_stubs.a" name];
   flag ["link"; "library"; "ocaml"; tag] & S[A"-cclib"; A(sprintf "-llwt_%s_stubs" name)];
   flag ["link"; "library"; "ocaml"; "byte"; tag] & S[A"-dllib"; A(sprintf "-llwt_%s_stubs" name)]
 

@@ -1,7 +1,7 @@
 /* Lightweight thread library for Objective Caml
  * http://www.ocsigen.org/lwt
  * Module Lwt_unix_stubs
- * Copyright (C) 2009 Jérémie Dimino
+ * Copyright (C) 2009-2010 Jérémie Dimino
  *               2009 Mauricio Fernandez
  *
  * This program is free software; you can redistribute it and/or modify
