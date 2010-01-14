@@ -29,6 +29,10 @@
 #include <caml/signals.h>
 #include <caml/config.h>
 #include <signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <errno.h>
+#include <string.h>
 
 /* +-----------------------------------------------------------------+
    | Read/write                                                      |
@@ -59,12 +63,107 @@ value lwt_unix_read(value fd, value buf, value ofs, value len)
 }
 
 /* +-----------------------------------------------------------------+
+   | {recv/send}_msg                                                 |
+   +-----------------------------------------------------------------+ */
+
+/* Convert a caml list of io-vectors into a C array io io-vector
+   structures */
+static void store_iovs(struct iovec *iovs, value iovs_val)
+{
+  CAMLparam0();
+  CAMLlocal2(list, x);
+  for(list = iovs_val; Is_block(list); list = Field(list, 1), iovs++) {
+    x = Field(list, 0);
+    iovs->iov_base = &Byte(String_val(Field(x, 0)), Long_val(Field(x, 1)));
+    iovs->iov_len = Long_val(Field(x, 2));
+  }
+  CAMLreturn0;
+}
+
+CAMLprim value lwt_unix_recv_msg(value sock_val, value n_iovs_val, value iovs_val)
+{
+  CAMLparam3(sock_val, n_iovs_val, iovs_val);
+  CAMLlocal3(list, result, x);
+
+  int n_iovs = Int_val(n_iovs_val);
+  struct iovec iovs[n_iovs];
+  store_iovs(iovs, iovs_val);
+
+  struct msghdr msg;
+  memset(&msg, 0, sizeof(msg));
+  msg.msg_iov = iovs;
+  msg.msg_iovlen = n_iovs;
+  msg.msg_controllen = CMSG_SPACE(256 * sizeof(int));
+  msg.msg_control = alloca(msg.msg_controllen);
+  memset(msg.msg_control, 0, msg.msg_controllen);
+
+  int ret = recvmsg(Int_val(sock_val), &msg, 0);
+  if (ret == -1) uerror("lwt_unix_recv_msg", Nothing);
+
+  struct cmsghdr *cm;
+  list = Val_int(0);
+  for (cm = CMSG_FIRSTHDR(&msg); cm; cm = CMSG_NXTHDR(&msg, cm))
+    if (cm->cmsg_level == SOL_SOCKET && cm->cmsg_type == SCM_RIGHTS) {
+      int *fds = (int*)CMSG_DATA(cm);
+      int nfds = (cm->cmsg_len - CMSG_LEN(0)) / sizeof(int);
+      int i;
+      for(i = nfds - 1; i >= 0; i--) {
+        x = caml_alloc_tuple(2);
+        Store_field(x, 0, Val_int(fds[i]));
+        Store_field(x, 1, list);
+        list = x;
+      };
+      break;
+    };
+
+  result = caml_alloc_tuple(2);
+  Store_field(result, 0, Val_int(ret));
+  Store_field(result, 1, list);
+  CAMLreturn(result);
+}
+
+CAMLprim value lwt_unix_send_msg(value sock_val, value n_iovs_val, value iovs_val, value n_fds_val, value fds_val)
+{
+  CAMLparam5(sock_val, n_iovs_val, iovs_val, n_fds_val, fds_val);
+  CAMLlocal1(x);
+
+  int n_iovs = Int_val(n_iovs_val);
+  struct iovec iovs[n_iovs];
+  store_iovs(iovs, iovs_val);
+
+  struct msghdr msg;
+  memset(&msg, 0, sizeof(msg));
+  msg.msg_iov = iovs;
+  msg.msg_iovlen = n_iovs;
+
+  int n_fds = Int_val(n_fds_val);
+  if (n_fds > 0) {
+    msg.msg_controllen = CMSG_SPACE(n_fds * sizeof(int));
+    msg.msg_control = alloca(msg.msg_controllen);
+    memset(msg.msg_control, 0, msg.msg_controllen);
+
+    struct cmsghdr *cm;
+    cm = CMSG_FIRSTHDR(&msg);
+    cm->cmsg_level = SOL_SOCKET;
+    cm->cmsg_type = SCM_RIGHTS;
+    cm->cmsg_len = CMSG_LEN(n_fds * sizeof(int));
+
+    int *fds = (int*)CMSG_DATA(cm);
+    for(x = fds_val; Is_block(x); x = Field(x, 1), fds++)
+      *fds = Int_val(Field(x, 0));
+  };
+
+  int ret = sendmsg(Int_val(sock_val), &msg, 0);
+  if (ret == -1) uerror("lwt_unix_send_msg", Nothing);
+  CAMLreturn(Val_int(ret));
+}
+
+/* +-----------------------------------------------------------------+
    | Select                                                          |
    +-----------------------------------------------------------------+ */
 
 #ifdef HAS_SELECT
 
-#include <sys/types.h>
 #include <sys/time.h>
 #ifdef HAS_SYS_SELECT_H
 #include <sys/select.h>
@@ -233,7 +332,6 @@ value lwt_unix_sigwinch()
 
 /* Some code duplicated from OCaml's otherlibs/unix/wait.c */
 
-#include <sys/types.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/wait.h>

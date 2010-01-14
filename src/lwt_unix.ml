@@ -310,6 +310,43 @@ let wait_write ch =
     else
       register_action outputs ch ignore
 
+type io_vector = {
+  iov_buffer : string;
+  iov_offset : int;
+  iov_length : int;
+}
+
+let io_vector ~buffer ~offset ~length = {
+  iov_buffer = buffer;
+  iov_offset = offset;
+  iov_length = length;
+}
+
+external lwt_unix_recv_msg : Unix.file_descr -> int -> io_vector list -> int * Unix.file_descr list = "lwt_unix_recv_msg"
+external lwt_unix_send_msg : Unix.file_descr -> int -> io_vector list -> int -> Unix.file_descr list -> int = "lwt_unix_send_msg"
+
+let check_io_vectors func_name iovs =
+  List.iter (fun iov ->
+               if iov.iov_offset < 0
+                 || iov.iov_length < 0
+                 || iov.iov_offset > String.length iov.iov_buffer - iov.iov_length then
+                   invalid_arg func_name) iovs
+
+let recv_msg ~socket ~io_vectors =
+  check_io_vectors "Lwt_unix.recv_msg" io_vectors;
+  let n_iovs = List.length io_vectors in
+  wrap_syscall inputs socket
+    (fun () ->
+       let n, fds = lwt_unix_recv_msg socket.fd n_iovs io_vectors in
+       (n, List.map mk_ch fds))
+
+let send_msg ~socket ~io_vectors ~fds =
+  check_io_vectors "Lwt_unix.send_msg" io_vectors;
+  let n_iovs = List.length io_vectors and n_fds = List.length fds and fds = List.map unix_file_descr fds in
+  wrap_syscall outputs socket
+    (fun () ->
+       lwt_unix_send_msg socket.fd n_iovs io_vectors n_fds fds)
+
 let pipe () =
   let (out_fd, in_fd) = Unix.pipe() in
   (mk_ch out_fd, mk_ch in_fd)

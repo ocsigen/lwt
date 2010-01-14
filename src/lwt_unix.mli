@@ -188,6 +188,8 @@ val wait_write : file_descr -> unit Lwt.t
   (** waits (without blocking other threads) until it is possible to
       write on the file descriptor *)
 
+(** {8 Miscellaneous} *)
+
 (** {8 Pipes} *)
 
 val pipe : unit -> file_descr * file_descr
@@ -286,6 +288,27 @@ val shutdown : file_descr -> Unix.shutdown_command -> unit
 
 val setsockopt : file_descr -> Unix.socket_bool_option -> bool -> unit
   (** Wrapper for [Unix.setsockopt] *)
+
+(** {8 receive/send messages} *)
+
+(** An io-vector. Used by {!recv_msg} and {!send_msg}. *)
+type io_vector = {
+  iov_buffer : string;
+  iov_offset : int;
+  iov_length : int;
+}
+
+val io_vector : buffer : string -> offset : int -> length : int -> io_vector
+  (** Creates an io-vector *)
+
+val recv_msg : socket : file_descr -> io_vectors : io_vector list -> (int * file_descr list) Lwt.t
+  (** [recv_msg ~socket ~io_vectors] receives data into a list of
+      io-vectors, plus any file-descriptors that may accompany the
+      message. *)
+
+val send_msg : socket : file_descr -> io_vectors : io_vector list -> fds : file_descr list -> int Lwt.t
+  (** [send_msg ~socket ~io_vectors ~fds] sends data from a list of
+      io-vectors, accompanied with a list of file-descriptor. *)
 
 (** {6 Helpers} *)
 
