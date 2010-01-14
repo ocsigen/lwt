@@ -21,6 +21,7 @@
  * 02111-1307, USA.
  */
 
+#define _GNU_SOURCE
 #include <caml/alloc.h>
 #include <caml/fail.h>
 #include <caml/mlvalues.h>
@@ -157,6 +158,40 @@ CAMLprim value lwt_unix_send_msg(value sock_val, value n_iovs_val, value iovs_va
   if (ret == -1) uerror("lwt_unix_send_msg", Nothing);
   CAMLreturn(Val_int(ret));
 }
+
+/* +-----------------------------------------------------------------+
+   | Credentials                                                     |
+   +-----------------------------------------------------------------+ */
+
+#include <sys/un.h>
+
+#if defined(SO_PEERCRED)
+
+CAMLprim value lwt_unix_get_credentials(value fd)
+{
+    CAMLparam1(fd);
+    CAMLlocal1(res);
+    struct ucred cred;
+    socklen_t cred_len = sizeof(cred);
+
+    if (getsockopt(Int_val(fd), SOL_SOCKET, SO_PEERCRED, &cred, &cred_len) == -1)
+      uerror("lwt_unix_get_credentials", Nothing);
+
+    res = caml_alloc_tuple(3);
+    Store_field(res, 0, Val_int(cred.pid));
+    Store_field(res, 1, Val_int(cred.uid));
+    Store_field(res, 2, Val_int(cred.gid));
+    CAMLreturn(res);
+}
+
+#else
+
+CAMLprim value lwt_unix_get_credentials(value fd_val)
+{
+  invalir_argument("get_credentials not implemented");
+}
+
+#endif
 
 /* +-----------------------------------------------------------------+
    | Select                                                          |

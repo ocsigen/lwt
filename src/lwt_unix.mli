@@ -289,6 +289,16 @@ val shutdown : file_descr -> Unix.shutdown_command -> unit
 val setsockopt : file_descr -> Unix.socket_bool_option -> bool -> unit
   (** Wrapper for [Unix.setsockopt] *)
 
+type credentials = {
+  cred_pid : int;
+  cred_uid : int;
+  cred_gid : int;
+}
+
+val get_credentials : file_descr -> credentials
+  (** [get_credentials fd] returns credentials informations from the
+      given socket. *)
+
 (** {8 receive/send messages} *)
 
 (** An io-vector. Used by {!recv_msg} and {!send_msg}. *)

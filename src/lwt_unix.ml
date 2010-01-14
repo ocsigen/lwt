@@ -347,6 +347,16 @@ let send_msg ~socket ~io_vectors ~fds =
     (fun () ->
        lwt_unix_send_msg socket.fd n_iovs io_vectors n_fds fds)
 
+type credentials = {
+  cred_pid : int;
+  cred_uid : int;
+  cred_gid : int;
+}
+
+external lwt_unix_get_credentials : Unix.file_descr -> credentials = "lwt_unix_get_credentials"
+
+let get_credentials ch = lwt_unix_get_credentials ch.fd
+
 let pipe () =
   let (out_fd, in_fd) = Unix.pipe() in
   (mk_ch out_fd, mk_ch in_fd)
