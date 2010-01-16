@@ -91,26 +91,21 @@ type key =
   | Key_down
   | Key_left
   | Key_right
-  | Key_escape
   | Key_f of int
-  | Key_enter
   | Key_next_page
   | Key_previous_page
   | Key_home
   | Key_end
   | Key_insert
-  | Key_backspace
   | Key_delete
-  | Key_tab
   | Key_control of char
-      (** A control key other than [Key_enter], [Key_escape],
-          [Key_backspace] or [Key_tab] *)
+      (** A control key *)
 
 val string_of_key : key -> string
   (** [string_of_key key] string representation of a key *)
 
 val control_mapping : (int * char) list
-  (** Mapping from control key codes to char code.
+  (** Mapping from control key codes to character codes.
 
       Here is the list of control keys:
 
@@ -154,6 +149,18 @@ val control_mapping : (int * char) list
         +------+-------+------+------+------+-------+------------------------------------------------+
       ]}
   *)
+
+val key_enter : key
+  (** [key_enter = Key_control 'j'] *)
+
+val key_escape : key
+  (** [key_escape = Key_control '['] *)
+
+val key_tab : key
+  (** [key_escape = Key_control 'i'] *)
+
+val key_backspace : key
+  (** [key_backspace = Key_control '?'] *)
 
 val sequence_mapping : (Text.t * key) list
   (** Mapping from sequence to keys *)

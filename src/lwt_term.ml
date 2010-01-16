@@ -235,18 +235,19 @@ type key =
   | Key_down
   | Key_left
   | Key_right
-  | Key_escape
   | Key_f of int
-  | Key_enter
   | Key_next_page
   | Key_previous_page
   | Key_home
   | Key_end
   | Key_insert
-  | Key_backspace
   | Key_delete
-  | Key_tab
   | Key_control of char
+
+let key_enter = Key_control 'j'
+let key_escape = Key_control '['
+let key_tab = Key_control 'i'
+let key_backspace = Key_control '?'
 
 let string_of_key = function
   | Key ch ->
@@ -263,10 +264,6 @@ let string_of_key = function
       "Key_left"
   | Key_right ->
       "Key_right"
-  | Key_escape ->
-      "Key_escape"
-  | Key_enter ->
-      "Key_enter"
   | Key_next_page ->
       "Key_next_page"
   | Key_previous_page ->
@@ -277,12 +274,8 @@ let string_of_key = function
       "Key_end"
   | Key_insert ->
       "Key_insert"
-  | Key_backspace ->
-      "Key_backspace"
   | Key_delete ->
       "Key_delete"
-  | Key_tab ->
-      "Key_tab"
 
 let sequence_mapping = [
   "\027[A", Key_up;
@@ -366,10 +359,6 @@ let control_mapping = [
 let decode_key ch =
   if ch = "" then invalid_arg "Lwt_term.decode_key";
   match ch with
-    | "\x09" -> Key_tab
-    | "\x0a" -> Key_enter
-    | "\x1b" -> Key_escape
-    | "\x7f" -> Key_backspace
     | ch when String.length ch = 1 ->
         begin try
           Key_control(List.assoc (Char.code ch.[0]) control_mapping)

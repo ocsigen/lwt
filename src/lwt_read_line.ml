@@ -202,13 +202,10 @@ struct
     | Key_down -> History_next
     | Key_left -> Backward_char
     | Key_right -> Forward_char
-    | Key_enter -> Accept_line
     | Key_home -> Beginning_of_line
     | Key_end -> End_of_line
     | Key_insert -> Insert
-    | Key_backspace -> Backward_delete_char
     | Key_delete -> Forward_delete_char
-    | Key_tab -> Complete
     | Key_control '@' -> Set_mark
     | Key_control 'a' -> Beginning_of_line
     | Key_control 'd' -> Break
