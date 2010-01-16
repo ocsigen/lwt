@@ -1507,44 +1507,58 @@ let add_entry line history =
     else
       line :: history
 
-let save_history name history =
-  with_file ~mode:Lwt_io.output name
-    (fun oc ->
-       Lwt_list.iter_s
-         (fun line -> write oc line >> write_char oc "\000")
-         history)
+let escape line =
+  Text.map (function
+              | "\n" -> "\\n"
+              | "\\" -> "\\\\"
+              | ch -> ch) line
 
-let load_line ic =
-  let buf = Buffer.create 42 in
-  let rec loop () =
-    read_char_opt ic >>= function
-      | None | Some "\000" ->
-          return (`Line(Buffer.contents buf))
-      | Some ch ->
-          Buffer.add_string buf ch;
-          loop ()
+let unescape line =
+  let buf = Buffer.create (String.length line) in
+  let rec loop ptr = match Text.next ptr with
+    | Some("\\", ptr) ->
+        begin match Text.next ptr with
+          | Some("\\", ptr) ->
+              Buffer.add_string buf "\\";
+              loop ptr
+          | Some("n", ptr) ->
+              Buffer.add_string buf "\n";
+              loop ptr
+          | Some(ch, ptr) ->
+              Buffer.add_string buf "\\";
+              Buffer.add_string buf ch;
+              loop ptr
+          | None ->
+              Buffer.add_string buf "\\";
+              Buffer.contents buf
+        end
+    | Some(ch, ptr) ->
+        Buffer.add_string buf ch;
+        loop ptr
+    | None ->
+        Buffer.contents buf
   in
-  read_char_opt ic >>= function
-    | None -> return `End_of_file
-    | Some "\000" -> return `Empty
-    | Some ch -> Buffer.add_string buf ch; loop ()
+  loop (Text.pointer_l line)
 
-let rec load_lines ic =
-  load_line ic >>= function
-    | `Line line ->
-        lwt lines = load_lines ic in
-        return (line :: lines)
-    | `Empty ->
-        load_lines ic
-    | `End_of_file ->
-        return []
+let rec load_lines ic acc =
+  Lwt_io.read_line_opt ic >>= function
+    | Some l ->
+        load_lines ic (unescape l :: acc)
+    | None ->
+        return acc
 
 let load_history name =
-  match try Some(open_file ~mode:Lwt_io.input name) with _ -> None with
-    | Some ic ->
-        try_lwt
-          load_lines ic
-        finally
-          close ic
-    | None ->
-        return []
+  if Sys.file_exists name then
+    Lwt_io.with_file ~mode:Lwt_io.input name (fun ic -> load_lines ic [])
+  else
+    return []
+
+let rec merge h1 h2 = match h1, h2 with
+  | l1 :: h1, l2 :: h2 when l1 = l2 ->
+      l1 :: merge h1 h2
+  | _ ->
+      h1 @ h2
+
+let save_history name history =
+  lwt on_disk_history = load_history name in
+  Lwt_io.lines_to_file name (Lwt_stream.map escape (Lwt_stream.of_list (merge (List.rev on_disk_history) (List.rev history))))
