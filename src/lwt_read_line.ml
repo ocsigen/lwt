@@ -210,6 +210,7 @@ struct
     | Key_control 'a' -> Beginning_of_line
     | Key_control 'd' -> Break
     | Key_control 'e' -> End_of_line
+    | Key_control 'h' -> Backward_delete_word
     | Key_control 'i' -> Complete
     | Key_control 'j' -> Accept_line
     | Key_control 'k' -> Kill_line
@@ -225,18 +226,19 @@ struct
     | Key "\027u" -> Uppercase
     | Key "\027l" -> Lowercase
     | Key "\027c" -> Capitalize
-    | Key "\027Oc" | Key "\027[1;5C"-> Forward_word
-    | Key "\027Od" | Key "\027[1;5D"-> Backward_word
+    | Key ("\027Oc" | "\027[1;5C") -> Forward_word
+    | Key ("\027Od" | "\027[1;5D") -> Backward_word
+    | Key ("\027\027[A" | "\027[1;3A") -> Complete_up
+    | Key ("\027\027[B" | "\027[1;3B") -> Complete_down
+    | Key ("\027\027[C" | "\027[1;3C") -> Complete_right
+    | Key ("\027\027[D" | "\027[1;3D") -> Complete_left
+    | Key ("\027\027[7~" | "\027[1;3H") -> Complete_first
+    | Key ("\027\027[8~" | "\027[1;3F") -> Complete_last
+    | Key ("\027\n" | "\194\141") -> Char "\n"
+    | Key ("\027\t" | "\194\137") -> Meta_complete
+    | Key ("\027w" | "\195\183") -> Copy
+    | Key ("\027[3^" | "\027[3;5~") -> Forward_delete_word
     | Key ch when Text.length ch = 1 && Text.is_print ch -> Char ch
-    | Key "\027\027[A" | Key "\027[1;3A" -> Complete_up
-    | Key "\027\027[B" | Key "\027[1;3B" -> Complete_down
-    | Key "\027\027[C" | Key "\027[1;3C" -> Complete_right
-    | Key "\027\027[D" | Key "\027[1;3D" -> Complete_left
-    | Key "\027\027[7~" | Key "\027[1;3H" -> Complete_first
-    | Key "\027\027[8~" | Key "\027[1;3F" -> Complete_last
-    | Key "\027\n" | Key "\194\141" -> Char "\n"
-    | Key "\027\t" | Key "\194\137" -> Meta_complete
-    | Key "\027w" | Key "\195\183" -> Copy
     | _ -> Nop
 end
 
@@ -527,6 +529,14 @@ struct
             | Forward_word ->
                 let a, b, c = split_first_word after in
                 edition (before ^ a ^ b, c)
+
+            | Backward_delete_word ->
+                let a, b, c = split_last_word before in
+                edition (a, c ^ after)
+
+            | Forward_delete_word ->
+                let a, b, c = split_first_word after in
+                edition (before ^ a, c)
 
             | Backward_search ->
                 let hist_before, hist_after = engine_state.history in
