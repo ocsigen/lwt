@@ -1,9 +1,19 @@
 ===== 2.0.0+dev =====
 
   * Adding a syntax extension for mesage logging
-  * Adding function {{{Lwt_util.daemonize}}}
+  * Adding function {{{Lwt_unix.daemonize}}}
+  * Adding function {{{Lwt_unix.recv_msg}}} and {{{Lwt_unix.send_msg}}}
+  * Adding function {{{Lwt_unix.wait4}}}
+  * Adding function {{{Lwt_io.establish_server}}}
+  * Adding module {{{Lwt_list}}}
+  * Adding module {{{Lwt_directory}}}
   * Enhancement in {{{Lwt_process}}}
-  * Adding {{{Lwt_unix.wait4}}}
+  * Allow to use {{{select}}} on arbitrary high file descriptors
+  * More commands in {{{Lwt_read_line}}}
+  * Adding controlable read-lines instances
+  * Optimization of {{{Lwt_stream}}}
+  * Optimization of {{{Lwt_io.write_char}}} and {{{Lwt_io.read_char}}}
+  * Bugfix of {{{Lwt_stream}}}: two parallel {{{Lwt_stream.get}}} returned the same value
   * Bugfix in Lwt_unix.connect: it returned immediatly on EINPROGRESS
   * Bugfixes in lwt.glib
 
