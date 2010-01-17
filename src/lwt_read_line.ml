@@ -838,7 +838,7 @@ struct
           let printed_before = Reset :: prompt @ [Reset; Text "(reverse-i-search)'"; Text st.search_word] in
           let printed_total = match st.search_history with
             | [] ->
-                []
+                printed_before @ [Text "'"]
             | phrase :: _ ->
                 let ptr_start = match Text.find phrase st.search_word with
                   | Some ptr ->
