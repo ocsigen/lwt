@@ -286,7 +286,7 @@ let _ =
 
         (* Link with the toplevel library *)
         dep ["file:src/toplevel.top"] ["src/lwt.cma"; "src/lwt_unix.cma"; "src/lwt_text.cma"; "src/lwt_top.cma"];
-        flag ["file:src/toplevel.top"] & S[A"-I"; A"src"; A"lwt.cma"; A"lwt_unix.cma"; A"lwt_text.cma"; A"lwt_top.cma"];
+        flag ["file:src/toplevel.top"] & S[A"-I"; A"src"; A"-I"; A"src/stubs"; A"lwt.cma"; A"lwt_unix.cma"; A"lwt_text.cma"; A"lwt_top.cma"];
 
         (* +---------------------------------------------------------+
            | C stubs                                                 |
