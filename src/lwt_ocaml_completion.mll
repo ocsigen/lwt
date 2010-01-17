@@ -42,7 +42,7 @@
   let get_directives () =
     Hashtbl.fold (fun k v set -> TextSet.add k set) Toploop.directive_table TextSet.empty
 
-  let list_env = ref (fun () -> TextSet.empty)
+  let complete_ident = ref (fun before ident after -> complete ~suffix:"" before ident after keywords)
 
   let list_files filter fname =
     let dir = Filename.dirname fname in
@@ -179,13 +179,7 @@ and complete_end before after = parse
   (* Completion on keywords *)
   | ((ident '.')* maybe_ident as id) eof {
       let before = Buffer.contents before in
-      return (match Text.split ~sep:"." id with
-                | [] ->
-                    complete ~suffix:"" before "" after keywords
-                | [id] ->
-                    complete ~suffix:"" before id after (TextSet.union keywords (!list_env ()))
-                | _ ->
-                    complete ~suffix:"" before id after (!list_env ()))
+      return (!complete_ident before id after)
     }
 
   | uchar as ch {
