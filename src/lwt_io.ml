@@ -228,27 +228,25 @@ let safe_flush_total oc =
   with
       _ -> return ()
 
-let rec auto_flush oc =
+let auto_flush oc =
   let wrapper = oc.main in
   lwt () = Lwt_unix.yield () in
   match wrapper.state with
     | Busy_primitive | Busy_atomic _ ->
-        (* The channel is used, wait again *)
-        auto_flush oc
+        (* The channel is used, cancel auto flushing. It will be
+           restarted when the channel returns to the [Idle] state: *)
+        oc.auto_flushing <- false;
+        return ()
 
     | Idle ->
-        if Lwt_sequence.is_empty oc.main.queued then begin
-          oc.auto_flushing <- false;
-          wrapper.state <- Busy_primitive;
-          lwt () = safe_flush_total oc in
-          if wrapper.state = Busy_primitive then
-            wrapper.state <- Idle;
-          if not (Lwt_sequence.is_empty wrapper.queued) then
-            wakeup (Lwt_sequence.take_l wrapper.queued) ();
-          return ()
-        end else
-          (* Some operations are queued, wait again: *)
-          auto_flush oc
+        oc.auto_flushing <- false;
+        wrapper.state <- Busy_primitive;
+        lwt () = safe_flush_total oc in
+        if wrapper.state = Busy_primitive then
+          wrapper.state <- Idle;
+        if not (Lwt_sequence.is_empty wrapper.queued) then
+          wakeup (Lwt_sequence.take_l wrapper.queued) ();
+        return ()
 
     | Closed ->
         fail (closed_channel oc)
@@ -266,13 +264,15 @@ let unlock wrapper = match wrapper.state with
         wakeup (Lwt_sequence.take_l wrapper.queued) ();
       (* Launches the auto-flusher: *)
       let ch = wrapper.channel in
-      if (ch.mode = Output &&
-          (* Launch the auto-flusher only for the main wrapper: *)
-          ch.main == wrapper &&
-          (* Do not launch two auto-flusher: *)
-          not ch.auto_flushing &&
-          (* Do not launch the auto-flusher if operations are queued: *)
-          Lwt_sequence.is_empty wrapper.queued) then begin
+      if (* Launch the auto-flusher only if the channel is not busy: *)
+        (wrapper.state = Idle &&
+            ch.mode = Output &&
+            (* Launch the auto-flusher only for the main wrapper: *)
+            ch.main == wrapper &&
+            (* Do not launch two auto-flusher: *)
+            not ch.auto_flushing &&
+            (* Do not launch the auto-flusher if operations are queued: *)
+            Lwt_sequence.is_empty wrapper.queued) then begin
         ch.auto_flushing <- true;
         ignore (auto_flush ch)
       end
@@ -313,7 +313,7 @@ let primitive f wrapper = match wrapper.state with
               f wrapper.channel
             finally
               unlock wrapper;
-            return ()
+              return ()
 
         | Invalid ->
             fail (invalid_channel wrapper.channel)
