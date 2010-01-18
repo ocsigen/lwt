@@ -24,4 +24,5 @@ Test.run "lwt" [
   Test_lwt.suite;
   Test_lwt_stream.suite;
   Test_lwt_util.suite;
+  Test_lwt_io.suite;
 ]
