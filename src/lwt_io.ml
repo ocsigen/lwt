@@ -109,9 +109,10 @@ and 'mode _channel = {
   (* Position of the end of data int the buffer. It is equal to
      [length] for output channels. *)
 
-  abort : int Lwt.t * int Lwt.u;
+  abort_waiter : int Lwt.t;
   (* Thread which is wakeup with an exception when the channel is
      closed. *)
+  abort_wakener : int Lwt.u;
 
   mutable auto_flushing : bool;
   (* Wether the auto-flusher is currently running or not *)
@@ -182,7 +183,7 @@ let perform_io ch = match ch.main.state with
             (size, ch.length - size)
         | Output ->
             (0, ch.ptr) in
-      lwt n = choose [fst ch.abort; lwt_unix_call (fun _ -> ch.perform_io ch.buffer ptr len)] in
+      lwt n = choose [ch.abort_waiter; lwt_unix_call (fun _ -> ch.perform_io ch.buffer ptr len)] in
       (* Never trust user functions... *)
       if n < 0 || n > len then
         fail (Failure (Printf.sprintf "Lwt_io: invalid result of the [%s] function(request=%d,result=%d)"
@@ -228,15 +229,29 @@ let safe_flush_total oc =
   with
       _ -> return ()
 
+let deepest_wrapper ch =
+  let rec loop wrapper =
+    match wrapper.state with
+      | Busy_atomic wrapper ->
+          loop wrapper
+      | _ ->
+          wrapper
+  in
+  loop ch.main
+
 let auto_flush oc =
-  let wrapper = oc.main in
   lwt () = Lwt_unix.yield () in
+  let wrapper = deepest_wrapper oc in
   match wrapper.state with
-    | Busy_primitive | Busy_atomic _ ->
+    | Busy_primitive ->
         (* The channel is used, cancel auto flushing. It will be
            restarted when the channel returns to the [Idle] state: *)
         oc.auto_flushing <- false;
         return ()
+
+    | Busy_atomic _ ->
+        (* Cannot happen since we took the deepest wrapper: *)
+        assert false
 
     | Idle ->
         oc.auto_flushing <- false;
@@ -248,11 +263,8 @@ let auto_flush oc =
           wakeup (Lwt_sequence.take_l wrapper.queued) ();
         return ()
 
-    | Closed ->
-        fail (closed_channel oc)
-
-    | Invalid ->
-        fail (invalid_channel oc)
+    | Closed | Invalid ->
+        return ()
 
 (* A ``locked'' channel is a channel in the state [Busy_primitive] or
    [Busy_atomic] *)
@@ -266,9 +278,8 @@ let unlock wrapper = match wrapper.state with
       let ch = wrapper.channel in
       if (* Launch the auto-flusher only if the channel is not busy: *)
         (wrapper.state = Idle &&
+            (* Launch the auto-flusher only for output channel: *)
             ch.mode = Output &&
-            (* Launch the auto-flusher only for the main wrapper: *)
-            ch.main == wrapper &&
             (* Do not launch two auto-flusher: *)
             not ch.auto_flushing &&
             (* Do not launch the auto-flusher if operations are queued: *)
@@ -392,27 +403,24 @@ let rec abort wrapper = match wrapper.state with
       wrapper.state <- Closed;
       (* Abort any current real reading/writing operation on the
          channel: *)
-      wakeup_exn (snd wrapper.channel.abort) (closed_channel wrapper.channel);
+      wakeup_exn (wrapper.channel.abort_wakener) (closed_channel wrapper.channel);
       Lazy.force wrapper.channel.close
 
-let close wrapper = match wrapper.channel.mode with
-  | Input ->
-      (* Just close it now: *)
-      abort wrapper
-  | Output ->
-      (* Performs all pending action, flush the buffer, then close
-         it: *)
-      try_lwt
-        primitive
-          (fun ch ->
-             if ch.mode = Output then
-               lwt () = safe_flush_total wrapper.channel in
-               abort wrapper
-              else
-                abort wrapper)
-          wrapper
-      with
-          _ ->
+let close wrapper =
+  let channel = wrapper.channel in
+  if channel.main != wrapper then
+    fail (Failure "Lwt_io.close: cannot close a channel obtained via Lwt_io.atomic")
+  else
+    match channel.mode with
+      | Input ->
+          (* Just close it now: *)
+          abort wrapper
+      | Output ->
+          try_lwt
+            (* Performs all pending actions, flush the buffer, then
+               close it: *)
+            primitive (fun channel -> safe_flush_total channel >> abort wrapper) wrapper
+          with _ ->
             abort wrapper
 
 (* Avoid confusion with the [close] argument of [make]: *)
@@ -429,7 +437,7 @@ let make ?buffer_size ?(close=return) ?(seek=no_seek) ~mode perform_io =
                      | Some size ->
                          check_buffer_size "Lwt_io.make" size;
                          size)
-  in
+  and abort_waiter, abort_wakener = Lwt.wait () in
   let rec ch = {
     buffer = buffer;
     length = String.length buffer;
@@ -439,7 +447,8 @@ let make ?buffer_size ?(close=return) ?(seek=no_seek) ~mode perform_io =
              | Output -> String.length buffer);
     perform_io = perform_io;
     close = lazy(try_lwt close ());
-    abort = wait ();
+    abort_waiter = abort_waiter;
+    abort_wakener = abort_wakener;
     main = wrapper;
     auto_flushing = false;
     mode = mode;
@@ -1046,7 +1055,7 @@ let write_char wrapper x =
     channel.ptr <- ptr + 1;
     String.unsafe_set channel.buffer ptr x;
     (* Fast launching of the auto flusher: *)
-    if (channel.main == wrapper && not channel.auto_flushing) then begin
+    if not channel.auto_flushing then begin
       channel.auto_flushing <- true;
       ignore (auto_flush channel);
       return ()

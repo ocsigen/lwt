@@ -145,13 +145,16 @@ val of_unix_fd : ?buffer_size : int -> ?close : (unit -> unit Lwt.t) -> mode : '
       [of_fd ?buffer_size ?close (Lwt_unix.of_unix_file_descr fd)] *)
 
 val close : 'a channel -> unit Lwt.t
-  (** [close ch] closes the given channel: wait for all pending
-      operations to terminate, preventing new one to be queued, then
-      flush the channel if it is an output channel and close it.
+  (** [close ch] closes the given channel. If [ch] is an output
+      channel, it performs all pending actions, flush it and close
+      it. If [ch] is an input channel, it just close it immediatly.
 
       [close] returns the result of the close function of the
       channel. Multiple calls to [close] will return exactly the same
-      value. *)
+      value.
+
+      Note: you cannot use [close] on channel obtained with an
+      {!atomic}. *)
 
 val abort : 'a channel -> unit Lwt.t
   (** [abort ch] abort current operations and close the channel
