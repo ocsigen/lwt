@@ -221,6 +221,7 @@ module Command : sig
     | Complete_down
     | Complete_first
     | Complete_last
+    | Undo
 
   val to_string : t -> string
     (** [to_string cmd] returns a string representation of a command *)

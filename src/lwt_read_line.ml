@@ -132,6 +132,7 @@ struct
     | Complete_down
     | Complete_first
     | Complete_last
+    | Undo
 
   let names = [
     (Nop, "nop");
@@ -170,6 +171,7 @@ struct
     (Backward_search, "backward-search");
     (Complete_first, "complete-first");
     (Complete_last, "complete-last");
+    (Undo, "undo");
   ]
 
   let to_string = function
@@ -222,6 +224,7 @@ struct
     | Key_control 'u' -> Backward_kill_line
     | Key_control 'w' -> Cut
     | Key_control 'y' -> Paste
+    | Key_control '_' -> Undo
     | Key_control '?' -> Backward_delete_char
     | Key "\027u" -> Uppercase
     | Key "\027l" -> Lowercase
@@ -1011,6 +1014,7 @@ struct
     box : Terminal.box;
     prompt : Lwt_term.styled_text;
     visible : bool;
+    old_states : edition_state list;
   }
 
   type event =
@@ -1253,9 +1257,38 @@ struct
             (* Cancel completion on user input: *)
             Lwt.cancel !completion_thread;
 
+          (* Save the command for possible [Undo] command *)
+          let state =
+            match command, state.engine with
+              | Undo, _ ->
+                  state
+              | _, { Engine.mode = Engine.Edition es } -> begin
+                  if List.length state.old_states < 1000 then
+                    match state.old_states with
+                      | es' :: _ when es = es' ->
+                          state
+                      | old_states ->
+                          { state with old_states = es :: old_states }
+                  else
+                    state
+                end
+              | _ ->
+                  state
+          in
+
           filter state command >>= function
             | Nop ->
                 loop state
+
+            | Undo -> begin
+                match state.old_states with
+                  | [] ->
+                      loop state
+                  | s :: l ->
+                      loop { state with
+                               engine = { state.engine with Engine.mode = Engine.Edition s };
+                               old_states = l }
+              end
 
             | Complete_right ->
                 begin match state.box with
@@ -1364,6 +1397,7 @@ struct
         box = Terminal.Box_none;
         prompt = React.S.value prompt;
         visible = true;
+        old_states = [];
       } in
 
       (* Cleanup *)
