@@ -1035,6 +1035,17 @@ struct
 
   let default_prompt _ = React.S.const [Text "# "]
 
+  let rec truncate_list n l = match n, l with
+    | 0, l ->
+        l
+    | _, [] ->
+        []
+    | n, x :: l ->
+        if n > 0 then
+          x :: truncate_list (n - 1) l
+        else
+          []
+
   let make ?(history=[]) ?(complete=no_completion) ?(clipboard=clipboard) ?(mode=`real_time)
       ?(map_text=fun x -> x) ?(filter=fun s c -> return c) ~map_result ?(prompt=default_prompt) () =
     (* Signal holding the last engine state before waiting for a new
@@ -1263,14 +1274,14 @@ struct
               | Undo, _ ->
                   state
               | _, { Engine.mode = Engine.Edition es } -> begin
-                  if List.length state.old_states < 1000 then
+                  let old_states =
                     match state.old_states with
                       | es' :: _ when es = es' ->
-                          state
+                          state.old_states
                       | old_states ->
-                          { state with old_states = es :: old_states }
-                  else
-                    state
+                          es :: old_states
+                  in
+                  { state with old_states = truncate_list 1000 old_states }
                 end
               | _ ->
                   state
