@@ -283,6 +283,19 @@ you must follow the following rules:
 \subsection{The syntax extension}
 
 \lwt offers a syntax extension to make code using it more readable.
+To use it add the ``lwt.syntax'' when compiling:
+
+\begin{verbatim}
+$ ocamlfind ocamlc -syntax camlp4o -package lwt.syntax -linkpkg -o foo foo.ml
+\end{verbatim}
+
+Or in the toplevel (after loading topfind):
+
+\begin{verbatim}
+# #camlp4o;;
+# #require "lwt.syntax";;
+\end{verbatim}
+
 The following construction are added to the language:
 
 \begin{itemize}
@@ -382,6 +395,39 @@ You can keep in mind the following table to write code using lwt:
     \hline
   \end{tabular}
 \end{center}
+
+\subsection{Other modules of the core library}
+
+The core library contains several modules that depends only on
+\lwt. Amongst them are:
+
+\begin{itemize}
+\item \texttt{Lwt\_list}: it defines iteration and scanning functions
+  over list using functions that returns a thread. For example:
+
+\begin{verbatim}
+val map_s : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
+val map_p : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
+\end{verbatim}
+
+  Note that the following naming convention is used: when the function
+  taken as argument is going to be executed sequentially, the
+  ``\texttt{\_s}'' suffix is used, and when it is going to be executed
+  in parallel, the suffix ``\texttt{\_p}'' is used.
+
+\item \texttt{Lwt\_mutex}: it defines mutex for \lwt. Basically the
+  only goal of an \lwt mutex is to serialize operations.
+
+\item \texttt{Lwt\_stream}: a stream is a object which returns
+  elements sequentially and lazily. Lazily means that the source of
+  the stream is guessed for new elements only when needed. This module
+  contains a lot of stream transformation, iteration, and scanning
+  functions.
+
+  Note that streams are consumable, if you want to iterates two times
+  over a stream, you may consider ``clonning'' it (via
+  \texttt{Lwt\_stream.clone}).
+\end{itemize}
 
 %% +-----------------------------------------------------------------+
 %% | Section                                                         |
