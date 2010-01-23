@@ -35,7 +35,7 @@
     completes.
 
     Moreover all sleeping threads returned by function of this modules
-    are {b concealable}, this means that you can cancel them with
+    are {b cancelable}, this means that you can cancel them with
     {!Lwt.cancel}. For example if you want to read something from a {b
     file descriptor} with a timeout, you can cancel the action after
     the timeout and the reading will not be performed if not already

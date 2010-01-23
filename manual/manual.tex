@@ -198,7 +198,7 @@ function:
 Not that this is an error to wakeup two times the same threads. \lwt
 will raise \texttt{Invalid\_argument} if you try to do so.
 
-With these information, try to guess the result of each of the
+With these informations, try to guess the result of each of the
 following expression:
 
 \begin{verbatim}
@@ -432,33 +432,230 @@ val map_p : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
 %% +-----------------------------------------------------------------+
 %% | Section                                                         |
 %% +-----------------------------------------------------------------+
-\section{The Lwt.unix library}
+\section{The lwt.unix library}
 \label{lwt.unix}
+
+The package \texttt{lwt.unix} contains all \texttt{unix} dependant
+modules of \lwt. It provides cooperative versions of functions of the
+standard and the unix libraries.
+
+The \texttt{Lwt\_unix} module is the cooperative equivalent of the
+\texttt{Unix} module, plus some specific functions. It also provides
+an helper to wrap system calls into cooperatives one (the
+\texttt{wrap\_syscall} function).
+
+\texttt{Lwt\_io} provides similar features that buffered channels of
+the standard library (of type \texttt{in\_channel} or
+\texttt{out\_channel}) but cooperatively.
+
+\texttt{Lwt\_gc} allow you to register finaliser that return a
+thread. At the end of the program, \lwt will wait for all the
+finaliser to terminates.
+
+\subsection{The lwt scheduler}
+
+The \texttt{Lwt\_main} contains the \lwt \emph{main loop}. It can be
+customized by adding filters, and/or by replacing the \texttt{select}
+function.
+
+Filters are responsible to collect sources to monitor before entering
+the blocking \texttt{select}, then to react and wakeup threads waiting
+for sources to become ready.
+
+\subsection{Limitations}
+
+To avoid blocking, \lwt puts all file descriptors (except
+\texttt{stdin}, \texttt{stdout} and \texttt{stderr}) in non-blocking
+mode. Unfortunatly no unix supports non-blocking mode for regular
+files. In practise a file descriptor for a regular file will always
+appears to be readable and writable even if this is not the case (for
+example because the file is located on a network file system and the
+server is not available). There is no workaround for this.
+
+By the way, since reading/writing a file will never appears to block,
+reading or writing a big file may prevent other threads to run until
+the operation on the file are finished. To avoid this,
+\texttt{Lwt\_io} yield every 0.05 seconds for regular files.
+
+Since there is no support at all for asynchrnously reading the
+contents of a directory, \texttt{Lwt\_directory} uses the same trick.
 
 %% +-----------------------------------------------------------------+
 %% | Section                                                         |
 %% +-----------------------------------------------------------------+
 \section{Detaching computation to preemptive threads}
 
-\subsection{Lwt.preemptive}
-\subsection{Lwt.extra}
+It may happen that you want to run a function which will take time to
+compute or that you want to use a blocking function that cannot be
+used in a non-blocking way. For these situations, \lwt allow you to
+\emph{detach} the computation to a preemptive thread.
+
+This is done by the module \texttt{Lwt\_preemptive} of the
+\texttt{lwt.preemptive} package which maintains a spool of system
+threads. The main function is:
+
+\begin{verbatim}
+val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
+\end{verbatim}
+
+\texttt{detach f x} will execute \texttt{f x} in another thread and
+asynchronously wait for the result.
+
+The \texttt{lwt.extra} package provides wrappers for a few blocking
+functions of the standard C library like \texttt{gethostbyname} (in
+the module \texttt{Lwt\_lib}).
 
 %% +-----------------------------------------------------------------+
 %% | Section                                                         |
 %% +-----------------------------------------------------------------+
-\section{The Lwt.text library}
+\section{The lwt.text library}
+
+The \texttt{lwt.text} library provides functions to deal with text
+mode (in a terminal). It is composed of three following modules:
+
+\begin{itemize}
+\item \texttt{Lwt\_text}, which is the equivalent of \texttt{Lwt\_io}
+  but for unicode text channels
+\item \texttt{Lwt\_term}, providing various terminal utilities, such as
+  reading a key from the terminal
+\item \texttt{Lwt\_read\_line}, which provides functions to input text
+  from the user with line editing support
+\end{itemize}
+
+\subsection{Text channels}
+
+A text channel is basically a byte channel plus an encoding. Input
+(resp. output) text channels decode (resp. encode) unicode characters
+on the fly. By default, output text channels use transliteration, so
+they will not fails because text you want to print cannot be encoded
+in the system encoding.
+
+For example, with you locale sets to ``C'', and the variable
+\texttt{name} set to ``Jérémie'', you got:
+
+\begin{verbatim}
+# lwt () = Lwt_text.printlf "My name is %s" name;;
+My name is J?r?mie
+\end{verbatim}
+
+\subsection{Terminal utilities}
+
+The \texttt{Lwt\_term} allow you to put the terminal in \emph{raw
+  mode}, meanings that input is not buffered and character are
+returned as the user type them. For example, you can read a key with:
+
+\begin{verbatim}
+# lwt key = Lwt_term.read_key ();;
+val key : Lwt_term.key = Lwt_term.Key_control 'j'
+\end{verbatim}
+
+The second main feature of \texttt{Lwt\_term} is the ability to prints
+text with styles. For example, to print text in bold and blue:
+
+\begin{verbatim}
+# open Lwt_term;;
+# lwt () = printlc [fg blue; bold; text "foo"];;
+foo
+\end{verbatim}
+
+If the output is not a terminal, then \texttt{printlc} will drop
+styles, and act as \texttt{Lwt\_text.printl}.
+
+\subsection{Read-line}
+
+\texttt{Lwt\_read\_line} provides a full featured and fully
+customisable read-line implementation. You can either use the
+high-level and easy to use \texttt{read\_*} functions, or use the
+advanced \texttt{Lwt\_read\_line.Control.read\_*} functions.
+
+For example:
+
+\begin{verbatim}
+# open Lwt_term;;
+# lwt l = Lwt_read_line.read_line ~prompt:[text "foo> "] ();;
+foo> Hello, world!
+val l : Text.t = "Hello, world!"
+\end{verbatim}
+
+The second class of functions is a bit more complicated to use, but
+allow to control a running read-line instances. For example you can
+temporary hide it to draw something, you can send it commands, fake
+input, and the prompt is a signal so it can change dynamically.
 
 %% +-----------------------------------------------------------------+
 %% | Section                                                         |
 %% +-----------------------------------------------------------------+
 \section{The logging facility}
+\label{lwt.log}
+
+The package \texttt{lwt.unix} contains a module \texttt{Lwt\_log}
+providing loggers. It support logging to a file, a channel, or to the
+syslog daemon. You can also defines your own logger by providing the
+appropriate functions (function \texttt{Lwt\_log.make}).
+
+Several loggers can be merged into one. Sending logs on the merged
+loggers will send these logs to all its components.
+
+For example to redirect all logs to \texttt{stderr} and to the syslog
+daemon:
+
+\begin{verbatim}
+# Lwt_log.default_logger :=
+    Lwt_log.merge ~level:Lwt_log.Info [
+      Lwt_log.channel
+        ~level:Lwt_log.Info
+        ~close_mode:`keep
+        ~channel:Lwt_io.stderr ();
+      Lwt_log.syslog
+        ~level:Lwt_log.Info
+        ~facility:`User ();
+    ]
+;;
+\end{verbatim}
+
+\lwt also provides a syntax extension, in the package
+\texttt{lwt.syntax.log}. It adds the following construction to the
+language:
+
+\begin{center}
+  \texttt{Log\#}\textit{level} \textit{format} \textit{arguments}
+\end{center}
+
+Where \textit{level} is one of \texttt{debug}, \texttt{info},
+\texttt{warning}, \texttt{error}, \texttt{fatal}. For example:
+
+\begin{verbatim}
+Log#debug "x = %s" x
+\end{verbatim}
+
+The advantages of using the syntax extension are the following:
+
+\begin{itemize}
+\item it automatically prefix the format with the module name
+\item it check the log level before calling the logging function, so
+  arguments are not computed if not needed
+\item debugging logs can be removed at parsing time
+\end{itemize}
+
+By default, the syntax extension remove all logs with the level
+\texttt{debug}. To keep them pass the command line option
+\texttt{-lwt-debug} to camlp4.
 
 %% +-----------------------------------------------------------------+
 %% | Section                                                         |
 %% +-----------------------------------------------------------------+
 \section{Other libraries}
 
-\subsection{Glib integration}
 \subsection{SSL support}
+
+The package \texttt{lwt.ssl} provides the module \texttt{Lwt\_ssl}
+which allow to use SSL asynchronously
+
+\subsection{Glib integration}
+
+The \texttt{lwt.glib} provides an alternative main loop for \lwt which
+uses the glib one. This allow you to write GTK application using \lwt.
+The one thing you have to do is to call \texttt{Lwt\_glib.init} at the
+beginning of you program.
 
 \end{document}

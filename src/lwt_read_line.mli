@@ -129,10 +129,10 @@ val read_line :
       from the user. If input is not a terminal, it defaults to
       [Lwt_text.read_line Lwt_text.stdin].
 
-      If @param mode contains the current completion mode. It default
+      If @param mode contains the current completion mode. It defaults
       to [`real_time].
 
-      @param prompt default to [Lwt_term.Text "# "] *)
+      @param prompt defaults to [Lwt_term.Text "# "] *)
 
 type password_style = [ `empty | `clear | `text of Text.t ]
     (** Style which indicate how the password is echoed to the user:
