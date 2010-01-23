@@ -43,6 +43,107 @@
 
 \subsection{The Lwt syntax extension}
 
+\lwt offers a syntax extension to make code using it more readable.
+The following construction are added to the language:
+
+\begin{itemize}
+\item \texttt{lwt} $pattern_1$ \texttt{=} $expr_1$ [ \texttt{and}
+  $pattern_2$ \texttt{=} $expr_2$ \dots ] \texttt{in} $expr$, which is a
+  parallel let-binding construction. For example in the following
+  code:
+
+\begin{verbatim}
+lwt x = f () and y = g () in
+expr
+\end{verbatim}
+
+  the thread \texttt{f ()} and \texttt{g ()} are launched in parallel
+  and their result are then bound to \texttt{x} and \texttt{y} in the
+  expression $expr$.
+
+  Of course you can also launch the two threads sequentially by
+  writing your code like that:
+
+\begin{verbatim}
+lwt x = f () in
+lwt y = g () in
+expr
+\end{verbatim}
+
+\item \texttt{try\_lwt} $expr$ [ \texttt{with} $pattern_1$
+  \texttt{$\rightarrow$} $expr_1$ ... ] [ \texttt{finally} $expr'$ ],
+  which is the equivalent of the standard \texttt{try-with}
+  construction but for \lwt. Both exception raised by
+  \texttt{Pervasives.raise} and \texttt{Lwt.fail} are caught.
+
+\item \texttt{for\_lwt} $ident$ \texttt{=} $expr_{init}$ ( \texttt{to}
+  $\mid$ \texttt{downto} ) $expr_{final}$ \texttt{do} $expr$
+  \texttt{done}, which is the equivalent of the standard \texttt{for}
+  construction but for \lwt.
+\end{itemize}
+
+\subsubsection{Correspondence table}
+
+You can keep in mind the following table to write code using lwt:
+
+\begin{center}
+  \begin{tabular}{|l|l|}
+    \hline
+
+    \textbf{without \lwt} & \textbf{with \lwt} \\
+
+    \hline
+
+    \texttt{let} $pattern_1$ \texttt{=} $expr_1$ &
+    \texttt{lwt} $pattern_1$ \texttt{=} $expr_1$ \\
+    \texttt{and} $pattern_2$ \texttt{=} $expr_2$ &
+    \texttt{and} $pattern_2$ \texttt{=} $expr_2$ \\
+    \dots &
+    \dots \\
+    \texttt{and} $pattern_n$ \texttt{=} $expr_n$ \texttt{in} &
+    \texttt{and} $pattern_n$ \texttt{=} $expr_n$ \texttt{in} \\
+    $expr$ &
+    $expr$ \\
+
+    \hline
+
+    \texttt{try} &
+    \texttt{try\_lwt} \\
+    \:\: $expr$ &
+    \:\: $expr$ \\
+    \texttt{with} &
+    \texttt{with} \\
+    \:\: $\mid pattern_1$ \texttt{$\rightarrow$} $expr_1$ &
+    \:\: $\mid pattern_1$ \texttt{$\rightarrow$} $expr_1$ \\
+    \:\: $\mid pattern_2$ \texttt{$\rightarrow$} $expr_2$ &
+    \:\: $\mid pattern_2$ \texttt{$\rightarrow$} $expr_2$ \\
+    \:\: \dots &
+    \:\: \dots \\
+    \:\: $\mid$ $pattern_n$ \texttt{$\rightarrow$} $expr_n$ &
+    \:\: $\mid$ $pattern_n$ \texttt{$\rightarrow$} $expr_n$ \\
+
+    \hline
+
+    \texttt{for} $ident$ \texttt{=} $expr_{init}$ \texttt{to} $expr_{final}$ \texttt{do} &
+    \texttt{for\_lwt} $ident$ \texttt{=} $expr_{init}$ \texttt{to} $expr_{final}$ \texttt{do} \\
+    \:\: $expr$ &
+    \:\: $expr$ \\
+    \texttt{done} &
+    \texttt{done} \\
+
+    \hline
+
+    \texttt{for} $ident$ \texttt{=} $expr_{init}$ \texttt{downto} $expr_{final}$ \texttt{do} &
+    \texttt{for\_lwt} $ident$ \texttt{=} $expr_{init}$ \texttt{downto} $expr_{final}$ \texttt{do} \\
+    \:\: $expr$ &
+    \:\: $expr$ \\
+    \texttt{done} &
+    \texttt{done} \\
+
+    \hline
+  \end{tabular}
+\end{center}
+
 %% +-----------------------------------------------------------------+
 %% | Section                                                         |
 %% +-----------------------------------------------------------------+
