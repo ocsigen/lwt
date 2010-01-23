@@ -1,5 +1,9 @@
 \documentclass{article}
 
+%% +-----------------------------------------------------------------+
+%% | Packages                                                        |
+%% +-----------------------------------------------------------------+
+
 \usepackage[utf8]{inputenc}
 \usepackage{xspace}
 \usepackage{verbatim}
@@ -36,12 +40,247 @@
 %% +-----------------------------------------------------------------+
 \section{Introduction}
 
+In any program, we have to interact with other processes, users, ...:
+
+\begin{itemize}
+\item the kernel, by doing system calls
+\item the user, by reading the keyboard, the mouse, or any input
+  device
+\item a graphical server, to build graphical user interface
+\item other computer, by using gthe network
+\item \dots
+\end{itemize}
+
+When this list contains only one item, it is pretty easy to
+handle. However as this list grow it become harder to handle. Several
+choices have been proposed to solve the problem:
+
+\begin{itemize}
+\item using a main loop, and integrate all components we are
+  ineteracting with into this main loop.
+\item using preemptive system threads
+\end{itemize}
+
+Both solution have their advantages and their drawbacks. For the first
+one, it may works, but it become very complicated to write a bit of
+sequential code. The typical example being with graphical user
+interfaces freezing and not redrawing themselves because they are
+waiting for some blocking part of the code to complete.
+
+If you already wrote code using preemptive threads, you shall know
+that doing it right with threads is a hard job. Moreover system
+threads consume non negligible resources, and so you are limited in
+the number of threads you launch at the same time. So this is not a
+real solution.
+
+\lwt offers a new alternative. It provides very light-weight
+cooperative threads; ``launching'' a thread is a very quick operation,
+it does not require a new stack, a new process, or whatever else and
+context switches are very fast. In fact, it is so easy that we will
+launch a thread for every system call. And composing cooperative
+threads will allow us to write higly asynchronous programs.
+
+In a first part, we will explain the concepts of \lwt, then we will
+describe the many sub-libraries of \lwt.
+
 %% +-----------------------------------------------------------------+
 %% | Section                                                         |
 %% +-----------------------------------------------------------------+
 \section{The Lwt core library}
 
-\subsection{The Lwt syntax extension}
+In this section we describe the basis of \lwt. It is advised to start
+an ocaml toplevel and try codes given as example. To start, launch
+\texttt{ocaml} in a terminal or in emacs with the tuareg mode, and
+type:
+
+\begin{verbatim}
+# #use "topfind";;
+# #require "lwt";;
+\end{verbatim}
+
+\subsection{Lwt concepts}
+
+Let's take a classical function of the \texttt{Pervasives} module:
+
+\begin{verbatim}
+# Pervasives.input_char;
+- : in_channel -> char = <fun>
+\end{verbatim}
+
+This function will wait for a character to come on the given input
+channel and return it. The problem with this function is that it is
+blocking: while it is being executed, the whole program will be
+blocked, and other events will not be handled until it returns.
+
+Now let's look what is the lwt equivalent:
+
+\begin{verbatim}
+# Lwt_io.read_char;;
+- : Lwt_io.input_channel -> char Lwt.t = <fun>
+\end{verbatim}
+
+As you can see, it does not returns a character but something of type
+\texttt{char Lwt.t}. The type \texttt{'a Lwt.t} is the type of threads
+returning a value of type \texttt{'a}. Actually the
+\texttt{Lwt\_io.read\_char} will try to read a character to the given
+input channel and \emph{immediatly} returns a light-weight thread.
+
+Now, let's see what we can do a lwt thread. The following code create
+a pipe, and launch a thread reading on the input side:
+
+\begin{verbatim}
+# let ic, oc = Lwt_io.pipe ();;
+val ic : Lwt_io.input_channel = <abstr>
+val oc : Lwt_io.output_channel = <abstr>
+# let t = Lwt_io.read_char ic;;
+val t : char Lwt.t = <abstr>
+\end{verbatim}
+
+We now introduce the concept of thread state:
+
+\begin{verbatim}
+# Lwt.state t;;
+- : char Lwt.state = Sleep
+\end{verbatim}
+
+A thread may be in one of the following states:
+
+\begin{itemize}
+\item \texttt{Return x}, which means that the thread has terminated
+  successfully and returned the value \texttt{x}
+\item \texttt{Fail exn}, which means that the thread has terminated,
+  but instead of returning a value, it failed with the exception
+  \texttt{exn}
+\item \texttt{Sleep}, which means that the thread is currently
+  sleeping and have not yet returned a value or an exception
+\end{itemize}
+
+The thread \texttt{t} is sleeping because there is currently nothing
+to read on the pipe. Let's write something:
+
+\begin{verbatim}
+# Lwt_io.write_char oc 'a';;
+- : unit Lwt.t = <abstr>
+# Lwt.state t;;
+- : char Lwt.state = Return 'a'
+\end{verbatim}
+
+So, after we write something, the reading thread has been wakeup and
+has returned the value \texttt{'a'}.
+
+\subsubsection{Primitives for thread creation}
+
+We now look at the primitives for creating \lwt threads. These
+functions are localted in the module \texttt{Lwt}.
+
+There are three primitives (one by thread state):
+
+\begin{itemize}
+\item \texttt{Lwt.return : 'a -> 'a Lwt.t} which create a thread which has already
+  terminated and returned a value
+\item \texttt{Lwt.fail : exn -> 'a Lwt.t} which create a thread which
+  has already terminated and failed with an exception
+\item \texttt{Lwt.wait : unit -> 'a Lwt.t * 'a Lwt.u} which create a
+  sleeping thread and returns this thread plus a wakener (of type
+  \texttt{'a Lwt.u}) which must be used to wakeup the sleeping thread.
+\end{itemize}
+
+To wakeup a sleeping thread, you can use one of the following
+function:
+
+\begin{itemize}
+\item \texttt{Lwt.wakeup : 'a Lwt.u -> 'a -> unit} which wakeup the
+  thread with a value.
+\item \texttt{Lwt.wakeup\_exn : 'a Lwt.u -> exn -> unit} which wakeup
+  the thread with an exception.
+\end{itemize}
+
+Not that this is an error to wakeup two times the same threads. \lwt
+will raise \texttt{Invalid\_argument} if you try to do so.
+
+With these information, try to guess the result of each of the
+following expression:
+
+\begin{verbatim}
+# Lwt.state (Lwt.return 42);;
+# Lwt.state (Lwt.fail Exit);;
+# let waiter, wakener = Lwt.wait ();;
+# Lwt.state waiter;;
+# Lwt.wakeup wakener 42;;
+# Lwt.state waiter;;
+# let waiter, wakener = Lwt.wait ();;
+# Lwt.state waiter;;
+# Lwt.wakeup_exn wakener Exit;;
+# Lwt.state waiter;;
+\end{verbatim}
+
+\subsubsection{Primitives for thread composition}
+
+The most important operation you need to know is \texttt{bind}:
+
+\begin{verbatim}
+val bind : 'a Lwt.t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
+\end{verbatim}
+
+\texttt{bind t f} returns the thread which waits for \texttt{t} to
+terminates, then pass the result to \texttt{f}. It \texttt{t} is a
+sleeping thread, then \texttt{bind t f} will be a sleeping thread too,
+until \texttt{t} terminates. If \texttt{t} fails, then the resulting
+thread will fail with the same exception.
+
+Similarly to \texttt{bind}, there is a function to handle the case
+when \texttt{t} fails:
+
+\begin{verbatim}
+val catch : (unit -> 'a Lwt.t) -> (exn -> 'a Lwt.t) -> 'a Lwt.t
+\end{verbatim}
+
+\texttt{catch f g} will call \texttt{f ()}, then waits for its
+termination, and if it fails with an exception \texttt{exn}, calls
+\texttt{g exn} to handle it.
+
+Look at the documentation of the \texttt{Lwt} module to see all
+primitives.
+
+\subsubsection{Cancelable threads}
+
+In some case, we may want to cancel a threads. For example, because it
+has not terminated after a timeout. This can be done with cancelable
+threads. To create a cancelable threads, you must use the
+\texttt{Lwt.task} function:
+
+\begin{verbatim}
+val task : unit -> 'a Lwt.t * 'a Lwt.u
+\end{verbatim}
+
+It has the same semantic that \texttt{Lwt.wait} except that the
+sleeping thread can be canceled with \texttt{Lwt.cancel}:
+
+\begin{verbatim}
+val cancel : 'a Lwt.t -> unit
+\end{verbatim}
+
+The threads will then fails with the exception
+\texttt{Lwt.Canceled}. To execute a function when the thread is
+canceled, you must use \texttt{Lwt.on\_cancel}:
+
+\begin{verbatim}
+val on_cancel : 'a Lwt.t -> (unit -> unit) -> unit
+\end{verbatim}
+
+\subsubsection{Rules}
+
+\lwt will always try to execute the more it can before yielding and
+switch to another cooperative threads. In order to make it works well,
+you must follow the following rules:
+
+\begin{itemize}
+\item do not write function that may takes time to complete
+\item do not do IOs that may block, otherwise the whole program will
+  hang. You must instead use asynchronous IOs operations
+\end{itemize}
+
+\subsection{The syntax extension}
 
 \lwt offers a syntax extension to make code using it more readable.
 The following construction are added to the language:
@@ -148,6 +387,7 @@ You can keep in mind the following table to write code using lwt:
 %% | Section                                                         |
 %% +-----------------------------------------------------------------+
 \section{The Lwt.unix library}
+\label{lwt.unix}
 
 %% +-----------------------------------------------------------------+
 %% | Section                                                         |
