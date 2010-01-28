@@ -1159,9 +1159,9 @@ let null =
 
 (* Do not close standard ios on close, otherwise uncaught exceptions
    will not be printed *)
-let stdin = of_fd ~close:return ~mode:input Lwt_unix.stdin
-let stdout = of_fd ~close:return ~mode:output Lwt_unix.stdout
-let stderr = of_fd ~close:return ~mode:output Lwt_unix.stderr
+let stdin = of_fd ~mode:input Lwt_unix.stdin
+let stdout = of_fd ~mode:output Lwt_unix.stdout
+let stderr = of_fd ~mode:output Lwt_unix.stderr
 
 let fprint oc txt = write oc txt
 let fprintl oc txt = write_line oc txt
