@@ -152,8 +152,6 @@ let close ?(recursive=false) logger = match !logger with
   | Opened logger ->
       close_rec recursive logger
 
-let _close logger = close logger
-
 let make ?(level=default_level) ~output ~close () =
   let rec logger =
     ref(Opened(End_point{ ep_output = output;
@@ -163,7 +161,6 @@ let make ?(level=default_level) ~output ~close () =
                           ep_parents = [];
                           ep_logger = logger }))
   in
-  Lwt_gc.finalise_or_exit _close logger;
   logger
 
 let merge ?(level=default_level) loggers =

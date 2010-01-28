@@ -152,6 +152,16 @@ let mode wrapper = wrapper.channel.mode
    | Creations, closing, locking, ...                                |
    +-----------------------------------------------------------------+ *)
 
+module Outputs = Weak.Make(struct
+                             type t = output_channel
+                             let hash = Hashtbl.hash
+                             let equal = ( == )
+                           end)
+
+(* Table of all opened output channels. On exit they are all
+   flushed: *)
+let outputs = Outputs.create 32
+
 let position wrapper =
   let ch = wrapper.channel in
   match ch.mode with
@@ -403,7 +413,7 @@ let rec abort wrapper = match wrapper.state with
       wrapper.state <- Closed;
       (* Abort any current real reading/writing operation on the
          channel: *)
-      wakeup_exn (wrapper.channel.abort_wakener) (closed_channel wrapper.channel);
+      wakeup_exn wrapper.channel.abort_wakener (closed_channel wrapper.channel);
       Lazy.force wrapper.channel.close
 
 let close wrapper =
@@ -423,11 +433,24 @@ let close wrapper =
           with _ ->
             abort wrapper
 
-(* Avoid confusion with the [close] argument of [make]: *)
-let alias_to_close = close
+let _ =
+  (* Flush all opened ouput channels on exit: *)
+  Lwt_sequence.add_l
+    (fun () ->
+       let wrappers = Outputs.fold (fun x l -> x :: l) outputs [] in
+       Lwt_list.iter_p
+         (fun wrapper ->
+            try_lwt
+              primitive safe_flush_total wrapper
+            with _ ->
+              return ())
+         wrappers)
+    Lwt_main.exit_hooks
 
 let no_seek pos cmd =
   fail (Failure "Lwt_io.seek: seek not supported on this channel")
+
+external unsafe_output : 'a channel -> output channel = "%identity"
 
 let make ?buffer_size ?(close=return) ?(seek=no_seek) ~mode perform_io =
   let buffer =
@@ -459,7 +482,7 @@ let make ?buffer_size ?(close=return) ?(seek=no_seek) ~mode perform_io =
     channel = ch;
     queued = Lwt_sequence.create ();
   } in
-  Lwt_gc.finalise_or_exit alias_to_close wrapper;
+  if mode = Output then Outputs.add outputs (unsafe_output wrapper);
   wrapper
 
 let of_fd ?buffer_size ?close ~mode fd =
