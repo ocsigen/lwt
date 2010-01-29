@@ -66,12 +66,12 @@ let run ~name ~suites =
             test.run () >>= function
               | false ->
                   lwt () = printlf "\r\027[JTest %S from suite %S failed." test.name suite_name in
-                  loop_tests failures suite_name (number + 1) suites tests
+                  loop_tests (failures + 1) suite_name (number + 1) suites tests
               | true ->
                   loop_tests failures suite_name (number + 1) suites tests
           with exn ->
             lwt () = printlf "\r\027[JTest %S from suite %S failed. It raised: %S" test.name suite_name (Printexc.to_string exn) in
-            loop_tests failures suite_name (number + 1) suites tests
+            loop_tests (failures + 1) suite_name (number + 1) suites tests
     in
     loop_suites 0 1 suites
   end in
