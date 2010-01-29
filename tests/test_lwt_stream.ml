@@ -74,4 +74,49 @@ let suite = suite "lwt_stream" [
        push (`Exn Exit);
        let t = Lwt_stream.get stream in
        return (result && Lwt.state t = Fail Exit));
+
+  test "get_while"
+    (fun () ->
+       let stream = Lwt_stream.of_list [1; 2; 3; 4; 5] in
+       lwt l1 = Lwt_stream.get_while (fun x -> x < 3) stream in
+       lwt l2 = Lwt_stream.to_list stream in
+       return (l1 = [1; 2] && l2 = [3; 4; 5]));
+
+  test "peek"
+    (fun () ->
+       let stream = Lwt_stream.of_list [1; 2; 3; 4; 5] in
+       lwt x = Lwt_stream.peek stream in
+       lwt y = Lwt_stream.peek stream in
+       lwt l = Lwt_stream.to_list stream in
+       return (x = Some 1 && y = Some 1 && l = [1; 2; 3; 4; 5]));
+
+  test "npeek"
+    (fun () ->
+       let stream = Lwt_stream.of_list [1; 2; 3; 4; 5] in
+       lwt x = Lwt_stream.npeek 3 stream in
+       lwt y = Lwt_stream.npeek 1 stream in
+       lwt l = Lwt_stream.to_list stream in
+       return (x = [1; 2; 3] && y = [1] && l = [1; 2; 3; 4; 5]));
+
+  test "get_available"
+    (fun () ->
+       let push, stream = Lwt_stream.push_stream () in
+       push (`Data 1);
+       push (`Data 2);
+       push (`Data 3);
+       let l = Lwt_stream.get_available stream in
+       push (`Data 4);
+       lwt x = Lwt_stream.get stream in
+       return (l = [1; 2; 3] && x = Some 4));
+
+  test "get_available_up_to"
+    (fun () ->
+       let push, stream = Lwt_stream.push_stream () in
+       push (`Data 1);
+       push (`Data 2);
+       push (`Data 3);
+       push (`Data 4);
+       let l = Lwt_stream.get_available_up_to 2 stream in
+       lwt x = Lwt_stream.get stream in
+       return (l = [1; 2] && x = Some 3));
 ]

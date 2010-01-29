@@ -204,12 +204,18 @@ let rec force n s =
 
 let npeek n s =
   lwt () = Lwt_mutex.with_lock s.mutex (fun () -> force n s) in
-  return (List.rev
-            (Queue.fold
-               (fun l x -> match x with
-                  | Some x ->  x :: l
-                  | None -> l)
-               [] s.queue))
+  let l, _ =
+    Queue.fold
+      (fun (l, n) x ->
+         if n > 0 then
+           match x with
+             | Some x ->  (x :: l, n - 1)
+             | None -> (l, n)
+         else
+           (l, n))
+      ([], n) s.queue
+  in
+  return (List.rev l)
 
 let get_unlocked s =
   if Queue.is_empty s.queue then begin
@@ -250,13 +256,14 @@ let nget n s =
 
 let get_while f s =
   let rec loop () =
-    get_unlocked s >>= function
+    peek_unlocked s >>= function
       | Some x ->
           let test = f x in
-          if test then
+          if test then begin
+            ignore (Queue.take s.queue);
             lwt l = loop () in
             return (x :: l)
-          else
+          end else
             return []
       | None ->
           return []
@@ -265,13 +272,14 @@ let get_while f s =
 
 let get_while_s f s =
   let rec loop () =
-    get_unlocked s >>= function
+    peek_unlocked s >>= function
       | Some x ->
           lwt test = f x in
-          if test then
+          if test then begin
+            ignore (Queue.take s.queue);
             lwt l = loop () in
             return (x :: l)
-          else
+          end else
             return []
       | None ->
           return []
@@ -362,10 +370,11 @@ let junk_old s =
 
 let get_available s =
   let rec loop () =
-    match Lwt.state (peek_unlocked s) with
+    match Lwt.state (peek s) with
       | Sleep | Return None ->
           []
       | Return(Some x) ->
+          ignore (Queue.take s.queue);
           x :: loop ()
       | Fail exn ->
           raise exn
@@ -377,10 +386,11 @@ let get_available_up_to n s =
     | 0 ->
         []
     | n ->
-        match Lwt.state (peek_unlocked s) with
+        match Lwt.state (peek s) with
           | Sleep | Return None ->
               []
           | Return(Some x) ->
+              ignore (Queue.take s.queue);
               x :: loop (n - 1)
           | Fail exn ->
               raise exn
