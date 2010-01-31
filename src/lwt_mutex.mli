@@ -27,6 +27,13 @@ val create : unit -> t
 val lock : t -> unit Lwt.t
 val unlock : t -> unit
 
+val is_locked : t -> bool
+  (** [locked mutex] returns whether [mutex] is currently locked *)
+
+val is_empty : t -> bool
+  (** [is_empty mutex] returns [true] if they are no thread waiting on
+      the mutex, and [false] otherwise *)
+
 val with_lock : t -> (unit -> 'a Lwt.t) -> 'a Lwt.t
   (** [with_lock lock f] is used to lock a mutex within a block
       scope.  The function [f ()] is called with the mutex locked, and

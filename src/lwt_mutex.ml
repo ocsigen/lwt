@@ -53,3 +53,6 @@ let with_lock m f =
   finally
     unlock m;
     return ()
+
+let is_locked m = m.locked
+let is_empty m = Lwt_sequence.is_empty m.waiters
