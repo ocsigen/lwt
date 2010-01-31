@@ -34,6 +34,7 @@ let log_intern fmt =
 type level =
   | Debug
   | Info
+  | Notice
   | Warning
   | Error
   | Fatal
@@ -41,6 +42,7 @@ type level =
 let string_of_level = function
   | Debug -> "debug"
   | Info -> "info"
+  | Notice -> "notice"
   | Warning -> "warning"
   | Error -> "error"
   | Fatal -> "fatal"
@@ -51,13 +53,14 @@ let default_level =
       | "0" | "fatal" -> Fatal
       | "1" | "error" -> Error
       | "2" | "warning" -> Warning
-      | "3" | "info" -> Info
-      | "4" | "debug" -> Debug
+      | "3" | "notice" -> Notice
+      | "4" | "info" -> Info
+      | "5" | "debug" -> Debug
       | str ->
           log_intern "wrong value for LWT_LOG: %S" str;
-          Warning
+          Notice
   with Not_found ->
-    Warning
+    Notice
 
 (* +-----------------------------------------------------------------+
    | Loggers                                                         |
@@ -275,6 +278,7 @@ let level_code = function
   | Fatal -> 0
   | Error -> 3
   | Warning -> 4
+  | Notice -> 5
   | Info -> 6
   | Debug -> 7
 

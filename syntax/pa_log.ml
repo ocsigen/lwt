@@ -28,6 +28,7 @@ let levels = [
   "fatal";
   "error";
   "warning";
+  "notice";
   "info";
   "debug";
 ]

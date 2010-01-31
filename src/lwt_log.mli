@@ -101,6 +101,8 @@ type level =
   | Info
       (** Informational message. Suitable to be displayed when the
           program is in verbose mode. *)
+  | Notice
+      (** Same as {!Info}, but is displayed by default. *)
   | Warning
       (** Something strange happend *)
   | Error
@@ -118,16 +120,18 @@ val default_level : level
         - [0] for {!Fatal}
         - [1] for {!Error}
         - [2] for {!Warning}
-        - [3] for {!Info}
-        - [4] for {!Debug}
-      - a level name (case insensitive): "debug", "info", "warning", "error", "fatal"
+        - [3] for {!Notice}
+        - [4] for {!Info}
+        - [5] for {!Debug}
+      - a level name (case insensitive): "debug", "info", "notice",
+        "warning", "error" or "fatal"
 
-      A level name of "debug" or level number of [4] means that
+      A level name of "debug" or level number of [5] means that
       everyhting will be displayed. A level name of {!Fatal} or level
       number of [0] means that only fatal error messages are
       displayed.
 
-      If [LWT_LOG] is not defined, then it default to {!Warning}. *)
+      If [LWT_LOG] is not defined, then it default to {!Notice}. *)
 
 (** In all the follwing function the optionnal argument [level]
     default to {!default_level} *)
