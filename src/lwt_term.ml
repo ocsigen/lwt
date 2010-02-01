@@ -658,3 +658,126 @@ let fprintlc oc fd st =
 
 let printlc st = fprintlc stdout Unix.stdout st
 let eprintlc st = fprintlc stderr Unix.stderr st
+
+(* +-----------------------------------------------------------------+
+   | Drawing                                                         |
+   +-----------------------------------------------------------------+ *)
+
+module Zone =
+struct
+  type t = {
+    points : point array array;
+    x : int;
+    y : int;
+    width : int;
+    height : int;
+  }
+
+  let points zone = zone.points
+  let x zone = zone.x
+  let y zone = zone.y
+  let width zone = zone.width
+  let height zone = zone.height
+
+  let make ~width ~height =
+    if width < 0 || height < 0 then invalid_arg "Lwt_term.Zone.make";
+    {
+      points = Array.make_matrix height width blank;
+      x = 0;
+      y = 0;
+      width = width;
+      height = height;
+    }
+
+  let sub ~zone ~x ~y ~width ~height =
+    if (x < 0 || y < 0 ||
+          width < 0 || height < 0 ||
+          x + width > zone.width ||
+          y +  height > zone.height) then
+      invalid_arg "Lwt_term.Zone.sub";
+    {
+      points = zone.points;
+      x = zone.x + x;
+      y = zone.y + y;
+      width = width;
+      height = height;
+    }
+
+  let inner zone = {
+    points = zone.points;
+    x = if zone.width >= 2 then zone.x + 1 else zone.x;
+    y = if zone.height >= 2 then zone.y + 1 else zone.y;
+    width = if zone.width >= 2 then zone.width - 2 else zone.width;
+    height = if zone.height >= 2 then zone.height - 2 else zone.height;
+  }
+end
+
+module Draw =
+struct
+  open Zone
+
+  let get ~zone ~x ~y =
+    if x < 0 || y < 0 || x >= zone.width || y >= zone.height then
+      invalid_arg "Lwt_term.Draw.get";
+    zone.points.(zone.y + y).(zone.x + x)
+
+  let set ~zone ~x ~y ~point =
+    if x < 0 || y < 0 || x >= zone.width || y >= zone.height then
+      ()
+    else
+      zone.points.(zone.y + y).(zone.x + x) <- point
+
+  let map ~zone ~x ~y f =
+    if x < 0 || y < 0 || x >= zone.width || y >= zone.height then
+      ()
+    else
+      let x = zone.x + x and y = zone.y + y in
+      zone.points.(y).(x) <- f zone.points.(y).(x)
+
+  let text ~zone ~x ~y ~text =
+    let rec loop x ptr = match Text.next ptr with
+      | Some(ch, ptr) ->
+          set zone x y { blank with char = ch };
+          loop (x + 1) ptr
+      | None ->
+          ()
+    in
+    loop x (Text.pointer_l text)
+
+  let textf zone x y fmt =
+    Printf.ksprintf (fun txt -> text zone x y txt) fmt
+
+  let textc ~zone ~x ~y ~text =
+    let rec loop style x = function
+      | [] ->
+          ()
+      | instr :: rest ->
+          match instr with
+            | Text text ->
+                loop_text style x (Text.pointer_l text) rest
+            | Reset ->
+                loop blank.style x rest
+            | Bold ->
+                loop { style with bold = true } x rest
+            | Underlined ->
+                loop { style with underlined = true } x rest
+            | Blink ->
+                loop { style with blink = true } x rest
+            | Inverse ->
+                loop { style with inverse = true } x rest
+            | Hidden ->
+                loop { style with hidden = true } x rest
+            | Foreground color ->
+                loop { style with foreground = color } x rest
+            | Background color ->
+                loop { style with background = color } x rest
+    and loop_text style x ptr rest =
+      match Text.next ptr with
+        | Some(ch, ptr) ->
+            set zone x y { char = ch; style = style };
+            loop_text style (x + 1) ptr rest
+        | None ->
+            loop style x rest
+    in
+    loop blank.style x text
+end

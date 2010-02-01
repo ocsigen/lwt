@@ -212,18 +212,6 @@ val lmagenta : color
 val lcyan : color
 val lwhite : color
 
-(** {8 Character styles} *)
-
-type style = {
-  bold : bool;
-  underlined : bool;
-  blink : bool;
-  inverse : bool;
-  hidden : bool;
-  foreground : color;
-  background : color;
-}
-
 (** {8 Text with styles} *)
 
 (** Elmement of a styled-text *)
@@ -293,6 +281,17 @@ val eprintlc : styled_text -> unit Lwt.t
 
 (** {6 Rendering} *)
 
+(** Character styles *)
+type style = {
+  bold : bool;
+  underlined : bool;
+  blink : bool;
+  inverse : bool;
+  hidden : bool;
+  foreground : color;
+  background : color;
+}
+
 (** A character on the screen: *)
 type point = {
   char : Text.t;
@@ -306,3 +305,72 @@ val blank : point
 
 val render : point array array -> unit Lwt.t
   (** Render an offscreen array to the terminal. *)
+
+(** {6 Drawing} *)
+
+(** Off-screen zones *)
+module Zone : sig
+  type t = {
+    points : point array array;
+    (** The off-screen matrix *)
+
+    x : int;
+    y : int;
+    (** Absolute coordinates of the top-left corner of the zone *)
+
+    width : int;
+    height : int;
+    (** Dimmensions of the zone *)
+  }
+
+  val points : t -> point array array
+  val x : t -> int
+  val y : t -> int
+  val width : t -> int
+  val height : t -> int
+
+  val make : width : int -> height : int -> t
+    (** Make a new zone where all points are initialized to
+        {!blank} *)
+
+  val sub : zone : t -> x : int -> y : int -> width : int -> height : int -> t
+    (** [sub ~zone ~x ~y ~width ~height] creates a sub-zone of
+        [zone]. [x] and [y] are relatives to the zone top left corner.
+
+        @raise [Invalid_argument] if the sub zone is not included in
+        [zone]*)
+
+  val inner : t -> t
+    (** [inner zone] returns the inner part of [zone] *)
+end
+
+(** Drawing helpers *)
+module Draw : sig
+
+  (** Note: except for {!get}, all function ignore points that are
+      outside the zone *)
+
+  val get : zone : Zone.t -> x : int -> y : int -> point
+    (** [get ~zone ~x ~y] returns the point at relative position [x]
+        and [y].
+
+        @raise [Invalid_arg] if the coordinates are outside the
+        zone *)
+
+  val set : zone : Zone.t -> x : int -> y : int -> point : point -> unit
+    (** [set ~zone ~x ~y ~popint] sets point at relative position [x]
+        and [y]. *)
+
+  val map : zone : Zone.t -> x : int -> y : int -> (point -> point) -> unit
+    (** [map ~zone ~x ~y f] replace the point at coordinates [(x, y)]
+        by the result of [f] applied on it. *)
+
+  val text : zone : Zone.t -> x : int -> y : int -> text : Text.t -> unit
+    (** Draw the given text at the given positon *)
+
+  val textf : Zone.t -> int -> int -> ('a, unit, string, unit) format4 -> 'a
+    (** Same as {!text} but uses a format string *)
+
+  val textc : zone : Zone.t -> x : int -> y : int -> text : styled_text -> unit
+    (** Same as {!text} but takes a text with styles *)
+end
