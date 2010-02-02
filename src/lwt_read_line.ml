@@ -80,12 +80,16 @@ let lookup word words =
 
 let complete ?(suffix=" ") before word after words =
   let prefix, words = lookup word words in
-  if TextSet.is_empty words then
-    { comp_state = (before ^ word, after);
-      comp_words = TextSet.empty }
-  else
-    { comp_state = (before ^ prefix, after);
-      comp_words = words }
+  match TextSet.cardinal words with
+    | 0 ->
+        { comp_state = (before ^ word, after);
+          comp_words = TextSet.empty }
+    | 1 ->
+        { comp_state = (before ^ prefix ^ suffix, after);
+          comp_words = words }
+    | _ ->
+        { comp_state = (before ^ prefix, after);
+          comp_words = words }
 
 (* +-----------------------------------------------------------------+
    | Commands                                                        |
