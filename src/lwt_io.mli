@@ -119,8 +119,7 @@ val make :
   (** [make ?buffer_size ?close ~mode perform_io] is the
       main function for creating new channels.
 
-      @param buffer_size is the size of the internal buffer. It is not
-      used if [buffer] is provided.
+      @param buffer_size is the size of the internal buffer.
 
       @param close is the close function of the channel. It defaults
       to [Lwt.return]
@@ -178,6 +177,12 @@ val buffered : 'a channel -> int
 
 val flush : output_channel -> unit Lwt.t
   (** [flush oc] performs all pending writes on [oc] *)
+
+val buffer_size : 'a channel -> int
+  (** Returns the size of the internal buffer. *)
+
+val resize_buffer : 'a channel -> int -> unit Lwt.t
+  (** Resize the internal buffer to the given size *)
 
 (** {6 Random access} *)
 
@@ -442,7 +447,7 @@ val block : 'a channel  -> int -> (string -> int -> 'b Lwt.t) -> 'b Lwt.t
       offset. The buffer contains [size] chars at [offset]. [f] may
       reads or writes these chars.
 
-      @param size must verify [0 <= size <= 256] *)
+      @param size must verify [0 <= size <= 16] *)
 
 (** Informations for accessing directly to the internal buffer of a
     channel: *)

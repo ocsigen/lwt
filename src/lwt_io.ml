@@ -99,8 +99,8 @@ and 'mode channel = {
 }
 
 and 'mode _channel = {
-  buffer : string;
-  length : int;
+  mutable buffer : string;
+  mutable length : int;
 
   mutable ptr : int;
   (* Current position *)
@@ -514,6 +514,46 @@ let buffered ch =
   match ch.channel.mode with
     | Input -> ch.channel.max - ch.channel.ptr
     | Output -> ch.channel.ptr
+
+let buffer_size ch = ch.channel.length
+
+let resize_buffer wrapper len =
+  if len < min_buffer_size then invalid_arg "Lwt_io.resize_buffer";
+  primitive begin fun ch ->
+    match ch.mode with
+      | Input ->
+          let unread_count = ch.max - ch.ptr in
+          (* Fail if we want to decrease the buffer size and there is
+             too much unread data in the buffer: *)
+          if len < unread_count then
+            fail (Failure "Lwt_io.resize_buffer: cannot decrease buffer size")
+          else begin
+            let buffer = String.create len in
+            String.unsafe_blit ch.buffer ch.ptr buffer 0 unread_count;
+            ch.buffer <- buffer;
+            ch.length <- len;
+            ch.ptr <- 0;
+            ch.max <- unread_count;
+            return ()
+          end
+      | Output ->
+          (* If we decrease the buffer size, flush the buffer until
+             the number of buffered bytes fits into the new buffer: *)
+          let rec loop () =
+            if ch.ptr > len then
+              lwt _ = flush_partial ch in
+              loop ()
+            else
+              return ()
+          in
+          lwt () = loop () in
+          let buffer = String.create len in
+          String.unsafe_blit ch.buffer 0 buffer 0 ch.ptr;
+          ch.buffer <- buffer;
+          ch.length <- len;
+          ch.max <- len;
+          return ()
+  end wrapper
 
 (* +-----------------------------------------------------------------+
    | Byte-order                                                      |
