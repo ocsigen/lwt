@@ -188,7 +188,7 @@ CAMLprim value lwt_unix_get_credentials(value fd)
 
 CAMLprim value lwt_unix_get_credentials(value fd_val)
 {
-  invalir_argument("get_credentials not implemented");
+  invalid_argument("get_credentials not implemented");
 }
 
 #endif
