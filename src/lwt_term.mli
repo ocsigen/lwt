@@ -29,10 +29,18 @@ val with_raw_mode : (unit -> 'a Lwt.t) -> 'a Lwt.t
   (** [with_raw_mode f] executes [f] while the terminal is in ``raw
       mode''. Raw mode means that character are returned as the user
       type them (otherwise only complete line are returned to the
-      program). *)
+      program).
+
+      If the terminal is already in raw mode, it just calls [f].  *)
 
 val raw_mode : unit -> bool
   (** Returns wether the terminal is currently in raw mode *)
+
+val save_state : unit -> unit Lwt.t
+  (** Save the state of the terminal *)
+
+val restore_state : unit -> unit Lwt.t
+  (** Restore the state of the terminal *)
 
 val show_cursor : unit -> unit Lwt.t
   (** [show_cursor ()] makes the cursor visible *)

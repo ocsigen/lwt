@@ -48,6 +48,12 @@ let set_attr mode =
   with
       _ -> ()
 
+let save_state () =
+  write stdout "\027[?1049h\027[?1h\027=\r"
+
+let restore_state () =
+  write stdout "\r\027[K\027[?1l\027>\027[r\027[?1049l"
+
 let cursor_visible = ref true
 
 let show_cursor _ =
