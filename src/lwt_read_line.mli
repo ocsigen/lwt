@@ -312,8 +312,6 @@ module Terminal : sig
   val init : state
     (** Initial state *)
 
-  (** {6 High-level functions} *)
-
   (** The following functions are the one used by read-line functions
       of this module. *)
 
@@ -362,24 +360,6 @@ module Terminal : sig
         erase everything (the prompt, user input, completion, ...).
 
         After an erase, the rendering state is [init]. *)
-
-  (** {6 Low-level functions} *)
-
-  (** The following functions are helpers in case you want to
-      reimplement you own read-line function *)
-
-  val expand_returns : columns : int -> text : Lwt_term.styled_text -> Lwt_term.styled_text
-    (** [expand_returns st] returns [st] where all ["\n"] have
-        been replaced by spaces until the end of line, then a ["\n"].
-
-        For example:
-
-        {[
-          prepare_for_display ~columns:10 [Text "foo\nbar"] = [Text "foo       \nbar"]
-        ]}
-
-        This allow you to clean-up previously displayed text.
-    *)
 end
 
 (** {6 Advanced use} *)

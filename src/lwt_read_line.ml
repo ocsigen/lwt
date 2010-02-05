@@ -667,49 +667,23 @@ struct
   open Command
 
   type state = {
-    length : int;
-    (* Length in characters of the complete printed text: the prompt,
-       the input before the cursor and the input after the cursor. *)
-    height_before : int;
-    (* The height of the complete text printed before the cursor: the
-       prompt and the input before the cursor. *)
+    printed_before : styled_text;
+    (* The text displayed before the cursor *)
+    printed_after : styled_text;
+    (* The text displayed after the cursor *)
     box : bool;
     (* Tell whether a box is currently displayed *)
     display_start : int;
     (* For dynamic completion. It is the index of the first displayed word. *)
   }
 
-  let init = { length = 0; height_before = 0; display_start = 0; box = false }
+  let init = { printed_before = []; printed_after = []; display_start = 0; box = false }
 
   type box =
     | Box_none
     | Box_empty
     | Box_words of text_set * int
     | Box_message of string
-
-  let expand_returns ~columns ~text =
-    let rec loop len = function
-      | [] ->
-          []
-      | Text text :: l ->
-          let buf = Buffer.create (String.length text) in
-          let len = Text.fold
-            (fun ch len ->
-               match ch with
-                 | "\n" ->
-                     for i = len mod columns to columns - 1 do
-                       Buffer.add_char buf ' '
-                     done;
-                     0
-                 | _ ->
-                     Buffer.add_string buf ch;
-                     len + 1)
-            text len in
-          Text(Buffer.contents buf) :: loop len l
-      | style :: l ->
-          style :: loop len l
-    in
-    loop 0 text
 
   let make_completion index columns words =
     let rec aux ofs idx = function
@@ -781,61 +755,74 @@ struct
     | n ->
         Text "\027[F" :: goto_beginning_of_line (n - 1)
 
-  let compute_height columns length =
-    if length = 0 then
-      0
-    else
-      let height = length / columns in
-      if length mod columns = 0 then
-        height - 1
+  let rec compute_position columns acc = function
+    | [] ->
+        acc
+    | Text txt :: rest ->
+        let acc = Text.fold (fun ch (column, line) ->
+                               match ch with
+                                 | "\n" ->
+                                     (0, line + 1)
+                                 | _ ->
+                                     if column = columns then
+                                       (1, line + 1)
+                                     else
+                                       (column + 1, line)) txt acc in
+        compute_position columns acc rest
+    | _ :: rest ->
+        compute_position columns acc rest
+
+  let _draw columns old_render_state new_render_state =
+
+    let new_width_before, new_height_before =
+      compute_position columns (0, 0) new_render_state.printed_before
+    and old_width_before, old_height_before =
+      compute_position columns (0, 0) old_render_state.printed_before in
+
+    let new_render_state, new_width_before, new_height_before =
+      (* If we terminates on the right margin, we add a "\n" to ensure
+         that the cursor will be printed at the beginning of the next
+         line: *)
+      if new_width_before = columns then
+        ({ new_render_state with printed_before = new_render_state.printed_before @ [Text "\n"] }, 0, new_height_before + 1)
       else
-        height
+        (new_render_state, new_width_before, new_height_before)
+    in
 
-  let _draw columns render_state printed_before printed_total =
-    let printed_before = expand_returns columns printed_before
-    and printed_total = expand_returns columns printed_total in
-    let length_before = styled_length printed_before
-    and length_total = styled_length printed_total in
+    let new_width_total, new_height_total =
+      compute_position columns (new_width_before, new_height_before) new_render_state.printed_after
+    and old_width_total, old_height_total =
+      compute_position columns (old_width_before, old_height_before) old_render_state.printed_after in
 
-    (* The new rendering state: *)
-    let new_render_state = {
-      render_state with
-        height_before = compute_height columns length_before;
-        length = length_total;
-    } in
-
-    (* [true] iff the cursor is at the right margin. In this case we
-       must print a '\n' to make it appeers at the beginning on the
-       next line. *)
-    let terminate_on_right_margin = length_before mod columns = 0
-
-    and remaining = max 0 (render_state.length - new_render_state.length) in
+    (* Produce a sequence erasing n lines: *)
+    let rec eraser acc = function
+      | 0 -> acc
+      | n -> eraser (Text "\027[K\n" :: acc) (n - 1)
+    in
 
     let text = List.flatten [
       (* Go back by the number of rows of the previous text: *)
-      goto_beginning_of_line render_state.height_before;
+      goto_beginning_of_line old_height_before;
 
-      (* Prints everything: *)
-      printed_total;
+      (* Erase all old contents: *)
+      eraser [Text "\027[K"] old_height_total;
 
-      (* Erase rests of the previous input (in case the input is
-         smaller than the predecessor): *)
-      [Text(String.make remaining ' ')];
+      (* Go back to the starting point: *)
+      goto_beginning_of_line old_height_total;
+
+      (* Print all new contents: *)
+      new_render_state.printed_before;
+      new_render_state.printed_after;
 
       (* Go back again to the beginning of printed text: *)
-      goto_beginning_of_line (compute_height columns (length_total + remaining));
+      goto_beginning_of_line new_height_total;
 
       (* Prints again the text before the cursor, to put the cursor at
          the right place: *)
-      printed_before;
-
-      if terminate_on_right_margin then [Text "\n"] else [];
+      new_render_state.printed_before;
     ] in
 
-    if terminate_on_right_margin then
-      (text, { new_render_state with height_before = new_render_state.height_before + 1 })
-    else
-      (text, new_render_state)
+    (text, new_render_state)
 
   (* Render the current state on the terminal, and returns the new
      terminal rendering state: *)
@@ -843,9 +830,9 @@ struct
     match engine_state.mode with
       | Search st ->
           let printed_before = Reset :: prompt @ [Reset; Text "(reverse-i-search)'"; Text st.search_word] in
-          let printed_total = match st.search_history with
+          let printed_after = match st.search_history with
             | [] ->
-                printed_before @ [Text "'"]
+                [Text "'"]
             | phrase :: _ ->
                 let ptr_start = match Text.find phrase st.search_word with
                   | Some ptr ->
@@ -857,14 +844,16 @@ struct
                       assert false
                 in
                 let ptr_end = Text.move (Text.length st.search_word) ptr_start in
-                printed_before @ [Text "': ";
-                                  Text(Text.chunk (Text.pointer_l phrase) ptr_start);
-                                  Underlined;
-                                  Text(Text.chunk ptr_start ptr_end);
-                                  Reset;
-                                  Text(Text.chunk ptr_end (Text.pointer_r phrase))]
+                [Text "': ";
+                 Text(Text.chunk (Text.pointer_l phrase) ptr_start);
+                 Underlined;
+                 Text(Text.chunk ptr_start ptr_end);
+                 Reset;
+                 Text(Text.chunk ptr_end (Text.pointer_r phrase))]
           in
-          _draw columns render_state printed_before printed_total
+          _draw columns render_state { render_state with
+                                         printed_before = printed_before;
+                                         printed_after = printed_after }
 
       | _ ->
           (* Text before and after the cursor, according to the current mode: *)
@@ -889,29 +878,43 @@ struct
 
           match box with
             | Box_none ->
-                _draw columns { render_state with box = false } printed_before (printed_before @ after)
+                _draw columns render_state
+                  { render_state with
+                      printed_before = printed_before;
+                      printed_after = after;
+                      box = false }
 
             | Box_message message ->
                 let bar = Text(Text.repeat (columns - 2) "─") in
                 let message_len = Text.length message in
                 let message = if message_len + 2 > columns then Text.sub message 0 (columns - 2) else message in
-                _draw columns { render_state with box = true } printed_before
-                  (List.flatten
-                     [printed_before; after;
-                      [Text "\n";
-                       Text "┌"; bar; Text "┐";
-                       Text "│"; Text message; Text(String.make (columns - 2 - message_len) ' '); Text "│";
-                       Text "└"; bar; Text "┘"]])
+                let printed_after =
+                  after @
+                    [Text "\n";
+                     Text "┌"; bar; Text "┐\n";
+                     Text "│"; Text message; Text(String.make (columns - 2 - message_len) ' '); Text "│\n";
+                     Text "└"; bar; Text "┘"]
+                in
+                _draw columns render_state
+                  { render_state with
+                      printed_before = printed_before;
+                      printed_after = printed_after;
+                      box = true }
 
             | Box_empty ->
                 let bar = Text(Text.repeat (columns - 2) "─") in
-                _draw columns { render_state with box  = true } printed_before
-                  (List.flatten
-                     [printed_before; after;
-                      [Text "\n";
-                       Text "┌"; bar; Text "┐";
-                       Text "│"; Text(Text.repeat (columns - 2) " "); Text "│";
-                       Text "└"; bar; Text "┘"]])
+                let printed_after =
+                  after @
+                    [Text "\n";
+                     Text "┌"; bar; Text "┐\n";
+                     Text "│"; Text(Text.repeat (columns - 2) " "); Text "│\n";
+                     Text "└"; bar; Text "┘"]
+                in
+                _draw columns render_state
+                  { render_state with
+                      printed_before = printed_before;
+                      printed_after = printed_after;
+                      box = true }
 
             | Box_words(words, position) ->
                 let words = TextSet.elements words and count = TextSet.cardinal words in
@@ -949,23 +952,31 @@ struct
                 in
 
                 let words = drop display_start words in
-                let printed_total = List.flatten
-                  [printed_before; after;
-                   [Text "\n";
-                    Text "┌"; Text(make_bar "┬" (columns - 2) words); Text "┐";
-                    Text "│"];
-                   make_completion (position - display_start) (columns - 2) words;
-                   [Text "│";
-                    Text "└"; Text(make_bar "┴" (columns - 2) words); Text "┘"]] in
+                let printed_after =
+                  List.flatten
+                    [after;
+                     [Text "\n";
+                      Text "┌"; Text(make_bar "┬" (columns - 2) words); Text "┐\n";
+                      Text "│"];
+                     make_completion (position - display_start) (columns - 2) words;
+                     [Text "│\n";
+                      Text "└"; Text(make_bar "┴" (columns - 2) words); Text "┘"]]
+                in
 
-                _draw columns { render_state with display_start = display_start; box = true } printed_before printed_total
+                _draw columns render_state
+                  { display_start = display_start;
+                    box = true;
+                    printed_before = printed_before;
+                    printed_after = printed_after }
 
   let last_draw ~columns ?(map_text=fun x -> x) ~render_state ~engine_state ~prompt () =
     let printed = prompt @ [Reset; Text(map_text(all_input engine_state)); Text "\n"] in
-    fst (_draw columns render_state printed printed)
+    fst (_draw columns render_state { render_state with
+                                        printed_before = printed;
+                                        printed_after = [] })
 
   let erase ~columns ~render_state () =
-    goto_beginning_of_line render_state.height_before @ [Text "\027[J"]
+    goto_beginning_of_line (snd(compute_position columns (0, 0) render_state.printed_before)) @ [Text "\027[J"]
 end
 
 (* +-----------------------------------------------------------------+
