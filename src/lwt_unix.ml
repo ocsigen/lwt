@@ -474,6 +474,9 @@ let pending_signals = Queue.create ()
 
 (* Pipe used to tell the main loop that a signal has been caught *)
 let signal_fd_reader, signal_fd_writer = pipe_in ()
+let () =
+  set_close_on_exec signal_fd_reader;
+  Unix.set_close_on_exec signal_fd_writer
 
 let wakeup_pending_signals () =
   while not (Queue.is_empty pending_signals) do
