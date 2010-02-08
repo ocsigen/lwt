@@ -298,7 +298,11 @@ let eprintl txt = write_line stderr txt
 let eprintf fmt = Printf.ksprintf eprint fmt
 let eprintlf fmt = Printf.ksprintf eprintl fmt
 
+let ignore_close ch =
+  ignore (close ch)
+
 let make_stream f ic =
+  Gc.finalise ignore_close ic;
   Lwt_stream.from (fun _ ->
                      try_lwt
                        f ic >|= fun x -> Some x

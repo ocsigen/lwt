@@ -1314,7 +1314,11 @@ let establish_server ?buffer_size sockaddr =
     event
   end
 
+let ignore_close ch =
+  ignore (close ch)
+
 let make_stream f ic =
+  Gc.finalise ignore_close ic;
   Lwt_stream.from (fun _ ->
                      lwt x = f ic in
                      if x = None then
