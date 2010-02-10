@@ -60,6 +60,7 @@ let rec read_input prompt buffer len =
   try
     if !pos = String.length !input then begin
       let prompt' = if prompt = "  " then [fg blue; text "> "] else [fg yellow; text prompt] in
+      !Lwt_ocaml_completion.restart ();
       let txt = Lwt_main.run begin
         lwt l = Lwt_read_line.Control.result
           (Lwt_read_line.Control.make

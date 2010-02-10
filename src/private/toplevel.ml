@@ -25,8 +25,12 @@ open Types
 open Lwt_read_line
 
 module TextSet = Set.Make(Text)
+module PathMap = Map.Make(struct type t = Path.t let compare = compare end)
 
 let keywords = Lwt_ocaml_completion.keywords
+
+let global_env = ref(lazy(raise Exit))
+let local_envs = ref(PathMap.empty)
 
 (* Returns [acc] plus all modules of [dir] *)
 let add_modules_from_directory acc dir =
@@ -39,7 +43,7 @@ let add_modules_from_directory acc dir =
   !acc
 
 (* List all names of the module with path [path] *)
-let module_names path =
+let get_names_of_module path =
   try
     match Env.find_module path !Toploop.toplevel_env with
       | Tmty_signature decls ->
@@ -59,6 +63,14 @@ let module_names path =
   with Not_found ->
     TextSet.empty
 
+let names_of_module path =
+  try
+    PathMap.find path !local_envs
+  with Not_found ->
+    let names = get_names_of_module path in
+    local_envs := PathMap.add path names !local_envs;
+    names
+
 (* List all names accessible without a path *)
 let env_names () =
   let rec loop acc = function
@@ -70,7 +82,7 @@ let env_names () =
     | Env.Env_modtype(summary, id, _) -> loop (TextSet.add (Ident.name id) acc) summary
     | Env.Env_class(summary, id, _) -> loop (TextSet.add (Ident.name id) acc) summary
     | Env.Env_cltype(summary, id, _) -> loop (TextSet.add (Ident.name id) acc) summary
-    | Env.Env_open(summary, path) -> loop (TextSet.union acc (module_names path)) summary
+    | Env.Env_open(summary, path) -> loop (TextSet.union acc (names_of_module path)) summary
   in
   (* Add names of the environment: *)
   let acc = loop TextSet.empty (Env.summary !Toploop.toplevel_env) in
@@ -91,14 +103,18 @@ let path_of_string text =
 let complete_ident before ident after =
   match Text.rev_split ~sep:"." ~max:2 ident with
     | [ident]->
-        complete ~suffix:"" before ident after (TextSet.union keywords (env_names ()))
+        complete ~suffix:"" before ident after (TextSet.union keywords (Lazy.force !global_env))
     | [path; ident] ->
         let before = before ^ path ^ "." in
-        let path = path_of_string path in
-        complete ~suffix:"" before ident after (module_names path)
+        complete ~suffix:"" before ident after (names_of_module (path_of_string path))
     | _ ->
         assert false
 
+let restart () =
+  global_env := lazy(env_names ());
+  local_envs := PathMap.empty
+
 let () =
   Topfind.don't_load_deeply ["lwt"; "lwt.unix"; "lwt.text"; "lwt.top"];
-  Lwt_ocaml_completion.complete_ident := complete_ident
+  Lwt_ocaml_completion.complete_ident := complete_ident;
+  Lwt_ocaml_completion.restart := restart

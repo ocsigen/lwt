@@ -43,6 +43,7 @@
     Hashtbl.fold (fun k v set -> TextSet.add k set) Toploop.directive_table TextSet.empty
 
   let complete_ident = ref (fun before ident after -> complete ~suffix:"" before ident after keywords)
+  let restart = ref (fun () -> ())
 
   let list_files filter fname =
     let dir = Filename.dirname fname in
