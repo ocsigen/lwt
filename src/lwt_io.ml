@@ -1219,7 +1219,7 @@ let eprintf fmt = Printf.ksprintf eprint fmt
 let eprintlf fmt = Printf.ksprintf eprintl fmt
 
 let pipe ?buffer_size _ =
-  let fd_r, fd_w = Lwt_unix.pipe () in
+  let fd_r, fd_w = unix_call Lwt_unix.pipe in
   (of_fd ?buffer_size ~mode:input fd_r, of_fd ?buffer_size ~mode:output fd_w)
 
 type file_name = string
