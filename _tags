@@ -9,10 +9,11 @@
 <src/lwt_glib.ml*>: pkg_lablgtk2
 <src/*.ml*>: pkg_unix, pkg_react
 <src/lwt_{text,term,read_line,top,ocaml_completion}.ml*>: pkg_text
+<src/private/lwt_ocaml_completion.ml>: pkg_text, pkg_findlib
 <src/lwt_top.ml>: pkg_findlib
 <src/lwt_ocaml_completion.ml>: pkg_findlib
-<src/toplevel.ml>: use_compiler_libs
-<src/toplevel.*>: pkg_unix, pkg_findlib, pkg_react, pkg_text
+<src/private/toplevel.ml>: use_compiler_libs
+<src/private/toplevel.*>: pkg_unix, pkg_findlib, pkg_react, pkg_text
 <tests/*>: pkg_react, pkg_unix, use_unix_stubs
 
 # +------------------------------------------------------------------+

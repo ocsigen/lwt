@@ -1,2 +1,2 @@
 Lwt_top
-Lwt_ocaml_completion
+private/Lwt_ocaml_completion

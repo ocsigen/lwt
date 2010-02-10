@@ -222,7 +222,7 @@ let _ =
                  (have_text, ["lwt_text"; "lwt_top"])])) in
 
         let byte = "syntax/pa_lwt.cmo" :: "syntax/pa_log.cmo" :: List.map (sprintf "src/%s.cma") libs
-          @ if have_toplevel then ["src/toplevel.top"] else []
+          @ if have_toplevel then ["src/private/toplevel.top"] else []
         and native = List.map (sprintf "src/%s.cmxa") libs in
 
         let virtual_rule name deps =
@@ -285,8 +285,8 @@ let _ =
         flag_all_stages "use_compiler_libs" & S(List.map (fun path -> S[A"-I"; A path]) compiler_libs);
 
         (* Link with the toplevel library *)
-        dep ["file:src/toplevel.top"] ["src/lwt.cma"; "src/lwt_unix.cma"; "src/lwt_text.cma"; "src/lwt_top.cma"];
-        flag ["file:src/toplevel.top"] & S[A"-I"; A"src"; A"-I"; A"src/stubs"; A"lwt.cma"; A"lwt_unix.cma"; A"lwt_text.cma"; A"lwt_top.cma"];
+        dep ["file:src/private/toplevel.top"] ["src/lwt.cma"; "src/lwt_unix.cma"; "src/lwt_text.cma"; "src/lwt_top.cma"];
+        flag ["file:src/private/toplevel.top"] & S[A"-I"; A"src"; A"-I"; A"src/stubs"; A"lwt.cma"; A"lwt_unix.cma"; A"lwt_text.cma"; A"lwt_top.cma"];
 
         (* +---------------------------------------------------------+
            | C stubs                                                 |
@@ -315,7 +315,8 @@ let _ =
                     "src/lwt_extra.mllib";
                     "src/lwt_text.mllib";
                     "src/lwt_ssl.mllib";
-                    "src/lwt_glib.mllib"]
+                    "src/lwt_glib.mllib";
+                    "src/lwt_top.mllib"]
         and prod = "lwt.odocl" in
         rule "lwt_doc" ~prod ~deps
           (fun _ _ -> Echo(List.map (sprintf "src/%s\n")
@@ -324,7 +325,7 @@ let _ =
                                              | "Lwt_chan" | "Lwt_util" -> false
                                              | s -> not (String.is_prefix "private" s))
                                 (List.concat (List.map string_list_of_file deps)))
-                           @ ["src/Lwt_top\n"; "syntax/Pa_lwt\n"; "syntax/Pa_log"],
+                           @ ["syntax/Pa_lwt\n"; "syntax/Pa_log"],
                            prod));
 
         (* The default "thread" tag is not compatible with ocamlfind.
