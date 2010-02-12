@@ -108,21 +108,26 @@ and 'mode _channel = {
   main : 'mode channel;
   (* The main wrapper *)
 
-  perform_io : string -> int -> int -> int Lwt.t;
-  (* Either a read or a write function *)
-
   close : unit Lwt.t Lazy.t;
   (* Close function *)
 
   mode : 'mode mode;
   (* The channel mode *)
 
-  seek : int64 -> Unix.seek_command -> int64 Lwt.t;
-  (* Random access *)
-
   mutable offset : int64;
   (* Number of bytes really read/written *)
+
+  typ : typ;
+  (* Type of the channel. *)
 }
+
+and typ =
+  | Type_normal of (string -> int -> int -> int Lwt.t) * (int64 -> Unix.seek_command -> int64 Lwt.t)
+      (* The channel has been created with [make]. The first argument
+         is the refill/flush function and the second is the seek
+         function. *)
+  | Type_string
+      (* The channel has been created with [of_string]. *)
 
 type input_channel = input channel
 type output_channel = output channel
@@ -168,39 +173,50 @@ let invalid_channel ch = Failure(Printf.sprintf "temporary atomic %s channel no 
 (* Flush/refill the buffer. No race condition could happen because
    this function is always called atomically: *)
 let perform_io ch = match ch.main.state with
-  | Busy_primitive | Busy_atomic _ ->
-      let ptr, len = match ch.mode with
-        | Input ->
-            (* Size of data in the buffer *)
-            let size = ch.max - ch.ptr in
-            (* If there are still data in the buffer, keep them: *)
-            if size > 0 then String.unsafe_blit ch.buffer ch.ptr ch.buffer 0 size;
-            (* Update positions: *)
-            ch.ptr <- 0;
-            ch.max <- size;
-            (size, ch.length - size)
-        | Output ->
-            (0, ch.ptr) in
-      lwt n = choose [ch.abort_waiter; ch.perform_io ch.buffer ptr len] in
-      (* Never trust user functions... *)
-      if n < 0 || n > len then
-        fail (Failure (Printf.sprintf "Lwt_io: invalid result of the [%s] function(request=%d,result=%d)"
-                         (match ch.mode with Input -> "read" | Output -> "write") len n))
-      else begin
-        (* Update the global offset: *)
-        ch.offset <- Int64.add ch.offset (Int64.of_int n);
-        (* Update buffer positions: *)
-        begin match ch.mode with
-          | Input ->
-              ch.max <- ch.max + n
-          | Output ->
-              (* Shift remaining data: *)
-              let len = len - n in
-              String.unsafe_blit ch.buffer n ch.buffer 0 len;
-              ch.ptr <- len
-        end;
-        return n
-      end
+  | Busy_primitive | Busy_atomic _ -> begin
+      match ch.typ with
+        | Type_normal(perform_io, seek) ->
+            let ptr, len = match ch.mode with
+              | Input ->
+                  (* Size of data in the buffer *)
+                  let size = ch.max - ch.ptr in
+                  (* If there are still data in the buffer, keep them: *)
+                  if size > 0 then String.unsafe_blit ch.buffer ch.ptr ch.buffer 0 size;
+                  (* Update positions: *)
+                  ch.ptr <- 0;
+                  ch.max <- size;
+                  (size, ch.length - size)
+              | Output ->
+                  (0, ch.ptr) in
+            lwt n = choose [ch.abort_waiter; perform_io ch.buffer ptr len] in
+            (* Never trust user functions... *)
+            if n < 0 || n > len then
+              fail (Failure (Printf.sprintf "Lwt_io: invalid result of the [%s] function(request=%d,result=%d)"
+                               (match ch.mode with Input -> "read" | Output -> "write") len n))
+            else begin
+              (* Update the global offset: *)
+              ch.offset <- Int64.add ch.offset (Int64.of_int n);
+              (* Update buffer positions: *)
+              begin match ch.mode with
+                | Input ->
+                    ch.max <- ch.max + n
+                | Output ->
+                    (* Shift remaining data: *)
+                    let len = len - n in
+                    String.unsafe_blit ch.buffer n ch.buffer 0 len;
+                    ch.ptr <- len
+              end;
+              return n
+            end
+
+        | Type_string -> begin
+            match ch.mode with
+              | Input ->
+                  return 0
+              | Output ->
+                  fail (Failure "cannot flush a channel created with Lwt_io.of_string")
+          end
+    end
 
   | Closed ->
       fail (closed_channel ch)
@@ -456,21 +472,45 @@ let make ?buffer_size ?(close=return) ?(seek=no_seek) ~mode perform_io =
     max = (match mode with
              | Input -> 0
              | Output -> String.length buffer);
-    perform_io = perform_io;
     close = lazy(try_lwt close ());
     abort_waiter = abort_waiter;
     abort_wakener = abort_wakener;
     main = wrapper;
     auto_flushing = false;
     mode = mode;
-    seek = (fun pos cmd -> try seek pos cmd with e -> fail e);
     offset = 0L;
+    typ = Type_normal(perform_io, fun pos cmd -> try seek pos cmd with e -> fail e);
   } and wrapper = {
     state = Idle;
     channel = ch;
     queued = Lwt_sequence.create ();
   } in
   if mode = Output then Outputs.add outputs (unsafe_output wrapper);
+  wrapper
+
+let of_string ~mode str =
+  let length = String.length str in
+  let abort_waiter, abort_wakener = Lwt.wait () in
+  let rec ch = {
+    buffer = str;
+    length = length;
+    ptr = 0;
+    max = length;
+    close = lazy(return ());
+    abort_waiter = abort_waiter;
+    abort_wakener = abort_wakener;
+    main = wrapper;
+    (* Auto flush is set to [true] to prevent writing functions from
+       trying to launch the auto-fllushed. *)
+    auto_flushing = true;
+    mode = mode;
+    offset = 0L;
+    typ = Type_string;
+  } and wrapper = {
+    state = Idle;
+    channel = ch;
+    queued = Lwt_sequence.create ();
+  } in
   wrapper
 
 let of_fd ?buffer_size ?close ~mode fd =
@@ -507,41 +547,45 @@ let buffer_size ch = ch.channel.length
 
 let resize_buffer wrapper len =
   if len < min_buffer_size then invalid_arg "Lwt_io.resize_buffer";
-  primitive begin fun ch ->
-    match ch.mode with
-      | Input ->
-          let unread_count = ch.max - ch.ptr in
-          (* Fail if we want to decrease the buffer size and there is
-             too much unread data in the buffer: *)
-          if len < unread_count then
-            fail (Failure "Lwt_io.resize_buffer: cannot decrease buffer size")
-          else begin
-            let buffer = String.create len in
-            String.unsafe_blit ch.buffer ch.ptr buffer 0 unread_count;
-            ch.buffer <- buffer;
-            ch.length <- len;
-            ch.ptr <- 0;
-            ch.max <- unread_count;
-            return ()
-          end
-      | Output ->
-          (* If we decrease the buffer size, flush the buffer until
-             the number of buffered bytes fits into the new buffer: *)
-          let rec loop () =
-            if ch.ptr > len then
-              lwt _ = flush_partial ch in
-              loop ()
-            else
-              return ()
-          in
-          lwt () = loop () in
-          let buffer = String.create len in
-          String.unsafe_blit ch.buffer 0 buffer 0 ch.ptr;
-          ch.buffer <- buffer;
-          ch.length <- len;
-          ch.max <- len;
-          return ()
-  end wrapper
+  match wrapper.channel.typ with
+    | Type_string ->
+        fail (Failure "Lwt_io.resize_buffer: cannot resize the buffer of a channel created with Lwt_io.of_string")
+    | Type_normal _ ->
+        primitive begin fun ch ->
+          match ch.mode with
+            | Input ->
+                let unread_count = ch.max - ch.ptr in
+                (* Fail if we want to decrease the buffer size and there is
+                   too much unread data in the buffer: *)
+                if len < unread_count then
+                  fail (Failure "Lwt_io.resize_buffer: cannot decrease buffer size")
+                else begin
+                  let buffer = String.create len in
+                  String.unsafe_blit ch.buffer ch.ptr buffer 0 unread_count;
+                  ch.buffer <- buffer;
+                  ch.length <- len;
+                  ch.ptr <- 0;
+                  ch.max <- unread_count;
+                  return ()
+                end
+            | Output ->
+                (* If we decrease the buffer size, flush the buffer until
+                   the number of buffered bytes fits into the new buffer: *)
+                let rec loop () =
+                  if ch.ptr > len then
+                    lwt _ = flush_partial ch in
+                    loop ()
+                  else
+                    return ()
+                in
+                lwt () = loop () in
+                let buffer = String.create len in
+                String.unsafe_blit ch.buffer 0 buffer 0 ch.ptr;
+                ch.buffer <- buffer;
+                ch.length <- len;
+                ch.max <- len;
+                return ()
+        end wrapper
 
 (* +-----------------------------------------------------------------+
    | Byte-order                                                      |
@@ -1028,36 +1072,46 @@ struct
      | Random access                                                 |
      +---------------------------------------------------------------+ *)
 
-  let seek ch pos =
-    lwt offset = ch.seek pos Unix.SEEK_SET in
+  let do_seek seek pos =
+    lwt offset = seek pos Unix.SEEK_SET in
     if offset <> pos then
-      fail (Failure "Lwt_io.set_pos: seek failed")
+      fail (Failure "Lwt_io.set_position: seek failed")
     else
       return ()
 
-  let set_position ch pos = match ch.mode with
-    | Output ->
+  let set_position ch pos = match ch.typ, ch.mode with
+    | Type_normal(perform_io, seek), Output ->
         lwt () = flush_total ch in
-        lwt () = seek ch pos in
+        lwt () = do_seek seek pos in
         ch.offset <- pos;
         return ()
-    | Input ->
+    | Type_normal(perform_io, seek), Input ->
         let current = Int64.sub ch.offset (Int64.of_int (ch.max - ch.ptr)) in
         if pos >= current && pos <= ch.offset then begin
           ch.ptr <- ch.max - (Int64.to_int (Int64.sub ch.offset pos));
           return ()
         end else begin
-          lwt () = seek ch pos in
+          lwt () = do_seek seek pos in
           ch.offset <- pos;
           ch.ptr <- 0;
           ch.max <- 0;
           return ()
         end
+    | Type_string, _ ->
+        if pos < 0L || pos > Int64.of_int ch.length then
+          fail (Failure "Lwt_io.set_position: out of bounds")
+        else begin
+          ch.ptr <- Int64.to_int pos;
+          return ()
+        end
 
-  let length ch =
-    lwt len = ch.seek 0L Unix.SEEK_END in
-    lwt () = seek ch ch.offset in
-    return len
+  let length ch = match ch.typ with
+    | Type_normal(perform_io, seek) ->
+        lwt len = seek 0L Unix.SEEK_END in
+        lwt () = do_seek seek ch.offset in
+        return len
+    | Type_string ->
+        return (Int64.of_int ch.length)
 end
 
 (* +-----------------------------------------------------------------+

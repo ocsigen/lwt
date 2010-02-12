@@ -138,6 +138,10 @@ val make :
       when more input is needed or when the buffer need to be
       flushed. *)
 
+val of_string : mode : 'mode mode -> string -> 'mode channel
+  (** Create a channel from a string. Reading/writing is done directly
+      on the provided string. *)
+
 val of_fd : ?buffer_size : int -> ?close : (unit -> unit Lwt.t) -> mode : 'mode mode -> Lwt_unix.file_descr -> 'mode channel
   (** [of_fd ?buffer_size ?close ~mode fd] creates a channel from a
       file descriptor.
