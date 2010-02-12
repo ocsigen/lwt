@@ -44,18 +44,6 @@ let close_fd fd =
   with exn ->
     fail exn
 
-let unix_call f =
-  try
-    f ()
-  with Unix.Unix_error(err, _, _) ->
-    raise (Sys_error(Unix.error_message err))
-
-let lwt_unix_call f =
-  try_lwt
-    f ()
-  with Unix.Unix_error(err, _, _) ->
-    fail (Sys_error(Unix.error_message err))
-
 (* +-----------------------------------------------------------------+
    | Types                                                           |
    +-----------------------------------------------------------------+ *)
@@ -193,7 +181,7 @@ let perform_io ch = match ch.main.state with
             (size, ch.length - size)
         | Output ->
             (0, ch.ptr) in
-      lwt n = choose [ch.abort_waiter; lwt_unix_call (fun _ -> ch.perform_io ch.buffer ptr len)] in
+      lwt n = choose [ch.abort_waiter; ch.perform_io ch.buffer ptr len] in
       (* Never trust user functions... *)
       if n < 0 || n > len then
         fail (Failure (Printf.sprintf "Lwt_io: invalid result of the [%s] function(request=%d,result=%d)"
@@ -640,11 +628,8 @@ struct
   let read_char_opt ic =
     try_lwt
       read_char ic >|= fun ch -> Some ch
-    with
-      | End_of_file ->
-          return None
-      | exn ->
-          fail exn
+    with End_of_file ->
+      return None
 
   let read_line ic =
     let buf = Buffer.create 128 in
@@ -675,11 +660,8 @@ struct
   let read_line_opt ic =
     try_lwt
       read_line ic >|= fun ch -> Some ch
-    with
-      | End_of_file ->
-          return None
-      | exn ->
-          fail exn
+    with End_of_file ->
+      return None
 
   let unsafe_read_into ic str ofs len =
     let avail = ic.max - ic.ptr in
@@ -1047,9 +1029,9 @@ struct
      +---------------------------------------------------------------+ *)
 
   let seek ch pos =
-    lwt offset = lwt_unix_call (fun _ -> ch.seek pos Unix.SEEK_SET) in
+    lwt offset = ch.seek pos Unix.SEEK_SET in
     if offset <> pos then
-      fail (Sys_error "Lwt_io.set_pos: seek failed")
+      fail (Failure "Lwt_io.set_pos: seek failed")
     else
       return ()
 
@@ -1219,7 +1201,7 @@ let eprintf fmt = Printf.ksprintf eprint fmt
 let eprintlf fmt = Printf.ksprintf eprintl fmt
 
 let pipe ?buffer_size _ =
-  let fd_r, fd_w = unix_call Lwt_unix.pipe in
+  let fd_r, fd_w = Lwt_unix.pipe () in
   (of_fd ?buffer_size ~mode:input fd_r, of_fd ?buffer_size ~mode:output fd_w)
 
 type file_name = string
@@ -1240,18 +1222,16 @@ let open_file ?buffer_size ?flags ?perm ~mode filename =
     | None, Output ->
         0o666
   in
-  unix_call (fun _ ->
-               let fd = Unix.openfile filename flags perm in
-               (* Special handling of FIFOs: reading/writing on FIFOs
-                  opened in non-blocking mode will never fail with
-                  [EWOULDBLOCK] or [EAGAIN] but will returns a size of
-                  [0] instead, so we need to chech that the file
-                  descriptor is readable/writable before using it: *)
-               of_fd ?buffer_size ~mode
-                 (if (Unix.fstat fd).Unix.st_kind = Unix.S_FIFO then
-                    Lwt_unix.of_unix_file_descr_blocking fd
-                  else
-                    Lwt_unix.of_unix_file_descr fd))
+  let fd = Unix.openfile filename flags perm in
+  (* Special handling of FIFOs: reading/writing on FIFOs opened in
+     non-blocking mode will never fail with [EWOULDBLOCK] or [EAGAIN]
+     but will returns a size of [0] instead, so we need to chech that
+     the file descriptor is readable/writable before using it: *)
+  of_fd ?buffer_size ~mode
+    (if (Unix.fstat fd).Unix.st_kind = Unix.S_FIFO then
+       Lwt_unix.of_unix_file_descr_blocking fd
+     else
+       Lwt_unix.of_unix_file_descr fd)
 
 let with_file ?buffer_size ?flags ?perm ~mode filename f =
   let ic = open_file ?buffer_size ?flags ?perm ~mode filename in
@@ -1263,25 +1243,23 @@ let with_file ?buffer_size ?flags ?perm ~mode filename f =
 let file_length filename = with_file ~mode:input filename length
 
 let open_connection ?buffer_size sockaddr =
-  lwt_unix_call begin fun _ ->
-    let fd = Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0 in
-    let close = lazy begin
-      Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
-      close_fd fd
-    end in
-    try_lwt
-      lwt () = Lwt_unix.connect fd sockaddr in
-      (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
-      return (make ?buffer_size
-                ~close:(fun _ -> Lazy.force close)
-                ~mode:input (Lwt_unix.read fd),
-              make ?buffer_size
-                ~close:(fun _ -> Lazy.force close)
-                ~mode:output (Lwt_unix.write fd))
-    with exn ->
-      lwt () = close_fd fd in
-      fail exn
-  end
+  let fd = Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0 in
+  let close = lazy begin
+    Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
+    close_fd fd
+  end in
+  try_lwt
+    lwt () = Lwt_unix.connect fd sockaddr in
+    (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
+    return (make ?buffer_size
+              ~close:(fun _ -> Lazy.force close)
+              ~mode:input (Lwt_unix.read fd),
+            make ?buffer_size
+              ~close:(fun _ -> Lazy.force close)
+              ~mode:output (Lwt_unix.write fd))
+  with exn ->
+    lwt () = close_fd fd in
+    fail exn
 
 let with_connection ?buffer_size sockaddr f =
   lwt ic, oc = open_connection sockaddr in
@@ -1291,28 +1269,26 @@ let with_connection ?buffer_size sockaddr f =
     close ic <&> close oc
 
 let establish_server ?buffer_size sockaddr =
-  unix_call begin fun () ->
-    let sock = Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0 in
-    Lwt_unix.setsockopt sock Unix.SO_REUSEADDR true;
-    Lwt_unix.bind sock sockaddr;
-    Lwt_unix.listen sock 5;
-    let event, push = React.E.create () in
-    let rec loop () =
-      lwt (fd, addr) = Lwt_unix.accept sock in
-      (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
-      let close = lazy begin
-        Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
-        close_fd fd
-      end in
-      push (of_fd ?buffer_size ~mode:input ~close:(fun () -> Lazy.force close) fd,
-            of_fd ?buffer_size ~mode:output ~close:(fun () -> Lazy.force close) fd);
-      loop ()
-    in
-    (* Yield here to avoid receiving a new connection before the user
-       map the event. *)
-    ignore (Lwt_unix.yield () >> loop ());
-    event
-  end
+  let sock = Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0 in
+  Lwt_unix.setsockopt sock Unix.SO_REUSEADDR true;
+  Lwt_unix.bind sock sockaddr;
+  Lwt_unix.listen sock 5;
+  let event, push = React.E.create () in
+  let rec loop () =
+    lwt (fd, addr) = Lwt_unix.accept sock in
+    (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
+    let close = lazy begin
+      Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
+      close_fd fd
+    end in
+    push (of_fd ?buffer_size ~mode:input ~close:(fun () -> Lazy.force close) fd,
+          of_fd ?buffer_size ~mode:output ~close:(fun () -> Lazy.force close) fd);
+    loop ()
+  in
+  (* Yield here to avoid receiving a new connection before the user
+     map the event. *)
+  ignore (Lwt_unix.yield () >> loop ());
+  event
 
 let ignore_close ch =
   ignore (close ch)

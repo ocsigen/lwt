@@ -41,7 +41,13 @@
       flush stderr;
     ]}
 
-    to have you messages displayed. *)
+    to have you messages displayed.
+
+    Note about errors: input functions of this module raise
+    [End_of_file] when the end-of-file is reached (i.e. when the read
+    function returns [0]). Other exceptions are ones caused by the
+    backend read/write functions, such as [Unix.Unix_error].
+*)
 
 exception Channel_closed of string
   (** Exception raised whan a channel is closed. The parameter is a
@@ -349,7 +355,7 @@ val open_file :
       file with name [filename] and returns a channel for
       reading/writing it.
 
-      @raise Sys_error on error
+      @raise Unix.Unix_error on error.
   *)
 
 val with_file :
@@ -369,7 +375,7 @@ val open_connection : ?buffer_size : int -> Unix.sockaddr -> (input_channel * ou
       The connection is completly closed when you close both
       channels.
 
-      @raise Sys_error on error
+      @raise Unix.Unix_error on error.
   *)
 
 val with_connection : ?buffer_size : int -> Unix.sockaddr -> (input_channel * output_channel -> 'a Lwt.t) -> 'a Lwt.t
