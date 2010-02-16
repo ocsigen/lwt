@@ -40,7 +40,7 @@
 
     {[
       (* Create a logger which will display messages on [stderr]: *)
-      let logger = Lwt_log.channel ~close_mode:`keep ~channel:Lwt_io.stderr () in
+      let logger = Lwt_log.channel ~close_mode:`Keep ~channel:Lwt_io.stderr () in
 
       (* Now log something: *)
       Lwt_log.log ~logger ~level:Lwt_log.Info "my pid is: %d" (Unix.getpid ())
@@ -50,7 +50,7 @@
 
     {[
       (* Logger which send all messages except debugging message to [stderr] *)
-      let logger_1 = Lwt_log.channel ~close_mode:`kept ~channel:Lwt_io.stderr ~level:Lwt_log.Info () in
+      let logger_1 = Lwt_log.channel ~close_mode:`Kept ~channel:Lwt_io.stderr ~level:Lwt_log.Info () in
 
       (* Logger which send all messages to the syslog daemon *)
       let logger_2 = Lwt_log.syslog () in
@@ -210,25 +210,25 @@ val syslog : ?level : level -> ?template : template -> ?paths : string list -> f
       @param template defaults to ["$(date) $(name)[$(pid)]: $(message)"]
   *)
 
-val file : ?level : level -> ?template : template -> ?mode : [ `truncate | `append ] -> ?perm : Unix.file_perm -> file_name : string -> unit -> logger
+val file : ?level : level -> ?template : template -> ?mode : [ `Truncate | `Append ] -> ?perm : Unix.file_perm -> file_name : string -> unit -> logger
   (** [desf_file ?level ?mode ?perm ~file_name ()] creates a logger
       which will write message to [file_name].
 
-      - if [mode = `truncate] then the file is truncated and
+      - if [mode = `Truncate] then the file is truncated and
       previous contents will be lost.
 
-      - if [mode = `append], new messages will be appended at the
+      - if [mode = `Append], new messages will be appended at the
       end of the file
 
-      @param mode defaults to [`append]
+      @param mode defaults to [`Append]
       @param template defaults to ["$(date): $(message)"]
   *)
 
-val channel : ?level : level -> ?template : template -> close_mode : [ `close | `keep ] -> channel : Lwt_io.output_channel -> unit -> logger
+val channel : ?level : level -> ?template : template -> close_mode : [ `Close | `Keep ] -> channel : Lwt_io.output_channel -> unit -> logger
   (** [channel ?level ~close_mode ~channel ()] creates a destination
       from a channel.
 
-      If [close_mode = `close] then [channel] is closed when the
+      If [close_mode = `Close] then [channel] is closed when the
       logger is closed, otherwise it is left open.
 
       @param template defaults to ["$(name): $(message)"]

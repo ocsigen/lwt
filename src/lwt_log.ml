@@ -88,7 +88,7 @@ type end_point = {
 
      {[
        lwt logger1 = syslog ()
-       and logger2 = channel ~close_mode:`keep ~channel:Lwt_io.stderr ()
+       and logger2 = channel ~close_mode:`Keep ~channel:Lwt_io.stderr ()
        and logger3 = file ~file_name "foo" in
 
        let m1 = merge [logger1; logger2]
@@ -258,21 +258,21 @@ let channel ?level ?(template="$(name): $(message)") ~close_mode ~channel () =
                  Lwt_io.flush oc
                end channel)
     ~close:(match close_mode with
-              | `keep -> return
-              | `close -> (fun () -> Lwt_io.close channel))
+              | `Keep -> return
+              | `Close -> (fun () -> Lwt_io.close channel))
     ()
 
 let default =
-  ref(channel ~close_mode:`keep ~channel:Lwt_io.stderr ())
+  ref(channel ~close_mode:`Keep ~channel:Lwt_io.stderr ())
 
-let file ?level ?(template="$(date): $(message)") ?(mode=`append) ?(perm=0o640) ~file_name () =
+let file ?level ?(template="$(date): $(message)") ?(mode=`Append) ?(perm=0o640) ~file_name () =
   let flags = match mode with
-    | `append ->
+    | `Append ->
         [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_APPEND; Unix.O_NONBLOCK]
-    | `truncate ->
+    | `Truncate ->
         [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_TRUNC; Unix.O_NONBLOCK] in
   let oc = Lwt_io.open_file ~mode:Lwt_io.output ~flags ~perm:0o644 file_name in
-  channel ?level ~template ~close_mode:`close ~channel:oc ()
+  channel ?level ~template ~close_mode:`Close ~channel:oc ()
 
 let level_code = function
   | Fatal -> 0

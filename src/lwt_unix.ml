@@ -655,30 +655,6 @@ let _ = Lwt_sequence.add_l select_filter Lwt_main.select_filters
    | Misc                                                            |
    +-----------------------------------------------------------------+ *)
 
-let daemonize ?(keep_stderr=false) ?(keep_umask=false) () =
-  if Unix.getppid () = 1 then
-    (* If our parent is [init], then we already are a demon *)
-    ()
-  else begin
-    Unix.chdir "/";
-
-    (* Exit the parent, and continue in the child: *)
-    if Unix.fork () > 0 then exit 0;
-
-    (* Redirect standards IO to/from /dev/null: *)
-    let fd = Unix.openfile "/dev/null" [Unix.O_RDWR] 0o666 in
-    Unix.dup2 fd Unix.stdin;
-    Unix.dup2 fd Unix.stdout;
-    if not keep_stderr then
-      Unix.dup2 fd Unix.stderr;
-    Unix.close fd;
-
-    if not keep_umask then
-      ignore (Unix.umask 0o022);
-
-    ignore (Unix.setsid ())
-  end
-
 (* Monitoring functions *)
 let inputs_length () = blocked_thread_count inputs
 let outputs_length () = blocked_thread_count outputs
