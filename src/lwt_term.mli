@@ -162,7 +162,7 @@ val key_enter : key
   (** [key_enter = Key_control 'j'] *)
 
 val key_escape : key
-  (** [key_escape = Key_control '['] *)
+  (** [key_escape = Key_control '\['] *)
 
 val key_tab : key
   (** [key_escape = Key_control 'i'] *)
@@ -345,7 +345,7 @@ module Zone : sig
     (** [sub ~zone ~x ~y ~width ~height] creates a sub-zone of
         [zone]. [x] and [y] are relatives to the zone top left corner.
 
-        @raise [Invalid_argument] if the sub zone is not included in
+        @raise Invalid_argument if the sub zone is not included in
         [zone]*)
 
   val inner : t -> t
@@ -362,7 +362,7 @@ module Draw : sig
     (** [get ~zone ~x ~y] returns the point at relative position [x]
         and [y].
 
-        @raise [Invalid_arg] if the coordinates are outside the
+        @raise Invalid_argument if the coordinates are outside the
         zone *)
 
   val set : zone : Zone.t -> x : int -> y : int -> point : point -> unit
