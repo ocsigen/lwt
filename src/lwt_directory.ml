@@ -32,12 +32,7 @@ let rec read_entry dir_handle =
     entry
 
 let stream ~path =
-  let dir_handle =
-    try
-      Unix.opendir path
-    with Unix.Unix_error(code, _, _) ->
-      raise (Sys_error(Unix.error_message code))
-  in
+  let dir_handle = Unix.opendir path in
   let close = lazy(Unix.closedir dir_handle)
   and auto_yield = Lwt_unix.auto_yield 0.05 in
   let stream = Lwt_stream.from begin fun () ->
@@ -50,8 +45,6 @@ let stream ~path =
       match exn with
         | End_of_file ->
             return None
-        | Unix.Unix_error(code, _, _) ->
-            fail(Sys_error(Unix.error_message code))
         | exn ->
             fail exn
   end in

@@ -26,39 +26,63 @@ type command = string * string array
 
 let shell cmd = ("/bin/sh", [| "/bin/sh"; "-c"; cmd |])
 
+type redirection =
+    [ `Keep
+    | `Dev_null
+    | `Close
+    | `FD_copy of Unix.file_descr
+    | `FD_move of Unix.file_descr ]
+
 (* +-----------------------------------------------------------------+
    | Spawing commands                                                |
    +-----------------------------------------------------------------+ *)
 
-let fd_move fd1 fd2 =
-  Unix.dup2 fd1 fd2;
-  Unix.close fd1
+let redirect fd redirection = match redirection with
+  | `Keep ->
+      ()
+  | `Dev_null ->
+      Unix.close fd;
+      let dev_null = Unix.openfile "/dev/null" [Unix.O_RDWR] 0o666 in
+      if fd <> dev_null then begin
+        Unix.dup2 dev_null fd;
+        Unix.close dev_null
+      end
+  | `Close ->
+      Unix.close fd
+  | `FD_copy fd' ->
+      Unix.dup2 fd' fd
+  | `FD_move fd' ->
+      Unix.dup2 fd' fd;
+      Unix.close fd'
 
-let spawn (prog, args) env stdin stdout stderr toclose =
-  try
-    match Unix.fork() with
-      | 0 ->
-          if stdin <> Unix.stdin then fd_move stdin Unix.stdin;
-          if stdout <> Unix.stdout then fd_move stdout Unix.stdout;
-          if stderr <> Unix.stdout then fd_move stderr Unix.stderr;
-          List.iter Unix.close toclose;
-          begin
-            try
-              match env with
-                | None ->
-                    Unix.execvp prog args
-                | Some env ->
-                    Unix.execvpe prog args env
-            with _ ->
-              exit 127
-          end
-      | id ->
-          if stdin <> Unix.stdin then Unix.close stdin;
-          if stdout <> Unix.stdout then Unix.close stdout;
-          if stderr <> Unix.stderr then Unix.close stderr;
-          id
-  with Unix.Unix_error(error, _, _) ->
-    raise (Sys_error(Unix.error_message error))
+let spawn (prog, args) env ?(stdin:redirection=`Keep) ?(stdout:redirection=`Keep) ?(stderr:redirection=`Keep) toclose =
+  match Unix.fork() with
+    | 0 ->
+        redirect Unix.stdin stdin;
+        redirect Unix.stdout stdout;
+        redirect Unix.stderr stderr;
+        List.iter Unix.close toclose;
+        begin
+          try
+            match env with
+              | None ->
+                  Unix.execvp prog args
+              | Some env ->
+                  Unix.execvpe prog args env
+          with _ ->
+            exit 127
+        end
+    | id ->
+        let close = function
+          | `FD_move fd ->
+              Unix.close fd
+          | _ ->
+              ()
+        in
+        close stdin;
+        close stdout;
+        close stderr;
+        id
 
 type state =
   | Running
@@ -104,8 +128,8 @@ object(self)
           end
 end
 
-class process_none ?timeout ?env cmd =
-  let pid = spawn cmd env Unix.stdin Unix.stdout Unix.stderr [] in
+class process_none ?timeout ?env ?stdin ?stdout ?stderr cmd =
+  let pid = spawn cmd env ?stdin ?stdout ?stderr [] in
   let w = Lwt_unix.wait4 [] pid in
   let close = lazy(w >|= status) in
 object
@@ -113,9 +137,9 @@ object
   method close = Lazy.force close
 end
 
-class process_in ?timeout ?env cmd =
+class process_in ?timeout ?env ?stdin ?stderr cmd =
   let stdout_r, stdout_w = Unix.pipe () in
-  let pid = spawn cmd env Unix.stdin stdout_w Unix.stderr [stdout_r] in
+  let pid = spawn cmd env ?stdin ~stdout:(`FD_move stdout_w) ?stderr [stdout_r] in
   let stdout = Lwt_io.of_unix_fd ~mode:Lwt_io.input stdout_r
   and w = Lwt_unix.wait4 [] pid in
   let close = lazy(Lwt_io.close stdout >> w >|= status) in
@@ -125,9 +149,9 @@ object
   method stdout = stdout
 end
 
-class process_out ?timeout ?env cmd =
+class process_out ?timeout ?env ?stdout ?stderr cmd =
   let stdin_r, stdin_w = Unix.pipe () in
-  let pid = spawn cmd env stdin_r Unix.stdout Unix.stderr [stdin_w] in
+  let pid = spawn cmd env ~stdin:(`FD_move stdin_r) ?stdout ?stderr [stdin_w] in
   let stdin = Lwt_io.of_unix_fd ~mode:Lwt_io.output stdin_w
   and w = Lwt_unix.wait4 [] pid in
   let close = lazy (Lwt_io.close stdin >> w >|= status) in
@@ -137,10 +161,10 @@ object
   method stdin = stdin
 end
 
-class process ?timeout ?env cmd =
+class process ?timeout ?env ?stderr cmd =
   let stdin_r, stdin_w = Unix.pipe ()
   and stdout_r, stdout_w = Unix.pipe () in
-  let pid = spawn cmd env stdin_r stdout_w Unix.stderr [stdin_w; stdout_r] in
+  let pid = spawn cmd env ~stdin:(`FD_move stdin_r) ~stdout:(`FD_move stdout_w) ?stderr [stdin_w; stdout_r] in
   let stdin = Lwt_io.of_unix_fd ~mode:Lwt_io.output stdin_w
   and stdout = Lwt_io.of_unix_fd ~mode:Lwt_io.input stdout_r
   and w = Lwt_unix.wait4 [] pid in
@@ -156,7 +180,7 @@ class process_full ?timeout ?env cmd =
   let stdin_r, stdin_w = Unix.pipe ()
   and stdout_r, stdout_w = Unix.pipe ()
   and stderr_r, stderr_w = Unix.pipe () in
-  let pid = spawn cmd env stdin_r stdout_w stderr_w [stdin_w; stdout_r; stderr_r] in
+  let pid = spawn cmd env ~stdin:(`FD_move stdin_r) ~stdout:(`FD_move stdout_w) ~stderr:(`FD_move stderr_w) [stdin_w; stdout_r; stderr_r] in
   let stdin = Lwt_io.of_unix_fd ~mode:Lwt_io.output stdin_w
   and stdout = Lwt_io.of_unix_fd ~mode:Lwt_io.input stdout_r
   and stderr = Lwt_io.of_unix_fd ~mode:Lwt_io.input stderr_r
@@ -170,10 +194,10 @@ object
   method stderr = stderr
 end
 
-let open_process_none ?timeout ?env cmd = new process_none ?timeout ?env cmd
-let open_process_in ?timeout ?env cmd = new process_in ?timeout ?env cmd
-let open_process_out ?timeout ?env cmd = new process_out ?timeout ?env cmd
-let open_process ?timeout ?env cmd = new process ?timeout ?env cmd
+let open_process_none ?timeout ?env ?stdin ?stdout ?stderr cmd = new process_none ?timeout ?env ?stdin ?stdout ?stderr cmd
+let open_process_in ?timeout ?env ?stdin ?stderr cmd = new process_in ?timeout ?env ?stdin ?stderr cmd
+let open_process_out ?timeout ?env ?stdout ?stderr cmd = new process_out ?timeout ?env ?stdout ?stderr cmd
+let open_process ?timeout ?env ?stderr cmd = new process ?timeout ?env ?stderr cmd
 let open_process_full ?timeout ?env cmd = new process_full ?timeout ?env cmd
 
 let make_with backend ?timeout ?env cmd f =
@@ -184,17 +208,17 @@ let make_with backend ?timeout ?env cmd f =
     lwt _ = process#close in
     return ()
 
-let with_process_none ?timeout ?env cmd f = make_with open_process_none ?timeout ?env cmd f
-let with_process_in ?timeout ?env cmd f = make_with open_process_in ?timeout ?env cmd f
-let with_process_out ?timeout ?env cmd f = make_with open_process_out ?timeout ?env cmd f
-let with_process ?timeout ?env cmd f = make_with open_process ?timeout ?env cmd f
+let with_process_none ?timeout ?env ?stdin ?stdout ?stderr cmd f = make_with (open_process_none ?stdin ?stdout ?stderr) ?timeout ?env cmd f
+let with_process_in ?timeout ?env ?stdin ?stderr cmd f = make_with (open_process_in ?stdin ?stderr) ?timeout ?env cmd f
+let with_process_out ?timeout ?env ?stdout ?stderr cmd f = make_with (open_process_out ?stdout ?stderr) ?timeout ?env cmd f
+let with_process ?timeout ?env ?stderr cmd f = make_with (open_process ?stderr) ?timeout ?env cmd f
 let with_process_full ?timeout ?env cmd f = make_with open_process_full ?timeout ?env cmd f
 
 (* +-----------------------------------------------------------------+
    | High-level functions                                            |
    +-----------------------------------------------------------------+ *)
 
-let exec ?timeout ?env cmd = (open_process_none ?timeout ?env cmd)#close
+let exec ?timeout ?env ?stdin ?stdout ?stderr cmd = (open_process_none ?timeout ?env ?stdin ?stdout ?stderr cmd)#close
 
 let ingore_close ch =
   ignore (Lwt_io.close ch)
@@ -237,17 +261,17 @@ let recv_line pr =
 
 (* Receiving *)
 
-let pread ?timeout ?env cmd =
-  recv (open_process_in ?timeout ?env cmd)
+let pread ?timeout ?env ?stdin ?stderr cmd =
+  recv (open_process_in ?timeout ?env ?stdin ?stderr cmd)
 
-let pread_chars ?timeout ?env cmd =
-  recv_chars (open_process_in ?timeout ?env cmd)
+let pread_chars ?timeout ?env ?stdin ?stderr cmd =
+  recv_chars (open_process_in ?timeout ?env ?stdin ?stderr cmd)
 
-let pread_line ?timeout ?env cmd =
-  recv_line (open_process_in ?timeout ?env cmd)
+let pread_line ?timeout ?env ?stdin ?stderr cmd =
+  recv_line (open_process_in ?timeout ?env ?stdin ?stderr cmd)
 
-let pread_lines ?timeout ?env cmd =
-  recv_lines (open_process_in ?timeout ?env cmd)
+let pread_lines ?timeout ?env ?stdin ?stderr cmd =
+  recv_lines (open_process_in ?timeout ?env ?stdin ?stderr cmd)
 
 (* Sending *)
 
@@ -258,17 +282,17 @@ let send f pr data =
   finally
     Lwt_io.close oc
 
-let pwrite ?timeout ?env cmd text =
-  send Lwt_io.write (open_process_out ?timeout ?env cmd) text
+let pwrite ?timeout ?env ?stdout ?stderr cmd text =
+  send Lwt_io.write (open_process_out ?timeout ?env ?stdout ?stderr cmd) text
 
-let pwrite_chars ?timeout ?env cmd chars =
-  send Lwt_io.write_chars (open_process_out ?timeout ?env cmd) chars
+let pwrite_chars ?timeout ?env ?stdout ?stderr cmd chars =
+  send Lwt_io.write_chars (open_process_out ?timeout ?env ?stdout ?stderr cmd) chars
 
-let pwrite_line ?timeout ?env cmd line =
-  send Lwt_io.write_line (open_process_out ?timeout ?env cmd) line
+let pwrite_line ?timeout ?env ?stdout ?stderr cmd line =
+  send Lwt_io.write_line (open_process_out ?timeout ?env ?stdout ?stderr cmd) line
 
-let pwrite_lines ?timeout ?env cmd lines =
-  send Lwt_io.write_lines (open_process_out ?timeout ?env cmd) lines
+let pwrite_lines ?timeout ?env ?stdout ?stderr cmd lines =
+  send Lwt_io.write_lines (open_process_out ?timeout ?env ?stdout ?stderr cmd) lines
 
 (* Mapping *)
 
@@ -280,22 +304,22 @@ let dump f pr data =
                  finally
                    Lwt_io.close oc)
 
-let pmap ?timeout ?env cmd text =
-  let pr = open_process ?timeout ?env cmd in
+let pmap ?timeout ?env ?stderr cmd text =
+  let pr = open_process ?timeout ?env ?stderr cmd in
   dump Lwt_io.write pr text;
   recv pr
 
-let pmap_chars ?timeout ?env cmd chars =
-  let pr = open_process ?timeout ?env cmd in
+let pmap_chars ?timeout ?env ?stderr cmd chars =
+  let pr = open_process ?timeout ?env ?stderr cmd in
   dump Lwt_io.write_chars pr chars;
   recv_chars pr
 
-let pmap_line ?timeout ?env cmd line =
-  let pr = open_process ?timeout ?env cmd in
+let pmap_line ?timeout ?env ?stderr cmd line =
+  let pr = open_process ?timeout ?env ?stderr cmd in
   dump Lwt_io.write_line pr line;
   recv_line pr
 
-let pmap_lines ?timeout ?env cmd lines =
-  let pr = open_process ?timeout ?env cmd in
+let pmap_lines ?timeout ?env ?stderr cmd lines =
+  let pr = open_process ?timeout ?env ?stderr cmd in
   dump Lwt_io.write_lines pr lines;
   recv_lines pr
