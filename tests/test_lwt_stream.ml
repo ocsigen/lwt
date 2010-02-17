@@ -119,4 +119,16 @@ let suite = suite "lwt_stream" [
        let l = Lwt_stream.get_available_up_to 2 stream in
        lwt x = Lwt_stream.get stream in
        return (l = [1; 2] && x = Some 3));
+
+  test "filter"
+    (fun () ->
+       let push, stream = Lwt_stream.push_stream () in
+       push (`Data 1);
+       push (`Data 2);
+       push (`Data 3);
+       push (`Data 4);
+       let filtered = Lwt_stream.filter ((=) 3) stream in
+       lwt x = Lwt_stream.get filtered in
+       let l = Lwt_stream.get_available filtered in
+       return (x = Some 3 && l = []));
 ]
