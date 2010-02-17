@@ -131,4 +131,17 @@ let suite = suite "lwt_stream" [
        lwt x = Lwt_stream.get filtered in
        let l = Lwt_stream.get_available filtered in
        return (x = Some 3 && l = []));
+
+  test "filter_map"
+    (fun () ->
+       let push, stream = Lwt_stream.push_stream () in
+       push (`Data 1);
+       push (`Data 2);
+       push (`Data 3);
+       push (`Data 4);
+       let filtered = Lwt_stream.filter_map (function 3 ->  Some "3" | _ -> None ) stream in
+       lwt x = Lwt_stream.get filtered in
+       let l = Lwt_stream.get_available filtered in
+       return (x = Some "3" && l = []));
+
 ]
