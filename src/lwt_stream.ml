@@ -33,7 +33,7 @@ type 'a t = {
   (* List of queues of all clones of this event (including this
      event) *)
   mutex : Lwt_mutex.t;
-  (* Mutex to prevent race condition (especially for cloned stream) *)
+  (* Mutex to prevent concurrent access to [next] *)
 }
 
 let add_clone wa q =
@@ -179,31 +179,42 @@ let push_clones wa x =
           ()
   done
 
-let peek_unlocked s =
-  if Queue.is_empty s.queue then begin
-    lwt result = s.next () in
-    push_clones !(s.clones) result;
-    return result
-  end else
-    return (Queue.top s.queue)
-
 let peek s =
-  Lwt_mutex.with_lock s.mutex (fun () -> peek_unlocked s)
+  if Queue.is_empty s.queue then
+    Lwt_mutex.with_lock s.mutex begin fun () ->
+      if Queue.is_empty s.queue then begin
+        lwt result = s.next () in
+        push_clones !(s.clones) result;
+        return result
+      end else
+        return (Queue.top s.queue)
+    end
+  else
+    return (Queue.top s.queue)
 
 let rec force n s =
   if Queue.length s.queue >= n then
     return ()
-  else begin
-    lwt result = s.next () in
-    push_clones !(s.clones) result;
-    if result = None then
-      return ()
-    else
-      force n s
-  end
+  else
+    Lwt_mutex.with_lock s.mutex begin fun () ->
+      if Queue.length s.queue >= n then
+        return false
+      else begin
+        lwt result = s.next () in
+        push_clones !(s.clones) result;
+        if result = None then
+          return false
+        else
+          return true
+      end
+    end >>= function
+      | true ->
+          force n s
+      | false ->
+          return ()
 
 let npeek n s =
-  lwt () = Lwt_mutex.with_lock s.mutex (fun () -> force n s) in
+  lwt () = force n s in
   let l, _ =
     Queue.fold
       (fun (l, n) x ->
@@ -217,46 +228,52 @@ let npeek n s =
   in
   return (List.rev l)
 
-let get_unlocked s =
-  if Queue.is_empty s.queue then begin
-    lwt x = s.next () in
-    (* This prevent from calling s.next when the stream has
-       terminated: *)
-    if x = None then Queue.push None s.queue;
-    let wa = !(s.clones) in
-    for i = 0 to Weak.length wa - 1 do
-      match Weak.get wa i with
-        | Some q when q != s.queue ->
-            Queue.push x q
-        | _ ->
-            ()
-    done;
-    return x
-  end else
+let rec get s =
+  if Queue.is_empty s.queue then
+    Lwt_mutex.with_lock s.mutex begin fun () ->
+      if Queue.is_empty s.queue then begin
+        lwt x = s.next () in
+        (* This prevent from calling s.next when the stream has
+           terminated: *)
+        if x = None then Queue.push None s.queue;
+        let wa = !(s.clones) in
+        for i = 0 to Weak.length wa - 1 do
+          match Weak.get wa i with
+            | Some q when q != s.queue ->
+                Queue.push x q
+            | _ ->
+                ()
+        done;
+        return x
+      end else begin
+        let x = Queue.take s.queue in
+        if x = None then Queue.push None s.queue;
+        return x
+      end
+    end
+  else begin
     let x = Queue.take s.queue in
     if x = None then Queue.push None s.queue;
     return x
-
-let get s =
-  Lwt_mutex.with_lock s.mutex (fun () -> get_unlocked s)
+  end
 
 let nget n s =
   let rec loop n =
     if n <= 0 then
       return []
     else
-      get_unlocked s >>= function
+      get s >>= function
         | Some x ->
             lwt l = loop (n - 1) in
             return (x :: l)
         | None ->
             return []
   in
-  Lwt_mutex.with_lock s.mutex (fun () -> loop n)
+  loop n
 
 let get_while f s =
   let rec loop () =
-    peek_unlocked s >>= function
+    peek s >>= function
       | Some x ->
           let test = f x in
           if test then begin
@@ -268,11 +285,11 @@ let get_while f s =
       | None ->
           return []
   in
-  Lwt_mutex.with_lock s.mutex loop
+  loop ()
 
 let get_while_s f s =
   let rec loop () =
-    peek_unlocked s >>= function
+    peek s >>= function
       | Some x ->
           lwt test = f x in
           if test then begin
@@ -284,7 +301,7 @@ let get_while_s f s =
       | None ->
           return []
   in
-  Lwt_mutex.with_lock s.mutex loop
+  loop ()
 
 let next s = get s >>= function
   | Some x -> return x
@@ -292,26 +309,26 @@ let next s = get s >>= function
 
 let to_list s =
   let rec loop () =
-    get_unlocked s >>= function
+    get s >>= function
       | Some x ->
           lwt l = loop () in
           return (x :: l)
       | None ->
           return []
   in
-  Lwt_mutex.with_lock s.mutex loop
+  loop ()
 
 let to_string s =
   let buf = Buffer.create 42 in
   let rec loop () =
-    get_unlocked s >>= function
+    get s >>= function
       | Some x ->
           Buffer.add_char buf x;
           loop ()
       | None ->
           return (Buffer.contents buf)
   in
-  Lwt_mutex.with_lock s.mutex loop
+  loop ()
 
 let junk s =
   lwt _ = get s in
@@ -322,14 +339,14 @@ let njunk n s =
     if n <= 0 then
       return ()
     else
-      lwt _ = get_unlocked s in
+      lwt _ = get s in
       loop (n - 1)
   in
-  Lwt_mutex.with_lock s.mutex (fun () -> loop n)
+  loop n
 
 let junk_while f s =
   let rec loop () =
-    peek_unlocked s >>= function
+    peek s >>= function
       | Some x ->
           let test = f x in
           if test then begin
@@ -340,11 +357,11 @@ let junk_while f s =
       | None ->
           return ()
   in
-  Lwt_mutex.with_lock s.mutex loop
+  loop ()
 
 let junk_while_s f s =
   let rec loop () =
-    peek_unlocked s >>= function
+    peek s >>= function
       | Some x ->
           lwt test = f x in
           if test then begin
@@ -355,18 +372,18 @@ let junk_while_s f s =
       | None ->
           return ()
   in
-  Lwt_mutex.with_lock s.mutex loop
+  loop ()
 
 let junk_old s =
   let rec loop () =
-    match Lwt.state (peek_unlocked s) with
+    match Lwt.state (peek s) with
       | Sleep ->
           return ()
       | _ ->
           ignore (Queue.take s.queue);
           loop ()
   in
-  Lwt_mutex.with_lock s.mutex loop
+  loop ()
 
 let get_available s =
   let rec loop () =
@@ -416,160 +433,159 @@ let map_s f s =
               return None)
 
 let filter f s =
-  let rec next_unlocked () =
-    get_unlocked s >>= function
+  let rec next () =
+    get s >>= function
       | Some x as result ->
           let test = f x in
           if test then
             return result
           else
-            next_unlocked ()
+            next ()
       | None ->
           return None
   in
-  from (fun () -> Lwt_mutex.with_lock s.mutex next_unlocked)
+  from next
 
 let filter_s f s =
-  let rec next_unlocked () =
-    get_unlocked s >>= function
+  let rec next () =
+    get s >>= function
       | Some x as result ->
           lwt test = f x in
           if test then
             return result
           else
-            next_unlocked ()
+            next ()
       | None ->
           return None
   in
-  from (fun () -> Lwt_mutex.with_lock s.mutex next_unlocked)
+  from next
 
 let filter_map f s =
-  let rec next_unlocked () =
-    get_unlocked s >>= function
+  let rec next () =
+    get s >>= function
       | Some x ->
           let x = f x in
           (match x with
              | Some _ ->
                  return x
              | None ->
-                 next_unlocked ())
+                 next ())
       | None ->
           return None
   in
-  from (fun () -> Lwt_mutex.with_lock s.mutex next_unlocked)
+  from next
 
 let filter_map_s f s =
-  let rec next_unlocked () =
-    get_unlocked s >>= function
+  let rec next () =
+    get s >>= function
       | Some x ->
           lwt x = f x in
           (match x with
              | Some _ ->
                  return x
              | None ->
-                 next_unlocked ())
+                 next ())
       | None ->
           return None
   in
-  from (fun () -> Lwt_mutex.with_lock s.mutex next_unlocked)
-
+  from next
 
 let map_list f s =
   let pendings = ref [] in
-  let rec next_unlocked () =
+  let rec next () =
     match !pendings with
       | [] ->
-          get_unlocked s >>= (function
+          get s >>= (function
                                 | Some x ->
                                     let l = f x in
                                     pendings := l;
-                                    next_unlocked ()
+                                    next ()
                                 | None ->
                                     return None)
       | x :: l ->
           pendings := l;
           return (Some x)
   in
-  from (fun () -> Lwt_mutex.with_lock s.mutex next_unlocked)
+  from next
 
 let map_list_s f s =
   let pendings = ref [] in
-  let rec next_unlocked () =
+  let rec next () =
     match !pendings with
       | [] ->
-          get_unlocked s >>= (function
-                                | Some x ->
-                                    lwt l = f x in
-                                    pendings := l;
-                                    next_unlocked ()
-                                | None ->
-                                    return None)
+          get s >>= (function
+                       | Some x ->
+                           lwt l = f x in
+                           pendings := l;
+                           next ()
+                       | None ->
+                           return None)
       | x :: l ->
           pendings := l;
           return (Some x)
   in
-  from (fun () -> Lwt_mutex.with_lock s.mutex next_unlocked)
+  from next
 
 let flatten s =
   map_list (fun l -> l) s
 
 let fold f s acc =
   let rec loop acc =
-    get_unlocked s >>= function
+    get s >>= function
       | Some x ->
           let acc = f x acc in
           loop acc
       | None ->
           return acc
   in
-  Lwt_mutex.with_lock s.mutex (fun () -> loop acc)
+  loop acc
 
 let fold_s f s acc =
   let rec loop acc =
-    get_unlocked s >>= function
+    get s >>= function
       | Some x ->
           lwt acc = f x acc in
           loop acc
       | None ->
           return acc
   in
-  Lwt_mutex.with_lock s.mutex (fun () -> loop acc)
+  loop acc
 
 let iter f s =
   let rec loop () =
-    get_unlocked s >>= function
+    get s >>= function
       | Some x ->
           let () = f x in
           loop ()
       | None ->
           return ()
   in
-  Lwt_mutex.with_lock s.mutex loop
+  loop ()
 
 let iter_s f s =
   let rec loop () =
-    get_unlocked s >>= function
+    get s >>= function
       | Some x ->
           lwt () = f x in
           loop ()
       | None ->
           return ()
   in
-  Lwt_mutex.with_lock s.mutex loop
+  loop ()
 
 let iter_p f s =
   let rec loop () =
-    get_unlocked s >>= function
+    get s >>= function
       | Some x ->
           f x <&> loop ()
       | None ->
           return ()
   in
-  Lwt_mutex.with_lock s.mutex loop
+  loop ()
 
 let find f s =
   let rec loop () =
-    get_unlocked s >>= function
+    get s >>= function
       | Some x as result ->
           let test = f x in
           if test then
@@ -579,11 +595,11 @@ let find f s =
       | None ->
           return None
   in
-  Lwt_mutex.with_lock s.mutex loop
+  loop ()
 
 let find_s f s =
   let rec loop () =
-    get_unlocked s >>= function
+    get s >>= function
       | Some x as result ->
           lwt test = f x in
           if test then
@@ -593,11 +609,11 @@ let find_s f s =
       | None ->
           return None
   in
-  Lwt_mutex.with_lock s.mutex loop
+  loop ()
 
 let rec find_map f s =
   let rec loop () =
-    get_unlocked s >>= function
+    get s >>= function
       | Some x ->
           let x = f x in
           (match x with
@@ -608,11 +624,11 @@ let rec find_map f s =
       | None ->
           return None
   in
-  Lwt_mutex.with_lock s.mutex loop
+  loop ()
 
 let rec find_map_s f s =
   let rec loop () =
-    get_unlocked s >>= function
+    get s >>= function
       | Some x ->
           lwt x = f x in
           (match x with
@@ -623,7 +639,7 @@ let rec find_map_s f s =
       | None ->
           return None
   in
-  Lwt_mutex.with_lock s.mutex loop
+  loop ()
 
 let rec combine s1 s2 =
   let next () =
@@ -635,11 +651,6 @@ let rec combine s1 s2 =
           return None
   in
   from next
-
-let split s = (map fst (clone s), map snd (clone s))
-
-let partition f s = (filter f s, filter (fun x -> not (f x)) (clone s))
-let partition_s f s = (filter_s f s, filter_s (fun x -> f x >|= not) (clone s))
 
 let append s1 s2 =
   let current_s = ref s1 and s1_finished = ref false in
