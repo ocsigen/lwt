@@ -71,9 +71,6 @@ doc:
 examples:
 	$(MAKE) -C examples
 
-test:
-	$(MAKE) -C test
-
 dist:
 	DARCS_REPO=$(PWD) darcs dist -d $(NAME)-$(VERSION)
 
