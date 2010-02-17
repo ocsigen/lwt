@@ -51,6 +51,17 @@ let suite = suite "lwt_stream" [
        and x2_3 = Lwt_stream.next stream2 in
        return ([x1_1; x1_2; x1_3] = [1; 2; 3] && [x2_1; x2_2; x2_3] = [1; 2; 3]));
 
+  test "clone 2"
+    (fun () ->
+       let push, stream1 = Lwt_stream.push_stream () in
+       push (`Data 1);
+       let stream2 = Lwt_stream.clone stream1 in
+       let x1_1 = poll (Lwt_stream.next stream1) in
+       let x1_2 = poll (Lwt_stream.next stream1) in
+       let x2_1 = poll (Lwt_stream.next stream2) in
+       let x2_2 = poll (Lwt_stream.next stream2) in
+       return ([x1_1;x1_2;x2_1;x2_2] = [Some 1;None;Some 1;None]));
+
   test "event"
     (fun () ->
        let event, push = React.E.create () in
