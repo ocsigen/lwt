@@ -179,6 +179,11 @@ val select : 'a t list -> 'a t
   (** [select l] is the same as [choose] but it cancels all sleeping
       threads when one terminates. *)
 
+val protected : 'a t -> 'a t
+  (** [protected thread] creates a new cancelable thread which behave
+      as [thread] except that cancelling it does not cancel
+      [thread]. *)
+
 (**/**)
 
 (* The functions below are probably not useful for the casual user.

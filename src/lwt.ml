@@ -226,7 +226,7 @@ let rec try_bind_rec t f g =
     | Repr _ ->
         assert false
 
-let try_bind x f = try_bind_rec (apply x ()) f
+let try_bind x f g = try_bind_rec (apply x ()) f g
 
 let poll t =
   match !(repr t) with
@@ -243,6 +243,19 @@ let rec ignore_result t =
         raise e
     | Sleep(_, waiters) ->
         add_waiter waiters (fun x -> ignore_result x)
+    | Repr _ ->
+        assert false
+
+let protected t =
+  match !(repr t) with
+    | Sleep _ ->
+        let waiter, wakener = task () in
+        ignore (try_bind_rec t
+                  (fun value -> (try wakeup wakener value with Invalid_argument _ -> ()); return ())
+                  (fun exn -> (try wakeup_exn wakener exn with Invalid_argument _ -> ()); return ()));
+        waiter
+    | Return _ | Fail _ ->
+        t
     | Repr _ ->
         assert false
 
