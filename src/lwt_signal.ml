@@ -20,6 +20,8 @@
  * 02111-1307, USA.
  *)
 
+open Lwt
+
 type notifier = unit React.signal Lwt_sequence.node
 
 let notifiers = Lwt_sequence.create ()
@@ -46,3 +48,27 @@ let always_notify_p f signal =
 
 let always_notify_s f signal =
   ignore (notify_s f signal)
+
+let limit f signal =
+  let signal', push' = React.S.create (React.S.value signal) in
+  let sleep = ref (return ()) and stop = ref None in
+  let _ =
+    React.S.map
+      (fun x ->
+         let waiter, wakener = wait () in
+         let () =
+           match !stop with
+             | Some wakener' ->
+                 stop := Some wakener;
+                 wakeup_exn wakener' Exit
+             | None ->
+                 stop := Some wakener
+         in
+         lwt () = !sleep <?> waiter in
+         stop := None;
+         sleep := f ();
+         push' x;
+         return ())
+      signal
+  in
+  signal'

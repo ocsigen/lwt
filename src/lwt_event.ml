@@ -82,3 +82,27 @@ let from f =
      method stop = Lazy.force stop
      method event = event
    end)
+
+let limit f event =
+  let event', push' = React.E.create () in
+  let sleep = ref (return ()) and stop = ref None in
+  let _ =
+    React.E.map
+      (fun x ->
+         let waiter, wakener = wait () in
+         let () =
+           match !stop with
+             | Some wakener' ->
+                 stop := Some wakener;
+                 wakeup_exn wakener' Exit
+             | None ->
+                 stop := Some wakener
+         in
+         lwt () = !sleep <?> waiter in
+         stop := None;
+         sleep := f ();
+         push' x;
+         return ())
+      event
+  in
+  event'

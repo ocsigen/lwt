@@ -32,6 +32,12 @@ val from : (unit -> 'a Lwt.t) -> < event : 'a React.event; stop : unit >
       value. Calls to [f] are serialised. The [stop] method stops
       the monitoring of [f]. *)
 
+val limit : (unit -> unit Lwt.t) -> 'a React.event -> 'a React.event
+  (** [limit f event] limits the rate of [event] with [f].
+
+      For example, to limit the rate of an event to 1 per second you
+      can use: [limit (fun () -> Lwt_unix.sleep 1.0) event]. *)
+
 (** {6 Notification} *)
 
 type notifier

@@ -22,6 +22,16 @@
 
 (** Signals utilities *)
 
+(** {6 Utilities} *)
+
+val limit : (unit -> unit Lwt.t) -> 'a React.signal -> 'a React.signal
+  (** [limit f signal] limits the rate of [signal] update with [f].
+
+      For example, to limit it to 1 per second, you can use: [limit
+      (fun () -> Lwt_unix.sleep 1.0) signal]. *)
+
+(** {6 Notification} *)
+
 type notifier
   (** Type of signal notifiers *)
 
