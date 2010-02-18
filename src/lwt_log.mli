@@ -236,15 +236,22 @@ val channel : ?level : level -> ?template : template -> close_mode : [ `Close | 
 
 (** {6 Logging functions} *)
 
-val log : ?logger : logger -> level : level -> ('a, unit, string, unit) format4 -> 'a
-  (** [log ?logger ~level format] log a message.
+val log : ?section : string -> ?logger : logger -> level : level -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+  (** [log ?section ?logger ~level format] log a message.
 
+      @param section can be set to the current module name
+             (this is done by the syntax extension)
       @param logger defaults to {!default}
       @param level defaults to {!Info}
+  *)
 
-      The resulting thread is ingored with [ignore_result]. *)
-
-val exn : ?logger : logger -> ?level : level -> exn : exn -> ('a, unit, string, unit) format4 -> 'a
-  (** [exn ?logger ?level exn format] logs an exception.
+val exn : ?section : string -> ?logger : logger -> ?level : level -> exn : exn -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+  (** [exn ?section ?logger ?level exn format] logs an exception.
 
       @param level default to {!Error} *)
+
+val log_i : ?section : string -> ?logger : logger -> level : level -> ('a, unit, string, unit) format4 -> 'a
+  (** Same as [log] but ignore the resulting thread *)
+
+val exn_i : ?section : string -> ?logger : logger -> ?level : level -> exn : exn -> ('a, unit, string, unit) format4 -> 'a
+  (** Same as [exn] but ignore the resulting thread *)

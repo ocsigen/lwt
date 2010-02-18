@@ -20,7 +20,6 @@
  * 02111-1307, USA.
  *)
 
-
 (** Logging facility.
 
     It replaces expression of the form:
@@ -34,6 +33,8 @@
     {[
       if Lwt_log.level !Lwt_log.default `Info then
         Lwt_log.log ~level:Lwt_log.Info "Foo: x = %d" x
+      else
+        return ()
     ]}
 
     You can also log exception with the backtrace if available:
@@ -42,9 +43,14 @@
       Log#exn exn "uncaught exception"
     ]}
 
-    Note that the application must be complete. For example: [Log#info
-    "%d"] will make compilation to fail.
+    Note:
 
-    It also add the command line flags "-no-debug" which remove all
+    - the application must be complete. For example: [Log#info "%d"]
+    will make compilation to fail
+
+    - it also add the command line flags "-no-debug" which remove all
     debug messages.
+
+    - if you want to ignore the resulting thread, you can use [LogI]
+    instead of [Log]
 *)

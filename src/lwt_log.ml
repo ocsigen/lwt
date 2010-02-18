@@ -476,20 +476,23 @@ let get_logger = function
   | Some logger ->
       !logger
 
-let log ?logger ~level fmt =
+let _log cont fail ?section ?logger ~level fmt =
   Printf.ksprintf begin fun message ->
     match get_logger logger with
       | Closed ->
-          raise Logger_closed
+          fail Logger_closed
       | Opened logger ->
-          ignore_result (log_rec logger level (split message))
+          cont (log_rec logger level
+                  (match section with
+                     | Some section -> List.map (fun line -> section ^ ": " ^ line) (split message)
+                     | None -> split message))
   end fmt
 
-let exn ?logger ?(level=Error) ~exn fmt =
+let _exn cont fail ?section ?logger ?(level=Error) ~exn fmt =
   Printf.ksprintf begin fun message ->
     match get_logger logger with
       | Closed ->
-          raise Logger_closed
+          fail Logger_closed
       | Opened logger ->
           let message = message ^ ": " ^ Printexc.to_string exn in
           let message =
@@ -500,5 +503,22 @@ let exn ?logger ?(level=Error) ~exn fmt =
             else
               message
           in
-          ignore_result (log_rec logger level (split message))
+          cont (log_rec logger level
+                  (match section with
+                     | Some section -> List.map (fun line -> section ^ ": " ^ line) (split message)
+                     | None -> split message))
   end fmt
+
+let identity x = x
+
+let log ?section ?logger ~level fmt =
+  _log identity fail ?section ?logger ~level fmt
+
+let exn ?section ?logger ?level ~exn fmt =
+  _exn identity fail ?section ?logger ?level ~exn fmt
+
+let log_i ?section ?logger ~level fmt =
+  _log ignore raise ?section ?logger ~level fmt
+
+let exn_i ?section ?logger ?level ~exn fmt =
+  _exn ignore raise ?section ?logger ?level ~exn fmt

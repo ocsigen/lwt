@@ -49,15 +49,24 @@ let rec apply e = function
 
 let split e =
   let rec aux acc = function
-    | <:expr@loc< Log#exn $exn$ $fmt$ >> ->
-        `Failure(exn, fmt, acc)
-    | <:expr@loc< Log#$lid:level$ $fmt$ >> ->
+    | <:expr@_loc< Log#exn $exn$ $fmt$ >> ->
+        `Failure("exn", <:expr< Lwt.return () >>, exn, fmt, acc)
+    | <:expr@_loc< LogI#exn $exn$ $fmt$ >> ->
+        `Failure("exn_i", <:expr< () >>, exn, fmt, acc)
+    | <:expr@_loc< Log#$lid:level$ $fmt$ >> ->
         if level = "debug" && (not !debug) then
           `Delete
         else if List.mem level levels then
-          `Log(fmt, level, acc)
+          `Log("log", <:expr< Lwt.return () >>, fmt, level, acc)
         else
-          Loc.raise loc (Failure (Printf.sprintf "invalid log level: %S" level))
+          Loc.raise _loc (Failure (Printf.sprintf "invalid log level: %S" level))
+    | <:expr@_loc< LogI#$lid:level$ $fmt$ >> ->
+        if level = "debug" && (not !debug) then
+          `Delete
+        else if List.mem level levels then
+          `Log("log_i", <:expr< () >>, fmt, level, acc)
+        else
+          Loc.raise _loc (Failure (Printf.sprintf "invalid log level: %S" level))
     | <:expr@loc< $a$ $b$ >> ->
         aux (b :: acc) a
     | _ ->
@@ -75,25 +84,31 @@ object
     match split e with
       | `Delete ->
           <:expr< () >>
-      | `Log(fmt, level, args) ->
+      | `Log(func, else_expr, fmt, level, args) ->
           let args = List.map super#expr args and fmt = super#expr fmt and level = String.capitalize level in
           <:expr<
             if Lwt_log.$uid:level$ >= Lwt_log.level !Lwt_log.default then
-              $apply <:expr< Lwt_log.log ~level:Lwt_log.$uid:level$
-                               $if module_name = "" then
-                                  fmt
-                                else
-                                  <:expr< Pervasives.( ^^ ) $str:module_name ^ ": "$ $fmt$ >> $ >> args$
+              $apply
+                 (if module_name = "" then
+                    <:expr< Lwt_log.$lid:func$ ~level:Lwt_log.$uid:level$ $fmt$ >>
+                  else
+                    <:expr< Lwt_log.$lid:func$ ~section:$str:module_name$ ~level:Lwt_log.$uid:level$ $fmt$ >>)
+                 args$
+            else
+              $else_expr$
           >>
-      | `Failure(exn, fmt, args) ->
+      | `Failure(func, else_expr, exn, fmt, args) ->
           let args = List.map super#expr args and fmt = super#expr fmt in
           <:expr<
             if Lwt_log.Error >= Lwt_log.level !Lwt_log.default then
-              $apply <:expr<  Lwt_log.exn ~exn:$exn$
-                                $if module_name = "" then
-                                   fmt
-                                 else
-                                   <:expr< Pervasives.( ^^ ) $str:module_name ^ ": "$ $fmt$ >> $ >> args$
+              $apply
+                 (if module_name = "" then
+                    <:expr<  Lwt_log.$lid:func$ ~exn:$exn$ $fmt$ >>
+                  else
+                    <:expr<  Lwt_log.$lid:func$ ~section:$str:module_name$ ~exn:$exn$ $fmt$ >>)
+                 args$
+            else
+              $else_expr$
           >>
       | `Not_a_log ->
           super#expr e
