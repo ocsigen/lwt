@@ -50,25 +50,33 @@ let always_notify_s f signal =
   ignore (notify_s f signal)
 
 let limit f signal =
-  let signal', push' = React.S.create (React.S.value signal) in
-  let sleep = ref (return ()) and stop = ref None in
-  let _ =
-    React.S.map
+  let event1, push1 = React.E.create () in
+  let sleep = ref (f ()) and stop = ref None in
+  let event2 =
+    React.E.filter
       (fun x ->
-         let waiter, wakener = wait () in
-         let () =
-           match !stop with
-             | Some wakener' ->
-                 stop := Some wakener;
-                 wakeup_exn wakener' Exit
-             | None ->
-                 stop := Some wakener
-         in
-         lwt () = !sleep <?> waiter in
-         stop := None;
-         sleep := f ();
-         push' x;
-         return ())
-      signal
+         if state !sleep <> Sleep then begin
+           sleep := f ();
+           true
+         end else begin
+           let _ =
+             let waiter, wakener = wait () in
+             let () =
+               match !stop with
+                 | Some wakener' ->
+                     stop := Some wakener;
+                     wakeup_exn wakener' Exit
+                 | None ->
+                     stop := Some wakener
+             in
+             lwt () = !sleep <?> waiter in
+             stop := None;
+             sleep := f ();
+             push1 x;
+             return ()
+           in
+           false
+         end)
+      (React.S.changes signal)
   in
-  signal'
+  React.S.hold (React.S.value signal) (React.E.select [event1; event2])

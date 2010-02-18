@@ -84,25 +84,33 @@ let from f =
    end)
 
 let limit f event =
-  let event', push' = React.E.create () in
+  let event1, push1 = React.E.create () in
   let sleep = ref (return ()) and stop = ref None in
-  let _ =
-    React.E.map
+  let event2 =
+    React.E.filter
       (fun x ->
-         let waiter, wakener = wait () in
-         let () =
-           match !stop with
-             | Some wakener' ->
-                 stop := Some wakener;
-                 wakeup_exn wakener' Exit
-             | None ->
-                 stop := Some wakener
-         in
-         lwt () = !sleep <?> waiter in
-         stop := None;
-         sleep := f ();
-         push' x;
-         return ())
+         if state !sleep <> Sleep then begin
+           sleep := f ();
+           true
+         end else begin
+           let _ =
+             let waiter, wakener = wait () in
+             let () =
+               match !stop with
+                 | Some wakener' ->
+                     stop := Some wakener;
+                     wakeup_exn wakener' Exit
+                 | None ->
+                     stop := Some wakener
+             in
+             lwt () = !sleep <?> waiter in
+             stop := None;
+             sleep := f ();
+             push1 x;
+             return ()
+           in
+           false
+         end)
       event
   in
-  event'
+  React.E.select [event1; event2]
