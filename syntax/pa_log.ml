@@ -25,12 +25,12 @@ open Camlp4.PreCast
 let debug = ref false
 
 let levels = [
-  "fatal";
-  "error";
-  "warning";
-  "notice";
-  "info";
-  "debug";
+  "Fatal";
+  "Error";
+  "Warning";
+  "Notice";
+  "Info";
+  "Debug";
 ]
 
 let module_name _loc =
@@ -49,22 +49,22 @@ let rec apply e = function
 
 let split e =
   let rec aux acc = function
-    | <:expr@_loc< Log#exn $exn$ $fmt$ >> ->
-        `Failure("exn", <:expr< Lwt.return () >>, exn, fmt, acc)
-    | <:expr@_loc< LogI#exn $exn$ $fmt$ >> ->
-        `Failure("exn_i", <:expr< () >>, exn, fmt, acc)
-    | <:expr@_loc< Log#$lid:level$ $fmt$ >> ->
-        if level = "debug" && (not !debug) then
+    | <:expr@_loc< Log.$lid:"exn" | "exn_f" as func$ >> ->
+      `Log(func, "Error", acc)
+    | <:expr@_loc< Log.$lid:func$ >> ->
+        let level =
+          String.capitalize (
+            let len = String.length func in
+            if len >= 2 && func.[len - 2] = '_' && func.[len - 1] = 'f' then
+              String.sub func 0 (len - 2)
+            else
+              func
+          )
+        in
+        if level = "Debug" && (not !debug) then
           `Delete
         else if List.mem level levels then
-          `Log("log", <:expr< Lwt.return () >>, fmt, level, acc)
-        else
-          Loc.raise _loc (Failure (Printf.sprintf "invalid log level: %S" level))
-    | <:expr@_loc< LogI#$lid:level$ $fmt$ >> ->
-        if level = "debug" && (not !debug) then
-          `Delete
-        else if List.mem level levels then
-          `Log("log_i", <:expr< () >>, fmt, level, acc)
+          `Log(func, level, acc)
         else
           Loc.raise _loc (Failure (Printf.sprintf "invalid log level: %S" level))
     | <:expr@loc< $a$ $b$ >> ->
@@ -80,35 +80,16 @@ object
 
   method expr e =
     let _loc = Ast.loc_of_expr e in
-    let module_name = module_name _loc in
     match split e with
       | `Delete ->
-          <:expr< () >>
-      | `Log(func, else_expr, fmt, level, args) ->
-          let args = List.map super#expr args and fmt = super#expr fmt and level = String.capitalize level in
+          <:expr< Lwt.return () >>
+      | `Log(func, level, args) ->
+          let args = List.map super#expr args in
           <:expr<
             if Lwt_log.$uid:level$ >= Lwt_log.level !Lwt_log.default then
-              $apply
-                 (if module_name = "" then
-                    <:expr< Lwt_log.$lid:func$ ~level:Lwt_log.$uid:level$ $fmt$ >>
-                  else
-                    <:expr< Lwt_log.$lid:func$ ~section:$str:module_name$ ~level:Lwt_log.$uid:level$ $fmt$ >>)
-                 args$
+              $apply <:expr< Log.$lid:func$ >> args$
             else
-              $else_expr$
-          >>
-      | `Failure(func, else_expr, exn, fmt, args) ->
-          let args = List.map super#expr args and fmt = super#expr fmt in
-          <:expr<
-            if Lwt_log.Error >= Lwt_log.level !Lwt_log.default then
-              $apply
-                 (if module_name = "" then
-                    <:expr<  Lwt_log.$lid:func$ ~exn:$exn$ $fmt$ >>
-                  else
-                    <:expr<  Lwt_log.$lid:func$ ~section:$str:module_name$ ~exn:$exn$ $fmt$ >>)
-                 args$
-            else
-              $else_expr$
+              Lwt.return ()
           >>
       | `Not_a_log ->
           super#expr e

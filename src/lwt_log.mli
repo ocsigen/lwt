@@ -67,27 +67,6 @@
 
     The [logger] argument is not mandatory, if you omit it, the
     {!default} logger will be used instead.
-
-    Moreover, there is the syntax extension [lwt.syntax.log] which
-    allow more convenient use of loggers.
-
-    It allow the following constructions:
-
-    {[
-      Log#error format ...
-    ]}
-
-    which is translated to:
-
-    {[
-      if Lwt_log.Error >= Lwt_log.level () then
-        Lwt_log.log ~level:Lwt_log.Error (module_name ^^ format) ...
-    ]}
-
-    The advantages of the syntax extension are:
-    - it does not compute the arguments if they are not needed
-    - it adds automatically the module name to error messages
-    - it can removes debugging message at compile-time (for speedup)
 *)
 
 (** {6 Log levels} *)
@@ -236,8 +215,8 @@ val channel : ?level : level -> ?template : template -> close_mode : [ `Close | 
 
 (** {6 Logging functions} *)
 
-val log : ?section : string -> ?logger : logger -> level : level -> ('a, unit, string, unit Lwt.t) format4 -> 'a
-  (** [log ?section ?logger ~level format] log a message.
+val log : ?section : string -> ?logger : logger -> ?level : level -> string -> unit Lwt.t
+  (** [log ?section ?logger ~level message] log a message.
 
       @param section can be set to the current module name
              (this is done by the syntax extension)
@@ -245,13 +224,76 @@ val log : ?section : string -> ?logger : logger -> level : level -> ('a, unit, s
       @param level defaults to {!Info}
   *)
 
-val exn : ?section : string -> ?logger : logger -> ?level : level -> exn : exn -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+val log_f : ?section : string -> ?logger : logger -> ?level : level -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+  (** [log_f] is the same as [log] except that it takes a format
+      string *)
+
+val exn : ?section : string -> ?logger : logger -> ?level : level -> exn : exn -> string -> unit Lwt.t
   (** [exn ?section ?logger ?level exn format] logs an exception.
 
       @param level default to {!Error} *)
 
-val log_i : ?section : string -> ?logger : logger -> level : level -> ('a, unit, string, unit) format4 -> 'a
-  (** Same as [log] but ignore the resulting thread *)
+val exn_f : ?section : string -> ?logger : logger -> ?level : level -> exn : exn -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+  (** [exn_f] is the same as [log] except that it takes a format
+      string *)
 
-val exn_i : ?section : string -> ?logger : logger -> ?level : level -> exn : exn -> ('a, unit, string, unit) format4 -> 'a
-  (** Same as [exn] but ignore the resulting thread *)
+(** {6 Functor} *)
+
+(** Create a logger with the [section] argument factorized *)
+module Make(Section : sig val section : string end) : sig
+
+  (** This module allow you to write more compact logging
+      instructions. It is recommended to create a module [Log] at the
+      begining of your file:
+
+      {[
+        module Log = Lwt_log.Make(struct let section = "section-name" end)
+      ]}
+
+      So the following instruction:
+
+      {[
+        Lwt_log.log ~section:"section-name" ~level:Lwt_log.Info msg
+      ]}
+
+      can be rewritten:
+
+      {[
+        Log.info msg
+      ]}
+
+      Althoug there is a syntax extension ([lwt.syntax.log]) which
+      does not modify the syntax, but modify logging instructions as
+      follow:
+
+      - it inlines test for the level, so arguments are not cmoputed
+        if not needed
+      - if can keep or remove debugging instructions
+  *)
+
+  val section : string
+    (** The section name (equal to [Section.section]) *)
+
+  (** {6 Logging functions} *)
+
+  val debug : string -> unit Lwt.t
+  val debug_f : ('a, unit, string, unit Lwt.t) format4 -> 'a
+
+  val info : string -> unit Lwt.t
+  val info_f : ('a, unit, string, unit Lwt.t) format4 -> 'a
+
+  val notice : string -> unit Lwt.t
+  val notice_f : ('a, unit, string, unit Lwt.t) format4 -> 'a
+
+  val warning : string -> unit Lwt.t
+  val warning_f : ('a, unit, string, unit Lwt.t) format4 -> 'a
+
+  val error : string -> unit Lwt.t
+  val error_f : ('a, unit, string, unit Lwt.t) format4 -> 'a
+
+  val fatal : string -> unit Lwt.t
+  val fatal_f : ('a, unit, string, unit Lwt.t) format4 -> 'a
+
+  val exn : exn -> string -> unit Lwt.t
+  val exn_f : exn -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+end

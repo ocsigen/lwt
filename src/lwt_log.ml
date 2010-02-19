@@ -476,49 +476,56 @@ let get_logger = function
   | Some logger ->
       !logger
 
-let _log cont fail ?section ?logger ~level fmt =
-  Printf.ksprintf begin fun message ->
-    match get_logger logger with
-      | Closed ->
-          fail Logger_closed
-      | Opened logger ->
-          cont (log_rec logger level
-                  (match section with
-                     | Some section -> List.map (fun line -> section ^ ": " ^ line) (split message)
-                     | None -> split message))
-  end fmt
+let log ?section ?logger ?(level=Info) message =
+  match get_logger logger with
+    | Closed ->
+        fail Logger_closed
+    | Opened logger ->
+        log_rec logger level
+          (match section with
+             | None | Some "" -> split message
+             | Some section -> List.map (fun line -> section ^ ": " ^ line) (split message))
 
-let _exn cont fail ?section ?logger ?(level=Error) ~exn fmt =
-  Printf.ksprintf begin fun message ->
-    match get_logger logger with
-      | Closed ->
-          fail Logger_closed
-      | Opened logger ->
-          let message = message ^ ": " ^ Printexc.to_string exn in
-          let message =
-            if Printexc.backtrace_status () then
-              match Printexc.get_backtrace () with
-                | "" -> message
-                | backtrace -> message ^ "\nbacktrace:\n" ^ backtrace
-            else
-              message
-          in
-          cont (log_rec logger level
-                  (match section with
-                     | Some section -> List.map (fun line -> section ^ ": " ^ line) (split message)
-                     | None -> split message))
-  end fmt
+let exn ?section ?logger ?(level=Error) ~exn message =
+  match get_logger logger with
+    | Closed ->
+        fail Logger_closed
+    | Opened logger ->
+        let message = message ^ ": " ^ Printexc.to_string exn in
+        let message =
+          if Printexc.backtrace_status () then
+            match Printexc.get_backtrace () with
+              | "" -> message
+              | backtrace -> message ^ "\nbacktrace:\n" ^ backtrace
+          else
+            message
+        in
+        log_rec logger level
+          (match section with
+             | None | Some "" -> split message
+             | Some section -> List.map (fun line -> section ^ ": " ^ line) (split message))
 
-let identity x = x
+let log_f ?section ?logger ?level format =
+  Printf.ksprintf (log ?section ?logger ?level) format
 
-let log ?section ?logger ~level fmt =
-  _log identity fail ?section ?logger ~level fmt
+let exn_f ?section ?logger ?level ~exn:e format =
+  Printf.ksprintf (exn ?section ?logger ?level ~exn:e) format
 
-let exn ?section ?logger ?level ~exn fmt =
-  _exn identity fail ?section ?logger ?level ~exn fmt
-
-let log_i ?section ?logger ~level fmt =
-  _log ignore raise ?section ?logger ~level fmt
-
-let exn_i ?section ?logger ?level ~exn fmt =
-  _exn ignore raise ?section ?logger ?level ~exn fmt
+module Make(Section : sig val section : string end) =
+struct
+  let section = Section.section
+  let debug msg = log ~section ~level:Debug msg
+  let debug_f fmt = Printf.ksprintf debug fmt
+  let info msg = log ~section ~level:Info msg
+  let info_f fmt = Printf.ksprintf info fmt
+  let notice msg = log ~section ~level:Notice msg
+  let notice_f fmt = Printf.ksprintf notice fmt
+  let warning msg = log ~section ~level:Warning msg
+  let warning_f fmt = Printf.ksprintf warning fmt
+  let error msg = log ~section ~level:Error msg
+  let error_f fmt = Printf.ksprintf error fmt
+  let fatal msg = log ~section ~level:Fatal msg
+  let fatal_f fmt = Printf.ksprintf fatal fmt
+  let exn e msg = exn ~section ~level:Error ~exn:e msg
+  let exn_f e fmt = Printf.ksprintf (exn e) fmt
+end

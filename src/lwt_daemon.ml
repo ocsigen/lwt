@@ -24,7 +24,7 @@ open Lwt
 
 let rec copy ic logger =
   lwt line = Lwt_io.read_line ic in
-  lwt () = Lwt_log.log ?logger ~level:Lwt_log.Notice "%s" line in
+  lwt () = Lwt_log.log ?logger ~level:Lwt_log.Notice line in
   copy ic logger
 
 let redirect fd logger =

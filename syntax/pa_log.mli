@@ -25,32 +25,23 @@
     It replaces expression of the form:
 
     {[
-      Log#info "x = %d" x
+      Log.info_f "x = %d" x
     ]}
 
-    in a file "foo.ml" by:
+    by
 
     {[
-      if Lwt_log.level !Lwt_log.default `Info then
-        Lwt_log.log ~level:Lwt_log.Info "Foo: x = %d" x
+      if Lwt_log.level !Lwt_log.default <= Lwt_log.Info then
+        Log.info_f "x = %d" x
       else
         return ()
     ]}
 
-    You can also log exception with the backtrace if available:
-
-    {[
-      Log#exn exn "uncaught exception"
-    ]}
-
     Note:
 
-    - the application must be complete. For example: [Log#info "%d"]
-    will make compilation to fail
+    - the application must be complete. For example: [Log.info "%d"]
+      will make compilation to fail
 
-    - it also add the command line flags "-no-debug" which remove all
-    debug messages.
-
-    - if you want to ignore the resulting thread, you can use [LogI]
-    instead of [Log]
+    - it also add the command line flags "-lwt-debug" to keep all debug
+      messages. By default debug messages are removed.
 *)
