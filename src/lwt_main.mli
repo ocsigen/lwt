@@ -43,6 +43,10 @@ val exit_hooks : (unit -> unit Lwt.t) Lwt_sequence.t
       - each hook is called exactly one time
       - exceptions raised by hooks are ignored *)
 
+val fast_yield : unit -> unit Lwt.t
+  (** [fast_yield ()] is similar to {!Lwt_unix.yield} except that it
+      resume earlier. It resumes before entering the main loop. *)
+
 (** {6 Low-level control of event loop} *)
 
 (** The rest of this file is for advanced users. You must have a good
@@ -52,12 +56,14 @@ val exit_hooks : (unit -> unit Lwt.t) Lwt_sequence.t
     - integration of external libraries which are not ``Lwt-aware''
       but are ``main-loop'' aware, or more generally which support
       asynchronous IOs.
-      If you want an example on how to do that, you can have a look at
-      the [ocaml-usb] library which integrates the C library [libusb] into
-      Lwt.
     - replace the default main-loop implementation (which is just
       a wrapper around select) by another one.
 *)
+
+val wakeup_fast_sleepers : unit -> unit
+  (** [wakeup_fast_sleepers ()] wakeups all threads that have suspend
+      themselves with {!fast_yield}. This function must be called
+      before collecting any sources. *)
 
 type fd_set = Unix.file_descr list
     (** A set of file-descriptors *)

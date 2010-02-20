@@ -254,7 +254,7 @@ let deepest_wrapper ch =
   loop ch.main
 
 let auto_flush oc =
-  lwt () = Lwt_unix.yield () in
+  lwt () = Lwt_main.fast_yield () in
   let wrapper = deepest_wrapper oc in
   match wrapper.state with
     | Busy_primitive ->
@@ -1341,7 +1341,7 @@ let establish_server ?buffer_size sockaddr =
   in
   (* Yield here to avoid receiving a new connection before the user
      map the event. *)
-  ignore (Lwt_unix.yield () >> loop ());
+  ignore (Lwt_main.fast_yield () >> loop ());
   event
 
 let ignore_close ch =
