@@ -48,10 +48,14 @@ let set_attr mode =
   with
       _ -> ()
 
-let save_state () =
+let drawing_mode = ref false
+
+let enter_drawing_mode () =
+  drawing_mode := true;
   write stdout "\027[?1049h\027[?1h\027=\r"
 
-let restore_state () =
+let leave_drawing_mode () =
+  drawing_mode := false;
   write stdout "\r\027[K\027[?1l\027>\027[r\027[?1049l"
 
 let cursor_visible = ref true
@@ -86,6 +90,12 @@ let cleanup () =
   lwt () =
     if not !cursor_visible then
       show_cursor ()
+    else
+      return ()
+  in
+  lwt () =
+    if !drawing_mode then
+      leave_drawing_mode ()
     else
       return ()
   in
@@ -513,9 +523,9 @@ let render m =
         return ()
     in
     (* Go to the top-left corner and reset attributes: *)
-    write oc "\027[H\027[0m" >>
-      loop_y 0 blank.style >>
-      write oc "\027[0m"
+    lwt () = write oc "\027[H\027[0m" in
+    lwt () = loop_y 0 blank.style in
+    write oc "\027[0m"
   end stdout
 
 (* +-----------------------------------------------------------------+

@@ -36,10 +36,10 @@ val with_raw_mode : (unit -> 'a Lwt.t) -> 'a Lwt.t
 val raw_mode : unit -> bool
   (** Returns wether the terminal is currently in raw mode *)
 
-val save_state : unit -> unit Lwt.t
-  (** Save the state of the terminal *)
+val enter_drawing_mode : unit -> unit Lwt.t
+  (** Put the terminal into drawing mode *)
 
-val restore_state : unit -> unit Lwt.t
+val leave_drawing_mode : unit -> unit Lwt.t
   (** Restore the state of the terminal *)
 
 val show_cursor : unit -> unit Lwt.t
