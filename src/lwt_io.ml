@@ -1328,21 +1328,36 @@ let establish_server ?buffer_size sockaddr =
   Lwt_unix.bind sock sockaddr;
   Lwt_unix.listen sock 5;
   let event, push = React.E.create () in
+  let abort_waiter, abort_wakener = wait () in
+  let abort_waiter = abort_waiter >> return `Shutdown in
   let rec loop () =
-    lwt (fd, addr) = Lwt_unix.accept sock in
-    (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
-    let close = lazy begin
-      Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
-      close_fd fd
-    end in
-    push (of_fd ?buffer_size ~mode:input ~close:(fun () -> Lazy.force close) fd,
-          of_fd ?buffer_size ~mode:output ~close:(fun () -> Lazy.force close) fd);
-    loop ()
+    select [Lwt_unix.accept sock >|= (fun x -> `Accept x); abort_waiter] >>= function
+      | `Accept(fd, addr) ->
+          (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
+          let close = lazy begin
+            Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
+            close_fd fd
+          end in
+          push (of_fd ?buffer_size ~mode:input ~close:(fun () -> Lazy.force close) fd,
+                of_fd ?buffer_size ~mode:output ~close:(fun () -> Lazy.force close) fd);
+          loop ()
+      | `Shutdown ->
+          Lwt_unix.close sock;
+          match sockaddr with
+            | Unix.ADDR_UNIX path when path <> "" && path.[0] <> '\x00' ->
+                Unix.unlink path;
+                return ()
+            | _ ->
+                return ()
   in
+  let shutdown = lazy(wakeup abort_wakener `Shutdown) in
   (* Yield here to avoid receiving a new connection before the user
      map the event. *)
   ignore (Lwt_main.fast_yield () >> loop ());
-  event
+  (object
+     method event = event
+     method shutdown = Lazy.force shutdown
+   end)
 
 let ignore_close ch =
   ignore (close ch)

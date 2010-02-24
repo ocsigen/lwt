@@ -386,7 +386,7 @@ val with_connection : ?buffer_size : int -> Unix.sockaddr -> (input_channel * ou
   (** [with_connection ?buffer_size ~mode addr f] open a connection to
       the given address and passes the channels to [f] *)
 
-val establish_server : ?buffer_size : int -> Unix.sockaddr -> (input_channel * output_channel) React.event
+val establish_server : ?buffer_size : int -> Unix.sockaddr -> < event : (input_channel * output_channel) React.event; shutdown : unit >
   (** [establich_server ?buffer_size sockaddr] creates a server which
       will listen for incomming connections. *)
 
