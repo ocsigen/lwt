@@ -1276,16 +1276,7 @@ let open_file ?buffer_size ?flags ?perm ~mode filename =
     | None, Output ->
         0o666
   in
-  let fd = Unix.openfile filename flags perm in
-  (* Special handling of FIFOs: reading/writing on FIFOs opened in
-     non-blocking mode will never fail with [EWOULDBLOCK] or [EAGAIN]
-     but will returns a size of [0] instead, so we need to chech that
-     the file descriptor is readable/writable before using it: *)
-  of_fd ?buffer_size ~mode
-    (if (Unix.fstat fd).Unix.st_kind = Unix.S_FIFO then
-       Lwt_unix.of_unix_file_descr_blocking fd
-     else
-       Lwt_unix.of_unix_file_descr fd)
+  of_unix_fd ?buffer_size ~mode (Unix.openfile filename flags perm)
 
 let with_file ?buffer_size ?flags ?perm ~mode filename f =
   let ic = open_file ?buffer_size ?flags ?perm ~mode filename in
