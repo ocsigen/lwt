@@ -107,8 +107,16 @@ val get_while_s : ('a -> bool Lwt.t) -> 'a t -> 'a list Lwt.t
       elements satisfy [f]. *)
 
 val next : 'a t -> 'a Lwt.t
-  (** [next enum] remove and returns the next element of the stream,
-      of fail with {!Empty} if the stream is empty. *)
+  (** [next st] remove and returns the next element of the stream, of
+      fail with {!Empty} if the stream is empty. *)
+
+val last_new : 'a t -> 'a Lwt.t
+  (** [next_new st] if no element are available on [st] without
+      sleeping, then it is the same as [next st]. Otherwise it removes
+      all elements of [st] that are ready except the last one, and
+      return it.
+
+      If fails with {!Empty} if the stream has no more elements *)
 
 val junk : 'a t -> unit Lwt.t
   (** [junk st] remove the first element of [st]. *)
@@ -148,14 +156,14 @@ val is_empty : 'a t -> bool Lwt.t
     For example:
 
     {[
-      # let st1 = Lwt_stream.of_list [1; 2; 3];;
-      val st1 : int Lwt_stream.t = <abstr>
-      # let st2 = Lwt_stream.map string_of_int st1;;
-      val st2 : string Lwt_stream.t = <abstr>
-      # Lwt_main.run (Lwt_stream.next st1);;
-      \- : int = 1
-      # Lwt_main.run (Lwt_stream.next st2);;
-      \- : string = "2"
+    # let st1 = Lwt_stream.of_list [1; 2; 3];;
+    val st1 : int Lwt_stream.t = <abstr>
+    # let st2 = Lwt_stream.map string_of_int st1;;
+    val st2 : string Lwt_stream.t = <abstr>
+    # Lwt_main.run (Lwt_stream.next st1);;
+    \- : int = 1
+    # Lwt_main.run (Lwt_stream.next st2);;
+    \- : string = "2"
     ]}
 *)
 

@@ -307,6 +307,28 @@ let next s = get s >>= function
   | Some x -> return x
   | None -> fail Empty
 
+let last_new s =
+  match Lwt.state (peek s) with
+    | Return None ->
+        fail Empty
+    | Sleep ->
+        next s
+    | Fail exn ->
+        fail exn
+    | Return(Some x) ->
+        let _ = Queue.take s.queue in
+        let rec loop last =
+          match Lwt.state (peek s) with
+            | Sleep | Return None ->
+                return last
+            | Return(Some x) ->
+                let _ = Queue.take s.queue in
+                loop x
+            | Fail exn ->
+                fail exn
+        in
+        loop x
+
 let to_list s =
   let rec loop () =
     get s >>= function

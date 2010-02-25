@@ -155,4 +155,12 @@ let suite = suite "lwt_stream" [
        let l = Lwt_stream.get_available filtered in
        return (x = Some "3" && l = []));
 
+  test "last_new"
+    (fun () ->
+       let push, stream = Lwt_stream.push_stream () in
+       push (`Data 1);
+       push (`Data 2);
+       push (`Data 3);
+       lwt x = Lwt_stream.last_new stream in
+       return (x = 3));
 ]
