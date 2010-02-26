@@ -22,13 +22,17 @@
  * 02111-1307, USA.
  *)
 
+(* +-----------------------------------------------------------------+
+   | Types                                                           |
+   +-----------------------------------------------------------------+ *)
+
 exception Canceled
 
 type +'a t
 type -'a u
 
 type cancel_list
-  (* Type of lists of threads, with possibly different types. With
+  (* Type of a lists of threads, with possibly different types. With
      existential types, it would be:
 
      {[
@@ -57,22 +61,49 @@ and 'a thread_state =
   | Fail of exn
       (* [Fail exn] a terminated thread which has failed with the
          exception [exn] *)
-  | Sleep of sleep_reason * ('a t -> unit) Lwt_sequence.t
-      (* [Sleep(sleep_reason, waiters)] is a sleeping
-         thread.
-
-         - [sleep_reason] is the reason why the thread is sleeping
-         - [waiters] is the list of waiters, which are thunk functions
-      *)
+  | Sleep of 'a sleeper
+      (* [Sleep sleeper] is a sleeping thread *)
   | Repr of 'a thread_repr
       (* [Repr t] a thread which behaves the same as [t] *)
 
 and 'a thread_repr = 'a thread_state ref
 
+and 'a sleeper = {
+  reason : sleep_reason;
+  (* Reason why the trhead is sleeping *)
+  mutable waiters : 'a waiter_set;
+  (* All thunk functions *)
+  mutable removed : int;
+  (* Number of waiter that have been disabled. When this number
+     reaches [max_removed], there are effectively removed from
+     [waiters]. *)
+}
+
+(* A waiter which can be removed from its set: *)
+and 'a removable = {
+  waiter : 'a t -> unit;
+  mutable active : bool;
+}
+
+(* Type of set of waiters: *)
+and 'a waiter_set =
+  | Empty
+  | Removable of 'a removable
+  | Immutable of ('a t -> unit)
+  | Append of 'a waiter_set * 'a waiter_set
+
 external thread_repr : 'a t -> 'a thread_repr = "%identity"
 external thread : 'a thread_repr -> 'a t = "%identity"
 external wakener : 'a thread_repr -> 'a u = "%identity"
 external wakener_repr : 'a u -> 'a thread_repr = "%identity"
+
+(* Maximum number of disabled waiters a waiter set may contains before
+   it get cleaned: *)
+let max_removed = 42
+
+(* +-----------------------------------------------------------------+
+   | Restarting/connecting threads                                   |
+   +-----------------------------------------------------------------+ *)
 
 (* Returns the represent of a thread, updating non-direct references: *)
 let rec repr_rec t =
@@ -81,8 +112,28 @@ let rec repr_rec t =
     | _       -> t
 let repr t = repr_rec (thread_repr t)
 
+let rec run_waiters_rec t ws rem =
+  match ws, rem with
+    | Empty, [] ->
+        ()
+    | Empty, ws :: rem ->
+        run_waiters_rec t ws rem
+    | Immutable f, [] ->
+        f t
+    | Immutable f, ws :: rem ->
+        f t;
+        run_waiters_rec t ws rem
+    | Removable w, [] ->
+        if w.active then w.waiter t
+    | Removable w, ws :: rem ->
+        if w.active then w.waiter t;
+        run_waiters_rec t ws rem
+    | Append(ws1, ws2), _ ->
+        run_waiters_rec t ws1 (ws2 :: rem)
+
+(* Run all waiters waiting on [t]: *)
 let run_waiters waiters t =
-  Lwt_sequence.iter_l (fun f -> f (thread t)) waiters
+  run_waiters_rec (thread t) waiters []
 
 (* Restarts a sleeping thread [t]:
 
@@ -92,7 +143,7 @@ let run_waiters waiters t =
 let restart t state caller =
   let t = repr_rec (wakener_repr t) in
   match !t with
-    | Sleep((Wait | Task), waiters) ->
+    | Sleep{ waiters = waiters } ->
         t := state;
         run_waiters waiters t
     | Fail Canceled ->
@@ -106,12 +157,27 @@ let wakeup_exn t e = restart t (Fail e) "wakeup_exn"
 
 let rec cancel t =
   match !(repr t) with
-    | Sleep(Task, _) ->
+    | Sleep{ reason = Task } ->
         wakeup_exn (wakener (thread_repr t)) Canceled
-    | Sleep(Temp l, _) ->
+    | Sleep{ reason = Temp l } ->
         List.iter cancel (cast_cancel_list l)
     | _ ->
         ()
+
+let append l1 l2 =
+  match l1, l2 with
+    | Empty, _ -> l2
+    | _, Empty -> l1
+    | _ -> Append(l1, l2)
+
+(* Remove all disbaled waiters of a waiter set: *)
+let rec cleanup = function
+  | Removable{ active = false } ->
+      Empty
+  | Append(l1, l2) ->
+      append (cleanup l1) (cleanup l2)
+  | ws ->
+      ws
 
 (* Connects the two processes [t1] and [t2] when [t2] finishes up,
    where [t1] must be a sleeping thread.
@@ -122,34 +188,59 @@ let rec cancel t =
 let rec connect t1 t2 =
   let t1 = repr t1 and t2 = repr t2 in
   match !t1 with
-    | Sleep(_, waiters1) ->
+    | Sleep sleeper1 ->
         if t1 == t2 then
           (* Do nothing if the two threads already have the same
              representation *)
           ()
         else begin
           match !t2 with
-            | Sleep(_, waiters2) ->
-                (* If [t2] is sleeping, then makes [t1] behave as [t2]: *)
-                t1 := Repr t2;
-                Lwt_sequence.transfer_l waiters1 waiters2
+            | Sleep sleeper2 ->
+                (* If [t2] is sleeping, then makes it behave as [t1]: *)
+                t2 := Repr t1;
+                (* Merge the two sets of waiters: *)
+                let waiters = append sleeper1.waiters sleeper2.waiters
+                and removed = sleeper1.removed + sleeper2.removed in
+                if removed > max_removed then begin
+                  (* Remove disabled threads *)
+                  sleeper1.removed <- 0;
+                  sleeper1.waiters <- cleanup waiters
+                end else begin
+                  sleeper1.removed <- removed;
+                  sleeper1.waiters <- waiters
+                end
             | state2 ->
                 (* [t2] has already terminated, assing its state to [t1]: *)
                 t1 := state2;
                 (* and run all the waiters of [t1]: *)
-                run_waiters waiters1 t1
+                run_waiters sleeper1.waiters t1
         end
     | _ ->
         (* [t1] is not asleep: *)
         invalid_arg "connect"
 
-let return v = thread (ref (Return v))
-let fail e = try raise e with e -> thread (ref (Fail e))
-let temp l = thread (ref (Sleep(Temp(make_cancel_list l), Lwt_sequence.create ())))
-let wait _ =
-  let t = ref (Sleep(Wait, Lwt_sequence.create ())) in (thread t, wakener t)
-let task _ =
-  let t = ref (Sleep(Task, Lwt_sequence.create ())) in (thread t, wakener t)
+(* +-----------------------------------------------------------------+
+   | Threads conctruction and combining                              |
+   +-----------------------------------------------------------------+ *)
+
+let return v =
+  thread (ref (Return v))
+let fail e =
+  thread (ref (Fail e))
+let temp l =
+  thread (ref (Sleep{ reason = Temp(make_cancel_list l);
+                      waiters = Empty;
+                      removed = 0 }))
+let wait () =
+  let t = ref (Sleep{ reason = Wait;
+                      waiters = Empty;
+                      removed = 0 }) in
+  (thread t, wakener t)
+let task () =
+  let t = ref (Sleep{ reason = Task;
+                      waiters = Empty;
+                      removed = 0 }) in
+  (thread t, wakener t)
 
 (* apply function, reifying explicit exceptions into the thread type
    apply: ('a -(exn)-> 'b t) -> ('a -(n)-> 'b t)
@@ -158,20 +249,25 @@ let task _ =
 *)
 let apply f x = try f x with e -> fail e
 
-let new_waiter waiters f =
-  Lwt_sequence.add_r f waiters
+let add_immutable_waiter sleeper waiter =
+  sleeper.waiters <- (match sleeper.waiters with
+                        | Empty -> Immutable waiter
+                        | _ -> Append(Immutable waiter, sleeper.waiters))
 
-let add_waiter waiters f =
-  ignore (new_waiter waiters f)
+let add_removable_waiter sleeper waiter =
+  sleeper.waiters <- (match sleeper.waiters with
+                        | Empty -> Removable waiter
+                        | _ -> Append(Removable waiter, sleeper.waiters))
 
 let on_cancel t f =
   let t = repr t in
   match !t with
-    | Sleep(_, waiters) ->
-        add_waiter waiters (fun x ->
-                              match !(repr x) with
-                                | Fail Canceled -> (try f () with _ -> ())
-                                | _ -> ())
+    | Sleep sleeper ->
+        add_immutable_waiter sleeper
+          (fun x ->
+             match !(repr x) with
+               | Fail Canceled -> (try f () with _ -> ())
+               | _ -> ())
     | Fail Canceled ->
         f ()
     | _ ->
@@ -185,9 +281,9 @@ let rec bind t f =
         f v
     | Fail e ->
         fail e
-    | Sleep(_, waiters) ->
+    | Sleep sleeper ->
         let res = temp [t] in
-        add_waiter waiters (fun x -> connect res (bind x (apply f)));
+        add_immutable_waiter sleeper (fun x -> connect res (bind x (apply f)));
         res
     | Repr _ ->
         assert false
@@ -204,9 +300,9 @@ let rec catch_rec t f =
         t
     | Fail e ->
         f e
-    | Sleep(_, waiters) ->
+    | Sleep sleeper ->
         let res = temp [t] in
-        add_waiter waiters (fun x -> connect res (catch_rec x (apply f)));
+        add_immutable_waiter sleeper (fun x -> connect res (catch_rec x (apply f)));
         res
     | Repr _ ->
         assert false
@@ -219,9 +315,9 @@ let rec try_bind_rec t f g =
         f v
     | Fail e ->
         apply g e
-    | Sleep(_, waiters) ->
+    | Sleep sleeper ->
         let res = temp [t] in
-        add_waiter waiters (fun x -> connect res (try_bind_rec x (apply f) g));
+        add_immutable_waiter sleeper (fun x -> connect res (try_bind_rec x (apply f) g));
         res
     | Repr _ ->
         assert false
@@ -241,8 +337,8 @@ let rec ignore_result t =
         ()
     | Fail e ->
         raise e
-    | Sleep(_, waiters) ->
-        add_waiter waiters (fun x -> ignore_result x)
+    | Sleep sleeper ->
+        add_immutable_waiter sleeper (fun x -> ignore_result x)
     | Repr _ ->
         assert false
 
@@ -261,7 +357,7 @@ let protected t =
 
 let rec nth_ready l n =
   match l with
-      [] ->
+    | [] ->
         assert false
     | x :: rem ->
         let x = repr x in
@@ -276,28 +372,45 @@ let rec nth_ready l n =
 let ready_count l =
   List.fold_left (fun acc x -> match !(repr x) with Sleep _ -> acc | _ -> acc + 1) 0 l
 
+let remove_waiters l =
+  List.iter
+    (fun t ->
+       match !(repr t) with
+         | Sleep sleeper ->
+             let removed = sleeper.removed + 1 in
+             if removed > max_removed then begin
+               sleeper.removed <- 0;
+               sleeper.waiters <- cleanup sleeper.waiters
+             end else
+               sleeper.removed <- removed
+         | _ ->
+             ())
+    l
+
 let choose l =
   let ready = ready_count l in
   if ready > 0 then
     nth_ready l (Random.int ready)
   else begin
     let res = temp l in
-    (* The list of nodes used for the waiter: *)
-    let nodes = ref [] in
-    let clear t =
-      (* Removes all nodes so we do not leak memory: *)
-      List.iter Lwt_sequence.remove !nodes;
+    let rec waiter = { active = true; waiter = handle_result }
+    and handle_result t =
+      (* Disable the waiter now: *)
+      waiter.active <- false;
+      (* Removes all waiters so we do not leak memory: *)
+      remove_waiters l;
       (* This will not fail because it is called at most one time,
          since all other waiters have been removed: *)
       connect res t
     in
-    List.iter begin fun t ->
-      match !(repr t) with
-        | Sleep(_, waiters) ->
-            nodes := new_waiter waiters clear :: !nodes
-        | _ ->
-            assert false
-    end l;
+    List.iter
+      (fun t ->
+         match !(repr t) with
+           | Sleep sleeper ->
+               add_removable_waiter sleeper waiter;
+           | _ ->
+               assert false)
+      l;
     res
   end
 
@@ -307,58 +420,83 @@ let select l =
     nth_ready l (Random.int ready)
   else begin
     let res = temp l in
-    let nodes = ref [] in
-    let clear t =
-      List.iter Lwt_sequence.remove !nodes;
+    let rec waiter = { active = true; waiter = handle_result }
+    and handle_result t =
+      waiter.active <- false;
+      remove_waiters l;
       (* Cancel all other threads: *)
       List.iter cancel l;
       connect res t
     in
-    List.iter begin fun t ->
-      match !(repr t) with
-        | Sleep(_, waiters) ->
-            nodes := new_waiter waiters clear :: !nodes
-        | _ ->
-            assert false
-    end l;
+    List.iter
+      (fun t ->
+         match !(repr t) with
+           | Sleep sleeper ->
+               add_removable_waiter sleeper waiter;
+           | _ ->
+               assert false)
+      l;
     res
   end
 
 let join l =
-  let res = temp l
-    (* Number of threads still sleeping: *)
-  and sleeping = ref 0
-    (* The list of nodes used for the waiter: *)
-  and nodes = ref [] in
-  (* Handle the termination of one threads: *)
-  let handle t = match !(repr t) with
+  let res = temp l and sleeping = ref 0 (* Number of threads still sleeping *) in
+  let rec waiter = { active = true; waiter = handle_result }
+  and handle_result t = match !(repr t) with
     | Fail exn ->
         (* The thread has failed, exit immediatly without waiting for
            other threads *)
-        List.iter Lwt_sequence.remove !nodes;
+        remove_waiters l;
         connect res t
     | _ ->
         decr sleeping;
-        (* Everybody has finished, we can wakeup the result: *)
-        if !sleeping = 0 then connect res t
+        (* Every threads has finished, we can wakeup the result: *)
+        if !sleeping = 0 then begin
+          waiter.active <- false;
+          connect res t
+        end
   in
-  let rec bind_sleepers = function
+  let rec init = function
     | [] ->
-        (* If no thread is sleeping, returns now: *)
-        if !sleeping = 0 then thread_repr res := Return ();
-        res
-    | t :: l -> match !(repr t) with
-        | Fail exn ->
-            (* One of the thread has already failed, fail now *)
-            t
-        | Sleep(_, waiters) ->
-            incr sleeping;
-            nodes := new_waiter waiters handle :: !nodes;
-            bind_sleepers l
-        | _ ->
-            bind_sleepers l
+        if !sleeping = 0 then
+          (* No threads is sleeping, returns immediately: *)
+          return ()
+        else
+          res
+    | t :: rest ->
+        match !(repr t) with
+          | Fail exn ->
+              (* One of the thread already failed, remove the waiter
+                 from all already visited sleeping threads and
+                 fail: *)
+              let rec loop = function
+                | [] ->
+                    t
+                | t :: l ->
+                    match !(repr t) with
+                      | Fail _ ->
+                          t
+                      | Sleep sleeper ->
+                          let removed = sleeper.removed + 1 in
+                          if removed > max_removed then begin
+                            sleeper.removed <- 0;
+                            sleeper.waiters <- cleanup sleeper.waiters
+                          end else
+                            sleeper.removed <- removed;
+                          loop l
+                      | _ ->
+                          loop l
+              in
+              waiter.active <- false;
+              loop l
+          | Sleep sleeper ->
+              incr sleeping;
+              add_removable_waiter sleeper waiter;
+              init rest
+          | _ ->
+              init rest
   in
-  bind_sleepers l
+  init l
 
 let ( <?> ) t1 t2 = choose [t1; t2]
 let ( <&> ) t1 t2 = join [t1; t2]
