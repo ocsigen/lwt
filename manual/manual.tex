@@ -480,10 +480,63 @@ the operation on the file are finished. To avoid this,
 Since there is no support at all for asynchrnously reading the
 contents of a directory, \texttt{Lwt\_directory} uses the same trick.
 
-%% +-----------------------------------------------------------------+
-%% | Section                                                         |
-%% +-----------------------------------------------------------------+
-\section{Detaching computation to preemptive threads}
+\subsection{The logging facility}
+\label{lwt.log}
+
+The package \texttt{lwt.unix} contains a module \texttt{Lwt\_log}
+providing loggers. It support logging to a file, a channel, or to the
+syslog daemon. You can also defines your own logger by providing the
+appropriate functions (function \texttt{Lwt\_log.make}).
+
+Several loggers can be merged into one. Sending logs on the merged
+loggers will send these logs to all its components.
+
+For example to redirect all logs to \texttt{stderr} and to the syslog
+daemon:
+
+\begin{verbatim}
+# Lwt_log.default_logger :=
+    Lwt_log.merge ~level:Lwt_log.Info [
+      Lwt_log.channel
+        ~level:Lwt_log.Info
+        ~close_mode:`keep
+        ~channel:Lwt_io.stderr ();
+      Lwt_log.syslog
+        ~level:Lwt_log.Info
+        ~facility:`User ();
+    ]
+;;
+\end{verbatim}
+
+\lwt also provides a syntax extension, in the package
+\texttt{lwt.syntax.log}. It adds the following construction to the
+language:
+
+\begin{center}
+  \texttt{Log\#}\textit{level} \textit{format} \textit{arguments}
+\end{center}
+
+Where \textit{level} is one of \texttt{debug}, \texttt{info},
+\texttt{warning}, \texttt{error}, \texttt{fatal}. For example:
+
+\begin{verbatim}
+Log#debug "x = %s" x
+\end{verbatim}
+
+The advantages of using the syntax extension are the following:
+
+\begin{itemize}
+\item it automatically prefix the format with the module name
+\item it check the log level before calling the logging function, so
+  arguments are not computed if not needed
+\item debugging logs can be removed at parsing time
+\end{itemize}
+
+By default, the syntax extension remove all logs with the level
+\texttt{debug}. To keep them pass the command line option
+\texttt{-lwt-debug} to camlp4.
+
+\subsection{Detaching computation to preemptive threads}
 
 It may happen that you want to run a function which will take time to
 compute or that you want to use a blocking function that cannot be
@@ -581,65 +634,6 @@ The second class of functions is a bit more complicated to use, but
 allow to control a running read-line instances. For example you can
 temporary hide it to draw something, you can send it commands, fake
 input, and the prompt is a signal so it can change dynamically.
-
-%% +-----------------------------------------------------------------+
-%% | Section                                                         |
-%% +-----------------------------------------------------------------+
-\section{The logging facility}
-\label{lwt.log}
-
-The package \texttt{lwt.unix} contains a module \texttt{Lwt\_log}
-providing loggers. It support logging to a file, a channel, or to the
-syslog daemon. You can also defines your own logger by providing the
-appropriate functions (function \texttt{Lwt\_log.make}).
-
-Several loggers can be merged into one. Sending logs on the merged
-loggers will send these logs to all its components.
-
-For example to redirect all logs to \texttt{stderr} and to the syslog
-daemon:
-
-\begin{verbatim}
-# Lwt_log.default_logger :=
-    Lwt_log.merge ~level:Lwt_log.Info [
-      Lwt_log.channel
-        ~level:Lwt_log.Info
-        ~close_mode:`keep
-        ~channel:Lwt_io.stderr ();
-      Lwt_log.syslog
-        ~level:Lwt_log.Info
-        ~facility:`User ();
-    ]
-;;
-\end{verbatim}
-
-\lwt also provides a syntax extension, in the package
-\texttt{lwt.syntax.log}. It adds the following construction to the
-language:
-
-\begin{center}
-  \texttt{Log\#}\textit{level} \textit{format} \textit{arguments}
-\end{center}
-
-Where \textit{level} is one of \texttt{debug}, \texttt{info},
-\texttt{warning}, \texttt{error}, \texttt{fatal}. For example:
-
-\begin{verbatim}
-Log#debug "x = %s" x
-\end{verbatim}
-
-The advantages of using the syntax extension are the following:
-
-\begin{itemize}
-\item it automatically prefix the format with the module name
-\item it check the log level before calling the logging function, so
-  arguments are not computed if not needed
-\item debugging logs can be removed at parsing time
-\end{itemize}
-
-By default, the syntax extension remove all logs with the level
-\texttt{debug}. To keep them pass the command line option
-\texttt{-lwt-debug} to camlp4.
 
 %% +-----------------------------------------------------------------+
 %% | Section                                                         |
