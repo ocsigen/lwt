@@ -305,6 +305,128 @@ let suite = suite "lwt" [
        a := r;
        wakeup w ();
        return true);
+
+  test "choose"
+    (fun () ->
+       let t1,w1 = wait () in
+       let t2,w2 = wait () in
+       let rec f = function
+	 | 0 -> []
+	 | i -> (choose [t1;t2])::(f (i-1))
+       in
+       let l = f 100 in
+       t1 <=> Sleep;
+       t2 <=> Sleep;
+       List.iter (fun t -> t <=> Sleep) l;
+       wakeup w1 ();
+       List.iter (fun t -> t <=> Return ()) l;
+       t1 <=> Return ();
+       t2 <=> Sleep;
+       return true);
+
+  test "protected return"
+    (fun () ->
+       let t = return 1 in
+       let t' = protected t in
+       return ((state t' = Return 1) && (state t = Return 1)));
+
+  test "protected fail"
+    (fun () ->
+       let t = fail Exn in
+       let t' = protected t in
+       return ((state t' = Fail Exn) && (state t = Fail Exn)));
+  
+  test "protected wait 1"
+    (fun () ->
+       let t,w = wait () in
+       let t' = protected t in
+       wakeup w 1;
+       return ((state t' = Return 1) && (state t = Return 1)));
+
+  test "protected wait 2"
+    (fun () ->
+       let t,w = wait () in
+       let t' = protected t in
+       wakeup_exn w Exn;
+       return ((state t' = Fail Exn) && (state t = Fail Exn)));
+
+  test "protected wait 3"
+    (fun () ->
+       let t,w = wait () in
+       let t' = protected t in
+       cancel t';
+       return ((state t' = Fail Canceled) && (state t = Sleep)));
+
+  test "protected wait 4"
+    (fun () ->
+       let t,w = wait () in
+       let t' = protected t in
+       cancel t';
+       wakeup w 1;
+       return ((state t' = Fail Canceled) && (state t = Return 1)));
+
+  test "protected wait 5"
+    (fun () ->
+       let t,w = wait () in
+       let t' = protected t in
+       cancel t';
+       wakeup_exn w Exn;
+       return ((state t' = Fail Canceled) && (state t = Fail Exn)));
+
+  test "protected wait 6"
+    (fun () ->
+       let t,w = wait () in
+       let t' = protected t in
+       wakeup_exn w Exn;
+       cancel t';
+       return ((state t' = Fail Exn) && (state t = Fail Exn)));
+
+  test "protected wait 7"
+    (fun () ->
+       let t,w = wait () in
+       let t' = protected t in
+       wakeup w 1;
+       cancel t';
+       return ((state t' = Return 1) && (state t = Return 1)));
+
+  test "join 1"
+    (fun () ->
+       let t1 = fail Exn in
+       let t2 = join [t1] in
+       return ((state t1 = Fail Exn) && (state t2 = Fail Exn)));
+
+  test "join 2"
+    (fun () ->
+       let t1,w1 = wait () in
+       let t2 = join [t1] in
+       wakeup_exn w1 Exn;
+       return ((state t1 = Fail Exn) && (state t2 = Fail Exn)));
+
+  test "join 3"
+    (fun () ->
+       let t1 = fail Exn in
+       let t2,w2 = wait () in
+       let t3 = fail Not_found in
+       let t4 = join [t2;t1;t3] in
+       return ((state t1 = Fail Exn) && (state t2 = Sleep) &&
+		 (state t3 = Fail Not_found) && (state t4 = Fail Exn)));
+
+  test "join 4"
+    (fun () ->
+       let t1 = fail Exn in
+       let t2,w2 = wait () in
+       let t3 = return () in
+       let rec f = function
+	 | 0 -> return true
+	 | i ->
+	     let t = join [t2;t3;t1] in
+	     if ((state t1 = Fail Exn) && (state t2 = Sleep)
+		 && (state t = Fail Exn) && (state t3 = Return ()))
+	     then f (i-1)
+	     else return false
+       in
+       f 100);
+
 ]
 
 let fact n =
