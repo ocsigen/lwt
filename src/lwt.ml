@@ -70,12 +70,12 @@ and 'a thread_repr = 'a thread_state ref
 
 and 'a sleeper = {
   reason : sleep_reason;
-  (* Reason why the trhead is sleeping *)
+  (* Reason why the thread is sleeping *)
   mutable waiters : 'a waiter_set;
   (* All thunk functions *)
   mutable removed : int;
   (* Number of waiter that have been disabled. When this number
-     reaches [max_removed], there are effectively removed from
+     reaches [max_removed], they are effectively removed from
      [waiters]. *)
 }
 
@@ -97,15 +97,15 @@ external thread : 'a thread_repr -> 'a t = "%identity"
 external wakener : 'a thread_repr -> 'a u = "%identity"
 external wakener_repr : 'a u -> 'a thread_repr = "%identity"
 
-(* Maximum number of disabled waiters a waiter set may contains before
-   it get cleaned: *)
+(* Maximum number of disabled waiters a waiter set can contains before
+   being cleaned: *)
 let max_removed = 42
 
 (* +-----------------------------------------------------------------+
    | Restarting/connecting threads                                   |
    +-----------------------------------------------------------------+ *)
 
-(* Returns the represent of a thread, updating non-direct references: *)
+(* Returns the representative of a thread, updating non-direct references: *)
 let rec repr_rec t =
   match !t with
     | Repr t' -> let t'' = repr_rec t' in if t'' != t' then t := Repr t''; t''
