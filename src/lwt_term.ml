@@ -106,7 +106,7 @@ let cleanup () =
         set_attr saved_attr;
         return ()
 
-let _ = Lwt_sequence.add_l cleanup Lwt_main.exit_hooks
+let () = Lwt_main.at_exit cleanup
 
 let raw_mode () = match !state with
   | Normal -> false

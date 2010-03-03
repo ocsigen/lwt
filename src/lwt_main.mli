@@ -43,6 +43,9 @@ val exit_hooks : (unit -> unit Lwt.t) Lwt_sequence.t
       - each hook is called exactly one time
       - exceptions raised by hooks are ignored *)
 
+val at_exit : (unit -> unit Lwt.t) -> unit
+  (** [at_exit hook] adds hook at the left of [exit_hooks]*)
+
 val fast_yield : unit -> unit Lwt.t
   (** [fast_yield ()] is similar to {!Lwt_unix.yield} except that it
       resume earlier. It resumes before entering the main loop. *)

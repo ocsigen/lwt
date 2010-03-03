@@ -437,9 +437,9 @@ let close wrapper =
           with _ ->
             abort wrapper
 
-let _ =
+let () =
   (* Flush all opened ouput channels on exit: *)
-  Lwt_sequence.add_l
+  Lwt_main.at_exit
     (fun () ->
        let wrappers = Outputs.fold (fun x l -> x :: l) outputs [] in
        Lwt_list.iter_p
@@ -449,7 +449,6 @@ let _ =
             with _ ->
               return ())
          wrappers)
-    Lwt_main.exit_hooks
 
 let no_seek pos cmd =
   fail (Failure "Lwt_io.seek: seek not supported on this channel")
