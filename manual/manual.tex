@@ -40,7 +40,9 @@
 %% +-----------------------------------------------------------------+
 \section{Introduction}
 
-In any program, we have to interact with other processes, users, ...:
+When writing a program, a common task of the developer is to handle IO
+operations. Indeed most software interact with several different
+resources, such as:
 
 \begin{itemize}
 \item the kernel, by doing system calls
@@ -52,8 +54,9 @@ In any program, we have to interact with other processes, users, ...:
 \end{itemize}
 
 When this list contains only one item, it is pretty easy to
-handle. However as this list grow it become harder to handle. Several
-choices have been proposed to solve the problem:
+handle. However as this list grows it becomes harder and harder to
+make everything works together. Several choices have been proposed to
+solve this problem:
 
 \begin{itemize}
 \item using a main loop, and integrate all components we are
@@ -70,15 +73,16 @@ waiting for some blocking part of the code to complete.
 If you already wrote code using preemptive threads, you shall know
 that doing it right with threads is a hard job. Moreover system
 threads consume non negligible resources, and so you are limited in
-the number of threads you launch at the same time. So this is not a
+the number of threads you launch at the same time. Thus this is not a
 real solution.
 
 \lwt offers a new alternative. It provides very light-weight
 cooperative threads; ``launching'' a thread is a very quick operation,
-it does not require a new stack, a new process, or whatever else and
-context switches are very fast. In fact, it is so easy that we will
-launch a thread for every system call. And composing cooperative
-threads will allow us to write higly asynchronous programs.
+it does not require a new stack, a new process, or anything
+else. Moreover context switches are very fast. In fact, it is so easy
+that we will launch a thread for every system call. And composing
+cooperative threads will allow us to write highly asynchronous
+programs.
 
 In a first part, we will explain the concepts of \lwt, then we will
 describe the many sub-libraries of \lwt.
@@ -98,6 +102,14 @@ type:
 # #require "lwt";;
 \end{verbatim}
 
+Also \lwt is now chipped with an improved toplevel, which support line
+edition and completion. If it has been correctly installed, you should
+be able to start it with the following command:
+
+\begin{verbatim}
+$ ocamlfind lwt/toplevel.top
+\end{verbatim}
+
 \subsection{Lwt concepts}
 
 Let's take a classical function of the \texttt{Pervasives} module:
@@ -108,7 +120,7 @@ Let's take a classical function of the \texttt{Pervasives} module:
 \end{verbatim}
 
 This function will wait for a character to come on the given input
-channel and return it. The problem with this function is that it is
+channel, then return it. The problem with this function is that it is
 blocking: while it is being executed, the whole program will be
 blocked, and other events will not be handled until it returns.
 
@@ -125,7 +137,7 @@ returning a value of type \texttt{'a}. Actually the
 \texttt{Lwt\_io.read\_char} will try to read a character to the given
 input channel and \emph{immediatly} returns a light-weight thread.
 
-Now, let's see what we can do a lwt thread. The following code create
+Now, let's see what we can do a \lwt thread. The following code create
 a pipe, and launch a thread reading on the input side:
 
 \begin{verbatim}
@@ -173,25 +185,25 @@ has returned the value \texttt{'a'}.
 We now look at the primitives for creating \lwt threads. These
 functions are localted in the module \texttt{Lwt}.
 
-There are three primitives (one by thread state):
+Here are the main primitives:
 
 \begin{itemize}
-\item \texttt{Lwt.return : 'a -> 'a Lwt.t} which create a thread which has already
+\item ``\texttt{Lwt.return : 'a -> 'a Lwt.t}'' creates a thread which has already
   terminated and returned a value
-\item \texttt{Lwt.fail : exn -> 'a Lwt.t} which create a thread which
-  has already terminated and failed with an exception
-\item \texttt{Lwt.wait : unit -> 'a Lwt.t * 'a Lwt.u} which create a
+\item ``\texttt{Lwt.fail : exn -> 'a Lwt.t}'' creates a thread which has
+  already terminated and failed with an exception
+\item ``\texttt{Lwt.wait : unit -> 'a Lwt.t * 'a Lwt.u}'' creates a
   sleeping thread and returns this thread plus a wakener (of type
   \texttt{'a Lwt.u}) which must be used to wakeup the sleeping thread.
 \end{itemize}
 
 To wakeup a sleeping thread, you can use one of the following
-function:
+functions:
 
 \begin{itemize}
-\item \texttt{Lwt.wakeup : 'a Lwt.u -> 'a -> unit} which wakeup the
+\item ``\texttt{Lwt.wakeup : 'a Lwt.u -> 'a -> unit}'' wakeups the
   thread with a value.
-\item \texttt{Lwt.wakeup\_exn : 'a Lwt.u -> exn -> unit} which wakeup
+\item ``\texttt{Lwt.wakeup\_exn : 'a Lwt.u -> exn -> unit}'' wakeups
   the thread with an exception.
 \end{itemize}
 
@@ -222,7 +234,7 @@ The most important operation you need to know is \texttt{bind}:
 val bind : 'a Lwt.t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
 \end{verbatim}
 
-\texttt{bind t f} returns the thread which waits for \texttt{t} to
+\texttt{bind t f} creates a thread which waits for \texttt{t} to
 terminates, then pass the result to \texttt{f}. It \texttt{t} is a
 sleeping thread, then \texttt{bind t f} will be a sleeping thread too,
 until \texttt{t} terminates. If \texttt{t} fails, then the resulting
@@ -237,16 +249,15 @@ val catch : (unit -> 'a Lwt.t) -> (exn -> 'a Lwt.t) -> 'a Lwt.t
 
 \texttt{catch f g} will call \texttt{f ()}, then waits for its
 termination, and if it fails with an exception \texttt{exn}, calls
-\texttt{g exn} to handle it.
-
-Look at the documentation of the \texttt{Lwt} module to see all
-primitives.
+\texttt{g exn} to handle it. Note that both exception raised with
+\texttt{Pervasives.raise} and \texttt{Lwt.fail} are caught by
+\texttt{catch}.
 
 \subsubsection{Cancelable threads}
 
 In some case, we may want to cancel a threads. For example, because it
 has not terminated after a timeout. This can be done with cancelable
-threads. To create a cancelable threads, you must use the
+threads. To create a cancelable thread, you must use the
 \texttt{Lwt.task} function:
 
 \begin{verbatim}
@@ -268,6 +279,83 @@ canceled, you must use \texttt{Lwt.on\_cancel}:
 val on_cancel : 'a Lwt.t -> (unit -> unit) -> unit
 \end{verbatim}
 
+Note that it is also possible to cancel a thread which has not been
+created with \texttt{Lwt.task}. In this case, the deepest cancelable
+threads connected the given thread will be cancelled.
+
+For example, consider the following code:
+
+\begin{verbatim}
+# let waiter, wakener = Lwt.task ();;
+val waiter : '_a Lwt.t = <abstr>
+val wakener : '_a Lwt.u = <abstr>
+# let t = bind waiter (fun x -> return (x + 1));;
+val t : int Lwt.t = <abstr>
+\end{verbatim}
+
+Here, cancelling \texttt{t} will in fact cancel \texttt{waiter},
+\texttt{t} will then fails with the exception \texttt{Lwt.Canceled}:
+
+\begin{verbatim}
+# Lwt.cancel t;;
+- : unit = ()
+# Lwt.state waiter;;
+- : int Lwt.state = Fail Lwt.Canceled
+# Lwt.state t;;
+- : int Lwt.state = Fail Lwt.Canceled
+\end{verbatim}
+
+By the way, it is possible to prevent a thread to be canceled, by
+using the function \texttt{Lwt.protected}:
+
+\begin{verbatim}
+val protected : 'a Lwt.t -> 'a Lwt.t
+\end{verbatim}
+
+Canceling \texttt{proctected t} will have no effect.
+
+\subsubsection{Primitives for multi-thread composition}
+
+We conculde this section with multi-thread composition function. There
+are three such functions in the \lwt module: \texttt{join},
+\texttt{choose} and \texttt{select}.
+
+The first one, \texttt{join} takes a list of threads, and wait for all
+of them to terminates:
+
+\begin{verbatim}
+val join : unit Lwt.t list -> unit Lwt.t
+\end{verbatim}
+
+Moreover, if one thread fails, it fails with the same exception,
+without waiting for the other threads to terminates.
+
+On the contrary \texttt{choose} waits for at least one threads to
+terminates, then returns the same value or exception:
+
+\begin{verbatim}
+val choose : 'a Lwt.t list -> 'a Lwt.t
+\end{verbatim}
+
+For example:
+
+\begin{verbatim}
+# let waiter1, wakener1 = Lwt.wait ();;
+val waiter1 : '_a Lwt.t = <abstr>
+val wakener1 : '_a Lwt.u = <abstr>
+# let waiter2, wakener2 = Lwt.wait ();;
+val waiter2 : '_a Lwt.t = <abstr>
+val wakeneré : '_a Lwt.u = <abstr>
+# let t = Lwt.choose [waiter1; waiter2];;
+val t : '_a Lwt.t = <abstr>
+# Lwt.state t;;
+- : '_a Lwt.state = Sleep
+# Lwt.wakeup wakener2 42;;
+- : unit = ()
+# Lwt.state t;;
+- : int Lwt.state = Return 42
+\end{verbatim}
+
 \subsubsection{Rules}
 
 \lwt will always try to execute the more it can before yielding and
@@ -275,9 +363,10 @@ switch to another cooperative threads. In order to make it works well,
 you must follow the following rules:
 
 \begin{itemize}
-\item do not write function that may takes time to complete
+\item do not write function that may takes time to complete without
+  using \lwt,
 \item do not do IOs that may block, otherwise the whole program will
-  hang. You must instead use asynchronous IOs operations
+  hang. You must instead use asynchronous IOs operations.
 \end{itemize}
 
 \subsection{The syntax extension}
@@ -399,35 +488,179 @@ You can keep in mind the following table to write code using lwt:
 \subsection{Other modules of the core library}
 
 The core library contains several modules that depends only on
-\lwt. Amongst them are:
-
-\begin{itemize}
-\item \texttt{Lwt\_list}: it defines iteration and scanning functions
-  over list using functions that returns a thread. For example:
+\lwt. The following naming convenetion is used in \lwt: when a
+function takes as argument a function returning a thread that is going
+to be executed sequentially, it is suffixed with ``\texttt{\_s}''. And
+when it is going to be executed in parallel, it is suffixed with
+``\texttt{\_p}''. For example, in the \texttt{Lwt\_list} module we have:
 
 \begin{verbatim}
 val map_s : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
 val map_p : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
 \end{verbatim}
 
-  Note that the following naming convention is used: when the function
-  taken as argument is going to be executed sequentially, the
-  ``\texttt{\_s}'' suffix is used, and when it is going to be executed
-  in parallel, the suffix ``\texttt{\_p}'' is used.
+\subsubsection{Mutexes}
 
-\item \texttt{Lwt\_mutex}: it defines mutex for \lwt. Basically the
-  only goal of an \lwt mutex is to serialize operations.
+\texttt{Lwt\_mutex} provides mutexes for \lwt. It use is almost the
+same than the \texttt{Mutex} module of the thread library shipped with
+OCaml. In general, programs using \lwt do not need a lot of
+mutexes. They are only usefull for serialising operations.
 
-\item \texttt{Lwt\_stream}: a stream is a object which returns
-  elements sequentially and lazily. Lazily means that the source of
-  the stream is guessed for new elements only when needed. This module
-  contains a lot of stream transformation, iteration, and scanning
-  functions.
+\subsubsection{Lists}
 
-  Note that streams are consumable, if you want to iterates two times
-  over a stream, you may consider ``clonning'' it (via
-  \texttt{Lwt\_stream.clone}).
-\end{itemize}
+The \texttt{Lwt\_list} module defines iteration and scanning functions
+over list, similar to the ones of the \texttt{List} module, but using
+functions that return a thread. For example:
+
+\begin{verbatim}
+val iter_s : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
+val iter_p : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
+\end{verbatim}
+
+In \texttt{iter\_s f l}, \texttt{iter\_s} will can f on each elements
+of \texttt{l}, waiting for completion between each elements. On the
+contrary, in \texttt{iter\_p f l}, \texttt{iter\_p} will call f on all
+elements of \texttt{l}, then wait for all the threads to terminate.
+
+\subsubsection{Data streams}
+
+\lwt streams are used in a lot of places in \lwt and its sub
+libraries. They offer a high-level interface to manipulate data flows.
+
+A stream is an object which returns elements sequentially and
+lazily. Lazily means that the source of the stream is guessed for new
+elements only when needed. This module contains a lot of stream
+transformation, iteration, and scanning functions.
+
+The common way of creating stream is by using
+\texttt{Lwt\_stream.from} or by using
+\texttt{Lwt\_stream.push\_stream}:
+
+\begin{verbatim}
+val from : (unit -> 'a option Lwt.t) -> 'a Lwt_stream.t
+val push_stream : unit ->
+   ([ `Data of 'a
+    | `End_of_stream
+    | `Exn of exn ] -> unit) * 'a Lwt_stream.t
+\end{verbatim}
+
+As for streams of the standard library, \texttt{from} takes as
+argument a function which is used to create new elements.
+
+\texttt{push\_stream} returns a function used to push new elements
+into the stream and the stream which will receive them.
+
+For example:
+
+\begin{verbatim}
+# let push, stream = Lwt_stream.push_stream ();;
+val push : [ `Data of '_a | `End_of_stream | `Exn of exn ] -> unit = <fun>
+val stream : '_a Lwt_stream.t = <abstr>
+# push (`Data 1);;
+- : unit = ()
+# push (`Data 2);;
+- : unit = ()
+# push (`Data 3);;
+- : unit = ()
+# Lwt.state (Lwt_stream.next stream);;
+- : int Lwt.state = Return 1
+# Lwt.state (Lwt_stream.next stream);;
+- : int Lwt.state = Return 2
+# Lwt.state (Lwt_stream.next stream);;
+- : int Lwt.state = Return 3
+# Lwt.state (Lwt_stream.next stream);;
+- : int Lwt.state = Sleep
+\end{verbatim}
+
+Note that streams are consumable. Once you take an element from a
+stream, it is removed from it. So, if you want to iterates two times
+over a stream, you may consider ``clonning'' it, with
+\texttt{Lwt\_stream.clone}. Cloned stream will returns the same
+elements in the same order. Consuming one will not consume the other.
+For example:
+
+\begin{verbatim}
+# let s = Lwt_stream.of_list [1; 2];;
+val s : int Lwt_stream.t = <abstr>
+# let s' = Lwt_stream.clone s;;
+val s' : int Lwt_stream.t = <abstr>
+# Lwt.state (Lwt_stream.next s);;
+- : int Lwt.state = Return 1
+# Lwt.state (Lwt_stream.next s);;
+- : int Lwt.state = Return 2
+# Lwt.state (Lwt_stream.next s');;
+- : int Lwt.state = Return 1
+# Lwt.state (Lwt_stream.next s');;
+- : int Lwt.state = Return 2
+\end{verbatim}
+
+\subsubsection{Mailbox variables}
+
+The \texttt{Lwt\_mvar} module provides mailbox variables. A mailbox
+variable, also called a ``mvar'', is a cell with may contains 0 or 1
+elements. If it contains no elements, we say that the mvar is empty,
+if it contains one, we say that it is full. Adding an element to a
+full mvar will block until the one is taken. Taking an element from an
+empty mvar will block until one is added.
+
+Mailbox variables are commonly used to pass messages between threads.
+
+Note that a mailbox variable can be seen as aa pushable stream with a
+limited memory.
+
+\subsubsection{Reactive programming helpers}
+
+The \texttt{Lwt\_event} and \texttt{Lwt\_signal} provides helpers for
+using the \texttt{react} library with \lwt. Among them we have
+\texttt{Lwt\_event.next}, which takes an event and returns a thread
+which will wait until the next occurence of this event. For example:
+
+\begin{verbatim}
+# let event, push = React.E.create ();;
+val event : '_a React.event = <abstr>
+val push : '_a -> unit = <fun>
+# let t = Lwt_event.next event;;
+val t : '_a Lwt.t = <abstr>
+# Lwt.state t;;
+- : '_a Lwt.state = Sleep
+# push 42;;
+- : unit = ()
+# Lwt.state t;;
+- : int Lwt.state = Return 42
+\end{verbatim}
+
+Another interesting features is the ability to limit events
+(resp. signals) to occurs (resp. to changes) too often. For example,
+suppose you are doing a program which display something on the screeen
+each time a signal change. If at some point the signal changes 1000
+times per second, you probably want not to render it 1000 times per
+second. For that you use \texttt{Lwt\_signal.limit}:
+
+\begin{verbatim}
+val limit : (unit -> unit Lwt.t) -> 'a React.signal -> 'a React.signal
+\end{verbatim}
+
+\texttt{Lwt\_signal.limit f signal} returns a signal with vary as
+\texttt{signal} except that two consecutive updates are separeted by a
+call to \texttt{f}. For example if \texttt{f} returns a thread which
+sleep for 0.1 seconds, then there will be no more than 10 changes per
+second. For example:
+
+\begin{verbatim}
+let draw x =
+  (* Draw the screen *)
+  ...
+
+let () =
+  (* The signal we are interested in: *)
+  let signal = ... in
+
+  (* The limited signal: *)
+  let signal' = Lwt_signal.limit (fun () -> Lwt_unix.sleep 0.1) in
+
+  (* Redraw the screen each time the limited signal change: *)
+  Lwt_signal.always_notify_p draw signal'
+\end{verbatim}
 
 %% +-----------------------------------------------------------------+
 %% | Section                                                         |
