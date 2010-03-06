@@ -143,7 +143,7 @@ let run_waiters waiters t =
 let restart t state caller =
   let t = repr_rec (wakener_repr t) in
   match !t with
-    | Sleep{ waiters = waiters } ->
+    | Sleep{ reason = (Wait | Task); waiters = waiters } ->
         t := state;
         run_waiters waiters t
     | Fail Canceled ->
@@ -196,18 +196,18 @@ let rec connect t1 t2 =
         else begin
           match !t2 with
             | Sleep sleeper2 ->
-                (* If [t2] is sleeping, then makes it behave as [t1]: *)
-                t2 := Repr t1;
+                (* If [t1] is sleeping, then makes it behave as [t2]: *)
+                t1 := Repr t2;
                 (* Merge the two sets of waiters: *)
-                let waiters = append sleeper1.waiters sleeper2.waiters
-                and removed = sleeper1.removed + sleeper2.removed in
+                let waiters = append sleeper2.waiters sleeper1.waiters
+                and removed = sleeper2.removed + sleeper1.removed in
                 if removed > max_removed then begin
                   (* Remove disabled threads *)
-                  sleeper1.removed <- 0;
-                  sleeper1.waiters <- cleanup waiters
+                  sleeper2.removed <- 0;
+                  sleeper2.waiters <- cleanup waiters
                 end else begin
-                  sleeper1.removed <- removed;
-                  sleeper1.waiters <- waiters
+                  sleeper2.removed <- removed;
+                  sleeper2.waiters <- waiters
                 end
             | state2 ->
                 (* [t2] has already terminated, assing its state to [t1]: *)

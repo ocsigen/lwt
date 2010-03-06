@@ -335,7 +335,7 @@ let suite = suite "lwt" [
        let t = fail Exn in
        let t' = protected t in
        return ((state t' = Fail Exn) && (state t = Fail Exn)));
-  
+
   test "protected wait 1"
     (fun () ->
        let t,w = wait () in
@@ -427,6 +427,26 @@ let suite = suite "lwt" [
        in
        f 100);
 
+  test "cancel loop"
+    (fun () ->
+       let rec loop () =
+         lwt () = Lwt_unix.yield () in
+         loop ()
+       in
+       let t = loop () in
+       cancel t;
+       return (state t = Fail Canceled));
+
+  test "cancel loop 2"
+    (fun () ->
+       let rec loop () =
+         lwt () = Lwt_unix.yield () in
+         loop ()
+       in
+       let t = loop () in
+       lwt () = Lwt_unix.yield () in
+       cancel t;
+       return (state t = Fail Canceled));
 ]
 
 let fact n =
