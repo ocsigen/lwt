@@ -79,16 +79,10 @@ and 'a sleeper = {
      [waiters]. *)
 }
 
-(* A waiter which can be removed from its set: *)
-and 'a removable = {
-  waiter : 'a t -> unit;
-  mutable active : bool;
-}
-
 (* Type of set of waiters: *)
 and 'a waiter_set =
   | Empty
-  | Removable of 'a removable
+  | Removable of ('a t -> unit) option ref
   | Immutable of ('a t -> unit)
   | Append of 'a waiter_set * 'a waiter_set
 
@@ -123,10 +117,14 @@ let rec run_waiters_rec t ws rem =
     | Immutable f, ws :: rem ->
         f t;
         run_waiters_rec t ws rem
-    | Removable w, [] ->
-        if w.active then w.waiter t
-    | Removable w, ws :: rem ->
-        if w.active then w.waiter t;
+    | Removable{ contents = None }, [] ->
+        ()
+    | Removable{ contents = None }, ws :: rem ->
+        run_waiters_rec t ws rem
+    | Removable{ contents = Some f }, [] ->
+        f t
+    | Removable{ contents = Some f }, ws :: rem ->
+        f t;
         run_waiters_rec t ws rem
     | Append(ws1, ws2), _ ->
         run_waiters_rec t ws1 (ws2 :: rem)
@@ -172,7 +170,7 @@ let append l1 l2 =
 
 (* Remove all disbaled waiters of a waiter set: *)
 let rec cleanup = function
-  | Removable{ active = false } ->
+  | Removable{ contents = None } ->
       Empty
   | Append(l1, l2) ->
       append (cleanup l1) (cleanup l2)
@@ -393,10 +391,10 @@ let choose l =
     nth_ready l (Random.int ready)
   else begin
     let res = temp l in
-    let rec waiter = { active = true; waiter = handle_result }
+    let rec waiter = ref (Some handle_result)
     and handle_result t =
       (* Disable the waiter now: *)
-      waiter.active <- false;
+      waiter := None;
       (* Removes all waiters so we do not leak memory: *)
       remove_waiters l;
       (* This will not fail because it is called at most one time,
@@ -420,9 +418,9 @@ let select l =
     nth_ready l (Random.int ready)
   else begin
     let res = temp l in
-    let rec waiter = { active = true; waiter = handle_result }
+    let rec waiter = ref (Some handle_result)
     and handle_result t =
-      waiter.active <- false;
+      waiter := None;
       remove_waiters l;
       (* Cancel all other threads: *)
       List.iter cancel l;
@@ -441,7 +439,7 @@ let select l =
 
 let join l =
   let res = temp l and sleeping = ref 0 (* Number of threads still sleeping *) in
-  let rec waiter = { active = true; waiter = handle_result }
+  let rec waiter = ref (Some handle_result)
   and handle_result t = match !(repr t) with
     | Fail exn ->
         (* The thread has failed, exit immediatly without waiting for
@@ -452,7 +450,7 @@ let join l =
         decr sleeping;
         (* Every threads has finished, we can wakeup the result: *)
         if !sleeping = 0 then begin
-          waiter.active <- false;
+          waiter := None;
           connect res t
         end
   in
@@ -487,7 +485,7 @@ let join l =
                       | _ ->
                           loop l
               in
-              waiter.active <- false;
+              waiter := None;
               loop l
           | Sleep sleeper ->
               incr sleeping;
