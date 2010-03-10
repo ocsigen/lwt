@@ -71,6 +71,9 @@ let hide_cursor _ =
 let clear_screen _ =
   write stdout "\027[2J\027[H"
 
+let clear_line _ =
+  write stdout "\027[2K"
+
 (* Go-up by [n] lines then to the beginning of the line. Normally
    "\027[nF" does exactly this but for some terminal 1 need to be
    added... By the way we can relly on the fact that all terminal
