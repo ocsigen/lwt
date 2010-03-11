@@ -257,7 +257,7 @@ let suite = suite "lwt" [
     (fun () ->
        let t,w = wait () in
        wakeup w ();
-       test_exn (wakeup w) () (Invalid_argument "wakeup");
+       test_exn (wakeup w) () (Invalid_argument "Lwt.wakeup");
        return true);
 
   test "28"
