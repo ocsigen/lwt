@@ -115,6 +115,6 @@ let restart () =
   local_envs := PathMap.empty
 
 let () =
-  Topfind.don't_load_deeply ["lwt"; "lwt.unix"; "lwt.text"; "lwt.top"];
+  Topfind.don't_load_deeply ["lwt"; "lwt.react"; "lwt.unix"; "lwt.text"; "lwt.top"];
   Lwt_ocaml_completion.complete_ident := complete_ident;
   Lwt_ocaml_completion.restart := restart

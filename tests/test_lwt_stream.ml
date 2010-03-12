@@ -65,7 +65,7 @@ let suite = suite "lwt_stream" [
   test "event"
     (fun () ->
        let event, push = React.E.create () in
-       let stream = Lwt_stream.of_event event in
+       let stream = Lwt_event.to_stream event in
        push 1;
        push 2;
        push 3;

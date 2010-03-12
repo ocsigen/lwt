@@ -208,13 +208,16 @@ val pipe_out : unit -> Unix.file_descr * file_descr
 
 (** {6 Signals} *)
 
-val signal : int -> < event : int React.event; stop : unit >
-  (** [signal signum] returns an object with a method [event] which is
-      the event occuring each time the signal number [signum] is
-      received by the running process.
+type signal_handler_id
+  (** Id of a signal handler, used to cancel it *)
 
-      The [stop] method is used to tell Lwt that you are no longer
-      interessed in this event. *)
+val on_signal : int -> (int -> unit) -> signal_handler_id
+  (** [on_signal signum f] calls [f] each time the signal with numnber
+      [signum] is received by the process. It returns a signal handler
+      identifier which can be used to stop monitoring [signum]. *)
+
+val disable_signal_handler : signal_handler_id -> unit
+  (** Stops receiving this signal *)
 
 (** {6 Processes} *)
 

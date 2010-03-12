@@ -49,9 +49,6 @@ val of_string : string -> char t
   (** [of_string str] creates a stream returning all characters of
       [str] *)
 
-val of_event : 'a React.event -> 'a t
-  (** [of_event e] creates a stream containing all event of [e] *)
-
 val clone : 'a t -> 'a t
   (** [clone st] clone the given stream. Operations on each stream
       will not affect the other.

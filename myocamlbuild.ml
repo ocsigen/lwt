@@ -46,7 +46,8 @@ let have_native = try_exec "ocamlfind ocamlopt -version"
 let have_threads = try_exec "ocamlfind query threads"
 let have_ssl = try_exec "ocamlfind query ssl"
 let have_glib = try_exec "ocamlfind query lablgtk2" && try_exec "pkg-config glib-2.0"
-let have_text = try_exec "ocamlfind query text"
+let have_react = try_exec "ocamlfind query react"
+let have_text = have_react && try_exec "ocamlfind query text"
 
 (* Try to find the path where compiler libraries are: *)
 let compiler_libs =
@@ -75,6 +76,7 @@ let () =
 | preemptive threads support:   %3s |
 | ssl support:                  %3s |
 | glib support:                 %3s |
+| react support                 %3s |
 | text support:                 %3s |
 | super toplevel:               %3s |
 +-----------------------------------+
@@ -82,6 +84,7 @@ let () =
     (yes_no have_threads)
     (yes_no have_ssl)
     (yes_no have_glib)
+    (yes_no have_react)
     (yes_no have_text)
     (yes_no have_toplevel)
 
@@ -219,7 +222,8 @@ let _ =
                 [(have_threads, ["lwt_preemptive"; "lwt_extra"]);
                  (have_ssl, ["lwt_ssl"]);
                  (have_glib, ["lwt_glib"]);
-                 (have_text, ["lwt_text"; "lwt_top"])])) in
+                 (have_text, ["lwt_text"; "lwt_top"]);
+                 (have_react, ["lwt_react"])])) in
 
         let byte = "syntax/pa_lwt.cmo" :: "syntax/pa_log.cmo" :: List.map (sprintf "src/%s.cma") libs
           @ if have_toplevel then ["src/private/toplevel.top"] else []
@@ -285,8 +289,8 @@ let _ =
         flag_all_stages "use_compiler_libs" & S(List.map (fun path -> S[A"-I"; A path]) compiler_libs);
 
         (* Link with the toplevel library *)
-        dep ["file:src/private/toplevel.top"] ["src/lwt.cma"; "src/lwt_unix.cma"; "src/lwt_text.cma"; "src/lwt_top.cma"];
-        flag ["file:src/private/toplevel.top"] & S[A"-I"; A"src"; A"-I"; A"src/stubs"; A"lwt.cma"; A"lwt_unix.cma"; A"lwt_text.cma"; A"lwt_top.cma"];
+        dep ["file:src/private/toplevel.top"] ["src/lwt.cma"; "src/lwt_react.cma"; "src/lwt_unix.cma"; "src/lwt_text.cma"; "src/lwt_top.cma"];
+        flag ["file:src/private/toplevel.top"] & S[A"-I"; A"src"; A"-I"; A"src/stubs"; A"lwt.cma"; A"src/lwt_react.cma"; A"lwt_unix.cma"; A"lwt_text.cma"; A"lwt_top.cma"];
 
         (* +---------------------------------------------------------+
            | C stubs                                                 |

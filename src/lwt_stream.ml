@@ -95,7 +95,6 @@ module EQueue :
 sig
   type 'a t
   type 'a input = [ `Data of 'a | `End_of_stream | `Exn of exn ]
-  val create_event : 'a React.event -> 'a t
   val create : unit -> ('a input -> unit) * 'a t
   val pop : 'a t -> 'a option Lwt.t
 end =
@@ -111,12 +110,10 @@ struct
 
   type 'a t = {
     mutable state : 'a state;
-    mutable event : 'a React.E.t option;
-    (* field used to prevent garbage collection *)
   }
 
   let create () =
-    let box = { state = No_mail; event = None } in
+    let box = { state = No_mail } in
     let push v =
       match box.state with
 	| Exn e ->
@@ -135,12 +132,6 @@ struct
 	    Queue.push v q
     in
     (push, box)
-
-  let create_event e =
-    let push, box = create () in
-    let push v = push (`Data v) in
-    box.event <- Some (React.E.trace push e);
-    box
 
   let pop b = match b.state with
     | Exn e ->
@@ -161,10 +152,6 @@ struct
           | `End_of_stream -> return None
 	  | `Exn e -> fail e
 end
-
-let of_event event =
-  let box = EQueue.create_event event in
-  from (fun () -> EQueue.pop box)
 
 let push_stream () =
   let push, box = EQueue.create () in

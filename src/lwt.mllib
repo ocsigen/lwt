@@ -5,6 +5,4 @@ Lwt_sequence
 Lwt_monitor
 Lwt_mvar
 Lwt_mutex
-Lwt_event
-Lwt_signal
 Lwt_list

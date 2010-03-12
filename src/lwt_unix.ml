@@ -454,23 +454,29 @@ let set_close_on_exec ch =
 
 module SignalMap = Map.Make(struct type t = int let compare = compare end)
 
-(* Information about a signal being monitored: *)
-type signal_info = {
-  event : int React.event;
-  (* The event which occurs when the signal is received. *)
-
-  send : int -> unit;
-  (* The function to send a new event *)
-
-  mutable ref_count : int;
-  (* Number of object created for this signal *)
-}
+type signal_handler = { sh_signum : int; sh_node : (int -> unit) Lwt_sequence.node }
+type signal_handler_id = signal_handler option ref
 
 (* The set of all monitored signals: *)
-let signals : signal_info SignalMap.t ref = ref SignalMap.empty
+let signals : (int -> unit) Lwt_sequence.t SignalMap.t ref = ref SignalMap.empty
 
 (* The list of pending signals *)
 let pending_signals = Queue.create ()
+
+let disable_signal_handler id = match !id with
+  | Some sh -> begin
+      id := None;
+      Lwt_sequence.remove sh.sh_node;
+      try
+        if Lwt_sequence.is_empty (SignalMap.find sh.sh_signum !signals) then begin
+          signals := SignalMap.remove sh.sh_signum !signals;
+          Sys.set_signal sh.sh_signum Sys.Signal_default
+        end
+      with Not_found ->
+        ()
+    end
+  | None ->
+      ()
 
 (* Pipe used to tell the main loop that a signal has been caught *)
 let signal_fd_reader, signal_fd_writer = pipe_in ()
@@ -481,7 +487,7 @@ let () =
 let wakeup_pending_signals () =
   while not (Queue.is_empty pending_signals) do
     let signum = Queue.pop pending_signals in
-    (SignalMap.find signum !signals).send signum
+    Lwt_sequence.iter_l (fun f -> f signum) (SignalMap.find signum !signals)
   done
 
 (* Read and dispatch signals *)
@@ -502,31 +508,16 @@ let handle_signal signum =
   Queue.push signum pending_signals;
   ignore (Unix.write signal_fd_writer " " 0 1)
 
-(* Add a reference to the given signal and return a new handle: *)
-let signal_ref signum info =
-  info.ref_count <- info.ref_count + 1;
-  let stop = lazy(
-    info.ref_count <- info.ref_count - 1;
-    if info.ref_count = 0 then begin
-      signals := SignalMap.remove signum !signals;
-      Sys.set_signal signum Sys.Signal_default
-    end
-  ) in
-  (object
-     method event = info.event
-     method stop = Lazy.force stop
-   end)
-
-let signal signum =
+let on_signal signum f =
   match try Some(SignalMap.find signum !signals) with Not_found -> None with
-    | Some info ->
-        signal_ref signum info
+    | Some seq ->
+        ref (Some{ sh_signum = signum; sh_node = Lwt_sequence.add_r f seq })
     | None ->
+        let seq = Lwt_sequence.create () in
+        let id = ref (Some{ sh_signum = signum; sh_node = Lwt_sequence.add_r f seq }) in
+        signals := SignalMap.add signum seq !signals;
         Sys.set_signal signum (Sys.Signal_handle handle_signal);
-        let event, send = React.E.create () in
-        let info = { send = send; event = event; ref_count = 0 } in
-        signals := SignalMap.add signum info !signals;
-        signal_ref signum info
+        id
 
 (* +-----------------------------------------------------------------+
    | Processes                                                       |
@@ -541,21 +532,21 @@ let has_wait4 = lwt_unix_has_wait4 ()
 
 let wait_children = Lwt_sequence.create ()
 
-let () =
-  Lwt_event.always_notify begin fun _ ->
-    Lwt_sequence.iter_node_l begin fun node ->
-      let cont, flags, pid = Lwt_sequence.get node in
-      try
-        let (pid', _, _) as v = lwt_unix_wait4 flags pid in
-        if pid' <> 0 then begin
-          Lwt_sequence.remove node;
-          Lwt.wakeup cont v
-        end
-      with e ->
-        Lwt_sequence.remove node;
-        Lwt.wakeup_exn cont e
-    end wait_children
-  end (signal Sys.sigchld)#event
+let _ =
+  on_signal Sys.sigchld
+    (fun _ ->
+       Lwt_sequence.iter_node_l begin fun node ->
+         let cont, flags, pid = Lwt_sequence.get node in
+         try
+           let (pid', _, _) as v = lwt_unix_wait4 flags pid in
+           if pid' <> 0 then begin
+             Lwt_sequence.remove node;
+             Lwt.wakeup cont v
+           end
+         with e ->
+           Lwt_sequence.remove node;
+           Lwt.wakeup_exn cont e
+       end wait_children)
 
 let _waitpid flags pid =
   try_lwt

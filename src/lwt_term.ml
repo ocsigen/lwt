@@ -167,9 +167,11 @@ external get_size : unit -> size = "lwt_unix_term_size"
 external sigwinch : unit -> int = "lwt_unix_sigwinch"
 
 let sigwinch_event =
+  let event, push = React.E.create () in
   try
-    (Lwt_unix.signal (sigwinch ()))#event
-  with _ ->
+    let _ = Lwt_unix.on_signal (sigwinch ()) push in
+    event
+  with Unix.Unix_error _ | Invalid_argument _ | Sys_error _ ->
     React.E.never
 
 let size =

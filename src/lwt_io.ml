@@ -1312,12 +1312,17 @@ let with_connection ?buffer_size sockaddr f =
   finally
     close ic <&> close oc
 
-let establish_server ?buffer_size sockaddr =
+type server = {
+  shutdown : unit -> unit;
+}
+
+let shutdown_server server = server.shutdown ()
+
+let establish_server ?buffer_size sockaddr f =
   let sock = Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0 in
   Lwt_unix.setsockopt sock Unix.SO_REUSEADDR true;
   Lwt_unix.bind sock sockaddr;
   Lwt_unix.listen sock 5;
-  let event, push = React.E.create () in
   let abort_waiter, abort_wakener = wait () in
   let abort_waiter = abort_waiter >> return `Shutdown in
   let rec loop () =
@@ -1328,8 +1333,8 @@ let establish_server ?buffer_size sockaddr =
             Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
             close_fd fd
           end in
-          push (of_fd ?buffer_size ~mode:input ~close:(fun () -> Lazy.force close) fd,
-                of_fd ?buffer_size ~mode:output ~close:(fun () -> Lazy.force close) fd);
+          f (of_fd ?buffer_size ~mode:input ~close:(fun () -> Lazy.force close) fd,
+             of_fd ?buffer_size ~mode:output ~close:(fun () -> Lazy.force close) fd);
           loop ()
       | `Shutdown ->
           Lwt_unix.close sock;
@@ -1341,13 +1346,7 @@ let establish_server ?buffer_size sockaddr =
                 return ()
   in
   let shutdown = lazy(wakeup abort_wakener `Shutdown) in
-  (* Yield here to avoid receiving a new connection before the user
-     map the event. *)
-  ignore (Lwt_main.fast_yield () >> loop ());
-  (object
-     method event = event
-     method shutdown = Lazy.force shutdown
-   end)
+  { shutdown = fun () -> Lazy.force shutdown }
 
 let ignore_close ch =
   ignore (close ch)

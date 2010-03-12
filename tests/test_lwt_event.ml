@@ -1,6 +1,6 @@
 (* Lightweight thread library for Objective Caml
  * http://www.ocsigen.org/lwt
- * Module Main_lwt
+ * Module Test_lwt_event
  * Copyright (C) 2009 Jérémie Dimino
  *
  * This program is free software; you can redistribute it and/or modify
@@ -20,10 +20,16 @@
  * 02111-1307, USA.
  *)
 
-Test.run "lwt" [
-  Test_lwt.suite;
-  Test_lwt_stream.suite;
-  Test_lwt_event.suite;
-  Test_lwt_util.suite;
-  Test_lwt_io.suite;
+open Test
+open Lwt
+
+let suite = suite "lwt_event" [
+  test "to_stream"
+    (fun () ->
+       let event, push = React.E.create () in
+       let stream = Lwt_event.to_stream event in
+       let t =  Lwt_stream.next stream in
+       assert (state t = Sleep);
+       push 42;
+       return (state t = Return 42));
 ]

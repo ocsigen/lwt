@@ -1090,10 +1090,10 @@ struct
     let push_event event = push_event (`Data event) in
 
     (* Screan resizing *)
-    let size_events = Lwt_stream.of_event (React.E.stamp (React.S.changes Lwt_term.size) Ev_screen_size_changed) in
+    let size_events = Lwt_event.to_stream (React.E.stamp (React.S.changes Lwt_term.size) Ev_screen_size_changed) in
 
     (* Prompt events *)
-    let prompt_events = Lwt_stream.of_event (React.E.map (fun prompt -> Ev_prompt prompt) (React.S.changes prompt)) in
+    let prompt_events = Lwt_event.to_stream (React.E.map (fun prompt -> Ev_prompt prompt) (React.S.changes prompt)) in
 
     (* All events  *)
     let events = Lwt_stream.choose [user_events; program_events; size_events; prompt_events] in

@@ -114,3 +114,58 @@ let limit f event =
       event
   in
   React.E.select [event1; event2]
+
+module EQueue :
+sig
+  type 'a t
+  val create : 'a React.event -> 'a t
+  val pop : 'a t -> 'a option Lwt.t
+end =
+struct
+
+  type 'a state =
+    | No_mail
+    | Waiting of 'a option Lwt.u
+    | Full of 'a Queue.t
+
+  type 'a t = {
+    mutable state : 'a state;
+    mutable event : unit React.event;
+    (* field used to prevent garbage collection *)
+  }
+
+  let create event =
+    let box = { state = No_mail; event = React.E.never } in
+    let push v =
+      match box.state with
+	| No_mail ->
+	    let q = Queue.create () in
+	    Queue.push v q;
+	    box.state <- Full q
+	| Waiting wakener ->
+            box.state <- No_mail;
+            wakeup wakener (Some v)
+	| Full q ->
+	    Queue.push v q
+    in
+    box.event <- React.E.map push event;
+    box
+
+  let pop b = match b.state with
+    | No_mail ->
+	let waiter, wakener = wait () in
+	b.state <- Waiting wakener;
+	waiter
+    | Waiting _ ->
+        (* Calls to next are serialized, so this case will never
+           happened *)
+	assert false
+    | Full q ->
+	let v = Queue.take q in
+	if Queue.is_empty q then b.state <- No_mail;
+        return (Some v)
+end
+
+let to_stream event =
+  let box = EQueue.create event in
+  Lwt_stream.from (fun () -> EQueue.pop box)
