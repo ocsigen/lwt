@@ -64,6 +64,32 @@ value lwt_unix_read(value fd, value buf, value ofs, value len)
 }
 
 /* +-----------------------------------------------------------------+
+   | Recv/send                                                       |
+   +-----------------------------------------------------------------+ */
+
+static int msg_flag_table[] = {
+  MSG_OOB, MSG_DONTROUTE, MSG_PEEK
+};
+
+value lwt_unix_recv(value fd, value buf, value ofs, value len, value flags)
+{
+  int ret;
+  ret = recv(Int_val(fd), &Byte(String_val(buf), Long_val(ofs)), Long_val(len),
+             convert_flag_list(flags, msg_flag_table));
+  if (ret == -1) uerror("lwt_unix_recv", Nothing);
+  return Val_int(ret);
+}
+
+value lwt_unix_send(value fd, value buf, value ofs, value len, value flags)
+{
+  int ret;
+  ret = send(Int_val(fd), &Byte(String_val(buf), Long_val(ofs)), Long_val(len),
+             convert_flag_list(flags, msg_flag_table));
+  if (ret == -1) uerror("lwt_unix_send", Nothing);
+  return Val_int(ret);
+}
+
+/* +-----------------------------------------------------------------+
    | {recv/send}_msg                                                 |
    +-----------------------------------------------------------------+ */
 

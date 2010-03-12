@@ -275,12 +275,14 @@ let stderr = of_unix_file_descr_blocking Unix.stderr
 
 external lwt_unix_read : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_read"
 external lwt_unix_write : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_write"
+external lwt_unix_recv : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_recv"
+external lwt_unix_send : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_send"
 
-let real_read, real_write =
+let real_read, real_write, real_recv, real_send =
   if Sys.os_type = "Unix" then
-    lwt_unix_read, lwt_unix_write
+    lwt_unix_read, lwt_unix_write, lwt_unix_recv, lwt_unix_send
   else
-    Unix.read, Unix.write
+    Unix.read, Unix.write, Unix.recv, Unix.send
 
 let read ch buf pos len =
   if pos < 0 || len < 0 || pos > String.length buf - len then
@@ -293,6 +295,24 @@ let write ch buf pos len =
     invalid_arg "Lwt_unix.write"
   else
     wrap_syscall outputs ch (fun _ -> real_write ch.fd buf pos len)
+
+let recv ch buf pos len flags =
+  if pos < 0 || len < 0 || pos > String.length buf - len then
+    invalid_arg "Lwt_unix.recv"
+  else
+    wrap_syscall inputs ch (fun _ -> real_recv ch.fd buf pos len flags)
+
+let send ch buf pos len flags =
+  if pos < 0 || len < 0 || pos > String.length buf - len then
+    invalid_arg "Lwt_unix.send"
+  else
+    wrap_syscall outputs ch (fun _ -> real_send ch.fd buf pos len flags)
+
+let recvfrom ch buf ofs len flags =
+  wrap_syscall inputs ch (fun _ -> Unix.recvfrom ch.fd buf ofs len flags)
+
+let sendto ch buf ofs len flags addr =
+  wrap_syscall outputs ch (fun _ -> Unix.sendto ch.fd buf ofs len flags addr)
 
 let wait_read ch =
   try_lwt

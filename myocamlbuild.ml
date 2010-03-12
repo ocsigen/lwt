@@ -343,7 +343,7 @@ let _ =
         (* Link with the toplevel library *)
         let libs = ["core"; "react"; "unix"; "text"; "top"] in
         dep ["file:src/top/private/toplevel.top"] (List.map (fun name -> sprintf "src/%s/lwt_%s.cma" name name) libs);
-        flag ["file:src/top/private/toplevel.top"] & S(List.map (fun name -> A(sprintf "src/%s/lwt_%s.cma" name name)) libs);
+        flag ["file:src/top/private/toplevel.top"] & S(A"-I" :: A"src/unix/stubs" :: List.map (fun name -> A(sprintf "src/%s/lwt_%s.cma" name name)) libs);
 
         (* +---------------------------------------------------------+
            | C stubs                                                 |

@@ -327,6 +327,18 @@ val get_credentials : file_descr -> credentials
 
 (** {8 receive/send messages} *)
 
+val recv : file_descr -> string -> int -> int -> Unix.msg_flag list -> int Lwt.t
+  (** Wrapper for [Unix.recv] *)
+
+val recvfrom : file_descr -> string -> int -> int -> Unix.msg_flag list -> (int * Unix.sockaddr) Lwt.t
+  (** Wrapper for [Unix.recvfrom] *)
+
+val send : file_descr -> string -> int -> int -> Unix.msg_flag list -> int Lwt.t
+  (** Wrapper for [Unix.send] *)
+
+val sendto : file_descr -> string -> int -> int -> Unix.msg_flag list -> Unix.sockaddr -> int Lwt.t
+  (** Wrapper for [Unix.sendto] *)
+
 (** An io-vector. Used by {!recv_msg} and {!send_msg}. *)
 type io_vector = {
   iov_buffer : string;
