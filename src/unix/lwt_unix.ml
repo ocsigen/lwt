@@ -643,8 +643,38 @@ let select_filter now select set_r set_w set_e timeout =
 let _ = Lwt_sequence.add_l select_filter Lwt_main.select_filters
 
 (* +-----------------------------------------------------------------+
+   | Directories                                                     |
+   +-----------------------------------------------------------------+ *)
+
+type dir_handle = {
+  dir_handle : Unix.dir_handle;
+  auto_yield : unit -> unit Lwt.t;
+}
+
+let opendir name = {
+  dir_handle = Unix.opendir name;
+  auto_yield = auto_yield 0.05;
+}
+
+let readdir dh =
+  lwt () = dh.auto_yield () in
+  try
+    return (Unix.readdir dh.dir_handle)
+  with exn ->
+    fail exn
+
+let rewinddir dh = Unix.rewinddir dh.dir_handle
+let closedir dh = Unix.closedir dh.dir_handle
+
+(* +-----------------------------------------------------------------+
    | Misc                                                            |
    +-----------------------------------------------------------------+ *)
+
+let handle_unix_error f x =
+  try_lwt
+    f x
+  with exn ->
+    Unix.handle_unix_error (fun () -> raise exn) ()
 
 (* Monitoring functions *)
 let inputs_length () = blocked_thread_count inputs

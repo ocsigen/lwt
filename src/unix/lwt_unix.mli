@@ -57,6 +57,10 @@
     operations will completes, and other will just be cancelled.
 *)
 
+val handle_unix_error : ('a -> 'b Lwt.t) -> 'a -> 'b Lwt.t
+  (** Same as [Unix.handle_unix_error] but catches lwt-level
+      exceptions *)
+
 (** {6 Sleeping} *)
 
 val sleep : float -> unit Lwt.t
@@ -218,6 +222,25 @@ val on_signal : int -> (int -> unit) -> signal_handler_id
 
 val disable_signal_handler : signal_handler_id -> unit
   (** Stops receiving this signal *)
+
+(** {6 Directories} *)
+
+type dir_handle
+  (** The type of descriptors over opened directories. *)
+
+val opendir : string -> dir_handle
+  (** Open a descriptor on a directory *)
+
+val readdir : dir_handle -> string Lwt.t
+  (** Return the next entry in a directory.
+
+      @raise End_of_file when the end of the directory has been reached. *)
+
+val rewinddir : dir_handle -> unit
+  (** Reposition the descriptor to the beginning of the directory *)
+
+val closedir : dir_handle -> unit
+  (** Close a directory descriptor. *)
 
 (** {6 Processes} *)
 

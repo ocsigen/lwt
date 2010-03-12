@@ -7,7 +7,6 @@ Lwt_io
 Lwt_process
 Lwt_main
 Lwt_log
-Lwt_directory
 Lwt_daemon
 private/Lwt_pqueue
 private/Lwt_select

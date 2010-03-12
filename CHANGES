@@ -14,7 +14,6 @@
   * Adding function {{{Lwt_unix.wait4}}}
   * Adding function {{{Lwt_io.establish_server}}}
   * Adding module {{{Lwt_list}}}
-  * Adding module {{{Lwt_directory}}}
   * Enhancement in {{{Lwt_process}}}, it now support redirections and timeouts
   * Allow to use {{{select}}} on arbitrary high file descriptors
   * More commands and features in {{{Lwt_read_line}}}:
