@@ -28,11 +28,14 @@
 
 \maketitle
 
+\textbf{Note:} this document is a work in progress. Sections 1 and 2
+are mostly ready.
+
 %% +-----------------------------------------------------------------+
 %% | Table of contents                                               |
 %% +-----------------------------------------------------------------+
 
-\setcounter{tocdepth}{2}
+\setcounter{tocdepth}{3}
 \tableofcontents
 
 %% +-----------------------------------------------------------------+
@@ -656,7 +659,7 @@ let () =
   let signal = ... in
 
   (* The limited signal: *)
-  let signal' = Lwt_signal.limit (fun () -> Lwt_unix.sleep 0.1) in
+  let signal' = Lwt_signal.limit (fun () -> Lwt_unix.sleep 0.1) signal in
 
   (* Redraw the screen each time the limited signal change: *)
   Lwt_signal.always_notify_p draw signal'
@@ -669,13 +672,17 @@ let () =
 \label{lwt.unix}
 
 The package \texttt{lwt.unix} contains all \texttt{unix} dependant
-modules of \lwt. It provides cooperative versions of functions of the
-standard and the unix libraries.
+modules of \lwt. Among all its features, it implements cooperative
+versions of functions of the standard library and unix library.
 
-The \texttt{Lwt\_unix} module is the cooperative equivalent of the
-\texttt{Unix} module, plus some specific functions. It also provides
-an helper to wrap system calls into cooperatives one (the
-\texttt{wrap\_syscall} function).
+\subsection{Unix primitives}
+
+The \texttt{Lwt\_unix} provides cooperative system calls. For example,
+the \lwt counterpart of \texttt{Unix.read} is:
+
+\begin{verbatim}
+val read  : file_descr -> string -> int -> int -> int Lwt.t
+\end{verbatim}
 
 \texttt{Lwt\_io} provides similar features that buffered channels of
 the standard library (of type \texttt{in\_channel} or
