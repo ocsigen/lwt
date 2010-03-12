@@ -2,9 +2,9 @@
 
 description = "Lightweight thread library for OCaml (core library)"
 version = "@VERSION@"
-exists_if = "lwt.cma,lwt.cmxa,lwt.cmxs"
-archive(byte) = "lwt.cma"
-archive(native) = "lwt.cmxa"
+exists_if = "lwt_core.cma,lwt_core.cmxa,lwt_core.cmxs"
+archive(byte) = "lwt_core.cma"
+archive(native) = "lwt_core.cmxa"
 
 package "react" (
   exists_if = "lwt_react.cma,lwt_react.cmxa,lwt_react.cmxs"
@@ -20,8 +20,8 @@ package "unix" (
   requires = "unix lwt"
   archive(byte) = "lwt_unix.cma"
   archive(native) = "lwt_unix.cmxa"
-  archive(toploop,byte) += "simple_top.cma"
-  archive(toploop,native) += "simple_top.cmxa"
+  archive(toploop,byte) += "lwt_simple_top.cma"
+  archive(toploop,native) += "lwt_simple_top.cmxa"
 )
 
 package "preemptive" (

@@ -88,6 +88,61 @@ let () =
     (yes_no have_text)
     (yes_no have_toplevel)
 
+type library = {
+  name : string;
+  (* The short name of the library ("core", "unix", ... *)
+  deps : string list;
+  (* Dependencies on other lwt libraries *)
+  have : bool;
+  (* Can we build it ? *)
+  test : bool;
+  (* Are they tests for it ? *)
+}
+
+(* All libraries with their dependencies *)
+let libraries = [
+  { name = "core";
+    have = true;
+    deps = [];
+    test = true };
+  { name = "unix";
+    have = true;
+    deps = ["core"];
+    test = true };
+  { name = "preemptive";
+    have = have_threads;
+    deps = ["core"; "unix"];
+    test = false };
+  { name = "extra";
+    have = have_threads;
+    deps = ["core"; "unix"; "preemptive"];
+    test = false };
+  { name = "glib";
+    have = have_glib;
+    deps = ["core"; "unix"];
+    test = false };
+  { name = "react";
+    have = have_react;
+    deps = ["core"];
+    test = false };
+  { name = "ssl";
+    have = have_ssl;
+    deps = ["core"; "unix"];
+    test = false };
+  { name = "text";
+    have = have_text;
+    deps = ["core"; "unix"; "react"];
+    test = false };
+  { name = "simple_top";
+    have = have_text;
+    deps = ["core"; "unix"];
+    test = false };
+  { name = "top";
+    have = have_text;
+    deps = ["core"; "unix"; "text"; "react"];
+    test = false };
+]
+
 (* +-----------------------------------------------------------------+
    | Ocamlfind                                                       |
    +-----------------------------------------------------------------+ *)
@@ -169,7 +224,7 @@ let pkg_config flags package =
 
 let define_stubs name =
   let tag = sprintf "use_%s_stubs" name in
-  dep ["link"; "ocaml"; tag] [sprintf "src/stubs/liblwt_%s_stubs.a" name];
+  dep ["link"; "ocaml"; tag] [sprintf "src/%s/stubs/liblwt_%s_stubs.a" name name];
   flag ["link"; "library"; "ocaml"; tag] & S[A"-cclib"; A(sprintf "-llwt_%s_stubs" name)];
   flag ["link"; "library"; "ocaml"; "byte"; tag] & S[A"-dllib"; A(sprintf "-llwt_%s_stubs" name)]
 
@@ -206,28 +261,25 @@ let _ =
         Options.ocamldoc := S[A"ocamlfind"; A"ocamldoc"; A"-hide-warnings"]
 
     | After_rules ->
-        Pathname.define_context "src" [ "src/private" ];
-        Pathname.define_context "src/private" [ "src" ];
+        List.iter
+          (fun lib ->
+             let deps = List.map (sprintf "src/%s") lib.deps in
+             Pathname.define_context (sprintf "src/%s" lib.name) (sprintf "src/%s/private" lib.name :: deps);
+             Pathname.define_context (sprintf "src/%s/private" lib.name) (sprintf "src/%s" lib.name :: deps))
+          libraries;
 
-        (* Tests can see everything *)
-        Pathname.define_context "tests" [ "src"; "src/private" ];
+        Pathname.define_context "tests"
+          (List.fold_left (fun acc lib -> sprintf "src/%s" lib.name :: sprintf "src/%s/private" lib.name :: acc) [] libraries);
 
         (* +---------------------------------------------------------+
            | Virtual targets                                         |
            +---------------------------------------------------------+ *)
 
-        let libs = "lwt" :: "lwt_unix" :: "simple_top" :: List.concat
-          (List.map snd
-             (List.filter fst
-                [(have_threads, ["lwt_preemptive"; "lwt_extra"]);
-                 (have_ssl, ["lwt_ssl"]);
-                 (have_glib, ["lwt_glib"]);
-                 (have_text, ["lwt_text"; "lwt_top"]);
-                 (have_react, ["lwt_react"])])) in
+        let libs = List.filter_opt (fun lib -> if lib.have then Some lib.name else None) libraries in
 
-        let byte = "syntax/pa_lwt.cmo" :: "syntax/pa_log.cmo" :: List.map (sprintf "src/%s.cma") libs
-          @ if have_toplevel then ["src/private/toplevel.top"] else []
-        and native = List.map (sprintf "src/%s.cmxa") libs in
+        let byte = "syntax/pa_lwt.cmo" :: "syntax/pa_log.cmo" :: List.map (fun name -> sprintf "src/%s/lwt_%s.cma" name name) libs
+          @ if have_toplevel then ["src/top/private/toplevel.top"] else []
+        and native = List.map (fun name -> sprintf "src/%s/lwt_%s.cmxa" name name) libs in
 
         let virtual_rule name deps =
           rule name ~stamp:name ~deps (fun _ _ -> Nop)
@@ -237,7 +289,7 @@ let _ =
         virtual_rule "byte" & "META" :: byte;
         virtual_rule "native" & "META" :: native;
 
-        let tests = ["lwt"] in
+        let tests = List.filter_opt (fun lib -> if lib.have && lib.test then Some lib.name else None) libraries in
 
         let tests = List.map (if have_native then
                                 sprintf "tests/main_%s.native"
@@ -289,8 +341,9 @@ let _ =
         flag_all_stages "use_compiler_libs" & S(List.map (fun path -> S[A"-I"; A path]) compiler_libs);
 
         (* Link with the toplevel library *)
-        dep ["file:src/private/toplevel.top"] ["src/lwt.cma"; "src/lwt_react.cma"; "src/lwt_unix.cma"; "src/lwt_text.cma"; "src/lwt_top.cma"];
-        flag ["file:src/private/toplevel.top"] & S[A"-I"; A"src"; A"-I"; A"src/stubs"; A"lwt.cma"; A"src/lwt_react.cma"; A"lwt_unix.cma"; A"lwt_text.cma"; A"lwt_top.cma"];
+        let libs = ["core"; "react"; "unix"; "text"; "top"] in
+        dep ["file:src/top/private/toplevel.top"] (List.map (fun name -> sprintf "src/%s/lwt_%s.cma" name name) libs);
+        flag ["file:src/top/private/toplevel.top"] & S(List.map (fun name -> A(sprintf "src/%s/lwt_%s.cma" name name)) libs);
 
         (* +---------------------------------------------------------+
            | C stubs                                                 |
@@ -313,22 +366,27 @@ let _ =
              Echo([substitute [("@VERSION@", get_version ())] (read_file "META.in")], "META"));
 
         (* Generation of the lwt.odocl file *)
-        let deps = ["src/lwt.mllib";
-                    "src/lwt_unix.mllib";
-                    "src/lwt_preemptive.mllib";
-                    "src/lwt_extra.mllib";
-                    "src/lwt_text.mllib";
-                    "src/lwt_ssl.mllib";
-                    "src/lwt_glib.mllib";
-                    "src/lwt_top.mllib"]
+        let deps =
+          List.filter_opt
+            (fun lib ->
+               if lib.have then
+                 Some(sprintf "src/%s/lwt_%s.mllib" lib.name lib.name)
+               else
+                 None)
+            libraries;
         and prod = "lwt.odocl" in
         rule "lwt_doc" ~prod ~deps
-          (fun _ _ -> Echo(List.map (sprintf "src/%s\n")
-                             (* Filter deprecated modules: *)
-                             (List.filter (function
-                                             | "Lwt_chan" | "Lwt_util" -> false
-                                             | s -> not (String.is_prefix "private" s))
-                                (List.concat (List.map string_list_of_file deps)))
+          (fun _ _ -> Echo(List.concat
+                             (List.map
+                                (fun lib ->
+                                   if lib.have then
+                                     List.filter (function
+                                                    | "Lwt_chan" | "Lwt_util" | "Simple_top" -> false
+                                                    | s -> not (String.is_prefix "private" s))
+                                       (string_list_of_file (sprintf "src/%s/lwt_%s.mllib" lib.name lib.name))
+                                   else
+                                     [])
+                                libraries)
                            @ ["syntax/Pa_lwt\n"; "syntax/Pa_log"],
                            prod));
 

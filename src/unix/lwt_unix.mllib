@@ -1,5 +1,4 @@
 Lwt_chan
-Lwt_pool
 Lwt_throttle
 Lwt_timeout
 Lwt_unix
