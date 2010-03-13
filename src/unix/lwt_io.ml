@@ -522,9 +522,9 @@ let of_fd ?buffer_size ?close ~mode fd =
     ~close:(match close with
               | Some f -> f
               | None -> (fun () -> close_fd fd))
-    ~seek:(fun pos cmd -> return (Unix.LargeFile.lseek (Lwt_unix.unix_file_descr fd) pos cmd))
+    ~seek:(fun pos cmd -> return (Lwt_unix.LargeFile.lseek fd pos cmd))
     ~mode
-    (match (Unix.fstat (Lwt_unix.unix_file_descr fd)).Unix.st_kind with
+    (match (Lwt_unix.fstat fd).Unix.st_kind with
        | Unix.S_REG | Unix.S_DIR ->
            (* Non-blocking I/Os are not possible on regular files: *)
            let auto_yield = Lwt_unix.auto_yield 0.05 in

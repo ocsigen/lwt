@@ -117,6 +117,9 @@ type state =
 val state : file_descr -> state
   (** [state fd] returns the state of [fd] *)
 
+val openfile : string -> Unix.open_flag list -> Unix.file_perm -> file_descr
+  (** Wrapper for [Unix.openfile] *)
+
 val unix_file_descr : file_descr -> Unix.file_descr
   (** Returns the underlying unix {b file descriptor}. It always
       succeed, even if the {b file descriptor}'s state is not
@@ -162,6 +165,24 @@ val close : file_descr -> unit
 val set_close_on_exec : file_descr -> unit
   (** Wrapper for [Unix.set_close_on_exec] *)
 
+val clear_close_on_exec : file_descr -> unit
+  (** Wrapper for [Unix.clear_close_on_exec] *)
+
+val fchmod : file_descr -> Unix.file_perm -> unit
+  (** Wrapper for [Unix.fchmod] *)
+
+val fchown : file_descr -> int -> int -> unit
+  (** Wrapper for [Unix.fchown] *)
+
+val dup : file_descr -> file_descr
+  (** Wrapper for [Unix.dup] *)
+
+val dup2 : file_descr -> file_descr -> unit
+  (** Wrapper for [Unix.dup2] *)
+
+val lockf : file_descr -> Unix.lock_command -> int -> unit
+  (** Wrapper for [Unix.lockf] *)
+
 (** {8 Standard instances} *)
 
 val stdin : file_descr
@@ -192,8 +213,6 @@ val wait_write : file_descr -> unit Lwt.t
   (** waits (without blocking other threads) until it is possible to
       write on the file descriptor *)
 
-(** {8 Miscellaneous} *)
-
 (** {8 Pipes} *)
 
 val pipe : unit -> file_descr * file_descr
@@ -209,6 +228,28 @@ val pipe_in : unit -> file_descr * Unix.file_descr
 val pipe_out : unit -> Unix.file_descr * file_descr
   (** [pipe_out ()] is the inverse of {!pipe_in}. You usually want to
       use this before forking to send data to the child process *)
+
+(** {8 Random access} *)
+
+val lseek : file_descr -> int -> Unix.seek_command -> int
+  (** Wrapper for [Unix.lseek] *)
+
+val ftruncate : file_descr -> int -> unit
+  (** Wrapper for [Unix.ftruncate] *)
+
+(** {6 Miscellaneous wrappers} *)
+
+val fstat : file_descr -> Unix.stats
+  (** Wrapper for [Unix.fstat] *)
+
+val isatty : file_descr -> bool
+  (** Wrapper for [Unix.isatty] *)
+
+module LargeFile : sig
+  val lseek : file_descr -> int64 -> Unix.seek_command -> int64
+  val ftruncate : file_descr -> int64 -> unit
+  val fstat : file_descr -> Unix.LargeFile.stats
+end
 
 (** {6 Signals} *)
 
@@ -312,8 +353,40 @@ val connect : file_descr -> Unix.sockaddr -> unit Lwt.t
 val shutdown : file_descr -> Unix.shutdown_command -> unit
   (** Wrapper for [Unix.shutdown] *)
 
+val getsockname : file_descr -> Unix.sockaddr
+  (** Wrapper for [Unix.getsockname] *)
+
+val getpeername : file_descr -> Unix.sockaddr
+  (** Wrapper for [Unix.getpeername] *)
+
+(** {8 Socket options} *)
+
+val getsockopt : file_descr -> Unix.socket_bool_option -> bool
+  (** Wrapper for [Unix.getsockopt] *)
+
 val setsockopt : file_descr -> Unix.socket_bool_option -> bool -> unit
   (** Wrapper for [Unix.setsockopt] *)
+
+val getsockopt_int : file_descr -> Unix.socket_int_option -> int
+  (** Wrapper for [Unix.getsockopt_int] *)
+
+val setsockopt_int : file_descr -> Unix.socket_int_option -> int -> unit
+  (** Wrapper for [Unix.setsockopt_int] *)
+
+val getsockopt_optint : file_descr -> Unix.socket_optint_option -> int option
+  (** Wrapper for [Unix.getsockopt_optint] *)
+
+val setsockopt_optint : file_descr -> Unix.socket_optint_option -> int option -> unit
+  (** Wrapper for [Unix.setsockopt_optint] *)
+
+val getsockopt_float : file_descr -> Unix.socket_float_option -> float
+  (** Wrapper for [Unix.getsockopt_float] *)
+
+val setsockopt_float : file_descr -> Unix.socket_float_option -> float -> unit
+  (** Wrapper for [Unix.setsockopt_float] *)
+
+val getsockopt_error : file_descr -> Unix.error option
+  (** Wrapper for [Unix.getsockopt_error] *)
 
 type credentials = {
   cred_pid : int;
@@ -322,7 +395,7 @@ type credentials = {
 }
 
 val get_credentials : file_descr -> credentials
-  (** [get_credentials fd] returns credentials informations from the
+  (** [get_credentials fd] returns credential informations from the
       given socket. *)
 
 (** {8 receive/send messages} *)
@@ -357,6 +430,23 @@ val recv_msg : socket : file_descr -> io_vectors : io_vector list -> (int * Unix
 val send_msg : socket : file_descr -> io_vectors : io_vector list -> fds : Unix.file_descr list -> int Lwt.t
   (** [send_msg ~socket ~io_vectors ~fds] sends data from a list of
       io-vectors, accompanied with a list of file-descriptor. *)
+
+(** {6 Terminal interface} *)
+
+val tcgetattr : file_descr -> Unix.terminal_io
+  (** Wrapper for [Unix.tcgetattr] *)
+
+val tcsetattr : file_descr -> Unix.setattr_when -> Unix.terminal_io -> unit
+  (** Wrapper for [Unix.tcsetattr] *)
+
+val tcdrain : file_descr -> unit
+  (** Wrapper for [Unix.tcdrain] *)
+
+val tcflush : file_descr -> Unix.flush_queue -> unit
+  (** Wrapper for [Unix.tcflush] *)
+
+val tcflow : file_descr -> Unix.flow_action -> unit
+  (** Wrapper for [Unix.tcflow] *)
 
 (** {6 Low-level interaction} *)
 

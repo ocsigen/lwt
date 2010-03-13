@@ -468,6 +468,128 @@ let set_close_on_exec ch =
   check_descriptor ch;
   Unix.set_close_on_exec ch.fd
 
+let clear_close_on_exec ch =
+  check_descriptor ch;
+  Unix.clear_close_on_exec ch.fd
+
+let openfile name flags perms =
+  of_unix_file_descr (Unix.openfile name flags perms)
+
+let lseek ch offset whence =
+  check_descriptor ch;
+  Unix.lseek ch.fd offset whence
+
+let ftruncate ch size =
+  check_descriptor ch;
+  Unix.ftruncate ch.fd size
+
+let fstat ch =
+  check_descriptor ch;
+  Unix.fstat ch.fd
+
+module LargeFile =
+struct
+  let lseek ch offset whence =
+    check_descriptor ch;
+    Unix.LargeFile.lseek ch.fd offset whence
+
+  let ftruncate ch size =
+    check_descriptor ch;
+    Unix.LargeFile.ftruncate ch.fd size
+
+  let fstat ch =
+    check_descriptor ch;
+    Unix.LargeFile.fstat ch.fd
+end
+
+let isatty ch =
+  check_descriptor ch;
+  Unix.isatty ch.fd
+
+let fchmod ch perms =
+  check_descriptor ch;
+  Unix.fchmod ch.fd perms
+
+let fchown ch perms =
+  check_descriptor ch;
+  Unix.fchown ch.fd perms
+
+let dup ch =
+  check_descriptor ch;
+  of_unix_file_descr (Unix.dup ch.fd)
+
+let dup2 ch1 ch2 =
+  check_descriptor ch1;
+  Unix.dup2 ch1.fd ch2.fd
+
+let lockf ch cmd size =
+  check_descriptor ch;
+  Unix.lockf ch.fd cmd size
+
+let getpeername ch =
+  check_descriptor ch;
+  Unix.getpeername ch.fd
+
+let getsockname ch =
+  check_descriptor ch;
+  Unix.getsockname ch.fd
+
+let getsockopt ch opt =
+  check_descriptor ch;
+  Unix.getsockopt ch.fd opt
+
+let setsockopt ch opt x =
+  check_descriptor ch;
+  Unix.setsockopt ch.fd opt x
+
+let getsockopt_int ch opt =
+  check_descriptor ch;
+  Unix.getsockopt_int ch.fd opt
+
+let setsockopt_int ch opt x =
+  check_descriptor ch;
+  Unix.setsockopt_int ch.fd opt x
+
+let getsockopt_optint ch opt =
+  check_descriptor ch;
+  Unix.getsockopt_optint ch.fd opt
+
+let setsockopt_optint ch opt x =
+  check_descriptor ch;
+  Unix.setsockopt_optint ch.fd opt x
+
+let getsockopt_float ch opt =
+  check_descriptor ch;
+  Unix.getsockopt_float ch.fd opt
+
+let setsockopt_float ch opt x =
+  check_descriptor ch;
+  Unix.setsockopt_float ch.fd opt x
+
+let getsockopt_error ch =
+  check_descriptor ch;
+  Unix.getsockopt_error ch.fd
+
+let tcgetattr ch =
+  check_descriptor ch;
+  Unix.tcgetattr ch.fd
+
+let tcsetattr ch when_ attr =
+  check_descriptor ch;
+  Unix.tcsetattr ch.fd when_ attr
+
+let tcdrain ch =
+  check_descriptor ch;
+  Unix.tcdrain ch.fd
+
+let tcflush ch q =
+  check_descriptor ch;
+  Unix.tcflush ch.fd q
+
+let tcflow ch f =
+  check_descriptor ch;
+  Unix.tcflow ch.fd f
+
 (* +-----------------------------------------------------------------+
    | Signals                                                         |
    +-----------------------------------------------------------------+ *)
