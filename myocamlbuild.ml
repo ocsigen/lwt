@@ -124,7 +124,7 @@ let libraries = [
   { name = "react";
     have = have_react;
     deps = ["core"];
-    test = false };
+    test = true };
   { name = "ssl";
     have = have_ssl;
     deps = ["core"; "unix"];
@@ -265,11 +265,11 @@ let _ =
           (fun lib ->
              let deps = List.map (sprintf "src/%s") lib.deps in
              Pathname.define_context (sprintf "src/%s" lib.name) (sprintf "src/%s/private" lib.name :: deps);
-             Pathname.define_context (sprintf "src/%s/private" lib.name) (sprintf "src/%s" lib.name :: deps))
+             Pathname.define_context (sprintf "src/%s/private" lib.name) (sprintf "src/%s" lib.name :: deps);
+             Pathname.define_context (sprintf "tests/%s" lib.name) ("tests" :: "src/core" :: "src/unix" :: sprintf "src/%s" lib.name :: sprintf "src/%s/private" lib.name :: deps))
           libraries;
 
-        Pathname.define_context "tests"
-          (List.fold_left (fun acc lib -> sprintf "src/%s" lib.name :: sprintf "src/%s/private" lib.name :: acc) [] libraries);
+        Pathname.define_context "tests" ["src/core"; "src/unix"];
 
         (* +---------------------------------------------------------+
            | Virtual targets                                         |
@@ -292,9 +292,9 @@ let _ =
         let tests = List.filter_opt (fun lib -> if lib.have && lib.test then Some lib.name else None) libraries in
 
         let tests = List.map (if have_native then
-                                sprintf "tests/main_%s.native"
+                                sprintf "tests/%s/main.native"
                               else
-                                sprintf "tests/main_%s.byte") tests in
+                                sprintf "tests/%s/main.byte") tests in
 
         virtual_rule "test_programs" & tests;
 

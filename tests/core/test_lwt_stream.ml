@@ -62,16 +62,6 @@ let suite = suite "lwt_stream" [
        let x2_2 = poll (Lwt_stream.next stream2) in
        return ([x1_1;x1_2;x2_1;x2_2] = [Some 1;None;Some 1;None]));
 
-  test "event"
-    (fun () ->
-       let event, push = React.E.create () in
-       let stream = Lwt_event.to_stream event in
-       push 1;
-       push 2;
-       push 3;
-       lwt l = Lwt_stream.nget 3 stream in
-       return (l = [1; 2; 3]));
-
   test "push_stream"
     (fun () ->
        let push, stream = Lwt_stream.push_stream () in

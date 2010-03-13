@@ -1,6 +1,6 @@
 (* Lightweight thread library for Objective Caml
  * http://www.ocsigen.org/lwt
- * Module Main_core
+ * Module Main
  * Copyright (C) 2009 Jérémie Dimino
  *
  * This program is free software; you can redistribute it and/or modify
@@ -23,6 +23,5 @@
 Test.run "core" [
   Test_lwt.suite;
   Test_lwt_stream.suite;
-  Test_lwt_event.suite;
   Test_lwt_util.suite;
 ]

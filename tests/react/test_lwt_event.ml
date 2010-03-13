@@ -32,4 +32,14 @@ let suite = suite "lwt_event" [
        assert (state t = Sleep);
        push 42;
        return (state t = Return 42));
+
+  test "to_stream 2"
+    (fun () ->
+       let event, push = React.E.create () in
+       let stream = Lwt_event.to_stream event in
+       push 1;
+       push 2;
+       push 3;
+       lwt l = Lwt_stream.nget 3 stream in
+       return (l = [1; 2; 3]));
 ]
