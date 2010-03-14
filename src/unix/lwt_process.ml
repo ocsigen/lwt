@@ -121,7 +121,7 @@ object(self)
               return ()
             with
               | Lwt_unix.Timeout ->
-                  (try Unix.kill Sys.sigkill pid with _ -> ());
+                  (try Unix.kill pid Sys.sigkill with _ -> ());
                   (try_lwt self#close >> return () with _ -> return ())
               | _ ->
                   return ()
