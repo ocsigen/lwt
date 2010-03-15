@@ -1086,8 +1086,8 @@ struct
                                          return (Some(Ev_command command))) in
 
     (* Events sent by the program: *)
-    let push_event, program_events = Lwt_stream.push_stream () in
-    let push_event event = push_event (`Data event) in
+    let program_events, push_event = Lwt_stream.create () in
+    let push_event event = push_event (Some event) in
 
     (* Screan resizing *)
     let size_events = Lwt_event.to_stream (React.E.stamp (React.S.changes Lwt_term.size) Ev_screen_size_changed) in

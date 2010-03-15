@@ -94,19 +94,14 @@ let of_string s =
 module EQueue :
 sig
   type 'a t
-  type 'a input = [ `Data of 'a | `End_of_stream | `Exn of exn ]
-  val create : unit -> ('a input -> unit) * 'a t
+  val create : unit -> 'a t * ('a option -> unit)
   val pop : 'a t -> 'a option Lwt.t
 end =
 struct
-
-  type 'a input = [ `Data of 'a | `End_of_stream | `Exn of exn ]
-
   type 'a state =
-    | Exn of exn
     | No_mail
     | Waiting of 'a option Lwt.u
-    | Full of 'a input Queue.t
+    | Full of 'a option Queue.t
 
   type 'a t = {
     mutable state : 'a state;
@@ -116,26 +111,19 @@ struct
     let box = { state = No_mail } in
     let push v =
       match box.state with
-	| Exn e ->
-            ()
 	| No_mail ->
 	    let q = Queue.create () in
 	    Queue.push v q;
 	    box.state <- Full q
 	| Waiting wakener ->
             box.state <- No_mail;
-	    (match v with
-	       | `Data v -> wakeup wakener (Some v)
-               | `End_of_stream -> wakeup wakener None
-	       | `Exn e -> wakeup_exn wakener e)
+            wakeup wakener v
 	| Full q ->
 	    Queue.push v q
     in
-    (push, box)
+    (box, push)
 
   let pop b = match b.state with
-    | Exn e ->
-        fail e
     | No_mail ->
 	let waiter, wakener = wait () in
 	b.state <- Waiting wakener;
@@ -147,15 +135,12 @@ struct
     | Full q ->
 	let v = Queue.take q in
 	if Queue.is_empty q then b.state <- No_mail;
-	match v with
-	  | `Data v -> return (Some v)
-          | `End_of_stream -> return None
-	  | `Exn e -> fail e
+        return v
 end
 
-let push_stream () =
-  let push, box = EQueue.create () in
-  (push, from (fun () -> EQueue.pop box))
+let create () =
+  let box, push = EQueue.create () in
+  (from (fun () -> EQueue.pop box), push)
 
 let push_clones wa x =
   for i = 0 to Weak.length wa - 1 do

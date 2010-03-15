@@ -53,8 +53,8 @@ let suite = suite "lwt_stream" [
 
   test "clone 2"
     (fun () ->
-       let push, stream1 = Lwt_stream.push_stream () in
-       push (`Data 1);
+       let stream1, push = Lwt_stream.create () in
+       push (Some 1);
        let stream2 = Lwt_stream.clone stream1 in
        let x1_1 = poll (Lwt_stream.next stream1) in
        let x1_2 = poll (Lwt_stream.next stream1) in
@@ -62,19 +62,22 @@ let suite = suite "lwt_stream" [
        let x2_2 = poll (Lwt_stream.next stream2) in
        return ([x1_1;x1_2;x2_1;x2_2] = [Some 1;None;Some 1;None]));
 
-  test "push_stream"
+  test "create"
     (fun () ->
-       let push, stream = Lwt_stream.push_stream () in
-       push (`Data 1);
-       push (`Data 2);
-       push (`Data 3);
-       push `End_of_stream;
+       let stream, push = Lwt_stream.create () in
+       push (Some 1);
+       push (Some 2);
+       push (Some 3);
+       push None;
        lwt l = Lwt_stream.to_list stream in
-       let result = l = [1; 2; 3] in
-       let push, stream = Lwt_stream.push_stream () in
-       push (`Exn Exit);
-       let t = Lwt_stream.get stream in
-       return (result && Lwt.state t = Fail Exit));
+       return (l = [1; 2; 3]));
+
+  test "create 2"
+    (fun () ->
+       let stream, push = Lwt_stream.create () in
+       push None;
+       let t = Lwt_stream.next stream in
+       return (Lwt.state t = Fail Lwt_stream.Empty));
 
   test "get_while"
     (fun () ->
@@ -101,33 +104,33 @@ let suite = suite "lwt_stream" [
 
   test "get_available"
     (fun () ->
-       let push, stream = Lwt_stream.push_stream () in
-       push (`Data 1);
-       push (`Data 2);
-       push (`Data 3);
+       let stream, push = Lwt_stream.create () in
+       push (Some 1);
+       push (Some 2);
+       push (Some 3);
        let l = Lwt_stream.get_available stream in
-       push (`Data 4);
+       push (Some 4);
        lwt x = Lwt_stream.get stream in
        return (l = [1; 2; 3] && x = Some 4));
 
   test "get_available_up_to"
     (fun () ->
-       let push, stream = Lwt_stream.push_stream () in
-       push (`Data 1);
-       push (`Data 2);
-       push (`Data 3);
-       push (`Data 4);
+       let stream, push = Lwt_stream.create () in
+       push (Some 1);
+       push (Some 2);
+       push (Some 3);
+       push (Some 4);
        let l = Lwt_stream.get_available_up_to 2 stream in
        lwt x = Lwt_stream.get stream in
        return (l = [1; 2] && x = Some 3));
 
   test "filter"
     (fun () ->
-       let push, stream = Lwt_stream.push_stream () in
-       push (`Data 1);
-       push (`Data 2);
-       push (`Data 3);
-       push (`Data 4);
+       let stream, push = Lwt_stream.create () in
+       push (Some 1);
+       push (Some 2);
+       push (Some 3);
+       push (Some 4);
        let filtered = Lwt_stream.filter ((=) 3) stream in
        lwt x = Lwt_stream.get filtered in
        let l = Lwt_stream.get_available filtered in
@@ -135,11 +138,11 @@ let suite = suite "lwt_stream" [
 
   test "filter_map"
     (fun () ->
-       let push, stream = Lwt_stream.push_stream () in
-       push (`Data 1);
-       push (`Data 2);
-       push (`Data 3);
-       push (`Data 4);
+       let stream, push = Lwt_stream.create () in
+       push (Some 1);
+       push (Some 2);
+       push (Some 3);
+       push (Some 4);
        let filtered = Lwt_stream.filter_map (function 3 ->  Some "3" | _ -> None ) stream in
        lwt x = Lwt_stream.get filtered in
        let l = Lwt_stream.get_available filtered in
@@ -147,10 +150,10 @@ let suite = suite "lwt_stream" [
 
   test "last_new"
     (fun () ->
-       let push, stream = Lwt_stream.push_stream () in
-       push (`Data 1);
-       push (`Data 2);
-       push (`Data 3);
+       let stream, push = Lwt_stream.create () in
+       push (Some 1);
+       push (Some 2);
+       push (Some 3);
        lwt x = Lwt_stream.last_new stream in
        return (x = 3));
 ]

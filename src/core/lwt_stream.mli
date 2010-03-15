@@ -39,8 +39,8 @@ val from : (unit -> 'a option Lwt.t) -> 'a t
       called each time more input is needed, and the stream ends when
       [f] returns [None]. *)
 
-val push_stream : unit -> ([ `Data of 'a | `End_of_stream | `Exn of exn ] -> unit) * 'a t
-  (** [push_stream ()] returns a new stream and a push function *)
+val create : unit -> 'a t * ('a option -> unit)
+  (** [create ()] returns a new stream and a push function *)
 
 val of_list : 'a list -> 'a t
   (** [of_list l] creates a stream returns all elements of [l] *)
