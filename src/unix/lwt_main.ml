@@ -27,21 +27,6 @@ type current_time = float Lazy.t
 type select = fd_set -> fd_set -> fd_set -> float option -> current_time * fd_set * fd_set * fd_set
 
 let select_filters = Lwt_sequence.create ()
-let fast_sleepers = Lwt_sequence.create ()
-
-let fast_yield () =
-  let waiter, wakener = task () in
-  let node = Lwt_sequence.add_r wakener fast_sleepers in
-  on_cancel waiter (fun () -> Lwt_sequence.remove node);
-  waiter
-
-let rec wakeup_fast_sleepers () =
-  match Lwt_sequence.take_opt_l fast_sleepers with
-    | None ->
-        ()
-    | Some wakener ->
-        wakeup wakener ();
-        wakeup_fast_sleepers ()
 
 let min_timeout a b = match a, b with
   | None, b -> b
@@ -81,7 +66,7 @@ let default_select set_r set_w set_e timeout =
   (Lazy.lazy_from_fun Unix.gettimeofday, set_r, set_w, set_e)
 
 let default_iteration () =
-  wakeup_fast_sleepers ();
+  Lwt.wakeup_paused ();
   ignore (apply_filters default_select [] [] [] None)
 
 let main_loop_iteration = ref default_iteration

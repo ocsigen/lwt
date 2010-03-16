@@ -112,6 +112,24 @@ let limit f event =
   in
   React.E.select [event1; event2]
 
+let stop_from wakener () =
+  wakeup wakener None
+
+let from f =
+  let event, push = React.E.create () in
+  let abort_waiter, abort_wakener = Lwt.wait () in
+  let rec loop () =
+    select [f () >|= (fun x -> Some x); abort_waiter] >>= function
+      | Some v ->
+          push v;
+          loop ()
+      | None ->
+          React.E.stop event;
+          return ()
+  in
+  ignore_result (pause () >>= loop);
+  with_finaliser (stop_from abort_wakener) event
+
 module EQueue :
 sig
   type 'a t
@@ -171,10 +189,6 @@ let to_stream event =
 let stop_stream wakener () =
   wakeup wakener None
 
-(* Problem to fix:
-
-   of_stream start immediatly the loop, so first elements are dropped.
-*)
 let of_stream stream =
   let event, push = React.E.create () in
   let abort_waiter, abort_wakener = Lwt.wait () in
@@ -187,7 +201,7 @@ let of_stream stream =
           React.E.stop event;
           return ()
   in
-  ignore_result (loop ());
+  ignore_result (pause () >>= loop);
   with_finaliser (stop_stream abort_wakener) event
 
 (* +-----------------------------------------------------------------+

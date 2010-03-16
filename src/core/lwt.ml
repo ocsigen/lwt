@@ -574,3 +574,19 @@ let state t = match !(repr t) with
   | Repr _ -> assert false
 
 include State
+
+let paused = Lwt_sequence.create ()
+
+let pause () =
+  let waiter, wakener = task () in
+  let node = Lwt_sequence.add_r wakener paused in
+  on_cancel waiter (fun () -> Lwt_sequence.remove node);
+  waiter
+
+let rec wakeup_paused () =
+  match Lwt_sequence.take_opt_l paused with
+    | None ->
+        ()
+    | Some wakener ->
+        wakeup wakener ();
+        wakeup_paused ()

@@ -99,4 +99,27 @@ let suite = suite "lwt_event" [
        Gc.full_major ();
        push 1;
        return (!l = []));
+
+  test "of_stream"
+    (fun () ->
+       let stream, push = Lwt_stream.create () in
+       let l = ref [] in
+       let event = React.E.map (fun x -> l := x :: !l) (Lwt_event.of_stream stream) in
+       ignore event;
+       push (Some 1);
+       push (Some 2);
+       push (Some 3);
+       Lwt.wakeup_paused ();
+       return (!l = [3; 2; 1]));
+
+  test "of_stream (gc)"
+    (fun () ->
+       let b = ref false in
+       let f _ = b := true in
+       let stream, push = Lwt_stream.create () in
+       Gc.finalise f stream;
+       let _ = Lwt_event.of_stream stream in
+       Lwt.wakeup_paused ();
+       Gc.full_major ();
+       return !b);
 ]

@@ -184,6 +184,17 @@ val protected : 'a t -> 'a t
       as [thread] except that cancelling it does not cancel
       [thread]. *)
 
+(** {6 Pause} *)
+
+val pause : unit -> unit t
+  (** [pause ()] is a sleeping thread which is wake up on the next
+      call to {!wakeup_paused}. A thread created with [pause] can be
+      canceled. *)
+
+val wakeup_paused : unit -> unit
+  (** [wakeup_paused ()] wakes up all threads which suspended
+      themselves with {!pause}. *)
+
 (**/**)
 
 (* The functions below are probably not useful for the casual user.

@@ -67,7 +67,7 @@ let select result glib_poll_fds glib_poll_fds_count glib_timeout set_r set_w set
 
 let select_wrapper glib_poll_fds glib_poll_fds_count glib_timeout =
   let result = ref 0 in
-  Lwt_main.wakeup_fast_sleepers ();
+  Lwt.wakeup_paused ();
   ignore (Lwt_main.apply_filters (select result glib_poll_fds glib_poll_fds_count glib_timeout) [] [] [] None);
   !result
 

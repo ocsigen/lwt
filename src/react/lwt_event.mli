@@ -38,9 +38,17 @@ val limit : (unit -> unit Lwt.t) -> 'a React.event -> 'a React.event
       For example, to limit the rate of an event to 1 per second you
       can use: [limit (fun () -> Lwt_unix.sleep 1.0) event]. *)
 
+val from : (unit -> 'a Lwt.t) -> 'a React.event
+  (** [from f] creates an event which occurs each [f ()] returns a
+      value. If [f] raises an exception, the event is just stopped. *)
+
 val to_stream : 'a React.event -> 'a Lwt_stream.t
   (** Creates a stream holding all values occurring on the given
       event *)
+
+val of_stream : 'a Lwt_stream.t -> 'a React.event
+  (** [of_stream stream] creates an event which occurs each time a
+      value is available on the stream. *)
 
 (** {6 Threaded versions of React transformation functions} *)
 

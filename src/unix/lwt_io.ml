@@ -254,7 +254,7 @@ let deepest_wrapper ch =
   loop ch.main
 
 let auto_flush oc =
-  lwt () = Lwt_main.fast_yield () in
+  lwt () = Lwt.pause () in
   let wrapper = deepest_wrapper oc in
   match wrapper.state with
     | Busy_primitive ->

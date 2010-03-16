@@ -46,10 +46,6 @@ val exit_hooks : (unit -> unit Lwt.t) Lwt_sequence.t
 val at_exit : (unit -> unit Lwt.t) -> unit
   (** [at_exit hook] adds hook at the left of [exit_hooks]*)
 
-val fast_yield : unit -> unit Lwt.t
-  (** [fast_yield ()] is similar to {!Lwt_unix.yield} except that it
-      resume earlier. It resumes before entering the main loop. *)
-
 (** {6 Low-level control of event loop} *)
 
 (** The rest of this file is for advanced users. You must have a good
@@ -61,12 +57,11 @@ val fast_yield : unit -> unit Lwt.t
       asynchronous IOs.
     - replace the default main-loop implementation (which is just
       a wrapper around select) by another one.
-*)
 
-val wakeup_fast_sleepers : unit -> unit
-  (** [wakeup_fast_sleepers ()] wakeups all threads that have suspend
-      themselves with {!fast_yield}. This function must be called
-      before collecting any sources. *)
+    Note that {!Lwt.wakeup_paused} must be called before collecting
+    sources of event and before doing the blocking select or
+    equivalent.
+*)
 
 type fd_set = Unix.file_descr list
     (** A set of file-descriptors *)
