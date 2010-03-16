@@ -43,6 +43,27 @@ let suite = suite "lwt_event" [
        lwt l = Lwt_stream.nget 3 stream in
        return (l = [1; 2; 3]));
 
+  test "with_finaliser"
+    (fun () ->
+       let b = ref false in
+       let f () = b := true in
+       let ev, push = React.E.create () in
+       let _ = Lwt_event.with_finaliser f ev in
+       Gc.full_major ();
+       return !b);
+
+  test "with_finaliser 2"
+    (fun () ->
+       let b = ref true in
+       let f () = b := false in
+       let ev, push = React.E.create () in
+       let ev = Lwt_event.with_finaliser f ev in
+       Gc.full_major ();
+       let thread = Lwt_event.next ev in
+       push 1;
+       lwt n = thread in
+       return (n = 1 && !b));
+
   test "map_s"
     (fun () ->
        let l = ref [] in

@@ -22,6 +22,10 @@
 
 open Lwt
 
+(* +-----------------------------------------------------------------+
+   | Notifiers                                                       |
+   +-----------------------------------------------------------------+ *)
+
 type notifier = unit React.signal Lwt_sequence.node
 
 let notifiers = Lwt_sequence.create ()
@@ -48,6 +52,17 @@ let always_notify_p f signal =
 
 let always_notify_s f signal =
   ignore (notify_s f signal)
+
+(* +-----------------------------------------------------------------+
+   | Lwt-specific utilities                                          |
+   +-----------------------------------------------------------------+ *)
+
+let finalise f _ = f ()
+
+let with_finaliser f signal =
+  let r = ref () in
+  Gc.finalise (finalise f) r;
+  React.S.map (fun x -> ignore r; x) signal
 
 let limit ?eq f signal =
   let event1, push1 = React.E.create () in
@@ -80,6 +95,10 @@ let limit ?eq f signal =
       (React.S.changes signal)
   in
   React.S.hold ?eq (React.S.value signal) (React.E.select [event1; event2])
+
+(* +-----------------------------------------------------------------+
+   | Signal transofrmations                                          |
+   +-----------------------------------------------------------------+ *)
 
 let map_s ?eq f initial signal =
   React.S.hold ?eq initial (Lwt_event.map_s f (React.S.changes signal))

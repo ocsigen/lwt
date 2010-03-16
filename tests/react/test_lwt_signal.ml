@@ -1,6 +1,6 @@
 (* Lightweight thread library for Objective Caml
  * http://www.ocsigen.org/lwt
- * Module Main
+ * Module Test_lwt_signal
  * Copyright (C) 2009 Jérémie Dimino
  *
  * This program is free software; you can redistribute it and/or modify
@@ -20,7 +20,25 @@
  * 02111-1307, USA.
  *)
 
-Test.run "react" [
-  Test_lwt_event.suite;
-  Test_lwt_signal.suite;
+open Test
+open Lwt
+
+let suite = suite "lwt_signal" [
+  test "with_finaliser"
+    (fun () ->
+       let b = ref false in
+       let f () = b := true in
+       let signal, set = React.S.create 0 in
+       let _ = Lwt_signal.with_finaliser f signal in
+       Gc.full_major ();
+       return !b);
+
+  test "with_finaliser 2"
+    (fun () ->
+       let b = ref true in
+       let f () = b := false in
+       let signal, set = React.S.create 0 in
+       let signal = Lwt_signal.with_finaliser f signal in
+       Gc.full_major ();
+       return (React.S.value signal = 0 && !b));
 ]

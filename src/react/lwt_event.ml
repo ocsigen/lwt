@@ -22,6 +22,10 @@
 
 open Lwt
 
+(* +-----------------------------------------------------------------+
+   | Notifiers                                                       |
+   +-----------------------------------------------------------------+ *)
+
 type notifier = unit React.event Lwt_sequence.node
 
 let notifiers = Lwt_sequence.create ()
@@ -49,7 +53,18 @@ let always_notify_p f event =
 let always_notify_s f event =
   ignore (notify_s f event)
 
-let _disable n _ = disable n
+(* +-----------------------------------------------------------------+
+   | Lwt-specific utilities                                          |
+   +-----------------------------------------------------------------+ *)
+
+let finalise f _ = f ()
+
+let with_finaliser f event =
+  let r = ref () in
+  Gc.finalise (finalise f) r;
+  React.E.map (fun x -> ignore r; x) event
+
+let stop_next notifier _ = disable notifier
 
 let next ev =
   let waiter, wakener = Lwt.task () in
@@ -60,28 +75,10 @@ let next ev =
        Lwt.wakeup wakener x)
     (React.E.once ev)
   in
-  stop := _disable notifier;
-  Lwt.on_cancel waiter (_disable notifier);
-  Gc.finalise (_disable notifier) waiter;
+  stop := stop_next notifier;
+  Lwt.on_cancel waiter (stop_next notifier);
+  Gc.finalise (stop_next notifier) waiter;
   waiter
-
-let from f =
-  let quit_waiter, quit_wakener = Lwt.wait () in
-  let event, send = React.E.create () in
-  let rec loop () =
-    Lwt.select [quit_waiter; f () >|= (fun x -> `Value x)] >>= function
-      | `Quit ->
-          return ()
-      | `Value x ->
-          send x;
-          loop ()
-  in
-  ignore (loop ());
-  let stop = lazy(React.E.stop event; Lwt.wakeup quit_wakener `Quit) in
-  (object
-     method stop = Lazy.force stop
-     method event = event
-   end)
 
 let limit f event =
   let event1, push1 = React.E.create () in
@@ -171,6 +168,32 @@ let to_stream event =
   let box = EQueue.create event in
   Lwt_stream.from (fun () -> EQueue.pop box)
 
+let stop_stream wakener () =
+  wakeup wakener None
+
+(* Problem to fix:
+
+   of_stream start immediatly the loop, so first elements are dropped.
+*)
+let of_stream stream =
+  let event, push = React.E.create () in
+  let abort_waiter, abort_wakener = Lwt.wait () in
+  let rec loop () =
+    select [Lwt_stream.get stream.get; abort_waiter] >>= function
+      | Some value ->
+          push value;
+          loop ()
+      | None ->
+          React.E.stop event;
+          return ()
+  in
+  ignore_result (loop ());
+  with_finaliser (stop_stream abort_wakener) event
+
+(* +-----------------------------------------------------------------+
+   | Event transofrmations                                           |
+   +-----------------------------------------------------------------+ *)
+
 let discard _ = None
 
 let map_s f event =
@@ -179,7 +202,7 @@ let map_s f event =
   let dummy =
     React.E.fmap discard
       (React.E.map (fun x ->
-                      ignore begin
+                      ignore_result begin
                         Lwt_mutex.with_lock mutex
                           (fun () ->
                              lwt x = f x in
@@ -194,7 +217,7 @@ let map_p f event =
   let dummy =
     React.E.fmap discard
       (React.E.map (fun x ->
-                      ignore begin
+                      ignore_result begin
                         lwt x = f x in
                         push' x;
                         return ()

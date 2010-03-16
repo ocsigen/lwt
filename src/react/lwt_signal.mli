@@ -22,13 +22,20 @@
 
 (** Signals utilities *)
 
-(** {6 Utilities} *)
+(** {6 Lwt-specific utilities} *)
+
+val with_finaliser : (unit -> unit) -> 'a React.signal -> 'a React.signal
+  (** [with_finaliser f signal] returns a signal [signal'] which
+      behave as [signal], except that [f] is called when [signal'] is
+      garbage collected. *)
 
 val limit : ?eq : ('a -> 'a -> bool) -> (unit -> unit Lwt.t) -> 'a React.signal -> 'a React.signal
   (** [limit f signal] limits the rate of [signal] update with [f].
 
       For example, to limit it to 1 per second, you can use: [limit
       (fun () -> Lwt_unix.sleep 1.0) signal]. *)
+
+(** {6 Threaded versions of React transformation functions} *)
 
 val map_s : ?eq : ('b -> 'b -> bool) -> ('a -> 'b Lwt.t) -> 'b -> 'a React.signal -> 'b React.signal
   (** [map_s ?eq f i s] is the signal [s] transformed by the function

@@ -22,15 +22,15 @@
 
 (** Events utilities *)
 
-(** {6 Utilities} *)
+(** {6 Lwt-specific utilities} *)
+
+val with_finaliser : (unit -> unit) -> 'a React.event -> 'a React.event
+  (** [with_finaliser f event] returns an event [event'] which behave
+      as [event], except that [f] is called when [event'] is garbage
+      collected. *)
 
 val next : 'a React.event -> 'a Lwt.t
   (** [next ev] returns the next occurrence of [ev] *)
-
-val from : (unit -> 'a Lwt.t) -> < event : 'a React.event; stop : unit >
-  (** [from f] return the event which occurs each time [f] returns a
-      value. Calls to [f] are serialised. The [stop] method stops
-      the monitoring of [f]. *)
 
 val limit : (unit -> unit Lwt.t) -> 'a React.event -> 'a React.event
   (** [limit f event] limits the rate of [event] with [f].
@@ -41,6 +41,8 @@ val limit : (unit -> unit Lwt.t) -> 'a React.event -> 'a React.event
 val to_stream : 'a React.event -> 'a Lwt_stream.t
   (** Creates a stream holding all values occurring on the given
       event *)
+
+(** {6 Threaded versions of React transformation functions} *)
 
 val map_s : ('a -> 'b Lwt.t) -> 'a React.event -> 'b React.event
   (** [map_s f e] is the same as [React.E.map] except that [f] may
