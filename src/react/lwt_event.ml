@@ -153,7 +153,8 @@ struct
 
   let pop b = match b.state with
     | No_mail ->
-	let waiter, wakener = wait () in
+	let waiter, wakener = task () in
+        Lwt.on_cancel waiter (fun () -> b.state <- No_mail);
 	b.state <- Waiting wakener;
 	waiter
     | Waiting _ ->
