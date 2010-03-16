@@ -42,4 +42,40 @@ let suite = suite "lwt_event" [
        push 3;
        lwt l = Lwt_stream.nget 3 stream in
        return (l = [1; 2; 3]));
+
+  test "map_s"
+    (fun () ->
+       let l = ref [] in
+       let event, push = React.E.create () in
+       let event' = Lwt_event.map_s (fun x -> l := x :: !l; return ()) event in
+       ignore event';
+       push 1;
+       return (!l = [1]));
+
+  test "map_s (gc)"
+    (fun () ->
+       let l = ref [] in
+       let event, push = React.E.create () in
+       let _ = Lwt_event.map_s (fun x -> l := x :: !l; return ()) event in
+       Gc.full_major ();
+       push 1;
+       return (!l = []));
+
+  test "map_p"
+    (fun () ->
+       let l = ref [] in
+       let event, push = React.E.create () in
+       let event' = Lwt_event.map_p (fun x -> l := x :: !l; return ()) event in
+       ignore event';
+       push 1;
+       return (!l = [1]));
+
+  test "map_p (gc)"
+    (fun () ->
+       let l = ref [] in
+       let event, push = React.E.create () in
+       let _ = Lwt_event.map_p (fun x -> l := x :: !l; return ()) event in
+       Gc.full_major ();
+       push 1;
+       return (!l = []));
 ]

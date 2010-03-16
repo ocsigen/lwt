@@ -24,11 +24,16 @@
 
 (** {6 Utilities} *)
 
-val limit : (unit -> unit Lwt.t) -> 'a React.signal -> 'a React.signal
+val limit : ?eq : ('a -> 'a -> bool) -> (unit -> unit Lwt.t) -> 'a React.signal -> 'a React.signal
   (** [limit f signal] limits the rate of [signal] update with [f].
 
       For example, to limit it to 1 per second, you can use: [limit
       (fun () -> Lwt_unix.sleep 1.0) signal]. *)
+
+val map_s : ?eq : ('b -> 'b -> bool) -> ('a -> 'b Lwt.t) -> 'b -> 'a React.signal -> 'b React.signal
+  (** [map_s ?eq f i s] is the signal [s] transformed by the function
+      [f], which may yield. [i] is the initial value of the returned
+      signal. *)
 
 (** {6 Notification} *)
 

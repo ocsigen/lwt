@@ -49,7 +49,7 @@ let always_notify_p f signal =
 let always_notify_s f signal =
   ignore (notify_s f signal)
 
-let limit f signal =
+let limit ?eq f signal =
   let event1, push1 = React.E.create () in
   let sleep = ref (f ()) and stop = ref None in
   let event2 =
@@ -79,4 +79,7 @@ let limit f signal =
          end)
       (React.S.changes signal)
   in
-  React.S.hold (React.S.value signal) (React.E.select [event1; event2])
+  React.S.hold ?eq (React.S.value signal) (React.E.select [event1; event2])
+
+let map_s ?eq f initial signal =
+  React.S.hold ?eq initial (Lwt_event.map_s f (React.S.changes signal))

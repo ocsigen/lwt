@@ -39,8 +39,16 @@ val limit : (unit -> unit Lwt.t) -> 'a React.event -> 'a React.event
       can use: [limit (fun () -> Lwt_unix.sleep 1.0) event]. *)
 
 val to_stream : 'a React.event -> 'a Lwt_stream.t
-  (** Creates a stream holding all values occuring on the given
-o      event *)
+  (** Creates a stream holding all values occurring on the given
+      event *)
+
+val map_s : ('a -> 'b Lwt.t) -> 'a React.event -> 'b React.event
+  (** [map_s f e] is the same as [React.E.map] except that [f] may
+      yield. The order of events is conserved. *)
+
+val map_p: ('a -> 'b Lwt.t) -> 'a React.event -> 'b React.event
+  (** [map_p f e] is the same as [map_s f e] except that the order of
+      events may be changed *)
 
 (** {6 Notification} *)
 

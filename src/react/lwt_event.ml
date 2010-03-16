@@ -170,3 +170,35 @@ end
 let to_stream event =
   let box = EQueue.create event in
   Lwt_stream.from (fun () -> EQueue.pop box)
+
+let discard _ = None
+
+let map_s f event =
+  let event', push' = React.E.create () in
+  let mutex = Lwt_mutex.create () in
+  let dummy =
+    React.E.fmap discard
+      (React.E.map (fun x ->
+                      ignore begin
+                        Lwt_mutex.with_lock mutex
+                          (fun () ->
+                             lwt x = f x in
+                             push' x;
+                             return ())
+                      end) event)
+  in
+  React.E.select [event'; dummy]
+
+let map_p f event =
+  let event', push' = React.E.create () in
+  let dummy =
+    React.E.fmap discard
+      (React.E.map (fun x ->
+                      ignore begin
+                        lwt x = f x in
+                        push' x;
+                        return ()
+                      end) event)
+  in
+  React.E.select [event'; dummy]
+
