@@ -179,7 +179,7 @@ let of_stream stream =
   let event, push = React.E.create () in
   let abort_waiter, abort_wakener = Lwt.wait () in
   let rec loop () =
-    select [Lwt_stream.get stream.get; abort_waiter] >>= function
+    select [Lwt_stream.get stream; abort_waiter] >>= function
       | Some value ->
           push value;
           loop ()
