@@ -380,10 +380,11 @@ let _ =
                              (List.map
                                 (fun lib ->
                                    if lib.have then
-                                     List.filter (function
-                                                    | "Lwt_chan" | "Lwt_util" | "Simple_top" -> false
-                                                    | s -> not (String.is_prefix "private" s))
-                                       (string_list_of_file (sprintf "src/%s/lwt_%s.mllib" lib.name lib.name))
+                                     List.map (sprintf "src/%s/%s\n" lib.name)
+                                       (List.filter (function
+                                                       | "Lwt_chan" | "Lwt_util" -> false
+                                                       | s -> not (String.is_prefix "private" s))
+                                          (string_list_of_file (sprintf "src/%s/lwt_%s.mllib" lib.name lib.name)))
                                    else
                                      [])
                                 libraries)
