@@ -52,13 +52,34 @@ val of_stream : 'a Lwt_stream.t -> 'a React.event
 
 (** {6 Threaded versions of React transformation functions} *)
 
-val map_s : ('a -> 'b Lwt.t) -> 'a React.event -> 'b React.event
-  (** [map_s f e] is the same as [React.E.map] except that [f] may
-      yield. The order of events is conserved. *)
+(** The following functions behave as their [React] counterpart,
+    except that they takes functions that may yield.
 
+    As usual the [_s] suffix is used when calls are serialized, and
+    the [_p] suffix is used when they are not.
+
+    Note that [*_p] functions may not preserve event order.
+*)
+
+val app_s : ('a -> 'b Lwt.t) React.event -> 'a React.event -> 'b React.event
+val app_p : ('a -> 'b Lwt.t) React.event -> 'a React.event -> 'b React.event
+
+val map_s : ('a -> 'b Lwt.t) -> 'a React.event -> 'b React.event
 val map_p: ('a -> 'b Lwt.t) -> 'a React.event -> 'b React.event
-  (** [map_p f e] is the same as [map_s f e] except that the order of
-      events may be changed *)
+
+val filter_s : ('a -> bool Lwt.t) -> 'a React.event -> 'a React.event
+val filter_p : ('a -> bool Lwt.t) -> 'a React.event -> 'a React.event
+
+val fmap_s : ('a -> 'b option Lwt.t) -> 'a React.event -> 'b React.event
+val fmap_p : ('a -> 'b option Lwt.t) -> 'a React.event -> 'b React.event
+
+val diff_s : ('a -> 'a -> 'b Lwt.t) -> 'a React.event -> 'b React.event
+
+val accum_s : ('a -> 'a Lwt.t) React.event -> 'a -> 'a React.event
+
+val fold_s : ('a -> 'b -> 'a Lwt.t) -> 'a -> 'b React.event -> 'a React.event
+
+val merge_s : ('a -> 'b -> 'a Lwt.t) -> 'a -> 'b React.event list -> 'a React.event
 
 (** {6 Notification} *)
 
