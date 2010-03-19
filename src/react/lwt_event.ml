@@ -119,7 +119,7 @@ let from f =
   let event, push = React.E.create () in
   let abort_waiter, abort_wakener = Lwt.wait () in
   let rec loop () =
-    select [f () >|= (fun x -> Some x); abort_waiter] >>= function
+    pick [f () >|= (fun x -> Some x); abort_waiter] >>= function
       | Some v ->
           push v;
           loop ()
@@ -193,7 +193,7 @@ let of_stream stream =
   let event, push = React.E.create () in
   let abort_waiter, abort_wakener = Lwt.wait () in
   let rec loop () =
-    select [Lwt_stream.get stream; abort_waiter] >>= function
+    pick [Lwt_stream.get stream; abort_waiter] >>= function
       | Some value ->
           push value;
           loop ()

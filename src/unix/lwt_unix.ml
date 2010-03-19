@@ -74,7 +74,7 @@ exception Timeout
 
 let timeout d = sleep d >> Lwt.fail Timeout
 
-let with_timeout d f = Lwt.select [timeout d; Lwt.apply f ()]
+let with_timeout d f = Lwt.pick [timeout d; Lwt.apply f ()]
 
 let in_the_past now t =
   t = 0. || t <= Lazy.force now

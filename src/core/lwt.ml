@@ -468,10 +468,27 @@ let choose l =
     res
   end
 
-let select l =
+(* Return the nth ready thread, and cancel all others *)
+let rec cancel_and_nth_ready l n =
+  match l with
+    | [] ->
+        assert false
+    | x :: rem ->
+        let x = repr x in
+        match !x with
+          | Sleep _ ->
+              cancel (thread x);
+              nth_ready rem n
+          | _ when n > 0 ->
+              nth_ready rem (n - 1)
+          | _ ->
+              List.iter cancel rem;
+              thread x
+
+let pick l =
   let ready = ready_count l in
   if ready > 0 then
-    nth_ready l (Random.int ready)
+    cancel_and_nth_ready l (Random.int ready)
   else begin
     let res = temp (fun () -> List.iter cancel l) in
     let rec waiter = ref (Some handle_result)

@@ -1,5 +1,6 @@
 ===== 2.0.0+dev =====
 
+  * Rename {{{Lwt.select}}} to {{{Lwt.pick}}}
   * More react helpers:
     ** {{{Lwt_event.next}}}
     ** {{{Lwt_event.limit}}} and {{{Lwt_signal.limit}}}

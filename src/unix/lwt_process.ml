@@ -117,7 +117,7 @@ object(self)
       | Some dt ->
           Lwt.ignore_result begin
             try_lwt
-              lwt _ = Lwt.select [Lwt_unix.timeout dt; w] in
+              lwt _ = Lwt.pick [Lwt_unix.timeout dt; w] in
               return ()
             with
               | Lwt_unix.Timeout ->

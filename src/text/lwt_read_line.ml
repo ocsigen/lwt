@@ -1124,7 +1124,7 @@ struct
                        let start_date = Unix.time () in
                        (* Animation to make the user happy: *)
                        let rec loop anim =
-                         choose [thread; Lwt_unix.sleep 0.1 >> return `Timeout] >>= function
+                         pick [thread; Lwt_unix.sleep 0.1 >> return `Timeout] >>= function
                            | `Result comp ->
                                last_completion := Some comp.comp_state;
                                if !want_completion then

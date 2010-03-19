@@ -147,14 +147,17 @@ type 'a state =
 val state : 'a t -> 'a state
   (** [state t] returns the state of a thread *)
 
-(** {6 Cancelling threads} *)
+(** {6 Cancelable threads} *)
+
+(** Cancelable threads are the same as regular threads except that
+    they can be canceled. *)
 
 exception Canceled
   (** Canceled threads fails with this exception *)
 
 val task : unit -> 'a t * 'a u
-  (** [task ()] creates a sleeping thread that can be canceled using
-      {!cancel} *)
+  (** [task ()] is the same as [wait ()] except that threads created
+      with [task] can be canceled. *)
 
 val on_cancel : 'a t -> (unit -> unit) -> unit
   (** [on_cancel t f] executes [f] when [t] is canceled. This is the
@@ -162,22 +165,22 @@ val on_cancel : 'a t -> (unit -> unit) -> unit
 
 val cancel : 'a t -> unit
   (** [cancel t] cancels the threads [t]. This means that the deepest
-      sleeping thread created with [task ()] to which [t] is connected
-      is wakeup with the exception {!Canceled}.
+      sleeping thread created with [task] and connected to [t] is
+      wakeup with the exception {!Canceled}.
 
       For example, in the following code:
 
       {[
-        let w = task () in
-        cancel (w >> printl "plop")
+        let waiter, wakener = task () in
+        cancel (waiter >> printl "plop")
       ]}
 
-      [w] will be waked up with {!Canceled}.
+      [waiter] will be waked up with {!Canceled}.
   *)
 
-val select : 'a t list -> 'a t
-  (** [select l] is the same as [choose] but it cancels all sleeping
-      threads when one terminates. *)
+val pick : 'a t list -> 'a t
+  (** [pick l] is the same as [choose], except that it cancels all
+      sleeping threads when one terminates. *)
 
 val protected : 'a t -> 'a t
   (** [protected thread] creates a new cancelable thread which behave

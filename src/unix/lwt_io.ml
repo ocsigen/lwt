@@ -188,7 +188,7 @@ let perform_io ch = match ch.main.state with
                   (size, ch.length - size)
               | Output ->
                   (0, ch.ptr) in
-            lwt n = choose [ch.abort_waiter; perform_io ch.buffer ptr len] in
+            lwt n = pick [ch.abort_waiter; perform_io ch.buffer ptr len] in
             (* Never trust user functions... *)
             if n < 0 || n > len then
               fail (Failure (Printf.sprintf "Lwt_io: invalid result of the [%s] function(request=%d,result=%d)"
@@ -1326,7 +1326,7 @@ let establish_server ?buffer_size sockaddr f =
   let abort_waiter, abort_wakener = wait () in
   let abort_waiter = abort_waiter >> return `Shutdown in
   let rec loop () =
-    select [Lwt_unix.accept sock >|= (fun x -> `Accept x); abort_waiter] >>= function
+    pick [Lwt_unix.accept sock >|= (fun x -> `Accept x); abort_waiter] >>= function
       | `Accept(fd, addr) ->
           (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
           let close = lazy begin
