@@ -196,7 +196,7 @@ let suite = suite "lwt" [
     (fun () ->
        let t,w = task () in
        let t',w' = wait () in
-       let r = select [t;t'] in r <=> Sleep;
+       let r = pick [t;t'] in r <=> Sleep;
        wakeup w' ();
        r <=> Return ();
        t <=> Fail Canceled;
@@ -204,14 +204,14 @@ let suite = suite "lwt" [
 
   test "21"
     (fun () ->
-       select [return ()] <=> Return ();
+       pick [return ()] <=> Return ();
        return true);
 
   test "22"
     (fun () ->
        let t,w = task () in
        let t',w' = wait () in
-       let r = select [t;t'] in
+       let r = pick [t;t'] in
        cancel r;
        r <=> Fail Canceled;
        t <=> Fail Canceled;

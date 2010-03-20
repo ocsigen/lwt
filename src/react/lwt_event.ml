@@ -208,69 +208,108 @@ let of_stream stream =
    | Event transofrmations                                           |
    +-----------------------------------------------------------------+ *)
 
-let discard _ = None
+let run_s event =
+  let event', push' = React.E.create () in
+  let mutex = Lwt_mutex.create () in
+  let dummy =
+    React.E.fmap
+      (fun thread ->
+         ignore_result begin
+           Lwt_mutex.with_lock mutex
+             (fun () ->
+                lwt result = thread in
+                push' result;
+                return ())
+         end;
+         None)
+      event
+  in
+  React.E.select [event'; dummy]
+
+let run_p event =
+  let event', push' = React.E.create () in
+  let dummy =
+    React.E.fmap
+      (fun thread ->
+         ignore_result begin
+           lwt result = thread in
+           push' result;
+           return ()
+         end;
+         None)
+      event
+  in
+  React.E.select [event'; dummy]
 
 let map_s f event =
   let event', push' = React.E.create () in
   let mutex = Lwt_mutex.create () in
   let dummy =
-    React.E.fmap discard
-      (React.E.map (fun x ->
-                      ignore_result begin
-                        Lwt_mutex.with_lock mutex
-                          (fun () ->
-                             lwt x = f x in
-                             push' x;
-                             return ())
-                      end) event)
+    React.E.fmap
+      (fun x ->
+         ignore_result begin
+           Lwt_mutex.with_lock mutex
+             (fun () ->
+                lwt x = f x in
+                push' x;
+                return ())
+         end;
+         None)
+      event
   in
   React.E.select [event'; dummy]
 
 let map_p f event =
   let event', push' = React.E.create () in
   let dummy =
-    React.E.fmap discard
-      (React.E.map (fun x ->
-                      ignore_result begin
-                        lwt x = f x in
-                        push' x;
-                        return ()
-                      end) event)
+    React.E.fmap
+      (fun x ->
+         ignore_result begin
+           lwt x = f x in
+           push' x;
+           return ()
+         end;
+         None)
+      event
   in
   React.E.select [event'; dummy]
 
 let app_s event_f event_x =
-  map_s (fun x -> x) (React.E.app event_f event_x)
+  run_s (React.E.app event_f event_x)
 
 let app_p event_f event_x =
-  map_p (fun x -> x) (React.E.app event_f event_x)
+  run_p (React.E.app event_f event_x)
 
 let filter_s f event =
   let event', push' = React.E.create () in
   let mutex = Lwt_mutex.create () in
   let dummy =
-    React.E.fmap discard
-      (React.E.map (fun x ->
-                      ignore_result begin
-                        Lwt_mutex.with_lock mutex
-                          (fun () ->
-                             f x >>= function
-                               | true -> push' x; return ()
-                               | false -> return ())
-                      end) event)
+    React.E.fmap
+      (fun x ->
+         ignore_result begin
+           Lwt_mutex.with_lock mutex
+             (fun () ->
+                f x >>= function
+                  | true -> push' x; return ()
+                  | false -> return ())
+         end;
+         None)
+      event
   in
   React.E.select [event'; dummy]
 
 let filter_p f event =
   let event', push' = React.E.create () in
   let dummy =
-    React.E.fmap discard
-      (React.E.map (fun x ->
-                      ignore_result begin
-                        f x >>= function
-                          | true -> push' x; return ()
-                          | false -> return ()
-                      end) event)
+    React.E.fmap
+      (fun x ->
+         ignore_result begin
+           f x >>= function
+             | true -> push' x; return ()
+             | false -> return ()
+         end;
+         None)
+      event
   in
   React.E.select [event'; dummy]
 
@@ -278,39 +317,43 @@ let fmap_s f event =
   let event', push' = React.E.create () in
   let mutex = Lwt_mutex.create () in
   let dummy =
-    React.E.fmap discard
-      (React.E.map (fun x ->
-                      ignore_result begin
-                        Lwt_mutex.with_lock mutex
-                          (fun () ->
-                             f x >>= function
-                               | Some x -> push' x; return ()
-                               | None -> return ())
-                      end) event)
+    React.E.fmap
+      (fun x ->
+         ignore_result begin
+           Lwt_mutex.with_lock mutex
+             (fun () ->
+                f x >>= function
+                  | Some x -> push' x; return ()
+                  | None -> return ())
+         end;
+         None)
+      event
   in
   React.E.select [event'; dummy]
 
 let fmap_p f event =
   let event', push' = React.E.create () in
   let dummy =
-    React.E.fmap discard
-      (React.E.map (fun x ->
-                      ignore_result begin
-                        f x >>= function
-                          | Some x -> push' x; return ()
-                          | None -> return ()
-                      end) event)
+    React.E.fmap
+      (fun x ->
+         ignore_result begin
+           f x >>= function
+             | Some x -> push' x; return ()
+             | None -> return ()
+         end;
+         None)
+      event
   in
   React.E.select [event'; dummy]
 
 let diff_s f event =
-  map_s (fun x -> x) (React.E.diff f event)
+  run_s (React.E.diff f event)
 
 let accum_s event_f initial =
-  map_s (fun x -> x) (React.E.accum (React.E.map (=<<) event_f) (return initial))
+  run_s (React.E.accum (React.E.map (=<<) event_f) (return initial))
 
 let fold_s f acc event =
-  map_s (fun x -> x) (React.E.fold (fun t x -> t >>= fun acc -> f acc x) (return acc) event)
+  run_s (React.E.fold (fun t x -> t >>= fun acc -> f acc x) (return acc) event)
 
 let merge_s f acc events =
-  map_s (fun x -> x) (React.E.merge (fun t x -> t >>= fun acc -> f acc x) (return acc) events)
+  run_s (React.E.merge (fun t x -> t >>= fun acc -> f acc x) (return acc) events)

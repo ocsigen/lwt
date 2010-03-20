@@ -100,5 +100,101 @@ let limit ?eq f signal =
    | Signal transofrmations                                          |
    +-----------------------------------------------------------------+ *)
 
+let run_s ?eq initial signal =
+  let signal', set' = React.S.create initial in
+  let mutex = Lwt_mutex.create () in
+  let dummy =
+    React.S.map
+      (fun thread ->
+         ignore_result begin
+           Lwt_mutex.with_lock mutex
+             (fun () ->
+                lwt result = thread in
+                set' result;
+                return ())
+         end)
+      signal
+  in
+  React.S.l2 ?eq (fun x y -> x) signal' dummy
+
+let app_s ?eq signal_f initial signal_x =
+  run_s ?eq initial (React.S.app signal_f signal_x)
+
 let map_s ?eq f initial signal =
-  React.S.hold ?eq initial (Lwt_event.map_s f (React.S.changes signal))
+  let signal', set' = React.S.create initial in
+  let mutex = Lwt_mutex.create () in
+  let dummy =
+    React.S.map
+      (fun x ->
+         ignore_result begin
+           Lwt_mutex.with_lock mutex
+             (fun () ->
+                lwt x = f x in
+                set' x;
+                return ())
+         end)
+      signal
+  in
+  React.S.l2 ?eq (fun x y -> x) signal' dummy
+
+let filter_s ?eq f initial signal =
+  let signal', set' = React.S.create initial in
+  let mutex = Lwt_mutex.create () in
+  let dummy =
+    React.S.map
+      (fun x ->
+         ignore_result begin
+           Lwt_mutex.with_lock mutex
+             (fun () ->
+                f x >>= function
+                  | true -> set' x; return ()
+                  | false -> return ())
+         end)
+      signal
+  in
+  React.S.l2 ?eq (fun x y -> x) signal' dummy
+
+let fmap_s ?eq f initial signal =
+  let signal', set' = React.S.create initial in
+  let mutex = Lwt_mutex.create () in
+  let dummy =
+    React.S.map
+      (fun x ->
+         ignore_result begin
+           Lwt_mutex.with_lock mutex
+             (fun () ->
+                f x >>= function
+                  | Some x -> set' x; return ()
+                  | None -> return ())
+         end)
+      signal
+  in
+  React.S.l2 ?eq (fun x y -> x) signal' dummy
+
+let diff_s f signal =
+  Lwt_event.run_s (React.S.diff f signal)
+
+let sample_s f event signal =
+  Lwt_event.run_s (React.S.sample f event signal)
+
+let accum_s ?eq event_f initial =
+  run_s ?eq initial (React.S.accum (React.E.map (=<<) event_f) (return initial))
+
+let fold_s ?eq f acc event =
+  run_s ?eq acc (React.S.fold (fun t x -> t >>= fun acc -> f acc x) (return acc) event)
+
+let merge_s ?eq f acc events =
+  run_s ?eq acc (React.S.merge (fun t x -> t >>= fun acc -> f acc x) (return acc) events)
+
+let l1_s ?eq f initial s1 =
+  run_s ?eq initial (React.S.l1 f s1)
+let l2_s ?eq f initial s1 s2 =
+  run_s ?eq initial (React.S.l2 f s1 s2)
+let l3_s ?eq f initial s1 s2 s3 =
+  run_s ?eq initial (React.S.l3 f s1 s2 s3)
+let l4_s ?eq f initial s1 s2 s3 s4 =
+  run_s ?eq initial (React.S.l4 f s1 s2 s3 s4)
+let l5_s ?eq f initial s1 s2 s3 s4 s5 =
+  run_s ?eq initial (React.S.l5 f s1 s2 s3 s4 s5)
+let l6_s ?eq f initial s1 s2 s3 s4 s5 s6 =
+  run_s ?eq initial (React.S.l6 f s1 s2 s3 s4 s5 s6)
