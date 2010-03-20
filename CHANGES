@@ -4,18 +4,20 @@
   * More react helpers:
     ** {{{Lwt_event.next}}}
     ** {{{Lwt_event.limit}}} and {{{Lwt_signal.limit}}}
-    ** {{{LWt_event.from}}}
+    ** {{{Lwt_event.from}}}
   * Adding function {{{Lwt_main.fast_yield}}}
   * Adding unit tests
   * Optimisation of {{{Lwt}}}
   * Adding module {{{Lwt_log}}} for logging
-  * Adding a camlp4 filter for remmoving logging statement or inlining tests
+  * Adding a camlp4 filter for remmoving logging statement or inlining
+    tests
   * Adding module {{{Lwt_daemon}}}
   * Adding function {{{Lwt_unix.recv_msg}}} and {{{Lwt_unix.send_msg}}}
   * Adding function {{{Lwt_unix.wait4}}}
   * Adding function {{{Lwt_io.establish_server}}}
   * Adding module {{{Lwt_list}}}
-  * Enhancement in {{{Lwt_process}}}, it now support redirections and timeouts
+  * Enhancement in {{{Lwt_process}}}, it now support redirections and
+    timeouts
   * Allow to use {{{select}}} on arbitrary high file descriptors
   * More commands and features in {{{Lwt_read_line}}}:
     ** Handle "undo" command
@@ -23,10 +25,12 @@
     ** More edition commands
     ** Completion as you type
     ** Backward search
-  * Enhancement in {{{Lwt_term}}}: more drawing functions and allow to put the terminal into drawing mode
+  * Enhancement in {{{Lwt_term}}}: more drawing functions and allow to
+    put the terminal into drawing mode
   * Optimisation of {{{Lwt_stream}}}
   * Optimisation of {{{Lwt_io.write_char}}} and {{{Lwt_io.read_char}}}
-  * Bugfix of {{{Lwt_stream}}}: two parallel {{{Lwt_stream.get}}} returned the same value
+  * Bugfix of {{{Lwt_stream}}}: two parallel {{{Lwt_stream.get}}}
+    returned the same value
   * Bugfix in Lwt_unix.connect: it returned immediatly on EINPROGRESS
   * Bugfixes in lwt.glib: file descriptors were not monitored correctly
 
