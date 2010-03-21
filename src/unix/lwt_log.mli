@@ -72,7 +72,7 @@ type section
       Section levels are initialised using the [LWT_LOG] environment
       variable, which must contains one or more rules of the form
       [pattern -> level] separated by ";". Where [pattern] is a string
-      that may contains [*].
+      that may contain [*].
 
       For example, if [LWT_LOG] contains:
 
@@ -82,7 +82,7 @@ type section
       ]}
 
       then the level of the section ["access"] is {!Warning} and the
-      level of any section matching ["foo(*)"] is {!Error}.
+      level of any section matching ["foo\(\*\)"] is {!Error}.
 
       If [LWT_LOG] is not defined then the rule ["* -> notice"] is
       used instead. *)

@@ -379,7 +379,7 @@ let _ =
           List.filter_opt
             (fun lib ->
                if lib.have then
-                 Some(sprintf "src/%s/lwt_%s.mllib" lib.name lib.name)
+                 Some(lib_path lib.name "mllib")
                else
                  None)
             libraries;
