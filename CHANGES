@@ -32,10 +32,10 @@
   * Optimisation of {{{Lwt_io.write_char}}} and {{{Lwt_io.read_char}}}
   * Bugfix of {{{Lwt_stream}}}: two parallel {{{Lwt_stream.get}}}
     returned the same value
-  * Bugfix in Lwt_unix.connect: it returned immediatly on EINPROGRESS
-  * Bugfixes in lwt.glib: file descriptors were not monitored correctly
+  * Bugfix in {{{Lwt_unix.connect}}}: it returned immediatly on EINPROGRESS
+  * Bugfixes in {{{Lwt_glib}}}: file descriptors were not monitored correctly
 
-===== 2.0.0 =====
+===== 2.0.0 (2009-10-15) =====
 
   * Adding modules:
     ** {{{Lwt_stream}}}: lwt-aware version of the {{{Stream}}} module
@@ -79,7 +79,7 @@
   * Unix-dependent part is now put in its own archive and findlib
     package.
 
-===== 1.1.0 =====
+===== 1.1.0 (2008-06-25) =====
 
   * Adding module {{{Lwt_pool}}} for creating pools (for example pools
     of connections)
