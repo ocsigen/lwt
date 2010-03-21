@@ -1,7 +1,8 @@
 ===== 2.0.0+dev =====
 
   * Rename {{{Lwt.select}}} to {{{Lwt.pick}}}
-  * Adding module {{{Lwt_condition}}}
+  * Removing module {{{Lwt_monitor}}} in favour of {{{Lwt_mutex}}} and
+    new module {{{Lwt_condition}}}
   * More react helpers:
     ** {{{Lwt_event.next}}}
     ** {{{Lwt_event.limit}}} and {{{Lwt_signal.limit}}}
