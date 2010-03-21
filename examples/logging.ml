@@ -1,22 +1,25 @@
 
-module Log = Lwt_log.Make(struct let section = "test" end)
+(* The logging section for this module: *)
+let section = Lwt_log.Section.make "test"
 
 lwt () =
   (* Enable all logging levels superior from [Info] to [Fatal]: *)
-  Lwt_log.set_level !Lwt_log.default Lwt_log.Info;
+  Lwt_log.Section.set_level section Lwt_log.Info;
 
   (* A message with the default logger: *)
-  lwt () = Lwt_log.log ~level:Lwt_log.Info "this message will appear only on stderr" in
+  lwt () = Lwt_log.log ~section ~level:Lwt_log.Info "this message will appear only on stderr" in
 
-  (* Same as begore, but using [Log]: *)
-  lwt () = Log.info "this one too" in
+  (* Same as begore, but using [Lwt_log.info]: *)
+  lwt () = Lwt_log.info ~section "this one too" in
 
   (* A message to a custom logger, logging simultaneously to [stderr]
      and to the system logger daemon: *)
-  let logger = Lwt_log.merge ~level:Lwt_log.Info
-    [Lwt_log.channel ~level:Lwt_log.Info ~close_mode:`Keep ~channel:Lwt_io.stderr ();
-     Lwt_log.syslog  ~level:Lwt_log.Info ~facility:`User ()] in
-  lwt () = Lwt_log.log ~logger ~level:Lwt_log.Info "this message will appear on stderr and in '/var/log/user.log'" in
+  let logger =
+    Lwt_log.broadcast
+      [Lwt_log.channel ~close_mode:`Keep ~channel:Lwt_io.stderr ();
+       Lwt_log.syslog ~facility:`User ()]
+  in
+  lwt () = Lwt_log.info ~section ~logger "this message will appear on stderr and in '/var/log/user.log'" in
 
   (* Logging of exceptions: *)
   Printexc.record_backtrace true;
@@ -27,4 +30,4 @@ lwt () =
     h ();
     Lwt.return ()
   with exn ->
-    Log.exn exn "h failed with"
+    Lwt_log.exn ~section ~exn "h failed with"

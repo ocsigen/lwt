@@ -21,7 +21,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *)
 
-module Log = Lwt_log.Make(struct let section = "lwt(preemptive)" end)
+let section = Lwt_log.Section.make "lwt(preemptive)"
 
 open Lwt
 open Lwt_io
@@ -47,7 +47,7 @@ let set_max_number_of_threads_queued n =
   max_thread_queued := n
 
 (* The function for logging errors: *)
-let error_log = ref (fun msg -> ignore (Log.error msg))
+let error_log = ref (fun msg -> ignore (Lwt_log.error ~section msg))
 
 (* The total number of preemptive threads currently running: *)
 let threads_count = ref 0

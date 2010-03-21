@@ -23,56 +23,19 @@
 
 (** Logging facility *)
 
-(** This module provides functions to deal with logging in your
-    program. It support:
+(** This module provides functions to deal with logging.
+    It support:
 
     - logging to the syslog daemon
     - logging to a channel (stderr, stdout, ...)
     - logging to a file
     - logging to multiple destination at the same time
-
-    Each logger may accept or drop a message according to its logging
-    {!level}. If a log message is emited with a logging level greater
-    or equal to the {!logger} logging level it is accepted, otherwise
-    it is discarded.
-
-    Here is a simple example on how to log messages:
-
-    {[
-      (* Create a logger which will display messages on [stderr]: *)
-      let logger = Lwt_log.channel ~close_mode:`Keep ~channel:Lwt_io.stderr () in
-
-      (* Now log something: *)
-      Lwt_log.log ~logger ~level:Lwt_log.Info "my pid is: %d" (Unix.getpid ())
-    ]}
-
-    Here is an example on how to compose loggers:
-
-    {[
-      (* Logger which send all messages except debugging message to [stderr] *)
-      let logger_1 = Lwt_log.channel ~close_mode:`Kept ~channel:Lwt_io.stderr ~level:Lwt_log.Info () in
-
-      (* Logger which send all messages to the syslog daemon *)
-      let logger_2 = Lwt_log.syslog () in
-
-      (* Combine the two logger into 1: *)
-      let logger = Lwt_log.merge [logger_1; logger_2] in
-
-      (* This message will be sent to the syslog daemon and stderr: *)
-      Lwt_log.log ~logger ~level:Lwt_log.Info "debug message":
-
-      (* This message will only be sent to the syslog daemon *)
-      Lwt_log.log ~logger ~level:Lwt_log.Debug "debug message"
-    ]}
-
-    The [logger] argument is not mandatory, if you omit it, the
-    {!default} logger will be used instead.
 *)
 
-(** {6 Log levels} *)
+(** {6 Types} *)
 
-(** This determines the importance of the message. The levels are, in
-    order of increasing importance: *)
+(** Type of log levels. A level determines the importance of a
+    message. The levels are, in order of increasing importance: *)
 type level =
   | Debug
       (** Debugging message. They can be automatically removed byt hte
@@ -91,209 +54,222 @@ type level =
       (** A fatal error happened, in most cases the program will end
           after a fatal error. *)
 
-val default_level : level
-  (** The default log level. It is initialised according to the
-      environment variable [LWT_LOG], which must be equal to:
-
-      - a number between [0] and [4]:
-        - [0] for {!Fatal}
-        - [1] for {!Error}
-        - [2] for {!Warning}
-        - [3] for {!Notice}
-        - [4] for {!Info}
-        - [5] for {!Debug}
-      - a level name (case insensitive): "debug", "info", "notice",
-        "warning", "error" or "fatal"
-
-      A level name of "debug" or level number of [5] means that
-      everyhting will be displayed. A level name of {!Fatal} or level
-      number of [0] means that only fatal error messages are
-      displayed.
-
-      If [LWT_LOG] is not defined, then it default to {!Notice}. *)
-
-(** In all the follwing function the optionnal argument [level]
-    default to {!default_level} *)
-
-(** {6 Loggers} *)
-
-(** A logger is responsible for receiving messages and send them to
-    thier destination. *)
-
-exception Logger_closed
-  (** Exception raised when trying to use a closed logger. *)
-
 type logger
-  (** Type of loggers *)
+  (** Type of an logger. An logger is responsible to dispatch messages
+      and store them somewhere.
 
-val make : ?level : level -> output : (level -> string list -> unit Lwt.t) -> close : (unit -> unit Lwt.t) -> unit -> logger
-  (** [make ?level ~output ~close ()] creates a new logger.
+      Lwt provides loggers sending log messages to a file, syslog,
+      ... but you can also create you own logger. *)
 
-      @param output must output a list of lines
-      @param close lust close the logger.
-  *)
+type section
+  (** Each logging message has a section. Sections can be used to
+      structure your logs. For example you can choose different
+      loggers according to the section.
 
-val merge : ?level : level -> logger list -> logger
-  (** [merge ?level loggers] creates a new logger which send messages
-      to all the given loggers. *)
+      Each section carries a level, and messages with a lower log
+      level than than the section level will be dropped.
 
-val close : ?recursive : bool -> logger -> unit Lwt.t
-  (** [close ?recursive logger] closes [logger]. If [recursive] is
-      [true] (the defaults) then all children of [loggers] are closed
-      too. *)
+      Section levels are initialised using the [LWT_LOG] environment
+      variable, which must contains one or more rules of the form
+      [pattern -> level] separated by ";". Where [pattern] is a string
+      that may contains [*].
 
-val default : logger ref
-  (** The default logger. Initially, it sends messages to the standard
-      output for error messages. *)
+      For example, if [LWT_LOG] contains:
 
-val level : logger -> level
-  (** [level logger] returns the logging level of [logger]. All
-      messages with a logging level inferior to this level will be
-      discarded. *)
+      {[
+        access -> warning;
+        foo\(\*\) -> error
+      ]}
 
-val set_level : logger -> level -> unit
-  (** [set_level logger level] sets the logging level of [logger] to
-      [level] *)
+      then the level of the section ["access"] is {!Warning} and the
+      level of any section matching ["foo(*)"] is {!Error}.
 
-(** {6 Predefined loggers} *)
+      If [LWT_LOG] is not defined then the rule ["* -> notice"] is
+      used instead. *)
+
+(** {6 Logging functions} *)
+
+val log : ?section : section -> ?logger : logger -> level : level -> string -> unit Lwt.t
+  (** [log ?section ?logger ~level message] logs a message.
+
+      [section] defaults to {!Section.main}. If [logger] is not
+      specified, then the default one is used instead (see
+      {!default}). *)
+
+val log_f : ?section : section -> ?logger : logger -> level : level -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+  (** [log_f] is the same as [log] except that it takes a format
+      string *)
+
+val exn : ?section : section -> ?logger : logger -> ?level : level -> exn : exn -> string -> unit Lwt.t
+  (** [exn ?section ?logger ?level exn format] logs an exception. If
+      possible the backtrace will also be logged.
+
+      @param level default to {!Error} *)
+
+val exn_f : ?section : section -> ?logger : logger -> ?level : level -> exn : exn -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+  (** [exn_f] is the same as [log] except that it takes a format
+      string *)
+
+(** The following functions are the same as {!log} except that their
+    name determines which level is used.
+
+    For example {!info msg} is the same as {!log ~level:Info msg}.
+*)
+
+val debug : ?section : section -> ?logger : logger -> string -> unit Lwt.t
+val debug_f : ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+
+val info : ?section : section -> ?logger : logger -> string -> unit Lwt.t
+val info_f : ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+
+val notice : ?section : section -> ?logger : logger -> string -> unit Lwt.t
+val notice_f : ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+
+val warning : ?section : section -> ?logger : logger -> string -> unit Lwt.t
+val warning_f : ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+
+val error : ?section : section -> ?logger : logger -> string -> unit Lwt.t
+val error_f : ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+
+val fatal : ?section : section -> ?logger : logger -> string -> unit Lwt.t
+val fatal_f : ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+
+(** Sections *)
+module Section : sig
+  type t = section
+
+  val make : string -> section
+    (** [make name] creates a section with the given name, with level
+        initialised according to the [LWT_LOG] environment variable. *)
+
+  val name : section -> string
+    (** [name section] returns the name of [section] *)
+
+  val main : section
+    (** The main section. It is the section used by default when no
+        one is provided. *)
+
+  val level : section -> level
+    (** [level section] returns the logging level of section *)
+
+  val set_level : section -> level -> unit
+    (** [set_level section] sets the logging level of the given
+        section *)
+end
+
+(** {6 Log templates} *)
 
 type template = string
     (** A template is for generating log messages.
 
-        It may contains varibles of the form [$(var)], where [var] is
-        one of:
+        It is a string which may contains variables of the form
+        [$(var)], where [var] is one of:
 
         - [date] which will be replaced with the current date
         - [name] which will be replaced by the program name
         - [pid] which will be replaced by the pid of the program
         - [message] which will be replaced by the message emited
-        - [level] which will be replaced by the level
+        - [level] which will be replaced by a string representation of
+          the level
+        - [section] which will be replaced by the name of the
+          message's section
+
+        For example:
+        - ["$(name): $(message)"]
+        - ["$(date) $(name)[$(pid)]: $(message)"]
     *)
 
-val render : buffer : Buffer.t -> template : template -> level : level -> message : string -> unit
-  (** Instantiate all variables of the given template. *)
+val render : buffer : Buffer.t -> template : template -> section : section -> level : level -> message : string -> unit
+  (** [render ~buffer ~template ~section ~level ~message] instantiate
+      all variables of [template], and store the result in
+      [buffer]. *)
+
+(** {6 Loggers} *)
+
+exception Logger_closed
+  (** Exception raised when trying to use a closed logger *)
+
+val make :  output : (section -> level -> string list -> unit Lwt.t) -> close : (unit -> unit Lwt.t) -> logger
+  (** [make ~output ~close] creates a new logger.
+
+      @param output is used to write logs. It is a function which
+      receive a section, a level and a list lines that must
+      be logged together.
+      @param close is used to close the logger *)
+
+val close : logger -> unit Lwt.t
+  (** Close the given logger *)
+
+val default : logger ref
+  (** The default logger. It is used as default when no one is
+      specified. Initially, it sends messages to the standard output
+      for error messages. *)
+
+val broadcast : logger list -> logger
+  (** [broadcast loggers] is a logger which send messages to all the
+      given loggers.
+
+      Note: closing a broadcast logger does not close its
+      components. *)
+
+val dispatch : (section -> level -> logger) -> logger
+  (** [dispatch f] is a logger which dispatch logging instructions to
+      different logger according to their level and/or section.
+
+      Here is an example:
+
+      {[
+        let access_logger = Lwt_log.file "access.log"
+        and error_logger = Lwt_log.file "error.log" in
+
+        Lwt_log.dispatch
+          (fun section level ->
+            match Lwt_log.Section.name section, level with
+              | "access", _ -> access_logger
+              | _, Lwt_log.Error -> error_logger)
+      ]}
+  *)
+
+(** {6 Predefined loggers} *)
+
+val null : logger
+  (** Logger which drops everything *)
 
 (** Syslog facility. Look at the SYSLOG(3) man page for a description
     of syslog facilities *)
-type facility =
+type syslog_facility =
     [ `Auth | `Authpriv | `Cron | `Daemon | `FTP | `Kernel
     | `Local0 | `Local1 | `Local2 | `Local3 | `Local4 | `Local5 | `Local6 | `Local7
     | `LPR | `Mail | `News | `Syslog | `User | `UUCP | `NTP | `Security | `Console ]
 
-val syslog : ?level : level -> ?template : template -> ?paths : string list -> facility : facility -> unit -> logger
-  (** [syslog ?level ?render ?paths ~facility ()] creates a logger which send
-      message to the system logger.
+val syslog : ?template : template -> ?paths : string list -> facility : syslog_facility -> unit -> logger
+  (** [syslog ?template ?paths ~facility ()] creates an logger
+      which send message to the system logger.
 
       @param paths is a list of path to try for the syslogd socket. It
              default to [\["/dev/log"; "/var/run/log"\]].
-      @param template defaults to ["$(date) $(name)[$(pid)]: $(message)"]
+      @param template defaults to ["$(date) $(name)[$(pid)]: $(section): $(message)"]
   *)
 
-val file : ?level : level -> ?template : template -> ?mode : [ `Truncate | `Append ] -> ?perm : Unix.file_perm -> file_name : string -> unit -> logger
-  (** [desf_file ?level ?mode ?perm ~file_name ()] creates a logger
-      which will write message to [file_name].
+val file : ?template : template -> ?mode : [ `Truncate | `Append ] -> ?perm : Unix.file_perm -> file_name : string -> unit -> logger
+  (** [desf_file ?template ?mode ?perm ~file_name ()] creates an
+      logger which will write messages to [file_name].
 
-      - if [mode = `Truncate] then the file is truncated and
-      previous contents will be lost.
+      - if [mode = `Truncate] then the file is truncated and previous
+      contents will be lost.
 
-      - if [mode = `Append], new messages will be appended at the
-      end of the file
+      - if [mode = `Append], new messages will be appended at the end
+      of the file
 
       @param mode defaults to [`Append]
-      @param template defaults to ["$(date): $(message)"]
+      @param template defaults to ["$(date): $(section): $(message)"]
   *)
 
-val channel : ?level : level -> ?template : template -> close_mode : [ `Close | `Keep ] -> channel : Lwt_io.output_channel -> unit -> logger
-  (** [channel ?level ~close_mode ~channel ()] creates a destination
+val channel :?template : template -> close_mode : [ `Close | `Keep ] -> channel : Lwt_io.output_channel -> unit -> logger
+  (** [channel ?template ~close_mode ~channel ()] creates a logger
       from a channel.
 
       If [close_mode = `Close] then [channel] is closed when the
       logger is closed, otherwise it is left open.
 
-      @param template defaults to ["$(name): $(message)"]
-  *)
-
-(** {6 Logging functions} *)
-
-val log : ?section : string -> ?logger : logger -> ?level : level -> string -> unit Lwt.t
-  (** [log ?section ?logger ~level message] log a message.
-
-      @param section can be set to the current module name
-             (this is done by the syntax extension)
-      @param logger defaults to {!default}
-      @param level defaults to {!Info}
-  *)
-
-val log_f : ?section : string -> ?logger : logger -> ?level : level -> ('a, unit, string, unit Lwt.t) format4 -> 'a
-  (** [log_f] is the same as [log] except that it takes a format
-      string *)
-
-val exn : ?section : string -> ?logger : logger -> ?level : level -> exn : exn -> string -> unit Lwt.t
-  (** [exn ?section ?logger ?level exn format] logs an exception.
-
-      @param level default to {!Error} *)
-
-val exn_f : ?section : string -> ?logger : logger -> ?level : level -> exn : exn -> ('a, unit, string, unit Lwt.t) format4 -> 'a
-  (** [exn_f] is the same as [log] except that it takes a format
-      string *)
-
-(** {6 Functor} *)
-
-(** Create a logger with the [section] argument factorized *)
-module Make(Section : sig val section : string end) : sig
-
-  (** This module allow you to write more compact logging
-      instructions. It is recommended to create a module [Log] at the
-      begining of your file:
-
-      {[
-        module Log = Lwt_log.Make(struct let section = "section-name" end)
-      ]}
-
-      So the following instruction:
-
-      {[
-        Lwt_log.log ~section:"section-name" ~level:Lwt_log.Info msg
-      ]}
-
-      can be rewritten:
-
-      {[
-        Log.info msg
-      ]}
-
-      Althoug there is a syntax extension ([lwt.syntax.log]) which
-      does not modify the syntax, but modify logging instructions as
-      follow:
-
-      - it inlines test for the level, so arguments are not cmoputed
-        if not needed
-      - if can keep or remove debugging instructions
-  *)
-
-  val section : string
-    (** The section name (equal to [Section.section]) *)
-
-  (** {6 Logging functions} *)
-
-  val debug : string -> unit Lwt.t
-  val debug_f : ('a, unit, string, unit Lwt.t) format4 -> 'a
-
-  val info : string -> unit Lwt.t
-  val info_f : ('a, unit, string, unit Lwt.t) format4 -> 'a
-
-  val notice : string -> unit Lwt.t
-  val notice_f : ('a, unit, string, unit Lwt.t) format4 -> 'a
-
-  val warning : string -> unit Lwt.t
-  val warning_f : ('a, unit, string, unit Lwt.t) format4 -> 'a
-
-  val error : string -> unit Lwt.t
-  val error_f : ('a, unit, string, unit Lwt.t) format4 -> 'a
-
-  val fatal : string -> unit Lwt.t
-  val fatal_f : ('a, unit, string, unit Lwt.t) format4 -> 'a
-
-  val exn : exn -> string -> unit Lwt.t
-  val exn_f : exn -> ('a, unit, string, unit Lwt.t) format4 -> 'a
-end
+      @param template defaults to ["$(name): $(section): $(message)"] *)

@@ -1,7 +1,7 @@
 (* Lightweight thread library for Objective Caml
  * http://www.ocsigen.org/lwt
- * Interface Pa_log
- * Copyright (C) 2009 Jérémie Dimino
+ * Interface Lwt_log_rules
+ * Copyright (C) 2010 Jérémie Dimino <jeremie@dimino.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -20,28 +20,8 @@
  * 02111-1307, USA.
  *)
 
-(** Logging facility.
+(** Logging rules parsing *)
 
-    It replaces expression of the form:
-
-    {[
-      Lwt_log.info_f ~section "x = %d" x
-    ]}
-
-    by
-
-    {[
-      if Lwt_log.Section.level section <= Lwt_log.Info then
-        Lwt_log.info_f ~section "x = %d" x
-      else
-        return ()
-    ]}
-
-    Note:
-
-    - the application must be complete. For example: [Log.info "%d"]
-      will make compilation to fail
-
-    - it also add the command line flags "-lwt-debug" to keep all debug
-      messages. By default debug messages are removed.
-*)
+val rules : Lexing.lexbuf -> (string * string) list
+  (** [parse lexbuf] returns the list of rules contained in
+      [lexbuf] *)

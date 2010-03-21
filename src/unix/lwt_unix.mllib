@@ -10,3 +10,4 @@ Lwt_log
 Lwt_daemon
 private/Lwt_pqueue
 private/Lwt_select
+private/Lwt_log_rules

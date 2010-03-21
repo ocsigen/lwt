@@ -48,10 +48,10 @@ let rec apply e = function
   | x :: l -> let _loc = Ast.loc_of_expr x in apply <:expr< $e$ $x$ >> l
 
 let split e =
-  let rec aux acc = function
-    | <:expr@_loc< Log.$lid:"exn" | "exn_f" as func$ >> ->
-      `Log(func, "Error", acc)
-    | <:expr@_loc< Log.$lid:func$ >> ->
+  let rec aux section acc = function
+    | <:expr@_loc< Lwt_log.$lid:"exn" | "exn_f" as func$ >> ->
+      `Log(func, section, "Error", acc)
+    | <:expr@_loc< Lwt_log.$lid:func$ >> ->
         let level =
           String.capitalize (
             let len = String.length func in
@@ -64,15 +64,22 @@ let split e =
         if level = "Debug" && (not !debug) then
           `Delete
         else if List.mem level levels then
-          `Log(func, level, acc)
+          `Log(func, section, level, acc)
         else
-          Loc.raise _loc (Failure (Printf.sprintf "invalid log level: %S" level))
-    | <:expr@loc< $a$ $b$ >> ->
-        aux (b :: acc) a
+          `Not_a_log
+    | <:expr@loc< $a$ $b$ >> -> begin
+        match b with
+          | <:expr< ~section >> ->
+              aux `Label (b :: acc) a
+          | <:expr@_loc< ~section:$section$ >> ->
+              aux (`Expr section) (<:expr< ~section:__pa_log_section >> :: acc) a
+          | b ->
+              aux section (b :: acc) a
+      end
     | _ ->
         `Not_a_log
   in
-  aux [] e
+  aux `None [] e
 
 let map =
 object
@@ -83,11 +90,28 @@ object
     match split e with
       | `Delete ->
           <:expr< Lwt.return () >>
-      | `Log(func, level, args) ->
+      | `Log(func, `None, level, args) ->
           let args = List.map super#expr args in
           <:expr<
-            if Lwt_log.$uid:level$ >= Lwt_log.level !Lwt_log.default then
-              $apply <:expr< Log.$lid:func$ >> args$
+            if Lwt_log.$uid:level$ >= Lwt_log.Section.level Lwt_log.Section.main then
+              $apply <:expr< Lwt_log.$lid:func$ >> args$
+            else
+              Lwt.return ()
+          >>
+      | `Log(func, `Label, level, args) ->
+          let args = List.map super#expr args in
+          <:expr<
+            if Lwt_log.$uid:level$ >= Lwt_log.Section.level section then
+              $apply <:expr< Lwt_log.$lid:func$ >> args$
+            else
+              Lwt.return ()
+          >>
+      | `Log(func, `Expr section, level, args) ->
+          let args = List.map super#expr args in
+          <:expr<
+            let __pa_log_section = $section$ in
+            if Lwt_log.$uid:level$ >= Lwt_log.Section.level __pa_log_section then
+              $apply <:expr< Lwt_log.$lid:func$ >> args$
             else
               Lwt.return ()
           >>

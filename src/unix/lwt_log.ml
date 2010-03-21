@@ -31,6 +31,10 @@ let program_name = Filename.basename Sys.argv.(0)
 let log_intern fmt =
   Printf.ksprintf (fun msg -> ignore_result (Lwt_io.eprintlf "%s: Lwt_log: %s" program_name msg)) fmt
 
+(* +-----------------------------------------------------------------+
+   | Log levels                                                      |
+   +-----------------------------------------------------------------+ *)
+
 type level =
   | Debug
   | Info
@@ -47,20 +51,115 @@ let string_of_level = function
   | Error -> "error"
   | Fatal -> "fatal"
 
-let default_level =
-  try
-    match String.lowercase (Sys.getenv "LWT_LOG") with
-      | "0" | "fatal" -> Fatal
-      | "1" | "error" -> Error
-      | "2" | "warning" -> Warning
-      | "3" | "notice" -> Notice
-      | "4" | "info" -> Info
-      | "5" | "debug" -> Debug
-      | str ->
-          log_intern "wrong value for LWT_LOG: %S" str;
+(* +-----------------------------------------------------------------+
+   | Patterns andrules                                               |
+   +-----------------------------------------------------------------+ *)
+
+type pattern = string list
+    (* A pattern is represented by a list of literals:
+
+       For example ["foo*bar*"] is represented by ["foo"; "bar"; ""]. *)
+
+let sub_equal str ofs patt =
+  let str_len = String.length str and patt_len = String.length patt in
+  let rec loop ofs ofs_patt =
+    ofs_patt = patt_len || (str.[ofs] = patt.[ofs_patt] && loop (ofs + 1) (ofs_patt + 1))
+  in
+  ofs + patt_len <= str_len && loop ofs 0
+
+let pattern_match pattern string =
+  let length = String.length string in
+  let rec loop offset pattern =
+    if offset = length then
+      pattern = [] || pattern = [""]
+    else
+      match pattern with
+        | [] ->
+            false
+        | literal :: pattern ->
+            let literal_length = String.length literal in
+            let max_offset = length - literal_length in
+            let rec search offset =
+              offset <= max_offset
+              && ((sub_equal string offset literal && loop (offset + literal_length) pattern)
+                  || search (offset + 1))
+            in
+            search offset
+  in
+  match pattern with
+    | [] ->
+        string = ""
+    | literal :: pattern ->
+        sub_equal string 0 literal && loop (String.length literal) pattern
+
+let split pattern =
+  let len = String.length pattern in
+  let rec loop ofs =
+    if ofs = len then
+      [""]
+    else
+      match try Some(String.index_from pattern ofs '*') with Not_found -> None with
+        | Some ofs' ->
+            String.sub pattern ofs (ofs' - ofs) :: loop (ofs' + 1)
+        | None ->
+            [String.sub pattern ofs (len - ofs)]
+  in
+  loop 0
+
+let rules =
+  match try Some(Sys.getenv "LWT_LOG") with Not_found -> None with
+    | Some str ->
+        let rec loop = function
+          | [] ->
+              []
+          | (pattern, level) :: rest ->
+              let pattern = split pattern in
+              match String.lowercase level with
+                | "debug" -> (pattern, Debug) :: loop rest
+                | "info" -> (pattern, Info) :: loop rest
+                | "notice" -> (pattern, Notice) :: loop rest
+                | "warning" -> (pattern, Warning) :: loop rest
+                | "error" -> (pattern, Error) :: loop rest
+                | "fatal" -> (pattern, Fatal) :: loop rest
+                | level -> log_intern "invalid log level (%s)" level; loop rest
+        in
+        loop (Lwt_log_rules.rules (Lexing.from_string str))
+    | None ->
+        []
+
+(* +-----------------------------------------------------------------+
+   | Sections                                                        |
+   +-----------------------------------------------------------------+ *)
+
+module Section =
+struct
+  type t = {
+    name : string;
+    mutable level : level;
+  }
+
+  let make name =
+    let rec find_level = function
+      | [] ->
           Notice
-  with Not_found ->
-    Notice
+      | (pattern, level) :: rest ->
+          if pattern_match pattern name then
+            level
+          else
+            find_level rest
+    in
+    { name = name; level = find_level rules }
+
+  let name section = section.name
+
+  let main = make "main"
+
+  let level section = section.level
+
+  let set_level section level = section.level <- level
+end
+
+type section = Section.t
 
 (* +-----------------------------------------------------------------+
    | Loggers                                                         |
@@ -68,140 +167,33 @@ let default_level =
 
 exception Logger_closed
 
-type end_point = {
-  ep_output : level -> string list -> unit Lwt.t;
-  (* [output facility level lines] adds [line] to the output *)
-
-  ep_close : unit -> unit Lwt.t;
-  (* [close ()] should free resources used for the destination *)
-
-  ep_mutex : Lwt_mutex.t;
-  (* Mutex used to serialize line addition *)
-
-  mutable ep_level : level;
-  (* The logging level *)
-
-  mutable ep_parents : merge list;
-  (* Parents are the merge in which the end-point is.
-
-     For exmaple in the following code:
-
-     {[
-       lwt logger1 = syslog ()
-       and logger2 = channel ~close_mode:`Keep ~channel:Lwt_io.stderr ()
-       and logger3 = file ~file_name "foo" in
-
-       let m1 = merge [logger1; logger2]
-       and m2 = merge [logger2; logger3] in
-     ]}
-
-     [logger1] have as parent [m1]
-     [logger2] have as parents [m1] and [m2]
-     [logger3] have as parent [m2]
-  *)
-
-  ep_logger : logger;
-  (* The logger associated with end-point *)
+type logger = {
+  mutable lg_closed : bool;
+  lg_output : section -> level -> string list -> unit Lwt.t;
+  lg_close : unit Lwt.t Lazy.t;
 }
 
-and merge = {
-  mutable merge_children : node list;
-  (* Elements of the merge node *)
+let close logger =
+  logger.lg_closed <- true;
+  Lazy.force logger.lg_close
 
-  mutable merge_parents : merge list;
-  (* Same as for end-points *)
+let make ~output ~close =
+  {
+    lg_closed = false;
+    lg_output = output;
+    lg_close = Lazy.lazy_from_fun close;
+  }
 
-  mutable merge_level : level;
-  (* The logging level of this logger *)
+let broadcast loggers =
+  make
+    ~output:(fun section level lines ->
+               Lwt_list.iter_p (fun logger -> logger.lg_output section level lines) loggers)
+    ~close:return
 
-  merge_logger : logger;
-  (* The logger associated with this merge-point *)
-}
-
-and node =
-  | End_point of end_point
-  | Merge of merge
-
-and logger_state =
-  | Opened of node
-  | Closed
-
-and logger = logger_state ref
-
-let rec close_rec recursive node = match node with
-  | End_point ep ->
-      ep.ep_logger := Closed;
-      (* Remove it from all its parents *)
-      List.iter
-        (fun parent ->
-           (* Remove the child from its parent *)
-           parent.merge_children <- List.filter ((!=) node) parent.merge_children)
-        ep.ep_parents;
-      ep.ep_close ()
-  | Merge merge ->
-      merge.merge_logger := Closed;
-      List.iter
-        (fun parent ->
-           parent.merge_children <- List.filter ((!=) node) parent.merge_children)
-        merge.merge_parents;
-      if recursive then
-        Lwt_list.iter_p (close_rec true) merge.merge_children
-      else
-        return ()
-
-let close ?(recursive=false) logger = match !logger with
-  | Closed ->
-      return ()
-  | Opened logger ->
-      close_rec recursive logger
-
-let make ?(level=default_level) ~output ~close () =
-  let rec logger =
-    ref(Opened(End_point{ ep_output = output;
-                          ep_close = close;
-                          ep_mutex = Lwt_mutex.create ();
-                          ep_level = level;
-                          ep_parents = [];
-                          ep_logger = logger }))
-  in
-  logger
-
-let merge ?(level=default_level) loggers =
-  let children = List.map (fun logger ->
-                             match !logger with
-                               | Opened node -> node
-                               | Closed -> raise Logger_closed) loggers in
-  let rec result = ref(Opened(Merge merge))
-  and merge = { merge_children = children;
-                merge_parents = [];
-                merge_level = level;
-                merge_logger = result } in
-  List.iter
-    (function
-       | End_point ep ->
-           ep.ep_parents <- merge :: ep.ep_parents
-       | Merge merge ->
-           merge.merge_parents <- merge :: merge.merge_parents)
-    children;
-  result
-
-let level logger =
-  match !logger with
-    | Closed ->
-        raise Logger_closed
-    | Opened(End_point ep) ->
-        ep.ep_level
-    | Opened(Merge merge) ->
-        merge.merge_level
-
-let set_level logger level =
-  match !logger with
-    | Closed ->
-        raise Logger_closed
-    | Opened(End_point ep) ->
-        ep.ep_level <- level
-    | Opened(Merge merge) ->
-        merge.merge_level <- level
+let dispatch f =
+  make
+    ~output:(fun section level lines -> (f section level).lg_output section level lines)
+    ~close:return
 
 (* +-----------------------------------------------------------------+
    | Templates                                                       |
@@ -229,7 +221,7 @@ let date_string () =
   in
   Printf.sprintf "%s %2d %02d:%02d:%02d" month_string tm.Unix.tm_mday tm.Unix.tm_hour tm.Unix.tm_min tm.Unix.tm_sec
 
-let render ~buffer ~template ~level ~message =
+let render ~buffer ~template ~section ~level ~message =
   Buffer.add_substitute buffer
     (function
        | "date" -> date_string ()
@@ -237,6 +229,7 @@ let render ~buffer ~template ~level ~message =
        | "pid" -> string_of_int (Unix.getpid ())
        | "message" -> message
        | "level" -> string_of_level level
+       | "section" -> Section.name section
        | var -> Printf.ksprintf invalid_arg "Lwt_log.render_buffer: unknown variable %S" var)
     template
 
@@ -244,35 +237,42 @@ let render ~buffer ~template ~level ~message =
    | Predefined loggers                                              |
    +-----------------------------------------------------------------+ *)
 
-let channel ?level ?(template="$(name): $(message)") ~close_mode ~channel () =
-  make ?level
-    ~output:(fun level lines ->
+let null =
+  make
+    ~output:(fun section level lines -> return ())
+    ~close:return
+
+let channel ?(template="$(name): $(section): $(message)") ~close_mode ~channel () =
+  make
+    ~output:(fun section level lines ->
                Lwt_io.atomic begin fun oc ->
                  let buf = Buffer.create 42 in
-                 lwt () = Lwt_list.iter_s begin fun line ->
-                   Buffer.clear buf;
-                   render ~buffer:buf ~template ~level ~message:line;
-                   Buffer.add_char buf '\n';
-                   Lwt_io.write oc (Buffer.contents buf)
-                 end lines in
+                 lwt () =
+                   Lwt_list.iter_s
+                     (fun line ->
+                        Buffer.clear buf;
+                        render ~buffer:buf ~template ~section ~level ~message:line;
+                        Buffer.add_char buf '\n';
+                        Lwt_io.write oc (Buffer.contents buf))
+                     lines
+                 in
                  Lwt_io.flush oc
                end channel)
     ~close:(match close_mode with
               | `Keep -> return
               | `Close -> (fun () -> Lwt_io.close channel))
-    ()
 
 let default =
   ref(channel ~close_mode:`Keep ~channel:Lwt_io.stderr ())
 
-let file ?level ?(template="$(date): $(message)") ?(mode=`Append) ?(perm=0o640) ~file_name () =
+let file ?(template="$(date): $(section): $(message)") ?(mode=`Append) ?(perm=0o640) ~file_name () =
   let flags = match mode with
     | `Append ->
         [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_APPEND; Unix.O_NONBLOCK]
     | `Truncate ->
         [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_TRUNC; Unix.O_NONBLOCK] in
   let oc = Lwt_io.open_file ~mode:Lwt_io.output ~flags ~perm:0o644 file_name in
-  channel ?level ~template ~close_mode:`Close ~channel:oc ()
+  channel ~template ~close_mode:`Close ~channel:oc ()
 
 let level_code = function
   | Fatal -> 0
@@ -282,7 +282,7 @@ let level_code = function
   | Info -> 6
   | Debug -> 7
 
-type facility =
+type syslog_facility =
     [ `Auth | `Authpriv | `Cron | `Daemon | `FTP | `Kernel
     | `Local0 | `Local1 | `Local2 | `Local3 | `Local4 | `Local5 | `Local6 | `Local7
     | `LPR | `Mail | `News | `Syslog | `User | `UUCP | `NTP | `Security | `Console ]
@@ -396,8 +396,8 @@ let truncate buf max =
   end else
     Buffer.contents buf
 
-let syslog ?level ?(template="$(date) $(name)[$(pid)]: $(message)") ?(paths=["/dev/log"; "/var/run/log"]) ~facility () =
-  let syslog_socket = ref None in
+let syslog ?(template="$(date) $(name)[$(pid)]: $(section): $(message)") ?(paths=["/dev/log"; "/var/run/log"]) ~facility () =
+  let syslog_socket = ref None and mutex = Lwt_mutex.create () in
   let get_syslog () = match !syslog_socket with
     | Some x ->
         return x
@@ -406,33 +406,35 @@ let syslog ?level ?(template="$(date) $(name)[$(pid)]: $(message)") ?(paths=["/d
         syslog_socket := Some x;
         return x
   in
-  make ?level
-    ~output:(fun level lines ->
-               let buf = Buffer.create 42 in
-               let make_line socket_type msg =
-                 Buffer.clear buf;
-                 Printf.bprintf buf "<%d>" ((facility_code facility lsl 3) lor level_code level);
-                 render ~buffer:buf ~template ~level ~message:msg;
-                 if socket_type = STREAM then Buffer.add_char buf '\x00';
-                 truncate buf 1024
-               in
-               let rec print socket_type fd = function
-                 | [] ->
-                     return ()
-                 | line :: lines ->
-                     try_lwt
-                       lwt () = write_string fd (make_line socket_type line) in
-                       print socket_type fd lines
-                     with Unix.Unix_error(_, _, _) ->
-                       (* Try to reconnect *)
-                       shutdown fd;
-                       syslog_socket := None;
-                       lwt socket_type, fd = get_syslog () in
-                       lwt () = write_string fd (make_line socket_type line) in
-                       print socket_type fd lines
-               in
-               lwt socket_type, fd = get_syslog () in
-               print socket_type fd lines)
+  make
+    ~output:(fun section level lines ->
+               Lwt_mutex.with_lock mutex
+                 (fun () ->
+                    let buf = Buffer.create 42 in
+                    let make_line socket_type msg =
+                      Buffer.clear buf;
+                      Printf.bprintf buf "<%d>" ((facility_code facility lsl 3) lor level_code level);
+                      render ~buffer:buf ~template ~section ~level ~message:msg;
+                      if socket_type = STREAM then Buffer.add_char buf '\x00';
+                      truncate buf 1024
+                    in
+                    let rec print socket_type fd = function
+                      | [] ->
+                          return ()
+                      | line :: lines ->
+                          try_lwt
+                            lwt () = write_string fd (make_line socket_type line) in
+                            print socket_type fd lines
+                          with Unix.Unix_error(_, _, _) ->
+                            (* Try to reconnect *)
+                            shutdown fd;
+                            syslog_socket := None;
+                            lwt socket_type, fd = get_syslog () in
+                            lwt () = write_string fd (make_line socket_type line) in
+                            print socket_type fd lines
+                    in
+                    lwt socket_type, fd = get_syslog () in
+                    print socket_type fd lines))
     ~close:(fun () ->
               match !syslog_socket with
                 | None ->
@@ -440,7 +442,6 @@ let syslog ?level ?(template="$(date) $(name)[$(pid)]: $(message)") ?(paths=["/d
                 | Some(socket_type, fd) ->
                     shutdown fd;
                     return ())
-    ()
 
 (* +-----------------------------------------------------------------+
    | Logging functions                                               |
@@ -457,75 +458,54 @@ let split str =
   in
   aux 0
 
-let rec log_rec node level lines = match node with
-  | End_point ep ->
-      if level >= ep.ep_level then
-        Lwt_mutex.with_lock ep.ep_mutex
-          (fun () -> ep.ep_output level lines)
+let log ?(section=Section.main) ?logger ~level message =
+  let logger = match logger with
+    | None -> !default
+    | Some logger -> logger
+  in
+  if logger.lg_closed then
+    fail Logger_closed
+  else if level >= section.Section.level then
+    logger.lg_output section level (split message)
+  else
+    return ()
+
+let exn ?(section=Section.main) ?logger ?(level=Error) ~exn message =
+  let logger = match logger with
+    | None -> !default
+    | Some logger -> logger
+  in
+  if logger.lg_closed then
+    fail Logger_closed
+  else if level >= section.Section.level then begin
+    let message = message ^ ": " ^ Printexc.to_string exn in
+    let message =
+      if Printexc.backtrace_status () then
+        match Printexc.get_backtrace () with
+          | "" -> message
+          | backtrace -> message ^ "\nbacktrace:\n" ^ backtrace
       else
-        return ()
-  | Merge merge ->
-      if level >= merge.merge_level then
-        Lwt_list.iter_p (fun node -> log_rec node level lines) merge.merge_children
-      else
-        return ()
+        message
+    in
+    logger.lg_output section level (split message)
+  end else
+    return ()
 
-let get_logger = function
-  | None ->
-      !(!default)
-  | Some logger ->
-      !logger
-
-let log ?section ?logger ?(level=Info) message =
-  match get_logger logger with
-    | Closed ->
-        fail Logger_closed
-    | Opened logger ->
-        log_rec logger level
-          (match section with
-             | None | Some "" -> split message
-             | Some section -> List.map (fun line -> section ^ ": " ^ line) (split message))
-
-let exn ?section ?logger ?(level=Error) ~exn message =
-  match get_logger logger with
-    | Closed ->
-        fail Logger_closed
-    | Opened logger ->
-        let message = message ^ ": " ^ Printexc.to_string exn in
-        let message =
-          if Printexc.backtrace_status () then
-            match Printexc.get_backtrace () with
-              | "" -> message
-              | backtrace -> message ^ "\nbacktrace:\n" ^ backtrace
-          else
-            message
-        in
-        log_rec logger level
-          (match section with
-             | None | Some "" -> split message
-             | Some section -> List.map (fun line -> section ^ ": " ^ line) (split message))
-
-let log_f ?section ?logger ?level format =
-  Printf.ksprintf (log ?section ?logger ?level) format
+let log_f ?section ?logger ~level format =
+  Printf.ksprintf (log ?section ?logger ~level) format
 
 let exn_f ?section ?logger ?level ~exn:e format =
   Printf.ksprintf (exn ?section ?logger ?level ~exn:e) format
 
-module Make(Section : sig val section : string end) =
-struct
-  let section = Section.section
-  let debug msg = log ~section ~level:Debug msg
-  let debug_f fmt = Printf.ksprintf debug fmt
-  let info msg = log ~section ~level:Info msg
-  let info_f fmt = Printf.ksprintf info fmt
-  let notice msg = log ~section ~level:Notice msg
-  let notice_f fmt = Printf.ksprintf notice fmt
-  let warning msg = log ~section ~level:Warning msg
-  let warning_f fmt = Printf.ksprintf warning fmt
-  let error msg = log ~section ~level:Error msg
-  let error_f fmt = Printf.ksprintf error fmt
-  let fatal msg = log ~section ~level:Fatal msg
-  let fatal_f fmt = Printf.ksprintf fatal fmt
-  let exn e msg = exn ~section ~level:Error ~exn:e msg
-  let exn_f e fmt = Printf.ksprintf (exn e) fmt
-end
+let debug ?section ?logger msg = log ?section ?logger ~level:Debug msg
+let debug_f ?section ?logger fmt = Printf.ksprintf (debug ?section ?logger) fmt
+let info ?section ?logger msg = log ?section ?logger ~level:Info msg
+let info_f ?section ?logger fmt = Printf.ksprintf (info ?section ?logger) fmt
+let notice ?section ?logger msg = log ?section ?logger ~level:Notice msg
+let notice_f ?section ?logger fmt = Printf.ksprintf (notice ?section ?logger) fmt
+let warning ?section ?logger msg = log ?section ?logger ~level:Warning msg
+let warning_f ?section ?logger fmt = Printf.ksprintf (warning ?section ?logger) fmt
+let error ?section ?logger msg = log ?section ?logger ~level:Error msg
+let error_f ?section ?logger fmt = Printf.ksprintf (error ?section ?logger) fmt
+let fatal ?section ?logger msg = log ?section ?logger ~level:Fatal msg
+let fatal_f ?section ?logger fmt = Printf.ksprintf (fatal ?section ?logger) fmt

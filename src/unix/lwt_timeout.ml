@@ -21,7 +21,7 @@
  * 02111-1307, USA.
  *)
 
-module Log = Lwt_log.Make(struct let section = "lwt(timeout)" end)
+let section = Lwt_log.Section.make "lwt(timeout)"
 
 type t =
   { mutable delay : int; action : unit -> unit;
@@ -78,7 +78,7 @@ let size l =
 let handle_exn =
   ref
     (fun exn ->
-       ignore (Log.exn exn "uncaught exception after timeout");
+       ignore (Lwt_log.exn ~section ~exn "uncaught exception after timeout");
        exit 1)
 
 let set_exn_handler f = handle_exn := f
