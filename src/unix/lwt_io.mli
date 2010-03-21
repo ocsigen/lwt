@@ -457,6 +457,12 @@ module LE : NumberIO
 module BE : NumberIO
   (** Reading/writing of integers in big-endian *)
 
+type byte_order = Little_endian | Big_endian
+    (** Type of byte order *)
+
+val system_byte_order : byte_order
+  (** The byte order used by the computer running the program *)
+
 (** {6 Low-level access to the internal buffer} *)
 
 val block : 'a channel  -> int -> (string -> int -> 'b Lwt.t) -> 'b Lwt.t

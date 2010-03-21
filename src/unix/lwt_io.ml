@@ -1211,6 +1211,12 @@ end
 module LE = MakeNumberIO(ByteOrder.LE)
 module BE = MakeNumberIO(ByteOrder.BE)
 
+type byte_order = Little_endian | Big_endian
+
+external get_system_byte_order : unit -> byte_order = "lwt_unix_system_byte_order"
+
+let system_byte_order = get_system_byte_order ()
+
 (* +-----------------------------------------------------------------+
    | Other                                                           |
    +-----------------------------------------------------------------+ *)

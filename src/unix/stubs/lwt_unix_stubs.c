@@ -490,3 +490,16 @@ value lwt_unix_has_wait4(value unit)
   return Val_int(0);
 #endif
 }
+
+/* +-----------------------------------------------------------------+
+   | Byte order                                                      |
+   +-----------------------------------------------------------------+ */
+
+value lwt_unix_system_byte_order()
+{
+#ifdef ARCH_BIG_ENDIAN
+  return Val_int(1);
+#else
+  return Val_int(0);
+#endif
+}
