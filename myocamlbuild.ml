@@ -143,6 +143,12 @@ let libraries = [
     test = false };
 ]
 
+let lib_path name suffix =
+  if name = "core" then
+    sprintf "src/core/lwt.%s" suffix
+  else
+    sprintf "src/%s/lwt_%s.%s" name name suffix
+
 (* +-----------------------------------------------------------------+
    | Ocamlfind                                                       |
    +-----------------------------------------------------------------+ *)
@@ -277,9 +283,12 @@ let _ =
 
         let libs = List.filter_opt (fun lib -> if lib.have then Some lib.name else None) libraries in
 
-        let byte = "syntax/pa_lwt.cmo" :: "syntax/pa_log.cmo" :: List.map (fun name -> sprintf "src/%s/lwt_%s.cma" name name) libs
+        let byte =
+          "syntax/pa_lwt.cmo" :: "syntax/pa_log.cmo" ::
+            List.map (fun name -> lib_path name "cma") libs
           @ if have_toplevel then ["src/top/private/toplevel.top"] else []
-        and native = List.map (fun name -> sprintf "src/%s/lwt_%s.cmxa" name name) libs in
+        and native =
+          List.map (fun name -> lib_path name "cmxa") libs in
 
         let virtual_rule name deps =
           rule name ~stamp:name ~deps (fun _ _ -> Nop)
@@ -342,8 +351,8 @@ let _ =
 
         (* Link with the toplevel library *)
         let libs = ["core"; "react"; "unix"; "text"; "top"] in
-        dep ["file:src/top/private/toplevel.top"] (List.map (fun name -> sprintf "src/%s/lwt_%s.cma" name name) libs);
-        flag ["file:src/top/private/toplevel.top"] & S(A"-I" :: A"src/unix/stubs" :: List.map (fun name -> A(sprintf "src/%s/lwt_%s.cma" name name)) libs);
+        dep ["file:src/top/private/toplevel.top"] (List.map (fun name -> lib_path name "cma") libs);
+        flag ["file:src/top/private/toplevel.top"] & S(A"-I" :: A"src/unix/stubs" :: List.map (fun name -> A(lib_path name "cma")) libs);
 
         (* +---------------------------------------------------------+
            | C stubs                                                 |

@@ -2,9 +2,9 @@
 
 description = "Lightweight thread library for OCaml (core library)"
 version = "@VERSION@"
-exists_if = "lwt_core.cma,lwt_core.cmxa,lwt_core.cmxs"
-archive(byte) = "lwt_core.cma"
-archive(native) = "lwt_core.cmxa"
+exists_if = "lwt.cma,lwt.cmxa,lwt.cmxs"
+archive(byte) = "lwt.cma"
+archive(native) = "lwt.cmxa"
 
 package "react" (
   exists_if = "lwt_react.cma,lwt_react.cmxa,lwt_react.cmxs"
