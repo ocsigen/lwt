@@ -1319,16 +1319,16 @@ let with_connection ?buffer_size sockaddr f =
     close ic <&> close oc
 
 type server = {
-  shutdown : unit -> unit;
+  shutdown : unit Lazy.t;
 }
 
-let shutdown_server server = server.shutdown ()
+let shutdown_server server = Lazy.force server.shutdown
 
-let establish_server ?buffer_size sockaddr f =
+let establish_server ?buffer_size ?(backlog=5) sockaddr f =
   let sock = Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0 in
   Lwt_unix.setsockopt sock Unix.SO_REUSEADDR true;
   Lwt_unix.bind sock sockaddr;
-  Lwt_unix.listen sock 5;
+  Lwt_unix.listen sock backlog;
   let abort_waiter, abort_wakener = wait () in
   let abort_waiter = abort_waiter >> return `Shutdown in
   let rec loop () =
@@ -1351,8 +1351,8 @@ let establish_server ?buffer_size sockaddr f =
             | _ ->
                 return ()
   in
-  let shutdown = lazy(wakeup abort_wakener `Shutdown) in
-  { shutdown = fun () -> Lazy.force shutdown }
+  ignore (loop ());
+  { shutdown = lazy(wakeup abort_wakener `Shutdown) }
 
 let ignore_close ch =
   ignore (close ch)

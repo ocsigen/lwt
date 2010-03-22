@@ -389,10 +389,13 @@ val with_connection : ?buffer_size : int -> Unix.sockaddr -> (input_channel * ou
 type server
   (** Type of a server *)
 
-val establish_server : ?buffer_size : int -> Unix.sockaddr -> (input_channel * output_channel -> unit) -> server
-  (** [establich_server ?buffer_size sockaddr f] creates a server
-      which will listen for incomming connections. New connections are
-      passed to [f]. Note that [f] must not raise any exception. *)
+val establish_server : ?buffer_size : int -> ?backlog : int -> Unix.sockaddr -> (input_channel * output_channel -> unit) -> server
+  (** [establich_server ?buffer_size ?backlog sockaddr f] creates a
+      server which will listen for incomming connections. New
+      connections are passed to [f]. Note that [f] must not raise any
+      exception.
+
+      [backlog] is the argument passed to [Lwt_unix.listen] *)
 
 val shutdown_server : server -> unit
   (** Shutdown the given server *)
