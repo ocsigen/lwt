@@ -21,6 +21,8 @@
  * 02111-1307, USA.
  *)
 
+(** OCaml-SSL integration *)
+
 type socket
 
 val ssl_accept : Lwt_unix.file_descr -> Ssl.context -> socket Lwt.t

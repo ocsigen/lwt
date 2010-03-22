@@ -21,6 +21,8 @@
  * 02111-1307, USA.
  *)
 
+(** Timeouts *)
+
 type t
 
 val set_exn_handler : (exn -> unit) -> unit

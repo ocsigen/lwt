@@ -21,6 +21,8 @@
  * 02111-1307, USA.
  *)
 
+(** Cooperative locks for mutual exclusion *)
+
 type t
 
 val create : unit -> t
