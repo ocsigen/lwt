@@ -393,12 +393,17 @@ let _ =
                                        (List.filter (function
                                                        | "Lwt_chan" | "Lwt_util" -> false
                                                        | s -> not (String.is_prefix "private" s))
-                                          (string_list_of_file (sprintf "src/%s/lwt_%s.mllib" lib.name lib.name)))
+                                          (string_list_of_file (lib_path lib.name "mllib")))
                                    else
                                      [])
                                 libraries)
                            @ ["syntax/Pa_lwt\n"; "syntax/Pa_log"],
                            prod));
+
+        (* Use an introduction page with categories *)
+        tag_file "lwt.docdir/index.html" ["apiref"];
+        dep ["apiref"] ["apiref-intro"];
+        flag ["apiref"] & S[A "-intro"; P "apiref-intro"];
 
         (* The default "thread" tag is not compatible with ocamlfind.
            Indeed, the default rules add the "threads.cma" or
