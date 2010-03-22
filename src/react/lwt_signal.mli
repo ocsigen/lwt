@@ -24,6 +24,17 @@
 
 open React
 
+(** {6 Monadic interface} *)
+
+val return : 'a -> 'a signal
+  (** Same as [React.S.const] *)
+
+val bind : 'a signal -> ('a -> 'b signal) -> 'b signal
+  (** [bind signal f] is initially [f x] where [x] is the current
+      value of [signal]. Each time [signal] changes to a new value
+      [y], [bind signal f] is set to [f y], until the next change of
+      [signal]. *)
+
 (** {6 Lwt-specific utilities} *)
 
 val with_finaliser : (unit -> unit) -> 'a signal -> 'a signal

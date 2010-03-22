@@ -198,3 +198,10 @@ let l5_s ?eq f initial s1 s2 s3 s4 s5 =
   run_s ?eq initial (React.S.l5 f s1 s2 s3 s4 s5)
 let l6_s ?eq f initial s1 s2 s3 s4 s5 s6 =
   run_s ?eq initial (React.S.l6 f s1 s2 s3 s4 s5 s6)
+
+(* +-----------------------------------------------------------------+
+   | Monadic interface                                               |
+   +-----------------------------------------------------------------+ *)
+
+let return = React.S.const
+let bind m f = React.S.switch (f (React.S.value m)) (React.E.map f (React.S.changes m))
