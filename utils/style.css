@@ -12,8 +12,11 @@ body {
     min-width: 40ex;
 }
 
-pre, p, div, span, img, table, td, ol, ul, li
-     { padding: 0em; border: 0em; margin: 0em }
+pre, p, div, span, img, table, td, ol, ul, li {
+    padding: 0em;
+    border: 0em;
+    margin: 0em
+}
 
 h1, h2, h3, h4, h5, h6, div.h7, div.h8, div.h9 {
     fontsize: 100%;
@@ -23,8 +26,6 @@ h1, h2, h3, h4, h5, h6, div.h7, div.h8, div.h9 {
     margin: 1em 0em 0em 0em;
     font-weight : bold;
     text-align: center;
-    border-top-style : dotted;
-    border-width : thin;
 }
 
 h1 {
@@ -70,7 +71,9 @@ div.h9 {
 
 .navbar {
     padding-bottom : 1em;
-    margin-bottom: 1em
+    margin-bottom: 1em;
+    border-bottom: 1px solid #000000;
+    border-bottom-style: dotted;
 }
 
 p {
