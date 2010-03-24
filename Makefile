@@ -45,6 +45,8 @@ NAME := lwt
 VERSION := $(shell head -n 1 VERSION)
 DESTDIR := $(shell $(OCAMLFIND) printconf destdir)
 
+DOC := lwt.docdir/index.html
+
 # +------------------------------------------------------------------+
 # | Rules                                                            |
 # +------------------------------------------------------------------+
@@ -64,7 +66,8 @@ tests:
 	$(OCAMLBUILD) test_programs
 
 doc:
-	$(OCAMLBUILD) doc
+	$(OCAMLBUILD) $(DOC)
+	cp utils/style.css _build/lwt.docdir
 
 examples:
 	$(MAKE) -C examples

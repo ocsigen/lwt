@@ -405,10 +405,6 @@ let _ =
         dep ["apiref"] ["apiref-intro"];
         flag ["apiref"] & S[A "-intro"; P "apiref-intro"; A"-colorize-code"];
 
-        (* Copy our css to the documentation directory: *)
-        rule "doc" ~deps:["lwt.docdir/index.html"; "utils/style.css"] ~stamp:"doc"
-          (fun _ _ -> cp "utils/style.css" "lwt.docdir/style.css");
-
         (* The default "thread" tag is not compatible with ocamlfind.
            Indeed, the default rules add the "threads.cma" or
            "threads.cmxa" options when using this tag. When using the
