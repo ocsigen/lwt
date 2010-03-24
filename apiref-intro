@@ -2,9 +2,9 @@
 
 {2 Core library}
 
-The {e core} library contains the {!Lwt} module, which defines
+The {e core} library ({e lwt} package) contains the {!Lwt} module, which defines
 cooperative threads with all the primitives to manipulate them. It
-also provides several general purpose modules, which do not depends on
+also provides several general purpose modules, which do not depend on
 any external package.
 
 {!modules:
@@ -20,7 +20,7 @@ Lwt_stream
 
 {2 Unix bindings}
 
-The {e Lwt.unix} package provides:
+The {e lwt.unix} package provides:
 - the {!Lwt_unix} module, which wrap system calls into cooperative ones
 - the {!Lwt_io} module, which defines cooperative byte channel, in
   replacement of ones of the standard library
@@ -42,7 +42,7 @@ This package depends on the {e core} library and the {e unix} package.
 
 {2 Reactive programming helpers}
 
-The {e lwt.react} pacakges provides helpers for functionnal reactive
+The {e lwt.react} package provides helpers for functionnal reactive
 programming with Lwt. It is based on the {e react} package. Both
 {!Lwt_event} and {!Lwt_signal} modules contains:
 
@@ -58,10 +58,10 @@ This package depends on the {e core} library and the {e react} package.
 
 {2 Syntax extensions}
 
-Lwt is shipped with two syntax extension. The first one, contained in
+Lwt is shipped with two syntax extensions. The first one, contained in
 the {e lwt.syntax} package, aims to make coding with Lwt easier, and
 to make code more readable. The second, contained in the package {e
-lwt.syntax.log}, is a camlp4 filter which decrease the performance
+lwt.syntax.log}, is a camlp4 filter which decreases the performance
 penalty when using logging by inlining level tests.
 
 {!modules:
