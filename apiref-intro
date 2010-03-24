@@ -2,6 +2,11 @@
 
 {2 Core library}
 
+The {e core} library contains the {!Lwt} module, which defines
+cooperative threads with all the primitives to manipulate them. It
+also provides several general purpose modules, which do not depends on
+any external package.
+
 {!modules:
 Lwt
 Lwt_condition
@@ -15,6 +20,12 @@ Lwt_stream
 
 {2 Unix bindings}
 
+The {e Lwt.unix} package provides:
+- the {!Lwt_unix} module, which wrap system calls into cooperative ones
+- the {!Lwt_io} module, which defines cooperative byte channel, in
+  replacement of ones of the standard library
+- module helpers for logging, spawning processes, ...
+
 {!modules:
 Lwt_daemon
 Lwt_gc
@@ -27,14 +38,31 @@ Lwt_timeout
 Lwt_unix
 }
 
+This package depends on the {e core} library and the {e unix} package.
+
 {2 Reactive programming helpers}
+
+The {e lwt.react} pacakges provides helpers for functionnal reactive
+programming with Lwt. It is based on the {e react} package. Both
+{!Lwt_event} and {!Lwt_signal} modules contains:
+
+- Lwt specific primitives
+- cooperative versions of {e react} functions
 
 {!modules:
 Lwt_event
 Lwt_signal
 }
 
+This package depends on the {e core} library and the {e react} package.
+
 {2 Syntax extensions}
+
+Lwt is shipped with two syntax extension. The first one, contained in
+the {e lwt.syntax} package, aims to make coding with Lwt easier, and
+to make code more readable. The second, contained in the package {e
+lwt.syntax.log}, is a camlp4 filter which decrease the performance
+penalty when using logging by inlining level tests.
 
 {!modules:
 Pa_lwt
@@ -43,13 +71,25 @@ Pa_log
 
 {2 Terminal manipulation}
 
+The package {e lwt.text} provides:
+- terminal manipulation through the module {!Lwt_term}
+- text channels which behaves as byte channels but are aware of the
+  text encoding
+- a cooperative, fully customizable read-line facility
+
 {!modules:
 Lwt_read_line
 Lwt_term
 Lwt_text
 }
 
+This package depends on the {e core} library, and the {e lwt.react},
+{e lwt.unix}, {e text} packages.
+
 {2 Miscellaneous}
+
+The following modules are wrapper for integration of non-Lwt
+functions/packages into Lwt.
 
 {!modules:
 Lwt_glib
