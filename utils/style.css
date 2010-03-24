@@ -107,6 +107,7 @@ ol li {
 
 pre {
     margin: 3ex 0em 1ex 0em;
+    background-color: #edf0f9;
 }
 .keyword {
     font-weight: bold;
