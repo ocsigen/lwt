@@ -60,10 +60,10 @@ val clone : 'a t -> 'a t
         val st1 : int Lwt_stream.t = <abstr>
         # let st2 = Lwt_stream.clone st1;;
         val st2 : int Lwt_stream.t = <abstr>
-        # Lwt_main.run (Lwt_stream.next st1);;
-        \- : int = 1
-        # Lwt_main.run (Lwt_stream.next st2);;
-        \- : int = 1
+        # lwt x = Lwt_stream.next st1;;
+        val x : int = 1
+        # lwt y = Lwt_stream.next st2;;
+        val y : int = 1
       ]}
   *)
 
@@ -153,14 +153,14 @@ val is_empty : 'a t -> bool Lwt.t
     For example:
 
     {[
-    # let st1 = Lwt_stream.of_list [1; 2; 3];;
-    val st1 : int Lwt_stream.t = <abstr>
-    # let st2 = Lwt_stream.map string_of_int st1;;
-    val st2 : string Lwt_stream.t = <abstr>
-    # Lwt_main.run (Lwt_stream.next st1);;
-    \- : int = 1
-    # Lwt_main.run (Lwt_stream.next st2);;
-    \- : string = "2"
+      # let st1 = Lwt_stream.of_list [1; 2; 3];;
+      val st1 : int Lwt_stream.t = <abstr>
+      # let st2 = Lwt_stream.map string_of_int st1;;
+      val st2 : string Lwt_stream.t = <abstr>
+      # lwt x = Lwt_stream.next st1;;
+      val x : int = 1
+      # lwt y = Lwt_stream.next st2;;
+      val y : string = "2"
     ]}
 *)
 
