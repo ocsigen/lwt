@@ -49,8 +49,6 @@ let rec apply e = function
 
 let split e =
   let rec aux section acc = function
-    | <:expr@_loc< Lwt_log.$lid:"exn" | "exn_f" as func$ >> ->
-      `Log(func, section, "Error", acc)
     | <:expr@_loc< Lwt_log.$lid:func$ >> ->
         let level =
           String.capitalize (

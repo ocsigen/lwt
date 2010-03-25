@@ -35,7 +35,7 @@
 (** {6 Types} *)
 
 (** Type of log levels. A level determines the importance of a
-    message. The levels are, in order of increasing importance: *)
+    message *)
 type level =
   | Debug
       (** Debugging message. They can be automatically removed byt hte
@@ -55,8 +55,8 @@ type level =
           after a fatal error. *)
 
 type logger
-  (** Type of an logger. An logger is responsible to dispatch messages
-      and store them somewhere.
+  (** Type of a logger. A logger is responsible for dispatching messages
+      and storing them somewhere.
 
       Lwt provides loggers sending log messages to a file, syslog,
       ... but you can also create you own logger. *)
@@ -75,39 +75,31 @@ type section
       that may contain [*].
 
       For example, if [LWT_LOG] contains:
-
       {[
         access -> warning;
-        foo\(\*\) -> error
+        foo[*] -> error
       ]}
-
       then the level of the section ["access"] is {!Warning} and the
-      level of any section matching ["foo\(\*\)"] is {!Error}.
+      level of any section matching ["foo[*]"] is {!Error}.
 
       If [LWT_LOG] is not defined then the rule ["* -> notice"] is
       used instead. *)
 
 (** {6 Logging functions} *)
 
-val log : ?section : section -> ?logger : logger -> level : level -> string -> unit Lwt.t
+val log : ?exn : exn -> ?section : section -> ?logger : logger -> level : level -> string -> unit Lwt.t
   (** [log ?section ?logger ~level message] logs a message.
 
       [section] defaults to {!Section.main}. If [logger] is not
       specified, then the default one is used instead (see
-      {!default}). *)
+      {!default}).
 
-val log_f : ?section : section -> ?logger : logger -> level : level -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+      If [exn] is provided, then its string representation
+      (= [Printexc.to_string exn]) will be append to the message, and if
+      possible the backtrace will also be logged. *)
+
+val log_f : ?exn : exn -> ?section : section -> ?logger : logger -> level : level -> ('a, unit, string, unit Lwt.t) format4 -> 'a
   (** [log_f] is the same as [log] except that it takes a format
-      string *)
-
-val exn : ?section : section -> ?logger : logger -> ?level : level -> exn : exn -> string -> unit Lwt.t
-  (** [exn ?section ?logger ?level exn format] logs an exception. If
-      possible the backtrace will also be logged.
-
-      @param level default to {!Error} *)
-
-val exn_f : ?section : section -> ?logger : logger -> ?level : level -> exn : exn -> ('a, unit, string, unit Lwt.t) format4 -> 'a
-  (** [exn_f] is the same as [log] except that it takes a format
       string *)
 
 (** The following functions are the same as {!log} except that their
@@ -116,23 +108,23 @@ val exn_f : ?section : section -> ?logger : logger -> ?level : level -> exn : ex
     For example {!info msg} is the same as {!log ~level:Info msg}.
 *)
 
-val debug : ?section : section -> ?logger : logger -> string -> unit Lwt.t
-val debug_f : ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+val debug : ?exn : exn -> ?section : section -> ?logger : logger -> string -> unit Lwt.t
+val debug_f : ?exn : exn ->  ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
 
-val info : ?section : section -> ?logger : logger -> string -> unit Lwt.t
-val info_f : ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+val info : ?exn : exn -> ?section : section -> ?logger : logger -> string -> unit Lwt.t
+val info_f : ?exn : exn ->  ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
 
-val notice : ?section : section -> ?logger : logger -> string -> unit Lwt.t
-val notice_f : ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+val notice : ?exn : exn -> ?section : section -> ?logger : logger -> string -> unit Lwt.t
+val notice_f : ?exn : exn ->  ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
 
-val warning : ?section : section -> ?logger : logger -> string -> unit Lwt.t
-val warning_f : ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+val warning : ?exn : exn -> ?section : section -> ?logger : logger -> string -> unit Lwt.t
+val warning_f : ?exn : exn ->  ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
 
-val error : ?section : section -> ?logger : logger -> string -> unit Lwt.t
-val error_f : ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+val error : ?exn : exn -> ?section : section -> ?logger : logger -> string -> unit Lwt.t
+val error_f : ?exn : exn ->  ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
 
-val fatal : ?section : section -> ?logger : logger -> string -> unit Lwt.t
-val fatal_f : ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+val fatal : ?exn : exn -> ?section : section -> ?logger : logger -> string -> unit Lwt.t
+val fatal_f : ?exn : exn ->  ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
 
 (** Sections *)
 module Section : sig
@@ -150,7 +142,7 @@ module Section : sig
         one is provided. *)
 
   val level : section -> level
-    (** [level section] returns the logging level of section *)
+    (** [level section] returns the logging level of [section] *)
 
   val set_level : section -> level -> unit
     (** [set_level section] sets the logging level of the given

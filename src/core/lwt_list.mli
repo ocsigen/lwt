@@ -25,7 +25,7 @@
 (** Note: this module use the same naming convention as
     {!Lwt_stream}. *)
 
-(** {6 List transversal} *)
+(** {6 List iterators} *)
 
 val iter_s : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
 val iter_p : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t

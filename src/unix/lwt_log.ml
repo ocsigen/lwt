@@ -458,7 +458,7 @@ let split str =
   in
   aux 0
 
-let log ?(section=Section.main) ?logger ~level message =
+let log ?exn ?(section=Section.main) ?logger ~level message =
   let logger = match logger with
     | None -> !default
     | Some logger -> logger
@@ -466,46 +466,35 @@ let log ?(section=Section.main) ?logger ~level message =
   if logger.lg_closed then
     fail Logger_closed
   else if level >= section.Section.level then
-    logger.lg_output section level (split message)
+    match exn with
+      | None ->
+          logger.lg_output section level (split message)
+      | Some exn ->
+          let message = message ^ ": " ^ Printexc.to_string exn in
+          let message =
+            if Printexc.backtrace_status () then
+              match Printexc.get_backtrace () with
+                | "" -> message
+                | backtrace -> message ^ "\nbacktrace:\n" ^ backtrace
+            else
+              message
+          in
+          logger.lg_output section level (split message)
   else
     return ()
 
-let exn ?(section=Section.main) ?logger ?(level=Error) ~exn message =
-  let logger = match logger with
-    | None -> !default
-    | Some logger -> logger
-  in
-  if logger.lg_closed then
-    fail Logger_closed
-  else if level >= section.Section.level then begin
-    let message = message ^ ": " ^ Printexc.to_string exn in
-    let message =
-      if Printexc.backtrace_status () then
-        match Printexc.get_backtrace () with
-          | "" -> message
-          | backtrace -> message ^ "\nbacktrace:\n" ^ backtrace
-      else
-        message
-    in
-    logger.lg_output section level (split message)
-  end else
-    return ()
+let log_f ?exn ?section ?logger ~level format =
+  Printf.ksprintf (log ?exn ?section ?logger ~level) format
 
-let log_f ?section ?logger ~level format =
-  Printf.ksprintf (log ?section ?logger ~level) format
-
-let exn_f ?section ?logger ?level ~exn:e format =
-  Printf.ksprintf (exn ?section ?logger ?level ~exn:e) format
-
-let debug ?section ?logger msg = log ?section ?logger ~level:Debug msg
-let debug_f ?section ?logger fmt = Printf.ksprintf (debug ?section ?logger) fmt
-let info ?section ?logger msg = log ?section ?logger ~level:Info msg
-let info_f ?section ?logger fmt = Printf.ksprintf (info ?section ?logger) fmt
-let notice ?section ?logger msg = log ?section ?logger ~level:Notice msg
-let notice_f ?section ?logger fmt = Printf.ksprintf (notice ?section ?logger) fmt
-let warning ?section ?logger msg = log ?section ?logger ~level:Warning msg
-let warning_f ?section ?logger fmt = Printf.ksprintf (warning ?section ?logger) fmt
-let error ?section ?logger msg = log ?section ?logger ~level:Error msg
-let error_f ?section ?logger fmt = Printf.ksprintf (error ?section ?logger) fmt
-let fatal ?section ?logger msg = log ?section ?logger ~level:Fatal msg
-let fatal_f ?section ?logger fmt = Printf.ksprintf (fatal ?section ?logger) fmt
+let debug ?exn ?section ?logger msg = log ?exn ?section ?logger ~level:Debug msg
+let debug_f ?exn ?section ?logger fmt = Printf.ksprintf (debug ?exn ?section ?logger) fmt
+let info ?exn ?section ?logger msg = log ?exn ?section ?logger ~level:Info msg
+let info_f ?exn ?section ?logger fmt = Printf.ksprintf (info ?exn ?section ?logger) fmt
+let notice ?exn ?section ?logger msg = log ?exn ?section ?logger ~level:Notice msg
+let notice_f ?exn ?section ?logger fmt = Printf.ksprintf (notice ?exn ?section ?logger) fmt
+let warning ?exn ?section ?logger msg = log ?exn ?section ?logger ~level:Warning msg
+let warning_f ?exn ?section ?logger fmt = Printf.ksprintf (warning ?exn ?section ?logger) fmt
+let error ?exn ?section ?logger msg = log ?exn ?section ?logger ~level:Error msg
+let error_f ?exn ?section ?logger fmt = Printf.ksprintf (error ?exn ?section ?logger) fmt
+let fatal ?exn ?section ?logger msg = log ?exn ?section ?logger ~level:Fatal msg
+let fatal_f ?exn ?section ?logger fmt = Printf.ksprintf (fatal ?exn ?section ?logger) fmt

@@ -50,7 +50,7 @@
 *)
 
 exception Channel_closed of string
-  (** Exception raised whan a channel is closed. The parameter is a
+  (** Exception raised when a channel is closed. The parameter is a
       description of the channel. *)
 
 (** {6 Types} *)
@@ -125,14 +125,15 @@ val make :
   (** [make ?buffer_size ?close ~mode perform_io] is the
       main function for creating new channels.
 
-      @param buffer_size is the size of the internal buffer.
+      @param buffer_size size of the internal buffer. It must be
+      between 16 and [Sys.max_string_length]
 
-      @param close is the close function of the channel. It defaults
-      to [Lwt.return]
+      @param close close function of the channel. It defaults to
+      [Lwt.return]
 
-      @param seek has the same meaning as [Unix.lseek]
+      @param seek same meaning as [Unix.lseek]
 
-      @param mode is either {!input} or {!output}
+      @param mode either {!input} or {!output}
 
       @param perform_io is the read or write function. It is called
       when more input is needed or when the buffer need to be
@@ -175,9 +176,7 @@ val atomic : ('a channel -> 'b Lwt.t) -> ('a channel -> 'b Lwt.t)
 
       Note:
       - the channel passed to [f] is invalid after [f] terminates
-      - [atomic] can be called inside another [atomic]
-      - the ``auto-flushing'' is performed only when all operations on
-      the main channel are terminated *)
+      - [atomic] can be called inside another [atomic] *)
 
 val file_length : string -> int64 Lwt.t
   (** Returns the length of a file *)
@@ -217,7 +216,7 @@ val read_char : input_channel -> char Lwt.t
       @raise End_of_file if the end of the file is reached *)
 
 val read_char_opt : input_channel -> char option Lwt.t
-  (** Same as {!read_byte} but do not raises [End_of_file] on end of
+  (** Same as {!read_byte} but does not raises [End_of_file] on end of
       input *)
 
 val read_chars : input_channel -> char Lwt_stream.t
@@ -230,7 +229,7 @@ val read_line : input_channel -> string Lwt.t
       ["\r\n"].
 
       If the end of line is reached before reading any character,
-      [End_of_file] is reached. If it is reached before reading an end
+      [End_of_file] is raised. If it is reached before reading an end
       of line but characters have already been read, they are
       returned. *)
 
@@ -276,8 +275,8 @@ val write_char : output_channel -> char -> unit Lwt.t
   (** [write_char oc char] writes [char] on [oc] *)
 
 val write_chars : output_channel -> char Lwt_stream.t -> unit Lwt.t
-  (** [write_chars oc chars] writes all characters contained hold by
-      [chars] on [oc] *)
+  (** [write_chars oc chars] writes all characters of [chars] on
+      [oc] *)
 
 val write : output_channel -> string -> unit Lwt.t
   (** [write oc str] writes all characters of [str] on [oc] *)
@@ -303,23 +302,21 @@ val write_value : output_channel -> ?flags : Marshal.extern_flags list -> 'a -> 
 
 (** {6 Printing} *)
 
-(** The functions are basically helpers. Also you may prefer the using
-    the name {!printl} rather than {!write_line} because it is
+(** These functions are basically helpers. Also you may prefer the
+    using the name {!printl} rather than {!write_line} because it is
     shorter.
 
     The general name of a printing function is [<prefix>print<suffixes>].
 
     Where [<prefix>] is one of:
-
     - ['f'], which means that the function takes as argument a channel
     - nothing, which means that the function prints on {!stdout}
     - ['e'], which means that the function prints on {!stderr}
 
     and [<suffixes>] is a combination of:
-
     - ['l'] which means that a new-line character is printed after the message
     - ['f'] which means that the function takes as argument a {b format} instead
-      of a string
+    of a string
 *)
 
 val fprint : output_channel -> string -> unit Lwt.t
@@ -460,8 +457,8 @@ module LE : NumberIO
 module BE : NumberIO
   (** Reading/writing of integers in big-endian *)
 
+(** Type of byte order *)
 type byte_order = Little_endian | Big_endian
-    (** Type of byte order *)
 
 val system_byte_order : byte_order
   (** The byte order used by the computer running the program *)
@@ -471,12 +468,11 @@ val system_byte_order : byte_order
 val block : 'a channel  -> int -> (string -> int -> 'b Lwt.t) -> 'b Lwt.t
   (** [block ch size f] pass to [f] the internal buffer and an
       offset. The buffer contains [size] chars at [offset]. [f] may
-      reads or writes these chars.
-
-      @param size must verify [0 <= size <= 16] *)
+      reads or writes these chars.  [size] must verify [0 <= size <=
+      16] *)
 
 (** Informations for accessing directly to the internal buffer of a
-    channel: *)
+    channel *)
 type direct_access = {
   da_buffer : string;
   (** The internal buffer *)

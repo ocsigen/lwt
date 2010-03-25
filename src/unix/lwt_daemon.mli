@@ -34,22 +34,20 @@ val daemonize :
       and exit the parent, detach it from its controlling terminal,
       and redict standard intputs/outputs..
 
-      Note: if the process is already a daemon, is does nothing.
+      Note: if the process is already a daemon, it does nothing.
 
       If [syslog] is [true] (the default), then {!Lwt_log.default} is
       set to [Lwt_log.syslog ~facility:`Daemon ()], otherwise it is
       kept unchanged.
 
       [stdin] is one of:
-
       - [`Dev_null] which means that [Unix.stdin] is reopened as
-        [/dev/null]
+        [/dev/null], this is the default behavior
       - [`Close] means that [Unix.stdin] is simply closed
       - [`Keep] means that [Unix.stdin] is left unchanged
 
       [stdout] and [stderr] control how the two associated file
       descriptors are redirected:
-
       - [`Dev_null] means that the output is redirected to [/dev/null]
       - [`Close] means that the file descriptor is closed
       - [`Keep] means that it is left unchanged
@@ -73,7 +71,6 @@ val daemonize :
       defaults to ["/"].
 
       [umask] may be one of:
-
       - [`Keep] which means that the umask is left unchanged
       - [`Set n] which means that the umash is set to [n]
 
