@@ -672,6 +672,14 @@ external lwt_unix_has_wait4 : unit -> bool = "lwt_unix_has_wait4"
 
 let has_wait4 = lwt_unix_has_wait4 ()
 
+let real_wait4 =
+  if has_wait4 then
+    lwt_unix_wait4
+  else
+    (fun flags pid ->
+       let pid, status = Unix.waitpid flags pid in
+       (pid, status, { ru_utime = 0.0; ru_stime = 0.0 }))
+
 let wait_children = Lwt_sequence.create ()
 
 let _ =

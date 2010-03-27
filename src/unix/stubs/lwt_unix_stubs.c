@@ -31,13 +31,17 @@
 #include <caml/config.h>
 #include <signal.h>
 #include <sys/types.h>
+#if !defined(__MINGW32__)
 #include <sys/socket.h>
+#endif
 #include <errno.h>
 #include <string.h>
 
 /* +-----------------------------------------------------------------+
    | Read/write                                                      |
    +-----------------------------------------------------------------+ */
+
+#if !defined(__MINGW32__)
 
 /* This code is a simplified version of the default unix_write and
    unix_read functions of caml.
@@ -63,9 +67,25 @@ value lwt_unix_read(value fd, value buf, value ofs, value len)
   return Val_int(ret);
 }
 
+#else
+
+value lwt_unix_write(value fd, value buf, value ofs, value len)
+{
+  invalid_argument("write not implemented");
+}
+
+value lwt_unix_read(value fd, value buf, value ofs, value len)
+{
+  invalid_argument("read not implemented");
+}
+
+#endif
+
 /* +-----------------------------------------------------------------+
    | Recv/send                                                       |
    +-----------------------------------------------------------------+ */
+
+#if !defined(__MINGW32__)
 
 static int msg_flag_table[] = {
   MSG_OOB, MSG_DONTROUTE, MSG_PEEK
@@ -89,9 +109,25 @@ value lwt_unix_send(value fd, value buf, value ofs, value len, value flags)
   return Val_int(ret);
 }
 
+#else
+
+value lwt_unix_recv(value fd, value buf, value ofs, value len, value flags)
+{
+  invalid_argument("recv not implemented");
+}
+
+value lwt_unix_send(value fd, value buf, value ofs, value len, value flags)
+{
+  invalid_argument("send not implemented");
+}
+
+#endif
+
 /* +-----------------------------------------------------------------+
    | {recv/send}_msg                                                 |
    +-----------------------------------------------------------------+ */
+
+#if !defined(__MINGW32__)
 
 /* Convert a caml list of io-vectors into a C array io io-vector
    structures */
@@ -185,13 +221,29 @@ CAMLprim value lwt_unix_send_msg(value sock_val, value n_iovs_val, value iovs_va
   CAMLreturn(Val_int(ret));
 }
 
+#else
+
+value lwt_unix_recv_msg(value sock_val, value n_iovs_val, value iovs_val)
+{
+  invalid_argument("recv_msg not implemented");
+}
+
+value lwt_unix_send_msg(value sock_val, value n_iovs_val, value iovs_val, value n_fds_val, value fds_val)
+{
+  invalid_argument("send_msg not implemented");
+}
+
+#endif
+
 /* +-----------------------------------------------------------------+
    | Credentials                                                     |
    +-----------------------------------------------------------------+ */
 
+#if !defined(__MINGW32__)
 #include <sys/un.h>
+#endif
 
-#if defined(SO_PEERCRED)
+#if defined(SO_PEERCRED) && !defined(__MINGW32__)
 
 CAMLprim value lwt_unix_get_credentials(value fd)
 {
@@ -223,7 +275,7 @@ CAMLprim value lwt_unix_get_credentials(value fd_val)
    | Select                                                          |
    +-----------------------------------------------------------------+ */
 
-#ifdef HAS_SELECT
+#if defined(HAS_SELECT) && !defined(__MINGW32__)
 
 #include <sys/time.h>
 #ifdef HAS_SYS_SELECT_H
@@ -324,7 +376,9 @@ CAMLprim value lwt_unix_select(value readfds,
 
 CAMLprim value lwt_unix_select(value readfds, value writefds, value exceptfds,
                                value timeout)
-{ invalid_argument("select not implemented"); }
+{
+  invalid_argument("select not implemented");
+}
 
 #endif
 
@@ -340,20 +394,20 @@ CAMLprim value lwt_unix_select(value readfds, value writefds, value exceptfds,
 CAMLprim value lwt_unix_term_size(value unit)
 {
   CAMLparam1(unit);
-  CAMLlocal(result);
+  CAMLlocal1(result);
   HANDLE handle;
   CONSOLE_SCREEN_BUFFER_INFO info;
 
-  hConOut = GetStdHandle(STD_OUTPUT_HANDLE);
-  if (hConOut == INVALID_HANDLE_VALUE)
+  handle = GetStdHandle(STD_OUTPUT_HANDLE);
+  if (handle == INVALID_HANDLE_VALUE)
     caml_failwith("GetStdHandle");
 
-  if (!GetConsoleScreenBufferInfo(hConOut, &scr))
+  if (!GetConsoleScreenBufferInfo(handle, &info))
     caml_failwith("GetConsoleScreenBufferInfo");
 
   result = caml_alloc_tuple(2);
-  Store_field(result, 0, Val_int(scr.dwSize.X));
-  Store_field(result, 1, Val_int(scr.dwSize.Y));
+  Store_field(result, 0, Val_int(info.dwSize.X));
+  Store_field(result, 1, Val_int(info.dwSize.Y));
   CAMLreturn(result);
 }
 
@@ -390,6 +444,8 @@ value lwt_unix_sigwinch()
 /* +-----------------------------------------------------------------+
    | wait4                                                           |
    +-----------------------------------------------------------------+ */
+
+#if !defined(__MINGW32__)
 
 /* Some code duplicated from OCaml's otherlibs/unix/wait.c */
 
@@ -490,6 +546,20 @@ value lwt_unix_has_wait4(value unit)
   return Val_int(0);
 #endif
 }
+
+#else
+
+value lwt_unix_wait4(value flags, value pid_req)
+{
+  invalid_argument("wait4 not implemented");
+}
+
+value lwt_unix_has_wait4(value unit)
+{
+  return Val_int(0);
+}
+
+#endif
 
 /* +-----------------------------------------------------------------+
    | Byte order                                                      |
