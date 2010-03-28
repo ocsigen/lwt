@@ -84,6 +84,7 @@ install:
 	  $(wildcard _build/src/*/*.a) \
 	  $(wildcard _build/src/*/stubs/*.so) \
 	  $(wildcard _build/src/*/stubs/*.a) \
+	  $(wildcard _build/src/*/stubs/*.dll) \
 	  $(wildcard _build/src/top/private/toplevel.top) \
 	  _build/syntax/pa_lwt.cmo \
 	  _build/syntax/pa_log.cmo
