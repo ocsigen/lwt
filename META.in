@@ -9,7 +9,7 @@ archive(native) = "lwt.cmxa"
 package "react" (
   exists_if = "lwt_react.cma,lwt_react.cmxa,lwt_react.cmxs"
   description = "Reactive programming helpers"
-  requires = "react"
+  requires = "react lwt"
   archive(byte) = "lwt_react.cma"
   archive(native) = "lwt_react.cmxa"
 )
