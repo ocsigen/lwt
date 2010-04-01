@@ -24,6 +24,8 @@
 
 open Lwt
 
+let windows_hack = Sys.os_type <> "Unix"
+
 (* +-----------------------------------------------------------------+
    | Sleepers                                                        |
    +-----------------------------------------------------------------+ *)
@@ -111,8 +113,17 @@ type file_descr = {
 }
 
 let mk_ch fd =
-  Unix.set_nonblock fd;
-  { fd = fd; state = Open; blocking = false }
+  if windows_hack then
+    match (Unix.fstat fd).Unix.st_kind  with
+      | Unix.S_SOCK ->
+          Unix.set_nonblock fd;
+          { fd = fd; state = Open; blocking = false }
+      | _ ->
+          { fd = fd; state = Open; blocking = true }
+  else begin
+    Unix.set_nonblock fd;
+    { fd = fd; state = Open; blocking = false }
+  end
 
 let rec check_descriptor ch =
   match ch.state with
@@ -202,8 +213,7 @@ let rec retry_syscall set ch cont action =
 let register_action set ch action =
   let (res, w) = Lwt.task () in
   let actions = get_actions ch set in
-  let node =
-    Lwt_sequence.add_r (fun _ -> retry_syscall set ch w action) actions in
+  let node = Lwt_sequence.add_r (fun _ -> retry_syscall set ch w action) actions in
   (* Unregister the action on cancel: *)
   Lwt.on_cancel res begin fun _ ->
     Lwt_sequence.remove node;
@@ -278,35 +288,38 @@ external lwt_unix_write : Unix.file_descr -> string -> int -> int -> int = "lwt_
 external lwt_unix_recv : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_recv"
 external lwt_unix_send : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_send"
 
-let real_read, real_write, real_recv, real_send =
-  if Sys.os_type = "Unix" then
-    lwt_unix_read, lwt_unix_write, lwt_unix_recv, lwt_unix_send
-  else
-    Unix.read, Unix.write, Unix.recv, Unix.send
-
 let read ch buf pos len =
   if pos < 0 || len < 0 || pos > String.length buf - len then
     invalid_arg "Lwt_unix.read"
-  else
-    wrap_syscall inputs ch (fun _ -> real_read ch.fd buf pos len)
+  else if windows_hack then begin
+    check_descriptor ch;
+    register_action inputs ch (fun () -> Unix.read ch.fd buf pos len)
+  end else
+    wrap_syscall inputs ch (fun () -> lwt_unix_read ch.fd buf pos len)
 
 let write ch buf pos len =
   if pos < 0 || len < 0 || pos > String.length buf - len then
     invalid_arg "Lwt_unix.write"
+  else if windows_hack then
+    wrap_syscall outputs ch (fun () -> Unix.write ch.fd buf pos len)
   else
-    wrap_syscall outputs ch (fun _ -> real_write ch.fd buf pos len)
+    wrap_syscall outputs ch (fun () -> lwt_unix_write ch.fd buf pos len)
 
 let recv ch buf pos len flags =
   if pos < 0 || len < 0 || pos > String.length buf - len then
     invalid_arg "Lwt_unix.recv"
+  else if windows_hack then
+    wrap_syscall inputs ch (fun () -> Unix.recv ch.fd buf pos len flags)
   else
-    wrap_syscall inputs ch (fun _ -> real_recv ch.fd buf pos len flags)
+    wrap_syscall inputs ch (fun () -> lwt_unix_recv ch.fd buf pos len flags)
 
 let send ch buf pos len flags =
   if pos < 0 || len < 0 || pos > String.length buf - len then
     invalid_arg "Lwt_unix.send"
+  else if windows_hack then
+    wrap_syscall outputs ch (fun () -> Unix.send ch.fd buf pos len flags)
   else
-    wrap_syscall outputs ch (fun _ -> real_send ch.fd buf pos len flags)
+    wrap_syscall outputs ch (fun () -> lwt_unix_send ch.fd buf pos len flags)
 
 let recvfrom ch buf ofs len flags =
   wrap_syscall inputs ch (fun _ -> Unix.recvfrom ch.fd buf ofs len flags)
@@ -682,28 +695,31 @@ let real_wait4 =
 
 let wait_children = Lwt_sequence.create ()
 
-let _ =
-  on_signal Sys.sigchld
-    (fun _ ->
-       Lwt_sequence.iter_node_l begin fun node ->
-         let cont, flags, pid = Lwt_sequence.get node in
-         try
-           let (pid', _, _) as v = lwt_unix_wait4 flags pid in
-           if pid' <> 0 then begin
-             Lwt_sequence.remove node;
-             Lwt.wakeup cont v
-           end
-         with e ->
-           Lwt_sequence.remove node;
-           Lwt.wakeup_exn cont e
-       end wait_children)
+let () =
+  if not windows_hack then
+    ignore begin
+      on_signal Sys.sigchld
+        (fun _ ->
+           Lwt_sequence.iter_node_l begin fun node ->
+             let cont, flags, pid = Lwt_sequence.get node in
+             try
+               let (pid', _, _) as v = lwt_unix_wait4 flags pid in
+               if pid' <> 0 then begin
+                 Lwt_sequence.remove node;
+                 Lwt.wakeup cont v
+               end
+             with e ->
+               Lwt_sequence.remove node;
+               Lwt.wakeup_exn cont e
+           end wait_children)
+    end
 
 let _waitpid flags pid =
   try_lwt
     return (Unix.waitpid flags pid)
 
 let waitpid flags pid =
-  if List.mem Unix.WNOHANG flags then
+  if List.mem Unix.WNOHANG flags || windows_hack then
     _waitpid flags pid
   else
     let flags = Unix.WNOHANG :: flags in
@@ -723,7 +739,7 @@ let _wait4 flags pid =
     return (lwt_unix_wait4 flags pid)
 
 let wait4 flags pid =
-  if List.mem Unix.WNOHANG flags then
+  if List.mem Unix.WNOHANG flags || windows_hack then
     _wait4 flags pid
   else
     let flags = Unix.WNOHANG :: flags in
