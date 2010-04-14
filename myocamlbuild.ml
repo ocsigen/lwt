@@ -262,9 +262,14 @@ let _ =
         Options.ocamlopt := ocamlfind "ocamlopt";
         Options.ocamldep := ocamlfind "ocamldep";
         Options.ocamlmktop := ocamlfind "ocamlmktop";
+        (* possibility to override ocamldoc (for the website) *)
+        let ocamldoc =
+          try Sh (Sys.getenv "OCAMLDOC")
+          with Not_found -> S[A"ocamlfind"; A"ocamldoc"]
+        in
         (* FIXME: sometimes ocamldoc say that elements are not found
            even if they are present: *)
-        Options.ocamldoc := S[A"ocamlfind"; A"ocamldoc"; A"-hide-warnings"]
+        Options.ocamldoc := S[ocamldoc; A"-hide-warnings"]
 
     | After_rules ->
         List.iter
