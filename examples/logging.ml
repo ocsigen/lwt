@@ -30,4 +30,4 @@ lwt () =
     h ();
     Lwt.return ()
   with exn ->
-    Lwt_log.exn ~section ~exn "h failed with"
+    Lwt_log.error ~section ~exn "h failed with"
