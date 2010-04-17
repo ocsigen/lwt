@@ -1,0 +1,3 @@
+# This file is used to generate "toplevel_temp.top", which is then
+# expunged into "toplevel.top"
+Toplevel

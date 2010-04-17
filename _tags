@@ -13,7 +13,7 @@
 <{src,tests}/top/**>: pkg_unix, pkg_react, pkg_text, pkg_findlib
 <{src,tests}/unix/**>: pkg_unix
 
-<src/top/private/toplevel.*>: use_compiler_libs
+<src/top/private/{toplevel.*,toplevel_temp.*}>: use_compiler_libs
 
 <tests/**>: pkg_unix, use_unix_stubs
 

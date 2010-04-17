@@ -49,9 +49,11 @@ let have_glib = try_exec "ocamlfind query lablgtk2" && try_exec "pkg-config glib
 let have_react = try_exec "ocamlfind query react"
 let have_text = have_react && try_exec "ocamlfind query text"
 
+let stdlib_path = String.chomp (run_and_read "ocamlfind ocamlc -where")
+
 (* Try to find the path where compiler libraries are: *)
 let compiler_libs =
-  let stdlib = String.chomp (run_and_read "ocamlfind ocamlc -where") in
+  let stdlib = String.chomp stdlib_path in
   try
     let path =
       List.find Pathname.exists [
@@ -356,8 +358,17 @@ let _ =
 
         (* Link with the toplevel library *)
         let libs = ["core"; "react"; "unix"; "text"; "top"] in
-        dep ["file:src/top/private/toplevel.top"] (List.map (fun name -> lib_path name "cma") libs);
-        flag ["file:src/top/private/toplevel.top"] & S(A"-I" :: A"src/unix/stubs" :: List.map (fun name -> A(lib_path name "cma")) libs);
+        dep ["file:src/top/private/toplevel_temp.top"] (List.map (fun name -> lib_path name "cma") libs);
+        flag ["file:src/top/private/toplevel_temp.top"] & S(A"-I" :: A"src/unix/stubs" :: List.map (fun name -> A(lib_path name "cma")) libs);
+
+        (* Expunge compiler modules *)
+        rule "toplevel expunge"
+          ~dep:"src/top/private/toplevel_temp.top"
+          ~prod:"src/top/private/toplevel.top"
+          (fun _ _ ->
+             Cmd(S[A(stdlib_path / "expunge");
+                   A"src/top/private/toplevel_temp.top";
+                   A"src/top/private/toplevel.top"]));
 
         (* +---------------------------------------------------------+
            | C stubs                                                 |
