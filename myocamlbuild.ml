@@ -366,9 +366,38 @@ let _ =
           ~dep:"src/top/private/toplevel_temp.top"
           ~prod:"src/top/private/toplevel.top"
           (fun _ _ ->
+             let directories =
+               stdlib_path
+               :: "src/core"
+               :: "src/react"
+               :: "src/unix"
+               :: "src/text"
+               :: "src/top"
+               :: (List.map
+                    (fun lib ->
+                       String.chomp
+                         (run_and_read
+                            ("ocamlfind query " ^ lib)))
+                    ["findlib"; "react"; "unix"; "ssl"; "text"])
+             in
+             let modules =
+               List.fold_left
+                 (fun set directory ->
+                    List.fold_left
+                      (fun set fname ->
+                         if Pathname.check_extension fname "cmi" then
+                           StringSet.add (module_name_of_pathname fname) set
+                         else
+                           set)
+                      set
+                      (Array.to_list (Pathname.readdir directory)))
+                 StringSet.empty directories
+             in
              Cmd(S[A(stdlib_path / "expunge");
                    A"src/top/private/toplevel_temp.top";
-                   A"src/top/private/toplevel.top"]));
+                   A"src/top/private/toplevel.top";
+                   A"outcometree"; A"topdirs"; A"toploop";
+                   S(List.map (fun x -> A x) (StringSet.elements modules))]));
 
         (* +---------------------------------------------------------+
            | C stubs                                                 |
