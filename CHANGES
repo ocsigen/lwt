@@ -1,4 +1,4 @@
-===== 2.0.0+dev =====
+===== 2.1.0 (2010-04-19) =====
 
   * Rename {{{Lwt.select}}} to {{{Lwt.pick}}}
   * Removing module {{{Lwt_monitor}}} in favour of {{{Lwt_mutex}}} and
