@@ -127,6 +127,16 @@ let restart t state caller =
     | _ ->
         invalid_arg caller
 
+let restart_cancel t =
+  let t = repr_rec (wakener_repr t) in
+  match !t with
+    | Sleep{ waiters = waiters } ->
+        let state = Fail Canceled in
+        t := state;
+        run_waiters waiters state
+    | _ ->
+        ()
+
 let wakeup t v = restart t (Return v) "Lwt.wakeup"
 let wakeup_exn t e = restart t (Fail e) "Lwt.wakeup_exn"
 
@@ -250,7 +260,7 @@ let wait () =
                       removed = 0 }) in
   (thread t, wakener t)
 let task () =
-  let rec t = ref (Sleep{ cancel = (fun () -> wakeup_exn (wakener t) Canceled);
+  let rec t = ref (Sleep{ cancel = (fun () -> restart_cancel (wakener t));
                           waiters = Empty;
                           removed = 0 }) in
   (thread t, wakener t)

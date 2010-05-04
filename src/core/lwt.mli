@@ -215,7 +215,11 @@ val pause : unit -> unit t
 
 val wakeup_paused : unit -> unit
   (** [wakeup_paused ()] wakes up all threads which suspended
-      themselves with {!pause}. *)
+      themselves with {!pause}.
+
+      This function is called by the scheduler, before entering the
+      main loop. You usually do not have to call it directly, except
+      if you are writing a custom scheduler. *)
 
 (**/**)
 
