@@ -72,6 +72,7 @@ let default_iteration () =
 let main_loop_iteration = ref default_iteration
 
 let rec run t =
+  Lwt.wakeup_paused ();
   match Lwt.poll t with
     | Some x ->
         x
