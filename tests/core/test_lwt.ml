@@ -457,27 +457,29 @@ let suite = suite "lwt" [
     (fun () ->
        lwt l = npick [return 1; return 2] in
        return (l = [1; 2]));
+
+  test "bind/cancel 1"
+    (fun () ->
+       let waiter, wakener = wait () in
+       let t =
+         lwt () = waiter in
+         let waiter, wakener = task () in
+         waiter
+       in
+       wakeup wakener ();
+       cancel t;
+       return (state t = Fail Canceled));
+
+  test "bind/cancel 2"
+    (fun () ->
+       let waiter, wakener = wait () in
+       let t =
+         lwt () = waiter in
+         let waiter, wakener = task () in
+         waiter
+       in
+       let t = t >>= return in
+       wakeup wakener ();
+       cancel t;
+       return (state t = Fail Canceled));
 ]
-
-let fact n =
-  let rec aux acc = function
-    | 0 -> return acc
-    | n -> bind (return (n-1)) (aux (n*acc))
-  in
-  aux 1 n
-
-(*
-let () =
-  (* Will normaly not overflow and shouldn't take memory *)
-  ignore (fact 10000000)
-*)
-
-(*
-let rec fact = function
-  | 0 -> return 1
-  | n -> bind (fact (n-1)) (fun x -> return (x*n))
-
-let () =
-  (* Will normaly overflow *)
-  ignore (fact 10000000)
-*)

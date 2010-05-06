@@ -46,7 +46,7 @@ type 'a thread_state =
 and 'a thread_repr = 'a thread_state ref
 
 and 'a sleeper = {
-  mutable cancel : unit -> unit;
+  cancel : (unit -> unit) ref;
   (* The cancel function of the thread *)
   mutable waiters : 'a waiter_set;
   (* All thunk functions *)
@@ -143,7 +143,7 @@ let wakeup_exn t e = restart t (Fail e) "Lwt.wakeup_exn"
 let cancel t =
   match !(repr t) with
     | Sleep{ cancel = f } ->
-        f ()
+        !f ()
     | _ ->
         ()
 
@@ -209,7 +209,7 @@ let connect t1 t2 =
                    for a thread that terminated, its cancel function
                    is meaningless. Only the one of [t2] is now
                    important: *)
-                sleeper1.cancel <- sleeper2.cancel;
+                sleeper1.cancel := !(sleeper2.cancel);
 
                 (* Merge the two sets of waiters: *)
                 let waiters = append sleeper1.waiters sleeper2.waiters
@@ -250,17 +250,18 @@ let return v =
   thread (ref (Return v))
 let fail e =
   thread (ref (Fail e))
-let temp f =
-  thread (ref (Sleep{ cancel = f;
+let temp r =
+  thread (ref (Sleep{ cancel = r;
                       waiters = Empty;
                       removed = 0 }))
+let no_cancel = ref ignore
 let wait () =
-  let t = ref (Sleep{ cancel = ignore;
+  let t = ref (Sleep{ cancel = no_cancel;
                       waiters = Empty;
                       removed = 0 }) in
   (thread t, wakener t)
 let task () =
-  let rec t = ref (Sleep{ cancel = (fun () -> restart_cancel (wakener t));
+  let rec t = ref (Sleep{ cancel = ref (fun () -> restart_cancel (wakener t));
                           waiters = Empty;
                           removed = 0 }) in
   (thread t, wakener t)
@@ -456,7 +457,7 @@ let choose l =
   if ready > 0 then
     nth_ready l (Random.int ready)
   else begin
-    let res = temp (fun () -> List.iter cancel l) in
+    let res = temp (ref (fun () -> List.iter cancel l)) in
     let rec waiter = ref (Some handle_result)
     and handle_result state =
       (* Disable the waiter now: *)
@@ -491,7 +492,7 @@ let rec nchoose_terminate res acc = function
             nchoose_terminate res acc l
 
 let nchoose_sleep l =
-  let res = temp (fun () -> List.iter cancel l) in
+  let res = temp (ref (fun () -> List.iter cancel l)) in
   let rec waiter = ref (Some handle_result)
   and handle_result state =
     waiter := None;
@@ -558,7 +559,7 @@ let pick l =
   if ready > 0 then
     cancel_and_nth_ready l (Random.int ready)
   else begin
-    let res = temp (fun () -> List.iter cancel l) in
+    let res = temp (ref (fun () -> List.iter cancel l)) in
     let rec waiter = ref (Some handle_result)
     and handle_result state =
       waiter := None;
@@ -579,7 +580,7 @@ let pick l =
   end
 
 let npick_sleep l =
-  let res = temp (fun () -> List.iter cancel l) in
+  let res = temp (ref (fun () -> List.iter cancel l)) in
   let rec waiter = ref (Some handle_result)
   and handle_result state =
     waiter := None;
@@ -629,7 +630,7 @@ let npick threads =
   init threads
 
 let join l =
-  let res = temp (fun () -> List.iter cancel l) and sleeping = ref 0 (* Number of threads still sleeping *) in
+  let res = temp (ref (fun () -> List.iter cancel l)) and sleeping = ref 0 (* Number of threads still sleeping *) in
   let rec waiter = ref (Some handle_result)
   and handle_result state = match state with
     | Fail exn ->
