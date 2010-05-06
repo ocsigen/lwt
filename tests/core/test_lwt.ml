@@ -447,6 +447,16 @@ let suite = suite "lwt" [
        lwt () = Lwt_unix.yield () in
        cancel t;
        return (state t = Fail Canceled));
+
+  test "nchoose"
+    (fun () ->
+       lwt l = nchoose [return 1; return 2] in
+       return (l = [1; 2]));
+
+  test "npick"
+    (fun () ->
+       lwt l = npick [return 1; return 2] in
+       return (l = [1; 2]));
 ]
 
 let fact n =

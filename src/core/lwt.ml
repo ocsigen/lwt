@@ -478,6 +478,64 @@ let choose l =
     res
   end
 
+let rec nchoose_terminate res acc = function
+  | [] ->
+      fast_connect res (Return(List.rev acc))
+  | t :: l ->
+      match !(repr t) with
+        | Return x ->
+            nchoose_terminate res (x :: acc) l
+        | Fail _ as state ->
+            fast_connect res state
+        | _ ->
+            nchoose_terminate res acc l
+
+let nchoose_sleep l =
+  let res = temp (fun () -> List.iter cancel l) in
+  let rec waiter = ref (Some handle_result)
+  and handle_result state =
+    waiter := None;
+    remove_waiters l;
+    nchoose_terminate res [] l
+  in
+  List.iter
+    (fun t ->
+       match !(repr t) with
+         | Sleep sleeper ->
+             add_removable_waiter sleeper waiter;
+         | _ ->
+             assert false)
+    l;
+  res
+
+let nchoose l =
+  let rec init = function
+    | [] ->
+        nchoose_sleep l
+    | t :: l ->
+        let t = repr t in
+        match !t with
+          | Return x ->
+              collect [x] l
+          | Fail exn ->
+              fail exn
+          | _ ->
+              init l
+  and collect acc = function
+    | [] ->
+        return (List.rev acc)
+    | t :: l ->
+        let t = repr t in
+        match !t with
+          | Return x ->
+              collect (x :: acc) l
+          | Fail exn ->
+              fail exn
+          | _ ->
+              collect acc l
+  in
+  init l
+
 (* Return the nth ready thread, and cancel all others *)
 let rec cancel_and_nth_ready l n =
   match l with
@@ -519,6 +577,56 @@ let pick l =
       l;
     res
   end
+
+let npick_sleep l =
+  let res = temp (fun () -> List.iter cancel l) in
+  let rec waiter = ref (Some handle_result)
+  and handle_result state =
+    waiter := None;
+    remove_waiters l;
+    List.iter cancel l;
+    nchoose_terminate res [] l
+  in
+  List.iter
+    (fun t ->
+       match !(repr t) with
+         | Sleep sleeper ->
+             add_removable_waiter sleeper waiter;
+         | _ ->
+             assert false)
+    l;
+  res
+
+let npick threads =
+  let rec init = function
+    | [] ->
+        npick_sleep threads
+    | t :: l ->
+        let t = repr t in
+        match !t with
+          | Return x ->
+              collect [x] l
+          | Fail exn ->
+              List.iter cancel threads;
+              fail exn
+          | _ ->
+              init l
+  and collect acc = function
+    | [] ->
+        List.iter cancel threads;
+        return (List.rev acc)
+    | t :: l ->
+        let t = repr t in
+        match !t with
+          | Return x ->
+              collect (x :: acc) l
+          | Fail exn ->
+              List.iter cancel threads;
+              fail exn
+          | _ ->
+              collect acc l
+  in
+  init threads
 
 let join l =
   let res = temp (fun () -> List.iter cancel l) and sleeping = ref 0 (* Number of threads still sleeping *) in

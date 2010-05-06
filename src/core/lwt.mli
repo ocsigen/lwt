@@ -110,6 +110,12 @@ val choose : 'a t list -> 'a t
       several threads are already terminated, one is choosen at
       random. *)
 
+val nchoose : 'a t list -> 'a list t
+  (** [nchoose l] returns the value of all that have succcessfully
+      terminated. If all threads are sleeping, it waits for at least
+      one to terminates. If one the threads of [l] fails, [nchoose]
+      fails with the same exception. *)
+
 val join : unit t list -> unit t
   (** [join l] wait for all threads in [l] to terminate. If fails if
       one of the threads fail. *)
@@ -199,6 +205,10 @@ val cancel : 'a t -> unit
 
 val pick : 'a t list -> 'a t
   (** [pick l] is the same as {!choose}, except that it cancels all
+      sleeping threads when one terminates. *)
+
+val npick : 'a t list -> 'a list t
+  (** [npick l] is the same as {!nchoose}, except that it cancels all
       sleeping threads when one terminates. *)
 
 val protected : 'a t -> 'a t
