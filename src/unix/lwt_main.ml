@@ -87,11 +87,13 @@ let rec call_hooks () =
     | None ->
         return ()
     | Some f ->
-        try_lwt
-          lwt () = f () in
-          call_hooks ()
-        with exn ->
-          call_hooks ()
+        lwt () =
+          try_lwt
+            f ()
+          with exn ->
+            return ()
+        in
+        call_hooks ()
 
 let () = at_exit (fun () -> run (call_hooks ()))
 let at_exit f = ignore (Lwt_sequence.add_l f exit_hooks)
