@@ -130,7 +130,7 @@ let restart t state caller =
 let restart_cancel t =
   let t = repr_rec (wakener_repr t) in
   match !t with
-    | Sleep{ waiters = waiters } ->
+    | Sleep{ waiters = waiters; cancel = cancel } ->
         let state = Fail Canceled in
         t := state;
         run_waiters waiters state
@@ -142,8 +142,10 @@ let wakeup_exn t e = restart t (Fail e) "Lwt.wakeup_exn"
 
 let cancel t =
   match !(repr t) with
-    | Sleep{ cancel = f } ->
-        !f ()
+    | Sleep{ cancel = cancel } ->
+        let f = !cancel in
+        cancel := ignore;
+        f ()
     | _ ->
         ()
 
