@@ -417,22 +417,25 @@ let accept ch =
   wrap_syscall inputs ch (fun _ -> let (fd, addr) = Unix.accept ch.fd in (mk_ch fd, addr))
 
 let accept_n ch n =
-  wrap_syscall inputs ch begin fun _ ->
-    let l = ref [] in
-    begin
-      try
-        for i = 1 to n do
-          if ch.blocking && not (readable ch.fd) then raise Exit;
-          let fd, addr = Unix.accept ch.fd in
-          l := (mk_ch fd, addr) :: !l
-        done
-      with
-        | (Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _) | Exit) when !l <> [] ->
-            (* Ignore blocking errors if we have at least one file-descriptor: *)
-            ()
-    end;
-    List.rev !l
-  end
+  let l = ref [] in
+  try_lwt
+    wrap_syscall inputs ch begin fun () ->
+      begin
+        try
+          for i = 1 to n do
+            if ch.blocking && not (readable ch.fd) then raise Retry;
+            let fd, addr = Unix.accept ch.fd in
+            l := (mk_ch fd, addr) :: !l
+          done
+        with
+          | (Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _) | Retry) when !l <> [] ->
+              (* Ignore blocking errors if we have at least one file-descriptor: *)
+              ()
+      end;
+      (List.rev !l, None)
+    end
+  with exn ->
+    return (List.rev !l, Some exn)
 
 let connect ch addr =
   (* [in_progress] tell wether connection has started but not
