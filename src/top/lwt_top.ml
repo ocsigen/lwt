@@ -125,7 +125,7 @@ let _ =
   if Unix.isatty Unix.stdin then begin
     Toploop.read_interactive_input := read_input;
 
-    let txt = "Welcome to the new Lwt powered OCaml toplevel!" in
+    let txt = "Welcome to the Lwt powered OCaml toplevel!" in
     let col_border = cyan and col_txt = yellow in
     let len = Text.length txt in
     let col = React.S.value Lwt_term.columns in
