@@ -330,12 +330,7 @@ let map f t =
         let res = temp sleeper.cancel in
         add_immutable_waiter sleeper
           (function
-             | Return v -> begin
-                 try
-                   fast_connect res (Return(f v))
-                 with exn ->
-                   fast_connect res (Fail exn)
-               end
+             | Return v -> fast_connect res (try Return(f v) with exn -> Fail exn)
              | Fail exn -> fast_connect res (Fail exn)
              | _ -> assert false);
         res
@@ -638,6 +633,7 @@ let join l =
     | Fail exn ->
         (* The thread has failed, exit immediatly without waiting for
            other threads *)
+        waiter := None;
         remove_waiters l;
         fast_connect res state
     | _ ->
