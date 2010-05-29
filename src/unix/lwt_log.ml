@@ -271,7 +271,9 @@ let file ?(template="$(date): $(section): $(message)") ?(mode=`Append) ?(perm=0o
         [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_APPEND; Unix.O_NONBLOCK]
     | `Truncate ->
         [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_TRUNC; Unix.O_NONBLOCK] in
-  let oc = Lwt_io.open_file ~mode:Lwt_io.output ~flags ~perm:0o644 file_name in
+  let fd = Lwt_unix.openfile file_name flags 0o666 in
+  Lwt_unix.set_close_on_exec fd;
+  let oc = Lwt_io.of_fd ~mode:Lwt_io.output fd in
   channel ~template ~close_mode:`Close ~channel:oc ()
 
 let level_code = function
@@ -345,6 +347,7 @@ let syslog_connect paths =
               let fd = Lwt_unix.socket Unix.PF_UNIX Unix.SOCK_DGRAM 0 in
               try_lwt
                 lwt () = Lwt_unix.connect fd (Unix.ADDR_UNIX path) in
+                Lwt_unix.set_close_on_exec fd;
                 return (DGRAM, fd)
               with
                 | Unix.Unix_error(Unix.EPROTOTYPE, _, _) -> begin
@@ -353,6 +356,7 @@ let syslog_connect paths =
                     let fd = Lwt_unix.socket Unix.PF_UNIX Unix.SOCK_STREAM 0 in
                     try_lwt
 	              lwt () = Lwt_unix.connect fd (Unix.ADDR_UNIX path) in
+                      Lwt_unix.set_close_on_exec fd;
                       return (STREAM, fd)
                     with Unix.Unix_error(error, _, _) ->
                       Lwt_unix.close fd;
