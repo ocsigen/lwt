@@ -1,3 +1,11 @@
+===== 2.1.1 =====
+
+  * Many bugfixes, including:
+    ** buggy behaviour of cancellable threads
+    ** file descriptor leakage in {{{Lwt_unix.accept_n}}
+  * Add {{{Lwt.nchoose}}} and {{{Lwt.npick}}}
+  * Use {{{set_close_on_exec}}} for fds created by {{{Lwt_log}}}
+
 ===== 2.1.0 (2010-04-19) =====
 
   * Rename {{{Lwt.select}}} to {{{Lwt.pick}}}
