@@ -65,139 +65,177 @@ let with_finaliser f signal =
   React.S.map (fun x -> ignore r; x) signal
 
 let limit ?eq f signal =
-  let event1, push1 = React.E.create () in
-  let sleep = ref (f ()) and stop = ref None in
-  let event2 =
+  let event_delayed, push_delayed = React.E.create () in
+  let limiter = ref (f ()) and stopper = ref None in
+  let event_immediate =
     React.E.filter
       (fun x ->
-         if state !sleep <> Sleep then begin
-           sleep := f ();
+         if state !limiter <> Sleep then begin
+           limiter := f ();
            true
          end else begin
            let _ =
              let waiter, wakener = wait () in
              let () =
-               match !stop with
+               match !stopper with
                  | Some wakener' ->
-                     stop := Some wakener;
+                     stopper := Some wakener;
                      wakeup_exn wakener' Exit
                  | None ->
-                     stop := Some wakener
+                     stopper := Some wakener
              in
-             lwt () = !sleep <?> waiter in
-             stop := None;
-             sleep := f ();
-             push1 x;
+             lwt () = !limiter <?> waiter in
+             stopper := None;
+             limiter := f ();
+             lwt () = pause () in
+             push_delayed x;
              return ()
            in
            false
          end)
       (React.S.changes signal)
   in
-  React.S.hold ?eq (React.S.value signal) (React.E.select [event1; event2])
+  React.S.hold ?eq (React.S.value signal) (React.E.select [event_immediate; event_delayed])
 
 (* +-----------------------------------------------------------------+
    | Signal transofrmations                                          |
    +-----------------------------------------------------------------+ *)
 
-let run_s ?eq initial signal =
-  let signal', set' = React.S.create initial in
+let fmap_s ?eq f initial signal =
+  let event_delayed, push_delayed = React.E.create () in
   let mutex = Lwt_mutex.create () in
-  let dummy =
-    React.S.map
-      (fun thread ->
-         ignore_result begin
-           Lwt_mutex.with_lock mutex
-             (fun () ->
-                lwt result = thread in
-                set' result;
-                return ())
+  let event_immediate =
+    React.E.fmap
+      (fun x ->
+         if Lwt_mutex.is_locked mutex then begin
+           let _ =
+             Lwt_mutex.with_lock mutex
+               (fun () ->
+                  f x >>= function
+                    | Some x ->
+                        lwt () = pause () in
+                        push_delayed x;
+                        return ()
+                    | None ->
+                        return ())
+           in
+           None
+         end else begin
+           let _ = Lwt_mutex.lock mutex in
+           try
+             let thread = f x in
+             match poll thread with
+               | Some(Some _ as opt) ->
+                   Lwt_mutex.unlock mutex;
+                   opt
+               | Some None ->
+                   None
+               | None ->
+                   let _ =
+                     try_lwt
+                       thread >>= function
+                         | Some x ->
+                             lwt () = pause () in
+                             push_delayed x;
+                             return ()
+                         | None ->
+                             return ()
+                     finally
+                       Lwt_mutex.unlock mutex;
+                       return ()
+                   in
+                   None
+           with exn ->
+             Lwt_mutex.unlock mutex;
+             raise exn
          end)
-      signal
+      (React.S.changes signal)
   in
-  React.S.l2 ?eq (fun x y -> x) signal' dummy
+  let thread = f (React.S.value signal) in
+  match poll thread with
+    | Some(Some x) ->
+        React.S.hold ?eq x (React.E.select [event_immediate; event_delayed])
+    | Some None ->
+        React.S.hold ?eq initial (React.E.select [event_immediate; event_delayed])
+    | None ->
+        let _ =
+          Lwt_mutex.with_lock mutex
+            (fun () ->
+               thread >>= function
+                 | Some x ->
+                     lwt () = pause () in
+                     push_delayed x;
+                     return ()
+                 | None ->
+                     return ())
+        in
+        React.S.hold ?eq initial (React.E.select [event_immediate; event_delayed])
+
+let some x = Some x
+
+let run_s ?eq initial signal =
+  fmap_s ?eq (fun thread -> thread >|= some) initial signal
 
 let app_s ?eq signal_f initial signal_x =
-  run_s ?eq initial (React.S.app signal_f signal_x)
+  fmap_s ?eq
+    (fun (f, x) -> f x >|= some)
+    initial
+    (React.S.l2 ~eq:(==) (fun f x -> (f, x)) signal_f signal_x)
 
 let map_s ?eq f initial signal =
-  let signal', set' = React.S.create initial in
-  let mutex = Lwt_mutex.create () in
-  let dummy =
-    React.S.map
-      (fun x ->
-         ignore_result begin
-           Lwt_mutex.with_lock mutex
-             (fun () ->
-                lwt x = f x in
-                set' x;
-                return ())
-         end)
-      signal
-  in
-  React.S.l2 ?eq (fun x y -> x) signal' dummy
+  fmap_s ?eq (fun x -> f x >|= some) initial signal
 
 let filter_s ?eq f initial signal =
-  let signal', set' = React.S.create initial in
-  let mutex = Lwt_mutex.create () in
-  let dummy =
-    React.S.map
-      (fun x ->
-         ignore_result begin
-           Lwt_mutex.with_lock mutex
-             (fun () ->
-                f x >>= function
-                  | true -> set' x; return ()
-                  | false -> return ())
-         end)
-      signal
-  in
-  React.S.l2 ?eq (fun x y -> x) signal' dummy
-
-let fmap_s ?eq f initial signal =
-  let signal', set' = React.S.create initial in
-  let mutex = Lwt_mutex.create () in
-  let dummy =
-    React.S.map
-      (fun x ->
-         ignore_result begin
-           Lwt_mutex.with_lock mutex
-             (fun () ->
-                f x >>= function
-                  | Some x -> set' x; return ()
-                  | None -> return ())
-         end)
-      signal
-  in
-  React.S.l2 ?eq (fun x y -> x) signal' dummy
+  fmap_s ?eq (fun x -> f x >|= function true -> Some x | false -> None) initial signal
 
 let diff_s f signal =
-  Lwt_event.run_s (React.S.diff f signal)
+  let previous = ref (React.S.value signal) in
+  Lwt_event.map_s
+    (fun x ->
+       let y = !previous in
+       previous := x;
+       f x y)
+    (React.S.changes signal)
 
 let sample_s f event signal =
-  Lwt_event.run_s (React.S.sample f event signal)
+  Lwt_event.map_s (fun x -> f x (React.S.value signal)) event
 
 let accum_s ?eq event_f initial =
-  run_s ?eq initial (React.S.accum (React.E.map (=<<) event_f) (return initial))
+  React.S.hold ?eq initial (Lwt_event.accum_s event_f initial)
 
 let fold_s ?eq f acc event =
-  run_s ?eq acc (React.S.fold (fun t x -> t >>= fun acc -> f acc x) (return acc) event)
+  React.S.hold ?eq acc (Lwt_event.fold_s f acc event)
 
-let merge_s ?eq f acc events =
-  run_s ?eq acc (React.S.merge (fun t x -> t >>= fun acc -> f acc x) (return acc) events)
+let rec rev_fold f acc = function
+  | [] ->
+      return acc
+  | x :: l ->
+      lwt acc = rev_fold f acc l in
+      f acc x
+
+let merge_s ?eq f acc signals =
+  fmap_s ?eq
+    (fun l -> rev_fold f acc l >|= some)
+    acc
+    (React.S.merge (fun l x -> x :: l) [] signals)
 
 let l1_s ?eq f initial s1 =
-  run_s ?eq initial (React.S.l1 f s1)
+  fmap_s ?eq (fun x1 -> f x1 >|= some) initial s1
+
 let l2_s ?eq f initial s1 s2 =
-  run_s ?eq initial (React.S.l2 f s1 s2)
+  fmap_s ?eq (fun (x1, x2) -> f x1 x2 >|= some) initial (React.S.l2 (fun x1 x2 -> (x1, x2)) s1 s2)
+
 let l3_s ?eq f initial s1 s2 s3 =
-  run_s ?eq initial (React.S.l3 f s1 s2 s3)
+  fmap_s ?eq (fun (x1, x2, x3) -> f x1 x2 x3 >|= some) initial (React.S.l3 (fun x1 x2 x3-> (x1, x2, x3)) s1 s2 s3)
+
 let l4_s ?eq f initial s1 s2 s3 s4 =
-  run_s ?eq initial (React.S.l4 f s1 s2 s3 s4)
+  fmap_s ?eq (fun (x1, x2, x3, x4) -> f x1 x2 x3 x4 >|= some) initial (React.S.l4 (fun x1 x2 x3 x4-> (x1, x2, x3, x4)) s1 s2 s3 s4)
+
 let l5_s ?eq f initial s1 s2 s3 s4 s5 =
-  run_s ?eq initial (React.S.l5 f s1 s2 s3 s4 s5)
+  fmap_s ?eq (fun (x1, x2, x3, x4, x5) -> f x1 x2 x3 x4 x5 >|= some) initial (React.S.l5 (fun x1 x2 x3 x4 x5-> (x1, x2, x3, x4, x5)) s1 s2 s3 s4 s5)
+
 let l6_s ?eq f initial s1 s2 s3 s4 s5 s6 =
-  run_s ?eq initial (React.S.l6 f s1 s2 s3 s4 s5 s6)
+  fmap_s ?eq (fun (x1, x2, x3, x4, x5, x6) -> f x1 x2 x3 x4 x5 x6 >|= some) initial (React.S.l6 (fun x1 x2 x3 x4 x5 x6-> (x1, x2, x3, x4, x5, x6)) s1 s2 s3 s4 s5 s6)
 
 (* +-----------------------------------------------------------------+
    | Monadic interface                                               |

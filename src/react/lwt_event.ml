@@ -81,36 +81,56 @@ let next ev =
   waiter
 
 let limit f event =
-  let event1, push1 = React.E.create () in
-  let sleep = ref (return ()) and stop = ref None in
-  let event2 =
+  (* Event for delayed delivering when the limiter is sleeping *)
+  let event_delayed, push_delayed = React.E.create () in
+
+  (* [limiter] is a thread which prevent [event] to be delivered while
+     it is sleeping *)
+  let limiter = ref (return ())
+
+  (* [stopper] is a thread which is wakeup if an event is received
+     before [limiter] returns *)
+  and stopper = ref None in
+  let event_immediate =
     React.E.filter
       (fun x ->
-         if state !sleep <> Sleep then begin
-           sleep := f ();
+         if state !limiter <> Sleep then begin
+           (* Limit for futurer events: *)
+           limiter := f ();
+           (* The limiter is not sleeping, we can deliver the event
+              right now: *)
            true
          end else begin
+           (* The limiter is sleeping, we have to wait for its
+              termination before delivering the event *)
            let _ =
              let waiter, wakener = wait () in
              let () =
-               match !stop with
+               match !stopper with
                  | Some wakener' ->
-                     stop := Some wakener;
+                     stopper := Some wakener;
+                     (* If an event is already queued, drop it: *)
                      wakeup_exn wakener' Exit
                  | None ->
-                     stop := Some wakener
+                     stopper := Some wakener
              in
-             lwt () = !sleep <?> waiter in
-             stop := None;
-             sleep := f ();
-             push1 x;
+             lwt () = !limiter <?> waiter in
+             (* If we reach this point, the limiter has already
+                terminated *)
+             stopper := None;
+             limiter := f ();
+             (* Make a pause to be sure we are not in an update cycle
+                of [event]: *)
+             lwt () = pause () in
+
+             push_delayed x;
              return ()
            in
            false
          end)
       event
   in
-  React.E.select [event1; event2]
+  React.E.select [event_immediate; event_delayed]
 
 let stop_from wakener () =
   wakeup wakener None
@@ -208,152 +228,127 @@ let of_stream stream =
    | Event transofrmations                                           |
    +-----------------------------------------------------------------+ *)
 
-let run_s event =
-  let event', push' = React.E.create () in
-  let mutex = Lwt_mutex.create () in
-  let dummy =
-    React.E.fmap
-      (fun thread ->
-         ignore_result begin
-           Lwt_mutex.with_lock mutex
-             (fun () ->
-                lwt result = thread in
-                push' result;
-                return ())
-         end;
-         None)
-      event
-  in
-  React.E.select [event'; dummy]
-
-let run_p event =
-  let event', push' = React.E.create () in
-  let dummy =
-    React.E.fmap
-      (fun thread ->
-         ignore_result begin
-           lwt result = thread in
-           push' result;
-           return ()
-         end;
-         None)
-      event
-  in
-  React.E.select [event'; dummy]
-
-let map_s f event =
-  let event', push' = React.E.create () in
-  let mutex = Lwt_mutex.create () in
-  let dummy =
-    React.E.fmap
-      (fun x ->
-         ignore_result begin
-           Lwt_mutex.with_lock mutex
-             (fun () ->
-                lwt x = f x in
-                push' x;
-                return ())
-         end;
-         None)
-      event
-  in
-  React.E.select [event'; dummy]
-
-let map_p f event =
-  let event', push' = React.E.create () in
-  let dummy =
-    React.E.fmap
-      (fun x ->
-         ignore_result begin
-           lwt x = f x in
-           push' x;
-           return ()
-         end;
-         None)
-      event
-  in
-  React.E.select [event'; dummy]
-
-let app_s event_f event_x =
-  run_s (React.E.app event_f event_x)
-
-let app_p event_f event_x =
-  run_p (React.E.app event_f event_x)
-
-let filter_s f event =
-  let event', push' = React.E.create () in
-  let mutex = Lwt_mutex.create () in
-  let dummy =
-    React.E.fmap
-      (fun x ->
-         ignore_result begin
-           Lwt_mutex.with_lock mutex
-             (fun () ->
-                f x >>= function
-                  | true -> push' x; return ()
-                  | false -> return ())
-         end;
-         None)
-      event
-  in
-  React.E.select [event'; dummy]
-
-let filter_p f event =
-  let event', push' = React.E.create () in
-  let dummy =
-    React.E.fmap
-      (fun x ->
-         ignore_result begin
-           f x >>= function
-             | true -> push' x; return ()
-             | false -> return ()
-         end;
-         None)
-      event
-  in
-  React.E.select [event'; dummy]
-
 let fmap_s f event =
-  let event', push' = React.E.create () in
+  let event_delayed, push_delayed = React.E.create () in
   let mutex = Lwt_mutex.create () in
-  let dummy =
+  let event_immediate =
     React.E.fmap
       (fun x ->
-         ignore_result begin
-           Lwt_mutex.with_lock mutex
-             (fun () ->
-                f x >>= function
-                  | Some x -> push' x; return ()
-                  | None -> return ())
-         end;
-         None)
+         if Lwt_mutex.is_locked mutex then begin
+           let _ =
+             Lwt_mutex.with_lock mutex
+               (fun () ->
+                  f x >>= function
+                    | Some x ->
+                        lwt () = pause () in
+                        push_delayed x;
+                        return ()
+                    | None ->
+                        return ())
+           in
+           None
+         end else begin
+           let _ = Lwt_mutex.lock mutex in
+           try
+             let thread = f x in
+             match poll thread with
+               | Some(Some _ as opt) ->
+                   Lwt_mutex.unlock mutex;
+                   opt
+               | Some None ->
+                   None
+               | None ->
+                   let _ =
+                     try_lwt
+                       thread >>= function
+                         | Some x ->
+                             lwt () = pause () in
+                             push_delayed x;
+                             return ()
+                         | None ->
+                             return ()
+                     finally
+                       Lwt_mutex.unlock mutex;
+                       return ()
+                   in
+                   None
+           with exn ->
+             Lwt_mutex.unlock mutex;
+             raise exn
+         end)
       event
   in
-  React.E.select [event'; dummy]
+  React.E.select [event_immediate; event_delayed]
 
 let fmap_p f event =
-  let event', push' = React.E.create () in
-  let dummy =
+  let event_delayed, push_delayed = React.E.create () in
+  let event_immediate =
     React.E.fmap
       (fun x ->
-         ignore_result begin
-           f x >>= function
-             | Some x -> push' x; return ()
-             | None -> return ()
-         end;
-         None)
+         let thread = f x in
+         match poll thread with
+           | Some(Some _ as opt) ->
+               opt
+           | Some None ->
+               None
+           | None ->
+               let _ =
+                 thread >>= function
+                   | Some x ->
+                       lwt () = pause () in
+                       push_delayed x;
+                       return ()
+                   | None ->
+                       return ()
+               in
+               None)
       event
   in
-  React.E.select [event'; dummy]
+  React.E.select [event_immediate; event_delayed]
+
+let some x = Some x
+
+let run_s event = fmap_s (fun thread -> thread >|= some) event
+let run_p event = fmap_p (fun thread -> thread >|= some) event
+
+let map_s f event = fmap_s (fun x -> f x >|= some) event
+let map_p f event = fmap_p (fun x -> f x >|= some) event
+
+let app_s event_f event_x = fmap_s (fun (f, x) -> f x >|= some) (React.E.app (React.E.map (fun f x -> (f, x)) event_f) event_x)
+let app_p event_f event_x = fmap_p (fun (f, x) -> f x >|= some) (React.E.app (React.E.map (fun f x -> (f, x)) event_f) event_x)
+
+let filter_s f event = fmap_s (fun x -> f x >|= function true -> Some x | false -> None) event
+let filter_p f event = fmap_p (fun x -> f x >|= function true -> Some x | false -> None) event
 
 let diff_s f event =
-  run_s (React.E.diff f event)
+  let previous = ref None in
+  fmap_s
+    (fun x ->
+       match !previous with
+         | None ->
+             previous := Some x;
+             return None
+         | Some y ->
+             previous := Some x;
+             f x y >|= some)
+    event
 
-let accum_s event_f initial =
-  run_s (React.E.accum (React.E.map (=<<) event_f) (return initial))
+let accum_s event_f acc =
+  let acc = ref acc in
+  fmap_s (fun f -> f !acc >|= fun x -> acc := x; Some x) event_f
 
 let fold_s f acc event =
-  run_s (React.E.fold (fun t x -> t >>= fun acc -> f acc x) (return acc) event)
+  let acc = ref acc in
+  fmap_s (fun x -> f !acc x >|= fun x -> acc := x; Some x) event
+
+let rec rev_fold f acc = function
+  | [] ->
+      return acc
+  | x :: l ->
+      lwt acc = rev_fold f acc l in
+      f acc x
 
 let merge_s f acc events =
-  run_s (React.E.merge (fun t x -> t >>= fun acc -> f acc x) (return acc) events)
+  fmap_s
+    (fun l -> rev_fold f acc l >|= some)
+    (React.E.merge (fun acc x -> x :: acc) [] events)
