@@ -2,7 +2,7 @@
 
   * Many bugfixes, including:
     ** buggy behaviour of cancellable threads
-    ** file descriptor leakage in {{{Lwt_unix.accept_n}}
+    ** file descriptor leakage in {{{Lwt_unix.accept_n}}}
   * Add {{{Lwt.nchoose}}} and {{{Lwt.npick}}}
   * Use {{{set_close_on_exec}}} for fds created by {{{Lwt_log}}}
   * Better implementation of lwtized react functions
