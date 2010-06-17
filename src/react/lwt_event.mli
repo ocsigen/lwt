@@ -52,6 +52,10 @@ val of_stream : 'a Lwt_stream.t -> 'a event
   (** [of_stream stream] creates an event which occurs each time a
       value is available on the stream. *)
 
+val delay : 'a event Lwt.t -> 'a event
+  (** [delay thread] is an event which does not occurs until [thread]
+      returns. Then it behaves as the event returned by [thread]. *)
+
 (** {6 Threaded versions of React transformation functions} *)
 
 (** The following functions behave as their [React] counterpart,

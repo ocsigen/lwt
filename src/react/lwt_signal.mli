@@ -48,6 +48,12 @@ val limit : ?eq : ('a -> 'a -> bool) -> (unit -> unit Lwt.t) -> 'a signal -> 'a 
       For example, to limit it to 1 per second, you can use: [limit
       (fun () -> Lwt_unix.sleep 1.0) signal]. *)
 
+val delay : 'a signal Lwt.t -> 'a event
+  (** [delay thread] is an event which does not occurs until [thread]
+      returns. When [thread] returns a signal [s], [delay thread] will
+      occurs with the current value of [s], and then behaves as
+      [React.S.changes s]. *)
+
 (** {6 Threaded versions of React transformation functions} *)
 
 (** The following functions behave as their [React] counterpart,

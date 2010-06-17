@@ -224,6 +224,15 @@ let of_stream stream =
   ignore_result (pause () >>= loop);
   with_finaliser (stop_stream abort_wakener) event
 
+let delay thread =
+  let event, send = React.E.create () in
+  ignore (
+    lwt event = thread in
+    send event;
+    return ()
+  );
+  React.E.switch React.E.never event
+
 (* +-----------------------------------------------------------------+
    | Event transofrmations                                           |
    +-----------------------------------------------------------------+ *)
