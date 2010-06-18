@@ -98,15 +98,33 @@ let limit ?eq f signal =
   React.S.hold ?eq (React.S.value signal) (React.E.select [event_immediate; event_delayed])
 
 let delay thread =
-  let event1, send1 = React.E.create () in
-  let event2, send2 = React.E.create () in
-  ignore (
-    lwt signal = thread in
-    send1 (React.S.value signal);
-    send2 (React.S.changes signal);
-    return ()
-  );
-  React.E.switch event1 event2
+  match poll thread with
+    | Some signal ->
+        let event1, send1 = React.E.create () in
+        let event2, send2 = React.E.create () in
+        ignore (
+          (* If the thread has already terminated, we make a pause to
+             prevent the first occurence to be lost *)
+          lwt () = pause () in
+          send1 (React.S.value signal);
+          send2 (React.S.changes signal);
+          React.E.stop event1;
+          React.E.stop event2;
+          return ()
+        );
+        React.E.switch event1 event2
+    | None ->
+        let event1, send1 = React.E.create () in
+        let event2, send2 = React.E.create () in
+        ignore (
+          lwt signal = thread in
+          send1 (React.S.value signal);
+          send2 (React.S.changes signal);
+          React.E.stop event1;
+          React.E.stop event2;
+          return ()
+        );
+        React.E.switch event1 event2
 
 (* +-----------------------------------------------------------------+
    | Signal transofrmations                                          |

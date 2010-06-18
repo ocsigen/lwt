@@ -225,13 +225,18 @@ let of_stream stream =
   with_finaliser (stop_stream abort_wakener) event
 
 let delay thread =
-  let event, send = React.E.create () in
-  ignore (
-    lwt event = thread in
-    send event;
-    return ()
-  );
-  React.E.switch React.E.never event
+  match poll thread with
+    | Some event ->
+        event
+    | None ->
+        let event1, send1 = React.E.create () in
+        ignore (
+          lwt event = thread in
+          send1 event;
+          React.E.stop event1;
+          return ()
+        );
+        React.E.switch React.E.never event1
 
 (* +-----------------------------------------------------------------+
    | Event transofrmations                                           |
