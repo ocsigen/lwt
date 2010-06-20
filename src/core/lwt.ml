@@ -256,9 +256,8 @@ let temp r =
   thread (ref (Sleep{ cancel = r;
                       waiters = Empty;
                       removed = 0 }))
-let no_cancel = ref ignore
 let wait () =
-  let t = ref (Sleep{ cancel = no_cancel;
+  let t = ref (Sleep{ cancel = ref ignore;
                       waiters = Empty;
                       removed = 0 }) in
   (thread t, wakener t)
