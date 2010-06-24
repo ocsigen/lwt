@@ -50,7 +50,7 @@
     Then you can do:
 
     {[
-      Lwt.select [Lwt_unix.timeout 1.0; read fd1 buf1 ofs1 len1; read fd2 buf2 ofs2 len2]
+      Lwt.pick [Lwt_unix.timeout 1.0; read fd1 buf1 ofs1 len1; read fd2 buf2 ofs2 len2]
     ]}
 
     In this case it is guaranteed that exactly one of the three
@@ -86,7 +86,7 @@ val with_timeout : float -> (unit -> 'a Lwt.t) -> 'a Lwt.t
   (** [with_timeout d f] is a short-hand for:
 
       {[
-        Lwt.select [Lwt_unix.timeout d; f ()]
+        Lwt.pick [Lwt_unix.timeout d; f ()]
       ]}
   *)
 
