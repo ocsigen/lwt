@@ -618,9 +618,6 @@ type signal_handler_id = signal_handler option ref
 (* The set of all monitored signals: *)
 let signals : (int -> unit) Lwt_sequence.t SignalMap.t ref = ref SignalMap.empty
 
-(* The list of pending signals *)
-let pending_signals = Queue.create ()
-
 let disable_signal_handler id = match !id with
   | Some sh -> begin
       id := None;
@@ -642,19 +639,21 @@ let () =
   set_close_on_exec signal_fd_reader;
   Unix.set_close_on_exec signal_fd_writer
 
-let wakeup_pending_signals () =
-  while not (Queue.is_empty pending_signals) do
-    let signum = Queue.pop pending_signals in
-    Lwt_sequence.iter_l (fun f -> f signum) (SignalMap.find signum !signals)
-  done
-
 (* Read and dispatch signals *)
 let rec read_signals () =
-  read signal_fd_reader (String.create 1) 0 1 >>= function
+  let buf = String.create 1 in
+  read signal_fd_reader buf 0 1 >>= function
     | 0 ->
         return ()
     | 1 ->
-        wakeup_pending_signals ();
+        let signum = Char.code buf.[0] in
+        let () =
+          match try Some(SignalMap.find signum !signals) with Not_found -> None with
+            | Some handlers ->
+                Lwt_sequence.iter_l (fun f -> f signum) handlers
+            | None ->
+                ()
+        in
         read_signals ()
     | _ ->
         assert false
@@ -663,10 +662,10 @@ let rec read_signals () =
 let _ = read_signals ()
 
 let handle_signal signum =
-  Queue.push signum pending_signals;
-  ignore (Unix.write signal_fd_writer " " 0 1)
+  ignore (Unix.write signal_fd_writer (String.make 1 (char_of_int signum)) 0 1)
 
 let on_signal signum f =
+  if signum < 0 || signum > 255 then invalid_arg "Lwt_unix.on_signal";
   match try Some(SignalMap.find signum !signals) with Not_found -> None with
     | Some seq ->
         ref (Some{ sh_signum = signum; sh_node = Lwt_sequence.add_r f seq })
@@ -804,9 +803,6 @@ let select_filter now select set_r set_w set_e timeout =
   (* Restart threads waiting on a file descriptors: *)
   List.iter (fun fd -> perform_actions inputs fd) set_r;
   List.iter (fun fd -> perform_actions outputs fd) set_w;
-  (* Wakeup signals is not needed here but this make signal delivering
-     faster: *)
-  wakeup_pending_signals ();
   result
 
 let _ = Lwt_sequence.add_l select_filter Lwt_main.select_filters
