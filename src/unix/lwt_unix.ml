@@ -610,25 +610,40 @@ let tcflow ch f =
    | Signals                                                         |
    +-----------------------------------------------------------------+ *)
 
-module SignalMap = Map.Make(struct type t = int let compare = compare end)
+(* An entry in the array of monitorted signals *)
+type signal_entry = {
+  se_signum : int;
+  (* The real signal number *)
 
-type signal_handler = { sh_signum : int; sh_node : (int -> unit) Lwt_sequence.node }
-type signal_handler_id = signal_handler option ref
+  se_handlers : (int -> unit) Lwt_sequence.t;
+  (* All the handlers registered for this signal *)
+}
 
 (* The set of all monitored signals: *)
-let signals : (int -> unit) Lwt_sequence.t SignalMap.t ref = ref SignalMap.empty
+let signals = Array.make 256 None
+
+type signal_handler = {
+  sh_index : int;
+  (* The index of the signal in [signals] *)
+
+  sh_node : (int -> unit) Lwt_sequence.node;
+  (* The function to call when the signal is received *)
+}
+
+type signal_handler_id = signal_handler option ref
 
 let disable_signal_handler id = match !id with
   | Some sh -> begin
       id := None;
       Lwt_sequence.remove sh.sh_node;
-      try
-        if Lwt_sequence.is_empty (SignalMap.find sh.sh_signum !signals) then begin
-          signals := SignalMap.remove sh.sh_signum !signals;
-          Sys.set_signal sh.sh_signum Sys.Signal_default
-        end
-      with Not_found ->
-        ()
+      match signals.(sh.sh_index) with
+        | Some se ->
+            if Lwt_sequence.is_empty se.se_handlers then begin
+              signals.(sh.sh_index) <- None;
+              Sys.set_signal se.se_signum Sys.Signal_default
+            end
+        | None ->
+            ()
     end
   | None ->
       ()
@@ -646,11 +661,11 @@ let rec read_signals () =
     | 0 ->
         return ()
     | 1 ->
-        let signum = Char.code buf.[0] in
+        let index = Char.code buf.[0] in
         let () =
-          match try Some(SignalMap.find signum !signals) with Not_found -> None with
-            | Some handlers ->
-                Lwt_sequence.iter_l (fun f -> f signum) handlers
+          match signals.(index) with
+            | Some se ->
+                Lwt_sequence.iter_l (fun f -> f se.se_signum) se.se_handlers
             | None ->
                 ()
         in
@@ -661,20 +676,38 @@ let rec read_signals () =
 (* Start listenning for signals *)
 let _ = read_signals ()
 
-let handle_signal signum =
-  ignore (Unix.write signal_fd_writer (String.make 1 (char_of_int signum)) 0 1)
+let handle_signal index signum =
+  ignore (Unix.write signal_fd_writer (String.make 1 (char_of_int index)) 0 1)
 
 let on_signal signum f =
-  if signum < 0 || signum > 255 then invalid_arg "Lwt_unix.on_signal";
-  match try Some(SignalMap.find signum !signals) with Not_found -> None with
-    | Some seq ->
-        ref (Some{ sh_signum = signum; sh_node = Lwt_sequence.add_r f seq })
-    | None ->
-        let seq = Lwt_sequence.create () in
-        let id = ref (Some{ sh_signum = signum; sh_node = Lwt_sequence.add_r f seq }) in
-        signals := SignalMap.add signum seq !signals;
-        Sys.set_signal signum (Sys.Signal_handle handle_signal);
-        id
+  (* Search for already registered signals: *)
+  let rec search i =
+    if i = 256 then
+      search_free_slot 0
+    else
+      match signals.(i) with
+        | Some se when se.se_signum = signum ->
+            ref (Some{ sh_index = i; sh_node = Lwt_sequence.add_r f se.se_handlers })
+        | _ ->
+            search (i + 1)
+
+  (* Search for a free slot in [signals]: *)
+  and search_free_slot i =
+    if i = 256 then
+      failwith "Lwt_unix.on_signal: too many different signals registered"
+    else
+      match signals.(i) with
+        | Some _ ->
+            search_free_slot (i + 1)
+        | None ->
+            let seq = Lwt_sequence.create () in
+            let id = ref (Some{ sh_index = i; sh_node = Lwt_sequence.add_r f seq }) in
+            signals.(i) <- Some{ se_signum = signum; se_handlers = seq };
+            Sys.set_signal signum (Sys.Signal_handle (handle_signal i));
+            id
+
+  in
+  search 0
 
 (* +-----------------------------------------------------------------+
    | Processes                                                       |
