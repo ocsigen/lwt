@@ -12,6 +12,8 @@ let g x = ("test"^x)
 
 exception Exn
 
+let key = new_key ()
+
 let suite = suite "lwt" [
   test "0"
     (fun () ->
@@ -482,4 +484,44 @@ let suite = suite "lwt" [
        wakeup wakener ();
        cancel t;
        return (state t = Fail Canceled));
+
+  test "data 1"
+    (fun () ->
+       lwt () = set key (Some 1) in
+       return (get key = Some 1));
+
+  test "data 2"
+    (fun () ->
+       lwt () = set key (Some 1) in
+       lwt () = set key (Some 2) in
+       return (get key = Some 2));
+
+  test "data 3"
+    (fun () ->
+       lwt () = set key (Some 1) in
+       let _ = set key (Some 2) in
+       return (get key = Some 1));
+
+  test "data 4"
+    (fun () ->
+       lwt () = set key (Some 1) in
+       let _ = set key (Some 2) >>= fun () -> return () in
+       return (get key = Some 1));
+
+  test "data 5"
+    (fun () ->
+       lwt () = set key (Some 1) in
+       let t = return () in
+       lwt () = set key (Some 2) in
+       lwt () = t in
+       return (get key = Some 1));
+
+  test "data 6"
+    (fun () ->
+       lwt () = set key (Some 1) in
+       let t = return () in
+       lwt () = set key (Some 2) in
+       let r = ref None in
+       let _ = t >>= (fun () -> r := get key; return ())  in
+       return (get key = Some 2 && !r = Some 1));
 ]

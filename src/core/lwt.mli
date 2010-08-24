@@ -86,6 +86,23 @@ val (>|=) : 'a t -> ('a -> 'b) -> 'b t
 val (=|<) : ('a -> 'b) -> 'a t -> 'b t
   (** [f =|< m] is [map f m] *)
 
+(** {6 Thread storage} *)
+
+type 'a key
+  (** Type of a key. Keys are used to store local values into
+      threads *)
+
+val new_key : unit -> 'a key
+  (** [new_key ()] creates a new key. *)
+
+val get : 'a key -> 'a option
+  (** [get key] returns the value associated with [key] in the current
+      thread. *)
+
+val set : 'a key -> 'a option -> unit t
+  (** [set key value] associates a value to [ley] in the current
+      thread. *)
+
 (** {6 Exceptions handling} *)
 
 val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
@@ -108,17 +125,26 @@ val finalize : (unit -> 'a t) -> (unit -> unit t) -> 'a t
 val choose : 'a t list -> 'a t
   (** [choose l] behaves as the first thread in [l] to terminate.  If
       several threads are already terminated, one is choosen at
-      random. *)
+      random.
+
+      Note: {!choose} leaves the local values of the current thread
+      unchanged. *)
 
 val nchoose : 'a t list -> 'a list t
   (** [nchoose l] returns the value of all that have succcessfully
       terminated. If all threads are sleeping, it waits for at least
       one to terminates. If one the threads of [l] fails, [nchoose]
-      fails with the same exception. *)
+      fails with the same exception.
+
+      Note: {!nchoose} leaves the local values of the current thread
+      unchanged. *)
 
 val join : unit t list -> unit t
-  (** [join l] wait for all threads in [l] to terminate. If fails if
-      one of the threads fail. *)
+  (** [join l] wait for all threads in [l] to terminate. It fails if
+      one of the threads fail.
+
+      Note: {!join} leaves the local values of the current thread
+      unchanged. *)
 
 val ( <?> ) : 'a t -> 'a t -> 'a t
   (** [t <?> t'] is the same as [choose [t; t']] *)
@@ -205,11 +231,17 @@ val cancel : 'a t -> unit
 
 val pick : 'a t list -> 'a t
   (** [pick l] is the same as {!choose}, except that it cancels all
-      sleeping threads when one terminates. *)
+      sleeping threads when one terminates.
+
+      Note: {!pick} leaves the local values of the current thread
+      unchanged. *)
 
 val npick : 'a t list -> 'a list t
   (** [npick l] is the same as {!nchoose}, except that it cancels all
-      sleeping threads when one terminates. *)
+      sleeping threads when one terminates.
+
+      Note: {!npick} leaves the local values of the current thread
+      unchanged. *)
 
 val protected : 'a t -> 'a t
   (** [protected thread] creates a new cancelable thread which behave

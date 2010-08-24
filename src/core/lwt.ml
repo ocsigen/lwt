@@ -28,6 +28,11 @@
 
 exception Canceled
 
+module Int_map = Map.Make(struct type t = int let compare = compare end)
+
+type data = exn Int_map.t
+  (* Type of data carried by threads *)
+
 type +'a t
 type -'a u
 
@@ -43,7 +48,13 @@ type 'a thread_state =
   | Repr of 'a thread_repr
       (* [Repr t] a thread which behaves the same as [t] *)
 
-and 'a thread_repr = 'a thread_state ref
+and 'a thread_repr = {
+  mutable state : 'a thread_state;
+  (* The state of the thread *)
+
+  data : data;
+  (* Data carried by this thread *)
+}
 
 and 'a sleeper = {
   cancel : (unit -> unit) ref;
@@ -59,8 +70,8 @@ and 'a sleeper = {
 (* Type of set of waiters: *)
 and 'a waiter_set =
   | Empty
-  | Removable of ('a thread_state -> unit) option ref
-  | Immutable of ('a thread_state -> unit)
+  | Removable of data * ('a thread_state -> unit) option ref
+  | Immutable of data * ('a thread_state -> unit)
   | Append of 'a waiter_set * 'a waiter_set
 
 external thread_repr : 'a t -> 'a thread_repr = "%identity"
@@ -73,13 +84,51 @@ external wakener_repr : 'a u -> 'a thread_repr = "%identity"
 let max_removed = 42
 
 (* +-----------------------------------------------------------------+
+   | Local storage                                                   |
+   +-----------------------------------------------------------------+ *)
+
+type 'a key = {
+  key_id : int;
+  key_make : 'a -> exn;
+  key_cast : exn -> 'a;
+}
+
+let next_key_id = ref 0
+
+let new_key (type t) () =
+  let key_id = !next_key_id in
+  next_key_id := key_id + 1;
+  let module M = struct exception E of t end in
+  {
+    key_id = key_id;
+    key_make = (fun x -> M.E x);
+    key_cast = (function M.E x -> x | _ -> assert false);
+  }
+
+let current_data = ref Int_map.empty
+
+let get key =
+  try
+    let cell = Int_map.find key.key_id !current_data in
+    Some(key.key_cast cell)
+  with Not_found ->
+    None
+
+let set key value =
+  match value with
+    | Some x ->
+        thread { state = Return (); data = Int_map.add key.key_id (key.key_make x) !current_data }
+    | None ->
+        thread { state = Return (); data = Int_map.remove key.key_id !current_data }
+
+(* +-----------------------------------------------------------------+
    | Restarting/connecting threads                                   |
    +-----------------------------------------------------------------+ *)
 
 (* Returns the representative of a thread, updating non-direct references: *)
 let rec repr_rec t =
-  match !t with
-    | Repr t' -> let t'' = repr_rec t' in if t'' != t' then t := Repr t''; t''
+  match t.state with
+    | Repr t' -> let t'' = repr_rec t' in if t'' != t' then t.state <- Repr t''; t''
     | _       -> t
 let repr t = repr_rec (thread_repr t)
 
@@ -89,18 +138,22 @@ let rec run_waiters_rec state ws rem =
         ()
     | Empty, ws :: rem ->
         run_waiters_rec state ws rem
-    | Immutable f, [] ->
+    | Immutable(data, f), [] ->
+        current_data := data;
         f state
-    | Immutable f, ws :: rem ->
+    | Immutable(data, f), ws :: rem ->
+        current_data := data;
         f state;
         run_waiters_rec state ws rem
-    | Removable{ contents = None }, [] ->
+    | Removable(data, { contents = None }), [] ->
         ()
-    | Removable{ contents = None }, ws :: rem ->
+    | Removable(data, { contents = None }), ws :: rem ->
         run_waiters_rec state ws rem
-    | Removable{ contents = Some f }, [] ->
+    | Removable(data, { contents = Some f }), [] ->
+        current_data := data;
         f state
-    | Removable{ contents = Some f }, ws :: rem ->
+    | Removable(data, { contents = Some f }), ws :: rem ->
+        current_data := data;
         f state;
         run_waiters_rec state ws rem
     | Append(ws1, ws2), _ ->
@@ -108,7 +161,9 @@ let rec run_waiters_rec state ws rem =
 
 (* Run all waiters waiting on [t]: *)
 let run_waiters waiters state =
-  run_waiters_rec state waiters []
+  let save = !current_data in
+  run_waiters_rec state waiters [];
+  current_data := save
 
 (* Restarts a sleeping thread [t]:
 
@@ -117,9 +172,9 @@ let run_waiters waiters state =
 *)
 let restart t state caller =
   let t = repr_rec (wakener_repr t) in
-  match !t with
-    | Sleep{ waiters = waiters } ->
-        t := state;
+  match t.state with
+    | Sleep{ waiters } ->
+        t.state <- state;
         run_waiters waiters state
     | Fail Canceled ->
         (* Do not fail if the thread has been canceled: *)
@@ -129,10 +184,10 @@ let restart t state caller =
 
 let restart_cancel t =
   let t = repr_rec (wakener_repr t) in
-  match !t with
-    | Sleep{ waiters = waiters; cancel = cancel } ->
+  match t.state with
+    | Sleep{ waiters; cancel } ->
         let state = Fail Canceled in
-        t := state;
+        t.state <- state;
         run_waiters waiters state
     | _ ->
         ()
@@ -141,11 +196,13 @@ let wakeup t v = restart t (Return v) "Lwt.wakeup"
 let wakeup_exn t e = restart t (Fail e) "Lwt.wakeup_exn"
 
 let cancel t =
-  match !(repr t) with
+  match (repr t).state with
     | Sleep{ cancel = cancel } ->
         let f = !cancel in
         cancel := ignore;
-        f ()
+        let save = !current_data in
+        f ();
+        current_data := save
     | _ ->
         ()
 
@@ -157,7 +214,7 @@ let append l1 l2 =
 
 (* Remove all disbaled waiters of a waiter set: *)
 let rec cleanup = function
-  | Removable{ contents = None } ->
+  | Removable(_, { contents = None }) ->
       Empty
   | Append(l1, l2) ->
       append (cleanup l1) (cleanup l2)
@@ -172,22 +229,22 @@ let rec cleanup = function
 *)
 let connect t1 t2 =
   let t1 = repr t1 and t2 = repr t2 in
-  match !t1 with
+  match t1.state with
     | Sleep sleeper1 ->
         if t1 == t2 then
           (* Do nothing if the two threads already have the same
              representation *)
           ()
         else begin
-          match !t2 with
+          match t2.state with
             | Sleep sleeper2 ->
                 (* If [t2] is sleeping, then makes it behave as [t1]: *)
-                t2 := Repr t1;
+                t2.state <- Repr t1;
                 (* Note that the order is important: the user have no
                    access to [t2] but may keep a reference to [t1]. If
                    we inverse the order, i.e. we do:
 
-                   [t1 := Repr t2]
+                   [t1.state <- Repr t2]
 
                    then we have a possible leak. For example:
 
@@ -208,9 +265,9 @@ let connect t1 t2 =
                 *)
 
                 (* However, since [t1] is a temporary thread created
-                   for a thread that terminated, its cancel function
-                   is meaningless. Only the one of [t2] is now
-                   important: *)
+                   for a thread that is now terminated, its cancel
+                   function is meaningless. Only the one of [t2] is
+                   now important: *)
                 sleeper1.cancel := !(sleeper2.cancel);
 
                 (* Merge the two sets of waiters: *)
@@ -225,8 +282,8 @@ let connect t1 t2 =
                   sleeper1.waiters <- waiters
                 end
             | state2 ->
-                (* [t2] has already terminated, assing its state to [t1]: *)
-                t1 := state2;
+                (* [t2] is already terminated, assing its state to [t1]: *)
+                t1.state <- state2;
                 (* and run all the waiters of [t1]: *)
                 run_waiters sleeper1.waiters state2
         end
@@ -237,9 +294,9 @@ let connect t1 t2 =
 (* Same as [connect] except that we know that [t2] has terminated: *)
 let fast_connect t state =
   let t = repr t in
-  match !t with
+  match t.state with
     | Sleep{ waiters = waiters } ->
-        t := state;
+        t.state <- state;
         run_waiters waiters state
     | _ ->
         invalid_arg "Lwt.fast_connect"
@@ -249,22 +306,35 @@ let fast_connect t state =
    +-----------------------------------------------------------------+ *)
 
 let return v =
-  thread (ref (Return v))
+  thread { state = Return v; data = !current_data }
+
 let fail e =
-  thread (ref (Fail e))
-let temp r =
-  thread (ref (Sleep{ cancel = r;
-                      waiters = Empty;
-                      removed = 0 }))
+  thread { state = Fail e; data = !current_data }
+
+let temp data r =
+  thread {
+    state = Sleep{ cancel = r;
+                   waiters = Empty;
+                   removed = 0 };
+    data = data;
+  }
+
 let wait () =
-  let t = ref (Sleep{ cancel = ref ignore;
-                      waiters = Empty;
-                      removed = 0 }) in
+  let t = {
+    state = Sleep{ cancel = ref ignore;
+                   waiters = Empty;
+                   removed = 0 };
+    data = !current_data;
+  } in
   (thread t, wakener t)
+
 let task () =
-  let rec t = ref (Sleep{ cancel = ref (fun () -> restart_cancel (wakener t));
-                          waiters = Empty;
-                          removed = 0 }) in
+  let rec t = {
+    state = Sleep{ cancel = ref (fun () -> restart_cancel (wakener t));
+                   waiters = Empty;
+                   removed = 0 };
+    data = !current_data;
+  } in
   (thread t, wakener t)
 
 (* apply function, reifying explicit exceptions into the thread type
@@ -274,21 +344,36 @@ let task () =
 *)
 let apply f x = try f x with e -> fail e
 
-let add_immutable_waiter sleeper waiter =
-  sleeper.waiters <- (match sleeper.waiters with
-                        | Empty -> Immutable waiter
-                        | _ -> Append(Immutable waiter, sleeper.waiters))
+let apply_with_data data f x =
+  if data == !current_data then
+    (* We don't catch exceptions here so that tail recursion is not broken *)
+    f x
+  else begin
+    let save = !current_data in
+    current_data := data;
+    try
+      let result = f x in
+      current_data := save;
+      result
+    with exn ->
+      current_data := save;
+      thread { state = Fail exn; data }
+  end
 
-let add_removable_waiter sleeper waiter =
+let add_immutable_waiter sleeper data waiter =
   sleeper.waiters <- (match sleeper.waiters with
-                        | Empty -> Removable waiter
-                        | _ -> Append(Removable waiter, sleeper.waiters))
+                        | Empty -> Immutable(data, waiter)
+                        | _ -> Append(Immutable(data, waiter), sleeper.waiters))
+
+let add_removable_waiter sleeper data waiter =
+  sleeper.waiters <- (match sleeper.waiters with
+                        | Empty -> Removable(data, waiter)
+                        | _ -> Append(Removable(data, waiter), sleeper.waiters))
 
 let on_cancel t f =
-  let t = repr t in
-  match !t with
+  match (repr t).state with
     | Sleep sleeper ->
-        add_immutable_waiter sleeper
+        add_immutable_waiter sleeper (thread_repr t).data
           (function
              | Fail Canceled -> (try f () with _ -> ())
              | _ -> ())
@@ -298,16 +383,14 @@ let on_cancel t f =
         ()
 
 let bind t f =
-  match !(repr t) with
+  match (repr t).state with
     | Return v ->
-        (* we don't use apply here so that tail recursion is not
-           broken *)
-        f v
+        apply_with_data (thread_repr t).data f v
     | Fail e ->
-        fail e
+        thread { state = Fail e; data = (thread_repr t).data }
     | Sleep sleeper ->
-        let res = temp sleeper.cancel in
-        add_immutable_waiter sleeper
+        let res = temp (thread_repr t).data sleeper.cancel in
+        add_immutable_waiter sleeper (thread_repr t).data
           (function
              | Return v -> connect res (try f v with exn -> fail exn)
              | Fail exn -> fast_connect res (Fail exn)
@@ -320,14 +403,27 @@ let (>>=) t f = bind t f
 let (=<<) f t = bind t f
 
 let map f t =
-  match !(repr t) with
+  match (repr t).state with
     | Return v ->
-        return (f v)
+        if (thread_repr t).data == !current_data then
+          return (f v)
+        else begin
+          let save = !current_data in
+          current_data := (thread_repr t).data;
+          try
+            let result = return (f v) in
+            current_data := save;
+            result
+          with exn ->
+            let result = fail exn in
+            current_data := save;
+            result
+        end
     | Fail e ->
-        fail e
+        thread { state = Fail e; data = (thread_repr t).data }
     | Sleep sleeper ->
-        let res = temp sleeper.cancel in
-        add_immutable_waiter sleeper
+        let res = temp (thread_repr t).data sleeper.cancel in
+        add_immutable_waiter sleeper (thread_repr t).data
           (function
              | Return v -> fast_connect res (try Return(f v) with exn -> Fail exn)
              | Fail exn -> fast_connect res (Fail exn)
@@ -341,14 +437,14 @@ let (=|<) f t = map f t
 
 let catch x f =
   let t = try x () with exn -> fail exn in
-  match !(repr t) with
-    | Return v ->
+  match (repr t).state with
+    | Return _ ->
         t
     | Fail exn ->
-        f exn
+        apply_with_data (thread_repr t).data f exn
     | Sleep sleeper ->
-        let res = temp sleeper.cancel in
-        add_immutable_waiter sleeper
+        let res = temp (thread_repr t).data sleeper.cancel in
+        add_immutable_waiter sleeper (thread_repr t).data
           (function
              | Return _ as state -> fast_connect res state
              | Fail exn -> connect res (try f exn with exn -> fail exn)
@@ -359,14 +455,14 @@ let catch x f =
 
 let try_bind x f g =
   let t = try x () with exn -> fail exn in
-  match !(repr t) with
+  match (repr t).state with
     | Return v ->
-        f v
+        apply_with_data (thread_repr t).data f v
     | Fail exn ->
-        g exn
+        apply_with_data (thread_repr t).data g exn
     | Sleep sleeper ->
-        let res = temp sleeper.cancel in
-        add_immutable_waiter sleeper
+        let res = temp (thread_repr t).data sleeper.cancel in
+        add_immutable_waiter sleeper (thread_repr t).data
           (function
              | Return v -> connect res (try f v with exn -> fail exn)
              | Fail exn -> connect res (try g exn with exn -> fail exn)
@@ -376,20 +472,20 @@ let try_bind x f g =
         assert false
 
 let poll t =
-  match !(repr t) with
+  match (repr t).state with
     | Fail e -> raise e
     | Return v -> Some v
     | Sleep _ -> None
     | Repr _ -> assert false
 
 let rec ignore_result t =
-  match !(repr t) with
+  match (repr t).state with
     | Return v ->
         ()
     | Fail e ->
         raise e
     | Sleep sleeper ->
-        add_immutable_waiter sleeper
+        add_immutable_waiter sleeper (thread_repr t).data
           (function
              | Return _ -> ()
              | Fail exn -> raise exn
@@ -398,10 +494,10 @@ let rec ignore_result t =
         assert false
 
 let protected t =
-  match !(repr t) with
+  match (repr t).state with
     | Sleep sleeper ->
         let waiter, wakener = task () in
-        add_immutable_waiter sleeper
+        add_immutable_waiter sleeper (thread_repr t).data
           (fun state ->
              try
                match state with
@@ -420,23 +516,22 @@ let rec nth_ready l n =
   match l with
     | [] ->
         assert false
-    | x :: rem ->
-        let x = repr x in
-        match !x with
+    | t :: l ->
+        match (repr t).state with
           | Sleep _ ->
-              nth_ready rem n
+              nth_ready l n
           | _ when n > 0 ->
-              nth_ready rem (n - 1)
+              nth_ready l (n - 1)
           | _ ->
-              thread x
+              t
 
 let ready_count l =
-  List.fold_left (fun acc x -> match !(repr x) with Sleep _ -> acc | _ -> acc + 1) 0 l
+  List.fold_left (fun acc x -> match (repr x).state with Sleep _ -> acc | _ -> acc + 1) 0 l
 
 let remove_waiters l =
   List.iter
     (fun t ->
-       match !(repr t) with
+       match (repr t).state with
          | Sleep sleeper ->
              let removed = sleeper.removed + 1 in
              if removed > max_removed then begin
@@ -451,9 +546,9 @@ let remove_waiters l =
 let choose l =
   let ready = ready_count l in
   if ready > 0 then
-    nth_ready l (Random.int ready)
+    thread { thread_repr (nth_ready l (Random.int ready)) with data = !current_data }
   else begin
-    let res = temp (ref (fun () -> List.iter cancel l)) in
+    let res = temp !current_data (ref (fun () -> List.iter cancel l)) in
     let rec waiter = ref (Some handle_result)
     and handle_result state =
       (* Disable the waiter now: *)
@@ -466,9 +561,12 @@ let choose l =
     in
     List.iter
       (fun t ->
-         match !(repr t) with
+         match (repr t).state with
            | Sleep sleeper ->
-               add_removable_waiter sleeper waiter;
+               (* The data passed here will never be used because
+                  [handle_result] only calls [fast_connect] which
+                  calls [run_waiters] which ignore the current data *)
+               add_removable_waiter sleeper (thread_repr t).data waiter;
            | _ ->
                assert false)
       l;
@@ -479,7 +577,7 @@ let rec nchoose_terminate res acc = function
   | [] ->
       fast_connect res (Return(List.rev acc))
   | t :: l ->
-      match !(repr t) with
+      match (repr t).state with
         | Return x ->
             nchoose_terminate res (x :: acc) l
         | Fail _ as state ->
@@ -488,7 +586,7 @@ let rec nchoose_terminate res acc = function
             nchoose_terminate res acc l
 
 let nchoose_sleep l =
-  let res = temp (ref (fun () -> List.iter cancel l)) in
+  let res = temp !current_data (ref (fun () -> List.iter cancel l)) in
   let rec waiter = ref (Some handle_result)
   and handle_result state =
     waiter := None;
@@ -497,9 +595,9 @@ let nchoose_sleep l =
   in
   List.iter
     (fun t ->
-       match !(repr t) with
+       match (repr t).state with
          | Sleep sleeper ->
-             add_removable_waiter sleeper waiter;
+             add_removable_waiter sleeper (thread_repr t).data waiter;
          | _ ->
              assert false)
     l;
@@ -510,8 +608,7 @@ let nchoose l =
     | [] ->
         nchoose_sleep l
     | t :: l ->
-        let t = repr t in
-        match !t with
+        match (repr t).state with
           | Return x ->
               collect [x] l
           | Fail exn ->
@@ -522,8 +619,7 @@ let nchoose l =
     | [] ->
         return (List.rev acc)
     | t :: l ->
-        let t = repr t in
-        match !t with
+        match (repr t).state with
           | Return x ->
               collect (x :: acc) l
           | Fail exn ->
@@ -538,24 +634,23 @@ let rec cancel_and_nth_ready l n =
   match l with
     | [] ->
         assert false
-    | x :: rem ->
-        let x = repr x in
-        match !x with
+    | t :: l ->
+        match (repr t).state with
           | Sleep _ ->
-              cancel (thread x);
-              nth_ready rem n
+              cancel t;
+              nth_ready l n
           | _ when n > 0 ->
-              nth_ready rem (n - 1)
+              nth_ready l (n - 1)
           | _ ->
-              List.iter cancel rem;
-              thread x
+              List.iter cancel l;
+              t
 
 let pick l =
   let ready = ready_count l in
   if ready > 0 then
     cancel_and_nth_ready l (Random.int ready)
   else begin
-    let res = temp (ref (fun () -> List.iter cancel l)) in
+    let res = temp !current_data (ref (fun () -> List.iter cancel l)) in
     let rec waiter = ref (Some handle_result)
     and handle_result state =
       waiter := None;
@@ -566,9 +661,9 @@ let pick l =
     in
     List.iter
       (fun t ->
-         match !(repr t) with
+         match (repr t).state with
            | Sleep sleeper ->
-               add_removable_waiter sleeper waiter;
+               add_removable_waiter sleeper (thread_repr t).data waiter;
            | _ ->
                assert false)
       l;
@@ -576,7 +671,7 @@ let pick l =
   end
 
 let npick_sleep l =
-  let res = temp (ref (fun () -> List.iter cancel l)) in
+  let res = temp !current_data (ref (fun () -> List.iter cancel l)) in
   let rec waiter = ref (Some handle_result)
   and handle_result state =
     waiter := None;
@@ -586,9 +681,9 @@ let npick_sleep l =
   in
   List.iter
     (fun t ->
-       match !(repr t) with
+       match (repr t).state with
          | Sleep sleeper ->
-             add_removable_waiter sleeper waiter;
+             add_removable_waiter sleeper (thread_repr t).data waiter;
          | _ ->
              assert false)
     l;
@@ -599,8 +694,7 @@ let npick threads =
     | [] ->
         npick_sleep threads
     | t :: l ->
-        let t = repr t in
-        match !t with
+        match (repr t).state with
           | Return x ->
               collect [x] l
           | Fail exn ->
@@ -613,8 +707,7 @@ let npick threads =
         List.iter cancel threads;
         return (List.rev acc)
     | t :: l ->
-        let t = repr t in
-        match !t with
+        match (repr t).state with
           | Return x ->
               collect (x :: acc) l
           | Fail exn ->
@@ -626,7 +719,8 @@ let npick threads =
   init threads
 
 let join l =
-  let res = temp (ref (fun () -> List.iter cancel l)) and sleeping = ref 0 (* Number of threads still sleeping *) in
+  let res = temp !current_data (ref (fun () -> List.iter cancel l))
+  and sleeping = ref 0 (* Number of threads still sleeping *) in
   let rec waiter = ref (Some handle_result)
   and handle_result state = match state with
     | Fail exn ->
@@ -651,7 +745,7 @@ let join l =
         else
           res
     | t :: rest ->
-        match !(repr t) with
+        match (repr t).state with
           | Fail exn ->
               (* One of the thread already failed, remove the waiter
                  from all already visited sleeping threads and
@@ -660,7 +754,7 @@ let join l =
                 | [] ->
                     t
                 | t :: l ->
-                    match !(repr t) with
+                    match (repr t).state with
                       | Fail _ ->
                           t
                       | Sleep sleeper ->
@@ -678,7 +772,7 @@ let join l =
               loop l
           | Sleep sleeper ->
               incr sleeping;
-              add_removable_waiter sleeper waiter;
+              add_removable_waiter sleeper (thread_repr t).data waiter;
               init rest
           | _ ->
               init rest
@@ -700,7 +794,7 @@ module State = struct
     | Sleep
 end
 
-let state t = match !(repr t) with
+let state t = match (repr t).state with
   | Return v -> State.Return v
   | Fail exn -> State.Fail exn
   | Sleep _ -> State.Sleep
