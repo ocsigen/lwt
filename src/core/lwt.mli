@@ -140,8 +140,9 @@ val nchoose : 'a t list -> 'a list t
       unchanged. *)
 
 val join : unit t list -> unit t
-  (** [join l] wait for all threads in [l] to terminate. It fails if
-      one of the threads fail.
+  (** [join l] waits for all threads in [l] to terminate. If one of
+      the threads fails, then [join l] will fails with the same
+      exception as the first one to terminate.
 
       Note: {!join} leaves the local values of the current thread
       unchanged. *)

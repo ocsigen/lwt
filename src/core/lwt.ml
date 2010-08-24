@@ -720,60 +720,45 @@ let npick threads =
 
 let join l =
   let res = temp !current_data (ref (fun () -> List.iter cancel l))
-  and sleeping = ref 0 (* Number of threads still sleeping *) in
+  (* Number of threads still sleeping: *)
+  and sleeping = ref 0
+  (* The state that must be returned: *)
+  and return_state = ref (Return ()) in
   let rec waiter = ref (Some handle_result)
-  and handle_result state = match state with
-    | Fail exn ->
-        (* The thread has failed, exit immediatly without waiting for
-           other threads *)
-        waiter := None;
-        remove_waiters l;
-        fast_connect res state
-    | _ ->
-        decr sleeping;
-        (* Every threads has finished, we can wakeup the result: *)
-        if !sleeping = 0 then begin
-          waiter := None;
-          fast_connect res state
-        end
+  and handle_result state =
+    begin
+      match !return_state, state with
+        | Return _, Fail _ -> return_state := state
+        | _ -> ()
+    end;
+    decr sleeping;
+    (* All threads are terminated, we can wakeup the result: *)
+    if !sleeping = 0 then begin
+      waiter := None;
+      fast_connect res !return_state
+    end
   in
   let rec init = function
     | [] ->
         if !sleeping = 0 then
-          (* No threads is sleeping, returns immediately: *)
-          return ()
+          (* No thread is sleeping, returns immediately: *)
+          thread { state = !return_state; data = !current_data }
         else
           res
     | t :: rest ->
         match (repr t).state with
-          | Fail exn ->
-              (* One of the thread already failed, remove the waiter
-                 from all already visited sleeping threads and
-                 fail: *)
-              let rec loop = function
-                | [] ->
-                    t
-                | t :: l ->
-                    match (repr t).state with
-                      | Fail _ ->
-                          t
-                      | Sleep sleeper ->
-                          let removed = sleeper.removed + 1 in
-                          if removed > max_removed then begin
-                            sleeper.removed <- 0;
-                            sleeper.waiters <- cleanup sleeper.waiters
-                          end else
-                            sleeper.removed <- removed;
-                          loop l
-                      | _ ->
-                          loop l
-              in
-              waiter := None;
-              loop l
           | Sleep sleeper ->
               incr sleeping;
               add_removable_waiter sleeper (thread_repr t).data waiter;
               init rest
+          | Fail _ as state -> begin
+              match !return_state with
+                | Return _ ->
+                    return_state := state;
+                    init rest
+                | _ ->
+                    init rest
+            end
           | _ ->
               init rest
   in

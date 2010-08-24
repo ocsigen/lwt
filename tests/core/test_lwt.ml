@@ -98,11 +98,11 @@ let suite = suite "lwt" [
        let t,w = wait () in
        let r1 = choose [t] in r1 <=> Sleep;
        choose [t;return ()] <=> Return ();
-       join [fail Exn;t] <=> Fail Exn;
+       join [fail Exn;t] <=> Sleep;
        let r2 = join [t] in r2 <=> Sleep;
        let r3 = join [t;return ()] in r3 <=> Sleep;
        wakeup w ();
-       r1 <=> Return (); r2 <=> Return (); r2 <=> Return ();
+       r1 <=> Return (); r2 <=> Return (); r3 <=> Return ();
        return true);
 
   test "12"
@@ -113,7 +113,7 @@ let suite = suite "lwt" [
        let r2 = join [t;t'] in
        wakeup_exn w Exn;
        r1 <=> Fail Exn;
-       r2 <=> Fail Exn;
+       r2 <=> Sleep;
        return true);
 
   test "13"
@@ -411,7 +411,7 @@ let suite = suite "lwt" [
        let t3 = fail Not_found in
        let t4 = join [t2;t1;t3] in
        return ((state t1 = Fail Exn) && (state t2 = Sleep) &&
-		 (state t3 = Fail Not_found) && (state t4 = Fail Exn)));
+		 (state t3 = Fail Not_found) && (state t4 = Sleep)));
 
   test "join 4"
     (fun () ->
@@ -423,7 +423,7 @@ let suite = suite "lwt" [
 	 | i ->
 	     let t = join [t2;t3;t1] in
 	     if ((state t1 = Fail Exn) && (state t2 = Sleep)
-		 && (state t = Fail Exn) && (state t3 = Return ()))
+		 && (state t = Sleep) && (state t3 = Return ()))
 	     then f (i-1)
 	     else return false
        in
