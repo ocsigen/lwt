@@ -30,7 +30,7 @@ exception Canceled
 
 module Int_map = Map.Make(struct type t = int let compare = compare end)
 
-type data = exn Int_map.t
+type data = (unit -> unit) Int_map.t
   (* Type of data carried by threads *)
 
 type +'a t
@@ -88,38 +88,34 @@ let max_removed = 42
    +-----------------------------------------------------------------+ *)
 
 type 'a key = {
-  key_id : int;
-  key_make : 'a -> exn;
-  key_cast : exn -> 'a;
+  id : int;
+  mutable store : 'a option;
 }
 
 let next_key_id = ref 0
 
 let new_key (type t) () =
-  let key_id = !next_key_id in
-  next_key_id := key_id + 1;
-  let module M = struct exception E of t end in
-  {
-    key_id = key_id;
-    key_make = (fun x -> M.E x);
-    key_cast = (function M.E x -> x | _ -> assert false);
-  }
+  let id = !next_key_id in
+  next_key_id := id + 1;
+  { id = id; store = None }
 
 let current_data = ref Int_map.empty
 
 let get key =
   try
-    let cell = Int_map.find key.key_id !current_data in
-    Some(key.key_cast cell)
+    Int_map.find key.id !current_data ();
+    let value = key.store in
+    key.store <- None;
+    value
   with Not_found ->
     None
 
 let set key value =
   match value with
-    | Some x ->
-        thread { state = Return (); data = Int_map.add key.key_id (key.key_make x) !current_data }
+    | Some _ ->
+        thread { state = Return (); data = Int_map.add key.id (fun () -> key.store <- value) !current_data }
     | None ->
-        thread { state = Return (); data = Int_map.remove key.key_id !current_data }
+        thread { state = Return (); data = Int_map.remove key.id !current_data }
 
 (* +-----------------------------------------------------------------+
    | Restarting/connecting threads                                   |
@@ -173,7 +169,7 @@ let run_waiters waiters state =
 let restart t state caller =
   let t = repr_rec (wakener_repr t) in
   match t.state with
-    | Sleep{ waiters } ->
+    | Sleep{ waiters = waiters } ->
         t.state <- state;
         run_waiters waiters state
     | Fail Canceled ->
@@ -185,7 +181,7 @@ let restart t state caller =
 let restart_cancel t =
   let t = repr_rec (wakener_repr t) in
   match t.state with
-    | Sleep{ waiters; cancel } ->
+    | Sleep{ waiters = waiters; cancel = cancel } ->
         let state = Fail Canceled in
         t.state <- state;
         run_waiters waiters state
