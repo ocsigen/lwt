@@ -94,7 +94,7 @@ type 'a key = {
 
 let next_key_id = ref 0
 
-let new_key (type t) () =
+let new_key () =
   let id = !next_key_id in
   next_key_id := id + 1;
   { id = id; store = None }
@@ -353,7 +353,7 @@ let apply_with_data data f x =
       result
     with exn ->
       current_data := save;
-      thread { state = Fail exn; data }
+      thread { state = Fail exn; data = data }
   end
 
 let add_immutable_waiter sleeper data waiter =
