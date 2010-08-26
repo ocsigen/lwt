@@ -183,6 +183,7 @@ let packages = [
   "react";
   "findlib";
   "str";
+  "bigarray";
 ]
 
 (* List of syntaxes *)
@@ -249,8 +250,19 @@ let define_c_library ~name ~c_name =
      specifics flags: *)
   flag ["c"; "compile"; tag] & S(List.map (fun arg -> S[A"-ccopt"; arg]) opt);
 
-  (* OCaml llibraries must depends on the C library: *)
+  (* OCaml libraries must depends on the C library: *)
   flag ["link"; "ocaml"; tag] & S(List.map (fun arg -> S[A"-cclib"; arg]) lib)
+
+let define_c_library_no_pkg_config ~name ~c_name =
+  let tag = sprintf "use_C_%s" name in
+  let lib = "-l" ^ c_name in
+
+  (* Add flags for linking with the C library: *)
+  flag ["ocamlmklib"; "c"; tag] & A lib;
+
+  (* OCaml libraries must depends on the C library: *)
+  flag ["link"; "ocaml"; tag] & S [A"-cclib";A lib]
+
 
 let _ =
   dispatch begin function
@@ -404,6 +416,8 @@ let _ =
            +---------------------------------------------------------+ *)
 
         define_stubs "unix";
+
+        define_c_library_no_pkg_config ~name:"pthread" ~c_name:"pthread";
 
         if have_glib then begin
           define_stubs "glib";

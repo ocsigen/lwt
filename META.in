@@ -17,7 +17,7 @@ package "react" (
 package "unix" (
   exists_if = "lwt_unix.cma,lwt_unix.cmxa,lwt_unix.cmxs"
   description = "Unix support for lwt"
-  requires = "unix lwt"
+  requires = "unix lwt bigarray"
   archive(byte) = "lwt_unix.cma"
   archive(native) = "lwt_unix.cmxa"
   archive(toploop,byte) += "lwt_simple_top.cma"

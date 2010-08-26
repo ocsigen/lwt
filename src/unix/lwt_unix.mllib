@@ -1,3 +1,4 @@
+Lwt_mmap
 Lwt_chan
 Lwt_throttle
 Lwt_timeout
