@@ -7,3 +7,4 @@ Lwt_mutex
 Lwt_list
 Lwt_pool
 Lwt_condition
+Lwt_switch
