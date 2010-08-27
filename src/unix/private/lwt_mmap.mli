@@ -23,12 +23,20 @@
 (** Cooperative disk inputs *)
 
 (** Note: on 32bits systems the functions in this module can't work with
-    files bigger than 4Go *)
+    files bigger than 2Go *)
 
 val sendfile : string -> Lwt_unix.file_descr -> int -> int -> unit Lwt.t
 (** [sendfile filename output offset length] sends a file throught
     [output] cooperatively *)
 
-val make_io : string -> Lwt_io.input_channel
-(** [make_io filename] creates an input channel from an mmap capabale file.
-    It provides real non-blocking disk inputs. *)
+type t
+
+val of_unix_fd : Unix.file_descr -> t option
+
+val size : t -> int
+
+val read : t -> int -> string -> int -> int -> int Lwt.t
+(** [read input position buf offset length] reads at maximum [length]
+    bytes from [input] at [position] into [buf] starting at position [offset].
+    It returns the number of bytes effectively read. *)
+

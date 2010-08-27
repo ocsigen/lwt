@@ -35,11 +35,11 @@ let pagesize = init_pagesize ()
 let finished_pipe =
   let in_fd = Lwt_unix.of_unix_file_descr (lwt_mmap_init_pipe ()) in
   Lwt_unix.set_close_on_exec in_fd;
-  Lwt_io.of_fd ~mode:Lwt_io.input ~buffer_size:256 in_fd
-
+  in_fd
 
 let mincore b offset len =
-  let s = mincore b offset len in
+  let num_pages = if (len mod pagesize) = 0 then (len/pagesize) else (len/pagesize) + 1 in
+  let s = mincore b offset num_pages in
   let f i = ( Char.code s.[i] ) land 1 = 1 in
   Array.init (String.length s) f
 
@@ -62,13 +62,36 @@ let detach =
     Lwt.on_cancel res (fun _ -> Hashtbl.remove waiter_tbl !count);
     res
 
+(* copy from Lwt_io *)
+type byte_order = Little_endian | Big_endian
+external get_system_byte_order : unit -> byte_order = "lwt_unix_system_byte_order"
+
+let (pos32_0,pos32_1,pos32_2,pos32_3) =
+  match get_system_byte_order () with
+    | Little_endian -> (0,1,2,3)
+    | Big_endian -> (3,2,1,0)
+
+let read_int32 =
+  let buf = String.create 4 in
+  fun fd ->
+    lwt n = Lwt_unix.read fd buf 0 4 in
+    match n with
+      | 4 ->
+	let v0 = Char.code buf.[pos32_0]
+	and v1 = Char.code buf.[pos32_1]
+	and v2 = Char.code buf.[pos32_2]
+	and v3 = Char.code buf.[pos32_3] in
+	return (Int32.logor
+                  (Int32.logor
+                     (Int32.of_int v0)
+                     (Int32.shift_left (Int32.of_int v1) 8))
+                  (Int32.logor
+                     (Int32.shift_left (Int32.of_int v2) 16)
+                     (Int32.shift_left (Int32.of_int v3) 24)))
+      | _ -> fail End_of_file
+
 let launch_waker =
   let thread = ref None in
-  let read_int32 =
-    match Lwt_io.system_byte_order with
-	| Lwt_io.Little_endian -> Lwt_io.LE.read_int32
-	| Lwt_io.Big_endian -> Lwt_io.BE.read_int32
-  in
   let rec loop () =
     lwt id = read_int32 finished_pipe in
     begin
@@ -112,34 +135,21 @@ let sendfile file fd offset len =
   in
   aux offset len
 
-let make_io file =
-  let file_fd = Unix.openfile file [] 0 in
-  let t = Bigarray.Array1.map_file file_fd Bigarray.char Bigarray.c_layout false (-1) in
-  let dim = Bigarray.Array1.dim t in
-  let position = ref 0 in
-  let read str offset len =
-    if String.length str < offset + len
-    then fail (Invalid_argument "Lwt_mmap.make_op/read")
-    else
-      let rest = !position mod pagesize in
-      let len = min (min len (pagesize - rest)) (dim - !position) in
-      lwt () = wait_mmap t offset in
-      (* for i = 0 to len - 1 do
-	str.[offset + i] <- t.{!position + i};
-      done; *)
-      lwt_mmap_memcpy t (!position) str offset len;
-      position := !position + len;
-      return len
-  in
-  let seek pos cmd =
-    let new_pos =
-      match cmd with
-	| Unix.SEEK_SET -> pos
-	| Unix.SEEK_CUR -> Int64.add (Int64.of_int !position) pos
-	| Unix.SEEK_END -> Int64.add (Int64.of_int dim) pos
-    in
-    if (Int64.of_int dim) < new_pos || new_pos < 0L
-    then fail (Invalid_argument "Lwt_mmap.make_op/seek")
-    else (position := Int64.to_int new_pos; return (new_pos))
-  in
-  Lwt_io.make ~seek ~mode:Lwt_io.input read
+let read t position str offset len =
+  if String.length str < offset + len
+  then fail (Invalid_argument "Lwt_mmap.read")
+  else
+    let rest = position mod pagesize in
+    let len = min (min len (pagesize - rest)) ((Bigarray.Array1.dim t) - position) in
+    lwt () = wait_mmap t position in
+    lwt_mmap_memcpy t position str offset len;
+    return len
+
+let size = Bigarray.Array1.dim
+
+let of_unix_fd fd =
+  try
+    Some (Bigarray.Array1.map_file fd Bigarray.char Bigarray.c_layout false (-1))
+  with
+    | Sys_error _ -> None
+    | Unix.Unix_error _ -> None

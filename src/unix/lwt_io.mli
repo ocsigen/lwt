@@ -369,6 +369,13 @@ val with_file :
       file and passes the channel to [f]. It is ensured that the
       channel is closed when [f ch] terminates (even if it fails). *)
 
+val sendfile : string -> Lwt_unix.file_descr -> int -> int -> unit Lwt.t
+(** [sendfile filename output offset length] sends a file throught
+    [output] cooperatively.
+    
+    Note: Only works on file that can be mmaped. On 32bit systems it
+    is limited to file smaller than 2Go. *)
+
 val open_connection : ?buffer_size : int -> Unix.sockaddr -> (input_channel * output_channel) Lwt.t
   (** [open_connection ?buffer_size ~mode addr] open a connection to
       the given address and returns two channels for using it.

@@ -1,5 +1,4 @@
 open Lwt
-open Lwt_mmap
 open Bigarray
 
 let file = ref ""
@@ -18,7 +17,7 @@ let rec ping () =
 let _ = ping ()
 
 let start = Unix.gettimeofday ()
-let n = Lwt_unix.run (Lwt_mmap.sendfile !file sock 0 len)
+let n = Lwt_unix.run (Lwt_io.sendfile !file sock 0 len)
 let stop = Unix.gettimeofday ()
 let time = stop -. start
 let _ = Printf.printf "\ntime: %fs speed: %fmo/s\n%!" time (((float len)/.time) /. 1048576.)

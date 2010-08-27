@@ -1,13 +1,13 @@
 open Lwt
-open Lwt_mmap
 open Bigarray
 
 let file = ref ""
 let () = Arg.parse [] (fun x -> file := x) "plop"
+let file_fd = Unix.openfile !file [] 0
 
 let len = (Unix.stat !file).Unix.st_size
 
-let input = make_io !file
+let input = Lwt_io.of_unix_fd ~mode:Lwt_io.input file_fd
 
 let main () =
   let finished = ref false in

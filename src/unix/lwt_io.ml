@@ -512,7 +512,38 @@ let of_string ~mode str =
   } in
   wrapper
 
-let of_fd ?buffer_size ?close ~mode fd =
+let of_mmap ?buffer_size ?close ~mode t =
+  let dim = Lwt_mmap.size t in
+  let position = ref 0 in
+  let read str offset len =
+    lwt n = Lwt_mmap.read t !position str offset len in
+    position := !position + n;
+    return n
+  in
+  let seek pos cmd =
+    let new_pos =
+      match cmd with
+	| Unix.SEEK_SET -> pos
+	| Unix.SEEK_CUR -> Int64.add (Int64.of_int !position) pos
+	| Unix.SEEK_END -> Int64.add (Int64.of_int dim) pos
+    in
+    if (Int64.of_int dim) < new_pos || new_pos < 0L
+    then fail (Invalid_argument "Lwt_io.of_mmap/seek")
+    else (position := Int64.to_int new_pos; return (new_pos))
+  in
+  make ?buffer_size ?close ~seek ~mode read
+
+let of_unix_fd_mmap ?buffer_size ?close ~mode fd =
+  match mode with
+    | Input ->
+      begin
+	match (Lwt_mmap.of_unix_fd fd) with
+	  | None -> None
+	  | Some t -> Some (of_mmap ?buffer_size ?close ~mode t)
+      end
+    | Output -> None
+
+let of_fd_no_mmap ?buffer_size ?close ~mode fd =
   let perform_io = match mode with
     | Input -> Lwt_unix.read fd
     | Output -> Lwt_unix.write fd
@@ -534,8 +565,15 @@ let of_fd ?buffer_size ?close ~mode fd =
        | _ ->
            perform_io)
 
+let of_fd  ?buffer_size ?close ~mode fd =
+  match of_unix_fd_mmap ?buffer_size ?close ~mode (Lwt_unix.unix_file_descr fd) with
+    | Some io -> io
+    | None -> of_fd_no_mmap ?buffer_size ?close ~mode fd
+
 let of_unix_fd ?buffer_size ?close ~mode fd =
-  of_fd ?buffer_size ?close ~mode (Lwt_unix.of_unix_file_descr fd)
+  match of_unix_fd_mmap ?buffer_size ?close ~mode fd with
+    | Some io -> io
+    | None -> of_fd_no_mmap ?buffer_size ?close ~mode (Lwt_unix.of_unix_file_descr fd)
 
 let buffered ch =
   match ch.channel.mode with
@@ -1289,6 +1327,8 @@ let with_file ?buffer_size ?flags ?perm ~mode filename f =
     f ic
   finally
     close ic
+
+let sendfile = Lwt_mmap.sendfile
 
 let file_length filename = with_file ~mode:input filename length
 
