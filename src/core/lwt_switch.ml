@@ -54,6 +54,16 @@ let add_hook switch hook =
     | None ->
         ()
 
+let add_hook_or_exec switch hook =
+  match switch with
+    | Some{ state = St_on os } ->
+        os.hooks <- hook :: os.hooks;
+        return ()
+    | Some{ state = St_off } ->
+        hook ()
+    | None ->
+        return ()
+
 let turn_off switch =
   match switch.state with
     | St_on { hooks } ->

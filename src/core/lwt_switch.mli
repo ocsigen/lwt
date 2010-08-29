@@ -104,3 +104,8 @@ val add_hook : t option -> (unit -> unit Lwt.t) -> unit
       {!turn_off} is invoked. It does nothing if [switch] is
       [None]. If [switch] contains an switch that is already off then
       {!Off} is raised. *)
+
+val add_hook_or_exec : t option -> (unit -> unit Lwt.t) -> unit Lwt.t
+  (** [add_hook_or_exec switch f] is the same as {!add_hook} except
+      that if the switch is already off, then [f] is called
+      immediatly. *)
