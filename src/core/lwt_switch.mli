@@ -91,7 +91,16 @@ val turn_off : t -> unit Lwt.t
       exception raised by hooks. If the switch is already off, then it
       does nothing. *)
 
-val add_hook : t -> (unit -> unit Lwt.t) -> unit Lwt.t
+exception Off
+  (** Exception raised when trying to add a hook to a switch that is
+      already off. *)
+
+val check : t option -> unit
+  (** [check switch] does nothing if [switch] is [None] or contains an
+      switch that is currently on, and raise {!Off} otherwise. *)
+
+val add_hook : t option -> (unit -> unit Lwt.t) -> unit
   (** [add_hook switch f] registers [f] so it will be called when
-      {!turn_off} is invoked. If the switch is already off, then [f]
-      is called immediatly. *)
+      {!turn_off} is invoked. It does nothing if [switch] is
+      [None]. If [switch] contains an switch that is already off then
+      {!Off} is raised. *)

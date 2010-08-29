@@ -22,35 +22,42 @@
 
 open Lwt
 
+exception Off
+
 type on_switch = {
   mutable hooks : (unit -> unit Lwt.t) list;
 }
 
 type state =
-  | On of on_switch
-  | Off
+  | St_on of on_switch
+  | St_off
 
 type t = { mutable state : state }
 
-let create () = { state = On { hooks = [] } }
+let create () = { state = St_on { hooks = [] } }
 
 let is_on switch =
   match switch.state with
-    | On _ -> true
-    | Off -> false
+    | St_on _ -> true
+    | St_off -> false
+
+let check = function
+  | Some{ state = St_off } -> raise Off
+  | _ -> ()
 
 let add_hook switch hook =
-  match switch.state with
-    | On os ->
-        os.hooks <- hook :: os.hooks;
-        return ()
-    | Off ->
-        hook ()
+  match switch with
+    | Some{ state = St_on os } ->
+        os.hooks <- hook :: os.hooks
+    | Some{ state = St_off } ->
+        raise Off
+    | None ->
+        ()
 
 let turn_off switch =
   match switch.state with
-    | On { hooks } ->
-        switch.state <- Off;
+    | St_on { hooks } ->
+        switch.state <- St_off;
         Lwt_list.iter_p (fun hook -> apply hook ()) hooks
-    | Off ->
+    | St_off ->
         return ()
