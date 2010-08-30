@@ -415,6 +415,8 @@ let _ =
            | C stubs                                                 |
            +---------------------------------------------------------+ *)
 
+	flag ["c"; "compile"; "profile"] & S[A"-ccopt"; A"-p"];
+
         define_stubs "unix";
 
         define_c_library_no_pkg_config ~name:"pthread" ~c_name:"pthread";

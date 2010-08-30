@@ -512,7 +512,7 @@ let of_string ~mode str =
   } in
   wrapper
 
-let of_mmap ?buffer_size ?close ~mode t =
+let of_mmap ?(buffer_size=Lwt_mmap.max_read_size) ?close ~mode t =
   let dim = Lwt_mmap.size t in
   let position = ref 0 in
   let read str offset len =
@@ -531,7 +531,7 @@ let of_mmap ?buffer_size ?close ~mode t =
     then fail (Invalid_argument "Lwt_io.of_mmap/seek")
     else (position := Int64.to_int new_pos; return (new_pos))
   in
-  make ?buffer_size ?close ~seek ~mode read
+  make ~buffer_size ?close ~seek ~mode read
 
 let of_unix_fd_mmap ?buffer_size ?close ~mode fd =
   match mode with

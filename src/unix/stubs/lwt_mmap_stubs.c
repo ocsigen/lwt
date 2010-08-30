@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <fcntl.h>
+#include <assert.h>
 
 #include <caml/config.h>
 #include <caml/memory.h>
@@ -54,19 +55,20 @@ lwt_mmap_mincore ( value v_bigarray, value v_offset, value v_len )
   char err_str[32];
   char *data;
   unsigned char *vec;
-  int len, offset, bigarray_len, r;
+  int len, offset, r;
   long page_size = sysconf(_SC_PAGESIZE);
 
   offset = Int_val (v_offset);
   len = Int_val (v_len);
   
-  bigarray_len = Caml_ba_array_val(v_bigarray)->dim[0];
-  v_vec = caml_alloc_string ((len+page_size-1) / page_size);
+  assert( offset <= Caml_ba_array_val(v_bigarray)->dim[0] );
+
+  v_vec = caml_alloc_string (len);
   vec = (unsigned char *) String_val(v_vec);
 
   data = Caml_ba_data_val(v_bigarray) + offset;
 
-  r = mincore (data, len, vec);
+  r = mincore (data, len*page_size, vec);
 
   if (r == -1) {
     snprintf(err_str,32,"%p 0x%x",data,len);

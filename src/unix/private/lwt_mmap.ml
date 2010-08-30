@@ -25,7 +25,7 @@ open Lwt
 type t = (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
 
 external init_pagesize : unit -> int = "lwt_mmap_init_pagesize"
-external mincore : t -> int -> int -> string = "lwt_mmap_mincore"
+external lwt_mmap_mincore : t -> int -> int -> string = "lwt_mmap_mincore"
 external lwt_mmap_write : Unix.file_descr -> t -> int -> int -> int = "lwt_mmap_write"
 external lwt_mmap_init_pipe : unit -> Unix.file_descr = "lwt_mmap_init_pipe"
 external lwt_mmap_launch_waiter : t -> int -> int32 -> unit = "lwt_mmap_launch_waiter"
@@ -37,11 +37,30 @@ let finished_pipe =
   Lwt_unix.set_close_on_exec in_fd;
   in_fd
 
-let mincore b offset len =
-  let num_pages = if (len mod pagesize) = 0 then (len/pagesize) else (len/pagesize) + 1 in
-  let s = mincore b offset num_pages in
-  let f i = ( Char.code s.[i] ) land 1 = 1 in
-  Array.init (String.length s) f
+let batch_size = 16
+let max_read_size = batch_size * pagesize
+
+let sendfile_batch_size = 256
+let max_sendfile_size = sendfile_batch_size * pagesize
+
+let length_in_core b offset len =
+  let num_pages = (len + pagesize - 1) / pagesize in
+  let s = lwt_mmap_mincore b offset num_pages in
+  let rec count i c =
+    if i = num_pages - 1
+    then
+      let dim = Bigarray.Array1.dim b in
+      if dim - offset - c >= pagesize
+      then c + pagesize
+      else dim - offset
+    else
+      if Char.code s.[i] land 1 = 1
+      then count (i + 1) (c + pagesize)
+      else c
+  in
+  let memory_ready = count 0 0 in
+  let rest = offset mod pagesize in
+  min (min len (memory_ready - rest)) ((Bigarray.Array1.dim b) - offset)
 
 let bigarray_write ch buf pos len =
   if pos < 0 || len < 0 || pos > Bigarray.Array1.dim buf - len then
@@ -112,26 +131,27 @@ let launch_waker =
       | Some _ -> ()
       | None -> thread := Some (loop ()); ()
 
-let wait_mmap t offset =
+let rec wait_mmap t offset len =
+  assert( len > 0 );
   let offs = offset - (offset mod pagesize) in
-  let res = mincore t offs pagesize in
-  if res.(0)
-  then return ()
+  let res = length_in_core t offs len in
+  if res > 0
+  then return res
   else
     ( launch_waker ();
-      detach t offset )
+      lwt () = detach t offset in
+      wait_mmap t offset len)
 
 let sendfile file fd offset len =
   let file_fd = Unix.openfile file [] 0 in
   let t = Bigarray.Array1.map_file file_fd Bigarray.char Bigarray.c_layout false (-1) in
   let rec aux offset len =
-    lwt () = wait_mmap t offset in
-    if len <= pagesize
-    then lwt _ = bigarray_write fd t offset len in return ()
-    else lwt n = bigarray_write fd t offset pagesize in
-         if n < pagesize
-	 then fail (Failure "sendfile")
-	 else aux (offset + pagesize) (len - pagesize)
+    if len = 0
+    then return ()
+    else
+      lwt ready = wait_mmap t offset (min max_sendfile_size len) in
+      lwt n = bigarray_write fd t offset ready in
+      aux (offset + n) (len - n)
   in
   aux offset len
 
@@ -139,9 +159,9 @@ let read t position str offset len =
   if String.length str < offset + len
   then fail (Invalid_argument "Lwt_mmap.read")
   else
+    lwt memory_ready = wait_mmap t position (min max_read_size len) in
     let rest = position mod pagesize in
-    let len = min (min len (pagesize - rest)) ((Bigarray.Array1.dim t) - position) in
-    lwt () = wait_mmap t position in
+    let len = min (min len (memory_ready - rest)) ((Bigarray.Array1.dim t) - position) in
     lwt_mmap_memcpy t position str offset len;
     return len
 
