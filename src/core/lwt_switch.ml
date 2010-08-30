@@ -66,7 +66,7 @@ let add_hook_or_exec switch hook =
 
 let turn_off switch =
   match switch.state with
-    | St_on { hooks } ->
+    | St_on { hooks = hooks } ->
         switch.state <- St_off;
         Lwt_list.iter_p (fun hook -> apply hook ()) hooks
     | St_off ->
