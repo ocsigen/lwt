@@ -40,6 +40,16 @@ ifeq ($(shell if which ocamlopt >/dev/null; then echo yes; fi),)
 OCAMLBUILD += -byte-plugin
 endif
 
+# Generate debuging information
+ifdef DEBUG
+OCAMLBUILD += -tag debug
+endif
+
+# Generate profiling information
+ifdef PROFILE
+OCAMLBUILD += -tag profile
+endif
+
 # General project parameters:
 NAME := lwt
 VERSION := $(shell head -n 1 VERSION)

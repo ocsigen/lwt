@@ -36,6 +36,16 @@ ifeq ($(TERM),dumb)
 OCAMLBUILD += -classic-display
 endif
 
+# Generate debuging information
+ifdef DEBUG
+OCAMLBUILD += -tag debug
+endif
+
+# Generate profiling information
+ifdef PROFILE
+OCAMLBUILD += -tag profile
+endif
+
 all: best
 
 best:
