@@ -31,6 +31,15 @@ external lwt_mmap_init_pipe : unit -> Unix.file_descr = "lwt_mmap_init_pipe"
 external lwt_mmap_launch_waiter : t -> int -> int32 -> unit = "lwt_mmap_launch_waiter"
 external lwt_mmap_memcpy : t -> int -> string -> int -> int -> unit = "lwt_mmap_memcpy"
 
+type madvise =
+  | MADV_NORMAL
+  | MADV_RANDOM
+  | MADV_SEQUENTIAL
+  | MADV_WILLNEED
+  | MADV_DONTNEED
+
+external lwt_mmap_madvise : t -> int -> int -> madvise -> unit = "lwt_mmap_madvise"
+
 let pagesize = init_pagesize ()
 let finished_pipe =
   let in_fd = Lwt_unix.of_unix_file_descr (lwt_mmap_init_pipe ()) in
@@ -42,6 +51,9 @@ let max_read_size = batch_size * pagesize
 
 let sendfile_batch_size = 256
 let max_sendfile_size = sendfile_batch_size * pagesize
+
+let min_sleep = 0.00002
+let max_sleep = 0.0005 (* about the time needed to launch a thread ( on my computer ) *)
 
 let length_in_core b offset len =
   let num_pages = (len + pagesize - 1) / pagesize in
@@ -138,9 +150,25 @@ let rec wait_mmap t offset len =
   if res > 0
   then return res
   else
-    ( launch_waker ();
-      lwt () = detach t offset in
-      wait_mmap t offset len)
+    begin
+      lwt_mmap_madvise t offset len MADV_WILLNEED;
+      let rec aux sleep =
+        let res = length_in_core t offs len in
+        if res > 0
+        then return res
+        else
+        if sleep < max_sleep
+        then
+	  lwt () = Lwt_unix.sleep sleep in
+          aux ( 2. *. sleep )
+        else
+          ( launch_waker ();
+	    lwt () = detach t offset in
+	    aux min_sleep )
+      in
+      lwt () = Lwt_unix.sleep min_sleep in
+      aux ( 2. *. min_sleep )
+    end
 
 let sendfile file fd offset len =
   let file_fd = Unix.openfile file [] 0 in
@@ -153,17 +181,21 @@ let sendfile file fd offset len =
       lwt n = bigarray_write fd t offset ready in
       aux (offset + n) (len - n)
   in
-  aux offset len
+  if len > (Bigarray.Array1.dim t - offset)
+  then fail (Invalid_argument "Lwt_mmap.sendfile")
+  else aux offset len
 
 let read t position str offset len =
-  if String.length str < offset + len
+  if (String.length str < offset + len) || ((Bigarray.Array1.dim t) < position)
   then fail (Invalid_argument "Lwt_mmap.read")
   else
-    lwt memory_ready = wait_mmap t position (min max_read_size len) in
-    let rest = position mod pagesize in
-    let len = min (min len (memory_ready - rest)) ((Bigarray.Array1.dim t) - position) in
-    lwt_mmap_memcpy t position str offset len;
-    return len
+    let file_rest = (Bigarray.Array1.dim t) - position in
+    if file_rest <= 0
+    then return 0
+    else 
+      lwt memory_ready = wait_mmap t position (min (min max_read_size len) file_rest) in
+      lwt_mmap_memcpy t position str offset memory_ready;
+      return memory_ready
 
 let size = Bigarray.Array1.dim
 

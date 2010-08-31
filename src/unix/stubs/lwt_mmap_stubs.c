@@ -78,6 +78,45 @@ lwt_mmap_mincore ( value v_bigarray, value v_offset, value v_len )
   CAMLreturn (v_vec);
 }
 
+static int advise_table[] =
+  { MADV_NORMAL,
+    MADV_RANDOM,
+    MADV_SEQUENTIAL,
+    MADV_WILLNEED,
+    MADV_DONTNEED };
+
+static int advise_of_int (int caml_advise)
+{
+  return advise_table[caml_advise];
+}
+
+CAMLprim value
+lwt_mmap_madvise (value bigarrayv, value offsetv, value lenv, value advisev)
+{
+  CAMLparam4 ( bigarrayv, offsetv, lenv, advisev);
+
+  char err_str[32];
+  char *data;
+  int len, offset, bigarray_len, r, advise;
+  
+  offset = Int_val (offsetv);
+  len = Int_val (lenv);
+  advise = advise_of_int( Int_val (advisev) );
+
+  bigarray_len = Bigarray_val(bigarrayv)->dim[0];
+
+  data = Data_bigarray_val(bigarrayv) + offset;
+
+  r = madvise(data, len, advise);
+
+  if (r == -1) {
+    snprintf(err_str,32,"%p 0x%x",data,len);
+    uerror("madvise",caml_copy_string(err_str));
+  }
+
+  CAMLreturn (Val_unit);
+}
+
 CAMLprim value lwt_mmap_write( value v_fd, value v_bstr, value v_pos, value v_len )
 {
   struct caml_ba_array *ba = Caml_ba_array_val(v_bstr);
