@@ -551,7 +551,11 @@ let choose l =
   let data = !current_data in
   let ready = ready_count l in
   if ready > 0 then
-    thread { state = with_data data (nth_ready l (Random.int ready)) }
+    if ready = 1 then
+      (* Optimisation for the common case: *)
+      thread { state = with_data data (nth_ready l 0) }
+    else
+      thread { state = with_data data (nth_ready l (Random.int ready)) }
   else begin
     let res = temp (ref (fun () -> List.iter cancel l)) in
     let rec waiter = ref (Some handle_result)
@@ -655,7 +659,11 @@ let pick l =
   let data = !current_data in
   let ready = ready_count l in
   if ready > 0 then
-    cancel_and_nth_ready l (Random.int ready)
+    if ready = 1 then
+      (* Optimisation for the common case: *)
+      thread { state = with_data data (cancel_and_nth_ready l 0) }
+    else
+      thread { state = with_data data (cancel_and_nth_ready l (Random.int ready)) }
   else begin
     let res = temp (ref (fun () -> List.iter cancel l)) in
     let rec waiter = ref (Some handle_result)
