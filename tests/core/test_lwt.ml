@@ -524,4 +524,196 @@ let suite = suite "lwt" [
        let r = ref None in
        let _ = t >>= (fun () -> r := get key; return ())  in
        return (get key = Some 2 && !r = Some 1));
+
+  test "data 7"
+    (fun () ->
+       lwt () = set key (Some 0) in
+       let waiter, wakener = wait () in
+       let t = waiter >> set key (Some 1) in
+       wakeup wakener ();
+       lwt () = t in
+       return (get key = Some 1));
+
+  test "data 8"
+    (fun () ->
+       lwt () = set key (Some 0) in
+       lwt _ = choose [set key (Some 1); set key (Some 2)] in
+       return (get key = Some 0));
+
+  test "data 9"
+    (fun () ->
+       lwt () = set key (Some 0) in
+       lwt _ = pick [set key (Some 1); set key (Some 2)] in
+       return (get key = Some 0));
+
+  test "data 10"
+    (fun () ->
+       lwt () = set key (Some 0) in
+       lwt _ = join [set key (Some 1); set key (Some 2)] in
+       return (get key = Some 0));
+
+  test "data 11"
+    (fun () ->
+       lwt () = set key (Some 0) in
+       let waiter, wakener = wait () in
+       let t = choose [waiter >> set key (Some 1)] in
+       wakeup wakener ();
+       lwt () = t in
+       return (get key = Some 0));
+
+  test "data 12"
+    (fun () ->
+       lwt () = set key (Some 0) in
+       let waiter, wakener = wait () in
+       let t = pick [waiter >> set key (Some 1)] in
+       wakeup wakener ();
+       lwt () = t in
+       return (get key = Some 0));
+
+  test "data 13"
+    (fun () ->
+       lwt () = set key (Some 0) in
+       let waiter, wakener = wait () in
+       let t = join [waiter >> set key (Some 1)] in
+       wakeup wakener ();
+       lwt () = t in
+       return (get key = Some 0));
+
+  test "data 14"
+    (fun () ->
+       lwt () = set key (Some 0) in
+       lwt _ = nchoose [set key (Some 1); set key (Some 2)] in
+       return (get key = Some 0));
+
+  test "data 15"
+    (fun () ->
+       lwt () = set key (Some 0) in
+       lwt _ = npick [set key (Some 1); set key (Some 2)] in
+       return (get key = Some 0));
+
+  test "data 16"
+    (fun () ->
+       lwt () = set key (Some 0) in
+       let waiter, wakener = wait () in
+       let t = nchoose [waiter >> set key (Some 1)] in
+       wakeup wakener ();
+       lwt _ = t in
+       return (get key = Some 0));
+
+  test "data 17"
+    (fun () ->
+       lwt () = set key (Some 0) in
+       let waiter, wakener = wait () in
+       let t = npick [waiter >> set key (Some 1)] in
+       wakeup wakener ();
+       lwt _ = t in
+       return (get key = Some 0));
+
+  test "data 18"
+    (fun () ->
+       lwt () = set key (Some 0) in
+       lwt () = try_lwt set key (Some 1) with exn -> return () in
+       return (get key = Some 1));
+
+  test "data 19"
+    (fun () ->
+       lwt () = set key (Some 0) in
+       lwt () = try_lwt fail Exit with exn -> set key (Some 1) in
+       return (get key = Some 1));
+
+  test "data 20"
+    (fun () ->
+       let waiter, wakener = wait () in
+       lwt () = set key (Some 0) in
+       let t = try_lwt waiter >> set key (Some 1) with exn -> return () in
+       wakeup wakener ();
+       lwt () = t in
+       return (get key = Some 1));
+
+  test "data 21"
+    (fun () ->
+       let waiter, wakener = wait () in
+       lwt () = set key (Some 0) in
+       let t = try_lwt fail Exit with exn -> waiter >> set key (Some 1) in
+       wakeup wakener ();
+       lwt () = t in
+       return (get key = Some 1));
+
+  test "data 22"
+    (fun () ->
+       lwt () = set key (Some 0) in
+       lwt () = try_lwt set key (Some 1) finally set key (Some 2) in
+       return (get key = Some 2));
+
+  test "data 23"
+    (fun () ->
+       let waiter, wakener = wait () in
+       lwt () = set key (Some 0) in
+       let t = try_lwt waiter >> set key (Some 1) finally set key (Some 2) in
+       wakeup wakener ();
+       lwt () = t in
+       return (get key = Some 2));
+
+  test "data 24"
+    (fun () ->
+       let waiter, wakener = wait () in
+       lwt () = set key (Some 0) in
+       let t = try_lwt set key (Some 1) finally waiter >> set key (Some 2) in
+       wakeup wakener ();
+       lwt () = t in
+       return (get key = Some 2));
+
+  test "data 25"
+    (fun () ->
+       lwt () = set key (Some 0) in
+       lwt () = try_lwt set key (Some 1) >> fail Exit with exn -> set key (Some 2) in
+       return (get key = Some 2));
+
+  test "data 26"
+    (fun () ->
+       lwt () = set key (Some 0) in
+       let waiter, wakener = wait () in
+       let t = try_lwt waiter >> set key (Some 1) with exn -> return () in
+       wakeup_exn wakener Exit;
+       lwt () = t in
+       return (get key = Some 0));
+
+  test "data 27"
+    (fun () ->
+       lwt () = set key (Some 0) in
+       let waiter1, wakener1 = wait () in
+       let waiter2, wakener2 = wait () in
+       let t =
+         lwt () = waiter1 in
+         lwt () = waiter2 in
+         set key (Some 1)
+       in
+       wakeup wakener1 ();
+       wakeup wakener2 ();
+       lwt () = t in
+       return (get key = Some 1));
+
+  test "data 28"
+    (fun () ->
+       lwt () = set key (Some 0) in
+       let waiter1, wakener1 = wait () in
+       let waiter2, wakener2 = wait () in
+       let t =
+         lwt () = waiter1 in
+         lwt () = waiter2 in
+         set key (Some 1)
+       in
+       wakeup wakener2 ();
+       wakeup wakener1 ();
+       lwt () = t in
+       return (get key = Some 1));
+
+  test "data 29"
+    (fun () ->
+       lwt () = set key (Some 0) in
+       let waiter, wakener = wait () in
+       lwt () = set key (Some 1) in
+       wakeup wakener ();
+       lwt () = waiter in
+       return (get key = Some 0));
 ]

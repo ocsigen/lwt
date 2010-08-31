@@ -15,7 +15,7 @@
 
 <src/top/private/{toplevel.*,toplevel_temp.*}>: use_compiler_libs
 
-<tests/**>: pkg_unix, use_unix_stubs
+<tests/**>: pkg_unix, use_unix_stubs, pkg_bigarray, use_C_pthread
 
 # +------------------------------------------------------------------+
 # | Syntax extensions                                                |
