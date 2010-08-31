@@ -25,7 +25,7 @@
 (** Note: on 32bits systems the functions in this module can't work with
     files bigger than 2Go *)
 
-val sendfile : string -> Lwt_unix.file_descr -> int -> int -> unit Lwt.t
+val sendfile : Unix.file_descr -> Lwt_unix.file_descr -> int -> int -> unit Lwt.t
 (** [sendfile filename output offset length] sends a file throught
     [output] cooperatively *)
 
