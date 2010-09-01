@@ -25,8 +25,6 @@
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
-#include <pthread.h>
-#include <fcntl.h>
 #include <assert.h>
 
 #include <caml/config.h>
@@ -38,6 +36,8 @@
 #include <caml/callback.h>
 #include <caml/unixsupport.h>
 #include <caml/signals.h>
+
+#include "lwt_unix.h"
 
 CAMLprim value
 lwt_mmap_init_pagesize ( value v_unit )
@@ -128,48 +128,36 @@ CAMLprim value lwt_mmap_write( value v_fd, value v_bstr, value v_pos, value v_le
   return Val_long(written);
 }
 
-int lwt_mmap_pipe = -1;
-pthread_mutex_t pipe_lock = PTHREAD_MUTEX_INITIALIZER;
-
-CAMLprim value lwt_mmap_init_pipe( value v_unit )
-{
-  int pipefd[2];
-  if ( pipe( pipefd ) == -1 ) uerror("lwt_mmap_write", Nothing);
-  if ( fcntl(pipefd[1], F_SETFD, FD_CLOEXEC) == -1 ) uerror("lwt_mmap_write", Nothing);
-  lwt_mmap_pipe = pipefd[1];
-  return Val_int(pipefd[0]);
-}
-
 typedef struct waiter_descr {
-  int32 ident;
+  int ident;
   char* data;
 } waiter_descr_t;
 
 static void *waiter_function(void *w)
 {
-  waiter_descr_t *waiter = (waiter_descr_t *) w;
-  char dummy = *( waiter->data );
+  waiter_descr_t *waiter = (waiter_descr_t *)w;
 
-  pthread_mutex_lock( &pipe_lock );
-  write( lwt_mmap_pipe, (void*) &(waiter->ident) , 4 );
-  pthread_mutex_unlock( &pipe_lock );
+  /* Read the first byte to force the kernel to fetch the page: */
+  char dummy = *(waiter->data);
+  /* Make the compiler happy: */
+  dummy = 0;
+
+  lwt_unix_send_notification(waiter->ident);
 
   free(waiter);
   return NULL;
 }
 
-CAMLprim value lwt_mmap_launch_waiter( value v_bigarray, value v_offset, value v_ident )
+CAMLprim value lwt_mmap_launch_waiter(value v_bigarray, value v_offset, value v_ident)
 {
-  waiter_descr_t *waiter = (waiter_descr_t *) malloc(sizeof(waiter_descr_t));
-  pthread_t thread;
-  int32 ident = Int32_val(v_ident);
+  waiter_descr_t *waiter = (waiter_descr_t *)malloc(sizeof(waiter_descr_t));
 
-  waiter->ident = ident;
+  waiter->ident = Int_val(v_ident);
   waiter->data = Caml_ba_data_val(v_bigarray) + Int_val(v_offset);
 
-  pthread_create( &thread, NULL, waiter_function, (void*) waiter );
+  lwt_unix_launch_thread(waiter_function, (void*)waiter);
 
-  return ( Val_unit );
+  return Val_unit;
 }
 
 CAMLprim value lwt_mmap_memcpy( value v_bigarray, value v_ba_offset, value v_string, value v_s_offset,

@@ -65,13 +65,10 @@ let finished_pipe =
   Unix.set_close_on_exec out_fd;
   (Lwt_io.of_fd ~mode:Lwt_io.input ~buffer_size:256 in_fd, Unix.out_channel_of_descr out_fd)
 
-(* Mutex used to prevent concurrent access to [finished_pipe] by
-   preemptive worker threads: *)
-let pipe_lock = Mutex.create ()
-
 type thread = {
-  task_channel: (unit -> unit) Event.channel;
-  (* Channel used to communicate a task to the worker thread. *)
+  task_channel: (int * (unit -> unit)) Event.channel;
+  (* Channel used to communicate notification id and tasks to the
+     worker thread. *)
 
   mutable thread : Thread.t;
   (* The worker thread. *)
@@ -87,22 +84,15 @@ let workers : thread Queue.t = Queue.create ()
 (* Queue of clients waiting for a worker to be available: *)
 let waiters : thread Lwt.u Lwt_sequence.t = Lwt_sequence.create ()
 
-(* Mapping from thread ids to client lwt-thread: *)
-let clients : (int, unit Lwt.u) Hashtbl.t = Hashtbl.create 16
-
 (* Code executed by a worker: *)
 let rec worker_loop worker =
-  let task = Event.sync (Event.receive worker.task_channel) in
+  let id, task = Event.sync (Event.receive worker.task_channel) in
   task ();
   (* If there is too much threads, exit. This can happen if the user
      decreased the maximum: *)
   if !threads_count > !max_threads then worker.reuse <- false;
   (* Tell the main thread that work is done: *)
-  Mutex.lock pipe_lock;
-  let oc = snd finished_pipe in
-  Pervasives.output_string oc (string_of_int (Thread.id worker.thread) ^ "\n");
-  Pervasives.flush oc;
-  Mutex.unlock pipe_lock;
+  Lwt_unix.send_notification id;
   if worker.reuse then worker_loop worker
 
 (* create a new worker: *)
@@ -138,49 +128,6 @@ let rec get_worker _ =
   end
 
 (* +-----------------------------------------------------------------+
-   | Dispatcher                                                      |
-   +-----------------------------------------------------------------+ *)
-
-(* The dispatcher is responsible for reading id of threads which have
-   finished their work and wakeup the corresponding lwt thread: *)
-
-let rec dispatch () =
-  begin
-    try_lwt
-      (* Read the id of the next thread that has finished his work: *)
-      lwt n = int_of_string =|< read_line (fst finished_pipe) in
-      ignore begin
-        (* Here we want to do the recursive call as soon as possible
-           (and before the wakeup) because if Lwt_unix.run is called
-           by the waiters of the thread beeing awoken, and if that run
-           wants to use detach, the pipe won't be available, and the
-           run will never finish ...  and block the other run
-           (remember that an invocation of [run] will not terminate
-           before all subsequent invocations are terminated) *)
-        lwt () = Lwt_unix.yield () in
-        let w = Hashtbl.find clients n in
-        Hashtbl.remove clients n;
-        wakeup w ();
-        return ()
-      end;
-      return `continue
-    with
-      | Channel_closed _ ->
-          return `break
-      | exn ->
-          Printf.ksprintf !error_log
-            "Internal error in lwt_preemptive.ml (read failed on the pipe) %s - Please check if Lwt_preemptive is initialized and that lwt_preemptive.cmo is linked only once. Otherwise, please report the bug"
-            (Printexc.to_string exn);
-          fail exn
-  end >>= function
-    | `continue -> dispatch ()
-    | `break -> return ()
-
-let dispatcher_running = ref false
-
-let dispatcher = lazy(dispatcher_running := true; dispatch ())
-
-(* +-----------------------------------------------------------------+
    | Initialisation, and dynamic parameters reset                    |
    +-----------------------------------------------------------------+ *)
 
@@ -196,14 +143,18 @@ let set_bounds (min, max) =
     add_worker (make_worker ())
   done
 
+let initialized = ref false
+
 let init min max errlog =
+  initialized := true;
   error_log := errlog;
-  set_bounds (min, max);
-  Lazy.force dispatcher
+  set_bounds (min, max)
 
 let simple_init _ =
-  if not !dispatcher_running then set_bounds (0, 4);
-  Lazy.force dispatcher
+  if not !initialized then begin
+    initialized := true;
+    set_bounds (0, 4)
+  end
 
 let nbthreads _ = !threads_count
 let nbthreadsqueued _ = Lwt_sequence.fold_l (fun _ x -> x + 1) waiters 0
@@ -214,7 +165,7 @@ let nbthreadsbusy _ = !threads_count - Queue.length workers
    +-----------------------------------------------------------------+ *)
 
 let detach f args =
-  let _ = simple_init () in
+  simple_init ();
   let result = ref `Nothing in
   (* The task for the worker thread: *)
   let task () =
@@ -224,20 +175,22 @@ let detach f args =
       result := `Failure exn
   in
   lwt worker = get_worker () in
-  let (res, w) =  Lwt.wait () in
-  Hashtbl.add clients (Thread.id worker.thread) w;
-  (* Send the task to the worker: *)
-  Event.sync (Event.send worker.task_channel task);
+  let waiter, wakener = wait () in
+  let id =
+    Lwt_unix.make_notification ~once:true
+      (fun () ->
+         match !result with
+           | `Nothing ->
+               wakeup_exn wakener (Failure "Lwt_preemptive.detach")
+           | `Success value ->
+               wakeup wakener value
+           | `Failure exn ->
+               wakeup_exn wakener exn)
+  in
   try_lwt
-    (* Wait for notification of the dispatcher: *)
-    res >>
-      match !result with
-      | `Nothing ->
-          fail (Failure "Lwt_preemptive.detach")
-      | `Success v ->
-          return v
-      | `Failure exn ->
-          fail exn
+    (* Send the id and the task to the worker: *)
+    Event.sync (Event.send worker.task_channel (id, task));
+    waiter
   finally
     if worker.reuse then
       (* Put back the worker to the pool: *)

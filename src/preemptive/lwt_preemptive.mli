@@ -28,7 +28,7 @@
 val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
   (** detaches a computation to a preemptive thread. *)
 
-val init : int -> int -> (string -> unit) -> unit Lwt.t
+val init : int -> int -> (string -> unit) -> unit
   (** [init min max log] initialises this module. i.e. it launches the
       minimum number of preemptive threads and starts the {b
       dispatcher}.
@@ -37,18 +37,13 @@ val init : int -> int -> (string -> unit) -> unit Lwt.t
       @param max is the maximum number of threads
       @param log is used to log error messages
 
-      It returns the {b dispatcher} thread, which never returns (it
-      returns only on internal errors).
-
       If {!Lwt_preemptive} has already been initialised, this call
-      only modify bounds and the log function, and return the dispatcher
-      thread. *)
+      only modify bounds and the log function, and return the
+      dispatcher thread. *)
 
-val simple_init : unit -> unit Lwt.t
+val simple_init : unit -> unit
   (** [simple_init ()] does a {i simple initialization}. i.e. with
       default parameters if the library is not yet initialised.
-
-      It returns the dispatcher thread.
 
       Note: this function is automatically called {!detach}. *)
 

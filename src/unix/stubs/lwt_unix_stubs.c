@@ -36,6 +36,7 @@
 #endif
 #include <errno.h>
 #include <string.h>
+#include <pthread.h>
 
 /* +-----------------------------------------------------------------+
    | Read/write                                                      |
@@ -573,3 +574,89 @@ value lwt_unix_system_byte_order()
   return Val_int(0);
 #endif
 }
+
+/* +-----------------------------------------------------------------+
+   | Notifications                                                   |
+   +-----------------------------------------------------------------+ */
+
+int notification_fd_writer = -1;
+pthread_mutex_t notification_pipe_lock = PTHREAD_MUTEX_INITIALIZER;
+
+value lwt_unix_set_notification_fd_writer(value fd)
+{
+  notification_fd_writer = Int_val(fd);
+  return Val_unit;
+}
+
+void lwt_unix_send_notification(int id)
+{
+  char buf[4];
+  buf[0] = id;
+  buf[1] = id << 8;
+  buf[2] = id << 16;
+  buf[3] = id << 24;
+
+  caml_enter_blocking_section();
+
+  pthread_mutex_lock(&notification_pipe_lock);
+
+  int offset = 0;
+  while (offset < 4) {
+    int n = write(notification_fd_writer, &(buf[offset]), 4 - offset);
+
+    if (n <= 0) {
+      pthread_mutex_unlock(&notification_pipe_lock);
+      caml_leave_blocking_section();
+      uerror("lwt_unix_send_notification", Nothing);
+    }
+
+    offset += n;
+  }
+
+  pthread_mutex_unlock(&notification_pipe_lock);
+
+  caml_leave_blocking_section();
+}
+
+value lwt_unix_send_notification_stub(value id)
+{
+  lwt_unix_send_notification(Int_val(id));
+  return Val_unit;
+}
+
+/* +-----------------------------------------------------------------+
+   | Threads                                                         |
+   +-----------------------------------------------------------------+ */
+
+#ifndef PTHREAD_STACK_MIN
+# define PTHREAD_STACK_MIN 0
+#endif
+
+#ifndef X_STACKSIZE
+# define X_STACKSIZE sizeof (long) * 4096
+#endif
+
+void lwt_unix_launch_thread(void* (*start)(void*), void* data)
+{
+  pthread_t thread;
+  pthread_attr_t attr;
+
+  pthread_attr_init(&attr);
+
+  /* The thread is created in detached state so we do not have to join
+     it when it terminates: */
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+
+  /* Use the minimum amount of stack: */
+  pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN < X_STACKSIZE ? X_STACKSIZE : PTHREAD_STACK_MIN);
+
+  int res = pthread_create(&thread, &attr, start, data);
+
+  if (res) {
+    errno = res;
+    uerror("lwt_unix_launch_thread", Nothing);
+  }
+
+  pthread_attr_destroy (&attr);
+}
+

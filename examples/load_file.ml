@@ -22,7 +22,8 @@ let main () =
       let stop = Unix.gettimeofday () in
       sleeps := !sleeps + 1;
       max_sleep := max (!max_sleep) (stop -. start);
-      (*print_string ".";*)
+      lwt () = Lwt_io.print "." in
+      lwt () = Lwt_io.flush Lwt_io.stdout in
       ping ()
   in
   let buf = String.create (4096*256) in

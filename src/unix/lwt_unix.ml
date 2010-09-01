@@ -24,6 +24,8 @@
 
 open Lwt
 
+module Int_map = Map.Make(struct type t = int let compare = compare end)
+
 let windows_hack = Sys.os_type <> "Unix"
 
 (* +-----------------------------------------------------------------+
@@ -607,107 +609,138 @@ let tcflow ch f =
   Unix.tcflow ch.fd f
 
 (* +-----------------------------------------------------------------+
+   | Notifications                                                   |
+   +-----------------------------------------------------------------+ *)
+
+external set_notification_fd_writer : Unix.file_descr -> unit = "lwt_unix_set_notification_fd_writer"
+external send_notification : int -> unit = "lwt_unix_send_notification_stub"
+
+(* Pipe used to send/receive notifications *)
+let notification_fd_reader, notification_fd_writer = pipe_in ()
+
+let () =
+  (* Send the writing side of the pipe to the C code: *)
+  set_notification_fd_writer notification_fd_writer;
+
+  set_close_on_exec notification_fd_reader;
+  Unix.set_close_on_exec notification_fd_writer
+
+(* Informations about a notifier *)
+type notifier = {
+  notify_handler : unit -> unit;
+  (* The callback *)
+
+  notify_once : bool;
+  (* Whether to remove the notifier after the reception of the first
+     notification *)
+}
+
+let notifiers = ref Int_map.empty
+
+let current_notification_id = ref 0
+
+let make_notification ?(once=false) f =
+  incr current_notification_id;
+  while Int_map.mem !current_notification_id !notifiers do
+    incr current_notification_id
+  done;
+  notifiers := Int_map.add !current_notification_id { notify_once = once; notify_handler = f } !notifiers;
+  !current_notification_id
+
+let stop_notification id =
+  notifiers := Int_map.remove id !notifiers
+
+(* Buffer used to receive notifications: *)
+let notification_buffer = String.create 4
+
+(* Read one notification *)
+let rec read_notification offset =
+  if offset = 4 then
+    return (Char.code notification_buffer.[0]
+            lor (Char.code notification_buffer.[1] lsl 8)
+            lor (Char.code notification_buffer.[1] lsl 16)
+            lor (Char.code notification_buffer.[1] lsl 24))
+  else
+    read notification_fd_reader notification_buffer offset (4 - offset) >>= function
+      | 0 ->
+          fail End_of_file
+      | n ->
+          read_notification (offset + n)
+
+(* Read continuously notications *)
+let rec read_notifications () =
+  lwt id = read_notification 0 in
+  match try Some(Int_map.find id !notifiers) with Not_found -> None with
+    | Some notifier ->
+        if notifier.notify_once then
+          stop_notification id;
+        notifier.notify_handler ();
+        read_notifications ()
+    | None ->
+        read_notifications ()
+
+let _ = read_notifications ()
+
+(* +-----------------------------------------------------------------+
    | Signals                                                         |
    +-----------------------------------------------------------------+ *)
 
-(* An entry in the array of monitorted signals *)
-type signal_entry = {
-  se_signum : int;
-  (* The real signal number *)
-
-  se_handlers : (int -> unit) Lwt_sequence.t;
-  (* All the handlers registered for this signal *)
-}
-
-(* The set of all monitored signals: *)
-let signals = Array.make 256 None
-
 type signal_handler = {
-  sh_index : int;
-  (* The index of the signal in [signals] *)
+  sig_node : (int -> unit) Lwt_sequence.node;
+  (* Node containing the function to be called when the signal is
+     received. *)
 
-  sh_node : (int -> unit) Lwt_sequence.node;
-  (* The function to call when the signal is received *)
+  sig_number : int;
+  (* The signal number *)
 }
 
 type signal_handler_id = signal_handler option ref
 
-let disable_signal_handler id = match !id with
-  | Some sh -> begin
-      id := None;
-      Lwt_sequence.remove sh.sh_node;
-      match signals.(sh.sh_index) with
-        | Some se ->
-            if Lwt_sequence.is_empty se.se_handlers then begin
-              signals.(sh.sh_index) <- None;
-              Sys.set_signal se.se_signum Sys.Signal_default
-            end
-        | None ->
-            ()
-    end
-  | None ->
-      ()
+type signal_info = {
+  siginfo_notification_id : int;
+  (* The notification id for signals *)
 
-(* Pipe used to tell the main loop that a signal has been caught *)
-let signal_fd_reader, signal_fd_writer = pipe_in ()
-let () =
-  set_close_on_exec signal_fd_reader;
-  Unix.set_close_on_exec signal_fd_writer
+  siginfo_handlers : (int -> unit) Lwt_sequence.t;
+  (* Sequence of handlers for this signal *)
+}
 
-(* Read and dispatch signals *)
-let rec read_signals () =
-  let buf = String.create 1 in
-  read signal_fd_reader buf 0 1 >>= function
-    | 0 ->
-        return ()
-    | 1 ->
-        let index = Char.code buf.[0] in
-        let () =
-          match signals.(index) with
-            | Some se ->
-                Lwt_sequence.iter_l (fun f -> f se.se_signum) se.se_handlers
-            | None ->
-                ()
-        in
-        read_signals ()
-    | _ ->
-        assert false
+(* Mapping from signal numbers to their informations *)
+let signals = ref Int_map.empty
 
-(* Start listenning for signals *)
-let _ = read_signals ()
+let disable_signal_handler signal_handler_id =
+  match !signal_handler_id with
+    | None ->
+        ()
+    | Some signal ->
+        signal_handler_id := None;
+        Lwt_sequence.remove signal.sig_node;
+        let siginfo = Int_map.find signal.sig_number !signals in
+        if Lwt_sequence.is_empty siginfo.siginfo_handlers then begin
+          signals := Int_map.remove signal.sig_number !signals;
+          stop_notification siginfo.siginfo_notification_id;
+          Sys.set_signal signal.sig_number Sys.Signal_default
+        end
 
-let handle_signal index signum =
-  ignore (Unix.write signal_fd_writer (String.make 1 (char_of_int index)) 0 1)
+let handle_signal id signum =
+  send_notification id
 
 let on_signal signum f =
-  (* Search for already registered signals: *)
-  let rec search i =
-    if i = 256 then
-      search_free_slot 0
-    else
-      match signals.(i) with
-        | Some se when se.se_signum = signum ->
-            ref (Some{ sh_index = i; sh_node = Lwt_sequence.add_r f se.se_handlers })
-        | _ ->
-            search (i + 1)
-
-  (* Search for a free slot in [signals]: *)
-  and search_free_slot i =
-    if i = 256 then
-      failwith "Lwt_unix.on_signal: too many different signals registered"
-    else
-      match signals.(i) with
-        | Some _ ->
-            search_free_slot (i + 1)
-        | None ->
-            let seq = Lwt_sequence.create () in
-            let id = ref (Some{ sh_index = i; sh_node = Lwt_sequence.add_r f seq }) in
-            signals.(i) <- Some{ se_signum = signum; se_handlers = seq };
-            Sys.set_signal signum (Sys.Signal_handle (handle_signal i));
-            id
-
+  let handlers =
+    match try Some(Int_map.find signum !signals) with Not_found -> None with
+      | Some{ siginfo_handlers = handlers } ->
+          handlers
+      | None ->
+          let handlers = Lwt_sequence.create () in
+          let id = make_notification (fun () -> Lwt_sequence.iter_l (fun f -> f signum) handlers) in
+          signals := Int_map.add signum { siginfo_notification_id = id;
+                                          siginfo_handlers = handlers } !signals;
+          Sys.set_signal signum (Sys.Signal_handle (handle_signal id));
+          handlers
   in
-  search 0
+  ref (Some{
+         sig_number = signum;
+         sig_node = Lwt_sequence.add_r f handlers;
+       })
 
 (* +-----------------------------------------------------------------+
    | Processes                                                       |

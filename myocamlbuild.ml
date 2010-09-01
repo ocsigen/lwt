@@ -426,6 +426,8 @@ let _ =
           define_c_library ~name:"glib" ~c_name:"glib-2.0"
         end;
 
+        dep ["file:src/unix/stubs/lwt_mmap_stubs.c"] ["src/unix/stubs/lwt_unix.h"];
+
         (* +---------------------------------------------------------+
            | Other                                                   |
            +---------------------------------------------------------+ *)

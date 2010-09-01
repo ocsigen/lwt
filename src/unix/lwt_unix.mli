@@ -503,6 +503,31 @@ val register_action : watchers -> file_descr -> (unit -> 'a) -> 'a Lwt.t
       - you should prefer using {!wrap_syscall}
   *)
 
+(** {6 Notifications} *)
+
+(** Lwt internally use a pipe to send notification to the main
+    thread. The following functions allow to use this pipe. *)
+
+val make_notification : ?once : bool -> (unit -> unit) -> int
+  (** [new_notifier ?once f] registers a new notifier. It returns the
+      id of the notifier. Each time a notification with this id is
+      received, [f] is called.
+
+      if [once] is specified, then the notification is stopped after
+      the first time it is received. It defaults to [false]. *)
+
+val send_notification : int -> unit
+  (** [send_notification id] sends a notification.
+
+      This function is thread-safe. *)
+
+val stop_notification : int -> unit
+  (** Stop the given notification. Note that you should not reuse the
+      id after the notification has been stopped, the result is
+      unspecified if you do so.
+
+      This function is not thread-safe. *)
+
 (**/**)
 
 val inputs_length : unit -> int
