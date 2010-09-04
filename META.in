@@ -67,16 +67,24 @@ package "glib" (
 package "syntax" (
   exists_if = "pa_lwt.cmo"
   description = "Syntactic sugars for Lwt"
-  requires = "camlp4"
+  requires = "camlp4 lwt.syntax.options"
   archive(syntax,preprocessor) = "pa_lwt.cmo"
   archive(syntax,toploop) = "pa_lwt.cmo"
 
   package "log" (
-    exists_if = "pa_log.cmo"
+    exists_if = "pa_lwt_log.cmo"
     description = "Syntactic sugars for logging"
+    requires = "camlp4 lwt.syntax.options"
+    archive(syntax,preprocessor) = "pa_lwt_log.cmo"
+    archive(syntax,toploop) = "pa_lwt_log.cmo"
+  )
+
+  package "options" (
+    exists_if = "pa_lwt_options.cmo"
+    description = "Options for syntax extensions"
     requires = "camlp4"
-    archive(syntax,preprocessor) = "pa_log.cmo"
-    archive(syntax,toploop) = "pa_log.cmo"
+    archive(syntax,preprocessor) = "pa_lwt_options.cmo"
+    archive(syntax,toploop) = "pa_lwt_options.cmo"
   )
 )
 

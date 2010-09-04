@@ -810,6 +810,68 @@ let rec wakeup_paused () =
         wakeup_paused ()
 
 (* +-----------------------------------------------------------------+
+   | Bakctrace support                                               |
+   +-----------------------------------------------------------------+ *)
+
+let backtrace_bind add_loc t f =
+  match (repr t).state with
+    | Return(data, v) ->
+        apply_with_data data f v
+    | Fail(data, exn) ->
+        thread { state = Fail(data, add_loc exn) }
+    | Sleep sleeper ->
+        let res = temp sleeper.cancel in
+        add_immutable_waiter sleeper
+          (function
+             | Return(data, v) -> current_data := data; connect res (try f v with exn -> fail (add_loc exn))
+             | Fail(data, exn) -> fast_connect res (Fail(data, add_loc exn))
+             | _ -> assert false);
+        res
+    | Repr _ ->
+        assert false
+
+let backtrace_catch add_loc x f =
+  let t = try x () with exn -> fail exn in
+  match (repr t).state with
+    | Return _ ->
+        t
+    | Fail(data, exn) ->
+        apply_with_data data f (add_loc exn)
+    | Sleep sleeper ->
+        let res = temp sleeper.cancel in
+        add_immutable_waiter sleeper
+          (function
+             | Return _ as state -> fast_connect res state
+             | Fail(data, exn) -> current_data := data; connect res (try f exn with exn -> fail (add_loc exn))
+             | _ -> assert false);
+        res
+    | Repr _ ->
+        assert false
+
+let backtrace_try_bind add_loc x f g =
+  let t = try x () with exn -> fail exn in
+  match (repr t).state with
+    | Return(data, v) ->
+        apply_with_data data f v
+    | Fail(data, exn) ->
+        apply_with_data data g (add_loc exn)
+    | Sleep sleeper ->
+        let res = temp sleeper.cancel in
+        add_immutable_waiter sleeper
+          (function
+             | Return(data, v) -> current_data := data; connect res (try f v with exn -> fail (add_loc exn))
+             | Fail(data, exn) -> current_data := data; connect res (try g exn with exn -> fail (add_loc exn))
+             | _ -> assert false);
+        res
+    | Repr _ ->
+        assert false
+
+let backtrace_finalize add_loc f g =
+  backtrace_try_bind add_loc f
+    (fun x -> g () >>= fun () -> return x)
+    (fun e -> g () >>= fun () -> fail (add_loc e))
+
+(* +-----------------------------------------------------------------+
    | Threads state query                                             |
    +-----------------------------------------------------------------+ *)
 

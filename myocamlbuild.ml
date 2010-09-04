@@ -303,7 +303,7 @@ let _ =
         let libs = List.filter_opt (fun lib -> if lib.have then Some lib.name else None) libraries in
 
         let byte =
-          "syntax/pa_lwt.cmo" :: "syntax/pa_log.cmo" ::
+          "syntax/pa_lwt.cmo" :: "syntax/pa_lwt_log.cmo" ::
             List.map (fun name -> lib_path name "cma") libs
           @ if have_toplevel then ["src/top/private/toplevel.top"] else []
         and native =
@@ -337,8 +337,9 @@ let _ =
 
              (* Make them depends on the syntax extension *)
              dep ["ocaml"; "ocamldep"; tag] [file])
-          [("pa_lwt", "syntax/pa_lwt.cmo");
-           ("pa_log", "syntax/pa_log.cmo")];
+          [("pa_lwt_options", "syntax/pa_lwt_options.cmo");
+           ("pa_lwt", "syntax/pa_lwt.cmo");
+           ("pa_lwt_log", "syntax/pa_lwt_log.cmo")];
 
         (* +---------------------------------------------------------+
            | Ocamlfind stuff                                         |
@@ -460,7 +461,7 @@ let _ =
                                    else
                                      [])
                                 libraries)
-                           @ ["syntax/Pa_lwt\n"; "syntax/Pa_log"],
+                           @ ["syntax/Pa_lwt\n"; "syntax/Pa_lwt_log"],
                            prod));
 
         (* Use an introduction page with categories *)

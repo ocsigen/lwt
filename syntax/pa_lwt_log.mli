@@ -1,6 +1,6 @@
 (* Lightweight thread library for Objective Caml
  * http://www.ocsigen.org/lwt
- * Interface Pa_log
+ * Interface Pa_lwt_log
  * Copyright (C) 2009 Jérémie Dimino
  *
  * This program is free software; you can redistribute it and/or modify

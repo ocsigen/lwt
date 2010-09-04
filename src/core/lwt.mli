@@ -282,3 +282,8 @@ val apply : ('a -> 'b t) -> 'a -> 'b t
          and the resulting thread fails with this exception. *)
 (* Q: Could be called 'glue' or 'trap' or something? *)
 
+val backtrace_bind : (exn -> exn) -> 'a t -> ('a -> 'b t) -> 'b t
+val backtrace_catch : (exn -> exn) -> (unit -> 'a t) -> (exn -> 'a t) -> 'a t
+val backtrace_try_bind : (exn -> exn) -> (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
+val backtrace_finalize : (exn -> exn) -> (unit -> 'a t) -> (unit -> unit t) -> 'a t
+

@@ -1,6 +1,6 @@
 (* Lightweight thread library for Objective Caml
  * http://www.ocsigen.org/lwt
- * Module Pa_log
+ * Module Pa_lwt_log
  * Copyright (C) 2009 Jérémie Dimino
  *
  * This program is free software; you can redistribute it and/or modify
@@ -21,8 +21,6 @@
  *)
 
 open Camlp4.PreCast
-
-let debug = ref false
 
 let levels = [
   "Fatal";
@@ -59,7 +57,7 @@ let split e =
               func
           )
         in
-        if level = "Debug" && (not !debug) then
+        if level = "Debug" && (not !Pa_lwt_options.debug) then
           `Delete
         else if List.mem level levels then
           `Log(func, section, level, acc)
@@ -120,5 +118,3 @@ end
 let () =
   AstFilters.register_str_item_filter map#str_item;
   AstFilters.register_topphrase_filter map#str_item;
-
-  Camlp4.Options.add "-lwt-debug" (Arg.Set debug) "keep debugging message"

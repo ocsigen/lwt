@@ -97,7 +97,8 @@ install:
 	  $(wildcard _build/src/*/stubs/*.dll) \
 	  $(wildcard _build/src/top/private/toplevel.top) \
 	  _build/syntax/pa_lwt.cmo \
-	  _build/syntax/pa_log.cmo
+	  _build/syntax/pa_lwt_log.cmo \
+	  _build/syntax/pa_lwt_options.cmo
 
 uninstall:
 	$(OCAMLFIND) remove $(NAME) -destdir "$(DESTDIR)"

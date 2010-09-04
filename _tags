@@ -21,8 +21,8 @@
 # | Syntax extensions                                                |
 # +------------------------------------------------------------------+
 
-<syntax/pa_{lwt,log}.ml>: syntax_camlp4o, pkg_camlp4, pkg_camlp4.quotations.o, pkg_camlp4.extend
-<{src,tests}/**/*.ml>: syntax_camlp4o, pkg_camlp4, pa_lwt, pa_log
+<syntax/*.ml>: syntax_camlp4o, pkg_camlp4, pkg_camlp4.quotations.o, pkg_camlp4.extend
+<{src,tests}/**/*.ml>: syntax_camlp4o, pkg_camlp4, pa_lwt_options, pa_lwt, pa_lwt_log
 
 # +------------------------------------------------------------------+
 # | C stubs                                                          |
