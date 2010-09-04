@@ -201,17 +201,17 @@ let syntaxes = [
 
 (* Given the tag [tag] add the command line options [f] to all stages
    of compilatiopn but linking *)
-let flag_all_stages_except_link tag f =
-  flag ["ocaml"; "compile"; tag] f;
-  flag ["ocaml"; "ocamldep"; tag] f;
-  flag ["ocaml"; "top"; tag] f;
-  flag ["ocaml"; "doc"; tag] f
+let flag_all_stages_except_link tags f =
+  flag ("ocaml" :: "compile" :: tags) f;
+  flag ("ocaml" :: "ocamldep" :: tags) f;
+  flag ("ocaml" :: "top" :: tags) f;
+  flag ("ocaml" :: "doc" :: tags) f
 
 (* Same as [flag_all_stages_except_link] but also flag the linking
    stage *)
-let flag_all_stages tag f =
-  flag_all_stages_except_link tag f;
-  flag ["ocaml"; "link"; tag] f
+let flag_all_stages tags f =
+  flag_all_stages_except_link tags f;
+  flag ("ocaml" :: "link" :: tags) f
 
 let substitute env text =
   List.fold_left (fun text (patt, repl) -> String.subst patt repl text) text env
@@ -333,7 +333,7 @@ let _ =
         List.iter
           (fun (tag, file) ->
              (* add "-ppopt file" to files using the syntax extension *)
-             flag_all_stages_except_link tag & S[A"-ppopt"; A file];
+             flag_all_stages_except_link [tag] & S[A"-ppopt"; A file];
 
              (* Make them depends on the syntax extension *)
              dep ["ocaml"; "ocamldep"; tag] [file])
@@ -353,13 +353,13 @@ let _ =
            when compiling, computing dependencies, generating
            documentation and linking. *)
         List.iter
-          (fun package -> flag_all_stages ("pkg_" ^ package) (S[A"-package"; A package]))
+          (fun package -> flag_all_stages ["pkg_" ^ package] (S[A"-package"; A package]))
           packages;
 
         (* Like -package but for extensions syntax. Morover -syntax is
            useless when linking. *)
         List.iter
-          (fun syntax -> flag_all_stages_except_link ("syntax_" ^ syntax) (S[A"-syntax"; A syntax]))
+          (fun syntax -> flag_all_stages_except_link ["syntax_" ^ syntax] (S[A"-syntax"; A syntax]))
           syntaxes;
 
         (* +---------------------------------------------------------+
@@ -367,7 +367,7 @@ let _ =
            +---------------------------------------------------------+ *)
 
         (* Add directories for compiler-libraries: *)
-        flag_all_stages "use_compiler_libs" & S(List.map (fun path -> S[A"-I"; A path]) compiler_libs);
+        flag_all_stages ["use_compiler_libs"] & S(List.map (fun path -> S[A"-I"; A path]) compiler_libs);
 
         (* Link with the toplevel library *)
         let libs = ["core"; "react"; "unix"; "text"; "top"] in
@@ -432,6 +432,9 @@ let _ =
         (* +---------------------------------------------------------+
            | Other                                                   |
            +---------------------------------------------------------+ *)
+
+        (* Add lwt debugging informations when compiling in debug mode: *)
+        flag_all_stages_except_link ["pa_lwt"; "debug"] & S[A"-ppopt"; A"-lwt-debug"];
 
         (* Generation of "META" *)
         rule "META" ~deps:["META.in"; "VERSION"] ~prod:"META"

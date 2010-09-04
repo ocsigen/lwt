@@ -70,7 +70,7 @@
         ...
       with exn ->
         lwt () = Lwt_switch.turn_off switch in
-        fail exn
+        raise_lwt exn
     ]}
 *)
 

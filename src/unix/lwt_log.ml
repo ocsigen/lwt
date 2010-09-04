@@ -329,7 +329,7 @@ let syslog_connect paths =
         (* No working socket found *)
         log_intern "no working socket found in {%s}; is syslogd running?"
           (String.concat ", " (List.map (Printf.sprintf "\"%s\"") paths));
-        fail (Sys_error(Unix.error_message Unix.ENOENT))
+        raise_lwt (Sys_error(Unix.error_message Unix.ENOENT))
     | path :: paths ->
         begin try
           return (Some (Unix.stat path).Unix.st_kind)
@@ -468,7 +468,7 @@ let log ?exn ?(section=Section.main) ?logger ~level message =
     | Some logger -> logger
   in
   if logger.lg_closed then
-    fail Logger_closed
+    raise_lwt Logger_closed
   else if level >= section.Section.level then
     match exn with
       | None ->

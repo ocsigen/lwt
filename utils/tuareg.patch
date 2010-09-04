@@ -35,7 +35,7 @@ index 7529577..e5b3b71 100644
       (list "\\<\\(false\\|true\\)\\>"
  	   0 'font-lock-constant-face nil nil)
 -     (list "\\<\\(as\\|do\\(ne\\|wnto\\)?\\|else\\|for\\|if\\|m\\(atch\\|utable\\)\\|new\\|p\\(arser\\|rivate\\)\\|t\\(hen\\|o\\|ry\\)\\|w\\(h\\(en\\|ile\\)\\|ith\\)\\|lazy\\|exception\\|raise\\|failwith\\|exit\\|assert\\|fun\\(ction\\)?\\)\\>"
-+     (list "\\<\\(as\\|do\\(ne\\|wnto\\)?\\|else\\|for\\(_lwt\\)?\\|if\\|m\\(atch\\|utable\\)\\|new\\|p\\(arser\\|rivate\\)\\|t\\(hen\\|o\\|ry\\(_lwt\\)?\\)\\|w\\(h\\(en\\|ile\\)\\|ith\\)\\|lazy\\|exception\\|raise\\|failwith\\|exit\\|assert\\|fun\\(ction\\)?\\|finally\\)\\>"
++     (list "\\<\\(raise_lwt\\|as\\|do\\(ne\\|wnto\\)?\\|else\\|for\\(_lwt\\)?\\|if\\|m\\(atch\\|utable\\)\\|new\\|p\\(arser\\|rivate\\)\\|t\\(hen\\|o\\|ry\\(_lwt\\)?\\)\\|w\\(h\\(en\\|ile\\)\\|ith\\)\\|lazy\\|exception\\|raise\\|failwith\\|exit\\|assert\\|fun\\(ction\\)?\\|finally\\)\\>"
  	   0 'font-lock-keyword-face nil nil)
       (list "[][;,()|{}]\\|[@^!:*=<>&/%+~?#---]\\.?\\|\\.\\.\\.*\\|\\<\\(asr\\|asl\\|lsr\\|lsl\\|l?or\\|l?and\\|xor\\|not\\|mod\\|of\\|ref\\)\\>"
  	   0 'tuareg-font-lock-operator-face nil nil)

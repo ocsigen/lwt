@@ -111,7 +111,7 @@ let rec wait_mmap t offset len =
 
 let read t position str offset len =
   if (String.length str < offset + len) || (t.dim < position)
-  then fail (Invalid_argument "Lwt_mmap.read")
+  then raise_lwt (Invalid_argument "Lwt_mmap.read")
   else
     let file_rest = t.dim - position in
     if file_rest <= 0
@@ -154,7 +154,7 @@ let of_unix_fd fd =
 
 let sendfile file_fd fd offset len =
   match of_unix_fd file_fd with
-    | None -> fail (Invalid_argument "Lwt_mmap.sendfile")
+    | None -> raise_lwt (Invalid_argument "Lwt_mmap.sendfile")
     | Some t ->
       let rec aux offset len =
 	if len = 0
@@ -165,6 +165,6 @@ let sendfile file_fd fd offset len =
           aux (offset + n) (len - n)
       in
       if len > (t.dim - offset)
-      then fail (Invalid_argument "Lwt_mmap.sendfile")
+      then raise_lwt (Invalid_argument "Lwt_mmap.sendfile")
       else aux offset len
 

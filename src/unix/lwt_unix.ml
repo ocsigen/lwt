@@ -76,7 +76,7 @@ let auto_yield timeout =
 
 exception Timeout
 
-let timeout d = sleep d >> Lwt.fail Timeout
+let timeout d = sleep d >> raise_lwt Timeout
 
 let with_timeout d f = Lwt.pick [timeout d; Lwt.apply f ()]
 
@@ -245,7 +245,7 @@ let wrap_syscall set ch action =
     | Retry_write ->
         register_action outputs ch action
     | e ->
-        fail e
+        raise_lwt e
 
 (* Performs all registered actions on [fd]: *)
 let perform_actions set fd =
@@ -663,7 +663,7 @@ let rec read_notification offset =
   else
     read notification_fd_reader notification_buffer offset (4 - offset) >>= function
       | 0 ->
-          fail End_of_file
+          raise_lwt End_of_file
       | n ->
           read_notification (offset + n)
 
@@ -892,7 +892,7 @@ let readdir dh =
   try
     return (Unix.readdir dh.dir_handle)
   with exn ->
-    fail exn
+    raise_lwt exn
 
 let rewinddir dh = Unix.rewinddir dh.dir_handle
 let closedir dh = Unix.closedir dh.dir_handle

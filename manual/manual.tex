@@ -194,7 +194,7 @@ Here are the main primitives:
 \item \texttt{Lwt.return : 'a -> 'a Lwt.t}
 
   creates a thread which has already terminated and returned a value
-\item \texttt{Lwt.fail : exn -> 'a Lwt.t}
+\item \texttt{raise_lwt : exn -> 'a Lwt.t}
 
   creates a thread which has already terminated and failed with an
   exception
@@ -225,7 +225,7 @@ following expression:
 
 \begin{verbatim}
 # Lwt.state (Lwt.return 42);;
-# Lwt.state (Lwt.fail Exit);;
+# Lwt.state (raise_lwt Exit);;
 # let waiter, wakener = Lwt.wait ();;
 # Lwt.state waiter;;
 # Lwt.wakeup wakener 42;;
@@ -260,7 +260,7 @@ val catch : (unit -> 'a Lwt.t) -> (exn -> 'a Lwt.t) -> 'a Lwt.t
 \texttt{catch f g} will call \texttt{f ()}, then waits for its
 termination, and if it fails with an exception \texttt{exn}, calls
 \texttt{g exn} to handle it. Note that both exceptions raised with
-\texttt{Pervasives.raise} and \texttt{Lwt.fail} are caught by
+\texttt{Pervasives.raise} and \texttt{raise_lwt} are caught by
 \texttt{catch}.
 
 \subsubsection{Cancelable threads}
@@ -428,7 +428,7 @@ expr
 
   which is the equivalent of the standard \texttt{try-with}
   construction but for \lwt. Both exception raised by
-  \texttt{Pervasives.raise} and \texttt{Lwt.fail} are caught.
+  \texttt{Pervasives.raise} and \texttt{raise_lwt} are caught.
 
 \item \texttt{for\_lwt} $ident$ \texttt{=} $expr_{init}$ ( \texttt{to}
   $\mid$ \texttt{downto} ) $expr_{final}$ \texttt{do} $expr$

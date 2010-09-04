@@ -64,7 +64,7 @@ let gethostbyname d =
        match (t'>t+.60.) with
          | true ->
              (remove cache) (d,h,t);
-             Lwt.fail Not_in_table
+             raise_lwt Not_in_table
          | false -> h)
     (function
        | Not_in_table ->
@@ -74,7 +74,7 @@ let gethostbyname d =
              add cache entry;
              (match !keeper with (a,b) -> keeper:= (entry::a,b));
              h
-       | e -> fail e)
+       | e -> raise_lwt e)
 (* Begin getaddrinfo caching *)
 
 
@@ -116,7 +116,7 @@ let getaddrinfo d s o =
        match (t'>t+.60.) with
          | true ->
              WeakAddrInfo.remove cache6 (d,s,o,i,t);
-             Lwt.fail Not_in_table
+             raise_lwt Not_in_table
          | false -> i)
     (function
          | Not_in_table ->
@@ -126,7 +126,7 @@ let getaddrinfo d s o =
                WeakAddrInfo.add cache6 entry;
                (match !keeper6 with (a,b) -> keeper6 := (entry::a,b));
                i
-         | e -> fail e)
+         | e -> raise_lwt e)
 
 
 let getnameinfo s l =

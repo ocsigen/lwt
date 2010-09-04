@@ -134,7 +134,7 @@ let rec exists_p f l =
 let rec find_s f l =
   match l with
     | [] ->
-        fail Not_found
+        raise_lwt Not_found
     | x :: l ->
         f x >>= function
           | true ->

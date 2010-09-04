@@ -155,7 +155,7 @@ let with_raw_mode f =
               };
               try_lwt f () finally leave_raw_mode ()
           | None ->
-              fail (Failure "Lwt_term.with_raw_mode: input is not a tty")
+              raise_lwt (Failure "Lwt_term.with_raw_mode: input is not a tty")
 
 (* +-----------------------------------------------------------------+
    | Terminal informations                                           |
@@ -200,11 +200,11 @@ let parse_escape st =
       | Sleep ->
           (* If the rest is not immediatly available, conclude that
              this is not an escape sequence but just the escape key: *)
-          fail Exit_sequence
+          raise_lwt Exit_sequence
       | Fail exn ->
-          fail exn
+          raise_lwt exn
       | Return None ->
-          fail Exit_sequence
+          raise_lwt Exit_sequence
       | Return(Some ch) ->
           (* Is it an ascii character ? *)
           if String.length ch = 1 then begin
@@ -212,7 +212,7 @@ let parse_escape st =
             return ch.[0]
           end else
             (* If it is not, then this is not an escape sequence: *)
-            fail Exit_sequence
+            raise_lwt Exit_sequence
   in
 
   (* Sometimes sequences starts with several escape characters: *)

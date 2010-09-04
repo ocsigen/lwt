@@ -50,7 +50,7 @@ let create_member p =
   with exn ->
     (* create failed, so don't increment count *)
     p.count <- p.count - 1;
-    fail exn
+    raise_lwt exn
 
 let acquire p =
   try
@@ -89,4 +89,4 @@ let use p f =
     return r
   with e ->
     checked_release p c;
-    fail e
+    raise_lwt e

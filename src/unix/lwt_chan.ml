@@ -48,7 +48,7 @@ let input_line ic =
         Buffer.add_char buf char;
         loop buf
     | None ->
-        fail End_of_file
+        raise_lwt End_of_file
 
 let input_value = read_value
 let input = read_into

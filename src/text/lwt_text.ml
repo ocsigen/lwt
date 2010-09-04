@@ -83,7 +83,7 @@ struct
     let ptr = da.da_ptr and max = da.da_max in
     if ptr = max then
       da.da_perform () >>= function
-        | 0 -> fail End_of_file
+        | 0 -> raise_lwt End_of_file
         | _ -> read_char da strict decoder
     else
       match Encoding.decode decoder da.da_buffer ptr (max - ptr) with
@@ -94,7 +94,7 @@ struct
             da.da_perform () >>= begin function
               | 0 ->
                   if strict then
-                    fail (Failure "Lwt_text.read_char: unterminated multibyte sequence")
+                    raise_lwt (Failure "Lwt_text.read_char: unterminated multibyte sequence")
                   else begin
                     da.da_ptr <- ptr + 1;
                     return (Text.char (Char.code da.da_buffer.[ptr]))
@@ -104,7 +104,7 @@ struct
             end
         | Encoding.Dec_error ->
             if strict then
-              fail (Failure "Lwt_text.read_char: unterminated multibyte sequence")
+              raise_lwt (Failure "Lwt_text.read_char: unterminated multibyte sequence")
             else begin
               da.da_ptr <- ptr + 1;
               return (Text.char (Char.code da.da_buffer.[ptr]))
@@ -117,7 +117,7 @@ struct
       | End_of_file ->
           return None
       | exn ->
-          fail exn
+          raise_lwt exn
 
   let rec read_all da strict decoder buf =
     lwt ch = read_char da strict decoder in
@@ -181,7 +181,7 @@ struct
                if cr_read then Buffer.add_char buf '\r';
                return(Buffer.contents buf)
            | exn ->
-               fail exn)
+               raise_lwt exn)
     in
     read_char da strict decoder >>= function
       | "\r" -> loop true
@@ -195,7 +195,7 @@ struct
       | End_of_file ->
           return None
       | exn ->
-          fail exn
+          raise_lwt exn
 
   (* +---------------------------------------------------------------+
      | Primitives for writing                                        |
@@ -210,7 +210,7 @@ struct
           lwt _ = da.da_perform () in
           write_code da encoder code
       | Encoding.Enc_error ->
-          fail (Failure "Lwt_text: cannot encode character")
+          raise_lwt (Failure "Lwt_text: cannot encode character")
 
   let byte str pos = Char.code (String.unsafe_get str pos)
 
@@ -242,7 +242,7 @@ struct
 
   let write_char da strict encoder = function
     | "" ->
-        fail (Invalid_argument "Lwt_text.write_char: empty text")
+        raise_lwt (Invalid_argument "Lwt_text.write_char: empty text")
     | ch ->
         let _, code = next_code ch 0 (String.length ch) in
         write_code da encoder code

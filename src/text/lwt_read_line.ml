@@ -1076,7 +1076,7 @@ struct
 
     (* Thread of the last [read_command]. It is cancelled when
        read-line terminates. *)
-    let last_read_command_thread = ref (fail Exit) in
+    let last_read_command_thread = ref (raise_lwt Exit) in
 
     (* Events typed by the user: *)
     let user_events = Lwt_stream.from (fun () ->
@@ -1199,14 +1199,14 @@ struct
                   process_event state event (loop prev)
 
               | Fail exn ->
-                  fail exn
+                  raise_lwt exn
             end
 
         | Return event ->
             process_event state event (loop prev)
 
         | Fail exn ->
-            fail exn
+            raise_lwt exn
 
     (* loop_refresh redraw the current state, even if it haa not
        changed: *)
@@ -1225,14 +1225,14 @@ struct
                   process_event state event loop_refresh
 
               | Fail exn ->
-                  fail exn
+                  raise_lwt exn
             end
 
         | Return event ->
             process_event state event loop_refresh
 
         | Fail exn ->
-            fail exn
+            raise_lwt exn
 
     and process_event state event loop = match event with
       | Ev_prompt prompt ->
@@ -1384,7 +1384,7 @@ struct
                             loop { state with engine = { state.engine with Engine.mode = Engine.Edition(before ^ Text.sub word idx (word_len - idx), after) } }
                           else
                             match Text.next ptr with
-                              | None -> fail (Failure "invalid completion")
+                              | None -> raise_lwt (Failure "invalid completion")
                               | Some(ch, ptr) -> search ptr (idx - 1)
                         in
                         if word_len > before_len then
@@ -1444,7 +1444,7 @@ struct
         | `Accept ->
             map_result (Engine.all_input state.engine)
         | `Interrupt ->
-            fail Interrupt
+            raise_lwt Interrupt
     end in
     {
       result = result;
@@ -1526,7 +1526,7 @@ struct
               | Some value ->
                   return value
               | None ->
-                  fail (Failure "Lwt_read_line.read_keyword: invalid input"))
+                  raise_lwt (Failure "Lwt_read_line.read_keyword: invalid input"))
 
   let read_yes_no ?history ?mode ?prompt () =
     read_keyword ?history ?mode ?prompt ~values:[("yes", true); ("no", false)] ()

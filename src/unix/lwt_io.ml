@@ -42,7 +42,7 @@ let close_fd fd =
     Lwt_unix.close fd;
     return ()
   with exn ->
-    fail exn
+    raise_lwt exn
 
 (* +-----------------------------------------------------------------+
    | Types                                                           |
@@ -191,8 +191,8 @@ let perform_io ch = match ch.main.state with
             lwt n = pick [ch.abort_waiter; perform_io ch.buffer ptr len] in
             (* Never trust user functions... *)
             if n < 0 || n > len then
-              fail (Failure (Printf.sprintf "Lwt_io: invalid result of the [%s] function(request=%d,result=%d)"
-                               (match ch.mode with Input -> "read" | Output -> "write") len n))
+              raise_lwt (Failure (Printf.sprintf "Lwt_io: invalid result of the [%s] function(request=%d,result=%d)"
+                                    (match ch.mode with Input -> "read" | Output -> "write") len n))
             else begin
               (* Update the global offset: *)
               ch.offset <- Int64.add ch.offset (Int64.of_int n);
@@ -214,15 +214,15 @@ let perform_io ch = match ch.main.state with
               | Input ->
                   return 0
               | Output ->
-                  fail (Failure "cannot flush a channel created with Lwt_io.of_string")
+                  raise_lwt (Failure "cannot flush a channel created with Lwt_io.of_string")
           end
     end
 
   | Closed ->
-      fail (closed_channel ch)
+      raise_lwt (closed_channel ch)
 
   | Invalid ->
-      fail (invalid_channel ch)
+      raise_lwt (invalid_channel ch)
 
   | Idle ->
       assert false
@@ -330,7 +330,7 @@ let primitive f wrapper = match wrapper.state with
         | Closed ->
             (* The channel has been closed while we were waiting *)
             unlock wrapper;
-            fail (closed_channel wrapper.channel)
+            raise_lwt (closed_channel wrapper.channel)
 
         | Idle ->
             wrapper.state <- Busy_primitive;
@@ -341,17 +341,17 @@ let primitive f wrapper = match wrapper.state with
               return ()
 
         | Invalid ->
-            fail (invalid_channel wrapper.channel)
+            raise_lwt (invalid_channel wrapper.channel)
 
         | Busy_primitive | Busy_atomic _ ->
             assert false
       end
 
   | Closed ->
-      fail (closed_channel wrapper.channel)
+      raise_lwt (closed_channel wrapper.channel)
 
   | Invalid ->
-      fail (invalid_channel wrapper.channel)
+      raise_lwt (invalid_channel wrapper.channel)
 
 (* Wrap a sequence of io operations into an atomic operation: *)
 let atomic f wrapper = match wrapper.state with
@@ -377,7 +377,7 @@ let atomic f wrapper = match wrapper.state with
         | Closed ->
             (* The channel has been closed while we were waiting *)
             unlock wrapper;
-            fail (closed_channel wrapper.channel)
+            raise_lwt (closed_channel wrapper.channel)
 
         | Idle ->
             let tmp_wrapper = { state = Idle;
@@ -392,17 +392,17 @@ let atomic f wrapper = match wrapper.state with
               return ()
 
         | Invalid ->
-            fail (invalid_channel wrapper.channel)
+            raise_lwt (invalid_channel wrapper.channel)
 
         | Busy_primitive | Busy_atomic _ ->
             assert false
       end
 
   | Closed ->
-      fail (closed_channel wrapper.channel)
+      raise_lwt (closed_channel wrapper.channel)
 
   | Invalid ->
-      fail (invalid_channel wrapper.channel)
+      raise_lwt (invalid_channel wrapper.channel)
 
 let rec abort wrapper = match wrapper.state with
   | Busy_atomic tmp_wrapper ->
@@ -412,7 +412,7 @@ let rec abort wrapper = match wrapper.state with
       (* Double close, just returns the same thing as before *)
       Lazy.force wrapper.channel.close
   | Invalid ->
-      fail (invalid_channel wrapper.channel)
+      raise_lwt (invalid_channel wrapper.channel)
   | Idle | Busy_primitive ->
       wrapper.state <- Closed;
       (* Abort any current real reading/writing operation on the
@@ -423,7 +423,7 @@ let rec abort wrapper = match wrapper.state with
 let close wrapper =
   let channel = wrapper.channel in
   if channel.main != wrapper then
-    fail (Failure "Lwt_io.close: cannot close a channel obtained via Lwt_io.atomic")
+    raise_lwt (Failure "Lwt_io.close: cannot close a channel obtained via Lwt_io.atomic")
   else
     match channel.mode with
       | Input ->
@@ -451,7 +451,7 @@ let () =
          wrappers)
 
 let no_seek pos cmd =
-  fail (Failure "Lwt_io.seek: seek not supported on this channel")
+  raise_lwt (Failure "Lwt_io.seek: seek not supported on this channel")
 
 external unsafe_output : 'a channel -> output channel = "%identity"
 
@@ -478,7 +478,7 @@ let make ?buffer_size ?(close=return) ?(seek=no_seek) ~mode perform_io =
     auto_flushing = false;
     mode = mode;
     offset = 0L;
-    typ = Type_normal(perform_io, fun pos cmd -> try seek pos cmd with e -> fail e);
+    typ = Type_normal(perform_io, fun pos cmd -> try seek pos cmd with e -> raise_lwt e);
   } and wrapper = {
     state = Idle;
     channel = ch;
@@ -528,7 +528,7 @@ let of_mmap ?(buffer_size=Lwt_mmap.max_read_size) ?close ~mode t =
 	| Unix.SEEK_END -> Int64.add (Int64.of_int dim) pos
     in
     if (Int64.of_int dim) < new_pos || new_pos < 0L
-    then fail (Invalid_argument "Lwt_io.of_mmap/seek")
+    then raise_lwt (Invalid_argument "Lwt_io.of_mmap/seek")
     else (position := Int64.to_int new_pos; return (new_pos))
   in
   make ~buffer_size ?close ~seek ~mode read
@@ -586,7 +586,7 @@ let resize_buffer wrapper len =
   if len < min_buffer_size then invalid_arg "Lwt_io.resize_buffer";
   match wrapper.channel.typ with
     | Type_string ->
-        fail (Failure "Lwt_io.resize_buffer: cannot resize the buffer of a channel created with Lwt_io.of_string")
+        raise_lwt (Failure "Lwt_io.resize_buffer: cannot resize the buffer of a channel created with Lwt_io.of_string")
     | Type_normal _ ->
         primitive begin fun ch ->
           match ch.mode with
@@ -595,7 +595,7 @@ let resize_buffer wrapper len =
                 (* Fail if we want to decrease the buffer size and there is
                    too much unread data in the buffer: *)
                 if len < unread_count then
-                  fail (Failure "Lwt_io.resize_buffer: cannot decrease buffer size")
+                  raise_lwt (Failure "Lwt_io.resize_buffer: cannot decrease buffer size")
                 else begin
                   let buffer = String.create len in
                   String.unsafe_blit ch.buffer ch.ptr buffer 0 unread_count;
@@ -699,7 +699,7 @@ struct
     let ptr = ic.ptr in
     if ptr = ic.max then
       refill ic >>= function
-        | 0 -> fail End_of_file
+        | 0 -> raise_lwt End_of_file
         | _ -> read_char ic
     else begin
       ic.ptr <- ptr + 1;
@@ -731,7 +731,7 @@ struct
                if cr_read then Buffer.add_char buf '\r';
                return(Buffer.contents buf)
            | exn ->
-               fail exn)
+               raise_lwt exn)
     in
     read_char ic >>= function
       | '\r' -> loop true
@@ -762,9 +762,9 @@ struct
 
   let read_into ic str ofs len =
     if ofs < 0 || len < 0 || ofs + len > String.length str then
-      fail (Invalid_argument (Printf.sprintf
-                                "Lwt_io.read_into(ofs=%d,len=%d,str_len=%d)"
-                                ofs len (String.length str)))
+      raise_lwt (Invalid_argument (Printf.sprintf
+                                     "Lwt_io.read_into(ofs=%d,len=%d,str_len=%d)"
+                                     ofs len (String.length str)))
     else begin
       if len = 0 then
         return 0
@@ -775,7 +775,7 @@ struct
   let rec unsafe_read_into_exactly ic str ofs len =
     unsafe_read_into ic str ofs len >>= function
       | 0 ->
-          fail End_of_file
+          raise_lwt End_of_file
       | n ->
           let len = len - n in
           if len = 0 then
@@ -785,9 +785,9 @@ struct
 
   let read_into_exactly ic str ofs len =
     if ofs < 0 || len < 0 || ofs + len > String.length str then
-      fail (Invalid_argument (Printf.sprintf
-                                "Lwt_io.read_into_exactly(ofs=%d,len=%d,str_len=%d)"
-                                ofs len (String.length str)))
+      raise_lwt (Invalid_argument (Printf.sprintf
+                                     "Lwt_io.read_into_exactly(ofs=%d,len=%d,str_len=%d)"
+                                     ofs len (String.length str)))
     else begin
       if len = 0 then
         return ()
@@ -866,9 +866,9 @@ struct
 
   let write_from oc str ofs len =
     if ofs < 0 || len < 0 || ofs + len > String.length str then
-      fail (Invalid_argument (Printf.sprintf
-                                "Lwt_io.write_from(ofs=%d,len=%d,str_len=%d)"
-                                ofs len (String.length str)))
+      raise_lwt (Invalid_argument (Printf.sprintf
+                                     "Lwt_io.write_from(ofs=%d,len=%d,str_len=%d)"
+                                     ofs len (String.length str)))
     else begin
       if len = 0 then
         return 0
@@ -885,9 +885,9 @@ struct
 
   let write_from_exactly oc str ofs len =
     if ofs < 0 || len < 0 || ofs + len > String.length str then
-      fail (Invalid_argument (Printf.sprintf
-                                "Lwt_io.write_from_exactly(ofs=%d,len=%d,str_len=%d)"
-                                ofs len (String.length str)))
+      raise_lwt (Invalid_argument (Printf.sprintf
+                                     "Lwt_io.write_from_exactly(ofs=%d,len=%d,str_len=%d)"
+                                     ofs len (String.length str)))
     else begin
       if len = 0 then
         return ()
@@ -913,7 +913,7 @@ struct
     if ic.max - ic.ptr < size then
       refill ic >>= function
         | 0 ->
-            fail End_of_file
+            raise_lwt End_of_file
         | _ ->
             read_block_unsafe ic size f
     else begin
@@ -934,7 +934,7 @@ struct
 
   let block ch size f =
     if size < 0 || size > min_buffer_size then
-      fail (Invalid_argument(Printf.sprintf "Lwt_io.block(size=%d)" size))
+      raise_lwt (Invalid_argument(Printf.sprintf "Lwt_io.block(size=%d)" size))
     else
       if ch.max - ch.ptr >= size then begin
         let ptr = ch.ptr in
@@ -950,7 +950,7 @@ struct
   let perform token da ch =
     if !token then begin
       if da.da_max <> ch.max || da.da_ptr < ch.ptr || da.da_ptr > ch.max then
-        fail (Invalid_argument "Lwt_io.direct_access.perform")
+        raise_lwt (Invalid_argument "Lwt_io.direct_access.perform")
       else begin
         ch.ptr <- da.da_ptr;
         lwt count = perform_io ch in
@@ -959,7 +959,7 @@ struct
         return count
       end
     end else
-      fail (Failure "Lwt_io.direct_access.perform: this function can not be called outside Lwt_io.direct_access")
+      raise_lwt (Failure "Lwt_io.direct_access.perform: this function can not be called outside Lwt_io.direct_access")
 
   let direct_access ch f =
     let token = ref true in
@@ -972,7 +972,7 @@ struct
     lwt x = f da in
     token := false;
     if da.da_max <> ch.max || da.da_ptr < ch.ptr || da.da_ptr > ch.max then
-      fail (Failure "Lwt_io.direct_access: invalid result of [f]")
+      raise_lwt (Failure "Lwt_io.direct_access: invalid result of [f]")
     else begin
       ch.ptr <- da.da_ptr;
       return x
@@ -1112,7 +1112,7 @@ struct
   let do_seek seek pos =
     lwt offset = seek pos Unix.SEEK_SET in
     if offset <> pos then
-      fail (Failure "Lwt_io.set_position: seek failed")
+      raise_lwt (Failure "Lwt_io.set_position: seek failed")
     else
       return ()
 
@@ -1136,7 +1136,7 @@ struct
         end
     | Type_string, _ ->
         if pos < 0L || pos > Int64.of_int ch.length then
-          fail (Failure "Lwt_io.set_position: out of bounds")
+          raise_lwt (Failure "Lwt_io.set_position: out of bounds")
         else begin
           ch.ptr <- Int64.to_int pos;
           return ()
@@ -1349,7 +1349,7 @@ let open_connection ?buffer_size sockaddr =
               ~mode:output (Lwt_unix.write fd))
   with exn ->
     lwt () = close_fd fd in
-    fail exn
+    raise_lwt exn
 
 let with_connection ?buffer_size sockaddr f =
   lwt ic, oc = open_connection sockaddr in
