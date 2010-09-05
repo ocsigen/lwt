@@ -16,6 +16,7 @@ Lwt_mvar
 Lwt_pool
 Lwt_sequence
 Lwt_stream
+Lwt_switch
 }
 
 {3 Unix bindings}
