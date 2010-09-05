@@ -28,9 +28,13 @@ They might also be available through your distribution.
 
 Instructions:
 
- * run "make" to compile everything
- * run "make install" as root to install compiled libraries
- * run "make uninstall" as root to uninstall them
+ * run "ocaml setup.ml -configure" to configure sources
+     You can add '--enable-<lib>' to enable compilation of
+     the sub-library <lib>. The flag '--enable-all' will
+     enable everything.
+ * run "ocaml setup.ml -build" to compile
+ * run "ocaml setup.ml -install" as root to install compiled libraries
+ * run "ocaml setup.ml -uninstall" as root to uninstall them
 
 HTML documentation is generated in _build/lwt.docdir/, but is not
 installed by default.

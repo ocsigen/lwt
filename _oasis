@@ -113,6 +113,7 @@ Library "lwt-unix"
   BuildDepends: lwt, unix, bigarray
   XMETADescription: Unix support for lwt
   CSources: lwt_unix.h, lwt_unix_stubs.c, lwt_mmap_stubs.c
+  CCLib: -lpthread
 
 Library "lwt-simple-top"
   Build$: flag(unix) || flag(all)
@@ -162,7 +163,7 @@ Library "lwt-glib"
   Path: src/glib
   Modules: Lwt_glib
   CSources: lwt_glib_stubs.c
-  BuildDepends: lwt, lwt.unix
+  BuildDepends: lwt, lwt.unix, lablgtk2
   XMETADescription: Glib integration
 
 Library "lwt-ssl"
@@ -182,7 +183,7 @@ Library "lwt-text"
   FindlibParent: lwt
   Path: src/text
   Modules: Lwt_text, Lwt_term, Lwt_read_line
-  BuildDepends: lwt, lwt.unix, lwt.react
+  BuildDepends: lwt, lwt.unix, lwt.react, text
   XMETADescription: Text mode utilities
 
 Library "lwt-top"
@@ -193,7 +194,7 @@ Library "lwt-top"
   Path: src/top
   Modules: Lwt_top
   InternalModules: Lwt_ocaml_completion
-  BuildDepends: lwt, lwt.text
+  BuildDepends: lwt, lwt.text, findlib
   XMETADescription: Line-editing in the toplevel
 
 Library "lwt-syntax"
@@ -208,7 +209,7 @@ Library "lwt-syntax"
 
 Library "lwt-syntax-options"
   FindlibName: options
-  FindlibParent: lwt.syntax
+  FindlibParent: lwt-syntax
   Path: syntax
   InternalModules: Pa_lwt_options
   BuildDepends: camlp4.lib
@@ -218,7 +219,7 @@ Library "lwt-syntax-options"
 
 Library "lwt-syntax-log"
   FindlibName: log
-  FindlibParent: lwt.syntax
+  FindlibParent: lwt-syntax
   Path: syntax
   Modules: Pa_lwt_log
   BuildDepends: camlp4.lib, camlp4.quotations.o
@@ -230,13 +231,13 @@ Library "lwt-syntax-log"
 # | Toplevel                                                          |
 # +-------------------------------------------------------------------+
 
-Executable toplevel
+Executable "lwt-toplevel"
   Build$: flag(toplevel) || flag(all)
   Install$: flag(toplevel) || flag(all)
   Path: src/top
   CompiledObject: byte
-  MainIs: src/top/toplevel.ml
-  BuildDepends: lwt, lwt.top
+  MainIs: lwt_toplevel.ml
+  BuildDepends: lwt, lwt.top, lwt.text, lwt.react, text, findlib, unix
 
 # +-------------------------------------------------------------------+
 # | Doc                                                               |
@@ -246,19 +247,19 @@ Document "lwt-manual"
   Title: Lwt user manual
   Type: custom (0.1.0)
   Install: true
-  XCustom: true
+  XCustom: make -C manual manual.pdf
   DataFiles: manual/manual.pdf
   InstallDir: $pdfdir
 
 Document "lwt-api"
-  Title:                API reference for Lwt
-  Type:                 ocamlbuild (0.1.0)
-  Install:              true
-  InstallDir:           $htmldir/api
-  DataFiles:            utils/style.css
-  BuildTools:           ocamldoc
-  XOCamlbuildPath:      ./
-  XOCamlBuildIntro:     apiref-intro
+  Title: API reference for Lwt
+  Type: ocamlbuild (0.1.0)
+  Install: true
+  InstallDir: $htmldir/api
+  DataFiles: utils/style.css
+  BuildTools: ocamldoc
+  XOCamlbuildPath: ./
+  XOCamlBuildIntro: apiref-intro
   XOCamlbuildLibraries:
     lwt,
     lwt.extra,

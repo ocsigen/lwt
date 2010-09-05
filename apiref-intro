@@ -67,7 +67,7 @@ penalty when using logging by inlining level tests.
 
 {!modules:
 Pa_lwt
-Pa_log
+Pa_lwt_log
 }
 
 {3 Terminal manipulation}
