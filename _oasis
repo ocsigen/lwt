@@ -1,0 +1,271 @@
+# +-------------------------------------------------------------------+
+# | Package parameters                                                |
+# +-------------------------------------------------------------------+
+
+OASISFormat: 0.1
+Name: lwt
+Version: 2.1.1
+LicenseFile: COPYING
+License: LGPL-2.1 with OCaml linking exception
+Authors:
+  Jérôme Vouillon,
+  Vincent Balat,
+  Nataliya Guts,
+  Pierre Clairambault,
+  Stéphane Glondu,
+  Jérémie Dimino,
+  Warren Harris,
+  Pierre Chambart,
+  Mauricio Fernandez
+Homepage: http://ocsigen.org/lwt/
+BuildTools: ocamlbuild
+Plugins: DevFiles (0.1.0), META (0.1.0)
+
+Synopsis: Lightweight thread library for Objective Caml
+Description:
+  Lwt is a library of cooperative threads implemented in monadic
+  style. With respect to preemptive threads, cooperative threads are
+  not using a scheduler to distribute processor time between
+  threads. Instead of this, each thread must tell the others that he
+  wants to let them work.
+
+# +-------------------------------------------------------------------+
+# | Flags                                                             |
+# +-------------------------------------------------------------------+
+
+Flag all
+  Description: build and install everything
+  Default: false
+
+Flag unix
+  Description: Unix support
+  Default: true
+
+Flag react
+  Description: React helpers
+  Default: false
+
+Flag glib
+  Description: Glib integration
+  Default: false
+
+Flag ssl
+  Description: SSL support
+  Default: false
+
+Flag text
+  Description: Text mode utilities
+  Default: false
+
+Flag preemptive
+  Description: Preemptive threads support
+  Default: true
+
+Flag extra
+  Description: Asynchronous unix functions
+  Default: true
+
+Flag toplevel
+  Description: Enhanced toplevel
+  Default: false
+
+# +-------------------------------------------------------------------+
+# | Libraries                                                         |
+# +-------------------------------------------------------------------+
+
+Library "lwt"
+  Path: src/core
+  Modules:
+    Lwt_condition,
+    Lwt_list,
+    Lwt,
+    Lwt_mutex,
+    Lwt_mvar,
+    Lwt_pool,
+    Lwt_sequence,
+    Lwt_stream,
+    Lwt_switch,
+    Lwt_util
+  XMETADescription: Lightweight thread library for OCaml (core library)
+
+Library "lwt-unix"
+  Build$: flag(unix) || flag(all)
+  Install$: flag(unix) || flag(all)
+  FindlibName: unix
+  FindlibParent: lwt
+  Path: src/unix
+  Modules:
+    Lwt_chan,
+    Lwt_daemon,
+    Lwt_gc,
+    Lwt_io,
+    Lwt_log,
+    Lwt_main,
+    Lwt_process,
+    Lwt_throttle,
+    Lwt_timeout,
+    Lwt_unix
+  InternalModules:
+    Lwt_log_rules,
+    Lwt_mmap,
+    Lwt_pqueue,
+    Lwt_select
+  BuildDepends: lwt, unix, bigarray
+  XMETADescription: Unix support for lwt
+  CSources: lwt_unix.h, lwt_unix_stubs.c, lwt_mmap_stubs.c
+
+Library "lwt-simple-top"
+  Build$: flag(unix) || flag(all)
+  Install$: flag(unix) || flag(all)
+  FindlibName: simple-top
+  FindlibParent: lwt
+  Path: src/simple_top
+  InternalModules: Lwt_simple_top
+  BuildDepends: lwt, lwt.unix
+  XMETADescription: Unix support for lwt
+
+Library "lwt-react"
+  Build$: flag(react) || flag(all)
+  Install$: flag(react) || flag(all)
+  FindlibName: react
+  FindlibParent: lwt
+  Path: src/react
+  Modules: Lwt_event, Lwt_signal
+  BuildDepends: lwt, react
+  XMETADescription: Reactive programming helpers
+
+Library "lwt-preemptive"
+  Build$: flag(preemptive) || flag(all)
+  Install$: flag(preemptive) || flag(all)
+  FindlibName: preemptive
+  FindlibParent: lwt
+  Path: src/preemptive
+  Modules: Lwt_preemptive
+  BuildDepends: lwt, lwt.unix, threads
+  XMETADescription: Preemptive threads support for Lwt
+
+Library "lwt-extra"
+  Build$: flag(extra) || flag(all)
+  Install$: flag(extra) || flag(all)
+  FindlibName: extra
+  FindlibParent: lwt
+  Path: src/extra
+  Modules: Lwt_lib
+  BuildDepends: lwt, lwt.preemptive
+  XMETADescription: Unix functions for Lwt using Lwt_preemptive
+
+Library "lwt-glib"
+  Build$: flag(glib) || flag(all)
+  Install$: flag(glib) || flag(all)
+  FindlibName: glib
+  FindlibParent: lwt
+  Path: src/glib
+  Modules: Lwt_glib
+  CSources: lwt_glib_stubs.c
+  BuildDepends: lwt, lwt.unix
+  XMETADescription: Glib integration
+
+Library "lwt-ssl"
+  Build$: flag(ssl) || flag(all)
+  Install$: flag(ssl) || flag(all)
+  FindlibName: ssl
+  FindlibParent: lwt
+  Path: src/ssl
+  Modules: Lwt_ssl
+  BuildDepends: lwt, lwt.unix, ssl
+  XMETADescription: SSL support for Lwt
+
+Library "lwt-text"
+  Build$: flag(text) || flag(all)
+  Install$: flag(text) || flag(all)
+  FindlibName: text
+  FindlibParent: lwt
+  Path: src/text
+  Modules: Lwt_text, Lwt_term, Lwt_read_line
+  BuildDepends: lwt, lwt.unix, lwt.react
+  XMETADescription: Text mode utilities
+
+Library "lwt-top"
+  Build$: flag(text) || flag(all)
+  Install$: flag(text) || flag(all)
+  FindlibName: top
+  FindlibParent: lwt
+  Path: src/top
+  Modules: Lwt_top
+  InternalModules: Lwt_ocaml_completion
+  BuildDepends: lwt, lwt.text
+  XMETADescription: Line-editing in the toplevel
+
+Library "lwt-syntax"
+  FindlibName: syntax
+  FindlibParent: lwt
+  Path: syntax
+  Modules: Pa_lwt
+  BuildDepends: camlp4.lib, camlp4.quotations.o, camlp4.extend
+  XMETAType: syntax
+  XMETADescription: Syntactic sugars for Lwt
+  XMETARequires: camlp4, lwt.syntax.options
+
+Library "lwt-syntax-options"
+  FindlibName: options
+  FindlibParent: lwt.syntax
+  Path: syntax
+  InternalModules: Pa_lwt_options
+  BuildDepends: camlp4.lib
+  XMETAType: syntax
+  XMETADescription: Options for syntax extensions
+  XMETARequires: camlp4
+
+Library "lwt-syntax-log"
+  FindlibName: log
+  FindlibParent: lwt.syntax
+  Path: syntax
+  Modules: Pa_lwt_log
+  BuildDepends: camlp4.lib, camlp4.quotations.o
+  XMETAType: syntax
+  XMETADescription: Syntactic sugars for logging
+  XMETARequires: camlp4, lwt.syntax.options
+
+# +-------------------------------------------------------------------+
+# | Toplevel                                                          |
+# +-------------------------------------------------------------------+
+
+Executable toplevel
+  Build$: flag(toplevel) || flag(all)
+  Install$: flag(toplevel) || flag(all)
+  Path: src/top
+  CompiledObject: byte
+  MainIs: src/top/toplevel.ml
+  BuildDepends: lwt, lwt.top
+
+# +-------------------------------------------------------------------+
+# | Doc                                                               |
+# +-------------------------------------------------------------------+
+
+Document "lwt-manual"
+  Title: Lwt user manual
+  Type: custom (0.1.0)
+  Install: true
+  XCustom: true
+  DataFiles: manual/manual.pdf
+  InstallDir: $pdfdir
+
+Document "lwt-api"
+  Title:                API reference for Lwt
+  Type:                 ocamlbuild (0.1.0)
+  Install:              true
+  InstallDir:           $htmldir/api
+  DataFiles:            utils/style.css
+  BuildTools:           ocamldoc
+  XOCamlbuildPath:      ./
+  XOCamlBuildIntro:     apiref-intro
+  XOCamlbuildLibraries:
+    lwt,
+    lwt.extra,
+    lwt.glib,
+    lwt.preemptive,
+    lwt.react,
+    lwt.ssl,
+    lwt.text,
+    lwt.top,
+    lwt.unix
