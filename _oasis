@@ -270,3 +270,52 @@ Document "lwt-api"
     lwt.text,
     lwt.top,
     lwt.unix
+
+# +-------------------------------------------------------------------+
+# | Tests                                                             |
+# +-------------------------------------------------------------------+
+
+Library test
+  Path: tests
+  Modules: Test
+  Install: false
+  Build$: flag(unix) || flag(all)
+
+Executable test_core
+  Path: tests/core
+  Build$: flag(unix) || flag(all)
+  Install: false
+  CompiledObject: best
+  MainIs: main.ml
+  BuildDepends: test, lwt, unix, lwt.unix
+
+Executable test_unix
+  Path: tests/unix
+  Build$: flag(unix) || flag(all)
+  Install: false
+  CompiledObject: best
+  MainIs: main.ml
+  BuildDepends: test, lwt, unix, lwt.unix
+
+Executable test_react
+  Path: tests/react
+  Build$: (flag(unix) && flag(react)) || flag(all)
+  Install: false
+  CompiledObject: best
+  MainIs: main.ml
+  BuildDepends: test, lwt, unix, lwt.unix, react, lwt.react
+
+Test core
+  Command: $test_core
+  TestTools: test_core
+  Run$: flag(unix) || flag(all)
+
+Test unix
+  Command: $test_unix
+  TestTools: test_unix
+  Run$: flag(unix) || flag(all)
+
+Test react
+  Command: $test_react
+  TestTools: test_react
+  Run$: (flag(unix) && flag(react)) || flag(all)
