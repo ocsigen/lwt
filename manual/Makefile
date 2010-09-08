@@ -1,16 +1,22 @@
-.PHONY: all clean clean-aux
+# Makefile
+# --------
+# Copyright : (c) 2010, Jeremie Dimino <jeremie@dimino.org>
+# Licence   : BSD3
+#
+# This file is a part of lwt.
 
-all: manual.pdf
+MELT := melt -latex xelatex -pdf -no-link myocamlbuild.ml
 
-%.pdf: %.tex
-	pdflatex $<
-	pdflatex $<
+all:
+	$(MELT) manual.mlt
 
-%.html: %.tex
-	hevea -fix manual.tex
+manual.pdf:
+	$(MELT) manual.mlt
+	cp _melt/manual.pdf manual.pdf
 
-clean: clean-aux
+clean-melt:
+	melt -clean
+
+clean:
+	melt -clean
 	rm -f *.pdf
-
-clean-aux:
-	rm -f *.aux *.dvi *.log *.out *.toc *.html *.htoc *.haux
