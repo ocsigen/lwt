@@ -119,7 +119,7 @@ are mostly ready.
   should be able to start it with the following command:
 
   <:shell_code:#
-$ ocamlfind lwt/toplevel.top
+$ lwt-toplevel
 #>
 
 {subsection "Lwt concepts"}
@@ -146,7 +146,7 @@ $ ocamlfind lwt/toplevel.top
   As you can see, it does not returns a character but something of
   type {texttt "char Lwt.t"}. The type {texttt "'a Lwt.t"} is the type
   of threads returning a value of type {texttt "'a"}. Actually the
-  {texttt "Lwt_io.read_char"} will try to read a character to the
+  {texttt "Lwt_io.read_char"} will try to read a character from the
   given input channel and {emph "immediatly"} returns a light-weight
   thread.
 
@@ -161,7 +161,7 @@ val oc : Lwt_io.output_channel = <abstr>
 val t : char Lwt.t = <abstr>
 %>
 
-  We should now look at the state of our newly created thread:
+  We can now look at the state of our newly created thread:
 
   <:caml_code:%
 # Lwt.state t;;
@@ -205,7 +205,7 @@ val t : char Lwt.t = <abstr>
 
       creates a thread which has already terminated and returned a value";
 
-     "{texttt "raise_lwt : exn -> 'a Lwt.t"}
+     "{texttt "Lwt.fail : exn -> 'a Lwt.t"}
 
       creates a thread which has already terminated and failed with an
       exception";
@@ -218,7 +218,7 @@ val t : char Lwt.t = <abstr>
    ]}
 
 
-  To wake up a sleeping thread, you can use one of the following
+  To wake up a sleeping thread, you must use one of the following
   functions:
 
   {itemize [
@@ -230,7 +230,7 @@ val t : char Lwt.t = <abstr>
       wakes up the thread with an exception.";
    ]}
 
-  Not that this is an error to wakeup two times the same threads. {lwt}
+  Note that this is an error to wakeup two times the same threads. {lwt}
   will raise {texttt "Invalid_argument"} if you try to do so.
 
   With these informations, try to guess the result of each of the
@@ -273,7 +273,7 @@ val catch : (unit -> 'a Lwt.t) -> (exn -> 'a Lwt.t) -> 'a Lwt.t
   {texttt "catch f g"} will call {texttt "f ()"}, then waits for its
   termination, and if it fails with an exception {texttt "exn"}, calls
   {texttt "g exn"} to handle it. Note that both exceptions raised with
-  {texttt "Pervasives.raise"} and {texttt "raise_lwt"} are caught by
+  {texttt "Pervasives.raise"} and {texttt "Lwt.fail"} are caught by
   {texttt "catch"}.
 
 {subsubsection "Cancelable threads"}
@@ -294,7 +294,7 @@ val task : unit -> 'a Lwt.t * 'a Lwt.u
 val cancel : 'a Lwt.t -> unit
 #>
 
-  The threads will then fails with the exception
+  The thread will then fails with the exception
   {texttt "Lwt.Canceled"}. To execute a function when the thread is
   canceled, you must use {texttt "Lwt.on_cancel"}:
 
@@ -350,8 +350,8 @@ val protected : 'a Lwt.t -> 'a Lwt.t
 val join : unit Lwt.t list -> unit Lwt.t
 %>
 
-  Moreover, if one thread fails, it fails with the same exception,
-  without waiting for the other threads to terminate.
+  Moreover, if at least one thread fails, {texttt "join l"} will fails with
+  the same exception as the first to fail, after all threads threads terminated.
 
   On the contrary {texttt "choose"} waits for at least one thread to
   terminate, then returns the same value or exception:
@@ -382,7 +382,7 @@ val t : '_a Lwt.t = <abstr>
 {subsubsection "Rules"}
 
   {lwt} will always try to execute the more it can before yielding and
-  switch to another cooperative threads. In order to make it works well,
+  switch to another cooperative thread. In order to make it works well,
   you must follow the following rules:
 
   {itemize [
@@ -441,7 +441,7 @@ expr
 
       which is the equivalent of the standard {texttt "try-with"}
       construction but for {lwt}. Both exception raised by
-      {texttt "Pervasives.raise"} and {texttt "raise_lwt"} are caught.";
+      {texttt "Pervasives.raise"} and {texttt "Lwt.fail"} are caught.";
 
      "{texttt "for_lwt"} $ident$ {texttt "="} $expr_{within_braces $init$}$ ( {texttt "to"}
       ${mid}$ {texttt "downto"} ) $expr_{within_braces $final$}$ {texttt "do"} $expr$
@@ -449,6 +449,10 @@ expr
 
       which is the equivalent of the standard {texttt "for"} construction
       but for {lwt}.";
+
+     "{texttt "raise_lwt"} $exn$
+
+      which is the same as {texttt "Lwt.fail"} $exn$ but with backtrace support.";
    ]}
 
 {subsubsection "Correspondence table"}
@@ -508,7 +512,22 @@ expr
          {texttt "done"} &
          {texttt "done"} \\
 
+         {hline}
+
+         {texttt "raise"} $exn$ &
+         {texttt "raise_lwt"} $exn$ \\
+
          {hline}")}
+
+{subsection "Backtrace support"}
+
+  When using {lwt}, exceptions are not recorded by the ocaml runtime, and so you can not
+  get backtraces. However it is possible to get them when using the syntax extension. All you
+  have to do is to pass the {texttt "-lwt-debug"} switch to {texttt "camlp4"}:
+
+  <:shell_code:%
+$ ocamlfind ocamlc -syntax camlp4o -package lwt.syntax -ppopt -lwt-debug -linkpkg -o foo foo.ml
+%>
 
 {subsection "Other modules of the core library"}
 
@@ -624,7 +643,7 @@ val s' : int Lwt_stream.t = <abstr>
   variable, also called a ``mvar'', is a cell which may contains 0 or 1
   element. If it contains no elements, we say that the mvar is empty,
   if it contains one, we say that it is full. Adding an element to a
-  full mvar will block until the one is taken. Taking an element from an
+  full mvar will block until one is taken. Taking an element from an
   empty mvar will block until one is added.
 
   Mailbox variables are commonly used to pass messages between threads.
@@ -703,7 +722,7 @@ let () =
 val read  : file_descr -> string -> int -> int -> int Lwt.t
 %>
 
-  {texttt "Lwt_io"} provides similar features that buffered channels of
+  {texttt "Lwt_io"} provides features similar to buffered channels of
   the standard library (of type {texttt "in_channel"} or
   {texttt "out_channel"}) but cooperatively.
 
@@ -721,24 +740,6 @@ val read  : file_descr -> string -> int -> int -> int Lwt.t
   the blocking {texttt "select"}, then to react and wakeup threads waiting
   for sources to become ready.
 
-{subsection "Limitations"}
-
-  To avoid blocking, {lwt} puts all file descriptors (except
-  {texttt "stdin"}, {texttt "stdout"} and {texttt "stderr"}) in non-blocking
-  mode. Unfortunatly no unix supports non-blocking mode for regular
-  files. In practise a file descriptor for a regular file will always
-  appears to be readable and writable even if this is not the case (for
-  example because the file is located on a network file system and the
-  server is not available). There is no workaround for this.
-
-  By the way, since reading/writing a file will never appears to block,
-  reading or writing a big file may prevent other threads to run until
-  the operation on the file are finished. To avoid this,
-  {texttt "Lwt_io"} yield every 0.05 seconds for regular files.
-
-  Since there is no support at all for asynchrnously reading the
-  contents of a directory, {texttt "Lwt_directory"} uses the same trick.
-
 {subsection ~label:lwt_log "The logging facility"}
 
   The package {texttt "lwt.unix"} contains a module {texttt "Lwt_log"}
@@ -747,46 +748,43 @@ val read  : file_descr -> string -> int -> int -> int Lwt.t
   appropriate functions (function {texttt "Lwt_log.make"}).
 
   Several loggers can be merged into one. Sending logs on the merged
-  loggers will send these logs to all its components.
+  logger will send these logs to all its components.
 
   For example to redirect all logs to {texttt "stderr"} and to the syslog
   daemon:
 
   <:caml_code:%
 # Lwt_log.default_logger :=
-    Lwt_log.merge ~level:Lwt_log.Info [
-      Lwt_log.channel
-        ~level:Lwt_log.Info
-        ~close_mode:`keep
-        ~channel:Lwt_io.stderr ();
-      Lwt_log.syslog
-        ~level:Lwt_log.Info
-        ~facility:`User ();
+    Lwt_log.broadcast [
+      Lwt_log.channel ~close_mode:`Keep ~channel:Lwt_io.stderr ();
+      Lwt_log.syslog ~facility:`User ();
     ]
 ;;
 %>
 
   {lwt} also provides a syntax extension, in the package
-  {texttt "lwt.syntax.log"}. It adds the following construction to the
-  language:
+  {texttt "lwt.syntax.log"}. It does not modify the language but
+  it replaces log statement of the form:
 
-  {center "{texttt "Log#"}{textit "level"} {textit "format"} {textit "arguments"}"}
+  <:caml_code:#
+Lwt_log.info_f ~section "something happened: %s" msg
+#>
 
+  by:
 
-  Where {textit "level"} is one of {texttt "debug"}, {texttt "info"},
-  {texttt "warning"}, {texttt "error"}, {texttt "fatal"}. For example:
-
-  <:caml_code:!
-Log#debug "x = %s" x
-!>
+  <:caml_code:#
+if Lwt_log.Section.level section <= Lwt_log.Info then
+  Lwt_log.info_f ~section "somethign happend: %s" msg
+else
+  Lwt.return ()
+#>
 
   The advantages of using the syntax extension are the following:
 
   {itemize [
-     "it automatically prefix the format with the module name";
      "it check the log level before calling the logging function, so
       arguments are not computed if not needed";
-     "item debugging logs can be removed at parsing time";
+     "debugging logs can be removed at parsing time";
    ]}
 
   By default, the syntax extension remove all logs with the level
@@ -819,7 +817,7 @@ val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
 {section "The lwt.text library"}
 
   The {texttt "lwt.text"} library provides functions to deal with text
-  mode (in a terminal). It is composed of three following modules:
+  mode (in a terminal). It is composed of the three following modules:
 
   {itemize [
      "{texttt "Lwt_text"}, which is the equivalent of {texttt "Lwt_io"}
