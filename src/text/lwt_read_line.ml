@@ -137,6 +137,7 @@ struct
     | Complete_first
     | Complete_last
     | Undo
+    | Delete_char_or_list
 
   let names = [
     (Nop, "nop");
@@ -176,6 +177,7 @@ struct
     (Complete_first, "complete-first");
     (Complete_last, "complete-last");
     (Undo, "undo");
+    (Delete_char_or_list, "delete-char-or-list");
   ]
 
   let to_string = function
@@ -214,7 +216,7 @@ struct
     | Key_delete -> Forward_delete_char
     | Key_control '@' -> Set_mark
     | Key_control 'a' -> Beginning_of_line
-    | Key_control 'd' -> Break
+    | Key_control 'd' -> Delete_char_or_list
     | Key_control 'e' -> End_of_line
     | Key_control 'h' -> Backward_delete_word
     | Key_control 'i' -> Complete
@@ -1302,7 +1304,18 @@ struct
                   state
           in
 
-          filter state command >>= function
+          (* User-provided filter *)
+          lwt command = filter state command in
+
+          (* Commands that need pre-processing *)
+          lwt command = match command, state.engine.Engine.mode with
+            | Delete_char_or_list, Engine.Edition ("", "") -> return Break
+            | Delete_char_or_list, Engine.Edition (_, "") -> return Complete
+            | Delete_char_or_list, Engine.Edition (_, _) -> return Forward_delete_char
+            | _ -> return command
+          in
+
+          match command with
             | Nop ->
                 loop state
 
