@@ -317,6 +317,12 @@ val blank : point
 val render : point array array -> unit Lwt.t
   (** Render an offscreen array to the terminal. *)
 
+val render_update : point array array -> point array array -> unit Lwt.t
+  (** [render_update displayed to_display] does the same as [render
+      to_display] but assumes that [displayed] contains the current
+      displayed text. This reduces the amount of text sent to the
+      terminal. *)
+
 (** {6 Drawing} *)
 
 (** Off-screen zones *)

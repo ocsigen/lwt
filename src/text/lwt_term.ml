@@ -475,7 +475,45 @@ let rec add_int buf = function
       add_int buf (n / 10);
       Buffer.add_char buf (Char.unsafe_chr (48 + (n mod 10)))
 
-let render m =
+let render_char buf oc pt last_style =
+  lwt () =
+    if pt.style <> last_style then begin
+      Buffer.clear buf;
+      Buffer.add_string buf "\027[0";
+      let mode n = function
+        | true ->
+            Buffer.add_char buf ';';
+            add_int buf n
+        | false ->
+            ()
+      and color f col =
+        if col = default then
+          ()
+        else if col < 8 then begin
+          Buffer.add_char buf ';';
+          add_int buf (f col)
+        end else begin
+          Buffer.add_char buf ';';
+          add_int buf (f 8);
+          Buffer.add_string buf ";5;";
+          add_int buf col;
+        end
+      in
+      mode Codes.bold pt.style.bold;
+      mode Codes.underlined pt.style.underlined;
+      mode Codes.blink pt.style.blink;
+      mode Codes.inverse pt.style.inverse;
+      mode Codes.hidden pt.style.hidden;
+      color Codes.foreground pt.style.foreground;
+      color Codes.background pt.style.background;
+      Buffer.add_char buf 'm';
+      write oc (Buffer.contents buf)
+    end else
+      return ()
+  in
+  write_char oc pt.char
+
+let render_update old m =
   let buf = Buffer.create 16 in
   Lwt_text.atomic begin fun oc ->
     let rec loop_y y last_style =
@@ -483,47 +521,27 @@ let render m =
         let rec loop_x x last_style =
           if x < Array.length m.(y) then
             let pt = m.(y).(x) in
-            lwt () =
-              if pt.style <> last_style then begin
-                Buffer.clear buf;
-                Buffer.add_string buf "\027[0";
-                let mode n = function
-                  | true ->
-                      Buffer.add_char buf ';';
-                      add_int buf n
-                  | false ->
-                      ()
-                and color f col =
-                  if col = default then
-                    ()
-                  else if col < 8 then begin
-                    Buffer.add_char buf ';';
-                    add_int buf (f col)
-                  end else begin
-                    Buffer.add_char buf ';';
-                    add_int buf (f 8);
-                    Buffer.add_string buf ";5;";
-                    add_int buf col;
-                  end
-                in
-                mode Codes.bold pt.style.bold;
-                mode Codes.underlined pt.style.underlined;
-                mode Codes.blink pt.style.blink;
-                mode Codes.inverse pt.style.inverse;
-                mode Codes.hidden pt.style.hidden;
-                color Codes.foreground pt.style.foreground;
-                color Codes.background pt.style.background;
-                Buffer.add_char buf 'm';
-                write oc (Buffer.contents buf)
-              end else
-                return ()
-            in
-            lwt () = write_char oc pt.char in
+            lwt () = render_char buf oc pt last_style in
             loop_x (x + 1) pt.style
           else
             loop_y (y + 1) last_style
         in
-        loop_x 0 last_style
+        if y < Array.length old && old.(y) = m.(y) then begin
+          if y + 1 < Array.length m then
+            lwt last_style =
+              if Array.length m.(y) > 0 then
+                let pt = m.(y).(0) in
+                lwt () = render_char buf oc pt last_style in
+                return pt.style
+              else
+                return last_style
+            in
+            lwt () = write oc "\r\n" in
+            loop_y (y + 1) last_style
+          else
+            return ()
+        end else
+          loop_x 0 last_style
       else
         return ()
     in
@@ -532,6 +550,8 @@ let render m =
     lwt () = loop_y 0 blank.style in
     write oc "\027[0m"
   end stdout
+
+let render m = render_update [||] m
 
 (* +-----------------------------------------------------------------+
    | Styled text                                                     |
