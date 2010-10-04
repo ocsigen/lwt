@@ -20,20 +20,14 @@
  * 02111-1307, USA.
  *)
 
-let profile = `Light
-
 let lwt = texttt "Lwt"
 let abstract body = command \"abstract\" [(T, body)] T
 
-class config profile = object(self)
-  inherit Meldor_ocaml.config profile
-  method box = Meldor.Box_framed
-end
-
-let config = new config profile
-
-let caml_code = Meldor_ocaml.stylise (config :> Meldor_ocaml.config)
-let shell_code = Verbatim.convert (fun str -> Meldor.stylise ~box:config#box [(config#default, str)])
+let code verb =
+  Verbatim.convert
+    (fun str ->
+       texttt (Latex.Verbatim.verbatim str))
+    verb
 
 let hline = text \"\\\\hline\"
 let vline = text \"\\\\vline\"
@@ -109,7 +103,7 @@ are mostly ready.
   launch {texttt "ocaml"} in a terminal or in emacs with the tuareg
   mode, and type:
 
-  <:caml_code:%
+  <:code:%
 # #use "topfind";;
 # #require "lwt";;
 %>
@@ -118,7 +112,7 @@ are mostly ready.
   edition and completion. If it has been correctly installed, you
   should be able to start it with the following command:
 
-  <:shell_code:#
+  <:code:#
 $ lwt-toplevel
 #>
 
@@ -126,7 +120,7 @@ $ lwt-toplevel
 
   Let's take a classical function of the {texttt "Pervasives"} module:
 
-  <:caml_code:%
+  <:code:%
 # Pervasives.input_char;
 - : in_channel -> char = <fun>
 %>
@@ -138,7 +132,7 @@ $ lwt-toplevel
 
   Now let's look at the lwt equivalent:
 
-  <:caml_code:%
+  <:code:%
 # Lwt_io.read_char;;
 - : Lwt_io.input_channel -> char Lwt.t = <fun>
 %>
@@ -153,7 +147,7 @@ $ lwt-toplevel
   Now, let's see what we can do with a {lwt} thread. The following
   code create a pipe, and launch a thread reading on the input side:
 
-  <:caml_code:%
+  <:code:%
 # let ic, oc = Lwt_io.pipe ();;
 val ic : Lwt_io.input_channel = <abstr>
 val oc : Lwt_io.output_channel = <abstr>
@@ -163,7 +157,7 @@ val t : char Lwt.t = <abstr>
 
   We can now look at the state of our newly created thread:
 
-  <:caml_code:%
+  <:code:%
 # Lwt.state t;;
 - : char Lwt.state = Sleep
 %>
@@ -183,7 +177,7 @@ val t : char Lwt.t = <abstr>
   The thread {texttt "t"} is sleeping because there is currently nothing
   to read on the pipe. Let's write something:
 
-  <:caml_code:%
+  <:code:%
 # Lwt_io.write_char oc 'a';;
 - : unit Lwt.t = <abstr>
 # Lwt.state t;;
@@ -236,7 +230,7 @@ val t : char Lwt.t = <abstr>
   With these informations, try to guess the result of each of the
   following expression:
 
-  <:caml_code:%
+  <:code:%
 # Lwt.state (Lwt.return 42);;
 # Lwt.state (raise_lwt Exit);;
 # let waiter, wakener = Lwt.wait ();;
@@ -253,7 +247,7 @@ val t : char Lwt.t = <abstr>
 
   The most important operation you need to know is {texttt "bind"}:
 
-  <:caml_code:#
+  <:code:#
 val bind : 'a Lwt.t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
 #>
 
@@ -266,7 +260,7 @@ val bind : 'a Lwt.t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
   Similarly to {texttt "bind"}, there is a function to handle the case
   when {texttt "t"} fails:
 
-   <:caml_code:#
+   <:code:#
 val catch : (unit -> 'a Lwt.t) -> (exn -> 'a Lwt.t) -> 'a Lwt.t
 #>
 
@@ -283,14 +277,14 @@ val catch : (unit -> 'a Lwt.t) -> (exn -> 'a Lwt.t) -> 'a Lwt.t
   threads. To create a cancelable thread, you must use the
   {texttt "Lwt.task"} function:
 
-  <:caml_code:#
+  <:code:#
 val task : unit -> 'a Lwt.t * 'a Lwt.u
 #>
 
   It has the same semantic that {texttt "Lwt.wait"} except that the
   sleeping thread can be canceled with {texttt "Lwt.cancel"}:
 
-  <:caml_code:#
+  <:code:#
 val cancel : 'a Lwt.t -> unit
 #>
 
@@ -298,7 +292,7 @@ val cancel : 'a Lwt.t -> unit
   {texttt "Lwt.Canceled"}. To execute a function when the thread is
   canceled, you must use {texttt "Lwt.on_cancel"}:
 
-  <:caml_code:#
+  <:code:#
 val on_cancel : 'a Lwt.t -> (unit -> unit) -> unit
 #>
 
@@ -308,7 +302,7 @@ val on_cancel : 'a Lwt.t -> (unit -> unit) -> unit
 
   For example, consider the following code:
 
-  <:caml_code:%
+  <:code:%
 # let waiter, wakener = Lwt.task ();;
 val waiter : '_a Lwt.t = <abstr>
 val wakener : '_a Lwt.u = <abstr>
@@ -319,7 +313,7 @@ val t : int Lwt.t = <abstr>
   Here, cancelling {texttt "t"} will in fact cancel {texttt "waiter"}.
   {texttt "t"} will then fails with the exception {texttt "Lwt.Canceled"}:
 
-  <:caml_code:%
+  <:code:%
 # Lwt.cancel t;;
 - : unit = ()
 # Lwt.state waiter;;
@@ -331,7 +325,7 @@ val t : int Lwt.t = <abstr>
   By the way, it is possible to prevent a thread from being canceled, by
   using the function {texttt "Lwt.protected"}:
 
-  <:caml_code:%
+  <:code:%
 val protected : 'a Lwt.t -> 'a Lwt.t
 %>
 
@@ -346,7 +340,7 @@ val protected : 'a Lwt.t -> 'a Lwt.t
   The first one, {texttt "join"} takes a list of threads and wait for all
   of them to terminate:
 
-  <:caml_code:%
+  <:code:%
 val join : unit Lwt.t list -> unit Lwt.t
 %>
 
@@ -356,13 +350,13 @@ val join : unit Lwt.t list -> unit Lwt.t
   On the contrary {texttt "choose"} waits for at least one thread to
   terminate, then returns the same value or exception:
 
-  <:caml_code:%
+  <:code:%
 val choose : 'a Lwt.t list -> 'a Lwt.t
 %>
 
   For example:
 
-  <:caml_code:%
+  <:code:%
 # let waiter1, wakener1 = Lwt.wait ();;
 val waiter1 : '_a Lwt.t = <abstr>
 val wakener1 : '_a Lwt.u = <abstr>
@@ -398,13 +392,13 @@ val t : '_a Lwt.t = <abstr>
   makes coding using {lwt} easier.  To use it add the ``lwt.syntax'' package when
   compiling:
 
-  <:shell_code:%
+  <:code:%
 $ ocamlfind ocamlc -syntax camlp4o -package lwt.syntax -linkpkg -o foo foo.ml
 %>
 
   Or in the toplevel (after loading topfind):
 
-  <:caml_code:%
+  <:code:%
 # #camlp4o;;
 # #require "lwt.syntax";;
 %>
@@ -418,7 +412,7 @@ $ ocamlfind ocamlc -syntax camlp4o -package lwt.syntax -linkpkg -o foo foo.ml
       which is a parallel let-binding construction. For example in the
       following code:
 
-      <:caml_code:%
+      <:code:%
 lwt x = f () and y = g () in
 expr
 %>
@@ -430,7 +424,7 @@ expr
       Of course you can also launch the two threads sequentially by
       writing your code like that:
 
-      <:caml_code:%
+      <:code:%
 lwt x = f () in
 lwt y = g () in
 expr
@@ -525,7 +519,7 @@ expr
   get backtraces. However it is possible to get them when using the syntax extension. All you
   have to do is to pass the {texttt "-lwt-debug"} switch to {texttt "camlp4"}:
 
-  <:shell_code:%
+  <:code:%
 $ ocamlfind ocamlc -syntax camlp4o -package lwt.syntax -ppopt -lwt-debug -linkpkg -o foo foo.ml
 %>
 
@@ -538,7 +532,7 @@ $ ocamlfind ocamlc -syntax camlp4o -package lwt.syntax -ppopt -lwt-debug -linkpk
   when it is going to be executed in parallel, it is suffixed with
   ``{texttt "_p"}''. For example, in the {texttt "Lwt_list"} module we have:
 
-  <:caml_code:%
+  <:code:%
 val map_s : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
 val map_p : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
 %>
@@ -556,7 +550,7 @@ val map_p : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
   over lists, similar to the ones of the {texttt "List"} module, but using
   functions that return a thread. For example:
 
-  <:caml_code:%
+  <:code:%
 val iter_s : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
 val iter_p : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
 %>
@@ -579,7 +573,7 @@ val iter_p : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
   The common way of creating a stream is by using
   {texttt "Lwt_stream.from"} or by using {texttt "Lwt_stream.push_stream"}:
 
-  <:caml_code:%
+  <:code:%
 val from : (unit -> 'a option Lwt.t) -> 'a Lwt_stream.t
 val push_stream : unit ->
    ([ `Data of 'a
@@ -595,7 +589,7 @@ val push_stream : unit ->
 
   For example:
 
-  <:caml_code:%
+  <:code:%
 # let push, stream = Lwt_stream.push_stream ();;
 val push : [ `Data of '_a | `End_of_stream | `Exn of exn ] -> unit = <fun>
 val stream : '_a Lwt_stream.t = <abstr>
@@ -622,7 +616,7 @@ val stream : '_a Lwt_stream.t = <abstr>
   elements in the same order. Consuming one will not consume the other.
   For example:
 
-  <:caml_code:%
+  <:code:%
 # let s = Lwt_stream.of_list [1; 2];;
 val s : int Lwt_stream.t = <abstr>
 # let s' = Lwt_stream.clone s;;
@@ -659,7 +653,7 @@ val s' : int Lwt_stream.t = <abstr>
   thread which will wait until the next occurence of this event. For
   example:
 
-  <:caml_code:%
+  <:code:%
 # let event, push = React.E.create ();;
 val event : '_a React.event = <abstr>
 val push : '_a -> unit = <fun>
@@ -680,7 +674,7 @@ val t : '_a Lwt.t = <abstr>
   times per second, you probably want not to render it 1000 times per
   second. For that you use {texttt "Lwt_signal.limit"}:
 
-  <:caml_code:%
+  <:code:%
 val limit : (unit -> unit Lwt.t) -> 'a React.signal -> 'a React.signal
 %>
 
@@ -690,7 +684,7 @@ val limit : (unit -> unit Lwt.t) -> 'a React.signal -> 'a React.signal
   sleep for 0.1 seconds, then there will be no more than 10 changes per
   second. For example:
 
-  <:caml_code:#
+  <:code:#
 let draw x =
   (* Draw the screen *)
   ...
@@ -718,8 +712,8 @@ let () =
   The {texttt "Lwt_unix"} provides cooperative system calls. For example,
   the {lwt} counterpart of {texttt "Unix.read"} is:
 
-  <:caml_code:%
-val read  : file_descr -> string -> int -> int -> int Lwt.t
+  <:code:%
+val read : file_descr -> string -> int -> int -> int Lwt.t
 %>
 
   {texttt "Lwt_io"} provides features similar to buffered channels of
@@ -753,7 +747,7 @@ val read  : file_descr -> string -> int -> int -> int Lwt.t
   For example to redirect all logs to {texttt "stderr"} and to the syslog
   daemon:
 
-  <:caml_code:%
+  <:code:%
 # Lwt_log.default_logger :=
     Lwt_log.broadcast [
       Lwt_log.channel ~close_mode:`Keep ~channel:Lwt_io.stderr ();
@@ -766,13 +760,13 @@ val read  : file_descr -> string -> int -> int -> int Lwt.t
   {texttt "lwt.syntax.log"}. It does not modify the language but
   it replaces log statement of the form:
 
-  <:caml_code:#
+  <:code:#
 Lwt_log.info_f ~section "something happened: %s" msg
 #>
 
   by:
 
-  <:caml_code:#
+  <:code:#
 if Lwt_log.Section.level section <= Lwt_log.Info then
   Lwt_log.info_f ~section "somethign happend: %s" msg
 else
@@ -802,7 +796,7 @@ else
   {texttt "lwt.preemptive"} package which maintains a spool of system
   threads. The main function is:
 
-  <:caml_code:%
+  <:code:%
 val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
 %>
 
@@ -839,7 +833,7 @@ val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
   For example, with you locale sets to ``C'', and the variable
   {texttt "name"} set to ``Jérémie'', you got:
 
-  <:caml_code:!
+  <:code:!
 # lwt () = Lwt_text.printlf "My name is %s" name;;
 My name is J?r?mie
 !>
@@ -850,7 +844,7 @@ My name is J?r?mie
   mode"}, meanings that input is not buffered and character are
   returned as the user type them. For example, you can read a key with:
 
-  <:caml_code:%
+  <:code:%
 # lwt key = Lwt_term.read_key ();;
 val key : Lwt_term.key = Lwt_term.Key_control 'j'
 %>
@@ -858,7 +852,7 @@ val key : Lwt_term.key = Lwt_term.Key_control 'j'
   The second main feature of {texttt "Lwt_term"} is the ability to prints
   text with styles. For example, to print text in bold and blue:
 
-  <:caml_code:%
+  <:code:%
 # open Lwt_term;;
 # lwt () = printlc [fg blue; bold; text "foo"];;
 foo
@@ -876,7 +870,7 @@ foo
 
   For example:
 
-  <:caml_code:%
+  <:code:%
 # open Lwt_term;;
 # lwt l = Lwt_read_line.read_line ~prompt:[text "foo> "] ();;
 foo> Hello, world!
@@ -910,6 +904,5 @@ let () =
        ~options:[`A4paper]
        ~title:"Lwt user manual"
        ~author:"Jérémie Dimino"
-       ~prelude:(Meldor.set_mono_font ~scale:0.8 "DejaVu Sans Mono")
        ~packages:[("fullpage", "")]
        doc)
