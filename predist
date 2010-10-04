@@ -10,11 +10,8 @@ make manual.pdf
 make clean-aux
 cd ..
 
-# Lets oasis create the Makefile
-rm -f Makefile
-
 # Add oasis stuff
 OASIS setup
 
-# Remove this file
-rm -f predist
+# Cleanup
+rm -f predist make-dist.sh
