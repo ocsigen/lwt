@@ -201,8 +201,8 @@ let dispatch f =
 
 type template = string
 
-let date_string () =
-  let tm = Unix.localtime (Unix.time ()) in
+let date_string time =
+  let tm = Unix.localtime time in
   let month_string =
     match tm.Unix.tm_mon with
       | 0 -> "Jan"
@@ -222,9 +222,11 @@ let date_string () =
   Printf.sprintf "%s %2d %02d:%02d:%02d" month_string tm.Unix.tm_mday tm.Unix.tm_hour tm.Unix.tm_min tm.Unix.tm_sec
 
 let render ~buffer ~template ~section ~level ~message =
+  let time = lazy(Unix.gettimeofday ()) in
   Buffer.add_substitute buffer
     (function
-       | "date" -> date_string ()
+       | "date" -> date_string (Lazy.force time)
+       | "milliseconds" -> String.sub (Printf.sprintf "%.4f" (fst (modf (Lazy.force time)))) 2 4
        | "name" -> program_name
        | "pid" -> string_of_int (Unix.getpid ())
        | "message" -> message

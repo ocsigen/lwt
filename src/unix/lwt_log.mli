@@ -158,6 +158,8 @@ type template = string
         [$(var)], where [var] is one of:
 
         - [date] which will be replaced with the current date
+        - [milliseconds] which will be replaced by the fractionnal part
+          of the current unix time
         - [name] which will be replaced by the program name
         - [pid] which will be replaced by the pid of the program
         - [message] which will be replaced by the message emited
@@ -169,6 +171,7 @@ type template = string
         For example:
         - ["$(name): $(message)"]
         - ["$(date) $(name)[$(pid)]: $(message)"]
+        - ["$(date).$(milliseconds) $(name)[$(pid)]: $(message)"]
     *)
 
 val render : buffer : Buffer.t -> template : template -> section : section -> level : level -> message : string -> unit
