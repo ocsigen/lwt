@@ -40,9 +40,6 @@ let lwt_log = label ()
 
 let doc = "
 
-{textbf "Note:"} this document is a work in progress. Sections 1 and 2
-are mostly ready.
-
 {tableofcontents}
 
 (*****************************************************************************)
@@ -73,7 +70,7 @@ are mostly ready.
 
   Both solution have their advantages and their drawbacks. For the
   first one, it may works, but it becomes very complicated to write
-  some piece of sequential code. The typical example being with
+  some piece of asynchronous sequential code. The typical example being with
   graphical user interfaces freezing and not redrawing themselves
   because they are waiting for some blocking part of the code to
   complete.
@@ -232,7 +229,7 @@ val t : char Lwt.t = <abstr>
 
   <:code:%
 # Lwt.state (Lwt.return 42);;
-# Lwt.state (raise_lwt Exit);;
+# Lwt.state (fail Exit);;
 # let waiter, wakener = Lwt.wait ();;
 # Lwt.state waiter;;
 # Lwt.wakeup wakener 42;;
@@ -255,7 +252,17 @@ val bind : 'a Lwt.t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
   terminates, then pass the result to {texttt "f"}. If {texttt "t"} is a
   sleeping thread, then {texttt "bind t f"} will be a sleeping thread too,
   until {texttt "t"} terminates. If {texttt "t"} fails, then the resulting
-  thread will fail with the same exception.
+  thread will fail with the same exception. For example, consider the
+  following expression:
+
+  <:code:#
+Lwt.bind
+  (Lwt_io.read_line Lwt_io.stdin)
+  (fun str -> Lwt_io.printlf "You typed %S" str)
+#>
+
+  This code will first wait for the user to enter a line of text, then
+  print a message on the standard output.
 
   Similarly to {texttt "bind"}, there is a function to handle the case
   when {texttt "t"} fails:
@@ -281,7 +288,7 @@ val catch : (unit -> 'a Lwt.t) -> (exn -> 'a Lwt.t) -> 'a Lwt.t
 val task : unit -> 'a Lwt.t * 'a Lwt.u
 #>
 
-  It has the same semantic that {texttt "Lwt.wait"} except that the
+  It has the same semantic as {texttt "Lwt.wait"} except that the
   sleeping thread can be canceled with {texttt "Lwt.cancel"}:
 
   <:code:#
@@ -329,13 +336,13 @@ val t : int Lwt.t = <abstr>
 val protected : 'a Lwt.t -> 'a Lwt.t
 %>
 
-  Canceling {texttt "proctected t"} will have no effect.
+  Canceling {texttt "(proctected t)"} will have no effect.
 
 {subsubsection "Primitives for multi-thread composition"}
 
-  We conclude this section with multi-thread composition functions. There
-  are three such functions in the {lwt} module: {texttt "join"},
-  {texttt "choose"} and {texttt "select"}.
+  We now show how to compose several threads at the same time. The
+  main functions for this are in the {lwt} module: {texttt "join"},
+  {texttt "choose"} and {texttt "pick"}.
 
   The first one, {texttt "join"} takes a list of threads and wait for all
   of them to terminate:
@@ -373,6 +380,9 @@ val t : '_a Lwt.t = <abstr>
 - : int Lwt.state = Return 42
 %>
 
+  Thel last one, {texttt "pick"}, is the same as {texttt "join"} except that it cancels
+  all other threads when one terminates.
+
 {subsubsection "Rules"}
 
   {lwt} will always try to execute the more it can before yielding and
@@ -406,7 +416,7 @@ $ ocamlfind ocamlc -syntax camlp4o -package lwt.syntax -linkpkg -o foo foo.ml
   The following construction are added to the language:
 
   {itemize [
-     "{lwt} $pattern_1$ {texttt "="} $expr_1$ [ {texttt "and"}
+     "{texttt "lwt"} $pattern_1$ {texttt "="} $expr_1$ [ {texttt "and"}
       $pattern_2$ {texttt "="} $expr_2$ {dots} ] {texttt "in"} $expr$
 
       which is a parallel let-binding construction. For example in the
@@ -571,33 +581,30 @@ val iter_p : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
   transformation, iteration, and scanning functions.
 
   The common way of creating a stream is by using
-  {texttt "Lwt_stream.from"} or by using {texttt "Lwt_stream.push_stream"}:
+  {texttt "Lwt_stream.from"} or by using {texttt "Lwt_stream.create"}:
 
   <:code:%
 val from : (unit -> 'a option Lwt.t) -> 'a Lwt_stream.t
-val push_stream : unit ->
-   ([ `Data of 'a
-    | `End_of_stream
-    | `Exn of exn ] -> unit) * 'a Lwt_stream.t
+val create : unit -> 'a Lwt_stream.t * ('a option -> unit)
 %>
 
   As for streams of the standard library, {texttt "from"} takes as
   argument a function which is used to create new elements.
 
-  {texttt "push_stream"} returns a function used to push new elements
+  {texttt "create"} returns a function used to push new elements
   into the stream and the stream which will receive them.
 
   For example:
 
   <:code:%
-# let push, stream = Lwt_stream.push_stream ();;
-val push : [ `Data of '_a | `End_of_stream | `Exn of exn ] -> unit = <fun>
+# let stream, push = Lwt_stream.create ();;
 val stream : '_a Lwt_stream.t = <abstr>
-# push (`Data 1);;
+val push : ''a option -> unit = <fun>
+# push (Some 1);;
 - : unit = ()
-# push (`Data 2);;
+# push (Some 2);;
 - : unit = ()
-# push (`Data 3);;
+# push (Some 3);;
 - : unit = ()
 # Lwt.state (Lwt_stream.next stream);;
 - : int Lwt.state = Return 1
@@ -705,7 +712,7 @@ let () =
 
   The package {texttt "lwt.unix"} contains all {texttt "unix"} dependant
   modules of {lwt}. Among all its features, it implements cooperative
-  versions of functions of the standard library and unix library.
+  versions of functions of the standard library and the unix library.
 
 {subsection "Unix primitives"}
 
@@ -785,28 +792,6 @@ else
   {texttt "debug"}. To keep them pass the command line option
   {texttt "-lwt-debug"} to camlp4.
 
-{subsection "Detaching computation to preemptive threads"}
-
-  It may happen that you want to run a function which will take time to
-  compute or that you want to use a blocking function that cannot be
-  used in a non-blocking way. For these situations, {lwt} allow you to
-  {emph "detach"} the computation to a preemptive thread.
-
-  This is done by the module {texttt "Lwt_preemptive"} of the
-  {texttt "lwt.preemptive"} package which maintains a spool of system
-  threads. The main function is:
-
-  <:code:%
-val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
-%>
-
-  {texttt "detach f x"} will execute {texttt "f x"} in another thread and
-  asynchronously wait for the result.
-
-  The {texttt "lwt.extra"} package provides wrappers for a few blocking
-  functions of the standard C library like {texttt "gethostbyname"} (in
-  the module {texttt "Lwt_lib"}).
-
 (*****************************************************************************)
 {section "The lwt.text library"}
 
@@ -884,6 +869,28 @@ val l : Text.t = "Hello, world!"
 
 (*****************************************************************************)
 {section "Other libraries"}
+
+{subsection "Detaching computation to preemptive threads"}
+
+  It may happen that you want to run a function which will take time to
+  compute or that you want to use a blocking function that cannot be
+  used in a non-blocking way. For these situations, {lwt} allow you to
+  {emph "detach"} the computation to a preemptive thread.
+
+  This is done by the module {texttt "Lwt_preemptive"} of the
+  {texttt "lwt.preemptive"} package which maintains a spool of system
+  threads. The main function is:
+
+  <:code:%
+val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
+%>
+
+  {texttt "detach f x"} will execute {texttt "f x"} in another thread and
+  asynchronously wait for the result.
+
+  The {texttt "lwt.extra"} package provides wrappers for a few blocking
+  functions of the standard C library like {texttt "gethostbyname"} (in
+  the module {texttt "Lwt_lib"}).
 
 {subsection "SSL support"}
 
