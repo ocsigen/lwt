@@ -1,0 +1,5 @@
+# OASIS_START
+# DO NOT EDIT (digest: 4cb83c9e3bda245e2a61db6c51f90aa8)
+lwt_unix_stubs.o
+lwt_mmap_stubs.o
+# OASIS_STOP

@@ -1,0 +1,9 @@
+# OASIS_START
+# DO NOT EDIT (digest: 8c0b6511e6e82f3938b76aeab3ce04b6)
+version = "2.1.1"
+description = "Lightweight thread library for Objective Caml"
+archive(byte) = "test.cma"
+archive(native) = "test.cmxa"
+exists_if = "test.cma"
+# OASIS_STOP
+

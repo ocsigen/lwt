@@ -13,5 +13,8 @@ cd ..
 # Add oasis stuff
 oasis setup
 
+# Make the configure script executable
+chmod +x configure
+
 # Cleanup
 rm -f predist make-dist.sh
