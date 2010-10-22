@@ -11,7 +11,7 @@ make clean-aux
 cd ..
 
 # Add oasis stuff
-OASIS setup
+oasis setup
 
 # Cleanup
 rm -f predist make-dist.sh

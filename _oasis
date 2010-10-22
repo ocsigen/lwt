@@ -19,7 +19,7 @@ Authors:
   Mauricio Fernandez
 Homepage: http://ocsigen.org/lwt/
 BuildTools: ocamlbuild
-Plugins: DevFiles (0.1.0), META (0.1.0)
+Plugins: DevFiles (0.2), META (0.2)
 
 Synopsis: Lightweight thread library for Objective Caml
 Description:
@@ -245,7 +245,7 @@ Executable "lwt-toplevel"
 
 Document "lwt-manual"
   Title: Lwt user manual
-  Type: custom (0.1.0)
+  Type: custom (0.2)
   Install: true
   XCustom: make -C manual manual.pdf
   DataFiles: manual/manual.pdf
@@ -253,13 +253,12 @@ Document "lwt-manual"
 
 Document "lwt-api"
   Title: API reference for Lwt
-  Type: ocamlbuild (0.1.0)
+  Type: ocamlbuild (0.2)
   Install: true
   InstallDir: $htmldir/api
   DataFiles: utils/style.css
   BuildTools: ocamldoc
   XOCamlbuildPath: ./
-  XOCamlBuildIntro: apiref-intro
   XOCamlbuildLibraries:
     lwt,
     lwt.extra,
@@ -319,3 +318,12 @@ Test react
   Command: $test_react
   TestTools: test_react
   Run$: (flag(unix) && flag(react)) || flag(all)
+
+# +-------------------------------------------------------------------+
+# | Misc                                                              |
+# +-------------------------------------------------------------------+
+
+SourceRepository head
+  Type: darcs
+  Location: http://ocsigen.org/darcs/lwt
+  Browser: http://ocsigen.org/darcsweb/?r=lwt;a=summary
