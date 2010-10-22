@@ -7,7 +7,7 @@
 cd manual
 make manual.pdf
 # Remove intermediate files
-make clean-aux
+make clean-melt
 cd ..
 
 # Add oasis stuff
