@@ -448,11 +448,21 @@ value lwt_unix_system_byte_order()
    +-----------------------------------------------------------------+ */
 
 int notification_fd_writer = -1;
-pthread_mutex_t notification_pipe_lock = PTHREAD_MUTEX_INITIALIZER;
 
-value lwt_unix_set_notification_fd_writer(value fd)
+#if defined(LWT_WINDOWS)
+HANDLE notification_pipe_mutex;
+#else
+pthread_mutex_t notification_pipe_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
+value lwt_unix_init_notification(value fd)
 {
   notification_fd_writer = FD_val(fd);
+
+#if defined(LWT_WINDOWS)
+  notification_pipe_mutex = CreateMutex(NULL, FALSE, NULL);
+#endif
+
   return Val_unit;
 }
 
@@ -466,14 +476,22 @@ void lwt_unix_send_notification(int id)
 
   caml_enter_blocking_section();
 
-  pthread_mutex_lock(&notification_pipe_lock);
+#if defined(LWT_WINDOWS)
+  WaitForSingleObject(notification_pipe_mutex, INFINITE);
+#else
+  pthread_mutex_lock(&notification_pipe_mutex);
+#endif
 
   int offset = 0;
   while (offset < 4) {
     int n = write(notification_fd_writer, &(buf[offset]), 4 - offset);
 
     if (n <= 0) {
-      pthread_mutex_unlock(&notification_pipe_lock);
+#if defined(LWT_WINDOWS)
+      ReleaseMutex(notification_pipe_mutex);
+#else
+      pthread_mutex_unlock(&notification_pipe_mutex);
+#endif
       caml_leave_blocking_section();
       uerror("lwt_unix_send_notification", Nothing);
     }
@@ -481,7 +499,11 @@ void lwt_unix_send_notification(int id)
     offset += n;
   }
 
-  pthread_mutex_unlock(&notification_pipe_lock);
+#if defined(LWT_WINDOWS)
+  ReleaseMutex(notification_pipe_mutex);
+#else
+  pthread_mutex_unlock(&notification_pipe_mutex);
+#endif
 
   caml_leave_blocking_section();
 }
@@ -496,14 +518,14 @@ value lwt_unix_send_notification_stub(value id)
    | Threads                                                         |
    +-----------------------------------------------------------------+ */
 
-#if !defined(LWT_WINDOWS)
-
-#ifndef PTHREAD_STACK_MIN
-# define PTHREAD_STACK_MIN 0
+#if !defined(X_STACKSIZE)
+#  define X_STACKSIZE sizeof (long) * 4096
 #endif
 
-#ifndef X_STACKSIZE
-# define X_STACKSIZE sizeof (long) * 4096
+#if !defined(LWT_WINDOWS)
+
+#if !defined(PTHREAD_STACK_MIN)
+#  define PTHREAD_STACK_MIN 0
 #endif
 
 void lwt_unix_launch_thread(void* (*start)(void*), void* data)
@@ -534,7 +556,8 @@ void lwt_unix_launch_thread(void* (*start)(void*), void* data)
 
 void lwt_unix_launch_thread(void* (*start)(void*), void* data)
 {
-  invalid_argument("lwt_unix_launch_thread not implemented");
+  if (CreateThread(NULL, X_STACKSIZE, (LPTHREAD_START_ROUTINE)start, (LPVOID)data, 0, NULL) == NULL)
+    uerror("lwt_unix_launch_thread", Nothing);
 }
 
 #endif
@@ -542,6 +565,8 @@ void lwt_unix_launch_thread(void* (*start)(void*), void* data)
 /* +-----------------------------------------------------------------+
    | Test for readability/writability                                |
    +-----------------------------------------------------------------+ */
+
+#if !defined(LWT_WINDOWS)
 
 #include <poll.h>
 
@@ -566,3 +591,17 @@ value lwt_unix_writable(value fd)
     uerror("lwt_unix_readable", Nothing);
   return (Val_bool(pollfd.revents & POLLOUT));
 }
+
+#else
+
+value lwt_unix_readable(value fd)
+{
+  return Val_int(1);
+}
+
+value lwt_unix_writable(value fd)
+{
+  return Val_int(1);
+}
+
+#endif

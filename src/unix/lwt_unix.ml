@@ -557,7 +557,7 @@ let tcflow ch f =
    | Notifications                                                   |
    +-----------------------------------------------------------------+ *)
 
-external set_notification_fd_writer : Unix.file_descr -> unit = "lwt_unix_set_notification_fd_writer"
+external init_notification : Unix.file_descr -> unit = "lwt_unix_init_notification"
 external send_notification : int -> unit = "lwt_unix_send_notification_stub"
 
 (* Pipe used to send/receive notifications *)
@@ -565,7 +565,7 @@ let notification_fd_reader, notification_fd_writer = pipe_in ()
 
 let () =
   (* Send the writing side of the pipe to the C code: *)
-  set_notification_fd_writer notification_fd_writer;
+  init_notification notification_fd_writer;
 
   set_close_on_exec notification_fd_reader;
   Unix.set_close_on_exec notification_fd_writer
