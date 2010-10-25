@@ -26,7 +26,6 @@
 #include <caml/fail.h>
 #include <caml/mlvalues.h>
 #include <caml/memory.h>
-#include <caml/unixsupport.h>
 #include <caml/signals.h>
 #include <caml/config.h>
 #include <signal.h>

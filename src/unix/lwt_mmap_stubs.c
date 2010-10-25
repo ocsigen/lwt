@@ -20,7 +20,6 @@
  * 02111-1307, USA.
  */
 
-#include <sys/mman.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
@@ -34,16 +33,44 @@
 #include <caml/fail.h>
 #include <caml/bigarray.h>
 #include <caml/callback.h>
-#include <caml/unixsupport.h>
 #include <caml/signals.h>
 
 #include "lwt_unix.h"
 
-CAMLprim value
-lwt_mmap_init_pagesize ( value v_unit )
+#if defined(LWT_WINDOWS)
+#  include <windows.h>
+#else
+#  include <sys/mman.h>
+#endif
+
+long page_size = -1;
+
+#if defined(LWT_WINDOWS)
+
+CAMLprim value lwt_mmap_init_pagesize()
 {
-  long page_size = sysconf(_SC_PAGESIZE);
-  return( Val_long ( page_size ) );
+  SYSTEM_INFO si;
+  GetSystemInfo(&si);
+  page_size = si.dwPageSize;
+  return Val_long(page_size);
+}
+
+CAMLprim value lwt_mmap_mincore(value v_bigarray, value v_offset, value v_len)
+{
+  return Val_int(1);
+}
+
+CAMLprim value lwt_mmap_madvise(value bigarrayv, value offsetv, value lenv, value advisev)
+{
+  return Val_unit;
+}
+
+#else
+
+CAMLprim value lwt_mmap_init_pagesize()
+{
+  page_size = sysconf(_SC_PAGESIZE);
+  return Val_long(page_size);
 }
 
 CAMLprim value
@@ -56,11 +83,10 @@ lwt_mmap_mincore ( value v_bigarray, value v_offset, value v_len )
   char *data;
   unsigned char *vec;
   int len, offset, r;
-  long page_size = sysconf(_SC_PAGESIZE);
 
   offset = Int_val (v_offset);
   len = Int_val (v_len);
-  
+
   assert( offset <= Caml_ba_array_val(v_bigarray)->dim[0] );
 
   v_vec = caml_alloc_string (len);
@@ -98,7 +124,7 @@ lwt_mmap_madvise (value bigarrayv, value offsetv, value lenv, value advisev)
   char err_str[32];
   char *data;
   int len, offset, bigarray_len, r, advise;
-  
+
   offset = Int_val (offsetv);
   len = Int_val (lenv);
   advise = advise_of_int( Int_val (advisev) );
@@ -116,6 +142,8 @@ lwt_mmap_madvise (value bigarrayv, value offsetv, value lenv, value advisev)
 
   CAMLreturn (Val_unit);
 }
+
+#endif
 
 CAMLprim value lwt_mmap_write( value v_fd, value v_bstr, value v_pos, value v_len )
 {
