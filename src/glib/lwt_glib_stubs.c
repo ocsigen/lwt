@@ -27,100 +27,128 @@
 #include <caml/fail.h>
 #include <caml/signals.h>
 #include <caml/callback.h>
-#include <stdlib.h>
-#include <string.h>
-#include <poll.h>
 #include <glib.h>
-#include <stdio.h>
+#include <ev.h>
 
-CAMLprim value lwt_glib_get_poll_bits(value unit)
+void lwt_libev_check_blocking_section();
+extern struct ev_loop *lwt_libev_main_loop;
+
+GMainContext *gc;
+ev_prepare prepare_watcher;
+ev_check check_watcher;
+ev_timer timer_watcher;
+ev_io *io_watchers = NULL;
+GPollFD *gpollfds = NULL;
+gint fds_count = 0;
+gint n_fds;
+gint max_priority;
+
+/* +-----------------------------------------------------------------+
+   | Prepare                                                         |
+   +-----------------------------------------------------------------+ */
+
+static void nop() {}
+
+static void prepare(struct ev_loop *loop, ev_prepare *watcher, int revents)
 {
-  CAMLparam1(unit);
-  CAMLlocal1(x);
-  x = caml_alloc_tuple(3);
-  Store_field(x, 0, Val_int(POLLIN));
-  Store_field(x, 1, Val_int(POLLOUT));
-  Store_field(x, 2, Val_int(POLLERR));
-  CAMLreturn(x);
-}
+  gint timeout;
 
-/* The polling function defined by glib: */
-GPollFunc old_poll_func;
+  g_main_context_dispatch(gc);
+  g_main_context_prepare(gc, &max_priority);
 
-#define GPollFD_val(v) *(GPollFD**)Data_custom_val(v)
-
-/* The ``real'' poll function. It is responsible for calling the
-   glib-defined poll function with the list of file-descriptors
-   monitored by lwt and glib. */
-CAMLprim value lwt_glib_real_poll(value glib_ufds, value glib_nfds, value lwt_ufds, value lwt_nfds, value timeout)
-{
-  CAMLparam5(glib_ufds, glib_nfds, lwt_ufds, lwt_nfds, timeout);
-
-  /* List of glib fds + lwt fds */
-  guint nfds = Int_val(lwt_nfds) + Int_val(glib_nfds);
-  GPollFD *ufds = (GPollFD*)malloc(sizeof(GPollFD) * nfds);
-  if (ufds == NULL) caml_failwith("out of memory");
-
-  /* Copy glib fds: */
-  memcpy(ufds, GPollFD_val(glib_ufds), sizeof(GPollFD) * Int_val(glib_nfds));
-
-  GPollFD *fp;
-  value l;
-
-  /* Copy lwt fds: */
-  for(fp = ufds + Int_val(glib_nfds), l = lwt_ufds; Is_block(l); fp++, l = Field(l, 1)) {
-    value poll_fd = Field(l, 0);
-    fp->fd = Int_val(Field(poll_fd, 0));
-    fp->events = Int_val(Field(poll_fd, 1));
-    fp->revents = 0;
+  while (fds_count < (n_fds = g_main_context_query(gc, max_priority, &timeout, gpollfds, fds_count))) {
+    free(gpollfds);
+    free(io_watchers);
+    fds_count = n_fds;
+    gpollfds = malloc(fds_count * sizeof (GPollFD));
+    io_watchers = malloc(fds_count * sizeof (ev_io));
   }
 
-  /* Call the old glib polling function: */
-  enter_blocking_section();
-  int result = old_poll_func(ufds, nfds, Int_val(timeout));
-  leave_blocking_section();
+  int i;
+  for (i = 0; i < n_fds; i++)
+    {
+      GPollFD *gpollfd = gpollfds + i;
+      ev_io *io_watcher = io_watchers + i;
 
-  /* Copy back glib fds: */
-  memcpy(GPollFD_val(glib_ufds), ufds, sizeof(GPollFD) * Int_val(glib_nfds));
+      gpollfd->revents = 0;
 
-  /* Copy back lwt fds: */
-  for(fp = ufds + Int_val(glib_nfds), l = lwt_ufds; Is_block(l); fp++, l = Field(l, 1)) {
-    value poll_fd = Field(l, 0);
-    Store_field(poll_fd, 1, Val_int(fp->revents));
+      int events = 0;
+      if (gpollfd->events & G_IO_IN) events |= EV_READ;
+      if (gpollfd->events & G_IO_OUT) events |= EV_WRITE;
+
+      ev_io_init(io_watcher, nop, gpollfd->fd, events);
+
+      ev_set_priority(io_watcher, EV_MINPRI);
+      ev_io_start(lwt_libev_main_loop, io_watcher);
+    }
+
+  if (timeout >= 0) {
+    ev_timer_set(&timer_watcher, timeout * 1e-3, 0.);
+    ev_timer_start(lwt_libev_main_loop, &timer_watcher);
   }
-
-  CAMLreturn(Val_int(result));
 }
 
-/* Just a C pointer */
-static struct custom_operations pointer_ops = {
-  "lwt.glib.pointer",
-  custom_finalize_default,
-  NULL,
-  NULL,
-  custom_serialize_default,
-  custom_deserialize_default
-};
+/* +-----------------------------------------------------------------+
+   | Check                                                           |
+   +-----------------------------------------------------------------+ */
 
-/* Wrapper for replacing the poll function of glib. It calls the ocaml
-   wrapper which adds all the file-descriptors that lwt want to
-   monitor: */
-gint lwt_glib_poll(GPollFD *ufds, guint nfds, gint timeout)
+static void check(struct ev_loop *loop, ev_check *watcher, int revents)
 {
-  value pointer = caml_alloc_custom(&pointer_ops, sizeof(GPollFD*), 0, 1);
-  GPollFD_val(pointer) = ufds;
-  return Int_val(caml_callback3(*caml_named_value("lwt-glib-select"), pointer, Val_int(nfds), Val_int(timeout)));
+  lwt_libev_check_blocking_section();
+
+  int i;
+  for (i = 0; i < n_fds; i++)
+    {
+      ev_io *io_watcher = io_watchers + i;
+
+      if (ev_is_pending(io_watcher))
+        {
+          GPollFD *gpollfd = gpollfds + i;
+          int revents = ev_clear_pending(loop, io_watcher);
+          int grevents = 0;
+
+          if (revents & EV_READ) grevents |= G_IO_IN;
+          if (revents & EV_WRITE) grevents |= G_IO_OUT;
+
+          gpollfd->revents = grevents;
+        }
+
+      ev_io_stop (loop, io_watcher);
+    }
+
+  if (ev_is_active(&timer_watcher)) ev_timer_stop(loop, &timer_watcher);
+
+  g_main_context_check(gc, max_priority, gpollfds, n_fds);
 }
 
-/* ``plug'' our polling function into the glib: */
-void lwt_glib_setup()
+/* +-----------------------------------------------------------------+
+   | Installation/suppression                                        |
+   +-----------------------------------------------------------------+ */
+
+value lwt_glib_install()
 {
-  old_poll_func = g_main_context_get_poll_func(NULL);
-  g_main_context_set_poll_func(NULL, lwt_glib_poll);
+  gc = g_main_context_default();
+  g_main_context_ref(gc);
+
+  ev_prepare_init(&prepare_watcher, prepare);
+  ev_set_priority(&prepare_watcher, EV_MINPRI);
+  ev_prepare_start(EV_DEFAULT, &prepare_watcher);
+
+  ev_check_init(&check_watcher, check);
+  ev_set_priority(&check_watcher, EV_MAXPRI);
+  ev_check_start(EV_DEFAULT, &check_watcher);
+
+  ev_init(&timer_watcher, nop);
+  ev_set_priority(&timer_watcher, EV_MINPRI);
+
+  return Val_unit;
 }
 
-/* ``unplug'' our polling function from the glib: */
-void lwt_glib_reset()
+value lwt_glib_remove()
 {
-  g_main_context_set_poll_func(NULL, old_poll_func);
+  g_main_context_unref(gc);
+  ev_prepare_stop(lwt_libev_main_loop, &prepare_watcher);
+  ev_check_stop(lwt_libev_main_loop, &check_watcher);
+  if (ev_is_active(&timer_watcher)) ev_timer_stop(lwt_libev_main_loop, &timer_watcher);
+  return Val_unit;
 }

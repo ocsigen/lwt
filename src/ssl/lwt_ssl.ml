@@ -52,9 +52,9 @@ let repeat_call fd f =
     Lwt.return (wrap_call f ())
   with
     Lwt_unix.Retry_read ->
-      Lwt_unix.register_action Lwt_unix.inputs fd (wrap_call f)
+      Lwt_unix.register_action Lwt_unix.Read fd (wrap_call f)
   | Lwt_unix.Retry_write ->
-      Lwt_unix.register_action Lwt_unix.outputs fd (wrap_call f)
+      Lwt_unix.register_action Lwt_unix.Write fd (wrap_call f)
   | e ->
       raise_lwt e
 

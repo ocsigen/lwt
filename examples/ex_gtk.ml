@@ -34,17 +34,23 @@
    cooperative thread.
 *)
 
+open Lwt
+
 (* The counter *)
 let num = ref 0
 
-let _ =
-  (* Needed for using Lwt+GLib, it replaces GLib initialization: *)
-  Lwt_glib.init ();
+lwt () =
+  ignore (GMain.init ());
+
+  (* Needed for using Lwt+GLib: *)
+  Lwt_glib.install ();
+
+  let waiter, wakener = Lwt.wait () in
 
   (* Creates the windows, and connects standard events: *)
   let window = GWindow.window ~border_width:10 () in
   let _ = window#event#connect#delete ~callback:(fun _ -> false)
-  and _ = window#connect#destroy ~callback:Lwt_glib.quit in
+  and _ = window#connect#destroy ~callback:(fun () -> wakeup wakener ()) in
 
   (* Creates a box, the decrement button and the label: *)
   let box = GPack.vbox ~packing:window#add () in
@@ -70,5 +76,4 @@ let _ =
   (* Display the main window of the application: *)
   window#show ();
 
-  (* Main loop: *)
-  GMain.Main.main ()
+  waiter

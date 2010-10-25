@@ -31,18 +31,23 @@
 #include <caml/config.h>
 #include <signal.h>
 #include <sys/types.h>
-#if !defined(__MINGW32__)
-#include <sys/socket.h>
-#endif
 #include <errno.h>
 #include <string.h>
-#include <pthread.h>
+
+#include "lwt_unix.h"
+
+#if defined(LWT_WINDOWS)
+#  include <windows.h>
+#else
+#  include <sys/socket.h>
+#  include <pthread.h>
+#endif
 
 /* +-----------------------------------------------------------------+
    | Read/write                                                      |
    +-----------------------------------------------------------------+ */
 
-#if !defined(__MINGW32__)
+#if !defined(LWT_WINDOWS)
 
 /* This code is a simplified version of the default unix_write and
    unix_read functions of caml.
@@ -86,7 +91,7 @@ value lwt_unix_read(value fd, value buf, value ofs, value len)
    | Recv/send                                                       |
    +-----------------------------------------------------------------+ */
 
-#if !defined(__MINGW32__)
+#if !defined(LWT_WINDOWS)
 
 static int msg_flag_table[] = {
   MSG_OOB, MSG_DONTROUTE, MSG_PEEK
@@ -128,7 +133,7 @@ value lwt_unix_send(value fd, value buf, value ofs, value len, value flags)
    | {recv/send}_msg                                                 |
    +-----------------------------------------------------------------+ */
 
-#if !defined(__MINGW32__)
+#if !defined(LWT_WINDOWS)
 
 /* Convert a caml list of io-vectors into a C array io io-vector
    structures */
@@ -240,11 +245,9 @@ value lwt_unix_send_msg(value sock_val, value n_iovs_val, value iovs_val, value 
    | Credentials                                                     |
    +-----------------------------------------------------------------+ */
 
-#if !defined(__MINGW32__)
-#include <sys/un.h>
-#endif
+#if defined(SO_PEERCRED) && !defined(LWT_WINDOWS)
 
-#if defined(SO_PEERCRED) && !defined(__MINGW32__)
+#include <sys/un.h>
 
 CAMLprim value lwt_unix_get_credentials(value fd)
 {
@@ -273,123 +276,11 @@ CAMLprim value lwt_unix_get_credentials(value fd_val)
 #endif
 
 /* +-----------------------------------------------------------------+
-   | Select                                                          |
-   +-----------------------------------------------------------------+ */
-
-#if defined(HAS_SELECT) && !defined(__MINGW32__)
-
-#include <sys/time.h>
-#ifdef HAS_SYS_SELECT_H
-#include <sys/select.h>
-#endif
-#include <string.h>
-#include <unistd.h>
-
-typedef fd_set file_descr_set;
-
-static void fdlist_to_fdset(value fdlist, fd_set *fdset)
-{
-  value l;
-  for (l = fdlist; l != Val_int(0); l = Field(l, 1)) {
-    int fd = Int_val(Field(l, 0));
-    FD_SET(fd, fdset);
-  }
-}
-
-static value fdset_to_fdlist(value fdlist, fd_set *fdset)
-{
-  value l;
-  value res = Val_int(0);
-
-  Begin_roots2(l, res);
-    for (l = fdlist; l != Val_int(0); l = Field(l, 1)) {
-      int fd = Int_val(Field(l, 0));
-      if (FD_ISSET(fd, fdset)) {
-        value newres = alloc_small(2, 0);
-        Field(newres, 0) = Val_int(fd);
-        Field(newres, 1) = res;
-        res = newres;
-      }
-    }
-  End_roots();
-  return res;
-}
-
-static void fdlist_maxfd(value fdlist, int *maxfd)
-{
-  value l;
-  for (l = fdlist; l != Val_int(0); l = Field(l, 1)) {
-    int fd = Int_val(Field(l, 0));
-    if (fd > *maxfd) *maxfd = fd;
-  }
-}
-
-CAMLprim value lwt_unix_select(value readfds,
-                           value writefds,
-                           value exceptfds,
-                           value timeout)
-{
-  int maxfd;
-  double tm;
-  struct timeval tv;
-  struct timeval * tvp;
-  int retcode;
-  value res;
-
-  Begin_roots3 (readfds, writefds, exceptfds);
-    maxfd = -1;
-    fdlist_maxfd(readfds, &maxfd);
-    fdlist_maxfd(writefds, &maxfd);
-    fdlist_maxfd(exceptfds, &maxfd);
-    int num_fdset = maxfd / FD_SETSIZE + 1;
-    fd_set read[num_fdset], write[num_fdset], except[num_fdset];
-    int count = num_fdset * sizeof(fd_set);
-    memset(&read, 0, count);
-    memset(&write, 0, count);
-    memset(&except, 0, count);
-    fdlist_to_fdset(readfds, &(read[0]));
-    fdlist_to_fdset(writefds, &(write[0]));
-    fdlist_to_fdset(exceptfds, &(except[0]));
-    tm = Double_val(timeout);
-    if (tm < 0.0)
-      tvp = (struct timeval *) NULL;
-    else {
-      tv.tv_sec = (int) tm;
-      tv.tv_usec = (int) (1e6 * (tm - tv.tv_sec));
-      tvp = &tv;
-    }
-    enter_blocking_section();
-    retcode = select(maxfd + 1, &(read[0]), &(write[0]), &(except[0]), tvp);
-    leave_blocking_section();
-    if (retcode == -1) uerror("select", Nothing);
-    readfds = fdset_to_fdlist(readfds, &(read[0]));
-    writefds = fdset_to_fdlist(writefds, &(write[0]));
-    exceptfds = fdset_to_fdlist(exceptfds, &(except[0]));
-    res = alloc_small(3, 0);
-    Field(res, 0) = readfds;
-    Field(res, 1) = writefds;
-    Field(res, 2) = exceptfds;
-  End_roots();
-  return res;
-}
-
-#else
-
-CAMLprim value lwt_unix_select(value readfds, value writefds, value exceptfds,
-                               value timeout)
-{
-  invalid_argument("select not implemented");
-}
-
-#endif
-
-/* +-----------------------------------------------------------------+
    | Terminal sizes                                                  |
    +-----------------------------------------------------------------+ */
 
-#if defined(__MINGW32__)
+#if defined(LWT_WINDOWS)
 
-#include <windows.h>
 #include <wincon.h>
 
 CAMLprim value lwt_unix_term_size(value unit)
@@ -446,7 +337,7 @@ value lwt_unix_sigwinch()
    | wait4                                                           |
    +-----------------------------------------------------------------+ */
 
-#if !defined(__MINGW32__)
+#if defined(HAS_WAIT4) && !defined(LWT_WINDOWS)
 
 /* Some code duplicated from OCaml's otherlibs/unix/wait.c */
 
@@ -502,8 +393,6 @@ value lwt_unix_wait4(value flags, value pid_req)
   int pid, status, cv_flags;
   cv_flags = caml_convert_flag_list(flags, wait_flag_table);
 
-#if defined(HAS_WAIT4)
-
   struct rusage ru;
 
   caml_enter_blocking_section();
@@ -515,23 +404,6 @@ value lwt_unix_wait4(value flags, value pid_req)
   Store_double_field(times, 0, ru.ru_utime.tv_sec + ru.ru_utime.tv_usec / 1e6);
   Store_double_field(times, 1, ru.ru_stime.tv_sec + ru.ru_stime.tv_usec / 1e6);
 
-#elif defined(HAS_WAITPID)
-
-  enter_blocking_section();
-  pid = waitpid(Int_val(pid_req), &status, cv_flags);
-  leave_blocking_section();
-  if (pid == -1) uerror("waitpid", Nothing);
-
-  times = alloc_small(2 * Double_wosize, Double_array_tag);
-  Store_double_field(times, 0, 0);
-  Store_double_field(times, 1, 0);
-
-#else
-
-  caml_invalid_argument("wait4 not implemented");
-
-#endif
-
   res = caml_alloc_tuple(3);
   Store_field(res, 0, Val_int(pid));
   Store_field(res, 1, alloc_process_status(status));
@@ -541,11 +413,7 @@ value lwt_unix_wait4(value flags, value pid_req)
 
 value lwt_unix_has_wait4(value unit)
 {
-#ifdef HAS_WAIT4
   return Val_int(1);
-#else
-  return Val_int(0);
-#endif
 }
 
 #else
@@ -584,7 +452,7 @@ pthread_mutex_t notification_pipe_lock = PTHREAD_MUTEX_INITIALIZER;
 
 value lwt_unix_set_notification_fd_writer(value fd)
 {
-  notification_fd_writer = Int_val(fd);
+  notification_fd_writer = FD_val(fd);
   return Val_unit;
 }
 
@@ -628,6 +496,8 @@ value lwt_unix_send_notification_stub(value id)
    | Threads                                                         |
    +-----------------------------------------------------------------+ */
 
+#if !defined(LWT_WINDOWS)
+
 #ifndef PTHREAD_STACK_MIN
 # define PTHREAD_STACK_MIN 0
 #endif
@@ -660,3 +530,39 @@ void lwt_unix_launch_thread(void* (*start)(void*), void* data)
   pthread_attr_destroy (&attr);
 }
 
+#else
+
+void lwt_unix_launch_thread(void* (*start)(void*), void* data)
+{
+  invalid_argument("lwt_unix_launch_thread not implemented");
+}
+
+#endif
+
+/* +-----------------------------------------------------------------+
+   | Test for readability/writability                                |
+   +-----------------------------------------------------------------+ */
+
+#include <poll.h>
+
+value lwt_unix_readable(value fd)
+{
+  struct pollfd pollfd;
+  pollfd.fd = Int_val(fd);
+  pollfd.events = POLLIN;
+  pollfd.revents = 0;
+  if (poll(&pollfd, 1, 0) < 0)
+    uerror("lwt_unix_readable", Nothing);
+  return (Val_bool(pollfd.revents & POLLIN));
+}
+
+value lwt_unix_writable(value fd)
+{
+  struct pollfd pollfd;
+  pollfd.fd = Int_val(fd);
+  pollfd.events = POLLOUT;
+  pollfd.revents = 0;
+  if (poll(&pollfd, 1, 0) < 0)
+    uerror("lwt_unix_readable", Nothing);
+  return (Val_bool(pollfd.revents & POLLOUT));
+}

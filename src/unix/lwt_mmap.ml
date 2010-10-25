@@ -78,7 +78,7 @@ let bigarray_write ch buf pos len =
   if pos < 0 || len < 0 || pos > Bigarray.Array1.dim buf - len then
     invalid_arg "Lwt_mmap.bigarray_write"
   else
-    Lwt_unix.wrap_syscall Lwt_unix.outputs ch (fun () -> lwt_mmap_write
+    Lwt_unix.wrap_syscall Lwt_unix.Write ch (fun () -> lwt_mmap_write
       (Lwt_unix.unix_file_descr ch) buf pos len)
 
 let rec wait_mmap t offset len =

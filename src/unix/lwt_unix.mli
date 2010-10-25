@@ -454,10 +454,6 @@ val tcflow : file_descr -> Unix.flow_action -> unit
 
 (** {6 Low-level interaction} *)
 
-type watchers
-  (** Type of a set of watchers, i.e. a set of action waiting for a {b
-      file descriptor} to be readable/writable. *)
-
 exception Retry
   (** If an action raises {!Retry}, it will be requeued until the {b
       file descriptor} becomes readable/writable again. *)
@@ -470,15 +466,9 @@ exception Retry_write
   (** If an action raises {!Retry_read}, it will be requeued until the
       {b file descriptor} becomes writables. *)
 
-val inputs : watchers
-  (** The set of action waiting for a {b file descriptor} to become
-      readable *)
+type io_event = Read | Write
 
-val outputs : watchers
-  (** The set of action waiting for a {b file descriptor} to become
-      writable *)
-
-val wrap_syscall : watchers -> file_descr -> (unit -> 'a) -> 'a Lwt.t
+val wrap_syscall : io_event -> file_descr -> (unit -> 'a) -> 'a Lwt.t
   (** [wrap_syscall set fd action] wrap an action on a {b file
       descriptor}. It tries to execture action, and if it can not be
       performed immediately without blocking, it is registered for
@@ -491,7 +481,7 @@ val check_descriptor : file_descr -> unit
   (** [check_descriptor fd] raise an exception if [fd] is not in the
       state {!Open} *)
 
-val register_action : watchers -> file_descr -> (unit -> 'a) -> 'a Lwt.t
+val register_action : io_event -> file_descr -> (unit -> 'a) -> 'a Lwt.t
   (** [register_action set fd action] registers [action] on [fd]. When
       [fd] becomes [readable]/[writable] [action] is called.
 
@@ -529,12 +519,6 @@ val stop_notification : int -> unit
       This function is not thread-safe. *)
 
 (**/**)
-
-val inputs_length : unit -> int
-val outputs_length : unit -> int
-val wait_children_length : unit -> int
-val get_new_sleeps : unit -> int
-val sleep_queue_size : unit -> int
 
 val run : 'a Lwt.t -> 'a
   (* Same as {!Lwt_main.run} *)

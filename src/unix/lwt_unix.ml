@@ -29,38 +29,36 @@ module Int_map = Map.Make(struct type t = int let compare = compare end)
 let windows_hack = Sys.os_type <> "Unix"
 
 (* +-----------------------------------------------------------------+
+   | libev suff                                                      |
+   +-----------------------------------------------------------------+ *)
+
+type io_event = Read | Write
+
+type ev_io
+type ev_signal
+type ev_timer
+type ev_child
+
+external ev_io_init : Unix.file_descr -> io_event -> (ev_io -> unit) -> ev_io = "lwt_libev_io_init"
+external ev_io_stop : ev_io -> unit = "lwt_libev_io_stop"
+external ev_signal_init : int -> (ev_signal -> unit) -> ev_signal = "lwt_libev_signal_init"
+external ev_signal_stop : ev_signal -> unit  = "lwt_libev_signal_stop"
+external ev_timer_init : float -> (ev_timer -> unit) -> ev_timer = "lwt_libev_timer_init"
+external ev_timer_stop : ev_timer -> unit  = "lwt_libev_timer_stop"
+external ev_child_init : int -> (ev_child -> Unix.process_status -> unit) -> ev_child = "lwt_libev_child_init"
+external ev_child_stop : ev_child -> unit  = "lwt_libev_child_stop"
+
+(* +-----------------------------------------------------------------+
    | Sleepers                                                        |
    +-----------------------------------------------------------------+ *)
 
-type sleep = {
-  time : float;
-  mutable canceled : bool;
-  thread : unit Lwt.u;
-}
-
-module SleepQueue =
-  Lwt_pqueue.Make (struct
-                     type t = sleep
-                     let compare { time = t1 } { time = t2 } = compare t1 t2
-                   end)
-
-(* Threads waiting for a timeout to expire: *)
-let sleep_queue = ref SleepQueue.empty
-
-(* Sleepers added since the last iteration of the main loop:
-
-   They are not added immediatly to the main sleep queue in order to
-   prevent them from being wakeup immediatly by [restart_threads].
-*)
-let new_sleeps = ref []
-
 let sleep d =
-  let (res, w) = Lwt.task () in
-  let t = if d <= 0. then 0. else Unix.gettimeofday () +. d in
-  let sleeper = { time = t; canceled = false; thread = w } in
-  new_sleeps := sleeper :: !new_sleeps;
-  Lwt.on_cancel res (fun _ -> sleeper.canceled <- true);
-  res
+  let waiter, wakener = Lwt.task () in
+  let ev = ev_timer_init d (fun ev ->
+                              ev_timer_stop ev;
+                              Lwt.wakeup wakener ()) in
+  Lwt.on_cancel waiter (fun () -> ev_timer_stop ev);
+  waiter
 
 let yield () = sleep 0.
 
@@ -76,26 +74,9 @@ let auto_yield timeout =
 
 exception Timeout
 
-let timeout d = sleep d >> raise_lwt Timeout
+let timeout d = sleep d >> Lwt.fail Timeout
 
 let with_timeout d f = Lwt.pick [timeout d; Lwt.apply f ()]
-
-let in_the_past now t =
-  t = 0. || t <= Lazy.force now
-
-(* We use a lazy-value for [now] to avoid one system call if not
-   needed: *)
-let rec restart_threads now =
-  match SleepQueue.lookup_min !sleep_queue with
-    | Some{ canceled = true } ->
-        sleep_queue := SleepQueue.remove_min !sleep_queue;
-        restart_threads now
-    | Some{ time = time; thread = thread } when in_the_past now time ->
-        sleep_queue := SleepQueue.remove_min !sleep_queue;
-        Lwt.wakeup thread ();
-        restart_threads now
-    | _ ->
-        ()
 
 (* +-----------------------------------------------------------------+
    | File descriptor wrappers                                        |
@@ -150,20 +131,12 @@ let set_blocking ch blocking =
   else
     Unix.set_nonblock ch.fd
 
-let readable fd = Lwt_select.select [fd] [] [] 0.0 <> ([], [], [])
-let writable fd = Lwt_select.select [] [fd] [] 0.0 <> ([], [], [])
+external readable : Unix.file_descr -> bool = "lwt_unix_readable" "noalloc"
+external writable : Unix.file_descr -> bool = "lwt_unix_writable" "noalloc"
 
 (* +-----------------------------------------------------------------+
    | Actions on file descriptors                                     |
    +-----------------------------------------------------------------+ *)
-
-module FdMap =
-  Map.Make (struct type t = Unix.file_descr let compare = compare end)
-
-type watchers = (file_descr * (unit -> unit) Lwt_sequence.t) FdMap.t ref
-
-let inputs = ref FdMap.empty
-let outputs = ref FdMap.empty
 
 exception Retry
 exception Retry_write
@@ -172,19 +145,11 @@ exception Retry_read
 type 'a outcome =
   | Success of 'a
   | Exn of exn
-  | Requeued of watchers
-
-let get_actions ch set =
-  try
-    snd (FdMap.find ch.fd !set)
-  with Not_found ->
-    let seq = Lwt_sequence.create () in
-    set := FdMap.add ch.fd (ch, seq) !set;
-    seq
+  | Requeued of io_event
 
 (* Retry a queued syscall, [cont] is the thread to wakeup
    if the action succeed: *)
-let rec retry_syscall set ch cont action =
+let rec retry_syscall ev event ch wakener action =
   let res =
     try
       check_descriptor ch;
@@ -196,80 +161,60 @@ let rec retry_syscall set ch cont action =
           (* EINTR because we are catching SIG_CHLD hence the system
              call might be interrupted to handle the signal; this lets
              us restart the system call eventually. *)
-          Requeued set
+          Requeued event
       | Retry_read ->
-          Requeued inputs
+          Requeued Read
       | Retry_write ->
-          Requeued outputs
+          Requeued Write
       | e ->
           Exn e
   in
   match res with
     | Success v ->
-        Lwt.wakeup cont v
+        ev_io_stop ev;
+        Lwt.wakeup wakener v
     | Exn e ->
-        Lwt.wakeup_exn cont e
-    | Requeued set ->
-        ignore (Lwt_sequence.add_r (fun _ -> retry_syscall set ch cont action) (get_actions ch set))
+        ev_io_stop ev;
+        Lwt.wakeup_exn wakener e
+    | Requeued event' ->
+        if event <> event' then begin
+          ev_io_stop ev;
+          ignore (ev_io_init ch.fd event' (fun ev -> retry_syscall ev event' ch wakener action))
+        end
 
-let register_action set ch action =
-  let (res, w) = Lwt.task () in
-  let actions = get_actions ch set in
-  let node = Lwt_sequence.add_r (fun _ -> retry_syscall set ch w action) actions in
-  (* Unregister the action on cancel: *)
-  Lwt.on_cancel res begin fun _ ->
-    Lwt_sequence.remove node;
-    if Lwt_sequence.is_empty actions then
-      (* If there is no other action queued on the file-descriptor,
-         remove it: *)
-      set := FdMap.remove ch.fd !set
-  end;
-  res
+let register_action event ch action =
+  let waiter, wakener = Lwt.task () in
+  let ev = ev_io_init ch.fd event (fun ev -> retry_syscall ev event ch wakener action) in
+  Lwt.on_cancel waiter (fun () -> ev_io_stop ev);
+  waiter
 
 (* Wraps a system call *)
-let wrap_syscall set ch action =
+let wrap_syscall event ch action =
   try
     check_descriptor ch;
-    if not ch.blocking || (set == inputs && readable ch.fd) || (set == outputs && writable ch.fd) then
+    if not ch.blocking || (event = Read && readable ch.fd) || (event == Write && writable ch.fd) then
       return (action ())
     else
-      register_action set ch action
+      register_action event ch action
   with
     | Retry
     | Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _)
     | Sys_blocked_io ->
         (* The action could not be completed immediatly, register it: *)
-        register_action set ch action
+        register_action event ch action
     | Retry_read ->
-        register_action inputs ch action
+        register_action Read ch action
     | Retry_write ->
-        register_action outputs ch action
+        register_action Write ch action
     | e ->
         raise_lwt e
-
-(* Performs all registered actions on [fd]: *)
-let perform_actions set fd =
-  try
-    let (ch, actions) = FdMap.find fd !set in
-    set := FdMap.remove fd !set;
-    List.iter (fun f -> f ()) (Lwt_sequence.fold_l (fun x l -> x :: l) actions [])
-  with Not_found ->
-    ()
-
-let active_descriptors set acc =
-  FdMap.fold (fun key _ acc -> key :: acc) !set acc
-
-let blocked_thread_count set =
-  FdMap.fold (fun key (_, l) c -> Lwt_sequence.fold_l (fun _ x -> x + 1) l 0 + c) !set 0
 
 (* +-----------------------------------------------------------------+
    | System calls                                                    |
    +-----------------------------------------------------------------+ *)
 
 let set_state ch st =
-  ch.state <- st;
-  perform_actions inputs ch.fd;
-  perform_actions outputs ch.fd
+  ch.state <- st
 
 let abort ch e =
   if ch.state <> Closed then
@@ -295,39 +240,39 @@ let read ch buf pos len =
     invalid_arg "Lwt_unix.read"
   else if windows_hack then begin
     check_descriptor ch;
-    register_action inputs ch (fun () -> Unix.read ch.fd buf pos len)
+    register_action Read ch (fun () -> Unix.read ch.fd buf pos len)
   end else
-    wrap_syscall inputs ch (fun () -> lwt_unix_read ch.fd buf pos len)
+    wrap_syscall Read ch (fun () -> lwt_unix_read ch.fd buf pos len)
 
 let write ch buf pos len =
   if pos < 0 || len < 0 || pos > String.length buf - len then
     invalid_arg "Lwt_unix.write"
   else if windows_hack then
-    wrap_syscall outputs ch (fun () -> Unix.write ch.fd buf pos len)
+    wrap_syscall Write ch (fun () -> Unix.write ch.fd buf pos len)
   else
-    wrap_syscall outputs ch (fun () -> lwt_unix_write ch.fd buf pos len)
+    wrap_syscall Write ch (fun () -> lwt_unix_write ch.fd buf pos len)
 
 let recv ch buf pos len flags =
   if pos < 0 || len < 0 || pos > String.length buf - len then
     invalid_arg "Lwt_unix.recv"
   else if windows_hack then
-    wrap_syscall inputs ch (fun () -> Unix.recv ch.fd buf pos len flags)
+    wrap_syscall Read ch (fun () -> Unix.recv ch.fd buf pos len flags)
   else
-    wrap_syscall inputs ch (fun () -> lwt_unix_recv ch.fd buf pos len flags)
+    wrap_syscall Read ch (fun () -> lwt_unix_recv ch.fd buf pos len flags)
 
 let send ch buf pos len flags =
   if pos < 0 || len < 0 || pos > String.length buf - len then
     invalid_arg "Lwt_unix.send"
   else if windows_hack then
-    wrap_syscall outputs ch (fun () -> Unix.send ch.fd buf pos len flags)
+    wrap_syscall Write ch (fun () -> Unix.send ch.fd buf pos len flags)
   else
-    wrap_syscall outputs ch (fun () -> lwt_unix_send ch.fd buf pos len flags)
+    wrap_syscall Write ch (fun () -> lwt_unix_send ch.fd buf pos len flags)
 
 let recvfrom ch buf ofs len flags =
-  wrap_syscall inputs ch (fun _ -> Unix.recvfrom ch.fd buf ofs len flags)
+  wrap_syscall Read ch (fun _ -> Unix.recvfrom ch.fd buf ofs len flags)
 
 let sendto ch buf ofs len flags addr =
-  wrap_syscall outputs ch (fun _ -> Unix.sendto ch.fd buf ofs len flags addr)
+  wrap_syscall Write ch (fun _ -> Unix.sendto ch.fd buf ofs len flags addr)
 
 let wait_read ch =
   try_lwt
@@ -335,7 +280,7 @@ let wait_read ch =
     if readable ch.fd then
       return ()
     else
-      register_action inputs ch ignore
+      register_action Read ch ignore
 
 let wait_write ch =
   try_lwt
@@ -343,7 +288,7 @@ let wait_write ch =
     if writable ch.fd then
       return ()
     else
-      register_action outputs ch ignore
+      register_action Write ch ignore
 
 type io_vector = {
   iov_buffer : string;
@@ -370,14 +315,14 @@ let check_io_vectors func_name iovs =
 let recv_msg ~socket ~io_vectors =
   check_io_vectors "Lwt_unix.recv_msg" io_vectors;
   let n_iovs = List.length io_vectors in
-  wrap_syscall inputs socket
+  wrap_syscall Read socket
     (fun () ->
        lwt_unix_recv_msg socket.fd n_iovs io_vectors)
 
 let send_msg ~socket ~io_vectors ~fds =
   check_io_vectors "Lwt_unix.send_msg" io_vectors;
   let n_iovs = List.length io_vectors and n_fds = List.length fds in
-  wrap_syscall outputs socket
+  wrap_syscall Write socket
     (fun () ->
        lwt_unix_send_msg socket.fd n_iovs io_vectors n_fds fds)
 
@@ -416,12 +361,12 @@ let socketpair dom typ proto =
   (mk_ch s1, mk_ch s2)
 
 let accept ch =
-  wrap_syscall inputs ch (fun _ -> let (fd, addr) = Unix.accept ch.fd in (mk_ch fd, addr))
+  wrap_syscall Read ch (fun _ -> let (fd, addr) = Unix.accept ch.fd in (mk_ch fd, addr))
 
 let accept_n ch n =
   let l = ref [] in
   try_lwt
-    wrap_syscall inputs ch begin fun () ->
+    wrap_syscall Read ch begin fun () ->
       begin
         try
           for i = 1 to n do
@@ -443,7 +388,7 @@ let connect ch addr =
   (* [in_progress] tell wether connection has started but not
      terminated: *)
   let in_progress = ref false in
-  wrap_syscall outputs ch begin fun _ ->
+  wrap_syscall Write ch begin fun _ ->
     if !in_progress then
       (* If the connection is in progress, [getsockopt_error] tells
          wether it succceed: *)
@@ -685,62 +630,14 @@ let _ = read_notifications ()
    | Signals                                                         |
    +-----------------------------------------------------------------+ *)
 
-type signal_handler = {
-  sig_node : (int -> unit) Lwt_sequence.node;
-  (* Node containing the function to be called when the signal is
-     received. *)
+type signal_handler_id = unit Lazy.t
 
-  sig_number : int;
-  (* The signal number *)
-}
+let on_signal signum handler =
+  let ev = ev_signal_init signum (fun ev -> handler signum) in
+  lazy(ev_signal_stop ev)
 
-type signal_handler_id = signal_handler option ref
-
-type signal_info = {
-  siginfo_notification_id : int;
-  (* The notification id for signals *)
-
-  siginfo_handlers : (int -> unit) Lwt_sequence.t;
-  (* Sequence of handlers for this signal *)
-}
-
-(* Mapping from signal numbers to their informations *)
-let signals = ref Int_map.empty
-
-let disable_signal_handler signal_handler_id =
-  match !signal_handler_id with
-    | None ->
-        ()
-    | Some signal ->
-        signal_handler_id := None;
-        Lwt_sequence.remove signal.sig_node;
-        let siginfo = Int_map.find signal.sig_number !signals in
-        if Lwt_sequence.is_empty siginfo.siginfo_handlers then begin
-          signals := Int_map.remove signal.sig_number !signals;
-          stop_notification siginfo.siginfo_notification_id;
-          Sys.set_signal signal.sig_number Sys.Signal_default
-        end
-
-let handle_signal id signum =
-  send_notification id
-
-let on_signal signum f =
-  let handlers =
-    match try Some(Int_map.find signum !signals) with Not_found -> None with
-      | Some{ siginfo_handlers = handlers } ->
-          handlers
-      | None ->
-          let handlers = Lwt_sequence.create () in
-          let id = make_notification (fun () -> Lwt_sequence.iter_l (fun f -> f signum) handlers) in
-          signals := Int_map.add signum { siginfo_notification_id = id;
-                                          siginfo_handlers = handlers } !signals;
-          Sys.set_signal signum (Sys.Signal_handle (handle_signal id));
-          handlers
-  in
-  ref (Some{
-         sig_number = signum;
-         sig_node = Lwt_sequence.add_r f handlers;
-       })
+let disable_signal_handler stop =
+  Lazy.force stop
 
 (* +-----------------------------------------------------------------+
    | Processes                                                       |
@@ -761,64 +658,87 @@ let real_wait4 =
        let pid, status = Unix.waitpid flags pid in
        (pid, status, { ru_utime = 0.0; ru_stime = 0.0 }))
 
+type child_waiter = {
+  cw_notify_id : int;
+  cw_flags : Unix.wait_flag list;
+  cw_pid : int;
+  mutable cw_result : (int * Unix.process_status * resource_usage) Lwt.t;
+}
+
 let wait_children = Lwt_sequence.create ()
 
 let () =
   if not windows_hack then
-    ignore begin
-      on_signal Sys.sigchld
-        (fun _ ->
-           Lwt_sequence.iter_node_l begin fun node ->
-             let cont, flags, pid = Lwt_sequence.get node in
-             try
-               let (pid', _, _) as v = lwt_unix_wait4 flags pid in
-               if pid' <> 0 then begin
-                 Lwt_sequence.remove node;
-                 Lwt.wakeup cont v
-               end
-             with e ->
-               Lwt_sequence.remove node;
-               Lwt.wakeup_exn cont e
-           end wait_children)
-    end
+    Sys.set_signal Sys.sigchld
+      (Sys.Signal_handle
+         (fun signum ->
+            Lwt_sequence.iter_node_l
+              (fun node ->
+                 let cw = Lwt_sequence.get node in
+                 try
+                   let (pid, _, _) as result = real_wait4 cw.cw_flags cw.cw_pid in
+                   if pid <> 0 then begin
+                     Lwt_sequence.remove node;
+                     cw.cw_result <- return result;
+                     send_notification cw.cw_notify_id
+                   end
+                 with exn ->
+                   Lwt_sequence.remove node;
+                   cw.cw_result <- fail exn;
+                   send_notification cw.cw_notify_id)
+              wait_children))
 
-let _waitpid flags pid =
+let safe_waitpid flags pid =
   try_lwt
     return (Unix.waitpid flags pid)
 
 let waitpid flags pid =
   if List.mem Unix.WNOHANG flags || windows_hack then
-    _waitpid flags pid
+    safe_waitpid flags pid
   else
     let flags = Unix.WNOHANG :: flags in
-    lwt ((pid', _) as res) = _waitpid flags pid in
+    lwt (pid', _) as result = safe_waitpid flags pid in
     if pid' <> 0 then
-      return res
+      return result
     else begin
-      let (res, w) = Lwt.task () in
-      let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
-      Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
-      lwt (pid, status, _) = res in
+      let waiter, wakener = Lwt.task () in
+      let child_waiter = {
+        cw_notify_id = make_notification ~once:true (wakeup wakener);
+        cw_flags = flags;
+        cw_pid = pid;
+        cw_result = fail Exit;
+      } in
+      let node = Lwt_sequence.add_l child_waiter wait_children in
+      Lwt.on_cancel waiter (fun () -> Lwt_sequence.remove node);
+      lwt () = waiter in
+      lwt pid, status, _ = child_waiter.cw_result in
       return (pid, status)
     end
 
-let _wait4 flags pid =
+let safe_wait4 flags pid =
   try_lwt
-    return (lwt_unix_wait4 flags pid)
+    return (real_wait4 flags pid)
 
 let wait4 flags pid =
   if List.mem Unix.WNOHANG flags || windows_hack then
-    _wait4 flags pid
+    safe_wait4 flags pid
   else
     let flags = Unix.WNOHANG :: flags in
-    lwt (pid', _, _) as res = _wait4 flags pid in
+    lwt (pid', _, _) as result = safe_wait4 flags pid in
     if pid' <> 0 then
-      return res
+      return result
     else begin
-      let (res, w) = Lwt.task () in
-      let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
-      Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
-      res
+      let waiter, wakener = Lwt.task () in
+      let child_waiter = {
+        cw_notify_id = make_notification ~once:true (wakeup wakener);
+        cw_flags = flags;
+        cw_pid = pid;
+        cw_result = fail Exit;
+      } in
+      let node = Lwt_sequence.add_l child_waiter wait_children in
+      Lwt.on_cancel waiter (fun () -> Lwt_sequence.remove node);
+      lwt () = waiter in
+      child_waiter.cw_result
     end
 
 let wait () = waitpid [] (-1)
@@ -833,45 +753,6 @@ let system cmd =
         end
     | id ->
         waitpid [] id >|= snd
-
-(* +-----------------------------------------------------------------+
-   | Event loop                                                      |
-   +-----------------------------------------------------------------+ *)
-
-let run = Lwt_main.run
-
-let rec get_next_timeout now timeout =
-  match SleepQueue.lookup_min !sleep_queue with
-    | Some{ canceled = true } ->
-        sleep_queue := SleepQueue.remove_min !sleep_queue;
-        get_next_timeout now timeout
-    | Some{ time = time } ->
-        Lwt_main.min_timeout timeout (Some(if time = 0. then 0. else max 0. (time -. (Lazy.force now))))
-    | None ->
-        timeout
-
-let select_filter now select set_r set_w set_e timeout =
-  (* Transfer all sleepers added since the last iteration to the main
-     sleep queue: *)
-  sleep_queue :=
-    List.fold_left
-      (fun q e -> SleepQueue.add e q) !sleep_queue !new_sleeps;
-  new_sleeps := [];
-  let (now, set_r, set_w, set_e) as result =
-    select
-      (active_descriptors inputs set_r)
-      (active_descriptors outputs set_w)
-      set_e
-      (get_next_timeout now timeout)
-  in
-  (* Restart threads waiting for a timeout: *)
-  restart_threads now;
-  (* Restart threads waiting on a file descriptors: *)
-  List.iter (fun fd -> perform_actions inputs fd) set_r;
-  List.iter (fun fd -> perform_actions outputs fd) set_w;
-  result
-
-let _ = Lwt_sequence.add_l select_filter Lwt_main.select_filters
 
 (* +-----------------------------------------------------------------+
    | Directories                                                     |
@@ -901,15 +782,10 @@ let closedir dh = Unix.closedir dh.dir_handle
    | Misc                                                            |
    +-----------------------------------------------------------------+ *)
 
+let run = Lwt_main.run
+
 let handle_unix_error f x =
   try_lwt
     f x
   with exn ->
     Unix.handle_unix_error (fun () -> raise exn) ()
-
-(* Monitoring functions *)
-let inputs_length () = blocked_thread_count inputs
-let outputs_length () = blocked_thread_count outputs
-let wait_children_length () = Lwt_sequence.fold_l (fun _ x -> succ x) wait_children 0
-let get_new_sleeps () = List.length !new_sleeps
-let sleep_queue_size () = SleepQueue.size !sleep_queue

@@ -22,54 +22,10 @@
 
 open Lwt
 
-type fd_set = Unix.file_descr list
-type current_time = float Lazy.t
-type select = fd_set -> fd_set -> fd_set -> float option -> current_time * fd_set * fd_set * fd_set
+external libev_init : unit -> unit = "lwt_libev_init"
+external libev_loop : unit -> unit = "lwt_libev_loop"
 
-let select_filters = Lwt_sequence.create ()
-
-let min_timeout a b = match a, b with
-  | None, b -> b
-  | a, None -> a
-  | Some a, Some b -> Some(min a b)
-
-let apply_filters select =
-  let now = Lazy.lazy_from_fun Unix.gettimeofday in
-  Lwt_sequence.fold_l (fun filter select -> filter now select) select_filters select
-
-let bad_fd fd =
-  try ignore (Unix.LargeFile.fstat fd); false with
-      Unix.Unix_error (_, _, _) ->
-        true
-
-let default_select set_r set_w set_e timeout =
-  let set_r, set_w, set_e =
-    if (set_r = [] && set_w = [] && set_e = [] && timeout = Some 0.0) then
-      (* If there is nothing to monitor and there is no timeout,
-         save one system call: *)
-      ([], [], [])
-    else
-      (* Blocking call to select: *)
-      try
-        Lwt_select.select set_r set_w set_e (match timeout with None -> -1.0 | Some t -> t)
-      with
-        | Unix.Unix_error (Unix.EINTR, _, _) ->
-            ([], [], [])
-        | Unix.Unix_error (Unix.EBADF, _, _) ->
-            (* On failure, keeps only bad file
-               descriptors. Actions registered on them have to
-               handle the error: *)
-            (List.filter bad_fd set_r,
-             List.filter bad_fd set_w,
-             List.filter bad_fd set_e)
-  in
-  (Lazy.lazy_from_fun Unix.gettimeofday, set_r, set_w, set_e)
-
-let default_iteration () =
-  Lwt.wakeup_paused ();
-  ignore (apply_filters default_select [] [] [] None)
-
-let main_loop_iteration = ref default_iteration
+let () = libev_init ()
 
 let rec run t =
   Lwt.wakeup_paused ();
@@ -77,7 +33,7 @@ let rec run t =
     | Some x ->
         x
     | None ->
-        !main_loop_iteration ();
+        libev_loop ();
         run t
 
 let exit_hooks = Lwt_sequence.create ()
