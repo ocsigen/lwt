@@ -29,7 +29,6 @@
 #include <caml/signals.h>
 #include <caml/custom.h>
 #include <caml/callback.h>
-#include <sys/wait.h>
 #include <ev.h>
 
 #include "lwt_unix.h"
@@ -80,7 +79,6 @@ CAMLprim value lwt_libev_loop()
 #define Ev_io_val(v) *(struct ev_io**)Data_custom_val(v)
 #define Ev_signal_val(v) *(struct ev_signal**)Data_custom_val(v)
 #define Ev_timer_val(v) *(struct ev_timer**)Data_custom_val(v)
-#define Ev_child_val(v) *(struct ev_child**)Data_custom_val(v)
 #define Ev_idle_val(v) *(struct ev_idle**)Data_custom_val(v)
 
 static void finalize_watcher(value watcher)
@@ -230,73 +228,5 @@ CAMLprim value lwt_libev_timer_init(value delay, value callback)
 CAMLprim value lwt_libev_timer_stop(value watcher)
 {
   ev_timer_stop(lwt_libev_main_loop, Ev_timer_val(watcher));
-  return Val_unit;
-}
-
-/* +-----------------------------------------------------------------+
-   | Child watchers                                                  |
-   +-----------------------------------------------------------------+ */
-
-#define TAG_WEXITED 0
-#define TAG_WSIGNALED 1
-#define TAG_WSTOPPED 2
-
-static value alloc_process_status(int pid, int status)
-{
-  value st, res;
-
-  if (WIFEXITED(status)) {
-    st = alloc_small(1, TAG_WEXITED);
-    Field(st, 0) = Val_int(WEXITSTATUS(status));
-  }
-  else if (WIFSTOPPED(status)) {
-    st = alloc_small(1, TAG_WSTOPPED);
-    Field(st, 0) = Val_int(caml_rev_convert_signal_number(WSTOPSIG(status)));
-  }
-  else {
-    st = alloc_small(1, TAG_WSIGNALED);
-    Field(st, 0) = Val_int(caml_rev_convert_signal_number(WTERMSIG(status)));
-  }
-  Begin_root (st);
-    res = alloc_small(2, 0);
-    Field(res, 0) = Val_int(pid);
-    Field(res, 1) = st;
-  End_roots();
-  return res;
-}
-
-static void handle_child(struct ev_loop *loop, ev_child *watcher, int revents)
-{
-  lwt_libev_check_blocking_section();
-  value status = alloc_process_status(watcher->pid, watcher->rstatus);
-  value meta = (value)watcher->data;
-  caml_callback2(Field(meta, 0), Field(meta, 1), status);
-}
-
-CAMLprim value lwt_libev_child_init(value pid, value callback)
-{
-  CAMLparam2(pid, callback);
-  CAMLlocal2(result, meta);
-  /* Create and initialise the watcher */
-  struct ev_child* watcher = new(struct ev_child);
-  ev_child_init(watcher, handle_child, Int_val(pid), 0);
-  /* Wrap the watcher into a custom caml value */
-  result = caml_alloc_custom(&watcher_ops, sizeof(struct ev_child*), 0, 1);
-  Ev_child_val(result) = watcher;
-  /* Creates meta-data */
-  meta = caml_alloc_tuple(2);
-  Store_field(meta, 0, callback);
-  Store_field(meta, 1, result);
-  /* Store metadata in the watcher, and register it as a root */
-  watcher->data = (void*)meta;
-  caml_register_generational_global_root((value*)(&(watcher->data)));
-  /* Start the event */
-  ev_child_start(lwt_libev_main_loop, watcher);
-  CAMLreturn(result);
-}
-
-CAMLprim value lwt_libev_child_stop(value watcher)
-{
-  ev_child_stop(lwt_libev_main_loop, Ev_child_val(watcher));
   return Val_unit;
 }

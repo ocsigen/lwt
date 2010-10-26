@@ -45,8 +45,6 @@ external ev_signal_init : int -> (ev_signal -> unit) -> ev_signal = "lwt_libev_s
 external ev_signal_stop : ev_signal -> unit  = "lwt_libev_signal_stop"
 external ev_timer_init : float -> (ev_timer -> unit) -> ev_timer = "lwt_libev_timer_init"
 external ev_timer_stop : ev_timer -> unit  = "lwt_libev_timer_stop"
-external ev_child_init : int -> (ev_child -> Unix.process_status -> unit) -> ev_child = "lwt_libev_child_init"
-external ev_child_stop : ev_child -> unit  = "lwt_libev_child_stop"
 
 (* +-----------------------------------------------------------------+
    | Sleepers                                                        |
