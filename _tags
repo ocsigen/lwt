@@ -8,7 +8,7 @@
 
 # GLib bindings:
 <src/glib/lwt-glib.*>: use_C_glib
-<src/glib/liblwt-glib_stubs.*>: use_C_glib
+<src/glib/liblwt-glib.*>: use_C_glib
 <src/glib/lwt_glib_stubs.*>: use_C_glib
 
 # OASIS_START
