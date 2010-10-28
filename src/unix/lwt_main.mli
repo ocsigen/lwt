@@ -36,6 +36,10 @@ val run : 'a Lwt.t -> 'a
         invocation of [run] will not terminate before all
         subsequent invocations are terminated. *)
 
+val yield : unit -> unit Lwt.t
+  (** [yield ()] is a threads which suspends itself and then resumes
+      as soon as possible and terminates. *)
+
 val exit_hooks : (unit -> unit Lwt.t) Lwt_sequence.t
   (** Sets of functions executed just before the program exit.
 

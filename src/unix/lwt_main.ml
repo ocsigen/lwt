@@ -24,8 +24,17 @@ open Lwt
 
 external libev_init : unit -> unit = "lwt_libev_init"
 external libev_loop : unit -> unit = "lwt_libev_loop"
+external libev_loop_no_wait : unit -> unit = "lwt_libev_loop_no_wait"
 
 let () = libev_init ()
+
+let yielded = Lwt_sequence.create ()
+
+let yield () =
+  let waiter, wakener = task () in
+  let node = Lwt_sequence.add_l wakener yielded in
+  on_cancel waiter (fun () -> Lwt_sequence.remove node);
+  waiter
 
 let rec run t =
   Lwt.wakeup_paused ();
@@ -33,7 +42,14 @@ let rec run t =
     | Some x ->
         x
     | None ->
-        libev_loop ();
+        if Lwt_sequence.is_empty yielded then
+          libev_loop ()
+        else begin
+          libev_loop_no_wait ();
+          let wakeners = Lwt_sequence.fold_r (fun x l -> x :: l) yielded [] in
+          Lwt_sequence.iter_node_l Lwt_sequence.remove yielded;
+          List.iter (fun wakener -> wakeup wakener ()) wakeners
+        end;
         run t
 
 let exit_hooks = Lwt_sequence.create ()

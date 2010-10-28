@@ -72,6 +72,15 @@ CAMLprim value lwt_libev_loop()
   return Val_unit;
 }
 
+CAMLprim value lwt_libev_loop_no_wait()
+{
+  caml_enter_blocking_section();
+  in_blocking_section = 1;
+  ev_loop(lwt_libev_main_loop, EVLOOP_ONESHOT | EVLOOP_NONBLOCK);
+  lwt_libev_check_blocking_section();
+  return Val_unit;
+}
+
 /* +-----------------------------------------------------------------+
    | Watchers                                                        |
    +-----------------------------------------------------------------+ */
