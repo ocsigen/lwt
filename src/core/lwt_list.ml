@@ -53,7 +53,7 @@ let rec map_p f l =
     | [] ->
         return []
     | x :: l ->
-        lwt x = f x and l = map_s f l in
+        lwt x = f x and l = map_p f l in
         return (x :: l)
 
 let rec rev_map_append_s acc f l =
@@ -109,7 +109,7 @@ let rec for_all_p f l =
     | [] ->
         return true
     | x :: l ->
-        lwt bx = f x and bl = for_all_s f l in
+        lwt bx = f x and bl = for_all_p f l in
         return (bx && bl)
 
 let rec exists_s f l =
@@ -182,7 +182,7 @@ let rec partition_p f l =
     | [] ->
         return ([], [])
     | x :: l ->
-        lwt bx = f x and l_l, l_r = partition_s f l in
+        lwt bx = f x and l_l, l_r = partition_p f l in
         if bx then
           return (x :: l_l, l_r)
         else
