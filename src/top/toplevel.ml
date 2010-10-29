@@ -25,7 +25,12 @@ open Types
 open Lwt_read_line
 
 module TextSet = Set.Make(Text)
-module PathMap = Map.Make(struct type t = Path.t let compare = compare end)
+
+type path =
+  | Path of Path.t
+  | Longident of Longident.t
+
+module PathMap = Map.Make(struct type t = path let compare = compare end)
 
 let keywords = Lwt_ocaml_completion.keywords
 
@@ -45,7 +50,13 @@ let add_modules_from_directory acc dir =
 (* List all names of the module with path [path] *)
 let get_names_of_module path =
   try
-    match Env.find_module path !Toploop.toplevel_env with
+    match
+      match path with
+        | Path path ->
+            Env.find_module path !Toploop.toplevel_env
+        | Longident ident ->
+            snd (Env.lookup_module ident !Toploop.toplevel_env)
+    with
       | Tmty_signature decls ->
           List.fold_left
             (fun acc decl -> match decl with
@@ -82,7 +93,7 @@ let env_names () =
     | Env.Env_modtype(summary, id, _) -> loop (TextSet.add (Ident.name id) acc) summary
     | Env.Env_class(summary, id, _) -> loop (TextSet.add (Ident.name id) acc) summary
     | Env.Env_cltype(summary, id, _) -> loop (TextSet.add (Ident.name id) acc) summary
-    | Env.Env_open(summary, path) -> loop (TextSet.union acc (names_of_module path)) summary
+    | Env.Env_open(summary, path) -> loop (TextSet.union acc (names_of_module (Path path))) summary
   in
   (* Add names of the environment: *)
   let acc = loop TextSet.empty (Env.summary !Toploop.toplevel_env) in
@@ -95,10 +106,10 @@ let path_of_string text =
         invalid_arg "Toplevel.make_path"
     | ident :: rest ->
         let rec loop path = function
-          | [] -> path
-          | component :: rest -> loop (Path.Pdot(path, component, 0)) rest
+          | [] -> Longident path
+          | component :: rest -> loop (Longident.Ldot(path, component)) rest
         in
-        loop (Path.Pident(Ident.create_persistent ident)) rest
+        loop (Longident.Lident ident) rest
 
 let complete_ident before ident after =
   match Text.rev_split ~sep:"." ~max:2 ident with
