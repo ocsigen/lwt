@@ -469,9 +469,9 @@ void lwt_unix_send_notification(int id)
 {
   char buf[4];
   buf[0] = id;
-  buf[1] = id << 8;
-  buf[2] = id << 16;
-  buf[3] = id << 24;
+  buf[1] = id >> 8;
+  buf[2] = id >> 16;
+  buf[3] = id >> 24;
 
   caml_enter_blocking_section();
 
