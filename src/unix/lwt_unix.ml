@@ -601,8 +601,8 @@ let rec read_notification offset =
   if offset = 4 then
     return (Char.code notification_buffer.[0]
             lor (Char.code notification_buffer.[1] lsl 8)
-            lor (Char.code notification_buffer.[1] lsl 16)
-            lor (Char.code notification_buffer.[1] lsl 24))
+            lor (Char.code notification_buffer.[2] lsl 16)
+            lor (Char.code notification_buffer.[3] lsl 24))
   else
     read notification_fd_reader notification_buffer offset (4 - offset) >>= function
       | 0 ->
