@@ -100,7 +100,7 @@ val get : 'a key -> 'a option
       thread. *)
 
 val set : 'a key -> 'a option -> unit t
-  (** [set key value] associates a value to [ley] in the current
+  (** [set key value] associates a value to [key] in the current
       thread. *)
 
 (** {6 Exceptions handling} *)

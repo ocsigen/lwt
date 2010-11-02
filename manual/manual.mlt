@@ -383,10 +383,65 @@ val t : '_a Lwt.t = <abstr>
   Thel last one, {texttt "pick"}, is the same as {texttt "join"} except that it cancels
   all other threads when one terminates.
 
+{subsubsection "Threads local storage"}
+
+  Lwt can stores variables with different values on different
+  threads. This is called threads local storage. For example, this can
+  be used to store contexts or thread identifiers. The contents of a
+  variable can be read with:
+
+  <:code:%
+val Lwt.get : 'a Lwt.key -> 'a
+%>
+
+  which takes a key to identify the variable we want to read and
+  returns either {texttt "None"} if the variable is not set, or
+  {texttt "Some x"} if it is. The value returned is the value of the
+  variable in the current thread.
+
+  New keys can be created with:
+
+  <:code:%
+val Lwt.new_key : unit -> 'a Lwt.key
+%>
+
+  To set a variable, you must use:
+
+  <:code:%
+val Lwt.get : 'a Lwt.key -> 'a -> unit Lwt.t
+%>
+
+  Note that contrary to {texttt "Lwt.get"}, {texttt "Lwt.set"} returns
+  a thread. An association {texttt "(key, value)"} takes effect in all
+  threads that are bound to {texttt "Lwt.set key value"}.
+
+  For example, you can use local storage to store thread identifiers
+  and use them in logs:
+
+  <:code:#
+let id_key = Lwt.new_key ()
+
+let log msg =
+  let thread_id =
+    match Lwt.get id_key with
+      | Some id -> id
+      | None -> "main"
+  in
+  Lwt_io.printlf "%s: %s" thread_id msg
+
+lwt () =
+  Lwt.join [
+    (lwt () = Lwt.set id_key (Some "thread 1") in
+     log "foo");
+    (lwt () = Lwt.set id_key (Some "thread 2") in
+     log "bar");
+  ]
+#>
+
 {subsubsection "Rules"}
 
   {lwt} will always try to execute the more it can before yielding and
-  switch to another cooperative thread. In order to make it works well,
+  switching to another cooperative thread. In order to make it works well,
   you must follow the following rules:
 
   {itemize [
