@@ -21,7 +21,7 @@
  *)
 
 (* OASIS_START *)
-(* DO NOT EDIT (digest: 8e75bfc2da270f764a3eae9e3638fbdf) *)
+(* DO NOT EDIT (digest: adbbcab51735f86a23fb00084d05458a) *)
 module OASISGettext = struct
 # 21 "/home/dim/sources/oasis/src/oasis/OASISGettext.ml"
   
@@ -498,9 +498,12 @@ let package_default =
      flags =
        [
           (["oasis_library_lwt_unix_cclib"; "link"],
-            [(OASISExpr.EBool true, S [A "-cclib"; A "-lpthread"])]);
+            [
+               (OASISExpr.EBool true,
+                 S [A "-cclib"; A "-lpthread"; A "-cclib"; A "-lev"])
+            ]);
           (["oasis_library_lwt_unix_cclib"; "ocamlmklib"; "c"],
-            [(OASISExpr.EBool true, S [A "-lpthread"])])
+            [(OASISExpr.EBool true, S [A "-lpthread"; A "-lev"])])
        ];
      }
   ;;

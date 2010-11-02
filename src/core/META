@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: 62adc4af3f62ee1562a3233132bf3d01)
+# DO NOT EDIT (digest: ec625074f551323c8d2c58f3bb1afdf0)
 version = "2.1.1"
 description = "Lightweight thread library for OCaml (core library)"
 archive(byte) = "lwt.cma"
@@ -62,7 +62,7 @@ package "simple-top" (
 package "glib" (
  version = "2.1.1"
  description = "Glib integration"
- requires = "lwt lwt.unix lablgtk2"
+ requires = "lwt lwt.unix"
  archive(byte) = "lwt-glib.cma"
  archive(native) = "lwt-glib.cmxa"
  exists_if = "lwt-glib.cma"
