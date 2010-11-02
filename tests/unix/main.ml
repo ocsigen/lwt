@@ -22,4 +22,5 @@
 
 Test.run "unix" [
   Test_lwt_io.suite;
+  Test_lwt_io_non_block.suite;
 ]
