@@ -41,3 +41,5 @@ val read : t -> int -> string -> int -> int -> int Lwt.t
     It returns the number of bytes effectively read. *)
 
 val max_read_size : int
+
+val close : t -> unit

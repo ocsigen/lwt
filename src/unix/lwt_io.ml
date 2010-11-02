@@ -531,7 +531,11 @@ let of_mmap ?(buffer_size=Lwt_mmap.max_read_size) ?close ~mode t =
     then raise_lwt (Invalid_argument "Lwt_io.of_mmap/seek")
     else (position := Int64.to_int new_pos; return (new_pos))
   in
-  make ~buffer_size ?close ~seek ~mode read
+  make ~buffer_size
+    ~close:(match close with
+              | Some f -> (fun () -> lwt () = f () in Lwt_mmap.close t; return ())
+              | None -> (fun () -> Lwt_mmap.close t; return ()))
+    ~seek ~mode read
 
 let of_unix_fd_mmap ?buffer_size ?close ~mode fd =
   match mode with
@@ -1319,7 +1323,10 @@ let open_file ?buffer_size ?flags ?perm ~mode filename =
     | None, Output ->
         0o666
   in
-  of_unix_fd ?buffer_size ~mode (Unix.openfile filename flags perm)
+  let fd = Unix.openfile filename flags perm in
+  match of_unix_fd_mmap ?buffer_size ~mode fd with
+    | Some io -> Unix.close fd; io
+    | None -> of_fd_no_mmap ?buffer_size ~mode (Lwt_unix.of_unix_file_descr fd)
 
 let with_file ?buffer_size ?flags ?perm ~mode filename f =
   let ic = open_file ?buffer_size ?flags ?perm ~mode filename in

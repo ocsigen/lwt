@@ -29,6 +29,8 @@ external lwt_mmap_mincore : barray -> int -> int -> string = "lwt_mmap_mincore"
 external lwt_mmap_write : Unix.file_descr -> barray -> int -> int -> int = "lwt_mmap_write"
 external lwt_mmap_launch_waiter : barray -> int -> int -> unit = "lwt_mmap_launch_waiter"
 external lwt_mmap_memcpy : barray -> int -> string -> int -> int -> unit = "lwt_mmap_memcpy"
+external lwt_mmap_munmap : barray -> unit = "lwt_mmap_munmap"
+external lwt_mmap_fstat : Unix.file_descr -> (int*int*float) = "lwt_mmap_fstat"
 
 type madvise =
   | MADV_NORMAL
@@ -40,9 +42,14 @@ type madvise =
 external lwt_mmap_madvise : barray -> int -> int -> madvise -> unit = "lwt_mmap_madvise"
 
 type t =
-    { fd : Unix.file_descr;
-      array : barray;
-      dim : int; }
+    { file_uid : int * int * float; (* it contains the file dev_id, inode_id and 
+				       last modification time.
+				       It is used to uniquely identify file *)
+      mutable array : barray; (* declared mutable only to be able to replace them
+				 by empty array on close. It prevents segfaults if
+				 an error occur *)
+      dim : int;
+      mutable ref_count : int; }
 
 let pagesize = init_pagesize ()
 
@@ -128,8 +135,8 @@ type t_ = t
 module Fd_weak_tbl = Weak.Make
   ( struct
       type t = t_
-      let equal t1 t2 = t1.fd = t2.fd
-      let hash t = Hashtbl.hash t.fd
+      let equal t1 t2 = t1.file_uid = t2.file_uid
+      let hash t = Hashtbl.hash t.file_uid
     end )
 
 let fd_table = Fd_weak_tbl.create 0
@@ -137,17 +144,23 @@ let fd_table = Fd_weak_tbl.create 0
 let null_array = Bigarray.Array1.create Bigarray.char Bigarray.c_layout 0
 
 let of_unix_fd fd =
-  let finder = { array = null_array; fd = fd; dim = 0 } in
+  let file_uid = lwt_mmap_fstat fd in
+  let finder = { array = null_array; file_uid = file_uid; dim = 0; ref_count = 0 } in
+  let make_array () =
+    let array = Bigarray.Array1.map_file fd Bigarray.char Bigarray.c_layout false (-1) in
+    let t = { file_uid = file_uid; array = array; dim = Bigarray.Array1.dim array; ref_count = 1 } in
+    Fd_weak_tbl.add fd_table t;
+    t
+  in
   try
     Some (
       try
-	Fd_weak_tbl.find fd_table finder
+	let t = Fd_weak_tbl.find fd_table finder in
+	if t.ref_count = 0
+	then make_array ()
+	else (t.ref_count <- t.ref_count + 1; t)
       with
-	| Not_found ->
-	  let array = Bigarray.Array1.map_file fd Bigarray.char Bigarray.c_layout false (-1) in
-	  let t = { fd = fd; array = array; dim = Bigarray.Array1.dim array } in
-	  Fd_weak_tbl.add fd_table t;
-          t )
+	| Not_found -> make_array ())
   with
     | Sys_error _ -> None
     | Unix.Unix_error _ -> None
@@ -168,3 +181,12 @@ let sendfile file_fd fd offset len =
       then raise_lwt (Invalid_argument "Lwt_mmap.sendfile")
       else aux offset len
 
+let close t =
+  t.ref_count <- t.ref_count - 1;
+  if t.ref_count = 0
+  then
+    begin
+      lwt_mmap_munmap t.array;
+      t.array <- null_array;
+      Fd_weak_tbl.remove fd_table t
+    end

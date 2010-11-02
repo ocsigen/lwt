@@ -25,6 +25,8 @@
 #include <errno.h>
 #include <unistd.h>
 #include <assert.h>
+#include <assert.h>
+#include <sys/stat.h>
 
 #include <caml/config.h>
 #include <caml/memory.h>
@@ -195,4 +197,56 @@ CAMLprim value lwt_mmap_memcpy( value v_bigarray, value v_ba_offset, value v_str
   void *dest = String_val(v_string) + Int_val(v_s_offset);
   memcpy( dest, src, Int_val( v_len ) );
   return ( Val_unit );
+}
+
+static void lwt_mmap_unmap_file(void * addr, uintnat len)
+{
+  uintnat page = getpagesize();
+  uintnat delta = (uintnat) addr % page;
+  munmap((void *)((uintnat)addr - delta), len + delta);
+}
+
+static void lwt_mmap_reset_ba(struct caml_ba_array * b)
+{
+  lwt_mmap_unmap_file(b->data, caml_ba_byte_size(b));
+  b->flags = CAML_BA_UINT8 | CAML_BA_C_LAYOUT | CAML_BA_EXTERNAL;
+  b->dim[0] = 0;
+}
+
+CAMLprim value lwt_mmap_munmap(value v)
+{
+  struct caml_ba_array * b = Caml_ba_array_val(v);
+
+  switch (b->flags & CAML_BA_MANAGED_MASK) {
+  case CAML_BA_MAPPED_FILE:
+    // the bigarray is only used inside Lwt_mmap: there is never sub arrays created
+    // so we can suppose there is no proxy
+    lwt_mmap_reset_ba(b);
+    break;
+  case CAML_BA_EXTERNAL: // that case shouldn't happen
+    break;
+  case CAML_BA_MANAGED: // that case shouldn't happen
+    break;
+  }
+
+  return ( Val_unit );
+}
+
+CAMLprim value lwt_mmap_fstat(value v_fd)
+{
+  CAMLparam1(v_fd);
+  CAMLlocal2(mtime, v);
+  int ret;
+  struct stat buf;
+
+  ret = fstat(Int_val(v_fd), &buf);
+  if (ret == -1) uerror("fstat", Nothing);
+  v = alloc_small(3, 0);
+  mtime = copy_double((double) buf.st_mtime);
+
+  Field (v, 0) = Val_int (buf.st_dev);
+  Field (v, 1) = Val_int (buf.st_ino);
+  Field (v, 2) = mtime;
+
+  CAMLreturn(v);
 }
