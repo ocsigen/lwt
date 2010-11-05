@@ -958,6 +958,32 @@ val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
   uses the glib one. This allow you to write GTK application using {lwt}.
   The one thing you have to do is to call {texttt "Lwt_glib.init"} at the
   beginning of you program.
+
+{section "Writing stubs using {lwt}"}
+
+  {textbf "Note:"} This part is for non-Windows system only.
+
+  {lwt} internally uses {texttt "libev"}. Sometimes C library need to watch
+  file-descriptors and/or to use timeouts. It is possible to use them with {lwt};
+  all you need to do is to integrate the library with {texttt "libev"}. You can find
+  all informations for that in the {texttt "libev"} manual.
+
+  However, if you are calling OCaml code in libev callbacks, you must add the
+  macro {texttt "LWT_UNIX_CHECK"} before calling the OCaml code. This macro is
+  defined in the header file {texttt "lwt_unix.h"} installed by {lwt}. This macro
+  takes care of acquiring back the runtime system mutex, which is released before
+  entering the libev main loop.
+
+{subsection "Thread-safe notifications"}
+
+  If you want to notify the main thread from another thread, you can use the {lwt}
+  thread safe notification system. First you need to create a notification identifier
+  (which is just an integer) from the OCaml side using the
+  {texttt "Lwt_unix.make_notification"} function, then you can send it from either the
+  OCaml code with {texttt "Lwt_unix.send_notification"} function, or from the C code using
+  the function {texttt "lwt_unix_send_notification"} (defined in {texttt "lwt_unix_.h"}).
+
+  Notification are received and processed asynchronously by the main thread.
 "
 
 let () =

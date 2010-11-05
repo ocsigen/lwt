@@ -23,4 +23,14 @@ void lwt_unix_send_notification(int id);
 /* Launch a thread with tunned parameters */
 void lwt_unix_launch_thread(void* (*start)(void*), void* data);
 
+extern int lwt_unix_in_blocking_section;
+
+/* Macro to add in libev callbacks. See the manual for
+   explanations. */
+#define LWT_UNIX_CHECK                          \
+  if (lwt_unix_in_blocking_section) {           \
+    lwt_unix_in_blocking_section = 0;           \
+    caml_leave_blocking_section();              \
+  }
+
 #endif /* __LWT_UNIX_H */

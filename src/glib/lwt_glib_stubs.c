@@ -30,7 +30,8 @@
 #include <glib.h>
 #include <ev.h>
 
-void lwt_libev_check_blocking_section();
+#include "../unix/lwt_unix.h"
+
 extern struct ev_loop *lwt_libev_main_loop;
 
 GMainContext *gc;
@@ -94,7 +95,7 @@ static void prepare(struct ev_loop *loop, ev_prepare *watcher, int revents)
 
 static void check(struct ev_loop *loop, ev_check *watcher, int revents)
 {
-  lwt_libev_check_blocking_section();
+  LWT_UNIX_CHECK;
 
   int i;
   for (i = 0; i < n_fds; i++)

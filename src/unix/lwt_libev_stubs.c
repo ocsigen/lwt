@@ -53,31 +53,23 @@ CAMLprim value lwt_libev_init()
    | Main loop                                                       |
    +-----------------------------------------------------------------+ */
 
-int in_blocking_section;
-
-void lwt_libev_check_blocking_section()
-{
-  if (in_blocking_section) {
-    in_blocking_section = 0;
-    caml_leave_blocking_section();
-  }
-}
+int lwt_unix_in_blocking_section = 0;
 
 CAMLprim value lwt_libev_loop()
 {
   caml_enter_blocking_section();
-  in_blocking_section = 1;
+  lwt_unix_in_blocking_section = 1;
   ev_loop(lwt_libev_main_loop, EVLOOP_ONESHOT);
-  lwt_libev_check_blocking_section();
+  LWT_UNIX_CHECK;
   return Val_unit;
 }
 
 CAMLprim value lwt_libev_loop_no_wait()
 {
   caml_enter_blocking_section();
-  in_blocking_section = 1;
+  lwt_unix_in_blocking_section = 1;
   ev_loop(lwt_libev_main_loop, EVLOOP_ONESHOT | EVLOOP_NONBLOCK);
-  lwt_libev_check_blocking_section();
+  LWT_UNIX_CHECK;
   return Val_unit;
 }
 
@@ -129,7 +121,7 @@ static void* xalloc(size_t n)
 
 static void handle_io(struct ev_loop *loop, ev_io *watcher, int revents)
 {
-  lwt_libev_check_blocking_section();
+  LWT_UNIX_CHECK;
   value meta = (value)watcher->data;
   caml_callback(Field(meta, 0), Field(meta, 1));
 }
@@ -168,7 +160,7 @@ CAMLprim value lwt_libev_io_stop(value watcher)
 
 static void handle_signal(struct ev_loop *loop, ev_signal *watcher, int revents)
 {
-  lwt_libev_check_blocking_section();
+  LWT_UNIX_CHECK;
   value meta = (value)watcher->data;
   caml_callback(Field(meta, 0), Field(meta, 1));
 }
@@ -207,7 +199,7 @@ CAMLprim value lwt_libev_signal_stop(value watcher)
 
 static void handle_timer(struct ev_loop *loop, ev_timer *watcher, int revents)
 {
-  lwt_libev_check_blocking_section();
+  LWT_UNIX_CHECK;
   value meta = (value)watcher->data;
   caml_callback(Field(meta, 0), Field(meta, 1));
 }
