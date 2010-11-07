@@ -39,7 +39,7 @@
 
 #include "lwt_unix.h"
 
-#if defined(LWT_WINDOWS)
+#if defined(LWT_ON_WINDOWS)
 #  include <windows.h>
 #else
 #  include <sys/mman.h>
@@ -47,7 +47,7 @@
 
 long page_size = -1;
 
-#if defined(LWT_WINDOWS)
+#if defined(LWT_ON_WINDOWS)
 
 CAMLprim value lwt_mmap_init_pagesize()
 {

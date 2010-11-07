@@ -32,8 +32,6 @@
 
 #include "../unix/lwt_unix.h"
 
-extern struct ev_loop *lwt_libev_main_loop;
-
 GMainContext *gc;
 ev_prepare prepare_watcher;
 ev_check check_watcher;
@@ -77,15 +75,20 @@ static void prepare(struct ev_loop *loop, ev_prepare *watcher, int revents)
       if (gpollfd->events & G_IO_IN) events |= EV_READ;
       if (gpollfd->events & G_IO_OUT) events |= EV_WRITE;
 
+#if defined(LWT_ON_WINDOWS)
+      /* On windows, glib file descriptors are handles */
+      ev_io_init(io_watcher, nop, _open_osfhandle(gpollfd->fd, 0), events);
+#else
       ev_io_init(io_watcher, nop, gpollfd->fd, events);
+#endif
 
       ev_set_priority(io_watcher, EV_MINPRI);
-      ev_io_start(lwt_libev_main_loop, io_watcher);
+      ev_io_start(lwt_unix_main_loop, io_watcher);
     }
 
   if (timeout >= 0) {
     ev_timer_set(&timer_watcher, timeout * 1e-3, 0.);
-    ev_timer_start(lwt_libev_main_loop, &timer_watcher);
+    ev_timer_start(lwt_unix_main_loop, &timer_watcher);
   }
 }
 
@@ -148,8 +151,8 @@ value lwt_glib_install()
 value lwt_glib_remove()
 {
   g_main_context_unref(gc);
-  ev_prepare_stop(lwt_libev_main_loop, &prepare_watcher);
-  ev_check_stop(lwt_libev_main_loop, &check_watcher);
-  if (ev_is_active(&timer_watcher)) ev_timer_stop(lwt_libev_main_loop, &timer_watcher);
+  ev_prepare_stop(lwt_unix_main_loop, &prepare_watcher);
+  ev_check_stop(lwt_unix_main_loop, &check_watcher);
+  if (ev_is_active(&timer_watcher)) ev_timer_stop(lwt_unix_main_loop, &timer_watcher);
   return Val_unit;
 }

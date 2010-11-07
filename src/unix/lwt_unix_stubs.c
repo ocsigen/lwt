@@ -35,7 +35,7 @@
 
 #include "lwt_unix.h"
 
-#if defined(LWT_WINDOWS)
+#if defined(LWT_ON_WINDOWS)
 #  include <windows.h>
 #else
 #  include <sys/socket.h>
@@ -46,7 +46,7 @@
    | Read/write                                                      |
    +-----------------------------------------------------------------+ */
 
-#if !defined(LWT_WINDOWS)
+#if !defined(LWT_ON_WINDOWS)
 
 /* This code is a simplified version of the default unix_write and
    unix_read functions of caml.
@@ -90,7 +90,7 @@ value lwt_unix_read(value fd, value buf, value ofs, value len)
    | Recv/send                                                       |
    +-----------------------------------------------------------------+ */
 
-#if !defined(LWT_WINDOWS)
+#if !defined(LWT_ON_WINDOWS)
 
 static int msg_flag_table[] = {
   MSG_OOB, MSG_DONTROUTE, MSG_PEEK
@@ -132,7 +132,7 @@ value lwt_unix_send(value fd, value buf, value ofs, value len, value flags)
    | {recv/send}_msg                                                 |
    +-----------------------------------------------------------------+ */
 
-#if !defined(LWT_WINDOWS)
+#if !defined(LWT_ON_WINDOWS)
 
 /* Convert a caml list of io-vectors into a C array io io-vector
    structures */
@@ -244,7 +244,7 @@ value lwt_unix_send_msg(value sock_val, value n_iovs_val, value iovs_val, value 
    | Credentials                                                     |
    +-----------------------------------------------------------------+ */
 
-#if defined(SO_PEERCRED) && !defined(LWT_WINDOWS)
+#if defined(SO_PEERCRED) && !defined(LWT_ON_WINDOWS)
 
 #include <sys/un.h>
 
@@ -278,7 +278,7 @@ CAMLprim value lwt_unix_get_credentials(value fd_val)
    | Terminal sizes                                                  |
    +-----------------------------------------------------------------+ */
 
-#if defined(LWT_WINDOWS)
+#if defined(LWT_ON_WINDOWS)
 
 #include <wincon.h>
 
@@ -336,7 +336,7 @@ value lwt_unix_sigwinch()
    | wait4                                                           |
    +-----------------------------------------------------------------+ */
 
-#if defined(HAS_WAIT4) && !defined(LWT_WINDOWS)
+#if defined(HAS_WAIT4) && !defined(LWT_ON_WINDOWS)
 
 /* Some code duplicated from OCaml's otherlibs/unix/wait.c */
 
@@ -448,7 +448,7 @@ value lwt_unix_system_byte_order()
 
 int notification_fd_writer = -1;
 
-#if defined(LWT_WINDOWS)
+#if defined(LWT_ON_WINDOWS)
 HANDLE notification_pipe_mutex;
 #else
 pthread_mutex_t notification_pipe_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -458,7 +458,7 @@ value lwt_unix_init_notification(value fd)
 {
   notification_fd_writer = FD_val(fd);
 
-#if defined(LWT_WINDOWS)
+#if defined(LWT_ON_WINDOWS)
   notification_pipe_mutex = CreateMutex(NULL, FALSE, NULL);
 #endif
 
@@ -475,7 +475,7 @@ void lwt_unix_send_notification(int id)
 
   caml_enter_blocking_section();
 
-#if defined(LWT_WINDOWS)
+#if defined(LWT_ON_WINDOWS)
   WaitForSingleObject(notification_pipe_mutex, INFINITE);
 #else
   pthread_mutex_lock(&notification_pipe_mutex);
@@ -486,7 +486,7 @@ void lwt_unix_send_notification(int id)
     int n = write(notification_fd_writer, &(buf[offset]), 4 - offset);
 
     if (n <= 0) {
-#if defined(LWT_WINDOWS)
+#if defined(LWT_ON_WINDOWS)
       ReleaseMutex(notification_pipe_mutex);
 #else
       pthread_mutex_unlock(&notification_pipe_mutex);
@@ -498,7 +498,7 @@ void lwt_unix_send_notification(int id)
     offset += n;
   }
 
-#if defined(LWT_WINDOWS)
+#if defined(LWT_ON_WINDOWS)
   ReleaseMutex(notification_pipe_mutex);
 #else
   pthread_mutex_unlock(&notification_pipe_mutex);
@@ -521,7 +521,7 @@ value lwt_unix_send_notification_stub(value id)
 #  define X_STACKSIZE sizeof (long) * 4096
 #endif
 
-#if !defined(LWT_WINDOWS)
+#if !defined(LWT_ON_WINDOWS)
 
 #if !defined(PTHREAD_STACK_MIN)
 #  define PTHREAD_STACK_MIN 0
@@ -565,7 +565,7 @@ void lwt_unix_launch_thread(void* (*start)(void*), void* data)
    | Test for readability/writability                                |
    +-----------------------------------------------------------------+ */
 
-#if !defined(LWT_WINDOWS)
+#if !defined(LWT_ON_WINDOWS)
 
 #include <poll.h>
 

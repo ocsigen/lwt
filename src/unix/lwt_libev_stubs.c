@@ -33,7 +33,7 @@
 
 #include "lwt_unix.h"
 
-struct ev_loop *lwt_libev_main_loop = NULL;
+struct ev_loop *lwt_unix_main_loop = NULL;
 
 CAMLextern int caml_convert_signal_number (int);
 CAMLextern int caml_rev_convert_signal_number (int);
@@ -44,8 +44,8 @@ CAMLextern int caml_rev_convert_signal_number (int);
 
 CAMLprim value lwt_libev_init()
 {
-  lwt_libev_main_loop = ev_default_loop(EVFLAG_FORKCHECK);
-  if (!lwt_libev_main_loop) caml_failwith("lwt_libev_init: could not initialise the default loop");
+  lwt_unix_main_loop = ev_default_loop(EVFLAG_FORKCHECK);
+  if (!lwt_unix_main_loop) caml_failwith("lwt_libev_init: could not initialise the default loop");
   return Val_unit;
 }
 
@@ -59,7 +59,7 @@ CAMLprim value lwt_libev_loop()
 {
   caml_enter_blocking_section();
   lwt_unix_in_blocking_section = 1;
-  ev_loop(lwt_libev_main_loop, EVLOOP_ONESHOT);
+  ev_loop(lwt_unix_main_loop, EVLOOP_ONESHOT);
   LWT_UNIX_CHECK;
   return Val_unit;
 }
@@ -68,7 +68,7 @@ CAMLprim value lwt_libev_loop_no_wait()
 {
   caml_enter_blocking_section();
   lwt_unix_in_blocking_section = 1;
-  ev_loop(lwt_libev_main_loop, EVLOOP_ONESHOT | EVLOOP_NONBLOCK);
+  ev_loop(lwt_unix_main_loop, EVLOOP_ONESHOT | EVLOOP_NONBLOCK);
   LWT_UNIX_CHECK;
   return Val_unit;
 }
@@ -144,13 +144,13 @@ CAMLprim value lwt_libev_io_init(value fd, value event, value callback)
   watcher->data = (void*)meta;
   caml_register_generational_global_root((value*)(&(watcher->data)));
   /* Start the event */
-  ev_io_start(lwt_libev_main_loop, watcher);
+  ev_io_start(lwt_unix_main_loop, watcher);
   CAMLreturn(result);
 }
 
 CAMLprim value lwt_libev_io_stop(value watcher)
 {
-  ev_io_stop(lwt_libev_main_loop, Ev_io_val(watcher));
+  ev_io_stop(lwt_unix_main_loop, Ev_io_val(watcher));
   return Val_unit;
 }
 
@@ -183,13 +183,13 @@ CAMLprim value lwt_libev_signal_init(value signum, value callback)
   watcher->data = (void*)meta;
   caml_register_generational_global_root((value*)(&(watcher->data)));
   /* Start the event */
-  ev_signal_start(lwt_libev_main_loop, watcher);
+  ev_signal_start(lwt_unix_main_loop, watcher);
   CAMLreturn(result);
 }
 
 CAMLprim value lwt_libev_signal_stop(value watcher)
 {
-  ev_signal_stop(lwt_libev_main_loop, Ev_signal_val(watcher));
+  ev_signal_stop(lwt_unix_main_loop, Ev_signal_val(watcher));
   return Val_unit;
 }
 
@@ -222,12 +222,12 @@ CAMLprim value lwt_libev_timer_init(value delay, value callback)
   watcher->data = (void*)meta;
   caml_register_generational_global_root((value*)(&(watcher->data)));
   /* Start the event */
-  ev_timer_start(lwt_libev_main_loop, watcher);
+  ev_timer_start(lwt_unix_main_loop, watcher);
   CAMLreturn(result);
 }
 
 CAMLprim value lwt_libev_timer_stop(value watcher)
 {
-  ev_timer_stop(lwt_libev_main_loop, Ev_timer_val(watcher));
+  ev_timer_stop(lwt_unix_main_loop, Ev_timer_val(watcher));
   return Val_unit;
 }
