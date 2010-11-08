@@ -1,0 +1,82 @@
+% eclbkbox.sty by Hideki Isozaki, 1992
+% Date: May  28, 1993
+
+\newbox\bk@bxb
+\newbox\bk@bxa
+\newif\if@bkcont 
+\newif\ifbkcount
+\newcount\bk@lcnt
+
+\def\breakboxskip{2pt}
+\def\breakboxparindent{1.8em}
+
+\def\breakbox{\vskip\breakboxskip\relax
+\setbox\bk@bxb\vbox\bgroup
+\advance\linewidth -2\fboxrule
+\advance\linewidth -2\fboxsep
+\hsize\linewidth\@parboxrestore
+\parindent\breakboxparindent\relax}
+
+% \@tempdimb: amount of vertical skip 
+% between the first line (\bk@bxa) and the rest (\bk@bxb)
+\def\bk@split{%
+\@tempdimb\ht\bk@bxb % height of original box
+\advance\@tempdimb\dp\bk@bxb 
+\setbox\bk@bxa\vsplit\bk@bxb to\z@ % split it
+\setbox\bk@bxa\vbox{\unvbox\bk@bxa}% recover height & depth of \bk@bxa
+\setbox\@tempboxa\vbox{\copy\bk@bxa\copy\bk@bxb}% naive concatenation
+\advance\@tempdimb-\ht\@tempboxa 
+\advance\@tempdimb-\dp\@tempboxa}% gap between two boxes
+ 
+
+% \@tempdima: height of the first line (\bk@bxa) + fboxsep
+\def\bk@addfsepht{%
+     \setbox\bk@bxa\vbox{\vskip\fboxsep\box\bk@bxa}}
+
+\def\bk@addskipht{%
+     \setbox\bk@bxa\vbox{\vskip\@tempdimb\box\bk@bxa}}
+
+% \@tempdima: depth of the first line (\bk@bxa) + fboxsep
+\def\bk@addfsepdp{%
+     \@tempdima\dp\bk@bxa
+     \advance\@tempdima\fboxsep
+     \dp\bk@bxa\@tempdima}
+
+% \@tempdima: depth of the first line (\bk@bxa) + vertical skip
+\def\bk@addskipdp{%
+     \@tempdima\dp\bk@bxa
+     \advance\@tempdima\@tempdimb
+     \dp\bk@bxa\@tempdima}
+
+\def\bk@line{%
+    \hbox to \linewidth{\ifbkcount\smash{\llap{\the\bk@lcnt\ }}\fi
+    \vrule \@width\fboxrule\hskip\fboxsep
+    \box\bk@bxa\hfil
+    \hskip\fboxsep\vrule \@width\fboxrule}}
+
+\def\endbreakbox{\egroup
+\ifhmode\par\fi{\noindent\bk@lcnt\@ne 
+\@bkconttrue\baselineskip\z@\lineskiplimit\z@
+\lineskip\z@\vfuzz\maxdimen
+\bk@split\bk@addfsepht\bk@addskipdp
+\ifvoid\bk@bxb      % Only one line
+\def\bk@fstln{\bk@addfsepdp
+\vbox{\hrule\@height\fboxrule\bk@line\hrule\@height\fboxrule}}%
+\else               % More than one line
+\def\bk@fstln{\vbox{\hrule\@height\fboxrule\bk@line}\hfil
+\advance\bk@lcnt\@ne
+\loop 
+ \bk@split\bk@addskipdp\leavevmode
+\ifvoid\bk@bxb      % The last line
+ \@bkcontfalse\bk@addfsepdp
+ \vtop{\bk@line\hrule\@height\fboxrule}%
+\else               % 2,...,(n-1)
+ \bk@line
+\fi
+ \hfil\advance\bk@lcnt\@ne
+\if@bkcont\repeat}%
+\fi
+\leavevmode\bk@fstln\par}\vskip\breakboxskip\relax}
+
+\bkcountfalse
+

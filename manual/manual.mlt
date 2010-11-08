@@ -23,11 +23,15 @@
 let lwt = texttt "Lwt"
 let abstract body = command \"abstract\" [(T, body)] T
 
+let breakbox tex =
+  environment ~packages:[(\"eclbkbox\", \"\")] \"breakbox\" (A, tex) A
+
 let code verb =
-  Verbatim.convert
-    (fun str ->
-       texttt (Latex.Verbatim.verbatim str))
-    verb
+  breakbox
+    (Verbatim.convert
+      (fun str ->
+         texttt (Latex.Verbatim.verbatim str))
+      verb)
 
 let hline = text \"\\\\hline\"
 let vline = text \"\\\\vline\"
@@ -585,7 +589,8 @@ expr
   have to do is to pass the {texttt "-lwt-debug"} switch to {texttt "camlp4"}:
 
   <:code:%
-$ ocamlfind ocamlc -syntax camlp4o -package lwt.syntax -ppopt -lwt-debug -linkpkg -o foo foo.ml
+$ ocamlfind ocamlc -syntax camlp4o -package lwt.syntax \
+    -ppopt -lwt-debug -linkpkg -o foo foo.ml
 %>
 
 {subsection "Other modules of the core library"}
@@ -988,7 +993,7 @@ val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
 
 let () =
   Melt.emit
-      (document
+    (document
        ~options:[`A4paper]
        ~title:"Lwt user manual"
        ~author:"Jérémie Dimino"
