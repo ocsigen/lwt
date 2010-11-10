@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: 15cd2d04e6dc29d62544906931b735cc)
+# DO NOT EDIT (digest: 6f7f10e82ac98391d9efe0bba82dcd2d)
 src/core/Lwt_condition
 src/core/Lwt_list
 src/core/Lwt
@@ -30,4 +30,5 @@ src/unix/Lwt_process
 src/unix/Lwt_throttle
 src/unix/Lwt_timeout
 src/unix/Lwt_unix
+src/unix/Lwt_mmap
 # OASIS_STOP

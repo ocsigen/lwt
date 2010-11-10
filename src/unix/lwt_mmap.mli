@@ -2,6 +2,7 @@
  * http://www.ocsigen.org/lwt
  * Module Lwt_mmap
  * Copyright (C) 2010 Pierre Chambart
+ *               2010 Jérémie Dimino
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -22,24 +23,43 @@
 
 (** Cooperative disk inputs *)
 
-(** Note: on 32bits systems the functions in this module can't work with
-    files bigger than 2Go *)
-
-val sendfile : Unix.file_descr -> Lwt_unix.file_descr -> int -> int -> unit Lwt.t
-(** [sendfile filename output offset length] sends a file throught
-    [output] cooperatively *)
+(** Note: on 32bits systems the functions in this module can't work
+    with files bigger than 2Go *)
 
 type t
+  (** Type of memory-maped file. *)
+
+type byte_array = (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+    (** Type of array of bytes used in this module. *)
+
+(** {6 Creation/closing} *)
 
 val of_unix_fd : Unix.file_descr -> t option
-
-val size : t -> int
-
-val read : t -> int -> string -> int -> int -> int Lwt.t
-(** [read input position buf offset length] reads at maximum [length]
-    bytes from [input] at [position] into [buf] starting at position [offset].
-    It returns the number of bytes effectively read. *)
-
-val max_read_size : int
+  (** Creates a mmaped file from a unix file descriptor. If the given
+      file descriptor is not mapable, it returns [None]. *)
 
 val close : t -> unit
+  (** Close the given mmaped file, i.e. unmap it. Note that the
+      underlying file descriptor is not closed by this function. *)
+
+(** {6 Informations} *)
+
+val size : t -> int
+  (** Returns the size of the mapped file. *)
+
+(** {6 Reading data} *)
+
+val read : t -> int -> string -> int -> int -> int Lwt.t
+  (** [read input position buf offset length] reads at maximum
+      [length] bytes from [input] at [position] into [buf] starting at
+      position [offset]. It returns the number of bytes effectively
+      read. *)
+
+(** {6 Misc} *)
+
+val sendfile : Unix.file_descr -> Lwt_unix.file_descr -> int -> int -> unit Lwt.t
+  (** [sendfile filename output offset length] sends a file throught
+      [output] cooperatively *)
+
+val max_read_size : int
+  (** The maximum size Lwt will advise the kernel to prefetch. *)

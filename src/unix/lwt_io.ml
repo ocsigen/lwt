@@ -1335,8 +1335,6 @@ let with_file ?buffer_size ?flags ?perm ~mode filename f =
   finally
     close ic
 
-let sendfile = Lwt_mmap.sendfile
-
 let file_length filename = with_file ~mode:input filename length
 
 let open_connection ?buffer_size sockaddr =

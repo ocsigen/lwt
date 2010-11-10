@@ -1,97 +1,17 @@
 # OASIS_START
-# DO NOT EDIT (digest: ec625074f551323c8d2c58f3bb1afdf0)
+# DO NOT EDIT (digest: 856ca0eb0178050daf1c1005905121f0)
 version = "2.1.1"
 description = "Lightweight thread library for OCaml (core library)"
 archive(byte) = "lwt.cma"
 archive(native) = "lwt.cmxa"
 exists_if = "lwt.cma"
-package "unix" (
+package "ssl" (
  version = "2.1.1"
- description = "Unix support for lwt"
- requires = "lwt unix bigarray"
- archive(byte) = "lwt-unix.cma"
- archive(native) = "lwt-unix.cmxa"
- exists_if = "lwt-unix.cma"
-)
-
-package "react" (
- version = "2.1.1"
- description = "Reactive programming helpers"
- requires = "lwt react"
- archive(byte) = "lwt-react.cma"
- archive(native) = "lwt-react.cmxa"
- exists_if = "lwt-react.cma"
-)
-
-package "text" (
- version = "2.1.1"
- description = "Text mode utilities"
- requires = "lwt lwt.unix lwt.react text"
- archive(byte) = "lwt-text.cma"
- archive(native) = "lwt-text.cmxa"
- exists_if = "lwt-text.cma"
-)
-
-package "top" (
- version = "2.1.1"
- description = "Line-editing in the toplevel"
- requires = "lwt lwt.text findlib"
- archive(byte) = "lwt-top.cma"
- archive(native) = "lwt-top.cmxa"
- exists_if = "lwt-top.cma"
-)
-
-package "preemptive" (
- version = "2.1.1"
- description = "Preemptive threads support for Lwt"
- requires = "lwt lwt.unix threads"
- archive(byte) = "lwt-preemptive.cma"
- archive(native) = "lwt-preemptive.cmxa"
- exists_if = "lwt-preemptive.cma"
-)
-
-package "simple-top" (
- version = "2.1.1"
- description = "Unix support for lwt"
- requires = "lwt lwt.unix"
- archive(byte) = "lwt-simple-top.cma"
- archive(native) = "lwt-simple-top.cmxa"
- exists_if = "lwt-simple-top.cma"
-)
-
-package "glib" (
- version = "2.1.1"
- description = "Glib integration"
- requires = "lwt lwt.unix"
- archive(byte) = "lwt-glib.cma"
- archive(native) = "lwt-glib.cmxa"
- exists_if = "lwt-glib.cma"
-)
-
-package "syntax" (
- version = "2.1.1"
- description = "Syntactic sugars for Lwt"
- requires = "camlp4 lwt.syntax.options"
- archive(syntax,preprocessor) = "lwt-syntax.cma"
- archive(syntax,toploop) = "lwt-syntax.cma"
- exists_if = "lwt-syntax.cma"
- package "log" (
-  version = "2.1.1"
-  description = "Syntactic sugars for logging"
-  requires = "camlp4 lwt.syntax.options"
-  archive(syntax,preprocessor) = "lwt-syntax-log.cma"
-  archive(syntax,toploop) = "lwt-syntax-log.cma"
-  exists_if = "lwt-syntax-log.cma"
- )
- 
- package "options" (
-  version = "2.1.1"
-  description = "Options for syntax extensions"
-  requires = "camlp4"
-  archive(syntax,preprocessor) = "lwt-syntax-options.cma"
-  archive(syntax,toploop) = "lwt-syntax-options.cma"
-  exists_if = "lwt-syntax-options.cma"
- )
+ description = "SSL support for Lwt"
+ requires = "lwt lwt.unix ssl"
+ archive(byte) = "lwt-ssl.cma"
+ archive(native) = "lwt-ssl.cmxa"
+ exists_if = "lwt-ssl.cma"
 )
 
 package "extra" (
@@ -103,13 +23,93 @@ package "extra" (
  exists_if = "lwt-extra.cma"
 )
 
-package "ssl" (
+package "syntax" (
  version = "2.1.1"
- description = "SSL support for Lwt"
- requires = "lwt lwt.unix ssl"
- archive(byte) = "lwt-ssl.cma"
- archive(native) = "lwt-ssl.cmxa"
- exists_if = "lwt-ssl.cma"
+ description = "Syntactic sugars for Lwt"
+ requires = "camlp4 lwt.syntax.options"
+ archive(syntax,preprocessor) = "lwt-syntax.cma"
+ archive(syntax,toploop) = "lwt-syntax.cma"
+ exists_if = "lwt-syntax.cma"
+ package "options" (
+  version = "2.1.1"
+  description = "Options for syntax extensions"
+  requires = "camlp4"
+  archive(syntax,preprocessor) = "lwt-syntax-options.cma"
+  archive(syntax,toploop) = "lwt-syntax-options.cma"
+  exists_if = "lwt-syntax-options.cma"
+ )
+ 
+ package "log" (
+  version = "2.1.1"
+  description = "Syntactic sugars for logging"
+  requires = "camlp4 lwt.syntax.options"
+  archive(syntax,preprocessor) = "lwt-syntax-log.cma"
+  archive(syntax,toploop) = "lwt-syntax-log.cma"
+  exists_if = "lwt-syntax-log.cma"
+ )
+)
+
+package "glib" (
+ version = "2.1.1"
+ description = "Glib integration"
+ requires = "lwt lwt.unix"
+ archive(byte) = "lwt-glib.cma"
+ archive(native) = "lwt-glib.cmxa"
+ exists_if = "lwt-glib.cma"
+)
+
+package "simple-top" (
+ version = "2.1.1"
+ description = "Unix support for lwt"
+ requires = "lwt lwt.unix"
+ archive(byte) = "lwt-simple-top.cma"
+ archive(native) = "lwt-simple-top.cmxa"
+ exists_if = "lwt-simple-top.cma"
+)
+
+package "preemptive" (
+ version = "2.1.1"
+ description = "Preemptive threads support for Lwt"
+ requires = "lwt lwt.unix threads"
+ archive(byte) = "lwt-preemptive.cma"
+ archive(native) = "lwt-preemptive.cmxa"
+ exists_if = "lwt-preemptive.cma"
+)
+
+package "top" (
+ version = "2.1.1"
+ description = "Line-editing in the toplevel"
+ requires = "lwt lwt.text findlib"
+ archive(byte) = "lwt-top.cma"
+ archive(native) = "lwt-top.cmxa"
+ exists_if = "lwt-top.cma"
+)
+
+package "text" (
+ version = "2.1.1"
+ description = "Text mode utilities"
+ requires = "lwt lwt.unix lwt.react text"
+ archive(byte) = "lwt-text.cma"
+ archive(native) = "lwt-text.cmxa"
+ exists_if = "lwt-text.cma"
+)
+
+package "react" (
+ version = "2.1.1"
+ description = "Reactive programming helpers"
+ requires = "lwt react"
+ archive(byte) = "lwt-react.cma"
+ archive(native) = "lwt-react.cmxa"
+ exists_if = "lwt-react.cma"
+)
+
+package "unix" (
+ version = "2.1.1"
+ description = "Unix support for lwt"
+ requires = "lwt unix bigarray"
+ archive(byte) = "lwt-unix.cma"
+ archive(native) = "lwt-unix.cmxa"
+ exists_if = "lwt-unix.cma"
 )
 # OASIS_STOP
 
