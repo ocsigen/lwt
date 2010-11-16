@@ -28,10 +28,12 @@
 #include <caml/memory.h>
 #include <caml/signals.h>
 #include <caml/config.h>
+#include <caml/custom.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "lwt_unix.h"
 
@@ -43,48 +45,28 @@
 #endif
 
 /* +-----------------------------------------------------------------+
-   | Read/write                                                      |
+   | Utils                                                           |
    +-----------------------------------------------------------------+ */
 
-#if !defined(LWT_ON_WINDOWS)
-
-/* This code is a simplified version of the default unix_write and
-   unix_read functions of caml.
-
-   Since we know that reading or writing will never block we can
-   directly use the buffer from the managed memory without copying it
-   (thus removing the limitation of 16KB by operation).
-*/
-
-value lwt_unix_write(value fd, value buf, value ofs, value len)
+void *lwt_unix_malloc(size_t size)
 {
-  int ret;
-  ret = write(Int_val(fd), &Byte(String_val(buf), Long_val(ofs)), Long_val(len));
-  if (ret == -1) uerror("lwt_unix_write", Nothing);
-  return Val_int(ret);
+  void *ptr = malloc(size);
+  if (ptr == NULL) {
+    perror("cannot allocate memory");
+    abort();
+  }
+  return ptr;
 }
 
-value lwt_unix_read(value fd, value buf, value ofs, value len)
+char *lwt_unix_strdup(char *str)
 {
-  int ret;
-  ret = read(Int_val(fd), &Byte(String_val(buf), Long_val(ofs)), Long_val(len));
-  if (ret == -1) uerror("lwt_unix_read", Nothing);
-  return Val_int(ret);
+  char *new_str = strdup(str);
+  if (new_str == NULL) {
+    perror("cannot allocate memory");
+    abort();
+  }
+  return new_str;
 }
-
-#else
-
-value lwt_unix_write(value fd, value buf, value ofs, value len)
-{
-  invalid_argument("write not implemented");
-}
-
-value lwt_unix_read(value fd, value buf, value ofs, value len)
-{
-  invalid_argument("read not implemented");
-}
-
-#endif
 
 /* +-----------------------------------------------------------------+
    | Recv/send                                                       |
@@ -448,20 +430,12 @@ value lwt_unix_system_byte_order()
 
 int notification_fd_writer = -1;
 
-#if defined(LWT_ON_WINDOWS)
-HANDLE notification_pipe_mutex;
-#else
-pthread_mutex_t notification_pipe_mutex = PTHREAD_MUTEX_INITIALIZER;
-#endif
+lwt_unix_mutex notification_pipe_mutex;
 
 value lwt_unix_init_notification(value fd)
 {
   notification_fd_writer = FD_val(fd);
-
-#if defined(LWT_ON_WINDOWS)
-  notification_pipe_mutex = CreateMutex(NULL, FALSE, NULL);
-#endif
-
+  lwt_unix_initialize_mutex(notification_pipe_mutex);
   return Val_unit;
 }
 
@@ -475,22 +449,14 @@ void lwt_unix_send_notification(int id)
 
   caml_enter_blocking_section();
 
-#if defined(LWT_ON_WINDOWS)
-  WaitForSingleObject(notification_pipe_mutex, INFINITE);
-#else
-  pthread_mutex_lock(&notification_pipe_mutex);
-#endif
+  lwt_unix_acquire_mutex(notification_pipe_mutex);
 
   int offset = 0;
   while (offset < 4) {
     int n = write(notification_fd_writer, &(buf[offset]), 4 - offset);
 
     if (n <= 0) {
-#if defined(LWT_ON_WINDOWS)
-      ReleaseMutex(notification_pipe_mutex);
-#else
-      pthread_mutex_unlock(&notification_pipe_mutex);
-#endif
+      lwt_unix_release_mutex(notification_pipe_mutex);
       caml_leave_blocking_section();
       uerror("lwt_unix_send_notification", Nothing);
     }
@@ -498,11 +464,7 @@ void lwt_unix_send_notification(int id)
     offset += n;
   }
 
-#if defined(LWT_ON_WINDOWS)
-  ReleaseMutex(notification_pipe_mutex);
-#else
-  pthread_mutex_unlock(&notification_pipe_mutex);
-#endif
+  lwt_unix_release_mutex(notification_pipe_mutex);
 
   caml_leave_blocking_section();
 }
@@ -527,7 +489,7 @@ value lwt_unix_send_notification_stub(value id)
 #  define PTHREAD_STACK_MIN 0
 #endif
 
-void lwt_unix_launch_thread(void* (*start)(void*), void* data)
+lwt_unix_thread lwt_unix_launch_thread(void* (*start)(void*), void* data)
 {
   pthread_t thread;
   pthread_attr_t attr;
@@ -541,22 +503,22 @@ void lwt_unix_launch_thread(void* (*start)(void*), void* data)
   /* Use the minimum amount of stack: */
   pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN < X_STACKSIZE ? X_STACKSIZE : PTHREAD_STACK_MIN);
 
-  int res = pthread_create(&thread, &attr, start, data);
+  int result = pthread_create(&thread, &attr, start, data);
 
-  if (res) {
-    errno = res;
-    uerror("lwt_unix_launch_thread", Nothing);
-  }
+  if (result) unix_error(result, "lwt_unix_launch_thread", Nothing);
 
   pthread_attr_destroy (&attr);
+
+  return thread;
 }
 
 #else
 
-void lwt_unix_launch_thread(void* (*start)(void*), void* data)
+lwt_unix_thread lwt_unix_launch_thread(void* (*start)(void*), void* data)
 {
-  if (CreateThread(NULL, X_STACKSIZE, (LPTHREAD_START_ROUTINE)start, (LPVOID)data, 0, NULL) == NULL)
-    uerror("lwt_unix_launch_thread", Nothing);
+  HANDLE thread = CreateThread(NULL, X_STACKSIZE, (LPTHREAD_START_ROUTINE)start, (LPVOID)data, 0, NULL);
+  if (thread == NULL) uerror("lwt_unix_launch_thread", Nothing);
+  return thread;
 }
 
 #endif
@@ -569,7 +531,7 @@ void lwt_unix_launch_thread(void* (*start)(void*), void* data)
 
 #include <poll.h>
 
-value lwt_unix_readable(value fd)
+CAMLprim value lwt_unix_readable(value fd)
 {
   struct pollfd pollfd;
   pollfd.fd = Int_val(fd);
@@ -580,7 +542,7 @@ value lwt_unix_readable(value fd)
   return (Val_bool(pollfd.revents & POLLIN));
 }
 
-value lwt_unix_writable(value fd)
+CAMLprim value lwt_unix_writable(value fd)
 {
   struct pollfd pollfd;
   pollfd.fd = Int_val(fd);
@@ -593,14 +555,147 @@ value lwt_unix_writable(value fd)
 
 #else
 
-value lwt_unix_readable(value fd)
+CAMLprim value lwt_unix_readable(value fd)
 {
   return Val_int(1);
 }
 
-value lwt_unix_writable(value fd)
+CAMLprim value lwt_unix_writable(value fd)
 {
   return Val_int(1);
 }
 
 #endif
+
+/* +-----------------------------------------------------------------+
+   | Detached calls                                                  |
+   +-----------------------------------------------------------------+ */
+
+/* Description of jobs. */
+struct custom_operations job_ops = {
+  "lwt.unix.job",
+  custom_finalize_default,
+  custom_compare_default,
+  custom_hash_default,
+  custom_serialize_default,
+  custom_deserialize_default
+};
+
+/* Get the job structure contained in a custom value. */
+#define Job_val(v) *(lwt_unix_job*)Data_custom_val(v)
+
+value lwt_unix_alloc_job(lwt_unix_job job)
+{
+  value val_job = caml_alloc_custom(&job_ops, sizeof(lwt_unix_job), 0, 1);
+  Job_val(val_job) = job;
+  return val_job;
+}
+
+/* The function executed by detached threads. */
+static void *worker(void *data)
+{
+  lwt_unix_job job = (lwt_unix_job)data;
+
+  /* Execute the job. */
+  job->worker(job);
+
+  switch (job->async_method) {
+
+  case LWT_UNIX_ASYNC_METHOD_NONE:
+    job->done = 1;
+    break;
+
+  case LWT_UNIX_ASYNC_METHOD_THREAD:
+    lwt_unix_acquire_mutex(job->mutex);
+
+    /* Job is done. If the main thread stopped until now, asynchronous
+       notification is not necessary. */
+    job->done = 1;
+
+    /* Send a notification if the main thread continued its execution
+       before the job terminated. */
+    if (job->fast == 0) {
+      lwt_unix_release_mutex(job->mutex);
+      lwt_unix_send_notification(job->notification_id);
+    } else
+      lwt_unix_release_mutex(job->mutex);
+
+    break;
+  }
+
+  return NULL;
+}
+
+CAMLprim value lwt_unix_start_job(value val_job, value val_notification_id, value val_async_method)
+{
+  lwt_unix_job job = Job_val(val_job);
+
+  /* Initialises job parameters. */
+  job->done = 0;
+  job->fast = 1;
+  job->async_method = Int_val(val_async_method);
+  job->notification_id = Int_val(val_notification_id);
+
+  switch (job->async_method) {
+
+  case LWT_UNIX_ASYNC_METHOD_NONE:
+    /* Execute the job synchronously. */
+    job->worker(job);
+    break;
+
+  case LWT_UNIX_ASYNC_METHOD_THREAD:
+    lwt_unix_initialize_mutex(job->mutex);
+    /* Launch the job on another thread. */
+    lwt_unix_launch_thread(worker, (void*)job);
+    break;
+  }
+
+  return Val_unit;
+}
+
+CAMLprim value lwt_unix_check_job(value val_job)
+{
+  lwt_unix_job job = Job_val(val_job);
+
+  switch (job->async_method) {
+
+  case LWT_UNIX_ASYNC_METHOD_NONE:
+    return Val_int(1);
+
+  case LWT_UNIX_ASYNC_METHOD_THREAD:
+    lwt_unix_acquire_mutex(job->mutex);
+    /* We are not waiting anymore. */
+    job->fast = 0;
+    value result = Val_bool(job->done);
+    lwt_unix_release_mutex(job->mutex);
+
+    return result;
+  }
+
+  return Val_int(0);
+}
+
+CAMLprim value lwt_unix_cancel_job(value val_job)
+{
+  struct lwt_unix_job *job = Job_val(val_job);
+
+  switch (job->async_method) {
+
+  case LWT_UNIX_ASYNC_METHOD_NONE:
+    break;
+
+  case LWT_UNIX_ASYNC_METHOD_THREAD:
+    lwt_unix_acquire_mutex(job->mutex);
+    if (job->done == 0) {
+#if defined(LWT_ON_WINDOWS)
+      /* TODO: do something here. */
+#else
+      pthread_cancel(job->thread);
+#endif
+    }
+    lwt_unix_release_mutex(job->mutex);
+    break;
+  }
+
+  return Val_unit;
+}

@@ -68,7 +68,8 @@ let flush ch = Lwt_io.flush ch.channel
 let atomic f ch = Lwt_io.atomic (fun ch' -> f { ch with channel = ch' }) ch.channel
 
 let open_file ?buffer_size ?strict ?encoding ?flags ?perm ~mode name =
-  make ?strict ?encoding (Lwt_io.open_file ?flags ?perm ~mode name)
+  lwt ch = Lwt_io.open_file ?flags ?perm ~mode name in
+  return (make ?strict ?encoding ch)
 
 let with_file ?buffer_size ?strict ?encoding ?flags ?perm ~mode name f =
   Lwt_io.with_file ?flags ?perm ~mode name (fun ch -> f (make ?strict ?encoding ch))
@@ -301,9 +302,14 @@ let eprintlf fmt = Printf.ksprintf eprintl fmt
 let ignore_close ch =
   ignore (close ch)
 
-let make_stream f ic =
-  Gc.finalise ignore_close ic;
+let make_stream f lazy_ic =
+  let lazy_ic =
+    lazy(lwt ic = Lazy.force lazy_ic in
+         Gc.finalise ignore_close ic;
+         return ic)
+  in
   Lwt_stream.from (fun _ ->
+                     lwt ic = Lazy.force lazy_ic in
                      try_lwt
                        f ic >|= fun x -> Some x
                      with
@@ -312,13 +318,13 @@ let make_stream f ic =
                            return None)
 
 let lines_of_file filename =
-  make_stream read_line (open_file ~mode:input filename)
+  make_stream read_line (lazy(open_file ~mode:input filename))
 
 let lines_to_file filename lines =
   with_file ~mode:output filename (fun oc -> write_lines oc lines)
 
 let chars_of_file filename =
-  make_stream read_char (open_file ~mode:input filename)
+  make_stream read_char (lazy(open_file ~mode:input filename))
 
 let chars_to_file filename chars =
   with_file ~mode:output filename (fun oc -> write_chars oc chars)

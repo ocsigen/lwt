@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: 856ca0eb0178050daf1c1005905121f0)
+# DO NOT EDIT (digest: 740ffd0f34a13ab45ff2f039cb4bc760)
 version = "2.1.1"
 description = "Lightweight thread library for OCaml (core library)"
 archive(byte) = "lwt.cma"
@@ -8,7 +8,7 @@ exists_if = "lwt.cma"
 package "ssl" (
  version = "2.1.1"
  description = "SSL support for Lwt"
- requires = "lwt lwt.unix ssl"
+ requires = "ssl lwt.unix"
  archive(byte) = "lwt-ssl.cma"
  archive(native) = "lwt-ssl.cmxa"
  exists_if = "lwt-ssl.cma"

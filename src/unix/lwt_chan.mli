@@ -44,8 +44,8 @@ val really_input : in_channel -> string -> int -> int -> unit Lwt.t
 val input_char : in_channel -> char Lwt.t
 val input_binary_int : in_channel -> int Lwt.t
 
-val open_in_gen : Unix.open_flag list -> int -> string -> in_channel
-val open_in : string -> in_channel
+val open_in_gen : Unix.open_flag list -> int -> string -> in_channel Lwt.t
+val open_in : string -> in_channel Lwt.t
 val close_in : in_channel -> unit Lwt.t
 
 (** {2 Cooperative output channels} *)
@@ -68,8 +68,8 @@ val output_value : out_channel -> 'a -> unit Lwt.t
 val output_char : out_channel -> char -> unit Lwt.t
 val output_binary_int : out_channel -> int -> unit Lwt.t
 
-val open_out_gen : Unix.open_flag list -> int -> string -> out_channel
-val open_out : string -> out_channel
+val open_out_gen : Unix.open_flag list -> int -> string -> out_channel Lwt.t
+val open_out : string -> out_channel Lwt.t
 val close_out : out_channel -> unit Lwt.t
 
 val open_connection : Unix.sockaddr -> (in_channel * out_channel) Lwt.t

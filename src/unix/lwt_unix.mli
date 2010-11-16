@@ -61,6 +61,38 @@ val handle_unix_error : ('a -> 'b Lwt.t) -> 'a -> 'b Lwt.t
   (** Same as [Unix.handle_unix_error] but catches lwt-level
       exceptions *)
 
+(** {6 Configuration} *)
+
+(** For system calls that cannot be made asynchronously, Lwt uses one
+    of the following method: *)
+type async_method =
+  | Async_none
+      (** System calls are made synchronously, and may block the
+          entire program. *)
+  | Async_thread
+      (** System calls are made in another thread, thus without
+          blocking other Lwt threads. The drawback is that it may
+          degrade performances in some cases.
+
+          This is the default. *)
+
+val default_async_method : unit -> async_method
+  (** Returns the default async method.
+
+      This can be initialized using the environment variable
+      ["LWT_ASYNC_METHOD"] with possible values ["none"] and
+      ["thread"]. *)
+
+val set_default_async_method : async_method -> unit
+  (** Sets the default async method. *)
+
+val async_method : unit -> async_method
+  (** [async_method ()] returns the async method used in the current
+      thread. *)
+
+val set_async_method : async_method -> unit Lwt.t
+  (** Sets the async method used in the current thread. *)
+
 (** {6 Sleeping} *)
 
 val sleep : float -> unit Lwt.t
@@ -105,7 +137,7 @@ type file_descr
 
 (** State of a {b file descriptor} *)
 type state =
-  | Open
+  | Opened
       (** The {b file descriptor} is opened *)
   | Closed
       (** The {b file descriptor} has been closed by {!close}. It must
@@ -117,38 +149,33 @@ type state =
 val state : file_descr -> state
   (** [state fd] returns the state of [fd] *)
 
-val openfile : string -> Unix.open_flag list -> Unix.file_perm -> file_descr
-  (** Wrapper for [Unix.openfile] *)
-
 val unix_file_descr : file_descr -> Unix.file_descr
   (** Returns the underlying unix {b file descriptor}. It always
       succeed, even if the {b file descriptor}'s state is not
       {!Open}. *)
 
-val of_unix_file_descr : Unix.file_descr -> file_descr
-  (** Creates a lwt {b file descriptor} from a unix one. It has the
-      side effect of putting it into non-blocking mode *)
+val of_unix_file_descr : ?blocking : bool -> ?set_flags : bool -> Unix.file_descr -> file_descr
+  (** Creates a lwt {b file descriptor} from a unix one. [blocking] is
+      the blocking mode of the file-descriptor. It defaults to
+      [false]. If [set_flags] is [true] (the default) then the file
+      flags are modified according to the [blocking] argument,
+      otherwise they are left unchanged.
 
-val of_unix_file_descr_blocking : Unix.file_descr -> file_descr
-  (** Normally [Lwt_unix] uses file descriptors in non-blocking mode,
-      but in certain cases, like for standard descriptors ({!stdin},
-      {!stdout} and {!stderr}) we do not want that.
-
-      This function do not modify the {b file descritpor} flags but
-      other operations involving it may be a bit less efficient, since
-      [Lwt_unix] will always check that the {b file descriptor} is
-      ready before using it.
-
-      Note: this is not 100% safe to use file descriptors in blocking
-      mode, so you should avoid doing it. *)
+      Note that the blocking mode is less efficient than the
+      non-blocking one, so it should be used only for file descriptors
+      that does not support asynchronous operations, such as regular
+      files, or for shared descriptors such as {!stdout}, {!stderr} or
+      {!stdin}. *)
 
 val blocking : file_descr -> bool
   (** [blocking fd] returns whether [fd] is used in blocking or
       non-blocking mode. *)
 
-val set_blocking : file_descr -> bool -> unit
+val set_blocking : ?set_flags : bool -> file_descr -> bool -> unit
   (** [set_blocking fd b] puts [fd] in blocking or non-blocking
-      mode. *)
+      mode. If [set_flags] is [true] (the default) then the file flags
+      are modified, otherwise the modification is only done at the
+      application level. *)
 
 val abort : file_descr -> exn -> unit
   (** [abort fd exn] makes all current and further uses of the file
@@ -157,6 +184,11 @@ val abort : file_descr -> exn -> unit
 
       If the {b file descrptor} is closed, this does nothing, if it is
       aborted, this replace the abort exception by [exn]. *)
+
+val openfile : string -> Unix.open_flag list -> Unix.file_perm -> file_descr Lwt.t
+  (** Wrapper for [Unix.openfile]. The returned file descriptor is put
+      into blocking mode according to the file kind; fifos and sockets
+      are in non-blocking mode and other are in blocking mode. *)
 
 val close : file_descr -> unit
   (** Close a {b file descriptor}. This close the underlying unix {b
@@ -493,6 +525,25 @@ val register_action : io_event -> file_descr -> (unit -> 'a) -> 'a Lwt.t
       - you should prefer using {!wrap_syscall}
   *)
 
+type 'a job
+  (** Type of jobs that run:
+
+      - on another thread if the current async method is [Async_thread]
+      - on the main thread if the current async method is [Async_none]. *)
+
+val execute_job :
+  ?async_method : async_method ->
+  job : 'a job ->
+  result : ('a job -> 'b) ->
+  free : ('a job -> unit) -> 'b Lwt.t
+  (** [execute_job ?async_method ~job ~get ~free] starts
+      [job] and wait for its termination.
+
+      [async_method] is how the job will be executed. It defaults to
+      the async method of the current thread. [result] is used to get
+      the result of the job, and [free] to free its associated
+      resources. *)
+
 (** {6 Notifications} *)
 
 (** Lwt internally use a pipe to send notification to the main
@@ -514,9 +565,12 @@ val send_notification : int -> unit
 val stop_notification : int -> unit
   (** Stop the given notification. Note that you should not reuse the
       id after the notification has been stopped, the result is
-      unspecified if you do so.
+      unspecified if you do so. *)
 
-      This function is not thread-safe. *)
+val set_notification : int -> (unit -> unit) -> unit
+  (** [set_notification id f] replace the function associated to the
+      notification by [f]. It raises [Not_found] if the given
+      notification is not found. *)
 
 (**/**)
 

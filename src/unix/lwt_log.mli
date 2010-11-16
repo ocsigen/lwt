@@ -246,7 +246,7 @@ val syslog : ?template : template -> ?paths : string list -> facility : syslog_f
       @param template defaults to ["$(date) $(name)[$(pid)]: $(section): $(message)"]
   *)
 
-val file : ?template : template -> ?mode : [ `Truncate | `Append ] -> ?perm : Unix.file_perm -> file_name : string -> unit -> logger
+val file : ?template : template -> ?mode : [ `Truncate | `Append ] -> ?perm : Unix.file_perm -> file_name : string -> unit -> logger Lwt.t
   (** [desf_file ?template ?mode ?perm ~file_name ()] creates an
       logger which will write messages to [file_name].
 

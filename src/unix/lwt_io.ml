@@ -512,42 +512,7 @@ let of_string ~mode str =
   } in
   wrapper
 
-let of_mmap ?(buffer_size=Lwt_mmap.max_read_size) ?close ~mode t =
-  let dim = Lwt_mmap.size t in
-  let position = ref 0 in
-  let read str offset len =
-    lwt n = Lwt_mmap.read t !position str offset len in
-    position := !position + n;
-    return n
-  in
-  let seek pos cmd =
-    let new_pos =
-      match cmd with
-	| Unix.SEEK_SET -> pos
-	| Unix.SEEK_CUR -> Int64.add (Int64.of_int !position) pos
-	| Unix.SEEK_END -> Int64.add (Int64.of_int dim) pos
-    in
-    if (Int64.of_int dim) < new_pos || new_pos < 0L
-    then raise_lwt (Invalid_argument "Lwt_io.of_mmap/seek")
-    else (position := Int64.to_int new_pos; return (new_pos))
-  in
-  make ~buffer_size
-    ~close:(match close with
-              | Some f -> (fun () -> lwt () = f () in Lwt_mmap.close t; return ())
-              | None -> (fun () -> Lwt_mmap.close t; return ()))
-    ~seek ~mode read
-
-let of_unix_fd_mmap ?buffer_size ?close ~mode fd =
-  match mode with
-    | Input ->
-      begin
-	match (Lwt_mmap.of_unix_fd fd) with
-	  | None -> None
-	  | Some t -> Some (of_mmap ?buffer_size ?close ~mode t)
-      end
-    | Output -> None
-
-let of_fd_no_mmap ?buffer_size ?close ~mode fd =
+let of_fd ?buffer_size ?close ~mode fd =
   let perform_io = match mode with
     | Input -> Lwt_unix.read fd
     | Output -> Lwt_unix.write fd
@@ -559,25 +524,10 @@ let of_fd_no_mmap ?buffer_size ?close ~mode fd =
               | None -> (fun () -> close_fd fd))
     ~seek:(fun pos cmd -> return (Lwt_unix.LargeFile.lseek fd pos cmd))
     ~mode
-    (match (Lwt_unix.fstat fd).Unix.st_kind with
-       | Unix.S_REG | Unix.S_DIR ->
-           (* Non-blocking I/Os are not possible on regular files: *)
-           let auto_yield = Lwt_unix.auto_yield 0.05 in
-           (fun str pos ofs ->
-              lwt () = auto_yield () in
-              perform_io str pos ofs)
-       | _ ->
-           perform_io)
-
-let of_fd  ?buffer_size ?close ~mode fd =
-  match of_unix_fd_mmap ?buffer_size ?close ~mode (Lwt_unix.unix_file_descr fd) with
-    | Some io -> io
-    | None -> of_fd_no_mmap ?buffer_size ?close ~mode fd
+    perform_io
 
 let of_unix_fd ?buffer_size ?close ~mode fd =
-  match of_unix_fd_mmap ?buffer_size ?close ~mode fd with
-    | Some io -> io
-    | None -> of_fd_no_mmap ?buffer_size ?close ~mode (Lwt_unix.of_unix_file_descr fd)
+  of_fd ?buffer_size ?close ~mode (Lwt_unix.of_unix_file_descr fd)
 
 let buffered ch =
   match ch.channel.mode with
@@ -1323,13 +1273,11 @@ let open_file ?buffer_size ?flags ?perm ~mode filename =
     | None, Output ->
         0o666
   in
-  let fd = Unix.openfile filename flags perm in
-  match of_unix_fd_mmap ?buffer_size ~mode fd with
-    | Some io -> Unix.close fd; io
-    | None -> of_fd_no_mmap ?buffer_size ~mode (Lwt_unix.of_unix_file_descr fd)
+  lwt fd = Lwt_unix.openfile filename flags perm in
+  return (of_fd ?buffer_size ~mode fd)
 
 let with_file ?buffer_size ?flags ?perm ~mode filename f =
-  let ic = open_file ?buffer_size ?flags ?perm ~mode filename in
+  lwt ic = open_file ?buffer_size ?flags ?perm ~mode filename in
   try_lwt
     f ic
   finally
@@ -1402,9 +1350,14 @@ let establish_server ?buffer_size ?(backlog=5) sockaddr f =
 let ignore_close ch =
   ignore (close ch)
 
-let make_stream f ic =
-  Gc.finalise ignore_close ic;
+let make_stream f lazy_ic =
+  let lazy_ic =
+    lazy(lwt ic = Lazy.force lazy_ic in
+         Gc.finalise ignore_close ic;
+         return ic)
+  in
   Lwt_stream.from (fun _ ->
+                     lwt ic = Lazy.force lazy_ic in
                      lwt x = f ic in
                      if x = None then
                        lwt () = close ic in
@@ -1413,13 +1366,13 @@ let make_stream f ic =
                        return x)
 
 let lines_of_file filename =
-  make_stream read_line_opt (open_file ~mode:input filename)
+  make_stream read_line_opt (lazy(open_file ~mode:input filename))
 
 let lines_to_file filename lines =
   with_file ~mode:output filename (fun oc -> write_lines oc lines)
 
 let chars_of_file filename =
-  make_stream read_char_opt (open_file ~mode:input filename)
+  make_stream read_char_opt (lazy(open_file ~mode:input filename))
 
 let chars_to_file filename chars =
   with_file ~mode:output filename (fun oc -> write_chars oc chars)

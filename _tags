@@ -12,7 +12,7 @@
 <src/glib/lwt_glib_stubs.*>: use_C_glib
 
 # OASIS_START
-# DO NOT EDIT (digest: 3fa241647e4dd44d4732cc1cb9906237)
+# DO NOT EDIT (digest: 53d198a04f229a2f77c89e150fd23346)
 # Library lwt
 "src/core": include
 # Library lwt-unix
@@ -35,6 +35,15 @@
 "src/unix/lwt_libev_stubs.c": use_lwt
 "src/unix/lwt_libev_stubs.c": pkg_unix
 "src/unix/lwt_libev_stubs.c": pkg_bigarray
+"src/unix/lwt_unix_read.c": use_lwt
+"src/unix/lwt_unix_read.c": pkg_unix
+"src/unix/lwt_unix_read.c": pkg_bigarray
+"src/unix/lwt_unix_write.c": use_lwt
+"src/unix/lwt_unix_write.c": pkg_unix
+"src/unix/lwt_unix_write.c": pkg_bigarray
+"src/unix/lwt_unix_open.c": use_lwt
+"src/unix/lwt_unix_open.c": pkg_unix
+"src/unix/lwt_unix_open.c": pkg_bigarray
 # Library lwt-react
 "src/react": include
 <src/react/*.ml{,i}>: use_lwt

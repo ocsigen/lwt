@@ -56,15 +56,6 @@ let threads_count = ref 0
    | Preemptive threads management                                   |
    +-----------------------------------------------------------------+ *)
 
-(* Pipe used to communicate between worker threads and the main
-   thread. Each time a thread finish its work, it send its id to the
-   main thread: *)
-let finished_pipe =
-  let (in_fd, out_fd) = Lwt_unix.pipe_in () in
-  Lwt_unix.set_close_on_exec in_fd;
-  Unix.set_close_on_exec out_fd;
-  (Lwt_io.of_fd ~mode:Lwt_io.input ~buffer_size:256 in_fd, Unix.out_channel_of_descr out_fd)
-
 type thread = {
   task_channel: (int * (unit -> unit)) Event.channel;
   (* Channel used to communicate notification id and tasks to the

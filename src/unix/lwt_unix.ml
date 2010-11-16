@@ -29,6 +29,76 @@ module Int_map = Map.Make(struct type t = int let compare = compare end)
 let windows_hack = Sys.os_type <> "Unix"
 
 (* +-----------------------------------------------------------------+
+   | Configuration                                                   |
+   +-----------------------------------------------------------------+ *)
+
+type async_method =
+  | Async_none
+  | Async_thread
+
+let default_async_method_var = ref Async_thread
+
+let () =
+  try
+    match Sys.getenv "LWT_ASYNC_METHOD" with
+      | "none" ->
+          default_async_method_var := Async_none
+      | "thread" ->
+          default_async_method_var := Async_thread
+      | str ->
+          Printf.eprintf
+            "%s: invalid lwt async method: '%s', must be 'none' or 'thread'\n%!"
+            (Filename.basename Sys.executable_name) str
+  with Not_found ->
+    ()
+
+let default_async_method () = !default_async_method_var
+let set_default_async_method am = default_async_method_var := am
+
+let async_method_key = Lwt.new_key ()
+
+let async_method () =
+  match Lwt.get async_method_key with
+    | Some am -> am
+    | None -> !default_async_method_var
+
+let set_async_method am =
+  Lwt.set async_method_key (Some am)
+
+(* +-----------------------------------------------------------------+
+   | Notifications management                                        |
+   +-----------------------------------------------------------------+ *)
+
+(* Informations about a notifier *)
+type notifier = {
+  notify_handler : unit -> unit;
+  (* The callback *)
+
+  notify_once : bool;
+  (* Whether to remove the notifier after the reception of the first
+     notification *)
+}
+
+let notifiers = ref Int_map.empty
+
+let current_notification_id = ref 0
+
+let make_notification ?(once=false) f =
+  incr current_notification_id;
+  while Int_map.mem !current_notification_id !notifiers do
+    incr current_notification_id
+  done;
+  notifiers := Int_map.add !current_notification_id { notify_once = once; notify_handler = f } !notifiers;
+  !current_notification_id
+
+let stop_notification id =
+  notifiers := Int_map.remove id !notifiers
+
+let set_notification id f =
+  let notifier = Int_map.find id !notifiers in
+  notifiers := Int_map.add id { notifier with notify_handler = f } !notifiers
+
+(* +-----------------------------------------------------------------+
    | libev suff                                                      |
    +-----------------------------------------------------------------+ *)
 
@@ -80,7 +150,7 @@ let with_timeout d f = Lwt.pick [timeout d; Lwt.apply f ()]
    | File descriptor wrappers                                        |
    +-----------------------------------------------------------------+ *)
 
-type state = Open | Closed | Aborted of exn
+type state = Opened | Closed | Aborted of exn
 
 type file_descr = {
   fd : Unix.file_descr;
@@ -93,22 +163,18 @@ type file_descr = {
   (* Is the file descriptor in blocking or non-blocking mode *)
 }
 
-let mk_ch fd =
-  if windows_hack then
-    match (Unix.fstat fd).Unix.st_kind  with
-      | Unix.S_SOCK ->
-          Unix.set_nonblock fd;
-          { fd = fd; state = Open; blocking = false }
-      | _ ->
-          { fd = fd; state = Open; blocking = true }
-  else begin
-    Unix.set_nonblock fd;
-    { fd = fd; state = Open; blocking = false }
-  end
+let mk_ch ?(blocking=false) ?(set_flags=true) fd =
+  if set_flags then begin
+    if blocking then
+      Unix.clear_nonblock fd
+    else
+      Unix.set_nonblock fd
+  end;
+  { fd = fd; state = Opened; blocking = blocking }
 
 let rec check_descriptor ch =
   match ch.state with
-    | Open ->
+    | Opened ->
         ()
     | Aborted e ->
         raise e
@@ -121,16 +187,33 @@ let blocking ch =
   check_descriptor ch;
   ch.blocking
 
-let set_blocking ch blocking =
+let set_blocking ?(set_flags=true) ch blocking =
   check_descriptor ch;
   ch.blocking <- blocking;
-  if blocking then
-    Unix.clear_nonblock ch.fd
-  else
-    Unix.set_nonblock ch.fd
+  if set_flags then begin
+    if blocking then
+      Unix.clear_nonblock ch.fd
+    else
+      Unix.set_nonblock ch.fd
+  end
 
 external readable : Unix.file_descr -> bool = "lwt_unix_readable" "noalloc"
 external writable : Unix.file_descr -> bool = "lwt_unix_writable" "noalloc"
+
+let set_state ch st =
+  ch.state <- st
+
+let abort ch e =
+  if ch.state <> Closed then
+    set_state ch (Aborted e)
+
+let unix_file_descr ch = ch.fd
+
+let of_unix_file_descr = mk_ch
+
+let stdin = of_unix_file_descr ~blocking:true Unix.stdin
+let stdout = of_unix_file_descr ~blocking:true Unix.stdout
+let stderr = of_unix_file_descr ~blocking:true Unix.stderr
 
 (* +-----------------------------------------------------------------+
    | Actions on file descriptors                                     |
@@ -208,69 +291,90 @@ let wrap_syscall event ch action =
         raise_lwt e
 
 (* +-----------------------------------------------------------------+
-   | System calls                                                    |
+   | Jobs                                                            |
    +-----------------------------------------------------------------+ *)
 
-let set_state ch st =
-  ch.state <- st
+type 'a job
 
-let abort ch e =
-  if ch.state <> Closed then
-    set_state ch (Aborted e)
+external start_job : 'a job -> int -> async_method -> unit = "lwt_unix_start_job"
+    (* Starts the given job with given parameters. *)
 
-let unix_file_descr ch = ch.fd
+external check_job : 'a job -> bool = "lwt_unix_check_job" "noalloc"
+    (* Check whether that a job has terminated or not. If it has not
+       yet terminated, it is marked so it will send a notification
+       when it finishes. *)
 
-let of_unix_file_descr fd = mk_ch fd
+external cancel_job : 'a job -> unit = "lwt_unix_cancel_job" "noalloc"
+    (* Cancel the thread of the given job. *)
 
-let of_unix_file_descr_blocking fd = { fd = fd; state = Open; blocking = true }
+let execute_job ?async_method ~job ~result ~free =
+  let async_method =
+    match async_method with
+      | Some am -> am
+      | None ->
+          match Lwt.get async_method_key with
+            | Some am -> am
+            | None -> !default_async_method_var
+  in
+  (* Create the notification for asynchronous wakeup. *)
+  let id = make_notification ~once:true ignore in
+  (* Starts the job. *)
+  start_job job id async_method;
+  lwt () =
+    match async_method with
+      | Async_none ->
+          return ()
+      | Async_thread ->
+          try_lwt
+            (* Give some time to the job before we fallback to
+               asynchronous notification. *)
+            pause ()
+          with Canceled as exn ->
+            cancel_job job;
+            (* Free resources for when the job terminates. *)
+            if check_job job then begin
+              stop_notification id;
+              free job
+            end else
+              set_notification id (fun () -> free job);
+            raise_lwt exn
+  in
+  if check_job job then begin
+    (* The job has already terminated, no need for asynchronous
+       notification. *)
+    stop_notification id;
+    (* Read and return the result immediatly. *)
+    let thread =
+      try
+        return (result job)
+      with exn ->
+        fail exn
+    in
+    free job;
+    thread
+  end else begin
+    (* The job has not terminated, setup the notification for the
+       asynchronous wakeup. *)
+    let waiter, wakener = task () in
+    set_notification id
+      (fun () ->
+         begin
+           try
+             wakeup wakener (result job);
+           with exn ->
+             wakeup_exn wakener exn
+         end;
+         free job);
+    on_cancel waiter
+      (fun () ->
+         cancel_job job;
+         set_notification id (fun () -> free job));
+    waiter
+  end
 
-let stdin = of_unix_file_descr_blocking Unix.stdin
-let stdout = of_unix_file_descr_blocking Unix.stdout
-let stderr = of_unix_file_descr_blocking Unix.stderr
-
-external lwt_unix_read : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_read"
-external lwt_unix_write : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_write"
-external lwt_unix_recv : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_recv"
-external lwt_unix_send : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_send"
-
-let read ch buf pos len =
-  if pos < 0 || len < 0 || pos > String.length buf - len then
-    invalid_arg "Lwt_unix.read"
-  else if windows_hack then begin
-    check_descriptor ch;
-    register_action Read ch (fun () -> Unix.read ch.fd buf pos len)
-  end else
-    wrap_syscall Read ch (fun () -> lwt_unix_read ch.fd buf pos len)
-
-let write ch buf pos len =
-  if pos < 0 || len < 0 || pos > String.length buf - len then
-    invalid_arg "Lwt_unix.write"
-  else if windows_hack then
-    wrap_syscall Write ch (fun () -> Unix.write ch.fd buf pos len)
-  else
-    wrap_syscall Write ch (fun () -> lwt_unix_write ch.fd buf pos len)
-
-let recv ch buf pos len flags =
-  if pos < 0 || len < 0 || pos > String.length buf - len then
-    invalid_arg "Lwt_unix.recv"
-  else if windows_hack then
-    wrap_syscall Read ch (fun () -> Unix.recv ch.fd buf pos len flags)
-  else
-    wrap_syscall Read ch (fun () -> lwt_unix_recv ch.fd buf pos len flags)
-
-let send ch buf pos len flags =
-  if pos < 0 || len < 0 || pos > String.length buf - len then
-    invalid_arg "Lwt_unix.send"
-  else if windows_hack then
-    wrap_syscall Write ch (fun () -> Unix.send ch.fd buf pos len flags)
-  else
-    wrap_syscall Write ch (fun () -> lwt_unix_send ch.fd buf pos len flags)
-
-let recvfrom ch buf ofs len flags =
-  wrap_syscall Read ch (fun _ -> Unix.recvfrom ch.fd buf ofs len flags)
-
-let sendto ch buf ofs len flags addr =
-  wrap_syscall Write ch (fun _ -> Unix.sendto ch.fd buf ofs len flags addr)
+(* +-----------------------------------------------------------------+
+   | System calls                                                    |
+   +-----------------------------------------------------------------+ *)
 
 let wait_read ch =
   try_lwt
@@ -280,6 +384,23 @@ let wait_read ch =
     else
       register_action Read ch ignore
 
+external stub_read : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_read"
+external read_job : Unix.file_descr -> int -> [ `unix_read ] job = "lwt_unix_read_job"
+external read_result : [ `unix_read ] job -> string -> int -> int = "lwt_unix_read_result" "noalloc"
+external read_free : [ `unix_read ] job -> unit = "lwt_unix_read_free" "noalloc"
+
+let read ch buf pos len =
+  if pos < 0 || len < 0 || pos > String.length buf - len then
+    invalid_arg "Lwt_unix.read"
+  else if windows_hack then begin
+    check_descriptor ch;
+    register_action Read ch (fun () -> Unix.read ch.fd buf pos len)
+  end else if ch.blocking then
+    lwt () = wait_read ch in
+    execute_job (read_job ch.fd len) (fun job -> read_result job buf pos) read_free
+  else
+    wrap_syscall Read ch (fun () -> stub_read ch.fd buf pos len)
+
 let wait_write ch =
   try_lwt
     check_descriptor ch;
@@ -287,6 +408,49 @@ let wait_write ch =
       return ()
     else
       register_action Write ch ignore
+
+external stub_write : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_write"
+external write_job : Unix.file_descr -> string -> int -> int -> [ `unix_write ] job = "lwt_unix_write_job"
+external write_result : [ `unix_write ] job -> int = "lwt_unix_write_result" "noalloc"
+external write_free : [ `unix_write ] job -> unit = "lwt_unix_write_free" "noalloc"
+
+let write ch buf pos len =
+  if pos < 0 || len < 0 || pos > String.length buf - len then
+    invalid_arg "Lwt_unix.write"
+  else if windows_hack then begin
+    check_descriptor ch;
+    register_action Read ch (fun () -> Unix.write ch.fd buf pos len)
+  end else if ch.blocking then
+    lwt () = wait_write ch in
+    execute_job (write_job ch.fd buf pos len) write_result write_free
+  else
+    wrap_syscall Write ch (fun () -> stub_write ch.fd buf pos len)
+
+external stub_recv : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_recv"
+
+let recv ch buf pos len flags =
+  if pos < 0 || len < 0 || pos > String.length buf - len then
+    invalid_arg "Lwt_unix.recv"
+  else if windows_hack then
+    wrap_syscall Read ch (fun () -> Unix.recv ch.fd buf pos len flags)
+  else
+    wrap_syscall Read ch (fun () -> stub_recv ch.fd buf pos len flags)
+
+external stub_send : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_send"
+
+let send ch buf pos len flags =
+  if pos < 0 || len < 0 || pos > String.length buf - len then
+    invalid_arg "Lwt_unix.send"
+  else if windows_hack then
+    wrap_syscall Write ch (fun () -> Unix.send ch.fd buf pos len flags)
+  else
+    wrap_syscall Write ch (fun () -> stub_send ch.fd buf pos len flags)
+
+let recvfrom ch buf ofs len flags =
+  wrap_syscall Read ch (fun _ -> Unix.recvfrom ch.fd buf ofs len flags)
+
+let sendto ch buf ofs len flags addr =
+  wrap_syscall Write ch (fun _ -> Unix.sendto ch.fd buf ofs len flags addr)
 
 type io_vector = {
   iov_buffer : string;
@@ -300,8 +464,8 @@ let io_vector ~buffer ~offset ~length = {
   iov_length = length;
 }
 
-external lwt_unix_recv_msg : Unix.file_descr -> int -> io_vector list -> int * Unix.file_descr list = "lwt_unix_recv_msg"
-external lwt_unix_send_msg : Unix.file_descr -> int -> io_vector list -> int -> Unix.file_descr list -> int = "lwt_unix_send_msg"
+external stub_recv_msg : Unix.file_descr -> int -> io_vector list -> int * Unix.file_descr list = "lwt_unix_recv_msg"
+external stub_send_msg : Unix.file_descr -> int -> io_vector list -> int -> Unix.file_descr list -> int = "lwt_unix_send_msg"
 
 let check_io_vectors func_name iovs =
   List.iter (fun iov ->
@@ -315,14 +479,14 @@ let recv_msg ~socket ~io_vectors =
   let n_iovs = List.length io_vectors in
   wrap_syscall Read socket
     (fun () ->
-       lwt_unix_recv_msg socket.fd n_iovs io_vectors)
+       stub_recv_msg socket.fd n_iovs io_vectors)
 
 let send_msg ~socket ~io_vectors ~fds =
   check_io_vectors "Lwt_unix.send_msg" io_vectors;
   let n_iovs = List.length io_vectors and n_fds = List.length fds in
   wrap_syscall Write socket
     (fun () ->
-       lwt_unix_send_msg socket.fd n_iovs io_vectors n_fds fds)
+       stub_send_msg socket.fd n_iovs io_vectors n_fds fds)
 
 type credentials = {
   cred_pid : int;
@@ -330,9 +494,9 @@ type credentials = {
   cred_gid : int;
 }
 
-external lwt_unix_get_credentials : Unix.file_descr -> credentials = "lwt_unix_get_credentials"
+external stub_get_credentials : Unix.file_descr -> credentials = "lwt_unix_get_credentials"
 
-let get_credentials ch = lwt_unix_get_credentials ch.fd
+let get_credentials ch = stub_get_credentials ch.fd
 
 let pipe () =
   let (out_fd, in_fd) = Unix.pipe() in
@@ -433,8 +597,18 @@ let clear_close_on_exec ch =
   check_descriptor ch;
   Unix.clear_close_on_exec ch.fd
 
+external open_job : string -> Unix.open_flag list -> int -> [ `unix_open ] job = "lwt_unix_open_job"
+external open_result : [ `unix_open ] job -> Unix.file_descr * bool = "lwt_unix_open_result"
+external open_free : [ `unix_open ] job -> unit = "lwt_unix_open_free" "noalloc"
+
 let openfile name flags perms =
-  of_unix_file_descr (Unix.openfile name flags perms)
+  lwt fd, blocking =
+    execute_job
+      (open_job name flags perms)
+      open_result
+      open_free
+  in
+  return (of_unix_file_descr ~blocking fd)
 
 let lseek ch offset whence =
   check_descriptor ch;
@@ -552,8 +726,11 @@ let tcflow ch f =
   Unix.tcflow ch.fd f
 
 (* +-----------------------------------------------------------------+
-   | Notifications                                                   |
+   | Reading notifications                                           |
    +-----------------------------------------------------------------+ *)
+
+(* Buffer used to receive notifications: *)
+let notification_buffer = String.create 4
 
 external init_notification : Unix.file_descr -> unit = "lwt_unix_init_notification"
 external send_notification : int -> unit = "lwt_unix_send_notification_stub"
@@ -567,34 +744,6 @@ let () =
 
   set_close_on_exec notification_fd_reader;
   Unix.set_close_on_exec notification_fd_writer
-
-(* Informations about a notifier *)
-type notifier = {
-  notify_handler : unit -> unit;
-  (* The callback *)
-
-  notify_once : bool;
-  (* Whether to remove the notifier after the reception of the first
-     notification *)
-}
-
-let notifiers = ref Int_map.empty
-
-let current_notification_id = ref 0
-
-let make_notification ?(once=false) f =
-  incr current_notification_id;
-  while Int_map.mem !current_notification_id !notifiers do
-    incr current_notification_id
-  done;
-  notifiers := Int_map.add !current_notification_id { notify_once = once; notify_handler = f } !notifiers;
-  !current_notification_id
-
-let stop_notification id =
-  notifiers := Int_map.remove id !notifiers
-
-(* Buffer used to receive notifications: *)
-let notification_buffer = String.create 4
 
 (* Read one notification *)
 let rec read_notification offset =
@@ -610,7 +759,7 @@ let rec read_notification offset =
       | n ->
           read_notification (offset + n)
 
-(* Read continuously notications *)
+(* Read continuously notifications *)
 let rec read_notifications () =
   lwt id = read_notification 0 in
   match try Some(Int_map.find id !notifiers) with Not_found -> None with
@@ -643,14 +792,14 @@ let disable_signal_handler stop =
 
 type resource_usage = { ru_utime : float; ru_stime : float }
 
-external lwt_unix_wait4 : Unix.wait_flag list -> int -> int * Unix.process_status * resource_usage = "lwt_unix_wait4"
-external lwt_unix_has_wait4 : unit -> bool = "lwt_unix_has_wait4"
+external stub_wait4 : Unix.wait_flag list -> int -> int * Unix.process_status * resource_usage = "lwt_unix_wait4"
+external stub_has_wait4 : unit -> bool = "lwt_unix_has_wait4"
 
-let has_wait4 = lwt_unix_has_wait4 ()
+let has_wait4 = stub_has_wait4 ()
 
 let real_wait4 =
   if has_wait4 then
-    lwt_unix_wait4
+    stub_wait4
   else
     (fun flags pid ->
        let pid, status = Unix.waitpid flags pid in

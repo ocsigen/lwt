@@ -32,6 +32,16 @@
 #  define LWT_ON_WINDOWS
 #endif
 
+/* Specific OS includes. */
+#if defined(LWT_ON_WINDOWS)
+#  include <windows.h>
+#else
+#  include <pthread.h>
+#  include <unistd.h>
+#  include <string.h>
+#  include <errno.h>
+#endif
+
 /* The macro to get the file-descriptor from a value. */
 #if defined(LWT_ON_WINDOWS)
 #  define FD_val(value) win_CRT_fd_of_filedescr(value)
@@ -39,11 +49,31 @@
 #  define FD_val(value) Int_val(value)
 #endif
 
+/* +-----------------------------------------------------------------+
+   | Utils                                                           |
+   +-----------------------------------------------------------------+ */
+
+/* Allocate the given amount of memory and abort the program if there
+   is no free memory left. */
+void *lwt_unix_malloc(size_t size);
+
+/* Same as [strdup] and abort hte program if there is not memory
+   left. */
+char *lwt_unix_strdup(char *string);
+
+/* Helper for allocating structures. */
+#define lwt_unix_new(type) (type*)lwt_unix_malloc(sizeof(type))
+
+/* +-----------------------------------------------------------------+
+   | Notifications                                                   |
+   +-----------------------------------------------------------------+ */
+
 /* Sends a notification for the given id. */
 void lwt_unix_send_notification(int id);
 
-/* Launch a thread in detached mode with the minimum amount of stack. */
-void lwt_unix_launch_thread(void* (*start)(void*), void* data);
+/* +-----------------------------------------------------------------+
+   | Libev                                                           |
+   +-----------------------------------------------------------------+ */
 
 /* The libev main loop. */
 extern struct ev_loop *lwt_unix_main_loop;
@@ -58,5 +88,85 @@ extern int lwt_unix_in_blocking_section;
     lwt_unix_in_blocking_section = 0;           \
     caml_leave_blocking_section();              \
   }
+
+/* +-----------------------------------------------------------------+
+   | Threading                                                       |
+   +-----------------------------------------------------------------+ */
+
+#if defined(LWT_ON_WINDOWS)
+
+typedef HANDLE lwt_unix_mutex;
+typedef HANDLE lwt_unix_thread;
+
+#define lwt_unix_initialize_mutex(mutex) mutex = CreateMutex(NULL, FALSE, NULL)
+#define lwt_unix_acquire_mutex(mutex) WaitForSingleObject(mutex, INFINITE)
+#define lwt_unix_release_mutex(mutex) ReleaseMutex(mutex)
+
+#else /* defined(LWT_ON_WINDOWS) */
+
+typedef pthread_mutex_t lwt_unix_mutex;
+typedef pthread_t lwt_unix_thread;
+
+#define lwt_unix_initialize_mutex(mutex) pthread_mutex_init(&(mutex), NULL)
+#define lwt_unix_acquire_mutex(mutex) pthread_mutex_lock(&(mutex))
+#define lwt_unix_release_mutex(mutex) pthread_mutex_unlock(&(mutex))
+
+#endif /* defined(LWT_ON_WINDOWS) */
+
+/* Launch a thread in detached mode with the minimum amount of stack. */
+lwt_unix_thread lwt_unix_launch_thread(void* (*start)(void*), void* data);
+
+/* +-----------------------------------------------------------------+
+   | Detached jobs                                                   |
+   +-----------------------------------------------------------------+ */
+
+/* How job are executed. */
+enum lwt_unix_async_method {
+  /* Synchronously. */
+  LWT_UNIX_ASYNC_METHOD_NONE = 0,
+
+  /* Asynchronously, on another thread. */
+  LWT_UNIX_ASYNC_METHOD_THREAD = 1
+};
+
+/* Type of job execution modes. */
+typedef enum lwt_unix_async_method lwt_unix_async_method;
+
+/* Common fields of job descriptions. */
+#define LWT_UNIX_JOB_FIELDS                                             \
+  /* Id used to notify the main thread in case the job do not           \
+     terminate immediatly. */                                           \
+  int notification_id;                                                  \
+                                                                        \
+  /* The function to call to do the work. */                            \
+  void (*worker)(struct lwt_unix_job *job);                             \
+                                                                        \
+  /* Is the job terminated ? In case the job is canceled, it will       \
+     always be 0. */                                                    \
+  int done;                                                             \
+                                                                        \
+  /* Is the main thread still waiting for the job ? */                  \
+  int fast;                                                             \
+                                                                        \
+  /* Mutex to protect access to [done] and [fast]. */                   \
+  lwt_unix_mutex mutex;                                                 \
+                                                                        \
+  /* Thread running the job. */                                         \
+  lwt_unix_thread thread;                                               \
+                                                                        \
+  /* The async method in used by the job. */                            \
+  lwt_unix_async_method async_method;
+
+/* A job descriptor. */
+struct lwt_unix_job { LWT_UNIX_JOB_FIELDS };
+
+/* Type of job descriptors. */
+typedef struct lwt_unix_job* lwt_unix_job;
+
+/* Type of worker functions. */
+typedef void (*lwt_unix_job_worker)(lwt_unix_job job);
+
+/* Allocate a caml custom value for the given job. */
+value lwt_unix_alloc_job(lwt_unix_job job);
 
 #endif /* __LWT_UNIX_H */

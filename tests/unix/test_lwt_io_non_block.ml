@@ -26,17 +26,9 @@ open Test
 
 let test_file = "Lwt_io_test"
 let file_contents = "test file content"
-let test_fd = ref Unix.stdin (* dummy fd *)
 
 let open_and_read_filename () =
-  let in_chan = open_file ~mode:input test_file in
-  lwt s = read in_chan in
-  lwt () = close in_chan in
-  assert (s = file_contents);
-  return ()
-
-let open_and_read_fd () =
-  let in_chan = of_unix_fd ~mode:input !test_fd in
+  lwt in_chan = open_file ~mode:input test_file in
   lwt s = read in_chan in
   lwt () = close in_chan in
   assert (s = file_contents);
@@ -45,28 +37,17 @@ let open_and_read_fd () =
 let suite = suite "lwt_io non blocking io" [
   test "create file"
     (fun () ->
-      let out_chan = open_file ~mode:output test_file in
+      lwt out_chan = open_file ~mode:output test_file in
       lwt () = write out_chan file_contents in
       lwt () = close out_chan in
-      let fd = Unix.openfile test_file [Unix.O_RDONLY] 0 in
-      test_fd := fd;
       return true);
 
   test "read file"
     (fun () ->
-      let in_chan = open_file ~mode:input test_file in
+      lwt in_chan = open_file ~mode:input test_file in
       lwt s = read in_chan in
       lwt () = close in_chan in
       return (s = file_contents));
-
-  test "many read file fd"
-    (fun () ->
-      lwt () = for_lwt i = 0 to 10000 do
-	try_lwt
-	  open_and_read_fd ()
-        with e -> lwt () = printf "\nstep %i\n" i in raise_lwt e
-      done in
-      return true);
 
   test "many read file"
     (fun () ->
@@ -75,27 +56,6 @@ let suite = suite "lwt_io non blocking io" [
 	  open_and_read_filename ()
         with e -> lwt () = printf "\nstep %i\n" i in raise_lwt e
       done in
-      return true);
-
-  test "test problem with fd weak table"
-    (fun () ->
-      let s1 = "s1" and s2 = "s2" in
-      let out_chan1 = open_file ~mode:output s1 in
-      let out_chan2 = open_file ~mode:output s2 in
-      lwt () = write out_chan1 s1 in
-      lwt () = write out_chan2 s2 in
-      lwt () = close out_chan1 in
-      lwt () = close out_chan2 in
-      let in_chan1 = open_file ~mode:input s1 in
-      let in_chan2 = open_file ~mode:input s2 in
-      lwt s1' = read in_chan1 in
-      lwt s2' = read in_chan2 in
-      lwt () = printf "\ns1: %s\ns2: %s\n" s1' s2' in
-      lwt () = close in_chan1 in
-      lwt () = close in_chan2 in
-      Unix.unlink s1;
-      Unix.unlink s2;
-      assert (s1 = s1' && s2 = s2');
       return true);
 
   test "remove file"

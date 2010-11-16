@@ -351,7 +351,7 @@ val open_file :
   ?flags : Unix.open_flag list ->
   ?perm : Unix.file_perm ->
   mode : 'a mode ->
-  file_name -> 'a channel
+  file_name -> 'a channel Lwt.t
   (** [open_file ?buffer_size ?flags ?perm ~mode filename] open the
       file with name [filename] and returns a channel for
       reading/writing it.

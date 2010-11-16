@@ -99,7 +99,7 @@ val open_file :
   ?flags : Unix.open_flag list ->
   ?perm : Unix.file_perm ->
   mode : 'a mode ->
-  file_name -> 'a channel
+  file_name -> 'a channel Lwt.t
 val with_file :
   ?buffer_size : int ->
   ?strict : bool ->
