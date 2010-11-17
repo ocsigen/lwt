@@ -113,8 +113,18 @@ typedef pthread_t lwt_unix_thread;
 
 #endif /* defined(LWT_ON_WINDOWS) */
 
-/* Launch a thread in detached mode with the minimum amount of stack. */
-lwt_unix_thread lwt_unix_launch_thread(void* (*start)(void*), void* data);
+/* Define the minimum stack size for a thread. */
+#if defined(PTHREAD_STACK_MIN)
+#  define LWT_UNIX_MINIMUM_STACK_SIZE PTHREAD_STACK_MIN
+#else
+#  define LWT_UNIX_MINIMUM_STACK_SIZE (sizeof (long) * 4096)
+#endif
+
+/* The default stack size. */
+#define LWT_UNIX_DEFAULT_STACK_SIZE 0
+
+/* Launch a thread in detached with the given amount of stack. */
+lwt_unix_thread lwt_unix_launch_thread(void* (*start)(void*), void* data, int stack_size);
 
 /* +-----------------------------------------------------------------+
    | Detached jobs                                                   |
@@ -126,7 +136,11 @@ enum lwt_unix_async_method {
   LWT_UNIX_ASYNC_METHOD_NONE = 0,
 
   /* Asynchronously, on another thread. */
-  LWT_UNIX_ASYNC_METHOD_THREAD = 1
+  LWT_UNIX_ASYNC_METHOD_DETACH = 1,
+
+  /* Asynchronously, on the main thread, switcing to another thread if
+     necessary. */
+  LWT_UNIX_ASYNC_METHOD_SWITCH = 2
 };
 
 /* Type of job execution modes. */

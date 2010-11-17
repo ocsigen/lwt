@@ -69,19 +69,27 @@ type async_method =
   | Async_none
       (** System calls are made synchronously, and may block the
           entire program. *)
-  | Async_thread
-      (** System calls are made in another thread, thus without
+  | Async_detach
+      (** System calls are made in another system thread, thus without
           blocking other Lwt threads. The drawback is that it may
           degrade performances in some cases.
 
           This is the default. *)
+  | Async_switch
+      (** System calls are made in the main thread, and if one blocks
+          the execution continue in another system thread. This method
+          is the most efficint, also you will get better performances
+          if you force all threads to run on the same cpu. On linux
+          this can be done by using the command [taskset].
+
+          Note that this method is still experimental. *)
 
 val default_async_method : unit -> async_method
   (** Returns the default async method.
 
       This can be initialized using the environment variable
-      ["LWT_ASYNC_METHOD"] with possible values ["none"] and
-      ["thread"]. *)
+      ["LWT_ASYNC_METHOD"] with possible values ["none"],
+      ["detach"] and ["switch"]. *)
 
 val set_default_async_method : async_method -> unit
   (** Sets the default async method. *)
@@ -92,6 +100,30 @@ val async_method : unit -> async_method
 
 val async_method_key : async_method Lwt.key
   (** The key for storing the local async method. *)
+
+val with_async_none : (unit -> 'a Lwt.t) -> 'a Lwt.t
+  (** [with_async_none f] is a shorthand for:
+
+      {[
+        Lwt.with_value async_method_key (Some Async_none) f
+      ]}
+  *)
+
+val with_async_detach : (unit -> 'a Lwt.t) -> 'a Lwt.t
+  (** [with_async_none f] is a shorthand for:
+
+      {[
+        Lwt.with_value async_method_key (Some Async_detach) f
+      ]}
+  *)
+
+val with_async_switch : (unit -> 'a Lwt.t) -> 'a Lwt.t
+  (** [with_async_none f] is a shorthand for:
+
+      {[
+        Lwt.with_value async_method_key (Some Async_switch) f
+      ]}
+  *)
 
 (** {6 Sleeping} *)
 

@@ -34,20 +34,23 @@ let windows_hack = Sys.os_type <> "Unix"
 
 type async_method =
   | Async_none
-  | Async_thread
+  | Async_detach
+  | Async_switch
 
-let default_async_method_var = ref Async_thread
+let default_async_method_var = ref Async_detach
 
 let () =
   try
     match Sys.getenv "LWT_ASYNC_METHOD" with
       | "none" ->
           default_async_method_var := Async_none
-      | "thread" ->
-          default_async_method_var := Async_thread
+      | "detach" ->
+          default_async_method_var := Async_detach
+      | "switch" ->
+          default_async_method_var := Async_switch
       | str ->
           Printf.eprintf
-            "%s: invalid lwt async method: '%s', must be 'none' or 'thread'\n%!"
+            "%s: invalid lwt async method: '%s', must be 'none', 'detach' or 'switch'\n%!"
             (Filename.basename Sys.executable_name) str
   with Not_found ->
     ()
@@ -61,6 +64,15 @@ let async_method () =
   match Lwt.get async_method_key with
     | Some am -> am
     | None -> !default_async_method_var
+
+let with_async_none f =
+  with_value async_method_key (Some Async_none) f
+
+let with_async_detach f =
+  with_value async_method_key (Some Async_detach) f
+
+let with_async_switch f =
+  with_value async_method_key (Some Async_switch) f
 
 (* +-----------------------------------------------------------------+
    | Notifications management                                        |
@@ -321,7 +333,7 @@ let execute_job ?async_method ~job ~result ~free =
     match async_method with
       | Async_none ->
           return ()
-      | Async_thread ->
+      | Async_detach | Async_switch ->
           try_lwt
             (* Give some time to the job before we fallback to
                asynchronous notification. *)

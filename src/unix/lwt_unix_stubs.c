@@ -503,17 +503,9 @@ void lwt_unix_send_notification(int id)
    | Threads                                                         |
    +-----------------------------------------------------------------+ */
 
-#if !defined(X_STACKSIZE)
-#  define X_STACKSIZE sizeof (long) * 4096
-#endif
-
 #if !defined(LWT_ON_WINDOWS)
 
-#if !defined(PTHREAD_STACK_MIN)
-#  define PTHREAD_STACK_MIN 0
-#endif
-
-lwt_unix_thread lwt_unix_launch_thread(void* (*start)(void*), void* data)
+lwt_unix_thread lwt_unix_launch_thread(void* (*start)(void*), void* data, int stack_size)
 {
   pthread_t thread;
   pthread_attr_t attr;
@@ -524,8 +516,8 @@ lwt_unix_thread lwt_unix_launch_thread(void* (*start)(void*), void* data)
      it when it terminates: */
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
-  /* Use the minimum amount of stack: */
-  pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN < X_STACKSIZE ? X_STACKSIZE : PTHREAD_STACK_MIN);
+  /* Use the given amount of stack: */
+  if (stack_size > 0) pthread_attr_setstacksize(&attr, stack_size);
 
   int result = pthread_create(&thread, &attr, start, data);
 
@@ -538,9 +530,9 @@ lwt_unix_thread lwt_unix_launch_thread(void* (*start)(void*), void* data)
 
 #else
 
-lwt_unix_thread lwt_unix_launch_thread(void* (*start)(void*), void* data)
+lwt_unix_thread lwt_unix_launch_thread(void* (*start)(void*), void* data, int stack_size)
 {
-  HANDLE thread = CreateThread(NULL, X_STACKSIZE, (LPTHREAD_START_ROUTINE)start, (LPVOID)data, 0, NULL);
+  HANDLE thread = CreateThread(NULL, stack_size, (LPTHREAD_START_ROUTINE)start, (LPVOID)data, 0, NULL);
   if (thread == NULL) uerror("lwt_unix_launch_thread", Nothing);
   return thread;
 }
@@ -592,7 +584,7 @@ CAMLprim value lwt_unix_writable(value fd)
 #endif
 
 /* +-----------------------------------------------------------------+
-   | Detached calls                                                  |
+   | Jobs                                                            |
    +-----------------------------------------------------------------+ */
 
 /* Description of jobs. */
@@ -615,7 +607,7 @@ value lwt_unix_alloc_job(lwt_unix_job job)
   return val_job;
 }
 
-/* The function executed by detached threads. */
+/* The function executed by worker threads. */
 static void *worker(void *data)
 {
   lwt_unix_job job = (lwt_unix_job)data;
@@ -629,7 +621,7 @@ static void *worker(void *data)
     job->done = 1;
     break;
 
-  case LWT_UNIX_ASYNC_METHOD_THREAD:
+  case LWT_UNIX_ASYNC_METHOD_DETACH:
     lwt_unix_acquire_mutex(job->mutex);
 
     /* Job is done. If the main thread stopped until now, asynchronous
@@ -644,6 +636,9 @@ static void *worker(void *data)
     } else
       lwt_unix_release_mutex(job->mutex);
 
+    break;
+
+  case LWT_UNIX_ASYNC_METHOD_SWITCH:
     break;
   }
 
@@ -669,10 +664,14 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_notification_id, valu
     caml_leave_blocking_section();
     break;
 
-  case LWT_UNIX_ASYNC_METHOD_THREAD:
+  case LWT_UNIX_ASYNC_METHOD_DETACH:
     lwt_unix_initialize_mutex(job->mutex);
     /* Launch the job on another thread. */
-    lwt_unix_launch_thread(worker, (void*)job);
+    lwt_unix_launch_thread(worker, (void*)job, LWT_UNIX_MINIMUM_STACK_SIZE);
+    break;
+
+  case LWT_UNIX_ASYNC_METHOD_SWITCH:
+    caml_failwith("the switch async method is not yet implemented");
     break;
   }
 
@@ -688,7 +687,8 @@ CAMLprim value lwt_unix_check_job(value val_job)
   case LWT_UNIX_ASYNC_METHOD_NONE:
     return Val_int(1);
 
-  case LWT_UNIX_ASYNC_METHOD_THREAD:
+  case LWT_UNIX_ASYNC_METHOD_DETACH:
+  case LWT_UNIX_ASYNC_METHOD_SWITCH:
     lwt_unix_acquire_mutex(job->mutex);
     /* We are not waiting anymore. */
     job->fast = 0;
@@ -710,7 +710,8 @@ CAMLprim value lwt_unix_cancel_job(value val_job)
   case LWT_UNIX_ASYNC_METHOD_NONE:
     break;
 
-  case LWT_UNIX_ASYNC_METHOD_THREAD:
+  case LWT_UNIX_ASYNC_METHOD_DETACH:
+  case LWT_UNIX_ASYNC_METHOD_SWITCH:
     lwt_unix_acquire_mutex(job->mutex);
     if (job->done == 0) {
 #if defined(LWT_ON_WINDOWS)
