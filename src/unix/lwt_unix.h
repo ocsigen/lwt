@@ -183,4 +183,22 @@ typedef void (*lwt_unix_job_worker)(lwt_unix_job job);
 /* Allocate a caml custom value for the given job. */
 value lwt_unix_alloc_job(lwt_unix_job job);
 
+/* Define not implement methods. */
+#define LWT_UNIX_JOB_NOT_IMPLEMENTED(name)      \
+  CAMLprim value lwt_unix_##name##_job()        \
+  {                                             \
+    invalid_argument("not implemented");        \
+  }                                             \
+                                                \
+  CAMLprim value lwt_unix_##name##_result()     \
+  {                                             \
+    invalid_argument("not implemented");        \
+  }                                             \
+                                                \
+  CAMLprim value lwt_unix_##name##_free()       \
+  {                                             \
+    invalid_argument("not implemented");        \
+  }
+
+
 #endif /* __LWT_UNIX_H */

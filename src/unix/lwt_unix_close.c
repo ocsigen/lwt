@@ -24,20 +24,7 @@
 
 #if defined(LWT_ON_WINDOWS)
 
-CAMLprim value lwt_unix_close_job()
-{
-  invalid_argument("not implemented");
-}
-
-CAMLprim value lwt_unix_close_result()
-{
-  invalid_argument("not implemented");
-}
-
-CAMLprim value lwt_unix_close_free()
-{
-  invalid_argument("not implemented");
-}
+LWT_UNIX_JOB_NOT_IMPLEMENTED(close)
 
 #else /* defined(LWT_ON_WINDOWS) */
 

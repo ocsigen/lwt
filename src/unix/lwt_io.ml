@@ -524,7 +524,7 @@ let of_fd ?buffer_size ?close ~mode fd =
     ~close:(match close with
               | Some f -> f
               | None -> (fun () -> Lwt_unix.close fd))
-    ~seek:(fun pos cmd -> return (Lwt_unix.LargeFile.lseek fd pos cmd))
+    ~seek:(fun pos cmd -> Lwt_unix.LargeFile.lseek fd pos cmd)
     ~mode
     perform_io
 

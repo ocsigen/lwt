@@ -24,20 +24,7 @@
 
 #if defined(LWT_ON_WINDOWS)
 
-CAMLprim value lwt_unix_read()
-{
-  invalid_argument("not implemented");
-}
-
-CAMLprim value lwt_unix_read_launch()
-{
-  invalid_argument("not implemented");
-}
-
-CAMLprim value lwt_unix_read_finish()
-{
-  invalid_argument("not implemented");
-}
+LWT_UNIX_JOB_NOT_IMPLEMENTED(read)
 
 #else /* defined(LWT_ON_WINDOWS) */
 

@@ -390,8 +390,37 @@ let execute_job ?async_method ~job ~result ~free =
   end
 
 (* +-----------------------------------------------------------------+
-   | System calls                                                    |
+   | Basic file input/output                                         |
    +-----------------------------------------------------------------+ *)
+
+external open_job : string -> Unix.open_flag list -> int -> [ `unix_open ] job = "lwt_unix_open_job"
+external open_result : [ `unix_open ] job -> Unix.file_descr * bool = "lwt_unix_open_result"
+external open_free : [ `unix_open ] job -> unit = "lwt_unix_open_free" "noalloc"
+
+let openfile name flags perms =
+  if windows_hack then
+    return (of_unix_file_descr (Unix.openfile name flags perms))
+  else
+    lwt fd, blocking =
+      execute_job
+        (open_job name flags perms)
+        open_result
+        open_free
+    in
+    return (of_unix_file_descr ~blocking fd)
+
+external close_job : Unix.file_descr -> [ `unix_close ] job = "lwt_unix_close_job"
+external close_result : [ `unix_close ] job -> unit = "lwt_unix_close_result"
+external close_free : [ `unix_close ] job -> unit = "lwt_unix_close_free" "noalloc"
+
+let close ch =
+  if ch.state = Closed then check_descriptor ch;
+  set_state ch Closed;
+  if windows_hack then begin
+    Unix.close ch.fd;
+    return ()
+  end else
+    execute_job (close_job ch.fd) close_result close_free
 
 let wait_read ch =
   try_lwt
@@ -441,6 +470,472 @@ let write ch buf pos len =
   else
     wrap_syscall Write ch (fun () -> stub_write ch.fd buf pos len)
 
+(* +-----------------------------------------------------------------+
+   | Seeking and truncating                                          |
+   +-----------------------------------------------------------------+ *)
+
+external lseek_job : Unix.file_descr -> int -> Unix.seek_command -> [ `unix_lseek ] job = "lwt_unix_lseek_job"
+external lseek_result : [ `unix_lseek ] job -> int = "lwt_unix_lseek_result"
+external lseek_free : [ `unix_lseek ] job -> unit = "lwt_unix_lseek_free"
+
+let lseek ch offset whence =
+  check_descriptor ch;
+  if windows_hack then
+    return (Unix.lseek ch.fd offset whence)
+  else
+    execute_job (lseek_job ch.fd offset whence) lseek_result lseek_free
+
+external truncate_job : string -> int -> [ `unix_truncate ] job = "lwt_unix_truncate_job"
+external truncate_result : [ `unix_truncate ] job -> unit = "lwt_unix_truncate_result"
+external truncate_free : [ `unix_truncate ] job -> unit = "lwt_unix_truncate_free"
+
+let truncate name offset =
+  if windows_hack then
+    return (Unix.truncate name offset)
+  else
+    execute_job (truncate_job name offset) truncate_result truncate_free
+
+external ftruncate_job : Unix.file_descr -> int -> [ `unix_ftruncate ] job = "lwt_unix_ftruncate_job"
+external ftruncate_result : [ `unix_ftruncate ] job -> unit = "lwt_unix_ftruncate_result"
+external ftruncate_free : [ `unix_ftruncate ] job -> unit = "lwt_unix_ftruncate_free"
+
+let ftruncate ch offset =
+  check_descriptor ch;
+  if windows_hack then
+    return (Unix.ftruncate ch.fd offset)
+  else
+    execute_job (ftruncate_job ch.fd offset) ftruncate_result ftruncate_free
+
+(* +-----------------------------------------------------------------+
+   | File status                                                     |
+   +-----------------------------------------------------------------+ *)
+
+external stat_job : string -> [ `unix_stat ] job = "lwt_unix_stat_job"
+external stat_result : [ `unix_stat ] job -> Unix.stats = "lwt_unix_stat_result"
+external stat_free : [ `unix_stat ] job -> unit = "lwt_unix_stat_free"
+
+let stat name =
+  if windows_hack then
+    return (Unix.stat name)
+  else
+    execute_job (stat_job name) stat_result stat_free
+
+external lstat_job : string -> [ `unix_lstat ] job = "lwt_unix_lstat_job"
+external lstat_result : [ `unix_lstat ] job -> Unix.stats = "lwt_unix_lstat_result"
+external lstat_free : [ `unix_lstat ] job -> unit = "lwt_unix_lstat_free"
+
+let lstat name =
+  if windows_hack then
+    return (Unix.lstat name)
+  else
+    execute_job (lstat_job name) lstat_result lstat_free
+
+external fstat_job : Unix.file_descr -> [ `unix_fstat ] job = "lwt_unix_fstat_job"
+external fstat_result : [ `unix_fstat ] job -> Unix.stats = "lwt_unix_fstat_result"
+external fstat_free : [ `unix_fstat ] job -> unit = "lwt_unix_fstat_free"
+
+let fstat ch =
+  check_descriptor ch;
+  if windows_hack then
+    return (Unix.fstat ch.fd)
+  else
+    execute_job (fstat_job ch.fd) fstat_result fstat_free
+
+external isatty_job : Unix.file_descr -> [ `unix_isatty ] job = "lwt_unix_isatty_job"
+external isatty_result : [ `unix_isatty ] job -> bool = "lwt_unix_isatty_result"
+external isatty_free : [ `unix_isatty ] job -> unit = "lwt_unix_isatty_free"
+
+let isatty ch =
+  check_descriptor ch;
+  if windows_hack then
+    return (Unix.isatty ch.fd)
+  else
+    execute_job (isatty_job ch.fd) isatty_result isatty_free
+
+(* +-----------------------------------------------------------------+
+   | File operations on large files                                  |
+   +-----------------------------------------------------------------+ *)
+
+module LargeFile =
+struct
+  external lseek_job : Unix.file_descr -> int64 -> Unix.seek_command -> [ `unix_lseek ] job = "lwt_unix_lseek_64_job"
+  external lseek_result : [ `unix_lseek ] job -> int64 = "lwt_unix_lseek_64_result"
+  external lseek_free : [ `unix_lseek ] job -> unit = "lwt_unix_lseek_64_free"
+
+  let lseek ch offset whence =
+    check_descriptor ch;
+    if windows_hack then
+      return (Unix.LargeFile.lseek ch.fd offset whence)
+    else
+      execute_job (lseek_job ch.fd offset whence) lseek_result lseek_free
+
+  external truncate_job : string -> int64 -> [ `unix_truncate ] job = "lwt_unix_truncate_64_job"
+  external truncate_result : [ `unix_truncate ] job -> unit = "lwt_unix_truncate_64_result"
+  external truncate_free : [ `unix_truncate ] job -> unit = "lwt_unix_truncate_64_free"
+
+  let truncate name offset =
+    if windows_hack then
+      return (Unix.LargeFile.truncate name offset)
+    else
+      execute_job (truncate_job name offset) truncate_result truncate_free
+
+  external ftruncate_job : Unix.file_descr -> int64 -> [ `unix_ftruncate ] job = "lwt_unix_ftruncate_64_job"
+  external ftruncate_result : [ `unix_ftruncate ] job -> unit = "lwt_unix_ftruncate_64_result"
+  external ftruncate_free : [ `unix_ftruncate ] job -> unit = "lwt_unix_ftruncate_64_free"
+
+  let ftruncate ch offset =
+    check_descriptor ch;
+    if windows_hack then
+      return (Unix.LargeFile.ftruncate ch.fd offset)
+    else
+      execute_job (ftruncate_job ch.fd offset) ftruncate_result ftruncate_free
+
+
+  external stat_job : string -> [ `unix_stat ] job = "lwt_unix_stat_64_job"
+  external stat_result : [ `unix_stat ] job -> Unix.LargeFile.stats = "lwt_unix_stat_64_result"
+  external stat_free : [ `unix_stat ] job -> unit = "lwt_unix_stat_64_free"
+
+  let stat name =
+    if windows_hack then
+      return (Unix.LargeFile.stat name)
+    else
+      execute_job (stat_job name) stat_result stat_free
+
+  external lstat_job : string -> [ `unix_lstat ] job = "lwt_unix_lstat_64_job"
+  external lstat_result : [ `unix_lstat ] job -> Unix.LargeFile.stats = "lwt_unix_lstat_64_result"
+  external lstat_free : [ `unix_lstat ] job -> unit = "lwt_unix_lstat_64_free"
+
+  let lstat name =
+    if windows_hack then
+      return (Unix.LargeFile.lstat name)
+    else
+      execute_job (lstat_job name) lstat_result lstat_free
+
+  external fstat_job : Unix.file_descr -> [ `unix_fstat ] job = "lwt_unix_fstat_64_job"
+  external fstat_result : [ `unix_fstat ] job -> Unix.LargeFile.stats = "lwt_unix_fstat_64_result"
+  external fstat_free : [ `unix_fstat ] job -> unit = "lwt_unix_fstat_64_free"
+
+  let fstat ch =
+    check_descriptor ch;
+    if windows_hack then
+      return (Unix.LargeFile.fstat ch.fd)
+    else
+      execute_job (fstat_job ch.fd) fstat_result fstat_free
+end
+
+(* +-----------------------------------------------------------------+
+   | Operations on file names                                        |
+   +-----------------------------------------------------------------+ *)
+
+external unlink_job : string -> [ `unix_unlink ] job = "lwt_unix_unlink_job"
+external unlink_result : [ `unix_unlink ] job -> unit = "lwt_unix_unlink_result"
+external unlink_free : [ `unix_unlink ] job -> unit = "lwt_unix_unlink_free"
+
+let unlink name =
+  if windows_hack then
+    return (Unix.unlink name)
+  else
+    execute_job (unlink_job name) unlink_result unlink_free
+
+external rename_job : string -> string -> [ `unix_rename ] job = "lwt_unix_rename_job"
+external rename_result : [ `unix_rename ] job -> unit = "lwt_unix_rename_result"
+external rename_free : [ `unix_rename ] job -> unit = "lwt_unix_rename_free"
+
+let rename name1 name2 =
+  if windows_hack then
+    return (Unix.rename name1 name2)
+  else
+    execute_job (rename_job name1 name2) rename_result rename_free
+
+external link_job : string -> string -> [ `unix_link ] job = "lwt_unix_link_job"
+external link_result : [ `unix_link ] job -> unit = "lwt_unix_link_result"
+external link_free : [ `unix_link ] job -> unit = "lwt_unix_link_free"
+
+let link name1 name2 =
+  if windows_hack then
+    return (Unix.link name1 name2)
+  else
+    execute_job (link_job name1 name2) link_result link_free
+
+(* +-----------------------------------------------------------------+
+   | File permissions and ownership                                  |
+   +-----------------------------------------------------------------+ *)
+
+external chmod_job : string -> Unix.file_perm -> [ `unix_chmod ] job = "lwt_unix_chmod_job"
+external chmod_result : [ `unix_chmod ] job -> unit = "lwt_unix_chmod_result"
+external chmod_free : [ `unix_chmod ] job -> unit = "lwt_unix_chmod_free"
+
+let chmod name perms =
+  if windows_hack then
+    return (Unix.chmod name perms)
+  else
+    execute_job (chmod_job name perms) chmod_result chmod_free
+
+external fchmod_job : Unix.file_descr -> Unix.file_perm -> [ `unix_fchmod ] job = "lwt_unix_fchmod_job"
+external fchmod_result : [ `unix_fchmod ] job -> unit = "lwt_unix_fchmod_result"
+external fchmod_free : [ `unix_fchmod ] job -> unit = "lwt_unix_fchmod_free"
+
+let fchmod ch perms =
+  check_descriptor ch;
+  if windows_hack then
+    return (Unix.fchmod ch.fd perms)
+  else
+    execute_job (fchmod_job ch.fd perms) fchmod_result fchmod_free
+
+external chown_job : string -> int -> int -> [ `unix_chown ] job = "lwt_unix_chown_job"
+external chown_result : [ `unix_chown ] job -> unit = "lwt_unix_chown_result"
+external chown_free : [ `unix_chown ] job -> unit = "lwt_unix_chown_free"
+
+let chown name uid gid =
+  if windows_hack then
+    return (Unix.chown name uid gid)
+  else
+    execute_job (chown_job name uid gid) chown_result chown_free
+
+external fchown_job : Unix.file_descr -> int -> int -> [ `unix_fchown ] job = "lwt_unix_fchown_job"
+external fchown_result : [ `unix_fchown ] job -> unit = "lwt_unix_fchown_result"
+external fchown_free : [ `unix_fchown ] job -> unit = "lwt_unix_fchown_free"
+
+let fchown ch uid gid =
+  check_descriptor ch;
+  if windows_hack then
+    return (Unix.fchown ch.fd uid gid)
+  else
+    execute_job (fchown_job ch.fd uid gid) fchown_result fchown_free
+
+external access_job : string -> Unix.access_permission list -> [ `unix_access ] job = "lwt_unix_access_job"
+external access_result : [ `unix_access ] job -> unit = "lwt_unix_access_result"
+external access_free : [ `unix_access ] job -> unit = "lwt_unix_access_free"
+
+let access name perms =
+  if windows_hack then
+    return (Unix.access name perms)
+  else
+    execute_job (access_job name perms) access_result access_free
+
+(* +-----------------------------------------------------------------+
+   | Operations on file descriptors                                  |
+   +-----------------------------------------------------------------+ *)
+
+let dup ch =
+  check_descriptor ch;
+  of_unix_file_descr (Unix.dup ch.fd)
+
+let dup2 ch1 ch2 =
+  check_descriptor ch1;
+  Unix.dup2 ch1.fd ch2.fd
+
+let set_close_on_exec ch =
+  check_descriptor ch;
+  Unix.set_close_on_exec ch.fd
+
+let clear_close_on_exec ch =
+  check_descriptor ch;
+  Unix.clear_close_on_exec ch.fd
+
+(* +-----------------------------------------------------------------+
+   | Directories                                                     |
+   +-----------------------------------------------------------------+ *)
+
+external mkdir_job : string -> Unix.file_perm -> [ `unix_mkdir ] job = "lwt_unix_mkdir_job"
+external mkdir_result : [ `unix_mkdir ] job -> unit = "lwt_unix_mkdir_result"
+external mkdir_free : [ `unix_mkdir ] job -> unit = "lwt_unix_mkdir_free"
+
+let mkdir name perms =
+  if windows_hack then
+    return (Unix.mkdir name perms)
+  else
+    execute_job (mkdir_job name perms) mkdir_result mkdir_free
+
+external rmdir_job : string -> [ `unix_rmdir ] job = "lwt_unix_rmdir_job"
+external rmdir_result : [ `unix_rmdir ] job -> unit = "lwt_unix_rmdir_result"
+external rmdir_free : [ `unix_rmdir ] job -> unit = "lwt_unix_rmdir_free"
+
+let rmdir name =
+  if windows_hack then
+    return (Unix.rmdir name)
+  else
+    execute_job (rmdir_job name) rmdir_result rmdir_free
+
+external chdir_job : string -> [ `unix_chdir ] job = "lwt_unix_chdir_job"
+external chdir_result : [ `unix_chdir ] job -> unit = "lwt_unix_chdir_result"
+external chdir_free : [ `unix_chdir ] job -> unit = "lwt_unix_chdir_free"
+
+let chdir name =
+  if windows_hack then
+    return (Unix.chdir name)
+  else
+    execute_job (chdir_job name) chdir_result chdir_free
+
+external chroot_job : string -> [ `unix_chroot ] job = "lwt_unix_chroot_job"
+external chroot_result : [ `unix_chroot ] job -> unit = "lwt_unix_chroot_result"
+external chroot_free : [ `unix_chroot ] job -> unit = "lwt_unix_chroot_free"
+
+let chroot name =
+  if windows_hack then
+    return (Unix.chroot name)
+  else
+    execute_job (chroot_job name) chroot_result chroot_free
+
+external opendir_job : string -> [ `unix_opendir ] job = "lwt_unix_opendir_job"
+external opendir_result : [ `unix_opendir ] job -> Unix.dir_handle = "lwt_unix_opendir_result"
+external opendir_free : [ `unix_opendir ] job -> unit = "lwt_unix_opendir_free"
+
+let opendir name =
+  if windows_hack then
+    return (Unix.opendir name)
+  else
+    execute_job (opendir_job name) opendir_result opendir_free
+
+external readdir_job : Unix.dir_handle -> [ `unix_readdir ] job = "lwt_unix_readdir_job"
+external readdir_result : [ `unix_readdir ] job -> string = "lwt_unix_readdir_result"
+external readdir_free : [ `unix_readdir ] job -> unit = "lwt_unix_readdir_free"
+
+let readdir handle =
+  if windows_hack then
+    return (Unix.readdir handle)
+  else
+    execute_job (readdir_job handle) readdir_result readdir_free
+
+external rewinddir_job : Unix.dir_handle -> [ `unix_rewinddir ] job = "lwt_unix_rewinddir_job"
+external rewinddir_result : [ `unix_rewinddir ] job -> unit = "lwt_unix_rewinddir_result"
+external rewinddir_free : [ `unix_rewinddir ] job -> unit = "lwt_unix_rewinddir_free"
+
+let rewinddir handle =
+  if windows_hack then
+    return (Unix.rewinddir handle)
+  else
+    execute_job (rewinddir_job handle) rewinddir_result rewinddir_free
+
+external closedir_job : Unix.dir_handle -> [ `unix_closedir ] job = "lwt_unix_closedir_job"
+external closedir_result : [ `unix_closedir ] job -> unit = "lwt_unix_closedir_result"
+external closedir_free : [ `unix_closedir ] job -> unit = "lwt_unix_closedir_free"
+
+let closedir handle =
+  if windows_hack then
+    return (Unix.closedir handle)
+  else
+    execute_job (closedir_job handle) closedir_result closedir_free
+
+(* +-----------------------------------------------------------------+
+   | Pipes and redirections                                          |
+   +-----------------------------------------------------------------+ *)
+
+let pipe () =
+  let (out_fd, in_fd) = Unix.pipe() in
+  (mk_ch out_fd, mk_ch in_fd)
+
+let pipe_in () =
+  let (out_fd, in_fd) = Unix.pipe() in
+  (mk_ch out_fd, in_fd)
+
+let pipe_out () =
+  let (out_fd, in_fd) = Unix.pipe() in
+  (out_fd, mk_ch in_fd)
+
+external mkfifo_job : string -> Unix.file_perm -> [ `unix_mkfifo ] job = "lwt_unix_mkfifo_job"
+external mkfifo_result : [ `unix_mkfifo ] job -> unit = "lwt_unix_mkfifo_result"
+external mkfifo_free : [ `unix_mkfifo ] job -> unit = "lwt_unix_mkfifo_free"
+
+let mkfifo name perms =
+  if windows_hack then
+    return (Unix.mkfifo name perms)
+  else
+    execute_job (mkfifo_job name perms) mkfifo_result mkfifo_free
+
+(* +-----------------------------------------------------------------+
+   | Symbolic links                                                  |
+   +-----------------------------------------------------------------+ *)
+
+external symlink_job : string -> string -> [ `unix_symlink ] job = "lwt_unix_symlink_job"
+external symlink_result : [ `unix_symlink ] job -> unit = "lwt_unix_symlink_result"
+external symlink_free : [ `unix_symlink ] job -> unit = "lwt_unix_symlink_free"
+
+let symlink name1 name2 =
+  if windows_hack then
+    return (Unix.symlink name1 name2)
+  else
+    execute_job (symlink_job name1 name2) symlink_result symlink_free
+
+external readlink_job : string -> [ `unix_readlink ] job = "lwt_unix_readlink_job"
+external readlink_result : [ `unix_readlink ] job -> string = "lwt_unix_readlink_result"
+external readlink_free : [ `unix_readlink ] job -> unit = "lwt_unix_readlink_free"
+
+let readlink name =
+  if windows_hack then
+    return (Unix.readlink name)
+  else
+    execute_job (readlink_job name) readlink_result readlink_free
+
+(* +-----------------------------------------------------------------+
+   | Locking                                                         |
+   +-----------------------------------------------------------------+ *)
+
+external lockf_job : Unix.file_descr -> Unix.lock_command -> int -> [ `unix_lockf ] job = "lwt_unix_lockf_job"
+external lockf_result : [ `unix_lockf ] job -> unit = "lwt_unix_lockf_result"
+external lockf_free : [ `unix_lockf ] job -> unit = "lwt_unix_lockf_free"
+
+let lockf ch cmd size =
+  check_descriptor ch;
+  if windows_hack then
+    return (Unix.lockf ch.fd cmd size)
+  else
+    execute_job (lockf_job ch.fd cmd size) lockf_result lockf_free
+
+(* +-----------------------------------------------------------------+
+   | User id, group id                                               |
+   +-----------------------------------------------------------------+ *)
+
+external getlogin_job : unit -> [ `unix_getlogin ] job = "lwt_unix_getlogin_job"
+external getlogin_result : [ `unix_getlogin ] job -> string = "lwt_unix_getlogin_result"
+external getlogin_free : [ `unix_getlogin ] job -> unit = "lwt_unix_getlogin_free"
+
+let getlogin () =
+  if windows_hack then
+    return (Unix.getlogin ())
+  else
+    execute_job (getlogin_job ()) getlogin_result getlogin_free
+
+external getpwnam_job : string -> [ `unix_getpwnam ] job = "lwt_unix_getpwnam_job"
+external getpwnam_result : [ `unix_getpwnam ] job -> Unix.passwd_entry = "lwt_unix_getpwnam_result"
+external getpwnam_free : [ `unix_getpwnam ] job -> unit = "lwt_unix_getpwnam_free"
+
+let getpwnam name =
+  if windows_hack then
+    return (Unix.getpwnam name)
+  else
+    execute_job (getpwnam_job name) getpwnam_result getpwnam_free
+
+external getgrnam_job : string -> [ `unix_getgrnam ] job = "lwt_unix_getgrnam_job"
+external getgrnam_result : [ `unix_getgrnam ] job -> Unix.group_entry = "lwt_unix_getgrnam_result"
+external getgrnam_free : [ `unix_getgrnam ] job -> unit = "lwt_unix_getgrnam_free"
+
+let getgrnam name =
+  if windows_hack then
+    return (Unix.getgrnam name)
+  else
+    execute_job (getgrnam_job name) getgrnam_result getgrnam_free
+
+external getpwuid_job : int -> [ `unix_getpwuid ] job = "lwt_unix_getpwuid_job"
+external getpwuid_result : [ `unix_getpwuid ] job -> Unix.passwd_entry = "lwt_unix_getpwuid_result"
+external getpwuid_free : [ `unix_getpwuid ] job -> unit = "lwt_unix_getpwuid_free"
+
+let getpwuid uid =
+  if windows_hack then
+    return (Unix.getpwuid uid)
+  else
+    execute_job (getpwuid_job uid) getpwuid_result getpwuid_free
+
+external getgrgid_job : int -> [ `unix_getgrgid ] job = "lwt_unix_getgrgid_job"
+external getgrgid_result : [ `unix_getgrgid ] job -> Unix.group_entry = "lwt_unix_getgrgid_result"
+external getgrgid_free : [ `unix_getgrgid ] job -> unit = "lwt_unix_getgrgid_free"
+
+let getgrgid gid =
+  if windows_hack then
+    return (Unix.getgrgid gid)
+  else
+    execute_job (getgrgid_job gid) getgrgid_result getgrgid_free
+
 external stub_recv : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_recv"
 
 let recv ch buf pos len flags =
@@ -479,15 +974,14 @@ let io_vector ~buffer ~offset ~length = {
   iov_length = length;
 }
 
-external stub_recv_msg : Unix.file_descr -> int -> io_vector list -> int * Unix.file_descr list = "lwt_unix_recv_msg"
-external stub_send_msg : Unix.file_descr -> int -> io_vector list -> int -> Unix.file_descr list -> int = "lwt_unix_send_msg"
-
 let check_io_vectors func_name iovs =
   List.iter (fun iov ->
                if iov.iov_offset < 0
                  || iov.iov_length < 0
                  || iov.iov_offset > String.length iov.iov_buffer - iov.iov_length then
                    invalid_arg func_name) iovs
+
+external stub_recv_msg : Unix.file_descr -> int -> io_vector list -> int * Unix.file_descr list = "lwt_unix_recv_msg"
 
 let recv_msg ~socket ~io_vectors =
   check_io_vectors "Lwt_unix.recv_msg" io_vectors;
@@ -496,34 +990,14 @@ let recv_msg ~socket ~io_vectors =
     (fun () ->
        stub_recv_msg socket.fd n_iovs io_vectors)
 
+external stub_send_msg : Unix.file_descr -> int -> io_vector list -> int -> Unix.file_descr list -> int = "lwt_unix_send_msg"
+
 let send_msg ~socket ~io_vectors ~fds =
   check_io_vectors "Lwt_unix.send_msg" io_vectors;
   let n_iovs = List.length io_vectors and n_fds = List.length fds in
   wrap_syscall Write socket
     (fun () ->
        stub_send_msg socket.fd n_iovs io_vectors n_fds fds)
-
-type credentials = {
-  cred_pid : int;
-  cred_uid : int;
-  cred_gid : int;
-}
-
-external stub_get_credentials : Unix.file_descr -> credentials = "lwt_unix_get_credentials"
-
-let get_credentials ch = stub_get_credentials ch.fd
-
-let pipe () =
-  let (out_fd, in_fd) = Unix.pipe() in
-  (mk_ch out_fd, mk_ch in_fd)
-
-let pipe_in () =
-  let (out_fd, in_fd) = Unix.pipe() in
-  (mk_ch out_fd, in_fd)
-
-let pipe_out () =
-  let (out_fd, in_fd) = Unix.pipe() in
-  (out_fd, mk_ch in_fd)
 
 let socket dom typ proto =
   let s = Unix.socket dom typ proto in
@@ -599,94 +1073,6 @@ let listen ch cnt =
   check_descriptor ch;
   Unix.listen ch.fd cnt
 
-let set_close_on_exec ch =
-  check_descriptor ch;
-  Unix.set_close_on_exec ch.fd
-
-let clear_close_on_exec ch =
-  check_descriptor ch;
-  Unix.clear_close_on_exec ch.fd
-
-external open_job : string -> Unix.open_flag list -> int -> [ `unix_open ] job = "lwt_unix_open_job"
-external open_result : [ `unix_open ] job -> Unix.file_descr * bool = "lwt_unix_open_result"
-external open_free : [ `unix_open ] job -> unit = "lwt_unix_open_free" "noalloc"
-
-let openfile name flags perms =
-  if windows_hack then
-    return (of_unix_file_descr (Unix.openfile name flags perms))
-  else
-    lwt fd, blocking =
-      execute_job
-        (open_job name flags perms)
-        open_result
-        open_free
-    in
-    return (of_unix_file_descr ~blocking fd)
-
-external close_job : Unix.file_descr -> [ `unix_close ] job = "lwt_unix_close_job"
-external close_result : [ `unix_close ] job -> unit = "lwt_unix_close_result"
-external close_free : [ `unix_close ] job -> unit = "lwt_unix_close_free" "noalloc"
-
-let close ch =
-  if ch.state = Closed then check_descriptor ch;
-  set_state ch Closed;
-  if windows_hack then begin
-    Unix.close ch.fd;
-    return ()
-  end else
-    execute_job (close_job ch.fd) close_result close_free
-
-let lseek ch offset whence =
-  check_descriptor ch;
-  Unix.lseek ch.fd offset whence
-
-let ftruncate ch size =
-  check_descriptor ch;
-  Unix.ftruncate ch.fd size
-
-let fstat ch =
-  check_descriptor ch;
-  Unix.fstat ch.fd
-
-module LargeFile =
-struct
-  let lseek ch offset whence =
-    check_descriptor ch;
-    Unix.LargeFile.lseek ch.fd offset whence
-
-  let ftruncate ch size =
-    check_descriptor ch;
-    Unix.LargeFile.ftruncate ch.fd size
-
-  let fstat ch =
-    check_descriptor ch;
-    Unix.LargeFile.fstat ch.fd
-end
-
-let isatty ch =
-  check_descriptor ch;
-  Unix.isatty ch.fd
-
-let fchmod ch perms =
-  check_descriptor ch;
-  Unix.fchmod ch.fd perms
-
-let fchown ch perms =
-  check_descriptor ch;
-  Unix.fchown ch.fd perms
-
-let dup ch =
-  check_descriptor ch;
-  of_unix_file_descr (Unix.dup ch.fd)
-
-let dup2 ch1 ch2 =
-  check_descriptor ch1;
-  Unix.dup2 ch1.fd ch2.fd
-
-let lockf ch cmd size =
-  check_descriptor ch;
-  Unix.lockf ch.fd cmd size
-
 let getpeername ch =
   check_descriptor ch;
   Unix.getpeername ch.fd
@@ -694,6 +1080,20 @@ let getpeername ch =
 let getsockname ch =
   check_descriptor ch;
   Unix.getsockname ch.fd
+
+type credentials = {
+  cred_pid : int;
+  cred_uid : int;
+  cred_gid : int;
+}
+
+external stub_get_credentials : Unix.file_descr -> credentials = "lwt_unix_get_credentials"
+
+let get_credentials ch = stub_get_credentials ch.fd
+
+(* +-----------------------------------------------------------------+
+   | Socket options                                                  |
+   +-----------------------------------------------------------------+ *)
 
 let getsockopt ch opt =
   check_descriptor ch;
@@ -731,25 +1131,158 @@ let getsockopt_error ch =
   check_descriptor ch;
   Unix.getsockopt_error ch.fd
 
+(* +-----------------------------------------------------------------+
+   | Host and protocol databases                                     |
+   +-----------------------------------------------------------------+ *)
+
+external gethostname_job : unit -> [ `unix_gethostname ] job = "lwt_unix_gethostname_job"
+external gethostname_result : [ `unix_gethostname ] job -> string = "lwt_unix_gethostname_result"
+external gethostname_free : [ `unix_gethostname ] job -> unit = "lwt_unix_gethostname_free"
+
+let gethostname () =
+  if windows_hack then
+    return (Unix.gethostname ())
+  else
+    execute_job (gethostname_job ()) gethostname_result gethostname_free
+
+external gethostbyname_job : string -> [ `unix_gethostbyname ] job = "lwt_unix_gethostbyname_job"
+external gethostbyname_result : [ `unix_gethostbyname ] job -> Unix.host_entry = "lwt_unix_gethostbyname_result"
+external gethostbyname_free : [ `unix_gethostbyname ] job -> unit = "lwt_unix_gethostbyname_free"
+
+let gethostbyname name =
+  if windows_hack then
+    return (Unix.gethostbyname name)
+  else
+    execute_job (gethostbyname_job name) gethostbyname_result gethostbyname_free
+
+external gethostbyaddr_job : Unix.inet_addr -> [ `unix_gethostbyaddr ] job = "lwt_unix_gethostbyaddr_job"
+external gethostbyaddr_result : [ `unix_gethostbyaddr ] job -> Unix.host_entry = "lwt_unix_gethostbyaddr_result"
+external gethostbyaddr_free : [ `unix_gethostbyaddr ] job -> unit = "lwt_unix_gethostbyaddr_free"
+
+let gethostbyaddr addr =
+  if windows_hack then
+    return (Unix.gethostbyaddr addr)
+  else
+    execute_job (gethostbyaddr_job addr) gethostbyaddr_result gethostbyaddr_free
+
+external getprotobyname_job : string -> [ `unix_getprotobyname ] job = "lwt_unix_getprotobyname_job"
+external getprotobyname_result : [ `unix_getprotobyname ] job -> Unix.protocol_entry = "lwt_unix_getprotobyname_result"
+external getprotobyname_free : [ `unix_getprotobyname ] job -> unit = "lwt_unix_getprotobyname_free"
+
+let getprotobyname name =
+  if windows_hack then
+    return (Unix.getprotobyname name)
+  else
+    execute_job (getprotobyname_job name) getprotobyname_result getprotobyname_free
+
+external getprotobynumber_job : int -> [ `unix_getprotobynumber ] job = "lwt_unix_getprotobynumber_job"
+external getprotobynumber_result : [ `unix_getprotobynumber ] job -> Unix.protocol_entry = "lwt_unix_getprotobynumber_result"
+external getprotobynumber_free : [ `unix_getprotobynumber ] job -> unit = "lwt_unix_getprotobynumber_free"
+
+let getprotobynumber number =
+  if windows_hack then
+    return (Unix.getprotobynumber number)
+  else
+    execute_job (getprotobynumber_job number) getprotobynumber_result getprotobynumber_free
+
+external getservbyname_job : string -> string -> [ `unix_getservbyname ] job = "lwt_unix_getservbyname_job"
+external getservbyname_result : [ `unix_getservbyname ] job -> Unix.service_entry = "lwt_unix_getservbyname_result"
+external getservbyname_free : [ `unix_getservbyname ] job -> unit = "lwt_unix_getservbyname_free"
+
+let getservbyname name x =
+  if windows_hack then
+    return (Unix.getservbyname name x)
+  else
+    execute_job (getservbyname_job name x) getservbyname_result getservbyname_free
+
+external getservbyport_job : int -> string -> [ `unix_getservbyport ] job = "lwt_unix_getservbyport_job"
+external getservbyport_result : [ `unix_getservbyport ] job -> Unix.service_entry = "lwt_unix_getservbyport_result"
+external getservbyport_free : [ `unix_getservbyport ] job -> unit = "lwt_unix_getservbyport_free"
+
+let getservbyport port x =
+  if windows_hack then
+    return (Unix.getservbyport port x)
+  else
+    execute_job (getservbyport_job port x) getservbyport_result getservbyport_free
+
+external getaddrinfo_job : string -> string -> Unix.getaddrinfo_option list -> [ `unix_getaddrinfo ] job = "lwt_unix_getaddrinfo_job"
+external getaddrinfo_result : [ `unix_getaddrinfo ] job -> Unix.addr_info list = "lwt_unix_getaddrinfo_result"
+external getaddrinfo_free : [ `unix_getaddrinfo ] job -> unit = "lwt_unix_getaddrinfo_free"
+
+let getaddrinfo host service opts =
+  if windows_hack then
+    return (Unix.getaddrinfo host service opts)
+  else
+    execute_job (getaddrinfo_job host service opts) getaddrinfo_result getaddrinfo_free
+
+external getnameinfo_job : Unix.sockaddr -> Unix.getnameinfo_option list -> [ `unix_getnameinfo ] job = "lwt_unix_getnameinfo_job"
+external getnameinfo_result : [ `unix_getnameinfo ] job -> Unix.name_info = "lwt_unix_getnameinfo_result"
+external getnameinfo_free : [ `unix_getnameinfo ] job -> unit = "lwt_unix_getnameinfo_free"
+
+let getnameinfo addr opts =
+  if windows_hack then
+    return (Unix.getnameinfo addr opts)
+  else
+    execute_job (getnameinfo_job addr opts) getnameinfo_result getnameinfo_free
+
+(* +-----------------------------------------------------------------+
+   | Terminal interface                                              |
+   +-----------------------------------------------------------------+ *)
+
+external tcgetattr_job : Unix.file_descr -> [ `unix_tcgetattr ] job = "lwt_unix_tcgetattr_job"
+external tcgetattr_result : [ `unix_tcgetattr ] job -> Unix.terminal_io = "lwt_unix_tcgetattr_result"
+external tcgetattr_free : [ `unix_tcgetattr ] job -> unit = "lwt_unix_tcgetattr_free"
+
 let tcgetattr ch =
   check_descriptor ch;
-  Unix.tcgetattr ch.fd
+  if windows_hack then
+    return (Unix.tcgetattr ch.fd)
+  else
+    execute_job (tcgetattr_job ch.fd) tcgetattr_result tcgetattr_free
 
-let tcsetattr ch when_ attr =
+external tcsetattr_job : Unix.file_descr -> Unix.setattr_when -> Unix.terminal_io -> [ `unix_tcsetattr ] job = "lwt_unix_tcsetattr_job"
+external tcsetattr_result : [ `unix_tcsetattr ] job -> unit = "lwt_unix_tcsetattr_result"
+external tcsetattr_free : [ `unix_tcsetattr ] job -> unit = "lwt_unix_tcsetattr_free"
+
+let tcsetattr ch when_ attrs =
   check_descriptor ch;
-  Unix.tcsetattr ch.fd when_ attr
+  if windows_hack then
+    return (Unix.tcsetattr ch.fd when_ attrs)
+  else
+    execute_job (tcsetattr_job ch.fd when_ attrs) tcsetattr_result tcsetattr_free
+
+external tcdrain_job : Unix.file_descr -> [ `unix_tcdrain ] job = "lwt_unix_tcdrain_job"
+external tcdrain_result : [ `unix_tcdrain ] job -> unit = "lwt_unix_tcdrain_result"
+external tcdrain_free : [ `unix_tcdrain ] job -> unit = "lwt_unix_tcdrain_free"
 
 let tcdrain ch =
   check_descriptor ch;
-  Unix.tcdrain ch.fd
+  if windows_hack then
+    return (Unix.tcdrain ch.fd)
+  else
+    execute_job (tcdrain_job ch.fd) tcdrain_result tcdrain_free
+
+external tcflush_job : Unix.file_descr -> Unix.flush_queue -> [ `unix_tcflush ] job = "lwt_unix_tcflush_job"
+external tcflush_result : [ `unix_tcflush ] job -> unit = "lwt_unix_tcflush_result"
+external tcflush_free : [ `unix_tcflush ] job -> unit = "lwt_unix_tcflush_free"
 
 let tcflush ch q =
   check_descriptor ch;
-  Unix.tcflush ch.fd q
+  if windows_hack then
+    return (Unix.tcflush ch.fd q)
+  else
+    execute_job (tcflush_job ch.fd q) tcflush_result tcflush_free
 
-let tcflow ch f =
+external tcflow_job : Unix.file_descr -> Unix.flow_action -> [ `unix_tcflow ] job = "lwt_unix_tcflow_job"
+external tcflow_result : [ `unix_tcflow ] job -> unit = "lwt_unix_tcflow_result"
+external tcflow_free : [ `unix_tcflow ] job -> unit = "lwt_unix_tcflow_free"
+
+let tcflow ch act =
   check_descriptor ch;
-  Unix.tcflow ch.fd f
+  if windows_hack then
+    return (Unix.tcflow ch.fd act)
+  else
+    execute_job (tcflow_job ch.fd act) tcflow_result tcflow_free
 
 (* +-----------------------------------------------------------------+
    | Reading notifications                                           |
@@ -926,30 +1459,6 @@ let system cmd =
         end
     | id ->
         waitpid [] id >|= snd
-
-(* +-----------------------------------------------------------------+
-   | Directories                                                     |
-   +-----------------------------------------------------------------+ *)
-
-type dir_handle = {
-  dir_handle : Unix.dir_handle;
-  auto_yield : unit -> unit Lwt.t;
-}
-
-let opendir name = {
-  dir_handle = Unix.opendir name;
-  auto_yield = auto_yield 0.05;
-}
-
-let readdir dh =
-  lwt () = dh.auto_yield () in
-  try
-    return (Unix.readdir dh.dir_handle)
-  with exn ->
-    raise_lwt exn
-
-let rewinddir dh = Unix.rewinddir dh.dir_handle
-let closedir dh = Unix.closedir dh.dir_handle
 
 (* +-----------------------------------------------------------------+
    | Misc                                                            |
