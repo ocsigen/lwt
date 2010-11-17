@@ -664,7 +664,9 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_notification_id, valu
 
   case LWT_UNIX_ASYNC_METHOD_NONE:
     /* Execute the job synchronously. */
+    caml_enter_blocking_section();
     job->worker(job);
+    caml_leave_blocking_section();
     break;
 
   case LWT_UNIX_ASYNC_METHOD_THREAD:
