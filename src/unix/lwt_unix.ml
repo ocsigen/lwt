@@ -206,8 +206,16 @@ let set_blocking ?(set_flags=true) ch blocking =
       Unix.set_nonblock ch.fd
   end
 
-external readable : Unix.file_descr -> bool = "lwt_unix_readable" "noalloc"
-external writable : Unix.file_descr -> bool = "lwt_unix_writable" "noalloc"
+external stub_readable : Unix.file_descr -> bool = "lwt_unix_readable" "noalloc"
+external stub_writable : Unix.file_descr -> bool = "lwt_unix_writable" "noalloc"
+
+let readable ch =
+  check_descriptor ch;
+  stub_readable ch.fd
+
+let writable ch =
+  check_descriptor ch;
+  stub_writable ch.fd
 
 let set_state ch st =
   ch.state <- st
@@ -282,7 +290,7 @@ let register_action event ch action =
 let wrap_syscall event ch action =
   try
     check_descriptor ch;
-    if not ch.blocking || (event = Read && readable ch.fd) || (event == Write && writable ch.fd) then
+    if not ch.blocking || (event = Read && stub_readable ch.fd) || (event == Write && stub_writable ch.fd) then
       return (action ())
     else
       register_action event ch action
@@ -387,8 +395,7 @@ let execute_job ?async_method ~job ~result ~free =
 
 let wait_read ch =
   try_lwt
-    check_descriptor ch;
-    if readable ch.fd then
+    if readable ch then
       return ()
     else
       register_action Read ch ignore
@@ -412,8 +419,7 @@ let read ch buf pos len =
 
 let wait_write ch =
   try_lwt
-    check_descriptor ch;
-    if writable ch.fd then
+    if writable ch then
       return ()
     else
       register_action Write ch ignore
@@ -541,7 +547,7 @@ let accept_n ch n =
       begin
         try
           for i = 1 to n do
-            if ch.blocking && not (readable ch.fd) then raise Retry;
+            if ch.blocking && not (stub_readable ch.fd) then raise Retry;
             let fd, addr = Unix.accept ch.fd in
             l := (mk_ch fd, addr) :: !l
           done

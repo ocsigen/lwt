@@ -269,6 +269,14 @@ val write : file_descr -> string -> int -> int -> int Lwt.t
   (** [read fd buf ofs len] has the same semantic as [Unix.write], but
       is cooperative *)
 
+val readable : file_descr -> bool
+  (** Returns whether the given file descriptor is currently
+      readable. *)
+
+val writable : file_descr -> bool
+  (** Returns whether the given file descriptor is currently
+      writable. *)
+
 val wait_read : file_descr -> unit Lwt.t
   (** waits (without blocking other threads) until there is something
       to read on the file descriptor *)
