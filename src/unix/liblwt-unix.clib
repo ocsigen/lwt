@@ -1,9 +1,10 @@
 # OASIS_START
-# DO NOT EDIT (digest: e467cd7a32a3710a4da531f33b5e665e)
+# DO NOT EDIT (digest: 06025c240b42201ccc15811016a00077)
 lwt_unix_stubs.o
 lwt_mmap_stubs.o
 lwt_libev_stubs.o
 lwt_unix_read.o
 lwt_unix_write.o
 lwt_unix_open.o
+lwt_unix_close.o
 # OASIS_STOP

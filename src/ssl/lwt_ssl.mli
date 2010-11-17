@@ -37,7 +37,7 @@ val wait_read : socket -> unit Lwt.t
 val wait_write : socket -> unit Lwt.t
 
 val shutdown : socket -> Unix.shutdown_command -> unit
-val close : socket -> unit
+val close : socket -> unit Lwt.t
 
 val out_channel_of_descr : socket -> Lwt_chan.out_channel
 val in_channel_of_descr : socket -> Lwt_chan.in_channel

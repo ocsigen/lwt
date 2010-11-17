@@ -572,11 +572,6 @@ let connect ch addr =
             raise Retry
   end
 
-let close ch =
-  if ch.state = Closed then check_descriptor ch;
-  set_state ch Closed;
-  Unix.close ch.fd
-
 let setsockopt ch opt v =
   check_descriptor ch;
   Unix.setsockopt ch.fd opt v
@@ -612,6 +607,19 @@ let openfile name flags perms =
         open_free
     in
     return (of_unix_file_descr ~blocking fd)
+
+external close_job : Unix.file_descr -> [ `unix_close ] job = "lwt_unix_close_job"
+external close_result : [ `unix_close ] job -> unit = "lwt_unix_close_result"
+external close_free : [ `unix_close ] job -> unit = "lwt_unix_close_free" "noalloc"
+
+let close ch =
+  if ch.state = Closed then check_descriptor ch;
+  set_state ch Closed;
+  if windows_hack then begin
+    Unix.close ch.fd;
+    return ()
+  end else
+    execute_job (close_job ch.fd) close_result close_free
 
 let lseek ch offset whence =
   check_descriptor ch;

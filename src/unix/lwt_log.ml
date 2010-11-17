@@ -353,7 +353,7 @@ let syslog_connect paths =
                 return (DGRAM, fd)
               with
                 | Unix.Unix_error(Unix.EPROTOTYPE, _, _) -> begin
-                    Lwt_unix.close fd;
+                    lwt () = Lwt_unix.close fd in
                     (* Then try with a stream socket: *)
                     let fd = Lwt_unix.socket Unix.PF_UNIX Unix.SOCK_STREAM 0 in
                     try_lwt
@@ -361,12 +361,12 @@ let syslog_connect paths =
                       Lwt_unix.set_close_on_exec fd;
                       return (STREAM, fd)
                     with Unix.Unix_error(error, _, _) ->
-                      Lwt_unix.close fd;
+                      lwt () = Lwt_unix.close fd in
                       log_intern "can not connect to \"%s\": %s" path (Unix.error_message error);
                       loop paths
                   end
                 | Unix.Unix_error(error, _, _) ->
-                    Lwt_unix.close fd;
+                    lwt () = Lwt_unix.close fd in
                     log_intern "can not connect to \"%s\": %s" path (Unix.error_message error);
                     loop paths
             end
@@ -433,7 +433,7 @@ let syslog ?(template="$(date) $(name)[$(pid)]: $(section): $(message)") ?(paths
                             print socket_type fd lines
                           with Unix.Unix_error(_, _, _) ->
                             (* Try to reconnect *)
-                            shutdown fd;
+                            lwt () = shutdown fd in
                             syslog_socket := None;
                             lwt socket_type, fd = get_syslog () in
                             lwt () = write_string fd (make_line socket_type line) in
@@ -446,8 +446,7 @@ let syslog ?(template="$(date) $(name)[$(pid)]: $(section): $(message)") ?(paths
                 | None ->
                     return ()
                 | Some(socket_type, fd) ->
-                    shutdown fd;
-                    return ())
+                    shutdown fd)
 
 (* +-----------------------------------------------------------------+
    | Logging functions                                               |

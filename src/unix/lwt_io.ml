@@ -37,13 +37,6 @@ let check_buffer_size fun_name buffer_size =
 
 let default_buffer_size = ref 4096
 
-let close_fd fd =
-  try
-    Lwt_unix.close fd;
-    return ()
-  with exn ->
-    raise_lwt exn
-
 (* +-----------------------------------------------------------------+
    | Types                                                           |
    +-----------------------------------------------------------------+ *)
@@ -521,7 +514,7 @@ let of_fd ?buffer_size ?close ~mode fd =
     ?buffer_size
     ~close:(match close with
               | Some f -> f
-              | None -> (fun () -> close_fd fd))
+              | None -> (fun () -> Lwt_unix.close fd))
     ~seek:(fun pos cmd -> return (Lwt_unix.LargeFile.lseek fd pos cmd))
     ~mode
     perform_io
@@ -1289,7 +1282,7 @@ let open_connection ?buffer_size sockaddr =
   let fd = Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0 in
   let close = lazy begin
     Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
-    close_fd fd
+    Lwt_unix.close fd
   end in
   try_lwt
     lwt () = Lwt_unix.connect fd sockaddr in
@@ -1301,7 +1294,7 @@ let open_connection ?buffer_size sockaddr =
               ~close:(fun _ -> Lazy.force close)
               ~mode:output (Lwt_unix.write fd))
   with exn ->
-    lwt () = close_fd fd in
+    lwt () = Lwt_unix.close fd in
     raise_lwt exn
 
 let with_connection ?buffer_size sockaddr f =
@@ -1330,13 +1323,13 @@ let establish_server ?buffer_size ?(backlog=5) sockaddr f =
           (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
           let close = lazy begin
             Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
-            close_fd fd
+            Lwt_unix.close fd
           end in
           f (of_fd ?buffer_size ~mode:input ~close:(fun () -> Lazy.force close) fd,
              of_fd ?buffer_size ~mode:output ~close:(fun () -> Lazy.force close) fd);
           loop ()
       | `Shutdown ->
-          Lwt_unix.close sock;
+          lwt () = Lwt_unix.close sock in
           match sockaddr with
             | Unix.ADDR_UNIX path when path <> "" && path.[0] <> '\x00' ->
                 Unix.unlink path;

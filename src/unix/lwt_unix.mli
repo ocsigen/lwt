@@ -190,7 +190,7 @@ val openfile : string -> Unix.open_flag list -> Unix.file_perm -> file_descr Lwt
       into blocking mode according to the file kind; fifos and sockets
       are in non-blocking mode and other are in blocking mode. *)
 
-val close : file_descr -> unit
+val close : file_descr -> unit Lwt.t
   (** Close a {b file descriptor}. This close the underlying unix {b
       file descriptor} and set its state to {!Closed} *)
 
