@@ -163,6 +163,15 @@ let name ch = match ch.mode with
 let closed_channel ch = Channel_closed(name ch)
 let invalid_channel ch = Failure(Printf.sprintf "temporary atomic %s channel no more valid" (name ch))
 
+let is_busy ch =
+  match ch.state with
+    | Invalid ->
+        raise (invalid_channel ch.channel)
+    | Idle | Closed ->
+        false
+    | Busy_primitive | Busy_atomic _ ->
+        true
+
 (* Flush/refill the buffer. No race condition could happen because
    this function is always called atomically: *)
 let perform_io ch = match ch.main.state with

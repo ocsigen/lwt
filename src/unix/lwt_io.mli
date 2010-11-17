@@ -193,6 +193,11 @@ val buffer_size : 'a channel -> int
 val resize_buffer : 'a channel -> int -> unit Lwt.t
   (** Resize the internal buffer to the given size *)
 
+val is_busy : 'a channel -> bool
+  (** [is_busy channel] returns whether the given channel is currently
+      busy. A channel is busy when there is at least one job using it
+      that has not yet terminated. *)
+
 (** {6 Random access} *)
 
 val position : 'a channel -> int64
