@@ -103,6 +103,11 @@ val set : 'a key -> 'a option -> unit t
   (** [set key value] associates a value to [key] in the current
       thread. *)
 
+val with_value : 'a key -> 'a option -> (unit -> 'b t) -> 'b t
+  (** [with_value key value f] executes [f] with [value] associated to
+      [key]. The previous value associated to [key] is restored after
+      [f] terminates. *)
+
 (** {6 Exceptions handling} *)
 
 val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
@@ -151,7 +156,7 @@ val ( <?> ) : 'a t -> 'a t -> 'a t
   (** [t <?> t'] is the same as [choose [t; t']] *)
 
 val ( <&> ) : unit t -> unit t -> unit t
-      (** [t <&> t'] is the same as [join [t; t']] *)
+  (** [t <&> t'] is the same as [join [t; t']] *)
 
 val ignore_result : 'a t -> unit
   (** [ignore_result t] start the thread [t] and ignores its result

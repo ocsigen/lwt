@@ -789,6 +789,12 @@ let finalize f g =
     (fun x -> g () >>= fun () -> return x)
     (fun e -> g () >>= fun () -> fail e)
 
+let with_value key value f =
+  let save = get key in
+  finalize
+    (fun () -> bind (set key value) f)
+    (fun () -> set key save)
+
 (* +-----------------------------------------------------------------+
    | Paused threads                                                  |
    +-----------------------------------------------------------------+ *)

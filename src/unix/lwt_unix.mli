@@ -90,8 +90,8 @@ val async_method : unit -> async_method
   (** [async_method ()] returns the async method used in the current
       thread. *)
 
-val set_async_method : async_method -> unit Lwt.t
-  (** Sets the async method used in the current thread. *)
+val async_method_key : async_method Lwt.key
+  (** The key for storing the local async method. *)
 
 (** {6 Sleeping} *)
 

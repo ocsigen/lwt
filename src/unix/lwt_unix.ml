@@ -62,9 +62,6 @@ let async_method () =
     | Some am -> am
     | None -> !default_async_method_var
 
-let set_async_method am =
-  Lwt.set async_method_key (Some am)
-
 (* +-----------------------------------------------------------------+
    | Notifications management                                        |
    +-----------------------------------------------------------------+ *)
