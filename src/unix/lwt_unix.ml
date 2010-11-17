@@ -602,13 +602,16 @@ external open_result : [ `unix_open ] job -> Unix.file_descr * bool = "lwt_unix_
 external open_free : [ `unix_open ] job -> unit = "lwt_unix_open_free" "noalloc"
 
 let openfile name flags perms =
-  lwt fd, blocking =
-    execute_job
-      (open_job name flags perms)
-      open_result
-      open_free
-  in
-  return (of_unix_file_descr ~blocking fd)
+  if windows_hack then
+    return (of_unix_file_descr (Unix.openfile name flags perms))
+  else
+    lwt fd, blocking =
+      execute_job
+        (open_job name flags perms)
+        open_result
+        open_free
+    in
+    return (of_unix_file_descr ~blocking fd)
 
 let lseek ch offset whence =
   check_descriptor ch;

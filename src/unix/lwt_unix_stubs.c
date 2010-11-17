@@ -439,9 +439,11 @@ value lwt_unix_init_notification(value fd)
   return Val_unit;
 }
 
-void lwt_unix_send_notification(int id)
+CAMLprim value lwt_unix_send_notification_stub(value val_id)
 {
   char buf[4];
+  int id = Val_int(val_id);
+
   buf[0] = id;
   buf[1] = id >> 8;
   buf[2] = id >> 16;
@@ -467,12 +469,34 @@ void lwt_unix_send_notification(int id)
   lwt_unix_release_mutex(notification_pipe_mutex);
 
   caml_leave_blocking_section();
+
+  return Val_unit;
 }
 
-value lwt_unix_send_notification_stub(value id)
+void lwt_unix_send_notification(int id)
 {
-  lwt_unix_send_notification(Int_val(id));
-  return Val_unit;
+  char buf[4];
+
+  buf[0] = id;
+  buf[1] = id >> 8;
+  buf[2] = id >> 16;
+  buf[3] = id >> 24;
+
+  lwt_unix_acquire_mutex(notification_pipe_mutex);
+
+  int offset = 0;
+  while (offset < 4) {
+    int n = write(notification_fd_writer, &(buf[offset]), 4 - offset);
+
+    if (n <= 0) {
+      perror("failed to send notification");
+      break;
+    }
+
+    offset += n;
+  }
+
+  lwt_unix_release_mutex(notification_pipe_mutex);
 }
 
 /* +-----------------------------------------------------------------+
