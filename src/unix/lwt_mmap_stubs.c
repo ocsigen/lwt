@@ -185,7 +185,7 @@ CAMLprim value lwt_mmap_launch_waiter(value v_bigarray, value v_offset, value v_
   waiter->ident = Int_val(v_ident);
   waiter->data = Caml_ba_data_val(v_bigarray) + Int_val(v_offset);
 
-  lwt_unix_launch_thread(waiter_function, (void*)waiter, LWT_UNIX_MINIMUM_STACK_SIZE);
+  lwt_unix_launch_thread(waiter_function, (void*)waiter);
 
   return Val_unit;
 }

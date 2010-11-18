@@ -1479,14 +1479,18 @@ struct
   let make_prompt prompt = React.S.value (prompt (React.S.const (Engine.init [])))
 
   let read_line ?history ?complete ?clipboard ?mode ?(prompt=default_prompt) () =
-    if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then
-      make ?history ?complete ?clipboard ?mode ~prompt ~map_result:return ()
+    lwt stdin_isatty = Lwt_unix.isatty Lwt_unix.stdin
+    and stdout_isatty = Lwt_unix.isatty Lwt_unix.stdout in
+    if stdin_isatty && stdout_isatty then
+      return (make ?history ?complete ?clipboard ?mode ~prompt ~map_result:return ())
     else
-      fake (lwt () = write stdout (strip_styles (make_prompt prompt)) in
-            Lwt_text.read_line stdin)
+      return (fake (lwt () = write stdout (strip_styles (make_prompt prompt)) in
+                    Lwt_text.read_line stdin))
 
   let read_password ?clipboard ?(style:password_style=`text "*") ?prompt () =
-    if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then
+    lwt stdin_isatty = Lwt_unix.isatty Lwt_unix.stdin
+    and stdout_isatty = Lwt_unix.isatty Lwt_unix.stdout in
+    if stdin_isatty && stdout_isatty then
       let map_text = match style with
         | `text ch -> (fun txt -> Text.map (fun _ -> ch) txt)
         | `clear -> (fun x -> x)
@@ -1498,9 +1502,9 @@ struct
         | command ->
             return command
       in
-      make ?clipboard ~map_text ~mode:`none ~filter ?prompt ~map_result:return ()
+      return (make ?clipboard ~map_text ~mode:`none ~filter ?prompt ~map_result:return ())
     else
-      failwith "Lwt_read_line.read_password: not running in a terminal"
+      fail (Failure "Lwt_read_line.read_password: not running in a terminal")
 
   let read_keyword ?history ?(case_sensitive=false) ?mode ?(prompt=default_prompt) ~values () =
     let compare = if case_sensitive then Text.compare else Text.icompare in
@@ -1512,7 +1516,9 @@ struct
           else
             assoc key l
     in
-    if Unix.isatty Unix.stdin && Unix.isatty Unix.stdout then
+    lwt stdin_isatty = Lwt_unix.isatty Lwt_unix.stdin
+    and stdout_isatty = Lwt_unix.isatty Lwt_unix.stdout in
+    if stdin_isatty && stdout_isatty then
       let words = List.fold_left (fun acc (key, value) -> TextSet.add key acc) TextSet.empty values in
       let filter state = function
         | Accept_line ->
@@ -1531,15 +1537,15 @@ struct
       and complete (before, after) =
         return (complete "" before after words)
       in
-      make ?history ?mode ~prompt ~filter ~map_result ~complete ()
+      return (make ?history ?mode ~prompt ~filter ~map_result ~complete ())
     else
-      fake (lwt () = write stdout (strip_styles (make_prompt prompt)) in
-            lwt txt = Lwt_text.read_line stdin in
-            match assoc txt values with
-              | Some value ->
-                  return value
-              | None ->
-                  raise_lwt (Failure "Lwt_read_line.read_keyword: invalid input"))
+      return (fake (lwt () = write stdout (strip_styles (make_prompt prompt)) in
+                    lwt txt = Lwt_text.read_line stdin in
+                    match assoc txt values with
+                      | Some value ->
+                          return value
+                      | None ->
+                          raise_lwt (Failure "Lwt_read_line.read_keyword: invalid input")))
 
   let read_yes_no ?history ?mode ?prompt () =
     read_keyword ?history ?mode ?prompt ~values:[("yes", true); ("no", false)] ()
@@ -1552,20 +1558,16 @@ end
 let default_prompt = [Text "# "]
 
 let read_line ?history ?complete ?clipboard ?mode ?(prompt=default_prompt) () =
-  Control.result
-    (Control.read_line ?history ?complete ?clipboard ?mode ~prompt:(fun _ -> React.S.const prompt) ())
+  Control.read_line ?history ?complete ?clipboard ?mode ~prompt:(fun _ -> React.S.const prompt) () >>= Control.result
 
 let read_password ?clipboard ?style ?(prompt=default_prompt) () =
-  Control.result
-    (Control.read_password ?clipboard ?style ~prompt:(fun _ -> React.S.const prompt) ())
+  Control.read_password ?clipboard ?style ~prompt:(fun _ -> React.S.const prompt) () >>= Control.result
 
 let read_keyword ?history ?case_sensitive ?mode ?(prompt=default_prompt) ~values () =
-  Control.result
-    (Control.read_keyword ?history ?case_sensitive ?mode ~prompt:(fun _ -> React.S.const prompt) ~values ())
+  Control.read_keyword ?history ?case_sensitive ?mode ~prompt:(fun _ -> React.S.const prompt) ~values () >>= Control.result
 
 let read_yes_no ?history ?mode ?(prompt=default_prompt) () =
-  Control.result
-    (Control.read_yes_no ?history ?mode ~prompt:(fun _ -> React.S.const prompt) ())
+  Control.read_yes_no ?history ?mode ~prompt:(fun _ -> React.S.const prompt) () >>= Control.result
 
 (* +-----------------------------------------------------------------+
    | History                                                         |

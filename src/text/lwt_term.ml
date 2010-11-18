@@ -37,16 +37,17 @@ let state = ref Normal
 let raw_count = ref 0
 
 let get_attr () =
-  try
-    Some(Unix.tcgetattr Unix.stdin)
-  with
-      _ -> None
+  try_lwt
+    lwt attr = Lwt_unix.tcgetattr Lwt_unix.stdin in
+    return (Some attr)
+  with _ ->
+    return None
 
 let set_attr mode =
-  try
-    Unix.tcsetattr Unix.stdin Unix.TCSAFLUSH mode
-  with
-      _ -> ()
+  try_lwt
+    Lwt_unix.tcsetattr Lwt_unix.stdin Unix.TCSAFLUSH mode
+  with _ ->
+    return ()
 
 let drawing_mode = ref false
 
@@ -106,8 +107,7 @@ let cleanup () =
     | Normal ->
         return ()
     | Raw saved_attr ->
-        set_attr saved_attr;
-        return ()
+        set_attr saved_attr
 
 let () = Lwt_main.at_exit cleanup
 
@@ -123,8 +123,7 @@ let leave_raw_mode () =
           assert false
       | Raw attr ->
           state := Normal;
-          set_attr attr;
-          return ()
+          set_attr attr
   else
     return ()
 
@@ -134,11 +133,11 @@ let with_raw_mode f =
         incr raw_count;
         finalize f leave_raw_mode
     | Normal ->
-        match get_attr () with
+        get_attr () >>= function
           | Some attr ->
               incr raw_count;
               state := Raw attr;
-              set_attr {
+              lwt () = set_attr {
                 attr with
                   (* Inspired from Python-3.0/Lib/tty.py: *)
                   Unix.c_brkint = false;
@@ -152,7 +151,7 @@ let with_raw_mode f =
                   Unix.c_isig = false;
                   Unix.c_vmin = 1;
                   Unix.c_vtime = 0
-              };
+              } in
               try_lwt f () finally leave_raw_mode ()
           | None ->
               raise_lwt (Failure "Lwt_term.with_raw_mode: input is not a tty")
@@ -677,28 +676,31 @@ let styled_length st =
   loop 0 st
 
 let printc st =
-  if Unix.isatty Unix.stdout then
-    atomic (fun oc -> write_styled oc st) stdout
-  else
-    write stdout (strip_styles st)
+  Lwt_unix.isatty Lwt_unix.stdout >>= function
+    | true ->
+        atomic (fun oc -> write_styled oc st) stdout
+    | false ->
+        write stdout (strip_styles st)
 
 let eprintc st =
-  if Unix.isatty Unix.stderr then
-    atomic (fun oc -> write_styled oc st) stderr
-  else
-    write stderr (strip_styles st)
+  Lwt_unix.isatty Lwt_unix.stderr >>= function
+    | true ->
+        atomic (fun oc -> write_styled oc st) stderr
+    | false ->
+        write stderr (strip_styles st)
 
 let fprintlc oc fd st =
-  if Unix.isatty fd then
-    atomic (fun oc ->
-              lwt () = write_styled oc st in
-              lwt () = write oc "\027[m" in
-              write_char oc "\n") oc
-  else
-    write_line oc (strip_styles st)
+  Lwt_unix.isatty fd >>= function
+    | true ->
+        atomic (fun oc ->
+                  lwt () = write_styled oc st in
+                  lwt () = write oc "\027[m" in
+                  write_char oc "\n") oc
+    | false ->
+        write_line oc (strip_styles st)
 
-let printlc st = fprintlc stdout Unix.stdout st
-let eprintlc st = fprintlc stderr Unix.stderr st
+let printlc st = fprintlc stdout Lwt_unix.stdout st
+let eprintlc st = fprintlc stderr Lwt_unix.stderr st
 
 (* +-----------------------------------------------------------------+
    | Drawing                                                         |

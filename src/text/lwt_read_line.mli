@@ -432,22 +432,22 @@ module Control : sig
     ?complete : completion ->
     ?clipboard : clipboard ->
     ?mode : completion_mode ->
-    ?prompt : prompt -> unit -> Text.t t
+    ?prompt : prompt -> unit -> Text.t t Lwt.t
 
   val read_password :
     ?clipboard : clipboard ->
     ?style : password_style ->
-    ?prompt : prompt -> unit -> Text.t t
+    ?prompt : prompt -> unit -> Text.t t Lwt.t
 
   val read_keyword :
     ?history : history ->
     ?case_sensitive : bool ->
     ?mode : completion_mode ->
     ?prompt : prompt ->
-    values :  (Text.t * 'value) list -> unit -> 'value t
+    values :  (Text.t * 'value) list -> unit -> 'value t Lwt.t
 
   val read_yes_no :
     ?history : history ->
     ?mode : completion_mode ->
-    ?prompt : prompt -> unit -> bool t
+    ?prompt : prompt -> unit -> bool t Lwt.t
 end

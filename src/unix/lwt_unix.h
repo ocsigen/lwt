@@ -113,18 +113,8 @@ typedef pthread_t lwt_unix_thread;
 
 #endif /* defined(LWT_ON_WINDOWS) */
 
-/* Define the minimum stack size for a thread. */
-#if defined(PTHREAD_STACK_MIN)
-#  define LWT_UNIX_MINIMUM_STACK_SIZE PTHREAD_STACK_MIN
-#else
-#  define LWT_UNIX_MINIMUM_STACK_SIZE (sizeof (long) * 4096)
-#endif
-
-/* The default stack size. */
-#define LWT_UNIX_DEFAULT_STACK_SIZE 0
-
-/* Launch a thread in detached with the given amount of stack. */
-lwt_unix_thread lwt_unix_launch_thread(void* (*start)(void*), void* data, int stack_size);
+/* Launch a thread in detached mode. */
+lwt_unix_thread lwt_unix_launch_thread(void* (*start)(void*), void* data);
 
 /* +-----------------------------------------------------------------+
    | Detached jobs                                                   |

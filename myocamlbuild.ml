@@ -545,6 +545,8 @@ let () =
              Options.make_links := false
 
          | After_rules ->
+             dep ["file:src/unix/lwt_unix_stubs.c"] ["src/unix/lwt_unix_unix.c"; "src/unix/lwt_unix_windows.c"];
+
              (* Internal syntax extension *)
              List.iter
                (fun base ->

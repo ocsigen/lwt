@@ -1251,6 +1251,17 @@ let tcsetattr ch when_ attrs =
   else
     execute_job (tcsetattr_job ch.fd when_ attrs) tcsetattr_result tcsetattr_free
 
+external tcsendbreak_job : Unix.file_descr -> int -> [ `unix_tcsendbreak ] job = "lwt_unix_tcsendbreak_job"
+external tcsendbreak_result : [ `unix_tcsendbreak ] job -> unit = "lwt_unix_tcsendbreak_result"
+external tcsendbreak_free : [ `unix_tcsendbreak ] job -> unit = "lwt_unix_tcsendbreak_free"
+
+let tcsendbreak ch delay =
+  check_descriptor ch;
+  if windows_hack then
+    return (Unix.tcsendbreak ch.fd delay)
+  else
+    execute_job (tcsendbreak_job ch.fd delay) tcsendbreak_result tcsendbreak_free
+
 external tcdrain_job : Unix.file_descr -> [ `unix_tcdrain ] job = "lwt_unix_tcdrain_job"
 external tcdrain_result : [ `unix_tcdrain ] job -> unit = "lwt_unix_tcdrain_result"
 external tcdrain_free : [ `unix_tcdrain ] job -> unit = "lwt_unix_tcdrain_free"
