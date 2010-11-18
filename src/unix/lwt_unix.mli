@@ -626,6 +626,9 @@ val tcgetattr : file_descr -> Unix.terminal_io Lwt.t
 val tcsetattr : file_descr -> Unix.setattr_when -> Unix.terminal_io -> unit Lwt.t
   (** Wrapper for [Unix.tcsetattr] *)
 
+val tcsendbreak : file_descr -> int -> unit Lwt.t
+  (** Wrapper for [Unix.tcsendbreak] *)
+
 val tcdrain : file_descr -> unit Lwt.t
   (** Wrapper for [Unix.tcdrain] *)
 

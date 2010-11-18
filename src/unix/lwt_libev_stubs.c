@@ -231,3 +231,14 @@ CAMLprim value lwt_libev_timer_stop(value watcher)
   ev_timer_stop(lwt_unix_main_loop, Ev_timer_val(watcher));
   return Val_unit;
 }
+
+/* +-----------------------------------------------------------------+
+   | Fake events                                                     |
+   +-----------------------------------------------------------------+ */
+
+CAMLprim value lwt_libev_fake_io(value fd)
+{
+  ev_feed_fd_event(lwt_unix_main_loop, FD_val(fd), EV_READ);
+  ev_feed_fd_event(lwt_unix_main_loop, FD_val(fd), EV_WRITE);
+  return Val_unit;
+}

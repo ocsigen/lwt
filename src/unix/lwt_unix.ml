@@ -124,6 +124,7 @@ external ev_signal_init : int -> (ev_signal -> unit) -> ev_signal = "lwt_libev_s
 external ev_signal_stop : ev_signal -> unit  = "lwt_libev_signal_stop"
 external ev_timer_init : float -> (ev_timer -> unit) -> ev_timer = "lwt_libev_timer_init"
 external ev_timer_stop : ev_timer -> unit  = "lwt_libev_timer_stop"
+external ev_fake_io : Unix.file_descr -> unit = "lwt_libev_fake_io"
 
 (* +-----------------------------------------------------------------+
    | Sleepers                                                        |
@@ -221,8 +222,10 @@ let set_state ch st =
   ch.state <- st
 
 let abort ch e =
-  if ch.state <> Closed then
-    set_state ch (Aborted e)
+  if ch.state <> Closed then begin
+    set_state ch (Aborted e);
+    ev_fake_io ch.fd
+  end
 
 let unix_file_descr ch = ch.fd
 
