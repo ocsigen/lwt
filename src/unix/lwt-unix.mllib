@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: f8993986f31e29aa398e6ef78c14e942)
+# DO NOT EDIT (digest: c8327ccd49fa1494b44ddf94a83a175e)
 Lwt_chan
 Lwt_daemon
 Lwt_gc
@@ -10,6 +10,5 @@ Lwt_process
 Lwt_throttle
 Lwt_timeout
 Lwt_unix
-Lwt_mmap
 Lwt_log_rules
 # OASIS_STOP

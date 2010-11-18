@@ -12,7 +12,7 @@
 <src/glib/lwt_glib_stubs.*>: use_C_glib
 
 # OASIS_START
-# DO NOT EDIT (digest: 3fa241647e4dd44d4732cc1cb9906237)
+# DO NOT EDIT (digest: 33e495dd4563de19d2e0490573d091ee)
 # Library lwt
 "src/core": include
 # Library lwt-unix
@@ -25,16 +25,12 @@
 <src/unix/lwt-unix.{cma,cmxa}>: use_liblwt-unix
 <src/unix/*.ml{,i}>: use_lwt
 <src/unix/*.ml{,i}>: pkg_unix
-<src/unix/*.ml{,i}>: pkg_bigarray
 "src/unix/lwt_unix_stubs.c": use_lwt
 "src/unix/lwt_unix_stubs.c": pkg_unix
-"src/unix/lwt_unix_stubs.c": pkg_bigarray
 "src/unix/lwt_mmap_stubs.c": use_lwt
 "src/unix/lwt_mmap_stubs.c": pkg_unix
-"src/unix/lwt_mmap_stubs.c": pkg_bigarray
 "src/unix/lwt_libev_stubs.c": use_lwt
 "src/unix/lwt_libev_stubs.c": pkg_unix
-"src/unix/lwt_libev_stubs.c": pkg_bigarray
 # Library lwt-react
 "src/react": include
 <src/react/*.ml{,i}>: use_lwt
@@ -49,18 +45,15 @@
 <src/text/*.ml{,i}>: pkg_unix
 <src/text/*.ml{,i}>: pkg_text
 <src/text/*.ml{,i}>: pkg_react
-<src/text/*.ml{,i}>: pkg_bigarray
 # Executable test_unix
 <tests/unix/main.{native,byte}>: use_test
 <tests/unix/main.{native,byte}>: use_lwt-unix
 <tests/unix/main.{native,byte}>: use_lwt
 <tests/unix/main.{native,byte}>: pkg_unix
-<tests/unix/main.{native,byte}>: pkg_bigarray
 <tests/unix/*.ml{,i}>: use_test
 <tests/unix/*.ml{,i}>: use_lwt-unix
 <tests/unix/*.ml{,i}>: use_lwt
 <tests/unix/*.ml{,i}>: pkg_unix
-<tests/unix/*.ml{,i}>: pkg_bigarray
 # Executable test_react
 <tests/react/main.{native,byte}>: use_test
 <tests/react/main.{native,byte}>: use_lwt-react
@@ -68,25 +61,21 @@
 <tests/react/main.{native,byte}>: use_lwt
 <tests/react/main.{native,byte}>: pkg_unix
 <tests/react/main.{native,byte}>: pkg_react
-<tests/react/main.{native,byte}>: pkg_bigarray
 <tests/react/*.ml{,i}>: use_test
 <tests/react/*.ml{,i}>: use_lwt-react
 <tests/react/*.ml{,i}>: use_lwt-unix
 <tests/react/*.ml{,i}>: use_lwt
 <tests/react/*.ml{,i}>: pkg_unix
 <tests/react/*.ml{,i}>: pkg_react
-<tests/react/*.ml{,i}>: pkg_bigarray
 # Executable test_core
 <tests/core/main.{native,byte}>: use_test
 <tests/core/main.{native,byte}>: use_lwt-unix
 <tests/core/main.{native,byte}>: use_lwt
 <tests/core/main.{native,byte}>: pkg_unix
-<tests/core/main.{native,byte}>: pkg_bigarray
 <tests/core/*.ml{,i}>: use_test
 <tests/core/*.ml{,i}>: use_lwt-unix
 <tests/core/*.ml{,i}>: use_lwt
 <tests/core/*.ml{,i}>: pkg_unix
-<tests/core/*.ml{,i}>: pkg_bigarray
 # Library lwt-top
 "src/top": include
 # Library lwt-preemptive
@@ -95,24 +84,20 @@
 <src/preemptive/*.ml{,i}>: use_lwt
 <src/preemptive/*.ml{,i}>: pkg_unix
 <src/preemptive/*.ml{,i}>: pkg_threads
-<src/preemptive/*.ml{,i}>: pkg_bigarray
 # Library lwt-simple-top
 "src/simple_top": include
 <src/simple_top/*.ml{,i}>: use_lwt-unix
 <src/simple_top/*.ml{,i}>: use_lwt
 <src/simple_top/*.ml{,i}>: pkg_unix
-<src/simple_top/*.ml{,i}>: pkg_bigarray
 # Library lwt-glib
 "src/glib": include
 <src/glib/lwt-glib.{cma,cmxa}>: use_liblwt-glib
 <src/glib/*.ml{,i}>: use_lwt-unix
 <src/glib/*.ml{,i}>: use_lwt
 <src/glib/*.ml{,i}>: pkg_unix
-<src/glib/*.ml{,i}>: pkg_bigarray
 "src/glib/lwt_glib_stubs.c": use_lwt-unix
 "src/glib/lwt_glib_stubs.c": use_lwt
 "src/glib/lwt_glib_stubs.c": pkg_unix
-"src/glib/lwt_glib_stubs.c": pkg_bigarray
 # Library lwt-syntax
 <syntax/*.ml{,i}>: pkg_camlp4.extend
 # Library lwt-syntax-log
@@ -127,7 +112,6 @@
 "src/top/lwt_toplevel.byte": pkg_text
 "src/top/lwt_toplevel.byte": pkg_react
 "src/top/lwt_toplevel.byte": pkg_findlib
-"src/top/lwt_toplevel.byte": pkg_bigarray
 <src/top/*.ml{,i}>: use_lwt-top
 <src/top/*.ml{,i}>: use_lwt-text
 <src/top/*.ml{,i}>: use_lwt-react
@@ -137,7 +121,13 @@
 <src/top/*.ml{,i}>: pkg_text
 <src/top/*.ml{,i}>: pkg_react
 <src/top/*.ml{,i}>: pkg_findlib
-<src/top/*.ml{,i}>: pkg_bigarray
+# Library lwt-mmap
+"src/mmap": include
+<src/mmap/lwt-mmap.{cma,cmxa}>: use_liblwt-mmap
+<src/mmap/*.ml{,i}>: use_lwt
+<src/mmap/*.ml{,i}>: pkg_bigarray
+"src/mmap/lwt_mmap.c": use_lwt
+"src/mmap/lwt_mmap.c": pkg_bigarray
 # Library lwt-extra
 "src/extra": include
 <src/extra/*.ml{,i}>: use_lwt-preemptive
@@ -145,7 +135,6 @@
 <src/extra/*.ml{,i}>: use_lwt
 <src/extra/*.ml{,i}>: pkg_unix
 <src/extra/*.ml{,i}>: pkg_threads
-<src/extra/*.ml{,i}>: pkg_bigarray
 # Library lwt-syntax-options
 "syntax": include
 <syntax/*.ml{,i}>: pkg_camlp4.lib
@@ -155,5 +144,4 @@
 <src/ssl/*.ml{,i}>: use_lwt
 <src/ssl/*.ml{,i}>: pkg_unix
 <src/ssl/*.ml{,i}>: pkg_ssl
-<src/ssl/*.ml{,i}>: pkg_bigarray
 # OASIS_STOP

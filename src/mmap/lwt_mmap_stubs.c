@@ -37,7 +37,7 @@
 #include <caml/callback.h>
 #include <caml/signals.h>
 
-#include "lwt_unix.h"
+#include "../unix/lwt_unix.h"
 
 #if defined(LWT_ON_WINDOWS)
 #  include <windows.h>

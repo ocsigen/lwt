@@ -41,6 +41,10 @@ Flag unix
   Description: Unix support
   Default: true
 
+Flag mmap
+  Description: mmap helpers
+  Default: true
+
 Flag react
   Description: React helpers
   Default: false
@@ -104,11 +108,10 @@ Library "lwt-unix"
     Lwt_process,
     Lwt_throttle,
     Lwt_timeout,
-    Lwt_unix,
-    Lwt_mmap
+    Lwt_unix
   InternalModules:
     Lwt_log_rules
-  BuildDepends: lwt, unix, bigarray
+  BuildDepends: lwt, unix
   XMETADescription: Unix support for lwt
   CSources:
     lwt_unix.h,
@@ -136,6 +139,17 @@ Library "lwt-react"
   Modules: Lwt_event, Lwt_signal
   BuildDepends: lwt, react
   XMETADescription: Reactive programming helpers
+
+Library "lwt-mmap"
+  Build$: flag(mmap) || flag(all)
+  Install$: flag(mmap) || flag(all)
+  FindlibName: mmap
+  FindlibParent: lwt
+  Path: src/mmap
+  Modules: Lwt_mmap
+  CSources: lwt_mmap.c
+  BuildDepends: lwt, bigarray
+  XMETADescription: Utilities for mmaped files
 
 Library "lwt-preemptive"
   Build$: flag(preemptive) || flag(all)
