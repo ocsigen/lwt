@@ -73,6 +73,12 @@ CAMLprim value lwt_libev_loop_no_wait()
   return Val_unit;
 }
 
+CAMLprim value lwt_libev_unloop()
+{
+  ev_unloop(lwt_unix_main_loop, EVUNLOOP_ONE);
+  return Val_unit;
+}
+
 /* +-----------------------------------------------------------------+
    | Watchers                                                        |
    +-----------------------------------------------------------------+ */
