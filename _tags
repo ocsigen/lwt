@@ -12,7 +12,7 @@
 <src/glib/lwt_glib_stubs.*>: use_C_glib
 
 # OASIS_START
-# DO NOT EDIT (digest: 33e495dd4563de19d2e0490573d091ee)
+# DO NOT EDIT (digest: f76095144df02ab67ec1c119b4d316dd)
 # Library lwt
 "src/core": include
 # Library lwt-unix
@@ -27,8 +27,6 @@
 <src/unix/*.ml{,i}>: pkg_unix
 "src/unix/lwt_unix_stubs.c": use_lwt
 "src/unix/lwt_unix_stubs.c": pkg_unix
-"src/unix/lwt_mmap_stubs.c": use_lwt
-"src/unix/lwt_mmap_stubs.c": pkg_unix
 "src/unix/lwt_libev_stubs.c": use_lwt
 "src/unix/lwt_libev_stubs.c": pkg_unix
 # Library lwt-react

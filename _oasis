@@ -116,7 +116,6 @@ Library "lwt-unix"
   CSources:
     lwt_unix.h,
     lwt_unix_stubs.c,
-    lwt_mmap_stubs.c,
     lwt_libev_stubs.c
   CCLib: -lpthread -lev
 

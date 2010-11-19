@@ -398,7 +398,7 @@ static int open_flag_table[] = {
 };
 
 struct job_open {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *path;
   int flags;
   int perms;
@@ -420,18 +420,18 @@ static void worker_open(struct job_open *job)
     if (fstat(fd, &stat) < 0)
       job->blocking = 1;
     else
-      job->blocking = S_ISFIFO(stat.st_mode) || S_ISSOCK(stat.st_mode);
+      job->blocking = !(S_ISFIFO(stat.st_mode) || S_ISSOCK(stat.st_mode));
   }
 }
 
 CAMLprim value lwt_unix_open_job(value val_path, value val_flags, value val_perms)
 {
   struct job_open *job = lwt_unix_new(struct job_open);
-  job->worker = (lwt_unix_job_worker)worker_open;
+  job->job.worker = (lwt_unix_job_worker)worker_open;
   job->path = lwt_unix_strdup(String_val(val_path));
   job->flags = convert_flag_list(val_flags, open_flag_table);
   job->perms = Int_val(val_perms);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_open_result(value val_job)
@@ -458,7 +458,7 @@ CAMLprim value lwt_unix_open_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_close {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   int fd;
   int result;
   int error_code;
@@ -475,9 +475,9 @@ static void worker_close(struct job_close *job)
 CAMLprim value lwt_unix_close_job(value val_fd)
 {
   struct job_close *job = lwt_unix_new(struct job_close);
-  job->worker = (lwt_unix_job_worker)worker_close;
+  job->job.worker = (lwt_unix_job_worker)worker_close;
   job->fd = Int_val(val_fd);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_close_result(value val_job)
@@ -498,7 +498,7 @@ CAMLprim value lwt_unix_close_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_read {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   int fd;
   char *buffer;
   int length;
@@ -517,11 +517,11 @@ CAMLprim value lwt_unix_read_job(value val_fd, value val_length)
 {
   struct job_read *job = lwt_unix_new(struct job_read);
   long length = Long_val(val_length);
-  job->worker = (lwt_unix_job_worker)worker_read;
+  job->job.worker = (lwt_unix_job_worker)worker_read;
   job->fd = Int_val(val_fd);
   job->buffer = (char*)lwt_unix_malloc(length);
   job->length = length;
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_read_result(value val_job, value val_string, value val_offset)
@@ -546,7 +546,7 @@ CAMLprim value lwt_unix_read_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_write {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   int fd;
   char *buffer;
   int length;
@@ -566,12 +566,12 @@ CAMLprim value lwt_unix_write_job(value val_fd, value val_string, value val_offs
 {
   struct job_write *job = lwt_unix_new(struct job_write);
   long length = Long_val(val_length);
-  job->worker = (lwt_unix_job_worker)worker_write;
+  job->job.worker = (lwt_unix_job_worker)worker_write;
   job->fd = Int_val(val_fd);
   job->buffer = (char*)lwt_unix_malloc(length);
   memcpy(job->buffer, String_val(val_string) + Long_val(val_offset), Long_val(val_length));
   job->length = length;
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_write_result(value val_job)
@@ -592,7 +592,7 @@ CAMLprim value lwt_unix_write_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_lseek {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   int fd;
   off_t offset;
   int command;
@@ -615,11 +615,11 @@ static void worker_lseek(struct job_lseek *job)
 CAMLprim value lwt_unix_lseek_job(value val_fd, value val_offset, value val_command)
 {
   struct job_lseek *job = lwt_unix_new(struct job_lseek);
-  job->worker = (lwt_unix_job_worker)worker_lseek;
+  job->job.worker = (lwt_unix_job_worker)worker_lseek;
   job->fd = Int_val(val_fd);
   job->offset = Long_val(val_offset);
   job->command = seek_command_table[Int_val(val_command)];
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_lseek_result(value val_job)
@@ -640,11 +640,11 @@ CAMLprim value lwt_unix_lseek_free(value val_job)
 CAMLprim value lwt_unix_lseek_64_job(value val_fd, value val_offset, value val_command)
 {
   struct job_lseek *job = lwt_unix_new(struct job_lseek);
-  job->worker = (lwt_unix_job_worker)worker_lseek;
+  job->job.worker = (lwt_unix_job_worker)worker_lseek;
   job->fd = Int_val(val_fd);
   job->offset = Int64_val(val_offset);
   job->command = seek_command_table[Int_val(val_command)];
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_lseek_64_result(value val_job)
@@ -667,7 +667,7 @@ CAMLprim value lwt_unix_lseek_64_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_truncate {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name;
   off_t offset;
   int result;
@@ -685,10 +685,10 @@ static void worker_truncate(struct job_truncate *job)
 CAMLprim value lwt_unix_truncate_job(value val_name, value val_offset)
 {
   struct job_truncate *job = lwt_unix_new(struct job_truncate);
-  job->worker = (lwt_unix_job_worker)worker_truncate;
+  job->job.worker = (lwt_unix_job_worker)worker_truncate;
   job->name = lwt_unix_strdup(String_val(val_name));
   job->offset = Long_val(val_offset);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_truncate_result(value val_job)
@@ -709,10 +709,10 @@ CAMLprim value lwt_unix_truncate_free(value val_job)
 CAMLprim value lwt_unix_truncate_64_job(value val_name, value val_offset)
 {
   struct job_truncate *job = lwt_unix_new(struct job_truncate);
-  job->worker = (lwt_unix_job_worker)worker_truncate;
+  job->job.worker = (lwt_unix_job_worker)worker_truncate;
   job->name = lwt_unix_strdup(String_val(val_name));
   job->offset = Int64_val(val_offset);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_truncate_64_result(value val_job)
@@ -735,7 +735,7 @@ CAMLprim value lwt_unix_truncate_64_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_ftruncate {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   int fd;
   off_t offset;
   int result;
@@ -753,10 +753,10 @@ static void worker_ftruncate(struct job_ftruncate *job)
 CAMLprim value lwt_unix_ftruncate_job(value val_fd, value val_offset)
 {
   struct job_ftruncate *job = lwt_unix_new(struct job_ftruncate);
-  job->worker = (lwt_unix_job_worker)worker_ftruncate;
+  job->job.worker = (lwt_unix_job_worker)worker_ftruncate;
   job->fd = Int_val(val_fd);
   job->offset = Long_val(val_offset);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_ftruncate_result(value val_job)
@@ -776,10 +776,10 @@ CAMLprim value lwt_unix_ftruncate_free(value val_job)
 CAMLprim value lwt_unix_ftruncate_64_job(value val_fd, value val_offset)
 {
   struct job_ftruncate *job = lwt_unix_new(struct job_ftruncate);
-  job->worker = (lwt_unix_job_worker)worker_ftruncate;
+  job->job.worker = (lwt_unix_job_worker)worker_ftruncate;
   job->fd = Int_val(val_fd);
   job->offset = Int64_val(val_offset);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_ftruncate_64_result(value val_job)
@@ -801,7 +801,7 @@ CAMLprim value lwt_unix_ftruncate_64_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_stat {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name;
   struct stat stat;
   int result;
@@ -862,9 +862,9 @@ static void worker_stat(struct job_stat *job)
 CAMLprim value lwt_unix_stat_job(value val_name)
 {
   struct job_stat *job = lwt_unix_new(struct job_stat);
-  job->worker = (lwt_unix_job_worker)worker_stat;
+  job->job.worker = (lwt_unix_job_worker)worker_stat;
   job->name = lwt_unix_strdup(String_val(val_name));
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_stat_result(value val_job)
@@ -885,9 +885,9 @@ CAMLprim value lwt_unix_stat_free(value val_job)
 CAMLprim value lwt_unix_stat_64_job(value val_name)
 {
   struct job_stat *job = lwt_unix_new(struct job_stat);
-  job->worker = (lwt_unix_job_worker)worker_stat;
+  job->job.worker = (lwt_unix_job_worker)worker_stat;
   job->name = lwt_unix_strdup(String_val(val_name));
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_stat_64_result(value val_job)
@@ -910,7 +910,7 @@ CAMLprim value lwt_unix_stat_64_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_lstat {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name;
   struct stat lstat;
   int result;
@@ -928,9 +928,9 @@ static void worker_lstat(struct job_lstat *job)
 CAMLprim value lwt_unix_lstat_job(value val_name)
 {
   struct job_lstat *job = lwt_unix_new(struct job_lstat);
-  job->worker = (lwt_unix_job_worker)worker_lstat;
+  job->job.worker = (lwt_unix_job_worker)worker_lstat;
   job->name = lwt_unix_strdup(String_val(val_name));
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_lstat_result(value val_job)
@@ -951,9 +951,9 @@ CAMLprim value lwt_unix_lstat_free(value val_job)
 CAMLprim value lwt_unix_lstat_64_job(value val_name)
 {
   struct job_lstat *job = lwt_unix_new(struct job_lstat);
-  job->worker = (lwt_unix_job_worker)worker_lstat;
+  job->job.worker = (lwt_unix_job_worker)worker_lstat;
   job->name = lwt_unix_strdup(String_val(val_name));
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_lstat_64_result(value val_job)
@@ -976,7 +976,7 @@ CAMLprim value lwt_unix_lstat_64_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_fstat {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   int fd;
   struct stat fstat;
   int result;
@@ -994,9 +994,9 @@ static void worker_fstat(struct job_fstat *job)
 CAMLprim value lwt_unix_fstat_job(value val_fd)
 {
   struct job_fstat *job = lwt_unix_new(struct job_fstat);
-  job->worker = (lwt_unix_job_worker)worker_fstat;
+  job->job.worker = (lwt_unix_job_worker)worker_fstat;
   job->fd = Int_val(val_fd);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_fstat_result(value val_job)
@@ -1016,9 +1016,9 @@ CAMLprim value lwt_unix_fstat_free(value val_job)
 CAMLprim value lwt_unix_fstat_64_job(value val_fd)
 {
   struct job_fstat *job = lwt_unix_new(struct job_fstat);
-  job->worker = (lwt_unix_job_worker)worker_fstat;
+  job->job.worker = (lwt_unix_job_worker)worker_fstat;
   job->fd = Int_val(val_fd);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_fstat_64_result(value val_job)
@@ -1040,7 +1040,7 @@ CAMLprim value lwt_unix_fstat_64_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_isatty {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   int fd;
   int result;
 };
@@ -1055,9 +1055,9 @@ static void worker_isatty(struct job_isatty *job)
 CAMLprim value lwt_unix_isatty_job(value val_fd)
 {
   struct job_isatty *job = lwt_unix_new(struct job_isatty);
-  job->worker = (lwt_unix_job_worker)worker_isatty;
+  job->job.worker = (lwt_unix_job_worker)worker_isatty;
   job->fd = Int_val(val_fd);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_isatty_result(value val_job)
@@ -1078,7 +1078,7 @@ CAMLprim value lwt_unix_isatty_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_unlink {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name;
   int result;
   int error_code;
@@ -1095,9 +1095,9 @@ static void worker_unlink(struct job_unlink *job)
 CAMLprim value lwt_unix_unlink_job(value val_name)
 {
   struct job_unlink *job = lwt_unix_new(struct job_unlink);
-  job->worker = (lwt_unix_job_worker)worker_unlink;
+  job->job.worker = (lwt_unix_job_worker)worker_unlink;
   job->name = lwt_unix_strdup(String_val(val_name));
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_unlink_result(value val_job)
@@ -1120,7 +1120,7 @@ CAMLprim value lwt_unix_unlink_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_rename {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name1;
   char *name2;
   int result;
@@ -1138,10 +1138,10 @@ static void worker_rename(struct job_rename *job)
 CAMLprim value lwt_unix_rename_job(value val_name1, value val_name2)
 {
   struct job_rename *job = lwt_unix_new(struct job_rename);
-  job->worker = (lwt_unix_job_worker)worker_rename;
+  job->job.worker = (lwt_unix_job_worker)worker_rename;
   job->name1 = lwt_unix_strdup(String_val(val_name1));
   job->name2 = lwt_unix_strdup(String_val(val_name2));
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_rename_result(value val_job)
@@ -1165,7 +1165,7 @@ CAMLprim value lwt_unix_rename_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_link {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name1;
   char *name2;
   int result;
@@ -1183,10 +1183,10 @@ static void worker_link(struct job_link *job)
 CAMLprim value lwt_unix_link_job(value val_name1, value val_name2)
 {
   struct job_link *job = lwt_unix_new(struct job_link);
-  job->worker = (lwt_unix_job_worker)worker_link;
+  job->job.worker = (lwt_unix_job_worker)worker_link;
   job->name1 = lwt_unix_strdup(String_val(val_name1));
   job->name2 = lwt_unix_strdup(String_val(val_name2));
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_link_result(value val_job)
@@ -1210,7 +1210,7 @@ CAMLprim value lwt_unix_link_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_chmod {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name;
   int perms;
   int result;
@@ -1228,10 +1228,10 @@ static void worker_chmod(struct job_chmod *job)
 CAMLprim value lwt_unix_chmod_job(value val_name, value val_perms)
 {
   struct job_chmod *job = lwt_unix_new(struct job_chmod);
-  job->worker = (lwt_unix_job_worker)worker_chmod;
+  job->job.worker = (lwt_unix_job_worker)worker_chmod;
   job->name = lwt_unix_strdup(String_val(val_name));
   job->perms = Int_val(val_perms);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_chmod_result(value val_job)
@@ -1254,7 +1254,7 @@ CAMLprim value lwt_unix_chmod_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_fchmod {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   int fd;
   int perms;
   int result;
@@ -1272,10 +1272,10 @@ static void worker_fchmod(struct job_fchmod *job)
 CAMLprim value lwt_unix_fchmod_job(value val_fd, value val_perms)
 {
   struct job_fchmod *job = lwt_unix_new(struct job_fchmod);
-  job->worker = (lwt_unix_job_worker)worker_fchmod;
+  job->job.worker = (lwt_unix_job_worker)worker_fchmod;
   job->fd = Int_val(val_fd);
   job->perms = Int_val(val_perms);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_fchmod_result(value val_job)
@@ -1297,7 +1297,7 @@ CAMLprim value lwt_unix_fchmod_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_chown {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name;
   int uid;
   int gid;
@@ -1316,11 +1316,11 @@ static void worker_chown(struct job_chown *job)
 CAMLprim value lwt_unix_chown_job(value val_name, value val_uid, value val_gid)
 {
   struct job_chown *job = lwt_unix_new(struct job_chown);
-  job->worker = (lwt_unix_job_worker)worker_chown;
+  job->job.worker = (lwt_unix_job_worker)worker_chown;
   job->name = lwt_unix_strdup(String_val(val_name));
   job->uid = Int_val(val_uid);
   job->gid = Int_val(val_gid);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_chown_result(value val_job)
@@ -1343,7 +1343,7 @@ CAMLprim value lwt_unix_chown_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_fchown {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   int fd;
   int uid;
   int gid;
@@ -1362,11 +1362,11 @@ static void worker_fchown(struct job_fchown *job)
 CAMLprim value lwt_unix_fchown_job(value val_fd, value val_uid, value val_gid)
 {
   struct job_fchown *job = lwt_unix_new(struct job_fchown);
-  job->worker = (lwt_unix_job_worker)worker_fchown;
+  job->job.worker = (lwt_unix_job_worker)worker_fchown;
   job->fd = Int_val(val_fd);
   job->uid = Int_val(val_uid);
   job->gid = Int_val(val_gid);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_fchown_result(value val_job)
@@ -1388,7 +1388,7 @@ CAMLprim value lwt_unix_fchown_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_access {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name;
   int mode;
   int result;
@@ -1410,10 +1410,10 @@ static void worker_access(struct job_access *job)
 CAMLprim value lwt_unix_access_job(value val_name, value val_perms)
 {
   struct job_access *job = lwt_unix_new(struct job_access);
-  job->worker = (lwt_unix_job_worker)worker_access;
+  job->job.worker = (lwt_unix_job_worker)worker_access;
   job->name = lwt_unix_strdup(String_val(val_name));
   job->mode = convert_flag_list(val_perms, access_permission_table);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_access_result(value val_job)
@@ -1436,7 +1436,7 @@ CAMLprim value lwt_unix_access_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_mkdir {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name;
   int perms;
   int result;
@@ -1454,10 +1454,10 @@ static void worker_mkdir(struct job_mkdir *job)
 CAMLprim value lwt_unix_mkdir_job(value val_name, value val_perms)
 {
   struct job_mkdir *job = lwt_unix_new(struct job_mkdir);
-  job->worker = (lwt_unix_job_worker)worker_mkdir;
+  job->job.worker = (lwt_unix_job_worker)worker_mkdir;
   job->name = lwt_unix_strdup(String_val(val_name));
   job->perms = Int_val(val_perms);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_mkdir_result(value val_job)
@@ -1480,7 +1480,7 @@ CAMLprim value lwt_unix_mkdir_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_rmdir {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name;
   int result;
   int error_code;
@@ -1497,9 +1497,9 @@ static void worker_rmdir(struct job_rmdir *job)
 CAMLprim value lwt_unix_rmdir_job(value val_name)
 {
   struct job_rmdir *job = lwt_unix_new(struct job_rmdir);
-  job->worker = (lwt_unix_job_worker)worker_rmdir;
+  job->job.worker = (lwt_unix_job_worker)worker_rmdir;
   job->name = lwt_unix_strdup(String_val(val_name));
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_rmdir_result(value val_job)
@@ -1522,7 +1522,7 @@ CAMLprim value lwt_unix_rmdir_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_chdir {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name;
   int result;
   int error_code;
@@ -1539,9 +1539,9 @@ static void worker_chdir(struct job_chdir *job)
 CAMLprim value lwt_unix_chdir_job(value val_name)
 {
   struct job_chdir *job = lwt_unix_new(struct job_chdir);
-  job->worker = (lwt_unix_job_worker)worker_chdir;
+  job->job.worker = (lwt_unix_job_worker)worker_chdir;
   job->name = lwt_unix_strdup(String_val(val_name));
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_chdir_result(value val_job)
@@ -1564,7 +1564,7 @@ CAMLprim value lwt_unix_chdir_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_chroot {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name;
   int result;
   int error_code;
@@ -1581,9 +1581,9 @@ static void worker_chroot(struct job_chroot *job)
 CAMLprim value lwt_unix_chroot_job(value val_name)
 {
   struct job_chroot *job = lwt_unix_new(struct job_chroot);
-  job->worker = (lwt_unix_job_worker)worker_chroot;
+  job->job.worker = (lwt_unix_job_worker)worker_chroot;
   job->name = lwt_unix_strdup(String_val(val_name));
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_chroot_result(value val_job)
@@ -1606,7 +1606,7 @@ CAMLprim value lwt_unix_chroot_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_opendir {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name;
   DIR *result;
   int error_code;
@@ -1623,9 +1623,9 @@ static void worker_opendir(struct job_opendir *job)
 CAMLprim value lwt_unix_opendir_job(value val_name)
 {
   struct job_opendir *job = lwt_unix_new(struct job_opendir);
-  job->worker = (lwt_unix_job_worker)worker_opendir;
+  job->job.worker = (lwt_unix_job_worker)worker_opendir;
   job->name = lwt_unix_strdup(String_val(val_name));
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_opendir_result(value val_job)
@@ -1650,7 +1650,7 @@ CAMLprim value lwt_unix_opendir_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_readdir {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   DIR *dir;
   struct dirent *entry;
   struct dirent *ptr;
@@ -1668,10 +1668,10 @@ static void worker_readdir(struct job_readdir *job)
 CAMLprim value lwt_unix_readdir_job(value val_dir)
 {
   struct job_readdir *job = lwt_unix_new(struct job_readdir);
-  job->worker = (lwt_unix_job_worker)worker_readdir;
+  job->job.worker = (lwt_unix_job_worker)worker_readdir;
   job->dir = DIR_Val(val_dir);
   job->entry = NULL;
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_readdir_result(value val_job)
@@ -1695,7 +1695,7 @@ CAMLprim value lwt_unix_readdir_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_rewinddir {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   DIR *dir;
 };
 
@@ -1709,9 +1709,9 @@ static void worker_rewinddir(struct job_rewinddir *job)
 CAMLprim value lwt_unix_rewinddir_job(value val_dir)
 {
   struct job_rewinddir *job = lwt_unix_new(struct job_rewinddir);
-  job->worker = (lwt_unix_job_worker)worker_rewinddir;
+  job->job.worker = (lwt_unix_job_worker)worker_rewinddir;
   job->dir = DIR_Val(val_dir);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_rewinddir_result(value val_job)
@@ -1731,7 +1731,7 @@ CAMLprim value lwt_unix_rewinddir_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_closedir {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   DIR *dir;
   int result;
   int error_code;
@@ -1748,9 +1748,9 @@ static void worker_closedir(struct job_closedir *job)
 CAMLprim value lwt_unix_closedir_job(value val_dir)
 {
   struct job_closedir *job = lwt_unix_new(struct job_closedir);
-  job->worker = (lwt_unix_job_worker)worker_closedir;
+  job->job.worker = (lwt_unix_job_worker)worker_closedir;
   job->dir = DIR_Val(val_dir);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_closedir_result(value val_job)
@@ -1772,7 +1772,7 @@ CAMLprim value lwt_unix_closedir_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_mkfifo {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name;
   int perms;
   int result;
@@ -1790,10 +1790,10 @@ static void worker_mkfifo(struct job_mkfifo *job)
 CAMLprim value lwt_unix_mkfifo_job(value val_name, value val_perms)
 {
   struct job_mkfifo *job = lwt_unix_new(struct job_mkfifo);
-  job->worker = (lwt_unix_job_worker)worker_mkfifo;
+  job->job.worker = (lwt_unix_job_worker)worker_mkfifo;
   job->name = lwt_unix_strdup(String_val(val_name));
   job->perms = Int_val(val_perms);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_mkfifo_result(value val_job)
@@ -1816,7 +1816,7 @@ CAMLprim value lwt_unix_mkfifo_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_symlink {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name1;
   char *name2;
   int result;
@@ -1834,10 +1834,10 @@ static void worker_symlink(struct job_symlink *job)
 CAMLprim value lwt_unix_symlink_job(value val_name1, value val_name2)
 {
   struct job_symlink *job = lwt_unix_new(struct job_symlink);
-  job->worker = (lwt_unix_job_worker)worker_symlink;
+  job->job.worker = (lwt_unix_job_worker)worker_symlink;
   job->name1 = lwt_unix_strdup(String_val(val_name1));
   job->name2 = lwt_unix_strdup(String_val(val_name2));
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_symlink_result(value val_job)
@@ -1861,7 +1861,7 @@ CAMLprim value lwt_unix_symlink_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_readlink {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name;
   char buffer[MAXPATHLEN];
   size_t result;
@@ -1879,9 +1879,9 @@ static void worker_readlink(struct job_readlink *job)
 CAMLprim value lwt_unix_readlink_job(value val_name)
 {
   struct job_readlink *job = lwt_unix_new(struct job_readlink);
-  job->worker = (lwt_unix_job_worker)worker_readlink;
+  job->job.worker = (lwt_unix_job_worker)worker_readlink;
   job->name = lwt_unix_strdup(String_val(val_name));
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_readlink_result(value val_job)
@@ -1905,7 +1905,7 @@ CAMLprim value lwt_unix_readlink_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_lockf {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   int fd;
   int command;
   off_t length;
@@ -1928,11 +1928,11 @@ static void worker_lockf(struct job_lockf *job)
 CAMLprim value lwt_unix_lockf_job(value val_fd, value val_command, value val_length)
 {
   struct job_lockf *job = lwt_unix_new(struct job_lockf);
-  job->worker = (lwt_unix_job_worker)worker_lockf;
+  job->job.worker = (lwt_unix_job_worker)worker_lockf;
   job->fd = Int_val(val_fd);
   job->command = lock_command_table[Int_val(val_command)];
   job->length = Long_val(val_length);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_lockf_result(value val_job)
@@ -1954,7 +1954,7 @@ CAMLprim value lwt_unix_lockf_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_getlogin {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char buffer[1024];
   int result;
 };
@@ -1969,8 +1969,8 @@ static void worker_getlogin(struct job_getlogin *job)
 CAMLprim value lwt_unix_getlogin_job()
 {
   struct job_getlogin *job = lwt_unix_new(struct job_getlogin);
-  job->worker = (lwt_unix_job_worker)worker_getlogin;
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  job->job.worker = (lwt_unix_job_worker)worker_getlogin;
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_getlogin_result(value val_job)
@@ -1992,7 +1992,7 @@ CAMLprim value lwt_unix_getlogin_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_getpwnam {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name;
   struct passwd pwd;
   struct passwd *ptr;
@@ -2041,10 +2041,10 @@ static void worker_getpwnam(struct job_getpwnam *job)
 CAMLprim value lwt_unix_getpwnam_job(value val_name)
 {
   struct job_getpwnam *job = lwt_unix_new(struct job_getpwnam);
-  job->worker = (lwt_unix_job_worker)worker_getpwnam;
+  job->job.worker = (lwt_unix_job_worker)worker_getpwnam;
   job->name = lwt_unix_strdup(String_val(val_name));
   job->buffer = NULL;
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_getpwnam_result(value val_job)
@@ -2069,7 +2069,7 @@ CAMLprim value lwt_unix_getpwnam_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_getgrnam {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name;
   struct group grp;
   struct group *ptr;
@@ -2108,10 +2108,10 @@ static void worker_getgrnam(struct job_getgrnam *job)
 CAMLprim value lwt_unix_getgrnam_job(value val_name)
 {
   struct job_getgrnam *job = lwt_unix_new(struct job_getgrnam);
-  job->worker = (lwt_unix_job_worker)worker_getgrnam;
+  job->job.worker = (lwt_unix_job_worker)worker_getgrnam;
   job->name = lwt_unix_strdup(String_val(val_name));
   job->buffer = NULL;
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_getgrnam_result(value val_job)
@@ -2136,7 +2136,7 @@ CAMLprim value lwt_unix_getgrnam_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_getpwuid {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   int uid;
   struct passwd pwd;
   struct passwd *ptr;
@@ -2157,10 +2157,10 @@ static void worker_getpwuid(struct job_getpwuid *job)
 CAMLprim value lwt_unix_getpwuid_job(value val_uid)
 {
   struct job_getpwuid *job = lwt_unix_new(struct job_getpwuid);
-  job->worker = (lwt_unix_job_worker)worker_getpwuid;
+  job->job.worker = (lwt_unix_job_worker)worker_getpwuid;
   job->uid = Int_val(val_uid);
   job->buffer = NULL;
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_getpwuid_result(value val_job)
@@ -2184,7 +2184,7 @@ CAMLprim value lwt_unix_getpwuid_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_getgrgid {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   int gid;
   struct group grp;
   struct group *ptr;
@@ -2205,10 +2205,10 @@ static void worker_getgrgid(struct job_getgrgid *job)
 CAMLprim value lwt_unix_getgrgid_job(value val_gid)
 {
   struct job_getgrgid *job = lwt_unix_new(struct job_getgrgid);
-  job->worker = (lwt_unix_job_worker)worker_getgrgid;
+  job->job.worker = (lwt_unix_job_worker)worker_getgrgid;
   job->gid = Int_val(val_gid);
   job->buffer = NULL;
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_getgrgid_result(value val_job)
@@ -2232,7 +2232,7 @@ CAMLprim value lwt_unix_getgrgid_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_gethostname {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char buffer[MAXHOSTNAMELEN];
   int result;
   int error_code;
@@ -2250,8 +2250,8 @@ static void worker_gethostname(struct job_gethostname *job)
 CAMLprim value lwt_unix_gethostname_job()
 {
   struct job_gethostname *job = lwt_unix_new(struct job_gethostname);
-  job->worker = (lwt_unix_job_worker)worker_gethostname;
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  job->job.worker = (lwt_unix_job_worker)worker_gethostname;
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_gethostname_result(value val_job)
@@ -2275,7 +2275,7 @@ CAMLprim value lwt_unix_gethostname_free(value val_job)
 #define NETDB_BUFFER_SIZE 10000
 
 struct job_gethostbyname {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name;
   struct hostent entry;
   struct hostent *ptr;
@@ -2345,9 +2345,9 @@ static void worker_gethostbyname(struct job_gethostbyname *job)
 CAMLprim value lwt_unix_gethostbyname_job(value val_name)
 {
   struct job_gethostbyname *job = lwt_unix_new(struct job_gethostbyname);
-  job->worker = (lwt_unix_job_worker)worker_gethostbyname;
+  job->job.worker = (lwt_unix_job_worker)worker_gethostbyname;
   job->name = lwt_unix_strdup(String_val(val_name));
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_gethostbyname_result(value val_job)
@@ -2370,7 +2370,7 @@ CAMLprim value lwt_unix_gethostbyname_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_gethostbyaddr {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   struct in_addr addr;
   struct hostent entry;
   struct hostent *ptr;
@@ -2389,9 +2389,9 @@ static void worker_gethostbyaddr(struct job_gethostbyaddr *job)
 CAMLprim value lwt_unix_gethostbyaddr_job(value val_addr)
 {
   struct job_gethostbyaddr *job = lwt_unix_new(struct job_gethostbyaddr);
-  job->worker = (lwt_unix_job_worker)worker_gethostbyaddr;
+  job->job.worker = (lwt_unix_job_worker)worker_gethostbyaddr;
   job->addr = GET_INET_ADDR(val_addr);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_gethostbyaddr_result(value val_job)
@@ -2413,7 +2413,7 @@ CAMLprim value lwt_unix_gethostbyaddr_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_getprotobyname {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name;
   struct protoent *result;
 };
@@ -2444,9 +2444,9 @@ static void worker_getprotobyname(struct job_getprotobyname *job)
 CAMLprim value lwt_unix_getprotobyname_job(value val_name)
 {
   struct job_getprotobyname *job = lwt_unix_new(struct job_getprotobyname);
-  job->worker = (lwt_unix_job_worker)worker_getprotobyname;
+  job->job.worker = (lwt_unix_job_worker)worker_getprotobyname;
   job->name = lwt_unix_strdup(String_val(val_name));
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_getprotobyname_result(value val_job)
@@ -2469,7 +2469,7 @@ CAMLprim value lwt_unix_getprotobyname_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_getprotobynumber {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   int number;
   struct protoent *result;
 };
@@ -2484,9 +2484,9 @@ static void worker_getprotobynumber(struct job_getprotobynumber *job)
 CAMLprim value lwt_unix_getprotobynumber_job(value val_number)
 {
   struct job_getprotobynumber *job = lwt_unix_new(struct job_getprotobynumber);
-  job->worker = (lwt_unix_job_worker)worker_getprotobynumber;
+  job->job.worker = (lwt_unix_job_worker)worker_getprotobynumber;
   job->number = Int_val(val_number);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_getprotobynumber_result(value val_job)
@@ -2508,7 +2508,7 @@ CAMLprim value lwt_unix_getprotobynumber_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_getservbyname {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *name;
   char *proto;
   struct servent *result;
@@ -2542,10 +2542,10 @@ static void worker_getservbyname(struct job_getservbyname *job)
 CAMLprim value lwt_unix_getservbyname_job(value val_name, value val_proto)
 {
   struct job_getservbyname *job = lwt_unix_new(struct job_getservbyname);
-  job->worker = (lwt_unix_job_worker)worker_getservbyname;
+  job->job.worker = (lwt_unix_job_worker)worker_getservbyname;
   job->name = lwt_unix_strdup(String_val(val_name));
   job->proto = lwt_unix_strdup(String_val(val_proto));
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_getservbyname_result(value val_job)
@@ -2569,7 +2569,7 @@ CAMLprim value lwt_unix_getservbyname_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_getservbyport {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   int port;
   char *proto;
   struct servent *result;
@@ -2585,10 +2585,10 @@ static void worker_getservbyport(struct job_getservbyport *job)
 CAMLprim value lwt_unix_getservbyport_job(value val_port, value val_proto)
 {
   struct job_getservbyport *job = lwt_unix_new(struct job_getservbyport);
-  job->worker = (lwt_unix_job_worker)worker_getservbyport;
+  job->job.worker = (lwt_unix_job_worker)worker_getservbyport;
   job->port = Int_val(val_port);
   job->proto = lwt_unix_strdup(String_val(val_proto));
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_getservbyport_result(value val_job)
@@ -2611,7 +2611,7 @@ CAMLprim value lwt_unix_getservbyport_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_getaddrinfo {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   char *node;
   char *service;
   struct addrinfo hints;
@@ -2671,7 +2671,7 @@ static void worker_getaddrinfo(struct job_getaddrinfo *job)
 CAMLprim value lwt_unix_getaddrinfo_job(value val_node, value val_service, value val_hints)
 {
   struct job_getaddrinfo *job = lwt_unix_new(struct job_getaddrinfo);
-  job->worker = (lwt_unix_job_worker)worker_getaddrinfo;
+  job->job.worker = (lwt_unix_job_worker)worker_getaddrinfo;
   job->node = caml_string_length(val_node) == 0 ? NULL : lwt_unix_strdup(String_val(val_node));
   job->service = caml_string_length(val_service) == 0 ? NULL : lwt_unix_strdup(String_val(val_service));
   job->info = NULL;
@@ -2701,7 +2701,7 @@ CAMLprim value lwt_unix_getaddrinfo_job(value val_node, value val_service, value
         job->hints.ai_flags |= AI_PASSIVE; break;
       }
   }
- return lwt_unix_alloc_job((lwt_unix_job)job);
+ return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_getaddrinfo_result(value val_job)
@@ -2737,7 +2737,7 @@ CAMLprim value lwt_unix_getaddrinfo_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_getnameinfo {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   union sock_addr_union addr;
   socklen_t addr_len;
   int opts;
@@ -2767,10 +2767,10 @@ static void worker_getnameinfo(struct job_getnameinfo *job)
 CAMLprim value lwt_unix_getnameinfo_job(value val_sockaddr, value val_opts)
 {
   struct job_getnameinfo *job = lwt_unix_new(struct job_getnameinfo);
-  job->worker = (lwt_unix_job_worker)worker_getnameinfo;
+  job->job.worker = (lwt_unix_job_worker)worker_getnameinfo;
   get_sockaddr(val_sockaddr, &(job->addr), &(job->addr_len));
   job->opts = convert_flag_list(val_opts, getnameinfo_flag_table);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_getnameinfo_result(value val_job)
@@ -3013,7 +3013,7 @@ static void decode_terminal_status(value *src)
    +-----------------------------------------------------------------+ */
 
 struct job_tcgetattr {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   int fd;
   struct termios termios;
   int result;
@@ -3031,9 +3031,9 @@ static void worker_tcgetattr(struct job_tcgetattr *job)
 CAMLprim value lwt_unix_tcgetattr_job(value val_fd)
 {
   struct job_tcgetattr *job = lwt_unix_new(struct job_tcgetattr);
-  job->worker = (lwt_unix_job_worker)worker_tcgetattr;
+  job->job.worker = (lwt_unix_job_worker)worker_tcgetattr;
   job->fd = Int_val(val_fd);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_tcgetattr_result(value val_job)
@@ -3057,7 +3057,7 @@ CAMLprim value lwt_unix_tcgetattr_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_tcsetattr {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   int fd;
   int when;
   struct termios termios;
@@ -3080,12 +3080,12 @@ static void worker_tcsetattr(struct job_tcsetattr *job)
 CAMLprim value lwt_unix_tcsetattr_job(value val_fd, value val_when, value val_termios)
 {
   struct job_tcsetattr *job = lwt_unix_new(struct job_tcsetattr);
-  job->worker = (lwt_unix_job_worker)worker_tcsetattr;
+  job->job.worker = (lwt_unix_job_worker)worker_tcsetattr;
   job->fd = Int_val(val_fd);
   job->when = when_flag_table[Int_val(val_when)];
   decode_terminal_status(&Field(val_termios, 0));
   memcpy(&(job->termios), &terminal_status, sizeof(struct termios));
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_tcsetattr_result(value val_job)
@@ -3106,7 +3106,7 @@ CAMLprim value lwt_unix_tcsetattr_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_tcdrain {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   int fd;
   int result;
   int error_code;
@@ -3123,9 +3123,9 @@ static void worker_tcdrain(struct job_tcdrain *job)
 CAMLprim value lwt_unix_tcdrain_job(value val_fd)
 {
   struct job_tcdrain *job = lwt_unix_new(struct job_tcdrain);
-  job->worker = (lwt_unix_job_worker)worker_tcdrain;
+  job->job.worker = (lwt_unix_job_worker)worker_tcdrain;
   job->fd = Int_val(val_fd);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_tcdrain_result(value val_job)
@@ -3146,7 +3146,7 @@ CAMLprim value lwt_unix_tcdrain_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_tcflush {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   int fd;
   int queue;
   int result;
@@ -3168,10 +3168,10 @@ static void worker_tcflush(struct job_tcflush *job)
 CAMLprim value lwt_unix_tcflush_job(value val_fd, value val_queue)
 {
   struct job_tcflush *job = lwt_unix_new(struct job_tcflush);
-  job->worker = (lwt_unix_job_worker)worker_tcflush;
+  job->job.worker = (lwt_unix_job_worker)worker_tcflush;
   job->fd = Int_val(val_fd);
   job->queue = queue_flag_table[Int_val(val_queue)];
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_tcflush_result(value val_job)
@@ -3192,7 +3192,7 @@ CAMLprim value lwt_unix_tcflush_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_tcflow {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   int fd;
   int action;
   int result;
@@ -3214,10 +3214,10 @@ static void worker_tcflow(struct job_tcflow *job)
 CAMLprim value lwt_unix_tcflow_job(value val_fd, value val_action)
 {
   struct job_tcflow *job = lwt_unix_new(struct job_tcflow);
-  job->worker = (lwt_unix_job_worker)worker_tcflow;
+  job->job.worker = (lwt_unix_job_worker)worker_tcflow;
   job->fd = Int_val(val_fd);
   job->action = action_flag_table[Int_val(val_action)];
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_tcflow_result(value val_job)
@@ -3238,7 +3238,7 @@ CAMLprim value lwt_unix_tcflow_free(value val_job)
    +-----------------------------------------------------------------+ */
 
 struct job_tcsendbreak {
-  LWT_UNIX_JOB_FIELDS;
+  struct lwt_unix_job job;
   int fd;
   int delay;
   int result;
@@ -3256,10 +3256,10 @@ static void worker_tcsendbreak(struct job_tcsendbreak *job)
 CAMLprim value lwt_unix_tcsendbreak_job(value val_fd, value val_delay)
 {
   struct job_tcsendbreak *job = lwt_unix_new(struct job_tcsendbreak);
-  job->worker = (lwt_unix_job_worker)worker_tcsendbreak;
+  job->job.worker = (lwt_unix_job_worker)worker_tcsendbreak;
   job->fd = Int_val(val_fd);
   job->delay = Int_val(val_delay);
-  return lwt_unix_alloc_job((lwt_unix_job)job);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_unix_tcsendbreak_result(value val_job)

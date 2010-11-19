@@ -231,9 +231,9 @@ let unix_file_descr ch = ch.fd
 
 let of_unix_file_descr = mk_ch
 
-let stdin = of_unix_file_descr ~blocking:true Unix.stdin
-let stdout = of_unix_file_descr ~blocking:true Unix.stdout
-let stderr = of_unix_file_descr ~blocking:true Unix.stderr
+let stdin = of_unix_file_descr ~set_flags:false ~blocking:true Unix.stdin
+let stdout = of_unix_file_descr ~set_flags:false ~blocking:true Unix.stdout
+let stderr = of_unix_file_descr ~set_flags:false ~blocking:true Unix.stderr
 
 (* +-----------------------------------------------------------------+
    | Actions on file descriptors                                     |
@@ -1485,3 +1485,9 @@ let handle_unix_error f x =
     f x
   with exn ->
     Unix.handle_unix_error (fun () -> raise exn) ()
+
+(* +-----------------------------------------------------------------+
+   | System thread pool                                              |
+   +-----------------------------------------------------------------+ *)
+
+external pool_size : unit -> int = "lwt_unix_pool_size"

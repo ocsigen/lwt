@@ -726,6 +726,15 @@ val set_notification : int -> (unit -> unit) -> unit
       notification by [f]. It raises [Not_found] if the given
       notification is not found. *)
 
+(** {6 System threads pool} *)
+
+(** If the program is using the async method {!Async_detach} or
+    {!Async_switch}, Lwt will launch system threads to execute
+    blocking system calls asynchronously. *)
+
+val pool_size : unit -> int
+  (** Number of system threads waiting for works. *)
+
 (**/**)
 
 val run : 'a Lwt.t -> 'a

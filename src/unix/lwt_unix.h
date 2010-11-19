@@ -95,21 +95,41 @@ extern int lwt_unix_in_blocking_section;
 
 #if defined(LWT_ON_WINDOWS)
 
-typedef HANDLE lwt_unix_mutex;
 typedef HANDLE lwt_unix_thread;
+typedef CRITICAL_SECTION lwt_unix_mutex;
+typedef CONDITION_VARIABLE lwt_unix_condition;
 
-#define lwt_unix_initialize_mutex(mutex) mutex = CreateMutex(NULL, FALSE, NULL)
-#define lwt_unix_acquire_mutex(mutex) WaitForSingleObject(mutex, INFINITE)
-#define lwt_unix_release_mutex(mutex) ReleaseMutex(mutex)
+#define lwt_unix_initialize_mutex(mutex) InitializeCriticalSection(&(mutex))
+#define lwt_unix_delete_mutex(mutex) DeleteCriticalSection(&(mutex))
+#define lwt_unix_acquire_mutex(mutex) EnterCriticalSection(&(mutex))
+#define lwt_unix_release_mutex(mutex) LeaveCriticalSection(&(mutex))
+
+#define lwt_unix_initialize_condition(cond) InitializeConditionVariable(&(cond))
+#define lwt_unix_delete_condition(cond)
+#define lwt_unix_wait_condition(cond, mutex) SleepConditionVariableCS(&(cond), &(mutex), INFINITE)
+#define lwt_unix_wake_condition(cond) WakeConditionVariable(&(cond))
+
+#define lwt_unix_self() GetCurrentThread()
+#define lwt_unix_thread_equal(a, b) (a) == (b)
 
 #else /* defined(LWT_ON_WINDOWS) */
 
-typedef pthread_mutex_t lwt_unix_mutex;
 typedef pthread_t lwt_unix_thread;
+typedef pthread_mutex_t lwt_unix_mutex;
+typedef pthread_cond_t lwt_unix_condition;
 
 #define lwt_unix_initialize_mutex(mutex) pthread_mutex_init(&(mutex), NULL)
+#define lwt_unix_delete_mutex(mutex)
 #define lwt_unix_acquire_mutex(mutex) pthread_mutex_lock(&(mutex))
 #define lwt_unix_release_mutex(mutex) pthread_mutex_unlock(&(mutex))
+
+#define lwt_unix_initialize_condition(cond) pthread_cond_init(&(cond), NULL)
+#define lwt_unix_delete_condition(cond)
+#define lwt_unix_wait_condition(cond, mutex) pthread_cond_wait(&(cond), &(mutex))
+#define lwt_unix_wake_condition(cond) pthread_cond_signal(&(cond))
+
+#define lwt_unix_self() pthread_self()
+#define lwt_unix_thread_equal(a, b) pthread_equal((a), (b))
 
 #endif /* defined(LWT_ON_WINDOWS) */
 
@@ -136,33 +156,34 @@ enum lwt_unix_async_method {
 /* Type of job execution modes. */
 typedef enum lwt_unix_async_method lwt_unix_async_method;
 
-/* Common fields of job descriptions. */
-#define LWT_UNIX_JOB_FIELDS                                             \
-  /* Id used to notify the main thread in case the job do not           \
-     terminate immediatly. */                                           \
-  int notification_id;                                                  \
-                                                                        \
-  /* The function to call to do the work. */                            \
-  void (*worker)(struct lwt_unix_job *job);                             \
-                                                                        \
-  /* Is the job terminated ? In case the job is canceled, it will       \
-     always be 0. */                                                    \
-  int done;                                                             \
-                                                                        \
-  /* Is the main thread still waiting for the job ? */                  \
-  int fast;                                                             \
-                                                                        \
-  /* Mutex to protect access to [done] and [fast]. */                   \
-  lwt_unix_mutex mutex;                                                 \
-                                                                        \
-  /* Thread running the job. */                                         \
-  lwt_unix_thread thread;                                               \
-                                                                        \
-  /* The async method in used by the job. */                            \
-  lwt_unix_async_method async_method;
-
 /* A job descriptor. */
-struct lwt_unix_job { LWT_UNIX_JOB_FIELDS };
+struct lwt_unix_job {
+  /* The next job in the queue. */
+  struct lwt_unix_job *next;
+
+  /* Id used to notify the main thread in case the job do not
+     terminate immediatly. */
+  int notification_id;
+
+  /* The function to call to do the work. */
+  void (*worker)(struct lwt_unix_job *job);
+
+  /* Is the job terminated ? In case the job is canceled, it will
+     always be 0. */
+  int done;
+
+  /* Is the main thread still waiting for the job ? */
+  int fast;
+
+  /* Mutex to protect access to [done] and [fast]. */
+  lwt_unix_mutex mutex;
+
+  /* Thread running the job. */
+  lwt_unix_thread thread;
+
+  /* The async method in used by the job. */
+  lwt_unix_async_method async_method;
+};
 
 /* Type of job descriptors. */
 typedef struct lwt_unix_job* lwt_unix_job;
