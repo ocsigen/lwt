@@ -312,9 +312,10 @@ let blocking ch =
   check_descriptor ch;
   Lazy.force ch.blocking
 
-let set_blocking ?set_flags ch blocking =
+let set_blocking ?(set_flags=true) ch blocking =
   check_descriptor ch;
-  ch.blocking <- is_blocking ~blocking ?set_flags ch.fd
+  ch.set_flags <- set_flags;
+  ch.blocking <- is_blocking ~blocking ~set_flags ch.fd
 
 external stub_readable : Unix.file_descr -> bool = "lwt_unix_readable" "noalloc"
 external stub_writable : Unix.file_descr -> bool = "lwt_unix_writable" "noalloc"
