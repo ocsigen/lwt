@@ -157,6 +157,88 @@ let timeout d = sleep d >> Lwt.fail Timeout
 let with_timeout d f = Lwt.pick [timeout d; Lwt.apply f ()]
 
 (* +-----------------------------------------------------------------+
+   | Jobs                                                            |
+   +-----------------------------------------------------------------+ *)
+
+type 'a job
+
+external start_job : 'a job -> int -> async_method -> unit = "lwt_unix_start_job"
+    (* Starts the given job with given parameters. *)
+
+external check_job : 'a job -> bool = "lwt_unix_check_job" "noalloc"
+    (* Check whether that a job has terminated or not. If it has not
+       yet terminated, it is marked so it will send a notification
+       when it finishes. *)
+
+external cancel_job : 'a job -> unit = "lwt_unix_cancel_job" "noalloc"
+    (* Cancel the thread of the given job. *)
+
+let execute_job ?async_method ~job ~result ~free =
+  let async_method =
+    match async_method with
+      | Some am -> am
+      | None ->
+          match Lwt.get async_method_key with
+            | Some am -> am
+            | None -> !default_async_method_var
+  in
+  (* Create the notification for asynchronous wakeup. *)
+  let id = make_notification ~once:true ignore in
+  (* Starts the job. *)
+  start_job job id async_method;
+  lwt () =
+    match async_method with
+      | Async_none ->
+          return ()
+      | Async_detach | Async_switch ->
+          try_lwt
+            (* Give some time to the job before we fallback to
+               asynchronous notification. *)
+            pause ()
+          with Canceled as exn ->
+            cancel_job job;
+            (* Free resources for when the job terminates. *)
+            if check_job job then begin
+              stop_notification id;
+              free job
+            end else
+              set_notification id (fun () -> free job);
+            raise_lwt exn
+  in
+  if check_job job then begin
+    (* The job has already terminated, no need for asynchronous
+       notification. *)
+    stop_notification id;
+    (* Read and return the result immediatly. *)
+    let thread =
+      try
+        return (result job)
+      with exn ->
+        fail exn
+    in
+    free job;
+    thread
+  end else begin
+    (* The job has not terminated, setup the notification for the
+       asynchronous wakeup. *)
+    let waiter, wakener = task () in
+    set_notification id
+      (fun () ->
+         begin
+           try
+             wakeup wakener (result job);
+           with exn ->
+             wakeup_exn wakener exn
+         end;
+         free job);
+    on_cancel waiter
+      (fun () ->
+         cancel_job job;
+         set_notification id (fun () -> free job));
+    waiter
+  end
+
+(* +-----------------------------------------------------------------+
    | File descriptor wrappers                                        |
    +-----------------------------------------------------------------+ *)
 
@@ -169,18 +251,51 @@ type file_descr = {
   mutable state: state;
   (* The state of the file descriptor *)
 
-  mutable blocking : bool;
+  mutable set_flags : bool;
+  (* Whether to set file flags *)
+
+  mutable blocking : bool Lwt.t Lazy.t;
   (* Is the file descriptor in blocking or non-blocking mode *)
 }
 
-let mk_ch ?(blocking=false) ?(set_flags=true) fd =
-  if set_flags then begin
-    if blocking then
-      Unix.clear_nonblock fd
-    else
-      Unix.set_nonblock fd
-  end;
-  { fd = fd; state = Opened; blocking = blocking }
+external guess_blocking_job : Unix.file_descr -> [ `unix_guess_blocking ] job = "lwt_unix_guess_blocking_job"
+external guess_blocking_result : [ `unix_guess_blocking ] job -> bool = "lwt_unix_guess_blocking_result" "noalloc"
+external guess_blocking_free : [ `unix_guess_blocking ] job -> unit = "lwt_unix_guess_blocking_free" "noalloc"
+
+let guess_blocking fd =
+  if windows_hack then
+    return (match (Unix.fstat fd).Unix.st_kind with
+              | Unix.S_SOCK | Unix.S_FIFO -> false
+              | _ -> true)
+  else
+    execute_job (guess_blocking_job fd) guess_blocking_result guess_blocking_free
+
+let is_blocking ?blocking ?(set_flags=true) fd =
+  match blocking, set_flags with
+    | Some state, false ->
+        lazy(return state)
+    | Some true, true ->
+        Unix.clear_nonblock fd;
+        lazy(return true)
+    | Some false, true ->
+        Unix.set_nonblock fd;
+        lazy(return false)
+    | None, false ->
+        lazy(guess_blocking fd)
+    | None, true ->
+        lazy(guess_blocking fd >>= function
+               | true ->
+                   Unix.clear_nonblock fd;
+                   return true
+               | false ->
+                   Unix.set_nonblock fd;
+                   return false)
+
+let mk_ch ?blocking ?(set_flags=true) fd =
+  { fd = fd;
+    state = Opened;
+    set_flags = set_flags;
+    blocking = is_blocking ?blocking ~set_flags fd }
 
 let rec check_descriptor ch =
   match ch.state with
@@ -195,17 +310,11 @@ let state ch = ch.state
 
 let blocking ch =
   check_descriptor ch;
-  ch.blocking
+  Lazy.force ch.blocking
 
-let set_blocking ?(set_flags=true) ch blocking =
+let set_blocking ?set_flags ch blocking =
   check_descriptor ch;
-  ch.blocking <- blocking;
-  if set_flags then begin
-    if blocking then
-      Unix.clear_nonblock ch.fd
-    else
-      Unix.set_nonblock ch.fd
-  end
+  ch.blocking <- is_blocking ~blocking ?set_flags ch.fd
 
 external stub_readable : Unix.file_descr -> bool = "lwt_unix_readable" "noalloc"
 external stub_writable : Unix.file_descr -> bool = "lwt_unix_writable" "noalloc"
@@ -293,7 +402,8 @@ let register_action event ch action =
 let wrap_syscall event ch action =
   try
     check_descriptor ch;
-    if not ch.blocking || (event = Read && stub_readable ch.fd) || (event == Write && stub_writable ch.fd) then
+    lwt blocking = Lazy.force ch.blocking in
+    if not blocking || (event = Read && stub_readable ch.fd) || (event == Write && stub_writable ch.fd) then
       return (action ())
     else
       register_action event ch action
@@ -309,88 +419,6 @@ let wrap_syscall event ch action =
         register_action Write ch action
     | e ->
         raise_lwt e
-
-(* +-----------------------------------------------------------------+
-   | Jobs                                                            |
-   +-----------------------------------------------------------------+ *)
-
-type 'a job
-
-external start_job : 'a job -> int -> async_method -> unit = "lwt_unix_start_job"
-    (* Starts the given job with given parameters. *)
-
-external check_job : 'a job -> bool = "lwt_unix_check_job" "noalloc"
-    (* Check whether that a job has terminated or not. If it has not
-       yet terminated, it is marked so it will send a notification
-       when it finishes. *)
-
-external cancel_job : 'a job -> unit = "lwt_unix_cancel_job" "noalloc"
-    (* Cancel the thread of the given job. *)
-
-let execute_job ?async_method ~job ~result ~free =
-  let async_method =
-    match async_method with
-      | Some am -> am
-      | None ->
-          match Lwt.get async_method_key with
-            | Some am -> am
-            | None -> !default_async_method_var
-  in
-  (* Create the notification for asynchronous wakeup. *)
-  let id = make_notification ~once:true ignore in
-  (* Starts the job. *)
-  start_job job id async_method;
-  lwt () =
-    match async_method with
-      | Async_none ->
-          return ()
-      | Async_detach | Async_switch ->
-          try_lwt
-            (* Give some time to the job before we fallback to
-               asynchronous notification. *)
-            pause ()
-          with Canceled as exn ->
-            cancel_job job;
-            (* Free resources for when the job terminates. *)
-            if check_job job then begin
-              stop_notification id;
-              free job
-            end else
-              set_notification id (fun () -> free job);
-            raise_lwt exn
-  in
-  if check_job job then begin
-    (* The job has already terminated, no need for asynchronous
-       notification. *)
-    stop_notification id;
-    (* Read and return the result immediatly. *)
-    let thread =
-      try
-        return (result job)
-      with exn ->
-        fail exn
-    in
-    free job;
-    thread
-  end else begin
-    (* The job has not terminated, setup the notification for the
-       asynchronous wakeup. *)
-    let waiter, wakener = task () in
-    set_notification id
-      (fun () ->
-         begin
-           try
-             wakeup wakener (result job);
-           with exn ->
-             wakeup_exn wakener exn
-         end;
-         free job);
-    on_cancel waiter
-      (fun () ->
-         cancel_job job;
-         set_notification id (fun () -> free job));
-    waiter
-  end
 
 (* +-----------------------------------------------------------------+
    | Basic file input/output                                         |
@@ -443,11 +471,13 @@ let read ch buf pos len =
   else if windows_hack then begin
     check_descriptor ch;
     register_action Read ch (fun () -> Unix.read ch.fd buf pos len)
-  end else if ch.blocking then
-    lwt () = wait_read ch in
-    execute_job (read_job ch.fd len) (fun job -> read_result job buf pos) read_free
-  else
-    wrap_syscall Read ch (fun () -> stub_read ch.fd buf pos len)
+  end else
+    Lazy.force ch.blocking >>= function
+      | true ->
+          lwt () = wait_read ch in
+          execute_job (read_job ch.fd len) (fun job -> read_result job buf pos) read_free
+      | false ->
+          wrap_syscall Read ch (fun () -> stub_read ch.fd buf pos len)
 
 let wait_write ch =
   try_lwt
@@ -467,11 +497,13 @@ let write ch buf pos len =
   else if windows_hack then begin
     check_descriptor ch;
     register_action Read ch (fun () -> Unix.write ch.fd buf pos len)
-  end else if ch.blocking then
-    lwt () = wait_write ch in
-    execute_job (write_job ch.fd buf pos len) write_result write_free
-  else
-    wrap_syscall Write ch (fun () -> stub_write ch.fd buf pos len)
+  end else
+    Lazy.force ch.blocking >>= function
+      | true ->
+          lwt () = wait_write ch in
+          execute_job (write_job ch.fd buf pos len) write_result write_free
+      | false ->
+          wrap_syscall Write ch (fun () -> stub_write ch.fd buf pos len)
 
 (* +-----------------------------------------------------------------+
    | Seeking and truncating                                          |
@@ -722,11 +754,38 @@ let access name perms =
 
 let dup ch =
   check_descriptor ch;
-  of_unix_file_descr (Unix.dup ch.fd)
+  let fd = Unix.dup ch.fd in
+  { fd = fd;
+    state = Opened;
+    set_flags = ch.set_flags;
+    blocking =
+      if ch.set_flags then
+        lazy(Lazy.force ch.blocking >>= function
+               | true ->
+                   Unix.clear_nonblock fd;
+                   return true
+               | false ->
+                   Unix.set_nonblock fd;
+                   return false)
+      else
+        ch.blocking }
 
 let dup2 ch1 ch2 =
   check_descriptor ch1;
-  Unix.dup2 ch1.fd ch2.fd
+  Unix.dup2 ch1.fd ch2.fd;
+  ch2.set_flags <- ch1.set_flags;
+  ch2.blocking <- (
+    if ch2.set_flags then
+      lazy(Lazy.force ch1.blocking >>= function
+             | true ->
+                 Unix.clear_nonblock ch2.fd;
+                 return true
+             | false ->
+                 Unix.set_nonblock ch2.fd;
+                 return false)
+    else
+      ch1.blocking
+  )
 
 let set_close_on_exec ch =
   check_descriptor ch;
@@ -826,15 +885,15 @@ let closedir handle =
 
 let pipe () =
   let (out_fd, in_fd) = Unix.pipe() in
-  (mk_ch out_fd, mk_ch in_fd)
+  (mk_ch ~blocking:false out_fd, mk_ch ~blocking:false in_fd)
 
 let pipe_in () =
   let (out_fd, in_fd) = Unix.pipe() in
-  (mk_ch out_fd, in_fd)
+  (mk_ch ~blocking:false out_fd, in_fd)
 
 let pipe_out () =
   let (out_fd, in_fd) = Unix.pipe() in
-  (out_fd, mk_ch in_fd)
+  (out_fd, mk_ch ~blocking:false in_fd)
 
 external mkfifo_job : string -> Unix.file_perm -> [ `unix_mkfifo ] job = "lwt_unix_mkfifo_job"
 external mkfifo_result : [ `unix_mkfifo ] job -> unit = "lwt_unix_mkfifo_result"
@@ -1004,7 +1063,7 @@ let send_msg ~socket ~io_vectors ~fds =
 
 let socket dom typ proto =
   let s = Unix.socket dom typ proto in
-  mk_ch s
+  mk_ch ~blocking:false s
 
 let shutdown ch shutdown_command =
   check_descriptor ch;
@@ -1012,21 +1071,22 @@ let shutdown ch shutdown_command =
 
 let socketpair dom typ proto =
   let (s1, s2) = Unix.socketpair dom typ proto in
-  (mk_ch s1, mk_ch s2)
+  (mk_ch ~blocking:false s1, mk_ch ~blocking:false s2)
 
 let accept ch =
-  wrap_syscall Read ch (fun _ -> let (fd, addr) = Unix.accept ch.fd in (mk_ch fd, addr))
+  wrap_syscall Read ch (fun _ -> let (fd, addr) = Unix.accept ch.fd in (mk_ch ~blocking:false fd, addr))
 
 let accept_n ch n =
   let l = ref [] in
+  lwt blocking = Lazy.force ch.blocking in
   try_lwt
     wrap_syscall Read ch begin fun () ->
       begin
         try
           for i = 1 to n do
-            if ch.blocking && not (stub_readable ch.fd) then raise Retry;
+            if blocking && not (stub_readable ch.fd) then raise Retry;
             let fd, addr = Unix.accept ch.fd in
-            l := (mk_ch fd, addr) :: !l
+            l := (mk_ch ~blocking:false fd, addr) :: !l
           done
         with
           | (Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _) | Retry) when !l <> [] ->

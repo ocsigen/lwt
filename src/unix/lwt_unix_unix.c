@@ -379,6 +379,48 @@ lwt_unix_thread lwt_unix_launch_thread(void* (*start)(void*), void* data)
 }
 
 /* +-----------------------------------------------------------------+
+   | JOB: guess_blocking                                             |
+   +-----------------------------------------------------------------+ */
+
+struct job_guess_blocking {
+  struct lwt_unix_job job;
+  int fd;
+  int result;
+};
+
+#define Job_guess_blocking_val(v) *(struct job_guess_blocking**)Data_custom_val(v)
+
+static void worker_guess_blocking(struct job_guess_blocking *job)
+{
+  struct stat stat;
+  if (fstat(job->fd, &stat) == 0)
+    job->result = !(S_ISFIFO(stat.st_mode) || S_ISSOCK(stat.st_mode));
+  else
+    job->result = 1;
+}
+
+CAMLprim value lwt_unix_guess_blocking_job(value val_fd)
+{
+  struct job_guess_blocking *job = lwt_unix_new(struct job_guess_blocking);
+  job->job.worker = (lwt_unix_job_worker)worker_guess_blocking;
+  job->fd = Int_val(val_fd);
+  return lwt_unix_alloc_job(&(job->job));
+}
+
+CAMLprim value lwt_unix_guess_blocking_result(value val_job)
+{
+  struct job_guess_blocking *job = Job_guess_blocking_val(val_job);
+  return Bool_val(job->result);
+}
+
+CAMLprim value lwt_unix_guess_blocking_free(value val_job)
+{
+  struct job_guess_blocking *job = Job_guess_blocking_val(val_job);
+  free(job);
+  return Val_unit;
+}
+
+/* +-----------------------------------------------------------------+
    | JOB: open                                                       |
    +-----------------------------------------------------------------+ */
 

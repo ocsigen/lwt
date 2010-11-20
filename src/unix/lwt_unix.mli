@@ -187,11 +187,19 @@ val unix_file_descr : file_descr -> Unix.file_descr
       {!Open}. *)
 
 val of_unix_file_descr : ?blocking : bool -> ?set_flags : bool -> Unix.file_descr -> file_descr
-  (** Creates a lwt {b file descriptor} from a unix one. [blocking] is
-      the blocking mode of the file-descriptor. It defaults to
-      [false]. If [set_flags] is [true] (the default) then the file
-      flags are modified according to the [blocking] argument,
-      otherwise they are left unchanged.
+  (** Creates a lwt {b file descriptor} from a unix one.
+
+      [blocking] is the blocking mode of the file-descriptor, it
+      describe how Lwt will use it. In non-blocking mode, read/write
+      on this file descriptor are made using non-blocking IO; in
+      blocking mode they are made using the current async method.  If
+      [blocking] is not specified it is guessed according to the file
+      kind: socket and pipes are in non-blocking mode and others are
+      in blocking mode.
+
+      If [set_flags] is [true] (the default) then the file flags are
+      modified according to the [blocking] argument, otherwise they
+      are left unchanged.
 
       Note that the blocking mode is less efficient than the
       non-blocking one, so it should be used only for file descriptors
@@ -199,7 +207,7 @@ val of_unix_file_descr : ?blocking : bool -> ?set_flags : bool -> Unix.file_desc
       files, or for shared descriptors such as {!stdout}, {!stderr} or
       {!stdin}. *)
 
-val blocking : file_descr -> bool
+val blocking : file_descr -> bool Lwt.t
   (** [blocking fd] returns whether [fd] is used in blocking or
       non-blocking mode. *)
 
@@ -260,9 +268,7 @@ val stderr : file_descr
   (** The standard {b file descriptor} for printing error messages *)
 
 val openfile : string -> Unix.open_flag list -> Unix.file_perm -> file_descr Lwt.t
-  (** Wrapper for [Unix.openfile]. The returned file descriptor is put
-      into blocking mode according to the file kind; fifos and sockets
-      are in non-blocking mode and other are in blocking mode. *)
+  (** Wrapper for [Unix.openfile]. *)
 
 val close : file_descr -> unit Lwt.t
   (** Close a {b file descriptor}. This close the underlying unix {b

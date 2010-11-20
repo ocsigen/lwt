@@ -127,9 +127,7 @@ value lwt_unix_sigwinch()
    | Jobs                                                            |
    +-----------------------------------------------------------------+ */
 
-LWT_UNIX_JOB_NOT_IMPLEMENTED(start)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(check)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(cancel)
+LWT_UNIX_JOB_NOT_IMPLEMENTED(guess_blokcing)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(open)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(close)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(read)
