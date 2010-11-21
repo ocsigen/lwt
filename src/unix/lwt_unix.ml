@@ -24,8 +24,6 @@
 
 open Lwt
 
-module Int_map = Map.Make(struct type t = int let compare = compare end)
-
 let windows_hack = Sys.os_type <> "Unix"
 
 (* +-----------------------------------------------------------------+
@@ -88,24 +86,28 @@ type notifier = {
      notification *)
 }
 
-let notifiers = ref Int_map.empty
+let notifiers = Hashtbl.create 1024
 
 let current_notification_id = ref 0
 
+let rec find_free_id id =
+  if Hashtbl.mem notifiers id then
+    find_free_id (id + 1)
+  else
+    id
+
 let make_notification ?(once=false) f =
-  incr current_notification_id;
-  while Int_map.mem !current_notification_id !notifiers do
-    incr current_notification_id
-  done;
-  notifiers := Int_map.add !current_notification_id { notify_once = once; notify_handler = f } !notifiers;
-  !current_notification_id
+  let id = find_free_id (!current_notification_id + 1) in
+  current_notification_id := id;
+  Hashtbl.add notifiers id { notify_once = once; notify_handler = f };
+  id
 
 let stop_notification id =
-  notifiers := Int_map.remove id !notifiers
+  Hashtbl.remove notifiers id
 
 let set_notification id f =
-  let notifier = Int_map.find id !notifiers in
-  notifiers := Int_map.add id { notifier with notify_handler = f } !notifiers
+  let notifier = Hashtbl.find notifiers id in
+  Hashtbl.add notifiers id { notifier with notify_handler = f }
 
 (* +-----------------------------------------------------------------+
    | libev suff                                                      |
@@ -1396,7 +1398,7 @@ let rec read_notification offset =
 (* Read continuously notifications *)
 let rec read_notifications () =
   lwt id = read_notification 0 in
-  match try Some(Int_map.find id !notifiers) with Not_found -> None with
+  match try Some(Hashtbl.find notifiers id) with Not_found -> None with
     | Some notifier ->
         if notifier.notify_once then
           stop_notification id;
