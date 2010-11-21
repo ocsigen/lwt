@@ -80,6 +80,17 @@ let of_list l =
             | [] -> return None
             | x :: l' -> l := l'; return (Some x))
 
+let of_array a =
+  let len = Array.length a and i = ref 0 in
+  from (fun () ->
+          if !i = len then
+            return None
+          else begin
+            let c = Array.unsafe_get a !i in
+            incr i;
+            return (Some c)
+          end)
+
 let of_string s =
   let len = String.length s and i = ref 0 in
   from (fun () ->

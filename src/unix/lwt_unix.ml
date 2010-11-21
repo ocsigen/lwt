@@ -862,6 +862,29 @@ let readdir handle =
   else
     execute_job (readdir_job handle) readdir_result readdir_free
 
+external readdir_n_job : Unix.dir_handle -> int -> [ `unix_readdir_n ] job = "lwt_unix_readdir_n_job"
+external readdir_n_result : [ `unix_readdir_n ] job -> string array = "lwt_unix_readdir_n_result"
+external readdir_n_free : [ `unix_readdir_n ] job -> unit = "lwt_unix_readdir_n_free"
+
+let readdir_n handle count =
+  if count < 0 then
+    fail (Invalid_argument "Lwt_uinx.readdir_n")
+  else if windows_hack then
+    let array = Array.make count "" in
+    let rec fill i =
+      if i = count then
+        return array
+      else
+        match try array.(i) <- Unix.readdir handle; true with End_of_file -> false with
+          | true ->
+              fill (i + 1)
+          | false ->
+              return (Array.sub array 0 i)
+    in
+    fill 0
+  else
+    execute_job (readdir_n_job handle count) readdir_n_result readdir_n_free
+
 external rewinddir_job : Unix.dir_handle -> [ `unix_rewinddir ] job = "lwt_unix_rewinddir_job"
 external rewinddir_result : [ `unix_rewinddir ] job -> unit = "lwt_unix_rewinddir_result"
 external rewinddir_free : [ `unix_rewinddir ] job -> unit = "lwt_unix_rewinddir_free"
@@ -881,6 +904,59 @@ let closedir handle =
     return (Unix.closedir handle)
   else
     execute_job (closedir_job handle) closedir_result closedir_free
+
+type list_directory_state  =
+  | LDS_not_started
+  | LDS_listing of Unix.dir_handle
+  | LDS_done
+
+let cleanup_dir_handle state =
+  match !state with
+    | LDS_listing handle ->
+        ignore (closedir handle)
+    | LDS_not_started | LDS_done ->
+        ()
+
+let files_of_directory path =
+  let state = ref LDS_not_started in
+  Lwt_stream.concat
+    (Lwt_stream.from
+       (fun () ->
+          match !state with
+            | LDS_not_started ->
+                lwt handle = opendir path in
+                lwt entries =
+                  try_lwt
+                    readdir_n handle 1024
+                  with exn ->
+                    lwt () = closedir handle in
+                    raise exn
+                in
+                if Array.length entries < 1024 then begin
+                  state := LDS_done;
+                  lwt () = closedir handle in
+                  return (Some(Lwt_stream.of_array entries))
+                end else begin
+                  state := LDS_listing handle;
+                  Gc.finalise cleanup_dir_handle state;
+                  return (Some(Lwt_stream.of_array entries))
+                end
+            | LDS_listing handle ->
+                lwt entries =
+                  try_lwt
+                    readdir_n handle 1024
+                  with exn ->
+                    lwt () = closedir handle in
+                    raise exn
+                in
+                if Array.length entries < 1024 then begin
+                  state := LDS_done;
+                  lwt () = closedir handle in
+                  return (Some(Lwt_stream.of_array entries))
+                end else
+                  return (Some(Lwt_stream.of_array entries))
+            | LDS_done ->
+                return None))
 
 (* +-----------------------------------------------------------------+
    | Pipes and redirections                                          |

@@ -407,11 +407,22 @@ val opendir : string -> Unix.dir_handle Lwt.t
 val readdir : Unix.dir_handle -> string Lwt.t
   (** Wrapper for [Unix.dir] *)
 
+val readdir_n : Unix.dir_handle -> int -> string array Lwt.t
+  (** [readdir_n handle count] reads at most [count] entry from the
+      given directory. It is more efficient that callling [count]
+      times [readdir]. If the length of the returned array is smaller
+      than [count], this means that the end of the directory has been
+      reached. *)
+
 val rewinddir : Unix.dir_handle -> unit Lwt.t
   (** Wrapper for [Unix.rewinddir] *)
 
 val closedir : Unix.dir_handle -> unit Lwt.t
   (** Wrapper for [Unix.closedir] *)
+
+val files_of_directory : string -> string Lwt_stream.t
+  (** [files_of_directory dir] returns the stream of all files of
+      [dir]. *)
 
 (** {6 Pipes and redirections} *)
 

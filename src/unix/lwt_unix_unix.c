@@ -1733,6 +1733,94 @@ CAMLprim value lwt_unix_readdir_free(value val_job)
 }
 
 /* +-----------------------------------------------------------------+
+   | JOB: readdir_n                                                  |
+   +-----------------------------------------------------------------+ */
+
+struct job_readdir_n {
+  struct lwt_unix_job job;
+  DIR *dir;
+  int count;
+  int error_code;
+  struct dirent *entries[];
+};
+
+#define Job_readdir_n_val(v) *(struct job_readdir_n**)Data_custom_val(v)
+
+static void worker_readdir_n(struct job_readdir_n *job)
+{
+  size_t size = offsetof(struct dirent, d_name) + fpathconf(dirfd(job->dir), _PC_NAME_MAX) + 1;
+  int i;
+  for(i = 0; i < job->count; i++) {
+    struct dirent *ptr;
+    struct dirent *entry = (struct dirent *)lwt_unix_malloc(size);
+
+    int result = readdir_r(job->dir, entry, &ptr);
+
+    /* An error happened. */
+    if (result != 0) {
+      /* Free already read entries. */
+      free(entry);
+      int j;
+      for(j = 0; j < i; j++) free(job->entries[j]);
+      /* Return an error. */
+      job->error_code = result;
+      return;
+    }
+
+    /* End of directory reached */
+    if (ptr == NULL) {
+      free(entry);
+      break;
+    }
+
+    job->entries[i] = entry;
+  }
+
+  job->count = i;
+  job->error_code = 0;
+}
+
+CAMLprim value lwt_unix_readdir_n_job(value val_dir, value val_count)
+{
+  int count = Int_val(val_count);
+  struct job_readdir_n *job = (struct job_readdir_n *)lwt_unix_malloc(sizeof(struct job_readdir_n) + sizeof(struct dirent*) * count);
+  job->job.worker = (lwt_unix_job_worker)worker_readdir_n;
+  job->dir = DIR_Val(val_dir);
+  job->count = count;
+  return lwt_unix_alloc_job(&(job->job));
+}
+
+CAMLprim value lwt_unix_readdir_n_result(value val_job)
+{
+  CAMLparam1(val_job);
+  CAMLlocal1(result);
+  struct job_readdir_n *job = Job_readdir_n_val(val_job);
+  if (job->error_code != 0) unix_error(job->error_code, "readdir_n", Nothing);
+
+  result = caml_alloc(job->count, 0);
+  int i;
+  for(i = 0; i < job->count; i++) {
+    Store_field(result, i, caml_copy_string(job->entries[i]->d_name));
+    free(job->entries[i]);
+    job->entries[i] = NULL;
+  }
+  job->count = 0;
+  CAMLreturn(result);
+}
+
+CAMLprim value lwt_unix_readdir_n_free(value val_job)
+{
+  struct job_readdir_n *job = Job_readdir_n_val(val_job);
+  if (job->error_code == 0) {
+    int i;
+    for(i = 0; i < job->count; i++)
+      if (job->entries[i] != NULL) free(job->entries[i]);
+  }
+  free(job);
+  return Val_unit;
+}
+
+/* +-----------------------------------------------------------------+
    | JOB: rewinddir                                                  |
    +-----------------------------------------------------------------+ */
 
