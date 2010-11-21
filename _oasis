@@ -146,8 +146,8 @@ Library "lwt-mmap"
   FindlibParent: lwt
   Path: src/mmap
   Modules: Lwt_mmap
-  CSources: lwt_mmap.c
-  BuildDepends: lwt, bigarray
+  CSources: lwt_mmap_stubs.c
+  BuildDepends: lwt.unix, bigarray
   XMETADescription: Utilities for mmaped files
 
 Library "lwt-preemptive"

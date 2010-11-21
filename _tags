@@ -12,7 +12,7 @@
 <src/glib/lwt_glib_stubs.*>: use_C_glib
 
 # OASIS_START
-# DO NOT EDIT (digest: f76095144df02ab67ec1c119b4d316dd)
+# DO NOT EDIT (digest: f7bf972f5ab1477263e8b9dc68ca9522)
 # Library lwt
 "src/core": include
 # Library lwt-unix
@@ -122,10 +122,14 @@
 # Library lwt-mmap
 "src/mmap": include
 <src/mmap/lwt-mmap.{cma,cmxa}>: use_liblwt-mmap
+<src/mmap/*.ml{,i}>: use_lwt-unix
 <src/mmap/*.ml{,i}>: use_lwt
+<src/mmap/*.ml{,i}>: pkg_unix
 <src/mmap/*.ml{,i}>: pkg_bigarray
-"src/mmap/lwt_mmap.c": use_lwt
-"src/mmap/lwt_mmap.c": pkg_bigarray
+"src/mmap/lwt_mmap_stubs.c": use_lwt-unix
+"src/mmap/lwt_mmap_stubs.c": use_lwt
+"src/mmap/lwt_mmap_stubs.c": pkg_unix
+"src/mmap/lwt_mmap_stubs.c": pkg_bigarray
 # Library lwt-extra
 "src/extra": include
 <src/extra/*.ml{,i}>: use_lwt-preemptive

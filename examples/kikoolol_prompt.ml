@@ -43,5 +43,5 @@ let make_prompt engine_state =
   end Lwt_term.size engine_state clipboard#contents time
 
 lwt () =
-  lwt line = Control.result (Control.read_line ~prompt:make_prompt ()) in
+  lwt line = Control.read_line ~prompt:make_prompt () >>= Control.result in
   Lwt_text.printl line

@@ -12,13 +12,13 @@ let file_fd = Unix.openfile !file [] 0
 
 let rec ping () =
   lwt () = Lwt_unix.sleep 0.1 in
-  lwt () = Lwt_text.print "." in
+  lwt () = Lwt_io.print "." in
   ping ()
 
 let _ = ping ()
 
 let start = Unix.gettimeofday ()
-let n = Lwt_unix.run (Lwt_io.sendfile file_fd sock 0 len)
+let n = Lwt_unix.run (Lwt_mmap.sendfile file_fd sock 0 len)
 let stop = Unix.gettimeofday ()
 let time = stop -. start
 let _ = Printf.printf "\ntime: %fs speed: %fmo/s\n%!" time (((float len)/.time) /. 1048576.)

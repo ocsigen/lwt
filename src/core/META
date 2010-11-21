@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: 16415500fc1252f1585e4de7a64d2474)
+# DO NOT EDIT (digest: 6f7dad8830d9299921a9334da0214ae6)
 version = "2.1.1"
 description = "Lightweight thread library for OCaml (core library)"
 archive(byte) = "lwt.cma"
@@ -26,7 +26,7 @@ package "extra" (
 package "mmap" (
  version = "2.1.1"
  description = "Utilities for mmaped files"
- requires = "lwt bigarray"
+ requires = "lwt.unix bigarray"
  archive(byte) = "lwt-mmap.cma"
  archive(native) = "lwt-mmap.cmxa"
  exists_if = "lwt-mmap.cma"

@@ -61,6 +61,7 @@ let packages = [
   "lwt.glib";
   "lwt.text";
   "lwt.unix";
+  "lwt.mmap";
   "lablgtk2";
 
   (* Syntax extensions: *)

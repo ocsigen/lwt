@@ -5,4 +5,4 @@
 <parallelize.*>: pkg_lwt.text
 <minishell.*>: thread, pkg_threads, pkg_lwt.preemptive, pkg_lwt.text
 <kikoolol_prompt.*>: pkg_lwt.text
-<send_file.*>: pkg_lwt.text
+<send_file.*>: pkg_lwt.mmap
