@@ -480,8 +480,6 @@ static void* worker_loop(void *data)
         node->next = become_worker;
         become_worker = node;
 
-        lwt_unix_release_mutex(pool_mutex);
-
         DEBUG("going back to the ocaml code");
 
         /* Go to before the blocking call. */
@@ -636,6 +634,9 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_notification_id, valu
 
     case CALL_SCHEDULED:
       DEBUG("resuming after being scheduled");
+
+      /* This mutex was locked before we did the jump. */
+      lwt_unix_release_mutex(pool_mutex);
 
       /* This thread is now running caml code. */
       //caml_c_thread_register();
