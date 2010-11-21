@@ -507,6 +507,9 @@ static void* worker_loop(void *data)
       /* Take the first queued job. */
       job = pool_queue->next;
 
+      job->thread = lwt_unix_self();
+      job->thread_initialized = 1;
+
       /* Remove it from the queue. */
       if (job->next == job)
         pool_queue = NULL;
@@ -577,6 +580,7 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_notification_id, valu
     if (threading_initialized == 0) initialize_threading();
 
     lwt_unix_initialize_mutex(job->mutex);
+    job->thread_initialized = 0;
 
     lwt_unix_acquire_mutex(pool_mutex);
     if (thread_waiting_count == 0) {
@@ -604,6 +608,7 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_notification_id, valu
     if (threading_initialized == 0) initialize_threading();
 
     lwt_unix_initialize_mutex(job->mutex);
+    job->thread = main_thread;
 
     /* Ensures there is at least one thread that can become the main
        thread. */
@@ -694,6 +699,8 @@ CAMLprim value lwt_unix_check_job(value val_job)
   return Val_int(0);
 }
 
+static void nop() {}
+
 CAMLprim value lwt_unix_cancel_job(value val_job)
 {
   struct lwt_unix_job *job = Job_val(val_job);
@@ -706,13 +713,33 @@ CAMLprim value lwt_unix_cancel_job(value val_job)
     break;
 
   case LWT_UNIX_ASYNC_METHOD_DETACH:
+    while (job->thread_initialized == 0) {
+      struct timeval tv;
+      tv.tv_sec = 0;
+      tv.tv_usec = 100000;
+      select(0, NULL, NULL, NULL, &tv);
+    };
+
   case LWT_UNIX_ASYNC_METHOD_SWITCH:
     lwt_unix_acquire_mutex(job->mutex);
     if (job->done == 0) {
 #if defined(LWT_ON_WINDOWS)
       /* TODO: do something here. */
 #else
-      pthread_cancel(job->thread);
+      struct sigaction old_sa, new_sa;
+
+      /* Set up a custom signal handler to be sure that the system
+         call will be interrupted. */
+      new_sa.sa_handler = nop;
+      new_sa.sa_flags = 0;
+      sigemptyset(&new_sa.sa_mask);
+      sigaction(SIGUSR1, &new_sa, &old_sa);
+
+      /* Interrupt the system call. */
+      pthread_kill(job->thread, SIGUSR1);
+
+      /* Restore the old signal handler. */
+      sigaction(SIGUSR1, &old_sa, NULL);
 #endif
     }
     lwt_unix_release_mutex(job->mutex);

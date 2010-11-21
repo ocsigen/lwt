@@ -181,6 +181,9 @@ struct lwt_unix_job {
   /* Thread running the job. */
   lwt_unix_thread thread;
 
+  /* Whether the [thread] field has been initialized. */
+  int thread_initialized;
+
   /* The async method in used by the job. */
   lwt_unix_async_method async_method;
 };
