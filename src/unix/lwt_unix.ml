@@ -1629,4 +1629,7 @@ let handle_unix_error f x =
    | System thread pool                                              |
    +-----------------------------------------------------------------+ *)
 
-external pool_size : unit -> int = "lwt_unix_pool_size"
+external pool_size : unit -> int = "lwt_unix_pool_size" "noalloc"
+external set_pool_size : int -> unit = "lwt_unix_set_pool_size" "noalloc"
+external thread_count : unit -> int = "lwt_unix_thread_count" "noalloc"
+external thread_waiting_count : unit -> int = "lwt_unix_thread_waiting_count" "noalloc"

@@ -226,7 +226,13 @@ static void execute_job(lwt_unix_job job)
    +-----------------------------------------------------------------+ */
 
 /* Number of thread waiting for a job in the pool. */
-static int pool_size = 0;
+static int thread_waiting_count = 0;
+
+/* Number of started threads. */
+static int thread_count = 0;
+
+/* Maximum number of system threads that can be started. */
+static int pool_size = 1000;
 
 /* Condition on which pool threads are waiting. */
 static lwt_unix_condition pool_condition;
@@ -235,7 +241,7 @@ static lwt_unix_condition pool_condition;
 static lwt_unix_job pool_queue = NULL;
 
 /* The mutex which protect access to [pool_queue], [pool_condition]
-   and [pool_size]. */
+   and [thread_waiting_count]. */
 static lwt_unix_mutex pool_mutex;
 
 /* +-----------------------------------------------------------------+
@@ -348,6 +354,7 @@ static void altstack_worker()
       longjmp(blocking_call_leave, CALL_SUCCEEDED);
     } else {
       /* We did not stayed the main thread, we now become a worker. */
+
       assert(become_worker != NULL);
 
       /* Take and remove the first worker checkpoint. */
@@ -446,7 +453,7 @@ static void* worker_loop(void *data)
     lwt_unix_acquire_mutex(pool_mutex);
 
     /* One more thread is waiting for work. */
-    pool_size++;
+    thread_waiting_count++;
 
     DEBUG("waiting for something to do");
 
@@ -457,7 +464,7 @@ static void* worker_loop(void *data)
     DEBUG("received something to do");
 
     /* This thread is busy. */
-    pool_size--;
+    thread_waiting_count--;
 
     if (main_state == STATE_BLOCKED) {
       DEBUG("main thread is blocked");
@@ -544,13 +551,20 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_notification_id, valu
 {
   lwt_unix_job job = Job_val(val_job);
 
+  lwt_unix_async_method async_method = Int_val(val_async_method);
+
+  /* Fallback to synchronous call if there is no worker available and
+     we can not launch more threads. */
+  if (async_method != LWT_UNIX_ASYNC_METHOD_NONE && thread_waiting_count == 0 && thread_count >= pool_size)
+    async_method = LWT_UNIX_ASYNC_METHOD_NONE;
+
   /* Initialises job parameters. */
   job->done = 0;
   job->fast = 1;
-  job->async_method = Int_val(val_async_method);
+  job->async_method = async_method;
   job->notification_id = Int_val(val_notification_id);
 
-  switch (job->async_method) {
+  switch (async_method) {
 
   case LWT_UNIX_ASYNC_METHOD_NONE:
     /* Execute the job synchronously. */
@@ -565,8 +579,9 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_notification_id, valu
     lwt_unix_initialize_mutex(job->mutex);
 
     lwt_unix_acquire_mutex(pool_mutex);
-    if (pool_size == 0) {
+    if (thread_waiting_count == 0) {
       /* Launch a new worker. */
+      thread_count++;
       lwt_unix_release_mutex(pool_mutex);
       lwt_unix_launch_thread(worker_loop, (void*)job);
     } else {
@@ -592,7 +607,10 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_notification_id, valu
 
     /* Ensures there is at least one thread that can become the main
        thread. */
-    if (pool_size == 0) lwt_unix_launch_thread(worker_loop, NULL);
+    if (thread_waiting_count == 0) {
+      thread_count++;
+      lwt_unix_launch_thread(worker_loop, NULL);
+    }
 
     if (blocking_call_enter == NULL) alloc_new_stack();
 
@@ -711,4 +729,20 @@ CAMLprim value lwt_unix_cancel_job(value val_job)
 CAMLprim value lwt_unix_pool_size()
 {
   return Val_int(pool_size);
+}
+
+CAMLprim value lwt_unix_set_pool_size(value val_size)
+{
+  pool_size = Int_val(val_size);
+  return Val_unit;
+}
+
+CAMLprim value lwt_unix_thread_count()
+{
+  return Val_int(thread_count);
+}
+
+CAMLprim value lwt_unix_thread_waiting_count()
+{
+  return Val_int(thread_waiting_count);
 }

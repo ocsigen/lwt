@@ -750,7 +750,17 @@ val set_notification : int -> (unit -> unit) -> unit
     blocking system calls asynchronously. *)
 
 val pool_size : unit -> int
-  (** Number of system threads waiting for works. *)
+  (** Maximum number of system threads that can be started. If this
+      limit is reached, jobs will be executed synchronously. *)
+
+val set_pool_size : int -> unit
+  (** Change the size of the pool. *)
+
+val thread_count : unit -> int
+  (** The number of system threads running (excluding this one). *)
+
+val thread_waiting_count : unit -> int
+  (** The number threads waiting for a job. *)
 
 (**/**)
 
