@@ -130,7 +130,7 @@ value lwt_unix_init_notification(value fd)
 CAMLprim value lwt_unix_send_notification_stub(value val_id)
 {
   char buf[4];
-  int id = Val_int(val_id);
+  int id = Int_val(val_id);
 
   buf[0] = id;
   buf[1] = id >> 8;
