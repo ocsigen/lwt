@@ -88,11 +88,6 @@ CAMLprim value lwt_libev_unloop()
 #define Ev_timer_val(v) *(struct ev_timer**)Data_custom_val(v)
 #define Ev_idle_val(v) *(struct ev_idle**)Data_custom_val(v)
 
-static void finalize_watcher(value watcher)
-{
-  free(Data_custom_val(watcher));
-}
-
 static int compare_watchers(value a, value b)
 {
   return (int)(Data_custom_val(a) - Data_custom_val(b));
@@ -105,21 +100,12 @@ static long hash_watcher(value watcher)
 
 static struct custom_operations watcher_ops = {
   "lwt.libev.watcher",
-  finalize_watcher,
+  custom_finalize_default,
   compare_watchers,
   hash_watcher,
   custom_serialize_default,
   custom_deserialize_default
 };
-
-static void* xalloc(size_t n)
-{
-  void* ptr = malloc(n);
-  if (!ptr) caml_failwith("out of memory");
-  return ptr;
-}
-
-#define new(type) ((type*)xalloc(sizeof(type)))
 
 /* +-----------------------------------------------------------------+
    | IO watchers                                                     |
@@ -137,7 +123,7 @@ CAMLprim value lwt_libev_io_init(value fd, value event, value callback)
   CAMLparam3(fd, event, callback);
   CAMLlocal2(result, meta);
   /* Create and initialise the watcher */
-  struct ev_io* watcher = new(struct ev_io);
+  struct ev_io* watcher = lwt_unix_new(struct ev_io);
   ev_io_init(watcher, handle_io, FD_val(fd), Int_val(event) == 0 ? EV_READ : EV_WRITE);
   /* Wrap the watcher into a custom caml value */
   result = caml_alloc_custom(&watcher_ops, sizeof(struct ev_io*), 0, 1);
@@ -154,9 +140,12 @@ CAMLprim value lwt_libev_io_init(value fd, value event, value callback)
   CAMLreturn(result);
 }
 
-CAMLprim value lwt_libev_io_stop(value watcher)
+CAMLprim value lwt_libev_io_stop(value val_watcher)
 {
-  ev_io_stop(lwt_unix_main_loop, Ev_io_val(watcher));
+  struct ev_io* watcher = Ev_io_val(val_watcher);
+  caml_remove_generational_global_root((value*)(&(watcher->data)));
+  ev_io_stop(lwt_unix_main_loop, watcher);
+  free(watcher);
   return Val_unit;
 }
 
@@ -176,7 +165,7 @@ CAMLprim value lwt_libev_signal_init(value signum, value callback)
   CAMLparam2(signum, callback);
   CAMLlocal2(result, meta);
   /* Create and initialise the watcher */
-  struct ev_signal* watcher = new(struct ev_signal);
+  struct ev_signal* watcher = lwt_unix_new(struct ev_signal);
   ev_signal_init(watcher, handle_signal, caml_convert_signal_number(Int_val(signum)));
   /* Wrap the watcher into a custom caml value */
   result = caml_alloc_custom(&watcher_ops, sizeof(struct ev_signal*), 0, 1);
@@ -193,9 +182,12 @@ CAMLprim value lwt_libev_signal_init(value signum, value callback)
   CAMLreturn(result);
 }
 
-CAMLprim value lwt_libev_signal_stop(value watcher)
+CAMLprim value lwt_libev_signal_stop(value val_watcher)
 {
-  ev_signal_stop(lwt_unix_main_loop, Ev_signal_val(watcher));
+  struct ev_signal* watcher = Ev_signal_val(val_watcher);
+  caml_remove_generational_global_root((value*)(&(watcher->data)));
+  ev_signal_stop(lwt_unix_main_loop, watcher);
+  free(watcher);
   return Val_unit;
 }
 
@@ -215,7 +207,7 @@ CAMLprim value lwt_libev_timer_init(value delay, value callback)
   CAMLparam2(delay, callback);
   CAMLlocal2(result, meta);
   /* Create and initialise the watcher */
-  struct ev_timer* watcher = new(struct ev_timer);
+  struct ev_timer* watcher = lwt_unix_new(struct ev_timer);
   ev_timer_init(watcher, handle_timer, Double_val(delay), 0);
   /* Wrap the watcher into a custom caml value */
   result = caml_alloc_custom(&watcher_ops, sizeof(struct ev_timer*), 0, 1);
@@ -232,9 +224,12 @@ CAMLprim value lwt_libev_timer_init(value delay, value callback)
   CAMLreturn(result);
 }
 
-CAMLprim value lwt_libev_timer_stop(value watcher)
+CAMLprim value lwt_libev_timer_stop(value val_watcher)
 {
-  ev_timer_stop(lwt_unix_main_loop, Ev_timer_val(watcher));
+  struct ev_timer* watcher = Ev_timer_val(val_watcher);
+  caml_remove_generational_global_root((value*)(&(watcher->data)));
+  ev_timer_stop(lwt_unix_main_loop, watcher);
+  free(watcher);
   return Val_unit;
 }
 
