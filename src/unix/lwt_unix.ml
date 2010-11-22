@@ -107,7 +107,7 @@ let stop_notification id =
 
 let set_notification id f =
   let notifier = Hashtbl.find notifiers id in
-  Hashtbl.add notifiers id { notifier with notify_handler = f }
+  Hashtbl.replace notifiers id { notifier with notify_handler = f }
 
 (* +-----------------------------------------------------------------+
    | libev suff                                                      |
