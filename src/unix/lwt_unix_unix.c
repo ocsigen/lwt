@@ -416,7 +416,7 @@ CAMLprim value lwt_unix_guess_blocking_result(value val_job)
 CAMLprim value lwt_unix_guess_blocking_free(value val_job)
 {
   struct job_guess_blocking *job = Job_guess_blocking_val(val_job);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -491,7 +491,7 @@ CAMLprim value lwt_unix_open_free(value val_job)
 {
   struct job_open *job = Job_open_val(val_job);
   free(job->path);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -531,7 +531,7 @@ CAMLprim value lwt_unix_close_result(value val_job)
 
 CAMLprim value lwt_unix_close_free(value val_job)
 {
-  free(Job_close_val(val_job));
+  lwt_unix_free_job(&(Job_close_val(val_job))->job);
   return Val_unit;
 }
 
@@ -579,7 +579,7 @@ CAMLprim value lwt_unix_read_free(value val_job)
 {
   struct job_read *job = Job_read_val(val_job);
   free(job->buffer);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -625,7 +625,7 @@ CAMLprim value lwt_unix_write_free(value val_job)
 {
   struct job_write *job = Job_write_val(val_job);
   free(job->buffer);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -675,7 +675,7 @@ CAMLprim value lwt_unix_lseek_result(value val_job)
 CAMLprim value lwt_unix_lseek_free(value val_job)
 {
   struct job_lseek *job = Job_lseek_val(val_job);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -700,7 +700,7 @@ CAMLprim value lwt_unix_lseek_64_result(value val_job)
 CAMLprim value lwt_unix_lseek_64_free(value val_job)
 {
   struct job_lseek *job = Job_lseek_val(val_job);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -744,7 +744,7 @@ CAMLprim value lwt_unix_truncate_free(value val_job)
 {
   struct job_truncate *job = Job_truncate_val(val_job);
   free(job->name);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -768,7 +768,7 @@ CAMLprim value lwt_unix_truncate_64_free(value val_job)
 {
   struct job_truncate *job = Job_truncate_val(val_job);
   free(job->name);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -811,7 +811,7 @@ CAMLprim value lwt_unix_ftruncate_result(value val_job)
 CAMLprim value lwt_unix_ftruncate_free(value val_job)
 {
   struct job_ftruncate *job = Job_ftruncate_val(val_job);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -834,7 +834,7 @@ CAMLprim value lwt_unix_ftruncate_64_result(value val_job)
 CAMLprim value lwt_unix_ftruncate_64_free(value val_job)
 {
   struct job_ftruncate *job = Job_ftruncate_val(val_job);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -920,7 +920,7 @@ CAMLprim value lwt_unix_stat_free(value val_job)
 {
   struct job_stat *job = Job_stat_val(val_job);
   free(job->name);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -943,7 +943,7 @@ CAMLprim value lwt_unix_stat_64_free(value val_job)
 {
   struct job_stat *job = Job_stat_val(val_job);
   free(job->name);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -986,7 +986,7 @@ CAMLprim value lwt_unix_lstat_free(value val_job)
 {
   struct job_lstat *job = Job_lstat_val(val_job);
   free(job->name);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1009,7 +1009,7 @@ CAMLprim value lwt_unix_lstat_64_free(value val_job)
 {
   struct job_lstat *job = Job_lstat_val(val_job);
   free(job->name);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1051,7 +1051,7 @@ CAMLprim value lwt_unix_fstat_result(value val_job)
 CAMLprim value lwt_unix_fstat_free(value val_job)
 {
   struct job_fstat *job = Job_fstat_val(val_job);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1073,7 +1073,7 @@ CAMLprim value lwt_unix_fstat_64_result(value val_job)
 CAMLprim value lwt_unix_fstat_64_free(value val_job)
 {
   struct job_fstat *job = Job_fstat_val(val_job);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1111,7 +1111,7 @@ CAMLprim value lwt_unix_isatty_result(value val_job)
 CAMLprim value lwt_unix_isatty_free(value val_job)
 {
   struct job_isatty *job = Job_isatty_val(val_job);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1153,7 +1153,7 @@ CAMLprim value lwt_unix_unlink_free(value val_job)
 {
   struct job_unlink *job = Job_unlink_val(val_job);
   free(job->name);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1198,7 +1198,7 @@ CAMLprim value lwt_unix_rename_free(value val_job)
   struct job_rename *job = Job_rename_val(val_job);
   free(job->name1);
   free(job->name2);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1243,7 +1243,7 @@ CAMLprim value lwt_unix_link_free(value val_job)
   struct job_link *job = Job_link_val(val_job);
   free(job->name1);
   free(job->name2);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1287,7 +1287,7 @@ CAMLprim value lwt_unix_chmod_free(value val_job)
 {
   struct job_chmod *job = Job_chmod_val(val_job);
   free(job->name);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1330,7 +1330,7 @@ CAMLprim value lwt_unix_fchmod_result(value val_job)
 CAMLprim value lwt_unix_fchmod_free(value val_job)
 {
   struct job_fchmod *job = Job_fchmod_val(val_job);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1376,7 +1376,7 @@ CAMLprim value lwt_unix_chown_free(value val_job)
 {
   struct job_chown *job = Job_chown_val(val_job);
   free(job->name);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1421,7 +1421,7 @@ CAMLprim value lwt_unix_fchown_result(value val_job)
 CAMLprim value lwt_unix_fchown_free(value val_job)
 {
   struct job_fchown *job = Job_fchown_val(val_job);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1469,7 +1469,7 @@ CAMLprim value lwt_unix_access_free(value val_job)
 {
   struct job_access *job = Job_access_val(val_job);
   free(job->name);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1513,7 +1513,7 @@ CAMLprim value lwt_unix_mkdir_free(value val_job)
 {
   struct job_mkdir *job = Job_mkdir_val(val_job);
   free(job->name);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1555,7 +1555,7 @@ CAMLprim value lwt_unix_rmdir_free(value val_job)
 {
   struct job_rmdir *job = Job_rmdir_val(val_job);
   free(job->name);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1597,7 +1597,7 @@ CAMLprim value lwt_unix_chdir_free(value val_job)
 {
   struct job_chdir *job = Job_chdir_val(val_job);
   free(job->name);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1639,7 +1639,7 @@ CAMLprim value lwt_unix_chroot_free(value val_job)
 {
   struct job_chroot *job = Job_chroot_val(val_job);
   free(job->name);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1683,7 +1683,7 @@ CAMLprim value lwt_unix_opendir_free(value val_job)
 {
   struct job_opendir *job = Job_opendir_val(val_job);
   free(job->name);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1728,7 +1728,7 @@ CAMLprim value lwt_unix_readdir_free(value val_job)
 {
   struct job_readdir *job = Job_readdir_val(val_job);
   if (job->entry != NULL) free(job->entry);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1816,7 +1816,7 @@ CAMLprim value lwt_unix_readdir_n_free(value val_job)
     for(i = 0; i < job->count; i++)
       if (job->entries[i] != NULL) free(job->entries[i]);
   }
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1852,7 +1852,7 @@ CAMLprim value lwt_unix_rewinddir_result(value val_job)
 CAMLprim value lwt_unix_rewinddir_free(value val_job)
 {
   struct job_rewinddir *job = Job_rewinddir_val(val_job);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1893,7 +1893,7 @@ CAMLprim value lwt_unix_closedir_result(value val_job)
 CAMLprim value lwt_unix_closedir_free(value val_job)
 {
   struct job_closedir *job = Job_closedir_val(val_job);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1937,7 +1937,7 @@ CAMLprim value lwt_unix_mkfifo_free(value val_job)
 {
   struct job_mkfifo *job = Job_mkfifo_val(val_job);
   free(job->name);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -1982,7 +1982,7 @@ CAMLprim value lwt_unix_symlink_free(value val_job)
   struct job_symlink *job = Job_symlink_val(val_job);
   free(job->name1);
   free(job->name2);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -2026,7 +2026,7 @@ CAMLprim value lwt_unix_readlink_free(value val_job)
 {
   struct job_readlink *job = Job_readlink_val(val_job);
   free(job->name);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -2075,7 +2075,7 @@ CAMLprim value lwt_unix_lockf_result(value val_job)
 CAMLprim value lwt_unix_lockf_free(value val_job)
 {
   struct job_lockf *job = Job_lockf_val(val_job);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -2113,7 +2113,7 @@ CAMLprim value lwt_unix_getlogin_result(value val_job)
 CAMLprim value lwt_unix_getlogin_free(value val_job)
 {
   struct job_getlogin *job = Job_getlogin_val(val_job);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -2190,7 +2190,7 @@ CAMLprim value lwt_unix_getpwnam_free(value val_job)
   struct job_getpwnam *job = Job_getpwnam_val(val_job);
   free(job->name);
   if (job->buffer != NULL) free(job->buffer);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -2257,7 +2257,7 @@ CAMLprim value lwt_unix_getgrnam_free(value val_job)
   struct job_getgrnam *job = Job_getgrnam_val(val_job);
   free(job->name);
   if (job->buffer != NULL) free(job->buffer);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -2305,7 +2305,7 @@ CAMLprim value lwt_unix_getpwuid_free(value val_job)
 {
   struct job_getpwuid *job = Job_getpwuid_val(val_job);
   if (job->buffer != NULL) free(job->buffer);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -2353,7 +2353,7 @@ CAMLprim value lwt_unix_getgrgid_free(value val_job)
 {
   struct job_getgrgid *job = Job_getgrgid_val(val_job);
   if (job->buffer != NULL) free(job->buffer);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -2394,7 +2394,7 @@ CAMLprim value lwt_unix_gethostname_result(value val_job)
 CAMLprim value lwt_unix_gethostname_free(value val_job)
 {
   struct job_gethostname *job = Job_gethostname_val(val_job);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -2491,7 +2491,7 @@ CAMLprim value lwt_unix_gethostbyname_free(value val_job)
 {
   struct job_gethostbyname *job = Job_gethostbyname_val(val_job);
   free(job->name);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -2534,7 +2534,7 @@ CAMLprim value lwt_unix_gethostbyaddr_result(value val_job)
 CAMLprim value lwt_unix_gethostbyaddr_free(value val_job)
 {
   struct job_gethostbyaddr *job = Job_gethostbyaddr_val(val_job);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -2590,7 +2590,7 @@ CAMLprim value lwt_unix_getprotobyname_free(value val_job)
 {
   struct job_getprotobyname *job = Job_getprotobyname_val(val_job);
   free(job->name);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -2629,7 +2629,7 @@ CAMLprim value lwt_unix_getprotobynumber_result(value val_job)
 CAMLprim value lwt_unix_getprotobynumber_free(value val_job)
 {
   struct job_getprotobynumber *job = Job_getprotobynumber_val(val_job);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -2690,7 +2690,7 @@ CAMLprim value lwt_unix_getservbyname_free(value val_job)
   struct job_getservbyname *job = Job_getservbyname_val(val_job);
   free(job->name);
   free(job->proto);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -2732,7 +2732,7 @@ CAMLprim value lwt_unix_getservbyport_free(value val_job)
 {
   struct job_getservbyport *job = Job_getservbyport_val(val_job);
   free(job->proto);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -2858,7 +2858,7 @@ CAMLprim value lwt_unix_getaddrinfo_free(value val_job)
   if (job->node != NULL) free(job->node);
   if (job->service != NULL) free(job->service);
   if (job->info != NULL) freeaddrinfo(job->info);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -2920,7 +2920,7 @@ CAMLprim value lwt_unix_getnameinfo_result(value val_job)
 CAMLprim value lwt_unix_getnameinfo_free(value val_job)
 {
   struct job_getnameinfo *job = Job_getnameinfo_val(val_job);
-  free(job);
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
@@ -3178,7 +3178,7 @@ CAMLprim value lwt_unix_tcgetattr_result(value val_job)
 
 CAMLprim value lwt_unix_tcgetattr_free(value val_job)
 {
-  free(Job_tcgetattr_val(val_job));
+  lwt_unix_free_job(&(Job_tcgetattr_val(val_job))->job);
   return Val_unit;
 }
 
@@ -3227,7 +3227,7 @@ CAMLprim value lwt_unix_tcsetattr_result(value val_job)
 
 CAMLprim value lwt_unix_tcsetattr_free(value val_job)
 {
-  free(Job_tcsetattr_val(val_job));
+  lwt_unix_free_job(&(Job_tcsetattr_val(val_job))->job);
   return Val_unit;
 }
 
@@ -3267,7 +3267,7 @@ CAMLprim value lwt_unix_tcdrain_result(value val_job)
 
 CAMLprim value lwt_unix_tcdrain_free(value val_job)
 {
-  free(Job_tcdrain_val(val_job));
+  lwt_unix_free_job(&(Job_tcdrain_val(val_job))->job);
   return Val_unit;
 }
 
@@ -3313,7 +3313,7 @@ CAMLprim value lwt_unix_tcflush_result(value val_job)
 
 CAMLprim value lwt_unix_tcflush_free(value val_job)
 {
-  free(Job_tcflush_val(val_job));
+  lwt_unix_free_job(&(Job_tcflush_val(val_job))->job);
   return Val_unit;
 }
 
@@ -3359,7 +3359,7 @@ CAMLprim value lwt_unix_tcflow_result(value val_job)
 
 CAMLprim value lwt_unix_tcflow_free(value val_job)
 {
-  free(Job_tcflow_val(val_job));
+  lwt_unix_free_job(&(Job_tcflow_val(val_job))->job);
   return Val_unit;
 }
 
@@ -3401,6 +3401,6 @@ CAMLprim value lwt_unix_tcsendbreak_result(value val_job)
 
 CAMLprim value lwt_unix_tcsendbreak_free(value val_job)
 {
-  free(Job_tcsendbreak_val(val_job));
+  lwt_unix_free_job(&(Job_tcsendbreak_val(val_job))->job);
   return Val_unit;
 }

@@ -119,12 +119,12 @@ typedef pthread_mutex_t lwt_unix_mutex;
 typedef pthread_cond_t lwt_unix_condition;
 
 #define lwt_unix_initialize_mutex(mutex) pthread_mutex_init(&(mutex), NULL)
-#define lwt_unix_delete_mutex(mutex)
+#define lwt_unix_delete_mutex(mutex) pthread_mutex_destroy(&(mutex))
 #define lwt_unix_acquire_mutex(mutex) pthread_mutex_lock(&(mutex))
 #define lwt_unix_release_mutex(mutex) pthread_mutex_unlock(&(mutex))
 
 #define lwt_unix_initialize_condition(cond) pthread_cond_init(&(cond), NULL)
-#define lwt_unix_delete_condition(cond)
+#define lwt_unix_delete_condition(cond) pthread_cond_destroy(&(cond))
 #define lwt_unix_wait_condition(cond, mutex) pthread_cond_wait(&(cond), &(mutex))
 #define lwt_unix_wake_condition(cond) pthread_cond_signal(&(cond))
 
@@ -196,6 +196,9 @@ typedef void (*lwt_unix_job_worker)(lwt_unix_job job);
 
 /* Allocate a caml custom value for the given job. */
 value lwt_unix_alloc_job(lwt_unix_job job);
+
+/* Free resourecs allocated for this job and free it. */
+void lwt_unix_free_job(lwt_unix_job job);
 
 /* Define not implement methods. */
 #define LWT_UNIX_JOB_NOT_IMPLEMENTED(name)      \

@@ -550,6 +550,13 @@ value lwt_unix_alloc_job(lwt_unix_job job)
   return val_job;
 }
 
+void lwt_unix_free_job(lwt_unix_job job)
+{
+  if (job->async_method != LWT_UNIX_ASYNC_METHOD_NONE)
+    lwt_unix_delete_mutex(job->mutex);
+  free(job);
+}
+
 CAMLprim value lwt_unix_start_job(value val_job, value val_notification_id, value val_async_method)
 {
   lwt_unix_job job = Job_val(val_job);
