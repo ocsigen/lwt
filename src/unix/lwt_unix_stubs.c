@@ -581,7 +581,7 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_notification_id, valu
     caml_enter_blocking_section();
     job->worker(job);
     caml_leave_blocking_section();
-    break;
+    return Val_true;
 
   case LWT_UNIX_ASYNC_METHOD_DETACH:
     if (threading_initialized == 0) initialize_threading();
@@ -609,7 +609,7 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_notification_id, valu
       lwt_unix_wake_condition(pool_condition);
       lwt_unix_release_mutex(pool_mutex);
     }
-    break;
+    return Val_bool(job->done);
 
   case LWT_UNIX_ASYNC_METHOD_SWITCH:
     if (threading_initialized == 0) initialize_threading();
@@ -660,7 +660,7 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_notification_id, valu
       node->next = blocking_call_enter;
       blocking_call_enter = node;
       lwt_unix_release_mutex(blocking_call_enter_mutex);
-      break;
+      return Val_true;
 
     case CALL_SCHEDULED:
       DEBUG("resuming after being scheduled");
@@ -670,13 +670,11 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_notification_id, valu
 
       /* This thread is now running caml code. */
       //caml_c_thread_register();
-      break;
+      return Val_bool(job->done);
     }
-
-    break;
   }
 
-  return Val_unit;
+  return Val_false;
 }
 
 CAMLprim value lwt_unix_check_job(value val_job)

@@ -164,8 +164,9 @@ let with_timeout d f = Lwt.pick [timeout d; Lwt.apply f ()]
 
 type 'a job
 
-external start_job : 'a job -> int -> async_method -> unit = "lwt_unix_start_job"
-    (* Starts the given job with given parameters. *)
+external start_job : 'a job -> int -> async_method -> bool = "lwt_unix_start_job"
+    (* Starts the given job with given parameters. It returns [true]
+       if the job is already terminated. *)
 
 external check_job : 'a job -> bool = "lwt_unix_check_job" "noalloc"
     (* Check whether that a job has terminated or not. If it has not
@@ -187,27 +188,27 @@ let execute_job ?async_method ~job ~result ~free =
   (* Create the notification for asynchronous wakeup. *)
   let id = make_notification ~once:true ignore in
   (* Starts the job. *)
-  start_job job id async_method;
-  lwt () =
-    match async_method with
-      | Async_none ->
-          return ()
-      | Async_detach | Async_switch ->
-          try_lwt
-            (* Give some time to the job before we fallback to
-               asynchronous notification. *)
-            pause ()
-          with Canceled as exn ->
-            cancel_job job;
-            (* Free resources for when the job terminates. *)
-            if check_job job then begin
-              stop_notification id;
-              free job
-            end else
-              set_notification id (fun () -> free job);
-            raise_lwt exn
+  let job_done = start_job job id async_method in
+  lwt job_done =
+    if job_done then
+      return true
+    else
+      try_lwt
+        (* Give some time to the job before we fallback to
+           asynchronous notification. *)
+        lwt () = pause () in
+        return (check_job job)
+      with Canceled as exn ->
+        cancel_job job;
+        (* Free resources for when the job terminates. *)
+        if check_job job then begin
+          stop_notification id;
+          free job
+        end else
+          set_notification id (fun () -> free job);
+        raise_lwt exn
   in
-  if check_job job then begin
+  if job_done then begin
     (* The job has already terminated, no need for asynchronous
        notification. *)
     stop_notification id;
