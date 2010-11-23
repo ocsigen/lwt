@@ -885,18 +885,25 @@ static value copy_stat(int use_64, struct stat *buf)
   switch (buf->st_mode & S_IFMT) {
   case S_IFREG:
     Field(v, 2) = Val_int(0);
+    break;
   case S_IFDIR:
     Field(v, 2) = Val_int(1);
+    break;
   case S_IFCHR:
     Field(v, 2) = Val_int(2);
+    break;
   case S_IFBLK:
     Field(v, 2) = Val_int(3);
+    break;
   case S_IFLNK:
     Field(v, 2) = Val_int(4);
+    break;
   case S_IFIFO:
     Field(v, 2) = Val_int(5);
+    break;
   case S_IFSOCK:
     Field(v, 2) = Val_int(6);
+    break;
   default:
     Field(v, 2) = Val_int(0);
     break;
