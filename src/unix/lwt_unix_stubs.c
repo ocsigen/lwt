@@ -29,7 +29,6 @@
 #include <caml/signals.h>
 #include <caml/config.h>
 #include <caml/custom.h>
-#include <caml/threads.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
