@@ -22,14 +22,12 @@
 
 open Lwt
 
-type byte_array = (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
-
 external init_pagesize : unit -> int = "lwt_mmap_init_pagesize"
-external lwt_mmap_mincore : byte_array -> int -> int -> string = "lwt_mmap_mincore"
-external lwt_mmap_write : Unix.file_descr -> byte_array -> int -> int -> int = "lwt_mmap_write"
-external lwt_mmap_launch_waiter : byte_array -> int -> int -> unit = "lwt_mmap_launch_waiter"
-external lwt_mmap_memcpy : byte_array -> int -> string -> int -> int -> unit = "lwt_mmap_memcpy"
-external lwt_mmap_munmap : byte_array -> unit = "lwt_mmap_munmap"
+external lwt_mmap_mincore : Lwt_bytes.t -> int -> int -> string = "lwt_mmap_mincore"
+external lwt_mmap_write : Unix.file_descr -> Lwt_bytes.t -> int -> int -> int = "lwt_mmap_write"
+external lwt_mmap_launch_waiter : Lwt_bytes.t -> int -> int -> unit = "lwt_mmap_launch_waiter"
+external lwt_mmap_memcpy : Lwt_bytes.t -> int -> string -> int -> int -> unit = "lwt_mmap_memcpy"
+external lwt_mmap_munmap : Lwt_bytes.t -> unit = "lwt_mmap_munmap"
 external lwt_mmap_fstat : Unix.file_descr -> (int*int*float) = "lwt_mmap_fstat"
 
 type madvise =
@@ -39,13 +37,13 @@ type madvise =
   | MADV_WILLNEED
   | MADV_DONTNEED
 
-external lwt_mmap_madvise : byte_array -> int -> int -> madvise -> unit = "lwt_mmap_madvise"
+external lwt_mmap_madvise : Lwt_bytes.t -> int -> int -> madvise -> unit = "lwt_mmap_madvise"
 
 type t =
     { file_uid : int * int * float;
       (* it contains the file dev_id, inode_id and last modification
 	 time.  It is used to uniquely identify file *)
-      mutable array : byte_array;
+      mutable array : Lwt_bytes.t;
       (* declared mutable only to be able to replace them by empty
 	 array on close. It prevents segfaults if an error occur *)
       dim : int;

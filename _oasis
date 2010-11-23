@@ -108,10 +108,11 @@ Library "lwt-unix"
     Lwt_process,
     Lwt_throttle,
     Lwt_timeout,
-    Lwt_unix
+    Lwt_unix,
+    Lwt_bytes
   InternalModules:
     Lwt_log_rules
-  BuildDepends: lwt, unix
+  BuildDepends: lwt, unix, bigarray
   XMETADescription: Unix support for lwt
   CSources:
     lwt_unix.h,

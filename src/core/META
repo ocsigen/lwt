@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: 6f7dad8830d9299921a9334da0214ae6)
+# DO NOT EDIT (digest: 905bc6801f64bec5451f9c94a09e9c10)
 version = "2.1.1"
 description = "Lightweight thread library for OCaml (core library)"
 archive(byte) = "lwt.cma"
@@ -115,7 +115,7 @@ package "react" (
 package "unix" (
  version = "2.1.1"
  description = "Unix support for lwt"
- requires = "lwt unix"
+ requires = "lwt unix bigarray"
  archive(byte) = "lwt-unix.cma"
  archive(native) = "lwt-unix.cmxa"
  exists_if = "lwt-unix.cma"

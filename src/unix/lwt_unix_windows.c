@@ -27,7 +27,17 @@ CAMLprim value lwt_unix_write()
   caml_invalid_argument("not implemented");
 }
 
+CAMLprim value lwt_unix_bytes_write()
+{
+  caml_invalid_argument("not implemented");
+}
+
 CAMLprim value lwt_unix_read()
+{
+  caml_invalid_argument("not implemented");
+}
+
+CAMLprim value lwt_unix_bytes_read()
 {
   caml_invalid_argument("not implemented");
 }
@@ -37,7 +47,17 @@ value lwt_unix_recv()
   caml_invalid_argument("recv not implemented");
 }
 
+value lwt_unix_bytes_recv()
+{
+  caml_invalid_argument("recv not implemented");
+}
+
 value lwt_unix_send()
+{
+  caml_invalid_argument("send not implemented");
+}
+
+value lwt_unix_bytes_send()
 {
   caml_invalid_argument("send not implemented");
 }
@@ -139,7 +159,9 @@ LWT_UNIX_JOB_NOT_IMPLEMENTED(guess_blocking)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(open)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(close)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(read)
+LWT_UNIX_JOB_NOT_IMPLEMENTED(bytes_read)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(write)
+LWT_UNIX_JOB_NOT_IMPLEMENTED(bytes_write)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(lseek)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(truncate)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(ftruncate)

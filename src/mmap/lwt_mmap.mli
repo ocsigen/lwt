@@ -29,9 +29,6 @@
 type t
   (** Type of memory-maped file. *)
 
-type byte_array = (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
-    (** Type of array of bytes used in this module. *)
-
 (** {6 Creation/closing} *)
 
 val of_unix_fd : Unix.file_descr -> t option

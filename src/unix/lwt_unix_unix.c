@@ -63,10 +63,26 @@ CAMLprim value lwt_unix_read(value val_fd, value val_buf, value val_ofs, value v
   return Val_int(ret);
 }
 
+CAMLprim value lwt_unix_bytes_read(value val_fd, value val_buf, value val_ofs, value val_len)
+{
+  int ret;
+  ret = read(Int_val(val_fd), (char*)Caml_ba_array_val(val_buf)->data + Long_val(val_ofs), Long_val(val_len));
+  if (ret == -1) uerror("read", Nothing);
+  return Val_int(ret);
+}
+
 CAMLprim value lwt_unix_write(value val_fd, value val_buf, value val_ofs, value val_len)
 {
   int ret;
   ret = write(Int_val(val_fd), &Byte(String_val(val_buf), Long_val(val_ofs)), Long_val(val_len));
+  if (ret == -1) uerror("write", Nothing);
+  return Val_int(ret);
+}
+
+CAMLprim value lwt_unix_bytes_write(value val_fd, value val_buf, value val_ofs, value val_len)
+{
+  int ret;
+  ret = write(Int_val(val_fd), (char*)Caml_ba_array_val(val_buf)->data + Long_val(val_ofs), Long_val(val_len));
   if (ret == -1) uerror("write", Nothing);
   return Val_int(ret);
 }
@@ -88,10 +104,28 @@ value lwt_unix_recv(value fd, value buf, value ofs, value len, value flags)
   return Val_int(ret);
 }
 
+value lwt_unix_bytes_recv(value fd, value buf, value ofs, value len, value flags)
+{
+  int ret;
+  ret = recv(Int_val(fd), (char*)Caml_ba_array_val(buf)->data + Long_val(ofs), Long_val(len),
+             convert_flag_list(flags, msg_flag_table));
+  if (ret == -1) uerror("recv", Nothing);
+  return Val_int(ret);
+}
+
 value lwt_unix_send(value fd, value buf, value ofs, value len, value flags)
 {
   int ret;
   ret = send(Int_val(fd), &Byte(String_val(buf), Long_val(ofs)), Long_val(len),
+             convert_flag_list(flags, msg_flag_table));
+  if (ret == -1) uerror("send", Nothing);
+  return Val_int(ret);
+}
+
+value lwt_unix_bytes_send(value fd, value buf, value ofs, value len, value flags)
+{
+  int ret;
+  ret = send(Int_val(fd), (char*)Caml_ba_array_val(buf)->data + Long_val(ofs), Long_val(len),
              convert_flag_list(flags, msg_flag_table));
   if (ret == -1) uerror("send", Nothing);
   return Val_int(ret);
@@ -601,6 +635,7 @@ struct job_read {
 };
 
 #define Job_read_val(v) *(struct job_read**)Data_custom_val(v)
+
 static void worker_read(struct job_read *job)
 {
   job->result = read(job->fd, job->buffer, job->length);
@@ -631,6 +666,52 @@ CAMLprim value lwt_unix_read_free(value val_job)
 {
   struct job_read *job = Job_read_val(val_job);
   free(job->buffer);
+  lwt_unix_free_job(&job->job);
+  return Val_unit;
+}
+
+/* +-----------------------------------------------------------------+
+   | JOB: bytes_read                                                 |
+   +-----------------------------------------------------------------+ */
+
+struct job_bytes_read {
+  struct lwt_unix_job job;
+  int fd;
+  char *buffer;
+  int length;
+  int result;
+  int error_code;
+};
+
+#define Job_bytes_read_val(v) *(struct job_bytes_read**)Data_custom_val(v)
+
+static void worker_bytes_read(struct job_bytes_read *job)
+{
+  job->result = read(job->fd, job->buffer, job->length);
+  job->error_code = errno;
+}
+
+CAMLprim value lwt_unix_bytes_read_job(value val_fd, value val_buf, value val_ofs, value val_len)
+{
+  struct job_bytes_read *job = lwt_unix_new(struct job_bytes_read);
+  job->job.worker = (lwt_unix_job_worker)worker_bytes_read;
+  job->fd = Int_val(val_fd);
+  job->buffer = (char*)Caml_ba_array_val(val_buf)->data + Long_val(val_ofs);
+  job->length = Long_val(val_len);
+  return lwt_unix_alloc_job(&(job->job));
+}
+
+CAMLprim value lwt_unix_bytes_read_result(value val_job)
+{
+  struct job_bytes_read *job = Job_bytes_read_val(val_job);
+  int result = job->result;
+  if (result < 0) unix_error(job->error_code, "read", Nothing);
+  return Val_long(result);
+}
+
+CAMLprim value lwt_unix_bytes_read_free(value val_job)
+{
+  struct job_bytes_read *job = Job_bytes_read_val(val_job);
   lwt_unix_free_job(&job->job);
   return Val_unit;
 }
@@ -679,6 +760,53 @@ CAMLprim value lwt_unix_write_result(value val_job)
 CAMLprim value lwt_unix_write_free(value val_job)
 {
   struct job_write *job = Job_write_val(val_job);
+  free(job->buffer);
+  lwt_unix_free_job(&job->job);
+  return Val_unit;
+}
+
+/* +-----------------------------------------------------------------+
+   | JOB: bytes_write                                                |
+   +-----------------------------------------------------------------+ */
+
+struct job_bytes_write {
+  struct lwt_unix_job job;
+  int fd;
+  char *buffer;
+  int length;
+  int result;
+  int error_code;
+};
+
+#define Job_bytes_write_val(v) *(struct job_bytes_write**)Data_custom_val(v)
+
+static void worker_bytes_write(struct job_bytes_write *job)
+{
+  job->result = write(job->fd, job->buffer, job->length);
+  job->error_code = errno;
+}
+
+CAMLprim value lwt_unix_bytes_write_job(value val_fd, value val_buffer, value val_offset, value val_length)
+{
+  struct job_bytes_write *job = lwt_unix_new(struct job_bytes_write);
+  job->job.worker = (lwt_unix_job_worker)worker_bytes_write;
+  job->fd = Int_val(val_fd);
+  job->buffer = (char*)Caml_ba_array_val(val_buffer)->data + Long_val(val_offset);
+  job->length = Long_val(val_length);
+  return lwt_unix_alloc_job(&(job->job));
+}
+
+CAMLprim value lwt_unix_bytes_write_result(value val_job)
+{
+  struct job_bytes_write *job = Job_bytes_write_val(val_job);
+  int result = job->result;
+  if (result < 0) unix_error(job->error_code, "write", Nothing);
+  return Val_long(result);
+}
+
+CAMLprim value lwt_unix_bytes_write_free(value val_job)
+{
+  struct job_bytes_write *job = Job_bytes_write_val(val_job);
   free(job->buffer);
   lwt_unix_free_job(&job->job);
   return Val_unit;
