@@ -170,11 +170,11 @@ let with_timeout d f = Lwt.pick [timeout d; Lwt.apply f ()]
 
 type 'a job
 
-external start_job : 'a job -> int -> async_method -> bool = "lwt_unix_start_job"
+external start_job : 'a job -> async_method -> bool = "lwt_unix_start_job"
     (* Starts the given job with given parameters. It returns [true]
        if the job is already terminated. *)
 
-external check_job : 'a job -> bool = "lwt_unix_check_job" "noalloc"
+external check_job : 'a job -> int -> bool = "lwt_unix_check_job" "noalloc"
     (* Check whether that a job has terminated or not. If it has not
        yet terminated, it is marked so it will send a notification
        when it finishes. *)
@@ -191,61 +191,63 @@ let execute_job ?async_method ~job ~result ~free =
             | Some am -> am
             | None -> !default_async_method_var
   in
-  (* Create the notification for asynchronous wakeup. *)
-  let id = make_notification ~once:true ignore in
   (* Starts the job. *)
-  let job_done = start_job job id async_method in
-  lwt job_done =
+  let job_done = start_job job async_method in
+  lwt status =
     if job_done then
-      return true
+      return None
     else
+      (* Create the notification for asynchronous wakeup. *)
+      let id = make_notification ~once:true ignore in
       try_lwt
         (* Give some time to the job before we fallback to
            asynchronous notification. *)
         lwt () = pause () in
-        return (check_job job)
+        if check_job job id then begin
+          stop_notification id;
+          return None
+        end else
+          return (Some id)
       with Canceled as exn ->
         cancel_job job;
-        (* Free resources for when the job terminates. *)
-        if check_job job then begin
+        (* Free resources when the job terminates. *)
+        if check_job job id then begin
           stop_notification id;
           free job
         end else
           set_notification id (fun () -> free job);
         raise_lwt exn
   in
-  if job_done then begin
-    (* The job has already terminated, no need for asynchronous
-       notification. *)
-    stop_notification id;
-    (* Read and return the result immediatly. *)
-    let thread =
-      try
-        return (result job)
-      with exn ->
-        fail exn
-    in
-    free job;
-    thread
-  end else begin
-    (* The job has not terminated, setup the notification for the
-       asynchronous wakeup. *)
-    let waiter, wakener = task () in
-    set_notification id
-      (fun () ->
-         begin
-           try
-             wakeup wakener (result job);
-           with exn ->
-             wakeup_exn wakener exn
-         end;
-         free job);
-    on_cancel waiter
-      (fun () ->
-         cancel_job job;
-         set_notification id (fun () -> free job));
-    waiter
-  end
+  match status with
+    | None ->
+        (* The job has already terminated, read and return the result
+           immediatly. *)
+        let thread =
+          try
+            return (result job)
+          with exn ->
+            fail exn
+        in
+        free job;
+        thread
+    | Some id ->
+        (* The job has not terminated, setup the notification for the
+           asynchronous wakeup. *)
+        let waiter, wakener = task () in
+        set_notification id
+          (fun () ->
+             begin
+               try
+                 wakeup wakener (result job);
+               with exn ->
+                 wakeup_exn wakener exn
+             end;
+             free job);
+        on_cancel waiter
+          (fun () ->
+             cancel_job job;
+             set_notification id (fun () -> free job));
+        waiter
 
 (* +-----------------------------------------------------------------+
    | File descriptor wrappers                                        |

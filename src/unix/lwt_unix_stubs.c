@@ -630,7 +630,7 @@ void lwt_unix_free_job(lwt_unix_job job)
   free(job);
 }
 
-CAMLprim value lwt_unix_start_job(value val_job, value val_notification_id, value val_async_method)
+CAMLprim value lwt_unix_start_job(value val_job, value val_async_method)
 {
   lwt_unix_job job = Job_val(val_job);
 
@@ -645,7 +645,6 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_notification_id, valu
   job->done = 0;
   job->fast = 1;
   job->async_method = async_method;
-  job->notification_id = Int_val(val_notification_id);
 
   switch (async_method) {
 
@@ -754,7 +753,7 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_notification_id, valu
   return Val_false;
 }
 
-CAMLprim value lwt_unix_check_job(value val_job)
+CAMLprim value lwt_unix_check_job(value val_job, value val_notification_id)
 {
   lwt_unix_job job = Job_val(val_job);
 
@@ -770,6 +769,8 @@ CAMLprim value lwt_unix_check_job(value val_job)
     pthread_mutex_lock(&job->mutex);
     /* We are not waiting anymore. */
     job->fast = 0;
+    /* Set the notification id for asynchronous wakeup. */
+    job->notification_id = Int_val(val_notification_id);
     value result = Val_bool(job->done);
     pthread_mutex_unlock(&job->mutex);
 
