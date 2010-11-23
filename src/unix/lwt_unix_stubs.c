@@ -222,6 +222,16 @@ static void execute_job(lwt_unix_job job)
 }
 
 /* +-----------------------------------------------------------------+
+   | Config                                                          |
+   +-----------------------------------------------------------------+ */
+
+/* The signal used to allocate new stack. */
+static int signal_alloc_stack;
+
+/* The signal used to kill a thread. */
+static int signal_kill_thread;
+
+/* +-----------------------------------------------------------------+
    | Thread pool                                                     |
    +-----------------------------------------------------------------+ */
 
@@ -301,9 +311,15 @@ static lwt_unix_job blocking_call = NULL;
 /* The stack frame used for the current blocking call. */
 static struct stack_frame *blocking_call_frame = NULL;
 
+/* Flag which become [1] once the stack has been allocated. */
+static int stack_allocated;
+
 /* Function executed on an alternative stack. */
 static void altstack_worker()
 {
+  if (stack_allocated == 1) return;
+  stack_allocated = 1;
+
   /* The first passage is to register a new stack frame. */
   struct stack_frame *node = lwt_unix_new(struct stack_frame);
 
@@ -398,17 +414,19 @@ void alloc_new_stack()
   /* Change the stack used for signals. */
   sigaltstack(&new_stack, &old_stack);
 
+  stack_allocated = 0;
+
   /* Set up the custom signal handler. */
   new_sa.sa_handler = altstack_worker;
   new_sa.sa_flags = SA_ONSTACK;
   sigemptyset(&new_sa.sa_mask);
-  sigaction(SIGUSR1, &new_sa, &old_sa);
+  sigaction(signal_alloc_stack, &new_sa, &old_sa);
 
   /* Save the stack frame. */
-  raise(SIGUSR1);
+  raise(signal_alloc_stack);
 
   /* Restore the old signal handler. */
-  sigaction(SIGUSR1, &old_sa, NULL);
+  sigaction(signal_alloc_stack, &old_sa, NULL);
 
   /* Restore the old alternative stack. */
   sigaltstack(&old_stack, NULL);
@@ -421,6 +439,13 @@ void alloc_new_stack()
 /* Whether threading has been initialized. */
 static int threading_initialized = 0;
 
+static void nop() {}
+
+#if !defined(SIGRTMIN) || !defined(SIGRTMAX)
+#  define SIGRTMIN 0
+#  define SIGRTMAX 0
+#endif
+
 /* Initialize the pool of thread. */
 void initialize_threading()
 {
@@ -430,6 +455,25 @@ void initialize_threading()
     lwt_unix_initialize_mutex(blocking_call_enter_mutex);
 
     main_thread = lwt_unix_self();
+
+    if (SIGRTMIN < SIGRTMAX) {
+      signal_alloc_stack = SIGRTMIN;
+      if (SIGRTMIN + 1 < SIGRTMAX)
+        signal_kill_thread = SIGRTMIN + 1;
+      else
+        signal_kill_thread = SIGUSR1;
+    } else {
+      signal_alloc_stack = SIGUSR1;
+      signal_kill_thread = SIGUSR2;
+    }
+
+    /* Define a handler for the signal used for killing threads to be
+       sure system calls get interrupted. */
+    struct sigaction sa;
+    sa.sa_handler = nop;
+    sa.sa_flags = 0;
+    sigemptyset(&sa.sa_mask);
+    sigaction(signal_kill_thread, &sa, NULL);
 
     threading_initialized = 1;
   }
@@ -704,8 +748,6 @@ CAMLprim value lwt_unix_check_job(value val_job)
   return Val_int(0);
 }
 
-static void nop() {}
-
 CAMLprim value lwt_unix_cancel_job(value val_job)
 {
   struct lwt_unix_job *job = Job_val(val_job);
@@ -731,20 +773,7 @@ CAMLprim value lwt_unix_cancel_job(value val_job)
 #if defined(LWT_ON_WINDOWS)
       /* TODO: do something here. */
 #else
-      struct sigaction old_sa, new_sa;
-
-      /* Set up a custom signal handler to be sure that the system
-         call will be interrupted. */
-      new_sa.sa_handler = nop;
-      new_sa.sa_flags = 0;
-      sigemptyset(&new_sa.sa_mask);
-      sigaction(SIGUSR1, &new_sa, &old_sa);
-
-      /* Interrupt the system call. */
-      pthread_kill(job->thread, SIGUSR1);
-
-      /* Restore the old signal handler. */
-      sigaction(SIGUSR1, &old_sa, NULL);
+      pthread_kill(job->thread, signal_kill_thread);
 #endif
     }
     lwt_unix_release_mutex(job->mutex);
