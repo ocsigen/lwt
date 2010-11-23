@@ -43,6 +43,7 @@
 #  include <sys/types.h>
 #  include <sys/stat.h>
 #  include <sys/param.h>
+#  include <sys/un.h>
 #  include <signal.h>
 #  include <errno.h>
 #  include <string.h>
@@ -55,6 +56,8 @@
 #  include <setjmp.h>
 #  include <sched.h>
 #  include <signal.h>
+#  include <netinet/in.h>
+#  include <arpa/inet.h>
 #endif
 
 //#define DEBUG_MODE

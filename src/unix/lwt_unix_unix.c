@@ -358,6 +358,8 @@ value lwt_unix_has_wait4(value unit)
    | CPUs                                                            |
    +-----------------------------------------------------------------+ */
 
+#if _BSD_SOURCE || _SVID_SOURCE
+
 CAMLprim value lwt_unix_get_cpu()
 {
   int cpu = sched_getcpu();
@@ -395,6 +397,25 @@ CAMLprim value lwt_unix_set_affinity(value val_pid, value val_cpus)
     uerror("sched_setaffinity", Nothing);
   return Val_unit;
 }
+
+#else
+
+CAMLprim value lwt_unix_get_cpu()
+{
+  caml_invalid_argument("not implemented");
+}
+
+CAMLprim value lwt_unix_get_affinity(value val_pid)
+{
+  caml_invalid_argument("not implemented");
+}
+
+CAMLprim value lwt_unix_set_affinity(value val_pid, value val_cpus)
+{
+  caml_invalid_argument("not implemented");
+}
+
+#endif
 
 /* +-----------------------------------------------------------------+
    | JOB: guess_blocking                                             |
@@ -441,6 +462,19 @@ CAMLprim value lwt_unix_guess_blocking_free(value val_job)
 /* +-----------------------------------------------------------------+
    | JOB: open                                                       |
    +-----------------------------------------------------------------+ */
+
+#ifndef O_NONBLOCK
+#define O_NONBLOCK O_NDELAY
+#endif
+#ifndef O_DSYNC
+#define O_DSYNC 0
+#endif
+#ifndef O_SYNC
+#define O_SYNC 0
+#endif
+#ifndef O_RSYNC
+#define O_RSYNC 0
+#endif
 
 static int open_flag_table[] = {
   O_RDONLY,

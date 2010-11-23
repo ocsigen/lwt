@@ -83,7 +83,7 @@ lwt_mmap_mincore ( value v_bigarray, value v_offset, value v_len )
 
   char err_str[32];
   char *data;
-  unsigned char *vec;
+  char *vec;
   int len, offset, r;
 
   offset = Int_val (v_offset);
@@ -92,7 +92,7 @@ lwt_mmap_mincore ( value v_bigarray, value v_offset, value v_len )
   assert( offset <= Caml_ba_array_val(v_bigarray)->dim[0] );
 
   v_vec = caml_alloc_string (len);
-  vec = (unsigned char *) String_val(v_vec);
+  vec = String_val(v_vec);
 
   data = Caml_ba_data_val(v_bigarray) + offset;
 
