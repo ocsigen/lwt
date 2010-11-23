@@ -762,6 +762,21 @@ val thread_count : unit -> int
 val thread_waiting_count : unit -> int
   (** The number threads waiting for a job. *)
 
+(** {6 CPUs} *)
+
+val get_cpu : unit -> int
+  (** [get_cpu ()] returns the number of the CPU the current thread is
+      running on. *)
+
+val get_affinity : ?pid : int -> unit -> int list
+  (** [get_affinity ?pid ()] returns the list of CPUs the process with
+      pid [pid] is allowed to run on. If [pid] is not specified then
+      the affinity of the current process is returned. *)
+
+val set_affinity : ?pid : int -> int list -> unit
+  (** [set_affinity ?pid cpus] sets the list of CPUs the given process
+      is allowed to run on. *)
+
 (**/**)
 
 val run : 'a Lwt.t -> 'a

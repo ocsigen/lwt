@@ -45,6 +45,7 @@
 #include <termios.h>
 #include <setjmp.h>
 #include <assert.h>
+#include <sched.h>
 
 #include "lwt_unix.h"
 

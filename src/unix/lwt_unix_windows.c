@@ -124,6 +124,25 @@ value lwt_unix_sigwinch()
 }
 
 /* +-----------------------------------------------------------------+
+   | CPUs                                                            |
+   +-----------------------------------------------------------------+ */
+
+CAMLprim value lwt_unix_get_cpu()
+{
+  invalid_argument("not implemented");
+}
+
+CAMLprim value lwt_unix_get_affinity(value val_pid)
+{
+  invalid_argument("not implemented");
+}
+
+CAMLprim value lwt_unix_set_affinity(value val_pid, value val_cpus)
+{
+  invalid_argument("not implemented");
+}
+
+/* +-----------------------------------------------------------------+
    | Jobs                                                            |
    +-----------------------------------------------------------------+ */
 

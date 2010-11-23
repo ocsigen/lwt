@@ -379,6 +379,48 @@ lwt_unix_thread lwt_unix_launch_thread(void* (*start)(void*), void* data)
 }
 
 /* +-----------------------------------------------------------------+
+   | CPUs                                                            |
+   +-----------------------------------------------------------------+ */
+
+CAMLprim value lwt_unix_get_cpu()
+{
+  int cpu = sched_getcpu();
+  if (cpu < 0) uerror("sched_getcpu", Nothing);
+  return Val_int(cpu);
+}
+
+CAMLprim value lwt_unix_get_affinity(value val_pid)
+{
+  CAMLparam1(val_pid);
+  CAMLlocal2(list, node);
+  cpu_set_t cpus;
+  if (sched_getaffinity(Int_val(val_pid), sizeof(cpu_set_t), &cpus) < 0)
+    uerror("sched_getaffinity", Nothing);
+  int i;
+  list = Val_int(0);
+  for (i = sizeof(cpu_set_t) * 8 - 1; i >= 0; i--) {
+    if (CPU_ISSET(i, &cpus)) {
+      node = caml_alloc_tuple(2);
+      Field(node, 0) = Val_int(i);
+      Field(node, 1) = list;
+      list = node;
+    }
+  }
+  CAMLreturn(list);
+}
+
+CAMLprim value lwt_unix_set_affinity(value val_pid, value val_cpus)
+{
+  cpu_set_t cpus;
+  CPU_ZERO(&cpus);
+  for (; Is_block(val_cpus); val_cpus = Field(val_cpus, 1))
+    CPU_SET(Int_val(Field(val_cpus, 0)), &cpus);
+  if (sched_setaffinity(Int_val(val_pid), sizeof(cpu_set_t), &cpus) < 0)
+    uerror("sched_setaffinity", Nothing);
+  return Val_unit;
+}
+
+/* +-----------------------------------------------------------------+
    | JOB: guess_blocking                                             |
    +-----------------------------------------------------------------+ */
 

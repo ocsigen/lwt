@@ -1634,3 +1634,14 @@ external pool_size : unit -> int = "lwt_unix_pool_size" "noalloc"
 external set_pool_size : int -> unit = "lwt_unix_set_pool_size" "noalloc"
 external thread_count : unit -> int = "lwt_unix_thread_count" "noalloc"
 external thread_waiting_count : unit -> int = "lwt_unix_thread_waiting_count" "noalloc"
+
+(* +-----------------------------------------------------------------+
+   | CPUs                                                            |
+   +-----------------------------------------------------------------+ *)
+
+external get_cpu : unit -> int = "lwt_unix_get_cpu"
+external stub_get_affinity : int -> int list = "lwt_unix_get_affinity"
+external stub_set_affinity : int -> int list -> unit = "lwt_unix_set_affinity"
+
+let get_affinity ?(pid=0) () = stub_get_affinity pid
+let set_affinity ?(pid=0) l = stub_set_affinity pid l
