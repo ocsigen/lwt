@@ -30,30 +30,31 @@
 #include <caml/config.h>
 #include <caml/custom.h>
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/param.h>
-#include <signal.h>
-#include <errno.h>
-#include <string.h>
-#include <stdio.h>
-#include <fcntl.h>
-#include <dirent.h>
-#include <pwd.h>
-#include <grp.h>
-#include <netdb.h>
-#include <termios.h>
-#include <setjmp.h>
 #include <assert.h>
-#include <sched.h>
+#include <stdio.h>
 
 #include "lwt_unix.h"
 
 #if defined(LWT_ON_WINDOWS)
 #  include <windows.h>
 #else
+#  include <unistd.h>
 #  include <sys/socket.h>
-#  include <pthread.h>
+#  include <sys/types.h>
+#  include <sys/stat.h>
+#  include <sys/param.h>
+#  include <signal.h>
+#  include <errno.h>
+#  include <string.h>
+#  include <fcntl.h>
+#  include <dirent.h>
+#  include <pwd.h>
+#  include <grp.h>
+#  include <netdb.h>
+#  include <termios.h>
+#  include <setjmp.h>
+#  include <sched.h>
+#  include <signal.h>
 #endif
 
 //#define DEBUG_MODE
@@ -118,12 +119,12 @@ value lwt_unix_system_byte_order()
 
 int notification_fd_writer = -1;
 
-lwt_unix_mutex notification_pipe_mutex;
+pthread_mutex_t notification_pipe_mutex;
 
 value lwt_unix_init_notification(value fd)
 {
   notification_fd_writer = FD_val(fd);
-  lwt_unix_initialize_mutex(notification_pipe_mutex);
+  pthread_mutex_init(&notification_pipe_mutex, NULL);
   return Val_unit;
 }
 
@@ -139,14 +140,14 @@ CAMLprim value lwt_unix_send_notification_stub(value val_id)
 
   caml_enter_blocking_section();
 
-  lwt_unix_acquire_mutex(notification_pipe_mutex);
+  pthread_mutex_lock(&notification_pipe_mutex);
 
   int offset = 0;
   while (offset < 4) {
     int n = write(notification_fd_writer, &(buf[offset]), 4 - offset);
 
     if (n <= 0) {
-      lwt_unix_release_mutex(notification_pipe_mutex);
+      pthread_mutex_unlock(&notification_pipe_mutex);
       caml_leave_blocking_section();
       uerror("send_notification", Nothing);
     }
@@ -154,7 +155,7 @@ CAMLprim value lwt_unix_send_notification_stub(value val_id)
     offset += n;
   }
 
-  lwt_unix_release_mutex(notification_pipe_mutex);
+  pthread_mutex_unlock(&notification_pipe_mutex);
 
   caml_leave_blocking_section();
 
@@ -170,7 +171,7 @@ void lwt_unix_send_notification(int id)
   buf[2] = id >> 16;
   buf[3] = id >> 24;
 
-  lwt_unix_acquire_mutex(notification_pipe_mutex);
+  pthread_mutex_lock(&notification_pipe_mutex);
 
   int offset = 0;
   while (offset < 4) {
@@ -184,7 +185,31 @@ void lwt_unix_send_notification(int id)
     offset += n;
   }
 
-  lwt_unix_release_mutex(notification_pipe_mutex);
+  pthread_mutex_unlock(&notification_pipe_mutex);
+}
+
+/* +-----------------------------------------------------------------+
+   | Launching a thread                                              |
+   +-----------------------------------------------------------------+ */
+
+pthread_t lwt_unix_launch_thread(void* (*start)(void*), void* data)
+{
+  pthread_t thread;
+  pthread_attr_t attr;
+
+  pthread_attr_init(&attr);
+
+  /* The thread is created in detached state so we do not have to join
+     it when it terminates: */
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+
+  int result = pthread_create(&thread, &attr, start, data);
+
+  if (result) unix_error(result, "launch_thread", Nothing);
+
+  pthread_attr_destroy (&attr);
+
+  return thread;
 }
 
 /* +-----------------------------------------------------------------+
@@ -201,7 +226,7 @@ static void execute_job(lwt_unix_job job)
 
   DEBUG("job done");
 
-  lwt_unix_acquire_mutex(job->mutex);
+  pthread_mutex_lock(&job->mutex);
 
   DEBUG("marking the job has done");
 
@@ -212,11 +237,11 @@ static void execute_job(lwt_unix_job job)
   /* Send a notification if the main thread continued its execution
      before the job terminated. */
   if (job->fast == 0) {
-    lwt_unix_release_mutex(job->mutex);
+    pthread_mutex_unlock(&job->mutex);
     DEBUG("notifying the main thread");
     lwt_unix_send_notification(job->notification_id);
   } else {
-    lwt_unix_release_mutex(job->mutex);
+    pthread_mutex_unlock(&job->mutex);
     DEBUG("not notifying the main thread");
   }
 }
@@ -226,10 +251,10 @@ static void execute_job(lwt_unix_job job)
    +-----------------------------------------------------------------+ */
 
 /* The signal used to allocate new stack. */
-static int signal_alloc_stack;
+static int signal_alloc_stack = -1;
 
 /* The signal used to kill a thread. */
-static int signal_kill_thread;
+static int signal_kill_thread = -1;
 
 /* +-----------------------------------------------------------------+
    | Thread pool                                                     |
@@ -245,14 +270,14 @@ static int thread_count = 0;
 static int pool_size = 1000;
 
 /* Condition on which pool threads are waiting. */
-static lwt_unix_condition pool_condition;
+static pthread_cond_t pool_condition;
 
 /* Queue of pending jobs. It points to the last enqueued job.  */
 static lwt_unix_job pool_queue = NULL;
 
 /* The mutex which protect access to [pool_queue], [pool_condition]
    and [thread_waiting_count]. */
-static lwt_unix_mutex pool_mutex;
+static pthread_mutex_t pool_mutex;
 
 /* +-----------------------------------------------------------------+
    | Thread switching                                                |
@@ -273,7 +298,7 @@ enum main_state {
 static enum main_state main_state = STATE_RUNNING;
 
 /* The main thread. */
-static lwt_unix_thread main_thread;
+static pthread_t main_thread;
 
 /* A node in a list of stack frames. */
 struct stack_frame {
@@ -288,7 +313,7 @@ struct stack_frame {
 static struct stack_frame *blocking_call_enter = NULL;
 
 /* Mutex to protect access to [blocking_call_enter]. */
-static lwt_unix_mutex blocking_call_enter_mutex;
+static pthread_mutex_t blocking_call_enter_mutex;
 
 /* Where to go when the blocking call is done, or when it get
    scheduled. */
@@ -326,10 +351,10 @@ static void altstack_worker()
   if (setjmp(node->checkpoint) == 0) {
 
     /* Add it to the list of available stack frames. */
-    lwt_unix_acquire_mutex(blocking_call_enter_mutex);
+    pthread_mutex_lock(&blocking_call_enter_mutex);
     node->next = blocking_call_enter;
     blocking_call_enter = node;
-    lwt_unix_release_mutex(blocking_call_enter_mutex);
+    pthread_mutex_unlock(&blocking_call_enter_mutex);
 
   } else {
 
@@ -344,9 +369,9 @@ static void altstack_worker()
     DEBUG("signaling the pool condition variable");
 
     /* Maybe wakeup a worker so it can become the main thread. */
-    lwt_unix_acquire_mutex(pool_mutex);
-    lwt_unix_wake_condition(pool_condition);
-    lwt_unix_release_mutex(pool_mutex);
+    pthread_mutex_lock(&pool_mutex);
+    pthread_cond_signal(&pool_condition);
+    pthread_mutex_unlock(&pool_mutex);
 
     DEBUG("executing the blocking call");
 
@@ -355,14 +380,14 @@ static void altstack_worker()
 
     DEBUG("blocking call done");
 
-    lwt_unix_acquire_mutex(pool_mutex);
+    pthread_mutex_lock(&pool_mutex);
 
-    if (lwt_unix_thread_equal(main_thread, lwt_unix_self())) {
+    if (pthread_equal(main_thread, pthread_self())) {
       /* We stayed the main thread, continue the execution
          normally. */
       main_state = STATE_RUNNING;
 
-      lwt_unix_release_mutex(pool_mutex);
+      pthread_mutex_unlock(&pool_mutex);
 
       DEBUG("blocing call terminated without blocking, resuming");
 
@@ -377,13 +402,13 @@ static void altstack_worker()
       struct stack_frame *node = become_worker;
       become_worker = node->next;
 
-      lwt_unix_release_mutex(pool_mutex);
+      pthread_mutex_unlock(&pool_mutex);
 
       DEBUG("blocking call terminated after blocking, becoming a worker");
 
       /* Add the stack frame used for this call to the list of
          available ones. */
-      lwt_unix_acquire_mutex(blocking_call_enter_mutex);
+      pthread_mutex_lock(&blocking_call_enter_mutex);
       frame->next = blocking_call_enter;
       blocking_call_enter = frame;
       /* Release the mutex only after the jump. */
@@ -401,6 +426,7 @@ static void altstack_worker()
 /* Allocate a new stack for doing blocking calls. */
 void alloc_new_stack()
 {
+#if !defined(LWT_ON_WINDOWS)
   DEBUG("allocate a new stack");
 
   stack_t old_stack, new_stack;
@@ -430,6 +456,7 @@ void alloc_new_stack()
 
   /* Restore the old alternative stack. */
   sigaltstack(&old_stack, NULL);
+#endif
 }
 
 /* +-----------------------------------------------------------------+
@@ -450,12 +477,13 @@ static void nop() {}
 void initialize_threading()
 {
   if (threading_initialized == 0) {
-    lwt_unix_initialize_mutex(pool_mutex);
-    lwt_unix_initialize_condition(pool_condition);
-    lwt_unix_initialize_mutex(blocking_call_enter_mutex);
+    pthread_mutex_init(&pool_mutex, NULL);
+    pthread_cond_init(&pool_condition, NULL);
+    pthread_mutex_init(&blocking_call_enter_mutex, NULL);
 
-    main_thread = lwt_unix_self();
+    main_thread = pthread_self();
 
+#if !defined(LWT_ON_WINDOWS)
     if (SIGRTMIN < SIGRTMAX) {
       signal_alloc_stack = SIGRTMIN;
       if (SIGRTMIN + 1 < SIGRTMAX)
@@ -474,6 +502,7 @@ void initialize_threading()
     sa.sa_flags = 0;
     sigemptyset(&sa.sa_mask);
     sigaction(signal_kill_thread, &sa, NULL);
+#endif
 
     threading_initialized = 1;
   }
@@ -494,7 +523,7 @@ static void* worker_loop(void *data)
   while (1) {
     DEBUG("entering waiting section");
 
-    lwt_unix_acquire_mutex(pool_mutex);
+    pthread_mutex_lock(&pool_mutex);
 
     /* One more thread is waiting for work. */
     thread_waiting_count++;
@@ -503,7 +532,7 @@ static void* worker_loop(void *data)
 
     /* Wait for something to do. */
     while (pool_queue == NULL && main_state == STATE_RUNNING)
-      lwt_unix_wait_condition(pool_condition, pool_mutex);
+      pthread_cond_wait(&pool_condition, &pool_mutex);
 
     DEBUG("received something to do");
 
@@ -515,7 +544,7 @@ static void* worker_loop(void *data)
       DEBUG("\e[1;31mswitching\e[0m");
 
       /* If the main thread is blocked, we become the main thread. */
-      main_thread = lwt_unix_self();
+      main_thread = pthread_self();
 
       /* The new main thread is running again. */
       main_state = STATE_RUNNING;
@@ -543,7 +572,7 @@ static void* worker_loop(void *data)
       //caml_c_thread_unregister();
 
       /* Release this mutex. It was locked before the jump. */
-      lwt_unix_release_mutex(blocking_call_enter_mutex);
+      pthread_mutex_unlock(&blocking_call_enter_mutex);
 
     } else {
       DEBUG("taking a job to execute");
@@ -551,7 +580,7 @@ static void* worker_loop(void *data)
       /* Take the first queued job. */
       job = pool_queue->next;
 
-      job->thread = lwt_unix_self();
+      job->thread = pthread_self();
       job->thread_initialized = 1;
 
       /* Remove it from the queue. */
@@ -560,7 +589,7 @@ static void* worker_loop(void *data)
       else
         pool_queue->next = job->next;
 
-      lwt_unix_release_mutex(pool_mutex);
+      pthread_mutex_unlock(&pool_mutex);
 
       /* Execute the job. */
       execute_job(job);
@@ -597,7 +626,7 @@ value lwt_unix_alloc_job(lwt_unix_job job)
 void lwt_unix_free_job(lwt_unix_job job)
 {
   if (job->async_method != LWT_UNIX_ASYNC_METHOD_NONE)
-    lwt_unix_delete_mutex(job->mutex);
+    pthread_mutex_destroy(&job->mutex);
   free(job);
 }
 
@@ -630,14 +659,14 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_notification_id, valu
   case LWT_UNIX_ASYNC_METHOD_DETACH:
     if (threading_initialized == 0) initialize_threading();
 
-    lwt_unix_initialize_mutex(job->mutex);
+    pthread_mutex_init(&job->mutex, NULL);
     job->thread_initialized = 0;
 
-    lwt_unix_acquire_mutex(pool_mutex);
+    pthread_mutex_lock(&pool_mutex);
     if (thread_waiting_count == 0) {
       /* Launch a new worker. */
       thread_count++;
-      lwt_unix_release_mutex(pool_mutex);
+      pthread_mutex_unlock(&pool_mutex);
       lwt_unix_launch_thread(worker_loop, (void*)job);
     } else {
       /* Add the job at the end of the queue. */
@@ -650,15 +679,19 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_notification_id, valu
         pool_queue = job;
       }
       /* Wakeup one worker. */
-      lwt_unix_wake_condition(pool_condition);
-      lwt_unix_release_mutex(pool_mutex);
+      pthread_cond_signal(&pool_condition);
+      pthread_mutex_unlock(&pool_mutex);
     }
     return Val_bool(job->done);
 
   case LWT_UNIX_ASYNC_METHOD_SWITCH:
+#if defined(LWT_ON_WINDOWS)
+    caml_invalid_argument("the switch method is not implemented on windows");
+#endif
+
     if (threading_initialized == 0) initialize_threading();
 
-    lwt_unix_initialize_mutex(job->mutex);
+    pthread_mutex_init(&job->mutex, NULL);
     job->thread = main_thread;
 
     /* Ensures there is at least one thread that can become the main
@@ -674,11 +707,11 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_notification_id, valu
 
     /* Take and remove the first available stack frame for system
        calls. */
-    lwt_unix_acquire_mutex(blocking_call_enter_mutex);
+    pthread_mutex_lock(&blocking_call_enter_mutex);
     assert(blocking_call_enter != NULL);
     struct stack_frame *node = blocking_call_enter;
     blocking_call_enter = node->next;
-    lwt_unix_release_mutex(blocking_call_enter_mutex);
+    pthread_mutex_unlock(&blocking_call_enter_mutex);
 
     /* Save the stack frame to leave the blocking call. */
     switch (setjmp(blocking_call_leave)) {
@@ -700,17 +733,17 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_notification_id, valu
 
       /* Re-add the stack frame used for the call to the list of
          available ones. */
-      lwt_unix_acquire_mutex(blocking_call_enter_mutex);
+      pthread_mutex_lock(&blocking_call_enter_mutex);
       node->next = blocking_call_enter;
       blocking_call_enter = node;
-      lwt_unix_release_mutex(blocking_call_enter_mutex);
+      pthread_mutex_unlock(&blocking_call_enter_mutex);
       return Val_true;
 
     case CALL_SCHEDULED:
       DEBUG("resuming after being scheduled");
 
       /* This mutex was locked before we did the jump. */
-      lwt_unix_release_mutex(pool_mutex);
+      pthread_mutex_unlock(&pool_mutex);
 
       /* This thread is now running caml code. */
       //caml_c_thread_register();
@@ -734,11 +767,11 @@ CAMLprim value lwt_unix_check_job(value val_job)
 
   case LWT_UNIX_ASYNC_METHOD_DETACH:
   case LWT_UNIX_ASYNC_METHOD_SWITCH:
-    lwt_unix_acquire_mutex(job->mutex);
+    pthread_mutex_lock(&job->mutex);
     /* We are not waiting anymore. */
     job->fast = 0;
     value result = Val_bool(job->done);
-    lwt_unix_release_mutex(job->mutex);
+    pthread_mutex_unlock(&job->mutex);
 
     DEBUG("job done: %d", Int_val(result));
 
@@ -768,15 +801,10 @@ CAMLprim value lwt_unix_cancel_job(value val_job)
     };
 
   case LWT_UNIX_ASYNC_METHOD_SWITCH:
-    lwt_unix_acquire_mutex(job->mutex);
-    if (job->done == 0) {
-#if defined(LWT_ON_WINDOWS)
-      /* TODO: do something here. */
-#else
+    pthread_mutex_lock(&job->mutex);
+    if (job->done == 0 && signal_kill_thread >= 0)
       pthread_kill(job->thread, signal_kill_thread);
-#endif
-    }
-    lwt_unix_release_mutex(job->mutex);
+    pthread_mutex_unlock(&job->mutex);
     break;
   }
 

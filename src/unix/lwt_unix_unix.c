@@ -222,7 +222,7 @@ CAMLprim value lwt_unix_get_credentials(value fd)
 
 CAMLprim value lwt_unix_get_credentials(value fd_val)
 {
-  invalid_argument("get_credentials not implemented");
+  caml_invalid_argument("get_credentials not implemented");
 }
 
 #endif
@@ -344,7 +344,7 @@ value lwt_unix_has_wait4(value unit)
 
 value lwt_unix_wait4(value flags, value pid_req)
 {
-  invalid_argument("wait4 not implemented");
+  caml_invalid_argument("wait4 not implemented");
 }
 
 value lwt_unix_has_wait4(value unit)
@@ -353,30 +353,6 @@ value lwt_unix_has_wait4(value unit)
 }
 
 #endif
-
-/* +-----------------------------------------------------------------+
-   | Launching a thread                                              |
-   +-----------------------------------------------------------------+ */
-
-lwt_unix_thread lwt_unix_launch_thread(void* (*start)(void*), void* data)
-{
-  pthread_t thread;
-  pthread_attr_t attr;
-
-  pthread_attr_init(&attr);
-
-  /* The thread is created in detached state so we do not have to join
-     it when it terminates: */
-  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-
-  int result = pthread_create(&thread, &attr, start, data);
-
-  if (result) unix_error(result, "launch_thread", Nothing);
-
-  pthread_attr_destroy (&attr);
-
-  return thread;
-}
 
 /* +-----------------------------------------------------------------+
    | CPUs                                                            |

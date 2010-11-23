@@ -26,20 +26,11 @@
 #include <caml/mlvalues.h>
 #include <caml/unixsupport.h>
 #include <ev.h>
+#include <pthread.h>
 
 /* Detect the target OS */
 #if defined(_WIN32) || defined(_WIN64)
 #  define LWT_ON_WINDOWS
-#endif
-
-/* Specific OS includes. */
-#if defined(LWT_ON_WINDOWS)
-#  include <windows.h>
-#else
-#  include <pthread.h>
-#  include <unistd.h>
-#  include <string.h>
-#  include <errno.h>
 #endif
 
 /* The macro to get the file-descriptor from a value. */
@@ -93,48 +84,8 @@ extern int lwt_unix_in_blocking_section;
    | Threading                                                       |
    +-----------------------------------------------------------------+ */
 
-#if defined(LWT_ON_WINDOWS)
-
-typedef HANDLE lwt_unix_thread;
-typedef CRITICAL_SECTION lwt_unix_mutex;
-typedef CONDITION_VARIABLE lwt_unix_condition;
-
-#define lwt_unix_initialize_mutex(mutex) InitializeCriticalSection(&(mutex))
-#define lwt_unix_delete_mutex(mutex) DeleteCriticalSection(&(mutex))
-#define lwt_unix_acquire_mutex(mutex) EnterCriticalSection(&(mutex))
-#define lwt_unix_release_mutex(mutex) LeaveCriticalSection(&(mutex))
-
-#define lwt_unix_initialize_condition(cond) InitializeConditionVariable(&(cond))
-#define lwt_unix_delete_condition(cond)
-#define lwt_unix_wait_condition(cond, mutex) SleepConditionVariableCS(&(cond), &(mutex), INFINITE)
-#define lwt_unix_wake_condition(cond) WakeConditionVariable(&(cond))
-
-#define lwt_unix_self() GetCurrentThread()
-#define lwt_unix_thread_equal(a, b) (a) == (b)
-
-#else /* defined(LWT_ON_WINDOWS) */
-
-typedef pthread_t lwt_unix_thread;
-typedef pthread_mutex_t lwt_unix_mutex;
-typedef pthread_cond_t lwt_unix_condition;
-
-#define lwt_unix_initialize_mutex(mutex) pthread_mutex_init(&(mutex), NULL)
-#define lwt_unix_delete_mutex(mutex) pthread_mutex_destroy(&(mutex))
-#define lwt_unix_acquire_mutex(mutex) pthread_mutex_lock(&(mutex))
-#define lwt_unix_release_mutex(mutex) pthread_mutex_unlock(&(mutex))
-
-#define lwt_unix_initialize_condition(cond) pthread_cond_init(&(cond), NULL)
-#define lwt_unix_delete_condition(cond) pthread_cond_destroy(&(cond))
-#define lwt_unix_wait_condition(cond, mutex) pthread_cond_wait(&(cond), &(mutex))
-#define lwt_unix_wake_condition(cond) pthread_cond_signal(&(cond))
-
-#define lwt_unix_self() pthread_self()
-#define lwt_unix_thread_equal(a, b) pthread_equal((a), (b))
-
-#endif /* defined(LWT_ON_WINDOWS) */
-
 /* Launch a thread in detached mode. */
-lwt_unix_thread lwt_unix_launch_thread(void* (*start)(void*), void* data);
+pthread_t lwt_unix_launch_thread(void* (*start)(void*), void* data);
 
 /* +-----------------------------------------------------------------+
    | Detached jobs                                                   |
@@ -176,10 +127,10 @@ struct lwt_unix_job {
   int fast;
 
   /* Mutex to protect access to [done] and [fast]. */
-  lwt_unix_mutex mutex;
+  pthread_mutex_t mutex;
 
   /* Thread running the job. */
-  lwt_unix_thread thread;
+  pthread_t thread;
 
   /* Whether the [thread] field has been initialized. */
   int thread_initialized;
@@ -204,17 +155,17 @@ void lwt_unix_free_job(lwt_unix_job job);
 #define LWT_UNIX_JOB_NOT_IMPLEMENTED(name)      \
   CAMLprim value lwt_unix_##name##_job()        \
   {                                             \
-    invalid_argument("not implemented");        \
+    caml_invalid_argument("not implemented");	\
   }                                             \
                                                 \
   CAMLprim value lwt_unix_##name##_result()     \
   {                                             \
-    invalid_argument("not implemented");        \
+    caml_invalid_argument("not implemented");	\
   }                                             \
                                                 \
   CAMLprim value lwt_unix_##name##_free()       \
   {                                             \
-    invalid_argument("not implemented");        \
+    caml_invalid_argument("not implemented");	\
   }
 
 

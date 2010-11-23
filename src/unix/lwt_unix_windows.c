@@ -24,42 +24,42 @@
 
 CAMLprim value lwt_unix_write()
 {
-  invalid_argument("not implemented");
+  caml_invalid_argument("not implemented");
 }
 
 CAMLprim value lwt_unix_read()
 {
-  invalid_argument("not implemented");
+  caml_invalid_argument("not implemented");
 }
 
 value lwt_unix_recv()
 {
-  invalid_argument("recv not implemented");
+  caml_invalid_argument("recv not implemented");
 }
 
 value lwt_unix_send()
 {
-  invalid_argument("send not implemented");
+  caml_invalid_argument("send not implemented");
 }
 
 value lwt_unix_recv_msg(value sock_val, value n_iovs_val, value iovs_val)
 {
-  invalid_argument("recv_msg not implemented");
+  caml_invalid_argument("recv_msg not implemented");
 }
 
 value lwt_unix_send_msg(value sock_val, value n_iovs_val, value iovs_val, value n_fds_val, value fds_val)
 {
-  invalid_argument("send_msg not implemented");
+  caml_invalid_argument("send_msg not implemented");
 }
 
 CAMLprim value lwt_unix_get_credentials(value fd_val)
 {
-  invalid_argument("get_credentials not implemented");
+  caml_invalid_argument("get_credentials not implemented");
 }
 
 value lwt_unix_wait4(value flags, value pid_req)
 {
-  invalid_argument("wait4 not implemented");
+  caml_invalid_argument("wait4 not implemented");
 }
 
 value lwt_unix_has_wait4(value unit)
@@ -75,17 +75,6 @@ CAMLprim value lwt_unix_readable(value fd)
 CAMLprim value lwt_unix_writable(value fd)
 {
   return Val_int(1);
-}
-
-/* +-----------------------------------------------------------------+
-   | Launching a thread                                              |
-   +-----------------------------------------------------------------+ */
-
-lwt_unix_thread lwt_unix_launch_thread(void* (*start)(void*), void* data)
-{
-  HANDLE thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)start, (LPVOID)data, 0, NULL);
-  if (thread == NULL) uerror("launch_thread", Nothing);
-  return thread;
 }
 
 /* +-----------------------------------------------------------------+
@@ -129,24 +118,24 @@ value lwt_unix_sigwinch()
 
 CAMLprim value lwt_unix_get_cpu()
 {
-  invalid_argument("not implemented");
+  caml_invalid_argument("not implemented");
 }
 
 CAMLprim value lwt_unix_get_affinity(value val_pid)
 {
-  invalid_argument("not implemented");
+  caml_invalid_argument("not implemented");
 }
 
 CAMLprim value lwt_unix_set_affinity(value val_pid, value val_cpus)
 {
-  invalid_argument("not implemented");
+  caml_invalid_argument("not implemented");
 }
 
 /* +-----------------------------------------------------------------+
    | Jobs                                                            |
    +-----------------------------------------------------------------+ */
 
-LWT_UNIX_JOB_NOT_IMPLEMENTED(guess_blokcing)
+LWT_UNIX_JOB_NOT_IMPLEMENTED(guess_blocking)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(open)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(close)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(read)
@@ -158,12 +147,12 @@ LWT_UNIX_JOB_NOT_IMPLEMENTED(stat)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(lstat)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(fstat)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(isatty)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(lseek)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(truncate)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(ftruncate)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(stat)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(lstat)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(fstat)
+LWT_UNIX_JOB_NOT_IMPLEMENTED(lseek_64)
+LWT_UNIX_JOB_NOT_IMPLEMENTED(truncate_64)
+LWT_UNIX_JOB_NOT_IMPLEMENTED(ftruncate_64)
+LWT_UNIX_JOB_NOT_IMPLEMENTED(stat_64)
+LWT_UNIX_JOB_NOT_IMPLEMENTED(lstat_64)
+LWT_UNIX_JOB_NOT_IMPLEMENTED(fstat_64)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(unlink)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(rename)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(link)
