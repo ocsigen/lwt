@@ -60,5 +60,18 @@ external unsafe_fill : t -> int -> int -> char -> unit = "lwt_unix_fill_bytes" "
 
 val read : Lwt_unix.file_descr -> t -> int -> int -> int Lwt.t
 val write : Lwt_unix.file_descr -> t -> int -> int -> int Lwt.t
+
 val recv : Lwt_unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> int Lwt.t
 val send : Lwt_unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> int Lwt.t
+
+type io_vector = {
+  iov_buffer : t;
+  iov_offset : int;
+  iov_length : int;
+}
+
+val io_vector : buffer : t -> offset : int -> length : int -> io_vector
+
+val recv_msg : socket : Lwt_unix.file_descr -> io_vectors : io_vector list -> (int * Unix.file_descr list) Lwt.t
+val send_msg : socket : Lwt_unix.file_descr -> io_vectors : io_vector list -> fds : Unix.file_descr list -> int Lwt.t
+

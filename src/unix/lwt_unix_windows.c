@@ -67,7 +67,17 @@ value lwt_unix_recv_msg(value sock_val, value n_iovs_val, value iovs_val)
   caml_invalid_argument("recv_msg not implemented");
 }
 
+value lwt_unix_bytes_recv_msg(value sock_val, value n_iovs_val, value iovs_val)
+{
+  caml_invalid_argument("recv_msg not implemented");
+}
+
 value lwt_unix_send_msg(value sock_val, value n_iovs_val, value iovs_val, value n_fds_val, value fds_val)
+{
+  caml_invalid_argument("send_msg not implemented");
+}
+
+value lwt_unix_bytes_send_msg(value sock_val, value n_iovs_val, value iovs_val, value n_fds_val, value fds_val)
 {
   caml_invalid_argument("send_msg not implemented");
 }

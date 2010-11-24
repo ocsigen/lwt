@@ -92,10 +92,12 @@ let to_string bytes =
    | IOs                                                             |
    +-----------------------------------------------------------------+ *)
 
+open Lwt_unix
+
 external stub_read : Unix.file_descr -> t -> int -> int -> int = "lwt_unix_bytes_read"
-external read_job : Unix.file_descr -> t -> int -> int -> [ `unix_bytes_read ] Lwt_unix.job = "lwt_unix_bytes_read_job"
-external read_result : [ `unix_bytes_read ] Lwt_unix.job -> int = "lwt_unix_bytes_read_result" "noalloc"
-external read_free : [ `unix_bytes_read ] Lwt_unix.job -> unit = "lwt_unix_bytes_read_free" "noalloc"
+external read_job : Unix.file_descr -> t -> int -> int -> [ `unix_bytes_read ] job = "lwt_unix_bytes_read_job"
+external read_result : [ `unix_bytes_read ] job -> int = "lwt_unix_bytes_read_result" "noalloc"
+external read_free : [ `unix_bytes_read ] job -> unit = "lwt_unix_bytes_read_free" "noalloc"
 
 let read fd buf pos len =
   if pos < 0 || len < 0 || pos > length buf - len then
@@ -103,17 +105,17 @@ let read fd buf pos len =
   else if windows_hack then
     invalid_arg "Lwt_bytes.read: not implemented"
   else
-    Lwt_unix.blocking fd >>= function
+    blocking fd >>= function
       | true ->
-          lwt () = Lwt_unix.wait_read fd in
-          Lwt_unix.execute_job (read_job (Lwt_unix.unix_file_descr fd) buf pos len) read_result read_free
+          lwt () = wait_read fd in
+          execute_job (read_job (unix_file_descr fd) buf pos len) read_result read_free
       | false ->
-          Lwt_unix.wrap_syscall Lwt_unix.Read fd (fun () -> stub_read (Lwt_unix.unix_file_descr fd) buf pos len)
+          wrap_syscall Read fd (fun () -> stub_read (unix_file_descr fd) buf pos len)
 
 external stub_write : Unix.file_descr -> t -> int -> int -> int = "lwt_unix_bytes_write"
-external write_job : Unix.file_descr -> t -> int -> int -> [ `unix_bytes_write ] Lwt_unix.job = "lwt_unix_bytes_write_job"
-external write_result : [ `unix_bytes_write ] Lwt_unix.job -> int = "lwt_unix_bytes_write_result" "noalloc"
-external write_free : [ `unix_bytes_write ] Lwt_unix.job -> unit = "lwt_unix_bytes_write_free" "noalloc"
+external write_job : Unix.file_descr -> t -> int -> int -> [ `unix_bytes_write ] job = "lwt_unix_bytes_write_job"
+external write_result : [ `unix_bytes_write ] job -> int = "lwt_unix_bytes_write_result" "noalloc"
+external write_free : [ `unix_bytes_write ] job -> unit = "lwt_unix_bytes_write_free" "noalloc"
 
 let write fd buf pos len =
   if pos < 0 || len < 0 || pos > length buf - len then
@@ -121,29 +123,68 @@ let write fd buf pos len =
   else if windows_hack then
     invalid_arg "Lwt_bytes.write: not implemented"
   else
-    Lwt_unix.blocking fd >>= function
+    blocking fd >>= function
       | true ->
-          lwt () = Lwt_unix.wait_write fd in
-          Lwt_unix.execute_job (write_job (Lwt_unix.unix_file_descr fd) buf pos len) write_result write_free
+          lwt () = wait_write fd in
+          execute_job (write_job (unix_file_descr fd) buf pos len) write_result write_free
       | false ->
-          Lwt_unix.wrap_syscall Lwt_unix.Write fd (fun () -> stub_write (Lwt_unix.unix_file_descr fd) buf pos len)
+          wrap_syscall Write fd (fun () -> stub_write (unix_file_descr fd) buf pos len)
 
 external stub_recv : Unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_bytes_recv"
 
 let recv fd buf pos len flags =
   if pos < 0 || len < 0 || pos > length buf - len then
-    invalid_arg "Lwt_unix.recv"
+    invalid_arg "recv"
   else if windows_hack then
     invalid_arg "Lwt_bytes.recv: not implemented"
   else
-    Lwt_unix.wrap_syscall Lwt_unix.Read fd (fun () -> stub_recv (Lwt_unix.unix_file_descr fd) buf pos len flags)
+    wrap_syscall Read fd (fun () -> stub_recv (unix_file_descr fd) buf pos len flags)
 
 external stub_send : Unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_bytes_send"
 
 let send fd buf pos len flags =
   if pos < 0 || len < 0 || pos > length buf - len then
-    invalid_arg "Lwt_unix.send"
+    invalid_arg "send"
   else if windows_hack then
     invalid_arg "Lwt_bytes.send: not implemented"
   else
-    Lwt_unix.wrap_syscall Lwt_unix.Write fd (fun () -> stub_send (Lwt_unix.unix_file_descr fd) buf pos len flags)
+    wrap_syscall Write fd (fun () -> stub_send (unix_file_descr fd) buf pos len flags)
+
+type io_vector = {
+  iov_buffer : t;
+  iov_offset : int;
+  iov_length : int;
+}
+
+let io_vector ~buffer ~offset ~length = {
+  iov_buffer = buffer;
+  iov_offset = offset;
+  iov_length = length;
+}
+
+let check_io_vectors func_name iovs =
+  List.iter
+    (fun iov ->
+       if iov.iov_offset < 0
+         || iov.iov_length < 0
+         || iov.iov_offset > length iov.iov_buffer - iov.iov_length then
+           invalid_arg func_name)
+    iovs
+
+external stub_recv_msg : Unix.file_descr -> int -> io_vector list -> int * Unix.file_descr list = "lwt_unix_bytes_recv_msg"
+
+let recv_msg ~socket ~io_vectors =
+  check_io_vectors "recv_msg" io_vectors;
+  let n_iovs = List.length io_vectors in
+  wrap_syscall Read socket
+    (fun () ->
+       stub_recv_msg (unix_file_descr socket) n_iovs io_vectors)
+
+external stub_send_msg : Unix.file_descr -> int -> io_vector list -> int -> Unix.file_descr list -> int = "lwt_unix_bytes_send_msg"
+
+let send_msg ~socket ~io_vectors ~fds =
+  check_io_vectors "send_msg" io_vectors;
+  let n_iovs = List.length io_vectors and n_fds = List.length fds in
+  wrap_syscall Write socket
+    (fun () ->
+       stub_send_msg (unix_file_descr socket) n_iovs io_vectors n_fds fds)

@@ -149,14 +149,22 @@ static void store_iovs(struct iovec *iovs, value iovs_val)
   CAMLreturn0;
 }
 
-CAMLprim value lwt_unix_recv_msg(value sock_val, value n_iovs_val, value iovs_val)
+static void bytes_store_iovs(struct iovec *iovs, value iovs_val)
 {
-  CAMLparam3(sock_val, n_iovs_val, iovs_val);
-  CAMLlocal3(list, result, x);
+  CAMLparam0();
+  CAMLlocal2(list, x);
+  for(list = iovs_val; Is_block(list); list = Field(list, 1), iovs++) {
+    x = Field(list, 0);
+    iovs->iov_base = (char*)Caml_ba_data_val(Field(x, 0)) + Long_val(Field(x, 1));
+    iovs->iov_len = Long_val(Field(x, 2));
+  }
+  CAMLreturn0;
+}
 
-  int n_iovs = Int_val(n_iovs_val);
-  struct iovec iovs[n_iovs];
-  store_iovs(iovs, iovs_val);
+static value wrapper_recv_msg(int fd, int n_iovs, struct iovec *iovs)
+{
+  CAMLparam0();
+  CAMLlocal3(list, result, x);
 
   struct msghdr msg;
   memset(&msg, 0, sizeof(msg));
@@ -166,7 +174,7 @@ CAMLprim value lwt_unix_recv_msg(value sock_val, value n_iovs_val, value iovs_va
   msg.msg_control = alloca(msg.msg_controllen);
   memset(msg.msg_control, 0, msg.msg_controllen);
 
-  int ret = recvmsg(Int_val(sock_val), &msg, 0);
+  int ret = recvmsg(fd, &msg, 0);
   if (ret == -1) uerror("recv_msg", Nothing);
 
   struct cmsghdr *cm;
@@ -191,21 +199,32 @@ CAMLprim value lwt_unix_recv_msg(value sock_val, value n_iovs_val, value iovs_va
   CAMLreturn(result);
 }
 
-CAMLprim value lwt_unix_send_msg(value sock_val, value n_iovs_val, value iovs_val, value n_fds_val, value fds_val)
+CAMLprim value lwt_unix_recv_msg(value val_fd, value val_n_iovs, value val_iovs)
 {
-  CAMLparam5(sock_val, n_iovs_val, iovs_val, n_fds_val, fds_val);
-  CAMLlocal1(x);
-
-  int n_iovs = Int_val(n_iovs_val);
+  int n_iovs = Int_val(val_n_iovs);
   struct iovec iovs[n_iovs];
-  store_iovs(iovs, iovs_val);
+  store_iovs(iovs, val_iovs);
+  return wrapper_recv_msg(Int_val(val_fd), n_iovs, iovs);
+}
+
+CAMLprim value lwt_unix_bytes_recv_msg(value val_fd, value val_n_iovs, value val_iovs)
+{
+  int n_iovs = Int_val(val_n_iovs);
+  struct iovec iovs[n_iovs];
+  bytes_store_iovs(iovs, val_iovs);
+  return wrapper_recv_msg(Int_val(val_fd), n_iovs, iovs);
+}
+
+static value wrapper_send_msg(int fd, int n_iovs, struct iovec *iovs, value val_n_fds, value val_fds)
+{
+  CAMLparam2(val_n_fds, val_fds);
 
   struct msghdr msg;
   memset(&msg, 0, sizeof(msg));
   msg.msg_iov = iovs;
   msg.msg_iovlen = n_iovs;
 
-  int n_fds = Int_val(n_fds_val);
+  int n_fds = Int_val(val_n_fds);
   if (n_fds > 0) {
     msg.msg_controllen = CMSG_SPACE(n_fds * sizeof(int));
     msg.msg_control = alloca(msg.msg_controllen);
@@ -218,13 +237,29 @@ CAMLprim value lwt_unix_send_msg(value sock_val, value n_iovs_val, value iovs_va
     cm->cmsg_len = CMSG_LEN(n_fds * sizeof(int));
 
     int *fds = (int*)CMSG_DATA(cm);
-    for(x = fds_val; Is_block(x); x = Field(x, 1), fds++)
-      *fds = Int_val(Field(x, 0));
+    for(; Is_block(val_fds); val_fds = Field(val_fds, 1), fds++)
+      *fds = Int_val(Field(val_fds, 0));
   };
 
-  int ret = sendmsg(Int_val(sock_val), &msg, 0);
+  int ret = sendmsg(fd, &msg, 0);
   if (ret == -1) uerror("send_msg", Nothing);
   CAMLreturn(Val_int(ret));
+}
+
+CAMLprim value lwt_unix_send_msg(value val_fd, value val_n_iovs, value val_iovs, value val_n_fds, value val_fds)
+{
+  int n_iovs = Int_val(val_n_iovs);
+  struct iovec iovs[n_iovs];
+  store_iovs(iovs, val_iovs);
+  return wrapper_send_msg(Int_val(val_fd), n_iovs, iovs, val_n_fds, val_fds);
+}
+
+CAMLprim value lwt_unix_bytes_send_msg(value val_fd, value val_n_iovs, value val_iovs, value val_n_fds, value val_fds)
+{
+  int n_iovs = Int_val(val_n_iovs);
+  struct iovec iovs[n_iovs];
+  bytes_store_iovs(iovs, val_iovs);
+  return wrapper_send_msg(Int_val(val_fd), n_iovs, iovs, val_n_fds, val_fds);
 }
 
 /* +-----------------------------------------------------------------+
