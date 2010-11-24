@@ -121,7 +121,7 @@ val make :
   ?close : (unit -> unit Lwt.t) ->
   ?seek : (int64 -> Unix.seek_command -> int64 Lwt.t) ->
   mode : 'mode mode ->
-  (string -> int -> int -> int Lwt.t) -> 'mode channel
+  (Lwt_bytes.t -> int -> int -> int Lwt.t) -> 'mode channel
   (** [make ?buffer_size ?close ~mode perform_io] is the
       main function for creating new channels.
 
@@ -139,9 +139,9 @@ val make :
       when more input is needed or when the buffer need to be
       flushed. *)
 
-val of_string : mode : 'mode mode -> string -> 'mode channel
-  (** Create a channel from a string. Reading/writing is done directly
-      on the provided string. *)
+val of_bytes : mode : 'mode mode -> Lwt_bytes.t -> 'mode channel
+  (** Create a channel from a byte array. Reading/writing is done
+      directly on the provided array. *)
 
 val of_fd : ?buffer_size : int -> ?close : (unit -> unit Lwt.t) -> mode : 'mode mode -> Lwt_unix.file_descr -> 'mode channel
   (** [of_fd ?buffer_size ?close ~mode fd] creates a channel from a
@@ -470,7 +470,7 @@ val system_byte_order : byte_order
 
 (** {6 Low-level access to the internal buffer} *)
 
-val block : 'a channel  -> int -> (string -> int -> 'b Lwt.t) -> 'b Lwt.t
+val block : 'a channel  -> int -> (Lwt_bytes.t -> int -> 'b Lwt.t) -> 'b Lwt.t
   (** [block ch size f] pass to [f] the internal buffer and an
       offset. The buffer contains [size] chars at [offset]. [f] may
       reads or writes these chars.  [size] must verify [0 <= size <=
@@ -479,7 +479,7 @@ val block : 'a channel  -> int -> (string -> int -> 'b Lwt.t) -> 'b Lwt.t
 (** Informations for accessing directly to the internal buffer of a
     channel *)
 type direct_access = {
-  da_buffer : string;
+  da_buffer : Lwt_bytes.t;
   (** The internal buffer *)
   mutable da_ptr : int;
   (** The pointer to:
@@ -510,3 +510,8 @@ val set_default_buffer_size : int -> unit
 
       @raise Invalid_argument if the given size is smaller than [16]
       or greater than [Sys.max_string_length] *)
+
+(**/**)
+
+val of_string : mode : 'mode mode -> string -> 'mode channel
+  (* Deprecated *)

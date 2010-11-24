@@ -696,7 +696,7 @@ CAMLprim value lwt_unix_bytes_read_job(value val_fd, value val_buf, value val_of
   struct job_bytes_read *job = lwt_unix_new(struct job_bytes_read);
   job->job.worker = (lwt_unix_job_worker)worker_bytes_read;
   job->fd = Int_val(val_fd);
-  job->buffer = (char*)Caml_ba_array_val(val_buf)->data + Long_val(val_ofs);
+  job->buffer = (char*)Caml_ba_data_val(val_buf) + Long_val(val_ofs);
   job->length = Long_val(val_len);
   return lwt_unix_alloc_job(&(job->job));
 }
@@ -791,7 +791,7 @@ CAMLprim value lwt_unix_bytes_write_job(value val_fd, value val_buffer, value va
   struct job_bytes_write *job = lwt_unix_new(struct job_bytes_write);
   job->job.worker = (lwt_unix_job_worker)worker_bytes_write;
   job->fd = Int_val(val_fd);
-  job->buffer = (char*)Caml_ba_array_val(val_buffer)->data + Long_val(val_offset);
+  job->buffer = (char*)Caml_ba_data_val(val_buffer) + Long_val(val_offset);
   job->length = Long_val(val_length);
   return lwt_unix_alloc_job(&(job->job));
 }
@@ -807,7 +807,6 @@ CAMLprim value lwt_unix_bytes_write_result(value val_job)
 CAMLprim value lwt_unix_bytes_write_free(value val_job)
 {
   struct job_bytes_write *job = Job_bytes_write_val(val_job);
-  free(job->buffer);
   lwt_unix_free_job(&job->job);
   return Val_unit;
 }

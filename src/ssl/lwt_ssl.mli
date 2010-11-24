@@ -32,6 +32,9 @@ val plain : Lwt_unix.file_descr -> socket
 val read : socket -> string -> int -> int -> int Lwt.t
 val write : socket -> string -> int -> int -> int Lwt.t
 
+val read_bytes : socket -> Lwt_bytes.t -> int -> int -> int Lwt.t
+val write_bytes : socket -> Lwt_bytes.t -> int -> int -> int Lwt.t
+
 (* Really wait on a plain socket, just yield over SSL *)
 val wait_read : socket -> unit Lwt.t
 val wait_write : socket -> unit Lwt.t

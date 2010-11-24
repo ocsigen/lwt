@@ -80,7 +80,7 @@ and 'mode channel = {
 }
 
 and 'mode _channel = {
-  mutable buffer : string;
+  mutable buffer : Lwt_bytes.t;
   mutable length : int;
 
   mutable ptr : int;
@@ -115,18 +115,18 @@ and 'mode _channel = {
 }
 
 and typ =
-  | Type_normal of (string -> int -> int -> int Lwt.t) * (int64 -> Unix.seek_command -> int64 Lwt.t)
+  | Type_normal of (Lwt_bytes.t -> int -> int -> int Lwt.t) * (int64 -> Unix.seek_command -> int64 Lwt.t)
       (* The channel has been created with [make]. The first argument
          is the refill/flush function and the second is the seek
          function. *)
-  | Type_string
-      (* The channel has been created with [of_string]. *)
+  | Type_bytes
+      (* The channel has been created with [of_bytes]. *)
 
 type input_channel = input channel
 type output_channel = output channel
 
 type direct_access = {
-  da_buffer : string;
+  da_buffer : Lwt_bytes.t;
   mutable da_ptr : int;
   mutable da_max : int;
   da_perform : unit -> int Lwt.t;
@@ -183,7 +183,7 @@ let perform_io ch = match ch.main.state with
                   (* Size of data in the buffer *)
                   let size = ch.max - ch.ptr in
                   (* If there are still data in the buffer, keep them: *)
-                  if size > 0 then String.unsafe_blit ch.buffer ch.ptr ch.buffer 0 size;
+                  if size > 0 then Lwt_bytes.unsafe_blit ch.buffer ch.ptr ch.buffer 0 size;
                   (* Update positions: *)
                   ch.ptr <- 0;
                   ch.max <- size;
@@ -205,13 +205,13 @@ let perform_io ch = match ch.main.state with
                 | Output ->
                     (* Shift remaining data: *)
                     let len = len - n in
-                    String.unsafe_blit ch.buffer n ch.buffer 0 len;
+                    Lwt_bytes.unsafe_blit ch.buffer n ch.buffer 0 len;
                     ch.ptr <- len
               end;
               return n
             end
 
-        | Type_string -> begin
+        | Type_bytes -> begin
             match ch.mode with
               | Input ->
                   return 0
@@ -458,21 +458,22 @@ let no_seek pos cmd =
 external unsafe_output : 'a channel -> output channel = "%identity"
 
 let make ?buffer_size ?(close=return) ?(seek=no_seek) ~mode perform_io =
-  let buffer =
-    String.create (match buffer_size with
-                     | None ->
-                         !default_buffer_size
-                     | Some size ->
-                         check_buffer_size "Lwt_io.make" size;
-                         size)
-  and abort_waiter, abort_wakener = Lwt.wait () in
+  let size =
+    match buffer_size with
+      | None ->
+          !default_buffer_size
+      | Some size ->
+          check_buffer_size "Lwt_io.make" size;
+          size
+  in
+  let buffer = Lwt_bytes.create size and abort_waiter, abort_wakener = Lwt.wait () in
   let rec ch = {
     buffer = buffer;
-    length = String.length buffer;
+    length = size;
     ptr = 0;
     max = (match mode with
              | Input -> 0
-             | Output -> String.length buffer);
+             | Output -> size);
     close = lazy(try_lwt close ());
     abort_waiter = abort_waiter;
     abort_wakener = abort_wakener;
@@ -489,11 +490,11 @@ let make ?buffer_size ?(close=return) ?(seek=no_seek) ~mode perform_io =
   if mode = Output then Outputs.add outputs (unsafe_output wrapper);
   wrapper
 
-let of_string ~mode str =
-  let length = String.length str in
+let of_bytes ~mode bytes =
+  let length = Lwt_bytes.length bytes in
   let abort_waiter, abort_wakener = Lwt.wait () in
   let rec ch = {
-    buffer = str;
+    buffer = bytes;
     length = length;
     ptr = 0;
     max = length;
@@ -506,7 +507,7 @@ let of_string ~mode str =
     auto_flushing = true;
     mode = mode;
     offset = 0L;
-    typ = Type_string;
+    typ = Type_bytes;
   } and wrapper = {
     state = Idle;
     channel = ch;
@@ -514,10 +515,12 @@ let of_string ~mode str =
   } in
   wrapper
 
+let of_string ~mode str = of_bytes ~mode (Lwt_bytes.of_string str)
+
 let of_fd ?buffer_size ?close ~mode fd =
   let perform_io = match mode with
-    | Input -> Lwt_unix.read fd
-    | Output -> Lwt_unix.write fd
+    | Input -> Lwt_bytes.read fd
+    | Output -> Lwt_bytes.write fd
   in
   make
     ?buffer_size
@@ -541,7 +544,7 @@ let buffer_size ch = ch.channel.length
 let resize_buffer wrapper len =
   if len < min_buffer_size then invalid_arg "Lwt_io.resize_buffer";
   match wrapper.channel.typ with
-    | Type_string ->
+    | Type_bytes ->
         raise_lwt (Failure "Lwt_io.resize_buffer: cannot resize the buffer of a channel created with Lwt_io.of_string")
     | Type_normal _ ->
         primitive begin fun ch ->
@@ -553,8 +556,8 @@ let resize_buffer wrapper len =
                 if len < unread_count then
                   raise_lwt (Failure "Lwt_io.resize_buffer: cannot decrease buffer size")
                 else begin
-                  let buffer = String.create len in
-                  String.unsafe_blit ch.buffer ch.ptr buffer 0 unread_count;
+                  let buffer = Lwt_bytes.create len in
+                  Lwt_bytes.unsafe_blit ch.buffer ch.ptr buffer 0 unread_count;
                   ch.buffer <- buffer;
                   ch.length <- len;
                   ch.ptr <- 0;
@@ -572,8 +575,8 @@ let resize_buffer wrapper len =
                     return ()
                 in
                 lwt () = loop () in
-                let buffer = String.create len in
-                String.unsafe_blit ch.buffer 0 buffer 0 ch.ptr;
+                let buffer = Lwt_bytes.create len in
+                Lwt_bytes.unsafe_blit ch.buffer 0 buffer 0 ch.ptr;
                 ch.buffer <- buffer;
                 ch.length <- len;
                 ch.max <- len;
@@ -659,7 +662,7 @@ struct
         | _ -> read_char ic
     else begin
       ic.ptr <- ptr + 1;
-      return (String.unsafe_get ic.buffer ptr)
+      return (Lwt_bytes.unsafe_get ic.buffer ptr)
     end
 
   let read_char_opt ic =
@@ -704,13 +707,13 @@ struct
     let avail = ic.max - ic.ptr in
     if avail > 0 then begin
       let len = min len avail in
-      String.unsafe_blit ic.buffer ic.ptr str ofs len;
+      Lwt_bytes.unsafe_blit_bytes_string ic.buffer ic.ptr str ofs len;
       ic.ptr <- ic.ptr + len;
       return len
     end else begin
       refill ic >>= fun n ->
         let len = min len n in
-        String.unsafe_blit ic.buffer 0 str ofs len;
+        Lwt_bytes.unsafe_blit_bytes_string ic.buffer 0 str ofs len;
         ic.ptr <- len;
         ic.max <- n;
         return len
@@ -751,19 +754,34 @@ struct
         unsafe_read_into_exactly ic str ofs len
     end
 
-  let rec read_all ic buf =
-    Buffer.add_substring buf ic.buffer ic.ptr (ic.max - ic.ptr);
+  let rev_concat len l =
+    let buf = String.create len in
+    let _ =
+      List.fold_left
+        (fun ofs str ->
+           let len = String.length str in
+           let ofs = ofs - len in
+           String.unsafe_blit str 0 buf ofs len;
+           ofs)
+        len l
+    in
+    buf
+
+  let rec read_all ic total_len acc =
+    let len = ic.max - ic.ptr in
+    let str = String.create len in
+    Lwt_bytes.unsafe_blit_bytes_string ic.buffer ic.ptr str 0 len;
     ic.ptr <- ic.max;
     refill ic >>= function
       | 0 ->
-          return (Buffer.contents buf)
+          return (rev_concat (len + total_len) (str :: acc))
       | n ->
-          read_all ic buf
+          read_all ic (len + total_len) (str :: acc)
 
   let read count ic =
     match count with
       | None ->
-          read_all ic (Buffer.create 512)
+          read_all ic 0 []
       | Some len ->
           let str = String.create len in
           lwt real_len = unsafe_read_into ic str 0 len in
@@ -777,7 +795,7 @@ struct
     lwt () = unsafe_read_into_exactly ic header 0 20 in
     let bsize = Marshal.data_size header 0 in
     let buffer = String.create (20 + bsize) in
-    String.unsafe_blit header 0 buffer 0 20 ;
+    String.unsafe_blit header 0 buffer 0 20;
     lwt () = unsafe_read_into_exactly ic buffer 20 bsize in
     return (Marshal.from_string buffer 0)
 
@@ -791,7 +809,7 @@ struct
     let ptr = oc.ptr in
     if ptr < oc.length then begin
       oc.ptr <- ptr + 1;
-      String.unsafe_set oc.buffer ptr ch;
+      Lwt_bytes.unsafe_set oc.buffer ptr ch;
       return ()
     end else
       lwt _ = flush_partial oc in
@@ -800,11 +818,11 @@ struct
   let rec unsafe_write_from oc str ofs len =
     let avail = oc.length - oc.ptr in
     if avail >= len then begin
-      String.unsafe_blit str ofs oc.buffer oc.ptr len;
+      Lwt_bytes.unsafe_blit_string_bytes str ofs oc.buffer oc.ptr len;
       oc.ptr <- oc.ptr + len;
       return 0
     end else begin
-      String.unsafe_blit str ofs oc.buffer oc.ptr avail;
+      Lwt_bytes.unsafe_blit_string_bytes str ofs oc.buffer oc.ptr avail;
       oc.ptr <- oc.length;
       lwt _ = flush_partial oc in
       let len = len - avail in
@@ -942,7 +960,7 @@ struct
        | Reading numbers                                             |
        +-------------------------------------------------------------+ *)
 
-    let get buffer ptr = Char.code (String.unsafe_get buffer ptr)
+    let get buffer ptr = Char.code (Lwt_bytes.unsafe_get buffer ptr)
 
     let read_int ic =
       read_block_unsafe ic 4
@@ -1017,7 +1035,7 @@ struct
        | Writing numbers                                             |
        +-------------------------------------------------------------+ *)
 
-    let set buffer ptr x = String.unsafe_set buffer ptr (Char.unsafe_chr x)
+    let set buffer ptr x = Lwt_bytes.unsafe_set buffer ptr (Char.unsafe_chr x)
 
     let write_int oc v =
       write_block_unsafe oc 4
@@ -1090,7 +1108,7 @@ struct
           ch.max <- 0;
           return ()
         end
-    | Type_string, _ ->
+    | Type_bytes, _ ->
         if pos < 0L || pos > Int64.of_int ch.length then
           raise_lwt (Failure "Lwt_io.set_position: out of bounds")
         else begin
@@ -1103,7 +1121,7 @@ struct
         lwt len = seek 0L Unix.SEEK_END in
         lwt () = do_seek seek ch.offset in
         return len
-    | Type_string ->
+    | Type_bytes ->
         return (Int64.of_int ch.length)
 end
 
@@ -1118,7 +1136,7 @@ let read_char wrapper =
      increases performances by 10x. *)
   if wrapper.state = Idle && ptr < channel.max then begin
     channel.ptr <- ptr + 1;
-    return (String.unsafe_get channel.buffer ptr)
+    return (Lwt_bytes.unsafe_get channel.buffer ptr)
   end else
     primitive Primitives.read_char wrapper
 
@@ -1127,7 +1145,7 @@ let read_char_opt wrapper =
   let ptr = channel.ptr in
   if wrapper.state = Idle && ptr < channel.max then begin
     channel.ptr <- ptr + 1;
-    return (Some(String.unsafe_get channel.buffer ptr))
+    return (Some(Lwt_bytes.unsafe_get channel.buffer ptr))
   end else
     primitive Primitives.read_char_opt wrapper
 
@@ -1145,7 +1163,7 @@ let write_char wrapper x =
   let ptr = channel.ptr in
   if wrapper.state = Idle && ptr < channel.max then begin
     channel.ptr <- ptr + 1;
-    String.unsafe_set channel.buffer ptr x;
+    Lwt_bytes.unsafe_set channel.buffer ptr x;
     (* Fast launching of the auto flusher: *)
     if not channel.auto_flushing then begin
       channel.auto_flushing <- true;
@@ -1224,7 +1242,7 @@ let zero =
   make
     ~mode:input
     ~buffer_size:min_buffer_size
-    (fun str ofs len -> String.fill str ofs len '\x00'; return len)
+    (fun str ofs len -> Lwt_bytes.fill str ofs len '\x00'; return len)
 
 let null =
   make
@@ -1298,10 +1316,10 @@ let open_connection ?buffer_size sockaddr =
     (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
     return (make ?buffer_size
               ~close:(fun _ -> Lazy.force close)
-              ~mode:input (Lwt_unix.read fd),
+              ~mode:input (Lwt_bytes.read fd),
             make ?buffer_size
               ~close:(fun _ -> Lazy.force close)
-              ~mode:output (Lwt_unix.write fd))
+              ~mode:output (Lwt_bytes.write fd))
   with exn ->
     lwt () = Lwt_unix.close fd in
     raise_lwt exn

@@ -199,7 +199,7 @@ Library "lwt-text"
   FindlibParent: lwt
   Path: src/text
   Modules: Lwt_text, Lwt_term, Lwt_read_line
-  BuildDepends: lwt, lwt.unix, lwt.react, text
+  BuildDepends: lwt, lwt.unix, lwt.react, text, text.bigarray
   XMETADescription: Text mode utilities
 
 Library "lwt-top"

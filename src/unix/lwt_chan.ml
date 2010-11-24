@@ -29,7 +29,14 @@ type in_channel = Lwt_io.input_channel
 type out_channel = Lwt_io.output_channel
 
 let in_channel_of_descr fd = of_fd ~mode:Lwt_io.input fd
-let make_in_channel ?close read = make ~mode:Lwt_io.input ?close read
+
+let make_in_channel ?close read =
+  make ~mode:Lwt_io.input ?close
+    (fun buf ofs len ->
+       let str = String.create len in
+       lwt n = read str 0 len in
+       if (n > 0) then Lwt_bytes.blit_string_bytes str 0 buf ofs len;
+       return n)
 
 let input_line ic =
   let rec loop buf =
@@ -59,7 +66,14 @@ let open_in_gen flags perm fname = open_file ~flags ~perm ~mode:Lwt_io.input fna
 let open_in fname = open_file ~mode:Lwt_io.input fname
 let close_in = close
 let out_channel_of_descr fd = of_fd ~mode:Lwt_io.output fd
-let make_out_channel ?close write = make ~mode:Lwt_io.output ?close write
+
+let make_out_channel ?close write =
+  make ~mode:Lwt_io.output ?close
+    (fun buf ofs len ->
+       let str = String.create len in
+       Lwt_bytes.blit_bytes_string buf ofs str 0 len;
+       write str 0 len)
+
 let output = write_from_exactly
 let flush = flush
 let output_string = write

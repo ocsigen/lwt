@@ -87,7 +87,7 @@ struct
         | 0 -> raise_lwt End_of_file
         | _ -> read_char da strict decoder
     else
-      match Encoding.decode decoder da.da_buffer ptr (max - ptr) with
+      match Encoding_bigarray.decode decoder da.da_buffer ptr (max - ptr) with
         | Encoding.Dec_ok(code, count) ->
             da.da_ptr <- ptr + count;
             return (Text.char code)
@@ -98,7 +98,7 @@ struct
                     raise_lwt (Failure "Lwt_text.read_char: unterminated multibyte sequence")
                   else begin
                     da.da_ptr <- ptr + 1;
-                    return (Text.char (Char.code da.da_buffer.[ptr]))
+                    return (Text.char (Char.code da.da_buffer.{ptr}))
                   end
               | _ ->
                   read_char da strict decoder
@@ -108,7 +108,7 @@ struct
               raise_lwt (Failure "Lwt_text.read_char: unterminated multibyte sequence")
             else begin
               da.da_ptr <- ptr + 1;
-              return (Text.char (Char.code da.da_buffer.[ptr]))
+              return (Text.char (Char.code da.da_buffer.{ptr}))
             end
 
   let read_char_opt da strict decoder =
@@ -203,7 +203,7 @@ struct
      +---------------------------------------------------------------+ *)
 
   let rec write_code da encoder code =
-    match Encoding.encode encoder da.da_buffer da.da_ptr (da.da_max - da.da_ptr) code with
+    match Encoding_bigarray.encode encoder da.da_buffer da.da_ptr (da.da_max - da.da_ptr) code with
       | Encoding.Enc_ok count ->
           da.da_ptr <- da.da_ptr + count;
           return ()

@@ -110,15 +110,15 @@ char *lwt_unix_strdup(char *str)
 
 CAMLprim value lwt_unix_blit_bytes_bytes(value val_buf1, value val_ofs1, value val_buf2, value val_ofs2, value val_len)
 {
-  memcpy((char*)Caml_ba_array_val(val_buf2)->data + Long_val(val_ofs2),
-         (char*)Caml_ba_array_val(val_buf1)->data + Long_val(val_ofs1),
+  memcpy((char*)Caml_ba_data_val(val_buf2) + Long_val(val_ofs2),
+         (char*)Caml_ba_data_val(val_buf1) + Long_val(val_ofs1),
          Long_val(val_len));
   return Val_unit;
 }
 
 CAMLprim value lwt_unix_blit_string_bytes(value val_buf1, value val_ofs1, value val_buf2, value val_ofs2, value val_len)
 {
-  memcpy((char*)Caml_ba_array_val(val_buf2)->data + Long_val(val_ofs2),
+  memcpy((char*)Caml_ba_data_val(val_buf2) + Long_val(val_ofs2),
          String_val(val_buf1) + Long_val(val_ofs1),
          Long_val(val_len));
   return Val_unit;
@@ -127,14 +127,14 @@ CAMLprim value lwt_unix_blit_string_bytes(value val_buf1, value val_ofs1, value 
 CAMLprim value lwt_unix_blit_bytes_string(value val_buf1, value val_ofs1, value val_buf2, value val_ofs2, value val_len)
 {
   memcpy(String_val(val_buf2) + Long_val(val_ofs2),
-         (char*)Caml_ba_array_val(val_buf1)->data + Long_val(val_ofs1),
+         (char*)Caml_ba_data_val(val_buf1) + Long_val(val_ofs1),
          Long_val(val_len));
   return Val_unit;
 }
 
 CAMLprim value lwt_unix_fill_bytes(value val_buf, value val_ofs, value val_len, value val_char)
 {
-  memset((char*)Caml_ba_array_val(val_buf)->data + Long_val(val_ofs), Int_val(val_char), Long_val(val_len));
+  memset((char*)Caml_ba_data_val(val_buf) + Long_val(val_ofs), Int_val(val_char), Long_val(val_len));
   return Val_unit;
 }
 

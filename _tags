@@ -4,7 +4,7 @@
 <**/*.ml>: pa_lwt_options, pa_lwt, pa_lwt_log
 <syntax/*.ml>: -pa_lwt_options, -pa_lwt, -pa_lwt_log
 
-<src/top/{lwt_toplevel.*,toplevel.*,toplevel_temp.*}>: use_compiler_libs, pkg_text, pkg_findlib, pkg_react, pkg_unix, pkg_bigarray
+<src/top/{lwt_toplevel.*,toplevel.*,toplevel_temp.*}>: use_compiler_libs, pkg_text, pkg_text.bigarray, pkg_findlib, pkg_react, pkg_unix, pkg_bigarray
 
 # GLib bindings:
 <src/glib/lwt-glib.*>: use_C_glib
@@ -12,7 +12,7 @@
 <src/glib/lwt_glib_stubs.*>: use_C_glib
 
 # OASIS_START
-# DO NOT EDIT (digest: 6e87bfb9a6f970a8215a767195700341)
+# DO NOT EDIT (digest: cdc0897fa8dae9bb2248d65cf321268b)
 # Library lwt
 "src/core": include
 # Library lwt-unix
@@ -44,6 +44,7 @@
 <src/text/*.ml{,i}>: use_lwt-unix
 <src/text/*.ml{,i}>: use_lwt
 <src/text/*.ml{,i}>: pkg_unix
+<src/text/*.ml{,i}>: pkg_text.bigarray
 <src/text/*.ml{,i}>: pkg_text
 <src/text/*.ml{,i}>: pkg_react
 <src/text/*.ml{,i}>: pkg_bigarray
@@ -121,6 +122,7 @@
 "src/top/lwt_toplevel.byte": use_lwt-unix
 "src/top/lwt_toplevel.byte": use_lwt
 "src/top/lwt_toplevel.byte": pkg_unix
+"src/top/lwt_toplevel.byte": pkg_text.bigarray
 "src/top/lwt_toplevel.byte": pkg_text
 "src/top/lwt_toplevel.byte": pkg_react
 "src/top/lwt_toplevel.byte": pkg_findlib
@@ -131,6 +133,7 @@
 <src/top/*.ml{,i}>: use_lwt-unix
 <src/top/*.ml{,i}>: use_lwt
 <src/top/*.ml{,i}>: pkg_unix
+<src/top/*.ml{,i}>: pkg_text.bigarray
 <src/top/*.ml{,i}>: pkg_text
 <src/top/*.ml{,i}>: pkg_react
 <src/top/*.ml{,i}>: pkg_findlib

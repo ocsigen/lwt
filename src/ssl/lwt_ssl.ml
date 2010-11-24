@@ -76,17 +76,62 @@ let ssl_connect fd ctx =
 
 let read (fd, s) buf pos len =
   match s with
-    Plain -> Lwt_unix.read fd buf pos len
-  | SSL s -> if len = 0 then Lwt.return 0 else
-             repeat_call fd (fun () ->
-             try Ssl.read s buf pos len
-             with Ssl.Read_error Ssl.Error_zero_return -> 0)
+    | Plain ->
+        Lwt_unix.read fd buf pos len
+    | SSL s ->
+        if len = 0 then
+          Lwt.return 0
+        else
+          repeat_call fd
+            (fun () ->
+               try
+                 Ssl.read s buf pos len
+               with Ssl.Read_error Ssl.Error_zero_return ->
+                 0)
+
+let read_bytes (fd, s) buf pos len =
+  match s with
+    | Plain ->
+        Lwt_bytes.read fd buf pos len
+    | SSL s ->
+        if len = 0 then
+          Lwt.return 0
+        else
+          repeat_call fd
+            (fun () ->
+               try
+                 let str = String.create len in
+                 let n = Ssl.read s str 0 len in
+                 Lwt_bytes.blit_string_bytes str 0 buf pos len;
+                 n
+               with Ssl.Read_error Ssl.Error_zero_return ->
+                 0)
 
 let write (fd, s) buf pos len =
   match s with
-    Plain -> Lwt_unix.write fd buf pos len
-  | SSL s -> if len = 0 then Lwt.return 0 else
-             repeat_call fd (fun () -> Ssl.write s buf pos len)
+    | Plain ->
+        Lwt_unix.write fd buf pos len
+    | SSL s ->
+        if len = 0 then
+          Lwt.return 0
+        else
+          repeat_call fd
+            (fun () ->
+               Ssl.write s buf pos len)
+
+let write_bytes (fd, s) buf pos len =
+  match s with
+    | Plain ->
+        Lwt_bytes.write fd buf pos len
+    | SSL s ->
+        if len = 0 then
+          Lwt.return 0
+        else
+          repeat_call fd
+            (fun () ->
+               let str = String.create len in
+               Lwt_bytes.blit_bytes_string buf pos str 0 len;
+               Ssl.write s str 0 len)
 
 let wait_read (fd, s) =
   match s with
@@ -99,10 +144,10 @@ let wait_write (fd, s) =
   | SSL _ -> Lwt_unix.yield ()
 
 let out_channel_of_descr s =
-  Lwt_chan.make_out_channel (fun buf pos len -> write s buf pos len)
+  Lwt_io.make ~mode:Lwt_io.output (fun buf pos len -> write_bytes s buf pos len)
 
 let in_channel_of_descr s =
-  Lwt_chan.make_in_channel (fun buf pos len -> read s buf pos len)
+  Lwt_io.make ~mode:Lwt_io.input (fun buf pos len -> read_bytes s buf pos len)
 
 let ssl_shutdown (fd, s) =
   match s with
