@@ -670,7 +670,10 @@ CAMLprim value lwt_unix_write_job(value val_fd, value val_string, value val_offs
 
 CAMLprim value lwt_unix_write_result(value val_job)
 {
-  return Val_long((Job_write_val(val_job))->result);
+  struct job_write *job = Job_write_val(val_job);
+  int result = job->result;
+  if (result < 0) unix_error(job->error_code, "write", Nothing);
+  return Val_long(result);
 }
 
 CAMLprim value lwt_unix_write_free(value val_job)
