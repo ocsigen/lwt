@@ -188,3 +188,23 @@ let send_msg ~socket ~io_vectors ~fds =
   wrap_syscall Write socket
     (fun () ->
        stub_send_msg (unix_file_descr socket) n_iovs io_vectors n_fds fds)
+
+external stub_recvfrom : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> int * Unix.sockaddr = "lwt_unix_bytes_recvfrom"
+
+let recvfrom fd buf pos len flags =
+  if pos < 0 || len < 0 || pos > String.length buf - len then
+    invalid_arg "Lwt_bytes.recvfrom"
+  else if windows_hack then
+    invalid_arg "Lwt_bytes.recvfrom: not implemented"
+  else
+    wrap_syscall Read fd (fun () -> stub_recvfrom (unix_file_descr fd) buf pos len flags)
+
+external stub_sendto : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> Unix.sockaddr -> int = "lwt_unix_bytes_sendto_byte" "lwt_unix_bytes_sendto"
+
+let sendto fd buf pos len flags addr =
+  if pos < 0 || len < 0 || pos > String.length buf - len then
+    invalid_arg "Lwt_bytes.sendto"
+  else if windows_hack then
+    invalid_arg "Lwt_bytes.sendto: not implemented"
+  else
+    wrap_syscall Write fd (fun () -> stub_sendto (unix_file_descr fd) buf pos len flags addr)

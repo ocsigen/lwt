@@ -64,6 +64,9 @@ val write : Lwt_unix.file_descr -> t -> int -> int -> int Lwt.t
 val recv : Lwt_unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> int Lwt.t
 val send : Lwt_unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> int Lwt.t
 
+val recvfrom : Lwt_unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> (int * Unix.sockaddr) Lwt.t
+val sendto : Lwt_unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> Unix.sockaddr -> int Lwt.t
+
 type io_vector = {
   iov_buffer : t;
   iov_offset : int;

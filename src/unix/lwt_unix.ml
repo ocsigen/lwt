@@ -1106,11 +1106,25 @@ let send ch buf pos len flags =
   else
     wrap_syscall Write ch (fun () -> stub_send ch.fd buf pos len flags)
 
-let recvfrom ch buf ofs len flags =
-  wrap_syscall Read ch (fun _ -> Unix.recvfrom ch.fd buf ofs len flags)
+external stub_recvfrom : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> int * Unix.sockaddr = "lwt_unix_recvfrom"
 
-let sendto ch buf ofs len flags addr =
-  wrap_syscall Write ch (fun _ -> Unix.sendto ch.fd buf ofs len flags addr)
+let recvfrom ch buf pos len flags =
+  if pos < 0 || len < 0 || pos > String.length buf - len then
+    invalid_arg "Lwt_unix.recvfrom"
+  else if windows_hack then
+    wrap_syscall Read ch (fun () -> Unix.recvfrom ch.fd buf pos len flags)
+  else
+    wrap_syscall Read ch (fun () -> stub_recvfrom ch.fd buf pos len flags)
+
+external stub_sendto : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> Unix.sockaddr -> int = "lwt_unix_sendto_byte" "lwt_unix_bytes_sendto"
+
+let sendto ch buf pos len flags addr =
+  if pos < 0 || len < 0 || pos > String.length buf - len then
+    invalid_arg "Lwt_unix.sendto"
+  else if windows_hack then
+    wrap_syscall Write ch (fun () -> Unix.sendto ch.fd buf pos len flags addr)
+  else
+    wrap_syscall Write ch (fun () -> stub_sendto ch.fd buf pos len flags addr)
 
 type io_vector = {
   iov_buffer : string;

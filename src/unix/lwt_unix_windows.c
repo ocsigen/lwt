@@ -52,6 +52,16 @@ value lwt_unix_bytes_recv()
   caml_invalid_argument("recv not implemented");
 }
 
+value lwt_unix_recvfrom()
+{
+  caml_invalid_argument("recvfrom not implemented");
+}
+
+value lwt_unix_bytes_recvfrom()
+{
+  caml_invalid_argument("recvfrom not implemented");
+}
+
 value lwt_unix_send()
 {
   caml_invalid_argument("send not implemented");
@@ -60,6 +70,26 @@ value lwt_unix_send()
 value lwt_unix_bytes_send()
 {
   caml_invalid_argument("send not implemented");
+}
+
+value lwt_unix_sendto()
+{
+  caml_invalid_argument("sendto not implemented");
+}
+
+value lwt_unix_sendto_byte()
+{
+  caml_invalid_argument("sendto not implemented");
+}
+
+value lwt_unix_bytes_sendto()
+{
+  caml_invalid_argument("sendto not implemented");
+}
+
+value lwt_unix_bytes_sendto_byte()
+{
+  caml_invalid_argument("sendto not implemented");
 }
 
 value lwt_unix_recv_msg(value sock_val, value n_iovs_val, value iovs_val)

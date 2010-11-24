@@ -88,7 +88,7 @@ CAMLprim value lwt_unix_bytes_write(value val_fd, value val_buf, value val_ofs, 
 }
 
 /* +-----------------------------------------------------------------+
-   | Recv/send                                                       |
+   | recv/send                                                       |
    +-----------------------------------------------------------------+ */
 
 static int msg_flag_table[] = {
@@ -129,6 +129,101 @@ value lwt_unix_bytes_send(value fd, value buf, value ofs, value len, value flags
              convert_flag_list(flags, msg_flag_table));
   if (ret == -1) uerror("send", Nothing);
   return Val_int(ret);
+}
+
+/* +-----------------------------------------------------------------+
+   | recvfrom/sendto                                                 |
+   +-----------------------------------------------------------------+ */
+
+extern int socket_domain_table[];
+extern int socket_type_table[];
+
+union sock_addr_union {
+  struct sockaddr s_gen;
+  struct sockaddr_un s_unix;
+  struct sockaddr_in s_inet;
+  struct sockaddr_in6 s_inet6;
+};
+
+CAMLexport value alloc_sockaddr (union sock_addr_union * addr /*in*/,
+                                 socklen_t addr_len, int close_on_error);
+
+value lwt_unix_recvfrom(value fd, value buf, value ofs, value len, value flags)
+{
+  CAMLparam5(fd, buf, ofs, len, flags);
+  CAMLlocal2(result, address);
+  int ret;
+  union sock_addr_union addr;
+  socklen_t addr_len;
+  addr_len = sizeof(addr);
+  ret = recvfrom(Int_val(fd), &Byte(String_val(buf), Long_val(ofs)), Long_val(len),
+                 convert_flag_list(flags, msg_flag_table),
+                 &addr.s_gen, &addr_len);
+  if (ret == -1) uerror("recvfrom", Nothing);
+  address = alloc_sockaddr(&addr, addr_len, -1);
+  result = caml_alloc_tuple(2);
+  Field(result, 0) = Val_int(ret);
+  Field(result, 1) = address;
+  CAMLreturn(result);
+}
+
+value lwt_unix_bytes_recvfrom(value fd, value buf, value ofs, value len, value flags)
+{
+  CAMLparam5(fd, buf, ofs, len, flags);
+  CAMLlocal2(result, address);
+  int ret;
+  union sock_addr_union addr;
+  socklen_t addr_len;
+  addr_len = sizeof(addr);
+  ret = recvfrom(Int_val(fd), (char*)Caml_ba_data_val(buf) + Long_val(ofs), Long_val(len),
+                 convert_flag_list(flags, msg_flag_table),
+                 &addr.s_gen, &addr_len);
+  if (ret == -1) uerror("recvfrom", Nothing);
+  address = alloc_sockaddr(&addr, addr_len, -1);
+  result = caml_alloc_tuple(2);
+  Field(result, 0) = Val_int(ret);
+  Field(result, 1) = address;
+  CAMLreturn(result);
+}
+
+extern void get_sockaddr (value mladdr,
+                          union sock_addr_union * addr /*out*/,
+                          socklen_t * addr_len /*out*/);
+
+value lwt_unix_sendto(value fd, value buf, value ofs, value len, value flags, value dest)
+{
+  union sock_addr_union addr;
+  socklen_t addr_len;
+  int ret;
+  get_sockaddr(dest, &addr, &addr_len);
+  ret = sendto(Int_val(fd), &Byte(String_val(buf), Long_val(ofs)), Long_val(len),
+               convert_flag_list(flags, msg_flag_table),
+               &addr.s_gen, addr_len);
+  if (ret == -1) uerror("send", Nothing);
+  return Val_int(ret);
+}
+
+CAMLprim value lwt_unix_sendto_byte(value *argv, int argc)
+{
+  return lwt_unix_sendto(argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
+}
+
+value lwt_unix_bytes_sendto(value fd, value buf, value ofs, value len, value flags, value dest)
+{
+  union sock_addr_union addr;
+  socklen_t addr_len;
+  int ret;
+  get_sockaddr(dest, &addr, &addr_len);
+  ret = sendto(Int_val(fd), (char*)Caml_ba_data_val(buf) + Long_val(ofs), Long_val(len),
+               convert_flag_list(flags, msg_flag_table),
+               &addr.s_gen, addr_len);
+  if (ret == -1) uerror("send", Nothing);
+  return Val_int(ret);
+}
+
+CAMLprim value lwt_unix_bytes_sendto_byte(value *argv, int argc)
+{
+  return lwt_unix_bytes_sendto(argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
 }
 
 /* +-----------------------------------------------------------------+
@@ -2975,19 +3070,6 @@ struct job_getaddrinfo {
 
 #define Job_getaddrinfo_val(v) *(struct job_getaddrinfo**)Data_custom_val(v)
 
-extern int socket_domain_table[];
-extern int socket_type_table[];
-
-union sock_addr_union {
-  struct sockaddr s_gen;
-  struct sockaddr_un s_unix;
-  struct sockaddr_in s_inet;
-  struct sockaddr_in6 s_inet6;
-};
-
-CAMLexport value alloc_sockaddr (union sock_addr_union * addr /*in*/,
-                                 socklen_t addr_len, int close_on_error);
-
 value cst_to_constr(int n, int *tbl, int size, int deflt)
 {
   int i;
@@ -3106,10 +3188,6 @@ struct job_getnameinfo {
 static int getnameinfo_flag_table[] = {
   NI_NOFQDN, NI_NUMERICHOST, NI_NAMEREQD, NI_NUMERICSERV, NI_DGRAM
 };
-
-extern void get_sockaddr (value mladdr,
-                          union sock_addr_union * addr /*out*/,
-                          socklen_t * addr_len /*out*/);
 
 static void worker_getnameinfo(struct job_getnameinfo *job)
 {
