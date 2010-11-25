@@ -139,6 +139,11 @@ CAMLprim value lwt_unix_fill_bytes(value val_buf, value val_ofs, value val_len, 
   return Val_unit;
 }
 
+CAMLprim value lwt_unix_mapped(value v_bstr)
+{
+  return Val_bool(Caml_ba_array_val(v_bstr)->flags & CAML_BA_MAPPED_FILE);
+}
+
 /* +-----------------------------------------------------------------+
    | Byte order                                                      |
    +-----------------------------------------------------------------+ */

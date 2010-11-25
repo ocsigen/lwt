@@ -89,6 +89,23 @@ let to_string bytes =
   unsafe_blit_bytes_string bytes 0 str 0 len;
   str
 
+let proxy = Array1.sub
+
+let extract buf ofs len =
+  if ofs < 0 || len < 0 || ofs > length buf - len then
+    invalid_arg "Lwt_bytes.extract"
+  else begin
+    let buf' = create len in
+    blit buf ofs buf' 0 len;
+    buf'
+  end
+
+let copy buf =
+  let len = length buf in
+  let buf' = create len in
+  blit buf 0 buf' 0 len;
+  buf'
+
 (* +-----------------------------------------------------------------+
    | IOs                                                             |
    +-----------------------------------------------------------------+ *)
@@ -216,6 +233,8 @@ let sendto fd buf pos len flags addr =
 
 let map_file ~fd ?pos ~shared ?(size=(-1)) () =
   Array1.map_file fd ?pos char c_layout shared size
+
+external mapped : t -> bool = "lwt_unix_mapped" "noalloc"
 
 type advice =
   | MADV_NORMAL
