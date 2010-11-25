@@ -252,5 +252,11 @@ external wait_mincore_free : [ `unix_wait_mincore ] job -> unit = "lwt_unix_wait
 let wait_mincore buffer offset =
   if offset < 0 || offset >= length buffer then
     invalid_arg "Lwt_bytes.wait_mincore"
-  else
-    execute_job (wait_mincore_job buffer offset) ignore wait_mincore_free
+  else begin
+    let state = [|false|] in
+    mincore buffer (offset - (offset mod page_size)) state;
+    if state.(0) then
+      return ()
+    else
+      execute_job (wait_mincore_job buffer offset) ignore wait_mincore_free
+  end
