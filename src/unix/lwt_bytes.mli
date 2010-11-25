@@ -64,8 +64,8 @@ val write : Lwt_unix.file_descr -> t -> int -> int -> int Lwt.t
 val recv : Lwt_unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> int Lwt.t
 val send : Lwt_unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> int Lwt.t
 
-val recvfrom : Lwt_unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> (int * Unix.sockaddr) Lwt.t
-val sendto : Lwt_unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> Unix.sockaddr -> int Lwt.t
+val recvfrom : Lwt_unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> (int * Unix.sockaddr) Lwt.t
+val sendto : Lwt_unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> Unix.sockaddr -> int Lwt.t
 
 type io_vector = {
   iov_buffer : t;
@@ -78,3 +78,36 @@ val io_vector : buffer : t -> offset : int -> length : int -> io_vector
 val recv_msg : socket : Lwt_unix.file_descr -> io_vectors : io_vector list -> (int * Unix.file_descr list) Lwt.t
 val send_msg : socket : Lwt_unix.file_descr -> io_vectors : io_vector list -> fds : Unix.file_descr list -> int Lwt.t
 
+(** {6 Memory mapped files} *)
+
+val map_file : fd : Unix.file_descr -> ?pos : int64 -> shared : bool -> ?size : int -> unit -> t
+  (** [map_file ~fd ?pos ~shared ?size ()] maps the file descriptor
+      [fd] to an array of bytes. *)
+
+(** Type of advise that can be sent to the kernel by the program. See
+    the manual madvise(2) for a description of each advices. *)
+type advice =
+  | MADV_NORMAL
+  | MADV_RANDOM
+  | MADV_SEQUENTIAL
+  | MADV_WILLNEED
+  | MADV_DONTNEED
+
+val madvise : t -> int -> int -> advice -> unit
+  (** [madvise buffer pos len advice] advise the kernel about how the
+      program is going to use the part of the memory mapped file
+      between [pos] and [pos + len]. *)
+
+val page_size : int
+  (** Size of pages. *)
+
+val mincore : t -> int -> bool array -> unit
+  (** [mincore buffer offset states] tests whether the given pages are
+      in the system memory (the RAM). The [offset] argument must be a
+      multiple of {!page_size}. [states] is used to store the result;
+      each cases is [true] if the corresponding page in the RAM and
+      [false] otherwise. *)
+
+val wait_mincore : t -> int -> unit Lwt.t
+  (** [wait_mincore buffer offset] waits until the page containing the
+      byte at offset [offset] in the the RAM. *)

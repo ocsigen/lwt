@@ -3,6 +3,7 @@
  * Module Lwt_unix_unix
  * Copyright (C) 2009-2010 Jérémie Dimino
  *               2009 Mauricio Fernandez
+ *               2010 Pierre Chambart
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -49,6 +50,45 @@ CAMLprim value lwt_unix_writable(value fd)
   if (poll(&pollfd, 1, 0) < 0)
     uerror("readable", Nothing);
   return (Val_bool(pollfd.revents & POLLOUT));
+}
+
+/* +-----------------------------------------------------------------+
+   | Memory mapped files                                             |
+   +-----------------------------------------------------------------+ */
+
+static int advise_table[] = {
+  MADV_NORMAL,
+  MADV_RANDOM,
+  MADV_SEQUENTIAL,
+  MADV_WILLNEED,
+  MADV_DONTNEED,
+};
+
+CAMLprim value lwt_unix_madvise (value val_buffer, value val_offset, value val_length, value val_advice)
+{
+  int ret = madvise((char*)Caml_ba_data_val(val_buffer) + Long_val(val_offset),
+                    Long_val(val_length),
+                    advise_table[Int_val(val_advice)]);
+  if (ret == -1)  uerror("madvise", Nothing);
+  return Val_unit;
+}
+
+CAMLprim value lwt_unix_get_page_size()
+{
+  long page_size = sysconf(_SC_PAGESIZE);
+  if (page_size < 0) page_size = 4096;
+  return Val_long(page_size);
+}
+
+CAMLprim value lwt_unix_mincore(value val_buffer, value val_offset, value val_length, value val_states)
+{
+  long len = Wosize_val(val_states);
+  unsigned char vec[len];
+  mincore((char*)Caml_ba_data_val(val_buffer) + Long_val(val_offset), Long_val(val_length), vec);
+  long i;
+  for (i = 0; i < len; i++)
+    Field(val_states, i) = Val_bool(vec[i] & 1);
+  return Val_unit;
 }
 
 /* +-----------------------------------------------------------------+
@@ -619,6 +659,40 @@ CAMLprim value lwt_unix_guess_blocking_result(value val_job)
 CAMLprim value lwt_unix_guess_blocking_free(value val_job)
 {
   struct job_guess_blocking *job = Job_guess_blocking_val(val_job);
+  lwt_unix_free_job(&job->job);
+  return Val_unit;
+}
+
+/* +-----------------------------------------------------------------+
+   | JOB: wait_mincore                                               |
+   +-----------------------------------------------------------------+ */
+
+struct job_wait_mincore {
+  struct lwt_unix_job job;
+  char *ptr;
+};
+
+#define Job_wait_mincore_val(v) *(struct job_wait_mincore**)Data_custom_val(v)
+
+static void worker_wait_mincore(struct job_wait_mincore *job)
+{
+  /* Read the byte to force the kernel to fetch the page: */
+  char dummy = *(job->ptr);
+  /* Make the compiler happy: */
+  dummy = 0;
+}
+
+CAMLprim value lwt_unix_wait_mincore_job(value val_buffer, value val_offset)
+{
+  struct job_wait_mincore *job = lwt_unix_new(struct job_wait_mincore);
+  job->job.worker = (lwt_unix_job_worker)worker_wait_mincore;
+  job->ptr = (char*)Caml_ba_data_val(val_buffer) + Long_val(val_offset);
+  return lwt_unix_alloc_job(&(job->job));
+}
+
+CAMLprim value lwt_unix_wait_mincore_free(value val_job)
+{
+  struct job_wait_mincore *job = Job_wait_mincore_val(val_job);
   lwt_unix_free_job(&job->job);
   return Val_unit;
 }

@@ -2,6 +2,7 @@
  * http://www.ocsigen.org/lwt
  * Module Lwt_unix
  * Copyright (C) 2010 Jérémie Dimino
+ *               2010 Pierre Chambart
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -189,22 +190,67 @@ let send_msg ~socket ~io_vectors ~fds =
     (fun () ->
        stub_send_msg (unix_file_descr socket) n_iovs io_vectors n_fds fds)
 
-external stub_recvfrom : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> int * Unix.sockaddr = "lwt_unix_bytes_recvfrom"
+external stub_recvfrom : Unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> int * Unix.sockaddr = "lwt_unix_bytes_recvfrom"
 
 let recvfrom fd buf pos len flags =
-  if pos < 0 || len < 0 || pos > String.length buf - len then
+  if pos < 0 || len < 0 || pos > length buf - len then
     invalid_arg "Lwt_bytes.recvfrom"
   else if windows_hack then
     invalid_arg "Lwt_bytes.recvfrom: not implemented"
   else
     wrap_syscall Read fd (fun () -> stub_recvfrom (unix_file_descr fd) buf pos len flags)
 
-external stub_sendto : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> Unix.sockaddr -> int = "lwt_unix_bytes_sendto_byte" "lwt_unix_bytes_sendto"
+external stub_sendto : Unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> Unix.sockaddr -> int = "lwt_unix_bytes_sendto_byte" "lwt_unix_bytes_sendto"
 
 let sendto fd buf pos len flags addr =
-  if pos < 0 || len < 0 || pos > String.length buf - len then
+  if pos < 0 || len < 0 || pos > length buf - len then
     invalid_arg "Lwt_bytes.sendto"
   else if windows_hack then
     invalid_arg "Lwt_bytes.sendto: not implemented"
   else
     wrap_syscall Write fd (fun () -> stub_sendto (unix_file_descr fd) buf pos len flags addr)
+
+(* +-----------------------------------------------------------------+
+   | Memory mapped files                                             |
+   +-----------------------------------------------------------------+ *)
+
+let map_file ~fd ?pos ~shared ?(size=(-1)) () =
+  Array1.map_file fd ?pos char c_layout shared size
+
+type advice =
+  | MADV_NORMAL
+  | MADV_RANDOM
+  | MADV_SEQUENTIAL
+  | MADV_WILLNEED
+  | MADV_DONTNEED
+
+external stub_madvise : t -> int -> int -> advice -> unit = "lwt_unix_madvise"
+
+let madvise buf pos len advice =
+  if pos < 0 || len < 0 || pos > length buf - len then
+    invalid_arg "Lwt_bytes.madvise"
+  else
+    stub_madvise buf pos len advice
+
+external get_page_size : unit -> int = "lwt_unix_get_page_size"
+
+let page_size = get_page_size ()
+
+external stub_mincore : t -> int -> int -> bool array -> unit = "lwt_unix_mincore"
+
+let mincore buffer offset states =
+  if (offset mod page_size <> 0
+      || offset < 0
+      || offset > length buffer - (Array.length states * page_size)) then
+    invalid_arg "Lwt_bytes.mincore"
+  else
+    stub_mincore buffer offset (Array.length states * page_size) states
+
+external wait_mincore_job : t -> int -> [ `unix_wait_mincore ] job = "lwt_unix_wait_mincore_job"
+external wait_mincore_free : [ `unix_wait_mincore ] job -> unit = "lwt_unix_wait_mincore_free" "noalloc"
+
+let wait_mincore buffer offset =
+  if offset < 0 || offset >= length buffer then
+    invalid_arg "Lwt_bytes.wait_mincore"
+  else
+    execute_job (wait_mincore_job buffer offset) ignore wait_mincore_free

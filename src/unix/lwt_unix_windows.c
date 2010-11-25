@@ -138,6 +138,31 @@ CAMLprim value lwt_unix_writable(value fd)
 }
 
 /* +-----------------------------------------------------------------+
+   | Memory mapped files                                             |
+   +-----------------------------------------------------------------+ */
+
+CAMLprim value lwt_unix_madvise (value val_buffer, value val_offset, value val_length, value val_advice)
+{
+  return Val_unit;
+}
+
+CAMLprim value lwt_unix_get_page_size()
+{
+  SYSTEM_INFO si;
+  GetSystemInfo(&si);
+  return Val_long(si.dwPageSize);
+}
+
+CAMLprim value lwt_unix_mincore(value val_buffer, value val_offset, value val_length, value val_states)
+{
+  long len = Wosize_val(val_states);
+  long i;
+  for (i = 0; i < len; i++)
+    Field(val_states, i) = Val_true;
+  return Val_unit;
+}
+
+/* +-----------------------------------------------------------------+
    | Terminal sizes                                                  |
    +-----------------------------------------------------------------+ */
 
@@ -196,6 +221,7 @@ CAMLprim value lwt_unix_set_affinity(value val_pid, value val_cpus)
    +-----------------------------------------------------------------+ */
 
 LWT_UNIX_JOB_NOT_IMPLEMENTED(guess_blocking)
+LWT_UNIX_JOB_NOT_IMPLEMENTED(wait_mincore)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(open)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(close)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(read)

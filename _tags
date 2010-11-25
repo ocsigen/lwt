@@ -12,7 +12,7 @@
 <src/glib/lwt_glib_stubs.*>: use_C_glib
 
 # OASIS_START
-# DO NOT EDIT (digest: cdc0897fa8dae9bb2248d65cf321268b)
+# DO NOT EDIT (digest: 38a222038a38beffd3224856035a08a8)
 # Library lwt
 "src/core": include
 # Library lwt-unix
@@ -138,17 +138,6 @@
 <src/top/*.ml{,i}>: pkg_react
 <src/top/*.ml{,i}>: pkg_findlib
 <src/top/*.ml{,i}>: pkg_bigarray
-# Library lwt-mmap
-"src/mmap": include
-<src/mmap/lwt-mmap.{cma,cmxa}>: use_liblwt-mmap
-<src/mmap/*.ml{,i}>: use_lwt-unix
-<src/mmap/*.ml{,i}>: use_lwt
-<src/mmap/*.ml{,i}>: pkg_unix
-<src/mmap/*.ml{,i}>: pkg_bigarray
-"src/mmap/lwt_mmap_stubs.c": use_lwt-unix
-"src/mmap/lwt_mmap_stubs.c": use_lwt
-"src/mmap/lwt_mmap_stubs.c": pkg_unix
-"src/mmap/lwt_mmap_stubs.c": pkg_bigarray
 # Library lwt-extra
 "src/extra": include
 <src/extra/*.ml{,i}>: use_lwt-preemptive

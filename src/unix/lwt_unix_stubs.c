@@ -45,6 +45,7 @@
 #  include <sys/stat.h>
 #  include <sys/param.h>
 #  include <sys/un.h>
+#  include <sys/mman.h>
 #  include <signal.h>
 #  include <errno.h>
 #  include <string.h>
