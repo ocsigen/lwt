@@ -270,10 +270,6 @@ CAMLprim value lwt_unix_bytes_sendto_byte(value *argv, int argc)
    | {recv/send}_msg                                                 |
    +-----------------------------------------------------------------+ */
 
-#if defined(CMSG_SPACE)
-#  define HAVE_FD_PASSING
-#endif
-
 /* Convert a caml list of io-vectors into a C array io io-vector
    structures */
 static void store_iovs(struct iovec *iovs, value iovs_val)
@@ -572,7 +568,7 @@ value lwt_unix_has_wait4(value unit)
    | CPUs                                                            |
    +-----------------------------------------------------------------+ */
 
-#if _BSD_SOURCE || _SVID_SOURCE
+#if defined(HAVE_GETCPU)
 
 CAMLprim value lwt_unix_get_cpu()
 {
@@ -580,6 +576,17 @@ CAMLprim value lwt_unix_get_cpu()
   if (cpu < 0) uerror("sched_getcpu", Nothing);
   return Val_int(cpu);
 }
+
+#else
+
+CAMLprim value lwt_unix_get_cpu()
+{
+  caml_invalid_argument("not implemented");
+}
+
+#endif
+
+#if defined(HAVE_AFFINITY)
 
 CAMLprim value lwt_unix_get_affinity(value val_pid)
 {
@@ -613,11 +620,6 @@ CAMLprim value lwt_unix_set_affinity(value val_pid, value val_cpus)
 }
 
 #else
-
-CAMLprim value lwt_unix_get_cpu()
-{
-  caml_invalid_argument("not implemented");
-}
 
 CAMLprim value lwt_unix_get_affinity(value val_pid)
 {

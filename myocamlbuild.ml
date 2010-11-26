@@ -21,7 +21,7 @@
  *)
 
 (* OASIS_START *)
-(* DO NOT EDIT (digest: adbbcab51735f86a23fb00084d05458a) *)
+(* DO NOT EDIT (digest: ff7772b4cd01afec9e08a37cc036f3df) *)
 module OASISGettext = struct
 # 21 "/home/dim/sources/oasis/src/oasis/OASISGettext.ml"
   
@@ -492,7 +492,9 @@ let package_default =
        ];
      lib_c =
        [
-          ("lwt-unix", "src/unix", ["src/unix/lwt_unix.h"]);
+          ("lwt-unix",
+            "src/unix",
+            ["src/unix/config.h"; "src/unix/lwt_unix.h"]);
           ("lwt-glib", "src/glib", [])
        ];
      flags =

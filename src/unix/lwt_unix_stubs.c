@@ -35,6 +35,7 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include "config.h"
 #include "lwt_unix.h"
 
 #if defined(LWT_ON_WINDOWS)

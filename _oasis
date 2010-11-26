@@ -20,6 +20,8 @@ Authors:
 Homepage: http://ocsigen.org/lwt/
 BuildTools: ocamlbuild
 Plugins: DevFiles (0.2), META (0.2)
+PostConfCommand: ocaml discover.ml -ocamlc $ocamlc -ext_obj $ext_obj
+PostDistCleanCommand: $rm src/unix/config.h
 
 Synopsis: Lightweight thread library for Objective Caml
 Description:
@@ -111,6 +113,7 @@ Library "lwt-unix"
   BuildDepends: lwt, unix, bigarray
   XMETADescription: Unix support for lwt
   CSources:
+    config.h,
     lwt_unix.h,
     lwt_unix_stubs.c,
     lwt_libev_stubs.c
