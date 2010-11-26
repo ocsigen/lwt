@@ -101,7 +101,7 @@ val async_method : unit -> async_method
 val async_method_key : async_method Lwt.key
   (** The key for storing the local async method. *)
 
-val with_async_none : (unit -> 'a Lwt.t) -> 'a Lwt.t
+val with_async_none : (unit -> 'a) -> 'a
   (** [with_async_none f] is a shorthand for:
 
       {[
@@ -109,7 +109,7 @@ val with_async_none : (unit -> 'a Lwt.t) -> 'a Lwt.t
       ]}
   *)
 
-val with_async_detach : (unit -> 'a Lwt.t) -> 'a Lwt.t
+val with_async_detach : (unit -> 'a) -> 'a
   (** [with_async_none f] is a shorthand for:
 
       {[
@@ -117,7 +117,7 @@ val with_async_detach : (unit -> 'a Lwt.t) -> 'a Lwt.t
       ]}
   *)
 
-val with_async_switch : (unit -> 'a Lwt.t) -> 'a Lwt.t
+val with_async_switch : (unit -> 'a) -> 'a
   (** [with_async_none f] is a shorthand for:
 
       {[

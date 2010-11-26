@@ -99,11 +99,7 @@ val get : 'a key -> 'a option
   (** [get key] returns the value associated with [key] in the current
       thread. *)
 
-val set : 'a key -> 'a option -> unit t
-  (** [set key value] associates a value to [key] in the current
-      thread. *)
-
-val with_value : 'a key -> 'a option -> (unit -> 'b t) -> 'b t
+val with_value : 'a key -> 'a option -> (unit -> 'b) -> 'b
   (** [with_value key value f] executes [f] with [value] associated to
       [key]. The previous value associated to [key] is restored after
       [f] terminates. *)

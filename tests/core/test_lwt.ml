@@ -12,7 +12,7 @@ let g x = ("test"^x)
 
 exception Exn
 
-let key = new_key ()
+let key : int key = new_key ()
 
 let suite = suite "lwt" [
   test "0"
@@ -484,7 +484,7 @@ let suite = suite "lwt" [
        wakeup wakener ();
        cancel t;
        return (state t = Fail Canceled));
-
+(*
   test "data 1"
     (fun () ->
        lwt () = set key (Some 1) in
@@ -716,4 +716,5 @@ let suite = suite "lwt" [
        wakeup wakener ();
        lwt () = waiter in
        return (get key = Some 0));
+*)
 ]
