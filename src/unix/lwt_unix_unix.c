@@ -270,6 +270,10 @@ CAMLprim value lwt_unix_bytes_sendto_byte(value *argv, int argc)
    | {recv/send}_msg                                                 |
    +-----------------------------------------------------------------+ */
 
+#if defined(CMSG_SPACE)
+#  define HAVE_FD_PASSING
+#endif
+
 /* Convert a caml list of io-vectors into a C array io io-vector
    structures */
 static void store_iovs(struct iovec *iovs, value iovs_val)
@@ -305,15 +309,18 @@ static value wrapper_recv_msg(int fd, int n_iovs, struct iovec *iovs)
   memset(&msg, 0, sizeof(msg));
   msg.msg_iov = iovs;
   msg.msg_iovlen = n_iovs;
+#if defined(HAVE_FD_PASSING)
   msg.msg_controllen = CMSG_SPACE(256 * sizeof(int));
   msg.msg_control = alloca(msg.msg_controllen);
   memset(msg.msg_control, 0, msg.msg_controllen);
+#endif
 
   int ret = recvmsg(fd, &msg, 0);
   if (ret == -1) uerror("recv_msg", Nothing);
 
-  struct cmsghdr *cm;
   list = Val_int(0);
+#if defined(HAVE_FD_PASSING)
+  struct cmsghdr *cm;
   for (cm = CMSG_FIRSTHDR(&msg); cm; cm = CMSG_NXTHDR(&msg, cm))
     if (cm->cmsg_level == SOL_SOCKET && cm->cmsg_type == SCM_RIGHTS) {
       int *fds = (int*)CMSG_DATA(cm);
@@ -327,6 +334,7 @@ static value wrapper_recv_msg(int fd, int n_iovs, struct iovec *iovs)
       };
       break;
     };
+#endif
 
   result = caml_alloc_tuple(2);
   Store_field(result, 0, Val_int(ret));
@@ -359,6 +367,7 @@ static value wrapper_send_msg(int fd, int n_iovs, struct iovec *iovs, value val_
   msg.msg_iov = iovs;
   msg.msg_iovlen = n_iovs;
 
+#if defined(HAVE_FD_PASSING)
   int n_fds = Int_val(val_n_fds);
   if (n_fds > 0) {
     msg.msg_controllen = CMSG_SPACE(n_fds * sizeof(int));
@@ -375,6 +384,7 @@ static value wrapper_send_msg(int fd, int n_iovs, struct iovec *iovs, value val_
     for(; Is_block(val_fds); val_fds = Field(val_fds, 1), fds++)
       *fds = Int_val(Field(val_fds, 0));
   };
+#endif
 
   int ret = sendmsg(fd, &msg, 0);
   if (ret == -1) uerror("send_msg", Nothing);
@@ -2803,8 +2813,6 @@ struct job_gethostbyname {
   struct hostent entry;
   struct hostent *ptr;
   char buffer[NETDB_BUFFER_SIZE];
-  int result;
-  int error_code;
 };
 
 #define Job_gethostbyname_val(v) *(struct job_gethostbyname**)Data_custom_val(v)
@@ -2862,7 +2870,15 @@ static value alloc_host_entry(struct hostent *entry)
 
 static void worker_gethostbyname(struct job_gethostbyname *job)
 {
-  job->result = gethostbyname_r(job->name, &(job->entry), job->buffer, NETDB_BUFFER_SIZE, &(job->ptr), &(job->error_code));
+  int h_errno;
+#if HAS_GETHOSTBYNAME_R == 5
+  job->ptr = gethostbyname_r(job->name, &(job->entry), job->buffer, NETDB_BUFFER_SIZE, &h_errno);
+#elif HAS_GETHOSTBYNAME_R == 6
+  if (gethostbyname_r(job->name, &(job->entry), job->buffer, NETDB_BUFFER_SIZE, &(job->ptr), &h_errno) != 0)
+    job->ptr = NULL;
+#else
+  job->ptr = NULL;
+#endif
 }
 
 CAMLprim value lwt_unix_gethostbyname_job(value val_name)
@@ -2876,7 +2892,7 @@ CAMLprim value lwt_unix_gethostbyname_job(value val_name)
 CAMLprim value lwt_unix_gethostbyname_result(value val_job)
 {
   struct job_gethostbyname *job = Job_gethostbyname_val(val_job);
-  if (job->result != 0 || job->ptr == NULL) caml_raise_not_found();
+  if (job->ptr == NULL) caml_raise_not_found();
   return alloc_host_entry(&(job->entry));
 }
 
@@ -2898,15 +2914,21 @@ struct job_gethostbyaddr {
   struct hostent entry;
   struct hostent *ptr;
   char buffer[NETDB_BUFFER_SIZE];
-  int result;
-  int error_code;
 };
 
 #define Job_gethostbyaddr_val(v) *(struct job_gethostbyaddr**)Data_custom_val(v)
 
 static void worker_gethostbyaddr(struct job_gethostbyaddr *job)
 {
-  job->result = gethostbyaddr_r(&(job->addr), 4, AF_INET, &(job->entry), job->buffer, NETDB_BUFFER_SIZE, &(job->ptr), &(job->error_code));
+  int h_errno;
+#if HAS_GETHOSTBYADDR_R == 7
+  job->ptr = gethostbyaddr_r(&(job->addr), 4, AF_INET, &(job->entry), job->buffer, NETDB_BUFFER_SIZE, &h_errno);
+#elif HAS_GETHOSTBYADDR_R == 8
+  if (gethostbyaddr_r(&(job->addr), 4, AF_INET, &(job->entry), job->buffer, NETDB_BUFFER_SIZE, &(job->ptr), &h_errno) != 0)
+    job->ptr = NULL;
+#else
+  job->ptr = NULL;
+#endif
 }
 
 CAMLprim value lwt_unix_gethostbyaddr_job(value val_addr)
@@ -2920,7 +2942,7 @@ CAMLprim value lwt_unix_gethostbyaddr_job(value val_addr)
 CAMLprim value lwt_unix_gethostbyaddr_result(value val_job)
 {
   struct job_gethostbyaddr *job = Job_gethostbyaddr_val(val_job);
-  if (job->result != 0 || job->ptr == NULL) caml_raise_not_found();
+  if (job->ptr == NULL) caml_raise_not_found();
   return alloc_host_entry(&(job->entry));
 }
 

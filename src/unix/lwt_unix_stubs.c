@@ -21,6 +21,7 @@
  */
 
 #define _GNU_SOURCE
+#define _POSIX_PTHREAD_SEMANTICS
 
 #include <caml/alloc.h>
 #include <caml/fail.h>
