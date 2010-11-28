@@ -565,7 +565,9 @@ let () =
              flag ["apiref"] & S[A "-intro"; P "apiref-intro"; A"-colorize-code"];
 
              (* Glib bindings: *)
-             define_c_library ~name:"glib" ~c_name:"glib-2.0";
+             let env = BaseEnvLight.load ~allow_empty:true ~filename:MyOCamlbuildBase.env_filename () in
+             if BaseEnvLight.var_get "glib" env = "true" || BaseEnvLight.var_get "all" env = "true" then
+               define_c_library ~name:"glib" ~c_name:"glib-2.0";
 
              flag ["ocaml"; "link"; "toplevel"] & A"-linkpkg";
 
