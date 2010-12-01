@@ -1308,8 +1308,14 @@ let file_length filename = with_file ~mode:input filename length
 let open_connection ?buffer_size sockaddr =
   let fd = Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0 in
   let close = lazy begin
-    Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
-    Lwt_unix.close fd
+    try_lwt
+      Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
+      return ()
+    with Unix.Unix_error(Unix.ENOTCONN, _, _) ->
+      (* This may happen if the server closed the connection before us *)
+      return ()
+    finally
+      Lwt_unix.close fd
   end in
   try_lwt
     lwt () = Lwt_unix.connect fd sockaddr in
