@@ -62,6 +62,8 @@ let repeat_call fd f =
 
 let plain fd = (fd, Plain)
 
+let embed_socket fd context = (fd, SSL(Ssl.embed_socket (Lwt_unix.unix_file_descr fd) context))
+
 let ssl_accept fd ctx =
   let socket = Ssl.embed_socket (Lwt_unix.unix_file_descr fd) ctx in
   Lwt.bind

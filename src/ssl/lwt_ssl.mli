@@ -28,6 +28,7 @@ type socket
 val ssl_accept : Lwt_unix.file_descr -> Ssl.context -> socket Lwt.t
 val ssl_connect : Lwt_unix.file_descr -> Ssl.context -> socket Lwt.t
 val plain : Lwt_unix.file_descr -> socket
+val embed_socket : Lwt_unix.file_descr -> Ssl.context -> socket
 
 val read : socket -> string -> int -> int -> int Lwt.t
 val write : socket -> string -> int -> int -> int Lwt.t
