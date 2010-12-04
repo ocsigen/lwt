@@ -1,3 +1,29 @@
+===== 2.1.1+dev =====
+
+  * Bugfixes:
+    ** Fix a bug with cancellable threads causing {{{Canceled}}}
+       exceptions to be raised randomly
+    ** Fix a fd-leak in Lwt_io.open_connection
+  * {{{Lwt_unix}}} now use libev instead of select
+  * Add thread local storage support to {{{Lwt}}}
+  * Add backtrace support to {{{Lwt}}}. Now {{{Lwt}}} exceptions can
+    be recored by using the syntax extension with the {{{-lwt-debug}}}
+    command line switch.
+  * Allow blocking system calls to be executed in parallels
+  * Change the type of many functions of {{{Lwt_unix}}}, which now
+    return a {{{Lwt}}} thread
+  * Add functions {{{Lwt.block}}} and {{{Lwt.no_cancel}}}
+  * Add functions {{{Lwt_unix.readable}}} and {{{Lwt_unix.writable}}}
+  * Add function {{{Lwt_io.is_busy}}}
+  * Add functions {{{Lwt_event.delay}}} and {{{Lwt_signal.delay}}}
+  * Add function {{{Lwt_term.render_update}}}
+  * Add function {{{Lwt_ssl.embed_socket}}}
+  * Add module {{{Lwt_bytes}}} defining operations on bigarrays
+    instead of strings
+  * Use bigarrays in Lwt_io instead of strings for the internal buffer.
+    Lwt_io.make now takes a function that uses a bigarray.
+  * Add module {{{Lwt_switch}}}
+
 ===== 2.1.1 (2010-06-13) =====
 
   * Many bugfixes, including:
