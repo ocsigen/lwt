@@ -471,6 +471,35 @@ let protected t =
     | Repr _ ->
         assert false
 
+let no_cancel t =
+  match (repr t).state with
+    | Sleep sleeper ->
+        let waiter, wakener = wait () in
+        add_immutable_waiter sleeper
+          (fun state ->
+             try
+               match state with
+                 | Return v -> wakeup wakener v
+                 | Fail exn -> wakeup_exn wakener exn
+                 | _ ->  assert false
+             with Invalid_argument _ ->
+               ());
+        waiter
+    | Return _ | Fail _ ->
+        t
+    | Repr _ ->
+        assert false
+
+let block t =
+  catch
+    (fun () -> protected t)
+    (function
+       | Canceled as exn ->
+           (* Wait for t to terminate then fail. *)
+           bind (no_cancel t) (fun _ -> fail exn)
+       | exn ->
+           fail exn)
+
 let rec nth_ready l n =
   match l with
     | [] ->
