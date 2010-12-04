@@ -510,32 +510,4 @@ let suite = suite "lwt" [
             in
             wakeup wakener ();
             t));
-
-  test "no_cancel 1"
-    (fun () ->
-       let waiter, wakener = task () in
-       let t = no_cancel waiter in
-       cancel t;
-       return (state t = Sleep));
-
-  test "block 1"
-    (fun () ->
-       let waiter, wakener = task () in
-       let t = block waiter in
-       cancel t;
-       let ok1 = state t = Sleep in
-       wakeup wakener ();
-       let ok2 = state t = Fail Canceled in
-       return (ok1 && ok2));
-
-  test "block 2"
-    (fun () ->
-       let waiter, wakener = task () in
-       let t = block waiter in
-       cancel t;
-       cancel t;
-       let ok1 = state t = Sleep in
-       wakeup wakener ();
-       let ok2 = state t = Fail Canceled in
-       return (ok1 && ok2));
 ]

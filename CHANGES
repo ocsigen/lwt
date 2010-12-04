@@ -12,7 +12,6 @@
   * Allow blocking system calls to be executed in parallels
   * Change the type of many functions of {{{Lwt_unix}}}, which now
     return a {{{Lwt}}} thread
-  * Add functions {{{Lwt.block}}} and {{{Lwt.no_cancel}}}
   * Add functions {{{Lwt_unix.readable}}} and {{{Lwt_unix.writable}}}
   * Add function {{{Lwt_io.is_busy}}}
   * Add functions {{{Lwt_event.delay}}} and {{{Lwt_signal.delay}}}

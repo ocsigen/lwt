@@ -250,15 +250,6 @@ val protected : 'a t -> 'a t
       as [thread] except that cancelling it does not cancel
       [thread]. *)
 
-val block : 'a t -> 'a t
-  (** [block thread] is the same as {!protected}, except that when it
-      is canceled, it waits for [thread] to complete, then fails with
-      {!Canceled}. *)
-
-val no_cancel : 'a t -> 'a t
-  (** [no_cancel thread] creates a thread which behave as [thread]
-      except that it cannot be canceled. *)
-
 (** {6 Pause} *)
 
 val pause : unit -> unit t

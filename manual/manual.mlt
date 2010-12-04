@@ -333,25 +333,15 @@ val t : int Lwt.t = <abstr>
 - : int Lwt.state = Fail Lwt.Canceled
 %>
 
-  By the way, it is possible to prevent a thread from being canceled,
-  by using one of the functions {texttt "Lwt.protected"}, {texttt
-  "Lwt.block"} or {texttt "Lwt.no_cancel"}:
+  By the way, it is possible to prevent a thread from being canceled
+  by using one of the function {texttt "Lwt.protected"}:
 
   <:code:%
 val protected : 'a Lwt.t -> 'a Lwt.t
-val block : 'a Lwt.t -> 'a Lwt.t
-val no_cancel : 'a Lwt.t -> 'a Lwt.t
 %>
 
-  Canceling {texttt "(proctected t)"}, {texttt "(block t)"} or {texttt
-  "(no_cancel t)"} will have no effect on {texttt "t"}. Differences
-  between these three functions are the following:
-
-  {itemize [
-     "{texttt "(protected t)"} resume immediatly when canceled,";
-     "{texttt "(block t)"} waits for {texttt "t"} to terminates when canceled,";
-     "{texttt "(no_cancel t)"} just ignores cancellation.";
-   ]}
+  Canceling {texttt "(proctected t)"} will have no effect on {texttt
+  "t"}.
 
 {subsubsection "Primitives for multi-thread composition"}
 
