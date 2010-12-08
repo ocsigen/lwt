@@ -186,6 +186,9 @@ val wakeup_exn : 'a u -> exn -> unit
   (** [wakeup_exn t e] makes the sleeping thread [t] fail with the
       exception [e]. *)
 
+val waiter_of_wakener : 'a u -> 'a t
+  (** Returns the thread associated to a wakener. *)
+
 (** {6 Threads state} *)
 
 (** State of a thread *)

@@ -321,6 +321,8 @@ let task () =
   } in
   (thread t, wakener t)
 
+let waiter_of_wakener wakener = thread (wakener_repr wakener)
+
 (* apply function, reifying explicit exceptions into the thread type
    apply: ('a -(exn)-> 'b t) -> ('a -(n)-> 'b t)
    semantically a natural transformation TE -> T, where T is the thread
