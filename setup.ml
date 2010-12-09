@@ -6338,4 +6338,15 @@ let setup_t =
 let setup () = BaseSetup.setup setup_t;;
 
 (* OASIS_STOP *)
+
+let () =
+  InternalInstallPlugin.lib_hook :=
+    fun (cs, bs, lib) ->
+      match lib.OASISTypes.lib_findlib_name with
+        | Some "unix" ->
+            (cs, bs, lib, ["src/unix/lwt_unix.h"])
+        | _ ->
+            (cs, bs, lib, [])
+;;
+
 let () = setup ();;
