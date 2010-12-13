@@ -1,12 +1,12 @@
 # OASIS_START
-# DO NOT EDIT (digest: 409dea507003fdac8e0656248886bc81)
-version = "2.1.1"
+# DO NOT EDIT (digest: b523e1af052d92a4ffe676801f3ce816)
+version = "2.2"
 description = "Lightweight thread library for OCaml (core library)"
 archive(byte) = "lwt.cma"
 archive(native) = "lwt.cmxa"
 exists_if = "lwt.cma"
 package "ssl" (
- version = "2.1.1"
+ version = "2.2"
  description = "SSL support for Lwt"
  requires = "ssl lwt.unix"
  archive(byte) = "lwt-ssl.cma"
@@ -15,7 +15,7 @@ package "ssl" (
 )
 
 package "extra" (
- version = "2.1.1"
+ version = "2.2"
  description = "Unix functions for Lwt using Lwt_preemptive"
  requires = "lwt lwt.preemptive"
  archive(byte) = "lwt-extra.cma"
@@ -24,14 +24,14 @@ package "extra" (
 )
 
 package "syntax" (
- version = "2.1.1"
+ version = "2.2"
  description = "Syntactic sugars for Lwt"
  requires = "camlp4 lwt.syntax.options"
  archive(syntax,preprocessor) = "lwt-syntax.cma"
  archive(syntax,toploop) = "lwt-syntax.cma"
  exists_if = "lwt-syntax.cma"
  package "options" (
-  version = "2.1.1"
+  version = "2.2"
   description = "Options for syntax extensions"
   requires = "camlp4"
   archive(syntax,preprocessor) = "lwt-syntax-options.cma"
@@ -40,7 +40,7 @@ package "syntax" (
  )
  
  package "log" (
-  version = "2.1.1"
+  version = "2.2"
   description = "Syntactic sugars for logging"
   requires = "camlp4 lwt.syntax.options"
   archive(syntax,preprocessor) = "lwt-syntax-log.cma"
@@ -50,7 +50,7 @@ package "syntax" (
 )
 
 package "glib" (
- version = "2.1.1"
+ version = "2.2"
  description = "Glib integration"
  requires = "lwt lwt.unix"
  archive(byte) = "lwt-glib.cma"
@@ -59,7 +59,7 @@ package "glib" (
 )
 
 package "simple-top" (
- version = "2.1.1"
+ version = "2.2"
  description = "Unix support for lwt"
  requires = "lwt lwt.unix"
  archive(byte) = "lwt-simple-top.cma"
@@ -68,7 +68,7 @@ package "simple-top" (
 )
 
 package "preemptive" (
- version = "2.1.1"
+ version = "2.2"
  description = "Preemptive threads support for Lwt"
  requires = "lwt lwt.unix threads"
  archive(byte) = "lwt-preemptive.cma"
@@ -77,7 +77,7 @@ package "preemptive" (
 )
 
 package "top" (
- version = "2.1.1"
+ version = "2.2"
  description = "Line-editing in the toplevel"
  requires = "lwt lwt.text findlib"
  archive(byte) = "lwt-top.cma"
@@ -86,7 +86,7 @@ package "top" (
 )
 
 package "text" (
- version = "2.1.1"
+ version = "2.2"
  description = "Text mode utilities"
  requires = "lwt lwt.unix lwt.react text text.bigarray"
  archive(byte) = "lwt-text.cma"
@@ -95,7 +95,7 @@ package "text" (
 )
 
 package "react" (
- version = "2.1.1"
+ version = "2.2"
  description = "Reactive programming helpers"
  requires = "lwt react"
  archive(byte) = "lwt-react.cma"
@@ -104,7 +104,7 @@ package "react" (
 )
 
 package "unix" (
- version = "2.1.1"
+ version = "2.2"
  description = "Unix support for lwt"
  requires = "lwt unix bigarray"
  archive(byte) = "lwt-unix.cma"

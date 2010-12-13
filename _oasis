@@ -4,7 +4,7 @@
 
 OASISFormat: 0.1
 Name: lwt
-Version: 2.1.1
+Version: 2.2
 LicenseFile: COPYING
 License: LGPL-2.1 with OCaml linking exception
 Authors:
