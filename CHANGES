@@ -1,4 +1,4 @@
-===== 2.2 (2010-12-13) =====
+===== 2.2.0 (2010-12-13) =====
 
   * Bugfixes:
     ** Fix a bug with cancellable threads causing {{{Canceled}}}
