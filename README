@@ -13,9 +13,10 @@ Requirements:
  * ocaml with ocamlbuild (>= 3.11.0)
  * findlib
  * react (from http://erratique.ch/software/react)
+ * libev (from http://software.schmorp.de/pkg/libev.html)
  * [optionnal] ocaml-text (needed for the enhanced toplevel)
  * [optionnal] ocamlssl (>= 0.4.0) (ocamlssl needs openssl) (>= 0.4.1 for MacOS)
- * [optionnal] lablgtk2, glib-2.0 developpement files and pkg-config
+ * [optionnal] glib-2.0 developpement files and pkg-config
 
 If ocaml/findlib/ocamlssl... are not installed on your computer, you
 can use GODI to install them automatically. See:
