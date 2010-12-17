@@ -33,6 +33,28 @@ external test : unit -> unit = \"lwt_test\"
 let () = test ()
 "
 
+let pthread_code = "
+#include <caml/mlvalues.h>
+#include <pthread.h>
+
+CAMLprim value lwt_test()
+{
+  pthread_create(0, 0, 0, 0);
+  return Val_unit;
+}
+"
+
+let libev_code = "
+#include <caml/mlvalues.h>
+#include <ev.h>
+
+CAMLprim value lwt_test()
+{
+  ev_default_loop(0);
+  return Val_unit;
+}
+"
+
 let fd_passing_code = "
 #include <caml/mlvalues.h>
 #include <sys/types.h>
@@ -82,11 +104,12 @@ let exec_name = ref "a.out"
 let log_file = ref ""
 let caml_file = ref ""
 
-let compile stub_file =
+let compile args stub_file =
   ksprintf
     Sys.command
-    "%s -custom %s %s 2> %s"
+    "%s -custom %s %s %s 2> %s"
     !ocamlc
+    args
     (Filename.quote stub_file)
     (Filename.quote !caml_file)
     (Filename.quote !log_file)
@@ -98,7 +121,7 @@ let safe_remove file_name =
   with exn ->
     ()
 
-let test_code stub_code =
+let test_code args stub_code =
   let stub_file, oc = Filename.open_temp_file "lwt_stub" ".c" in
   let cleanup () =
     safe_remove stub_file;
@@ -108,7 +131,7 @@ let test_code stub_code =
     output_string oc stub_code;
     flush oc;
     close_out oc;
-    let result = compile stub_file in
+    let result = compile args stub_file in
     cleanup ();
     result
   with exn ->
@@ -118,14 +141,24 @@ let test_code stub_code =
 
 let config = open_out "src/unix/config.h"
 
-let test name macro code =
-  printf "testing for %s: %!" name;
-  if test_code code then begin
+let test_lib name ?(args="") code =
+  printf "testing for %s:%!" name;
+  if test_code args code then begin
+    printf " %s available\n%!" (String.make (34 - String.length name) '.');
+    true
+  end else begin
+    printf " %s unavailable\n%!" (String.make (34 - String.length name) '.');
+    false
+  end
+
+let test_feature name macro ?(args="") code =
+  printf "testing for %s:%!" name;
+  if test_code args code then begin
     fprintf config "#define %s\n" macro;
-    printf "%savailable\n%!" (String.make (30 - String.length name) ' ')
+    printf " %s available\n%!" (String.make (34 - String.length name) '.')
   end else begin
     fprintf config "//#define %s\n" macro;
-    printf "%sunavailable\n%!" (String.make (30 - String.length name) ' ')
+    printf " %s unavailable\n%!" (String.make (34 - String.length name) '.')
   end
 
 (* +-----------------------------------------------------------------+
@@ -157,6 +190,24 @@ let () =
              safe_remove (Filename.chop_extension !caml_file ^ ".cmi");
              safe_remove (Filename.chop_extension !caml_file ^ ".cmo"));
 
-  test "fd passing" "HAVE_FD_PASSING" fd_passing_code;
-  test "sched_getcpu" "HAVE_GETCPU" getcpu_code;
-  test "affinity getting/setting" "HAVE_AFFINITY" affinity_code
+  let missing = [] in
+  let missing = if test_lib "libev" ~args:"-cclib -lev" libev_code then missing else "libev" :: missing in
+  let missing = if test_lib "pthread" ~args:"-cclib -lpthread" pthread_code then missing else "pthread" :: missing in
+
+  if missing <> [] then begin
+    printf "
+The following recquired C libraries are missing: %s.
+Please install them and retry. If they are installed in a non-standard location, set the environment variables C_INCLUDE_PATH and LIBRARY_PATH accordingly and retry.
+
+For example, if they are installed in /opt/local, you can type:
+
+export C_INCLUDE_PATH=/opt/local/include
+export LIBRARY_PATH=/opt/local/lib
+
+" (String.concat ", " missing);
+    exit 1
+  end;
+
+  test_feature "fd passing" "HAVE_FD_PASSING" fd_passing_code;
+  test_feature "sched_getcpu" "HAVE_GETCPU" getcpu_code;
+  test_feature "affinity getting/setting" "HAVE_AFFINITY" affinity_code
