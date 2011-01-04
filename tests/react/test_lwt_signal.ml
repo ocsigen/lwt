@@ -24,21 +24,4 @@ open Test
 open Lwt
 
 let suite = suite "lwt_signal" [
-  test "with_finaliser"
-    (fun () ->
-       let b = ref false in
-       let f () = b := true in
-       let signal, set = React.S.create 0 in
-       let _ = Lwt_signal.with_finaliser f signal in
-       Gc.full_major ();
-       return !b);
-
-  test "with_finaliser 2"
-    (fun () ->
-       let b = ref true in
-       let f () = b := false in
-       let signal, set = React.S.create 0 in
-       let signal = Lwt_signal.with_finaliser f signal in
-       Gc.full_major ();
-       return (React.S.value signal = 0 && !b));
 ]
