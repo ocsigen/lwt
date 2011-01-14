@@ -514,8 +514,8 @@ let choose l =
       thread { state = nth_ready l (Random.int ready) }
   else begin
     let res = temp (ref (fun () -> List.iter cancel l)) in
-    let rec waiter = ref (Some handle_result)
-    and handle_result state =
+    let waiter = ref None in
+    let handle_result state =
       (* Disable the waiter now: *)
       waiter := None;
       (* Removes all waiters so we do not leak memory: *)
@@ -524,6 +524,7 @@ let choose l =
          since all other waiters have been removed: *)
       fast_connect res state
     in
+    waiter := (Some handle_result);
     List.iter
       (fun t ->
          match (repr t).state with
