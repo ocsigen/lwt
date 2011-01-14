@@ -268,6 +268,11 @@ val wakeup_paused : unit -> unit
       main loop. You usually do not have to call it directly, except
       if you are writing a custom scheduler. *)
 
+val register_pause_notifier : ( unit -> unit ) -> unit
+  (** [register_pause_notifier f] register a function [f] that
+      will be called each time pause is called. It is usefull to be
+      able to call wakeup_paused when there is no scheduler *)
+
 (**/**)
 
 (* The functions below are probably not useful for the casual user.
