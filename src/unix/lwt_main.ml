@@ -49,9 +49,11 @@ let rec run t =
               libev_loop ()
             else begin
               libev_loop_no_wait ();
-              let wakeners = Lwt_sequence.fold_r (fun x l -> x :: l) yielded [] in
-              Lwt_sequence.iter_node_l Lwt_sequence.remove yielded;
-              List.iter (fun wakener -> wakeup wakener ()) wakeners
+              if not (Lwt_sequence.is_empty yielded) then begin
+                let tmp = Lwt_sequence.create () in
+                Lwt_sequence.transfer_r yielded tmp;
+                Lwt_sequence.iter_l (fun wakener -> wakeup wakener ()) tmp
+              end
             end
           with exn ->
             libev_unloop ();

@@ -784,10 +784,12 @@ let pause () =
   waiter
 
 let wakeup_paused () =
-  let l = Lwt_sequence.fold_r (fun x l -> x :: l) paused [] in
-  Lwt_sequence.iter_node_l Lwt_sequence.remove paused;
-  paused_count := 0;
-  List.iter (fun wakener -> wakeup wakener ()) l
+  if not (Lwt_sequence.is_empty paused) then begin
+    let tmp = Lwt_sequence.create () in
+    Lwt_sequence.transfer_r paused tmp;
+    paused_count := 0;
+    Lwt_sequence.iter_l (fun wakener -> wakeup wakener ()) tmp
+  end
 
 let register_pause_notifier f = pause_hook := f
 
