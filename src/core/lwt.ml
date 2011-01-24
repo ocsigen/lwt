@@ -770,26 +770,28 @@ let with_value key value f =
    | Paused threads                                                  |
    +-----------------------------------------------------------------+ *)
 
-let pause_hook = ref (fun () -> ())
+let pause_hook = ref ignore
 
 let paused = Lwt_sequence.create ()
+let paused_count = ref 0
 
 let pause () =
   let waiter, wakener = task () in
   let node = Lwt_sequence.add_r wakener paused in
   on_cancel waiter (fun () -> Lwt_sequence.remove node);
-  !pause_hook ();
+  incr paused_count;
+  !pause_hook !paused_count;
   waiter
 
-let rec wakeup_paused () =
-  match Lwt_sequence.take_opt_l paused with
-    | None ->
-        ()
-    | Some wakener ->
-        wakeup wakener ();
-        wakeup_paused ()
+let wakeup_paused () =
+  let l = Lwt_sequence.fold_r (fun x l -> x :: l) paused [] in
+  Lwt_sequence.iter_node_l Lwt_sequence.remove paused;
+  paused_count := 0;
+  List.iter (fun wakener -> wakeup wakener ()) l
 
 let register_pause_notifier f = pause_hook := f
+
+let paused_count () = !paused_count
 
 (* +-----------------------------------------------------------------+
    | Bakctrace support                                               |

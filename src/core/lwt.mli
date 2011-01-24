@@ -266,12 +266,20 @@ val wakeup_paused : unit -> unit
 
       This function is called by the scheduler, before entering the
       main loop. You usually do not have to call it directly, except
-      if you are writing a custom scheduler. *)
+      if you are writing a custom scheduler.
 
-val register_pause_notifier : ( unit -> unit ) -> unit
-  (** [register_pause_notifier f] register a function [f] that
-      will be called each time pause is called. It is usefull to be
-      able to call wakeup_paused when there is no scheduler *)
+      Note that if a paused thread resume and pause again, it will not
+      be wakeup at this point. *)
+
+val paused_count : unit -> int
+  (** [paused_count ()] returns the number of thread currently
+      paused. *)
+
+val register_pause_notifier : (int -> unit) -> unit
+  (** [register_pause_notifier f] register a function [f] that will be
+      called each time pause is called. The parameter passed to [f] is
+      the new number of threads paused. It is usefull to be able to
+      call {!wakeup_paused} when there is no scheduler *)
 
 (**/**)
 

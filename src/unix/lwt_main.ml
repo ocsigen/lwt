@@ -45,7 +45,7 @@ let rec run t =
     | None ->
         begin
           try
-            if Lwt_sequence.is_empty yielded then
+            if Lwt.paused_count () = 0 && Lwt_sequence.is_empty yielded then
               libev_loop ()
             else begin
               libev_loop_no_wait ();
