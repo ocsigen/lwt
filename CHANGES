@@ -1,3 +1,8 @@
+===== 2.2.1 (2011-01-26) =====
+
+  * Better interaction with Js_of_ocaml.
+  * Add functions {{{Lwt.register_pause_notifier}}} and {{{Lwt.paused_count}}}.
+
 ===== 2.2.0 (2010-12-13) =====
 
   * Bugfixes:
