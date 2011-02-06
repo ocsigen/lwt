@@ -1,7 +1,7 @@
 (* Lightweight thread library for Objective Caml
  * http://www.ocsigen.org/lwt
  * Module Lwt_main
- * Copyright (C) 2009 Jérémie Dimino
+ * Copyright (C) 2009-2011 Jérémie Dimino
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as

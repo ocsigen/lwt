@@ -116,34 +116,14 @@ let set_notification id f =
   Notifiers.replace notifiers id { notifier with notify_handler = f }
 
 (* +-----------------------------------------------------------------+
-   | libev suff                                                      |
-   +-----------------------------------------------------------------+ *)
-
-type io_event = Read | Write
-
-type ev_io
-type ev_signal
-type ev_timer
-type ev_child
-
-external ev_io_init : Unix.file_descr -> io_event -> (ev_io -> unit) -> ev_io = "lwt_libev_io_init"
-external ev_io_stop : ev_io -> unit = "lwt_libev_io_stop"
-external ev_signal_init : int -> (ev_signal -> unit) -> ev_signal = "lwt_libev_signal_init"
-external ev_signal_stop : ev_signal -> unit  = "lwt_libev_signal_stop"
-external ev_timer_init : float -> (ev_timer -> unit) -> ev_timer = "lwt_libev_timer_init"
-external ev_timer_stop : ev_timer -> unit  = "lwt_libev_timer_stop"
-external ev_fake_io : Unix.file_descr -> unit = "lwt_libev_fake_io"
-
-(* +-----------------------------------------------------------------+
    | Sleepers                                                        |
    +-----------------------------------------------------------------+ *)
 
-let sleep d =
+let sleep delay =
   let waiter, wakener = Lwt.task () in
-  let ev = ev_timer_init d (fun ev ->
-                              ev_timer_stop ev;
-                              Lwt.wakeup wakener ()) in
-  Lwt.on_cancel waiter (fun () -> ev_timer_stop ev);
+  let ev = ref Lwt_engine.fake_event in
+  Lwt.on_cancel waiter (fun () -> Lwt_engine.stop_event !ev);
+  ev := Lwt_engine.on_timer delay (fun () -> Lwt_engine.stop_event !ev; Lwt.wakeup wakener ());
   waiter
 
 let yield = Lwt_main.yield
@@ -253,7 +233,7 @@ let execute_job ?async_method ~job ~result ~free =
    | File descriptor wrappers                                        |
    +-----------------------------------------------------------------+ *)
 
-type state = Opened | Closed | Aborted of exn
+type state = Opened | Closed
 
 type file_descr = {
   fd : Unix.file_descr;
@@ -312,8 +292,6 @@ let rec check_descriptor ch =
   match ch.state with
     | Opened ->
         ()
-    | Aborted e ->
-        raise e
     | Closed ->
         raise (Unix.Unix_error (Unix.EBADF, "check_descriptor", ""))
 
@@ -342,12 +320,6 @@ let writable ch =
 let set_state ch st =
   ch.state <- st
 
-let abort ch e =
-  if ch.state <> Closed then begin
-    set_state ch (Aborted e);
-    ev_fake_io ch.fd
-  end
-
 let unix_file_descr ch = ch.fd
 
 let of_unix_file_descr = mk_ch
@@ -359,6 +331,8 @@ let stderr = of_unix_file_descr ~set_flags:false ~blocking:true Unix.stderr
 (* +-----------------------------------------------------------------+
    | Actions on file descriptors                                     |
    +-----------------------------------------------------------------+ *)
+
+type io_event = Read | Write
 
 exception Retry
 exception Retry_write
@@ -393,22 +367,32 @@ let rec retry_syscall ev event ch wakener action =
   in
   match res with
     | Success v ->
-        ev_io_stop ev;
+        Lwt_engine.stop_event !ev;
         Lwt.wakeup wakener v
     | Exn e ->
-        ev_io_stop ev;
+        Lwt_engine.stop_event !ev;
         Lwt.wakeup_exn wakener e
     | Requeued event' ->
         if event <> event' then begin
-          ev_io_stop ev;
-          ignore (ev_io_init ch.fd event' (fun ev -> retry_syscall ev event' ch wakener action))
+          Lwt_engine.stop_event !ev;
+          match event' with
+            | Read ->
+                ev := Lwt_engine.on_readable ch.fd (fun () -> retry_syscall ev event' ch wakener action)
+            | Write ->
+                ev := Lwt_engine.on_readable ch.fd (fun () -> retry_syscall ev event' ch wakener action)
         end
 
 let register_action event ch action =
   let waiter, wakener = Lwt.task () in
-  let ev = ev_io_init ch.fd event (fun ev -> retry_syscall ev event ch wakener action) in
-  Lwt.on_cancel waiter (fun () -> ev_io_stop ev);
-  waiter
+  let ev = ref Lwt_engine.fake_event in
+  Lwt.on_cancel waiter (fun () -> Lwt_engine.stop_event !ev);
+  match event with
+    | Read ->
+        ev := Lwt_engine.on_readable ch.fd (fun () -> retry_syscall ev event ch wakener action);
+        waiter
+    | Write ->
+        ev := Lwt_engine.on_writable ch.fd (fun () -> retry_syscall ev event ch wakener action);
+        waiter
 
 (* Wraps a system call *)
 let wrap_syscall event ch action =
@@ -1512,14 +1496,12 @@ let _ = read_notifications ()
    | Signals                                                         |
    +-----------------------------------------------------------------+ *)
 
-type signal_handler_id = unit Lazy.t
+type signal_handler_id = Lwt_engine.event
 
 let on_signal signum handler =
-  let ev = ev_signal_init signum (fun ev -> handler signum) in
-  lazy(ev_signal_stop ev)
+  Lwt_engine.on_signal signum (fun () -> handler signum)
 
-let disable_signal_handler stop =
-  Lazy.force stop
+let disable_signal_handler = Lwt_engine.stop_event
 
 (* +-----------------------------------------------------------------+
    | Processes                                                       |

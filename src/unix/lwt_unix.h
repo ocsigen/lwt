@@ -63,24 +63,6 @@ char *lwt_unix_strdup(char *string);
 void lwt_unix_send_notification(int id);
 
 /* +-----------------------------------------------------------------+
-   | Libev                                                           |
-   +-----------------------------------------------------------------+ */
-
-/* The libev main loop. */
-extern struct ev_loop *lwt_unix_main_loop;
-
-/* Flag which tells whether we are in a blocking section or not. */
-extern int lwt_unix_in_blocking_section;
-
-/* Macro to add in libev callbacks. See the manual for
-   explanations. */
-#define LWT_UNIX_CHECK                          \
-  if (lwt_unix_in_blocking_section) {           \
-    lwt_unix_in_blocking_section = 0;           \
-    caml_leave_blocking_section();              \
-  }
-
-/* +-----------------------------------------------------------------+
    | Threading                                                       |
    +-----------------------------------------------------------------+ */
 

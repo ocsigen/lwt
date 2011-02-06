@@ -107,6 +107,7 @@ Library "lwt-unix"
     Lwt_throttle,
     Lwt_timeout,
     Lwt_unix,
+    Lwt_engine,
     Lwt_bytes
   InternalModules:
     Lwt_log_rules

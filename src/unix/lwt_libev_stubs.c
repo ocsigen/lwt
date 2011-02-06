@@ -33,7 +33,7 @@
 
 #include "lwt_unix.h"
 
-struct ev_loop *lwt_unix_main_loop = NULL;
+static struct ev_loop *lwt_unix_main_loop = NULL;
 
 CAMLextern int caml_convert_signal_number (int);
 CAMLextern int caml_rev_convert_signal_number (int);
@@ -53,7 +53,13 @@ CAMLprim value lwt_libev_init()
    | Main loop                                                       |
    +-----------------------------------------------------------------+ */
 
-int lwt_unix_in_blocking_section = 0;
+static int lwt_unix_in_blocking_section = 0;
+
+#define LWT_UNIX_CHECK                          \
+  if (lwt_unix_in_blocking_section) {           \
+    lwt_unix_in_blocking_section = 0;           \
+    caml_leave_blocking_section();              \
+  }
 
 CAMLprim value lwt_libev_loop()
 {
@@ -86,7 +92,8 @@ CAMLprim value lwt_libev_unloop()
 #define Ev_io_val(v) *(struct ev_io**)Data_custom_val(v)
 #define Ev_signal_val(v) *(struct ev_signal**)Data_custom_val(v)
 #define Ev_timer_val(v) *(struct ev_timer**)Data_custom_val(v)
-#define Ev_idle_val(v) *(struct ev_idle**)Data_custom_val(v)
+#define Ev_prepare_val(v) *(struct ev_prepare**)Data_custom_val(v)
+#define Ev_check_val(v) *(struct ev_check**)Data_custom_val(v)
 
 static int compare_watchers(value a, value b)
 {
@@ -114,30 +121,35 @@ static struct custom_operations watcher_ops = {
 static void handle_io(struct ev_loop *loop, ev_io *watcher, int revents)
 {
   LWT_UNIX_CHECK;
-  value meta = (value)watcher->data;
-  caml_callback(Field(meta, 0), Field(meta, 1));
+  caml_callback((value)watcher->data, Val_unit);
 }
 
-CAMLprim value lwt_libev_io_init(value fd, value event, value callback)
+static value lwt_libev_io_init(int fd, int event, value callback)
 {
-  CAMLparam3(fd, event, callback);
-  CAMLlocal2(result, meta);
+  CAMLparam1(callback);
+  CAMLlocal1(result);
   /* Create and initialise the watcher */
   struct ev_io* watcher = lwt_unix_new(struct ev_io);
-  ev_io_init(watcher, handle_io, FD_val(fd), Int_val(event) == 0 ? EV_READ : EV_WRITE);
+  ev_io_init(watcher, handle_io, fd, event);
   /* Wrap the watcher into a custom caml value */
   result = caml_alloc_custom(&watcher_ops, sizeof(struct ev_io*), 0, 1);
   Ev_io_val(result) = watcher;
-  /* Creates meta-data */
-  meta = caml_alloc_tuple(2);
-  Store_field(meta, 0, callback);
-  Store_field(meta, 1, result);
-  /* Store metadata in the watcher, and register it as a root */
-  watcher->data = (void*)meta;
+  /* Store the callback in the watcher, and register it as a root */
+  watcher->data = (void*)callback;
   caml_register_generational_global_root((value*)(&(watcher->data)));
   /* Start the event */
   ev_io_start(lwt_unix_main_loop, watcher);
   CAMLreturn(result);
+}
+
+CAMLprim value lwt_libev_readable_init(value fd, value callback)
+{
+  return lwt_libev_io_init(FD_val(fd), EV_READ, callback);
+}
+
+CAMLprim value lwt_libev_writable_init(value fd, value callback)
+{
+  return lwt_libev_io_init(FD_val(fd), EV_WRITE, callback);
 }
 
 CAMLprim value lwt_libev_io_stop(value val_watcher)
@@ -156,26 +168,21 @@ CAMLprim value lwt_libev_io_stop(value val_watcher)
 static void handle_signal(struct ev_loop *loop, ev_signal *watcher, int revents)
 {
   LWT_UNIX_CHECK;
-  value meta = (value)watcher->data;
-  caml_callback(Field(meta, 0), Field(meta, 1));
+  caml_callback((value)watcher->data, Val_unit);
 }
 
 CAMLprim value lwt_libev_signal_init(value signum, value callback)
 {
   CAMLparam2(signum, callback);
-  CAMLlocal2(result, meta);
+  CAMLlocal1(result);
   /* Create and initialise the watcher */
   struct ev_signal* watcher = lwt_unix_new(struct ev_signal);
   ev_signal_init(watcher, handle_signal, caml_convert_signal_number(Int_val(signum)));
   /* Wrap the watcher into a custom caml value */
   result = caml_alloc_custom(&watcher_ops, sizeof(struct ev_signal*), 0, 1);
   Ev_signal_val(result) = watcher;
-  /* Creates meta-data */
-  meta = caml_alloc_tuple(2);
-  Store_field(meta, 0, callback);
-  Store_field(meta, 1, result);
-  /* Store metadata in the watcher, and register it as a root */
-  watcher->data = (void*)meta;
+  /* Store the callback in the watcher, and register it as a root */
+  watcher->data = (void*)callback;
   caml_register_generational_global_root((value*)(&(watcher->data)));
   /* Start the event */
   ev_signal_start(lwt_unix_main_loop, watcher);
@@ -198,26 +205,21 @@ CAMLprim value lwt_libev_signal_stop(value val_watcher)
 static void handle_timer(struct ev_loop *loop, ev_timer *watcher, int revents)
 {
   LWT_UNIX_CHECK;
-  value meta = (value)watcher->data;
-  caml_callback(Field(meta, 0), Field(meta, 1));
+  caml_callback((value)watcher->data, Val_unit);
 }
 
 CAMLprim value lwt_libev_timer_init(value delay, value callback)
 {
   CAMLparam2(delay, callback);
-  CAMLlocal2(result, meta);
+  CAMLlocal1(result);
   /* Create and initialise the watcher */
   struct ev_timer* watcher = lwt_unix_new(struct ev_timer);
   ev_timer_init(watcher, handle_timer, Double_val(delay), 0);
   /* Wrap the watcher into a custom caml value */
   result = caml_alloc_custom(&watcher_ops, sizeof(struct ev_timer*), 0, 1);
   Ev_timer_val(result) = watcher;
-  /* Creates meta-data */
-  meta = caml_alloc_tuple(2);
-  Store_field(meta, 0, callback);
-  Store_field(meta, 1, result);
-  /* Store metadata in the watcher, and register it as a root */
-  watcher->data = (void*)meta;
+  /* Store the callback in the watcher, and register it as a root */
+  watcher->data = (void*)callback;
   caml_register_generational_global_root((value*)(&(watcher->data)));
   /* Start the event */
   ev_timer_start(lwt_unix_main_loop, watcher);
@@ -234,12 +236,77 @@ CAMLprim value lwt_libev_timer_stop(value val_watcher)
 }
 
 /* +-----------------------------------------------------------------+
-   | Fake events                                                     |
+   | Suspend watchers                                                |
    +-----------------------------------------------------------------+ */
 
-CAMLprim value lwt_libev_fake_io(value fd)
+static void handle_prepare(struct ev_loop *loop, ev_prepare *watcher, int revents)
 {
-  ev_feed_fd_event(lwt_unix_main_loop, FD_val(fd), EV_READ);
-  ev_feed_fd_event(lwt_unix_main_loop, FD_val(fd), EV_WRITE);
+  LWT_UNIX_CHECK;
+  caml_callback((value)watcher->data, Val_unit);
+}
+
+CAMLprim value lwt_libev_suspend_init(value callback)
+{
+  CAMLparam1(callback);
+  CAMLlocal1(result);
+  /* Create and initialise the watcher */
+  struct ev_prepare* watcher = lwt_unix_new(struct ev_prepare);
+  ev_prepare_init(watcher, handle_prepare);
+  ev_set_priority(&watcher, EV_MINPRI);
+  /* Wrap the watcher into a custom caml value */
+  result = caml_alloc_custom(&watcher_ops, sizeof(struct ev_prepare*), 0, 1);
+  Ev_prepare_val(result) = watcher;
+  /* Store the callback in the watcher, and register it as a root */
+  watcher->data = (void*)callback;
+  caml_register_generational_global_root((value*)(&(watcher->data)));
+  /* Start the event */
+  ev_prepare_start(lwt_unix_main_loop, watcher);
+  CAMLreturn(result);
+}
+
+CAMLprim value lwt_libev_suspend_stop(value val_watcher)
+{
+  struct ev_prepare* watcher = Ev_prepare_val(val_watcher);
+  caml_remove_generational_global_root((value*)(&(watcher->data)));
+  ev_prepare_stop(lwt_unix_main_loop, watcher);
+  free(watcher);
+  return Val_unit;
+}
+
+/* +-----------------------------------------------------------------+
+   | Resume watchers                                                 |
+   +-----------------------------------------------------------------+ */
+
+static void handle_check(struct ev_loop *loop, ev_check *watcher, int revents)
+{
+  LWT_UNIX_CHECK;
+  caml_callback((value)watcher->data, Val_unit);
+}
+
+CAMLprim value lwt_libev_resume_init(value callback)
+{
+  CAMLparam1(callback);
+  CAMLlocal1(result);
+  /* Create and initialise the watcher */
+  struct ev_check* watcher = lwt_unix_new(struct ev_check);
+  ev_check_init(watcher, handle_check);
+  ev_set_priority(&watcher, EV_MAXPRI);
+  /* Wrap the watcher into a custom caml value */
+  result = caml_alloc_custom(&watcher_ops, sizeof(struct ev_check*), 0, 1);
+  Ev_check_val(result) = watcher;
+  /* Store the callback in the watcher, and register it as a root */
+  watcher->data = (void*)callback;
+  caml_register_generational_global_root((value*)(&(watcher->data)));
+  /* Start the event */
+  ev_check_start(lwt_unix_main_loop, watcher);
+  CAMLreturn(result);
+}
+
+CAMLprim value lwt_libev_resume_stop(value val_watcher)
+{
+  struct ev_check* watcher = Ev_check_val(val_watcher);
+  caml_remove_generational_global_root((value*)(&(watcher->data)));
+  ev_check_stop(lwt_unix_main_loop, watcher);
+  free(watcher);
   return Val_unit;
 }

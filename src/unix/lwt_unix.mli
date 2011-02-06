@@ -164,8 +164,7 @@ type file_descr
       A {b file descriptor} may be:
 
       - {b opened}, in which case it is fully usable
-      - {b closed} or {b aborted}, in which case it is no longer
-      usable *)
+      - {b closed} in which case it is no longer usable *)
 
 (** State of a {b file descriptor} *)
 type state =
@@ -174,9 +173,6 @@ type state =
   | Closed
       (** The {b file descriptor} has been closed by {!close}. It must
           not be used for any operation. *)
-  | Aborted of exn
-      (** The {b file descriptor} has been aborted, the only operation
-          possible is {!close}, all others will fail. *)
 
 val state : file_descr -> state
   (** [state fd] returns the state of [fd] *)
@@ -216,14 +212,6 @@ val set_blocking : ?set_flags : bool -> file_descr -> bool -> unit
       mode. If [set_flags] is [true] (the default) then the file flags
       are modified, otherwise the modification is only done at the
       application level. *)
-
-val abort : file_descr -> exn -> unit
-  (** [abort fd exn] makes all current and further uses of the file
-      descriptor fail with the given exception. This put the {b file
-      descriptor} into the {!Aborted} state.
-
-      If the {b file descrptor} is closed, this does nothing, if it is
-      aborted, this replace the abort exception by [exn]. *)
 
 (** {6 Process handling} *)
 
@@ -475,7 +463,7 @@ val getgrgid : int -> Unix.group_entry Lwt.t
 
 (** {6 Signals} *)
 
-type signal_handler_id
+type signal_handler_id = Lwt_engine.event
   (** Id of a signal handler, used to cancel it *)
 
 val on_signal : int -> (int -> unit) -> signal_handler_id
