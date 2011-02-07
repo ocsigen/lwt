@@ -107,13 +107,14 @@ let _ =
            | Virtual targets                                         |
            +---------------------------------------------------------+ *)
 
-        let examples = "logging" :: "parallelize" :: "relay" :: "start_editor"
-	  :: "load_file" :: "send_file" :: List.concat
-          (List.map snd
-             (List.filter fst
-                [(have_lwt_glib, ["ex_gtk"]);
-                 (have_lwt_text, ["show_keys"; "kikoolol_prompt"]);
-                 (have_lwt_preemptive, ["minishell"])])) in
+        let examples = "logging" :: "parallelize" :: "relay" :: "start_editor" :: "load_file" ::
+          (List.concat
+             (List.map snd
+                (List.filter fst
+                   [(have_lwt_glib, ["ex_gtk"]);
+                    (have_lwt_text, ["show_keys"; "kikoolol_prompt"]);
+                    (have_lwt_preemptive, ["minishell"])])))
+        in
 
         let byte = List.map (sprintf "%s.byte") examples
         and native = List.map (sprintf "%s.native") examples in
