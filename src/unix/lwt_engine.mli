@@ -45,35 +45,48 @@ val fake_event : event
     kind of callbacks for different kind of events. *)
 
 (** Type of engines. *)
-type t = {
-  init : unit -> unit;
-  (** [init ()] musts initializes the engine. *)
+class type t = object
+  method destroy : unit
+    (** Destroy the engine and free its associated resources. *)
 
-  stop : unit -> unit;
-  (** [stop ()] musts stop the engine. *)
+  method iter : bool -> unit
+    (** [iter block] performs one iteration of the main loop. If
+        [block] is [true] the function must blocks until one event
+        become available, otherwise it should just check for available
+        events and return immediatly. *)
 
-  iter : bool -> unit;
-  (** [iter block] musts perform one iteration of the main loop. If
-      [block] is [true] the function must blocks until one event
-      become available, otherwise it should just check for available
-      events and returns immediatly. *)
+  method on_readable : Unix.file_descr -> (unit -> unit) -> event
+    (** [on_readable fd f] calls [f] each time [fd] becomes
+        readable. *)
 
-  on_readable : Unix.file_descr -> (unit -> unit) -> event;
-  (** [on_readable fd f] musts call [f] each time [fd] becomes
-      readable. *)
+  method on_writable : Unix.file_descr -> (unit -> unit) -> event
+    (** [on_readable fd f] calls [f] each time [fd] becomes
+        writable. *)
 
-  on_writable : Unix.file_descr -> (unit -> unit) -> event;
-  (** [on_readable fd f] musts call [f] each time [fd] becomes
-      writable. *)
+  method on_timer : float -> bool -> (unit -> unit) -> event
+    (** [on_timer delay repeat f] calls [f] one time after [delay]
+        seconds. If [repeat] is [true] then [f] is called each [delay]
+        seconds, otherwise it is called only one time. *)
+end
 
-  on_timer : float -> (unit -> unit) -> event;
-  (** [on_timer delay f] musts call [f] one time after [delay]
-      seconds. *)
+(** {6 Predefined engines} *)
 
-  on_signal : int -> (unit -> unit) -> event;
-  (** [on_signal signum f] musts call [f] each time the signal with
-      number [signum] is received by the process. *)
-}
+type ev_loop
+  (** Type of libev loops. *)
+
+(** Engine based on libev. *)
+class libev : object
+  inherit t
+
+  val loop : ev_loop
+    (** The libev loop used for this engine. *)
+
+  method loop : ev_loop
+    (** Returns [loop]. *)
+end
+
+(** Engine based on select. *)
+class select : t
 
 (** {6 The current engine} *)
 
@@ -83,12 +96,9 @@ val get : unit -> t
 val set : t -> unit
   (** [set engine] replaces the current engine by the given one. *)
 
-(** The following functions are for accessing the current engine. *)
+(** Convenient access to the current engine. *)
 
-val init : unit -> unit
-val stop : unit -> unit
 val iter : bool -> unit
 val on_readable : Unix.file_descr -> (unit -> unit) -> event
 val on_writable : Unix.file_descr -> (unit -> unit) -> event
-val on_timer : float -> (unit -> unit) -> event
-val on_signal : int -> (unit -> unit) -> event
+val on_timer : float -> bool -> (unit -> unit) -> event

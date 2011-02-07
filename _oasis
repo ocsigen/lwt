@@ -87,7 +87,8 @@ Library "lwt"
     Lwt_sequence,
     Lwt_stream,
     Lwt_switch,
-    Lwt_util
+    Lwt_util,
+    Lwt_pqueue
   XMETADescription: Lightweight thread library for OCaml (core library)
 
 Library "lwt-unix"

@@ -34,85 +34,216 @@ let fake_event = lazy ()
    | Engines                                                         |
    +-----------------------------------------------------------------+ *)
 
-type t = {
-  init : unit -> unit;
-  stop : unit -> unit;
-  iter : bool -> unit;
-  on_readable : Unix.file_descr -> (unit -> unit) -> event;
-  on_writable : Unix.file_descr -> (unit -> unit) -> event;
-  on_timer : float -> (unit -> unit) -> event;
-  on_signal : int -> (unit -> unit) -> event;
-}
+class type t = object
+  method destroy : unit
+  method iter : bool -> unit
+  method on_readable : Unix.file_descr -> (unit -> unit) -> event
+  method on_writable : Unix.file_descr -> (unit -> unit) -> event
+  method on_timer : float -> bool -> (unit -> unit) -> event
+end
 
 (* +-----------------------------------------------------------------+
    | The libev engine                                                |
    +-----------------------------------------------------------------+ *)
 
+type ev_loop
 type ev_io
-type ev_signal
 type ev_timer
 
-external ev_init : unit -> unit = "lwt_libev_init"
-external ev_stop : unit -> unit = "lwt_libev_stop"
-external ev_loop : unit -> unit = "lwt_libev_loop"
-external ev_loop_no_wait : unit -> unit = "lwt_libev_loop_no_wait"
-external ev_unloop : unit -> unit = "lwt_libev_unloop"
-external ev_readable_init : Unix.file_descr -> (unit -> unit) -> ev_io = "lwt_libev_readable_init"
-external ev_writable_init : Unix.file_descr -> (unit -> unit) -> ev_io = "lwt_libev_writable_init"
-external ev_io_stop : ev_io -> unit = "lwt_libev_io_stop"
-external ev_timer_init : float -> (unit -> unit) -> ev_timer = "lwt_libev_timer_init"
-external ev_timer_stop : ev_timer -> unit  = "lwt_libev_timer_stop"
-external ev_signal_init : int -> (unit -> unit) -> ev_signal = "lwt_libev_signal_init"
-external ev_signal_stop : ev_signal -> unit  = "lwt_libev_signal_stop"
+external ev_init : unit -> ev_loop = "lwt_libev_init"
+external ev_stop : ev_loop -> unit = "lwt_libev_stop"
+external ev_loop : ev_loop -> bool -> unit = "lwt_libev_loop"
+external ev_unloop : ev_loop -> unit = "lwt_libev_unloop"
+external ev_readable_init : ev_loop -> Unix.file_descr -> (unit -> unit) -> ev_io = "lwt_libev_readable_init"
+external ev_writable_init : ev_loop -> Unix.file_descr -> (unit -> unit) -> ev_io = "lwt_libev_writable_init"
+external ev_io_stop : ev_loop -> ev_io -> unit = "lwt_libev_io_stop"
+external ev_timer_init : ev_loop -> float -> bool -> (unit -> unit) -> ev_timer = "lwt_libev_timer_init"
+external ev_timer_stop : ev_loop -> ev_timer -> unit  = "lwt_libev_timer_stop"
 
-let libev_engine = {
-  init = ev_init;
-  stop = ev_stop;
-  iter =
-    (fun block ->
-       try
-         if block then
-           ev_loop ()
-         else
-           ev_loop_no_wait ()
-       with exn ->
-         ev_unloop ();
-         raise exn);
-  on_readable =
-    (fun fd f ->
-       let ev = ev_readable_init fd f in
-       lazy(ev_io_stop ev));
-  on_writable =
-    (fun fd f ->
-       let ev = ev_writable_init fd f in
-       lazy(ev_io_stop ev));
-  on_timer =
-    (fun delay f ->
-       let ev = ev_timer_init delay f in
-       lazy(ev_timer_stop ev));
-  on_signal =
-    (fun signum f ->
-       let ev = ev_signal_init signum f in
-       lazy(ev_signal_stop ev));
+class libev = object
+  val loop = ev_init ()
+  method loop = loop
+
+  method destroy = ev_stop loop
+
+  method iter block =
+    try
+      ev_loop loop block
+    with exn ->
+      ev_unloop loop;
+      raise exn
+
+  method on_readable fd f =
+    let ev = ev_readable_init loop fd f in
+    lazy(ev_io_stop loop ev)
+
+  method on_writable fd f =
+    let ev = ev_writable_init loop fd f in
+    lazy(ev_io_stop loop ev)
+
+  method on_timer delay repeat f =
+    let ev = ev_timer_init loop delay repeat f in
+    lazy(ev_timer_stop loop ev)
+end
+
+(* +-----------------------------------------------------------------+
+   | The select engine                                               |
+   +-----------------------------------------------------------------+ *)
+
+(* Type of a sleeper for the select engine. *)
+type sleeper = {
+  mutable time : float;
+  (* The time at which the sleeper should be wakeup. *)
+
+  mutable stopped : bool;
+  (* [true] iff the event has been stopped. *)
+
+  action : unit -> unit;
+  (* The action for the sleeper. *)
 }
+
+module Sleep_queue =
+  Lwt_pqueue.Make(struct
+                    type t = sleeper
+                    let compare { time = t1 } { time = t2 } = compare t1 t2
+                  end)
+
+module Fd_map = Map.Make(struct type t = Unix.file_descr let compare = compare end)
+
+let rec restart_actions sleep_queue now =
+  match Sleep_queue.lookup_min sleep_queue with
+    | Some{ stopped = true } ->
+        restart_actions (Sleep_queue.remove_min sleep_queue) now
+    | Some{ time = time; action = action } when time <= now ->
+        action ();
+        restart_actions (Sleep_queue.remove_min sleep_queue) now
+    | _ ->
+        sleep_queue
+
+let rec get_next_timeout sleep_queue =
+  match Sleep_queue.lookup_min sleep_queue with
+    | Some{ stopped = true } ->
+        get_next_timeout (Sleep_queue.remove_min sleep_queue)
+    | Some{ time = time } ->
+        max 0. (time -. Unix.gettimeofday ())
+    | None ->
+        -1.
+
+let bad_fd fd =
+  try
+    let _ = Unix.fstat fd in
+    false
+  with Unix.Unix_error (_, _, _) ->
+    true
+
+class select = object(self)
+
+  val mutable sleep_queue = Sleep_queue.empty
+    (* Threads waiting for a timeout to expire. *)
+
+  val mutable new_sleeps = []
+    (* Sleepers added since the last iteration of the main loop:
+
+       They are not added immediatly to the main sleep queue in order
+       to prevent them from being wakeup immediatly.  *)
+
+  val mutable wait_readable = Fd_map.empty
+    (* Sequences of actions waiting for file descriptors to become
+       readable. *)
+
+  val mutable wait_writable = Fd_map.empty
+    (* Sequences of actions waiting for file descriptors to become
+       writable. *)
+
+  method destroy = ()
+
+  method iter block =
+    (* Transfer all sleepers added since the last iteration to the
+       main sleep queue: *)
+    sleep_queue <- List.fold_left (fun q e -> Sleep_queue.add e q) sleep_queue new_sleeps;
+    new_sleeps <- [];
+    (* Collect file descriptors. *)
+    let fds_r = Fd_map.fold (fun fd _ l -> fd :: l) wait_readable [] in
+    let fds_w = Fd_map.fold (fun fd _ l -> fd :: l) wait_writable [] in
+    (* Compute the timeout. *)
+    let timeout = if block then get_next_timeout sleep_queue else 0. in
+    (* Do the blocking call *)
+    let fds_r, fds_w, fds_e =
+      try
+        Unix.select fds_r fds_w [] timeout
+      with
+        | Unix.Unix_error (Unix.EINTR, _, _) ->
+            ([], [], [])
+        | Unix.Unix_error (Unix.EBADF, _, _) ->
+            (* Keeps only bad file descriptors. Actions registered on
+               them have to handle the error: *)
+            (List.filter bad_fd fds_r,
+             List.filter bad_fd fds_w,
+             [])
+    in
+    (* Restart threads waiting for a timeout: *)
+    sleep_queue <- restart_actions sleep_queue (Unix.gettimeofday ());
+    (* Restart threads waiting on a file descriptors: *)
+    List.iter (fun fd -> Lwt_sequence.iter_l (fun f -> f ()) (Fd_map.find fd wait_readable)) fds_r;
+    List.iter (fun fd -> Lwt_sequence.iter_l (fun f -> f ()) (Fd_map.find fd wait_writable)) fds_w
+
+  method on_timer delay repeat f =
+    if repeat then begin
+      let rec sleeper = { time = Unix.gettimeofday () +. delay; stopped = false; action = g }
+      and g () =
+        sleeper.time <- Unix.gettimeofday () +. delay;
+        new_sleeps <- sleeper :: new_sleeps;
+        f ()
+      in
+      new_sleeps <- sleeper :: new_sleeps;
+      lazy(sleeper.stopped <- true)
+    end else begin
+      let sleeper = { time = Unix.gettimeofday () +. delay; stopped = false; action = f } in
+      new_sleeps <- sleeper :: new_sleeps;
+      lazy(sleeper.stopped <- true)
+    end
+
+  method on_readable fd f =
+    let actions =
+      try
+        Fd_map.find fd wait_readable
+      with Not_found ->
+        let actions = Lwt_sequence.create () in
+        wait_readable <- Fd_map.add fd actions wait_readable;
+        actions
+    in
+    let node = Lwt_sequence.add_l f actions in
+    lazy(Lwt_sequence.remove node;
+         if Lwt_sequence.is_empty actions then wait_readable <- Fd_map.remove fd wait_readable)
+
+  method on_writable fd f =
+    let actions =
+      try
+        Fd_map.find fd wait_writable
+      with Not_found ->
+        let actions = Lwt_sequence.create () in
+        wait_writable <- Fd_map.add fd actions wait_writable;
+        actions
+    in
+    let node = Lwt_sequence.add_l f actions in
+    lazy(Lwt_sequence.remove node;
+         if Lwt_sequence.is_empty actions then wait_writable <- Fd_map.remove fd wait_writable)
+end
 
 (* +-----------------------------------------------------------------+
    | The current engine                                              |
    +-----------------------------------------------------------------+ *)
 
-let current = ref libev_engine
-let () = !current.init ()
+let current = ref (if Sys.os_type <> "Unix" then (new select :> t) else (new libev :> t))
 
-let get () = !current
+let get () =
+  !current
+
 let set engine =
-  !current.stop ();
-  current := engine;
-  !current.init ()
+  !current#destroy;
+  current := engine
 
-let init () = !current.init ()
-let stop () = !current.stop ()
-let iter block = !current.iter block
-let on_readable fd f = !current.on_readable fd f
-let on_writable fd f = !current.on_writable fd f
-let on_timer delay f = !current.on_timer delay f
-let on_signal signum f = !current.on_signal signum f
+let iter block = !current#iter block
+let on_readable fd f = !current#on_readable fd f
+let on_writable fd f = !current#on_writable fd f
+let on_timer delay repeat f = !current#on_timer delay repeat f

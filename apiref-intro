@@ -15,6 +15,7 @@ Lwt_mutex
 Lwt_mvar
 Lwt_pool
 Lwt_sequence
+Lwt_pqueue
 Lwt_stream
 Lwt_switch
 }
@@ -33,6 +34,7 @@ Lwt_gc
 Lwt_io
 Lwt_log
 Lwt_main
+Lwt_engine
 Lwt_process
 Lwt_throttle
 Lwt_timeout

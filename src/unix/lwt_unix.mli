@@ -463,7 +463,7 @@ val getgrgid : int -> Unix.group_entry Lwt.t
 
 (** {6 Signals} *)
 
-type signal_handler_id = Lwt_engine.event
+type signal_handler_id
   (** Id of a signal handler, used to cancel it *)
 
 val on_signal : int -> (int -> unit) -> signal_handler_id

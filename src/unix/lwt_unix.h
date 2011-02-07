@@ -25,7 +25,6 @@
 
 #include <caml/mlvalues.h>
 #include <caml/unixsupport.h>
-#include <ev.h>
 #include <pthread.h>
 
 /* Detect the target OS */
@@ -39,6 +38,9 @@
 #else
 #  define FD_val(value) Int_val(value)
 #endif
+
+/* Macro to extract a libev loop from a caml value. */
+#define Ev_loop_val(value) *(struct ev_loop**)Data_custom_val(value)
 
 /* +-----------------------------------------------------------------+
    | Utils                                                           |

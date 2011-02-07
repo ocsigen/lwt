@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: a2c62b46d1cc1bb1ee2dc7697e6b3619)
+# DO NOT EDIT (digest: fe94bad50907a0f8804b6363c1408ee2)
 src/core/Lwt_condition
 src/core/Lwt_list
 src/core/Lwt
@@ -10,6 +10,7 @@ src/core/Lwt_sequence
 src/core/Lwt_stream
 src/core/Lwt_switch
 src/core/Lwt_util
+src/core/Lwt_pqueue
 src/extra/Lwt_lib
 src/glib/Lwt_glib
 src/preemptive/Lwt_preemptive

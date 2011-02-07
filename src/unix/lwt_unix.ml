@@ -123,7 +123,7 @@ let sleep delay =
   let waiter, wakener = Lwt.task () in
   let ev = ref Lwt_engine.fake_event in
   Lwt.on_cancel waiter (fun () -> Lwt_engine.stop_event !ev);
-  ev := Lwt_engine.on_timer delay (fun () -> Lwt_engine.stop_event !ev; Lwt.wakeup wakener ());
+  ev := Lwt_engine.on_timer delay false (fun () -> Lwt_engine.stop_event !ev; Lwt.wakeup wakener ());
   waiter
 
 let yield = Lwt_main.yield
@@ -1496,12 +1496,35 @@ let _ = read_notifications ()
    | Signals                                                         |
    +-----------------------------------------------------------------+ *)
 
-type signal_handler_id = Lwt_engine.event
+module Signal_map = Map.Make(struct type t = int let compare a b = a - b end)
+
+let signals = ref Signal_map.empty
+
+type signal_handler_id = unit Lazy.t
 
 let on_signal signum handler =
-  Lwt_engine.on_signal signum (fun () -> handler signum)
+  let notification, actions =
+    try
+      Signal_map.find signum !signals
+    with Not_found ->
+      let actions = Lwt_sequence.create () in
+      let notification = make_notification (fun () -> Lwt_sequence.iter_l (fun f -> f signum) actions) in
+      (try
+         Sys.set_signal signum (Sys.Signal_handle (fun signum -> send_notification notification))
+       with exn ->
+         stop_notification notification;
+         raise exn);
+      signals := Signal_map.add signum (notification, actions) !signals;
+      (notification, actions)
+  in
+  let node = Lwt_sequence.add_r handler actions in
+  lazy(Lwt_sequence.remove node;
+       if Lwt_sequence.is_empty actions then begin
+         stop_notification notification;
+         Sys.set_signal signum Sys.Signal_default
+       end)
 
-let disable_signal_handler = Lwt_engine.stop_event
+let disable_signal_handler = Lazy.force
 
 (* +-----------------------------------------------------------------+
    | Processes                                                       |
@@ -1522,87 +1545,64 @@ let real_wait4 =
        let pid, status = Unix.waitpid flags pid in
        (pid, status, { ru_utime = 0.0; ru_stime = 0.0 }))
 
-type child_waiter = {
-  cw_notify_id : int;
-  cw_flags : Unix.wait_flag list;
-  cw_pid : int;
-  mutable cw_result : (int * Unix.process_status * resource_usage) Lwt.t;
-}
-
 let wait_children = Lwt_sequence.create ()
 
 let () =
   if not windows_hack then
-    Sys.set_signal Sys.sigchld
-      (Sys.Signal_handle
-         (fun signum ->
-            Lwt_sequence.iter_node_l
-              (fun node ->
-                 let cw = Lwt_sequence.get node in
-                 try
-                   let (pid, _, _) as result = real_wait4 cw.cw_flags cw.cw_pid in
-                   if pid <> 0 then begin
-                     Lwt_sequence.remove node;
-                     cw.cw_result <- return result;
-                     send_notification cw.cw_notify_id
-                   end
-                 with exn ->
-                   Lwt_sequence.remove node;
-                   cw.cw_result <- fail exn;
-                   send_notification cw.cw_notify_id)
-              wait_children))
+    ignore begin
+      on_signal Sys.sigchld
+        (fun _ ->
+           Lwt_sequence.iter_node_l begin fun node ->
+             let wakener, flags, pid = Lwt_sequence.get node in
+             try
+               let (pid', _, _) as v = stub_wait4 flags pid in
+               if pid' <> 0 then begin
+                 Lwt_sequence.remove node;
+                 Lwt.wakeup wakener v
+               end
+             with e ->
+               Lwt_sequence.remove node;
+               Lwt.wakeup_exn wakener e
+           end wait_children)
+    end
 
-let safe_waitpid flags pid =
+let _waitpid flags pid =
   try_lwt
     return (Unix.waitpid flags pid)
 
 let waitpid flags pid =
   if List.mem Unix.WNOHANG flags || windows_hack then
-    safe_waitpid flags pid
+    _waitpid flags pid
   else
     let flags = Unix.WNOHANG :: flags in
-    lwt (pid', _) as result = safe_waitpid flags pid in
+    lwt ((pid', _) as res) = _waitpid flags pid in
     if pid' <> 0 then
-      return result
+      return res
     else begin
-      let waiter, wakener = Lwt.task () in
-      let child_waiter = {
-        cw_notify_id = make_notification ~once:true (wakeup wakener);
-        cw_flags = flags;
-        cw_pid = pid;
-        cw_result = fail Exit;
-      } in
-      let node = Lwt_sequence.add_l child_waiter wait_children in
-      Lwt.on_cancel waiter (fun () -> Lwt_sequence.remove node);
-      lwt () = waiter in
-      lwt pid, status, _ = child_waiter.cw_result in
+      let (res, w) = Lwt.task () in
+      let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
+      Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
+      lwt (pid, status, _) = res in
       return (pid, status)
     end
 
-let safe_wait4 flags pid =
+let _wait4 flags pid =
   try_lwt
-    return (real_wait4 flags pid)
+    return (stub_wait4 flags pid)
 
 let wait4 flags pid =
   if List.mem Unix.WNOHANG flags || windows_hack then
-    safe_wait4 flags pid
+    _wait4 flags pid
   else
     let flags = Unix.WNOHANG :: flags in
-    lwt (pid', _, _) as result = safe_wait4 flags pid in
+    lwt (pid', _, _) as res = _wait4 flags pid in
     if pid' <> 0 then
-      return result
+      return res
     else begin
-      let waiter, wakener = Lwt.task () in
-      let child_waiter = {
-        cw_notify_id = make_notification ~once:true (wakeup wakener);
-        cw_flags = flags;
-        cw_pid = pid;
-        cw_result = fail Exit;
-      } in
-      let node = Lwt_sequence.add_l child_waiter wait_children in
-      Lwt.on_cancel waiter (fun () -> Lwt_sequence.remove node);
-      lwt () = waiter in
-      child_waiter.cw_result
+      let (res, w) = Lwt.task () in
+      let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
+      Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
+      res
     end
 
 let wait () = waitpid [] (-1)
