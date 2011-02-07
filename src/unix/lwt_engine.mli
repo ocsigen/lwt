@@ -46,6 +46,18 @@ val fake_event : event
 
 (** Type of engines. *)
 type t = {
+  init : unit -> unit;
+  (** [init ()] musts initializes the engine. *)
+
+  stop : unit -> unit;
+  (** [stop ()] musts stop the engine. *)
+
+  iter : bool -> unit;
+  (** [iter block] musts perform one iteration of the main loop. If
+      [block] is [true] the function must blocks until one event
+      become available, otherwise it should just check for available
+      events and returns immediatly. *)
+
   on_readable : Unix.file_descr -> (unit -> unit) -> event;
   (** [on_readable fd f] musts call [f] each time [fd] becomes
       readable. *)
@@ -61,14 +73,6 @@ type t = {
   on_signal : int -> (unit -> unit) -> event;
   (** [on_signal signum f] musts call [f] each time the signal with
       number [signum] is received by the process. *)
-
-  on_suspend : (unit -> unit) -> event;
-  (** [on_suspend f] musts call [f] each time is about to goes into
-      idle by suspending itself. *)
-
-  on_resume : (unit -> unit) -> event;
-  (** [on_resume f] musts call [f] each time the process resume from
-      idle. *)
 }
 
 (** {6 The current engine} *)
@@ -81,9 +85,10 @@ val set : t -> unit
 
 (** The following functions are for accessing the current engine. *)
 
+val init : unit -> unit
+val stop : unit -> unit
+val iter : bool -> unit
 val on_readable : Unix.file_descr -> (unit -> unit) -> event
 val on_writable : Unix.file_descr -> (unit -> unit) -> event
 val on_timer : float -> (unit -> unit) -> event
 val on_signal : int -> (unit -> unit) -> event
-val on_suspend : (unit -> unit) -> event
-val on_resume : (unit -> unit) -> event

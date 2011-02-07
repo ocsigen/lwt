@@ -40,6 +40,12 @@ val yield : unit -> unit Lwt.t
   (** [yield ()] is a threads which suspends itself and then resumes
       as soon as possible and terminates. *)
 
+val enter_iter_hooks : (unit -> unit) Lwt_sequence.t
+  (** Functions that are called before the main iteration. *)
+
+val leave_iter_hooks : (unit -> unit) Lwt_sequence.t
+  (** Functions that are called after the main iteration. *)
+
 val exit_hooks : (unit -> unit Lwt.t) Lwt_sequence.t
   (** Sets of functions executed just before the program exit.
 

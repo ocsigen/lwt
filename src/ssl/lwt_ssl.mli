@@ -48,7 +48,5 @@ val in_channel_of_descr : socket -> Lwt_chan.in_channel
 
 val ssl_shutdown : socket -> unit Lwt.t
 
-val abort : socket -> exn -> unit
-
 (** Are we using an SSL socket? *)
 val is_ssl : socket -> bool

@@ -22,13 +22,8 @@
 
 open Lwt
 
-external libev_init : unit -> unit = "lwt_libev_init"
-external libev_loop : unit -> unit = "lwt_libev_loop"
-external libev_loop_no_wait : unit -> unit = "lwt_libev_loop_no_wait"
-external libev_unloop : unit -> unit = "lwt_libev_unloop"
-
-let () = libev_init ()
-
+let enter_iter_hooks = Lwt_sequence.create ()
+let leave_iter_hooks = Lwt_sequence.create ()
 let yielded = Lwt_sequence.create ()
 
 let yield () =
@@ -43,22 +38,14 @@ let rec run t =
     | Some x ->
         x
     | None ->
-        begin
-          try
-            if Lwt.paused_count () = 0 && Lwt_sequence.is_empty yielded then
-              libev_loop ()
-            else begin
-              libev_loop_no_wait ();
-              if not (Lwt_sequence.is_empty yielded) then begin
-                let tmp = Lwt_sequence.create () in
-                Lwt_sequence.transfer_r yielded tmp;
-                Lwt_sequence.iter_l (fun wakener -> wakeup wakener ()) tmp
-              end
-            end
-          with exn ->
-            libev_unloop ();
-            raise exn
+        Lwt_sequence.iter_l (fun f -> f ()) enter_iter_hooks;
+        Lwt_engine.iter (Lwt.paused_count () = 0 && Lwt_sequence.is_empty yielded);
+        if not (Lwt_sequence.is_empty yielded) then begin
+          let tmp = Lwt_sequence.create () in
+          Lwt_sequence.transfer_r yielded tmp;
+          Lwt_sequence.iter_l (fun wakener -> wakeup wakener ()) tmp
         end;
+        Lwt_sequence.iter_l (fun f -> f ()) leave_iter_hooks;
         run t
 
 let exit_hooks = Lwt_sequence.create ()

@@ -35,12 +35,13 @@ let fake_event = lazy ()
    +-----------------------------------------------------------------+ *)
 
 type t = {
+  init : unit -> unit;
+  stop : unit -> unit;
+  iter : bool -> unit;
   on_readable : Unix.file_descr -> (unit -> unit) -> event;
   on_writable : Unix.file_descr -> (unit -> unit) -> event;
   on_timer : float -> (unit -> unit) -> event;
   on_signal : int -> (unit -> unit) -> event;
-  on_suspend : (unit -> unit) -> event;
-  on_resume : (unit -> unit) -> event;
 }
 
 (* +-----------------------------------------------------------------+
@@ -50,9 +51,12 @@ type t = {
 type ev_io
 type ev_signal
 type ev_timer
-type ev_suspend
-type ev_resume
 
+external ev_init : unit -> unit = "lwt_libev_init"
+external ev_stop : unit -> unit = "lwt_libev_stop"
+external ev_loop : unit -> unit = "lwt_libev_loop"
+external ev_loop_no_wait : unit -> unit = "lwt_libev_loop_no_wait"
+external ev_unloop : unit -> unit = "lwt_libev_unloop"
 external ev_readable_init : Unix.file_descr -> (unit -> unit) -> ev_io = "lwt_libev_readable_init"
 external ev_writable_init : Unix.file_descr -> (unit -> unit) -> ev_io = "lwt_libev_writable_init"
 external ev_io_stop : ev_io -> unit = "lwt_libev_io_stop"
@@ -60,12 +64,20 @@ external ev_timer_init : float -> (unit -> unit) -> ev_timer = "lwt_libev_timer_
 external ev_timer_stop : ev_timer -> unit  = "lwt_libev_timer_stop"
 external ev_signal_init : int -> (unit -> unit) -> ev_signal = "lwt_libev_signal_init"
 external ev_signal_stop : ev_signal -> unit  = "lwt_libev_signal_stop"
-external ev_suspend_init : (unit -> unit) -> ev_suspend = "lwt_libev_suspend_init"
-external ev_suspend_stop : ev_suspend -> unit = "lwt_libev_suspend_stop"
-external ev_resume_init : (unit -> unit) -> ev_resume = "lwt_libev_resume_init"
-external ev_resume_stop : ev_resume -> unit = "lwt_libev_resume_stop"
 
 let libev_engine = {
+  init = ev_init;
+  stop = ev_stop;
+  iter =
+    (fun block ->
+       try
+         if block then
+           ev_loop ()
+         else
+           ev_loop_no_wait ()
+       with exn ->
+         ev_unloop ();
+         raise exn);
   on_readable =
     (fun fd f ->
        let ev = ev_readable_init fd f in
@@ -82,14 +94,6 @@ let libev_engine = {
     (fun signum f ->
        let ev = ev_signal_init signum f in
        lazy(ev_signal_stop ev));
-  on_suspend =
-    (fun f ->
-       let ev = ev_suspend_init f in
-       lazy(ev_suspend_stop ev));
-  on_resume =
-    (fun f ->
-       let ev = ev_resume_init f in
-       lazy(ev_resume_stop ev));
 }
 
 (* +-----------------------------------------------------------------+
@@ -97,12 +101,18 @@ let libev_engine = {
    +-----------------------------------------------------------------+ *)
 
 let current = ref libev_engine
-let get () = !current
-let set engine = current := engine
+let () = !current.init ()
 
+let get () = !current
+let set engine =
+  !current.stop ();
+  current := engine;
+  !current.init ()
+
+let init () = !current.init ()
+let stop () = !current.stop ()
+let iter block = !current.iter block
 let on_readable fd f = !current.on_readable fd f
 let on_writable fd f = !current.on_writable fd f
 let on_timer delay f = !current.on_timer delay f
 let on_signal signum f = !current.on_signal signum f
-let on_suspend f = !current.on_suspend f
-let on_resume f = !current.on_resume f
