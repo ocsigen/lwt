@@ -53,6 +53,9 @@ val on_timer : float -> bool -> (event -> unit) -> event
       seconds. If [repeat] is [true] then [f] is called each [delay]
       seconds, otherwise it is called only one time. *)
 
+val fake_io : Unix.file_descr -> unit
+  (** Simulates activity on the given file descriptor. *)
+
 (** {6 Engines} *)
 
 (** An engine represent a set of functions used to register different
@@ -76,6 +79,7 @@ class virtual t : object
   method on_readable : Unix.file_descr -> (event -> unit) -> event
   method on_writable : Unix.file_descr -> (event -> unit) -> event
   method on_timer : float -> bool -> (event -> unit) -> event
+  method fake_io : Unix.file_descr -> unit
 
   (** {6 Backend methods} *)
 

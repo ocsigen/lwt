@@ -232,7 +232,7 @@ let execute_job ?async_method ~job ~result ~free =
    | File descriptor wrappers                                        |
    +-----------------------------------------------------------------+ *)
 
-type state = Opened | Closed
+type state = Opened | Closed | Aborted of exn
 
 type file_descr = {
   fd : Unix.file_descr;
@@ -291,6 +291,8 @@ let rec check_descriptor ch =
   match ch.state with
     | Opened ->
         ()
+    | Aborted e ->
+        raise e
     | Closed ->
         raise (Unix.Unix_error (Unix.EBADF, "check_descriptor", ""))
 
@@ -318,6 +320,12 @@ let writable ch =
 
 let set_state ch st =
   ch.state <- st
+
+let abort ch e =
+  if ch.state <> Closed then begin
+    set_state ch (Aborted e);
+    Lwt_engine.fake_io ch.fd
+  end
 
 let unix_file_descr ch = ch.fd
 
