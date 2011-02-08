@@ -121,9 +121,8 @@ let set_notification id f =
 
 let sleep delay =
   let waiter, wakener = Lwt.task () in
-  let ev = ref Lwt_engine.fake_event in
-  Lwt.on_cancel waiter (fun () -> Lwt_engine.stop_event !ev);
-  ev := Lwt_engine.on_timer delay false (fun () -> Lwt_engine.stop_event !ev; Lwt.wakeup wakener ());
+  let ev = Lwt_engine.on_timer delay false (fun ev -> Lwt_engine.stop_event ev; Lwt.wakeup wakener ()) in
+  Lwt.on_cancel waiter (fun () -> Lwt_engine.stop_event ev);
   waiter
 
 let yield = Lwt_main.yield
@@ -377,9 +376,9 @@ let rec retry_syscall ev event ch wakener action =
           Lwt_engine.stop_event !ev;
           match event' with
             | Read ->
-                ev := Lwt_engine.on_readable ch.fd (fun () -> retry_syscall ev event' ch wakener action)
+                ev := Lwt_engine.on_readable ch.fd (fun _ -> retry_syscall ev event' ch wakener action)
             | Write ->
-                ev := Lwt_engine.on_readable ch.fd (fun () -> retry_syscall ev event' ch wakener action)
+                ev := Lwt_engine.on_readable ch.fd (fun _ -> retry_syscall ev event' ch wakener action)
         end
 
 let register_action event ch action =
@@ -388,10 +387,10 @@ let register_action event ch action =
   Lwt.on_cancel waiter (fun () -> Lwt_engine.stop_event !ev);
   match event with
     | Read ->
-        ev := Lwt_engine.on_readable ch.fd (fun () -> retry_syscall ev event ch wakener action);
+        ev := Lwt_engine.on_readable ch.fd (fun _ -> retry_syscall ev event ch wakener action);
         waiter
     | Write ->
-        ev := Lwt_engine.on_writable ch.fd (fun () -> retry_syscall ev event ch wakener action);
+        ev := Lwt_engine.on_writable ch.fd (fun _ -> retry_syscall ev event ch wakener action);
         waiter
 
 (* Wraps a system call *)

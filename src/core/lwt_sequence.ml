@@ -65,6 +65,10 @@ let create () =
 
 let is_empty seq = seq.next == seq
 
+let empty seq =
+  seq.prev <- seq;
+  seq.next <- seq
+
 let add_l data seq =
   let node = { node_prev = seq; node_next = seq.next; node_data = data; node_active = true } in
   seq.next.prev <- seq_of_node node;

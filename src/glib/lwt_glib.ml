@@ -43,9 +43,9 @@ let enter () =
   for i = 0 to Array.length sources - 1 do
     let src = sources.(i) in
     if src.check_readable then
-      events := engine#on_readable src.fd (fun () -> glib_mark_readable i) :: !events;
+      events := engine#on_readable src.fd (fun _ -> glib_mark_readable i) :: !events;
     if src.check_writable then
-      events := engine#on_writable src.fd (fun () -> glib_mark_writable i) :: !events
+      events := engine#on_writable src.fd (fun _ -> glib_mark_writable i) :: !events
   done;
   if timeout = 0. then
     ignore (Lwt_main.yield ())

@@ -95,6 +95,9 @@ val transfer_r : 'a t -> 'a t -> unit
       the right of [s2]. This operation runs in constant time and
       space. *)
 
+val empty : 'a t -> unit
+  (** [cleanup s] removes all elements of [s]. *)
+
 (** {6 Sequence iterators} *)
 
 (** Note: it is OK to remove a node while traversing a sequence *)

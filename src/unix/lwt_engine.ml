@@ -24,22 +24,77 @@
    | Events                                                          |
    +-----------------------------------------------------------------+ *)
 
-type event = unit Lazy.t
+type event = {
+  stop : unit Lazy.t;
+  (* The stop method of the event. *)
+  node : Obj.t Lwt_sequence.node;
+  (* The node in the sequence of registered events. *)
+}
 
-let make_event = Lazy.lazy_from_fun
-let stop_event ev = Lazy.force ev
-let fake_event = lazy ()
+external cast_node : 'a Lwt_sequence.node -> Obj.t Lwt_sequence.node = "%identity"
+
+let stop_event ev =
+  Lwt_sequence.remove ev.node;
+  Lazy.force ev.stop
+
+let fake_event = {
+  stop = lazy ();
+  node = Lwt_sequence.add_l (Obj.repr ()) (Lwt_sequence.create ());
+}
 
 (* +-----------------------------------------------------------------+
    | Engines                                                         |
    +-----------------------------------------------------------------+ *)
 
-class type t = object
-  method destroy : unit
-  method iter : bool -> unit
-  method on_readable : Unix.file_descr -> (unit -> unit) -> event
-  method on_writable : Unix.file_descr -> (unit -> unit) -> event
-  method on_timer : float -> bool -> (unit -> unit) -> event
+class virtual t = object(self)
+  method virtual iter : bool -> unit
+  method virtual private cleanup : unit
+  method virtual private register_readable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+  method virtual private register_writable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+  method virtual private register_timer : float -> bool -> (unit -> unit) -> unit Lazy.t
+
+  val readables = Lwt_sequence.create ()
+    (* Sequence of callbacks waiting for a file descriptor to become
+       readable. *)
+
+  val writables = Lwt_sequence.create ()
+    (* Sequence of callbacks waiting for a file descriptor to become
+       writable. *)
+
+  val timers = Lwt_sequence.create ()
+    (* Sequence of timers. *)
+
+  method destroy =
+    Lwt_sequence.empty readables;
+    Lwt_sequence.empty writables;
+    Lwt_sequence.empty timers;
+    self#cleanup
+
+  method copy (engine : t) =
+    Lwt_sequence.iter_l (fun (fd, f) -> ignore (engine#on_readable fd f)) readables;
+    Lwt_sequence.iter_l (fun (fd, f) -> ignore (engine#on_readable fd f)) writables;
+    Lwt_sequence.iter_l (fun (delay, repeat, f) -> ignore (engine#on_timer delay repeat f)) timers
+
+  method on_readable fd f =
+    let ev_cell = ref fake_event in
+    let stop = self#register_readable fd (fun () -> f !ev_cell) in
+    let ev = { stop = stop; node = cast_node (Lwt_sequence.add_r (fd, f) readables) } in
+    ev_cell := ev;
+    ev
+
+  method on_writable fd f =
+    let ev_cell = ref fake_event in
+    let stop = self#register_writable fd (fun () -> f !ev_cell) in
+    let ev = { stop = stop; node = cast_node (Lwt_sequence.add_r (fd, f) writables) } in
+    ev_cell := ev;
+    ev
+
+  method on_timer delay repeat f =
+    let ev_cell = ref fake_event in
+    let stop = self#register_timer delay repeat (fun () -> f !ev_cell) in
+    let ev = { stop = stop; node = cast_node (Lwt_sequence.add_r (delay, repeat, f) timers) } in
+    ev_cell := ev;
+    ev
 end
 
 (* +-----------------------------------------------------------------+
@@ -61,10 +116,12 @@ external ev_timer_init : ev_loop -> float -> bool -> (unit -> unit) -> ev_timer 
 external ev_timer_stop : ev_loop -> ev_timer -> unit  = "lwt_libev_timer_stop"
 
 class libev = object
+  inherit t
+
   val loop = ev_init ()
   method loop = loop
 
-  method destroy = ev_stop loop
+  method private cleanup = ev_stop loop
 
   method iter block =
     try
@@ -73,15 +130,15 @@ class libev = object
       ev_unloop loop;
       raise exn
 
-  method on_readable fd f =
+  method private register_readable fd f =
     let ev = ev_readable_init loop fd f in
     lazy(ev_io_stop loop ev)
 
-  method on_writable fd f =
+  method private register_writable fd f =
     let ev = ev_writable_init loop fd f in
     lazy(ev_io_stop loop ev)
 
-  method on_timer delay repeat f =
+  method private register_timer delay repeat f =
     let ev = ev_timer_init loop delay repeat f in
     lazy(ev_timer_stop loop ev)
 end
@@ -137,6 +194,7 @@ let bad_fd fd =
     true
 
 class select = object(self)
+  inherit t
 
   val mutable sleep_queue = Sleep_queue.empty
     (* Threads waiting for a timeout to expire. *)
@@ -155,7 +213,7 @@ class select = object(self)
     (* Sequences of actions waiting for file descriptors to become
        writable. *)
 
-  method destroy = ()
+  method private cleanup = ()
 
   method iter block =
     (* Transfer all sleepers added since the last iteration to the
@@ -187,7 +245,7 @@ class select = object(self)
     List.iter (fun fd -> Lwt_sequence.iter_l (fun f -> f ()) (Fd_map.find fd wait_readable)) fds_r;
     List.iter (fun fd -> Lwt_sequence.iter_l (fun f -> f ()) (Fd_map.find fd wait_writable)) fds_w
 
-  method on_timer delay repeat f =
+  method private register_timer delay repeat f =
     if repeat then begin
       let rec sleeper = { time = Unix.gettimeofday () +. delay; stopped = false; action = g }
       and g () =
@@ -203,7 +261,7 @@ class select = object(self)
       lazy(sleeper.stopped <- true)
     end
 
-  method on_readable fd f =
+  method private register_readable fd f =
     let actions =
       try
         Fd_map.find fd wait_readable
@@ -216,7 +274,7 @@ class select = object(self)
     lazy(Lwt_sequence.remove node;
          if Lwt_sequence.is_empty actions then wait_readable <- Fd_map.remove fd wait_readable)
 
-  method on_writable fd f =
+  method private register_writable fd f =
     let actions =
       try
         Fd_map.find fd wait_writable
@@ -240,6 +298,7 @@ let get () =
   !current
 
 let set engine =
+  !current#copy engine;
   !current#destroy;
   current := engine
 

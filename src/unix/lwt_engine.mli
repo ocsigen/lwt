@@ -28,16 +28,30 @@ type event
   (** Type of events. An event represent a callback registered to be
       called when some event occurs. *)
 
-val make_event : (unit -> unit) -> event
-  (** [make_event stop] creates a new event. [stop] is the function
-      used to stop the event and free its associated resources. [stop]
-      is guaranteed to be called at most one time. *)
-
 val stop_event : event -> unit
   (** [stop_event event] stops the given event. *)
 
 val fake_event : event
   (** Event which does nothing when stopped. *)
+
+(** {6 Event loop functions} *)
+
+val iter : bool -> unit
+  (** [iter block] performs one iteration of the main loop. If [block]
+      is [true] the function must blocks until one event become
+      available, otherwise it should just check for available events
+      and return immediatly. *)
+
+val on_readable : Unix.file_descr -> (event -> unit) -> event
+  (** [on_readable fd f] calls [f] each time [fd] becomes readable. *)
+
+val on_writable : Unix.file_descr -> (event -> unit) -> event
+  (** [on_readable fd f] calls [f] each time [fd] becomes writable. *)
+
+val on_timer : float -> bool -> (event -> unit) -> event
+  (** [on_timer delay repeat f] calls [f] one time after [delay]
+      seconds. If [repeat] is [true] then [f] is called each [delay]
+      seconds, otherwise it is called only one time. *)
 
 (** {6 Engines} *)
 
@@ -45,28 +59,40 @@ val fake_event : event
     kind of callbacks for different kind of events. *)
 
 (** Type of engines. *)
-class type t = object
+class virtual t : object
   method destroy : unit
     (** Destroy the engine and free its associated resources. *)
 
-  method iter : bool -> unit
-    (** [iter block] performs one iteration of the main loop. If
-        [block] is [true] the function must blocks until one event
-        become available, otherwise it should just check for available
-        events and return immediatly. *)
+  method copy : t -> unit
+    (** [copy engine] copy all events from the current engine to
+        [engine]. Note that timers are reset in the destination
+        engine, i.e. if a timer with a delay of 2 seconds was
+        registered 1 second ago it will occurs in 2 seconds in the
+        destination engine. *)
 
-  method on_readable : Unix.file_descr -> (unit -> unit) -> event
-    (** [on_readable fd f] calls [f] each time [fd] becomes
-        readable. *)
+  (** {6 Event loop methods} *)
 
-  method on_writable : Unix.file_descr -> (unit -> unit) -> event
-    (** [on_readable fd f] calls [f] each time [fd] becomes
-        writable. *)
+  method virtual iter : bool -> unit
+  method on_readable : Unix.file_descr -> (event -> unit) -> event
+  method on_writable : Unix.file_descr -> (event -> unit) -> event
+  method on_timer : float -> bool -> (event -> unit) -> event
 
-  method on_timer : float -> bool -> (unit -> unit) -> event
-    (** [on_timer delay repeat f] calls [f] one time after [delay]
-        seconds. If [repeat] is [true] then [f] is called each [delay]
-        seconds, otherwise it is called only one time. *)
+  (** {6 Backend methods} *)
+
+  (** Notes:
+
+      - the callback passed to register methods is of type [unit ->
+      unit] and not [event -> unit]
+      - register methods returns a lazy value which unregister the
+      event when forced
+  *)
+
+  method virtual private cleanup : unit
+    (** Cleanup resources associated to the engine. *)
+
+  method virtual private register_readable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+  method virtual private register_writable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+  method virtual private register_timer : float -> bool -> (unit -> unit) -> unit Lazy.t
 end
 
 (** {6 Predefined engines} *)
@@ -83,10 +109,24 @@ class libev : object
 
   method loop : ev_loop
     (** Returns [loop]. *)
+
+  method iter : bool -> unit
+  method private cleanup : unit
+  method private register_readable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+  method private register_writable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+  method private register_timer : float -> bool -> (unit -> unit) -> unit Lazy.t
 end
 
 (** Engine based on select. *)
-class select : t
+class select : object
+  inherit t
+
+  method iter : bool -> unit
+  method private cleanup : unit
+  method private register_readable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+  method private register_writable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+  method private register_timer : float -> bool -> (unit -> unit) -> unit Lazy.t
+end
 
 (** {6 The current engine} *)
 
@@ -94,11 +134,5 @@ val get : unit -> t
   (** [get ()] returns the engine currently in use. *)
 
 val set : t -> unit
-  (** [set engine] replaces the current engine by the given one. *)
-
-(** Convenient access to the current engine. *)
-
-val iter : bool -> unit
-val on_readable : Unix.file_descr -> (unit -> unit) -> event
-val on_writable : Unix.file_descr -> (unit -> unit) -> event
-val on_timer : float -> bool -> (unit -> unit) -> event
+  (** [set engine] replaces the current engine by the given one. All
+      events from the current engine are copied to the new one. *)
