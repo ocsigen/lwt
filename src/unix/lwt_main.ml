@@ -33,18 +33,25 @@ let yield () =
   waiter
 
 let rec run t =
+  (* Wakeup paused threads now. *)
   Lwt.wakeup_paused ();
   match Lwt.poll t with
     | Some x ->
         x
     | None ->
+        (* Call enter hooks. *)
         Lwt_sequence.iter_l (fun f -> f ()) enter_iter_hooks;
+        (* Do the main loop call. *)
         Lwt_engine.iter (Lwt.paused_count () = 0 && Lwt_sequence.is_empty yielded);
+        (* Wakeup paused threads again. *)
+        Lwt.wakeup_paused ();
+        (* Wakeup yielded threads now. *)
         if not (Lwt_sequence.is_empty yielded) then begin
           let tmp = Lwt_sequence.create () in
           Lwt_sequence.transfer_r yielded tmp;
           Lwt_sequence.iter_l (fun wakener -> wakeup wakener ()) tmp
         end;
+        (* Call leave hooks. *)
         Lwt_sequence.iter_l (fun f -> f ()) leave_iter_hooks;
         run t
 
