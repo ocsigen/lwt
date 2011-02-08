@@ -75,7 +75,7 @@ class virtual t = object(self)
 
   method copy (engine : t) =
     Lwt_sequence.iter_l (fun (fd, f, g, stop) -> ignore (engine#on_readable fd f)) readables;
-    Lwt_sequence.iter_l (fun (fd, f, g, stop) -> ignore (engine#on_readable fd f)) writables;
+    Lwt_sequence.iter_l (fun (fd, f, g, stop) -> ignore (engine#on_writable fd f)) writables;
     Lwt_sequence.iter_l (fun (delay, repeat, f, g, stop) -> ignore (engine#on_timer delay repeat f)) timers
 
   method fake_io fd =
