@@ -64,7 +64,8 @@ val fake_io : Unix.file_descr -> unit
 (** Type of engines. *)
 class virtual t : object
   method destroy : unit
-    (** Destroy the engine and free its associated resources. *)
+    (** Destroy the engine, remove all its events and free its
+        associated resources. *)
 
   method copy : t -> unit
     (** [copy engine] copy all events from the current engine to
