@@ -67,8 +67,8 @@ class virtual t : object
     (** Destroy the engine, remove all its events and free its
         associated resources. *)
 
-  method copy : t -> unit
-    (** [copy engine] copy all events from the current engine to
+  method transfer : t -> unit
+    (** [transfer engine] moves all events from the current engine to
         [engine]. Note that timers are reset in the destination
         engine, i.e. if a timer with a delay of 2 seconds was
         registered 1 second ago it will occurs in 2 seconds in the
@@ -140,4 +140,5 @@ val get : unit -> t
 
 val set : t -> unit
   (** [set engine] replaces the current engine by the given one. All
-      events from the current engine are copied to the new one. *)
+      events from the current engine are transferred to the new
+      one. *)

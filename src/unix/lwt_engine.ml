@@ -24,23 +24,28 @@
    | Events                                                          |
    +-----------------------------------------------------------------+ *)
 
-type event = {
+type _event = {
   stop : unit Lazy.t;
   (* The stop method of the event. *)
   node : Obj.t Lwt_sequence.node;
   (* The node in the sequence of registered events. *)
 }
 
+type event = _event ref
+
 external cast_node : 'a Lwt_sequence.node -> Obj.t Lwt_sequence.node = "%identity"
 
 let stop_event ev =
+  let ev = !ev in
   Lwt_sequence.remove ev.node;
   Lazy.force ev.stop
 
-let fake_event = {
+let _fake_event = {
   stop = lazy ();
   node = Lwt_sequence.add_l (Obj.repr ()) (Lwt_sequence.create ());
 }
+
+let fake_event = ref _fake_event
 
 (* +-----------------------------------------------------------------+
    | Engines                                                         |
@@ -65,45 +70,39 @@ class virtual t = object(self)
     (* Sequence of timers. *)
 
   method destroy =
-    Lwt_sequence.iter_l (fun (fd, f, g, stop) -> Lazy.force stop) readables;
-    Lwt_sequence.iter_l (fun (fd, f, g, stop) -> Lazy.force stop) writables;
-    Lwt_sequence.iter_l (fun (delay, repeat, f, g, stop) -> Lazy.force stop) timers;
-    Lwt_sequence.empty readables;
-    Lwt_sequence.empty writables;
-    Lwt_sequence.empty timers;
+    Lwt_sequence.iter_l (fun (fd, f, g, ev) -> stop_event ev) readables;
+    Lwt_sequence.iter_l (fun (fd, f, g, ev) -> stop_event ev) writables;
+    Lwt_sequence.iter_l (fun (delay, repeat, f, g, ev) -> stop_event ev) timers;
     self#cleanup
 
-  method copy (engine : t) =
-    Lwt_sequence.iter_l (fun (fd, f, g, stop) -> ignore (engine#on_readable fd f)) readables;
-    Lwt_sequence.iter_l (fun (fd, f, g, stop) -> ignore (engine#on_writable fd f)) writables;
-    Lwt_sequence.iter_l (fun (delay, repeat, f, g, stop) -> ignore (engine#on_timer delay repeat f)) timers
+  method transfer (engine : t) =
+    Lwt_sequence.iter_l (fun (fd, f, g, ev) -> stop_event ev; ev := !(engine#on_readable fd f)) readables;
+    Lwt_sequence.iter_l (fun (fd, f, g, ev) -> stop_event ev; ev := !(engine#on_writable fd f)) writables;
+    Lwt_sequence.iter_l (fun (delay, repeat, f, g, ev) -> stop_event ev; ev := !(engine#on_timer delay repeat f)) timers
 
   method fake_io fd =
     Lwt_sequence.iter_l (fun (fd', f, g, stop) -> if fd = fd' then g ()) readables;
     Lwt_sequence.iter_l (fun (fd', f, g, stop) -> if fd = fd' then g ()) writables
 
   method on_readable fd f =
-    let ev_cell = ref fake_event in
-    let g () = f !ev_cell in
+    let ev = ref _fake_event in
+    let g () = f ev in
     let stop = self#register_readable fd g in
-    let ev = { stop = stop; node = cast_node (Lwt_sequence.add_r (fd, f, g, stop) readables) } in
-    ev_cell := ev;
+    ev := { stop = stop; node = cast_node (Lwt_sequence.add_r (fd, f, g, ev) readables) };
     ev
 
   method on_writable fd f =
-    let ev_cell = ref fake_event in
-    let g () = f !ev_cell in
+    let ev = ref _fake_event in
+    let g () = f ev in
     let stop = self#register_writable fd g in
-    let ev = { stop = stop; node = cast_node (Lwt_sequence.add_r (fd, f, g, stop) writables) } in
-    ev_cell := ev;
+    ev := { stop = stop; node = cast_node (Lwt_sequence.add_r (fd, f, g, ev) writables) } ;
     ev
 
   method on_timer delay repeat f =
-    let ev_cell = ref fake_event in
-    let g () = f !ev_cell in
+    let ev = ref _fake_event in
+    let g () = f ev in
     let stop = self#register_timer delay repeat g in
-    let ev = { stop = stop; node = cast_node (Lwt_sequence.add_r (delay, repeat, f, g, stop) timers) } in
-    ev_cell := ev;
+    ev := { stop = stop; node = cast_node (Lwt_sequence.add_r (delay, repeat, f, g, ev) timers) };
     ev
 end
 
@@ -308,7 +307,7 @@ let get () =
   !current
 
 let set engine =
-  !current#copy engine;
+  !current#transfer engine;
   !current#destroy;
   current := engine
 
