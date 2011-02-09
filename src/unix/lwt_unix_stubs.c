@@ -64,6 +64,10 @@
 #  include <arpa/inet.h>
 #endif
 
+#if defined(HAVE_EVENTFD)
+#  include <sys/eventfd.h>
+#endif
+
 //#define DEBUG_MODE
 
 #if defined(DEBUG_MODE)
@@ -163,15 +167,96 @@ value lwt_unix_system_byte_order()
    | Notifications                                                   |
    +-----------------------------------------------------------------+ */
 
-int notification_fd_writer = -1;
+#if defined(LWT_ON_WINDOWS)
 
-pthread_mutex_t notification_pipe_mutex;
-
-value lwt_unix_init_notification(value fd)
+static HANDLE set_close_on_exec(HANDLE handle)
 {
-  notification_fd_writer = FD_val(fd);
-  pthread_mutex_init(&notification_pipe_mutex, NULL);
+  HANDLE new_handle;
+  if (!DuplicateHandle(GetCurrentProcess(), handle,
+                       GetCurrentProcess(), &new_handle,
+                       0L, FALSE, DUPLICATE_SAME_ACCESS)) {
+    win32_maperr(GetLastError());
+    uerror("set_close_on_exec", Nothing);
+  }
+  CloseHandle(handle);
+  return new_handle;
+}
+
+#else
+
+static void set_close_on_exec(int fd)
+{
+  int flags = fcntl(fd, F_GETFD, 0);
+  if (flags == -1 || fcntl(fd, F_SETFD, flags | FD_CLOEXEC) == -1)
+    uerror("set_close_on_exec", Nothing);
+}
+
+#endif
+
+#if defined(HAVE_EVENTFD)
+
+static int notification_fd;
+
+value lwt_unix_init_notification()
+{
+  notification_fd = eventfd(0, 0);
+  if (notification_fd == -1) uerror("eventfd", Nothing);
+  set_close_on_exec(notification_fd);
+  return Val_int(notification_fd);
+}
+
+void lwt_unix_send_notification(int id)
+{
+  uint64_t id64 = id;
+  write(notification_fd, &id64, 8);
+}
+
+value lwt_unix_send_notification_stub(value id)
+{
+  uint64_t id64 = Long_val(id);
+  write(notification_fd, &id64, 8);
   return Val_unit;
+}
+
+value lwt_unix_recv_notification()
+{
+  uint64_t id64;
+  int ret = read(notification_fd, &id64, 8);
+  if (ret == -1) uerror("read", Nothing);
+  return Val_long(id64);
+}
+
+#elif defined(LWT_ON_WINDOWS)
+
+static HANDLE handle_r, handle_w;
+
+value lwt_unix_init_notification()
+{
+  if (!CreatePipe(&handle_r, &handle_w, NULL, 4096)) {
+    win32_maperr(GetLastError());
+    uerror("pipe", Nothing);
+  }
+  handle_r = set_close_on_exec(handle_r);
+  handle_w = set_close_on_exec(handle_w);
+  return win_alloc_handle(handle_r);
+}
+
+CAMLprim value lwt_unix_recv_notification()
+{
+  char buf[4];
+  int offset = 0;
+  while (offset < 4) {
+    int n;
+    if (!ReadFile(handle_r, &(buf[offset]), 4 - offset, &n, NULL)) {
+      win32_maperr(GetLastError());
+      uerror("recv_notification", Nothing);
+    }
+    offset += n;
+  }
+  return Val_int(buf[0]
+                 | (buf[1] << 8)
+                 | (buf[2] << 16)
+                 | (buf[3] << 24));
 }
 
 CAMLprim value lwt_unix_send_notification_stub(value val_id)
@@ -190,7 +275,97 @@ CAMLprim value lwt_unix_send_notification_stub(value val_id)
 
   int offset = 0;
   while (offset < 4) {
-    int n = write(notification_fd_writer, &(buf[offset]), 4 - offset);
+    int n;
+    if (!WriteFile(handle_w, &(buf[offset]), 4 - offset, &n, NULL)) {
+      int err = GetLastError();
+      pthread_mutex_unlock(&notification_pipe_mutex);
+      caml_leave_blocking_section();
+      win32_maperr(err);
+      uerror("send_notification", Nothing);
+    }
+
+    offset += n;
+  }
+
+  pthread_mutex_unlock(&notification_pipe_mutex);
+
+  caml_leave_blocking_section();
+
+  return Val_unit;
+}
+
+void lwt_unix_send_notification(int id)
+{
+  char buf[4];
+
+  buf[0] = id;
+  buf[1] = id >> 8;
+  buf[2] = id >> 16;
+  buf[3] = id >> 24;
+
+  pthread_mutex_lock(&notification_pipe_mutex);
+
+  int offset = 0;
+  while (offset < 4) {
+    int n;
+    if (!WriteFile(handle_w, &(buf[offset]), 4 - offset, &n, NULL)) {
+      perror("failed to send notification");
+      break;
+    }
+
+    offset += n;
+  }
+
+  pthread_mutex_unlock(&notification_pipe_mutex);
+}
+
+#else
+
+static int notification_fds[2];
+
+pthread_mutex_t notification_pipe_mutex;
+
+value lwt_unix_init_notification(value fd)
+{
+  if (pipe(notification_fds) == -1) uerror("pipe", Nothing);
+  set_close_on_exec(notification_fds[0]);
+  set_close_on_exec(notification_fds[1]);
+  pthread_mutex_init(&notification_pipe_mutex, NULL);
+  return Val_int(notification_fds[0]);
+}
+
+CAMLprim value lwt_unix_recv_notification()
+{
+  char buf[4];
+  int offset = 0;
+  while (offset < 4) {
+    int n = read(notification_fds[0], &(buf[offset]), 4 - offset);
+    if (n <= 0) uerror("recv_notification", Nothing);
+    offset += n;
+  }
+  return Val_int(buf[0]
+                 | (buf[1] << 8)
+                 | (buf[2] << 16)
+                 | (buf[3] << 24));
+}
+
+CAMLprim value lwt_unix_send_notification_stub(value val_id)
+{
+  char buf[4];
+  int id = Int_val(val_id);
+
+  buf[0] = id;
+  buf[1] = id >> 8;
+  buf[2] = id >> 16;
+  buf[3] = id >> 24;
+
+  caml_enter_blocking_section();
+
+  pthread_mutex_lock(&notification_pipe_mutex);
+
+  int offset = 0;
+  while (offset < 4) {
+    int n = write(notification_fds[1], &(buf[offset]), 4 - offset);
 
     if (n <= 0) {
       pthread_mutex_unlock(&notification_pipe_mutex);
@@ -221,7 +396,7 @@ void lwt_unix_send_notification(int id)
 
   int offset = 0;
   while (offset < 4) {
-    int n = write(notification_fd_writer, &(buf[offset]), 4 - offset);
+    int n = write(notification_fds[1], &(buf[offset]), 4 - offset);
 
     if (n <= 0) {
       perror("failed to send notification");
@@ -233,6 +408,8 @@ void lwt_unix_send_notification(int id)
 
   pthread_mutex_unlock(&notification_pipe_mutex);
 }
+
+#endif
 
 /* +-----------------------------------------------------------------+
    | Launching a thread                                              |

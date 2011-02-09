@@ -93,6 +93,17 @@ CAMLprim value lwt_test()
 }
 "
 
+let eventfd_code = "
+#include <caml/mlvalues.h>
+#include <sys/eventfd.h>
+
+CAMLprim value lwt_test()
+{
+  eventfd(0, 0);
+  return Val_unit;
+}
+"
+
 (* +-----------------------------------------------------------------+
    | Compilation                                                     |
    +-----------------------------------------------------------------+ *)
@@ -208,6 +219,7 @@ export LIBRARY_PATH=/opt/local/lib
     exit 1
   end;
 
+  test_feature "eventfd" "HAVE_EVENTFD" eventfd_code;
   test_feature "fd passing" "HAVE_FD_PASSING" fd_passing_code;
   test_feature "sched_getcpu" "HAVE_GETCPU" getcpu_code;
   test_feature "affinity getting/setting" "HAVE_AFFINITY" affinity_code

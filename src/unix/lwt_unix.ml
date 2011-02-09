@@ -1458,36 +1458,18 @@ let tcflow ch act =
 (* Buffer used to receive notifications: *)
 let notification_buffer = String.create 4
 
-external init_notification : Unix.file_descr -> unit = "lwt_unix_init_notification"
+external init_notification : unit -> Unix.file_descr = "lwt_unix_init_notification"
 external send_notification : int -> unit = "lwt_unix_send_notification_stub"
+external recv_notification : unit -> int = "lwt_unix_recv_notification"
 
-(* Pipe used to send/receive notifications *)
-let notification_fd_reader, notification_fd_writer = pipe_in ()
+let notification_fd = of_unix_file_descr ~blocking:false (init_notification ())
 
-let () =
-  (* Send the writing side of the pipe to the C code: *)
-  init_notification notification_fd_writer;
-
-  set_close_on_exec notification_fd_reader;
-  Unix.set_close_on_exec notification_fd_writer
-
-(* Read one notification *)
-let rec read_notification offset =
-  if offset = 4 then
-    return (Char.code notification_buffer.[0]
-            lor (Char.code notification_buffer.[1] lsl 8)
-            lor (Char.code notification_buffer.[2] lsl 16)
-            lor (Char.code notification_buffer.[3] lsl 24))
-  else
-    read notification_fd_reader notification_buffer offset (4 - offset) >>= function
-      | 0 ->
-          raise_lwt End_of_file
-      | n ->
-          read_notification (offset + n)
+let read_notification () =
+  wrap_syscall Read notification_fd recv_notification
 
 (* Read continuously notifications *)
 let rec read_notifications () =
-  lwt id = read_notification 0 in
+  lwt id = read_notification () in
   match try Some(Notifiers.find notifiers id) with Not_found -> None with
     | Some notifier ->
         if notifier.notify_once then
