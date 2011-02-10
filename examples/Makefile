@@ -28,7 +28,7 @@
 
 # Tools
 OCAMLFIND := ocamlfind
-OCAMLBUILD := ocamlbuild
+OCAMLBUILD := ocamlbuild -byte-plugin
 
 # Use classic-display when compiling under a terminal which does not
 # support ANSI sequence:
