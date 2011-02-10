@@ -20,6 +20,11 @@
  * 02111-1307, USA.
  */
 
+#if defined(_WIN32) || defined(_WIN64)
+#  include <winsock2.h>
+#  include <windows.h>
+#endif
+
 #define _GNU_SOURCE
 #define _POSIX_PTHREAD_SEMANTICS
 
@@ -38,9 +43,7 @@
 #include "config.h"
 #include "lwt_unix.h"
 
-#if defined(LWT_ON_WINDOWS)
-#  include <windows.h>
-#else
+#if !defined(LWT_ON_WINDOWS)
 #  include <unistd.h>
 #  include <sys/socket.h>
 #  include <sys/types.h>
@@ -238,17 +241,17 @@ static void resize_notifications()
 
 #if defined(LWT_ON_WINDOWS)
 
-static HANDLE set_close_on_exec(HANDLE handle)
+static SOCKET set_close_on_exec(SOCKET socket)
 {
-  HANDLE new_handle;
-  if (!DuplicateHandle(GetCurrentProcess(), handle,
-                       GetCurrentProcess(), &new_handle,
+  SOCKET new_socket;
+  if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)socket,
+                       GetCurrentProcess(), (HANDLE*)&new_socket,
                        0L, FALSE, DUPLICATE_SAME_ACCESS)) {
     win32_maperr(GetLastError());
     uerror("set_close_on_exec", Nothing);
   }
-  CloseHandle(handle);
-  return new_handle;
+  closesocket(socket);
+  return new_socket;
 }
 
 #else
@@ -280,22 +283,84 @@ NOTIFICATION_STUBS({ uint64_t buf = 1; write(notification_fd, (char*)&buf, 8); }
 
 #elif defined(LWT_ON_WINDOWS)
 
-static HANDLE handle_r, handle_w;
+static SOCKET socket_r, socket_w;
 
 value lwt_unix_init_notification()
 {
   init_notifications();
-  if (!CreatePipe(&handle_r, &handle_w, NULL, 4096)) {
-    win32_maperr(GetLastError());
-    uerror("pipe", Nothing);
-  }
-  handle_r = set_close_on_exec(handle_r);
-  handle_w = set_close_on_exec(handle_w);
-  return win_alloc_handle(handle_r);
+
+  /* Since pipes do not works with select, we need to use a pair of
+     sockets. The following code simulate the socketpair call of
+     unix. */
+
+  union {
+    struct sockaddr_in inaddr;
+    struct sockaddr addr;
+  } a;
+  SOCKET listener;
+  int e;
+  int addrlen = sizeof(a.inaddr);
+  int reuse = 1;
+  DWORD err;
+
+  socket_r = INVALID_SOCKET;
+  socket_w = INVALID_SOCKET;
+
+  listener = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  if (listener == INVALID_SOCKET)
+    goto failure;
+
+  memset(&a, 0, sizeof(a));
+  a.inaddr.sin_family = AF_INET;
+  a.inaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  a.inaddr.sin_port = 0;
+
+  if (setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, (char*) &reuse, sizeof(reuse)) == -1)
+    goto failure;
+
+  if  (bind(listener, &a.addr, sizeof(a.inaddr)) == SOCKET_ERROR)
+    goto failure;
+
+  memset(&a, 0, sizeof(a));
+  if  (getsockname(listener, &a.addr, &addrlen) == SOCKET_ERROR)
+    goto failure;
+
+  a.inaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  a.inaddr.sin_family = AF_INET;
+
+  if (listen(listener, 1) == SOCKET_ERROR)
+    goto failure;
+
+  socket_r = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+  if (socket_r == INVALID_SOCKET)
+    goto failure;
+
+  if (connect(socket_r, &a.addr, sizeof(a.inaddr)) == SOCKET_ERROR)
+    goto failure;
+
+  socket_w = accept(listener, NULL, NULL);
+  if (socket_w == INVALID_SOCKET)
+    goto failure;
+
+  closesocket(listener);
+
+  socket_r = set_close_on_exec(socket_r);
+  socket_w = set_close_on_exec(socket_w);
+  return win_alloc_socket(socket_r);
+
+ failure:
+  err = WSAGetLastError();
+  closesocket(listener);
+  closesocket(socket_r);
+  closesocket(socket_w);
+  win32_maperr(err);
+  uerror("init_notification", Nothing);
+  /* Just to make the compiler happy. */
+  return Val_unit;
 }
 
-NOTIFICATION_STUBS({ char buf; DWORD n; WriteFile(handle_w, &buf, 1, &n, NULL); },
-                   { char buf; DWORD n; ReadFile(handle_w, &buf, 1, &n, NULL); })
+NOTIFICATION_STUBS({ char buf; send(socket_w, &buf, 1, 0); },
+                   { char buf; recv(socket_r, &buf, 1, 0); })
 
 #else
 
