@@ -253,33 +253,54 @@ external guess_blocking_result : [ `unix_guess_blocking ] job -> bool = "lwt_uni
 external guess_blocking_free : [ `unix_guess_blocking ] job -> unit = "lwt_unix_guess_blocking_free" "noalloc"
 
 let guess_blocking fd =
-  if windows_hack then
-    return (match (Unix.fstat fd).Unix.st_kind with
-              | Unix.S_SOCK | Unix.S_FIFO -> false
-              | _ -> true)
-  else
-    execute_job (guess_blocking_job fd) guess_blocking_result guess_blocking_free
+  execute_job (guess_blocking_job fd) guess_blocking_result guess_blocking_free
 
 let is_blocking ?blocking ?(set_flags=true) fd =
-  match blocking, set_flags with
-    | Some state, false ->
-        lazy(return state)
-    | Some true, true ->
-        Unix.clear_nonblock fd;
-        lazy(return true)
-    | Some false, true ->
-        Unix.set_nonblock fd;
-        lazy(return false)
-    | None, false ->
-        lazy(guess_blocking fd)
-    | None, true ->
-        lazy(guess_blocking fd >>= function
-               | true ->
-                   Unix.clear_nonblock fd;
-                   return true
-               | false ->
-                   Unix.set_nonblock fd;
-                   return false)
+  if windows_hack then
+    match (Unix.fstat fd).Unix.st_kind with
+      | Unix.S_SOCK -> begin
+          match blocking, set_flags with
+            | Some state, false ->
+                lazy(return state)
+            | Some true, true ->
+                Unix.clear_nonblock fd;
+                lazy(return true)
+            | Some false, true ->
+                Unix.set_nonblock fd;
+                lazy(return false)
+            | None, false ->
+                lazy(return false)
+            | None, true ->
+                Unix.set_nonblock fd;
+                lazy(return false)
+        end
+      | _ -> begin
+          match blocking with
+            | Some state ->
+                lazy(return state)
+            | None ->
+                lazy(return true)
+        end
+  else
+    match blocking, set_flags with
+      | Some state, false ->
+          lazy(return state)
+      | Some true, true ->
+          Unix.clear_nonblock fd;
+          lazy(return true)
+      | Some false, true ->
+          Unix.set_nonblock fd;
+          lazy(return false)
+      | None, false ->
+          lazy(guess_blocking fd)
+      | None, true ->
+          lazy(guess_blocking fd >>= function
+                 | true ->
+                     Unix.clear_nonblock fd;
+                     return true
+                 | false ->
+                     Unix.set_nonblock fd;
+                     return false)
 
 let mk_ch ?blocking ?(set_flags=true) fd =
   { fd = fd;
@@ -958,15 +979,15 @@ let files_of_directory path =
 
 let pipe () =
   let (out_fd, in_fd) = Unix.pipe() in
-  (mk_ch ~blocking:false out_fd, mk_ch ~blocking:false in_fd)
+  (mk_ch ~blocking:windows_hack out_fd, mk_ch ~blocking:windows_hack in_fd)
 
 let pipe_in () =
   let (out_fd, in_fd) = Unix.pipe() in
-  (mk_ch ~blocking:false out_fd, in_fd)
+  (mk_ch ~blocking:windows_hack out_fd, in_fd)
 
 let pipe_out () =
   let (out_fd, in_fd) = Unix.pipe() in
-  (out_fd, mk_ch ~blocking:false in_fd)
+  (out_fd, mk_ch ~blocking:windows_hack in_fd)
 
 external mkfifo_job : string -> Unix.file_perm -> [ `unix_mkfifo ] job = "lwt_unix_mkfifo_job"
 external mkfifo_result : [ `unix_mkfifo ] job -> unit = "lwt_unix_mkfifo_result"
