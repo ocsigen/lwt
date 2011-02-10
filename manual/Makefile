@@ -5,18 +5,16 @@
 #
 # This file is a part of lwt.
 
-MELT := melt -pdf -no-link eclbkbox.sty
+all: manual.pdf
 
-all:
-	$(MELT) manual.mlt
+manual-wiki.tex: manual.wiki
+	latex_of_wiki < manual.wiki > manual-wiki.tex
 
-manual.pdf:
-	$(MELT) manual.mlt
-	cp _melt/manual.pdf manual.pdf
+manual.pdf: manual.tex manual-wiki.tex
+	pdflatex -interaction=nonstopmode manual.tex
 
-clean-melt:
-	melt -clean
+clean-aux:
+	rm -f .latex_of_wiki_offsets *.log *.aux *.out *.toc manual-wiki.tex
 
-clean:
-	melt -clean
-	rm -f *.pdf
+clean: clean-aux
+	rm -f manual.pdf

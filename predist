@@ -7,7 +7,7 @@
 cd manual
 make manual.pdf
 # Remove intermediate files
-make clean-melt
+make clean-aux
 cd ..
 
 # Make the configure script executable
