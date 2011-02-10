@@ -6,7 +6,7 @@
 
 <src/top/{lwt_toplevel.*,toplevel.*,toplevel_temp.*}>: use_compiler_libs, pkg_text, pkg_text.bigarray, pkg_findlib, pkg_react, pkg_unix, pkg_bigarray
 
-<src/unix/*>: use_ev, use_pthread
+<src/{unix,glib}/*>: use_stubs
 
 # GLib bindings:
 <src/glib/lwt-glib.*>: use_C_glib

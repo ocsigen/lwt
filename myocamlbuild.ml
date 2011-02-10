@@ -673,20 +673,17 @@ let () =
              in
 
              (* Add directories for libev and pthreads *)
-             let flags lib dir =
-               flag ["ocamlmklib"; "c"; "use_" ^ lib] & A("-L" ^ dir ^ "/lib");
-               flag ["c"; "compile"; "use_" ^ lib] & S[A"-ccopt"; A("-I" ^ dir ^ "/include")];
-               flag ["link"; "ocaml"; "use_" ^ lib] & S[A"-cclib"; A("-L" ^ dir ^ "/lib")]
+             let flags dir =
+               flag ["ocamlmklib"; "c"; "use_stubs"] & A("-L" ^ dir ^ "/lib");
+               flag ["c"; "compile"; "use_stubs"] & S[A"-ccopt"; A("-I" ^ dir ^ "/include")];
+               flag ["link"; "ocaml"; "use_stubs"] & S[A"-cclib"; A("-L" ^ dir ^ "/lib")]
              in
              begin
-               match search_header "ev.h" with
-                 | None -> ()
-                 | Some path -> flags "ev" path
-             end;
-             begin
-               match search_header "pthread.h" with
-                 | None -> ()
-                 | Some path -> flags "pthread" path
+               match search_header "ev.h", search_header "pthread.h" with
+                 | None, None -> ()
+                 | Some path, None | None, Some path -> flags path
+                 | Some path1, Some path2 when path1 = path2 -> flags path1
+                 | Some path1, Some path2 -> flags path1; flags path2
              end
 
          | _ ->
