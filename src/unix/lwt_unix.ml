@@ -471,10 +471,7 @@ external read_free : [ `unix_read ] job -> unit = "lwt_unix_read_free" "noalloc"
 let read ch buf pos len =
   if pos < 0 || len < 0 || pos > String.length buf - len then
     invalid_arg "Lwt_unix.read"
-  else if windows_hack then begin
-    check_descriptor ch;
-    register_action Read ch (fun () -> Unix.read ch.fd buf pos len)
-  end else
+  else
     Lazy.force ch.blocking >>= function
       | true ->
           lwt () = wait_read ch in
@@ -497,10 +494,7 @@ external write_free : [ `unix_write ] job -> unit = "lwt_unix_write_free" "noall
 let write ch buf pos len =
   if pos < 0 || len < 0 || pos > String.length buf - len then
     invalid_arg "Lwt_unix.write"
-  else if windows_hack then begin
-    check_descriptor ch;
-    register_action Read ch (fun () -> Unix.write ch.fd buf pos len)
-  end else
+  else
     Lazy.force ch.blocking >>= function
       | true ->
           lwt () = wait_write ch in

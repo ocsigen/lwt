@@ -22,24 +22,136 @@
 
 /* Windows version of stubs. */
 
-CAMLprim value lwt_unix_write()
+CAMLprim value lwt_unix_write(value fd, value buf, value vofs, value vlen)
 {
-  caml_invalid_argument("not implemented");
+  intnat ofs, len, written;
+  DWORD numbytes, numwritten;
+  DWORD err = 0;
+
+  Begin_root (buf);
+    ofs = Long_val(vofs);
+    len = Long_val(vlen);
+    written = 0;
+    if (len > 0) {
+      numbytes = len;
+      if (Descr_kind_val(fd) == KIND_SOCKET) {
+        int ret;
+        SOCKET s = Socket_val(fd);
+        ret = send(s, &Byte(buf, ofs), numbytes, 0);
+        if (ret == SOCKET_ERROR) err = WSAGetLastError();
+        numwritten = ret;
+      } else {
+        HANDLE h = Handle_val(fd);
+        if (! WriteFile(h, &Byte(buf, ofs), numbytes, &numwritten, NULL))
+          err = GetLastError();
+      }
+      if (err) {
+        win32_maperr(err);
+        uerror("write", Nothing);
+      }
+      written = numwritten;
+    }
+  End_roots();
+  return Val_long(written);
 }
 
-CAMLprim value lwt_unix_bytes_write()
+CAMLprim value lwt_unix_bytes_write(value fd, value buf, value vofs, value vlen)
 {
-  caml_invalid_argument("not implemented");
+  intnat ofs, len, written;
+  DWORD numbytes, numwritten;
+  DWORD err = 0;
+
+  Begin_root (buf);
+    ofs = Long_val(vofs);
+    len = Long_val(vlen);
+    written = 0;
+    if (len > 0) {
+      numbytes = len;
+      if (Descr_kind_val(fd) == KIND_SOCKET) {
+        int ret;
+        SOCKET s = Socket_val(fd);
+        ret = send(s, (char*)Caml_ba_array_val(buf)->data + ofs, numbytes, 0);
+        if (ret == SOCKET_ERROR) err = WSAGetLastError();
+        numwritten = ret;
+      } else {
+        HANDLE h = Handle_val(fd);
+        if (! WriteFile(h, (char*)Caml_ba_array_val(buf)->data + ofs, numbytes, &numwritten, NULL))
+          err = GetLastError();
+      }
+      if (err) {
+        win32_maperr(err);
+        uerror("write", Nothing);
+      }
+      written = numwritten;
+    }
+  End_roots();
+  return Val_long(written);
 }
 
-CAMLprim value lwt_unix_read()
+CAMLprim value lwt_unix_read(value fd, value buf, value vofs, value vlen)
 {
-  caml_invalid_argument("not implemented");
+  intnat ofs, len, written;
+  DWORD numbytes, numwritten;
+  DWORD err = 0;
+
+  Begin_root (buf);
+    ofs = Long_val(vofs);
+    len = Long_val(vlen);
+    written = 0;
+    if (len > 0) {
+      numbytes = len;
+      if (Descr_kind_val(fd) == KIND_SOCKET) {
+        int ret;
+        SOCKET s = Socket_val(fd);
+        ret = recv(s, &Byte(buf, ofs), numbytes, 0);
+        if (ret == SOCKET_ERROR) err = WSAGetLastError();
+        numwritten = ret;
+      } else {
+        HANDLE h = Handle_val(fd);
+        if (! ReadFile(h, &Byte(buf, ofs), numbytes, &numwritten, NULL))
+          err = GetLastError();
+      }
+      if (err) {
+        win32_maperr(err);
+        uerror("write", Nothing);
+      }
+      written = numwritten;
+    }
+  End_roots();
+  return Val_long(written);
 }
 
-CAMLprim value lwt_unix_bytes_read()
+CAMLprim value lwt_unix_bytes_read(value fd, value buf, value vofs, value vlen)
 {
-  caml_invalid_argument("not implemented");
+  intnat ofs, len, written;
+  DWORD numbytes, numwritten;
+  DWORD err = 0;
+
+  Begin_root (buf);
+    ofs = Long_val(vofs);
+    len = Long_val(vlen);
+    written = 0;
+    if (len > 0) {
+      numbytes = len;
+      if (Descr_kind_val(fd) == KIND_SOCKET) {
+        int ret;
+        SOCKET s = Socket_val(fd);
+        ret = recv(s, (char*)Caml_ba_array_val(buf)->data + ofs, numbytes, 0);
+        if (ret == SOCKET_ERROR) err = WSAGetLastError();
+        numwritten = ret;
+      } else {
+        HANDLE h = Handle_val(fd);
+        if (! ReadFile(h, (char*)Caml_ba_array_val(buf)->data + ofs, numbytes, &numwritten, NULL))
+          err = GetLastError();
+      }
+      if (err) {
+        win32_maperr(err);
+        uerror("write", Nothing);
+      }
+      written = numwritten;
+    }
+  End_roots();
+  return Val_long(written);
 }
 
 value lwt_unix_recv()
@@ -217,6 +329,136 @@ CAMLprim value lwt_unix_set_affinity(value val_pid, value val_cpus)
 }
 
 /* +-----------------------------------------------------------------+
+   | JOB: read                                                       |
+   +-----------------------------------------------------------------+ */
+
+struct job_read {
+  struct lwt_unix_job job;
+  union {
+    HANDLE handle;
+    SOCKET socket;
+  } fd;
+  enum { KIND_HANDLE, KIND_SOCKET } kind;
+  char *buffer;
+  DWORD length;
+  DWORD result;
+  DWORD error_code;
+};
+
+#define Job_read_val(v) *(struct job_read**)Data_custom_val(v)
+
+static void worker_read(struct job_read *job)
+{
+  if (job->fd.kind == KIND_SOCKET) {
+    int ret;
+    ret = recv(job->fd.socket, job->buffer, job->length, 0);
+    if (ret == SOCKET_ERROR) job->error_code = WSAGetLastError();
+    job->result = ret;
+  } else {
+    if (!ReadFile(job->fd.handle, job->buffer, job->length, &(job->result), NULL))
+      job->error_code = GetLastError();
+  }
+}
+
+CAMLprim value lwt_unix_read_job(value val_fd, value val_length)
+{
+  struct job_read *job = lwt_unix_new(struct job_read);
+  struct filedescr *fd = (struct filedescr *)Data_custom_val(val_fd);
+  long length = Long_val(val_length);
+  job->job.worker = (lwt_unix_job_worker)worker_read;
+  job->fd = fd.fd;
+  job->kind = fd.kind;
+  job->buffer = (char*)lwt_unix_malloc(length);
+  job->length = length;
+  job->error_code = 0;
+  return lwt_unix_alloc_job(&(job->job));
+}
+
+CAMLprim value lwt_unix_read_result(value val_job, value val_string, value val_offset)
+{
+  struct job_read *job = Job_read_val(val_job);
+  if (job->error_code) {
+    win32_maperr(job->error_code);
+    uerror("write", Nothing);
+  }
+  memcpy(String_val(val_string) + Long_val(val_offset), job->buffer, job->result);
+  return Val_long(job->result);
+}
+
+CAMLprim value lwt_unix_read_free(value val_job)
+{
+  struct job_read *job = Job_read_val(val_job);
+  free(job->buffer);
+  lwt_unix_free_job(&job->job);
+  return Val_unit;
+}
+
+/* +-----------------------------------------------------------------+
+   | JOB: write                                                      |
+   +-----------------------------------------------------------------+ */
+
+struct job_write {
+  struct lwt_unix_job job;
+  union {
+    HANDLE handle;
+    SOCKET socket;
+  } fd;
+  enum { KIND_HANDLE, KIND_SOCKET } kind;
+  char *buffer;
+  DWORD length;
+  DWORD result;
+  DWORD error_code;
+};
+
+#define Job_write_val(v) *(struct job_write**)Data_custom_val(v)
+
+static void worker_write(struct job_write *job)
+{
+  if (job->fd.kind == KIND_SOCKET) {
+    int ret;
+    ret = send(job->fd.socket, job->buffer, job->length, 0);
+    if (ret == SOCKET_ERROR) job->error_code = WSAGetLastError();
+    job->result = ret;
+  } else {
+    if (!WriteFile(job->fd.handle, job->buffer, job->length, &(job->result), NULL))
+      job->error_code = GetLastError();
+  }
+}
+
+CAMLprim value lwt_unix_write_job(value val_fd, value val_length)
+{
+  struct job_write *job = lwt_unix_new(struct job_write);
+  struct filedescr *fd = (struct filedescr *)Data_custom_val(val_fd);
+  long length = Long_val(val_length);
+  job->job.worker = (lwt_unix_job_worker)worker_write;
+  job->fd = fd.fd;
+  job->kind = fd.kind;
+  job->buffer = (char*)lwt_unix_malloc(length);
+  memcpy(job->buffer, String_val(val_string) + Long_val(val_offset), length);
+  job->length = length;
+  job->error_code = 0;
+  return lwt_unix_alloc_job(&(job->job));
+}
+
+CAMLprim value lwt_unix_write_result(value val_job, value val_string, value val_offset)
+{
+  struct job_write *job = Job_write_val(val_job);
+  if (job->error_code) {
+    win32_maperr(job->error_code);
+    uerror("write", Nothing);
+  }
+  return Val_long(job->result);
+}
+
+CAMLprim value lwt_unix_write_free(value val_job)
+{
+  struct job_write *job = Job_write_val(val_job);
+  free(job->buffer);
+  lwt_unix_free_job(&job->job);
+  return Val_unit;
+}
+
+/* +-----------------------------------------------------------------+
    | Jobs                                                            |
    +-----------------------------------------------------------------+ */
 
@@ -224,9 +466,7 @@ LWT_UNIX_JOB_NOT_IMPLEMENTED(guess_blocking)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(wait_mincore)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(open)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(close)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(read)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(bytes_read)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(write)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(bytes_write)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(lseek)
 LWT_UNIX_JOB_NOT_IMPLEMENTED(truncate)

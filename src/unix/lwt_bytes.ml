@@ -120,9 +120,10 @@ external read_free : [ `unix_bytes_read ] job -> unit = "lwt_unix_bytes_read_fre
 let read fd buf pos len =
   if pos < 0 || len < 0 || pos > length buf - len then
     invalid_arg "Lwt_bytes.read"
-  else if windows_hack then
-    invalid_arg "Lwt_bytes.read: not implemented"
-  else
+  else if windows_hack then begin
+    check_descriptor fd;
+    register_action Read fd (fun () -> stub_read (unix_file_descr fd) buf pos len)
+  end else
     blocking fd >>= function
       | true ->
           lwt () = wait_read fd in
@@ -138,9 +139,10 @@ external write_free : [ `unix_bytes_write ] job -> unit = "lwt_unix_bytes_write_
 let write fd buf pos len =
   if pos < 0 || len < 0 || pos > length buf - len then
     invalid_arg "Lwt_bytes.write"
-  else if windows_hack then
-    invalid_arg "Lwt_bytes.write: not implemented"
-  else
+  else if windows_hack then begin
+    check_descriptor fd;
+    register_action Write fd (fun () -> stub_write (unix_file_descr fd) buf pos len)
+  end else
     blocking fd >>= function
       | true ->
           lwt () = wait_write fd in

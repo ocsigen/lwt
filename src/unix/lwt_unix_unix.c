@@ -960,7 +960,7 @@ CAMLprim value lwt_unix_write_job(value val_fd, value val_string, value val_offs
   job->job.worker = (lwt_unix_job_worker)worker_write;
   job->fd = Int_val(val_fd);
   job->buffer = (char*)lwt_unix_malloc(length);
-  memcpy(job->buffer, String_val(val_string) + Long_val(val_offset), Long_val(val_length));
+  memcpy(job->buffer, String_val(val_string) + Long_val(val_offset), length);
   job->length = length;
   return lwt_unix_alloc_job(&(job->job));
 }
