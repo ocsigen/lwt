@@ -349,7 +349,7 @@ struct job_read {
 
 static void worker_read(struct job_read *job)
 {
-  if (job->fd.kind == KIND_SOCKET) {
+  if (job->kind == KIND_SOCKET) {
     int ret;
     ret = recv(job->fd.socket, job->buffer, job->length, 0);
     if (ret == SOCKET_ERROR) job->error_code = WSAGetLastError();
@@ -366,8 +366,11 @@ CAMLprim value lwt_unix_read_job(value val_fd, value val_length)
   struct filedescr *fd = (struct filedescr *)Data_custom_val(val_fd);
   long length = Long_val(val_length);
   job->job.worker = (lwt_unix_job_worker)worker_read;
-  job->fd = fd->fd;
   job->kind = fd->kind;
+  if (fd->kind == KIND_HANDLE)
+    job->fd.handle = fd->fd.handle;
+  else
+    job->fd.socket = fd->fd.socket;
   job->buffer = (char*)lwt_unix_malloc(length);
   job->length = length;
   job->error_code = 0;
@@ -414,7 +417,7 @@ struct job_write {
 
 static void worker_write(struct job_write *job)
 {
-  if (job->fd.kind == KIND_SOCKET) {
+  if (job->kind == KIND_SOCKET) {
     int ret;
     ret = send(job->fd.socket, job->buffer, job->length, 0);
     if (ret == SOCKET_ERROR) job->error_code = WSAGetLastError();
@@ -431,8 +434,11 @@ CAMLprim value lwt_unix_write_job(value val_fd, value val_string, value val_offs
   struct filedescr *fd = (struct filedescr *)Data_custom_val(val_fd);
   long length = Long_val(val_length);
   job->job.worker = (lwt_unix_job_worker)worker_write;
-  job->fd = fd->fd;
   job->kind = fd->kind;
+  if (fd->kind == KIND_HANDLE)
+    job->fd.handle = fd->fd.handle;
+  else
+    job->fd.socket = fd->fd.socket;
   job->buffer = (char*)lwt_unix_malloc(length);
   memcpy(job->buffer, String_val(val_string) + Long_val(val_offset), length);
   job->length = length;
