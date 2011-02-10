@@ -42,26 +42,24 @@ gint max_priority;
    | Get sources                                                     |
    +-----------------------------------------------------------------+ */
 
-static value caml_fd_of_glib_source(int fd)
-{
 #if defined(LWT_ON_WINDOWS)
-  /* On windows, glib file descriptors are handles */
-  HANDLE handle = (HANDLE)fd;
+
+static value alloc_fd(HANDLE handle)
+{
   value res = win_alloc_handle(handle);
   int opt;
   int optlen = sizeof(opt);
   if (getsockopt((SOCKET)handle, SOL_SOCKET, SO_TYPE, (char *)&opt, &optlen) == 0)
     Descr_kind_val(res) = KIND_SOCKET;
   return res;
-#else
-  return Val_int(fd);
-#endif
 }
+
+#endif
 
 CAMLprim value lwt_glib_get_sources()
 {
   CAMLparam0();
-  CAMLlocal3(fds, src, result);
+  CAMLlocal4(fd, fds, src, result);
 
   gint timeout;
 
@@ -80,12 +78,19 @@ CAMLprim value lwt_glib_get_sources()
     GPollFD *gpollfd = gpollfds + i;
     gpollfd->revents = 0;
 
-    src = caml_alloc_tuple(3);
-    Store_field(src, 0, caml_fd_of_glib_source(gpollfd->fd));
-    Store_field(src, 1, Val_bool(gpollfd->events & G_IO_IN));
-    Store_field(src, 2, Val_bool(gpollfd->events & G_IO_OUT));
+#if defined(LWT_ON_WINDOWS)
+    /* On windows, glib file descriptors are handles */
+    fd = alloc_fd((HANDLE)gpollfd->fd);
+#else
+    fd = Val_int(gpollfd->fd);
+#endif
 
-    Store_field(fds, i, src);
+    src = caml_alloc_tuple(3);
+    Field(src, 0) = fd;
+    Field(src, 1) = Val_bool(gpollfd->events & G_IO_IN);
+    Field(src, 2) = Val_bool(gpollfd->events & G_IO_OUT);
+
+    Field(fds, i) = src;
   }
 
   result = caml_alloc_tuple(2);
