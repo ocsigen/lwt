@@ -35,27 +35,34 @@ external glib_mark_writable : int -> unit = "lwt_glib_mark_readable" "noalloc"
 
 let state = ref None
 let events = ref []
+let check = ref true
 
 let enter () =
-  let engine = Lwt_engine.get () in
-  assert (!events = []);
-  let sources, timeout = glib_get_sources () in
-  for i = 0 to Array.length sources - 1 do
-    let src = sources.(i) in
-    if src.check_readable then
-      events := engine#on_readable src.fd (fun _ -> glib_mark_readable i) :: !events;
-    if src.check_writable then
-      events := engine#on_writable src.fd (fun _ -> glib_mark_writable i) :: !events
-  done;
-  if timeout = 0. then
-    ignore (Lwt_main.yield ())
-  else if timeout > 0. then
-    events := engine#on_timer timeout false ignore :: !events
+  if !check then begin
+    check := false;
+    let engine = Lwt_engine.get () in
+    assert (!events = []);
+    let sources, timeout = glib_get_sources () in
+    for i = 0 to Array.length sources - 1 do
+      let src = sources.(i) in
+      if src.check_readable then
+        events := engine#on_readable src.fd (fun _ -> glib_mark_readable i) :: !events;
+      if src.check_writable then
+        events := engine#on_writable src.fd (fun _ -> glib_mark_writable i) :: !events
+    done;
+    if timeout = 0. then
+      ignore (Lwt_main.yield ())
+    else if timeout > 0. then
+      events := engine#on_timer timeout false ignore :: !events
+  end
 
 let leave () =
-  List.iter Lwt_engine.stop_event !events;
-  events := [];
-  glib_check ()
+  if not !check then begin
+    check := true;
+    List.iter Lwt_engine.stop_event !events;
+    events := [];
+    glib_check ()
+  end
 
 let install () =
   match !state with
