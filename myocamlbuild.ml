@@ -20,6 +20,16 @@
  * 02111-1307, USA.
  *)
 
+(* Keep that in sync with the list in discover.ml *)
+let search_paths = [
+  "/usr";
+  "/usr/local";
+  "/opt";
+  "/opt/local";
+  "/sw";
+  "/mingw";
+]
+
 (* OASIS_START *)
 (* DO NOT EDIT (digest: ff7772b4cd01afec9e08a37cc036f3df) *)
 module OASISGettext = struct
@@ -646,7 +656,38 @@ let () =
                         A"src/top/toplevel_temp.top";
                         A"src/top/lwt_toplevel.byte";
                         A"outcometree"; A"topdirs"; A"toploop";
-                        S(List.map (fun x -> A x) (StringSet.elements modules))]))
+                        S(List.map (fun x -> A x) (StringSet.elements modules))]));
+
+             (* Search for a header file in standard directories. *)
+             let search_header header =
+               let rec loop = function
+                 | [] ->
+                     None
+                 | dir :: dirs ->
+                     if Sys.file_exists (dir ^ "/include/" ^ header) then
+                       Some dir
+                     else
+                       loop dirs
+               in
+               loop search_paths
+             in
+
+             (* Add directories for libev and pthreads *)
+             let flags lib dir =
+               flag ["ocamlmklib"; "c"; "use_" ^ lib] & A("-L" ^ dir ^ "/lib");
+               flag ["c"; "compile"; "use_" ^ lib] & S[A"-ccopt"; A("-I" ^ dir ^ "/include")];
+               flag ["link"; "ocaml"; "use_" ^ lib] & S[A"-cclib"; A("-L" ^ dir ^ "/lib")]
+             in
+             begin
+               match search_header "ev.h" with
+                 | None -> ()
+                 | Some path -> flags "ev" path
+             end;
+             begin
+               match search_header "pthread.h" with
+                 | None -> ()
+                 | Some path -> flags "pthread" path
+             end
 
          | _ ->
              ())

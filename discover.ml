@@ -22,6 +22,16 @@
 
 (* Discover available features *)
 
+(* Keep that in sync with the list in myocamlbuild.ml *)
+let search_paths = [
+  "/usr";
+  "/usr/local";
+  "/opt";
+  "/opt/local";
+  "/sw";
+  "/mingw";
+]
+
 open Printf
 
 (* +-----------------------------------------------------------------+
@@ -115,12 +125,34 @@ let exec_name = ref "a.out"
 let log_file = ref ""
 let caml_file = ref ""
 
+(* Search for a header file in standard directories. *)
+let search_header header =
+  let rec loop = function
+    | [] ->
+        None
+    | dir :: dirs ->
+        if Sys.file_exists (dir ^ "/include/" ^ header) then
+          Some dir
+        else
+          loop dirs
+  in
+  loop search_paths
+
+let c_args =
+  let flags path = Printf.sprintf "-ccopt -I%s/include -cclib -L%s/lib" path path in
+  match search_header "ev.h", search_header "pthread.h" with
+    | None, None -> ""
+    | Some path, None | None, Some path -> flags path
+    | Some path1, Some path2 when path1 = path2 -> flags path1
+    | Some path1, Some path2 -> flags path1 ^ " " ^ flags path2
+
 let compile args stub_file =
   ksprintf
     Sys.command
-    "%s -custom %s %s %s 2> %s"
+    "%s -custom %s %s %s %s 2> %s"
     !ocamlc
     args
+    c_args
     (Filename.quote stub_file)
     (Filename.quote !caml_file)
     (Filename.quote !log_file)
@@ -179,8 +211,8 @@ let test_feature name macro ?(args="") code =
 let () =
   let args = [
     "-ocamlc", Arg.Set_string ocamlc, "<path> ocamlc";
-    "-ext_obj", Arg.Set_string ext_obj, "<ext> C object files extension";
-    "-exec_name", Arg.Set_string exec_name, "<name> name of the executable produced by ocamlc";
+    "-ext-obj", Arg.Set_string ext_obj, "<ext> C object files extension";
+    "-exec-name", Arg.Set_string exec_name, "<name> name of the executable produced by ocamlc";
   ] in
   Arg.parse args ignore "check for the need of -liconv\noptions are:";
 
