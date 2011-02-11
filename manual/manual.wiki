@@ -852,17 +852,6 @@ val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
 
 == Writing stubs using {{{Lwt}}} ==
 
-  {{{Lwt}}} internally uses {{{libev}}}. Sometimes C library need to watch
-  file-descriptors and/or to use timeouts. It is possible to use them with {{{Lwt}}};
-  all you need to do is to integrate the library with {{{libev}}}. You can find
-  all informations for that in the {{{libev}}} manual.
-
-  However, if you are calling OCaml code in libev callbacks, you must add the
-  macro {{{LWT_UNIX_CHECK}}} before calling the OCaml code. This macro is
-  defined in the header file {{{lwt_unix.h}}} installed by {{{Lwt}}}. This macro
-  takes care of acquiring back the runtime system mutex, which is released before
-  entering the libev main loop.
-
 === Thread-safe notifications ===
 
   If you want to notify the main thread from another thread, you can use the {{{Lwt}}}
