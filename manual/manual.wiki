@@ -882,7 +882,7 @@ val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
   We show as example the implementation of {{{Lwt_unix.mkdir}}}. On the C
   side we have:
 
-<<code language="ocaml" |
+<<code language="c" |
 /* The job info structure */
 struct job_mkdir {
   /* Informations required by lwt.
@@ -958,11 +958,11 @@ CAMLprim value lwt_unix_mkdir_free(value val_job)
 
   return Val_unit;
 }
-%>
+>>
 
   and on the ocaml side:
 
-  <:code:%
+<<code language="ocaml" |
 (* The stub for creating the job. *)
 external mkdir_job : string -> int -> [ `unix_mkdir ] job = "lwt_unix_mkdir_job"
 
