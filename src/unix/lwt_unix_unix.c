@@ -380,6 +380,8 @@ static value wrapper_send_msg(int fd, int n_iovs, struct iovec *iovs, value val_
     for(; Is_block(val_fds); val_fds = Field(val_fds, 1), fds++)
       *fds = Int_val(Field(val_fds, 0));
   };
+#else
+  if (n_fds > 0) lwt_unix_not_available("fd_passing");
 #endif
 
   int ret = sendmsg(fd, &msg, 0);
@@ -432,7 +434,7 @@ CAMLprim value lwt_unix_get_credentials(value fd)
 
 CAMLprim value lwt_unix_get_credentials(value fd_val)
 {
-  caml_invalid_argument("get_credentials not implemented");
+  lwt_unix_not_available("get_credentials");
 }
 
 #endif
@@ -554,7 +556,7 @@ value lwt_unix_has_wait4(value unit)
 
 value lwt_unix_wait4(value flags, value pid_req)
 {
-  caml_invalid_argument("wait4 not implemented");
+  lwt_unix_not_available("wait4");
 }
 
 value lwt_unix_has_wait4(value unit)
@@ -581,7 +583,7 @@ CAMLprim value lwt_unix_get_cpu()
 
 CAMLprim value lwt_unix_get_cpu()
 {
-  caml_invalid_argument("not implemented");
+  lwt_unix_not_implemented("get_cpu");
 }
 
 #endif
@@ -623,12 +625,12 @@ CAMLprim value lwt_unix_set_affinity(value val_pid, value val_cpus)
 
 CAMLprim value lwt_unix_get_affinity(value val_pid)
 {
-  caml_invalid_argument("not implemented");
+  lwt_unix_not_implemented("get_affinity");
 }
 
 CAMLprim value lwt_unix_set_affinity(value val_pid, value val_cpus)
 {
-  caml_invalid_argument("not implemented");
+  lwt_unix_not_implemented("set_affinity");
 }
 
 #endif

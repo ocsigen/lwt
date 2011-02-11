@@ -156,7 +156,7 @@ let recv fd buf pos len flags =
   if pos < 0 || len < 0 || pos > length buf - len then
     invalid_arg "recv"
   else if windows_hack then
-    invalid_arg "Lwt_bytes.recv: not implemented"
+    raise (Not_available "Lwt_bytes.recv")
   else
     wrap_syscall Read fd (fun () -> stub_recv (unix_file_descr fd) buf pos len flags)
 
@@ -166,7 +166,7 @@ let send fd buf pos len flags =
   if pos < 0 || len < 0 || pos > length buf - len then
     invalid_arg "send"
   else if windows_hack then
-    invalid_arg "Lwt_bytes.send: not implemented"
+    raise (Not_available "Lwt_bytes.send")
   else
     wrap_syscall Write fd (fun () -> stub_send (unix_file_descr fd) buf pos len flags)
 
@@ -215,7 +215,7 @@ let recvfrom fd buf pos len flags =
   if pos < 0 || len < 0 || pos > length buf - len then
     invalid_arg "Lwt_bytes.recvfrom"
   else if windows_hack then
-    invalid_arg "Lwt_bytes.recvfrom: not implemented"
+    raise (Not_available "Lwt_bytes.recvfrom")
   else
     wrap_syscall Read fd (fun () -> stub_recvfrom (unix_file_descr fd) buf pos len flags)
 
@@ -225,7 +225,7 @@ let sendto fd buf pos len flags addr =
   if pos < 0 || len < 0 || pos > length buf - len then
     invalid_arg "Lwt_bytes.sendto"
   else if windows_hack then
-    invalid_arg "Lwt_bytes.sendto: not implemented"
+    raise (Not_available "Lwt_bytes.sendto")
   else
     wrap_syscall Write fd (fun () -> stub_sendto (unix_file_descr fd) buf pos len flags addr)
 

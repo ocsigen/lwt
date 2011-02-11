@@ -57,6 +57,9 @@ char *lwt_unix_strdup(char *string);
 /* Helper for allocating structures. */
 #define lwt_unix_new(type) (type*)lwt_unix_malloc(sizeof(type))
 
+/* Raise [Lwt_unix.Not_available]. */
+void lwt_unix_not_available(char const *feature) Noreturn;
+
 /* +-----------------------------------------------------------------+
    | Notifications                                                   |
    +-----------------------------------------------------------------+ */

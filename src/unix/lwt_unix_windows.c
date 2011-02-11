@@ -226,12 +226,12 @@ value lwt_unix_bytes_send_msg(value sock_val, value n_iovs_val, value iovs_val, 
 
 CAMLprim value lwt_unix_get_credentials(value fd_val)
 {
-  caml_invalid_argument("get_credentials not implemented");
+  lwt_unix_not_available("get_credentials");
 }
 
 value lwt_unix_wait4(value flags, value pid_req)
 {
-  caml_invalid_argument("wait4 not implemented");
+  lwt_unix_not_available("wait4");
 }
 
 value lwt_unix_has_wait4(value unit)
@@ -315,17 +315,17 @@ value lwt_unix_sigwinch()
 
 CAMLprim value lwt_unix_get_cpu()
 {
-  caml_invalid_argument("not implemented");
+  lwt_unix_not_available("get_cpu");
 }
 
 CAMLprim value lwt_unix_get_affinity(value val_pid)
 {
-  caml_invalid_argument("not implemented");
+  lwt_unix_not_available("get_affinity");
 }
 
 CAMLprim value lwt_unix_set_affinity(value val_pid, value val_cpus)
 {
-  caml_invalid_argument("not implemented");
+  lwt_unix_not_available("set_affinity");
 }
 
 /* +-----------------------------------------------------------------+

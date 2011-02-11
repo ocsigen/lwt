@@ -36,6 +36,7 @@
 #include <caml/config.h>
 #include <caml/custom.h>
 #include <caml/bigarray.h>
+#include <caml/callback.h>
 
 #include <assert.h>
 #include <stdio.h>
@@ -112,6 +113,11 @@ char *lwt_unix_strdup(char *str)
     abort();
   }
   return new_str;
+}
+
+void lwt_unix_not_available(char const *feature)
+{
+  caml_raise_with_arg(*caml_named_value("lwt:not-available"), caml_copy_string(feature));
 }
 
 /* +-----------------------------------------------------------------+
@@ -1027,4 +1033,63 @@ CAMLprim value lwt_unix_thread_count()
 CAMLprim value lwt_unix_thread_waiting_count()
 {
   return Val_int(thread_waiting_count);
+}
+
+/* +-----------------------------------------------------------------+
+   | Feature testing                                                 |
+   +-----------------------------------------------------------------+ */
+
+CAMLprim value lwt_unix_have(value feature)
+{
+  if (feature == hash_variant("wait4")) {
+
+#if defined(HAS_WAIT4)
+    return Val_true;
+#else
+    return Val_false;
+#endif
+
+  } else if (feature == hash_variant("get_cpu")) {
+
+#if defined(HAVE_GETCPU)
+    return Val_true;
+#else
+    return Val_false;
+#endif
+
+  } else if (feature == hash_variant("get_affinity") || feature == hash_variant("set_affinity")) {
+
+#if defined(HAVE_AFFINITY)
+    return Val_true;
+#else
+    return Val_false;
+#endif
+
+  } else if (feature == hash_variant("recv_msg") || feature == hash_variant("send_msg")) {
+
+#if defined(LWT_ON_WINDOWS)
+    return Val_false;
+#else
+    return Val_true;
+#endif
+
+  } else if (feature == hash_variant("fd_passing")) {
+
+#if defined(HAVE_FD_PASSING)
+    return Val_true;
+#else
+    return Val_false;
+#endif
+
+  } else if (feature == hash_variant("get_credentials")) {
+
+#if defined(SO_PEERCRED)
+    return Val_true;
+#else
+    return Val_false;
+#endif
+
+  }
+
+  return Val_false;
 }

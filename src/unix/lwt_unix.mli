@@ -61,6 +61,10 @@ val handle_unix_error : ('a -> 'b Lwt.t) -> 'a -> 'b Lwt.t
   (** Same as [Unix.handle_unix_error] but catches lwt-level
       exceptions *)
 
+exception Not_available of string
+  (** [Not_available(feature)] is an exception that may be raised when
+      a feature is not available on the current platform. *)
+
 (** {6 Configuration} *)
 
 (** For system calls that cannot be made asynchronously, Lwt uses one
@@ -248,12 +252,10 @@ type resource_usage = {
 val wait4 : Unix.wait_flag list -> int -> (int * Unix.process_status * resource_usage) Lwt.t
   (** [wait4 flags pid] returns [(pid, status, rusage)] where [(pid,
       status)] is the same result as [Unix.waitpid flags pid], and
-      [rusage] contains accounting information about the child. *)
+      [rusage] contains accounting information about the child.
 
-val has_wait4 : bool
-  (** Whether the [wait4] system call is available on this system. If
-      it is not, them [wait4] will always returns [{ utime = 0.0;
-      stime = 0.0 }] as resource usages. *)
+      If this call is not available, then it will always returns [{
+      utime = 0.0; stime = 0.0 }] as resource usages.  *)
 
 val system : string -> Unix.process_status Lwt.t
   (** Wrapper for [Unix.system] *)
@@ -568,7 +570,9 @@ val recv_msg : socket : file_descr -> io_vectors : io_vector list -> (int * Unix
 
 val send_msg : socket : file_descr -> io_vectors : io_vector list -> fds : Unix.file_descr list -> int Lwt.t
   (** [send_msg ~socket ~io_vectors ~fds] sends data from a list of
-      io-vectors, accompanied with a list of file-descriptor. *)
+      io-vectors, accompanied with a list of file-descriptor. If
+      fd-passing is not possible on the current system and [fds] is
+      not empty, it raises [Not_available "fd_passing"]. *)
 
 type credentials = {
   cred_pid : int;
@@ -780,7 +784,27 @@ val set_affinity : ?pid : int -> int list -> unit
   (** [set_affinity ?pid cpus] sets the list of CPUs the given process
       is allowed to run on. *)
 
+(** {6 Feature testing} *)
+
+(** Features that can be tested. *)
+type feature =
+    [ `wait4
+    | `get_cpu
+    | `get_affinity
+    | `set_affinity
+    | `recv_msg
+    | `send_msg
+    | `fd_passing
+    | `get_credentials ]
+
+val have : feature -> bool
+  (** Test whether the given feature is available on the current
+      system. *)
+
 (**/**)
 
 val run : 'a Lwt.t -> 'a
   (* Same as {!Lwt_main.run} *)
+
+val has_wait4 : bool
+  (* Deprecated, use [have `wait4]. *)

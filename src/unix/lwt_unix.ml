@@ -26,6 +26,10 @@ open Lwt
 
 let windows_hack = Sys.os_type <> "Unix"
 
+exception Not_available of string
+
+let () = Callback.register_exception "lwt:not-available" (Not_available "")
+
 (* +-----------------------------------------------------------------+
    | Configuration                                                   |
    +-----------------------------------------------------------------+ *)
@@ -1648,3 +1652,19 @@ external stub_set_affinity : int -> int list -> unit = "lwt_unix_set_affinity"
 
 let get_affinity ?(pid=0) () = stub_get_affinity pid
 let set_affinity ?(pid=0) l = stub_set_affinity pid l
+
+(* +-----------------------------------------------------------------+
+   | Feature testing                                                 |
+   +-----------------------------------------------------------------+ *)
+
+type feature =
+    [ `wait4
+    | `get_cpu
+    | `get_affinity
+    | `set_affinity
+    | `recv_msg
+    | `send_msg
+    | `fd_passing
+    | `get_credentials ]
+
+external have : feature -> bool = "lwt_unix_have"
