@@ -156,4 +156,58 @@ let suite = suite "lwt_stream" [
        push (Some 3);
        lwt x = Lwt_stream.last_new stream in
        return (x = 3));
+
+  test "cancel push stream 1"
+    (fun () ->
+       let stream, push = Lwt_stream.create () in
+       let t = Lwt_stream.next stream in
+       cancel t;
+       return (state t = Fail Canceled));
+
+  test "cancel push stream 2"
+    (fun () ->
+       let stream, push = Lwt_stream.create () in
+       let t = Lwt_stream.next stream in
+       cancel t;
+       push (Some 1);
+       let t' = Lwt_stream.next stream in
+       return (state t' = Return 1));
+
+  (* check if the push function keeps references to the elements in
+     the stream *)
+  test "push and GC"
+    (fun () ->
+      let stream, push = Lwt_stream.create () in
+      let w = Weak.create 5 in
+      let rec fold = function
+        | 0 -> []
+        | i -> match Weak.get w i with
+            | None -> fold (i-1)
+            | Some v -> v::(fold (i-1))
+      in
+      let push v =
+          let v' = ref v in
+          Weak.set w v (Some v');
+          push (Some v')
+      in
+      (* count the number of reachable elements in the stream *)
+      let test n = List.length (fold (Weak.length w - 1)) = n in
+      assert (test 0);
+      push 1;
+      push 2;
+      push 3;
+      assert (test 3);
+      assert (state (Lwt_stream.next stream) = Return {contents = 1});
+      Gc.full_major ();
+      (* ocaml can consider that stream is unreachable before the next
+         line, hence freeing the whole data *)
+      assert (List.length (fold (Weak.length w - 1)) < 3);
+
+      let stream = () in
+      Gc.full_major ();
+      assert (test 0);
+      (* we add that to force caml to keep a reference on push *)
+      push 4;
+      return true);
+
 ]
