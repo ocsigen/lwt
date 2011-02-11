@@ -11,7 +11,7 @@ manual-wiki.tex: manual.wiki
 	latex_of_wiki < manual.wiki > manual-wiki.tex
 
 manual.pdf: manual.tex manual-wiki.tex
-	pdflatex -interaction=nonstopmode manual.tex
+	rubber --pdf manual.tex
 
 clean-aux:
 	rm -f .latex_of_wiki_offsets *.log *.aux *.out *.toc manual-wiki.tex
