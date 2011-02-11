@@ -3,6 +3,8 @@
 \usepackage[utf8]{inputenc}
 \usepackage{url}
 \usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
 
 \hypersetup{%
   a4paper=true,
@@ -12,6 +14,28 @@
   pdftitle = {Lwt user manual},
   pdfauthor = {Jérémie Dimino},
   pdfkeywords = {OCaml, Lwt, Cooperative threads, Coroutines}
+}
+
+\lstset{
+  language=[Objective]Caml,
+  extendedchars,
+  keywordstyle=\bfseries,%\underbar,
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  basicstyle=\ttfamily,%\smaller,
+  frame=l,
+  framerule=1.5mm,
+  xleftmargin=6mm,
+  framesep=4mm,
+  rulecolor=\color{lightgray},
+  morekeywords={initializer,object,lwt,for\_lwt,try\_lwt,raise\_lwt},
+  %moredelim=[is][\ttfamily\underbar]{\%}{\%}%,
+  moredelim=*[s][\itshape]{(*}{*)},
+  moredelim=[is][\textcolor{darkgray}]{§}{§},
+  %mathescape=true, % echappement en mode math avec des $
+  escapechar=°
+% échappement LaTeX
 }
 
 \title{Lwt user manual}
