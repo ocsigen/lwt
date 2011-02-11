@@ -67,8 +67,7 @@ $ lwt-toplevel
 
   Let's take a classical function of the {{{Pervasives}}} module:
 
-<<code language="ocaml" |
-# Pervasives.input_char;
+<<code language="ocaml" |# Pervasives.input_char;
 - : in_channel -> char = <fun>
 >>
 
@@ -79,8 +78,7 @@ $ lwt-toplevel
 
   Now let's look at the lwt equivalent:
 
-<<code language="ocaml" |
-# Lwt_io.read_char;;
+<<code language="ocaml" |# Lwt_io.read_char;;
 - : Lwt_io.input_channel -> char Lwt.t = <fun>
 >>
 
@@ -94,8 +92,7 @@ $ lwt-toplevel
   Now, let's see what we can do with a {{{Lwt}}} thread. The following
   code create a pipe, and launch a thread reading on the input side:
 
-<<code language="ocaml" |
-# let ic, oc = Lwt_io.pipe ();;
+<<code language="ocaml" |# let ic, oc = Lwt_io.pipe ();;
 val ic : Lwt_io.input_channel = <abstr>
 val oc : Lwt_io.output_channel = <abstr>
 # let t = Lwt_io.read_char ic;;
@@ -104,8 +101,7 @@ val t : char Lwt.t = <abstr>
 
   We can now look at the state of our newly created thread:
 
-<<code language="ocaml" |
-# Lwt.state t;;
+<<code language="ocaml" |# Lwt.state t;;
 - : char Lwt.state = Sleep
 >>
 
@@ -122,8 +118,7 @@ val t : char Lwt.t = <abstr>
   The thread {{{t}}} is sleeping because there is currently nothing
   to read on the pipe. Let's write something:
 
-<<code language="ocaml" |
-# Lwt_io.write_char oc 'a';;
+<<code language="ocaml" |# Lwt_io.write_char oc 'a';;
 - : unit Lwt.t = <abstr>
 # Lwt.state t;;
 - : char Lwt.state = Return 'a'
@@ -168,8 +163,7 @@ val t : char Lwt.t = <abstr>
   With these informations, try to guess the result of each of the
   following expression:
 
-<<code language="ocaml" |
-# Lwt.state (Lwt.return 42);;
+<<code language="ocaml" |# Lwt.state (Lwt.return 42);;
 # Lwt.state (fail Exit);;
 # let waiter, wakener = Lwt.wait ();;
 # Lwt.state waiter;;
@@ -185,8 +179,7 @@ val t : char Lwt.t = <abstr>
 
   The most important operation you need to know is {{{bind}}}:
 
-<<code language="ocaml" |
-val bind : 'a Lwt.t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
+<<code language="ocaml" |val bind : 'a Lwt.t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
 >>
 
   {{{bind t f}}} creates a thread which waits for {{{t}}} to
@@ -196,8 +189,7 @@ val bind : 'a Lwt.t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
   thread will fail with the same exception. For example, consider the
   following expression:
 
-<<code language="ocaml" |
-Lwt.bind
+<<code language="ocaml" |Lwt.bind
   (Lwt_io.read_line Lwt_io.stdin)
   (fun str -> Lwt_io.printlf "You typed %S" str)
 >>
@@ -208,12 +200,11 @@ Lwt.bind
   Similarly to {{{bind}}}, there is a function to handle the case
   when {{{t}}} fails:
 
-<<code language="ocaml" |
-val catch : (unit -> 'a Lwt.t) -> (exn -> 'a Lwt.t) -> 'a Lwt.t
+<<code language="ocaml" |val catch : (unit -> 'a Lwt.t) -> (exn -> 'a Lwt.t) -> 'a Lwt.t
 >>
 
   {{{catch f g}}} will call {{{f ()}}}, then waits for its
-  termination, and if it fails with an exception {texttt "exn"}, calls
+  termination, and if it fails with an exception {{{exn}}}, calls
   {{{g exn}}} to handle it. Note that both exceptions raised with
   {{{Pervasives.raise}}} and {{{Lwt.fail}}} are caught by
   {{{catch}}}.
@@ -225,23 +216,20 @@ val catch : (unit -> 'a Lwt.t) -> (exn -> 'a Lwt.t) -> 'a Lwt.t
   threads. To create a cancelable thread, you must use the
   {{{Lwt.task}}} function:
 
-<<code language="ocaml" |
-val task : unit -> 'a Lwt.t * 'a Lwt.u
+<<code language="ocaml" |val task : unit -> 'a Lwt.t * 'a Lwt.u
 >>
 
   It has the same semantic as {{{Lwt.wait}}} except that the
   sleeping thread can be canceled with {{{Lwt.cancel}}}:
 
-<<code language="ocaml" |
-val cancel : 'a Lwt.t -> unit
+<<code language="ocaml" |val cancel : 'a Lwt.t -> unit
 >>
 
   The thread will then fails with the exception
-  {{{Lwt.Canceled}}}}. To execute a function when the thread is
+  {{{Lwt.Canceled}}}. To execute a function when the thread is
   canceled, you must use {{{Lwt.on_cancel}}}:
 
-<<code language="ocaml" |
-val on_cancel : 'a Lwt.t -> (unit -> unit) -> unit
+<<code language="ocaml" |val on_cancel : 'a Lwt.t -> (unit -> unit) -> unit
 >>
 
   Note that it is also possible to cancel a thread which has not been
@@ -250,8 +238,7 @@ val on_cancel : 'a Lwt.t -> (unit -> unit) -> unit
 
   For example, consider the following code:
 
-<<code language="ocaml" |
-# let waiter, wakener = Lwt.task ();;
+<<code language="ocaml" |# let waiter, wakener = Lwt.task ();;
 val waiter : '_a Lwt.t = <abstr>
 val wakener : '_a Lwt.u = <abstr>
 # let t = bind waiter (fun x -> return (x + 1));;
@@ -261,8 +248,7 @@ val t : int Lwt.t = <abstr>
   Here, cancelling {{{t}}} will in fact cancel {{{waiter}}}.
   {{{t}}} will then fails with the exception {{{Lwt.Canceled}}}:
 
-<<code language="ocaml" |
-# Lwt.cancel t;;
+<<code language="ocaml" |# Lwt.cancel t;;
 - : unit = ()
 # Lwt.state waiter;;
 - : int Lwt.state = Fail Lwt.Canceled
@@ -271,10 +257,9 @@ val t : int Lwt.t = <abstr>
 >>
 
   By the way, it is possible to prevent a thread from being canceled
-  by using one of the function {{{Lwt.protected}}}:
+  by using the function {{{Lwt.protected}}}:
 
-<<code language="ocaml" |
-val protected : 'a Lwt.t -> 'a Lwt.t
+<<code language="ocaml" |val protected : 'a Lwt.t -> 'a Lwt.t
 >>
 
   Canceling {{{(proctected t)}}} will have no effect on {{{t}}}.
@@ -288,8 +273,7 @@ val protected : 'a Lwt.t -> 'a Lwt.t
   The first one, {{{join}}} takes a list of threads and wait for all
   of them to terminate:
 
-<<code language="ocaml" |
-val join : unit Lwt.t list -> unit Lwt.t
+<<code language="ocaml" |val join : unit Lwt.t list -> unit Lwt.t
 >>
 
   Moreover, if at least one thread fails, {{{join l}}} will fails with
@@ -298,14 +282,12 @@ val join : unit Lwt.t list -> unit Lwt.t
   On the contrary {{{choose}}} waits for at least one thread to
   terminate, then returns the same value or exception:
 
-<<code language="ocaml" |
-val choose : 'a Lwt.t list -> 'a Lwt.t
+<<code language="ocaml" |val choose : 'a Lwt.t list -> 'a Lwt.t
 >>
 
   For example:
 
-<<code language="ocaml" |
-# let waiter1, wakener1 = Lwt.wait ();;
+<<code language="ocaml" |# let waiter1, wakener1 = Lwt.wait ();;
 val waiter1 : '_a Lwt.t = <abstr>
 val wakener1 : '_a Lwt.u = <abstr>
 # let waiter2, wakener2 = Lwt.wait ();;
@@ -331,8 +313,7 @@ val t : '_a Lwt.t = <abstr>
   be used to store contexts or thread identifiers. The contents of a
   variable can be read with:
 
-<<code language="ocaml" |
-val Lwt.get : 'a Lwt.key -> 'a option
+<<code language="ocaml" |val Lwt.get : 'a Lwt.key -> 'a option
 >>
 
   which takes a key to identify the variable we want to read and
@@ -342,14 +323,12 @@ val Lwt.get : 'a Lwt.key -> 'a option
 
   New keys can be created with:
 
-<<code language="ocaml" |
-val Lwt.new_key : unit -> 'a Lwt.key
+<<code language="ocaml" |val Lwt.new_key : unit -> 'a Lwt.key
 >>
 
   To set a variable, you must use:
 
-<<code language="ocaml" |
-val Lwt.with_value : 'a Lwt.key -> 'a option -> (unit -> 'b) -> 'b
+<<code language="ocaml" |val Lwt.with_value : 'a Lwt.key -> 'a option -> (unit -> 'b) -> 'b
 >>
 
   {{{with_value key value f}}} will executes {{{f}}} with
@@ -359,8 +338,7 @@ val Lwt.with_value : 'a Lwt.key -> 'a option -> (unit -> 'b) -> 'b
   For example, you can use local storage to store thread identifiers
   and use them in logs:
 
-<<code language="ocaml" |
-let id_key = Lwt.new_key ()
+<<code language="ocaml" |let id_key = Lwt.new_key ()
 
 let log msg =
   let thread_id =
@@ -394,14 +372,12 @@ lwt () =
   makes coding using {{{Lwt}}} easier.  To use it add the ``lwt.syntax'' package when
   compiling:
 
-<<code language="ocaml" |
-$ ocamlfind ocamlc -syntax camlp4o -package lwt.syntax -linkpkg -o foo foo.ml
+<<code language="ocaml" |$ ocamlfind ocamlc -syntax camlp4o -package lwt.syntax -linkpkg -o foo foo.ml
 >>
 
   Or in the toplevel (after loading topfind):
 
-<<code language="ocaml" |
-# #camlp4o;;
+<<code language="ocaml" |# #camlp4o;;
 # #require "lwt.syntax";;
 >>
 
@@ -413,8 +389,7 @@ $ ocamlfind ocamlc -syntax camlp4o -package lwt.syntax -linkpkg -o foo foo.ml
      which is a parallel let-binding construction. For example in the
      following code:
 
-<<code language="ocaml" |
-lwt x = f () and y = g () in
+<<code language="ocaml" |lwt x = f () and y = g () in
 expr
 >>
 
@@ -425,8 +400,7 @@ expr
       Of course you can also launch the two threads sequentially by
       writing your code like that:
 
-<<code language="ocaml" |
-lwt x = f () in
+<<code language="ocaml" |lwt x = f () in
 lwt y = g () in
 expr
 >>
@@ -481,10 +455,10 @@ expr
   get backtraces. However it is possible to get them when using the syntax extension. All you
   have to do is to pass the {{{-lwt-debug}}} switch to {{{camlp4}}}:
 
-<<code language="ocaml" |
+{{{
 $ ocamlfind ocamlc -syntax camlp4o -package lwt.syntax \
     -ppopt -lwt-debug -linkpkg -o foo foo.ml
->>
+}}}
 
 === Other modules of the core library ===
 
@@ -495,8 +469,7 @@ $ ocamlfind ocamlc -syntax camlp4o -package lwt.syntax \
   when it is going to be executed in parallel, it is suffixed with
   ``{{{_p}}}''. For example, in the {{{Lwt_list}}} module we have:
 
-<<code language="ocaml" |
-val map_s : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
+<<code language="ocaml" |val map_s : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
 val map_p : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
 >>
 
@@ -513,8 +486,7 @@ val map_p : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
   over lists, similar to the ones of the {{{List}}} module, but using
   functions that return a thread. For example:
 
-<<code language="ocaml" |
-val iter_s : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
+<<code language="ocaml" |val iter_s : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
 val iter_p : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
 >>
 
@@ -536,8 +508,7 @@ val iter_p : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
   The common way of creating a stream is by using
   {{{Lwt_stream.from}}} or by using {{{Lwt_stream.create}}}:
 
-<<code language="ocaml" |
-val from : (unit -> 'a option Lwt.t) -> 'a Lwt_stream.t
+<<code language="ocaml" |val from : (unit -> 'a option Lwt.t) -> 'a Lwt_stream.t
 val create : unit -> 'a Lwt_stream.t * ('a option -> unit)
 >>
 
@@ -549,10 +520,9 @@ val create : unit -> 'a Lwt_stream.t * ('a option -> unit)
 
   For example:
 
-<<code language="ocaml" |
-# let stream, push = Lwt_stream.create ();;
+<<code language="ocaml" |# let stream, push = Lwt_stream.create ();;
 val stream : '_a Lwt_stream.t = <abstr>
-val push : ''a option -> unit = <fun>
+val push : '_a option -> unit = <fun>
 # push (Some 1);;
 - : unit = ()
 # push (Some 2);;
@@ -576,8 +546,7 @@ val push : ''a option -> unit = <fun>
   elements in the same order. Consuming one will not consume the other.
   For example:
 
-<<code language="ocaml" |
-# let s = Lwt_stream.of_list [1; 2];;
+<<code language="ocaml" |# let s = Lwt_stream.of_list [1; 2];;
 val s : int Lwt_stream.t = <abstr>
 # let s' = Lwt_stream.clone s;;
 val s' : int Lwt_stream.t = <abstr>
@@ -616,8 +585,7 @@ val s' : int Lwt_stream.t = <abstr>
   The {{{Lwt_unix}}} provides cooperative system calls. For example,
   the {{{Lwt}}} counterpart of {{{Unix.read}}} is:
 
-<<code language="ocaml" |
-val read : file_descr -> string -> int -> int -> int Lwt.t
+<<code language="ocaml" |val read : file_descr -> string -> int -> int -> int Lwt.t
 >>
 
   {{{Lwt_io}}} provides features similar to buffered channels of
@@ -651,8 +619,7 @@ val read : file_descr -> string -> int -> int -> int Lwt.t
   For example to redirect all logs to {{{stderr}}} and to the syslog
   daemon:
 
-<<code language="ocaml" |
-# Lwt_log.default_logger :=
+<<code language="ocaml" |# Lwt_log.default_logger :=
     Lwt_log.broadcast [
       Lwt_log.channel ~close_mode:`Keep ~channel:Lwt_io.stderr ();
       Lwt_log.syslog ~facility:`User ();
@@ -664,14 +631,12 @@ val read : file_descr -> string -> int -> int -> int Lwt.t
   {{{lwt.syntax.log}}}. It does not modify the language but
   it replaces log statement of the form:
 
-<<code language="ocaml" |
-Lwt_log.info_f ~section "something happened: %s" msg
+<<code language="ocaml" |Lwt_log.info_f ~section "something happened: %s" msg
 >>
 
   by:
 
-<<code language="ocaml" |
-if Lwt_log.Section.level section <= Lwt_log.Info then
+<<code language="ocaml" |if Lwt_log.Section.level section <= Lwt_log.Info then
   Lwt_log.info_f ~section "somethign happend: %s" msg
 else
   Lwt.return ()
@@ -695,8 +660,7 @@ else
   thread which will wait until the next occurence of this event. For
   example:
 
-<<code language="ocaml" |
-# let event, push = React.E.create ();;
+<<code language="ocaml" |# let event, push = React.E.create ();;
 val event : '_a React.event = <abstr>
 val push : '_a -> unit = <fun>
 # let t = Lwt_event.next event;;
@@ -716,8 +680,7 @@ val t : '_a Lwt.t = <abstr>
   times per second, you probably want not to render it 1000 times per
   second. For that you use {{{Lwt_signal.limit}}}:
 
-<<code language="ocaml" |
-val limit : (unit -> unit Lwt.t) -> 'a React.signal -> 'a React.signal
+<<code language="ocaml" |val limit : (unit -> unit Lwt.t) -> 'a React.signal -> 'a React.signal
 >>
 
   {{{Lwt_signal.limit f signal}}} returns a signal which varies as
@@ -726,8 +689,7 @@ val limit : (unit -> unit Lwt.t) -> 'a React.signal -> 'a React.signal
   sleep for 0.1 seconds, then there will be no more than 10 changes per
   second. For example:
 
-<<code language="ocaml" |
-let draw x =
+<<code language="ocaml" |let draw x =
   (* Draw the screen *)
   ...
 
@@ -765,8 +727,7 @@ let () =
   For example, with you locale sets to ``C'', and the variable
   {{{name}}} set to ``Jérémie'', you got:
 
-<<code language="ocaml" |
-# lwt () = Lwt_text.printlf "My name is %s" name;;
+<<code language="ocaml" |# lwt () = Lwt_text.printlf "My name is %s" name;;
 My name is J?r?mie
 >>
 
@@ -776,16 +737,14 @@ My name is J?r?mie
   meanings that input is not buffered and character are
   returned as the user type them. For example, you can read a key with:
 
-<<code language="ocaml" |
-# lwt key = Lwt_term.read_key ();;
+<<code language="ocaml" |# lwt key = Lwt_term.read_key ();;
 val key : Lwt_term.key = Lwt_term.Key_control 'j'
 >>
 
   The second main feature of {{{Lwt_term}}} is the ability to prints
   text with styles. For example, to print text in bold and blue:
 
-<<code language="ocaml" |
-# open Lwt_term;;
+<<code language="ocaml" |# open Lwt_term;;
 # lwt () = printlc [fg blue; bold; text "foo"];;
 foo
 >>
@@ -802,8 +761,7 @@ foo
 
   For example:
 
-<<code language="ocaml" |
-# open Lwt_term;;
+<<code language="ocaml" |# open Lwt_term;;
 # lwt l = Lwt_read_line.read_line ~prompt:[text "foo> "] ();;
 foo> Hello, world!
 val l : Text.t = "Hello, world!"
@@ -827,8 +785,7 @@ val l : Text.t = "Hello, world!"
   {{{lwt.preemptive}}} package which maintains a spool of system
   threads. The main function is:
 
-<<code language="ocaml" |
-val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
+<<code language="ocaml" |val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
 >>
 
   {{{detach f x}}} will execute {{{f x}}} in another thread and
@@ -882,8 +839,7 @@ val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
   We show as example the implementation of {{{Lwt_unix.mkdir}}}. On the C
   side we have:
 
-<<code language="c" |
-/* The job info structure */
+<<code language="c" |/* The job info structure */
 struct job_mkdir {
   /* Informations required by lwt.
      It must be the first field of the structure. */
@@ -962,8 +918,7 @@ CAMLprim value lwt_unix_mkdir_free(value val_job)
 
   and on the ocaml side:
 
-<<code language="ocaml" |
-(* The stub for creating the job. *)
+<<code language="ocaml" |(* The stub for creating the job. *)
 external mkdir_job : string -> int -> [ `unix_mkdir ] job = "lwt_unix_mkdir_job"
 
 (* The stub for reading the result of the job. *)

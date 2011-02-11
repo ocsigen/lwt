@@ -19,23 +19,24 @@
 \lstset{
   language=[Objective]Caml,
   extendedchars,
-  keywordstyle=\bfseries,%\underbar,
   showspaces=false,
   showstringspaces=false,
   showtabs=false,
-  basicstyle=\ttfamily,%\smaller,
+  basicstyle=\ttfamily,
   frame=l,
   framerule=1.5mm,
   xleftmargin=6mm,
   framesep=4mm,
   rulecolor=\color{lightgray},
-  morekeywords={initializer,object,lwt,for\_lwt,try\_lwt,raise\_lwt},
-  %moredelim=[is][\ttfamily\underbar]{\%}{\%}%,
+  emph={lwt,for\_lwt,try\_lwt,raise\_lwt},
+  emphstyle=\color[rgb]{0.627451, 0.125490, 0.941176},
   moredelim=*[s][\itshape]{(*}{*)},
   moredelim=[is][\textcolor{darkgray}]{§}{§},
-  %mathescape=true, % echappement en mode math avec des $
-  escapechar=°
-% échappement LaTeX
+  escapechar=°,
+  keywordstyle=\color[rgb]{0.627451, 0.125490, 0.941176},
+  stringstyle=\color[rgb]{0.545098, 0.278431, 0.364706},
+  commentstyle=\color[rgb]{0.698039, 0.133333, 0.133333},
+  numberstyle=\color[rgb]{0.372549, 0.619608, 0.627451}
 }
 
 \title{Lwt user manual}
