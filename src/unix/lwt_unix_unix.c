@@ -583,7 +583,7 @@ CAMLprim value lwt_unix_get_cpu()
 
 CAMLprim value lwt_unix_get_cpu()
 {
-  lwt_unix_not_implemented("get_cpu");
+  lwt_unix_not_available("get_cpu");
 }
 
 #endif
@@ -625,12 +625,12 @@ CAMLprim value lwt_unix_set_affinity(value val_pid, value val_cpus)
 
 CAMLprim value lwt_unix_get_affinity(value val_pid)
 {
-  lwt_unix_not_implemented("get_affinity");
+  lwt_unix_not_available("get_affinity");
 }
 
 CAMLprim value lwt_unix_set_affinity(value val_pid, value val_cpus)
 {
-  lwt_unix_not_implemented("set_affinity");
+  lwt_unix_not_available("set_affinity");
 }
 
 #endif
