@@ -61,13 +61,13 @@ val fake_io : Unix.file_descr -> unit
 (** An engine represent a set of functions used to register different
     kind of callbacks for different kind of events. *)
 
-(** Type of engines. *)
-class virtual t : object
+(** Abstract class for engines. *)
+class virtual abstract : object
   method destroy : unit
     (** Destroy the engine, remove all its events and free its
         associated resources. *)
 
-  method transfer : t -> unit
+  method transfer : abstract -> unit
     (** [transfer engine] moves all events from the current engine to
         [engine]. Note that timers are reset in the destination
         engine, i.e. if a timer with a delay of 2 seconds was
@@ -100,6 +100,17 @@ class virtual t : object
   method virtual private register_timer : float -> bool -> (unit -> unit) -> unit Lazy.t
 end
 
+(** Type of engines. *)
+class type t = object
+  inherit abstract
+
+  method iter : bool -> unit
+  method private cleanup : unit
+  method private register_readable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+  method private register_writable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+  method private register_timer : float -> bool -> (unit -> unit) -> unit Lazy.t
+end
+
 (** {6 Predefined engines} *)
 
 type ev_loop
@@ -114,23 +125,42 @@ class libev : object
 
   method loop : ev_loop
     (** Returns [loop]. *)
-
-  method iter : bool -> unit
-  method private cleanup : unit
-  method private register_readable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
-  method private register_writable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
-  method private register_timer : float -> bool -> (unit -> unit) -> unit Lazy.t
 end
 
-(** Engine based on select. *)
-class select : object
+(** Engine based on [Unix.select]. *)
+class select : t
+
+(** Abstract class for engines based on a select-like function. *)
+class virtual select_based : object
   inherit t
 
-  method iter : bool -> unit
-  method private cleanup : unit
-  method private register_readable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
-  method private register_writable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
-  method private register_timer : float -> bool -> (unit -> unit) -> unit Lazy.t
+  method private virtual select : Unix.file_descr list -> Unix.file_descr list -> float -> Unix.file_descr list * Unix.file_descr list
+    (** [select fds_r fds_w timeout] waits for either:
+
+        - one of the file descriptor of [fds_r] to become readable
+        - one of the file descriptor of [fds_w] to become writable
+        - timeout to expire
+
+        and returns the list of readable file descriptor and the list
+        of writable file descriptors. *)
+end
+
+(** Abstract class for engines based on a poll-like function. *)
+class virtual poll_based : object
+  inherit t
+
+  method private virtual poll : (Unix.file_descr * bool * bool) list -> float -> (Unix.file_descr * bool * bool) list
+    (** [poll fds tiomeout], where [fds] is a list of tuples of the
+        form [(fd, check_readable, check_writable)], waits for either:
+
+        - one of the file descriptor with [check_readable] set to
+          [true] to become readable
+        - one of the file descriptor with [check_writable] set to
+          [true] to become writable
+        - timeout to expire
+
+        and returns the list of file descriptors with their readable
+        and writable status. *)
 end
 
 (** {6 The current engine} *)
@@ -138,7 +168,12 @@ end
 val get : unit -> t
   (** [get ()] returns the engine currently in use. *)
 
-val set : t -> unit
-  (** [set engine] replaces the current engine by the given one. All
-      events from the current engine are transferred to the new
-      one. *)
+val set : ?transfer : bool -> ?destroy : bool -> #t -> unit
+  (** [set ?transfer ?destroy engine] replaces the current engine by
+      the given one.
+
+      If [transfer] is [true] (the default) all events from the
+      current engine are transferred to the new one.
+
+      If [destroy] is [true] (the default) then the current engine is
+      destroyed before being replaced. *)

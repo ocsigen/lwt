@@ -51,7 +51,7 @@ let fake_event = ref _fake_event
    | Engines                                                         |
    +-----------------------------------------------------------------+ *)
 
-class virtual t = object(self)
+class virtual abstract = object(self)
   method virtual iter : bool -> unit
   method virtual private cleanup : unit
   method virtual private register_readable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
@@ -75,7 +75,7 @@ class virtual t = object(self)
     Lwt_sequence.iter_l (fun (delay, repeat, f, g, ev) -> stop_event ev) timers;
     self#cleanup
 
-  method transfer (engine : t) =
+  method transfer (engine : abstract) =
     Lwt_sequence.iter_l (fun (fd, f, g, ev) -> stop_event ev; ev := !(engine#on_readable fd f)) readables;
     Lwt_sequence.iter_l (fun (fd, f, g, ev) -> stop_event ev; ev := !(engine#on_writable fd f)) writables;
     Lwt_sequence.iter_l (fun (delay, repeat, f, g, ev) -> stop_event ev; ev := !(engine#on_timer delay repeat f)) timers
@@ -106,6 +106,16 @@ class virtual t = object(self)
     ev
 end
 
+class type t = object
+  inherit abstract
+
+  method iter : bool -> unit
+  method private cleanup : unit
+  method private register_readable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+  method private register_writable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+  method private register_timer : float -> bool -> (unit -> unit) -> unit Lazy.t
+end
+
 (* +-----------------------------------------------------------------+
    | The libev engine                                                |
    +-----------------------------------------------------------------+ *)
@@ -125,7 +135,7 @@ external ev_timer_init : ev_loop -> float -> bool -> (unit -> unit) -> ev_timer 
 external ev_timer_stop : ev_loop -> ev_timer -> unit  = "lwt_libev_timer_stop"
 
 class libev = object
-  inherit t
+  inherit abstract
 
   val loop = ev_init ()
   method loop = loop
@@ -153,7 +163,7 @@ class libev = object
 end
 
 (* +-----------------------------------------------------------------+
-   | The select engine                                               |
+   | Select/poll based engines                                       |
    +-----------------------------------------------------------------+ *)
 
 (* Type of a sleeper for the select engine. *)
@@ -202,8 +212,13 @@ let bad_fd fd =
   with Unix.Unix_error (_, _, _) ->
     true
 
-class select = object(self)
-  inherit t
+let invoke_actions fd map =
+  match try Some(Fd_map.find fd map) with Not_found -> None with
+    | Some actions -> Lwt_sequence.iter_l (fun f -> f ()) actions
+    | None -> ()
+
+class virtual select_or_poll_based = object(self)
+  inherit abstract
 
   val mutable sleep_queue = Sleep_queue.empty
     (* Threads waiting for a timeout to expire. *)
@@ -223,36 +238,6 @@ class select = object(self)
        writable. *)
 
   method private cleanup = ()
-
-  method iter block =
-    (* Transfer all sleepers added since the last iteration to the
-       main sleep queue: *)
-    sleep_queue <- List.fold_left (fun q e -> Sleep_queue.add e q) sleep_queue new_sleeps;
-    new_sleeps <- [];
-    (* Collect file descriptors. *)
-    let fds_r = Fd_map.fold (fun fd _ l -> fd :: l) wait_readable [] in
-    let fds_w = Fd_map.fold (fun fd _ l -> fd :: l) wait_writable [] in
-    (* Compute the timeout. *)
-    let timeout = if block then get_next_timeout sleep_queue else 0. in
-    (* Do the blocking call *)
-    let fds_r, fds_w, fds_e =
-      try
-        Unix.select fds_r fds_w [] timeout
-      with
-        | Unix.Unix_error (Unix.EINTR, _, _) ->
-            ([], [], [])
-        | Unix.Unix_error (Unix.EBADF, _, _) ->
-            (* Keeps only bad file descriptors. Actions registered on
-               them have to handle the error: *)
-            (List.filter bad_fd fds_r,
-             List.filter bad_fd fds_w,
-             [])
-    in
-    (* Restart threads waiting for a timeout: *)
-    sleep_queue <- restart_actions sleep_queue (Unix.gettimeofday ());
-    (* Restart threads waiting on a file descriptors: *)
-    List.iter (fun fd -> Lwt_sequence.iter_l (fun f -> f ()) (Fd_map.find fd wait_readable)) fds_r;
-    List.iter (fun fd -> Lwt_sequence.iter_l (fun f -> f ()) (Fd_map.find fd wait_writable)) fds_w
 
   method private register_timer delay repeat f =
     if repeat then begin
@@ -297,6 +282,87 @@ class select = object(self)
          if Lwt_sequence.is_empty actions then wait_writable <- Fd_map.remove fd wait_writable)
 end
 
+class virtual select_based = object(self)
+  inherit select_or_poll_based
+
+  method private virtual select : Unix.file_descr list -> Unix.file_descr list -> float -> Unix.file_descr list * Unix.file_descr list
+
+  method iter block =
+    (* Transfer all sleepers added since the last iteration to the
+       main sleep queue: *)
+    sleep_queue <- List.fold_left (fun q e -> Sleep_queue.add e q) sleep_queue new_sleeps;
+    new_sleeps <- [];
+    (* Collect file descriptors. *)
+    let fds_r = Fd_map.fold (fun fd _ l -> fd :: l) wait_readable [] in
+    let fds_w = Fd_map.fold (fun fd _ l -> fd :: l) wait_writable [] in
+    (* Compute the timeout. *)
+    let timeout = if block then get_next_timeout sleep_queue else 0. in
+    (* Do the blocking call *)
+    let fds_r, fds_w =
+      try
+        self#select fds_r fds_w timeout
+      with
+        | Unix.Unix_error (Unix.EINTR, _, _) ->
+            ([], [])
+        | Unix.Unix_error (Unix.EBADF, _, _) ->
+            (* Keeps only bad file descriptors. Actions registered on
+               them have to handle the error: *)
+            (List.filter bad_fd fds_r,
+             List.filter bad_fd fds_w)
+    in
+    (* Restart threads waiting for a timeout: *)
+    sleep_queue <- restart_actions sleep_queue (Unix.gettimeofday ());
+    (* Restart threads waiting on a file descriptors: *)
+    List.iter (fun fd -> invoke_actions fd wait_readable) fds_r;
+    List.iter (fun fd -> invoke_actions fd wait_writable) fds_w
+end
+
+class virtual poll_based = object(self)
+  inherit select_or_poll_based
+
+  method private virtual poll : (Unix.file_descr * bool * bool) list -> float -> (Unix.file_descr * bool * bool) list
+
+  method iter block =
+    (* Transfer all sleepers added since the last iteration to the
+       main sleep queue: *)
+    sleep_queue <- List.fold_left (fun q e -> Sleep_queue.add e q) sleep_queue new_sleeps;
+    new_sleeps <- [];
+    (* Collect file descriptors. *)
+    let fds = [] in
+    let fds = Fd_map.fold (fun fd _ l -> (fd, true, false) :: l) wait_readable fds in
+    let fds = Fd_map.fold (fun fd _ l -> (fd, false, true) :: l) wait_writable fds in
+    (* Compute the timeout. *)
+    let timeout = if block then get_next_timeout sleep_queue else 0. in
+    (* Do the blocking call *)
+    let fds =
+      try
+        self#poll fds timeout
+      with
+        | Unix.Unix_error (Unix.EINTR, _, _) ->
+            []
+        | Unix.Unix_error (Unix.EBADF, _, _) ->
+            (* Keeps only bad file descriptors. Actions registered on
+               them have to handle the error: *)
+            List.filter (fun (fd, _, _) -> bad_fd fd) fds
+    in
+    (* Restart threads waiting for a timeout: *)
+    sleep_queue <- restart_actions sleep_queue (Unix.gettimeofday ());
+    (* Restart threads waiting on a file descriptors: *)
+    List.iter
+      (fun (fd, readable, writable) ->
+         if readable then invoke_actions fd wait_readable;
+         if writable then invoke_actions fd wait_writable)
+      fds
+end
+
+class select = object
+  inherit select_based
+
+  method private select fds_r fds_w timeout =
+    let fds_r, fds_w, _ = Unix.select fds_r fds_w [] timeout in
+    (fds_r, fds_w)
+end
+
 (* +-----------------------------------------------------------------+
    | The current engine                                              |
    +-----------------------------------------------------------------+ *)
@@ -306,10 +372,10 @@ let current = ref (if Lwt_sys.windows then (new select :> t) else (new libev :> 
 let get () =
   !current
 
-let set engine =
-  !current#transfer engine;
-  !current#destroy;
-  current := engine
+let set ?(transfer=true) ?(destroy=true) engine =
+  if transfer then !current#transfer (engine : #t :> abstract);
+  if destroy then !current#destroy;
+  current := (engine : #t :> t)
 
 let iter block = !current#iter block
 let on_readable fd f = !current#on_readable fd f

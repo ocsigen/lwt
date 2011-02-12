@@ -39,6 +39,73 @@ gint n_fds;
 gint max_priority;
 
 /* +-----------------------------------------------------------------+
+   | Polling                                                         |
+   +-----------------------------------------------------------------+ */
+
+CAMLprim value lwt_glib_poll(value val_fds, value val_count, value val_timeout)
+{
+  CAMLparam3(val_fds, val_count, val_timeout);
+  CAMLlocal5(node, src, node_result, src_result, tmp);
+
+  gint timeout;
+  long count = Long_val(val_count);
+
+  g_main_context_dispatch(gc);
+  g_main_context_prepare(gc, &max_priority);
+
+  while (fds_count < count + (n_fds = g_main_context_query(gc, max_priority, &timeout, gpollfds, fds_count))) {
+    free(gpollfds);
+    fds_count = n_fds + count;
+    gpollfds = malloc(fds_count * sizeof (GPollFD));
+  }
+
+  int i;
+
+  /* Clear all revents fields. */
+  for (i = 0; i < n_fds + count; i++) gpollfds[i].revents = 0;
+
+  /* Add all Lwt fds. */
+  for (i = n_fds, node = val_fds; i < n_fds + count; i++, node = Field(node, 1)) {
+    src = Field(node, 0);
+    GPollFD *gpollfd = gpollfds + i;
+#if defined(LWT_ON_WINDOWS)
+    gpollfd->fd = Handle_val(Field(src, 0));
+#else
+    gpollfd->fd = Int_val(Field(src, 0));
+#endif
+    gint events = 0;
+    if (Bool_val(Field(src, 1))) events |= G_IO_IN;
+    if (Bool_val(Field(src, 2))) events |= G_IO_OUT;
+    gpollfd->events = events;
+  }
+
+  gint lwt_timeout = Int_val(val_timeout);
+  if (timeout < 0 || (lwt_timeout >= 0 && lwt_timeout < timeout))
+    timeout = lwt_timeout;
+
+  /* Do the blocking call. */
+  g_main_context_get_poll_func(gc)(gpollfds, n_fds + count, timeout);
+  g_main_context_check(gc, max_priority, gpollfds, n_fds);
+
+  /* Build the result. */
+  node_result = Val_int(0);
+  for (i = n_fds, node = val_fds; i < n_fds + count; i++, node = Field(node, 1)) {
+    src_result = caml_alloc_tuple(3);
+    src = Field(node, 0);
+    Field(src_result, 0) = Field(src, 0);
+    gint revents = gpollfds[i].revents;
+    Field(src_result, 1) = Val_bool(revents & G_IO_IN);
+    Field(src_result, 2) = Val_bool(revents & G_IO_OUT);
+    tmp = caml_alloc_tuple(2);
+    Field(tmp, 0) = src_result;
+    Field(tmp, 1) = node_result;
+    node_result = tmp;
+  }
+
+  CAMLreturn(node_result);
+}
+
+/* +-----------------------------------------------------------------+
    | Get sources                                                     |
    +-----------------------------------------------------------------+ */
 
