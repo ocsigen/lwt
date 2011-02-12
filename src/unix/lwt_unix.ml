@@ -2073,7 +2073,7 @@ external thread_waiting_count : unit -> int = "lwt_unix_thread_waiting_count" "n
 #if HAVE_GETCPU
 external get_cpu : unit -> int = "lwt_unix_get_cpu"
 #else
-let get_cpu = raise (Lwt_sys.Not_available "get_cpu")
+let get_cpu () = raise (Lwt_sys.Not_available "get_cpu")
 #endif
 
 #if HAVE_AFFINITY
