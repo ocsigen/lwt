@@ -409,7 +409,7 @@ CAMLprim value lwt_unix_bytes_send_msg(value val_fd, value val_n_iovs, value val
    | Credentials                                                     |
    +-----------------------------------------------------------------+ */
 
-#if defined(SO_PEERCRED)
+#if defined(HAVE_GET_CREDENTIALS)
 
 #include <sys/un.h>
 
@@ -428,13 +428,6 @@ CAMLprim value lwt_unix_get_credentials(value fd)
     Store_field(res, 1, Val_int(cred.uid));
     Store_field(res, 2, Val_int(cred.gid));
     CAMLreturn(res);
-}
-
-#else
-
-CAMLprim value lwt_unix_get_credentials(value fd_val)
-{
-  lwt_unix_not_available("get_credentials");
 }
 
 #endif
@@ -472,8 +465,6 @@ value lwt_unix_sigwinch()
 /* +-----------------------------------------------------------------+
    | wait4                                                           |
    +-----------------------------------------------------------------+ */
-
-#if defined(HAS_WAIT4)
 
 /* Some code duplicated from OCaml's otherlibs/unix/wait.c */
 
@@ -552,20 +543,6 @@ value lwt_unix_has_wait4(value unit)
   return Val_int(1);
 }
 
-#else
-
-value lwt_unix_wait4(value flags, value pid_req)
-{
-  lwt_unix_not_available("wait4");
-}
-
-value lwt_unix_has_wait4(value unit)
-{
-  return Val_int(0);
-}
-
-#endif
-
 /* +-----------------------------------------------------------------+
    | CPUs                                                            |
    +-----------------------------------------------------------------+ */
@@ -577,13 +554,6 @@ CAMLprim value lwt_unix_get_cpu()
   int cpu = sched_getcpu();
   if (cpu < 0) uerror("sched_getcpu", Nothing);
   return Val_int(cpu);
-}
-
-#else
-
-CAMLprim value lwt_unix_get_cpu()
-{
-  lwt_unix_not_available("get_cpu");
 }
 
 #endif
@@ -619,18 +589,6 @@ CAMLprim value lwt_unix_set_affinity(value val_pid, value val_cpus)
   if (sched_setaffinity(Int_val(val_pid), sizeof(cpu_set_t), &cpus) < 0)
     uerror("sched_setaffinity", Nothing);
   return Val_unit;
-}
-
-#else
-
-CAMLprim value lwt_unix_get_affinity(value val_pid)
-{
-  lwt_unix_not_available("get_affinity");
-}
-
-CAMLprim value lwt_unix_set_affinity(value val_pid, value val_cpus)
-{
-  lwt_unix_not_available("set_affinity");
 }
 
 #endif

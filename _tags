@@ -1,8 +1,8 @@
 # -*- conf -*-
 
 <**/*.ml>: syntax_camlp4o, pkg_camlp4
-<**/*.ml>: pa_lwt_options, pa_lwt, pa_lwt_log
-<syntax/*.ml>: -pa_lwt_options, -pa_lwt, -pa_lwt_log
+<**/*.ml>: pa_lwt_options, pa_lwt, pa_lwt_log, pa_optcomp
+<syntax/*.ml>: -pa_lwt_options, -pa_lwt, -pa_lwt_log, -pa_optcomp
 
 <src/top/{lwt_toplevel.*,toplevel.*,toplevel_temp.*}>: use_compiler_libs, pkg_text, pkg_text.bigarray, pkg_findlib, pkg_react, pkg_unix, pkg_bigarray
 
@@ -14,7 +14,7 @@
 <src/glib/lwt_glib_stubs.*>: use_C_glib
 
 # OASIS_START
-# DO NOT EDIT (digest: 38a222038a38beffd3224856035a08a8)
+# DO NOT EDIT (digest: e0c630a4d9655d2ced0f13c325a00ca9)
 # Library lwt
 "src/core": include
 # Library lwt-unix
@@ -116,7 +116,6 @@
 # Library lwt-syntax
 <syntax/*.ml{,i}>: pkg_camlp4.extend
 # Library lwt-syntax-log
-<syntax/*.ml{,i}>: pkg_camlp4.quotations.o
 # Executable lwt-toplevel
 "src/top/lwt_toplevel.byte": use_lwt-top
 "src/top/lwt_toplevel.byte": use_lwt-text
@@ -148,6 +147,8 @@
 <src/extra/*.ml{,i}>: pkg_unix
 <src/extra/*.ml{,i}>: pkg_threads
 <src/extra/*.ml{,i}>: pkg_bigarray
+# Library optcomp
+<syntax/*.ml{,i}>: pkg_camlp4.quotations.o
 # Library lwt-syntax-options
 "syntax": include
 <syntax/*.ml{,i}>: pkg_camlp4.lib

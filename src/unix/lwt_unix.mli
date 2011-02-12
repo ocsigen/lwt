@@ -250,8 +250,7 @@ val wait4 : Unix.wait_flag list -> int -> (int * Unix.process_status * resource_
       status)] is the same result as [Unix.waitpid flags pid], and
       [rusage] contains accounting information about the child.
 
-      If this call is not available, then it will always returns [{
-      utime = 0.0; stime = 0.0 }] as resource usages.  *)
+      On windows it will always returns [{ utime = 0.0; stime = 0.0 }]. *)
 
 val system : string -> Unix.process_status Lwt.t
   (** Wrapper for [Unix.system] *)
@@ -562,13 +561,17 @@ val io_vector : buffer : string -> offset : int -> length : int -> io_vector
 val recv_msg : socket : file_descr -> io_vectors : io_vector list -> (int * Unix.file_descr list) Lwt.t
   (** [recv_msg ~socket ~io_vectors] receives data into a list of
       io-vectors, plus any file-descriptors that may accompany the
-      message. *)
+      message.
+
+      This call is not available on windows. *)
 
 val send_msg : socket : file_descr -> io_vectors : io_vector list -> fds : Unix.file_descr list -> int Lwt.t
   (** [send_msg ~socket ~io_vectors ~fds] sends data from a list of
       io-vectors, accompanied with a list of file-descriptor. If
       fd-passing is not possible on the current system and [fds] is
-      not empty, it raises [Lwt_sys.Not_available "fd_passing"]. *)
+      not empty, it raises [Lwt_sys.Not_available "fd_passing"].
+
+      This call is not available on windows. *)
 
 type credentials = {
   cred_pid : int;

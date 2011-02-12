@@ -126,7 +126,10 @@ type io_vector = {
 val io_vector : buffer : t -> offset : int -> length : int -> io_vector
 
 val recv_msg : socket : Lwt_unix.file_descr -> io_vectors : io_vector list -> (int * Unix.file_descr list) Lwt.t
+  (** This call is not available on windows. *)
+
 val send_msg : socket : Lwt_unix.file_descr -> io_vectors : io_vector list -> fds : Unix.file_descr list -> int Lwt.t
+  (** This call is not available on windows. *)
 
 (** {6 Memory mapped files} *)
 
@@ -150,7 +153,9 @@ type advice =
 val madvise : t -> int -> int -> advice -> unit
   (** [madvise buffer pos len advice] advise the kernel about how the
       program is going to use the part of the memory mapped file
-      between [pos] and [pos + len]. *)
+      between [pos] and [pos + len].
+
+      This call is not available on windows. *)
 
 val page_size : int
   (** Size of pages. *)
@@ -160,8 +165,12 @@ val mincore : t -> int -> bool array -> unit
       in the system memory (the RAM). The [offset] argument must be a
       multiple of {!page_size}. [states] is used to store the result;
       each cases is [true] if the corresponding page in the RAM and
-      [false] otherwise. *)
+      [false] otherwise.
+
+      This call is not available on windows. *)
 
 val wait_mincore : t -> int -> unit Lwt.t
   (** [wait_mincore buffer offset] waits until the page containing the
-      byte at offset [offset] in the the RAM. *)
+      byte at offset [offset] in the the RAM.
+
+      This functions is not available on windows. *)

@@ -154,124 +154,15 @@ CAMLprim value lwt_unix_bytes_read(value fd, value buf, value vofs, value vlen)
   return Val_long(written);
 }
 
-value lwt_unix_recv()
-{
-  caml_invalid_argument("recv not implemented");
-}
-
-value lwt_unix_bytes_recv()
-{
-  caml_invalid_argument("recv not implemented");
-}
-
-value lwt_unix_recvfrom()
-{
-  caml_invalid_argument("recvfrom not implemented");
-}
-
-value lwt_unix_bytes_recvfrom()
-{
-  caml_invalid_argument("recvfrom not implemented");
-}
-
-value lwt_unix_send()
-{
-  caml_invalid_argument("send not implemented");
-}
-
-value lwt_unix_bytes_send()
-{
-  caml_invalid_argument("send not implemented");
-}
-
-value lwt_unix_sendto()
-{
-  caml_invalid_argument("sendto not implemented");
-}
-
-value lwt_unix_sendto_byte()
-{
-  caml_invalid_argument("sendto not implemented");
-}
-
-value lwt_unix_bytes_sendto()
-{
-  caml_invalid_argument("sendto not implemented");
-}
-
-value lwt_unix_bytes_sendto_byte()
-{
-  caml_invalid_argument("sendto not implemented");
-}
-
-value lwt_unix_recv_msg(value sock_val, value n_iovs_val, value iovs_val)
-{
-  caml_invalid_argument("recv_msg not implemented");
-}
-
-value lwt_unix_bytes_recv_msg(value sock_val, value n_iovs_val, value iovs_val)
-{
-  caml_invalid_argument("recv_msg not implemented");
-}
-
-value lwt_unix_send_msg(value sock_val, value n_iovs_val, value iovs_val, value n_fds_val, value fds_val)
-{
-  caml_invalid_argument("send_msg not implemented");
-}
-
-value lwt_unix_bytes_send_msg(value sock_val, value n_iovs_val, value iovs_val, value n_fds_val, value fds_val)
-{
-  caml_invalid_argument("send_msg not implemented");
-}
-
-CAMLprim value lwt_unix_get_credentials(value fd_val)
-{
-  lwt_unix_not_available("get_credentials");
-}
-
-value lwt_unix_wait4(value flags, value pid_req)
-{
-  lwt_unix_not_available("wait4");
-}
-
-value lwt_unix_has_wait4(value unit)
-{
-  return Val_int(0);
-}
-
-CAMLprim value lwt_unix_readable(value fd)
-{
-  return Val_int(1);
-}
-
-CAMLprim value lwt_unix_writable(value fd)
-{
-  return Val_int(1);
-}
-
 /* +-----------------------------------------------------------------+
    | Memory mapped files                                             |
    +-----------------------------------------------------------------+ */
-
-CAMLprim value lwt_unix_madvise (value val_buffer, value val_offset, value val_length, value val_advice)
-{
-  return Val_unit;
-}
 
 CAMLprim value lwt_unix_get_page_size()
 {
   SYSTEM_INFO si;
   GetSystemInfo(&si);
   return Val_long(si.dwPageSize);
-}
-
-CAMLprim value lwt_unix_mincore(value val_buffer, value val_offset, value val_length, value val_states)
-{
-  long len = Wosize_val(val_states);
-  long i;
-  for (i = 0; i < len; i++)
-    Field(val_states, i) = Val_true;
-  return Val_unit;
 }
 
 /* +-----------------------------------------------------------------+
@@ -307,25 +198,6 @@ value lwt_unix_sigwinch()
 #else
   return Val_int(0);
 #endif
-}
-
-/* +-----------------------------------------------------------------+
-   | CPUs                                                            |
-   +-----------------------------------------------------------------+ */
-
-CAMLprim value lwt_unix_get_cpu()
-{
-  lwt_unix_not_available("get_cpu");
-}
-
-CAMLprim value lwt_unix_get_affinity(value val_pid)
-{
-  lwt_unix_not_available("get_affinity");
-}
-
-CAMLprim value lwt_unix_set_affinity(value val_pid, value val_cpus)
-{
-  lwt_unix_not_available("set_affinity");
 }
 
 /* +-----------------------------------------------------------------+
@@ -391,6 +263,73 @@ CAMLprim value lwt_unix_read_result(value val_job, value val_string, value val_o
 CAMLprim value lwt_unix_read_free(value val_job)
 {
   struct job_read *job = Job_read_val(val_job);
+  free(job->buffer);
+  lwt_unix_free_job(&job->job);
+  return Val_unit;
+}
+
+/* +-----------------------------------------------------------------+
+   | JOB: bytes_read                                                 |
+   +-----------------------------------------------------------------+ */
+
+struct job_bytes_read {
+  struct lwt_unix_job job;
+  union {
+    HANDLE handle;
+    SOCKET socket;
+  } fd;
+  int kind;
+  char *buffer;
+  DWORD length;
+  DWORD result;
+  DWORD error_code;
+};
+
+#define Job_bytes_read_val(v) *(struct job_bytes_read**)Data_custom_val(v)
+
+static void worker_bytes_read(struct job_bytes_read *job)
+{
+  if (job->kind == KIND_SOCKET) {
+    int ret;
+    ret = recv(job->fd.socket, job->buffer, job->length, 0);
+    if (ret == SOCKET_ERROR) job->error_code = WSAGetLastError();
+    job->result = ret;
+  } else {
+    if (!ReadFile(job->fd.handle, job->buffer, job->length, &(job->result), NULL))
+      job->error_code = GetLastError();
+  }
+}
+
+CAMLprim value lwt_unix_bytes_read_job(value val_fd, value val_buffer, value val_offset, value val_length)
+{
+  struct job_bytes_read *job = lwt_unix_new(struct job_bytes_read);
+  struct filedescr *fd = (struct filedescr *)Data_custom_val(val_fd);
+  long length = Long_val(val_length);
+  job->job.worker = (lwt_unix_job_worker)worker_bytes_read;
+  job->kind = fd->kind;
+  if (fd->kind == KIND_HANDLE)
+    job->fd.handle = fd->fd.handle;
+  else
+    job->fd.socket = fd->fd.socket;
+  job->buffer = (char*)Caml_ba_data_val(val_buffer) + Long_val(val_offset);
+  job->length = length;
+  job->error_code = 0;
+  return lwt_unix_alloc_job(&(job->job));
+}
+
+CAMLprim value lwt_unix_bytes_read_result(value val_job)
+{
+  struct job_bytes_read *job = Job_bytes_read_val(val_job);
+  if (job->error_code) {
+    win32_maperr(job->error_code);
+    uerror("write", Nothing);
+  }
+  return Val_long(job->result);
+}
+
+CAMLprim value lwt_unix_bytes_read_free(value val_job)
+{
+  struct job_bytes_read *job = Job_bytes_read_val(val_job);
   free(job->buffer);
   lwt_unix_free_job(&job->job);
   return Val_unit;
@@ -465,66 +404,68 @@ CAMLprim value lwt_unix_write_free(value val_job)
 }
 
 /* +-----------------------------------------------------------------+
-   | Jobs                                                            |
+   | JOB: bytes_write                                                |
    +-----------------------------------------------------------------+ */
 
-LWT_UNIX_JOB_NOT_IMPLEMENTED(guess_blocking)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(wait_mincore)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(open)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(close)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(bytes_read)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(bytes_write)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(lseek)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(truncate)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(ftruncate)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(stat)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(lstat)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(fstat)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(isatty)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(lseek_64)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(truncate_64)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(ftruncate_64)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(stat_64)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(lstat_64)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(fstat_64)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(unlink)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(rename)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(link)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(chmod)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(fchmod)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(chown)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(fchown)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(access)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(mkdir)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(rmdir)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(chdir)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(chroot)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(opendir)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(readdir)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(readdir_n)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(rewinddir)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(closedir)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(mkfifo)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(symlink)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(readlink)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(lockf)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(getlogin)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(getpwnam)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(getgrnam)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(getpwuid)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(getgrgid)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(gethostname)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(gethostbyname)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(gethostbyaddr)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(getprotobyname)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(getprotobynumber)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(getservbyname)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(getservbyport)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(getaddrinfo)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(getnameinfo)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(tcgetattr)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(tcsetattr)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(tcsendbreak)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(tcdrain)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(tcflush)
-LWT_UNIX_JOB_NOT_IMPLEMENTED(tcflow)
+struct job_bytes_write {
+  struct lwt_unix_job job;
+  union {
+    HANDLE handle;
+    SOCKET socket;
+  } fd;
+  int kind;
+  char *buffer;
+  DWORD length;
+  DWORD result;
+  DWORD error_code;
+};
+
+#define Job_bytes_write_val(v) *(struct job_bytes_write**)Data_custom_val(v)
+
+static void worker_bytes_write(struct job_bytes_write *job)
+{
+  if (job->kind == KIND_SOCKET) {
+    int ret;
+    ret = send(job->fd.socket, job->buffer, job->length, 0);
+    if (ret == SOCKET_ERROR) job->error_code = WSAGetLastError();
+    job->result = ret;
+  } else {
+    if (!WriteFile(job->fd.handle, job->buffer, job->length, &(job->result), NULL))
+      job->error_code = GetLastError();
+  }
+}
+
+CAMLprim value lwt_unix_bytes_write_job(value val_fd, value val_buffer, value val_offset, value val_length)
+{
+  struct job_bytes_write *job = lwt_unix_new(struct job_bytes_write);
+  struct filedescr *fd = (struct filedescr *)Data_custom_val(val_fd);
+  long length = Long_val(val_length);
+  job->job.worker = (lwt_unix_job_worker)worker_bytes_write;
+  job->kind = fd->kind;
+  if (fd->kind == KIND_HANDLE)
+    job->fd.handle = fd->fd.handle;
+  else
+    job->fd.socket = fd->fd.socket;
+  job->buffer = (char*)Caml_ba_data_val(val_buffer) + Long_val(val_offset);
+  job->length = length;
+  job->error_code = 0;
+  return lwt_unix_alloc_job(&(job->job));
+}
+
+CAMLprim value lwt_unix_bytes_write_result(value val_job)
+{
+  struct job_bytes_write *job = Job_bytes_write_val(val_job);
+  if (job->error_code) {
+    win32_maperr(job->error_code);
+    uerror("bytes_write", Nothing);
+  }
+  return Val_long(job->result);
+}
+
+CAMLprim value lwt_unix_bytes_write_free(value val_job)
+{
+  struct job_bytes_write *job = Job_bytes_write_val(val_job);
+  free(job->buffer);
+  lwt_unix_free_job(&job->job);
+  return Val_unit;
+}

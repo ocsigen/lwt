@@ -38,7 +38,9 @@ type feature =
     | `recv_msg
     | `send_msg
     | `fd_passing
-    | `get_credentials ]
+    | `get_credentials
+    | `mincore
+    | `madvise ]
 
 val have : feature -> bool
   (** Test whether the given feature is available on the current

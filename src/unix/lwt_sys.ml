@@ -20,6 +20,8 @@
  * 02111-1307, USA.
  *)
 
+#include "src/unix/lwt_config.ml"
+
 exception Not_available of string
 
 let () = Callback.register_exception "lwt:not-available" (Not_available "")
@@ -34,6 +36,18 @@ type feature =
     | `recv_msg
     | `send_msg
     | `fd_passing
-    | `get_credentials ]
+    | `get_credentials
+    | `mincore
+    | `madvise ]
 
-external have : feature -> bool = "lwt_unix_have"
+let have = function
+  | `wait4
+  | `recv_msg
+  | `send_msg
+  | `mincore
+  | `madvise -> not windows
+  | `get_cpu -> <:optcomp< HAVE_GETCPU >>
+  | `get_affinity
+  | `set_affinity -> <:optcomp< HAVE_AFFINITY >>
+  | `fd_passing -> <:optcomp< HAVE_FD_PASSING >>
+  | `get_credentials -> <:optcomp< HAVE_GET_CREDENTIALS >>

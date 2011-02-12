@@ -114,6 +114,18 @@ CAMLprim value lwt_test()
 }
 "
 
+let get_credentials_code = "
+#include <caml/mlvalues.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+
+CAMLprim value lwt_test()
+{
+    getsockopt(0, SOL_SOCKET, SO_PEERCRED, 0, 0);
+    return Val_unit;
+}
+"
+
 (* +-----------------------------------------------------------------+
    | Compilation                                                     |
    +-----------------------------------------------------------------+ *)
@@ -182,7 +194,8 @@ let test_code args stub_code =
     cleanup ();
     raise exn
 
-let config = open_out "src/unix/config.h"
+let config = open_out "src/unix/lwt_config.h"
+let config_ml = open_out "src/unix/lwt_config.ml"
 
 let test_lib name ?(args="") code =
   printf "testing for %s:%!" name;
@@ -198,9 +211,11 @@ let test_feature name macro ?(args="") code =
   printf "testing for %s:%!" name;
   if test_code args code then begin
     fprintf config "#define %s\n" macro;
+    fprintf config_ml "#let %s = true\n" macro;
     printf " %s available\n%!" (String.make (34 - String.length name) '.')
   end else begin
     fprintf config "//#define %s\n" macro;
+    fprintf config_ml "#let %s = false\n" macro;
     printf " %s unavailable\n%!" (String.make (34 - String.length name) '.')
   end
 
@@ -227,6 +242,7 @@ let () =
   (* Cleanup things on exit. *)
   at_exit (fun () ->
              (try close_out config with _ -> ());
+             (try close_out config_ml with _ -> ());
              safe_remove !log_file;
              safe_remove !exec_name;
              safe_remove !caml_file;
@@ -254,4 +270,5 @@ export LIBRARY_PATH=/opt/local/lib
   test_feature "eventfd" "HAVE_EVENTFD" eventfd_code;
   test_feature "fd passing" "HAVE_FD_PASSING" fd_passing_code;
   test_feature "sched_getcpu" "HAVE_GETCPU" getcpu_code;
-  test_feature "affinity getting/setting" "HAVE_AFFINITY" affinity_code
+  test_feature "affinity getting/setting" "HAVE_AFFINITY" affinity_code;
+  test_feature "credentials getting" "HAVE_GET_CREDENTIALS" get_credentials_code

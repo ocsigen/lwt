@@ -31,7 +31,7 @@ let search_paths = [
 ]
 
 (* OASIS_START *)
-(* DO NOT EDIT (digest: ff7772b4cd01afec9e08a37cc036f3df) *)
+(* DO NOT EDIT (digest: ce14a9d3f4546f95031b29f1cecb878c) *)
 module OASISGettext = struct
 # 21 "/home/dim/sources/oasis/src/oasis/OASISGettext.ml"
   
@@ -497,6 +497,7 @@ let package_default =
           ("syntax/lwt-syntax", ["syntax"]);
           ("syntax/lwt-syntax-log", ["syntax"]);
           ("src/extra/lwt-extra", ["src/extra"]);
+          ("syntax/optcomp", ["syntax"]);
           ("syntax/lwt-syntax-options", ["syntax"]);
           ("src/ssl/lwt-ssl", ["src/ssl"])
        ];
@@ -504,7 +505,7 @@ let package_default =
        [
           ("lwt-unix",
             "src/unix",
-            ["src/unix/config.h"; "src/unix/lwt_unix.h"]);
+            ["src/unix/lwt_config.h"; "src/unix/lwt_unix.h"]);
           ("lwt-glib", "src/glib", [])
        ];
      flags =
@@ -558,6 +559,7 @@ let () =
 
          | After_rules ->
              dep ["file:src/unix/lwt_unix_stubs.c"] ["src/unix/lwt_unix_unix.c"; "src/unix/lwt_unix_windows.c"];
+             dep ["pa_optcomp"] ["src/unix/lwt_config.ml"];
 
              (* Internal syntax extension *)
              List.iter
@@ -567,7 +569,7 @@ let () =
                   flag ["ocaml"; "ocamldep"; tag] & S[A"-ppopt"; A file];
                   flag ["ocaml"; "doc"; tag] & S[A"-ppopt"; A file];
                   dep ["ocaml"; "ocamldep"; tag] [file])
-               ["lwt_options"; "lwt"; "lwt_log"];
+               ["lwt_options"; "lwt"; "lwt_log"; "optcomp"];
 
              (* Use an introduction page with categories *)
              tag_file "lwt-api.docdir/index.html" ["apiref"];
@@ -578,6 +580,11 @@ let () =
              let env = BaseEnvLight.load ~allow_empty:true ~filename:MyOCamlbuildBase.env_filename () in
              if BaseEnvLight.var_get "glib" env = "true" || BaseEnvLight.var_get "all" env = "true" then
                define_c_library ~name:"glib" ~c_name:"glib-2.0";
+
+             let opts = S[A"-ppopt"; A "-let"; A"-ppopt"; A("windows=" ^ if BaseEnvLight.var_get "os_type" env <> "Unix" then "true" else "false")] in
+             flag ["ocaml"; "compile"; "pa_optcomp"] & opts;
+             flag ["ocaml"; "ocamldep"; "pa_optcomp"] & opts;
+             flag ["ocaml"; "doc"; "pa_optcomp"] & opts;
 
              flag ["ocaml"; "link"; "toplevel"] & A"-linkpkg";
 
