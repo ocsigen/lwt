@@ -40,6 +40,7 @@ Lwt_throttle
 Lwt_timeout
 Lwt_unix
 Lwt_bytes
+Lwt_sys
 }
 
 This package depends on the {e core} library and the {e unix} package.
