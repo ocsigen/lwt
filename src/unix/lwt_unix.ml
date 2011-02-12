@@ -24,12 +24,6 @@
 
 open Lwt
 
-let windows_hack = Sys.os_type <> "Unix"
-
-exception Not_available of string
-
-let () = Callback.register_exception "lwt:not-available" (Not_available "")
-
 (* +-----------------------------------------------------------------+
    | Configuration                                                   |
    +-----------------------------------------------------------------+ *)
@@ -260,7 +254,7 @@ let guess_blocking fd =
   execute_job (guess_blocking_job fd) guess_blocking_result guess_blocking_free
 
 let is_blocking ?blocking ?(set_flags=true) fd =
-  if windows_hack then
+  if Lwt_sys.windows then
     match (Unix.fstat fd).Unix.st_kind with
       | Unix.S_SOCK -> begin
           match blocking, set_flags with
@@ -457,7 +451,7 @@ external open_result : [ `unix_open ] job -> Unix.file_descr * bool = "lwt_unix_
 external open_free : [ `unix_open ] job -> unit = "lwt_unix_open_free" "noalloc"
 
 let openfile name flags perms =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (of_unix_file_descr (Unix.openfile name flags perms))
   else
     lwt fd, blocking =
@@ -475,7 +469,7 @@ external close_free : [ `unix_close ] job -> unit = "lwt_unix_close_free" "noall
 let close ch =
   if ch.state = Closed then check_descriptor ch;
   set_state ch Closed;
-  if windows_hack then begin
+  if Lwt_sys.windows then begin
     Unix.close ch.fd;
     return ()
   end else
@@ -537,7 +531,7 @@ external lseek_free : [ `unix_lseek ] job -> unit = "lwt_unix_lseek_free"
 
 let lseek ch offset whence =
   check_descriptor ch;
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.lseek ch.fd offset whence)
   else
     execute_job (lseek_job ch.fd offset whence) lseek_result lseek_free
@@ -547,7 +541,7 @@ external truncate_result : [ `unix_truncate ] job -> unit = "lwt_unix_truncate_r
 external truncate_free : [ `unix_truncate ] job -> unit = "lwt_unix_truncate_free"
 
 let truncate name offset =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.truncate name offset)
   else
     execute_job (truncate_job name offset) truncate_result truncate_free
@@ -558,7 +552,7 @@ external ftruncate_free : [ `unix_ftruncate ] job -> unit = "lwt_unix_ftruncate_
 
 let ftruncate ch offset =
   check_descriptor ch;
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.ftruncate ch.fd offset)
   else
     execute_job (ftruncate_job ch.fd offset) ftruncate_result ftruncate_free
@@ -572,7 +566,7 @@ external stat_result : [ `unix_stat ] job -> Unix.stats = "lwt_unix_stat_result"
 external stat_free : [ `unix_stat ] job -> unit = "lwt_unix_stat_free"
 
 let stat name =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.stat name)
   else
     execute_job (stat_job name) stat_result stat_free
@@ -582,7 +576,7 @@ external lstat_result : [ `unix_lstat ] job -> Unix.stats = "lwt_unix_lstat_resu
 external lstat_free : [ `unix_lstat ] job -> unit = "lwt_unix_lstat_free"
 
 let lstat name =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.lstat name)
   else
     execute_job (lstat_job name) lstat_result lstat_free
@@ -593,7 +587,7 @@ external fstat_free : [ `unix_fstat ] job -> unit = "lwt_unix_fstat_free"
 
 let fstat ch =
   check_descriptor ch;
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.fstat ch.fd)
   else
     execute_job (fstat_job ch.fd) fstat_result fstat_free
@@ -604,7 +598,7 @@ external isatty_free : [ `unix_isatty ] job -> unit = "lwt_unix_isatty_free"
 
 let isatty ch =
   check_descriptor ch;
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.isatty ch.fd)
   else
     execute_job (isatty_job ch.fd) isatty_result isatty_free
@@ -621,7 +615,7 @@ struct
 
   let lseek ch offset whence =
     check_descriptor ch;
-    if windows_hack then
+    if Lwt_sys.windows then
       return (Unix.LargeFile.lseek ch.fd offset whence)
     else
       execute_job (lseek_job ch.fd offset whence) lseek_result lseek_free
@@ -631,7 +625,7 @@ struct
   external truncate_free : [ `unix_truncate ] job -> unit = "lwt_unix_truncate_64_free"
 
   let truncate name offset =
-    if windows_hack then
+    if Lwt_sys.windows then
       return (Unix.LargeFile.truncate name offset)
     else
       execute_job (truncate_job name offset) truncate_result truncate_free
@@ -642,7 +636,7 @@ struct
 
   let ftruncate ch offset =
     check_descriptor ch;
-    if windows_hack then
+    if Lwt_sys.windows then
       return (Unix.LargeFile.ftruncate ch.fd offset)
     else
       execute_job (ftruncate_job ch.fd offset) ftruncate_result ftruncate_free
@@ -653,7 +647,7 @@ struct
   external stat_free : [ `unix_stat ] job -> unit = "lwt_unix_stat_64_free"
 
   let stat name =
-    if windows_hack then
+    if Lwt_sys.windows then
       return (Unix.LargeFile.stat name)
     else
       execute_job (stat_job name) stat_result stat_free
@@ -663,7 +657,7 @@ struct
   external lstat_free : [ `unix_lstat ] job -> unit = "lwt_unix_lstat_64_free"
 
   let lstat name =
-    if windows_hack then
+    if Lwt_sys.windows then
       return (Unix.LargeFile.lstat name)
     else
       execute_job (lstat_job name) lstat_result lstat_free
@@ -674,7 +668,7 @@ struct
 
   let fstat ch =
     check_descriptor ch;
-    if windows_hack then
+    if Lwt_sys.windows then
       return (Unix.LargeFile.fstat ch.fd)
     else
       execute_job (fstat_job ch.fd) fstat_result fstat_free
@@ -689,7 +683,7 @@ external unlink_result : [ `unix_unlink ] job -> unit = "lwt_unix_unlink_result"
 external unlink_free : [ `unix_unlink ] job -> unit = "lwt_unix_unlink_free"
 
 let unlink name =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.unlink name)
   else
     execute_job (unlink_job name) unlink_result unlink_free
@@ -699,7 +693,7 @@ external rename_result : [ `unix_rename ] job -> unit = "lwt_unix_rename_result"
 external rename_free : [ `unix_rename ] job -> unit = "lwt_unix_rename_free"
 
 let rename name1 name2 =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.rename name1 name2)
   else
     execute_job (rename_job name1 name2) rename_result rename_free
@@ -709,7 +703,7 @@ external link_result : [ `unix_link ] job -> unit = "lwt_unix_link_result"
 external link_free : [ `unix_link ] job -> unit = "lwt_unix_link_free"
 
 let link name1 name2 =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.link name1 name2)
   else
     execute_job (link_job name1 name2) link_result link_free
@@ -723,7 +717,7 @@ external chmod_result : [ `unix_chmod ] job -> unit = "lwt_unix_chmod_result"
 external chmod_free : [ `unix_chmod ] job -> unit = "lwt_unix_chmod_free"
 
 let chmod name perms =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.chmod name perms)
   else
     execute_job (chmod_job name perms) chmod_result chmod_free
@@ -734,7 +728,7 @@ external fchmod_free : [ `unix_fchmod ] job -> unit = "lwt_unix_fchmod_free"
 
 let fchmod ch perms =
   check_descriptor ch;
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.fchmod ch.fd perms)
   else
     execute_job (fchmod_job ch.fd perms) fchmod_result fchmod_free
@@ -744,7 +738,7 @@ external chown_result : [ `unix_chown ] job -> unit = "lwt_unix_chown_result"
 external chown_free : [ `unix_chown ] job -> unit = "lwt_unix_chown_free"
 
 let chown name uid gid =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.chown name uid gid)
   else
     execute_job (chown_job name uid gid) chown_result chown_free
@@ -755,7 +749,7 @@ external fchown_free : [ `unix_fchown ] job -> unit = "lwt_unix_fchown_free"
 
 let fchown ch uid gid =
   check_descriptor ch;
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.fchown ch.fd uid gid)
   else
     execute_job (fchown_job ch.fd uid gid) fchown_result fchown_free
@@ -765,7 +759,7 @@ external access_result : [ `unix_access ] job -> unit = "lwt_unix_access_result"
 external access_free : [ `unix_access ] job -> unit = "lwt_unix_access_free"
 
 let access name perms =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.access name perms)
   else
     execute_job (access_job name perms) access_result access_free
@@ -826,7 +820,7 @@ external mkdir_result : [ `unix_mkdir ] job -> unit = "lwt_unix_mkdir_result"
 external mkdir_free : [ `unix_mkdir ] job -> unit = "lwt_unix_mkdir_free"
 
 let mkdir name perms =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.mkdir name perms)
   else
     execute_job (mkdir_job name perms) mkdir_result mkdir_free
@@ -836,7 +830,7 @@ external rmdir_result : [ `unix_rmdir ] job -> unit = "lwt_unix_rmdir_result"
 external rmdir_free : [ `unix_rmdir ] job -> unit = "lwt_unix_rmdir_free"
 
 let rmdir name =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.rmdir name)
   else
     execute_job (rmdir_job name) rmdir_result rmdir_free
@@ -846,7 +840,7 @@ external chdir_result : [ `unix_chdir ] job -> unit = "lwt_unix_chdir_result"
 external chdir_free : [ `unix_chdir ] job -> unit = "lwt_unix_chdir_free"
 
 let chdir name =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.chdir name)
   else
     execute_job (chdir_job name) chdir_result chdir_free
@@ -856,7 +850,7 @@ external chroot_result : [ `unix_chroot ] job -> unit = "lwt_unix_chroot_result"
 external chroot_free : [ `unix_chroot ] job -> unit = "lwt_unix_chroot_free"
 
 let chroot name =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.chroot name)
   else
     execute_job (chroot_job name) chroot_result chroot_free
@@ -866,7 +860,7 @@ external opendir_result : [ `unix_opendir ] job -> Unix.dir_handle = "lwt_unix_o
 external opendir_free : [ `unix_opendir ] job -> unit = "lwt_unix_opendir_free"
 
 let opendir name =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.opendir name)
   else
     execute_job (opendir_job name) opendir_result opendir_free
@@ -876,7 +870,7 @@ external readdir_result : [ `unix_readdir ] job -> string = "lwt_unix_readdir_re
 external readdir_free : [ `unix_readdir ] job -> unit = "lwt_unix_readdir_free"
 
 let readdir handle =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.readdir handle)
   else
     execute_job (readdir_job handle) readdir_result readdir_free
@@ -888,7 +882,7 @@ external readdir_n_free : [ `unix_readdir_n ] job -> unit = "lwt_unix_readdir_n_
 let readdir_n handle count =
   if count < 0 then
     fail (Invalid_argument "Lwt_uinx.readdir_n")
-  else if windows_hack then
+  else if Lwt_sys.windows then
     let array = Array.make count "" in
     let rec fill i =
       if i = count then
@@ -909,7 +903,7 @@ external rewinddir_result : [ `unix_rewinddir ] job -> unit = "lwt_unix_rewinddi
 external rewinddir_free : [ `unix_rewinddir ] job -> unit = "lwt_unix_rewinddir_free"
 
 let rewinddir handle =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.rewinddir handle)
   else
     execute_job (rewinddir_job handle) rewinddir_result rewinddir_free
@@ -919,7 +913,7 @@ external closedir_result : [ `unix_closedir ] job -> unit = "lwt_unix_closedir_r
 external closedir_free : [ `unix_closedir ] job -> unit = "lwt_unix_closedir_free"
 
 let closedir handle =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.closedir handle)
   else
     execute_job (closedir_job handle) closedir_result closedir_free
@@ -983,22 +977,22 @@ let files_of_directory path =
 
 let pipe () =
   let (out_fd, in_fd) = Unix.pipe() in
-  (mk_ch ~blocking:windows_hack out_fd, mk_ch ~blocking:windows_hack in_fd)
+  (mk_ch ~blocking:Lwt_sys.windows out_fd, mk_ch ~blocking:Lwt_sys.windows in_fd)
 
 let pipe_in () =
   let (out_fd, in_fd) = Unix.pipe() in
-  (mk_ch ~blocking:windows_hack out_fd, in_fd)
+  (mk_ch ~blocking:Lwt_sys.windows out_fd, in_fd)
 
 let pipe_out () =
   let (out_fd, in_fd) = Unix.pipe() in
-  (out_fd, mk_ch ~blocking:windows_hack in_fd)
+  (out_fd, mk_ch ~blocking:Lwt_sys.windows in_fd)
 
 external mkfifo_job : string -> Unix.file_perm -> [ `unix_mkfifo ] job = "lwt_unix_mkfifo_job"
 external mkfifo_result : [ `unix_mkfifo ] job -> unit = "lwt_unix_mkfifo_result"
 external mkfifo_free : [ `unix_mkfifo ] job -> unit = "lwt_unix_mkfifo_free"
 
 let mkfifo name perms =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.mkfifo name perms)
   else
     execute_job (mkfifo_job name perms) mkfifo_result mkfifo_free
@@ -1012,7 +1006,7 @@ external symlink_result : [ `unix_symlink ] job -> unit = "lwt_unix_symlink_resu
 external symlink_free : [ `unix_symlink ] job -> unit = "lwt_unix_symlink_free"
 
 let symlink name1 name2 =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.symlink name1 name2)
   else
     execute_job (symlink_job name1 name2) symlink_result symlink_free
@@ -1022,7 +1016,7 @@ external readlink_result : [ `unix_readlink ] job -> string = "lwt_unix_readlink
 external readlink_free : [ `unix_readlink ] job -> unit = "lwt_unix_readlink_free"
 
 let readlink name =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.readlink name)
   else
     execute_job (readlink_job name) readlink_result readlink_free
@@ -1037,7 +1031,7 @@ external lockf_free : [ `unix_lockf ] job -> unit = "lwt_unix_lockf_free"
 
 let lockf ch cmd size =
   check_descriptor ch;
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.lockf ch.fd cmd size)
   else
     execute_job (lockf_job ch.fd cmd size) lockf_result lockf_free
@@ -1051,7 +1045,7 @@ external getlogin_result : [ `unix_getlogin ] job -> string = "lwt_unix_getlogin
 external getlogin_free : [ `unix_getlogin ] job -> unit = "lwt_unix_getlogin_free"
 
 let getlogin () =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.getlogin ())
   else
     execute_job (getlogin_job ()) getlogin_result getlogin_free
@@ -1061,7 +1055,7 @@ external getpwnam_result : [ `unix_getpwnam ] job -> Unix.passwd_entry = "lwt_un
 external getpwnam_free : [ `unix_getpwnam ] job -> unit = "lwt_unix_getpwnam_free"
 
 let getpwnam name =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.getpwnam name)
   else
     execute_job (getpwnam_job name) getpwnam_result getpwnam_free
@@ -1071,7 +1065,7 @@ external getgrnam_result : [ `unix_getgrnam ] job -> Unix.group_entry = "lwt_uni
 external getgrnam_free : [ `unix_getgrnam ] job -> unit = "lwt_unix_getgrnam_free"
 
 let getgrnam name =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.getgrnam name)
   else
     execute_job (getgrnam_job name) getgrnam_result getgrnam_free
@@ -1081,7 +1075,7 @@ external getpwuid_result : [ `unix_getpwuid ] job -> Unix.passwd_entry = "lwt_un
 external getpwuid_free : [ `unix_getpwuid ] job -> unit = "lwt_unix_getpwuid_free"
 
 let getpwuid uid =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.getpwuid uid)
   else
     execute_job (getpwuid_job uid) getpwuid_result getpwuid_free
@@ -1091,7 +1085,7 @@ external getgrgid_result : [ `unix_getgrgid ] job -> Unix.group_entry = "lwt_uni
 external getgrgid_free : [ `unix_getgrgid ] job -> unit = "lwt_unix_getgrgid_free"
 
 let getgrgid gid =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.getgrgid gid)
   else
     execute_job (getgrgid_job gid) getgrgid_result getgrgid_free
@@ -1101,7 +1095,7 @@ external stub_recv : Unix.file_descr -> string -> int -> int -> Unix.msg_flag li
 let recv ch buf pos len flags =
   if pos < 0 || len < 0 || pos > String.length buf - len then
     invalid_arg "Lwt_unix.recv"
-  else if windows_hack then
+  else if Lwt_sys.windows then
     wrap_syscall Read ch (fun () -> Unix.recv ch.fd buf pos len flags)
   else
     wrap_syscall Read ch (fun () -> stub_recv ch.fd buf pos len flags)
@@ -1111,7 +1105,7 @@ external stub_send : Unix.file_descr -> string -> int -> int -> Unix.msg_flag li
 let send ch buf pos len flags =
   if pos < 0 || len < 0 || pos > String.length buf - len then
     invalid_arg "Lwt_unix.send"
-  else if windows_hack then
+  else if Lwt_sys.windows then
     wrap_syscall Write ch (fun () -> Unix.send ch.fd buf pos len flags)
   else
     wrap_syscall Write ch (fun () -> stub_send ch.fd buf pos len flags)
@@ -1121,7 +1115,7 @@ external stub_recvfrom : Unix.file_descr -> string -> int -> int -> Unix.msg_fla
 let recvfrom ch buf pos len flags =
   if pos < 0 || len < 0 || pos > String.length buf - len then
     invalid_arg "Lwt_unix.recvfrom"
-  else if windows_hack then
+  else if Lwt_sys.windows then
     wrap_syscall Read ch (fun () -> Unix.recvfrom ch.fd buf pos len flags)
   else
     wrap_syscall Read ch (fun () -> stub_recvfrom ch.fd buf pos len flags)
@@ -1131,7 +1125,7 @@ external stub_sendto : Unix.file_descr -> string -> int -> int -> Unix.msg_flag 
 let sendto ch buf pos len flags addr =
   if pos < 0 || len < 0 || pos > String.length buf - len then
     invalid_arg "Lwt_unix.sendto"
-  else if windows_hack then
+  else if Lwt_sys.windows then
     wrap_syscall Write ch (fun () -> Unix.sendto ch.fd buf pos len flags addr)
   else
     wrap_syscall Write ch (fun () -> stub_sendto ch.fd buf pos len flags addr)
@@ -1315,7 +1309,7 @@ external gethostname_result : [ `unix_gethostname ] job -> string = "lwt_unix_ge
 external gethostname_free : [ `unix_gethostname ] job -> unit = "lwt_unix_gethostname_free"
 
 let gethostname () =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.gethostname ())
   else
     execute_job (gethostname_job ()) gethostname_result gethostname_free
@@ -1325,7 +1319,7 @@ external gethostbyname_result : [ `unix_gethostbyname ] job -> Unix.host_entry =
 external gethostbyname_free : [ `unix_gethostbyname ] job -> unit = "lwt_unix_gethostbyname_free"
 
 let gethostbyname name =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.gethostbyname name)
   else
     execute_job (gethostbyname_job name) gethostbyname_result gethostbyname_free
@@ -1335,7 +1329,7 @@ external gethostbyaddr_result : [ `unix_gethostbyaddr ] job -> Unix.host_entry =
 external gethostbyaddr_free : [ `unix_gethostbyaddr ] job -> unit = "lwt_unix_gethostbyaddr_free"
 
 let gethostbyaddr addr =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.gethostbyaddr addr)
   else
     execute_job (gethostbyaddr_job addr) gethostbyaddr_result gethostbyaddr_free
@@ -1345,7 +1339,7 @@ external getprotobyname_result : [ `unix_getprotobyname ] job -> Unix.protocol_e
 external getprotobyname_free : [ `unix_getprotobyname ] job -> unit = "lwt_unix_getprotobyname_free"
 
 let getprotobyname name =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.getprotobyname name)
   else
     execute_job (getprotobyname_job name) getprotobyname_result getprotobyname_free
@@ -1355,7 +1349,7 @@ external getprotobynumber_result : [ `unix_getprotobynumber ] job -> Unix.protoc
 external getprotobynumber_free : [ `unix_getprotobynumber ] job -> unit = "lwt_unix_getprotobynumber_free"
 
 let getprotobynumber number =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.getprotobynumber number)
   else
     execute_job (getprotobynumber_job number) getprotobynumber_result getprotobynumber_free
@@ -1365,7 +1359,7 @@ external getservbyname_result : [ `unix_getservbyname ] job -> Unix.service_entr
 external getservbyname_free : [ `unix_getservbyname ] job -> unit = "lwt_unix_getservbyname_free"
 
 let getservbyname name x =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.getservbyname name x)
   else
     execute_job (getservbyname_job name x) getservbyname_result getservbyname_free
@@ -1375,7 +1369,7 @@ external getservbyport_result : [ `unix_getservbyport ] job -> Unix.service_entr
 external getservbyport_free : [ `unix_getservbyport ] job -> unit = "lwt_unix_getservbyport_free"
 
 let getservbyport port x =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.getservbyport port x)
   else
     execute_job (getservbyport_job port x) getservbyport_result getservbyport_free
@@ -1385,7 +1379,7 @@ external getaddrinfo_result : [ `unix_getaddrinfo ] job -> Unix.addr_info list =
 external getaddrinfo_free : [ `unix_getaddrinfo ] job -> unit = "lwt_unix_getaddrinfo_free"
 
 let getaddrinfo host service opts =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.getaddrinfo host service opts)
   else
     execute_job (getaddrinfo_job host service opts) getaddrinfo_result getaddrinfo_free
@@ -1395,7 +1389,7 @@ external getnameinfo_result : [ `unix_getnameinfo ] job -> Unix.name_info = "lwt
 external getnameinfo_free : [ `unix_getnameinfo ] job -> unit = "lwt_unix_getnameinfo_free"
 
 let getnameinfo addr opts =
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.getnameinfo addr opts)
   else
     execute_job (getnameinfo_job addr opts) getnameinfo_result getnameinfo_free
@@ -1410,7 +1404,7 @@ external tcgetattr_free : [ `unix_tcgetattr ] job -> unit = "lwt_unix_tcgetattr_
 
 let tcgetattr ch =
   check_descriptor ch;
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.tcgetattr ch.fd)
   else
     execute_job (tcgetattr_job ch.fd) tcgetattr_result tcgetattr_free
@@ -1421,7 +1415,7 @@ external tcsetattr_free : [ `unix_tcsetattr ] job -> unit = "lwt_unix_tcsetattr_
 
 let tcsetattr ch when_ attrs =
   check_descriptor ch;
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.tcsetattr ch.fd when_ attrs)
   else
     execute_job (tcsetattr_job ch.fd when_ attrs) tcsetattr_result tcsetattr_free
@@ -1432,7 +1426,7 @@ external tcsendbreak_free : [ `unix_tcsendbreak ] job -> unit = "lwt_unix_tcsend
 
 let tcsendbreak ch delay =
   check_descriptor ch;
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.tcsendbreak ch.fd delay)
   else
     execute_job (tcsendbreak_job ch.fd delay) tcsendbreak_result tcsendbreak_free
@@ -1443,7 +1437,7 @@ external tcdrain_free : [ `unix_tcdrain ] job -> unit = "lwt_unix_tcdrain_free"
 
 let tcdrain ch =
   check_descriptor ch;
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.tcdrain ch.fd)
   else
     execute_job (tcdrain_job ch.fd) tcdrain_result tcdrain_free
@@ -1454,7 +1448,7 @@ external tcflush_free : [ `unix_tcflush ] job -> unit = "lwt_unix_tcflush_free"
 
 let tcflush ch q =
   check_descriptor ch;
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.tcflush ch.fd q)
   else
     execute_job (tcflush_job ch.fd q) tcflush_result tcflush_free
@@ -1465,7 +1459,7 @@ external tcflow_free : [ `unix_tcflow ] job -> unit = "lwt_unix_tcflow_free"
 
 let tcflow ch act =
   check_descriptor ch;
-  if windows_hack then
+  if Lwt_sys.windows then
     return (Unix.tcflow ch.fd act)
   else
     execute_job (tcflow_job ch.fd act) tcflow_result tcflow_free
@@ -1551,7 +1545,7 @@ let real_wait4 =
 let wait_children = Lwt_sequence.create ()
 
 let () =
-  if not windows_hack then
+  if not Lwt_sys.windows then
     ignore begin
       on_signal Sys.sigchld
         (fun _ ->
@@ -1574,7 +1568,7 @@ let _waitpid flags pid =
     return (Unix.waitpid flags pid)
 
 let waitpid flags pid =
-  if List.mem Unix.WNOHANG flags || windows_hack then
+  if List.mem Unix.WNOHANG flags || Lwt_sys.windows then
     _waitpid flags pid
   else
     let flags = Unix.WNOHANG :: flags in
@@ -1594,7 +1588,7 @@ let _wait4 flags pid =
     return (stub_wait4 flags pid)
 
 let wait4 flags pid =
-  if List.mem Unix.WNOHANG flags || windows_hack then
+  if List.mem Unix.WNOHANG flags || Lwt_sys.windows then
     _wait4 flags pid
   else
     let flags = Unix.WNOHANG :: flags in
@@ -1652,19 +1646,3 @@ external stub_set_affinity : int -> int list -> unit = "lwt_unix_set_affinity"
 
 let get_affinity ?(pid=0) () = stub_get_affinity pid
 let set_affinity ?(pid=0) l = stub_set_affinity pid l
-
-(* +-----------------------------------------------------------------+
-   | Feature testing                                                 |
-   +-----------------------------------------------------------------+ *)
-
-type feature =
-    [ `wait4
-    | `get_cpu
-    | `get_affinity
-    | `set_affinity
-    | `recv_msg
-    | `send_msg
-    | `fd_passing
-    | `get_credentials ]
-
-external have : feature -> bool = "lwt_unix_have"

@@ -21,8 +21,6 @@
  * 02111-1307, USA.
  *)
 
-let windows_hack = Sys.os_type <> "Unix"
-
 open Bigarray
 open Lwt
 
@@ -120,7 +118,7 @@ external read_free : [ `unix_bytes_read ] job -> unit = "lwt_unix_bytes_read_fre
 let read fd buf pos len =
   if pos < 0 || len < 0 || pos > length buf - len then
     invalid_arg "Lwt_bytes.read"
-  else if windows_hack then begin
+  else if Lwt_sys.windows then begin
     check_descriptor fd;
     register_action Read fd (fun () -> stub_read (unix_file_descr fd) buf pos len)
   end else
@@ -139,7 +137,7 @@ external write_free : [ `unix_bytes_write ] job -> unit = "lwt_unix_bytes_write_
 let write fd buf pos len =
   if pos < 0 || len < 0 || pos > length buf - len then
     invalid_arg "Lwt_bytes.write"
-  else if windows_hack then begin
+  else if Lwt_sys.windows then begin
     check_descriptor fd;
     register_action Write fd (fun () -> stub_write (unix_file_descr fd) buf pos len)
   end else
@@ -155,8 +153,8 @@ external stub_recv : Unix.file_descr -> t -> int -> int -> Unix.msg_flag list ->
 let recv fd buf pos len flags =
   if pos < 0 || len < 0 || pos > length buf - len then
     invalid_arg "recv"
-  else if windows_hack then
-    raise (Not_available "Lwt_bytes.recv")
+  else if Lwt_sys.windows then
+    raise (Lwt_sys.Not_available "Lwt_bytes.recv")
   else
     wrap_syscall Read fd (fun () -> stub_recv (unix_file_descr fd) buf pos len flags)
 
@@ -165,8 +163,8 @@ external stub_send : Unix.file_descr -> t -> int -> int -> Unix.msg_flag list ->
 let send fd buf pos len flags =
   if pos < 0 || len < 0 || pos > length buf - len then
     invalid_arg "send"
-  else if windows_hack then
-    raise (Not_available "Lwt_bytes.send")
+  else if Lwt_sys.windows then
+    raise (Lwt_sys.Not_available "Lwt_bytes.send")
   else
     wrap_syscall Write fd (fun () -> stub_send (unix_file_descr fd) buf pos len flags)
 
@@ -214,8 +212,8 @@ external stub_recvfrom : Unix.file_descr -> t -> int -> int -> Unix.msg_flag lis
 let recvfrom fd buf pos len flags =
   if pos < 0 || len < 0 || pos > length buf - len then
     invalid_arg "Lwt_bytes.recvfrom"
-  else if windows_hack then
-    raise (Not_available "Lwt_bytes.recvfrom")
+  else if Lwt_sys.windows then
+    raise (Lwt_sys.Not_available "Lwt_bytes.recvfrom")
   else
     wrap_syscall Read fd (fun () -> stub_recvfrom (unix_file_descr fd) buf pos len flags)
 
@@ -224,8 +222,8 @@ external stub_sendto : Unix.file_descr -> t -> int -> int -> Unix.msg_flag list 
 let sendto fd buf pos len flags addr =
   if pos < 0 || len < 0 || pos > length buf - len then
     invalid_arg "Lwt_bytes.sendto"
-  else if windows_hack then
-    raise (Not_available "Lwt_bytes.sendto")
+  else if Lwt_sys.windows then
+    raise (Lwt_sys.Not_available "Lwt_bytes.sendto")
   else
     wrap_syscall Write fd (fun () -> stub_sendto (unix_file_descr fd) buf pos len flags addr)
 

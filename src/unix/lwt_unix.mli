@@ -61,10 +61,6 @@ val handle_unix_error : ('a -> 'b Lwt.t) -> 'a -> 'b Lwt.t
   (** Same as [Unix.handle_unix_error] but catches lwt-level
       exceptions *)
 
-exception Not_available of string
-  (** [Not_available(feature)] is an exception that may be raised when
-      a feature is not available on the current platform. *)
-
 (** {6 Configuration} *)
 
 (** For system calls that cannot be made asynchronously, Lwt uses one
@@ -572,7 +568,7 @@ val send_msg : socket : file_descr -> io_vectors : io_vector list -> fds : Unix.
   (** [send_msg ~socket ~io_vectors ~fds] sends data from a list of
       io-vectors, accompanied with a list of file-descriptor. If
       fd-passing is not possible on the current system and [fds] is
-      not empty, it raises [Not_available "fd_passing"]. *)
+      not empty, it raises [Lwt_sys.Not_available "fd_passing"]. *)
 
 type credentials = {
   cred_pid : int;
@@ -783,23 +779,6 @@ val get_affinity : ?pid : int -> unit -> int list
 val set_affinity : ?pid : int -> int list -> unit
   (** [set_affinity ?pid cpus] sets the list of CPUs the given process
       is allowed to run on. *)
-
-(** {6 Feature testing} *)
-
-(** Features that can be tested. *)
-type feature =
-    [ `wait4
-    | `get_cpu
-    | `get_affinity
-    | `set_affinity
-    | `recv_msg
-    | `send_msg
-    | `fd_passing
-    | `get_credentials ]
-
-val have : feature -> bool
-  (** Test whether the given feature is available on the current
-      system. *)
 
 (**/**)
 

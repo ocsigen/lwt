@@ -301,7 +301,7 @@ end
    | The current engine                                              |
    +-----------------------------------------------------------------+ *)
 
-let current = ref (if Sys.os_type <> "Unix" then (new select :> t) else (new libev :> t))
+let current = ref (if Lwt_sys.windows then (new select :> t) else (new libev :> t))
 
 let get () =
   !current
