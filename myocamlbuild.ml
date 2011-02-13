@@ -31,7 +31,7 @@ let search_paths = [
 ]
 
 (* OASIS_START *)
-(* DO NOT EDIT (digest: ce14a9d3f4546f95031b29f1cecb878c) *)
+(* DO NOT EDIT (digest: 884eea2b3bad9bd38a97fd3262ba81ca) *)
 module OASISGettext = struct
 # 21 "/home/dim/sources/oasis/src/oasis/OASISGettext.ml"
   
@@ -506,6 +506,7 @@ let package_default =
           ("lwt-unix",
             "src/unix",
             ["src/unix/lwt_config.h"; "src/unix/lwt_unix.h"]);
+          ("lwt-text", "src/text", []);
           ("lwt-glib", "src/glib", [])
        ];
      flags =
@@ -621,6 +622,7 @@ let () =
                                                      "src/top/lwt-top.cma"];
 
              flag ["file:src/top/toplevel_temp.top"] & S[A"-I"; A"src/unix";
+                                                         A"-I"; A"src/text";
                                                          A"src/core/lwt.cma";
                                                          A"src/react/lwt-react.cma";
                                                          A"src/unix/lwt-unix.cma";

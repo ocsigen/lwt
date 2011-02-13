@@ -433,36 +433,6 @@ CAMLprim value lwt_unix_get_credentials(value fd)
 #endif
 
 /* +-----------------------------------------------------------------+
-   | Terminal sizes                                                  |
-   +-----------------------------------------------------------------+ */
-
-#include <sys/ioctl.h>
-#include <termios.h>
-
-value lwt_unix_term_size(value unit)
-{
-  CAMLparam1(unit);
-  CAMLlocal1(result);
-  struct winsize size;
-  if (ioctl(STDIN_FILENO, TIOCGWINSZ, &size) < 0)
-    caml_failwith("ioctl(TIOCGWINSZ)");
-
-  result = caml_alloc_tuple(2);
-  Store_field(result, 0, Val_int(size.ws_row));
-  Store_field(result, 1, Val_int(size.ws_col));
-  CAMLreturn(result);
-}
-
-value lwt_unix_sigwinch()
-{
-#ifdef SIGWINCH
-  return Val_int(SIGWINCH);
-#else
-  return Val_int(0);
-#endif
-}
-
-/* +-----------------------------------------------------------------+
    | wait4                                                           |
    +-----------------------------------------------------------------+ */
 

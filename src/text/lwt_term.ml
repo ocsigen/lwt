@@ -165,21 +165,42 @@ type size = {
   columns : int;
 }
 
-external get_size : unit -> size = "lwt_unix_term_size"
-external sigwinch : unit -> int = "lwt_unix_sigwinch"
+external get_size : Unix.file_descr -> size = "lwt_text_term_size"
+
+#if windows
+
+let size =
+  React.S.const
+    (try
+       get_size Unix.stdout
+     with Unix.Unix_error _ ->
+       { columns = 80; lines = 25 })
+
+#else
+
+external sigwinch : unit -> int = "lwt_text_sigwinch"
+let sigwinch = sigwinch ()
 
 let sigwinch_event =
-  let event, push = React.E.create () in
-  try
-    let _ = Lwt_unix.on_signal (sigwinch ()) push in
-    event
-  with Unix.Unix_error _ | Invalid_argument _ | Sys_error _ ->
+  if sigwinch = 0 then
     React.E.never
+  else
+    try
+      let event, push = React.E.create () in
+      let _ = Lwt_unix.on_signal sigwinch push in
+      event
+    with Unix.Unix_error _ | Invalid_argument _ | Sys_error _ ->
+      React.E.never
 
 let size =
   React.S.hold
-    (try get_size () with _ -> { columns = 80; lines = 25 })
-    (React.E.map (fun _ -> get_size ()) sigwinch_event)
+    (try
+       get_size Unix.stdin
+     with Unix.Unix_error _ ->
+       { columns = 80; lines = 25 })
+    (React.E.map (fun _ -> get_size Unix.stdin) sigwinch_event)
+
+#endif
 
 let columns = React.S.map (fun { columns = c } -> c) size
 let lines = React.S.map (fun { lines = l } -> l) size

@@ -6,7 +6,7 @@
 
 <src/top/{lwt_toplevel.*,toplevel.*,toplevel_temp.*}>: use_compiler_libs, pkg_text, pkg_text.bigarray, pkg_findlib, pkg_react, pkg_unix, pkg_bigarray
 
-<src/{unix,glib}/*>: use_stubs
+<src/{unix,glib,text}/*>: use_stubs
 
 # GLib bindings:
 <src/glib/lwt-glib.*>: use_C_glib
@@ -14,7 +14,7 @@
 <src/glib/lwt_glib_stubs.*>: use_C_glib
 
 # OASIS_START
-# DO NOT EDIT (digest: e0c630a4d9655d2ced0f13c325a00ca9)
+# DO NOT EDIT (digest: 3002505a72055cc9ea7cc437415b4f9a)
 # Library lwt
 "src/core": include
 # Library lwt-unix
@@ -42,6 +42,7 @@
 "tests": include
 # Library lwt-text
 "src/text": include
+<src/text/lwt-text.{cma,cmxa}>: use_liblwt-text
 <src/text/*.ml{,i}>: use_lwt-react
 <src/text/*.ml{,i}>: use_lwt-unix
 <src/text/*.ml{,i}>: use_lwt
@@ -50,6 +51,14 @@
 <src/text/*.ml{,i}>: pkg_text
 <src/text/*.ml{,i}>: pkg_react
 <src/text/*.ml{,i}>: pkg_bigarray
+"src/text/lwt_text_stubs.c": use_lwt-react
+"src/text/lwt_text_stubs.c": use_lwt-unix
+"src/text/lwt_text_stubs.c": use_lwt
+"src/text/lwt_text_stubs.c": pkg_unix
+"src/text/lwt_text_stubs.c": pkg_text.bigarray
+"src/text/lwt_text_stubs.c": pkg_text
+"src/text/lwt_text_stubs.c": pkg_react
+"src/text/lwt_text_stubs.c": pkg_bigarray
 # Executable test_unix
 <tests/unix/main.{native,byte}>: use_test
 <tests/unix/main.{native,byte}>: use_lwt-unix

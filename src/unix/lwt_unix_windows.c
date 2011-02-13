@@ -166,41 +166,6 @@ CAMLprim value lwt_unix_get_page_size()
 }
 
 /* +-----------------------------------------------------------------+
-   | Terminal sizes                                                  |
-   +-----------------------------------------------------------------+ */
-
-#include <wincon.h>
-
-CAMLprim value lwt_unix_term_size(value unit)
-{
-  CAMLparam1(unit);
-  CAMLlocal1(result);
-  HANDLE handle;
-  CONSOLE_SCREEN_BUFFER_INFO info;
-
-  handle = GetStdHandle(STD_OUTPUT_HANDLE);
-  if (handle == INVALID_HANDLE_VALUE)
-    caml_failwith("GetStdHandle");
-
-  if (!GetConsoleScreenBufferInfo(handle, &info))
-    caml_failwith("GetConsoleScreenBufferInfo");
-
-  result = caml_alloc_tuple(2);
-  Store_field(result, 0, Val_int(info.dwSize.X));
-  Store_field(result, 1, Val_int(info.dwSize.Y));
-  CAMLreturn(result);
-}
-
-value lwt_unix_sigwinch()
-{
-#ifdef SIGWINCH
-  return Val_int(SIGWINCH);
-#else
-  return Val_int(0);
-#endif
-}
-
-/* +-----------------------------------------------------------------+
    | JOB: read                                                       |
    +-----------------------------------------------------------------+ */
 

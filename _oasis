@@ -198,6 +198,7 @@ Library "lwt-text"
   Modules: Lwt_text, Lwt_term, Lwt_read_line
   BuildDepends: lwt, lwt.unix, lwt.react, text, text.bigarray
   XMETADescription: Text mode utilities
+  CSources: lwt_text_stubs.c
 
 Library "lwt-top"
   Build$: flag(text) || flag(all)
