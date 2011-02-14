@@ -34,7 +34,11 @@ val run : 'a Lwt.t -> 'a
         returns.
       - Successive invocations of [run] are serialized: an
         invocation of [run] will not terminate before all
-        subsequent invocations are terminated. *)
+        subsequent invocations are terminated.
+
+      Note also that it is not safe to call [run] in a function
+      registered with [Pervasives.at_exit], use the {!at_exit}
+      function of this module instead. *)
 
 val yield : unit -> unit Lwt.t
   (** [yield ()] is a threads which suspends itself and then resumes

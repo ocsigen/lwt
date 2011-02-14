@@ -789,4 +789,4 @@ val run : 'a Lwt.t -> 'a
   (* Same as {!Lwt_main.run} *)
 
 val has_wait4 : bool
-  (* Deprecated, use [have `wait4]. *)
+  (* Deprecated, use [Lwt_sys.have `wait4]. *)
