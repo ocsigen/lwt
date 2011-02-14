@@ -14,4 +14,4 @@ cd ..
 chmod +x configure
 
 # Cleanup
-rm -f predist
+rm -f predist boring
