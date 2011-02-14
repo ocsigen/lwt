@@ -1,7 +1,10 @@
 (^|/)_build($|/)
-^lwt-.*.tar.gz$
-^src/unix/lwt_config.ml$
-^src/unix/lwt_config.h$
-^webdarcs.log$
-^setup.data$
-^setup.log$
+^lwt-.*\.tar\.gz$
+^src/unix/lwt_config\.ml$
+^src/unix/lwt_config\.h$
+^webdarcs\.log$
+^setup\.data$
+^setup\.log$
+^manual/.*\.(toc|pdf|out|log|aux)$
+^manual/manual-wiki\.tex$
+^manual/\.latex_of_wiki_offsets
