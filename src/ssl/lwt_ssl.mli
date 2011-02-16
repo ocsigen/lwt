@@ -52,3 +52,7 @@ val abort : socket -> exn -> unit
 
 (** Are we using an SSL socket? *)
 val is_ssl : socket -> bool
+
+val getsockname : socket -> Unix.sockaddr
+
+val getpeername : socket -> Unix.sockaddr

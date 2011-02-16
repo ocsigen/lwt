@@ -161,3 +161,15 @@ let shutdown (fd, _) cmd = Lwt_unix.shutdown fd cmd
 let close (fd, _) = Lwt_unix.close fd
 
 let abort (fd, _) = Lwt_unix.abort fd
+
+let get_fd (fd,socket) =
+  match socket with
+    | Plain -> Lwt_unix.unix_file_descr fd
+    | SSL socket -> (Ssl.file_descr_of_socket socket)
+
+let getsockname s =
+  Unix.getsockname (get_fd s)
+
+let getpeername s =
+  Unix.getpeername (get_fd s)
+
