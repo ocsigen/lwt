@@ -295,7 +295,6 @@ CAMLprim value lwt_unix_bytes_read_result(value val_job)
 CAMLprim value lwt_unix_bytes_read_free(value val_job)
 {
   struct job_bytes_read *job = Job_bytes_read_val(val_job);
-  free(job->buffer);
   lwt_unix_free_job(&job->job);
   return Val_unit;
 }
@@ -430,7 +429,6 @@ CAMLprim value lwt_unix_bytes_write_result(value val_job)
 CAMLprim value lwt_unix_bytes_write_free(value val_job)
 {
   struct job_bytes_write *job = Job_bytes_write_val(val_job);
-  free(job->buffer);
   lwt_unix_free_job(&job->job);
   return Val_unit;
 }
