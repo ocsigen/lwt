@@ -114,7 +114,7 @@ open Lwt_unix
 
 external stub_read : Unix.file_descr -> t -> int -> int -> int = "lwt_unix_bytes_read"
 external read_job : Unix.file_descr -> t -> int -> int -> [ `unix_bytes_read ] job = "lwt_unix_bytes_read_job"
-external read_result : [ `unix_bytes_read ] job -> int = "lwt_unix_bytes_read_result" "noalloc"
+external read_result : [ `unix_bytes_read ] job -> int = "lwt_unix_bytes_read_result"
 external read_free : [ `unix_bytes_read ] job -> unit = "lwt_unix_bytes_read_free" "noalloc"
 
 let read fd buf pos len =
@@ -130,7 +130,7 @@ let read fd buf pos len =
 
 external stub_write : Unix.file_descr -> t -> int -> int -> int = "lwt_unix_bytes_write"
 external write_job : Unix.file_descr -> t -> int -> int -> [ `unix_bytes_write ] job = "lwt_unix_bytes_write_job"
-external write_result : [ `unix_bytes_write ] job -> int = "lwt_unix_bytes_write_result" "noalloc"
+external write_result : [ `unix_bytes_write ] job -> int = "lwt_unix_bytes_write_result"
 external write_free : [ `unix_bytes_write ] job -> unit = "lwt_unix_bytes_write_free" "noalloc"
 
 let write fd buf pos len =

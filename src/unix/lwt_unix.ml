@@ -341,8 +341,8 @@ let stub_writable fd = Unix.select [] [fd] [] (-1.0) <> ([], [], [])
 
 #else
 
-external stub_readable : Unix.file_descr -> bool = "lwt_unix_readable" "noalloc"
-external stub_writable : Unix.file_descr -> bool = "lwt_unix_writable" "noalloc"
+external stub_readable : Unix.file_descr -> bool = "lwt_unix_readable"
+external stub_writable : Unix.file_descr -> bool = "lwt_unix_writable"
 
 #endif
 
@@ -514,7 +514,7 @@ let wait_read ch =
 
 external stub_read : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_read"
 external read_job : Unix.file_descr -> int -> [ `unix_read ] job = "lwt_unix_read_job"
-external read_result : [ `unix_read ] job -> string -> int -> int = "lwt_unix_read_result" "noalloc"
+external read_result : [ `unix_read ] job -> string -> int -> int = "lwt_unix_read_result"
 external read_free : [ `unix_read ] job -> unit = "lwt_unix_read_free" "noalloc"
 
 let read ch buf pos len =
@@ -537,7 +537,7 @@ let wait_write ch =
 
 external stub_write : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_write"
 external write_job : Unix.file_descr -> string -> int -> int -> [ `unix_write ] job = "lwt_unix_write_job"
-external write_result : [ `unix_write ] job -> int = "lwt_unix_write_result" "noalloc"
+external write_result : [ `unix_write ] job -> int = "lwt_unix_write_result"
 external write_free : [ `unix_write ] job -> unit = "lwt_unix_write_free" "noalloc"
 
 let write ch buf pos len =
