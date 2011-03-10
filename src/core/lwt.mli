@@ -281,6 +281,30 @@ val register_pause_notifier : (int -> unit) -> unit
       the new number of threads paused. It is usefull to be able to
       call {!wakeup_paused} when there is no scheduler *)
 
+(** {6 Misc} *)
+
+val on_success : 'a t -> ('a -> unit) -> unit
+  (** [on_success t f] executes [f] when [t] terminates without
+      failing. This is the same as:
+
+      {[
+        ignore_result (bind t (fun x -> f x; return ()))
+      ]}
+
+      but a bit more efficient.
+ *)
+
+val on_failure : 'a t -> (exn -> unit) -> unit
+  (** [on_failure t f] executes [f] when [t] terminates and
+      fails. This is the same as:
+
+      {[
+        ignore_result (catch t (fun e -> f e; return ()))
+      ]}
+
+      but a bit more efficient.
+  *)
+
 (**/**)
 
 (* The functions below are probably not useful for the casual user.

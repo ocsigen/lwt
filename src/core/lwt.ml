@@ -371,6 +371,22 @@ let bind t f =
     | Repr _ ->
         assert false
 
+let on_success t f =
+  match (repr t).state with
+    | Return v ->
+        f v
+    | Fail exn ->
+        raise exn
+    | Sleep sleeper ->
+        let data = !current_data in
+        add_immutable_waiter sleeper
+          (function
+             | Return v -> current_data := data; f v
+             | Fail exn -> raise exn
+             | _ -> assert false)
+    | Repr _ ->
+        assert false
+
 let (>>=) t f = bind t f
 let (=<<) f t = bind t f
 
@@ -411,6 +427,22 @@ let catch x f =
              | Fail exn -> current_data := data; connect res (try f exn with exn -> fail exn)
              | _ -> assert false);
         res
+    | Repr _ ->
+        assert false
+
+let on_failure t f =
+  match (repr t).state with
+    | Return v ->
+        ()
+    | Fail exn ->
+        f exn
+    | Sleep sleeper ->
+        let data = !current_data in
+        add_immutable_waiter sleeper
+          (function
+             | Return v -> ()
+             | Fail exn -> current_data := data; f exn
+             | _ -> assert false)
     | Repr _ ->
         assert false
 
