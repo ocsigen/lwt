@@ -144,7 +144,7 @@ Library "lwt-react"
   FindlibName: react
   FindlibParent: lwt
   Path: src/react
-  Modules: Lwt_event, Lwt_signal
+  Modules: Lwt_event, Lwt_signal, Lwt_react
   BuildDepends: lwt, react
   XMETADescription: Reactive programming helpers
 

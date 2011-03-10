@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: 05fad65a1618a382fbb08df0a70d1d03)
+# DO NOT EDIT (digest: 3765e1ec54bbe828c698193a4cfda07b)
 src/core/Lwt_condition
 src/core/Lwt_list
 src/core/Lwt
@@ -16,6 +16,7 @@ src/glib/Lwt_glib
 src/preemptive/Lwt_preemptive
 src/react/Lwt_event
 src/react/Lwt_signal
+src/react/Lwt_react
 src/ssl/Lwt_ssl
 src/text/Lwt_text
 src/text/Lwt_term
