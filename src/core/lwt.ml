@@ -343,9 +343,10 @@ let add_removable_waiter sleeper waiter =
 let on_cancel t f =
   match (repr t).state with
     | Sleep sleeper ->
+        let data = !current_data in
         add_immutable_waiter sleeper
           (function
-             | Fail Canceled -> (try f () with _ -> ())
+             | Fail Canceled -> current_data := data; (try f () with _ -> ())
              | _ -> ())
     | Fail Canceled ->
         f ()
