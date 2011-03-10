@@ -27,7 +27,7 @@
 
 open React
 val return : 'a -> 'a signal
-val bind : 'a signal -> ('a -> 'b signal) -> 'b signal
+val bind : ?eq : ('b -> 'b -> bool) -> 'a signal -> ('a -> 'b signal) -> 'b signal
 val with_finaliser : (unit -> unit) -> 'a signal -> 'a signal
 val limit : ?eq : ('a -> 'a -> bool) -> (unit -> unit Lwt.t) -> 'a signal -> 'a signal
 val delay : 'a signal Lwt.t -> 'a event
