@@ -282,7 +282,9 @@ Document "lwt-api"
     lwt.ssl,
     lwt.text,
     lwt.top,
-    lwt.unix
+    lwt.unix,
+    lwt.syntax,
+    lwt.syntax.log
 
 # +-------------------------------------------------------------------+
 # | Tests                                                             |
