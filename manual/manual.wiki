@@ -654,16 +654,34 @@ else
 
 == The Lwt.react library ==
 
-  The {{{Lwt_event}}} and {{{Lwt_signal}}} modules provide
-  helpers for using the {{{react}}} library with {{{Lwt}}}. Among them we
-  have {{{Lwt_event.next}}}, which takes an event and returns a
-  thread which will wait until the next occurence of this event. For
-  example:
+  The {{{Lwt_react}}} module provide helpers for using the {{{react}}}
+  library with {{{Lwt}}}. It extends the {{{React}}} module by adding
+  {{{Lwt}}} specific functions. It can be used as a replacement of
+  {{{React}}}. For example you can add at the beginning of you
+  program:
 
-<<code language="ocaml" |# let event, push = React.E.create ();;
+<<code language="ocaml" |open Lwt_react
+>>
+
+  instead of:
+
+<<code language="ocaml" |open React
+>>
+
+  or:
+
+<<code language="ocaml" |module React = Lwt_react
+>>
+
+  Among the added functionnality we have {{{Lwt_react.E.next}}}, which
+  takes an event and returns a thread which will wait until the next
+  occurence of this event. For example:
+
+<<code language="ocaml" |# open Lwt_react;;
+# let event, push = E.create ();;
 val event : '_a React.event = <abstr>
 val push : '_a -> unit = <fun>
-# let t = Lwt_event.next event;;
+# let t = E.next event;;
 val t : '_a Lwt.t = <abstr>
 # Lwt.state t;;
 - : '_a Lwt.state = Sleep
@@ -678,18 +696,20 @@ val t : '_a Lwt.t = <abstr>
   suppose you are doing a program which displays something on the screeen
   each time a signal changes. If at some point the signal changes 1000
   times per second, you probably want not to render it 1000 times per
-  second. For that you use {{{Lwt_signal.limit}}}:
+  second. For that you use {{{Lwt_react.S.limit}}}:
 
 <<code language="ocaml" |val limit : (unit -> unit Lwt.t) -> 'a React.signal -> 'a React.signal
 >>
 
-  {{{Lwt_signal.limit f signal}}} returns a signal which varies as
+  {{{Lwt_react.S.limit f signal}}} returns a signal which varies as
   {{{signal}}} except that two consecutive updates are separeted by a
-  call to {{{f}}}. For example if {{{f}}} returns a thread which
-  sleep for 0.1 seconds, then there will be no more than 10 changes per
+  call to {{{f}}}. For example if {{{f}}} returns a thread which sleep
+  for 0.1 seconds, then there will be no more than 10 changes per
   second. For example:
 
-<<code language="ocaml" |let draw x =
+<<code language="ocaml" |open Lwt_react
+
+let draw x =
   (* Draw the screen *)
   ...
 
@@ -698,10 +718,10 @@ let () =
   let signal = ... in
 
   (* The limited signal: *)
-  let signal' = Lwt_signal.limit (fun () -> Lwt_unix.sleep 0.1) signal in
+  let signal' = S.limit (fun () -> Lwt_unix.sleep 0.1) signal in
 
   (* Redraw the screen each time the limited signal change: *)
-  Lwt_signal.always_notify_p draw signal'
+  S.notify_p draw signal'
 >>
 
 == The lwt.text library ==
