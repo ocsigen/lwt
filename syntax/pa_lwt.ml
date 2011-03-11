@@ -176,6 +176,22 @@ EXTEND Gram
               <:expr< Lwt.fail (try raise $e$ with exn -> exn) >>
             else
               <:expr< Lwt.fail $e$ >>
+
+        | "while_lwt"; cond = sequence; "do"; body = sequence; "done" ->
+            <:expr<
+              let rec __pa_lwt_loop () =
+                if $cond$ then
+                  Lwt.bind ($body$) __pa_lwt_loop
+                else
+                  Lwt.return ()
+              in
+              __pa_lwt_loop ()
+            >>
+
+        | "match_lwt"; e = sequence; "with"; c = match_case ->
+            <:expr<
+              Lwt.bind ($e$) (function $c$)
+            >>
         ] ];
 
     str_item:
