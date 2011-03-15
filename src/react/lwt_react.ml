@@ -16,22 +16,6 @@ module E = struct
   include React.E
 
   (* +---------------------------------------------------------------+
-     | Notifiers                                                     |
-     +---------------------------------------------------------------+ *)
-
-  let notifiers = ref []
-
-  let notify f event =
-    notifiers := map f event :: !notifiers
-
-  let notify_p f event =
-    notifiers := map (fun x -> Lwt.ignore_result (f x)) event :: !notifiers
-
-  let notify_s f event =
-    let mutex = Lwt_mutex.create () in
-    notifiers := map (fun x -> Lwt.ignore_result (Lwt_mutex.with_lock mutex (fun () -> f x))) event :: !notifiers
-
-  (* +---------------------------------------------------------------+
      | Lwt-specific utilities                                        |
      +---------------------------------------------------------------+ *)
 
@@ -187,6 +171,11 @@ module E = struct
           on_success thread (fun e -> send e; stop event);
           switch never event
 
+  let keeped = ref []
+
+  let keep e =
+    keeped := map ignore e :: !keeped
+
   (* +---------------------------------------------------------------+
      | Event transofrmations                                         |
      +---------------------------------------------------------------+ *)
@@ -297,22 +286,6 @@ module S = struct
   include React.S
 
   (* +---------------------------------------------------------------+
-     | Notifiers                                                     |
-     +---------------------------------------------------------------+ *)
-
-  let notifiers = ref []
-
-  let notify f signal =
-    notifiers := map f signal :: !notifiers
-
-  let notify_p f signal =
-    notifiers := map (fun x -> Lwt.ignore_result (f x)) signal :: !notifiers
-
-  let notify_s f signal =
-    let mutex = Lwt_mutex.create () in
-    notifiers := map (fun x -> Lwt.ignore_result (Lwt_mutex.with_lock mutex (fun () -> f x))) signal :: !notifiers
-
-  (* +---------------------------------------------------------------+
      | Lwt-specific utilities                                        |
      +---------------------------------------------------------------+ *)
 
@@ -360,6 +333,11 @@ module S = struct
     in
 
     hold ?eq (value s) (E.select [iter; event])
+
+  let keeped = ref []
+
+  let keep s =
+    keeped := map ignore s :: !keeped
 
   (* +---------------------------------------------------------------+
      | Signal transofrmations                                        |

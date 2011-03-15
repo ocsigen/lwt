@@ -56,6 +56,10 @@ module E : sig
         [thread] returns. Then it behaves as the event returned by
         [thread]. *)
 
+  val keep : 'a event -> unit
+    (** [keep e] keeps a reference to [e] so it will never be garbage
+        collected. *)
+
   (** {6 Threaded versions of React transformation functions} *)
 
   (** The following functions behave as their [React] counterpart,
@@ -88,19 +92,6 @@ module E : sig
 
   val run_s : 'a Lwt.t event -> 'a event
   val run_p : 'a Lwt.t event -> 'a event
-
-  (** {6 Notification} *)
-
-  val notify : ('a -> unit) -> 'a event -> unit
-    (** [notify f ev] calls [f x] each time [ev] has a value [x] *)
-
-  val notify_p : ('a -> unit Lwt.t) -> 'a event -> unit
-    (** [notify_p f ev] is the same as [notify] except that [f x] is a
-        thread. Calls to [f] are made in parallel. *)
-
-  val notify_s : ('a -> unit Lwt.t) -> 'a event -> unit
-    (** [notify_s f ev] is the same as [notify] except that [f x] is a
-        thread. Calls to [f] are serialized. *)
 end
 
 module S : sig
@@ -133,6 +124,10 @@ module S : sig
 
         For example, to limit it to 1 per second, you can use: [limit
         (fun () -> Lwt_unix.sleep 1.0) s]. *)
+
+  val keep : 'a signal -> unit
+    (** [keep s] keeps a reference to [s] so it will never be garbage
+        collected. *)
 
   (** {6 Threaded versions of React transformation functions} *)
 
@@ -168,17 +163,4 @@ module S : sig
   val l6_s : ?eq : ('g -> 'g -> bool) -> ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g Lwt.t) -> 'a signal -> 'b signal -> 'c signal -> 'd signal -> 'e signal -> 'f signal -> 'g signal Lwt.t
 
   val run_s : ?eq : ('a -> 'a -> bool) -> 'a Lwt.t signal -> 'a signal Lwt.t
-
-  (** {6 Notification} *)
-
-  val notify : ('a -> unit) -> 'a signal -> unit
-    (** [notify f s] calls [f] each time the value of [s] change *)
-
-  val notify_p : ('a -> unit Lwt.t) -> 'a signal -> unit
-    (** [notify_p f s] is the same as [notify] except that [f x] is a
-        thread. Calls to [f] are made in parallel. *)
-
-  val notify_s : ('a -> unit Lwt.t) -> 'a signal -> unit
-    (** [notify_s f s] is the same as [notify] except that [f x] is a
-        thread. Calls to [f] are serialized. *)
 end
