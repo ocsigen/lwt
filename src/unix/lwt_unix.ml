@@ -1908,6 +1908,11 @@ let _ =
 module Signal_map = Map.Make(struct type t = int let compare a b = a - b end)
 
 let signals = ref Signal_map.empty
+let signal_count () =
+  Signal_map.fold
+    (fun signum (id, actions) len -> len + Lwt_sequence.length actions)
+    !signals
+    0
 
 type signal_handler_id = unit Lazy.t
 
@@ -1956,6 +1961,7 @@ external stub_wait4 : Unix.wait_flag list -> int -> int * Unix.process_status * 
 #endif
 
 let wait_children = Lwt_sequence.create ()
+let wait_count () = Lwt_sequence.length wait_children
 
 #if not windows
 let () =

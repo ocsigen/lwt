@@ -104,6 +104,10 @@ class virtual abstract = object(self)
     let stop = self#register_timer delay repeat g in
     ev := { stop = stop; node = cast_node (Lwt_sequence.add_r (delay, repeat, f, g, ev) timers) };
     ev
+
+  method readable_count = Lwt_sequence.length readables
+  method writable_count = Lwt_sequence.length writables
+  method timer_count = Lwt_sequence.length timers
 end
 
 class type t = object
@@ -382,3 +386,6 @@ let on_readable fd f = !current#on_readable fd f
 let on_writable fd f = !current#on_writable fd f
 let on_timer delay repeat f = !current#on_timer delay repeat f
 let fake_io fd = !current#fake_io fd
+let readable_count () = !current#readable_count
+let writable_count () = !current#writable_count
+let timer_count () = !current#timer_count

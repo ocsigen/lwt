@@ -53,6 +53,17 @@ val on_timer : float -> bool -> (event -> unit) -> event
       seconds. If [repeat] is [true] then [f] is called each [delay]
       seconds, otherwise it is called only one time. *)
 
+val readable_count : unit -> int
+  (** Returns the number of events waiting for a file descriptor to
+      become readable. *)
+
+val writable_count : unit -> int
+  (** Returns the number of events waiting for a file descriptor to
+      become writable. *)
+
+val timer_count : unit -> int
+  (** Returns the number of registered timers. *)
+
 val fake_io : Unix.file_descr -> unit
   (** Simulates activity on the given file descriptor. *)
 
@@ -81,6 +92,9 @@ class virtual abstract : object
   method on_writable : Unix.file_descr -> (event -> unit) -> event
   method on_timer : float -> bool -> (event -> unit) -> event
   method fake_io : Unix.file_descr -> unit
+  method readable_count : int
+  method writable_count : int
+  method timer_count : int
 
   (** {6 Backend methods} *)
 

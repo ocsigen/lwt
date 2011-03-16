@@ -252,6 +252,10 @@ val wait4 : Unix.wait_flag list -> int -> (int * Unix.process_status * resource_
 
       On windows it will always returns [{ utime = 0.0; stime = 0.0 }]. *)
 
+val wait_count : unit -> int
+  (** Returns the number of threads waiting for a child to
+      terminate. *)
+
 val system : string -> Unix.process_status Lwt.t
   (** Wrapper for [Unix.system] *)
 
@@ -485,6 +489,9 @@ val on_signal : int -> (int -> unit) -> signal_handler_id
 
 val disable_signal_handler : signal_handler_id -> unit
   (** Stops receiving this signal *)
+
+val signal_count : unit -> int
+  (** Returns the number of registered signal handler. *)
 
 (** {6 Sockets} *)
 
