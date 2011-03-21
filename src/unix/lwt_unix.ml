@@ -1408,7 +1408,7 @@ let recvfrom ch buf pos len flags =
 #if windows
 let stub_sendto = Unix.sendto
 #else
-external stub_sendto : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> Unix.sockaddr -> int = "lwt_unix_sendto_byte" "lwt_unix_bytes_sendto"
+external stub_sendto : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> Unix.sockaddr -> int = "lwt_unix_sendto_byte" "lwt_unix_sendto"
 #endif
 
 let sendto ch buf pos len flags addr =
