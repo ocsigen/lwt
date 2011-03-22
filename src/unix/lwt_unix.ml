@@ -463,6 +463,21 @@ let wrap_syscall event ch action =
    | Basic file input/output                                         |
    +-----------------------------------------------------------------+ *)
 
+type open_flag =
+    Unix.open_flag =
+  | O_RDONLY
+  | O_WRONLY
+  | O_RDWR
+  | O_NONBLOCK
+  | O_APPEND
+  | O_CREAT
+  | O_TRUNC
+  | O_EXCL
+  | O_NOCTTY
+  | O_DSYNC
+  | O_SYNC
+  | O_RSYNC
+
 #if windows
 
 let openfile name flags perms =
@@ -555,6 +570,12 @@ let write ch buf pos len =
    | Seeking and truncating                                          |
    +-----------------------------------------------------------------+ *)
 
+type seek_command =
+    Unix.seek_command =
+  | SEEK_SET
+  | SEEK_CUR
+  | SEEK_END
+
 #if windows
 
 let lseek ch offset whence =
@@ -610,6 +631,35 @@ let ftruncate ch offset =
 (* +-----------------------------------------------------------------+
    | File status                                                     |
    +-----------------------------------------------------------------+ *)
+
+type file_perm = Unix.file_perm
+
+type file_kind =
+    Unix.file_kind =
+  | S_REG
+  | S_DIR
+  | S_CHR
+  | S_BLK
+  | S_LNK
+  | S_FIFO
+  | S_SOCK
+
+type stats =
+    Unix.stats =
+    {
+      st_dev : int;
+      st_ino : int;
+      st_kind : file_kind;
+      st_perm : file_perm;
+      st_nlink : int;
+      st_uid : int;
+      st_gid : int;
+      st_rdev : int;
+      st_size : int;
+      st_atime : float;
+      st_mtime : float;
+      st_ctime : float;
+    }
 
 #if windows
 
@@ -685,6 +735,23 @@ let isatty ch =
 
 module LargeFile =
 struct
+
+  type stats =
+      Unix.LargeFile.stats =
+      {
+        st_dev : int;
+        st_ino : int;
+        st_kind : file_kind;
+        st_perm : file_perm;
+        st_nlink : int;
+        st_uid : int;
+        st_gid : int;
+        st_rdev : int;
+        st_size : int64;
+        st_atime : float;
+        st_mtime : float;
+        st_ctime : float;
+      }
 
 #if windows
 
@@ -914,6 +981,13 @@ let fchown ch uid gid =
 
 #endif
 
+type access_permission =
+    Unix.access_permission =
+  | R_OK
+  | W_OK
+  | X_OK
+  | F_OK
+
 #if windows
 
 let access name perms =
@@ -1044,6 +1118,8 @@ let chroot name =
   execute_job (chroot_job name) chroot_result chroot_free
 
 #endif
+
+type dir_handle = Unix.dir_handle
 
 #if windows
 
@@ -1267,6 +1343,15 @@ let readlink name =
    | Locking                                                         |
    +-----------------------------------------------------------------+ *)
 
+type lock_command =
+    Unix.lock_command =
+  | F_ULOCK
+  | F_LOCK
+  | F_TLOCK
+  | F_TEST
+  | F_RLOCK
+  | F_TRLOCK
+
 #if windows
 
 let lockf ch cmd size =
@@ -1288,6 +1373,27 @@ let lockf ch cmd size =
 (* +-----------------------------------------------------------------+
    | User id, group id                                               |
    +-----------------------------------------------------------------+ *)
+
+type passwd_entry =
+    Unix.passwd_entry =
+  {
+    pw_name : string;
+    pw_passwd : string;
+    pw_uid : int;
+    pw_gid : int;
+    pw_gecos : string;
+    pw_dir : string;
+    pw_shell : string
+  }
+
+type group_entry =
+    Unix.group_entry =
+  {
+    gr_name : string;
+    gr_passwd : string;
+    gr_gid : int;
+    gr_mem : string array
+  }
 
 #if windows
 
@@ -1368,6 +1474,16 @@ let getgrgid gid =
   execute_job (getgrgid_job gid) getgrgid_result getgrgid_free
 
 #endif
+
+(* +-----------------------------------------------------------------+
+   | Sockets                                                         |
+   +-----------------------------------------------------------------+ *)
+
+type msg_flag =
+    Unix.msg_flag =
+  | MSG_OOB
+  | MSG_DONTROUTE
+  | MSG_PEEK
 
 #if windows
 let stub_recv = Unix.recv
@@ -1472,9 +1588,32 @@ let send_msg ~socket ~io_vectors ~fds =
 
 #endif
 
+type inet_addr = Unix.inet_addr
+
+type socket_domain =
+    Unix.socket_domain =
+  | PF_UNIX
+  | PF_INET
+  | PF_INET6
+
+type socket_type =
+    Unix.socket_type =
+  | SOCK_STREAM
+  | SOCK_DGRAM
+  | SOCK_RAW
+  | SOCK_SEQPACKET
+
+type sockaddr = Unix.sockaddr = ADDR_UNIX of string | ADDR_INET of inet_addr * int
+
 let socket dom typ proto =
   let s = Unix.socket dom typ proto in
   mk_ch ~blocking:false s
+
+type shutdown_command =
+    Unix.shutdown_command =
+  | SHUTDOWN_RECEIVE
+  | SHUTDOWN_SEND
+  | SHUTDOWN_ALL
 
 let shutdown ch shutdown_command =
   check_descriptor ch;
@@ -1580,6 +1719,34 @@ let get_credentials ch =
    | Socket options                                                  |
    +-----------------------------------------------------------------+ *)
 
+type socket_bool_option =
+    Unix.socket_bool_option =
+  | SO_DEBUG
+  | SO_BROADCAST
+  | SO_REUSEADDR
+  | SO_KEEPALIVE
+  | SO_DONTROUTE
+  | SO_OOBINLINE
+  | SO_ACCEPTCONN
+  | TCP_NODELAY
+  | IPV6_ONLY
+
+type socket_int_option =
+    Unix.socket_int_option =
+  | SO_SNDBUF
+  | SO_RCVBUF
+  | SO_ERROR
+  | SO_TYPE
+  | SO_RCVLOWAT
+  | SO_SNDLOWAT
+
+type socket_optint_option = Unix.socket_optint_option = SO_LINGER
+
+type socket_float_option =
+    Unix.socket_float_option =
+  | SO_RCVTIMEO
+  | SO_SNDTIMEO
+
 let getsockopt ch opt =
   check_descriptor ch;
   Unix.getsockopt ch.fd opt
@@ -1619,6 +1786,32 @@ let getsockopt_error ch =
 (* +-----------------------------------------------------------------+
    | Host and protocol databases                                     |
    +-----------------------------------------------------------------+ *)
+
+type host_entry =
+    Unix.host_entry =
+    {
+      h_name : string;
+      h_aliases : string array;
+      h_addrtype : socket_domain;
+      h_addr_list : inet_addr array
+    }
+
+type protocol_entry =
+    Unix.protocol_entry =
+    {
+      p_name : string;
+      p_aliases : string array;
+      p_proto : int
+    }
+
+type service_entry =
+    Unix.service_entry =
+    {
+      s_name : string;
+      s_aliases : string array;
+      s_port : int;
+      s_proto : string
+    }
 
 #if windows
 
@@ -1732,6 +1925,25 @@ let getservbyport port x =
 
 #endif
 
+type addr_info =
+    Unix.addr_info =
+    {
+      ai_family : socket_domain;
+      ai_socktype : socket_type;
+      ai_protocol : int;
+      ai_addr : sockaddr;
+      ai_canonname : string;
+    }
+
+type getaddrinfo_option =
+    Unix.getaddrinfo_option =
+  | AI_FAMILY of socket_domain
+  | AI_SOCKTYPE of socket_type
+  | AI_PROTOCOL of int
+  | AI_NUMERICHOST
+  | AI_CANONNAME
+  | AI_PASSIVE
+
 #if windows
 
 let getaddrinfo host service opts =
@@ -1747,6 +1959,21 @@ let getaddrinfo host service opts =
   execute_job (getaddrinfo_job host service opts) getaddrinfo_result getaddrinfo_free
 
 #endif
+
+type name_info =
+    Unix.name_info =
+    {
+      ni_hostname : string;
+      ni_service : string;
+    }
+
+type getnameinfo_option =
+    Unix.getnameinfo_option =
+  | NI_NOFQDN
+  | NI_NUMERICHOST
+  | NI_NAMEREQD
+  | NI_NUMERICSERV
+  | NI_DGRAM
 
 #if windows
 
@@ -1767,6 +1994,69 @@ let getnameinfo addr opts =
 (* +-----------------------------------------------------------------+
    | Terminal interface                                              |
    +-----------------------------------------------------------------+ *)
+
+
+type terminal_io =
+    Unix.terminal_io =
+    {
+      mutable c_ignbrk : bool;
+      mutable c_brkint : bool;
+      mutable c_ignpar : bool;
+      mutable c_parmrk : bool;
+      mutable c_inpck : bool;
+      mutable c_istrip : bool;
+      mutable c_inlcr : bool;
+      mutable c_igncr : bool;
+      mutable c_icrnl : bool;
+      mutable c_ixon : bool;
+      mutable c_ixoff : bool;
+      mutable c_opost : bool;
+      mutable c_obaud : int;
+      mutable c_ibaud : int;
+      mutable c_csize : int;
+      mutable c_cstopb : int;
+      mutable c_cread : bool;
+      mutable c_parenb : bool;
+      mutable c_parodd : bool;
+      mutable c_hupcl : bool;
+      mutable c_clocal : bool;
+      mutable c_isig : bool;
+      mutable c_icanon : bool;
+      mutable c_noflsh : bool;
+      mutable c_echo : bool;
+      mutable c_echoe : bool;
+      mutable c_echok : bool;
+      mutable c_echonl : bool;
+      mutable c_vintr : char;
+      mutable c_vquit : char;
+      mutable c_verase : char;
+      mutable c_vkill : char;
+      mutable c_veof : char;
+      mutable c_veol : char;
+      mutable c_vmin : int;
+      mutable c_vtime : int;
+      mutable c_vstart : char;
+      mutable c_vstop : char;
+    }
+
+type setattr_when =
+    Unix.setattr_when =
+  | TCSANOW
+  | TCSADRAIN
+  | TCSAFLUSH
+
+type flush_queue =
+    Unix.flush_queue =
+  | TCIFLUSH
+  | TCOFLUSH
+  | TCIOFLUSH
+
+type flow_action =
+    Unix.flow_action =
+  | TCOOFF
+  | TCOON
+  | TCIOFF
+  | TCION
 
 #if windows
 
@@ -1943,6 +2233,17 @@ let disable_signal_handler = Lazy.force
 (* +-----------------------------------------------------------------+
    | Processes                                                       |
    +-----------------------------------------------------------------+ *)
+
+type process_status =
+    Unix.process_status =
+  | WEXITED of int
+  | WSIGNALED of int
+  | WSTOPPED of int
+
+type wait_flag =
+    Unix.wait_flag =
+  | WNOHANG
+  | WUNTRACED
 
 let has_wait4 = not Lwt_sys.windows
 

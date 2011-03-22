@@ -230,10 +230,21 @@ val abort : file_descr -> exn -> unit
 
 (** {6 Process handling} *)
 
-val wait : unit -> (int * Unix.process_status) Lwt.t
+type process_status =
+    Unix.process_status =
+  | WEXITED of int
+  | WSIGNALED of int
+  | WSTOPPED of int
+
+type wait_flag =
+    Unix.wait_flag =
+  | WNOHANG
+  | WUNTRACED
+
+val wait : unit -> (int * process_status) Lwt.t
   (** Wrapper for [Unix.wait] *)
 
-val waitpid : Unix.wait_flag list -> int -> (int * Unix.process_status) Lwt.t
+val waitpid : wait_flag list -> int -> (int * process_status) Lwt.t
   (** Wrapper for [Unix.waitpid] *)
 
 (** Resource usages *)
@@ -245,7 +256,7 @@ type resource_usage = {
   (** System time used *)
 }
 
-val wait4 : Unix.wait_flag list -> int -> (int * Unix.process_status * resource_usage) Lwt.t
+val wait4 : wait_flag list -> int -> (int * process_status * resource_usage) Lwt.t
   (** [wait4 flags pid] returns [(pid, status, rusage)] where [(pid,
       status)] is the same result as [Unix.waitpid flags pid], and
       [rusage] contains accounting information about the child.
@@ -256,7 +267,7 @@ val wait_count : unit -> int
   (** Returns the number of threads waiting for a child to
       terminate. *)
 
-val system : string -> Unix.process_status Lwt.t
+val system : string -> process_status Lwt.t
   (** Wrapper for [Unix.system] *)
 
 (** {6 Basic file input/output} *)
@@ -271,7 +282,24 @@ val stdout : file_descr
 val stderr : file_descr
   (** The standard {b file descriptor} for printing error messages *)
 
-val openfile : string -> Unix.open_flag list -> Unix.file_perm -> file_descr Lwt.t
+type file_perm = Unix.file_perm
+
+type open_flag =
+    Unix.open_flag =
+  | O_RDONLY
+  | O_WRONLY
+  | O_RDWR
+  | O_NONBLOCK
+  | O_APPEND
+  | O_CREAT
+  | O_TRUNC
+  | O_EXCL
+  | O_NOCTTY
+  | O_DSYNC
+  | O_SYNC
+  | O_RSYNC
+
+val openfile : string -> open_flag list -> file_perm -> file_descr Lwt.t
   (** Wrapper for [Unix.openfile]. *)
 
 val close : file_descr -> unit Lwt.t
@@ -304,7 +332,13 @@ val wait_write : file_descr -> unit Lwt.t
 
 (** {6 Seeking and truncating} *)
 
-val lseek : file_descr -> int -> Unix.seek_command -> int Lwt.t
+type seek_command =
+    Unix.seek_command =
+  | SEEK_SET
+  | SEEK_CUR
+  | SEEK_END
+
+val lseek : file_descr -> int -> seek_command -> int Lwt.t
   (** Wrapper for [Unix.lseek] *)
 
 val truncate : string -> int -> unit Lwt.t
@@ -315,13 +349,40 @@ val ftruncate : file_descr -> int -> unit Lwt.t
 
 (** {6 File status} *)
 
-val stat : string -> Unix.stats Lwt.t
+type file_kind =
+    Unix.file_kind =
+  | S_REG
+  | S_DIR
+  | S_CHR
+  | S_BLK
+  | S_LNK
+  | S_FIFO
+  | S_SOCK
+
+type stats =
+    Unix.stats =
+    {
+      st_dev : int;
+      st_ino : int;
+      st_kind : file_kind;
+      st_perm : file_perm;
+      st_nlink : int;
+      st_uid : int;
+      st_gid : int;
+      st_rdev : int;
+      st_size : int;
+      st_atime : float;
+      st_mtime : float;
+      st_ctime : float;
+    }
+
+val stat : string -> stats Lwt.t
   (** Wrapper for [Unix.stat] *)
 
-val lstat : string -> Unix.stats Lwt.t
+val lstat : string -> stats Lwt.t
   (** Wrapper for [Unix.lstat] *)
 
-val fstat : file_descr -> Unix.stats Lwt.t
+val fstat : file_descr -> stats Lwt.t
   (** Wrapper for [Unix.fstat] *)
 
 val isatty : file_descr -> bool Lwt.t
@@ -330,7 +391,7 @@ val isatty : file_descr -> bool Lwt.t
 (** {6 File operations on large files} *)
 
 module LargeFile : sig
-  val lseek : file_descr -> int64 -> Unix.seek_command -> int64 Lwt.t
+  val lseek : file_descr -> int64 -> seek_command -> int64 Lwt.t
     (** Wrapper for [Unix.LargeFile.lseek] *)
 
   val truncate : string -> int64 -> unit Lwt.t
@@ -339,13 +400,30 @@ module LargeFile : sig
   val ftruncate : file_descr -> int64 -> unit Lwt.t
     (** Wrapper for [Unix.LargeFile.ftruncate] *)
 
-  val stat : string -> Unix.LargeFile.stats Lwt.t
+  type stats =
+      Unix.LargeFile.stats =
+      {
+        st_dev : int;
+        st_ino : int;
+        st_kind : file_kind;
+        st_perm : file_perm;
+        st_nlink : int;
+        st_uid : int;
+        st_gid : int;
+        st_rdev : int;
+        st_size : int64;
+        st_atime : float;
+        st_mtime : float;
+        st_ctime : float;
+      }
+
+  val stat : string -> stats Lwt.t
     (** Wrapper for [Unix.LargeFile.stat] *)
 
-  val lstat : string -> Unix.LargeFile.stats Lwt.t
+  val lstat : string -> stats Lwt.t
     (** Wrapper for [Unix.LargeFile.lstat] *)
 
-  val fstat : file_descr -> Unix.LargeFile.stats Lwt.t
+  val fstat : file_descr -> stats Lwt.t
     (** Wrapper for [Unix.LargeFile.fstat] *)
 end
 
@@ -362,10 +440,10 @@ val link : string -> string -> unit Lwt.t
 
 (** {6 File permissions and ownership} *)
 
-val chmod : string -> Unix.file_perm -> unit Lwt.t
+val chmod : string -> file_perm -> unit Lwt.t
   (** Wrapper for [Unix.chmod] *)
 
-val fchmod : file_descr -> Unix.file_perm -> unit Lwt.t
+val fchmod : file_descr -> file_perm -> unit Lwt.t
   (** Wrapper for [Unix.fchmod] *)
 
 val chown : string -> int -> int -> unit Lwt.t
@@ -374,7 +452,14 @@ val chown : string -> int -> int -> unit Lwt.t
 val fchown : file_descr -> int -> int -> unit Lwt.t
   (** Wrapper for [Unix.fchown] *)
 
-val access : string -> Unix.access_permission list -> unit Lwt.t
+type access_permission =
+    Unix.access_permission =
+  | R_OK
+  | W_OK
+  | X_OK
+  | F_OK
+
+val access : string -> access_permission list -> unit Lwt.t
   (** Wrapper for [Unix.access] *)
 
 (** {6 Operations on file descriptors} *)
@@ -393,7 +478,7 @@ val clear_close_on_exec : file_descr -> unit
 
 (** {6 Directories} *)
 
-val mkdir : string -> Unix.file_perm -> unit Lwt.t
+val mkdir : string -> file_perm -> unit Lwt.t
   (** Wrapper for [Unix.mkdir] *)
 
 val rmdir : string -> unit Lwt.t
@@ -405,23 +490,25 @@ val chdir : string -> unit Lwt.t
 val chroot : string -> unit Lwt.t
   (** Wrapper for [Unix.chroot] *)
 
-val opendir : string -> Unix.dir_handle Lwt.t
+type dir_handle = Unix.dir_handle
+
+val opendir : string -> dir_handle Lwt.t
   (** Wrapper for [Unix.opendir] *)
 
-val readdir : Unix.dir_handle -> string Lwt.t
+val readdir : dir_handle -> string Lwt.t
   (** Wrapper for [Unix.dir] *)
 
-val readdir_n : Unix.dir_handle -> int -> string array Lwt.t
+val readdir_n : dir_handle -> int -> string array Lwt.t
   (** [readdir_n handle count] reads at most [count] entry from the
       given directory. It is more efficient that callling [count]
       times [readdir]. If the length of the returned array is smaller
       than [count], this means that the end of the directory has been
       reached. *)
 
-val rewinddir : Unix.dir_handle -> unit Lwt.t
+val rewinddir : dir_handle -> unit Lwt.t
   (** Wrapper for [Unix.rewinddir] *)
 
-val closedir : Unix.dir_handle -> unit Lwt.t
+val closedir : dir_handle -> unit Lwt.t
   (** Wrapper for [Unix.closedir] *)
 
 val files_of_directory : string -> string Lwt_stream.t
@@ -444,7 +531,7 @@ val pipe_out : unit -> Unix.file_descr * file_descr
   (** [pipe_out ()] is the inverse of {!pipe_in}. You usually want to
       use this before forking to send data to the child process *)
 
-val mkfifo : string -> Unix.file_perm -> unit Lwt.t
+val mkfifo : string -> file_perm -> unit Lwt.t
   (** Wrapper for [Unix.mkfifo] *)
 
 (** {6 Symbolic links} *)
@@ -457,24 +544,54 @@ val readlink : string -> string Lwt.t
 
 (** {6 Locking} *)
 
-val lockf : file_descr -> Unix.lock_command -> int -> unit Lwt.t
+type lock_command =
+    Unix.lock_command =
+  | F_ULOCK
+  | F_LOCK
+  | F_TLOCK
+  | F_TEST
+  | F_RLOCK
+  | F_TRLOCK
+
+val lockf : file_descr -> lock_command -> int -> unit Lwt.t
   (** Wrapper for [Unix.lockf] *)
 
 (** {6 User id, group id} *)
 
+type passwd_entry =
+    Unix.passwd_entry =
+  {
+    pw_name : string;
+    pw_passwd : string;
+    pw_uid : int;
+    pw_gid : int;
+    pw_gecos : string;
+    pw_dir : string;
+    pw_shell : string
+  }
+
+type group_entry =
+    Unix.group_entry =
+  {
+    gr_name : string;
+    gr_passwd : string;
+    gr_gid : int;
+    gr_mem : string array
+  }
+
 val getlogin : unit -> string Lwt.t
   (** Wrapper for [Unix.getlogin] *)
 
-val getpwnam : string -> Unix.passwd_entry Lwt.t
+val getpwnam : string -> passwd_entry Lwt.t
   (** Wrapper for [Unix.getpwnam] *)
 
-val getgrnam : string -> Unix.group_entry Lwt.t
+val getgrnam : string -> group_entry Lwt.t
   (** Wrapper for [Unix.getgrnam] *)
 
-val getpwuid : int -> Unix.passwd_entry Lwt.t
+val getpwuid : int -> passwd_entry Lwt.t
   (** Wrapper for [Unix.getpwuid] *)
 
-val getgrgid : int -> Unix.group_entry Lwt.t
+val getgrgid : int -> group_entry Lwt.t
   (** Wrapper for [Unix.getgrgid] *)
 
 (** {6 Signals} *)
@@ -495,23 +612,40 @@ val signal_count : unit -> int
 
 (** {6 Sockets} *)
 
-val socket : Unix.socket_domain -> Unix.socket_type -> int -> file_descr
+type inet_addr = Unix.inet_addr
+
+type socket_domain =
+    Unix.socket_domain =
+  | PF_UNIX
+  | PF_INET
+  | PF_INET6
+
+type socket_type =
+    Unix.socket_type =
+  | SOCK_STREAM
+  | SOCK_DGRAM
+  | SOCK_RAW
+  | SOCK_SEQPACKET
+
+type sockaddr = Unix.sockaddr = ADDR_UNIX of string | ADDR_INET of inet_addr * int
+
+val socket : socket_domain -> socket_type -> int -> file_descr
   (** [socket domain type proto] is the same as [Unix.socket] but maps
       the result into a lwt {b file descriptor} *)
 
-val socketpair : Unix.socket_domain -> Unix.socket_type -> int -> file_descr * file_descr
+val socketpair : socket_domain -> socket_type -> int -> file_descr * file_descr
   (** Wrapper for [Unix.socketpair] *)
 
-val bind : file_descr -> Unix.sockaddr -> unit
+val bind : file_descr -> sockaddr -> unit
   (** Wrapper for [Unix.bind] *)
 
 val listen : file_descr -> int -> unit
   (** Wrapper for [Unix.listen] *)
 
-val accept : file_descr -> (file_descr * Unix.sockaddr) Lwt.t
+val accept : file_descr -> (file_descr * sockaddr) Lwt.t
   (** Wrapper for [Unix.accept] *)
 
-val accept_n : file_descr -> int -> ((file_descr * Unix.sockaddr) list * exn option) Lwt.t
+val accept_n : file_descr -> int -> ((file_descr * sockaddr) list * exn option) Lwt.t
   (** [accept_n fd count] accepts up to [count] connection in one time.
 
       - if no connection is available right now, it returns a sleeping
@@ -531,28 +665,40 @@ val accept_n : file_descr -> int -> ((file_descr * Unix.sockaddr) list * exn opt
 
       {{:http://portal.acm.org/citation.cfm?id=1247435}Acceptable strategies for improving web server performance} *)
 
-val connect : file_descr -> Unix.sockaddr -> unit Lwt.t
+val connect : file_descr -> sockaddr -> unit Lwt.t
   (** Wrapper for [Unix.connect] *)
 
-val shutdown : file_descr -> Unix.shutdown_command -> unit
+type shutdown_command =
+    Unix.shutdown_command =
+  | SHUTDOWN_RECEIVE
+  | SHUTDOWN_SEND
+  | SHUTDOWN_ALL
+
+val shutdown : file_descr -> shutdown_command -> unit
   (** Wrapper for [Unix.shutdown] *)
 
-val getsockname : file_descr -> Unix.sockaddr
+val getsockname : file_descr -> sockaddr
   (** Wrapper for [Unix.getsockname] *)
 
-val getpeername : file_descr -> Unix.sockaddr
+val getpeername : file_descr -> sockaddr
   (** Wrapper for [Unix.getpeername] *)
 
-val recv : file_descr -> string -> int -> int -> Unix.msg_flag list -> int Lwt.t
+type msg_flag =
+    Unix.msg_flag =
+  | MSG_OOB
+  | MSG_DONTROUTE
+  | MSG_PEEK
+
+val recv : file_descr -> string -> int -> int -> msg_flag list -> int Lwt.t
   (** Wrapper for [Unix.recv] *)
 
-val recvfrom : file_descr -> string -> int -> int -> Unix.msg_flag list -> (int * Unix.sockaddr) Lwt.t
+val recvfrom : file_descr -> string -> int -> int -> msg_flag list -> (int * sockaddr) Lwt.t
   (** Wrapper for [Unix.recvfrom] *)
 
-val send : file_descr -> string -> int -> int -> Unix.msg_flag list -> int Lwt.t
+val send : file_descr -> string -> int -> int -> msg_flag list -> int Lwt.t
   (** Wrapper for [Unix.send] *)
 
-val sendto : file_descr -> string -> int -> int -> Unix.msg_flag list -> Unix.sockaddr -> int Lwt.t
+val sendto : file_descr -> string -> int -> int -> msg_flag list -> sockaddr -> int Lwt.t
   (** Wrapper for [Unix.sendto] *)
 
 (** An io-vector. Used by {!recv_msg} and {!send_msg}. *)
@@ -592,28 +738,56 @@ val get_credentials : file_descr -> credentials
 
 (** {8 Socket options} *)
 
-val getsockopt : file_descr -> Unix.socket_bool_option -> bool
+type socket_bool_option =
+    Unix.socket_bool_option =
+  | SO_DEBUG
+  | SO_BROADCAST
+  | SO_REUSEADDR
+  | SO_KEEPALIVE
+  | SO_DONTROUTE
+  | SO_OOBINLINE
+  | SO_ACCEPTCONN
+  | TCP_NODELAY
+  | IPV6_ONLY
+
+type socket_int_option =
+    Unix.socket_int_option =
+  | SO_SNDBUF
+  | SO_RCVBUF
+  | SO_ERROR
+  | SO_TYPE
+  | SO_RCVLOWAT
+  | SO_SNDLOWAT
+
+type socket_optint_option = Unix.socket_optint_option = SO_LINGER
+
+type socket_float_option =
+    Unix.socket_float_option =
+  | SO_RCVTIMEO
+  | SO_SNDTIMEO
+
+val getsockopt : file_descr -> socket_bool_option -> bool
   (** Wrapper for [Unix.getsockopt] *)
 
-val setsockopt : file_descr -> Unix.socket_bool_option -> bool -> unit
+val setsockopt : file_descr -> socket_bool_option -> bool -> unit
   (** Wrapper for [Unix.setsockopt] *)
 
-val getsockopt_int : file_descr -> Unix.socket_int_option -> int
+val getsockopt_int : file_descr -> socket_int_option -> int
   (** Wrapper for [Unix.getsockopt_int] *)
 
-val setsockopt_int : file_descr -> Unix.socket_int_option -> int -> unit
+val setsockopt_int : file_descr -> socket_int_option -> int -> unit
   (** Wrapper for [Unix.setsockopt_int] *)
 
-val getsockopt_optint : file_descr -> Unix.socket_optint_option -> int option
+val getsockopt_optint : file_descr -> socket_optint_option -> int option
   (** Wrapper for [Unix.getsockopt_optint] *)
 
-val setsockopt_optint : file_descr -> Unix.socket_optint_option -> int option -> unit
+val setsockopt_optint : file_descr -> socket_optint_option -> int option -> unit
   (** Wrapper for [Unix.setsockopt_optint] *)
 
-val getsockopt_float : file_descr -> Unix.socket_float_option -> float
+val getsockopt_float : file_descr -> socket_float_option -> float
   (** Wrapper for [Unix.getsockopt_float] *)
 
-val setsockopt_float : file_descr -> Unix.socket_float_option -> float -> unit
+val setsockopt_float : file_descr -> socket_float_option -> float -> unit
   (** Wrapper for [Unix.setsockopt_float] *)
 
 val getsockopt_error : file_descr -> Unix.error option
@@ -621,39 +795,148 @@ val getsockopt_error : file_descr -> Unix.error option
 
 (** {6 Host and protocol databases} *)
 
+type host_entry =
+    Unix.host_entry =
+    {
+      h_name : string;
+      h_aliases : string array;
+      h_addrtype : socket_domain;
+      h_addr_list : inet_addr array
+    }
+
+type protocol_entry =
+    Unix.protocol_entry =
+    {
+      p_name : string;
+      p_aliases : string array;
+      p_proto : int
+    }
+
+type service_entry =
+    Unix.service_entry =
+    {
+      s_name : string;
+      s_aliases : string array;
+      s_port : int;
+      s_proto : string
+    }
+
 val gethostname : unit -> string Lwt.t
   (** Wrapper for [Unix.gethostname] *)
 
-val gethostbyname : string -> Unix.host_entry Lwt.t
+val gethostbyname : string -> host_entry Lwt.t
   (** Wrapper for [Unix.gethostbyname] *)
 
-val gethostbyaddr : Unix.inet_addr -> Unix.host_entry Lwt.t
+val gethostbyaddr : inet_addr -> host_entry Lwt.t
   (** Wrapper for [Unix.gethostbyaddr] *)
 
-val getprotobyname : string -> Unix.protocol_entry Lwt.t
+val getprotobyname : string -> protocol_entry Lwt.t
   (** Wrapper for [Unix.getprotobyname] *)
 
-val getprotobynumber : int -> Unix.protocol_entry Lwt.t
+val getprotobynumber : int -> protocol_entry Lwt.t
   (** Wrapper for [Unix.getprotobynumber] *)
 
-val getservbyname : string -> string -> Unix.service_entry Lwt.t
+val getservbyname : string -> string -> service_entry Lwt.t
   (** Wrapper for [Unix.getservbyname] *)
 
-val getservbyport : int -> string -> Unix.service_entry Lwt.t
+val getservbyport : int -> string -> service_entry Lwt.t
   (** Wrapper for [Unix.getservbyport] *)
 
-val getaddrinfo : string -> string -> Unix.getaddrinfo_option list -> Unix.addr_info list Lwt.t
+type addr_info =
+    Unix.addr_info =
+    {
+      ai_family : socket_domain;
+      ai_socktype : socket_type;
+      ai_protocol : int;
+      ai_addr : sockaddr;
+      ai_canonname : string;
+    }
+
+type getaddrinfo_option =
+    Unix.getaddrinfo_option =
+  | AI_FAMILY of socket_domain
+  | AI_SOCKTYPE of socket_type
+  | AI_PROTOCOL of int
+  | AI_NUMERICHOST
+  | AI_CANONNAME
+  | AI_PASSIVE
+
+val getaddrinfo : string -> string -> getaddrinfo_option list -> addr_info list Lwt.t
   (** Wrapper for [Unix.getaddrinfo] *)
 
-val getnameinfo : Unix.sockaddr -> Unix.getnameinfo_option list -> Unix.name_info Lwt.t
+type name_info =
+    Unix.name_info =
+    {
+      ni_hostname : string;
+      ni_service : string;
+    }
+
+type getnameinfo_option =
+    Unix.getnameinfo_option =
+  | NI_NOFQDN
+  | NI_NUMERICHOST
+  | NI_NAMEREQD
+  | NI_NUMERICSERV
+  | NI_DGRAM
+
+val getnameinfo : sockaddr -> getnameinfo_option list -> name_info Lwt.t
   (** Wrapper for [Unix.getnameinfo] *)
 
 (** {6 Terminal interface} *)
 
-val tcgetattr : file_descr -> Unix.terminal_io Lwt.t
+type terminal_io =
+    Unix.terminal_io =
+    {
+      mutable c_ignbrk : bool;
+      mutable c_brkint : bool;
+      mutable c_ignpar : bool;
+      mutable c_parmrk : bool;
+      mutable c_inpck : bool;
+      mutable c_istrip : bool;
+      mutable c_inlcr : bool;
+      mutable c_igncr : bool;
+      mutable c_icrnl : bool;
+      mutable c_ixon : bool;
+      mutable c_ixoff : bool;
+      mutable c_opost : bool;
+      mutable c_obaud : int;
+      mutable c_ibaud : int;
+      mutable c_csize : int;
+      mutable c_cstopb : int;
+      mutable c_cread : bool;
+      mutable c_parenb : bool;
+      mutable c_parodd : bool;
+      mutable c_hupcl : bool;
+      mutable c_clocal : bool;
+      mutable c_isig : bool;
+      mutable c_icanon : bool;
+      mutable c_noflsh : bool;
+      mutable c_echo : bool;
+      mutable c_echoe : bool;
+      mutable c_echok : bool;
+      mutable c_echonl : bool;
+      mutable c_vintr : char;
+      mutable c_vquit : char;
+      mutable c_verase : char;
+      mutable c_vkill : char;
+      mutable c_veof : char;
+      mutable c_veol : char;
+      mutable c_vmin : int;
+      mutable c_vtime : int;
+      mutable c_vstart : char;
+      mutable c_vstop : char;
+    }
+
+val tcgetattr : file_descr -> terminal_io Lwt.t
   (** Wrapper for [Unix.tcgetattr] *)
 
-val tcsetattr : file_descr -> Unix.setattr_when -> Unix.terminal_io -> unit Lwt.t
+type setattr_when =
+    Unix.setattr_when =
+  | TCSANOW
+  | TCSADRAIN
+  | TCSAFLUSH
+
+val tcsetattr : file_descr -> setattr_when -> terminal_io -> unit Lwt.t
   (** Wrapper for [Unix.tcsetattr] *)
 
 val tcsendbreak : file_descr -> int -> unit Lwt.t
@@ -662,10 +945,23 @@ val tcsendbreak : file_descr -> int -> unit Lwt.t
 val tcdrain : file_descr -> unit Lwt.t
   (** Wrapper for [Unix.tcdrain] *)
 
-val tcflush : file_descr -> Unix.flush_queue -> unit Lwt.t
+type flush_queue =
+    Unix.flush_queue =
+  | TCIFLUSH
+  | TCOFLUSH
+  | TCIOFLUSH
+
+val tcflush : file_descr -> flush_queue -> unit Lwt.t
   (** Wrapper for [Unix.tcflush] *)
 
-val tcflow : file_descr -> Unix.flow_action -> unit Lwt.t
+type flow_action =
+    Unix.flow_action =
+  | TCOOFF
+  | TCOON
+  | TCIOFF
+  | TCION
+
+val tcflow : file_descr -> flow_action -> unit Lwt.t
   (** Wrapper for [Unix.tcflow] *)
 
 (** {6 Low-level interaction} *)
