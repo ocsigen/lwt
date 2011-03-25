@@ -14,11 +14,13 @@
 <src/glib/lwt_glib_stubs.*>: use_C_glib
 
 # OASIS_START
-# DO NOT EDIT (digest: 3002505a72055cc9ea7cc437415b4f9a)
+# DO NOT EDIT (digest: a18c6c6caac63f0e8f150e504d703d8a)
 # Library lwt
 "src/core": include
+"src/core/lwt.cmxs": use_lwt
 # Library lwt-unix
 "src/unix": include
+"src/unix/lwt-unix.cmxs": use_lwt-unix
 <src/unix/lwt-unix.{cma,cmxa}>: oasis_library_lwt_unix_cclib
 "src/unix/liblwt-unix.lib": oasis_library_lwt_unix_cclib
 "src/unix/dlllwt-unix.dll": oasis_library_lwt_unix_cclib
@@ -36,12 +38,15 @@
 "src/unix/lwt_libev_stubs.c": pkg_bigarray
 # Library lwt-react
 "src/react": include
+"src/react/lwt-react.cmxs": use_lwt-react
 <src/react/*.ml{,i}>: use_lwt
 <src/react/*.ml{,i}>: pkg_react
 # Library test
 "tests": include
+"tests/test.cmxs": use_test
 # Library lwt-text
 "src/text": include
+"src/text/lwt-text.cmxs": use_lwt-text
 <src/text/lwt-text.{cma,cmxa}>: use_liblwt-text
 <src/text/*.ml{,i}>: use_lwt-react
 <src/text/*.ml{,i}>: use_lwt-unix
@@ -98,8 +103,10 @@
 <tests/core/*.ml{,i}>: pkg_bigarray
 # Library lwt-top
 "src/top": include
+"src/top/lwt-top.cmxs": use_lwt-top
 # Library lwt-preemptive
 "src/preemptive": include
+"src/preemptive/lwt-preemptive.cmxs": use_lwt-preemptive
 <src/preemptive/*.ml{,i}>: use_lwt-unix
 <src/preemptive/*.ml{,i}>: use_lwt
 <src/preemptive/*.ml{,i}>: pkg_unix
@@ -107,12 +114,14 @@
 <src/preemptive/*.ml{,i}>: pkg_bigarray
 # Library lwt-simple-top
 "src/simple_top": include
+"src/simple_top/lwt-simple-top.cmxs": use_lwt-simple-top
 <src/simple_top/*.ml{,i}>: use_lwt-unix
 <src/simple_top/*.ml{,i}>: use_lwt
 <src/simple_top/*.ml{,i}>: pkg_unix
 <src/simple_top/*.ml{,i}>: pkg_bigarray
 # Library lwt-glib
 "src/glib": include
+"src/glib/lwt-glib.cmxs": use_lwt-glib
 <src/glib/lwt-glib.{cma,cmxa}>: use_liblwt-glib
 <src/glib/*.ml{,i}>: use_lwt-unix
 <src/glib/*.ml{,i}>: use_lwt
@@ -123,8 +132,10 @@
 "src/glib/lwt_glib_stubs.c": pkg_unix
 "src/glib/lwt_glib_stubs.c": pkg_bigarray
 # Library lwt-syntax
+"syntax/lwt-syntax.cmxs": use_lwt-syntax
 <syntax/*.ml{,i}>: pkg_camlp4.extend
 # Library lwt-syntax-log
+"syntax/lwt-syntax-log.cmxs": use_lwt-syntax-log
 # Executable lwt-toplevel
 "src/top/lwt_toplevel.byte": use_lwt-top
 "src/top/lwt_toplevel.byte": use_lwt-text
@@ -150,6 +161,7 @@
 <src/top/*.ml{,i}>: pkg_bigarray
 # Library lwt-extra
 "src/extra": include
+"src/extra/lwt-extra.cmxs": use_lwt-extra
 <src/extra/*.ml{,i}>: use_lwt-preemptive
 <src/extra/*.ml{,i}>: use_lwt-unix
 <src/extra/*.ml{,i}>: use_lwt
@@ -157,12 +169,15 @@
 <src/extra/*.ml{,i}>: pkg_threads
 <src/extra/*.ml{,i}>: pkg_bigarray
 # Library optcomp
+"syntax/optcomp.cmxs": use_optcomp
 <syntax/*.ml{,i}>: pkg_camlp4.quotations.o
 # Library lwt-syntax-options
 "syntax": include
+"syntax/lwt-syntax-options.cmxs": use_lwt-syntax-options
 <syntax/*.ml{,i}>: pkg_camlp4.lib
 # Library lwt-ssl
 "src/ssl": include
+"src/ssl/lwt-ssl.cmxs": use_lwt-ssl
 <src/ssl/*.ml{,i}>: use_lwt-unix
 <src/ssl/*.ml{,i}>: use_lwt
 <src/ssl/*.ml{,i}>: pkg_unix
