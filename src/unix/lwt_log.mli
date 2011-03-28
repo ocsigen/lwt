@@ -82,6 +82,10 @@ type section
       then the level of the section ["access"] is {!Warning} and the
       level of any section matching ["foo[*]"] is {!Error}.
 
+      If the pattern is omited in a rule then the pattern ["*"] is
+      used instead, so [LWT_LOG] may just contains ["debug"] for
+      instance.
+
       If [LWT_LOG] is not defined then the rule ["* -> notice"] is
       used instead. *)
 

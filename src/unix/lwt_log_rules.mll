@@ -32,6 +32,8 @@ let level =  ['a'-'z' 'A'-'Z']+
 rule rules = parse
   | space* (pattern as pattern) space* "->" space* (level as level)
      { (pattern, level) :: semi_colon_and_rules lexbuf }
+  | space* (level as level)
+     { ("*", level) :: semi_colon_and_rules lexbuf }
   | space* eof
      { [] }
   | ""
