@@ -181,7 +181,7 @@ EXTEND Gram
             <:expr<
               let rec __pa_lwt_loop () =
                 if $cond$ then
-                  Lwt.bind ($body$) __pa_lwt_loop
+                  Lwt.bind (begin $body$ end) __pa_lwt_loop
                 else
                   Lwt.return ()
               in
@@ -190,7 +190,7 @@ EXTEND Gram
 
         | "match_lwt"; e = sequence; "with"; c = match_case ->
             <:expr<
-              Lwt.bind ($e$) (function $c$)
+              Lwt.bind (begin $e$ end) (function $c$)
             >>
         ] ];
 
