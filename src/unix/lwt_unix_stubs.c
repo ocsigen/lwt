@@ -188,11 +188,15 @@ static long notification_count = 0;
 /* The index to the next available cell in the notification buffer. */
 static long notification_index = 0;
 
+/* 1 iff the notification system has been initialized. */
+static int notification_system_initialized = 0;
+
 static void init_notifications()
 {
   pthread_mutex_init(&notification_mutex, NULL);
   notification_count = 4096;
   notifications = (long*)lwt_unix_malloc(notification_count * sizeof(long));
+  notification_system_initialized = 1;
 }
 
 static void resize_notifications()
@@ -217,7 +221,12 @@ static void resize_notifications()
     } else {                                                            \
       /* There is none, notify the main thread. */                      \
       notifications[notification_index++] = id;                         \
+      int ret;                                                          \
       send;                                                             \
+      if (ret < 0) {                                                    \
+        pthread_mutex_unlock(&notification_mutex);                      \
+        uerror("send_notification", Nothing);                           \
+      }                                                                 \
     }                                                                   \
     pthread_mutex_unlock(&notification_mutex);                          \
   }                                                                     \
@@ -232,7 +241,12 @@ static void resize_notifications()
   {                                                                     \
     pthread_mutex_lock(&notification_mutex);                            \
     /* Receive the signal. */                                           \
+    int ret;                                                            \
     recv;                                                               \
+    if (ret < 0) {                                                      \
+      pthread_mutex_unlock(&notification_mutex);                        \
+      uerror("recv_notification", Nothing);                             \
+    }                                                                   \
     /* Read all pending notifications. */                               \
     value result = caml_alloc_tuple(notification_index);                \
     int i;                                                              \
@@ -242,6 +256,19 @@ static void resize_notifications()
     notification_index = 0;                                             \
     pthread_mutex_unlock(&notification_mutex);                          \
     return result;                                                      \
+  }                                                                     \
+                                                                        \
+  value lwt_unix_poke_notification()                                    \
+  {                                                                     \
+    pthread_mutex_lock(&notification_mutex);                            \
+    int ret;                                                            \
+    send;                                                               \
+    if (ret < 0) {                                                      \
+      pthread_mutex_unlock(&notification_mutex);                        \
+      uerror("poke_notification", Nothing);                             \
+    }                                                                   \
+    pthread_mutex_unlock(&notification_mutex);                          \
+    return Val_unit;                                                    \
   }
 
 
@@ -277,15 +304,18 @@ static int notification_fd;
 
 value lwt_unix_init_notification()
 {
-  init_notifications();
+  if (notification_system_initialized) {
+    if (close(notification_fd) == -1) uerror("close", Nothing);
+  } else
+    init_notifications();
   notification_fd = eventfd(0, 0);
   if (notification_fd == -1) uerror("eventfd", Nothing);
   set_close_on_exec(notification_fd);
   return Val_int(notification_fd);
 }
 
-NOTIFICATION_STUBS({ uint64_t buf = 1; write(notification_fd, (char*)&buf, 8); },
-                   { uint64_t buf; read(notification_fd, (char*)&buf, 8); })
+NOTIFICATION_STUBS({ uint64_t buf = 1; ret = write(notification_fd, (char*)&buf, 8); },
+                   { uint64_t buf; ret = read(notification_fd, (char*)&buf, 8); })
 
 #elif defined(LWT_ON_WINDOWS)
 
@@ -293,7 +323,11 @@ static SOCKET socket_r, socket_w;
 
 value lwt_unix_init_notification()
 {
-  init_notifications();
+  if (notification_system_initialized) {
+    closescoket(socket_r);
+    closesocket(socket_w);
+  } else
+    init_notifications();
 
   /* Since pipes do not works with select, we need to use a pair of
      sockets. The following code simulate the socketpair call of
@@ -365,8 +399,8 @@ value lwt_unix_init_notification()
   return Val_unit;
 }
 
-NOTIFICATION_STUBS({ char buf; send(socket_w, &buf, 1, 0); },
-                   { char buf; recv(socket_r, &buf, 1, 0); })
+NOTIFICATION_STUBS({ char buf; ret = send(socket_w, &buf, 1, 0); },
+                   { char buf; ret = recv(socket_r, &buf, 1, 0); })
 
 #else
 
@@ -374,15 +408,19 @@ static int notification_fds[2];
 
 value lwt_unix_init_notification(value fd)
 {
-  init_notifications();
+  if (notification_system_initialized) {
+    if (close(notification_fds[0]) == -1) uerror("close", Nothing);
+    if (close(notification_fds[1]) == -1) uerror("close", Nothing);
+  } else
+    init_notifications();
   if (pipe(notification_fds) == -1) uerror("pipe", Nothing);
   set_close_on_exec(notification_fds[0]);
   set_close_on_exec(notification_fds[1]);
   return Val_int(notification_fds[0]);
 }
 
-NOTIFICATION_STUBS({ char buf; write(notification_fds[1], &buf, 1); },
-                   { char buf; read(notification_fds[0], &buf, 1); })
+NOTIFICATION_STUBS({ char buf; ret = write(notification_fds[1], &buf, 1); },
+                   { char buf; ret = read(notification_fds[0], &buf, 1); })
 
 #endif
 
