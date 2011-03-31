@@ -246,6 +246,18 @@ type file_descr = {
 
   mutable blocking : bool Lwt.t Lazy.t;
   (* Is the file descriptor in blocking or non-blocking mode *)
+
+  mutable event_readable : Lwt_engine.event option;
+  (* The event used to check the file descriptor for readability. *)
+
+  mutable event_writable : Lwt_engine.event option;
+  (* The event used to check the file descriptor for writability. *)
+
+  hooks_readable : (unit -> unit) Lwt_sequence.t;
+  (* Hooks to call when the file descriptor becomes readable. *)
+
+  hooks_writable : (unit -> unit) Lwt_sequence.t;
+  (* Hooks to call when the file descriptor becomes writable. *)
 }
 
 #if windows
@@ -308,11 +320,16 @@ let is_blocking ?blocking ?(set_flags=true) fd =
 
 #endif
 
-let mk_ch ?blocking ?(set_flags=true) fd =
-  { fd = fd;
-    state = Opened;
-    set_flags = set_flags;
-    blocking = is_blocking ?blocking ~set_flags fd }
+let mk_ch ?blocking ?(set_flags=true) fd = {
+  fd = fd;
+  state = Opened;
+  set_flags = set_flags;
+  blocking = is_blocking ?blocking ~set_flags fd;
+  event_readable = None;
+  event_writable = None;
+  hooks_readable = Lwt_sequence.create ();
+  hooks_writable = Lwt_sequence.create ();
+}
 
 let rec check_descriptor ch =
   match ch.state with
@@ -386,9 +403,33 @@ type 'a outcome =
   | Exn of exn
   | Requeued of io_event
 
-(* Retry a queued syscall, [cont] is the thread to wakeup
-   if the action succeed: *)
-let rec retry_syscall ev event ch wakener action =
+(* Wait a bit, then stop events that are no more used. *)
+let stop_events ch =
+  on_success
+    (pause ())
+    (fun () ->
+       if Lwt_sequence.is_empty ch.hooks_readable then begin
+         match ch.event_readable with
+           | Some ev -> Lwt_engine.stop_event ev
+           | None -> ()
+       end;
+       if Lwt_sequence.is_empty ch.hooks_writable then begin
+         match ch.event_writable with
+           | Some ev -> Lwt_engine.stop_event ev
+           | None -> ()
+       end)
+
+let register_readable ch =
+  if ch.event_readable = None then
+    ch.event_readable <- Some(Lwt_engine.on_readable ch.fd (fun _ -> Lwt_sequence.iter_l (fun f -> f ()) ch.hooks_readable))
+
+let register_writable ch =
+  if ch.event_writable = None then
+    ch.event_writable <- Some(Lwt_engine.on_writable ch.fd (fun _ -> Lwt_sequence.iter_l (fun f -> f ()) ch.hooks_writable))
+
+(* Retry a queued syscall, [wakener] is the thread to wakeup if the
+   action succeeds: *)
+let rec retry_syscall node event ch wakener action =
   let res =
     try
       check_descriptor ch;
@@ -410,31 +451,42 @@ let rec retry_syscall ev event ch wakener action =
   in
   match res with
     | Success v ->
-        Lwt_engine.stop_event !ev;
+        Lwt_sequence.remove !node;
+        stop_events ch;
         Lwt.wakeup wakener v
     | Exn e ->
-        Lwt_engine.stop_event !ev;
+        Lwt_sequence.remove !node;
+        stop_events ch;
         Lwt.wakeup_exn wakener e
     | Requeued event' ->
         if event <> event' then begin
-          Lwt_engine.stop_event !ev;
+          Lwt_sequence.remove !node;
+          stop_events ch;
           match event' with
             | Read ->
-                ev := Lwt_engine.on_readable ch.fd (fun _ -> retry_syscall ev event' ch wakener action)
+                node := Lwt_sequence.add_r (fun () -> retry_syscall node Read ch wakener action) ch.hooks_readable ;
+                register_readable ch
             | Write ->
-                ev := Lwt_engine.on_readable ch.fd (fun _ -> retry_syscall ev event' ch wakener action)
+                node := Lwt_sequence.add_r (fun () -> retry_syscall node Write ch wakener action) ch.hooks_writable;
+                register_writable ch
         end
+
+let dummy = Lwt_sequence.add_r ignore (Lwt_sequence.create ())
 
 let register_action event ch action =
   let waiter, wakener = Lwt.task () in
-  let ev = ref Lwt_engine.fake_event in
-  Lwt.on_cancel waiter (fun () -> Lwt_engine.stop_event !ev);
   match event with
     | Read ->
-        ev := Lwt_engine.on_readable ch.fd (fun _ -> retry_syscall ev event ch wakener action);
+        let node = ref dummy in
+        node := Lwt_sequence.add_r (fun () -> retry_syscall node Read ch wakener action) ch.hooks_readable;
+        on_cancel waiter (fun () -> Lwt_sequence.remove !node; stop_events ch);
+        register_readable ch;
         waiter
     | Write ->
-        ev := Lwt_engine.on_writable ch.fd (fun _ -> retry_syscall ev event ch wakener action);
+        let node = ref dummy in
+        node := Lwt_sequence.add_r (fun () -> retry_syscall node Write ch wakener action) ch.hooks_writable;
+        on_cancel waiter (fun () -> Lwt_sequence.remove !node; stop_events ch);
+        register_writable ch;
         waiter
 
 (* Wraps a system call *)
@@ -442,7 +494,7 @@ let wrap_syscall event ch action =
   try
     check_descriptor ch;
     lwt blocking = Lazy.force ch.blocking in
-    if not blocking || (event = Read && stub_readable ch.fd) || (event == Write && stub_writable ch.fd) then
+    if not blocking || (event = Read && stub_readable ch.fd) || (event = Write && stub_writable ch.fd) then
       return (action ())
     else
       register_action event ch action
@@ -1011,7 +1063,8 @@ let access name perms =
 let dup ch =
   check_descriptor ch;
   let fd = Unix.dup ch.fd in
-  { fd = fd;
+  {
+    fd = fd;
     state = Opened;
     set_flags = ch.set_flags;
     blocking =
@@ -1024,7 +1077,12 @@ let dup ch =
                    Unix.set_nonblock fd;
                    return false)
       else
-        ch.blocking }
+        ch.blocking;
+    event_readable = None;
+    event_writable = None;
+    hooks_readable = Lwt_sequence.create ();
+    hooks_writable = Lwt_sequence.create ();
+  }
 
 let dup2 ch1 ch2 =
   check_descriptor ch1;
