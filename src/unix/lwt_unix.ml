@@ -410,13 +410,19 @@ let stop_events ch =
     (fun () ->
        if Lwt_sequence.is_empty ch.hooks_readable then begin
          match ch.event_readable with
-           | Some ev -> Lwt_engine.stop_event ev
-           | None -> ()
+           | Some ev ->
+               ch.event_readable <- None;
+               Lwt_engine.stop_event ev
+           | None ->
+               ()
        end;
        if Lwt_sequence.is_empty ch.hooks_writable then begin
          match ch.event_writable with
-           | Some ev -> Lwt_engine.stop_event ev
-           | None -> ()
+           | Some ev ->
+               ch.event_writable <- None;
+               Lwt_engine.stop_event ev
+           | None ->
+               ()
        end)
 
 let register_readable ch =
