@@ -195,7 +195,7 @@ EXTEND Gram
         ] ];
 
     str_item:
-      [ [ "lwt"; l = letb_binding ->
+      [ [ "lwt"; l = letb_binding -> begin
             match l with
               | [(_loc, p, e)] ->
                   <:str_item<
@@ -209,6 +209,9 @@ EXTEND Gram
                         $gen_top_bind _loc l$
                       end
                   >>
+          end
+        | "lwt"; l = letb_binding; "in"; e = expr ->
+            <:str_item< let () = Lwt_main.run (let $gen_binding l$ in $gen_bind l e$) >>
         ] ];
 END
 
