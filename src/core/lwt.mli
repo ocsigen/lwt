@@ -140,6 +140,10 @@ val nchoose : 'a t list -> 'a list t
       Note: {!nchoose} leaves the local values of the current thread
       unchanged. *)
 
+val nchoose_split : 'a t list -> ('a list * 'a t list) t
+  (** [nchoose_split l] does the same as {!nchoose} but also retrurns
+      the list of threads that have not yet terminated. *)
+
 val join : unit t list -> unit t
   (** [join l] waits for all threads in [l] to terminate. If one of
       the threads fails, then [join l] will fails with the same

@@ -628,6 +628,62 @@ let nchoose l =
   in
   init l
 
+let rec nchoose_split_terminate res acc_terminated acc_sleeping = function
+  | [] ->
+      fast_connect res (Return(List.rev acc_terminated, List.rev acc_sleeping))
+  | t :: l ->
+      match (repr t).state with
+        | Return x ->
+            nchoose_split_terminate res (x :: acc_terminated) acc_sleeping l
+        | Fail e ->
+            fast_connect res (Fail e)
+        | _ ->
+            nchoose_split_terminate res acc_terminated (t :: acc_sleeping) l
+
+let nchoose_split_sleep l =
+  let res = temp (ref (fun () -> List.iter cancel l)) in
+  let rec waiter = ref (Some handle_result)
+  and handle_result state =
+    waiter := None;
+    remove_waiters l;
+    nchoose_split_terminate res [] [] l
+  in
+  List.iter
+    (fun t ->
+       match (repr t).state with
+         | Sleep sleeper ->
+             add_removable_waiter sleeper waiter;
+         | _ ->
+             assert false)
+    l;
+  res
+
+let nchoose_split l =
+  let rec init acc_sleeping = function
+    | [] ->
+        nchoose_split_sleep l
+    | t :: l ->
+        match (repr t).state with
+          | Return x ->
+              collect [x] acc_sleeping l
+          | Fail exn ->
+              fail exn
+          | _ ->
+              init (t :: acc_sleeping) l
+  and collect acc_terminated acc_sleeping = function
+    | [] ->
+        return (List.rev acc_terminated, acc_sleeping)
+    | t :: l ->
+        match (repr t).state with
+          | Return x ->
+              collect (x :: acc_terminated) acc_sleeping l
+          | Fail exn ->
+              fail exn
+          | _ ->
+              collect acc_terminated (t :: acc_sleeping) l
+  in
+  init [] l
+
 (* Return the nth ready thread, and cancel all others *)
 let rec cancel_and_nth_ready l n =
   match l with
