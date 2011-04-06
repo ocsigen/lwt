@@ -51,3 +51,9 @@ let have = function
   | `set_affinity -> <:optcomp< HAVE_AFFINITY >>
   | `fd_passing -> <:optcomp< HAVE_FD_PASSING >>
   | `get_credentials -> <:optcomp< HAVE_GET_CREDENTIALS >>
+
+type byte_order = Little_endian | Big_endian
+
+external get_byte_order : unit -> byte_order = "lwt_unix_system_byte_order"
+
+let byte_order = get_byte_order ()

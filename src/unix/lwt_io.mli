@@ -457,16 +457,19 @@ module type NumberIO = sig
 end
 
 module LE : NumberIO
-  (** Reading/writing of integers in little-endian *)
+  (** Reading/writing of numbers in little-endian *)
 
 module BE : NumberIO
-  (** Reading/writing of integers in big-endian *)
+  (** Reading/writing of numbers in big-endian *)
 
-(** Type of byte order *)
-type byte_order = Little_endian | Big_endian
+include NumberIO
+(** Reading/writing of numbers in the system endianness. *)
+
+type byte_order = Lwt_sys.byte_order = Little_endian | Big_endian
+    (** Type of byte order *)
 
 val system_byte_order : byte_order
-  (** The byte order used by the computer running the program *)
+  (** Same as {!Lwt_sys.byte_order}. *)
 
 (** {6 Low-level access to the internal buffer} *)
 

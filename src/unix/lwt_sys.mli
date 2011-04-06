@@ -45,3 +45,9 @@ type feature =
 val have : feature -> bool
   (** Test whether the given feature is available on the current
       system. *)
+
+type byte_order = Little_endian | Big_endian
+    (** Type of byte order *)
+
+val byte_order : byte_order
+  (** The byte order used by the computer running the program. *)
