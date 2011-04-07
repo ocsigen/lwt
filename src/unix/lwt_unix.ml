@@ -2480,3 +2480,87 @@ let get_affinity ?pid () = raise (Lwt_sys.Not_available "get_affinity")
 let set_affinity ?pid l = raise (Lwt_sys.Not_available "set_affinity")
 
 #endif
+
+(* +-----------------------------------------------------------------+
+   | Error printing                                                  |
+   +-----------------------------------------------------------------+ *)
+
+let () =
+  Printexc.register_printer
+    (function
+       | Unix.Unix_error(error, func, arg) ->
+           let error =
+             match error with
+               | Unix.E2BIG -> "E2BIG"
+               | Unix.EACCES -> "EACCES"
+               | Unix.EAGAIN -> "EAGAIN"
+               | Unix.EBADF -> "EBADF"
+               | Unix.EBUSY -> "EBUSY"
+               | Unix.ECHILD -> "ECHILD"
+               | Unix.EDEADLK -> "EDEADLK"
+               | Unix.EDOM -> "EDOM"
+               | Unix.EEXIST -> "EEXIST"
+               | Unix.EFAULT -> "EFAULT"
+               | Unix.EFBIG -> "EFBIG"
+               | Unix.EINTR -> "EINTR"
+               | Unix.EINVAL -> "EINVAL"
+               | Unix.EIO -> "EIO"
+               | Unix.EISDIR -> "EISDIR"
+               | Unix.EMFILE -> "EMFILE"
+               | Unix.EMLINK -> "EMLINK"
+               | Unix.ENAMETOOLONG -> "ENAMETOOLONG"
+               | Unix.ENFILE -> "ENFILE"
+               | Unix.ENODEV -> "ENODEV"
+               | Unix.ENOENT -> "ENOENT"
+               | Unix.ENOEXEC -> "ENOEXEC"
+               | Unix.ENOLCK -> "ENOLCK"
+               | Unix.ENOMEM -> "ENOMEM"
+               | Unix.ENOSPC -> "ENOSPC"
+               | Unix.ENOSYS -> "ENOSYS"
+               | Unix.ENOTDIR -> "ENOTDIR"
+               | Unix.ENOTEMPTY -> "ENOTEMPTY"
+               | Unix.ENOTTY -> "ENOTTY"
+               | Unix.ENXIO -> "ENXIO"
+               | Unix.EPERM -> "EPERM"
+               | Unix.EPIPE -> "EPIPE"
+               | Unix.ERANGE -> "ERANGE"
+               | Unix.EROFS -> "EROFS"
+               | Unix.ESPIPE -> "ESPIPE"
+               | Unix.ESRCH -> "ESRCH"
+               | Unix.EXDEV -> "EXDEV"
+               | Unix.EWOULDBLOCK -> "EWOULDBLOCK"
+               | Unix.EINPROGRESS -> "EINPROGRESS"
+               | Unix.EALREADY -> "EALREADY"
+               | Unix.ENOTSOCK -> "ENOTSOCK"
+               | Unix.EDESTADDRREQ -> "EDESTADDRREQ"
+               | Unix.EMSGSIZE -> "EMSGSIZE"
+               | Unix.EPROTOTYPE -> "EPROTOTYPE"
+               | Unix.ENOPROTOOPT -> "ENOPROTOOPT"
+               | Unix.EPROTONOSUPPORT -> "EPROTONOSUPPORT"
+               | Unix.ESOCKTNOSUPPORT -> "ESOCKTNOSUPPORT"
+               | Unix.EOPNOTSUPP -> "EOPNOTSUPP"
+               | Unix.EPFNOSUPPORT -> "EPFNOSUPPORT"
+               | Unix.EAFNOSUPPORT -> "EAFNOSUPPORT"
+               | Unix.EADDRINUSE -> "EADDRINUSE"
+               | Unix.EADDRNOTAVAIL -> "EADDRNOTAVAIL"
+               | Unix.ENETDOWN -> "ENETDOWN"
+               | Unix.ENETUNREACH -> "ENETUNREACH"
+               | Unix.ENETRESET -> "ENETRESET"
+               | Unix.ECONNABORTED -> "ECONNABORTED"
+               | Unix.ECONNRESET -> "ECONNRESET"
+               | Unix.ENOBUFS -> "ENOBUFS"
+               | Unix.EISCONN -> "EISCONN"
+               | Unix.ENOTCONN -> "ENOTCONN"
+               | Unix.ESHUTDOWN -> "ESHUTDOWN"
+               | Unix.ETOOMANYREFS -> "ETOOMANYREFS"
+               | Unix.ETIMEDOUT -> "ETIMEDOUT"
+               | Unix.ECONNREFUSED -> "ECONNREFUSED"
+               | Unix.EHOSTDOWN -> "EHOSTDOWN"
+               | Unix.EHOSTUNREACH -> "EHOSTUNREACH"
+               | Unix.ELOOP -> "ELOOP"
+               | Unix.EOVERFLOW -> "EOVERFLOW"
+               | Unix.EUNKNOWNERR n -> Printf.sprintf "EUNKNOWNERR %d" n
+           in
+           Some(Printf.sprintf "Unix.Unix_error(Unix.%s, %S, %S)" error func arg)
+       | _ ->
+           None)
