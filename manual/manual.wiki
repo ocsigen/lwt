@@ -448,6 +448,16 @@ expr
   | {{{done}}}                                                                       | {{{done}}}                                                                           |
   |                                                                                  |                                                                                      |
   | {{{raise}}} //exn//                                                              | {{{raise_lwt}}} //exn//                                                              |
+  |                                                                                  |                                                                                      |
+  | {{{match}}} //expr// {{{with}}}                                                  | {{{match_lwt}}} //expr// {{{with}}}                                                  |
+  | // // {{{|}}} //pattern,,1,,// {{{->}}} //expr,,1,,//                            | // // {{{|}}} //pattern,,1,,// {{{->}}} //expr,,1,,//                                |
+  | // // {{{|}}} //pattern,,2,,// {{{->}}} //expr,,2,,//                            | // // {{{|}}} //pattern,,2,,// {{{->}}} //expr,,2,,//                                |
+  | // // ...                                                                        | // // ...                                                                            |
+  | // // {{{|}}} //pattern,,n,,// {{{->}}} //expr,,n,,//                            | // // {{{|}}} //pattern,,n,,// {{{->}}} //expr,,n,,//                                |
+  |                                                                                  |                                                                                      |
+  | {{{while}}} //expr// {{{do}}}                                                    | {{{while_lwt}}} //expr// {{{do}}}                                                    |
+  | // expr//                                                                        | // expr//                                                                            |
+  | {{{done}}}                                                                       | {{{done}}}                                                                           |
 
 === Backtrace support ===
 
