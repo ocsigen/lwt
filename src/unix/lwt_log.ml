@@ -52,7 +52,7 @@ let string_of_level = function
   | Fatal -> "fatal"
 
 (* +-----------------------------------------------------------------+
-   | Patterns andrules                                               |
+   | Patterns and rules                                              |
    +-----------------------------------------------------------------+ *)
 
 type pattern = string list
@@ -106,7 +106,7 @@ let split pattern =
   in
   loop 0
 
-let rules =
+let rules = ref (
   match try Some(Sys.getenv "LWT_LOG") with Not_found -> None with
     | Some str ->
         let rec loop = function
@@ -126,6 +126,7 @@ let rules =
         loop (Lwt_log_rules.rules (Lexing.from_string str))
     | None ->
         []
+)
 
 (* +-----------------------------------------------------------------+
    | Sections                                                        |
@@ -136,19 +137,46 @@ struct
   type t = {
     name : string;
     mutable level : level;
+    mutable modified : bool;
   }
 
-  let make name =
-    let rec find_level = function
+  type section = t
+
+  module Sections = Weak.Make(struct
+                                type t = section
+                                let equal a b = a.name = b.name
+                                let hash s = Hashtbl.hash s.name
+                              end)
+
+  let sections = Sections.create 32
+
+  let find_level name =
+    let rec loop = function
       | [] ->
           Notice
       | (pattern, level) :: rest ->
           if pattern_match pattern name then
             level
           else
-            find_level rest
+            loop rest
     in
-    { name = name; level = find_level rules }
+    loop !rules
+
+  let recompute_levels () =
+    Sections.iter
+      (fun section ->
+         if not section.modified then
+           section.level <- find_level section.name)
+      sections
+
+  let make name =
+    let section = { name = name; level = Notice; modified = false } in
+    try
+      Sections.find sections section
+    with Not_found ->
+      section.level <- find_level name;
+      Sections.add sections section;
+      section
 
   let name section = section.name
 
@@ -156,10 +184,26 @@ struct
 
   let level section = section.level
 
-  let set_level section level = section.level <- level
+  let set_level section level =
+    section.level <- level;
+    section.modified <- true
+
+  let reset_level section =
+    if section.modified then begin
+      section.modified <- false;
+      section.level <- find_level section.name
+    end
 end
 
 type section = Section.t
+
+let add_rule pattern level =
+  rules := (split pattern, level) :: !rules;
+  Section.recompute_levels ()
+
+let append_rule pattern level =
+  rules := !rules @ [(split pattern, level)];
+  Section.recompute_levels ()
 
 (* +-----------------------------------------------------------------+
    | Loggers                                                         |

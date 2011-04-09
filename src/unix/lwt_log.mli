@@ -89,6 +89,27 @@ type section
       If [LWT_LOG] is not defined then the rule ["* -> notice"] is
       used instead. *)
 
+val add_rule : string -> level -> unit
+  (** [add_rule pattern level] adds a rule for sections logging
+      levels. The rule is added before all other rules. It takes
+      effect immediatly and affect all sections for which the level
+      has not been set explicitly with {!Section.set_level}. [pattern]
+      may contains [*]. For example:
+
+      {[
+        Lwt_log.add_rule "lwt(*)" Lwt_log.Info
+      ]}
+  *)
+
+val append_rule : string -> level -> unit
+  (** [append_rule pattern level] adds the given rule after all other
+      rules. For example to set the default fallback rule:
+
+      {[
+        Lwt_log.append_rule "*" Lwt_log.Info
+      ]}
+  *)
+
 (** {6 Logging functions} *)
 
 val log : ?exn : exn -> ?section : section -> ?logger : logger -> level : level -> string -> unit Lwt.t
@@ -135,22 +156,29 @@ module Section : sig
   type t = section
 
   val make : string -> section
-    (** [make name] creates a section with the given name, with level
-        initialised according to the [LWT_LOG] environment variable. *)
+    (** [make name] creates a section with the given name. Two calls
+        to {!make} with the same name will return the same section
+        object. *)
 
   val name : section -> string
-    (** [name section] returns the name of [section] *)
+    (** [name section] returns the name of [section]. *)
 
   val main : section
     (** The main section. It is the section used by default when no
         one is provided. *)
 
   val level : section -> level
-    (** [level section] returns the logging level of [section] *)
+    (** [level section] returns the logging level of [section]. *)
 
   val set_level : section -> level -> unit
     (** [set_level section] sets the logging level of the given
-        section *)
+        section. Modifications of rules using {!add_rule} won't affect
+        the level of this section after this operation. *)
+
+  val reset_level : section -> unit
+    (** [reset_level section] resets the level of [section] to its
+        default value, i.e. to the value obtained by applying
+        rules. *)
 end
 
 (** {6 Log templates} *)
