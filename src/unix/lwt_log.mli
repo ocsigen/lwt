@@ -97,7 +97,7 @@ val add_rule : string -> level -> unit
       may contains [*]. For example:
 
       {[
-        Lwt_log.add_rule "lwt(*)" Lwt_log.Info
+        Lwt_log.add_rule "lwt*" Lwt_log.Info
       ]}
   *)
 
