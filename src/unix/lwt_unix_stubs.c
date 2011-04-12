@@ -329,7 +329,7 @@ value lwt_unix_init_notification()
     break;
   case NOTIFICATION_MODE_WINDOWS:
     notification_mode = NOTIFICATION_MODE_NONE;
-    closescoket(socket_r);
+    closesocket(socket_r);
     closesocket(socket_w);
     break;
   case NOTIFICATION_MODE_NONE:
