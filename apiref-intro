@@ -1,6 +1,6 @@
-{2 Lwt - API Reference}
+{1 Lwt - API Reference}
 
-{3 Core library}
+{2 Core library}
 
 The {e core} library ({e lwt} package) contains the {!Lwt} module, which defines
 cooperative threads with all the primitives to manipulate them. It
@@ -20,7 +20,7 @@ Lwt_stream
 Lwt_switch
 }
 
-{3 Unix bindings}
+{2 Unix bindings}
 
 The {e lwt.unix} package provides:
 - the {!Lwt_unix} module, which wrap system calls into cooperative ones
@@ -45,7 +45,7 @@ Lwt_sys
 
 This package depends on the {e core} library and the {e unix} package.
 
-{3 Reactive programming helpers}
+{2 Reactive programming helpers}
 
 The {e lwt.react} package provides helpers for functionnal reactive
 programming with Lwt. It is based on the {e react} package. The
@@ -62,7 +62,7 @@ Lwt_react
 
 This package depends on the {e core} library and the {e react} package.
 
-{3 Syntax extensions}
+{2 Syntax extensions}
 
 Lwt is shipped with two syntax extensions. The first one, contained in
 the {e lwt.syntax} package, aims to make coding with Lwt easier, and
@@ -75,7 +75,7 @@ Pa_lwt
 Pa_lwt_log
 }
 
-{3 Terminal manipulation}
+{2 Terminal manipulation}
 
 The package {e lwt.text} provides:
 - terminal manipulation through the module {!Lwt_term}
@@ -92,7 +92,7 @@ Lwt_text
 This package depends on the {e core} library, and the {e lwt.react},
 {e lwt.unix}, {e text} packages.
 
-{3 Miscellaneous}
+{2 Miscellaneous}
 
 The following modules are wrapper for integration of non-Lwt
 functions/packages into Lwt.
@@ -104,6 +104,6 @@ Lwt_preemptive
 Lwt_ssl
 }
 
-{3 Index}
+{2 Index}
 
 {!indexlist}
