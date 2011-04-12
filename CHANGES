@@ -1,3 +1,28 @@
+===== 2.3.0 (2011-04-12) =====
+
+  * Add an extensible system of engines to:
+    ** allow the user to replace libev by another event system, such
+       as select
+    ** allow easier integration of external libraries supporting
+       asynchronous operations
+  * Lots of improvements for windows:
+    ** use the ocaml select instead of libev by default on windows
+    ** make asynchronous operations on non-socket file descriptors
+       such as pipes to work
+    ** make glib integration to work
+  * Better use of engines in Lwt_unix: now events are cached to minimize
+    the amount of calls to epoll_ctl
+  * Use an eventfd when possible for notifications for faster delivery
+  * Add modules:
+    ** Lwt_sys: allow to test availability of extra features
+    ** Lwt_react: replace Lwt_event and Lwt_signal
+  * Allow to configure logging rules at runtime in Lwt_log
+  * Add match_lwt and while_lwt to the syntax extension
+  * Fixes:
+    ** syntax extension: handle "lwt ... = ... in ..." at toplevel
+    ** make the notification system fork-proof
+    ** fix an issue with stubs not raising correctly exceptions
+
 ===== 2.2.1 (2011-01-26) =====
 
   * Better interaction with Js_of_ocaml.
