@@ -1,6 +1,6 @@
 # OASIS_START
-# DO NOT EDIT (digest: c5263bdae2e63e7bd2e37b4ac8d9e9af)
-version = "2.2.1"
+# DO NOT EDIT (digest: 0579699d729773b1c980ccefa1570fe5)
+version = "2.3.0"
 description = "Lightweight thread library for Objective Caml"
 requires = "camlp4.lib camlp4.quotations.o"
 archive(byte) = "optcomp.cma"
