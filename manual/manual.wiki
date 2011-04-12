@@ -1,3 +1,5 @@
+<<webonly | <<a_file src="manual.pdf" | Download the pdf manual >>.>>
+
 == Introduction ==
 
   When writing a program, a common developer's task is to handle IO
