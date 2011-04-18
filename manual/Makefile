@@ -14,7 +14,7 @@ manual.pdf: manual.tex manual-wiki.tex
 	rubber --pdf manual.tex
 
 clean-aux:
-	rm -f .latex_of_wiki_offsets *.log *.aux *.out *.toc manual-wiki.tex
+	rm -f .latex_of_wiki_offsets *.log *.aux *.out *.toc
 
 clean: clean-aux
 	rm -f manual.pdf
