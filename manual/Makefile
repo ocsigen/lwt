@@ -17,4 +17,4 @@ clean-aux:
 	rm -f .latex_of_wiki_offsets *.log *.aux *.out *.toc
 
 clean: clean-aux
-	rm -f manual.pdf
+	rm -f manual.pdf manual-wiki.tex
