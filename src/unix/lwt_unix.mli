@@ -347,6 +347,16 @@ val truncate : string -> int -> unit Lwt.t
 val ftruncate : file_descr -> int -> unit Lwt.t
   (** Wrapper for [Unix.ftruncate] *)
 
+(** {6 Syncing} *)
+
+val fsync : file_descr -> unit Lwt.t
+  (** Synchronise all data and metadata of the file descriptor with
+      the disk. On Windows it uses [FlushFileBuffers]. *)
+
+val fdatasync : file_descr -> unit Lwt.t
+  (** Synchronise all data (but not metadata) of the file descriptor
+      with the disk. On Windows it uses [FlushFileBuffers]. *)
+
 (** {6 File status} *)
 
 type file_kind =

@@ -1167,6 +1167,88 @@ CAMLprim value lwt_unix_ftruncate_64_free(value val_job)
 }
 
 /* +-----------------------------------------------------------------+
+   | JOB: fsync                                                      |
+   +-----------------------------------------------------------------+ */
+
+struct job_fsync {
+  struct lwt_unix_job job;
+  int fd;
+  int result;
+  int error_code;
+};
+
+#define Job_fsync_val(v) *(struct job_fsync**)Data_custom_val(v)
+
+static void worker_fsync(struct job_fsync *job)
+{
+  job->result = fsync(job->fd);
+  job->error_code = errno;
+}
+
+CAMLprim value lwt_unix_fsync_job(value val_fd)
+{
+  struct job_fsync *job = lwt_unix_new(struct job_fsync);
+  job->job.worker = (lwt_unix_job_worker)worker_fsync;
+  job->fd = Int_val(val_fd);
+  return lwt_unix_alloc_job(&(job->job));
+}
+
+CAMLprim value lwt_unix_fsync_result(value val_job)
+{
+  struct job_fsync *job = Job_fsync_val(val_job);
+  if (job->result < 0) unix_error(job->error_code, "fsync", Nothing);
+  return Val_unit;
+}
+
+CAMLprim value lwt_unix_fsync_free(value val_job)
+{
+  struct job_fsync *job = Job_fsync_val(val_job);
+  lwt_unix_free_job(&job->job);
+  return Val_unit;
+}
+
+/* +-----------------------------------------------------------------+
+   | JOB: fdatasync                                                  |
+   +-----------------------------------------------------------------+ */
+
+struct job_fdatasync {
+  struct lwt_unix_job job;
+  int fd;
+  int result;
+  int error_code;
+};
+
+#define Job_fdatasync_val(v) *(struct job_fdatasync**)Data_custom_val(v)
+
+static void worker_fdatasync(struct job_fdatasync *job)
+{
+  job->result = fdatasync(job->fd);
+  job->error_code = errno;
+}
+
+CAMLprim value lwt_unix_fdatasync_job(value val_fd)
+{
+  struct job_fdatasync *job = lwt_unix_new(struct job_fdatasync);
+  job->job.worker = (lwt_unix_job_worker)worker_fdatasync;
+  job->fd = Int_val(val_fd);
+  return lwt_unix_alloc_job(&(job->job));
+}
+
+CAMLprim value lwt_unix_fdatasync_result(value val_job)
+{
+  struct job_fdatasync *job = Job_fdatasync_val(val_job);
+  if (job->result < 0) unix_error(job->error_code, "fdatasync", Nothing);
+  return Val_unit;
+}
+
+CAMLprim value lwt_unix_fdatasync_free(value val_job)
+{
+  struct job_fdatasync *job = Job_fdatasync_val(val_job);
+  lwt_unix_free_job(&job->job);
+  return Val_unit;
+}
+
+/* +-----------------------------------------------------------------+
    | JOB: stat                                                       |
    +-----------------------------------------------------------------+ */
 

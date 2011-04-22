@@ -710,6 +710,34 @@ let ftruncate ch offset =
 #endif
 
 (* +-----------------------------------------------------------------+
+   | Syncing                                                         |
+   +-----------------------------------------------------------------+ *)
+
+external fsync_job : Unix.file_descr -> [ `unix_fsync ] job = "lwt_unix_fsync_job"
+external fsync_result : [ `unix_fsync ] job -> unit = "lwt_unix_fsync_result"
+external fsync_free : [ `unix_fsync ] job -> unit = "lwt_unix_fsync_free"
+
+let fsync ch =
+  check_descriptor ch;
+  execute_job (fsync_job ch.fd) fsync_result fsync_free
+
+#if windows
+
+let fdatasync = fsync
+
+#else
+
+external fdatasync_job : Unix.file_descr -> [ `unix_fdatasync ] job = "lwt_unix_fdatasync_job"
+external fdatasync_result : [ `unix_fdatasync ] job -> unit = "lwt_unix_fdatasync_result"
+external fdatasync_free : [ `unix_fdatasync ] job -> unit = "lwt_unix_fdatasync_free"
+
+let fdatasync ch =
+  check_descriptor ch;
+  execute_job (fdatasync_job ch.fd) fdatasync_result fdatasync_free
+
+#endif
+
+(* +-----------------------------------------------------------------+
    | File status                                                     |
    +-----------------------------------------------------------------+ *)
 

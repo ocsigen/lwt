@@ -219,7 +219,7 @@ CAMLprim value lwt_unix_read_result(value val_job, value val_string, value val_o
   struct job_read *job = Job_read_val(val_job);
   if (job->error_code) {
     win32_maperr(job->error_code);
-    uerror("write", Nothing);
+    uerror("read", Nothing);
   }
   memcpy(String_val(val_string) + Long_val(val_offset), job->buffer, job->result);
   return Val_long(job->result);
@@ -287,7 +287,7 @@ CAMLprim value lwt_unix_bytes_read_result(value val_job)
   struct job_bytes_read *job = Job_bytes_read_val(val_job);
   if (job->error_code) {
     win32_maperr(job->error_code);
-    uerror("write", Nothing);
+    uerror("bytes_read", Nothing);
   }
   return Val_long(job->result);
 }
@@ -429,6 +429,51 @@ CAMLprim value lwt_unix_bytes_write_result(value val_job)
 CAMLprim value lwt_unix_bytes_write_free(value val_job)
 {
   struct job_bytes_write *job = Job_bytes_write_val(val_job);
+  lwt_unix_free_job(&job->job);
+  return Val_unit;
+}
+
+/* +-----------------------------------------------------------------+
+   | JOB: fsync                                                      |
+   +-----------------------------------------------------------------+ */
+
+struct job_fsync {
+  struct lwt_unix_job job;
+  HANDLE handle;
+  DWORD error_code;
+};
+
+#define Job_fsync_val(v) *(struct job_fsync**)Data_custom_val(v)
+
+static void worker_fsync(struct job_fsync *job)
+{
+  if (!FlushFileBuffers(job->handle))
+    job->error_code = GetLastError();
+}
+
+CAMLprim value lwt_unix_fsync_job(value val_fd)
+{
+  struct job_fsync *job = lwt_unix_new(struct job_fsync);
+  struct filedescr *fd = (struct filedescr *)Data_custom_val(val_fd);
+  job->job.worker = (lwt_unix_job_worker)worker_fsync;
+  job->handle = fd->fd.handle;
+  job->error_code = 0;
+  return lwt_unix_alloc_job(&(job->job));
+}
+
+CAMLprim value lwt_unix_fsync_result(value val_job, value val_string, value val_offset)
+{
+  struct job_fsync *job = Job_fsync_val(val_job);
+  if (job->error_code) {
+    win32_maperr(job->error_code);
+    uerror("fsync", Nothing);
+  }
+  return Val_unit;
+}
+
+CAMLprim value lwt_unix_fsync_free(value val_job)
+{
+  struct job_fsync *job = Job_fsync_val(val_job);
   lwt_unix_free_job(&job->job);
   return Val_unit;
 }
