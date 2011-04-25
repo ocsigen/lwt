@@ -126,6 +126,17 @@ CAMLprim value lwt_test()
 }
 "
 
+let fdatasync_code = "
+#include <caml/mlvalues.h>
+#include <sys/unistd.h>
+
+CAMLprim value lwt_test()
+{
+  fdatasync(0);
+  return Val_unit;
+}
+"
+
 (* +-----------------------------------------------------------------+
    | Compilation                                                     |
    +-----------------------------------------------------------------+ *)
@@ -271,4 +282,5 @@ export LIBRARY_PATH=/opt/local/lib
   test_feature "fd passing" "HAVE_FD_PASSING" fd_passing_code;
   test_feature "sched_getcpu" "HAVE_GETCPU" getcpu_code;
   test_feature "affinity getting/setting" "HAVE_AFFINITY" affinity_code;
-  test_feature "credentials getting" "HAVE_GET_CREDENTIALS" get_credentials_code
+  test_feature "credentials getting" "HAVE_GET_CREDENTIALS" get_credentials_code;
+  test_feature "fdatasync" "HAVE_FDATASYNC" fdatasync_code

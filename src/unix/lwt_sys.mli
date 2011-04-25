@@ -40,7 +40,8 @@ type feature =
     | `fd_passing
     | `get_credentials
     | `mincore
-    | `madvise ]
+    | `madvise
+    | `fdatasync ]
 
 val have : feature -> bool
   (** Test whether the given feature is available on the current

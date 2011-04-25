@@ -1207,6 +1207,8 @@ CAMLprim value lwt_unix_fsync_free(value val_job)
   return Val_unit;
 }
 
+#if defined(HAVE_FDATASYNC)
+
 /* +-----------------------------------------------------------------+
    | JOB: fdatasync                                                  |
    +-----------------------------------------------------------------+ */
@@ -1247,6 +1249,8 @@ CAMLprim value lwt_unix_fdatasync_free(value val_job)
   lwt_unix_free_job(&job->job);
   return Val_unit;
 }
+
+#endif
 
 /* +-----------------------------------------------------------------+
    | JOB: stat                                                       |

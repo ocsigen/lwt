@@ -355,7 +355,9 @@ val fsync : file_descr -> unit Lwt.t
 
 val fdatasync : file_descr -> unit Lwt.t
   (** Synchronise all data (but not metadata) of the file descriptor
-      with the disk. On Windows it uses [FlushFileBuffers]. *)
+      with the disk.
+
+      Note that [fdatasync] is not available on all platforms. *)
 
 (** {6 File status} *)
 

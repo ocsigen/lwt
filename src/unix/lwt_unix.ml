@@ -721,11 +721,7 @@ let fsync ch =
   check_descriptor ch;
   execute_job (fsync_job ch.fd) fsync_result fsync_free
 
-#if windows
-
-let fdatasync = fsync
-
-#else
+#if HAVE_FDATASYNC
 
 external fdatasync_job : Unix.file_descr -> [ `unix_fdatasync ] job = "lwt_unix_fdatasync_job"
 external fdatasync_result : [ `unix_fdatasync ] job -> unit = "lwt_unix_fdatasync_result"
@@ -734,6 +730,11 @@ external fdatasync_free : [ `unix_fdatasync ] job -> unit = "lwt_unix_fdatasync_
 let fdatasync ch =
   check_descriptor ch;
   execute_job (fdatasync_job ch.fd) fdatasync_result fdatasync_free
+
+#else
+
+let fdatasync ch =
+  fail (Lwt_sys.Not_available "fdatasync")
 
 #endif
 
