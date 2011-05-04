@@ -38,7 +38,7 @@
     message *)
 type level =
   | Debug
-      (** Debugging message. They can be automatically removed byt hte
+      (** Debugging message. They can be automatically removed by the
           syntax extension. *)
   | Info
       (** Informational message. Suitable to be displayed when the
