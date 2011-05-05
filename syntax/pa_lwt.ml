@@ -215,11 +215,16 @@ EXTEND Gram
         ] ];
 END
 
-(* Replace the anonymous bind [x >> y] by [x >>= fun _ -> y] *)
+(* Replace the anonymous bind [x >> y] by [x >>= fun _ -> y] or [x >>= fun () ->
+   y] if the strict sequence flag is used. *)
 let map_anonymous_bind = object
   inherit Ast.map as super
   method expr e = match super#expr e with
-    | <:expr@_loc< $lid:f$ $a$ $b$ >> when f = ">>" -> <:expr< Lwt.bind $a$ (fun _ -> $b$) >>
+    | <:expr@_loc< $lid:f$ $a$ $b$ >> when f = ">>" ->
+        if !Pa_lwt_options.strict_sequence then
+          <:expr< Lwt.bind $a$ (fun () -> $b$) >>
+        else
+          <:expr< Lwt.bind $a$ (fun _ -> $b$) >>
     | e -> e
 end
 

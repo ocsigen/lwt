@@ -21,7 +21,11 @@
  *)
 
 let debug = ref false
+let strict_sequence = ref false
 
 let () =
   Camlp4.Options.add "-lwt-debug" (Arg.Set debug) "debugging mode"
 
+let () =
+  Camlp4.Options.add "-lwt-strict-sequence" (Arg.Set strict_sequence)
+    "check left hand side of >> for non unit expressions "
