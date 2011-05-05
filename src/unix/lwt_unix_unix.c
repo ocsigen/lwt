@@ -363,8 +363,8 @@ static value wrapper_send_msg(int fd, int n_iovs, struct iovec *iovs, value val_
   msg.msg_iov = iovs;
   msg.msg_iovlen = n_iovs;
 
-#if defined(HAVE_FD_PASSING)
   int n_fds = Int_val(val_n_fds);
+#if defined(HAVE_FD_PASSING)
   if (n_fds > 0) {
     msg.msg_controllen = CMSG_SPACE(n_fds * sizeof(int));
     msg.msg_control = alloca(msg.msg_controllen);
