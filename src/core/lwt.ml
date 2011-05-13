@@ -537,6 +537,10 @@ let remove_waiters l =
              ())
     l
 
+(* The PRNG state is initialized with a constant to make non-IO-based
+   programs deterministic. *)
+let random_state = Random.State.make [||]
+
 let choose l =
   let ready = ready_count l in
   if ready > 0 then
@@ -544,7 +548,7 @@ let choose l =
       (* Optimisation for the common case: *)
       thread { state = nth_ready l 0 }
     else
-      thread { state = nth_ready l (Random.int ready) }
+      thread { state = nth_ready l (Random.State.int random_state ready) }
   else begin
     let res = temp (ref (fun () -> List.iter cancel l)) in
     let waiter = ref None in
@@ -707,7 +711,7 @@ let pick l =
       (* Optimisation for the common case: *)
       thread { state = cancel_and_nth_ready l 0 }
     else
-      thread { state = cancel_and_nth_ready l (Random.int ready) }
+      thread { state = cancel_and_nth_ready l (Random.State.int random_state ready) }
   else begin
     let res = temp (ref (fun () -> List.iter cancel l)) in
     let rec waiter = ref (Some handle_result)
