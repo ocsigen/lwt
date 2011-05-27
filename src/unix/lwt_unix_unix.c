@@ -2411,6 +2411,10 @@ CAMLprim value lwt_unix_symlink_free(value val_job)
    | JOB: readlink                                                   |
    +-----------------------------------------------------------------+ */
 
+#if !defined(MAXPATHLEN)
+#  define MAXPATHLEN 512
+#endif
+
 struct job_readlink {
   struct lwt_unix_job job;
   char *name;
@@ -2781,6 +2785,10 @@ CAMLprim value lwt_unix_getgrgid_free(value val_job)
 /* +-----------------------------------------------------------------+
    | JOB: gethostname                                                |
    +-----------------------------------------------------------------+ */
+
+#if !defined(MAXHOSTNAMELEN)
+#  define MAXHOSTNAMELEN 256
+#endif
 
 struct job_gethostname {
   struct lwt_unix_job job;
