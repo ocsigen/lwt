@@ -230,6 +230,11 @@ val abort : file_descr -> exn -> unit
 
 (** {6 Process handling} *)
 
+val fork : unit -> int
+  (** [fork ()] does the same as [Unix.fork]. You must use this
+      function instead of [Unix.fork] when you want to use Lwt in the
+      child process. *)
+
 type process_status =
     Unix.process_status =
   | WEXITED of int

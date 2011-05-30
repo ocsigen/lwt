@@ -2290,7 +2290,6 @@ let tcflow ch act =
 let notification_buffer = String.create 4
 
 external init_notification : unit -> Unix.file_descr = "lwt_unix_init_notification"
-external poke_notification : unit -> unit = "lwt_unix_poke_notification"
 external send_notification : int -> unit = "lwt_unix_send_notification_stub"
 external recv_notifications : unit -> int array = "lwt_unix_recv_notifications"
 
@@ -2303,28 +2302,11 @@ let handle_notification id =
     | None ->
         ()
 
-let pid = ref (Unix.getpid ())
-let ev_notifications = ref Lwt_engine.fake_event
-
 let rec handle_notifications ev =
   (* Process available notifications. *)
-  Array.iter handle_notification (recv_notifications ());
-  (* If the pid changed, create a new notification file descriptor. *)
-  let current_pid = Unix.getpid () in
-  if !pid <> current_pid then begin
-    pid := current_pid;
-    (* Stop monitoring the current notification file descriptor. *)
-    Lwt_engine.stop_event !ev_notifications;
-    (* Resend a notification to be sure other process using the same
-       file descriptor won't get stuck. *)
-    poke_notification ();
-    (* Reinitialise the notification system with a new file
-       descriptor. *)
-    ev_notifications := Lwt_engine.on_readable (init_notification ()) handle_notifications;
-  end
+  Array.iter handle_notification (recv_notifications ())
 
-let () =
-  ev_notifications := Lwt_engine.on_readable (init_notification ()) handle_notifications
+let event_notifications = ref (Lwt_engine.on_readable (init_notification ()) handle_notifications)
 
 (* +-----------------------------------------------------------------+
    | Signals                                                         |
@@ -2368,6 +2350,16 @@ let disable_signal_handler = Lazy.force
 (* +-----------------------------------------------------------------+
    | Processes                                                       |
    +-----------------------------------------------------------------+ *)
+
+let fork () =
+  match Unix.fork () with
+    | 0 ->
+        Lwt_engine.stop_event !event_notifications;
+        (* Reinitialise the notification system. *)
+        event_notifications := Lwt_engine.on_readable (init_notification ()) handle_notifications;
+        0
+    | pid ->
+        pid
 
 type process_status =
     Unix.process_status =

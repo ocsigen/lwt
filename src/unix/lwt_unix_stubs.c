@@ -288,23 +288,6 @@ value lwt_unix_recv_notifications()
   return result;
 }
 
-value lwt_unix_poke_notification()
-{
-  pthread_mutex_lock(&notification_mutex);
-  for (;;) {
-    int ret = notification_send();
-    if (ret < 0) {
-      if (errno != EINTR) {
-        pthread_mutex_unlock(&notification_mutex);
-        uerror("poke_notification", Nothing);
-      }
-    } else
-      break;
-  }
-  pthread_mutex_unlock(&notification_mutex);
-  return Val_unit;
-}
-
 #if defined(LWT_ON_WINDOWS)
 
 static SOCKET set_close_on_exec(SOCKET socket)
