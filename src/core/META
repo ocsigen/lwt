@@ -1,10 +1,28 @@
 # OASIS_START
-# DO NOT EDIT (digest: 8f234fdcf46287672e74ecdcb764a886)
+# DO NOT EDIT (digest: 40739ffed5126bb7545846567bf1269f)
 version = "2.3.0"
 description = "Lightweight thread library for OCaml (core library)"
 archive(byte) = "lwt.cma"
 archive(native) = "lwt.cmxa"
 exists_if = "lwt.cma"
+package "glib" (
+ version = "2.3.0"
+ description = "Glib integration"
+ requires = "lwt lwt.unix"
+ archive(byte) = "lwt-glib.cma"
+ archive(native) = "lwt-glib.cmxa"
+ exists_if = "lwt-glib.cma"
+)
+
+package "simple-top" (
+ version = "2.3.0"
+ description = "Unix support for lwt"
+ requires = "lwt lwt.unix"
+ archive(byte) = "lwt-simple-top.cma"
+ archive(native) = "lwt-simple-top.cmxa"
+ exists_if = "lwt-simple-top.cma"
+)
+
 package "ssl" (
  version = "2.3.0"
  description = "SSL support for Lwt"
@@ -27,15 +45,15 @@ package "syntax" (
  version = "2.3.0"
  description = "Syntactic sugars for Lwt"
  requires = "camlp4 lwt.syntax.options"
- archive(syntax,preprocessor) = "lwt-syntax.cma"
- archive(syntax,toploop) = "lwt-syntax.cma"
+ archive(syntax, preprocessor) = "lwt-syntax.cma"
+ archive(syntax, toploop) = "lwt-syntax.cma"
  exists_if = "lwt-syntax.cma"
  package "options" (
   version = "2.3.0"
   description = "Options for syntax extensions"
   requires = "camlp4"
-  archive(syntax,preprocessor) = "lwt-syntax-options.cma"
-  archive(syntax,toploop) = "lwt-syntax-options.cma"
+  archive(syntax, preprocessor) = "lwt-syntax-options.cma"
+  archive(syntax, toploop) = "lwt-syntax-options.cma"
   exists_if = "lwt-syntax-options.cma"
  )
  
@@ -43,37 +61,10 @@ package "syntax" (
   version = "2.3.0"
   description = "Syntactic sugars for logging"
   requires = "camlp4 lwt.syntax.options"
-  archive(syntax,preprocessor) = "lwt-syntax-log.cma"
-  archive(syntax,toploop) = "lwt-syntax-log.cma"
+  archive(syntax, preprocessor) = "lwt-syntax-log.cma"
+  archive(syntax, toploop) = "lwt-syntax-log.cma"
   exists_if = "lwt-syntax-log.cma"
  )
-)
-
-package "glib" (
- version = "2.3.0"
- description = "Glib integration"
- requires = "lwt lwt.unix"
- archive(byte) = "lwt-glib.cma"
- archive(native) = "lwt-glib.cmxa"
- exists_if = "lwt-glib.cma"
-)
-
-package "simple-top" (
- version = "2.3.0"
- description = "Unix support for lwt"
- requires = "lwt lwt.unix"
- archive(byte) = "lwt-simple-top.cma"
- archive(native) = "lwt-simple-top.cmxa"
- exists_if = "lwt-simple-top.cma"
-)
-
-package "preemptive" (
- version = "2.3.0"
- description = "Preemptive threads support for Lwt"
- requires = "lwt lwt.unix threads"
- archive(byte) = "lwt-preemptive.cma"
- archive(native) = "lwt-preemptive.cmxa"
- exists_if = "lwt-preemptive.cma"
 )
 
 package "top" (
@@ -83,6 +74,15 @@ package "top" (
  archive(byte) = "lwt-top.cma"
  archive(native) = "lwt-top.cmxa"
  exists_if = "lwt-top.cma"
+)
+
+package "preemptive" (
+ version = "2.3.0"
+ description = "Preemptive threads support for Lwt"
+ requires = "lwt lwt.unix threads"
+ archive(byte) = "lwt-preemptive.cma"
+ archive(native) = "lwt-preemptive.cmxa"
+ exists_if = "lwt-preemptive.cma"
 )
 
 package "text" (

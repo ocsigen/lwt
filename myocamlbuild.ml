@@ -31,14 +31,14 @@ let search_paths = [
 ]
 
 (* OASIS_START *)
-(* DO NOT EDIT (digest: 884eea2b3bad9bd38a97fd3262ba81ca) *)
+(* DO NOT EDIT (digest: 0f1d6b7181a6dc04aa95b9da87aa5687) *)
 module OASISGettext = struct
-# 21 "/home/dim/sources/oasis/src/oasis/OASISGettext.ml"
+# 21 "/home/dim/sources/oasis-0.2.1~alpha1/src/oasis/OASISGettext.ml"
   
-  let ns_ str = 
+  let ns_ str =
     str
   
-  let s_ str = 
+  let s_ str =
     str
   
   let f_ (str : ('a, 'b, 'c, 'd) format4) =
@@ -50,13 +50,13 @@ module OASISGettext = struct
     else
       fmt2^^""
   
-  let init = 
+  let init =
     []
   
 end
 
 module OASISExpr = struct
-# 21 "/home/dim/sources/oasis/src/oasis/OASISExpr.ml"
+# 21 "/home/dim/sources/oasis-0.2.1~alpha1/src/oasis/OASISExpr.ml"
   
   
   
@@ -78,18 +78,18 @@ module OASISExpr = struct
   type 'a choices = (t * 'a) list 
   
   let eval var_get t =
-    let rec eval' = 
+    let rec eval' =
       function
         | EBool b ->
             b
   
-        | ENot e -> 
+        | ENot e ->
             not (eval' e)
   
         | EAnd (e1, e2) ->
             (eval' e1) && (eval' e2)
   
-        | EOr (e1, e2) -> 
+        | EOr (e1, e2) ->
             (eval' e1) || (eval' e2)
   
         | EFlag nm ->
@@ -108,19 +108,19 @@ module OASISExpr = struct
       eval' t
   
   let choose ?printer ?name var_get lst =
-    let rec choose_aux = 
+    let rec choose_aux =
       function
         | (cond, vl) :: tl ->
-            if eval var_get cond then 
-              vl 
+            if eval var_get cond then
+              vl
             else
               choose_aux tl
         | [] ->
-            let str_lst = 
+            let str_lst =
               if lst = [] then
                 s_ "<empty>"
               else
-                String.concat 
+                String.concat
                   (s_ ", ")
                   (List.map
                      (fun (cond, vl) ->
@@ -129,10 +129,10 @@ module OASISExpr = struct
                           | None -> s_ "<no printer>")
                      lst)
             in
-              match name with 
+              match name with
                 | Some nm ->
                     failwith
-                      (Printf.sprintf 
+                      (Printf.sprintf
                          (f_ "No result for the choice list '%s': %s")
                          nm str_lst)
                 | None ->
@@ -147,14 +147,14 @@ end
 
 
 module BaseEnvLight = struct
-# 21 "/home/dim/sources/oasis/src/base/BaseEnvLight.ml"
+# 21 "/home/dim/sources/oasis-0.2.1~alpha1/src/base/BaseEnvLight.ml"
   
   module MapString = Map.Make(String)
   
   type t = string MapString.t
   
   let default_filename =
-    Filename.concat 
+    Filename.concat
       (Sys.getcwd ())
       "setup.data"
   
@@ -170,23 +170,23 @@ module BaseEnvLight = struct
         let line =
           ref 1
         in
-        let st_line = 
+        let st_line =
           Stream.from
             (fun _ ->
                try
-                 match Stream.next st with 
+                 match Stream.next st with
                    | '\n' -> incr line; Some '\n'
                    | c -> Some c
                with Stream.Failure -> None)
         in
-        let lexer = 
+        let lexer =
           Genlex.make_lexer ["="] st_line
         in
         let rec read_file mp =
-          match Stream.npeek 3 lexer with 
+          match Stream.npeek 3 lexer with
             | [Genlex.Ident nm; Genlex.Kwd "="; Genlex.String value] ->
-                Stream.junk lexer; 
-                Stream.junk lexer; 
+                Stream.junk lexer;
+                Stream.junk lexer;
                 Stream.junk lexer;
                 read_file (MapString.add nm value mp)
             | [] ->
@@ -209,8 +209,8 @@ module BaseEnvLight = struct
       end
     else
       begin
-        failwith 
-          (Printf.sprintf 
+        failwith
+          (Printf.sprintf
              "Unable to load environment, the file '%s' doesn't exist."
              filename)
       end
@@ -220,23 +220,23 @@ module BaseEnvLight = struct
       let buff =
         Buffer.create ((String.length str) * 2)
       in
-        Buffer.add_substitute 
+        Buffer.add_substitute
           buff
-          (fun var -> 
-             try 
+          (fun var ->
+             try
                var_expand (MapString.find var env)
              with Not_found ->
-               failwith 
-                 (Printf.sprintf 
+               failwith
+                 (Printf.sprintf
                     "No variable %s defined when trying to expand %S."
-                    var 
+                    var
                     str))
           str;
         Buffer.contents buff
     in
       var_expand (MapString.find name env)
   
-  let var_choose lst env = 
+  let var_choose lst env =
     OASISExpr.choose
       (fun nm -> var_get nm env)
       lst
@@ -244,7 +244,7 @@ end
 
 
 module MyOCamlbuildFindlib = struct
-# 21 "/home/dim/sources/oasis/src/plugins/ocamlbuild/MyOCamlbuildFindlib.ml"
+# 21 "/home/dim/sources/oasis-0.2.1~alpha1/src/plugins/ocamlbuild/MyOCamlbuildFindlib.ml"
   
   (** OCamlbuild extension, copied from 
     * http://brion.inria.fr/gallium/index.php/Using_ocamlfind_with_ocamlbuild
@@ -343,6 +343,7 @@ module MyOCamlbuildFindlib = struct
            * the "threads" package using the previous plugin.
            *)
           flag ["ocaml"; "pkg_threads"; "compile"] (S[A "-thread"]);
+          flag ["ocaml"; "pkg_threads"; "doc"] (S[A "-I"; A "+threads"]);
           flag ["ocaml"; "pkg_threads"; "link"] (S[A "-thread"]);
           flag ["ocaml"; "pkg_threads"; "infer_interface"] (S[A "-thread"])
   
@@ -352,7 +353,7 @@ module MyOCamlbuildFindlib = struct
 end
 
 module MyOCamlbuildBase = struct
-# 21 "/home/dim/sources/oasis/src/plugins/ocamlbuild/MyOCamlbuildBase.ml"
+# 21 "/home/dim/sources/oasis-0.2.1~alpha1/src/plugins/ocamlbuild/MyOCamlbuildBase.ml"
   
   (** Base functions for writing myocamlbuild.ml
       @author Sylvain Le Gall
@@ -367,7 +368,7 @@ module MyOCamlbuildBase = struct
   type name = string 
   type tag = string 
   
-# 55 "/home/dim/sources/oasis/src/plugins/ocamlbuild/MyOCamlbuildBase.ml"
+# 55 "/home/dim/sources/oasis-0.2.1~alpha1/src/plugins/ocamlbuild/MyOCamlbuildBase.ml"
   
   type t =
       {
@@ -490,16 +491,16 @@ let package_default =
           ("src/react/lwt-react", ["src/react"]);
           ("tests/test", ["tests"]);
           ("src/text/lwt-text", ["src/text"]);
-          ("src/top/lwt-top", ["src/top"]);
           ("src/preemptive/lwt-preemptive", ["src/preemptive"]);
-          ("src/simple_top/lwt-simple-top", ["src/simple_top"]);
-          ("src/glib/lwt-glib", ["src/glib"]);
+          ("src/top/lwt-top", ["src/top"]);
           ("syntax/lwt-syntax", ["syntax"]);
           ("syntax/lwt-syntax-log", ["syntax"]);
           ("src/extra/lwt-extra", ["src/extra"]);
           ("syntax/optcomp", ["syntax"]);
           ("syntax/lwt-syntax-options", ["syntax"]);
-          ("src/ssl/lwt-ssl", ["src/ssl"])
+          ("src/ssl/lwt-ssl", ["src/ssl"]);
+          ("src/simple_top/lwt-simple-top", ["src/simple_top"]);
+          ("src/glib/lwt-glib", ["src/glib"])
        ];
      lib_c =
        [
