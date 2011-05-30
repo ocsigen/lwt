@@ -243,10 +243,15 @@ void lwt_unix_send_notification(int id)
   } else {
     /* There is none, notify the main thread. */
     notifications[notification_index++] = id;
-    int ret = notification_send();
-    if (ret < 0) {
-      pthread_mutex_unlock(&notification_mutex);
-      uerror("send_notification", Nothing);
+    for (;;) {
+      int ret = notification_send();
+      if (ret < 0) {
+        if (errno != EINTR) {
+          pthread_mutex_unlock(&notification_mutex);
+          uerror("send_notification", Nothing);
+        }
+      } else
+        break;
     }
   }
   pthread_mutex_unlock(&notification_mutex);
@@ -262,10 +267,15 @@ value lwt_unix_recv_notifications()
 {
   pthread_mutex_lock(&notification_mutex);
   /* Receive the signal. */
-  int ret = notification_recv();
-  if (ret < 0) {
-    pthread_mutex_unlock(&notification_mutex);
-    uerror("recv_notification", Nothing);
+  for (;;) {
+    int ret = notification_recv();
+    if (ret < 0) {
+      if (errno != EINTR) {
+        pthread_mutex_unlock(&notification_mutex);
+        uerror("recv_notifications", Nothing);
+      }
+    } else
+      break;
   }
   /* Read all pending notifications. */
   value result = caml_alloc_tuple(notification_index);
@@ -281,15 +291,19 @@ value lwt_unix_recv_notifications()
 value lwt_unix_poke_notification()
 {
   pthread_mutex_lock(&notification_mutex);
-  int ret = notification_send();
-  if (ret < 0) {
-    pthread_mutex_unlock(&notification_mutex);
-    uerror("poke_notification", Nothing);
+  for (;;) {
+    int ret = notification_send();
+    if (ret < 0) {
+      if (errno != EINTR) {
+        pthread_mutex_unlock(&notification_mutex);
+        uerror("poke_notification", Nothing);
+      }
+    } else
+      break;
   }
   pthread_mutex_unlock(&notification_mutex);
   return Val_unit;
 }
-
 
 #if defined(LWT_ON_WINDOWS)
 
