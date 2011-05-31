@@ -55,7 +55,11 @@ let daemonize ?(syslog=true) ?(stdin=`Dev_null) ?(stdout=`Log_default) ?(stderr=
     Unix.chdir directory;
 
     (* Exit the parent, and continue in the child: *)
-    if Unix.fork () > 0 then exit 0;
+    if Unix.fork () > 0 then begin
+      (* Do not run exit hooks in the parent. *)
+      Lwt_sequence.iter_node_l Lwt_sequence.remove Lwt_main.exit_hooks;
+      exit 0
+    end;
 
     if syslog then Lwt_log.default := Lwt_log.syslog ~facility:`Daemon ();
 
