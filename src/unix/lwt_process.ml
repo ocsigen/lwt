@@ -56,7 +56,7 @@ let redirect fd redirection = match redirection with
       Unix.close fd'
 
 let spawn (prog, args) env ?(stdin:redirection=`Keep) ?(stdout:redirection=`Keep) ?(stderr:redirection=`Keep) toclose =
-  match Unix.fork() with
+  match Lwt_unix.fork() with
     | 0 ->
         redirect Unix.stdin stdin;
         redirect Unix.stdout stdout;
