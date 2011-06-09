@@ -31,61 +31,103 @@ module type S = sig
   val wait : t -> key -> bool Lwt.t
 end
 
+let section = Lwt_log.Section.make "Lwt_throttle"
+
 module Make (H : Hashtbl.HashedType) : (S with type key = H.t) = struct
   module MH = Hashtbl.Make(H)
 
   type key = H.t
+  type elt = {
+    mutable consumed : int;
+    queue : bool Lwt.u Queue.t;
+  }
+
   type t = {
-    mutex : Lwt_mutex.t;
-    dt : float;
-    max : float;
-    timeout : int;
-    table : (float ref * Lwt_timeout.t) MH.t
+    rate : int;
+    max : int; (* maximum number of waiting threads *)
+    mutable waiting : int;
+    table : elt MH.t;
+    mutable cleaning : unit Lwt.t option;
   }
 
   let create ~rate ~max ~n =
-    if rate < 1 || max < 1 || n < 1 then
+    if rate < 1 || max < 1 || n < 0 then
       invalid_arg "Lwt_throttle.S.create"
     else {
-      mutex = Lwt_mutex.create ();
-      dt = 1. /. (float_of_int rate);
-      max = float_of_int max;
-      timeout = max+1;
-      table = MH.create n
+      rate = rate;
+      max = max;
+      waiting = 0;
+      table = MH.create n;
+      cleaning = None;
     }
 
-  let remove t k () =
-    ignore begin
-      Lwt_mutex.lock t.mutex >>= fun () ->
-      MH.remove t.table k;
-      return (Lwt_mutex.unlock t.mutex)
-    end
-
-  let wait t k =
-    Lwt_mutex.lock t.mutex >>= fun () ->
-    let now = Unix.time () in
-    let (last, timeout) =
-      try
-        MH.find t.table k
-      with Not_found ->
-        let x = (ref now, Lwt_timeout.create t.timeout (remove t k)) in
-        MH.add t.table k x;
-        x
+  let update_key t key elt (old_waiting,to_run) =
+    let rec update to_run = function
+      | 0 -> 0, Queue.length elt.queue, to_run
+      | i ->
+        try
+          let to_run = (Queue.take elt.queue)::to_run in
+          update to_run (i-1)
+        with
+          | Queue.Empty -> i, 0, to_run
     in
-    Lwt_timeout.stop timeout;
-    let next = !last +. t.dt in
-    let wait = next -. now in
-    Lwt_timeout.start timeout;
-    if wait > t.max then begin
-      Lwt_mutex.unlock t.mutex;
-      return false
-    end else if wait > 0. then begin
-      last := next;
-      Lwt_mutex.unlock t.mutex;
-      Lwt_unix.sleep wait >>= fun () -> return true
-    end else begin
-      last := now;
-      Lwt_mutex.unlock t.mutex;
-      return true
-    end
+    let not_consumed, waiting, to_run = update to_run t.rate in
+    let consumed = t.rate - not_consumed in
+    if consumed = 0
+    then
+      (* there is no waiting threads for this key: we can clean the table *)
+      MH.remove t.table key
+    else elt.consumed <- consumed;
+    (old_waiting+waiting, to_run)
+
+  let rec clean_table t =
+    let waiting,to_run = MH.fold (update_key t) t.table (0,[]) in
+    t.waiting <- waiting;
+    if waiting = 0 && to_run = []
+    then
+      (* the table is empty: we do not need to clean in 1 second *)
+      t.cleaning <- None
+    else launch_cleaning t;
+    List.iter (fun u -> wakeup u true) to_run
+
+  and launch_cleaning t =
+    t.cleaning <-
+      let t =
+        lwt () = Lwt_unix.sleep 1. in
+        try_lwt
+          clean_table t;
+          return ();
+        with
+          | exn -> Lwt_log.fatal ~exn ~section "internal error"
+      in
+      Some t
+
+  let really_wait t elt =
+    let w,u = Lwt.task () in
+    if t.max > t.waiting
+    then (Queue.add u elt.queue;
+          t.waiting <- succ t.waiting;
+          w)
+    else return false
+
+  let wait t key =
+    let res =
+      try
+        let elt = MH.find t.table key in
+        if elt.consumed >= t.rate
+        then really_wait t elt
+        else (elt.consumed <- succ elt.consumed;
+              return true)
+      with
+        | Not_found ->
+          let elt = { consumed = 1;
+                      queue = Queue.create () } in
+          MH.add t.table key elt;
+          return true
+    in
+    (match t.cleaning with
+      | None -> launch_cleaning t
+      | Some _ -> ());
+    res
+
 end
