@@ -2411,15 +2411,11 @@ CAMLprim value lwt_unix_symlink_free(value val_job)
    | JOB: readlink                                                   |
    +-----------------------------------------------------------------+ */
 
-#if !defined(MAXPATHLEN)
-#  define MAXPATHLEN 512
-#endif
-
 struct job_readlink {
   struct lwt_unix_job job;
   char *name;
-  char buffer[MAXPATHLEN];
-  size_t result;
+  char *buffer;
+  ssize_t result;
   int error_code;
 };
 
@@ -2427,8 +2423,32 @@ struct job_readlink {
 
 static void worker_readlink(struct job_readlink *job)
 {
-  job->result = readlink(job->name, job->buffer, MAXPATHLEN);
-  job->error_code = errno;
+
+  ssize_t buffer_size = 1024;
+  ssize_t link_length;
+
+  for (;;) {
+
+    job->buffer = lwt_unix_malloc(buffer_size);
+
+    link_length = readlink(job->name, job->buffer, buffer_size);
+
+    if (link_length < buffer_size) {
+      if (link_length >= 0) {
+        job->buffer = realloc(job->buffer, link_length + 1);
+        job->buffer[link_length] = '\0';
+      } else {
+        free (job->buffer);
+        job->buffer = NULL;
+      }
+      job->result = link_length;
+      job->error_code = errno;
+      break;
+    } else {
+      free(job->buffer);
+      buffer_size *= 2;
+    }
+  }
 }
 
 CAMLprim value lwt_unix_readlink_job(value val_name)
@@ -2436,6 +2456,7 @@ CAMLprim value lwt_unix_readlink_job(value val_name)
   struct job_readlink *job = lwt_unix_new(struct job_readlink);
   job->job.worker = (lwt_unix_job_worker)worker_readlink;
   job->name = lwt_unix_strdup(String_val(val_name));
+  job->buffer = NULL;
   return lwt_unix_alloc_job(&(job->job));
 }
 
@@ -2443,7 +2464,6 @@ CAMLprim value lwt_unix_readlink_result(value val_job)
 {
   struct job_readlink *job = Job_readlink_val(val_job);
   if (job->result < 0) unix_error(job->error_code, "readlink", Nothing);
-  job->buffer[job->result] = 0;
   return caml_copy_string(job->buffer);
 }
 
@@ -2451,6 +2471,7 @@ CAMLprim value lwt_unix_readlink_free(value val_job)
 {
   struct job_readlink *job = Job_readlink_val(val_job);
   free(job->name);
+  free(job->buffer);
   lwt_unix_free_job(&job->job);
   return Val_unit;
 }
@@ -2786,13 +2807,9 @@ CAMLprim value lwt_unix_getgrgid_free(value val_job)
    | JOB: gethostname                                                |
    +-----------------------------------------------------------------+ */
 
-#if !defined(MAXHOSTNAMELEN)
-#  define MAXHOSTNAMELEN 256
-#endif
-
 struct job_gethostname {
   struct lwt_unix_job job;
-  char buffer[MAXHOSTNAMELEN];
+  char *buffer;
   int result;
   int error_code;
 };
@@ -2801,15 +2818,32 @@ struct job_gethostname {
 
 static void worker_gethostname(struct job_gethostname *job)
 {
-  job->result = gethostname(job->buffer, MAXHOSTNAMELEN);
-  job->buffer[MAXHOSTNAMELEN - 1] = 0;
-  job->error_code = errno;
+  int buffer_size = 64;
+  int err;
+
+  for (;;) {
+
+    job->buffer = lwt_unix_malloc(buffer_size + 1);
+
+    err = gethostname(job->buffer, buffer_size);
+
+    if (err == -1 && errno == ENAMETOOLONG) {
+      free(job->buffer);
+      buffer_size *= 2;
+    } else {
+      job->buffer[buffer_size] = '\0';
+      job->result = err;
+      job->error_code = errno;
+      break;
+    }
+  }
 }
 
 CAMLprim value lwt_unix_gethostname_job()
 {
   struct job_gethostname *job = lwt_unix_new(struct job_gethostname);
   job->job.worker = (lwt_unix_job_worker)worker_gethostname;
+  job->buffer = NULL;
   return lwt_unix_alloc_job(&(job->job));
 }
 
@@ -2823,6 +2857,7 @@ CAMLprim value lwt_unix_gethostname_result(value val_job)
 CAMLprim value lwt_unix_gethostname_free(value val_job)
 {
   struct job_gethostname *job = Job_gethostname_val(val_job);
+  free(job->buffer);
   lwt_unix_free_job(&job->job);
   return Val_unit;
 }
