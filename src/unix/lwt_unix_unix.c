@@ -2609,7 +2609,7 @@ static value alloc_passwd_entry(struct passwd *entry)
 static void worker_getpwnam(struct job_getpwnam *job)
 {
   size_t buffer_size = sysconf(_SC_GETPW_R_SIZE_MAX);
-  if (buffer_size < 0) buffer_size = 16384;
+  if (buffer_size == (size_t) -1) buffer_size = 16384;
   job->buffer = (char*)lwt_unix_malloc(buffer_size);
   job->result = getpwnam_r(job->name, &(job->pwd), job->buffer, buffer_size, &(job->ptr));
 }
@@ -2676,7 +2676,7 @@ static value alloc_group_entry(struct group *entry)
 static void worker_getgrnam(struct job_getgrnam *job)
 {
   size_t buffer_size = sysconf(_SC_GETGR_R_SIZE_MAX);
-  if (buffer_size < 0) buffer_size = 16384;
+  if (buffer_size == (size_t) -1) buffer_size = 16384;
   job->buffer = (char*)lwt_unix_malloc(buffer_size);
   job->result = getgrnam_r(job->name, &(job->grp), job->buffer, buffer_size, &(job->ptr));
 }
@@ -2725,7 +2725,7 @@ struct job_getpwuid {
 static void worker_getpwuid(struct job_getpwuid *job)
 {
   size_t buffer_size = sysconf(_SC_GETPW_R_SIZE_MAX);
-  if (buffer_size < 0) buffer_size = 16384;
+  if (buffer_size == (size_t) -1) buffer_size = 16384;
   job->buffer = (char*)lwt_unix_malloc(buffer_size);
   job->result = getpwuid_r(job->uid, &(job->pwd), job->buffer, buffer_size, &(job->ptr));
 }
@@ -2773,7 +2773,7 @@ struct job_getgrgid {
 static void worker_getgrgid(struct job_getgrgid *job)
 {
   size_t buffer_size = sysconf(_SC_GETGR_R_SIZE_MAX);
-  if (buffer_size < 0) buffer_size = 16384;
+  if (buffer_size == (size_t) -1) buffer_size = 16384;
   job->buffer = (char*)lwt_unix_malloc(buffer_size);
   job->result = getgrgid_r(job->gid, &(job->grp), job->buffer, buffer_size, &(job->ptr));
 }
