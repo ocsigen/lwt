@@ -174,9 +174,9 @@ let compile args stub_file =
     Sys.command
     "%s -custom %s %s %s %s 2> %s"
     !ocamlc
-    args
     c_args
     (Filename.quote stub_file)
+    args
     (Filename.quote !caml_file)
     (Filename.quote !log_file)
   = 0
