@@ -264,6 +264,12 @@ val pause : unit -> unit t
       call to {!wakeup_paused}. A thread created with [pause] can be
       canceled. *)
 
+val wakeup_later : 'a u -> 'a -> unit
+  (** Same as {!wakeup} but the thread is wakeup after a pause. *)
+
+val wakeup_later_exn : 'a u -> exn -> unit
+  (** Same as {!wakeup_exn} but the thread is wakeup after a pause. *)
+
 val wakeup_paused : unit -> unit
   (** [wakeup_paused ()] wakes up all threads which suspended
       themselves with {!pause}.
