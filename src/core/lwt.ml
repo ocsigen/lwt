@@ -172,6 +172,55 @@ let wakeup_exn t e =
     | _ ->
         invalid_arg "Lwt.wakeup_exn"
 
+(* Same as [wakeup] but do not raise [Invalid_argument]. *)
+let ignore_wakeup t v =
+  let t = repr_rec (wakener_repr t) in
+  match t.state with
+    | Sleep{ waiters = waiters } ->
+        let state = Return v in
+        t.state <- state;
+        run_waiters waiters state
+    | _ ->
+        ()
+
+(* Same as [wakeup_exn] but do not raise [Invalid_argument]. *)
+let ignore_wakeup_exn t e =
+  let t = repr_rec (wakener_repr t) in
+  match t.state with
+    | Sleep{ waiters = waiters } ->
+        let state = Fail e in
+        t.state <- state;
+        run_waiters waiters state
+    | _ ->
+        ()
+
+let wakeuping = ref false
+let to_wakeup = Queue.create ()
+
+let wakeup_all () =
+  while not (Queue.is_empty to_wakeup) do
+    Queue.pop to_wakeup ()
+  done;
+  wakeuping := false
+
+let wakeup_later t v =
+  if !wakeuping then
+    Queue.push (fun () -> ignore_wakeup t v) to_wakeup
+  else begin
+    wakeuping := true;
+    ignore_wakeup t v;
+    wakeup_all ()
+  end
+
+let wakeup_later_exn t v =
+  if !wakeuping then
+    Queue.push (fun () -> ignore_wakeup_exn t v) to_wakeup
+  else begin
+    wakeuping := true;
+    ignore_wakeup_exn t v;
+    wakeup_all ()
+  end
+
 let restart_cancel t =
   let t = repr_rec (wakener_repr t) in
   match t.state with
@@ -870,28 +919,18 @@ let paused_count = ref 0
 
 let pause () =
   let waiter, wakener = task () in
-  let node = Lwt_sequence.add_r (fun () -> wakeup wakener ()) paused in
+  let node = Lwt_sequence.add_r wakener paused in
   on_cancel waiter (fun () -> Lwt_sequence.remove node);
   incr paused_count;
   !pause_hook !paused_count;
   waiter
-
-let wakeup_later t v =
-  ignore (Lwt_sequence.add_r (fun () -> wakeup t v) paused);
-  incr paused_count;
-  !pause_hook !paused_count
-
-let wakeup_later_exn t exn =
-  ignore (Lwt_sequence.add_r (fun () -> wakeup_exn t exn) paused);
-  incr paused_count;
-  !pause_hook !paused_count
 
 let wakeup_paused () =
   if not (Lwt_sequence.is_empty paused) then begin
     let tmp = Lwt_sequence.create () in
     Lwt_sequence.transfer_r paused tmp;
     paused_count := 0;
-    Lwt_sequence.iter_l (fun f -> f ()) tmp
+    Lwt_sequence.iter_l (fun wakener -> wakeup wakener ()) tmp
   end
 
 let register_pause_notifier f = pause_hook := f

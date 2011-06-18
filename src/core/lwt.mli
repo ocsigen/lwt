@@ -190,6 +190,14 @@ val wakeup_exn : 'a u -> exn -> unit
   (** [wakeup_exn t e] makes the sleeping thread [t] fail with the
       exception [e]. *)
 
+val wakeup_later : 'a u -> 'a -> unit
+  (** Same as {!wakeup} but it is not guaranteed that the thread will
+      be wakeup immediately. *)
+
+val wakeup_later_exn : 'a u -> exn -> unit
+  (** Same as {!wakeup_exn} but it is not guaranteed that the thread
+      will be wakeup immediately. *)
+
 val waiter_of_wakener : 'a u -> 'a t
   (** Returns the thread associated to a wakener. *)
 
@@ -263,12 +271,6 @@ val pause : unit -> unit t
   (** [pause ()] is a sleeping thread which is wake up on the next
       call to {!wakeup_paused}. A thread created with [pause] can be
       canceled. *)
-
-val wakeup_later : 'a u -> 'a -> unit
-  (** Same as {!wakeup} but the thread is wakeup after a pause. *)
-
-val wakeup_later_exn : 'a u -> exn -> unit
-  (** Same as {!wakeup_exn} but the thread is wakeup after a pause. *)
 
 val wakeup_paused : unit -> unit
   (** [wakeup_paused ()] wakes up all threads which suspended
