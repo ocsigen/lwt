@@ -3,6 +3,7 @@
 ^src/unix/lwt_config\.ml$
 ^src/unix/lwt_config\.h$
 ^webdarcs\.log$
+^setup\.ml$
 ^setup\.data$
 ^setup\.log$
 ^manual/.*\.(toc|pdf|out|log|aux)$
