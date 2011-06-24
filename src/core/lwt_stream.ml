@@ -133,7 +133,7 @@ struct
               box.state <- Full q
             | Waiting wakener ->
               box.state <- No_mail;
-              wakeup wakener v
+              wakeup_later wakener v
             | Full q ->
               Queue.push v q
     in

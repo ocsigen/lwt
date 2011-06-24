@@ -276,7 +276,7 @@ let auto_flush oc =
         if wrapper.state = Busy_primitive then
           wrapper.state <- Idle;
         if not (Lwt_sequence.is_empty wrapper.queued) then
-          wakeup (Lwt_sequence.take_l wrapper.queued) ();
+          wakeup_later (Lwt_sequence.take_l wrapper.queued) ();
         return ()
 
     | Closed | Invalid ->
@@ -289,7 +289,7 @@ let unlock wrapper = match wrapper.state with
   | Busy_primitive | Busy_atomic _ ->
       wrapper.state <- Idle;
       if not (Lwt_sequence.is_empty wrapper.queued) then
-        wakeup (Lwt_sequence.take_l wrapper.queued) ();
+        wakeup_later (Lwt_sequence.take_l wrapper.queued) ();
       (* Launches the auto-flusher: *)
       let ch = wrapper.channel in
       if (* Launch the auto-flusher only if the channel is not busy: *)
@@ -307,7 +307,7 @@ let unlock wrapper = match wrapper.state with
   | Closed | Invalid ->
       (* Do not change channel state if the channel has been closed *)
       if not (Lwt_sequence.is_empty wrapper.queued) then
-        wakeup (Lwt_sequence.take_l wrapper.queued) ()
+        wakeup_later (Lwt_sequence.take_l wrapper.queued) ()
 
   | Idle ->
       (* We must never unlock an unlocked channel *)

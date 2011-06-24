@@ -67,7 +67,7 @@ let acquire p =
 
 let release p c =
   try
-    wakeup (Lwt_sequence.take_l p.waiters) c
+    wakeup_later (Lwt_sequence.take_l p.waiters) c
   with Lwt_sequence.Empty ->
     Queue.push c p.list
 

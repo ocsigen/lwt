@@ -117,7 +117,7 @@ module E = struct
 	      box.state <- Full q
 	  | Waiting wakener ->
               box.state <- No_mail;
-              wakeup wakener (Some v)
+              wakeup_later wakener (Some v)
 	  | Full q ->
 	      Queue.push v q
       in
