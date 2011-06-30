@@ -375,8 +375,8 @@ let set_state ch st =
   ch.state <- st
 
 let clear_events ch =
-  Lwt_sequence.iter_node_l Lwt_sequence.remove ch.hooks_readable;
-  Lwt_sequence.iter_node_l Lwt_sequence.remove ch.hooks_writable;
+  Lwt_sequence.iter_node_l (fun node -> Lwt_sequence.remove node; Lwt_sequence.get node ()) ch.hooks_readable;
+  Lwt_sequence.iter_node_l (fun node -> Lwt_sequence.remove node; Lwt_sequence.get node ()) ch.hooks_writable;
   begin
     match ch.event_readable with
       | Some ev ->
@@ -397,7 +397,6 @@ let clear_events ch =
 let abort ch e =
   if ch.state <> Closed then begin
     set_state ch (Aborted e);
-    Lwt_engine.fake_io ch.fd;
     clear_events ch
   end
 
@@ -584,9 +583,6 @@ let openfile name flags perms =
 let close ch =
   if ch.state = Closed then check_descriptor ch;
   set_state ch Closed;
-  (* Simulate activity on the file descriptor to be sure all pending
-     threads are wakeup. *)
-  Lwt_engine.fake_io ch.fd;
   clear_events ch;
   return (Unix.close ch.fd)
 
@@ -599,7 +595,6 @@ external close_free : [ `unix_close ] job -> unit = "lwt_unix_close_free" "noall
 let close ch =
   if ch.state = Closed then check_descriptor ch;
   set_state ch Closed;
-  Lwt_engine.fake_io ch.fd;
   clear_events ch;
   execute_job (close_job ch.fd) close_result close_free
 
