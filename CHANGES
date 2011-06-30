@@ -1,3 +1,21 @@
+===== 2.3.1 (2011-06-30) =====
+
+  * Fix building of documentation when using the tarball
+  * Add Lwt_unix.fsync and Lwt_unix.fdatasync
+  * Fix the stubs for Lwt_unix.send_msg when fd-passing is not
+    available
+  * Add -lwt-sequence-strict option to the syntax extension
+  * Use a custom PRNG state for Lwt.choose and Lwt.pick
+  * Fix a display glitch when starting the toplevel
+  * Add Lwt_unix.fork which should now be used when one want to use
+    Lwt in the child process
+  * Better implementation of Lwt_unix.readlink and
+    Lwt_unix.gethostbyname, which fixes compilation on Hurd
+  * Add Lwt.wakeup_later and Lwt.wakeup_later_exn to be used when one
+    need to do lot of nested wakeup, which fixes a buffer overflow in
+    Lwt_mutex
+  * Fix Lwt_unix.abort and Lwt_unix.close (threads was never wakeup)
+
 ===== 2.3.0 (2011-04-12) =====
 
   * Add an extensible system of engines to:
