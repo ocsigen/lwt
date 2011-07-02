@@ -41,7 +41,7 @@ HTML documentation is generated in _build/lwt.docdir/, but is not
 installed by default.
 
 If you get the development version you need to obtain oasis
-(http://oasis.forge.ocamlcore.org/) and run "oasis setup-dev -only-setup".
+(http://oasis.forge.ocamlcore.org/).
 
 --------------------------------------------------------------------------
 
