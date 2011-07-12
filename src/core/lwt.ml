@@ -746,9 +746,9 @@ let rec cancel_and_nth_ready l n =
         match (repr t).state with
           | Sleep _ ->
               cancel t;
-              nth_ready l n
+              cancel_and_nth_ready l n
           | _ when n > 0 ->
-              nth_ready l (n - 1)
+              cancel_and_nth_ready l (n - 1)
           | state ->
               List.iter cancel l;
               state
