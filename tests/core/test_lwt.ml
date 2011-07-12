@@ -485,6 +485,23 @@ let suite = suite "lwt" [
        cancel t;
        return (state t = Fail Canceled));
 
+  test "bind/cancel 3"
+    (fun () ->
+       let waiter1, wakener1 = wait () in
+       let waiter2, wakener2 = wait () in
+       let t =
+         lwt () = waiter1 in
+         try_lwt
+           lwt () = waiter2 in
+           fst (task ())
+         with Canceled ->
+           return true
+       in
+       wakeup wakener1 ();
+       wakeup wakener2 ();
+       cancel t;
+       return (state t = Return true));
+
   test "data 1"
     (fun () ->
        with_value key (Some 1)
