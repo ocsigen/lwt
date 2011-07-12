@@ -239,15 +239,15 @@ let restart_cancel t =
 
 let cancel_none = Cancel_func ignore
 
-let rec get_cancel r =
-  match !r with
-    | Cancel_func f -> f
-    | Cancel_repr r -> let f = get_cancel r in r := cancel_none; f
+let rec get_cancel = function
+  | Cancel_func f -> f
+  | Cancel_repr r -> let c = !r in r := cancel_none; get_cancel c
 
 let cancel t =
   match (repr t).state with
     | Sleep{ cancel = cancel } ->
-        let f = get_cancel cancel in
+        let f = get_cancel !cancel in
+        cancel := cancel_none;
         let save = !current_data in
         f ();
         current_data := save
