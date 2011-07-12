@@ -54,8 +54,8 @@ and 'a thread_repr = {
 }
 
 and 'a sleeper = {
-  cancel : (unit -> unit) ref;
-  (* The cancel function of the thread *)
+  cancel : cancel ref;
+  (* The canceler for this thread *)
   mutable waiters : 'a waiter_set;
   (* All thunk functions *)
   mutable removed : int;
@@ -70,6 +70,12 @@ and 'a waiter_set =
   | Removable of ('a thread_state -> unit) option ref
   | Immutable of ('a thread_state -> unit)
   | Append of 'a waiter_set * 'a waiter_set
+
+and cancel =
+  | Cancel_func of (unit -> unit)
+      (* A cancel function. *)
+  | Cancel_repr of cancel ref
+      (* Behave has this canceler. *)
 
 external thread_repr : 'a t -> 'a thread_repr = "%identity"
 external thread : 'a thread_repr -> 'a t = "%identity"
@@ -224,18 +230,24 @@ let wakeup_later_exn t v =
 let restart_cancel t =
   let t = repr_rec (wakener_repr t) in
   match t.state with
-    | Sleep{ waiters = waiters; cancel = cancel } ->
+    | Sleep{ waiters = waiters } ->
         let state = Fail Canceled in
         t.state <- state;
         run_waiters waiters state
     | _ ->
         ()
 
+let cancel_none = Cancel_func ignore
+
+let rec get_cancel r =
+  match !r with
+    | Cancel_func f -> f
+    | Cancel_repr r -> let f = get_cancel r in r := cancel_none; f
+
 let cancel t =
   match (repr t).state with
     | Sleep{ cancel = cancel } ->
-        let f = !cancel in
-        cancel := ignore;
+        let f = get_cancel cancel in
         let save = !current_data in
         f ();
         current_data := save
@@ -304,7 +316,7 @@ let connect t1 t2 =
                    for a thread that is now terminated, its cancel
                    function is meaningless. Only the one of [t2] is
                    now important: *)
-                sleeper1.cancel := !(sleeper2.cancel);
+                sleeper1.cancel := Cancel_repr sleeper2.cancel;
 
                 (* Merge the two sets of waiters: *)
                 let waiters = append sleeper1.waiters sleeper2.waiters
@@ -356,7 +368,7 @@ let temp r =
 
 let wait () =
   let t = {
-    state = Sleep{ cancel = ref ignore;
+    state = Sleep{ cancel = ref cancel_none;
                    waiters = Empty;
                    removed = 0 };
   } in
@@ -364,7 +376,7 @@ let wait () =
 
 let task () =
   let rec t = {
-    state = Sleep{ cancel = ref (fun () -> restart_cancel (wakener t));
+    state = Sleep{ cancel = ref (Cancel_func(fun () -> restart_cancel (wakener t)));
                    waiters = Empty;
                    removed = 0 };
   } in
@@ -599,7 +611,7 @@ let choose l =
     else
       thread { state = nth_ready l (Random.State.int random_state ready) }
   else begin
-    let res = temp (ref (fun () -> List.iter cancel l)) in
+    let res = temp (ref (Cancel_func(fun () -> List.iter cancel l))) in
     let waiter = ref None in
     let handle_result state =
       (* Disable the waiter now: *)
@@ -638,7 +650,7 @@ let rec nchoose_terminate res acc = function
             nchoose_terminate res acc l
 
 let nchoose_sleep l =
-  let res = temp (ref (fun () -> List.iter cancel l)) in
+  let res = temp (ref (Cancel_func(fun () -> List.iter cancel l))) in
   let rec waiter = ref (Some handle_result)
   and handle_result state =
     waiter := None;
@@ -694,7 +706,7 @@ let rec nchoose_split_terminate res acc_terminated acc_sleeping = function
             nchoose_split_terminate res acc_terminated (t :: acc_sleeping) l
 
 let nchoose_split_sleep l =
-  let res = temp (ref (fun () -> List.iter cancel l)) in
+  let res = temp (ref (Cancel_func(fun () -> List.iter cancel l))) in
   let rec waiter = ref (Some handle_result)
   and handle_result state =
     waiter := None;
@@ -762,7 +774,7 @@ let pick l =
     else
       thread { state = cancel_and_nth_ready l (Random.State.int random_state ready) }
   else begin
-    let res = temp (ref (fun () -> List.iter cancel l)) in
+    let res = temp (ref (Cancel_func(fun () -> List.iter cancel l))) in
     let rec waiter = ref (Some handle_result)
     and handle_result state =
       waiter := None;
@@ -783,7 +795,7 @@ let pick l =
   end
 
 let npick_sleep l =
-  let res = temp (ref (fun () -> List.iter cancel l)) in
+  let res = temp (ref (Cancel_func(fun () -> List.iter cancel l))) in
   let rec waiter = ref (Some handle_result)
   and handle_result state =
     waiter := None;
@@ -831,7 +843,7 @@ let npick threads =
   init threads
 
 let join l =
-  let res = temp (ref (fun () -> List.iter cancel l))
+  let res = temp (ref (Cancel_func(fun () -> List.iter cancel l)))
   (* Number of threads still sleeping: *)
   and sleeping = ref 0
   (* The state that must be returned: *)
