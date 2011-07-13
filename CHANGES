@@ -1,4 +1,4 @@
-===== 2.3.1 (2011-06-30) =====
+===== 2.3.1 (2011-07-13) =====
 
   * Fix building of documentation when using the tarball
   * Add Lwt_unix.fsync and Lwt_unix.fdatasync
@@ -15,6 +15,8 @@
     need to do lot of nested wakeup, which fixes a buffer overflow in
     Lwt_mutex
   * Fix Lwt_unix.abort and Lwt_unix.close (threads was never wakeup)
+  * Fix Lwt_throttle for correct timings
+  * Fix subtle use of cancel
 
 ===== 2.3.0 (2011-04-12) =====
 
