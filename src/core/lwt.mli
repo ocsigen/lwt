@@ -234,7 +234,7 @@ val on_cancel : 'a t -> (unit -> unit) -> unit
 val cancel : 'a t -> unit
   (** [cancel t] cancels the threads [t]. This means that the deepest
       sleeping thread created with [task] and connected to [t] is
-      wakeup with the exception {!Canceled}.
+      woken up with the exception {!Canceled}.
 
       For example, in the following code:
 
@@ -243,7 +243,7 @@ val cancel : 'a t -> unit
         cancel (waiter >> printl "plop")
       ]}
 
-      [waiter] will be waked up with {!Canceled}.
+      [waiter] will be woken up with {!Canceled}.
   *)
 
 val pick : 'a t list -> 'a t
