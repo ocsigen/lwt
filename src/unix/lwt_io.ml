@@ -58,6 +58,9 @@ type 'mode state =
       (* An atomic operations is being performed on the channel. The
          argument is the temporary atomic wrapper. *)
 
+  | Waiting_for_busy
+      (* A queued operation has not yet started. *)
+
   | Idle
       (* The channel is unused *)
 
@@ -169,7 +172,7 @@ let is_busy ch =
         raise (invalid_channel ch.channel)
     | Idle | Closed ->
         false
-    | Busy_primitive | Busy_atomic _ ->
+    | Busy_primitive | Busy_atomic _ | Waiting_for_busy ->
         true
 
 (* Flush/refill the buffer. No race condition could happen because
@@ -226,7 +229,7 @@ let perform_io ch = match ch.main.state with
   | Invalid ->
       raise_lwt (invalid_channel ch)
 
-  | Idle ->
+  | Idle | Waiting_for_busy ->
       assert false
 
 let refill = perform_io
@@ -259,7 +262,7 @@ let auto_flush oc =
   lwt () = Lwt.pause () in
   let wrapper = deepest_wrapper oc in
   match wrapper.state with
-    | Busy_primitive ->
+    | Busy_primitive | Waiting_for_busy ->
         (* The channel is used, cancel auto flushing. It will be
            restarted when the channel returns to the [Idle] state: *)
         oc.auto_flushing <- false;
@@ -287,9 +290,12 @@ let auto_flush oc =
 
 let unlock wrapper = match wrapper.state with
   | Busy_primitive | Busy_atomic _ ->
-      wrapper.state <- Idle;
-      if not (Lwt_sequence.is_empty wrapper.queued) then
-        wakeup_later (Lwt_sequence.take_l wrapper.queued) ();
+      if Lwt_sequence.is_empty wrapper.queued then
+        wrapper.state <- Idle
+      else begin
+        wrapper.state <- Waiting_for_busy;
+        wakeup_later (Lwt_sequence.take_l wrapper.queued) ()
+      end;
       (* Launches the auto-flusher: *)
       let ch = wrapper.channel in
       if (* Launch the auto-flusher only if the channel is not busy: *)
@@ -309,7 +315,7 @@ let unlock wrapper = match wrapper.state with
       if not (Lwt_sequence.is_empty wrapper.queued) then
         wakeup_later (Lwt_sequence.take_l wrapper.queued) ()
 
-  | Idle ->
+  | Idle | Waiting_for_busy ->
       (* We must never unlock an unlocked channel *)
       assert false
 
@@ -323,7 +329,7 @@ let primitive f wrapper = match wrapper.state with
         unlock wrapper;
         return ()
 
-  | Busy_primitive | Busy_atomic _ ->
+  | Busy_primitive | Busy_atomic _ | Waiting_for_busy ->
       let (res, w) = task () in
       let node = Lwt_sequence.add_r w wrapper.queued in
       Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
@@ -334,7 +340,7 @@ let primitive f wrapper = match wrapper.state with
             unlock wrapper;
             raise_lwt (closed_channel wrapper.channel)
 
-        | Idle ->
+        | Idle | Waiting_for_busy ->
             wrapper.state <- Busy_primitive;
             try_lwt
               f wrapper.channel
@@ -370,7 +376,7 @@ let atomic f wrapper = match wrapper.state with
         unlock wrapper;
         return ()
 
-  | Busy_primitive | Busy_atomic _ ->
+  | Busy_primitive | Busy_atomic _ | Waiting_for_busy ->
       let (res, w) = task () in
       let node = Lwt_sequence.add_r w wrapper.queued in
       Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
@@ -381,7 +387,7 @@ let atomic f wrapper = match wrapper.state with
             unlock wrapper;
             raise_lwt (closed_channel wrapper.channel)
 
-        | Idle ->
+        | Idle | Waiting_for_busy ->
             let tmp_wrapper = { state = Idle;
                                 channel = wrapper.channel;
                                 queued = Lwt_sequence.create () } in
@@ -415,7 +421,7 @@ let rec abort wrapper = match wrapper.state with
       Lazy.force wrapper.channel.close
   | Invalid ->
       raise_lwt (invalid_channel wrapper.channel)
-  | Idle | Busy_primitive ->
+  | Idle | Busy_primitive | Waiting_for_busy ->
       wrapper.state <- Closed;
       (* Abort any current real reading/writing operation on the
          channel: *)
