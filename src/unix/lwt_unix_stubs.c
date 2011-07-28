@@ -126,7 +126,7 @@ void lwt_unix_not_available(char const *feature)
 
 CAMLprim value lwt_unix_blit_bytes_bytes(value val_buf1, value val_ofs1, value val_buf2, value val_ofs2, value val_len)
 {
-  memcpy((char*)Caml_ba_data_val(val_buf2) + Long_val(val_ofs2),
+  memmove((char*)Caml_ba_data_val(val_buf2) + Long_val(val_ofs2),
          (char*)Caml_ba_data_val(val_buf1) + Long_val(val_ofs1),
          Long_val(val_len));
   return Val_unit;
