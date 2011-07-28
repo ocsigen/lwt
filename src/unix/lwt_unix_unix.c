@@ -619,9 +619,8 @@ struct job_wait_mincore {
 static void worker_wait_mincore(struct job_wait_mincore *job)
 {
   /* Read the byte to force the kernel to fetch the page: */
-  char dummy = *(job->ptr);
-  /* Make the compiler happy: */
-  dummy = 0;
+  char dummy;
+  memcpy(&dummy, job->ptr, 1);
 }
 
 CAMLprim value lwt_unix_wait_mincore_job(value val_buffer, value val_offset)
