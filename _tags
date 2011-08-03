@@ -8,6 +8,8 @@
 
 <src/{unix,glib,text}/*>: use_stubs
 
+"src/unix/lwt_io.mli": syntax_camlp4o, pkg_camlp4, pa_optcomp
+
 # GLib bindings:
 <src/glib/lwt-glib.*>: use_C_glib
 <src/glib/liblwt-glib.*>: use_C_glib

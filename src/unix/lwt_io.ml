@@ -44,7 +44,15 @@ let default_buffer_size = ref 4096
 type input
 type output
 
-type 'a mode = Input | Output
+#if ocaml_version >= (3, 13)
+type 'a mode =
+  | Input : input mode
+  | Output : output mode
+#else
+type 'a mode =
+  | Input
+  | Output
+#endif
 
 let input : input mode = Input
 let output : output mode = Output

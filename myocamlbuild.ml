@@ -79,6 +79,12 @@ let () =
                   dep ["ocaml"; "ocamldep"; tag] [file])
                ["lwt_options"; "lwt"; "lwt_log"; "optcomp"];
 
+             (* Optcomp for .mli *)
+             flag ["ocaml"; "compile"; "pa_optcomp_standalone"] & S[A"-pp"; A "./syntax/optcomp.byte"];
+             flag ["ocaml"; "ocamldep"; "pa_optcomp_standalone"] & S[A"-pp"; A "./syntax/optcomp.byte"];
+             flag ["ocaml"; "doc"; "pa_optcomp_standalone"] & S[A"-pp"; A "./syntax/optcomp.byte"];
+             dep ["ocaml"; "ocamldep"; "pa_optcomp_standalone"] ["syntax/optcomp.byte"];
+
              (* Use an introduction page with categories *)
              tag_file "lwt-api.docdir/index.html" ["apiref"];
              dep ["apiref"] ["apiref-intro"];
@@ -92,7 +98,7 @@ let () =
              let opts = S[A"-ppopt"; A "-let"; A"-ppopt"; A("windows=" ^ if BaseEnvLight.var_get "os_type" env <> "Unix" then "true" else "false")] in
              flag ["ocaml"; "compile"; "pa_optcomp"] & opts;
              flag ["ocaml"; "ocamldep"; "pa_optcomp"] & opts;
-             flag ["ocaml"; "doc"; "pa_optcomp"] & opts;
+             (*flag ["ocaml"; "doc"; "pa_optcomp"] & opts; Does not work... *)
 
              flag ["ocaml"; "link"; "toplevel"] & A"-linkpkg";
 
