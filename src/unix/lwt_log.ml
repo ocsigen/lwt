@@ -245,6 +245,8 @@ let dispatch f =
 
 type template = string
 
+let location_key = Lwt.new_key ()
+
 let date_string time =
   let tm = Unix.localtime time in
   let month_string =
@@ -267,6 +269,11 @@ let date_string time =
 
 let render ~buffer ~template ~section ~level ~message =
   let time = lazy(Unix.gettimeofday ()) in
+  let file, line, column =
+    match Lwt.get location_key with
+      | Some loc -> loc
+      | None -> ("<unknown>", -1, -1)
+  in
   Buffer.add_substitute buffer
     (function
        | "date" -> date_string (Lazy.force time)
@@ -276,6 +283,9 @@ let render ~buffer ~template ~section ~level ~message =
        | "message" -> message
        | "level" -> string_of_level level
        | "section" -> Section.name section
+       | "loc-file" -> file
+       | "loc-line" -> string_of_int line
+       | "loc-column" -> string_of_int column
        | var -> Printf.ksprintf invalid_arg "Lwt_log.render_buffer: unknown variable %S" var)
     template
 
@@ -507,7 +517,7 @@ let split str =
   in
   aux 0
 
-let log ?exn ?(section=Section.main) ?logger ~level message =
+let log ?exn ?(section=Section.main) ?location ?logger ~level message =
   let logger = match logger with
     | None -> !default
     | Some logger -> logger
@@ -517,7 +527,7 @@ let log ?exn ?(section=Section.main) ?logger ~level message =
   else if level >= section.Section.level then
     match exn with
       | None ->
-          logger.lg_output section level (split message)
+          Lwt.with_value location_key location (fun () -> logger.lg_output section level (split message))
       | Some exn ->
           let message = message ^ ": " ^ Printexc.to_string exn in
           let message =
@@ -528,22 +538,22 @@ let log ?exn ?(section=Section.main) ?logger ~level message =
             else
               message
           in
-          logger.lg_output section level (split message)
+          Lwt.with_value location_key location (fun () -> logger.lg_output section level (split message))
   else
     return ()
 
-let log_f ?exn ?section ?logger ~level format =
-  Printf.ksprintf (log ?exn ?section ?logger ~level) format
+let log_f ?exn ?section ?location ?logger ~level format =
+  Printf.ksprintf (log ?exn ?section ?location ?logger ~level) format
 
-let debug ?exn ?section ?logger msg = log ?exn ?section ?logger ~level:Debug msg
-let debug_f ?exn ?section ?logger fmt = Printf.ksprintf (debug ?exn ?section ?logger) fmt
-let info ?exn ?section ?logger msg = log ?exn ?section ?logger ~level:Info msg
-let info_f ?exn ?section ?logger fmt = Printf.ksprintf (info ?exn ?section ?logger) fmt
-let notice ?exn ?section ?logger msg = log ?exn ?section ?logger ~level:Notice msg
-let notice_f ?exn ?section ?logger fmt = Printf.ksprintf (notice ?exn ?section ?logger) fmt
-let warning ?exn ?section ?logger msg = log ?exn ?section ?logger ~level:Warning msg
-let warning_f ?exn ?section ?logger fmt = Printf.ksprintf (warning ?exn ?section ?logger) fmt
-let error ?exn ?section ?logger msg = log ?exn ?section ?logger ~level:Error msg
-let error_f ?exn ?section ?logger fmt = Printf.ksprintf (error ?exn ?section ?logger) fmt
-let fatal ?exn ?section ?logger msg = log ?exn ?section ?logger ~level:Fatal msg
-let fatal_f ?exn ?section ?logger fmt = Printf.ksprintf (fatal ?exn ?section ?logger) fmt
+let debug ?exn ?section ?location ?logger msg = log ?exn ?section ?location ?logger ~level:Debug msg
+let debug_f ?exn ?section ?location ?logger fmt = Printf.ksprintf (debug ?exn ?section ?location ?logger) fmt
+let info ?exn ?section ?location ?logger msg = log ?exn ?section ?location ?logger ~level:Info msg
+let info_f ?exn ?section ?location ?logger fmt = Printf.ksprintf (info ?exn ?section ?location ?logger) fmt
+let notice ?exn ?section ?location ?logger msg = log ?exn ?section ?location ?logger ~level:Notice msg
+let notice_f ?exn ?section ?location ?logger fmt = Printf.ksprintf (notice ?exn ?section ?location ?logger) fmt
+let warning ?exn ?section ?location ?logger msg = log ?exn ?section ?location ?logger ~level:Warning msg
+let warning_f ?exn ?section ?location ?logger fmt = Printf.ksprintf (warning ?exn ?section ?location ?logger) fmt
+let error ?exn ?section ?location ?logger msg = log ?exn ?section ?location ?logger ~level:Error msg
+let error_f ?exn ?section ?location ?logger fmt = Printf.ksprintf (error ?exn ?section ?location ?logger) fmt
+let fatal ?exn ?section ?location ?logger msg = log ?exn ?section ?location ?logger ~level:Fatal msg
+let fatal_f ?exn ?section ?location ?logger fmt = Printf.ksprintf (fatal ?exn ?section ?location ?logger) fmt

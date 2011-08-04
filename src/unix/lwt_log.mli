@@ -112,7 +112,7 @@ val append_rule : string -> level -> unit
 
 (** {6 Logging functions} *)
 
-val log : ?exn : exn -> ?section : section -> ?logger : logger -> level : level -> string -> unit Lwt.t
+val log : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> level : level -> string -> unit Lwt.t
   (** [log ?section ?logger ~level message] logs a message.
 
       [section] defaults to {!Section.main}. If [logger] is not
@@ -121,9 +121,12 @@ val log : ?exn : exn -> ?section : section -> ?logger : logger -> level : level 
 
       If [exn] is provided, then its string representation
       (= [Printexc.to_string exn]) will be append to the message, and if
-      possible the backtrace will also be logged. *)
+      possible the backtrace will also be logged.
 
-val log_f : ?exn : exn -> ?section : section -> ?logger : logger -> level : level -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+      [location] contains the location of the logging directive, it is
+      of the form [(file_name, line, column)]. *)
+
+val log_f : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> level : level -> ('a, unit, string, unit Lwt.t) format4 -> 'a
   (** [log_f] is the same as [log] except that it takes a format
       string *)
 
@@ -133,23 +136,23 @@ val log_f : ?exn : exn -> ?section : section -> ?logger : logger -> level : leve
     For example {!info msg} is the same as {!log ~level:Info msg}.
 *)
 
-val debug : ?exn : exn -> ?section : section -> ?logger : logger -> string -> unit Lwt.t
-val debug_f : ?exn : exn ->  ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+val debug : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> string -> unit Lwt.t
+val debug_f : ?exn : exn ->  ?section : section -> ?location : (string * int * int) -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
 
-val info : ?exn : exn -> ?section : section -> ?logger : logger -> string -> unit Lwt.t
-val info_f : ?exn : exn ->  ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+val info : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> string -> unit Lwt.t
+val info_f : ?exn : exn ->  ?section : section -> ?location : (string * int * int) -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
 
-val notice : ?exn : exn -> ?section : section -> ?logger : logger -> string -> unit Lwt.t
-val notice_f : ?exn : exn ->  ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+val notice : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> string -> unit Lwt.t
+val notice_f : ?exn : exn ->  ?section : section -> ?location : (string * int * int) -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
 
-val warning : ?exn : exn -> ?section : section -> ?logger : logger -> string -> unit Lwt.t
-val warning_f : ?exn : exn ->  ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+val warning : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> string -> unit Lwt.t
+val warning_f : ?exn : exn ->  ?section : section -> ?location : (string * int * int) -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
 
-val error : ?exn : exn -> ?section : section -> ?logger : logger -> string -> unit Lwt.t
-val error_f : ?exn : exn ->  ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+val error : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> string -> unit Lwt.t
+val error_f : ?exn : exn ->  ?section : section -> ?location : (string * int * int) -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
 
-val fatal : ?exn : exn -> ?section : section -> ?logger : logger -> string -> unit Lwt.t
-val fatal_f : ?exn : exn ->  ?section : section -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+val fatal : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> string -> unit Lwt.t
+val fatal_f : ?exn : exn ->  ?section : section -> ?location : (string * int * int) -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
 
 (** Sections *)
 module Section : sig
@@ -199,17 +202,28 @@ type template = string
           the level
         - [section] which will be replaced by the name of the
           message's section
+        - [loc-file] which will be replaced by the file name of the
+          calling logging function
+        - [loc-line] which will be replaced by the line number of the
+          calling logging function
+        - [loc-column] which will be replaced by the column number of
+           the calling logging function
 
         For example:
         - ["$(name): $(message)"]
         - ["$(date) $(name)[$(pid)]: $(message)"]
         - ["$(date).$(milliseconds) $(name)[$(pid)]: $(message)"]
+        - ["$(date): $(loc-file): $(loc-line): $(loc-column): $(message)"]
     *)
 
 val render : buffer : Buffer.t -> template : template -> section : section -> level : level -> message : string -> unit
   (** [render ~buffer ~template ~section ~level ~message] instantiate
       all variables of [template], and store the result in
-      [buffer]. *)
+      [buffer]. The location is obtained from threads local
+      storage. *)
+
+val location_key : (string * int * int) Lwt.key
+  (** The key for storing current location. *)
 
 (** {6 Loggers} *)
 
@@ -220,9 +234,9 @@ val make :  output : (section -> level -> string list -> unit Lwt.t) -> close : 
   (** [make ~output ~close] creates a new logger.
 
       @param output is used to write logs. It is a function which
-      receive a section, a level and a list lines that must
-      be logged together.
-      @param close is used to close the logger *)
+      receive a section, a level and a list lines that must be logged
+      together.
+      @param close is used to close the logger. *)
 
 val close : logger -> unit Lwt.t
   (** Close the given logger *)

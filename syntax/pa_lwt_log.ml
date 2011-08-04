@@ -77,6 +77,13 @@ let split e =
   in
   aux `None [] e
 
+let make_loc _loc =
+  <:expr<
+    ($str:Loc.file_name _loc$,
+     $int:string_of_int (Loc.start_line _loc)$,
+     $int:string_of_int (Loc.start_off _loc - Loc.start_bol _loc)$)
+  >>
+
 let map =
 object
   inherit Ast.map as super
@@ -90,7 +97,7 @@ object
           let args = List.map super#expr args in
           <:expr<
             if Lwt_log.$uid:level$ >= Lwt_log.Section.level Lwt_log.Section.main then
-              $apply <:expr< Lwt_log.$lid:func$ >> args$
+              $apply <:expr< Lwt_log.$lid:func$ ~location:$make_loc _loc$ >> args$
             else
               Lwt.return ()
           >>
@@ -98,7 +105,7 @@ object
           let args = List.map super#expr args in
           <:expr<
             if Lwt_log.$uid:level$ >= Lwt_log.Section.level section then
-              $apply <:expr< Lwt_log.$lid:func$ >> args$
+              $apply <:expr< Lwt_log.$lid:func$ ~location:$make_loc _loc$ >> args$
             else
               Lwt.return ()
           >>
@@ -107,7 +114,7 @@ object
           <:expr<
             let __pa_log_section = $section$ in
             if Lwt_log.$uid:level$ >= Lwt_log.Section.level __pa_log_section then
-              $apply <:expr< Lwt_log.$lid:func$ >> args$
+              $apply <:expr< Lwt_log.$lid:func$ ~location:$make_loc _loc$ >> args$
             else
               Lwt.return ()
           >>

@@ -26,8 +26,13 @@ lwt () =
   let f () : unit = raise Exit in
   let g () = f () in
   let h () = g () in
-  try
-    h ();
-    Lwt.return ()
-  with exn ->
-    Lwt_log.error ~section ~exn "h failed with"
+  lwt () =
+    try
+      h ();
+      Lwt.return ()
+    with exn ->
+      Lwt_log.error ~section ~exn "h failed with"
+  in
+
+  let logger = Lwt_log.channel ~template:"$(name): $(section): $(loc-file): $(loc-line): $(loc-column): $(message)" ~close_mode:`Keep ~channel:Lwt_io.stderr () in
+  Lwt_log.info ~section ~logger "this message will appear with a location"
