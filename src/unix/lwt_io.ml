@@ -1346,7 +1346,7 @@ let open_connection ?buffer_size sockaddr =
     raise_lwt exn
 
 let with_connection ?buffer_size sockaddr f =
-  lwt ic, oc = open_connection sockaddr in
+  lwt ic, oc = open_connection ?buffer_size sockaddr in
   try_lwt
     f (ic, oc)
   finally
