@@ -2340,11 +2340,19 @@ let on_signal signum handler =
   let node = Lwt_sequence.add_r handler actions in
   lazy(Lwt_sequence.remove node;
        if Lwt_sequence.is_empty actions then begin
+         signals := Signal_map.remove signum !signals;
          stop_notification notification;
          Sys.set_signal signum Sys.Signal_default
        end)
 
 let disable_signal_handler = Lazy.force
+
+let reinstall_signal_handler signum =
+  match try Some (Signal_map.find signum !signals) with Not_found -> None with
+    | Some (notification, actions) ->
+        Sys.set_signal signum (Sys.Signal_handle (fun signum -> send_notification notification))
+    | None ->
+        ()
 
 (* +-----------------------------------------------------------------+
    | Processes                                                       |

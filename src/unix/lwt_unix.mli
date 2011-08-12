@@ -627,6 +627,12 @@ val disable_signal_handler : signal_handler_id -> unit
 val signal_count : unit -> int
   (** Returns the number of registered signal handler. *)
 
+val reinstall_signal_handler : int -> unit
+  (** [reinstall_signal_handler signum] if any signal handler is
+      registered for this signal with {!on_signal}, it reinstall the
+      signal handler (with [Sys.set_signal]). This is usefull in case
+      another part of the program install another signal handler. *)
+
 (** {6 Sockets} *)
 
 type inet_addr = Unix.inet_addr
