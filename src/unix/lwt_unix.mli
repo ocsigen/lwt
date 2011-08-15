@@ -233,7 +233,13 @@ val abort : file_descr -> exn -> unit
 val fork : unit -> int
   (** [fork ()] does the same as [Unix.fork]. You must use this
       function instead of [Unix.fork] when you want to use Lwt in the
-      child process. *)
+      child process.
+
+      Notes:
+      - in the child process all pending jobs are canceled,
+      - if you are going to use Lwt in the parent and the child, it is
+        a good idea to call {!Lwt_io.flush_all} before callling
+        {!fork} to avoid double-flush. *)
 
 type process_status =
     Unix.process_status =
@@ -1046,6 +1052,13 @@ val execute_job :
       the async method of the current thread. [result] is used to get
       the result of the job, and [free] to free its associated
       resources. *)
+
+val cancel_jobs : unit -> unit
+  (** [cancel_jobs ()] make all pending jobs to fail with
+      {!Lwt.Canceled}. *)
+
+val wait_for_jobs : unit -> unit Lwt.t
+  (** Wait for all pending jobs to terminate. *)
 
 (** {6 Notifications} *)
 

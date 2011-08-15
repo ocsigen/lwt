@@ -161,6 +161,18 @@ external check_job : 'a job -> int -> bool = "lwt_unix_check_job" "noalloc"
 external cancel_job : 'a job -> unit = "lwt_unix_cancel_job" "noalloc"
     (* Cancel the thread of the given job. *)
 
+(* All running jobs. *)
+let jobs = Lwt_sequence.create ()
+
+(* Cancel all running jobs. *)
+let rec cancel_jobs () =
+  match Lwt_sequence.take_opt_l jobs with
+    | Some w -> cancel w; cancel_jobs ()
+    | None -> ()
+
+let wait_for_jobs () =
+  join (Lwt_sequence.fold_l (fun w l -> w :: l) jobs [])
+
 let execute_job ?async_method ~job ~result ~free =
   let async_method =
     match async_method with
@@ -172,61 +184,70 @@ let execute_job ?async_method ~job ~result ~free =
   in
   (* Starts the job. *)
   let job_done = start_job job async_method in
-  lwt status =
-    if job_done then
-      return None
-    else
-      (* Create the notification for asynchronous wakeup. *)
-      let id = make_notification ~once:true ignore in
-      try_lwt
-        (* Give some time to the job before we fallback to
-           asynchronous notification. *)
-        lwt () = pause () in
-        if check_job job id then begin
-          stop_notification id;
-          return None
-        end else
-          return (Some id)
-      with Canceled as exn ->
-        cancel_job job;
-        (* Free resources when the job terminates. *)
-        if check_job job id then begin
-          stop_notification id;
-          free job
-        end else
-          set_notification id (fun () -> free job);
-        raise_lwt exn
+  let w =
+    lwt status =
+      if job_done then
+        return None
+      else
+        (* Create the notification for asynchronous wakeup. *)
+        let id = make_notification ~once:true ignore in
+        try_lwt
+          (* Give some time to the job before we fallback to
+             asynchronous notification. *)
+          lwt () = pause () in
+          if check_job job id then begin
+            stop_notification id;
+            return None
+          end else
+            return (Some id)
+        with Canceled as exn ->
+          cancel_job job;
+          (* Free resources when the job terminates. *)
+          if check_job job id then begin
+            stop_notification id;
+            free job
+          end else
+            set_notification id (fun () -> free job);
+          raise_lwt exn
+    in
+    match status with
+      | None ->
+          (* The job has already terminated, read and return the result
+             immediatly. *)
+          let thread =
+            try
+              return (result job)
+            with exn ->
+              fail exn
+          in
+          free job;
+          thread
+      | Some id ->
+          (* The job has not terminated, setup the notification for the
+             asynchronous wakeup. *)
+          let waiter, wakener = task () in
+          set_notification id
+            (fun () ->
+               begin
+                 try
+                   wakeup wakener (result job);
+                 with exn ->
+                   wakeup_exn wakener exn
+               end;
+               free job);
+          on_cancel waiter
+            (fun () ->
+               cancel_job job;
+               set_notification id (fun () -> free job));
+          waiter
   in
-  match status with
-    | None ->
-        (* The job has already terminated, read and return the result
-           immediatly. *)
-        let thread =
-          try
-            return (result job)
-          with exn ->
-            fail exn
-        in
-        free job;
-        thread
-    | Some id ->
-        (* The job has not terminated, setup the notification for the
-           asynchronous wakeup. *)
-        let waiter, wakener = task () in
-        set_notification id
-          (fun () ->
-             begin
-               try
-                 wakeup wakener (result job);
-               with exn ->
-                 wakeup_exn wakener exn
-             end;
-             free job);
-        on_cancel waiter
-          (fun () ->
-             cancel_job job;
-             set_notification id (fun () -> free job));
-        waiter
+  if state w = Sleep then begin
+    (* Add the job to the sequence of all jobs. *)
+    let node = Lwt_sequence.add_l (w >> return ()) jobs in
+    (* Remove it on termination. *)
+    on_termination w (fun () -> Lwt_sequence.remove node)
+  end;
+  w
 
 (* +-----------------------------------------------------------------+
    | File descriptor wrappers                                        |
@@ -2364,6 +2385,9 @@ let fork () =
         Lwt_engine.stop_event !event_notifications;
         (* Reinitialise the notification system. *)
         event_notifications := Lwt_engine.on_readable (init_notification ()) handle_notifications;
+        (* Cancel all pending jobs. We yield first so that if the
+           program do an exec just after, it won't be executed. *)
+        on_termination (Lwt_main.yield ()) cancel_jobs;
         0
     | pid ->
         pid

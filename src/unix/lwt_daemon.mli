@@ -34,7 +34,10 @@ val daemonize :
       and exit the parent, detach it from its controlling terminal,
       and redict standard intputs/outputs..
 
-      Note: if the process is already a daemon, it does nothing.
+      Notes:
+      - if the process is already a daemon, it does nothing.
+      - you must be sure that there is no pending threads when
+        calling this function, otherwise they may be canceled.
 
       If [syslog] is [true] (the default), then {!Lwt_log.default} is
       set to [Lwt_log.syslog ~facility:`Daemon ()], otherwise it is

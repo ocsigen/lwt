@@ -186,6 +186,9 @@ val buffered : 'a channel -> int
 val flush : output_channel -> unit Lwt.t
   (** [flush oc] performs all pending writes on [oc] *)
 
+val flush_all : unit -> unit Lwt.t
+  (** [flush_all ()] flushes all open output channels *)
+
 val buffer_size : 'a channel -> int
   (** Returns the size of the internal buffer. *)
 
