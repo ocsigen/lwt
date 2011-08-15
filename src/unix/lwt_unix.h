@@ -94,6 +94,21 @@ enum lwt_unix_async_method {
 /* Type of job execution modes. */
 typedef enum lwt_unix_async_method lwt_unix_async_method;
 
+/* State of a job. */
+enum lwt_unix_job_state {
+  /* The job has not yet started. */
+  LWT_UNIX_JOB_STATE_PENDING,
+
+  /* The job is running. */
+  LWT_UNIX_JOB_STATE_RUNNING,
+
+  /* The job is done. */
+  LWT_UNIX_JOB_STATE_DONE,
+
+  /* The job has been canceled. */
+  LWT_UNIX_JOB_STATE_CANCELED
+};
+
 /* A job descriptor. */
 struct lwt_unix_job {
   /* The next job in the queue. */
@@ -106,21 +121,17 @@ struct lwt_unix_job {
   /* The function to call to do the work. */
   void (*worker)(struct lwt_unix_job *job);
 
-  /* Is the job terminated ? In case the job is canceled, it will
-     always be 0. */
-  int done;
+  /* State of the job. */
+  enum lwt_unix_job_state state;
 
   /* Is the main thread still waiting for the job ? */
   int fast;
 
-  /* Mutex to protect access to [done] and [fast]. */
+  /* Mutex to protect access to [state] and [fast]. */
   pthread_mutex_t mutex;
 
   /* Thread running the job. */
   pthread_t thread;
-
-  /* Whether the [thread] field has been initialized. */
-  int thread_initialized;
 
   /* The async method in used by the job. */
   lwt_unix_async_method async_method;

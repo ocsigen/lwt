@@ -2379,15 +2379,24 @@ let reinstall_signal_handler signum =
    | Processes                                                       |
    +-----------------------------------------------------------------+ *)
 
+external reset_after_fork : unit -> unit = "lwt_unix_reset_after_fork"
+
 let fork () =
   match Unix.fork () with
     | 0 ->
+        (* Reset threading. *)
+        reset_after_fork ();
+        (* Stop the old event for notifications. *)
         Lwt_engine.stop_event !event_notifications;
         (* Reinitialise the notification system. *)
         event_notifications := Lwt_engine.on_readable (init_notification ()) handle_notifications;
-        (* Cancel all pending jobs. We yield first so that if the
-           program do an exec just after, it won't be executed. *)
-        on_termination (Lwt_main.yield ()) cancel_jobs;
+        (* Collect all pending jobs. *)
+        let l = Lwt_sequence.fold_l (fun w l -> w :: l) jobs [] in
+        (* Remove them all. *)
+        Lwt_sequence.iter_node_l Lwt_sequence.remove jobs;
+        (* And cancel them all. We yield first so that if the program
+           do an exec just after, it won't be executed. *)
+        on_termination (Lwt_main.yield ()) (fun () -> List.iter cancel l);
         0
     | pid ->
         pid

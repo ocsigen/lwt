@@ -528,6 +528,22 @@ static void execute_job(lwt_unix_job job)
 {
   DEBUG("executing the job");
 
+  pthread_mutex_lock(&job->mutex);
+
+  /* If the job has been canceled, do nothing. */
+  if (job->state == LWT_UNIX_JOB_STATE_CANCELED) {
+    pthread_mutex_unlock(&job->mutex);
+    return;
+  }
+
+  /* Mark the job as running. */
+  job->state = LWT_UNIX_JOB_STATE_RUNNING;
+
+  /* Set the thread of the job. */
+  job->thread = pthread_self();
+
+  pthread_mutex_unlock(&job->mutex);
+
   /* Execute the job. */
   job->worker(job);
 
@@ -539,7 +555,7 @@ static void execute_job(lwt_unix_job job)
 
   /* Job is done. If the main thread stopped until now, asynchronous
      notification is not necessary. */
-  job->done = 1;
+  job->state = LWT_UNIX_JOB_STATE_DONE;
 
   /* Send a notification if the main thread continued its execution
      before the job terminated. */
@@ -887,9 +903,6 @@ static void* worker_loop(void *data)
       /* Take the first queued job. */
       job = pool_queue->next;
 
-      job->thread = pthread_self();
-      job->thread_initialized = 1;
-
       /* Remove it from the queue. */
       if (job->next == job)
         pool_queue = NULL;
@@ -949,7 +962,7 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method)
     async_method = LWT_UNIX_ASYNC_METHOD_NONE;
 
   /* Initialises job parameters. */
-  job->done = 0;
+  job->state = LWT_UNIX_JOB_STATE_PENDING;
   job->fast = 1;
   job->async_method = async_method;
 
@@ -966,7 +979,6 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method)
     if (threading_initialized == 0) initialize_threading();
 
     pthread_mutex_init(&job->mutex, NULL);
-    job->thread_initialized = 0;
 
     pthread_mutex_lock(&pool_mutex);
     if (thread_waiting_count == 0) {
@@ -988,7 +1000,7 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method)
       pthread_cond_signal(&pool_condition);
       pthread_mutex_unlock(&pool_mutex);
     }
-    return Val_bool(job->done);
+    return Val_bool(job->state == LWT_UNIX_JOB_STATE_DONE);
 
   case LWT_UNIX_ASYNC_METHOD_SWITCH:
 #if defined(LWT_ON_WINDOWS)
@@ -1053,7 +1065,7 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method)
 
       /* This thread is now running caml code. */
       //caml_c_thread_register();
-      return Val_bool(job->done);
+      return Val_bool(job->state == LWT_UNIX_JOB_STATE_DONE);
     }
   }
 
@@ -1078,7 +1090,7 @@ CAMLprim value lwt_unix_check_job(value val_job, value val_notification_id)
     job->fast = 0;
     /* Set the notification id for asynchronous wakeup. */
     job->notification_id = Int_val(val_notification_id);
-    value result = Val_bool(job->done);
+    value result = Val_bool(job->state == LWT_UNIX_JOB_STATE_DONE);
     pthread_mutex_unlock(&job->mutex);
 
     DEBUG("job done: %d", Int_val(result));
@@ -1101,19 +1113,49 @@ CAMLprim value lwt_unix_cancel_job(value val_job)
     break;
 
   case LWT_UNIX_ASYNC_METHOD_DETACH:
-    while (job->thread_initialized == 0) {
-      struct timeval tv;
-      tv.tv_sec = 0;
-      tv.tv_usec = 100000;
-      select(0, NULL, NULL, NULL, &tv);
-    };
-
   case LWT_UNIX_ASYNC_METHOD_SWITCH:
     pthread_mutex_lock(&job->mutex);
-    if (job->done == 0 && signal_kill_thread >= 0)
-      pthread_kill(job->thread, signal_kill_thread);
+    switch (job->state) {
+    case LWT_UNIX_JOB_STATE_PENDING:
+      /* The job has not yet started, mark it as canceled. */
+      job->state = LWT_UNIX_JOB_STATE_CANCELED;
+      break;
+
+    case LWT_UNIX_JOB_STATE_RUNNING:
+      /* The job is running, kill it. */
+      if (signal_kill_thread >= 0)
+        pthread_kill(job->thread, signal_kill_thread);
+      break;
+
+    case LWT_UNIX_JOB_STATE_DONE:
+      /* The job is done, do nothing. */
+      break;
+
+    case LWT_UNIX_JOB_STATE_CANCELED:
+      /* Not possible. */
+      break;
+    }
     pthread_mutex_unlock(&job->mutex);
     break;
+  }
+
+  return Val_unit;
+}
+
+CAMLprim value lwt_unix_reset_after_fork()
+{
+  if (threading_initialized) {
+    /* Reset the main thread. */
+    main_thread = pthread_self ();
+
+    /* There is no more waiting threads. */
+    thread_waiting_count = 0;
+
+    /* There is no more threads. */
+    thread_count = 0;
+
+    /* Empty the queue. */
+    pool_queue = NULL;
   }
 
   return Val_unit;
