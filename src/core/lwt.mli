@@ -317,6 +317,17 @@ val on_failure : 'a t -> (exn -> unit) -> unit
       but a bit more efficient.
   *)
 
+val on_termination : 'a t -> (unit -> unit) -> unit
+  (** [on_termination t f] executes [f] when [t] terminates. This is
+      the same as:
+
+      {[
+        ignore_result (finalize (fun () -> t) (fun () -> f (); return ()))
+      ]}
+
+      but a bit more efficient.
+  *)
+
 (**/**)
 
 (* The functions below are probably not useful for the casual user.

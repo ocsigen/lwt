@@ -507,6 +507,22 @@ let on_failure t f =
     | Repr _ ->
         assert false
 
+let on_termination t f =
+  match (repr t).state with
+    | Return v ->
+        f ()
+    | Fail exn ->
+        f ()
+    | Sleep sleeper ->
+        let data = !current_data in
+        add_immutable_waiter sleeper
+          (function
+             | Return v -> current_data := data; f ()
+             | Fail exn -> current_data := data; f ()
+             | _ -> assert false)
+    | Repr _ ->
+        assert false
+
 let try_bind x f g =
   let t = try x () with exn -> fail exn in
   match (repr t).state with
