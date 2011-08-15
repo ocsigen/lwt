@@ -453,18 +453,19 @@ let close wrapper =
           with _ ->
             abort wrapper
 
+let flush_all () =
+  let wrappers = Outputs.fold (fun x l -> x :: l) outputs [] in
+  Lwt_list.iter_p
+    (fun wrapper ->
+       try_lwt
+         primitive safe_flush_total wrapper
+       with _ ->
+         return ())
+    wrappers
+
 let () =
   (* Flush all opened ouput channels on exit: *)
-  Lwt_main.at_exit
-    (fun () ->
-       let wrappers = Outputs.fold (fun x l -> x :: l) outputs [] in
-       Lwt_list.iter_p
-         (fun wrapper ->
-            try_lwt
-              primitive safe_flush_total wrapper
-            with _ ->
-              return ())
-         wrappers)
+  Lwt_main.at_exit flush_all
 
 let no_seek pos cmd =
   raise_lwt (Failure "Lwt_io.seek: seek not supported on this channel")
