@@ -159,7 +159,11 @@ module Outputs = Weak.Make(struct
    flushed: *)
 let outputs = Outputs.create 32
 
+#if ocaml_version >= (3, 13)
+let position : type mode. mode channel -> int64 = fun wrapper ->
+#else
 let position wrapper =
+#endif
   let ch = wrapper.channel in
   match ch.mode with
     | Input ->
@@ -167,9 +171,14 @@ let position wrapper =
     | Output ->
         Int64.add ch.offset (Int64.of_int ch.ptr)
 
-let name ch = match ch.mode with
-  | Input -> "input"
-  | Output -> "output"
+#if ocaml_version >= (3, 13)
+let name : type mode. mode _channel -> string = fun ch ->
+#else
+let name ch =
+#endif
+  match ch.mode with
+    | Input -> "input"
+    | Output -> "output"
 
 let closed_channel ch = Channel_closed(name ch)
 let invalid_channel ch = Failure(Printf.sprintf "temporary atomic %s channel no more valid" (name ch))
@@ -185,7 +194,11 @@ let is_busy ch =
 
 (* Flush/refill the buffer. No race condition could happen because
    this function is always called atomically: *)
+#if ocaml_version >= (3, 13)
+let perform_io : type mode. mode _channel -> int Lwt.t = fun ch -> match ch.main.state with
+#else
 let perform_io ch = match ch.main.state with
+#endif
   | Busy_primitive | Busy_atomic _ -> begin
       match ch.typ with
         | Type_normal(perform_io, seek) ->
@@ -296,7 +309,11 @@ let auto_flush oc =
 (* A ``locked'' channel is a channel in the state [Busy_primitive] or
    [Busy_atomic] *)
 
+#if ocaml_version >= (3, 13)
+let unlock : type m. m channel -> unit = fun wrapper -> match wrapper.state with
+#else
 let unlock wrapper = match wrapper.state with
+#endif
   | Busy_primitive | Busy_atomic _ ->
       if Lwt_sequence.is_empty wrapper.queued then
         wrapper.state <- Idle
@@ -309,7 +326,7 @@ let unlock wrapper = match wrapper.state with
       if (* Launch the auto-flusher only if the channel is not busy: *)
         (wrapper.state = Idle &&
             (* Launch the auto-flusher only for output channel: *)
-            ch.mode = Output &&
+            (match ch.mode with Input -> false | Output -> true) &&
             (* Do not launch two auto-flusher: *)
             not ch.auto_flushing &&
             (* Do not launch the auto-flusher if operations are queued: *)
@@ -436,7 +453,11 @@ let rec abort wrapper = match wrapper.state with
       wakeup_exn wrapper.channel.abort_wakener (closed_channel wrapper.channel);
       Lazy.force wrapper.channel.close
 
+#if ocaml_version >= (3, 13)
+let close : type mode. mode channel -> unit Lwt.t = fun wrapper ->
+#else
 let close wrapper =
+#endif
   let channel = wrapper.channel in
   if channel.main != wrapper then
     raise_lwt (Failure "Lwt_io.close: cannot close a channel obtained via Lwt_io.atomic")
@@ -470,9 +491,22 @@ let () =
 let no_seek pos cmd =
   raise_lwt (Failure "Lwt_io.seek: seek not supported on this channel")
 
+#if ocaml_version < (3, 13)
 external unsafe_output : 'a channel -> output channel = "%identity"
+#endif
 
+#if ocaml_version >= (3, 13)
+let make :
+  type m.
+    ?buffer_size : int ->
+    ?close : (unit -> unit Lwt.t) ->
+    ?seek : (int64 -> Unix.seek_command -> int64 Lwt.t) ->
+    mode : m mode ->
+    (Lwt_bytes.t -> int -> int -> int Lwt.t) ->
+    m channel = fun ?buffer_size ?(close=return) ?(seek=no_seek) ~mode perform_io ->
+#else
 let make ?buffer_size ?(close=return) ?(seek=no_seek) ~mode perform_io =
+#endif
   let size =
     match buffer_size with
       | None ->
@@ -502,7 +536,13 @@ let make ?buffer_size ?(close=return) ?(seek=no_seek) ~mode perform_io =
     channel = ch;
     queued = Lwt_sequence.create ();
   } in
+#if ocaml_version < (3, 13)
   if mode = Output then Outputs.add outputs (unsafe_output wrapper);
+#else
+  (match mode with
+     | Input -> ()
+     | Output -> Outputs.add outputs wrapper);
+#endif
   wrapper
 
 let of_bytes ~mode bytes =
@@ -532,7 +572,11 @@ let of_bytes ~mode bytes =
 
 let of_string ~mode str = of_bytes ~mode (Lwt_bytes.of_string str)
 
+#if ocaml_version >= (3, 13)
+let of_fd : type m. ?buffer_size : int -> ?close : (unit -> unit Lwt.t) -> mode : m mode -> Lwt_unix.file_descr -> m channel = fun ?buffer_size ?close ~mode fd ->
+#else
 let of_fd ?buffer_size ?close ~mode fd =
+#endif
   let perform_io = match mode with
     | Input -> Lwt_bytes.read fd
     | Output -> Lwt_bytes.write fd
@@ -546,23 +590,39 @@ let of_fd ?buffer_size ?close ~mode fd =
     ~mode
     perform_io
 
+#if ocaml_version >= (3, 13)
+let of_unix_fd : type m. ?buffer_size : int -> ?close : (unit -> unit Lwt.t) -> mode : m mode -> Unix.file_descr -> m channel = fun ?buffer_size ?close ~mode fd ->
+#else
 let of_unix_fd ?buffer_size ?close ~mode fd =
+#endif
   of_fd ?buffer_size ?close ~mode (Lwt_unix.of_unix_file_descr fd)
 
+#if ocaml_version >= (3, 13)
+let buffered : type m. m channel -> int = fun ch ->
+#else
 let buffered ch =
+#endif
   match ch.channel.mode with
     | Input -> ch.channel.max - ch.channel.ptr
     | Output -> ch.channel.ptr
 
 let buffer_size ch = ch.channel.length
 
+#if ocaml_version >= (3, 13)
+let resize_buffer : type m. m channel -> int -> unit Lwt.t = fun wrapper len ->
+#else
 let resize_buffer wrapper len =
+#endif
   if len < min_buffer_size then invalid_arg "Lwt_io.resize_buffer";
   match wrapper.channel.typ with
     | Type_bytes ->
         raise_lwt (Failure "Lwt_io.resize_buffer: cannot resize the buffer of a channel created with Lwt_io.of_string")
     | Type_normal _ ->
-        primitive begin fun ch ->
+#if ocaml_version >= (3, 13)
+        let f : type m. m _channel -> unit Lwt.t = fun ch ->
+#else
+        let f ch =
+#endif
           match ch.mode with
             | Input ->
                 let unread_count = ch.max - ch.ptr in
@@ -596,7 +656,8 @@ let resize_buffer wrapper len =
                 ch.length <- len;
                 ch.max <- len;
                 return ()
-        end wrapper
+        in
+        primitive f wrapper
 
 (* +-----------------------------------------------------------------+
    | Byte-order                                                      |
@@ -921,7 +982,11 @@ struct
       f oc.buffer ptr
     end
 
+#if ocaml_version >= (3, 13)
+  let block : type m. m _channel -> int -> (Lwt_bytes.t -> int -> 'a Lwt.t) -> 'a Lwt.t = fun ch size f ->
+#else
   let block ch size f =
+#endif
     if size < 0 || size > min_buffer_size then
       raise_lwt (Invalid_argument(Printf.sprintf "Lwt_io.block(size=%d)" size))
     else
@@ -1105,7 +1170,11 @@ struct
     else
       return ()
 
+#if ocaml_version >= (3, 13)
+  let set_position : type m. m _channel -> int64 -> unit Lwt.t = fun ch pos -> match ch.typ, ch.mode with
+#else
   let set_position ch pos = match ch.typ, ch.mode with
+#endif
     | Type_normal(perform_io, seek), Output ->
         lwt () = flush_total ch in
         lwt () = do_seek seek pos in
@@ -1293,7 +1362,11 @@ let pipe ?buffer_size _ =
 
 type file_name = string
 
+#if ocaml_version >= (3, 13)
+let open_file : type m. ?buffer_size : int -> ?flags : Unix.open_flag list -> ?perm : Unix.file_perm -> mode : m mode -> file_name -> m channel Lwt.t = fun ?buffer_size ?flags ?perm ~mode filename ->
+#else
 let open_file ?buffer_size ?flags ?perm ~mode filename =
+#endif
   let flags = match flags, mode with
     | Some l, _ ->
         l
