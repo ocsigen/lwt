@@ -43,6 +43,16 @@ installed by default.
 If you get the development version you need to obtain oasis
 (http://oasis.forge.ocamlcore.org/).
 
+If you want to build the toplevel you have to install compiler
+libraries, under debian it is the package
+ocaml-compiler-libs. Otherwise you can add a symlink like that:
+
+  $ ln -s <ocaml sources> $(ocamlc -where)/compiler-libs
+
+Note that the utop project replaces the Lwt toplevel:
+
+  https://forge.ocamlcore.org/projects/utop/
+
 --------------------------------------------------------------------------
 
 Authors:
