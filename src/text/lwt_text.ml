@@ -49,7 +49,11 @@ let decoder = function
   | Encoder _ -> assert false
   | Decoder d -> d
 
+#if ocaml_version >= (3, 13)
+let make : type m. ?strict : bool -> ?encoding : string -> m Lwt_io.channel -> m channel = fun ?(strict=false) ?(encoding=Encoding.system) ch ->
+#else
 let make ?(strict=false) ?(encoding=Encoding.system) ch =
+#endif
   { channel = ch;
     encoding = encoding;
     strict = strict;
