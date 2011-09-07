@@ -28,7 +28,6 @@
 #include <caml/signals.h>
 #include <caml/callback.h>
 #include <glib.h>
-#include <ev.h>
 
 #include "../unix/lwt_unix.h"
 
