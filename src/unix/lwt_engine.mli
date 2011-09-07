@@ -130,7 +130,8 @@ end
 type ev_loop
   (** Type of libev loops. *)
 
-(** Engine based on libev. *)
+(** Engine based on libev. If not compiled with libev support, the
+    creation of the class will raise {!Lwt_sys.Not_available}. *)
 class libev : object
   inherit t
 

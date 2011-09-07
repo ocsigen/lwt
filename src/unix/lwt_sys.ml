@@ -39,7 +39,8 @@ type feature =
     | `get_credentials
     | `mincore
     | `madvise
-    | `fdatasync ]
+    | `fdatasync
+    | `libev ]
 
 let have = function
   | `wait4
@@ -53,6 +54,7 @@ let have = function
   | `fd_passing -> <:optcomp< HAVE_FD_PASSING >>
   | `get_credentials -> <:optcomp< HAVE_GET_CREDENTIALS >>
   | `fdatasync -> <:optcomp< HAVE_FDATASYNC >>
+  | `libev -> <:optcomp< HAVE_LIBEV >>
 
 type byte_order = Little_endian | Big_endian
 

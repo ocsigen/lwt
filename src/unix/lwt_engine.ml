@@ -20,6 +20,8 @@
  * 02111-1307, USA.
  *)
 
+#include "src/unix/lwt_config.ml"
+
 (* +-----------------------------------------------------------------+
    | Events                                                          |
    +-----------------------------------------------------------------+ *)
@@ -124,6 +126,8 @@ end
    | The libev engine                                                |
    +-----------------------------------------------------------------+ *)
 
+#if HAVE_LIBEV
+
 type ev_loop
 type ev_io
 type ev_timer
@@ -165,6 +169,24 @@ class libev = object
     let ev = ev_timer_init loop delay repeat f in
     lazy(ev_timer_stop loop ev)
 end
+
+#else
+
+type ev_loop
+
+class libev = object(self)
+  inherit abstract
+
+  val loop : ev_loop = raise (Lwt_sys.Not_available "libev")
+  method loop : ev_loop = assert false
+  method iter = assert false
+  method private cleanup = assert false
+  method private register_readable = assert false
+  method private register_writable = assert false
+  method private register_timer = assert false
+end
+
+#endif
 
 (* +-----------------------------------------------------------------+
    | Select/poll based engines                                       |
@@ -371,7 +393,15 @@ end
    | The current engine                                              |
    +-----------------------------------------------------------------+ *)
 
-let current = ref (if Lwt_sys.windows then (new select :> t) else (new libev :> t))
+#if HAVE_LIBEV && not windows
+
+let current = ref (new libev :> t)
+
+#else
+
+let current = ref (new select :> t)
+
+#endif
 
 let get () =
   !current

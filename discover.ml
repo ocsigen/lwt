@@ -144,6 +144,7 @@ CAMLprim value lwt_test()
 let ocamlc = ref "ocamlc"
 let ext_obj = ref ".o"
 let exec_name = ref "a.out"
+let use_libev = ref true
 
 let log_file = ref ""
 let caml_file = ref ""
@@ -208,26 +209,18 @@ let test_code args stub_code =
 let config = open_out "src/unix/lwt_config.h"
 let config_ml = open_out "src/unix/lwt_config.ml"
 
-let test_lib name ?(args="") code =
-  printf "testing for %s:%!" name;
-  if test_code args code then begin
-    printf " %s available\n%!" (String.make (34 - String.length name) '.');
-    true
-  end else begin
-    printf " %s unavailable\n%!" (String.make (34 - String.length name) '.');
-    false
-  end
-
 let test_feature name macro ?(args="") code =
   printf "testing for %s:%!" name;
   if test_code args code then begin
     fprintf config "#define %s\n" macro;
     fprintf config_ml "#let %s = true\n" macro;
-    printf " %s available\n%!" (String.make (34 - String.length name) '.')
+    printf " %s available\n%!" (String.make (34 - String.length name) '.');
+    true
   end else begin
     fprintf config "//#define %s\n" macro;
     fprintf config_ml "#let %s = false\n" macro;
-    printf " %s unavailable\n%!" (String.make (34 - String.length name) '.')
+    printf " %s unavailable\n%!" (String.make (34 - String.length name) '.');
+    false
   end
 
 (* +-----------------------------------------------------------------+
@@ -239,6 +232,11 @@ let () =
     "-ocamlc", Arg.Set_string ocamlc, "<path> ocamlc";
     "-ext-obj", Arg.Set_string ext_obj, "<ext> C object files extension";
     "-exec-name", Arg.Set_string exec_name, "<name> name of the executable produced by ocamlc";
+    "-use-libev", Arg.Symbol (["true"; "false"],
+                              function
+                                | "true" -> use_libev := true
+                                | "false" -> use_libev := false
+                                | _ -> assert false), " whether to check for libev";
   ] in
   Arg.parse args ignore "check for the need of -liconv\noptions are:";
 
@@ -261,8 +259,20 @@ let () =
              safe_remove (Filename.chop_extension !caml_file ^ ".cmo"));
 
   let missing = [] in
-  let missing = if test_lib "libev" ~args:"-cclib -lev" libev_code then missing else "libev" :: missing in
-  let missing = if test_lib "pthread" ~args:"-cclib -lpthread" pthread_code then missing else "pthread" :: missing in
+  let missing =
+    if !use_libev then
+      if test_feature "libev" "HAVE_LIBEV" ~args:"-cclib -lev" libev_code then
+        missing
+      else
+        "libev" :: missing
+    else begin
+      printf "not checking for libev\n%!";
+      fprintf config "//#define HAVE_LIBEV\n";
+      fprintf config_ml "#let HAVE_LIBEV = false\n";
+      missing
+    end
+  in
+  let missing = if test_feature "pthread" "HAVE_PTHREAD" ~args:"-cclib -lpthread" pthread_code then missing else "pthread" :: missing in
 
   if missing <> [] then begin
     printf "
@@ -274,13 +284,14 @@ For example, if they are installed in /opt/local, you can type:
 export C_INCLUDE_PATH=/opt/local/include
 export LIBRARY_PATH=/opt/local/lib
 
+To compile without libev support, use ./configure --disable-libev ...
 " (String.concat ", " missing);
     exit 1
   end;
 
-  test_feature "eventfd" "HAVE_EVENTFD" eventfd_code;
-  test_feature "fd passing" "HAVE_FD_PASSING" fd_passing_code;
-  test_feature "sched_getcpu" "HAVE_GETCPU" getcpu_code;
-  test_feature "affinity getting/setting" "HAVE_AFFINITY" affinity_code;
-  test_feature "credentials getting" "HAVE_GET_CREDENTIALS" get_credentials_code;
-  test_feature "fdatasync" "HAVE_FDATASYNC" fdatasync_code
+  ignore (test_feature "eventfd" "HAVE_EVENTFD" eventfd_code);
+  ignore (test_feature "fd passing" "HAVE_FD_PASSING" fd_passing_code);
+  ignore (test_feature "sched_getcpu" "HAVE_GETCPU" getcpu_code);
+  ignore (test_feature "affinity getting/setting" "HAVE_AFFINITY" affinity_code);
+  ignore (test_feature "credentials getting" "HAVE_GET_CREDENTIALS" get_credentials_code);
+  ignore (test_feature "fdatasync" "HAVE_FDATASYNC" fdatasync_code)

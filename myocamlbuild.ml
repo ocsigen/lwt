@@ -95,7 +95,7 @@ let () =
              if BaseEnvLight.var_get "glib" env = "true" || BaseEnvLight.var_get "all" env = "true" then
                define_c_library ~name:"glib" ~c_name:"glib-2.0";
 
-             let opts = S[A"-ppopt"; A "-let"; A"-ppopt"; A("windows=" ^ if BaseEnvLight.var_get "os_type" env <> "Unix" then "true" else "false")] in
+             let opts = S[A "-ppopt"; A "-let"; A "-ppopt"; A ("windows=" ^ if BaseEnvLight.var_get "os_type" env <> "Unix" then "true" else "false")] in
              flag ["ocaml"; "compile"; "pa_optcomp"] & opts;
              flag ["ocaml"; "ocamldep"; "pa_optcomp"] & opts;
              (*flag ["ocaml"; "doc"; "pa_optcomp"] & opts; Does not work... *)

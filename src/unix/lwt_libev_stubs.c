@@ -22,6 +22,10 @@
 
 /* Stubs for libev */
 
+#include "lwt_config.h"
+
+#if defined(HAVE_LIBEV)
+
 #include <caml/alloc.h>
 #include <caml/fail.h>
 #include <caml/mlvalues.h>
@@ -203,3 +207,5 @@ CAMLprim value lwt_libev_timer_stop(value loop, value val_watcher)
   free(watcher);
   return Val_unit;
 }
+
+#endif

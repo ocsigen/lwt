@@ -41,7 +41,8 @@ type feature =
     | `get_credentials
     | `mincore
     | `madvise
-    | `fdatasync ]
+    | `fdatasync
+    | `libev ]
 
 val have : feature -> bool
   (** Test whether the given feature is available on the current
