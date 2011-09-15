@@ -391,6 +391,16 @@ let waiter_of_wakener wakener = thread (wakener_repr wakener)
 *)
 let apply f x = try f x with e -> fail e
 
+let wrap f = try return (f ()) with exn -> fail exn
+
+let wrap1 f x1 = try return (f x1) with exn -> fail exn
+let wrap2 f x1 x2 = try return (f x1 x2) with exn -> fail exn
+let wrap3 f x1 x2 x3 = try return (f x1 x2 x3) with exn -> fail exn
+let wrap4 f x1 x2 x3 x4 = try return (f x1 x2 x3 x4) with exn -> fail exn
+let wrap5 f x1 x2 x3 x4 x5 = try return (f x1 x2 x3 x4 x5) with exn -> fail exn
+let wrap6 f x1 x2 x3 x4 x5 x6 = try return (f x1 x2 x3 x4 x5 x6) with exn -> fail exn
+let wrap7 f x1 x2 x3 x4 x5 x6 x7 = try return (f x1 x2 x3 x4 x5 x6 x7) with exn -> fail exn
+
 let add_immutable_waiter sleeper waiter =
   sleeper.waiters <- (match sleeper.waiters with
                         | Empty -> Immutable waiter

@@ -36,7 +36,8 @@
     Note that inside a Lwt thread, exceptions must be raised with
     {!fail} instead of [raise]. Also the [try ... with ...]
     construction will not catch Lwt errors. You must use {!catch}
-    instead.
+    instead. You can also use {!wrap} for functions that may raise
+    normal exception.
 
     Lwt also provides the syntax extension {!Pa_lwt} to make code
     using Lwt more readable.
@@ -120,6 +121,48 @@ val try_bind : (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
 val finalize : (unit -> 'a t) -> (unit -> unit t) -> 'a t
   (** [finalize f g] returns the same result as [f ()] whether it
       fails or not. In both cases, [g ()] is executed after [f]. *)
+
+val wrap : (unit -> 'a) -> 'a t
+  (** [wrap f] calls [f] and transform the result into a monad. If [f]
+      raise an exception, it is catched by Lwt.
+
+      This is actually the same as:
+
+      {[
+        try
+          return (f ())
+        with exn ->
+          fail exn
+      ]}
+  *)
+
+val wrap1 : ('a -> 'b) -> 'a -> 'b t
+  (** [wrap1 f x] applies [f] on [x] and returns the result as a
+      thread. If the application of [f] to [x] raise an exception it
+      is catched and a thread is returned.
+
+      Note that you must use {!wrap} instead of {!wrap1} if the
+      evaluation of [x] may raise an exception.
+
+      for example the following code is not ok:
+
+      {[
+        wrap1 f (Hashtbl.find table key)
+      ]}
+
+      you should write instead:
+
+      {[
+        wrap (fun () -> f (Hashtbl.find table key))
+      ]}
+  *)
+
+val wrap2 : ('a -> 'b -> 'c) -> 'a -> 'b -> 'c t
+val wrap3 : ('a -> 'b -> 'c -> 'd) -> 'a -> 'b -> 'c -> 'd t
+val wrap4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a -> 'b -> 'c -> 'd -> 'e t
+val wrap5 : ('a -> 'b -> 'c -> 'd -> 'e -> 'f) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f t
+val wrap6 : ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g t
+val wrap7 : ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h t
 
 (** {6 Multi-threads composition} *)
 
