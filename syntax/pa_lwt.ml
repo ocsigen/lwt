@@ -177,6 +177,9 @@ EXTEND Gram
             else
               <:expr< Lwt.fail $e$ >>
 
+        | "assert_lwt"; e = SELF ->
+            <:expr< try assert $e$ with exn -> Lwt.fail exn >>
+
         | "while_lwt"; cond = sequence; "do"; body = sequence; "done" ->
             <:expr<
               let rec __pa_lwt_loop () =

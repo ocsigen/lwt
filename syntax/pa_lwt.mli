@@ -126,6 +126,12 @@
       This allow exception to be traced when the -lwt-debug switch is passed
       to the syntax extension.
 
+    - assertion:
+
+      {[
+        assert_lwt <expr>
+      ]}
+
     - for loop:
 
       {[

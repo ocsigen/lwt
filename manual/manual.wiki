@@ -451,6 +451,8 @@ expr
   |                                                                                  |                                                                                      |
   | {{{raise}}} //exn//                                                              | {{{raise_lwt}}} //exn//                                                              |
   |                                                                                  |                                                                                      |
+  | {{{assert}}} //expr//                                                            | {{{assert_lwt}}} //expr//                                                            |
+  |                                                                                  |                                                                                      |
   | {{{match}}} //expr// {{{with}}}                                                  | {{{match_lwt}}} //expr// {{{with}}}                                                  |
   | // // {{{|}}} //pattern,,1,,// {{{->}}} //expr,,1,,//                            | // // {{{|}}} //pattern,,1,,// {{{->}}} //expr,,1,,//                                |
   | // // {{{|}}} //pattern,,2,,// {{{->}}} //expr,,2,,//                            | // // {{{|}}} //pattern,,2,,// {{{->}}} //expr,,2,,//                                |
