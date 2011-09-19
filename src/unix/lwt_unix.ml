@@ -283,31 +283,30 @@ type file_descr = {
 
 #if windows
 
+external is_socket : Unix.file_descr -> bool = "lwt_unix_is_socket" "noalloc"
+
 let is_blocking ?blocking ?(set_flags=true) fd =
-    match (Unix.fstat fd).Unix.st_kind with
-      | Unix.S_SOCK -> begin
-          match blocking, set_flags with
-            | Some state, false ->
-                lazy(return state)
-            | Some true, true ->
-                Unix.clear_nonblock fd;
-                lazy(return true)
-            | Some false, true ->
-                Unix.set_nonblock fd;
-                lazy(return false)
-            | None, false ->
-                lazy(return false)
-            | None, true ->
-                Unix.set_nonblock fd;
-                lazy(return false)
-        end
-      | _ -> begin
-          match blocking with
-            | Some state ->
-                lazy(return state)
-            | None ->
-                lazy(return true)
-        end
+  if is_socket fd then
+    match blocking, set_flags with
+      | Some state, false ->
+          lazy(return state)
+      | Some true, true ->
+          Unix.clear_nonblock fd;
+          lazy(return true)
+      | Some false, true ->
+          Unix.set_nonblock fd;
+          lazy(return false)
+      | None, false ->
+          lazy(return false)
+      | None, true ->
+          Unix.set_nonblock fd;
+          lazy(return false)
+  else
+    match blocking with
+      | Some state ->
+          lazy(return state)
+      | None ->
+          lazy(return true)
 
 #else
 

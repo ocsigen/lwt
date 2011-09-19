@@ -130,6 +130,8 @@ lwt () =
     Lwt_unix.bind sock src_addr;
     Lwt_unix.listen sock 1024;
 
+    ignore (Lwt_log.notice "waiting for connection");
+
     (* Wait for a connection. *)
     lwt fd1, _ = Lwt_unix.accept sock in
 
@@ -149,6 +151,6 @@ lwt () =
 
     return ()
 
-  with Unix.Unix_error (error, _, _) ->
-    ignore (Lwt_log.error_f "something went wrong: %s" (Unix.error_message error));
+  with exn ->
+    ignore (Lwt_log.error ~exn "something went wrong");
     exit 1

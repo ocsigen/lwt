@@ -22,6 +22,11 @@
 
 /* Windows version of stubs. */
 
+CAMLprim value lwt_unix_is_socket(value fd)
+{
+  return (Val_bool(Descr_kind_val(fd) == KIND_SOCKET));
+}
+
 CAMLprim value lwt_unix_write(value fd, value buf, value vofs, value vlen)
 {
   intnat ofs, len, written;
