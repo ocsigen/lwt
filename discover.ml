@@ -173,7 +173,7 @@ let c_args =
 let compile args stub_file =
   ksprintf
     Sys.command
-    "%s -custom %s %s %s %s 2> %s"
+    "%s -custom %s %s %s %s > %s 2>&1"
     !ocamlc
     c_args
     (Filename.quote stub_file)
