@@ -1783,11 +1783,41 @@ let accept_n ch n =
   with exn ->
     return (List.rev !l, Some exn)
 
+#if windows
+
 let connect ch addr =
   (* [in_progress] tell wether connection has started but not
      terminated: *)
   let in_progress = ref false in
-  wrap_syscall Write ch begin fun _ ->
+  wrap_syscall Write ch begin fun () ->
+    if !in_progress then
+      (* Nothing works without this test and i have no idea why... *)
+      if writable ch then
+        try
+          Unix.connect ch.fd addr
+        with
+          | Unix.Unix_error (Unix.EISCONN, _, _) ->
+              (* This is the windows way of telling that the connection
+                 has completed. *)
+              ()
+      else
+        raise Retry
+    else
+      try
+        Unix.connect ch.fd addr
+      with
+        | Unix.Unix_error (Unix.EWOULDBLOCK, _, _) ->
+            in_progress := true;
+            raise Retry
+  end
+
+#else
+
+let connect ch addr =
+  (* [in_progress] tell wether connection has started but not
+     terminated: *)
+  let in_progress = ref false in
+  wrap_syscall Write ch begin fun () ->
     if !in_progress then
       (* If the connection is in progress, [getsockopt_error] tells
          wether it succceed: *)
@@ -1804,10 +1834,12 @@ let connect ch addr =
            is interrupted by a signal: *)
         Unix.connect ch.fd addr
       with
-        | Unix.Unix_error(Unix.EINPROGRESS, _, _) ->
+        | Unix.Unix_error (Unix.EINPROGRESS, _, _) ->
             in_progress := true;
             raise Retry
   end
+
+#endif
 
 let setsockopt ch opt v =
   check_descriptor ch;
