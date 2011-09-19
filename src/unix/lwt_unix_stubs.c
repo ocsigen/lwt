@@ -265,10 +265,12 @@ value lwt_unix_send_notification_stub(value id)
 
 value lwt_unix_recv_notifications()
 {
+  int ret, i;
+  value result;
   pthread_mutex_lock(&notification_mutex);
   /* Receive the signal. */
   for (;;) {
-    int ret = notification_recv();
+    ret = notification_recv();
     if (ret < 0) {
       if (errno != EINTR) {
         pthread_mutex_unlock(&notification_mutex);
@@ -278,8 +280,7 @@ value lwt_unix_recv_notifications()
       break;
   }
   /* Read all pending notifications. */
-  value result = caml_alloc_tuple(notification_index);
-  int i;
+  result = caml_alloc_tuple(notification_index);
   for (i = 0; i < notification_index; i++)
     Field(result, i) = Val_long(notifications[i]);
   /* Reset the index. */
@@ -319,6 +320,16 @@ static int windows_notification_recv()
 
 value lwt_unix_init_notification()
 {
+  union {
+    struct sockaddr_in inaddr;
+    struct sockaddr addr;
+  } a;
+  SOCKET listener;
+  int e;
+  int addrlen = sizeof(a.inaddr);
+  int reuse = 1;
+  DWORD err;
+
   switch (notification_mode) {
   case NOTIFICATION_MODE_NOT_INITIALIZED:
     notification_mode = NOTIFICATION_MODE_NONE;
@@ -338,16 +349,6 @@ value lwt_unix_init_notification()
   /* Since pipes do not works with select, we need to use a pair of
      sockets. The following code simulate the socketpair call of
      unix. */
-
-  union {
-    struct sockaddr_in inaddr;
-    struct sockaddr addr;
-  } a;
-  SOCKET listener;
-  int e;
-  int addrlen = sizeof(a.inaddr);
-  int reuse = 1;
-  DWORD err;
 
   socket_r = INVALID_SOCKET;
   socket_w = INVALID_SOCKET;
@@ -503,6 +504,7 @@ pthread_t lwt_unix_launch_thread(void* (*start)(void*), void* data)
 {
   pthread_t thread;
   pthread_attr_t attr;
+  int result;
 
   pthread_attr_init(&attr);
 
@@ -510,7 +512,7 @@ pthread_t lwt_unix_launch_thread(void* (*start)(void*), void* data)
      it when it terminates: */
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
-  int result = pthread_create(&thread, &attr, start, data);
+  result = pthread_create(&thread, &attr, start, data);
 
   if (result) unix_error(result, "launch_thread", Nothing);
 
@@ -665,11 +667,14 @@ static int stack_allocated;
 /* Function executed on an alternative stack. */
 static void altstack_worker()
 {
+  struct stack_frame *node;
+  jmp_buf buf;
+
   if (stack_allocated == 1) return;
   stack_allocated = 1;
 
   /* The first passage is to register a new stack frame. */
-  struct stack_frame *node = lwt_unix_new(struct stack_frame);
+  node = lwt_unix_new(struct stack_frame);
 
   if (setjmp(node->checkpoint) == 0) {
 
@@ -722,7 +727,7 @@ static void altstack_worker()
       assert(become_worker != NULL);
 
       /* Take and remove the first worker checkpoint. */
-      struct stack_frame *node = become_worker;
+      node = become_worker;
       become_worker = node->next;
 
       pthread_mutex_unlock(&pool_mutex);
@@ -736,7 +741,6 @@ static void altstack_worker()
       blocking_call_enter = frame;
       /* Release the mutex only after the jump. */
 
-      jmp_buf buf;
       memcpy(&buf, &(node->checkpoint), sizeof(jmp_buf));
       free(node);
       longjmp(buf, 1);
@@ -839,6 +843,7 @@ void initialize_threading()
 static void* worker_loop(void *data)
 {
   lwt_unix_job job = (lwt_unix_job)data;
+  struct stack_frame *node;
 
   /* Execute the initial job if any. */
   if (job != NULL) execute_job(job);
@@ -872,7 +877,7 @@ static void* worker_loop(void *data)
       /* The new main thread is running again. */
       main_state = STATE_RUNNING;
 
-      struct stack_frame *node = lwt_unix_new(struct stack_frame);
+      node = lwt_unix_new(struct stack_frame);
 
       /* Save the stack frame so the old main thread can become a
          worker when the blocking call terminates. */
@@ -953,7 +958,7 @@ void lwt_unix_free_job(lwt_unix_job job)
 CAMLprim value lwt_unix_start_job(value val_job, value val_async_method)
 {
   lwt_unix_job job = Job_val(val_job);
-
+  struct stack_frame *node;
   lwt_unix_async_method async_method = Int_val(val_async_method);
 
   /* Fallback to synchronous call if there is no worker available and
@@ -1027,7 +1032,7 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method)
        calls. */
     pthread_mutex_lock(&blocking_call_enter_mutex);
     assert(blocking_call_enter != NULL);
-    struct stack_frame *node = blocking_call_enter;
+    node = blocking_call_enter;
     blocking_call_enter = node->next;
     pthread_mutex_unlock(&blocking_call_enter_mutex);
 
@@ -1075,6 +1080,7 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method)
 CAMLprim value lwt_unix_check_job(value val_job, value val_notification_id)
 {
   lwt_unix_job job = Job_val(val_job);
+  value result;
 
   DEBUG("checking job");
 
@@ -1090,7 +1096,7 @@ CAMLprim value lwt_unix_check_job(value val_job, value val_notification_id)
     job->fast = 0;
     /* Set the notification id for asynchronous wakeup. */
     job->notification_id = Int_val(val_notification_id);
-    value result = Val_bool(job->state == LWT_UNIX_JOB_STATE_DONE);
+    result = Val_bool(job->state == LWT_UNIX_JOB_STATE_DONE);
     pthread_mutex_unlock(&job->mutex);
 
     DEBUG("job done: %d", Int_val(result));
