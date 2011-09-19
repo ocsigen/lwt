@@ -297,6 +297,34 @@ Document "lwt-api"
     lwt.syntax.log
 
 # +-------------------------------------------------------------------+
+# | Examples                                                          |
+# +-------------------------------------------------------------------+
+
+Executable logging
+  Path: examples/unix
+  Build$: flag(unix)
+  Install: false
+  MainIs: logging.ml
+  BuildDepends: lwt.unix, lwt.syntax
+  CompiledObject: best
+
+Executable relay
+  Path: examples/unix
+  Build$: flag(unix)
+  Install: false
+  MainIs: relay.ml
+  BuildDepends: lwt.unix, lwt.syntax
+  CompiledObject: best
+
+Executable parallelize
+  Path: examples/unix
+  Build$: flag(unix)
+  Install: false
+  MainIs: parallelize.ml
+  BuildDepends: lwt.unix, lwt.syntax
+  CompiledObject: best
+
+# +-------------------------------------------------------------------+
 # | Tests                                                             |
 # +-------------------------------------------------------------------+
 
