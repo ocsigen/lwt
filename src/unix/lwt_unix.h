@@ -25,7 +25,6 @@
 
 #include <caml/mlvalues.h>
 #include <caml/unixsupport.h>
-#include <pthread.h>
 
 /* Detect the target OS */
 #if defined(_WIN32) || defined(_WIN64)
@@ -71,8 +70,57 @@ void lwt_unix_send_notification(int id);
    | Threading                                                       |
    +-----------------------------------------------------------------+ */
 
+#if defined(LWT_ON_WINDOWS)
+
+typedef DWORD lwt_unix_thread;
+typedef CRITICAL_SECTION lwt_unix_mutex;
+typedef struct lwt_unix_condition lwt_unix_condition;
+
+#else
+
+#include <pthread.h>
+
+typedef pthread_t lwt_unix_thread;
+typedef pthread_mutex_t lwt_unix_mutex;
+typedef pthread_cond_t lwt_unix_condition;
+
+#endif
+
 /* Launch a thread in detached mode. */
-pthread_t lwt_unix_launch_thread(void* (*start)(void*), void* data);
+void lwt_unix_launch_thread(void* (*start)(void*), void* data);
+
+/* Return a handle to the currently running thread. */
+lwt_unix_thread lwt_unix_thread_self();
+
+/* Returns whether two thread handles refer to the same thread. */
+int lwt_unix_thread_equal(lwt_unix_thread thread1, lwt_unix_thread thread2);
+
+/* Initialises a mutex. */
+void lwt_unix_mutex_init(lwt_unix_mutex *mutex);
+
+/* Destroy a mutex. */
+void lwt_unix_mutex_destroy(lwt_unix_mutex *mutex);
+
+/* Lock a mutex. */
+void lwt_unix_mutex_lock(lwt_unix_mutex *mutex);
+
+/* Unlock a mutex. */
+void lwt_unix_mutex_unlock(lwt_unix_mutex *mutex);
+
+/* Initialises a condition variable. */
+void lwt_unix_condition_init(lwt_unix_condition *condition);
+
+/* Destroy a condition variable. */
+void lwt_unix_condition_destroy(lwt_unix_condition *condition);
+
+/* Signal a condition variable. */
+void lwt_unix_condition_signal(lwt_unix_condition *condition);
+
+/* Broadcast a signal on a condition variable. */
+void lwt_unix_condition_broadcast(lwt_unix_condition *condition);
+
+/* Wait for a signal on a condition variable. */
+void lwt_unix_condition_wait(lwt_unix_condition *condition, lwt_unix_mutex *mutex);
 
 /* +-----------------------------------------------------------------+
    | Detached jobs                                                   |
@@ -128,10 +176,10 @@ struct lwt_unix_job {
   int fast;
 
   /* Mutex to protect access to [state] and [fast]. */
-  pthread_mutex_t mutex;
+  lwt_unix_mutex mutex;
 
   /* Thread running the job. */
-  pthread_t thread;
+  lwt_unix_thread thread;
 
   /* The async method in used by the job. */
   lwt_unix_async_method async_method;

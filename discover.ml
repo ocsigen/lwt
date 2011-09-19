@@ -145,6 +145,7 @@ let ocamlc = ref "ocamlc"
 let ext_obj = ref ".o"
 let exec_name = ref "a.out"
 let use_libev = ref true
+let os_type = ref "Unix"
 
 let log_file = ref ""
 let caml_file = ref ""
@@ -209,18 +210,25 @@ let test_code args stub_code =
 let config = open_out "src/unix/lwt_config.h"
 let config_ml = open_out "src/unix/lwt_config.ml"
 
-let test_feature name macro ?(args="") code =
-  printf "testing for %s:%!" name;
-  if test_code args code then begin
-    fprintf config "#define %s\n" macro;
-    fprintf config_ml "#let %s = true\n" macro;
-    printf " %s available\n%!" (String.make (34 - String.length name) '.');
-    true
+let test_feature ?(do_check = true) name macro ?(args="") code =
+  if do_check then begin
+    printf "testing for %s:%!" name;
+    if test_code args code then begin
+      fprintf config "#define %s\n" macro;
+      fprintf config_ml "#let %s = true\n" macro;
+      printf " %s available\n%!" (String.make (34 - String.length name) '.');
+      true
+    end else begin
+      fprintf config "//#define %s\n" macro;
+      fprintf config_ml "#let %s = false\n" macro;
+      printf " %s unavailable\n%!" (String.make (34 - String.length name) '.');
+      false
+    end
   end else begin
+    printf "not checking for %s\n%!" name;
     fprintf config "//#define %s\n" macro;
     fprintf config_ml "#let %s = false\n" macro;
-    printf " %s unavailable\n%!" (String.make (34 - String.length name) '.');
-    false
+    true
   end
 
 (* +-----------------------------------------------------------------+
@@ -237,8 +245,9 @@ let () =
                                 | "true" -> use_libev := true
                                 | "false" -> use_libev := false
                                 | _ -> assert false), " whether to check for libev";
+    "-os-type", Arg.Set_string os_type, "<name> type of the target os";
   ] in
-  Arg.parse args ignore "check for the need of -liconv\noptions are:";
+  Arg.parse args ignore "check for external C libraries and available features\noptions are:";
 
   (* Put the caml code into a temporary file. *)
   let file, oc = Filename.open_temp_file "lwt_caml" ".ml" in
@@ -259,24 +268,12 @@ let () =
              safe_remove (Filename.chop_extension !caml_file ^ ".cmo"));
 
   let missing = [] in
-  let missing =
-    if !use_libev then
-      if test_feature "libev" "HAVE_LIBEV" ~args:"-cclib -lev" libev_code then
-        missing
-      else
-        "libev" :: missing
-    else begin
-      printf "not checking for libev\n%!";
-      fprintf config "//#define HAVE_LIBEV\n";
-      fprintf config_ml "#let HAVE_LIBEV = false\n";
-      missing
-    end
-  in
-  let missing = if test_feature "pthread" "HAVE_PTHREAD" ~args:"-cclib -lpthread" pthread_code then missing else "pthread" :: missing in
+  let missing = if test_feature ~do_check:!use_libev "libev" "HAVE_LIBEV" ~args:"-cclib -lev" libev_code then missing else "libev" :: missing in
+  let missing = if test_feature ~do_check:(!os_type <> "Win32") "pthread" "HAVE_PTHREAD" ~args:"-cclib -lpthread" pthread_code then missing else "pthread" :: missing in
 
   if missing <> [] then begin
     printf "
-The following recquired C libraries are missing: %s.
+      The following recquired C libraries are missing: %s.
 Please install them and retry. If they are installed in a non-standard location, set the environment variables C_INCLUDE_PATH and LIBRARY_PATH accordingly and retry.
 
 For example, if they are installed in /opt/local, you can type:

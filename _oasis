@@ -21,7 +21,7 @@ Authors:
 Homepage: http://ocsigen.org/lwt/
 BuildTools: ocamlbuild
 Plugins: DevFiles (0.2), META (0.2)
-PostConfCommand: ocaml discover.ml -ocamlc $ocamlc -ext-obj $ext_obj -exec-name $default_executable_name -use-libev $libev
+PostConfCommand: ocaml discover.ml -ocamlc $ocamlc -ext-obj $ext_obj -exec-name $default_executable_name -use-libev $libev -os-type $os_type
 PostDistCleanCommand: $rm src/unix/lwt_config.h src/unix/lwt_config.ml
 
 Synopsis: Lightweight thread library for Objective Caml
@@ -74,7 +74,7 @@ Flag toplevel
 
 Flag libev
   Description: Compile with libev support
-  Default: true
+  Default$: !os_type(Win32)
 
 # +-------------------------------------------------------------------+
 # | Libraries                                                         |
@@ -131,10 +131,12 @@ Library "lwt-unix"
     lwt_unix.h,
     lwt_unix_stubs.c,
     lwt_libev_stubs.c
-  if flag(libev)
-    CCLib: -lpthread -lev
+  if os_type(Win32)
+    CCLib+: ws2_32.lib
   else
-    CCLib: -lpthread
+    CCLib+: -lpthread
+  if flag(libev)
+    CCLib+: -lev
 
 Library "lwt-simple-top"
   Build$: flag(unix) || flag(all)
