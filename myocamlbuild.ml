@@ -35,27 +35,37 @@ let search_paths = [
 
 open Ocamlbuild_plugin
 
-let pkg_config flags package =
+let pkg_config flags =
   with_temp_file "lwt" "pkg-config"
     (fun tmp ->
-       Command.execute ~quiet:true & Cmd(S[A "pkg-config"; A("--" ^ flags); A package; Sh ">"; A tmp]);
+       Command.execute ~quiet:true & Cmd(S[A "pkg-config"; S flags; Sh ">"; A tmp]);
        List.map (fun arg -> A arg) (string_list_of_file tmp))
 
-let define_c_library ~name ~c_name =
+let define_c_library ?(msvc = false) ~name ~c_name () =
   let tag = Printf.sprintf "use_C_%s" name in
 
-  (* Get flags for using pkg-config: *)
-  let opt = pkg_config "cflags" c_name and lib = pkg_config "libs" c_name in
+  (* Get compile flags. *)
+  let opt = pkg_config [A "--cflags"; A c_name] in
+
+  (* Get linking flags. *)
+  let lib =
+    if msvc then
+      (* With msvc we need to pass "glib-2.0.lib" instead of
+         "-lglib-2.0" otherwise executables will fail. *)
+      pkg_config [A "--libs-only-L"; A c_name] @ pkg_config [A "--libs-only-l"; A "--msvc-syntax"; A c_name]
+    else
+      pkg_config [A "--libs"; A c_name]
+  in
 
   (* Add flags for linking with the C library: *)
   flag ["ocamlmklib"; "c"; tag] & S lib;
 
   (* C stubs using the C library must be compiled with the library
      specifics flags: *)
-  flag ["c"; "compile"; tag] & S(List.map (fun arg -> S[A"-ccopt"; arg]) opt);
+  flag ["c"; "compile"; tag] & S (List.map (fun arg -> S[A"-ccopt"; arg]) opt);
 
   (* OCaml libraries must depends on the C library: *)
-  flag ["link"; "ocaml"; tag] & S(List.map (fun arg -> S[A"-cclib"; arg]) lib)
+  flag ["link"; "ocaml"; tag] & S (List.map (fun arg -> S[A"-cclib"; arg]) lib)
 
 let () =
   dispatch
@@ -92,8 +102,9 @@ let () =
 
              (* Glib bindings: *)
              let env = BaseEnvLight.load ~allow_empty:true ~filename:MyOCamlbuildBase.env_filename () in
+             let msvc = BaseEnvLight.var_get "ccomp_type" env = "msvc" in
              if BaseEnvLight.var_get "glib" env = "true" || BaseEnvLight.var_get "all" env = "true" then
-               define_c_library ~name:"glib" ~c_name:"glib-2.0";
+               define_c_library ~msvc ~name:"glib" ~c_name:"glib-2.0" ();
 
              let opts = S[A "-ppopt"; A "-let"; A "-ppopt"; A ("windows=" ^ if BaseEnvLight.var_get "os_type" env <> "Unix" then "true" else "false")] in
              flag ["ocaml"; "compile"; "pa_optcomp"] & opts;
