@@ -43,11 +43,16 @@ gint max_priority;
 
 CAMLprim value lwt_glib_poll(value val_fds, value val_count, value val_timeout)
 {
+  gint timeout, lwt_timeout;
+  long count;
+  int i;
+  GPollFD *gpollfd;
+  gint events, revents;
+
   CAMLparam3(val_fds, val_count, val_timeout);
   CAMLlocal5(node, src, node_result, src_result, tmp);
 
-  gint timeout;
-  long count = Long_val(val_count);
+  count = Long_val(val_count);
 
   g_main_context_dispatch(gc);
   g_main_context_prepare(gc, &max_priority);
@@ -58,27 +63,25 @@ CAMLprim value lwt_glib_poll(value val_fds, value val_count, value val_timeout)
     gpollfds = lwt_unix_malloc(fds_count * sizeof (GPollFD));
   }
 
-  int i;
-
   /* Clear all revents fields. */
   for (i = 0; i < n_fds + count; i++) gpollfds[i].revents = 0;
 
   /* Add all Lwt fds. */
   for (i = n_fds, node = val_fds; i < n_fds + count; i++, node = Field(node, 1)) {
     src = Field(node, 0);
-    GPollFD *gpollfd = gpollfds + i;
+    gpollfd = gpollfds + i;
 #if defined(LWT_ON_WINDOWS)
     gpollfd->fd = Handle_val(Field(src, 0));
 #else
     gpollfd->fd = Int_val(Field(src, 0));
 #endif
-    gint events = 0;
+    events = 0;
     if (Bool_val(Field(src, 1))) events |= G_IO_IN;
     if (Bool_val(Field(src, 2))) events |= G_IO_OUT;
     gpollfd->events = events;
   }
 
-  gint lwt_timeout = Int_val(val_timeout);
+  lwt_timeout = Int_val(val_timeout);
   if (timeout < 0 || (lwt_timeout >= 0 && lwt_timeout < timeout))
     timeout = lwt_timeout;
 
@@ -92,7 +95,7 @@ CAMLprim value lwt_glib_poll(value val_fds, value val_count, value val_timeout)
     src_result = caml_alloc_tuple(3);
     src = Field(node, 0);
     Field(src_result, 0) = Field(src, 0);
-    gint revents = gpollfds[i].revents;
+    revents = gpollfds[i].revents;
     Field(src_result, 1) = Val_bool(revents & G_IO_IN);
     Field(src_result, 2) = Val_bool(revents & G_IO_OUT);
     tmp = caml_alloc_tuple(2);
@@ -124,10 +127,12 @@ static value alloc_fd(HANDLE handle)
 
 CAMLprim value lwt_glib_get_sources()
 {
+  gint timeout;
+  int i;
+  GPollFD *gpollfd;
+
   CAMLparam0();
   CAMLlocal4(fd, fds, src, result);
-
-  gint timeout;
 
   g_main_context_dispatch(gc);
   g_main_context_prepare(gc, &max_priority);
@@ -138,10 +143,9 @@ CAMLprim value lwt_glib_get_sources()
     gpollfds = lwt_unix_malloc(fds_count * sizeof (GPollFD));
   }
 
-  int i;
   fds = caml_alloc_tuple(n_fds);
   for (i = 0; i < n_fds; i++) {
-    GPollFD *gpollfd = gpollfds + i;
+    gpollfd = gpollfds + i;
     gpollfd->revents = 0;
 
 #if defined(LWT_ON_WINDOWS)
