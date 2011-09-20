@@ -123,3 +123,9 @@ let remove () =
         glib_stop ()
     | State_lwt_into_glib engine ->
         Lwt_engine.set engine
+
+(* +-----------------------------------------------------------------+
+   | Misc                                                            |
+   +-----------------------------------------------------------------+ *)
+
+external iter : unit -> unit = "lwt_glib_iter"

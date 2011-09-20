@@ -44,3 +44,20 @@ val install : ?mode : [ `glib_into_lwt | `lwt_into_glib ] -> unit -> unit
 
 val remove : unit -> unit
   (** Remove the Glib<->Lwt integration. *)
+
+val iter : unit -> unit
+  (** This function is not related to Lwt. [iter ()] does the same as
+      [Glib.Main.iteration true] but can safely be called in a
+      multi-threaded program, it will not block the whole program.
+
+      For example:
+
+      {[
+        let main () =
+          while true do
+            Lwt_glib.iter ()
+          done
+
+        let thread = Thread.create main ()
+      ]}
+  *)

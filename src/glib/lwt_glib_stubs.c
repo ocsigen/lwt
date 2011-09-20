@@ -55,7 +55,7 @@ CAMLprim value lwt_glib_poll(value val_fds, value val_count, value val_timeout)
   while (fds_count < count + (n_fds = g_main_context_query(gc, max_priority, &timeout, gpollfds, fds_count))) {
     free(gpollfds);
     fds_count = n_fds + count;
-    gpollfds = malloc(fds_count * sizeof (GPollFD));
+    gpollfds = lwt_unix_malloc(fds_count * sizeof (GPollFD));
   }
 
   int i;
@@ -135,7 +135,7 @@ CAMLprim value lwt_glib_get_sources()
   while (fds_count < (n_fds = g_main_context_query(gc, max_priority, &timeout, gpollfds, fds_count))) {
     free(gpollfds);
     fds_count = n_fds;
-    gpollfds = malloc(fds_count * sizeof (GPollFD));
+    gpollfds = lwt_unix_malloc(fds_count * sizeof (GPollFD));
   }
 
   int i;
@@ -196,15 +196,60 @@ CAMLprim value lwt_glib_check()
    | Initialization/stopping                                         |
    +-----------------------------------------------------------------+ */
 
-value lwt_glib_init()
+CAMLprim value lwt_glib_init()
 {
   gc = g_main_context_default();
   g_main_context_ref(gc);
   return Val_unit;
 }
 
-value lwt_glib_stop()
+CAMLprim value lwt_glib_stop()
 {
   g_main_context_unref(gc);
+  return Val_unit;
+}
+
+/* +-----------------------------------------------------------------+
+   | Misc                                                            |
+   +-----------------------------------------------------------------+ */
+
+CAMLprim value lwt_glib_iter()
+{
+  GMainContext *gc;
+  gint max_priority, timeout;
+  GPollFD *pollfds = NULL;
+  gint pollfds_size = 0;
+  gint nfds;
+  gint i;
+
+  /* Get the main context. */
+  gc = g_main_context_default();
+
+  /* Dispatch pending events. */
+  g_main_context_dispatch(gc);
+
+  /* Prepare the context for polling. */
+  g_main_context_prepare(gc, &max_priority);
+
+  /* Get all file descriptors to poll. */
+  while (pollfds_size < (nfds = g_main_context_query(gc, max_priority, &timeout, pollfds, pollfds_size))) {
+    free(pollfds);
+    pollfds_size = nfds;
+    pollfds = lwt_unix_malloc(pollfds_size * sizeof (GPollFD));
+  }
+
+  /* Clear all revents fields. */
+  for (i = 0; i < nfds; i++) pollfds[i].revents = 0;
+
+  /* Do the blocking call. */
+  caml_enter_blocking_section();
+  g_main_context_get_poll_func(gc)(pollfds, nfds, timeout);
+  caml_leave_blocking_section();
+
+  /* Let glib parse the result. */
+  g_main_context_check(gc, max_priority, pollfds, nfds);
+
+  free(pollfds);
+
   return Val_unit;
 }
