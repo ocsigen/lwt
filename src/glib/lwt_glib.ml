@@ -128,4 +128,5 @@ let remove () =
    | Misc                                                            |
    +-----------------------------------------------------------------+ *)
 
-external iter : unit -> unit = "lwt_glib_iter"
+external iter : bool -> unit = "lwt_glib_iter"
+external wakeup : unit -> unit = "lwt_glib_wakeup"

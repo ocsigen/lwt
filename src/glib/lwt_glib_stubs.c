@@ -217,7 +217,7 @@ CAMLprim value lwt_glib_stop()
    | Misc                                                            |
    +-----------------------------------------------------------------+ */
 
-CAMLprim value lwt_glib_iter()
+CAMLprim value lwt_glib_iter(value may_block)
 {
   GMainContext *gc;
   gint max_priority, timeout;
@@ -249,6 +249,9 @@ CAMLprim value lwt_glib_iter()
   /* Clear all revents fields. */
   for (i = 0; i < nfds; i++) pollfds[i].revents = 0;
 
+  /* Set the timeout to 0 if we do not want to block. */
+  if (!Bool_val(may_block)) timeout = 0;
+
   /* Do the blocking call. */
   caml_enter_blocking_section();
   g_main_context_get_poll_func(gc)(pollfds, nfds, timeout);
@@ -262,5 +265,11 @@ CAMLprim value lwt_glib_iter()
 
   free(pollfds);
 
+  return Val_unit;
+}
+
+CAMLprim value lwt_glib_wakeup()
+{
+  g_main_context_wakeup(g_main_context_default());
   return Val_unit;
 }
