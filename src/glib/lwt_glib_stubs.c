@@ -229,6 +229,10 @@ CAMLprim value lwt_glib_iter()
   /* Get the main context. */
   gc = g_main_context_default();
 
+  /* Try to acquire it. */
+  if (!g_main_context_acquire(gc))
+    caml_failwith("Lwt_glib.iter");
+
   /* Dispatch pending events. */
   g_main_context_dispatch(gc);
 
@@ -252,6 +256,9 @@ CAMLprim value lwt_glib_iter()
 
   /* Let glib parse the result. */
   g_main_context_check(gc, max_priority, pollfds, nfds);
+
+  /* Release the context. */
+  g_main_context_release(gc);
 
   free(pollfds);
 

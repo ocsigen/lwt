@@ -60,4 +60,6 @@ val iter : unit -> unit
 
         let thread = Thread.create main ()
       ]}
-  *)
+
+      Note: you can call this function only from one thread at a time,
+      otherwise it will raise [Failure]. *)
