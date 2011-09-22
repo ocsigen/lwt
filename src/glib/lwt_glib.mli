@@ -22,11 +22,44 @@
 
 (** Glib integration *)
 
-(** This modules is intended to allow the use of Lwt in GTK
-    applications.
+(** This module allow to use Lwt in GTK applications.
 
-    If you are using GTK and Lwt in the same application, then you
-    must call {!install} at the beginning of you program. *)
+    Here is what you have to do to make Lwt and GTK work together:
+    - call {!install} at the beginning of your program (before or
+    after GMain.init, it does not matter)
+    - do not call GMain.main, write your application as a normal Lwt
+    application instead.
+
+    For example:
+
+    {[
+      let () = Lwt_main.run (
+        (* Initializes GTK. *)
+        ignore (GMain.init ());
+
+        (* Install Lwt<->Glib integration. *)
+        Lwt_glib.install ();
+
+        (* Thread which is wakeup when the main window is closed. *)
+        let waiter, wakener = Lwt.wait () in
+
+        (* Create a window. *)
+        let window = GWindow.window () in
+
+        (* Display something inside the window. *)
+        ignore (GMisc.label ~text:"Hello, world!" ~packing:window#add ());
+
+        (* Quit when the window is closed. *)
+        ignore (window#connect#destroy (Lwt.wakeup wakener));
+
+        (* Show the window. *)
+        window#show ();
+
+        (* Wait for it to be closed. *)
+        waiter
+      )
+    ]}
+ *)
 
 val install : ?mode : [ `glib_into_lwt | `lwt_into_glib ] -> unit -> unit
   (** Install the Glib<->Lwt integration.
