@@ -195,6 +195,13 @@ lwt () =
   let entry = GEdit.entry ~packing:hbox#add () in
   let send = GButton.button ~label:"send" ~packing:(hbox#pack ~expand:false) () in
 
+  (* Try to use a monospace font. *)
+  (try
+     view#misc#modify_font_by_name "Monospace";
+     entry#misc#modify_font_by_name "Monospace"
+   with _ ->
+     ());
+
   (* Thread waiting for the main window to be closed. *)
   let waiter, wakener = wait () in
 
