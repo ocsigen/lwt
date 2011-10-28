@@ -588,6 +588,40 @@ val s' : int Lwt_stream.t = <abstr>
   Note that a mailbox variable can be seen as a pushable stream with a
   limited memory.
 
+== Running a Lwt program ==
+
+  Threads you create with {{{Lwt}}} always have the type
+  {{{Lwt.t}}}. If you want to write a program and run it this is not
+  enough. Indeed you don't know when a {{{Lwt}}} thread is terminated.
+
+  For example if your program is just:
+
+<<code language="ocaml"|let _ = Lwt_io.printl "Hello, world!"
+>>
+
+  you have no guarantee that the thread writing {{{"Hello, world!"}}}
+  on the terminal will be terminated when the program exit. In order
+  to wait for a thread to terminate, you have to call the function
+  {{{Lwt_main.run}}}:
+
+<<code language="ocaml"|val Lwt_main.run : 'a Lwt.t -> 'a
+>>
+
+  This functions wait for the given thread to terminate and returns
+  its result. In fact it does more than that; it also run the
+  scheduler which is responsible for making thread to progress when
+  events are received from the outside world.
+
+  So basically, when you write a {{{Lwt}}} program you must call at
+  the toplevel the function {{{Lwt_main.run}}}. For instance:
+
+<<code language="ocaml"|let () = Lwt_main.run (Lwt_io.printl "Hello, world!")
+>>
+
+  Note that you must call {{{Lwt_main.run}}} only once at a time. It
+  cannot be used anywhere to get the result of a thread. It must only
+  be used in the entry point of your program.
+
 == The {{{lwt.unix}}} library ==
 
   The package {{{lwt.unix}}} contains all {{{unix}}} dependant
@@ -610,15 +644,42 @@ val s' : int Lwt_stream.t = <abstr>
   thread. At the end of the program, {{{Lwt}}} will wait for all the
   finaliser to terminates.
 
-=== The lwt scheduler ===
+=== The Lwt scheduler ===
 
-  The {{{Lwt_main}}} contains the {{{Lwt}}} //main loop//. It can be
-  customized by adding filters, and/or by replacing the {{{select}}}
-  function.
+  Threads doing IO may be put asleep until some events are received by
+  the process. For example when you read from a file descriptor, you
+  may have to wait for the file descriptor to become readable if no
+  data are immediatly available on it.
 
-  Filters are responsible to collect sources to monitor before entering
-  the blocking {{{select}}}, then to react and wakeup threads waiting
-  for sources to become ready.
+  {{{Lwt}}} contains a shceduler which is responsible for managing
+  multiple threads waiting for events, and restart them when needed.
+  This scheduler is implemented by the two modules {{{Lwt_engine}}}
+  and {{{Lwt_main}}}. {{{Lwt_engine}}} is a low-level module, it
+  provides signatures for IO multiplexers as well as several builtin
+  implementation. {{{Lwt}}} support by default multiplexing IO with
+  {{{libev}}} or {{{Unix.select}}}. The signature is given by the
+  class {{{Lwt_engine.t}}}.
+
+  {{{libev}}} is used by default on Unix, because it supports any
+  number of file descriptors while Unix.select supports only 1024 at
+  most, and is also much more efficient. On Windows {{{Unix.select}}}
+  is used because {{{libev}}} does not works properly. The user may
+  change at any time the backend in use.
+
+  The engine can also be used directly in order to integrate other
+  libraries with {{{Lwt}}}. For example {{{GTK}}} need to be notified
+  when some events are received. If you use {{{Lwt}}} with {{{GTK}}}
+  you need to use the {{{Lwt}}} scheduler to monitor {{{GTK}}}
+  sources. This is what is done by the {{{lwt.glib}}} package.
+
+  The {{{Lwt_main}}} module contains the //main loop// of
+  {{{Lwt}}}. It is run by calling the function {{{Lwt_main.run}}}:
+
+<<code language="ocaml"|val Lwt_main.run : 'a Lwt.t -> 'a
+>>
+
+  This function continously run the scheduler until the thread passed
+  as argument terminates.
 
 === The logging facility ===
 
