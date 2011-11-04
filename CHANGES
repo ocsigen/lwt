@@ -1,3 +1,21 @@
+===== 2.3.2 (2011-11-04) =====
+
+  * Add location informations in logs:
+    ** allow loggers to get the current location through local storage
+    ** pass current location to logging functions
+    ** pass the current location with the syntax extension
+  * Add Lwt.on_termination
+  * Add Lwt_unix.reinstall_signal_handler
+  * Add Lwt_io.flush_all
+  * Add assert_lwt keyword to the syntax extension
+  * Add Lwt.wrap
+  * Add Lwt_glib.iter and Lwt_glib.wakeup
+  * ocaml 3.13 ready
+  * Allow to compile without libev support
+  * Fix bugs in Lwt_io
+  * Better handling of forks
+  * Fix many problems on Windows
+
 ===== 2.3.1 (2011-07-13) =====
 
   * Fix building of documentation when using the tarball
