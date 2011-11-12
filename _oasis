@@ -46,19 +46,19 @@ Flag unix
 
 Flag react
   Description: React helpers
-  Default: false
+  Default$: flag(all)
 
 Flag glib
   Description: Glib integration
-  Default: false
+  Default$: flag(all)
 
 Flag ssl
   Description: SSL support
-  Default: false
+  Default$: flag(all)
 
 Flag text
   Description: Text mode utilities
-  Default: false
+  Default$: flag(all)
 
 Flag preemptive
   Description: Preemptive threads support
@@ -70,7 +70,7 @@ Flag extra
 
 Flag toplevel
   Description: Enhanced toplevel
-  Default: false
+  Default$: flag(all)
 
 Flag libev
   Description: Compile with libev support
