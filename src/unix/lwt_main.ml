@@ -32,7 +32,7 @@ let yield () =
   on_cancel waiter (fun () -> Lwt_sequence.remove node);
   waiter
 
-let rec run t =
+let rec run_rec t =
   (* Wakeup paused threads now. *)
   Lwt.wakeup_paused ();
   match Lwt.poll t with
@@ -53,7 +53,21 @@ let rec run t =
         end;
         (* Call leave hooks. *)
         Lwt_sequence.iter_l (fun f -> f ()) leave_iter_hooks;
-        run t
+        run_rec t
+
+let run_count = ref 0
+
+let run t =
+  incr run_count;
+  try
+    let result = run_rec t in
+    decr run_count;
+    result
+  with exn ->
+    decr run_count;
+    raise exn
+
+let is_running () = !run_count > 0
 
 let exit_hooks = Lwt_sequence.create ()
 
