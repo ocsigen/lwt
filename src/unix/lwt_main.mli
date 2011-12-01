@@ -44,10 +44,6 @@ val yield : unit -> unit Lwt.t
   (** [yield ()] is a threads which suspends itself and then resumes
       as soon as possible and terminates. *)
 
-val is_running : unit -> bool
-  (** [is_running ()] returns whether the main loop is currently
-      running. *)
-
 val enter_iter_hooks : (unit -> unit) Lwt_sequence.t
   (** Functions that are called before the main iteration. *)
 
