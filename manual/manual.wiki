@@ -21,21 +21,21 @@
      interacting with into this main loop.
    * using preemptive system threads
 
-  Both solution have their advantages and their drawbacks. For the
-  first one, it may works, but it becomes very complicated to write
-  some piece of asynchronous sequential code. The typical example being with
+  Both solutions have their advantages and their drawbacks. For the
+  first one, it may work, but it becomes very complicated to write
+  a piece of asynchronous sequential code. The typical example is
   graphical user interfaces freezing and not redrawing themselves
   because they are waiting for some blocking part of the code to
   complete.
 
-  If you already wrote code using preemptive threads, you shall know
-  that doing it right with threads is a hard job. Moreover system
+  If you already wrote code using preemptive threads, you should know
+  that doing it right with threads is a hard job. Morover system
   threads consume non negligible resources, and so you can only launch
   a limited number of threads at the same time. Thus this is not a
   real solution.
 
   {{{Lwt}}} offers a new alternative. It provides very light-weight
-  cooperative threads; ``launching'' a thread is a very quick
+  cooperative threads; ``launching'' a thread is a very fast
   operation, it does not require a new stack, a new process, or
   anything else. Moreover context switches are very fast. In fact, it
   is so easy that we will launch a thread for every system call. And
@@ -74,7 +74,7 @@ $ lwt-toplevel
 >>
 
   This function will wait for a character to come on the given input
-  channel, then return it. The problem with this function is that it is
+  channel, and then return it. The problem with this function is that it is
   blocking: while it is being executed, the whole program will be
   blocked, and other events will not be handled until it returns.
 
@@ -84,7 +84,7 @@ $ lwt-toplevel
 - : Lwt_io.input_channel -> char Lwt.t = <fun>
 >>
 
-  As you can see, it does not returns a character but something of
+  As you can see, it does not return a character but something of
   type {{{char Lwt.t}}}. The type {{{'a Lwt.t}}} is the type
   of threads returning a value of type {{{'a}}}. Actually the
   {{{Lwt_io.read_char}}} will try to read a character from the
@@ -92,7 +92,7 @@ $ lwt-toplevel
   thread.
 
   Now, let's see what we can do with a {{{Lwt}}} thread. The following
-  code create a pipe, and launch a thread reading on the input side:
+  code creates a pipe, and launches a thread reading on the input side:
 
 <<code language="ocaml" |# let ic, oc = Lwt_io.pipe ();;
 val ic : Lwt_io.input_channel = <abstr>
@@ -115,10 +115,10 @@ val t : char Lwt.t = <abstr>
      but instead of returning a value, it failed with the exception
      {{{exn}}}
    * {{{Sleep}}}, which means that the thread is currently
-     sleeping and have not yet returned a value or an exception
+     sleeping and has not yet returned a value or an exception
 
   The thread {{{t}}} is sleeping because there is currently nothing
-  to read on the pipe. Let's write something:
+  to read from the pipe. Let's write something:
 
 <<code language="ocaml" |# Lwt_io.write_char oc 'a';;
 - : unit Lwt.t = <abstr>
@@ -126,7 +126,7 @@ val t : char Lwt.t = <abstr>
 - : char Lwt.state = Return 'a'
 >>
 
-  So, after we write something, the reading thread has been wakeup and
+  So, after we write something, the reading thread has been awoken and
   has returned the value {{{'a'}}}.
 
 === Primitives for thread creation ===
@@ -159,7 +159,7 @@ val t : char Lwt.t = <abstr>
      \\
      wakes up the thread with an exception.
 
-  Note that this is an error to wakeup two times the same threads. {{{Lwt}}}
+  Note that this is an error to wakeup the same threads twice. {{{Lwt}}}
   will raise {{{Invalid_argument}}} if you try to do so.
 
   With these informations, try to guess the result of each of the
@@ -185,7 +185,7 @@ val t : char Lwt.t = <abstr>
 >>
 
   {{{bind t f}}} creates a thread which waits for {{{t}}} to
-  terminates, then pass the result to {{{f}}}. If {{{t}}} is a
+  terminate, then passes the result to {{{f}}}. If {{{t}}} is a
   sleeping thread, then {{{bind t f}}} will be a sleeping thread too,
   until {{{t}}} terminates. If {{{t}}} fails, then the resulting
   thread will fail with the same exception. For example, consider the
@@ -221,13 +221,13 @@ val t : char Lwt.t = <abstr>
 <<code language="ocaml" |val task : unit -> 'a Lwt.t * 'a Lwt.u
 >>
 
-  It has the same semantic as {{{Lwt.wait}}} except that the
+  It has the same semantics as {{{Lwt.wait}}} except that the
   sleeping thread can be canceled with {{{Lwt.cancel}}}:
 
 <<code language="ocaml" |val cancel : 'a Lwt.t -> unit
 >>
 
-  The thread will then fails with the exception
+  The thread will then fail with the exception
   {{{Lwt.Canceled}}}. To execute a function when the thread is
   canceled, you must use {{{Lwt.on_cancel}}}:
 
@@ -248,7 +248,7 @@ val t : int Lwt.t = <abstr>
 >>
 
   Here, cancelling {{{t}}} will in fact cancel {{{waiter}}}.
-  {{{t}}} will then fails with the exception {{{Lwt.Canceled}}}:
+  {{{t}}} will then fail with the exception {{{Lwt.Canceled}}}:
 
 <<code language="ocaml" |# Lwt.cancel t;;
 - : unit = ()
@@ -268,20 +268,20 @@ val t : int Lwt.t = <abstr>
 
 ==== Primitives for multi-thread composition ====
 
-  We now show how to compose several threads at the same time. The
+  We now show how to compose several concurrent threads. The
   main functions for this are in the {{{Lwt}}} module: {{{join}}},
   {{{choose}}} and {{{pick}}}.
 
-  The first one, {{{join}}} takes a list of threads and wait for all
+  The first one, {{{join}}} takes a list of threads and waits for all
   of them to terminate:
 
 <<code language="ocaml" |val join : unit Lwt.t list -> unit Lwt.t
 >>
 
-  Moreover, if at least one thread fails, {{{join l}}} will fails with
-  the same exception as the first to fail, after all threads threads terminated.
+  Moreover, if at least one thread fails, {{{join l}}} will fail with
+  the same exception as the first to fail, after all threads terminate.
 
-  On the contrary {{{choose}}} waits for at least one thread to
+  Similarly {{{choose}}} waits for at least one thread to
   terminate, then returns the same value or exception:
 
 <<code language="ocaml" |val choose : 'a Lwt.t list -> 'a Lwt.t
@@ -305,12 +305,12 @@ val t : '_a Lwt.t = <abstr>
 - : int Lwt.state = Return 42
 >>
 
-  Thel last one, {{{pick}}}, is the same as {{{join}}} except that it cancels
+  The last one, {{{pick}}}, is the same as {{{join}}} except that it cancels
   all other threads when one terminates.
 
 ==== Threads local storage ====
 
-  Lwt can stores variables with different values on different
+  Lwt can store variables with different values on different
   threads. This is called threads local storage. For example, this can
   be used to store contexts or thread identifiers. The contents of a
   variable can be read with:
@@ -333,7 +333,7 @@ val t : '_a Lwt.t = <abstr>
 <<code language="ocaml" |val Lwt.with_value : 'a Lwt.key -> 'a option -> (unit -> 'b) -> 'b
 >>
 
-  {{{with_value key value f}}} will executes {{{f}}} with
+  {{{with_value key value f}}} will execute {{{f}}} with
   the binding {{{key -> value}}}. The old value associated to
   {{{key}}} is restored after {{{f}}} terminates.
 
@@ -359,8 +359,8 @@ lwt () =
 
 ==== Rules ====
 
-  {{{Lwt}}} will always try to execute the more it can before yielding and
-  switching to another cooperative thread. In order to make it works well,
+  {{{Lwt}}} will always try to execute as much as possible before yielding and
+  switching to another cooperative thread. In order to make it work well,
   you must follow the following rules:
 
    * do not write function that may takes time to complete without
@@ -383,7 +383,7 @@ lwt () =
 # #require "lwt.syntax";;
 >>
 
-  The following construction are added to the language:
+  The following constructions are added to the language:
 
    * {{{lwt}}} //pattern,,1,,// {{{=}}} //expr,,1,,// [ {{{and}}}
      //pattern,,2,,// {{{=}}} //expr,,2,,// ... ] {{{in}}} //expr//
@@ -395,8 +395,8 @@ lwt () =
 expr
 >>
 
-      the thread {{{f ()}}} and {{{g ()}}} are launched in parallel
-      and their result are then bound to {{{x}}} and {{{y}}} in the
+      the thread {{{f ()}}} and {{{g ()}}} are launched concurrently
+      and their results are then bound to {{{x}}} and {{{y}}} in the
       expression //expr//.
 
       Of course you can also launch the two threads sequentially by
@@ -411,7 +411,7 @@ expr
      {{{->}}} //expr,,1,,// ... ] [ {{{finally}}} //expr'// ]
      \\
      which is the equivalent of the standard {{{try-with}}}
-     construction but for {{{Lwt}}}. Both exception raised by
+     construction but for {{{Lwt}}}. Both exceptions raised by
      {{{Pervasives.raise}}} and {{{Lwt.fail}}} are caught.";
 
    * {{{for_lwt}}} //ident// {{{=}}} //expr,,init,,// ( {{{to}}} {{{|}}}
@@ -427,7 +427,7 @@ expr
 
 ==== Correspondence table ====
 
-  You can keep in mind the following table to write code using lwt:
+  You might appreciate the following table to write code using lwt:
 
   |= without {{{Lwt}}}                                                               |= with {{{Lwt}}}                                                                      |
   |                                                                                  |                                                                                      |
@@ -465,7 +465,7 @@ expr
 
 === Backtrace support ===
 
-  When using {{{Lwt}}}, exceptions are not recorded by the ocaml runtime, and so you can not
+  When using {{{Lwt}}}, exceptions are not recorded by the ocaml runtime, and so you don't
   get backtraces. However it is possible to get them when using the syntax extension. All you
   have to do is to pass the {{{-lwt-debug}}} switch to {{{camlp4}}}:
 
@@ -476,11 +476,11 @@ $ ocamlfind ocamlc -syntax camlp4o -package lwt.syntax \
 
 === Other modules of the core library ===
 
-  The core library contains several modules that depend only on
+  The core library contains several modules that only depend on
   {{{Lwt}}}. The following naming convention is used in {{{Lwt}}}: when a
   function takes as argument a function returning a thread that is going
   to be executed sequentially, it is suffixed with ``{{{_s}}}''. And
-  when it is going to be executed in parallel, it is suffixed with
+  when it is going to be executed concurrently, it is suffixed with
   ``{{{_p}}}''. For example, in the {{{Lwt_list}}} module we have:
 
 <<code language="ocaml" |val map_s : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
@@ -505,7 +505,7 @@ val iter_p : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
 >>
 
   In {{{iter_s f l}}}, {{{iter_s}}} will call f on each elements
-  of {{{l}}}, waiting for completion between each elements. On the
+  of {{{l}}}, waiting for completion between each element. On the
   contrary, in {{{iter_p f l}}}, {{{iter_p}}} will call f on all
   elements of {{{l}}}, then wait for all the threads to terminate.
 
@@ -515,8 +515,8 @@ val iter_p : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
   libraries. They offer a high-level interface to manipulate data flows.
 
   A stream is an object which returns elements sequentially and
-  lazily. Lazily means that the source of the stream is guessed for new
-  elements only when needed. This module contains a lot of stream
+  lazily. Lazily means that the source of the stream is touched only for new
+  elements when needed. This module contains a lot of stream
   transformation, iteration, and scanning functions.
 
   The common way of creating a stream is by using
@@ -554,9 +554,9 @@ val push : '_a option -> unit = <fun>
 >>
 
   Note that streams are consumable. Once you take an element from a
-  stream, it is removed from it. So, if you want to iterates two times
+  stream, it is removed from it. So, if you want to iterate two times
   over a stream, you may consider ``clonning'' it, with
-  {{{Lwt_stream.clone}}}. Cloned stream will returns the same
+  {{{Lwt_stream.clone}}}. Cloned stream will return the same
   elements in the same order. Consuming one will not consume the other.
   For example:
 
@@ -577,7 +577,7 @@ val s' : int Lwt_stream.t = <abstr>
 ==== Mailbox variables ====
 
   The {{{Lwt_mvar}}} module provides mailbox variables. A mailbox
-  variable, also called a ``mvar'', is a cell which may contains 0 or 1
+  variable, also called a ``mvar'', is a cell which may contain 0 or 1
   element. If it contains no elements, we say that the mvar is empty,
   if it contains one, we say that it is full. Adding an element to a
   full mvar will block until one is taken. Taking an element from an
@@ -624,7 +624,7 @@ val s' : int Lwt_stream.t = <abstr>
 
 == The {{{lwt.unix}}} library ==
 
-  The package {{{lwt.unix}}} contains all {{{unix}}} dependant
+  The package {{{lwt.unix}}} contains all {{{unix}}} dependent
   modules of {{{Lwt}}}. Among all its features, it implements cooperative
   versions of functions of the standard library and the unix library.
 
@@ -640,9 +640,9 @@ val s' : int Lwt_stream.t = <abstr>
   the standard library (of type {{{in_channel}}} or
   {{{out_channel}}}) but cooperatively.
 
-  {{{Lwt_gc}}} allow you to register finaliser that return a
+  {{{Lwt_gc}}} allows you to register a finaliser that returns a
   thread. At the end of the program, {{{Lwt}}} will wait for all the
-  finaliser to terminates.
+  finaliser to terminate.
 
 === The Lwt scheduler ===
 
@@ -684,8 +684,8 @@ val s' : int Lwt_stream.t = <abstr>
 === The logging facility ===
 
   The package {{{lwt.unix}}} contains a module {{{Lwt_log}}}
-  providing loggers. It support logging to a file, a channel, or to the
-  syslog daemon. You can also defines your own logger by providing the
+  providing loggers. It supports logging to a file, a channel, or to the
+  syslog daemon. You can also define your own logger by providing the
   appropriate functions (function {{{Lwt_log.make}}}).
 
   Several loggers can be merged into one. Sending logs on the merged
@@ -719,17 +719,17 @@ else
 
   The advantages of using the syntax extension are the following:
 
-   * it check the log level before calling the logging function, so
-     arguments are not computed if not needed
+   * it checks the log level before calling the logging function, so
+     the arguments are not computed if not needed
    * debugging logs can be removed at parsing time
 
-  By default, the syntax extension remove all logs with the level
-  {{{debug}}}. To keep them pass the command line option
+  By default, the syntax extension removes all logs with the level
+  {{{debug}}}. To keep them, pass the command line option
   {{{-lwt-debug}}} to camlp4.
 
 == The Lwt.react library ==
 
-  The {{{Lwt_react}}} module provide helpers for using the {{{react}}}
+  The {{{Lwt_react}}} module provides helpers for using the {{{react}}}
   library with {{{Lwt}}}. It extends the {{{React}}} module by adding
   {{{Lwt}}} specific functions. It can be used as a replacement of
   {{{React}}}. For example you can add at the beginning of you
@@ -748,7 +748,7 @@ else
 <<code language="ocaml" |module React = Lwt_react
 >>
 
-  Among the added functionnality we have {{{Lwt_react.E.next}}}, which
+  Among the added functionalities we have {{{Lwt_react.E.next}}}, which
   takes an event and returns a thread which will wait until the next
   occurence of this event. For example:
 
@@ -767,7 +767,7 @@ val t : '_a Lwt.t = <abstr>
 >>
 
   Another interesting feature is the ability to limit events
-  (resp. signals) to occurs (resp. to changes) too often. For example,
+  (resp. signals) from occuring (resp. changing) too often. For example,
   suppose you are doing a program which displays something on the screeen
   each time a signal changes. If at some point the signal changes 1000
   times per second, you probably want not to render it 1000 times per
@@ -813,10 +813,10 @@ let () =
 
 === Text channels ===
 
-  A text channel is basically a byte channel plus an encoding. Input
+  A text channel is basically a byte channel with an encoding. Input
   (resp. output) text channels decode (resp. encode) unicode characters
   on the fly. By default, output text channels use transliteration, so
-  they will not fails because text you want to print cannot be encoded
+  they will not fail because text you want to print cannot be encoded
   in the system encoding.
 
   For example, with you locale sets to ``C'', and the variable
@@ -829,14 +829,14 @@ My name is J?r?mie
 === Terminal utilities ===
 
   The {{{Lwt_term}}} allow you to put the terminal in //raw mode//,
-  meanings that input is not buffered and character are
-  returned as the user type them. For example, you can read a key with:
+  meaning that input is not buffered and character are
+  returned as the user types them. For example, you can read a key with:
 
 <<code language="ocaml" |# lwt key = Lwt_term.read_key ();;
 val key : Lwt_term.key = Lwt_term.Key_control 'j'
 >>
 
-  The second main feature of {{{Lwt_term}}} is the ability to prints
+  The second main feature of {{{Lwt_term}}} is the ability to print
   text with styles. For example, to print text in bold and blue:
 
 <<code language="ocaml" |# open Lwt_term;;
@@ -863,7 +863,7 @@ val l : Text.t = "Hello, world!"
 >>
 
   The second class of functions is a bit more complicated to use, but
-  allow to control a running read-line instances. For example you can
+  allow to control a running read-line instance. For example you can
   temporary hide it to draw something, you can send it commands, fake
   input, and the prompt is a signal so it can change dynamically.
 
@@ -877,7 +877,7 @@ val l : Text.t = "Hello, world!"
   //detach// the computation to a preemptive thread.
 
   This is done by the module {{{Lwt_preemptive}}} of the
-  {{{lwt.preemptive}}} package which maintains a spool of system
+  {{{lwt.preemptive}}} package which maintains a pool of system
   threads. The main function is:
 
 <<code language="ocaml" |val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
@@ -897,8 +897,8 @@ val l : Text.t = "Hello, world!"
 
 === Glib integration ===
 
-  The {{{lwt.glib}}} embed the {{{glib}}} main loop into the
-  {{{Lwt}}} one. This allow you to write GTK application using {{{Lwt}}}.  The
+  The {{{lwt.glib}}} embeds the {{{glib}}} main loop into the
+  {{{Lwt}}} one. This allows you to write GTK application using {{{Lwt}}}.  The
   one thing you have to do is to call {{{Lwt_glib.install}}} at
   the beginning of you program.
 
@@ -913,7 +913,7 @@ val l : Text.t = "Hello, world!"
   OCaml code with {{{Lwt_unix.send_notification}}} function, or from the C code using
   the function {{{lwt_unix_send_notification}}} (defined in {{{lwt_unix_.h}}}).
 
-  Notification are received and processed asynchronously by the main thread.
+  Notifications are received and processed asynchronously by the main thread.
 
 === Jobs ===
 
@@ -924,11 +924,11 @@ val l : Text.t = "Hello, world!"
    * A function to create the job, which creates a job structure info
      and stores parameters in it. This function is executed in the
      main thread.
-   * A function which execute the job. This one may be executed asynchronously
+   * A function which executes the job. This one may be executed asynchronously
      in another thread.
-   * A function which read the result of the job. This function is
+   * A function which reads the result of the job. This function is
      executed in the main thread.
-   * And finally a function that free resources allocated for the
+   * And finally a function that frees resources allocated for the
      job, which is also executed in the main thread.
 
   We show as example the implementation of {{{Lwt_unix.mkdir}}}. On the C
