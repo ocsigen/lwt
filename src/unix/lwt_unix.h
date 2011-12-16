@@ -23,6 +23,7 @@
 #ifndef __LWT_UNIX_H
 #define __LWT_UNIX_H
 
+#include <lwt_config.h>
 #include <caml/mlvalues.h>
 #include <caml/unixsupport.h>
 
@@ -70,19 +71,19 @@ void lwt_unix_send_notification(int id);
    | Threading                                                       |
    +-----------------------------------------------------------------+ */
 
-#if defined(LWT_ON_WINDOWS)
-
-typedef DWORD lwt_unix_thread;
-typedef CRITICAL_SECTION lwt_unix_mutex;
-typedef struct lwt_unix_condition lwt_unix_condition;
-
-#else
+#if defined(HAVE_PTHREAD)
 
 #include <pthread.h>
 
 typedef pthread_t lwt_unix_thread;
 typedef pthread_mutex_t lwt_unix_mutex;
 typedef pthread_cond_t lwt_unix_condition;
+
+#else
+
+typedef DWORD lwt_unix_thread;
+typedef CRITICAL_SECTION lwt_unix_mutex;
+typedef struct lwt_unix_condition lwt_unix_condition;
 
 #endif
 

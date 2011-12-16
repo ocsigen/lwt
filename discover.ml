@@ -137,6 +137,17 @@ CAMLprim value lwt_test()
 }
 "
 
+let glib_code = "
+#include <caml/mlvalues.h>
+#include <glib.h>
+
+CAMLprim value lwt_test()
+{
+  g_main_context_dispatch(0);
+  return Val_unit;
+}
+"
+
 (* +-----------------------------------------------------------------+
    | Compilation                                                     |
    +-----------------------------------------------------------------+ *)
@@ -145,7 +156,11 @@ let ocamlc = ref "ocamlc"
 let ext_obj = ref ".o"
 let exec_name = ref "a.out"
 let use_libev = ref true
+let use_glib = ref false
+let use_pthread = ref true
+let use_unix = ref true
 let os_type = ref "Unix"
+let ccomp_type = ref "cc"
 
 let log_file = ref ""
 let caml_file = ref ""
@@ -163,22 +178,15 @@ let search_header header =
   in
   loop search_paths
 
-let c_args =
-  let flags path = Printf.sprintf "-ccopt -I%s/include -cclib -L%s/lib" path path in
-  match search_header "ev.h", search_header "pthread.h" with
-    | None, None -> ""
-    | Some path, None | None, Some path -> flags path
-    | Some path1, Some path2 when path1 = path2 -> flags path1
-    | Some path1, Some path2 -> flags path1 ^ " " ^ flags path2
+let setup_data = ref []
 
 let compile args stub_file =
   ksprintf
     Sys.command
-    "%s -custom %s %s %s %s > %s 2>&1"
+    "%s -custom %s %s %s > %s 2>&1"
     !ocamlc
-    c_args
-    (Filename.quote stub_file)
     args
+    (Filename.quote stub_file)
     (Filename.quote !caml_file)
     (Filename.quote !log_file)
   = 0
@@ -210,42 +218,113 @@ let test_code args stub_code =
 let config = open_out "src/unix/lwt_config.h"
 let config_ml = open_out "src/unix/lwt_config.ml"
 
-let test_feature ?(do_check = true) name macro ?(args="") code =
+let () =
+  fprintf config "\
+#ifndef __LWT_CONFIG_H
+#define __LWT_CONFIG_H
+"
+
+let not_available = ref []
+
+let test_feature ?(do_check = true) name macro test =
   if do_check then begin
     printf "testing for %s:%!" name;
-    if test_code args code then begin
-      fprintf config "#define %s\n" macro;
-      fprintf config_ml "#let %s = true\n" macro;
-      printf " %s available\n%!" (String.make (34 - String.length name) '.');
-      true
+    if test () then begin
+      if macro <> "" then begin
+        fprintf config "#define %s\n" macro;
+        fprintf config_ml "#let %s = true\n" macro
+      end;
+      printf " %s available\n%!" (String.make (34 - String.length name) '.')
     end else begin
-      fprintf config "//#define %s\n" macro;
-      fprintf config_ml "#let %s = false\n" macro;
+      if macro <> "" then begin
+        fprintf config "//#define %s\n" macro;
+        fprintf config_ml "#let %s = false\n" macro
+      end;
       printf " %s unavailable\n%!" (String.make (34 - String.length name) '.');
-      false
+      not_available := name :: !not_available
     end
   end else begin
     printf "not checking for %s\n%!" name;
-    fprintf config "//#define %s\n" macro;
-    fprintf config_ml "#let %s = false\n" macro;
-    true
+    if macro <> "" then begin
+      fprintf config "//#define %s\n" macro;
+      fprintf config_ml "#let %s = false\n" macro
+    end
   end
+
+(* +-----------------------------------------------------------------+
+   | pkg-config                                                      |
+   +-----------------------------------------------------------------+ *)
+
+let split str =
+  let rec skip_spaces i =
+    if i = String.length str then
+      []
+    else
+      if str.[i] = ' ' then
+        skip_spaces (i + 1)
+      else
+        extract i (i + 1)
+  and extract i j =
+    if j = String.length str then
+      [String.sub str i (j - i)]
+    else
+      if str.[j] = ' ' then
+        String.sub str i (j - i) :: skip_spaces (j + 1)
+      else
+        extract i (j + 1)
+  in
+  skip_spaces 0
+
+let pkg_config flags =
+  if ksprintf Sys.command "pkg-config %s > %s 2>&1" flags !log_file = 0 then begin
+    let ic = open_in !log_file in
+    let line = input_line ic in
+    close_in ic;
+    split line
+  end else
+    raise Exit
+
+let pkg_config_flags name =
+  try
+    (* Get compile flags. *)
+    let opt = ksprintf pkg_config "--cflags %s" name in
+    (* Get linking flags. *)
+    let lib =
+      if !ccomp_type = "msvc" then
+        (* With msvc we need to pass "glib-2.0.lib" instead of
+           "-lglib-2.0" otherwise executables will fail. *)
+        ksprintf pkg_config "--libs-only-L %s" name @ ksprintf pkg_config "--libs-only-l --msvc-syntax %s" name
+      else
+        ksprintf pkg_config "--libs %s" name
+    in
+    Some (opt, lib)
+  with Exit ->
+    None
+
+let make_ocamlc_flags opt lib =
+  String.concat " " (List.map (sprintf "-ccopt %s") opt) ^ " " ^ String.concat " " (List.map (sprintf "-cclib %s") lib)
 
 (* +-----------------------------------------------------------------+
    | Entry point                                                     |
    +-----------------------------------------------------------------+ *)
 
+let arg_bool r =
+  Arg.Symbol (["true"; "false"],
+              function
+                | "true" -> r := true
+                | "false" -> r := false
+                | _ -> assert false)
 let () =
   let args = [
     "-ocamlc", Arg.Set_string ocamlc, "<path> ocamlc";
     "-ext-obj", Arg.Set_string ext_obj, "<ext> C object files extension";
     "-exec-name", Arg.Set_string exec_name, "<name> name of the executable produced by ocamlc";
-    "-use-libev", Arg.Symbol (["true"; "false"],
-                              function
-                                | "true" -> use_libev := true
-                                | "false" -> use_libev := false
-                                | _ -> assert false), " whether to check for libev";
+    "-use-libev", arg_bool use_libev, " whether to check for libev";
+    "-use-glib", arg_bool use_glib, " whether to check for glib";
+    "-use-pthread", arg_bool use_pthread, " whether to use pthread";
+    "-use-unix", arg_bool use_unix, " whether to build lwt.unix";
     "-os-type", Arg.Set_string os_type, "<name> type of the target os";
+    "-ccomp-type", Arg.Set_string ccomp_type, "<ccomp-type> C compiler type";
   ] in
   Arg.parse args ignore "check for external C libraries and available features\noptions are:";
 
@@ -267,13 +346,64 @@ let () =
              safe_remove (Filename.chop_extension !caml_file ^ ".cmi");
              safe_remove (Filename.chop_extension !caml_file ^ ".cmo"));
 
-  let missing = [] in
-  let missing = if test_feature ~do_check:!use_libev "libev" "HAVE_LIBEV" ~args:"-cclib -lev" libev_code then missing else "libev" :: missing in
-  let missing = if test_feature ~do_check:(!os_type <> "Win32") "pthread" "HAVE_PTHREAD" ~args:"-cclib -lpthread" pthread_code then missing else "pthread" :: missing in
+  (* Test for pkg-config. *)
+  test_feature ~do_check:(!use_libev || !use_glib) "pkg-config" ""
+    (fun () ->
+       ksprintf Sys.command "pkg-config --version > %s 2>&1" !log_file = 0);
 
-  if missing <> [] then begin
+  (* Not having pkg-config is not fatal. *)
+  let have_pkg_config = !not_available = [] in
+  not_available := [];
+
+  let test_libev () =
+    let opt, lib =
+      match if have_pkg_config then pkg_config_flags "libev" else None with
+        | Some (opt, lib) ->
+            (opt, lib)
+        | None ->
+            match search_header "ev.h" with
+              | Some dir ->
+                  ([sprintf "-I%s/include" dir], [sprintf "-L%s/lib" dir; "-lev"])
+              | None ->
+                  ([], ["-lev"])
+    in
+    setup_data := ("libev_opt", opt) :: ("libev_lib", lib) :: !setup_data;
+    test_code (make_ocamlc_flags opt lib) libev_code
+  in
+
+  let test_pthread () =
+    let opt, lib =
+      match search_header "pthread.h" with
+        | Some dir ->
+            ([sprintf "-I%s/include" dir], [sprintf "-L%s/lib" dir; "-lpthread"])
+        | None ->
+            ([], ["-lpthread"])
+    in
+    setup_data := ("pthread_opt", opt) :: ("pthread_lib", lib) :: !setup_data;
+    test_code (make_ocamlc_flags opt lib) pthread_code
+  in
+
+  let test_glib () =
+    if have_pkg_config then
+      match pkg_config_flags "glib-2.0" with
+        | Some (opt, lib) ->
+            setup_data := ("glib_opt", opt) :: ("glib_lib", lib) :: !setup_data;
+            test_code (make_ocamlc_flags opt lib) glib_code
+        | None ->
+            false
+    else
+      false
+  in
+
+  test_feature ~do_check:!use_libev "libev" "HAVE_LIBEV" test_libev;
+  test_feature ~do_check:!use_pthread "pthread" "HAVE_PTHREAD" test_pthread;
+  test_feature ~do_check:!use_glib "glib" "" test_glib;
+
+  if !not_available <> [] then begin
+    if !use_glib && not have_pkg_config then
+      printf "The 'pkg-config' command is not available, you need it to build glib support.";
     printf "
-      The following recquired C libraries are missing: %s.
+The following recquired C libraries are missing: %s.
 Please install them and retry. If they are installed in a non-standard location, set the environment variables C_INCLUDE_PATH and LIBRARY_PATH accordingly and retry.
 
 For example, if they are installed in /opt/local, you can type:
@@ -282,13 +412,35 @@ export C_INCLUDE_PATH=/opt/local/include
 export LIBRARY_PATH=/opt/local/lib
 
 To compile without libev support, use ./configure --disable-libev ...
-" (String.concat ", " missing);
+" (String.concat ", " !not_available);
     exit 1
   end;
 
-  ignore (test_feature "eventfd" "HAVE_EVENTFD" eventfd_code);
-  ignore (test_feature "fd passing" "HAVE_FD_PASSING" fd_passing_code);
-  ignore (test_feature "sched_getcpu" "HAVE_GETCPU" getcpu_code);
-  ignore (test_feature "affinity getting/setting" "HAVE_AFFINITY" affinity_code);
-  ignore (test_feature "credentials getting" "HAVE_GET_CREDENTIALS" get_credentials_code);
-  ignore (test_feature "fdatasync" "HAVE_FDATASYNC" fdatasync_code)
+  if !use_unix && !os_type <> "Win32" && not !use_pthread then begin
+    printf "
+No threading library available!
+
+One is needed if you want to build lwt.unix.
+
+Lwt can use pthread or the win32 API.
+";
+    exit 1
+  end;
+
+  let do_check = !os_type <> "Win32" in
+  test_feature ~do_check "eventfd" "HAVE_EVENTFD" (fun () -> test_code "" eventfd_code);
+  test_feature ~do_check "fd passing" "HAVE_FD_PASSING" (fun () -> test_code "" fd_passing_code);
+  test_feature ~do_check "sched_getcpu" "HAVE_GETCPU" (fun () -> test_code "" getcpu_code);
+  test_feature ~do_check "affinity getting/setting" "HAVE_AFFINITY" (fun () -> test_code "" affinity_code);
+  test_feature ~do_check "credentials getting" "HAVE_GET_CREDENTIALS" (fun () -> test_code "" get_credentials_code);
+  test_feature ~do_check "fdatasync" "HAVE_FDATASYNC" (fun () -> test_code "" fdatasync_code);
+
+  fprintf config "#endif\n";
+
+  (* Add flags to setup.data *)
+  let oc = open_out_gen [Open_wronly; Open_creat; Open_append; Open_text] 0o644 "setup.data" in
+  List.iter
+    (fun (name, args) ->
+       fprintf oc "%s=%S\n" name (String.concat " " args))
+    !setup_data;
+  close_out oc

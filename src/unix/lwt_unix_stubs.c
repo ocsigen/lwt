@@ -176,7 +176,83 @@ value lwt_unix_system_byte_order()
    | Threading                                                       |
    +-----------------------------------------------------------------+ */
 
-#if defined(LWT_ON_WINDOWS)
+#if defined(HAVE_PTHREAD)
+
+void lwt_unix_launch_thread(void* (*start)(void*), void* data)
+{
+  pthread_t thread;
+  pthread_attr_t attr;
+  int result;
+
+  pthread_attr_init(&attr);
+
+  /* The thread is created in detached state so we do not have to join
+     it when it terminates: */
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+
+  result = pthread_create(&thread, &attr, start, data);
+
+  if (result) unix_error(result, "launch_thread", Nothing);
+
+  pthread_attr_destroy (&attr);
+}
+
+lwt_unix_thread lwt_unix_thread_self()
+{
+  return pthread_self();
+}
+
+int lwt_unix_thread_equal(lwt_unix_thread thread1, lwt_unix_thread thread2)
+{
+  return pthread_equal(thread1, thread2);
+}
+
+void lwt_unix_mutex_init(lwt_unix_mutex *mutex)
+{
+  pthread_mutex_init(mutex, NULL);
+}
+
+void lwt_unix_mutex_destroy(lwt_unix_mutex *mutex)
+{
+  pthread_mutex_destroy(mutex);
+}
+
+void lwt_unix_mutex_lock(lwt_unix_mutex *mutex)
+{
+  pthread_mutex_lock(mutex);
+}
+
+void lwt_unix_mutex_unlock(lwt_unix_mutex *mutex)
+{
+  pthread_mutex_unlock(mutex);
+}
+
+void lwt_unix_condition_init(lwt_unix_condition *condition)
+{
+  pthread_cond_init(condition, NULL);
+}
+
+void lwt_unix_condition_destroy(lwt_unix_condition *condition)
+{
+  pthread_cond_destroy(condition);
+}
+
+void lwt_unix_condition_signal(lwt_unix_condition *condition)
+{
+  pthread_cond_signal(condition);
+}
+
+void lwt_unix_condition_broadcast(lwt_unix_condition *condition)
+{
+  pthread_cond_broadcast(condition);
+}
+
+void lwt_unix_condition_wait(lwt_unix_condition *condition, lwt_unix_mutex *mutex)
+{
+  pthread_cond_wait(condition, mutex);
+}
+
+#elif defined(LWT_ON_WINDOWS)
 
 void lwt_unix_launch_thread(void* (*start)(void*), void* data)
 {
@@ -284,79 +360,7 @@ void lwt_unix_condition_wait(lwt_unix_condition *condition, lwt_unix_mutex *mute
 
 #else
 
-void lwt_unix_launch_thread(void* (*start)(void*), void* data)
-{
-  pthread_t thread;
-  pthread_attr_t attr;
-  int result;
-
-  pthread_attr_init(&attr);
-
-  /* The thread is created in detached state so we do not have to join
-     it when it terminates: */
-  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-
-  result = pthread_create(&thread, &attr, start, data);
-
-  if (result) unix_error(result, "launch_thread", Nothing);
-
-  pthread_attr_destroy (&attr);
-}
-
-lwt_unix_thread lwt_unix_thread_self()
-{
-  return pthread_self();
-}
-
-int lwt_unix_thread_equal(lwt_unix_thread thread1, lwt_unix_thread thread2)
-{
-  return pthread_equal(thread1, thread2);
-}
-
-void lwt_unix_mutex_init(lwt_unix_mutex *mutex)
-{
-  pthread_mutex_init(mutex, NULL);
-}
-
-void lwt_unix_mutex_destroy(lwt_unix_mutex *mutex)
-{
-  pthread_mutex_destroy(mutex);
-}
-
-void lwt_unix_mutex_lock(lwt_unix_mutex *mutex)
-{
-  pthread_mutex_lock(mutex);
-}
-
-void lwt_unix_mutex_unlock(lwt_unix_mutex *mutex)
-{
-  pthread_mutex_unlock(mutex);
-}
-
-void lwt_unix_condition_init(lwt_unix_condition *condition)
-{
-  pthread_cond_init(condition, NULL);
-}
-
-void lwt_unix_condition_destroy(lwt_unix_condition *condition)
-{
-  pthread_cond_destroy(condition);
-}
-
-void lwt_unix_condition_signal(lwt_unix_condition *condition)
-{
-  pthread_cond_signal(condition);
-}
-
-void lwt_unix_condition_broadcast(lwt_unix_condition *condition)
-{
-  pthread_cond_broadcast(condition);
-}
-
-void lwt_unix_condition_wait(lwt_unix_condition *condition, lwt_unix_mutex *mutex)
-{
-  pthread_cond_wait(condition, mutex);
-}
+#  error "no threading library available!"
 
 #endif
 
@@ -1310,7 +1314,7 @@ CAMLprim value lwt_unix_cancel_job(value val_job)
       break;
 
     case LWT_UNIX_JOB_STATE_RUNNING:
-#if !defined(LWT_ON_WINDOWS)
+#if !defined(HAVE_PTHREAD)
       /* The job is running, kill it. */
       if (signal_kill_thread >= 0)
         pthread_kill(job->thread, signal_kill_thread);

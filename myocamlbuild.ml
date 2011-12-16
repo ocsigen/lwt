@@ -20,52 +20,48 @@
  * 02111-1307, USA.
  *)
 
-(* Keep that in sync with the list in discover.ml *)
-let search_paths = [
-  "/usr";
-  "/usr/local";
-  "/opt";
-  "/opt/local";
-  "/sw";
-  "/mingw";
-]
-
 (* OASIS_START *)
 (* OASIS_STOP *)
 
 open Ocamlbuild_plugin
 
-let pkg_config flags =
-  with_temp_file "lwt" "pkg-config"
-    (fun tmp ->
-       Command.execute ~quiet:true & Cmd(S[A "pkg-config"; S flags; Sh ">"; A tmp]);
-       List.map (fun arg -> A arg) (string_list_of_file tmp))
-
-let define_c_library ?(msvc = false) ~name ~c_name () =
-  let tag = Printf.sprintf "use_C_%s" name in
-
-  (* Get compile flags. *)
-  let opt = pkg_config [A "--cflags"; A c_name] in
-
-  (* Get linking flags. *)
-  let lib =
-    if msvc then
-      (* With msvc we need to pass "glib-2.0.lib" instead of
-         "-lglib-2.0" otherwise executables will fail. *)
-      pkg_config [A "--libs-only-L"; A c_name] @ pkg_config [A "--libs-only-l"; A "--msvc-syntax"; A c_name]
+let split str =
+  let rec skip_spaces i =
+    if i = String.length str then
+      []
     else
-      pkg_config [A "--libs"; A c_name]
+      if str.[i] = ' ' then
+        skip_spaces (i + 1)
+      else
+        extract i (i + 1)
+  and extract i j =
+    if j = String.length str then
+      [String.sub str i (j - i)]
+    else
+      if str.[j] = ' ' then
+        String.sub str i (j - i) :: skip_spaces (j + 1)
+      else
+        extract i (j + 1)
   in
+  skip_spaces 0
 
-  (* Add flags for linking with the C library: *)
-  flag ["ocamlmklib"; "c"; tag] & S lib;
+let define_c_library name env =
+  if BaseEnvLight.var_get name env = "true" then begin
+    let tag = Printf.sprintf "use_C_%s" name in
 
-  (* C stubs using the C library must be compiled with the library
-     specifics flags: *)
-  flag ["c"; "compile"; tag] & S (List.map (fun arg -> S[A"-ccopt"; arg]) opt);
+    let opt = List.map (fun x -> A x) (split (BaseEnvLight.var_get (name ^ "_opt") env))
+    and lib = List.map (fun x -> A x) (split (BaseEnvLight.var_get (name ^ "_lib") env)) in
 
-  (* OCaml libraries must depends on the C library: *)
-  flag ["link"; "ocaml"; tag] & S (List.map (fun arg -> S[A"-cclib"; arg]) lib)
+    (* Add flags for linking with the C library: *)
+    flag ["ocamlmklib"; "c"; tag] & S lib;
+
+    (* C stubs using the C library must be compiled with the library
+       specifics flags: *)
+    flag ["c"; "compile"; tag] & S (List.map (fun arg -> S[A"-ccopt"; arg]) opt);
+
+    (* OCaml libraries must depends on the C library: *)
+    flag ["link"; "ocaml"; tag] & S (List.map (fun arg -> S[A"-cclib"; arg]) lib)
+  end
 
 let () =
   dispatch
@@ -100,23 +96,26 @@ let () =
              dep ["apiref"] ["apiref-intro"];
              flag ["apiref"] & S[A "-intro"; P "apiref-intro"; A"-colorize-code"];
 
-             (* Glib bindings: *)
+             (* Stubs: *)
              let env = BaseEnvLight.load ~allow_empty:true ~filename:MyOCamlbuildBase.env_filename () in
-             let msvc = BaseEnvLight.var_get "ccomp_type" env = "msvc" in
-             if BaseEnvLight.var_get "glib" env = "true" || BaseEnvLight.var_get "all" env = "true" then
-               define_c_library ~msvc ~name:"glib" ~c_name:"glib-2.0" ();
+             define_c_library "glib" env;
+             define_c_library "libev" env;
+             define_c_library "pthread" env;
+
+             flag ["c"; "compile"; "use_lwt_unix_h"] & S [A"-ccopt"; A"-Isrc/unix"];
 
              let opts = S[A "-ppopt"; A "-let"; A "-ppopt"; A ("windows=" ^ if BaseEnvLight.var_get "os_type" env <> "Unix" then "true" else "false")] in
              flag ["ocaml"; "compile"; "pa_optcomp"] & opts;
              flag ["ocaml"; "ocamldep"; "pa_optcomp"] & opts;
              (*flag ["ocaml"; "doc"; "pa_optcomp"] & opts; Does not work... *)
 
+             (* Toplevel stuff *)
+
              flag ["ocaml"; "link"; "toplevel"] & A"-linkpkg";
 
-             let env = BaseEnvLight.load () in
              let stdlib_path = BaseEnvLight.var_get "standard_library" env in
 
-             (* Try to find the path where compiler libraries are: *)
+             (* Try to find the path where compiler libraries are. *)
              let compiler_libs =
                let stdlib = String.chomp stdlib_path in
                try
@@ -189,35 +188,7 @@ let () =
                         A"src/top/toplevel_temp.top";
                         A"src/top/lwt_toplevel.byte";
                         A"outcometree"; A"topdirs"; A"toploop";
-                        S(List.map (fun x -> A x) (StringSet.elements modules))]));
-
-             (* Search for a header file in standard directories. *)
-             let search_header header =
-               let rec loop = function
-                 | [] ->
-                     None
-                 | dir :: dirs ->
-                     if Sys.file_exists (dir ^ "/include/" ^ header) then
-                       Some dir
-                     else
-                       loop dirs
-               in
-               loop search_paths
-             in
-
-             (* Add directories for libev and pthreads *)
-             let flags dir =
-               flag ["ocamlmklib"; "c"; "use_stubs"] & A("-L" ^ dir ^ "/lib");
-               flag ["c"; "compile"; "use_stubs"] & S[A"-ccopt"; A("-I" ^ dir ^ "/include")];
-               flag ["link"; "ocaml"; "use_stubs"] & S[A"-cclib"; A("-L" ^ dir ^ "/lib")]
-             in
-             begin
-               match search_header "ev.h", search_header "pthread.h" with
-                 | None, None -> ()
-                 | Some path, None | None, Some path -> flags path
-                 | Some path1, Some path2 when path1 = path2 -> flags path1
-                 | Some path1, Some path2 -> flags path1; flags path2
-             end
+                        S(List.map (fun x -> A x) (StringSet.elements modules))]))
 
          | _ ->
              ())
