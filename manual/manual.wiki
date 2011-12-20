@@ -29,7 +29,7 @@
   complete.
 
   If you already wrote code using preemptive threads, you should know
-  that doing it right with threads is a hard job. Morover system
+  that doing it right with threads is a hard job. Moreover system
   threads consume non negligible resources, and so you can only launch
   a limited number of threads at the same time. Thus this is not a
   real solution.
