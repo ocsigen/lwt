@@ -180,14 +180,15 @@ let search_header header =
 
 let setup_data = ref []
 
-let compile args stub_file =
+let compile (opt, lib) stub_file =
   ksprintf
     Sys.command
-    "%s -custom %s %s %s > %s 2>&1"
+    "%s -custom %s %s %s %s > %s 2>&1"
     !ocamlc
-    args
+    (String.concat " " (List.map (sprintf "-ccopt %s") opt))
     (Filename.quote stub_file)
     (Filename.quote !caml_file)
+    (String.concat " " (List.map (sprintf "-cclib %s") lib))
     (Filename.quote !log_file)
   = 0
 
@@ -301,9 +302,6 @@ let pkg_config_flags name =
   with Exit ->
     None
 
-let make_ocamlc_flags opt lib =
-  String.concat " " (List.map (sprintf "-ccopt %s") opt) ^ " " ^ String.concat " " (List.map (sprintf "-cclib %s") lib)
-
 (* +-----------------------------------------------------------------+
    | Entry point                                                     |
    +-----------------------------------------------------------------+ *)
@@ -368,7 +366,7 @@ let () =
                   ([], ["-lev"])
     in
     setup_data := ("libev_opt", opt) :: ("libev_lib", lib) :: !setup_data;
-    test_code (make_ocamlc_flags opt lib) libev_code
+    test_code (opt, lib) libev_code
   in
 
   let test_pthread () =
@@ -380,7 +378,7 @@ let () =
             ([], ["-lpthread"])
     in
     setup_data := ("pthread_opt", opt) :: ("pthread_lib", lib) :: !setup_data;
-    test_code (make_ocamlc_flags opt lib) pthread_code
+    test_code (opt, lib) pthread_code
   in
 
   let test_glib () =
@@ -388,7 +386,7 @@ let () =
       match pkg_config_flags "glib-2.0" with
         | Some (opt, lib) ->
             setup_data := ("glib_opt", opt) :: ("glib_lib", lib) :: !setup_data;
-            test_code (make_ocamlc_flags opt lib) glib_code
+            test_code (opt, lib) glib_code
         | None ->
             false
     else
@@ -428,12 +426,12 @@ Lwt can use pthread or the win32 API.
   end;
 
   let do_check = !os_type <> "Win32" in
-  test_feature ~do_check "eventfd" "HAVE_EVENTFD" (fun () -> test_code "" eventfd_code);
-  test_feature ~do_check "fd passing" "HAVE_FD_PASSING" (fun () -> test_code "" fd_passing_code);
-  test_feature ~do_check "sched_getcpu" "HAVE_GETCPU" (fun () -> test_code "" getcpu_code);
-  test_feature ~do_check "affinity getting/setting" "HAVE_AFFINITY" (fun () -> test_code "" affinity_code);
-  test_feature ~do_check "credentials getting" "HAVE_GET_CREDENTIALS" (fun () -> test_code "" get_credentials_code);
-  test_feature ~do_check "fdatasync" "HAVE_FDATASYNC" (fun () -> test_code "" fdatasync_code);
+  test_feature ~do_check "eventfd" "HAVE_EVENTFD" (fun () -> test_code ([], []) eventfd_code);
+  test_feature ~do_check "fd passing" "HAVE_FD_PASSING" (fun () -> test_code ([], []) fd_passing_code);
+  test_feature ~do_check "sched_getcpu" "HAVE_GETCPU" (fun () -> test_code ([], []) getcpu_code);
+  test_feature ~do_check "affinity getting/setting" "HAVE_AFFINITY" (fun () -> test_code ([], []) affinity_code);
+  test_feature ~do_check "credentials getting" "HAVE_GET_CREDENTIALS" (fun () -> test_code ([], []) get_credentials_code);
+  test_feature ~do_check "fdatasync" "HAVE_FDATASYNC" (fun () -> test_code ([], []) fdatasync_code);
 
   fprintf config "#endif\n";
 
