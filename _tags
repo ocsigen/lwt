@@ -6,7 +6,7 @@
 
 <src/top/{lwt_toplevel.*,toplevel.*,toplevel_temp.*}>: use_compiler_libs, pkg_text, pkg_text.bigarray, pkg_findlib, pkg_react, pkg_unix, pkg_bigarray
 
-"src/unix/lwt_io.mli": syntax_camlp4o, pkg_camlp4, pa_optcomp
+<src/unix/lwt_{io,unix}.mli>: syntax_camlp4o, pkg_camlp4, pa_optcomp
 
 # Stubs
 <src/unix/*>: use_C_libev, use_C_pthread

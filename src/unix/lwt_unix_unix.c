@@ -667,7 +667,8 @@ static int open_flag_table[] = {
   O_NOCTTY,
   O_DSYNC,
   O_SYNC,
-  O_RSYNC
+  O_RSYNC,
+  0
 };
 
 struct job_open {
