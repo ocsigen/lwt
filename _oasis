@@ -88,7 +88,7 @@ Library "optcomp"
   Install: false
   Path: syntax
   Modules: Pa_optcomp
-  BuildDepends: camlp4.lib, camlp4.quotations.o
+  BuildDepends: camlp4, camlp4.quotations.o
 
 Library "lwt"
   Path: src/core
@@ -226,7 +226,7 @@ Library "lwt-syntax"
   FindlibParent: lwt
   Path: syntax
   Modules: Pa_lwt
-  BuildDepends: camlp4.lib, camlp4.quotations.o, camlp4.extend
+  BuildDepends: camlp4, camlp4.quotations.o, camlp4.extend
   XMETAType: syntax
   XMETADescription: Syntactic sugars for Lwt
   XMETARequires: camlp4, lwt.syntax.options
@@ -236,7 +236,7 @@ Library "lwt-syntax-options"
   FindlibParent: lwt-syntax
   Path: syntax
   InternalModules: Pa_lwt_options
-  BuildDepends: camlp4.lib
+  BuildDepends: camlp4
   XMETAType: syntax
   XMETADescription: Options for syntax extensions
   XMETARequires: camlp4
@@ -246,7 +246,7 @@ Library "lwt-syntax-log"
   FindlibParent: lwt-syntax
   Path: syntax
   Modules: Pa_lwt_log
-  BuildDepends: camlp4.lib, camlp4.quotations.o
+  BuildDepends: camlp4, camlp4.quotations.o
   XMETAType: syntax
   XMETADescription: Syntactic sugars for logging
   XMETARequires: camlp4, lwt.syntax.options
