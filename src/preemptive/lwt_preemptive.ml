@@ -193,3 +193,52 @@ let detach f args =
       Thread.join worker.thread
     end;
     return ()
+
+(* +-----------------------------------------------------------------+
+   | Running Lwt threads in the main thread                          |
+   +-----------------------------------------------------------------+ *)
+
+type 'a result =
+  | Value of 'a
+  | Error of exn
+
+(* Queue of [unit -> unit Lwt.t] functions. *)
+let jobs = Queue.create ()
+
+(* Mutex to protect access to [jobs]. *)
+let jobs_mutex = Mutex.create ()
+
+let job_notification =
+  Lwt_unix.make_notification
+    (fun () ->
+       (* Take the first job. The queue is never empty at this
+          point. *)
+       Mutex.lock jobs_mutex;
+       let thunk = Queue.take jobs in
+       Mutex.unlock jobs_mutex;
+       ignore (thunk ()))
+
+let run_in_main f =
+  let channel = Event.new_channel () in
+  (* Create the job. *)
+  let job () =
+    (* Execute [f] and wait for its result. *)
+    lwt result =
+      try_bind f
+        (fun ret -> return (Value ret))
+        (fun exn -> return (Error exn))
+    in
+    (* Send the result. *)
+    Event.sync (Event.send channel result);
+    return ()
+  in
+  (* Add the job to the queue. *)
+  Mutex.lock jobs_mutex;
+  Queue.add job jobs;
+  Mutex.unlock jobs_mutex;
+  (* Notify the main thread. *)
+  Lwt_unix.send_notification job_notification;
+  (* Wait for the result. *)
+  match Event.sync (Event.receive channel) with
+    | Value ret -> ret
+    | Error exn -> raise exn

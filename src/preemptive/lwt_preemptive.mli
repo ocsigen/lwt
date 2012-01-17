@@ -28,6 +28,10 @@
 val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
   (** detaches a computation to a preemptive thread. *)
 
+val run_in_main : (unit -> 'a Lwt.t) -> 'a
+  (** [run_in_main f] executes [f] in the main thread, i.e. the one
+      executing {!Lwt_main.run} and returns its result. *)
+
 val init : int -> int -> (string -> unit) -> unit
   (** [init min max log] initialises this module. i.e. it launches the
       minimum number of preemptive threads and starts the {b

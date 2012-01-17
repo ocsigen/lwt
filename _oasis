@@ -360,6 +360,14 @@ Executable test_react
   MainIs: main.ml
   BuildDepends: test, lwt, unix, lwt.unix, react, lwt.react
 
+Executable test_preemptive
+  Path: tests/preemptive
+  Build$: flag(preemptive) || flag(all)
+  Install: false
+  CompiledObject: best
+  MainIs: main.ml
+  BuildDepends: test, lwt, unix, lwt.unix, lwt.preemptive, threads
+
 Test core
   Command: $test_core
   TestTools: test_core
@@ -374,6 +382,11 @@ Test react
   Command: $test_react
   TestTools: test_react
   Run$: (flag(unix) && flag(react)) || flag(all)
+
+Test preemptive
+  Command: $test_preemptive
+  TestTools: test_preemptive
+  Run$: flag(preemptive) || flag(all)
 
 # +-------------------------------------------------------------------+
 # | Misc                                                              |
