@@ -1314,7 +1314,7 @@ CAMLprim value lwt_unix_cancel_job(value val_job)
       break;
 
     case LWT_UNIX_JOB_STATE_RUNNING:
-#if !defined(HAVE_PTHREAD)
+#if defined(HAVE_PTHREAD)
       /* The job is running, kill it. */
       if (signal_kill_thread >= 0)
         pthread_kill(job->thread, signal_kill_thread);
