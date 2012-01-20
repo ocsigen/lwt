@@ -373,8 +373,8 @@ let set_blocking ?(set_flags=true) ch blocking =
 
 #if windows
 
-let stub_readable fd = Unix.select [fd] [] [] (-1.0) <> ([], [], [])
-let stub_writable fd = Unix.select [] [fd] [] (-1.0) <> ([], [], [])
+let stub_readable fd = Unix.select [fd] [] [] 0.0 <> ([], [], [])
+let stub_writable fd = Unix.select [] [fd] [] 0.0 <> ([], [], [])
 
 #else
 
