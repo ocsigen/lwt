@@ -336,7 +336,6 @@ void lwt_unix_condition_broadcast(lwt_unix_condition *condition)
 
 void lwt_unix_condition_wait(lwt_unix_condition *condition, lwt_unix_mutex *mutex)
 {
-  HANDLE event;
   struct wait_list node;
 
   /* Create the event for the notification. */
@@ -353,6 +352,9 @@ void lwt_unix_condition_wait(lwt_unix_condition *condition, lwt_unix_mutex *mute
 
   /* Wait for a signal. */
   WaitForSingleObject(node.event, INFINITE);
+
+  /* The event is no more used. */
+  CloseHandle(node.event);
 
   /* Re-acquire the mutex. */
   EnterCriticalSection(mutex);
