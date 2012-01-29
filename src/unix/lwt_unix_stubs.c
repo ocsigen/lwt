@@ -368,6 +368,99 @@ void lwt_unix_condition_wait(lwt_unix_condition *condition, lwt_unix_mutex *mute
 #endif
 
 /* +-----------------------------------------------------------------+
+   | Socketpair on windows                                           |
+   +-----------------------------------------------------------------+ */
+
+#if defined(LWT_ON_WINDOWS)
+
+static void lwt_unix_socketpair(int domain, int type, int protocol, int sockets[2])
+{
+  union {
+    struct sockaddr_in inaddr;
+    struct sockaddr addr;
+  } a;
+  SOCKET listener;
+  int addrlen = sizeof(a.inaddr);
+  int reuse = 1;
+  DWORD err;
+
+  sockets[0] = INVALID_SOCKET;
+  sockets[1] = INVALID_SOCKET;
+
+  listener = socket(domain, type, protocol);
+  if (listener == INVALID_SOCKET)
+    goto failure;
+
+  memset(&a, 0, sizeof(a));
+  a.inaddr.sin_family = domain;
+  a.inaddr.sin_addr.s_addr = hxtonl(INADDR_LOOPBACK);
+  a.inaddr.sin_port = 0;
+
+  if (setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, (char*) &reuse, sizeof(reuse)) == -1)
+    goto failure;
+
+  if  (bind(listener, &a.addr, sizeof(a.inaddr)) == SOCKET_ERROR)
+    goto failure;
+
+  memset(&a, 0, sizeof(a));
+  if  (getsockname(listener, &a.addr, &addrlen) == SOCKET_ERROR)
+    goto failure;
+
+  a.inaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  a.inaddr.sin_family = AF_INET;
+
+  if (listen(listener, 1) == SOCKET_ERROR)
+    goto failure;
+
+  sockets[0] = socket(domain, type, protocol);
+  if (sockets[0] == INVALID_SOCKET)
+    goto failure;
+
+  if (connect(sockets[0], &a.addr, sizeof(a.inaddr)) == SOCKET_ERROR)
+    goto failure;
+
+  sockets[1] = accept(listener, NULL, NULL);
+  if (sockets[1] == INVALID_SOCKET)
+    goto failure;
+
+  closesocket(listener);
+  return;
+
+ failure:
+  err = WSAGetLastError();
+  closesocket(listener);
+  closesocket(sockets[0]);
+  closesocket(sockets[1]);
+  win32_maperr(err);
+  uerror("socketpair", Nothing);
+}
+
+static int socket_domain_table[] = {
+  PF_UNIX, PF_INET
+};
+
+static int socket_type_table[] = {
+  SOCK_STREAM, SOCK_DGRAM, SOCK_RAW, SOCK_SEQPACKET
+};
+
+CAMLprim value lwt_unix_socketpair_stub(value domain, value type, value protocol)
+{
+  CAMLparam3(domain, type, protocol);
+  CAMLlocal1(result);
+  SOCKET sockets[2];
+  lwt_unix_socketpair(socket_domain_table[Int_val(domain)],
+                      socket_type_table[Int_val(type)],
+                      Int_val(protocol),
+                      sockets);
+  result = caml_alloc_tuple(2);
+  Store_field(result, 0, win_alloc_socket(sockets[0]));
+  Store_field(result, 1, win_alloc_socket(sockets[1]));
+  CAMLreturn(result);
+}
+
+#endif
+
+/* +-----------------------------------------------------------------+
    | Notifications                                                   |
    +-----------------------------------------------------------------+ */
 
@@ -534,15 +627,7 @@ static int windows_notification_recv()
 
 value lwt_unix_init_notification()
 {
-  union {
-    struct sockaddr_in inaddr;
-    struct sockaddr addr;
-  } a;
-  SOCKET listener;
-  int e;
-  int addrlen = sizeof(a.inaddr);
-  int reuse = 1;
-  DWORD err;
+  SOCKET sockets[2];
 
   switch (notification_mode) {
   case NOTIFICATION_MODE_NOT_INITIALIZED:
@@ -561,52 +646,11 @@ value lwt_unix_init_notification()
   }
 
   /* Since pipes do not works with select, we need to use a pair of
-     sockets. The following code simulate the socketpair call of
-     unix. */
+     sockets. */
+  lwt_unix_socketpair(AF_INET, SOCK_STREAM, IPPROTO_TCP, sockets);
 
-  socket_r = INVALID_SOCKET;
-  socket_w = INVALID_SOCKET;
-
-  listener = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-  if (listener == INVALID_SOCKET)
-    goto failure;
-
-  memset(&a, 0, sizeof(a));
-  a.inaddr.sin_family = AF_INET;
-  a.inaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-  a.inaddr.sin_port = 0;
-
-  if (setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, (char*) &reuse, sizeof(reuse)) == -1)
-    goto failure;
-
-  if  (bind(listener, &a.addr, sizeof(a.inaddr)) == SOCKET_ERROR)
-    goto failure;
-
-  memset(&a, 0, sizeof(a));
-  if  (getsockname(listener, &a.addr, &addrlen) == SOCKET_ERROR)
-    goto failure;
-
-  a.inaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-  a.inaddr.sin_family = AF_INET;
-
-  if (listen(listener, 1) == SOCKET_ERROR)
-    goto failure;
-
-  socket_r = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
-  if (socket_r == INVALID_SOCKET)
-    goto failure;
-
-  if (connect(socket_r, &a.addr, sizeof(a.inaddr)) == SOCKET_ERROR)
-    goto failure;
-
-  socket_w = accept(listener, NULL, NULL);
-  if (socket_w == INVALID_SOCKET)
-    goto failure;
-
-  closesocket(listener);
-
-  socket_r = set_close_on_exec(socket_r);
-  socket_w = set_close_on_exec(socket_w);
+  socket_r = set_close_on_exec(sockets[0]);
+  socket_w = set_close_on_exec(sockets[1]);
   notification_mode = NOTIFICATION_MODE_WINDOWS;
   notification_send = windows_notification_send;
   notification_recv = windows_notification_recv;

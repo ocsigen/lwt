@@ -1757,8 +1757,18 @@ let shutdown ch shutdown_command =
   check_descriptor ch;
   Unix.shutdown ch.fd shutdown_command
 
+#if windows
+
+external socketpair_stub : socket_domain -> socket_type -> int -> Unix.file_descr * Unix.file_descr = "lwt_unix_socketpair_stub"
+
+#else
+
+let socketpair_stub = Unix.socketpair
+
+#endif
+
 let socketpair dom typ proto =
-  let (s1, s2) = Unix.socketpair dom typ proto in
+  let (s1, s2) = socketpair_stub dom typ proto in
   (mk_ch ~blocking:false s1, mk_ch ~blocking:false s2)
 
 let accept ch =
