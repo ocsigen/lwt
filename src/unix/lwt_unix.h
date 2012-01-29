@@ -27,11 +27,6 @@
 #include <caml/mlvalues.h>
 #include <caml/unixsupport.h>
 
-/* Detect the target OS */
-#if defined(_WIN32) || defined(_WIN64)
-#  define LWT_ON_WINDOWS
-#endif
-
 /* The macro to get the file-descriptor from a value. */
 #if defined(LWT_ON_WINDOWS)
 #  define FD_val(value) win_CRT_fd_of_filedescr(value)

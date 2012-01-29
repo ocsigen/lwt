@@ -20,7 +20,9 @@
  * 02111-1307, USA.
  */
 
-#if defined(_WIN32) || defined(_WIN64)
+#include <lwt_config.h.h>
+
+#if defined(LWT_ON_WINDOWS)
 #  include <windows.h>
 #  include <wincon.h>
 #else
@@ -30,7 +32,7 @@
 #  include <signal.h>
 #endif
 
-#include "../unix/lwt_unix.h"
+#include <lwt_unix.h>
 
 #include <caml/alloc.h>
 #include <caml/fail.h>

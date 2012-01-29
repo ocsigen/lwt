@@ -102,12 +102,7 @@ let () =
              define_c_library "libev" env;
              define_c_library "pthread" env;
 
-             flag ["c"; "compile"; "use_lwt_unix_h"] & S [A"-ccopt"; A"-Isrc/unix"];
-
-             let opts = S[A "-ppopt"; A "-let"; A "-ppopt"; A ("windows=" ^ if BaseEnvLight.var_get "os_type" env <> "Unix" then "true" else "false")] in
-             flag ["ocaml"; "compile"; "pa_optcomp"] & opts;
-             flag ["ocaml"; "ocamldep"; "pa_optcomp"] & opts;
-             (*flag ["ocaml"; "doc"; "pa_optcomp"] & opts; Does not work... *)
+             flag ["c"; "compile"; "use_lwt_headers"] & S [A"-ccopt"; A"-Isrc/unix"];
 
              (* Toplevel stuff *)
 

@@ -20,7 +20,9 @@
  * 02111-1307, USA.
  */
 
-#if defined(_WIN32) || defined(_WIN64)
+#include "lwt_config.h"
+
+#if defined(LWT_ON_WINDOWS)
 #  include <winsock2.h>
 #  include <windows.h>
 #endif
@@ -42,7 +44,6 @@
 #include <stdio.h>
 #include <setjmp.h>
 
-#include "lwt_config.h"
 #include "lwt_unix.h"
 
 #if !defined(LWT_ON_WINDOWS)

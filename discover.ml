@@ -433,6 +433,14 @@ Lwt can use pthread or the win32 API.
   test_feature ~do_check "credentials getting" "HAVE_GET_CREDENTIALS" (fun () -> test_code ([], []) get_credentials_code);
   test_feature ~do_check "fdatasync" "HAVE_FDATASYNC" (fun () -> test_code ([], []) fdatasync_code);
 
+  if !os_type = "Win32" then begin
+    output_string config "#define LWT_ON_WINDOWS\n";
+    output_string config_ml "#let windows=true\n"
+  end else begin
+    output_string config "//#define LWT_ON_WINDOWS\n";
+    output_string config_ml "#let windows=false\n"
+  end;
+
   fprintf config "#endif\n";
 
   (* Add flags to setup.data *)

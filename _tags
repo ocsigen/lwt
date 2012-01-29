@@ -12,8 +12,8 @@
 <src/unix/*>: use_C_libev, use_C_pthread
 <src/glib/*>: use_C_glib
 <src/text/*>: use_C_pthread
-<**/*.c>: use_lwt_unix_h
-<**/*.h>: use_lwt_unix_h
+<**/*.c>: use_lwt_headers
+<**/*.h>: use_lwt_headers
 
 # OASIS_START
 # OASIS_STOP

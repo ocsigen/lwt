@@ -26,7 +26,7 @@ exception Not_available of string
 
 let () = Callback.register_exception "lwt:not-available" (Not_available "")
 
-let windows = Sys.os_type <> "Unix"
+let windows = Sys.os_type = "Win32"
 
 type feature =
     [ `wait4
