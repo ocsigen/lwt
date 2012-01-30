@@ -20,11 +20,17 @@
  * 02111-1307, USA.
  *)
 
+#include "src/unix/lwt_config.ml"
+
 open Lwt
 
 type command = string * string array
 
-let shell cmd = ("/bin/sh", [| "/bin/sh"; "-c"; cmd |])
+#if windows
+let shell cmd = ("", [|"cmd.exe"; "/c"; "\000" ^ cmd|])
+#else
+let shell cmd = ("", [|"/bin/sh"; "-c"; cmd|])
+#endif
 
 type redirection =
     [ `Keep
@@ -34,8 +40,87 @@ type redirection =
     | `FD_move of Unix.file_descr ]
 
 (* +-----------------------------------------------------------------+
-   | Spawing commands                                                |
+   | OS-depentent command spawning                                   |
    +-----------------------------------------------------------------+ *)
+
+type proc = {
+  id : int;
+  (* The process id. *)
+  fd : Unix.file_descr;
+  (* A handle on windows, and a dummy value of Unix. *)
+}
+
+#if windows
+
+let get_fd fd redirection =
+  match redirection with
+    | `Keep ->
+        Some fd
+    | `Dev_null ->
+        Some (Unix.openfile "nul" [Unix.O_RDWR] 0o666)
+    | `Close ->
+        None
+    | `FD_copy fd' ->
+        Some fd'
+    | `FD_move fd' ->
+        Some fd'
+
+external create_process : string option -> string -> string option -> (Unix.file_descr option * Unix.file_descr option * Unix.file_descr option) -> proc = "lwt_process_create_process"
+
+let quote arg =
+  if String.length arg > 0 && arg.[0] = '\000' then
+    String.sub arg 1 (String.length arg - 1)
+  else
+    Filename.quote arg
+
+let spawn (prog, args) env ?(stdin:redirection=`Keep) ?(stdout:redirection=`Keep) ?(stderr:redirection=`Keep) toclose =
+  let cmdline = String.concat " " (List.map quote (Array.to_list args)) in
+  let env =
+    match env with
+      | None ->
+          None
+      | Some env ->
+          let len = Array.fold_left (fun len str -> String.length str + len + 1) 1 env in
+          let res = String.create len in
+          let ofs =
+            Array.fold_left
+              (fun ofs str ->
+                 let len = String.length str in
+                 String.blit str 0 res ofs len;
+                 res.[ofs + len] <- '\000';
+                 ofs + len + 1)
+              0 env
+          in
+          res.[ofs] <- '\000';
+          Some res
+  in
+  List.iter Unix.set_close_on_exec toclose;
+  let proc = create_process (if prog = "" then None else Some prog) cmdline env (get_fd Unix.stdin stdin, get_fd Unix.stdout stdout, get_fd Unix.stderr stderr) in
+  let close = function
+    | `FD_move fd ->
+        Unix.close fd
+    | _ ->
+        ()
+  in
+  close stdin;
+  close stdout;
+  close stderr;
+  proc
+
+external wait_job : Unix.file_descr -> [ `wait ] Lwt_unix.job  = "lwt_process_wait_job"
+external wait_result : [ `wait ] Lwt_unix.job -> int = "lwt_process_wait_result"
+external wait_free : [ `wait ] Lwt_unix.job -> unit = "lwt_process_wait_free"
+
+let waitproc proc =
+  lwt code = Lwt_unix.execute_job (wait_job proc.fd) wait_result wait_free in
+  return (proc.id, Lwt_unix.WEXITED code, { Lwt_unix.ru_utime = 0.; Lwt_unix.ru_stime = 0. })
+
+external terminate_process : Unix.file_descr -> int -> unit = "lwt_process_terminate_process"
+
+let terminate proc =
+  terminate_process proc.fd 1
+
+#else
 
 let redirect fd redirection = match redirection with
   | `Keep ->
@@ -55,8 +140,50 @@ let redirect fd redirection = match redirection with
       Unix.dup2 fd' fd;
       Unix.close fd'
 
+let rec need_inline args idx =
+  if idx = Array.length args then
+    false
+  else
+    let arg = args.(idx) in
+    (String.length arg > 0 && arg.[0] = '\000') || need_inline args (idx + 1)
+
+let split arg =
+  let rec search_start i =
+    if i = String.length arg then
+      []
+    else
+      match arg.[i] with
+        | ' ' | '\t' ->
+            search_start (i + 1)
+        | _ ->
+            loop_word i (i + 1)
+  and loop_word i j =
+    if j = String.length arg then
+      [String.sub arg i (j - i)]
+    else
+      match arg.[i] with
+        | ' ' | '\t' ->
+            String.sub arg i (j - i) :: search_start (j + 1)
+        | _ ->
+            loop_word i (j + 1)
+  in
+  search_start 0
+
+let inline arg =
+  if String.length arg > 0 && arg.[0] = '\000' then
+    split arg
+  else
+    [arg]
+
+let map_args args =
+  if need_inline args 0 then begin
+    Array.of_list (List.flatten (List.map inline (Array.to_list args)))
+  end else
+    args
+
 let spawn (prog, args) env ?(stdin:redirection=`Keep) ?(stdout:redirection=`Keep) ?(stderr:redirection=`Keep) toclose =
-  match Lwt_unix.fork() with
+  let prog = if prog = "" && Array.length args > 0 then args.(0) else prog in
+  match Lwt_unix.fork () with
     | 0 ->
         redirect Unix.stdin stdin;
         redirect Unix.stdout stdout;
@@ -85,7 +212,18 @@ let spawn (prog, args) env ?(stdin:redirection=`Keep) ?(stdout:redirection=`Keep
         close stdin;
         close stdout;
         close stderr;
-        id
+        { id; fd = Unix.stdin }
+
+let waitproc proc = Lwt_unix.wait4 [] proc.id
+
+let terminate proc =
+  Unix.kill proc.id Sys.sigkill
+
+#endif
+
+(* +-----------------------------------------------------------------+
+   | Objects                                                         |
+   +-----------------------------------------------------------------+ *)
 
 type state =
   | Running
@@ -94,87 +232,85 @@ type state =
 let status (pid, status, rusage) = status
 let rusage (pid, status, rusage) = rusage
 
-class virtual common timeout (w : (int * Unix.process_status * Lwt_unix.resource_usage) Lwt.t) pid =
-  let status = lazy(w >|= status) and rusage = lazy(w >|= rusage) in
+external cast_chan : 'a Lwt_io.channel -> unit Lwt_io.channel = "%identity"
+  (* Transform a channel into a channel that only support closing. *)
+
+let ignore_close chan = ignore (Lwt_io.close chan)
+
+class virtual common timeout proc channels =
+  let wait = waitproc proc in
+  let close = lazy(join (List.map Lwt_io.close channels) >> wait) in
 object(self)
 
-  method virtual close : Unix.process_status Lwt.t
+  method pid = proc.id
 
-  method pid = pid
+  method state =
+    match Lwt.poll wait with
+      | None -> Running
+      | Some (pid, status, rusage) -> Exited status
 
-  method state = match Lwt.poll w with
-    | None -> Running
-    | Some(pid, status, rusage) -> Exited status
+  method kill signum =
+    if Lwt.state wait = Lwt.Sleep then
+      Unix.kill proc.id signum
 
-  method kill signum = match Lwt.poll w with
-    | None -> Unix.kill pid signum
-    | Some _ -> ()
+  method terminate =
+    if Lwt.state wait = Lwt.Sleep then
+      terminate proc
 
-  method status = Lazy.force status
-  method rusage = Lazy.force rusage
+  method close = Lwt.protected (Lazy.force close) >|= status
+  method status = Lwt.protected wait >|= status
+  method rusage = Lwt.protected wait >|= rusage
 
   initializer
+    (* Ensure channels are closed when no longer used. *)
+    List.iter (Gc.finalise ignore_close) channels;
+    (* Handle timeout. *)
     match timeout with
       | None ->
           ()
       | Some dt ->
           Lwt.ignore_result begin
-            try_lwt
-              lwt _ = Lwt.pick [Lwt_unix.timeout dt; w] in
-              return ()
-            with
-              | Lwt_unix.Timeout ->
-                  (try Unix.kill pid Sys.sigkill with _ -> ());
-                  (try_lwt self#close >> return () with _ -> return ())
-              | _ ->
+            match_lwt Lwt.choose [Lwt_unix.sleep dt >> return false; wait >> return true] with
+              | true ->
                   return ()
+              | false ->
+                  (try self#terminate with _ -> ());
+                  join (List.map Lwt_io.close channels)
           end
 end
 
 class process_none ?timeout ?env ?stdin ?stdout ?stderr cmd =
-  let pid = spawn cmd env ?stdin ?stdout ?stderr [] in
-  let w = Lwt_unix.wait4 [] pid in
-  let close = lazy(w >|= status) in
+  let proc = spawn cmd env ?stdin ?stdout ?stderr [] in
 object
-  inherit common timeout w pid
-  method close = Lazy.force close
+  inherit common timeout proc []
 end
 
 class process_in ?timeout ?env ?stdin ?stderr cmd =
   let stdout_r, stdout_w = Unix.pipe () in
-  let pid = spawn cmd env ?stdin ~stdout:(`FD_move stdout_w) ?stderr [stdout_r] in
-  let stdout = Lwt_io.of_unix_fd ~mode:Lwt_io.input stdout_r
-  and w = Lwt_unix.wait4 [] pid in
-  let close = lazy(Lwt_io.close stdout >> w >|= status) in
+  let proc = spawn cmd env ?stdin ~stdout:(`FD_move stdout_w) ?stderr [stdout_r] in
+  let stdout = Lwt_io.of_unix_fd ~mode:Lwt_io.input stdout_r in
 object
-  inherit common timeout w pid
-  method close = Lazy.force close
+  inherit common timeout proc [cast_chan stdout]
   method stdout = stdout
 end
 
 class process_out ?timeout ?env ?stdout ?stderr cmd =
   let stdin_r, stdin_w = Unix.pipe () in
-  let pid = spawn cmd env ~stdin:(`FD_move stdin_r) ?stdout ?stderr [stdin_w] in
-  let stdin = Lwt_io.of_unix_fd ~mode:Lwt_io.output stdin_w
-  and w = Lwt_unix.wait4 [] pid in
-  let close = lazy (Lwt_io.close stdin >> w >|= status) in
+  let proc = spawn cmd env ~stdin:(`FD_move stdin_r) ?stdout ?stderr [stdin_w] in
+  let stdin = Lwt_io.of_unix_fd ~mode:Lwt_io.output stdin_w in
 object
-  inherit common timeout w pid
-  method close = Lazy.force close
+  inherit common timeout proc [cast_chan stdin]
   method stdin = stdin
 end
 
 class process ?timeout ?env ?stderr cmd =
   let stdin_r, stdin_w = Unix.pipe ()
   and stdout_r, stdout_w = Unix.pipe () in
-  let pid = spawn cmd env ~stdin:(`FD_move stdin_r) ~stdout:(`FD_move stdout_w) ?stderr [stdin_w; stdout_r] in
+  let proc = spawn cmd env ~stdin:(`FD_move stdin_r) ~stdout:(`FD_move stdout_w) ?stderr [stdin_w; stdout_r] in
   let stdin = Lwt_io.of_unix_fd ~mode:Lwt_io.output stdin_w
-  and stdout = Lwt_io.of_unix_fd ~mode:Lwt_io.input stdout_r
-  and w = Lwt_unix.wait4 [] pid in
-  let close = lazy(Lwt_io.close stdin <&> Lwt_io.close stdout >> w >|= status) in
+  and stdout = Lwt_io.of_unix_fd ~mode:Lwt_io.input stdout_r in
 object
-  inherit common timeout w pid
-  method close = Lazy.force close
+  inherit common timeout proc [cast_chan stdin; cast_chan stdout]
   method stdin = stdin
   method stdout = stdout
 end
@@ -183,15 +319,12 @@ class process_full ?timeout ?env cmd =
   let stdin_r, stdin_w = Unix.pipe ()
   and stdout_r, stdout_w = Unix.pipe ()
   and stderr_r, stderr_w = Unix.pipe () in
-  let pid = spawn cmd env ~stdin:(`FD_move stdin_r) ~stdout:(`FD_move stdout_w) ~stderr:(`FD_move stderr_w) [stdin_w; stdout_r; stderr_r] in
+  let proc = spawn cmd env ~stdin:(`FD_move stdin_r) ~stdout:(`FD_move stdout_w) ~stderr:(`FD_move stderr_w) [stdin_w; stdout_r; stderr_r] in
   let stdin = Lwt_io.of_unix_fd ~mode:Lwt_io.output stdin_w
   and stdout = Lwt_io.of_unix_fd ~mode:Lwt_io.input stdout_r
-  and stderr = Lwt_io.of_unix_fd ~mode:Lwt_io.input stderr_r
-  and w = Lwt_unix.wait4 [] pid in
-  let close = lazy(join [Lwt_io.close stdin; Lwt_io.close stdout; Lwt_io.close stderr] >> w >|= status) in
+  and stderr = Lwt_io.of_unix_fd ~mode:Lwt_io.input stderr_r in
 object
-  inherit common timeout w pid
-  method close = Lazy.force close
+  inherit common timeout proc [cast_chan stdin; cast_chan stdout; cast_chan stderr]
   method stdin = stdin
   method stdout = stdout
   method stderr = stderr
@@ -226,11 +359,17 @@ let exec ?timeout ?env ?stdin ?stdout ?stderr cmd = (open_process_none ?timeout 
 let ingore_close ch =
   ignore (Lwt_io.close ch)
 
+let read_opt read ic =
+  try_lwt
+    read ic >|= fun x -> Some x
+  with Unix.Unix_error (Unix.EPIPE, _, _) | End_of_file ->
+    return None
+
 let recv_chars pr =
   let ic = pr#stdout in
   Gc.finalise ingore_close ic;
   Lwt_stream.from (fun _ ->
-                     lwt x = Lwt_io.read_char_opt ic in
+                     lwt x = read_opt Lwt_io.read_char ic in
                      if x = None then begin
                        lwt () = Lwt_io.close ic in
                        return x
@@ -241,7 +380,7 @@ let recv_lines pr =
   let ic = pr#stdout in
   Gc.finalise ingore_close ic;
   Lwt_stream.from (fun _ ->
-                     lwt x = Lwt_io.read_line_opt ic in
+                     lwt x = read_opt Lwt_io.read_line ic in
                      if x = None then begin
                        lwt () = Lwt_io.close ic in
                        return x
@@ -253,7 +392,7 @@ let recv pr =
   try_lwt
     Lwt_io.read ic
   finally
-    Lwt_io.close ic >> return ()
+    Lwt_io.close ic
 
 let recv_line pr =
   let ic = pr#stdout in

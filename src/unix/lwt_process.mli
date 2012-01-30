@@ -25,10 +25,39 @@
 (** This modules allow you to spawn processes and communicate with them. *)
 
 type command = string * string array
-    (** A command is a program name with a list of arguments *)
+    (** A command. The first field is the name of the executable and
+        the second is the list of arguments. For example:
+
+        {[
+          ("ls", [|"ls"; "-l"|])
+        ]}.
+
+        Notes:
+
+        - if the name is the empty string, then the first argument
+        will be used. You should specify a name only if you do not
+        want the executable to be searched in the PATH. On Windows the
+        only way to enable automatic seach in PATH is to pass an empty
+        name.
+
+        - it is possible to ``inline'' an argument, i.e. split it into
+        multiple arguments. To do that prefix it with ["\000"]. For
+        example:
+
+        {[
+          ("", [|"echo"; "\000foo bar"|])
+        ]}
+
+        is the same as:
+
+        {[
+          ("", [|"echo"; "foo"; "bar"|])
+        ]}.
+    *)
 
 val shell : string -> command
-  (** A command executed with ["/bin/sh"] *)
+  (** A command executed with the shell. (with ["/bin/sh -c <cmd>"] on
+      Unix and ["cmd.exe /c <cmd>"] on Windows). *)
 
 (** All the following functions take an optionnal argument
     [timeout]. If specified, after expiration, the process will be
@@ -169,7 +198,11 @@ object
 
   method kill : int -> unit
     (** [kill signum] sends [signum] to the process if it is still
-        running *)
+        running. *)
+
+  method terminate : unit
+    (** Terminates the process. It is equivalent to [kill Sys.sigkill]
+        on Unix but also works on windows (unlike {!kill}). *)
 
   method status : Unix.process_status Lwt.t
     (** Threads which wait for the sub-process to exit then returns its

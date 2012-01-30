@@ -373,7 +373,7 @@ void lwt_unix_condition_wait(lwt_unix_condition *condition, lwt_unix_mutex *mute
 
 #if defined(LWT_ON_WINDOWS)
 
-static void lwt_unix_socketpair(int domain, int type, int protocol, int sockets[2])
+static void lwt_unix_socketpair(int domain, int type, int protocol, SOCKET sockets[2])
 {
   union {
     struct sockaddr_in inaddr;
@@ -393,7 +393,7 @@ static void lwt_unix_socketpair(int domain, int type, int protocol, int sockets[
 
   memset(&a, 0, sizeof(a));
   a.inaddr.sin_family = domain;
-  a.inaddr.sin_addr.s_addr = hxtonl(INADDR_LOOPBACK);
+  a.inaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   a.inaddr.sin_port = 0;
 
   if (setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, (char*) &reuse, sizeof(reuse)) == -1)
@@ -655,16 +655,6 @@ value lwt_unix_init_notification()
   notification_send = windows_notification_send;
   notification_recv = windows_notification_recv;
   return win_alloc_socket(socket_r);
-
- failure:
-  err = WSAGetLastError();
-  closesocket(listener);
-  closesocket(socket_r);
-  closesocket(socket_w);
-  win32_maperr(err);
-  uerror("init_notification", Nothing);
-  /* Just to make the compiler happy. */
-  return Val_unit;
 }
 
 #else /* defined(LWT_ON_WINDOWS) */

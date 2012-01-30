@@ -134,7 +134,8 @@ Library "lwt-unix"
     lwt_config.h,
     lwt_unix.h,
     lwt_unix_stubs.c,
-    lwt_libev_stubs.c
+    lwt_libev_stubs.c,
+    lwt_process_stubs.c
   if os_type(Win32) && ccomp_type(msvc)
     CCLib+: ws2_32.lib
   else if os_type(Win32)
