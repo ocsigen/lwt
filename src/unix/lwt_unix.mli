@@ -279,7 +279,10 @@ val wait_count : unit -> int
       terminate. *)
 
 val system : string -> process_status Lwt.t
-  (** Wrapper for [Unix.system] *)
+  (** Executes the given command, waits until it terminates, and
+      return its termination status. The string is interpreted by the
+      shell [/bin/sh] on Unix and [cmd.exe] on Windows. The result
+      [WEXITED 127] indicates that the shell couldn't be executed. *)
 
 (** {6 Basic file input/output} *)
 

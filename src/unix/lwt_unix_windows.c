@@ -482,3 +482,61 @@ CAMLprim value lwt_unix_fsync_free(value val_job)
   lwt_unix_free_job(&job->job);
   return Val_unit;
 }
+
+/* +-----------------------------------------------------------------+
+   | JOB: system                                                     |
+   +-----------------------------------------------------------------+ */
+
+struct job_system {
+  struct lwt_unix_job job;
+  HANDLE handle;
+};
+
+#define job_system_val(v) *(struct job_system**)Data_custom_val(v)
+
+static void worker_wait(struct job_system *job)
+{
+  WaitForSingleObject(job->handle, INFINITE);
+}
+
+CAMLprim value lwt_unix_system_job(value cmdline)
+{
+  STARTUPINFO si;
+  PROCESS_INFORMATION pi;
+  struct job_system *job = lwt_unix_new(struct job_system);
+
+  ZeroMemory(&si, sizeof(si));
+  ZeroMemory(&pi, sizeof(pi));
+  si.cb = sizeof(si);
+  if (!CreateProcess(NULL, String_val(cmdline), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
+    win32_maperr(GetLastError());
+    uerror("CreateProcess", Nothing);
+  }
+  CloseHandle(pi.hThread);
+
+  job->job.worker = (lwt_unix_job_worker)worker_wait;
+  job->handle = pi.hProcess;
+
+  return lwt_unix_alloc_job(&(job->job));
+}
+
+CAMLprim value lwt_unix_system_result(value val_job)
+{
+  HANDLE handle = (job_system_val(val_job))->handle;
+  DWORD code;
+  DWORD err;
+  if (!GetExitCodeProcess(handle, &code)) {
+    err = GetLastError();
+    CloseHandle(handle);
+    win32_maperr(err);
+    uerror("GetExitCodeProcess", Nothing);
+  }
+  CloseHandle(handle);
+  return Val_int(code);
+}
+
+CAMLprim value lwt_unix_system_free(value val_job)
+{
+  lwt_unix_free_job(&(job_system_val(val_job))->job);
+  return Val_unit;
+}

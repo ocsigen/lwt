@@ -2552,16 +2552,32 @@ let wait4 flags pid =
 
 let wait () = waitpid [] (-1)
 
+#if windows
+
+external system_job : string -> [ `system ] job = "lwt_unix_system_job"
+external system_result : [ `system ] job -> int = "lwt_unix_system_result"
+external system_free : [ `system ] job -> unit = "lwt_unix_system_free"
+
 let system cmd =
-  match Unix.fork () with
+  execute_job (system_job ("cmd.exe /c " ^ cmd)) (fun job -> WEXITED (system_result job)) system_free
+
+#else
+
+let system cmd =
+  match fork () with
     | 0 ->
         begin try
           Unix.execv "/bin/sh" [| "/bin/sh"; "-c"; cmd |]
         with _ ->
+          (* Prevent exit hooks from running, they are not supposed to
+             be executed here. *)
+          Lwt_sequence.iter_node_l Lwt_sequence.remove Lwt_main.exit_hooks;
           exit 127
         end
     | id ->
         waitpid [] id >|= snd
+
+#endif
 
 (* +-----------------------------------------------------------------+
    | Misc                                                            |

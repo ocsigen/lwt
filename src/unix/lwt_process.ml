@@ -197,8 +197,8 @@ let spawn (prog, args) env ?(stdin:redirection=`Keep) ?(stdout:redirection=`Keep
               | Some env ->
                   Unix.execvpe prog args env
           with _ ->
-            (* Prevent hooks from running, otherwise thay may use
-               notifications and the result would be unspecified. *)
+            (* Prevent exit hooks from running, they are not supposed
+               to be executed here. *)
             Lwt_sequence.iter_node_l Lwt_sequence.remove Lwt_main.exit_hooks;
             exit 127
         end
