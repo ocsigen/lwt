@@ -20,7 +20,7 @@
  * 02111-1307, USA.
  */
 
-#include <lwt_config.h.h>
+#include <lwt_config.h>
 
 #if defined(LWT_ON_WINDOWS)
 #  include <windows.h>
