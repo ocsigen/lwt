@@ -43,6 +43,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <setjmp.h>
+#include <signal.h>
 
 #include "lwt_unix.h"
 
@@ -54,7 +55,6 @@
 #  include <sys/param.h>
 #  include <sys/un.h>
 #  include <sys/mman.h>
-#  include <signal.h>
 #  include <errno.h>
 #  include <string.h>
 #  include <fcntl.h>
@@ -64,7 +64,6 @@
 #  include <netdb.h>
 #  include <termios.h>
 #  include <sched.h>
-#  include <signal.h>
 #  include <netinet/in.h>
 #  include <arpa/inet.h>
 #endif
@@ -743,6 +742,109 @@ value lwt_unix_init_notification()
 }
 
 #endif /* defined(LWT_ON_WINDOWS) */
+
+/* +-----------------------------------------------------------------+
+   | Signals                                                         |
+   +-----------------------------------------------------------------+ */
+
+#ifndef NSIG
+#define NSIG 64
+#endif
+
+/* Notifications id for each monitored signal. */
+static int signal_notifications[NSIG];
+
+CAMLextern int caml_convert_signal_number (int);
+
+/* Send a notification when a signal is received. */
+static void handle_signal(int signum)
+{
+  if (signum >= 0 && signum < NSIG) {
+    int id = signal_notifications[signum];
+    if (id != -1) lwt_unix_send_notification(id);
+  }
+}
+
+#if defined(LWT_ON_WINDOWS)
+/* Handle Ctrl+C on windows. */
+static BOOL WINAPI handle_break(DWORD event)
+{
+  int id = signal_notifications[SIGINT];
+  if (id == -1 || (event != CTRL_C_EVENT && event != CTRL_BREAK_EVENT)) return FALSE;
+  lwt_unix_send_notification(id);
+  return TRUE;
+}
+#endif
+
+/* Install a signal handler. */
+CAMLprim value lwt_unix_set_signal(value val_signum, value val_notification)
+{
+#if !defined(LWT_ON_WINDOWS)
+  struct sigaction sa;
+#endif
+  int signum = caml_convert_signal_number(Int_val(val_signum));
+  int notification = Int_val(val_notification);
+
+  if (signum < 0 || signum >= NSIG)
+    caml_invalid_argument("Lwt_unix.on_signal: unavailable signal");
+
+  signal_notifications[signum] = notification;
+
+#if defined(LWT_ON_WINDOWS)
+  if (signum == SIGINT) {
+    if (!SetConsoleCtrlHandler(handle_break, TRUE)) {
+      signal_notifications[signum] = -1;
+      win32_maperr(GetLastError());
+      uerror("SetConsoleCtrlHandler", Nothing);
+    }
+  } else {
+    if (signal(signum, handle_signal) == SIG_ERR) {
+      signal_notifications[signum] = -1;
+      uerror("signal", Nothing);
+    }
+  }
+#else
+  sa.sa_handler = handle_signal;
+  sa.sa_flags = 0;
+  if (sigaction(signum, &sa, NULL) == -1) {
+    signal_notifications[signum] = -1;
+    uerror("sigaction", Nothing);
+  }
+#endif
+  return Val_unit;
+}
+
+/* Remove a signal handler. */
+CAMLprim value lwt_unix_remove_signal(value val_signum)
+{
+#if !defined(LWT_ON_WINDOWS)
+  struct sigaction sa;
+#endif
+  /* The signal number is valid here since it was when we did the
+     set_signal. */
+  int signum = caml_convert_signal_number(Int_val(val_signum));
+  signal_notifications[signum] = -1;
+#if defined(LWT_ON_WINDOWS)
+  if (signum == SIGINT)
+    SetConsoleCtrlHandler(NULL, FALSE);
+  else
+    signal(signum, SIG_DFL);
+#else
+  sa.sa_handler = SIG_DFL;
+  sa.sa_flags = 0;
+  sigaction(signum, &sa, NULL);
+#endif
+  return Val_unit;
+}
+
+/* Mark all signals as non-monitored. */
+CAMLprim value lwt_unix_init_signals()
+{
+  int i;
+  for (i = 0; i < NSIG; i++)
+    signal_notifications[i] = -1;
+  return Val_unit;
+}
 
 /* +-----------------------------------------------------------------+
    | Job execution                                                   |

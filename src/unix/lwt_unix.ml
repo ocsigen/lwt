@@ -2376,6 +2376,12 @@ let event_notifications = ref (Lwt_engine.on_readable (init_notification ()) han
    | Signals                                                         |
    +-----------------------------------------------------------------+ *)
 
+external set_signal : int -> int -> unit = "lwt_unix_set_signal"
+external remove_signal : int -> unit = "lwt_unix_remove_signal"
+external init_signals : unit -> unit = "lwt_unix_init_signals"
+
+let () = init_signals ()
+
 module Signal_map = Map.Make(struct type t = int let compare a b = a - b end)
 
 let signals = ref Signal_map.empty
@@ -2395,7 +2401,7 @@ let on_signal signum handler =
       let actions = Lwt_sequence.create () in
       let notification = make_notification (fun () -> Lwt_sequence.iter_l (fun f -> f signum) actions) in
       (try
-         Sys.set_signal signum (Sys.Signal_handle (fun signum -> send_notification notification))
+         set_signal signum notification
        with exn ->
          stop_notification notification;
          raise exn);
@@ -2405,9 +2411,9 @@ let on_signal signum handler =
   let node = Lwt_sequence.add_r handler actions in
   lazy(Lwt_sequence.remove node;
        if Lwt_sequence.is_empty actions then begin
+         remove_signal signum;
          signals := Signal_map.remove signum !signals;
-         stop_notification notification;
-         Sys.set_signal signum Sys.Signal_default
+         stop_notification notification
        end)
 
 let disable_signal_handler = Lazy.force
@@ -2415,7 +2421,7 @@ let disable_signal_handler = Lazy.force
 let reinstall_signal_handler signum =
   match try Some (Signal_map.find signum !signals) with Not_found -> None with
     | Some (notification, actions) ->
-        Sys.set_signal signum (Sys.Signal_handle (fun signum -> send_notification notification))
+        set_signal signum notification
     | None ->
         ()
 
