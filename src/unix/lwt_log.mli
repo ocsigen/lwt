@@ -130,6 +130,12 @@ val log_f : ?exn : exn -> ?section : section -> ?location : (string * int * int)
   (** [log_f] is the same as [log] except that it takes a format
       string *)
 
+val ign_log : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> level : level -> string -> unit
+  (** Same as {!log} but ignore the resulting thread. *)
+
+val ign_log_f : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> level : level -> ('a, unit, string, unit) format4 -> 'a
+  (** Same as {!log_f} but ignore the resulting thread. *)
+
 (** The following functions are the same as {!log} except that their
     name determines which level is used.
 
@@ -138,21 +144,33 @@ val log_f : ?exn : exn -> ?section : section -> ?location : (string * int * int)
 
 val debug : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> string -> unit Lwt.t
 val debug_f : ?exn : exn ->  ?section : section -> ?location : (string * int * int) -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+val ign_debug : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> string -> unit
+val ign_debug_f : ?exn : exn ->  ?section : section -> ?location : (string * int * int) -> ?logger : logger -> ('a, unit, string, unit) format4 -> 'a
 
 val info : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> string -> unit Lwt.t
 val info_f : ?exn : exn ->  ?section : section -> ?location : (string * int * int) -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+val ign_info : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> string -> unit
+val ign_info_f : ?exn : exn ->  ?section : section -> ?location : (string * int * int) -> ?logger : logger -> ('a, unit, string, unit) format4 -> 'a
 
 val notice : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> string -> unit Lwt.t
 val notice_f : ?exn : exn ->  ?section : section -> ?location : (string * int * int) -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+val ign_notice : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> string -> unit
+val ign_notice_f : ?exn : exn ->  ?section : section -> ?location : (string * int * int) -> ?logger : logger -> ('a, unit, string, unit) format4 -> 'a
 
 val warning : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> string -> unit Lwt.t
 val warning_f : ?exn : exn ->  ?section : section -> ?location : (string * int * int) -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+val ign_warning : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> string -> unit
+val ign_warning_f : ?exn : exn ->  ?section : section -> ?location : (string * int * int) -> ?logger : logger -> ('a, unit, string, unit) format4 -> 'a
 
 val error : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> string -> unit Lwt.t
 val error_f : ?exn : exn ->  ?section : section -> ?location : (string * int * int) -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+val ign_error : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> string -> unit
+val ign_error_f : ?exn : exn ->  ?section : section -> ?location : (string * int * int) -> ?logger : logger -> ('a, unit, string, unit) format4 -> 'a
 
 val fatal : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> string -> unit Lwt.t
 val fatal_f : ?exn : exn ->  ?section : section -> ?location : (string * int * int) -> ?logger : logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+val ign_fatal : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> string -> unit
+val ign_fatal_f : ?exn : exn ->  ?section : section -> ?location : (string * int * int) -> ?logger : logger -> ('a, unit, string, unit) format4 -> 'a
 
 (** Sections *)
 module Section : sig

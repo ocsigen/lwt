@@ -545,6 +545,15 @@ let log ?exn ?(section=Section.main) ?location ?logger ~level message =
 let log_f ?exn ?section ?location ?logger ~level format =
   Printf.ksprintf (log ?exn ?section ?location ?logger ~level) format
 
+let ign_log ?exn ?section ?location ?logger ~level message =
+  try
+    ignore (log ?exn ?section ?location ?logger ~level message)
+  with _ ->
+    ()
+
+let ign_log_f ?exn ?section ?location ?logger ~level format =
+  Printf.ksprintf (ign_log ?exn ?section ?location ?logger ~level) format
+
 let debug ?exn ?section ?location ?logger msg = log ?exn ?section ?location ?logger ~level:Debug msg
 let debug_f ?exn ?section ?location ?logger fmt = Printf.ksprintf (debug ?exn ?section ?location ?logger) fmt
 let info ?exn ?section ?location ?logger msg = log ?exn ?section ?location ?logger ~level:Info msg
@@ -557,3 +566,16 @@ let error ?exn ?section ?location ?logger msg = log ?exn ?section ?location ?log
 let error_f ?exn ?section ?location ?logger fmt = Printf.ksprintf (error ?exn ?section ?location ?logger) fmt
 let fatal ?exn ?section ?location ?logger msg = log ?exn ?section ?location ?logger ~level:Fatal msg
 let fatal_f ?exn ?section ?location ?logger fmt = Printf.ksprintf (fatal ?exn ?section ?location ?logger) fmt
+
+let ign_debug ?exn ?section ?location ?logger msg = ign_log ?exn ?section ?location ?logger ~level:Debug msg
+let ign_debug_f ?exn ?section ?location ?logger fmt = Printf.ksprintf (ign_debug ?exn ?section ?location ?logger) fmt
+let ign_info ?exn ?section ?location ?logger msg = ign_log ?exn ?section ?location ?logger ~level:Info msg
+let ign_info_f ?exn ?section ?location ?logger fmt = Printf.ksprintf (ign_info ?exn ?section ?location ?logger) fmt
+let ign_notice ?exn ?section ?location ?logger msg = ign_log ?exn ?section ?location ?logger ~level:Notice msg
+let ign_notice_f ?exn ?section ?location ?logger fmt = Printf.ksprintf (ign_notice ?exn ?section ?location ?logger) fmt
+let ign_warning ?exn ?section ?location ?logger msg = ign_log ?exn ?section ?location ?logger ~level:Warning msg
+let ign_warning_f ?exn ?section ?location ?logger fmt = Printf.ksprintf (ign_warning ?exn ?section ?location ?logger) fmt
+let ign_error ?exn ?section ?location ?logger msg = ign_log ?exn ?section ?location ?logger ~level:Error msg
+let ign_error_f ?exn ?section ?location ?logger fmt = Printf.ksprintf (ign_error ?exn ?section ?location ?logger) fmt
+let ign_fatal ?exn ?section ?location ?logger msg = ign_log ?exn ?section ?location ?logger ~level:Fatal msg
+let ign_fatal_f ?exn ?section ?location ?logger fmt = Printf.ksprintf (ign_fatal ?exn ?section ?location ?logger) fmt
