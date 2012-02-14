@@ -147,10 +147,7 @@ enum lwt_unix_job_state {
   LWT_UNIX_JOB_STATE_RUNNING,
 
   /* The job is done. */
-  LWT_UNIX_JOB_STATE_DONE,
-
-  /* The job has been canceled. */
-  LWT_UNIX_JOB_STATE_CANCELED
+  LWT_UNIX_JOB_STATE_DONE
 };
 
 /* A job descriptor. */

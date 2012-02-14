@@ -442,22 +442,6 @@ let bind t f =
     | Repr _ ->
         assert false
 
-let on_success t f =
-  match (repr t).state with
-    | Return v ->
-        f v
-    | Fail exn ->
-        raise exn
-    | Sleep sleeper ->
-        let data = !current_data in
-        add_immutable_waiter sleeper
-          (function
-             | Return v -> current_data := data; f v
-             | Fail exn -> raise exn
-             | _ -> assert false)
-    | Repr _ ->
-        assert false
-
 let (>>=) t f = bind t f
 let (=<<) f t = bind t f
 
@@ -501,6 +485,22 @@ let catch x f =
     | Repr _ ->
         assert false
 
+let on_success t f =
+  match (repr t).state with
+    | Return v ->
+        f v
+    | Fail exn ->
+        ()
+    | Sleep sleeper ->
+        let data = !current_data in
+        add_immutable_waiter sleeper
+          (function
+             | Return v -> current_data := data; f v
+             | Fail exn -> ()
+             | _ -> assert false)
+    | Repr _ ->
+        assert false
+
 let on_failure t f =
   match (repr t).state with
     | Return v ->
@@ -529,6 +529,22 @@ let on_termination t f =
           (function
              | Return v -> current_data := data; f ()
              | Fail exn -> current_data := data; f ()
+             | _ -> assert false)
+    | Repr _ ->
+        assert false
+
+let on_any t f g =
+  match (repr t).state with
+    | Return v ->
+        f v
+    | Fail exn ->
+        g exn
+    | Sleep sleeper ->
+        let data = !current_data in
+        add_immutable_waiter sleeper
+          (function
+             | Return v -> current_data := data; f v
+             | Fail exn -> current_data := data; g exn
              | _ -> assert false)
     | Repr _ ->
         assert false
@@ -578,6 +594,25 @@ let protected t =
   match (repr t).state with
     | Sleep sleeper ->
         let waiter, wakener = task () in
+        add_immutable_waiter sleeper
+          (fun state ->
+             try
+               match state with
+                 | Return v -> wakeup wakener v
+                 | Fail exn -> wakeup_exn wakener exn
+                 | _ ->  assert false
+             with Invalid_argument _ ->
+               ());
+        waiter
+    | Return _ | Fail _ ->
+        t
+    | Repr _ ->
+        assert false
+
+let no_cancel t =
+  match (repr t).state with
+    | Sleep sleeper ->
+        let waiter, wakener = wait () in
         add_immutable_waiter sleeper
           (fun state ->
              try

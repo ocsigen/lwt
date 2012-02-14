@@ -34,23 +34,23 @@
     returns a sleeping threads which is waked up when the operation
     completes.
 
-    Moreover all sleeping threads returned by function of this modules
-    are {b cancelable}, this means that you can cancel them with
-    {!Lwt.cancel}. For example if you want to read something from a {b
-    file descriptor} with a timeout, you can cancel the action after
-    the timeout and the reading will not be performed if not already
-    done.
+    Most operations on sockets and pipes (on Windows it is only
+    sockets) are {b cancelable}, this means that you can cancel them
+    with {!Lwt.cancel}. For example if you want to read something from
+    a {b file descriptor} with a timeout, you can cancel the action
+    after the timeout and the reading will not be performed if not
+    already done.
 
-    More precisely, assuming that you have two {b file descriptor}
-    [fd1] and [fd2] and you want to read something from [fd1] or
-    exclusively from [fd2], and fail with an exception if a timeout of
-    1 second expires, without reading anything from [fd1] and [fd2],
-    even if they become readable in the future.
+    More precisely, assuming that you have two sockets [sock1] and
+    [sock2] and you want to read something from [sock1] or exclusively
+    from [sock2], and fail with an exception if a timeout of 1 second
+    expires, without reading anything from [sock1] and [sock2], even
+    if they become readable in the future.
 
     Then you can do:
 
     {[
-      Lwt.pick [Lwt_unix.timeout 1.0; read fd1 buf1 ofs1 len1; read fd2 buf2 ofs2 len2]
+      Lwt.pick [Lwt_unix.timeout 1.0; read sock1 buf1 ofs1 len1; read sock2 buf2 ofs2 len2]
     ]}
 
     In this case it is guaranteed that exactly one of the three
@@ -1057,11 +1057,17 @@ val execute_job :
       [async_method] is how the job will be executed. It defaults to
       the async method of the current thread. [result] is used to get
       the result of the job, and [free] to free its associated
-      resources. *)
+      resources.
+
+      Note: jobs cannot be canceled. *)
+
+val abort_jobs : exn -> unit
+  (** [abort_jobs exn] make all pending jobs to fail with exn. Note
+      that this does not abort the real job (i.e. the C function
+      executing it), just the lwt thread for it. *)
 
 val cancel_jobs : unit -> unit
-  (** [cancel_jobs ()] make all pending jobs to fail with
-      {!Lwt.Canceled}. *)
+  (** [cancel_jobs ()] is the same as [abort_jobs Lwt.Canceled]. *)
 
 val wait_for_jobs : unit -> unit Lwt.t
   (** Wait for all pending jobs to terminate. *)
@@ -1088,6 +1094,10 @@ val stop_notification : int -> unit
   (** Stop the given notification. Note that you should not reuse the
       id after the notification has been stopped, the result is
       unspecified if you do so. *)
+
+val call_notification : int -> unit
+  (** Call the handler associated to the given notification. Note that
+      if the notification was defined with [once = true] it is removed. *)
 
 val set_notification : int -> (unit -> unit) -> unit
   (** [set_notification id f] replace the function associated to the

@@ -308,6 +308,10 @@ val protected : 'a t -> 'a t
       as [thread] except that cancelling it does not cancel
       [thread]. *)
 
+val no_cancel : 'a t -> 'a t
+  (** [no_cancel thread] creates a thread which behave as [thread]
+      except that it cannot be canceled. *)
+
 (** {6 Pause} *)
 
 val pause : unit -> unit t
@@ -343,7 +347,7 @@ val on_success : 'a t -> ('a -> unit) -> unit
       failing. This is the same as:
 
       {[
-        ignore_result (bind t (fun x -> f x; return ()))
+        ignore (bind t (fun x -> f x; return ()))
       ]}
 
       but a bit more efficient.
@@ -354,7 +358,7 @@ val on_failure : 'a t -> (exn -> unit) -> unit
       fails. This is the same as:
 
       {[
-        ignore_result (catch t (fun e -> f e; return ()))
+        ignore (catch t (fun e -> f e; return ()))
       ]}
 
       but a bit more efficient.
@@ -365,7 +369,18 @@ val on_termination : 'a t -> (unit -> unit) -> unit
       the same as:
 
       {[
-        ignore_result (finalize (fun () -> t) (fun () -> f (); return ()))
+        ignore (finalize (fun () -> t) (fun () -> f (); return ()))
+      ]}
+
+      but a bit more efficient.
+  *)
+
+val on_any : 'a t -> ('a -> unit) -> (exn -> unit) -> unit
+  (** [on_any t f g] executes [f] or [g] when [t] terminates. This is
+      the same as:
+
+      {[
+        ignore (try_bind (fun () -> t) (fun x -> f x; return ()) (fun e -> g e; return ()))
       ]}
 
       but a bit more efficient.
