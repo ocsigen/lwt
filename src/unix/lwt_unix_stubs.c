@@ -761,7 +761,14 @@ static void handle_signal(int signum)
 {
   if (signum >= 0 && signum < NSIG) {
     int id = signal_notifications[signum];
-    if (id != -1) lwt_unix_send_notification(id);
+    if (id != -1) {
+#if defined(LWT_ON_WINDOWS)
+      /* The signal handler must be reinstalled if we use the signal
+         function. */
+      signal(signum, handle_signal);
+#endif
+      lwt_unix_send_notification(id);
+    }
   }
 }
 
@@ -806,6 +813,7 @@ CAMLprim value lwt_unix_set_signal(value val_signum, value val_notification)
 #else
   sa.sa_handler = handle_signal;
   sa.sa_flags = 0;
+  sigemptyset(&sa.sa_mask);
   if (sigaction(signum, &sa, NULL) == -1) {
     signal_notifications[signum] = -1;
     uerror("sigaction", Nothing);
@@ -832,6 +840,7 @@ CAMLprim value lwt_unix_remove_signal(value val_signum)
 #else
   sa.sa_handler = SIG_DFL;
   sa.sa_flags = 0;
+  sigemptyset(&sa.sa_mask);
   sigaction(signum, &sa, NULL);
 #endif
   return Val_unit;
