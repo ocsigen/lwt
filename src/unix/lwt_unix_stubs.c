@@ -528,6 +528,15 @@ static void resize_notifications()
 void lwt_unix_send_notification(int id)
 {
   int ret;
+#if !defined(LWT_ON_WINDOWS)
+  sigset_t new_mask;
+  sigset_t old_mask;
+  int error;
+  sigfillset(&new_mask);
+  pthread_sigmask(SIG_SETMASK, &new_mask, &old_mask);
+#else
+  DWORD error;
+#endif
   lwt_unix_mutex_lock(&notification_mutex);
   if (notification_index > 0) {
     /* There is already a pending notification in the buffer, no
@@ -537,27 +546,27 @@ void lwt_unix_send_notification(int id)
   } else {
     /* There is none, notify the main thread. */
     notifications[notification_index++] = id;
-#if defined(LWT_ON_WINDOWS)
     ret = notification_send();
+#if defined(LWT_ON_WINDOWS)
     if (ret == SOCKET_ERROR) {
+      error = WSAGetLastError();
       lwt_unix_mutex_unlock(&notification_mutex);
-      win32_maperr(WSAGetLastError());
+      win32_maperr(error);
       uerror("send_notification", Nothing);
     }
 #else
-    for (;;) {
-      ret = notification_send();
-      if (ret < 0) {
-        if (errno != EINTR) {
-          lwt_unix_mutex_unlock(&notification_mutex);
-          uerror("send_notification", Nothing);
-        }
-      } else
-        break;
+    if (ret < 0) {
+      error = errno;
+      lwt_unix_mutex_unlock(&notification_mutex);
+      pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
+      unix_error(error, "send_notification", Nothing);
     }
 #endif
   }
   lwt_unix_mutex_unlock(&notification_mutex);
+#if !defined(LWT_ON_WINDOWS)
+  pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
+#endif
 }
 
 value lwt_unix_send_notification_stub(value id)
@@ -570,25 +579,31 @@ value lwt_unix_recv_notifications()
 {
   int ret, i;
   value result;
+#if !defined(LWT_ON_WINDOWS)
+  sigset_t new_mask;
+  sigset_t old_mask;
+  int error;
+  sigfillset(&new_mask);
+  pthread_sigmask(SIG_SETMASK, &new_mask, &old_mask);
+#else
+  DWORD error;
+#endif
   lwt_unix_mutex_lock(&notification_mutex);
   /* Receive the signal. */
-#if defined(LWT_ON_WINDOWS)
   ret = notification_recv();
+#if defined(LWT_ON_WINDOWS)
   if (ret == SOCKET_ERROR) {
+    error = WSAGetLastError();
     lwt_unix_mutex_unlock(&notification_mutex);
-    win32_maperr(WSAGetLastError());
+    win32_maperr(error);
     uerror("recv_notifications", Nothing);
   }
 #else
-  for (;;) {
-    ret = notification_recv();
-    if (ret < 0) {
-      if (errno != EINTR) {
-        lwt_unix_mutex_unlock(&notification_mutex);
-        uerror("recv_notifications", Nothing);
-      }
-    } else
-      break;
+  if (ret < 0) {
+    error = errno;
+    lwt_unix_mutex_unlock(&notification_mutex);
+    pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
+    unix_error(error, "recv_notifications", Nothing);
   }
 #endif
   /* Read all pending notifications. */
@@ -598,6 +613,9 @@ value lwt_unix_recv_notifications()
   /* Reset the index. */
   notification_index = 0;
   lwt_unix_mutex_unlock(&notification_mutex);
+#if !defined(LWT_ON_WINDOWS)
+  pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
+#endif
   return result;
 }
 
