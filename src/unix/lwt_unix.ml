@@ -360,23 +360,35 @@ let set_blocking ?(set_flags=true) ch blocking =
 
 #if windows
 
-let stub_readable fd = Unix.select [fd] [] [] 0.0 <> ([], [], [])
-let stub_writable fd = Unix.select [] [fd] [] 0.0 <> ([], [], [])
+let unix_stub_readable fd = Unix.select [fd] [] [] 0.0 <> ([], [], [])
+let unix_stub_writable fd = Unix.select [] [fd] [] 0.0 <> ([], [], [])
 
 #else
 
-external stub_readable : Unix.file_descr -> bool = "lwt_unix_readable"
-external stub_writable : Unix.file_descr -> bool = "lwt_unix_writable"
+external unix_stub_readable : Unix.file_descr -> bool = "lwt_unix_readable"
+external unix_stub_writable : Unix.file_descr -> bool = "lwt_unix_writable"
 
 #endif
 
+let rec unix_readable fd =
+  try
+    unix_stub_readable fd
+  with Unix.Unix_error (Unix.EINTR, _, _) ->
+    unix_readable fd
+
+let rec unix_writable fd =
+  try
+    unix_stub_writable fd
+  with Unix.Unix_error (Unix.EINTR, _, _) ->
+    unix_writable fd
+
 let readable ch =
   check_descriptor ch;
-  stub_readable ch.fd
+  unix_readable ch.fd
 
 let writable ch =
   check_descriptor ch;
-  stub_writable ch.fd
+  unix_writable ch.fd
 
 let set_state ch st =
   ch.state <- st
@@ -527,7 +539,7 @@ let wrap_syscall event ch action =
   try
     check_descriptor ch;
     lwt blocking = Lazy.force ch.blocking in
-    if not blocking || (event = Read && stub_readable ch.fd) || (event = Write && stub_writable ch.fd) then
+    if not blocking || (event = Read && unix_readable ch.fd) || (event = Write && unix_writable ch.fd) then
       return (action ())
     else
       register_action event ch action
@@ -1769,7 +1781,7 @@ let accept_n ch n =
       begin
         try
           for i = 1 to n do
-            if blocking && not (stub_readable ch.fd) then raise Retry;
+            if blocking && not (unix_readable ch.fd) then raise Retry;
             let fd, addr = Unix.accept ch.fd in
             l := (mk_ch ~blocking:false fd, addr) :: !l
           done
