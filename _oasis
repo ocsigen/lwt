@@ -335,11 +335,12 @@ Library test
   Path: tests
   Modules: Test
   Install: false
-  Build$: flag(unix) || flag(all)
+  Build$: flag(tests) && (flag(unix) || flag(all))
+  BuildDepends: lwt, unix, lwt.unix
 
 Executable test_core
   Path: tests/core
-  Build$: flag(unix) || flag(all)
+  Build$: flag(tests) && (flag(unix) || flag(all))
   Install: false
   CompiledObject: best
   MainIs: main.ml
@@ -347,7 +348,7 @@ Executable test_core
 
 Executable test_unix
   Path: tests/unix
-  Build$: flag(unix) || flag(all)
+  Build$: flag(tests) && (flag(unix) || flag(all))
   Install: false
   CompiledObject: best
   MainIs: main.ml
@@ -355,7 +356,7 @@ Executable test_unix
 
 Executable test_react
   Path: tests/react
-  Build$: (flag(unix) && flag(react)) || flag(all)
+  Build$: flag(tests) && ((flag(unix) && flag(react)) || flag(all))
   Install: false
   CompiledObject: best
   MainIs: main.ml
@@ -363,7 +364,7 @@ Executable test_react
 
 Executable test_preemptive
   Path: tests/preemptive
-  Build$: flag(preemptive) || flag(all)
+  Build$: flag(tests) && (flag(preemptive) || flag(all))
   Install: false
   CompiledObject: best
   MainIs: main.ml
@@ -372,22 +373,22 @@ Executable test_preemptive
 Test core
   Command: $test_core
   TestTools: test_core
-  Run$: flag(unix) || flag(all)
+  Run$: flag(tests) && (flag(unix) || flag(all))
 
 Test unix
   Command: $test_unix
   TestTools: test_unix
-  Run$: flag(unix) || flag(all)
+  Run$: flag(tests) && (flag(unix) || flag(all))
 
 Test react
   Command: $test_react
   TestTools: test_react
-  Run$: (flag(unix) && flag(react)) || flag(all)
+  Run$: flag(tests) && ((flag(unix) && flag(react)) || flag(all))
 
 Test preemptive
   Command: $test_preemptive
   TestTools: test_preemptive
-  Run$: flag(preemptive) || flag(all)
+  Run$: flag(tests) && (flag(preemptive) || flag(all))
 
 # +-------------------------------------------------------------------+
 # | Misc                                                              |
