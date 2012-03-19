@@ -2,7 +2,7 @@
 # | Package parameters                                                |
 # +-------------------------------------------------------------------+
 
-OASISFormat: 0.1
+OASISFormat: 0.3
 OCamlVersion: >= 3.12
 Name: lwt
 Version: 2.3.2
@@ -20,7 +20,7 @@ Authors:
   Mauricio Fernandez
 Homepage: http://ocsigen.org/lwt/
 BuildTools: ocamlbuild
-Plugins: DevFiles (0.2), META (0.2)
+Plugins: DevFiles (0.3), META (0.3)
 PostConfCommand: ocaml discover.ml -ocamlc $ocamlc -ext-obj $ext_obj -exec-name $default_executable_name -use-libev $libev -os-type $os_type -use-glib $glib -ccomp-type $ccomp_type -use-pthread $pthread -use-unix $unix
 PostDistCleanCommand: $rm src/unix/lwt_config.h src/unix/lwt_config.ml
 
@@ -272,7 +272,7 @@ Executable "lwt-toplevel"
 
 Document "lwt-manual"
   Title: Lwt user manual
-  Type: custom (0.2)
+  Type: custom (0.3)
   Install: true
   XCustom: make -C manual manual.pdf
   DataFiles: manual/manual.pdf
@@ -280,7 +280,7 @@ Document "lwt-manual"
 
 Document "lwt-api"
   Title: API reference for Lwt
-  Type: ocamlbuild (0.2)
+  Type: ocamlbuild (0.3)
   Install: true
   InstallDir: $htmldir/api
   DataFiles: utils/style.css
