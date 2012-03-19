@@ -85,11 +85,12 @@ static int lwt_libev_in_blocking_section = 0;
 
 CAMLprim value lwt_libev_loop(value loop, value block)
 {
+  CAMLparam2(loop, block);
   caml_enter_blocking_section();
   lwt_libev_in_blocking_section = 1;
   ev_loop(Ev_loop_val(loop), Bool_val(block) ? EVLOOP_ONESHOT : EVLOOP_ONESHOT | EVLOOP_NONBLOCK);
   LWT_LIBEV_CHECK;
-  return Val_unit;
+  CAMLreturn(Val_unit);
 }
 
 CAMLprim value lwt_libev_unloop(value loop)
@@ -164,11 +165,12 @@ CAMLprim value lwt_libev_writable_init(value loop, value fd, value callback)
 
 CAMLprim value lwt_libev_io_stop(value loop, value val_watcher)
 {
+  CAMLparam2(loop, val_watcher);
   struct ev_io* watcher = Ev_io_val(val_watcher);
   caml_remove_generational_global_root((value*)(&(watcher->data)));
   ev_io_stop(Ev_loop_val(loop), watcher);
   free(watcher);
-  return Val_unit;
+  CAMLreturn(Val_unit);
 }
 
 /* +-----------------------------------------------------------------+
@@ -183,7 +185,7 @@ static void handle_timer(struct ev_loop *loop, ev_timer *watcher, int revents)
 
 CAMLprim value lwt_libev_timer_init(value loop, value delay, value repeat, value callback)
 {
-  CAMLparam2(delay, callback);
+  CAMLparam4(loop, delay, repeat, callback);
   CAMLlocal1(result);
   /* Create and initialise the watcher */
   struct ev_timer* watcher = lwt_unix_new(struct ev_timer);
@@ -201,11 +203,12 @@ CAMLprim value lwt_libev_timer_init(value loop, value delay, value repeat, value
 
 CAMLprim value lwt_libev_timer_stop(value loop, value val_watcher)
 {
+  CAMLparam2(loop, val_watcher);
   struct ev_timer* watcher = Ev_timer_val(val_watcher);
   caml_remove_generational_global_root((value*)(&(watcher->data)));
   ev_timer_stop(Ev_loop_val(loop), watcher);
   free(watcher);
-  return Val_unit;
+  CAMLreturn(Val_unit);
 }
 
 #endif
