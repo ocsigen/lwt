@@ -143,8 +143,8 @@ exception Timeout
   (** Exception raised by timeout operations *)
 
 val timeout : float -> 'a Lwt.t
-  (** [timeout d] is a threads which remain suspended for [d] seconds
-      then fail with {!Timeout} *)
+  (** [timeout d] is a thread which remains suspended for [d] seconds
+      then fails with {!Timeout} *)
 
 val with_timeout : float -> (unit -> 'a Lwt.t) -> 'a Lwt.t
   (** [with_timeout d f] is a short-hand for:
@@ -183,14 +183,14 @@ val state : file_descr -> state
 
 val unix_file_descr : file_descr -> Unix.file_descr
   (** Returns the underlying unix {b file descriptor}. It always
-      succeed, even if the {b file descriptor}'s state is not
+      succeeds, even if the {b file descriptor}'s state is not
       {!Open}. *)
 
 val of_unix_file_descr : ?blocking : bool -> ?set_flags : bool -> Unix.file_descr -> file_descr
   (** Creates a lwt {b file descriptor} from a unix one.
 
-      [blocking] is the blocking mode of the file-descriptor, it
-      describe how Lwt will use it. In non-blocking mode, read/write
+      [blocking] is the blocking mode of the file-descriptor, and
+      describes how Lwt will use it. In non-blocking mode, read/write
       on this file descriptor are made using non-blocking IO; in
       blocking mode they are made using the current async method.  If
       [blocking] is not specified it is guessed according to the file
@@ -222,7 +222,7 @@ val abort : file_descr -> exn -> unit
       descriptor fail with the given exception. This put the {b file
       descriptor} into the {!Aborted} state.
 
-      If the {b file descrptor} is closed, this does nothing, if it is
+      If the {b file descriptor} is closed, this does nothing, if it is
       aborted, this replace the abort exception by [exn].
 
       Note that this only works for reading and writing operations on
@@ -529,8 +529,8 @@ val readdir : dir_handle -> string Lwt.t
 
 val readdir_n : dir_handle -> int -> string array Lwt.t
   (** [readdir_n handle count] reads at most [count] entry from the
-      given directory. It is more efficient that callling [count]
-      times [readdir]. If the length of the returned array is smaller
+      given directory. It is more efficient than calling [readdir]
+      [count] times. If the length of the returned array is smaller
       than [count], this means that the end of the directory has been
       reached. *)
 

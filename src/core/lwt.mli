@@ -235,11 +235,11 @@ val wakeup_exn : 'a u -> exn -> unit
 
 val wakeup_later : 'a u -> 'a -> unit
   (** Same as {!wakeup} but it is not guaranteed that the thread will
-      be wakeup immediately. *)
+      be woken up immediately. *)
 
 val wakeup_later_exn : 'a u -> exn -> unit
   (** Same as {!wakeup_exn} but it is not guaranteed that the thread
-      will be wakeup immediately. *)
+      will be woken up immediately. *)
 
 val waiter_of_wakener : 'a u -> 'a t
   (** Returns the thread associated to a wakener. *)
@@ -327,12 +327,12 @@ val wakeup_paused : unit -> unit
       main loop. You usually do not have to call it directly, except
       if you are writing a custom scheduler.
 
-      Note that if a paused thread resume and pause again, it will not
-      be wakeup at this point. *)
+      Note that if a paused thread resumes and pauses again, it will not
+      be woken up at this point. *)
 
 val paused_count : unit -> int
-  (** [paused_count ()] returns the number of thread currently
-      paused. *)
+  (** [paused_count ()] returns the number of currently paused
+      threads. *)
 
 val register_pause_notifier : (int -> unit) -> unit
   (** [register_pause_notifier f] register a function [f] that will be
