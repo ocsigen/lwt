@@ -769,7 +769,12 @@ type credentials = {
 
 val get_credentials : file_descr -> credentials
   (** [get_credentials fd] returns credential informations from the
-      given socket. *)
+      given socket. On some platforms, obtaining the peer pid is not
+      possible and it will be set to [-1]. If obtaining credentials 
+      is not possible on the current system, it raises
+      [Lwt_sys.Not_available "get_credentials"].
+
+      This call is not available on windows. *)
 
 (** {8 Socket options} *)
 

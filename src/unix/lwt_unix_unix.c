@@ -430,6 +430,25 @@ CAMLprim value lwt_unix_get_credentials(value fd)
     CAMLreturn(res);
 }
 
+#elif defined(HAVE_GETPEEREID)
+
+CAMLprim value lwt_unix_get_credentials(value fd)
+{
+    CAMLparam1(fd);
+    CAMLlocal1(res);
+    uid_t euid;
+    gid_t egid;
+
+    if (getpeereid(Int_val(fd), &euid, &egid) == -1)
+      uerror("get_credentials", Nothing);
+
+    res = caml_alloc_tuple(3);
+    Store_field(res, 0, Val_int(-1));
+    Store_field(res, 1, Val_int(euid));
+    Store_field(res, 2, Val_int(egid));
+    CAMLreturn(res);
+}
+
 #endif
 
 /* +-----------------------------------------------------------------+

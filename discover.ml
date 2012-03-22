@@ -126,6 +126,20 @@ CAMLprim value lwt_test()
 }
 "
 
+let get_peereid_code = "
+#include <caml/mlvalues.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+CAMLprim value lwt_test()
+{
+    uid_t euid;
+    gid_t egid;
+    getpeereid(0, &euid, &egid);
+    return Val_unit;
+}
+"
+
 let fdatasync_code = "
 #include <caml/mlvalues.h>
 #include <sys/unistd.h>
@@ -430,7 +444,8 @@ Lwt can use pthread or the win32 API.
   test_feature ~do_check "fd passing" "HAVE_FD_PASSING" (fun () -> test_code ([], []) fd_passing_code);
   test_feature ~do_check "sched_getcpu" "HAVE_GETCPU" (fun () -> test_code ([], []) getcpu_code);
   test_feature ~do_check "affinity getting/setting" "HAVE_AFFINITY" (fun () -> test_code ([], []) affinity_code);
-  test_feature ~do_check "credentials getting" "HAVE_GET_CREDENTIALS" (fun () -> test_code ([], []) get_credentials_code);
+  test_feature ~do_check "credentials getting (getsockopt)" "HAVE_GET_CREDENTIALS" (fun () -> test_code ([], []) get_credentials_code);
+  test_feature ~do_check "credentials getting (getpeereid)" "HAVE_GETPEEREID" (fun () -> test_code ([], []) get_peereid_code);
   test_feature ~do_check "fdatasync" "HAVE_FDATASYNC" (fun () -> test_code ([], []) fdatasync_code);
 
   if !os_type = "Win32" then begin

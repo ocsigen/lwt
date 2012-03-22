@@ -1879,7 +1879,7 @@ type credentials = {
   cred_gid : int;
 }
 
-#if HAVE_GET_CREDENTIALS
+#if HAVE_GET_CREDENTIALS || HAVE_GETPEEREID
 
 external stub_get_credentials : Unix.file_descr -> credentials = "lwt_unix_get_credentials"
 
