@@ -54,15 +54,7 @@
 
 {{{
 # #use "topfind";;
-# #require "lwt";;
-}}}
-
-  {{{Lwt}}} is also shipped with an improved toplevel, which supports line
-  edition and completion. If it has been correctly installed, you
-  should be able to start it with the following command:
-
-{{{
-$ lwt-toplevel
+# #require "lwt.simple-top";;
 }}}
 
 === Lwt concepts ===
