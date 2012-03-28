@@ -29,9 +29,9 @@ type 'a t = {
   (* The source of the stream *)
   queue : 'a option Queue.t;
   (* Queue of pending elements, which are not yet consumed *)
-  clones : 'a option Queue.t Weak.t ref;
-  (* List of queues of all clones of this event (including this
-     event) *)
+  mutable clones : 'a option Queue.t Weak.t ref option;
+  (* List of queues of all clones of this stream (including this
+     stream). It is [None] until [clone] is used on the stream. *)
   mutex : Lwt_mutex.t;
   (* Mutex to prevent concurrent access to [next] *)
 }
@@ -54,24 +54,31 @@ let add_clone wa q =
   loop 0
 
 let clone s =
+  let clones =
+    match s.clones with
+      | Some clones ->
+          clones
+      | None ->
+          let clones = ref (Weak.create 2) in
+          Weak.set !clones 0 (Some s.queue);
+          s.clones <- Some clones;
+          clones
+  in
   let s' = {
     next = s.next;
     queue = Queue.copy s.queue;
-    clones = s.clones;
+    clones = Some clones;
     mutex = s.mutex;
   } in
-  add_clone s'.clones s'.queue;
+  add_clone clones s'.queue;
   s'
 
-let from f =
-  let s = {
-    next = f;
-    queue = Queue.create ();
-    clones = ref(Weak.create 1);
-    mutex = Lwt_mutex.create ();
-  } in
-  Weak.set !(s.clones) 0 (Some s.queue);
-  s
+let from f = {
+  next = f;
+  queue = Queue.create ();
+  clones = None;
+  mutex = Lwt_mutex.create ();
+}
 
 let of_list l =
   let l = ref l in
@@ -163,21 +170,27 @@ let create () =
   let box, push = EQueue.create () in
   (from (fun () -> EQueue.pop box), push)
 
-let push_clones wa x =
-  for i = 0 to Weak.length wa - 1 do
-    match Weak.get wa i with
-      | Some q ->
-          Queue.push x q
-      | None ->
-          ()
-  done
+(* Push [x] into all clones of [s], including [s] itself. *)
+let push_clones s x =
+  match s.clones with
+    | Some { contents = wa } ->
+        for i = 0 to Weak.length wa - 1 do
+          match Weak.get wa i with
+            | Some q ->
+                Queue.push x q
+            | None ->
+                ()
+        done
+    | None ->
+        (* We are our own clone. *)
+        Queue.push x s.queue
 
 let peek s =
   if Queue.is_empty s.queue then
     Lwt_mutex.with_lock s.mutex begin fun () ->
       if Queue.is_empty s.queue then begin
         lwt result = s.next () in
-        push_clones !(s.clones) result;
+        push_clones s result;
         return result
       end else
         return (Queue.top s.queue)
@@ -194,7 +207,7 @@ let rec force n s =
         return false
       else begin
         lwt result = s.next () in
-        push_clones !(s.clones) result;
+        push_clones s result;
         if result = None then
           return false
         else
@@ -229,14 +242,17 @@ let rec get s =
         (* This prevent from calling s.next when the stream has
            terminated: *)
         if x = None then Queue.push None s.queue;
-        let wa = !(s.clones) in
-        for i = 0 to Weak.length wa - 1 do
-          match Weak.get wa i with
-            | Some q when q != s.queue ->
-                Queue.push x q
-            | _ ->
-                ()
-        done;
+        (match s.clones with
+           | Some { contents = wa } ->
+               for i = 0 to Weak.length wa - 1 do
+                 match Weak.get wa i with
+                   | Some q when q != s.queue ->
+                       Queue.push x q
+                   | _ ->
+                       ()
+               done
+           | None ->
+               ());
         return x
       end else begin
         let x = Queue.take s.queue in
