@@ -1079,6 +1079,17 @@ let backtrace_finalize add_loc f g =
    | Threads state query                                             |
    +-----------------------------------------------------------------+ *)
 
+let rec is_sleeping_rec t =
+  match t.state with
+    | Return _ | Fail _ ->
+        false
+    | Sleep _ ->
+        true
+    | Repr t ->
+        is_sleeping_rec t
+
+let is_sleeping t = is_sleeping_rec (thread_repr t)
+
 module State = struct
   type 'a state =
     | Return of 'a

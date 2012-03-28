@@ -111,10 +111,9 @@ val next : 'a t -> 'a Lwt.t
       fail with {!Empty} if the stream is empty. *)
 
 val last_new : 'a t -> 'a Lwt.t
-  (** [next_new st] if no element are available on [st] without
-      sleeping, then it is the same as [next st]. Otherwise it removes
-      all elements of [st] that are ready except the last one, and
-      return it.
+  (** [last_new st] returns the last element that can be obtained
+      without sleepping, or wait for one if no one is already
+      available.
 
       If fails with {!Empty} if the stream has no more elements *)
 

@@ -37,6 +37,14 @@ let suite = suite "lwt_stream" [
        lwt () = Lwt_mvar.put mvar 2 in
        lwt () = Lwt_mvar.put mvar 3 in
        lwt x1 = t1 and x2 = t2 and x3 = t3 in
+       return (List.sort compare [x1; x2; x3] = [1; 2; 3]));
+
+  test "of_list"
+    (fun () ->
+       let stream = Lwt_stream.of_list [1; 2; 3] in
+       lwt x1 = Lwt_stream.next stream in
+       lwt x2 = Lwt_stream.next stream in
+       lwt x3 = Lwt_stream.next stream in
        return ([x1; x2; x3] = [1; 2; 3]));
 
   test "clone"
@@ -100,6 +108,8 @@ let suite = suite "lwt_stream" [
        lwt x = Lwt_stream.npeek 3 stream in
        lwt y = Lwt_stream.npeek 1 stream in
        lwt l = Lwt_stream.to_list stream in
+       let pr l = "[" ^ String.concat "; " (List.map string_of_int l) ^ "]" in
+       Printf.printf "%s %s %s\n" (pr x) (pr y) (pr l);
        return (x = [1; 2; 3] && y = [1] && l = [1; 2; 3; 4; 5]));
 
   test "get_available"

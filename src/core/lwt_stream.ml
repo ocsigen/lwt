@@ -24,61 +24,68 @@ open Lwt
 
 exception Empty
 
+(* A node in a queue of pending data. *)
+type 'a node = {
+  mutable next : 'a node;
+  (* Next node in the queue. For the last node it points to itself. *)
+  mutable data : 'a option;
+  (* Data of this node. For the last node it is always [None]. *)
+}
+
+(* Note: a queue for an exhausted stream is represented by a node
+   containing [None] followed by a node with itself as next and [None]
+   as data. *)
+
+let new_node () =
+  let rec node = { next = node; data = None } in
+  node
+
+(* Type of a stream source using a function to create new elements. *)
+type 'a from = {
+  from_create : unit -> 'a option Lwt.t;
+  (* Function used to create new elements. *)
+  mutable from_thread : unit Lwt.t;
+  (* Thread which:
+
+     - wait for the thread returned by the last call to [from_next],
+     - add the next element to the end of the queue.
+
+     If it is a sleeping thread, then it must be used instead of creating a
+     new one with [from_create]. *)
+}
+
+(* Source of a stream. *)
+type 'a source =
+  | From of 'a from
+  | Push of unit Lwt.t ref
+
 type 'a t = {
-  next : unit -> 'a option Lwt.t;
-  (* The source of the stream *)
-  queue : 'a option Queue.t;
-  (* Queue of pending elements, which are not yet consumed *)
-  mutable clones : 'a option Queue.t Weak.t ref option;
-  (* List of queues of all clones of this stream (including this
-     stream). It is [None] until [clone] is used on the stream. *)
-  mutex : Lwt_mutex.t;
-  (* Mutex to prevent concurrent access to [next] *)
+  source : 'a source;
+  (* The source of the stream. *)
+  mutable node : 'a node;
+  (* Pointer to first pending element, or to [last] if there is no
+     pending element. *)
+  last : 'a node ref;
+  (* Node marking the end of the queue of pending elements. *)
 }
 
-let add_clone wa q =
-  let len = Weak.length !wa in
-  (* loop search for a free cell in [wa] and fill it with [q]: *)
-  let rec loop i =
-    if i = len then begin
-      (* Growing *)
-      let clones = Weak.create (len + 1) in
-      Weak.blit !wa 0 clones 0 len;
-      wa := clones;
-      Weak.set clones len (Some q)
-    end else if Weak.check !wa i then
-      loop (i + 1)
-    else
-      Weak.set !wa i (Some q)
-  in
-  loop 0
-
-let clone s =
-  let clones =
-    match s.clones with
-      | Some clones ->
-          clones
-      | None ->
-          let clones = ref (Weak.create 2) in
-          Weak.set !clones 0 (Some s.queue);
-          s.clones <- Some clones;
-          clones
-  in
-  let s' = {
-    next = s.next;
-    queue = Queue.copy s.queue;
-    clones = Some clones;
-    mutex = s.mutex;
-  } in
-  add_clone clones s'.queue;
-  s'
-
-let from f = {
-  next = f;
-  queue = Queue.create ();
-  clones = None;
-  mutex = Lwt_mutex.create ();
+(* The only difference between two clones is the pointer to the first
+   pending element. *)
+let clone s = {
+  source = s.source;
+  node = s.node;
+  last = s.last;
 }
+
+let return0 = return ()
+
+let from f =
+  let last = new_node () in
+  {
+    source = From { from_create = f; from_thread = return0 };
+    node = last;
+    last = ref last;
+  }
 
 let of_list l =
   let l = ref l in
@@ -109,343 +116,334 @@ let of_string s =
             return (Some c)
           end)
 
-module EQueue :
-sig
-  type 'a t
-  val create : unit -> 'a t * ('a option -> unit)
-  val pop : 'a t -> 'a option Lwt.t
-end =
-struct
-  type 'a state =
-    | No_mail
-    | Waiting of 'a option Lwt.u
-    | Full of 'a option Queue.t
-
-  type 'a t = {
-    mutable state : 'a state;
-  }
-
-  let create () =
-    let weak_box = Weak.create 1 in
-    let push v =
-      match Weak.get weak_box 0 with
-        | None -> ()
-        | Some box ->
-            match box.state with
-              | No_mail ->
-                  let q = Queue.create () in
-                  Queue.push v q;
-                  box.state <- Full q
-              | Waiting wakener ->
-                  box.state <- No_mail;
-                  wakeup_later wakener v
-              | Full q ->
-                  Queue.push v q
-    in
-    let box = { state = No_mail } in
-    Weak.set weak_box 0 (Some box);
-    (box, push)
-
-  let pop b =
-    match b.state with
-      | No_mail ->
-	  let waiter, wakener = task () in
-	  b.state <- Waiting wakener;
-	  (try_lwt
-             waiter
-           with exn ->
-             b.state <- No_mail;
-             raise_lwt exn)
-      | Waiting _ ->
-          (* Calls to next are serialized, so this case will never
-             happened *)
-	  assert false
-      | Full q ->
-	  let v = Queue.take q in
-	  if Queue.is_empty q then b.state <- No_mail;
-          return v
-end
-
 let create () =
-  let box, push = EQueue.create () in
-  (from (fun () -> EQueue.pop box), push)
-
-(* Push [x] into all clones of [s], including [s] itself. *)
-let push_clones s x =
-  match s.clones with
-    | Some { contents = wa } ->
-        for i = 0 to Weak.length wa - 1 do
-          match Weak.get wa i with
-            | Some q ->
-                Queue.push x q
-            | None ->
-                ()
-        done
-    | None ->
-        (* We are our own clone. *)
-        Queue.push x s.queue
-
-let peek s =
-  if Queue.is_empty s.queue then
-    Lwt_mutex.with_lock s.mutex begin fun () ->
-      if Queue.is_empty s.queue then begin
-        lwt result = s.next () in
-        push_clones s result;
-        return result
-      end else
-        return (Queue.top s.queue)
-    end
-  else
-    return (Queue.top s.queue)
-
-let rec force n s =
-  if Queue.length s.queue >= n then
-    return ()
-  else
-    Lwt_mutex.with_lock s.mutex begin fun () ->
-      if Queue.length s.queue >= n then
-        return false
-      else begin
-        lwt result = s.next () in
-        push_clones s result;
-        if result = None then
-          return false
-        else
-          return true
-      end
-    end >>= function
-      | true ->
-          force n s
-      | false ->
-          return ()
-
-let npeek n s =
-  lwt () = force n s in
-  let l, _ =
-    Queue.fold
-      (fun (l, n) x ->
-         if n > 0 then
-           match x with
-             | Some x ->  (x :: l, n - 1)
-             | None -> (l, n)
-         else
-           (l, n))
-      ([], n) s.queue
+  (* Create the cell pointing to the end of the queue. *)
+  let last = ref (new_node ()) in
+  (* Create the thread for notifications of new elements. *)
+  let waiter_cell, wakener_cell =
+    let waiter, wakener = wait () in
+    (ref waiter, ref wakener)
   in
-  return (List.rev l)
+  (* The push function. It does not keep a reference to the stream. *)
+  let push x =
+    (* Push the element at the end of the queue. *)
+    let node = !last and new_last = new_node () in
+    node.data <- x;
+    node.next <- new_last;
+    last := new_last;
+    (* Update threads. *)
+    let old_wakener = !wakener_cell in
+    let new_waiter, new_wakener = wait () in
+    waiter_cell := new_waiter;
+    wakener_cell := new_wakener;
+    (* Signal that a new value has been received. *)
+    wakeup_later old_wakener ()
+  in
+  ({ source = Push waiter_cell;
+     node = !last;
+     last = last },
+   push)
+
+(* Wait for a new element to be added to the queue of pending element
+   of the stream. *)
+let feed s =
+  match s.source with
+    | From from ->
+        (* There is already a thread started to create a new element,
+           wait for this one to terminate. *)
+        if is_sleeping from.from_thread then
+          protected from.from_thread
+        else begin
+          (* Otherwise request a new element. *)
+          let thread =
+            lwt x = from.from_create () in
+            (* Push the element to the end of the queue. *)
+            let node = !(s.last) and new_last = new_node () in
+            node.data <- x;
+            node.next <- new_last;
+            s.last := new_last;
+            return ()
+          in
+          (* Allow other threads to access this thread. *)
+          from.from_thread <- thread;
+          protected thread
+        end
+    | Push { contents = waiter } ->
+        protected waiter
+
+let rec peek s =
+  if s.node == !(s.last) then
+    feed s >> peek s
+  else
+    return s.node.data
+
+let rec npeek_rec node acc n s =
+  if n <= 0 then
+    return (List.rev acc)
+  else if node == !(s.last) then
+    feed s >> npeek_rec node acc n s
+  else
+    match node.data with
+      | Some x ->
+          npeek_rec node.next (x :: acc) (n - 1) s
+      | None ->
+          return (List.rev acc)
+
+let npeek n s = npeek_rec s.node [] n s
 
 let rec get s =
-  if Queue.is_empty s.queue then
-    Lwt_mutex.with_lock s.mutex begin fun () ->
-      if Queue.is_empty s.queue then begin
-        lwt x = s.next () in
-        (* This prevent from calling s.next when the stream has
-           terminated: *)
-        if x = None then Queue.push None s.queue;
-        (match s.clones with
-           | Some { contents = wa } ->
-               for i = 0 to Weak.length wa - 1 do
-                 match Weak.get wa i with
-                   | Some q when q != s.queue ->
-                       Queue.push x q
-                   | _ ->
-                       ()
-               done
-           | None ->
-               ());
-        return x
-      end else begin
-        let x = Queue.take s.queue in
-        if x = None then Queue.push None s.queue;
-        return x
-      end
-    end
+  if s.node == !(s.last) then
+    feed s >> get s
   else begin
-    let x = Queue.take s.queue in
-    if x = None then Queue.push None s.queue;
+    let x = s.node.data in
+    if x <> None then s.node <- s.node.next;
     return x
   end
 
-let nget n s =
-  let rec loop n =
-    if n <= 0 then
-      return []
-    else
-      get s >>= function
-        | Some x ->
-            lwt l = loop (n - 1) in
-            return (x :: l)
-        | None ->
-            return []
-  in
-  loop n
+let rec nget_rec acc n s =
+  if n <= 0 then
+    return (List.rev acc)
+  else if s.node == !(s.last) then
+    feed s >> nget_rec acc n s
+  else
+    match s.node.data with
+      | Some x ->
+          s.node <- s.node.next;
+          nget_rec (x :: acc) (n - 1) s
+      | None ->
+          return (List.rev acc)
 
-let get_while f s =
-  let rec loop () =
-    peek s >>= function
+let nget n s = nget_rec [] n s
+
+let rec get_while_rec acc f s =
+  if s.node == !(s.last) then
+    feed s >> get_while_rec acc f s
+  else
+    let node = s.node in
+    match node.data with
       | Some x ->
           let test = f x in
           if test then begin
-            ignore (Queue.take s.queue);
-            lwt l = loop () in
-            return (x :: l)
+            if node == s.node then s.node <- node.next;
+            get_while_rec (x :: acc) f s
           end else
-            return []
+            return (List.rev acc)
       | None ->
-          return []
-  in
-  loop ()
+          return (List.rev acc)
 
-let get_while_s f s =
-  let rec loop () =
-    peek s >>= function
+let get_while f s = get_while_rec [] f s
+
+let rec get_while_s_rec acc f s =
+  if s.node == !(s.last) then
+    feed s >> get_while_s_rec acc f s
+  else
+    let node = s.node in
+    match node.data with
       | Some x ->
           lwt test = f x in
           if test then begin
-            ignore (Queue.take s.queue);
-            lwt l = loop () in
-            return (x :: l)
+            if node == s.node then s.node <- node.next;
+            get_while_s_rec (x :: acc) f s
           end else
-            return []
+            return (List.rev acc)
       | None ->
-          return []
-  in
-  loop ()
+          return (List.rev acc)
 
-let next s = get s >>= function
-  | Some x -> return x
-  | None -> raise_lwt Empty
+let get_while_s f s = get_while_s_rec [] f s
+
+let rec next s =
+  if s.node == !(s.last) then
+    feed s >> next s
+  else
+    match s.node.data with
+      | Some x ->
+          s.node <- s.node.next;
+          return x
+      | None ->
+          raise_lwt Empty
+
+let rec last_new_rec x s =
+  if s.node == !(s.last) then
+    let thread = feed s in
+    match state thread with
+      | Return _ ->
+          last_new_rec x s
+      | Fail exn ->
+          raise_lwt exn
+      | Sleep ->
+          return x
+  else
+    match s.node.data with
+      | Some x ->
+          s.node <- s.node.next;
+          last_new_rec x s
+      | None ->
+          return x
 
 let last_new s =
-  match Lwt.state (peek s) with
-    | Return None ->
-        raise_lwt Empty
-    | Sleep ->
-        next s
-    | Fail exn ->
-        raise_lwt exn
-    | Return(Some x) ->
-        let _ = Queue.take s.queue in
-        let rec loop last =
-          match Lwt.state (peek s) with
-            | Sleep | Return None ->
-                return last
-            | Return(Some x) ->
-                let _ = Queue.take s.queue in
-                loop x
-            | Fail exn ->
-                raise_lwt exn
-        in
-        loop x
-
-let to_list s =
-  let rec loop () =
-    get s >>= function
+  if s.node == !(s.last) then
+    let thread = next s in
+    match state thread with
+      | Return x ->
+          last_new_rec x s
+      | _ ->
+          thread
+  else
+    match s.node.data with
       | Some x ->
-          lwt l = loop () in
-          return (x :: l)
+          s.node <- s.node.next;
+          last_new_rec x s
       | None ->
-          return []
-  in
-  loop ()
+          raise_lwt Empty
 
-let to_string s =
-  let buf = Buffer.create 42 in
-  let rec loop () =
-    get s >>= function
+let rec to_list_rec acc s =
+  if s.node == !(s.last) then
+    feed s >> to_list_rec acc s
+  else
+    match s.node.data with
       | Some x ->
+          s.node <- s.node.next;
+          to_list_rec (x :: acc) s
+      | None ->
+          return (List.rev acc)
+
+let to_list s = to_list_rec [] s
+
+let rec to_string_rec buf s =
+  if s.node == !(s.last) then
+    feed s >> to_string_rec buf s
+  else
+    match s.node.data with
+      | Some x ->
+          s.node <- s.node.next;
           Buffer.add_char buf x;
-          loop ()
+          to_string_rec buf s
       | None ->
           return (Buffer.contents buf)
-  in
-  loop ()
+
+let to_string s = to_string_rec (Buffer.create 128) s
 
 let junk s =
-  lwt _ = get s in
-  return ()
-
-let njunk n s =
-  let rec loop n =
-    if n <= 0 then
+  let node = s.node in
+  if node == !(s.last) then begin
+    lwt _ = feed s in
+    if node == s.node then begin
+      s.node <- node.next;
       return ()
-    else
-      lwt _ = get s in
-      loop (n - 1)
-  in
-  loop n
+    end else
+      return ()
+  end else begin
+    s.node <- node.next;
+    return ()
+  end
 
-let junk_while f s =
-  let rec loop () =
-    peek s >>= function
+let rec njunk_rec node n s =
+  if n <= 0 then
+    return ()
+  else if node == !(s.last) then
+    feed s >> njunk_rec node n s
+  else
+    njunk_rec node.next (n - 1) s
+
+let njunk n s = njunk_rec s.node n s
+
+let rec junk_while f s =
+  if s.node == !(s.last) then
+    feed s >> junk_while f s
+  else
+    let node = s.node in
+    match node.data with
       | Some x ->
           let test = f x in
           if test then begin
-            ignore (Queue.take s.queue);
-            loop ()
+            if node == s.node then s.node <- node.next;
+            junk_while f s
           end else
             return ()
       | None ->
           return ()
-  in
-  loop ()
 
-let junk_while_s f s =
-  let rec loop () =
-    peek s >>= function
+let rec junk_while_s f s =
+  if s.node == !(s.last) then
+    feed s >> junk_while_s f s
+  else
+    let node = s.node in
+    match node.data with
       | Some x ->
           lwt test = f x in
           if test then begin
-            ignore (Queue.take s.queue);
-            loop ()
+            if node == s.node then s.node <- node.next;
+            junk_while_s f s
           end else
             return ()
       | None ->
           return ()
-  in
-  loop ()
 
-let junk_old s =
-  let rec loop () =
-    match Lwt.state (peek s) with
+let rec junk_old s =
+  if s.node == !(s.last) then
+    let thread = feed s in
+    match state thread with
+      | Return _ ->
+          junk_old s
+      | Fail exn ->
+          raise_lwt exn
       | Sleep ->
           return ()
-      | _ ->
-          ignore (Queue.take s.queue);
-          loop ()
-  in
-  loop ()
+  else
+    match s.node.data with
+      | Some _ ->
+          s.node <- s.node.next;
+          junk_old s
+      | None ->
+          return ()
 
-let get_available s =
-  let rec loop () =
-    match Lwt.state (peek s) with
-      | Sleep | Return None ->
-          []
-      | Return(Some x) ->
-          ignore (Queue.take s.queue);
-          x :: loop ()
+let rec get_available_rec acc s =
+  if s.node == !(s.last) then
+    let thread = feed s in
+    match state thread with
+      | Return _ ->
+          get_available_rec acc s
       | Fail exn ->
           raise exn
-  in
-  loop ()
+      | Sleep ->
+          List.rev acc
+  else
+    match s.node.data with
+      | Some x ->
+          s.node <- s.node.next;
+          get_available_rec (x :: acc) s
+      | None ->
+          List.rev acc
 
-let get_available_up_to n s =
-  let rec loop = function
-    | 0 ->
-        []
-    | n ->
-        match Lwt.state (peek s) with
-          | Sleep | Return None ->
-              []
-          | Return(Some x) ->
-              ignore (Queue.take s.queue);
-              x :: loop (n - 1)
-          | Fail exn ->
-              raise exn
-  in
-  loop n
+let get_available s = get_available_rec [] s
 
-let is_empty s = peek s >|= fun x -> x = None
+let rec get_available_up_to_rec acc n s =
+  if n <= 0 then
+    List.rev acc
+  else if s.node == !(s.last) then
+    let thread = feed s in
+    match state thread with
+      | Return _ ->
+          get_available_up_to_rec acc n s
+      | Fail exn ->
+          raise exn
+      | Sleep ->
+          List.rev acc
+  else
+    match s.node.data with
+      | Some x ->
+          s.node <- s.node.next;
+          get_available_up_to_rec (x :: acc) (n - 1) s
+      | None ->
+          List.rev acc
+
+let get_available_up_to n s = get_available_up_to_rec [] n s
+
+let rec is_empty s =
+  if s.node == !(s.last) then
+    feed s >> is_empty s
+  else
+    return (s.node.data = None)
 
 let map f s =
   from (fun () -> get s >>= function
@@ -560,117 +558,124 @@ let map_list_s f s =
 let flatten s =
   map_list (fun l -> l) s
 
-let fold f s acc =
-  let rec loop acc =
-    get s >>= function
+let rec fold f s acc =
+  if s.node == !(s.last) then
+    feed s >> fold f s acc
+  else
+    match s.node.data with
       | Some x ->
+          s.node <- s.node.next;
           let acc = f x acc in
-          loop acc
+          fold f s acc
       | None ->
           return acc
-  in
-  loop acc
 
-let fold_s f s acc =
-  let rec loop acc =
-    get s >>= function
+let rec fold_s f s acc =
+  if s.node == !(s.last) then
+    feed s >> fold_s f s acc
+  else
+    match s.node.data with
       | Some x ->
+          s.node <- s.node.next;
           lwt acc = f x acc in
-          loop acc
+          fold_s f s acc
       | None ->
           return acc
-  in
-  loop acc
 
-let iter f s =
-  let rec loop () =
-    get s >>= function
+let rec iter f s =
+  if s.node == !(s.last) then
+    feed s >> iter f s
+  else
+    match s.node.data with
       | Some x ->
+          s.node <- s.node.next;
           let () = f x in
-          loop ()
+          iter f s
       | None ->
           return ()
-  in
-  loop ()
 
-let iter_s f s =
-  let rec loop () =
-    get s >>= function
+let rec iter_s f s =
+  if s.node == !(s.last) then
+    feed s >> iter_s f s
+  else
+    match s.node.data with
       | Some x ->
+          s.node <- s.node.next;
           lwt () = f x in
-          loop ()
+          iter_s f s
       | None ->
           return ()
-  in
-  loop ()
 
-let iter_p f s =
-  let rec loop () =
-    get s >>= function
+let rec iter_p f s =
+  if s.node == !(s.last) then
+    feed s >> iter_p f s
+  else
+    match s.node.data with
       | Some x ->
-          f x <&> loop ()
+          s.node <- s.node.next;
+          f x <&> iter_p f s
       | None ->
           return ()
-  in
-  loop ()
 
-let find f s =
-  let rec loop () =
-    get s >>= function
+let rec find f s =
+  if s.node == !(s.last) then
+    feed s >> find f s
+  else
+    match s.node.data with
       | Some x as result ->
+          s.node <- s.node.next;
           let test = f x in
           if test then
             return result
           else
-            loop ()
+            find f s
       | None ->
           return None
-  in
-  loop ()
 
-let find_s f s =
-  let rec loop () =
-    get s >>= function
+let rec find_s f s =
+  if s.node == !(s.last) then
+    feed s >> find_s f s
+  else
+    match s.node.data with
       | Some x as result ->
+          s.node <- s.node.next;
           lwt test = f x in
           if test then
             return result
           else
-            loop ()
+            find_s f s
       | None ->
           return None
-  in
-  loop ()
 
 let rec find_map f s =
-  let rec loop () =
-    get s >>= function
+  if s.node == !(s.last) then
+    feed s >> find_map f s
+  else
+    match s.node.data with
       | Some x ->
+          s.node <- s.node.next;
           let x = f x in
-          (match x with
-             | Some _ ->
-                 return x
-             | None ->
-                 loop ())
+          if x = None then
+            find_map f s
+          else
+            return x
       | None ->
           return None
-  in
-  loop ()
 
 let rec find_map_s f s =
-  let rec loop () =
-    get s >>= function
+  if s.node == !(s.last) then
+    feed s >> find_map_s f s
+  else
+    match s.node.data with
       | Some x ->
+          s.node <- s.node.next;
           lwt x = f x in
-          (match x with
-             | Some _ ->
-                 return x
-             | None ->
-                 loop ())
+          if x = None then
+            find_map_s f s
+          else
+            return x
       | None ->
           return None
-  in
-  loop ()
 
 let rec combine s1 s2 =
   let next () =
@@ -684,16 +689,15 @@ let rec combine s1 s2 =
   from next
 
 let append s1 s2 =
-  let current_s = ref s1 and s1_finished = ref false in
+  let current_s = ref s1 in
   let rec next () =
     get !current_s >>= function
       | Some _ as result ->
           return result
       | None ->
-          if !s1_finished then
+          if !current_s == s2 then
             return None
           else begin
-            s1_finished := true;
             current_s := s2;
             next ()
           end
@@ -701,7 +705,7 @@ let append s1 s2 =
   from next
 
 let concat s_top =
-  let current_s = ref(from(fun () -> return None)) in
+  let current_s = ref (from (fun () -> return None)) in
   let rec next () =
     get !current_s >>= function
       | Some _ as result ->
@@ -717,8 +721,8 @@ let concat s_top =
   from next
 
 let choose streams =
-  let source s = (s, peek s >|= fun x -> (s, x)) in
-  let streams = ref (List.rev_map source streams) in
+  let source s = (s, get s >|= fun x -> (s, x)) in
+  let streams = ref (List.map source streams) in
   let rec next () =
     match !streams with
       | [] ->
@@ -728,7 +732,6 @@ let choose streams =
           let l = List.remove_assq s l in
           match x with
             | Some _ ->
-                lwt () = junk s in
                 streams := source s :: l;
                 return x
             | None ->
@@ -737,12 +740,11 @@ let choose streams =
   from next
 
 let parse s f =
-  let s' = clone s in
+  let node = s.node in
   try_lwt
     f s
   with exn ->
-    Queue.clear s.queue;
-    Queue.transfer s'.queue s.queue;
+    s.node <- node;
     raise_lwt exn
 
 let hexdump stream =

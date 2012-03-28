@@ -258,6 +258,9 @@ type 'a state =
 val state : 'a t -> 'a state
   (** [state t] returns the state of a thread *)
 
+val is_sleeping : 'a t -> bool
+  (** [is_sleeping t] returns [true] iff [t] is sleeping. *)
+
 (** {6 Cancelable threads} *)
 
 (** Cancelable threads are the same as regular threads except that
