@@ -54,10 +54,18 @@ type 'a from = {
      new one with [from_create]. *)
 }
 
+(* Type of a stream source for push streams. *)
+type push = {
+  mutable push_signal : unit Lwt.t;
+  (* Thread signaled when a new element is added to the stream. *)
+  mutable push_waiting : bool;
+  (* Is a thread waiting on [push_signal] ? *)
+}
+
 (* Source of a stream. *)
 type 'a source =
   | From of 'a from
-  | Push of unit Lwt.t ref
+  | Push of push
 
 type 'a t = {
   source : 'a source;
@@ -119,10 +127,12 @@ let of_string s =
 let create () =
   (* Create the cell pointing to the end of the queue. *)
   let last = ref (new_node ()) in
-  (* Create the thread for notifications of new elements. *)
-  let waiter_cell, wakener_cell =
+  (* Create the source for notifications of new elements. *)
+  let source, wakener_cell =
     let waiter, wakener = wait () in
-    (ref waiter, ref wakener)
+    ({ push_signal = waiter;
+       push_waiting = false },
+     ref wakener)
   in
   (* The push function. It does not keep a reference to the stream. *)
   let push x =
@@ -131,15 +141,20 @@ let create () =
     node.data <- x;
     node.next <- new_last;
     last := new_last;
-    (* Update threads. *)
-    let old_wakener = !wakener_cell in
-    let new_waiter, new_wakener = wait () in
-    waiter_cell := new_waiter;
-    wakener_cell := new_wakener;
-    (* Signal that a new value has been received. *)
-    wakeup_later old_wakener ()
+    (* Send a signal if at least one thread is waiting for a new
+       element. *)
+    if source.push_waiting then begin
+      source.push_waiting <- false;
+      (* Update threads. *)
+      let old_wakener = !wakener_cell in
+      let new_waiter, new_wakener = wait () in
+      source.push_signal <- new_waiter;
+      wakener_cell := new_wakener;
+      (* Signal that a new value has been received. *)
+      wakeup_later old_wakener ()
+    end
   in
-  ({ source = Push waiter_cell;
+  ({ source = Push source;
      node = !last;
      last = last },
    push)
@@ -168,8 +183,9 @@ let feed s =
           from.from_thread <- thread;
           protected thread
         end
-    | Push { contents = waiter } ->
-        protected waiter
+    | Push push ->
+        push.push_waiting <- true;
+        protected push.push_signal
 
 let rec peek s =
   if s.node == !(s.last) then
