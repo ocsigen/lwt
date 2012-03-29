@@ -24,6 +24,10 @@ open Lwt
 
 exception Empty
 
+type 'a result =
+  | Value of 'a
+  | Error of exn
+
 (* A node in a queue of pending data. *)
 type 'a node = {
   mutable next : 'a node;
@@ -227,6 +231,22 @@ let rec get_rec s node =
   end
 
 let get s = get_rec s s.node
+
+let rec get_exn_rec s node =
+  if node == !(s.last) then
+    try_bind
+      (fun () -> feed s)
+      (fun () -> get_exn_rec s node)
+      (fun exn -> return (Some (Error exn)))
+  else
+    match node.data with
+      | Some value ->
+          consume s node;
+          return (Some (Value value))
+      | None ->
+          return None
+
+let map_exn s = from (fun () -> get_exn_rec s s.node)
 
 let rec nget_rec node acc n s =
   if n <= 0 then

@@ -235,4 +235,25 @@ let suite = suite "lwt_stream" [
        (* We have that to force caml to keep a reference on [push]. *)
        push (Some(ref 4));
        return true);
+
+  test "map_exn"
+    (fun () ->
+       let open Lwt_stream in
+       let l = [Value 1; Error Exit; Error (Failure "plop"); Value 42; Error End_of_file] in
+       let q = ref l in
+       let stream =
+         Lwt_stream.from
+           (fun () ->
+              match !q with
+                | [] ->
+                    return None
+                | Value x :: l ->
+                    q := l;
+                    return (Some x)
+                | Error e :: l ->
+                    q := l;
+                    raise_lwt e)
+       in
+       lwt l' = Lwt_stream.to_list (Lwt_stream.map_exn stream) in
+       return (l = l'));
 ]

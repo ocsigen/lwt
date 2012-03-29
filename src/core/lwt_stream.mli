@@ -219,6 +219,18 @@ val concat : 'a t t -> 'a t
 val flatten : 'a list t -> 'a t
   (** [flatten st = map_list (fun l -> l) st] *)
 
+(** A value or an error. *)
+type 'a result =
+  | Value of 'a
+  | Error of exn
+
+val map_exn : 'a t -> 'a result t
+  (** [map_exn s] returns a stream that captures all exceptions raised
+      by the source of the stream (the function passed to {!from}).
+
+      Note that for push-streams (as returned by {!create}) all
+      elements of the mapped streams are values. *)
+
 (** {6 Parsing} *)
 
 val parse : 'a t -> ('a t -> 'b Lwt.t) -> 'b Lwt.t
