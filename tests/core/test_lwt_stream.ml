@@ -34,10 +34,8 @@ let suite = suite "lwt_stream" [
        let t2 = Lwt_stream.next stream in
        let t3 = Lwt_stream.next stream in
        lwt () = Lwt_mvar.put mvar 1 in
-       lwt () = Lwt_mvar.put mvar 2 in
-       lwt () = Lwt_mvar.put mvar 3 in
        lwt x1 = t1 and x2 = t2 and x3 = t3 in
-       return (List.sort compare [x1; x2; x3] = [1; 2; 3]));
+       return ([x1; x2; x3] = [1; 1; 1]));
 
   test "of_list"
     (fun () ->

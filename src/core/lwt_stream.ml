@@ -187,11 +187,22 @@ let feed s =
         push.push_waiting <- true;
         protected push.push_signal
 
-let rec peek s =
-  if s.node == !(s.last) then
-    feed s >> peek s
+(* Remove [node] from the top of the queue, or do nothing if it was
+   already consumed.
+
+   Precondition: node.data <> None
+*)
+let consume s node =
+  if node == s.node then
+    s.node <- node.next
+
+let rec peek_rec s node =
+  if node == !(s.last) then
+    feed s >> peek_rec s node
   else
-    return s.node.data
+    return node.data
+
+let peek s = peek_rec s s.node
 
 let rec npeek_rec node acc n s =
   if n <= 0 then
@@ -207,149 +218,148 @@ let rec npeek_rec node acc n s =
 
 let npeek n s = npeek_rec s.node [] n s
 
-let rec get s =
-  if s.node == !(s.last) then
-    feed s >> get s
+let rec get_rec s node =
+  if node == !(s.last) then
+    feed s >> get_rec s node
   else begin
-    let x = s.node.data in
-    if x <> None then s.node <- s.node.next;
-    return x
+    if node.data <> None then consume s node;
+    return node.data
   end
 
-let rec nget_rec acc n s =
+let get s = get_rec s s.node
+
+let rec nget_rec node acc n s =
   if n <= 0 then
     return (List.rev acc)
-  else if s.node == !(s.last) then
-    feed s >> nget_rec acc n s
+  else if node == !(s.last) then
+    feed s >> nget_rec node acc n s
   else
     match s.node.data with
       | Some x ->
-          s.node <- s.node.next;
-          nget_rec (x :: acc) (n - 1) s
+          consume s node;
+          nget_rec node.next (x :: acc) (n - 1) s
       | None ->
           return (List.rev acc)
 
-let nget n s = nget_rec [] n s
+let nget n s = nget_rec s.node [] n s
 
-let rec get_while_rec acc f s =
-  if s.node == !(s.last) then
-    feed s >> get_while_rec acc f s
+let rec get_while_rec node acc f s =
+  if node == !(s.last) then
+    feed s >> get_while_rec node acc f s
   else
-    let node = s.node in
     match node.data with
       | Some x ->
           let test = f x in
           if test then begin
-            if node == s.node then s.node <- node.next;
-            get_while_rec (x :: acc) f s
+            consume s node;
+            get_while_rec node.next (x :: acc) f s
           end else
             return (List.rev acc)
       | None ->
           return (List.rev acc)
 
-let get_while f s = get_while_rec [] f s
+let get_while f s = get_while_rec s.node [] f s
 
-let rec get_while_s_rec acc f s =
-  if s.node == !(s.last) then
-    feed s >> get_while_s_rec acc f s
+let rec get_while_s_rec node acc f s =
+  if node == !(s.last) then
+    feed s >> get_while_s_rec node acc f s
   else
-    let node = s.node in
     match node.data with
       | Some x ->
           lwt test = f x in
           if test then begin
-            if node == s.node then s.node <- node.next;
-            get_while_s_rec (x :: acc) f s
+            consume s node;
+            get_while_s_rec node.next (x :: acc) f s
           end else
             return (List.rev acc)
       | None ->
           return (List.rev acc)
 
-let get_while_s f s = get_while_s_rec [] f s
+let get_while_s f s = get_while_s_rec s.node [] f s
 
-let rec next s =
-  if s.node == !(s.last) then
-    feed s >> next s
+let rec next_rec s node =
+  if node == !(s.last) then
+    feed s >> next_rec s node
   else
-    match s.node.data with
+    match node.data with
       | Some x ->
-          s.node <- s.node.next;
+          consume s node;
           return x
       | None ->
           raise_lwt Empty
 
-let rec last_new_rec x s =
-  if s.node == !(s.last) then
+let next s = next_rec s s.node
+
+let rec last_new_rec node x s =
+  if node == !(s.last) then
     let thread = feed s in
     match state thread with
       | Return _ ->
-          last_new_rec x s
+          last_new_rec node x s
       | Fail exn ->
           raise_lwt exn
       | Sleep ->
           return x
   else
-    match s.node.data with
+    match node.data with
       | Some x ->
-          s.node <- s.node.next;
-          last_new_rec x s
+          consume s node;
+          last_new_rec node.next x s
       | None ->
           return x
 
 let last_new s =
-  if s.node == !(s.last) then
+  let node = s.node in
+  if node == !(s.last) then
     let thread = next s in
     match state thread with
       | Return x ->
-          last_new_rec x s
+          last_new_rec node x s
       | _ ->
           thread
   else
-    match s.node.data with
+    match node.data with
       | Some x ->
-          s.node <- s.node.next;
-          last_new_rec x s
+          consume s node;
+          last_new_rec node.next x s
       | None ->
           raise_lwt Empty
 
-let rec to_list_rec acc s =
-  if s.node == !(s.last) then
-    feed s >> to_list_rec acc s
+let rec to_list_rec node acc s =
+  if node == !(s.last) then
+    feed s >> to_list_rec node acc s
   else
-    match s.node.data with
+    match node.data with
       | Some x ->
-          s.node <- s.node.next;
-          to_list_rec (x :: acc) s
+          consume s node;
+          to_list_rec node.next (x :: acc) s
       | None ->
           return (List.rev acc)
 
-let to_list s = to_list_rec [] s
+let to_list s = to_list_rec s.node [] s
 
-let rec to_string_rec buf s =
-  if s.node == !(s.last) then
-    feed s >> to_string_rec buf s
+let rec to_string_rec node buf s =
+  if node == !(s.last) then
+    feed s >> to_string_rec node buf s
   else
-    match s.node.data with
+    match node.data with
       | Some x ->
-          s.node <- s.node.next;
+          consume s node;
           Buffer.add_char buf x;
-          to_string_rec buf s
+          to_string_rec node.next buf s
       | None ->
           return (Buffer.contents buf)
 
-let to_string s = to_string_rec (Buffer.create 128) s
+let to_string s = to_string_rec s.node (Buffer.create 128) s
 
 let junk s =
   let node = s.node in
   if node == !(s.last) then begin
     lwt _ = feed s in
-    if node == s.node then begin
-      s.node <- node.next;
-      return ()
-    end else
-      return ()
+    if node.data <> None then consume s node;
+    return ()
   end else begin
-    s.node <- node.next;
+    if node.data <> None then s.node <- node.next;
     return ()
   end
 
@@ -359,88 +369,97 @@ let rec njunk_rec node n s =
   else if node == !(s.last) then
     feed s >> njunk_rec node n s
   else
-    njunk_rec node.next (n - 1) s
+    match node.data with
+      | Some _ ->
+          consume s node;
+          njunk_rec node.next (n - 1) s
+      | None ->
+          return ()
 
 let njunk n s = njunk_rec s.node n s
 
-let rec junk_while f s =
-  if s.node == !(s.last) then
-    feed s >> junk_while f s
+let rec junk_while_rec node f s =
+  if node == !(s.last) then
+    feed s >> junk_while_rec node f s
   else
-    let node = s.node in
     match node.data with
       | Some x ->
           let test = f x in
           if test then begin
-            if node == s.node then s.node <- node.next;
-            junk_while f s
+            consume s node;
+            junk_while_rec node.next f s
           end else
             return ()
       | None ->
           return ()
 
-let rec junk_while_s f s =
-  if s.node == !(s.last) then
-    feed s >> junk_while_s f s
+let junk_while f s = junk_while_rec s.node f s
+
+let rec junk_while_s_rec node f s =
+  if node == !(s.last) then
+    feed s >> junk_while_s_rec node f s
   else
-    let node = s.node in
     match node.data with
       | Some x ->
           lwt test = f x in
           if test then begin
-            if node == s.node then s.node <- node.next;
-            junk_while_s f s
+            consume s node;
+            junk_while_s_rec node.next f s
           end else
             return ()
       | None ->
           return ()
 
-let rec junk_old s =
-  if s.node == !(s.last) then
+let junk_while_s f s = junk_while_s_rec s.node f s
+
+let rec junk_old_rec node s =
+  if node == !(s.last) then
     let thread = feed s in
     match state thread with
       | Return _ ->
-          junk_old s
+          junk_old_rec node s
       | Fail exn ->
           raise_lwt exn
       | Sleep ->
           return ()
   else
-    match s.node.data with
+    match node.data with
       | Some _ ->
-          s.node <- s.node.next;
-          junk_old s
+          consume s node;
+          junk_old_rec node.next s
       | None ->
           return ()
 
-let rec get_available_rec acc s =
-  if s.node == !(s.last) then
+let junk_old s = junk_old_rec s.node s
+
+let rec get_available_rec node acc s =
+  if node == !(s.last) then
     let thread = feed s in
     match state thread with
       | Return _ ->
-          get_available_rec acc s
+          get_available_rec node acc s
       | Fail exn ->
           raise exn
       | Sleep ->
           List.rev acc
   else
-    match s.node.data with
+    match node.data with
       | Some x ->
-          s.node <- s.node.next;
-          get_available_rec (x :: acc) s
+          consume s node;
+          get_available_rec node.next (x :: acc) s
       | None ->
           List.rev acc
 
-let get_available s = get_available_rec [] s
+let get_available s = get_available_rec s.node [] s
 
-let rec get_available_up_to_rec acc n s =
+let rec get_available_up_to_rec node acc n s =
   if n <= 0 then
     List.rev acc
-  else if s.node == !(s.last) then
+  else if node == !(s.last) then
     let thread = feed s in
     match state thread with
       | Return _ ->
-          get_available_up_to_rec acc n s
+          get_available_up_to_rec node acc n s
       | Fail exn ->
           raise exn
       | Sleep ->
@@ -448,12 +467,12 @@ let rec get_available_up_to_rec acc n s =
   else
     match s.node.data with
       | Some x ->
-          s.node <- s.node.next;
-          get_available_up_to_rec (x :: acc) (n - 1) s
+          consume s node;
+          get_available_up_to_rec node.next (x :: acc) (n - 1) s
       | None ->
           List.rev acc
 
-let get_available_up_to n s = get_available_up_to_rec [] n s
+let get_available_up_to n s = get_available_up_to_rec s.node [] n s
 
 let rec is_empty s =
   if s.node == !(s.last) then
@@ -574,124 +593,142 @@ let map_list_s f s =
 let flatten s =
   map_list (fun l -> l) s
 
-let rec fold f s acc =
-  if s.node == !(s.last) then
-    feed s >> fold f s acc
+let rec fold_rec node f s acc =
+  if node == !(s.last) then
+    feed s >> fold_rec node f s acc
   else
-    match s.node.data with
+    match node.data with
       | Some x ->
-          s.node <- s.node.next;
+          consume s node;
           let acc = f x acc in
-          fold f s acc
+          fold_rec node.next f s acc
       | None ->
           return acc
 
-let rec fold_s f s acc =
-  if s.node == !(s.last) then
-    feed s >> fold_s f s acc
+let fold f s acc = fold_rec s.node f s acc
+
+let rec fold_s_rec node f s acc =
+  if node == !(s.last) then
+    feed s >> fold_s_rec node f s acc
   else
-    match s.node.data with
+    match node.data with
       | Some x ->
-          s.node <- s.node.next;
+          consume s node;
           lwt acc = f x acc in
-          fold_s f s acc
+          fold_s_rec node.next f s acc
       | None ->
           return acc
 
-let rec iter f s =
-  if s.node == !(s.last) then
-    feed s >> iter f s
+let fold_s f s acc = fold_s_rec s.node f s acc
+
+let rec iter_rec node f s =
+  if node == !(s.last) then
+    feed s >> iter_rec node f s
   else
-    match s.node.data with
+    match node.data with
       | Some x ->
-          s.node <- s.node.next;
+          consume s node;
           let () = f x in
-          iter f s
+          iter_rec node.next f s
       | None ->
           return ()
 
-let rec iter_s f s =
-  if s.node == !(s.last) then
-    feed s >> iter_s f s
+let iter f s = iter_rec s.node f s
+
+let rec iter_s_rec node f s =
+  if node == !(s.last) then
+    feed s >> iter_s_rec node f s
   else
-    match s.node.data with
+    match node.data with
       | Some x ->
-          s.node <- s.node.next;
+          consume s node;
           lwt () = f x in
-          iter_s f s
+          iter_s_rec node.next f s
       | None ->
           return ()
 
-let rec iter_p f s =
-  if s.node == !(s.last) then
-    feed s >> iter_p f s
+let iter_s f s = iter_s_rec s.node f s
+
+let rec iter_p_rec node f s =
+  if node == !(s.last) then
+    feed s >> iter_p_rec node f s
   else
-    match s.node.data with
+    match node.data with
       | Some x ->
-          s.node <- s.node.next;
-          f x <&> iter_p f s
+          consume s node;
+          f x <&> iter_p_rec node.next f s
       | None ->
           return ()
 
-let rec find f s =
-  if s.node == !(s.last) then
-    feed s >> find f s
+let iter_p f s = iter_p_rec s.node f s
+
+let rec find_rec node f s =
+  if node == !(s.last) then
+    feed s >> find_rec node f s
   else
-    match s.node.data with
+    match node.data with
       | Some x as result ->
-          s.node <- s.node.next;
+          consume s node;
           let test = f x in
           if test then
             return result
           else
-            find f s
+            find_rec node.next f s
       | None ->
           return None
 
-let rec find_s f s =
-  if s.node == !(s.last) then
-    feed s >> find_s f s
+let find f s = find_rec s.node f s
+
+let rec find_s_rec node f s =
+  if node == !(s.last) then
+    feed s >> find_s_rec node f s
   else
-    match s.node.data with
+    match node.data with
       | Some x as result ->
-          s.node <- s.node.next;
+          consume s node;
           lwt test = f x in
           if test then
             return result
           else
-            find_s f s
+            find_s_rec node.next f s
       | None ->
           return None
 
-let rec find_map f s =
-  if s.node == !(s.last) then
-    feed s >> find_map f s
+let find_s f s = find_s_rec s.node f s
+
+let rec find_map_rec node f s =
+  if node == !(s.last) then
+    feed s >> find_map_rec node f s
   else
-    match s.node.data with
+    match node.data with
       | Some x ->
-          s.node <- s.node.next;
+          consume s node;
           let x = f x in
           if x = None then
-            find_map f s
+            find_map_rec node.next f s
           else
             return x
       | None ->
           return None
 
-let rec find_map_s f s =
-  if s.node == !(s.last) then
-    feed s >> find_map_s f s
+let find_map f s = find_map_rec s.node f s
+
+let rec find_map_s_rec node f s =
+  if node == !(s.last) then
+    feed s >> find_map_s_rec node f s
   else
-    match s.node.data with
+    match node.data with
       | Some x ->
-          s.node <- s.node.next;
+          consume s node;
           lwt x = f x in
           if x = None then
-            find_map_s f s
+            find_map_s_rec node.next f s
           else
             return x
       | None ->
           return None
+
+let find_map_s f s = find_map_s_rec s.node f s
 
 let rec combine s1 s2 =
   let next () =
