@@ -27,6 +27,11 @@ type t =
 
 type socket = Lwt_unix.file_descr * t
 
+let ssl_socket (fd, kind) =
+  match kind with
+    | Plain -> None
+    | SSL socket -> Some socket
+
 let is_ssl s =
   match snd s with
     Plain -> false

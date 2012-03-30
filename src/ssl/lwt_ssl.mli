@@ -24,6 +24,13 @@
 (** OCaml-SSL integration *)
 
 type socket
+  (** Wrapper for SSL sockets.
+
+      It is either a plain socket, either a real SSL socket. *)
+
+val ssl_socket : socket -> Ssl.socket option
+  (** Returns the underlying SSL socket used for this wrapper. If it
+      is a plain socket it returns [None]. *)
 
 val ssl_accept : Lwt_unix.file_descr -> Ssl.context -> socket Lwt.t
 val ssl_connect : Lwt_unix.file_descr -> Ssl.context -> socket Lwt.t
