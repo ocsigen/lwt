@@ -1046,25 +1046,42 @@ val register_action : io_event -> file_descr -> (unit -> 'a) -> 'a Lwt.t
   *)
 
 type 'a job
-  (** Type of jobs that run:
-
-      - on another thread if the current async method is [Async_thread]
-      - on the main thread if the current async method is [Async_none]. *)
+  (** Type of job descriptions. A job description describe how to call
+      a C function and how to get its result. The C function may be
+      executed in another system thread. *)
 
 val execute_job :
   ?async_method : async_method ->
   job : 'a job ->
   result : ('a job -> 'b) ->
   free : ('a job -> unit) -> 'b Lwt.t
-  (** [execute_job ?async_method ~job ~get ~free] starts
-      [job] and wait for its termination.
+  (** This is the old and deprecated way of running a job. Use
+      {!run_job} in new code. *)
 
-      [async_method] is how the job will be executed. It defaults to
-      the async method of the current thread. [result] is used to get
-      the result of the job, and [free] to free its associated
-      resources.
+val run_job : ?async_method : async_method -> 'a job -> 'a Lwt.t
+  (** [run_job ?async_method job] starts [job] and wait for its
+      termination.
 
-      Note: jobs cannot be canceled. *)
+      The async method is choosen follow:
+      - if the optional parameter [async_method] is specified, it is
+        used,
+      - otherwise if the local key {!async_method_key} is set in the
+        current thread, it is used,
+      - otherwise the default method (returned by
+        {!default_async_method}) is used.
+
+      If the method is {!Async_none} then the job is run synchronously
+      and may block the current system thread, thus blocking all Lwt
+      threads.
+
+      If the method is {!Async_detach} then the job is run in another
+      system thread, unless the the maximum number of worker threads
+      has been reached (as given by {!pool_size}).
+
+      If the method is {!Async_switch} then the job is run
+      synchronously and if it blocks, execution will continue in
+      another system thread (unless the limit is reached).
+  *)
 
 val abort_jobs : exn -> unit
   (** [abort_jobs exn] make all pending jobs to fail with exn. Note

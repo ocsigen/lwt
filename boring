@@ -2,6 +2,8 @@
 ^lwt-.*\.tar\.gz$
 ^src/unix/lwt_config\.ml$
 ^src/unix/lwt_config\.h$
+^src/unix/lwt_unix_jobs_generated\.ml$
+^src/unix/jobs-unix/
 ^webdarcs\.log$
 ^setup\.data$
 ^setup\.log$

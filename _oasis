@@ -22,7 +22,7 @@ Homepage: http://ocsigen.org/lwt/
 BuildTools: ocamlbuild
 Plugins: DevFiles (0.3), META (0.3)
 PostConfCommand: ocaml discover.ml -ocamlc $ocamlc -ext-obj $ext_obj -exec-name $default_executable_name -use-libev $libev -os-type $os_type -use-glib $glib -ccomp-type $ccomp_type -use-pthread $pthread -use-unix $unix
-PostDistCleanCommand: $rm src/unix/lwt_config.h src/unix/lwt_config.ml
+PostDistCleanCommand: $rm src/unix/lwt_config.h src/unix/lwt_config.ml src/unix/lwt_unix_jobs_generated.ml src/unix/jobs-unix/*
 
 Synopsis: Lightweight thread library for Objective Caml
 Description:
@@ -125,7 +125,8 @@ Library "lwt-unix"
     Lwt_unix,
     Lwt_sys,
     Lwt_engine,
-    Lwt_bytes
+    Lwt_bytes,
+    Lwt_unix_jobs_generated
   InternalModules:
     Lwt_log_rules
   BuildDepends: lwt, unix, bigarray
@@ -135,7 +136,31 @@ Library "lwt-unix"
     lwt_unix.h,
     lwt_unix_stubs.c,
     lwt_libev_stubs.c,
-    lwt_process_stubs.c
+    lwt_process_stubs.c,
+    jobs-unix/lwt_unix_job_access.c,
+    jobs-unix/lwt_unix_job_chdir.c,
+    jobs-unix/lwt_unix_job_chmod.c,
+    jobs-unix/lwt_unix_job_chown.c,
+    jobs-unix/lwt_unix_job_chroot.c,
+    jobs-unix/lwt_unix_job_close.c,
+    jobs-unix/lwt_unix_job_fchmod.c,
+    jobs-unix/lwt_unix_job_fchown.c,
+    jobs-unix/lwt_unix_job_fdatasync.c,
+    jobs-unix/lwt_unix_job_fsync.c,
+    jobs-unix/lwt_unix_job_ftruncate.c,
+    jobs-unix/lwt_unix_job_link.c,
+    jobs-unix/lwt_unix_job_lseek.c,
+    jobs-unix/lwt_unix_job_mkdir.c,
+    jobs-unix/lwt_unix_job_mkfifo.c,
+    jobs-unix/lwt_unix_job_rename.c,
+    jobs-unix/lwt_unix_job_rmdir.c,
+    jobs-unix/lwt_unix_job_symlink.c,
+    jobs-unix/lwt_unix_job_tcdrain.c,
+    jobs-unix/lwt_unix_job_tcflow.c,
+    jobs-unix/lwt_unix_job_tcflush.c,
+    jobs-unix/lwt_unix_job_tcsendbreak.c,
+    jobs-unix/lwt_unix_job_truncate.c,
+    jobs-unix/lwt_unix_job_unlink.c
   if os_type(Win32) && ccomp_type(msvc)
     CCLib+: ws2_32.lib
   else if os_type(Win32)

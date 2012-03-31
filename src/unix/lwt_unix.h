@@ -44,13 +44,15 @@
 /* Allocate the given amount of memory and abort the program if there
    is no free memory left. */
 void *lwt_unix_malloc(size_t size);
+void *lwt_unix_realloc(void *ptr, size_t size);
 
 /* Same as [strdup] and abort hte program if there is not memory
    left. */
 char *lwt_unix_strdup(char *string);
 
-/* Helper for allocating structures. */
+/* Helpers for allocating structures. */
 #define lwt_unix_new(type) (type*)lwt_unix_malloc(sizeof(type))
+#define lwt_unix_new_plus(type, size) (type*)lwt_unix_malloc(sizeof(type) + size)
 
 /* Raise [Lwt_unix.Not_available]. */
 void lwt_unix_not_available(char const *feature) Noreturn;
@@ -162,6 +164,15 @@ struct lwt_unix_job {
   /* The function to call to do the work. */
   void (*worker)(struct lwt_unix_job *job);
 
+  /* The function to call to extract the result and free memory
+     allocated by the job.
+
+     Note: if you want to raise an excpetion, be sure to free
+     resources before raising it!
+
+     It has been introduced in Lwt 2.3.3. */
+  value (*result)(struct lwt_unix_job *job);
+
   /* State of the job. */
   enum lwt_unix_job_state state;
 
@@ -184,13 +195,84 @@ typedef struct lwt_unix_job* lwt_unix_job;
 /* Type of worker functions. */
 typedef void (*lwt_unix_job_worker)(lwt_unix_job job);
 
+/* Type of result functions. */
+typedef value (*lwt_unix_job_result)(lwt_unix_job job);
+
 /* Allocate a caml custom value for the given job. */
 value lwt_unix_alloc_job(lwt_unix_job job);
 
 /* Free resourecs allocated for this job and free it. */
 void lwt_unix_free_job(lwt_unix_job job);
 
-/* Define not implement methods. */
+/* +-----------------------------------------------------------------+
+   | Helpers for writing jobs                                        |
+   +-----------------------------------------------------------------+ */
+
+/* Allocate a job structure and set its worker and result fields.
+
+   - VAR is the name of the job variable. It is usually "job".
+   - FUNC is the suffix of the structure name and functions of this job.
+     It is usually the name of the function that is wrapped.
+   - SIZE is the dynamic size to allocate at the end of the structure,
+     in case it ends ends with something of the form: char data[]);
+*/
+#define LWT_UNIX_INIT_JOB(VAR, FUNC, SIZE)                              \
+  struct job_##FUNC *VAR = lwt_unix_new_plus(struct job_##FUNC, SIZE);  \
+  VAR->job.worker = (lwt_unix_job_worker)worker_##FUNC;                 \
+  VAR->job.result = (lwt_unix_job_result)result_##FUNC
+
+/* Same as LWT_UNIX_INIT_JOB, but also stores a string argument named
+   ARG at the end of the job structure. The offset of the copied
+   string is assigned to the field VAR->ARG.
+
+   The structure must ends with: char data[]; */
+#define LWT_UNIX_INIT_JOB_STRING(VAR, FUNC, SIZE, ARG)  \
+  mlsize_t __len = caml_string_length(ARG);             \
+  LWT_UNIX_INIT_JOB(VAR, FUNC, SIZE + __len + 1);       \
+  VAR->ARG = VAR->data + SIZE;                          \
+  memcpy(VAR->ARG, String_val(ARG), __len + 1)
+
+/* Same as LWT_UNIX_INIT_JOB, but also stores two string arguments
+   named ARG1 and ARG2 at the end of the job structure. The offsets of
+   the copied strings are assigned to the fields VAR->ARG1 and
+   VAR->ARG2.
+
+   The structure definition must ends with: char data[]; */
+#define LWT_UNIX_INIT_JOB_STRING2(VAR, FUNC, SIZE, ARG1, ARG2)          \
+  mlsize_t __len1 = caml_string_length(ARG1);                           \
+  mlsize_t __len2 = caml_string_length(ARG2);                           \
+  LWT_UNIX_INIT_JOB(VAR, FUNC, SIZE + __len1 + __len2 + 2);             \
+  VAR->ARG1 = VAR->data + SIZE;                                         \
+  VAR->ARG2 = VAR->data + SIZE + __len1 + 1;                            \
+  memcpy(VAR->ARG1, String_val(ARG1), __len1 + 1);                      \
+  memcpy(VAR->ARG2, String_val(ARG2), __len2 + 1)
+
+/* If TEST is true, it frees the job and raises Unix.Unix_error using
+   the value of errno stored in the field error_code. */
+#define LWT_UNIX_CHECK_JOB(VAR, TEST, NAME)                             \
+  if (TEST) {                                                           \
+    int error_code = VAR->error_code;                                   \
+    lwt_unix_free_job(&VAR->job);                                       \
+    unix_error(error_code, NAME, Nothing);                              \
+  }
+
+/* If TEST is true, it frees the job and raises Unix.Unix_error using
+   the value of errno stored in the field error_code and uses the C
+   string ARG for the third field of Unix.Unix_error. */
+#define LWT_UNIX_CHECK_JOB_ARG(VAR, TEST, NAME, ARG)                    \
+  if (TEST) {                                                           \
+    int error_code = VAR->error_code;                                   \
+    value arg = caml_copy_string(ARG);                                  \
+    lwt_unix_free_job(&VAR->job);                                       \
+    unix_error(error_code, NAME, arg);                                  \
+  }
+
+/* +-----------------------------------------------------------------+
+   | Deprecated                                                      |
+   +-----------------------------------------------------------------+ */
+
+/* Define not implement methods. Deprecated: it is for the old
+   mechanism with three externals. */
 #define LWT_UNIX_JOB_NOT_IMPLEMENTED(name)      \
   CAMLprim value lwt_unix_##name##_job()        \
   {                                             \
@@ -206,6 +288,5 @@ void lwt_unix_free_job(lwt_unix_job job);
   {                                             \
     caml_invalid_argument("not implemented");	\
   }
-
 
 #endif /* __LWT_UNIX_H */

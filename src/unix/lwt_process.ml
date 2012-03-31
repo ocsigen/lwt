@@ -107,12 +107,10 @@ let spawn (prog, args) env ?(stdin:redirection=`Keep) ?(stdout:redirection=`Keep
   close stderr;
   proc
 
-external wait_job : Unix.file_descr -> [ `wait ] Lwt_unix.job  = "lwt_process_wait_job"
-external wait_result : [ `wait ] Lwt_unix.job -> int = "lwt_process_wait_result"
-external wait_free : [ `wait ] Lwt_unix.job -> unit = "lwt_process_wait_free"
+external wait_job : Unix.file_descr -> int Lwt_unix.job  = "lwt_process_wait_job"
 
 let waitproc proc =
-  lwt code = Lwt_unix.execute_job (wait_job proc.fd) wait_result wait_free in
+  lwt code = Lwt_unix.run_job (wait_job proc.fd) in
   return (proc.id, Lwt_unix.WEXITED code, { Lwt_unix.ru_utime = 0.; Lwt_unix.ru_stime = 0. })
 
 external terminate_process : Unix.file_descr -> int -> unit = "lwt_process_terminate_process"

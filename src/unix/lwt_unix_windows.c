@@ -181,13 +181,13 @@ struct job_read {
     SOCKET socket;
   } fd;
   int kind;
-  char *buffer;
   DWORD length;
   DWORD result;
   DWORD error_code;
+  value string;
+  DWORD offset;
+  char buffer[];
 };
-
-#define Job_read_val(v) *(struct job_read**)Data_custom_val(v)
 
 static void worker_read(struct job_read *job)
 {
@@ -202,40 +202,36 @@ static void worker_read(struct job_read *job)
   }
 }
 
-CAMLprim value lwt_unix_read_job(value val_fd, value val_length)
+static value result_read(struct job_read *job)
 {
-  struct job_read *job = lwt_unix_new(struct job_read);
+  value result;
+  DWORD error = job->error_code;
+  if (error) {
+    caml_remove_generational_global_root(&job->string);
+    lwt_unix_free_job(&job->job);
+    win32_maperr(error);
+    uerror("read", Nothing);
+  }
+  memcpy(String_val(job->string) + job->offset, job->buffer, job->result);
+  result = Val_long(job->result);
+  caml_remove_generational_global_root(&job->string);
+  lwt_unix_free_job(&job->job);
+  return result;
+}
+
+CAMLprim value lwt_unix_read_job(value val_fd, value val_string, value val_offset, value val_length)
+{
   struct filedescr *fd = (struct filedescr *)Data_custom_val(val_fd);
   long length = Long_val(val_length);
-  job->job.worker = (lwt_unix_job_worker)worker_read;
+  LWT_UNIX_INIT_JOB(job, read, length);
   job->kind = fd->kind;
   if (fd->kind == KIND_HANDLE)
     job->fd.handle = fd->fd.handle;
   else
     job->fd.socket = fd->fd.socket;
-  job->buffer = (char*)lwt_unix_malloc(length);
   job->length = length;
   job->error_code = 0;
   return lwt_unix_alloc_job(&(job->job));
-}
-
-CAMLprim value lwt_unix_read_result(value val_job, value val_string, value val_offset)
-{
-  struct job_read *job = Job_read_val(val_job);
-  if (job->error_code) {
-    win32_maperr(job->error_code);
-    uerror("read", Nothing);
-  }
-  memcpy(String_val(val_string) + Long_val(val_offset), job->buffer, job->result);
-  return Val_long(job->result);
-}
-
-CAMLprim value lwt_unix_read_free(value val_job)
-{
-  struct job_read *job = Job_read_val(val_job);
-  free(job->buffer);
-  lwt_unix_free_job(&job->job);
-  return Val_unit;
 }
 
 /* +-----------------------------------------------------------------+
@@ -255,8 +251,6 @@ struct job_bytes_read {
   DWORD error_code;
 };
 
-#define Job_bytes_read_val(v) *(struct job_bytes_read**)Data_custom_val(v)
-
 static void worker_bytes_read(struct job_bytes_read *job)
 {
   if (job->kind == KIND_SOCKET) {
@@ -270,38 +264,33 @@ static void worker_bytes_read(struct job_bytes_read *job)
   }
 }
 
+static value result_bytes_read(struct job_bytes_read *job)
+{
+  value result;
+  DWORD error = job->error_code;
+  if (error) {
+    lwt_unix_free_job(&job->job);
+    win32_maperr(error);
+    uerror("bytes_read", Nothing);
+  }
+  result = Val_long(job->result);
+  lwt_unix_free_job(&job->job);
+  return result;
+}
+
 CAMLprim value lwt_unix_bytes_read_job(value val_fd, value val_buffer, value val_offset, value val_length)
 {
-  struct job_bytes_read *job = lwt_unix_new(struct job_bytes_read);
   struct filedescr *fd = (struct filedescr *)Data_custom_val(val_fd);
-  long length = Long_val(val_length);
-  job->job.worker = (lwt_unix_job_worker)worker_bytes_read;
+  LWT_UNIX_INIT_JOB(job, bytes_read, 0);
   job->kind = fd->kind;
   if (fd->kind == KIND_HANDLE)
     job->fd.handle = fd->fd.handle;
   else
     job->fd.socket = fd->fd.socket;
   job->buffer = (char*)Caml_ba_data_val(val_buffer) + Long_val(val_offset);
-  job->length = length;
+  job->length = Long_val(val_length);
   job->error_code = 0;
   return lwt_unix_alloc_job(&(job->job));
-}
-
-CAMLprim value lwt_unix_bytes_read_result(value val_job)
-{
-  struct job_bytes_read *job = Job_bytes_read_val(val_job);
-  if (job->error_code) {
-    win32_maperr(job->error_code);
-    uerror("bytes_read", Nothing);
-  }
-  return Val_long(job->result);
-}
-
-CAMLprim value lwt_unix_bytes_read_free(value val_job)
-{
-  struct job_bytes_read *job = Job_bytes_read_val(val_job);
-  lwt_unix_free_job(&job->job);
-  return Val_unit;
 }
 
 /* +-----------------------------------------------------------------+
@@ -315,13 +304,11 @@ struct job_write {
     SOCKET socket;
   } fd;
   int kind;
-  char *buffer;
   DWORD length;
   DWORD result;
   DWORD error_code;
+  char buffer[];
 };
-
-#define Job_write_val(v) *(struct job_write**)Data_custom_val(v)
 
 static void worker_write(struct job_write *job)
 {
@@ -336,40 +323,34 @@ static void worker_write(struct job_write *job)
   }
 }
 
+static value result_write(struct job_write *job)
+{
+  value result;
+  DWORD error = job->error_code;
+  if (error) {
+    lwt_unix_free_job(&job->job);
+    win32_maperr(error);
+    uerror("write", Nothing);
+  }
+  result = Val_long(job->result);
+  lwt_unix_free_job(&job->job);
+  return result;
+}
+
 CAMLprim value lwt_unix_write_job(value val_fd, value val_string, value val_offset, value val_length)
 {
-  struct job_write *job = lwt_unix_new(struct job_write);
   struct filedescr *fd = (struct filedescr *)Data_custom_val(val_fd);
   long length = Long_val(val_length);
-  job->job.worker = (lwt_unix_job_worker)worker_write;
+  LWT_UNIX_INIT_JOB(job, write, length);
   job->kind = fd->kind;
   if (fd->kind == KIND_HANDLE)
     job->fd.handle = fd->fd.handle;
   else
     job->fd.socket = fd->fd.socket;
-  job->buffer = (char*)lwt_unix_malloc(length);
   memcpy(job->buffer, String_val(val_string) + Long_val(val_offset), length);
   job->length = length;
   job->error_code = 0;
   return lwt_unix_alloc_job(&(job->job));
-}
-
-CAMLprim value lwt_unix_write_result(value val_job)
-{
-  struct job_write *job = Job_write_val(val_job);
-  if (job->error_code) {
-    win32_maperr(job->error_code);
-    uerror("write", Nothing);
-  }
-  return Val_long(job->result);
-}
-
-CAMLprim value lwt_unix_write_free(value val_job)
-{
-  struct job_write *job = Job_write_val(val_job);
-  free(job->buffer);
-  lwt_unix_free_job(&job->job);
-  return Val_unit;
 }
 
 /* +-----------------------------------------------------------------+
@@ -389,8 +370,6 @@ struct job_bytes_write {
   DWORD error_code;
 };
 
-#define Job_bytes_write_val(v) *(struct job_bytes_write**)Data_custom_val(v)
-
 static void worker_bytes_write(struct job_bytes_write *job)
 {
   if (job->kind == KIND_SOCKET) {
@@ -404,11 +383,24 @@ static void worker_bytes_write(struct job_bytes_write *job)
   }
 }
 
+CAMLprim value result_bytes_write(struct job_bytes_write *job)
+{
+  value result;
+  DWORD error = job->error_code;
+  if (error) {
+    lwt_unix_free_job(&job->job);
+    win32_maperr(error);
+    uerror("bytes_write", Nothing);
+  }
+  result = Val_long(job->result)
+  lwt_unix_free_job(&job->job);
+  return result;
+}
+
 CAMLprim value lwt_unix_bytes_write_job(value val_fd, value val_buffer, value val_offset, value val_length)
 {
-  struct job_bytes_write *job = lwt_unix_new(struct job_bytes_write);
   struct filedescr *fd = (struct filedescr *)Data_custom_val(val_fd);
-  long length = Long_val(val_length);
+  LWT_UNIX_INIT_JOB(job, bytes_write, 0);
   job->job.worker = (lwt_unix_job_worker)worker_bytes_write;
   job->kind = fd->kind;
   if (fd->kind == KIND_HANDLE)
@@ -416,26 +408,9 @@ CAMLprim value lwt_unix_bytes_write_job(value val_fd, value val_buffer, value va
   else
     job->fd.socket = fd->fd.socket;
   job->buffer = (char*)Caml_ba_data_val(val_buffer) + Long_val(val_offset);
-  job->length = length;
+  job->length = Long_val(val_length);
   job->error_code = 0;
   return lwt_unix_alloc_job(&(job->job));
-}
-
-CAMLprim value lwt_unix_bytes_write_result(value val_job)
-{
-  struct job_bytes_write *job = Job_bytes_write_val(val_job);
-  if (job->error_code) {
-    win32_maperr(job->error_code);
-    uerror("bytes_write", Nothing);
-  }
-  return Val_long(job->result);
-}
-
-CAMLprim value lwt_unix_bytes_write_free(value val_job)
-{
-  struct job_bytes_write *job = Job_bytes_write_val(val_job);
-  lwt_unix_free_job(&job->job);
-  return Val_unit;
 }
 
 /* +-----------------------------------------------------------------+
@@ -448,39 +423,35 @@ struct job_fsync {
   DWORD error_code;
 };
 
-#define Job_fsync_val(v) *(struct job_fsync**)Data_custom_val(v)
-
 static void worker_fsync(struct job_fsync *job)
 {
   if (!FlushFileBuffers(job->handle))
     job->error_code = GetLastError();
 }
 
-CAMLprim value lwt_unix_fsync_job(value val_fd)
+static value result_fsync(struct job_fsync *job)
 {
-  struct job_fsync *job = lwt_unix_new(struct job_fsync);
-  struct filedescr *fd = (struct filedescr *)Data_custom_val(val_fd);
-  job->job.worker = (lwt_unix_job_worker)worker_fsync;
-  job->handle = fd->fd.handle;
-  job->error_code = 0;
-  return lwt_unix_alloc_job(&(job->job));
-}
-
-CAMLprim value lwt_unix_fsync_result(value val_job, value val_string, value val_offset)
-{
-  struct job_fsync *job = Job_fsync_val(val_job);
-  if (job->error_code) {
-    win32_maperr(job->error_code);
+  DWORD error = job->error_code;
+  if (error) {
+    lwt_unix_free_job(&job->job);
+    win32_maperr(error);
     uerror("fsync", Nothing);
   }
+  lwt_unix_free_job(&job->job);
   return Val_unit;
 }
 
-CAMLprim value lwt_unix_fsync_free(value val_job)
+CAMLprim value lwt_unix_fsync_job(value val_fd)
 {
-  struct job_fsync *job = Job_fsync_val(val_job);
-  lwt_unix_free_job(&job->job);
-  return Val_unit;
+  struct filedescr *fd = (struct filedescr *)Data_custom_val(val_fd);
+  if (fd.kind != KIND_HANDLE) {
+    caml_invalid_argument("Lwt_unix.fsync");
+  } else {
+    LWT_UNIX_INIT_JOB(job, fsync, 0);
+    job->handle = fd->fd.handle;
+    job->error_code = 0;
+    return lwt_unix_alloc_job(&(job->job));
+  }
 }
 
 /* +-----------------------------------------------------------------+
@@ -492,39 +463,17 @@ struct job_system {
   HANDLE handle;
 };
 
-#define job_system_val(v) *(struct job_system**)Data_custom_val(v)
-
 static void worker_wait(struct job_system *job)
 {
   WaitForSingleObject(job->handle, INFINITE);
 }
 
-CAMLprim value lwt_unix_system_job(value cmdline)
+static value result_system(struct job_system *job)
 {
-  STARTUPINFO si;
-  PROCESS_INFORMATION pi;
-  struct job_system *job = lwt_unix_new(struct job_system);
-
-  ZeroMemory(&si, sizeof(si));
-  ZeroMemory(&pi, sizeof(pi));
-  si.cb = sizeof(si);
-  if (!CreateProcess(NULL, String_val(cmdline), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
-    win32_maperr(GetLastError());
-    uerror("CreateProcess", Nothing);
-  }
-  CloseHandle(pi.hThread);
-
-  job->job.worker = (lwt_unix_job_worker)worker_wait;
-  job->handle = pi.hProcess;
-
-  return lwt_unix_alloc_job(&(job->job));
-}
-
-CAMLprim value lwt_unix_system_result(value val_job)
-{
-  HANDLE handle = (job_system_val(val_job))->handle;
+  HANDLE handle = job->handle;
   DWORD code;
   DWORD err;
+  lwt_unix_free_job(&job->job);
   if (!GetExitCodeProcess(handle, &code)) {
     err = GetLastError();
     CloseHandle(handle);
@@ -535,8 +484,21 @@ CAMLprim value lwt_unix_system_result(value val_job)
   return Val_int(code);
 }
 
-CAMLprim value lwt_unix_system_free(value val_job)
+CAMLprim value lwt_unix_system_job(value cmdline)
 {
-  lwt_unix_free_job(&(job_system_val(val_job))->job);
-  return Val_unit;
+  STARTUPINFO si;
+  PROCESS_INFORMATION pi;
+
+  ZeroMemory(&si, sizeof(si));
+  ZeroMemory(&pi, sizeof(pi));
+  si.cb = sizeof(si);
+  if (!CreateProcess(NULL, String_val(cmdline), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
+    win32_maperr(GetLastError());
+    uerror("CreateProcess", Nothing);
+  } else {
+    LWT_UNIX_INIT_JOB(job, system, 0);
+    CloseHandle(pi.hThread);
+    job->handle = pi.hProcess;
+    return lwt_unix_alloc_job(&(job->job));
+  }
 }

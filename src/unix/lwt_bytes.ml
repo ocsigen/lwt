@@ -113,9 +113,7 @@ let copy buf =
 open Lwt_unix
 
 external stub_read : Unix.file_descr -> t -> int -> int -> int = "lwt_unix_bytes_read"
-external read_job : Unix.file_descr -> t -> int -> int -> [ `unix_bytes_read ] job = "lwt_unix_bytes_read_job"
-external read_result : [ `unix_bytes_read ] job -> int = "lwt_unix_bytes_read_result"
-external read_free : [ `unix_bytes_read ] job -> unit = "lwt_unix_bytes_read_free" "noalloc"
+external read_job : Unix.file_descr -> t -> int -> int -> int job = "lwt_unix_bytes_read_job"
 
 let read fd buf pos len =
   if pos < 0 || len < 0 || pos > length buf - len then
@@ -124,14 +122,12 @@ let read fd buf pos len =
     blocking fd >>= function
       | true ->
           lwt () = wait_read fd in
-          execute_job (read_job (unix_file_descr fd) buf pos len) read_result read_free
+          run_job (read_job (unix_file_descr fd) buf pos len)
       | false ->
           wrap_syscall Read fd (fun () -> stub_read (unix_file_descr fd) buf pos len)
 
 external stub_write : Unix.file_descr -> t -> int -> int -> int = "lwt_unix_bytes_write"
-external write_job : Unix.file_descr -> t -> int -> int -> [ `unix_bytes_write ] job = "lwt_unix_bytes_write_job"
-external write_result : [ `unix_bytes_write ] job -> int = "lwt_unix_bytes_write_result"
-external write_free : [ `unix_bytes_write ] job -> unit = "lwt_unix_bytes_write_free" "noalloc"
+external write_job : Unix.file_descr -> t -> int -> int -> int job = "lwt_unix_bytes_write_job"
 
 let write fd buf pos len =
   if pos < 0 || len < 0 || pos > length buf - len then
@@ -140,7 +136,7 @@ let write fd buf pos len =
     blocking fd >>= function
       | true ->
           lwt () = wait_write fd in
-          execute_job (write_job (unix_file_descr fd) buf pos len) write_result write_free
+          run_job (write_job (unix_file_descr fd) buf pos len)
       | false ->
           wrap_syscall Write fd (fun () -> stub_write (unix_file_descr fd) buf pos len)
 
@@ -326,8 +322,7 @@ let mincore buffer offset states =
   else
     stub_mincore buffer offset (Array.length states * page_size) states
 
-external wait_mincore_job : t -> int -> [ `unix_wait_mincore ] job = "lwt_unix_wait_mincore_job"
-external wait_mincore_free : [ `unix_wait_mincore ] job -> unit = "lwt_unix_wait_mincore_free" "noalloc"
+external wait_mincore_job : t -> int -> unit job = "lwt_unix_wait_mincore_job"
 
 let wait_mincore buffer offset =
   if offset < 0 || offset >= length buffer then
@@ -338,7 +333,7 @@ let wait_mincore buffer offset =
     if state.(0) then
       return ()
     else
-      execute_job (wait_mincore_job buffer offset) ignore wait_mincore_free
+      run_job (wait_mincore_job buffer offset)
   end
 
 #endif

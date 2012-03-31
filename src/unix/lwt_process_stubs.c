@@ -83,40 +83,31 @@ struct job_wait {
   HANDLE handle;
 };
 
-#define Job_wait_val(v) *(struct job_wait**)Data_custom_val(v)
-
 static void worker_wait(struct job_wait *job)
 {
   WaitForSingleObject(job->handle, INFINITE);
 }
 
-CAMLprim value lwt_process_wait_job(value handle)
+static value result_wait(struct job_wait *job)
 {
-  struct job_wait *job = lwt_unix_new(struct job_wait);
-  job->job.worker = (lwt_unix_job_worker)worker_wait;
-  job->handle = Handle_val(handle);
-  return lwt_unix_alloc_job(&(job->job));
-}
-
-CAMLprim value lwt_process_wait_result(value val_job)
-{
-  HANDLE handle = (Job_wait_val(val_job))->handle;
-  DWORD code;
-  DWORD err;
-  if (!GetExitCodeProcess(handle, &code)) {
-    err = GetLastError();
-    CloseHandle(handle);
-    win32_maperr(err);
+  DWORD code, error;
+  if (!GetExitCodeProcess(job->handle, &code)) {
+    error = GetLastError();
+    CloseHandle(job->handle);
+    lwt_unix_free_job(&job->job);
+    win32_maperr(error);
     uerror("GetExitCodeProcess", Nothing);
   }
   CloseHandle(handle);
+  lwt_unix_free_job(&job->job);
   return Val_int(code);
 }
 
-CAMLprim value lwt_process_wait_free(value val_job)
+CAMLprim value lwt_process_wait_job(value handle)
 {
-  lwt_unix_free_job(&(Job_wait_val(val_job))->job);
-  return Val_unit;
+  LWT_UNIX_INIT_JOB(job, wait, 0);
+  job->handle = Handle_val(handle);
+  return lwt_unix_alloc_job(&(job->job));
 }
 
 CAMLprim value lwt_process_terminate_process(value handle, value code)

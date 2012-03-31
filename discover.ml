@@ -464,4 +464,12 @@ Lwt can use pthread or the win32 API.
     (fun (name, args) ->
        fprintf oc "%s=%S\n" name (String.concat " " args))
     !setup_data;
-  close_out oc
+  close_out oc;
+
+  close_out config;
+  close_out config_ml;
+
+  (* Generate stubs. *)
+  print_endline "Generating C stubs...";
+  exit (Sys.command "ocaml src/unix/gen_stubs.ml")
+

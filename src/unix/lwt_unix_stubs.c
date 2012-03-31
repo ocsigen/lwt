@@ -43,6 +43,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <signal.h>
+#include <errno.h>
 
 #if !defined(LWT_ON_WINDOWS) && defined(SIGRTMIN) && defined(SIGRTMAX)
 #define LWT_UNIX_SIGNAL_ASYNC_SWITCH SIGRTMIN
@@ -61,7 +62,6 @@
 #  include <sys/param.h>
 #  include <sys/un.h>
 #  include <sys/mman.h>
-#  include <errno.h>
 #  include <string.h>
 #  include <fcntl.h>
 #  include <dirent.h>
@@ -109,6 +109,16 @@ void *lwt_unix_malloc(size_t size)
     abort();
   }
   return ptr;
+}
+
+void *lwt_unix_realloc(void *ptr, size_t size)
+{
+  void *new_ptr = realloc(ptr, size);
+  if (new_ptr == NULL) {
+    perror("cannot allocate memory");
+    abort();
+  }
+  return new_ptr;
 }
 
 char *lwt_unix_strdup(char *str)
@@ -1447,6 +1457,21 @@ CAMLprim value lwt_unix_check_job(value val_job, value val_notification_id)
   }
 
   return Val_int(0);
+}
+
+CAMLprim value lwt_unix_self_result(value val_job)
+{
+  lwt_unix_job job = Job_val(val_job);
+  return job->result(job);
+}
+
+CAMLprim value lwt_unix_run_job_sync(value val_job)
+{
+  lwt_unix_job job = Job_val(val_job);
+  caml_enter_blocking_section();
+  job->worker(job);
+  caml_leave_blocking_section();
+  return job->result(job);
 }
 
 CAMLprim value lwt_unix_reset_after_fork()
