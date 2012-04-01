@@ -104,11 +104,6 @@ let () =
 
              flag ["c"; "compile"; "use_lwt_headers"] & S [A"-ccopt"; A"-Isrc/unix"];
 
-             rule "generated stubs"
-               ~prods:["src/unix/lwt_unix_jobs_generated.ml"; "src/unix/jobs-unix/%"]
-               (fun _ _ ->
-                  failwith "A generated C file is missing, you need to run: ocaml src/unix/gen_stubs.ml");
-
              (* Toplevel stuff *)
 
              flag ["ocaml"; "link"; "toplevel"] & A"-linkpkg";
