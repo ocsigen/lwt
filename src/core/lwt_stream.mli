@@ -39,8 +39,60 @@ val from : (unit -> 'a option Lwt.t) -> 'a t
       called each time more input is needed, and the stream ends when
       [f] returns [None]. *)
 
+exception Closed
+  (** Exception raised by the push function of a push-stream when
+      pushing an element after the end of stream ([= None]) have been
+      pushed. *)
+
 val create : unit -> 'a t * ('a option -> unit)
   (** [create ()] returns a new stream and a push function *)
+
+exception Full
+  (** Exception raised by the push function of a bounded push-stream
+      when the stream queue is full and a thread is already waiting to
+      push an element. *)
+
+(** Type of sources for bounded push-streams. *)
+class type ['a] bounded_push = object
+  method size : int
+    (** Size of the stream. *)
+
+  method resize : int -> unit
+    (** Change the size of the stream queue. Note that the new size
+        can smaller than the current stream queue size.
+
+        It raises [Invalid_argument] if [size < 0]. *)
+
+  method push : 'a -> unit Lwt.t
+    (** Pushes a new element to the stream. If the stream is full then
+        it will block until one element is consumed. If another thread
+        is already blocked on {!push}, it raises {!Full}. *)
+
+  method close : unit
+    (** Closes the stream. Any thread currently blocked on {!push}
+        will fail with {!Closed}. *)
+
+  method count : int
+    (** Number of elements in the stream queue. *)
+
+  method blocked : bool
+    (** Is a thread is blocked on {!push} ? *)
+
+  method closed : bool
+    (** Is the stream closed ? *)
+end
+
+val create_bounded : int -> 'a t * 'a bounded_push
+  (** [create_bounded size] returns a new stream and a bounded push
+      source. The stream can hold a maximum of [size] elements.  When
+      this limit is reached, pushing a new element will block until
+      one is consumed.
+
+      Note that you cannot clone or parse (with {!parse}) a bounded
+      stream. These functions will raise [Invalid_argument] if you try
+      to do so.
+
+      It raises [Invalid_argument] if [size < 0]. *)
 
 val of_list : 'a list -> 'a t
   (** [of_list l] creates a stream returning all elements of [l] *)
@@ -68,7 +120,9 @@ val clone : 'a t -> 'a t
         # lwt y = Lwt_stream.next st2;;
         val y : int = 1
       ]}
-  *)
+
+      It raises [Invalid_argument] if [st] is a bounded
+      push-stream. *)
 
 (** {6 Destruction} *)
 
@@ -235,7 +289,10 @@ val map_exn : 'a t -> 'a result t
 
 val parse : 'a t -> ('a t -> 'b Lwt.t) -> 'b Lwt.t
   (** [parse st f] parses [st] with [f]. If [f] raise an exception,
-      [st] is restored to its previous state. *)
+      [st] is restored to its previous state.
+
+      It raises [Invalid_argument] if [st] is a bounded
+      push-stream. *)
 
 (** {6 Misc} *)
 

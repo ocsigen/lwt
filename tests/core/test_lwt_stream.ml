@@ -85,6 +85,28 @@ let suite = suite "lwt_stream" [
        let t = Lwt_stream.next stream in
        return (Lwt.state t = Fail Lwt_stream.Empty));
 
+  test "create_bounded"
+    (fun () ->
+       let stream, push = Lwt_stream.create_bounded 3 in
+       let acc = true in
+       let acc = acc && state (push#push 1) = Return () in
+       let acc = acc && state (push#push 2) = Return () in
+       let acc = acc && state (push#push 3) = Return () in
+       let t = push#push 4 in
+       let acc = acc && state t = Sleep in
+       let acc = acc && state (push#push 5) = Fail Lwt_stream.Full in
+       let acc = acc && state (push#push 6) = Fail Lwt_stream.Full in
+       let acc = acc && state (Lwt_stream.get stream) = Return (Some 1) in
+       (* Lwt_stream uses wakeup_later so we have to wait a bit. *)
+       lwt () = Lwt_unix.yield () in
+       let acc = acc && state t = Return () in
+       let acc = acc && state (Lwt_stream.get stream) = Return (Some 2) in
+       let acc = acc && state (push#push 7) = Return () in
+       push#close;
+       let acc = acc && state (push#push 8) = Fail Lwt_stream.Closed in
+       let acc = acc && state (Lwt_stream.to_list stream) = Return [3; 4; 7] in
+       return acc);
+
   test "get_while"
     (fun () ->
        let stream = Lwt_stream.of_list [1; 2; 3; 4; 5] in

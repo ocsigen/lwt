@@ -22,6 +22,8 @@
 
 open Lwt
 
+exception Closed
+exception Full
 exception Empty
 
 type 'a result =
@@ -66,10 +68,30 @@ type push = {
   (* Is a thread waiting on [push_signal] ? *)
 }
 
+(* Type of a stream source for bounded-push streams. *)
+type 'a push_bounded = {
+  mutable pushb_signal : unit Lwt.t;
+  (* Thread signaled when a new element is added to the stream. *)
+  mutable pushb_waiting : bool;
+  (* Is a thread waiting on [pushb_signal] ? *)
+  mutable pushb_size : int;
+  (* Size of the queue. *)
+  mutable pushb_count : int;
+  (* Current length of the queue. *)
+  mutable pushb_pending : 'a option;
+  (* The next element to push if a thread blocked on push. We store it
+     here to be sure it will be the first element to be added when
+     space becomes available. *)
+  mutable pushb_push_waiter : unit Lwt.t;
+  mutable pushb_push_wakener : unit Lwt.u;
+  (* Thread blocked on push. *)
+}
+
 (* Source of a stream. *)
 type 'a source =
   | From of 'a from
   | Push of push
+  | Push_bounded of 'a push_bounded
 
 type 'a t = {
   source : 'a source;
@@ -81,13 +103,27 @@ type 'a t = {
   (* Node marking the end of the queue of pending elements. *)
 }
 
+class type ['a] bounded_push = object
+  method size : int
+  method resize : int -> unit
+  method push : 'a -> unit Lwt.t
+  method close : unit
+  method count : int
+  method blocked : bool
+  method closed : bool
+end
+
 (* The only difference between two clones is the pointer to the first
    pending element. *)
-let clone s = {
-  source = s.source;
-  node = s.node;
-  last = s.last;
-}
+let clone s =
+  (match s.source with
+     | Push_bounded _ -> invalid_arg "Lwt_stream.clone"
+     | _ -> ());
+  {
+    source = s.source;
+    node = s.node;
+    last = s.last;
+  }
 
 let return0 = return ()
 
@@ -138,8 +174,12 @@ let create () =
        push_waiting = false },
      ref wakener)
   in
+  (* Set to [true] when the end-of-stream is sent. *)
+  let closed = ref false in
   (* The push function. It does not keep a reference to the stream. *)
   let push x =
+    if !closed then raise Closed;
+    if x = None then closed := true;
     (* Push the element at the end of the queue. *)
     let node = !last and new_last = new_node () in
     node.data <- x;
@@ -162,6 +202,122 @@ let create () =
      node = !last;
      last = last },
    push)
+
+(* Add the pending element to the queue and notify the blocked pushed.
+
+   Precondition: info.pushb_pending = Some _
+
+   This does not modify info.pushb_count. *)
+let notify_pusher info last =
+  (* Push the element at the end of the queue. *)
+  let node = !last and new_last = new_node () in
+  node.data <- info.pushb_pending;
+  node.next <- new_last;
+  last := new_last;
+  (* Clear pending element. *)
+  info.pushb_pending <- None;
+  (* Wakeup the pusher. *)
+  let old_wakener = info.pushb_push_wakener in
+  let waiter, wakener = task () in
+  info.pushb_push_waiter <- waiter;
+  info.pushb_push_wakener <- wakener;
+  wakeup_later old_wakener ()
+
+class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last = object
+  val mutable closed = false
+
+  method size =
+    info.pushb_size
+
+  method resize size =
+    if size < 0 then invalid_arg "Lwt_stream.bounded_push#resize";
+    info.pushb_size <- size;
+    if info.pushb_count < info.pushb_size && info.pushb_pending <> None then begin
+      info.pushb_count <- info.pushb_count + 1;
+      notify_pusher info last
+    end
+
+  method push x =
+    if closed then
+      raise_lwt Closed
+    else if info.pushb_pending <> None then
+      raise_lwt Full
+    else if info.pushb_count >= info.pushb_size then begin
+      info.pushb_pending <- Some x;
+      try_lwt
+        info.pushb_push_waiter
+      with Canceled as exn ->
+        info.pushb_pending <- None;
+        let waiter, wakener = task () in
+        info.pushb_push_waiter <- waiter;
+        info.pushb_push_wakener <- wakener;
+        raise_lwt exn
+    end else begin
+      (* Push the element at the end of the queue. *)
+      let node = !last and new_last = new_node () in
+      node.data <- Some x;
+      node.next <- new_last;
+      last := new_last;
+      info.pushb_count <- info.pushb_count + 1;
+      (* Send a signal if at least one thread is waiting for a new
+         element. *)
+      if info.pushb_waiting then begin
+        info.pushb_waiting <- false;
+        (* Update threads. *)
+        let old_wakener = !wakener_cell in
+        let new_waiter, new_wakener = wait () in
+        info.pushb_signal <- new_waiter;
+        wakener_cell := new_wakener;
+        (* Signal that a new value has been received. *)
+        wakeup_later old_wakener ()
+      end;
+      return ()
+    end
+
+  method close =
+    if not closed then begin
+      closed <- true;
+      let node = !last and new_last = new_node () in
+      node.data <- None;
+      node.next <- new_last;
+      last := new_last;
+      if info.pushb_pending <> None then begin
+        info.pushb_pending <- None;
+        wakeup_later_exn info.pushb_push_wakener Closed
+      end
+    end
+
+  method count =
+    info.pushb_count
+
+  method blocked =
+    info.pushb_pending <> None
+
+  method closed =
+    closed
+end
+
+let create_bounded size =
+  if size < 0 then invalid_arg "Lwt_stream.create_bounded";
+  (* Create the cell pointing to the end of the queue. *)
+  let last = ref (new_node ()) in
+  (* Create the source for notifications of new elements. *)
+  let info, wakener_cell =
+    let waiter, wakener = wait () in
+    let push_waiter, push_wakener = task () in
+    ({ pushb_signal = waiter;
+       pushb_waiting = false;
+       pushb_size = size;
+       pushb_count = 0;
+       pushb_pending = None;
+       pushb_push_waiter = push_waiter;
+       pushb_push_wakener = push_wakener },
+     ref wakener)
+  in
+  ({ source = Push_bounded info;
+     node = !last;
+     last = last },
+   new bounded_push_impl info wakener_cell last)
 
 (* Wait for a new element to be added to the queue of pending element
    of the stream. *)
@@ -190,6 +346,9 @@ let feed s =
     | Push push ->
         push.push_waiting <- true;
         protected push.push_signal
+    | Push_bounded push ->
+        push.pushb_waiting <- true;
+        protected push.pushb_signal
 
 (* Remove [node] from the top of the queue, or do nothing if it was
    already consumed.
@@ -197,8 +356,17 @@ let feed s =
    Precondition: node.data <> None
 *)
 let consume s node =
-  if node == s.node then
-    s.node <- node.next
+  if node == s.node then begin
+    s.node <- node.next;
+    match s.source with
+      | Push_bounded info ->
+          if info.pushb_pending = None then
+            info.pushb_count <- info.pushb_count - 1
+          else
+            notify_pusher info s.last
+      | _ ->
+          ()
+  end
 
 let rec peek_rec s node =
   if node == !(s.last) then
@@ -379,7 +547,7 @@ let junk s =
     if node.data <> None then consume s node;
     return ()
   end else begin
-    if node.data <> None then s.node <- node.next;
+    if node.data <> None then consume s node;
     return ()
   end
 
@@ -813,6 +981,9 @@ let choose streams =
   from next
 
 let parse s f =
+  (match s.source with
+     | Push_bounded _ -> invalid_arg "Lwt_stream.parse"
+     | _ -> ());
   let node = s.node in
   try_lwt
     f s
