@@ -161,7 +161,11 @@ struct lwt_unix_job {
      terminate immediatly. */
   int notification_id;
 
-  /* The function to call to do the work. */
+  /* The function to call to do the work.
+
+     This function must not:
+     - access or allocate OCaml block values (tuples, strings, ...),
+     - call OCaml code. */
   void (*worker)(struct lwt_unix_job *job);
 
   /* The function to call to extract the result and free memory

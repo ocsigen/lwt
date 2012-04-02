@@ -937,7 +937,9 @@ val l : Text.t = "Hello, world!"
      function is executed in the main thread.
      The return type for the OCaml external must be of the form {{{'a job}}}.
    * A function which executes the job. This one may be executed asynchronously
-     in another thread.
+     in another thread. This function must not:
+     ** access or allocate OCaml block values (tuples, strings, ...),
+     ** call OCaml code.
    * A function which reads the result of the job, free resources and
      return the result as an OCaml value. This function is executed in
      the main thread.
