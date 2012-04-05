@@ -315,6 +315,7 @@ let split_name name =
     ("", name)
 
 let ml_oc = ref stdout
+let mli_oc = ref stdout
 
 module type Params = sig
   val fname : string
@@ -627,7 +628,24 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
     pr "            raise_lwt exn\n";
     pr "        end\n";
     pr "     | async_method ->\n";
-    pr "         run_job async_method (%s%s_job %s)\n" job.name suffix mapped_args
+    pr "         run_job async_method (%s%s_job %s)\n" job.name suffix mapped_args;
+    fprintf !mli_oc "  val %s%s : %s -> %s Lwt.t\n"
+      job.name
+      suffix
+      (String.concat " -> "
+         (match
+            List.map
+              (fun (_, _, { caml_type }) ->
+                 match caml_type with
+                   | Caml_alias ("Unix.file_descr", _) ->
+                       "Deps._file_descr"
+                   | _ ->
+                       caml_type_name caml_type)
+              (List.filter (fun (_, dir, { caml_type }) -> dir = In && caml_type <> Caml_void) job.params)
+          with
+            | [] -> ["unit"]
+            | l -> l))
+      caml_return_type
 
   let gen_file () =
     pr "\
@@ -914,7 +932,9 @@ let () =
     | [|_|] ->
         let fname = "lwt_unix_jobs_generated.ml" in
         ml_oc := open_out ("src/unix/" ^ fname);
-        fprintf !ml_oc "\
+        mli_oc := open_out ("src/unix/" ^ fname ^ "i");
+        let pr_header oc fname =
+          fprintf oc "\
 (*
  * %s
  * %s
@@ -934,15 +954,25 @@ module type Deps = sig
   val run_job : _async_method -> 'a _job -> 'a Lwt.t
 end
 
+"
+            fname
+            (String.make (String.length fname) '-')
+            prog_name;
+        in
+        pr_header !ml_oc fname;
+        fprintf !ml_oc "\
 module Make(Deps : Deps) = struct
   open Deps
-"
-          fname
-          (String.make (String.length fname) '-')
-          prog_name;
+";
+        pr_header !mli_oc fname;
+        fprintf !mli_oc "\
+module Make(Deps : Deps) : sig
+";
         StringMap.iter (fun name job -> gen job) jobs;
         output_string !ml_oc "end\n";
-        close_out !ml_oc
+        output_string !mli_oc "end\n";
+        close_out !ml_oc;
+        close_out !mli_oc
     | [|_; "list-job-files"|] ->
         StringMap.iter (fun name job -> printf "src/unix/jobs-unix/lwt_unix_job_%s.c\n" name) jobs
     | [|_; "list-job-names"|] ->
