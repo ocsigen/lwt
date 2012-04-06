@@ -39,8 +39,8 @@ module E : sig
         can use: [limit (fun () -> Lwt_unix.sleep 1.0) event]. *)
 
   val from : (unit -> 'a Lwt.t) -> 'a event
-    (** [from f] creates an event which occurs each [f ()] returns a
-        value. If [f] raises an exception, the event is just
+    (** [from f] creates an event which occurs each time [f ()]
+        returns a value. If [f] raises an exception, the event is just
         stopped. *)
 
   val to_stream : 'a event -> 'a Lwt_stream.t

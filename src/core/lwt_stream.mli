@@ -45,7 +45,21 @@ exception Closed
       pushed. *)
 
 val create : unit -> 'a t * ('a option -> unit)
-  (** [create ()] returns a new stream and a push function *)
+  (** [create ()] returns a new stream and a push function. *)
+
+val create_with_reference : unit -> 'a t * ('a option -> unit) * ('b -> unit)
+  (** [create_with_reference ()] returns a new stream and a push
+      function. The last function allows to set a reference to an
+      external source. This prevent the external source from being
+      garbage collected.
+
+      For example, to convert a reactive event to a stream:
+
+      {[
+        let stream, push, set_ref = Lwt_stream.create_with_reference () in
+        set_ref (map_event push event)
+      ]}
+  *)
 
 exception Full
   (** Exception raised by the push function of a bounded push-stream
@@ -80,6 +94,9 @@ class type ['a] bounded_push = object
 
   method closed : bool
     (** Is the stream closed ? *)
+
+  method set_reference : 'a. 'a -> unit
+    (** Set the reference to an external source. *)
 end
 
 val create_bounded : int -> 'a t * 'a bounded_push

@@ -66,6 +66,8 @@ type push = {
   (* Thread signaled when a new element is added to the stream. *)
   mutable push_waiting : bool;
   (* Is a thread waiting on [push_signal] ? *)
+  mutable push_external : Obj.t;
+  (* Reference to an external source. *)
 }
 
 (* Type of a stream source for bounded-push streams. *)
@@ -85,6 +87,8 @@ type 'a push_bounded = {
   mutable pushb_push_waiter : unit Lwt.t;
   mutable pushb_push_wakener : unit Lwt.u;
   (* Thread blocked on push. *)
+  mutable pushb_external : Obj.t;
+  (* Reference to an external source. *)
 }
 
 (* Source of a stream. *)
@@ -111,6 +115,7 @@ class type ['a] bounded_push = object
   method count : int
   method blocked : bool
   method closed : bool
+  method set_reference : 'a. 'a -> unit
 end
 
 (* The only difference between two clones is the pointer to the first
@@ -164,14 +169,15 @@ let of_string s =
             return (Some c)
           end)
 
-let create () =
+let create_with_reference () =
   (* Create the cell pointing to the end of the queue. *)
   let last = ref (new_node ()) in
   (* Create the source for notifications of new elements. *)
   let source, wakener_cell =
     let waiter, wakener = wait () in
     ({ push_signal = waiter;
-       push_waiting = false },
+       push_waiting = false;
+       push_external = Obj.repr () },
      ref wakener)
   in
   (* Set to [true] when the end-of-stream is sent. *)
@@ -201,7 +207,12 @@ let create () =
   ({ source = Push source;
      node = !last;
      last = last },
-   push)
+   push,
+   fun x -> source.push_external <- Obj.repr x)
+
+let create () =
+  let source, push, _ = create_with_reference () in
+  (source, push)
 
 (* Add the pending element to the queue and notify the blocked pushed.
 
@@ -295,6 +306,9 @@ class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last = object
 
   method closed =
     closed
+
+  method set_reference : 'a. 'a -> unit =
+    fun x -> info.pushb_external <- Obj.repr x
 end
 
 let create_bounded size =
@@ -311,7 +325,8 @@ let create_bounded size =
        pushb_count = 0;
        pushb_pending = None;
        pushb_push_waiter = push_waiter;
-       pushb_push_wakener = push_wakener },
+       pushb_push_wakener = push_wakener;
+       pushb_external = Obj.repr () },
      ref wakener)
   in
   ({ source = Push_bounded info;
