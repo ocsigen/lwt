@@ -28,12 +28,9 @@ type t = { mutable locked : bool; mutable waiters : unit Lwt.u Lwt_sequence.t  }
 let create () = { locked = false; waiters = Lwt_sequence.create () }
 
 let rec lock m =
-  if m.locked then begin
-    let (res, w) = Lwt.task () in
-    let node = Lwt_sequence.add_r w m.waiters in
-    Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
-    res
-  end else begin
+  if m.locked then
+    Lwt.add_task_r m.waiters
+  else begin
     m.locked <- true;
     Lwt.return ()
   end

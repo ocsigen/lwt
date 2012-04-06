@@ -36,9 +36,7 @@ type 'a t = 'a Lwt.u Lwt_sequence.t
 let create = Lwt_sequence.create
 
 let wait ?mutex cvar =
-  let waiter, wakener = Lwt.task () in
-  let node = Lwt_sequence.add_r wakener cvar in
-  on_cancel waiter (fun () -> Lwt_sequence.remove node);
+  let waiter = Lwt.add_task_r cvar in
   let () =
     match mutex with
       | Some m -> Lwt_mutex.unlock m

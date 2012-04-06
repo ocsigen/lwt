@@ -355,10 +355,7 @@ let primitive f wrapper = match wrapper.state with
         return ()
 
   | Busy_primitive | Busy_atomic _ | Waiting_for_busy ->
-      let (res, w) = task () in
-      let node = Lwt_sequence.add_r w wrapper.queued in
-      Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
-      lwt () = res in
+      lwt () = add_task_r wrapper.queued in
       begin match wrapper.state with
         | Closed ->
             (* The channel has been closed while we were waiting *)
@@ -402,10 +399,7 @@ let atomic f wrapper = match wrapper.state with
         return ()
 
   | Busy_primitive | Busy_atomic _ | Waiting_for_busy ->
-      let (res, w) = task () in
-      let node = Lwt_sequence.add_r w wrapper.queued in
-      Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
-      lwt () = res in
+      lwt () = add_task_r wrapper.queued in
       begin match wrapper.state with
         | Closed ->
             (* The channel has been closed while we were waiting *)

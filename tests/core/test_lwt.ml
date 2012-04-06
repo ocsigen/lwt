@@ -549,4 +549,40 @@ let suite = suite "lwt" [
             in
             wakeup wakener ();
             t));
+
+
+  test "on_cancel race condition"
+    (fun () ->
+       (* Queue of cancel-able pending threads. *)
+       let queue = Lwt_sequence.create () in
+       (* Add two cancel-able pending threads to the queue. *)
+       let waiter1, wakener1 = task () in
+       let node1 = Lwt_sequence.add_r wakener1 queue in
+       let waiter2, wakener2 = task () in
+       let node2 = Lwt_sequence.add_r wakener2 queue in
+       (* Remove nodes when a thread is canceled. *)
+       on_cancel waiter1 (fun () -> Lwt_sequence.remove node1);
+       on_cancel waiter2 (fun () -> Lwt_sequence.remove node2);
+       (* Add another one to the left of the on_cancel one: *)
+       let waiter', wakener' = wait () in
+       let t = bind waiter' (fun _ -> waiter1) in
+       (* Send a value to the first thread of the queue when [t]
+          fails. *)
+       ignore (
+         try_lwt
+           t
+         with _ ->
+           (* Take the first thread from the queue and send it a value. *)
+           wakeup (Lwt_sequence.take_l queue) 42;
+           return 0
+       );
+       (* Terminate [waiter'] so [waiter1 <- Repr t] *)
+       wakeup wakener' 0;
+       (* now there are two thunk functions on [t]:
+            - (fun _ -> wakeup (Lwt_sequence.take_l queue) 42; return 0);
+            - (fun _ -> Lwt_sequence.remove node); *)
+       (* Cancel [waiter1]. If on_cancel handlers are not executed
+          before other thunk functions, [42] is lost. *)
+       cancel waiter1;
+       return (state waiter1 = Fail Canceled && state waiter2 = Return 42));
 ]

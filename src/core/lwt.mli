@@ -274,8 +274,18 @@ val task : unit -> 'a t * 'a u
       with [task] can be canceled. *)
 
 val on_cancel : 'a t -> (unit -> unit) -> unit
-  (** [on_cancel t f] executes [f] when [t] is canceled. This is the
-      same as catching [Canceled]. *)
+  (** [on_cancel t f] executes [f] when [t] is canceled. [f] will be
+      executed before all other threads waiting on [t]. *)
+
+val add_task_r : 'a u Lwt_sequence.t -> 'a t
+  (** [add_task_r seq] creates a sleeping thread, adds its wakener to
+      the right of [seq] and returns its waiter. When the thread is
+      canceled, it is removed from [seq]. *)
+
+val add_task_l : 'a u Lwt_sequence.t -> 'a t
+  (** [add_task_l seq] creates a sleeping thread, adds its wakener to
+      the left of [seq] and returns its waiter. When the thread is
+      canceled, it is removed from [seq]. *)
 
 val cancel : 'a t -> unit
   (** [cancel t] cancels the threads [t]. This means that the deepest

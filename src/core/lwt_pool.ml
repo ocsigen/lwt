@@ -72,12 +72,8 @@ let acquire p =
   if Queue.is_empty p.list then
     if p.count < p.max then
       create_member p
-    else begin
-      let waiter, wakener = task () in
-      let node = Lwt_sequence.add_r wakener p.waiters in
-      on_cancel waiter (fun () -> Lwt_sequence.remove node);
-      waiter
-    end
+    else
+      add_task_r p.waiters
   else
     let c = Queue.take p.list in
     lwt valid =

@@ -26,11 +26,7 @@ let enter_iter_hooks = Lwt_sequence.create ()
 let leave_iter_hooks = Lwt_sequence.create ()
 let yielded = Lwt_sequence.create ()
 
-let yield () =
-  let waiter, wakener = task () in
-  let node = Lwt_sequence.add_l wakener yielded in
-  on_cancel waiter (fun () -> Lwt_sequence.remove node);
-  waiter
+let yield () = add_task_r yielded
 
 let rec run t =
   (* Wakeup paused threads now. *)

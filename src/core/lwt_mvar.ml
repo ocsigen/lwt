@@ -81,7 +81,4 @@ let take mvar =
         end;
         Lwt.return v
     | None ->
-        let (res, w) = Lwt.task () in
-        let node = Lwt_sequence.add_r w mvar.readers in
-        Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
-        res
+        Lwt.add_task_r mvar.readers
