@@ -562,9 +562,9 @@ let register_action event ch action =
 
 (* Wraps a system call *)
 let wrap_syscall event ch action =
+  check_descriptor ch;
+  lwt blocking = Lazy.force ch.blocking in
   try
-    check_descriptor ch;
-    lwt blocking = Lazy.force ch.blocking in
     if not blocking || (event = Read && unix_readable ch.fd) || (event = Write && unix_writable ch.fd) then
       return (action ())
     else
