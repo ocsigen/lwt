@@ -585,4 +585,27 @@ let suite = suite "lwt" [
           before other thunk functions, [42] is lost. *)
        cancel waiter1;
        return (state waiter1 = Fail Canceled && state waiter2 = Return 42));
+
+  test "re-cancel"
+    (fun () ->
+       let waiter1, wakener1 = task () in
+       let waiter2, wakener2 = task () in
+       let waiter3, wakener3 = task () in
+       let t1 = catch (fun () -> waiter1) (fun exn -> waiter2) in
+       let t2 = bind t1 return in
+       let t3 = bind waiter3 (fun () -> t1) in
+       wakeup wakener3 ();
+       cancel t3;
+       cancel t2;
+       return (List.for_all (fun t -> state t = Fail Canceled) [t1; t2; t3; waiter1; waiter2]));
+
+  test "re-cancel choose"
+    (fun () ->
+       let waiter1, wakener1 = task () in
+       let waiter2, wakener2 = task () in
+       let t1 = catch (fun () -> waiter1) (fun exn -> waiter2) in
+       let t2 = choose [t1] in
+       cancel t2;
+       cancel t2;
+       return (state waiter1 = Fail Canceled && state waiter2 = Fail Canceled));
 ]

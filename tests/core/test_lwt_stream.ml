@@ -128,8 +128,6 @@ let suite = suite "lwt_stream" [
        lwt x = Lwt_stream.npeek 3 stream in
        lwt y = Lwt_stream.npeek 1 stream in
        lwt l = Lwt_stream.to_list stream in
-       let pr l = "[" ^ String.concat "; " (List.map string_of_int l) ^ "]" in
-       Printf.printf "%s %s %s\n" (pr x) (pr y) (pr l);
        return (x = [1; 2; 3] && y = [1] && l = [1; 2; 3; 4; 5]));
 
   test "get_available"
