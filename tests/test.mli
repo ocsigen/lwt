@@ -28,9 +28,12 @@ type t
 type suite
   (** Type of a suite of tests *)
 
-val test : name : string -> run : (unit -> bool Lwt.t) -> t
+val test_direct : name : string -> run : (unit -> bool) -> t
   (** Defines a test. [run] must returns [true] if the test succeeded
       and [false] otherwise. *)
+
+val test : name : string -> run : (unit -> bool Lwt.t) -> t
+  (** Defines a test which returns a thread. *)
 
 val suite : name : string -> tests : t list -> suite
   (** Defines a suite of tests *)

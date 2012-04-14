@@ -25,7 +25,7 @@ open Lwt_io
 
 type t = {
   name : string;
-  run : unit -> bool Lwt.t;
+  run : unit -> bool;
 }
 
 type suite = {
@@ -33,46 +33,45 @@ type suite = {
   suite_tests : t list;
 }
 
-let test ~name ~run = { name = name; run = run }
+let test_direct ~name ~run = { name = name; run = run }
+let test ~name ~run = { name = name; run = (fun () -> Lwt_main.run (run ())) }
 let suite ~name ~tests = { suite_name = name; suite_tests = tests }
 
 let run ~name ~suites =
-  let n = Lwt_main.run begin
-    (* Count the number of tests in [suites] *)
-    let total = List.fold_left (fun n { suite_tests = l } -> n + List.length l) 0 suites in
+  (* Count the number of tests in [suites] *)
+  let total = List.fold_left (fun n { suite_tests = l } -> n + List.length l) 0 suites in
 
-    lwt () = printlf "Running %d tests for library %S." total name in
+  Printf.printf "Running %d tests for library %S.\n%!" total name;
 
-    (* Iterate over suites: *)
-    let rec loop_suites failures number = function
+  (* Iterate over suites: *)
+  let rec loop_suites failures number suites =
+    match suites with
       | [] ->
           if failures = 0 then
-            lwt () = printl "\r\027[JDone. All tests succeeded." in
-            return 0
-          else
-            lwt () = printlf "\r\027[JDone. %d of %d tests failed." failures total in
-            return 1
+            Printf.printf "\r\027[JDone. All tests succeeded.\n%!"
+          else begin
+            Printf.printf "\r\027[JDone. %d of %d tests failed.\n%!" failures total;
+            exit 1
+          end
       | suite :: suites ->
           loop_tests failures suite.suite_name number suites suite.suite_tests
 
-    (* Iterate over tests: *)
-    and loop_tests failures suite_name number suites = function
+  (* Iterate over tests: *)
+  and loop_tests failures suite_name number suites tests =
+    match tests with
       | [] ->
           loop_suites failures number suites
       | test :: tests ->
-          lwt () = printf "\r\027[J(%d/%d) Running test %S from suite %S" number total test.name suite_name in
-          lwt () = flush stdout in
-          try_lwt
-            test.run () >>= function
-              | false ->
-                  lwt () = printlf "\r\027[J\027[31;1mTest %S from suite %S failed.\027[0m" test.name suite_name in
-                  loop_tests (failures + 1) suite_name (number + 1) suites tests
-              | true ->
-                  loop_tests failures suite_name (number + 1) suites tests
+          Printf.printf "\r\027[J(%d/%d) Running test %S from suite %S%!" number total test.name suite_name;
+          try
+            if test.run () then
+              loop_tests failures suite_name (number + 1) suites tests
+            else begin
+              Printf.printf "\r\027[J\027[31;1mTest %S from suite %S failed.\027[0m\n%!" test.name suite_name;
+              loop_tests (failures + 1) suite_name (number + 1) suites tests
+            end
           with exn ->
-            lwt () = printlf "\r\027[J\027[31;1mTest %S from suite %S failed. It raised: %S.\027[0m" test.name suite_name (Printexc.to_string exn) in
+            Printf.printf "\r\027[J\027[31;1mTest %S from suite %S failed. It raised: %S.\027[0m\n%!" test.name suite_name (Printexc.to_string exn);
             loop_tests (failures + 1) suite_name (number + 1) suites tests
-    in
-    loop_suites 0 1 suites
-  end in
-  exit n
+  in
+  loop_suites 0 1 suites

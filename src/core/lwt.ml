@@ -46,9 +46,23 @@ type a_thread = (module A_thread)
     (* a_thread = exists 'a. 'a t *)
 
 (* Pack a thread into a A_thread module. *)
-let pack (type x) t =
+let pack_thread (type x) t =
   let module M = struct type a = x let thread = t end in
   (module M : A_thread)
+
+(* A type + a list of threads of this type. *)
+module type A_threads = sig
+  type a
+  val threads : a t list
+end
+
+type a_threads = (module A_threads)
+    (* a_threads = exists 'a. 'a t list *)
+
+(* Pack a list of threads into a A_threads module. *)
+let pack_threads (type x) l =
+  let module M = struct type a = x let threads = l end in
+  (module M : A_threads)
 
 type 'a thread_state =
   | Return of 'a
@@ -71,7 +85,8 @@ and 'a sleeper = {
   mutable cancel : cancel;
   (* How to cancel this thread. *)
   mutable waiters : 'a waiter_set;
-  (* All thunk functions *)
+  (* All thunk functions. These functions are always called inside a
+     enter_wakeup/leave_wakeup block. *)
   mutable removed : int;
   (* Number of waiter that have been disabled. When this number
      reaches [max_removed], they are effectively removed from
@@ -90,7 +105,7 @@ and cancel =
          [task]. *)
   | Cancel_link of a_thread
       (* Cancel this thread. *)
-  | Cancel_links of a_thread list
+  | Cancel_links of a_threads
       (* Cancel all these threads. *)
 
 (* Type of set of waiters: *)
@@ -98,6 +113,8 @@ and 'a waiter_set =
   | Empty
   | Removable of ('a thread_state -> unit) option ref
   | Immutable of ('a thread_state -> unit)
+  | Unsafe of ('a thread_state -> unit)
+      (* Unsafe means that it can raise an exception. *)
   | Append of 'a waiter_set * 'a waiter_set
 
 and 'a cancel_handler_set =
@@ -160,60 +177,139 @@ let rec repr_rec t =
     | _       -> t
 let repr t = repr_rec (thread_repr t)
 
+type backtrace = string
+
+let string_of_backtrace bt = bt
+
+(* Queue of exceptions raised by thunk functions. *)
+let uncaught_exceptions = Queue.create ()
+
+let on_uncaught_exception = ref (fun () -> raise (fst (Queue.pop uncaught_exceptions)))
+
+(* Call [f x] and store any raised exception in [exns]. *)
+let call_unsafe f x =
+  try
+    f x
+  with exn ->
+    let bt =
+      if Printexc.backtrace_status () then
+        Printexc.get_backtrace ()
+      else
+        ""
+    in
+    Queue.push (exn, bt) uncaught_exceptions
+
 let rec run_waiters_rec state ws rem =
-  match ws, rem with
-    | Empty, [] ->
-        ()
-    | Empty, ws :: rem ->
-        run_waiters_rec state ws rem
-    | Immutable f, [] ->
-        f state
-    | Immutable f, ws :: rem ->
+  match ws with
+    | Empty ->
+        run_waiters_rec_next state rem
+    | Immutable f ->
         f state;
-        run_waiters_rec state ws rem
-    | Removable{ contents = None }, [] ->
-        ()
-    | Removable{ contents = None }, ws :: rem ->
-        run_waiters_rec state ws rem
-    | Removable{ contents = Some f }, [] ->
-        f state
-    | Removable{ contents = Some f }, ws :: rem ->
+        run_waiters_rec_next state rem
+    | Removable { contents = None } ->
+        run_waiters_rec_next state rem
+    | Removable { contents = Some f } ->
         f state;
-        run_waiters_rec state ws rem
-    | Append(ws1, ws2), _ ->
+        run_waiters_rec_next state rem
+    | Unsafe f ->
+        call_unsafe f state;
+        run_waiters_rec_next state rem
+    | Append (ws1, ws2) ->
         run_waiters_rec state ws1 (ws2 :: rem)
 
-let rec run_cancel_handlers_rec chs rem =
-  match chs, rem with
-    | Chs_empty, [] ->
+and run_waiters_rec_next state rem =
+  match rem with
+    | [] ->
         ()
-    | Chs_empty, chs :: rem ->
-        run_cancel_handlers_rec chs rem
-    | Chs_func (data, f), [] ->
+    | ws :: rem ->
+        run_waiters_rec state ws rem
+
+let rec run_cancel_handlers_rec chs rem =
+  match chs with
+    | Chs_empty ->
+        run_cancel_handlers_rec_next rem
+    | Chs_func (data, f) ->
         current_data := data;
-        f ()
-    | Chs_func (data, f), chs :: rem ->
-        current_data := data;
-        f ();
-        run_cancel_handlers_rec chs rem
-    | Chs_node n, [] ->
-        Lwt_sequence.remove n
-    | Chs_node n, chs :: rem ->
+        call_unsafe f ();
+        run_cancel_handlers_rec_next rem
+    | Chs_node n ->
         Lwt_sequence.remove n;
-        run_cancel_handlers_rec chs rem
-    | Chs_append (chs1, chs2), _ ->
+        run_cancel_handlers_rec_next rem
+    | Chs_append (chs1, chs2) ->
         run_cancel_handlers_rec chs1 (chs2 :: rem)
 
-(* Run all waiters waiting on [t]: *)
-let run_waiters sleeper state =
-  let save = !current_data in
+and run_cancel_handlers_rec_next rem =
+  match rem with
+    | [] ->
+        ()
+    | chs :: rem ->
+        run_cancel_handlers_rec chs rem
+
+(* Run all waiters waiting on [t]. This must always be done inside a
+   enter_wakeup/leave_wakeup block.
+
+   This function must never raise an exception. *)
+let unsafe_run_waiters sleeper state =
+  (* Call cancel handlers if this is a thread cancellation. *)
   (match state with
      | Fail Canceled ->
          run_cancel_handlers_rec sleeper.cancel_handlers []
      | _ ->
          ());
-  run_waiters_rec state sleeper.waiters [];
-  current_data := save
+  (* Restart waiters. *)
+  run_waiters_rec state sleeper.waiters []
+
+(* [true] if we are in a wakeup. *)
+let wakening = ref false
+
+(* A sleeper + its state. *)
+module type A_closure = sig
+  type a
+  val sleeper : a sleeper
+  val state : a thread_state
+end
+
+(* Queue of sleepers to wakeup. *)
+let to_wakeup = Queue.create ()
+
+(* Enter a wakeup operation. *)
+let enter_wakeup () =
+  let snapshot = !current_data in
+  let already_wakening =
+    if !wakening then
+      (* If we are already in a wakeup, do nothing. *)
+      true
+    else begin
+      (* Otherwise mark that a wakeup operation has started. *)
+      wakening := true;
+      false
+    end
+  in
+  (already_wakening, snapshot)
+
+(* Leave a wakeup operation. *)
+let leave_wakeup (already_wakening, snapshot) =
+  if not already_wakening then begin
+    (* This was the first wakeup on the call stack, wakeup remaining
+       sleeping threads. *)
+    while not (Queue.is_empty to_wakeup) do
+      let closure = Queue.pop to_wakeup in
+      let module M = (val closure : A_closure) in
+      unsafe_run_waiters M.sleeper M.state
+    done;
+    (* We are done wakening threads. *)
+    wakening := false;
+    current_data := snapshot;
+    (* Handle uncaught exceptions. This must be done after setting
+       [wakening] since it can raise an exception. *)
+    if not (Queue.is_empty uncaught_exceptions) then !on_uncaught_exception ()
+  end else
+    current_data := snapshot
+
+let safe_run_waiters sleeper state =
+  let ctx = enter_wakeup () in
+  unsafe_run_waiters sleeper state;
+  leave_wakeup ctx
 
 let wakeup t v =
   let t = repr_rec (wakener_repr t) in
@@ -221,7 +317,7 @@ let wakeup t v =
     | Sleep sleeper ->
         let state = Return v in
         t.state <- state;
-        run_waiters sleeper state
+        safe_run_waiters sleeper state
     | Fail Canceled ->
         (* Do not fail if the thread has been canceled: *)
         ()
@@ -234,65 +330,62 @@ let wakeup_exn t e =
     | Sleep sleeper ->
         let state = Fail e in
         t.state <- state;
-        run_waiters sleeper state
+        safe_run_waiters sleeper state
     | Fail Canceled ->
         ()
     | _ ->
         invalid_arg "Lwt.wakeup_exn"
 
-(* Same as [wakeup] but do not raise [Invalid_argument]. *)
-let ignore_wakeup t v =
+let wakeup_later (type x) t v =
   let t = repr_rec (wakener_repr t) in
   match t.state with
     | Sleep sleeper ->
         let state = Return v in
         t.state <- state;
-        run_waiters sleeper state
-    | _ ->
+        if !wakening then begin
+          (* Already wakening => create the closure for later wakening. *)
+          let module M = struct
+            type a = x
+            let sleeper = sleeper
+            let state = state
+          end in
+          Queue.push (module M : A_closure) to_wakeup
+        end else
+          (* Otherwise restart threads now. *)
+          safe_run_waiters sleeper state
+    | Fail Canceled ->
         ()
+    | _ ->
+        invalid_arg "Lwt.wakeup"
 
-(* Same as [wakeup_exn] but do not raise [Invalid_argument]. *)
-let ignore_wakeup_exn t e =
+let wakeup_later_exn (type x) t e =
   let t = repr_rec (wakener_repr t) in
   match t.state with
     | Sleep sleeper ->
         let state = Fail e in
         t.state <- state;
-        run_waiters sleeper state
-    | _ ->
+        if !wakening then begin
+          (* Already wakening => create the closure for later wakening. *)
+          let module M = struct
+            type a = x
+            let sleeper = sleeper
+            let state = state
+          end in
+          Queue.push (module M : A_closure) to_wakeup
+        end else
+          (* Otherwise restart threads now. *)
+          safe_run_waiters sleeper state
+    | Fail Canceled ->
         ()
-
-let wakeuping = ref false
-let to_wakeup = Queue.create ()
-
-let wakeup_all () =
-  while not (Queue.is_empty to_wakeup) do
-    Queue.pop to_wakeup ()
-  done;
-  wakeuping := false
-
-let wakeup_later t v =
-  if !wakeuping then
-    Queue.push (fun () -> ignore_wakeup t v) to_wakeup
-  else begin
-    wakeuping := true;
-    ignore_wakeup t v;
-    wakeup_all ()
-  end
-
-let wakeup_later_exn t v =
-  if !wakeuping then
-    Queue.push (fun () -> ignore_wakeup_exn t v) to_wakeup
-  else begin
-    wakeuping := true;
-    ignore_wakeup_exn t v;
-    wakeup_all ()
-  end
+    | _ ->
+        invalid_arg "Lwt.wakeup"
 
 module type A_sleeper = sig
   type a
   val sleeper : a sleeper
 end
+
+type a_sleeper = (module A_sleeper)
 
 let pack_sleeper (type x) sleeper =
   let module M = struct type a = x let sleeper = sleeper end in
@@ -302,9 +395,8 @@ let cancel (type x) t =
   let state = Fail Canceled in
   (* - collect all sleepers to restart
      - set the state of all threads to cancel to [Fail Canceled] *)
-  let rec collect acc t =
-    let module M = (val t : A_thread) in
-    let t = repr M.thread in
+  let rec collect : 'a. a_sleeper list -> 'a t -> a_sleeper list = fun acc t ->
+    let t = repr t in
     match t.state with
       | Sleep ({ cancel } as sleeper) -> begin
           match cancel with
@@ -315,24 +407,26 @@ let cancel (type x) t =
                    collected again. *)
                 t.state <- state;
                 (pack_sleeper sleeper) :: acc
-            | Cancel_link t ->
-                collect acc t
-            | Cancel_links l ->
-                List.fold_left collect acc l
+            | Cancel_link m ->
+                let module M = (val m : A_thread) in
+                collect acc M.thread
+            | Cancel_links m ->
+                let module M = (val m : A_threads) in
+                List.fold_left collect acc M.threads
         end
       | _ ->
           acc
   in
-  let sleepers = collect [] (pack t) in
+  let sleepers = collect [] t in
   (* Restart all sleepers. *)
-  let save = !current_data in
+  let ctx = enter_wakeup () in
   List.iter
     (fun sleeper ->
        let module M = (val sleeper : A_sleeper) in
        run_cancel_handlers_rec M.sleeper.cancel_handlers [];
        run_waiters_rec state M.sleeper.waiters [])
     sleepers;
-  current_data := save
+  leave_wakeup ctx
 
 let append l1 l2 =
   match l1, l2 with
@@ -355,12 +449,11 @@ let rec cleanup = function
   | ws ->
       ws
 
-(* Connects the two processes [t1] and [t2] when [t2] finishes up,
-   where [t1] must be a sleeping thread.
+(* Make [t1] and [t2] behave the same way, where [t1] is a sleeping
+   thread. This means that they must share the same representation.
 
-   Connecting means running all the waiters for [t2] and assigning the
-   state of [t1] to [t2].
-*)
+   [connect] assumes it is called inside a enter_wakeup/leave_wakeup
+   block. *)
 let connect t1 t2 =
   let t1 = repr t1 and t2 = repr t2 in
   match t1.state with
@@ -417,29 +510,31 @@ let connect t1 t2 =
                 (* [t2] is already terminated, assing its state to [t1]: *)
                 t1.state <- state2;
                 (* and run all the waiters of [t1]: *)
-                run_waiters sleeper1 state2
+                unsafe_run_waiters sleeper1 state2
         end
     | _ ->
         (* [t1] is not asleep: *)
-        invalid_arg "Lwt.connect"
+         assert false
 
-(* Same as [connect] except that we know that [t2] has terminated: *)
+(* Same as [connect] except that we know that [t2] has alreayd
+   terminated. *)
 let fast_connect t state =
   let t = repr t in
   match t.state with
     | Sleep sleeper ->
         t.state <- state;
-        run_waiters sleeper state
+        unsafe_run_waiters sleeper state
     | _ ->
-        invalid_arg "Lwt.fast_connect"
+        assert false
 
-(* Same as [fast_connect] except that it does nothing if [t] has terminated. *)
+(* Same as [fast_connect] except that it does nothing if [t] has
+   terminated. *)
 let fast_connect_if t state =
   let t = repr t in
   match t.state with
     | Sleep sleeper ->
         t.state <- state;
-        run_waiters sleeper state
+        unsafe_run_waiters sleeper state
     | _ ->
         ()
 
@@ -455,7 +550,7 @@ let fail e =
 
 let temp t =
   thread {
-    state = Sleep { cancel = Cancel_link (pack (thread t));
+    state = Sleep { cancel = Cancel_link (pack_thread (thread t));
                     waiters = Empty;
                     removed = 0;
                     cancel_handlers = Chs_empty }
@@ -463,7 +558,7 @@ let temp t =
 
 let temp_many l =
   thread {
-    state = Sleep { cancel = Cancel_links (List.map pack l);
+    state = Sleep { cancel = Cancel_links (pack_threads l);
                     waiters = Empty;
                     removed = 0;
                     cancel_handlers = Chs_empty }
@@ -541,6 +636,9 @@ let add_waiter sleeper waiter =
 
 let add_immutable_waiter sleeper waiter =
   add_waiter sleeper (Immutable waiter)
+
+let add_unsafe_waiter sleeper waiter =
+  add_waiter sleeper (Unsafe waiter)
 
 let on_cancel t f =
   match (repr t).state with
@@ -627,7 +725,7 @@ let on_success t f =
         ()
     | Sleep sleeper ->
         let data = !current_data in
-        add_immutable_waiter sleeper
+        add_unsafe_waiter sleeper
           (function
              | Return v -> current_data := data; f v
              | Fail exn -> ()
@@ -643,7 +741,7 @@ let on_failure t f =
         f exn
     | Sleep sleeper ->
         let data = !current_data in
-        add_immutable_waiter sleeper
+        add_unsafe_waiter sleeper
           (function
              | Return v -> ()
              | Fail exn -> current_data := data; f exn
@@ -659,7 +757,7 @@ let on_termination t f =
         f ()
     | Sleep sleeper ->
         let data = !current_data in
-        add_immutable_waiter sleeper
+        add_unsafe_waiter sleeper
           (function
              | Return v -> current_data := data; f ()
              | Fail exn -> current_data := data; f ()
@@ -675,7 +773,7 @@ let on_any t f g =
         g exn
     | Sleep sleeper ->
         let data = !current_data in
-        add_immutable_waiter sleeper
+        add_unsafe_waiter sleeper
           (function
              | Return v -> current_data := data; f v
              | Fail exn -> current_data := data; g exn
@@ -716,7 +814,7 @@ let rec ignore_result t =
     | Fail e ->
         raise e
     | Sleep sleeper ->
-        add_immutable_waiter sleeper
+        add_unsafe_waiter sleeper
           (function
              | Return _ -> ()
              | Fail exn -> raise exn

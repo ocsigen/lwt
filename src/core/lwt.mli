@@ -204,15 +204,38 @@ val ( <&> ) : unit t -> unit t -> unit t
 
 val ignore_result : 'a t -> unit
   (** [ignore_result t] start the thread [t] and ignores its result
-      value if the thread terminates sucessfully.  However, if the
-      thread [t] fails, the exception is raised instead of being
-      ignored.
+      value if the thread terminates sucessfully. However, if the
+      thread [t] fails, the exception is added to
+      {!uncaught_exceptions} instead of being ignored.
 
       You should use this function if you want to start a thread and
       don't care what its return value is, nor when it terminates (for
-      instance, because it is looping).  Note that if the thread [t]
-      yields and later fails, the exception will not be raised at this
-      point in the program. *)
+      instance, because it is looping). *)
+
+type backtrace
+  (** Type of exception backtraces. *)
+
+val uncaught_exceptions : (exn * backtrace) Queue.t
+  (** Queue of uncaught exceptions. Exceptions raised by the callback
+      of the following functions are added to this queue:
+
+      - {!on_cancel}
+      - {!on_success}
+      - {!on_failure}
+      - {!on_termination}
+      - {!on_any}
+  *)
+
+val on_uncaught_exception : (unit -> unit) ref
+  (** Hook executed to handle exceptions in {!uncaught_exceptions}.
+      The default behavior is to call [raise] on the first exception
+      of the queue. {!Lwt_main} replaces this hook by
+      [Pervasives.ignore] and raises uncaught exceptions at toplevel
+      only. *)
+
+val string_of_backtrace : backtrace -> string
+  (** Returns the contents of a backtrace as a string, as returned by
+      [Printexc.get_backtrace]. *)
 
 (** {6 Sleeping and resuming} *)
 
