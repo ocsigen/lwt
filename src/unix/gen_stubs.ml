@@ -315,7 +315,6 @@ let split_name name =
     ("", name)
 
 let ml_oc = ref stdout
-let mli_oc = ref stdout
 
 module type Params = sig
   val fname : string
@@ -327,7 +326,6 @@ module type Generator = sig
   val gen_worker : string -> unit
   val gen_result : string -> unit
   val gen_job_stub : string -> string -> string -> unit
-  val gen_sync_stub : string -> unit
   val gen_caml : string -> unit
   val gen_file : unit -> unit
 end
@@ -499,100 +497,9 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
     pr "  return lwt_unix_alloc_job(&job->job);\n";
     pr "}\n"
 
-  let gen_sync_stub suffix =
-    pr "\n";
-    pr "CAMLprim value lwt_unix_%s%s_sync(%s)\n" job.name suffix (String.concat ", " (List.map (fun (name, _, _) -> "value val_" ^ name) ins));
-    pr "{\n";
-    if strings <> [] then
-      pr "  CAMLparam%d(%s);\n" (List.length strings) (String.concat ", " (List.map ((^) "val_") strings));
-    if job.result.c_type <> C_void then begin
-      pr "  /* This field store the result of the call. */\n";
-      pr "  %s result;\n" (c_type_name job.result.c_type)
-    end;
-    if job.uerror = Uerror_errno then begin
-      pr "  /* This field store the value of [errno] after the call. */\n";
-      pr "  int errno_copy;\n"
-    end;
-    List.iter
-      (fun (name, dir, { c_type }) ->
-         if dir = In then begin
-           pr "  /* C representation of the val_%s parameter. */\n" job.name;
-           pr "  %s %s;\n" (c_type_name c_type) name
-         end)
-      job.params;
-    pr "\n";
-    List.iter
-      (fun (name, dir, { caml_type; c_type; hint }) ->
-         pr "  /* Extract the %s parameter. */\n" name;
-         pr "  %s = " name;
-         (match real_caml_type caml_type, c_type, hint with
-            | Caml_int, (C_int | C_int_alias _), _ -> pr "Int_val(val_%s)" name
-            | Caml_int, (C_long | C_long_alias _), _ -> pr "Long_val(val_%s)" name
-            | Caml_int64, (C_long | C_long_alias _), _ -> pr "Int64_val(val_%s)" name
-            | Caml_string, C_ptr C_char, _ -> pr "String_val(val_%s)" name
-            | Caml_list (Caml_variant (type_name, _)), _, Hint_flag_list _ -> pr "%s_of_%ss(val_%s)" (c_type_name c_type) (snd (split_name type_name)) name
-            | Caml_variant (type_name, _), _, Hint_table _ -> pr "%s_table[Int_val(val_%s)]" (snd (split_name type_name)) name
-            | _ -> assert false);
-         pr ";\n")
-      ins;
-    pr "\n";
-    pr "  caml_enter_blocking_section();\n";
-    pr "\n";
-    pr "  /* Perform the blocking call. */\n";
-    pr "  ";
-    if job.result.c_type <> C_void then pr "result = ";
-    pr "%s(%s);\n" job.name
-      (String.concat ", "
-         (List.map
-            (fun (name, dir, _) ->
-               match dir with
-                 | In -> name
-                 | Out | In_out -> "&" ^ name)
-            job.params));
-    if job.uerror = Uerror_errno then begin
-      pr "  /* Save the value of errno. */\n";
-      pr "  errno_copy = errno;\n"
-    end;
-    pr "\n";
-    pr "  caml_leave_blocking_section();\n";
-    pr "\n";
-    (match job.check with
-       | None ->
-           ()
-       | Some test ->
-           pr "  /* Check for errors. */\n";
-           pr "  if (%s) {\n" (subst false test);
-           pr "    /* Raise the error. */\n";
-           (match strings with
-              | [] ->
-                  pr "    unix_error(errno_copy, %S, Nothing);\n" job.name
-              | name :: _ ->
-                  pr "    unix_error(errno_copy, %S, val_%s);\n" job.name name);
-           pr "  }\n");
-    let result =
-      if job.result.caml_type = Caml_void then
-        "Val_unit"
-      else
-        match job.result.caml_type, job.result.c_type with
-          | Caml_int, (C_int | C_int_alias _) ->
-              "Val_int(result)"
-          | Caml_int, (C_long | C_long_alias _) ->
-              "Val_long(result)"
-          | Caml_int64, (C_long | C_long_alias _) ->
-              "caml_copy_int64(result)"
-          | _ ->
-              assert false
-    in
-    if strings <> [] then
-      pr "  CAMLreturn(%s);\n" result
-    else
-      pr "  return %s;\n" result;
-    pr "}\n"
-
   let gen_caml suffix =
     let pr fmt = fprintf !ml_oc fmt in
-    pr "\n";
-    pr "  external %s%s_job : %s -> %s _job = \"lwt_unix_%s%s_job\"\n"
+    pr "  external %s%s_job : %s -> %s Job.t = \"lwt_unix_%s%s_job\"\n"
       job.name
       suffix
       caml_arg_types
@@ -601,51 +508,7 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
        else
          caml_return_type)
       job.name
-      suffix;
-    pr "  external %s%s_sync : %s -> %s = \"lwt_unix_%s%s_sync\"\n"
-      job.name
       suffix
-      caml_arg_types
-      caml_return_type
-      job.name
-      suffix;
-    let mapped_args =
-      String.concat " "
-        (List.map (fun (name, _, { caml_type }) ->
-                     match caml_type with
-                       | Caml_alias ("Unix.file_descr", _) ->
-                           "(unix_file_descr " ^ name ^ ")"
-                       | _ ->
-                           name) ins)
-    in
-    pr "\n";
-    pr "  let %s%s %s =\n" job.name suffix (String.concat " " (List.map (fun (name, _, _) -> name) ins));
-    pr "    match async_method () with\n";
-    pr "      | Async_none -> begin\n";
-    pr "          try\n";
-    pr "            Lwt.return (%s%s_sync %s)\n" job.name suffix mapped_args;
-    pr "          with exn ->\n";
-    pr "            raise_lwt exn\n";
-    pr "        end\n";
-    pr "     | async_method ->\n";
-    pr "         run_job async_method (%s%s_job %s)\n" job.name suffix mapped_args;
-    fprintf !mli_oc "  val %s%s : %s -> %s Lwt.t\n"
-      job.name
-      suffix
-      (String.concat " -> "
-         (match
-            List.map
-              (fun (_, _, { caml_type }) ->
-                 match caml_type with
-                   | Caml_alias ("Unix.file_descr", _) ->
-                       "Deps._file_descr"
-                   | _ ->
-                       caml_type_name caml_type)
-              (List.filter (fun (_, dir, { caml_type }) -> dir = In && caml_type <> Caml_void) job.params)
-          with
-            | [] -> ["unit"]
-            | l -> l))
-      caml_return_type
 
   let gen_file () =
     pr "\
@@ -685,16 +548,16 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
       (String.concat ", "
          (List.map
             (fun (name, dir, { c_type }) ->
-               match dir with
-                 | In -> c_type_name c_type ^ " " ^ name
-                 | In_out | Out -> c_type_name (C_ptr c_type) ^ " " ^ name)
+              match dir with
+                | In -> c_type_name c_type ^ " " ^ name
+                | In_out | Out -> c_type_name (C_ptr c_type) ^ " " ^ name)
             job.params))
       job.name
       caml_arg_types
       (if is_tuple then
-         "(" ^ caml_return_type ^ ")"
+          "(" ^ caml_return_type ^ ")"
        else
-         caml_return_type)
+          caml_return_type)
       job.name
       job.name
       caml_arg_types
@@ -710,10 +573,10 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
       String.concat " && "
         (List.map
            (fun (yes, var) ->
-              if yes then
-                sprintf "defined(%s)" var
-              else
-                sprintf "!defined(%s)" var)
+             if yes then
+               sprintf "defined(%s)" var
+             else
+               sprintf "!defined(%s)" var)
            job.exists_if)
     in
 
@@ -738,56 +601,56 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
 ";
       List.iter
         (fun (name, _, atype) ->
-           match atype.hint with
-             | Hint_none ->
-                 ()
-             | Hint_flag_list mapping | Hint_table mapping ->
-                 let name, cstrs =
-                   match atype.caml_type with
-                     | Caml_list (Caml_variant (name, cstrs))
-                     | Caml_variant (name, cstrs) -> (name, cstrs)
-                     | _ -> assert false
-                 in
-                 let path, item = split_name name in
-                 pr "\n";
-                 pr "/* Table mapping constructors of ocaml type %s to C values. */\n" name;
-                 pr "static %s %s_table[] = {\n" (c_type_name atype.c_type) item;
-                 let rec loop l =
-                   match l with
-                     | [] ->
-                         ()
-                     | (cstr, typ) :: l ->
-                         assert (typ = []);
-                         pr "  /* Constructor %s. */\n" cstr;
-                         pr "  %s"
-                           (find_map
-                              (function
-                                 | (S name, _) when name = cstr -> Some name
-                                 | (D (name, name'), _) when name = cstr -> Some name'
-                                 | _ -> None)
-                              mapping);
-                         if l = [] then
-                           pr "\n"
-                         else begin
-                           pr ",\n";
-                           loop l
-                         end
-                 in
-                 loop cstrs;
-                 pr "};\n";
-                 if (match atype.hint with Hint_flag_list _ -> true | _ -> false) then begin
-                   pr "\n";
-                   pr "/* Convert ocaml values of type %s to a C %s. */\n" name (c_type_name atype.c_type);
-                   pr "static %s %s_of_%ss(value list)\n" (c_type_name atype.c_type) (c_type_name atype.c_type) item;
-                   pr "{\n";
-                   pr "  %s result = 0;\n" (c_type_name atype.c_type);
-                   pr "  while (Is_block(list)) {\n";
-                   pr "    result |= %s_table[Int_val(Field(list, 0))];\n" item;
-                   pr "    list = Field(list, 1);\n";
-                   pr "  };\n";
-                   pr "  return result;\n";
-                   pr "}\n";
-                 end)
+          match atype.hint with
+            | Hint_none ->
+              ()
+            | Hint_flag_list mapping | Hint_table mapping ->
+              let name, cstrs =
+                match atype.caml_type with
+                  | Caml_list (Caml_variant (name, cstrs))
+                  | Caml_variant (name, cstrs) -> (name, cstrs)
+                  | _ -> assert false
+              in
+              let path, item = split_name name in
+              pr "\n";
+              pr "/* Table mapping constructors of ocaml type %s to C values. */\n" name;
+              pr "static %s %s_table[] = {\n" (c_type_name atype.c_type) item;
+              let rec loop l =
+                match l with
+                  | [] ->
+                    ()
+                  | (cstr, typ) :: l ->
+                    assert (typ = []);
+                    pr "  /* Constructor %s. */\n" cstr;
+                    pr "  %s"
+                      (find_map
+                         (function
+                           | (S name, _) when name = cstr -> Some name
+                           | (D (name, name'), _) when name = cstr -> Some name'
+                           | _ -> None)
+                         mapping);
+                    if l = [] then
+                      pr "\n"
+                    else begin
+                      pr ",\n";
+                      loop l
+                    end
+              in
+              loop cstrs;
+              pr "};\n";
+              if (match atype.hint with Hint_flag_list _ -> true | _ -> false) then begin
+                pr "\n";
+                pr "/* Convert ocaml values of type %s to a C %s. */\n" name (c_type_name atype.c_type);
+                pr "static %s %s_of_%ss(value list)\n" (c_type_name atype.c_type) (c_type_name atype.c_type) item;
+                pr "{\n";
+                pr "  %s result = 0;\n" (c_type_name atype.c_type);
+                pr "  while (Is_block(list)) {\n";
+                pr "    result |= %s_table[Int_val(Field(list, 0))];\n" item;
+                pr "    list = Field(list, 1);\n";
+                pr "  };\n";
+                pr "  return result;\n";
+                pr "}\n";
+              end)
         converters
     end;
 
@@ -812,8 +675,8 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
     end;
     List.iter
       (fun (name, dir, { c_type }) ->
-         pr "  /* %s parameter. */\n" (string_of_direction dir);
-         pr "  %s %s;\n" (c_type_name c_type) name)
+        pr "  /* %s parameter. */\n" (string_of_direction dir);
+        pr "  %s %s;\n" (c_type_name c_type) name)
       job.params;
     if strings <> [] then begin
       pr "  /* Buffer for string parameters. */\n";
@@ -830,41 +693,24 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
     if map_in_64 || map_out_64 || map_result_64 then
       Gen64.gen_job_stub "_64" "" (if map_out_64 || map_result_64 then "_64" else "");
 
-    pr "
-/* +-----------------------------------------------------------------+
-   | Synchronous call                                                |
-   +-----------------------------------------------------------------+ */
-";
-
-    gen_sync_stub "";
-
-    if map_in_64 || map_out_64 || map_result_64 then Gen64.gen_sync_stub "_64";
-
     if job.exists_if <> [] then begin
       pr "\n";
-      pr "#else /* %s */\n" exists_if;
-      pr "\n";
-      pr "CAMLprim value lwt_unix_%s_job()\n" job.name;
-      pr "{\n";
-      pr "  lwt_unix_not_available(%S);\n" job.name;
-      pr "}\n";
-      pr "\n";
-      pr "CAMLprim value lwt_unix_%s_sync()\n" job.name;
-      pr "{\n";
-      pr "  lwt_unix_not_available(%S);\n" job.name;
-      pr "}\n";
-      pr "\n";
-      if map_in_64 || map_out_64 || map_result_64 then begin
-        pr "CAMLprim value lwt_unix_%s_64_job()\n" job.name;
+      (* XXX: hack for fsync *)
+      if job.name <> "fsync" then begin
+        pr "#else /* %s */\n" exists_if;
+        pr "\n";
+        pr "CAMLprim value lwt_unix_%s_job()\n" job.name;
         pr "{\n";
         pr "  lwt_unix_not_available(%S);\n" job.name;
         pr "}\n";
         pr "\n";
-        pr "CAMLprim value lwt_unix_%s_64_sync()\n" job.name;
-        pr "{\n";
-        pr "  lwt_unix_not_available(%S);\n" job.name;
-        pr "}\n";
-        pr "\n";
+        if map_in_64 || map_out_64 || map_result_64 then begin
+          pr "CAMLprim value lwt_unix_%s_64_job()\n" job.name;
+          pr "{\n";
+          pr "  lwt_unix_not_available(%S);\n" job.name;
+          pr "}\n";
+          pr "\n";
+        end;
       end;
       pr "#endif /* %s */\n" exists_if
     end;
@@ -932,7 +778,6 @@ let () =
     | [|_|] ->
         let fname = "lwt_unix_jobs_generated.ml" in
         ml_oc := open_out ("src/unix/" ^ fname);
-        mli_oc := open_out ("src/unix/" ^ fname ^ "i");
         let pr_header oc fname =
           fprintf oc "\
 (*
@@ -942,16 +787,8 @@ let () =
  * File generated with %s
  *)
 
-module type Deps = sig
-  type _async_method =
-    | Async_none
-    | Async_detach
-    | Async_switch
-  type _file_descr
-  type 'a _job
-  val unix_file_descr : _file_descr -> Unix.file_descr
-  val async_method : unit -> _async_method
-  val run_job : _async_method -> 'a _job -> 'a Lwt.t
+module type Job = sig
+  type 'a t
 end
 
 "
@@ -961,18 +798,11 @@ end
         in
         pr_header !ml_oc fname;
         fprintf !ml_oc "\
-module Make(Deps : Deps) = struct
-  open Deps
-";
-        pr_header !mli_oc fname;
-        fprintf !mli_oc "\
-module Make(Deps : Deps) : sig
+module Make(Job : Job) = struct
 ";
         StringMap.iter (fun name job -> gen job) jobs;
         output_string !ml_oc "end\n";
-        output_string !mli_oc "end\n";
-        close_out !ml_oc;
-        close_out !mli_oc
+        close_out !ml_oc
     | [|_; "list-job-files"|] ->
         StringMap.iter (fun name job -> printf "src/unix/jobs-unix/lwt_unix_job_%s.c\n" name) jobs
     | [|_; "list-job-names"|] ->

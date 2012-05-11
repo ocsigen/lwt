@@ -392,7 +392,7 @@ CAMLprim value result_bytes_write(struct job_bytes_write *job)
     win32_maperr(error);
     uerror("bytes_write", Nothing);
   }
-  result = Val_long(job->result)
+  result = Val_long(job->result);
   lwt_unix_free_job(&job->job);
   return result;
 }
@@ -444,7 +444,7 @@ static value result_fsync(struct job_fsync *job)
 CAMLprim value lwt_unix_fsync_job(value val_fd)
 {
   struct filedescr *fd = (struct filedescr *)Data_custom_val(val_fd);
-  if (fd.kind != KIND_HANDLE) {
+  if (fd->kind != KIND_HANDLE) {
     caml_invalid_argument("Lwt_unix.fsync");
   } else {
     LWT_UNIX_INIT_JOB(job, fsync, 0);
@@ -463,7 +463,7 @@ struct job_system {
   HANDLE handle;
 };
 
-static void worker_wait(struct job_system *job)
+static void worker_system(struct job_system *job)
 {
   WaitForSingleObject(job->handle, INFINITE);
 }

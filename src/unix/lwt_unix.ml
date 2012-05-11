@@ -586,18 +586,7 @@ let wrap_syscall event ch action =
    | Generated jobs                                                  |
    +-----------------------------------------------------------------+ *)
 
-include Lwt_unix_jobs_generated.Make
-          (struct
-             type _async_method = async_method =
-                                  | Async_none
-                                  | Async_detach
-                                  | Async_switch
-             type _file_descr = file_descr
-             type 'a _job = 'a job
-             let unix_file_descr ch = ch.fd
-             let async_method = async_method
-             let run_job am job = run_job_aux am job self_result
-           end)
+module Jobs = Lwt_unix_jobs_generated.Make(struct type 'a t = 'a job end)
 
 (* +-----------------------------------------------------------------+
    | Basic file input/output                                         |
@@ -650,7 +639,7 @@ let close ch =
   if ch.state = Closed then check_descriptor ch;
   set_state ch Closed;
   clear_events ch;
-  close ch
+  run_job (Jobs.close_job ch.fd)
 
 #endif
 
@@ -712,12 +701,23 @@ let lseek ch offset whence =
   check_descriptor ch;
   return (Unix.lseek ch.fd offset whence)
 
+#else
+
+let lseek ch offset whence =
+  check_descriptor ch;
+  run_job (Jobs.lseek_job ch.fd offset whence)
+
 #endif
 
 #if windows
 
 let truncate name offset =
   return (Unix.truncate name offset)
+
+#else
+
+let truncate name offset =
+  run_job (Jobs.truncate_job name offset)
 
 #endif
 
@@ -727,7 +727,25 @@ let ftruncate ch offset =
   check_descriptor ch;
   return (Unix.ftruncate ch.fd offset)
 
+#else
+
+let ftruncate ch offset =
+  check_descriptor ch;
+  run_job (Jobs.ftruncate_job ch.fd offset)
+
 #endif
+
+(* +-----------------------------------------------------------------+
+   | File system synchronisation                                     |
+   +-----------------------------------------------------------------+ *)
+
+let fdatasync ch =
+  check_descriptor ch;
+  run_job (Jobs.fdatasync_job ch.fd)
+
+let fsync ch =
+  check_descriptor ch;
+  run_job (Jobs.fsync_job ch.fd)
 
 (* +-----------------------------------------------------------------+
    | File status                                                     |
@@ -854,7 +872,9 @@ struct
 
 #else
 
-  let lseek = lseek_64
+  let lseek ch offset whence =
+    check_descriptor ch;
+    run_job (Jobs.lseek_64_job ch.fd offset whence)
 
 #endif
 
@@ -865,7 +885,8 @@ struct
 
 #else
 
-  let truncate = truncate_64
+  let truncate name offset =
+    run_job (Jobs.truncate_64_job name offset)
 
 #endif
 
@@ -877,7 +898,9 @@ struct
 
 #else
 
-  let ftruncate = ftruncate_64
+  let ftruncate ch offset =
+    check_descriptor ch;
+    run_job (Jobs.ftruncate_64_job ch.fd offset)
 
 #endif
 
@@ -936,6 +959,11 @@ end
 let unlink name =
   return (Unix.unlink name)
 
+#else
+
+let unlink name =
+  run_job (Jobs.unlink_job name)
+
 #endif
 
 #if windows
@@ -943,12 +971,22 @@ let unlink name =
 let rename name1 name2 =
   return (Unix.rename name1 name2)
 
+#else
+
+let rename name1 name2 =
+  run_job (Jobs.rename_job name1 name2)
+
 #endif
 
 #if windows
 
 let link name1 name2 =
   return (Unix.link name1 name2)
+
+#else
+
+let link oldpath newpath =
+  run_job (Jobs.link_job oldpath newpath)
 
 #endif
 
@@ -961,6 +999,11 @@ let link name1 name2 =
 let chmod name perms =
   return (Unix.chmod name perms)
 
+#else
+
+let chmod path mode =
+  run_job (Jobs.chmod_job path mode)
+
 #endif
 
 #if windows
@@ -969,12 +1012,23 @@ let fchmod ch perms =
   check_descriptor ch;
   return (Unix.fchmod ch.fd perms)
 
+#else
+
+let fchmod ch mode =
+  check_descriptor ch;
+  run_job (Jobs.fchmod_job ch.fd mode)
+
 #endif
 
 #if windows
 
 let chown name uid gid =
   return (Unix.chown name uid gid)
+
+#else
+
+let chown path ower group =
+  run_job (Jobs.chown_job path ower group)
 
 #endif
 
@@ -983,6 +1037,12 @@ let chown name uid gid =
 let fchown ch uid gid =
   check_descriptor ch;
   return (Unix.fchown ch.fd uid gid)
+
+#else
+
+let fchown ch ower group =
+  check_descriptor ch;
+  run_job (Jobs.fchown_job ch.fd ower group)
 
 #endif
 
@@ -997,6 +1057,11 @@ type access_permission =
 
 let access name perms =
   return (Unix.access name perms)
+
+#else
+
+let access path mode =
+  run_job (Jobs.access_job path mode)
 
 #endif
 
@@ -1062,12 +1127,22 @@ let clear_close_on_exec ch =
 let mkdir name perms =
   return (Unix.mkdir name perms)
 
+#else
+
+let mkdir name perms =
+  run_job (Jobs.mkdir_job name perms)
+
 #endif
 
 #if windows
 
 let rmdir name =
   return (Unix.rmdir name)
+
+#else
+
+let rmdir name =
+  run_job (Jobs.rmdir_job name)
 
 #endif
 
@@ -1076,12 +1151,22 @@ let rmdir name =
 let chdir name =
   return (Unix.chdir name)
 
+#else
+
+let chdir path =
+  run_job (Jobs.chdir_job path)
+
 #endif
 
 #if windows
 
 let chroot name =
   return (Unix.chroot name)
+
+#else
+
+let chroot path =
+  run_job (Jobs.chroot_job path)
 
 #endif
 
@@ -1248,6 +1333,11 @@ let pipe_out () =
 let mkfifo name perms =
   return (Unix.mkfifo name perms)
 
+#else
+
+let mkfifo name perms =
+  run_job (Jobs.mkfifo_job name perms)
+
 #endif
 
 (* +-----------------------------------------------------------------+
@@ -1258,6 +1348,11 @@ let mkfifo name perms =
 
 let symlink name1 name2 =
   return (Unix.symlink name1 name2)
+
+#else
+
+let symlink name1 name2 =
+  run_job (Jobs.symlink_job name1 name2)
 
 #endif
 
@@ -1943,7 +2038,6 @@ let getnameinfo addr opts =
    | Terminal interface                                              |
    +-----------------------------------------------------------------+ *)
 
-
 type terminal_io =
     Unix.terminal_io =
     {
@@ -2044,6 +2138,12 @@ let tcsendbreak ch delay =
   check_descriptor ch;
   return (Unix.tcsendbreak ch.fd delay)
 
+#else
+
+let tcsendbreak ch delay =
+  check_descriptor ch;
+  run_job (Jobs.tcsendbreak_job ch.fd delay)
+
 #endif
 
 #if windows
@@ -2051,6 +2151,12 @@ let tcsendbreak ch delay =
 let tcdrain ch =
   check_descriptor ch;
   return (Unix.tcdrain ch.fd)
+
+#else
+
+let tcdrain ch =
+  check_descriptor ch;
+  run_job (Jobs.tcdrain_job ch.fd)
 
 #endif
 
@@ -2060,6 +2166,12 @@ let tcflush ch q =
   check_descriptor ch;
   return (Unix.tcflush ch.fd q)
 
+#else
+
+let tcflush ch q =
+  check_descriptor ch;
+  run_job (Jobs.tcflush_job ch.fd q)
+
 #endif
 
 #if windows
@@ -2067,6 +2179,12 @@ let tcflush ch q =
 let tcflow ch act =
   check_descriptor ch;
   return (Unix.tcflow ch.fd act)
+
+#else
+
+let tcflow ch act =
+  check_descriptor ch;
+  run_job (Jobs.tcflow_job ch.fd act)
 
 #endif
 
@@ -2278,7 +2396,8 @@ let wait () = waitpid [] (-1)
 external system_job : string -> int job = "lwt_unix_system_job"
 
 let system cmd =
-  run_job (system_job ("cmd.exe /c " ^ cmd)
+  lwt code = run_job (system_job ("cmd.exe /c " ^ cmd)) in
+  return (Unix.WEXITED code)
 
 #else
 

@@ -98,7 +98,7 @@ static value result_wait(struct job_wait *job)
     win32_maperr(error);
     uerror("GetExitCodeProcess", Nothing);
   }
-  CloseHandle(handle);
+  CloseHandle(job->handle);
   lwt_unix_free_job(&job->job);
   return Val_int(code);
 }
