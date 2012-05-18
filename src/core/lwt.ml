@@ -680,7 +680,7 @@ let map f t =
   let t = repr t in
   match t.state with
     | Return v ->
-        return (f v)
+        thread { state = try Return (f v) with exn -> Fail exn }
     | Fail _ as state ->
         thread { state }
     | Sleep sleeper ->
