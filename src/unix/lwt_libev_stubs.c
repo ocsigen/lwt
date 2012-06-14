@@ -60,10 +60,23 @@ static struct custom_operations loop_ops = {
   custom_deserialize_default
 };
 
+/* Do nothing.
+
+   We replace the invoke_pending callback of the event loop, so when
+   events are ready, they can be executed after ev_loop has returned:
+   it is executed in a blocking section and callbacks must be executed
+   outside.
+ */
+static void nop(struct ev_loop *loop)
+{
+}
+
 CAMLprim value lwt_libev_init()
 {
   struct ev_loop *loop = ev_loop_new(EVFLAG_FORKCHECK);
   if (!loop) caml_failwith("lwt_libev_init");
+  /* Remove the invoke_pending callback. */
+  ev_set_invoke_pending_cb(loop, nop);
   value result = caml_alloc_custom(&loop_ops, sizeof(struct ev_loop*), 0, 1);
   Ev_loop_val(result) = loop;
   return result;
@@ -75,22 +88,19 @@ CAMLprim value lwt_libev_stop(value loop)
   return Val_unit;
 }
 
-static int lwt_libev_in_blocking_section = 0;
-
-#define LWT_LIBEV_CHECK                          \
-  if (lwt_libev_in_blocking_section) {           \
-    lwt_libev_in_blocking_section = 0;           \
-    caml_leave_blocking_section();               \
-  }
-
-CAMLprim value lwt_libev_loop(value loop, value block)
+CAMLprim value lwt_libev_loop(value val_loop, value val_block)
 {
-  CAMLparam2(loop, block);
+  /* Extract the event loop now.
+
+     It seems to crash if we don't do that (??). */
+  struct ev_loop *loop = Ev_loop_val(val_loop);
+  /* Call the event loop inside a blocking section. */
   caml_enter_blocking_section();
-  lwt_libev_in_blocking_section = 1;
-  ev_loop(Ev_loop_val(loop), Bool_val(block) ? EVLOOP_ONESHOT : EVLOOP_ONESHOT | EVLOOP_NONBLOCK);
-  LWT_LIBEV_CHECK;
-  CAMLreturn(Val_unit);
+  ev_loop(loop, Bool_val(val_block) ? EVLOOP_ONESHOT : EVLOOP_ONESHOT | EVLOOP_NONBLOCK);
+  caml_leave_blocking_section();
+  /* Invoke callbacks now, i.e. outside the blocking section. */
+  ev_invoke_pending(loop);
+  return Val_unit;
 }
 
 CAMLprim value lwt_libev_unloop(value loop)
@@ -131,7 +141,6 @@ static struct custom_operations watcher_ops = {
 
 static void handle_io(struct ev_loop *loop, ev_io *watcher, int revents)
 {
-  LWT_LIBEV_CHECK;
   caml_callback((value)watcher->data, Val_unit);
 }
 
@@ -179,7 +188,6 @@ CAMLprim value lwt_libev_io_stop(value loop, value val_watcher)
 
 static void handle_timer(struct ev_loop *loop, ev_timer *watcher, int revents)
 {
-  LWT_LIBEV_CHECK;
   caml_callback((value)watcher->data, Val_unit);
 }
 
