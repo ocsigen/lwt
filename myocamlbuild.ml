@@ -104,6 +104,13 @@ let () =
 
              flag ["c"; "compile"; "use_lwt_headers"] & S [A"-ccopt"; A"-Isrc/unix"];
 
+             (* With ocaml >= 4, toploop.cmi is not in the stdlib path *)
+             let ocaml_major_version = Scanf.sscanf (BaseEnvLight.var_get "ocaml_version" env) "%d" (fun x -> x) in
+             if ocaml_major_version >= 4 then
+               List.iter
+                 (fun stage -> flag ["ocaml"; stage; "use_toploop"] & S[A "-package"; A "compiler-libs.toplevel"])
+                 ["compile"; "ocamldep"; "doc"];
+
              (* Toplevel stuff *)
 
              flag ["ocaml"; "link"; "toplevel"] & A"-linkpkg";
