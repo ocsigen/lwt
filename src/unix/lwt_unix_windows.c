@@ -231,6 +231,9 @@ CAMLprim value lwt_unix_read_job(value val_fd, value val_string, value val_offse
     job->fd.socket = fd->fd.socket;
   job->length = length;
   job->error_code = 0;
+  job->string = val_string;
+  job->offset = Long_val(val_offset);
+  caml_register_generational_global_root(&(job->string));
   return lwt_unix_alloc_job(&(job->job));
 }
 
