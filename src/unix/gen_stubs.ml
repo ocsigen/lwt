@@ -456,10 +456,10 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
       strings;
     pr "  /* Allocate a new job. */\n";
     if strings = [] then
-      pr "  struct job_%s* job = (struct job_%s*)lwt_unix_new(struct job_%s);\n" job.name job.name job.name
+      pr "  struct job_%s* job = lwt_unix_new(struct job_%s);\n" job.name job.name
     else
-      pr "  struct job_%s* job = (struct job_%s*)lwt_unix_new_plus(struct job_%s, %s);\n"
-        job.name job.name job.name
+      pr "  struct job_%s* job = lwt_unix_new_plus(struct job_%s, %s);\n"
+        job.name job.name
         (String.concat " + " (List.map (fun name -> "len_" ^ name) strings));
     let rec loop = function
       | [] ->
