@@ -162,6 +162,20 @@ CAMLprim value lwt_test()
 }
 "
 
+let netdb_reentrant_code = "
+#include <caml/mlvalues.h>
+#include <netdb.h>
+
+CAMLprim value lwt_test()
+{
+  getprotobyname_r(0, 0, 0, 0, 0);
+  getprotobynumber_r(0, 0, 0, 0, 0);
+  getservbyname_r(0, 0, 0, 0, 0, 0);
+  getservbyport_r(0, 0, 0, 0, 0, 0);
+  return Val_unit;
+}
+"
+
 (* +-----------------------------------------------------------------+
    | Compilation                                                     |
    +-----------------------------------------------------------------+ *)
@@ -447,6 +461,7 @@ Lwt can use pthread or the win32 API.
   test_feature ~do_check "credentials getting (getsockopt)" "HAVE_GET_CREDENTIALS" (fun () -> test_code ([], []) get_credentials_code);
   test_feature ~do_check "credentials getting (getpeereid)" "HAVE_GETPEEREID" (fun () -> test_code ([], []) get_peereid_code);
   test_feature ~do_check "fdatasync" "HAVE_FDATASYNC" (fun () -> test_code ([], []) fdatasync_code);
+  test_feature ~do_check "netdb_reentrant" "HAVE_NETDB_REENTRANT" (fun () -> test_code ([], []) netdb_reentrant_code);
 
   if !os_type = "Win32" then begin
     output_string config "#define LWT_ON_WINDOWS\n";

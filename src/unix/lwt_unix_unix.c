@@ -1847,6 +1847,8 @@ static value alloc_servent(struct servent *entry)
   return res;
 }
 
+#if defined(HAVE_NETDB_REENTRANT)
+
 #define JOB_GET_ENTRY2(INIT, FUNC, TYPE, ARGS_VAL, ARGS_DECL, ARGS_CALL) \
   struct job_##FUNC {                                                   \
     struct lwt_unix_job job;                                            \
@@ -1899,6 +1901,41 @@ static value alloc_servent(struct servent *entry)
     INIT;                                                               \
     return lwt_unix_alloc_job(&(job->job));                             \
   }
+
+#else /* defined(HAVE_NETDB_REENTRANT) */
+
+#define JOB_GET_ENTRY2(INIT, FUNC, TYPE, ARGS_VAL, ARGS_DECL, ARGS_CALL) \
+  struct job_##FUNC {                                                   \
+    struct lwt_unix_job job;                                            \
+    struct TYPE *entry;                                                 \
+    ARGS_DECL;                                                          \
+  };                                                                    \
+                                                                        \
+  static void worker_##FUNC(struct job_##FUNC *job)                     \
+  {                                                                     \
+    job->entry = FUNC(ARGS_CALL);                                       \
+  }                                                                     \
+                                                                        \
+  static value result_##FUNC(struct job_##FUNC *job)                    \
+  {                                                                     \
+    if (job->entry == NULL) {                                           \
+      lwt_unix_free_job(&job->job);                                     \
+      caml_raise_not_found();                                           \
+    } else {                                                            \
+      value res = alloc_##TYPE(job->entry);                             \
+      lwt_unix_free_job(&job->job);                                     \
+      return res;                                                       \
+    }                                                                   \
+  }                                                                     \
+                                                                        \
+  CAMLprim value lwt_unix_##FUNC##_job(ARGS_VAL)                        \
+  {                                                                     \
+    INIT;                                                               \
+    return lwt_unix_alloc_job(&(job->job));                             \
+  }
+
+#endif /* defined(HAVE_NETDB_REENTRANT) */
+
 
 JOB_GET_ENTRY2(LWT_UNIX_INIT_JOB_STRING(job, getprotobyname, 0, name),
                getprotobyname,
