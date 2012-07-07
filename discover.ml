@@ -206,8 +206,6 @@ let search_header header =
   in
   loop search_paths
 
-let setup_data = ref []
-
 let compile (opt, lib) stub_file =
   ksprintf
     Sys.command
@@ -372,6 +370,8 @@ let () =
              safe_remove (Filename.chop_extension !caml_file ^ ".cmi");
              safe_remove (Filename.chop_extension !caml_file ^ ".cmo"));
 
+  let setup_data = ref [] in
+
   (* Test for pkg-config. *)
   test_feature ~do_check:(!use_libev || !use_glib) "pkg-config" ""
     (fun () ->
@@ -473,12 +473,52 @@ Lwt can use pthread or the win32 API.
 
   fprintf config "#endif\n";
 
+  (* Our setup.data keys. *)
+  let setup_data_keys = [
+    "libev_opt";
+    "libev_lib";
+    "pthread_lib";
+    "pthread_opt";
+    "glib_opt";
+    "glib_lib";
+  ] in
+
+  (* Load setup.data *)
+  let setup_data_lines =
+    match try Some (open_in "setup.data") with Sys_error _ -> None with
+      | Some ic ->
+          let rec aux acc =
+            match try Some (input_line ic) with End_of_file -> None with
+              | None ->
+                  close_in ic;
+                  acc
+              | Some line ->
+                  match try Some(String.index line '=') with Not_found -> None with
+                    | Some idx ->
+                        let key = String.sub line 0 idx in
+                        if List.mem key setup_data_keys then
+                          aux acc
+                        else
+                          aux (line :: acc)
+                    | None ->
+                        aux (line :: acc)
+          in
+          aux []
+      | None ->
+          []
+  in
+
   (* Add flags to setup.data *)
-  let oc = open_out_gen [Open_wronly; Open_creat; Open_append; Open_text] 0o644 "setup.data" in
+  let setup_data_lines =
+    List.fold_left
+      (fun lines (name, args) ->
+         sprintf "%s=%S" name (String.concat " " args) :: lines)
+      setup_data_lines !setup_data
+  in
+  let oc = open_out "setup.data" in
   List.iter
-    (fun (name, args) ->
-       fprintf oc "%s=%S\n" name (String.concat " " args))
-    !setup_data;
+    (fun str -> output_string oc str; output_char oc '\n')
+    (List.rev setup_data_lines);
   close_out oc;
 
   close_out config;
