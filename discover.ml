@@ -352,6 +352,9 @@ let () =
   ] in
   Arg.parse args ignore "check for external C libraries and available features\noptions are:";
 
+  (* Check nothing if we do not build lwt.unix. *)
+  if not !use_unix then exit 0;
+
   (* Put the caml code into a temporary file. *)
   let file, oc = Filename.open_temp_file "lwt_caml" ".ml" in
   caml_file := file;
@@ -442,7 +445,7 @@ To compile without libev support, use ./configure --disable-libev ...
     exit 1
   end;
 
-  if !use_unix && !os_type <> "Win32" && not !use_pthread then begin
+  if !os_type <> "Win32" && not !use_pthread then begin
     printf "
 No threading library available!
 

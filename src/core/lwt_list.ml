@@ -27,7 +27,7 @@ let rec iter_s f l =
     | [] ->
         return ()
     | x :: l ->
-        lwt () = f x in
+        f x >>= fun () ->
         iter_s f l
 
 let rec iter_p f l =
@@ -35,17 +35,16 @@ let rec iter_p f l =
     | [] ->
         return ()
     | x :: l ->
-        let t = f x and lt = iter_p f l in
-        lwt () = t in
-        lt
+        let tx = f x and tl = iter_p f l in
+        tx >>= fun () -> tl
 
 let rec map_s f l =
   match l with
     | [] ->
         return []
     | x :: l ->
-        lwt x = f x in
-        lwt l = map_s f l in
+        f x >>= fun x ->
+        map_s f l >>= fun l ->
         return (x :: l)
 
 let rec map_p f l =
@@ -53,7 +52,9 @@ let rec map_p f l =
     | [] ->
         return []
     | x :: l ->
-        lwt x = f x and l = map_p f l in
+        let tx = f x and tl = map_p f l in
+        tx >>= fun x ->
+        tl >>= fun l ->
         return (x :: l)
 
 let rec rev_map_append_s acc f l =
@@ -61,7 +62,7 @@ let rec rev_map_append_s acc f l =
     | [] ->
         return acc
     | x :: l ->
-        lwt x = f x in
+        f x >>= fun x ->
         rev_map_append_s (x :: acc) f l
 
 let rev_map_s f l =
@@ -72,7 +73,10 @@ let rec rev_map_append_p acc f l =
     | [] ->
         acc
     | x :: l ->
-        rev_map_append_p (lwt x = f x and l = acc in return (x :: l)) f l
+        rev_map_append_p
+          (f x >>= fun x ->
+           acc >>= fun l ->
+           return (x :: l)) f l
 
 let rev_map_p f l =
   rev_map_append_p (return []) f l
@@ -82,7 +86,7 @@ let rec fold_left_s f acc l =
     | [] ->
         return acc
     | x :: l ->
-        lwt acc = f acc x in
+        f acc x >>= fun acc ->
         fold_left_s f acc l
 
 let rec fold_right_s f l acc =
@@ -90,7 +94,7 @@ let rec fold_right_s f l acc =
     | [] ->
         return acc
     | x :: l ->
-        lwt acc = fold_right_s f l acc in
+        fold_right_s f l acc >>= fun acc ->
         f x acc
 
 let rec for_all_s f l =
@@ -109,7 +113,9 @@ let rec for_all_p f l =
     | [] ->
         return true
     | x :: l ->
-        lwt bx = f x and bl = for_all_p f l in
+        let tx = f x and tl = for_all_p f l in
+        tx >>= fun bx ->
+        tl >>= fun bl ->
         return (bx && bl)
 
 let rec exists_s f l =
@@ -128,13 +134,15 @@ let rec exists_p f l =
     | [] ->
         return false
     | x :: l ->
-        lwt bx = f x and bl = exists_p f l in
+        let tx = f x and tl = exists_p f l in
+        tx >>= fun bx ->
+        tl >>= fun bl ->
         return (bx || bl)
 
 let rec find_s f l =
   match l with
     | [] ->
-        raise_lwt Not_found
+        fail Not_found
     | x :: l ->
         f x >>= function
           | true ->
@@ -149,7 +157,7 @@ let rec filter_s f l =
     | x :: l ->
         f x >>= function
           | true ->
-              lwt l = filter_s f l in
+              filter_s f l >>= fun l ->
               return (x :: l)
           | false ->
               filter_s f l
@@ -159,7 +167,9 @@ let rec filter_p f l =
     | [] ->
         return []
     | x :: l ->
-        lwt bx = f x and l = filter_p f l in
+        let tx = f x and tl = filter_p f l in
+        tx >>= fun bx ->
+        tl >>= fun l ->
         if bx then
           return (x :: l)
         else
@@ -170,8 +180,8 @@ let rec partition_s f l =
     | [] ->
         return ([], [])
     | x :: l ->
-        lwt bx = f x in
-        lwt l_l, l_r = partition_s f l in
+        f x >>= fun bx ->
+        partition_s f l >>= fun (l_l, l_r) ->
         if bx then
           return (x :: l_l, l_r)
         else
@@ -182,7 +192,9 @@ let rec partition_p f l =
     | [] ->
         return ([], [])
     | x :: l ->
-        lwt bx = f x and l_l, l_r = partition_p f l in
+        let tx = f x and tl = partition_p f l in
+        tx >>= fun bx ->
+        tl >>= fun (l_l, l_r) ->
         if bx then
           return (x :: l_l, l_r)
         else

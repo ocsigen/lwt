@@ -46,12 +46,8 @@ let unlock m =
   end
 
 let with_lock m f =
-  lwt () = lock m in
-  try_lwt
-    f ()
-  finally
-    unlock m;
-    return ()
+  lock m >>= fun () ->
+  Lwt.finalize f (fun () -> unlock m; return ())
 
 let is_locked m = m.locked
 let is_empty m = Lwt_sequence.is_empty m.waiters

@@ -42,12 +42,12 @@ let wait ?mutex cvar =
       | Some m -> Lwt_mutex.unlock m
       | None -> ()
   in
-  try_lwt
-    waiter
-  finally
-    match mutex with
-      | Some m -> Lwt_mutex.lock m
-      | None -> return ()
+  Lwt.finalize
+    (fun () -> waiter)
+    (fun () ->
+       match mutex with
+         | Some m -> Lwt_mutex.lock m
+         | None -> return ())
 
 let signal cvar arg =
   try

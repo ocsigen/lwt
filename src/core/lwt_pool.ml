@@ -45,14 +45,14 @@ let create m ?(check = fun _ f -> f true) ?(validate = fun _ -> return true) cre
     waiters = Lwt_sequence.create () }
 
 let create_member p =
-  try_lwt
-    p.count <- p.count + 1; (* must be done before p.create *)
-    lwt mem = p.create () in
-    return mem
-  with exn ->
-    (* create failed, so don't increment count *)
-    p.count <- p.count - 1;
-    raise_lwt exn
+  Lwt.catch
+    (fun () ->
+       p.count <- p.count + 1; (* must be done before p.create *)
+       p.create ())
+    (fun exn ->
+       (* create failed, so don't increment count *)
+       p.count <- p.count - 1;
+       fail exn)
 
 let release p c =
   try
@@ -63,7 +63,7 @@ let release p c =
 let replace_acquired p =
   ignore_result (
     p.count <- p.count - 1;
-    lwt c = create_member p in
+    create_member p >>= fun c ->
     release p c;
     return ()
   )
@@ -76,19 +76,17 @@ let acquire p =
       add_task_r p.waiters
   else
     let c = Queue.take p.list in
-    lwt valid =
-      try_lwt
-        p.validate c
-      with e ->
-        replace_acquired p;
-        raise_lwt e
-    in
-    if valid then
-      return c
-    else begin
-      p.count <- p.count - 1;
-      create_member p
-    end
+    Lwt.catch
+      (fun () -> p.validate c)
+      (fun e ->
+         replace_acquired p;
+         fail e)
+    >>= function
+      | true ->
+          return c
+      | false ->
+          p.count <- p.count - 1;
+          create_member p
 
 let checked_release p c =
   p.check c begin fun ok ->
@@ -99,11 +97,12 @@ let checked_release p c =
   end
 
 let use p f =
-  lwt c = acquire p in
-  try_lwt
-    lwt r = f c in
-    release p c;
-    return r
-  with e ->
-    checked_release p c;
-    raise_lwt e
+  acquire p >>= fun c ->
+  Lwt.catch
+    (fun () ->
+       f c >>= fun r ->
+       release p c;
+       return r)
+    (fun e ->
+       checked_release p c;
+       fail e)

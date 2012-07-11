@@ -250,19 +250,23 @@ class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last = object
 
   method push x =
     if closed then
-      raise_lwt Closed
+      Lwt.fail Closed
     else if info.pushb_pending <> None then
-      raise_lwt Full
+      Lwt.fail Full
     else if info.pushb_count >= info.pushb_size then begin
       info.pushb_pending <- Some x;
-      try_lwt
-        info.pushb_push_waiter
-      with Canceled as exn ->
-        info.pushb_pending <- None;
-        let waiter, wakener = task () in
-        info.pushb_push_waiter <- waiter;
-        info.pushb_push_wakener <- wakener;
-        raise_lwt exn
+      Lwt.catch
+        (fun () -> info.pushb_push_waiter)
+        (fun exn ->
+           match exn with
+             | Canceled ->
+                 info.pushb_pending <- None;
+                 let waiter, wakener = task () in
+                 info.pushb_push_waiter <- waiter;
+                 info.pushb_push_wakener <- wakener;
+                 Lwt.fail exn
+             | _ ->
+                 Lwt.fail exn)
     end else begin
       (* Push the element at the end of the queue. *)
       let node = !last and new_last = new_node () in
@@ -346,7 +350,7 @@ let feed s =
         else begin
           (* Otherwise request a new element. *)
           let thread =
-            lwt x = from.from_create () in
+            from.from_create () >>= fun x ->
             (* Push the element to the end of the queue. *)
             let node = !(s.last) and new_last = new_node () in
             node.data <- x;
@@ -385,7 +389,7 @@ let consume s node =
 
 let rec peek_rec s node =
   if node == !(s.last) then
-    feed s >> peek_rec s node
+    feed s >>= fun () -> peek_rec s node
   else
     return node.data
 
@@ -395,7 +399,7 @@ let rec npeek_rec node acc n s =
   if n <= 0 then
     return (List.rev acc)
   else if node == !(s.last) then
-    feed s >> npeek_rec node acc n s
+    feed s >>= fun () -> npeek_rec node acc n s
   else
     match node.data with
       | Some x ->
@@ -407,7 +411,7 @@ let npeek n s = npeek_rec s.node [] n s
 
 let rec get_rec s node =
   if node == !(s.last) then
-    feed s >> get_rec s node
+    feed s >>= fun () -> get_rec s node
   else begin
     if node.data <> None then consume s node;
     return node.data
@@ -435,7 +439,7 @@ let rec nget_rec node acc n s =
   if n <= 0 then
     return (List.rev acc)
   else if node == !(s.last) then
-    feed s >> nget_rec node acc n s
+    feed s >>= fun () -> nget_rec node acc n s
   else
     match s.node.data with
       | Some x ->
@@ -448,7 +452,7 @@ let nget n s = nget_rec s.node [] n s
 
 let rec get_while_rec node acc f s =
   if node == !(s.last) then
-    feed s >> get_while_rec node acc f s
+    feed s >>= fun () -> get_while_rec node acc f s
   else
     match node.data with
       | Some x ->
@@ -465,16 +469,17 @@ let get_while f s = get_while_rec s.node [] f s
 
 let rec get_while_s_rec node acc f s =
   if node == !(s.last) then
-    feed s >> get_while_s_rec node acc f s
+    feed s >>= fun () -> get_while_s_rec node acc f s
   else
     match node.data with
-      | Some x ->
-          lwt test = f x in
-          if test then begin
-            consume s node;
-            get_while_s_rec node.next (x :: acc) f s
-          end else
-            return (List.rev acc)
+      | Some x -> begin
+          f x >>= function
+            | true ->
+                consume s node;
+                get_while_s_rec node.next (x :: acc) f s
+            | false ->
+                return (List.rev acc)
+        end
       | None ->
           return (List.rev acc)
 
@@ -482,14 +487,14 @@ let get_while_s f s = get_while_s_rec s.node [] f s
 
 let rec next_rec s node =
   if node == !(s.last) then
-    feed s >> next_rec s node
+    feed s >>= fun () -> next_rec s node
   else
     match node.data with
       | Some x ->
           consume s node;
           return x
       | None ->
-          raise_lwt Empty
+          Lwt.fail Empty
 
 let next s = next_rec s s.node
 
@@ -500,7 +505,7 @@ let rec last_new_rec node x s =
       | Return _ ->
           last_new_rec node x s
       | Fail exn ->
-          raise_lwt exn
+          Lwt.fail exn
       | Sleep ->
           return x
   else
@@ -526,11 +531,11 @@ let last_new s =
           consume s node;
           last_new_rec node.next x s
       | None ->
-          raise_lwt Empty
+          Lwt.fail Empty
 
 let rec to_list_rec node acc s =
   if node == !(s.last) then
-    feed s >> to_list_rec node acc s
+    feed s >>= fun () -> to_list_rec node acc s
   else
     match node.data with
       | Some x ->
@@ -543,7 +548,7 @@ let to_list s = to_list_rec s.node [] s
 
 let rec to_string_rec node buf s =
   if node == !(s.last) then
-    feed s >> to_string_rec node buf s
+    feed s >>= fun () -> to_string_rec node buf s
   else
     match node.data with
       | Some x ->
@@ -558,7 +563,7 @@ let to_string s = to_string_rec s.node (Buffer.create 128) s
 let junk s =
   let node = s.node in
   if node == !(s.last) then begin
-    lwt _ = feed s in
+    feed s >>= fun () ->
     if node.data <> None then consume s node;
     return ()
   end else begin
@@ -570,7 +575,7 @@ let rec njunk_rec node n s =
   if n <= 0 then
     return ()
   else if node == !(s.last) then
-    feed s >> njunk_rec node n s
+    feed s >>= fun () -> njunk_rec node n s
   else
     match node.data with
       | Some _ ->
@@ -583,7 +588,7 @@ let njunk n s = njunk_rec s.node n s
 
 let rec junk_while_rec node f s =
   if node == !(s.last) then
-    feed s >> junk_while_rec node f s
+    feed s >>= fun () -> junk_while_rec node f s
   else
     match node.data with
       | Some x ->
@@ -600,16 +605,17 @@ let junk_while f s = junk_while_rec s.node f s
 
 let rec junk_while_s_rec node f s =
   if node == !(s.last) then
-    feed s >> junk_while_s_rec node f s
+    feed s >>= fun () -> junk_while_s_rec node f s
   else
     match node.data with
-      | Some x ->
-          lwt test = f x in
-          if test then begin
-            consume s node;
-            junk_while_s_rec node.next f s
-          end else
-            return ()
+      | Some x -> begin
+          f x >>= function
+            | true ->
+                consume s node;
+                junk_while_s_rec node.next f s
+            | false ->
+                return ()
+        end
       | None ->
           return ()
 
@@ -622,7 +628,7 @@ let rec junk_old_rec node s =
       | Return _ ->
           junk_old_rec node s
       | Fail exn ->
-          raise_lwt exn
+          Lwt.fail exn
       | Sleep ->
           return ()
   else
@@ -679,7 +685,7 @@ let get_available_up_to n s = get_available_up_to_rec s.node [] n s
 
 let rec is_empty s =
   if s.node == !(s.last) then
-    feed s >> is_empty s
+    feed s >>= fun () -> is_empty s
   else
     return (s.node.data = None)
 
@@ -694,8 +700,7 @@ let map f s =
 let map_s f s =
   from (fun () -> get s >>= function
           | Some x ->
-              lwt x = f x in
-              return (Some x)
+              f x >|= (fun x -> Some x)
           | None ->
               return None)
 
@@ -716,12 +721,13 @@ let filter f s =
 let filter_s f s =
   let rec next () =
     get s >>= function
-      | Some x as result ->
-          lwt test = f x in
-          if test then
-            return result
-          else
-            next ()
+      | Some x as result -> begin
+          f x >>= function
+            | true ->
+                return result
+            | false ->
+                next ()
+        end
       | None ->
           return None
   in
@@ -745,13 +751,13 @@ let filter_map f s =
 let filter_map_s f s =
   let rec next () =
     get s >>= function
-      | Some x ->
-          lwt x = f x in
-          (match x with
-             | Some _ ->
-                 return x
-             | None ->
-                 next ())
+      | Some x -> begin
+          f x >>= function
+            | Some _ as opt ->
+                return opt
+            | None ->
+                next ()
+        end
       | None ->
           return None
   in
@@ -763,12 +769,12 @@ let map_list f s =
     match !pendings with
       | [] ->
           get s >>= (function
-                                | Some x ->
-                                    let l = f x in
-                                    pendings := l;
-                                    next ()
-                                | None ->
-                                    return None)
+                       | Some x ->
+                           let l = f x in
+                           pendings := l;
+                           next ()
+                       | None ->
+                           return None)
       | x :: l ->
           pendings := l;
           return (Some x)
@@ -782,7 +788,7 @@ let map_list_s f s =
       | [] ->
           get s >>= (function
                        | Some x ->
-                           lwt l = f x in
+                           f x >>= fun l ->
                            pendings := l;
                            next ()
                        | None ->
@@ -798,7 +804,7 @@ let flatten s =
 
 let rec fold_rec node f s acc =
   if node == !(s.last) then
-    feed s >> fold_rec node f s acc
+    feed s >>= fun () -> fold_rec node f s acc
   else
     match node.data with
       | Some x ->
@@ -812,12 +818,12 @@ let fold f s acc = fold_rec s.node f s acc
 
 let rec fold_s_rec node f s acc =
   if node == !(s.last) then
-    feed s >> fold_s_rec node f s acc
+    feed s >>= fun () -> fold_s_rec node f s acc
   else
     match node.data with
       | Some x ->
           consume s node;
-          lwt acc = f x acc in
+          f x acc >>= fun acc ->
           fold_s_rec node.next f s acc
       | None ->
           return acc
@@ -826,7 +832,7 @@ let fold_s f s acc = fold_s_rec s.node f s acc
 
 let rec iter_rec node f s =
   if node == !(s.last) then
-    feed s >> iter_rec node f s
+    feed s >>= fun () -> iter_rec node f s
   else
     match node.data with
       | Some x ->
@@ -840,12 +846,12 @@ let iter f s = iter_rec s.node f s
 
 let rec iter_s_rec node f s =
   if node == !(s.last) then
-    feed s >> iter_s_rec node f s
+    feed s >>= fun () -> iter_s_rec node f s
   else
     match node.data with
       | Some x ->
           consume s node;
-          lwt () = f x in
+          f x >>= fun () ->
           iter_s_rec node.next f s
       | None ->
           return ()
@@ -854,7 +860,7 @@ let iter_s f s = iter_s_rec s.node f s
 
 let rec iter_p_rec node f s =
   if node == !(s.last) then
-    feed s >> iter_p_rec node f s
+    feed s >>= fun () -> iter_p_rec node f s
   else
     match node.data with
       | Some x ->
@@ -867,7 +873,7 @@ let iter_p f s = iter_p_rec s.node f s
 
 let rec find_rec node f s =
   if node == !(s.last) then
-    feed s >> find_rec node f s
+    feed s >>= fun () -> find_rec node f s
   else
     match node.data with
       | Some x as result ->
@@ -884,16 +890,17 @@ let find f s = find_rec s.node f s
 
 let rec find_s_rec node f s =
   if node == !(s.last) then
-    feed s >> find_s_rec node f s
+    feed s >>= fun () -> find_s_rec node f s
   else
     match node.data with
-      | Some x as result ->
+      | Some x as result -> begin
           consume s node;
-          lwt test = f x in
-          if test then
-            return result
-          else
-            find_s_rec node.next f s
+          f x >>= function
+            | true ->
+                return result
+            | false ->
+                find_s_rec node.next f s
+        end
       | None ->
           return None
 
@@ -901,7 +908,7 @@ let find_s f s = find_s_rec s.node f s
 
 let rec find_map_rec node f s =
   if node == !(s.last) then
-    feed s >> find_map_rec node f s
+    feed s >>= fun () -> find_map_rec node f s
   else
     match node.data with
       | Some x ->
@@ -918,16 +925,17 @@ let find_map f s = find_map_rec s.node f s
 
 let rec find_map_s_rec node f s =
   if node == !(s.last) then
-    feed s >> find_map_s_rec node f s
+    feed s >>= fun () -> find_map_s_rec node f s
   else
     match node.data with
-      | Some x ->
+      | Some x -> begin
           consume s node;
-          lwt x = f x in
-          if x = None then
-            find_map_s_rec node.next f s
-          else
-            return x
+          f x >>= function
+            | None ->
+                find_map_s_rec node.next f s
+            | Some _ as opt ->
+                return opt
+        end
       | None ->
           return None
 
@@ -935,7 +943,9 @@ let find_map_s f s = find_map_s_rec s.node f s
 
 let rec combine s1 s2 =
   let next () =
-    lwt n1 = get s1 and n2 = get s2 in
+    let t1 = get s1 and t2 = get s2 in
+    t1 >>= fun n1 ->
+    t2 >>= fun n2 ->
     match n1, n2 with
       | Some x1, Some x2 ->
           return (Some(x1, x2))
@@ -984,7 +994,7 @@ let choose streams =
       | [] ->
           return None
       | l ->
-          lwt s, x = Lwt.choose (List.map snd l) in
+          Lwt.choose (List.map snd l) >>= fun (s, x) ->
           let l = List.remove_assq s l in
           match x with
             | Some _ ->
@@ -1000,11 +1010,11 @@ let parse s f =
      | Push_bounded _ -> invalid_arg "Lwt_stream.parse"
      | _ -> ());
   let node = s.node in
-  try_lwt
-    f s
-  with exn ->
-    s.node <- node;
-    raise_lwt exn
+  Lwt.catch
+    (fun () -> f s)
+    (fun exn ->
+       s.node <- node;
+       Lwt.fail exn)
 
 let hexdump stream =
   let buf = Buffer.create 80 and num = ref 0 in

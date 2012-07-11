@@ -40,6 +40,10 @@ Flag all
   Description: build and install everything
   Default: false
 
+Flag syntax
+  Description: Build the syntax extension
+  Default: true
+
 Flag unix
   Description: Unix support
   Default: true
@@ -62,11 +66,11 @@ Flag text
 
 Flag preemptive
   Description: Preemptive threads support
-  Default: true
+  Default$: flag(unix)
 
 Flag extra
   Description: Asynchronous unix functions
-  Default: true
+  Default$: flag(preemptive)
 
 Flag toplevel
   Description: Enhanced toplevel
@@ -86,6 +90,7 @@ Flag pthread
 
 Library "optcomp"
   Install: false
+  Build$: flag(syntax) || flag(all)
   Path: syntax
   Modules: Pa_optcomp
   BuildDepends: camlp4, camlp4.quotations.o
@@ -250,6 +255,8 @@ Library "lwt-top"
   XMETADescription: Line-editing in the toplevel
 
 Library "lwt-syntax"
+  Build$: flag(syntax) || flag(all)
+  Install$: flag(syntax) || flag(all)
   FindlibName: syntax
   FindlibParent: lwt
   Path: syntax
@@ -260,6 +267,8 @@ Library "lwt-syntax"
   XMETARequires: camlp4, lwt.syntax.options
 
 Library "lwt-syntax-options"
+  Build$: flag(syntax) || flag(all)
+  Install$: flag(syntax) || flag(all)
   FindlibName: options
   FindlibParent: lwt-syntax
   Path: syntax
@@ -270,6 +279,8 @@ Library "lwt-syntax-options"
   XMETARequires: camlp4
 
 Library "lwt-syntax-log"
+  Build$: flag(syntax) || flag(all)
+  Install$: flag(syntax) || flag(all)
   FindlibName: log
   FindlibParent: lwt-syntax
   Path: syntax
@@ -389,7 +400,7 @@ Executable test_react
 
 Executable test_preemptive
   Path: tests/preemptive
-  Build$: flag(tests) && (flag(preemptive) || flag(all))
+  Build$: flag(tests) && ((flag(preemptive) && flag(unix)) || flag(all))
   Install: false
   CompiledObject: best
   MainIs: main.ml
@@ -413,7 +424,7 @@ Test react
 Test preemptive
   Command: $test_preemptive
   TestTools: test_preemptive
-  Run$: flag(tests) && (flag(preemptive) || flag(all))
+  Run$: flag(tests) && ((flag(preemptive) && flag(unix)) || flag(all))
 
 # +-------------------------------------------------------------------+
 # | Misc                                                              |
