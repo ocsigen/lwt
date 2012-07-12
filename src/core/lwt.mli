@@ -285,6 +285,26 @@ val wakeup_later_exn : 'a u -> exn -> unit
 val waiter_of_wakener : 'a u -> 'a t
   (** Returns the thread associated to a wakener. *)
 
+type +'a result
+  (** Either a value of type ['a], either an exception. *)
+
+val make_value : 'a -> 'a result
+  (** [value x] creates a result containing the value [x]. *)
+
+val make_error : exn -> 'a result
+  (** [error e] creates a result containing the exception [e]. *)
+
+val of_result : 'a result -> 'a t
+  (** Returns a thread from a result. *)
+
+val wakeup_result : 'a u -> 'a result -> unit
+  (** [wakeup_result t r] makes the sleeping thread [t] terminate with
+      the result [r]. *)
+
+val wakeup_later_result : 'a u -> 'a result -> unit
+  (** Same as {!wakeup_result} but it is not guaranteed that the
+      thread will be woken up immediately. *)
+
 (** {6 Threads state} *)
 
 (** State of a thread *)

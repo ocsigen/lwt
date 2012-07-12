@@ -180,31 +180,18 @@ let cancel_jobs () = abort_jobs Lwt.Canceled
 let wait_for_jobs () =
   join (Lwt_sequence.fold_l (fun (w, f) l -> w :: l) jobs [])
 
-type 'a result =
-  | Value of 'a
-  | Error of exn
-
 let wrap_result f x =
   try
-    Value (f x)
+    Lwt.make_value (f x)
   with exn ->
-    Error exn
-
-let wakeup_result wakener result =
-  match result with
-    | Value x -> wakeup wakener x
-    | Error e -> wakeup_exn wakener e
+    Lwt.make_error exn
 
 let run_job_aux async_method job result =
   (* Starts the job. *)
   if start_job job async_method then
     (* The job has already terminated, read and return the result
        immediatly. *)
-    match result job with
-      | Value x ->
-          return x
-      | Error e ->
-          fail e
+    Lwt.of_result (result job)
   else begin
     (* Thread for the job. *)
     let waiter, wakener = wait () in
@@ -217,7 +204,7 @@ let run_job_aux async_method job result =
           (fun () ->
              Lwt_sequence.remove node;
              let result = result job in
-             if state waiter = Sleep then wakeup_result wakener result)
+             if state waiter = Sleep then Lwt.wakeup_result wakener result)
       in
       (* Give the job some time before we fallback to asynchronous
          notification. *)
@@ -250,9 +237,9 @@ external run_job_sync : 'a job -> 'a = "lwt_unix_run_job_sync"
 
 let self_result job =
   try
-    Value (self_result job)
+    Lwt.make_value (self_result job)
   with exn ->
-    Error exn
+    Lwt.make_error exn
 
 let run_job ?async_method job =
   let async_method = choose_async_method async_method in

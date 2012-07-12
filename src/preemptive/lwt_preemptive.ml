@@ -151,28 +151,23 @@ let nbthreadsbusy () = !threads_count - Queue.length workers
    | Detaching                                                       |
    +-----------------------------------------------------------------+ *)
 
+let init_result = Lwt.make_error (Failure "Lwt_preemptive.detach")
+
 let detach f args =
   simple_init ();
-  let result = ref `Nothing in
+  let result = ref init_result in
   (* The task for the worker thread: *)
   let task () =
     try
-      result := `Success(f args)
+      result := Lwt.make_value (f args)
     with exn ->
-      result := `Failure exn
+      result := Lwt.make_error exn
   in
   lwt worker = get_worker () in
   let waiter, wakener = wait () in
   let id =
     Lwt_unix.make_notification ~once:true
-      (fun () ->
-         match !result with
-           | `Nothing ->
-               wakeup_exn wakener (Failure "Lwt_preemptive.detach")
-           | `Success value ->
-               wakeup wakener value
-           | `Failure exn ->
-               wakeup_exn wakener exn)
+      (fun () -> Lwt.wakeup_result wakener !result)
   in
   try_lwt
     (* Send the id and the task to the worker: *)

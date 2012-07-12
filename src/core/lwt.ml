@@ -311,36 +311,37 @@ let safe_run_waiters sleeper state =
   unsafe_run_waiters sleeper state;
   leave_wakeup ctx
 
-let wakeup t v =
+(* A ['a result] is either [Return of 'a] or [Fail of exn] so it is
+   covariant. *)
+
+type +'a result (* = 'a thread_state *)
+external result_of_state : 'a thread_state -> 'a result = "%identity"
+external state_of_result : 'a result -> 'a thread_state = "%identity"
+
+let make_value v = result_of_state (Return v)
+let make_error e = result_of_state (Fail e)
+
+let wakeup_result t result =
   let t = repr_rec (wakener_repr t) in
   match t.state with
     | Sleep sleeper ->
-        let state = Return v in
+        let state = state_of_result result in
         t.state <- state;
         safe_run_waiters sleeper state
     | Fail Canceled ->
         (* Do not fail if the thread has been canceled: *)
         ()
     | _ ->
-        invalid_arg "Lwt.wakeup"
+        invalid_arg "Lwt.wakeup_result"
 
-let wakeup_exn t e =
+let wakeup t v = wakeup_result t (make_value v)
+let wakeup_exn t e = wakeup_result t (make_error e)
+
+let wakeup_later_result (type x) t result =
   let t = repr_rec (wakener_repr t) in
   match t.state with
     | Sleep sleeper ->
-        let state = Fail e in
-        t.state <- state;
-        safe_run_waiters sleeper state
-    | Fail Canceled ->
-        ()
-    | _ ->
-        invalid_arg "Lwt.wakeup_exn"
-
-let wakeup_later (type x) t v =
-  let t = repr_rec (wakener_repr t) in
-  match t.state with
-    | Sleep sleeper ->
-        let state = Return v in
+        let state = state_of_result result in
         t.state <- state;
         if !wakening then begin
           (* Already wakening => create the closure for later wakening. *)
@@ -356,29 +357,10 @@ let wakeup_later (type x) t v =
     | Fail Canceled ->
         ()
     | _ ->
-        invalid_arg "Lwt.wakeup"
+        invalid_arg "Lwt.wakeup_later_result"
 
-let wakeup_later_exn (type x) t e =
-  let t = repr_rec (wakener_repr t) in
-  match t.state with
-    | Sleep sleeper ->
-        let state = Fail e in
-        t.state <- state;
-        if !wakening then begin
-          (* Already wakening => create the closure for later wakening. *)
-          let module M = struct
-            type a = x
-            let sleeper = sleeper
-            let state = state
-          end in
-          Queue.push (module M : A_closure) to_wakeup
-        end else
-          (* Otherwise restart threads now. *)
-          safe_run_waiters sleeper state
-    | Fail Canceled ->
-        ()
-    | _ ->
-        invalid_arg "Lwt.wakeup"
+let wakeup_later t v = wakeup_later_result t (make_value v)
+let wakeup_later_exn t e = wakeup_later_result t (make_error e)
 
 module type A_sleeper = sig
   type a
@@ -551,6 +533,9 @@ let return_none = return None
 let return_nil = return []
 let return_true = return true
 let return_false = return false
+
+let of_result result =
+  thread { state = state_of_result result }
 
 let fail e =
   thread { state = Fail e }
