@@ -3,9 +3,9 @@
 <**/*.ml>: syntax_camlp4o, pkg_camlp4
 <**/*.ml>: pa_lwt_options, pa_lwt, pa_lwt_log, pa_optcomp
 <syntax/*.ml>: -pa_lwt_options, -pa_lwt, -pa_lwt_log, -pa_optcomp
-# Disable camlp4 for at least the core library, we will see for other
-# ones latter:
-<src/core/*.ml>: -syntax_camlp4o, -pkg_camlp4, -pa_lwt_options, -pa_lwt, -pa_lwt_log, -pa_optcomp
+# Disable camlp4 for at least the core and react libraries, we will
+# see for other ones latter:
+<src/{core,react}/*.ml>: -syntax_camlp4o, -pkg_camlp4, -pa_lwt_options, -pa_lwt, -pa_lwt_log, -pa_optcomp
 
 <src/simple_top/lwt_simple_top.ml>: use_toploop
 

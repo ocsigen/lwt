@@ -20,10 +20,9 @@
  * 02111-1307, USA.
  *)
 
-include Lwt_react.S
+let (>>=) = Lwt.(>>=)
 
-open Lwt_react
-open Lwt
+include Lwt_react.S
 
 (* +-----------------------------------------------------------------+
    | Notifiers                                                       |
@@ -38,14 +37,14 @@ let disable n =
   stop (Lwt_sequence.get n)
 
 let notify f signal =
-  Lwt_sequence.add_l (S.map f signal) notifiers
+  Lwt_sequence.add_l (React.S.map f signal) notifiers
 
 let notify_p f signal =
-  Lwt_sequence.add_l (S.map (fun x -> Lwt.ignore_result (f x)) signal) notifiers
+  Lwt_sequence.add_l (React.S.map (fun x -> Lwt.ignore_result (f x)) signal) notifiers
 
 let notify_s f signal =
   let mutex = Lwt_mutex.create () in
-  Lwt_sequence.add_l (S.map (fun x -> Lwt.ignore_result (Lwt_mutex.with_lock mutex (fun () -> f x))) signal) notifiers
+  Lwt_sequence.add_l (React.S.map (fun x -> Lwt.ignore_result (Lwt_mutex.with_lock mutex (fun () -> f x))) signal) notifiers
 
 let always_notify f signal =
   ignore (notify f signal)
@@ -61,31 +60,31 @@ let always_notify_s f signal =
    +-----------------------------------------------------------------+ *)
 
 let delay thread =
-  match poll thread with
+  match Lwt.poll thread with
     | Some signal ->
         let event1, send1 = React.E.create () in
         let event2, send2 = React.E.create () in
         ignore (
           (* If the thread has already terminated, we make a pause to
              prevent the first occurence to be lost *)
-          lwt () = pause () in
+          Lwt.pause () >>= fun () ->
           send1 (value signal);
           send2 (changes signal);
           React.E.stop event1;
           React.E.stop event2;
-          return ()
+          Lwt.return_unit
         );
         React.E.switch event1 event2
     | None ->
         let event1, send1 = React.E.create () in
         let event2, send2 = React.E.create () in
         ignore (
-          lwt signal = thread in
+          thread >>= fun signal ->
           send1 (value signal);
           send2 (changes signal);
           React.E.stop event1;
           React.E.stop event2;
-          return ()
+          Lwt.return_unit
         );
         React.E.switch event1 event2
 
@@ -94,67 +93,67 @@ let delay thread =
    +-----------------------------------------------------------------+ *)
 
 let run_s ?eq i s =
-  let event, push = E.create () in
+  let event, push = React.E.create () in
   let mutex = Lwt_mutex.create () in
-  let iter = E.fmap (fun t -> on_success (Lwt_mutex.with_lock mutex (fun () -> t)) push; None) (changes s) in
-  on_success (Lwt_mutex.with_lock mutex (fun () -> value s)) push;
-  hold ?eq i (E.select [iter; event])
+  let iter = React.E.fmap (fun t -> Lwt.on_success (Lwt_mutex.with_lock mutex (fun () -> t)) push; None) (changes s) in
+  Lwt.on_success (Lwt_mutex.with_lock mutex (fun () -> value s)) push;
+  hold ?eq i (React.E.select [iter; event])
 
 let map_s ?eq f i s =
-  let event, push = E.create () in
+  let event, push = React.E.create () in
   let mutex = Lwt_mutex.create () in
-  let iter = E.fmap (fun x -> on_success (Lwt_mutex.with_lock mutex (fun () -> f x)) push; None) (changes s) in
-  on_success (Lwt_mutex.with_lock mutex (fun () -> f (value s))) push;
-  hold ?eq i (E.select [iter; event])
+  let iter = React.E.fmap (fun x -> Lwt.on_success (Lwt_mutex.with_lock mutex (fun () -> f x)) push; None) (changes s) in
+  Lwt.on_success (Lwt_mutex.with_lock mutex (fun () -> f (value s))) push;
+  hold ?eq i (React.E.select [iter; event])
 
 let app_s ?eq sf i s =
-  let event, push = E.create () in
+  let event, push = React.E.create () in
   let mutex = Lwt_mutex.create () in
-  let iter = E.fmap (fun (f, x) -> on_success (Lwt_mutex.with_lock mutex (fun () -> f x)) push; None) (E.app (E.map (fun f x -> (f, x)) (changes sf)) (changes s)) in
-  on_success (Lwt_mutex.with_lock mutex (fun () -> (value sf) (value s))) push;
-  hold ?eq i (E.select [iter; event])
+  let iter = React.E.fmap (fun (f, x) -> Lwt.on_success (Lwt_mutex.with_lock mutex (fun () -> f x)) push; None) (React.E.app (React.E.map (fun f x -> (f, x)) (changes sf)) (changes s)) in
+  Lwt.on_success (Lwt_mutex.with_lock mutex (fun () -> (value sf) (value s))) push;
+  hold ?eq i (React.E.select [iter; event])
 
 let filter_s ?eq f i s =
-  let event, push = E.create () in
+  let event, push = React.E.create () in
   let mutex = Lwt_mutex.create () in
-  let iter = E.fmap (fun x -> on_success (Lwt_mutex.with_lock mutex (fun () -> f x)) (function true -> push x | false -> ()); None) (changes s) in
+  let iter = React.E.fmap (fun x -> Lwt.on_success (Lwt_mutex.with_lock mutex (fun () -> f x)) (function true -> push x | false -> ()); None) (changes s) in
   let x = value s in
-  on_success
+  Lwt.on_success
     (Lwt_mutex.with_lock mutex (fun () -> f x))
     (function
        | true ->
            push x
        | false ->
            ());
-  hold ?eq i (E.select [iter; event])
+  hold ?eq i (React.E.select [iter; event])
 
 let fmap_s ?eq f i s =
-  let event, push = E.create () in
+  let event, push = React.E.create () in
   let mutex = Lwt_mutex.create () in
-  let iter = E.fmap (fun x -> on_success (Lwt_mutex.with_lock mutex (fun () -> f x)) (function Some x -> push x | None -> ()); None) (changes s) in
-  on_success
+  let iter = React.E.fmap (fun x -> Lwt.on_success (Lwt_mutex.with_lock mutex (fun () -> f x)) (function Some x -> push x | None -> ()); None) (changes s) in
+  Lwt.on_success
     (Lwt_mutex.with_lock mutex (fun () -> f (value s)))
     (function
        | Some x ->
            push x
        | None ->
            ());
-  hold ?eq i (E.select [iter; event])
+  hold ?eq i (React.E.select [iter; event])
 
 let rec rev_fold f acc = function
   | [] ->
-      return acc
+      Lwt.return acc
   | x :: l ->
-      lwt acc = rev_fold f acc l in
+      rev_fold f acc l >>= fun acc ->
       f acc x
 
 let merge_s ?eq f acc sl =
   let s = merge (fun acc x -> x :: acc) [] sl in
-  let event, push = E.create () in
+  let event, push = React.E.create () in
   let mutex = Lwt_mutex.create () in
-  let iter = E.fmap (fun l -> on_success (Lwt_mutex.with_lock mutex (fun () -> rev_fold f acc l)) push; None) (changes s) in
-  on_success (Lwt_mutex.with_lock mutex (fun () -> rev_fold f acc (value s))) push;
-  hold ?eq acc (E.select [iter; event])
+  let iter = React.E.fmap (fun l -> Lwt.on_success (Lwt_mutex.with_lock mutex (fun () -> rev_fold f acc l)) push; None) (changes s) in
+  Lwt.on_success (Lwt_mutex.with_lock mutex (fun () -> rev_fold f acc (value s))) push;
+  hold ?eq acc (React.E.select [iter; event])
 
 let l1_s ?eq f i s1 =
   map_s ?eq f i s1
