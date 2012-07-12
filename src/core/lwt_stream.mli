@@ -39,6 +39,11 @@ val from : (unit -> 'a option Lwt.t) -> 'a t
       called each time more input is needed, and the stream ends when
       [f] returns [None]. *)
 
+val from_direct : (unit -> 'a option) -> 'a t
+  (** [from_direct f] does the same as {!from} but with a function
+      that does not return a thread. It is better than wrapping [f]
+      into a function which return a thread. *)
+
 exception Closed
   (** Exception raised by the push function of a push-stream when
       pushing an element after the end of stream ([= None]) have been

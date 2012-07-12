@@ -95,6 +95,7 @@ type 'a push_bounded = {
 (* Source of a stream. *)
 type 'a source =
   | From of 'a from
+  | From_direct of (unit -> 'a option)
   | Push of push
   | Push_bounded of 'a push_bounded
 
@@ -139,34 +140,45 @@ let from f =
     last = ref last;
   }
 
+let from_direct f =
+  let last = new_node () in
+  {
+    source = From_direct f;
+    node = last;
+    last = ref last;
+  }
+
 let of_list l =
   let l = ref l in
-  from (fun () ->
-          match !l with
-            | [] -> Lwt.return_none
-            | x :: l' -> l := l'; Lwt.return (Some x))
+  from_direct
+    (fun () ->
+       match !l with
+         | [] -> None
+         | x :: l' -> l := l'; Some x)
 
 let of_array a =
   let len = Array.length a and i = ref 0 in
-  from (fun () ->
-          if !i = len then
-            Lwt.return_none
-          else begin
-            let c = Array.unsafe_get a !i in
-            incr i;
-            Lwt.return (Some c)
-          end)
+  from_direct
+    (fun () ->
+       if !i = len then
+         None
+       else begin
+         let c = Array.unsafe_get a !i in
+         incr i;
+         Some c
+       end)
 
 let of_string s =
   let len = String.length s and i = ref 0 in
-  from (fun () ->
-          if !i = len then
-            Lwt.return_none
-          else begin
-            let c = String.unsafe_get s !i in
-            incr i;
-            Lwt.return (Some c)
-          end)
+  from_direct
+    (fun () ->
+       if !i = len then
+         None
+       else begin
+         let c = String.unsafe_get s !i in
+         incr i;
+         Some c
+       end)
 
 let create_with_reference () =
   (* Create the cell pointing to the end of the queue. *)
@@ -361,6 +373,14 @@ let feed s =
           from.from_thread <- thread;
           Lwt.protected thread
         end
+    | From_direct f ->
+        let x = f () in
+        (* Push the element to the end of the queue. *)
+        let node = !(s.last) and new_last = new_node () in
+        node.data <- x;
+        node.next <- new_last;
+        s.last := new_last;
+        Lwt.return_unit
     | Push push ->
         push.push_waiting <- true;
         Lwt.protected push.push_signal
