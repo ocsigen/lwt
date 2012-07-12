@@ -88,6 +88,23 @@ val (>|=) : 'a t -> ('a -> 'b) -> 'b t
 val (=|<) : ('a -> 'b) -> 'a t -> 'b t
   (** [f =|< m] is [map f m] *)
 
+(** {8 Pre-allocated threads} *)
+
+val return_unit : unit t
+  (** [return_unit = return ()] *)
+
+val return_none : 'a option t
+  (** [return_none = return None] *)
+
+val return_nil : 'a list t
+  (** [return_nil = return \[\]] *)
+
+val return_true : bool t
+  (** [return_true = return true] *)
+
+val return_false : bool t
+  (** [return_false = return false] *)
+
 (** {6 Thread storage} *)
 
 type 'a key

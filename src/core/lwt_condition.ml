@@ -29,7 +29,7 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************)
 
-open Lwt
+let (>>=) = Lwt.(>>=)
 
 type 'a t = 'a Lwt.u Lwt_sequence.t
 
@@ -47,15 +47,15 @@ let wait ?mutex cvar =
     (fun () ->
        match mutex with
          | Some m -> Lwt_mutex.lock m
-         | None -> return ())
+         | None -> Lwt.return_unit)
 
 let signal cvar arg =
   try
-    wakeup_later (Lwt_sequence.take_l cvar) arg
+    Lwt.wakeup_later (Lwt_sequence.take_l cvar) arg
   with Lwt_sequence.Empty ->
     ()
 
 let broadcast cvar arg =
   let wakeners = Lwt_sequence.fold_r (fun x l -> x :: l) cvar [] in
   Lwt_sequence.iter_node_l Lwt_sequence.remove cvar;
-  List.iter (fun wakener -> wakeup_later wakener arg) wakeners
+  List.iter (fun wakener -> Lwt.wakeup_later wakener arg) wakeners

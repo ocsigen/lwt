@@ -320,8 +320,6 @@ val hexdump : char t -> string t
       Basically, here is a simple implementation of [hexdump -C]:
 
       {[
-        open Lwt
-        open Lwt_io
-        let () = Lwt_main.run (write_lines stdout (Lwt_stream.hexdump (read_lines stdin)))
+        let () = Lwt_main.run (Lwt_io.write_lines Lwt_io.stdout (Lwt_stream.hexdump (Lwt_io.read_lines Lwt_io.stdin)))
       ]}
   *)

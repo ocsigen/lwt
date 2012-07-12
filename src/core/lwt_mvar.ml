@@ -1,4 +1,3 @@
-(* -*- Mode: Caml; indent-tabs-mode: nil -*- *)
 (******************************************************************************)
 (* Lightweight thread library for Objective Caml
  * http://www.ocsigen.org/lwt
@@ -30,8 +29,6 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************)
 
-let return_unit = Lwt.return ()
-
 type 'a t = {
   mutable contents : 'a option;
   (* Current contents *)
@@ -62,7 +59,7 @@ let put mvar v =
           | Some w ->
               Lwt.wakeup_later w v
         end;
-        return_unit
+        Lwt.return_unit
     | Some _ ->
         let (res, w) = Lwt.task () in
         let node = Lwt_sequence.add_r (v, w) mvar.writers in

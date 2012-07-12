@@ -545,6 +545,13 @@ let fast_connect_if t state =
 let return v =
   thread { state = Return v }
 
+let state_return_unit = Return ()
+let return_unit = thread { state = state_return_unit }
+let return_none = return None
+let return_nil = return []
+let return_true = return true
+let return_false = return false
+
 let fail e =
   thread { state = Fail e }
 
@@ -1104,7 +1111,7 @@ let join l =
   (* Number of threads still sleeping: *)
   and sleeping = ref 0
   (* The state that must be returned: *)
-  and return_state = ref (Return ()) in
+  and return_state = ref state_return_unit in
   let handle_result state =
     begin
       match !return_state, state with

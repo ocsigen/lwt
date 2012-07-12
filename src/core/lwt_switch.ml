@@ -20,8 +20,6 @@
  * 02111-1307, USA.
  *)
 
-open Lwt
-
 exception Off
 
 type on_switch = {
@@ -47,27 +45,27 @@ let check = function
 
 let add_hook switch hook =
   match switch with
-    | Some{ state = St_on os } ->
+    | Some { state = St_on os } ->
         os.hooks <- hook :: os.hooks
-    | Some{ state = St_off } ->
+    | Some { state = St_off } ->
         raise Off
     | None ->
         ()
 
 let add_hook_or_exec switch hook =
   match switch with
-    | Some{ state = St_on os } ->
+    | Some { state = St_on os } ->
         os.hooks <- hook :: os.hooks;
-        return ()
-    | Some{ state = St_off } ->
+        Lwt.return_unit
+    | Some { state = St_off } ->
         hook ()
     | None ->
-        return ()
+        Lwt.return_unit
 
 let turn_off switch =
   match switch.state with
     | St_on { hooks = hooks } ->
         switch.state <- St_off;
-        Lwt_list.iter_p (fun hook -> apply hook ()) hooks
+        Lwt_list.iter_p (fun hook -> Lwt.apply hook ()) hooks
     | St_off ->
-        return ()
+        Lwt.return_unit

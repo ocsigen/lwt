@@ -21,7 +21,7 @@
  * 02111-1307, USA.
  *)
 
-open Lwt
+let (>>=) = Lwt.(>>=)
 
 type t = { mutable locked : bool; mutable waiters : unit Lwt.u Lwt_sequence.t  }
 
@@ -32,7 +32,7 @@ let rec lock m =
     Lwt.add_task_r m.waiters
   else begin
     m.locked <- true;
-    Lwt.return ()
+    Lwt.return_unit
   end
 
 let unlock m =
@@ -47,7 +47,7 @@ let unlock m =
 
 let with_lock m f =
   lock m >>= fun () ->
-  Lwt.finalize f (fun () -> unlock m; return ())
+  Lwt.finalize f (fun () -> unlock m; Lwt.return_unit)
 
 let is_locked m = m.locked
 let is_empty m = Lwt_sequence.is_empty m.waiters

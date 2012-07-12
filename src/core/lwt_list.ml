@@ -20,12 +20,13 @@
  * 02111-1307, USA.
  *)
 
-open Lwt
+let (>>=) = Lwt.(>>=)
+let (>|=) = Lwt.(>|=)
 
 let rec iter_s f l =
   match l with
     | [] ->
-        return ()
+        Lwt.return_unit
     | x :: l ->
         f x >>= fun () ->
         iter_s f l
@@ -33,7 +34,7 @@ let rec iter_s f l =
 let rec iter_p f l =
   match l with
     | [] ->
-        return ()
+        Lwt.return_unit
     | x :: l ->
         let tx = f x and tl = iter_p f l in
         tx >>= fun () -> tl
@@ -41,26 +42,26 @@ let rec iter_p f l =
 let rec map_s f l =
   match l with
     | [] ->
-        return []
+        Lwt.return_nil
     | x :: l ->
         f x >>= fun x ->
-        map_s f l >>= fun l ->
-        return (x :: l)
+        map_s f l >|= fun l ->
+        x :: l
 
 let rec map_p f l =
   match l with
     | [] ->
-        return []
+        Lwt.return_nil
     | x :: l ->
         let tx = f x and tl = map_p f l in
         tx >>= fun x ->
-        tl >>= fun l ->
-        return (x :: l)
+        tl >|= fun l ->
+        x :: l
 
 let rec rev_map_append_s acc f l =
   match l with
     | [] ->
-        return acc
+        Lwt.return acc
     | x :: l ->
         f x >>= fun x ->
         rev_map_append_s (x :: acc) f l
@@ -75,16 +76,16 @@ let rec rev_map_append_p acc f l =
     | x :: l ->
         rev_map_append_p
           (f x >>= fun x ->
-           acc >>= fun l ->
-           return (x :: l)) f l
+           acc >|= fun l ->
+           x :: l) f l
 
 let rev_map_p f l =
-  rev_map_append_p (return []) f l
+  rev_map_append_p Lwt.return_nil f l
 
 let rec fold_left_s f acc l =
   match l with
     | [] ->
-        return acc
+        Lwt.return acc
     | x :: l ->
         f acc x >>= fun acc ->
         fold_left_s f acc l
@@ -92,7 +93,7 @@ let rec fold_left_s f acc l =
 let rec fold_right_s f l acc =
   match l with
     | [] ->
-        return acc
+        Lwt.return acc
     | x :: l ->
         fold_right_s f l acc >>= fun acc ->
         f x acc
@@ -100,102 +101,104 @@ let rec fold_right_s f l acc =
 let rec for_all_s f l =
   match l with
     | [] ->
-        return true
+        Lwt.return_true
     | x :: l ->
         f x >>= function
           | true ->
               for_all_s f l
           | false ->
-              return false
+              Lwt.return_false
 
 let rec for_all_p f l =
   match l with
     | [] ->
-        return true
+        Lwt.return_true
     | x :: l ->
         let tx = f x and tl = for_all_p f l in
         tx >>= fun bx ->
-        tl >>= fun bl ->
-        return (bx && bl)
+        tl >|= fun bl ->
+        bx && bl
 
 let rec exists_s f l =
   match l with
     | [] ->
-        return false
+        Lwt.return_false
     | x :: l ->
         f x >>= function
           | true ->
-              return true
+              Lwt.return_true
           | false ->
               exists_s f l
 
 let rec exists_p f l =
   match l with
     | [] ->
-        return false
+        Lwt.return_false
     | x :: l ->
         let tx = f x and tl = exists_p f l in
         tx >>= fun bx ->
-        tl >>= fun bl ->
-        return (bx || bl)
+        tl >|= fun bl ->
+        bx || bl
 
 let rec find_s f l =
   match l with
     | [] ->
-        fail Not_found
+        Lwt.fail Not_found
     | x :: l ->
         f x >>= function
           | true ->
-              return x
+              Lwt.return x
           | false ->
               find_s f l
 
 let rec filter_s f l =
   match l with
     | [] ->
-        return []
+        Lwt.return_nil
     | x :: l ->
         f x >>= function
           | true ->
-              filter_s f l >>= fun l ->
-              return (x :: l)
+              filter_s f l >|= fun l ->
+              x :: l
           | false ->
               filter_s f l
 
 let rec filter_p f l =
   match l with
     | [] ->
-        return []
+        Lwt.return_nil
     | x :: l ->
         let tx = f x and tl = filter_p f l in
         tx >>= fun bx ->
-        tl >>= fun l ->
+        tl >|= fun l ->
         if bx then
-          return (x :: l)
+          x :: l
         else
-          return l
+          l
+
+let return_nil_nil = Lwt.return ([], [])
 
 let rec partition_s f l =
   match l with
     | [] ->
-        return ([], [])
+        return_nil_nil
     | x :: l ->
         f x >>= fun bx ->
-        partition_s f l >>= fun (l_l, l_r) ->
+        partition_s f l >|= fun (l_l, l_r) ->
         if bx then
-          return (x :: l_l, l_r)
+          (x :: l_l, l_r)
         else
-          return (l_l, x :: l_r)
+          (l_l, x :: l_r)
 
 let rec partition_p f l =
   match l with
     | [] ->
-        return ([], [])
+        return_nil_nil
     | x :: l ->
         let tx = f x and tl = partition_p f l in
         tx >>= fun bx ->
-        tl >>= fun (l_l, l_r) ->
+        tl >|= fun (l_l, l_r) ->
         if bx then
-          return (x :: l_l, l_r)
+          (x :: l_l, l_r)
         else
-          return (l_l, x :: l_r)
+          (l_l, x :: l_r)

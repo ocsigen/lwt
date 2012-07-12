@@ -19,7 +19,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *)
 
-open Lwt
+let (>>=) = Lwt.(>>=)
+let (>|=) = Lwt.(>|=)
 
 (*
 XXX Close after some timeout
@@ -35,7 +36,7 @@ type 'a t =
     list : 'a Queue.t;
     waiters : 'a Lwt.u Lwt_sequence.t }
 
-let create m ?(check = fun _ f -> f true) ?(validate = fun _ -> return true) create =
+let create m ?(check = fun _ f -> f true) ?(validate = fun _ -> Lwt.return_true) create =
   { max = m;
     create = create;
     validate = validate;
@@ -52,20 +53,20 @@ let create_member p =
     (fun exn ->
        (* create failed, so don't increment count *)
        p.count <- p.count - 1;
-       fail exn)
+       Lwt.fail exn)
 
 let release p c =
   try
-    wakeup_later (Lwt_sequence.take_l p.waiters) c
+    Lwt.wakeup_later (Lwt_sequence.take_l p.waiters) c
   with Lwt_sequence.Empty ->
     Queue.push c p.list
 
 let replace_acquired p =
-  ignore_result (
+  Lwt.ignore_result (
     p.count <- p.count - 1;
     create_member p >>= fun c ->
     release p c;
-    return ()
+    Lwt.return_unit
   )
 
 let acquire p =
@@ -73,20 +74,21 @@ let acquire p =
     if p.count < p.max then
       create_member p
     else
-      add_task_r p.waiters
+      Lwt.add_task_r p.waiters
   else
     let c = Queue.take p.list in
-    Lwt.catch
-      (fun () -> p.validate c)
+    Lwt.try_bind
+      (fun () ->
+         p.validate c)
+      (function
+         | true ->
+             Lwt.return c
+         | false ->
+             p.count <- p.count - 1;
+             create_member p)
       (fun e ->
          replace_acquired p;
-         fail e)
-    >>= function
-      | true ->
-          return c
-      | false ->
-          p.count <- p.count - 1;
-          create_member p
+         Lwt.fail e)
 
 let checked_release p c =
   p.check c begin fun ok ->
@@ -100,9 +102,10 @@ let use p f =
   acquire p >>= fun c ->
   Lwt.catch
     (fun () ->
-       f c >>= fun r ->
+       let t = f c in
+       t >>= fun _ ->
        release p c;
-       return r)
+       t)
     (fun e ->
        checked_release p c;
-       fail e)
+       Lwt.fail e)

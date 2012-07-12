@@ -21,64 +21,59 @@
  * 02111-1307, USA.
  *)
 
-open Lwt
+let (>>=) = Lwt.(>>=)
+let (>|=) = Lwt.(>|=)
 
 let rec iter f l =
   let l = List.fold_left (fun acc a -> f a :: acc) [] l in
   let l = List.rev l in
-  List.fold_left (fun rt t -> t >>= fun () -> rt) (Lwt.return ()) l
+  List.fold_left (fun rt t -> t >>= fun () -> rt) Lwt.return_unit l
 
 let rec iter_serial f l =
   match l with
-    []     -> return ()
-  | a :: r -> f a >>= (fun () -> iter_serial f r)
+    | []     -> Lwt.return_unit
+    | a :: r -> f a >>= fun () -> iter_serial f r
 
 let rec map f l =
   match l with
-    [] ->
-      return []
-  | v :: r ->
-      let t = f v in
-      let rt = map f r in
-      t >>= (fun v' ->
-      rt >>= (fun l' ->
-      return (v' :: l')))
+    | [] ->
+        Lwt.return_nil
+    | v :: r ->
+        let t = f v in
+        let rt = map f r in
+        t >>= fun v' ->
+        rt >|= fun l' ->
+        v' :: l'
 
 let map_with_waiting_action f wa l =
   let rec loop l =
     match l with
-      [] ->
-        return []
-    | v :: r ->
-        let t = f v in
-        let rt = loop r in
-        t >>= (fun v' ->
+      | [] ->
+          Lwt.return_nil
+      | v :: r ->
+          let t = f v in
+          let rt = loop r in
+          t >>= fun v' ->
           (* Perform the specified "waiting action" for the next    *)
           (* item in the list.                                      *)
-          if r <> [] then
-            wa (List.hd r)
-          else
-            ();
-          rt >>= (fun l' ->
-            return (v' :: l')))
+          if r <> [] then wa (List.hd r);
+          rt >|= fun l' ->
+          v' :: l'
   in
-  if l <> [] then
-    wa (List.hd l)
-  else
-    ();
+  if l <> [] then wa (List.hd l);
   loop l
 
 let rec map_serial f l =
   match l with
-    [] ->
-      return []
-  | v :: r ->
-      f v >>= (fun v' ->
-      map_serial f r >>= (fun l' ->
-      return (v' :: l')))
+    | [] ->
+        Lwt.return_nil
+    | v :: r ->
+        f v >>= fun v' ->
+        map_serial f r >|= fun l' ->
+        v' :: l'
 
 let rec fold_left f a = function
-  | [] -> return a
+  | [] -> Lwt.return a
   | b::l -> f a b >>= fun v -> fold_left f v l
 
 let join = Lwt.join
@@ -102,15 +97,17 @@ let leave_region reg sz =
      reg.count <- reg.count - sz
 
 let run_in_region_1 reg sz thr =
-  (catch
-     (fun () -> thr () >>= (fun v -> leave_region reg sz; return v))
-     (fun e -> leave_region reg sz; Lwt.fail e))
+  Lwt.finalize
+    thr
+    (fun () ->
+       leave_region reg sz;
+       Lwt.return_unit)
 
 let run_in_region reg sz thr =
   if reg.count >= reg.size then begin
-    let (res, w) = wait () in
+    let (res, w) = Lwt.wait () in
     Queue.add (w, sz) reg.waiters;
-    res >>= (fun () -> run_in_region_1 reg sz thr)
+    res >>= fun () -> run_in_region_1 reg sz thr
   end else begin
     reg.count <- reg.count + sz;
     run_in_region_1 reg sz thr
