@@ -1988,7 +1988,8 @@ let getaddrinfo host service opts =
 external getaddrinfo_job : string -> string -> Unix.getaddrinfo_option list -> Unix.addr_info list job = "lwt_unix_getaddrinfo_job"
 
 let getaddrinfo host service opts =
-  run_job (getaddrinfo_job host service opts)
+  run_job (getaddrinfo_job host service opts) >>= fun l ->
+  return (List.rev l)
 
 #endif
 
