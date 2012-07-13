@@ -886,7 +886,7 @@ let add_removable_waiter threads waiter =
 
 (* The PRNG state is initialized with a constant to make non-IO-based
    programs deterministic. *)
-let random_state = Random.State.make [||]
+let random_state = lazy (Random.State.make [||])
 
 let choose l =
   let ready = ready_count l in
@@ -895,7 +895,7 @@ let choose l =
       (* Optimisation for the common case: *)
       nth_ready l 0
     else
-      nth_ready l (Random.State.int random_state ready)
+      nth_ready l (Random.State.int (Lazy.force random_state) ready)
   else begin
     let res = temp_many l in
     let rec waiter = ref (Some handle_result)
@@ -1035,7 +1035,7 @@ let pick l =
       (* Optimisation for the common case: *)
       cancel_and_nth_ready l 0
     else
-      cancel_and_nth_ready l (Random.State.int random_state ready)
+      cancel_and_nth_ready l (Random.State.int (Lazy.force random_state) ready)
   else begin
     let res = temp_many l in
     let rec waiter = ref (Some handle_result)
