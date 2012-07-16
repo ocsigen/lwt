@@ -61,7 +61,7 @@ Flag ssl
   Default$: flag(all)
 
 Flag text
-  Description: Text mode utilities
+  Description: Text mode utilities (deprecated)
   Default$: flag(all)
 
 Flag preemptive
@@ -240,7 +240,7 @@ Library "lwt-text"
   Path: src/text
   Modules: Lwt_text, Lwt_term, Lwt_read_line
   BuildDepends: lwt, lwt.unix, lwt.react, text, text.bigarray
-  XMETADescription: Text mode utilities
+  XMETADescription: Text mode utilities (deprecated)
   CSources: lwt_text_stubs.c
 
 Library "lwt-top"
@@ -252,7 +252,7 @@ Library "lwt-top"
   Modules: Lwt_top
   InternalModules: Lwt_ocaml_completion
   BuildDepends: lwt, lwt.text, findlib
-  XMETADescription: Line-editing in the toplevel
+  XMETADescription: Line-editing in the toplevel (deprecated)
 
 Library "lwt-syntax"
   Build$: flag(syntax) || flag(all)

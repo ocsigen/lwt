@@ -59,6 +59,9 @@
 # #require "lwt.simple-top";;
 }}}
 
+  {{{lwt.simple-top}}} makes sure {{{Lwt}}} threads can run while
+  using the toplevel. You do not need it if your are using {{{utop}}}.
+
 === Lwt concepts ===
 
   Let's take a classical function of the {{{Pervasives}}} module:
