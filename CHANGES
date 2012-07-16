@@ -1,3 +1,31 @@
+===== 2.4.0 (2012-07-16) =====
+
+  * Reimplement Lwt_stream
+    - much simpler and more efficient
+    - do not use Weak
+    - add bounded push streams
+  * Add Lwt_preemptive.run_in_main
+  * Implement Lwt_unix.get_credentials on MacOS X/OpenBSD
+  * Ensure that on_cancel functions are executed first
+  * Better implementation of Lwt.cancel with more tests
+  * Simplify the API for unix jobs
+  * Better handling of the master lock in libev stubs
+  * Windows fixes/updates:
+    - pass -lws2_32 instead of ws2_32.lib if building with mingw
+    - fix a bug causing Lwt_unix.read/write to block when a socket
+      is not readable/writable
+    - port Lwt_process and Lwt_unix.system to windows
+  * Compatibility with ocaml 4.00:
+    - add O_SHARE_DELETE to Lwt_unix.open_flag
+    - add -package compiler-libs.toplevel for files using Toploop
+  * Do not use module Sys for signal handling to avoid
+    ocaml code to be called in a C thread
+  * Fix Lwt_unix.wrap_syscall: try instead of Lwt.catch
+  * Fix a dead-lock between lwt_unix_send_notification
+    and lwt_unix_recv_notifications
+  * Fix #277: add a function to return the Ssl.socket of a Lwt_ssl.socket
+  * Fix problems with C libraries detection/linking
+
 ===== 2.3.2 (2011-11-04) =====
 
   * Add location informations in logs:
