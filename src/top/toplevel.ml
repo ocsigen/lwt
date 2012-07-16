@@ -47,6 +47,37 @@ let add_modules_from_directory acc dir =
     (Sys.readdir (if dir = "" then Filename.current_dir_name else dir));
   !acc
 
+#if ocaml_version >= (4, 0)
+
+(* List all names of the module with path [path] *)
+let get_names_of_module path =
+  try
+    match
+      match path with
+        | Path path ->
+            Env.find_module path !Toploop.toplevel_env
+        | Longident ident ->
+            snd (Env.lookup_module ident !Toploop.toplevel_env)
+    with
+      | Mty_signature decls ->
+          List.fold_left
+            (fun acc decl -> match decl with
+               | Sig_value(id, _)
+               | Sig_type(id, _, _)
+               | Sig_exception(id, _)
+               | Sig_module(id, _, _)
+               | Sig_modtype(id, _)
+               | Sig_class(id, _, _)
+               | Sig_class_type(id, _, _) ->
+                   TextSet.add (Ident.name id) acc)
+            TextSet.empty decls
+      | _ ->
+          TextSet.empty
+  with Not_found ->
+    TextSet.empty
+
+#else
+
 (* List all names of the module with path [path] *)
 let get_names_of_module path =
   try
@@ -73,6 +104,8 @@ let get_names_of_module path =
           TextSet.empty
   with Not_found ->
     TextSet.empty
+
+#endif
 
 let names_of_module path =
   try
