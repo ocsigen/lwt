@@ -799,7 +799,7 @@ let poll t =
     | Sleep _ -> None
     | Repr _ -> assert false
 
-let rec ignore_result t =
+let async t =
   match (repr t).state with
     | Return _ ->
         ()
@@ -813,6 +813,8 @@ let rec ignore_result t =
              | _ -> assert false)
     | Repr _ ->
         assert false
+
+let ignore_result = async
 
 let protected t =
   match (repr t).state with

@@ -219,15 +219,20 @@ val ( <?> ) : 'a t -> 'a t -> 'a t
 val ( <&> ) : unit t -> unit t -> unit t
   (** [t <&> t'] is the same as [join [t; t']] *)
 
-val ignore_result : 'a t -> unit
-  (** [ignore_result t] start the thread [t] and ignores its result
-      value if the thread terminates sucessfully. However, if the
-      thread [t] fails, the exception is added to
+val async : 'a t -> unit
+  (** [async t] ignores the result value of the thread [t]. However,
+      if the thread [t] fails, the exception is added to
       {!uncaught_exceptions} instead of being ignored.
 
-      You should use this function if you want to start a thread and
-      don't care what its return value is, nor when it terminates (for
-      instance, because it is looping). *)
+      You should use this function if you want to start a thread that
+      might fail and don't care what its return value is, nor when it
+      terminates (for instance, because it is looping).
+
+      Note: it is better to handle all possible exceptions a thread
+      might fail with. *)
+
+val ignore_result : 'a t -> unit
+  (** Same as {!async}. *)
 
 type backtrace
   (** Type of exception backtraces. *)
