@@ -1468,6 +1468,8 @@ CAMLprim value lwt_unix_self_result(value val_job)
 CAMLprim value lwt_unix_run_job_sync(value val_job)
 {
   lwt_unix_job job = Job_val(val_job);
+  /* So lwt_unix_free_job won't try to destroy the mutex. */
+  job->async_method = LWT_UNIX_ASYNC_METHOD_NONE;
   caml_enter_blocking_section();
   job->worker(job);
   caml_leave_blocking_section();
