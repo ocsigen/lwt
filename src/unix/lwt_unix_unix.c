@@ -2014,7 +2014,9 @@ static value convert_addrinfo(struct addrinfo * a)
 
 static void worker_getaddrinfo(struct job_getaddrinfo *job)
 {
-  job->result = getaddrinfo(job->node, job->service, &job->hints, &job->info);
+  job->result =
+    getaddrinfo(job->node[0]?job->node:NULL, job->service[0]?job->service:NULL,
+                &job->hints, &job->info);
 }
 
 static value result_getaddrinfo(struct job_getaddrinfo *job)
