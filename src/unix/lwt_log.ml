@@ -29,7 +29,7 @@ let program_name = Filename.basename Sys.argv.(0)
 
 (* Errors happening in this module are always logged to [stderr]: *)
 let log_intern fmt =
-  Printf.ksprintf (fun msg -> ignore_result (Lwt_io.eprintlf "%s: Lwt_log: %s" program_name msg)) fmt
+  Printf.ksprintf (fun msg -> Lwt.async (fun () -> Lwt_io.eprintlf "%s: Lwt_log: %s" program_name msg)) fmt
 
 (* +-----------------------------------------------------------------+
    | Log levels                                                      |

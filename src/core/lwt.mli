@@ -219,45 +219,30 @@ val ( <?> ) : 'a t -> 'a t -> 'a t
 val ( <&> ) : unit t -> unit t -> unit t
   (** [t <&> t'] is the same as [join [t; t']] *)
 
-val async : 'a t -> unit
-  (** [async t] ignores the result value of the thread [t]. However,
-      if the thread [t] fails, the exception is added to
-      {!uncaught_exceptions} instead of being ignored.
+val async : (unit -> 'a t) -> unit
+  (** [async f] starts a thread without waiting for the result. If it
+      fails (now or later), the exception is given to
+      {!async_exception_hook}.
 
       You should use this function if you want to start a thread that
       might fail and don't care what its return value is, nor when it
-      terminates (for instance, because it is looping).
-
-      Note: it is better to handle all possible exceptions a thread
-      might fail with. *)
+      terminates (for instance, because it is looping). *)
 
 val ignore_result : 'a t -> unit
-  (** Same as {!async}. *)
+  (** [ignore_result t] is like [Pervasives.ignore t] except that:
 
-type backtrace
-  (** Type of exception backtraces. *)
+      - if [t] already failed, it raises the exception now,
+      - if [t] is sleeping and fails later, the exception will be
+        given to {!async_exception_hook}. *)
 
-val uncaught_exceptions : (exn * backtrace) Queue.t
-  (** Queue of uncaught exceptions. Exceptions raised by the callback
-      of the following functions are added to this queue:
+val async_exception_hook : (exn -> unit) ref
+  (** Function called when a asynchronous exception is thrown.
 
-      - {!on_cancel}
-      - {!on_success}
-      - {!on_failure}
-      - {!on_termination}
-      - {!on_any}
-  *)
+      The default behavior is to print an error message with a
+      backtrace if available and to exit the program.
 
-val on_uncaught_exception : (unit -> unit) ref
-  (** Hook executed to handle exceptions in {!uncaught_exceptions}.
-      The default behavior is to call [raise] on the first exception
-      of the queue. {!Lwt_main} replaces this hook by
-      [Pervasives.ignore] and raises uncaught exceptions at toplevel
-      only. *)
-
-val string_of_backtrace : backtrace -> string
-  (** Returns the contents of a backtrace as a string, as returned by
-      [Printexc.get_backtrace]. *)
+      The behavior is undefined if this function raise an
+      exception. *)
 
 (** {6 Sleeping and resuming} *)
 
@@ -341,7 +326,10 @@ val task : unit -> 'a t * 'a u
 
 val on_cancel : 'a t -> (unit -> unit) -> unit
   (** [on_cancel t f] executes [f] when [t] is canceled. [f] will be
-      executed before all other threads waiting on [t]. *)
+      executed before all other threads waiting on [t].
+
+      If [f] raises an exception it is given to
+      {!async_exception_hook}. *)
 
 val add_task_r : 'a u Lwt_sequence.t -> 'a t
   (** [add_task_r seq] creates a sleeping thread, adds its wakener to
@@ -423,47 +411,22 @@ val register_pause_notifier : (int -> unit) -> unit
 
 val on_success : 'a t -> ('a -> unit) -> unit
   (** [on_success t f] executes [f] when [t] terminates without
-      failing. This is the same as:
-
-      {[
-        ignore (bind t (fun x -> f x; return ()))
-      ]}
-
-      but a bit more efficient.
- *)
+      failing. If [f] raises an exception it is given to
+      {!async_exception_hook}. *)
 
 val on_failure : 'a t -> (exn -> unit) -> unit
-  (** [on_failure t f] executes [f] when [t] terminates and
-      fails. This is the same as:
-
-      {[
-        ignore (catch t (fun e -> f e; return ()))
-      ]}
-
-      but a bit more efficient.
-  *)
+  (** [on_failure t f] executes [f] when [t] terminates and fails. If
+      [f] raises an exception it is given to
+      {!async_exception_hook}. *)
 
 val on_termination : 'a t -> (unit -> unit) -> unit
-  (** [on_termination t f] executes [f] when [t] terminates. This is
-      the same as:
-
-      {[
-        ignore (finalize (fun () -> t) (fun () -> f (); return ()))
-      ]}
-
-      but a bit more efficient.
-  *)
+  (** [on_termination t f] executes [f] when [t] terminates. If [f]
+      raises an exception it is given to {!async_exception_hook}. *)
 
 val on_any : 'a t -> ('a -> unit) -> (exn -> unit) -> unit
-  (** [on_any t f g] executes [f] or [g] when [t] terminates. This is
-      the same as:
-
-      {[
-        ignore (try_bind (fun () -> t) (fun x -> f x; return ()) (fun e -> g e; return ()))
-      ]}
-
-      but a bit more efficient.
-  *)
+  (** [on_any t f g] executes [f] or [g] when [t] terminates. If [f]
+      or [g] raises an exception it is given to
+      {!async_exception_hook}. *)
 
 (**/**)
 

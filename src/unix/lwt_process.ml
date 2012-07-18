@@ -267,14 +267,14 @@ object(self)
       | None ->
           ()
       | Some dt ->
-          Lwt.ignore_result begin
-            match_lwt Lwt.choose [Lwt_unix.sleep dt >> return false; wait >> return true] with
-              | true ->
-                  return ()
-              | false ->
-                  (try self#terminate with _ -> ());
-                  join (List.map Lwt_io.close channels)
-          end
+          Lwt.async
+            (fun () ->
+               match_lwt Lwt.choose [Lwt_unix.sleep dt >> return false; wait >> return true] with
+                 | true ->
+                     return ()
+                 | false ->
+                     (try self#terminate with _ -> ());
+                     join (List.map Lwt_io.close channels))
 end
 
 class process_none ?timeout ?env ?stdin ?stdout ?stderr cmd =
@@ -439,10 +439,12 @@ let pwrite_lines ?timeout ?env ?stdout ?stderr cmd lines =
 (* Dump something to a command: *)
 let dump f pr data =
   let oc = pr#stdin in
-  ignore_result (try_lwt
-                   f oc data
-                 finally
-                   Lwt_io.close oc)
+  Lwt.async
+    (fun () ->
+       try_lwt
+         f oc data
+       finally
+         Lwt_io.close oc)
 
 let pmap ?timeout ?env ?stderr cmd text =
   let pr = open_process ?timeout ?env ?stderr cmd in

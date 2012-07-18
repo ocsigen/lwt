@@ -62,12 +62,12 @@ let release p c =
     Queue.push c p.list
 
 let replace_acquired p =
-  Lwt.ignore_result (
-    p.count <- p.count - 1;
-    create_member p >>= fun c ->
-    release p c;
-    Lwt.return_unit
-  )
+  Lwt.async
+    (fun () ->
+       p.count <- p.count - 1;
+       create_member p >>= fun c ->
+       release p c;
+       Lwt.return_unit)
 
 let acquire p =
   if Queue.is_empty p.list then

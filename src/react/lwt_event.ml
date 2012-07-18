@@ -38,11 +38,11 @@ let notify f event =
   Lwt_sequence.add_l (React.E.map f event) notifiers
 
 let notify_p f event =
-  Lwt_sequence.add_l (React.E.map (fun x -> Lwt.ignore_result (f x)) event) notifiers
+  Lwt_sequence.add_l (React.E.map (fun x -> Lwt.async (fun () -> f x)) event) notifiers
 
 let notify_s f event =
   let mutex = Lwt_mutex.create () in
-  Lwt_sequence.add_l (React.E.map (fun x -> Lwt.ignore_result (Lwt_mutex.with_lock mutex (fun () -> f x))) event) notifiers
+  Lwt_sequence.add_l (React.E.map (fun x -> Lwt.async (fun () -> Lwt_mutex.with_lock mutex (fun () -> f x))) event) notifiers
 
 let always_notify f event =
   ignore (notify f event)

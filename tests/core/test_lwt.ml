@@ -36,23 +36,16 @@ exception Exn
 
 let key : int key = new_key ()
 
-let with_exn_handler handler f =
-  let save = !Lwt.on_uncaught_exception in
-  Lwt.on_uncaught_exception := handler;
+let with_async_exception_hook hook f =
+  let save = !Lwt.async_exception_hook in
+  Lwt.async_exception_hook := hook;
   try
     let x = f () in
-    Lwt.on_uncaught_exception := save;
+    Lwt.async_exception_hook := save;
     x
   with exn ->
-    Lwt.on_uncaught_exception := save;
+    Lwt.async_exception_hook := save;
     raise exn
-
-let raise_first () = raise (fst (Queue.pop uncaught_exceptions))
-
-let get_uncaught_exceptions () =
-  let l = List.map fst (Queue.fold (fun l x -> x :: l) [] uncaught_exceptions) in
-  Queue.clear uncaught_exceptions;
-  l
 
 let suite = suite "lwt" [
   test "0"
@@ -177,32 +170,20 @@ let suite = suite "lwt" [
        assert ( poll t = None );
        return true);
 
-  test_direct "15"
-    (fun () ->
-       with_exn_handler
-         raise_first
-         (fun () ->
-            let t, w = wait () in
-            ignore_result t;
-            wakeup w ();
-            let t, w = wait () in
-            ignore_result t;
-            test_exn (wakeup_exn w) Exn Exn;
-            true));
-
   test_direct "15.1"
     (fun () ->
-       with_exn_handler
-         ignore
+       let exns = ref [] in
+       with_async_exception_hook
+         (fun e -> exns := e :: !exns)
          (fun () ->
             let t, w = wait () in
             ignore_result t;
             wakeup w ();
-            assert (get_uncaught_exceptions () = []);
+            assert (!exns = []);
             let t, w = wait () in
             ignore_result t;
             wakeup_exn w Exn;
-            assert (get_uncaught_exceptions () = [Exn]);
+            assert (!exns = [Exn]);
             true));
 
   test "16"
@@ -242,7 +223,6 @@ let suite = suite "lwt" [
     (fun () ->
        let t,w = task () in
        on_cancel t (fun () -> ());
-       on_cancel t (fun () -> raise Exn);
        on_cancel (return ()) (fun () -> assert false);
        cancel t;
        on_cancel t (fun () -> ());
@@ -644,31 +624,11 @@ let suite = suite "lwt" [
        cancel t2;
        return (state waiter1 = Fail Canceled && state waiter2 = Fail Canceled));
 
-  test "ignore_result"
-    (fun () ->
-       with_exn_handler
-         raise_first
-         (fun () ->
-            let waiter, wakener = wait () in
-            let t1 = map (fun () -> 42) waiter in
-            ignore_result (
-              lwt () = waiter in
-              fail Exit
-            );
-            let t2 = map (fun () -> "42") waiter in
-            let ok =
-              try
-                wakeup wakener ();
-                false
-              with Exit ->
-                true
-            in
-            return (ok && state t1 = Return 42 && state t2 = Return "42")));
-
   test "ignore_result 2"
     (fun () ->
-       with_exn_handler
-         ignore
+       let exns = ref [] in
+       with_async_exception_hook
+         (fun e -> exns := e :: !exns)
          (fun () ->
             let waiter, wakener = wait () in
             let t1 = map (fun () -> 42) waiter in
@@ -678,35 +638,18 @@ let suite = suite "lwt" [
             );
             let t2 = map (fun () -> "42") waiter in
             wakeup wakener ();
-            return (get_uncaught_exceptions () = [Exit] && state t1 = Return 42 && state t2 = Return "42")));
-
-  test "on_success exn"
-    (fun () ->
-       with_exn_handler
-         raise_first
-         (fun () ->
-            let waiter, wakener = wait () in
-            let t1 = map (fun () -> 42) waiter in
-            on_success waiter (fun () -> raise Exit);
-            let t2 = map (fun () -> "42") waiter in
-            let ok =
-              try
-                wakeup wakener ();
-                false
-              with Exit ->
-                true
-            in
-            return (ok && state t1 = Return 42 && state t2 = Return "42")));
+            return (!exns = [Exit] && state t1 = Return 42 && state t2 = Return "42")));
 
   test "on_success exn 2"
     (fun () ->
-       with_exn_handler
-         ignore
+       let exns = ref [] in
+       with_async_exception_hook
+         (fun e -> exns := e :: !exns)
          (fun () ->
             let waiter, wakener = wait () in
             let t1 = map (fun () -> 42) waiter in
             on_success waiter (fun () -> raise Exit);
             let t2 = map (fun () -> "42") waiter in
             wakeup wakener ();
-            return (get_uncaught_exceptions () = [Exit] && state t1 = Return 42 && state t2 = Return "42")));
+            return (!exns = [Exit] && state t1 = Return 42 && state t2 = Return "42")));
 ]

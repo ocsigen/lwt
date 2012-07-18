@@ -40,11 +40,11 @@ let notify f signal =
   Lwt_sequence.add_l (React.S.map f signal) notifiers
 
 let notify_p f signal =
-  Lwt_sequence.add_l (React.S.map (fun x -> Lwt.ignore_result (f x)) signal) notifiers
+  Lwt_sequence.add_l (React.S.map (fun x -> Lwt.async (fun () -> f x)) signal) notifiers
 
 let notify_s f signal =
   let mutex = Lwt_mutex.create () in
-  Lwt_sequence.add_l (React.S.map (fun x -> Lwt.ignore_result (Lwt_mutex.with_lock mutex (fun () -> f x))) signal) notifiers
+  Lwt_sequence.add_l (React.S.map (fun x -> Lwt.async (fun () -> Lwt_mutex.with_lock mutex (fun () -> f x))) signal) notifiers
 
 let always_notify f signal =
   ignore (notify f signal)

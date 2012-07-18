@@ -113,13 +113,12 @@ and 'a waiter_set =
   | Empty
   | Removable of ('a thread_state -> unit) option ref
   | Immutable of ('a thread_state -> unit)
-  | Unsafe of ('a thread_state -> unit)
-      (* Unsafe means that it can raise an exception. *)
   | Append of 'a waiter_set * 'a waiter_set
 
 and 'a cancel_handler_set =
   | Chs_empty
   | Chs_func of data * (unit -> unit)
+      (* The callback may raise an exception. *)
   | Chs_node of 'a u Lwt_sequence.node
       (* This is the same as:
 
@@ -177,27 +176,22 @@ let rec repr_rec t =
     | _       -> t
 let repr t = repr_rec (thread_repr t)
 
-type backtrace = string
+let async_exception_hook =
+  ref (fun exn ->
+         prerr_string "Fatal error: exception ";
+         prerr_string (Printexc.to_string exn);
+         prerr_char '\n';
+         Printexc.print_backtrace stderr;
+         flush stderr;
+         exit 2)
 
-let string_of_backtrace bt = bt
-
-(* Queue of exceptions raised by thunk functions. *)
-let uncaught_exceptions = Queue.create ()
-
-let on_uncaught_exception = ref (fun () -> raise (fst (Queue.pop uncaught_exceptions)))
-
-(* Call [f x] and store any raised exception in [exns]. *)
+(* Execute [f x] and handle any raised exception with
+   [async_exception_hook]. *)
 let call_unsafe f x =
   try
     f x
   with exn ->
-    let bt =
-      if Printexc.backtrace_status () then
-        Printexc.get_backtrace ()
-      else
-        ""
-    in
-    Queue.push (exn, bt) uncaught_exceptions
+    !async_exception_hook exn
 
 let rec run_waiters_rec state ws rem =
   match ws with
@@ -210,9 +204,6 @@ let rec run_waiters_rec state ws rem =
         run_waiters_rec_next state rem
     | Removable { contents = Some f } ->
         f state;
-        run_waiters_rec_next state rem
-    | Unsafe f ->
-        call_unsafe f state;
         run_waiters_rec_next state rem
     | Append (ws1, ws2) ->
         run_waiters_rec state ws1 (ws2 :: rem)
@@ -299,10 +290,7 @@ let leave_wakeup (already_wakening, snapshot) =
     done;
     (* We are done wakening threads. *)
     wakening := false;
-    current_data := snapshot;
-    (* Handle uncaught exceptions. This must be done after setting
-       [wakening] since it can raise an exception. *)
-    if not (Queue.is_empty uncaught_exceptions) then !on_uncaught_exception ()
+    current_data := snapshot
   end else
     current_data := snapshot
 
@@ -629,20 +617,17 @@ let add_waiter sleeper waiter =
 let add_immutable_waiter sleeper waiter =
   add_waiter sleeper (Immutable waiter)
 
-let add_unsafe_waiter sleeper waiter =
-  add_waiter sleeper (Unsafe waiter)
-
 let on_cancel t f =
   match (repr t).state with
     | Sleep sleeper ->
-        let handler = Chs_func (!current_data, fun () -> try f () with _ -> ()) in
+        let handler = Chs_func (!current_data, f) in
         sleeper.cancel_handlers <- (
           match sleeper.cancel_handlers with
             | Chs_empty -> handler
             | chs -> Chs_append (handler, chs)
         )
     | Fail Canceled ->
-        f ()
+        call_unsafe f ()
     | _ ->
         ()
 
@@ -712,14 +697,14 @@ let catch x f =
 let on_success t f =
   match (repr t).state with
     | Return v ->
-        f v
+        call_unsafe f v
     | Fail exn ->
         ()
     | Sleep sleeper ->
         let data = !current_data in
-        add_unsafe_waiter sleeper
+        add_immutable_waiter sleeper
           (function
-             | Return v -> current_data := data; f v
+             | Return v -> current_data := data; call_unsafe f v
              | Fail exn -> ()
              | _ -> assert false)
     | Repr _ ->
@@ -730,13 +715,13 @@ let on_failure t f =
     | Return v ->
         ()
     | Fail exn ->
-        f exn
+        call_unsafe f exn
     | Sleep sleeper ->
         let data = !current_data in
-        add_unsafe_waiter sleeper
+        add_immutable_waiter sleeper
           (function
              | Return v -> ()
-             | Fail exn -> current_data := data; f exn
+             | Fail exn -> current_data := data; call_unsafe f exn
              | _ -> assert false)
     | Repr _ ->
         assert false
@@ -744,15 +729,15 @@ let on_failure t f =
 let on_termination t f =
   match (repr t).state with
     | Return v ->
-        f ()
+        call_unsafe f ()
     | Fail exn ->
-        f ()
+        call_unsafe f ()
     | Sleep sleeper ->
         let data = !current_data in
-        add_unsafe_waiter sleeper
+        add_immutable_waiter sleeper
           (function
-             | Return v -> current_data := data; f ()
-             | Fail exn -> current_data := data; f ()
+             | Return v -> current_data := data; call_unsafe f ()
+             | Fail exn -> current_data := data; call_unsafe f ()
              | _ -> assert false)
     | Repr _ ->
         assert false
@@ -760,15 +745,15 @@ let on_termination t f =
 let on_any t f g =
   match (repr t).state with
     | Return v ->
-        f v
+        call_unsafe f v
     | Fail exn ->
-        g exn
+        call_unsafe g exn
     | Sleep sleeper ->
         let data = !current_data in
-        add_unsafe_waiter sleeper
+        add_immutable_waiter sleeper
           (function
-             | Return v -> current_data := data; f v
-             | Fail exn -> current_data := data; g exn
+             | Return v -> current_data := data; call_unsafe f v
+             | Fail exn -> current_data := data; call_unsafe g exn
              | _ -> assert false)
     | Repr _ ->
         assert false
@@ -799,22 +784,36 @@ let poll t =
     | Sleep _ -> None
     | Repr _ -> assert false
 
-let async t =
+let async f =
+  let t = repr (try f () with exn -> fail exn) in
+  match t.state with
+    | Return _ ->
+        ()
+    | Fail exn ->
+        !async_exception_hook exn
+    | Sleep sleeper ->
+        add_immutable_waiter sleeper
+          (function
+             | Return _ -> ()
+             | Fail exn -> !async_exception_hook exn
+             | _ -> assert false)
+    | Repr _ ->
+        assert false
+
+let ignore_result t =
   match (repr t).state with
     | Return _ ->
         ()
     | Fail e ->
         raise e
     | Sleep sleeper ->
-        add_unsafe_waiter sleeper
+        add_immutable_waiter sleeper
           (function
              | Return _ -> ()
-             | Fail exn -> raise exn
+             | Fail exn -> !async_exception_hook exn
              | _ -> assert false)
     | Repr _ ->
         assert false
-
-let ignore_result = async
 
 let protected t =
   match (repr t).state with
