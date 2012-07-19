@@ -4,6 +4,7 @@
     - much simpler and more efficient
     - do not use Weak
     - add bounded push streams
+  * Add Lwt.async
   * Add Lwt_preemptive.run_in_main
   * Implement Lwt_unix.get_credentials on MacOS X/OpenBSD
   * Ensure that on_cancel functions are executed first
