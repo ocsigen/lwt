@@ -702,12 +702,14 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
         pr "CAMLprim value lwt_unix_%s_job()\n" job.name;
         pr "{\n";
         pr "  lwt_unix_not_available(%S);\n" job.name;
+        pr "  return Val_unit;\n";
         pr "}\n";
         pr "\n";
         if map_in_64 || map_out_64 || map_result_64 then begin
           pr "CAMLprim value lwt_unix_%s_64_job()\n" job.name;
           pr "{\n";
           pr "  lwt_unix_not_available(%S);\n" job.name;
+          pr "  return Val_unit;\n";
           pr "}\n";
           pr "\n";
         end;
