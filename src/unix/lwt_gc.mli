@@ -27,9 +27,12 @@
     finaliser. *)
 
 val finalise : ('a -> unit Lwt.t) -> 'a -> unit
-  (** [finalise f x] calls [f x] when [x] is garbage collected. If [f
-      x] yields, then Lwt will waits for its termination at the end of
-      the program. *)
+  (** [finalise f x] ensures [f x] is evaluated after [x] has been
+      garbage collected. If [f x] yields, then Lwt will waits for its
+      termination at the end of the program.
+
+      Note that [f x] is not called at garbage collection time, but
+      latter in the main loop. *)
 
 val finalise_or_exit : ('a -> unit Lwt.t) -> 'a -> unit
   (** [finalise_or_exit f x] call [f x] when [x] is garbage collected
