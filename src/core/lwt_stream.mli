@@ -214,15 +214,20 @@ val junk_old : 'a t -> unit Lwt.t
   *)
 
 val get_available : 'a t -> 'a list
-  (** [get_available l] returns all available elements of [l] without
+  (** [get_available st] returns all available elements of [l] without
       blocking *)
 
 val get_available_up_to : int -> 'a t -> 'a list
-  (** [get_available_up_to l n] returns up to [n] elements of [l]
+  (** [get_available_up_to n st] returns up to [n] elements of [l]
       without blocking *)
 
 val is_empty : 'a t -> bool Lwt.t
-  (** [is_empty enum] returns wether the given stream is empty *)
+  (** [is_empty st] returns wether the given stream is empty *)
+
+val on_terminate : 'a t -> (unit -> unit) -> unit
+  (** [on_terminate st f] executes [f] when the end of the stream [st]
+      is reached. Note that the stream may still contains elements if
+      {!peek} or similar was used. *)
 
 (** {6 Stream transversal} *)
 

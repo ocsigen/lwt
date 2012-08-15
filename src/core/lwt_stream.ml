@@ -107,6 +107,9 @@ type 'a t = {
      pending element. *)
   last : 'a node ref;
   (* Node marking the end of the queue of pending elements. *)
+  hooks : (unit -> unit) list ref;
+  (* Functions called when the end of stream is reached. Hooks are
+     shared between all clones. *)
 }
 
 class type ['a] bounded_push = object
@@ -130,6 +133,7 @@ let clone s =
     source = s.source;
     node = s.node;
     last = s.last;
+    hooks = s.hooks;
   }
 
 let from f =
@@ -138,6 +142,7 @@ let from f =
     source = From { from_create = f; from_thread = Lwt.return_unit };
     node = last;
     last = ref last;
+    hooks = ref [];
   }
 
 let from_direct f =
@@ -146,7 +151,11 @@ let from_direct f =
     source = From_direct f;
     node = last;
     last = ref last;
+    hooks = ref [];
   }
+
+let on_terminate s f =
+  s.hooks := f :: !(s.hooks)
 
 let of_list l =
   let l = ref l in
@@ -193,6 +202,7 @@ let create_with_reference () =
   in
   (* Set to [true] when the end-of-stream is sent. *)
   let closed = ref false in
+  let hooks = ref [] in
   (* The push function. It does not keep a reference to the stream. *)
   let push x =
     if !closed then raise Closed;
@@ -213,11 +223,15 @@ let create_with_reference () =
       wakener_cell := new_wakener;
       (* Signal that a new value has been received. *)
       Lwt.wakeup_later old_wakener ()
-    end
+    end;
+    (* Do this at the end in case one of the function raise an
+       exception. *)
+    if x = None then List.iter (fun f -> f ()) !hooks
   in
   ({ source = Push source;
      node = !last;
-     last = last },
+     last = last;
+     hooks = hooks },
    push,
    fun x -> source.push_external <- Obj.repr x)
 
@@ -245,7 +259,7 @@ let notify_pusher info last =
   info.pushb_push_wakener <- wakener;
   Lwt.wakeup_later old_wakener ()
 
-class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last = object
+class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last hooks = object
   val mutable closed = false
 
   method size =
@@ -310,7 +324,8 @@ class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last = object
       if info.pushb_pending <> None then begin
         info.pushb_pending <- None;
         Lwt.wakeup_later_exn info.pushb_push_wakener Closed
-      end
+      end;
+      List.iter (fun f -> f ()) !hooks
     end
 
   method count =
@@ -330,6 +345,7 @@ let create_bounded size =
   if size < 0 then invalid_arg "Lwt_stream.create_bounded";
   (* Create the cell pointing to the end of the queue. *)
   let last = ref (new_node ()) in
+  let hooks = ref [] in
   (* Create the source for notifications of new elements. *)
   let info, wakener_cell =
     let waiter, wakener = Lwt.wait () in
@@ -346,8 +362,9 @@ let create_bounded size =
   in
   ({ source = Push_bounded info;
      node = !last;
-     last = last },
-   new bounded_push_impl info wakener_cell last)
+     last = last;
+     hooks = hooks },
+   new bounded_push_impl info wakener_cell last hooks)
 
 (* Wait for a new element to be added to the queue of pending element
    of the stream. *)
@@ -367,6 +384,7 @@ let feed s =
             node.data <- x;
             node.next <- new_last;
             s.last := new_last;
+            if x = None then List.iter (fun f -> f ()) !(s.hooks);
             Lwt.return_unit
           in
           (* Allow other threads to access this thread. *)
@@ -380,6 +398,7 @@ let feed s =
         node.data <- x;
         node.next <- new_last;
         s.last := new_last;
+        if x = None then List.iter (fun f -> f ()) !(s.hooks);
         Lwt.return_unit
     | Push push ->
         push.push_waiting <- true;
