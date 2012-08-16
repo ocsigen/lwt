@@ -411,15 +411,22 @@ CAMLprim value lwt_unix_bytes_send_msg(value val_fd, value val_n_iovs, value val
    | Credentials                                                     |
    +-----------------------------------------------------------------+ */
 
-#if defined(HAVE_GET_CREDENTIALS)
+#if defined(HAVE_GET_CREDENTIALS) || defined(HAVE_GET_CREDENTIALS_OPENBSD)
 
 #include <sys/un.h>
+#if defined(HAVE_GET_CREDENTIALS_OPENBSD)
+#  include <sys/uio.h>
+#endif
 
 CAMLprim value lwt_unix_get_credentials(value fd)
 {
     CAMLparam1(fd);
     CAMLlocal1(res);
+#if defined(HAVE_GET_CREDENTIALS)
     struct ucred cred;
+#else
+    struct sockpeercred cred;
+#endif
     socklen_t cred_len = sizeof(cred);
 
     if (getsockopt(Int_val(fd), SOL_SOCKET, SO_PEERCRED, &cred, &cred_len) == -1)

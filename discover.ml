@@ -118,11 +118,30 @@ let get_credentials_code = "
 #include <caml/mlvalues.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 
 CAMLprim value lwt_test()
 {
-    getsockopt(0, SOL_SOCKET, SO_PEERCRED, 0, 0);
-    return Val_unit;
+  struct ucred cred;
+  socklen_t cred_len = sizeof(cred);
+  getsockopt(0, SOL_SOCKET, SO_PEERCRED, &cred, &cred_len);
+  return Val_unit;
+}
+"
+
+let get_credentials_openbsd_code = "
+#include <caml/mlvalues.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <sys/uio.h>
+
+CAMLprim value lwt_test()
+{
+  struct sockpeercred cred;
+  socklen_t cred_len = sizeof(cred);
+  getsockopt(0, SOL_SOCKET, SO_PEERCRED, &cred, &cred_len);
+  return Val_unit;
 }
 "
 
@@ -133,10 +152,10 @@ let get_peereid_code = "
 
 CAMLprim value lwt_test()
 {
-    uid_t euid;
-    gid_t egid;
-    getpeereid(0, &euid, &egid);
-    return Val_unit;
+  uid_t euid;
+  gid_t egid;
+  getpeereid(0, &euid, &egid);
+  return Val_unit;
 }
 "
 
@@ -462,6 +481,7 @@ Lwt can use pthread or the win32 API.
   test_feature ~do_check "sched_getcpu" "HAVE_GETCPU" (fun () -> test_code ([], []) getcpu_code);
   test_feature ~do_check "affinity getting/setting" "HAVE_AFFINITY" (fun () -> test_code ([], []) affinity_code);
   test_feature ~do_check "credentials getting (getsockopt)" "HAVE_GET_CREDENTIALS" (fun () -> test_code ([], []) get_credentials_code);
+  test_feature ~do_check "credentials getting (OpenBSD)" "HAVE_GET_CREDENTIALS_OPENBSD" (fun () -> test_code ([], []) get_credentials_openbsd_code);
   test_feature ~do_check "credentials getting (getpeereid)" "HAVE_GETPEEREID" (fun () -> test_code ([], []) get_peereid_code);
   test_feature ~do_check "fdatasync" "HAVE_FDATASYNC" (fun () -> test_code ([], []) fdatasync_code);
   test_feature ~do_check "netdb_reentrant" "HAVE_NETDB_REENTRANT" (fun () -> test_code ([], []) netdb_reentrant_code);
