@@ -114,31 +114,15 @@ CAMLprim value lwt_test()
 }
 "
 
-let get_credentials_code = "
+let get_credentials_code struct_name = "
+#define _GNU_SOURCE
 #include <caml/mlvalues.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/un.h>
 
 CAMLprim value lwt_test()
 {
-  struct ucred cred;
-  socklen_t cred_len = sizeof(cred);
-  getsockopt(0, SOL_SOCKET, SO_PEERCRED, &cred, &cred_len);
-  return Val_unit;
-}
-"
-
-let get_credentials_openbsd_code = "
-#include <caml/mlvalues.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <sys/uio.h>
-
-CAMLprim value lwt_test()
-{
-  struct sockpeercred cred;
+  struct " ^ struct_name ^ " cred;
   socklen_t cred_len = sizeof(cred);
   getsockopt(0, SOL_SOCKET, SO_PEERCRED, &cred, &cred_len);
   return Val_unit;
@@ -480,11 +464,32 @@ Lwt can use pthread or the win32 API.
   test_feature ~do_check "fd passing" "HAVE_FD_PASSING" (fun () -> test_code ([], []) fd_passing_code);
   test_feature ~do_check "sched_getcpu" "HAVE_GETCPU" (fun () -> test_code ([], []) getcpu_code);
   test_feature ~do_check "affinity getting/setting" "HAVE_AFFINITY" (fun () -> test_code ([], []) affinity_code);
-  test_feature ~do_check "credentials getting (getsockopt)" "HAVE_GET_CREDENTIALS" (fun () -> test_code ([], []) get_credentials_code);
-  test_feature ~do_check "credentials getting (OpenBSD)" "HAVE_GET_CREDENTIALS_OPENBSD" (fun () -> test_code ([], []) get_credentials_openbsd_code);
+  test_feature ~do_check "credentials getting (Linux)" "HAVE_GET_CREDENTIALS_LINUX" (fun () -> test_code ([], []) (get_credentials_code "ucred"));
+  test_feature ~do_check "credentials getting (NetBSD)" "HAVE_GET_CREDENTIALS_NETBSD" (fun () -> test_code ([], []) (get_credentials_code "sockcred"));
+  test_feature ~do_check "credentials getting (OpenBSD)" "HAVE_GET_CREDENTIALS_OPENBSD" (fun () -> test_code ([], []) (get_credentials_code "sockpeercred"));
+  test_feature ~do_check "credentials getting (FreeBSD)" "HAVE_GET_CREDENTIALS_FREEBSD" (fun () -> test_code ([], []) (get_credentials_code "cmsgcred"));
   test_feature ~do_check "credentials getting (getpeereid)" "HAVE_GETPEEREID" (fun () -> test_code ([], []) get_peereid_code);
   test_feature ~do_check "fdatasync" "HAVE_FDATASYNC" (fun () -> test_code ([], []) fdatasync_code);
   test_feature ~do_check "netdb_reentrant" "HAVE_NETDB_REENTRANT" (fun () -> test_code ([], []) netdb_reentrant_code);
+
+  let get_cred_vars = [
+    "HAVE_GET_CREDENTIALS_LINUX";
+    "HAVE_GET_CREDENTIALS_NETBSD";
+    "HAVE_GET_CREDENTIALS_OPENBSD";
+    "HAVE_GET_CREDENTIALS_FREEBSD";
+    "HAVE_GETPEEREID";
+  ] in
+
+  Printf.fprintf config "\
+#if %s
+#  define HAVE_GET_CREDENTIALS
+#endif
+"
+    (String.concat " || " (List.map (Printf.sprintf "defined(%s)") get_cred_vars));
+
+  Printf.fprintf config_ml
+    "#let HAVE_GET_CREDENTIALS = %s\n"
+    (String.concat " || " get_cred_vars);
 
   if !os_type = "Win32" then begin
     output_string config "#define LWT_ON_WINDOWS\n";

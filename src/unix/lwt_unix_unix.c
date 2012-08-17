@@ -26,11 +26,16 @@
 
 #define ARGS(args...) args
 
+#include <sys/uio.h>
+#include <sys/un.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <sys/wait.h>
+#include <poll.h>
+
 /* +-----------------------------------------------------------------+
    | Test for readability/writability                                |
    +-----------------------------------------------------------------+ */
-
-#include <poll.h>
 
 CAMLprim value lwt_unix_readable(value fd)
 {
@@ -411,35 +416,7 @@ CAMLprim value lwt_unix_bytes_send_msg(value val_fd, value val_n_iovs, value val
    | Credentials                                                     |
    +-----------------------------------------------------------------+ */
 
-#if defined(HAVE_GET_CREDENTIALS) || defined(HAVE_GET_CREDENTIALS_OPENBSD)
-
-#include <sys/un.h>
-#if defined(HAVE_GET_CREDENTIALS_OPENBSD)
-#  include <sys/uio.h>
-#endif
-
-CAMLprim value lwt_unix_get_credentials(value fd)
-{
-    CAMLparam1(fd);
-    CAMLlocal1(res);
-#if defined(HAVE_GET_CREDENTIALS)
-    struct ucred cred;
-#else
-    struct sockpeercred cred;
-#endif
-    socklen_t cred_len = sizeof(cred);
-
-    if (getsockopt(Int_val(fd), SOL_SOCKET, SO_PEERCRED, &cred, &cred_len) == -1)
-      uerror("get_credentials", Nothing);
-
-    res = caml_alloc_tuple(3);
-    Store_field(res, 0, Val_int(cred.pid));
-    Store_field(res, 1, Val_int(cred.uid));
-    Store_field(res, 2, Val_int(cred.gid));
-    CAMLreturn(res);
-}
-
-#elif defined(HAVE_GETPEEREID)
+#if defined(HAVE_GETPEEREID)
 
 CAMLprim value lwt_unix_get_credentials(value fd)
 {
@@ -458,6 +435,39 @@ CAMLprim value lwt_unix_get_credentials(value fd)
     CAMLreturn(res);
 }
 
+#elif defined(HAVE_GET_CREDENTIALS)
+
+#if defined(HAVE_GET_CREDENTIALS_LINUX)
+#  define CREDENTIALS_TYPE struct ucred
+#  define CREDENTIALS_FIELD(id) id
+#elif defined(HAVE_GET_CREDENTIALS_NETBSD)
+#  define CREDENTIALS_TYPE struct sockcred
+#  define CREDENTIALS_FIELD(id) sc_ ## id
+#elif defined(HAVE_GET_CREDENTIALS_OPENBSD)
+#  define CREDENTIALS_TYPE struct sockpeercred
+#  define CREDENTIALS_FIELD(id) id
+#elif defined(HAVE_GET_CREDENTIALS_FREEBSD)
+#  define CREDENTIALS_TYPE struct cmsgcred
+#  define CREDENTIALS_FIELD(id) cmsgcred_ ## id
+#endif
+
+CAMLprim value lwt_unix_get_credentials(value fd)
+{
+    CAMLparam1(fd);
+    CAMLlocal1(res);
+    CREDENTIALS_TYPE cred;
+    socklen_t cred_len = sizeof(cred);
+
+    if (getsockopt(Int_val(fd), SOL_SOCKET, SO_PEERCRED, &cred, &cred_len) == -1)
+      uerror("get_credentials", Nothing);
+
+    res = caml_alloc_tuple(3);
+    Store_field(res, 0, Val_int(cred.CREDENTIALS_FIELD(pid)));
+    Store_field(res, 1, Val_int(cred.CREDENTIALS_FIELD(uid)));
+    Store_field(res, 2, Val_int(cred.CREDENTIALS_FIELD(gid)));
+    CAMLreturn(res);
+}
+
 #endif
 
 /* +-----------------------------------------------------------------+
@@ -465,10 +475,6 @@ CAMLprim value lwt_unix_get_credentials(value fd)
    +-----------------------------------------------------------------+ */
 
 /* Some code duplicated from OCaml's otherlibs/unix/wait.c */
-
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <sys/wait.h>
 
 CAMLextern int caml_convert_signal_number (int);
 CAMLextern int caml_rev_convert_signal_number (int);
