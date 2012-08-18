@@ -416,27 +416,6 @@ CAMLprim value lwt_unix_bytes_send_msg(value val_fd, value val_n_iovs, value val
    | Credentials                                                     |
    +-----------------------------------------------------------------+ */
 
-#if defined(HAVE_GETPEEREID)
-
-CAMLprim value lwt_unix_get_credentials(value fd)
-{
-    CAMLparam1(fd);
-    CAMLlocal1(res);
-    uid_t euid;
-    gid_t egid;
-
-    if (getpeereid(Int_val(fd), &euid, &egid) == -1)
-      uerror("get_credentials", Nothing);
-
-    res = caml_alloc_tuple(3);
-    Store_field(res, 0, Val_int(-1));
-    Store_field(res, 1, Val_int(euid));
-    Store_field(res, 2, Val_int(egid));
-    CAMLreturn(res);
-}
-
-#elif defined(HAVE_GET_CREDENTIALS)
-
 #if defined(HAVE_GET_CREDENTIALS_LINUX)
 #  define CREDENTIALS_TYPE struct ucred
 #  define CREDENTIALS_FIELD(id) id
@@ -450,6 +429,8 @@ CAMLprim value lwt_unix_get_credentials(value fd)
 #  define CREDENTIALS_TYPE struct cmsgcred
 #  define CREDENTIALS_FIELD(id) cmsgcred_ ## id
 #endif
+
+#if defined(CREDENTIALS_TYPE)
 
 CAMLprim value lwt_unix_get_credentials(value fd)
 {
@@ -465,6 +446,25 @@ CAMLprim value lwt_unix_get_credentials(value fd)
     Store_field(res, 0, Val_int(cred.CREDENTIALS_FIELD(pid)));
     Store_field(res, 1, Val_int(cred.CREDENTIALS_FIELD(uid)));
     Store_field(res, 2, Val_int(cred.CREDENTIALS_FIELD(gid)));
+    CAMLreturn(res);
+}
+
+#elif defined(HAVE_GETPEEREID)
+
+CAMLprim value lwt_unix_get_credentials(value fd)
+{
+    CAMLparam1(fd);
+    CAMLlocal1(res);
+    uid_t euid;
+    gid_t egid;
+
+    if (getpeereid(Int_val(fd), &euid, &egid) == -1)
+      uerror("get_credentials", Nothing);
+
+    res = caml_alloc_tuple(3);
+    Store_field(res, 0, Val_int(-1));
+    Store_field(res, 1, Val_int(euid));
+    Store_field(res, 2, Val_int(egid));
     CAMLreturn(res);
 }
 
