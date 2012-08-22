@@ -633,6 +633,11 @@ val on_signal : int -> (int -> unit) -> signal_handler_id
       [signum] is received by the process. It returns a signal handler
       identifier which can be used to stop monitoring [signum]. *)
 
+val on_signal_full : int -> (signal_handler_id -> int -> unit) -> signal_handler_id
+  (** [on_signal_full f] is the same as [on_signal f] except that [f]
+      also receive the signal handler identifier as argument so it can
+      disable it. *)
+
 val disable_signal_handler : signal_handler_id -> unit
   (** Stops receiving this signal *)
 

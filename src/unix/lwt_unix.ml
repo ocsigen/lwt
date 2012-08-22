@@ -2205,6 +2205,13 @@ let () = init_signals ()
 
 module Signal_map = Map.Make(struct type t = int let compare a b = a - b end)
 
+type signal_handler = {
+  sh_num : int;
+  sh_node : (signal_handler_id -> int -> unit) Lwt_sequence.node;
+}
+
+and signal_handler_id = signal_handler option ref
+
 let signals = ref Signal_map.empty
 let signal_count () =
   Signal_map.fold
@@ -2212,15 +2219,20 @@ let signal_count () =
     !signals
     0
 
-type signal_handler_id = unit Lazy.t
-
-let on_signal signum handler =
+let on_signal_full signum handler =
+  let id = ref None in
   let notification, actions =
     try
       Signal_map.find signum !signals
     with Not_found ->
       let actions = Lwt_sequence.create () in
-      let notification = make_notification (fun () -> Lwt_sequence.iter_l (fun f -> f signum) actions) in
+      let notification =
+        make_notification
+          (fun () ->
+            Lwt_sequence.iter_l
+              (fun f -> f id signum)
+              actions)
+      in
       (try
          set_signal signum notification
        with exn ->
@@ -2230,14 +2242,24 @@ let on_signal signum handler =
       (notification, actions)
   in
   let node = Lwt_sequence.add_r handler actions in
-  lazy(Lwt_sequence.remove node;
-       if Lwt_sequence.is_empty actions then begin
-         remove_signal signum;
-         signals := Signal_map.remove signum !signals;
-         stop_notification notification
-       end)
+  id := Some { sh_num = signum; sh_node = node };
+  id
 
-let disable_signal_handler = Lazy.force
+let on_signal signum f = on_signal_full signum (fun id num -> f num)
+
+let disable_signal_handler id =
+  match !id with
+  | None ->
+    ()
+  | Some sh ->
+    id := None;
+    Lwt_sequence.remove sh.sh_node;
+    let notification, actions = Signal_map.find sh.sh_num !signals in
+    if Lwt_sequence.is_empty actions then begin
+      remove_signal sh.sh_num;
+      signals := Signal_map.remove sh.sh_num !signals;
+      stop_notification notification
+    end
 
 let reinstall_signal_handler signum =
   match try Some (Signal_map.find signum !signals) with Not_found -> None with
