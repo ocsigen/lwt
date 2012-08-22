@@ -1,3 +1,9 @@
+===== 2.4.1 (2012-08-22) =====
+
+  * Add Lwt_stream.on_terminate
+  * Fix Lwt_gc
+  * Fix stubs for get_credentials on *BSD
+
 ===== 2.4.0 (2012-07-16) =====
 
   * Reimplement Lwt_stream
