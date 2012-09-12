@@ -57,7 +57,7 @@ let split_path str =
       []
     else
       let j = try String.index_from str i path_sep with Not_found -> len in
-      String.sub str i j :: aux (j + 1)
+      String.sub str i (j - i) :: aux (j + 1)
   in
   aux 0
 
