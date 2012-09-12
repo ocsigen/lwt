@@ -22,18 +22,47 @@
 
 (* Discover available features *)
 
-(* Search paths, mostly for MacOS users. libev is installed by port
-   systems into non-standard locations by default on MacOS. *)
-let search_paths = [
-  "/usr";
-  "/usr/local";
-  "/opt";
-  "/opt/local";
-  "/sw";
-  "/mingw";
+open Printf
+
+(* +-----------------------------------------------------------------+
+   | Search path                                                     |
+   +-----------------------------------------------------------------+ *)
+
+(* List of search paths for header files, mostly for MacOS
+   users. libev is installed by port systems into non-standard
+   locations by default on MacOS.
+
+   We use a hardcorded list of path + the ones from C_INCLUDE_PATH.
+*)
+
+let default_search_paths = [
+  "/usr/include";
+  "/usr/local/include";
+  "/opt/include";
+  "/opt/local/include";
+  "/sw/include";
+  "/mingw/include";
 ]
 
-open Printf
+let path_sep = if Sys.os_type = "Win32" then ';' else ':'
+
+let split_path str =
+  let len = String.length str in
+  let rec aux i =
+    if i >= len then
+      []
+    else
+      let j = try String.index_from str i path_sep with Not_found -> len in
+      String.sub str i j :: aux (j + 1)
+  in
+  aux 0
+
+let search_paths =
+  match try Some (Sys.getenv "C_INCLUDE_PATH") with Not_found -> None with
+    | Some path ->
+        split_path path @ default_search_paths
+    | None ->
+        default_search_paths
 
 (* +-----------------------------------------------------------------+
    | Test codes                                                      |
@@ -197,13 +226,15 @@ let ccomp_type = ref "cc"
 let log_file = ref ""
 let caml_file = ref ""
 
+let ( // ) = Filename.concat
+
 (* Search for a header file in standard directories. *)
 let search_header header =
   let rec loop = function
     | [] ->
         None
     | dir :: dirs ->
-        if Sys.file_exists (dir ^ "/include/" ^ header) then
+        if Sys.file_exists (dir // header) then
           Some dir
         else
           loop dirs
@@ -415,7 +446,7 @@ let () =
             | None ->
                 match search_header "ev.h" with
                   | Some dir ->
-                      ([sprintf "-I%s/include" dir], [sprintf "-L%s/lib" dir; "-lev"])
+                      (["-I" ^ dir], ["-L" ^ (dir // ".." // "lib"); "-lev"])
                   | None ->
                       ([], ["-lev"]))
     in
@@ -429,7 +460,7 @@ let () =
         (fun () ->
           match search_header "pthread.h" with
             | Some dir ->
-                ([sprintf "-I%s/include" dir], [sprintf "-L%s/lib" dir; "-lpthread"])
+                (["-I" ^ dir], ["-L" ^ (dir // ".." // "lib"); "-lpthread"])
             | None ->
                 ([], ["-lpthread"]))
     in
