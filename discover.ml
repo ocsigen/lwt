@@ -32,17 +32,21 @@ open Printf
    users. libev is installed by port systems into non-standard
    locations by default on MacOS.
 
-   We use a hardcorded list of path + the ones from C_INCLUDE_PATH.
+   We use a hardcorded list of path + the ones from C_INCLUDE_PATH and
+   LIBRARY_PATH.
 *)
 
-let default_search_paths = [
-  "/usr/include";
-  "/usr/local/include";
-  "/opt/include";
-  "/opt/local/include";
-  "/sw/include";
-  "/mingw/include";
-]
+let ( // ) = Filename.concat
+
+let default_search_paths =
+  List.map (fun dir -> (dir ^ "/include", dir ^ "/lib")) [
+    "/usr";
+    "/usr/local";
+    "/opt";
+    "/opt/local";
+    "/sw";
+    "/mingw";
+  ]
 
 let path_sep = if Sys.os_type = "Win32" then ';' else ':'
 
@@ -58,11 +62,17 @@ let split_path str =
   aux 0
 
 let search_paths =
-  match try Some (Sys.getenv "C_INCLUDE_PATH") with Not_found -> None with
-    | Some path ->
-        split_path path @ default_search_paths
-    | None ->
-        default_search_paths
+  let get var f =
+    try
+      List.map f (split_path (Sys.getenv var))
+    with Not_found ->
+      []
+  in
+  List.flatten [
+    get "C_INCLUDE_PATH" (fun dir -> (dir, dir // ".." // "lib"));
+    get "LIBRARY_PATH" (fun dir -> (dir // ".." // "include", dir));
+    default_search_paths;
+  ]
 
 (* +-----------------------------------------------------------------+
    | Test codes                                                      |
@@ -226,16 +236,14 @@ let ccomp_type = ref "cc"
 let log_file = ref ""
 let caml_file = ref ""
 
-let ( // ) = Filename.concat
-
 (* Search for a header file in standard directories. *)
 let search_header header =
   let rec loop = function
     | [] ->
         None
-    | dir :: dirs ->
-        if Sys.file_exists (dir // header) then
-          Some dir
+    | (dir_include, dir_lib) :: dirs ->
+        if Sys.file_exists (dir_include // header) then
+          Some (dir_include, dir_lib)
         else
           loop dirs
   in
@@ -445,8 +453,8 @@ let () =
                 (opt, lib)
             | None ->
                 match search_header "ev.h" with
-                  | Some dir ->
-                      (["-I" ^ dir], ["-L" ^ (dir // ".." // "lib"); "-lev"])
+                  | Some (dir_i, dir_l) ->
+                      (["-I" ^ dir_i], ["-L" ^ dir_l; "-lev"])
                   | None ->
                       ([], ["-lev"]))
     in
@@ -459,8 +467,8 @@ let () =
       lib_flags "PTHREAD"
         (fun () ->
           match search_header "pthread.h" with
-            | Some dir ->
-                (["-I" ^ dir], ["-L" ^ (dir // ".." // "lib"); "-lpthread"])
+            | Some (dir_i, dir_l) ->
+                (["-I" ^ dir_i], ["-L" ^ dir_l; "-lpthread"])
             | None ->
                 ([], ["-lpthread"]))
     in
