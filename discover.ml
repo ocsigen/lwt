@@ -22,7 +22,8 @@
 
 (* Discover available features *)
 
-(* Keep that in sync with the list in myocamlbuild.ml *)
+(* Search paths, mostly for MacOS users. libev is installed by port
+   systems into non-standard locations by default on MacOS. *)
 let search_paths = [
   "/usr";
   "/usr/local";
@@ -331,6 +332,23 @@ let pkg_config_flags name =
   with Exit ->
     None
 
+let lib_flags env_var_prefix fallback =
+  let get var = try Some (split (Sys.getenv var)) with Not_found -> None in
+  match get (env_var_prefix ^ "_CFLAGS"), get (env_var_prefix ^ "_LIBS") with
+    | Some opt, Some lib ->
+        (opt, lib)
+    | x ->
+        let opt, lib = fallback () in
+        match x with
+          | Some opt, Some lib ->
+              assert false
+          | Some opt, None ->
+              (opt, lib)
+          | None, Some lib ->
+              (opt, lib)
+          | None, None ->
+              (opt, lib)
+
 (* +-----------------------------------------------------------------+
    | Entry point                                                     |
    +-----------------------------------------------------------------+ *)
@@ -389,15 +407,17 @@ let () =
 
   let test_libev () =
     let opt, lib =
-      match if have_pkg_config then pkg_config_flags "libev" else None with
-        | Some (opt, lib) ->
-            (opt, lib)
-        | None ->
-            match search_header "ev.h" with
-              | Some dir ->
-                  ([sprintf "-I%s/include" dir], [sprintf "-L%s/lib" dir; "-lev"])
-              | None ->
-                  ([], ["-lev"])
+      lib_flags "LIBEV"
+        (fun () ->
+          match if have_pkg_config then pkg_config_flags "libev" else None with
+            | Some (opt, lib) ->
+                (opt, lib)
+            | None ->
+                match search_header "ev.h" with
+                  | Some dir ->
+                      ([sprintf "-I%s/include" dir], [sprintf "-L%s/lib" dir; "-lev"])
+                  | None ->
+                      ([], ["-lev"]))
     in
     setup_data := ("libev_opt", opt) :: ("libev_lib", lib) :: !setup_data;
     test_code (opt, lib) libev_code
@@ -405,26 +425,30 @@ let () =
 
   let test_pthread () =
     let opt, lib =
-      match search_header "pthread.h" with
-        | Some dir ->
-            ([sprintf "-I%s/include" dir], [sprintf "-L%s/lib" dir; "-lpthread"])
-        | None ->
-            ([], ["-lpthread"])
+      lib_flags "PTHREAD"
+        (fun () ->
+          match search_header "pthread.h" with
+            | Some dir ->
+                ([sprintf "-I%s/include" dir], [sprintf "-L%s/lib" dir; "-lpthread"])
+            | None ->
+                ([], ["-lpthread"]))
     in
     setup_data := ("pthread_opt", opt) :: ("pthread_lib", lib) :: !setup_data;
     test_code (opt, lib) pthread_code
   in
 
   let test_glib () =
-    if have_pkg_config then
-      match pkg_config_flags "glib-2.0" with
-        | Some (opt, lib) ->
-            setup_data := ("glib_opt", opt) :: ("glib_lib", lib) :: !setup_data;
-            test_code (opt, lib) glib_code
-        | None ->
-            false
-    else
-      false
+    let opt, lib =
+      lib_flags "GLIB"
+        (fun () ->
+          match if have_pkg_config then pkg_config_flags "glib-2.0" else None with
+            | Some (opt, lib) ->
+                (opt, lib)
+            | None ->
+                ([], ["-lglib-2.0"]))
+    in
+    setup_data := ("glib_opt", opt) :: ("glib_lib", lib) :: !setup_data;
+    test_code (opt, lib) glib_code
   in
 
   test_feature ~do_check:!use_libev "libev" "HAVE_LIBEV" test_libev;
@@ -432,16 +456,18 @@ let () =
   test_feature ~do_check:!use_glib "glib" "" test_glib;
 
   if !not_available <> [] then begin
-    if !use_glib && not have_pkg_config then
-      printf "The 'pkg-config' command is not available, you need it to build glib support.";
+    if not have_pkg_config then
+      printf "Warning: the 'pkg-config' command is not available.";
     printf "
 The following recquired C libraries are missing: %s.
-Please install them and retry. If they are installed in a non-standard location, set the environment variables C_INCLUDE_PATH and LIBRARY_PATH accordingly and retry.
+Please install them and retry. If they are installed in a non-standard location
+or need special flags, set the environment variables <LIB>_CLFAGS and <LIB>_LIBS
+accordingly and retry.
 
-For example, if they are installed in /opt/local, you can type:
+For example, if libev is installed in /opt/local, you can type:
 
-export C_INCLUDE_PATH=/opt/local/include
-export LIBRARY_PATH=/opt/local/lib
+export LIBEV_CLFAGS=-I/opt/local/include
+export LIBEV_LIBS=-L/opt/local/lib
 
 To compile without libev support, use ./configure --disable-libev ...
 " (String.concat ", " !not_available);
