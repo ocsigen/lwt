@@ -90,9 +90,6 @@ CAMLprim value lwt_libev_stop(value loop)
 
 CAMLprim value lwt_libev_loop(value val_loop, value val_block)
 {
-  /* Extract the event loop now.
-
-     It seems to crash if we don't do that (??). */
   struct ev_loop *loop = Ev_loop_val(val_loop);
   /* Call the event loop inside a blocking section. */
   caml_enter_blocking_section();
