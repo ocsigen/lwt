@@ -68,9 +68,9 @@ val install : ?mode : [ `glib_into_lwt | `lwt_into_glib ] -> unit -> unit
       loop, and if [mode] is [`lwt_into_glib] then Lwt will use the
       Glib main loop.
 
-      The first mode is better but for some unknown reason it does not
-      work under Windows, so the second is used as default on Windows
-      while the first one is used as default on Unix.
+      The first mode is better but it does not work under Windows, so
+      the second is used as default on Windows while the first one is
+      used as default on Unix.
 
       If the integration is already active, this function does
       nothing. *)

@@ -20,12 +20,6 @@
  * 02111-1307, USA.
  *)
 
-type source = {
-  fd : Unix.file_descr;
-  check_readable : bool;
-  check_writable : bool;
-}
-
 external glib_init : unit -> unit = "lwt_glib_init"
 external glib_stop : unit -> unit = "lwt_glib_stop"
 
@@ -51,7 +45,13 @@ end
    | Glib --> Lwt based integration                                  |
    +-----------------------------------------------------------------+ *)
 
-external glib_get_sources : unit -> source array * float = "lwt_glib_get_sources"
+type watch =
+  | Watch_none
+  | Watch_in
+  | Watch_out
+  | Watch_in_out
+
+external glib_get_sources : unit -> Unix.file_descr array * watch array * float = "lwt_glib_get_sources"
 external glib_check : unit -> unit = "lwt_glib_check"
 external glib_mark_readable : int -> unit = "lwt_glib_mark_readable" "noalloc"
 external glib_mark_writable : int -> unit = "lwt_glib_mark_readable" "noalloc"
@@ -64,13 +64,20 @@ let enter () =
     check := false;
     let engine = Lwt_engine.get () in
     assert (!events = []);
-    let sources, timeout = glib_get_sources () in
-    for i = 0 to Array.length sources - 1 do
-      let src = sources.(i) in
-      if src.check_readable then
-        events := engine#on_readable src.fd (fun _ -> glib_mark_readable i) :: !events;
-      if src.check_writable then
-        events := engine#on_writable src.fd (fun _ -> glib_mark_writable i) :: !events
+    let fds, watches, timeout = glib_get_sources () in
+    for i = 0 to Array.length fds - 1 do
+      let fd = fds.(i) in
+      match watches.(i) with
+        | Watch_none ->
+            ()
+        | Watch_in ->
+            events := engine#on_readable fd (fun _ -> glib_mark_readable i) :: !events
+        | Watch_out ->
+            events := engine#on_writable fd (fun _ -> glib_mark_writable i) :: !events
+        | Watch_in_out ->
+            events := engine#on_readable fd (fun _ -> glib_mark_readable i)
+                   :: engine#on_writable fd (fun _ -> glib_mark_writable i)
+                   :: !events
     done;
     if timeout = 0. then
       ignore (Lwt_main.yield ())
