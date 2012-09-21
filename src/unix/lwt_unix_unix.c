@@ -1264,6 +1264,7 @@ static value result_readdir(struct job_readdir *job)
 CAMLprim value lwt_unix_readdir_job(value val_dir)
 {
   LWT_UNIX_INIT_JOB(job, readdir, 0);
+  job->dir = DIR_Val(val_dir);
   return lwt_unix_alloc_job(&job->job);
 }
 
