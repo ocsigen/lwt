@@ -1252,7 +1252,7 @@ static value result_readdir(struct job_readdir *job)
   } else if (job->ptr == NULL) {
     free(job->entry);
     lwt_unix_free_job(&job->job);
-    caml_raise_not_found();
+    caml_raise_end_of_file();
   } else {
     value name = caml_copy_string(job->entry->d_name);
     free(job->entry);
