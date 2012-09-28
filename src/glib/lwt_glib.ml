@@ -97,16 +97,11 @@ let leave () =
    | Installation/removal                                            |
    +-----------------------------------------------------------------+ *)
 
-let install ?mode () =
+let install ?(mode=`lwt_into_glib) () =
   match !state with
     | State_lwt_into_glib _ | State_glib_into_lwt _ ->
         ()
     | State_none ->
-        let mode =
-          match mode with
-            | Some mode -> mode
-            | None -> if Lwt_sys.windows then `lwt_into_glib else `glib_into_lwt
-        in
         glib_init ();
         match mode with
           | `glib_into_lwt ->
