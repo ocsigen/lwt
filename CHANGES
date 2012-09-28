@@ -1,3 +1,15 @@
+===== 2.4.2 (2012-09-28) =====
+
+  * fix the stub for Lwt_unix.readdir
+  * change the default method for Lwt_glib.install
+    (use the glib main loop by default: more portable)
+  * ignore invalid file descriptors returned by glib
+    (like the emulation of select in glib does)
+  * use environment variables in discover.ml
+    - use LIBRARY_PATH and C_INCLUDE_PATH for searching headers
+    - allow to pass flags for a library in <LIB>_CLFAGS and <LIB>_LIBS
+  * add Lwt_unix.on_signal_full
+
 ===== 2.4.1 (2012-08-22) =====
 
   * Add Lwt_stream.on_terminate
