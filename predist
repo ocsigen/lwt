@@ -13,5 +13,8 @@ cd ..
 # Add oasis stuff
 oasis setup
 
+# Set release mode in the Makefile
+sed -i 's/^SETUP := setup-dev.exe.*/SETUP := setup.exe/' Makefile
+
 # Cleanup
 rm -f predist boring dist.sh

@@ -10,3 +10,5 @@
 ^manual/.*\.(toc|pdf|out|log|aux)$
 ^manual/manual-wiki\.tex$
 ^manual/\.latex_of_wiki_offsets
+^setup.exe$
+^setup-dev.exe$
