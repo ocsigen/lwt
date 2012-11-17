@@ -377,7 +377,7 @@ val with_file :
       channel is closed when [f ch] terminates (even if it fails). *)
 
 val open_connection : ?buffer_size : int -> Unix.sockaddr -> (input_channel * output_channel) Lwt.t
-  (** [open_connection ?buffer_size ~mode addr] open a connection to
+  (** [open_connection ?buffer_size addr] open a connection to
       the given address and returns two channels for using it.
 
       The connection is completly closed when you close both
@@ -387,7 +387,7 @@ val open_connection : ?buffer_size : int -> Unix.sockaddr -> (input_channel * ou
   *)
 
 val with_connection : ?buffer_size : int -> Unix.sockaddr -> (input_channel * output_channel -> 'a Lwt.t) -> 'a Lwt.t
-  (** [with_connection ?buffer_size ~mode addr f] open a connection to
+  (** [with_connection ?buffer_size addr f] open a connection to
       the given address and passes the channels to [f] *)
 
 type server
