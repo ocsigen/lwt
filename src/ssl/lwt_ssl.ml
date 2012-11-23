@@ -21,6 +21,8 @@
  * 02111-1307, USA.
  *)
 
+let (>>=) = Lwt.bind
+
 type t =
     Plain
   | SSL of Ssl.socket
@@ -150,12 +152,6 @@ let wait_write (fd, s) =
     Plain -> Lwt_unix.wait_write fd
   | SSL _ -> Lwt_unix.yield ()
 
-let out_channel_of_descr s =
-  Lwt_io.make ~mode:Lwt_io.output (fun buf pos len -> write_bytes s buf pos len)
-
-let in_channel_of_descr s =
-  Lwt_io.make ~mode:Lwt_io.input (fun buf pos len -> read_bytes s buf pos len)
-
 let ssl_shutdown (fd, s) =
   match s with
     Plain -> Lwt.return ()
@@ -166,6 +162,23 @@ let shutdown (fd, _) cmd = Lwt_unix.shutdown fd cmd
 let close (fd, _) = Lwt_unix.close fd
 
 let abort (fd, _) = Lwt_unix.abort fd
+
+let shutdown_and_close s =
+  ssl_shutdown s >>= fun () ->
+  Lwt.wrap2 shutdown s Unix.SHUTDOWN_ALL >>= fun () ->
+  close s
+
+let out_channel_of_descr s =
+  Lwt_io.make
+    ~mode:Lwt_io.output
+    ~close:(fun () -> shutdown_and_close s)
+    (fun buf pos len -> write_bytes s buf pos len)
+
+let in_channel_of_descr s =
+  Lwt_io.make
+    ~mode:Lwt_io.input
+    ~close:(fun () -> shutdown_and_close s)
+    (fun buf pos len -> read_bytes s buf pos len)
 
 let get_fd (fd,socket) =
   match socket with
