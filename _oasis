@@ -22,7 +22,7 @@ Homepage: http://ocsigen.org/lwt/
 BuildTools: ocamlbuild
 Plugins: DevFiles (0.3), META (0.3)
 XDevFilesEnableMakefile: false
-PostConfCommand: ocaml discover.ml -ocamlc $ocamlc -ext-obj $ext_obj -exec-name $default_executable_name -use-libev $libev -os-type $os_type -use-glib $glib -ccomp-type $ccomp_type -use-pthread $pthread -use-unix $unix
+PostConfCommand: ocaml discover.ml -ocamlc $ocamlc -ext-obj $ext_obj -exec-name $default_executable_name -use-libev $libev -os-type $os_type -use-glib $glib -ccomp-type $ccomp_type -use-pthread $pthread -use-unix $unix -android-target $android_target
 PostDistCleanCommand: $rm src/unix/lwt_config.h src/unix/lwt_config.ml src/unix/lwt_unix_jobs_generated.ml src/unix/jobs-unix/*
 
 Synopsis: Lightweight thread library for Objective Caml
@@ -36,6 +36,10 @@ Description:
 # +-------------------------------------------------------------------+
 # | Flags                                                             |
 # +-------------------------------------------------------------------+
+
+Flag android_target
+  Description: Compiles for Android
+  Default: false
 
 Flag all
   Description: build and install everything
@@ -67,7 +71,7 @@ Flag text
 
 Flag preemptive
   Description: Preemptive threads support
-  Default$: flag(unix)
+  Default$: flag(unix) && !flag(android_target)
 
 Flag extra
   Description: Asynchronous unix functions
@@ -79,7 +83,7 @@ Flag toplevel
 
 Flag libev
   Description: Compile with libev support
-  Default$: !os_type(Win32)
+  Default$: !os_type(Win32) && !flag(android_target)
 
 Flag pthread
   Description: Use pthread

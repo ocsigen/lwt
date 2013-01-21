@@ -247,7 +247,8 @@ let jobs = Seq [
           check = Some "$(result) == (off_t)-1";
           map64 = ["offset"; "result"];
       };
-  Job (simple_unit ["termios"; "unistd"] "tcdrain" [("fd", file_descr)]);
+  Job { (simple_unit ["termios"; "unistd"] "tcdrain" [("fd", file_descr)])
+        with exists_if = [(false, "__ANDROID__")] };
   Job (simple_unit ["termios"; "unistd"] "tcflush" [("fd", file_descr); ("queue", flush_queue)]);
   Job (simple_unit ["termios"; "unistd"] "tcflow" [("fd", file_descr); ("action", flow_action)]);
   Job (simple_unit ["termios"; "unistd"] "tcsendbreak" [("fd", file_descr); ("duration", int)]);

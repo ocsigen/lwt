@@ -231,6 +231,7 @@ let use_glib = ref false
 let use_pthread = ref true
 let use_unix = ref true
 let os_type = ref "Unix"
+let android_target = ref false
 let ccomp_type = ref "cc"
 
 let log_file = ref ""
@@ -408,6 +409,7 @@ let () =
     "-use-pthread", arg_bool use_pthread, " whether to use pthread";
     "-use-unix", arg_bool use_unix, " whether to build lwt.unix";
     "-os-type", Arg.Set_string os_type, "<name> type of the target os";
+    "-android-target", arg_bool android_target, "<name> compiles for Android";
     "-ccomp-type", Arg.Set_string ccomp_type, "<ccomp-type> C compiler type";
   ] in
   Arg.parse args ignore "check for external C libraries and available features\noptions are:";
@@ -464,6 +466,7 @@ let () =
 
   let test_pthread () =
     let opt, lib =
+      if !android_target then ([], []) else
       lib_flags "PTHREAD"
         (fun () ->
           match search_header "pthread.h" with
@@ -527,15 +530,18 @@ Lwt can use pthread or the win32 API.
   let do_check = !os_type <> "Win32" in
   test_feature ~do_check "eventfd" "HAVE_EVENTFD" (fun () -> test_code ([], []) eventfd_code);
   test_feature ~do_check "fd passing" "HAVE_FD_PASSING" (fun () -> test_code ([], []) fd_passing_code);
-  test_feature ~do_check "sched_getcpu" "HAVE_GETCPU" (fun () -> test_code ([], []) getcpu_code);
-  test_feature ~do_check "affinity getting/setting" "HAVE_AFFINITY" (fun () -> test_code ([], []) affinity_code);
+  test_feature ~do_check:(do_check && not !android_target)
+    "sched_getcpu" "HAVE_GETCPU" (fun () -> test_code ([], []) getcpu_code);
+  test_feature ~do_check:(do_check && not !android_target)
+    "affinity getting/setting" "HAVE_AFFINITY" (fun () -> test_code ([], []) affinity_code);
   test_feature ~do_check "credentials getting (Linux)" "HAVE_GET_CREDENTIALS_LINUX" (fun () -> test_code ([], []) (get_credentials_code "ucred"));
   test_feature ~do_check "credentials getting (NetBSD)" "HAVE_GET_CREDENTIALS_NETBSD" (fun () -> test_code ([], []) (get_credentials_code "sockcred"));
   test_feature ~do_check "credentials getting (OpenBSD)" "HAVE_GET_CREDENTIALS_OPENBSD" (fun () -> test_code ([], []) (get_credentials_code "sockpeercred"));
   test_feature ~do_check "credentials getting (FreeBSD)" "HAVE_GET_CREDENTIALS_FREEBSD" (fun () -> test_code ([], []) (get_credentials_code "cmsgcred"));
   test_feature ~do_check "credentials getting (getpeereid)" "HAVE_GETPEEREID" (fun () -> test_code ([], []) get_peereid_code);
   test_feature ~do_check "fdatasync" "HAVE_FDATASYNC" (fun () -> test_code ([], []) fdatasync_code);
-  test_feature ~do_check "netdb_reentrant" "HAVE_NETDB_REENTRANT" (fun () -> test_code ([], []) netdb_reentrant_code);
+  test_feature ~do_check:(do_check && not !android_target)
+    "netdb_reentrant" "HAVE_NETDB_REENTRANT" (fun () -> test_code ([], []) netdb_reentrant_code);
 
   let get_cred_vars = [
     "HAVE_GET_CREDENTIALS_LINUX";
@@ -562,6 +568,11 @@ Lwt can use pthread or the win32 API.
   end else begin
     output_string config "//#define LWT_ON_WINDOWS\n";
     output_string config_ml "#let windows=false\n"
+  end;
+  if !android_target then begin
+    output_string config_ml "#let android=true\n"
+  end else begin
+    output_string config_ml "#let android=false\n"
   end;
 
   fprintf config "#endif\n";

@@ -479,6 +479,8 @@ CAMLprim value lwt_unix_get_credentials(value fd)
 CAMLextern int caml_convert_signal_number (int);
 CAMLextern int caml_rev_convert_signal_number (int);
 
+#if !defined(__ANDROID__)
+
 #if !(defined(WIFEXITED) && defined(WEXITSTATUS) && defined(WIFSTOPPED) && \
       defined(WSTOPSIG) && defined(WTERMSIG))
 /* Assume old-style V7 status word */
@@ -546,6 +548,8 @@ value lwt_unix_has_wait4(value unit)
 {
   return Val_int(1);
 }
+
+#endif
 
 /* +-----------------------------------------------------------------+
    | CPUs                                                            |
@@ -1500,6 +1504,8 @@ CAMLprim value lwt_unix_lockf_job(value val_fd, value val_command, value val_len
    | JOB: getlogin                                                   |
    +-----------------------------------------------------------------+ */
 
+#if !defined(__ANDROID__)
+
 struct job_getlogin {
   struct lwt_unix_job job;
   char buffer[1024];
@@ -1530,9 +1536,13 @@ CAMLprim value lwt_unix_getlogin_job()
   return lwt_unix_alloc_job(&job->job);
 }
 
+#endif
+
 /* +-----------------------------------------------------------------+
    | JOBs: get{pw,gr}{nam,uid}                                       |
    +-----------------------------------------------------------------+ */
+
+#if !defined(__ANDROID__)
 
 static value alloc_passwd_entry(struct passwd *entry)
 {
@@ -1543,7 +1553,7 @@ static value alloc_passwd_entry(struct passwd *entry)
   Begin_roots5 (name, passwd, gecos, dir, shell);
     name = copy_string(entry->pw_name);
     passwd = copy_string(entry->pw_passwd);
-#ifndef __BEOS__
+#if !defined(__BEOS__)
     gecos = copy_string(entry->pw_gecos);
 #else
     gecos = copy_string("");
@@ -1628,6 +1638,8 @@ JOB_GET_ENTRY(LWT_UNIX_INIT_JOB_STRING(job, getpwnam, 0, name), getpwnam, GETPW,
 JOB_GET_ENTRY(LWT_UNIX_INIT_JOB_STRING(job, getgrnam, 0, name), getgrnam, GETGR, group, name, char *name; char data[], caml_copy_string(job->name))
 JOB_GET_ENTRY(LWT_UNIX_INIT_JOB(job, getpwuid, 0); job->uid = Int_val(uid), getpwuid, GETPW, passwd, uid, int uid, Nothing)
 JOB_GET_ENTRY(LWT_UNIX_INIT_JOB(job, getgrgid, 0); job->gid = Int_val(gid), getgrgid, GETGR, group, gid, int gid, Nothing)
+
+#endif
 
 /* +-----------------------------------------------------------------+
    | JOB: gethostname                                                |

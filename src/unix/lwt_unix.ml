@@ -1411,7 +1411,7 @@ type group_entry =
     gr_mem : string array
   }
 
-#if windows
+#if windows || android
 
 let getlogin () =
   return (Unix.getlogin ())
@@ -1425,7 +1425,7 @@ let getlogin () =
 
 #endif
 
-#if windows
+#if windows || android
 
 let getpwnam name =
   return (Unix.getpwnam name)
@@ -1439,7 +1439,7 @@ let getpwnam name =
 
 #endif
 
-#if windows
+#if windows || android
 
 let getgrnam name =
   return (Unix.getgrnam name)
@@ -1453,7 +1453,7 @@ let getgrnam name =
 
 #endif
 
-#if windows
+#if windows || android
 
 let getpwuid uid =
   return (Unix.getpwuid uid)
@@ -1467,7 +1467,7 @@ let getpwuid uid =
 
 #endif
 
-#if windows
+#if windows || android
 
 let getgrgid gid =
   return (Unix.getgrgid gid)
@@ -2134,7 +2134,7 @@ let tcsendbreak ch delay =
 
 #endif
 
-#if windows
+#if windows || android
 
 let tcdrain ch =
   check_descriptor ch;
@@ -2305,17 +2305,19 @@ type wait_flag =
   | WNOHANG
   | WUNTRACED
 
-let has_wait4 = not Lwt_sys.windows
-
 type resource_usage = { ru_utime : float; ru_stime : float }
 
-#if windows
+#if windows || android
+
+let has_wait4 = false
 
 let stub_wait4 flags pid =
   let pid, status = Unix.waitpid flags pid in
   (pid, status, { ru_utime = 0.0; ru_stime = 0.0 })
 
 #else
+
+let has_wait4 = true
 
 external stub_wait4 : Unix.wait_flag list -> int -> int * Unix.process_status * resource_usage = "lwt_unix_wait4"
 
@@ -2376,7 +2378,7 @@ let _wait4 flags pid =
   try_lwt
     return (stub_wait4 flags pid)
 
-#if windows
+#if windows || android
 
 let wait4 = _wait4
 
