@@ -1388,7 +1388,7 @@ static value result_readlink(struct job_readlink *job)
 {
   LWT_UNIX_CHECK_JOB_ARG(job, job->result < 0, "readlink", job->name);
   value result = caml_copy_string(job->buffer);
-  free(&job->buffer);
+  free(job->buffer);
   lwt_unix_free_job(&job->job);
   return result;
 }
