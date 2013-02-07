@@ -60,7 +60,7 @@
 }}}
 
   {{{lwt.simple-top}}} makes sure {{{Lwt}}} threads can run while
-  using the toplevel. You do not need it if your are using {{{utop}}}.
+  using the toplevel. You do not need it if you are using {{{utop}}}.
 
 === Lwt concepts ===
 
@@ -85,7 +85,7 @@
   type {{{char Lwt.t}}}. The type {{{'a Lwt.t}}} is the type
   of threads returning a value of type {{{'a}}}. Actually the
   {{{Lwt_io.read_char}}} will try to read a character from the
-  given input channel and //immediatly// returns a light-weight
+  given input channel and //immediately// returns a light-weight
   thread.
 
   Now, let's see what we can do with a {{{Lwt}}} thread. The following
@@ -156,10 +156,10 @@ val t : char Lwt.t = <abstr>
      \\
      wakes up the thread with an exception.
 
-  Note that this is an error to wakeup the same threads twice. {{{Lwt}}}
+  Note that it is an error to wakeup the same thread twice. {{{Lwt}}}
   will raise {{{Invalid_argument}}} if you try to do so.
 
-  With these informations, try to guess the result of each of the
+  With this information, try to guess the result of each of the
   following expression:
 
 <<code language="ocaml" |# Lwt.state (Lwt.return 42);;
@@ -360,7 +360,7 @@ lwt () =
   switching to another cooperative thread. In order to make it work well,
   you must follow the following rules:
 
-   * do not write function that may takes time to complete without
+   * do not write functions that may take time to complete without
      using {{{Lwt}}},
    * do not do IOs that may block, otherwise the whole program will
      hang. You must instead use asynchronous IOs operations.
@@ -409,7 +409,7 @@ expr
      \\
      which is the equivalent of the standard {{{try-with}}}
      construction but for {{{Lwt}}}. Both exceptions raised by
-     {{{Pervasives.raise}}} and {{{Lwt.fail}}} are caught.";
+     {{{Pervasives.raise}}} and {{{Lwt.fail}}} are caught.
 
    * {{{for_lwt}}} //ident// {{{=}}} //expr,,init,,// ( {{{to}}} {{{|}}}
      {{{downto}}} ) //expr,,final,,// {{{do}}} //expr//
@@ -605,11 +605,11 @@ val s' : int Lwt_stream.t = <abstr>
 >>
 
   This functions wait for the given thread to terminate and returns
-  its result. In fact it does more than that; it also run the
-  scheduler which is responsible for making thread to progress when
+  its result. In fact it does more than that; it also runs the
+  scheduler which is responsible for making threads progress when
   events are received from the outside world.
 
-  So basically, when you write a {{{Lwt}}} program you must call at
+  So basically, when you write a {{{Lwt}}} program you must call
   the toplevel the function {{{Lwt_main.run}}}. For instance:
 
 <<code language="ocaml"|let () = Lwt_main.run (Lwt_io.printl "Hello, world!")
@@ -643,28 +643,28 @@ val s' : int Lwt_stream.t = <abstr>
 
 === The Lwt scheduler ===
 
-  Threads doing IO may be put asleep until some events are received by
+  Threads doing IO may be put to sleep until some events are received by
   the process. For example when you read from a file descriptor, you
   may have to wait for the file descriptor to become readable if no
-  data are immediatly available on it.
+  data are immediately available on it.
 
-  {{{Lwt}}} contains a shceduler which is responsible for managing
+  {{{Lwt}}} contains a scheduler which is responsible for managing
   multiple threads waiting for events, and restart them when needed.
   This scheduler is implemented by the two modules {{{Lwt_engine}}}
   and {{{Lwt_main}}}. {{{Lwt_engine}}} is a low-level module, it
   provides signatures for IO multiplexers as well as several builtin
-  implementation. {{{Lwt}}} support by default multiplexing IO with
+  implementations. {{{Lwt}}} supports by default multiplexing IO with
   {{{libev}}} or {{{Unix.select}}}. The signature is given by the
   class {{{Lwt_engine.t}}}.
 
   {{{libev}}} is used by default on Unix, because it supports any
   number of file descriptors while Unix.select supports only 1024 at
   most, and is also much more efficient. On Windows {{{Unix.select}}}
-  is used because {{{libev}}} does not works properly. The user may
+  is used because {{{libev}}} does not work properly. The user may
   change at any time the backend in use.
 
   The engine can also be used directly in order to integrate other
-  libraries with {{{Lwt}}}. For example {{{GTK}}} need to be notified
+  libraries with {{{Lwt}}}. For example {{{GTK}}} needs to be notified
   when some events are received. If you use {{{Lwt}}} with {{{GTK}}}
   you need to use the {{{Lwt}}} scheduler to monitor {{{GTK}}}
   sources. This is what is done by the {{{lwt.glib}}} package.
@@ -675,7 +675,7 @@ val s' : int Lwt_stream.t = <abstr>
 <<code language="ocaml"|val Lwt_main.run : 'a Lwt.t -> 'a
 >>
 
-  This function continously run the scheduler until the thread passed
+  This function continously runs the scheduler until the thread passed
   as argument terminates.
 
 === The logging facility ===
@@ -701,7 +701,7 @@ val s' : int Lwt_stream.t = <abstr>
 
   {{{Lwt}}} also provides a syntax extension, in the package
   {{{lwt.syntax.log}}}. It does not modify the language but
-  it replaces log statement of the form:
+  it replaces log statements of the form:
 
 <<code language="ocaml" |Lwt_log.info_f ~section "something happened: %s" msg
 >>
@@ -709,7 +709,7 @@ val s' : int Lwt_stream.t = <abstr>
   by:
 
 <<code language="ocaml" |if Lwt_log.Section.level section <= Lwt_log.Info then
-  Lwt_log.info_f ~section "somethign happend: %s" msg
+  Lwt_log.info_f ~section "something happened: %s" msg
 else
   Lwt.return ()
 >>
@@ -729,7 +729,7 @@ else
   The {{{Lwt_react}}} module provides helpers for using the {{{react}}}
   library with {{{Lwt}}}. It extends the {{{React}}} module by adding
   {{{Lwt}}} specific functions. It can be used as a replacement of
-  {{{React}}}. For example you can add at the beginning of you
+  {{{React}}}. For example you can add at the beginning of your
   program:
 
 <<code language="ocaml" |open Lwt_react
@@ -764,18 +764,18 @@ val t : '_a Lwt.t = <abstr>
 >>
 
   Another interesting feature is the ability to limit events
-  (resp. signals) from occuring (resp. changing) too often. For example,
+  (resp. signals) from occurring (resp. changing) too often. For example,
   suppose you are doing a program which displays something on the screeen
   each time a signal changes. If at some point the signal changes 1000
-  times per second, you probably want not to render it 1000 times per
+  times per second, you probably don't want to render it 1000 times per
   second. For that you use {{{Lwt_react.S.limit}}}:
 
 <<code language="ocaml" |val limit : (unit -> unit Lwt.t) -> 'a React.signal -> 'a React.signal
 >>
 
   {{{Lwt_react.S.limit f signal}}} returns a signal which varies as
-  {{{signal}}} except that two consecutive updates are separeted by a
-  call to {{{f}}}. For example if {{{f}}} returns a thread which sleep
+  {{{signal}}} except that two consecutive updates are separated by a
+  call to {{{f}}}. For example if {{{f}}} returns a thread which sleeps
   for 0.1 seconds, then there will be no more than 10 changes per
   second. For example:
 
@@ -821,8 +821,8 @@ let () =
   they will not fail because text you want to print cannot be encoded
   in the system encoding.
 
-  For example, with you locale sets to ``C'', and the variable
-  {{{name}}} set to ``Jérémie'', you got:
+  For example, with your locale sets to ``C'', and the variable
+  {{{name}}} set to ``Jérémie'', you get:
 
 <<code language="ocaml" |# lwt () = Lwt_text.printlf "My name is %s" name;;
 My name is J?r?mie
@@ -831,7 +831,7 @@ My name is J?r?mie
 === Terminal utilities ===
 
   The {{{Lwt_term}}} allow you to put the terminal in //raw mode//,
-  meaning that input is not buffered and character are
+  meaning that input is not buffered and characters are
   returned as the user types them. For example, you can read a key with:
 
 <<code language="ocaml" |# lwt key = Lwt_term.read_key ();;
@@ -851,7 +851,7 @@ foo
 
 === Read-line ===
 
-  {{{Lwt_read_line}}} provides a full featured and fully
+  {{{Lwt_read_line}}} provides a fully featured and fully
   customisable read-line implementation. You can either use the
   high-level and easy to use {{{read_*}}} functions, or use the
   advanced {{{Lwt_read_line.Control.read_*}}} functions.
@@ -865,8 +865,8 @@ val l : Text.t = "Hello, world!"
 >>
 
   The second class of functions is a bit more complicated to use, but
-  allow to control a running read-line instance. For example you can
-  temporary hide it to draw something, you can send it commands, fake
+  allow control of a running read-line instance. For example you can
+  temporarily hide it to draw something, you can send it commands, fake
   input, and the prompt is a signal so it can change dynamically.
 
 == Other libraries ==
@@ -875,7 +875,7 @@ val l : Text.t = "Hello, world!"
 
   It may happen that you want to run a function which will take time to
   compute or that you want to use a blocking function that cannot be
-  used in a non-blocking way. For these situations, {{{Lwt}}} allow you to
+  used in a non-blocking way. For these situations, {{{Lwt}}} allows you to
   //detach// the computation to a preemptive thread.
 
   This is done by the module {{{Lwt_preemptive}}} of the
@@ -907,14 +907,14 @@ val l : Text.t = "Hello, world!"
 === SSL support ===
 
   The package {{{lwt.ssl}}} provides the module {{{Lwt_ssl}}}
-  which allow to use SSL asynchronously
+  which allows use of SSL asynchronously.
 
 === Glib integration ===
 
   The {{{lwt.glib}}} embeds the {{{glib}}} main loop into the
-  {{{Lwt}}} one. This allows you to write GTK application using {{{Lwt}}}.  The
+  {{{Lwt}}} one. This allows you to write GTK applications using {{{Lwt}}}.  The
   one thing you have to do is to call {{{Lwt_glib.install}}} at
-  the beginning of you program.
+  the beginning of your program.
 
 == Writing stubs using {{{Lwt}}} ==
 
@@ -931,11 +931,11 @@ val l : Text.t = "Hello, world!"
 
 === Jobs ===
 
-  For operations that can not be executed asynchronously, {{{Lwt}}}
+  For operations that cannot be executed asynchronously, {{{Lwt}}}
   uses a system of jobs that can be executed in a different threads. A
   job is composed of three functions:
 
-   * A stub function to create the job. It musts allocate a new job
+   * A stub function to create the job. It must allocate a new job
      structure and fill its [worker] and [result] fields. This
      function is executed in the main thread.
      The return type for the OCaml external must be of the form {{{'a job}}}.
@@ -943,8 +943,8 @@ val l : Text.t = "Hello, world!"
      in another thread. This function must not:
      ** access or allocate OCaml block values (tuples, strings, ...),
      ** call OCaml code.
-   * A function which reads the result of the job, free resources and
-     return the result as an OCaml value. This function is executed in
+   * A function which reads the result of the job, frees resources and
+     returns the result as an OCaml value. This function is executed in
      the main thread.
 
   With {{{Lwt < 2.3.3}}}, 4 functions (including 3 stubs) were
