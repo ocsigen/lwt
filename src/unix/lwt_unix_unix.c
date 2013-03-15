@@ -1762,14 +1762,19 @@ static value alloc_host_entry(struct hostent *entry)
 
 static void worker_gethostbyname(struct job_gethostbyname *job)
 {
-  int h_errno;
 #if HAS_GETHOSTBYNAME_R == 5
+  int h_errno;
   job->ptr = gethostbyname_r(job->name, &job->entry, job->buffer, NETDB_BUFFER_SIZE, &h_errno);
 #elif HAS_GETHOSTBYNAME_R == 6
+  int h_errno;
   if (gethostbyname_r(job->name, &job->entry, job->buffer, NETDB_BUFFER_SIZE, &(job->ptr), &h_errno) != 0)
     job->ptr = NULL;
 #else
-  job->ptr = NULL;
+  job->ptr = gethostbyname(job->name);
+  if (job->ptr) {
+    memcpy((void*)&job->entry, (void*)job->ptr, sizeof(struct hostent));
+    job->ptr = &job->entry;
+  }
 #endif
 }
 
@@ -1805,14 +1810,19 @@ struct job_gethostbyaddr {
 
 static void worker_gethostbyaddr(struct job_gethostbyaddr *job)
 {
-  int h_errno;
 #if HAS_GETHOSTBYADDR_R == 7
+  int h_errno;
   job->ptr = gethostbyaddr_r(&job->addr, 4, AF_INET, &job->entry, job->buffer, NETDB_BUFFER_SIZE, &h_errno);
 #elif HAS_GETHOSTBYADDR_R == 8
+  int h_errno;
   if (gethostbyaddr_r(&job->addr, 4, AF_INET, &job->entry, job->buffer, NETDB_BUFFER_SIZE, &job->ptr, &h_errno) != 0)
     job->ptr = NULL;
 #else
-  job->ptr = NULL;
+  job->ptr = gethostbyaddr(&job->addr, 4, AF_INET);
+  if (job->ptr) {
+    memcpy((void*)&job->entry, (void*)job->ptr, sizeof(struct hostent));
+    job->ptr = &job->entry;
+  }
 #endif
 }
 
