@@ -233,6 +233,7 @@ let use_unix = ref true
 let os_type = ref "Unix"
 let android_target = ref false
 let ccomp_type = ref "cc"
+let libev_default = ref true
 
 let log_file = ref ""
 let caml_file = ref ""
@@ -411,6 +412,7 @@ let () =
     "-os-type", Arg.Set_string os_type, "<name> type of the target os";
     "-android-target", arg_bool android_target, "<name> compiles for Android";
     "-ccomp-type", Arg.Set_string ccomp_type, "<ccomp-type> C compiler type";
+    "-libev_default", arg_bool libev_default, " whether to use the libev backend by default";
   ] in
   Arg.parse args ignore "check for external C libraries and available features\noptions are:";
 
@@ -573,6 +575,11 @@ Lwt can use pthread or the win32 API.
     output_string config_ml "#let android=true\n"
   end else begin
     output_string config_ml "#let android=false\n"
+  end;
+  if !libev_default then begin
+    output_string config_ml "#let libev_default=true\n"
+  end else begin
+    output_string config_ml "#let libev_default=false\n"
   end;
 
   fprintf config "#endif\n";

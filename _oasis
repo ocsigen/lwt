@@ -22,7 +22,7 @@ Homepage: http://ocsigen.org/lwt/
 BuildTools: ocamlbuild
 Plugins: DevFiles (0.3), META (0.3)
 XDevFilesEnableMakefile: false
-PostConfCommand: ocaml discover.ml -ocamlc $ocamlc -ext-obj $ext_obj -exec-name $default_executable_name -use-libev $libev -os-type $os_type -use-glib $glib -ccomp-type $ccomp_type -use-pthread $pthread -use-unix $unix -android-target $android_target
+PostConfCommand: ocaml discover.ml -ocamlc $ocamlc -ext-obj $ext_obj -exec-name $default_executable_name -use-libev $libev -os-type $os_type -use-glib $glib -ccomp-type $ccomp_type -use-pthread $pthread -use-unix $unix -android-target $android_target -libev_default $libev_default
 PostDistCleanCommand: $rm src/unix/lwt_config.h src/unix/lwt_config.ml src/unix/lwt_unix_jobs_generated.ml src/unix/jobs-unix/*
 
 Synopsis: Lightweight thread library for Objective Caml
@@ -84,6 +84,10 @@ Flag toplevel
 Flag libev
   Description: Compile with libev support
   Default$: !os_type(Win32) && !flag(android_target)
+
+Flag libev_default
+  Description: Use the libev backend by default
+  Default$: system(linux) || system(linux_elf) || system(linux_aout) || system(linux_eabi) || system(linux_eabihf)
 
 Flag pthread
   Description: Use pthread

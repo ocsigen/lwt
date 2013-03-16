@@ -393,7 +393,7 @@ end
    | The current engine                                              |
    +-----------------------------------------------------------------+ *)
 
-#if HAVE_LIBEV && not windows
+#if HAVE_LIBEV && libev_default
 
 let current = ref (new libev :> t)
 
