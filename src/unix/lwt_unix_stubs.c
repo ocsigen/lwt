@@ -1309,6 +1309,7 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method)
   struct stack_frame *node;
 #endif
   lwt_unix_async_method async_method = Int_val(val_async_method);
+  int done = 0;
 
   /* Fallback to synchronous call if there is no worker available and
      we can not launch more threads. */
@@ -1354,7 +1355,16 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method)
       lwt_unix_condition_signal(&pool_condition);
       lwt_unix_mutex_unlock(&pool_mutex);
     }
-    return Val_bool(job->state == LWT_UNIX_JOB_STATE_DONE);
+
+    done = job->state == LWT_UNIX_JOB_STATE_DONE;
+    if (done) {
+      /* Wait for the mutex to be released because the job is going to
+         be freed immediatly. */
+      lwt_unix_mutex_lock(&job->mutex);
+      lwt_unix_mutex_unlock(&job->mutex);
+    }
+
+    return Val_bool(done);
 
   case LWT_UNIX_ASYNC_METHOD_SWITCH:
 #if defined(LWT_UNIX_SIGNAL_ASYNC_SWITCH)
@@ -1418,7 +1428,14 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method)
 
       /* This thread is now running caml code. */
       //caml_c_thread_register();
-      return Val_bool(job->state == LWT_UNIX_JOB_STATE_DONE);
+
+      done = job->state == LWT_UNIX_JOB_STATE_DONE;
+      if (done) {
+        lwt_unix_mutex_lock(&job->mutex);
+        lwt_unix_mutex_unlock(&job->mutex);
+      }
+
+      return Val_bool(done);
     }
 
 #else /* defined(LWT_UNIX_SIGNAL_ASYNC_SWITCH) */
