@@ -394,8 +394,8 @@ type server
   (** Type of a server *)
 
 val establish_server : ?buffer_size : int -> ?backlog : int -> Unix.sockaddr -> (input_channel * output_channel -> unit) -> server
-  (** [establich_server ?buffer_size ?backlog sockaddr f] creates a
-      server which will listen for incomming connections. New
+  (** [establish_server ?buffer_size ?backlog sockaddr f] creates a
+      server which will listen for incoming connections. New
       connections are passed to [f]. Note that [f] must not raise any
       exception.
 
