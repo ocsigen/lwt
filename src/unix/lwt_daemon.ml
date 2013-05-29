@@ -81,7 +81,7 @@ let daemonize ?(syslog=true) ?(stdin=`Dev_null) ?(stdout=`Log_default) ?(stderr=
       | `Keep ->
           ()
       | `Set n ->
-          ignore (Unix.umask 0o022);
+          ignore (Unix.umask n);
     end;
 
     ignore (Unix.setsid ())
