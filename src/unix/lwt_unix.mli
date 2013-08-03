@@ -128,7 +128,7 @@ val with_async_switch : (unit -> 'a) -> 'a
 (** {6 Sleeping} *)
 
 val sleep : float -> unit Lwt.t
-  (** [sleep d] is a threads which remain suspended for [d] seconds
+  (** [sleep d] is a thread that remains suspended for [d] seconds
       and then terminates. *)
 
 val yield : unit -> unit Lwt.t
