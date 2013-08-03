@@ -132,7 +132,7 @@ val sleep : float -> unit Lwt.t
       and then terminates. *)
 
 val yield : unit -> unit Lwt.t
-  (** [yield ()] is a threads which suspends itself and then resumes
+  (** [yield ()] is a thread that suspends itself and then resumes
       as soon as possible and terminates. *)
 
 val auto_yield : float -> (unit -> unit Lwt.t)
