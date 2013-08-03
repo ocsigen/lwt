@@ -631,7 +631,7 @@ type signal_handler_id
 val on_signal : int -> (int -> unit) -> signal_handler_id
   (** [on_signal signum f] calls [f] each time the signal with numnber
       [signum] is received by the process. It returns a signal handler
-      identifier which can be used to stop monitoring [signum]. *)
+      identifier that can be used to stop monitoring [signum]. *)
 
 val on_signal_full : int -> (signal_handler_id -> int -> unit) -> signal_handler_id
   (** [on_signal_full f] is the same as [on_signal f] except that [f]
