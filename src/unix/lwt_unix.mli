@@ -525,7 +525,7 @@ val opendir : string -> dir_handle Lwt.t
   (** Wrapper for [Unix.opendir] *)
 
 val readdir : dir_handle -> string Lwt.t
-  (** Wrapper for [Unix.dir] *)
+  (** Wrapper for [Unix.readdir]. *)
 
 val readdir_n : dir_handle -> int -> string array Lwt.t
   (** [readdir_n handle count] reads at most [count] entry from the
