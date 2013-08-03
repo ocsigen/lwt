@@ -136,7 +136,7 @@ val yield : unit -> unit Lwt.t
       as soon as possible and terminates. *)
 
 val auto_yield : float -> (unit -> unit Lwt.t)
-  (** [auto_yield timeout] returns a function [f] which will yield
+  (** [auto_yield timeout] returns a function [f] that will yield
       every [timeout] seconds. *)
 
 exception Timeout
