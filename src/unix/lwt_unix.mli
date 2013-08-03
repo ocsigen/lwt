@@ -686,21 +686,21 @@ val accept : file_descr -> (file_descr * sockaddr) Lwt.t
   (** Wrapper for [Unix.accept] *)
 
 val accept_n : file_descr -> int -> ((file_descr * sockaddr) list * exn option) Lwt.t
-  (** [accept_n fd count] accepts up to [count] connection in one time.
+  (** [accept_n fd count] accepts up to [count] connections at one time.
 
       - if no connection is available right now, it returns a sleeping
       thread
 
-      - if more that 1 and less than [count] are available, it returns
+      - if more than 1 and less than [count] are available, it returns
       all of them
 
-      - if more that [count] are available, it returns the next
+      - if more than [count] are available, it returns the next
       [count] of them
 
-      - if an error happen, it returns the connections that have been
+      - if an error happens, it returns the connections that have been
       successfully accepted so far and the error
 
-      [accept_n] has the advantage of improving performances. If you
+      [accept_n] has the advantage of improving performance. If you
       want a more detailed description, you can have a look at:
 
       {{:http://portal.acm.org/citation.cfm?id=1247435}Acceptable strategies for improving web server performance} *)
