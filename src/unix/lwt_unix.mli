@@ -24,37 +24,37 @@
 
 (** Cooperative system calls *)
 
-(** This modules redefine system calls, as in the [Unix] module of the
-    standard library, but mapped into cooperative ones, which will not
-    block the program, letting other threads run.
+(** This modules maps system calls, like those of the standard
+    library's [Unix] module, to cooperative ones, which will not block
+    the program.
 
-    The semantic of all operations is the following: if the action
+    The semantics of all operations is the following: if the action
     (for example reading from a {b file descriptor}) can be performed
-    immediatly, it is done and returns immediatly, otherwise it
-    returns a sleeping threads which is waked up when the operation
+    immediately, it is done and returns immediately, otherwise it
+    returns a sleeping thread which is woken up when the operation
     completes.
 
     Most operations on sockets and pipes (on Windows it is only
-    sockets) are {b cancelable}, this means that you can cancel them
+    sockets) are {b cancelable}, meaning you can cancel them
     with {!Lwt.cancel}. For example if you want to read something from
     a {b file descriptor} with a timeout, you can cancel the action
     after the timeout and the reading will not be performed if not
     already done.
 
-    More precisely, assuming that you have two sockets [sock1] and
-    [sock2] and you want to read something from [sock1] or exclusively
-    from [sock2], and fail with an exception if a timeout of 1 second
+    For example, consider that you have two sockets [sock1] and
+    [sock2]. You want to read something from [sock1] or exclusively
+    from [sock2] and fail with an exception if a timeout of 1 second
     expires, without reading anything from [sock1] and [sock2], even
     if they become readable in the future.
 
     Then you can do:
 
     {[
-      Lwt.pick [Lwt_unix.timeout 1.0; read sock1 buf1 ofs1 len1; read sock2 buf2 ofs2 len2]
+    Lwt.pick [Lwt_unix.timeout 1.0; read sock1 buf1 ofs1 len1; read sock2 buf2 ofs2 len2]
     ]}
 
-    In this case it is guaranteed that exactly one of the three
-    operations will completes, and other will just be cancelled.
+    In this case, it is guaranteed that exactly one of the three
+    operations will complete, and the others will be cancelled.
 *)
 
 val handle_unix_error : ('a -> 'b Lwt.t) -> 'a -> 'b Lwt.t
