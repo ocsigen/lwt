@@ -143,8 +143,8 @@ exception Timeout
   (** Exception raised by timeout operations *)
 
 val timeout : float -> 'a Lwt.t
-  (** [timeout d] is a thread which remains suspended for [d] seconds
-      then fails with {!Timeout} *)
+  (** [timeout d] is a thread that remains suspended for [d] seconds
+      and then fails with {!Timeout}. *)
 
 val with_timeout : float -> (unit -> 'a Lwt.t) -> 'a Lwt.t
   (** [with_timeout d f] is a short-hand for:
