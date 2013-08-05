@@ -24,37 +24,37 @@
 
 (** Cooperative system calls *)
 
-(** This modules redefine system calls, as in the [Unix] module of the
-    standard library, but mapped into cooperative ones, which will not
-    block the program, letting other threads run.
+(** This modules maps system calls, like those of the standard
+    library's [Unix] module, to cooperative ones, which will not block
+    the program.
 
-    The semantic of all operations is the following: if the action
+    The semantics of all operations is the following: if the action
     (for example reading from a {b file descriptor}) can be performed
-    immediatly, it is done and returns immediatly, otherwise it
-    returns a sleeping threads which is waked up when the operation
+    immediately, it is done and returns immediately, otherwise it
+    returns a sleeping thread which is woken up when the operation
     completes.
 
     Most operations on sockets and pipes (on Windows it is only
-    sockets) are {b cancelable}, this means that you can cancel them
+    sockets) are {b cancelable}, meaning you can cancel them
     with {!Lwt.cancel}. For example if you want to read something from
     a {b file descriptor} with a timeout, you can cancel the action
     after the timeout and the reading will not be performed if not
     already done.
 
-    More precisely, assuming that you have two sockets [sock1] and
-    [sock2] and you want to read something from [sock1] or exclusively
-    from [sock2], and fail with an exception if a timeout of 1 second
+    For example, consider that you have two sockets [sock1] and
+    [sock2]. You want to read something from [sock1] or exclusively
+    from [sock2] and fail with an exception if a timeout of 1 second
     expires, without reading anything from [sock1] and [sock2], even
     if they become readable in the future.
 
     Then you can do:
 
     {[
-      Lwt.pick [Lwt_unix.timeout 1.0; read sock1 buf1 ofs1 len1; read sock2 buf2 ofs2 len2]
+    Lwt.pick [Lwt_unix.timeout 1.0; read sock1 buf1 ofs1 len1; read sock2 buf2 ofs2 len2]
     ]}
 
-    In this case it is guaranteed that exactly one of the three
-    operations will completes, and other will just be cancelled.
+    In this case, it is guaranteed that exactly one of the three
+    operations will complete, and the others will be cancelled.
 *)
 
 val handle_unix_error : ('a -> 'b Lwt.t) -> 'a -> 'b Lwt.t
@@ -128,23 +128,23 @@ val with_async_switch : (unit -> 'a) -> 'a
 (** {6 Sleeping} *)
 
 val sleep : float -> unit Lwt.t
-  (** [sleep d] is a threads which remain suspended for [d] seconds
+  (** [sleep d] is a thread that remains suspended for [d] seconds
       and then terminates. *)
 
 val yield : unit -> unit Lwt.t
-  (** [yield ()] is a threads which suspends itself and then resumes
+  (** [yield ()] is a thread that suspends itself and then resumes
       as soon as possible and terminates. *)
 
 val auto_yield : float -> (unit -> unit Lwt.t)
-  (** [auto_yield timeout] returns a function [f] which will yield
+  (** [auto_yield timeout] returns a function [f] that will yield
       every [timeout] seconds. *)
 
 exception Timeout
   (** Exception raised by timeout operations *)
 
 val timeout : float -> 'a Lwt.t
-  (** [timeout d] is a thread which remains suspended for [d] seconds
-      then fails with {!Timeout} *)
+  (** [timeout d] is a thread that remains suspended for [d] seconds
+      and then fails with {!Timeout}. *)
 
 val with_timeout : float -> (unit -> 'a Lwt.t) -> 'a Lwt.t
   (** [with_timeout d f] is a short-hand for:
@@ -525,7 +525,7 @@ val opendir : string -> dir_handle Lwt.t
   (** Wrapper for [Unix.opendir] *)
 
 val readdir : dir_handle -> string Lwt.t
-  (** Wrapper for [Unix.dir] *)
+  (** Wrapper for [Unix.readdir]. *)
 
 val readdir_n : dir_handle -> int -> string array Lwt.t
   (** [readdir_n handle count] reads at most [count] entry from the
@@ -631,7 +631,7 @@ type signal_handler_id
 val on_signal : int -> (int -> unit) -> signal_handler_id
   (** [on_signal signum f] calls [f] each time the signal with numnber
       [signum] is received by the process. It returns a signal handler
-      identifier which can be used to stop monitoring [signum]. *)
+      identifier that can be used to stop monitoring [signum]. *)
 
 val on_signal_full : int -> (signal_handler_id -> int -> unit) -> signal_handler_id
   (** [on_signal_full f] is the same as [on_signal f] except that [f]
@@ -686,21 +686,21 @@ val accept : file_descr -> (file_descr * sockaddr) Lwt.t
   (** Wrapper for [Unix.accept] *)
 
 val accept_n : file_descr -> int -> ((file_descr * sockaddr) list * exn option) Lwt.t
-  (** [accept_n fd count] accepts up to [count] connection in one time.
+  (** [accept_n fd count] accepts up to [count] connections at one time.
 
       - if no connection is available right now, it returns a sleeping
       thread
 
-      - if more that 1 and less than [count] are available, it returns
+      - if more than 1 and less than [count] are available, it returns
       all of them
 
-      - if more that [count] are available, it returns the next
+      - if more than [count] are available, it returns the next
       [count] of them
 
-      - if an error happen, it returns the connections that have been
+      - if an error happens, it returns the connections that have been
       successfully accepted so far and the error
 
-      [accept_n] has the advantage of improving performances. If you
+      [accept_n] has the advantage of improving performance. If you
       want a more detailed description, you can have a look at:
 
       {{:http://portal.acm.org/citation.cfm?id=1247435}Acceptable strategies for improving web server performance} *)
