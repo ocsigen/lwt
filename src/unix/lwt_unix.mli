@@ -315,6 +315,9 @@ type open_flag =
 #if ocaml_version >= (3, 13)
   | O_SHARE_DELETE
 #endif
+#if ocaml_version >= (4, 01)
+  | O_CLOEXEC
+#endif
 
 val openfile : string -> open_flag list -> file_perm -> file_descr Lwt.t
   (** Wrapper for [Unix.openfile]. *)
