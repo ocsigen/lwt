@@ -122,9 +122,9 @@ let load_rules str =
         | "fatal" -> (pattern, Fatal) :: loop rest
         | level -> log_intern "invalid log level (%s)" level; loop rest
   in
-  let onerror () = Printf.eprintf "Invalid contents of the LWT_LOG variable\n%!" in
-  rules:= loop (Lwt_log_rules.rules onerror (Lexing.from_string str))
-
+  match Lwt_log_rules.rules (Lexing.from_string str) with
+    | None -> Printf.eprintf "Invalid contents of the LWT_LOG variable\n%!"
+    | Some l -> rules := loop l
 
 
 (* +-----------------------------------------------------------------+

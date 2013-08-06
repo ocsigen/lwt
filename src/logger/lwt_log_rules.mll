@@ -19,26 +19,31 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  * 02111-1307, USA.
  *)
+{exception Parse_error}
 
 let space = [' ' '\t' '\n']
 let pattern = [^ ' ' '\t' '\n']+
 let level =  ['a'-'z' 'A'-'Z']+
 
-rule rules onerror = parse
+rule rules = parse
   | space* (pattern as pattern) space* "->" space* (level as level)
-     { (pattern, level) :: semi_colon_and_rules onerror lexbuf }
+     { (pattern, level) :: semi_colon_and_rules lexbuf }
   | space* (level as level)
-     { ("*", level) :: semi_colon_and_rules onerror lexbuf }
+     { ("*", level) :: semi_colon_and_rules lexbuf }
   | space* eof
      { [] }
   | ""
-     { onerror (); [] }
+     { raise Parse_error }
 
-and semi_colon_and_rules onerror = parse
+and semi_colon_and_rules = parse
   | space* ";"
-     { rules onerror lexbuf }
+     { rules lexbuf }
   | space* eof
      { [] }
   | ""
-     { onerror (); [] }
+     { raise Parse_error }
 
+{ let rules buf =
+  try
+    Some (rules buf)
+  with Parse_error -> None }

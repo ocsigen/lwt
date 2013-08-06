@@ -22,6 +22,6 @@
 
 (** Logging rules parsing *)
 
-val rules : (unit -> unit) -> Lexing.lexbuf -> (string * string) list
+val rules : Lexing.lexbuf -> (string * string) list option
   (** [parse lexbuf] returns the list of rules contained in
-      [lexbuf] *)
+      [lexbuf] or None in case of parsing error *)
