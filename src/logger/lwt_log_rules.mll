@@ -1,6 +1,6 @@
 (* Lightweight thread library for Objective Caml
  * http://www.ocsigen.org/lwt
- * Interface Lwt_log_rules
+ * Module Lwt_log_rules
  * Copyright (C) 2010 Jérémie Dimino <jeremie@dimino.org>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -20,8 +20,25 @@
  * 02111-1307, USA.
  *)
 
-(** Logging rules parsing *)
+let space = [' ' '\t' '\n']
+let pattern = [^ ' ' '\t' '\n']+
+let level =  ['a'-'z' 'A'-'Z']+
 
-val rules : Lexing.lexbuf -> (string * string) list
-  (** [parse lexbuf] returns the list of rules contained in
-      [lexbuf] *)
+rule rules onerror = parse
+  | space* (pattern as pattern) space* "->" space* (level as level)
+     { (pattern, level) :: semi_colon_and_rules onerror lexbuf }
+  | space* (level as level)
+     { ("*", level) :: semi_colon_and_rules onerror lexbuf }
+  | space* eof
+     { [] }
+  | ""
+     { onerror (); [] }
+
+and semi_colon_and_rules onerror = parse
+  | space* ";"
+     { rules onerror lexbuf }
+  | space* eof
+     { [] }
+  | ""
+     { onerror (); [] }
+
