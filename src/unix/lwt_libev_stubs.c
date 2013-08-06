@@ -194,7 +194,11 @@ CAMLprim value lwt_libev_timer_init(value loop, value delay, value repeat, value
   CAMLlocal1(result);
   /* Create and initialise the watcher */
   struct ev_timer* watcher = lwt_unix_new(struct ev_timer);
-  ev_timer_init(watcher, handle_timer, Double_val(delay), Bool_val(repeat));
+  if (Bool_val(repeat))
+    ev_timer_init(watcher, handle_timer, Double_val(delay), Double_val(delay));
+  else
+    ev_timer_init(watcher, handle_timer, Double_val(delay), 0.0);
+
   /* Wrap the watcher into a custom caml value */
   result = caml_alloc_custom(&watcher_ops, sizeof(struct ev_timer*), 0, 1);
   Ev_timer_val(result) = watcher;
