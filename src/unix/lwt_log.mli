@@ -21,7 +21,6 @@
  * 02111-1307, USA.
  *)
 
-include module type of Lwt_log_core
 (** Logging facility *)
 
 (** This module provides functions to deal with logging.
@@ -33,8 +32,15 @@ include module type of Lwt_log_core
     - logging to a file
 *)
 
+
 (** {6 Types} *)
 
+include module type of Lwt_log_core with
+  type level = Lwt_log_core.level and
+  type logger = Lwt_log_core.logger and
+  type section = Lwt_log_core.section and
+  type template = Lwt_log_core.template and
+  module Section = Lwt_log_core.Section
 (** {8 logger} *)
   (** A logger is responsible for dispatching messages
       and storing them somewhere.
