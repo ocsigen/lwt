@@ -35,15 +35,14 @@ include module type of Lwt_log_core
 
 (** {6 Types} *)
 
-
-(** {4 logger} *)
+(** {8 logger} *)
   (** A logger is responsible for dispatching messages
       and storing them somewhere.
 
       Lwt provides loggers sending log messages to a file, syslog,
       ... but you can also create you own logger. *)
 
-(** {4 section} *)
+(** {8 section} *)
   (** Each logging message has a section. Sections can be used to
       structure your logs. For example you can choose different
       loggers according to the section.
