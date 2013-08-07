@@ -20,6 +20,15 @@ Lwt_stream
 Lwt_switch
 }
 
+{2 Logger}
+The {e lwt.log} package provides a logger engine.
+
+{!modules:
+Lwt_log_core
+}
+
+This package depends on the {e core} library
+
 {2 Unix bindings}
 
 The {e lwt.unix} package provides:
@@ -43,7 +52,8 @@ Lwt_bytes
 Lwt_sys
 }
 
-This package depends on the {e core} library and the {e unix} package.
+This package depends on the {e core} library, the {e unix} package and
+the {e lwt.log} package.
 
 {2 Reactive programming helpers}
 

@@ -120,6 +120,14 @@ Library "lwt"
     Lwt_pqueue
   XMETADescription: Lightweight thread library for OCaml (core library)
 
+Library "lwt-log"
+  FindlibName: log
+  FindlibParent: lwt
+  Path: src/logger
+  Modules: Lwt_log_core, Lwt_log_rules
+  BuildDepends: lwt
+  XMETADescription: Logger for lwt
+
 Library "lwt-unix"
   Build$: flag(unix) || flag(all)
   Install$: flag(unix) || flag(all)
@@ -141,9 +149,8 @@ Library "lwt-unix"
     Lwt_engine,
     Lwt_bytes
   InternalModules:
-    Lwt_log_rules,
     Lwt_unix_jobs_generated
-  BuildDepends: lwt, unix, bigarray
+  BuildDepends: lwt, lwt.log, unix, bigarray
   XMETADescription: Unix support for lwt
   CSources:
     lwt_config.h,
@@ -340,6 +347,7 @@ Document "lwt-api"
     lwt.ssl,
     lwt.text,
     lwt.top,
+    lwt.log,
     lwt.unix,
     lwt.syntax,
     lwt.syntax.log

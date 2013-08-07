@@ -29,6 +29,9 @@ build: $(SETUP) setup.data
 doc: $(SETUP) setup.data build
 	./$(SETUP) -doc $(DOCFLAGS)
 
+doc-api: $(SETUP) setup.data build
+	./$(SETUP) -build lwt-api.docdir/index.html
+
 test: $(SETUP) setup.data build
 	./$(SETUP) -test $(TESTFLAGS)
 

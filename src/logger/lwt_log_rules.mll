@@ -19,11 +19,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  * 02111-1307, USA.
  *)
-
-{
-  let invalid () =
-    Printf.eprintf "%s: invalid contents of the LWT_LOG variable\n%!" (Filename.basename Sys.argv.(0))
-}
+{exception Parse_error}
 
 let space = [' ' '\t' '\n']
 let pattern = [^ ' ' '\t' '\n']+
@@ -37,7 +33,7 @@ rule rules = parse
   | space* eof
      { [] }
   | ""
-     { invalid (); [] }
+     { raise Parse_error }
 
 and semi_colon_and_rules = parse
   | space* ";"
@@ -45,5 +41,9 @@ and semi_colon_and_rules = parse
   | space* eof
      { [] }
   | ""
-     { invalid (); [] }
+     { raise Parse_error }
 
+{ let rules buf =
+  try
+    Some (rules buf)
+  with Parse_error -> None }
