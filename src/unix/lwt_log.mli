@@ -32,24 +32,25 @@
     - logging to a file
 *)
 
-
-(** {6 Types} *)
-
 include module type of Lwt_log_core with
   type level = Lwt_log_core.level and
   type logger = Lwt_log_core.logger and
   type section = Lwt_log_core.section and
   type template = Lwt_log_core.template and
   module Section = Lwt_log_core.Section
+
+(** {6 Types} *)
+
 (** {8 logger} *)
-  (** A logger is responsible for dispatching messages
-      and storing them somewhere.
+  (** See {!Lwt_log_core.logger}.
 
       Lwt provides loggers sending log messages to a file, syslog,
-      ... but you can also create you own logger. *)
+      ... but you can also create you own logger.*)
 
 (** {8 section} *)
-  (** Each logging message has a section. Sections can be used to
+  (** See {!Lwt_log_core.section}.
+
+      Each logging message has a section. Sections can be used to
       structure your logs. For example you can choose different
       loggers according to the section.
 
@@ -65,8 +66,10 @@ include module type of Lwt_log_core with
 
 (** {6 Log templates} *)
 
-(** {4 template} *)
-    (** A template is for generating log messages.
+(** {8 template} *)
+    (** See {!Lwt_log_core.template}.
+
+        A template is for generating log messages.
 
         It is a string which may contains variables of the form
         [$(var)], where [var] is one of:
