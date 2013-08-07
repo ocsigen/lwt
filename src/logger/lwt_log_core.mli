@@ -26,10 +26,9 @@
 (** This module provides functions to deal with logging.
     It support:
 
-    - logging to the syslog daemon
-    - logging to a channel (stderr, stdout, ...)
-    - logging to a file
     - logging to multiple destination at the same time
+    - filtering logs per destination
+
 *)
 
 (** {6 Types} *)
@@ -56,10 +55,7 @@ type level =
 
 type logger
   (** Type of a logger. A logger is responsible for dispatching messages
-      and storing them somewhere.
-
-      Lwt provides loggers sending log messages to a file, syslog,
-      ... but you can also create you own logger. *)
+      and storing them somewhere. *)
 
 type section
   (** Each logging message has a section. Sections can be used to
@@ -69,12 +65,12 @@ type section
       Each section carries a level, and messages with a lower log
       level than than the section level will be dropped.
 
-      Section levels are initialised using the [LWT_LOG] environment
-      variable, which must contains one or more rules of the form
+      Section levels are initialised using [load_rules rules_str] where
+      [rules_str] must contains one or more rules of the form
       [pattern -> level] separated by ";". Where [pattern] is a string
       that may contain [*].
 
-      For example, if [LWT_LOG] contains:
+      For example, if [rules_str] contains:
       {[
         access -> warning;
         foo[*] -> error
@@ -83,11 +79,10 @@ type section
       level of any section matching ["foo[*]"] is {!Error}.
 
       If the pattern is omited in a rule then the pattern ["*"] is
-      used instead, so [LWT_LOG] may just contains ["debug"] for
+      used instead, so [rules_str] may just contains ["debug"] for
       instance.
 
-      If [LWT_LOG] is not defined then the rule ["* -> notice"] is
-      used instead. *)
+      By default, the following rule apply : ["* -> notice"] *)
 
 val string_of_level : level -> string
 
@@ -102,7 +97,7 @@ val add_rule : string -> level -> unit
       may contains [*]. For example:
 
       {[
-        Lwt_log.add_rule "lwt*" Lwt_log.Info
+        Lwt_log_core.add_rule "lwt*" Lwt_log_core.Info
       ]}
   *)
 
@@ -111,7 +106,7 @@ val append_rule : string -> level -> unit
       rules. For example to set the default fallback rule:
 
       {[
-        Lwt_log.append_rule "*" Lwt_log.Info
+        Lwt_log_core.append_rule "*" Lwt_log_core.Info
       ]}
   *)
 
@@ -214,12 +209,6 @@ type template = string
 
         It is a string which may contains variables of the form
         [$(var)], where [var] is one of:
-
-        - [date] which will be replaced with the current date
-        - [milliseconds] which will be replaced by the fractionnal part
-          of the current unix time
-        - [name] which will be replaced by the program name
-        - [pid] which will be replaced by the pid of the program
         - [message] which will be replaced by the message emited
         - [level] which will be replaced by a string representation of
           the level
@@ -286,11 +275,11 @@ val dispatch : (section -> level -> logger) -> logger
         let access_logger = Lwt_log.file "access.log"
         and error_logger = Lwt_log.file "error.log" in
 
-        Lwt_log.dispatch
+        Lwt_log_core.dispatch
           (fun section level ->
-            match Lwt_log.Section.name section, level with
+            match Lwt_log_core.Section.name section, level with
               | "access", _ -> access_logger
-              | _, Lwt_log.Error -> error_logger)
+              | _, Lwt_log_core.Error -> error_logger)
       ]}
   *)
 

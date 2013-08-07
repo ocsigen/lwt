@@ -347,6 +347,7 @@ Document "lwt-api"
     lwt.ssl,
     lwt.text,
     lwt.top,
+    lwt.log,
     lwt.unix,
     lwt.syntax,
     lwt.syntax.log
