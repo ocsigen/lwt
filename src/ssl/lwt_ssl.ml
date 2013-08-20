@@ -180,14 +180,16 @@ let in_channel_of_descr s =
     ~close:(fun () -> shutdown_and_close s)
     (fun buf pos len -> read_bytes s buf pos len)
 
-let get_fd (fd,socket) =
+let get_fd (fd,socket) = fd
+
+let get_unix_fd (fd,socket) =
   match socket with
     | Plain -> Lwt_unix.unix_file_descr fd
     | SSL socket -> (Ssl.file_descr_of_socket socket)
 
 let getsockname s =
-  Unix.getsockname (get_fd s)
+  Unix.getsockname (get_unix_fd s)
 
 let getpeername s =
-  Unix.getpeername (get_fd s)
+  Unix.getpeername (get_unix_fd s)
 
