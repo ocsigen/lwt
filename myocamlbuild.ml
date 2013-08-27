@@ -148,6 +148,7 @@ let () =
                  ["compile"; "ocamldep"; "doc"; "link"];
 
                dep ["file:src/top/toplevel_temp.top"] ["src/core/lwt.cma";
+                                                       "src/logger/lwt-log.cma";
                                                        "src/react/lwt-react.cma";
                                                        "src/unix/lwt-unix.cma";
                                                        "src/text/lwt-text.cma";
@@ -156,6 +157,7 @@ let () =
                flag ["file:src/top/toplevel_temp.top"] & S[A"-I"; A"src/unix";
                                                            A"-I"; A"src/text";
                                                            A"src/core/lwt.cma";
+                                                           A"src/logger/lwt-log.cma";
                                                            A"src/react/lwt-react.cma";
                                                            A"src/unix/lwt-unix.cma";
                                                            A"src/text/lwt-text.cma";
