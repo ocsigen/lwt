@@ -31,9 +31,8 @@ let redirect fd logger =
   let fd_r, fd_w = Unix.pipe () in
   Unix.set_close_on_exec fd_r;
   Unix.dup2 fd_w fd;
-  Unix.close fd_w;
-  let ic = Lwt_io.of_unix_fd ~mode:Lwt_io.input fd in
-  ignore (copy ic logger)
+  let ic = Lwt_io.of_unix_fd ~mode:Lwt_io.input fd_r in
+  ignore_result (copy ic logger)
 
 let redirect_output dev_null fd mode = match mode with
   | `Dev_null ->
