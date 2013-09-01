@@ -78,7 +78,7 @@ type async_method =
   | Async_switch
       (** System calls are made in the main thread, and if one blocks
           the execution continue in another system thread. This method
-          is the most efficint, also you will get better performances
+          is the most efficient, also you will get better performance
           if you force all threads to run on the same cpu. On linux
           this can be done by using the command [taskset].
 
