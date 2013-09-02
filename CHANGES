@@ -1,3 +1,19 @@
+===== 2.4.4 (2013-10-22) =====
+
+  * add android support
+  * fix issues in stubs for Lwt_unix jobs
+  * fix compatilibity issue with ocaml 4.01
+  * fix the stub for ev_timer_init
+  * add lwt.log containing Lwt_log_core, the unix-free part of Lwt_log
+  * add Lwt_ssl.get_fd
+  * fix stdout/stderr redirections in Lwt_daemon.daemonize
+  * add Lwt_list.{map,iter}i{_s,_p}
+
+===== 2.4.3 (2012-12-27) =====
+
+  * fix Lwt_ssl.{in,out}_channel_of_descr: shutdown and close the
+    socket when the channel is closed
+
 ===== 2.4.2 (2012-09-28) =====
 
   * fix the stub for Lwt_unix.readdir
