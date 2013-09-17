@@ -507,7 +507,7 @@ val direct_access : 'a channel -> (direct_access -> 'b Lwt.t) -> 'b Lwt.t
 
 val default_buffer_size : unit -> int
   (** Return the default size for buffers. Channels that are created
-      without specific size use this one. *)
+      without a specific size use this one. *)
 
 val set_default_buffer_size : int -> unit
   (** Change the default buffer size.
