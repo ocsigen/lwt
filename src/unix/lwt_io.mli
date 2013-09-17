@@ -308,13 +308,13 @@ val write_value : output_channel -> ?flags : Marshal.extern_flags list -> 'a -> 
 
 (** {6 Printing} *)
 
-(** These functions are basically helpers. Also you may prefer the
+(** These functions are basically helpers. Also you may prefer
     using the name {!printl} rather than {!write_line} because it is
     shorter.
 
-    The general name of a printing function is [<prefix>print<suffixes>].
+    The general name of a printing function is [<prefix>print<suffixes>],
 
-    Where [<prefix>] is one of:
+    where [<prefix>] is one of:
     - ['f'], which means that the function takes as argument a channel
     - nothing, which means that the function prints on {!stdout}
     - ['e'], which means that the function prints on {!stderr}
