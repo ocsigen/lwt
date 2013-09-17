@@ -22,26 +22,25 @@
 
 (** Buffered byte channels *)
 
-(** A {b channel} is a high-level object for performing input/output (IO). It allows
-    to read/write from/to the outside world in an efficient
-    way, by minimising the number of system calls.
+(** A {b channel} is a high-level object for performing input/output
+    (IO). It allows to read/write from/to the outside world in an
+    efficient way, by minimising the number of system calls.
 
-    An {b output channel} is used to send data
-    and an {b input channel} is used to receive
-    data.
+    An {b output channel} is used to send data and an {b input
+    channel} is used to receive data.
 
     If you are familiar with buffered channels you may be familiar too
     with the {b flush} operation. Note that byte channels of this
     module are automatically flushed when there is nothing else to do
-    (i.e. before the program becomes idle), so this means that you
-    no longer have to write:
+    (i.e. before the program becomes idle), so this means that you no
+    longer have to write:
 
     {[
       eprintf "log message\n";
       flush stderr;
     ]}
 
-    to have you messages displayed.
+    to have your messages displayed.
 
     Note about errors: input functions of this module raise
     [End_of_file] when the end-of-file is reached (i.e. when the read
@@ -155,14 +154,14 @@ val of_unix_fd : ?buffer_size : int -> ?close : (unit -> unit Lwt.t) -> mode : '
 
 val close : 'a channel -> unit Lwt.t
   (** [close ch] closes the given channel. If [ch] is an output
-      channel, it performs all pending actions, flush it and close
-      it. If [ch] is an input channel, it just close it immediatly.
+      channel, it performs all pending actions, flushes it and closes
+      it. If [ch] is an input channel, it just closes it immediately.
 
       [close] returns the result of the close function of the
       channel. Multiple calls to [close] will return exactly the same
       value.
 
-      Note: you cannot use [close] on channel obtained with an
+      Note: you cannot use [close] on channels obtained with
       {!atomic}. *)
 
 val abort : 'a channel -> unit Lwt.t
