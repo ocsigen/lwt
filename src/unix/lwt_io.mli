@@ -206,7 +206,7 @@ val position : 'a channel -> int64
 
 val set_position : 'a channel -> int64 -> unit Lwt.t
   (** [set_position ch pos] Sets the position in the output channel. This
-      does not work if the channel do not support random access. *)
+      does not work if the channel does not support random access. *)
 
 val length : 'a channel -> int64 Lwt.t
   (** Returns the length of the channel in bytes *)
