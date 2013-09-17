@@ -1,4 +1,4 @@
-/* Lightweight thread library for Objective Caml
+/* Lightweight thread library for OCaml
  * http://www.ocsigen.org/lwt
  * Module Lwt_unix_stubs
  * Copyright (C) 2009-2010 Jérémie Dimino

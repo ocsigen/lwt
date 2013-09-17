@@ -1,4 +1,4 @@
-(* Lightweight thread library for Objective Caml
+(* Lightweight thread library for OCaml
  * http://www.ocsigen.org/lwt
  * Module Lwt_log_rules
  * Copyright (C) 2010 Jérémie Dimino <jeremie@dimino.org>

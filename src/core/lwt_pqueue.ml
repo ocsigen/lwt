@@ -1,4 +1,4 @@
-(* Lightweight thread library for Objective Caml
+(* Lightweight thread library for OCaml
  * http://www.ocsigen.org/lwt
  * Module Lwt_pqueue
  * Copyright (C) 1999-2004 Jérôme Vouillon
