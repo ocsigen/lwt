@@ -480,7 +480,7 @@ val block : 'a channel  -> int -> (Lwt_bytes.t -> int -> 'b Lwt.t) -> 'b Lwt.t
       read or write these chars.  [size] must satisfy [0 <= size <=
       16] *)
 
-(** Informations for accessing directly to the internal buffer of a
+(** Information for directly accessing the internal buffer of a
     channel *)
 type direct_access = {
   da_buffer : Lwt_bytes.t;
@@ -493,7 +493,7 @@ type direct_access = {
   (** The maximum offset *)
   da_perform : unit -> int Lwt.t;
   (** - for input channels:
-        refill the buffer and returns how many bytes have been read
+        refills the buffer and returns how many bytes have been read
       - for output channels:
         flush partially the buffer and returns how many bytes have been written *)
 }
