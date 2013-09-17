@@ -477,7 +477,7 @@ val system_byte_order : byte_order
 val block : 'a channel  -> int -> (Lwt_bytes.t -> int -> 'b Lwt.t) -> 'b Lwt.t
   (** [block ch size f] pass to [f] the internal buffer and an
       offset. The buffer contains [size] chars at [offset]. [f] may
-      reads or writes these chars.  [size] must verify [0 <= size <=
+      read or write these chars.  [size] must satisfy [0 <= size <=
       16] *)
 
 (** Informations for accessing directly to the internal buffer of a
