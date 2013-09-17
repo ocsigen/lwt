@@ -166,7 +166,7 @@ val close : 'a channel -> unit Lwt.t
 
 val abort : 'a channel -> unit Lwt.t
   (** [abort ch] abort current operations and close the channel
-      immediatly. *)
+      immediately. *)
 
 val atomic : ('a channel -> 'b Lwt.t) -> ('a channel -> 'b Lwt.t)
   (** [atomic f] transforms a sequence of io operations into one
