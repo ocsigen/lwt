@@ -22,18 +22,18 @@
 
 (** Buffered byte channels *)
 
-(** A {b channel} is a high-level object for performing IOs. It allow
-    to read/write things from/to the outside worlds in an efficient
+(** A {b channel} is a high-level object for performing input/output (IO). It allows
+    to read/write from/to the outside world in an efficient
     way, by minimising the number of system calls.
 
-    An {b output channel} is a channel that can be used to send data
-    and an {b input channel} is a channel that can used to receive
+    An {b output channel} is used to send data
+    and an {b input channel} is used to receive
     data.
 
     If you are familiar with buffered channels you may be familiar too
-    with the {b flush} operation. Note that byte channles of this
-    modules are automatically flushed when there is nothing else to do
-    (i.e. before the program goes into idle), so this means that you
+    with the {b flush} operation. Note that byte channels of this
+    module are automatically flushed when there is nothing else to do
+    (i.e. before the program becomes idle), so this means that you
     no longer have to write:
 
     {[
