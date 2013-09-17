@@ -410,7 +410,7 @@ val lines_of_file : file_name -> string Lwt_stream.t
 
 val lines_to_file : file_name -> string Lwt_stream.t -> unit Lwt.t
   (** [lines_to_file name lines] writes all lines of [lines] to
-      [files] *)
+      file with name [name]. *)
 
 val chars_of_file : file_name -> char Lwt_stream.t
   (** [chars_of_file name] returns a stream of all characters of the
