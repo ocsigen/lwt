@@ -358,7 +358,7 @@ val open_file :
   ?perm : Unix.file_perm ->
   mode : 'a mode ->
   file_name -> 'a channel Lwt.t
-  (** [open_file ?buffer_size ?flags ?perm ~mode filename] open the
+  (** [open_file ?buffer_size ?flags ?perm ~mode filename] opens the
       file with name [filename] and returns a channel for
       reading/writing it.
 
@@ -371,12 +371,12 @@ val with_file :
   ?perm : Unix.file_perm ->
   mode : 'a mode ->
   file_name -> ('a channel -> 'b Lwt.t) -> 'b Lwt.t
-  (** [with_file ?buffer_size ?flags ?perm ~mode filename f] open a
+  (** [with_file ?buffer_size ?flags ?perm ~mode filename f] opens a
       file and passes the channel to [f]. It is ensured that the
       channel is closed when [f ch] terminates (even if it fails). *)
 
 val open_connection : ?buffer_size : int -> Unix.sockaddr -> (input_channel * output_channel) Lwt.t
-  (** [open_connection ?buffer_size addr] open a connection to
+  (** [open_connection ?buffer_size addr] opens a connection to
       the given address and returns two channels for using it.
 
       The connection is completly closed when you close both
@@ -386,7 +386,7 @@ val open_connection : ?buffer_size : int -> Unix.sockaddr -> (input_channel * ou
   *)
 
 val with_connection : ?buffer_size : int -> Unix.sockaddr -> (input_channel * output_channel -> 'a Lwt.t) -> 'a Lwt.t
-  (** [with_connection ?buffer_size addr f] open a connection to
+  (** [with_connection ?buffer_size addr f] opens a connection to
       the given address and passes the channels to [f] *)
 
 type server
