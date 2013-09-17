@@ -222,7 +222,7 @@ val read_char : input_channel -> char Lwt.t
       @raise End_of_file if the end of the file is reached *)
 
 val read_char_opt : input_channel -> char option Lwt.t
-  (** Same as {!read_byte} but does not raises [End_of_file] on end of
+  (** Same as {!read_byte} but does not raise [End_of_file] on end of
       input *)
 
 val read_chars : input_channel -> char Lwt_stream.t
