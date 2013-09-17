@@ -273,7 +273,7 @@ val read_value : input_channel -> 'a Lwt.t
 (** Note: as for reading functions, all functions except
     {!write_chars} and {!write_lines} are {b atomic}.
 
-    For example if you use {!write_line} in to different threads, the
+    For example if you use {!write_line} in two different threads, the
     two operations will be serialized, and lines cannot be mixed.
 *)
 
