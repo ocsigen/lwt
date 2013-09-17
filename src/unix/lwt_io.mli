@@ -499,7 +499,7 @@ type direct_access = {
 }
 
 val direct_access : 'a channel -> (direct_access -> 'b Lwt.t) -> 'b Lwt.t
-  (** [direct_access ch f] pass to [f] a {!direct_access}
+  (** [direct_access ch f] passes to [f] a {!direct_access}
       structure. [f] must use it and update [da_ptr] to reflect how
       many bytes have been read/written. *)
 
