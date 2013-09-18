@@ -220,7 +220,7 @@ let parse_escape st =
   let get () =
     match Lwt.state (Lwt_stream.get st) with
       | Sleep ->
-          (* If the rest is not immediatly available, conclude that
+          (* If the rest is not immediately available, conclude that
              this is not an escape sequence but just the escape key: *)
           raise_lwt Exit_sequence
       | Fail exn ->

@@ -100,4 +100,4 @@ val iter : bool -> unit
 
 val wakeup : unit -> unit
   (** If one thread is blocking on {!iter}, then [wakeup ()] make
-      {!iter} to return immediatly. *)
+      {!iter} to return immediately. *)

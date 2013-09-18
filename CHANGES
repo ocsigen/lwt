@@ -182,7 +182,7 @@
   * Optimisation of {{{Lwt_io.write_char}}} and {{{Lwt_io.read_char}}}
   * Bugfix of {{{Lwt_stream}}}: two parallel {{{Lwt_stream.get}}}
     returned the same value
-  * Bugfix in {{{Lwt_unix.connect}}}: it returned immediatly on EINPROGRESS
+  * Bugfix in {{{Lwt_unix.connect}}}: it returned immediately on EINPROGRESS
   * Bugfixes in {{{Lwt_glib}}}: file descriptors were not monitored correctly
 
 ===== 2.0.0 (2009-10-15) =====

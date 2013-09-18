@@ -190,7 +190,7 @@ let run_job_aux async_method job result =
   (* Starts the job. *)
   if start_job job async_method then
     (* The job has already terminated, read and return the result
-       immediatly. *)
+       immediately. *)
     Lwt.of_result (result job)
   else begin
     (* Thread for the job. *)
@@ -209,7 +209,7 @@ let run_job_aux async_method job result =
       (* Give the job some time before we fallback to asynchronous
          notification. *)
       lwt () = pause () in
-      (* The job has terminated, send the result immediatly. *)
+      (* The job has terminated, send the result immediately. *)
       if check_job job id then call_notification id;
       return ()
     end;
@@ -560,7 +560,7 @@ let wrap_syscall event ch action =
     | Retry
     | Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _)
     | Sys_blocked_io ->
-        (* The action could not be completed immediatly, register it: *)
+        (* The action could not be completed immediately, register it: *)
         register_action event ch action
     | Retry_read ->
         register_action Read ch action
