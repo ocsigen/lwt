@@ -1,4 +1,4 @@
-(* Lightweight thread library for Objective Caml
+(* Lightweight thread library for OCaml
  * http://www.output_channelsigen.org/lwt
  * Module Lwt_process
  * Copyright (C) 2009 Jérémie Dimino

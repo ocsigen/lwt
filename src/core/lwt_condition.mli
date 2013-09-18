@@ -1,5 +1,5 @@
 (******************************************************************************)
-(* Lightweight thread library for Objective Caml
+(* Lightweight thread library for OCaml
  * http://www.ocsigen.org/lwt
  * Interface Lwt_condition
  ******************************************************************************
