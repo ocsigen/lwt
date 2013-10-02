@@ -33,7 +33,7 @@ val lock : t -> unit Lwt.t
   (** [lock mutex] lockcs the mutex, that is:
 
       - if the mutex is unlocked, then it is marked as locked and
-        {!lock} returns immediatly
+        {!lock} returns immediately
 
       - if it is locked, then {!lock} waits for all threads waiting on
         the mutex to terminate, then it resumes when the last one

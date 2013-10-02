@@ -40,7 +40,7 @@ val iter : bool -> unit
   (** [iter block] performs one iteration of the main loop. If [block]
       is [true] the function must blocks until one event become
       available, otherwise it should just check for available events
-      and return immediatly. *)
+      and return immediately. *)
 
 val on_readable : Unix.file_descr -> (event -> unit) -> event
   (** [on_readable fd f] calls [f] each time [fd] becomes readable. *)
