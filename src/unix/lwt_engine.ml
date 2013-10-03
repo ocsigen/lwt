@@ -252,8 +252,8 @@ class virtual select_or_poll_based = object(self)
   val mutable new_sleeps = []
     (* Sleepers added since the last iteration of the main loop:
 
-       They are not added immediatly to the main sleep queue in order
-       to prevent them from being wakeup immediatly.  *)
+       They are not added immediately to the main sleep queue in order
+       to prevent them from being wakeup immediately.  *)
 
   val mutable wait_readable = Fd_map.empty
     (* Sequences of actions waiting for file descriptors to become

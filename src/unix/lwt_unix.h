@@ -158,7 +158,7 @@ struct lwt_unix_job {
   struct lwt_unix_job *next;
 
   /* Id used to notify the main thread in case the job do not
-     terminate immediatly. */
+     terminate immediately. */
   int notification_id;
 
   /* The function to call to do the work.

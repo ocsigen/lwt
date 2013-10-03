@@ -1359,7 +1359,7 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method)
     done = job->state == LWT_UNIX_JOB_STATE_DONE;
     if (done) {
       /* Wait for the mutex to be released because the job is going to
-         be freed immediatly. */
+         be freed immediately. */
       lwt_unix_mutex_lock(&job->mutex);
       lwt_unix_mutex_unlock(&job->mutex);
     }
