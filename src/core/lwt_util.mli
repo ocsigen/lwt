@@ -24,7 +24,7 @@
 (** Note: This lodule is deprecated. Use {!Lwt_list} and {!Lwt_pool}
     instead. *)
 
-(** {2 Lists iterators} *)
+(** {3 Lists iterators} *)
 
 val iter : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
     (** [iter f l] start a thread for each element in [l].  The threads
@@ -61,7 +61,7 @@ val fold_left : ('a -> 'b -> 'a Lwt.t) -> 'a -> 'b list -> 'a Lwt.t
 
 (****)
 
-(** {2 Regions} *)
+(** {3 Regions} *)
 
 type region
 

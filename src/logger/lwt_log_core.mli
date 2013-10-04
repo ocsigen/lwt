@@ -31,7 +31,7 @@
 
 *)
 
-(** {6 Types} *)
+(** {2 Types} *)
 
 (** Type of log levels. A level determines the importance of a
     message *)
@@ -110,7 +110,7 @@ val append_rule : string -> level -> unit
       ]}
   *)
 
-(** {6 Logging functions} *)
+(** {2 Logging functions} *)
 
 val log : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> level : level -> string -> unit Lwt.t
   (** [log ?section ?logger ~level message] logs a message.
@@ -202,7 +202,7 @@ module Section : sig
         rules. *)
 end
 
-(** {6 Log templates} *)
+(** {2 Log templates} *)
 
 type template = string
     (** A template is for generating log messages.
@@ -237,7 +237,7 @@ val render : buffer : Buffer.t -> template : template -> section : section -> le
 val location_key : (string * int * int) Lwt.key
   (** The key for storing current location. *)
 
-(** {6 Loggers} *)
+(** {2 Loggers} *)
 
 exception Logger_closed
   (** Exception raised when trying to use a closed logger *)
@@ -283,7 +283,7 @@ val dispatch : (section -> level -> logger) -> logger
       ]}
   *)
 
-(** {6 Predefined loggers} *)
+(** {2 Predefined loggers} *)
 
 val null : logger
   (** Logger which drops everything *)

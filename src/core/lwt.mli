@@ -44,7 +44,7 @@
     using Lwt more readable.
 *)
 
-(** {6 Definitions and basics} *)
+(** {2 Definitions and basics} *)
 
 type +'a t
   (** The type of threads returning a result of type ['a]. *)
@@ -88,7 +88,7 @@ val (>|=) : 'a t -> ('a -> 'b) -> 'b t
 val (=|<) : ('a -> 'b) -> 'a t -> 'b t
   (** [f =|< m] is [map f m] *)
 
-(** {8 Pre-allocated threads} *)
+(** {3 Pre-allocated threads} *)
 
 val return_unit : unit t
   (** [return_unit = return ()] *)
@@ -105,7 +105,7 @@ val return_true : bool t
 val return_false : bool t
   (** [return_false = return false] *)
 
-(** {6 Thread storage} *)
+(** {2 Thread storage} *)
 
 type 'a key
   (** Type of a key. Keys are used to store local values into
@@ -123,7 +123,7 @@ val with_value : 'a key -> 'a option -> (unit -> 'b) -> 'b
       [key]. The previous value associated to [key] is restored after
       [f] terminates. *)
 
-(** {6 Exceptions handling} *)
+(** {2 Exceptions handling} *)
 
 val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
   (** [catch t f] is a thread that behaves as the thread [t ()] if
@@ -182,7 +182,7 @@ val wrap5 : ('a -> 'b -> 'c -> 'd -> 'e -> 'f) -> 'a -> 'b -> 'c -> 'd -> 'e -> 
 val wrap6 : ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g t
 val wrap7 : ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h t
 
-(** {6 Multi-threads composition} *)
+(** {2 Multi-threads composition} *)
 
 val choose : 'a t list -> 'a t
   (** [choose l] behaves as the first thread in [l] to terminate.  If
@@ -244,7 +244,7 @@ val async_exception_hook : (exn -> unit) ref
       The behavior is undefined if this function raise an
       exception. *)
 
-(** {6 Sleeping and resuming} *)
+(** {2 Sleeping and resuming} *)
 
 type 'a u
   (** The type of thread wakeners. *)
@@ -295,7 +295,7 @@ val wakeup_later_result : 'a u -> 'a result -> unit
   (** Same as {!wakeup_result} but it is not guaranteed that the
       thread will be woken up immediately. *)
 
-(** {6 Threads state} *)
+(** {2 Threads state} *)
 
 (** State of a thread *)
 type 'a state =
@@ -312,7 +312,7 @@ val state : 'a t -> 'a state
 val is_sleeping : 'a t -> bool
   (** [is_sleeping t] returns [true] iff [t] is sleeping. *)
 
-(** {6 Cancelable threads} *)
+(** {2 Cancelable threads} *)
 
 (** Cancelable threads are the same as regular threads except that
     they can be canceled. *)
@@ -379,7 +379,7 @@ val no_cancel : 'a t -> 'a t
   (** [no_cancel thread] creates a thread which behave as [thread]
       except that it cannot be canceled. *)
 
-(** {6 Pause} *)
+(** {2 Pause} *)
 
 val pause : unit -> unit t
   (** [pause ()] is a sleeping thread which is wake up on the next
@@ -407,7 +407,7 @@ val register_pause_notifier : (int -> unit) -> unit
       the new number of threads paused. It is usefull to be able to
       call {!wakeup_paused} when there is no scheduler *)
 
-(** {6 Misc} *)
+(** {2 Misc} *)
 
 val on_success : 'a t -> ('a -> unit) -> unit
   (** [on_success t f] executes [f] when [t] terminates without
@@ -450,4 +450,3 @@ val backtrace_bind : (exn -> exn) -> 'a t -> ('a -> 'b t) -> 'b t
 val backtrace_catch : (exn -> exn) -> (unit -> 'a t) -> (exn -> 'a t) -> 'a t
 val backtrace_try_bind : (exn -> exn) -> (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
 val backtrace_finalize : (exn -> exn) -> (unit -> 'a t) -> (unit -> unit t) -> 'a t
-

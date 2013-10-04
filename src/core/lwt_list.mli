@@ -25,7 +25,7 @@
 (** Note: this module use the same naming convention as
     {!Lwt_stream}. *)
 
-(** {6 List iterators} *)
+(** {2 List iterators} *)
 
 val iter_s : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
 val iter_p : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
@@ -40,7 +40,7 @@ val fold_left_s : ('a -> 'b -> 'a Lwt.t) -> 'a -> 'b list -> 'a Lwt.t
 
 val fold_right_s : ('a -> 'b -> 'b Lwt.t) -> 'a list -> 'b -> 'b Lwt.t
 
-(** {6 List scanning} *)
+(** {2 List scanning} *)
 
 val for_all_s : ('a -> bool Lwt.t) -> 'a list -> bool Lwt.t
 val for_all_p : ('a -> bool Lwt.t) -> 'a list -> bool Lwt.t
@@ -48,7 +48,7 @@ val for_all_p : ('a -> bool Lwt.t) -> 'a list -> bool Lwt.t
 val exists_s : ('a -> bool Lwt.t) -> 'a list -> bool Lwt.t
 val exists_p : ('a -> bool Lwt.t) -> 'a list -> bool Lwt.t
 
-(** {6 List searching} *)
+(** {2 List searching} *)
 
 val find_s : ('a -> bool Lwt.t) -> 'a list -> 'a Lwt.t
 

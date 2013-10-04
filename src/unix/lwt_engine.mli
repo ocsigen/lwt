@@ -22,7 +22,7 @@
 
 (** Lwt unix main loop engine *)
 
-(** {6 Events} *)
+(** {2 Events} *)
 
 type event
   (** Type of events. An event represent a callback registered to be
@@ -34,7 +34,7 @@ val stop_event : event -> unit
 val fake_event : event
   (** Event which does nothing when stopped. *)
 
-(** {6 Event loop functions} *)
+(** {2 Event loop functions} *)
 
 val iter : bool -> unit
   (** [iter block] performs one iteration of the main loop. If [block]
@@ -67,7 +67,7 @@ val timer_count : unit -> int
 val fake_io : Unix.file_descr -> unit
   (** Simulates activity on the given file descriptor. *)
 
-(** {6 Engines} *)
+(** {2 Engines} *)
 
 (** An engine represent a set of functions used to register different
     kind of callbacks for different kind of events. *)
@@ -85,7 +85,7 @@ class virtual abstract : object
         registered 1 second ago it will occurs in 2 seconds in the
         destination engine. *)
 
-  (** {6 Event loop methods} *)
+  (** {2 Event loop methods} *)
 
   method virtual iter : bool -> unit
   method on_readable : Unix.file_descr -> (event -> unit) -> event
@@ -96,7 +96,7 @@ class virtual abstract : object
   method writable_count : int
   method timer_count : int
 
-  (** {6 Backend methods} *)
+  (** {2 Backend methods} *)
 
   (** Notes:
 
@@ -125,7 +125,7 @@ class type t = object
   method private register_timer : float -> bool -> (unit -> unit) -> unit Lazy.t
 end
 
-(** {6 Predefined engines} *)
+(** {2 Predefined engines} *)
 
 type ev_loop
   (** Type of libev loops. *)
@@ -178,7 +178,7 @@ class virtual poll_based : object
         and writable status. *)
 end
 
-(** {6 The current engine} *)
+(** {2 The current engine} *)
 
 val get : unit -> t
   (** [get ()] returns the engine currently in use. *)

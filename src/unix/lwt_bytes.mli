@@ -31,7 +31,7 @@ val create : int -> t
 val length : t -> int
   (** Returns the length of the given byte array. *)
 
-(** {6 Access} *)
+(** {2 Access} *)
 
 external get : t -> int -> char = "%caml_ba_ref_1"
   (** [get buffer offset] returns the byte at offset [offset] in
@@ -47,7 +47,7 @@ external unsafe_get : t -> int -> char = "%caml_ba_unsafe_ref_1"
 external unsafe_set : t -> int -> char -> unit = "%caml_ba_unsafe_set_1"
   (** Same as {!set} but without bound checking. *)
 
-(** {6 Conversions} *)
+(** {2 Conversions} *)
 
 val of_string : string -> t
   (** [of_string str] returns a newly allocated byte array with the
@@ -57,7 +57,7 @@ val to_string : t -> string
   (** [to_string buf] returns a newly allocated string with the same
       contents as [buf]. *)
 
-(** {6 Copying} *)
+(** {2 Copying} *)
 
 val blit : t -> int -> t -> int -> int -> unit
   (** [blit buf1 ofs1 buf2 ofs2 len] copy [len] bytes from [buf1]
@@ -93,7 +93,7 @@ val extract : t -> int -> int -> t
 val copy : t -> t
   (** [copy buffer] creates a copy of the given byte array. *)
 
-(** {6 Filling} *)
+(** {2 Filling} *)
 
 val fill : t -> int -> int -> char -> unit
   (** [fill buffer offset length value] puts [value] in all [length]
@@ -102,7 +102,7 @@ val fill : t -> int -> int -> char -> unit
 external unsafe_fill : t -> int -> int -> char -> unit = "lwt_unix_fill_bytes" "noalloc"
   (** Same as {!fill} but without bound checking. *)
 
-(** {6 IOs} *)
+(** {2 IOs} *)
 
 (** The following functions does the same as the functions in
     {!Lwt_unix} except that they use byte arrays instead of
@@ -131,7 +131,7 @@ val recv_msg : socket : Lwt_unix.file_descr -> io_vectors : io_vector list -> (i
 val send_msg : socket : Lwt_unix.file_descr -> io_vectors : io_vector list -> fds : Unix.file_descr list -> int Lwt.t
   (** This call is not available on windows. *)
 
-(** {6 Memory mapped files} *)
+(** {2 Memory mapped files} *)
 
 val map_file : fd : Unix.file_descr -> ?pos : int64 -> shared : bool -> ?size : int -> unit -> t
   (** [map_file ~fd ?pos ~shared ?size ()] maps the file descriptor

@@ -63,7 +63,7 @@ val goto_beginning_of_line : int -> unit Lwt.t
       - ...
   *)
 
-(** {6 Terminal informations} *)
+(** {2 Terminal informations} *)
 
 (** Terminal sizes: *)
 type size = {
@@ -80,7 +80,7 @@ val columns : int React.signal
 val lines : int React.signal
   (** Number of lines of the terminal *)
 
-(** {6 Keys} *)
+(** {2 Keys} *)
 
 val parse_key_raw : Text.t Lwt_stream.t -> Text.t Lwt.t
   (** [parse_key_raw st] recognize escape sequence in a stream of
@@ -185,7 +185,7 @@ val standard_input : Text.t Lwt_stream.t
 val read_key : unit -> key Lwt.t
   (** Get and decode a key from {!standard_input} *)
 
-(** {6 Styles} *)
+(** {2 Styles} *)
 
 type color = int
     (** Type of a color. Most modern terminals support either 88 or
@@ -195,7 +195,7 @@ val set_color : color -> int * int * int -> unit Lwt.t
   (** [set_color num (red, green, blue)] sets the three components of
       the color number [num] *)
 
-(** {8 Standard colors} *)
+(** {3 Standard colors} *)
 
 val default : color
 val black : color
@@ -207,7 +207,7 @@ val magenta : color
 val cyan : color
 val white : color
 
-(** {8 Light colors} *)
+(** {3 Light colors} *)
 
 (** Note: these colors are not supposed to works on all terminals, but
     in practice it works with all modern ones. By the way, using
@@ -223,7 +223,7 @@ val lmagenta : color
 val lcyan : color
 val lwhite : color
 
-(** {8 Text with styles} *)
+(** {3 Text with styles} *)
 
 (** Elmement of a styled-text *)
 type styled_text_instruction =
@@ -290,7 +290,7 @@ val printlc : styled_text -> unit Lwt.t
 val eprintlc : styled_text -> unit Lwt.t
   (** Same as [printlc] but prints on stderr *)
 
-(** {6 Rendering} *)
+(** {2 Rendering} *)
 
 (** Character styles *)
 type style = {
@@ -323,7 +323,7 @@ val render_update : point array array -> point array array -> unit Lwt.t
       displayed text. This reduces the amount of text sent to the
       terminal. *)
 
-(** {6 Drawing} *)
+(** {2 Drawing} *)
 
 (** Off-screen zones *)
 module Zone : sig

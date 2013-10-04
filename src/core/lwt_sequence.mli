@@ -37,7 +37,7 @@ type 'a t
 type 'a node
   (** Type of a node holding one value of type ['a] in a sequence *)
 
-(** {6 Operation on nodes} *)
+(** {2 Operation on nodes} *)
 
 val get : 'a node -> 'a
   (** Returns the contents of a node *)
@@ -49,7 +49,7 @@ val remove : 'a node -> unit
   (** Removes a node from the sequence it is part of. It does nothing
       if the node has already been removed. *)
 
-(** {6 Operations on sequence} *)
+(** {2 Operations on sequence} *)
 
 val create : unit -> 'a t
   (** [create ()] creates a new empty sequence *)
@@ -100,7 +100,7 @@ val transfer_r : 'a t -> 'a t -> unit
       the right of [s2]. This operation runs in constant time and
       space. *)
 
-(** {6 Sequence iterators} *)
+(** {2 Sequence iterators} *)
 
 (** Note: it is OK to remove a node while traversing a sequence *)
 

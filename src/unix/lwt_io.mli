@@ -52,7 +52,7 @@ exception Channel_closed of string
   (** Exception raised when a channel is closed. The parameter is a
       description of the channel. *)
 
-(** {6 Types} *)
+(** {2 Types} *)
 
 type 'mode channel
   (** Type of buffered byte channels *)
@@ -90,7 +90,7 @@ type output_channel = output channel
 val mode : 'a channel -> 'a mode
   (** [mode ch] returns the mode of a channel *)
 
-(** {6 Well-known instances} *)
+(** {2 Well-known instances} *)
 
 val stdin : input_channel
   (** The standard input, it reads data from {!Lwt_unix.stdin} *)
@@ -108,7 +108,7 @@ val zero : input_channel
 val null : output_channel
   (** Output which drops everything *)
 
-(** {6 Channels creation/manipulation} *)
+(** {2 Channels creation/manipulation} *)
 
 val pipe : ?buffer_size : int -> unit -> input_channel * output_channel
   (** [pipe ?buffer_size ()] creates a pipe using {!Lwt_unix.pipe} and
@@ -199,7 +199,7 @@ val is_busy : 'a channel -> bool
       busy. A channel is busy when there is at least one job using it
       that has not yet terminated. *)
 
-(** {6 Random access} *)
+(** {2 Random access} *)
 
 val position : 'a channel -> int64
   (** [position ch] Returns the current position in the channel. *)
@@ -211,7 +211,7 @@ val set_position : 'a channel -> int64 -> unit Lwt.t
 val length : 'a channel -> int64 Lwt.t
   (** Returns the length of the channel in bytes *)
 
-(** {6 Reading} *)
+(** {2 Reading} *)
 
 (** Note: except for functions dealing with streams ({!read_chars} and
     {!read_lines}) all functions are {b atomic}. *)
@@ -268,7 +268,7 @@ val read_into_exactly : input_channel -> string -> int -> int -> unit Lwt.t
 val read_value : input_channel -> 'a Lwt.t
   (** [read_value ic] reads a marshaled value from [ic] *)
 
-(** {6 Writing} *)
+(** {2 Writing} *)
 
 (** Note: as for reading functions, all functions except
     {!write_chars} and {!write_lines} are {b atomic}.
@@ -306,7 +306,7 @@ val write_from_exactly : output_channel -> string -> int -> int -> unit Lwt.t
 val write_value : output_channel -> ?flags : Marshal.extern_flags list -> 'a -> unit Lwt.t
   (** [write_value oc ?flags x] marshals the value [x] to [oc] *)
 
-(** {6 Printing} *)
+(** {2 Printing} *)
 
 (** These functions are basically helpers. Also you may prefer
     using the name {!printl} rather than {!write_line} because it is
@@ -338,7 +338,7 @@ val eprintl : string -> unit Lwt.t
 val eprintf : ('a, unit, string, unit Lwt.t) format4 -> 'a
 val eprintlf : ('a, unit, string, unit Lwt.t) format4 -> 'a
 
-(** {6 Utilities} *)
+(** {2 Utilities} *)
 
 val hexdump_stream : output_channel -> char Lwt_stream.t -> unit Lwt.t
   (** [hexdump_stream oc byte_stream] produces the same output as the
@@ -347,7 +347,7 @@ val hexdump_stream : output_channel -> char Lwt_stream.t -> unit Lwt.t
 val hexdump : output_channel -> string -> unit Lwt.t
   (** [hexdump oc str = hexdump_stream oc (Lwt_stream.of_string str)] *)
 
-(** {6 File utilities} *)
+(** {2 File utilities} *)
 
 type file_name = string
     (** Type of file names *)
@@ -421,12 +421,12 @@ val chars_to_file : file_name -> char Lwt_stream.t -> unit Lwt.t
   (** [chars_to_file name chars] writes all characters of [chars] to
       [name] *)
 
-(** {6 Input/output of integers} *)
+(** {2 Input/output of integers} *)
 
 (** Common interface for reading/writing integers in binary *)
 module type NumberIO = sig
 
-  (** {8 Reading} *)
+  (** {3 Reading} *)
 
   val read_int : input_channel -> int Lwt.t
     (** Reads a 32-bits integer as an ocaml int *)
@@ -441,7 +441,7 @@ module type NumberIO = sig
   val read_float64 : input_channel -> float Lwt.t
     (** Reads an IEEE double precision floating point value *)
 
-  (** {8 Writing} *)
+  (** {3 Writing} *)
 
   val write_int : output_channel -> int -> unit Lwt.t
     (** Writes an ocaml int as a 32-bits integer *)
@@ -472,7 +472,7 @@ type byte_order = Lwt_sys.byte_order = Little_endian | Big_endian
 val system_byte_order : byte_order
   (** Same as {!Lwt_sys.byte_order}. *)
 
-(** {6 Low-level access to the internal buffer} *)
+(** {2 Low-level access to the internal buffer} *)
 
 val block : 'a channel  -> int -> (Lwt_bytes.t -> int -> 'b Lwt.t) -> 'b Lwt.t
   (** [block ch size f] pass to [f] the internal buffer and an
@@ -503,7 +503,7 @@ val direct_access : 'a channel -> (direct_access -> 'b Lwt.t) -> 'b Lwt.t
       structure. [f] must use it and update [da_ptr] to reflect how
       many bytes have been read/written. *)
 
-(** {6 Misc} *)
+(** {2 Misc} *)
 
 val default_buffer_size : unit -> int
   (** Return the default size for buffers. Channels that are created

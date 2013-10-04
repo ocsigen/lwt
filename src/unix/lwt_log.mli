@@ -39,15 +39,15 @@ include module type of Lwt_log_core
    and type template = Lwt_log_core.template
    and module Section = Lwt_log_core.Section
 
-(** {6 Types} *)
+(** {2 Types} *)
 
-(** {8 logger} *)
+(** {3 logger} *)
   (** See {!Lwt_log_core.logger}.
 
       Lwt provides loggers sending log messages to a file, syslog,
       ... but you can also create you own logger.*)
 
-(** {8 section} *)
+(** {3 section} *)
   (** See {!Lwt_log_core.section}.
 
       Each logging message has a section. Sections can be used to
@@ -64,9 +64,9 @@ include module type of Lwt_log_core
       If [LWT_LOG] is not defined then the rule ["* -> notice"] is
       used instead. *)
 
-(** {6 Log templates} *)
+(** {2 Log templates} *)
 
-(** {8 template} *)
+(** {3 template} *)
     (** See {!Lwt_log_core.template}.
 
         A template is for generating log messages.
@@ -98,7 +98,7 @@ include module type of Lwt_log_core
         - ["$(date): $(loc-file): $(loc-line): $(loc-column): $(message)"]
     *)
 
-(** {6 Predefined loggers} *)
+(** {2 Predefined loggers} *)
 
 (** Syslog facility. Look at the SYSLOG(3) man page for a description
     of syslog facilities *)

@@ -22,7 +22,7 @@ type 'a signal = 'a React.signal
 module E : sig
   include module type of React.E
 
-  (** {6 Lwt-specific utilities} *)
+  (** {2 Lwt-specific utilities} *)
 
   val with_finaliser : (unit -> unit) -> 'a event -> 'a event
     (** [with_finaliser f e] returns an event [e'] which behave as
@@ -60,7 +60,7 @@ module E : sig
     (** [keep e] keeps a reference to [e] so it will never be garbage
         collected. *)
 
-  (** {6 Threaded versions of React transformation functions} *)
+  (** {2 Threaded versions of React transformation functions} *)
 
   (** The following functions behave as their [React] counterpart,
       except that they takes functions that may yield.
@@ -97,7 +97,7 @@ end
 module S : sig
   include module type of React.S
 
-  (** {6 Monadic interface} *)
+  (** {2 Monadic interface} *)
 
   val return : 'a -> 'a signal
     (** Same as [const]. *)
@@ -112,7 +112,7 @@ module S : sig
     (** Same as {!bind} except that [f] returns a thread. Calls to [f]
         are serialized. *)
 
-  (** {6 Lwt-specific utilities} *)
+  (** {2 Lwt-specific utilities} *)
 
   val with_finaliser : (unit -> unit) -> 'a signal -> 'a signal
     (** [with_finaliser f s] returns a signal [s'] which behave as
@@ -129,7 +129,7 @@ module S : sig
     (** [keep s] keeps a reference to [s] so it will never be garbage
         collected. *)
 
-  (** {6 Threaded versions of React transformation functions} *)
+  (** {2 Threaded versions of React transformation functions} *)
 
   (** The following functions behave as their [React] counterpart,
       except that they takes functions that may yield.

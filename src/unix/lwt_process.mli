@@ -63,9 +63,9 @@ val shell : string -> command
     [timeout]. If specified, after expiration, the process will be
     sent a [Unix.sigkill] signal and channels will be closed. *)
 
-(** {6 High-level functions} *)
+(** {2 High-level functions} *)
 
-(** {8 Redirections} *)
+(** {3 Redirections} *)
 
 (** A file descriptor redirection. It describe how standard file
     descriptors are redirected in the child process. *)
@@ -85,7 +85,7 @@ type redirection =
 
 (** Note: all optionnal redirection argumetns default to [`Keep] *)
 
-(** {8 Executing} *)
+(** {3 Executing} *)
 
 val exec :
   ?timeout : float ->
@@ -96,7 +96,7 @@ val exec :
   command -> Unix.process_status Lwt.t
   (** Executes the given command and returns its exit status. *)
 
-(** {8 Receiving} *)
+(** {3 Receiving} *)
 
 val pread :
   ?timeout : float ->
@@ -123,7 +123,7 @@ val pread_lines :
   ?stderr : redirection ->
   command -> string Lwt_stream.t
 
-(** {8 Sending} *)
+(** {3 Sending} *)
 
 val pwrite :
   ?timeout : float ->
@@ -150,7 +150,7 @@ val pwrite_lines :
   ?stderr : redirection ->
   command -> string Lwt_stream.t -> unit Lwt.t
 
-(** {8 Mapping} *)
+(** {3 Mapping} *)
 
 val pmap :
   ?timeout : float ->
@@ -173,7 +173,7 @@ val pmap_lines :
   ?stderr : redirection ->
   command -> string Lwt_stream.t -> string Lwt_stream.t
 
-(** {6 Spawning processes} *)
+(** {2 Spawning processes} *)
 
 (** State of a sub-process *)
 type state =

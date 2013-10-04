@@ -32,7 +32,7 @@
 
 open Lwt_io
 
-(** {6 Types} *)
+(** {2 Types} *)
 
 type 'mode channel
   (** Type of a text channel *)
@@ -43,7 +43,7 @@ type input_channel = input channel
 type output_channel = output channel
     (** Type of a text output channel *)
 
-(** {6 Creation/manipulation} *)
+(** {2 Creation/manipulation} *)
 
 val make : ?strict : bool -> ?encoding : Encoding.t -> 'a Lwt_io.channel -> 'a channel
   (** [make ?strict ?encoding ch] creates a text channel from a byte
@@ -72,7 +72,7 @@ val flush : output_channel -> unit Lwt.t
 val close : 'a channel -> unit Lwt.t
   (** Close the underlying byte channel *)
 
-(** {6 Lwt_io like values} *)
+(** {2 Lwt_io like values} *)
 
 val atomic : ('a channel -> 'b Lwt.t) -> ('a channel -> 'b Lwt.t)
 val stdin : input_channel

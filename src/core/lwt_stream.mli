@@ -32,7 +32,7 @@ type 'a t
     - [_p] when the function returns a thread and calls are parallelised
 *)
 
-(** {6 Construction} *)
+(** {2 Construction} *)
 
 val from : (unit -> 'a option Lwt.t) -> 'a t
   (** [from f] creates an stream from the given input function. [f] is
@@ -146,7 +146,7 @@ val clone : 'a t -> 'a t
       It raises [Invalid_argument] if [st] is a bounded
       push-stream. *)
 
-(** {6 Destruction} *)
+(** {2 Destruction} *)
 
 val to_list : 'a t -> 'a list Lwt.t
   (** Returns the list of elements of the given stream *)
@@ -155,7 +155,7 @@ val to_string : char t -> string Lwt.t
   (** Returns the word composed of all characters of the given
       stream *)
 
-(** {6 Data retreival} *)
+(** {2 Data retreival} *)
 
 exception Empty
   (** Exception raised when trying to retreive data from an empty
@@ -229,7 +229,7 @@ val on_terminate : 'a t -> (unit -> unit) -> unit
       is reached. Note that the stream may still contains elements if
       {!peek} or similar was used. *)
 
-(** {6 Stream transversal} *)
+(** {2 Stream transversal} *)
 
 (** Note: all the following functions are destructive.
 
@@ -312,7 +312,7 @@ val map_exn : 'a t -> 'a result t
       Note that for push-streams (as returned by {!create}) all
       elements of the mapped streams are values. *)
 
-(** {6 Parsing} *)
+(** {2 Parsing} *)
 
 val parse : 'a t -> ('a t -> 'b Lwt.t) -> 'b Lwt.t
   (** [parse st f] parses [st] with [f]. If [f] raise an exception,
@@ -321,7 +321,7 @@ val parse : 'a t -> ('a t -> 'b Lwt.t) -> 'b Lwt.t
       It raises [Invalid_argument] if [st] is a bounded
       push-stream. *)
 
-(** {6 Misc} *)
+(** {2 Misc} *)
 
 val hexdump : char t -> string t
   (** [hexdump byte_stream] returns a stream which is the same as the

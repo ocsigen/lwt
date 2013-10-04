@@ -22,7 +22,7 @@
 
 (** Interactive line input *)
 
-(** {6 Definitions} *)
+(** {2 Definitions} *)
 
 exception Interrupt
   (** Exception raised when the user press [Ctrl^D] *)
@@ -38,7 +38,7 @@ type prompt = Lwt_term.styled_text
 
 type text_set = Set.Make(Text).t
 
-(** {8 Completion} *)
+(** {3 Completion} *)
 
 (** Result of a completion function: *)
 type completion_result = {
@@ -74,7 +74,7 @@ val complete : ?suffix : Text.t -> Text.t -> Text.t -> Text.t -> text_set -> com
 val print_words : Lwt_text.output_channel -> int -> string list -> unit Lwt.t
   (** [print_words oc columns strs] pretty-prints a list of words. *)
 
-(** {8 History} *)
+(** {3 History} *)
 
 type history = Text.t list
     (** Type of an history *)
@@ -93,7 +93,7 @@ val load_history : string -> history Lwt.t
   (** [load_history filename] loads history from [filename]. Returns
       the empty history if the the file does not exit. *)
 
-(** {8 Clipboards} *)
+(** {3 Clipboards} *)
 
 (** Type of a clipboard. *)
 class clipboard : object
@@ -105,7 +105,7 @@ val clipboard : clipboard
   (** The global clipboard. All read-line instances which do not use a
       specific clipboard use this one. *)
 
-(** {6 High-level functions} *)
+(** {2 High-level functions} *)
 
 type completion_mode = [ `classic | `real_time | `none ]
     (** The completion mode.
@@ -171,7 +171,7 @@ val read_yes_no : ?history : history -> ?mode : completion_mode -> ?prompt : pro
       ]}
   *)
 
-(** {6 Low-level interaction} *)
+(** {2 Low-level interaction} *)
 
 (** This part allow you to implements your own read-line function, or
     just to use the readline engine in another context (message box,
@@ -363,7 +363,7 @@ module Terminal : sig
         After an erase, the rendering state is [init]. *)
 end
 
-(** {6 Advanced use} *)
+(** {2 Advanced use} *)
 
 (** Controlling a running read-line instance *)
 module Control : sig
@@ -372,7 +372,7 @@ module Control : sig
     (** Type of a running read-line instance, returning a value of
         type ['a] *)
 
-  (** {6 Control} *)
+  (** {2 Control} *)
 
   val result : 'a t -> 'a Lwt.t
     (** Threads waiting for the read-line instance to terminates *)
@@ -398,7 +398,7 @@ module Control : sig
       are not controllable. i.e. {!accept}, {!refresh}, ... have no
       effect. *)
 
-  (** {6 Creation of read-line instances} *)
+  (** {2 Creation of read-line instances} *)
 
   type prompt = Engine.state React.signal -> Lwt_term.styled_text React.signal
     (** The prompt a signal which may depends on the engine state *)
@@ -425,7 +425,7 @@ module Control : sig
         parameters. [filter] is called to handle commands. You can
         return {!Command.Nop} to drop a command. *)
 
-  (** {6 Predefined instances} *)
+  (** {2 Predefined instances} *)
 
   val read_line :
     ?history : history ->

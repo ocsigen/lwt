@@ -25,7 +25,7 @@
 
 (** Note: the {!Lwt_io} module deprecates this module. *)
 
-(** {2 Cooperative input channels} *)
+(** {3 Cooperative input channels} *)
 type in_channel = Lwt_io.input_channel
 
 val in_channel_of_descr : Lwt_unix.file_descr -> in_channel
@@ -48,7 +48,7 @@ val open_in_gen : Unix.open_flag list -> int -> string -> in_channel Lwt.t
 val open_in : string -> in_channel Lwt.t
 val close_in : in_channel -> unit Lwt.t
 
-(** {2 Cooperative output channels} *)
+(** {3 Cooperative output channels} *)
 
 type out_channel = Lwt_io.output_channel
 
