@@ -214,7 +214,16 @@ let perform_io ch = match ch.main.state with
                   (size, ch.length - size)
               | Output ->
                   (0, ch.ptr) in
-            lwt n = pick [ch.abort_waiter; perform_io ch.buffer ptr len] in
+            lwt n = pick [ch.abort_waiter;
+#if windows
+                          try_lwt
+                            perform_io ch.buffer ptr len
+                          with Unix.Unix_error (Unix.EPIPE, _, _) ->
+                            return 0
+#else
+                          perform_io ch.buffer ptr len
+#endif
+                         ] in
             (* Never trust user functions... *)
             if n < 0 || n > len then
               raise_lwt (Failure (Printf.sprintf "Lwt_io: invalid result of the [%s] function(request=%d,result=%d)"
