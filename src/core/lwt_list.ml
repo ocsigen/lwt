@@ -39,6 +39,26 @@ let rec iter_p f l =
         let tx = f x and tl = iter_p f l in
         tx >>= fun () -> tl
 
+let rec iteri_s i f l =
+  match l with
+    | [] ->
+        Lwt.return_unit
+    | x :: l ->
+        f i x >>= fun () ->
+        iteri_s (i + 1) f l
+
+let iteri_s f l = iteri_s 0 f l
+
+let rec iteri_p i f l =
+  match l with
+    | [] ->
+        Lwt.return_unit
+    | x :: l ->
+        let tx = f i x and tl = iteri_p (i + 1) f l in
+        tx >>= fun () -> tl
+
+let iteri_p f l = iteri_p 0 f l
+
 let rec map_s f l =
   match l with
     | [] ->
@@ -57,6 +77,29 @@ let rec map_p f l =
         tx >>= fun x ->
         tl >|= fun l ->
         x :: l
+
+let rec mapi_s i f l =
+  match l with
+    | [] ->
+        Lwt.return_nil
+    | x :: l ->
+        f i x >>= fun x ->
+        mapi_s (i + 1) f l >|= fun l ->
+        x :: l
+
+let mapi_s f l = mapi_s 0 f l
+
+let rec mapi_p i f l =
+  match l with
+    | [] ->
+        Lwt.return_nil
+    | x :: l ->
+        let tx = f i x and tl = mapi_p (i + 1) f l in
+        tx >>= fun x ->
+        tl >|= fun l ->
+        x :: l
+
+let mapi_p f l = mapi_p 0 f l
 
 let rec rev_map_append_s acc f l =
   match l with

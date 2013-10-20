@@ -30,8 +30,14 @@
 val iter_s : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
 val iter_p : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
 
+val iteri_s : (int -> 'a -> unit Lwt.t) -> 'a list -> unit Lwt.t
+val iteri_p : (int -> 'a -> unit Lwt.t) -> 'a list -> unit Lwt.t
+
 val map_s : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
 val map_p : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
+
+val mapi_s : (int -> 'a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
+val mapi_p : (int -> 'a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
 
 val rev_map_s : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
 val rev_map_p : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
