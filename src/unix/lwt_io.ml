@@ -20,6 +20,8 @@
  * 02111-1307, USA.
  *)
 
+#include "src/unix/lwt_config.ml"
+
 open Lwt
 
 exception Channel_closed of string
