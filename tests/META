@@ -1,0 +1,12 @@
+# OASIS_START
+# DO NOT EDIT (digest: 5e4d6d6b05000d93007485045ce6e94e)
+version = "2.4.4"
+description = "Lightweight thread library for OCaml"
+requires = "lwt unix lwt.unix"
+archive(byte) = "test.cma"
+archive(byte, plugin) = "test.cma"
+archive(native) = "test.cmxa"
+archive(native, plugin) = "test.cmxs"
+exists_if = "test.cma"
+# OASIS_STOP
+

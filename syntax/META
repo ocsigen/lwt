@@ -1,0 +1,12 @@
+# OASIS_START
+# DO NOT EDIT (digest: 465e2f7fc4bbfbfe1f2563675210a70c)
+version = "2.4.4"
+description = "Lightweight thread library for OCaml"
+requires = "camlp4 camlp4.quotations.o"
+archive(byte) = "optcomp.cma"
+archive(byte, plugin) = "optcomp.cma"
+archive(native) = "optcomp.cmxa"
+archive(native, plugin) = "optcomp.cmxs"
+exists_if = "optcomp.cma"
+# OASIS_STOP
+
