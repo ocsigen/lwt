@@ -106,7 +106,7 @@ type job = {
 
 let ocaml_version = Scanf.sscanf Sys.ocaml_version "%d.%d" (fun major minor -> (major, minor))
 
-let prog_name = Filename.basename Sys.argv.(0)
+let prog_name = Filename.basename Sys.executable_name
 let log fmt = ksprintf (fun msg -> prerr_endline (prog_name ^ ": " ^ msg)) fmt
 
 (* +-----------------------------------------------------------------+

@@ -26,7 +26,7 @@
 open Lwt
 include Lwt_log_core
 
-let program_name = Filename.basename Sys.argv.(0)
+let program_name = Filename.basename Sys.executable_name
 
 (* Errors happening in this module are always logged to [stderr]: *)
 let log_intern fmt =
