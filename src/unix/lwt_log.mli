@@ -24,7 +24,7 @@
 (** Logging facility *)
 
 (** This module provides functions to deal with logging.
-    It extends Lwt_log_core with Unix features.
+    It extends {!Lwt_log_core} with Unix features.
     It adds:
 
     - logging to the syslog daemon
@@ -46,23 +46,6 @@ include module type of Lwt_log_core
 
       Lwt provides loggers sending log messages to a file, syslog,
       ... but you can also create you own logger.*)
-
-(** {3 section} *)
-  (** See {!Lwt_log_core.section}.
-
-      Each logging message has a section. Sections can be used to
-      structure your logs. For example you can choose different
-      loggers according to the section.
-
-      Each section carries a level, and messages with a lower log
-      level than than the section level will be dropped.
-
-      Section levels are initialised using [Lwt_log_core.load_rules] with
-      the content of [LWT_LOG] environment
-      variable if set.
-
-      If [LWT_LOG] is not defined then the rule ["* -> notice"] is
-      used instead. *)
 
 (** {2 Log templates} *)
 

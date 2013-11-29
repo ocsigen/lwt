@@ -126,6 +126,10 @@ let load_rules str =
     | None -> Printf.eprintf "Invalid contents of the LWT_LOG variable\n%!"
     | Some l -> rules := loop l
 
+let _ =
+  match try Some(Sys.getenv "LWT_LOG") with Not_found -> None with
+    | Some str -> load_rules str
+    | None -> ()
 
 (* +-----------------------------------------------------------------+
    | Sections                                                        |

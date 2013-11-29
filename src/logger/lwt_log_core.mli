@@ -65,12 +65,12 @@ type section
       Each section carries a level, and messages with a lower log
       level than than the section level will be dropped.
 
-      Section levels are initialised using [load_rules rules_str] where
-      [rules_str] must contains one or more rules of the form
+      Section levels are initialised using the contents of the [LWT_LOG]
+      environment variable, which must contain one or more rules of the form
       [pattern -> level] separated by ";". Where [pattern] is a string
       that may contain [*].
 
-      For example, if [rules_str] contains:
+      For example, if [LWT_LOG] contains:
       {[
         access -> warning;
         foo[*] -> error
@@ -79,7 +79,7 @@ type section
       level of any section matching ["foo[*]"] is {!Error}.
 
       If the pattern is omited in a rule then the pattern ["*"] is
-      used instead, so [rules_str] may just contains ["debug"] for
+      used instead, so [LWT_LOG] may just contains ["debug"] for
       instance.
 
       By default, the following rule apply : ["* -> notice"] *)
@@ -87,7 +87,8 @@ type section
 val string_of_level : level -> string
 
 val load_rules : string -> unit
-  (** reset rules by parsing the string *)
+  (** Reset the rules set when parsing the [LWT_LOG] environment variable using this
+      string. *)
 
 val add_rule : string -> level -> unit
   (** [add_rule pattern level] adds a rule for sections logging
