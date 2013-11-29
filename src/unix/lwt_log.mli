@@ -39,49 +39,19 @@ include module type of Lwt_log_core
    and type template = Lwt_log_core.template
    and module Section = Lwt_log_core.Section
 
-(** {2 Types} *)
+val render : buffer : Buffer.t -> template : template -> section : section -> level : level -> message : string -> unit
+  (** Same as {!Lwt_log_core.render}, except that the template may also contain the
+      following variables:
 
-(** {3 logger} *)
-  (** See {!Lwt_log_core.logger}.
+      - [date] which will be replaced with the current date
+      - [milliseconds] which will be replaced by the fractionnal part of the current unix
+        time
 
-      Lwt provides loggers sending log messages to a file, syslog,
-      ... but you can also create you own logger.*)
-
-(** {2 Log templates} *)
-
-(** {3 template} *)
-    (** See {!Lwt_log_core.template}.
-
-        A template is for generating log messages.
-
-        It is a string which may contains variables of the form
-        [$(var)], where [var] is one of:
-
-        - [date] which will be replaced with the current date
-        - [milliseconds] which will be replaced by the fractionnal part
-          of the current unix time
-        - [name] which will be replaced by the program name
-        - [pid] which will be replaced by the pid of the program
-        - [message] which will be replaced by the message emited
-        - [level] which will be replaced by a string representation of
-          the level
-        - [section] which will be replaced by the name of the
-          message's section
-        - [loc-file] which will be replaced by the file name of the
-          calling logging function
-        - [loc-line] which will be replaced by the line number of the
-          calling logging function
-        - [loc-column] which will be replaced by the column number of
-           the calling logging function
-
-        For example:
-        - ["$(name): $(message)"]
+      For example:
         - ["$(date) $(name)[$(pid)]: $(message)"]
         - ["$(date).$(milliseconds) $(name)[$(pid)]: $(message)"]
         - ["$(date): $(loc-file): $(loc-line): $(loc-column): $(message)"]
-    *)
-
-(** {2 Predefined loggers} *)
+  *)
 
 (** Syslog facility. Look at the SYSLOG(3) man page for a description
     of syslog facilities *)

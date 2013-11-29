@@ -224,9 +224,7 @@ type template = string
 
         For example:
         - ["$(name): $(message)"]
-        - ["$(date) $(name)[$(pid)]: $(message)"]
-        - ["$(date).$(milliseconds) $(name)[$(pid)]: $(message)"]
-        - ["$(date): $(loc-file): $(loc-line): $(loc-column): $(message)"]
+        - ["$(name): $(loc-file): $(loc-line): $(loc-column): $(message)"]
     *)
 
 val render : buffer : Buffer.t -> template : template -> section : section -> level : level -> message : string -> unit
