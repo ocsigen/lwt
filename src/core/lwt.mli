@@ -1,9 +1,9 @@
 (* Lightweight thread library for OCaml
  * http://www.ocsigen.org/lwt
  * Interface Lwt
- * Copyright (C) 2005-2008 Jérôme Vouillon
- * Laboratoire PPS - CNRS Université Paris Diderot
- *               2009-2012 Jérémie Dimino
+ * Copyright (C) 2005-2008 Jï¿½rï¿½me Vouillon
+ * Laboratoire PPS - CNRS Universitï¿½ Paris Diderot
+ *               2009-2012 Jï¿½rï¿½mie Dimino
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -30,7 +30,7 @@
     waiting for some event to happen.
 
     Lwt threads are cooperative in the sense that switching to another
-    thread is awlays explicit (with {!wakeup} or {!wekup_exn}). When a
+    thread is awlays explicit (with {!wakeup} or {!wakeup_exn}). When a
     thread is running, it executes as much as possible, and then
     returns (a value or an eror) or sleeps.
 
