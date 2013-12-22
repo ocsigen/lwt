@@ -66,7 +66,7 @@
 
   Let's take a classical function of the {{{Pervasives}}} module:
 
-<<code language="ocaml" |# Pervasives.input_char;
+<<code language="ocaml" |# Pervasives.input_char;;
 - : in_channel -> char = <fun>
 >>
 
@@ -101,7 +101,7 @@ val t : char Lwt.t = <abstr>
   We can now look at the state of our newly created thread:
 
 <<code language="ocaml" |# Lwt.state t;;
-- : char Lwt.state = Sleep
+- : char Lwt.state = Lwt.Sleep
 >>
 
   A thread may be in one of the following states:
@@ -120,7 +120,7 @@ val t : char Lwt.t = <abstr>
 <<code language="ocaml" |# Lwt_io.write_char oc 'a';;
 - : unit Lwt.t = <abstr>
 # Lwt.state t;;
-- : char Lwt.state = Return 'a'
+- : char Lwt.state = Lwt.Return 'a'
 >>
 
   So, after we write something, the reading thread has been awoken and
@@ -163,7 +163,7 @@ val t : char Lwt.t = <abstr>
   following expression:
 
 <<code language="ocaml" |# Lwt.state (Lwt.return 42);;
-# Lwt.state (fail Exit);;
+# Lwt.state (Lwt.fail Exit);;
 # let waiter, wakener = Lwt.wait ();;
 # Lwt.state waiter;;
 # Lwt.wakeup wakener 42;;
@@ -240,7 +240,7 @@ val t : char Lwt.t = <abstr>
 <<code language="ocaml" |# let waiter, wakener = Lwt.task ();;
 val waiter : '_a Lwt.t = <abstr>
 val wakener : '_a Lwt.u = <abstr>
-# let t = bind waiter (fun x -> return (x + 1));;
+# let t = Lwt.bind waiter (fun x -> Lwt.return (x + 1));;
 val t : int Lwt.t = <abstr>
 >>
 
@@ -250,9 +250,9 @@ val t : int Lwt.t = <abstr>
 <<code language="ocaml" |# Lwt.cancel t;;
 - : unit = ()
 # Lwt.state waiter;;
-- : int Lwt.state = Fail Lwt.Canceled
+- : int Lwt.state = Lwt.Fail Lwt.Canceled
 # Lwt.state t;;
-- : int Lwt.state = Fail Lwt.Canceled
+- : int Lwt.state = Lwt.Fail Lwt.Canceled
 >>
 
   By the way, it is possible to prevent a thread from being canceled
@@ -295,11 +295,11 @@ val wakener : '_a Lwt.u = <abstr>
 # let t = Lwt.choose [waiter1; waiter2];;
 val t : '_a Lwt.t = <abstr>
 # Lwt.state t;;
-- : '_a Lwt.state = Sleep
+- : '_a Lwt.state = Lwt.Sleep
 # Lwt.wakeup wakener2 42;;
 - : unit = ()
 # Lwt.state t;;
-- : int Lwt.state = Return 42
+- : int Lwt.state = Lwt.Return 42
 >>
 
   The last one, {{{pick}}}, is the same as {{{join}}} except that it cancels
@@ -368,7 +368,7 @@ lwt () =
 === The syntax extension ===
 
   {{{Lwt}}} offers a syntax extension which increases code readability and
-  makes coding using {{{Lwt}}} easier.  To use it add the ``lwt.syntax'' package when
+  makes coding using {{{Lwt}}} easier.  To use it add the {{{lwt.syntax}}} package when
   compiling:
 
 <<code language="ocaml" |$ ocamlfind ocamlc -syntax camlp4o -package lwt.syntax -linkpkg -o foo foo.ml
@@ -489,7 +489,7 @@ val map_p : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
   {{{Lwt_mutex}}} provides mutexes for {{{Lwt}}}. Its use is almost the
   same as the {{{Mutex}}} module of the thread library shipped with
   OCaml. In general, programs using {{{Lwt}}} do not need a lot of
-  mutexes. They are only usefull for serialising operations.
+  mutexes. They are only useful for serialising operations.
 
 ==== Lists ====
 
@@ -541,18 +541,18 @@ val push : '_a option -> unit = <fun>
 # push (Some 3);;
 - : unit = ()
 # Lwt.state (Lwt_stream.next stream);;
-- : int Lwt.state = Return 1
+- : int Lwt.state = Lwt.Return 1
 # Lwt.state (Lwt_stream.next stream);;
-- : int Lwt.state = Return 2
+- : int Lwt.state = Lwt.Return 2
 # Lwt.state (Lwt_stream.next stream);;
-- : int Lwt.state = Return 3
+- : int Lwt.state = Lwt.Return 3
 # Lwt.state (Lwt_stream.next stream);;
-- : int Lwt.state = Sleep
+- : int Lwt.state = Lwt.Sleep
 >>
 
   Note that streams are consumable. Once you take an element from a
   stream, it is removed from it. So, if you want to iterate two times
-  over a stream, you may consider ``clonning'' it, with
+  over a stream, you may consider ``cloning'' it, with
   {{{Lwt_stream.clone}}}. Cloned stream will return the same
   elements in the same order. Consuming one will not consume the other.
   For example:
@@ -562,13 +562,13 @@ val s : int Lwt_stream.t = <abstr>
 # let s' = Lwt_stream.clone s;;
 val s' : int Lwt_stream.t = <abstr>
 # Lwt.state (Lwt_stream.next s);;
-- : int Lwt.state = Return 1
+- : int Lwt.state = Lwt.Return 1
 # Lwt.state (Lwt_stream.next s);;
-- : int Lwt.state = Return 2
+- : int Lwt.state = Lwt.Return 2
 # Lwt.state (Lwt_stream.next s');;
-- : int Lwt.state = Return 1
+- : int Lwt.state = Lwt.Return 1
 # Lwt.state (Lwt_stream.next s');;
-- : int Lwt.state = Return 2
+- : int Lwt.state = Lwt.Return 2
 >>
 
 ==== Mailbox variables ====
@@ -691,7 +691,7 @@ val s' : int Lwt_stream.t = <abstr>
   For example to redirect all logs to {{{stderr}}} and to the syslog
   daemon:
 
-<<code language="ocaml" |# Lwt_log.default_logger :=
+<<code language="ocaml" |# Lwt_log.default :=
     Lwt_log.broadcast [
       Lwt_log.channel ~close_mode:`Keep ~channel:Lwt_io.stderr ();
       Lwt_log.syslog ~facility:`User ();
@@ -756,11 +756,11 @@ val push : '_a -> unit = <fun>
 # let t = E.next event;;
 val t : '_a Lwt.t = <abstr>
 # Lwt.state t;;
-- : '_a Lwt.state = Sleep
+- : '_a Lwt.state = Lwt.Sleep
 # push 42;;
 - : unit = ()
 # Lwt.state t;;
-- : int Lwt.state = Return 42
+- : int Lwt.state = Lwt.Return 42
 >>
 
   Another interesting feature is the ability to limit events
@@ -801,7 +801,7 @@ let () =
   **WARNING:** the {{{lwt.text}}} library is deprecated. It has been
   replaced by the {{{lambda-term}}} library which is more complete and
   more portable. It is available here:
-  http://lambda-term.forge.ocamlcore.org/.
+  http://forge.ocamlcore.org/projects/lambda-term/
 
   The {{{lwt.text}}} library provides functions to deal with text
   mode (in a terminal). It is composed of the three following modules:
