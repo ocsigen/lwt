@@ -364,7 +364,7 @@ let with_process_full ?timeout ?env cmd f = make_with open_process_full ?timeout
 
 let exec ?timeout ?env ?stdin ?stdout ?stderr cmd = (open_process_none ?timeout ?env ?stdin ?stdout ?stderr cmd)#close
 
-let ingore_close ch =
+let ignore_close ch =
   ignore (Lwt_io.close ch)
 
 let read_opt read ic =
@@ -375,7 +375,7 @@ let read_opt read ic =
 
 let recv_chars pr =
   let ic = pr#stdout in
-  Gc.finalise ingore_close ic;
+  Gc.finalise ignore_close ic;
   Lwt_stream.from (fun _ ->
                      lwt x = read_opt Lwt_io.read_char ic in
                      if x = None then begin
@@ -386,7 +386,7 @@ let recv_chars pr =
 
 let recv_lines pr =
   let ic = pr#stdout in
-  Gc.finalise ingore_close ic;
+  Gc.finalise ignore_close ic;
   Lwt_stream.from (fun _ ->
                      lwt x = read_opt Lwt_io.read_line ic in
                      if x = None then begin
