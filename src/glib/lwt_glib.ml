@@ -38,7 +38,7 @@ external glib_poll : (Unix.file_descr * bool * bool) list -> int -> int -> (Unix
 
 class engine = object
   inherit Lwt_engine.poll_based
-  method private poll fds timeout = glib_poll fds (List.length fds) (truncate (timeout *. 1000.))
+  method private poll fds timeout = glib_poll fds (List.length fds) (max (-1) (truncate (timeout *. 1000.)))
 end
 
 (* +-----------------------------------------------------------------+
