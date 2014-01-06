@@ -86,16 +86,27 @@ CAMLprim value lwt_glib_poll(value val_fds, value val_count, value val_timeout)
     timeout = lwt_timeout;
 
   /* Do the blocking call. */
+  caml_enter_blocking_section();
   g_main_context_get_poll_func(gc)(gpollfds, n_fds + count, timeout);
+  caml_leave_blocking_section();
+
   g_main_context_check(gc, max_priority, gpollfds, n_fds);
 
   /* Build the result. */
   node_result = Val_int(0);
   for (i = n_fds, node = val_fds; i < n_fds + count; i++, node = Field(node, 1)) {
+    gpollfd = gpollfds + i;
     src_result = caml_alloc_tuple(3);
     src = Field(node, 0);
     Field(src_result, 0) = Field(src, 0);
-    revents = gpollfds[i].revents;
+    revents = gpollfd->revents;
+    if (revents & G_IO_HUP) {
+      /* Treat HUP as ready. There's no point continuing to wait on this FD. */
+      if (gpollfd->events & G_IO_IN)
+        revents |= G_IO_IN;
+      if (gpollfd->events & G_IO_OUT)
+        revents |= G_IO_OUT;
+    }
     Field(src_result, 1) = Val_bool(revents & G_IO_IN);
     Field(src_result, 2) = Val_bool(revents & G_IO_OUT);
     tmp = caml_alloc_tuple(2);
