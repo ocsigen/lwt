@@ -43,7 +43,7 @@ val create :
       function before its {!use}. Invalid elements are re-created.
 
       The optional function [check] is called after a [use] of an
-      element failed. It must call its argument excatly one with
+      element failed. It must call its argument exactly once with
       [true] if the pool member is still valid and [false]
       otherwise. *)
 
