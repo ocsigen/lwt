@@ -39,7 +39,7 @@ val lock : t -> unit Lwt.t
         the mutex to terminate, then it resumes when the last one
         unlocks the mutex
 
-      Note: threads are woken up is the same order they try to lock the
+      Note: threads are woken up in the same order they try to lock the
       mutex *)
 
 val unlock : t -> unit

@@ -23,7 +23,7 @@
 
 (** This module allows to mix preemptive threads with [Lwt]
     cooperative threads. It maintains an extensible pool of preemptive
-    threads to with you can detach computations. *)
+    threads to which you can detach computations. *)
 
 val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
   (** detaches a computation to a preemptive thread. *)
