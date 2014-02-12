@@ -587,7 +587,7 @@ value lwt_unix_send_notification_stub(value id)
 
 value lwt_unix_recv_notifications()
 {
-  int ret, i;
+  int ret, i, current_index;
   value result;
 #if !defined(LWT_ON_WINDOWS)
   sigset_t new_mask;
@@ -616,8 +616,23 @@ value lwt_unix_recv_notifications()
     unix_error(error, "recv_notifications", Nothing);
   }
 #endif
+
+  do {
+    /*
+     release the mutex while calling caml_alloc,
+     which may call gc and switch the thread,
+     resulting in a classical deadlock,
+     when thread in question tries another send
+    */
+    current_index = notification_index;
+    lwt_unix_mutex_unlock(&notification_mutex);
+    result = caml_alloc_tuple(current_index);
+    lwt_unix_mutex_lock(&notification_mutex);
+    /* check that no new notifications appeared meanwhile (rare) */
+  }
+  while (current_index != notification_index);
+
   /* Read all pending notifications. */
-  result = caml_alloc_tuple(notification_index);
   for (i = 0; i < notification_index; i++)
     Field(result, i) = Val_long(notifications[i]);
   /* Reset the index. */
