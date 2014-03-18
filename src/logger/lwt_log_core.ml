@@ -306,14 +306,12 @@ let log ?exn ?(section=Section.main) ?location ?logger ~level message =
       | None ->
           Lwt.with_value location_key location (fun () -> logger.lg_output section level (split message))
       | Some exn ->
+          let bt = if Printexc.backtrace_status () then Printexc.get_backtrace ()
+                   else "" in
           let message = message ^ ": " ^ Printexc.to_string exn in
           let message =
-            if Printexc.backtrace_status () then
-              match Printexc.get_backtrace () with
-                | "" -> message
-                | backtrace -> message ^ "\nbacktrace:\n" ^ backtrace
-            else
-              message
+            if String.length bt = 0 then message
+            else message ^ "\nbacktrace:\n" ^ bt
           in
           Lwt.with_value location_key location (fun () -> logger.lg_output section level (split message))
   else
