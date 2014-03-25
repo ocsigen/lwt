@@ -135,3 +135,21 @@ val fold_r : ('a -> 'b -> 'b) -> 'a t -> 'b -> 'b
       ]}
       where [e1], [e2], ..., [en] are the elements of [s]
   *)
+
+val find_node_opt_l : ('a -> bool) -> 'a t -> 'a node option
+  (** [find_node_opt_l f s] returns [Some x], where [x] is the first node of
+      [s] starting from the left that satisfies [f] or [None] if none
+      exists. *)
+
+val find_node_opt_r : ('a -> bool) -> 'a t -> 'a node option
+  (** [find_node_opt_r f s] returns [Some x], where [x] is the first node of
+      [s] starting from the right that satisfies [f] or [None] if none
+      exists. *)
+
+val find_node_l : ('a -> bool) -> 'a t -> 'a node
+  (** [find_node_l f s] returns the first node of [s] starting from the left
+      that satisfies [f] or raises [Not_found] if none exists. *)
+
+val find_node_r : ('a -> bool) -> 'a t -> 'a node
+  (** [find_node_r f s] returns the first node of [s] starting from the right
+      that satisfies [f] or raises [Not_found] if none exists. *)
