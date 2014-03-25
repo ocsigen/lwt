@@ -207,3 +207,41 @@ let fold_r f seq acc =
         loop node.node_next acc
   in
   loop seq.prev acc
+
+let find_node_l f seq =
+  let rec loop curr =
+    if curr != seq then
+      let node = node_of_seq curr in
+      if node.node_active then
+        if f node.node_data then
+          node
+        else
+          loop node.node_next
+      else
+        loop node.node_next
+    else
+      raise Not_found
+  in
+  loop seq.next
+
+let find_node_r f seq =
+  let rec loop curr =
+    if curr != seq then
+      let node = node_of_seq curr in
+      if node.node_active then
+        if f node.node_data then
+          node
+        else
+          loop node.node_prev
+      else
+        loop node.node_prev
+    else
+      raise Not_found
+  in
+  loop seq.prev
+
+let find_node_opt_l f seq =
+  try Some (find_node_l f seq) with Not_found -> None
+
+let find_node_opt_r f seq =
+  try Some (find_node_r f seq) with Not_found -> None
