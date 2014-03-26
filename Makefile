@@ -1,62 +1,49 @@
-# Makefile
-# --------
-# Copyright : (c) 2012, Jeremie Dimino <jeremie@dimino.org>
-# Licence   : BSD3
-#
-# Generic Makefile for oasis project
+# OASIS_START
+# DO NOT EDIT (digest: 9a60866e2fa295c5e33a3fe33b8f3a32)
 
-# Set to setup.exe for the release
-SETUP := setup-dev.exe
+SETUP = ./setup.exe
 
-# Default rule
-default: build
+build: setup.data $(SETUP)
+	$(SETUP) -build $(BUILDFLAGS)
 
-# Setup for the development version
-setup-dev.exe: _oasis setup.ml
-	grep -v '^#' setup.ml > setup_dev.ml
-	ocamlfind ocamlopt -o $@ -linkpkg -package ocamlbuild,oasis.dynrun setup_dev.ml || \
-	  ocamlfind ocamlc -o $@ -linkpkg -package ocamlbuild,oasis.dynrun setup_dev.ml || true
-	rm -f setup_dev.*
+doc: setup.data $(SETUP) build
+	$(SETUP) -doc $(DOCFLAGS)
 
-# Setup for the release
-setup.exe: setup.ml
-	ocamlopt.opt -o $@ $< || ocamlopt -o $@ $< || ocamlc -o $@ $<
-	rm -f setup.cmx setup.cmi setup.o setup.obj setup.cmo
-
-build: $(SETUP) setup.data
-	./$(SETUP) -build $(BUILDFLAGS)
-
-doc: $(SETUP) setup.data build
-	./$(SETUP) -doc $(DOCFLAGS)
-
-doc-api: $(SETUP) setup.data build
-	./$(SETUP) -build lwt-api.docdir/index.html
-
-test: $(SETUP) setup.data build
-	./$(SETUP) -test $(TESTFLAGS)
+test: setup.data $(SETUP) build
+	$(SETUP) -test $(TESTFLAGS)
 
 all: $(SETUP)
-	./$(SETUP) -all $(ALLFLAGS)
+	$(SETUP) -all $(ALLFLAGS)
 
-install: $(SETUP) setup.data
-	./$(SETUP) -install $(INSTALLFLAGS)
+install: setup.data $(SETUP)
+	$(SETUP) -install $(INSTALLFLAGS)
 
-uninstall: $(SETUP) setup.data
-	./$(SETUP) -uninstall $(UNINSTALLFLAGS)
+uninstall: setup.data $(SETUP)
+	$(SETUP) -uninstall $(UNINSTALLFLAGS)
 
-reinstall: $(SETUP) setup.data
-	./$(SETUP) -reinstall $(REINSTALLFLAGS)
+reinstall: setup.data $(SETUP)
+	$(SETUP) -reinstall $(REINSTALLFLAGS)
 
 clean: $(SETUP)
-	./$(SETUP) -clean $(CLEANFLAGS)
+	$(SETUP) -clean $(CLEANFLAGS)
 
 distclean: $(SETUP)
-	./$(SETUP) -distclean $(DISTCLEANFLAGS)
-
-configure: $(SETUP)
-	./$(SETUP) -configure $(CONFIGUREFLAGS)
+	$(SETUP) -distclean $(DISTCLEANFLAGS)
+	$(RM) $(SETUP)
 
 setup.data: $(SETUP)
-	./$(SETUP) -configure $(CONFIGUREFLAGS)
+	$(SETUP) -configure $(CONFIGUREFLAGS)
 
-.PHONY: default build doc test all install uninstall reinstall clean distclean configure
+configure: $(SETUP)
+	$(SETUP) -configure $(CONFIGUREFLAGS)
+
+setup.exe: setup.ml
+	ocamlfind ocamlopt -o $@ -linkpkg -package oasis.dynrun $< || ocamlfind ocamlc -o $@ -linkpkg -package oasis.dynrun $< || true
+	$(RM) setup.cmi setup.cmo setup.cmx setup.o
+
+.PHONY: build doc test all install uninstall reinstall clean distclean configure
+
+# OASIS_STOP
+
+doc-api: $(SETUP) setup.data build
+	$(SETUP) -build lwt-api.docdir/index.html
