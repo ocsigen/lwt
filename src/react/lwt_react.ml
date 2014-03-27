@@ -380,13 +380,10 @@ module S = struct
   let return =
     const
 
-  let bind ?eq s f =
-    switch ?eq (f (value s)) (E.map f (changes s))
-
   let bind_s ?eq s f =
     let event, push = E.create () in
     let mutex = Lwt_mutex.create () in
     let iter = E.fmap (fun x -> Lwt.on_success (Lwt_mutex.with_lock mutex (fun () -> f x)) push; None) (changes s) in
     Lwt_mutex.with_lock mutex (fun () -> f (value s)) >>= fun x ->
-    Lwt.return (switch ?eq x (E.select [iter; event]))
+    Lwt.return (switch ?eq (hold ~eq:( == ) x (E.select [iter; event])))
 end
