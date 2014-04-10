@@ -18,8 +18,8 @@ Requirements:
  * [optional] ocamlssl (>= 0.4.0) (ocamlssl needs openssl) (>= 0.4.1 for MacOS)
  * [optional] glib-2.0 development files and pkg-config
 
-If the dependencies are now installed on your computer, you can use OPAM
-can use GODI to install them automatically. See:
+If the dependencies are not installed on your computer, you can use OPAM
+to install them automatically. See:
 
   http://opam.ocaml.org/
 
