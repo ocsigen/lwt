@@ -10,18 +10,18 @@ This library is part of the Ocsigen project. See:
 
 Requirements:
 
- * ocaml with ocamlbuild (>= 3.11.0)
+ * OCaml with ocamlbuild (>= 3.12.1)
  * findlib
- * [optionnal] react (from http://erratique.ch/software/react)
- * [optionnal] libev (from http://software.schmorp.de/pkg/libev.html)
- * [optionnal] ocaml-text (needed for the enhanced toplevel)
- * [optionnal] ocamlssl (>= 0.4.0) (ocamlssl needs openssl) (>= 0.4.1 for MacOS)
- * [optionnal] glib-2.0 developpement files and pkg-config
+ * [optional] react (from http://erratique.ch/software/react)
+ * [optional] libev (from http://software.schmorp.de/pkg/libev.html)
+ * [optional] ocaml-text (needed for the enhanced toplevel)
+ * [optional] ocamlssl (>= 0.4.0) (ocamlssl needs openssl) (>= 0.4.1 for MacOS)
+ * [optional] glib-2.0 development files and pkg-config
 
-If ocaml/findlib/ocamlssl... are not installed on your computer, you
-can use GODI to install them automatically. See:
+If the dependencies are not installed on your computer, you can use OPAM
+to install them automatically. See:
 
-  http://godi.camlcity.org/godi/index.html
+  http://opam.ocaml.org/
 
 They might also be available through your distribution.
 
@@ -42,18 +42,15 @@ Instructions:
 HTML documentation is generated in _build/lwt.docdir/, but is not
 installed by default.
 
-If you get the development version you need to obtain oasis
+If you get the development version you need to obtain OASIS
 (http://oasis.forge.ocamlcore.org/).
 
 If you want to build the toplevel you have to install compiler
-libraries, under debian it is the package
-ocaml-compiler-libs. Otherwise you can add a symlink like that:
-
-  $ ln -s <ocaml sources> $(ocamlc -where)/compiler-libs
+libraries. Under Debian it is the package ocaml-compiler-libs.
 
 Note that the utop project replaces the Lwt toplevel:
 
-  https://forge.ocamlcore.org/projects/utop/
+  https://github.com/diml/utop
 
 --------------------------------------------------------------------------
 
