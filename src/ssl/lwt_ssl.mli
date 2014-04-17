@@ -51,7 +51,10 @@ val embed_uninitialized_socket :
   Lwt_unix.file_descr -> Ssl.context -> uninitialized_socket
 
 val ssl_perform_handshake : uninitialized_socket -> socket Lwt.t
+(** Initiate a SSL/TLS handshake on the specified socket (used by clients). *)
+
 val ssl_accept_handshake  : uninitialized_socket -> socket Lwt.t
+(** Await a SSL/TLS handshake on the specified socket (used by servers). *)
 
 val read : socket -> string -> int -> int -> int Lwt.t
 val write : socket -> string -> int -> int -> int Lwt.t
