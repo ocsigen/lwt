@@ -29,10 +29,14 @@ type t =
 
 type socket = Lwt_unix.file_descr * t
 
+type uninitialized_socket = Lwt_unix.file_descr * Ssl.socket
+
 let ssl_socket (fd, kind) =
   match kind with
     | Plain -> None
     | SSL socket -> Some socket
+
+let ssl_socket_of_uninitialized_socket (fd, socket) = socket
 
 let is_ssl s =
   match snd s with
@@ -70,6 +74,7 @@ let repeat_call fd f =
 let plain fd = (fd, Plain)
 
 let embed_socket fd context = (fd, SSL(Ssl.embed_socket (Lwt_unix.unix_file_descr fd) context))
+let embed_uninitialized_socket fd context = (fd, Ssl.embed_socket (Lwt_unix.unix_file_descr fd) context)
 
 let ssl_accept fd ctx =
   let socket = Ssl.embed_socket (Lwt_unix.unix_file_descr fd) ctx in
@@ -79,6 +84,16 @@ let ssl_accept fd ctx =
 
 let ssl_connect fd ctx =
   let socket = Ssl.embed_socket (Lwt_unix.unix_file_descr fd) ctx in
+  Lwt.bind
+    (repeat_call fd (fun () -> Ssl.connect socket)) (fun () ->
+  Lwt.return (fd, SSL socket))
+
+let ssl_accept_handshake (fd, socket) =
+  Lwt.bind
+    (repeat_call fd (fun () -> Ssl.accept socket)) (fun () ->
+  Lwt.return (fd, SSL socket))
+
+let ssl_perform_handshake (fd, socket) =
   Lwt.bind
     (repeat_call fd (fun () -> Ssl.connect socket)) (fun () ->
   Lwt.return (fd, SSL socket))
