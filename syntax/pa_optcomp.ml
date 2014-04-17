@@ -334,13 +334,19 @@ let parse_ident stream =
 let parse_expr stream =
   (* Lists of opened brackets *)
   let opened_brackets = ref [] in
+  let eoi = ref None in
 
   (* Return the next token of [stream] until all opened parentheses
      have been closed and a newline is reached *)
   let rec next_token _ =
-    Some(match Stream.next stream, !opened_brackets with
+    match !eoi with
+    | Some _ as x -> x
+    | None ->
+        Some(match Stream.next stream, !opened_brackets with
            | (NEWLINE, loc), [] ->
-               EOI, loc
+               let x = EOI, loc in
+               eoi := Some x;
+               x
 
            | (KEYWORD("(" | "[" | "{" as b), _) as x, l ->
                opened_brackets := b :: l;
