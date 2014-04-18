@@ -28,9 +28,16 @@ type socket
 
       It is either a plain socket, either a real SSL socket. *)
 
+type uninitialized_socket
+  (** Wrapper for SSL sockets that have not yet performed the SSL
+      handshake. *)
+
 val ssl_socket : socket -> Ssl.socket option
 (** Returns the underlying SSL socket used for this wrapper. If it is
       a plain socket it returns [None]. *)
+
+val ssl_socket_of_uninitialized_socket : uninitialized_socket -> Ssl.socket
+(** Returns the underlying SSL socket used for this wrapper. *)
 
 val is_ssl : socket -> bool
 (** Are we using an SSL socket? *)
@@ -39,6 +46,15 @@ val ssl_accept : Lwt_unix.file_descr -> Ssl.context -> socket Lwt.t
 val ssl_connect : Lwt_unix.file_descr -> Ssl.context -> socket Lwt.t
 val plain : Lwt_unix.file_descr -> socket
 val embed_socket : Lwt_unix.file_descr -> Ssl.context -> socket
+
+val embed_uninitialized_socket :
+  Lwt_unix.file_descr -> Ssl.context -> uninitialized_socket
+
+val ssl_perform_handshake : uninitialized_socket -> socket Lwt.t
+(** Initiate a SSL/TLS handshake on the specified socket (used by clients). *)
+
+val ssl_accept_handshake  : uninitialized_socket -> socket Lwt.t
+(** Await a SSL/TLS handshake on the specified socket (used by servers). *)
 
 val read : socket -> string -> int -> int -> int Lwt.t
 val write : socket -> string -> int -> int -> int Lwt.t
