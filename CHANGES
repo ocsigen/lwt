@@ -1,5 +1,16 @@
-===== 2.4.5 (trunk) =====
-
+===== 2.4.5 (2014-04-21) =====
+ 
+  * Lwt_ssl: expand API to allow setting socket options with Ssl
+    functions
+  * fix for camlp4 trunk
+  * support for React 1.0.0
+  * add Lwt_sequence.find_node_* functions
+  * Lwt_log: get backtrace early to overcome exns in
+    Printexc.to_string
+  * fix potential deadlock in lwt_unix_recv_notifications
+  * lwt.glib fixes:
+    - handle HUP
+    - fix for BSD/OSX
   * do not raise an exception in Lwt_log if argv[0] is blank
 
 ===== 2.4.4 (2013-10-22) =====
