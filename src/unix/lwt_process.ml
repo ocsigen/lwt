@@ -179,6 +179,8 @@ let map_args args =
   end else
     args
 
+external sys_exit : int -> 'a = "caml_sys_exit"
+
 let spawn (prog, args) env ?(stdin:redirection=`Keep) ?(stdout:redirection=`Keep) ?(stderr:redirection=`Keep) toclose =
   let prog = if prog = "" && Array.length args > 0 then args.(0) else prog in
   match Lwt_unix.fork () with
@@ -195,10 +197,8 @@ let spawn (prog, args) env ?(stdin:redirection=`Keep) ?(stdout:redirection=`Keep
               | Some env ->
                   Unix.execvpe prog args env
           with _ ->
-            (* Prevent exit hooks from running, they are not supposed
-               to be executed here. *)
-            Lwt_sequence.iter_node_l Lwt_sequence.remove Lwt_main.exit_hooks;
-            exit 127
+            (* Do not run at_exit hooks *)
+            sys_exit 127
         end
     | id ->
         let close = function

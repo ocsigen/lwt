@@ -2416,16 +2416,16 @@ let system cmd =
 
 #else
 
+external sys_exit : int -> 'a = "caml_sys_exit"
+
 let system cmd =
   match fork () with
     | 0 ->
         begin try
           Unix.execv "/bin/sh" [| "/bin/sh"; "-c"; cmd |]
         with _ ->
-          (* Prevent exit hooks from running, they are not supposed to
-             be executed here. *)
-          Lwt_sequence.iter_node_l Lwt_sequence.remove Lwt_main.exit_hooks;
-          exit 127
+          (* Do not run at_exit hooks *)
+          sys_exit 127
         end
     | id ->
         waitpid [] id >|= snd
