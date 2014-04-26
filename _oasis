@@ -49,6 +49,10 @@ Flag syntax
   Description: Build the syntax extension
   Default: true
 
+Flag ppx
+  Description: Build the ppx syntax extension
+  Default: true
+
 Flag unix
   Description: Unix support
   Default: true
@@ -293,6 +297,13 @@ Library "lwt-syntax-options"
   XMETAType: syntax
   XMETADescription: Options for syntax extensions
   XMETARequires: camlp4
+
+Executable ppx_lwt
+  Build$: flag(ppx) || flag(all)
+  Install$: flag(ppx) || flag(all)
+  Path: ppx
+  MainIs : ppx_lwt.ml
+  BuildDepends: compiler-libs.common
 
 Library "lwt-syntax-log"
   Build$: flag(syntax) || flag(all)
