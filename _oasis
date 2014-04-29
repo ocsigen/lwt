@@ -303,7 +303,9 @@ Executable ppx_lwt
   Install$: flag(ppx) || flag(all)
   Path: ppx
   MainIs : ppx_lwt.ml
-  BuildDepends: compiler-libs.common
+  BuildDepends: compiler-libs.common, ppx_tools
+  ByteOpt: -ppx "ocamlfind ppx_tools/ppx_metaquot.exe"
+  NativeOpt: -ppx "ocamlfind ppx_tools/ppx_metaquot.exe"
 
 Library "lwt-syntax-log"
   Build$: flag(syntax) || flag(all)
