@@ -6,6 +6,7 @@
 # Disable camlp4 for at least the core and react libraries, we will
 # see for other ones latter:
 <src/{core,react}/*.ml>: -syntax_camlp4o, -pkg_camlp4, -pa_lwt_options, -pa_lwt, -pa_lwt_log, -pa_optcomp
+<ppx/*.ml>: -syntax_camlp4o, -pkg_camlp4, -pa_lwt_options, -pa_lwt, -pa_lwt_log, -pa_optcomp
 
 <src/simple_top/*>: use_toploop
 <src/top/*>: use_toploop
