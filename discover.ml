@@ -274,7 +274,7 @@ let compile (opt, lib) stub_file =
     "%s -c -I%s %s %s -o %s >> %s 2>&1"
     !cc
     (Filename.quote !standard_library)
-    (String.concat " " @@ List.map Filename.quote opt)
+    (String.concat " " (List.map Filename.quote opt))
     (Filename.quote stub_file)
     (Filename.quote obj_file)
     (Filename.quote !log_file))
