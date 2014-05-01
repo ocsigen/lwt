@@ -224,6 +224,8 @@ CAMLprim value lwt_test()
    +-----------------------------------------------------------------+ *)
 
 let ocamlc = ref "ocamlc"
+let cc = ref "cc"
+let standard_library = ref "/usr/lib/ocaml"
 let ext_obj = ref ".o"
 let exec_name = ref "a.out"
 let use_libev = ref true
@@ -234,6 +236,15 @@ let os_type = ref "Unix"
 let android_target = ref false
 let ccomp_type = ref "cc"
 let libev_default = ref true
+let debug = ref (try Sys.getenv "DEBUG" = "y" with Not_found -> false)
+
+let dprintf fmt =
+  if !debug then
+    (
+      eprintf "DBG: ";
+      kfprintf (fun oc -> fprintf oc "\n%!") stderr fmt
+    )
+  else ifprintf stderr fmt
 
 let log_file = ref ""
 let caml_file = ref ""
@@ -251,23 +262,40 @@ let search_header header =
   in
   loop search_paths
 
+(* CFLAGS should not be passed to the linker. *)
 let compile (opt, lib) stub_file =
-  ksprintf
-    Sys.command
-    "%s -custom %s %s %s %s > %s 2>&1"
-    !ocamlc
-    (String.concat " " (List.map (sprintf "-ccopt %s") opt))
+  let cmd fmt = ksprintf (fun s ->
+    dprintf "RUN: %s" s;
+    Sys.command s = 0) fmt in
+  let obj_file = Filename.chop_suffix stub_file ".c" ^ !ext_obj
+  in
+  (* First compile the .c file using CC and the CFLAGS (opt) *)
+  (cmd
+    "%s -c -I%s %s %s -o %s >> %s 2>&1"
+    !cc
+    (Filename.quote !standard_library)
+    (String.concat " " @@ List.map Filename.quote opt)
     (Filename.quote stub_file)
+    (Filename.quote obj_file)
+    (Filename.quote !log_file))
+  &&
+  (* Now link the resulting .o with the LDFLAGS (lib) *)
+  (cmd
+    "%s -custom %s %s %s >> %s 2>&1"
+    !ocamlc
+    (Filename.quote obj_file)
     (Filename.quote !caml_file)
     (String.concat " " (List.map (sprintf "-cclib %s") lib))
-    (Filename.quote !log_file)
-  = 0
+    (Filename.quote !log_file))
 
 let safe_remove file_name =
-  try
-    Sys.remove file_name
-  with exn ->
-    ()
+  if !debug then
+    dprintf "DEBUG: Not removing %s\n" file_name
+  else
+    try
+      Sys.remove file_name
+    with exn ->
+      ()
 
 let test_code args stub_code =
   let stub_file, oc = Filename.open_temp_file "lwt_stub" ".c" in
@@ -403,6 +431,8 @@ let arg_bool r =
 let () =
   let args = [
     "-ocamlc", Arg.Set_string ocamlc, "<path> ocamlc";
+    "-cc", Arg.Set_string cc, "<path> C compiler";
+    "-standard-library", Arg.Set_string standard_library, "<path> Path to Ocaml standard library";
     "-ext-obj", Arg.Set_string ext_obj, "<ext> C object files extension";
     "-exec-name", Arg.Set_string exec_name, "<name> name of the executable produced by ocamlc";
     "-use-libev", arg_bool use_libev, " whether to check for libev";
