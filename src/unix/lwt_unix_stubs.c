@@ -560,9 +560,11 @@ void lwt_unix_send_notification(int id)
 #if defined(LWT_ON_WINDOWS)
     if (ret == SOCKET_ERROR) {
       error = WSAGetLastError();
-      lwt_unix_mutex_unlock(&notification_mutex);
-      win32_maperr(error);
-      uerror("send_notification", Nothing);
+      if (error != WSANOTINITIALISED) {
+	lwt_unix_mutex_unlock(&notification_mutex);
+	win32_maperr(error);
+	uerror("send_notification", Nothing);
+      } /* else we're probably shutting down, so ignore the error */
     }
 #else
     if (ret < 0) {
