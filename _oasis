@@ -304,8 +304,9 @@ Executable ppx_lwt
   Path: ppx
   MainIs : ppx_lwt.ml
   BuildDepends: compiler-libs.common, ppx_tools
-  ByteOpt: -ppx "ocamlfind ppx_tools/ppx_metaquot.exe"
-  NativeOpt: -ppx "ocamlfind ppx_tools/ppx_metaquot.exe"
+  ByteOpt: -ppx "ocamlfind ppx_tools/ppx_metaquot"
+  NativeOpt: -ppx "ocamlfind ppx_tools/ppx_metaquot"
+  CompiledObject: best
 
 Library "lwt-syntax-log"
   Build$: flag(syntax) || flag(all)
