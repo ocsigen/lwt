@@ -665,7 +665,7 @@ static SOCKET socket_r, socket_w;
 
 static int windows_notification_send()
 {
-  char buf;
+  char buf = '!';
   return send(socket_w, &buf, 1, 0);
 }
 
