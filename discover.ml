@@ -535,12 +535,12 @@ let () =
     printf "
 The following recquired C libraries are missing: %s.
 Please install them and retry. If they are installed in a non-standard location
-or need special flags, set the environment variables <LIB>_CLFAGS and <LIB>_LIBS
+or need special flags, set the environment variables <LIB>_CFLAGS and <LIB>_LIBS
 accordingly and retry.
 
 For example, if libev is installed in /opt/local, you can type:
 
-export LIBEV_CLFAGS=-I/opt/local/include
+export LIBEV_CFLAGS=-I/opt/local/include
 export LIBEV_LIBS=-L/opt/local/lib
 
 To compile without libev support, use ./configure --disable-libev ...
