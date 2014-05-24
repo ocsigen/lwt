@@ -1,0 +1,29 @@
+opam-version: "1"
+maintainer: "jeremie@dimino.org"
+version: "dev"
+build: [
+  ["./configure" "--%{conf-libev:enable}%-libev" "--enable-react" "--%{ssl:enable}%-ssl" "--%{base-unix:enable}%-unix" "--%{base-unix:enable}%-extra" "--%{base-threads:enable}%-preemptive" "--%{lablgtk:enable}%-glib" "--%{ocaml-text:enable}%-text" {"%{react:installed}%"}]
+  [make "build"]
+  [make "install"]
+]
+remove: [
+  [ "ocamlfind" "remove" "lwt" ]
+]
+depends: [
+  "ocamlfind"
+  "oasis"
+]
+depopts: [
+  "base-threads"
+  "base-unix"
+  "conf-libev"
+  "ssl"
+  "lablgtk"
+  "text"
+  "react"
+  ## OASIS is not required in released version
+  "oasis" {>= "0.4.4"}
+]
+conflicts: [
+  "react" {< "1.0.0" }
+]
