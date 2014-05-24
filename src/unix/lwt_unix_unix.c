@@ -2070,7 +2070,8 @@ static value result_getaddrinfo(struct job_getaddrinfo *job)
       vres = v;
     }
   }
-  freeaddrinfo(job->info);
+  if (job->info != NULL)
+    freeaddrinfo(job->info);
   lwt_unix_free_job(&job->job);
   CAMLreturn(vres);
 }
