@@ -25,8 +25,8 @@ oasis setup
 sed 's/^SETUP := setup-dev.exe.*/SETUP := setup.exe/' Makefile > Makefile.new
 mv Makefile.new Makefile
 
-# Remove this script
-rm -f dist
+# Remove this script and dev-files
+rm -f dist.sh opam .jenkins.sh
 
 # Commit
 git add --all --force
