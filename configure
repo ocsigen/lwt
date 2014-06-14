@@ -1,5 +1,27 @@
 #!/bin/sh
 
 # OASIS_START
+# DO NOT EDIT (digest: 6f7b8221311e800a7093dc3b793f67ca)
+set -e
+
+FST=true
+for i in "$@"; do
+  if $FST; then
+    set --
+    FST=false
+  fi
+
+  case $i in
+    --*=*)
+      ARG=${i%%=*}
+      VAL=${i##*=}
+      set -- "$@" "$ARG" "$VAL"
+      ;;
+    *)
+      set -- "$@" "$i"
+      ;;
+  esac
+done
+
 make configure CONFIGUREFLAGS="$*"
 # OASIS_STOP
