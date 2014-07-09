@@ -1,0 +1,156 @@
+open Test
+open Lwt
+
+let suite = suite "ppx" [
+    test "let"
+      (fun () ->
+         let%lwt x = return 3 in
+         return (x + 1 = 4)
+      ) ;
+
+    test "nested let"
+      (fun () ->
+         let%lwt x = return 3 in
+         let%lwt y = return 4 in
+         return (x + y = 7)
+      ) ;
+
+    test "and let"
+      (fun () ->
+         let%lwt x = return 3
+             and y = return 4 in
+         return (x + y = 7)
+      ) ;
+
+    test "match"
+      (fun () ->
+         let x = Lwt.return (Some 3) in
+         match%lwt x with
+           | Some x -> return (x + 1 = 4)
+           | None -> return false
+      ) ;
+
+    test "for" (* Test for proper sequencing *)
+      (fun () ->
+         let r = ref [] in
+         let f x =
+           let%lwt () = Lwt_unix.sleep 0.2 in Lwt.return (r := x :: !r)
+         in
+         let%lwt () =
+           for%lwt x = 3 to 5 do f x done
+         in return (!r = [5 ; 4 ; 3])
+      ) ;
+
+    test "while" (* Test for proper sequencing *)
+      (fun () ->
+         let r = ref [] in
+         let f x =
+           let%lwt () = Lwt_unix.sleep 0.2 in Lwt.return (r := x :: !r)
+         in
+         let%lwt () =
+           let c = ref 2 in
+           while%lwt !c < 5 do incr c ; f !c done
+         in return (!r = [5 ; 4 ; 3])
+      ) ;
+
+    test "assert"
+      (fun () ->
+         let%lwt () = assert%lwt true
+         in return true
+      ) ;
+
+    test "raise"
+      (fun () ->
+         Lwt.catch (fun () -> [%lwt raise Not_found])
+           (fun exn -> return (exn = Not_found))
+      ) ;
+
+    test "try"
+      (fun () ->
+         try%lwt
+           Lwt.fail Not_found
+         with _ -> return true
+      ) [@warning("@8@11")] ;
+
+    test "try raise"
+      (fun () ->
+         try%lwt
+           raise Not_found
+         with _ -> return true
+      ) [@warning("@8@11")] ;
+
+    test "try fallback"
+      (fun () ->
+         try%lwt
+           try%lwt
+             Lwt.fail Not_found
+           with Failure _ -> return false
+         with Not_found -> return true
+      ) [@warning("@8@11")] ;
+
+    test "finally body"
+      (fun () ->
+         let x = ref false in
+         begin try%lwt
+           return_unit
+         with
+         | _ -> return_unit
+         | [%finally] -> x := true; return_unit
+         end >>= fun () ->
+         return !x
+      ) ;
+
+    test "finally exn"
+      (fun () ->
+         let x = ref false in
+         begin try%lwt
+           raise Not_found
+         with
+         | _ -> return_unit
+         | [%finally] -> x := true; return_unit
+         end >>= fun () ->
+         return !x
+      ) ;
+
+    test "finally exn default"
+      (fun () ->
+         let x = ref false in
+         try%lwt
+           begin try%lwt
+             raise Not_found
+           with
+           | [%finally] -> x := true; return_unit
+           end >>= fun () ->
+           return false
+         with Not_found ->
+           return !x
+      ) ;
+
+    test "sequence"
+      (fun () ->
+         let lst = ref [] in
+         (lst := 2 :: !lst; Lwt.return_unit) >>
+         (lst := 1 :: !lst; Lwt.return_unit) >>
+         (Lwt.return (!lst = [1;2]))
+      ) ;
+
+    test "log"
+      (fun () ->
+         Lwt_log.ign_debug "bar";
+         Lwt_log.debug "foo" >>= fun () ->
+         Lwt_log.info_f "baz" >>= fun () ->
+         return_true
+      ) ;
+
+    test "structure let"
+      (fun () ->
+         let module M =
+           struct
+             let%lwt result = Lwt.return_true
+           end
+         in
+         Lwt.return M.result
+      ) ;
+  ]
+
+let _ = Test.run "ppx" [ suite ]
