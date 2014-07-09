@@ -49,6 +49,10 @@ Flag syntax
   Description: Build the syntax extension
   Default: true
 
+Flag ppx
+  Description: Build the ppx syntax extension
+  Default: true
+
 Flag unix
   Description: Unix support
   Default: true
@@ -306,6 +310,25 @@ Library "lwt-syntax-log"
   XMETADescription: Syntactic sugars for logging
   XMETARequires: camlp4, lwt.syntax.options
 
+Library "ppx"
+  Build$: flag(ppx) || flag(all)
+  Install$: flag(ppx) || flag(all)
+  FindlibName: ppx
+  FindlibParent: lwt
+  Path: ppx
+  Modules:
+  XMETADescription: New-style (ppx) syntax extension
+  XMETARequires:    lwt
+  XMETAExtraLines:  ppx = "ppx_lwt"
+
+Executable "ppx_lwt"
+  Build$: flag(ppx) || flag(all)
+  Install$: flag(ppx) || flag(all)
+  Path: ppx
+  MainIs: ppx_lwt.ml
+  BuildDepends: compiler-libs.common, ppx_tools.metaquot
+  CompiledObject: byte # should be best, necessary for tests.
+
 # +-------------------------------------------------------------------+
 # | Toplevel                                                          |
 # +-------------------------------------------------------------------+
@@ -423,6 +446,17 @@ Executable test_preemptive
   MainIs: main.ml
   BuildDepends: test, lwt, unix, lwt.unix, lwt.preemptive, threads
 
+Executable test_ppx
+  Path: tests/ppx
+  Build$: flag(tests) && ((flag(ppx) && flag(unix)) || flag(all))
+  Install: false
+  CompiledObject: best
+  MainIs: main.ml
+  BuildTools: ppx_lwt
+  NativeOpt: -ppx ppx/ppx_lwt.byte # hacky, $ppx_lwt doesn't work.
+  ByteOpt: -ppx ppx/ppx_lwt.byte
+  BuildDepends: test, lwt, lwt.unix
+
 Test core
   Command: $test_core
   TestTools: test_core
@@ -442,6 +476,11 @@ Test preemptive
   Command: $test_preemptive
   TestTools: test_preemptive
   Run$: flag(tests) && ((flag(preemptive) && flag(unix)) || flag(all))
+
+Test ppx
+  Command: $test_ppx
+  TestTools: test_ppx
+  Run$: flag(tests) && ((flag(ppx) && flag(unix)) || flag(all))
 
 # +-------------------------------------------------------------------+
 # | Misc                                                              |
