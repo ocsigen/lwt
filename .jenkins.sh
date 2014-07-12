@@ -1,4 +1,4 @@
-opam pin lwt .
+opam pin add lwt .
 opam install ssl lablgtk text react
 opam install --deps-only lwt
 opam install --verbose lwt
