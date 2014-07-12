@@ -2,7 +2,7 @@ opam-version: "1"
 maintainer: "jeremie@dimino.org"
 version: "dev"
 build: [
-  ["./configure" "--%{conf-libev:enable}%-libev" "--enable-react" "--%{ssl:enable}%-ssl" "--%{base-unix:enable}%-unix" "--%{base-unix:enable}%-extra" "--%{base-threads:enable}%-preemptive" "--%{lablgtk:enable}%-glib" "--%{ocaml-text:enable}%-text" {"%{react:installed}%"} "--standard-library" "%{lib}%/ocaml"]
+  ["./configure" "--%{conf-libev:enable}%-libev" "--enable-react" "--%{ssl:enable}%-ssl" "--%{base-unix:enable}%-unix" "--%{base-unix:enable}%-extra" "--%{base-threads:enable}%-preemptive" "--%{lablgtk:enable}%-glib" "--%{ocaml-text:enable}%-text" {"%{react:installed}%"}]
   [make "build"]
   [make "install"]
 ]
