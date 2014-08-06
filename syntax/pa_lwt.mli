@@ -164,7 +164,7 @@
         done
       ]}
 
-    - pattern mattching:
+    - pattern matching:
 
       {[
         match_lwt <expr> with
