@@ -40,7 +40,7 @@
     Note:
 
     - the application must be complete. For example: [Log.info "%d"]
-      will make compilation to fail
+      will make compilation fail
 
     - it also add the command line flags "-lwt-debug" to keep all debug
       messages. By default debug messages are removed.
