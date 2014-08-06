@@ -103,13 +103,41 @@ let lwt_expression mapper ({ pexp_attributes } as exp) =
          (gen_binds exp.pexp_loc vbl e)
      in mapper.expr mapper { new_exp with pexp_attributes }
 
-  (** [match%lwt $e$ with $c$] ≡ [Lwt.bind $e$ (function $c$)] *)
-  | Pexp_match (e , cases) ->
-     let new_exp =
-       [%expr
-           Lwt.bind [%e e] [%e Exp.function_ cases]
-       ]
-     in mapper.expr mapper { new_exp with pexp_attributes }
+  (** [match%lwt $e$ with $c$] ≡ [Lwt.bind $e$ (function $c$)]
+      [match%lwt $e$ with exception $x$ | $c$] ≡
+      [Lwt.try_bind (fun () -> $e$) (function $c$) (function $x$)] *)
+  | Pexp_match (e, cases) ->
+    let exns, cases =
+      cases |> List.partition (
+        function
+        | { pc_lhs = [%pat? exception [%p? _]]} -> true
+        | _ -> false)
+    in
+    let exns =
+      exns |> List.map (
+        function
+        | { pc_lhs = [%pat? exception [%p? pat]]} as case ->
+          { case with pc_lhs = pat }
+        | _ -> assert false)
+    in
+    let exhaustive =
+      exns |> List.exists (
+        function
+        | { pc_lhs = [%pat? exception _]}
+        | { pc_lhs = [%pat? exception [%p? { ppat_desc = Ppat_var _ }]]} -> true
+        | _ -> false)
+    in
+    let exns =
+      if exhaustive then exns
+      else exns @ [Exp.case (Pat.var (def_loc "__pa_lwt_e")) [%expr Lwt.fail __pa_lwt_e]]
+    in
+    let new_exp =
+      match exns with
+      | [] -> [%expr Lwt.bind [%e e] [%e Exp.function_ cases]]
+      | _  ->  [%expr Lwt.try_bind (fun () -> [%e e])
+                       [%e Exp.function_ cases] [%e Exp.function_ exns]]
+    in
+    mapper.expr mapper { new_exp with pexp_attributes }
 
   (** [assert%lwt $e$] ≡
       [try Lwt.return (assert $e$) with exn -> Lwt.fail exn] *)
