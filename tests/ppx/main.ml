@@ -30,6 +30,23 @@ let suite = suite "ppx" [
            | None -> return false
       ) ;
 
+    test "match-exn"
+      (fun () ->
+         let x = Lwt.return (Some 3) in
+         let x' = Lwt.fail Not_found in
+         let%lwt a =
+           match%lwt x with
+           | exception Not_found -> return false
+           | Some x -> return (x = 3)
+           | None -> return false
+         and b =
+           match%lwt x' with
+           | exception Not_found -> return true
+           | _ -> return false
+         in
+         Lwt.return (a && b)
+      ) ;
+
     test "for" (* Test for proper sequencing *)
       (fun () ->
          let r = ref [] in
