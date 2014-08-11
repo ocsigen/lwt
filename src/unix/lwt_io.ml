@@ -1399,8 +1399,11 @@ let with_file ?buffer_size ?flags ?perm ~mode filename f =
 
 let file_length filename = with_file ~mode:input filename length
 
-let open_connection ?buffer_size sockaddr =
-  let fd = Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0 in
+let open_connection ?fd ?buffer_size sockaddr =
+  let fd = match fd with
+    | None -> Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0
+    | Some fd -> fd
+  in
   let close = lazy begin
     try_lwt
       Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
@@ -1424,8 +1427,8 @@ let open_connection ?buffer_size sockaddr =
     lwt () = Lwt_unix.close fd in
     raise_lwt exn
 
-let with_connection ?buffer_size sockaddr f =
-  lwt ic, oc = open_connection ?buffer_size sockaddr in
+let with_connection ?fd ?buffer_size sockaddr f =
+  lwt ic, oc = open_connection ?fd ?buffer_size sockaddr in
   try_lwt
     f (ic, oc)
   finally
@@ -1437,8 +1440,11 @@ type server = {
 
 let shutdown_server server = Lazy.force server.shutdown
 
-let establish_server ?buffer_size ?(backlog=5) sockaddr f =
-  let sock = Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0 in
+let establish_server ?fd ?buffer_size ?(backlog=5) sockaddr f =
+  let sock = match fd with
+    | None -> Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0
+    | Some fd -> fd
+  in
   Lwt_unix.setsockopt sock Unix.SO_REUSEADDR true;
   Lwt_unix.bind sock sockaddr;
   Lwt_unix.listen sock backlog;
