@@ -375,30 +375,40 @@ val with_file :
       file and passes the channel to [f]. It is ensured that the
       channel is closed when [f ch] terminates (even if it fails). *)
 
-val open_connection : ?buffer_size : int -> Unix.sockaddr -> (input_channel * output_channel) Lwt.t
-  (** [open_connection ?buffer_size addr] opens a connection to
-      the given address and returns two channels for using it.
+val open_connection :
+  ?fd : Lwt_unix.file_descr ->
+  ?buffer_size : int -> Unix.sockaddr -> (input_channel * output_channel) Lwt.t
+(** [open_connection ?fd ?buffer_size addr] opens a connection to the
+    given address and returns two channels for using it. If [fd] is
+    not specified, a fresh one will be used.
 
-      The connection is completly closed when you close both
-      channels.
+    The connection is completly closed when you close both
+    channels.
 
-      @raise Unix.Unix_error on error.
-  *)
+    @raise Unix.Unix_error on error.
+*)
 
-val with_connection : ?buffer_size : int -> Unix.sockaddr -> (input_channel * output_channel -> 'a Lwt.t) -> 'a Lwt.t
-  (** [with_connection ?buffer_size addr f] opens a connection to
+val with_connection :
+  ?fd : Lwt_unix.file_descr ->
+  ?buffer_size : int ->
+  Unix.sockaddr -> (input_channel * output_channel -> 'a Lwt.t) -> 'a Lwt.t
+(** [with_connection ?fd ?buffer_size addr f] opens a connection to
       the given address and passes the channels to [f] *)
 
 type server
   (** Type of a server *)
 
-val establish_server : ?buffer_size : int -> ?backlog : int -> Unix.sockaddr -> (input_channel * output_channel -> unit) -> server
-  (** [establish_server ?buffer_size ?backlog sockaddr f] creates a
-      server which will listen for incoming connections. New
-      connections are passed to [f]. Note that [f] must not raise any
-      exception.
+val establish_server :
+  ?fd : Lwt_unix.file_descr ->
+  ?buffer_size : int ->
+  ?backlog : int ->
+  Unix.sockaddr -> (input_channel * output_channel -> unit) -> server
+(** [establish_server ?fd ?buffer_size ?backlog sockaddr f] creates a
+    server which will listen for incoming connections. New connections
+    are passed to [f]. Note that [f] must not raise any exception. If
+    [fd] is not specified, a fresh file descriptor will be created.
 
-      [backlog] is the argument passed to [Lwt_unix.listen] *)
+    [backlog] is the argument passed to [Lwt_unix.listen] *)
 
 val shutdown_server : server -> unit
   (** Shutdown the given server *)
