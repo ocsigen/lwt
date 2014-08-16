@@ -3,8 +3,9 @@ maintainer: "jeremie@dimino.org"
 version: "dev"
 build: [
   ["./configure"
+    "--prefix" prefix
     "--%{conf-libev:enable}%-libev"
-    "--enable-react"
+    "--%{react:enable}%-react"
     "--%{ssl:enable}%-ssl"
     "--%{base-unix:enable}%-unix"
     "--%{base-unix:enable}%-extra"
