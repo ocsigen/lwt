@@ -85,6 +85,14 @@ Pa_lwt
 Pa_lwt_log
 }
 
+{2 Ppx syntax extension}
+
+This new ppx extension provided by the package {e lwt.ppx} replaces {!Pa_lwt} and {!Pa_lwt_log} using the new ppx mechanism.
+
+{!modules:
+Ppx_lwt
+}
+
 {2 Terminal manipulation}
 
 The package {e lwt.text} provides:

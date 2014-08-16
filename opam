@@ -3,8 +3,9 @@ maintainer: "jeremie@dimino.org"
 version: "dev"
 build: [
   ["./configure"
+    "--prefix" prefix
     "--%{conf-libev:enable}%-libev"
-    "--enable-react"
+    "--%{react:enable}%-react"
     "--%{ssl:enable}%-ssl"
     "--%{base-unix:enable}%-unix"
     "--%{base-unix:enable}%-extra"
@@ -20,6 +21,7 @@ remove: [
 ]
 depends: [
   "ocamlfind" {>= "1.5.0"}
+  "camlp4"
   ## OASIS is not required in released version
   "oasis" {>= "0.4.4"}
 ]
