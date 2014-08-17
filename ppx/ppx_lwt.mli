@@ -20,12 +20,12 @@
  * 02111-1307, USA.
 *)
 
-(** Ppx syntax extension for lwt *)
+(** Ppx syntax extension for Lwt *)
 
 
 (** {2 Ppx extensions}
 
-   This extension add the following extensions and attributes :
+   This extension adds the following syntax:
 
    - lwt-binding:
 
@@ -34,9 +34,9 @@
      code
    ]}
 
-   is the same as [bind (get_char stdin) (fun ch -> code)]
+   is the same as [bind (get_char stdin) (fun ch -> code)].
 
-   Moreover it supports parallel binding:
+   Moreover, it supports parallel binding:
 
    {[
      let%lwt x = do_something1 ()
@@ -44,8 +44,8 @@
      code
    ]}
 
-   will let [do_something1 ()] and [do_something2 ()] runs then
-   bind their result to [x] and [y]. It is the same as:
+   will run [do_something1 ()] and [do_something2 ()], then
+   bind their results to [x] and [y]. It is the same as:
 
    {[
      let t1 = do_something1
@@ -54,11 +54,6 @@
    ]}
 
    - exception catching:
-
-   {[
-     try%lwt
-       <expr>
-   ]},
 
    {[
      try%lwt
@@ -109,9 +104,6 @@
    Note that the [exn -> Lwt.fail exn] branch is automatically added
    when needed.
 
-   The construction [try%lwt <expr>] just catch regular exception
-   into lwt exception. i.e. it is the same as [catch (fun _ -> <expr>) fail].
-
    - assertion:
 
    {[
@@ -151,9 +143,19 @@
        | <patt_n> -> <expr_n>
    ]}
 
+   Exception cases are also supported:
+
+   {[
+     match%lwt <expr> with
+       | exception <exn> -> <expr_1>
+       | <patt_2> -> <expr_2>
+           ...
+       | <patt_n> -> <expr_n>
+   ]}
+
    - exception raising:
 
-   For all other expression, this construction
+   For all other expression, the construct
    {[
      [%lwt <expr>]
    ]}
@@ -163,17 +165,17 @@
      Lwt.catch (fun () -> <expr>) Lwt.fail
    ]}
 
-   It allows to encode the old [raise_lwt <e>] as [[%lwt raise <e>]].
+   It allows to encode the old [raise_lwt <e>] as [[%lwt raise <e>]], and offers a convenient way to interact with non-Lwt code.
 
    {2 Debug}
 
-   By default, the debug mode is enabled. This means that the [backtrace] version of the [bind], [finalize] and [catch] functions are used, which will enable proper backtraces for Lwt exceptions.
+   By default, the debug mode is enabled. This means that the [backtrace] versions of the [bind], [finalize] and [catch] functions are used, enabling proper backtraces for the Lwt exceptions.
 
    The debug mode can be disabled with the option [-no-debug].
 
    {2 Sequence}
 
-   It is also possible to sequence lwt operation with the [>>] operator:
+   It is also possible to sequence Lwt operations with the [>>] operator:
    {[
      write stdio "Hello, " >> write stdio "world!"
    ]}
@@ -208,8 +210,5 @@
    - Debug messages are removed if the option [-no-debug] is passed.
 
    - The log syntax extension can be disabled with the option [-no-log].
-
-
-
 
 *)
