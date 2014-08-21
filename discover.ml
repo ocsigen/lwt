@@ -42,6 +42,7 @@ let default_search_paths =
   List.map (fun dir -> (dir // "include", dir // "lib")) [
     "/usr";
     "/usr/local";
+    "/usr/pkg";
     "/opt";
     "/opt/local";
     "/sw";
