@@ -39,9 +39,10 @@ open Printf
 let ( // ) = Filename.concat
 
 let default_search_paths =
-  List.map (fun dir -> (dir ^ "/include", dir ^ "/lib")) [
+  List.map (fun dir -> (dir // "include", dir // "lib")) [
     "/usr";
     "/usr/local";
+    "/usr/pkg";
     "/opt";
     "/opt/local";
     "/sw";
@@ -61,6 +62,16 @@ let split_path str =
   in
   aux 0
 
+let rec replace_last path ~patt ~repl =
+  let comp = Filename.basename path
+  and parent = Filename.dirname path in
+  if comp = patt then
+    parent // repl
+  else if parent = path then
+    path
+  else
+    (replace_last parent ~patt ~repl) // comp
+
 let search_paths =
   let get var f =
     try
@@ -69,8 +80,8 @@ let search_paths =
       []
   in
   List.flatten [
-    get "C_INCLUDE_PATH" (fun dir -> (dir, dir // ".." // "lib"));
-    get "LIBRARY_PATH" (fun dir -> (dir // ".." // "include", dir));
+    get "C_INCLUDE_PATH" (fun dir -> (dir, replace_last dir ~patt:"include" ~repl:"lib"));
+    get "LIBRARY_PATH" (fun dir -> (replace_last dir ~patt:"lib" ~repl:"include", dir));
     default_search_paths;
   ]
 
