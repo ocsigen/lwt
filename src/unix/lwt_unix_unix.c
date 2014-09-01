@@ -1911,7 +1911,6 @@ static value alloc_servent(struct servent *entry)
         break;                                                          \
       case ENOENT:                                                      \
       default:                                                          \
-        free(job->buffer);                                              \
         job->ptr = NULL;                                                \
         return;                                                         \
       }                                                                 \
