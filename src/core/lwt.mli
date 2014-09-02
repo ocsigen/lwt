@@ -32,7 +32,7 @@
     Lwt threads are cooperative in the sense that switching to another
     thread is awlays explicit (with {!wakeup} or {!wakeup_exn}). When a
     thread is running, it executes as much as possible, and then
-    returns (a value or an eror) or sleeps.
+    returns (a value or an error) or sleeps.
 
     Note that inside a Lwt thread, exceptions must be raised with
     {!fail} instead of [raise]. Also the [try ... with ...]
@@ -70,7 +70,7 @@ val bind : 'a t -> ('a -> 'b t) -> 'b t
       Note that [bind] is also often used just for synchronization
       purpose: [t'] will not execute before [t] is terminated.
 
-      The result of a thread can be bound several time. *)
+      The result of a thread can be bound several times. *)
 
 val (>>=) : 'a t -> ('a -> 'b t) -> 'b t
   (** [t >>= f] is an alternative notation for [bind t f]. *)
@@ -79,7 +79,7 @@ val (=<<) : ('a -> 'b t) -> 'a t -> 'b t
   (** [f =<< t] is [t >>= f] *)
 
 val map : ('a -> 'b) -> 'a t -> 'b t
-  (** [map f m] map the result of a thread. This is the same as [bind
+  (** [map f m] maps the result of a thread. This is the same as [bind
       m (fun x -> return (f x))] *)
 
 val (>|=) : 'a t -> ('a -> 'b) -> 'b t
@@ -109,7 +109,7 @@ val return_false : bool t
 
 type 'a key
   (** Type of a key. Keys are used to store local values into
-      threads *)
+      threads. *)
 
 val new_key : unit -> 'a key
   (** [new_key ()] creates a new key. *)
@@ -120,8 +120,7 @@ val get : 'a key -> 'a option
 
 val with_value : 'a key -> 'a option -> (unit -> 'b) -> 'b
   (** [with_value key value f] executes [f] with [value] associated to
-      [key]. The previous value associated to [key] is restored after
-      [f] terminates. *)
+      [key]. [key] is restored to its previous value after [f] terminates. *)
 
 (** {2 Exceptions handling} *)
 
@@ -141,8 +140,9 @@ val finalize : (unit -> 'a t) -> (unit -> unit t) -> 'a t
       fails or not. In both cases, [g ()] is executed after [f]. *)
 
 val wrap : (unit -> 'a) -> 'a t
-  (** [wrap f] calls [f] and transform the result into a monad. If [f]
-      raise an exception, it is catched by Lwt.
+  (** [wrap f] calls [f] and transforms the result into an Lwt thread.
+      If [f] raises an exception, it is caught and converted to an Lwt
+      exception.
 
       This is actually the same as:
 
@@ -162,13 +162,13 @@ val wrap1 : ('a -> 'b) -> 'a -> 'b t
       Note that you must use {!wrap} instead of {!wrap1} if the
       evaluation of [x] may raise an exception.
 
-      for example the following code is not ok:
+      For example, the following code is incorrect:
 
       {[
         wrap1 f (Hashtbl.find table key)
       ]}
 
-      you should write instead:
+      and should be written as:
 
       {[
         wrap (fun () -> f (Hashtbl.find table key))
@@ -186,7 +186,7 @@ val wrap7 : ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) -> 'a -> 'b -> 'c -> 
 
 val choose : 'a t list -> 'a t
   (** [choose l] behaves as the first thread in [l] to terminate.  If
-      several threads are already terminated, one is choosen at
+      several threads are already terminated, one is chosen at
       random.
 
       Note: {!choose} leaves the local values of the current thread
