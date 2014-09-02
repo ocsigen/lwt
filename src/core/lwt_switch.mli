@@ -66,7 +66,9 @@
     {[
       let switch = Lwt_switch.create () in
       try_lwt
-        lwt idf = f ~switch () and idg = g ~switch () and idh = h ~switch () in
+        lwt idf = f ~switch ()
+        and idg = g ~switch ()
+        and idh = h ~switch () in
         ...
       with exn ->
         lwt () = Lwt_switch.turn_off switch in
