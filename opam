@@ -12,6 +12,7 @@ remove: [
 depends: [
   "ocamlfind"
   "oasis"
+  "camlp4"
 ]
 depopts: [
   "base-threads"
