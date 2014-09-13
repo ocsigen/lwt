@@ -1,5 +1,5 @@
 (* Lightweight thread library for OCaml
- * http://www.output_channelsigen.org/lwt
+ * http://www.ocsigen.org/lwt
  * Module Lwt_process
  * Copyright (C) 2009 Jérémie Dimino
  *
@@ -22,7 +22,7 @@
 
 (** Process management *)
 
-(** This modules allow you to spawn processes and communicate with them. *)
+(** This modules allows you to spawn processes and communicate with them. *)
 
 type command = string * string array
     (** A command. The first field is the name of the executable and
@@ -59,7 +59,7 @@ val shell : string -> command
   (** A command executed with the shell. (with ["/bin/sh -c <cmd>"] on
       Unix and ["cmd.exe /c <cmd>"] on Windows). *)
 
-(** All the following functions take an optionnal argument
+(** All the following functions take an optional argument
     [timeout]. If specified, after expiration, the process will be
     sent a [Unix.sigkill] signal and channels will be closed. *)
 
@@ -67,7 +67,7 @@ val shell : string -> command
 
 (** {3 Redirections} *)
 
-(** A file descriptor redirection. It describe how standard file
+(** A file descriptor redirection. It describes how standard file
     descriptors are redirected in the child process. *)
 type redirection =
     [ `Keep
@@ -83,7 +83,7 @@ type redirection =
         (** The file descriptor is replaced by the given one, which is
             then closed. *) ]
 
-(** Note: all optionnal redirection argumetns default to [`Keep] *)
+(** Note: all optional redirection arguments default to [`Keep] *)
 
 (** {3 Executing} *)
 
@@ -202,7 +202,7 @@ object
 
   method terminate : unit
     (** Terminates the process. It is equivalent to [kill Sys.sigkill]
-        on Unix but also works on windows (unlike {!kill}). *)
+        on Unix but also works on Windows (unlike {!kill}). *)
 
   method status : Unix.process_status Lwt.t
     (** Threads which wait for the sub-process to exit then returns its
@@ -213,7 +213,7 @@ object
         its resource usages *)
 
   method close : Unix.process_status Lwt.t
-    (** Closes the process and returns its exit status. This close all
+    (** Closes the process and returns its exit status. This closes all
         channels used to communicate with the process *)
 end
 
