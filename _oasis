@@ -329,7 +329,7 @@ Executable "ppx_lwt"
   Path: ppx
   MainIs: ppx_lwt_ex.ml
   BuildDepends: compiler-libs.common, ppx_tools.metaquot
-  CompiledObject: byte # should be best, necessary for tests.
+  CompiledObject: best
 
 # +-------------------------------------------------------------------+
 # | Toplevel                                                          |
@@ -456,8 +456,6 @@ Executable test_ppx
   CompiledObject: best
   MainIs: main.ml
   BuildTools: ppx_lwt
-  NativeOpt: -ppx ppx/ppx_lwt_ex.byte # hacky, $ppx_lwt doesn't work.
-  ByteOpt: -ppx ppx/ppx_lwt_ex.byte
   BuildDepends: test, lwt, lwt.unix
 
 Test core

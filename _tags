@@ -23,5 +23,8 @@
 <**/*.c>: use_lwt_headers
 <**/*.h>: use_lwt_headers
 
+# Ppx tests
+<tests/ppx/*>: use_ppx_lwt
+
 # OASIS_START
 # OASIS_STOP
