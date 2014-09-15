@@ -22,7 +22,7 @@
 
 (** Process management *)
 
-(** This modules allows you to spawn processes and communicate with them. *)
+(** This module allows you to spawn processes and communicate with them. *)
 
 type command = string * string array
     (** A command. The first field is the name of the executable and
