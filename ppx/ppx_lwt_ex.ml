@@ -189,14 +189,10 @@ let lwt_expression mapper ({ pexp_attributes } as exp) =
        ]
      in mapper.expr mapper { new_exp with pexp_attributes }
 
-  (** [try%lwt $e$ with [%finally] -> $f$] ≡
-      [Lwt.finalize (fun () -> $e$) (fun () -> $f$)],
-      [try%lwt $e$ with $c$] ≡
-      [Lwt.catch (fun () -> $e$) (function $c$)],
-      [try%lwt $e$ with $c$ | [%finally] -> $f$] ≡
-      [Lwt.try_bind (fun () -> $e$)
-          (fun __pa_lwt_x -> Lwt.bind $f$ (fun () -> Lwt.return __pa_lwt_x))
-          (fun __pa_lwt_e -> Lwt.bind $f$ (fun () -> match __pa_lwt_e with $c$))]. *)
+
+  (** [try%lwt $e$ with $c$] ≡
+      [Lwt.catch (fun () -> $e$) (function $c$)]
+  *)
   | Pexp_try (expr, cases) ->
     let has_wildcard =
       cases |> List.exists (fun case ->
@@ -204,53 +200,17 @@ let lwt_expression mapper ({ pexp_attributes } as exp) =
         | Ppat_any | Ppat_var _ -> true
         | _ -> false)
     in
-    let cases, finally =
-      (List.fold_right (fun case (cases, finally) ->
-        match finally, case.pc_lhs with
-        | None, [%pat? [%finally]] ->
-          begin match case.pc_guard with
-          | Some { pexp_loc = loc } ->
-            raise Location.(Error (error ~loc "Finally clauses cannot have guards"))
-          | None -> cases, Some case.pc_rhs
-          end
-        | Some _, [%pat? [%finally]] ->
-          raise Location.(Error (error ~loc:case.pc_lhs.ppat_loc
-                                      "There can only be one finally clause"))
-        | _ -> case :: cases, finally)) cases ([], None)
-    in
     let cases =
       if not has_wildcard
       then cases @ [Exp.case [%pat? exn] [%expr Lwt.fail exn]]
       else cases
     in
     let new_exp =
-      match cases, finally with
-      | [], Some final ->
-        if !debug then
-          [%expr Lwt.backtrace_finalize (fun exn -> try raise exn with exn -> exn)
-                    (fun () -> [%e expr]) (fun () -> [%e final])]
-        else
-          [%expr Lwt.finalize (fun () -> [%e expr]) (fun () -> [%e final])]
-      | cases, None ->
-        if !debug then
-          [%expr Lwt.backtrace_catch (fun exn -> try raise exn with exn -> exn)
-                    (fun () -> [%e expr]) [%e Exp.function_ cases]]
-        else
-          [%expr Lwt.catch (fun () -> [%e expr]) [%e Exp.function_ cases]]
-      | cases, Some final ->
-        if !debug then
-          [%expr Lwt.backtrace_try_bind (fun exn -> try raise exn with exn -> exn)
-                    (fun () -> [%e expr])
-                    (fun __pa_lwt_x -> Lwt.backtrace_bind (fun exn -> try raise exn with exn -> exn)
-                                          [%e final] (fun () -> Lwt.return __pa_lwt_x))
-                    (fun __pa_lwt_e -> Lwt.backtrace_bind (fun exn -> try raise exn with exn -> exn)
-                                          [%e final] (fun () ->
-                                            [%e Exp.match_ [%expr __pa_lwt_e] cases]))]
-        else
-          [%expr Lwt.try_bind (fun () -> [%e expr])
-                    (fun __pa_lwt_x -> Lwt.bind [%e final] (fun () -> Lwt.return __pa_lwt_x))
-                    (fun __pa_lwt_e -> Lwt.bind [%e final] (fun () ->
-                                          [%e Exp.match_ [%expr __pa_lwt_e] cases]))]
+      if !debug then
+        [%expr Lwt.backtrace_catch (fun exn -> try raise exn with exn -> exn)
+               (fun () -> [%e expr]) [%e Exp.function_ cases]]
+      else
+        [%expr Lwt.catch (fun () -> [%e expr]) [%e Exp.function_ cases]]
     in
     mapper.expr mapper { new_exp with pexp_attributes }
 
@@ -337,6 +297,33 @@ let lwt_mapper args =
       match expr with
       | [%expr [%lwt [%e? exp]]] ->
         lwt_expression mapper exp
+
+
+      (** [($e$)[%finally $f$]] ≡
+          [Lwt.finalize (fun () -> $e$) (fun () -> $f$)] *)
+      | [%expr [%e? exp ] [%finally     [%e? finally]] ]
+      | [%expr [%e? exp ] [%lwt.finally [%e? finally]] ] ->
+        let new_exp =
+          if !debug then
+            [%expr Lwt.backtrace_finalize (fun exn -> try raise exn with exn -> exn)
+                   (fun () -> [%e exp]) (fun () -> [%e finally])]
+          else
+            [%expr Lwt.finalize (fun () -> [%e exp]) (fun () -> [%e finally])]
+        in
+        mapper.expr mapper
+          { new_exp with
+            pexp_attributes = expr.pexp_attributes @ exp.pexp_attributes
+          }
+
+      | [%expr [%finally     [%e? _ ]]]
+      | [%expr [%lwt.finally [%e? _ ]]] ->
+        raise (Location.Error (
+           Location.errorf
+              ~loc:expr.pexp_loc
+              "Lwt's finally should be used only with the syntax: \"(<expr>)[%%finally ...]\"."
+          ))
+
+
       | [%expr [%e? lhs] >> [%e? rhs]] ->
         if !sequence then
           let pat = if !strict_seq then [%pat? ()] else [%pat? _] in

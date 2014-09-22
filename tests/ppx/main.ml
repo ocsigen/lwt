@@ -108,11 +108,12 @@ let suite = suite "ppx" [
     test "finally body"
       (fun () ->
          let x = ref false in
-         begin try%lwt
-           return_unit
-         with
-         | _ -> return_unit
-         | [%finally] -> x := true; return_unit
+         begin
+           (try%lwt
+             return_unit
+            with
+              | _ -> return_unit
+           ) [%finally x := true; return_unit]
          end >>= fun () ->
          return !x
       ) ;
@@ -120,11 +121,12 @@ let suite = suite "ppx" [
     test "finally exn"
       (fun () ->
          let x = ref false in
-         begin try%lwt
-           raise Not_found
-         with
-         | _ -> return_unit
-         | [%finally] -> x := true; return_unit
+         begin
+           (try%lwt
+             raise Not_found
+            with
+              | _ -> return_unit
+           ) [%finally x := true; return_unit]
          end >>= fun () ->
          return !x
       ) ;
@@ -133,11 +135,8 @@ let suite = suite "ppx" [
       (fun () ->
          let x = ref false in
          try%lwt
-           begin try%lwt
-             raise Not_found
-           with
-           | [%finally] -> x := true; return_unit
-           end >>= fun () ->
+           ( raise Not_found )[%finally x := true; return_unit]
+           >>= fun () ->
            return false
          with Not_found ->
            return !x

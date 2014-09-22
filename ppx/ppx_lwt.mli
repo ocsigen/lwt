@@ -60,22 +60,6 @@
        <expr>
      with
        <branches>
-   ]},
-
-   {[
-     try%lwt
-       <expr>
-     with [%finally] -> <expr>
-   ]}
-
-   and
-
-   {[
-     try%lwt
-       <expr>
-     with
-       <branches>
-       | [%finally] -> <expr>
    ]}
 
    For example:
@@ -103,6 +87,15 @@
 
    Note that the [exn -> Lwt.fail exn] branch is automatically added
    when needed.
+
+   - finalizer:
+
+   {[
+     (<expr>) [%finally <expr>]
+   ]}
+
+   You can use [[%lwt.finally ...]] instead of [[%finally ...]].
+
 
    - assertion:
 
