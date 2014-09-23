@@ -90,8 +90,9 @@ let gen_top_binds vbs =
 (** For expressions only *)
 (* We only expand the first level after a %lwt.
    After that, we call the mapper to expand sub-expressions. *)
-let lwt_expression mapper ({ pexp_attributes } as exp) =
+let lwt_expression mapper exp attributes =
   default_loc := exp.pexp_loc;
+  let pexp_attributes = attributes @ exp.pexp_attributes in
   match exp.pexp_desc with
 
   (** [let%lwt $p$ = $e$ in $e'$] ≡ [Lwt.bind $e$ (fun $p$ -> $e'$)] *)
@@ -296,7 +297,7 @@ let lwt_mapper args =
     expr = (fun mapper expr ->
       match expr with
       | [%expr [%lwt [%e? exp]]] ->
-        lwt_expression mapper exp
+        lwt_expression mapper exp expr.pexp_attributes
 
 
       (** [($e$)[%finally $f$]] ≡
