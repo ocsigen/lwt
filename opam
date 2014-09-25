@@ -24,6 +24,7 @@ depends: [
   "camlp4"
   ## OASIS is not required in released version
   "oasis" {>= "0.4.4"}
+  ( "base-no-ppx" | "ppx_tools" )
 ]
 depopts: [
   "base-threads"
@@ -33,7 +34,6 @@ depopts: [
   "lablgtk"
   "text"
   "react"
-  "ppx_tools"
 ]
 conflicts: [
   "react" {< "1.0.0" }
