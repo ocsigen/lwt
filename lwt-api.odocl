@@ -1,0 +1,43 @@
+# OASIS_START
+# DO NOT EDIT (digest: a790eacd71b4379186d86905c10c60d3)
+src/core/Lwt_condition
+src/core/Lwt_list
+src/core/Lwt
+src/core/Lwt_mutex
+src/core/Lwt_mvar
+src/core/Lwt_pool
+src/core/Lwt_sequence
+src/core/Lwt_stream
+src/core/Lwt_switch
+src/core/Lwt_util
+src/core/Lwt_pqueue
+src/extra/Lwt_lib
+src/glib/Lwt_glib
+src/preemptive/Lwt_preemptive
+src/react/Lwt_event
+src/react/Lwt_signal
+src/react/Lwt_react
+src/ssl/Lwt_ssl
+src/text/Lwt_text
+src/text/Lwt_term
+src/text/Lwt_read_line
+src/top/Lwt_top
+src/logger/Lwt_log_core
+src/logger/Lwt_log_rules
+src/unix/Lwt_chan
+src/unix/Lwt_daemon
+src/unix/Lwt_gc
+src/unix/Lwt_io
+src/unix/Lwt_log
+src/unix/Lwt_main
+src/unix/Lwt_process
+src/unix/Lwt_throttle
+src/unix/Lwt_timeout
+src/unix/Lwt_unix
+src/unix/Lwt_sys
+src/unix/Lwt_engine
+src/unix/Lwt_bytes
+syntax/Pa_lwt
+syntax/Pa_lwt_log
+ppx/Ppx_lwt
+# OASIS_STOP
