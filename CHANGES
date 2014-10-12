@@ -1,5 +1,17 @@
+===== 2.4.6 (2014-10-12) =====
+
+  * Add a ppx syntax extension
+  * Add a ?fd argument to
+    Lwt_io.{open_connection,with_connection,establish_server}.
+  * Fix stub for getaddrinfo and getprotobyname
+  * Windows fix: don't throw an exception in the notification handler
+    if we're shutting down
+  * Fix include file search in ./configure
+  * ./configure fixes for windows
+  * Fix: use sys_exit instead of exit when Unix.execv fails
+
 ===== 2.4.5 (2014-04-21) =====
- 
+
   * Lwt_ssl: expand API to allow setting socket options with Ssl
     functions
   * fix for camlp4 trunk
