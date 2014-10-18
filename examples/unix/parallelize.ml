@@ -23,14 +23,14 @@
 (* Reads commands from standard input and launch them in parallel,
    using as many processes as the number of CPUs. *)
 
-open Lwt
+open Lwt.Infix
 
 (* Reads one command, launch it and waits for when it termination,
    then start again: *)
 let rec launch () =
   match_lwt Lwt_io.read_line_opt Lwt_io.stdin with
     | None ->
-        return ()
+        Lwt.return ()
     | Some line ->
         lwt exit_status = Lwt_process.exec (Lwt_process.shell line) in
         launch ()
@@ -39,7 +39,7 @@ let rec launch () =
    CPUs: *)
 let rec create_threads = function
   | 0 ->
-      return ()
+      Lwt.return ()
   | n ->
       launch () <&> create_threads (n - 1)
 

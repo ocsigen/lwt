@@ -22,7 +22,7 @@
 
 (* A simple graphical telnet. *)
 
-open Lwt
+open Lwt.Infix
 
 (* +-----------------------------------------------------------------+
    | Utils                                                           |
@@ -62,7 +62,7 @@ let read ic (view : GText.view) =
     loop ()
   with Unix.Unix_error (error, _, _) ->
     show_error "reading error: %s" (Unix.error_message error);
-    return ()
+    Lwt.return ()
 
 (* Function called when the user active the [connect] menu
    item. [view] is the text view used to display data received from
@@ -80,20 +80,20 @@ let connect (view : GText.view) =
   port#adjustment#set_bounds ~lower:0. ~upper:(float max_int) ~step_incr:1. ();
 
   (* Thread waiting for the popup to be closed. *)
-  let waiter, wakener = wait () in
+  let waiter, wakener = Lwt.wait () in
 
   (* Wakeup the thread when the popup is closed. *)
-  ignore (dialog#connect#response (wakeup wakener));
+  ignore (dialog#connect#response (Lwt.wakeup wakener));
 
   dialog#show ();
 
   ignore (
     match_lwt waiter with
       | `DELETE_EVENT ->
-          return ()
+          Lwt.return ()
       | `CANCEL ->
           dialog#destroy ();
-          return ()
+          Lwt.return ()
       | `OK ->
           let host = host#text and port = int_of_float port#value in
           dialog#destroy ();
@@ -102,34 +102,34 @@ let connect (view : GText.view) =
             lwt entry = Lwt_unix.gethostbyname host in
             if Array.length entry.Unix.h_addr_list = 0 then begin
               show_error "no address found for host %S" host;
-              return ()
+              Lwt.return ()
             end else begin
               lwt ic, oc = Lwt_io.open_connection (Unix.ADDR_INET (entry.Unix.h_addr_list.(0), port)) in
               (* Close the previous connection. *)
               lwt () =
                 match !connection with
                   | None ->
-                      return ()
+                      Lwt.return ()
                   | Some (ic, oc, thread) ->
-                      cancel thread;
+                      Lwt.cancel thread;
                       try_lwt
                         Lwt_io.close ic <&> Lwt_io.close oc
                       with Unix.Unix_error (error, _, _) ->
                         show_error "cannot close the connection: %s" (Unix.error_message error);
-                        return ()
+                        Lwt.return ()
               in
               (* Clear the buffer. *)
               view#buffer#delete view#buffer#start_iter view#buffer#end_iter;
               connection := Some (ic, oc, read ic view);
-              return ()
+              Lwt.return ()
             end
           with
             | Unix.Unix_error (error, _, _) ->
                 show_error "cannot establish the connection: %s" (Unix.error_message error);
-                return ()
+                Lwt.return ()
             | Not_found ->
                 show_error "host %S not found" host;
-                return ()
+                Lwt.return ()
   )
 
 (* Send some data. *)
@@ -144,7 +144,7 @@ let write (view : GText.view) (entry : GEdit.entry) =
             Lwt_io.write_line oc text
           with Unix.Unix_error (error, _, _) ->
             show_error "cannot send line: %s" (Unix.error_message error);
-            return ()
+            Lwt.return ()
         )
     | None ->
         show_error "not connected"
@@ -203,11 +203,11 @@ lwt () =
      ());
 
   (* Thread waiting for the main window to be closed. *)
-  let waiter, wakener = wait () in
+  let waiter, wakener = Lwt.wait () in
 
   (* Setup callbacks. *)
-  ignore (window#connect#destroy (wakeup wakener));
-  ignore (menu_quit#connect#activate (wakeup wakener));
+  ignore (window#connect#destroy (Lwt.wakeup wakener));
+  ignore (menu_quit#connect#activate (Lwt.wakeup wakener));
   ignore (menu_connect#connect#activate (fun () -> connect view));
   ignore (entry#connect#activate (fun () -> write view entry));
   ignore (send#connect#clicked (fun () -> write view entry));
