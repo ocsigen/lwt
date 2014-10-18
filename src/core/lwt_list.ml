@@ -20,8 +20,7 @@
  * 02111-1307, USA.
  *)
 
-let (>>=) = Lwt.(>>=)
-let (>|=) = Lwt.(>|=)
+open Lwt.Infix
 
 let rec iter_s f l =
   match l with

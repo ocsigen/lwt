@@ -21,8 +21,7 @@
  * 02111-1307, USA.
  *)
 
-let (>>=) = Lwt.(>>=)
-let (>|=) = Lwt.(>|=)
+open Lwt.Infix
 
 let rec iter f l =
   let l = List.fold_left (fun acc a -> f a :: acc) [] l in

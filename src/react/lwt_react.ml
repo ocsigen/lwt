@@ -7,7 +7,7 @@
  * This file is a part of lwt.
  *)
 
-let (>>=) = Lwt.(>>=)
+open Lwt.Infix
 
 type 'a event = 'a React.event
 type 'a signal = 'a React.signal

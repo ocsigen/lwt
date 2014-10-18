@@ -21,7 +21,7 @@
  * 02111-1307, USA.
  *)
 
-let (>>=) = Lwt.(>>=)
+open Lwt.Infix
 
 type t = { mutable locked : bool; mutable waiters : unit Lwt.u Lwt_sequence.t  }
 

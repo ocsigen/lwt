@@ -20,8 +20,7 @@
  * 02111-1307, USA.
  *)
 
-let (>>=) = Lwt.(>>=)
-let (>|=) = Lwt.(>|=)
+open Lwt.Infix
 
 exception Closed
 exception Full

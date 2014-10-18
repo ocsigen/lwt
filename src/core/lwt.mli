@@ -428,6 +428,28 @@ val on_any : 'a t -> ('a -> unit) -> (exn -> unit) -> unit
       or [g] raises an exception it is given to
       {!async_exception_hook}. *)
 
+(** Infix operators. You should open only this module. *)
+module Infix : sig
+
+  val (>>=) : 'a t -> ('a -> 'b t) -> 'b t
+  (** [t >>= f] is an alternative notation for [bind t f]. *)
+
+  val (=<<) : ('a -> 'b t) -> 'a t -> 'b t
+  (** [f =<< t] is [t >>= f] *)
+
+  val (>|=) : 'a t -> ('a -> 'b) -> 'b t
+  (** [m >|= f] is [map f m] *)
+
+  val (=|<) : ('a -> 'b) -> 'a t -> 'b t
+  (** [f =|< m] is [map f m] *)
+
+  val ( <?> ) : 'a t -> 'a t -> 'a t
+  (** [t <?> t'] is the same as [choose [t; t']] *)
+
+  val ( <&> ) : unit t -> unit t -> unit t
+  (** [t <&> t'] is the same as [join [t; t']] *)
+end
+
 (**/**)
 
 (* The functions below are probably not useful for the casual user.
