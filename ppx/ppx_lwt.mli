@@ -204,4 +204,10 @@
 
    - The log syntax extension can be disabled with the option [-no-log].
 
+   {2 [Lwt.return] rewriting}
+
+   If you pass the option [-rewrite-return], [Lwt.return ()] (resp. [None], [[]], [true] and [false]) will be rewritten [Lwt.return_unit] (resp. [none], [nil], [true] and [false]).
+
+   Note: The pattern recognition is purely syntactic. [Lwt.return @@ ()] will not be rewritten.
+
 *)
