@@ -33,7 +33,7 @@ let rec write_exactly fd buf ofs len =
   lwt n = Lwt_bytes.write fd buf ofs len in
   if n = len then
     (* Everything has been written, do nothing. *)
-    Lwt.return ()
+    Lwt.return_unit
   else
     (* Write remaining data. *)
     write_exactly fd buf (ofs + n) (len - n)
@@ -55,7 +55,7 @@ let relay in_fd out_fd =
     if Queue.is_empty queue then
       if !end_of_input then
         (* End of input reached, exit. *)
-        Lwt.return ()
+        Lwt.return_unit
       else
         (* There is no data pending, wait for some. *)
         lwt () = Lwt_condition.wait cond in
@@ -149,7 +149,7 @@ lwt () =
 
     ignore (Lwt_log.notice "done relayling");
 
-    Lwt.return ()
+    Lwt.return_unit
 
   with exn ->
     ignore (Lwt_log.error ~exn "something went wrong");

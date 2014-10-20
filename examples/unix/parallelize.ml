@@ -30,7 +30,7 @@ open Lwt.Infix
 let rec launch () =
   match_lwt Lwt_io.read_line_opt Lwt_io.stdin with
     | None ->
-        Lwt.return ()
+        Lwt.return_unit
     | Some line ->
         lwt exit_status = Lwt_process.exec (Lwt_process.shell line) in
         launch ()
@@ -39,7 +39,7 @@ let rec launch () =
    CPUs: *)
 let rec create_threads = function
   | 0 ->
-      Lwt.return ()
+      Lwt.return_unit
   | n ->
       launch () <&> create_threads (n - 1)
 

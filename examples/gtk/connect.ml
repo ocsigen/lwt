@@ -62,7 +62,7 @@ let read ic (view : GText.view) =
     loop ()
   with Unix.Unix_error (error, _, _) ->
     show_error "reading error: %s" (Unix.error_message error);
-    Lwt.return ()
+    Lwt.return_unit
 
 (* Function called when the user active the [connect] menu
    item. [view] is the text view used to display data received from
@@ -90,10 +90,10 @@ let connect (view : GText.view) =
   ignore (
     match_lwt waiter with
       | `DELETE_EVENT ->
-          Lwt.return ()
+          Lwt.return_unit
       | `CANCEL ->
           dialog#destroy ();
-          Lwt.return ()
+          Lwt.return_unit
       | `OK ->
           let host = host#text and port = int_of_float port#value in
           dialog#destroy ();
@@ -102,34 +102,34 @@ let connect (view : GText.view) =
             lwt entry = Lwt_unix.gethostbyname host in
             if Array.length entry.Unix.h_addr_list = 0 then begin
               show_error "no address found for host %S" host;
-              Lwt.return ()
+              Lwt.return_unit
             end else begin
               lwt ic, oc = Lwt_io.open_connection (Unix.ADDR_INET (entry.Unix.h_addr_list.(0), port)) in
               (* Close the previous connection. *)
               lwt () =
                 match !connection with
                   | None ->
-                      Lwt.return ()
+                      Lwt.return_unit
                   | Some (ic, oc, thread) ->
                       Lwt.cancel thread;
                       try_lwt
                         Lwt_io.close ic <&> Lwt_io.close oc
                       with Unix.Unix_error (error, _, _) ->
                         show_error "cannot close the connection: %s" (Unix.error_message error);
-                        Lwt.return ()
+                        Lwt.return_unit
               in
               (* Clear the buffer. *)
               view#buffer#delete view#buffer#start_iter view#buffer#end_iter;
               connection := Some (ic, oc, read ic view);
-              Lwt.return ()
+              Lwt.return_unit
             end
           with
             | Unix.Unix_error (error, _, _) ->
                 show_error "cannot establish the connection: %s" (Unix.error_message error);
-                Lwt.return ()
+                Lwt.return_unit
             | Not_found ->
                 show_error "host %S not found" host;
-                Lwt.return ()
+                Lwt.return_unit
   )
 
 (* Send some data. *)
@@ -144,7 +144,7 @@ let write (view : GText.view) (entry : GEdit.entry) =
             Lwt_io.write_line oc text
           with Unix.Unix_error (error, _, _) ->
             show_error "cannot send line: %s" (Unix.error_message error);
-            Lwt.return ()
+            Lwt.return_unit
         )
     | None ->
         show_error "not connected"

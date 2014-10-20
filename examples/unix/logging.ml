@@ -53,7 +53,7 @@ lwt () =
   lwt () =
     try
       h ();
-      Lwt.return ()
+      Lwt.return_unit
     with exn ->
       Lwt_log.error ~section ~exn "h failed with"
   in
