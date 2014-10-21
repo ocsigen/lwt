@@ -91,13 +91,6 @@ Flag pthread
 # | Libraries                                                         |
 # +-------------------------------------------------------------------+
 
-Library "optcomp"
-  Install: false
-  Build$: flag(syntax) || flag(all)
-  Path: syntax
-  Modules: Pa_optcomp
-  BuildDepends: camlp4, camlp4.quotations.o
-
 Library "lwt"
   Path: src/core
   Modules:

@@ -607,15 +607,8 @@ Lwt can use pthread or the win32 API.
 
   if !os_type = "Win32" then begin
     output_string config "#define LWT_ON_WINDOWS\n";
-    output_string config_ml "#let windows=true\n"
   end else begin
     output_string config "//#define LWT_ON_WINDOWS\n";
-    output_string config_ml "#let windows=false\n"
-  end;
-  if !android_target then begin
-    output_string config_ml "#let android=true\n"
-  end else begin
-    output_string config_ml "#let android=false\n"
   end;
   if !android_target then begin
     output_string config_ml "let android = true\n"

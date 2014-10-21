@@ -76,7 +76,6 @@ let () =
              let env = BaseEnvLight.load ~allow_empty:true ~filename:MyOCamlbuildBase.env_filename () in
 
              dep ["file:src/unix/lwt_unix_stubs.c"] ["src/unix/lwt_unix_unix.c"; "src/unix/lwt_unix_windows.c"];
-             dep ["pa_optcomp"] ["src/unix/lwt_config.ml"];
 
              (* Internal syntax extension *)
              List.iter
@@ -86,13 +85,7 @@ let () =
                   flag ["ocaml"; "ocamldep"; tag] & S[A"-ppopt"; A file];
                   flag ["ocaml"; "doc"; tag] & S[A"-ppopt"; A file];
                   dep ["ocaml"; "ocamldep"; tag] [file])
-               ["lwt_options"; "lwt"; "lwt_log"; "optcomp"];
-
-             (* Optcomp for .mli *)
-             flag ["ocaml"; "compile"; "pa_optcomp_standalone"] & S[A"-pp"; A "./syntax/optcomp.byte"];
-             flag ["ocaml"; "ocamldep"; "pa_optcomp_standalone"] & S[A"-pp"; A "./syntax/optcomp.byte"];
-             flag ["ocaml"; "doc"; "pa_optcomp_standalone"] & S[A"-pp"; A "./syntax/optcomp.byte"];
-             dep ["ocaml"; "ocamldep"; "pa_optcomp_standalone"] ["syntax/optcomp.byte"];
+               ["lwt_options"; "lwt"; "lwt_log"];
 
              (* Use byte or native ppx, depending of Oasis variable. *)
              let native_suffix =
