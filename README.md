@@ -16,7 +16,6 @@ This library is part of the Ocsigen project. See:
  * [optional] ppx_tools (from http://github.com/alainfrisch/ppx_tools)
  * [optional] react (from http://erratique.ch/software/react)
  * [optional] libev (from http://software.schmorp.de/pkg/libev.html)
- * [optional] ocaml-text
  * [optional] ocamlssl (>= 0.4.0) (ocamlssl needs openssl) (>= 0.4.1 for MacOS)
  * [optional] glib-2.0 development files and pkg-config
 

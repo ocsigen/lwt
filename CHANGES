@@ -1,6 +1,6 @@
 ===== next =====
 
-  * Remove deprecated lwt.top library.
+  * Remove deprecated lwt.text and lwt.top libraries.
   * Remove deprecated Lwt_signal and Lwt_event modules from
     lwt.react.
 
