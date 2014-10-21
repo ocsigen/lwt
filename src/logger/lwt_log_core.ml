@@ -228,7 +228,7 @@ let make ~output ~close =
   {
     lg_closed = false;
     lg_output = output;
-    lg_close = Lazy.lazy_from_fun close;
+    lg_close  = Lazy.from_fun close;
   }
 
 let broadcast loggers =
