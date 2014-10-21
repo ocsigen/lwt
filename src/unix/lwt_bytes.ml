@@ -21,8 +21,6 @@
  * 02111-1307, USA.
  *)
 
-#include "src/unix/lwt_config.ml"
-
 open Bigarray
 open Lwt
 

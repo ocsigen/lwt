@@ -20,8 +20,6 @@
  * 02111-1307, USA.
  *)
 
-#include "src/unix/lwt_config.ml"
-
 open Lwt
 
 type command = string * string array

@@ -617,6 +617,11 @@ Lwt can use pthread or the win32 API.
   end else begin
     output_string config_ml "#let android=false\n"
   end;
+  if !android_target then begin
+    output_string config_ml "let android = true\n"
+  end else begin
+    output_string config_ml "let android = false\n"
+  end;
   if !libev_default then begin
     output_string config_ml "let libev_default = true\n"
   end else begin

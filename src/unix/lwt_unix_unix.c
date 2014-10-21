@@ -548,11 +548,6 @@ value lwt_unix_wait4(value flags, value pid_req)
   CAMLreturn(res);
 }
 
-value lwt_unix_has_wait4(value unit)
-{
-  return Val_int(1);
-}
-
 #endif
 
 /* +-----------------------------------------------------------------+
@@ -1549,6 +1544,10 @@ CAMLprim value lwt_unix_getlogin_job(value Unit)
   return lwt_unix_alloc_job(&job->job);
 }
 
+#else
+
+LWT_NOT_AVAILABLE1(unix_getlogin_job)
+
 #endif
 
 /* +-----------------------------------------------------------------+
@@ -1651,6 +1650,13 @@ JOB_GET_ENTRY(LWT_UNIX_INIT_JOB_STRING(job, getpwnam, 0, name), getpwnam, GETPW,
 JOB_GET_ENTRY(LWT_UNIX_INIT_JOB_STRING(job, getgrnam, 0, name), getgrnam, GETGR, group, name, char *name; char data[], caml_copy_string(job->name))
 JOB_GET_ENTRY(LWT_UNIX_INIT_JOB(job, getpwuid, 0); job->uid = Int_val(uid), getpwuid, GETPW, passwd, uid, int uid, Nothing)
 JOB_GET_ENTRY(LWT_UNIX_INIT_JOB(job, getgrgid, 0); job->gid = Int_val(gid), getgrgid, GETGR, group, gid, int gid, Nothing)
+
+#else
+
+LWT_NOT_AVAILABLE1(unix_getpwnam_job)
+LWT_NOT_AVAILABLE1(unix_getgrnam_job)
+LWT_NOT_AVAILABLE1(unix_getpwuid_job)
+LWT_NOT_AVAILABLE1(unix_getgruid_job)
 
 #endif
 

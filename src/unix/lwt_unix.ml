@@ -22,8 +22,6 @@
  * 02111-1307, USA.
  *)
 
-#include "src/unix/lwt_config.ml"
-
 open Lwt
 
 (* +-----------------------------------------------------------------+
@@ -1169,75 +1167,45 @@ type group_entry =
     gr_mem : string array
   }
 
-#if windows || android
-
-let getlogin () =
-  return (Unix.getlogin ())
-
-#else
-
 external getlogin_job : unit -> string job = "lwt_unix_getlogin_job"
 
 let getlogin () =
-  run_job (getlogin_job ())
-
-#endif
-
-#if windows || android
-
-let getpwnam name =
-  return (Unix.getpwnam name)
-
-#else
+  if Sys.win32 || Lwt_config.android then
+    return (Unix.getlogin ())
+  else
+    run_job (getlogin_job ())
 
 external getpwnam_job : string -> Unix.passwd_entry job = "lwt_unix_getpwnam_job"
 
 let getpwnam name =
-  run_job (getpwnam_job name)
-
-#endif
-
-#if windows || android
-
-let getgrnam name =
-  return (Unix.getgrnam name)
-
-#else
+  if Sys.win32 || Lwt_config.android then
+    return (Unix.getpwnam name)
+  else
+    run_job (getpwnam_job name)
 
 external getgrnam_job : string -> Unix.group_entry job = "lwt_unix_getgrnam_job"
 
 let getgrnam name =
-  run_job (getgrnam_job name)
-
-#endif
-
-#if windows || android
-
-let getpwuid uid =
-  return (Unix.getpwuid uid)
-
-#else
+  if Sys.win32 || Lwt_config.android then
+    return (Unix.getgrnam name)
+  else
+    run_job (getgrnam_job name)
 
 external getpwuid_job : int -> Unix.passwd_entry job = "lwt_unix_getpwuid_job"
 
 let getpwuid uid =
-  run_job (getpwuid_job uid)
-
-#endif
-
-#if windows || android
-
-let getgrgid gid =
-  return (Unix.getgrgid gid)
-
-#else
+  if Sys.win32 || Lwt_config.android then
+    return (Unix.getpwuid uid)
+  else
+    run_job (getpwuid_job uid)
 
 external getgrgid_job : int -> Unix.group_entry job = "lwt_unix_getgrgid_job"
 
 let getgrgid gid =
-  run_job (getgrgid_job gid)
-
-#endif
+  if Sys.win32 || Lwt_config.android then
+    return (Unix.getgrgid gid)
+  else
+    run_job (getgrgid_job gid)
 
 (* +-----------------------------------------------------------------+
    | Sockets                                                         |
@@ -1763,19 +1731,12 @@ let tcsendbreak ch delay =
   else
     run_job (Jobs.tcsendbreak_job ch.fd delay)
 
-#if windows || android
-
 let tcdrain ch =
   check_descriptor ch;
-  return (Unix.tcdrain ch.fd)
-
-#else
-
-let tcdrain ch =
-  check_descriptor ch;
-  run_job (Jobs.tcdrain_job ch.fd)
-
-#endif
+  if Sys.win32 then
+    return (Unix.tcdrain ch.fd)
+  else
+    run_job (Jobs.tcdrain_job ch.fd)
 
 let tcflush ch q =
   check_descriptor ch;
@@ -1922,21 +1883,17 @@ type wait_flag =
 
 type resource_usage = { ru_utime : float; ru_stime : float }
 
-#if windows || android
-
-let has_wait4 = false
-
-let stub_wait4 flags pid =
-  let pid, status = Unix.waitpid flags pid in
-  (pid, status, { ru_utime = 0.0; ru_stime = 0.0 })
-
-#else
-
-let has_wait4 = true
+let has_wait4 = not Sys.win32
 
 external stub_wait4 : Unix.wait_flag list -> int -> int * Unix.process_status * resource_usage = "lwt_unix_wait4"
 
-#endif
+let do_wait4 flags pid =
+  if Sys.win32 then
+    let pid, status = Unix.waitpid flags pid in
+    (pid, status, { ru_utime = 0.0; ru_stime = 0.0 })
+  else
+    stub_wait4 flags pid
+
 
 let wait_children = Lwt_sequence.create ()
 let wait_count () = Lwt_sequence.length wait_children
@@ -1949,7 +1906,7 @@ let () =
            Lwt_sequence.iter_node_l begin fun node ->
              let wakener, flags, pid = Lwt_sequence.get node in
              try
-               let (pid', _, _) as v = stub_wait4 flags pid in
+               let (pid', _, _) as v = do_wait4 flags pid in
                if pid' <> 0 then begin
                  Lwt_sequence.remove node;
                  Lwt.wakeup wakener v
@@ -1984,32 +1941,23 @@ let waitpid =
           return (pid, status)
         end
 
-let _wait4 flags pid =
-  try_lwt
-    return (stub_wait4 flags pid)
-
-#if windows || android
-
-let wait4 = _wait4
-
-#else
-
 let wait4 flags pid =
-  if List.mem Unix.WNOHANG flags then
-    _wait4 flags pid
+  if Sys.win32 then
+    return (do_wait4 flags pid)
   else
-    let flags = Unix.WNOHANG :: flags in
-    lwt (pid', _, _) as res = _wait4 flags pid in
-    if pid' <> 0 then
-      return res
-    else begin
-      let (res, w) = Lwt.task () in
-      let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
-      Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
-      res
-    end
-
-#endif
+    if List.mem Unix.WNOHANG flags then
+      return (do_wait4 flags pid)
+    else
+      let flags = Unix.WNOHANG :: flags in
+      let (pid', _, _) as res = do_wait4 flags pid in
+      if pid' <> 0 then
+        return res
+      else begin
+        let (res, w) = Lwt.task () in
+        let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
+        Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
+        res
+      end
 
 let wait () = waitpid [] (-1)
 
