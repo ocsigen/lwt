@@ -10,7 +10,7 @@ This library is part of the Ocsigen project. See:
 
 ## Requirements:
 
- * OCaml with ocamlbuild (>= 3.12.1)
+ * OCaml (>= 4.01)
  * findlib
  * [optional] react (from http://erratique.ch/software/react)
  * [optional] libev (from http://software.schmorp.de/pkg/libev.html)

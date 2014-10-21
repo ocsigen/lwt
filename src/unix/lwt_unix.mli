@@ -312,12 +312,8 @@ type open_flag =
   | O_DSYNC
   | O_SYNC
   | O_RSYNC
-#if ocaml_version >= (3, 13)
   | O_SHARE_DELETE
-#endif
-#if ocaml_version >= (4, 01)
   | O_CLOEXEC
-#endif
 
 val openfile : string -> open_flag list -> file_perm -> file_descr Lwt.t
   (** Wrapper for [Unix.openfile]. *)
@@ -782,7 +778,7 @@ type credentials = {
 val get_credentials : file_descr -> credentials
   (** [get_credentials fd] returns credential informations from the
       given socket. On some platforms, obtaining the peer pid is not
-      possible and it will be set to [-1]. If obtaining credentials 
+      possible and it will be set to [-1]. If obtaining credentials
       is not possible on the current system, it raises
       [Lwt_sys.Not_available "get_credentials"].
 

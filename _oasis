@@ -3,7 +3,7 @@
 # +-------------------------------------------------------------------+
 
 OASISFormat: 0.4
-OCamlVersion: >= 3.12
+OCamlVersion: >= 4.01
 Name: lwt
 Version: 2.4.6
 LicenseFile: COPYING
@@ -200,7 +200,7 @@ Library "lwt-simple-top"
   FindlibParent: lwt
   Path: src/simple_top
   InternalModules: Lwt_simple_top
-  BuildDepends: lwt, lwt.unix
+  BuildDepends: lwt, lwt.unix, compiler-libs.common
   XMETADescription: Unix support for lwt
 
 Library "lwt-react"

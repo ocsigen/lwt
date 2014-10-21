@@ -593,12 +593,8 @@ type open_flag =
   | O_DSYNC
   | O_SYNC
   | O_RSYNC
-#if ocaml_version >= (3, 13)
   | O_SHARE_DELETE
-#endif
-#if ocaml_version >= (4, 01)
   | O_CLOEXEC
-#endif
 
 #if windows
 

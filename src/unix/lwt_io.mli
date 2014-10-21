@@ -64,16 +64,9 @@ type output
   (** Output mode *)
 
 (** Channel mode *)
-#if ocaml_version >= (3, 13)
 type 'a mode =
   | Input : input mode
   | Output : output mode
-#else
-type 'a mode =
-    private
-  | Input
-  | Output
-#endif
 
 val input : input mode
   (** [input] input mode representation *)

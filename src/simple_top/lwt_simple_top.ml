@@ -43,5 +43,5 @@ let read_input_non_interactive prompt buffer len =
   in
   Lwt_main.run (write stdout prompt >> loop 0)
 
-let _ =
+let () =
   Toploop.read_interactive_input := read_input_non_interactive
