@@ -1606,20 +1606,11 @@ type credentials = {
   cred_gid : int;
 }
 
-#if HAVE_GET_CREDENTIALS
-
 external stub_get_credentials : Unix.file_descr -> credentials = "lwt_unix_get_credentials"
 
 let get_credentials ch =
   check_descriptor ch;
   stub_get_credentials ch.fd
-
-#else
-
-let get_credentials ch =
-  raise (Lwt_sys.Not_available "get_credentials")
-
-#endif
 
 (* +-----------------------------------------------------------------+
    | Socket options                                                  |
@@ -2308,26 +2299,13 @@ external thread_waiting_count : unit -> int = "lwt_unix_thread_waiting_count" "n
    | CPUs                                                            |
    +-----------------------------------------------------------------+ *)
 
-#if HAVE_GETCPU
 external get_cpu : unit -> int = "lwt_unix_get_cpu"
-#else
-let get_cpu () = raise (Lwt_sys.Not_available "get_cpu")
-#endif
-
-#if HAVE_AFFINITY
 
 external stub_get_affinity : int -> int list = "lwt_unix_get_affinity"
 external stub_set_affinity : int -> int list -> unit = "lwt_unix_set_affinity"
 
 let get_affinity ?(pid=0) () = stub_get_affinity pid
 let set_affinity ?(pid=0) l = stub_set_affinity pid l
-
-#else
-
-let get_affinity ?pid () = raise (Lwt_sys.Not_available "get_affinity")
-let set_affinity ?pid l = raise (Lwt_sys.Not_available "set_affinity")
-
-#endif
 
 (* +-----------------------------------------------------------------+
    | Error printing                                                  |

@@ -27,7 +27,7 @@ exception Not_available of string
       a feature is not available on the current system. *)
 
 val windows : bool
-  (** [true] iff running on windows. *)
+  (** [true] iff running on windows. Deprecated; use [Sys.win32]. *)
 
 (** Features that can be tested. *)
 type feature =

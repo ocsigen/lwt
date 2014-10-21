@@ -343,13 +343,13 @@ let test_feature ?(do_check = true) name macro test =
     if test () then begin
       if macro <> "" then begin
         fprintf config "#define %s\n" macro;
-        fprintf config_ml "#let %s = true\n" macro
+        fprintf config_ml "let _%s = true\n" macro
       end;
       printf " %s available\n%!" (String.make (34 - String.length name) '.')
     end else begin
       if macro <> "" then begin
         fprintf config "//#define %s\n" macro;
-        fprintf config_ml "#let %s = false\n" macro
+        fprintf config_ml "let _%s = false\n" macro
       end;
       printf " %s unavailable\n%!" (String.make (34 - String.length name) '.');
       not_available := name :: !not_available
@@ -358,7 +358,7 @@ let test_feature ?(do_check = true) name macro test =
     printf "not checking for %s\n%!" name;
     if macro <> "" then begin
       fprintf config "//#define %s\n" macro;
-      fprintf config_ml "#let %s = false\n" macro
+      fprintf config_ml "let _%s = false\n" macro
     end
   end
 
@@ -602,8 +602,8 @@ Lwt can use pthread or the win32 API.
     (String.concat " || " (List.map (Printf.sprintf "defined(%s)") get_cred_vars));
 
   Printf.fprintf config_ml
-    "#let HAVE_GET_CREDENTIALS = %s\n"
-    (String.concat " || " get_cred_vars);
+    "let _HAVE_GET_CREDENTIALS = %s\n"
+    (String.concat " || " (List.map (fun s -> "_" ^ s) get_cred_vars));
 
   if !os_type = "Win32" then begin
     output_string config "#define LWT_ON_WINDOWS\n";
@@ -618,9 +618,9 @@ Lwt can use pthread or the win32 API.
     output_string config_ml "#let android=false\n"
   end;
   if !libev_default then begin
-    output_string config_ml "#let libev_default=true\n"
+    output_string config_ml "let libev_default = true\n"
   end else begin
-    output_string config_ml "#let libev_default=false\n"
+    output_string config_ml "let libev_default = false\n"
   end;
 
   fprintf config "#endif\n";

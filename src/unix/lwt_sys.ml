@@ -20,13 +20,11 @@
  * 02111-1307, USA.
  *)
 
-#include "src/unix/lwt_config.ml"
-
 exception Not_available of string
 
 let () = Callback.register_exception "lwt:not-available" (Not_available "")
 
-let windows = Sys.os_type = "Win32"
+let windows = Sys.win32
 
 type feature =
     [ `wait4
@@ -47,14 +45,14 @@ let have = function
   | `recv_msg
   | `send_msg
   | `mincore
-  | `madvise -> not windows
-  | `get_cpu -> <:optcomp< HAVE_GETCPU >>
+  | `madvise -> not Sys.win32
+  | `get_cpu -> Lwt_config._HAVE_GETCPU
   | `get_affinity
-  | `set_affinity -> <:optcomp< HAVE_AFFINITY >>
-  | `fd_passing -> <:optcomp< HAVE_FD_PASSING >>
-  | `get_credentials -> <:optcomp< HAVE_GET_CREDENTIALS >>
-  | `fdatasync -> <:optcomp< HAVE_FDATASYNC >>
-  | `libev -> <:optcomp< HAVE_LIBEV >>
+  | `set_affinity -> Lwt_config._HAVE_AFFINITY
+  | `fd_passing -> Lwt_config._HAVE_FD_PASSING
+  | `get_credentials -> Lwt_config._HAVE_GET_CREDENTIALS
+  | `fdatasync -> Lwt_config._HAVE_FDATASYNC
+  | `libev -> Lwt_config._HAVE_LIBEV
 
 type byte_order = Little_endian | Big_endian
 

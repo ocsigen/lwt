@@ -468,6 +468,10 @@ CAMLprim value lwt_unix_get_credentials(value fd)
     CAMLreturn(res);
 }
 
+#else
+
+LWT_NOT_AVAILABLE1(get_credentials)
+
 #endif
 
 /* +-----------------------------------------------------------------+
@@ -564,6 +568,10 @@ CAMLprim value lwt_unix_get_cpu()
   return Val_int(cpu);
 }
 
+#else
+
+LWT_NOT_AVAILABLE1(get_cpu)
+
 #endif
 
 #if defined(HAVE_AFFINITY)
@@ -598,6 +606,11 @@ CAMLprim value lwt_unix_set_affinity(value val_pid, value val_cpus)
     uerror("sched_setaffinity", Nothing);
   return Val_unit;
 }
+
+#else
+
+LWT_NOT_AVAILABLE1(get_affinity)
+LWT_NOT_AVAILABLE2(set_affinity)
 
 #endif
 

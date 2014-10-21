@@ -57,6 +57,22 @@ char *lwt_unix_strdup(char *string);
 /* Raise [Lwt_unix.Not_available]. */
 void lwt_unix_not_available(char const *feature) Noreturn;
 
+#define LWT_NOT_AVAILABLE1(prim) \
+  CAMLprim value lwt_ ## prim(value a1) \
+  { lwt_unix_not_available(#prim); }
+#define LWT_NOT_AVAILABLE2(prim) \
+  CAMLprim value lwt_ ## prim(value a1, value a2) \
+  { lwt_unix_not_available(#prim); }
+#define LWT_NOT_AVAILABLE3(prim) \
+  CAMLprim value lwt_ ## prim(value a1, value a2, value a3) \
+  { lwt_unix_not_available(#prim); }
+#define LWT_NOT_AVAILABLE4(prim) \
+  CAMLprim value lwt_ ## prim(value a1, value a2, value a3, value a4) \
+  { lwt_unix_not_available(#prim); }
+#define LWT_NOT_AVAILABLE5(prim) \
+  CAMLprim value lwt_ ## prim(value a1, value a2, value a3, value a4, value a5) \
+  { lwt_unix_not_available(#prim); }
+
 /* +-----------------------------------------------------------------+
    | Notifications                                                   |
    +-----------------------------------------------------------------+ */

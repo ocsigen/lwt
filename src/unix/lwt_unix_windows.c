@@ -505,3 +505,12 @@ CAMLprim value lwt_unix_system_job(value cmdline)
     return lwt_unix_alloc_job(&(job->job));
   }
 }
+
+/* +-----------------------------------------------------------------+
+   | Unavailable primitives                                          |
+   +-----------------------------------------------------------------+ */
+
+LWT_NOT_AVAILABLE1(get_credentials)
+LWT_NOT_AVAILABLE1(get_cpu)
+LWT_NOT_AVAILABLE1(get_affinity)
+LWT_NOT_AVAILABLE2(set_affinity)
