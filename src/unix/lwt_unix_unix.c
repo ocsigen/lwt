@@ -2470,3 +2470,14 @@ CAMLprim value lwt_unix_tcsetattr_job(value fd, value when, value termios)
   memcpy(&job->termios, &Field(termios, 0), NFIELDS * sizeof(value));
   return lwt_unix_alloc_job(&job->job);
 }
+
+/* +-----------------------------------------------------------------+
+   | Unavailable primitives                                          |
+   +-----------------------------------------------------------------+ */
+
+LWT_NOT_AVAILABLE1(unix_is_socket)
+LWT_NOT_AVAILABLE1(unix_socketpair_stub)
+LWT_NOT_AVAILABLE1(unix_system_job)
+LWT_NOT_AVAILABLE4(process_create_process)
+LWT_NOT_AVAILABLE1(process_wait_job)
+LWT_NOT_AVAILABLE2(process_terminate_process)
