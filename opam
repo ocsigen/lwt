@@ -8,7 +8,6 @@ build: [
     "--%{react:enable}%-react"
     "--%{ssl:enable}%-ssl"
     "--%{base-unix:enable}%-unix"
-    "--%{base-unix:enable}%-extra"
     "--%{base-threads:enable}%-preemptive"
     "--%{lablgtk:enable}%-glib"
     "--%{ppx_tools:enable}%-ppx"]

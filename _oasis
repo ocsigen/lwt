@@ -75,10 +75,6 @@ Flag preemptive
   Description: Preemptive threads support
   Default$: flag(unix) && !flag(android_target)
 
-Flag extra
-  Description: Asynchronous unix functions
-  Default$: flag(preemptive)
-
 Flag libev
   Description: Compile with libev support
   Default$: !os_type(Win32) && !flag(android_target)
@@ -214,16 +210,6 @@ Library "lwt-preemptive"
   BuildDepends: lwt, lwt.unix, threads
   XMETADescription: Preemptive threads support for Lwt
 
-Library "lwt-extra"
-  Build$: flag(extra) || flag(all)
-  Install$: flag(extra) || flag(all)
-  FindlibName: extra
-  FindlibParent: lwt
-  Path: src/extra
-  Modules: Lwt_lib
-  BuildDepends: lwt, lwt.preemptive
-  XMETADescription: Unix functions for Lwt using Lwt_preemptive
-
 Library "lwt-glib"
   Build$: flag(glib) || flag(all)
   Install$: flag(glib) || flag(all)
@@ -322,7 +308,6 @@ Document "lwt-api"
   XOCamlbuildPath: ./
   XOCamlbuildLibraries:
     lwt,
-    lwt.extra,
     lwt.glib,
     lwt.preemptive,
     lwt.react,
