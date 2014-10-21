@@ -199,14 +199,13 @@ let perform_io : type mode. mode _channel -> int Lwt.t = fun ch -> match ch.main
               | Output ->
                   (0, ch.ptr) in
             lwt n = pick [ch.abort_waiter;
-#if windows
-                          try_lwt
+                          if Sys.win32 then
+                            try_lwt
+                              perform_io ch.buffer ptr len
+                            with Unix.Unix_error (Unix.EPIPE, _, _) ->
+                              return 0
+                          else
                             perform_io ch.buffer ptr len
-                          with Unix.Unix_error (Unix.EPIPE, _, _) ->
-                            return 0
-#else
-                          perform_io ch.buffer ptr len
-#endif
                          ] in
             (* Never trust user functions... *)
             if n < 0 || n > len then

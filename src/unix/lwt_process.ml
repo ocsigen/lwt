@@ -26,11 +26,11 @@ open Lwt
 
 type command = string * string array
 
-#if windows
-let shell cmd = ("", [|"cmd.exe"; "/c"; "\000" ^ cmd|])
-#else
-let shell cmd = ("", [|"/bin/sh"; "-c"; cmd|])
-#endif
+let shell =
+  if Sys.win32 then
+    fun cmd -> ("", [|"cmd.exe"; "/c"; "\000" ^ cmd|])
+  else
+    fun cmd -> ("", [|"/bin/sh"; "-c"; cmd|])
 
 type redirection =
     [ `Keep

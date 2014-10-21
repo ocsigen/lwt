@@ -611,23 +611,14 @@ let openfile name flags perms =
 
 #endif
 
-#if windows
-
 let close ch =
   if ch.state = Closed then check_descriptor ch;
   set_state ch Closed;
   clear_events ch;
-  return (Unix.close ch.fd)
-
-#else
-
-let close ch =
-  if ch.state = Closed then check_descriptor ch;
-  set_state ch Closed;
-  clear_events ch;
-  run_job (Jobs.close_job ch.fd)
-
-#endif
+  if Sys.win32 then
+    return (Unix.close ch.fd)
+  else
+    run_job (Jobs.close_job ch.fd)
 
 let wait_read ch =
   try_lwt
@@ -681,45 +672,25 @@ type seek_command =
   | SEEK_CUR
   | SEEK_END
 
-#if windows
-
 let lseek ch offset whence =
   check_descriptor ch;
-  return (Unix.lseek ch.fd offset whence)
-
-#else
-
-let lseek ch offset whence =
-  check_descriptor ch;
-  run_job (Jobs.lseek_job ch.fd offset whence)
-
-#endif
-
-#if windows
+  if Sys.win32 then
+    return (Unix.lseek ch.fd offset whence)
+  else
+    run_job (Jobs.lseek_job ch.fd offset whence)
 
 let truncate name offset =
-  return (Unix.truncate name offset)
-
-#else
-
-let truncate name offset =
-  run_job (Jobs.truncate_job name offset)
-
-#endif
-
-#if windows
+  if Sys.win32 then
+    return (Unix.truncate name offset)
+  else
+    run_job (Jobs.truncate_job name offset)
 
 let ftruncate ch offset =
   check_descriptor ch;
-  return (Unix.ftruncate ch.fd offset)
-
-#else
-
-let ftruncate ch offset =
-  check_descriptor ch;
-  run_job (Jobs.ftruncate_job ch.fd offset)
-
-#endif
+  if Sys.win32 then
+    return (Unix.ftruncate ch.fd offset)
+  else
+    run_job (Jobs.ftruncate_job ch.fd offset)
 
 (* +-----------------------------------------------------------------+
    | File system synchronisation                                     |
@@ -850,45 +821,25 @@ struct
         st_ctime : float;
       }
 
-#if windows
-
   let lseek ch offset whence =
     check_descriptor ch;
-    return (Unix.LargeFile.lseek ch.fd offset whence)
-
-#else
-
-  let lseek ch offset whence =
-    check_descriptor ch;
-    run_job (Jobs.lseek_64_job ch.fd offset whence)
-
-#endif
-
-#if windows
+    if Sys.win32 then
+      return (Unix.LargeFile.lseek ch.fd offset whence)
+    else
+      run_job (Jobs.lseek_64_job ch.fd offset whence)
 
   let truncate name offset =
-    return (Unix.LargeFile.truncate name offset)
-
-#else
-
-  let truncate name offset =
-    run_job (Jobs.truncate_64_job name offset)
-
-#endif
-
-#if windows
+    if Sys.win32 then
+      return (Unix.LargeFile.truncate name offset)
+    else
+      run_job (Jobs.truncate_64_job name offset)
 
   let ftruncate ch offset =
     check_descriptor ch;
-    return (Unix.LargeFile.ftruncate ch.fd offset)
-
-#else
-
-  let ftruncate ch offset =
-    check_descriptor ch;
-    run_job (Jobs.ftruncate_64_job ch.fd offset)
-
-#endif
+    if Sys.win32 then
+      return (Unix.LargeFile.ftruncate ch.fd offset)
+    else
+      run_job (Jobs.ftruncate_64_job ch.fd offset)
 
 #if windows
 
@@ -940,97 +891,53 @@ end
    | Operations on file names                                        |
    +-----------------------------------------------------------------+ *)
 
-#if windows
-
 let unlink name =
-  return (Unix.unlink name)
-
-#else
-
-let unlink name =
-  run_job (Jobs.unlink_job name)
-
-#endif
-
-#if windows
+  if Sys.win32 then
+    return (Unix.unlink name)
+  else
+    run_job (Jobs.unlink_job name)
 
 let rename name1 name2 =
-  return (Unix.rename name1 name2)
-
-#else
-
-let rename name1 name2 =
-  run_job (Jobs.rename_job name1 name2)
-
-#endif
-
-#if windows
-
-let link name1 name2 =
-  return (Unix.link name1 name2)
-
-#else
+  if Sys.win32 then
+    return (Unix.rename name1 name2)
+  else
+    run_job (Jobs.rename_job name1 name2)
 
 let link oldpath newpath =
-  run_job (Jobs.link_job oldpath newpath)
-
-#endif
+  if Sys.win32 then
+    return (Unix.link oldpath newpath)
+  else
+    run_job (Jobs.link_job oldpath newpath)
 
 (* +-----------------------------------------------------------------+
    | File permissions and ownership                                  |
    +-----------------------------------------------------------------+ *)
 
-#if windows
-
-let chmod name perms =
-  return (Unix.chmod name perms)
-
-#else
-
-let chmod path mode =
-  run_job (Jobs.chmod_job path mode)
-
-#endif
-
-#if windows
-
-let fchmod ch perms =
-  check_descriptor ch;
-  return (Unix.fchmod ch.fd perms)
-
-#else
+let chmod name mode =
+  if Sys.win32 then
+    return (Unix.chmod name mode)
+  else
+    run_job (Jobs.chmod_job name mode)
 
 let fchmod ch mode =
   check_descriptor ch;
-  run_job (Jobs.fchmod_job ch.fd mode)
-
-#endif
-
-#if windows
+  if Sys.win32 then
+    return (Unix.fchmod ch.fd mode)
+  else
+    run_job (Jobs.fchmod_job ch.fd mode)
 
 let chown name uid gid =
-  return (Unix.chown name uid gid)
-
-#else
-
-let chown path ower group =
-  run_job (Jobs.chown_job path ower group)
-
-#endif
-
-#if windows
+  if Sys.win32 then
+    return (Unix.chown name uid gid)
+  else
+    run_job (Jobs.chown_job name uid gid)
 
 let fchown ch uid gid =
   check_descriptor ch;
-  return (Unix.fchown ch.fd uid gid)
-
-#else
-
-let fchown ch ower group =
-  check_descriptor ch;
-  run_job (Jobs.fchown_job ch.fd ower group)
-
-#endif
+  if Sys.win32 then
+    return (Unix.fchown ch.fd uid gid)
+  else
+    run_job (Jobs.fchown_job ch.fd uid gid)
 
 type access_permission =
     Unix.access_permission =
@@ -1039,17 +946,11 @@ type access_permission =
   | X_OK
   | F_OK
 
-#if windows
-
-let access name perms =
-  return (Unix.access name perms)
-
-#else
-
-let access path mode =
-  run_job (Jobs.access_job path mode)
-
-#endif
+let access name mode =
+  if Sys.win32 then
+    return (Unix.access name mode)
+  else
+    run_job (Jobs.access_job name mode)
 
 (* +-----------------------------------------------------------------+
    | Operations on file descriptors                                  |
@@ -1108,53 +1009,29 @@ let clear_close_on_exec ch =
    | Directories                                                     |
    +-----------------------------------------------------------------+ *)
 
-#if windows
-
-let mkdir name perms =
-  return (Unix.mkdir name perms)
-
-#else
-
-let mkdir name perms =
-  run_job (Jobs.mkdir_job name perms)
-
-#endif
-
-#if windows
+let mkdir =
+  if Sys.win32 then
+    fun name perms -> return (Unix.mkdir name perms)
+  else
+    fun name perms -> run_job (Jobs.mkdir_job name perms)
 
 let rmdir name =
-  return (Unix.rmdir name)
-
-#else
-
-let rmdir name =
-  run_job (Jobs.rmdir_job name)
-
-#endif
-
-#if windows
+  if Sys.win32 then
+    return (Unix.rmdir name)
+  else
+    run_job (Jobs.rmdir_job name)
 
 let chdir name =
-  return (Unix.chdir name)
-
-#else
-
-let chdir path =
-  run_job (Jobs.chdir_job path)
-
-#endif
-
-#if windows
+  if Sys.win32 then
+    return (Unix.chdir name)
+  else
+    run_job (Jobs.chdir_job name)
 
 let chroot name =
-  return (Unix.chroot name)
-
-#else
-
-let chroot path =
-  run_job (Jobs.chroot_job path)
-
-#endif
+  if Sys.win32 then
+    return (Unix.chroot name)
+  else
+    run_job (Jobs.chroot_job name)
 
 type dir_handle = Unix.dir_handle
 
@@ -1314,33 +1191,21 @@ let pipe_out () =
   let (out_fd, in_fd) = Unix.pipe() in
   (out_fd, mk_ch ~blocking:Lwt_sys.windows in_fd)
 
-#if windows
-
 let mkfifo name perms =
-  return (Unix.mkfifo name perms)
-
-#else
-
-let mkfifo name perms =
-  run_job (Jobs.mkfifo_job name perms)
-
-#endif
+  if Sys.win32 then
+    return (Unix.mkfifo name perms)
+  else
+    run_job (Jobs.mkfifo_job name perms)
 
 (* +-----------------------------------------------------------------+
    | Symbolic links                                                  |
    +-----------------------------------------------------------------+ *)
 
-#if windows
-
 let symlink name1 name2 =
-  return (Unix.symlink name1 name2)
-
-#else
-
-let symlink name1 name2 =
-  run_job (Jobs.symlink_job name1 name2)
-
-#endif
+  if Sys.win32 then
+    return (Unix.symlink name1 name2)
+  else
+    run_job (Jobs.symlink_job name1 name2)
 
 #if windows
 
@@ -1663,63 +1528,57 @@ let accept_n ch n =
   with exn ->
     return (List.rev !l, Some exn)
 
-#if windows
-
 let connect ch addr =
-  (* [in_progress] tell wether connection has started but not
-     terminated: *)
-  let in_progress = ref false in
-  wrap_syscall Write ch begin fun () ->
-    if !in_progress then
-      (* Nothing works without this test and i have no idea why... *)
-      if writable ch then
+  if Sys.win32 then
+    (* [in_progress] tell wether connection has started but not
+       terminated: *)
+    let in_progress = ref false in
+    wrap_syscall Write ch begin fun () ->
+      if !in_progress then
+        (* Nothing works without this test and i have no idea why... *)
+        if writable ch then
+          try
+            Unix.connect ch.fd addr
+          with
+            | Unix.Unix_error (Unix.EISCONN, _, _) ->
+                (* This is the windows way of telling that the connection
+                   has completed. *)
+                ()
+        else
+          raise Retry
+      else
         try
           Unix.connect ch.fd addr
         with
-          | Unix.Unix_error (Unix.EISCONN, _, _) ->
-              (* This is the windows way of telling that the connection
-                 has completed. *)
+          | Unix.Unix_error (Unix.EWOULDBLOCK, _, _) ->
+              in_progress := true;
+              raise Retry
+    end
+  else
+    (* [in_progress] tell wether connection has started but not
+       terminated: *)
+    let in_progress = ref false in
+    wrap_syscall Write ch begin fun () ->
+      if !in_progress then
+        (* If the connection is in progress, [getsockopt_error] tells
+           wether it succceed: *)
+        match Unix.getsockopt_error ch.fd with
+          | None ->
+              (* The socket is connected *)
               ()
+          | Some err ->
+              (* An error happened: *)
+              raise (Unix.Unix_error(err, "connect", ""))
       else
-        raise Retry
-    else
-      try
-        Unix.connect ch.fd addr
-      with
-        | Unix.Unix_error (Unix.EWOULDBLOCK, _, _) ->
-            in_progress := true;
-            raise Retry
-  end
-
-#else
-
-let connect ch addr =
-  (* [in_progress] tell wether connection has started but not
-     terminated: *)
-  let in_progress = ref false in
-  wrap_syscall Write ch begin fun () ->
-    if !in_progress then
-      (* If the connection is in progress, [getsockopt_error] tells
-         wether it succceed: *)
-      match Unix.getsockopt_error ch.fd with
-        | None ->
-            (* The socket is connected *)
-            ()
-        | Some err ->
-            (* An error happened: *)
-            raise (Unix.Unix_error(err, "connect", ""))
-    else
-      try
-        (* We should pass only one time here, unless the system call
-           is interrupted by a signal: *)
-        Unix.connect ch.fd addr
-      with
-        | Unix.Unix_error (Unix.EINPROGRESS, _, _) ->
-            in_progress := true;
-            raise Retry
-  end
-
-#endif
+        try
+          (* We should pass only one time here, unless the system call
+             is interrupted by a signal: *)
+          Unix.connect ch.fd addr
+        with
+          | Unix.Unix_error (Unix.EINPROGRESS, _, _) ->
+              in_progress := true;
+              raise Retry
+    end
 
 let setsockopt ch opt v =
   check_descriptor ch;
@@ -2349,29 +2208,25 @@ let _waitpid flags pid =
   try_lwt
     return (Unix.waitpid flags pid)
 
-#if windows
-
-let waitpid = _waitpid
-
-#else
-
-let waitpid flags pid =
-  if List.mem Unix.WNOHANG flags then
-    _waitpid flags pid
+let waitpid =
+  if Sys.win32 then
+    _waitpid
   else
-    let flags = Unix.WNOHANG :: flags in
-    lwt ((pid', _) as res) = _waitpid flags pid in
-    if pid' <> 0 then
-      return res
-    else begin
-      let (res, w) = Lwt.task () in
-      let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
-      Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
-      lwt (pid, status, _) = res in
-      return (pid, status)
-    end
-
-#endif
+    fun flags pid ->
+      if List.mem Unix.WNOHANG flags then
+        _waitpid flags pid
+      else
+        let flags = Unix.WNOHANG :: flags in
+        lwt ((pid', _) as res) = _waitpid flags pid in
+        if pid' <> 0 then
+          return res
+        else begin
+          let (res, w) = Lwt.task () in
+          let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
+          Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
+          lwt (pid, status, _) = res in
+          return (pid, status)
+        end
 
 let _wait4 flags pid =
   try_lwt
