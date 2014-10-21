@@ -70,7 +70,7 @@ static void nop(struct ev_loop *loop)
 {
 }
 
-CAMLprim value lwt_libev_init()
+CAMLprim value lwt_libev_init(value Unit)
 {
   struct ev_loop *loop = ev_loop_new(EVFLAG_FORKCHECK);
   if (!loop) caml_failwith("lwt_libev_init");

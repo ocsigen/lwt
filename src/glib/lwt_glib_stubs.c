@@ -136,7 +136,7 @@ static value alloc_fd(HANDLE handle)
 
 #endif
 
-CAMLprim value lwt_glib_get_sources()
+CAMLprim value lwt_glib_get_sources(value Unit)
 {
   gint timeout;
   int i;
@@ -204,7 +204,7 @@ CAMLprim value lwt_glib_mark_writable(value i)
    | Check                                                           |
    +-----------------------------------------------------------------+ */
 
-CAMLprim value lwt_glib_check()
+CAMLprim value lwt_glib_check(value Unit)
 {
   g_main_context_check(gc, max_priority, gpollfds, n_fds);
   return Val_unit;
@@ -214,14 +214,14 @@ CAMLprim value lwt_glib_check()
    | Initialization/stopping                                         |
    +-----------------------------------------------------------------+ */
 
-CAMLprim value lwt_glib_init()
+CAMLprim value lwt_glib_init(value Unit)
 {
   gc = g_main_context_default();
   g_main_context_ref(gc);
   return Val_unit;
 }
 
-CAMLprim value lwt_glib_stop()
+CAMLprim value lwt_glib_stop(value Unit)
 {
   g_main_context_unref(gc);
   return Val_unit;
@@ -282,7 +282,7 @@ CAMLprim value lwt_glib_iter(value may_block)
   return Val_unit;
 }
 
-CAMLprim value lwt_glib_wakeup()
+CAMLprim value lwt_glib_wakeup(value Unit)
 {
   g_main_context_wakeup(g_main_context_default());
   return Val_unit;

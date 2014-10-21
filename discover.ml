@@ -98,7 +98,7 @@ let pthread_code = "
 #include <caml/mlvalues.h>
 #include <pthread.h>
 
-CAMLprim value lwt_test()
+CAMLprim value lwt_test(value Unit)
 {
   pthread_create(0, 0, 0, 0);
   return Val_unit;
@@ -109,7 +109,7 @@ let libev_code = "
 #include <caml/mlvalues.h>
 #include <ev.h>
 
-CAMLprim value lwt_test()
+CAMLprim value lwt_test(value Unit)
 {
   ev_default_loop(0);
   return Val_unit;
@@ -121,7 +121,7 @@ let fd_passing_code = "
 #include <sys/types.h>
 #include <sys/socket.h>
 
-CAMLprim value lwt_test()
+CAMLprim value lwt_test(value Unit)
 {
   struct msghdr msg;
   msg.msg_controllen = 0;
@@ -135,7 +135,7 @@ let getcpu_code = "
 #define _GNU_SOURCE
 #include <sched.h>
 
-CAMLprim value lwt_test()
+CAMLprim value lwt_test(value Unit)
 {
   sched_getcpu();
   return Val_unit;
@@ -147,7 +147,7 @@ let affinity_code = "
 #define _GNU_SOURCE
 #include <sched.h>
 
-CAMLprim value lwt_test()
+CAMLprim value lwt_test(value Unit)
 {
   sched_getaffinity(0, 0, 0);
   return Val_unit;
@@ -158,7 +158,7 @@ let eventfd_code = "
 #include <caml/mlvalues.h>
 #include <sys/eventfd.h>
 
-CAMLprim value lwt_test()
+CAMLprim value lwt_test(value Unit)
 {
   eventfd(0, 0);
   return Val_unit;
@@ -171,7 +171,7 @@ let get_credentials_code struct_name = "
 #include <sys/types.h>
 #include <sys/socket.h>
 
-CAMLprim value lwt_test()
+CAMLprim value lwt_test(value Unit)
 {
   struct " ^ struct_name ^ " cred;
   socklen_t cred_len = sizeof(cred);
@@ -185,7 +185,7 @@ let get_peereid_code = "
 #include <sys/types.h>
 #include <unistd.h>
 
-CAMLprim value lwt_test()
+CAMLprim value lwt_test(value Unit)
 {
   uid_t euid;
   gid_t egid;
@@ -198,7 +198,7 @@ let fdatasync_code = "
 #include <caml/mlvalues.h>
 #include <sys/unistd.h>
 
-CAMLprim value lwt_test()
+CAMLprim value lwt_test(value Unit)
 {
   fdatasync(0);
   return Val_unit;
@@ -209,7 +209,7 @@ let glib_code = "
 #include <caml/mlvalues.h>
 #include <glib.h>
 
-CAMLprim value lwt_test()
+CAMLprim value lwt_test(value Unit)
 {
   g_main_context_dispatch(0);
   return Val_unit;
@@ -220,7 +220,7 @@ let netdb_reentrant_code = "
 #include <caml/mlvalues.h>
 #include <netdb.h>
 
-CAMLprim value lwt_test()
+CAMLprim value lwt_test(value Unit)
 {
   getprotobyname_r(0, 0, 0, 0, 0);
   getprotobynumber_r(0, 0, 0, 0, 0);

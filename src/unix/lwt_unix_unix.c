@@ -80,7 +80,7 @@ CAMLprim value lwt_unix_madvise (value val_buffer, value val_offset, value val_l
   return Val_unit;
 }
 
-CAMLprim value lwt_unix_get_page_size()
+CAMLprim value lwt_unix_get_page_size(value Unit)
 {
   long page_size = sysconf(_SC_PAGESIZE);
   if (page_size < 0) page_size = 4096;
@@ -561,7 +561,7 @@ value lwt_unix_has_wait4(value unit)
 
 #if defined(HAVE_GETCPU)
 
-CAMLprim value lwt_unix_get_cpu()
+CAMLprim value lwt_unix_get_cpu(value Unit)
 {
   int cpu = sched_getcpu();
   if (cpu < 0) uerror("sched_getcpu", Nothing);
@@ -1543,7 +1543,7 @@ static value result_getlogin(struct job_getlogin *job)
   }
 }
 
-CAMLprim value lwt_unix_getlogin_job()
+CAMLprim value lwt_unix_getlogin_job(value Unit)
 {
   LWT_UNIX_INIT_JOB(job, getlogin, 0);
   return lwt_unix_alloc_job(&job->job);
@@ -1701,7 +1701,7 @@ static value result_gethostname(struct job_gethostname *job)
   return result;
 }
 
-CAMLprim value lwt_unix_gethostname_job()
+CAMLprim value lwt_unix_gethostname_job(value Unit)
 {
   LWT_UNIX_INIT_JOB(job, gethostname, 0);
   return lwt_unix_alloc_job(&(job->job));

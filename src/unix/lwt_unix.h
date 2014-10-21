@@ -294,17 +294,17 @@ void lwt_unix_free_job(lwt_unix_job job);
 /* Define not implement methods. Deprecated: it is for the old
    mechanism with three externals. */
 #define LWT_UNIX_JOB_NOT_IMPLEMENTED(name)      \
-  CAMLprim value lwt_unix_##name##_job()        \
+  CAMLprim value lwt_unix_##name##_job(value Unit)        \
   {                                             \
     caml_invalid_argument("not implemented");	\
   }                                             \
                                                 \
-  CAMLprim value lwt_unix_##name##_result()     \
+  CAMLprim value lwt_unix_##name##_result(value Unit)     \
   {                                             \
     caml_invalid_argument("not implemented");	\
   }                                             \
                                                 \
-  CAMLprim value lwt_unix_##name##_free()       \
+  CAMLprim value lwt_unix_##name##_free(value Unit)       \
   {                                             \
     caml_invalid_argument("not implemented");	\
   }

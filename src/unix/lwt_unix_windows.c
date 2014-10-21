@@ -163,7 +163,7 @@ CAMLprim value lwt_unix_bytes_read(value fd, value buf, value vofs, value vlen)
    | Memory mapped files                                             |
    +-----------------------------------------------------------------+ */
 
-CAMLprim value lwt_unix_get_page_size()
+CAMLprim value lwt_unix_get_page_size(value Unit)
 {
   SYSTEM_INFO si;
   GetSystemInfo(&si);
