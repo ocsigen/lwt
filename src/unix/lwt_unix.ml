@@ -1089,15 +1089,15 @@ let files_of_directory path =
 
 let pipe () =
   let (out_fd, in_fd) = Unix.pipe() in
-  (mk_ch ~blocking:Lwt_sys.windows out_fd, mk_ch ~blocking:Lwt_sys.windows in_fd)
+  (mk_ch ~blocking:Sys.win32 out_fd, mk_ch ~blocking:Sys.win32 in_fd)
 
 let pipe_in () =
   let (out_fd, in_fd) = Unix.pipe() in
-  (mk_ch ~blocking:Lwt_sys.windows out_fd, in_fd)
+  (mk_ch ~blocking:Sys.win32 out_fd, in_fd)
 
 let pipe_out () =
   let (out_fd, in_fd) = Unix.pipe() in
-  (out_fd, mk_ch ~blocking:Lwt_sys.windows in_fd)
+  (out_fd, mk_ch ~blocking:Sys.win32 in_fd)
 
 let mkfifo name perms =
   if Sys.win32 then
@@ -1886,8 +1886,6 @@ type wait_flag =
 
 type resource_usage = { ru_utime : float; ru_stime : float }
 
-let has_wait4 = not Sys.win32
-
 external stub_wait4 : Unix.wait_flag list -> int -> int * Unix.process_status * resource_usage = "lwt_unix_wait4"
 
 let do_wait4 flags pid =
@@ -1988,8 +1986,6 @@ let system cmd =
 (* +-----------------------------------------------------------------+
    | Misc                                                            |
    +-----------------------------------------------------------------+ *)
-
-let run = Lwt_main.run
 
 let handle_unix_error f x =
   Lwt.catch

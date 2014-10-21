@@ -24,8 +24,6 @@ exception Not_available of string
 
 let () = Callback.register_exception "lwt:not-available" (Not_available "")
 
-let windows = Sys.win32
-
 type feature =
     [ `wait4
     | `get_cpu

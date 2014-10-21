@@ -517,8 +517,3 @@ val set_default_buffer_size : int -> unit
 
       @raise Invalid_argument if the given size is smaller than [16]
       or greater than [Sys.max_string_length] *)
-
-(**/**)
-
-val of_string : mode : 'mode mode -> string -> 'mode channel
-  (* Deprecated *)

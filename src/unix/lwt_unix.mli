@@ -1167,11 +1167,3 @@ val get_affinity : ?pid : int -> unit -> int list
 val set_affinity : ?pid : int -> int list -> unit
   (** [set_affinity ?pid cpus] sets the list of CPUs the given process
       is allowed to run on. *)
-
-(**/**)
-
-val run : 'a Lwt.t -> 'a
-  (* Same as {!Lwt_main.run} *)
-
-val has_wait4 : bool
-  (* Deprecated, use [Lwt_sys.have `wait4]. *)

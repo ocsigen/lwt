@@ -535,8 +535,6 @@ let of_bytes ~mode bytes =
   } in
   wrapper
 
-let of_string ~mode str = of_bytes ~mode (Lwt_bytes.of_string str)
-
 let of_fd : type m. ?buffer_size : int -> ?close : (unit -> unit Lwt.t) -> mode : m mode -> Lwt_unix.file_descr -> m channel = fun ?buffer_size ?close ~mode fd ->
   let perform_io = match mode with
     | Input -> Lwt_bytes.read fd
