@@ -142,7 +142,8 @@ Library "lwt-unix"
     Lwt_engine,
     Lwt_bytes
   InternalModules:
-    Lwt_unix_jobs_generated
+    Lwt_unix_jobs_generated,
+    Lwt_config
   BuildDepends: lwt, lwt.log, unix, bigarray
   XMETADescription: Unix support for lwt
   CSources:
