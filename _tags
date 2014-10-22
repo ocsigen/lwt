@@ -14,7 +14,7 @@ not <src/ssl/*>: safe_string
 <tests/ppx/*>: ppx_lwt
 
 # Examples
-<examples/**/*.ml>: syntax(camlp4o), package(camlp4), pa_lwt_options, pa_lwt, pa_lwt_log
+<examples/**/*.ml>: ppx_lwt
 
 # OASIS_START
 # OASIS_STOP

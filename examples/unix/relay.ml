@@ -30,7 +30,7 @@ open Lwt.Infix
 
 (* Write exactly [len] bytes from [buf] at [ofs]. *)
 let rec write_exactly fd buf ofs len =
-  lwt n = Lwt_bytes.write fd buf ofs len in
+  let%lwt n = Lwt_bytes.write fd buf ofs len in
   if n = len then
     (* Everything has been written, do nothing. *)
     Lwt.return_unit
@@ -58,11 +58,11 @@ let relay in_fd out_fd =
         Lwt.return_unit
       else
         (* There is no data pending, wait for some. *)
-        lwt () = Lwt_condition.wait cond in
+        let%lwt () = Lwt_condition.wait cond in
         loop_write ()
     else
       let (buf, len) = Queue.take queue in
-      lwt () = write_exactly out_fd buf 0 len in
+      let%lwt () = write_exactly out_fd buf 0 len in
       loop_write ()
   in
 
@@ -72,7 +72,7 @@ let relay in_fd out_fd =
   (* Read continously from [in_fd]. *)
   let rec loop_read () =
     let buf = Lwt_bytes.create 8192 in
-    match_lwt Lwt_bytes.read in_fd buf 0 8192 with
+    match%lwt Lwt_bytes.read in_fd buf 0 8192 with
       | 0 ->
           (* If we read nothing, this means that the connection has
              been closed. *)
@@ -110,19 +110,19 @@ let addr_of_string str =
   (* Parse the port. *)
   let port = try int_of_string port with Failure _ -> usage () in
   (* Request the address of the host. *)
-  lwt entry = Lwt_unix.gethostbyname host in
+  let%lwt entry = Lwt_unix.gethostbyname host in
   if Array.length entry.Unix.h_addr_list = 0 then begin
     Printf.eprintf "no address found for host %S\n" host;
     exit 1
   end;
   Lwt.return (Unix.ADDR_INET (entry.Unix.h_addr_list.(0), port))
 
-lwt () =
+let%lwt () =
   if Array.length Sys.argv <> 3 then usage ();
 
-  try_lwt
+  try%lwt
     (* Resolve addresses. *)
-    lwt src_addr = addr_of_string Sys.argv.(1) and dst_addr = addr_of_string Sys.argv.(2) in
+    let%lwt src_addr = addr_of_string Sys.argv.(1) and dst_addr = addr_of_string Sys.argv.(2) in
 
     (* Initialize the listening address. *)
     let sock = Lwt_unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
@@ -133,19 +133,19 @@ lwt () =
     ignore (Lwt_log.notice "waiting for connection");
 
     (* Wait for a connection. *)
-    lwt fd1, _ = Lwt_unix.accept sock in
+    let%lwt fd1, _ = Lwt_unix.accept sock in
 
     ignore (Lwt_log.notice "connection received, start relayling");
 
     (* Closes the no-more used listening socket. *)
-    lwt () = Lwt_unix.close sock in
+    let%lwt () = Lwt_unix.close sock in
 
     (* Connect to the destination port. *)
     let fd2 = Lwt_unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
-    lwt () = Lwt_unix.connect fd2 dst_addr in
+    let%lwt () = Lwt_unix.connect fd2 dst_addr in
 
     (* Start relaying. *)
-    lwt () = Lwt.pick [relay fd1 fd2; relay fd2 fd1] in
+    let%lwt () = Lwt.pick [relay fd1 fd2; relay fd2 fd1] in
 
     ignore (Lwt_log.notice "done relayling");
 

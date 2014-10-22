@@ -325,26 +325,26 @@ Document "lwt-api"
 
 Executable logging
   Path: examples/unix
-  Build$: flag(unix) && flag(camlp4)
+  Build$: flag(unix) && flag(ppx)
   Install: false
   MainIs: logging.ml
-  BuildDepends: lwt.unix, lwt.syntax
+  BuildDepends: lwt.unix, lwt.ppx
   CompiledObject: best
 
 Executable relay
   Path: examples/unix
-  Build$: flag(unix) && flag(camlp4)
+  Build$: flag(unix) && flag(ppx)
   Install: false
   MainIs: relay.ml
-  BuildDepends: lwt.unix, lwt.syntax
+  BuildDepends: lwt.unix, lwt.ppx
   CompiledObject: best
 
 Executable parallelize
   Path: examples/unix
-  Build$: flag(unix) && flag(camlp4)
+  Build$: flag(unix) && flag(ppx)
   Install: false
   MainIs: parallelize.ml
-  BuildDepends: lwt.unix, lwt.syntax
+  BuildDepends: lwt.unix, lwt.ppx
   CompiledObject: best
 
 # +-------------------------------------------------------------------+
