@@ -2,7 +2,6 @@
 
 # Syntax extension
 <syntax/*.ml>: syntax(camlp4o)
-<examples/**/*.ml>: syntax(camlp4o), package(camlp4), pa_lwt_options, pa_lwt, pa_lwt_log
 
 # Stubs
 <src/unix/*>: use_C_libev, use_C_pthread
@@ -11,7 +10,10 @@
 <**/*.h>: use_lwt_headers
 
 # Ppx tests
-<tests/ppx/*>: use_ppx_lwt
+<tests/ppx/*>: ppx_lwt
+
+# Examples
+<examples/**/*.ml>: syntax(camlp4o), package(camlp4), pa_lwt_options, pa_lwt, pa_lwt_log
 
 # OASIS_START
 # OASIS_STOP

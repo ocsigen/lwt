@@ -47,9 +47,9 @@ Flag all
   Description: build and install everything
   Default: false
 
-Flag syntax
+Flag camlp4
   Description: Build the syntax extension
-  Default: true
+  Default$: flag(all)
 
 Flag ppx
   Description: Build the ppx syntax extension
@@ -226,8 +226,8 @@ Library "lwt-ssl"
   XMETADescription: SSL support for Lwt
 
 Library "lwt-syntax"
-  Build$: flag(syntax) || flag(all)
-  Install$: flag(syntax) || flag(all)
+  Build$: flag(camlp4) || flag(all)
+  Install$: flag(camlp4) || flag(all)
   FindlibName: syntax
   FindlibParent: lwt
   Path: syntax
@@ -238,8 +238,8 @@ Library "lwt-syntax"
   XMETARequires: camlp4, lwt.syntax.options
 
 Library "lwt-syntax-options"
-  Build$: flag(syntax) || flag(all)
-  Install$: flag(syntax) || flag(all)
+  Build$: flag(camlp4) || flag(all)
+  Install$: flag(camlp4) || flag(all)
   FindlibName: options
   FindlibParent: lwt-syntax
   Path: syntax
@@ -250,8 +250,8 @@ Library "lwt-syntax-options"
   XMETARequires: camlp4
 
 Library "lwt-syntax-log"
-  Build$: flag(syntax) || flag(all)
-  Install$: flag(syntax) || flag(all)
+  Build$: flag(camlp4) || flag(all)
+  Install$: flag(camlp4) || flag(all)
   FindlibName: log
   FindlibParent: lwt-syntax
   Path: syntax
@@ -318,7 +318,7 @@ Document "lwt-api"
 
 Executable logging
   Path: examples/unix
-  Build$: flag(unix)
+  Build$: flag(unix) && flag(camlp4)
   Install: false
   MainIs: logging.ml
   BuildDepends: lwt.unix, lwt.syntax
@@ -326,7 +326,7 @@ Executable logging
 
 Executable relay
   Path: examples/unix
-  Build$: flag(unix)
+  Build$: flag(unix) && flag(camlp4)
   Install: false
   MainIs: relay.ml
   BuildDepends: lwt.unix, lwt.syntax
@@ -334,7 +334,7 @@ Executable relay
 
 Executable parallelize
   Path: examples/unix
-  Build$: flag(unix)
+  Build$: flag(unix) && flag(camlp4)
   Install: false
   MainIs: parallelize.ml
   BuildDepends: lwt.unix, lwt.syntax

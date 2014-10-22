@@ -5,6 +5,7 @@ build: [
   ["./configure"
     "--prefix" prefix
     "--%{conf-libev:enable}%-libev"
+    "--%{camlp4:enable}%-camlp4"
     "--%{react:enable}%-react"
     "--%{ssl:enable}%-ssl"
     "--%{base-unix:enable}%-unix"
@@ -19,15 +20,15 @@ remove: [
 ]
 depends: [
   "ocamlfind" {>= "1.5.0"}
-  "camlp4"
+  ( "base-no-ppx" | "ppx_tools" )
   ## OASIS is not required in released version
   "oasis" {>= "0.4.4"}
-  ( "base-no-ppx" | "ppx_tools" )
 ]
 depopts: [
   "base-threads"
   "base-unix"
   "conf-libev"
+  "camlp4"
   "ssl"
   "lablgtk"
   "react"

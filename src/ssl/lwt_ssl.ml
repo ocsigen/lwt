@@ -67,7 +67,7 @@ let repeat_call fd f =
   | Lwt_unix.Retry_write ->
       Lwt_unix.register_action Lwt_unix.Write fd (wrap_call f)
   | e ->
-      raise_lwt e
+      Lwt.fail e
 
 (****)
 

@@ -72,10 +72,13 @@ let () =
              Options.make_links := false
 
          | After_rules ->
-
              let env = BaseEnvLight.load ~allow_empty:true ~filename:MyOCamlbuildBase.env_filename () in
 
-             dep ["file:src/unix/lwt_unix_stubs.c"] ["src/unix/lwt_unix_unix.c"; "src/unix/lwt_unix_windows.c"];
+             (* Determine extension of CompiledObject: best *)
+             let native_suffix =
+               if BaseEnvLight.var_get "is_native" env = "true"
+               then "native" else "byte"
+             in
 
              (* Internal syntax extension *)
              List.iter
@@ -87,16 +90,8 @@ let () =
                   dep ["ocaml"; "ocamldep"; tag] [file])
                ["lwt_options"; "lwt"; "lwt_log"];
 
-             (* Use byte or native ppx, depending of Oasis variable. *)
-             let native_suffix =
-               if BaseEnvLight.var_get "is_native" env = "true"
-               then "native" else "byte"
-             in
-             flag ["ocaml"; "compile"; "use_ppx_lwt"] &
-             S [
-               A "-ppx" ;
-               A ("ppx/ppx_lwt_ex." ^ native_suffix)
-             ] ;
+             flag ["ocaml"; "compile"; "ppx_lwt"] &
+              S [A "-ppx"; A ("ppx/ppx_lwt_ex." ^ native_suffix)];
 
              (* Use an introduction page with categories *)
              tag_file "lwt-api.docdir/index.html" ["apiref"];
@@ -104,6 +99,7 @@ let () =
              flag ["apiref"] & S[A "-intro"; P "apiref-intro"; A"-colorize-code"];
 
              (* Stubs: *)
+             dep ["file:src/unix/lwt_unix_stubs.c"] ["src/unix/lwt_unix_unix.c"; "src/unix/lwt_unix_windows.c"];
 
              (* Check for "unix" because other variables are not
                 present in the setup.data file if lwt.unix is
