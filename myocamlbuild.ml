@@ -81,17 +81,8 @@ let () =
              in
 
              (* Internal syntax extension *)
-             List.iter
-               (fun base ->
-                  let tag = "pa_" ^ base and file = "syntax/pa_" ^ base ^ ".cmo" in
-                  flag ["ocaml"; "compile"; tag] & S[A"-ppopt"; A file];
-                  flag ["ocaml"; "ocamldep"; tag] & S[A"-ppopt"; A file];
-                  flag ["ocaml"; "doc"; tag] & S[A"-ppopt"; A file];
-                  dep ["ocaml"; "ocamldep"; tag] [file])
-               ["lwt_options"; "lwt"; "lwt_log"];
-
-             flag ["ocaml"; "compile"; "ppx_lwt"] &
-              S [A "-ppx"; A ("ppx/ppx_lwt_ex." ^ native_suffix)];
+             flag ["ocaml"; "compile"; "use_ppx_lwt"] &
+               S [A "-ppx"; A ("ppx/ppx_lwt_ex." ^ native_suffix)];
 
              (* Use an introduction page with categories *)
              tag_file "lwt-api.docdir/index.html" ["apiref"];

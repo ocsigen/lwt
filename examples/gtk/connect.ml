@@ -50,7 +50,7 @@ let connection = ref None
 (* Read continously data from [ic] and write them to [view]. *)
 let read ic (view : GText.view) =
   let rec loop () =
-    match_lwt Lwt_io.read_line_opt ic with
+    match%lwt Lwt_io.read_line_opt ic with
       | Some line ->
           view#buffer#insert ~iter:view#buffer#end_iter ~tag_names:["recv"] (line ^ "\n");
           loop ()
@@ -58,7 +58,7 @@ let read ic (view : GText.view) =
           view#buffer#insert ~iter:view#buffer#end_iter "end of connection\n";
           Lwt_io.close ic
   in
-  try_lwt
+  try%lwt
     loop ()
   with Unix.Unix_error (error, _, _) ->
     show_error "reading error: %s" (Unix.error_message error);
@@ -88,7 +88,7 @@ let connect (view : GText.view) =
   dialog#show ();
 
   ignore (
-    match_lwt waiter with
+    match%lwt waiter with
       | `DELETE_EVENT ->
           Lwt.return_unit
       | `CANCEL ->
@@ -97,22 +97,22 @@ let connect (view : GText.view) =
       | `OK ->
           let host = host#text and port = int_of_float port#value in
           dialog#destroy ();
-          try_lwt
+          try%lwt
             (* Resolve the address. *)
-            lwt entry = Lwt_unix.gethostbyname host in
+            let%lwt entry = Lwt_unix.gethostbyname host in
             if Array.length entry.Unix.h_addr_list = 0 then begin
               show_error "no address found for host %S" host;
               Lwt.return_unit
             end else begin
-              lwt ic, oc = Lwt_io.open_connection (Unix.ADDR_INET (entry.Unix.h_addr_list.(0), port)) in
+              let%lwt ic, oc = Lwt_io.open_connection (Unix.ADDR_INET (entry.Unix.h_addr_list.(0), port)) in
               (* Close the previous connection. *)
-              lwt () =
+              let%lwt () =
                 match !connection with
                   | None ->
                       Lwt.return_unit
                   | Some (ic, oc, thread) ->
                       Lwt.cancel thread;
-                      try_lwt
+                      try%lwt
                         Lwt_io.close ic <&> Lwt_io.close oc
                       with Unix.Unix_error (error, _, _) ->
                         show_error "cannot close the connection: %s" (Unix.error_message error);
@@ -140,7 +140,7 @@ let write (view : GText.view) (entry : GEdit.entry) =
     | Some (ic, oc, thread) ->
         view#buffer#insert ~iter:view#buffer#end_iter ~tag_names:["send"] (text ^ "\n");
         ignore (
-          try_lwt
+          try%lwt
             Lwt_io.write_line oc text
           with Unix.Unix_error (error, _, _) ->
             show_error "cannot send line: %s" (Unix.error_message error);

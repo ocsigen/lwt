@@ -28,11 +28,11 @@ open Lwt.Infix
 (* Reads one command, launch it and waits for when it termination,
    then start again: *)
 let rec launch () =
-  match_lwt Lwt_io.read_line_opt Lwt_io.stdin with
+  match%lwt Lwt_io.read_line_opt Lwt_io.stdin with
     | None ->
         Lwt.return_unit
     | Some line ->
-        lwt exit_status = Lwt_process.exec (Lwt_process.shell line) in
+        let%lwt exit_status = Lwt_process.exec (Lwt_process.shell line) in
         launch ()
 
 (* Creates the initial <N> threads, where <N> is the number of
@@ -54,4 +54,4 @@ let cpus_count () =
             false)
        (Lwt_io.lines_of_file "/proc/cpuinfo")) 0
 
-lwt () = cpus_count () >>= create_threads
+let%lwt () = cpus_count () >>= create_threads
