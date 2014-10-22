@@ -28,33 +28,35 @@ let suite = suite "lwt_stream" [
     (fun () ->
        let mvar = Lwt_mvar.create_empty () in
        let stream = Lwt_stream.from (fun () ->
-                                       lwt x = Lwt_mvar.take mvar in
+                                       Lwt_mvar.take mvar >>= fun x ->
                                        return (Some x)) in
        let t1 = Lwt_stream.next stream in
        let t2 = Lwt_stream.next stream in
        let t3 = Lwt_stream.next stream in
-       lwt () = Lwt_mvar.put mvar 1 in
-       lwt x1 = t1 and x2 = t2 and x3 = t3 in
+       Lwt_mvar.put mvar 1 >>= fun () ->
+       t1 >>= fun x1 ->
+       t2 >>= fun x2 ->
+       t3 >>= fun x3 ->
        return ([x1; x2; x3] = [1; 1; 1]));
 
   test "of_list"
     (fun () ->
        let stream = Lwt_stream.of_list [1; 2; 3] in
-       lwt x1 = Lwt_stream.next stream in
-       lwt x2 = Lwt_stream.next stream in
-       lwt x3 = Lwt_stream.next stream in
+       Lwt_stream.next stream >>= fun x1 ->
+       Lwt_stream.next stream >>= fun x2 ->
+       Lwt_stream.next stream >>= fun x3 ->
        return ([x1; x2; x3] = [1; 2; 3]));
 
   test "clone"
     (fun () ->
        let stream1 = Lwt_stream.of_list [1; 2; 3] in
        let stream2 = Lwt_stream.clone stream1 in
-       lwt x1_1 = Lwt_stream.next stream1 in
-       lwt x2_1 = Lwt_stream.next stream2 in
-       lwt x1_2 = Lwt_stream.next stream1
-       and x1_3 = Lwt_stream.next stream1
-       and x2_2 = Lwt_stream.next stream2
-       and x2_3 = Lwt_stream.next stream2 in
+       Lwt_stream.next stream1 >>= fun x1_1 ->
+       Lwt_stream.next stream2 >>= fun x2_1 ->
+       Lwt_stream.next stream1 >>= fun x1_2 ->
+       Lwt_stream.next stream1 >>= fun x1_3 ->
+       Lwt_stream.next stream2 >>= fun x2_2 ->
+       Lwt_stream.next stream2 >>= fun x2_3 ->
        return ([x1_1; x1_2; x1_3] = [1; 2; 3] && [x2_1; x2_2; x2_3] = [1; 2; 3]));
 
   test "clone 2"
@@ -75,7 +77,7 @@ let suite = suite "lwt_stream" [
        push (Some 2);
        push (Some 3);
        push None;
-       lwt l = Lwt_stream.to_list stream in
+       Lwt_stream.to_list stream >>= fun l ->
        return (l = [1; 2; 3]));
 
   test "create 2"
@@ -98,7 +100,7 @@ let suite = suite "lwt_stream" [
        let acc = acc && state (push#push 6) = Fail Lwt_stream.Full in
        let acc = acc && state (Lwt_stream.get stream) = Return (Some 1) in
        (* Lwt_stream uses wakeup_later so we have to wait a bit. *)
-       lwt () = Lwt_unix.yield () in
+       Lwt_unix.yield () >>= fun () ->
        let acc = acc && state t = Return () in
        let acc = acc && state (Lwt_stream.get stream) = Return (Some 2) in
        let acc = acc && state (push#push 7) = Return () in
@@ -110,24 +112,24 @@ let suite = suite "lwt_stream" [
   test "get_while"
     (fun () ->
        let stream = Lwt_stream.of_list [1; 2; 3; 4; 5] in
-       lwt l1 = Lwt_stream.get_while (fun x -> x < 3) stream in
-       lwt l2 = Lwt_stream.to_list stream in
+       Lwt_stream.get_while (fun x -> x < 3) stream >>= fun l1 ->
+       Lwt_stream.to_list stream >>= fun l2 ->
        return (l1 = [1; 2] && l2 = [3; 4; 5]));
 
   test "peek"
     (fun () ->
        let stream = Lwt_stream.of_list [1; 2; 3; 4; 5] in
-       lwt x = Lwt_stream.peek stream in
-       lwt y = Lwt_stream.peek stream in
-       lwt l = Lwt_stream.to_list stream in
+       Lwt_stream.peek stream >>= fun x ->
+       Lwt_stream.peek stream >>= fun y ->
+       Lwt_stream.to_list stream >>= fun l ->
        return (x = Some 1 && y = Some 1 && l = [1; 2; 3; 4; 5]));
 
   test "npeek"
     (fun () ->
        let stream = Lwt_stream.of_list [1; 2; 3; 4; 5] in
-       lwt x = Lwt_stream.npeek 3 stream in
-       lwt y = Lwt_stream.npeek 1 stream in
-       lwt l = Lwt_stream.to_list stream in
+       Lwt_stream.npeek 3 stream >>= fun x ->
+       Lwt_stream.npeek 1 stream >>= fun y ->
+       Lwt_stream.to_list stream >>= fun l ->
        return (x = [1; 2; 3] && y = [1] && l = [1; 2; 3; 4; 5]));
 
   test "get_available"
@@ -138,7 +140,7 @@ let suite = suite "lwt_stream" [
        push (Some 3);
        let l = Lwt_stream.get_available stream in
        push (Some 4);
-       lwt x = Lwt_stream.get stream in
+       Lwt_stream.get stream >>= fun x ->
        return (l = [1; 2; 3] && x = Some 4));
 
   test "get_available_up_to"
@@ -149,7 +151,7 @@ let suite = suite "lwt_stream" [
        push (Some 3);
        push (Some 4);
        let l = Lwt_stream.get_available_up_to 2 stream in
-       lwt x = Lwt_stream.get stream in
+       Lwt_stream.get stream >>= fun x ->
        return (l = [1; 2] && x = Some 3));
 
   test "filter"
@@ -160,7 +162,7 @@ let suite = suite "lwt_stream" [
        push (Some 3);
        push (Some 4);
        let filtered = Lwt_stream.filter ((=) 3) stream in
-       lwt x = Lwt_stream.get filtered in
+       Lwt_stream.get filtered >>= fun x ->
        let l = Lwt_stream.get_available filtered in
        return (x = Some 3 && l = []));
 
@@ -172,7 +174,7 @@ let suite = suite "lwt_stream" [
        push (Some 3);
        push (Some 4);
        let filtered = Lwt_stream.filter_map (function 3 ->  Some "3" | _ -> None ) stream in
-       lwt x = Lwt_stream.get filtered in
+       Lwt_stream.get filtered >>= fun x ->
        let l = Lwt_stream.get_available filtered in
        return (x = Some "3" && l = []));
 
@@ -182,7 +184,7 @@ let suite = suite "lwt_stream" [
        push (Some 1);
        push (Some 2);
        push (Some 3);
-       lwt x = Lwt_stream.last_new stream in
+       Lwt_stream.last_new stream >>= fun x ->
        return (x = 3));
 
   test "cancel push stream 1"
@@ -272,9 +274,9 @@ let suite = suite "lwt_stream" [
                     return (Some x)
                 | Error e :: l ->
                     q := l;
-                    raise_lwt e)
+                    Lwt.fail e)
        in
-       lwt l' = Lwt_stream.to_list (Lwt_stream.map_exn stream) in
+       Lwt_stream.to_list (Lwt_stream.map_exn stream) >>= fun l' ->
        return (l = l'));
 
   test "on_terminate"

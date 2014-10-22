@@ -22,7 +22,8 @@
  *)
 
 open Bigarray
-open Lwt
+
+let return, (>>=) = Lwt.return, Lwt.(>>=)
 
 type t = (char, int8_unsigned_elt, c_layout) Array1.t
 
@@ -119,7 +120,7 @@ let read fd buf pos len =
   else
     blocking fd >>= function
       | true ->
-          lwt () = wait_read fd in
+          wait_read fd >>= fun () ->
           run_job (read_job (unix_file_descr fd) buf pos len)
       | false ->
           wrap_syscall Read fd (fun () -> stub_read (unix_file_descr fd) buf pos len)
@@ -133,7 +134,7 @@ let write fd buf pos len =
   else
     blocking fd >>= function
       | true ->
-          lwt () = wait_write fd in
+          wait_write fd >>= fun () ->
           run_job (write_job (unix_file_descr fd) buf pos len)
       | false ->
           wrap_syscall Write fd (fun () -> stub_write (unix_file_descr fd) buf pos len)

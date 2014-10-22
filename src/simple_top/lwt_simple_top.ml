@@ -23,15 +23,14 @@
 (* Integration with the toplevel for people who do not use the
    enhanced toplevel (the utop project). *)
 
-open Lwt
-open Lwt_io
+let return, (>>=) = Lwt.return, Lwt.(>>=)
 
 let read_input_non_interactive prompt buffer len =
   let rec loop i =
     if i = len then
       return (i, false)
     else
-      read_char_opt stdin >>= function
+      Lwt_io.read_char_opt Lwt_io.stdin >>= function
         | Some c ->
             buffer.[i] <- c;
             if c = '\n' then
@@ -41,7 +40,7 @@ let read_input_non_interactive prompt buffer len =
         | None ->
             return (i, true)
   in
-  Lwt_main.run (write stdout prompt >> loop 0)
+  Lwt_main.run (Lwt_io.write Lwt_io.stdout prompt >>= fun () -> loop 0)
 
 let () =
   Toploop.read_interactive_input := read_input_non_interactive

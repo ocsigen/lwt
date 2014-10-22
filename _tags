@@ -2,9 +2,7 @@
 
 # Syntax extension
 <syntax/*.ml>: syntax(camlp4o)
-<src/{logger,preemptive,simple_top,unix}/*.ml>: syntax(camlp4o), package(camlp4), pa_lwt_options, pa_lwt, pa_lwt_log
 <examples/**/*.ml>: syntax(camlp4o), package(camlp4), pa_lwt_options, pa_lwt, pa_lwt_log
-<tests/{core,preemptive,unix}/*.ml>: syntax(camlp4o), package(camlp4), pa_lwt_options, pa_lwt, pa_lwt_log
 
 # Stubs
 <src/unix/*>: use_C_libev, use_C_pthread

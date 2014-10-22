@@ -21,10 +21,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *)
 
-let section = Lwt_log.Section.make "lwt(preemptive)"
+let return, (>>=) = Lwt.return, Lwt.(>>=)
 
-open Lwt
-open Lwt_io
+let section = Lwt_log.Section.make "lwt(preemptive)"
 
 (* +-----------------------------------------------------------------+
    | Parameters                                                      |
@@ -103,7 +102,7 @@ let add_worker worker =
     | None ->
         Queue.add worker workers
     | Some w ->
-        wakeup w worker
+        Lwt.wakeup w worker
 
 (* Wait for worker to be available, then return it: *)
 let rec get_worker () =
@@ -163,27 +162,28 @@ let detach f args =
     with exn ->
       result := Lwt.make_error exn
   in
-  lwt worker = get_worker () in
-  let waiter, wakener = wait () in
+  get_worker () >>= fun worker ->
+  let waiter, wakener = Lwt.wait () in
   let id =
     Lwt_unix.make_notification ~once:true
       (fun () -> Lwt.wakeup_result wakener !result)
   in
-  try_lwt
-    (* Send the id and the task to the worker: *)
-    Event.sync (Event.send worker.task_channel (id, task));
-    waiter
-  finally
-    if worker.reuse then
-      (* Put back the worker to the pool: *)
-      add_worker worker
-    else begin
-      decr threads_count;
-      (* Or wait for the thread to terminates, to free its associated
-         resources: *)
-      Thread.join worker.thread
-    end;
-    return ()
+  Lwt.finalize
+    (fun () ->
+      (* Send the id and the task to the worker: *)
+      Event.sync (Event.send worker.task_channel (id, task));
+      waiter)
+    (fun () ->
+      if worker.reuse then
+        (* Put back the worker to the pool: *)
+        add_worker worker
+      else begin
+        decr threads_count;
+        (* Or wait for the thread to terminates, to free its associated
+           resources: *)
+        Thread.join worker.thread
+      end;
+      return ())
 
 (* +-----------------------------------------------------------------+
    | Running Lwt threads in the main thread                          |
@@ -214,11 +214,9 @@ let run_in_main f =
   (* Create the job. *)
   let job () =
     (* Execute [f] and wait for its result. *)
-    lwt result =
-      try_bind f
-        (fun ret -> return (Value ret))
-        (fun exn -> return (Error exn))
-    in
+    Lwt.try_bind f
+      (fun ret -> return (Value ret))
+      (fun exn -> return (Error exn)) >>= fun result ->
     (* Send the result. *)
     Event.sync (Event.send channel result);
     return ()

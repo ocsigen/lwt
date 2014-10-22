@@ -22,7 +22,7 @@
  * 02111-1307, USA.
  *)
 
-open Lwt
+let return, (>>=), (>|=) = Lwt.return, Lwt.(>>=), Lwt.(>|=)
 
 (* +-----------------------------------------------------------------+
    | Configuration                                                   |
@@ -62,13 +62,13 @@ let async_method () =
     | None -> !default_async_method_var
 
 let with_async_none f =
-  with_value async_method_key (Some Async_none) f
+  Lwt.with_value async_method_key (Some Async_none) f
 
 let with_async_detach f =
-  with_value async_method_key (Some Async_detach) f
+  Lwt.with_value async_method_key (Some Async_detach) f
 
 let with_async_switch f =
-  with_value async_method_key (Some Async_switch) f
+  Lwt.with_value async_method_key (Some Async_switch) f
 
 (* +-----------------------------------------------------------------+
    | Notifications management                                        |
@@ -146,7 +146,7 @@ let auto_yield timeout =
 
 exception Timeout
 
-let timeout d = sleep d >> Lwt.fail Timeout
+let timeout d = sleep d >>= fun () -> Lwt.fail Timeout
 
 let with_timeout d f = Lwt.pick [timeout d; Lwt.apply f ()]
 
@@ -176,7 +176,7 @@ let rec abort_jobs exn =
 let cancel_jobs () = abort_jobs Lwt.Canceled
 
 let wait_for_jobs () =
-  join (Lwt_sequence.fold_l (fun (w, f) l -> w :: l) jobs [])
+  Lwt.join (Lwt_sequence.fold_l (fun (w, f) l -> w :: l) jobs [])
 
 let wrap_result f x =
   try
@@ -192,9 +192,12 @@ let run_job_aux async_method job result =
     Lwt.of_result (result job)
   else begin
     (* Thread for the job. *)
-    let waiter, wakener = wait () in
+    let waiter, wakener = Lwt.wait () in
     (* Add the job to the sequence of all jobs. *)
-    let node = Lwt_sequence.add_l (waiter >> return (), fun exn -> if state waiter = Sleep then wakeup_exn wakener exn) jobs in
+    let node = Lwt_sequence.add_l (
+                  (waiter >>= fun _ -> return ()),
+                  (fun exn -> if Lwt.state waiter = Lwt.Sleep then Lwt.wakeup_exn wakener exn))
+                jobs in
     ignore begin
       (* Create the notification for asynchronous wakeup. *)
       let id =
@@ -202,11 +205,11 @@ let run_job_aux async_method job result =
           (fun () ->
              Lwt_sequence.remove node;
              let result = result job in
-             if state waiter = Sleep then Lwt.wakeup_result wakener result)
+             if Lwt.state waiter = Lwt.Sleep then Lwt.wakeup_result wakener result)
       in
       (* Give the job some time before we fallback to asynchronous
          notification. *)
-      lwt () = pause () in
+      Lwt.pause () >>= fun () ->
       (* The job has terminated, send the result immediately. *)
       if check_job job id then call_notification id;
       return ()
@@ -245,7 +248,7 @@ let run_job ?async_method job =
     try
       return (run_job_sync job)
     with exn ->
-      fail exn
+      Lwt.fail exn
   else
     run_job_aux async_method job self_result
 
@@ -447,8 +450,8 @@ type 'a outcome =
 
 (* Wait a bit, then stop events that are no more used. *)
 let stop_events ch =
-  on_success
-    (pause ())
+  Lwt.on_success
+    (Lwt.pause ())
     (fun () ->
        if Lwt_sequence.is_empty ch.hooks_readable then begin
          match ch.event_readable with
@@ -527,20 +530,20 @@ let register_action event ch action =
     | Read ->
         let node = ref dummy in
         node := Lwt_sequence.add_r (fun () -> retry_syscall node Read ch wakener action) ch.hooks_readable;
-        on_cancel waiter (fun () -> Lwt_sequence.remove !node; stop_events ch);
+        Lwt.on_cancel waiter (fun () -> Lwt_sequence.remove !node; stop_events ch);
         register_readable ch;
         waiter
     | Write ->
         let node = ref dummy in
         node := Lwt_sequence.add_r (fun () -> retry_syscall node Write ch wakener action) ch.hooks_writable;
-        on_cancel waiter (fun () -> Lwt_sequence.remove !node; stop_events ch);
+        Lwt.on_cancel waiter (fun () -> Lwt_sequence.remove !node; stop_events ch);
         register_writable ch;
         waiter
 
 (* Wraps a system call *)
 let wrap_syscall event ch action =
   check_descriptor ch;
-  lwt blocking = Lazy.force ch.blocking in
+  Lazy.force ch.blocking >>= fun blocking ->
   try
     if not blocking || (event = Read && unix_readable ch.fd) || (event = Write && unix_writable ch.fd) then
       return (action ())
@@ -557,7 +560,7 @@ let wrap_syscall event ch action =
     | Retry_write ->
         register_action Write ch action
     | e ->
-        raise_lwt e
+        Lwt.fail e
 
 (* +-----------------------------------------------------------------+
    | Generated jobs                                                  |
@@ -592,7 +595,7 @@ let openfile name flags perms =
   if Sys.win32 then
     return (of_unix_file_descr (Unix.openfile name flags perms))
   else
-    lwt fd, blocking = run_job (open_job name flags perms) in
+    run_job (open_job name flags perms) >>= fun (fd, blocking) ->
     return (of_unix_file_descr ~blocking fd)
 
 let close ch =
@@ -605,11 +608,13 @@ let close ch =
     run_job (Jobs.close_job ch.fd)
 
 let wait_read ch =
-  try_lwt
-    if readable ch then
-      return ()
-    else
-      register_action Read ch ignore
+  Lwt.catch
+    (fun () ->
+      if readable ch then
+        return ()
+      else
+        register_action Read ch ignore)
+    Lwt.fail
 
 external stub_read : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_read"
 external read_job : Unix.file_descr -> string -> int -> int -> int job = "lwt_unix_read_job"
@@ -620,17 +625,19 @@ let read ch buf pos len =
   else
     Lazy.force ch.blocking >>= function
       | true ->
-          lwt () = wait_read ch in
+          wait_read ch >>= fun () ->
           run_job (read_job ch.fd buf pos len)
       | false ->
           wrap_syscall Read ch (fun () -> stub_read ch.fd buf pos len)
 
 let wait_write ch =
-  try_lwt
-    if writable ch then
-      return ()
-    else
-      register_action Write ch ignore
+  Lwt.catch
+    (fun () ->
+      if writable ch then
+        return ()
+      else
+        register_action Write ch ignore)
+    Lwt.fail
 
 external stub_write : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_write"
 external write_job : Unix.file_descr -> string -> int -> int -> int job = "lwt_unix_write_job"
@@ -641,7 +648,7 @@ let write ch buf pos len =
   else
     Lazy.force ch.blocking >>= function
       | true ->
-          lwt () = wait_write ch in
+          wait_write ch >>= fun () ->
           run_job (write_job ch.fd buf pos len)
       | false ->
           wrap_syscall Write ch (fun () -> stub_write ch.fd buf pos len)
@@ -994,7 +1001,7 @@ external readdir_n_job : Unix.dir_handle -> int -> string array job = "lwt_unix_
 
 let readdir_n handle count =
   if count < 0 then
-    fail (Invalid_argument "Lwt_uinx.readdir_n")
+    Lwt.fail (Invalid_argument "Lwt_uinx.readdir_n")
   else if Sys.win32 then
     let array = Array.make count "" in
     let rec fill i =
@@ -1046,17 +1053,15 @@ let files_of_directory path =
        (fun () ->
           match !state with
             | LDS_not_started ->
-                lwt handle = opendir path in
-                lwt entries =
-                  try_lwt
-                    readdir_n handle 1024
-                  with exn ->
-                    lwt () = closedir handle in
-                    raise exn
-                in
+                opendir path >>= fun handle ->
+                Lwt.catch
+                  (fun () -> readdir_n handle 1024)
+                  (fun exn ->
+                    closedir handle >>= fun () ->
+                    Lwt.fail exn) >>= fun entries ->
                 if Array.length entries < 1024 then begin
                   state := LDS_done;
-                  lwt () = closedir handle in
+                  closedir handle >>= fun () ->
                   return (Some(Lwt_stream.of_array entries))
                 end else begin
                   state := LDS_listing handle;
@@ -1064,16 +1069,14 @@ let files_of_directory path =
                   return (Some(Lwt_stream.of_array entries))
                 end
             | LDS_listing handle ->
-                lwt entries =
-                  try_lwt
-                    readdir_n handle 1024
-                  with exn ->
-                    lwt () = closedir handle in
-                    raise exn
-                in
+                Lwt.catch
+                  (fun () -> readdir_n handle 1024)
+                  (fun exn ->
+                    closedir handle >>= fun () ->
+                    Lwt.fail exn) >>= fun entries ->
                 if Array.length entries < 1024 then begin
                   state := LDS_done;
-                  lwt () = closedir handle in
+                  closedir handle >>= fun () ->
                   return (Some(Lwt_stream.of_array entries))
                 end else
                   return (Some(Lwt_stream.of_array entries))
@@ -1331,25 +1334,25 @@ let accept ch =
 
 let accept_n ch n =
   let l = ref [] in
-  lwt blocking = Lazy.force ch.blocking in
-  try_lwt
-    wrap_syscall Read ch begin fun () ->
-      begin
-        try
-          for i = 1 to n do
-            if blocking && not (unix_readable ch.fd) then raise Retry;
-            let fd, addr = Unix.accept ch.fd in
-            l := (mk_ch ~blocking:false fd, addr) :: !l
-          done
-        with
-          | (Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _) | Retry) when !l <> [] ->
-              (* Ignore blocking errors if we have at least one file-descriptor: *)
-              ()
-      end;
-      (List.rev !l, None)
-    end
-  with exn ->
-    return (List.rev !l, Some exn)
+  Lazy.force ch.blocking >>= fun blocking ->
+  Lwt.catch
+    (fun () ->
+      wrap_syscall Read ch begin fun () ->
+        begin
+          try
+            for i = 1 to n do
+              if blocking && not (unix_readable ch.fd) then raise Retry;
+              let fd, addr = Unix.accept ch.fd in
+              l := (mk_ch ~blocking:false fd, addr) :: !l
+            done
+          with
+            | (Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _) | Retry) when !l <> [] ->
+                (* Ignore blocking errors if we have at least one file-descriptor: *)
+                ()
+        end;
+        (List.rev !l, None)
+      end)
+    (fun exn -> return (List.rev !l, Some exn))
 
 let connect ch addr =
   if Sys.win32 then
@@ -1865,7 +1868,7 @@ let fork () =
         Lwt_sequence.iter_node_l Lwt_sequence.remove jobs;
         (* And cancel them all. We yield first so that if the program
            do an exec just after, it won't be executed. *)
-        on_termination (Lwt_main.yield ()) (fun () -> List.iter (fun f -> f Lwt.Canceled) l);
+        Lwt.on_termination (Lwt_main.yield ()) (fun () -> List.iter (fun f -> f Lwt.Canceled) l);
         0
     | pid ->
         pid
@@ -1918,8 +1921,9 @@ let () =
     end
 
 let _waitpid flags pid =
-  try_lwt
-    return (Unix.waitpid flags pid)
+  Lwt.catch
+    (fun () -> return (Unix.waitpid flags pid))
+    Lwt.fail
 
 let waitpid =
   if Sys.win32 then
@@ -1930,14 +1934,14 @@ let waitpid =
         _waitpid flags pid
       else
         let flags = Unix.WNOHANG :: flags in
-        lwt ((pid', _) as res) = _waitpid flags pid in
+        _waitpid flags pid >>= fun ((pid', _) as res) ->
         if pid' <> 0 then
           return res
         else begin
           let (res, w) = Lwt.task () in
           let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
           Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
-          lwt (pid, status, _) = res in
+          res >>= fun (pid, status, _) ->
           return (pid, status)
         end
 
@@ -1967,7 +1971,7 @@ external sys_exit : int -> 'a = "caml_sys_exit"
 
 let system cmd =
   if Sys.win32 then
-    lwt code = run_job (system_job ("cmd.exe /c " ^ cmd)) in
+    run_job (system_job ("cmd.exe /c " ^ cmd)) >>= fun code ->
     return (Unix.WEXITED code)
   else
     match fork () with
@@ -1988,10 +1992,10 @@ let system cmd =
 let run = Lwt_main.run
 
 let handle_unix_error f x =
-  try_lwt
-    f x
-  with exn ->
-    Unix.handle_unix_error (fun () -> raise exn) ()
+  Lwt.catch
+    (fun () -> f x)
+    (fun exn ->
+      Unix.handle_unix_error (fun () -> raise exn) ())
 
 (* +-----------------------------------------------------------------+
    | System thread pool                                              |

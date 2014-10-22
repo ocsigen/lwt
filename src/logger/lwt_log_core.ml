@@ -300,7 +300,7 @@ let log ?exn ?(section=Section.main) ?location ?logger ~level message =
     | Some logger -> logger
   in
   if logger.lg_closed then
-    raise_lwt Logger_closed
+    Lwt.fail Logger_closed
   else if level >= section.Section.level then
     match exn with
       | None ->

@@ -20,11 +20,11 @@
  * 02111-1307, USA.
  *)
 
-open Lwt
+let return, (>>=) = Lwt.return, Lwt.(>>=)
 
 let rec copy ic logger =
-  lwt line = Lwt_io.read_line ic in
-  lwt () = Lwt_log.log ?logger ~level:Lwt_log.Notice line in
+  Lwt_io.read_line ic >>= fun line ->
+  Lwt_log.log ?logger ~level:Lwt_log.Notice line >>= fun () ->
   copy ic logger
 
 let redirect fd logger =
@@ -33,7 +33,7 @@ let redirect fd logger =
   Unix.dup2 fd_w fd;
   Unix.close fd_w;
   let ic = Lwt_io.of_unix_fd ~mode:Lwt_io.input fd_r in
-  ignore_result (copy ic logger)
+  Lwt.ignore_result (copy ic logger)
 
 let redirect_output dev_null fd mode = match mode with
   | `Dev_null ->

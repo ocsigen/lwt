@@ -21,7 +21,7 @@
  * 02111-1307, USA.
  *)
 
-open Lwt
+let return, (>>=) = Lwt.return, Lwt.(>>=)
 
 module type S = sig
   type key
@@ -88,17 +88,18 @@ module Make (H : Hashtbl.HashedType) : (S with type key = H.t) = struct
       (* the table is empty: we do not need to clean in 1 second *)
       t.cleaning <- None
     else launch_cleaning t;
-    List.iter (fun u -> wakeup u true) to_run
+    List.iter (fun u -> Lwt.wakeup u true) to_run
 
   and launch_cleaning t =
     t.cleaning <-
       let t =
-        lwt () = Lwt_unix.sleep 1. in
-        try_lwt
-          clean_table t;
-          return ();
-        with
-          | exn -> Lwt_log.fatal ~exn ~section "internal error"
+        Lwt_unix.sleep 1. >>= fun () ->
+        Lwt.catch
+          (fun () ->
+            clean_table t;
+            return ())
+          (fun exn ->
+            Lwt_log.fatal ~exn ~section "internal error")
       in
       Some t
 

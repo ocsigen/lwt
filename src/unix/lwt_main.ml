@@ -20,13 +20,13 @@
  * 02111-1307, USA.
  *)
 
-open Lwt
+let return, (>>=) = Lwt.return, Lwt.(>>=)
 
 let enter_iter_hooks = Lwt_sequence.create ()
 let leave_iter_hooks = Lwt_sequence.create ()
 let yielded = Lwt_sequence.create ()
 
-let yield () = add_task_r yielded
+let yield () = Lwt.add_task_r yielded
 
 let rec run t =
   (* Wakeup paused threads now. *)
@@ -45,7 +45,7 @@ let rec run t =
         if not (Lwt_sequence.is_empty yielded) then begin
           let tmp = Lwt_sequence.create () in
           Lwt_sequence.transfer_r yielded tmp;
-          Lwt_sequence.iter_l (fun wakener -> wakeup wakener ()) tmp
+          Lwt_sequence.iter_l (fun wakener -> Lwt.wakeup wakener ()) tmp
         end;
         (* Call leave hooks. *)
         Lwt_sequence.iter_l (fun f -> f ()) leave_iter_hooks;
@@ -58,12 +58,9 @@ let rec call_hooks () =
     | None ->
         return ()
     | Some f ->
-        lwt () =
-          try_lwt
-            f ()
-          with exn ->
-            return ()
-        in
+        Lwt.catch
+          (fun () -> f ())
+          (fun _  -> return ()) >>= fun () ->
         call_hooks ()
 
 let () = at_exit (fun () -> run (call_hooks ()))

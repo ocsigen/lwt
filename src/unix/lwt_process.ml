@@ -20,7 +20,7 @@
  * 02111-1307, USA.
  *)
 
-open Lwt
+let return, (>>=), (>|=) = Lwt.return, Lwt.(>>=), Lwt.(>|=)
 
 type command = string * string array
 
@@ -110,7 +110,7 @@ let win32_spawn (prog, args) env ?(stdin:redirection=`Keep) ?(stdout:redirection
 external win32_wait_job : Unix.file_descr -> int Lwt_unix.job  = "lwt_process_wait_job"
 
 let win32_waitproc proc =
-  lwt code = Lwt_unix.run_job (win32_wait_job proc.fd) in
+  Lwt_unix.run_job (win32_wait_job proc.fd) >>= fun code ->
   return (proc.id, Lwt_unix.WEXITED code, { Lwt_unix.ru_utime = 0.; Lwt_unix.ru_stime = 0. })
 
 external win32_terminate_process : Unix.file_descr -> int -> unit = "lwt_process_terminate_process"
@@ -196,7 +196,7 @@ let ignore_close chan = ignore (Lwt_io.close chan)
 
 class virtual common timeout proc channels =
   let wait = waitproc proc in
-  let close = lazy(join (List.map Lwt_io.close channels) >> wait) in
+  let close = lazy(Lwt.join (List.map Lwt_io.close channels) >>= fun () -> wait) in
 object(self)
 
   method pid = proc.id
@@ -231,14 +231,14 @@ object(self)
                self#close. *)
             Lwt.try_bind
               (fun () ->
-                 Lwt.choose [Lwt_unix.sleep dt >> return false;
-                             wait >> return true])
+                 Lwt.choose [(Lwt_unix.sleep dt >>= fun () -> Lwt.return_false);
+                             (wait >>= fun _ -> Lwt.return_true)])
               (function
                  | true ->
-                     return_unit
+                     Lwt.return_unit
                  | false ->
                      self#terminate;
-                     Lazy.force close >> Lwt.return_unit)
+                     Lazy.force close >>= fun _ -> Lwt.return_unit)
               (fun exn ->
                  (* The exception is dropped because it can be
                     obtained with self#close. *)
@@ -305,11 +305,11 @@ let open_process_full ?timeout ?env cmd = new process_full ?timeout ?env cmd
 
 let make_with backend ?timeout ?env cmd f =
   let process = backend ?timeout ?env cmd in
-  try_lwt
-    f process
-  finally
-    lwt _ = process#close in
-    return ()
+  Lwt.finalize
+    (fun () -> f process)
+    (fun () ->
+      process#close >>= fun _ ->
+      return ())
 
 let with_process_none ?timeout ?env ?stdin ?stdout ?stderr cmd f = make_with (open_process_none ?stdin ?stdout ?stderr) ?timeout ?env cmd f
 let with_process_in ?timeout ?env ?stdin ?stderr cmd f = make_with (open_process_in ?stdin ?stderr) ?timeout ?env cmd f
@@ -327,18 +327,20 @@ let ignore_close ch =
   ignore (Lwt_io.close ch)
 
 let read_opt read ic =
-  try_lwt
-    read ic >|= fun x -> Some x
-  with Unix.Unix_error (Unix.EPIPE, _, _) | End_of_file ->
-    return None
+  Lwt.catch
+    (fun () -> read ic >|= fun x -> Some x)
+    (function
+    | Unix.Unix_error (Unix.EPIPE, _, _) | End_of_file ->
+        return None
+    | exn -> Lwt.fail exn)
 
 let recv_chars pr =
   let ic = pr#stdout in
   Gc.finalise ignore_close ic;
   Lwt_stream.from (fun _ ->
-                     lwt x = read_opt Lwt_io.read_char ic in
+                     read_opt Lwt_io.read_char ic >>= fun x ->
                      if x = None then begin
-                       lwt () = Lwt_io.close ic in
+                       Lwt_io.close ic >>= fun () ->
                        return x
                      end else
                        return x)
@@ -347,33 +349,30 @@ let recv_lines pr =
   let ic = pr#stdout in
   Gc.finalise ignore_close ic;
   Lwt_stream.from (fun _ ->
-                     lwt x = read_opt Lwt_io.read_line ic in
+                     read_opt Lwt_io.read_line ic >>= fun x ->
                      if x = None then begin
-                       lwt () = Lwt_io.close ic in
+                       Lwt_io.close ic >>= fun () ->
                        return x
                      end else
                        return x)
 
 let recv pr =
   let ic = pr#stdout in
-  try_lwt
-    Lwt_io.read ic
-  finally
-    Lwt_io.close ic
+  Lwt.finalize
+    (fun () -> Lwt_io.read ic)
+    (fun () -> Lwt_io.close ic)
 
 let recv_line pr =
   let ic = pr#stdout in
-  try_lwt
-    Lwt_io.read_line ic
-  finally
-    Lwt_io.close ic
+  Lwt.finalize
+    (fun () -> Lwt_io.read_line ic)
+    (fun () -> Lwt_io.close ic)
 
 let send f pr data =
   let oc = pr#stdin in
-  try_lwt
-    f oc data
-  finally
-    Lwt_io.close oc
+  Lwt.finalize
+    (fun () -> f oc data)
+    (fun () -> Lwt_io.close oc)
 
 (* Receiving *)
 
@@ -449,14 +448,17 @@ let pmap ?timeout ?env ?stderr cmd text =
   (* Start the sender and getter at the same time. *)
   let sender = send Lwt_io.write pr text in
   let getter = recv pr in
-  try_lwt
-    (* Wait for both to terminate, returning the result of the
-       getter. *)
-    sender >> getter
-  with Lwt.Canceled as exn ->
-    (* Cancel the getter if the sender was canceled. *)
-    Lwt.cancel getter;
-    raise_lwt exn
+  Lwt.catch
+    (fun () ->
+      (* Wait for both to terminate, returning the result of the
+         getter. *)
+      sender >>= fun () -> getter)
+    (function
+    | Lwt.Canceled as exn ->
+        (* Cancel the getter if the sender was canceled. *)
+        Lwt.cancel getter;
+        Lwt.fail exn
+    | exn -> Lwt.fail exn)
 
 let pmap_chars ?timeout ?env ?stderr cmd chars =
   let pr = open_process ?timeout ?env ?stderr cmd in
@@ -468,14 +470,17 @@ let pmap_line ?timeout ?env ?stderr cmd line =
   (* Start the sender and getter at the same time. *)
   let sender = send Lwt_io.write_line pr line in
   let getter = recv_line pr in
-  try_lwt
-    (* Wait for both to terminate, returning the result of the
-       getter. *)
-    sender >> getter
-  with Lwt.Canceled as exn ->
-    (* Cancel the getter if the sender was canceled. *)
-    Lwt.cancel getter;
-    raise_lwt exn
+  Lwt.catch
+    (fun () ->
+      (* Wait for both to terminate, returning the result of the
+         getter. *)
+      sender >>= fun () -> getter)
+    (function
+    | Lwt.Canceled as exn ->
+        (* Cancel the getter if the sender was canceled. *)
+        Lwt.cancel getter;
+        Lwt.fail exn
+    | exn -> Lwt.fail exn)
 
 let pmap_lines ?timeout ?env ?stderr cmd lines =
   let pr = open_process ?timeout ?env ?stderr cmd in

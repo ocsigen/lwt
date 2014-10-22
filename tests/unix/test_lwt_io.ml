@@ -33,12 +33,12 @@ let suite = suite "lwt_io" [
                                             Lwt_bytes.blit_bytes_string buf ofs str 0 len;
                                             sent := str :: !sent;
                                             return len) in
-       lwt () = write oc "foo" in
-       lwt () = write oc "bar" in
+       write oc "foo" >>= fun () ->
+       write oc "bar" >>= fun () ->
        if !sent <> [] then
          return false
        else
-         lwt () = Lwt_unix.yield () in
+         Lwt_unix.yield () >>= fun () ->
          return (!sent = ["foobar"]));
 
   test "auto-flush in atomic"
@@ -51,12 +51,12 @@ let suite = suite "lwt_io" [
                                      return len) in
        atomic
          (fun oc ->
-            lwt () = write oc "foo" in
-            lwt () = write oc "bar" in
+            write oc "foo" >>= fun () ->
+            write oc "bar" >>= fun () ->
             if !sent <> [] then
               return false
             else
-              lwt () = Lwt_unix.yield () in
+              Lwt_unix.yield () >>= fun () ->
               return (!sent = ["foobar"]))
          oc);
 ]

@@ -20,7 +20,7 @@
  * 02111-1307, USA.
  *)
 
-open Lwt
+let return, (>>=), (>|=), (<&>) = Lwt.return, Lwt.(>>=), Lwt.(>|=), Lwt.(<&>)
 
 exception Channel_closed of string
 
@@ -196,18 +196,20 @@ let perform_io : type mode. mode _channel -> int Lwt.t = fun ch -> match ch.main
                   (size, ch.length - size)
               | Output ->
                   (0, ch.ptr) in
-            lwt n = pick [ch.abort_waiter;
-                          if Sys.win32 then
-                            try_lwt
-                              perform_io ch.buffer ptr len
-                            with Unix.Unix_error (Unix.EPIPE, _, _) ->
-                              return 0
-                          else
-                            perform_io ch.buffer ptr len
-                         ] in
+            Lwt.pick [ch.abort_waiter;
+                      if Sys.win32 then
+                        Lwt.catch
+                          (fun () -> perform_io ch.buffer ptr len)
+                          (function
+                          | Unix.Unix_error (Unix.EPIPE, _, _) ->
+                            return 0
+                          | exn -> Lwt.fail exn)
+                      else
+                        perform_io ch.buffer ptr len
+                     ] >>= fun n ->
             (* Never trust user functions... *)
             if n < 0 || n > len then
-              raise_lwt (Failure (Printf.sprintf "Lwt_io: invalid result of the [%s] function(request=%d,result=%d)"
+              Lwt.fail (Failure (Printf.sprintf "Lwt_io: invalid result of the [%s] function(request=%d,result=%d)"
                                     (match ch.mode with Input -> "read" | Output -> "write") len n))
             else begin
               (* Update the global offset: *)
@@ -230,15 +232,15 @@ let perform_io : type mode. mode _channel -> int Lwt.t = fun ch -> match ch.main
               | Input ->
                   return 0
               | Output ->
-                  raise_lwt (Failure "cannot flush a channel created with Lwt_io.of_string")
+                  Lwt.fail (Failure "cannot flush a channel created with Lwt_io.of_string")
           end
     end
 
   | Closed ->
-      raise_lwt (closed_channel ch)
+      Lwt.fail (closed_channel ch)
 
   | Invalid ->
-      raise_lwt (invalid_channel ch)
+      Lwt.fail (invalid_channel ch)
 
   | Idle | Waiting_for_busy ->
       assert false
@@ -248,16 +250,15 @@ let flush_partial = perform_io
 
 let rec flush_total oc =
   if oc.ptr > 0 then
-    lwt _ = flush_partial oc in
+    flush_partial oc >>= fun _ ->
     flush_total oc
   else
     return ()
 
 let safe_flush_total oc =
-  try_lwt
-    flush_total oc
-  with
-      _ -> return ()
+  Lwt.catch
+    (fun () -> flush_total oc)
+    (fun _  -> return ())
 
 let deepest_wrapper ch =
   let rec loop wrapper =
@@ -270,7 +271,7 @@ let deepest_wrapper ch =
   loop ch.main
 
 let auto_flush oc =
-  lwt () = Lwt.pause () in
+  Lwt.pause () >>= fun () ->
   let wrapper = deepest_wrapper oc in
   match wrapper.state with
     | Busy_primitive | Waiting_for_busy ->
@@ -286,11 +287,11 @@ let auto_flush oc =
     | Idle ->
         oc.auto_flushing <- false;
         wrapper.state <- Busy_primitive;
-        lwt () = safe_flush_total oc in
+        safe_flush_total oc >>= fun () ->
         if wrapper.state = Busy_primitive then
           wrapper.state <- Idle;
         if not (Lwt_sequence.is_empty wrapper.queued) then
-          wakeup_later (Lwt_sequence.take_l wrapper.queued) ();
+          Lwt.wakeup_later (Lwt_sequence.take_l wrapper.queued) ();
         return ()
 
     | Closed | Invalid ->
@@ -305,7 +306,7 @@ let unlock : type m. m channel -> unit = fun wrapper -> match wrapper.state with
         wrapper.state <- Idle
       else begin
         wrapper.state <- Waiting_for_busy;
-        wakeup_later (Lwt_sequence.take_l wrapper.queued) ()
+        Lwt.wakeup_later (Lwt_sequence.take_l wrapper.queued) ()
       end;
       (* Launches the auto-flusher: *)
       let ch = wrapper.channel in
@@ -324,7 +325,7 @@ let unlock : type m. m channel -> unit = fun wrapper -> match wrapper.state with
   | Closed | Invalid ->
       (* Do not change channel state if the channel has been closed *)
       if not (Lwt_sequence.is_empty wrapper.queued) then
-        wakeup_later (Lwt_sequence.take_l wrapper.queued) ()
+        Lwt.wakeup_later (Lwt_sequence.take_l wrapper.queued) ()
 
   | Idle | Waiting_for_busy ->
       (* We must never unlock an unlocked channel *)
@@ -334,40 +335,40 @@ let unlock : type m. m channel -> unit = fun wrapper -> match wrapper.state with
 let primitive f wrapper = match wrapper.state with
   | Idle ->
       wrapper.state <- Busy_primitive;
-      try_lwt
-        f wrapper.channel
-      finally
-        unlock wrapper;
-        return ()
+      Lwt.finalize
+        (fun () -> f wrapper.channel)
+        (fun () ->
+          unlock wrapper;
+          return ())
 
   | Busy_primitive | Busy_atomic _ | Waiting_for_busy ->
-      lwt () = add_task_r wrapper.queued in
+      Lwt.add_task_r wrapper.queued >>= fun () ->
       begin match wrapper.state with
         | Closed ->
             (* The channel has been closed while we were waiting *)
             unlock wrapper;
-            raise_lwt (closed_channel wrapper.channel)
+            Lwt.fail (closed_channel wrapper.channel)
 
         | Idle | Waiting_for_busy ->
             wrapper.state <- Busy_primitive;
-            try_lwt
-              f wrapper.channel
-            finally
-              unlock wrapper;
-              return ()
+            Lwt.finalize
+              (fun () -> f wrapper.channel)
+              (fun () ->
+                unlock wrapper;
+                return ())
 
         | Invalid ->
-            raise_lwt (invalid_channel wrapper.channel)
+            Lwt.fail (invalid_channel wrapper.channel)
 
         | Busy_primitive | Busy_atomic _ ->
             assert false
       end
 
   | Closed ->
-      raise_lwt (closed_channel wrapper.channel)
+      Lwt.fail (closed_channel wrapper.channel)
 
   | Invalid ->
-      raise_lwt (invalid_channel wrapper.channel)
+      Lwt.fail (invalid_channel wrapper.channel)
 
 (* Wrap a sequence of io operations into an atomic operation: *)
 let atomic f wrapper = match wrapper.state with
@@ -376,46 +377,46 @@ let atomic f wrapper = match wrapper.state with
                           channel = wrapper.channel;
                           queued = Lwt_sequence.create () } in
       wrapper.state <- Busy_atomic tmp_wrapper;
-      try_lwt
-        f tmp_wrapper
-      finally
-        (* The temporary wrapper is no more valid: *)
-        tmp_wrapper.state <- Invalid;
-        unlock wrapper;
-        return ()
+      Lwt.finalize
+        (fun () -> f tmp_wrapper)
+        (fun () ->
+          (* The temporary wrapper is no more valid: *)
+          tmp_wrapper.state <- Invalid;
+          unlock wrapper;
+          return ())
 
   | Busy_primitive | Busy_atomic _ | Waiting_for_busy ->
-      lwt () = add_task_r wrapper.queued in
+      Lwt.add_task_r wrapper.queued >>= fun () ->
       begin match wrapper.state with
         | Closed ->
             (* The channel has been closed while we were waiting *)
             unlock wrapper;
-            raise_lwt (closed_channel wrapper.channel)
+            Lwt.fail (closed_channel wrapper.channel)
 
         | Idle | Waiting_for_busy ->
             let tmp_wrapper = { state = Idle;
                                 channel = wrapper.channel;
                                 queued = Lwt_sequence.create () } in
             wrapper.state <- Busy_atomic tmp_wrapper;
-            try_lwt
-              f tmp_wrapper
-            finally
-              tmp_wrapper.state <- Invalid;
-              unlock wrapper;
-              return ()
+            Lwt.finalize
+              (fun () -> f tmp_wrapper)
+              (fun () ->
+                tmp_wrapper.state <- Invalid;
+                unlock wrapper;
+                return ())
 
         | Invalid ->
-            raise_lwt (invalid_channel wrapper.channel)
+            Lwt.fail (invalid_channel wrapper.channel)
 
         | Busy_primitive | Busy_atomic _ ->
             assert false
       end
 
   | Closed ->
-      raise_lwt (closed_channel wrapper.channel)
+      Lwt.fail (closed_channel wrapper.channel)
 
   | Invalid ->
-      raise_lwt (invalid_channel wrapper.channel)
+      Lwt.fail (invalid_channel wrapper.channel)
 
 let rec abort wrapper = match wrapper.state with
   | Busy_atomic tmp_wrapper ->
@@ -425,39 +426,39 @@ let rec abort wrapper = match wrapper.state with
       (* Double close, just returns the same thing as before *)
       Lazy.force wrapper.channel.close
   | Invalid ->
-      raise_lwt (invalid_channel wrapper.channel)
+      Lwt.fail (invalid_channel wrapper.channel)
   | Idle | Busy_primitive | Waiting_for_busy ->
       wrapper.state <- Closed;
       (* Abort any current real reading/writing operation on the
          channel: *)
-      wakeup_exn wrapper.channel.abort_wakener (closed_channel wrapper.channel);
+      Lwt.wakeup_exn wrapper.channel.abort_wakener (closed_channel wrapper.channel);
       Lazy.force wrapper.channel.close
 
 let close : type mode. mode channel -> unit Lwt.t = fun wrapper ->
   let channel = wrapper.channel in
   if channel.main != wrapper then
-    raise_lwt (Failure "Lwt_io.close: cannot close a channel obtained via Lwt_io.atomic")
+    Lwt.fail (Failure "Lwt_io.close: cannot close a channel obtained via Lwt_io.atomic")
   else
     match channel.mode with
       | Input ->
           (* Just close it now: *)
           abort wrapper
       | Output ->
-          try_lwt
-            (* Performs all pending actions, flush the buffer, then
-               close it: *)
-            primitive (fun channel -> safe_flush_total channel >> abort wrapper) wrapper
-          with _ ->
-            abort wrapper
+          Lwt.catch
+            (fun () ->
+              (* Performs all pending actions, flush the buffer, then close it: *)
+              primitive (fun channel ->
+                safe_flush_total channel >>= fun () -> abort wrapper) wrapper)
+            (fun _ ->
+              abort wrapper)
 
 let flush_all () =
   let wrappers = Outputs.fold (fun x l -> x :: l) outputs [] in
   Lwt_list.iter_p
     (fun wrapper ->
-       try_lwt
-         primitive safe_flush_total wrapper
-       with _ ->
-         return ())
+       Lwt.catch
+          (fun () -> primitive safe_flush_total wrapper)
+          (fun _  -> return ()))
     wrappers
 
 let () =
@@ -465,7 +466,7 @@ let () =
   Lwt_main.at_exit flush_all
 
 let no_seek pos cmd =
-  raise_lwt (Failure "Lwt_io.seek: seek not supported on this channel")
+  Lwt.fail (Failure "Lwt_io.seek: seek not supported on this channel")
 
 let make :
   type m.
@@ -491,14 +492,14 @@ let make :
     max = (match mode with
              | Input -> 0
              | Output -> size);
-    close = lazy(try_lwt close ());
+    close = lazy(Lwt.catch close Lwt.fail);
     abort_waiter = abort_waiter;
     abort_wakener = abort_wakener;
     main = wrapper;
     auto_flushing = false;
     mode = mode;
     offset = 0L;
-    typ = Type_normal(perform_io, fun pos cmd -> try seek pos cmd with e -> raise_lwt e);
+    typ = Type_normal(perform_io, fun pos cmd -> try seek pos cmd with e -> Lwt.fail e);
   } and wrapper = {
     state = Idle;
     channel = ch;
@@ -564,7 +565,7 @@ let resize_buffer : type m. m channel -> int -> unit Lwt.t = fun wrapper len ->
   if len < min_buffer_size then invalid_arg "Lwt_io.resize_buffer";
   match wrapper.channel.typ with
     | Type_bytes ->
-        raise_lwt (Failure "Lwt_io.resize_buffer: cannot resize the buffer of a channel created with Lwt_io.of_string")
+        Lwt.fail (Failure "Lwt_io.resize_buffer: cannot resize the buffer of a channel created with Lwt_io.of_string")
     | Type_normal _ ->
         let f : type m. m _channel -> unit Lwt.t = fun ch ->
           match ch.mode with
@@ -573,7 +574,7 @@ let resize_buffer : type m. m channel -> int -> unit Lwt.t = fun wrapper len ->
                 (* Fail if we want to decrease the buffer size and there is
                    too much unread data in the buffer: *)
                 if len < unread_count then
-                  raise_lwt (Failure "Lwt_io.resize_buffer: cannot decrease buffer size")
+                  Lwt.fail (Failure "Lwt_io.resize_buffer: cannot decrease buffer size")
                 else begin
                   let buffer = Lwt_bytes.create len in
                   Lwt_bytes.unsafe_blit ch.buffer ch.ptr buffer 0 unread_count;
@@ -588,12 +589,12 @@ let resize_buffer : type m. m channel -> int -> unit Lwt.t = fun wrapper len ->
                    the number of buffered bytes fits into the new buffer: *)
                 let rec loop () =
                   if ch.ptr > len then
-                    lwt _ = flush_partial ch in
+                    flush_partial ch >>= fun _ ->
                     loop ()
                   else
                     return ()
                 in
-                lwt () = loop () in
+                loop () >>= fun () ->
                 let buffer = Lwt_bytes.create len in
                 Lwt_bytes.unsafe_blit ch.buffer 0 buffer 0 ch.ptr;
                 ch.buffer <- buffer;
@@ -678,7 +679,7 @@ struct
     let ptr = ic.ptr in
     if ptr = ic.max then
       refill ic >>= function
-        | 0 -> raise_lwt End_of_file
+        | 0 -> Lwt.fail End_of_file
         | _ -> read_char ic
     else begin
       ic.ptr <- ptr + 1;
@@ -686,15 +687,16 @@ struct
     end
 
   let read_char_opt ic =
-    try_lwt
-      read_char ic >|= fun ch -> Some ch
-    with End_of_file ->
-      return None
+    Lwt.catch
+      (fun () -> read_char ic >|= fun ch -> Some ch)
+      (function
+      | End_of_file -> return None
+      | exn -> Lwt.fail exn)
 
   let read_line ic =
     let buf = Buffer.create 128 in
     let rec loop cr_read =
-      try_bind (fun _ -> read_char ic)
+      Lwt.try_bind (fun _ -> read_char ic)
         (function
            | '\n' ->
                return(Buffer.contents buf)
@@ -710,7 +712,7 @@ struct
                if cr_read then Buffer.add_char buf '\r';
                return(Buffer.contents buf)
            | exn ->
-               raise_lwt exn)
+               Lwt.fail exn)
     in
     read_char ic >>= function
       | '\r' -> loop true
@@ -718,10 +720,11 @@ struct
       | ch -> Buffer.add_char buf ch; loop false
 
   let read_line_opt ic =
-    try_lwt
-      read_line ic >|= fun ch -> Some ch
-    with End_of_file ->
-      return None
+    Lwt.catch
+      (fun () -> read_line ic >|= fun ch -> Some ch)
+      (function
+      | End_of_file -> return None
+      | exn -> Lwt.fail exn)
 
   let unsafe_read_into ic str ofs len =
     let avail = ic.max - ic.ptr in
@@ -741,7 +744,7 @@ struct
 
   let read_into ic str ofs len =
     if ofs < 0 || len < 0 || ofs + len > String.length str then
-      raise_lwt (Invalid_argument (Printf.sprintf
+      Lwt.fail (Invalid_argument (Printf.sprintf
                                      "Lwt_io.read_into(ofs=%d,len=%d,str_len=%d)"
                                      ofs len (String.length str)))
     else begin
@@ -754,7 +757,7 @@ struct
   let rec unsafe_read_into_exactly ic str ofs len =
     unsafe_read_into ic str ofs len >>= function
       | 0 ->
-          raise_lwt End_of_file
+          Lwt.fail End_of_file
       | n ->
           let len = len - n in
           if len = 0 then
@@ -764,7 +767,7 @@ struct
 
   let read_into_exactly ic str ofs len =
     if ofs < 0 || len < 0 || ofs + len > String.length str then
-      raise_lwt (Invalid_argument (Printf.sprintf
+      Lwt.fail (Invalid_argument (Printf.sprintf
                                      "Lwt_io.read_into_exactly(ofs=%d,len=%d,str_len=%d)"
                                      ofs len (String.length str)))
     else begin
@@ -804,7 +807,7 @@ struct
           read_all ic 0 []
       | Some len ->
           let str = String.create len in
-          lwt real_len = unsafe_read_into ic str 0 len in
+          unsafe_read_into ic str 0 len >>= fun real_len ->
           if real_len < len then
             return (String.sub str 0 real_len)
           else
@@ -812,11 +815,11 @@ struct
 
   let read_value ic =
     let header = String.create 20 in
-    lwt () = unsafe_read_into_exactly ic header 0 20 in
+    unsafe_read_into_exactly ic header 0 20 >>= fun () ->
     let bsize = Marshal.data_size header 0 in
     let buffer = String.create (20 + bsize) in
     String.unsafe_blit header 0 buffer 0 20;
-    lwt () = unsafe_read_into_exactly ic buffer 20 bsize in
+    unsafe_read_into_exactly ic buffer 20 bsize >>= fun () ->
     return (Marshal.from_string buffer 0)
 
   (* +---------------------------------------------------------------+
@@ -832,7 +835,7 @@ struct
       Lwt_bytes.unsafe_set oc.buffer ptr ch;
       return ()
     end else
-      lwt _ = flush_partial oc in
+      flush_partial oc >>= fun _ ->
       write_char oc ch
 
   let rec unsafe_write_from oc str ofs len =
@@ -844,7 +847,7 @@ struct
     end else begin
       Lwt_bytes.unsafe_blit_string_bytes str ofs oc.buffer oc.ptr avail;
       oc.ptr <- oc.length;
-      lwt _ = flush_partial oc in
+      flush_partial oc >>= fun _ ->
       let len = len - avail in
       if oc.ptr = 0 then begin
         if len = 0 then
@@ -860,7 +863,7 @@ struct
 
   let write_from oc str ofs len =
     if ofs < 0 || len < 0 || ofs + len > String.length str then
-      raise_lwt (Invalid_argument (Printf.sprintf
+      Lwt.fail (Invalid_argument (Printf.sprintf
                                      "Lwt_io.write_from(ofs=%d,len=%d,str_len=%d)"
                                      ofs len (String.length str)))
     else begin
@@ -879,7 +882,7 @@ struct
 
   let write_from_exactly oc str ofs len =
     if ofs < 0 || len < 0 || ofs + len > String.length str then
-      raise_lwt (Invalid_argument (Printf.sprintf
+      Lwt.fail (Invalid_argument (Printf.sprintf
                                      "Lwt_io.write_from_exactly(ofs=%d,len=%d,str_len=%d)"
                                      ofs len (String.length str)))
     else begin
@@ -893,7 +896,7 @@ struct
     unsafe_write_from_exactly oc str 0 (String.length str)
 
   let write_line oc str =
-    lwt () = unsafe_write_from_exactly oc str 0 (String.length str) in
+    unsafe_write_from_exactly oc str 0 (String.length str) >>= fun () ->
     write_char oc '\n'
 
   let write_value oc ?(flags=[]) x =
@@ -907,7 +910,7 @@ struct
     if ic.max - ic.ptr < size then
       refill ic >>= function
         | 0 ->
-            raise_lwt End_of_file
+            Lwt.fail End_of_file
         | _ ->
             read_block_unsafe ic size f
     else begin
@@ -918,7 +921,7 @@ struct
 
   let rec write_block_unsafe oc size f =
     if oc.max - oc.ptr < size then
-      lwt _ = flush_partial oc in
+      flush_partial oc >>= fun _ ->
       write_block_unsafe oc size f
     else begin
       let ptr = oc.ptr in
@@ -928,7 +931,7 @@ struct
 
   let block : type m. m _channel -> int -> (Lwt_bytes.t -> int -> 'a Lwt.t) -> 'a Lwt.t = fun ch size f ->
     if size < 0 || size > min_buffer_size then
-      raise_lwt (Invalid_argument(Printf.sprintf "Lwt_io.block(size=%d)" size))
+      Lwt.fail (Invalid_argument(Printf.sprintf "Lwt_io.block(size=%d)" size))
     else
       if ch.max - ch.ptr >= size then begin
         let ptr = ch.ptr in
@@ -944,16 +947,16 @@ struct
   let perform token da ch =
     if !token then begin
       if da.da_max <> ch.max || da.da_ptr < ch.ptr || da.da_ptr > ch.max then
-        raise_lwt (Invalid_argument "Lwt_io.direct_access.perform")
+        Lwt.fail (Invalid_argument "Lwt_io.direct_access.perform")
       else begin
         ch.ptr <- da.da_ptr;
-        lwt count = perform_io ch in
+        perform_io ch >>= fun count ->
         da.da_ptr <- ch.ptr;
         da.da_max <- ch.max;
         return count
       end
     end else
-      raise_lwt (Failure "Lwt_io.direct_access.perform: this function can not be called outside Lwt_io.direct_access")
+      Lwt.fail (Failure "Lwt_io.direct_access.perform: this function can not be called outside Lwt_io.direct_access")
 
   let direct_access ch f =
     let token = ref true in
@@ -963,10 +966,10 @@ struct
       da_buffer = ch.buffer;
       da_perform = (fun _ -> perform token da ch);
     } in
-    lwt x = f da in
+    f da >>= fun x ->
     token := false;
     if da.da_max <> ch.max || da.da_ptr < ch.ptr || da.da_ptr > ch.max then
-      raise_lwt (Failure "Lwt_io.direct_access: invalid result of [f]")
+      Lwt.fail (Failure "Lwt_io.direct_access: invalid result of [f]")
     else begin
       ch.ptr <- da.da_ptr;
       return x
@@ -1104,16 +1107,16 @@ struct
      +---------------------------------------------------------------+ *)
 
   let do_seek seek pos =
-    lwt offset = seek pos Unix.SEEK_SET in
+    seek pos Unix.SEEK_SET >>= fun offset ->
     if offset <> pos then
-      raise_lwt (Failure "Lwt_io.set_position: seek failed")
+      Lwt.fail (Failure "Lwt_io.set_position: seek failed")
     else
       return ()
 
   let set_position : type m. m _channel -> int64 -> unit Lwt.t = fun ch pos -> match ch.typ, ch.mode with
     | Type_normal(perform_io, seek), Output ->
-        lwt () = flush_total ch in
-        lwt () = do_seek seek pos in
+        flush_total ch >>= fun () ->
+        do_seek seek pos >>= fun () ->
         ch.offset <- pos;
         return ()
     | Type_normal(perform_io, seek), Input ->
@@ -1122,7 +1125,7 @@ struct
           ch.ptr <- ch.max - (Int64.to_int (Int64.sub ch.offset pos));
           return ()
         end else begin
-          lwt () = do_seek seek pos in
+          do_seek seek pos >>= fun () ->
           ch.offset <- pos;
           ch.ptr <- 0;
           ch.max <- 0;
@@ -1130,7 +1133,7 @@ struct
         end
     | Type_bytes, _ ->
         if pos < 0L || pos > Int64.of_int ch.length then
-          raise_lwt (Failure "Lwt_io.set_position: out of bounds")
+          Lwt.fail (Failure "Lwt_io.set_position: out of bounds")
         else begin
           ch.ptr <- Int64.to_int pos;
           return ()
@@ -1138,8 +1141,8 @@ struct
 
   let length ch = match ch.typ with
     | Type_normal(perform_io, seek) ->
-        lwt len = seek 0L Unix.SEEK_END in
-        lwt () = do_seek seek ch.offset in
+        seek 0L Unix.SEEK_END >>= fun len ->
+        do_seek seek ch.offset >>= fun () ->
         return len
     | Type_bytes ->
         return (Int64.of_int ch.length)
@@ -1314,15 +1317,14 @@ let open_file : type m. ?buffer_size : int -> ?flags : Unix.open_flag list -> ?p
     | None, Output ->
         0o666
   in
-  lwt fd = Lwt_unix.openfile filename flags perm in
+  Lwt_unix.openfile filename flags perm >>= fun fd ->
   return (of_fd ?buffer_size ~mode fd)
 
 let with_file ?buffer_size ?flags ?perm ~mode filename f =
-  lwt ic = open_file ?buffer_size ?flags ?perm ~mode filename in
-  try_lwt
-    f ic
-  finally
-    close ic
+  open_file ?buffer_size ?flags ?perm ~mode filename >>= fun ic ->
+  Lwt.finalize
+    (fun () -> f ic)
+    (fun () -> close ic)
 
 let file_length filename = with_file ~mode:input filename length
 
@@ -1332,34 +1334,39 @@ let open_connection ?fd ?buffer_size sockaddr =
     | Some fd -> fd
   in
   let close = lazy begin
-    try_lwt
-      Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
-      return ()
-    with Unix.Unix_error(Unix.ENOTCONN, _, _) ->
-      (* This may happen if the server closed the connection before us *)
-      return ()
-    finally
-      Lwt_unix.close fd
+    Lwt.finalize
+      (fun () ->
+        Lwt.catch
+          (fun () ->
+            Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
+            return ())
+          (function
+          | Unix.Unix_error(Unix.ENOTCONN, _, _) ->
+            (* This may happen if the server closed the connection before us *)
+            return ()
+          | exn -> Lwt.fail exn))
+      (fun () ->
+        Lwt_unix.close fd)
   end in
-  try_lwt
-    lwt () = Lwt_unix.connect fd sockaddr in
-    (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
-    return (make ?buffer_size
-              ~close:(fun _ -> Lazy.force close)
-              ~mode:input (Lwt_bytes.read fd),
-            make ?buffer_size
-              ~close:(fun _ -> Lazy.force close)
-              ~mode:output (Lwt_bytes.write fd))
-  with exn ->
-    lwt () = Lwt_unix.close fd in
-    raise_lwt exn
+  Lwt.catch
+    (fun () ->
+      Lwt_unix.connect fd sockaddr >>= fun () ->
+      (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
+      return (make ?buffer_size
+                ~close:(fun _ -> Lazy.force close)
+                ~mode:input (Lwt_bytes.read fd),
+              make ?buffer_size
+                ~close:(fun _ -> Lazy.force close)
+                ~mode:output (Lwt_bytes.write fd)))
+    (fun exn ->
+      Lwt_unix.close fd >>= fun () ->
+      Lwt.fail exn)
 
 let with_connection ?fd ?buffer_size sockaddr f =
-  lwt ic, oc = open_connection ?fd ?buffer_size sockaddr in
-  try_lwt
-    f (ic, oc)
-  finally
-    close ic <&> close oc
+  open_connection ?fd ?buffer_size sockaddr >>= fun (ic, oc) ->
+  Lwt.finalize
+    (fun () -> f (ic, oc))
+    (fun () -> close ic <&> close oc)
 
 type server = {
   shutdown : unit Lazy.t;
@@ -1375,10 +1382,10 @@ let establish_server ?fd ?buffer_size ?(backlog=5) sockaddr f =
   Lwt_unix.setsockopt sock Unix.SO_REUSEADDR true;
   Lwt_unix.bind sock sockaddr;
   Lwt_unix.listen sock backlog;
-  let abort_waiter, abort_wakener = wait () in
-  let abort_waiter = abort_waiter >> return `Shutdown in
+  let abort_waiter, abort_wakener = Lwt.wait () in
+  let abort_waiter = abort_waiter >>= fun _ -> return `Shutdown in
   let rec loop () =
-    pick [Lwt_unix.accept sock >|= (fun x -> `Accept x); abort_waiter] >>= function
+    Lwt.pick [Lwt_unix.accept sock >|= (fun x -> `Accept x); abort_waiter] >>= function
       | `Accept(fd, addr) ->
           (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
           let close = lazy begin
@@ -1389,7 +1396,7 @@ let establish_server ?fd ?buffer_size ?(backlog=5) sockaddr f =
              of_fd ?buffer_size ~mode:output ~close:(fun () -> Lazy.force close) fd);
           loop ()
       | `Shutdown ->
-          lwt () = Lwt_unix.close sock in
+          Lwt_unix.close sock >>= fun () ->
           match sockaddr with
             | Unix.ADDR_UNIX path when path <> "" && path.[0] <> '\x00' ->
                 Unix.unlink path;
@@ -1398,22 +1405,22 @@ let establish_server ?fd ?buffer_size ?(backlog=5) sockaddr f =
                 return ()
   in
   ignore (loop ());
-  { shutdown = lazy(wakeup abort_wakener `Shutdown) }
+  { shutdown = lazy(Lwt.wakeup abort_wakener `Shutdown) }
 
 let ignore_close ch =
   ignore (close ch)
 
 let make_stream f lazy_ic =
   let lazy_ic =
-    lazy(lwt ic = Lazy.force lazy_ic in
+    lazy(Lazy.force lazy_ic >>= fun ic ->
          Gc.finalise ignore_close ic;
          return ic)
   in
   Lwt_stream.from (fun _ ->
-                     lwt ic = Lazy.force lazy_ic in
-                     lwt x = f ic in
+                     Lazy.force lazy_ic >>= fun ic ->
+                     f ic >>= fun x ->
                      if x = None then
-                       lwt () = close ic in
+                       close ic >>= fun () ->
                        return x
                      else
                        return x)
