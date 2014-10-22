@@ -15,5 +15,8 @@
 # Examples
 <examples/**/*.ml>: syntax(camlp4o), package(camlp4), pa_lwt_options, pa_lwt, pa_lwt_log
 
+# Examples
+<examples/**/*.ml>: use_ppx_lwt
+
 # OASIS_START
 # OASIS_STOP
