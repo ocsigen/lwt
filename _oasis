@@ -53,7 +53,7 @@ Flag camlp4
 
 Flag ppx
   Description: Build the ppx syntax extension
-  Default: true
+  Default$: flag(all)
 
 Flag unix
   Description: Unix support
