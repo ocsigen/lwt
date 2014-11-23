@@ -27,6 +27,7 @@ let debug      = ref true
 let log        = ref true
 let sequence   = ref true
 let strict_seq = ref true
+let rewrite_return = ref false
 
 (** let%lwt related functions *)
 
@@ -285,6 +286,21 @@ let lwt_log mapper fn args attrs loc =
     else default_mapper.expr mapper (Exp.apply ~attrs fn args)
   | _ -> default_mapper.expr mapper (Exp.apply ~attrs fn args)
 
+(** Rewrite [Lwt.return foo] is an allocation-less form. *)
+let lwt_return mapper exp return =
+  let pexp_attributes = exp.pexp_attributes in
+  default_loc := exp.pexp_loc;
+  let new_exp = match return with
+    | [%expr ()]    -> [%expr Lwt.return_unit]
+    | [%expr None]  -> [%expr Lwt.return_none]
+    | [%expr []]    -> [%expr Lwt.return_nil]
+    | [%expr false] -> [%expr Lwt.return_false]
+    | [%expr true]  -> [%expr Lwt.return_true]
+    | _             -> [%expr Lwt.return [%e default_mapper.expr mapper return]]
+  in
+  { new_exp with pexp_attributes }
+
+
 let lwt_mapper args =
   args |> List.iter (fun arg ->
     match arg with
@@ -292,6 +308,7 @@ let lwt_mapper args =
     | "-no-log" -> log := false
     | "-no-sequence" -> sequence := false
     | "-no-strict-sequence" -> strict_seq := false
+    | "-rewrite-return" -> rewrite_return := true
     | _ -> raise (Location.Error (Location.errorf "Unknown lwt.ppx argument: %s" arg)));
   { default_mapper with
     expr = (fun mapper expr ->
@@ -323,6 +340,9 @@ let lwt_mapper args =
               ~loc:expr.pexp_loc
               "Lwt's finally should be used only with the syntax: \"(<expr>)[%%finally ...]\"."
           ))
+
+      | [%expr Lwt.return [%e? return]] when !rewrite_return ->
+        lwt_return mapper expr return
 
 
       | [%expr [%e? lhs] >> [%e? rhs]] ->
