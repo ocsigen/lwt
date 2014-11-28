@@ -1,4 +1,4 @@
-Lwt: lightweight thread library for OCaml
+# Lwt: lightweight thread library for OCaml
 
 --------------------------------------------------------------------------
 
@@ -8,7 +8,7 @@ This library is part of the Ocsigen project. See:
 
 --------------------------------------------------------------------------
 
-Requirements:
+## Requirements:
 
  * OCaml with ocamlbuild (>= 3.12.1)
  * findlib
@@ -27,17 +27,17 @@ They might also be available through your distribution.
 
 --------------------------------------------------------------------------
 
-Instructions:
+## Instructions:
 
- * run "ocaml setup.ml -configure" to configure sources
-     You can add '--enable-<lib>' to enable compilation of
-     the sub-library <lib>. The flag '--enable-all' will
-     enable everything.
-     In order to compile without libev support you must add
-     '--disable-libev'.
- * run "ocaml setup.ml -build" to compile
- * run "ocaml setup.ml -install" as root to install compiled libraries
- * run "ocaml setup.ml -uninstall" as root to uninstall them
+ * run `ocaml setup.ml -configure` to configure sources
+   You can add `--enable-<lib>` to enable compilation of
+   the sub-library <lib>. The flag `--enable-all` will
+   enable everything.
+   In order to compile without libev support you must add
+   `--disable-libev`.
+ * run `ocaml setup.ml -build` to compile
+ * run `ocaml setup.ml -install` as root to install compiled libraries
+ * run `ocaml setup.ml -uninstall` as root to uninstall them
 
 HTML documentation is generated in _build/lwt.docdir/, but is not
 installed by default.
@@ -54,7 +54,7 @@ Note that the utop project replaces the Lwt toplevel:
 
 --------------------------------------------------------------------------
 
-Authors:
+## Authors:
 
  * Jérôme Vouillon
  * Vincent Balat
