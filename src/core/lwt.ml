@@ -1288,3 +1288,13 @@ let state t = match (repr t).state with
   | Repr _ -> assert false
 
 include State
+
+
+module Infix = struct
+  let (>>=) = (>>=)
+  let (=<<) = (=<<)
+  let (>|=) = (>|=)
+  let (=|<) = (=|<)
+  let (<&>) = (<&>)
+  let (<?>) = (<?>)
+end

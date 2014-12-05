@@ -21,7 +21,7 @@
  * 02111-1307, USA.
  *)
 
-let (>>=) = Lwt.bind
+open Lwt.Infix
 
 type t =
     Plain
@@ -207,4 +207,3 @@ let getsockname s =
 
 let getpeername s =
   Unix.getpeername (get_unix_fd s)
-

@@ -22,7 +22,7 @@
 
 (* Relay data from an address to another. *)
 
-open Lwt
+open Lwt.Infix
 
 (* +-----------------------------------------------------------------+
    | Relaying                                                        |
@@ -33,7 +33,7 @@ let rec write_exactly fd buf ofs len =
   lwt n = Lwt_bytes.write fd buf ofs len in
   if n = len then
     (* Everything has been written, do nothing. *)
-    return ()
+    Lwt.return_unit
   else
     (* Write remaining data. *)
     write_exactly fd buf (ofs + n) (len - n)
@@ -55,7 +55,7 @@ let relay in_fd out_fd =
     if Queue.is_empty queue then
       if !end_of_input then
         (* End of input reached, exit. *)
-        return ()
+        Lwt.return_unit
       else
         (* There is no data pending, wait for some. *)
         lwt () = Lwt_condition.wait cond in
@@ -91,7 +91,7 @@ let relay in_fd out_fd =
   in
 
   (* Wait for either the reader to terminate or the writer to fail. *)
-  pick [writer; loop_read ()]
+  Lwt.pick [writer; loop_read ()]
 
 (* +-----------------------------------------------------------------+
    | Entry point                                                     |
@@ -115,7 +115,7 @@ let addr_of_string str =
     Printf.eprintf "no address found for host %S\n" host;
     exit 1
   end;
-  return (Unix.ADDR_INET (entry.Unix.h_addr_list.(0), port))
+  Lwt.return (Unix.ADDR_INET (entry.Unix.h_addr_list.(0), port))
 
 lwt () =
   if Array.length Sys.argv <> 3 then usage ();
@@ -145,11 +145,11 @@ lwt () =
     lwt () = Lwt_unix.connect fd2 dst_addr in
 
     (* Start relaying. *)
-    lwt () = pick [relay fd1 fd2; relay fd2 fd1] in
+    lwt () = Lwt.pick [relay fd1 fd2; relay fd2 fd1] in
 
     ignore (Lwt_log.notice "done relayling");
 
-    return ()
+    Lwt.return_unit
 
   with exn ->
     ignore (Lwt_log.error ~exn "something went wrong");

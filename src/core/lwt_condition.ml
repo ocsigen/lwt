@@ -29,7 +29,7 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************)
 
-let (>>=) = Lwt.(>>=)
+open Lwt.Infix
 
 type 'a t = 'a Lwt.u Lwt_sequence.t
 
