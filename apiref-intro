@@ -72,7 +72,7 @@ Lwt_react
 
 This package depends on the {e core} library and the {e react} package.
 
-{2 Syntax extensions}
+{2 caml4 syntax extensions}
 
 Lwt is shipped with two syntax extensions. The first one, contained in
 the {e lwt.syntax} package, aims to make coding with Lwt easier, and
@@ -85,30 +85,13 @@ Pa_lwt
 Pa_lwt_log
 }
 
-{2 Ppx syntax extension}
+{2 ppx syntax extension}
 
 This new ppx extension provided by the package {e lwt.ppx} replaces {!Pa_lwt} and {!Pa_lwt_log} using the new ppx mechanism.
 
 {!modules:
 Ppx_lwt
 }
-
-{2 Terminal manipulation}
-
-The package {e lwt.text} provides:
-- terminal manipulation through the module {!Lwt_term}
-- text channels which behaves as byte channels but are aware of the
-  text encoding
-- a cooperative, fully customizable read-line facility
-
-{!modules:
-Lwt_read_line
-Lwt_term
-Lwt_text
-}
-
-This package depends on the {e core} library, and the {e lwt.react},
-{e lwt.unix}, {e text} packages.
 
 {2 Miscellaneous}
 
@@ -117,7 +100,6 @@ functions/packages into Lwt.
 
 {!modules:
 Lwt_glib
-Lwt_lib
 Lwt_preemptive
 Lwt_ssl
 }
