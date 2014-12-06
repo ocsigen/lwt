@@ -20,7 +20,7 @@
  * 02111-1307, USA.
  *)
 
-let return, (>>=) = Lwt.return, Lwt.(>>=)
+open Lwt.Infix
 
 let rec copy ic logger =
   Lwt_io.read_line ic >>= fun line ->

@@ -22,7 +22,7 @@
  * 02111-1307, USA.
  *)
 
-let return, (>>=) = Lwt.return, Lwt.(>>=)
+open Lwt.Infix
 
 type in_channel = Lwt_io.input_channel
 type out_channel = Lwt_io.output_channel
@@ -35,20 +35,20 @@ let make_in_channel ?close read =
        let str = String.create len in
        read str 0 len >>= fun n ->
        if (n > 0) then Lwt_bytes.blit_string_bytes str 0 buf ofs len;
-       return n)
+       Lwt.return n)
 
 let input_line ic =
   let rec loop buf =
     Lwt_io.read_char_opt ic >>= function
       | None | Some '\n' ->
-          return (Buffer.contents buf)
+          Lwt.return (Buffer.contents buf)
       | Some char ->
           Buffer.add_char buf char;
           loop buf
   in
   Lwt_io.read_char_opt ic >>= function
     | Some '\n' ->
-        return ""
+        Lwt.return ""
     | Some char ->
         let buf = Buffer.create 128 in
         Buffer.add_char buf char;

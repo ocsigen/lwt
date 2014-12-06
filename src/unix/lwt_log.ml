@@ -25,7 +25,7 @@
 
 include Lwt_log_core
 
-let return, (>>=) = Lwt.return, Lwt.(>>=)
+open Lwt.Infix
 
 let program_name = Filename.basename Sys.executable_name
 
@@ -98,7 +98,7 @@ let channel ?(template="$(name): $(section): $(message)") ~close_mode ~channel (
                  Lwt_io.flush oc
                end channel)
     ~close:(match close_mode with
-              | `Keep -> return
+              | `Keep -> Lwt.return
               | `Close -> (fun () -> Lwt_io.close channel))
 
 let _ = Lwt_log_core.default := channel ~close_mode:`Keep ~channel:Lwt_io.stderr ()
@@ -112,7 +112,7 @@ let file ?(template="$(date): $(section): $(message)") ?(mode=`Append) ?(perm=0o
   Lwt_unix.openfile file_name flags perm >>= fun fd ->
   Lwt_unix.set_close_on_exec fd;
   let oc = Lwt_io.of_fd ~mode:Lwt_io.output fd in
-  return (channel ~template ~close_mode:`Close ~channel:oc ())
+  Lwt.return (channel ~template ~close_mode:`Close ~channel:oc ())
 
 let level_code = function
   | Fatal -> 0
@@ -170,13 +170,13 @@ let syslog_connect paths =
         Lwt.fail (Sys_error(Unix.error_message Unix.ENOENT))
     | path :: paths ->
         begin try
-          return (Some (Unix.stat path).Unix.st_kind)
+          Lwt.return (Some (Unix.stat path).Unix.st_kind)
         with
           | Unix.Unix_error(Unix.ENOENT, _, _) ->
-              return None
+              Lwt.return_none
           | Unix.Unix_error(error, _, _) ->
               log_intern "can not stat \"%s\": %s" path (Unix.error_message error);
-              return None
+              Lwt.return_none
         end >>= function
           | None ->
               loop paths
@@ -187,7 +187,7 @@ let syslog_connect paths =
                 (fun () ->
                   Lwt_unix.connect fd (Unix.ADDR_UNIX path) >>= fun () ->
                   Lwt_unix.set_close_on_exec fd;
-                  return (DGRAM, fd))
+                  Lwt.return (DGRAM, fd))
                 (function
                 | Unix.Unix_error(Unix.EPROTOTYPE, _, _) -> begin
                     Lwt_unix.close fd >>= fun () ->
@@ -197,7 +197,7 @@ let syslog_connect paths =
                       (fun () ->
 	                    Lwt_unix.connect fd (Unix.ADDR_UNIX path) >>= fun () ->
                         Lwt_unix.set_close_on_exec fd;
-                        return (STREAM, fd))
+                        Lwt.return (STREAM, fd))
                       (function
                       | Unix.Unix_error(error, _, _) ->
                           Lwt_unix.close fd >>= fun () ->
@@ -223,13 +223,13 @@ let write_string fd str =
   let len = String.length str in
   let rec aux start_ofs =
     if start_ofs = len then
-      return ()
+      Lwt.return_unit
     else
       Lwt_unix.write fd str start_ofs (len - start_ofs) >>= fun n ->
       if n <> 0 then
         aux (start_ofs + n)
       else
-        return ()
+        Lwt.return_unit
   in
   aux 0
 
@@ -247,11 +247,11 @@ let syslog ?(template="$(date) $(name)[$(pid)]: $(section): $(message)") ?(paths
   let syslog_socket = ref None and mutex = Lwt_mutex.create () in
   let get_syslog () = match !syslog_socket with
     | Some x ->
-        return x
+        Lwt.return x
     | None ->
         syslog_connect paths >>= fun x ->
         syslog_socket := Some x;
-        return x
+        Lwt.return x
   in
   make
     ~output:(fun section level lines ->
@@ -267,7 +267,7 @@ let syslog ?(template="$(date) $(name)[$(pid)]: $(section): $(message)") ?(paths
                     in
                     let rec print socket_type fd = function
                       | [] ->
-                          return ()
+                          Lwt.return_unit
                       | line :: lines ->
                           Lwt.catch
                             (fun () ->
@@ -288,6 +288,6 @@ let syslog ?(template="$(date) $(name)[$(pid)]: $(section): $(message)") ?(paths
     ~close:(fun () ->
               match !syslog_socket with
                 | None ->
-                    return ()
+                    Lwt.return_unit
                 | Some(socket_type, fd) ->
                     shutdown fd)

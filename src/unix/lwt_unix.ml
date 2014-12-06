@@ -22,7 +22,7 @@
  * 02111-1307, USA.
  *)
 
-let return, (>>=), (>|=) = Lwt.return, Lwt.(>>=), Lwt.(>|=)
+open Lwt.Infix
 
 (* +-----------------------------------------------------------------+
    | Configuration                                                   |
@@ -142,7 +142,7 @@ let auto_yield timeout =
       limit := current +. timeout;
       yield ();
     end else
-      return ()
+      Lwt.return_unit
 
 exception Timeout
 
@@ -195,7 +195,7 @@ let run_job_aux async_method job result =
     let waiter, wakener = Lwt.wait () in
     (* Add the job to the sequence of all jobs. *)
     let node = Lwt_sequence.add_l (
-                  (waiter >>= fun _ -> return ()),
+                  (waiter >>= fun _ -> Lwt.return_unit),
                   (fun exn -> if Lwt.state waiter = Lwt.Sleep then Lwt.wakeup_exn wakener exn))
                 jobs in
     ignore begin
@@ -212,7 +212,7 @@ let run_job_aux async_method job result =
       Lwt.pause () >>= fun () ->
       (* The job has terminated, send the result immediately. *)
       if check_job job id then call_notification id;
-      return ()
+      Lwt.return_unit
     end;
     waiter
   end
@@ -230,7 +230,7 @@ let execute_job ?async_method ~job ~result ~free =
   run_job_aux async_method job (fun job -> let x = wrap_result result job in free job; x)
 
 external self_result : 'a job -> 'a = "lwt_unix_self_result"
-      (* Returns the result of a job using the [result] field of the C
+      (* returns the result of a job using the [result] field of the C
          job structure. *)
 
 external run_job_sync : 'a job -> 'a = "lwt_unix_run_job_sync"
@@ -246,7 +246,7 @@ let run_job ?async_method job =
   let async_method = choose_async_method async_method in
   if async_method = Async_none then
     try
-      return (run_job_sync job)
+      Lwt.return (run_job_sync job)
     with exn ->
       Lwt.fail exn
   else
@@ -296,44 +296,44 @@ let is_blocking ?blocking ?(set_flags=true) fd =
     if is_socket fd then
       match blocking, set_flags with
         | Some state, false ->
-            lazy(return state)
+            lazy(Lwt.return state)
         | Some true, true ->
             Unix.clear_nonblock fd;
-            lazy(return true)
+            lazy(Lwt.return_true)
         | Some false, true ->
             Unix.set_nonblock fd;
-            lazy(return false)
+            lazy(Lwt.return_false)
         | None, false ->
-            lazy(return false)
+            lazy(Lwt.return_false)
         | None, true ->
             Unix.set_nonblock fd;
-            lazy(return false)
+            lazy(Lwt.return_false)
     else
       match blocking with
         | Some state ->
-            lazy(return state)
+            lazy(Lwt.return state)
         | None ->
-            lazy(return true)
+            lazy(Lwt.return_true)
   end else begin
     match blocking, set_flags with
       | Some state, false ->
-          lazy(return state)
+          lazy(Lwt.return state)
       | Some true, true ->
           Unix.clear_nonblock fd;
-          lazy(return true)
+          lazy(Lwt.return_true)
       | Some false, true ->
           Unix.set_nonblock fd;
-          lazy(return false)
+          lazy(Lwt.return_false)
       | None, false ->
           lazy(guess_blocking fd)
       | None, true ->
           lazy(guess_blocking fd >>= function
                  | true ->
                      Unix.clear_nonblock fd;
-                     return true
+                     Lwt.return_true
                  | false ->
                      Unix.set_nonblock fd;
-                     return false)
+                     Lwt.return_false)
   end
 
 let mk_ch ?blocking ?(set_flags=true) fd = {
@@ -546,7 +546,7 @@ let wrap_syscall event ch action =
   Lazy.force ch.blocking >>= fun blocking ->
   try
     if not blocking || (event = Read && unix_readable ch.fd) || (event = Write && unix_writable ch.fd) then
-      return (action ())
+      Lwt.return (action ())
     else
       register_action event ch action
   with
@@ -593,17 +593,17 @@ external open_job : string -> Unix.open_flag list -> int -> (Unix.file_descr * b
 
 let openfile name flags perms =
   if Sys.win32 then
-    return (of_unix_file_descr (Unix.openfile name flags perms))
+    Lwt.return (of_unix_file_descr (Unix.openfile name flags perms))
   else
     run_job (open_job name flags perms) >>= fun (fd, blocking) ->
-    return (of_unix_file_descr ~blocking fd)
+    Lwt.return (of_unix_file_descr ~blocking fd)
 
 let close ch =
   if ch.state = Closed then check_descriptor ch;
   set_state ch Closed;
   clear_events ch;
   if Sys.win32 then
-    return (Unix.close ch.fd)
+    Lwt.return (Unix.close ch.fd)
   else
     run_job (Jobs.close_job ch.fd)
 
@@ -611,7 +611,7 @@ let wait_read ch =
   Lwt.catch
     (fun () ->
       if readable ch then
-        return ()
+        Lwt.return_unit
       else
         register_action Read ch ignore)
     Lwt.fail
@@ -634,7 +634,7 @@ let wait_write ch =
   Lwt.catch
     (fun () ->
       if writable ch then
-        return ()
+        Lwt.return_unit
       else
         register_action Write ch ignore)
     Lwt.fail
@@ -666,20 +666,20 @@ type seek_command =
 let lseek ch offset whence =
   check_descriptor ch;
   if Sys.win32 then
-    return (Unix.lseek ch.fd offset whence)
+    Lwt.return (Unix.lseek ch.fd offset whence)
   else
     run_job (Jobs.lseek_job ch.fd offset whence)
 
 let truncate name offset =
   if Sys.win32 then
-    return (Unix.truncate name offset)
+    Lwt.return (Unix.truncate name offset)
   else
     run_job (Jobs.truncate_job name offset)
 
 let ftruncate ch offset =
   check_descriptor ch;
   if Sys.win32 then
-    return (Unix.ftruncate ch.fd offset)
+    Lwt.return (Unix.ftruncate ch.fd offset)
   else
     run_job (Jobs.ftruncate_job ch.fd offset)
 
@@ -732,7 +732,7 @@ external stat_job : string -> Unix.stats job = "lwt_unix_stat_job"
 
 let stat name =
   if Sys.win32 then
-    return (Unix.stat name)
+    Lwt.return (Unix.stat name)
   else
     run_job (stat_job name)
 
@@ -740,7 +740,7 @@ external lstat_job : string -> Unix.stats job = "lwt_unix_lstat_job"
 
 let lstat name =
   if Sys.win32 then
-    return (Unix.stat name)
+    Lwt.return (Unix.stat name)
   else
     run_job (lstat_job name)
 
@@ -749,7 +749,7 @@ external fstat_job : Unix.file_descr -> Unix.stats job = "lwt_unix_fstat_job"
 let fstat ch =
   check_descriptor ch;
   if Sys.win32 then
-    return (Unix.fstat ch.fd)
+    Lwt.return (Unix.fstat ch.fd)
   else
     run_job (fstat_job ch.fd)
 
@@ -758,7 +758,7 @@ external isatty_job : Unix.file_descr -> bool job = "lwt_unix_isatty_job"
 let isatty ch =
   check_descriptor ch;
   if Sys.win32 then
-    return (Unix.isatty ch.fd)
+    Lwt.return (Unix.isatty ch.fd)
   else
     run_job (isatty_job ch.fd)
 
@@ -789,20 +789,20 @@ struct
   let lseek ch offset whence =
     check_descriptor ch;
     if Sys.win32 then
-      return (Unix.LargeFile.lseek ch.fd offset whence)
+      Lwt.return (Unix.LargeFile.lseek ch.fd offset whence)
     else
       run_job (Jobs.lseek_64_job ch.fd offset whence)
 
   let truncate name offset =
     if Sys.win32 then
-      return (Unix.LargeFile.truncate name offset)
+      Lwt.return (Unix.LargeFile.truncate name offset)
     else
       run_job (Jobs.truncate_64_job name offset)
 
   let ftruncate ch offset =
     check_descriptor ch;
     if Sys.win32 then
-      return (Unix.LargeFile.ftruncate ch.fd offset)
+      Lwt.return (Unix.LargeFile.ftruncate ch.fd offset)
     else
       run_job (Jobs.ftruncate_64_job ch.fd offset)
 
@@ -812,13 +812,13 @@ struct
     if Sys.win32 then
       run_job (stat_job name)
     else
-      return (Unix.LargeFile.stat name)
+      Lwt.return (Unix.LargeFile.stat name)
 
   external lstat_job : string -> Unix.LargeFile.stats job = "lwt_unix_lstat_64_job"
 
   let lstat name =
     if Sys.win32 then
-      return (Unix.LargeFile.lstat name)
+      Lwt.return (Unix.LargeFile.lstat name)
     else
       run_job (lstat_job name)
 
@@ -827,7 +827,7 @@ struct
   let fstat ch =
     check_descriptor ch;
     if Sys.win32 then
-      return (Unix.LargeFile.fstat ch.fd)
+      Lwt.return (Unix.LargeFile.fstat ch.fd)
     else
       run_job (fstat_job ch.fd)
 
@@ -839,19 +839,19 @@ end
 
 let unlink name =
   if Sys.win32 then
-    return (Unix.unlink name)
+    Lwt.return (Unix.unlink name)
   else
     run_job (Jobs.unlink_job name)
 
 let rename name1 name2 =
   if Sys.win32 then
-    return (Unix.rename name1 name2)
+    Lwt.return (Unix.rename name1 name2)
   else
     run_job (Jobs.rename_job name1 name2)
 
 let link oldpath newpath =
   if Sys.win32 then
-    return (Unix.link oldpath newpath)
+    Lwt.return (Unix.link oldpath newpath)
   else
     run_job (Jobs.link_job oldpath newpath)
 
@@ -861,27 +861,27 @@ let link oldpath newpath =
 
 let chmod name mode =
   if Sys.win32 then
-    return (Unix.chmod name mode)
+    Lwt.return (Unix.chmod name mode)
   else
     run_job (Jobs.chmod_job name mode)
 
 let fchmod ch mode =
   check_descriptor ch;
   if Sys.win32 then
-    return (Unix.fchmod ch.fd mode)
+    Lwt.return (Unix.fchmod ch.fd mode)
   else
     run_job (Jobs.fchmod_job ch.fd mode)
 
 let chown name uid gid =
   if Sys.win32 then
-    return (Unix.chown name uid gid)
+    Lwt.return (Unix.chown name uid gid)
   else
     run_job (Jobs.chown_job name uid gid)
 
 let fchown ch uid gid =
   check_descriptor ch;
   if Sys.win32 then
-    return (Unix.fchown ch.fd uid gid)
+    Lwt.return (Unix.fchown ch.fd uid gid)
   else
     run_job (Jobs.fchown_job ch.fd uid gid)
 
@@ -894,7 +894,7 @@ type access_permission =
 
 let access name mode =
   if Sys.win32 then
-    return (Unix.access name mode)
+    Lwt.return (Unix.access name mode)
   else
     run_job (Jobs.access_job name mode)
 
@@ -914,10 +914,10 @@ let dup ch =
         lazy(Lazy.force ch.blocking >>= function
                | true ->
                    Unix.clear_nonblock fd;
-                   return true
+                   Lwt.return_true
                | false ->
                    Unix.set_nonblock fd;
-                   return false)
+                   Lwt.return_false)
       else
         ch.blocking;
     event_readable = None;
@@ -935,10 +935,10 @@ let dup2 ch1 ch2 =
       lazy(Lazy.force ch1.blocking >>= function
              | true ->
                  Unix.clear_nonblock ch2.fd;
-                 return true
+                 Lwt.return_true
              | false ->
                  Unix.set_nonblock ch2.fd;
-                 return false)
+                 Lwt.return_false)
     else
       ch1.blocking
   )
@@ -957,25 +957,25 @@ let clear_close_on_exec ch =
 
 let mkdir name perms =
   if Sys.win32 then
-    return (Unix.mkdir name perms)
+    Lwt.return (Unix.mkdir name perms)
   else
     run_job (Jobs.mkdir_job name perms)
 
 let rmdir name =
   if Sys.win32 then
-    return (Unix.rmdir name)
+    Lwt.return (Unix.rmdir name)
   else
     run_job (Jobs.rmdir_job name)
 
 let chdir name =
   if Sys.win32 then
-    return (Unix.chdir name)
+    Lwt.return (Unix.chdir name)
   else
     run_job (Jobs.chdir_job name)
 
 let chroot name =
   if Sys.win32 then
-    return (Unix.chroot name)
+    Lwt.return (Unix.chroot name)
   else
     run_job (Jobs.chroot_job name)
 
@@ -985,7 +985,7 @@ external opendir_job : string -> Unix.dir_handle job = "lwt_unix_opendir_job"
 
 let opendir name =
   if Sys.win32 then
-    return (Unix.opendir name)
+    Lwt.return (Unix.opendir name)
   else
     run_job (opendir_job name)
 
@@ -993,7 +993,7 @@ external readdir_job : Unix.dir_handle -> string job = "lwt_unix_readdir_job"
 
 let readdir handle =
   if Sys.win32 then
-    return (Unix.readdir handle)
+    Lwt.return (Unix.readdir handle)
   else
     run_job (readdir_job handle)
 
@@ -1006,13 +1006,13 @@ let readdir_n handle count =
     let array = Array.make count "" in
     let rec fill i =
       if i = count then
-        return array
+        Lwt.return array
       else
         match try array.(i) <- Unix.readdir handle; true with End_of_file -> false with
           | true ->
               fill (i + 1)
           | false ->
-              return (Array.sub array 0 i)
+              Lwt.return (Array.sub array 0 i)
     in
     fill 0
   else
@@ -1022,7 +1022,7 @@ external rewinddir_job : Unix.dir_handle -> unit job = "lwt_unix_rewinddir_job"
 
 let rewinddir handle =
   if Sys.win32 then
-    return (Unix.rewinddir handle)
+    Lwt.return (Unix.rewinddir handle)
   else
     run_job (rewinddir_job handle)
 
@@ -1030,7 +1030,7 @@ external closedir_job : Unix.dir_handle -> unit job = "lwt_unix_closedir_job"
 
 let closedir handle =
   if Sys.win32 then
-    return (Unix.closedir handle)
+    Lwt.return (Unix.closedir handle)
   else
     run_job (closedir_job handle)
 
@@ -1062,11 +1062,11 @@ let files_of_directory path =
                 if Array.length entries < 1024 then begin
                   state := LDS_done;
                   closedir handle >>= fun () ->
-                  return (Some(Lwt_stream.of_array entries))
+                  Lwt.return (Some(Lwt_stream.of_array entries))
                 end else begin
                   state := LDS_listing handle;
                   Gc.finalise cleanup_dir_handle state;
-                  return (Some(Lwt_stream.of_array entries))
+                  Lwt.return (Some(Lwt_stream.of_array entries))
                 end
             | LDS_listing handle ->
                 Lwt.catch
@@ -1077,11 +1077,11 @@ let files_of_directory path =
                 if Array.length entries < 1024 then begin
                   state := LDS_done;
                   closedir handle >>= fun () ->
-                  return (Some(Lwt_stream.of_array entries))
+                  Lwt.return (Some(Lwt_stream.of_array entries))
                 end else
-                  return (Some(Lwt_stream.of_array entries))
+                  Lwt.return (Some(Lwt_stream.of_array entries))
             | LDS_done ->
-                return None))
+                Lwt.return_none))
 
 (* +-----------------------------------------------------------------+
    | Pipes and redirections                                          |
@@ -1101,7 +1101,7 @@ let pipe_out () =
 
 let mkfifo name perms =
   if Sys.win32 then
-    return (Unix.mkfifo name perms)
+    Lwt.return (Unix.mkfifo name perms)
   else
     run_job (Jobs.mkfifo_job name perms)
 
@@ -1111,7 +1111,7 @@ let mkfifo name perms =
 
 let symlink name1 name2 =
   if Sys.win32 then
-    return (Unix.symlink name1 name2)
+    Lwt.return (Unix.symlink name1 name2)
   else
     run_job (Jobs.symlink_job name1 name2)
 
@@ -1119,7 +1119,7 @@ external readlink_job : string -> string job = "lwt_unix_readlink_job"
 
 let readlink name =
   if Sys.win32 then
-    return (Unix.readlink name)
+    Lwt.return (Unix.readlink name)
   else
     run_job (readlink_job name)
 
@@ -1141,7 +1141,7 @@ external lockf_job : Unix.file_descr -> Unix.lock_command -> int -> unit job = "
 let lockf ch cmd size =
   check_descriptor ch;
   if Sys.win32 then
-    return (Unix.lockf ch.fd cmd size)
+    Lwt.return (Unix.lockf ch.fd cmd size)
   else
     run_job (lockf_job ch.fd cmd size)
 
@@ -1174,7 +1174,7 @@ external getlogin_job : unit -> string job = "lwt_unix_getlogin_job"
 
 let getlogin () =
   if Sys.win32 || Lwt_config.android then
-    return (Unix.getlogin ())
+    Lwt.return (Unix.getlogin ())
   else
     run_job (getlogin_job ())
 
@@ -1182,7 +1182,7 @@ external getpwnam_job : string -> Unix.passwd_entry job = "lwt_unix_getpwnam_job
 
 let getpwnam name =
   if Sys.win32 || Lwt_config.android then
-    return (Unix.getpwnam name)
+    Lwt.return (Unix.getpwnam name)
   else
     run_job (getpwnam_job name)
 
@@ -1190,7 +1190,7 @@ external getgrnam_job : string -> Unix.group_entry job = "lwt_unix_getgrnam_job"
 
 let getgrnam name =
   if Sys.win32 || Lwt_config.android then
-    return (Unix.getgrnam name)
+    Lwt.return (Unix.getgrnam name)
   else
     run_job (getgrnam_job name)
 
@@ -1198,7 +1198,7 @@ external getpwuid_job : int -> Unix.passwd_entry job = "lwt_unix_getpwuid_job"
 
 let getpwuid uid =
   if Sys.win32 || Lwt_config.android then
-    return (Unix.getpwuid uid)
+    Lwt.return (Unix.getpwuid uid)
   else
     run_job (getpwuid_job uid)
 
@@ -1206,7 +1206,7 @@ external getgrgid_job : int -> Unix.group_entry job = "lwt_unix_getgrgid_job"
 
 let getgrgid gid =
   if Sys.win32 || Lwt_config.android then
-    return (Unix.getgrgid gid)
+    Lwt.return (Unix.getgrgid gid)
   else
     run_job (getgrgid_job gid)
 
@@ -1352,7 +1352,7 @@ let accept_n ch n =
         end;
         (List.rev !l, None)
       end)
-    (fun exn -> return (List.rev !l, Some exn))
+    (fun exn -> Lwt.return (List.rev !l, Some exn))
 
 let connect ch addr =
   if Sys.win32 then
@@ -1540,7 +1540,7 @@ external gethostname_job : unit -> string job = "lwt_unix_gethostname_job"
 
 let gethostname () =
   if Sys.win32 then
-    return (Unix.gethostname ())
+    Lwt.return (Unix.gethostname ())
   else
     run_job (gethostname_job ())
 
@@ -1548,7 +1548,7 @@ external gethostbyname_job : string -> Unix.host_entry job = "lwt_unix_gethostby
 
 let gethostbyname name =
   if Sys.win32 then
-    return (Unix.gethostbyname name)
+    Lwt.return (Unix.gethostbyname name)
   else
     run_job (gethostbyname_job name)
 
@@ -1556,7 +1556,7 @@ external gethostbyaddr_job : Unix.inet_addr -> Unix.host_entry job = "lwt_unix_g
 
 let gethostbyaddr addr =
   if Sys.win32 then
-    return (Unix.gethostbyaddr addr)
+    Lwt.return (Unix.gethostbyaddr addr)
   else
     run_job (gethostbyaddr_job addr)
 
@@ -1564,7 +1564,7 @@ external getprotobyname_job : string -> Unix.protocol_entry job = "lwt_unix_getp
 
 let getprotobyname name =
   if Sys.win32 then
-    return (Unix.getprotobyname name)
+    Lwt.return (Unix.getprotobyname name)
   else
     run_job (getprotobyname_job name)
 
@@ -1572,7 +1572,7 @@ external getprotobynumber_job : int -> Unix.protocol_entry job = "lwt_unix_getpr
 
 let getprotobynumber number =
   if Sys.win32 then
-    return (Unix.getprotobynumber number)
+    Lwt.return (Unix.getprotobynumber number)
   else
     run_job (getprotobynumber_job number)
 
@@ -1580,7 +1580,7 @@ external getservbyname_job : string -> string -> Unix.service_entry job = "lwt_u
 
 let getservbyname name x =
   if Sys.win32 then
-    return (Unix.getservbyname name x)
+    Lwt.return (Unix.getservbyname name x)
   else
     run_job (getservbyname_job name x)
 
@@ -1588,7 +1588,7 @@ external getservbyport_job : int -> string -> Unix.service_entry job = "lwt_unix
 
 let getservbyport port x =
   if Sys.win32 then
-    return (Unix.getservbyport port x)
+    Lwt.return (Unix.getservbyport port x)
   else
     run_job (getservbyport_job port x)
 
@@ -1615,10 +1615,10 @@ external getaddrinfo_job : string -> string -> Unix.getaddrinfo_option list -> U
 
 let getaddrinfo host service opts =
   if Sys.win32 then
-    return (Unix.getaddrinfo host service opts)
+    Lwt.return (Unix.getaddrinfo host service opts)
   else
     run_job (getaddrinfo_job host service opts) >>= fun l ->
-    return (List.rev l)
+    Lwt.return (List.rev l)
 
 type name_info =
     Unix.name_info =
@@ -1639,7 +1639,7 @@ external getnameinfo_job : Unix.sockaddr -> Unix.getnameinfo_option list -> Unix
 
 let getnameinfo addr opts =
   if Sys.win32 then
-    return (Unix.getnameinfo addr opts)
+    Lwt.return (Unix.getnameinfo addr opts)
   else
     run_job (getnameinfo_job addr opts)
 
@@ -1714,7 +1714,7 @@ external tcgetattr_job : Unix.file_descr -> Unix.terminal_io job = "lwt_unix_tcg
 let tcgetattr ch =
   check_descriptor ch;
   if Sys.win32 then
-    return (Unix.tcgetattr ch.fd)
+    Lwt.return (Unix.tcgetattr ch.fd)
   else
     run_job (tcgetattr_job ch.fd)
 
@@ -1723,35 +1723,35 @@ external tcsetattr_job : Unix.file_descr -> Unix.setattr_when -> Unix.terminal_i
 let tcsetattr ch when_ attrs =
   check_descriptor ch;
   if Sys.win32 then
-    return (Unix.tcsetattr ch.fd when_ attrs)
+    Lwt.return (Unix.tcsetattr ch.fd when_ attrs)
   else
     run_job (tcsetattr_job ch.fd when_ attrs)
 
 let tcsendbreak ch delay =
   check_descriptor ch;
   if Sys.win32 then
-    return (Unix.tcsendbreak ch.fd delay)
+    Lwt.return (Unix.tcsendbreak ch.fd delay)
   else
     run_job (Jobs.tcsendbreak_job ch.fd delay)
 
 let tcdrain ch =
   check_descriptor ch;
   if Sys.win32 then
-    return (Unix.tcdrain ch.fd)
+    Lwt.return (Unix.tcdrain ch.fd)
   else
     run_job (Jobs.tcdrain_job ch.fd)
 
 let tcflush ch q =
   check_descriptor ch;
   if Sys.win32 then
-    return (Unix.tcflush ch.fd q)
+    Lwt.return (Unix.tcflush ch.fd q)
   else
     run_job (Jobs.tcflush_job ch.fd q)
 
 let tcflow ch act =
   check_descriptor ch;
   if Sys.win32 then
-    return (Unix.tcflow ch.fd act)
+    Lwt.return (Unix.tcflow ch.fd act)
   else
     run_job (Jobs.tcflow_job ch.fd act)
 
@@ -1922,7 +1922,7 @@ let () =
 
 let _waitpid flags pid =
   Lwt.catch
-    (fun () -> return (Unix.waitpid flags pid))
+    (fun () -> Lwt.return (Unix.waitpid flags pid))
     Lwt.fail
 
 let waitpid =
@@ -1936,26 +1936,26 @@ let waitpid =
         let flags = Unix.WNOHANG :: flags in
         _waitpid flags pid >>= fun ((pid', _) as res) ->
         if pid' <> 0 then
-          return res
+          Lwt.return res
         else begin
           let (res, w) = Lwt.task () in
           let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
           Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
           res >>= fun (pid, status, _) ->
-          return (pid, status)
+          Lwt.return (pid, status)
         end
 
 let wait4 flags pid =
   if Sys.win32 then
-    return (do_wait4 flags pid)
+    Lwt.return (do_wait4 flags pid)
   else
     if List.mem Unix.WNOHANG flags then
-      return (do_wait4 flags pid)
+      Lwt.return (do_wait4 flags pid)
     else
       let flags = Unix.WNOHANG :: flags in
       let (pid', _, _) as res = do_wait4 flags pid in
       if pid' <> 0 then
-        return res
+        Lwt.return res
       else begin
         let (res, w) = Lwt.task () in
         let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
@@ -1972,7 +1972,7 @@ external sys_exit : int -> 'a = "caml_sys_exit"
 let system cmd =
   if Sys.win32 then
     run_job (system_job ("cmd.exe /c " ^ cmd)) >>= fun code ->
-    return (Unix.WEXITED code)
+    Lwt.return (Unix.WEXITED code)
   else
     match fork () with
       | 0 ->

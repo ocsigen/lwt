@@ -23,7 +23,7 @@
 
 open Bigarray
 
-let return, (>>=) = Lwt.return, Lwt.(>>=)
+open Lwt.Infix
 
 type t = (char, int8_unsigned_elt, c_layout) Array1.t
 
@@ -257,7 +257,7 @@ let wait_mincore buffer offset =
     let state = [|false|] in
     mincore buffer (offset - (offset mod page_size)) state;
     if state.(0) then
-      return ()
+      Lwt.return_unit
     else
       run_job (wait_mincore_job buffer offset)
   end

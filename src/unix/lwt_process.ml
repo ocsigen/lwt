@@ -20,7 +20,7 @@
  * 02111-1307, USA.
  *)
 
-let return, (>>=), (>|=) = Lwt.return, Lwt.(>>=), Lwt.(>|=)
+open Lwt.Infix
 
 type command = string * string array
 
@@ -111,7 +111,7 @@ external win32_wait_job : Unix.file_descr -> int Lwt_unix.job  = "lwt_process_wa
 
 let win32_waitproc proc =
   Lwt_unix.run_job (win32_wait_job proc.fd) >>= fun code ->
-  return (proc.id, Lwt_unix.WEXITED code, { Lwt_unix.ru_utime = 0.; Lwt_unix.ru_stime = 0. })
+  Lwt.return (proc.id, Lwt_unix.WEXITED code, { Lwt_unix.ru_utime = 0.; Lwt_unix.ru_stime = 0. })
 
 external win32_terminate_process : Unix.file_descr -> int -> unit = "lwt_process_terminate_process"
 
@@ -309,7 +309,7 @@ let make_with backend ?timeout ?env cmd f =
     (fun () -> f process)
     (fun () ->
       process#close >>= fun _ ->
-      return ())
+      Lwt.return_unit)
 
 let with_process_none ?timeout ?env ?stdin ?stdout ?stderr cmd f = make_with (open_process_none ?stdin ?stdout ?stderr) ?timeout ?env cmd f
 let with_process_in ?timeout ?env ?stdin ?stderr cmd f = make_with (open_process_in ?stdin ?stderr) ?timeout ?env cmd f
@@ -331,7 +331,7 @@ let read_opt read ic =
     (fun () -> read ic >|= fun x -> Some x)
     (function
     | Unix.Unix_error (Unix.EPIPE, _, _) | End_of_file ->
-        return None
+        Lwt.return_none
     | exn -> Lwt.fail exn)
 
 let recv_chars pr =
@@ -341,9 +341,9 @@ let recv_chars pr =
                      read_opt Lwt_io.read_char ic >>= fun x ->
                      if x = None then begin
                        Lwt_io.close ic >>= fun () ->
-                       return x
+                       Lwt.return x
                      end else
-                       return x)
+                       Lwt.return x)
 
 let recv_lines pr =
   let ic = pr#stdout in
@@ -352,9 +352,9 @@ let recv_lines pr =
                      read_opt Lwt_io.read_line ic >>= fun x ->
                      if x = None then begin
                        Lwt_io.close ic >>= fun () ->
-                       return x
+                       Lwt.return x
                      end else
-                       return x)
+                       Lwt.return x)
 
 let recv pr =
   let ic = pr#stdout in

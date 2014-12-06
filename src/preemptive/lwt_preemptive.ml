@@ -21,7 +21,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *)
 
-let return, (>>=) = Lwt.return, Lwt.(>>=)
+open Lwt.Infix
 
 let section = Lwt_log.Section.make "lwt(preemptive)"
 
@@ -107,9 +107,9 @@ let add_worker worker =
 (* Wait for worker to be available, then return it: *)
 let rec get_worker () =
   if not (Queue.is_empty workers) then
-    return (Queue.take workers)
+    Lwt.return (Queue.take workers)
   else if !threads_count < !max_threads then
-    return (make_worker ())
+    Lwt.return (make_worker ())
   else
     Lwt.add_task_r waiters
 
@@ -183,7 +183,7 @@ let detach f args =
            resources: *)
         Thread.join worker.thread
       end;
-      return ())
+      Lwt.return_unit)
 
 (* +-----------------------------------------------------------------+
    | Running Lwt threads in the main thread                          |
@@ -215,11 +215,11 @@ let run_in_main f =
   let job () =
     (* Execute [f] and wait for its result. *)
     Lwt.try_bind f
-      (fun ret -> return (Value ret))
-      (fun exn -> return (Error exn)) >>= fun result ->
+      (fun ret -> Lwt.return (Value ret))
+      (fun exn -> Lwt.return (Error exn)) >>= fun result ->
     (* Send the result. *)
     Event.sync (Event.send channel result);
-    return ()
+    Lwt.return_unit
   in
   (* Add the job to the queue. *)
   Mutex.lock jobs_mutex;

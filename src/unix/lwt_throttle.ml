@@ -21,7 +21,7 @@
  * 02111-1307, USA.
  *)
 
-let return, (>>=) = Lwt.return, Lwt.(>>=)
+open Lwt.Infix
 
 module type S = sig
   type key
@@ -97,7 +97,7 @@ module Make (H : Hashtbl.HashedType) : (S with type key = H.t) = struct
         Lwt.catch
           (fun () ->
             clean_table t;
-            return ())
+            Lwt.return_unit)
           (fun exn ->
             Lwt_log.fatal ~exn ~section "internal error")
       in
@@ -109,7 +109,7 @@ module Make (H : Hashtbl.HashedType) : (S with type key = H.t) = struct
     then (Queue.add u elt.queue;
           t.waiting <- succ t.waiting;
           w)
-    else return false
+    else Lwt.return_false
 
   let wait t key =
     let res =
@@ -118,13 +118,13 @@ module Make (H : Hashtbl.HashedType) : (S with type key = H.t) = struct
         if elt.consumed >= t.rate
         then really_wait t elt
         else (elt.consumed <- succ elt.consumed;
-              return true)
+              Lwt.return_true)
       with
         | Not_found ->
           let elt = { consumed = 1;
                       queue = Queue.create () } in
           MH.add t.table key elt;
-          return true
+          Lwt.return_true
     in
     (match t.cleaning with
       | None -> launch_cleaning t

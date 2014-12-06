@@ -20,7 +20,7 @@
  * 02111-1307, USA.
  *)
 
-let return, (>>=) = Lwt.return, Lwt.(>>=)
+open Lwt.Infix
 
 let enter_iter_hooks = Lwt_sequence.create ()
 let leave_iter_hooks = Lwt_sequence.create ()
@@ -56,11 +56,11 @@ let exit_hooks = Lwt_sequence.create ()
 let rec call_hooks () =
   match Lwt_sequence.take_opt_l exit_hooks with
     | None ->
-        return ()
+        Lwt.return_unit
     | Some f ->
         Lwt.catch
           (fun () -> f ())
-          (fun _  -> return ()) >>= fun () ->
+          (fun _  -> Lwt.return_unit) >>= fun () ->
         call_hooks ()
 
 let () = at_exit (fun () -> run (call_hooks ()))
