@@ -83,10 +83,6 @@ Flag extra
   Description: Asynchronous unix functions
   Default$: flag(preemptive)
 
-Flag toplevel
-  Description: Enhanced toplevel
-  Default$: flag(all)
-
 Flag libev
   Description: Compile with libev support
   Default$: !os_type(Win32) && !flag(android_target)
@@ -260,21 +256,9 @@ Library "lwt-text"
   FindlibName: text
   FindlibParent: lwt
   Path: src/text
-  Modules: Lwt_text, Lwt_term, Lwt_read_line
-  BuildDepends: lwt, lwt.unix, lwt.react, text, text.bigarray
+  Modules: Lwt_text
+  BuildDepends: lwt, lwt.unix, text, text.bigarray
   XMETADescription: Text mode utilities (deprecated)
-  CSources: lwt_text_stubs.c
-
-Library "lwt-top"
-  Build$: flag(text) || flag(all)
-  Install$: flag(text) || flag(all)
-  FindlibName: top
-  FindlibParent: lwt
-  Path: src/top
-  Modules: Lwt_top
-  InternalModules: Lwt_ocaml_completion
-  BuildDepends: lwt, lwt.text, findlib
-  XMETADescription: Line-editing in the toplevel (deprecated)
 
 Library "lwt-syntax"
   Build$: flag(syntax) || flag(all)
@@ -332,18 +316,6 @@ Executable "ppx_lwt"
   CompiledObject: best
 
 # +-------------------------------------------------------------------+
-# | Toplevel                                                          |
-# +-------------------------------------------------------------------+
-
-Executable "lwt-toplevel"
-  Build$: flag(toplevel) || flag(all)
-  Install$: flag(toplevel) || flag(all)
-  Path: src/top
-  CompiledObject: byte
-  MainIs: lwt_toplevel.ml
-  BuildDepends: lwt, lwt.top, lwt.text, lwt.react, text, findlib, unix
-
-# +-------------------------------------------------------------------+
 # | Doc                                                               |
 # +-------------------------------------------------------------------+
 
@@ -371,7 +343,6 @@ Document "lwt-api"
     lwt.react,
     lwt.ssl,
     lwt.text,
-    lwt.top,
     lwt.log,
     lwt.unix,
     lwt.syntax,

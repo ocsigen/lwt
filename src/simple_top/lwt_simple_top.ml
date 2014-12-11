@@ -20,8 +20,8 @@
  * 02111-1307, USA.
  *)
 
-(* Integration with the toplevel for people who do not have the
-   enhanced toplevel (package lwt.top, which require ocaml-text). *)
+(* Integration with the toplevel for people who do not use the
+   enhanced toplevel (the utop project). *)
 
 open Lwt
 open Lwt_io

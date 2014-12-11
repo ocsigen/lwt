@@ -14,7 +14,7 @@ This library is part of the Ocsigen project. See:
  * findlib
  * [optional] react (from http://erratique.ch/software/react)
  * [optional] libev (from http://software.schmorp.de/pkg/libev.html)
- * [optional] ocaml-text (needed for the enhanced toplevel)
+ * [optional] ocaml-text
  * [optional] ocamlssl (>= 0.4.0) (ocamlssl needs openssl) (>= 0.4.1 for MacOS)
  * [optional] glib-2.0 development files and pkg-config
 
@@ -45,10 +45,7 @@ installed by default.
 If you get the development version you need to obtain OASIS
 (http://oasis.forge.ocamlcore.org/).
 
-If you want to build the toplevel you have to install compiler
-libraries. Under Debian it is the package ocaml-compiler-libs.
-
-Note that the utop project replaces the Lwt toplevel:
+The Lwt toplevel was deprecated and removed. Use utop instead:
 
   https://github.com/diml/utop
 

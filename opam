@@ -11,7 +11,7 @@ build: [
     "--%{base-unix:enable}%-extra"
     "--%{base-threads:enable}%-preemptive"
     "--%{lablgtk:enable}%-glib"
-    "--%{ocaml-text:enable}%-text" {"%{react:installed}%"}
+    "--%{text:enable}%-text"
     "--%{ppx_tools:enable}%-ppx"]
   [make "build"]
   [make "install"]
