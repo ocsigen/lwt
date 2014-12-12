@@ -48,6 +48,17 @@ CAMLprim value lwt_unix_readable(value fd)
   return (Val_bool(pollfd.revents & POLLIN));
 }
 
+CAMLprim value lwt_unix_pollpri(value fd)
+{
+  struct pollfd pollfd;
+  pollfd.fd = Int_val(fd);
+  pollfd.events = POLLPRI;
+  pollfd.revents = 0;
+  if (poll(&pollfd, 1, 0) < 0)
+    uerror("pollpri", Nothing);
+  return (Val_bool(pollfd.revents & POLLPRI));
+}
+
 CAMLprim value lwt_unix_writable(value fd)
 {
   struct pollfd pollfd;
@@ -55,7 +66,7 @@ CAMLprim value lwt_unix_writable(value fd)
   pollfd.events = POLLOUT;
   pollfd.revents = 0;
   if (poll(&pollfd, 1, 0) < 0)
-    uerror("readable", Nothing);
+    uerror("writable", Nothing);
   return (Val_bool(pollfd.revents & POLLOUT));
 }
 

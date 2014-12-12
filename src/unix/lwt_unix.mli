@@ -334,6 +334,10 @@ val readable : file_descr -> bool
   (** Returns whether the given file descriptor is currently
       readable. *)
 
+val pollpri : file_descr -> bool
+  (** Returns whether high priority data may be read without
+      blocking *)
+
 val writable : file_descr -> bool
   (** Returns whether the given file descriptor is currently
       writable. *)
@@ -341,6 +345,10 @@ val writable : file_descr -> bool
 val wait_read : file_descr -> unit Lwt.t
   (** waits (without blocking other threads) until there is something
       to read on the file descriptor *)
+
+val wait_pollpri : file_descr -> unit Lwt.t
+  (** waits (without blocking other threads) until there is high
+      priority data to read on the file descriptor *)
 
 val wait_write : file_descr -> unit Lwt.t
   (** waits (without blocking other threads) until it is possible to

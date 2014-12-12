@@ -369,6 +369,7 @@ let set_blocking ?(set_flags=true) ch blocking =
 
 external unix_stub_readable : Unix.file_descr -> bool = "lwt_unix_readable"
 external unix_stub_writable : Unix.file_descr -> bool = "lwt_unix_writable"
+external unix_stub_pollpri : Unix.file_descr -> bool = "lwt_unix_pollpri"
 
 let rec unix_readable fd =
   try
@@ -378,6 +379,12 @@ let rec unix_readable fd =
       unix_stub_readable fd
   with Unix.Unix_error (Unix.EINTR, _, _) ->
     unix_readable fd
+
+let rec unix_pollpri fd =
+  try
+    unix_stub_pollpri fd
+  with Unix.Unix_error (Unix.EINTR, _, _) ->
+    unix_pollpri fd
 
 let rec unix_writable fd =
   try
@@ -391,6 +398,10 @@ let rec unix_writable fd =
 let readable ch =
   check_descriptor ch;
   unix_readable ch.fd
+
+let pollpri ch =
+  check_descriptor ch;
+  unix_pollpri ch.fd
 
 let writable ch =
   check_descriptor ch;
@@ -629,6 +640,15 @@ let read ch buf pos len =
           run_job (read_job ch.fd buf pos len)
       | false ->
           wrap_syscall Read ch (fun () -> stub_read ch.fd buf pos len)
+
+let wait_pollpri ch =
+  Lwt.catch
+    (fun () ->
+       if pollpri ch then
+         Lwt.return_unit
+    else
+      register_action Read ch ignore)
+    Lwt.fail
 
 let wait_write ch =
   Lwt.catch
