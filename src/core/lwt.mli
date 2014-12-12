@@ -56,6 +56,14 @@ val return : 'a -> 'a t
 val fail : exn -> 'a t
   (** [fail e] is a thread that fails with the exception [e]. *)
 
+val fail_with : string -> 'a t
+  (** [fail_with msg] is a thread that fails with the exception
+      [Failure msg]. *)
+
+val fail_invalid_arg : string -> 'a t
+  (** [fail_invalid_arg msg] is a thread that fails with the exception
+      [Invalid_argument msg]. *)
+
 val bind : 'a t -> ('a -> 'b t) -> 'b t
   (** [bind t f] is a thread which first waits for the thread [t] to
       terminate and then, if the thread succeeds, behaves as the
