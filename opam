@@ -11,7 +11,6 @@ build: [
     "--%{base-unix:enable}%-extra"
     "--%{base-threads:enable}%-preemptive"
     "--%{lablgtk:enable}%-glib"
-    "--%{text:enable}%-text"
     "--%{ppx_tools:enable}%-ppx"]
   [make "build"]
   [make "install"]
@@ -32,7 +31,6 @@ depopts: [
   "conf-libev"
   "ssl"
   "lablgtk"
-  "text"
   "react"
 ]
 conflicts: [

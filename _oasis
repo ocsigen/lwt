@@ -71,10 +71,6 @@ Flag ssl
   Description: SSL support
   Default$: flag(all)
 
-Flag text
-  Description: Text mode utilities (deprecated)
-  Default$: flag(all)
-
 Flag preemptive
   Description: Preemptive threads support
   Default$: flag(unix) && !flag(android_target)
@@ -250,16 +246,6 @@ Library "lwt-ssl"
   BuildDepends: ssl, lwt.unix
   XMETADescription: SSL support for Lwt
 
-Library "lwt-text"
-  Build$: flag(text) || flag(all)
-  Install$: flag(text) || flag(all)
-  FindlibName: text
-  FindlibParent: lwt
-  Path: src/text
-  Modules: Lwt_text
-  BuildDepends: lwt, lwt.unix, text, text.bigarray
-  XMETADescription: Text mode utilities (deprecated)
-
 Library "lwt-syntax"
   Build$: flag(syntax) || flag(all)
   Install$: flag(syntax) || flag(all)
@@ -342,7 +328,6 @@ Document "lwt-api"
     lwt.preemptive,
     lwt.react,
     lwt.ssl,
-    lwt.text,
     lwt.log,
     lwt.unix,
     lwt.syntax,
