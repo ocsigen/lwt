@@ -72,7 +72,7 @@ type async_method =
   | Async_detach
       (** System calls are made in another system thread, thus without
           blocking other Lwt threads. The drawback is that it may
-          degrade performances in some cases.
+          degrade performance in some cases.
 
           This is the default. *)
   | Async_switch
@@ -780,9 +780,9 @@ type credentials = {
 }
 
 val get_credentials : file_descr -> credentials
-  (** [get_credentials fd] returns credential informations from the
+  (** [get_credentials fd] returns credentials information from the
       given socket. On some platforms, obtaining the peer pid is not
-      possible and it will be set to [-1]. If obtaining credentials 
+      possible and it will be set to [-1]. If obtaining credentials
       is not possible on the current system, it raises
       [Lwt_sys.Not_available "get_credentials"].
 
@@ -1034,9 +1034,9 @@ type io_event = Read | Write
 
 val wrap_syscall : io_event -> file_descr -> (unit -> 'a) -> 'a Lwt.t
   (** [wrap_syscall set fd action] wrap an action on a {b file
-      descriptor}. It tries to execture action, and if it can not be
+      descriptor}. It tries to execute action, and if it can not be
       performed immediately without blocking, it is registered for
-      latter.
+      later.
 
       In the latter case, if the thread is canceled, [action] is
       removed from [set]. *)
