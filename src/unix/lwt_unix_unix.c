@@ -80,7 +80,7 @@ CAMLprim value lwt_unix_madvise (value val_buffer, value val_offset, value val_l
   return Val_unit;
 }
 
-CAMLprim value lwt_unix_get_page_size()
+CAMLprim value lwt_unix_get_page_size(value Unit)
 {
   long page_size = sysconf(_SC_PAGESIZE);
   if (page_size < 0) page_size = 4096;
@@ -468,6 +468,10 @@ CAMLprim value lwt_unix_get_credentials(value fd)
     CAMLreturn(res);
 }
 
+#else
+
+LWT_NOT_AVAILABLE1(get_credentials)
+
 #endif
 
 /* +-----------------------------------------------------------------+
@@ -544,11 +548,6 @@ value lwt_unix_wait4(value flags, value pid_req)
   CAMLreturn(res);
 }
 
-value lwt_unix_has_wait4(value unit)
-{
-  return Val_int(1);
-}
-
 #endif
 
 /* +-----------------------------------------------------------------+
@@ -557,12 +556,16 @@ value lwt_unix_has_wait4(value unit)
 
 #if defined(HAVE_GETCPU)
 
-CAMLprim value lwt_unix_get_cpu()
+CAMLprim value lwt_unix_get_cpu(value Unit)
 {
   int cpu = sched_getcpu();
   if (cpu < 0) uerror("sched_getcpu", Nothing);
   return Val_int(cpu);
 }
+
+#else
+
+LWT_NOT_AVAILABLE1(get_cpu)
 
 #endif
 
@@ -598,6 +601,11 @@ CAMLprim value lwt_unix_set_affinity(value val_pid, value val_cpus)
     uerror("sched_setaffinity", Nothing);
   return Val_unit;
 }
+
+#else
+
+LWT_NOT_AVAILABLE1(get_affinity)
+LWT_NOT_AVAILABLE2(set_affinity)
 
 #endif
 
@@ -1530,11 +1538,15 @@ static value result_getlogin(struct job_getlogin *job)
   }
 }
 
-CAMLprim value lwt_unix_getlogin_job()
+CAMLprim value lwt_unix_getlogin_job(value Unit)
 {
   LWT_UNIX_INIT_JOB(job, getlogin, 0);
   return lwt_unix_alloc_job(&job->job);
 }
+
+#else
+
+LWT_NOT_AVAILABLE1(unix_getlogin_job)
 
 #endif
 
@@ -1639,6 +1651,13 @@ JOB_GET_ENTRY(LWT_UNIX_INIT_JOB_STRING(job, getgrnam, 0, name), getgrnam, GETGR,
 JOB_GET_ENTRY(LWT_UNIX_INIT_JOB(job, getpwuid, 0); job->uid = Int_val(uid), getpwuid, GETPW, passwd, uid, int uid, Nothing)
 JOB_GET_ENTRY(LWT_UNIX_INIT_JOB(job, getgrgid, 0); job->gid = Int_val(gid), getgrgid, GETGR, group, gid, int gid, Nothing)
 
+#else
+
+LWT_NOT_AVAILABLE1(unix_getpwnam_job)
+LWT_NOT_AVAILABLE1(unix_getgrnam_job)
+LWT_NOT_AVAILABLE1(unix_getpwuid_job)
+LWT_NOT_AVAILABLE1(unix_getgruid_job)
+
 #endif
 
 /* +-----------------------------------------------------------------+
@@ -1688,7 +1707,7 @@ static value result_gethostname(struct job_gethostname *job)
   return result;
 }
 
-CAMLprim value lwt_unix_gethostname_job()
+CAMLprim value lwt_unix_gethostname_job(value Unit)
 {
   LWT_UNIX_INIT_JOB(job, gethostname, 0);
   return lwt_unix_alloc_job(&(job->job));
@@ -2457,3 +2476,14 @@ CAMLprim value lwt_unix_tcsetattr_job(value fd, value when, value termios)
   memcpy(&job->termios, &Field(termios, 0), NFIELDS * sizeof(value));
   return lwt_unix_alloc_job(&job->job);
 }
+
+/* +-----------------------------------------------------------------+
+   | Unavailable primitives                                          |
+   +-----------------------------------------------------------------+ */
+
+LWT_NOT_AVAILABLE1(unix_is_socket)
+LWT_NOT_AVAILABLE1(unix_socketpair_stub)
+LWT_NOT_AVAILABLE1(unix_system_job)
+LWT_NOT_AVAILABLE4(process_create_process)
+LWT_NOT_AVAILABLE1(process_wait_job)
+LWT_NOT_AVAILABLE2(process_terminate_process)

@@ -104,8 +104,6 @@ type job = {
    | Configuration                                                   |
    +-----------------------------------------------------------------+ *)
 
-let ocaml_version = Scanf.sscanf Sys.ocaml_version "%d.%d" (fun major minor -> (major, minor))
-
 let prog_name = Filename.basename Sys.executable_name
 let log fmt = ksprintf (fun msg -> prerr_endline (prog_name ^ ": " ^ msg)) fmt
 
@@ -139,22 +137,21 @@ let table name c_type l = {
 let filter_fst l = List.map snd (List.filter fst l)
 
 let open_flag =
-  flag_list "Unix.open_flag" C_int
-    (filter_fst [
-       true, (S "O_RDONLY", None);
-       true, (S "O_WRONLY", None);
-       true, (S "O_RDWR", None);
-       true, (S "O_NONBLOCK", Some "O_NDELAY");
-       true, (S "O_APPEND", None);
-       true, (S "O_CREAT", None);
-       true, (S "O_TRUNC", None);
-       true, (S "O_EXCL", None);
-       true, (S "O_NOCTTY", None);
-       true, (S "O_DSYNC", Some "0");
-       true, (S "O_SYNC", Some "0");
-       true, (S "O_RSYNC", Some "0");
-       ocaml_version >= (3, 13) , (S "O_SHARE_DELETE", None);
-     ])
+  flag_list "Unix.open_flag" C_int [
+    S "O_RDONLY", None;
+    S "O_WRONLY", None;
+    S "O_RDWR", None;
+    S "O_NONBLOCK", Some "O_NDELAY";
+    S "O_APPEND", None;
+    S "O_CREAT", None;
+    S "O_TRUNC", None;
+    S "O_EXCL", None;
+    S "O_NOCTTY", None;
+    S "O_DSYNC", Some "0";
+    S "O_SYNC", Some "0";
+    S "O_RSYNC", Some "0";
+    S "O_SHARE_DELETE", None;
+  ]
 
 let access_permission =
   flag_list "Unix.access_permission" C_int [
@@ -700,14 +697,14 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
       if job.name <> "fsync" then begin
         pr "#else /* %s */\n" exists_if;
         pr "\n";
-        pr "CAMLprim value lwt_unix_%s_job()\n" job.name;
+        pr "CAMLprim value lwt_unix_%s_job(value Unit)\n" job.name;
         pr "{\n";
         pr "  lwt_unix_not_available(%S);\n" job.name;
         pr "  return Val_unit;\n";
         pr "}\n";
         pr "\n";
         if map_in_64 || map_out_64 || map_result_64 then begin
-          pr "CAMLprim value lwt_unix_%s_64_job()\n" job.name;
+          pr "CAMLprim value lwt_unix_%s_64_job(value Unit)\n" job.name;
           pr "{\n";
           pr "  lwt_unix_not_available(%S);\n" job.name;
           pr "  return Val_unit;\n";

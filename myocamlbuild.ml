@@ -72,12 +72,13 @@ let () =
              Options.make_links := false
 
          | After_rules ->
-
              let env = BaseEnvLight.load ~allow_empty:true ~filename:MyOCamlbuildBase.env_filename () in
 
-
-             dep ["file:src/unix/lwt_unix_stubs.c"] ["src/unix/lwt_unix_unix.c"; "src/unix/lwt_unix_windows.c"];
-             dep ["pa_optcomp"] ["src/unix/lwt_config.ml"];
+             (* Determine extension of CompiledObject: best *)
+             let native_suffix =
+               if BaseEnvLight.var_get "is_native" env = "true"
+               then "native" else "byte"
+             in
 
              (* Internal syntax extension *)
              List.iter
@@ -87,24 +88,10 @@ let () =
                   flag ["ocaml"; "ocamldep"; tag] & S[A"-ppopt"; A file];
                   flag ["ocaml"; "doc"; tag] & S[A"-ppopt"; A file];
                   dep ["ocaml"; "ocamldep"; tag] [file])
-               ["lwt_options"; "lwt"; "lwt_log"; "optcomp"];
+               ["lwt_options"; "lwt"; "lwt_log"];
 
-             (* Optcomp for .mli *)
-             flag ["ocaml"; "compile"; "pa_optcomp_standalone"] & S[A"-pp"; A "./syntax/optcomp.byte"];
-             flag ["ocaml"; "ocamldep"; "pa_optcomp_standalone"] & S[A"-pp"; A "./syntax/optcomp.byte"];
-             flag ["ocaml"; "doc"; "pa_optcomp_standalone"] & S[A"-pp"; A "./syntax/optcomp.byte"];
-             dep ["ocaml"; "ocamldep"; "pa_optcomp_standalone"] ["syntax/optcomp.byte"];
-
-             (* Use byte or native ppx, depending of Oasis variable. *)
-             let native_suffix =
-               if BaseEnvLight.var_get "is_native" env = "true"
-               then "native" else "byte"
-             in
-             flag ["ocaml"; "compile"; "use_ppx_lwt"] &
-             S [
-               A "-ppx" ;
-               A ("ppx/ppx_lwt_ex." ^ native_suffix)
-             ] ;
+             flag ["ocaml"; "compile"; "ppx_lwt"] &
+              S [A "-ppx"; A ("ppx/ppx_lwt_ex." ^ native_suffix)];
 
              (* Use an introduction page with categories *)
              tag_file "lwt-api.docdir/index.html" ["apiref"];
@@ -112,6 +99,7 @@ let () =
              flag ["apiref"] & S[A "-intro"; P "apiref-intro"; A"-colorize-code"];
 
              (* Stubs: *)
+             dep ["file:src/unix/lwt_unix_stubs.c"] ["src/unix/lwt_unix_unix.c"; "src/unix/lwt_unix_windows.c"];
 
              (* Check for "unix" because other variables are not
                 present in the setup.data file if lwt.unix is
@@ -122,98 +110,6 @@ let () =
                define_c_library "pthread" env;
 
                flag ["c"; "compile"; "use_lwt_headers"] & S [A"-ccopt"; A"-Isrc/unix"];
-
-               (* With ocaml >= 4, toploop.cmi is not in the stdlib
-                  path *)
-               let ocaml_major_version = Scanf.sscanf (BaseEnvLight.var_get "ocaml_version" env) "%d" (fun x -> x) in
-               if ocaml_major_version >= 4 then
-                 List.iter
-                   (fun stage -> flag ["ocaml"; stage; "use_toploop"] & S[A "-package"; A "compiler-libs.toplevel"])
-                   ["compile"; "ocamldep"; "doc"];
-
-               (* Toplevel stuff *)
-
-               flag ["ocaml"; "link"; "toplevel"] & A"-linkpkg";
-
-               let stdlib_path = BaseEnvLight.var_get "standard_library" env in
-
-               (* Try to find the path where compiler libraries
-                  are. *)
-               let compiler_libs =
-                 let stdlib = String.chomp stdlib_path in
-                 try
-                   let path =
-                     List.find Pathname.exists [
-                       stdlib / "compiler-libs";
-                       stdlib / "compiler-lib";
-                       stdlib / ".." / "compiler-libs";
-                       stdlib / ".." / "compiler-lib";
-                     ]
-                   in
-                   path :: List.filter Pathname.exists [ path / "typing"; path / "utils"; path / "parsing" ]
-                 with Not_found ->
-                   []
-               in
-
-               (* Add directories for compiler-libraries: *)
-               let paths = List.map (fun path -> S[A"-I"; A path]) compiler_libs in
-               List.iter
-                 (fun stage -> flag ["ocaml"; stage; "use_compiler_libs"] & S paths)
-                 ["compile"; "ocamldep"; "doc"; "link"];
-
-               dep ["file:src/top/toplevel_temp.top"] ["src/core/lwt.cma";
-                                                       "src/logger/lwt-log.cma";
-                                                       "src/react/lwt-react.cma";
-                                                       "src/unix/lwt-unix.cma";
-                                                       "src/text/lwt-text.cma";
-                                                       "src/top/lwt-top.cma"];
-
-               flag ["file:src/top/toplevel_temp.top"] & S[A"-I"; A"src/unix";
-                                                           A"-I"; A"src/text";
-                                                           A"src/core/lwt.cma";
-                                                           A"src/logger/lwt-log.cma";
-                                                           A"src/react/lwt-react.cma";
-                                                           A"src/unix/lwt-unix.cma";
-                                                           A"src/text/lwt-text.cma";
-                                                           A"src/top/lwt-top.cma"];
-
-               (* Expunge compiler modules *)
-               rule "toplevel expunge"
-                 ~dep:"src/top/toplevel_temp.top"
-                 ~prod:"src/top/lwt_toplevel.byte"
-                 (fun _ _ ->
-                    let directories =
-                      stdlib_path
-                      :: "src/core"
-                      :: "src/react"
-                      :: "src/unix"
-                      :: "src/text"
-                      :: "src/top"
-                      :: (List.map
-                            (fun lib ->
-                               String.chomp
-                                 (run_and_read
-                                    ("ocamlfind query " ^ lib)))
-                            ["findlib"; "react"; "unix"; "text"])
-                    in
-                    let modules =
-                      List.fold_left
-                        (fun set directory ->
-                           List.fold_left
-                             (fun set fname ->
-                                if Pathname.check_extension fname "cmi" then
-                                  StringSet.add (module_name_of_pathname fname) set
-                                else
-                                  set)
-                             set
-                             (Array.to_list (Pathname.readdir directory)))
-                        StringSet.empty directories
-                    in
-                    Cmd(S[A(stdlib_path / "expunge");
-                          A"src/top/toplevel_temp.top";
-                          A"src/top/lwt_toplevel.byte";
-                          A"outcometree"; A"topdirs"; A"toploop";
-                          S(List.map (fun x -> A x) (StringSet.elements modules))]))
              end
 
          | _ ->

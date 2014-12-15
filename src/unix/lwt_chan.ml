@@ -22,65 +22,64 @@
  * 02111-1307, USA.
  *)
 
-open Lwt
-open Lwt_io
+open Lwt.Infix
 
 type in_channel = Lwt_io.input_channel
 type out_channel = Lwt_io.output_channel
 
-let in_channel_of_descr fd = of_fd ~mode:Lwt_io.input fd
+let in_channel_of_descr fd = Lwt_io.of_fd ~mode:Lwt_io.input fd
 
 let make_in_channel ?close read =
-  make ~mode:Lwt_io.input ?close
+  Lwt_io.make ~mode:Lwt_io.input ?close
     (fun buf ofs len ->
        let str = String.create len in
-       lwt n = read str 0 len in
+       read str 0 len >>= fun n ->
        if (n > 0) then Lwt_bytes.blit_string_bytes str 0 buf ofs len;
-       return n)
+       Lwt.return n)
 
 let input_line ic =
   let rec loop buf =
-    read_char_opt ic >>= function
+    Lwt_io.read_char_opt ic >>= function
       | None | Some '\n' ->
-          return (Buffer.contents buf)
+          Lwt.return (Buffer.contents buf)
       | Some char ->
           Buffer.add_char buf char;
           loop buf
   in
-  read_char_opt ic >>= function
+  Lwt_io.read_char_opt ic >>= function
     | Some '\n' ->
-        return ""
+        Lwt.return ""
     | Some char ->
         let buf = Buffer.create 128 in
         Buffer.add_char buf char;
         loop buf
     | None ->
-        raise_lwt End_of_file
+        Lwt.fail End_of_file
 
-let input_value = read_value
-let input = read_into
-let really_input = read_into_exactly
-let input_char = read_char
-let input_binary_int = BE.read_int
-let open_in_gen flags perm fname = open_file ~flags ~perm ~mode:Lwt_io.input fname
-let open_in fname = open_file ~mode:Lwt_io.input fname
-let close_in = close
-let out_channel_of_descr fd = of_fd ~mode:Lwt_io.output fd
+let input_value = Lwt_io.read_value
+let input = Lwt_io.read_into
+let really_input = Lwt_io.read_into_exactly
+let input_char = Lwt_io.read_char
+let input_binary_int = Lwt_io.BE.read_int
+let open_in_gen flags perm fname = Lwt_io.open_file ~flags ~perm ~mode:Lwt_io.input fname
+let open_in fname = Lwt_io.open_file ~mode:Lwt_io.input fname
+let close_in = Lwt_io.close
+let out_channel_of_descr fd = Lwt_io.of_fd ~mode:Lwt_io.output fd
 
 let make_out_channel ?close write =
-  make ~mode:Lwt_io.output ?close
+  Lwt_io.make ~mode:Lwt_io.output ?close
     (fun buf ofs len ->
        let str = String.create len in
        Lwt_bytes.blit_bytes_string buf ofs str 0 len;
        write str 0 len)
 
-let output = write_from_exactly
-let flush = flush
-let output_string = write
-let output_value oc v = write_value oc v
-let output_char = write_char
-let output_binary_int = BE.write_int
-let open_out_gen flags perm fname = open_file ~flags ~perm ~mode:Lwt_io.output fname
-let open_out fname = open_file ~mode:Lwt_io.output fname
-let close_out = close
-let open_connection sockaddr = open_connection sockaddr
+let output = Lwt_io.write_from_exactly
+let flush = Lwt_io.flush
+let output_string = Lwt_io.write
+let output_value oc v = Lwt_io.write_value oc v
+let output_char = Lwt_io.write_char
+let output_binary_int = Lwt_io.BE.write_int
+let open_out_gen flags perm fname = Lwt_io.open_file ~flags ~perm ~mode:Lwt_io.output fname
+let open_out fname = Lwt_io.open_file ~mode:Lwt_io.output fname
+let close_out = Lwt_io.close
+let open_connection sockaddr = Lwt_io.open_connection sockaddr

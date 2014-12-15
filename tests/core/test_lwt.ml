@@ -469,7 +469,7 @@ let suite = suite "lwt" [
   test "cancel loop"
     (fun () ->
        let rec loop () =
-         lwt () = Lwt_unix.yield () in
+         Lwt_unix.yield () >>= fun () ->
          loop ()
        in
        let t = loop () in
@@ -479,29 +479,29 @@ let suite = suite "lwt" [
   test "cancel loop 2"
     (fun () ->
        let rec loop () =
-         lwt () = Lwt_unix.yield () in
+         Lwt_unix.yield () >>= fun () ->
          loop ()
        in
        let t = loop () in
-       lwt () = Lwt_unix.yield () in
+       Lwt_unix.yield () >>= fun () ->
        cancel t;
        return (state t = Fail Canceled));
 
   test "nchoose"
     (fun () ->
-       lwt l = nchoose [return 1; return 2] in
+       nchoose [return 1; return 2] >>= fun l ->
        return (l = [1; 2]));
 
   test "npick"
     (fun () ->
-       lwt l = npick [return 1; return 2] in
+       npick [return 1; return 2] >>= fun l ->
        return (l = [1; 2]));
 
   test "bind/cancel 1"
     (fun () ->
        let waiter, wakener = wait () in
        let t =
-         lwt () = waiter in
+         waiter >>= fun () ->
          let waiter, wakener = task () in
          waiter
        in
@@ -513,7 +513,7 @@ let suite = suite "lwt" [
     (fun () ->
        let waiter, wakener = wait () in
        let t =
-         lwt () = waiter in
+         waiter >>= fun () ->
          let waiter, wakener = task () in
          waiter
        in
@@ -527,12 +527,15 @@ let suite = suite "lwt" [
        let waiter1, wakener1 = wait () in
        let waiter2, wakener2 = wait () in
        let t =
-         lwt () = waiter1 in
-         try_lwt
-           lwt () = waiter2 in
-           fst (task ())
-         with Canceled ->
-           return true
+         waiter1 >>= fun () ->
+         Lwt.catch
+           (fun () ->
+             waiter2 >>= fun () ->
+             fst (task ()))
+           (function
+           | Canceled ->
+               return true
+           | exn -> Lwt.fail exn)
        in
        wakeup wakener1 ();
        wakeup wakener2 ();
@@ -559,7 +562,7 @@ let suite = suite "lwt" [
             let t =
               with_value key (Some 2)
                 (fun () ->
-                   lwt () = waiter in
+                   waiter >>= fun () ->
                    return (get key = Some 2))
             in
             wakeup wakener ();
@@ -584,12 +587,12 @@ let suite = suite "lwt" [
        (* Send a value to the first thread of the queue when [t]
           fails. *)
        ignore (
-         try_lwt
-           t
-         with _ ->
-           (* Take the first thread from the queue and send it a value. *)
-           wakeup (Lwt_sequence.take_l queue) 42;
-           return 0
+         Lwt.catch
+           (fun () -> t)
+           (fun _ ->
+             (* Take the first thread from the queue and send it a value. *)
+             wakeup (Lwt_sequence.take_l queue) 42;
+             return 0)
        );
        (* Terminate [waiter'] so [waiter1 <- Repr t] *)
        wakeup wakener' 0;
@@ -633,7 +636,7 @@ let suite = suite "lwt" [
             let waiter, wakener = wait () in
             let t1 = map (fun () -> 42) waiter in
             ignore_result (
-              lwt () = waiter in
+              waiter >>= fun () ->
               fail Exit
             );
             let t2 = map (fun () -> "42") waiter in

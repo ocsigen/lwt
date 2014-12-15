@@ -23,7 +23,7 @@
 
 (* This code is an adaptation of [syslog-ocaml] *)
 
-open Lwt
+open Lwt.Infix
 
 (* Errors happening in this module are always logged to [stderr]: *)
 let log_intern fmt =
@@ -228,19 +228,19 @@ let make ~output ~close =
   {
     lg_closed = false;
     lg_output = output;
-    lg_close = Lazy.lazy_from_fun close;
+    lg_close  = Lazy.from_fun close;
   }
 
 let broadcast loggers =
   make
     ~output:(fun section level lines ->
                Lwt_list.iter_p (fun logger -> logger.lg_output section level lines) loggers)
-    ~close:return
+    ~close:Lwt.return
 
 let dispatch f =
   make
     ~output:(fun section level lines -> (f section level).lg_output section level lines)
-    ~close:return
+    ~close:Lwt.return
 
 (* +-----------------------------------------------------------------+
    | Templates                                                       |
@@ -273,8 +273,8 @@ let render ~buffer ~template ~section ~level ~message =
 
 let null =
   make
-    ~output:(fun section level lines -> return ())
-    ~close:return
+    ~output:(fun section level lines -> Lwt.return_unit)
+    ~close:Lwt.return
 
 let default = ref null
 
@@ -300,7 +300,7 @@ let log ?exn ?(section=Section.main) ?location ?logger ~level message =
     | Some logger -> logger
   in
   if logger.lg_closed then
-    raise_lwt Logger_closed
+    Lwt.fail Logger_closed
   else if level >= section.Section.level then
     match exn with
       | None ->
@@ -315,7 +315,7 @@ let log ?exn ?(section=Section.main) ?location ?logger ~level message =
           in
           Lwt.with_value location_key location (fun () -> logger.lg_output section level (split message))
   else
-    return ()
+    Lwt.return_unit
 
 let log_f ?exn ?section ?location ?logger ~level format =
   Printf.ksprintf (log ?exn ?section ?location ?logger ~level) format

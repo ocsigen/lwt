@@ -57,6 +57,22 @@ char *lwt_unix_strdup(char *string);
 /* Raise [Lwt_unix.Not_available]. */
 void lwt_unix_not_available(char const *feature) Noreturn;
 
+#define LWT_NOT_AVAILABLE1(prim) \
+  CAMLprim value lwt_ ## prim(value a1) \
+  { lwt_unix_not_available(#prim); }
+#define LWT_NOT_AVAILABLE2(prim) \
+  CAMLprim value lwt_ ## prim(value a1, value a2) \
+  { lwt_unix_not_available(#prim); }
+#define LWT_NOT_AVAILABLE3(prim) \
+  CAMLprim value lwt_ ## prim(value a1, value a2, value a3) \
+  { lwt_unix_not_available(#prim); }
+#define LWT_NOT_AVAILABLE4(prim) \
+  CAMLprim value lwt_ ## prim(value a1, value a2, value a3, value a4) \
+  { lwt_unix_not_available(#prim); }
+#define LWT_NOT_AVAILABLE5(prim) \
+  CAMLprim value lwt_ ## prim(value a1, value a2, value a3, value a4, value a5) \
+  { lwt_unix_not_available(#prim); }
+
 /* +-----------------------------------------------------------------+
    | Notifications                                                   |
    +-----------------------------------------------------------------+ */
@@ -278,17 +294,17 @@ void lwt_unix_free_job(lwt_unix_job job);
 /* Define not implement methods. Deprecated: it is for the old
    mechanism with three externals. */
 #define LWT_UNIX_JOB_NOT_IMPLEMENTED(name)      \
-  CAMLprim value lwt_unix_##name##_job()        \
+  CAMLprim value lwt_unix_##name##_job(value Unit)        \
   {                                             \
     caml_invalid_argument("not implemented");	\
   }                                             \
                                                 \
-  CAMLprim value lwt_unix_##name##_result()     \
+  CAMLprim value lwt_unix_##name##_result(value Unit)     \
   {                                             \
     caml_invalid_argument("not implemented");	\
   }                                             \
                                                 \
-  CAMLprim value lwt_unix_##name##_free()       \
+  CAMLprim value lwt_unix_##name##_free(value Unit)       \
   {                                             \
     caml_invalid_argument("not implemented");	\
   }

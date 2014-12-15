@@ -28,35 +28,35 @@ let test_file = "Lwt_io_test"
 let file_contents = "test file content"
 
 let open_and_read_filename () =
-  lwt in_chan = open_file ~mode:input test_file in
-  lwt s = read in_chan in
-  lwt () = close in_chan in
+  open_file ~mode:input test_file >>= fun in_chan ->
+  read in_chan >>= fun s ->
+  close in_chan >>= fun () ->
   assert (s = file_contents);
   return ()
 
 let suite = suite "lwt_io non blocking io" [
   test "create file"
     (fun () ->
-      lwt out_chan = open_file ~mode:output test_file in
-      lwt () = write out_chan file_contents in
-      lwt () = close out_chan in
+      open_file ~mode:output test_file >>= fun out_chan ->
+      write out_chan file_contents >>= fun () ->
+      close out_chan >>= fun () ->
       return true);
 
   test "read file"
     (fun () ->
-      lwt in_chan = open_file ~mode:input test_file in
-      lwt s = read in_chan in
-      lwt () = close in_chan in
+      open_file ~mode:input test_file >>= fun in_chan ->
+      read in_chan >>= fun s ->
+      close in_chan >>= fun () ->
       return (s = file_contents));
 
   test "many read file"
     (fun () ->
-      lwt () = for_lwt i = 0 to 10000 do
-	try_lwt
-	  open_and_read_filename ()
-        with e -> lwt () = printf "\nstep %i\n" i in raise_lwt e
-      done in
-      return true);
+      let rec loop i =
+        open_and_read_filename () >>= fun () ->
+        if i > 10000 then return true
+        else loop (i + 1)
+      in
+      loop 0);
 
   test "remove file"
     (fun () ->

@@ -8,7 +8,6 @@
 
 (* Use topfind, this is the minimum: *)
 #use "topfind";;
-(* Note: if you use lwt/toplevel.byte, you should remove this line *)
 
 (* Syntax to use, you can replace that with #camlp4r if you prefer
    revised syntax: *)
@@ -16,9 +15,6 @@
 
 (* Load Lwt syntactic sugars: *)
 #require "lwt.syntax";;
-
-(* Load the lwt.top package, with line-editing support :) *)
-#require "lwt.top";;
 
 (* Open useful Lwt modules for scripting: *)
 open Lwt_unix;;

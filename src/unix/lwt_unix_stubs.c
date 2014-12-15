@@ -898,7 +898,7 @@ CAMLprim value lwt_unix_remove_signal(value val_signum)
 }
 
 /* Mark all signals as non-monitored. */
-CAMLprim value lwt_unix_init_signals()
+CAMLprim value lwt_unix_init_signals(value Unit)
 {
   int i;
   for (i = 0; i < NSIG; i++)
@@ -1510,7 +1510,7 @@ CAMLprim value lwt_unix_run_job_sync(value val_job)
   return job->result(job);
 }
 
-CAMLprim value lwt_unix_reset_after_fork()
+CAMLprim value lwt_unix_reset_after_fork(value Unit)
 {
   if (threading_initialized) {
 #if defined(LWT_UNIX_HAVE_ASYNC_SWITCH)
@@ -1535,7 +1535,7 @@ CAMLprim value lwt_unix_reset_after_fork()
    | Statistics and control                                          |
    +-----------------------------------------------------------------+ */
 
-CAMLprim value lwt_unix_pool_size()
+CAMLprim value lwt_unix_pool_size(value Unit)
 {
   return Val_int(pool_size);
 }
@@ -1546,12 +1546,12 @@ CAMLprim value lwt_unix_set_pool_size(value val_size)
   return Val_unit;
 }
 
-CAMLprim value lwt_unix_thread_count()
+CAMLprim value lwt_unix_thread_count(value Unit)
 {
   return Val_int(thread_count);
 }
 
-CAMLprim value lwt_unix_thread_waiting_count()
+CAMLprim value lwt_unix_thread_waiting_count(value Unit)
 {
   return Val_int(thread_waiting_count);
 }

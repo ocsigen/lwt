@@ -96,7 +96,7 @@ let rec loop () =
     with e -> !handle_exn e
   done;
   curr := (!curr + 1) mod (Array.length !buckets);
-  if !count > 0 then loop () else begin stopped := true; Lwt.return () end)
+  if !count > 0 then loop () else begin stopped := true; Lwt.return_unit end)
 
 let start x =
   let in_list = lst_in_list x in

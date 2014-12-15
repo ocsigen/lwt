@@ -18,7 +18,7 @@ let () =
     fun (cs, bs, lib) ->
       match lib.OASISTypes.lib_findlib_name with
         | Some "unix" ->
-            (cs, bs, lib, ["src/unix/lwt_config.ml"; "src/unix/lwt_config.h"; "src/unix/lwt_unix.h"])
+            (cs, bs, lib, ["src/unix/lwt_config.h"; "src/unix/lwt_unix.h"])
         | _ ->
             (cs, bs, lib, [])
 ;;

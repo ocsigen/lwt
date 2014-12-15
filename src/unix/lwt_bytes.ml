@@ -21,10 +21,9 @@
  * 02111-1307, USA.
  *)
 
-#include "src/unix/lwt_config.ml"
-
 open Bigarray
-open Lwt
+
+open Lwt.Infix
 
 type t = (char, int8_unsigned_elt, c_layout) Array1.t
 
@@ -121,7 +120,7 @@ let read fd buf pos len =
   else
     blocking fd >>= function
       | true ->
-          lwt () = wait_read fd in
+          wait_read fd >>= fun () ->
           run_job (read_job (unix_file_descr fd) buf pos len)
       | false ->
           wrap_syscall Read fd (fun () -> stub_read (unix_file_descr fd) buf pos len)
@@ -135,17 +134,10 @@ let write fd buf pos len =
   else
     blocking fd >>= function
       | true ->
-          lwt () = wait_write fd in
+          wait_write fd >>= fun () ->
           run_job (write_job (unix_file_descr fd) buf pos len)
       | false ->
           wrap_syscall Write fd (fun () -> stub_write (unix_file_descr fd) buf pos len)
-
-#if windows
-
-let recv fd buf pos len flags =
-  raise (Lwt_sys.Not_available "Lwt_bytes.recv")
-
-#else
 
 external stub_recv : Unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_bytes_recv"
 
@@ -155,15 +147,6 @@ let recv fd buf pos len flags =
   else
     wrap_syscall Read fd (fun () -> stub_recv (unix_file_descr fd) buf pos len flags)
 
-#endif
-
-#if windows
-
-let send fd buf pos len flags =
-  raise (Lwt_sys.Not_available "Lwt_bytes.send")
-
-#else
-
 external stub_send : Unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_bytes_send"
 
 let send fd buf pos len flags =
@@ -171,8 +154,6 @@ let send fd buf pos len flags =
     invalid_arg "send"
   else
     wrap_syscall Write fd (fun () -> stub_send (unix_file_descr fd) buf pos len flags)
-
-#endif
 
 type io_vector = {
   iov_buffer : t;
@@ -195,13 +176,6 @@ let check_io_vectors func_name iovs =
            invalid_arg func_name)
     iovs
 
-#if windows
-
-let recv_msg ~socket ~io_vectors =
-  raise (Lwt_sys.Not_available "recv_msg")
-
-#else
-
 external stub_recv_msg : Unix.file_descr -> int -> io_vector list -> int * Unix.file_descr list = "lwt_unix_bytes_recv_msg"
 
 let recv_msg ~socket ~io_vectors =
@@ -210,15 +184,6 @@ let recv_msg ~socket ~io_vectors =
   wrap_syscall Read socket
     (fun () ->
        stub_recv_msg (unix_file_descr socket) n_iovs io_vectors)
-
-#endif
-
-#if windows
-
-let send_msg ~socket ~io_vectors ~fds =
-  raise (Lwt_sys.Not_available "send_msg")
-
-#else
 
 external stub_send_msg : Unix.file_descr -> int -> io_vector list -> int -> Unix.file_descr list -> int = "lwt_unix_bytes_send_msg"
 
@@ -229,15 +194,6 @@ let send_msg ~socket ~io_vectors ~fds =
     (fun () ->
        stub_send_msg (unix_file_descr socket) n_iovs io_vectors n_fds fds)
 
-#endif
-
-#if windows
-
-let recvfrom fd buf pos len flags =
-  raise (Lwt_sys.Not_available "Lwt_bytes.recvfrom")
-
-#else
-
 external stub_recvfrom : Unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> int * Unix.sockaddr = "lwt_unix_bytes_recvfrom"
 
 let recvfrom fd buf pos len flags =
@@ -246,15 +202,6 @@ let recvfrom fd buf pos len flags =
   else
     wrap_syscall Read fd (fun () -> stub_recvfrom (unix_file_descr fd) buf pos len flags)
 
-#endif
-
-#if windows
-
-let sendto fd buf pos len flags addr =
-  raise (Lwt_sys.Not_available "Lwt_bytes.sendto")
-
-#else
-
 external stub_sendto : Unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> Unix.sockaddr -> int = "lwt_unix_bytes_sendto_byte" "lwt_unix_bytes_sendto"
 
 let sendto fd buf pos len flags addr =
@@ -262,8 +209,6 @@ let sendto fd buf pos len flags addr =
     invalid_arg "Lwt_bytes.sendto"
   else
     wrap_syscall Write fd (fun () -> stub_sendto (unix_file_descr fd) buf pos len flags addr)
-
-#endif
 
 (* +-----------------------------------------------------------------+
    | Memory mapped files                                             |
@@ -281,13 +226,6 @@ type advice =
   | MADV_WILLNEED
   | MADV_DONTNEED
 
-#if windows
-
-let madvise buf pos len advice =
-  raise (Lwt_sys.Not_available "madvise")
-
-#else
-
 external stub_madvise : t -> int -> int -> advice -> unit = "lwt_unix_madvise"
 
 let madvise buf pos len advice =
@@ -296,21 +234,9 @@ let madvise buf pos len advice =
   else
     stub_madvise buf pos len advice
 
-#endif
-
 external get_page_size : unit -> int = "lwt_unix_get_page_size"
 
 let page_size = get_page_size ()
-
-#if windows
-
-let mincore buffer offset states =
-  raise (Lwt_sys.Not_available "mincore")
-
-let wait_mincore buffer offset =
-  raise (Lwt_sys.Not_available "mincore")
-
-#else
 
 external stub_mincore : t -> int -> int -> bool array -> unit = "lwt_unix_mincore"
 
@@ -331,9 +257,7 @@ let wait_mincore buffer offset =
     let state = [|false|] in
     mincore buffer (offset - (offset mod page_size)) state;
     if state.(0) then
-      return ()
+      Lwt.return_unit
     else
       run_job (wait_mincore_job buffer offset)
   end
-
-#endif

@@ -23,8 +23,9 @@
 
 (* This code is an adaptation of [syslog-ocaml] *)
 
-open Lwt
 include Lwt_log_core
+
+open Lwt.Infix
 
 let program_name = Filename.basename Sys.executable_name
 
@@ -87,19 +88,17 @@ let channel ?(template="$(name): $(section): $(message)") ~close_mode ~channel (
     ~output:(fun section level lines ->
                Lwt_io.atomic begin fun oc ->
                  let buf = Buffer.create 42 in
-                 lwt () =
-                   Lwt_list.iter_s
-                     (fun line ->
-                        Buffer.clear buf;
-                        render ~buffer:buf ~template ~section ~level ~message:line;
-                        Buffer.add_char buf '\n';
-                        Lwt_io.write oc (Buffer.contents buf))
-                     lines
-                 in
+                 Lwt_list.iter_s
+                   (fun line ->
+                      Buffer.clear buf;
+                      render ~buffer:buf ~template ~section ~level ~message:line;
+                      Buffer.add_char buf '\n';
+                      Lwt_io.write oc (Buffer.contents buf))
+                   lines >>= fun () ->
                  Lwt_io.flush oc
                end channel)
     ~close:(match close_mode with
-              | `Keep -> return
+              | `Keep -> Lwt.return
               | `Close -> (fun () -> Lwt_io.close channel))
 
 let _ = Lwt_log_core.default := channel ~close_mode:`Keep ~channel:Lwt_io.stderr ()
@@ -110,10 +109,10 @@ let file ?(template="$(date): $(section): $(message)") ?(mode=`Append) ?(perm=0o
         [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_APPEND; Unix.O_NONBLOCK]
     | `Truncate ->
         [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_TRUNC; Unix.O_NONBLOCK] in
-  lwt fd = Lwt_unix.openfile file_name flags perm in
+  Lwt_unix.openfile file_name flags perm >>= fun fd ->
   Lwt_unix.set_close_on_exec fd;
   let oc = Lwt_io.of_fd ~mode:Lwt_io.output fd in
-  return (channel ~template ~close_mode:`Close ~channel:oc ())
+  Lwt.return (channel ~template ~close_mode:`Close ~channel:oc ())
 
 let level_code = function
   | Fatal -> 0
@@ -168,44 +167,49 @@ let syslog_connect paths =
         (* No working socket found *)
         log_intern "no working socket found in {%s}; is syslogd running?"
           (String.concat ", " (List.map (Printf.sprintf "\"%s\"") paths));
-        raise_lwt (Sys_error(Unix.error_message Unix.ENOENT))
+        Lwt.fail (Sys_error(Unix.error_message Unix.ENOENT))
     | path :: paths ->
         begin try
-          return (Some (Unix.stat path).Unix.st_kind)
+          Lwt.return (Some (Unix.stat path).Unix.st_kind)
         with
           | Unix.Unix_error(Unix.ENOENT, _, _) ->
-              return None
+              Lwt.return_none
           | Unix.Unix_error(error, _, _) ->
               log_intern "can not stat \"%s\": %s" path (Unix.error_message error);
-              return None
+              Lwt.return_none
         end >>= function
           | None ->
               loop paths
           | Some Unix.S_SOCK -> begin
               (* First, we try with a dgram socket : *)
               let fd = Lwt_unix.socket Unix.PF_UNIX Unix.SOCK_DGRAM 0 in
-              try_lwt
-                lwt () = Lwt_unix.connect fd (Unix.ADDR_UNIX path) in
-                Lwt_unix.set_close_on_exec fd;
-                return (DGRAM, fd)
-              with
+              Lwt.catch
+                (fun () ->
+                  Lwt_unix.connect fd (Unix.ADDR_UNIX path) >>= fun () ->
+                  Lwt_unix.set_close_on_exec fd;
+                  Lwt.return (DGRAM, fd))
+                (function
                 | Unix.Unix_error(Unix.EPROTOTYPE, _, _) -> begin
-                    lwt () = Lwt_unix.close fd in
+                    Lwt_unix.close fd >>= fun () ->
                     (* Then try with a stream socket: *)
                     let fd = Lwt_unix.socket Unix.PF_UNIX Unix.SOCK_STREAM 0 in
-                    try_lwt
-	              lwt () = Lwt_unix.connect fd (Unix.ADDR_UNIX path) in
-                      Lwt_unix.set_close_on_exec fd;
-                      return (STREAM, fd)
-                    with Unix.Unix_error(error, _, _) ->
-                      lwt () = Lwt_unix.close fd in
-                      log_intern "can not connect to \"%s\": %s" path (Unix.error_message error);
-                      loop paths
+                    Lwt.catch
+                      (fun () ->
+	                    Lwt_unix.connect fd (Unix.ADDR_UNIX path) >>= fun () ->
+                        Lwt_unix.set_close_on_exec fd;
+                        Lwt.return (STREAM, fd))
+                      (function
+                      | Unix.Unix_error(error, _, _) ->
+                          Lwt_unix.close fd >>= fun () ->
+                          log_intern "can not connect to \"%s\": %s" path (Unix.error_message error);
+                          loop paths
+                      | exn -> Lwt.fail exn)
                   end
                 | Unix.Unix_error(error, _, _) ->
-                    lwt () = Lwt_unix.close fd in
+                    Lwt_unix.close fd >>= fun () ->
                     log_intern "can not connect to \"%s\": %s" path (Unix.error_message error);
                     loop paths
+                | exn -> Lwt.fail exn)
             end
           | Some _ ->
               log_intern "\"%s\" is not a socket" path;
@@ -219,13 +223,13 @@ let write_string fd str =
   let len = String.length str in
   let rec aux start_ofs =
     if start_ofs = len then
-      return ()
+      Lwt.return_unit
     else
-      lwt n = Lwt_unix.write fd str start_ofs (len - start_ofs) in
+      Lwt_unix.write fd str start_ofs (len - start_ofs) >>= fun n ->
       if n <> 0 then
         aux (start_ofs + n)
       else
-        return ()
+        Lwt.return_unit
   in
   aux 0
 
@@ -243,11 +247,11 @@ let syslog ?(template="$(date) $(name)[$(pid)]: $(section): $(message)") ?(paths
   let syslog_socket = ref None and mutex = Lwt_mutex.create () in
   let get_syslog () = match !syslog_socket with
     | Some x ->
-        return x
+        Lwt.return x
     | None ->
-        lwt x = syslog_connect paths in
+        syslog_connect paths >>= fun x ->
         syslog_socket := Some x;
-        return x
+        Lwt.return x
   in
   make
     ~output:(fun section level lines ->
@@ -263,24 +267,27 @@ let syslog ?(template="$(date) $(name)[$(pid)]: $(section): $(message)") ?(paths
                     in
                     let rec print socket_type fd = function
                       | [] ->
-                          return ()
+                          Lwt.return_unit
                       | line :: lines ->
-                          try_lwt
-                            lwt () = write_string fd (make_line socket_type line) in
-                            print socket_type fd lines
-                          with Unix.Unix_error(_, _, _) ->
-                            (* Try to reconnect *)
-                            lwt () = shutdown fd in
-                            syslog_socket := None;
-                            lwt socket_type, fd = get_syslog () in
-                            lwt () = write_string fd (make_line socket_type line) in
-                            print socket_type fd lines
+                          Lwt.catch
+                            (fun () ->
+                              write_string fd (make_line socket_type line) >>= fun () ->
+                              print socket_type fd lines)
+                            (function
+                            | Unix.Unix_error(_, _, _) ->
+                                (* Try to reconnect *)
+                                shutdown fd >>= fun () ->
+                                syslog_socket := None;
+                                get_syslog () >>= fun (socket_type, fd) ->
+                                write_string fd (make_line socket_type line) >>= fun () ->
+                                print socket_type fd lines
+                            | exn -> Lwt.fail exn)
                     in
-                    lwt socket_type, fd = get_syslog () in
+                    get_syslog () >>= fun (socket_type, fd) ->
                     print socket_type fd lines))
     ~close:(fun () ->
               match !syslog_socket with
                 | None ->
-                    return ()
+                    Lwt.return_unit
                 | Some(socket_type, fd) ->
                     shutdown fd)

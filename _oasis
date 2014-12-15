@@ -3,7 +3,7 @@
 # +-------------------------------------------------------------------+
 
 OASISFormat: 0.4
-OCamlVersion: >= 3.12
+OCamlVersion: >= 4.01
 Name: lwt
 Version: 2.4.6
 LicenseFile: COPYING
@@ -47,13 +47,13 @@ Flag all
   Description: build and install everything
   Default: false
 
-Flag syntax
+Flag camlp4
   Description: Build the syntax extension
-  Default: true
+  Default$: flag(all)
 
 Flag ppx
   Description: Build the ppx syntax extension
-  Default: true
+  Default$: flag(all)
 
 Flag unix
   Description: Unix support
@@ -71,21 +71,9 @@ Flag ssl
   Description: SSL support
   Default$: flag(all)
 
-Flag text
-  Description: Text mode utilities (deprecated)
-  Default$: flag(all)
-
 Flag preemptive
   Description: Preemptive threads support
   Default$: flag(unix) && !flag(android_target)
-
-Flag extra
-  Description: Asynchronous unix functions
-  Default$: flag(preemptive)
-
-Flag toplevel
-  Description: Enhanced toplevel
-  Default$: flag(all)
 
 Flag libev
   Description: Compile with libev support
@@ -103,13 +91,6 @@ Flag pthread
 # | Libraries                                                         |
 # +-------------------------------------------------------------------+
 
-Library "optcomp"
-  Install: false
-  Build$: flag(syntax) || flag(all)
-  Path: syntax
-  Modules: Pa_optcomp
-  BuildDepends: camlp4, camlp4.quotations.o
-
 Library "lwt"
   Path: src/core
   Modules:
@@ -122,7 +103,6 @@ Library "lwt"
     Lwt_sequence,
     Lwt_stream,
     Lwt_switch,
-    Lwt_util,
     Lwt_pqueue
   XMETADescription: Lightweight thread library for OCaml (core library)
 
@@ -155,7 +135,8 @@ Library "lwt-unix"
     Lwt_engine,
     Lwt_bytes
   InternalModules:
-    Lwt_unix_jobs_generated
+    Lwt_unix_jobs_generated,
+    Lwt_config
   BuildDepends: lwt, lwt.log, unix, bigarray
   XMETADescription: Unix support for lwt
   CSources:
@@ -200,7 +181,7 @@ Library "lwt-simple-top"
   FindlibParent: lwt
   Path: src/simple_top
   InternalModules: Lwt_simple_top
-  BuildDepends: lwt, lwt.unix
+  BuildDepends: lwt, lwt.unix, compiler-libs.common
   XMETADescription: Unix support for lwt
 
 Library "lwt-react"
@@ -209,7 +190,7 @@ Library "lwt-react"
   FindlibName: react
   FindlibParent: lwt
   Path: src/react
-  Modules: Lwt_event, Lwt_signal, Lwt_react
+  Modules: Lwt_react
   BuildDepends: lwt, react
   XMETADescription: Reactive programming helpers
 
@@ -222,16 +203,6 @@ Library "lwt-preemptive"
   Modules: Lwt_preemptive
   BuildDepends: lwt, lwt.unix, threads
   XMETADescription: Preemptive threads support for Lwt
-
-Library "lwt-extra"
-  Build$: flag(extra) || flag(all)
-  Install$: flag(extra) || flag(all)
-  FindlibName: extra
-  FindlibParent: lwt
-  Path: src/extra
-  Modules: Lwt_lib
-  BuildDepends: lwt, lwt.preemptive
-  XMETADescription: Unix functions for Lwt using Lwt_preemptive
 
 Library "lwt-glib"
   Build$: flag(glib) || flag(all)
@@ -254,31 +225,9 @@ Library "lwt-ssl"
   BuildDepends: ssl, lwt.unix
   XMETADescription: SSL support for Lwt
 
-Library "lwt-text"
-  Build$: flag(text) || flag(all)
-  Install$: flag(text) || flag(all)
-  FindlibName: text
-  FindlibParent: lwt
-  Path: src/text
-  Modules: Lwt_text, Lwt_term, Lwt_read_line
-  BuildDepends: lwt, lwt.unix, lwt.react, text, text.bigarray
-  XMETADescription: Text mode utilities (deprecated)
-  CSources: lwt_text_stubs.c
-
-Library "lwt-top"
-  Build$: flag(text) || flag(all)
-  Install$: flag(text) || flag(all)
-  FindlibName: top
-  FindlibParent: lwt
-  Path: src/top
-  Modules: Lwt_top
-  InternalModules: Lwt_ocaml_completion
-  BuildDepends: lwt, lwt.text, findlib
-  XMETADescription: Line-editing in the toplevel (deprecated)
-
 Library "lwt-syntax"
-  Build$: flag(syntax) || flag(all)
-  Install$: flag(syntax) || flag(all)
+  Build$: flag(camlp4) || flag(all)
+  Install$: flag(camlp4) || flag(all)
   FindlibName: syntax
   FindlibParent: lwt
   Path: syntax
@@ -289,8 +238,8 @@ Library "lwt-syntax"
   XMETARequires: camlp4, lwt.syntax.options
 
 Library "lwt-syntax-options"
-  Build$: flag(syntax) || flag(all)
-  Install$: flag(syntax) || flag(all)
+  Build$: flag(camlp4) || flag(all)
+  Install$: flag(camlp4) || flag(all)
   FindlibName: options
   FindlibParent: lwt-syntax
   Path: syntax
@@ -301,8 +250,8 @@ Library "lwt-syntax-options"
   XMETARequires: camlp4
 
 Library "lwt-syntax-log"
-  Build$: flag(syntax) || flag(all)
-  Install$: flag(syntax) || flag(all)
+  Build$: flag(camlp4) || flag(all)
+  Install$: flag(camlp4) || flag(all)
   FindlibName: log
   FindlibParent: lwt-syntax
   Path: syntax
@@ -332,18 +281,6 @@ Executable "ppx_lwt"
   CompiledObject: best
 
 # +-------------------------------------------------------------------+
-# | Toplevel                                                          |
-# +-------------------------------------------------------------------+
-
-Executable "lwt-toplevel"
-  Build$: flag(toplevel) || flag(all)
-  Install$: flag(toplevel) || flag(all)
-  Path: src/top
-  CompiledObject: byte
-  MainIs: lwt_toplevel.ml
-  BuildDepends: lwt, lwt.top, lwt.text, lwt.react, text, findlib, unix
-
-# +-------------------------------------------------------------------+
 # | Doc                                                               |
 # +-------------------------------------------------------------------+
 
@@ -365,13 +302,10 @@ Document "lwt-api"
   XOCamlbuildPath: ./
   XOCamlbuildLibraries:
     lwt,
-    lwt.extra,
     lwt.glib,
     lwt.preemptive,
     lwt.react,
     lwt.ssl,
-    lwt.text,
-    lwt.top,
     lwt.log,
     lwt.unix,
     lwt.syntax,
@@ -384,7 +318,7 @@ Document "lwt-api"
 
 Executable logging
   Path: examples/unix
-  Build$: flag(unix)
+  Build$: flag(unix) && flag(camlp4)
   Install: false
   MainIs: logging.ml
   BuildDepends: lwt.unix, lwt.syntax
@@ -392,7 +326,7 @@ Executable logging
 
 Executable relay
   Path: examples/unix
-  Build$: flag(unix)
+  Build$: flag(unix) && flag(camlp4)
   Install: false
   MainIs: relay.ml
   BuildDepends: lwt.unix, lwt.syntax
@@ -400,7 +334,7 @@ Executable relay
 
 Executable parallelize
   Path: examples/unix
-  Build$: flag(unix)
+  Build$: flag(unix) && flag(camlp4)
   Install: false
   MainIs: parallelize.ml
   BuildDepends: lwt.unix, lwt.syntax
@@ -433,14 +367,6 @@ Executable test_unix
   MainIs: main.ml
   BuildDepends: test, lwt, unix, lwt.unix
 
-Executable test_react
-  Path: tests/react
-  Build$: flag(tests) && ((flag(unix) && flag(react)) || flag(all))
-  Install: false
-  CompiledObject: best
-  MainIs: main.ml
-  BuildDepends: test, lwt, unix, lwt.unix, react, lwt.react
-
 Executable test_preemptive
   Path: tests/preemptive
   Build$: flag(tests) && ((flag(preemptive) && flag(unix)) || flag(all))
@@ -467,11 +393,6 @@ Test unix
   Command: $test_unix
   TestTools: test_unix
   Run$: flag(tests) && (flag(unix) || flag(all))
-
-Test react
-  Command: $test_react
-  TestTools: test_react
-  Run$: flag(tests) && ((flag(unix) && flag(react)) || flag(all))
 
 Test preemptive
   Command: $test_preemptive

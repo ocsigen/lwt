@@ -24,7 +24,10 @@ let ensure_termination t =
   if Lwt.state t = Lwt.Sleep then begin
     let hook = Lwt_sequence.add_l (fun _ -> t) Lwt_main.exit_hooks in
     (* Remove the hook when t has terminated *)
-    ignore (try_lwt t finally Lwt_sequence.remove hook; Lwt.return_unit)
+    ignore (
+      Lwt.finalize
+        (fun () -> t)
+        (fun () -> Lwt_sequence.remove hook; Lwt.return_unit))
   end
 
 let finaliser f =

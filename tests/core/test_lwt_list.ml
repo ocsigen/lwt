@@ -23,7 +23,6 @@
 
 open Test
 open Lwt
-open Lwt_util
 
 let ( <=> ) v v' =
   assert ( state v = v')
@@ -112,115 +111,33 @@ let test_map f test_list =
 let suite = suite "lwt_util" [
   test "0"
     (fun () ->
-       test_iter iter [1;0;1];
-       test_exception iter;
+       test_iter Lwt_list.iter_p [1;0;1];
+       test_exception Lwt_list.iter_p;
        return true);
 
   test "1"
     (fun () ->
-       test_iter iter_serial [1;0;0];
-       test_exception iter;
+       test_iter Lwt_list.iter_s [1;0;0];
+       test_exception Lwt_list.iter_s;
        return true);
 
   test "2"
     (fun () ->
-       test_map map [4;8;5];
-       test_exception map;
+       test_map Lwt_list.map_p [4;8;5];
+       test_exception Lwt_list.map_p;
        return true);
 
   test "3"
     (fun () ->
-       test_map map_serial [4;7;8];
-       test_exception map_serial;
+       test_map Lwt_list.map_s [4;7;8];
+       test_exception Lwt_list.map_s;
        return true);
 
   test "4"
     (fun () ->
        let l = [1;2;3] in
        let f acc v = return (v::acc) in
-       let t = fold_left f [] l in
+       let t = Lwt_list.fold_left_s f [] l in
        t <=> Return (List.rev l);
        return true);
-
-  (* XXX l'espace semble mal compte dans les regions: on peut lancer
-     un thread tant que l'espace n'est pas nul, ca ne prends pas en
-     compte la taille du thread.  ca devrait bloquer si il n'y a pas
-     assez de place. De plus resize region devrait permetre de
-     reveiller des threads.
-
-     Une maniere de corriger est de ne pas permetre aux threads de
-     faire une taille superieur a 1. *)
-
-  test "5"
-    (fun () ->
-       let t1,w1 = wait () in
-       let t2,w2 = wait () in
-       let t3,w3 = task () in
-       let region = make_region 3 in
-       run_in_region region 1 return <=> Return ();
-       (* XXX ne devrait pas pouvoir se lancer *)
-       run_in_region region 4 return <=> Return ();
-       let a = run_in_region region 3 (fun () -> t1) in
-       a <=> Sleep;
-       let b = run_in_region region 1 return in
-       b <=> Sleep;
-       let c = run_in_region region 3 (fun () -> t2) in
-       c <=> Sleep;
-       let d = run_in_region region 1 return in
-       d <=> Sleep;
-       let e = run_in_region region 3 (fun () -> t3) in
-       e <=> Sleep;
-       let f = run_in_region region 1 return in
-       f <=> Sleep;
-       wakeup w1 ();
-       a <=> Return ();
-       b <=> Return ();
-       c <=> Sleep;
-       d <=> Sleep;
-       e <=> Sleep;
-       f <=> Sleep;
-       cancel t3;
-       e <=> Sleep;
-       f <=> Sleep;
-       wakeup w2 ();
-       c <=> Return ();
-       d <=> Return ();
-       e <=> Fail Canceled;
-       f <=> Return ();
-       return true);
-
-  test "6"
-    (fun () ->
-       let f () = raise Exn in
-       let region = make_region 1 in
-       run_in_region region 1 f <=> Fail Exn;
-       run_in_region region 1 return <=> Return ();
-       return true);
 ]
-
-(* XXX le comportement souhaite devrait etre:
-   ( avec resize qui renvoie un lwt qui se reveille
-     quand il y a suffisement de resources libres )
-*)
-(*
-let () =
-  let region = make_region 1 in
-  run_in_region region 1 return <=> Return ();
-  let t = run_in_region region 2 return in
-  t <=> Sleep;
-  resize_region region 2 <=> Return ();
-  t <=> Return ();
-  let t,w = wait () in
-  let t = run_in_region region 2 (fun () -> t) in
-  t <=> Sleep;
-  let t2 = run_in_region region 2 return in
-  let t3 = resize_region region 1 in
-  t2 <=> Sleep;
-  t3 <=> Sleep;
-  wakeup w ();
-  t <=> Return ();
-  t3 <=> Return ();
-  t2 <=> Sleep
-*)
-
-(* XXX ca ne gere pas les cancel non plus *)

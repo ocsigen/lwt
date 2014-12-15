@@ -22,9 +22,7 @@
  * 02111-1307, USA.
  *)
 
-#include "src/unix/lwt_config.ml"
-
-open Lwt
+open Lwt.Infix
 
 (* +-----------------------------------------------------------------+
    | Configuration                                                   |
@@ -64,13 +62,13 @@ let async_method () =
     | None -> !default_async_method_var
 
 let with_async_none f =
-  with_value async_method_key (Some Async_none) f
+  Lwt.with_value async_method_key (Some Async_none) f
 
 let with_async_detach f =
-  with_value async_method_key (Some Async_detach) f
+  Lwt.with_value async_method_key (Some Async_detach) f
 
 let with_async_switch f =
-  with_value async_method_key (Some Async_switch) f
+  Lwt.with_value async_method_key (Some Async_switch) f
 
 (* +-----------------------------------------------------------------+
    | Notifications management                                        |
@@ -144,11 +142,11 @@ let auto_yield timeout =
       limit := current +. timeout;
       yield ();
     end else
-      return ()
+      Lwt.return_unit
 
 exception Timeout
 
-let timeout d = sleep d >> Lwt.fail Timeout
+let timeout d = sleep d >>= fun () -> Lwt.fail Timeout
 
 let with_timeout d f = Lwt.pick [timeout d; Lwt.apply f ()]
 
@@ -178,7 +176,7 @@ let rec abort_jobs exn =
 let cancel_jobs () = abort_jobs Lwt.Canceled
 
 let wait_for_jobs () =
-  join (Lwt_sequence.fold_l (fun (w, f) l -> w :: l) jobs [])
+  Lwt.join (Lwt_sequence.fold_l (fun (w, f) l -> w :: l) jobs [])
 
 let wrap_result f x =
   try
@@ -194,9 +192,12 @@ let run_job_aux async_method job result =
     Lwt.of_result (result job)
   else begin
     (* Thread for the job. *)
-    let waiter, wakener = wait () in
+    let waiter, wakener = Lwt.wait () in
     (* Add the job to the sequence of all jobs. *)
-    let node = Lwt_sequence.add_l (waiter >> return (), fun exn -> if state waiter = Sleep then wakeup_exn wakener exn) jobs in
+    let node = Lwt_sequence.add_l (
+                  (waiter >>= fun _ -> Lwt.return_unit),
+                  (fun exn -> if Lwt.state waiter = Lwt.Sleep then Lwt.wakeup_exn wakener exn))
+                jobs in
     ignore begin
       (* Create the notification for asynchronous wakeup. *)
       let id =
@@ -204,14 +205,14 @@ let run_job_aux async_method job result =
           (fun () ->
              Lwt_sequence.remove node;
              let result = result job in
-             if state waiter = Sleep then Lwt.wakeup_result wakener result)
+             if Lwt.state waiter = Lwt.Sleep then Lwt.wakeup_result wakener result)
       in
       (* Give the job some time before we fallback to asynchronous
          notification. *)
-      lwt () = pause () in
+      Lwt.pause () >>= fun () ->
       (* The job has terminated, send the result immediately. *)
       if check_job job id then call_notification id;
-      return ()
+      Lwt.return_unit
     end;
     waiter
   end
@@ -229,7 +230,7 @@ let execute_job ?async_method ~job ~result ~free =
   run_job_aux async_method job (fun job -> let x = wrap_result result job in free job; x)
 
 external self_result : 'a job -> 'a = "lwt_unix_self_result"
-      (* Returns the result of a job using the [result] field of the C
+      (* returns the result of a job using the [result] field of the C
          job structure. *)
 
 external run_job_sync : 'a job -> 'a = "lwt_unix_run_job_sync"
@@ -245,9 +246,9 @@ let run_job ?async_method job =
   let async_method = choose_async_method async_method in
   if async_method = Async_none then
     try
-      return (run_job_sync job)
+      Lwt.return (run_job_sync job)
     with exn ->
-      fail exn
+      Lwt.fail exn
   else
     run_job_aux async_method job self_result
 
@@ -283,34 +284,7 @@ type file_descr = {
   (* Hooks to call when the file descriptor becomes writable. *)
 }
 
-#if windows
-
 external is_socket : Unix.file_descr -> bool = "lwt_unix_is_socket" "noalloc"
-
-let is_blocking ?blocking ?(set_flags=true) fd =
-  if is_socket fd then
-    match blocking, set_flags with
-      | Some state, false ->
-          lazy(return state)
-      | Some true, true ->
-          Unix.clear_nonblock fd;
-          lazy(return true)
-      | Some false, true ->
-          Unix.set_nonblock fd;
-          lazy(return false)
-      | None, false ->
-          lazy(return false)
-      | None, true ->
-          Unix.set_nonblock fd;
-          lazy(return false)
-  else
-    match blocking with
-      | Some state ->
-          lazy(return state)
-      | None ->
-          lazy(return true)
-
-#else
 
 external guess_blocking_job : Unix.file_descr -> bool job = "lwt_unix_guess_blocking_job"
 
@@ -318,27 +292,49 @@ let guess_blocking fd =
   run_job (guess_blocking_job fd)
 
 let is_blocking ?blocking ?(set_flags=true) fd =
+  if Sys.win32 then begin
+    if is_socket fd then
+      match blocking, set_flags with
+        | Some state, false ->
+            lazy(Lwt.return state)
+        | Some true, true ->
+            Unix.clear_nonblock fd;
+            lazy(Lwt.return_true)
+        | Some false, true ->
+            Unix.set_nonblock fd;
+            lazy(Lwt.return_false)
+        | None, false ->
+            lazy(Lwt.return_false)
+        | None, true ->
+            Unix.set_nonblock fd;
+            lazy(Lwt.return_false)
+    else
+      match blocking with
+        | Some state ->
+            lazy(Lwt.return state)
+        | None ->
+            lazy(Lwt.return_true)
+  end else begin
     match blocking, set_flags with
       | Some state, false ->
-          lazy(return state)
+          lazy(Lwt.return state)
       | Some true, true ->
           Unix.clear_nonblock fd;
-          lazy(return true)
+          lazy(Lwt.return_true)
       | Some false, true ->
           Unix.set_nonblock fd;
-          lazy(return false)
+          lazy(Lwt.return_false)
       | None, false ->
           lazy(guess_blocking fd)
       | None, true ->
           lazy(guess_blocking fd >>= function
                  | true ->
                      Unix.clear_nonblock fd;
-                     return true
+                     Lwt.return_true
                  | false ->
                      Unix.set_nonblock fd;
-                     return false)
-
-#endif
+                     Lwt.return_false)
+  end
 
 let mk_ch ?blocking ?(set_flags=true) fd = {
   fd = fd;
@@ -371,27 +367,24 @@ let set_blocking ?(set_flags=true) ch blocking =
   ch.set_flags <- set_flags;
   ch.blocking <- is_blocking ~blocking ~set_flags ch.fd
 
-#if windows
-
-let unix_stub_readable fd = Unix.select [fd] [] [] 0.0 <> ([], [], [])
-let unix_stub_writable fd = Unix.select [] [fd] [] 0.0 <> ([], [], [])
-
-#else
-
 external unix_stub_readable : Unix.file_descr -> bool = "lwt_unix_readable"
 external unix_stub_writable : Unix.file_descr -> bool = "lwt_unix_writable"
 
-#endif
-
 let rec unix_readable fd =
   try
-    unix_stub_readable fd
+    if Sys.win32 then
+      Unix.select [fd] [] [] 0.0 <> ([], [], [])
+    else
+      unix_stub_readable fd
   with Unix.Unix_error (Unix.EINTR, _, _) ->
     unix_readable fd
 
 let rec unix_writable fd =
   try
-    unix_stub_writable fd
+    if Sys.win32 then
+      Unix.select [] [fd] [] 0.0 <> ([], [], [])
+    else
+      unix_stub_writable fd
   with Unix.Unix_error (Unix.EINTR, _, _) ->
     unix_writable fd
 
@@ -457,8 +450,8 @@ type 'a outcome =
 
 (* Wait a bit, then stop events that are no more used. *)
 let stop_events ch =
-  on_success
-    (pause ())
+  Lwt.on_success
+    (Lwt.pause ())
     (fun () ->
        if Lwt_sequence.is_empty ch.hooks_readable then begin
          match ch.event_readable with
@@ -537,23 +530,23 @@ let register_action event ch action =
     | Read ->
         let node = ref dummy in
         node := Lwt_sequence.add_r (fun () -> retry_syscall node Read ch wakener action) ch.hooks_readable;
-        on_cancel waiter (fun () -> Lwt_sequence.remove !node; stop_events ch);
+        Lwt.on_cancel waiter (fun () -> Lwt_sequence.remove !node; stop_events ch);
         register_readable ch;
         waiter
     | Write ->
         let node = ref dummy in
         node := Lwt_sequence.add_r (fun () -> retry_syscall node Write ch wakener action) ch.hooks_writable;
-        on_cancel waiter (fun () -> Lwt_sequence.remove !node; stop_events ch);
+        Lwt.on_cancel waiter (fun () -> Lwt_sequence.remove !node; stop_events ch);
         register_writable ch;
         waiter
 
 (* Wraps a system call *)
 let wrap_syscall event ch action =
   check_descriptor ch;
-  lwt blocking = Lazy.force ch.blocking in
+  Lazy.force ch.blocking >>= fun blocking ->
   try
     if not blocking || (event = Read && unix_readable ch.fd) || (event = Write && unix_writable ch.fd) then
-      return (action ())
+      Lwt.return (action ())
     else
       register_action event ch action
   with
@@ -567,7 +560,7 @@ let wrap_syscall event ch action =
     | Retry_write ->
         register_action Write ch action
     | e ->
-        raise_lwt e
+        Lwt.fail e
 
 (* +-----------------------------------------------------------------+
    | Generated jobs                                                  |
@@ -593,52 +586,35 @@ type open_flag =
   | O_DSYNC
   | O_SYNC
   | O_RSYNC
-#if ocaml_version >= (3, 13)
   | O_SHARE_DELETE
-#endif
-#if ocaml_version >= (4, 01)
   | O_CLOEXEC
-#endif
-
-#if windows
-
-let openfile name flags perms =
-  return (of_unix_file_descr (Unix.openfile name flags perms))
-
-#else
 
 external open_job : string -> Unix.open_flag list -> int -> (Unix.file_descr * bool) job = "lwt_unix_open_job"
 
 let openfile name flags perms =
-  lwt fd, blocking = run_job (open_job name flags perms) in
-  return (of_unix_file_descr ~blocking fd)
-
-#endif
-
-#if windows
-
-let close ch =
-  if ch.state = Closed then check_descriptor ch;
-  set_state ch Closed;
-  clear_events ch;
-  return (Unix.close ch.fd)
-
-#else
+  if Sys.win32 then
+    Lwt.return (of_unix_file_descr (Unix.openfile name flags perms))
+  else
+    run_job (open_job name flags perms) >>= fun (fd, blocking) ->
+    Lwt.return (of_unix_file_descr ~blocking fd)
 
 let close ch =
   if ch.state = Closed then check_descriptor ch;
   set_state ch Closed;
   clear_events ch;
-  run_job (Jobs.close_job ch.fd)
-
-#endif
+  if Sys.win32 then
+    Lwt.return (Unix.close ch.fd)
+  else
+    run_job (Jobs.close_job ch.fd)
 
 let wait_read ch =
-  try_lwt
-    if readable ch then
-      return ()
-    else
-      register_action Read ch ignore
+  Lwt.catch
+    (fun () ->
+      if readable ch then
+        Lwt.return_unit
+      else
+        register_action Read ch ignore)
+    Lwt.fail
 
 external stub_read : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_read"
 external read_job : Unix.file_descr -> string -> int -> int -> int job = "lwt_unix_read_job"
@@ -649,17 +625,19 @@ let read ch buf pos len =
   else
     Lazy.force ch.blocking >>= function
       | true ->
-          lwt () = wait_read ch in
+          wait_read ch >>= fun () ->
           run_job (read_job ch.fd buf pos len)
       | false ->
           wrap_syscall Read ch (fun () -> stub_read ch.fd buf pos len)
 
 let wait_write ch =
-  try_lwt
-    if writable ch then
-      return ()
-    else
-      register_action Write ch ignore
+  Lwt.catch
+    (fun () ->
+      if writable ch then
+        Lwt.return_unit
+      else
+        register_action Write ch ignore)
+    Lwt.fail
 
 external stub_write : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_write"
 external write_job : Unix.file_descr -> string -> int -> int -> int job = "lwt_unix_write_job"
@@ -670,7 +648,7 @@ let write ch buf pos len =
   else
     Lazy.force ch.blocking >>= function
       | true ->
-          lwt () = wait_write ch in
+          wait_write ch >>= fun () ->
           run_job (write_job ch.fd buf pos len)
       | false ->
           wrap_syscall Write ch (fun () -> stub_write ch.fd buf pos len)
@@ -685,45 +663,25 @@ type seek_command =
   | SEEK_CUR
   | SEEK_END
 
-#if windows
-
 let lseek ch offset whence =
   check_descriptor ch;
-  return (Unix.lseek ch.fd offset whence)
-
-#else
-
-let lseek ch offset whence =
-  check_descriptor ch;
-  run_job (Jobs.lseek_job ch.fd offset whence)
-
-#endif
-
-#if windows
+  if Sys.win32 then
+    Lwt.return (Unix.lseek ch.fd offset whence)
+  else
+    run_job (Jobs.lseek_job ch.fd offset whence)
 
 let truncate name offset =
-  return (Unix.truncate name offset)
-
-#else
-
-let truncate name offset =
-  run_job (Jobs.truncate_job name offset)
-
-#endif
-
-#if windows
+  if Sys.win32 then
+    Lwt.return (Unix.truncate name offset)
+  else
+    run_job (Jobs.truncate_job name offset)
 
 let ftruncate ch offset =
   check_descriptor ch;
-  return (Unix.ftruncate ch.fd offset)
-
-#else
-
-let ftruncate ch offset =
-  check_descriptor ch;
-  run_job (Jobs.ftruncate_job ch.fd offset)
-
-#endif
+  if Sys.win32 then
+    Lwt.return (Unix.ftruncate ch.fd offset)
+  else
+    run_job (Jobs.ftruncate_job ch.fd offset)
 
 (* +-----------------------------------------------------------------+
    | File system synchronisation                                     |
@@ -770,65 +728,39 @@ type stats =
       st_ctime : float;
     }
 
-#if windows
-
-let stat name =
-  return (Unix.stat name)
-
-#else
-
 external stat_job : string -> Unix.stats job = "lwt_unix_stat_job"
 
 let stat name =
-  run_job (stat_job name)
-
-#endif
-
-#if windows
-
-let lstat name =
-  return (Unix.lstat name)
-
-#else
+  if Sys.win32 then
+    Lwt.return (Unix.stat name)
+  else
+    run_job (stat_job name)
 
 external lstat_job : string -> Unix.stats job = "lwt_unix_lstat_job"
 
 let lstat name =
-  run_job (lstat_job name)
-
-#endif
-
-#if windows
-
-let fstat ch =
-  check_descriptor ch;
-  return (Unix.fstat ch.fd)
-
-#else
+  if Sys.win32 then
+    Lwt.return (Unix.stat name)
+  else
+    run_job (lstat_job name)
 
 external fstat_job : Unix.file_descr -> Unix.stats job = "lwt_unix_fstat_job"
 
 let fstat ch =
   check_descriptor ch;
-  run_job (fstat_job ch.fd)
-
-#endif
-
-#if windows
-
-let isatty ch =
-  check_descriptor ch;
-  return (Unix.isatty ch.fd)
-
-#else
+  if Sys.win32 then
+    Lwt.return (Unix.fstat ch.fd)
+  else
+    run_job (fstat_job ch.fd)
 
 external isatty_job : Unix.file_descr -> bool job = "lwt_unix_isatty_job"
 
 let isatty ch =
   check_descriptor ch;
-  run_job (isatty_job ch.fd)
-
-#endif
+  if Sys.win32 then
+    Lwt.return (Unix.isatty ch.fd)
+  else
+    run_job (isatty_job ch.fd)
 
 (* +-----------------------------------------------------------------+
    | File operations on large files                                  |
@@ -854,89 +786,50 @@ struct
         st_ctime : float;
       }
 
-#if windows
-
   let lseek ch offset whence =
     check_descriptor ch;
-    return (Unix.LargeFile.lseek ch.fd offset whence)
-
-#else
-
-  let lseek ch offset whence =
-    check_descriptor ch;
-    run_job (Jobs.lseek_64_job ch.fd offset whence)
-
-#endif
-
-#if windows
+    if Sys.win32 then
+      Lwt.return (Unix.LargeFile.lseek ch.fd offset whence)
+    else
+      run_job (Jobs.lseek_64_job ch.fd offset whence)
 
   let truncate name offset =
-    return (Unix.LargeFile.truncate name offset)
-
-#else
-
-  let truncate name offset =
-    run_job (Jobs.truncate_64_job name offset)
-
-#endif
-
-#if windows
+    if Sys.win32 then
+      Lwt.return (Unix.LargeFile.truncate name offset)
+    else
+      run_job (Jobs.truncate_64_job name offset)
 
   let ftruncate ch offset =
     check_descriptor ch;
-    return (Unix.LargeFile.ftruncate ch.fd offset)
-
-#else
-
-  let ftruncate ch offset =
-    check_descriptor ch;
-    run_job (Jobs.ftruncate_64_job ch.fd offset)
-
-#endif
-
-#if windows
-
-  let stat name =
-    return (Unix.LargeFile.stat name)
-
-#else
+    if Sys.win32 then
+      Lwt.return (Unix.LargeFile.ftruncate ch.fd offset)
+    else
+      run_job (Jobs.ftruncate_64_job ch.fd offset)
 
   external stat_job : string -> Unix.LargeFile.stats job = "lwt_unix_stat_64_job"
 
   let stat name =
-    run_job (stat_job name)
-
-#endif
-
-#if windows
-
-  let lstat name =
-    return (Unix.LargeFile.lstat name)
-
-#else
+    if Sys.win32 then
+      run_job (stat_job name)
+    else
+      Lwt.return (Unix.LargeFile.stat name)
 
   external lstat_job : string -> Unix.LargeFile.stats job = "lwt_unix_lstat_64_job"
 
   let lstat name =
-    run_job (lstat_job name)
-
-#endif
-
-#if windows
-
-  let fstat ch =
-    check_descriptor ch;
-    return (Unix.LargeFile.fstat ch.fd)
-
-#else
+    if Sys.win32 then
+      Lwt.return (Unix.LargeFile.lstat name)
+    else
+      run_job (lstat_job name)
 
   external fstat_job : Unix.file_descr -> Unix.LargeFile.stats job = "lwt_unix_fstat_64_job"
 
   let fstat ch =
     check_descriptor ch;
-    run_job (fstat_job ch.fd)
-
-#endif
+    if Sys.win32 then
+      Lwt.return (Unix.LargeFile.fstat ch.fd)
+    else
+      run_job (fstat_job ch.fd)
 
 end
 
@@ -944,97 +837,53 @@ end
    | Operations on file names                                        |
    +-----------------------------------------------------------------+ *)
 
-#if windows
-
 let unlink name =
-  return (Unix.unlink name)
-
-#else
-
-let unlink name =
-  run_job (Jobs.unlink_job name)
-
-#endif
-
-#if windows
+  if Sys.win32 then
+    Lwt.return (Unix.unlink name)
+  else
+    run_job (Jobs.unlink_job name)
 
 let rename name1 name2 =
-  return (Unix.rename name1 name2)
-
-#else
-
-let rename name1 name2 =
-  run_job (Jobs.rename_job name1 name2)
-
-#endif
-
-#if windows
-
-let link name1 name2 =
-  return (Unix.link name1 name2)
-
-#else
+  if Sys.win32 then
+    Lwt.return (Unix.rename name1 name2)
+  else
+    run_job (Jobs.rename_job name1 name2)
 
 let link oldpath newpath =
-  run_job (Jobs.link_job oldpath newpath)
-
-#endif
+  if Sys.win32 then
+    Lwt.return (Unix.link oldpath newpath)
+  else
+    run_job (Jobs.link_job oldpath newpath)
 
 (* +-----------------------------------------------------------------+
    | File permissions and ownership                                  |
    +-----------------------------------------------------------------+ *)
 
-#if windows
-
-let chmod name perms =
-  return (Unix.chmod name perms)
-
-#else
-
-let chmod path mode =
-  run_job (Jobs.chmod_job path mode)
-
-#endif
-
-#if windows
-
-let fchmod ch perms =
-  check_descriptor ch;
-  return (Unix.fchmod ch.fd perms)
-
-#else
+let chmod name mode =
+  if Sys.win32 then
+    Lwt.return (Unix.chmod name mode)
+  else
+    run_job (Jobs.chmod_job name mode)
 
 let fchmod ch mode =
   check_descriptor ch;
-  run_job (Jobs.fchmod_job ch.fd mode)
-
-#endif
-
-#if windows
+  if Sys.win32 then
+    Lwt.return (Unix.fchmod ch.fd mode)
+  else
+    run_job (Jobs.fchmod_job ch.fd mode)
 
 let chown name uid gid =
-  return (Unix.chown name uid gid)
-
-#else
-
-let chown path ower group =
-  run_job (Jobs.chown_job path ower group)
-
-#endif
-
-#if windows
+  if Sys.win32 then
+    Lwt.return (Unix.chown name uid gid)
+  else
+    run_job (Jobs.chown_job name uid gid)
 
 let fchown ch uid gid =
   check_descriptor ch;
-  return (Unix.fchown ch.fd uid gid)
-
-#else
-
-let fchown ch ower group =
-  check_descriptor ch;
-  run_job (Jobs.fchown_job ch.fd ower group)
-
-#endif
+  if Sys.win32 then
+    Lwt.return (Unix.fchown ch.fd uid gid)
+  else
+    run_job (Jobs.fchown_job ch.fd uid gid)
 
 type access_permission =
     Unix.access_permission =
@@ -1043,17 +892,11 @@ type access_permission =
   | X_OK
   | F_OK
 
-#if windows
-
-let access name perms =
-  return (Unix.access name perms)
-
-#else
-
-let access path mode =
-  run_job (Jobs.access_job path mode)
-
-#endif
+let access name mode =
+  if Sys.win32 then
+    Lwt.return (Unix.access name mode)
+  else
+    run_job (Jobs.access_job name mode)
 
 (* +-----------------------------------------------------------------+
    | Operations on file descriptors                                  |
@@ -1071,10 +914,10 @@ let dup ch =
         lazy(Lazy.force ch.blocking >>= function
                | true ->
                    Unix.clear_nonblock fd;
-                   return true
+                   Lwt.return_true
                | false ->
                    Unix.set_nonblock fd;
-                   return false)
+                   Lwt.return_false)
       else
         ch.blocking;
     event_readable = None;
@@ -1092,10 +935,10 @@ let dup2 ch1 ch2 =
       lazy(Lazy.force ch1.blocking >>= function
              | true ->
                  Unix.clear_nonblock ch2.fd;
-                 return true
+                 Lwt.return_true
              | false ->
                  Unix.set_nonblock ch2.fd;
-                 return false)
+                 Lwt.return_false)
     else
       ch1.blocking
   )
@@ -1112,142 +955,84 @@ let clear_close_on_exec ch =
    | Directories                                                     |
    +-----------------------------------------------------------------+ *)
 
-#if windows
-
 let mkdir name perms =
-  return (Unix.mkdir name perms)
-
-#else
-
-let mkdir name perms =
-  run_job (Jobs.mkdir_job name perms)
-
-#endif
-
-#if windows
+  if Sys.win32 then
+    Lwt.return (Unix.mkdir name perms)
+  else
+    run_job (Jobs.mkdir_job name perms)
 
 let rmdir name =
-  return (Unix.rmdir name)
-
-#else
-
-let rmdir name =
-  run_job (Jobs.rmdir_job name)
-
-#endif
-
-#if windows
+  if Sys.win32 then
+    Lwt.return (Unix.rmdir name)
+  else
+    run_job (Jobs.rmdir_job name)
 
 let chdir name =
-  return (Unix.chdir name)
-
-#else
-
-let chdir path =
-  run_job (Jobs.chdir_job path)
-
-#endif
-
-#if windows
+  if Sys.win32 then
+    Lwt.return (Unix.chdir name)
+  else
+    run_job (Jobs.chdir_job name)
 
 let chroot name =
-  return (Unix.chroot name)
-
-#else
-
-let chroot path =
-  run_job (Jobs.chroot_job path)
-
-#endif
+  if Sys.win32 then
+    Lwt.return (Unix.chroot name)
+  else
+    run_job (Jobs.chroot_job name)
 
 type dir_handle = Unix.dir_handle
-
-#if windows
-
-let opendir name =
-  return (Unix.opendir name)
-
-#else
 
 external opendir_job : string -> Unix.dir_handle job = "lwt_unix_opendir_job"
 
 let opendir name =
-  run_job (opendir_job name)
-
-#endif
-
-#if windows
-
-let readdir handle =
-  return (Unix.readdir handle)
-
-#else
+  if Sys.win32 then
+    Lwt.return (Unix.opendir name)
+  else
+    run_job (opendir_job name)
 
 external readdir_job : Unix.dir_handle -> string job = "lwt_unix_readdir_job"
 
 let readdir handle =
-  run_job (readdir_job handle)
-
-#endif
-
-#if windows
-
-let readdir_n handle count =
-  if count < 0 then
-    fail (Invalid_argument "Lwt_uinx.readdir_n")
+  if Sys.win32 then
+    Lwt.return (Unix.readdir handle)
   else
-    let array = Array.make count "" in
-    let rec fill i =
-      if i = count then
-        return array
-      else
-        match try array.(i) <- Unix.readdir handle; true with End_of_file -> false with
-          | true ->
-              fill (i + 1)
-          | false ->
-              return (Array.sub array 0 i)
-    in
-    fill 0
-
-#else
+    run_job (readdir_job handle)
 
 external readdir_n_job : Unix.dir_handle -> int -> string array job = "lwt_unix_readdir_n_job"
 
 let readdir_n handle count =
   if count < 0 then
-    fail (Invalid_argument "Lwt_uinx.readdir_n")
+    Lwt.fail (Invalid_argument "Lwt_uinx.readdir_n")
+  else if Sys.win32 then
+    let array = Array.make count "" in
+    let rec fill i =
+      if i = count then
+        Lwt.return array
+      else
+        match try array.(i) <- Unix.readdir handle; true with End_of_file -> false with
+          | true ->
+              fill (i + 1)
+          | false ->
+              Lwt.return (Array.sub array 0 i)
+    in
+    fill 0
   else
     run_job (readdir_n_job handle count)
-
-#endif
-
-#if windows
-
-let rewinddir handle =
-  return (Unix.rewinddir handle)
-
-#else
 
 external rewinddir_job : Unix.dir_handle -> unit job = "lwt_unix_rewinddir_job"
 
 let rewinddir handle =
-  run_job (rewinddir_job handle)
-
-#endif
-
-#if windows
-
-let closedir handle =
-  return (Unix.closedir handle)
-
-#else
+  if Sys.win32 then
+    Lwt.return (Unix.rewinddir handle)
+  else
+    run_job (rewinddir_job handle)
 
 external closedir_job : Unix.dir_handle -> unit job = "lwt_unix_closedir_job"
 
 let closedir handle =
-  run_job (closedir_job handle)
-
-#endif
+  if Sys.win32 then
+    Lwt.return (Unix.closedir handle)
+  else
+    run_job (closedir_job handle)
 
 type list_directory_state  =
   | LDS_not_started
@@ -1268,39 +1053,35 @@ let files_of_directory path =
        (fun () ->
           match !state with
             | LDS_not_started ->
-                lwt handle = opendir path in
-                lwt entries =
-                  try_lwt
-                    readdir_n handle 1024
-                  with exn ->
-                    lwt () = closedir handle in
-                    raise exn
-                in
+                opendir path >>= fun handle ->
+                Lwt.catch
+                  (fun () -> readdir_n handle 1024)
+                  (fun exn ->
+                    closedir handle >>= fun () ->
+                    Lwt.fail exn) >>= fun entries ->
                 if Array.length entries < 1024 then begin
                   state := LDS_done;
-                  lwt () = closedir handle in
-                  return (Some(Lwt_stream.of_array entries))
+                  closedir handle >>= fun () ->
+                  Lwt.return (Some(Lwt_stream.of_array entries))
                 end else begin
                   state := LDS_listing handle;
                   Gc.finalise cleanup_dir_handle state;
-                  return (Some(Lwt_stream.of_array entries))
+                  Lwt.return (Some(Lwt_stream.of_array entries))
                 end
             | LDS_listing handle ->
-                lwt entries =
-                  try_lwt
-                    readdir_n handle 1024
-                  with exn ->
-                    lwt () = closedir handle in
-                    raise exn
-                in
+                Lwt.catch
+                  (fun () -> readdir_n handle 1024)
+                  (fun exn ->
+                    closedir handle >>= fun () ->
+                    Lwt.fail exn) >>= fun entries ->
                 if Array.length entries < 1024 then begin
                   state := LDS_done;
-                  lwt () = closedir handle in
-                  return (Some(Lwt_stream.of_array entries))
+                  closedir handle >>= fun () ->
+                  Lwt.return (Some(Lwt_stream.of_array entries))
                 end else
-                  return (Some(Lwt_stream.of_array entries))
+                  Lwt.return (Some(Lwt_stream.of_array entries))
             | LDS_done ->
-                return None))
+                Lwt.return_none))
 
 (* +-----------------------------------------------------------------+
    | Pipes and redirections                                          |
@@ -1318,47 +1099,29 @@ let pipe_out () =
   let (out_fd, in_fd) = Unix.pipe() in
   (out_fd, mk_ch ~blocking:Lwt_sys.windows in_fd)
 
-#if windows
-
 let mkfifo name perms =
-  return (Unix.mkfifo name perms)
-
-#else
-
-let mkfifo name perms =
-  run_job (Jobs.mkfifo_job name perms)
-
-#endif
+  if Sys.win32 then
+    Lwt.return (Unix.mkfifo name perms)
+  else
+    run_job (Jobs.mkfifo_job name perms)
 
 (* +-----------------------------------------------------------------+
    | Symbolic links                                                  |
    +-----------------------------------------------------------------+ *)
 
-#if windows
-
 let symlink name1 name2 =
-  return (Unix.symlink name1 name2)
-
-#else
-
-let symlink name1 name2 =
-  run_job (Jobs.symlink_job name1 name2)
-
-#endif
-
-#if windows
-
-let readlink name =
-  return (Unix.readlink name)
-
-#else
+  if Sys.win32 then
+    Lwt.return (Unix.symlink name1 name2)
+  else
+    run_job (Jobs.symlink_job name1 name2)
 
 external readlink_job : string -> string job = "lwt_unix_readlink_job"
 
 let readlink name =
-  run_job (readlink_job name)
-
-#endif
+  if Sys.win32 then
+    Lwt.return (Unix.readlink name)
+  else
+    run_job (readlink_job name)
 
 (* +-----------------------------------------------------------------+
    | Locking                                                         |
@@ -1373,21 +1136,14 @@ type lock_command =
   | F_RLOCK
   | F_TRLOCK
 
-#if windows
-
-let lockf ch cmd size =
-  check_descriptor ch;
-  return (Unix.lockf ch.fd cmd size)
-
-#else
-
 external lockf_job : Unix.file_descr -> Unix.lock_command -> int -> unit job = "lwt_unix_lockf_job"
 
 let lockf ch cmd size =
   check_descriptor ch;
-  run_job (lockf_job ch.fd cmd size)
-
-#endif
+  if Sys.win32 then
+    Lwt.return (Unix.lockf ch.fd cmd size)
+  else
+    run_job (lockf_job ch.fd cmd size)
 
 (* +-----------------------------------------------------------------+
    | User id, group id                                               |
@@ -1414,75 +1170,45 @@ type group_entry =
     gr_mem : string array
   }
 
-#if windows || android
-
-let getlogin () =
-  return (Unix.getlogin ())
-
-#else
-
 external getlogin_job : unit -> string job = "lwt_unix_getlogin_job"
 
 let getlogin () =
-  run_job (getlogin_job ())
-
-#endif
-
-#if windows || android
-
-let getpwnam name =
-  return (Unix.getpwnam name)
-
-#else
+  if Sys.win32 || Lwt_config.android then
+    Lwt.return (Unix.getlogin ())
+  else
+    run_job (getlogin_job ())
 
 external getpwnam_job : string -> Unix.passwd_entry job = "lwt_unix_getpwnam_job"
 
 let getpwnam name =
-  run_job (getpwnam_job name)
-
-#endif
-
-#if windows || android
-
-let getgrnam name =
-  return (Unix.getgrnam name)
-
-#else
+  if Sys.win32 || Lwt_config.android then
+    Lwt.return (Unix.getpwnam name)
+  else
+    run_job (getpwnam_job name)
 
 external getgrnam_job : string -> Unix.group_entry job = "lwt_unix_getgrnam_job"
 
 let getgrnam name =
-  run_job (getgrnam_job name)
-
-#endif
-
-#if windows || android
-
-let getpwuid uid =
-  return (Unix.getpwuid uid)
-
-#else
+  if Sys.win32 || Lwt_config.android then
+    Lwt.return (Unix.getgrnam name)
+  else
+    run_job (getgrnam_job name)
 
 external getpwuid_job : int -> Unix.passwd_entry job = "lwt_unix_getpwuid_job"
 
 let getpwuid uid =
-  run_job (getpwuid_job uid)
-
-#endif
-
-#if windows || android
-
-let getgrgid gid =
-  return (Unix.getgrgid gid)
-
-#else
+  if Sys.win32 || Lwt_config.android then
+    Lwt.return (Unix.getpwuid uid)
+  else
+    run_job (getpwuid_job uid)
 
 external getgrgid_job : int -> Unix.group_entry job = "lwt_unix_getgrgid_job"
 
 let getgrgid gid =
-  run_job (getgrgid_job gid)
-
-#endif
+  if Sys.win32 || Lwt_config.android then
+    Lwt.return (Unix.getgrgid gid)
+  else
+    run_job (getgrgid_job gid)
 
 (* +-----------------------------------------------------------------+
    | Sockets                                                         |
@@ -1494,53 +1220,41 @@ type msg_flag =
   | MSG_DONTROUTE
   | MSG_PEEK
 
-#if windows
-let stub_recv = Unix.recv
-#else
 external stub_recv : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_recv"
-#endif
 
 let recv ch buf pos len flags =
   if pos < 0 || len < 0 || pos > String.length buf - len then
     invalid_arg "Lwt_unix.recv"
   else
-    wrap_syscall Read ch (fun () -> stub_recv ch.fd buf pos len flags)
+    let do_recv = if Sys.win32 then Unix.recv else stub_recv in
+    wrap_syscall Read ch (fun () -> do_recv ch.fd buf pos len flags)
 
-#if windows
-let stub_send = Unix.send
-#else
 external stub_send : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_send"
-#endif
 
 let send ch buf pos len flags =
   if pos < 0 || len < 0 || pos > String.length buf - len then
     invalid_arg "Lwt_unix.send"
   else
-    wrap_syscall Write ch (fun () -> stub_send ch.fd buf pos len flags)
+    let do_send = if Sys.win32 then Unix.send else stub_send in
+    wrap_syscall Write ch (fun () -> do_send ch.fd buf pos len flags)
 
-#if windows
-let stub_recvfrom = Unix.recvfrom
-#else
 external stub_recvfrom : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> int * Unix.sockaddr = "lwt_unix_recvfrom"
-#endif
 
 let recvfrom ch buf pos len flags =
   if pos < 0 || len < 0 || pos > String.length buf - len then
     invalid_arg "Lwt_unix.recvfrom"
   else
-    wrap_syscall Read ch (fun () -> stub_recvfrom ch.fd buf pos len flags)
+    let do_recvfrom = if Sys.win32 then Unix.recvfrom else stub_recvfrom in
+    wrap_syscall Read ch (fun () -> do_recvfrom ch.fd buf pos len flags)
 
-#if windows
-let stub_sendto = Unix.sendto
-#else
 external stub_sendto : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> Unix.sockaddr -> int = "lwt_unix_sendto_byte" "lwt_unix_sendto"
-#endif
 
 let sendto ch buf pos len flags addr =
   if pos < 0 || len < 0 || pos > String.length buf - len then
     invalid_arg "Lwt_unix.sendto"
   else
-    wrap_syscall Write ch (fun () -> stub_sendto ch.fd buf pos len flags addr)
+    let do_sendto = if Sys.win32 then Unix.sendto else stub_sendto in
+    wrap_syscall Write ch (fun () -> do_sendto ch.fd buf pos len flags addr)
 
 type io_vector = {
   iov_buffer : string;
@@ -1561,30 +1275,12 @@ let check_io_vectors func_name iovs =
                  || iov.iov_offset > String.length iov.iov_buffer - iov.iov_length then
                    invalid_arg func_name) iovs
 
-#if windows
-
-let recv_msg ~socket ~io_vectors =
-  raise (Lwt_sys.Not_available "recv_msg")
-
-#else
-
 external stub_recv_msg : Unix.file_descr -> int -> io_vector list -> int * Unix.file_descr list = "lwt_unix_recv_msg"
 
 let recv_msg ~socket ~io_vectors =
   check_io_vectors "Lwt_unix.recv_msg" io_vectors;
   let n_iovs = List.length io_vectors in
-  wrap_syscall Read socket
-    (fun () ->
-       stub_recv_msg socket.fd n_iovs io_vectors)
-
-#endif
-
-#if windows
-
-let send_msg ~socket ~io_vectors ~fds =
-  raise (Lwt_sys.Not_available "send_msg")
-
-#else
+  wrap_syscall Read socket (fun () -> stub_recv_msg socket.fd n_iovs io_vectors)
 
 external stub_send_msg : Unix.file_descr -> int -> io_vector list -> int -> Unix.file_descr list -> int = "lwt_unix_send_msg"
 
@@ -1594,8 +1290,6 @@ let send_msg ~socket ~io_vectors ~fds =
   wrap_syscall Write socket
     (fun () ->
        stub_send_msg socket.fd n_iovs io_vectors n_fds fds)
-
-#endif
 
 type inet_addr = Unix.inet_addr
 
@@ -1628,18 +1322,11 @@ let shutdown ch shutdown_command =
   check_descriptor ch;
   Unix.shutdown ch.fd shutdown_command
 
-#if windows
-
-external socketpair_stub : socket_domain -> socket_type -> int -> Unix.file_descr * Unix.file_descr = "lwt_unix_socketpair_stub"
-
-#else
-
-let socketpair_stub = Unix.socketpair
-
-#endif
+external stub_socketpair : socket_domain -> socket_type -> int -> Unix.file_descr * Unix.file_descr = "lwt_unix_socketpair_stub"
 
 let socketpair dom typ proto =
-  let (s1, s2) = socketpair_stub dom typ proto in
+  let do_socketpair = if Sys.win32 then Unix.socketpair else stub_socketpair in
+  let (s1, s2) = do_socketpair dom typ proto in
   (mk_ch ~blocking:false s1, mk_ch ~blocking:false s2)
 
 let accept ch =
@@ -1647,83 +1334,77 @@ let accept ch =
 
 let accept_n ch n =
   let l = ref [] in
-  lwt blocking = Lazy.force ch.blocking in
-  try_lwt
-    wrap_syscall Read ch begin fun () ->
-      begin
-        try
-          for i = 1 to n do
-            if blocking && not (unix_readable ch.fd) then raise Retry;
-            let fd, addr = Unix.accept ch.fd in
-            l := (mk_ch ~blocking:false fd, addr) :: !l
-          done
-        with
-          | (Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _) | Retry) when !l <> [] ->
-              (* Ignore blocking errors if we have at least one file-descriptor: *)
-              ()
-      end;
-      (List.rev !l, None)
-    end
-  with exn ->
-    return (List.rev !l, Some exn)
-
-#if windows
+  Lazy.force ch.blocking >>= fun blocking ->
+  Lwt.catch
+    (fun () ->
+      wrap_syscall Read ch begin fun () ->
+        begin
+          try
+            for i = 1 to n do
+              if blocking && not (unix_readable ch.fd) then raise Retry;
+              let fd, addr = Unix.accept ch.fd in
+              l := (mk_ch ~blocking:false fd, addr) :: !l
+            done
+          with
+            | (Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _) | Retry) when !l <> [] ->
+                (* Ignore blocking errors if we have at least one file-descriptor: *)
+                ()
+        end;
+        (List.rev !l, None)
+      end)
+    (fun exn -> Lwt.return (List.rev !l, Some exn))
 
 let connect ch addr =
-  (* [in_progress] tell wether connection has started but not
-     terminated: *)
-  let in_progress = ref false in
-  wrap_syscall Write ch begin fun () ->
-    if !in_progress then
-      (* Nothing works without this test and i have no idea why... *)
-      if writable ch then
+  if Sys.win32 then
+    (* [in_progress] tell wether connection has started but not
+       terminated: *)
+    let in_progress = ref false in
+    wrap_syscall Write ch begin fun () ->
+      if !in_progress then
+        (* Nothing works without this test and i have no idea why... *)
+        if writable ch then
+          try
+            Unix.connect ch.fd addr
+          with
+            | Unix.Unix_error (Unix.EISCONN, _, _) ->
+                (* This is the windows way of telling that the connection
+                   has completed. *)
+                ()
+        else
+          raise Retry
+      else
         try
           Unix.connect ch.fd addr
         with
-          | Unix.Unix_error (Unix.EISCONN, _, _) ->
-              (* This is the windows way of telling that the connection
-                 has completed. *)
+          | Unix.Unix_error (Unix.EWOULDBLOCK, _, _) ->
+              in_progress := true;
+              raise Retry
+    end
+  else
+    (* [in_progress] tell wether connection has started but not
+       terminated: *)
+    let in_progress = ref false in
+    wrap_syscall Write ch begin fun () ->
+      if !in_progress then
+        (* If the connection is in progress, [getsockopt_error] tells
+           wether it succceed: *)
+        match Unix.getsockopt_error ch.fd with
+          | None ->
+              (* The socket is connected *)
               ()
+          | Some err ->
+              (* An error happened: *)
+              raise (Unix.Unix_error(err, "connect", ""))
       else
-        raise Retry
-    else
-      try
-        Unix.connect ch.fd addr
-      with
-        | Unix.Unix_error (Unix.EWOULDBLOCK, _, _) ->
-            in_progress := true;
-            raise Retry
-  end
-
-#else
-
-let connect ch addr =
-  (* [in_progress] tell wether connection has started but not
-     terminated: *)
-  let in_progress = ref false in
-  wrap_syscall Write ch begin fun () ->
-    if !in_progress then
-      (* If the connection is in progress, [getsockopt_error] tells
-         wether it succceed: *)
-      match Unix.getsockopt_error ch.fd with
-        | None ->
-            (* The socket is connected *)
-            ()
-        | Some err ->
-            (* An error happened: *)
-            raise (Unix.Unix_error(err, "connect", ""))
-    else
-      try
-        (* We should pass only one time here, unless the system call
-           is interrupted by a signal: *)
-        Unix.connect ch.fd addr
-      with
-        | Unix.Unix_error (Unix.EINPROGRESS, _, _) ->
-            in_progress := true;
-            raise Retry
-  end
-
-#endif
+        try
+          (* We should pass only one time here, unless the system call
+             is interrupted by a signal: *)
+          Unix.connect ch.fd addr
+        with
+          | Unix.Unix_error (Unix.EINPROGRESS, _, _) ->
+              in_progress := true;
+              raise Retry
+    end
 
 let setsockopt ch opt v =
   check_descriptor ch;
@@ -1751,20 +1432,11 @@ type credentials = {
   cred_gid : int;
 }
 
-#if HAVE_GET_CREDENTIALS
-
 external stub_get_credentials : Unix.file_descr -> credentials = "lwt_unix_get_credentials"
 
 let get_credentials ch =
   check_descriptor ch;
   stub_get_credentials ch.fd
-
-#else
-
-let get_credentials ch =
-  raise (Lwt_sys.Not_available "get_credentials")
-
-#endif
 
 (* +-----------------------------------------------------------------+
    | Socket options                                                  |
@@ -1864,103 +1536,61 @@ type service_entry =
       s_proto : string
     }
 
-#if windows
-
-let gethostname () =
-  return (Unix.gethostname ())
-
-#else
-
 external gethostname_job : unit -> string job = "lwt_unix_gethostname_job"
 
 let gethostname () =
-  run_job (gethostname_job ())
-
-#endif
-
-#if windows
-
-let gethostbyname name =
-  return (Unix.gethostbyname name)
-
-#else
+  if Sys.win32 then
+    Lwt.return (Unix.gethostname ())
+  else
+    run_job (gethostname_job ())
 
 external gethostbyname_job : string -> Unix.host_entry job = "lwt_unix_gethostbyname_job"
 
 let gethostbyname name =
-  run_job (gethostbyname_job name)
-
-#endif
-
-#if windows
-
-let gethostbyaddr addr =
-  return (Unix.gethostbyaddr addr)
-
-#else
+  if Sys.win32 then
+    Lwt.return (Unix.gethostbyname name)
+  else
+    run_job (gethostbyname_job name)
 
 external gethostbyaddr_job : Unix.inet_addr -> Unix.host_entry job = "lwt_unix_gethostbyaddr_job"
 
 let gethostbyaddr addr =
-  run_job (gethostbyaddr_job addr)
-
-#endif
-
-#if windows
-
-let getprotobyname name =
-  return (Unix.getprotobyname name)
-
-#else
+  if Sys.win32 then
+    Lwt.return (Unix.gethostbyaddr addr)
+  else
+    run_job (gethostbyaddr_job addr)
 
 external getprotobyname_job : string -> Unix.protocol_entry job = "lwt_unix_getprotobyname_job"
 
 let getprotobyname name =
-  run_job (getprotobyname_job name)
-
-#endif
-
-#if windows
-
-let getprotobynumber number =
-  return (Unix.getprotobynumber number)
-
-#else
+  if Sys.win32 then
+    Lwt.return (Unix.getprotobyname name)
+  else
+    run_job (getprotobyname_job name)
 
 external getprotobynumber_job : int -> Unix.protocol_entry job = "lwt_unix_getprotobynumber_job"
 
 let getprotobynumber number =
-  run_job (getprotobynumber_job number)
-
-#endif
-
-#if windows
-
-let getservbyname name x =
-  return (Unix.getservbyname name x)
-
-#else
+  if Sys.win32 then
+    Lwt.return (Unix.getprotobynumber number)
+  else
+    run_job (getprotobynumber_job number)
 
 external getservbyname_job : string -> string -> Unix.service_entry job = "lwt_unix_getservbyname_job"
 
 let getservbyname name x =
-  run_job (getservbyname_job name x)
-
-#endif
-
-#if windows
-
-let getservbyport port x =
-  return (Unix.getservbyport port x)
-
-#else
+  if Sys.win32 then
+    Lwt.return (Unix.getservbyname name x)
+  else
+    run_job (getservbyname_job name x)
 
 external getservbyport_job : int -> string -> Unix.service_entry job = "lwt_unix_getservbyport_job"
 
 let getservbyport port x =
-  run_job (getservbyport_job port x)
-
-#endif
+  if Sys.win32 then
+    Lwt.return (Unix.getservbyport port x)
+  else
+    run_job (getservbyport_job port x)
 
 type addr_info =
     Unix.addr_info =
@@ -1981,20 +1611,14 @@ type getaddrinfo_option =
   | AI_CANONNAME
   | AI_PASSIVE
 
-#if windows
-
-let getaddrinfo host service opts =
-  return (Unix.getaddrinfo host service opts)
-
-#else
-
 external getaddrinfo_job : string -> string -> Unix.getaddrinfo_option list -> Unix.addr_info list job = "lwt_unix_getaddrinfo_job"
 
 let getaddrinfo host service opts =
-  run_job (getaddrinfo_job host service opts) >>= fun l ->
-  return (List.rev l)
-
-#endif
+  if Sys.win32 then
+    Lwt.return (Unix.getaddrinfo host service opts)
+  else
+    run_job (getaddrinfo_job host service opts) >>= fun l ->
+    Lwt.return (List.rev l)
 
 type name_info =
     Unix.name_info =
@@ -2011,19 +1635,13 @@ type getnameinfo_option =
   | NI_NUMERICSERV
   | NI_DGRAM
 
-#if windows
-
-let getnameinfo addr opts =
-  return (Unix.getnameinfo addr opts)
-
-#else
-
 external getnameinfo_job : Unix.sockaddr -> Unix.getnameinfo_option list -> Unix.name_info job = "lwt_unix_getnameinfo_job"
 
 let getnameinfo addr opts =
-  run_job (getnameinfo_job addr opts)
-
-#endif
+  if Sys.win32 then
+    Lwt.return (Unix.getnameinfo addr opts)
+  else
+    run_job (getnameinfo_job addr opts)
 
 (* +-----------------------------------------------------------------+
    | Terminal interface                                              |
@@ -2091,93 +1709,51 @@ type flow_action =
   | TCIOFF
   | TCION
 
-#if windows
-
-let tcgetattr ch =
-  check_descriptor ch;
-  return (Unix.tcgetattr ch.fd)
-
-#else
-
 external tcgetattr_job : Unix.file_descr -> Unix.terminal_io job = "lwt_unix_tcgetattr_job"
 
 let tcgetattr ch =
   check_descriptor ch;
-  run_job (tcgetattr_job ch.fd)
-
-#endif
-
-#if windows
-
-let tcsetattr ch when_ attrs =
-  check_descriptor ch;
-  return (Unix.tcsetattr ch.fd when_ attrs)
-
-#else
+  if Sys.win32 then
+    Lwt.return (Unix.tcgetattr ch.fd)
+  else
+    run_job (tcgetattr_job ch.fd)
 
 external tcsetattr_job : Unix.file_descr -> Unix.setattr_when -> Unix.terminal_io -> unit job = "lwt_unix_tcsetattr_job"
 
 let tcsetattr ch when_ attrs =
   check_descriptor ch;
-  run_job (tcsetattr_job ch.fd when_ attrs)
-
-#endif
-
-#if windows
-
-let tcsendbreak ch delay =
-  check_descriptor ch;
-  return (Unix.tcsendbreak ch.fd delay)
-
-#else
+  if Sys.win32 then
+    Lwt.return (Unix.tcsetattr ch.fd when_ attrs)
+  else
+    run_job (tcsetattr_job ch.fd when_ attrs)
 
 let tcsendbreak ch delay =
   check_descriptor ch;
-  run_job (Jobs.tcsendbreak_job ch.fd delay)
-
-#endif
-
-#if windows || android
-
-let tcdrain ch =
-  check_descriptor ch;
-  return (Unix.tcdrain ch.fd)
-
-#else
+  if Sys.win32 then
+    Lwt.return (Unix.tcsendbreak ch.fd delay)
+  else
+    run_job (Jobs.tcsendbreak_job ch.fd delay)
 
 let tcdrain ch =
   check_descriptor ch;
-  run_job (Jobs.tcdrain_job ch.fd)
-
-#endif
-
-#if windows
-
-let tcflush ch q =
-  check_descriptor ch;
-  return (Unix.tcflush ch.fd q)
-
-#else
+  if Sys.win32 then
+    Lwt.return (Unix.tcdrain ch.fd)
+  else
+    run_job (Jobs.tcdrain_job ch.fd)
 
 let tcflush ch q =
   check_descriptor ch;
-  run_job (Jobs.tcflush_job ch.fd q)
-
-#endif
-
-#if windows
-
-let tcflow ch act =
-  check_descriptor ch;
-  return (Unix.tcflow ch.fd act)
-
-#else
+  if Sys.win32 then
+    Lwt.return (Unix.tcflush ch.fd q)
+  else
+    run_job (Jobs.tcflush_job ch.fd q)
 
 let tcflow ch act =
   check_descriptor ch;
-  run_job (Jobs.tcflow_job ch.fd act)
-
-#endif
+  if Sys.win32 then
+    Lwt.return (Unix.tcflow ch.fd act)
+  else
+    run_job (Jobs.tcflow_job ch.fd act)
 
 (* +-----------------------------------------------------------------+
    | Reading notifications                                           |
@@ -2292,7 +1868,7 @@ let fork () =
         Lwt_sequence.iter_node_l Lwt_sequence.remove jobs;
         (* And cancel them all. We yield first so that if the program
            do an exec just after, it won't be executed. *)
-        on_termination (Lwt_main.yield ()) (fun () -> List.iter (fun f -> f Lwt.Canceled) l);
+        Lwt.on_termination (Lwt_main.yield ()) (fun () -> List.iter (fun f -> f Lwt.Canceled) l);
         0
     | pid ->
         pid
@@ -2310,127 +1886,104 @@ type wait_flag =
 
 type resource_usage = { ru_utime : float; ru_stime : float }
 
-#if windows || android
-
-let has_wait4 = false
-
-let stub_wait4 flags pid =
-  let pid, status = Unix.waitpid flags pid in
-  (pid, status, { ru_utime = 0.0; ru_stime = 0.0 })
-
-#else
-
-let has_wait4 = true
+let has_wait4 = not Sys.win32
 
 external stub_wait4 : Unix.wait_flag list -> int -> int * Unix.process_status * resource_usage = "lwt_unix_wait4"
 
-#endif
+let do_wait4 flags pid =
+  if Sys.win32 then
+    let pid, status = Unix.waitpid flags pid in
+    (pid, status, { ru_utime = 0.0; ru_stime = 0.0 })
+  else
+    stub_wait4 flags pid
+
 
 let wait_children = Lwt_sequence.create ()
 let wait_count () = Lwt_sequence.length wait_children
 
-#if not windows
 let () =
-  ignore begin
-    on_signal Sys.sigchld
-      (fun _ ->
-         Lwt_sequence.iter_node_l begin fun node ->
-           let wakener, flags, pid = Lwt_sequence.get node in
-           try
-             let (pid', _, _) as v = stub_wait4 flags pid in
-             if pid' <> 0 then begin
+  if not Sys.win32 then
+    ignore begin
+      on_signal Sys.sigchld
+        (fun _ ->
+           Lwt_sequence.iter_node_l begin fun node ->
+             let wakener, flags, pid = Lwt_sequence.get node in
+             try
+               let (pid', _, _) as v = do_wait4 flags pid in
+               if pid' <> 0 then begin
+                 Lwt_sequence.remove node;
+                 Lwt.wakeup wakener v
+               end
+             with e ->
                Lwt_sequence.remove node;
-               Lwt.wakeup wakener v
-             end
-           with e ->
-             Lwt_sequence.remove node;
-             Lwt.wakeup_exn wakener e
-         end wait_children)
-  end
-#endif
+               Lwt.wakeup_exn wakener e
+           end wait_children)
+    end
 
 let _waitpid flags pid =
-  try_lwt
-    return (Unix.waitpid flags pid)
+  Lwt.catch
+    (fun () -> Lwt.return (Unix.waitpid flags pid))
+    Lwt.fail
 
-#if windows
-
-let waitpid = _waitpid
-
-#else
-
-let waitpid flags pid =
-  if List.mem Unix.WNOHANG flags then
-    _waitpid flags pid
+let waitpid =
+  if Sys.win32 then
+    _waitpid
   else
-    let flags = Unix.WNOHANG :: flags in
-    lwt ((pid', _) as res) = _waitpid flags pid in
-    if pid' <> 0 then
-      return res
-    else begin
-      let (res, w) = Lwt.task () in
-      let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
-      Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
-      lwt (pid, status, _) = res in
-      return (pid, status)
-    end
-
-#endif
-
-let _wait4 flags pid =
-  try_lwt
-    return (stub_wait4 flags pid)
-
-#if windows || android
-
-let wait4 = _wait4
-
-#else
+    fun flags pid ->
+      if List.mem Unix.WNOHANG flags then
+        _waitpid flags pid
+      else
+        let flags = Unix.WNOHANG :: flags in
+        _waitpid flags pid >>= fun ((pid', _) as res) ->
+        if pid' <> 0 then
+          Lwt.return res
+        else begin
+          let (res, w) = Lwt.task () in
+          let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
+          Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
+          res >>= fun (pid, status, _) ->
+          Lwt.return (pid, status)
+        end
 
 let wait4 flags pid =
-  if List.mem Unix.WNOHANG flags then
-    _wait4 flags pid
+  if Sys.win32 then
+    Lwt.return (do_wait4 flags pid)
   else
-    let flags = Unix.WNOHANG :: flags in
-    lwt (pid', _, _) as res = _wait4 flags pid in
-    if pid' <> 0 then
-      return res
-    else begin
-      let (res, w) = Lwt.task () in
-      let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
-      Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
-      res
-    end
-
-#endif
+    if List.mem Unix.WNOHANG flags then
+      Lwt.return (do_wait4 flags pid)
+    else
+      let flags = Unix.WNOHANG :: flags in
+      let (pid', _, _) as res = do_wait4 flags pid in
+      if pid' <> 0 then
+        Lwt.return res
+      else begin
+        let (res, w) = Lwt.task () in
+        let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
+        Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
+        res
+      end
 
 let wait () = waitpid [] (-1)
 
-#if windows
-
 external system_job : string -> int job = "lwt_unix_system_job"
-
-let system cmd =
-  lwt code = run_job (system_job ("cmd.exe /c " ^ cmd)) in
-  return (Unix.WEXITED code)
-
-#else
 
 external sys_exit : int -> 'a = "caml_sys_exit"
 
 let system cmd =
-  match fork () with
-    | 0 ->
-        begin try
-          Unix.execv "/bin/sh" [| "/bin/sh"; "-c"; cmd |]
-        with _ ->
-          (* Do not run at_exit hooks *)
-          sys_exit 127
-        end
-    | id ->
-        waitpid [] id >|= snd
-
-#endif
+  if Sys.win32 then
+    run_job (system_job ("cmd.exe /c " ^ cmd)) >>= fun code ->
+    Lwt.return (Unix.WEXITED code)
+  else
+    match fork () with
+      | 0 ->
+          begin try
+            Unix.execv "/bin/sh" [| "/bin/sh"; "-c"; cmd |]
+          with _ ->
+            (* Do not run at_exit hooks *)
+            sys_exit 127
+          end
+      | id ->
+          waitpid [] id >|= snd
 
 (* +-----------------------------------------------------------------+
    | Misc                                                            |
@@ -2439,10 +1992,10 @@ let system cmd =
 let run = Lwt_main.run
 
 let handle_unix_error f x =
-  try_lwt
-    f x
-  with exn ->
-    Unix.handle_unix_error (fun () -> raise exn) ()
+  Lwt.catch
+    (fun () -> f x)
+    (fun exn ->
+      Unix.handle_unix_error (fun () -> raise exn) ())
 
 (* +-----------------------------------------------------------------+
    | System thread pool                                              |
@@ -2457,26 +2010,13 @@ external thread_waiting_count : unit -> int = "lwt_unix_thread_waiting_count" "n
    | CPUs                                                            |
    +-----------------------------------------------------------------+ *)
 
-#if HAVE_GETCPU
 external get_cpu : unit -> int = "lwt_unix_get_cpu"
-#else
-let get_cpu () = raise (Lwt_sys.Not_available "get_cpu")
-#endif
-
-#if HAVE_AFFINITY
 
 external stub_get_affinity : int -> int list = "lwt_unix_get_affinity"
 external stub_set_affinity : int -> int list -> unit = "lwt_unix_set_affinity"
 
 let get_affinity ?(pid=0) () = stub_get_affinity pid
 let set_affinity ?(pid=0) l = stub_set_affinity pid l
-
-#else
-
-let get_affinity ?pid () = raise (Lwt_sys.Not_available "get_affinity")
-let set_affinity ?pid l = raise (Lwt_sys.Not_available "set_affinity")
-
-#endif
 
 (* +-----------------------------------------------------------------+
    | Error printing                                                  |

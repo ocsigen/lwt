@@ -67,7 +67,7 @@ let repeat_call fd f =
   | Lwt_unix.Retry_write ->
       Lwt_unix.register_action Lwt_unix.Write fd (wrap_call f)
   | e ->
-      raise_lwt e
+      Lwt.fail e
 
 (****)
 
@@ -169,7 +169,7 @@ let wait_write (fd, s) =
 
 let ssl_shutdown (fd, s) =
   match s with
-    Plain -> Lwt.return ()
+    Plain -> Lwt.return_unit
   | SSL s -> repeat_call fd (fun () -> Ssl.shutdown s)
 
 let shutdown (fd, _) cmd = Lwt_unix.shutdown fd cmd

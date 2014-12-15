@@ -29,9 +29,9 @@ let suite = suite "lwt_preemptive" [
        let f () =
          Lwt_preemptive.run_in_main
            (fun () ->
-              lwt () = Lwt_unix.sleep 0.01 in
+              Lwt_unix.sleep 0.01 >>= fun () ->
               return 42)
        in
-       lwt x = Lwt_preemptive.detach f () in
+       Lwt_preemptive.detach f () >>= fun x ->
        return (x = 42));
 ]
