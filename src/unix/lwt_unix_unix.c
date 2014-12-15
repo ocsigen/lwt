@@ -470,7 +470,7 @@ CAMLprim value lwt_unix_get_credentials(value fd)
 
 #else
 
-LWT_NOT_AVAILABLE1(get_credentials)
+LWT_NOT_AVAILABLE1(unix_get_credentials)
 
 #endif
 
@@ -565,7 +565,7 @@ CAMLprim value lwt_unix_get_cpu(value Unit)
 
 #else
 
-LWT_NOT_AVAILABLE1(get_cpu)
+LWT_NOT_AVAILABLE1(unix_get_cpu)
 
 #endif
 
@@ -604,8 +604,8 @@ CAMLprim value lwt_unix_set_affinity(value val_pid, value val_cpus)
 
 #else
 
-LWT_NOT_AVAILABLE1(get_affinity)
-LWT_NOT_AVAILABLE2(set_affinity)
+LWT_NOT_AVAILABLE1(unix_get_affinity)
+LWT_NOT_AVAILABLE2(unix_set_affinity)
 
 #endif
 
