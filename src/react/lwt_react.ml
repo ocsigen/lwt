@@ -56,7 +56,7 @@ module E = struct
                | None ->
                    let cell = ref x in
                    delayed := Some cell;
-                   Lwt.on_success !limiter (fun () -> push !cell);
+                   Lwt.on_success !limiter (fun () -> let x = !cell in delayed := None; push x);
                    None
            end else begin
              (* Set the limiter for future events. *)
@@ -251,7 +251,7 @@ module S = struct
                | None ->
                    let cell = ref x in
                    delayed := Some cell;
-                   Lwt.on_success !limiter (fun () -> push !cell);
+                   Lwt.on_success !limiter (fun () -> let x = !cell in delayed := None; push x);
                    None
            end else begin
              (* Set the limiter for future events. *)
