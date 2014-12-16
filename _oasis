@@ -367,6 +367,14 @@ Executable test_unix
   MainIs: main.ml
   BuildDepends: test, lwt, unix, lwt.unix
 
+Executable test_react
+  Path: tests/react
+  Build$: flag(tests) && ((flag(unix) && flag(react)) || flag(all))
+  Install: false
+  CompiledObject: best
+  MainIs: main.ml
+  BuildDepends: test, lwt, unix, lwt.unix, react, lwt.react
+
 Executable test_preemptive
   Path: tests/preemptive
   Build$: flag(tests) && ((flag(preemptive) && flag(unix)) || flag(all))
@@ -393,6 +401,11 @@ Test unix
   Command: $test_unix
   TestTools: test_unix
   Run$: flag(tests) && (flag(unix) || flag(all))
+
+Test react
+  Command: $test_react
+  TestTools: test_react
+  Run$: flag(tests) && ((flag(unix) && flag(react)) || flag(all))
 
 Test preemptive
   Command: $test_preemptive
