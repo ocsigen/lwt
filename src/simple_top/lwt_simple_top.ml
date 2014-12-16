@@ -32,7 +32,7 @@ let read_input_non_interactive prompt buffer len =
     else
       Lwt_io.read_char_opt Lwt_io.stdin >>= function
         | Some c ->
-            buffer.[i] <- c;
+            Bytes.set buffer i c;
             if c = '\n' then
               Lwt.return (i + 1, false)
             else
