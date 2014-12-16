@@ -528,6 +528,12 @@ let of_result result =
 let fail e =
   thread { state = Fail e }
 
+let fail_with msg =
+  thread { state = Fail (Failure msg) }
+
+let fail_invalid_arg msg =
+  thread { state = Fail (Invalid_argument msg) }
+
 let temp t =
   thread {
     state = Sleep { cancel = Cancel_link (pack_thread (thread t));
