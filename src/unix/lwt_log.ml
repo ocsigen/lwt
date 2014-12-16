@@ -225,7 +225,7 @@ let write_string fd str =
     if start_ofs = len then
       Lwt.return_unit
     else
-      Lwt_unix.write fd str start_ofs (len - start_ofs) >>= fun n ->
+      Lwt_unix.write fd (Bytes.unsafe_of_string str) start_ofs (len - start_ofs) >>= fun n ->
       if n <> 0 then
         aux (start_ofs + n)
       else
@@ -237,9 +237,7 @@ let truncate buf max =
   if Buffer.length buf > max then begin
     let suffix = "<truncated>" in
     let len_suffix = String.length suffix in
-    let str = Buffer.sub buf 0 max in
-    StringLabels.blit ~src:suffix ~src_pos:0 ~dst:str ~dst_pos:(max - len_suffix) ~len:len_suffix;
-    str
+    Buffer.sub buf 0 (max - len_suffix) ^ suffix
   end else
     Buffer.contents buf
 
