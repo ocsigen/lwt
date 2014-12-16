@@ -104,6 +104,7 @@ Library "lwt"
     Lwt_stream,
     Lwt_switch,
     Lwt_pqueue
+  BuildDepends: bytes
   XMETADescription: Lightweight thread library for OCaml (core library)
 
 Library "lwt-log"

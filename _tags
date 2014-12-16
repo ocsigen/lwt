@@ -1,4 +1,5 @@
 # -*- conf -*-
+not <src/ssl/*>: safe_string
 
 # Syntax extension
 <syntax/*.ml>: syntax(camlp4o)
