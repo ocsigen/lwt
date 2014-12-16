@@ -124,9 +124,9 @@ let read_bytes (fd, s) buf pos len =
           repeat_call fd
             (fun () ->
                try
-                 let str = String.create len in
+                 let str = Bytes.create len in
                  let n = Ssl.read s str 0 len in
-                 Lwt_bytes.blit_string_bytes str 0 buf pos len;
+                 Lwt_bytes.blit_from_bytes str 0 buf pos len;
                  n
                with Ssl.Read_error Ssl.Error_zero_return ->
                  0)
@@ -153,8 +153,8 @@ let write_bytes (fd, s) buf pos len =
         else
           repeat_call fd
             (fun () ->
-               let str = String.create len in
-               Lwt_bytes.blit_bytes_string buf pos str 0 len;
+               let str = Bytes.create len in
+               Lwt_bytes.blit_to_bytes buf pos str 0 len;
                Ssl.write s str 0 len)
 
 let wait_read (fd, s) =
