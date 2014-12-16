@@ -616,11 +616,11 @@ let wait_read ch =
         register_action Read ch ignore)
     Lwt.fail
 
-external stub_read : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_read"
-external read_job : Unix.file_descr -> string -> int -> int -> int job = "lwt_unix_read_job"
+external stub_read : Unix.file_descr -> Bytes.t -> int -> int -> int = "lwt_unix_read"
+external read_job : Unix.file_descr -> Bytes.t -> int -> int -> int job = "lwt_unix_read_job"
 
 let read ch buf pos len =
-  if pos < 0 || len < 0 || pos > String.length buf - len then
+  if pos < 0 || len < 0 || pos > Bytes.length buf - len then
     invalid_arg "Lwt_unix.read"
   else
     Lazy.force ch.blocking >>= function
@@ -639,11 +639,11 @@ let wait_write ch =
         register_action Write ch ignore)
     Lwt.fail
 
-external stub_write : Unix.file_descr -> string -> int -> int -> int = "lwt_unix_write"
-external write_job : Unix.file_descr -> string -> int -> int -> int job = "lwt_unix_write_job"
+external stub_write : Unix.file_descr -> Bytes.t -> int -> int -> int = "lwt_unix_write"
+external write_job : Unix.file_descr -> Bytes.t -> int -> int -> int job = "lwt_unix_write_job"
 
 let write ch buf pos len =
-  if pos < 0 || len < 0 || pos > String.length buf - len then
+  if pos < 0 || len < 0 || pos > Bytes.length buf - len then
     invalid_arg "Lwt_unix.write"
   else
     Lazy.force ch.blocking >>= function
@@ -1220,37 +1220,37 @@ type msg_flag =
   | MSG_DONTROUTE
   | MSG_PEEK
 
-external stub_recv : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_recv"
+external stub_recv : Unix.file_descr -> Bytes.t -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_recv"
 
 let recv ch buf pos len flags =
-  if pos < 0 || len < 0 || pos > String.length buf - len then
+  if pos < 0 || len < 0 || pos > Bytes.length buf - len then
     invalid_arg "Lwt_unix.recv"
   else
     let do_recv = if Sys.win32 then Unix.recv else stub_recv in
     wrap_syscall Read ch (fun () -> do_recv ch.fd buf pos len flags)
 
-external stub_send : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_send"
+external stub_send : Unix.file_descr -> Bytes.t -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_send"
 
 let send ch buf pos len flags =
-  if pos < 0 || len < 0 || pos > String.length buf - len then
+  if pos < 0 || len < 0 || pos > Bytes.length buf - len then
     invalid_arg "Lwt_unix.send"
   else
     let do_send = if Sys.win32 then Unix.send else stub_send in
     wrap_syscall Write ch (fun () -> do_send ch.fd buf pos len flags)
 
-external stub_recvfrom : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> int * Unix.sockaddr = "lwt_unix_recvfrom"
+external stub_recvfrom : Unix.file_descr -> Bytes.t -> int -> int -> Unix.msg_flag list -> int * Unix.sockaddr = "lwt_unix_recvfrom"
 
 let recvfrom ch buf pos len flags =
-  if pos < 0 || len < 0 || pos > String.length buf - len then
+  if pos < 0 || len < 0 || pos > Bytes.length buf - len then
     invalid_arg "Lwt_unix.recvfrom"
   else
     let do_recvfrom = if Sys.win32 then Unix.recvfrom else stub_recvfrom in
     wrap_syscall Read ch (fun () -> do_recvfrom ch.fd buf pos len flags)
 
-external stub_sendto : Unix.file_descr -> string -> int -> int -> Unix.msg_flag list -> Unix.sockaddr -> int = "lwt_unix_sendto_byte" "lwt_unix_sendto"
+external stub_sendto : Unix.file_descr -> Bytes.t -> int -> int -> Unix.msg_flag list -> Unix.sockaddr -> int = "lwt_unix_sendto_byte" "lwt_unix_sendto"
 
 let sendto ch buf pos len flags addr =
-  if pos < 0 || len < 0 || pos > String.length buf - len then
+  if pos < 0 || len < 0 || pos > Bytes.length buf - len then
     invalid_arg "Lwt_unix.sendto"
   else
     let do_sendto = if Sys.win32 then Unix.sendto else stub_sendto in
@@ -1760,7 +1760,7 @@ let tcflow ch act =
    +-----------------------------------------------------------------+ *)
 
 (* Buffer used to receive notifications: *)
-let notification_buffer = String.create 4
+let notification_buffer = Bytes.create 4
 
 external init_notification : unit -> Unix.file_descr = "lwt_unix_init_notification"
 external send_notification : int -> unit = "lwt_unix_send_notification_stub"
