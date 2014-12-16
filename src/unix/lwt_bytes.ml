@@ -48,25 +48,25 @@ let fill bytes ofs len ch =
    | Blitting                                                        |
    +-----------------------------------------------------------------+ *)
 
-external unsafe_blit_string_bytes : string -> int -> t -> int -> int -> unit = "lwt_unix_blit_string_bytes" "noalloc"
-external unsafe_blit_bytes_string : t -> int -> string -> int -> int -> unit = "lwt_unix_blit_bytes_string" "noalloc"
-external unsafe_blit : t -> int -> t -> int -> int -> unit = "lwt_unix_blit_bytes_bytes" "noalloc"
+external unsafe_blit_from_bytes : Bytes.t -> int -> t -> int -> int -> unit = "lwt_unix_blit_from_bytes" "noalloc"
+external unsafe_blit_to_bytes : t -> int -> Bytes.t -> int -> int -> unit = "lwt_unix_blit_to_bytes" "noalloc"
+external unsafe_blit : t -> int -> t -> int -> int -> unit = "lwt_unix_blit" "noalloc"
 
-let blit_string_bytes src_buf src_ofs dst_buf dst_ofs len =
+let blit_from_bytes src_buf src_ofs dst_buf dst_ofs len =
   if (len < 0
-      || src_ofs < 0 || src_ofs > String.length src_buf - len
+      || src_ofs < 0 || src_ofs > Bytes.length src_buf - len
       || dst_ofs < 0 || dst_ofs > length dst_buf - len) then
     invalid_arg "String.blit"
   else
-    unsafe_blit_string_bytes src_buf src_ofs dst_buf dst_ofs len
+    unsafe_blit_from_bytes src_buf src_ofs dst_buf dst_ofs len
 
-let blit_bytes_string src_buf src_ofs dst_buf dst_ofs len =
+let blit_to_bytes src_buf src_ofs dst_buf dst_ofs len =
   if (len < 0
       || src_ofs < 0 || src_ofs > length src_buf - len
-      || dst_ofs < 0 || dst_ofs > String.length dst_buf - len) then
+      || dst_ofs < 0 || dst_ofs > Bytes.length dst_buf - len) then
     invalid_arg "String.blit"
   else
-    unsafe_blit_bytes_string src_buf src_ofs dst_buf dst_ofs len
+    unsafe_blit_to_bytes src_buf src_ofs dst_buf dst_ofs len
 
 let blit src_buf src_ofs dst_buf dst_ofs len =
   if (len < 0
@@ -76,17 +76,21 @@ let blit src_buf src_ofs dst_buf dst_ofs len =
   else
     unsafe_blit src_buf src_ofs dst_buf dst_ofs len
 
-let of_string str =
-  let len = String.length str in
+let of_bytes buf =
+  let len = Bytes.length buf in
   let bytes = create len in
-  unsafe_blit_string_bytes str 0 bytes 0 len;
+  unsafe_blit_from_bytes buf 0 bytes 0 len;
   bytes
 
-let to_string bytes =
+let of_string str = of_bytes (Bytes.unsafe_of_string str)
+
+let to_bytes bytes =
   let len = length bytes in
-  let str = String.create len in
-  unsafe_blit_bytes_string bytes 0 str 0 len;
+  let str = Bytes.create len in
+  unsafe_blit_to_bytes bytes 0 str 0 len;
   str
+
+let to_string bytes = Bytes.unsafe_to_string (to_bytes bytes)
 
 let proxy = Array1.sub
 
