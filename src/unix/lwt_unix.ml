@@ -653,6 +653,10 @@ let write ch buf pos len =
       | false ->
           wrap_syscall Write ch (fun () -> stub_write ch.fd buf pos len)
 
+let write_string ch buf pos len =
+  let buf = Bytes.unsafe_of_string buf in
+  write ch buf pos len
+
 (* +-----------------------------------------------------------------+
    | Seeking and truncating                                          |
    +-----------------------------------------------------------------+ *)

@@ -225,7 +225,7 @@ let write_string fd str =
     if start_ofs = len then
       Lwt.return_unit
     else
-      Lwt_unix.write fd (Bytes.unsafe_of_string str) start_ofs (len - start_ofs) >>= fun n ->
+      Lwt_unix.write_string fd str start_ofs (len - start_ofs) >>= fun n ->
       if n <> 0 then
         aux (start_ofs + n)
       else

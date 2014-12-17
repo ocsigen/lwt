@@ -872,6 +872,10 @@ struct
         unsafe_write_from oc buf ofs len >>= fun remaining -> Lwt.return (len - remaining)
     end
 
+  let write_from_string oc buf ofs len =
+    let buf = Bytes.unsafe_of_string buf in
+    write_from oc buf ofs len
+
   let rec unsafe_write_from_exactly oc buf ofs len =
     unsafe_write_from oc buf ofs len >>= function
       | 0 ->
@@ -890,6 +894,10 @@ struct
       else
         unsafe_write_from_exactly oc buf ofs len
     end
+
+  let write_from_string_exactly oc buf ofs len =
+    let buf = Bytes.unsafe_of_string buf in
+    write_from_exactly oc buf ofs len
 
   let write oc str =
     let buf = Bytes.unsafe_of_string str in
@@ -1201,7 +1209,9 @@ let write_char wrapper x =
 let write oc str = primitive (fun oc -> Primitives.write oc str) oc
 let write_line oc x = primitive (fun oc -> Primitives.write_line oc x) oc
 let write_from oc str ofs len = primitive (fun oc -> Primitives.write_from oc str ofs len) oc
+let write_from_string oc str ofs len = primitive (fun oc -> Primitives.write_from_string oc str ofs len) oc
 let write_from_exactly oc str ofs len = primitive (fun oc -> Primitives.write_from_exactly oc str ofs len) oc
+let write_from_string_exactly oc str ofs len = primitive (fun oc -> Primitives.write_from_string_exactly oc str ofs len) oc
 let write_value oc ?flags x = primitive (fun oc -> Primitives.write_value oc ?flags x) oc
 
 let block ch size f = primitive (fun ch -> Primitives.block ch size f) ch

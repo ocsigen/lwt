@@ -292,9 +292,15 @@ val write_from : output_channel -> Bytes.t -> int -> int -> int Lwt.t
       to [oc], from [buffer] at offset [offset] and returns the number
       of bytes actually written *)
 
+val write_from_string : output_channel -> string -> int -> int -> int Lwt.t
+  (** See {!write}. *)
+
 val write_from_exactly : output_channel -> Bytes.t -> int -> int -> unit Lwt.t
   (** [write_from_exactly oc buffer offset length] writes all [length]
       bytes from [buffer] at offset [offset] to [oc] *)
+
+val write_from_string_exactly : output_channel -> string -> int -> int -> unit Lwt.t
+  (** See {!write_from_exactly}. *)
 
 val write_value : output_channel -> ?flags : Marshal.extern_flags list -> 'a -> unit Lwt.t
   (** [write_value oc ?flags x] marshals the value [x] to [oc] *)

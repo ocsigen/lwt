@@ -327,8 +327,11 @@ val read : file_descr -> Bytes.t -> int -> int -> int Lwt.t
       is cooperative *)
 
 val write : file_descr -> Bytes.t -> int -> int -> int Lwt.t
-  (** [read fd buf ofs len] has the same semantic as [Unix.write], but
+  (** [write fd buf ofs len] has the same semantic as [Unix.write], but
       is cooperative *)
+
+val write_string : file_descr -> string -> int -> int -> int Lwt.t
+  (** See {!write}. *)
 
 val readable : file_descr -> bool
   (** Returns whether the given file descriptor is currently
