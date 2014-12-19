@@ -29,9 +29,9 @@ let suite = suite "lwt_io" [
     (fun () ->
        let sent = ref [] in
        let oc = Lwt_io.make ~mode:output (fun buf ofs len ->
-                                            let str = String.create len in
-                                            Lwt_bytes.blit_bytes_string buf ofs str 0 len;
-                                            sent := str :: !sent;
+                                            let bytes = Bytes.create len in
+                                            Lwt_bytes.blit_to_bytes buf ofs bytes 0 len;
+                                            sent := bytes :: !sent;
                                             return len) in
        write oc "foo" >>= fun () ->
        write oc "bar" >>= fun () ->
@@ -45,9 +45,9 @@ let suite = suite "lwt_io" [
     (fun () ->
        let sent = ref [] in
        let oc = make ~mode:output (fun buf ofs len ->
-                                     let str = String.create len in
-                                     Lwt_bytes.blit_bytes_string buf ofs str 0 len;
-                                     sent := str :: !sent;
+                                     let bytes = Bytes.create len in
+                                     Lwt_bytes.blit_to_bytes buf ofs bytes 0 len;
+                                     sent := bytes :: !sent;
                                      return len) in
        atomic
          (fun oc ->

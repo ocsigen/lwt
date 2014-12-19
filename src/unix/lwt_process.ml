@@ -77,18 +77,18 @@ let win32_spawn (prog, args) env ?(stdin:redirection=`Keep) ?(stdout:redirection
           None
       | Some env ->
           let len = Array.fold_left (fun len str -> String.length str + len + 1) 1 env in
-          let res = String.create len in
+          let res = Bytes.create len in
           let ofs =
             Array.fold_left
               (fun ofs str ->
                  let len = String.length str in
                  String.blit str 0 res ofs len;
-                 res.[ofs + len] <- '\000';
+                 Bytes.set res (ofs + len) '\000';
                  ofs + len + 1)
               0 env
           in
-          res.[ofs] <- '\000';
-          Some res
+          Bytes.set res ofs '\000';
+          Some (Bytes.unsafe_to_string res)
   in
   List.iter Unix.set_close_on_exec toclose;
   let stdin_fd  = win32_get_fd Unix.stdin stdin

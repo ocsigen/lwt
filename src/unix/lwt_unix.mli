@@ -322,13 +322,16 @@ val close : file_descr -> unit Lwt.t
   (** Close a {b file descriptor}. This close the underlying unix {b
       file descriptor} and set its state to {!Closed} *)
 
-val read : file_descr -> string -> int -> int -> int Lwt.t
+val read : file_descr -> Bytes.t -> int -> int -> int Lwt.t
   (** [read fd buf ofs len] has the same semantic as [Unix.read], but
       is cooperative *)
 
-val write : file_descr -> string -> int -> int -> int Lwt.t
-  (** [read fd buf ofs len] has the same semantic as [Unix.write], but
+val write : file_descr -> Bytes.t -> int -> int -> int Lwt.t
+  (** [write fd buf ofs len] has the same semantic as [Unix.write], but
       is cooperative *)
+
+val write_string : file_descr -> string -> int -> int -> int Lwt.t
+  (** See {!write}. *)
 
 val readable : file_descr -> bool
   (** Returns whether the given file descriptor is currently
@@ -728,16 +731,16 @@ type msg_flag =
   | MSG_DONTROUTE
   | MSG_PEEK
 
-val recv : file_descr -> string -> int -> int -> msg_flag list -> int Lwt.t
+val recv : file_descr -> Bytes.t -> int -> int -> msg_flag list -> int Lwt.t
   (** Wrapper for [Unix.recv] *)
 
-val recvfrom : file_descr -> string -> int -> int -> msg_flag list -> (int * sockaddr) Lwt.t
+val recvfrom : file_descr -> Bytes.t -> int -> int -> msg_flag list -> (int * sockaddr) Lwt.t
   (** Wrapper for [Unix.recvfrom] *)
 
-val send : file_descr -> string -> int -> int -> msg_flag list -> int Lwt.t
+val send : file_descr -> Bytes.t -> int -> int -> msg_flag list -> int Lwt.t
   (** Wrapper for [Unix.send] *)
 
-val sendto : file_descr -> string -> int -> int -> msg_flag list -> sockaddr -> int Lwt.t
+val sendto : file_descr -> Bytes.t -> int -> int -> msg_flag list -> sockaddr -> int Lwt.t
   (** Wrapper for [Unix.sendto] *)
 
 (** An io-vector. Used by {!recv_msg} and {!send_msg}. *)

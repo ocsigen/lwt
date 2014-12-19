@@ -535,8 +535,6 @@ let of_bytes ~mode bytes =
   } in
   wrapper
 
-let of_string ~mode str = of_bytes ~mode (Lwt_bytes.of_string str)
-
 let of_fd : type m. ?buffer_size : int -> ?close : (unit -> unit Lwt.t) -> mode : m mode -> Lwt_unix.file_descr -> m channel = fun ?buffer_size ?close ~mode fd ->
   let perform_io = match mode with
     | Input -> Lwt_bytes.read fd
@@ -726,36 +724,36 @@ struct
       | End_of_file -> Lwt.return_none
       | exn -> Lwt.fail exn)
 
-  let unsafe_read_into ic str ofs len =
+  let unsafe_read_into ic buf ofs len =
     let avail = ic.max - ic.ptr in
     if avail > 0 then begin
       let len = min len avail in
-      Lwt_bytes.unsafe_blit_bytes_string ic.buffer ic.ptr str ofs len;
+      Lwt_bytes.unsafe_blit_to_bytes ic.buffer ic.ptr buf ofs len;
       ic.ptr <- ic.ptr + len;
       Lwt.return len
     end else begin
       refill ic >>= fun n ->
         let len = min len n in
-        Lwt_bytes.unsafe_blit_bytes_string ic.buffer 0 str ofs len;
+        Lwt_bytes.unsafe_blit_to_bytes ic.buffer 0 buf ofs len;
         ic.ptr <- len;
         ic.max <- n;
         Lwt.return len
     end
 
-  let read_into ic str ofs len =
-    if ofs < 0 || len < 0 || ofs + len > String.length str then
+  let read_into ic buf ofs len =
+    if ofs < 0 || len < 0 || ofs + len > Bytes.length buf then
       Lwt.fail (Invalid_argument (Printf.sprintf
-                                     "Lwt_io.read_into(ofs=%d,len=%d,str_len=%d)"
-                                     ofs len (String.length str)))
+                                    "Lwt_io.read_into(ofs=%d,len=%d,str_len=%d)"
+                                    ofs len (Bytes.length buf)))
     else begin
       if len = 0 then
         Lwt.return 0
       else
-        unsafe_read_into ic str ofs len
+        unsafe_read_into ic buf ofs len
     end
 
-  let rec unsafe_read_into_exactly ic str ofs len =
-    unsafe_read_into ic str ofs len >>= function
+  let rec unsafe_read_into_exactly ic buf ofs len =
+    unsafe_read_into ic buf ofs len >>= function
       | 0 ->
           Lwt.fail End_of_file
       | n ->
@@ -763,22 +761,22 @@ struct
           if len = 0 then
             Lwt.return_unit
           else
-            unsafe_read_into_exactly ic str (ofs + n) len
+            unsafe_read_into_exactly ic buf (ofs + n) len
 
-  let read_into_exactly ic str ofs len =
-    if ofs < 0 || len < 0 || ofs + len > String.length str then
+  let read_into_exactly ic buf ofs len =
+    if ofs < 0 || len < 0 || ofs + len > Bytes.length buf then
       Lwt.fail (Invalid_argument (Printf.sprintf
-                                     "Lwt_io.read_into_exactly(ofs=%d,len=%d,str_len=%d)"
-                                     ofs len (String.length str)))
+                                    "Lwt_io.read_into_exactly(ofs=%d,len=%d,str_len=%d)"
+                                    ofs len (Bytes.length buf)))
     else begin
       if len = 0 then
         Lwt.return_unit
       else
-        unsafe_read_into_exactly ic str ofs len
+        unsafe_read_into_exactly ic buf ofs len
     end
 
   let rev_concat len l =
-    let buf = String.create len in
+    let buf = Bytes.create len in
     let _ =
       List.fold_left
         (fun ofs str ->
@@ -792,8 +790,9 @@ struct
 
   let rec read_all ic total_len acc =
     let len = ic.max - ic.ptr in
-    let str = String.create len in
-    Lwt_bytes.unsafe_blit_bytes_string ic.buffer ic.ptr str 0 len;
+    let buf = Bytes.create len in
+    Lwt_bytes.unsafe_blit_to_bytes ic.buffer ic.ptr buf 0 len;
+    let str = Bytes.unsafe_to_string buf in
     ic.ptr <- ic.max;
     refill ic >>= function
       | 0 ->
@@ -804,23 +803,23 @@ struct
   let read count ic =
     match count with
       | None ->
-          read_all ic 0 []
+          read_all ic 0 [] >|= Bytes.unsafe_to_string
       | Some len ->
-          let str = String.create len in
-          unsafe_read_into ic str 0 len >>= fun real_len ->
+          let buf = Bytes.create len in
+          unsafe_read_into ic buf 0 len >>= fun real_len ->
           if real_len < len then
-            Lwt.return (String.sub str 0 real_len)
+            Lwt.return Bytes.(sub buf 0 real_len |> unsafe_to_string)
           else
-            Lwt.return str
+            Lwt.return (Bytes.unsafe_to_string buf)
 
   let read_value ic =
-    let header = String.create 20 in
+    let header = Bytes.create 20 in
     unsafe_read_into_exactly ic header 0 20 >>= fun () ->
     let bsize = Marshal.data_size header 0 in
-    let buffer = String.create (20 + bsize) in
-    String.unsafe_blit header 0 buffer 0 20;
+    let buffer = Bytes.create (20 + bsize) in
+    Bytes.unsafe_blit header 0 buffer 0 20;
     unsafe_read_into_exactly ic buffer 20 bsize >>= fun () ->
-    Lwt.return (Marshal.from_string buffer 0)
+    Lwt.return (Marshal.from_bytes buffer 0)
 
   (* +---------------------------------------------------------------+
      | Writing                                                       |
@@ -841,11 +840,11 @@ struct
   let rec unsafe_write_from oc str ofs len =
     let avail = oc.length - oc.ptr in
     if avail >= len then begin
-      Lwt_bytes.unsafe_blit_string_bytes str ofs oc.buffer oc.ptr len;
+      Lwt_bytes.unsafe_blit_from_bytes str ofs oc.buffer oc.ptr len;
       oc.ptr <- oc.ptr + len;
       Lwt.return 0
     end else begin
-      Lwt_bytes.unsafe_blit_string_bytes str ofs oc.buffer oc.ptr avail;
+      Lwt_bytes.unsafe_blit_from_bytes str ofs oc.buffer oc.ptr avail;
       oc.ptr <- oc.length;
       flush_partial oc >>= fun _ ->
       let len = len - avail in
@@ -861,42 +860,52 @@ struct
         Lwt.return len
     end
 
-  let write_from oc str ofs len =
-    if ofs < 0 || len < 0 || ofs + len > String.length str then
+  let write_from oc buf ofs len =
+    if ofs < 0 || len < 0 || ofs + len > Bytes.length buf then
       Lwt.fail (Invalid_argument (Printf.sprintf
-                                     "Lwt_io.write_from(ofs=%d,len=%d,str_len=%d)"
-                                     ofs len (String.length str)))
+                                    "Lwt_io.write_from(ofs=%d,len=%d,str_len=%d)"
+                                    ofs len (Bytes.length buf)))
     else begin
       if len = 0 then
         Lwt.return 0
       else
-        unsafe_write_from oc str ofs len >>= fun remaining -> Lwt.return (len - remaining)
+        unsafe_write_from oc buf ofs len >>= fun remaining -> Lwt.return (len - remaining)
     end
 
-  let rec unsafe_write_from_exactly oc str ofs len =
-    unsafe_write_from oc str ofs len >>= function
+  let write_from_string oc buf ofs len =
+    let buf = Bytes.unsafe_of_string buf in
+    write_from oc buf ofs len
+
+  let rec unsafe_write_from_exactly oc buf ofs len =
+    unsafe_write_from oc buf ofs len >>= function
       | 0 ->
           Lwt.return_unit
       | n ->
-          unsafe_write_from_exactly oc str (ofs + len - n) n
+          unsafe_write_from_exactly oc buf (ofs + len - n) n
 
-  let write_from_exactly oc str ofs len =
-    if ofs < 0 || len < 0 || ofs + len > String.length str then
+  let write_from_exactly oc buf ofs len =
+    if ofs < 0 || len < 0 || ofs + len > Bytes.length buf then
       Lwt.fail (Invalid_argument (Printf.sprintf
-                                     "Lwt_io.write_from_exactly(ofs=%d,len=%d,str_len=%d)"
-                                     ofs len (String.length str)))
+                                    "Lwt_io.write_from_exactly(ofs=%d,len=%d,str_len=%d)"
+                                    ofs len (Bytes.length buf)))
     else begin
       if len = 0 then
         Lwt.return_unit
       else
-        unsafe_write_from_exactly oc str ofs len
+        unsafe_write_from_exactly oc buf ofs len
     end
 
+  let write_from_string_exactly oc buf ofs len =
+    let buf = Bytes.unsafe_of_string buf in
+    write_from_exactly oc buf ofs len
+
   let write oc str =
-    unsafe_write_from_exactly oc str 0 (String.length str)
+    let buf = Bytes.unsafe_of_string str in
+    unsafe_write_from_exactly oc buf 0 (Bytes.length buf)
 
   let write_line oc str =
-    unsafe_write_from_exactly oc str 0 (String.length str) >>= fun () ->
+    let buf = Bytes.unsafe_of_string str in
+    unsafe_write_from_exactly oc buf 0 (Bytes.length buf) >>= fun () ->
     write_char oc '\n'
 
   let write_value oc ?(flags=[]) x =
@@ -1200,7 +1209,9 @@ let write_char wrapper x =
 let write oc str = primitive (fun oc -> Primitives.write oc str) oc
 let write_line oc x = primitive (fun oc -> Primitives.write_line oc x) oc
 let write_from oc str ofs len = primitive (fun oc -> Primitives.write_from oc str ofs len) oc
+let write_from_string oc str ofs len = primitive (fun oc -> Primitives.write_from_string oc str ofs len) oc
 let write_from_exactly oc str ofs len = primitive (fun oc -> Primitives.write_from_exactly oc str ofs len) oc
+let write_from_string_exactly oc str ofs len = primitive (fun oc -> Primitives.write_from_string_exactly oc str ofs len) oc
 let write_value oc ?flags x = primitive (fun oc -> Primitives.write_value oc ?flags x) oc
 
 let block ch size f = primitive (fun ch -> Primitives.block ch size f) ch
