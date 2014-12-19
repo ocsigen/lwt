@@ -234,9 +234,7 @@ CAMLprim value lwt_test(value Unit)
    | Compilation                                                     |
    +-----------------------------------------------------------------+ *)
 
-let ocamlc = ref "ocamlc"
-let cc = ref "cc"
-let standard_library = ref "/usr/lib/ocaml"
+let ocamlc = ref "ocamlfind ocamlc"
 let ext_obj = ref ".o"
 let exec_name = ref "a.out"
 let use_libev = ref true
@@ -280,12 +278,11 @@ let compile (opt, lib) stub_file =
     Sys.command s = 0) fmt in
   let obj_file = Filename.chop_suffix stub_file ".c" ^ !ext_obj
   in
-  (* First compile the .c file using CC and the CFLAGS (opt) *)
+  (* First compile the .c file using -ocamlc and CFLAGS (opt) *)
   (cmd
-    "%s -c -I%s %s %s -o %s >> %s 2>&1"
-    !cc
-    (Filename.quote !standard_library)
-    (String.concat " " (List.map Filename.quote opt))
+    "%s -c %s %s -ccopt -o -ccopt %s >> %s 2>&1"
+    !ocamlc
+    (String.concat " " (List.map (fun x -> "-ccopt " ^ x) (List.map Filename.quote opt)))
     (Filename.quote stub_file)
     (Filename.quote obj_file)
     (Filename.quote !log_file))
@@ -442,8 +439,6 @@ let arg_bool r =
 let () =
   let args = [
     "-ocamlc", Arg.Set_string ocamlc, "<path> ocamlc";
-    "-cc", Arg.Set_string cc, "<path> C compiler";
-    "-standard-library", Arg.Set_string standard_library, "<path> Path to Ocaml standard library";
     "-ext-obj", Arg.Set_string ext_obj, "<ext> C object files extension";
     "-exec-name", Arg.Set_string exec_name, "<name> name of the executable produced by ocamlc";
     "-use-libev", arg_bool use_libev, " whether to check for libev";
