@@ -77,6 +77,28 @@ let rec map_p f l =
         tl >|= fun l ->
         x :: l
 
+let rec filter_map_s f l =
+  match l with
+  | [] ->
+    Lwt.return_nil
+  | x :: l ->
+    f x >>= function
+    | Some x ->
+      filter_map_s f l >|= fun l ->
+      x :: l
+    | None ->
+      filter_map_s f l
+
+let rec filter_map_p f l =
+  match l with
+  | [] ->
+    Lwt.return_nil
+  | x :: l ->
+    let tx = f x and tl = filter_map_p f l in
+    tx >>= function
+    | Some x -> tl >|= fun l -> x :: l
+    | None -> tl
+
 let rec mapi_s i f l =
   match l with
     | [] ->
