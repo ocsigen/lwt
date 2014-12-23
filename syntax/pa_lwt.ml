@@ -35,13 +35,16 @@ open Syntax
    when there is not already one. *)
 let gen_catch mc =
   (* Does the match case have a rule of the form "| e -> ..." ? *)
-  let rec have_default = function
-    | <:match_case< $a$ | $b$ >> -> have_default a || have_default b
-    | <:match_case< _ -> $_$ >>
-    | <:match_case< $lid:_$ -> $_$ >> -> true
+  let rec default_case = function
+    | <:match_case< $a$ | $b$ >> -> default_case a || default_case b
+    | <:match_case< $patt$ -> $_$ >> -> catch_all patt
+    | _ -> false
+  and catch_all = function
+    | <:patt< _ >> | <:patt< $lid:_$ >> -> true
+    | <:patt< $p$ as $_$ >> -> catch_all p
     | _ -> false
   in
-  if have_default mc then
+  if default_case mc then
     mc
   else
     let _loc = Ast.loc_of_match_case mc in
