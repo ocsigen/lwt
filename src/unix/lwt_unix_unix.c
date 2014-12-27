@@ -548,6 +548,10 @@ value lwt_unix_wait4(value flags, value pid_req)
   CAMLreturn(res);
 }
 
+#else
+
+LWT_NOT_AVAILABLE2(unix_wait4)
+
 #endif
 
 /* +-----------------------------------------------------------------+
@@ -1656,7 +1660,7 @@ JOB_GET_ENTRY(LWT_UNIX_INIT_JOB(job, getgrgid, 0); job->gid = Int_val(gid), getg
 LWT_NOT_AVAILABLE1(unix_getpwnam_job)
 LWT_NOT_AVAILABLE1(unix_getgrnam_job)
 LWT_NOT_AVAILABLE1(unix_getpwuid_job)
-LWT_NOT_AVAILABLE1(unix_getgruid_job)
+LWT_NOT_AVAILABLE1(unix_getgrgid_job)
 
 #endif
 
