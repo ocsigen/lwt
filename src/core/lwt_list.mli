@@ -61,5 +61,8 @@ val find_s : ('a -> bool Lwt.t) -> 'a list -> 'a Lwt.t
 val filter_s : ('a -> bool Lwt.t) -> 'a list -> 'a list Lwt.t
 val filter_p : ('a -> bool Lwt.t) -> 'a list -> 'a list Lwt.t
 
+val filter_map_s : ('a -> 'b option Lwt.t) -> 'a list -> 'b list Lwt.t
+val filter_map_p : ('a -> 'b option Lwt.t) -> 'a list -> 'b list Lwt.t
+
 val partition_s : ('a -> bool Lwt.t) -> 'a list -> ('a list * 'a list) Lwt.t
 val partition_p : ('a -> bool Lwt.t) -> 'a list -> ('a list * 'a list) Lwt.t
