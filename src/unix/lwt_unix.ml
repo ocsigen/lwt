@@ -1410,10 +1410,6 @@ let connect ch addr =
               raise Retry
     end
 
-let setsockopt ch opt v =
-  check_descriptor ch;
-  Unix.setsockopt ch.fd opt v
-
 let bind ch addr =
   check_descriptor ch;
   Unix.bind ch.fd addr
