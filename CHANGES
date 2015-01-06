@@ -1,8 +1,17 @@
-===== next =====
+===== 2.4.7 (2015-01-06) =====
 
+  * camlp4 is now optional.
+  * Add safe_string compliance except for Lwt_ssl (need ocaml-ssl fix).
+  * Add Lwt.Infix module to open instead of Lwt to have (>>=), etc.
+  * Add Lwt_list.filter_map_{s,p} functions.
+  * Add Lwt.fail_{with,invalid_arg} functions.
+  * Improved Android support.
   * Remove deprecated lwt.text and lwt.top libraries.
   * Remove deprecated Lwt_signal and Lwt_event modules from
     lwt.react.
+  * Fix #111: try_lwt wrongly warns about unused match case.
+  * Fix #96: Fix Lwt_react.S.limit and Lwt_react.E.limit.
+  * Fix #91: Workaround to fix compilation on OSX.
 
 ===== 2.4.6 (2014-10-12) =====
 

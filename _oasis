@@ -5,7 +5,7 @@
 OASISFormat: 0.4
 OCamlVersion: >= 4.01
 Name: lwt
-Version: 2.4.6
+Version: 2.4.7
 LicenseFile: COPYING
 License: LGPL-2.1 with OCaml linking exception
 Authors:
@@ -17,7 +17,12 @@ Authors:
   Jérémie Dimino,
   Warren Harris,
   Pierre Chambart,
-  Mauricio Fernandez
+  Mauricio Fernandez,
+  Grégoire Henri,
+  Gabriel Radanne,
+  Peter Zotov,
+  Hugo Heuzard,
+  Vincent Bernardoff
 Homepage: http://ocsigen.org/lwt/
 BuildTools: ocamlbuild
 Plugins: DevFiles (0.3), META (0.3)

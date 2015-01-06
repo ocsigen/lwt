@@ -66,6 +66,11 @@ The Lwt toplevel was deprecated and removed. Use utop instead:
  * Warren Harris (Metaweb Technologies, Inc.)
  * Pierre Chambart
  * Mauricio Fernandez
+ * Gregoire Henri
+ * Gabriel Radanne
+ * Peter Zotov
+ * Hugo Heuzard
+ * Vincent Bernardoff
 
 See each source file for copyright information, and COPYING for license.
 
