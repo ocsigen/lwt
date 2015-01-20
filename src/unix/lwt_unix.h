@@ -72,6 +72,9 @@ void lwt_unix_not_available(char const *feature) Noreturn;
 #define LWT_NOT_AVAILABLE5(prim) \
   CAMLprim value lwt_ ## prim(value a1, value a2, value a3, value a4, value a5) \
   { lwt_unix_not_available(#prim); }
+#define LWT_NOT_AVAILABLE6(prim) \
+  CAMLprim value lwt_ ## prim(value a1, value a2, value a3, value a4, value a5, value a6) \
+  { lwt_unix_not_available(#prim); }
 
 /* +-----------------------------------------------------------------+
    | Notifications                                                   |
