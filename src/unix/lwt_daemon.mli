@@ -59,10 +59,10 @@ val daemonize :
       - [`Log_default] means that the output is redirected to the
         default logger
 
-      Both [stdout] and [stderr] defaults to [`Log_default].
+      Both [stdout] and [stderr] default to [`Log_default].
 
       Warning: do not redirect an output to a logger logging into this
-      outpout, for example this code will create an infinite loop:
+      output. For example, this code will create an infinite loop:
 
       {[
         let logger = Lwt_log.channel ~close_mode:`Keep ~channel:Lwt_io.stderr () in
@@ -75,7 +75,7 @@ val daemonize :
 
       [umask] may be one of:
       - [`Keep] which means that the umask is left unchanged
-      - [`Set n] which means that the umash is set to [n]
+      - [`Set n] which means that the umask is set to [n]
 
       It defaults to [`Set 0o022].
   *)

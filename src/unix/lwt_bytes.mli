@@ -42,10 +42,10 @@ val set : t -> int -> char -> unit
       offset [offset] in [buffer] to [value]. *)
 
 val unsafe_get : t -> int -> char
-  (** Same as {!get} but without bound checking. *)
+  (** Same as {!get} but without bounds checking. *)
 
 val unsafe_set : t -> int -> char -> unit
-  (** Same as {!set} but without bound checking. *)
+  (** Same as {!set} but without bounds checking. *)
 
 (** {2 Conversions} *)
 
@@ -68,25 +68,25 @@ val to_string : t -> string
 (** {2 Copying} *)
 
 val blit : t -> int -> t -> int -> int -> unit
-  (** [blit buf1 ofs1 buf2 ofs2 len] copy [len] bytes from [buf1]
+  (** [blit buf1 ofs1 buf2 ofs2 len] copies [len] bytes from [buf1]
       starting at offset [ofs1] to [buf2] starting at offset [ofs2]. *)
 
 val blit_from_bytes : Bytes.t -> int -> t -> int -> int -> unit
-  (** Same as blit but the first buffer is a string instead of a byte
+  (** Same as {!blit} but the first buffer is a string instead of a byte
       array. *)
 
 val blit_to_bytes : t -> int -> Bytes.t -> int -> int -> unit
-  (** Same as blit but the second buffer is a string instead of a byte
+  (** Same as {!blit} but the second buffer is a string instead of a byte
       array. *)
 
 val unsafe_blit : t -> int -> t -> int -> int -> unit
   (** Same as {!blit} but without bound checking. *)
 
 val unsafe_blit_from_bytes : Bytes.t -> int -> t -> int -> int -> unit
-  (** Same as {!blit_string_bytes} but without bound checking. *)
+  (** Same as {!blit_string_bytes} but without bounds checking. *)
 
 val unsafe_blit_to_bytes : t -> int -> Bytes.t -> int -> int -> unit
-  (** Same as {!blit_bytes_string} but without bound checking. *)
+  (** Same as {!blit_bytes_string} but without bounds checking. *)
 
 val proxy : t -> int -> int -> t
   (** [proxy buffer offset length] creates a ``proxy''. The returned
@@ -108,12 +108,12 @@ val fill : t -> int -> int -> char -> unit
       bytes of [buffer] starting at offset [offset]. *)
 
 external unsafe_fill : t -> int -> int -> char -> unit = "lwt_unix_fill_bytes" "noalloc"
-  (** Same as {!fill} but without bound checking. *)
+  (** Same as {!fill} but without bounds checking. *)
 
 (** {2 IOs} *)
 
-(** The following functions does the same as the functions in
-    {!Lwt_unix} except that they use byte arrays instead of
+(** The following functions behave similarly to the ones in
+    {!Lwt_unix} except they use byte arrays instead of
     strings. *)
 
 val read : Lwt_unix.file_descr -> t -> int -> int -> int Lwt.t
@@ -150,7 +150,7 @@ external mapped : t -> bool = "lwt_unix_mapped" "noalloc"
       file. *)
 
 (** Type of advise that can be sent to the kernel by the program. See
-    the manual madvise(2) for a description of each advices. *)
+    the manual madvise(2) for a description of each. *)
 type advice =
   | MADV_NORMAL
   | MADV_RANDOM
@@ -159,9 +159,9 @@ type advice =
   | MADV_DONTNEED
 
 val madvise : t -> int -> int -> advice -> unit
-  (** [madvise buffer pos len advice] advise the kernel about how the
-      program is going to use the part of the memory mapped file
-      between [pos] and [pos + len].
+  (** [madvise buffer pos len advice] advises the kernel how the
+      program will use the memory mapped file between [pos] and
+      [pos + len].
 
       This call is not available on windows. *)
 
@@ -172,13 +172,13 @@ val mincore : t -> int -> bool array -> unit
   (** [mincore buffer offset states] tests whether the given pages are
       in the system memory (the RAM). The [offset] argument must be a
       multiple of {!page_size}. [states] is used to store the result;
-      each cases is [true] if the corresponding page in the RAM and
+      each cases is [true] if the corresponding page is in RAM and
       [false] otherwise.
 
       This call is not available on windows. *)
 
 val wait_mincore : t -> int -> unit Lwt.t
   (** [wait_mincore buffer offset] waits until the page containing the
-      byte at offset [offset] in the the RAM.
+      byte at offset [offset] is in RAM.
 
       This functions is not available on windows. *)

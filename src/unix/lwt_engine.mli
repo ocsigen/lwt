@@ -38,7 +38,7 @@ val fake_event : event
 
 val iter : bool -> unit
   (** [iter block] performs one iteration of the main loop. If [block]
-      is [true] the function must blocks until one event become
+      is [true] the function must block until one event becomes
       available, otherwise it should just check for available events
       and return immediately. *)
 
@@ -69,8 +69,8 @@ val fake_io : Unix.file_descr -> unit
 
 (** {2 Engines} *)
 
-(** An engine represent a set of functions used to register different
-    kind of callbacks for different kind of events. *)
+(** An engine represents a set of functions used to register different
+    kinds of callbacks for different kinds of events. *)
 
 (** Abstract class for engines. *)
 class virtual abstract : object
@@ -82,7 +82,7 @@ class virtual abstract : object
     (** [transfer engine] moves all events from the current engine to
         [engine]. Note that timers are reset in the destination
         engine, i.e. if a timer with a delay of 2 seconds was
-        registered 1 second ago it will occurs in 2 seconds in the
+        registered 1 second ago it will occur in 2 seconds in the
         destination engine. *)
 
   (** {2 Event loop methods} *)
@@ -102,12 +102,12 @@ class virtual abstract : object
 
       - the callback passed to register methods is of type [unit ->
       unit] and not [event -> unit]
-      - register methods returns a lazy value which unregister the
+      - register methods return a lazy value which unregisters the
       event when forced
   *)
 
   method virtual private cleanup : unit
-    (** Cleanup resources associated to the engine. *)
+    (** Cleanup resources associated with the engine. *)
 
   method virtual private register_readable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
   method virtual private register_writable : Unix.file_descr -> (unit -> unit) -> unit Lazy.t
