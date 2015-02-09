@@ -1329,7 +1329,7 @@ let shutdown ch shutdown_command =
 external stub_socketpair : socket_domain -> socket_type -> int -> Unix.file_descr * Unix.file_descr = "lwt_unix_socketpair_stub"
 
 let socketpair dom typ proto =
-  let do_socketpair = if Sys.win32 then Unix.socketpair else stub_socketpair in
+  let do_socketpair = if Sys.win32 then stub_socketpair else Unix.socketpair  in
   let (s1, s2) = do_socketpair dom typ proto in
   (mk_ch ~blocking:false s1, mk_ch ~blocking:false s2)
 
