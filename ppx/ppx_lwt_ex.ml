@@ -13,6 +13,11 @@ let with_loc f { txt ; loc } =
 let def_loc txt =
   { txt; loc = !default_loc }
 
+(** All generated name should be marked with ghost location.
+    It helps merlin, among other things.
+*)
+let ghost t = {t with Location.loc_ghost = true}
+
 (** {3 Internal names} *)
 
 let lwt_prefix = "__ppx_lwt_"
@@ -36,7 +41,7 @@ let gen_name i = lwt_prefix ^ string_of_int i
 let gen_bindings l =
   let aux i binding =
     { binding with
-      pvb_pat = (pvar @@ gen_name i) [@metaloc binding.pvb_expr.pexp_loc]
+      pvb_pat = (pvar @@ gen_name i) [@metaloc ghost binding.pvb_expr.pexp_loc]
     }
   in
   List.mapi aux l
@@ -48,17 +53,17 @@ let gen_binds e_loc l e =
     | [] -> e
     | binding :: t ->
       let name = (* __ppx_lwt_$i, at the position of $x$ *)
-        (evar @@ gen_name i) [@metaloc binding.pvb_expr.pexp_loc]
+        (evar @@ gen_name i) [@metaloc ghost binding.pvb_expr.pexp_loc]
       in
       let fun_ =
-        [%expr (fun [%p binding.pvb_pat] -> [%e aux (i+1) t])] [@metaloc binding.pvb_loc]
+        [%expr (fun [%p binding.pvb_pat] -> [%e aux (i+1) t])] [@metaloc ghost binding.pvb_loc]
       in
       let new_exp =
         if !debug then
           [%expr Lwt.backtrace_bind (fun exn -> try raise exn with exn -> exn)
-                          [%e name] [%e fun_]] [@metaloc e_loc]
+                          [%e name] [%e fun_]] [@metaloc ghost e_loc]
         else
-          [%expr Lwt.bind [%e name] [%e fun_]] [@metaloc e_loc]
+          [%expr Lwt.bind [%e name] [%e fun_]] [@metaloc ghost e_loc]
       in
       { new_exp with pexp_attributes = binding.pvb_attributes }
   in aux 0 l
@@ -91,7 +96,8 @@ let gen_top_binds vbs =
 (* We only expand the first level after a %lwt.
    After that, we call the mapper to expand sub-expressions. *)
 let lwt_expression mapper exp attributes =
-  default_loc := exp.pexp_loc;
+  let exp_loc = ghost exp.pexp_loc in
+  default_loc := exp_loc;
   let pexp_attributes = attributes @ exp.pexp_attributes in
   match exp.pexp_desc with
 
@@ -101,7 +107,7 @@ let lwt_expression mapper exp attributes =
        Exp.let_
          Nonrecursive
          (gen_bindings vbl)
-         (gen_binds exp.pexp_loc vbl e)
+         (gen_binds exp_loc vbl e)
      in mapper.expr mapper { new_exp with pexp_attributes }
 
   (** [match%lwt $e$ with $c$] ≡ [Lwt.bind $e$ (function $c$)]
@@ -177,8 +183,9 @@ let lwt_expression mapper exp attributes =
      in
      let p' = with_loc evar p_var in
 
-     let exp_bound = [%expr __ppx_lwt_bound] [@metaloc bound.pexp_loc] in
-     let pat_bound = [%pat? __ppx_lwt_bound] [@metaloc bound.pexp_loc] in
+     let pexp_loc = ghost bound.pexp_loc in
+     let exp_bound = [%expr __ppx_lwt_bound] [@metaloc pexp_loc] in
+     let pat_bound = [%pat? __ppx_lwt_bound] [@metaloc pexp_loc] in
 
      let new_exp =
        [%expr
@@ -220,7 +227,7 @@ let lwt_expression mapper exp attributes =
     let exp =
       match exp with
       | { pexp_loc; pexp_desc=Pexp_let (Recursive, _, _); pexp_attributes } ->
-        let attr = attribute_of_warning pexp_loc "\"let%lwt rec\" is not a recursive Lwt binding" in
+        let attr = attribute_of_warning (ghost pexp_loc) "\"let%lwt rec\" is not a recursive Lwt binding" in
         { exp with pexp_attributes = attr :: pexp_attributes }
       | _ -> exp
     in
@@ -341,14 +348,14 @@ let lwt_mapper args =
         lwt_log mapper fn args pexp_attributes pexp_loc
       | _ -> default_mapper.expr mapper expr);
     structure_item = (fun mapper stri ->
-      default_loc := stri.pstr_loc;
+      default_loc := ghost stri.pstr_loc;
       match stri with
       | [%stri let%lwt [%p? var] = [%e? exp]] ->
         [%stri let [%p var] = Lwt_main.run [%e mapper.expr mapper exp]]
       | { pstr_desc = Pstr_extension (({ txt = "lwt" }, PStr [
             { pstr_desc = Pstr_value (Recursive, vbs) }]) as content, attrs); pstr_loc } ->
         { stri with pstr_desc =
-            Pstr_extension (content, warn_let_lwt_rec pstr_loc attrs) }
+            Pstr_extension (content, warn_let_lwt_rec (ghost pstr_loc) attrs) }
       | { pstr_desc = Pstr_extension (({ txt = "lwt" }, PStr [
             { pstr_desc = Pstr_value (Nonrecursive, vbs) }]), _) } ->
         mapper.structure_item mapper (Str.value Nonrecursive (gen_top_binds vbs))
