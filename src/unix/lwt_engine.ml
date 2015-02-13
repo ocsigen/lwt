@@ -195,8 +195,13 @@ let rec restart_actions sleep_queue now =
     | Some{ stopped = true } ->
         restart_actions (Sleep_queue.remove_min sleep_queue) now
     | Some{ time = time; action = action } when time <= now ->
+        (* We have to remove the sleeper to the queue before performing
+           the action. The action can change the sleeper's time, and this
+           might break the priority queue invariant if the sleeper is
+           still in the queue. *)
+        let q = Sleep_queue.remove_min sleep_queue in
         action ();
-        restart_actions (Sleep_queue.remove_min sleep_queue) now
+        restart_actions q now
     | _ ->
         sleep_queue
 
