@@ -208,6 +208,9 @@ let append_rule pattern level =
   rules := !rules @ [(split pattern, level)];
   Section.recompute_levels ()
 
+let reset_rules () =
+  rules := []
+
 (* +-----------------------------------------------------------------+
    | Loggers                                                         |
    +-----------------------------------------------------------------+ *)
