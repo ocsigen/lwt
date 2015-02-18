@@ -209,7 +209,8 @@ let append_rule pattern level =
   Section.recompute_levels ()
 
 let reset_rules () =
-  rules := []
+  rules := [];
+  Section.recompute_levels ()
 
 (* +-----------------------------------------------------------------+
    | Loggers                                                         |
