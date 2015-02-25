@@ -23,7 +23,7 @@
 #include <lwt_config.h>
 
 #if defined(LWT_ON_WINDOWS)
-
+#define _WINSOCKAPI_
 #include <windows.h>
 
 #include <lwt_unix.h>
