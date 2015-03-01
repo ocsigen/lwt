@@ -2,7 +2,7 @@
 #
 # dist
 # ----
-# Copyright : (c) 2012, Jeremie Dimino <jeremie@dimino.org>
+# Copyright : (c) 2012, Jérémie Dimino <jeremie@dimino.org>
 # Licence   : BSD3
 #
 # Script to build the release

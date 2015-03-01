@@ -1,8 +1,8 @@
 (* Lightweight thread library for OCaml
  * http://www.ocsigen.org/lwt
  * Module Lwt_throttle
- * Copyright (C) 2008 Stéphane Glondu
- * Laboratoire PPS - CNRS Université Paris Diderot
+ * Copyright (C) 2008 StÃ©phane Glondu
+ * Laboratoire PPS - CNRS UniversitÃ© Paris Diderot
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as

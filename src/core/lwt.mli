@@ -1,9 +1,9 @@
 (* Lightweight thread library for OCaml
  * http://www.ocsigen.org/lwt
  * Interface Lwt
- * Copyright (C) 2005-2008 J�r�me Vouillon
- * Laboratoire PPS - CNRS Universit� Paris Diderot
- *               2009-2012 J�r�mie Dimino
+ * Copyright (C) 2005-2008 Jérôme Vouillon
+ * Laboratoire PPS - CNRS Université Paris Diderot
+ *               2009-2012 Jérémie Dimino
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as

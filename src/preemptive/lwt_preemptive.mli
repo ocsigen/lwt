@@ -1,9 +1,9 @@
 (* Ocsigen
  * http://www.ocsigen.org
  * Module lwt_preemptive.ml
- * Copyright (C) 2005 Nataliya Guts, Vincent Balat, Jérôme Vouillon
- * Laboratoire PPS - CNRS Université Paris Diderot
- *               2009 Jérémie Dimino
+ * Copyright (C) 2005 Nataliya Guts, Vincent Balat, JÃ©rÃ´me Vouillon
+ * Laboratoire PPS - CNRS UniversitÃ© Paris Diderot
+ *               2009 JÃ©rÃ©mie Dimino
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
