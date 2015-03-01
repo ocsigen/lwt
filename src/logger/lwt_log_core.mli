@@ -93,7 +93,7 @@ val load_rules : string -> unit
 val add_rule : string -> level -> unit
   (** [add_rule pattern level] adds a rule for sections logging
       levels. The rule is added before all other rules. It takes
-      effect immediately and affect all sections for which the level
+      effect immediately and affects all sections for which the level
       has not been set explicitly with {!Section.set_level}. [pattern]
       may contains [*]. For example:
 
@@ -110,6 +110,10 @@ val append_rule : string -> level -> unit
         Lwt_log_core.append_rule "*" Lwt_log_core.Info
       ]}
   *)
+
+val reset_rules : unit -> unit
+  (** removes all rules.
+   *)
 
 (** {2 Logging functions} *)
 
