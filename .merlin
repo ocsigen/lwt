@@ -1,8 +1,8 @@
-S src/*
+S src/**
 S ppx/
 S syntax/
 
-B _build/*
+B _build/**
 
 
 S tests/
