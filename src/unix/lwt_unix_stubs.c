@@ -23,6 +23,7 @@
 #include "lwt_config.h"
 
 #if defined(LWT_ON_WINDOWS)
+#  define _WINSOCKAPI_
 #  include <winsock2.h>
 #  include <windows.h>
 #endif
