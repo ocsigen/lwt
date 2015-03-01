@@ -1,8 +1,8 @@
 (* Lightweight thread library for OCaml
  * http://www.ocsigen.org/lwt
  * Module Lwt_mutex
- * Copyright (C) 2005-2008 Jérôme Vouillon
- * Laboratoire PPS - CNRS Université Paris Diderot
+ * Copyright (C) 2005-2008 JÃ©rÃ´me Vouillon
+ * Laboratoire PPS - CNRS UniversitÃ© Paris Diderot
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as

@@ -1,8 +1,8 @@
 (* Lwt
  * http://www.ocsigen.org
- * Copyright (C) 2008 Jérôme Vouillon
- *               2012 Jérémie Dimino
- * Laboratoire PPS - CNRS Université Paris Diderot
+ * Copyright (C) 2008 JÃ©rÃ´me Vouillon
+ *               2012 JÃ©rÃ©mie Dimino
+ * Laboratoire PPS - CNRS UniversitÃ© Paris Diderot
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
