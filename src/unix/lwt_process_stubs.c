@@ -24,8 +24,6 @@
 
 #if defined(LWT_ON_WINDOWS)
 
-#include <windows.h>
-
 #include <lwt_unix.h>
 
 #include <caml/memory.h>
