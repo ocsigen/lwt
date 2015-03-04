@@ -39,7 +39,7 @@ let suite = suite "lwt_io" [
          return false
        else
          Lwt_unix.yield () >>= fun () ->
-         return (!sent = ["foobar"]));
+         return (!sent = [Bytes.of_string "foobar"]));
 
   test "auto-flush in atomic"
     (fun () ->
@@ -57,6 +57,6 @@ let suite = suite "lwt_io" [
               return false
             else
               Lwt_unix.yield () >>= fun () ->
-              return (!sent = ["foobar"]))
+              return (!sent = [Bytes.of_string "foobar"]))
          oc);
 ]
