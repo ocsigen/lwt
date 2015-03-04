@@ -22,11 +22,6 @@
 
 #include "lwt_config.h"
 
-#if defined(LWT_ON_WINDOWS)
-#  include <winsock2.h>
-#  include <windows.h>
-#endif
-
 #define _GNU_SOURCE
 #define _POSIX_PTHREAD_SEMANTICS
 
