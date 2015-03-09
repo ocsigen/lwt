@@ -42,7 +42,7 @@ val from : (unit -> 'a option Lwt.t) -> 'a t
 val from_direct : (unit -> 'a option) -> 'a t
   (** [from_direct f] does the same as {!from} but with a function
       that does not return a thread. It is better than wrapping [f]
-      into a function which return a thread. *)
+      into a function which returns a thread. *)
 
 exception Closed
   (** Exception raised by the push function of a push-stream when
@@ -54,8 +54,8 @@ val create : unit -> 'a t * ('a option -> unit)
 
 val create_with_reference : unit -> 'a t * ('a option -> unit) * ('b -> unit)
   (** [create_with_reference ()] returns a new stream and a push
-      function. The last function allows to set a reference to an
-      external source. This prevent the external source from being
+      function. The last function allows a reference to be set to an
+      external source. This prevents the external source from being
       garbage collected.
 
       For example, to convert a reactive event to a stream:
