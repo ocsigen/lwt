@@ -63,7 +63,7 @@ The Lwt toplevel was deprecated and removed. Use utop instead:
  * Pierre Clairambault
  * Stéphane Glondu
  * Jérémie Dimino
- * Warren Harris (Metaweb Technologies, Inc.)
+ * Warren Harris
  * Pierre Chambart
  * Mauricio Fernandez
  * Gregoire Henri
@@ -71,6 +71,7 @@ The Lwt toplevel was deprecated and removed. Use utop instead:
  * Peter Zotov
  * Hugo Heuzard
  * Vincent Bernardoff
+ * Romain Slootmaekers
 
 See each source file for copyright information, and COPYING for license.
 
