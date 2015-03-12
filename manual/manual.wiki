@@ -302,7 +302,7 @@ val t : '_a Lwt.t = <abstr>
 - : int Lwt.state = Lwt.Return 42
 >>
 
-  The last one, {{{pick}}}, is the same as {{{choice}}} except that it cancels
+  The last one, {{{pick}}}, is the same as {{{choose}}} except that it cancels
   all other threads when one terminates.
 
 ==== Threads local storage ====
