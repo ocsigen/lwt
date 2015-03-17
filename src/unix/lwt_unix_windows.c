@@ -506,6 +506,16 @@ CAMLprim value lwt_unix_system_job(value cmdline)
   }
 }
 
+CAMLprim value lwt_have_reentrant_hostent(value u)
+{
+  (void) u;
+  return Val_int(0);
+}
+CAMLprim value lwt_have_netdb_reentrant(value u)
+{
+  (void) u;
+  return Val_int(0);
+}
 /* +-----------------------------------------------------------------+
    | Unavailable primitives                                          |
    +-----------------------------------------------------------------+ */

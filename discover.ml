@@ -217,15 +217,19 @@ CAMLprim value lwt_test(value Unit)
 "
 
 let netdb_reentrant_code = "
+#define _POSIX_PTHREAD_SEMANTICS
 #include <caml/mlvalues.h>
 #include <netdb.h>
+#include <stddef.h>
 
 CAMLprim value lwt_test(value Unit)
 {
-  getprotobyname_r(0, 0, 0, 0, 0);
-  getprotobynumber_r(0, 0, 0, 0, 0);
-  getservbyname_r(0, 0, 0, 0, 0, 0);
-  getservbyport_r(0, 0, 0, 0, 0, 0);
+  struct hostent *he;
+  struct servent *se;
+  he = gethostbyname_r((const char *)NULL, (struct hostent *)NULL,(char *)NULL, (int)0, (struct hostent **)NULL, (int *)NULL);
+  he = gethostbyaddr_r((const char *)NULL, (int)0, (int)0,(struct hostent *)NULL, (char *)NULL, (int)0, (struct hostent **)NULL,(int *)NULL);
+  se = getservbyname_r((const char *)NULL, (const char *)NULL,(struct servent *)NULL, (char *)NULL, (int)0, (struct servent **)NULL);
+  se = getservbyport_r((int)0, (const char *)NULL,(struct servent *)NULL, (char *)NULL, (int)0, (struct servent **)NULL);
   return Val_unit;
 }
 "

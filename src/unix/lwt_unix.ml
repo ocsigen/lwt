@@ -1574,53 +1574,90 @@ let gethostname () =
   else
     run_job (gethostname_job ())
 
+external have_reentrant_hostent: unit -> bool = "lwt_have_reentrant_hostent" "noalloc"
+let have_reentrant_hostent = have_reentrant_hostent ()
+let hostent_mutex = Lwt_mutex.create ()
+
 external gethostbyname_job : string -> Unix.host_entry job = "lwt_unix_gethostbyname_job"
 
 let gethostbyname name =
   if Sys.win32 then
     Lwt.return (Unix.gethostbyname name)
-  else
+  else if have_reentrant_hostent then
     run_job (gethostbyname_job name)
+  else
+    Lwt_mutex.with_lock hostent_mutex ( fun () ->
+        run_job (gethostbyname_job name) )
 
 external gethostbyaddr_job : Unix.inet_addr -> Unix.host_entry job = "lwt_unix_gethostbyaddr_job"
 
 let gethostbyaddr addr =
   if Sys.win32 then
     Lwt.return (Unix.gethostbyaddr addr)
-  else
+  else if have_reentrant_hostent then
     run_job (gethostbyaddr_job addr)
+  else
+    Lwt_mutex.with_lock hostent_mutex ( fun () ->
+        run_job (gethostbyaddr_job addr) )
+
+external have_netdb_reentrant : unit -> bool = "lwt_have_netdb_reentrant" "noalloc"
+let have_netdb_reentrant = have_netdb_reentrant ()
+
+let protoent_mutex =
+  if Sys.win32 || have_netdb_reentrant then
+    hostent_mutex
+  else
+    Lwt_mutex.create ()
 
 external getprotobyname_job : string -> Unix.protocol_entry job = "lwt_unix_getprotobyname_job"
 
 let getprotobyname name =
   if Sys.win32 then
     Lwt.return (Unix.getprotobyname name)
-  else
+  else if have_netdb_reentrant then
     run_job (getprotobyname_job name)
+  else
+    Lwt_mutex.with_lock protoent_mutex ( fun () ->
+        run_job (getprotobyname_job name))
 
 external getprotobynumber_job : int -> Unix.protocol_entry job = "lwt_unix_getprotobynumber_job"
 
 let getprotobynumber number =
   if Sys.win32 then
     Lwt.return (Unix.getprotobynumber number)
-  else
+  else if have_netdb_reentrant then
     run_job (getprotobynumber_job number)
+  else
+    Lwt_mutex.with_lock protoent_mutex ( fun () ->
+        run_job (getprotobynumber_job number))
+
+let servent_mutex =
+  if Sys.win32 || have_netdb_reentrant then
+    hostent_mutex
+  else
+    Lwt_mutex.create ()
 
 external getservbyname_job : string -> string -> Unix.service_entry job = "lwt_unix_getservbyname_job"
 
 let getservbyname name x =
   if Sys.win32 then
     Lwt.return (Unix.getservbyname name x)
-  else
+  else if have_netdb_reentrant then
     run_job (getservbyname_job name x)
+  else
+    Lwt_mutex.with_lock protoent_mutex ( fun () ->
+        run_job (getservbyname_job name x) )
 
 external getservbyport_job : int -> string -> Unix.service_entry job = "lwt_unix_getservbyport_job"
 
 let getservbyport port x =
   if Sys.win32 then
     Lwt.return (Unix.getservbyport port x)
-  else
+  else if have_netdb_reentrant then
     run_job (getservbyport_job port x)
+  else
+    Lwt_mutex.with_lock protoent_mutex ( fun () ->
+        run_job (getservbyport_job port x) )
 
 type addr_info =
     Unix.addr_info =
