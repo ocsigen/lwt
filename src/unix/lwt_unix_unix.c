@@ -1664,6 +1664,119 @@ LWT_NOT_AVAILABLE1(unix_getgrgid_job)
 
 #endif
 
+/* Helper functions for not re-entrant functions */
+#if !defined(HAS_GETHOSTBYADDR_R) || (HAS_GETHOSTBYADDR_R != 7 && HAS_GETHOSTBYADDR_R != 8)
+#define NON_R_GETHOSTBYADDR 1
+#endif
+
+#if !defined(HAS_GETHOSTBYNAME_R) || (HAS_GETHOSTBYNAME_R != 5 && HAS_GETHOSTBYNAME_R != 6)
+#define NON_R_GETHOSTBYNAME 1
+#endif
+
+CAMLprim value lwt_have_reentrant_hostent(value u)
+{
+  (void)u;
+#if defined(NON_R_GETHOSTBYNAME) || defined(NON_R_GETHOSTBYNAME)
+  return Val_int(0);
+#else
+  return Val_int(1);
+#endif
+}
+
+CAMLprim value lwt_have_netdb_reentrant(value u){
+  (void)u;
+#ifdef HAVE_NETDB_REENTRANT
+  return Val_int(1);
+#else
+  return Val_int(0);
+#endif
+}
+
+#if defined(NON_R_GETHOSTBYADDR) || defined(NON_R_GETHOSTBYNAME)
+static char **
+c_copy_addr_array(char ** src, int addr_len)
+{
+  if ( src == NULL ){
+    return NULL;
+  }
+  char ** p = src;
+  size_t i = 0 ;
+  while ( *p ){
+    i++;
+    p++;
+  }
+  const size_t ar_len = i;
+  p = malloc((ar_len+1) * sizeof(char*));
+  if ( p == NULL ){
+    return NULL;
+  }
+  for ( i = 0 ; i < ar_len ; ++i ){
+    p[i] = malloc(addr_len);
+    if ( p[i] == NULL ){
+      size_t j;
+      for ( j = 0 ; j < i ; j++ ){
+        free(p[j]);
+      }
+      free(p);
+      return NULL;
+    }
+    memcpy(p[i],src[i],addr_len);
+  }
+  p[ar_len] = NULL;
+  return p;
+}
+#endif
+#if !defined(HAVE_NETDB_REENTRANT) || defined(NON_R_GETHOSTBYADDR) || defined(NON_R_GETHOSTBYNAME)
+static char **
+c_copy_string_array(char **src)
+{
+  char ** p = src;
+  size_t i = 0 ;
+  size_t len ;
+  if ( src == NULL ){
+    return NULL;
+  }
+  while ( *p ){
+    i++;
+    p++;
+  }
+  len = i;
+  p = malloc((len+1) * sizeof(char *));
+  if ( p == NULL ){
+    return NULL;
+  }
+  for ( i = 0 ; i < len ; ++i ){
+    p[i] = strdup(src[i]);
+    if ( p[i] == NULL ){
+      size_t j;
+      for ( j = 0 ; j < i ; j++ ){
+        free(p[j]);
+      }
+      free(p);
+      return NULL;
+    }
+  }
+  p[len] = NULL;
+  return p;
+}
+
+static void c_free_string_array(char ** src)
+{
+  if ( src ){
+    char ** p = src;
+    while (*p){
+      free(*p);
+      ++p;
+    }
+    free(src);
+  }
+}
+
+static inline char * s_strdup (const char *s){
+  return (strdup( s == NULL ? "" : s ));
+}
+#endif
+
 /* +-----------------------------------------------------------------+
    | JOB: gethostname                                                |
    +-----------------------------------------------------------------+ */
@@ -1727,7 +1840,9 @@ struct job_gethostbyname {
   struct lwt_unix_job job;
   struct hostent entry;
   struct hostent *ptr;
+#ifndef NON_R_GETHOSTBYNAME
   char buffer[NETDB_BUFFER_SIZE];
+#endif
   char *name;
   char data[];
 };
@@ -1783,6 +1898,63 @@ static value alloc_host_entry(struct hostent *entry)
   return res;
 }
 
+#if defined(NON_R_GETHOSTBYADDR) || defined(NON_R_GETHOSTBYNAME)
+static struct hostent *
+hostent_dup(struct hostent *orig)
+{
+  if ( orig == NULL ){
+    return NULL;
+  }
+  struct hostent *h = malloc(sizeof *h);
+  if ( h == NULL ){
+    return NULL;
+  }
+  h->h_name = s_strdup(orig->h_name);
+  if ( !h->h_name ){
+    goto nomem1;
+  }
+  if ( !orig->h_aliases ){
+    h->h_aliases = NULL;
+  }
+  else {
+    h->h_aliases = c_copy_string_array(orig->h_aliases);
+    if ( !h->h_aliases){
+      goto nomem2;
+    }
+  }
+  if ( !orig->h_addr_list ){
+    h->h_addr_list = NULL;
+  }
+  else {
+    h->h_addr_list = c_copy_addr_array(orig->h_addr_list,orig->h_length);
+    if ( !h->h_addr_list ){
+      goto nomem3;
+    }
+  }
+  h->h_addrtype = orig->h_addrtype;
+  h->h_length = orig->h_length;
+  return h;
+nomem3:
+  c_free_string_array(h->h_aliases);
+nomem2:
+  free(h->h_name);
+nomem1:
+  free(h);
+  return NULL;
+}
+
+static void
+hostent_free(struct hostent *h)
+{
+  if ( h ){
+    c_free_string_array(h->h_addr_list);
+    c_free_string_array(h->h_aliases);
+    free(h->h_name);
+    free(h);
+  }
+}
+#endif
+
 static void worker_gethostbyname(struct job_gethostbyname *job)
 {
 #if HAS_GETHOSTBYNAME_R == 5
@@ -1795,8 +1967,10 @@ static void worker_gethostbyname(struct job_gethostbyname *job)
 #else
   job->ptr = gethostbyname(job->name);
   if (job->ptr) {
-    memcpy((void*)&job->entry, (void*)job->ptr, sizeof(struct hostent));
-    job->ptr = &job->entry;
+    job->ptr= hostent_dup(job->ptr);
+    if ( job->ptr ){
+      job->entry = *job->ptr;
+    }
   }
 #endif
 }
@@ -1808,6 +1982,9 @@ static value result_gethostbyname(struct job_gethostbyname *job)
     caml_raise_not_found();
   } else {
     value entry = alloc_host_entry(&job->entry);
+#ifdef NON_R_GETHOSTBYNAME
+    hostent_free(job->ptr);
+#endif
     lwt_unix_free_job(&job->job);
     return entry;
   }
@@ -1828,7 +2005,9 @@ struct job_gethostbyaddr {
   struct in_addr addr;
   struct hostent entry;
   struct hostent *ptr;
+#ifndef NON_R_GETHOSTBYADDR
   char buffer[NETDB_BUFFER_SIZE];
+#endif
 };
 
 static void worker_gethostbyaddr(struct job_gethostbyaddr *job)
@@ -1843,8 +2022,10 @@ static void worker_gethostbyaddr(struct job_gethostbyaddr *job)
 #else
   job->ptr = gethostbyaddr(&job->addr, 4, AF_INET);
   if (job->ptr) {
-    memcpy((void*)&job->entry, (void*)job->ptr, sizeof(struct hostent));
-    job->ptr = &job->entry;
+    job->ptr = hostent_dup(job->ptr);
+    if ( job->ptr ){
+      job->entry = *job->ptr;
+    }
   }
 #endif
 }
@@ -1856,6 +2037,9 @@ static value result_gethostbyaddr(struct job_gethostbyaddr *job)
     caml_raise_not_found();
   } else {
     value entry = alloc_host_entry(&job->entry);
+#ifdef NON_R_GETHOSTBYADDR
+    hostent_free(job->ptr);
+#endif
     lwt_unix_free_job(&job->job);
     return entry;
   }
@@ -1962,6 +2146,86 @@ static value alloc_servent(struct servent *entry)
 
 #else /* defined(HAVE_NETDB_REENTRANT) */
 
+static struct servent * servent_dup(const struct servent * serv)
+{
+  struct servent * s;
+  if (!serv){
+    return NULL;
+  }
+  s = malloc(sizeof *s);
+  if ( s == NULL ){
+    goto nomem1;
+  }
+  s->s_name = s_strdup(serv->s_name);
+  if ( s->s_name == NULL ){
+    goto nomem2;
+  }
+  s->s_proto = s_strdup(serv->s_proto);
+  if ( s->s_proto == NULL ){
+    goto nomem3;
+  }
+  s->s_aliases = c_copy_string_array(serv->s_aliases);
+  if ( s->s_aliases == NULL && serv->s_aliases != NULL ){
+    goto nomem4;
+  }
+  s->s_port = serv->s_port;
+  return s;
+nomem4:
+  free(s->s_proto);
+nomem3:
+  free(s->s_name);
+nomem2:
+  free(s);
+nomem1:
+  return NULL;
+}
+
+static void servent_free(struct servent * s)
+{
+  if ( ! s ){
+    return;
+  }
+  free(s->s_proto);
+  free(s->s_name);
+  c_free_string_array(s->s_aliases);
+  free(s);
+}
+
+static struct protoent * protoent_dup(const struct protoent * proto)
+{
+  if (!proto){
+    return NULL;
+  }
+  struct protoent * p = malloc(sizeof *p);
+  if ( p == NULL ){
+    return NULL;
+  }
+  p->p_name = s_strdup(proto->p_name);
+  if ( p->p_name == NULL ){
+    goto nomem1;
+  }
+  p->p_aliases = c_copy_string_array( proto->p_aliases );
+  if ( p->p_aliases == NULL && proto->p_aliases != NULL ){
+    goto nomem2;
+  }
+  p->p_proto = proto->p_proto;
+  return p;
+nomem2:
+  free(p->p_name);
+nomem1:
+  free(p);
+  return NULL;
+}
+
+static void protoent_free(struct protoent * p)
+{
+  if ( p ){
+    free(p->p_name);
+    c_free_string_array(p->p_aliases);
+    free(p);
+  }
+}
+
 #define JOB_GET_ENTRY2(INIT, FUNC, TYPE, ARGS_VAL, ARGS_DECL, ARGS_CALL) \
   struct job_##FUNC {                                                   \
     struct lwt_unix_job job;                                            \
@@ -1972,6 +2236,11 @@ static value alloc_servent(struct servent *entry)
   static void worker_##FUNC(struct job_##FUNC *job)                     \
   {                                                                     \
     job->entry = FUNC(ARGS_CALL);                                       \
+    if ( job->entry ){                                                  \
+      job->entry = TYPE ## _dup ( job->entry );                         \
+      if (! job->entry ){                                               \
+      }                                                                 \
+    }                                                                   \
   }                                                                     \
                                                                         \
   static value result_##FUNC(struct job_##FUNC *job)                    \
@@ -1981,6 +2250,7 @@ static value alloc_servent(struct servent *entry)
       caml_raise_not_found();                                           \
     } else {                                                            \
       value res = alloc_##TYPE(job->entry);                             \
+      TYPE ## _free ( job->entry );                                     \
       lwt_unix_free_job(&job->job);                                     \
       return res;                                                       \
     }                                                                   \
@@ -2018,7 +2288,7 @@ JOB_GET_ENTRY2(LWT_UNIX_INIT_JOB_STRING2(job, getservbyname, 0, name, proto),
                char data[],
                ARGS(job->name, job->proto))
 JOB_GET_ENTRY2(LWT_UNIX_INIT_JOB_STRING(job, getservbyport, 0, proto);
-               job->port = Int_val(port),
+               job->port = htons(Int_val(port)),
                getservbyport,
                servent,
                ARGS(value port, value proto),
