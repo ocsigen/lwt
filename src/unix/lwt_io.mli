@@ -103,21 +103,29 @@ val null : output_channel
 
 (** {2 Channels creation/manipulation} *)
 
-val pipe : ?buffer_size : int -> unit -> input_channel * output_channel
-  (** [pipe ?buffer_size ()] creates a pipe using {!Lwt_unix.pipe} and
+val pipe : ?in_buffer : Lwt_bytes.t -> ?out_buffer : Lwt_bytes.t -> unit -> input_channel * output_channel
+  (** [pipe ?in_buffer ?out_buffer ()] creates a pipe using {!Lwt_unix.pipe} and
       makes two channels from the two returned file descriptors *)
 
 val make :
-  ?buffer_size : int ->
+  ?buffer : Lwt_bytes.t ->
   ?close : (unit -> unit Lwt.t) ->
   ?seek : (int64 -> Unix.seek_command -> int64 Lwt.t) ->
   mode : 'mode mode ->
   (Lwt_bytes.t -> int -> int -> int Lwt.t) -> 'mode channel
-  (** [make ?buffer_size ?close ~mode perform_io] is the
+  (** [make ?buffer ?close ~mode perform_io] is the
       main function for creating new channels.
 
-      @param buffer_size size of the internal buffer. It must be
-      between 16 and [Sys.max_string_length]
+      @param buffer user-supplied buffer. When this argument is
+      present, its value will be used as the buffer for created
+      channel. Size of buffer must conform to limitations described
+      in {!set_default_buffer_size}.
+      When this argument is not present, a new internal buffer of default
+      size will be allocated for this channel.
+      Warning: do not use the same buffer for simultaneous work with
+      more than one channel.
+      There are other functions in this module that take [buffer]
+      argument, their semantics agrees with the described above.
 
       @param close close function of the channel. It defaults to
       [Lwt.return]
@@ -134,16 +142,16 @@ val of_bytes : mode : 'mode mode -> Lwt_bytes.t -> 'mode channel
   (** Create a channel from a byte array. Reading/writing is done
       directly on the provided array. *)
 
-val of_fd : ?buffer_size : int -> ?close : (unit -> unit Lwt.t) -> mode : 'mode mode -> Lwt_unix.file_descr -> 'mode channel
-  (** [of_fd ?buffer_size ?close ~mode fd] creates a channel from a
+val of_fd : ?buffer : Lwt_bytes.t -> ?close : (unit -> unit Lwt.t) -> mode : 'mode mode -> Lwt_unix.file_descr -> 'mode channel
+  (** [of_fd ?buffer ?close ~mode fd] creates a channel from a
       file descriptor.
 
       @param close defaults to closing the file descriptor. *)
 
-val of_unix_fd : ?buffer_size : int -> ?close : (unit -> unit Lwt.t) -> mode : 'mode mode -> Unix.file_descr -> 'mode channel
-  (** [of_unix_fd ?buffer_size ?close ~mode fd] is a short-hand for:
+val of_unix_fd : ?buffer : Lwt_bytes.t -> ?close : (unit -> unit Lwt.t) -> mode : 'mode mode -> Unix.file_descr -> 'mode channel
+  (** [of_unix_fd ?buffer ?close ~mode fd] is a short-hand for:
 
-      [of_fd ?buffer_size ?close (Lwt_unix.of_unix_file_descr fd)] *)
+      [of_fd ?buffer ?close (Lwt_unix.of_unix_file_descr fd)] *)
 
 val close : 'a channel -> unit Lwt.t
   (** [close ch] closes the given channel. If [ch] is an output
@@ -352,12 +360,12 @@ type file_name = string
     (** Type of file names *)
 
 val open_file :
-  ?buffer_size : int ->
+  ?buffer : Lwt_bytes.t ->
   ?flags : Unix.open_flag list ->
   ?perm : Unix.file_perm ->
   mode : 'a mode ->
   file_name -> 'a channel Lwt.t
-  (** [open_file ?buffer_size ?flags ?perm ~mode filename] opens the
+  (** [open_file ?buffer ?flags ?perm ~mode filename] opens the
       file with name [filename] and returns a channel for
       reading/writing it.
 
@@ -365,19 +373,20 @@ val open_file :
   *)
 
 val with_file :
-  ?buffer_size : int ->
+  ?buffer : Lwt_bytes.t ->
   ?flags : Unix.open_flag list ->
   ?perm : Unix.file_perm ->
   mode : 'a mode ->
   file_name -> ('a channel -> 'b Lwt.t) -> 'b Lwt.t
-  (** [with_file ?buffer_size ?flags ?perm ~mode filename f] opens a
+  (** [with_file ?buffer ?flags ?perm ~mode filename f] opens a
       file and passes the channel to [f]. It is ensured that the
       channel is closed when [f ch] terminates (even if it fails). *)
 
 val open_connection :
   ?fd : Lwt_unix.file_descr ->
-  ?buffer_size : int -> Unix.sockaddr -> (input_channel * output_channel) Lwt.t
-(** [open_connection ?fd ?buffer_size addr] opens a connection to the
+  ?in_buffer : Lwt_bytes.t -> ?out_buffer : Lwt_bytes.t ->
+  Unix.sockaddr -> (input_channel * output_channel) Lwt.t
+(** [open_connection ?fd ?in_buffer ?out_buffer addr] opens a connection to the
     given address and returns two channels for using it. If [fd] is
     not specified, a fresh one will be used.
 
@@ -389,9 +398,9 @@ val open_connection :
 
 val with_connection :
   ?fd : Lwt_unix.file_descr ->
-  ?buffer_size : int ->
+  ?in_buffer : Lwt_bytes.t -> ?out_buffer : Lwt_bytes.t ->
   Unix.sockaddr -> (input_channel * output_channel -> 'a Lwt.t) -> 'a Lwt.t
-(** [with_connection ?fd ?buffer_size addr f] opens a connection to
+(** [with_connection ?fd ?in_buffer ?out_buffer addr f] opens a connection to
       the given address and passes the channels to [f] *)
 
 type server
@@ -516,7 +525,7 @@ val direct_access : 'a channel -> (direct_access -> 'b Lwt.t) -> 'b Lwt.t
 
 val default_buffer_size : unit -> int
   (** Return the default size for buffers. Channels that are created
-      without a specific size use this one. *)
+      without a specific buffer use new buffer of this size. *)
 
 val set_default_buffer_size : int -> unit
   (** Change the default buffer size.

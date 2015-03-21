@@ -35,6 +35,9 @@ let check_buffer_size fun_name buffer_size =
   else
     ()
 
+let check_buffer fun_name buffer =
+  check_buffer_size fun_name (Lwt_bytes.length buffer)
+
 let default_buffer_size = ref 4096
 
 (* +-----------------------------------------------------------------+
@@ -470,21 +473,22 @@ let no_seek pos cmd =
 
 let make :
   type m.
-    ?buffer_size : int ->
+    ?buffer : Lwt_bytes.t ->
     ?close : (unit -> unit Lwt.t) ->
     ?seek : (int64 -> Unix.seek_command -> int64 Lwt.t) ->
     mode : m mode ->
     (Lwt_bytes.t -> int -> int -> int Lwt.t) ->
-    m channel = fun ?buffer_size ?(close=Lwt.return) ?(seek=no_seek) ~mode perform_io ->
-  let size =
-    match buffer_size with
+    m channel = fun ?buffer ?(close=Lwt.return) ?(seek=no_seek) ~mode perform_io ->
+  let (buffer, size) =
+    match buffer with
+      | Some buffer ->
+          check_buffer "Lwt_io.make" buffer;
+          (buffer, Lwt_bytes.length buffer)
       | None ->
-          !default_buffer_size
-      | Some size ->
-          check_buffer_size "Lwt_io.make" size;
-          size
+          let size = !default_buffer_size in
+          (Lwt_bytes.create size, size)
   in
-  let buffer = Lwt_bytes.create size and abort_waiter, abort_wakener = Lwt.wait () in
+  let abort_waiter, abort_wakener = Lwt.wait () in
   let rec ch = {
     buffer = buffer;
     length = size;
@@ -535,13 +539,13 @@ let of_bytes ~mode bytes =
   } in
   wrapper
 
-let of_fd : type m. ?buffer_size : int -> ?close : (unit -> unit Lwt.t) -> mode : m mode -> Lwt_unix.file_descr -> m channel = fun ?buffer_size ?close ~mode fd ->
+let of_fd : type m. ?buffer : Lwt_bytes.t -> ?close : (unit -> unit Lwt.t) -> mode : m mode -> Lwt_unix.file_descr -> m channel = fun ?buffer ?close ~mode fd ->
   let perform_io = match mode with
     | Input -> Lwt_bytes.read fd
     | Output -> Lwt_bytes.write fd
   in
   make
-    ?buffer_size
+    ?buffer
     ~close:(match close with
               | Some f -> f
               | None -> (fun () -> Lwt_unix.close fd))
@@ -549,8 +553,8 @@ let of_fd : type m. ?buffer_size : int -> ?close : (unit -> unit Lwt.t) -> mode 
     ~mode
     perform_io
 
-let of_unix_fd : type m. ?buffer_size : int -> ?close : (unit -> unit Lwt.t) -> mode : m mode -> Unix.file_descr -> m channel = fun ?buffer_size ?close ~mode fd ->
-  of_fd ?buffer_size ?close ~mode (Lwt_unix.of_unix_file_descr fd)
+let of_unix_fd : type m. ?buffer : Lwt_bytes.t -> ?close : (unit -> unit Lwt.t) -> mode : m mode -> Unix.file_descr -> m channel = fun ?buffer ?close ~mode fd ->
+  of_fd ?buffer ?close ~mode (Lwt_unix.of_unix_file_descr fd)
 
 let buffered : type m. m channel -> int = fun ch ->
   match ch.channel.mode with
@@ -1278,13 +1282,13 @@ let write_lines oc lines = Lwt_stream.iter_s (fun line -> write_line oc line) li
 let zero =
   make
     ~mode:input
-    ~buffer_size:min_buffer_size
+    ~buffer:(Lwt_bytes.create min_buffer_size)
     (fun str ofs len -> Lwt_bytes.fill str ofs len '\x00'; Lwt.return len)
 
 let null =
   make
     ~mode:output
-    ~buffer_size:min_buffer_size
+    ~buffer:(Lwt_bytes.create min_buffer_size)
     (fun str ofs len -> Lwt.return len)
 
 (* Do not close standard ios on close, otherwise uncaught exceptions
@@ -1308,13 +1312,14 @@ let eprintl txt = write_line stderr txt
 let eprintf fmt = Printf.ksprintf eprint fmt
 let eprintlf fmt = Printf.ksprintf eprintl fmt
 
-let pipe ?buffer_size _ =
+let pipe ?in_buffer ?out_buffer _ =
   let fd_r, fd_w = Lwt_unix.pipe () in
-  (of_fd ?buffer_size ~mode:input fd_r, of_fd ?buffer_size ~mode:output fd_w)
+  (of_fd ?buffer:in_buffer ~mode:input fd_r,
+   of_fd ?buffer:out_buffer ~mode:output fd_w)
 
 type file_name = string
 
-let open_file : type m. ?buffer_size : int -> ?flags : Unix.open_flag list -> ?perm : Unix.file_perm -> mode : m mode -> file_name -> m channel Lwt.t = fun ?buffer_size ?flags ?perm ~mode filename ->
+let open_file : type m. ?buffer : Lwt_bytes.t -> ?flags : Unix.open_flag list -> ?perm : Unix.file_perm -> mode : m mode -> file_name -> m channel Lwt.t = fun ?buffer ?flags ?perm ~mode filename ->
   let flags = match flags, mode with
     | Some l, _ ->
         l
@@ -1331,17 +1336,17 @@ let open_file : type m. ?buffer_size : int -> ?flags : Unix.open_flag list -> ?p
         0o666
   in
   Lwt_unix.openfile filename flags perm >>= fun fd ->
-  Lwt.return (of_fd ?buffer_size ~mode fd)
+  Lwt.return (of_fd ?buffer ~mode fd)
 
-let with_file ?buffer_size ?flags ?perm ~mode filename f =
-  open_file ?buffer_size ?flags ?perm ~mode filename >>= fun ic ->
+let with_file ?buffer ?flags ?perm ~mode filename f =
+  open_file ?buffer ?flags ?perm ~mode filename >>= fun ic ->
   Lwt.finalize
     (fun () -> f ic)
     (fun () -> close ic)
 
 let file_length filename = with_file ~mode:input filename length
 
-let open_connection ?fd ?buffer_size sockaddr =
+let open_connection ?fd ?in_buffer ?out_buffer sockaddr =
   let fd = match fd with
     | None -> Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0
     | Some fd -> fd
@@ -1365,18 +1370,18 @@ let open_connection ?fd ?buffer_size sockaddr =
     (fun () ->
       Lwt_unix.connect fd sockaddr >>= fun () ->
       (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
-      Lwt.return (make ?buffer_size
+      Lwt.return (make ?buffer:in_buffer
                 ~close:(fun _ -> Lazy.force close)
                 ~mode:input (Lwt_bytes.read fd),
-              make ?buffer_size
+              make ?buffer:out_buffer
                 ~close:(fun _ -> Lazy.force close)
                 ~mode:output (Lwt_bytes.write fd)))
     (fun exn ->
       Lwt_unix.close fd >>= fun () ->
       Lwt.fail exn)
 
-let with_connection ?fd ?buffer_size sockaddr f =
-  open_connection ?fd ?buffer_size sockaddr >>= fun (ic, oc) ->
+let with_connection ?fd ?in_buffer ?out_buffer sockaddr f =
+  open_connection ?fd ?in_buffer ?out_buffer sockaddr >>= fun (ic, oc) ->
   Lwt.finalize
     (fun () -> f (ic, oc))
     (fun () -> close ic <&> close oc)
@@ -1387,7 +1392,7 @@ type server = {
 
 let shutdown_server server = Lazy.force server.shutdown
 
-let establish_server ?fd ?buffer_size ?(backlog=5) sockaddr f =
+let establish_server ?fd ?(buffer_size = !default_buffer_size) ?(backlog=5) sockaddr f =
   let sock = match fd with
     | None -> Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0
     | Some fd -> fd
@@ -1405,8 +1410,10 @@ let establish_server ?fd ?buffer_size ?(backlog=5) sockaddr f =
             Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
             Lwt_unix.close fd
           end in
-          f (of_fd ?buffer_size ~mode:input ~close:(fun () -> Lazy.force close) fd,
-             of_fd ?buffer_size ~mode:output ~close:(fun () -> Lazy.force close) fd);
+          f (of_fd ~buffer:(Lwt_bytes.create buffer_size) ~mode:input
+               ~close:(fun () -> Lazy.force close) fd,
+             of_fd ~buffer:(Lwt_bytes.create buffer_size) ~mode:output
+               ~close:(fun () -> Lazy.force close) fd);
           loop ()
       | `Shutdown ->
           Lwt_unix.close sock >>= fun () ->
