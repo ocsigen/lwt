@@ -234,6 +234,31 @@ CAMLprim value lwt_test(value Unit)
 }
 "
 
+let hostent_reentrant_code = "
+#define _GNU_SOURCE
+#include <stddef.h>
+#include <caml/mlvalues.h>
+#include <caml/config.h>
+/* Helper functions for not re-entrant functions */
+#if !defined(HAS_GETHOSTBYADDR_R) || (HAS_GETHOSTBYADDR_R != 7 && HAS_GETHOSTBYADDR_R != 8)
+#define NON_R_GETHOSTBYADDR 1
+#endif
+
+#if !defined(HAS_GETHOSTBYNAME_R) || (HAS_GETHOSTBYNAME_R != 5 && HAS_GETHOSTBYNAME_R != 6)
+#define NON_R_GETHOSTBYNAME 1
+#endif
+
+CAMLprim value lwt_test(value u)
+{
+  (void)u;
+#if defined(NON_R_GETHOSTBYNAME) || defined(NON_R_GETHOSTBYNAME)
+#error \"not available\"
+#else
+  return Val_unit;
+#endif
+}
+"
+
 (* +-----------------------------------------------------------------+
    | Compilation                                                     |
    +-----------------------------------------------------------------+ *)
@@ -584,6 +609,7 @@ Lwt can use pthread or the win32 API.
   test_feature ~do_check "fdatasync" "HAVE_FDATASYNC" (fun () -> test_code ([], []) fdatasync_code);
   test_feature ~do_check:(do_check && not !android_target)
     "netdb_reentrant" "HAVE_NETDB_REENTRANT" (fun () -> test_code ([], []) netdb_reentrant_code);
+  test_feature ~do_check "reentrant gethost*" "HAVE_REENTRANT_HOSTENT" (fun () -> test_code ([], []) hostent_reentrant_code);
 
   let get_cred_vars = [
     "HAVE_GET_CREDENTIALS_LINUX";

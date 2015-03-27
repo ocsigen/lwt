@@ -1665,32 +1665,16 @@ LWT_NOT_AVAILABLE1(unix_getgrgid_job)
 #endif
 
 /* Helper functions for not re-entrant functions */
+
+/* keep test in sync with discover.ml */
 #if !defined(HAS_GETHOSTBYADDR_R) || (HAS_GETHOSTBYADDR_R != 7 && HAS_GETHOSTBYADDR_R != 8)
 #define NON_R_GETHOSTBYADDR 1
 #endif
 
+/* keep test in sync with discover.ml */
 #if !defined(HAS_GETHOSTBYNAME_R) || (HAS_GETHOSTBYNAME_R != 5 && HAS_GETHOSTBYNAME_R != 6)
 #define NON_R_GETHOSTBYNAME 1
 #endif
-
-CAMLprim value lwt_have_reentrant_hostent(value u)
-{
-  (void)u;
-#if defined(NON_R_GETHOSTBYNAME) || defined(NON_R_GETHOSTBYNAME)
-  return Val_int(0);
-#else
-  return Val_int(1);
-#endif
-}
-
-CAMLprim value lwt_have_netdb_reentrant(value u){
-  (void)u;
-#ifdef HAVE_NETDB_REENTRANT
-  return Val_int(1);
-#else
-  return Val_int(0);
-#endif
-}
 
 #if defined(NON_R_GETHOSTBYADDR) || defined(NON_R_GETHOSTBYNAME)
 static char **
