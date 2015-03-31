@@ -79,7 +79,7 @@ type section
       level of any section matching ["foo[*]"] is {!Error}.
 
       If the pattern is omited in a rule then the pattern ["*"] is
-      used instead, so [LWT_LOG] may just contains ["debug"] for
+      used instead, so [LWT_LOG] may just contain ["debug"] for
       instance.
 
       By default, the following rule apply : ["* -> notice"] *)
