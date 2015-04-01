@@ -79,7 +79,7 @@ type section
       level of any section matching ["foo[*]"] is {!Error}.
 
       If the pattern is omited in a rule then the pattern ["*"] is
-      used instead, so [LWT_LOG] may just contains ["debug"] for
+      used instead, so [LWT_LOG] may just contain ["debug"] for
       instance.
 
       By default, the following rule apply : ["* -> notice"] *)
@@ -258,8 +258,9 @@ val close : logger -> unit Lwt.t
 
 val default : logger ref
   (** The default logger. It is used as default when no one is
-      specified. Initially, it sends messages to the standard output
-      for error messages. *)
+      specified. If Lwt.unix is loaded, a default logger which
+      sends all messages to standard error is set, otherwise
+      no default logger is set. *)
 
 val broadcast : logger list -> logger
   (** [broadcast loggers] is a logger which send messages to all the
