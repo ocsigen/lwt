@@ -258,8 +258,9 @@ val close : logger -> unit Lwt.t
 
 val default : logger ref
   (** The default logger. It is used as default when no one is
-      specified. Initially, it sends messages to the standard output
-      for error messages. *)
+      specified. If {!Lwt_core} is linked (in the package [lwt.unix])
+      the default logger sends all messages to standard error.
+      Otherwise the default logger is {!null}. *)
 
 val broadcast : logger list -> logger
   (** [broadcast loggers] is a logger which send messages to all the
