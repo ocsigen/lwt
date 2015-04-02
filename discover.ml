@@ -309,7 +309,7 @@ let test_code args stub_code =
   let stub_file, oc = Filename.open_temp_file "lwt_stub" ".c" in
   let cleanup () =
     safe_remove stub_file;
-    safe_remove (Filename.chop_extension (Filename.basename stub_file) ^ !ext_obj)
+    safe_remove (Filename.chop_extension stub_file ^ !ext_obj)
   in
   try
     output_string oc stub_code;
