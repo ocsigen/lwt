@@ -1507,6 +1507,36 @@ let getsockopt_error ch =
   Unix.getsockopt_error ch.fd
 
 (* +-----------------------------------------------------------------+
+   | Multicast functions                                             |
+   +-----------------------------------------------------------------+ *)
+
+external stub_mcast_set_loop : Unix.file_descr -> bool -> unit = "lwt_unix_mcast_set_loop"
+
+external stub_mcast_set_ttl : Unix.file_descr -> int -> unit = "lwt_unix_mcast_set_ttl"
+
+type mcast_action = Add | Drop
+
+external stub_mcast_modify_membership :
+  Unix.file_descr -> mcast_action -> Unix.inet_addr -> Unix.inet_addr -> unit =
+  "lwt_unix_mcast_modify_membership"
+
+let mcast_set_loop ch flag =
+  check_descriptor ch;
+  stub_mcast_set_loop ch.fd flag
+
+let mcast_set_ttl ch ttl =
+  check_descriptor ch;
+  stub_mcast_set_ttl ch.fd ttl
+
+let mcast_add_membership ch ?(ifname = Unix.inet_addr_any) addr =
+  check_descriptor ch;
+  stub_mcast_modify_membership ch.fd Add ifname addr
+
+let mcast_drop_membership ch ?(ifname = Unix.inet_addr_any) addr =
+  check_descriptor ch;
+  stub_mcast_modify_membership ch.fd Drop ifname addr
+
+(* +-----------------------------------------------------------------+
    | Host and protocol databases                                     |
    +-----------------------------------------------------------------+ *)
 

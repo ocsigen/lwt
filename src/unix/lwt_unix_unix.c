@@ -474,6 +474,129 @@ LWT_NOT_AVAILABLE1(unix_get_credentials)
 
 #endif
 
+static int socket_domain (int fd)
+{
+    /* Return the socket domain, PF_INET or PF_INET6. Fails for non-IP
+       protos.
+       fd must be a socket!
+    */
+    union sock_addr_union addr;
+    socklen_t l;
+
+    l = sizeof(addr);
+    if (getsockname(fd, &addr.s_gen, &l) == -1)
+        uerror("getsockname", Nothing);
+
+    switch (addr.s_gen.sa_family) {
+    case AF_INET:
+        return PF_INET;
+    case AF_INET6:
+        return PF_INET6;
+    default:
+        invalid_argument("Not an Internet socket");
+    }
+
+    return 0;
+}
+
+
+CAMLprim value lwt_unix_mcast_set_loop (value fd, value flag)
+{
+    int t, r, f;
+
+    t = socket_domain(Int_val(fd));
+    f = Bool_val(flag);
+    r = 0;
+
+    switch (t) {
+    case PF_INET:
+        r = setsockopt (Int_val(fd), IPPROTO_IP, IP_MULTICAST_LOOP, (void *) &f, sizeof(f));
+        break;
+    default:
+        invalid_argument("lwt_unix_mcast_set_loop");
+    };
+
+    if (r == -1)
+        uerror("setsockopt",Nothing);
+
+    return Val_unit;
+}
+
+
+CAMLprim value lwt_unix_mcast_set_ttl (value fd, value ttl)
+{
+    int t, r, v;
+    int fd_sock;
+
+    fd_sock = Int_val(fd);
+    t = socket_domain(fd_sock);
+    v = Int_val(ttl);
+    r = 0;
+
+    switch (t) {
+    case PF_INET:
+        r = setsockopt(fd_sock, IPPROTO_IP, IP_MULTICAST_TTL, (void *) &v, sizeof(v));
+        break;
+    default:
+        invalid_argument("lwt_unix_mcast_set_ttl");
+    };
+
+    if (r == -1)
+        uerror("setsockopt",Nothing);
+
+    return Val_unit;
+}
+
+/* Keep this in sync with the type Lwt_unix.mcast_action */
+#define VAL_MCAST_ACTION_ADD  (Val_int(0))
+#define VAL_MCAST_ACTION_DROP (Val_int(1))
+
+#define GET_INET_ADDR(v)      (*((struct in_addr *) (v)))
+
+CAMLprim value lwt_unix_mcast_modify_membership (value fd, value v_action, value if_addr, value group_addr)
+{
+    int t, r;
+    int fd_sock;
+    int optname;
+
+    fd_sock = Int_val(fd);
+    t = socket_domain(fd_sock);
+    r = 0;
+
+    switch (t) {
+    case PF_INET: {
+        struct ip_mreq mreq;
+
+        if (string_length(group_addr) != 4 || string_length(if_addr) != 4 )
+            invalid_argument("lwt_unix_mcast_modify: Not an IPV4 address");
+
+        memcpy(&mreq.imr_multiaddr, &GET_INET_ADDR(group_addr), 4);
+        memcpy(&mreq.imr_interface, &GET_INET_ADDR(if_addr), 4);
+
+        switch (v_action) {
+        case VAL_MCAST_ACTION_ADD:
+            optname = IP_ADD_MEMBERSHIP;
+            break;
+
+        case VAL_MCAST_ACTION_DROP:
+            optname = IP_DROP_MEMBERSHIP;
+            break;
+        }
+
+        r = setsockopt(fd_sock, IPPROTO_IP, optname, (void *) &mreq, sizeof(mreq));
+        break;
+    }
+    default:
+        invalid_argument("lwt_unix_mcast_modify_membership");
+    };
+
+    if (r == -1)
+        uerror("setsockopt", Nothing);
+
+    return Val_unit;
+}
+
+
 /* +-----------------------------------------------------------------+
    | wait4                                                           |
    +-----------------------------------------------------------------+ */
