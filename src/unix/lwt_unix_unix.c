@@ -474,6 +474,10 @@ LWT_NOT_AVAILABLE1(unix_get_credentials)
 
 #endif
 
+/* +-----------------------------------------------------------------+
+   | Multicast functions                                             |
+   +-----------------------------------------------------------------+ */
+
 static int socket_domain (int fd)
 {
     /* Return the socket domain, PF_INET or PF_INET6. Fails for non-IP
