@@ -103,9 +103,11 @@ val null : output_channel
 
 (** {2 Channels creation/manipulation} *)
 
-val pipe : ?in_buffer : Lwt_bytes.t -> ?out_buffer : Lwt_bytes.t -> unit -> input_channel * output_channel
-  (** [pipe ?in_buffer ?out_buffer ()] creates a pipe using {!Lwt_unix.pipe} and
-      makes two channels from the two returned file descriptors *)
+val pipe : ?in_buffer : Lwt_bytes.t -> ?out_buffer : Lwt_bytes.t -> unit ->
+  input_channel * output_channel
+  (** [pipe ?in_buffer ?out_buffer ()] creates a pipe using
+      {!Lwt_unix.pipe} and makes two channels from the two returned file
+      descriptors *)
 
 val make :
   ?buffer : Lwt_bytes.t ->
@@ -117,15 +119,17 @@ val make :
       main function for creating new channels.
 
       @param buffer user-supplied buffer. When this argument is
-      present, its value will be used as the buffer for created
-      channel. Size of buffer must conform to limitations described
-      in {!set_default_buffer_size}.
-      When this argument is not present, a new internal buffer of default
-      size will be allocated for this channel.
-      Warning: do not use the same buffer for simultaneous work with
-      more than one channel.
-      There are other functions in this module that take [buffer]
-      argument, their semantics agrees with the described above.
+      present, its value will be used as the buffer for the created
+      channel. The size of buffer must conform to the limitations
+      described in {!set_default_buffer_size}.  When this argument is
+      not present, a new internal buffer of default size will be
+      allocated for this channel.
+
+      Warning: do not use the same buffer for simultaneous work with more
+      than one channel.
+
+      There are other functions in this module that take a [buffer]
+      argument, sharing the same semantics.
 
       @param close close function of the channel. It defaults to
       [Lwt.return]
@@ -142,13 +146,15 @@ val of_bytes : mode : 'mode mode -> Lwt_bytes.t -> 'mode channel
   (** Create a channel from a byte array. Reading/writing is done
       directly on the provided array. *)
 
-val of_fd : ?buffer : Lwt_bytes.t -> ?close : (unit -> unit Lwt.t) -> mode : 'mode mode -> Lwt_unix.file_descr -> 'mode channel
+val of_fd : ?buffer : Lwt_bytes.t -> ?close : (unit -> unit Lwt.t) ->
+  mode : 'mode mode -> Lwt_unix.file_descr -> 'mode channel
   (** [of_fd ?buffer ?close ~mode fd] creates a channel from a
       file descriptor.
 
       @param close defaults to closing the file descriptor. *)
 
-val of_unix_fd : ?buffer : Lwt_bytes.t -> ?close : (unit -> unit Lwt.t) -> mode : 'mode mode -> Unix.file_descr -> 'mode channel
+val of_unix_fd : ?buffer : Lwt_bytes.t -> ?close : (unit -> unit Lwt.t) ->
+  mode : 'mode mode -> Unix.file_descr -> 'mode channel
   (** [of_unix_fd ?buffer ?close ~mode fd] is a short-hand for:
 
       [of_fd ?buffer ?close (Lwt_unix.of_unix_file_descr fd)] *)
@@ -386,22 +392,23 @@ val open_connection :
   ?fd : Lwt_unix.file_descr ->
   ?in_buffer : Lwt_bytes.t -> ?out_buffer : Lwt_bytes.t ->
   Unix.sockaddr -> (input_channel * output_channel) Lwt.t
-(** [open_connection ?fd ?in_buffer ?out_buffer addr] opens a connection to the
-    given address and returns two channels for using it. If [fd] is
-    not specified, a fresh one will be used.
+  (** [open_connection ?fd ?in_buffer ?out_buffer addr] opens a
+      connection to the given address and returns two channels for using
+      it. If [fd] is not specified, a fresh one will be used.
 
-    The connection is completly closed when you close both
-    channels.
+      The connection is completly closed when you close both
+      channels.
 
-    @raise Unix.Unix_error on error.
-*)
+      @raise Unix.Unix_error on error.
+  *)
 
 val with_connection :
   ?fd : Lwt_unix.file_descr ->
   ?in_buffer : Lwt_bytes.t -> ?out_buffer : Lwt_bytes.t ->
   Unix.sockaddr -> (input_channel * output_channel -> 'a Lwt.t) -> 'a Lwt.t
-(** [with_connection ?fd ?in_buffer ?out_buffer addr f] opens a connection to
-      the given address and passes the channels to [f] *)
+  (** [with_connection ?fd ?in_buffer ?out_buffer addr f] opens a
+      connection to the given address and passes the channels to
+      [f] *)
 
 type server
   (** Type of a server *)
@@ -411,12 +418,13 @@ val establish_server :
   ?buffer_size : int ->
   ?backlog : int ->
   Unix.sockaddr -> (input_channel * output_channel -> unit) -> server
-(** [establish_server ?fd ?buffer_size ?backlog sockaddr f] creates a
-    server which will listen for incoming connections. New connections
-    are passed to [f]. Note that [f] must not raise any exception. If
-    [fd] is not specified, a fresh file descriptor will be created.
+  (** [establish_server ?fd ?buffer_size ?backlog sockaddr f] creates
+      a server which will listen for incoming connections. New
+      connections are passed to [f]. Note that [f] must not raise any
+      exception. If [fd] is not specified, a fresh file descriptor will
+      be created.
 
-    [backlog] is the argument passed to [Lwt_unix.listen] *)
+      [backlog] is the argument passed to [Lwt_unix.listen] *)
 
 val shutdown_server : server -> unit
   (** Shutdown the given server *)
