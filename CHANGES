@@ -1,3 +1,11 @@
+===== 2.5.0 (XXXX-XX-XX) =====
+
+  * API CHANGE: Functions in Lwt_io that were previously using a
+    ~buffer_size argument now takes a ~buffer argument.
+  * Fix non-reentrant function calls (#136)
+  * IPv4 multicast support
+  * Minor fixes + documentation improvements
+
 ===== 2.4.8 (2015-03-11) =====
 
   * Fix compilation under Windows (#117, #129)
