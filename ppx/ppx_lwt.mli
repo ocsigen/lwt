@@ -146,6 +146,21 @@
        | <patt_n> -> <expr_n>
    ]}
 
+   - conditional:
+
+   {[
+     if%lwt <expr> then
+       <expr_1>
+     else
+       <expr_2>
+   ]}
+
+   and
+
+   {[
+     if%lwt <expr> then <expr_1>
+   ]}
+
    - exception raising:
 
    For all other expression, the construct

@@ -104,6 +104,9 @@ val return_unit : unit t
 val return_none : 'a option t
   (** [return_none = return None] *)
 
+val return_some : 'a -> 'a option t
+  (** [return_some x = return (Some x)] *)
+
 val return_nil : 'a list t
   (** [return_nil = return \[\]] *)
 

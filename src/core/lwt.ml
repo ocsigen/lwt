@@ -518,6 +518,7 @@ let return v =
 let state_return_unit = Return ()
 let return_unit = thread { state = state_return_unit }
 let return_none = return None
+let return_some x = return (Some x)
 let return_nil = return []
 let return_true = return true
 let return_false = return false

@@ -47,6 +47,19 @@ let suite = suite "ppx" [
          Lwt.return (a && b)
       ) ;
 
+    test "if"
+      (fun () ->
+         let x = Lwt.return true in
+         let%lwt a =
+           if%lwt x then Lwt.return_true else Lwt.return_false
+         in
+         let%lwt b =
+           if%lwt x then Lwt.return_false else Lwt.return_true
+         in
+         (if%lwt x >|= not then Lwt.return_unit) >>= fun () ->
+         Lwt.return (a && b)
+      ) ;
+
     test "for" (* Test for proper sequencing *)
       (fun () ->
          let r = ref [] in

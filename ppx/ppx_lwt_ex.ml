@@ -215,6 +215,22 @@ let lwt_expression mapper exp attributes =
     in
     mapper.expr mapper { new_exp with pexp_attributes }
 
+  (** [if%lwt $c$ then $e1$ else $e2$] ≡
+      [match%lwt $c$ with true -> $e1$ | false -> $e2$]
+      [if%lwt $c$ then $e1$] ≡
+      [match%lwt $c$ with true -> $e1$ | false -> Lwt.return_unit]
+  *)
+  | Pexp_ifthenelse (cond, e1, e2) ->
+     let e2 = match e2 with None -> [%expr Lwt.return_unit] | Some e -> e in
+     let cases =
+       [
+         Exp.case [%pat? true] e1 ;
+         Exp.case [%pat? false] e2 ;
+       ]
+     in
+     let new_exp = [%expr Lwt.bind [%e cond] [%e Exp.function_ cases]] in
+    mapper.expr mapper { new_exp with pexp_attributes }
+
   (** [[%lwt $e$]] ≡ [Lwt.catch (fun () -> $e$) Lwt.fail] *)
   | _ ->
     let exp =
