@@ -6,6 +6,7 @@
   * IPv4 multicast support
   * Minor fixes + documentation improvements
   * Add support for if%lwt in ppx extension
+  * Add Lwt.return_some
 
 ===== 2.4.8 (2015-03-11) =====
 
