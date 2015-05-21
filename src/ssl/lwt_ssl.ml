@@ -124,10 +124,7 @@ let read_bytes (fd, s) buf pos len =
           repeat_call fd
             (fun () ->
                try
-                 let str = Bytes.create len in
-                 let n = Ssl.read s str 0 len in
-                 Lwt_bytes.blit_from_bytes str 0 buf pos len;
-                 n
+                 Ssl.read_into_bigarray s buf pos len
                with Ssl.Read_error Ssl.Error_zero_return ->
                  0)
 
@@ -152,10 +149,7 @@ let write_bytes (fd, s) buf pos len =
           Lwt.return 0
         else
           repeat_call fd
-            (fun () ->
-               let str = Bytes.create len in
-               Lwt_bytes.blit_to_bytes buf pos str 0 len;
-               Ssl.write s str 0 len)
+            (fun () -> Ssl.write_bigarray s buf pos len)
 
 let wait_read (fd, s) =
   match s with
