@@ -31,10 +31,11 @@ depopts: [
   "base-unix"
   "conf-libev"
   "camlp4"
-  "ssl" {>= "0.5.0"}
+  "ssl"
   "lablgtk"
   "react"
 ]
 conflicts: [
   "react" {< "1.0.0" }
+  "ssl" {< "0.5.0"}
 ]
