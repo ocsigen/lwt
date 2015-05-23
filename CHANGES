@@ -2,6 +2,7 @@
 
   * API CHANGE: Functions in Lwt_io that were previously using a
     ~buffer_size argument now takes a ~buffer argument.
+  * Accept ?buffer argument in Lwt_ssl.{in,out}_channel_of_descr.
   * Fix non-reentrant function calls (#136)
   * IPv4 multicast support
   * Minor fixes + documentation improvements

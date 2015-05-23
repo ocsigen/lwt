@@ -177,14 +177,16 @@ let shutdown_and_close s =
   Lwt.wrap2 shutdown s Unix.SHUTDOWN_ALL >>= fun () ->
   close s
 
-let out_channel_of_descr s =
+let out_channel_of_descr ?buffer s =
   Lwt_io.make
+    ?buffer
     ~mode:Lwt_io.output
     ~close:(fun () -> shutdown_and_close s)
     (fun buf pos len -> write_bytes s buf pos len)
 
-let in_channel_of_descr s =
+let in_channel_of_descr ?buffer s =
   Lwt_io.make
+    ?buffer
     ~mode:Lwt_io.input
     ~close:(fun () -> shutdown_and_close s)
     (fun buf pos len -> read_bytes s buf pos len)
