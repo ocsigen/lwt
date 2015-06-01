@@ -195,7 +195,8 @@
 
    {2 Logging}
 
-   The syntax extension will replace expression of the form:
+   The logging syntax extension is enabled with [-log].
+   It will replace expressions of the form:
 
    {[
      Lwt_log.info_f ~section "x = %d" x
@@ -216,7 +217,5 @@
    will make compilation fail.
 
    - Debug messages are removed if the option [-no-debug] is passed.
-
-   - The log syntax extension can be disabled with the option [-no-log].
 
 *)

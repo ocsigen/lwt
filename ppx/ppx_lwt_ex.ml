@@ -24,7 +24,7 @@ let warn_let_lwt_rec loc attrs =
   attr :: attrs
 
 let debug      = ref true
-let log        = ref true
+let log        = ref false
 let sequence   = ref true
 let strict_seq = ref true
 
@@ -305,6 +305,7 @@ let lwt_mapper args =
   args |> List.iter (fun arg ->
     match arg with
     | "-no-debug" -> debug := false
+    | "-log" -> log := true
     | "-no-log" -> log := false
     | "-no-sequence" -> sequence := false
     | "-no-strict-sequence" -> strict_seq := false
