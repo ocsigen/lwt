@@ -33,10 +33,10 @@ type 'a t = {
   mutable contents : 'a option;
   (* Current contents *)
 
-  mutable writers : ('a * unit Lwt.u) Lwt_sequence.t;
+  writers : ('a * unit Lwt.u) Lwt_sequence.t;
   (* Threads waiting to put a value *)
 
-  mutable readers : 'a Lwt.u Lwt_sequence.t;
+  readers : 'a Lwt.u Lwt_sequence.t;
   (* Threads waiting for a value *)
 }
 
