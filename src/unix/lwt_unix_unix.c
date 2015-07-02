@@ -582,7 +582,7 @@ CAMLprim value lwt_unix_mcast_modify_membership (value fd, value v_action, value
             optname = IP_ADD_MEMBERSHIP;
             break;
 
-        case VAL_MCAST_ACTION_DROP:
+        default:
             optname = IP_DROP_MEMBERSHIP;
             break;
         }
