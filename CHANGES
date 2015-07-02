@@ -8,6 +8,8 @@
   * Minor fixes + documentation improvements
   * Add support for if%lwt in ppx extension
   * Add Lwt.return_some
+  * Disable log syntax extension by default in ppx.
+    Give [-log] as ppx argument to enable it.
 
 ===== 2.4.8 (2015-03-11) =====
 
