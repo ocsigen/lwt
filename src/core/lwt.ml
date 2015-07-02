@@ -1189,7 +1189,9 @@ let pause () =
   waiter
 
 let wakeup_paused () =
-  if not (Lwt_sequence.is_empty paused) then begin
+  if Lwt_sequence.is_empty paused then
+    paused_count := 0
+  else begin
     let tmp = Lwt_sequence.create () in
     Lwt_sequence.transfer_r paused tmp;
     paused_count := 0;
