@@ -814,9 +814,9 @@ struct
 
   let stat name =
     if Sys.win32 then
-      run_job (stat_job name)
-    else
       Lwt.return (Unix.LargeFile.stat name)
+    else
+      run_job (stat_job name)
 
   external lstat_job : string -> Unix.LargeFile.stats job = "lwt_unix_lstat_64_job"
 
