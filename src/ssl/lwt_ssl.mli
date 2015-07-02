@@ -69,8 +69,8 @@ val wait_write : socket -> unit Lwt.t
 val shutdown : socket -> Unix.shutdown_command -> unit
 val close : socket -> unit Lwt.t
 
-val in_channel_of_descr : socket -> Lwt_io.input_channel
-val out_channel_of_descr : socket -> Lwt_io.output_channel
+val in_channel_of_descr : ?buffer:Lwt_bytes.t -> socket -> Lwt_io.input_channel
+val out_channel_of_descr : ?buffer:Lwt_bytes.t -> socket -> Lwt_io.output_channel
 
 val ssl_shutdown : socket -> unit Lwt.t
 

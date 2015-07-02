@@ -37,4 +37,5 @@ depopts: [
 ]
 conflicts: [
   "react" {< "1.0.0" }
+  "ssl" {< "0.5.0"}
 ]
