@@ -54,7 +54,7 @@ let suite = suite "ppx" [
            if%lwt x then Lwt.return_true else Lwt.return_false
          in
          let%lwt b =
-           if%lwt x then Lwt.return_false else Lwt.return_true
+           if%lwt x>|= not then Lwt.return_false else Lwt.return_true
          in
          (if%lwt x >|= not then Lwt.return_unit) >>= fun () ->
          Lwt.return (a && b)
