@@ -259,6 +259,25 @@ CAMLprim value lwt_test(value u)
 }
 "
 
+let struct_ns_code conversion = "
+#define _GNU_SOURCE
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <caml/mlvalues.h>
+
+#define NANOSEC" ^ conversion ^ "
+
+CAMLprim value lwt_test() {
+  struct stat *buf;
+  double a, m, c;
+  a = (double)NANOSEC(buf, a);
+  m = (double)NANOSEC(buf, m);
+  c = (double)NANOSEC(buf, c);
+  return Val_unit;
+}
+"
+
 (* +-----------------------------------------------------------------+
    | Compilation                                                     |
    +-----------------------------------------------------------------+ *)
@@ -560,6 +579,28 @@ let () =
     test_code (opt, lib) glib_code
   in
 
+  let test_nanosecond_stat () =
+    printf "testing for nanosecond stat support:%!";
+    let conversions = [
+      ("(buf, field) buf->st_##field##tim.tv_nsec",      "*tim.tv_nsec");
+      ("(buf, field) buf->st_##field##timespec.tv_nsec", "*timespec.tv_nsec");
+      ("(buf, field) buf->st_##field##timensec",         "*timensec");
+    ] in
+    let fallback = "(buf, field) 0.0" in
+    let conversion = try
+      let (conversion, desc) = List.find (fun (conversion, _desc) ->
+        test_code ([], []) (struct_ns_code conversion)
+      ) conversions in
+      printf " %s %s\n%!" (String.make 11 '.') desc;
+      conversion
+    with Not_found -> begin
+      printf " %s unavailable\n%!" (String.make 11 '.');
+      fprintf config "#define NANOSEC%s\n" fallback;
+      fallback
+    end in
+    fprintf config "#define NANOSEC%s\n" conversion
+  in
+
   test_feature ~do_check:!use_libev "libev" "HAVE_LIBEV" test_libev;
   test_feature ~do_check:!use_pthread "pthread" "HAVE_PTHREAD" test_pthread;
   test_feature ~do_check:!use_glib "glib" "" test_glib;
@@ -610,6 +651,7 @@ Lwt can use pthread or the win32 API.
   test_feature ~do_check:(do_check && not !android_target)
     "netdb_reentrant" "HAVE_NETDB_REENTRANT" (fun () -> test_code ([], []) netdb_reentrant_code);
   test_feature ~do_check "reentrant gethost*" "HAVE_REENTRANT_HOSTENT" (fun () -> test_code ([], []) hostent_reentrant_code);
+  test_nanosecond_stat ();
 
   let get_cred_vars = [
     "HAVE_GET_CREDENTIALS_LINUX";
