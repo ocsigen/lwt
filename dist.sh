@@ -15,6 +15,10 @@ VERSION=`oasis query Version 2> /dev/null`
 PREFIX=$NAME-$VERSION
 ARCHIVE=$(pwd)/$PREFIX.tar.gz
 
+# Clean setup.data and other generated files.
+make clean
+make distclean
+
 # Create a branch for the release
 git checkout -b release-$VERSION
 
