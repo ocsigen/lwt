@@ -429,6 +429,6 @@ Test ppx
 # +-------------------------------------------------------------------+
 
 SourceRepository head
-  Type: darcs
-  Location: http://ocsigen.org/darcs/lwt
-  Browser: http://ocsigen.org/darcsweb/?r=lwt;a=summary
+  Type: git
+  Location: git://github.com/ocsigen/lwt
+  Browser: https://github.com/ocsigen/lwt
