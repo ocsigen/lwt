@@ -35,12 +35,18 @@ let open_and_read_filename () =
   return ()
 
 let suite = suite "lwt_io non blocking io" [
+  test "file does not exist"
+    (fun () -> Lwt_unix.file_exists test_file >|= fun r -> not r);
+
   test "create file"
     (fun () ->
       open_file ~mode:output test_file >>= fun out_chan ->
       write out_chan file_contents >>= fun () ->
       close out_chan >>= fun () ->
       return true);
+
+  test "file exists"
+    (fun () -> Lwt_unix.file_exists test_file);
 
   test "read file"
     (fun () ->

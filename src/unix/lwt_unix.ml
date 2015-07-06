@@ -757,6 +757,15 @@ let fstat ch =
   else
     run_job (fstat_job ch.fd)
 
+let file_exists name =
+  Lwt.try_bind
+    (fun () -> stat name)
+    (fun _ -> Lwt.return_true)
+    (fun e ->
+       match e with
+       | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return_false
+       | _ -> Lwt.fail e)
+
 external isatty_job : Unix.file_descr -> bool job = "lwt_unix_isatty_job"
 
 let isatty ch =
@@ -834,6 +843,15 @@ struct
       Lwt.return (Unix.LargeFile.fstat ch.fd)
     else
       run_job (fstat_job ch.fd)
+
+  let file_exists name =
+    Lwt.try_bind
+      (fun () -> stat name)
+      (fun _ -> Lwt.return_true)
+      (fun e ->
+         match e with
+         | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return_false
+         | _ -> Lwt.fail e)
 
 end
 

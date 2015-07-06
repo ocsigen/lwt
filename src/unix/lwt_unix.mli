@@ -416,6 +416,9 @@ val lstat : string -> stats Lwt.t
 val fstat : file_descr -> stats Lwt.t
   (** Wrapper for [Unix.fstat] *)
 
+val file_exists : string -> bool Lwt.t
+  (** [file_exists name] tests if a file named [name] exists. *)
+
 val isatty : file_descr -> bool Lwt.t
   (** Wrapper for [Unix.isatty] *)
 
@@ -456,6 +459,9 @@ module LargeFile : sig
 
   val fstat : file_descr -> stats Lwt.t
     (** Wrapper for [Unix.LargeFile.fstat] *)
+
+  val file_exists : string -> bool Lwt.t
+    (** [file_exists name] tests if a file named [name] exists. *)
 end
 
 (** {2 Operations on file names} *)
