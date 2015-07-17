@@ -13,13 +13,16 @@ let with_loc f { txt ; loc } =
 let def_loc txt =
   { txt; loc = !default_loc }
 
+(** Test if a pattern is a catchall. *)
+let rec is_catchall p = match p.ppat_desc with
+  | Ppat_any | Ppat_var _ -> true
+  | Ppat_alias (p, _) -> is_catchall p
+  | _ -> false
+
 (** Add a wildcard case in there is none. Useful for exception handlers. *)
 let add_wildcard_case cases =
   let has_wildcard =
-    cases |> List.exists (fun case ->
-      match case.pc_lhs.ppat_desc with
-      | Ppat_any | Ppat_var _ -> true
-      | _ -> false)
+    List.exists (fun case -> is_catchall case.pc_lhs) cases
   in
   if not has_wildcard
   then cases @ [Exp.case [%pat? exn] [%expr Lwt.fail exn]]
