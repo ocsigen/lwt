@@ -13,6 +13,21 @@ let with_loc f { txt ; loc } =
 let def_loc txt =
   { txt; loc = !default_loc }
 
+(** Test if a pattern is a catchall. *)
+let rec is_catchall p = match p.ppat_desc with
+  | Ppat_any | Ppat_var _ -> true
+  | Ppat_alias (p, _) -> is_catchall p
+  | _ -> false
+
+(** Add a wildcard case in there is none. Useful for exception handlers. *)
+let add_wildcard_case cases =
+  let has_wildcard =
+    List.exists (fun case -> is_catchall case.pc_lhs) cases
+  in
+  if not has_wildcard
+  then cases @ [Exp.case [%pat? exn] [%expr Lwt.fail exn]]
+  else cases
+
 (** {3 Internal names} *)
 
 let lwt_prefix = "__ppx_lwt_"
@@ -121,17 +136,7 @@ let lwt_expression mapper exp attributes =
           { case with pc_lhs = pat }
         | _ -> assert false)
     in
-    let exhaustive =
-      exns |> List.exists (
-        function
-        | { pc_lhs = [%pat? exception _]}
-        | { pc_lhs = [%pat? exception [%p? { ppat_desc = Ppat_var _ }]]} -> true
-        | _ -> false)
-    in
-    let exns =
-      if exhaustive then exns
-      else exns @ [Exp.case (Pat.var (def_loc "__pa_lwt_e")) [%expr Lwt.fail __pa_lwt_e]]
-    in
+    let exns = add_wildcard_case exns in
     let new_exp =
       match exns with
       | [] -> [%expr Lwt.bind [%e e] [%e Exp.function_ cases]]
@@ -195,17 +200,7 @@ let lwt_expression mapper exp attributes =
       [Lwt.catch (fun () -> $e$) (function $c$)]
   *)
   | Pexp_try (expr, cases) ->
-    let has_wildcard =
-      cases |> List.exists (fun case ->
-        match case.pc_lhs.ppat_desc with
-        | Ppat_any | Ppat_var _ -> true
-        | _ -> false)
-    in
-    let cases =
-      if not has_wildcard
-      then cases @ [Exp.case [%pat? exn] [%expr Lwt.fail exn]]
-      else cases
-    in
+    let cases = add_wildcard_case cases in
     let new_exp =
       if !debug then
         [%expr Lwt.backtrace_catch (fun exn -> try raise exn with exn -> exn)
