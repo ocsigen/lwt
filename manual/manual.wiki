@@ -701,6 +701,19 @@ val s' : int Lwt_stream.t = <abstr>
   This function continously runs the scheduler until the thread passed
   as argument terminates.
 
+  To make sure {{{Lwt}}} is compiled with {{{libev}}} support,
+  tell opam that the library is available on the system by installing the
+  [[http://opam.ocaml.org/packages/conf-libev/conf-libev.4-11/|conf-libev]]
+  package. You may get the actual library with your system package manager:
+
+  * {{{brew install libev}}} on MacOSX,
+  * {{{apt-get install libev-dev}}} on Debian/Ubuntu, or
+  * {{{yum install libev-devel}}} on CentOS, which requires to set
+    {{{export C_INCLUDE_PATH=/usr/include/libev/}}} and
+    {{{export LIBRARY_PATH=/usr/lib64/}}} before calling
+    {{{opam install conf-libev}}}.
+
+
 === The logging facility ===
 
   The package {{{lwt.unix}}} contains a module {{{Lwt_log}}}
