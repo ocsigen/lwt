@@ -241,7 +241,7 @@ let truncate buf max =
   end else
     Buffer.contents buf
 
-let syslog ?(template="$(date) $(name)[$(pid)]: $(section): $(message)") ?(paths=["/dev/log"; "/var/run/log"]) ~facility () =
+let syslog ?(template="$(date) $(name)[$(pid)]: $(section): $(message)") ?(paths=["/dev/log"; "/var/run/log"; "/var/run/syslog"]) ~facility () =
   let syslog_socket = ref None and mutex = Lwt_mutex.create () in
   let get_syslog () = match !syslog_socket with
     | Some x ->
