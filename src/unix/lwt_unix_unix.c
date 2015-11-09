@@ -832,8 +832,23 @@ static int open_flag_table[] = {
   O_DSYNC,
   O_SYNC,
   O_RSYNC,
+  0,
+#ifdef O_CLOEXEC
+  O_CLOEXEC
+#else
+#define NEED_CLOEXEC_EMULATION
   0
+#endif
 };
+
+#ifdef NEED_CLOEXEC_EMULATION
+static int open_cloexec_table[14] = {
+  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0,
+  0,
+  1
+};
+#endif
 
 struct job_open {
   struct lwt_unix_job job;
@@ -850,6 +865,18 @@ static void worker_open(struct job_open *job)
 {
   int fd;
   fd = open(job->name, job->flags, job->perms);
+#if defined(NEED_CLOEXEC_EMULATION) && defined(FD_CLOEXEC)
+  if (fd >= 0 && job->fd) {
+    int flags = fcntl(fd, F_GETFD, 0);
+    if (flags == -1 ||
+        fcntl(fd, F_SETFD, flags | FD_CLOEXEC) == -1) {
+      int serrno = errno;
+      close(fd);
+      errno = serrno;
+      fd = -1;
+    }
+  }
+#endif
   job->fd = fd;
   job->error_code = errno;
   if (fd >= 0) {
@@ -875,6 +902,9 @@ static value result_open(struct job_open *job)
 CAMLprim value lwt_unix_open_job(value name, value flags, value perms)
 {
   LWT_UNIX_INIT_JOB_STRING(job, open, 0, name);
+#ifdef NEED_CLOEXEC_EMULATION
+  job->fd = convert_flag_list(flags, open_cloexec_table) != 0;
+#endif
   job->flags = convert_flag_list(flags, open_flag_table);
   job->perms = Int_val(perms);
   return lwt_unix_alloc_job(&(job->job));
