@@ -175,10 +175,10 @@ val mincore : t -> int -> bool array -> unit
       each cases is [true] if the corresponding page is in RAM and
       [false] otherwise.
 
-      This call is not available on windows. *)
+      This call is not available on windows and cygwin. *)
 
 val wait_mincore : t -> int -> unit Lwt.t
   (** [wait_mincore buffer offset] waits until the page containing the
       byte at offset [offset] is in RAM.
 
-      This functions is not available on windows. *)
+      This functions is not available on windows and cygwin. *)

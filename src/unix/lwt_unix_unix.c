@@ -87,6 +87,9 @@ CAMLprim value lwt_unix_get_page_size(value Unit)
   return Val_long(page_size);
 }
 
+#ifdef __CYGWIN__
+LWT_NOT_AVAILABLE4(unix_mincore)
+#else
 CAMLprim value lwt_unix_mincore(value val_buffer, value val_offset, value val_length, value val_states)
 {
   long len = Wosize_val(val_states);
@@ -97,6 +100,7 @@ CAMLprim value lwt_unix_mincore(value val_buffer, value val_offset, value val_le
     Field(val_states, i) = Val_bool(vec[i] & 1);
   return Val_unit;
 }
+#endif
 
 /* +-----------------------------------------------------------------+
    | read/write                                                      |
@@ -777,6 +781,9 @@ CAMLprim value lwt_unix_guess_blocking_job(value val_fd)
    | JOB: wait_mincore                                               |
    +-----------------------------------------------------------------+ */
 
+#ifdef __CYGWIN__
+LWT_NOT_AVAILABLE2(unix_wait_mincore_job)
+#else
 struct job_wait_mincore {
   struct lwt_unix_job job;
   char *ptr;
@@ -801,6 +808,7 @@ CAMLprim value lwt_unix_wait_mincore_job(value val_buffer, value val_offset)
   job->ptr = (char*)Caml_ba_data_val(val_buffer) + Long_val(val_offset);
   return lwt_unix_alloc_job(&(job->job));
 }
+#endif
 
 /* +-----------------------------------------------------------------+
    | JOB: open                                                       |
