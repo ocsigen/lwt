@@ -744,4 +744,3 @@ Lwt can use pthread or the win32 API.
   (* Generate stubs. *)
   print_endline "Generating C stubs...";
   exit (Sys.command "ocaml src/unix/gen_stubs.ml")
-
