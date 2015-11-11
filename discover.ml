@@ -230,6 +230,10 @@ CAMLprim value lwt_test(value Unit)
   he = gethostbyaddr_r((const char *)NULL, (int)0, (int)0,(struct hostent *)NULL, (char *)NULL, (int)0, (struct hostent **)NULL,(int *)NULL);
   se = getservbyname_r((const char *)NULL, (const char *)NULL,(struct servent *)NULL, (char *)NULL, (int)0, (struct servent **)NULL);
   se = getservbyport_r((int)0, (const char *)NULL,(struct servent *)NULL, (char *)NULL, (int)0, (struct servent **)NULL);
+  pr = getprotoent_r((struct protoent *)NULL, (char *)NULL, (int)0, (struct protoent **)NULL);
+  pr = getprotobyname_r((const char *)NULL, (struct protoent *)NULL, (char *)NULL, (int)0, (struct protoent **)NULL);
+  pr = getprotobynumber_r((int)0, (struct protoent *)NULL, (char *)NULL, (int)0, (struct protoent **)NULL);
+
   return Val_unit;
 }
 "
