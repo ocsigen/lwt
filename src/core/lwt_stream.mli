@@ -224,10 +224,13 @@ val get_available_up_to : int -> 'a t -> 'a list
 val is_empty : 'a t -> bool Lwt.t
   (** [is_empty st] returns wether the given stream is empty *)
 
-val on_terminate : 'a t -> (unit -> unit) -> unit
-  (** [on_terminate st f] executes [f] when the end of the stream [st]
+val on_termination : 'a t -> (unit -> unit) -> unit
+  (** [on_termination st f] executes [f] when the end of the stream [st]
       is reached. Note that the stream may still contains elements if
       {!peek} or similar was used. *)
+
+val on_terminate : 'a t -> (unit -> unit) -> unit
+  (* Deprecated, use [on_termination] *)
 
 (** {2 Stream transversal} *)
 
