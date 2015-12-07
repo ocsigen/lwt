@@ -279,11 +279,11 @@ let suite = suite "lwt_stream" [
        Lwt_stream.to_list (Lwt_stream.map_exn stream) >>= fun l' ->
        return (l = l'));
 
-  test "on_terminate"
+  test "on_termination"
     (fun () ->
       let st = Lwt_stream.of_list [1; 2] in
       let b = ref false in
-      Lwt_stream.on_terminate st (fun () -> b := true);
+      Lwt_stream.on_termination st (fun () -> b := true);
       ignore (Lwt_stream.peek st);
       let b1 = !b = false in
       ignore (Lwt_stream.junk st);

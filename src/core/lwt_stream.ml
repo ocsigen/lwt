@@ -153,8 +153,10 @@ let from_direct f =
     hooks = ref [];
   }
 
-let on_terminate s f =
+let on_termination s f =
   s.hooks := f :: !(s.hooks)
+
+let on_terminate = on_termination
 
 let of_list l =
   let l = ref l in
