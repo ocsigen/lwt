@@ -43,7 +43,7 @@ They might also be available through your distribution.
  * run `ocaml setup.ml -install` as root to install compiled libraries
  * run `ocaml setup.ml -uninstall` as root to uninstall them
 
-HTML documentation is generated in _build/lwt.docdir/, but is not
+HTML documentation is generated in `_build/lwt.docdir/`, but is not
 installed by default.
 
 If you get the development version you need to obtain OASIS
