@@ -1,3 +1,12 @@
+===== 2.5.1 (2015-12-07) =====
+
+  * Lwt_stream.on_terminate -> Lwt_stream.on_termination
+  * Lwt_unix: handle O_CLOEXEC
+  * Lwt_log: add OSX syslog path
+  * Ppx: Improve lwt%match, improve catchall detection
+  * Add Lwt_unix.file_exists and Lwt_unix.Large_file.file_exists
+  * Build fixes
+
 ===== 2.5.0 (2015-07-03) =====
 
   * API CHANGE: Functions in Lwt_io that were previously using a
