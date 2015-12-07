@@ -44,8 +44,8 @@ let have = function
   | `wait4
   | `recv_msg
   | `send_msg
-  | `mincore
   | `madvise -> not Sys.win32
+  | `mincore -> not (Sys.win32 || Sys.cygwin)
   | `get_cpu -> Lwt_config._HAVE_GETCPU
   | `get_affinity
   | `set_affinity -> Lwt_config._HAVE_AFFINITY
