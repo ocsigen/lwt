@@ -5,7 +5,7 @@
 OASISFormat: 0.4
 OCamlVersion: >= 4.01
 Name: lwt
-Version: 2.5.0
+Version: 2.5.1
 LicenseFile: COPYING
 License: LGPL-2.1 with OCaml linking exception
 Authors:
@@ -26,7 +26,7 @@ Authors:
   Romain Slootmaekers
 Homepage: http://ocsigen.org/lwt/
 BuildTools: ocamlbuild
-Plugins: DevFiles (0.3), META (0.3)
+Plugins: DevFiles (0.4), META (0.4)
 XDevFilesEnableMakefile: false
 PostConfCommand: ocaml discover.ml -ext-obj $ext_obj -exec-name $default_executable_name -use-libev $libev -os-type $os_type -use-glib $glib -ccomp-type $ccomp_type -use-pthread $pthread -use-unix $unix -android-target $android_target -libev_default $libev_default
 PostDistCleanCommand: $rm src/unix/lwt_config.h src/unix/lwt_config.ml src/unix/lwt_unix_jobs_generated.ml src/unix/jobs-unix/*
