@@ -110,7 +110,7 @@ val with_async_none : (unit -> 'a) -> 'a
   *)
 
 val with_async_detach : (unit -> 'a) -> 'a
-  (** [with_async_none f] is a shorthand for:
+  (** [with_async_detach f] is a shorthand for:
 
       {[
         Lwt.with_value async_method_key (Some Async_detach) f
@@ -118,7 +118,7 @@ val with_async_detach : (unit -> 'a) -> 'a
   *)
 
 val with_async_switch : (unit -> 'a) -> 'a
-  (** [with_async_none f] is a shorthand for:
+  (** [with_async_switch f] is a shorthand for:
 
       {[
         Lwt.with_value async_method_key (Some Async_switch) f
