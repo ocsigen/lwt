@@ -326,6 +326,14 @@ class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last hooks = 
         info.pushb_pending <- None;
         Lwt.wakeup_later_exn info.pushb_push_wakener Closed
       end;
+      (* Send a signal if at least one thread is waiting for a new
+         element. *)
+      if info.pushb_waiting then begin
+        info.pushb_waiting <- false;
+        let old_wakener = !wakener_cell in
+        (* Signal that a new value has been received. *)
+        Lwt.wakeup_later old_wakener ()
+      end;
       List.iter (fun f -> f ()) !hooks
     end
 
