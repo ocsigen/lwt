@@ -30,11 +30,11 @@ sed 's/^SETUP := setup-dev.exe.*/SETUP := setup.exe/' Makefile > Makefile.new
 mv Makefile.new Makefile
 
 # Remove this script and dev-files
-rm -f dist.sh opam .jenkins.sh
+rm -f dist.sh opam .jenkins.sh *.exe
 
 # Commit
 git add --all --force
-git commit -m "prepare release"
+git commit -m "Prepare release"
 git tag $VERSION
 
 git checkout master
