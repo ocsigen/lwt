@@ -1,7 +1,15 @@
 opam-version: "1.2"
 name: "lwt"
 version: "dev"
-maintainer: "jeremie@dimino.org"
+maintainer: "Jérôme Vouillon <jerome.vouillon@pps.univ-paris-diderot.fr>"
+authors: [
+  "Jérôme Vouillon"
+  "Jérémie Dimino"
+]
+homepage: "http://github.com/ocsigen/lwt"
+dev-repo: "git://github.com/ocsigen/lwt"
+bug-reports: "http://github.com/ocsigen/lwt/issues"
+license: "LGPL with OpenSSL linking exception"
 build: [
   ["./configure"
     "--prefix" prefix
@@ -14,13 +22,11 @@ build: [
     "--%{lablgtk:enable}%-glib"
     "--%{ppx_tools:enable}%-ppx"]
   [make "build"]
-  [make "install"]
 ]
-remove: [
-  [ "ocamlfind" "remove" "lwt" ]
-]
+install: [[make "install"]]
+remove: [[ "ocamlfind" "remove" "lwt" ]]
 depends: [
-  "ocamlfind" {>= "1.5.0"}
+  "ocamlfind" {build & >= "1.5.0"}
   "base-bytes"
   ( "base-no-ppx" | "ppx_tools" )
   ## OASIS is not required in released version
@@ -36,6 +42,7 @@ depopts: [
   "react"
 ]
 conflicts: [
-  "react" {< "1.0.0" }
+  "react" {< "1.0.0"}
   "ssl" {< "0.5.0"}
 ]
+available: [ocaml-version >= "4.01.0" & compiler != "4.02.1+BER"]
