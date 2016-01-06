@@ -765,6 +765,22 @@ let on_any t f g =
     | Repr _ ->
         assert false
 
+let on_any_unsafe t f g =
+  match (repr t).state with
+    | Return v ->
+        f v
+    | Fail exn ->
+        g exn
+    | Sleep sleeper ->
+        let data = !current_data in
+        add_immutable_waiter sleeper
+          (function
+             | Return v -> current_data := data; f v
+             | Fail exn -> current_data := data; g exn
+             | _ -> assert false)
+    | Repr _ ->
+        assert false
+
 let try_bind x f g =
   let t = repr (try x () with exn -> fail exn) in
   match t.state with

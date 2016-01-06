@@ -439,6 +439,14 @@ val on_any : 'a t -> ('a -> unit) -> (exn -> unit) -> unit
       or [g] raises an exception it is given to
       {!async_exception_hook}. *)
 
+val on_any_unsafe : 'a t -> ('a -> unit) -> (exn -> unit) -> unit
+  (** [on_any_unsafe t f g] is the same as [on_any t f g], except that
+      the calls to [f] and [g] are tail calls.
+
+      As a consequence, [on_any_unsafe] does not attempt to catch
+      exceptions raised by [f] and [g], and therefore does not call
+      {!async_exception_hook}. *)
+
 (** Infix operators. You should open only this module. *)
 module Infix : sig
 
