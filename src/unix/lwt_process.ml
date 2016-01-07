@@ -196,8 +196,8 @@ let ignore_close chan = ignore (Lwt_io.close chan)
 
 class virtual common timeout proc channels =
   let wait = waitproc proc in
-  let close = lazy(Lwt.join (List.map Lwt_io.close channels) >>= fun () -> wait) in
 object(self)
+  val mutable closed = false
 
   method pid = proc.id
 
@@ -214,7 +214,13 @@ object(self)
     if Lwt.state wait = Lwt.Sleep then
       terminate proc
 
-  method close = Lwt.protected (Lazy.force close) >|= status
+  method close =
+    if closed then self#status
+    else (
+      closed <- true;
+      Lwt.protected (Lwt.join (List.map Lwt_io.close channels))
+      >>= fun () -> self#status
+    )
   method status = Lwt.protected wait >|= status
   method rusage = Lwt.protected wait >|= rusage
 
@@ -238,7 +244,7 @@ object(self)
                      Lwt.return_unit
                  | false ->
                      self#terminate;
-                     Lazy.force close >>= fun _ -> Lwt.return_unit)
+                     self#close >>= fun _ -> Lwt.return_unit)
               (fun exn ->
                  (* The exception is dropped because it can be
                     obtained with self#close. *)
