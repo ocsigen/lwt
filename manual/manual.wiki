@@ -367,8 +367,17 @@ lwt () =
 
 === The syntax extension ===
 
-  {{{Lwt}}} offers a syntax extension which increases code readability and
-  makes coding using {{{Lwt}}} easier.  To use it add the {{{lwt.syntax}}} package when
+  {{{Lwt}}} offers two syntax extensions which increases code readability and
+  makes coding using {{{Lwt}}} easier.
+
+==== Ppx ====
+
+  The Ppx syntax extension is documented <<a_api text="here" | module Ppx_lwt>>.
+  This syntax extension is more recent and is recommended.
+
+==== Camlp4 ====
+
+To use it add the {{{lwt.syntax}}} package when
   compiling:
 
 <<code language="ocaml" |$ ocamlfind ocamlc -syntax camlp4o -package lwt.syntax -linkpkg -o foo foo.ml
@@ -462,14 +471,28 @@ expr
 
 === Backtrace support ===
 
-  When using {{{Lwt}}}, exceptions are not recorded by the ocaml runtime, and so you don't
-  get backtraces. However it is possible to get them when using the syntax extension. All you
-  have to do is to pass the {{{-lwt-debug}}} switch to {{{camlp4}}}:
+  If an exception is raised inside an Lwt thread, the backtrace provided by OCaml
+  will not be very useful. It will end inside the Lwt scheduler instead of
+  continuing into the code that started the thread. To avoid this, and get good
+  backtraces from Lwt, use one of the syntax extensions in debug mode.
+
+  In debug mode, the {{{lwt}}} and {{{let%lwt}}} constructs will properly
+  propagate backtraces.
+
+  In the <<a_api text="ppx syntax extension" | module Ppx_lwt>>, the debug mode is
+  enabled by default. This has a small performance impact, so you can disable it
+  by passing {{{-no-debug}}}.
+
+  In the {{{camlp4 syntax extension}}}, you need to pass the {{{-lwt-debug}}} switch:
 
 {{{
 $ ocamlfind ocamlc -syntax camlp4o -package lwt.syntax \
     -ppopt -lwt-debug -linkpkg -o foo foo.ml
 }}}
+
+   As always, to get backtraces from an OCaml program, you need to either declare
+   the environment variable {{{OCAMLRUNPARAM=b}}} or call
+   {{{Printexc.record_backtrace true}}} at the start of your program.
 
 === Other modules of the core library ===
 

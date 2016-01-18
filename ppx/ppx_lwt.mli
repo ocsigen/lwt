@@ -25,13 +25,18 @@
 
 (** {2 Ppx extensions}
 
+    This Ppx extension adds various syntactic shortcut for lwt programming.
+    It needs OCaml >= 4.02 and {{:https://github.com/alainfrisch/ppx_tools}ppx_tools}.
+
+    To use it, simply use the ocamlfind package [lwt.ppx].
+
    This extension adds the following syntax:
 
    - lwt-binding:
 
    {[
-     let%lwt ch = get_char stdin in
-     code
+let%lwt ch = get_char stdin in
+code
    ]}
 
    is the same as [bind (get_char stdin) (fun ch -> code)].
@@ -39,50 +44,50 @@
    Moreover, it supports parallel binding:
 
    {[
-     let%lwt x = do_something1 ()
-     and y = do_something2 in
-     code
+let%lwt x = do_something1 ()
+and y = do_something2 in
+code
    ]}
 
    will run [do_something1 ()] and [do_something2 ()], then
    bind their results to [x] and [y]. It is the same as:
 
    {[
-     let t1 = do_something1
-     and t2 = do_something2 in
-     bind t1 (fun x -> bind t2 (fun y -> code))
+let t1 = do_something1
+and t2 = do_something2 in
+bind t1 (fun x -> bind t2 (fun y -> code))
    ]}
 
    - exception catching:
 
    {[
-     try%lwt
-       <expr>
-     with
-       <branches>
+try%lwt
+  <expr>
+with
+  <branches>
    ]}
 
    For example:
 
    {[
-     try%lwt
-       f x
-     with
-       | Failure msg ->
-           prerr_endline msg;
-           return ()
+try%lwt
+  f x
+with
+  | Failure msg ->
+      prerr_endline msg;
+      return ()
    ]}
 
    is expanded to:
 
    {[
-     catch (fun () -> f x)
-       (function
-         | Failure msg ->
-             prerr_endline msg;
-             return ()
-         | exn ->
-             Lwt.fail exn)
+catch (fun () -> f x)
+  (function
+    | Failure msg ->
+        prerr_endline msg;
+        return ()
+    | exn ->
+        Lwt.fail exn)
    ]}
 
    Note that the [exn -> Lwt.fail exn] branch is automatically added
@@ -106,53 +111,53 @@
    - for loop:
 
    {[
-     for%lwt i = <expr> to <expr> do
-       <expr>
-     done
+for%lwt i = <expr> to <expr> do
+  <expr>
+done
    ]}
 
    and:
 
    {[
-     for%lwt i = <expr> downto <expr> do
-       <expr>
-     done
+for%lwt i = <expr> downto <expr> do
+  <expr>
+done
    ]}
 
    - while loop:
 
    {[
-     while%lwt <expr> do
-       <expr>
-     done
+while%lwt <expr> do
+  <expr>
+done
    ]}
 
    - pattern matching:
 
    {[
-     match%lwt <expr> with
-       | <patt_1> -> <expr_1>
-           ...
-       | <patt_n> -> <expr_n>
+match%lwt <expr> with
+  | <patt_1> -> <expr_1>
+      ...
+  | <patt_n> -> <expr_n>
    ]}
 
    Exception cases are also supported:
 
    {[
-     match%lwt <expr> with
-       | exception <exn> -> <expr_1>
-       | <patt_2> -> <expr_2>
-           ...
-       | <patt_n> -> <expr_n>
+match%lwt <expr> with
+  | exception <exn> -> <expr_1>
+  | <patt_2> -> <expr_2>
+      ...
+  | <patt_n> -> <expr_n>
    ]}
 
    - conditional:
 
    {[
-     if%lwt <expr> then
-       <expr_1>
-     else
-       <expr_2>
+if%lwt <expr> then
+  <expr_1>
+else
+  <expr_2>
    ]}
 
    and
@@ -179,7 +184,12 @@
 
    By default, the debug mode is enabled. This means that the [backtrace] versions of the [bind], [finalize] and [catch] functions are used, enabling proper backtraces for the Lwt exceptions.
 
-   The debug mode can be disabled with the option [-no-debug].
+   The debug mode can be disabled with the option [-no-debug]:
+
+   {[
+$ ocamlfind ocamlc -package lwt.ppx \
+    -ppxopt lwt.ppx,-no-debug -linkpkg -o foo foo.ml
+   ]}
 
    {2 Sequence}
 
@@ -191,7 +201,8 @@
    By default, each operation must return [unit Lwt.t]. This constraint can be
    lifted with the option [-no-strict-sequence]. The operator can be disabled
    with the option [-no-sequence].
-
+   Note that unlike [>>=], [>>] is not an OCaml value. it is a piece of syntax
+   added by the ppx rewriter - i.e., you cannot refer to [(>>)].
 
    {2 Logging}
 
@@ -205,10 +216,10 @@
    by
 
    {[
-     if Lwt_log.Section.level section <= Lwt_log.Info then
-       Lwt_log.info_f ~section "x = %d" x
-     else
-       return ()
+if Lwt_log.Section.level section <= Lwt_log.Info then
+  Lwt_log.info_f ~section "x = %d" x
+else
+  return ()
    ]}
 
    Notes:
