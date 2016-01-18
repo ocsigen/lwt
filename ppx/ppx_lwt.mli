@@ -191,7 +191,8 @@
    By default, each operation must return [unit Lwt.t]. This constraint can be
    lifted with the option [-no-strict-sequence]. The operator can be disabled
    with the option [-no-sequence].
-
+   Note that unlike [>>=], [>>] is not an OCaml value. it is a piece of syntax
+   added by the ppx rewriter - i.e., you cannot refer to [(>>)].
 
    {2 Logging}
 
