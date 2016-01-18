@@ -367,8 +367,17 @@ lwt () =
 
 === The syntax extension ===
 
-  {{{Lwt}}} offers a syntax extension which increases code readability and
-  makes coding using {{{Lwt}}} easier.  To use it add the {{{lwt.syntax}}} package when
+  {{{Lwt}}} offers two syntax extensions which increases code readability and
+  makes coding using {{{Lwt}}} easier.
+
+==== Ppx ====
+
+  The Ppx syntax extension is documented <<a_api text="here" | module Ppx_lwt>>.
+  This syntax extension is more recent and is recommended.
+
+==== Camlp4 ====
+
+To use it add the {{{lwt.syntax}}} package when
   compiling:
 
 <<code language="ocaml" |$ ocamlfind ocamlc -syntax camlp4o -package lwt.syntax -linkpkg -o foo foo.ml
