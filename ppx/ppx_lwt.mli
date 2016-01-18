@@ -184,7 +184,12 @@ else
 
    By default, the debug mode is enabled. This means that the [backtrace] versions of the [bind], [finalize] and [catch] functions are used, enabling proper backtraces for the Lwt exceptions.
 
-   The debug mode can be disabled with the option [-no-debug].
+   The debug mode can be disabled with the option [-no-debug]:
+
+   {[
+$ ocamlfind ocamlc -package lwt.ppx \
+    -ppxopt lwt.ppx,-no-debug -linkpkg -o foo foo.ml
+   ]}
 
    {2 Sequence}
 
