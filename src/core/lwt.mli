@@ -78,7 +78,12 @@ val bind : 'a t -> ('a -> 'b t) -> 'b t
       Note that [bind] is also often used just for synchronization
       purpose: [t'] will not execute before [t] is terminated.
 
-      The result of a thread can be bound several times. *)
+      The result of a thread can be bound several times.
+
+      Note that [bind] will not propagate backtraces correctly.
+      See <<a_api project="lwt" | The manual>>
+      for how to enable backtraces.
+  *)
 
 val (>>=) : 'a t -> ('a -> 'b t) -> 'b t
   (** [t >>= f] is an alternative notation for [bind t f]. *)
@@ -253,7 +258,11 @@ val async_exception_hook : (exn -> unit) ref
       backtrace if available and to exit the program.
 
       The behavior is undefined if this function raise an
-      exception. *)
+      exception.
+
+      See <<a_api project="lwt" | The manual>>
+      for how to enable backtraces.
+  *)
 
 (** {2 Sleeping and resuming} *)
 
