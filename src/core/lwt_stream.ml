@@ -1052,6 +1052,7 @@ let choose streams =
                 streams := source s :: l;
                 Lwt.return x
             | None ->
+                streams := l;
                 next ()
   in
   from next

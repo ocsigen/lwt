@@ -306,4 +306,8 @@ let suite = suite "lwt_stream" [
       ignore (Lwt_stream.peek st);
       let b3 = !b = true in
       Lwt.return (b1 && b2 && b3));
+
+  test "choose_exhausted"
+    (fun () ->
+      Lwt_stream.(to_list (choose [of_list []])) >|= fun _ -> true);
 ]
