@@ -557,13 +557,7 @@ let () =
   let test_pthread () =
     let opt, lib =
       if !android_target then ([], []) else
-      lib_flags "PTHREAD"
-        (fun () ->
-          match search_header "pthread.h" with
-            | Some (dir_i, dir_l) ->
-                (["-I" ^ dir_i], ["-L" ^ dir_l; "-lpthread"])
-            | None ->
-                ([], ["-lpthread"]))
+      lib_flags "PTHREAD" (fun () -> ([], ["-lpthread"]))
     in
     setup_data := ("pthread_opt", opt) :: ("pthread_lib", lib) :: !setup_data;
     test_code (opt, lib) pthread_code
