@@ -47,9 +47,9 @@ let redirect_output dev_null fd mode = match mode with
   | `Log logger ->
       redirect fd (Some logger)
 
-let daemonize ?(syslog=true) ?(stdin=`Dev_null) ?(stdout=`Log_default) ?(stderr=`Log_default) ?(directory="/") ?(umask=`Set 0o022) () =
-  if Unix.getppid () = 1 then
-    (* If our parent is [init], then we already are a demon *)
+let daemonize ?(syslog=true) ?(stdin=`Dev_null) ?(stdout=`Log_default) ?(stderr=`Log_default) ?(directory="/") ?(umask=`Set 0o022) ?(force=false) () =
+  if not force && Unix.getppid () = 1 then
+    (* If our parent is [init], then we already are a deamon *)
     ()
   else begin
     Unix.chdir directory;

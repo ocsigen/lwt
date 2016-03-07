@@ -29,13 +29,15 @@ val daemonize :
   ?stderr : [ `Dev_null | `Close | `Keep | `Log_default | `Log of Lwt_log.logger ] ->
   ?directory : string ->
   ?umask : [ `Keep | `Set of int ] ->
+  ?force : bool ->
   unit -> unit
   (** Put the current running process into daemon mode. I.e. it forks
       and exit the parent, detach it from its controlling terminal,
       and redict standard intputs/outputs..
 
       Notes:
-      - if the process is already a daemon, it does nothing.
+      - if the process is already a daemon (i.e. the parent PID is 1), then
+        function does nothing unless [force] is [true].
       - you must be sure that there is no pending threads when
         calling this function, otherwise they may be canceled.
 
