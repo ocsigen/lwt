@@ -101,8 +101,8 @@ type 'a source =
 type 'a t = {
   source : 'a source;
   (* The source of the stream. *)
-  closed : bool ref;
-  (* Whether the source of the stream has been closed. *)
+  closed : unit Lwt.t;
+  (* A thread that sleeps until the stream is closed. *)
   mutable node : 'a node;
   (* Pointer to first pending element, or to [last] if there is no
      pending element. *)
@@ -140,8 +140,9 @@ let clone s =
 
 let from_source source =
   let last = new_node () in
-  let closed = ref false in
-  let mark_closed () = closed := true in
+  let closed, closed_w = Lwt.wait () in
+  let mark_closed () =
+    if not (Lwt.is_sleeping closed) then Lwt.wakeup closed_w () in
   { source = source
   ; closed = closed
   ; node = last
@@ -210,7 +211,7 @@ let create_with_reference () =
   let closed = t.closed and last = t.last and hooks = t.hooks in
   (* The push function. It does not keep a reference to the stream. *)
   let push x =
-    if !closed then raise Closed;
+    if not (Lwt.is_sleeping closed) then raise Closed;
     (* Push the element at the end of the queue. *)
     let node = !last and new_last = new_node () in
     node.data <- x;
@@ -729,7 +730,10 @@ let rec is_empty s =
     Lwt.return (s.node.data = None)
 
 let is_closed s =
-  !(s.closed)
+  not (Lwt.is_sleeping s.closed)
+
+let closed s =
+  s.closed
 
 let map f s =
   from (fun () -> get s >|= function
