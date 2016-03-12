@@ -224,6 +224,10 @@ val get_available_up_to : int -> 'a t -> 'a list
 val is_empty : 'a t -> bool Lwt.t
   (** [is_empty st] returns wether the given stream is empty *)
 
+val is_closed : 'a t -> bool
+  (** [is_closed st] returns whether the given stream has been closed. Even if
+      the stream is closed, it still may contain elements waiting to be read. *)
+
 val on_termination : 'a t -> (unit -> unit) -> unit
   (** [on_termination st f] executes [f] when the end of the stream [st]
       is reached. Note that the stream may still contains elements if
