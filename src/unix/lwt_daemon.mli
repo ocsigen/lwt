@@ -35,8 +35,6 @@ val daemonize :
       and redict standard intputs/outputs..
 
       Notes:
-      - if the process is already a daemon (i.e. the parent PID is 1), then
-        function does nothing unless [force] is [true].
       - you must be sure that there is no pending threads when
         calling this function, otherwise they may be canceled.
 
