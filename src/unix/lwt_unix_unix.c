@@ -55,7 +55,7 @@ CAMLprim value lwt_unix_writable(value fd)
   pollfd.events = POLLOUT;
   pollfd.revents = 0;
   if (poll(&pollfd, 1, 0) < 0)
-    uerror("readable", Nothing);
+    uerror("writable", Nothing);
   return (Val_bool(pollfd.revents & POLLOUT));
 }
 
