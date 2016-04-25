@@ -1,3 +1,12 @@
+===== 2.5.2 (2015-04-25) =====
+
+  * Fix compatibility for 4.03 (#227)
+  * Various documentation fixes (#199,#200,#210,)
+  * Improve wildcard detection in the ppx (#198)
+  * Fix Lwt_stream: bounded_push#close wake the reader (#201)
+  * Fix infinite loop with Lwt_stream.choose (#214)
+  * Fix lazyness failure with Lwt_io.common#close (#207)
+
 ===== 2.5.1 (2015-12-07) =====
 
   * Lwt_stream.on_terminate -> Lwt_stream.on_termination
