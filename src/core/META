@@ -1,0 +1,132 @@
+# OASIS_START
+# DO NOT EDIT (digest: bc8d6fff062fa1a39ca89d01e9e1c40c)
+version = "2.5.2"
+description = "Lightweight thread library for OCaml (core library)"
+requires = "bytes"
+archive(byte) = "lwt.cma"
+archive(byte, plugin) = "lwt.cma"
+archive(native) = "lwt.cmxa"
+archive(native, plugin) = "lwt.cmxs"
+exists_if = "lwt.cma"
+package "unix" (
+ version = "2.5.2"
+ description = "Unix support for lwt"
+ requires = "lwt lwt.log unix bigarray"
+ archive(byte) = "lwt-unix.cma"
+ archive(byte, plugin) = "lwt-unix.cma"
+ archive(native) = "lwt-unix.cmxa"
+ archive(native, plugin) = "lwt-unix.cmxs"
+ exists_if = "lwt-unix.cma"
+)
+
+package "syntax" (
+ version = "2.5.2"
+ description = "Syntactic sugars for Lwt"
+ requires = "camlp4 lwt.syntax.options"
+ archive(syntax, preprocessor) = "lwt-syntax.cma"
+ archive(syntax, toploop) = "lwt-syntax.cma"
+ archive(syntax, preprocessor, native) = "lwt-syntax.cmxa"
+ archive(syntax, preprocessor, native, plugin) = "lwt-syntax.cmxs"
+ exists_if = "lwt-syntax.cma"
+ package "options" (
+  version = "2.5.2"
+  description = "Options for syntax extensions"
+  requires = "camlp4"
+  archive(syntax, preprocessor) = "lwt-syntax-options.cma"
+  archive(syntax, toploop) = "lwt-syntax-options.cma"
+  archive(syntax, preprocessor, native) = "lwt-syntax-options.cmxa"
+  archive(syntax, preprocessor, native, plugin) = "lwt-syntax-options.cmxs"
+  exists_if = "lwt-syntax-options.cma"
+ )
+ 
+ package "log" (
+  version = "2.5.2"
+  description = "Syntactic sugars for logging"
+  requires = "camlp4 lwt.syntax.options"
+  archive(syntax, preprocessor) = "lwt-syntax-log.cma"
+  archive(syntax, toploop) = "lwt-syntax-log.cma"
+  archive(syntax, preprocessor, native) = "lwt-syntax-log.cmxa"
+  archive(syntax, preprocessor, native, plugin) = "lwt-syntax-log.cmxs"
+  exists_if = "lwt-syntax-log.cma"
+ )
+)
+
+package "ssl" (
+ version = "2.5.2"
+ description = "SSL support for Lwt"
+ requires = "ssl lwt.unix"
+ archive(byte) = "lwt-ssl.cma"
+ archive(byte, plugin) = "lwt-ssl.cma"
+ archive(native) = "lwt-ssl.cmxa"
+ archive(native, plugin) = "lwt-ssl.cmxs"
+ exists_if = "lwt-ssl.cma"
+)
+
+package "simple-top" (
+ version = "2.5.2"
+ description = "Unix support for lwt"
+ requires = "lwt lwt.unix compiler-libs.common"
+ archive(byte) = "lwt-simple-top.cma"
+ archive(byte, plugin) = "lwt-simple-top.cma"
+ archive(native) = "lwt-simple-top.cmxa"
+ archive(native, plugin) = "lwt-simple-top.cmxs"
+ exists_if = "lwt-simple-top.cma"
+)
+
+package "react" (
+ version = "2.5.2"
+ description = "Reactive programming helpers"
+ requires = "lwt react"
+ archive(byte) = "lwt-react.cma"
+ archive(byte, plugin) = "lwt-react.cma"
+ archive(native) = "lwt-react.cmxa"
+ archive(native, plugin) = "lwt-react.cmxs"
+ exists_if = "lwt-react.cma"
+)
+
+package "preemptive" (
+ version = "2.5.2"
+ description = "Preemptive threads support for Lwt"
+ requires = "lwt lwt.unix threads"
+ archive(byte) = "lwt-preemptive.cma"
+ archive(byte, plugin) = "lwt-preemptive.cma"
+ archive(native) = "lwt-preemptive.cmxa"
+ archive(native, plugin) = "lwt-preemptive.cmxs"
+ exists_if = "lwt-preemptive.cma"
+)
+
+package "ppx" (
+ version = "2.5.2"
+ description = "New-style (ppx) syntax extension"
+ requires = "lwt"
+ archive(byte) = "ppx.cma"
+ archive(byte, plugin) = "ppx.cma"
+ archive(native) = "ppx.cmxa"
+ archive(native, plugin) = "ppx.cmxs"
+ ppx = "ppx_lwt"
+ exists_if = "ppx.cma"
+)
+
+package "log" (
+ version = "2.5.2"
+ description = "Logger for lwt"
+ requires = "lwt"
+ archive(byte) = "lwt-log.cma"
+ archive(byte, plugin) = "lwt-log.cma"
+ archive(native) = "lwt-log.cmxa"
+ archive(native, plugin) = "lwt-log.cmxs"
+ exists_if = "lwt-log.cma"
+)
+
+package "glib" (
+ version = "2.5.2"
+ description = "Glib integration"
+ requires = "lwt lwt.unix"
+ archive(byte) = "lwt-glib.cma"
+ archive(byte, plugin) = "lwt-glib.cma"
+ archive(native) = "lwt-glib.cmxa"
+ archive(native, plugin) = "lwt-glib.cmxs"
+ exists_if = "lwt-glib.cma"
+)
+# OASIS_STOP
+
