@@ -347,7 +347,7 @@ let mk_ch ?blocking ?(set_flags=true) fd = {
   hooks_writable = Lwt_sequence.create ();
 }
 
-let rec check_descriptor ch =
+let check_descriptor ch =
   match ch.state with
     | Opened ->
         ()
