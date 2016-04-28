@@ -1510,6 +1510,7 @@ static value result_readdir_n(struct job_readdir_n *job)
       Store_field(result, i, caml_copy_string(job->entries[i]->d_name));
       free(job->entries[i]);
     }
+    lwt_unix_free_job(&job->job);
     CAMLreturn(result);
   }
 }
