@@ -1083,14 +1083,6 @@ type 'a job
       a C function and how to get its result. The C function may be
       executed in another system thread. *)
 
-val execute_job :
-  ?async_method : async_method ->
-  job : 'a job ->
-  result : ('a job -> 'b) ->
-  free : ('a job -> unit) -> 'b Lwt.t
-  (** This is the old and deprecated way of running a job. Use
-      {!run_job} in new code. *)
-
 val run_job : ?async_method : async_method -> 'a job -> 'a Lwt.t
   (** [run_job ?async_method job] starts [job] and wait for its
       termination.
@@ -1126,6 +1118,13 @@ val cancel_jobs : unit -> unit
 
 val wait_for_jobs : unit -> unit Lwt.t
   (** Wait for all pending jobs to terminate. *)
+
+val execute_job :
+  ?async_method : async_method ->
+  job : 'a job ->
+  result : ('a job -> 'b) ->
+  free : ('a job -> unit) -> 'b Lwt.t
+  (** @deprecated Use [run_job]. *)
 
 (** {2 Notifications} *)
 
@@ -1196,7 +1195,7 @@ val set_affinity : ?pid : int -> int list -> unit
 (**/**)
 
 val run : 'a Lwt.t -> 'a
-  (* Same as {!Lwt_main.run} *)
+  (** @deprecated Use [Lwt_main.run]. *)
 
 val has_wait4 : bool
-  (* Deprecated, use [Lwt_sys.have `wait4]. *)
+  (** @deprecated Use [Lwt_sys.have `wait4]. *)

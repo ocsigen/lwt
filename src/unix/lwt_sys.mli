@@ -26,9 +26,6 @@ exception Not_available of string
   (** [Not_available(feature)] is an exception that may be raised when
       a feature is not available on the current system. *)
 
-val windows : bool
-  (** [true] iff running on windows. Deprecated; use [Sys.win32]. *)
-
 (** Features that can be tested. *)
 type feature =
     [ `wait4
@@ -53,3 +50,6 @@ type byte_order = Little_endian | Big_endian
 
 val byte_order : byte_order
   (** The byte order used by the computer running the program. *)
+
+val windows : bool
+  (** @deprecated Use [Sys.win32]. *)

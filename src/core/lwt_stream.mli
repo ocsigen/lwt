@@ -230,7 +230,7 @@ val on_termination : 'a t -> (unit -> unit) -> unit
       {!peek} or similar was used. *)
 
 val on_terminate : 'a t -> (unit -> unit) -> unit
-  (* Deprecated, use [on_termination] *)
+  (** @deprecated Use [on_termination]. *)
 
 (** {2 Stream transversal} *)
 
