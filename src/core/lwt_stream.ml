@@ -101,6 +101,8 @@ type 'a source =
 type 'a t = {
   source : 'a source;
   (* The source of the stream. *)
+  closed : unit Lwt.t;
+  (* A thread that sleeps until the stream is closed. *)
   mutable node : 'a node;
   (* Pointer to first pending element, or to [last] if there is no
      pending element. *)
@@ -130,28 +132,31 @@ let clone s =
      | _ -> ());
   {
     source = s.source;
+    closed = s.closed;
     node = s.node;
     last = s.last;
     hooks = s.hooks;
   }
 
-let from f =
+let from_source source =
   let last = new_node () in
-  {
-    source = From { from_create = f; from_thread = Lwt.return_unit };
-    node = last;
-    last = ref last;
-    hooks = ref [];
+  let closed, closed_w = Lwt.wait () in
+  let mark_closed () =
+    if not (Lwt.is_sleeping closed) then Lwt.wakeup closed_w () in
+  { source = source
+  ; closed = closed
+  ; node = last
+  ; last = ref last
+  ; hooks = ref [mark_closed]
   }
 
+let from f =
+  from_source (From { from_create = f; from_thread = Lwt.return_unit })
+
 let from_direct f =
-  let last = new_node () in
-  {
-    source = From_direct f;
-    node = last;
-    last = ref last;
-    hooks = ref [];
-  }
+  let t = from_source (From_direct f) in
+  List.iter (fun f -> f ()) !(t.hooks);
+  t
 
 let on_termination s f =
   s.hooks := f :: !(s.hooks)
@@ -191,8 +196,6 @@ let of_string s =
        end)
 
 let create_with_reference () =
-  (* Create the cell pointing to the end of the queue. *)
-  let last = ref (new_node ()) in
   (* Create the source for notifications of new elements. *)
   let source, wakener_cell =
     let waiter, wakener = Lwt.wait () in
@@ -201,13 +204,14 @@ let create_with_reference () =
        push_external = Obj.repr () },
      ref wakener)
   in
-  (* Set to [true] when the end-of-stream is sent. *)
-  let closed = ref false in
-  let hooks = ref [] in
+  let t = from_source (Push source) in
+  (* [push] should not close over [t] so that it can be garbage collected even
+   * there are still references to [push]. Unpack all the components of [t]
+   * that [push] needs and reference those identifiers instead. *)
+  let closed = t.closed and last = t.last and hooks = t.hooks in
   (* The push function. It does not keep a reference to the stream. *)
   let push x =
-    if !closed then raise Closed;
-    if x = None then closed := true;
+    if not (Lwt.is_sleeping closed) then raise Closed;
     (* Push the element at the end of the queue. *)
     let node = !last and new_last = new_node () in
     node.data <- x;
@@ -229,12 +233,7 @@ let create_with_reference () =
        exception. *)
     if x = None then List.iter (fun f -> f ()) !hooks
   in
-  ({ source = Push source;
-     node = !last;
-     last = last;
-     hooks = hooks },
-   push,
-   fun x -> source.push_external <- Obj.repr x)
+  (t, push, fun x -> source.push_external <- Obj.repr x)
 
 let create () =
   let source, push, _ = create_with_reference () in
@@ -352,9 +351,6 @@ end
 
 let create_bounded size =
   if size < 0 then invalid_arg "Lwt_stream.create_bounded";
-  (* Create the cell pointing to the end of the queue. *)
-  let last = ref (new_node ()) in
-  let hooks = ref [] in
   (* Create the source for notifications of new elements. *)
   let info, wakener_cell =
     let waiter, wakener = Lwt.wait () in
@@ -369,11 +365,8 @@ let create_bounded size =
        pushb_external = Obj.repr () },
      ref wakener)
   in
-  ({ source = Push_bounded info;
-     node = !last;
-     last = last;
-     hooks = hooks },
-   new bounded_push_impl info wakener_cell last hooks)
+  let t = from_source (Push_bounded info) in
+  (t, new bounded_push_impl info wakener_cell t.last t.hooks)
 
 (* Wait for a new element to be added to the queue of pending element
    of the stream. *)
@@ -735,6 +728,12 @@ let rec is_empty s =
     feed s >>= fun () -> is_empty s
   else
     Lwt.return (s.node.data = None)
+
+let is_closed s =
+  not (Lwt.is_sleeping s.closed)
+
+let closed s =
+  s.closed
 
 let map f s =
   from (fun () -> get s >|= function

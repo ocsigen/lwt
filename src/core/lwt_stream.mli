@@ -215,14 +215,22 @@ val junk_old : 'a t -> unit Lwt.t
 
 val get_available : 'a t -> 'a list
   (** [get_available st] returns all available elements of [l] without
-      blocking *)
+      blocking. *)
 
 val get_available_up_to : int -> 'a t -> 'a list
   (** [get_available_up_to n st] returns up to [n] elements of [l]
-      without blocking *)
+      without blocking. *)
 
 val is_empty : 'a t -> bool Lwt.t
-  (** [is_empty st] returns wether the given stream is empty *)
+  (** [is_empty st] returns whether the given stream is empty. *)
+
+val is_closed : 'a t -> bool
+  (** [is_closed st] returns whether the given stream has been closed. Even if
+      the stream is closed, it still may contain elements waiting to be read. *)
+
+val closed : 'a t -> unit Lwt.t
+  (** [closed st] returns a thread that will sleep until the stream has been
+      closed. *)
 
 val on_termination : 'a t -> (unit -> unit) -> unit
   (** [on_termination st f] executes [f] when the end of the stream [st]
@@ -230,7 +238,7 @@ val on_termination : 'a t -> (unit -> unit) -> unit
       {!peek} or similar was used. *)
 
 val on_terminate : 'a t -> (unit -> unit) -> unit
-  (* Deprecated, use [on_termination] *)
+  (* Deprecated, use [on_termination]. *)
 
 (** {2 Stream transversal} *)
 
