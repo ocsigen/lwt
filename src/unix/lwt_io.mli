@@ -437,13 +437,27 @@ val establish_server :
   ?buffer_size : int ->
   ?backlog : int ->
   Unix.sockaddr -> (input_channel * output_channel -> unit) -> server
-  (** [establish_server ?fd ?buffer_size ?backlog sockaddr f] creates
-      a server which will listen for incoming connections. New
-      connections are passed to [f]. Note that [f] must not raise any
-      exception. If [fd] is not specified, a fresh file descriptor will
-      be created.
+  (** [establish_server ?fd ?buffer_size ?backlog sockaddr f] creates a server
+      which listens for incoming connections. New connections are passed to [f].
 
-      [backlog] is the argument passed to [Lwt_unix.listen] *)
+      [establish_server] does not start separate threads for running [f], nor
+      close the connections passed to [f]. Thus, the skeleton of a practical
+      server based on [establish_server] might look like this:
+
+      {[
+        Lwt_io.establish_server address (fun (ic, oc) ->
+          Lwt.async (fun () ->
+
+            (* ... *)
+
+            Lwt.catch (fun () -> Lwt_io.close oc) (fun _ -> Lwt.return_unit) >>=
+            Lwt.catch (fun () -> Lwt_io.close ic) (fun _ -> Lwt.return_unit)))
+      ]}
+
+      If [fd] is not specified, a fresh file descriptor will be created for
+      listening.
+
+      [backlog] is the argument passed to [Lwt_unix.listen]. *)
 
 val shutdown_server : server -> unit
   (** Shutdown the given server *)
