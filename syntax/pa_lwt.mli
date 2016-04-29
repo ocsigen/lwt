@@ -30,6 +30,13 @@
          write stdio "Hello, " >> write stdio "world!"
       ]}
 
+      If you are mixing `>>` and `;`, you need to use parentheses or
+      `begin`/`end` to get the result you expect:
+
+      {[
+        write stdout "Hello, " >> (ignore (); write stdout "world!")
+      ]}
+
     - lwt-binding:
 
       {[
