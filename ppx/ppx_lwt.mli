@@ -195,7 +195,7 @@ $ ocamlfind ocamlc -package lwt.ppx \
 
    It is also possible to sequence Lwt operations with the [>>] operator:
    {[
-     write stdio "Hello, " >> write stdio "world!"
+     write stdout "Hello, " >> write stdout "world!"
    ]}
 
    By default, each operation must return [unit Lwt.t]. This constraint can be

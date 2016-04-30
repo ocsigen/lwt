@@ -27,7 +27,7 @@
     - anonymous bind:
 
       {[
-         write stdio "Hello, " >> write stdio "world!"
+         write stdout "Hello, " >> write stdout "world!"
       ]}
 
       If you are mixing `>>` and `;`, you need to use parentheses or
