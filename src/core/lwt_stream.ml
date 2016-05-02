@@ -101,16 +101,13 @@ type 'a source =
 type 'a t = {
   source : 'a source;
   (* The source of the stream. *)
-  closed : unit Lwt.t;
-  (* A thread that sleeps until the stream is closed. *)
+  close : unit Lwt.u;
+  (* A waiter for a thread that sleeps until the stream is closed. *)
   mutable node : 'a node;
   (* Pointer to first pending element, or to [last] if there is no
      pending element. *)
   last : 'a node ref;
   (* Node marking the end of the queue of pending elements. *)
-  hooks : (unit -> unit) list ref;
-  (* Functions called when the end of stream is reached. Hooks are
-     shared between all clones. *)
 }
 
 class type ['a] bounded_push = object
@@ -132,22 +129,18 @@ let clone s =
      | _ -> ());
   {
     source = s.source;
-    closed = s.closed;
+    close = s.close;
     node = s.node;
     last = s.last;
-    hooks = s.hooks;
   }
 
 let from_source source =
   let last = new_node () in
-  let closed, closed_w = Lwt.wait () in
-  let mark_closed () =
-    if not (Lwt.is_sleeping closed) then Lwt.wakeup closed_w () in
+  let _, close = Lwt.wait () in
   { source = source
-  ; closed = closed
+  ; close = close
   ; node = last
   ; last = ref last
-  ; hooks = ref [mark_closed]
   }
 
 let from f =
@@ -156,8 +149,14 @@ let from f =
 let from_direct f =
   from_source (From_direct f)
 
+let closed s =
+  Lwt.waiter_of_wakener s.close
+
+let is_closed s =
+  not (Lwt.is_sleeping (closed s))
+
 let on_termination s f =
-  s.hooks := f :: !(s.hooks)
+  Lwt.async (fun () -> closed s >|= f)
 
 let on_terminate = on_termination
 
@@ -206,10 +205,10 @@ let create_with_reference () =
   (* [push] should not close over [t] so that it can be garbage collected even
    * there are still references to [push]. Unpack all the components of [t]
    * that [push] needs and reference those identifiers instead. *)
-  let closed = t.closed and last = t.last and hooks = t.hooks in
+  let close = t.close and last = t.last in
   (* The push function. It does not keep a reference to the stream. *)
   let push x =
-    if not (Lwt.is_sleeping closed) then raise Closed;
+    if not (Lwt.is_sleeping (Lwt.waiter_of_wakener close)) then raise Closed;
     (* Push the element at the end of the queue. *)
     let node = !last and new_last = new_node () in
     node.data <- x;
@@ -229,7 +228,7 @@ let create_with_reference () =
     end;
     (* Do this at the end in case one of the function raise an
        exception. *)
-    if x = None then List.iter (fun f -> f ()) !hooks
+    if x = None then Lwt.wakeup close ()
   in
   (t, push, fun x -> source.push_external <- Obj.repr x)
 
@@ -257,7 +256,7 @@ let notify_pusher info last =
   info.pushb_push_wakener <- wakener;
   Lwt.wakeup_later old_wakener ()
 
-class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last hooks = object
+class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last close = object
   val mutable closed = false
 
   method size =
@@ -331,7 +330,7 @@ class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last hooks = 
         (* Signal that a new value has been received. *)
         Lwt.wakeup_later old_wakener ()
       end;
-      List.iter (fun f -> f ()) !hooks
+      Lwt.wakeup close ();
     end
 
   method count =
@@ -364,7 +363,7 @@ let create_bounded size =
      ref wakener)
   in
   let t = from_source (Push_bounded info) in
-  (t, new bounded_push_impl info wakener_cell t.last t.hooks)
+  (t, new bounded_push_impl info wakener_cell t.last t.close)
 
 (* Wait for a new element to be added to the queue of pending element
    of the stream. *)
@@ -384,7 +383,7 @@ let feed s =
             node.data <- x;
             node.next <- new_last;
             s.last := new_last;
-            if x = None then List.iter (fun f -> f ()) !(s.hooks);
+            if x = None then Lwt.wakeup s.close ();
             Lwt.return_unit
           in
           (* Allow other threads to access this thread. *)
@@ -398,7 +397,7 @@ let feed s =
         node.data <- x;
         node.next <- new_last;
         s.last := new_last;
-        if x = None then List.iter (fun f -> f ()) !(s.hooks);
+        if x = None then Lwt.wakeup s.close ();
         Lwt.return_unit
     | Push push ->
         push.push_waiting <- true;
@@ -726,12 +725,6 @@ let rec is_empty s =
     feed s >>= fun () -> is_empty s
   else
     Lwt.return (s.node.data = None)
-
-let is_closed s =
-  not (Lwt.is_sleeping s.closed)
-
-let closed s =
-  s.closed
 
 let map f s =
   from (fun () -> get s >|= function
