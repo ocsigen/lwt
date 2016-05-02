@@ -292,20 +292,30 @@ let suite = suite "lwt_stream" [
        Lwt_stream.to_list (Lwt_stream.map_exn stream) >>= fun l' ->
        return (l = l'));
 
-  test "on_termination"
+
+  test "closed"
     (fun () ->
-      let st = Lwt_stream.of_list [1; 2] in
+      let b1 = Lwt_stream.(is_closed (of_list [])) in
+      let b2 = Lwt_stream.(is_closed (of_list [1;2;3])) in
+      let b3 = Lwt_stream.(is_closed (of_array [||])) in
+      let b4 = Lwt_stream.(is_closed (of_array [|1;2;3;|])) in
+      let b5 = Lwt_stream.(is_closed (of_string "")) in
+      let b6 = Lwt_stream.(is_closed (of_string "123")) in
+      let b7 = Lwt_stream.(is_closed (from_direct (fun () -> Some 1))) in
+      let b8 = Lwt_stream.(is_closed (from_direct (fun () -> None))) in
+      let st = Lwt_stream.from_direct (
+        let value = ref (Some 1) in
+        fun () -> let r = !value in value := None; r)
+      in
       let b = ref false in
-      Lwt_stream.on_termination st (fun () -> b := true);
+      Lwt.async (fun () -> Lwt_stream.closed st >|= fun () -> b := true);
       ignore (Lwt_stream.peek st);
-      let b1 = !b = false in
+      let b9 = !b = false in
       ignore (Lwt_stream.junk st);
       ignore (Lwt_stream.peek st);
-      let b2 = !b = false in
-      ignore (Lwt_stream.junk st);
-      ignore (Lwt_stream.peek st);
-      let b3 = !b = true in
-      Lwt.return (b1 && b2 && b3));
+      let b10 = !b = true in
+      let b11 = Lwt_stream.is_closed st in
+      return (b1 && b2 && b3 && b4 && b5 && b6 && not b7 && not b8 && b9 && b10 && b11));
 
   test "choose_exhausted"
     (fun () ->

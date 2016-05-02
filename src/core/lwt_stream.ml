@@ -170,9 +170,27 @@ let enqueue' e last =
 let enqueue e s =
   enqueue' e s.last
 
+let feed_direct f last close  =
+  let x = f () in
+  (* Push the element to the end of the queue. *)
+  enqueue' x last;
+  if x = None then Lwt.wakeup close ();
+;;
+
+(* Create a stream from a fixed-length direct source, e.g., lists, arrays, and
+   strings. This constructor will call the genterator function until
+   termination, producing a closed stream with all the elements it will provide
+   in the internal queue. *)
+let from_fixed f =
+  let s = from_direct f in
+  while not (is_closed s) do
+    feed_direct f s.last s.close
+  done;
+  s
+
 let of_list l =
   let l = ref l in
-  from_direct
+  from_fixed
     (fun () ->
        match !l with
          | [] -> None
@@ -180,7 +198,7 @@ let of_list l =
 
 let of_array a =
   let len = Array.length a and i = ref 0 in
-  from_direct
+  from_fixed
     (fun () ->
        if !i = len then
          None
@@ -192,7 +210,7 @@ let of_array a =
 
 let of_string s =
   let len = String.length s and i = ref 0 in
-  from_direct
+  from_fixed
     (fun () ->
        if !i = len then
          None
@@ -389,10 +407,7 @@ let feed s =
           Lwt.protected thread
         end
     | From_direct f ->
-        let x = f () in
-        (* Push the element to the end of the queue. *)
-        enqueue x s;
-        if x = None then Lwt.wakeup s.close ();
+        feed_direct f s.last s.close;
         Lwt.return_unit
     | Push push ->
         push.push_waiting <- true;
