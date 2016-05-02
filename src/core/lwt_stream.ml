@@ -160,6 +160,16 @@ let on_termination s f =
 
 let on_terminate = on_termination
 
+let enqueue' e last =
+  let node = !last and new_last = new_node () in
+  node.data <- e;
+  node.next <- new_last;
+  last := new_last
+;;
+
+let enqueue e s =
+  enqueue' e s.last
+
 let of_list l =
   let l = ref l in
   from_direct
@@ -210,10 +220,7 @@ let create_with_reference () =
   let push x =
     if not (Lwt.is_sleeping (Lwt.waiter_of_wakener close)) then raise Closed;
     (* Push the element at the end of the queue. *)
-    let node = !last and new_last = new_node () in
-    node.data <- x;
-    node.next <- new_last;
-    last := new_last;
+    enqueue' x last;
     (* Send a signal if at least one thread is waiting for a new
        element. *)
     if source.push_waiting then begin
@@ -243,10 +250,7 @@ let create () =
    This does not modify info.pushb_count. *)
 let notify_pusher info last =
   (* Push the element at the end of the queue. *)
-  let node = !last and new_last = new_node () in
-  node.data <- info.pushb_pending;
-  node.next <- new_last;
-  last := new_last;
+  enqueue' info.pushb_pending last;
   (* Clear pending element. *)
   info.pushb_pending <- None;
   (* Wakeup the pusher. *)
@@ -291,10 +295,7 @@ class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last close = 
                  Lwt.fail exn)
     end else begin
       (* Push the element at the end of the queue. *)
-      let node = !last and new_last = new_node () in
-      node.data <- Some x;
-      node.next <- new_last;
-      last := new_last;
+      enqueue' (Some x) last;
       info.pushb_count <- info.pushb_count + 1;
       (* Send a signal if at least one thread is waiting for a new
          element. *)
@@ -379,10 +380,7 @@ let feed s =
           let thread =
             from.from_create () >>= fun x ->
             (* Push the element to the end of the queue. *)
-            let node = !(s.last) and new_last = new_node () in
-            node.data <- x;
-            node.next <- new_last;
-            s.last := new_last;
+            enqueue x s;
             if x = None then Lwt.wakeup s.close ();
             Lwt.return_unit
           in
@@ -393,10 +391,7 @@ let feed s =
     | From_direct f ->
         let x = f () in
         (* Push the element to the end of the queue. *)
-        let node = !(s.last) and new_last = new_node () in
-        node.data <- x;
-        node.next <- new_last;
-        s.last := new_last;
+        enqueue x s;
         if x = None then Lwt.wakeup s.close ();
         Lwt.return_unit
     | Push push ->
