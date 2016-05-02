@@ -225,8 +225,10 @@ val is_empty : 'a t -> bool Lwt.t
   (** [is_empty st] returns whether the given stream is empty. *)
 
 val is_closed : 'a t -> bool
-  (** [is_closed st] returns whether the given stream has been closed. Even if
-      the stream is closed, it still may contain elements waiting to be read. *)
+  (** [is_closed st] returns whether the given stream has been closed. A closed
+      stream is not necessarily empty. It may still contain unread elements. If
+      [is_closed s = true], then all subsequent reads until eof are guaranteed
+      not to block. *)
 
 val closed : 'a t -> unit Lwt.t
   (** [closed st] returns a thread that will sleep until the stream has been
