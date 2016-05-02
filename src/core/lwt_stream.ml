@@ -154,9 +154,7 @@ let from f =
   from_source (From { from_create = f; from_thread = Lwt.return_unit })
 
 let from_direct f =
-  let t = from_source (From_direct f) in
-  List.iter (fun f -> f ()) !(t.hooks);
-  t
+  from_source (From_direct f)
 
 let on_termination s f =
   s.hooks := f :: !(s.hooks)
