@@ -292,6 +292,39 @@ let suite = suite "lwt_stream" [
        Lwt_stream.to_list (Lwt_stream.map_exn stream) >>= fun l' ->
        return (l = l'));
 
+  test "is_closed"
+    (fun () ->
+      let st = Lwt_stream.of_list [1; 2] in
+      let b1 = not (Lwt_stream.is_closed st) in
+      ignore (Lwt_stream.peek st);
+      let b2 = not (Lwt_stream.is_closed st) in
+      ignore (Lwt_stream.junk st);
+      ignore (Lwt_stream.peek st);
+      let b3 = not (Lwt_stream.is_closed st) in
+      ignore (Lwt_stream.junk st);
+      ignore (Lwt_stream.peek st);
+      let b4 = Lwt_stream.is_closed st in
+      Lwt.return (b1 && b2 && b3 && b4));
+
+  test "closed"
+    (fun () ->
+      let st = Lwt_stream.of_list [1; 2] in
+      let b = ref false in
+      let is_closed_in_notification = ref false in
+      Lwt.async (fun () ->
+        Lwt_stream.closed st >|= fun () ->
+        b := true;
+        is_closed_in_notification := Lwt_stream.is_closed st);
+      ignore (Lwt_stream.peek st);
+      let b1 = !b = false in
+      ignore (Lwt_stream.junk st);
+      ignore (Lwt_stream.peek st);
+      let b2 = !b = false in
+      ignore (Lwt_stream.junk st);
+      ignore (Lwt_stream.peek st);
+      let b3 = !b = true in
+      Lwt.return (b1 && b2 && b3 && !is_closed_in_notification));
+
   test "on_termination"
     (fun () ->
       let st = Lwt_stream.of_list [1; 2] in
@@ -306,6 +339,16 @@ let suite = suite "lwt_stream" [
       ignore (Lwt_stream.peek st);
       let b3 = !b = true in
       Lwt.return (b1 && b2 && b3));
+
+  test "on_termination when closed"
+    (fun () ->
+      let st = Lwt_stream.of_list [] in
+      let b = ref false in
+      let b1 = not (Lwt_stream.is_closed st) in
+      ignore (Lwt_stream.junk st);
+      let b2 = Lwt_stream.is_closed st in
+      Lwt_stream.on_termination st (fun () -> b := true);
+      Lwt.return (b1 && b2 && !b));
 
   test "choose_exhausted"
     (fun () ->
