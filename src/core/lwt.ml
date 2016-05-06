@@ -747,16 +747,15 @@ let on_failure t f =
 
 let on_termination t f =
   match (repr t).state with
-    | Return v ->
-        call_unsafe f ()
-    | Fail exn ->
+    | Return _
+    | Fail _ ->
         call_unsafe f ()
     | Sleep sleeper ->
         let data = !current_data in
         add_immutable_waiter sleeper
           (function
-             | Return v -> current_data := data; call_unsafe f ()
-             | Fail exn -> current_data := data; call_unsafe f ()
+             | Return _
+             | Fail _ -> current_data := data; call_unsafe f ()
              | _ -> assert false)
     | Repr _ ->
         assert false
