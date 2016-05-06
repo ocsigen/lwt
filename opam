@@ -23,6 +23,10 @@ build: [
     "--%{ppx_tools:enable}%-ppx"]
   [make "build"]
 ]
+build-test: [
+  ["./configure" "--enable-tests"]
+  [make "test"]
+]
 install: [[make "install"]]
 remove: [[ "ocamlfind" "remove" "lwt" ]]
 depends: [

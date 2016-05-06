@@ -1,0 +1,23 @@
+language: c
+
+os:
+  - linux
+  - osx
+
+env:
+  - COMPILER=4.01
+  - COMPILER=4.02
+  - COMPILER=4.03
+
+matrix:
+  include:
+    - os: linux
+      env: COMPILER=4.02 LIBEV=yes
+    - os: osx
+      env: COMPILER=4.03 LIBEV=yes
+    - os: osx
+      env: COMPILER=4.03 PACKAGE_MANAGER=macports
+    - os: osx
+      env: COMPILER=4.03 LIBEV=yes PACKAGE_MANAGER=macports
+
+script: bash -e utils/travis.sh
