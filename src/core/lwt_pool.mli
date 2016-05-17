@@ -28,7 +28,7 @@
 *)
 
 type 'a t
-  (** Type of pools *)
+  (** Type of a pool containing values of 'a *)
 
 val create :
   int ->
