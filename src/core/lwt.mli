@@ -305,8 +305,10 @@ val wakeup_later_exn : 'a u -> exn -> unit
 val waiter_of_wakener : 'a u -> 'a t
   (** Returns the thread associated to a wakener. *)
 
-type +'a result
-  (** Either a value of type ['a], either an exception. *)
+type +'a result = ('a, exn) Result.result
+  (** Either a value of type ['a], either an exception.
+
+      This type is defined as [('a, exn) Result.result] @since NEXT_RELEASE *)
 
 val make_value : 'a -> 'a result
   (** [value x] creates a result containing the value [x]. *)

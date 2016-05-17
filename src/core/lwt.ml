@@ -302,12 +302,16 @@ let safe_run_waiters sleeper state =
 (* A ['a result] is either [Return of 'a] or [Fail of exn] so it is
    covariant. *)
 
-type +'a result (* = 'a thread_state *)
-external result_of_state : 'a thread_state -> 'a result = "%identity"
-external state_of_result : 'a result -> 'a thread_state = "%identity"
+type +'a result = ('a, exn) Result.result
 
-let make_value v = result_of_state (Return v)
-let make_error e = result_of_state (Fail e)
+let state_of_result
+  : 'a result -> 'a thread_state
+  = function
+  | Result.Ok x -> Return x
+  | Result.Error e -> Fail e
+
+let make_value v = Result.Ok v
+let make_error e = Result.Error e
 
 let wakeup_result t result =
   let t = repr_rec (wakener_repr t) in
