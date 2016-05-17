@@ -311,10 +311,12 @@ type +'a result = ('a, exn) Result.result
       This type is defined as [('a, exn) Result.result] @since NEXT_RELEASE *)
 
 val make_value : 'a -> 'a result
-  (** [value x] creates a result containing the value [x]. *)
+  (** [value x] creates a result containing the value [x].
+      @deprecated since NEXT_RELEASE as it corresponds to {!Result.Ok} *)
 
 val make_error : exn -> 'a result
-  (** [error e] creates a result containing the exception [e]. *)
+  (** [error e] creates a result containing the exception [e].
+      @deprecated since NEXT_RELEASE as it corresponds to {!Result.Error} *)
 
 val of_result : 'a result -> 'a t
   (** Returns a thread from a result. *)
