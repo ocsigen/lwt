@@ -1,0 +1,20 @@
+version: "{build}"
+
+shallow_clone: true
+
+environment:
+  global:
+    CYGWIN: C:\Cygwin
+    CYGSH: C:\Cygwin\bin\bash -lc
+  matrix:
+    - COMPILER: 4.01.0
+      SYSTEM: cygwin
+
+    - COMPILER: 4.02.3
+      SYSTEM: cygwin
+
+install:
+  - utils\appveyor-%SYSTEM%-install.bat
+
+build_script:
+  - utils\appveyor-%SYSTEM%-build.bat
