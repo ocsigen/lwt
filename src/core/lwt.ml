@@ -522,6 +522,8 @@ let return_some x = return (Some x)
 let return_nil = return []
 let return_true = return true
 let return_false = return false
+let return_ok x = return (Result.Ok x)
+let return_error x = return (Result.Error x)
 
 let of_result result =
   thread { state = state_of_result result }

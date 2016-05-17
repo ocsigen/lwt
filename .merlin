@@ -7,3 +7,6 @@ B _build/**
 
 S tests/
 S examples/
+
+PKG result
+PKG bytes

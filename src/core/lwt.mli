@@ -121,6 +121,16 @@ val return_true : bool t
 val return_false : bool t
   (** [return_false = return false] *)
 
+val return_ok : 'a -> ('a, _) Result.result t
+  (** [return_ok x] is similar to [return (Ok x)], to indicate success
+      explicitely..
+      @since NEXT_RELEASE *)
+
+val return_error : 'e -> (_, 'e) Result.result t
+  (** [return_error x] is similar to [return (Error x)], to indicate
+      an error explicitely
+      @since NEXT_RELEASE *)
+
 (** {2 Thread storage} *)
 
 type 'a key
