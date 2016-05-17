@@ -40,9 +40,14 @@ val catch : 'a Lwt.t -> ('a, exn) t
 (** [catch x] behaves like [return y] if [x] evaluates to [y],
     and like [fail e] if [x] raises [e] *)
 
+val get_exn : ('a, exn) t -> 'a Lwt.t
+(** [get_exn] is the opposite of {!catch}: it unwraps the result type,
+    returning the value in case of success, calls {!Lwt.fail} in
+    case of error. *)
+
 val map : ('a -> 'b) -> ('a,'e) t -> ('b,'e) t
 
-val map_err : ('e1 -> 'e2) -> ('a,'e1) t -> ('b,'e2) t
+val map_err : ('e1 -> 'e2) -> ('a,'e1) t -> ('a,'e2) t
 
 val bind : ('a,'e) t -> ('a -> ('b,'e) t) -> ('b,'e) t
 

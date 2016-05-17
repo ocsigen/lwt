@@ -106,6 +106,7 @@ Library "lwt"
     Lwt_mutex,
     Lwt_mvar,
     Lwt_pool,
+    Lwt_result,
     Lwt_sequence,
     Lwt_stream,
     Lwt_switch,

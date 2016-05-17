@@ -41,10 +41,23 @@ let map f e =
       | Ok x -> Ok (f x))
     e
 
+let map_err f e =
+  Lwt.map
+    (function
+      | Error e -> Error (f e)
+      | Ok x -> Ok x)
+    e
+
 let catch e =
   Lwt.catch
     (fun () -> ok e)
     fail
+
+let get_exn e =
+  Lwt.bind e
+    (function
+      | Ok x -> Lwt.return x
+      | Error e -> Lwt.fail e)
 
 let bind e f =
   Lwt.bind e
@@ -53,7 +66,10 @@ let bind e f =
       | Ok x -> f x)
 
 let bind_lwt e f =
-  Lwt.bind e (fun x -> ok (f x))
+  Lwt.bind e
+    (function
+      | Ok x -> ok (f x)
+      | Error e -> fail e)
 
 let bind_result e f =
   Lwt.map
