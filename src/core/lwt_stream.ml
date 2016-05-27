@@ -170,38 +170,6 @@ let enqueue' e last =
 let enqueue e s =
   enqueue' e s.last
 
-let of_list l =
-  let l = ref l in
-  from_direct
-    (fun () ->
-       match !l with
-         | [] -> None
-         | x :: l' -> l := l'; Some x)
-
-let of_array a =
-  let len = Array.length a and i = ref 0 in
-  from_direct
-    (fun () ->
-       if !i = len then
-         None
-       else begin
-         let c = Array.unsafe_get a !i in
-         incr i;
-         Some c
-       end)
-
-let of_string s =
-  let len = String.length s and i = ref 0 in
-  from_direct
-    (fun () ->
-       if !i = len then
-         None
-       else begin
-         let c = String.unsafe_get s !i in
-         incr i;
-         Some c
-       end)
-
 let create_with_reference () =
   (* Create the source for notifications of new elements. *)
   let source, wakener_cell =
@@ -242,6 +210,21 @@ let create_with_reference () =
 let create () =
   let source, push, _ = create_with_reference () in
   (source, push)
+
+let of_iter iter i =
+  let stream, push = create () in
+  iter (fun x -> push (Some x)) i;
+  push None;
+  stream
+
+let of_list l =
+  of_iter List.iter l
+
+let of_array a =
+  of_iter Array.iter a
+
+let of_string s =
+  of_iter String.iter s
 
 (* Add the pending element to the queue and notify the blocked pushed.
 
