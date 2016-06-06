@@ -1,11 +1,8 @@
-%CYGWIN%\setup-x86.exe -q -P ocaml,ocaml-camlp4,ocaml-compiler-libs,libncurses-devel,unzip,libmpfr-devel,patch,flexdll
 set PATH=%PATH%;%CYGWIN%\bin
-cd ..
-wget https://github.com/ocaml/opam/releases/download/1.2.2/opam-full-1.2.2.tar.gz
-tar xvf opam-full-1.2.2.tar.gz
-%CYGSH% "cd /cygdrive/c/projects/opam-full-1.2.2 && env DJDIR=workaround ./configure && make lib-ext && make && make install"
+
 %CYGSH% "opam init -ya"
-%CYGSH% "opam switch %COMPILER%"
+
+cd ..
 git clone https://github.com/ocaml/oasis.git
 cd oasis
 git checkout 0.4.6
