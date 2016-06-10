@@ -18,3 +18,6 @@ install:
 
 build_script:
   - '%CYGSH% "cd /cygdrive/c/projects/lwt ; utils/appveyor-%SYSTEM%-build.sh"'
+
+cache:
+  - '..\opam-cache-%COMPILER%.tar -> opam, appveyor.yml, utils\appveyor*.sh'
