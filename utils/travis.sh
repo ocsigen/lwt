@@ -96,13 +96,14 @@ then
     opam install -y conf-libev
 fi
 
-opam install -y camlp4 react ssl lablgtk
 
 
-
-# Install Lwt and run the tests.
+# Pin Lwt, install its optional dependencies, then install Lwt and run the
+# tests.
 opam pin add -y --no-action .
-opam install -y --build-test lwt
+opam install -y `opam list --short --depopts --required-by lwt | grep -v '^conf-'`
+opam install -y ounit
+opam install -y --build-test --keep-build-dir lwt
 
 
 
