@@ -14,7 +14,7 @@ install:
   - ps: '(new-object net.webclient).DownloadString("https://aantron.github.io/binaries/$env:SYSTEM/x86/ocaml/$env:COMPILER/install.ps1") | PowerShell -Command -'
   - ps: '(new-object net.webclient).DownloadString("https://aantron.github.io/binaries/$env:SYSTEM/x86/camlp4/$env:COMPILER/install.ps1") | PowerShell -Command -'
   - ps: '(new-object net.webclient).DownloadString("https://aantron.github.io/binaries/$env:SYSTEM/x86/opam/1.2/install.ps1") | PowerShell -Command -'
-  - utils\appveyor-%SYSTEM%-install.bat
+  - '%CYGSH% "cd /cygdrive/c/projects/lwt ; utils/appveyor-%SYSTEM%-install.sh"'
 
 build_script:
-  - utils\appveyor-%SYSTEM%-build.bat
+  - '%CYGSH% "cd /cygdrive/c/projects/lwt ; utils/appveyor-%SYSTEM%-build.sh"'
