@@ -155,10 +155,10 @@ val to_string : char t -> string Lwt.t
   (** Returns the word composed of all characters of the given
       stream *)
 
-(** {2 Data retreival} *)
+(** {2 Data retrieval} *)
 
 exception Empty
-  (** Exception raised when trying to retreive data from an empty
+  (** Exception raised when trying to retrieve data from an empty
       stream. *)
 
 val peek : 'a t -> 'a option Lwt.t
