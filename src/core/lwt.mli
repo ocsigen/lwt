@@ -30,7 +30,7 @@
     waiting for some event to happen.
 
     Lwt threads are cooperative in the sense that switching to another
-    thread is awlays explicit (with {!wakeup} or {!wakeup_exn}). When a
+    thread is always explicit (with {!wakeup} or {!wakeup_exn}). When a
     thread is running, it executes as much as possible, and then
     returns (a value or an error) or sleeps.
 
