@@ -29,19 +29,22 @@ packages_homebrew () {
     then
         brew install libev
     fi
+
+    DO_SWITCH=yes
 }
 
 packages_macports () {
-    wget https://distfiles.macports.org/MacPorts/MacPorts-2.3.4-10.9-Mavericks.pkg
-    sudo installer -pkg MacPorts-2.3.4-10.9-Mavericks.pkg -target /
-    export PATH=/opt/local/bin:$PATH
-    sudo port selfupdate
-    sudo port install pkgconfig gtk2 opam | cat
+    eval `wget -q -O - https://aantron.github.io/binaries/macports/x86_64/macports/current/install.sh | bash`
+    sudo port install pkgconfig gtk2 | cat
 
     if [ "$LIBEV" = yes ]
     then
         sudo port install libev | cat
     fi
+
+    wget -q -O - https://aantron.github.io/binaries/macports/x86_64/opam/1.2/install.sh | bash
+    wget -q -O - https://aantron.github.io/binaries/macports/x86_64/ocaml/$COMPILER/install.sh | bash
+    wget -q -O - https://aantron.github.io/binaries/macports/x86_64/camlp4/$COMPILER/install.sh | bash
 }
 
 packages_osx () {
@@ -49,8 +52,6 @@ packages_osx () {
         macports) packages_macports;;
                *) packages_homebrew;;
     esac
-
-    DO_SWITCH=yes
 }
 
 packages () {
