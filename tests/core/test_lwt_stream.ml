@@ -311,14 +311,14 @@ let suite = suite "lwt_stream" [
         fun () -> let r = !value in value := None; r)
       in
       let b = ref false in
-      Lwt.async (fun () -> Lwt_stream.closed st >|= fun () -> b := true);
+      Lwt.async (fun () ->
+        Lwt_stream.closed st >|= fun () -> b := Lwt_stream.is_closed st);
       ignore (Lwt_stream.peek st);
       let b1 = !b = false in
       ignore (Lwt_stream.junk st);
       ignore (Lwt_stream.peek st);
       let b2 = !b = true in
-      let b3 = Lwt_stream.is_closed st in
-      return (b1 && b2 && b3));
+      return (b1 && b2));
 
   test "on_termination"
     (fun () ->
