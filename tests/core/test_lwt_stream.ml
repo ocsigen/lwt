@@ -336,6 +336,14 @@ let suite = suite "lwt_stream" [
       let b3 = Lwt_stream.is_closed st in
       Lwt.return (b1 && b2 && b3));
 
+  test "on_termination when closed"
+    (fun () ->
+      let st = Lwt_stream.of_list [] in
+      let b = ref false in
+      let b1 = Lwt_stream.is_closed st in
+      Lwt_stream.on_termination st (fun () -> b := true);
+      Lwt.return (b1 && !b));
+
   test "choose_exhausted"
     (fun () ->
       Lwt_stream.(to_list (choose [of_list []])) >|= fun _ -> true);
