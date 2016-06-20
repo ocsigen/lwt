@@ -64,15 +64,12 @@
     the code becomes:
 
     {[
-      let switch = Lwt_switch.create () in
-      try_lwt
+      Lwt_switch.with_switch (fun switch ->
         lwt idf = f ~switch ()
         and idg = g ~switch ()
         and idh = h ~switch () in
         ...
-      with exn ->
-        lwt () = Lwt_switch.turn_off switch in
-        raise_lwt exn
+      )
     ]}
 *)
 
@@ -81,6 +78,11 @@ type t
 
 val create : unit -> t
   (** [create ()] creates a new switch. *)
+
+val with_switch : (t -> 'a Lwt.t) -> 'a Lwt.t
+  (** [with_switch fn] is [fn switch], where [switch] is a fresh switch
+      that is turned off when the callback thread finishes (whether it
+      succeeds or fails). *)
 
 val is_on : t -> bool
   (** [is_on switch] returns [true] if the switch is currently on, and

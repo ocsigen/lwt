@@ -69,3 +69,9 @@ let turn_off switch =
         Lwt_list.iter_p (fun hook -> Lwt.apply hook ()) hooks
     | St_off ->
         Lwt.return_unit
+
+let with_switch fn =
+  let switch = create () in
+  Lwt.finalize
+    (fun () -> fn switch)
+    (fun () -> turn_off switch)
