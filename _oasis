@@ -106,11 +106,12 @@ Library "lwt"
     Lwt_mutex,
     Lwt_mvar,
     Lwt_pool,
+    Lwt_result,
     Lwt_sequence,
     Lwt_stream,
     Lwt_switch,
     Lwt_pqueue
-  BuildDepends: bytes
+  BuildDepends: bytes, result
   XMETADescription: Lightweight thread library for OCaml (core library)
 
 Library "lwt-log"
