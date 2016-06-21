@@ -152,4 +152,46 @@ let suite = suite "lwt_switch" [
       let check_4 = !hook_calls = 2 in
 
       check_1 && check_2 && check_3 && check_4);
+
+  test "turn_off waits for hooks: regular exit"
+    (fun () ->
+      let hooks_finished = ref 0 in
+
+      let hook () =
+        Lwt_unix.sleep 0.001 >>= fun () ->
+        hooks_finished := !hooks_finished + 1;
+        Lwt.return_unit
+      in
+
+      let switch = Lwt_switch.create () in
+      Lwt_switch.add_hook (Some switch) hook;
+      Lwt_switch.add_hook (Some switch) hook;
+
+      Lwt_switch.turn_off switch >|= fun () ->
+      !hooks_finished = 2);
+
+  test "turn_off waits for hooks: hook exception"
+    (fun () ->
+      let hooks_finished = ref 0 in
+
+      let successful_hook () =
+        Lwt_unix.sleep 0.001 >>= fun () ->
+        hooks_finished := !hooks_finished + 1;
+        Lwt.return_unit
+      in
+
+      let failing_hook () =
+        hooks_finished := !hooks_finished + 1;
+        raise Exit
+      in
+
+      let switch = Lwt_switch.create () in
+      Lwt_switch.add_hook (Some switch) successful_hook;
+      Lwt_switch.add_hook (Some switch) failing_hook;
+      Lwt_switch.add_hook (Some switch) successful_hook;
+
+      Lwt.catch
+        (fun () -> Lwt_switch.turn_off switch)
+        (fun _ -> Lwt.return_unit) >|= fun () ->
+      !hooks_finished = 3);
 ]

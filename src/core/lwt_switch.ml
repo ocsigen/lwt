@@ -66,7 +66,7 @@ let turn_off switch =
   match switch.state with
     | St_on { hooks = hooks } ->
         switch.state <- St_off;
-        Lwt_list.iter_p (fun hook -> Lwt.apply hook ()) hooks
+        Lwt.join (List.map (fun hook -> Lwt.apply hook ()) hooks)
     | St_off ->
         Lwt.return_unit
 
