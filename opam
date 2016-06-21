@@ -28,6 +28,7 @@ remove: [[ "ocamlfind" "remove" "lwt" ]]
 depends: [
   "ocamlfind" {build & >= "1.5.0"}
   "base-bytes"
+  "result"
   ( "base-no-ppx" | "ppx_tools" )
   ## OASIS is not required in released version
   "oasis" {>= "0.4.4"}
