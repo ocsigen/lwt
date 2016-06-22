@@ -129,7 +129,7 @@ let ocamldoc_wiki tags deps docout docdir =
 let () =
   try
     let wikidoc_dir =
-      let base = Ocamlbuild_pack.My_unix.run_and_read "ocamlfind query wikidoc" in
+      let base = Ocamlbuild_pack.My_unix.run_and_read "ocamlfind query wikidoc 2> /dev/null" in
       String.sub base 0 (String.length base - 1)
     in
 
