@@ -23,7 +23,13 @@
 
 (** This module allows to mix preemptive threads with [Lwt]
     cooperative threads. It maintains an extensible pool of preemptive
-    threads to which you can detach computations. *)
+    threads to which you can detach computations.
+
+    When compiling or linking programs that use [Lwt_preemptive], you should
+    pass the [-thread] or [-vmthread] option. This depends on your build system.
+    For OCamlbuild, add [true: thread] to [_tags]. For OASIS, add [threads] to
+    [BuildDepends] in [_oasis].
+ *)
 
 val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
   (** detaches a computation to a preemptive thread. *)
