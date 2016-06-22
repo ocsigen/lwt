@@ -20,15 +20,20 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *)
 
-(** Creating pools (for example pools of connections to a database). *)
+(** External resource pools. *)
 
-(** Instead of creating a new connection each time you need one,
-    keep a pool of opened connections and reuse opened connections
-    that are free.
-*)
+(** For example, instead of creating a new database connection each time you
+    need one, keep a pool of opened connections and reuse ones that are free.
+    The pool also provides a limit on the number of connections that can
+    simultaneously be open.
+
+    Note that pools are not for keeping Lwt threads. Lwt threads are very cheap
+    to create and are pure. It is neither desirable nor possible to reuse them.
+    If you want to have a pool of {e system} threads, consider module
+    [Lwt_preemptive]. *)
 
 type 'a t
-  (** Type of a pool containing values of 'a *)
+  (** Pools containing values of type ['a]. *)
 
 val create :
   int ->
@@ -36,17 +41,17 @@ val create :
   ?validate : ('a -> bool Lwt.t) ->
   (unit -> 'a Lwt.t) -> 'a t
   (** [create n ?check ?validate f] creates a new pool with at most
-      [n] members. [f] is the function to use to create a new pool
-      member.
+      [n] elements. [f] is the function to use to create a new element
+      Elements are created on demand.
 
       An element of the pool is validated by the optional [validate]
       function before its {!use}. Invalid elements are re-created.
 
       The optional function [check] is called after a [use] of an
       element failed. It must call its argument exactly once with
-      [true] if the pool member is still valid and [false]
-      otherwise. *)
+      [true] if the element is still valid and [false] otherwise. *)
 
 val use : 'a t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
-  (** [use p f] takes one free member of the pool [p] and gives it to
-      the function [f]. *)
+  (** [use p f] takes one free element of the pool [p] and gives it to
+      the function [f]. The element is put back into the pool after the
+      thread created by [f] completes. *)
