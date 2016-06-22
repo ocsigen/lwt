@@ -104,7 +104,7 @@ fi
 opam pin add -y --no-action .
 opam install -y `opam list --short --depopts --required-by lwt | grep -v '^conf-'`
 opam install -y ounit
-opam install -y --build-test --keep-build-dir lwt
+opam install -y --build-test --keep-build-dir --verbose lwt
 
 
 
