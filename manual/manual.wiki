@@ -686,6 +686,10 @@ val s' : int Lwt_stream.t = <abstr>
   is used because {{{libev}}} does not work properly. The user may
   change at any time the backend in use.
 
+  If you see an {{{Invalid_argument}}} error on {{{Unix.select}}}, it
+  may be because the 1024 file descriptor limit was exceeded. Try
+  switching to {{{libev}}}, if possible.
+
   The engine can also be used directly in order to integrate other
   libraries with {{{Lwt}}}. For example {{{GTK}}} needs to be notified
   when some events are received. If you use {{{Lwt}}} with {{{GTK}}}
