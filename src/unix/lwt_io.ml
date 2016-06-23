@@ -455,6 +455,11 @@ let close : type mode. mode channel -> unit Lwt.t = fun wrapper ->
             (fun _ ->
               abort wrapper)
 
+let is_closed wrapper =
+  match wrapper.state with
+  | Closed -> true
+  | _ -> false
+
 let flush_all () =
   let wrappers = Outputs.fold (fun x l -> x :: l) outputs [] in
   Lwt_list.iter_p
@@ -1423,6 +1428,41 @@ let establish_server ?fd ?(buffer_size = !default_buffer_size) ?(backlog=5) sock
   in
   ignore (loop ());
   { shutdown = lazy(Lwt.wakeup abort_wakener `Shutdown) }
+
+let establish_server_safe ?fd ?buffer_size ?backlog sockaddr f =
+  let best_effort_close channel =
+    (* First, check whether the channel is closed. f may have already tried to
+       close the channel, received an exception, and handled it somehow. If so,
+       trying to close the channel here will trigger the same exception, which
+       will go to !Lwt.async_exception_hook, despite the user's efforts. *)
+    (* The Invalid state is not possible on the channel, because it was not
+       created using Lwt_io.atomic. *)
+    if is_closed channel then
+      Lwt.return_unit
+    else
+      Lwt.catch
+        (fun () -> close channel)
+        (fun exn ->
+          !Lwt.async_exception_hook exn;
+          Lwt.return_unit)
+  in
+
+  let handler ((input_channel, output_channel) as channels) =
+    Lwt.async (fun () ->
+      (* Not using Lwt.finalize here, to make sure that exceptions from [f]
+         reach !Lwt.async_exception_hook before exceptions from closing the
+         channels. *)
+      Lwt.catch
+        (fun () -> f channels)
+        (fun exn ->
+          !Lwt.async_exception_hook exn;
+          Lwt.return_unit)
+
+      >>= fun () -> best_effort_close input_channel
+      >>= fun () -> best_effort_close output_channel)
+  in
+
+  establish_server ?fd ?buffer_size ?backlog sockaddr handler
 
 let ignore_close ch =
   ignore (close ch)

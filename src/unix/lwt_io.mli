@@ -413,6 +413,25 @@ val with_connection :
 type server
   (** Type of a server *)
 
+val establish_server_safe :
+  ?fd : Lwt_unix.file_descr ->
+  ?buffer_size : int ->
+  ?backlog : int ->
+  Unix.sockaddr -> (input_channel * output_channel -> unit Lwt.t) -> server
+  (** [establish_server_safe ?fd ?buffer_size ?backlog sockaddr f] creates a
+      server which listens for incoming connections. New connections are passed
+      to [f]. When threads returned by [f] complete, the connections are closed
+      automatically.
+
+      The server does not wait for each thread. It begins accepting new
+      connections immediately.
+
+      If a thread raises an exception, it is passed to
+      [!Lwt.async_exception_hook]. Likewise, if the automatic [close] of a
+      connection raises an exception, it is passed to
+      [!Lwt.async_exception_hook]. To handle exceptions raised by [close], call
+      it manually inside [f]. *)
+
 val establish_server :
   ?fd : Lwt_unix.file_descr ->
   ?buffer_size : int ->
