@@ -24,6 +24,8 @@ open Lwt
 open Lwt_io
 open Test
 
+let local = Unix.ADDR_INET (Unix.inet_addr_loopback, 4321)
+
 let suite = suite "lwt_io" [
   test "auto-flush"
     (fun () ->
@@ -59,4 +61,53 @@ let suite = suite "lwt_io" [
               Lwt_unix.yield () >>= fun () ->
               return (!sent = [Bytes.of_string "foobar"]))
          oc);
+
+  (* Without the corresponding bugfix, which is to handle ENOTCONN from
+     Lwt_unix.shutdown, this test raises an exception from the handler's calls
+     to close. *)
+  test "establish_server: shutdown: client closes first"
+    (fun () ->
+      let wait_for_client, client_finished = Lwt.wait () in
+
+      let handler_wait, run_handler = Lwt.wait () in
+      let handler =
+        handler_wait >>= fun (in_channel, out_channel) ->
+        wait_for_client >>= fun () ->
+        Lwt_io.close in_channel >>= fun () ->
+        Lwt_io.close out_channel >>= fun () ->
+        Lwt.return_true
+      in
+
+      let server =
+        Lwt_io.establish_server
+          local (fun channels -> Lwt.wakeup run_handler channels)
+      in
+
+      with_connection local (fun _ -> Lwt.return_unit) >>= fun () ->
+      Lwt.wakeup client_finished ();
+      Lwt_io.shutdown_server server;
+      handler);
+
+  (* Counterpart to establish_server: shutdown test. Confirms that shutdown is
+     implemented correctly in open_connection. *)
+  test "open_connection: shutdown: server closes first"
+    (fun () ->
+      let wait_for_server, server_finished = Lwt.wait () in
+
+      let server =
+        Lwt_io.establish_server local (fun (in_channel, out_channel) ->
+          Lwt.async (fun () ->
+            Lwt_io.close in_channel >>= fun () ->
+            Lwt_io.close out_channel >|= fun () ->
+            Lwt.wakeup server_finished ()))
+      in
+
+      with_connection local (fun _ ->
+        wait_for_server >>= fun () ->
+        Lwt.return_true)
+
+      >|= fun result ->
+
+      Lwt_io.shutdown_server server;
+      result);
 ]

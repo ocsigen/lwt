@@ -1346,26 +1346,26 @@ let with_file ?buffer ?flags ?perm ~mode filename f =
 
 let file_length filename = with_file ~mode:input filename length
 
+let close_socket fd =
+  Lwt.finalize
+    (fun () ->
+      Lwt.catch
+        (fun () ->
+          Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
+          Lwt.return_unit)
+        (function
+        (* Occurs if the peer closes the connection first. *)
+        | Unix.Unix_error (Unix.ENOTCONN, _, _) -> Lwt.return_unit
+        | exn -> Lwt.fail exn))
+    (fun () ->
+      Lwt_unix.close fd)
+
 let open_connection ?fd ?in_buffer ?out_buffer sockaddr =
   let fd = match fd with
     | None -> Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0
     | Some fd -> fd
   in
-  let close = lazy begin
-    Lwt.finalize
-      (fun () ->
-        Lwt.catch
-          (fun () ->
-            Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
-            Lwt.return_unit)
-          (function
-          | Unix.Unix_error(Unix.ENOTCONN, _, _) ->
-            (* This may happen if the server closed the connection before us *)
-            Lwt.return_unit
-          | exn -> Lwt.fail exn))
-      (fun () ->
-        Lwt_unix.close fd)
-  end in
+  let close = lazy (close_socket fd) in
   Lwt.catch
     (fun () ->
       Lwt_unix.connect fd sockaddr >>= fun () ->
@@ -1406,10 +1406,7 @@ let establish_server ?fd ?(buffer_size = !default_buffer_size) ?(backlog=5) sock
     Lwt.pick [Lwt_unix.accept sock >|= (fun x -> `Accept x); abort_waiter] >>= function
       | `Accept(fd, addr) ->
           (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
-          let close = lazy begin
-            Lwt_unix.shutdown fd Unix.SHUTDOWN_ALL;
-            Lwt_unix.close fd
-          end in
+          let close = lazy (close_socket fd) in
           f (of_fd ~buffer:(Lwt_bytes.create buffer_size) ~mode:input
                ~close:(fun () -> Lazy.force close) fd,
              of_fd ~buffer:(Lwt_bytes.create buffer_size) ~mode:output
