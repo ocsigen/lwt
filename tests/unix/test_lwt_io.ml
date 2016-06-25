@@ -357,6 +357,27 @@ let suite = suite "lwt_io" [
       with_async_exception_hook see_exception run >|= fun () ->
       !exceptions_observed = 3 && !correct_exceptions);
 
+  test "with_connection"
+    (fun () ->
+      let open Establish_server in
+
+      let in_channel' = ref stdin in
+      let out_channel' = ref stdout in
+
+      let server =
+        Lwt_io.establish_server_safe local (fun _ -> Lwt.return_unit) in
+
+      Lwt_io.with_connection local (fun (in_channel, out_channel) ->
+        in_channel' := in_channel;
+        out_channel' := out_channel;
+        Lwt.return_unit)
+
+      >>= fun () ->
+      shutdown_server_and_wait server >>= fun () ->
+      is_closed_in !in_channel' >>= fun in_closed ->
+      is_closed_out !out_channel' >|= fun out_closed ->
+      in_closed && out_closed);
+
   (* Makes the socket fail with EBADF on close. Tries to close the socket
      manually, and handles the exception. When with_connection tries to close
      the socket again implicitly, that should not raise the exception again. *)
