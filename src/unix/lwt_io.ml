@@ -1387,9 +1387,15 @@ let open_connection ?fd ?in_buffer ?out_buffer sockaddr =
 
 let with_connection ?fd ?in_buffer ?out_buffer sockaddr f =
   open_connection ?fd ?in_buffer ?out_buffer sockaddr >>= fun (ic, oc) ->
+
+  (* If the user already tried to close the socket and got an exception, we
+     don't want to raise that exception again during implicit close. *)
+  let close_if_not_closed channel =
+    if is_closed channel then Lwt.return_unit else close channel in
+
   Lwt.finalize
     (fun () -> f (ic, oc))
-    (fun () -> close ic <&> close oc)
+    (fun () -> close_if_not_closed ic <&> close_if_not_closed oc)
 
 type server = {
   shutdown : unit Lazy.t;
