@@ -294,6 +294,12 @@ let leave_wakeup (already_wakening, snapshot) =
   end else
     current_data := snapshot
 
+(* See https://github.com/ocsigen/lwt/issues/48. *)
+(* This runs any existing handlers scheduled with Lwt.wakeup_later, then
+   hard-exits the current wakeup. *)
+let abandon_wakeups () =
+  if !wakening then leave_wakeup (false, Int_map.empty)
+
 let safe_run_waiters sleeper state =
   let ctx = enter_wakeup () in
   unsafe_run_waiters sleeper state;

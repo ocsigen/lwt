@@ -63,5 +63,9 @@ let rec call_hooks () =
           (fun _  -> Lwt.return_unit) >>= fun () ->
         call_hooks ()
 
-let () = at_exit (fun () -> run (call_hooks ()))
+let () =
+  at_exit (fun () ->
+    Lwt.abandon_wakeups ();
+    run (call_hooks ()))
+
 let at_exit f = ignore (Lwt_sequence.add_l f exit_hooks)
