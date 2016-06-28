@@ -142,5 +142,7 @@ let suite = suite "lwt_mutex" [
           This causes the unlock in with_lock to be lost.
        *)
        let () = Lwt.wakeup_later wakener () in
-       Lwt.return (not (Lwt_mutex.is_locked mtx)));
+       let r = Lwt.catch (fun () -> t) (fun _ -> Lwt.return ()) in
+       Lwt.bind r (fun () ->
+         Lwt.return (not (Lwt_mutex.is_locked mtx))));
 ]
