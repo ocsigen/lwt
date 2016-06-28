@@ -834,19 +834,6 @@ let ignore_result t =
     | Repr _ ->
         assert false
 
-let protected t =
-  match (repr t).state with
-    | Sleep sleeper ->
-        let res = thread (task_aux ()) in
-        (* We use [fact_connect_if] because when [res] is canceled, it
-           will always terminate before [t]. *)
-        add_immutable_waiter sleeper (fast_connect_if res);
-        res
-    | Return _ | Fail _ ->
-        t
-    | Repr _ ->
-        assert false
-
 let no_cancel t =
   match (repr t).state with
     | Sleep sleeper ->
@@ -1110,6 +1097,19 @@ let npick threads =
               collect acc l
   in
   init threads
+
+let protected t =
+  match (repr t).state with
+    | Sleep sleeper ->
+        let res = thread (task_aux ()) in
+        (* We use [fact_connect_if] because when [res] is canceled, it
+           will always terminate before [t]. *)
+        add_immutable_waiter sleeper (fast_connect_if res);
+        res
+    | Return _ | Fail _ ->
+        t
+    | Repr _ ->
+        assert false
 
 let join l =
   let res = temp_many l
