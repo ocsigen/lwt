@@ -1104,8 +1104,14 @@ let protected t =
         let res = thread (task_aux ()) in
         (* We use [fact_connect_if] because when [res] is canceled, it
            will always terminate before [t]. *)
-        add_immutable_waiter sleeper (fast_connect_if res);
+        let rec waiter_cell = ref (Some waiter)
+        and waiter state = fast_connect_if res state in
+        add_removable_waiter [t] waiter_cell;
+        on_cancel res (fun () ->
+          waiter_cell := None;
+          remove_waiters [t]);
         res
+
     | Return _ | Fail _ ->
         t
     | Repr _ ->
