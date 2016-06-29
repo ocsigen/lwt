@@ -375,58 +375,65 @@ let suite = suite "lwt" [
        let t' = protected t in
        return ((state t' = Fail Exn) && (state t = Fail Exn)));
 
-  test "protected wait 1"
+  test "protected task 1"
     (fun () ->
-       let t,w = wait () in
+       let t,w = task () in
        let t' = protected t in
        wakeup w 1;
        return ((state t' = Return 1) && (state t = Return 1)));
 
-  test "protected wait 2"
+  test "protected task 2"
     (fun () ->
-       let t,w = wait () in
+       let t,w = task () in
        let t' = protected t in
        wakeup_exn w Exn;
        return ((state t' = Fail Exn) && (state t = Fail Exn)));
 
-  test "protected wait 3"
+  test "protected task 3"
     (fun () ->
-       let t,w = wait () in
+       let t,w = task () in
        let t' = protected t in
        cancel t';
        return ((state t' = Fail Canceled) && (state t = Sleep)));
 
-  test "protected wait 4"
+  test "protected task 4"
     (fun () ->
-       let t,w = wait () in
+       let t,w = task () in
        let t' = protected t in
        cancel t';
        wakeup w 1;
        return ((state t' = Fail Canceled) && (state t = Return 1)));
 
-  test "protected wait 5"
+  test "protected task 5"
     (fun () ->
-       let t,w = wait () in
+       let t,w = task () in
        let t' = protected t in
        cancel t';
        wakeup_exn w Exn;
        return ((state t' = Fail Canceled) && (state t = Fail Exn)));
 
-  test "protected wait 6"
+  test "protected task 6"
     (fun () ->
-       let t,w = wait () in
+       let t,w = task () in
        let t' = protected t in
        wakeup_exn w Exn;
        cancel t';
        return ((state t' = Fail Exn) && (state t = Fail Exn)));
 
-  test "protected wait 7"
+  test "protected task 7"
     (fun () ->
-       let t,w = wait () in
+       let t,w = task () in
        let t' = protected t in
        wakeup w 1;
        cancel t';
        return ((state t' = Return 1) && (state t = Return 1)));
+
+  test "protected task: cancel task"
+    (fun () ->
+      let t,w = task () in
+      let t' = protected t in
+      cancel t;
+      return ((state t' = Fail Canceled) && (state t = Fail Canceled)));
 
   test "join 1"
     (fun () ->
