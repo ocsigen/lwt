@@ -31,14 +31,27 @@
     [BuildDepends] in [_oasis].
  *)
 
-val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
-  (** detaches a computation to a preemptive thread. *)
+val detach :
+  ?init:(unit -> unit) ->
+  ?at_exit:(unit -> unit) ->
+  ('a -> 'b) -> 'a -> 'b Lwt.t
+  (** detaches a computation to a preemptive thread.
+
+      @param init can tells the thread to run a function when the containing
+      preemptive thread initializes.  Passing [None] can be used to clear any
+      previously set call.
+      @param at_exit can tells the thread to run a function when the containing
+      preemptive thread exits.  Passing [None] can be used to clear any
+      previously set call. *)
 
 val run_in_main : (unit -> 'a Lwt.t) -> 'a
   (** [run_in_main f] executes [f] in the main thread, i.e. the one
       executing {!Lwt_main.run} and returns its result. *)
 
-val init : int -> int -> (string -> unit) -> unit
+val init :
+  ?init:(unit -> unit) ->
+  ?at_exit:(unit -> unit) ->
+  int -> int -> (string -> unit) -> unit
   (** [init min max log] initialises this module. i.e. it launches the
       minimum number of preemptive threads and starts the {b
       dispatcher}.
@@ -46,14 +59,22 @@ val init : int -> int -> (string -> unit) -> unit
       @param min is the minimum number of threads
       @param max is the maximum number of threads
       @param log is used to log error messages
+      @param init acts like it does in {!detach}
+      @param at_exit acts like it does in {!detach}
 
       If {!Lwt_preemptive} has already been initialised, this call
       only modify bounds and the log function, and return the
       dispatcher thread. *)
 
-val simple_init : unit -> unit
+val simple_init :
+  ?init:(unit -> unit) ->
+  ?at_exit:(unit -> unit) ->
+  unit -> unit
   (** [simple_init ()] does a {i simple initialization}. i.e. with
       default parameters if the library is not yet initialised.
+
+      @param init acts like it does in {!detach}
+      @param at_exit acts like it does in {!detach}
 
       Note: this function is automatically called {!detach}. *)
 
@@ -61,9 +82,15 @@ val get_bounds : unit -> int * int
   (** [get_bounds ()] returns the minimum and the maximum number of
       preemptive threads. *)
 
-val set_bounds : int * int -> unit
+val set_bounds :
+  ?init:(unit -> unit) ->
+  ?at_exit:(unit -> unit) ->
+  int * int -> unit
   (** [set_bounds (min, max)] set the minimum and the maximum number
-      of preemptive threads. *)
+      of preemptive threads.
+
+      @param init acts like it does in {!detach}
+      @param at_exit acts like it does in {!detach} *)
 
 val set_max_number_of_threads_queued : int -> unit
   (** Sets the size of the waiting queue, if no more preemptive

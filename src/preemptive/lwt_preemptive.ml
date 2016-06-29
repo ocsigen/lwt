@@ -60,6 +60,12 @@ type thread = {
   (* Channel used to communicate notification id and tasks to the
      worker thread. *)
 
+  mutable init : (unit -> unit) option;
+  (* function to call when a new thread is created *)
+
+  mutable at_exit : (unit -> unit) option;
+  (* Function to call when the thread exits *)
+
   mutable thread : Thread.t;
   (* The worker thread. *)
 
@@ -77,19 +83,33 @@ let waiters : thread Lwt.u Lwt_sequence.t = Lwt_sequence.create ()
 (* Code executed by a worker: *)
 let rec worker_loop worker =
   let id, task = Event.sync (Event.receive worker.task_channel) in
+  begin
+    match worker.init with
+    | None -> ()
+    | Some f -> f (); worker.init <- None
+  end;
   task ();
   (* If there is too much threads, exit. This can happen if the user
      decreased the maximum: *)
   if !threads_count > !max_threads then worker.reuse <- false;
   (* Tell the main thread that work is done: *)
   Lwt_unix.send_notification id;
-  if worker.reuse then worker_loop worker
+  if worker.reuse then (
+    worker_loop worker
+  )
+  else (
+    match worker.at_exit with
+    | None -> ()
+    | Some f -> f (); worker.at_exit <- None
+  )
 
 (* create a new worker: *)
-let make_worker () =
+let make_worker init at_exit =
   incr threads_count;
   let worker = {
     task_channel = Event.new_channel ();
+    init = init;
+    at_exit = at_exit;
     thread = Thread.self ();
     reuse = true;
   } in
@@ -105,11 +125,11 @@ let add_worker worker =
         Lwt.wakeup w worker
 
 (* Wait for worker to be available, then return it: *)
-let rec get_worker () =
+let rec get_worker init at_exit =
   if not (Queue.is_empty workers) then
     Lwt.return (Queue.take workers)
   else if !threads_count < !max_threads then
-    Lwt.return (make_worker ())
+    Lwt.return (make_worker init at_exit)
   else
     Lwt.add_task_r waiters
 
@@ -119,27 +139,27 @@ let rec get_worker () =
 
 let get_bounds () = (!min_threads, !max_threads)
 
-let set_bounds (min, max) =
+let set_bounds ?init ?at_exit (min, max) =
   if min < 0 || max < min then invalid_arg "Lwt_preemptive.set_bounds";
   let diff = min - !threads_count in
   min_threads := min;
   max_threads := max;
   (* Launch new workers: *)
   for i = 1 to diff do
-    add_worker (make_worker ())
+    add_worker (make_worker init at_exit)
   done
 
 let initialized = ref false
 
-let init min max errlog =
+let init ?init ?at_exit min max errlog =
   initialized := true;
   error_log := errlog;
-  set_bounds (min, max)
+  set_bounds ?init ?at_exit (min, max)
 
-let simple_init () =
+let simple_init ?init ?at_exit () =
   if not !initialized then begin
     initialized := true;
-    set_bounds (0, 4)
+    set_bounds ?init ?at_exit (0, 4)
   end
 
 let nbthreads () = !threads_count
@@ -152,8 +172,8 @@ let nbthreadsbusy () = !threads_count - Queue.length workers
 
 let init_result = Lwt.make_error (Failure "Lwt_preemptive.detach")
 
-let detach f args =
-  simple_init ();
+let detach ?init ?at_exit f args =
+  simple_init ?init ?at_exit ();
   let result = ref init_result in
   (* The task for the worker thread: *)
   let task () =
@@ -162,7 +182,7 @@ let detach f args =
     with exn ->
       result := Lwt.make_error exn
   in
-  get_worker () >>= fun worker ->
+  get_worker init at_exit >>= fun worker ->
   let waiter, wakener = Lwt.wait () in
   let id =
     Lwt_unix.make_notification ~once:true
