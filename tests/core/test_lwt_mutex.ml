@@ -112,7 +112,12 @@ let suite = suite "lwt_mutex" [
           not (Lwt_mutex.is_locked mutex)
       in
 
-      (* Run thread 3. *)
-      Lwt.wakeup wake_top_level_waiter ();
+      (* Run thread 3.
+       * Keep this as wakeup_later to test the issue on 2.3.2 reported in
+       * https://github.com/ocsigen/lwt/pull/202
+       * See also:
+       * https://github.com/ocsigen/lwt/pull/261
+       *)
+      Lwt.wakeup_later wake_top_level_waiter ();
       while_waking);
 ]
