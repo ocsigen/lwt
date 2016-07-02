@@ -146,9 +146,23 @@ let mode wrapper = wrapper.channel.mode
    | Creations, closing, locking, ...                                |
    +-----------------------------------------------------------------+ *)
 
+(* This strange hash function is fine because Lwt_io only ever:
+    - adds distinct channels to the hash set,
+    - folds over the hash set.
+   Lwt_io never looks up individual elements. The constant function is not
+   suitable, because then all channels will end up in the same hash bucket.
+
+   A weak hash set is used instead of a weak array to avoid having to include
+   resizing and compaction code in Lwt_io. *)
+let hash_output_channel =
+  let index = ref 0 in
+  fun () ->
+    index := !index + 1;
+    !index
+
 module Outputs = Weak.Make(struct
                              type t = output_channel
-                             let hash = Hashtbl.hash
+                             let hash _ = hash_output_channel ()
                              let equal = ( == )
                            end)
 
