@@ -42,12 +42,12 @@
 
 static int compare_loops(value a, value b)
 {
-  return (int)(Data_custom_val(a) - Data_custom_val(b));
+  return (int)((char*)Ev_loop_val(a) - (char*)Ev_loop_val(b));
 }
 
 static long hash_loop(value loop)
 {
-  return (long)Data_custom_val(loop);
+  return (long)Ev_loop_val(loop);
 }
 
 static struct custom_operations loop_ops = {
@@ -114,12 +114,12 @@ CAMLprim value lwt_libev_unloop(value loop)
 
 static int compare_watchers(value a, value b)
 {
-  return (int)(Data_custom_val(a) - Data_custom_val(b));
+  return (int)((char*)Ev_io_val(a) - (char*)Ev_io_val(b));
 }
 
 static long hash_watcher(value watcher)
 {
-  return (long)Data_custom_val(watcher);
+  return (long)Ev_io_val(watcher);
 }
 
 static struct custom_operations watcher_ops = {
