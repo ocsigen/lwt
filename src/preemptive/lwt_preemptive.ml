@@ -247,6 +247,11 @@ let job_notification =
        Mutex.unlock jobs_mutex;
        ignore (thunk ()))
 
+(* There is a potential performance issue from creating a cell every time this
+   function is called. See:
+   https://github.com/ocsigen/lwt/issues/218
+   https://github.com/ocsigen/lwt/pull/219
+   http://caml.inria.fr/mantis/view.php?id=7158 *)
 let run_in_main f =
   let cell = CELL.make () in
   (* Create the job. *)
