@@ -107,7 +107,7 @@ let split pattern =
 
 let rules = ref []
 
-let load_rules str =
+let load_rules' str =
   let rec loop = function
     | [] ->
       []
@@ -128,7 +128,7 @@ let load_rules str =
 
 let _ =
   match try Some(Sys.getenv "LWT_LOG") with Not_found -> None with
-    | Some str -> load_rules str
+    | Some str -> load_rules' str
     | None -> ()
 
 (* +-----------------------------------------------------------------+
@@ -199,6 +199,10 @@ struct
 end
 
 type section = Section.t
+
+let load_rules str =
+  load_rules' str;
+  Section.recompute_levels ()
 
 let add_rule pattern level =
   rules := (split pattern, level) :: !rules;
