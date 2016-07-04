@@ -67,23 +67,24 @@ val shell : string -> command
 
 (** {3 Redirections} *)
 
-(** A file descriptor redirection. It describes how standard file
-    descriptors are redirected in the child process. *)
 type redirection =
     [ `Keep
-        (** The file descriptor is left unchanged *)
     | `Dev_null
-        (** Connect the file descriptor to [/dev/null] *)
     | `Close
-        (** The file descriptor is closed *)
     | `FD_copy of Unix.file_descr
-        (** The file descriptor is replaced by the given
-            one *)
-    | `FD_move of Unix.file_descr
-        (** The file descriptor is replaced by the given one, which is
-            then closed. *) ]
+    | `FD_move of Unix.file_descr]
+(** File descriptor redirections. These are used with the [~stdin], [~stdout],
+    and [~stderr] arguments below to specify how the standard file descriptors
+    should be redirected in the child process.
 
-(** Note: all optional redirection arguments default to [`Keep] *)
+    - [`Keep]: point to the same file as in the parent.
+    - [`Dev_null]: redirect to [/dev/null] (POSIX) or [nul] (Win32).
+    - [`Close]: close the file descriptor.
+    - [`FD_copy fd] redirect to the file pointed to by [fd]. [fd] remains open.
+    - [`FD_move fd] redirect to the file pointed to by [fd]. [fd] is then
+      closed.
+
+    All optional redirection arguments default to [`Keep]. *)
 
 (** {3 Executing} *)
 
