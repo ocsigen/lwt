@@ -32,11 +32,24 @@
  *)
 
 val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
-  (** detaches a computation to a preemptive thread. *)
+  (** [detach f x] runs the computation [f x] in a separate preemptive thread.
+      [detach] evaluates to an Lwt thread, which waits for the preemptive thread
+      to complete.
+
+      Note that Lwt thread-local storage (i.e., [Lwt.with_key]) cannot be safely
+      used from within [f x]. The same goes for most of the rest of Lwt. If you
+      need to run an Lwt thread in [f x], use {!run_in_main}. *)
 
 val run_in_main : (unit -> 'a Lwt.t) -> 'a
-  (** [run_in_main f] executes [f] in the main thread, i.e. the one
-      executing {!Lwt_main.run} and returns its result. *)
+  (** [run_in_main f] can be called from a detached computation to execute
+      [f ()] in the main preemptive thread, i.e. the one executing
+      {!Lwt_main.run}. [run_in_main f] blocks until [f ()] completes, then
+      returns its result. If [f ()] raises an exception, [run_in_main f] raises
+      the same exception.
+
+      [Lwt.with_key] may be used inside [f ()]. [Lwt.get] can correctly retrieve
+      values set inside [f ()], but not values set outside the [detach]
+      invocation that is calling [run_in_main]. *)
 
 val init : int -> int -> (string -> unit) -> unit
   (** [init min max log] initialises this module. i.e. it launches the
