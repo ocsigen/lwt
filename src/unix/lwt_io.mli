@@ -460,7 +460,10 @@ val establish_server :
       [backlog] is the argument passed to [Lwt_unix.listen]. *)
 
 val shutdown_server : server -> unit
-  (** Shutdown the given server *)
+  (** Close the given server's listening socket. This function does not wait for
+      the close operation to actually complete. It does not affect the sockets
+      of connections that have already been accepted, i.e. passed to [f] by
+      [establish_server] or [establish_server_safe]. *)
 
 val lines_of_file : file_name -> string Lwt_stream.t
   (** [lines_of_file name] returns a stream of all lines of the file
