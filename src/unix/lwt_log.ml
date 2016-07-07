@@ -67,7 +67,7 @@ let render ~buffer ~template ~section ~level ~message =
   Buffer.add_substitute buffer
     (function
        | "date" -> date_string (Lazy.force time)
-       | "milliseconds" -> String.sub (Printf.sprintf "%.4f" (fst (modf (Lazy.force time)))) 2 4
+       | "milliseconds" -> Printf.sprintf "%03.0f" (mod_float (Lazy.force time *. 1000.) 1000.)
        | "name" -> program_name
        | "pid" -> string_of_int (Unix.getpid ())
        | "message" -> message
