@@ -14,10 +14,10 @@ Lwt_list
 Lwt_mutex
 Lwt_mvar
 Lwt_pool
-Lwt_sequence
-Lwt_pqueue
 Lwt_stream
 Lwt_switch
+Lwt_sequence
+Lwt_pqueue
 }
 
 {2 Logger}

@@ -20,7 +20,7 @@
  * 02111-1307, USA.
  *)
 
-(** Mutable sequence of elements *)
+(** Mutable sequence of elements (deprecated) *)
 
 (** A sequence is an object holding a list of elements which support
     the following operations:
@@ -29,6 +29,10 @@
     - taking an element from the left or the right in time and space O(1)
     - removing a previously added element from a sequence in time and space O(1)
     - removing an element while the sequence is being transversed.
+
+   @deprecated This module should be an internal implementation detail of Lwt,
+   and may be removed from the API at some point in the future. Use any other
+   doubly-linked list library as an alternative.
 *)
 
 type 'a t
