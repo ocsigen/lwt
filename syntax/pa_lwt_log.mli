@@ -20,7 +20,7 @@
  * 02111-1307, USA.
  *)
 
-(** Logging facility
+(** Special syntax for the logging facility (deprecated)
 
     It replaces expression of the form:
 

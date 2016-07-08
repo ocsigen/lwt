@@ -20,7 +20,7 @@
  * 02111-1307, USA.
  *)
 
-(** Syntactic sugars for lwt *)
+(** Syntactic sugars for Lwt (deprecated) *)
 
 (** This extension add the following sugars:
 

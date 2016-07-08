@@ -72,22 +72,9 @@ Lwt_react
 
 This package depends on the {e core} library and the {e react} package.
 
-{2 caml4 syntax extensions}
+{2 PPX syntax extension}
 
-Lwt is shipped with two syntax extensions. The first one, contained in
-the {e lwt.syntax} package, aims to make coding with Lwt easier, and
-to make code more readable. The second, contained in the package {e
-lwt.syntax.log}, is a camlp4 filter which decreases the performance
-penalty when using logging by inlining level tests.
-
-{!modules:
-Pa_lwt
-Pa_lwt_log
-}
-
-{2 ppx syntax extension}
-
-This new ppx extension provided by the package {e lwt.ppx} replaces {!Pa_lwt} and {!Pa_lwt_log} using the new ppx mechanism.
+Syntactic sugar for Lwt, such as [let%lwt x = e in e'] syntax for [bind].
 
 {!modules:
 Ppx_lwt
@@ -102,6 +89,21 @@ functions/packages into Lwt.
 Lwt_glib
 Lwt_preemptive
 Lwt_ssl
+}
+
+{2 Camlp4 syntax extensions}
+
+These extensions are deprecated. Use {!Ppx_lwt} instead.
+
+Lwt is shipped with two Camlp4 syntax extensions. The first one, contained in
+the {e lwt.syntax} package, aims to make coding with Lwt easier, and
+to make code more readable. The second, contained in the package {e
+lwt.syntax.log}, is a Camlp4 filter which decreases the performance
+penalty when using logging by inlining level tests.
+
+{!modules:
+Pa_lwt
+Pa_lwt_log
 }
 
 {2 Index}

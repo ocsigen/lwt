@@ -242,7 +242,7 @@ Library "lwt-syntax"
   Modules: Pa_lwt
   BuildDepends: camlp4, camlp4.quotations.o, camlp4.extend
   XMETAType: syntax
-  XMETADescription: Syntactic sugars for Lwt
+  XMETADescription: Syntactic sugars for Lwt (deprecated)
   XMETARequires: camlp4, lwt.syntax.options
 
 Library "lwt-syntax-options"
@@ -254,7 +254,7 @@ Library "lwt-syntax-options"
   InternalModules: Pa_lwt_options
   BuildDepends: camlp4
   XMETAType: syntax
-  XMETADescription: Options for syntax extensions
+  XMETADescription: Options for syntax extensions (deprecated)
   XMETARequires: camlp4
 
 Library "lwt-syntax-log"
@@ -266,7 +266,7 @@ Library "lwt-syntax-log"
   Modules: Pa_lwt_log
   BuildDepends: camlp4, camlp4.quotations.o
   XMETAType: syntax
-  XMETADescription: Syntactic sugars for logging
+  XMETADescription: Syntactic sugars for logging (deprecated)
   XMETARequires: camlp4, lwt.syntax.options
 
 Library "ppx"
