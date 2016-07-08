@@ -21,7 +21,7 @@
  * 02111-1307, USA.
  *)
 
-(** Functional priority queues.
+(** Functional priority queues (deprecated).
 
     A priority queue maintains, in the abstract sense, a set of elements in
     order, and supports fast lookup and removal of the first ("minimum")
