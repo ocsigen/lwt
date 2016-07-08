@@ -43,9 +43,9 @@ val render : buffer : Buffer.t -> template : template -> section : section -> le
   (** Same as {!Lwt_log_core.render}, except that the template may also contain the
       following variables:
 
-      - [date] which will be replaced with the current date
-      - [milliseconds] which will be replaced by the fractionnal part of the current unix
-        time
+      - [date], which will be replaced with the current local date and time,
+      - [milliseconds], which will be replaced by the fractional part of the current Unix
+        time, to millisecond accuracy.
 
       For example:
         - ["$(date) $(name)[$(pid)]: $(message)"]
