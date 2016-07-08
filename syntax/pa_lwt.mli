@@ -121,6 +121,10 @@
     Note that the [exn -> Lwt.fail exn] branch is automatically addedd
     when needed.
 
+    Note also that [finally] is evaluated {e before} [with] if an exception is
+    raised. This is not the case with the newer PPX extension: there, [finally]
+    is always evaluated last.
+
     The construction [try_lwt <expr>] just catch regular exception
     into lwt exception. i.e. it is the same as [catch (fun _ -> <expr>) fail].
 
