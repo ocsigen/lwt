@@ -16,5 +16,8 @@ not <src/ssl/*>: safe_string
 # Examples
 <examples/**/*.ml>: ppx_lwt
 
+# Examples
+<examples/**/*.ml>: use_ppx_lwt
+
 # OASIS_START
 # OASIS_STOP
