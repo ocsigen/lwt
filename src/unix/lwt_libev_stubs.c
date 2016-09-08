@@ -29,6 +29,8 @@
 
 #define CAML_NAME_SPACE
 
+#include <assert.h>
+
 #include <caml/alloc.h>
 #include <caml/fail.h>
 #include <caml/mlvalues.h>
@@ -37,6 +39,34 @@
 #include <caml/custom.h>
 #include <caml/callback.h>
 #include <ev.h>
+
+/* +-----------------------------------------------------------------+
+   | Backend types                                                   |
+   +-----------------------------------------------------------------+ */
+enum {
+  val_EVBACKEND_DEFAULT,
+  val_EVBACKEND_SELECT,
+  val_EVBACKEND_POLL,
+  val_EVBACKEND_EPOLL,
+  val_EVBACKEND_KQUEUE,
+  val_EVBACKEND_DEVPOLL,
+  val_EVBACKEND_PORT
+};
+
+static unsigned int backend_val(value v)
+{
+  switch (Int_val(v))
+  {
+  case val_EVBACKEND_DEFAULT : return 0;
+  case val_EVBACKEND_SELECT  : return EVBACKEND_SELECT;
+  case val_EVBACKEND_POLL    : return EVBACKEND_POLL;
+  case val_EVBACKEND_EPOLL   : return EVBACKEND_EPOLL;
+  case val_EVBACKEND_KQUEUE  : return EVBACKEND_KQUEUE;
+  case val_EVBACKEND_DEVPOLL : return EVBACKEND_DEVPOLL;
+  case val_EVBACKEND_PORT    : return EVBACKEND_PORT;
+  default: assert(0);
+  }
+}
 
 /* +-----------------------------------------------------------------+
    | Loops                                                           |
@@ -72,9 +102,9 @@ static void nop(struct ev_loop *loop)
 {
 }
 
-CAMLprim value lwt_libev_init(value Unit)
+CAMLprim value lwt_libev_init(value backend)
 {
-  struct ev_loop *loop = ev_loop_new(EVFLAG_FORKCHECK);
+  struct ev_loop *loop = ev_loop_new(EVFLAG_FORKCHECK | backend_val(backend));
   if (!loop) caml_failwith("lwt_libev_init");
   /* Remove the invoke_pending callback. */
   ev_set_invoke_pending_cb(loop, nop);
