@@ -128,7 +128,27 @@ type ev_loop
 type ev_io
 type ev_timer
 
-external ev_init : unit -> ev_loop = "lwt_libev_init"
+module Ev_backend =
+struct
+  type t =
+    | EV_DEFAULT
+    | EV_SELECT
+    | EV_POLL
+    | EV_EPOLL
+    | EV_KQUEUE
+    | EV_DEVPOLL
+    | EV_PORT
+
+  let default = EV_DEFAULT
+  let select = EV_SELECT
+  let poll = EV_POLL
+  let epoll = EV_EPOLL
+  let kqueue = EV_KQUEUE
+  let devpoll = EV_DEVPOLL
+  let port = EV_PORT
+end
+
+external ev_init : Ev_backend.t -> ev_loop = "lwt_libev_init"
 external ev_stop : ev_loop -> unit = "lwt_libev_stop"
 external ev_loop : ev_loop -> bool -> unit = "lwt_libev_loop"
 external ev_unloop : ev_loop -> unit = "lwt_libev_unloop"
@@ -138,10 +158,10 @@ external ev_io_stop : ev_loop -> ev_io -> unit = "lwt_libev_io_stop"
 external ev_timer_init : ev_loop -> float -> bool -> (unit -> unit) -> ev_timer = "lwt_libev_timer_init"
 external ev_timer_stop : ev_loop -> ev_timer -> unit  = "lwt_libev_timer_stop"
 
-class libev = object
+class libev' ?(backend=Ev_backend.default) () = object
   inherit abstract
 
-  val loop = ev_init ()
+  val loop = ev_init backend
   method loop = loop
 
   method private cleanup = ev_stop loop
@@ -165,6 +185,8 @@ class libev = object
     let ev = ev_timer_init loop delay repeat f in
     lazy(ev_timer_stop loop ev)
 end
+
+class libev = libev' ()
 
 (* +-----------------------------------------------------------------+
    | Select/poll based engines                                       |

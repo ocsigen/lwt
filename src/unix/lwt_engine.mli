@@ -128,6 +128,19 @@ end
 (** {2 Predefined engines} *)
 
 type ev_loop
+
+module Ev_backend :
+sig
+  type t
+  val default : t
+  val select : t
+  val poll : t
+  val epoll : t
+  val kqueue : t
+  val devpoll : t
+  val port : t
+end
+
   (** Type of libev loops. *)
 
 (** Engine based on libev. If not compiled with libev support, the
