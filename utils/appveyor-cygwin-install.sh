@@ -7,7 +7,7 @@ DIRECTORY=$(pwd)
 
 # AppVeyor does not cache empty subdirectories of .opam, such as $SWITCH/build.
 # To get around that, create a tar archive of .opam.
-CACHE=$DIRECTORY/../opam-cache-$COMPILER.tar
+CACHE=$DIRECTORY/../opam-cache-$SYSTEM-$COMPILER.tar
 
 if [ ! -f $CACHE ]
 then
