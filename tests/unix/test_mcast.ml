@@ -52,25 +52,26 @@ let parent set_loop fd =
 
 let test_mcast name join set_loop =
   test name ~only_if:(fun () -> not Sys.win32) begin fun () ->
-  let should_timeout = not join || not set_loop in
-  let fd1 = Lwt_unix.(socket PF_INET SOCK_DGRAM 0) in
-  let fd2 = Lwt_unix.(socket PF_INET SOCK_DGRAM 0) in
-  let t () =
-    Lwt.catch
-      (fun () ->
-         let t1 = child join fd1 in
-         let t2 = parent set_loop fd2 in
-         Lwt.join [t1; t2] >>= fun () -> Lwt.return true
-      )
-      (function
-        | Lwt_unix.Timeout ->
-          Lwt.return should_timeout
-        | e ->
-          Printf.eprintf "\ntest_mcast: unexpected failure: %S\n%!" (Printexc.to_string e);
-          Lwt.return false
-      )
-  in
-  Lwt.finalize t (fun () -> Lwt.join [Lwt_unix.close fd1; Lwt_unix.close fd2])
+    let should_timeout = not join || not set_loop in
+    let fd1 = Lwt_unix.(socket PF_INET SOCK_DGRAM 0) in
+    let fd2 = Lwt_unix.(socket PF_INET SOCK_DGRAM 0) in
+    let t () =
+      Lwt.catch
+        (fun () ->
+           let t1 = child join fd1 in
+           let t2 = parent set_loop fd2 in
+           Lwt.join [t1; t2] >>= fun () -> Lwt.return true
+        )
+        (function
+          | Lwt_unix.Timeout ->
+            Lwt.return should_timeout
+          | e ->
+            Printf.eprintf "\ntest_mcast: unexpected failure: %S\n%!"
+              (Printexc.to_string e);
+            Lwt.return false
+        )
+    in
+    Lwt.finalize t (fun () -> Lwt.join [Lwt_unix.close fd1; Lwt_unix.close fd2])
   end
 
 let suite =
