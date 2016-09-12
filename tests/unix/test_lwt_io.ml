@@ -307,6 +307,7 @@ let suite = suite "lwt_io" [
      the tester. The correct behavior is for implicit close to do nothing if the
      user already tried to close the sockets. *)
   test "establish_server_safe: no duplicate exceptions"
+    ~only_if:(fun () -> not Sys.win32)
     (fun () ->
       let open Establish_server in
 
@@ -334,6 +335,7 @@ let suite = suite "lwt_io" [
      an exception from the handler. Checks that the handler exception arrives
      at Lwt.async_exception_hook before the exceptions from implicit close. *)
   test "establish_server_safe: order of exceptions"
+    ~only_if:(fun () -> not Sys.win32)
     (fun () ->
       let open Establish_server in
 
@@ -382,6 +384,7 @@ let suite = suite "lwt_io" [
      manually, and handles the exception. When with_connection tries to close
      the socket again implicitly, that should not raise the exception again. *)
   test "with_connection: no duplicate exceptions"
+    ~only_if:(fun () -> not Sys.win32)
     (fun () ->
       let open Establish_server in
 

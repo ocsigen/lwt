@@ -50,7 +50,8 @@ let parent set_loop fd =
       mcast_addr mcast_port;
   Lwt.return_unit
 
-let test_mcast join set_loop =
+let test_mcast name join set_loop =
+  test name ~only_if:(fun () -> not Sys.win32) begin fun () ->
   let should_timeout = not join || not set_loop in
   let fd1 = Lwt_unix.(socket PF_INET SOCK_DGRAM 0) in
   let fd2 = Lwt_unix.(socket PF_INET SOCK_DGRAM 0) in
@@ -70,12 +71,13 @@ let test_mcast join set_loop =
       )
   in
   Lwt.finalize t (fun () -> Lwt.join [Lwt_unix.close fd1; Lwt_unix.close fd2])
+  end
 
 let suite =
   suite "unix_mcast"
     [
-      test "mcast-join-loop" (fun () -> test_mcast true true);
-      test "mcast-nojoin-loop" (fun () -> test_mcast false true);
-      test "mcast-join-noloop" (fun () -> test_mcast true false);
-      test "mcast-nojoin-noloop" (fun () -> test_mcast false false);
+      test_mcast "mcast-join-loop" true true;
+      test_mcast "mcast-nojoin-loop" false true;
+      test_mcast "mcast-join-noloop" true false;
+      test_mcast "mcast-nojoin-noloop" false false;
     ]

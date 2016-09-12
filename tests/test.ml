@@ -25,6 +25,7 @@ open Lwt_io
 
 type t = {
   name : string;
+  only_if : unit -> bool;
   run : unit -> bool;
 }
 
@@ -33,8 +34,11 @@ type suite = {
   suite_tests : t list;
 }
 
-let test_direct ~name ~run = { name = name; run = run }
-let test ~name ~run = { name = name; run = (fun () -> Lwt_main.run (run ())) }
+let test_direct name ?(only_if = fun () -> true) run = {name; only_if; run}
+
+let test name ?(only_if = fun () -> true) run =
+  {name; only_if; run = fun () -> Lwt_main.run (run ())}
+
 let suite ~name ~tests = { suite_name = name; suite_tests = tests }
 
 let run ~name ~suites =
@@ -44,34 +48,43 @@ let run ~name ~suites =
   Printf.printf "Running %d tests for library %S.\n%!" total name;
 
   (* Iterate over suites: *)
-  let rec loop_suites failures number suites =
+  let rec loop_suites failures skipped number suites =
     match suites with
       | [] ->
           if failures = 0 then
-            Printf.printf "\r\027[JDone. All tests succeeded.\n%!"
+            Printf.printf "\r\027[JDone. %d test(s) skipped.\n%!" skipped
           else begin
             Printf.printf "\r\027[JDone. %d of %d tests failed.\n%!" failures total;
             exit 1
           end
       | suite :: suites ->
-          loop_tests failures suite.suite_name number suites suite.suite_tests
+          loop_tests
+            failures skipped suite.suite_name number suites suite.suite_tests
 
   (* Iterate over tests: *)
-  and loop_tests failures suite_name number suites tests =
+  and loop_tests failures skipped suite_name number suites tests =
     match tests with
       | [] ->
-          loop_suites failures number suites
+          loop_suites failures skipped number suites
       | test :: tests ->
+          if not (test.only_if ()) then begin
+            Printf.printf "\r\027[J(%d/%d) Skipping test %S from suite %S%!"
+              number total test.name suite_name;
+            loop_tests
+              failures (skipped + 1) suite_name (number + 1) suites tests
+          end
+          else begin
           Printf.printf "\r\027[J(%d/%d) Running test %S from suite %S%!" number total test.name suite_name;
           try
             if test.run () then
-              loop_tests failures suite_name (number + 1) suites tests
+              loop_tests failures skipped suite_name (number + 1) suites tests
             else begin
               Printf.printf "\r\027[J\027[31;1mTest %S from suite %S failed.\027[0m\n%!" test.name suite_name;
-              loop_tests (failures + 1) suite_name (number + 1) suites tests
+              loop_tests (failures + 1) skipped suite_name (number + 1) suites tests
             end
           with exn ->
             Printf.printf "\r\027[J\027[31;1mTest %S from suite %S failed. It raised: %S.\027[0m\n%!" test.name suite_name (Printexc.to_string exn);
-            loop_tests (failures + 1) suite_name (number + 1) suites tests
+            loop_tests (failures + 1) skipped suite_name (number + 1) suites tests
+          end
   in
-  loop_suites 0 1 suites
+  loop_suites 0 0 1 suites
