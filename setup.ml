@@ -15,12 +15,12 @@ open OASISDynRun;;
 
 let () =
   InternalInstallPlugin.lib_hook :=
-    fun (cs, bs, lib) ->
+    fun (cs, bs, lib, dn) ->
       match lib.OASISTypes.lib_findlib_name with
         | Some "unix" ->
-            (cs, bs, lib, ["src/unix/lwt_config.h"; "src/unix/lwt_unix.h"])
+            (cs, bs, lib, dn, ["src/unix/lwt_config.h"; "src/unix/lwt_unix.h"])
         | _ ->
-            (cs, bs, lib, [])
+            (cs, bs, lib, dn, [])
 ;;
 
 let () = setup ();;

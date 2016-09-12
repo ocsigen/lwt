@@ -72,7 +72,12 @@ let () =
              Options.make_links := false
 
          | After_rules ->
-             let env = BaseEnvLight.load ~allow_empty:true ~filename:MyOCamlbuildBase.env_filename () in
+             let env =
+               BaseEnvLight.load
+                 ~allow_empty:true
+                 ~filename:(Pathname.basename BaseEnvLight.default_filename)
+                 ()
+             in
 
              (* Determine extension of CompiledObject: best *)
              let native_suffix =
