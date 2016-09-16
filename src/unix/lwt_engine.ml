@@ -146,6 +146,17 @@ struct
   let kqueue = EV_KQUEUE
   let devpoll = EV_DEVPOLL
   let port = EV_PORT
+
+  let name = function
+    | EV_DEFAULT -> "EV_DEFAULT"
+    | EV_SELECT -> "EV_SELECT"
+    | EV_POLL -> "EV_POLL"
+    | EV_EPOLL -> "EV_EPOLL"
+    | EV_KQUEUE -> "EV_KQUEUE"
+    | EV_DEVPOLL -> "EV_DEVPOLL"
+    | EV_PORT -> "EV_PORT"
+
+  let pp fmt t = Format.pp_print_string fmt (name t)
 end
 
 external ev_init : Ev_backend.t -> ev_loop = "lwt_libev_init"

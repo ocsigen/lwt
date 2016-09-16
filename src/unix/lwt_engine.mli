@@ -139,6 +139,8 @@ sig
   val kqueue : t
   val devpoll : t
   val port : t
+
+  val pp : Format.formatter -> t -> unit
 end
 
   (** Type of libev loops. *)
