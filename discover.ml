@@ -606,18 +606,20 @@ let () =
   if !not_available <> [] then begin
     if not have_pkg_config then
       printf "Warning: the 'pkg-config' command is not available.";
+    (* The missing library list should be printed on the last line, to avoid
+       being trimmed by OPAM. The whole message should be kept to 10 lines. See
+       https://github.com/ocsigen/lwt/issues/271. *)
     printf "
-The following recquired C libraries are missing: %s.
-Please install them and retry. If they are installed in a non-standard location
-or need special flags, set the environment variables <LIB>_CFLAGS and <LIB>_LIBS
-accordingly and retry.
+Some required C libraries were not found.
 
-For example, if libev is installed in /opt/local, you can type:
+If a C library <lib> is installed in a non-standard location, set <LIB>_CFLAGS
+and <LIB>_LIBS accordingly. You may also try ./configure --disable-<lib> to
+avoid compiling support for it. For example, in the case of libev missing:
+    export LIBEV_CFLAGS=-I/opt/local/include
+    export LIBEV_LIBS=-L/opt/local/lib
+    (* or: *)  ./configure --disable-libev
 
-export LIBEV_CFLAGS=-I/opt/local/include
-export LIBEV_LIBS=-L/opt/local/lib
-
-To compile without libev support, use ./configure --disable-libev ...
+Missing C libraries: %s
 " (String.concat ", " !not_available);
     exit 1
   end;
