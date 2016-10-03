@@ -616,7 +616,7 @@ If a C library <lib> is installed in a non-standard location, set <LIB>_CFLAGS
 and <LIB>_LIBS accordingly. You may also try ./configure --disable-<lib> to
 avoid compiling support for it. For example, in the case of libev missing:
     export LIBEV_CFLAGS=-I/opt/local/include
-    export LIBEV_LIBS=-L/opt/local/lib
+    export LIBEV_LIBS='-L/opt/local/lib -lev'
     (* or: *)  ./configure --disable-libev
 
 Missing C libraries: %s
