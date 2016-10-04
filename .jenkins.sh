@@ -1,7 +1,7 @@
 
 opam pin add --no-action lwt .
 opam install camlp4
-opam install ssl lablgtk text react conf-libev
+opam install ssl lablgtk react conf-libev
 opam install --deps-only lwt
 opam install --verbose lwt
 
