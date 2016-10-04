@@ -292,14 +292,6 @@ Executable "ppx_lwt"
 # | Doc                                                               |
 # +-------------------------------------------------------------------+
 
-Document "lwt-manual"
-  Title: Lwt user manual
-  Type: custom (0.3)
-  Install: true
-  XCustom: make -C manual manual.pdf
-  DataFiles: manual/manual.pdf
-  InstallDir: $pdfdir
-
 Document "lwt-api"
   Title: API reference for Lwt
   Type: ocamlbuild (0.3)

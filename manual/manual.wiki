@@ -1,5 +1,3 @@
-<<webonly | <<a_file src="manual.pdf" | Download the pdf manual >>.>>
-
 = Lwt manual =
 
 == Introduction ==
