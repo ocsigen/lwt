@@ -186,10 +186,11 @@ else
 
    The debug mode can be disabled with the option [-no-debug]:
 
-   {[
+   {v
+
 $ ocamlfind ocamlc -package lwt.ppx \
     -ppxopt lwt.ppx,-no-debug -linkpkg -o foo foo.ml
-   ]}
+ v}
 
    {2 Sequence}
 
