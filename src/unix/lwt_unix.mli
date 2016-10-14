@@ -187,35 +187,56 @@ val unix_file_descr : file_descr -> Unix.file_descr
       {!Open}. *)
 
 val of_unix_file_descr : ?blocking : bool -> ?set_flags : bool -> Unix.file_descr -> file_descr
-  (** Creates a lwt {b file descriptor} from a unix one.
+(** Wraps a [Unix] file descriptor [fd] in an [Lwt_unix.file_descr] [fd'].
 
-      [blocking] is the blocking mode of the file-descriptor, and
-      describes how Lwt will use it. In non-blocking mode, read/write
-      on this file descriptor are made using non-blocking IO; in
-      blocking mode they are made using the current async method.  If
-      [blocking] is not specified it is guessed according to the file
-      kind: socket and pipes are in non-blocking mode and others are
-      in blocking mode.
+    [~blocking] controls the {e internal} strategy Lwt uses to perform I/O on
+    the underlying [fd]. Regardless of [~blocking], at the API level,
+    [Lwt_unix.read], [Lwt_unix.write], etc. on [fd'] {e always} block the Lwt
+    thread, but {e never} block the whole process. However, for performance
+    reasons, it is important that [~blocking] match the actual blocking mode of
+    [fd].
 
-      If [set_flags] is [true] (the default) then the file flags are
-      modified according to the [blocking] argument, otherwise they
-      are left unchanged.
+    If [~blocking] is not specified, [of_unix_file_descr] chooses non-blocking
+    mode for Unix sockets, Unix pipes, and Windows sockets, and blocking mode
+    for everything else.
 
-      Note that the blocking mode is less efficient than the
-      non-blocking one, so it should be used only for file descriptors
-      that does not support asynchronous operations, such as regular
-      files, or for shared descriptors such as {!stdout}, {!stderr} or
-      {!stdin}. *)
+    [of_unix_file_descr] runs a system call to set the specified or chosen
+    blocking mode on the underlying [fd].
+
+    To prevent [of_unix_file_descr] from running this system call, you can pass
+    [~set_flags:false]. Note that, in this case, if [~blocking], whether passed
+    explicitly or chosen by Lwt, does not match the true blocking mode of the
+    underlying [fd], I/O on [fd'] will suffer performance degradation.
+
+    Note that [~set_flags] is effectively always [false] if running on Windows
+    and [fd] is not a socket.
+
+    Generally, non-blocking I/O is faster: for blocking I/O, Lwt typically has
+    to run system calls in worker threads to avoid blocking the process. See
+    your system documentation for whether particular kinds of file descriptors
+    support non-blocking I/O. *)
 
 val blocking : file_descr -> bool Lwt.t
-  (** [blocking fd] returns whether [fd] is used in blocking or
-      non-blocking mode. *)
+(** [blocking fd] indicates whether Lwt is internally using blocking or
+    non-blocking I/O with [fd].
+
+    Note that this may differ from the blocking mode of the underlying [Unix]
+    file descriptor (i.e. [unix_file_descr fd]).
+
+    See {!of_unix_file_descr} for details. *)
 
 val set_blocking : ?set_flags : bool -> file_descr -> bool -> unit
-  (** [set_blocking fd b] puts [fd] in blocking or non-blocking
-      mode. If [set_flags] is [true] (the default) then the file flags
-      are modified, otherwise the modification is only done at the
-      application level. *)
+(** [set_blocking fd b] causes Lwt to internally use blocking or non-blocking
+    I/O with [fd], according to the value of [b].
+
+    If [~set_flags] is [true] (the default), Lwt also makes a system call to set
+    the underlying file descriptor's blocking mode to match. Otherwise,
+    [set_blocking] is only informational for Lwt.
+
+    It is important that the underlying file descriptor actually have the same
+    blocking mode as that indicated by [b].
+
+    See {!of_unix_file_descr} for details. *)
 
 val abort : file_descr -> exn -> unit
   (** [abort fd exn] makes all current and further uses of the file
@@ -323,8 +344,19 @@ val close : file_descr -> unit Lwt.t
       file descriptor} and set its state to {!Closed} *)
 
 val read : file_descr -> Bytes.t -> int -> int -> int Lwt.t
-  (** [read fd buf ofs len] has the same semantic as [Unix.read], but
-      is cooperative *)
+(** [read fd buf ofs len] reads up to [len] bytes from [fd], and writes them to
+    [buf], starting at offset [ofs]. The function immediately evaluates to an
+    Lwt thread, which waits for the operation to complete. If it completes
+    successfully, the thread indicates the number of bytes actually read, or
+    zero if the end of file has been reached.
+
+    Note that the Lwt thread waits for data (or end of file) even if the
+    underlying file descriptor is in non-blocking mode. See
+    {!of_unix_file_descr} for a discussion of non-blocking I/O and Lwt.
+
+    The thread can fail with any exception that can be raised by [Unix.read],
+    except [Unix.Unix_error Unix.EAGAIN], [Unix.Unix_error Unix.EWOULDBLOCK] or
+    [Unix.Unix_error Unix.EINTR]. *)
 
 val write : file_descr -> Bytes.t -> int -> int -> int Lwt.t
   (** [write fd buf ofs len] has the same semantic as [Unix.write], but
