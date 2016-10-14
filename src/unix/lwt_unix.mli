@@ -359,8 +359,19 @@ val read : file_descr -> Bytes.t -> int -> int -> int Lwt.t
     [Unix.Unix_error Unix.EINTR]. *)
 
 val write : file_descr -> Bytes.t -> int -> int -> int Lwt.t
-  (** [write fd buf ofs len] has the same semantic as [Unix.write], but
-      is cooperative *)
+(** [write fd buf ofs len] writes up to [len] bytes to [fd] from [buf], starting
+    at buffer offset [ofs]. The function immediately evaluates to an Lwt thread,
+    which waits for the operation to complete. If the operation completes
+    successfully, the thread indicates the number of bytes actually written,
+    which may be less than [len].
+
+    Note that the Lwt thread waits to write even if the underlying file
+    descriptor is in non-blocking mode. See {!of_unix_file_descr} for a
+    discussion of non-blocking I/O and Lwt.
+
+    The thread can fail with any exception that can be raised by
+    [Unix.single_write], except [Unix.Unix_error Unix.EAGAIN],
+    [Unix.Unix_error Unix.EWOULDBLOCK] or [Unix.Unix_error Unix.EINTR]. *)
 
 val write_string : file_descr -> string -> int -> int -> int Lwt.t
   (** See {!write}. *)
