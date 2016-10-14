@@ -255,11 +255,17 @@ val async : (unit -> 'a t) -> unit
       terminates (for instance, because it is looping). *)
 
 val ignore_result : 'a t -> unit
-  (** [ignore_result t] is like [Pervasives.ignore t] except that:
+(** [ignore_result t] behaves as follows:
 
-      - if [t] already failed, it raises the exception now,
-      - if [t] is sleeping and fails later, the exception will be
-        given to {!async_exception_hook}. *)
+    - if [t] has completed with a result, [ignore_result t] does nothing,
+    - if [t] has completed with an exception, [ignore_result t] raises the
+      exception,
+    - if [t] has not completed, [ignore_result t] evaluates to [()] immediately,
+      but if [t] completes later with an exception, it will be given to
+      {!async_exception_hook}.
+
+    Note that this means [ignore_result t] does not wait for [t] to complete. If
+    you need to wait, use [t >>= fun _ -> (* ...after t... *)]. *)
 
 val async_exception_hook : (exn -> unit) ref
   (** Function called when a asynchronous exception is thrown.
