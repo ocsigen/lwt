@@ -478,7 +478,7 @@ CAMLprim value lwt_unix_socketpair_stub(value domain, value type, value protocol
 static lwt_unix_mutex notification_mutex;
 
 /* All pending notifications. */
-static long *notifications = NULL;
+static intnat *notifications = NULL;
 
 /* The size of the notification buffer. */
 static long notification_count = 0;
@@ -517,20 +517,20 @@ static void init_notifications()
 {
   lwt_unix_mutex_init(&notification_mutex);
   notification_count = 4096;
-  notifications = (long*)lwt_unix_malloc(notification_count * sizeof(long));
+  notifications = (intnat*)lwt_unix_malloc(notification_count * sizeof(intnat));
 }
 
 static void resize_notifications()
 {
   long new_notification_count = notification_count * 2;
-  long *new_notifications = (long*)lwt_unix_malloc(new_notification_count * sizeof(long));
-  memcpy((void*)new_notifications, (void*)notifications, notification_count * sizeof(long));
+  intnat *new_notifications = (intnat*)lwt_unix_malloc(new_notification_count * sizeof(intnat));
+  memcpy((void*)new_notifications, (void*)notifications, notification_count * sizeof(intnat));
   free(notifications);
   notifications = new_notifications;
   notification_count = new_notification_count;
 }
 
-void lwt_unix_send_notification(int id)
+void lwt_unix_send_notification(intnat id)
 {
   int ret;
 #if !defined(LWT_ON_WINDOWS)
@@ -798,7 +798,7 @@ value lwt_unix_init_notification()
 #endif
 
 /* Notifications id for each monitored signal. */
-static int signal_notifications[NSIG];
+static intnat signal_notifications[NSIG];
 
 CAMLextern int caml_convert_signal_number (int);
 
@@ -806,7 +806,7 @@ CAMLextern int caml_convert_signal_number (int);
 static void handle_signal(int signum)
 {
   if (signum >= 0 && signum < NSIG) {
-    int id = signal_notifications[signum];
+    intnat id = signal_notifications[signum];
     if (id != -1) {
 #if defined(LWT_ON_WINDOWS)
       /* The signal handler must be reinstalled if we use the signal
@@ -822,7 +822,7 @@ static void handle_signal(int signum)
 /* Handle Ctrl+C on windows. */
 static BOOL WINAPI handle_break(DWORD event)
 {
-  int id = signal_notifications[SIGINT];
+  intnat id = signal_notifications[SIGINT];
   if (id == -1 || (event != CTRL_C_EVENT && event != CTRL_BREAK_EVENT)) return FALSE;
   lwt_unix_send_notification(id);
   return TRUE;
@@ -836,7 +836,7 @@ CAMLprim value lwt_unix_set_signal(value val_signum, value val_notification)
   struct sigaction sa;
 #endif
   int signum = caml_convert_signal_number(Int_val(val_signum));
-  int notification = Int_val(val_notification);
+  intnat notification = Long_val(val_notification);
 
   if (signum < 0 || signum >= NSIG)
     caml_invalid_argument("Lwt_unix.on_signal: unavailable signal");
@@ -1476,7 +1476,7 @@ CAMLprim value lwt_unix_check_job(value val_job, value val_notification_id)
     /* We are not waiting anymore. */
     job->fast = 0;
     /* Set the notification id for asynchronous wakeup. */
-    job->notification_id = Int_val(val_notification_id);
+    job->notification_id = Long_val(val_notification_id);
     result = Val_bool(job->state == LWT_UNIX_JOB_STATE_DONE);
     lwt_unix_mutex_unlock(&job->mutex);
 
