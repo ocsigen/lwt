@@ -768,6 +768,15 @@ let file_exists name =
        | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return_false
        | _ -> Lwt.fail e)
 
+external utimes_job : string -> float -> float -> unit job =
+  "lwt_unix_utimes_job"
+
+let utimes path atime mtime =
+  if Sys.win32 then
+    Lwt.return (Unix.utimes path atime mtime)
+  else
+    run_job (utimes_job path atime mtime)
+
 external isatty_job : Unix.file_descr -> bool job = "lwt_unix_isatty_job"
 
 let isatty ch =

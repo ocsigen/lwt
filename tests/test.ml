@@ -95,3 +95,6 @@ let run ~name ~suites =
           end
   in
   loop_suites 0 0 1 suites
+
+let temp_file () =
+  Filename.temp_file ~temp_dir:"_build" "lwt-testing-" ""

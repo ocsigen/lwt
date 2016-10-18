@@ -42,3 +42,6 @@ val suite : name : string -> tests : t list -> suite
 val run : name : string -> suites : suite list -> unit
   (** Run all the given tests and exit the program with an exit code
       of [0] if all tests succeeded and with [1] otherwise. *)
+
+val temp_file : unit -> string
+(** Creates a temporary file in [_build/] and evaluates to its path. *)

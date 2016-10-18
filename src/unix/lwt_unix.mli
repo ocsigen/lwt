@@ -462,6 +462,18 @@ val fstat : file_descr -> stats Lwt.t
 val file_exists : string -> bool Lwt.t
   (** [file_exists name] tests if a file named [name] exists. *)
 
+val utimes : string -> float -> float -> unit Lwt.t
+(** [utimes path atime mtime] updates the access and modification times of the
+    file at [path]. The access time is set to [atime] and the modification time
+    to [mtime]. To set both to the current time, call [utimes path 0. 0.].
+
+    This function corresponds to
+    {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALutimes}
+    [Unix.utimes]}. See also
+    {{:http://man7.org/linux/man-pages/man3/utimes.3p.html} [utimes(3p)]}.
+
+    @since NEXT_RELEASE *)
+
 val isatty : file_descr -> bool Lwt.t
   (** Wrapper for [Unix.isatty] *)
 
