@@ -413,6 +413,8 @@ val with_connection :
 type server
   (** Type of a server *)
 
+(**/**)
+
 val establish_server_safe :
   ?fd : Lwt_unix.file_descr ->
   ?buffer_size : int ->
@@ -431,6 +433,8 @@ val establish_server_safe :
       connection raises an exception, it is passed to
       [!Lwt.async_exception_hook]. To handle exceptions raised by [close], call
       it manually inside [f]. *)
+
+(**/**)
 
 val establish_server :
   ?fd : Lwt_unix.file_descr ->
