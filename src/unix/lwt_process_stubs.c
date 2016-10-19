@@ -26,6 +26,8 @@
 
 #include <lwt_unix.h>
 
+#define CAML_NAME_SPACE
+
 #include <caml/memory.h>
 #include <caml/alloc.h>
 #include <caml/fail.h>

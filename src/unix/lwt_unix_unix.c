@@ -150,7 +150,7 @@ value lwt_unix_recv(value fd, value buf, value ofs, value len, value flags)
 {
   int ret;
   ret = recv(Int_val(fd), &Byte(String_val(buf), Long_val(ofs)), Long_val(len),
-             convert_flag_list(flags, msg_flag_table));
+             caml_convert_flag_list(flags, msg_flag_table));
   if (ret == -1) uerror("recv", Nothing);
   return Val_int(ret);
 }
@@ -159,7 +159,7 @@ value lwt_unix_bytes_recv(value fd, value buf, value ofs, value len, value flags
 {
   int ret;
   ret = recv(Int_val(fd), (char*)Caml_ba_array_val(buf)->data + Long_val(ofs), Long_val(len),
-             convert_flag_list(flags, msg_flag_table));
+             caml_convert_flag_list(flags, msg_flag_table));
   if (ret == -1) uerror("recv", Nothing);
   return Val_int(ret);
 }
@@ -168,7 +168,7 @@ value lwt_unix_send(value fd, value buf, value ofs, value len, value flags)
 {
   int ret;
   ret = send(Int_val(fd), &Byte(String_val(buf), Long_val(ofs)), Long_val(len),
-             convert_flag_list(flags, msg_flag_table));
+             caml_convert_flag_list(flags, msg_flag_table));
   if (ret == -1) uerror("send", Nothing);
   return Val_int(ret);
 }
@@ -177,7 +177,7 @@ value lwt_unix_bytes_send(value fd, value buf, value ofs, value len, value flags
 {
   int ret;
   ret = send(Int_val(fd), (char*)Caml_ba_array_val(buf)->data + Long_val(ofs), Long_val(len),
-             convert_flag_list(flags, msg_flag_table));
+             caml_convert_flag_list(flags, msg_flag_table));
   if (ret == -1) uerror("send", Nothing);
   return Val_int(ret);
 }
@@ -208,7 +208,7 @@ value lwt_unix_recvfrom(value fd, value buf, value ofs, value len, value flags)
   socklen_t addr_len;
   addr_len = sizeof(addr);
   ret = recvfrom(Int_val(fd), &Byte(String_val(buf), Long_val(ofs)), Long_val(len),
-                 convert_flag_list(flags, msg_flag_table),
+                 caml_convert_flag_list(flags, msg_flag_table),
                  &addr.s_gen, &addr_len);
   if (ret == -1) uerror("recvfrom", Nothing);
   address = alloc_sockaddr(&addr, addr_len, -1);
@@ -227,7 +227,7 @@ value lwt_unix_bytes_recvfrom(value fd, value buf, value ofs, value len, value f
   socklen_t addr_len;
   addr_len = sizeof(addr);
   ret = recvfrom(Int_val(fd), (char*)Caml_ba_data_val(buf) + Long_val(ofs), Long_val(len),
-                 convert_flag_list(flags, msg_flag_table),
+                 caml_convert_flag_list(flags, msg_flag_table),
                  &addr.s_gen, &addr_len);
   if (ret == -1) uerror("recvfrom", Nothing);
   address = alloc_sockaddr(&addr, addr_len, -1);
@@ -248,7 +248,7 @@ value lwt_unix_sendto(value fd, value buf, value ofs, value len, value flags, va
   int ret;
   get_sockaddr(dest, &addr, &addr_len);
   ret = sendto(Int_val(fd), &Byte(String_val(buf), Long_val(ofs)), Long_val(len),
-               convert_flag_list(flags, msg_flag_table),
+               caml_convert_flag_list(flags, msg_flag_table),
                &addr.s_gen, addr_len);
   if (ret == -1) uerror("send", Nothing);
   return Val_int(ret);
@@ -266,7 +266,7 @@ value lwt_unix_bytes_sendto(value fd, value buf, value ofs, value len, value fla
   int ret;
   get_sockaddr(dest, &addr, &addr_len);
   ret = sendto(Int_val(fd), (char*)Caml_ba_data_val(buf) + Long_val(ofs), Long_val(len),
-               convert_flag_list(flags, msg_flag_table),
+               caml_convert_flag_list(flags, msg_flag_table),
                &addr.s_gen, addr_len);
   if (ret == -1) uerror("send", Nothing);
   return Val_int(ret);
@@ -501,7 +501,7 @@ static int socket_domain (int fd)
     case AF_INET6:
         return PF_INET6;
     default:
-        invalid_argument("Not an Internet socket");
+        caml_invalid_argument("Not an Internet socket");
     }
 
     return 0;
@@ -521,7 +521,7 @@ CAMLprim value lwt_unix_mcast_set_loop (value fd, value flag)
         r = setsockopt (Int_val(fd), IPPROTO_IP, IP_MULTICAST_LOOP, (void *) &f, sizeof(f));
         break;
     default:
-        invalid_argument("lwt_unix_mcast_set_loop");
+        caml_invalid_argument("lwt_unix_mcast_set_loop");
     };
 
     if (r == -1)
@@ -546,7 +546,7 @@ CAMLprim value lwt_unix_mcast_set_ttl (value fd, value ttl)
         r = setsockopt(fd_sock, IPPROTO_IP, IP_MULTICAST_TTL, (void *) &v, sizeof(v));
         break;
     default:
-        invalid_argument("lwt_unix_mcast_set_ttl");
+        caml_invalid_argument("lwt_unix_mcast_set_ttl");
     };
 
     if (r == -1)
@@ -575,8 +575,11 @@ CAMLprim value lwt_unix_mcast_modify_membership (value fd, value v_action, value
     case PF_INET: {
         struct ip_mreq mreq;
 
-        if (string_length(group_addr) != 4 || string_length(if_addr) != 4 )
-            invalid_argument("lwt_unix_mcast_modify: Not an IPV4 address");
+        if (caml_string_length(group_addr) != 4 ||
+            caml_string_length(if_addr) != 4) {
+
+            caml_invalid_argument("lwt_unix_mcast_modify: Not an IPV4 address");
+        }
 
         memcpy(&mreq.imr_multiaddr, &GET_INET_ADDR(group_addr), 4);
         memcpy(&mreq.imr_interface, &GET_INET_ADDR(if_addr), 4);
@@ -595,7 +598,7 @@ CAMLprim value lwt_unix_mcast_modify_membership (value fd, value v_action, value
         break;
     }
     default:
-        invalid_argument("lwt_unix_mcast_modify_membership");
+        caml_invalid_argument("lwt_unix_mcast_modify_membership");
     };
 
     if (r == -1)
@@ -635,15 +638,15 @@ static value alloc_process_status(int status)
   value st;
 
   if (WIFEXITED(status)) {
-    st = alloc_small(1, TAG_WEXITED);
+    st = caml_alloc_small(1, TAG_WEXITED);
     Field(st, 0) = Val_int(WEXITSTATUS(status));
   }
   else if (WIFSTOPPED(status)) {
-    st = alloc_small(1, TAG_WSTOPPED);
+    st = caml_alloc_small(1, TAG_WSTOPPED);
     Field(st, 0) = Val_int(caml_rev_convert_signal_number(WSTOPSIG(status)));
   }
   else {
-    st = alloc_small(1, TAG_WSIGNALED);
+    st = caml_alloc_small(1, TAG_WSIGNALED);
     Field(st, 0) = Val_int(caml_rev_convert_signal_number(WTERMSIG(status)));
   }
   return st;
@@ -668,7 +671,7 @@ value lwt_unix_wait4(value flags, value pid_req)
   caml_leave_blocking_section();
   if (pid == -1) uerror("wait4", Nothing);
 
-  times = alloc_small(2 * Double_wosize, Double_array_tag);
+  times = caml_alloc_small(2 * Double_wosize, Double_array_tag);
   Store_double_field(times, 0, ru.ru_utime.tv_sec + ru.ru_utime.tv_usec / 1e6);
   Store_double_field(times, 1, ru.ru_stime.tv_sec + ru.ru_stime.tv_usec / 1e6);
 
@@ -911,9 +914,9 @@ CAMLprim value lwt_unix_open_job(value name, value flags, value perms)
 {
   LWT_UNIX_INIT_JOB_STRING(job, open, 0, name);
 #ifdef NEED_CLOEXEC_EMULATION
-  job->fd = convert_flag_list(flags, open_cloexec_table) != 0;
+  job->fd = caml_convert_flag_list(flags, open_cloexec_table) != 0;
 #endif
-  job->flags = convert_flag_list(flags, open_flag_table);
+  job->flags = caml_convert_flag_list(flags, open_flag_table);
   job->perms = Int_val(perms);
   return lwt_unix_alloc_job(&(job->job));
 }
@@ -1108,11 +1111,14 @@ static value copy_stat(int use_64, struct stat *buf)
   CAMLparam0();
   CAMLlocal5(atime, mtime, ctime, offset, v);
 
-  atime = copy_double((double) buf->st_atime + (NANOSEC(buf, a) / 1000000000.0));
-  mtime = copy_double((double) buf->st_mtime + (NANOSEC(buf, m) / 1000000000.0));
-  ctime = copy_double((double) buf->st_ctime + (NANOSEC(buf, c) / 1000000000.0));
+  atime =
+    caml_copy_double((double) buf->st_atime + (NANOSEC(buf, a) / 1000000000.0));
+  mtime =
+    caml_copy_double((double) buf->st_mtime + (NANOSEC(buf, m) / 1000000000.0));
+  ctime =
+    caml_copy_double((double) buf->st_ctime + (NANOSEC(buf, c) / 1000000000.0));
   offset = use_64 ? caml_copy_int64(buf->st_size) : Val_int(buf->st_size);
-  v = alloc_small(12, 0);
+  v = caml_alloc_small(12, 0);
   Field(v, 0) = Val_int (buf->st_dev);
   Field(v, 1) = Val_int (buf->st_ino);
   switch (buf->st_mode & S_IFMT) {
@@ -1782,16 +1788,16 @@ static value alloc_passwd_entry(struct passwd *entry)
   value dir = Val_unit, shell = Val_unit;
 
   Begin_roots5 (name, passwd, gecos, dir, shell);
-    name = copy_string(entry->pw_name);
-    passwd = copy_string(entry->pw_passwd);
+    name = caml_copy_string(entry->pw_name);
+    passwd = caml_copy_string(entry->pw_passwd);
 #if !defined(__BEOS__)
-    gecos = copy_string(entry->pw_gecos);
+    gecos = caml_copy_string(entry->pw_gecos);
 #else
-    gecos = copy_string("");
+    gecos = caml_copy_string("");
 #endif
-    dir = copy_string(entry->pw_dir);
-    shell = copy_string(entry->pw_shell);
-    res = alloc_small(7, 0);
+    dir = caml_copy_string(entry->pw_dir);
+    shell = caml_copy_string(entry->pw_shell);
+    res = caml_alloc_small(7, 0);
     Field(res, 0) = name;
     Field(res, 1) = passwd;
     Field(res, 2) = Val_int(entry->pw_uid);
@@ -1809,10 +1815,10 @@ static value alloc_group_entry(struct group *entry)
   value name = Val_unit, pass = Val_unit, mem = Val_unit;
 
   Begin_roots3 (name, pass, mem);
-    name = copy_string(entry->gr_name);
-    pass = copy_string(entry->gr_passwd);
-    mem = copy_string_array((const char**)entry->gr_mem);
-    res = alloc_small(4, 0);
+    name = caml_copy_string(entry->gr_name);
+    pass = caml_copy_string(entry->gr_passwd);
+    mem = caml_copy_string_array((const char**)entry->gr_mem);
+    res = caml_alloc_small(4, 0);
     Field(res, 0) = name;
     Field(res, 1) = pass;
     Field(res, 2) = Val_int(entry->gr_gid);
@@ -2073,18 +2079,20 @@ static value alloc_host_entry(struct hostent *entry)
   value addr_list = Val_unit, adr = Val_unit;
 
   Begin_roots4 (name, aliases, addr_list, adr);
-    name = copy_string((char *)(entry->h_name));
+    name = caml_copy_string((char *)(entry->h_name));
     /* PR#4043: protect against buggy implementations of gethostbynamee()
        that return a NULL pointer in h_aliases */
     if (entry->h_aliases)
-      aliases = copy_string_array((const char**)entry->h_aliases);
+      aliases = caml_copy_string_array((const char**)entry->h_aliases);
     else
       aliases = Atom(0);
     if (entry->h_length == 16)
-      addr_list = alloc_array(alloc_one_addr6, (const char**)entry->h_addr_list);
+      addr_list =
+        caml_alloc_array(alloc_one_addr6, (const char**)entry->h_addr_list);
     else
-      addr_list = alloc_array(alloc_one_addr, (const char**)entry->h_addr_list);
-    res = alloc_small(4, 0);
+      addr_list =
+        caml_alloc_array(alloc_one_addr, (const char**)entry->h_addr_list);
+    res = caml_alloc_small(4, 0);
     Field(res, 0) = name;
     Field(res, 1) = aliases;
     switch (entry->h_addrtype) {
@@ -2261,9 +2269,9 @@ static value alloc_protoent(struct protoent *entry)
   value name = Val_unit, aliases = Val_unit;
 
   Begin_roots2 (name, aliases);
-    name = copy_string(entry->p_name);
-    aliases = copy_string_array((const char**)entry->p_aliases);
-    res = alloc_small(3, 0);
+    name = caml_copy_string(entry->p_name);
+    aliases = caml_copy_string_array((const char**)entry->p_aliases);
+    res = caml_alloc_small(3, 0);
     Field(res,0) = name;
     Field(res,1) = aliases;
     Field(res,2) = Val_int(entry->p_proto);
@@ -2277,10 +2285,10 @@ static value alloc_servent(struct servent *entry)
   value name = Val_unit, aliases = Val_unit, proto = Val_unit;
 
   Begin_roots3 (name, aliases, proto);
-    name = copy_string(entry->s_name);
-    aliases = copy_string_array((const char**)entry->s_aliases);
-    proto = copy_string(entry->s_proto);
-    res = alloc_small(4, 0);
+    name = caml_copy_string(entry->s_name);
+    aliases = caml_copy_string_array((const char**)entry->s_aliases);
+    proto = caml_copy_string(entry->s_proto);
+    res = caml_alloc_small(4, 0);
     Field(res,0) = name;
     Field(res,1) = aliases;
     Field(res,2) = Val_int(ntohs(entry->s_port));
@@ -2529,8 +2537,8 @@ static value convert_addrinfo(struct addrinfo * a)
   if (len > sizeof(sa)) len = sizeof(sa);
   memcpy(&sa.s_gen, a->ai_addr, len);
   vaddr = alloc_sockaddr(&sa, len, -1);
-  vcanonname = copy_string(a->ai_canonname == NULL ? "" : a->ai_canonname);
-  vres = alloc_small(5, 0);
+  vcanonname = caml_copy_string(a->ai_canonname == NULL ? "" : a->ai_canonname);
+  vres = caml_alloc_small(5, 0);
   Field(vres, 0) = cst_to_constr(a->ai_family, socket_domain_table, 3, 0);
   Field(vres, 1) = cst_to_constr(a->ai_socktype, socket_type_table, 4, 0);
   Field(vres, 2) = Val_int(a->ai_protocol);
@@ -2646,7 +2654,7 @@ CAMLprim value lwt_unix_getnameinfo_job(value sockaddr, value opts)
 {
   LWT_UNIX_INIT_JOB(job, getnameinfo, 0);
   get_sockaddr(sockaddr, &job->addr, &job->addr_len);
-  job->opts = convert_flag_list(opts, getnameinfo_flag_table);
+  job->opts = caml_convert_flag_list(opts, getnameinfo_flag_table);
   return lwt_unix_alloc_job(&job->job);
 }
 

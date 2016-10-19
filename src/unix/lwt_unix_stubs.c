@@ -25,6 +25,8 @@
 #define _GNU_SOURCE
 #define _POSIX_PTHREAD_SEMANTICS
 
+#define CAML_NAME_SPACE
+
 #include <caml/alloc.h>
 #include <caml/fail.h>
 #include <caml/mlvalues.h>

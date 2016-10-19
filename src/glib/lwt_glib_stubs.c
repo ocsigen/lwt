@@ -20,6 +20,8 @@
  * 02111-1307, USA.
  */
 
+#define CAML_NAME_SPACE
+
 #include <caml/mlvalues.h>
 #include <caml/memory.h>
 #include <caml/custom.h>

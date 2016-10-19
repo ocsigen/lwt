@@ -27,6 +27,8 @@
 
 #if defined(HAVE_LIBEV)
 
+#define CAML_NAME_SPACE
+
 #include <caml/alloc.h>
 #include <caml/fail.h>
 #include <caml/mlvalues.h>

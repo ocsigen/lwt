@@ -564,6 +564,7 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
 
     pr "\n";
     pr "/* Caml headers. */\n";
+    pr "#define CAML_NAME_SPACE\n";
     pr "#include <lwt_unix.h>\n";
     List.iter (pr "#include <caml/%s.h>\n") ["memory"; "alloc"; "fail"; "signals"];
 

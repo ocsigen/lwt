@@ -23,6 +23,8 @@
 #ifndef __LWT_UNIX_H
 #define __LWT_UNIX_H
 
+#define CAML_NAME_SPACE
+
 #include <lwt_config.h>
 #include <caml/mlvalues.h>
 #include <caml/unixsupport.h>
