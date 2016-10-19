@@ -1,7 +1,7 @@
 opam-version: "1.2"
 name: "lwt"
 version: "dev"
-maintainer: "Jérôme Vouillon <jerome.vouillon@pps.univ-paris-diderot.fr>"
+maintainer: "Anton Bachin <antonbachin@yahoo.com>"
 authors: [
   "Jérôme Vouillon"
   "Jérémie Dimino"
