@@ -693,6 +693,10 @@ let ftruncate ch offset =
    | File system synchronisation                                     |
    +-----------------------------------------------------------------+ *)
 
+(* fdatasync appears to be an undocumented system call on OS X. It is detected
+   during configuration of Lwt, and seems to work for now. However, it may break
+   if we make implicit function declaration an error, or in other
+   circumstances. *)
 let fdatasync ch =
   check_descriptor ch;
   run_job (Jobs.fdatasync_job ch.fd)

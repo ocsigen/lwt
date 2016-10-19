@@ -419,7 +419,7 @@ val fdatasync : file_descr -> unit Lwt.t
   (** Synchronise all data (but not metadata) of the file descriptor
       with the disk.
 
-      Note that [fdatasync] is not available on all platforms. *)
+      Note that [fdatasync] is not available on Windows. *)
 
 (** {2 File status} *)
 

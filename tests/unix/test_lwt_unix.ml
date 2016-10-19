@@ -60,4 +60,16 @@ let suite = suite "lwt_unix" [
         | Unix.Unix_error (Unix.ENOENT, "utimes", _) -> Lwt.return_unit
         | e -> Lwt.fail e) >>= fun () ->
       Lwt.return_true);
+
+  (* Test that fdatasync remains available on OS X when it is detected. See
+     comment by implementation of Lwt_unix.fdatasync. *)
+  test ~only_if:(fun () -> Lwt_sys.have `fdatasync) "fdatasync: basic"
+    (fun () ->
+      let temporary_file = temp_file () in
+
+      Lwt_unix.(openfile temporary_file [O_WRONLY] 0) >>= fun fd ->
+      Lwt.finalize
+        (fun () -> Lwt_unix.fdatasync fd)
+        (fun () -> Lwt_unix.close fd) >>= fun () ->
+      Lwt.return_true);
 ]
