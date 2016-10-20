@@ -13,7 +13,6 @@ set -e
 NAME=`oasis query Name 2> /dev/null`
 VERSION=`oasis query Version 2> /dev/null`
 PREFIX=$NAME-$VERSION
-ARCHIVE=$(pwd)/$PREFIX.tar.gz
 
 # Clean setup.data and other generated files.
 make clean
@@ -29,12 +28,18 @@ oasis setup
 sed 's/^SETUP := setup-dev.exe.*/SETUP := setup.exe/' Makefile > Makefile.new
 mv Makefile.new Makefile
 
-# Remove this script and dev-files
-rm -f dist.sh opam .jenkins.sh *.exe
+# Adjust opam file
+sed "s/^version: \"dev\"/version: \"$VERSION\"/" opam > opam.1
+grep -vi oasis opam.1 > opam.2
+mv opam.2 opam
+rm opam.1
+
+# Remove dev-files
+rm -f .jenkins.sh appveyor.yml .travis.yml *.exe configure _oasis
 
 # Commit
 git add --all --force
-git commit -m "Prepare release"
+git commit -m "Release $VERSION"
 git tag $VERSION
 
-git checkout master
+echo "Tag $VERSION created. Run 'git push origin $VERSION' to publish."
