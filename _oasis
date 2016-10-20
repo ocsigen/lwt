@@ -28,7 +28,7 @@ Homepage: http://ocsigen.org/lwt/
 BuildTools: ocamlbuild
 Plugins: DevFiles (0.4), META (0.4)
 XDevFilesEnableMakefile: false
-PostConfCommand: ocaml discover.ml -ext-obj $ext_obj -exec-name $default_executable_name -use-libev $libev -os-type $os_type -use-glib $glib -ccomp-type $ccomp_type -use-pthread $pthread -use-unix $unix -android-target $android_target -libev_default $libev_default
+PostConfCommand: ocaml utils/discover.ml -ext-obj $ext_obj -exec-name $default_executable_name -use-libev $libev -os-type $os_type -use-glib $glib -ccomp-type $ccomp_type -use-pthread $pthread -use-unix $unix -android-target $android_target -libev_default $libev_default
 PostDistCleanCommand: $rm src/unix/lwt_config.h src/unix/lwt_config.ml src/unix/lwt_unix_jobs_generated.ml src/unix/jobs-unix/*
 
 AlphaFeatures: pure_interface
@@ -238,7 +238,7 @@ Library "lwt-syntax"
   Install$: flag(camlp4) || flag(all)
   FindlibName: syntax
   FindlibParent: lwt
-  Path: syntax
+  Path: src/camlp4
   Modules: Pa_lwt
   BuildDepends: camlp4, camlp4.quotations.o, camlp4.extend
   XMETAType: syntax
@@ -250,7 +250,7 @@ Library "lwt-syntax-options"
   Install$: flag(camlp4) || flag(all)
   FindlibName: options
   FindlibParent: lwt-syntax
-  Path: syntax
+  Path: src/camlp4
   InternalModules: Pa_lwt_options
   BuildDepends: camlp4
   XMETAType: syntax
@@ -262,7 +262,7 @@ Library "lwt-syntax-log"
   Install$: flag(camlp4) || flag(all)
   FindlibName: log
   FindlibParent: lwt-syntax
-  Path: syntax
+  Path: src/camlp4
   Modules: Pa_lwt_log
   BuildDepends: camlp4, camlp4.quotations.o
   XMETAType: syntax
@@ -274,7 +274,7 @@ Library "ppx"
   Install$: flag(ppx) || flag(all)
   FindlibName: ppx
   FindlibParent: lwt
-  Path: ppx
+  Path: src/ppx
   Modules: Ppx_lwt
   XMETADescription: New-style (ppx) syntax extension
   XMETARequires:    lwt
@@ -283,7 +283,7 @@ Library "ppx"
 Executable "ppx_lwt"
   Build$: flag(ppx) || flag(all)
   Install$: flag(ppx) || flag(all)
-  Path: ppx
+  Path: src/ppx
   MainIs: ppx_lwt_ex.ml
   BuildDepends: compiler-libs.common, ppx_tools.metaquot
   CompiledObject: best
@@ -317,7 +317,7 @@ Document "lwt-api"
 # +-------------------------------------------------------------------+
 
 Executable logging
-  Path: examples/unix
+  Path: doc/examples/unix
   Build$: flag(unix) && flag(ppx)
   Install: false
   MainIs: logging.ml
@@ -325,7 +325,7 @@ Executable logging
   CompiledObject: best
 
 Executable relay
-  Path: examples/unix
+  Path: doc/examples/unix
   Build$: flag(unix) && flag(ppx)
   Install: false
   MainIs: relay.ml
@@ -333,7 +333,7 @@ Executable relay
   CompiledObject: best
 
 Executable parallelize
-  Path: examples/unix
+  Path: doc/examples/unix
   Build$: flag(unix) && flag(ppx)
   Install: false
   MainIs: parallelize.ml

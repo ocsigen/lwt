@@ -1,12 +1,9 @@
 S src/**
-S ppx/
-S syntax/
 
 B _build/**
 
-
 S tests/
-S examples/
+S doc/examples/
 
 PKG result
 PKG bytes

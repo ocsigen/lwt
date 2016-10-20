@@ -11,7 +11,7 @@ dev-repo: "git://github.com/ocsigen/lwt"
 bug-reports: "http://github.com/ocsigen/lwt/issues"
 license: "LGPL with OpenSSL linking exception"
 build: [
-  ["./configure"
+  ["ocaml" "setup.ml" "-configure"
     "--prefix" prefix
     "--%{conf-libev:enable}%-libev"
     "--%{camlp4:enable}%-camlp4"
@@ -24,7 +24,7 @@ build: [
   [make "build"]
 ]
 build-test: [
-  ["./configure" "--enable-tests"]
+  ["ocaml" "setup.ml" "-configure" "--enable-tests"]
   [make "test"]
 ]
 install: [[make "install"]]

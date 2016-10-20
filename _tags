@@ -2,7 +2,7 @@
 not <src/ssl/*>: safe_string
 
 # Syntax extension
-<syntax/*.ml>: syntax(camlp4o)
+<src/camlp4/*.ml>: syntax(camlp4o)
 
 # Stubs
 <src/unix/*>: use_C_libev, use_C_pthread
@@ -14,7 +14,7 @@ not <src/ssl/*>: safe_string
 <tests/ppx/*>: ppx_lwt
 
 # Examples
-<examples/**/*.ml>: ppx_lwt
+<doc/examples/**/*.ml>: ppx_lwt
 
 # OASIS_START
 # OASIS_STOP
