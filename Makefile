@@ -52,6 +52,7 @@ clean: $(SETUP)
 
 distclean: $(SETUP)
 	./$(SETUP) -distclean $(DISTCLEANFLAGS)
+	rm -rf setup*.exe
 
 configure: $(SETUP)
 	./$(SETUP) -configure $(CONFIGUREFLAGS)
