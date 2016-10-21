@@ -120,7 +120,7 @@ Library "lwt-log"
   Path: src/logger
   Modules: Lwt_log_core, Lwt_log_rules
   BuildDepends: lwt
-  XMETADescription: Logger for lwt
+  XMETADescription: Logger for Lwt
 
 Library "lwt-unix"
   Build$: flag(unix) || flag(all)
@@ -146,7 +146,7 @@ Library "lwt-unix"
     Lwt_unix_jobs_generated,
     Lwt_config
   BuildDepends: lwt, lwt.log, unix, bigarray
-  XMETADescription: Unix support for lwt
+  XMETADescription: Unix support for Lwt
   CSources:
     lwt_config.h,
     lwt_unix.h,
@@ -190,7 +190,7 @@ Library "lwt-simple-top"
   Path: src/simple_top
   InternalModules: Lwt_simple_top
   BuildDepends: lwt, lwt.unix, compiler-libs.common
-  XMETADescription: Unix support for lwt
+  XMETADescription: Lwt-OCaml top level integration (deprecated; use utop)
 
 Library "lwt-react"
   Build$: flag(react) || flag(all)
@@ -200,7 +200,7 @@ Library "lwt-react"
   Path: src/react
   Modules: Lwt_react
   BuildDepends: lwt, react
-  XMETADescription: Reactive programming helpers
+  XMETADescription: Reactive programming helpers for Lwt
 
 Library "lwt-preemptive"
   Build$: flag(preemptive) || flag(all)
@@ -210,7 +210,7 @@ Library "lwt-preemptive"
   Path: src/preemptive
   Modules: Lwt_preemptive
   BuildDepends: lwt, lwt.unix, threads
-  XMETADescription: Preemptive threads support for Lwt
+  XMETADescription: Preemptive thread support for Lwt
 
 Library "lwt-glib"
   Build$: flag(glib) || flag(all)
@@ -221,7 +221,7 @@ Library "lwt-glib"
   Modules: Lwt_glib
   CSources: lwt_glib_stubs.c
   BuildDepends: lwt, lwt.unix
-  XMETADescription: Glib integration
+  XMETADescription: Glib integration for Lwt
 
 Library "lwt-ssl"
   Build$: flag(ssl) || flag(all)
@@ -242,7 +242,7 @@ Library "lwt-syntax"
   Modules: Pa_lwt
   BuildDepends: camlp4, camlp4.quotations.o, camlp4.extend
   XMETAType: syntax
-  XMETADescription: Syntactic sugars for Lwt (deprecated)
+  XMETADescription: Camlp4 syntax for Lwt (deprecated; use lwt.ppx)
   XMETARequires: camlp4, lwt.syntax.options
 
 Library "lwt-syntax-options"
@@ -254,7 +254,7 @@ Library "lwt-syntax-options"
   InternalModules: Pa_lwt_options
   BuildDepends: camlp4
   XMETAType: syntax
-  XMETADescription: Options for syntax extensions (deprecated)
+  XMETADescription: Options for Lwt Camlp4 syntax extension (deprecated; use lwt.ppx)
   XMETARequires: camlp4
 
 Library "lwt-syntax-log"
@@ -266,7 +266,7 @@ Library "lwt-syntax-log"
   Modules: Pa_lwt_log
   BuildDepends: camlp4, camlp4.quotations.o
   XMETAType: syntax
-  XMETADescription: Syntactic sugars for logging (deprecated)
+  XMETADescription: Camlp4 syntax for Lwt logging (deprecated; use lwt.ppx)
   XMETARequires: camlp4, lwt.syntax.options
 
 Library "ppx"
@@ -276,7 +276,7 @@ Library "ppx"
   FindlibParent: lwt
   Path: src/ppx
   Modules: Ppx_lwt
-  XMETADescription: New-style (ppx) syntax extension
+  XMETADescription: Lwt PPX syntax extension
   XMETARequires:    lwt
   XMETAExtraLines:  ppx = "ppx_lwt"
 

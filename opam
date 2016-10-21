@@ -6,8 +6,8 @@ authors: [
   "Jérôme Vouillon"
   "Jérémie Dimino"
 ]
-homepage: "http://github.com/ocsigen/lwt"
-dev-repo: "git://github.com/ocsigen/lwt"
+homepage: "https://github.com/ocsigen/lwt"
+dev-repo: "https://github.com/ocsigen/lwt.git"
 bug-reports: "http://github.com/ocsigen/lwt/issues"
 license: "LGPL with OpenSSL linking exception"
 build: [
@@ -31,11 +31,12 @@ install: [[make "install"]]
 remove: [[ "ocamlfind" "remove" "lwt" ]]
 depends: [
   "ocamlfind" {build & >= "1.5.0"}
+  "ocamlbuild" {build}
   "base-bytes"
   "result"
   ( "base-no-ppx" | "ppx_tools" )
   ## OASIS is not required in released version
-  "oasis" {>= "0.4.7"}
+  "oasis" {build & >= "0.4.7"}
 ]
 depopts: [
   "base-threads"
