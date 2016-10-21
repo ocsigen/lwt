@@ -1,5 +1,7 @@
 # Lwt: lightweight thread library for OCaml
 
+[![Join the chat at https://gitter.im/ocaml-lwt/Lobby](https://badges.gitter.im/ocaml-lwt/Lobby.svg)](https://gitter.im/ocaml-lwt/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 --------------------------------------------------------------------------
 
 This library is part of the Ocsigen project. See:
