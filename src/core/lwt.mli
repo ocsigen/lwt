@@ -81,7 +81,7 @@ val bind : 'a t -> ('a -> 'b t) -> 'b t
       The result of a thread can be bound several times.
 
       Note that [bind] will not propagate backtraces correctly.
-      See <<a_api project="lwt" | The manual>>
+      See {{:http://ocsigen.org/lwt/manual/} the manual}
       for how to enable backtraces.
   *)
 
@@ -276,7 +276,7 @@ val async_exception_hook : (exn -> unit) ref
       The behavior is undefined if this function raise an
       exception.
 
-      See <<a_api project="lwt" | The manual>>
+      See {{:http://ocsigen.org/lwt/manual/} the manual}
       for how to enable backtraces.
   *)
 

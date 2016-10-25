@@ -50,7 +50,10 @@
     Then you can do:
 
     {[
-    Lwt.pick [Lwt_unix.timeout 1.0; read sock1 buf1 ofs1 len1; read sock2 buf2 ofs2 len2]
+    Lwt.pick
+      [Lwt_unix.timeout 1.0;
+       read sock1 buf1 ofs1 len1;
+       read sock2 buf2 ofs2 len2]
     ]}
 
     In this case, it is guaranteed that exactly one of the three
