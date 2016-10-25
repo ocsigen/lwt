@@ -354,6 +354,9 @@ val read : file_descr -> Bytes.t -> int -> int -> int Lwt.t
     underlying file descriptor is in non-blocking mode. See
     {!of_unix_file_descr} for a discussion of non-blocking I/O and Lwt.
 
+    If Lwt is using blocking I/O on [fd], [read] writes data into a temporary
+    buffer, then copies it into [buf].
+
     The thread can fail with any exception that can be raised by [Unix.read],
     except [Unix.Unix_error Unix.EAGAIN], [Unix.Unix_error Unix.EWOULDBLOCK] or
     [Unix.Unix_error Unix.EINTR]. *)
@@ -368,6 +371,8 @@ val write : file_descr -> Bytes.t -> int -> int -> int Lwt.t
     Note that the Lwt thread waits to write even if the underlying file
     descriptor is in non-blocking mode. See {!of_unix_file_descr} for a
     discussion of non-blocking I/O and Lwt.
+
+    If Lwt is using blocking I/O on [fd], [buf] is copied before writing.
 
     The thread can fail with any exception that can be raised by
     [Unix.single_write], except [Unix.Unix_error Unix.EAGAIN],
@@ -793,16 +798,26 @@ type msg_flag =
   | MSG_PEEK
 
 val recv : file_descr -> Bytes.t -> int -> int -> msg_flag list -> int Lwt.t
-  (** Wrapper for [Unix.recv] *)
+(** Wrapper for [Unix.recv].
+
+    On Windows, [recv] writes data into a temporary buffer, then copies it into
+    the given one. *)
 
 val recvfrom : file_descr -> Bytes.t -> int -> int -> msg_flag list -> (int * sockaddr) Lwt.t
-  (** Wrapper for [Unix.recvfrom] *)
+(** Wrapper for [Unix.recvfrom].
+
+    On Windows, [recvfrom] writes data into a temporary buffer, then copies it
+    into the given one. *)
 
 val send : file_descr -> Bytes.t -> int -> int -> msg_flag list -> int Lwt.t
-  (** Wrapper for [Unix.send] *)
+(** Wrapper for [Unix.send].
+
+    On Windows, [send] copies the given buffer before writing. *)
 
 val sendto : file_descr -> Bytes.t -> int -> int -> msg_flag list -> sockaddr -> int Lwt.t
-  (** Wrapper for [Unix.sendto] *)
+(** Wrapper for [Unix.sendto].
+
+    On Windows, [sendto] copies the given buffer before writing. *)
 
 (** An io-vector. Used by {!recv_msg} and {!send_msg}. *)
 type io_vector = {
@@ -820,18 +835,20 @@ val recv_msg : socket : file_descr -> io_vectors : io_vector list -> (int * Unix
     messages. It returns a tuple whose first field is the number of
     bytes received and second is a list of received file
     descriptors. The messages themselves will be recorded in the
-    provided [io_vectors] list.
+    provided [io_vectors] list. Data is written directly into the
+    [iov_buffer] buffers.
 
-    This call is not available on windows. *)
+    Not implemented on Windows. *)
 
 val send_msg : socket : file_descr -> io_vectors : io_vector list -> fds : Unix.file_descr list -> int Lwt.t
 (** [send_msg ~socket ~io_vectors ~fds] sends data from a list of
     io-vectors, accompanied with a list of file-descriptors. It
     returns the number of bytes sent. If fd-passing is not possible on
     the current system and [fds] is not empty, it raises
-    [Lwt_sys.Not_available "fd_passing"].
+    [Lwt_sys.Not_available "fd_passing"]. Data is written directly from
+    the [iov_buffer] buffers.
 
-    This call is not available on windows. *)
+    Not implemented on Windows. *)
 
 type credentials = {
   cred_pid : int;

@@ -112,18 +112,24 @@ external unsafe_fill : t -> int -> int -> char -> unit = "lwt_unix_fill_bytes" "
 
 (** {2 IOs} *)
 
-(** The following functions behave similarly to the ones in
-    {!Lwt_unix} except they use byte arrays instead of
-    strings. *)
+(** The following functions behave similarly to the ones in {!Lwt_unix}, except
+    they use byte arrays instead of strings, and they never perform extra copies
+    of the data. *)
 
 val read : Lwt_unix.file_descr -> t -> int -> int -> int Lwt.t
 val write : Lwt_unix.file_descr -> t -> int -> int -> int Lwt.t
 
 val recv : Lwt_unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> int Lwt.t
+(** Not implemented on Windows. *)
+
 val send : Lwt_unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> int Lwt.t
+(** Not implemented on Windows. *)
 
 val recvfrom : Lwt_unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> (int * Unix.sockaddr) Lwt.t
+(** Not implemented on Windows. *)
+
 val sendto : Lwt_unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> Unix.sockaddr -> int Lwt.t
+(** Not implemented on Windows. *)
 
 type io_vector = {
   iov_buffer : t;
@@ -134,10 +140,10 @@ type io_vector = {
 val io_vector : buffer : t -> offset : int -> length : int -> io_vector
 
 val recv_msg : socket : Lwt_unix.file_descr -> io_vectors : io_vector list -> (int * Unix.file_descr list) Lwt.t
-  (** This call is not available on windows. *)
+(** Not implemented on Windows. *)
 
 val send_msg : socket : Lwt_unix.file_descr -> io_vectors : io_vector list -> fds : Unix.file_descr list -> int Lwt.t
-  (** This call is not available on windows. *)
+(** Not implemented on Windows. *)
 
 (** {2 Memory mapped files} *)
 
