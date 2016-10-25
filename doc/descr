@@ -1,5 +1,6 @@
-A cooperative threads library for OCaml
-This library is part of the Ocsigen project. See:
+Cooperative threads and I/O in monadic style
 
-http://ocsigen.org/lwt
-
+Lwt provides typed, composable cooperative threads. These make it easy to run
+normally-blocking I/O operations concurrently in a single process. Also, in many
+cases, Lwt threads can interact without the need for locks or other
+synchronization primitives.
