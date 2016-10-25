@@ -28,18 +28,17 @@ let () =
       let%lwt () = write outgoing "GET / HTTP/1.1\r\n" in
       let%lwt () = write outgoing "Connection: close\r\n\r\n" in
       let%lwt response = read incoming in
-      let%lwt () = write stdout "Response:\n\n" in
-      let%lwt () = write stdout response in
-      Lwt.return 0))
+      Lwt.return (Some response)))
   in
 
   let timeout =
     let%lwt () = Lwt_unix.sleep 5. in
-    let%lwt () = Lwt_io.(write stderr "Request timed out") in
-    Lwt.return 1
+    Lwt.return None
   in
 
-  exit (Lwt_main.run (Lwt.pick [request; timeout]))
+  match Lwt_main.run (Lwt.pick [request; timeout]) with
+  | Some response -> print_string response
+  | None -> prerr_endline "Request timed out"; exit 1
 ```
 
 The above program can be compiled and run with
