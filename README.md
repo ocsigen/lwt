@@ -66,7 +66,7 @@ available in [`doc/examples`][examples].
 
 Open an [issue][issues], visit [Gitter][gitter] chat, [email][email] the
 maintainer, or ask in [#ocaml][irc]. If you think enough people will be
-interested in the answer, it is also possible to ask on [StackOverflow][so].
+interested in the answer, it is also possible to ask on [Stack Overflow][so].
 
 [issues]: https://github.com/ocsigen/lwt/issues/new
 [gitter]: https://gitter.im/ocaml-lwt/Lobby
@@ -85,6 +85,12 @@ opam source --dev-repo --pin lwt
 ```
 
 This will also install the development dependency OASIS.
+
+A list of [project suggestions][projects] and a [roadmap][roadmap] can be found
+on the wiki.
+
+[projects]: https://github.com/ocsigen/lwt/wiki/Plan#projects
+[roadmap]:  https://github.com/ocsigen/lwt/wiki/Plan#roadmap
 
 ## License
 
