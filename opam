@@ -1,6 +1,6 @@
 opam-version: "1.2"
 name: "lwt"
-version: "dev"
+version: "2.6.0"
 maintainer: "Anton Bachin <antonbachin@yahoo.com>"
 authors: [
   "Jérôme Vouillon"
@@ -35,8 +35,6 @@ depends: [
   "base-bytes"
   "result"
   ( "base-no-ppx" | "ppx_tools" )
-  ## OASIS is not required in released version
-  "oasis" {build & >= "0.4.7"}
 ]
 depopts: [
   "base-threads"
