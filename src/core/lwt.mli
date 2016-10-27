@@ -122,14 +122,12 @@ val return_false : bool t
   (** [return_false = return false] *)
 
 val return_ok : 'a -> ('a, _) Result.result t
-  (** [return_ok x] is similar to [return (Ok x)], to indicate success
-      explicitely..
-      @since NEXT_RELEASE *)
+  (** [return_ok x] is equivalent to [return (Ok x)].
+      @since 2.6.0 *)
 
 val return_error : 'e -> (_, 'e) Result.result t
-  (** [return_error x] is similar to [return (Error x)], to indicate
-      an error explicitely
-      @since NEXT_RELEASE *)
+  (** [return_error x] is equivalent to [return (Error x)].
+      @since 2.6.0 *)
 
 (** {2 Thread storage} *)
 
@@ -314,15 +312,15 @@ val waiter_of_wakener : 'a u -> 'a t
 type +'a result = ('a, exn) Result.result
   (** Either a value of type ['a], either an exception.
 
-      This type is defined as [('a, exn) Result.result] @since NEXT_RELEASE *)
+      This type is defined as [('a, exn) Result.result] since 2.6.0. *)
 
 val make_value : 'a -> 'a result
   (** [value x] creates a result containing the value [x].
-      @deprecated since NEXT_RELEASE as it corresponds to {!Result.Ok} *)
+      @deprecated Since 2.6.0. Use {!Result.Ok} *)
 
 val make_error : exn -> 'a result
   (** [error e] creates a result containing the exception [e].
-      @deprecated since NEXT_RELEASE as it corresponds to {!Result.Error} *)
+      @deprecated Since 2.6.0. Use {!Result.Error} *)
 
 val of_result : 'a result -> 'a t
   (** Returns a thread from a result. *)

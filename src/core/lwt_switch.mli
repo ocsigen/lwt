@@ -82,7 +82,9 @@ val create : unit -> t
 val with_switch : (t -> 'a Lwt.t) -> 'a Lwt.t
   (** [with_switch fn] is [fn switch], where [switch] is a fresh switch
       that is turned off when the callback thread finishes (whether it
-      succeeds or fails). *)
+      succeeds or fails).
+
+      @since 2.6.0 *)
 
 val is_on : t -> bool
   (** [is_on switch] returns [true] if the switch is currently on, and

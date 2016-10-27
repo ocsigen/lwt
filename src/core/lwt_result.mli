@@ -22,7 +22,8 @@
 
 (** Module [Lwt_result]: explicit error handling *)
 
-(** This module provides helpers for values of type [('a, 'b) result Lwt.t] *)
+(** This module provides helpers for values of type [('a, 'b) result Lwt.t].
+    The module is experimental and may change in the future. *)
 
 type (+'a, +'b) t = ('a, 'b) Result.result Lwt.t
 

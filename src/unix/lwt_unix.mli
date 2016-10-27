@@ -480,7 +480,7 @@ val utimes : string -> float -> float -> unit Lwt.t
     [Unix.utimes]}. See also
     {{:http://man7.org/linux/man-pages/man3/utimes.3p.html} [utimes(3p)]}.
 
-    @since NEXT_RELEASE *)
+    @since 2.6.0 *)
 
 val isatty : file_descr -> bool Lwt.t
   (** Wrapper for [Unix.isatty] *)

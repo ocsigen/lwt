@@ -1,7 +1,53 @@
-===== 2.5.2 (2015-04-25) =====
+===== 2.6.0 (2016-10-27) =====
+
+====== Additions ======
+
+  * Lwt_stream.closed and Lwt_stream.is_closed (#223, Spiros Eliopoulos).
+  * Lwt_switch.with_switch (#256, Thomas Leonard).
+  * Define 'a Lwt.result as ('a, exn) result (#247, Simon Cruanes).
+  * Lwt_condition.broadcast_exn (#241, Nicolas Ojeda Bar).
+  * Lwt_unix.utimes (#193).
+
+====== Bugfixes ======
+
+  * Memory leak in Lwt_unix.readdir_n (#229, diagnosed Thomas Leonard).
+  * Memory leak in Lwt.protected (#56, #181, reported @ygrek, Mauricio
+    Fernandez).
+  * Lwt_switch.turn_off hook exception handling (995b704).
+  * Handling of ENOTCONN when channels passed to handler of
+    Lwt_io.establish_server are closed (95fb431).
+  * Duplicate exceptions on implicit close in Lwt_io.with_connection (b1afe45).
+  * Deadlock in Lwt_main.at_exit (#48, #114, reported Jérôme Vouillon, Vincent
+    Bernardoff).
+  * Performance of Lwt_preemptive.detach (#218, #219, Mauricio Fernandez).
+  * Bad hash functions for libev loops (#146, reported Mark Christiaens).
+  * Hash of uninitialized data in Lwt_io (#217, reported Jeremy Yallop).
+  * Update log sections after Lwt_log.load_rules (#188, reported @rand00).
+  * Print three digits for milliseconds in Lwt_log (#264, Fabian Hemmer).
+  * Do not truncate Unix job notification ids in C (#277, diagnosed
+    @stijn-devriendt).
+
+====== Deprecations ======
+
+  * Lwt_stream.on_termination: bind on Lwt_stream.closed instead.
+  * Lwt.make_value, Lwt.make_error: use result's Ok and Error constructors.
+  * Lwt_pqueue, Lwt_sequence: use min-heaps and linked lists from another
+    library (#135).
+  * Pa_lwt, Pa_lwt_log: use Ppx_lwt.
+
+====== Miscellaneous ======
+
+  * Update examples to use PPX syntax instead of Camlp4 (#108, Peter Zotov).
+  * Set up Travis, AppVeyor for testing on Linux, OS X, Cygwin, and MinGW. MSVC
+    also planned.
+  * Large amount of local documentation fixes (Hezekiah Carty, Etienne Millon,
+    Leo Wzukw, Sebastien Mondet, reports by others).
+  * A bunch of new tests.
+
+===== 2.5.2 (2016-04-25) =====
 
   * Fix compatibility for 4.03 (#227)
-  * Various documentation fixes (#199,#200,#210,)
+  * Various documentation fixes (#199,#200,#210)
   * Improve wildcard detection in the ppx (#198)
   * Fix Lwt_stream: bounded_push#close wake the reader (#201)
   * Fix infinite loop with Lwt_stream.choose (#214)

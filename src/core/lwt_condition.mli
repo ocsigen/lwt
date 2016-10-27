@@ -66,4 +66,6 @@ val broadcast : 'a t -> 'a -> unit
 
 val broadcast_exn : 'a t -> exn -> unit
     (** [broadcast_exn condvar exn] fails all waiting threads with exception
-        [exn]. *)
+        [exn].
+
+        @since 2.6.0 *)
