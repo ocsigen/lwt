@@ -200,7 +200,8 @@ let fdatasync_code = "
 
 CAMLprim value lwt_test(value Unit)
 {
-  fdatasync(0);
+  int (*fdatasyncp)(int) = fdatasync;
+  fdatasyncp(0);
   return Val_unit;
 }
 "
