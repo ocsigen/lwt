@@ -158,7 +158,7 @@ let lwt_expression mapper exp attributes =
   (** [while%lwt $cond$ do $body$ done] ≡
       [let rec __ppx_lwt_loop () =
          if $cond$ then Lwt.bind $body$ __ppx_lwt_loop
-         else Lwt.return ()
+         else Lwt.return_unit
        in __ppx_lwt_loop]
    *)
   | Pexp_while (cond, body) ->
@@ -166,7 +166,7 @@ let lwt_expression mapper exp attributes =
        [%expr
         let rec __ppx_lwt_loop () =
           if [%e cond] then Lwt.bind [%e body] __ppx_lwt_loop
-          else Lwt.return ()
+          else Lwt.return_unit
         in __ppx_lwt_loop ()
        ]
      in mapper.expr mapper { new_exp with pexp_attributes }
@@ -174,7 +174,7 @@ let lwt_expression mapper exp attributes =
   (** [for%lwt $p$ = $start$ (to|downto) $end$ do $body$ done] ≡
       [let __ppx_lwt_bound = $end$ in
        let rec __ppx_lwt_loop $p$ =
-         if $p$ COMP __ppx_lwt_bound then Lwt.return ()
+         if $p$ COMP __ppx_lwt_bound then Lwt.return_unit
          else Lwt.bind $body$ (fun () -> __ppx_lwt_loop ($p$ OP 1))
        in __ppx_lwt_loop $start$]
    *)
@@ -192,7 +192,7 @@ let lwt_expression mapper exp attributes =
        [%expr
         let [%p pat_bound] : int = [%e bound] in
         let rec __ppx_lwt_loop [%p p] =
-          if [%e comp] [%e p'] [%e exp_bound] then Lwt.return ()
+          if [%e comp] [%e p'] [%e exp_bound] then Lwt.return_unit
           else Lwt.bind [%e body] (fun () -> __ppx_lwt_loop ([%e op] [%e p'] 1))
         in __ppx_lwt_loop [%e start]
        ]
