@@ -39,7 +39,8 @@ rm -f .jenkins.sh appveyor.yml .travis.yml *.exe configure _oasis
 
 # Commit
 git add --all --force
+git rm .gitignore
 git commit -m "Release $VERSION"
-git tag $VERSION
+git tag -a $VERSION
 
 echo "Tag $VERSION created. Run 'git push origin $VERSION' to publish."
