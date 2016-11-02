@@ -8,12 +8,19 @@ packages_apt () {
         4.01) PPA=avsm/ocaml41+opam12;;
         4.02) PPA=avsm/ocaml42+opam12;;
         4.03) PPA=avsm/ocaml42+opam12; DO_SWITCH=yes;;
+        4.04) PPA=avsm/ocaml42+opam12; DO_SWITCH=yes;;
            *) echo Unsupported compiler $COMPILER; exit 1;;
     esac
 
     sudo add-apt-repository -y ppa:$PPA
     sudo apt-get update -qq
-    sudo apt-get install -qq ocaml-nox opam
+
+    if [ -z "$DO_SWITCH" ]
+    then
+        sudo apt-get install -qq ocaml-nox
+    fi
+
+    sudo apt-get install -qq opam
 
     if [ "$LIBEV" = yes ]
     then
@@ -71,6 +78,7 @@ case $COMPILER in
     4.01) SWITCH=4.01.0;;
     4.02) SWITCH=4.02.3;;
     4.03) SWITCH=4.03.0;;
+    4.04) SWITCH=4.04.0+beta2;;
        *) echo Unsupported compiler $COMPILER; exit 1;;
 esac
 
