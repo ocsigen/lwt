@@ -78,7 +78,7 @@ case $COMPILER in
     4.01) SWITCH=4.01.0;;
     4.02) SWITCH=4.02.3;;
     4.03) SWITCH=4.03.0;;
-    4.04) SWITCH=4.04.0+beta2;;
+    4.04) SWITCH=4.04.0;;
        *) echo Unsupported compiler $COMPILER; exit 1;;
 esac
 

@@ -12,6 +12,8 @@ env:
 matrix:
   include:
     - os: linux
+      # Using 4.02 here because a binary is available from the PPA, which makes
+      # the build complete faster.
       env: COMPILER=4.02 LIBEV=yes
     - os: osx
       env: COMPILER=4.03 LIBEV=yes
