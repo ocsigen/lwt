@@ -203,7 +203,183 @@ let readdir_tests =
            "closedir", (fun () -> Lwt_unix.closedir directory)]);
   ]
 
+let writev_tests =
+  let make_io_vectors vecs =
+    let open Lwt_unix.IO_vectors in
+    let io_vectors = create () in
+    List.iter (function
+      | `Bytes (s, offset, length) ->
+        append_bytes io_vectors (Bytes.unsafe_of_string s) offset length
+      | `Bigarray (s, offset, length) ->
+        append_bigarray io_vectors (Lwt_bytes.of_string s) offset length)
+      vecs;
+    io_vectors
+  in
+
+  let writer ?blocking write_fd io_vectors data_length = fun () ->
+    Lwt_unix.blocking write_fd >>= fun is_blocking ->
+    Gc.full_major ();
+    Lwt_unix.writev write_fd io_vectors >>= fun bytes_written ->
+    Lwt_unix.close write_fd >>= fun () ->
+    let blocking_matches =
+      match blocking, is_blocking with
+      | Some v, v' when v <> v' -> false
+      | _ -> true
+    in
+    Lwt.return (bytes_written = data_length && blocking_matches)
+  in
+
+  let reader read_fd expected_data = fun () ->
+    if expected_data = "" then
+      let readable = Lwt_unix.readable read_fd in
+      Lwt_unix.close read_fd >>= fun () ->
+      Lwt.return (not readable)
+    else
+      let open! Lwt_io in
+      let channel = of_fd ~mode:input read_fd in
+      read channel >>= fun read_data ->
+      close channel >>= fun () ->
+      Lwt.return (read_data = expected_data)
+  in
+
+  [
+    test "writev: basic non-blocking" ~only_if:(fun () -> not Sys.win32)
+      (fun () ->
+        let io_vectors =
+          make_io_vectors
+            [`Bytes ("foo", 0, 3);
+             `Bytes ("bar", 0, 3);
+             `Bigarray ("baz", 0, 3)]
+        in
+
+        let read_fd, write_fd = Lwt_unix.pipe () in
+
+        Lwt_list.for_all_s (fun t -> t ())
+          [writer ~blocking:false write_fd io_vectors 9;
+           reader read_fd "foobarbaz"]);
+
+    test "writev: basic blocking" ~only_if:(fun () -> not Sys.win32)
+      (fun () ->
+        let io_vectors =
+          make_io_vectors
+            [`Bytes ("foo", 0, 3);
+             `Bytes ("bar", 0, 3);
+             `Bigarray ("baz", 0, 3)]
+        in
+
+        let read_fd, write_fd = Lwt_unix.pipe () in
+        Lwt_unix.set_blocking write_fd true;
+
+        Lwt_list.for_all_s (fun t -> t ())
+          [writer ~blocking:true write_fd io_vectors 9;
+           reader read_fd "foobarbaz"]);
+
+    test "writev: slices" ~only_if:(fun () -> not Sys.win32)
+      (fun () ->
+        let io_vectors =
+          make_io_vectors [`Bytes ("foo", 1, 2); `Bigarray ("bar", 1, 2)] in
+
+        let read_fd, write_fd = Lwt_unix.pipe () in
+
+        Lwt_list.for_all_s (fun t -> t ())
+          [writer write_fd io_vectors 4;
+           reader read_fd "ooar"]);
+
+    test "writev: drop" ~only_if:(fun () -> not Sys.win32)
+      (fun () ->
+        let io_vectors =
+          make_io_vectors
+            [`Bytes ("foo", 0, 3);
+             `Bytes ("bar", 0, 3);
+             `Bigarray ("baz", 0, 3)]
+        in
+
+        let read_fd, write_fd = Lwt_unix.pipe () in
+
+        Lwt_unix.IO_vectors.drop io_vectors 4;
+
+        Lwt_list.for_all_s (fun t -> t ())
+          [writer write_fd io_vectors 5;
+           reader read_fd "arbaz"]);
+
+    test "writev: bad iovec" ~only_if:(fun () -> not Sys.win32)
+      (fun () ->
+        let negative_offset = make_io_vectors [`Bytes ("foo", -1, 3)] in
+        let negative_length = make_io_vectors [`Bytes ("foo", 0, -1)] in
+        let out_of_bounds = make_io_vectors [`Bytes ("foo", 1, 3)] in
+
+        let negative_offset' = make_io_vectors [`Bigarray ("foo", -1, 3)] in
+        let negative_length' = make_io_vectors [`Bigarray ("foo", 0, -1)] in
+        let out_of_bounds' = make_io_vectors [`Bigarray ("foo", 1, 3)] in
+
+        let read_fd, write_fd = Lwt_unix.pipe () in
+
+        let writer io_vectors =
+          fun () ->
+            Lwt.catch
+              (fun () ->
+                Lwt_unix.writev write_fd io_vectors >>= fun _ ->
+                Lwt.return_false)
+              (function
+                | Invalid_argument _ -> Lwt.return_true
+                | e -> Lwt.fail e)
+        in
+
+        let close write_fd = fun () ->
+          Lwt_unix.close write_fd >>= fun () -> Lwt.return_true in
+
+        Lwt_list.for_all_s (fun t -> t ())
+          [writer negative_offset;
+           writer negative_length;
+           writer out_of_bounds;
+           writer negative_offset';
+           writer negative_length';
+           writer out_of_bounds';
+           reader read_fd "";
+           close write_fd]);
+
+    test "writev: iovecs exceeding limit"
+      ~only_if:(fun () -> not Sys.win32 &&
+                          Lwt_unix.IO_vectors.system_limit <> None)
+      (fun () ->
+        let limit =
+          match Lwt_unix.IO_vectors.system_limit with
+          | Some limit -> limit
+          | None -> assert false
+        in
+
+        let io_vectors =
+          let open Lwt_unix.IO_vectors in
+          let io_vectors = create () in
+          let rec loop count =
+            if count < 1 then io_vectors
+            else
+              (append_bytes io_vectors (Bytes.unsafe_of_string "a") 0 1;
+              loop (count - 1))
+          in
+          loop (limit + 1)
+        in
+
+        let read_fd, write_fd = Lwt_unix.pipe () in
+
+        Lwt_list.for_all_s (fun t -> t ())
+          [writer write_fd io_vectors limit;
+           reader read_fd (String.make limit 'a')]);
+
+    test "writev: negative drop" ~only_if:(fun () -> not Sys.win32)
+      (fun () ->
+        let io_vectors = make_io_vectors [`Bytes ("foo", 0, 3)] in
+        Lwt_unix.IO_vectors.drop io_vectors (-1);
+
+        let read_fd, write_fd = Lwt_unix.pipe () in
+
+        Lwt_list.for_all_s (fun t -> t ())
+          [writer write_fd io_vectors 3;
+           reader read_fd "foo"]);
+  ]
+
 let suite =
   suite "lwt_unix"
     (utimes_tests @
-     readdir_tests)
+     readdir_tests @
+     writev_tests)

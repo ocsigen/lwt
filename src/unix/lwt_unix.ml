@@ -663,6 +663,112 @@ let write_string ch buf pos len =
   let buf = Bytes.unsafe_of_string buf in
   write ch buf pos len
 
+module IO_vectors =
+struct
+  type _bigarray =
+    (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+
+  type _buffer =
+    | Bytes of bytes
+    | Bigarray of _bigarray
+
+  type _io_vector =
+    {buffer : _buffer;
+     mutable offset : int;
+     mutable length : int}
+
+  (* This representation does not give constant amortized time append across all
+     possible operation sequences, but it does for expected typical usage, in
+     which some number of append operations is followed by some number of
+     flatten operations. *)
+  type t =
+    {mutable prefix : _io_vector list;
+     mutable reversed_suffix : _io_vector list;
+     mutable count : int}
+
+  let create () = {prefix = []; reversed_suffix = []; count = 0}
+
+  let _append io_vectors io_vector =
+    io_vectors.reversed_suffix <- io_vector::io_vectors.reversed_suffix;
+    io_vectors.count <- io_vectors.count + 1
+
+  let append_bytes io_vectors buffer offset length =
+    _append io_vectors {buffer = Bytes buffer; offset; length}
+
+  let append_bigarray io_vectors buffer offset length =
+    _append io_vectors {buffer = Bigarray buffer; offset; length}
+
+  let _flatten io_vectors =
+    match io_vectors.reversed_suffix with
+    | [] -> ()
+    | _ ->
+      io_vectors.prefix <-
+        io_vectors.prefix @ (List.rev io_vectors.reversed_suffix);
+      io_vectors.reversed_suffix <- []
+
+  let drop io_vectors count =
+    _flatten io_vectors;
+    let rec loop count prefix =
+      if count <= 0 then prefix
+      else
+        match prefix with
+        | [] -> []
+        | {length; _}::rest when length <= count ->
+          io_vectors.count <- io_vectors.count - 1;
+          loop (count - length) rest
+        | first::_ ->
+          first.offset <- first.offset + count;
+          first.length <- first.length - count;
+          prefix
+    in
+    io_vectors.prefix <- loop count io_vectors.prefix
+
+  external _stub_iov_max : unit -> int = "lwt_unix_iov_max"
+
+  let system_limit =
+    if Sys.win32 then None
+    else Some (_stub_iov_max ())
+
+  let _check tag io_vector =
+    let buffer_length =
+      match io_vector.buffer with
+      | Bytes s -> Bytes.length s
+      | Bigarray a -> Bigarray.Array1.dim a
+    in
+
+    if io_vector.length < 0 ||
+       io_vector.offset < 0 ||
+       io_vector.offset + io_vector.length > buffer_length then
+      invalid_arg tag
+end
+
+external _stub_writev :
+  Unix.file_descr -> IO_vectors._io_vector list -> int -> int =
+  "lwt_unix_writev"
+
+external _writev_job :
+  Unix.file_descr -> IO_vectors._io_vector list -> int -> int job =
+  "lwt_unix_writev_job"
+
+let writev fd io_vectors =
+  IO_vectors._flatten io_vectors;
+  List.iter (IO_vectors._check "writev") io_vectors.IO_vectors.prefix;
+
+  let count = io_vectors.IO_vectors.count in
+  let count =
+    match IO_vectors.system_limit with
+    | Some limit when count > limit -> limit
+    | _ -> count
+  in
+
+  Lazy.force fd.blocking >>= function
+    | true ->
+      wait_write fd >>= fun () ->
+      run_job (_writev_job fd.fd io_vectors.IO_vectors.prefix count)
+    | false ->
+      wrap_syscall Write fd (fun () ->
+        _stub_writev fd.fd io_vectors.IO_vectors.prefix count)
+
 (* +-----------------------------------------------------------------+
    | Seeking and truncating                                          |
    +-----------------------------------------------------------------+ *)

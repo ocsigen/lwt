@@ -148,6 +148,148 @@ CAMLprim value lwt_unix_bytes_write(value val_fd, value val_buf, value val_ofs, 
   return Val_long(ret);
 }
 
+/* writev */
+
+/* Tags for each of the constructors of type Lwt_unix.IO_vectors._buffer. The
+   order must correspond to that in lwt_unix.ml. */
+enum {IO_vectors_bytes, IO_vectors_bigarray};
+
+/* Given an uninitialized array of iovec structures `iovecs`, and an OCaml value
+   `io_vectors` of type Lwt_unix.IO_vectors._io_vector list, writes pointers to
+   the first `count` buffer slices in `io_vectors` to `iovecs`. Each buffer
+   slice may be a bytes buffer or a Bigarray buffer.
+
+   In case `buffer_copies` is not NULL, a fresh buffer is allocated on the heap
+   for each bytes buffer, and the contents of the bytes buffer are copied there.
+   Pointers to these copies are written to `iovecs`, instead of pointers to the
+   original buffers. The pointers are also stored as an array at
+   `buffer_copies`, so that they can be freed later. This mechanism is used when
+   `iovecs` will be passed to a blocking I/O call, which is run by Lwt in a
+   worker thread. In that case, the original, uncopied bytes buffers may be
+   moved by the garbage collector before the I/O call runs, or while it is
+   running. */
+static void flatten_io_vectors(
+    struct iovec *iovecs, value io_vectors, size_t count, char **buffer_copies)
+{
+    CAMLparam1(io_vectors);
+    CAMLlocal3(node, io_vector, buffer);
+
+    size_t index;
+    size_t copy_index = 0;
+
+    for (node = io_vectors, index = 0; index < count;
+         node = Field(node, 1), ++index) {
+
+        io_vector = Field(node, 0);
+
+        intnat offset = Long_val(Field(io_vector, 1));
+        intnat length = Long_val(Field(io_vector, 2));
+
+        iovecs[index].iov_len = length;
+
+        buffer = Field(Field(io_vector, 0), 0);
+        if (Tag_val(Field(io_vector, 0)) == IO_vectors_bytes) {
+            if (buffer_copies != NULL) {
+                buffer_copies[copy_index] = lwt_unix_malloc(length);
+                memcpy(
+                    buffer_copies[copy_index],
+                    &Byte(String_val(buffer), offset), length);
+
+                iovecs[index].iov_base = buffer_copies[copy_index];
+                ++copy_index;
+            }
+            else
+                iovecs[index].iov_base = &Byte(String_val(buffer), offset);
+        }
+        else
+            iovecs[index].iov_base = &((char*)Caml_ba_data_val(buffer))[offset];
+    }
+
+    if (buffer_copies != NULL)
+        buffer_copies[copy_index] = NULL;
+
+    CAMLreturn0;
+}
+
+CAMLprim value lwt_unix_iov_max(value unit)
+{
+    return Val_int(IOV_MAX);
+}
+
+/* writev primitive for non-blocking file descriptors. */
+CAMLprim value lwt_unix_writev(value fd, value io_vectors, value val_count)
+{
+    CAMLparam3(fd, io_vectors, val_count);
+
+    size_t count = Long_val(val_count);
+
+    /* Assemble iovec structures on the stack. No data is copied. */
+    struct iovec iovecs[count];
+    flatten_io_vectors(iovecs, io_vectors, count, NULL);
+
+    ssize_t result = writev(Int_val(fd), iovecs, count);
+
+    if (result == -1)
+        uerror("writev", Nothing);
+
+    CAMLreturn(Val_long(result));
+}
+
+/* Job and writev primitives for blocking file descriptors. */
+struct job_writev {
+    struct lwt_unix_job job;
+    int fd;
+    int error_code;
+    ssize_t result;
+    size_t count;
+    /* Heap-allocated iovec structures. */
+    struct iovec *iovecs;
+    /* Heap-allocated array of pointers to heap-allocated copies of bytes buffer
+       slices. This array is NULL-terminated. */
+    char **buffer_copies;
+};
+
+static void worker_writev(struct job_writev *job)
+{
+    job->result = writev(job->fd, job->iovecs, job->count);
+    job->error_code = errno;
+}
+
+static value result_writev(struct job_writev *job)
+{
+    char **buffer_copy;
+    for (buffer_copy = job->buffer_copies; *buffer_copy != NULL;
+         ++buffer_copy) {
+
+        free(*buffer_copy);
+    }
+    free(job->buffer_copies);
+    free(job->iovecs);
+
+    ssize_t result = job->result;
+    LWT_UNIX_CHECK_JOB(job, result < 0, "writev");
+    lwt_unix_free_job(&job->job);
+    return Val_long(result);
+}
+
+CAMLprim value lwt_unix_writev_job(value fd, value io_vectors, value val_count)
+{
+    CAMLparam3(fd, io_vectors, val_count);
+
+    LWT_UNIX_INIT_JOB(job, writev, 0);
+    job->fd = Int_val(fd);
+    job->count = Long_val(val_count);
+
+    /* Assemble iovec structures on the heap and copy bytes buffer slices. */
+    job->iovecs = lwt_unix_malloc(job->count * sizeof(struct iovec));
+    /* The extra (+ 1) pointer is for the NULL terminator, in case all buffer
+       slices are in bytes buffers. */
+    job->buffer_copies = lwt_unix_malloc((job->count + 1) * sizeof(char*));
+    flatten_io_vectors(job->iovecs, io_vectors, job->count, job->buffer_copies);
+
+    CAMLreturn(lwt_unix_alloc_job(&job->job));
+}
+
 /* +-----------------------------------------------------------------+
    | recv/send                                                       |
    +-----------------------------------------------------------------+ */

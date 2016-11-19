@@ -384,6 +384,69 @@ val write : file_descr -> bytes -> int -> int -> int Lwt.t
 val write_string : file_descr -> string -> int -> int -> int Lwt.t
   (** See {!write}. *)
 
+(** Sequences of buffer slices for {!writev}. *)
+module IO_vectors :
+sig
+  type t
+  (** Mutable sequences of I/O vectors. An I/O vector describes a slice of a
+      [bytes] or [Bigarray] buffer. Each I/O vector is a triple containing a
+      reference to the buffer, an offset into the buffer where the slice begins,
+      and the length of the slice. *)
+
+  type _bigarray =
+    (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+  (** Type abbreviation equivalent to {!Lwt_bytes.t}. Do not use this type name
+      directly; use {!Lwt_bytes.t} instead. *)
+
+  val create : unit -> t
+  (** Creates an empty I/O vector sequence. *)
+
+  val append_bytes : t -> bytes -> int -> int -> unit
+  (** [append_bytes vs buffer offset length] appends a slice of the [bytes]
+      buffer [buffer] beginning at [offset] and with length [length] to the
+      I/O vector sequence [vs]. *)
+
+  val append_bigarray : t -> _bigarray -> int -> int -> unit
+  (** [append_bigarray vs buffer offset length] appends a slice of the
+      [Bigarray] buffer [buffer] beginning at [offset] and with length [length]
+      to the I/O vector sequence [vs]. *)
+
+  val drop : t -> int -> unit
+  (** [drop vs n] adjusts the I/O vector sequence [vs] so that it no longer
+      includes its first [n] bytes. *)
+
+  val system_limit : int option
+  (** Some systems limit the number of I/O vectors that can be passed in a
+      single call to their [writev] or [readv] system calls. On those systems,
+      if the limit is [n], this value is equal to [Some n]. On systems without
+      such a limit, the value is equal to [None].
+
+      Unless you need atomic I/O operations, you can ignore this limit. The Lwt
+      binding automatically respects it internally. See {!Lwt_unix.writev}.
+
+      A typical limit is 1024 vectors. *)
+end
+
+val writev : file_descr -> IO_vectors.t -> int Lwt.t
+(** [writev fd vs] writes the bytes in the buffer slices [vs] to the file
+    descriptor [fd]. If the operation completes successfully, the resulting
+    thread indicates the number of bytes written.
+
+    If the Unix file descriptor underlying [fd] is in non-blocking mode,
+    [writev] does not make a copy the bytes before writing. Otherwise, it copies
+    [bytes] slices, but not [Bigarray] slices.
+
+    Note that the returned Lwt thread is blocked until failure or a successful
+    write, even if the underlying descriptor is in non-blocking mode. See
+    {!of_unix_file_descr} for a discussion of non-blocking I/O and Lwt.
+
+    If {!IO_vectors.system_limit} is [Some n] and [IO_vectors.count vs] exceeds
+    [n], then [Lwt_unix.writev] passes only the first [n] slices in [vs] to the
+    underlying [writev] system call.
+
+    Not implemented on Windows. It should be possible to implement, upon
+    request, for Windows sockets only. *)
+
 val readable : file_descr -> bool
   (** Returns whether the given file descriptor is currently
       readable. *)
