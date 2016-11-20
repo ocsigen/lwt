@@ -1022,19 +1022,23 @@ let opendir name =
   else
     run_job (opendir_job name)
 
+external valid_dir : Unix.dir_handle -> bool = "lwt_unix_valid_dir"
 external readdir_job : Unix.dir_handle -> string job = "lwt_unix_readdir_job"
 
 let readdir handle =
   if Sys.win32 then
     Lwt.return (Unix.readdir handle)
   else
-    run_job (readdir_job handle)
+    if valid_dir handle then
+      run_job (readdir_job handle)
+    else
+      Lwt.fail (Unix.(Unix_error (EBADF, "Lwt_unix.readdir", "")))
 
 external readdir_n_job : Unix.dir_handle -> int -> string array job = "lwt_unix_readdir_n_job"
 
 let readdir_n handle count =
   if count < 0 then
-    Lwt.fail (Invalid_argument "Lwt_uinx.readdir_n")
+    Lwt.fail (Invalid_argument "Lwt_unix.readdir_n")
   else if Sys.win32 then
     let array = Array.make count "" in
     let rec fill i =
@@ -1049,7 +1053,10 @@ let readdir_n handle count =
     in
     fill 0
   else
-    run_job (readdir_n_job handle count)
+    if valid_dir handle then
+      run_job (readdir_n_job handle count)
+    else
+      Lwt.fail (Unix.(Unix_error (EBADF, "Lwt_unix.readdir_n", "")))
 
 external rewinddir_job : Unix.dir_handle -> unit job = "lwt_unix_rewinddir_job"
 
@@ -1057,15 +1064,24 @@ let rewinddir handle =
   if Sys.win32 then
     Lwt.return (Unix.rewinddir handle)
   else
-    run_job (rewinddir_job handle)
+    if valid_dir handle then
+      run_job (rewinddir_job handle)
+    else
+      Lwt.fail (Unix.(Unix_error (EBADF, "Lwt_unix.rewinddir", "")))
 
 external closedir_job : Unix.dir_handle -> unit job = "lwt_unix_closedir_job"
+external invalidate_dir : Unix.dir_handle -> unit = "lwt_unix_invalidate_dir"
 
 let closedir handle =
   if Sys.win32 then
     Lwt.return (Unix.closedir handle)
   else
-    run_job (closedir_job handle)
+    if valid_dir handle then
+      run_job (closedir_job handle) >>= fun () ->
+      invalidate_dir handle;
+      Lwt.return_unit
+    else
+      Lwt.fail (Unix.(Unix_error (EBADF, "Lwt_unix.closedir", "")))
 
 type list_directory_state  =
   | LDS_not_started
