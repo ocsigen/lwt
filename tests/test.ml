@@ -98,3 +98,16 @@ let run ~name ~suites =
 
 let temp_file () =
   Filename.temp_file ~temp_dir:"_build" "lwt-testing-" ""
+
+let temp_directory =
+  let rng = Random.State.make_self_init () in
+  fun () ->
+    let rec attempt () =
+      let number = Random.State.int rng 10000 in
+      let path = Printf.sprintf "_build/lwt-testing-%04d" number in
+      try
+        Unix.mkdir path 0o755;
+        path
+      with Not_found -> attempt ()
+    in
+  attempt ()

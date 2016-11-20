@@ -45,3 +45,6 @@ val run : name : string -> suites : suite list -> unit
 
 val temp_file : unit -> string
 (** Creates a temporary file in [_build/] and evaluates to its path. *)
+
+val temp_directory : unit -> string
+(** Creates a temporary directory in [build/] and evaluates to its path. *)
