@@ -593,23 +593,35 @@ val chroot : string -> unit Lwt.t
 type dir_handle = Unix.dir_handle
 
 val opendir : string -> dir_handle Lwt.t
-  (** Wrapper for [Unix.opendir] *)
+(** Opens a directory for listing. Directories opened with this function must be
+    explicitly closed with {!closedir}. This is a cooperative analog of
+    {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALopendir}
+    [Unix.opendir]}. *)
 
 val readdir : dir_handle -> string Lwt.t
-  (** Wrapper for [Unix.readdir]. *)
+(** Reads the next directory entry from the given directory. Special entries
+    such as [.] and [..] are included. If all entries have been read, raises
+    [End_of_file]. This is a cooperative analog of
+    {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALreaddir}
+    [Unix.readdir]}. *)
 
 val readdir_n : dir_handle -> int -> string array Lwt.t
-  (** [readdir_n handle count] reads at most [count] entry from the
+  (** [readdir_n handle count] reads at most [count] entries from the
       given directory. It is more efficient than calling [readdir]
       [count] times. If the length of the returned array is smaller
       than [count], this means that the end of the directory has been
       reached. *)
 
 val rewinddir : dir_handle -> unit Lwt.t
-  (** Wrapper for [Unix.rewinddir] *)
+(** Resets the given directory handle, so that directory listing can be
+    restarted. Cooperative analog of
+    {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALrewinddir}
+    [Unix.rewinddir]}. *)
 
 val closedir : dir_handle -> unit Lwt.t
-  (** Wrapper for [Unix.closedir] *)
+(** Closes a directory handle. Cooperative analog of
+    {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALclosedir}
+    [Unix.closedir]}. *)
 
 val files_of_directory : string -> string Lwt_stream.t
   (** [files_of_directory dir] returns the stream of all files of
