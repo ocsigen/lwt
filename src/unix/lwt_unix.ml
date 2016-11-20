@@ -1080,6 +1080,7 @@ let cleanup_dir_handle state =
         ()
 
 let files_of_directory path =
+  let chunk_size = 1024 in
   let state = ref LDS_not_started in
   Lwt_stream.concat
     (Lwt_stream.from
@@ -1088,11 +1089,11 @@ let files_of_directory path =
             | LDS_not_started ->
                 opendir path >>= fun handle ->
                 Lwt.catch
-                  (fun () -> readdir_n handle 1024)
+                  (fun () -> readdir_n handle chunk_size)
                   (fun exn ->
                     closedir handle >>= fun () ->
                     Lwt.fail exn) >>= fun entries ->
-                if Array.length entries < 1024 then begin
+                if Array.length entries < chunk_size then begin
                   state := LDS_done;
                   closedir handle >>= fun () ->
                   Lwt.return (Some(Lwt_stream.of_array entries))
@@ -1103,11 +1104,11 @@ let files_of_directory path =
                 end
             | LDS_listing handle ->
                 Lwt.catch
-                  (fun () -> readdir_n handle 1024)
+                  (fun () -> readdir_n handle chunk_size)
                   (fun exn ->
                     closedir handle >>= fun () ->
                     Lwt.fail exn) >>= fun entries ->
-                if Array.length entries < 1024 then begin
+                if Array.length entries < chunk_size then begin
                   state := LDS_done;
                   closedir handle >>= fun () ->
                   Lwt.return (Some(Lwt_stream.of_array entries))
