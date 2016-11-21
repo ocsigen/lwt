@@ -1476,6 +1476,24 @@ CAMLprim value lwt_unix_rewinddir_job(value dir)
   return lwt_unix_alloc_job(&(job->job));
 }
 
+/* struct dirent size */
+
+/* Some kind of estimate of the true size of a dirent structure, including the
+   space used for the name. This is controversial, and there is an ongoing
+   discussion (see Internet) about deprecating readdir_r because of the need to
+   guess the size in this way. */
+static size_t dirent_size(DIR *dir)
+{
+    size_t size =
+        offsetof(struct dirent, d_name) +
+        fpathconf(dirfd(dir), _PC_NAME_MAX) + 1;
+
+    if (size < sizeof(struct dirent))
+        size = sizeof(struct dirent);
+
+    return size;
+}
+
 /* +-----------------------------------------------------------------+
    | JOB: readdir                                                    |
    +-----------------------------------------------------------------+ */
@@ -1490,7 +1508,7 @@ struct job_readdir {
 
 static void worker_readdir(struct job_readdir *job)
 {
-  job->entry = lwt_unix_malloc(offsetof(struct dirent, d_name) + fpathconf(dirfd(job->dir), _PC_NAME_MAX) + 1);
+  job->entry = lwt_unix_malloc(dirent_size(job->dir));
   job->result = readdir_r(job->dir, job->entry, &job->ptr);
 }
 
@@ -1534,7 +1552,7 @@ struct job_readdir_n {
 
 static void worker_readdir_n(struct job_readdir_n *job)
 {
-  size_t size = offsetof(struct dirent, d_name) + fpathconf(dirfd(job->dir), _PC_NAME_MAX) + 1;
+  size_t size = dirent_size(job->dir);
   long i;
   for(i = 0; i < job->count; i++) {
     struct dirent *ptr;
