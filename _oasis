@@ -3,7 +3,7 @@
 # +-------------------------------------------------------------------+
 
 OASISFormat: 0.4
-OCamlVersion: >= 4.01
+OCamlVersion: >= 4.02
 Name: lwt
 Version: 2.6.0
 LicenseFile: COPYING

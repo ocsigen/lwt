@@ -122,7 +122,4 @@ then
     ! opam list -i conf-libev
 fi
 
-if [ "$COMPILER" != 4.01 ]
-then
-    opam list -i ppx_tools
-fi
+opam list -i ppx_tools

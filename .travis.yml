@@ -5,7 +5,6 @@ os:
   - osx
 
 env:
-  - COMPILER=4.01
   - COMPILER=4.02
   - COMPILER=4.03
 
