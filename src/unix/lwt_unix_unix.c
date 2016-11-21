@@ -1547,37 +1547,25 @@ struct job_readdir_n {
   DIR *dir;
   long count;
   int error_code;
-  struct dirent *entries[];
+  struct dirent entries[];
 };
 
 static void worker_readdir_n(struct job_readdir_n *job)
 {
-  size_t size = dirent_size(job->dir);
   long i;
   for(i = 0; i < job->count; i++) {
     struct dirent *ptr;
-    struct dirent *entry = (struct dirent *)lwt_unix_malloc(size);
-
-    int result = readdir_r(job->dir, entry, &ptr);
+    int result = readdir_r(job->dir, &job->entries[i], &ptr);
 
     /* An error happened. */
     if (result != 0) {
-      /* Free already read entries. */
-      free(entry);
-      long j;
-      for(j = 0; j < i; j++) free(job->entries[j]);
-      /* Return an error. */
       job->error_code = result;
       return;
     }
 
     /* End of directory reached */
-    if (ptr == NULL) {
-      free(entry);
+    if (ptr == NULL)
       break;
-    }
-
-    job->entries[i] = entry;
   }
 
   job->count = i;
@@ -1596,8 +1584,7 @@ static value result_readdir_n(struct job_readdir_n *job)
     result = caml_alloc(job->count, 0);
     long i;
     for(i = 0; i < job->count; i++) {
-      Store_field(result, i, caml_copy_string(job->entries[i]->d_name));
-      free(job->entries[i]);
+      Store_field(result, i, caml_copy_string(job->entries[i].d_name));
     }
     lwt_unix_free_job(&job->job);
     CAMLreturn(result);
@@ -1607,9 +1594,12 @@ static value result_readdir_n(struct job_readdir_n *job)
 CAMLprim value lwt_unix_readdir_n_job(value val_dir, value val_count)
 {
   long count = Long_val(val_count);
-  LWT_UNIX_INIT_JOB(job, readdir_n, sizeof(struct dirent*) * count);
-  job->dir = DIR_Val(val_dir);
+  DIR *dir = DIR_Val(val_dir);
+
+  LWT_UNIX_INIT_JOB(job, readdir_n, dirent_size(dir) * count);
+  job->dir = dir;
   job->count = count;
+
   return lwt_unix_alloc_job(&job->job);
 }
 
