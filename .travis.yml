@@ -1,27 +1,25 @@
 language: c
 
-os:
-  - linux
-  - osx
-
-env:
-  - COMPILER=4.02
-  - COMPILER=4.03
-
 matrix:
   include:
     - os: linux
-      # Using 4.02 here because a binary is available from the PPA, which makes
-      # the build complete faster.
-      env: COMPILER=4.02 LIBEV=yes
-    - os: osx
-      env: COMPILER=4.03 LIBEV=yes
-    - os: osx
-      env: COMPILER=4.03 PACKAGE_MANAGER=macports
-    - os: osx
-      env: COMPILER=4.03 LIBEV=yes PACKAGE_MANAGER=macports
+      env: COMPILER=4.03
     - os: linux
       env: COMPILER=4.04
+    - os: linux
+      # Using 4.02 here because a binary is available from the PPA, which makes
+      # the build complete faster. If the compiler for this test is switched to
+      # a different version, add a separate 4.02 row.
+      env: COMPILER=4.02 LIBEV=yes
+    - os: osx
+      env: COMPILER=4.04
+    - os: osx
+      env: COMPILER=4.04 LIBEV=yes
+    - os: osx
+      # A 4.04 binary is not yet available.
+      env: COMPILER=4.03 PACKAGE_MANAGER=macports
+    - os: osx
+      env: COMPILER=4.03 PACKAGE_MANAGER=macports LIBEV=yes
 
 script: bash -e utils/travis.sh
 
