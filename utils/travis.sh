@@ -30,14 +30,20 @@ packages_apt () {
 
 packages_homebrew () {
     brew update > /dev/null
+
+    if [ "$COMPILER" = system ]
+    then
+        brew install ocaml
+    else
+        DO_SWITCH=yes
+    fi
+
     brew install gtk+ opam
 
     if [ "$LIBEV" = yes ]
     then
         brew install libev
     fi
-
-    DO_SWITCH=yes
 }
 
 packages_macports () {
@@ -79,6 +85,7 @@ case $COMPILER in
     4.02) SWITCH=4.02.3;;
     4.03) SWITCH=4.03.0;;
     4.04) SWITCH=4.04.0;;
+    system) SWITCH=`ocamlc -version`;;
        *) echo Unsupported compiler $COMPILER; exit 1;;
 esac
 

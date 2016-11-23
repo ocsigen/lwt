@@ -12,9 +12,9 @@ matrix:
       # a different version, add a separate 4.02 row.
       env: COMPILER=4.02 LIBEV=yes
     - os: osx
-      env: COMPILER=4.04
+      env: COMPILER=system
     - os: osx
-      env: COMPILER=4.04 LIBEV=yes
+      env: COMPILER=system LIBEV=yes
     - os: osx
       # A 4.04 binary is not yet available.
       env: COMPILER=4.03 PACKAGE_MANAGER=macports
