@@ -24,3 +24,10 @@ matrix:
       env: COMPILER=4.04
 
 script: bash -e utils/travis.sh
+
+notifications:
+  email:
+    recipients:
+      - antonbachin@yahoo.com
+    on_success: always
+    on_failure: always
