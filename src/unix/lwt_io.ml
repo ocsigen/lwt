@@ -1521,3 +1521,9 @@ let set_default_buffer_size size =
   check_buffer_size "set_default_buffer_size" size;
   default_buffer_size := size
 let default_buffer_size _ = !default_buffer_size
+
+module Versioned =
+struct
+  let establish_server_1 = establish_server
+  let establish_server_2 = establish_server_safe
+end

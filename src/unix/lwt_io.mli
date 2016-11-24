@@ -413,34 +413,20 @@ val with_connection :
 type server
   (** Type of a server *)
 
-(**/**)
-
-val establish_server_safe :
-  ?fd : Lwt_unix.file_descr ->
-  ?buffer_size : int ->
-  ?backlog : int ->
-  Unix.sockaddr -> (input_channel * output_channel -> unit Lwt.t) -> server
-  (** [establish_server_safe ?fd ?buffer_size ?backlog sockaddr f] creates a
-      server which listens for incoming connections. New connections are passed
-      to [f]. When threads returned by [f] complete, the connections are closed
-      automatically.
-
-      The server does not wait for each thread. It begins accepting new
-      connections immediately.
-
-      If a thread raises an exception, it is passed to
-      [!Lwt.async_exception_hook]. Likewise, if the automatic [close] of a
-      connection raises an exception, it is passed to
-      [!Lwt.async_exception_hook]. To handle exceptions raised by [close], call
-      it manually inside [f]. *)
-
-(**/**)
-
 val establish_server :
   ?fd : Lwt_unix.file_descr ->
   ?buffer_size : int ->
   ?backlog : int ->
   Unix.sockaddr -> (input_channel * output_channel -> unit) -> server
+[@@ocaml.deprecated
+"The signature and semantics of this function will soon change:
+- the callback parameter f will evaluate to a thread (-> unit Lwt.t),
+- channels will be closed automatically when that thread completes, to avoid
+  leaking file descriptors.
+This will be breaking change. See
+  https://github.com/ocsigen/lwt/pull/258
+To keep the current functionality, use Lwt_io.Versioned.establish_server_1
+To use the safer version immediately, use Lwt_io.Versioned.establish_server_2"]
   (** [establish_server ?fd ?buffer_size ?backlog sockaddr f] creates a server
       which listens for incoming connections. New connections are passed to [f].
 
@@ -461,13 +447,17 @@ val establish_server :
       If [fd] is not specified, a fresh file descriptor will be created for
       listening.
 
-      [backlog] is the argument passed to [Lwt_unix.listen]. *)
+      [backlog] is the argument passed to [Lwt_unix.listen].
+
+      @deprecated Will be replaced by {!Versioned.establish_server_2}, which
+        closes the channels passed to [f] automatically when a thread returned
+        by [f] completes. *)
 
 val shutdown_server : server -> unit
   (** Close the given server's listening socket. This function does not wait for
       the close operation to actually complete. It does not affect the sockets
       of connections that have already been accepted, i.e. passed to [f] by
-      [establish_server] or [establish_server_safe]. *)
+      [establish_server]. *)
 
 val lines_of_file : file_name -> string Lwt_stream.t
   (** [lines_of_file name] returns a stream of all lines of the file
@@ -580,3 +570,38 @@ val set_default_buffer_size : int -> unit
 
       @raise Invalid_argument if the given size is smaller than [16]
       or greater than [Sys.max_string_length] *)
+
+(** Versioned variants of APIs undergoing breaking changes. *)
+module Versioned :
+sig
+  val establish_server_1 :
+    ?fd : Lwt_unix.file_descr ->
+    ?buffer_size : int ->
+    ?backlog : int ->
+    Unix.sockaddr -> (input_channel * output_channel -> unit) -> server
+  [@@ocaml.deprecated
+"Deprecated in favor of Lwt_io.Versioned.establish_server_2. See
+  https://github.com/ocsigen/lwt/pull/258"]
+  (** Alias for the current {!Lwt_io.establish_server}.
+
+      @deprecated Use {!establish_server_2}. *)
+
+  val establish_server_2 :
+    ?fd : Lwt_unix.file_descr ->
+    ?buffer_size : int ->
+    ?backlog : int ->
+    Unix.sockaddr -> (input_channel * output_channel -> unit Lwt.t) -> server
+  (** [establish_server_safe ?fd ?buffer_size ?backlog sockaddr f] creates a
+      server which listens for incoming connections. New connections are passed
+      to [f]. When threads returned by [f] complete, the connections are closed
+      automatically.
+
+      The server does not wait for each thread. It begins accepting new
+      connections immediately.
+
+      If a thread raises an exception, it is passed to
+      [!Lwt.async_exception_hook]. Likewise, if the automatic [close] of a
+      connection raises an exception, it is passed to
+      [!Lwt.async_exception_hook]. To handle exceptions raised by [close], call
+      it manually inside [f]. *)
+end

@@ -41,14 +41,14 @@ let shutdown_server_and_wait server =
   Lwt_io.shutdown_server server;
   Lwt_unix.sleep 0.05
 
-(* Helpers for [establish_server_safe] tests. *)
+(* Helpers for [establish_server_2] tests. *)
 module Establish_server =
 struct
   let with_client f =
     let handler_finished, notify_handler_finished = Lwt.wait () in
 
     let server =
-      Lwt_io.establish_server_safe
+      Lwt_io.Versioned.establish_server_2
         local
         (fun channels ->
           Lwt.finalize
@@ -172,7 +172,7 @@ let suite = suite "lwt_io" [
   (* Without the corresponding bugfix, which is to handle ENOTCONN from
      Lwt_unix.shutdown, this test raises an exception from the handler's calls
      to close. *)
-  test "establish_server: shutdown: client closes first"
+  test "establish_server_1: shutdown: client closes first"
     (fun () ->
       let wait_for_client, client_finished = Lwt.wait () in
 
@@ -186,7 +186,7 @@ let suite = suite "lwt_io" [
       in
 
       let server =
-        Lwt_io.establish_server
+        Lwt_io.Versioned.establish_server_1
           local (fun channels -> Lwt.wakeup run_handler channels)
       in
 
@@ -202,11 +202,12 @@ let suite = suite "lwt_io" [
       let wait_for_server, server_finished = Lwt.wait () in
 
       let server =
-        Lwt_io.establish_server local (fun (in_channel, out_channel) ->
-          Lwt.async (fun () ->
-            Lwt_io.close in_channel >>= fun () ->
-            Lwt_io.close out_channel >|= fun () ->
-            Lwt.wakeup server_finished ()))
+        Lwt_io.Versioned.establish_server_1
+          local (fun (in_channel, out_channel) ->
+            Lwt.async (fun () ->
+              Lwt_io.close in_channel >>= fun () ->
+              Lwt_io.close out_channel >|= fun () ->
+              Lwt.wakeup server_finished ()))
       in
 
       with_connection local (fun _ ->
@@ -218,7 +219,7 @@ let suite = suite "lwt_io" [
       shutdown_server_and_wait server >|= fun () ->
       result);
 
-  test "establish_server_safe: implicit close"
+  test "establish_server_2: implicit close"
     (fun () ->
       let open Establish_server in
 
@@ -250,7 +251,7 @@ let suite = suite "lwt_io" [
       in_closed_after_handler &&
       out_closed_after_handler);
 
-  test "establish_server_safe: implicit close on exception"
+  test "establish_server_2: implicit close on exception"
     (fun () ->
       let open Establish_server in
 
@@ -281,7 +282,7 @@ let suite = suite "lwt_io" [
   (* This does a simple double close of the channels (second close is implicit).
      If something breaks, the test will finish with an exception, or
      Lwt.async_exception_hook will kill the process. *)
-  test "establish_server_safe: explicit close"
+  test "establish_server_2: explicit close"
     (fun () ->
       let open Establish_server in
 
@@ -306,7 +307,7 @@ let suite = suite "lwt_io" [
      sockets again, the exception will go to Lwt.async_exception_hook and kill
      the tester. The correct behavior is for implicit close to do nothing if the
      user already tried to close the sockets. *)
-  test "establish_server_safe: no duplicate exceptions"
+  test "establish_server_2: no duplicate exceptions"
     ~only_if:(fun () -> not Sys.win32)
     (fun () ->
       let open Establish_server in
@@ -334,7 +335,7 @@ let suite = suite "lwt_io" [
   (* Screws up the open sockets so closing them fails with EBADF. Then, raises
      an exception from the handler. Checks that the handler exception arrives
      at Lwt.async_exception_hook before the exceptions from implicit close. *)
-  test "establish_server_safe: order of exceptions"
+  test "establish_server_2: order of exceptions"
     ~only_if:(fun () -> not Sys.win32)
     (fun () ->
       let open Establish_server in
@@ -367,7 +368,7 @@ let suite = suite "lwt_io" [
       let out_channel' = ref stdout in
 
       let server =
-        Lwt_io.establish_server_safe local (fun _ -> Lwt.return_unit) in
+        Lwt_io.Versioned.establish_server_2 local (fun _ -> Lwt.return_unit) in
 
       Lwt_io.with_connection local (fun (in_channel, out_channel) ->
         in_channel' := in_channel;
@@ -400,7 +401,7 @@ let suite = suite "lwt_io" [
       let handler_started, notify_handler_started = Lwt.wait () in
       let finish_server, resume_server = Lwt.wait () in
       let server =
-        Lwt_io.establish_server_safe local
+        Lwt_io.Versioned.establish_server_2 local
           (fun _ ->
             Lwt.wakeup notify_handler_started ();
             finish_server)
