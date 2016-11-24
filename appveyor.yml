@@ -4,7 +4,7 @@ shallow_clone: true
 
 environment:
   matrix:
-    - {SYSTEM: cygwin, ARCH: x86, COMPILER: 4.02}
+    - {SYSTEM: cygwin, ARCH: x86, COMPILER: 4.04}
     - {SYSTEM: mingw, ARCH: x86_64, COMPILER: 4.03}
 
 install:
