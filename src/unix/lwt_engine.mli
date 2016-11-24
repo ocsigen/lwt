@@ -128,11 +128,26 @@ end
 (** {2 Predefined engines} *)
 
 type ev_loop
+
+module Ev_backend :
+sig
+  type t
+  val default : t
+  val select : t
+  val poll : t
+  val epoll : t
+  val kqueue : t
+  val devpoll : t
+  val port : t
+
+  val pp : Format.formatter -> t -> unit
+end
+
   (** Type of libev loops. *)
 
 (** Engine based on libev. If not compiled with libev support, the
     creation of the class will raise {!Lwt_sys.Not_available}. *)
-class libev : object
+class libev : ?backend:Ev_backend.t -> unit -> object
   inherit t
 
   val loop : ev_loop
