@@ -156,6 +156,12 @@ class libev : object
   method loop : ev_loop
     (** Returns [loop]. *)
 end
+[@@ocaml.deprecated
+"This class will soon have parameters for selecting a libev backend. This will
+be a breaking change. See
+  https://github.com/ocsigen/lwt/pull/269
+To preserve the current signature, use Lwt_engine.Versioned.libev_1
+To use the replacement immediately, use Lwt_engine.Versioned.libev_2 ()"]
 
 (** Engine based on [Unix.select]. *)
 class select : t
@@ -207,3 +213,21 @@ val set : ?transfer : bool -> ?destroy : bool -> #t -> unit
 
       If [destroy] is [true] (the default) then the current engine is
       destroyed before being replaced. *)
+
+module Versioned :
+sig
+  class libev_1 : object
+    inherit t
+    val loop : ev_loop
+    method loop : ev_loop
+  end
+  [@@ocaml.deprecated
+   "Deprecated in favor of Lwt_engine.Versioned.libev_2. See
+  https://github.com/ocsigen/lwt/pull/269"]
+
+  class libev_2 : ?backend:Ev_backend.t -> unit -> object
+    inherit t
+    val loop : ev_loop
+    method loop : ev_loop
+  end
+end

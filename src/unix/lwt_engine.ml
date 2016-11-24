@@ -431,3 +431,9 @@ let fake_io fd = !current#fake_io fd
 let readable_count () = !current#readable_count
 let writable_count () = !current#writable_count
 let timer_count () = !current#timer_count
+
+module Versioned =
+struct
+  class libev_1 = libev
+  class libev_2 = libev'
+end
