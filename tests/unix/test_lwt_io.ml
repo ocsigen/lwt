@@ -33,14 +33,6 @@ let with_async_exception_hook hook f =
 
 let local = Unix.ADDR_INET (Unix.inet_addr_loopback, 4321)
 
-(* Add small delay to help ensure [close] system calls are issued on listening
-   sockets as a result of calling [Lwt_io.shutdown_server], before proceeding.
-   In the future, it would be better if [Lwt_io.shutdown_server] produced a
-   thread that could be waited on. *)
-let shutdown_server_and_wait server =
-  Lwt_io.shutdown_server server;
-  Lwt_unix.sleep 0.05
-
 (* Helpers for [establish_server_2] tests. *)
 module Establish_server =
 struct
@@ -67,7 +59,7 @@ struct
     in
 
     client_finished >>= fun () ->
-    shutdown_server_and_wait server
+    Lwt_io.Versioned.shutdown_server_2 server
 
   (* Dirty hack for forcing [Lwt_io.close] to fail, to test response to [close]
      exceptions. Impolitely closes the [n]th last file descriptor allocated by
@@ -192,7 +184,7 @@ let suite = suite "lwt_io" [
 
       with_connection local (fun _ -> Lwt.return_unit) >>= fun () ->
       Lwt.wakeup client_finished ();
-      shutdown_server_and_wait server >>= fun () ->
+      Lwt_io.Versioned.shutdown_server_2 server >>= fun () ->
       handler);
 
   (* Counterpart to establish_server: shutdown test. Confirms that shutdown is
@@ -216,7 +208,7 @@ let suite = suite "lwt_io" [
 
       >>= fun result ->
 
-      shutdown_server_and_wait server >|= fun () ->
+      Lwt_io.Versioned.shutdown_server_2 server >|= fun () ->
       result);
 
   test "establish_server_2: implicit close"
@@ -243,6 +235,12 @@ let suite = suite "lwt_io" [
       in
 
       run >>= fun () ->
+      (* Give a little time for the close system calls on the connection sockets
+         to complete. The Lwt_io and Lwt_unix APIs do not currently allow
+         binding on the implicit closes of these sockets, so resorting to a
+         delay. *)
+      Lwt_unix.sleep 0.05 >>= fun () ->
+
       is_closed_in !in_channel' >>= fun in_closed_after_handler ->
       is_closed_out !out_channel' >|= fun out_closed_after_handler ->
 
@@ -274,9 +272,12 @@ let suite = suite "lwt_io" [
         run
 
       >>= fun () ->
+      (* See comment in other implicit close test. *)
+      Lwt_unix.sleep 0.05 >>= fun () ->
 
       is_closed_in !in_channel' >>= fun in_closed_after_handler ->
       is_closed_out !out_channel' >|= fun out_closed_after_handler ->
+
       in_closed_after_handler && out_closed_after_handler);
 
   (* This does a simple double close of the channels (second close is implicit).
@@ -376,7 +377,7 @@ let suite = suite "lwt_io" [
         Lwt.return_unit)
 
       >>= fun () ->
-      shutdown_server_and_wait server >>= fun () ->
+      Lwt_io.Versioned.shutdown_server_2 server >>= fun () ->
       is_closed_in !in_channel' >>= fun in_closed ->
       is_closed_out !out_channel' >|= fun out_closed ->
       in_closed && out_closed);
@@ -416,6 +417,6 @@ let suite = suite "lwt_io" [
 
       >>= fun () ->
       Lwt.wakeup resume_server ();
-      shutdown_server_and_wait server >|= fun () ->
+      Lwt_io.Versioned.shutdown_server_2 server >|= fun () ->
       !exceptions_observed = 2);
 ]

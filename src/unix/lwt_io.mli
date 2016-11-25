@@ -454,10 +454,19 @@ To use the safer version immediately, use Lwt_io.Versioned.establish_server_2"]
         by [f] completes. *)
 
 val shutdown_server : server -> unit
-  (** Close the given server's listening socket. This function does not wait for
-      the close operation to actually complete. It does not affect the sockets
-      of connections that have already been accepted, i.e. passed to [f] by
-      [establish_server]. *)
+[@@ocaml.deprecated
+"This function will soon evaluate to a thread that waits for the close system
+call to complete. This will be a breaking change for some builds. See
+  https://github.com/ocsigen/lwt/issues/259
+To keep the current signature, use Lwt_io.Versioned.shutdown_server_1
+To use the new version immediately, use Lwt_io.Versioned.shutdown_server_2"]
+  (** Closes the given server's listening socket. This function does not wait
+      for the [close] operation to actually complete. It does not affect the
+      sockets of connections that have already been accepted, i.e. passed to [f]
+      by [establish_server].
+
+      @deprecated Will be replaced by {!Versioned.shutdown_server_2}, which
+        evaluates to a thread that waits for [close] to complete. *)
 
 val lines_of_file : file_name -> string Lwt_stream.t
   (** [lines_of_file name] returns a stream of all lines of the file
@@ -604,4 +613,20 @@ sig
       connection raises an exception, it is passed to
       [!Lwt.async_exception_hook]. To handle exceptions raised by [close], call
       it manually inside [f]. *)
+
+  val shutdown_server_1 : server -> unit
+  [@@ocaml.deprecated
+"Deprecated in favor of Lwt_io.Versioned.shutdown_server_2. See
+  https://github.com/ocsigen/lwt/issues/259"]
+  (** Alias for the current {!Lwt_io.shutdown_server}.
+
+      @deprecated Use {!shutdown_server_2}. *)
+
+  val shutdown_server_2 : server -> unit Lwt.t
+  (** Closes the given server's listening socket. The thread returned by this
+      function waits for the underlying [close] system call to complete.
+
+      This function does not affect sockets of connections that have already
+      been accepted by the server, i.e. those passed by [establish_server] to
+      its callback [f]. *)
 end

@@ -1412,10 +1412,12 @@ let with_connection ?fd ?in_buffer ?out_buffer sockaddr f =
     (fun () -> close_if_not_closed ic <&> close_if_not_closed oc)
 
 type server = {
-  shutdown : unit Lazy.t;
+  shutdown : unit Lwt.t Lazy.t;
 }
 
-let shutdown_server server = Lazy.force server.shutdown
+let shutdown_server_2 server = Lazy.force server.shutdown
+
+let shutdown_server server = Lwt.async (fun () -> shutdown_server_2 server)
 
 let establish_server ?fd ?(buffer_size = !default_buffer_size) ?(backlog=5) sockaddr f =
   let sock = match fd with
@@ -1426,7 +1428,9 @@ let establish_server ?fd ?(buffer_size = !default_buffer_size) ?(backlog=5) sock
   Lwt_unix.bind sock sockaddr;
   Lwt_unix.listen sock backlog;
   let abort_waiter, abort_wakener = Lwt.wait () in
-  let abort_waiter = abort_waiter >>= fun _ -> Lwt.return `Shutdown in
+  let abort_waiter = abort_waiter >>= fun () -> Lwt.return `Shutdown in
+  (* Signals that the listening socket has been closed. *)
+  let closed_waiter, closed_wakener = Lwt.wait () in
   let rec loop () =
     Lwt.pick [Lwt_unix.accept sock >|= (fun x -> `Accept x); abort_waiter] >>= function
       | `Accept(fd, addr) ->
@@ -1439,15 +1443,17 @@ let establish_server ?fd ?(buffer_size = !default_buffer_size) ?(backlog=5) sock
           loop ()
       | `Shutdown ->
           Lwt_unix.close sock >>= fun () ->
-          match sockaddr with
+          (match sockaddr with
             | Unix.ADDR_UNIX path when path <> "" && path.[0] <> '\x00' ->
                 Unix.unlink path;
                 Lwt.return_unit
             | _ ->
-                Lwt.return_unit
+                Lwt.return_unit) >>= fun () ->
+          Lwt.wakeup closed_wakener ();
+          Lwt.return_unit
   in
   ignore (loop ());
-  { shutdown = lazy(Lwt.wakeup abort_wakener `Shutdown) }
+  { shutdown = lazy (Lwt.wakeup abort_wakener (); closed_waiter) }
 
 let establish_server_safe ?fd ?buffer_size ?backlog sockaddr f =
   let best_effort_close channel =
@@ -1526,4 +1532,7 @@ module Versioned =
 struct
   let establish_server_1 = establish_server
   let establish_server_2 = establish_server_safe
+
+  let shutdown_server_1 = shutdown_server
+  let shutdown_server_2 = shutdown_server_2
 end
