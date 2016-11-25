@@ -45,9 +45,11 @@ let split str =
   in
   skip_spaces 0
 
+let c_library_tag name = Printf.sprintf "use_C_%s" name
+
 let define_c_library name env =
   if BaseEnvLight.var_get name env = "true" then begin
-    let tag = Printf.sprintf "use_C_%s" name in
+    let tag = c_library_tag name in
 
     let opt = List.map (fun x -> A x) (split (BaseEnvLight.var_get (name ^ "_opt") env))
     and lib = List.map (fun x -> A x) (split (BaseEnvLight.var_get (name ^ "_lib") env)) in
@@ -109,13 +111,15 @@ let () =
              (* Check for "unix" because other variables are not
                 present in the setup.data file if lwt.unix is
                 disabled. *)
-             if BaseEnvLight.var_get "unix" env = "true" then begin
-               define_c_library "glib" env;
-               define_c_library "libev" env;
-               define_c_library "pthread" env;
+             let c_libraries = ["glib"; "libev"; "pthread"] in
 
+             if BaseEnvLight.var_get "unix" env = "true" then begin
+               List.iter (fun name -> define_c_library name env) c_libraries;
                flag ["c"; "compile"; "use_lwt_headers"] & S [A"-ccopt"; A"-Isrc/unix"];
-             end
+             end;
+
+             List.iter (fun name ->
+               mark_tag_used (c_library_tag name)) c_libraries
 
          | _ ->
              ())
