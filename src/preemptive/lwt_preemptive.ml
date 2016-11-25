@@ -143,7 +143,7 @@ let add_worker worker =
         Lwt.wakeup w worker
 
 (* Wait for worker to be available, then return it: *)
-let rec get_worker () =
+let get_worker () =
   if not (Queue.is_empty workers) then
     Lwt.return (Queue.take workers)
   else if !threads_count < !max_threads then
@@ -163,7 +163,7 @@ let set_bounds (min, max) =
   min_threads := min;
   max_threads := max;
   (* Launch new workers: *)
-  for i = 1 to diff do
+  for _i = 1 to diff do
     add_worker (make_worker ())
   done
 
@@ -259,7 +259,9 @@ let run_in_main f =
     (* Execute [f] and wait for its result. *)
     Lwt.try_bind f
       (fun ret -> Lwt.return (Value ret))
-      (fun exn -> Lwt.return (Error exn)) >>= fun result ->
+      (fun exn -> Lwt.return (Error exn : _ result)) >>= fun result ->
+      (* TODO: Eliminate above type constraint after getting rid of result
+         type. *)
     (* Send the result. *)
     CELL.set cell result;
     Lwt.return_unit

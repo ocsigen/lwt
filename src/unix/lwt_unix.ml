@@ -174,13 +174,13 @@ let jobs = Lwt_sequence.create ()
 
 let rec abort_jobs exn =
   match Lwt_sequence.take_opt_l jobs with
-    | Some (w, f) -> f exn; abort_jobs exn
+    | Some (_, f) -> f exn; abort_jobs exn
     | None -> ()
 
 let cancel_jobs () = abort_jobs Lwt.Canceled
 
 let wait_for_jobs () =
-  Lwt.join (Lwt_sequence.fold_l (fun (w, f) l -> w :: l) jobs [])
+  Lwt.join (Lwt_sequence.fold_l (fun (w, _) l -> w :: l) jobs [])
 
 let wrap_result f x =
   try
@@ -770,7 +770,7 @@ let file_exists name =
     (fun e ->
        match e with
        | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return_false
-       | _ -> Lwt.fail e)
+       | _ -> Lwt.fail e) [@ocaml.warning "-4"]
 
 external utimes_job : string -> float -> float -> unit job =
   "lwt_unix_utimes_job"
@@ -866,7 +866,7 @@ struct
       (fun e ->
          match e with
          | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return_false
-         | _ -> Lwt.fail e)
+         | _ -> Lwt.fail e) [@ocaml.warning "-4"]
 
 end
 
@@ -1394,7 +1394,7 @@ let accept_n ch n =
       wrap_syscall Read ch begin fun () ->
         begin
           try
-            for i = 1 to n do
+            for _i = 1 to n do
               if blocking && not (unix_readable ch.fd) then raise Retry;
               let fd, addr = Unix.accept ch.fd in
               l := (mk_ch ~blocking:false fd, addr) :: !l
@@ -1676,7 +1676,8 @@ let getprotobynumber number =
     Lwt_mutex.with_lock protoent_mutex ( fun () ->
         run_job (getprotobynumber_job number))
 
-let servent_mutex =
+(* TODO: Not used anywhere, and that might be a bug. *)
+let _servent_mutex =
   if Sys.win32 || Lwt_config._HAVE_NETDB_REENTRANT then
     hostent_mutex
   else
@@ -1871,14 +1872,11 @@ let tcflow ch act =
    | Reading notifications                                           |
    +-----------------------------------------------------------------+ *)
 
-(* Buffer used to receive notifications: *)
-let notification_buffer = Bytes.create 4
-
 external init_notification : unit -> Unix.file_descr = "lwt_unix_init_notification"
 external send_notification : int -> unit = "lwt_unix_send_notification_stub"
 external recv_notifications : unit -> int array = "lwt_unix_recv_notifications"
 
-let rec handle_notifications ev =
+let handle_notifications _ =
   (* Process available notifications. *)
   Array.iter call_notification (recv_notifications ())
 
@@ -1906,13 +1904,13 @@ and signal_handler_id = signal_handler option ref
 let signals = ref Signal_map.empty
 let signal_count () =
   Signal_map.fold
-    (fun signum (id, actions) len -> len + Lwt_sequence.length actions)
+    (fun _signum (_id, actions) len -> len + Lwt_sequence.length actions)
     !signals
     0
 
 let on_signal_full signum handler =
   let id = ref None in
-  let notification, actions =
+  let _, actions =
     try
       Signal_map.find signum !signals
     with Not_found ->
@@ -1936,7 +1934,7 @@ let on_signal_full signum handler =
   id := Some { sh_num = signum; sh_node = node };
   id
 
-let on_signal signum f = on_signal_full signum (fun id num -> f num)
+let on_signal signum f = on_signal_full signum (fun _id num -> f num)
 
 let disable_signal_handler id =
   match !id with
@@ -1954,7 +1952,7 @@ let disable_signal_handler id =
 
 let reinstall_signal_handler signum =
   match try Some (Signal_map.find signum !signals) with Not_found -> None with
-    | Some (notification, actions) ->
+    | Some (notification, _) ->
         set_signal signum notification
     | None ->
         ()
@@ -1975,7 +1973,7 @@ let fork () =
         (* Reinitialise the notification system. *)
         event_notifications := Lwt_engine.on_readable (init_notification ()) handle_notifications;
         (* Collect all pending jobs. *)
-        let l = Lwt_sequence.fold_l (fun (w, f) l -> f :: l) jobs [] in
+        let l = Lwt_sequence.fold_l (fun (_, f) l -> f :: l) jobs [] in
         (* Remove them all. *)
         Lwt_sequence.iter_node_l Lwt_sequence.remove jobs;
         (* And cancel them all. We yield first so that if the program

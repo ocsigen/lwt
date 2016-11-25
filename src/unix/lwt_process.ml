@@ -186,8 +186,8 @@ type state =
   | Running
   | Exited of Unix.process_status
 
-let status (pid, status, rusage) = status
-let rusage (pid, status, rusage) = rusage
+let status (_pid, status, _rusage) = status
+let rusage (_pid, _status, rusage) = rusage
 
 external cast_chan : 'a Lwt_io.channel -> unit Lwt_io.channel = "%identity"
   (* Transform a channel into a channel that only support closing. *)
@@ -204,7 +204,7 @@ object(self)
   method state =
     match Lwt.poll wait with
       | None -> Running
-      | Some (pid, status, rusage) -> Exited status
+      | Some (_pid, status, _rusage) -> Exited status
 
   method kill signum =
     if Lwt.state wait = Lwt.Sleep then
@@ -245,7 +245,7 @@ object(self)
                  | false ->
                      self#terminate;
                      self#close >>= fun _ -> Lwt.return_unit)
-              (fun exn ->
+              (fun _ ->
                  (* The exception is dropped because it can be
                     obtained with self#close. *)
                  Lwt.return_unit)
@@ -338,7 +338,7 @@ let read_opt read ic =
     (function
     | Unix.Unix_error (Unix.EPIPE, _, _) | End_of_file ->
         Lwt.return_none
-    | exn -> Lwt.fail exn)
+    | exn -> Lwt.fail exn) [@ocaml.warning "-4"]
 
 let recv_chars pr =
   let ic = pr#stdout in

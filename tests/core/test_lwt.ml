@@ -63,15 +63,15 @@ let suite = suite "lwt" [
 
   test "1"
     (fun () ->
-       catch return (fun e -> return ()) <=> Return ();
-       catch (fun () -> fail Exn) (function Exn -> return ()| e -> assert false) <=> Return ();
+       catch return (fun _ -> return ()) <=> Return ();
+       catch (fun () -> fail Exn) (function Exn -> return () | _ -> assert false) <=> Return ();
        catch (fun () -> fail Exn) (fun e -> fail e) <=> Fail Exn;
        return true);
 
   test "2"
     (fun () ->
-       try_bind return return ( fun e -> assert false ) <=> Return ();
-       try_bind (fun () -> fail Exn) return (function Exn -> return ()| e -> assert false) <=> Return ();
+       try_bind return return (fun _ -> assert false) <=> Return ();
+       try_bind (fun () -> fail Exn) return (function Exn -> return () | _ -> assert false) <=> Return ();
        return true);
 
   test "3"
@@ -141,7 +141,7 @@ let suite = suite "lwt" [
   test "12"
     (fun () ->
        let t,w = wait () in
-       let t',w' = wait () in
+       let t', _ = wait () in
        let r1 = join [return ();t] in
        let r2 = join [t;t'] in
        wakeup_exn w Exn;
@@ -166,7 +166,7 @@ let suite = suite "lwt" [
     (fun () ->
        assert ( poll (return ()) = Some () );
        test_exn poll (fail Exn) Exn;
-       let t,w = wait () in
+       let t, _ = wait () in
        assert ( poll t = None );
        return true);
 
@@ -189,8 +189,8 @@ let suite = suite "lwt" [
   test "16"
     (fun () ->
        let t,w = wait () in
-       let r1 = catch (fun () -> t) (fun e -> return ()) in r1 <=> Sleep;
-       let r2 = try_bind (fun () -> t) return ( fun e -> assert false ) in r2 <=> Sleep;
+       let r1 = catch (fun () -> t) (fun _ -> return ()) in r1 <=> Sleep;
+       let r2 = try_bind (fun () -> t) return (fun _ -> assert false) in r2 <=> Sleep;
        wakeup w ();
        r1 <=> Return ();
        r2 <=> Return ();
@@ -200,8 +200,8 @@ let suite = suite "lwt" [
 
   test "17"
     (fun () ->
-       let t,w = task () in
-       let t',w' = wait () in
+       let t, _ = task () in
+       let t', _ = wait () in
        let t'' = return () in
        cancel t;
        cancel t';
@@ -213,7 +213,7 @@ let suite = suite "lwt" [
 
   test "18"
     (fun () ->
-       let t,w = task () in
+       let t, _ = task () in
        let r = bind t return in
        cancel r;
        r <=> Fail Canceled;
@@ -221,7 +221,7 @@ let suite = suite "lwt" [
 
   test "19"
     (fun () ->
-       let t,w = task () in
+       let t, _ = task () in
        on_cancel t (fun () -> ());
        on_cancel (return ()) (fun () -> assert false);
        cancel t;
@@ -233,7 +233,7 @@ let suite = suite "lwt" [
 
   test "20"
     (fun () ->
-       let t,w = task () in
+       let t, _ = task () in
        let t',w' = wait () in
        let r = pick [t;t'] in r <=> Sleep;
        wakeup w' ();
@@ -248,8 +248,8 @@ let suite = suite "lwt" [
 
   test "22"
     (fun () ->
-       let t,w = task () in
-       let t',w' = wait () in
+       let t, _ = task () in
+       let t', _ = wait () in
        let r = pick [t;t'] in
        cancel r;
        r <=> Fail Canceled;
@@ -258,7 +258,7 @@ let suite = suite "lwt" [
 
   test "23"
     (fun () ->
-       let t,w = task () in
+       let t, _ = task () in
        let r = join [t] in
        cancel r;
        r <=> Fail Canceled;
@@ -267,7 +267,7 @@ let suite = suite "lwt" [
 
   test "24"
     (fun () ->
-       let t,w = task () in
+       let t, _ = task () in
        let r = choose [t] in
        cancel r;
        r <=> Fail Canceled;
@@ -276,7 +276,7 @@ let suite = suite "lwt" [
 
   test "25"
     (fun () ->
-       let t,w = task () in
+       let t, _ = task () in
        let r = catch (fun () -> t) (function Canceled -> return ()| _ -> assert false) in
        cancel r;
        r <=> Return ();
@@ -285,7 +285,7 @@ let suite = suite "lwt" [
 
   test "26"
     (fun () ->
-       let t,w = task () in
+       let t, _ = task () in
        let r = try_bind (fun () -> t) (fun _ -> assert false) (function Canceled -> return ()| _ -> assert false) in
        cancel r;
        r <=> Return ();
@@ -294,7 +294,7 @@ let suite = suite "lwt" [
 
   test "27"
     (fun () ->
-       let t,w = wait () in
+       let _, w = wait () in
        wakeup w ();
        test_exn (wakeup w) () (Invalid_argument "Lwt.wakeup_result");
        return true);
@@ -348,7 +348,7 @@ let suite = suite "lwt" [
   test "choose"
     (fun () ->
        let t1,w1 = wait () in
-       let t2,w2 = wait () in
+       let t2, _ = wait () in
        let rec f = function
 	 | 0 -> []
 	 | i -> (choose [t1;t2])::(f (i-1))
@@ -391,7 +391,7 @@ let suite = suite "lwt" [
 
   test "protected task 3"
     (fun () ->
-       let t,w = task () in
+       let t, _ = task () in
        let t' = protected t in
        cancel t';
        return ((state t' = Fail Canceled) && (state t = Sleep)));
@@ -430,7 +430,7 @@ let suite = suite "lwt" [
 
   test "protected task: cancel task"
     (fun () ->
-      let t,w = task () in
+      let t, _ = task () in
       let t' = protected t in
       cancel t;
       return ((state t' = Fail Canceled) && (state t = Fail Canceled)));
@@ -451,7 +451,7 @@ let suite = suite "lwt" [
   test "join 3"
     (fun () ->
        let t1 = fail Exn in
-       let t2,w2 = wait () in
+       let t2, _ = wait () in
        let t3 = fail Not_found in
        let t4 = join [t2;t1;t3] in
        return ((state t1 = Fail Exn) && (state t2 = Sleep) &&
@@ -460,7 +460,7 @@ let suite = suite "lwt" [
   test "join 4"
     (fun () ->
        let t1 = fail Exn in
-       let t2,w2 = wait () in
+       let t2, _ = wait () in
        let t3 = return () in
        let rec f = function
 	 | 0 -> return true
@@ -509,7 +509,7 @@ let suite = suite "lwt" [
        let waiter, wakener = wait () in
        let t =
          waiter >>= fun () ->
-         let waiter, wakener = task () in
+         let waiter, _ = task () in
          waiter
        in
        wakeup wakener ();
@@ -521,7 +521,7 @@ let suite = suite "lwt" [
        let waiter, wakener = wait () in
        let t =
          waiter >>= fun () ->
-         let waiter, wakener = task () in
+         let waiter, _ = task () in
          waiter
        in
        let t = t >>= return in
@@ -613,10 +613,10 @@ let suite = suite "lwt" [
 
   test "re-cancel"
     (fun () ->
-       let waiter1, wakener1 = task () in
-       let waiter2, wakener2 = task () in
+       let waiter1, _ = task () in
+       let waiter2, _ = task () in
        let waiter3, wakener3 = task () in
-       let t1 = catch (fun () -> waiter1) (fun exn -> waiter2) in
+       let t1 = catch (fun () -> waiter1) (fun _ -> waiter2) in
        let t2 = bind t1 return in
        let t3 = bind waiter3 (fun () -> t1) in
        wakeup wakener3 ();
@@ -626,9 +626,9 @@ let suite = suite "lwt" [
 
   test "re-cancel choose"
     (fun () ->
-       let waiter1, wakener1 = task () in
-       let waiter2, wakener2 = task () in
-       let t1 = catch (fun () -> waiter1) (fun exn -> waiter2) in
+       let waiter1, _ = task () in
+       let waiter2, _ = task () in
+       let t1 = catch (fun () -> waiter1) (fun _ -> waiter2) in
        let t2 = choose [t1] in
        cancel t2;
        cancel t2;

@@ -31,16 +31,6 @@ let levels = [
   "Debug";
 ]
 
-let module_name _loc =
-  let file_name = Loc.file_name _loc in
-  if file_name = "" then
-    ""
-  else
-    String.capitalize (Filename.basename (try
-                                            Filename.chop_extension file_name
-                                          with Invalid_argument _ ->
-                                            file_name))
-
 let rec apply e = function
   | [] -> e
   | x :: l -> let _loc = Ast.loc_of_expr x in apply <:expr< $e$ $x$ >> l
@@ -69,7 +59,7 @@ let split e =
           `Log(ign, func, section, level, acc)
         else
           `Not_a_log
-    | <:expr@loc< $a$ $b$ >> -> begin
+    | <:expr@_loc< $a$ $b$ >> -> begin
         match b with
           | <:expr< ~section >> ->
               aux `Label (b :: acc) a
@@ -94,7 +84,7 @@ let map =
 object
   inherit Ast.map as super
 
-  method expr e =
+  method! expr e =
     let _loc = Ast.loc_of_expr e in
     match split e with
       | `Delete false ->

@@ -31,17 +31,17 @@ type socket = Lwt_unix.file_descr * t
 
 type uninitialized_socket = Lwt_unix.file_descr * Ssl.socket
 
-let ssl_socket (fd, kind) =
+let ssl_socket (_fd, kind) =
   match kind with
     | Plain -> None
     | SSL socket -> Some socket
 
-let ssl_socket_of_uninitialized_socket (fd, socket) = socket
+let ssl_socket_of_uninitialized_socket (_fd, socket) = socket
 
 let is_ssl s =
   match snd s with
     Plain -> false
-  | _ -> true
+  | SSL _ -> true
 
 let wrap_call f () =
   try
@@ -49,13 +49,13 @@ let wrap_call f () =
   with
     (Ssl.Connection_error err | Ssl.Accept_error err |
      Ssl.Read_error err | Ssl.Write_error err) as e ->
-      match err with
+      (match err with
         Ssl.Error_want_read ->
           raise Lwt_unix.Retry_read
      | Ssl.Error_want_write ->
           raise Lwt_unix.Retry_write
      | _ ->
-          raise e
+          raise e) [@ocaml.warning "-4"]
 
 let repeat_call fd f =
   try
@@ -191,7 +191,7 @@ let in_channel_of_descr ?buffer s =
     ~close:(fun () -> shutdown_and_close s)
     (fun buf pos len -> read_bytes s buf pos len)
 
-let get_fd (fd,socket) = fd
+let get_fd (fd, _socket) = fd
 
 let get_unix_fd (fd,socket) =
   match socket with

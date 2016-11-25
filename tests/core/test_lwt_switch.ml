@@ -29,14 +29,14 @@ let suite = suite "lwt_switch" [
       let hook_1_calls = ref 0 in
       let hook_2_calls = ref 0 in
 
-      let hook call_counter ?switch () =
+      let hook call_counter () =
         call_counter := !call_counter + 1;
         Lwt.return_unit
       in
 
       let switch = Lwt_switch.create () in
-      Lwt_switch.add_hook (Some switch) (hook hook_1_calls ~switch);
-      Lwt_switch.add_hook (Some switch) (hook hook_2_calls ~switch);
+      Lwt_switch.add_hook (Some switch) (hook hook_1_calls);
+      Lwt_switch.add_hook (Some switch) (hook hook_2_calls);
 
       let check_1 = !hook_1_calls = 0 in
       let check_2 = !hook_2_calls = 0 in

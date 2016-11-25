@@ -177,7 +177,7 @@ let syslog_connect paths =
           | Unix.Unix_error(error, _, _) ->
               log_intern "can not stat \"%s\": %s" path (Unix.error_message error);
               Lwt.return_none
-        end >>= function
+        end >>= (function
           | None ->
               loop paths
           | Some Unix.S_SOCK -> begin
@@ -209,11 +209,11 @@ let syslog_connect paths =
                     Lwt_unix.close fd >>= fun () ->
                     log_intern "can not connect to \"%s\": %s" path (Unix.error_message error);
                     loop paths
-                | exn -> Lwt.fail exn)
+                | exn -> Lwt.fail exn) [@ocaml.warning "-4"]
             end
           | Some _ ->
               log_intern "\"%s\" is not a socket" path;
-              loop paths
+              loop paths) [@ocaml.warning "-4"]
   in
   loop paths
 
@@ -287,5 +287,5 @@ let syslog ?(template="$(date) $(name)[$(pid)]: $(section): $(message)") ?(paths
               match !syslog_socket with
                 | None ->
                     Lwt.return_unit
-                | Some(socket_type, fd) ->
+                | Some(_socket_type, fd) ->
                     shutdown fd)

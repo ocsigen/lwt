@@ -45,11 +45,13 @@ end
    | Glib --> Lwt based integration                                  |
    +-----------------------------------------------------------------+ *)
 
+[@@@ocaml.warning "-37"]
 type watch =
   | Watch_none
   | Watch_in
   | Watch_out
   | Watch_in_out
+[@@@ocaml.warning "+37"]
 
 external glib_get_sources : unit -> Unix.file_descr array * watch array * float = "lwt_glib_get_sources"
 external glib_check : unit -> unit = "lwt_glib_check"

@@ -202,7 +202,7 @@ let suite = suite "lwt_stream" [
 
   test "cancel push stream 1"
     (fun () ->
-       let stream, push = Lwt_stream.create () in
+       let stream, _ = Lwt_stream.create () in
        let t = Lwt_stream.next stream in
        cancel t;
        return (state t = Fail Canceled));
@@ -238,7 +238,7 @@ let suite = suite "lwt_stream" [
            else
              match Weak.get w idx with
                | None -> loop acc (idx + 1)
-               | Some v -> loop (acc + 1) (idx + 1)
+               | Some _ -> loop (acc + 1) (idx + 1)
          in
          loop 0 0
        in
@@ -273,7 +273,9 @@ let suite = suite "lwt_stream" [
 
   test "map_exn"
     (fun () ->
-       let open Lwt_stream in
+       (* TODO: This will no longer be a shadowing open once Lwt_stream.error
+          is removed. *)
+       let open! Lwt_stream in
        let l = [Value 1; Error Exit; Error (Failure "plop"); Value 42; Error End_of_file] in
        let q = ref l in
        let stream =
@@ -352,5 +354,6 @@ let suite = suite "lwt_stream" [
 
   test "choose_exhausted"
     (fun () ->
-      Lwt_stream.(to_list (choose [of_list []])) >|= fun _ -> true);
+      let open! Lwt_stream in
+      to_list (choose [of_list []]) >|= fun _ -> true);
 ]

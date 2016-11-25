@@ -169,15 +169,15 @@ type io_vector = {
   iov_length : int;
 }
 
-let io_vector ~buffer ~offset ~length = {
+let io_vector ~buffer ~offset ~length = ({
   iov_buffer = buffer;
   iov_offset = offset;
   iov_length = length;
-}
+} : io_vector)
 
 let check_io_vectors func_name iovs =
   List.iter
-    (fun iov ->
+    (fun (iov : io_vector) ->
        if iov.iov_offset < 0
          || iov.iov_length < 0
          || iov.iov_offset > length iov.iov_buffer - iov.iov_length then

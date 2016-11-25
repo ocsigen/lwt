@@ -32,7 +32,7 @@ let rec launch () =
     | None ->
         Lwt.return_unit
     | Some line ->
-        let%lwt exit_status = Lwt_process.exec (Lwt_process.shell line) in
+        let%lwt _ = Lwt_process.exec (Lwt_process.shell line) in
         launch ()
 
 (* Creates the initial <N> threads, where <N> is the number of

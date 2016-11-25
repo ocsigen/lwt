@@ -20,9 +20,8 @@
  * 02111-1307, USA.
  *)
 
-open Camlp4
 open Camlp4.PreCast
-open Syntax
+open! Syntax
 
 (* Generate the catching function from a macth-case.
 
@@ -54,9 +53,9 @@ let gen_binding l =
   let rec aux n = function
     | [] ->
         assert false
-    | [(_loc, p, e)] ->
+    | [(_loc, _p, e)] ->
         <:binding< $lid:"__pa_lwt_" ^ string_of_int n$ = $e$ >>
-    | (_loc, p, e) :: l ->
+    | (_loc, _p, e) :: l ->
         <:binding< $lid:"__pa_lwt_" ^ string_of_int n$ = $e$ and $aux (n + 1) l$ >>
   in
   aux 0 l
@@ -65,7 +64,7 @@ let gen_bind l e =
   let rec aux n = function
     | [] ->
         e
-    | (_loc, p, e) :: l ->
+    | (_loc, p, _e) :: l ->
         if !Pa_lwt_options.debug then
           <:expr< Lwt.backtrace_bind (fun exn -> try raise exn with exn -> exn) $lid:"__pa_lwt_" ^ string_of_int n$ (fun $p$ -> $aux (n + 1) l$) >>
         else
@@ -77,7 +76,7 @@ let gen_top_bind _loc l =
   let rec aux n vars = function
     | [] ->
         <:expr< Lwt.return ($tup:Ast.exCom_of_list (List.rev vars)$) >>
-    | (_loc, p, e) :: l ->
+    | (_loc, _p, _e) :: l ->
         let id = "__pa_lwt_" ^ string_of_int n in
         if !Pa_lwt_options.debug then
           <:expr< Lwt.backtrace_bind (fun exn -> try raise exn with exn -> exn) $lid:id$ (fun $lid:id$ -> $aux (n + 1) (<:expr< $lid:id$ >> :: vars) l$) >>
@@ -209,7 +208,7 @@ EXTEND Gram
                   >>
               | _ ->
                   <:str_item<
-                    let $tup:Ast.paCom_of_list (List.map (fun (_loc, p, e) -> p) l)$ =
+                    let $tup:Ast.paCom_of_list (List.map (fun (_loc, p, _e) -> p) l)$ =
                       Lwt_main.run begin
                         let $gen_binding l$ in
                         $gen_top_bind _loc l$
@@ -225,7 +224,7 @@ END
    y] if the strict sequence flag is used. *)
 let map_anonymous_bind = object
   inherit Ast.map as super
-  method expr e = match super#expr e with
+  method! expr e = match super#expr e with
     | <:expr@_loc< $lid:f$ $a$ $b$ >> when f = ">>" ->
         if !Pa_lwt_options.strict_sequence then
           <:expr< Lwt.bind $a$ (fun () -> $b$) >>

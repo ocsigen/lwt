@@ -200,7 +200,7 @@ let is_busy ch =
 let perform_io : type mode. mode _channel -> int Lwt.t = fun ch -> match ch.main.state with
   | Busy_primitive | Busy_atomic _ -> begin
       match ch.typ with
-        | Type_normal(perform_io, seek) ->
+        | Type_normal(perform_io, _) ->
             let ptr, len = match ch.mode with
               | Input ->
                   (* Size of data in the buffer *)
@@ -220,7 +220,7 @@ let perform_io : type mode. mode _channel -> int Lwt.t = fun ch -> match ch.main
                           (function
                           | Unix.Unix_error (Unix.EPIPE, _, _) ->
                             Lwt.return 0
-                          | exn -> Lwt.fail exn)
+                          | exn -> Lwt.fail exn) [@ocaml.warning "-4"]
                       else
                         perform_io ch.buffer ptr len
                      ] >>= fun n ->
@@ -282,7 +282,7 @@ let deepest_wrapper ch =
     match wrapper.state with
       | Busy_atomic wrapper ->
           loop wrapper
-      | _ ->
+      | Busy_primitive | Waiting_for_busy | Idle | Closed | Invalid ->
           wrapper
   in
   loop ch.main
@@ -472,7 +472,7 @@ let close : type mode. mode channel -> unit Lwt.t = fun wrapper ->
 let is_closed wrapper =
   match wrapper.state with
   | Closed -> true
-  | _ -> false
+  | Busy_primitive | Busy_atomic _ | Waiting_for_busy | Idle | Invalid -> false
 
 let flush_all () =
   let wrappers = Outputs.fold (fun x l -> x :: l) outputs [] in
@@ -487,7 +487,7 @@ let () =
   (* Flush all opened ouput channels on exit: *)
   Lwt_main.at_exit flush_all
 
-let no_seek pos cmd =
+let no_seek _pos _cmd =
   Lwt.fail (Failure "Lwt_io.seek: seek not supported on this channel")
 
 let make :
@@ -820,7 +820,7 @@ struct
     refill ic >>= function
       | 0 ->
           Lwt.return (rev_concat (len + total_len) (str :: acc))
-      | n ->
+      | _ ->
           read_all ic (len + total_len) (str :: acc)
 
   let read count ic =
@@ -1148,12 +1148,12 @@ struct
       Lwt.return_unit
 
   let set_position : type m. m _channel -> int64 -> unit Lwt.t = fun ch pos -> match ch.typ, ch.mode with
-    | Type_normal(perform_io, seek), Output ->
+    | Type_normal(_, seek), Output ->
         flush_total ch >>= fun () ->
         do_seek seek pos >>= fun () ->
         ch.offset <- pos;
         Lwt.return_unit
-    | Type_normal(perform_io, seek), Input ->
+    | Type_normal(_, seek), Input ->
         let current = Int64.sub ch.offset (Int64.of_int (ch.max - ch.ptr)) in
         if pos >= current && pos <= ch.offset then begin
           ch.ptr <- ch.max - (Int64.to_int (Int64.sub ch.offset pos));
@@ -1174,7 +1174,7 @@ struct
         end
 
   let length ch = match ch.typ with
-    | Type_normal(perform_io, seek) ->
+    | Type_normal(_, seek) ->
         seek 0L Unix.SEEK_END >>= fun len ->
         do_seek seek ch.offset >>= fun () ->
         Lwt.return len
@@ -1308,7 +1308,7 @@ let null =
   make
     ~mode:output
     ~buffer:(Lwt_bytes.create min_buffer_size)
-    (fun str ofs len -> Lwt.return len)
+    (fun _str _ofs len -> Lwt.return len)
 
 (* Do not close standard ios on close, otherwise uncaught exceptions
    will not be printed *)
@@ -1375,7 +1375,7 @@ let close_socket fd =
         (function
         (* Occurs if the peer closes the connection first. *)
         | Unix.Unix_error (Unix.ENOTCONN, _, _) -> Lwt.return_unit
-        | exn -> Lwt.fail exn))
+        | exn -> Lwt.fail exn) [@ocaml.warning "-4"])
     (fun () ->
       Lwt_unix.close fd)
 
@@ -1433,7 +1433,7 @@ let establish_server ?fd ?(buffer_size = !default_buffer_size) ?(backlog=5) sock
   let closed_waiter, closed_wakener = Lwt.wait () in
   let rec loop () =
     Lwt.pick [Lwt_unix.accept sock >|= (fun x -> `Accept x); abort_waiter] >>= function
-      | `Accept(fd, addr) ->
+      | `Accept(fd, _addr) ->
           (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
           let close = lazy (close_socket fd) in
           f (of_fd ~buffer:(Lwt_bytes.create buffer_size) ~mode:input
@@ -1448,7 +1448,7 @@ let establish_server ?fd ?(buffer_size = !default_buffer_size) ?(backlog=5) sock
                 Unix.unlink path;
                 Lwt.return_unit
             | _ ->
-                Lwt.return_unit) >>= fun () ->
+                Lwt.return_unit) [@ocaml.warning "-4"] >>= fun () ->
           Lwt.wakeup closed_wakener ();
           Lwt.return_unit
   in

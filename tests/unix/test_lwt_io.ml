@@ -20,9 +20,8 @@
  * 02111-1307, USA.
  *)
 
-open Lwt
-open Lwt_io
 open Test
+open Lwt.Infix
 
 let with_async_exception_hook hook f =
   let old_hook = !Lwt.async_exception_hook in
@@ -129,36 +128,36 @@ let suite = suite "lwt_io" [
   test "auto-flush"
     (fun () ->
        let sent = ref [] in
-       let oc = Lwt_io.make ~mode:output (fun buf ofs len ->
+       let oc = Lwt_io.make ~mode:Lwt_io.output (fun buf ofs len ->
                                             let bytes = Bytes.create len in
                                             Lwt_bytes.blit_to_bytes buf ofs bytes 0 len;
                                             sent := bytes :: !sent;
-                                            return len) in
-       write oc "foo" >>= fun () ->
-       write oc "bar" >>= fun () ->
+                                            Lwt.return len) in
+       Lwt_io.write oc "foo" >>= fun () ->
+       Lwt_io.write oc "bar" >>= fun () ->
        if !sent <> [] then
-         return false
+         Lwt.return false
        else
          Lwt_unix.yield () >>= fun () ->
-         return (!sent = [Bytes.of_string "foobar"]));
+         Lwt.return (!sent = [Bytes.of_string "foobar"]));
 
   test "auto-flush in atomic"
     (fun () ->
        let sent = ref [] in
-       let oc = make ~mode:output (fun buf ofs len ->
+       let oc = Lwt_io.make ~mode:Lwt_io.output (fun buf ofs len ->
                                      let bytes = Bytes.create len in
                                      Lwt_bytes.blit_to_bytes buf ofs bytes 0 len;
                                      sent := bytes :: !sent;
-                                     return len) in
-       atomic
+                                     Lwt.return len) in
+       Lwt_io.atomic
          (fun oc ->
-            write oc "foo" >>= fun () ->
-            write oc "bar" >>= fun () ->
+            Lwt_io.write oc "foo" >>= fun () ->
+            Lwt_io.write oc "bar" >>= fun () ->
             if !sent <> [] then
-              return false
+              Lwt.return false
             else
               Lwt_unix.yield () >>= fun () ->
-              return (!sent = [Bytes.of_string "foobar"]))
+              Lwt.return (!sent = [Bytes.of_string "foobar"]))
          oc);
 
   (* Without the corresponding bugfix, which is to handle ENOTCONN from
@@ -182,7 +181,7 @@ let suite = suite "lwt_io" [
           local (fun channels -> Lwt.wakeup run_handler channels)
       in
 
-      with_connection local (fun _ -> Lwt.return_unit) >>= fun () ->
+      Lwt_io.with_connection local (fun _ -> Lwt.return_unit) >>= fun () ->
       Lwt.wakeup client_finished ();
       Lwt_io.Versioned.shutdown_server_2 server >>= fun () ->
       handler);
@@ -202,7 +201,7 @@ let suite = suite "lwt_io" [
               Lwt.wakeup server_finished ()))
       in
 
-      with_connection local (fun _ ->
+      Lwt_io.with_connection local (fun _ ->
         wait_for_server >>= fun () ->
         Lwt.return_true)
 
@@ -319,7 +318,7 @@ let suite = suite "lwt_io" [
           | Unix.Unix_error (Unix.EBADF, _, _) ->
             exceptions_observed := !exceptions_observed + 1;
             Lwt.return_unit
-          | exn -> Lwt.fail exn)
+          | exn -> Lwt.fail exn) [@ocaml.warning "-4"]
       in
 
       let run =
@@ -345,15 +344,15 @@ let suite = suite "lwt_io" [
       let correct_exceptions = ref true in
       let see_exception exn =
         exceptions_observed := !exceptions_observed + 1;
-        match !exceptions_observed, exn with
+        (match !exceptions_observed, exn with
         | 1, Exit
         | (2 | 3), Unix.Unix_error (Unix.EBADF, _, _) -> ()
-        | _ -> correct_exceptions := false
+        | _ -> correct_exceptions := false) [@ocaml.warning "-4"]
       in
 
       let run () =
         Establish_server.with_client
-          (fun (in_channel, out_channel) ->
+          (fun (_in_channel, _out_channel) ->
             close_last_fd 1;
             raise Exit)
       in
@@ -365,8 +364,8 @@ let suite = suite "lwt_io" [
     (fun () ->
       let open Establish_server in
 
-      let in_channel' = ref stdin in
-      let out_channel' = ref stdout in
+      let in_channel' = ref Lwt_io.stdin in
+      let out_channel' = ref Lwt_io.stdout in
 
       let server =
         Lwt_io.Versioned.establish_server_2 local (fun _ -> Lwt.return_unit) in
@@ -396,7 +395,7 @@ let suite = suite "lwt_io" [
           | Unix.Unix_error (Unix.EBADF, _, _) ->
             exceptions_observed := !exceptions_observed + 1;
             Lwt.return_unit
-          | exn -> Lwt.fail exn)
+          | exn -> Lwt.fail exn) [@ocaml.warning "-4"]
       in
 
       let handler_started, notify_handler_started = Lwt.wait () in

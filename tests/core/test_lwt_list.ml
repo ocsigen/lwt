@@ -77,7 +77,7 @@ let test_exception f =
 
 let test_map f test_list =
   let t,w = wait () in
-  let t',w' = task () in
+  let t', _ = task () in
   let get =
     let r = ref 0 in
     let c = ref 0 in

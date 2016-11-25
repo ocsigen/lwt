@@ -70,19 +70,25 @@ class virtual abstract = object(self)
     (* Sequence of timers. *)
 
   method destroy =
-    Lwt_sequence.iter_l (fun (fd, f, g, ev) -> stop_event ev) readables;
-    Lwt_sequence.iter_l (fun (fd, f, g, ev) -> stop_event ev) writables;
-    Lwt_sequence.iter_l (fun (delay, repeat, f, g, ev) -> stop_event ev) timers;
+    Lwt_sequence.iter_l (fun (_fd, _f, _g, ev) -> stop_event ev) readables;
+    Lwt_sequence.iter_l (fun (_fd, _f, _g, ev) -> stop_event ev) writables;
+    Lwt_sequence.iter_l (fun (_delay, _repeat, _f, _g, ev) -> stop_event ev)
+      timers;
     self#cleanup
 
   method transfer (engine : abstract) =
-    Lwt_sequence.iter_l (fun (fd, f, g, ev) -> stop_event ev; ev := !(engine#on_readable fd f)) readables;
-    Lwt_sequence.iter_l (fun (fd, f, g, ev) -> stop_event ev; ev := !(engine#on_writable fd f)) writables;
-    Lwt_sequence.iter_l (fun (delay, repeat, f, g, ev) -> stop_event ev; ev := !(engine#on_timer delay repeat f)) timers
+    Lwt_sequence.iter_l (fun (fd, f, _g, ev) ->
+      stop_event ev; ev := !(engine#on_readable fd f)) readables;
+    Lwt_sequence.iter_l (fun (fd, f, _g, ev) ->
+      stop_event ev; ev := !(engine#on_writable fd f)) writables;
+    Lwt_sequence.iter_l (fun (delay, repeat, f, _g, ev) ->
+      stop_event ev; ev := !(engine#on_timer delay repeat f)) timers
 
   method fake_io fd =
-    Lwt_sequence.iter_l (fun (fd', f, g, stop) -> if fd = fd' then g ()) readables;
-    Lwt_sequence.iter_l (fun (fd', f, g, stop) -> if fd = fd' then g ()) writables
+    Lwt_sequence.iter_l (fun (fd', _f, g, _stop) ->
+      if fd = fd' then g ()) readables;
+    Lwt_sequence.iter_l (fun (fd', _f, g, _stop) ->
+      if fd = fd' then g ()) writables
 
   method on_readable fd f =
     let ev = ref _fake_event in
@@ -218,16 +224,16 @@ type sleeper = {
 module Sleep_queue =
   Lwt_pqueue.Make(struct
                     type t = sleeper
-                    let compare { time = t1 } { time = t2 } = compare t1 t2
+                    let compare {time = t1; _} {time = t2; _} = compare t1 t2
                   end)
 
 module Fd_map = Map.Make(struct type t = Unix.file_descr let compare = compare end)
 
 let rec restart_actions sleep_queue now =
   match Sleep_queue.lookup_min sleep_queue with
-    | Some{ stopped = true } ->
+    | Some{ stopped = true; _ } ->
         restart_actions (Sleep_queue.remove_min sleep_queue) now
-    | Some{ time = time; action = action } when time <= now ->
+    | Some{ time = time; action = action; _ } when time <= now ->
         (* We have to remove the sleeper to the queue before performing
            the action. The action can change the sleeper's time, and this
            might break the priority queue invariant if the sleeper is
@@ -240,9 +246,9 @@ let rec restart_actions sleep_queue now =
 
 let rec get_next_timeout sleep_queue =
   match Sleep_queue.lookup_min sleep_queue with
-    | Some{ stopped = true } ->
+    | Some{ stopped = true; _ } ->
         get_next_timeout (Sleep_queue.remove_min sleep_queue)
-    | Some{ time = time } ->
+    | Some{ time = time; _ } ->
         max 0. (time -. Unix.gettimeofday ())
     | None ->
         -1.
@@ -259,7 +265,7 @@ let invoke_actions fd map =
     | Some actions -> Lwt_sequence.iter_l (fun f -> f ()) actions
     | None -> ()
 
-class virtual select_or_poll_based = object(self)
+class virtual select_or_poll_based = object
   inherit abstract
 
   val mutable sleep_queue = Sleep_queue.empty

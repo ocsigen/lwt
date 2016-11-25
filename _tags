@@ -1,6 +1,12 @@
 # -*- conf -*-
 not <src/ssl/*>: safe_string
 
+# Warnings. The order is important. This is not fully legitimate as it appears
+# to depend on how Ocamlbuild internally handles lists of warn() tags.
+<src/camlp4/*.ml> or <src/ppx/*.ml>: warn(-4)
+<src/camlp4/*.ml>: warn(-3)
+<**/*>: warn(+A-29-58)
+
 # Syntax extension
 <src/camlp4/*.ml>: syntax(camlp4o)
 

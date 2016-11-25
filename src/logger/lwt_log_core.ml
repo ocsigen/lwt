@@ -23,8 +23,6 @@
 
 (* This code is an adaptation of [syslog-ocaml] *)
 
-open Lwt.Infix
-
 (* Errors happening in this module are always logged to [stderr]: *)
 let log_intern fmt =
   Printf.eprintf ("Lwt_log: " ^^ fmt ^^ "\n%!")
@@ -53,7 +51,6 @@ let string_of_level = function
    | Patterns and rules                                              |
    +-----------------------------------------------------------------+ *)
 
-type pattern = string list
     (* A pattern is represented by a list of literals:
 
        For example ["foo*bar*"] is represented by ["foo"; "bar"; ""]. *)
@@ -281,7 +278,7 @@ let render ~buffer ~template ~section ~level ~message =
 
 let null =
   make
-    ~output:(fun section level lines -> Lwt.return_unit)
+    ~output:(fun _section _level _lines -> Lwt.return_unit)
     ~close:Lwt.return
 
 let default = ref null

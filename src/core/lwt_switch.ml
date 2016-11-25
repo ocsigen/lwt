@@ -41,7 +41,7 @@ let is_on switch =
 
 let check = function
   | Some{ state = St_off } -> raise Off
-  | _ -> ()
+  | Some {state = St_on _} | None -> ()
 
 let add_hook switch hook =
   match switch with

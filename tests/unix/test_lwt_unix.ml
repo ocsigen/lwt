@@ -58,7 +58,7 @@ let utimes_tests = [
         (fun () -> Lwt_unix.utimes "non-existent-file" 0. 0.)
         (function
         | Unix.Unix_error (Unix.ENOENT, "utimes", _) -> Lwt.return_unit
-        | e -> Lwt.fail e) >>= fun () ->
+        | e -> Lwt.fail e) [@ocaml.warning "-4"] >>= fun () ->
       Lwt.return_true);
 ]
 
@@ -179,7 +179,7 @@ let readdir_tests =
     (* Should make sure Win32 behaves in the same way as well. *)
     test "readdir: already closed" ~only_if:(fun () -> not Sys.win32)
       (fun () ->
-        let path, filenames = populate 0 in
+        let path, _ = populate 0 in
 
         Lwt_unix.opendir path >>= fun directory ->
         Lwt_unix.closedir directory >>= fun () ->
@@ -193,7 +193,7 @@ let readdir_tests =
             (function
               | Unix.Unix_error (Unix.EBADF, tag', _) when tag' = tag ->
                 Lwt.return_true
-              | exn -> Lwt.fail exn)
+              | exn -> Lwt.fail exn) [@ocaml.warning "-4"]
         in
 
         Lwt_list.for_all_s (fun (tag, t) -> expect_ebadf tag t)

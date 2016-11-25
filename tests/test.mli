@@ -36,10 +36,10 @@ val test_direct : string -> ?only_if:(unit -> bool) -> (unit -> bool) -> t
 val test : string -> ?only_if:(unit -> bool) -> (unit -> bool Lwt.t) -> t
   (** Like [test_direct], but defines a test which runs a thread. *)
 
-val suite : name : string -> tests : t list -> suite
+val suite : string -> t list -> suite
   (** Defines a suite of tests *)
 
-val run : name : string -> suites : suite list -> unit
+val run : string -> suite list -> unit
   (** Run all the given tests and exit the program with an exit code
       of [0] if all tests succeeded and with [1] otherwise. *)
 
