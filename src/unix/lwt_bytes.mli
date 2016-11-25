@@ -108,6 +108,7 @@ val fill : t -> int -> int -> char -> unit
       bytes of [buffer] starting at offset [offset]. *)
 
 external unsafe_fill : t -> int -> int -> char -> unit = "lwt_unix_fill_bytes" "noalloc"
+  [@@ocaml.warning "-3"]
   (** Same as {!fill} but without bounds checking. *)
 
 (** {2 IOs} *)
@@ -152,6 +153,7 @@ val map_file : fd : Unix.file_descr -> ?pos : int64 -> shared : bool -> ?size : 
       [fd] to an array of bytes. *)
 
 external mapped : t -> bool = "lwt_unix_mapped" "noalloc"
+  [@@ocaml.warning "-3"]
   (** [mapped buffer] returns [true] iff [buffer] is a memory mapped
       file. *)
 

@@ -162,10 +162,12 @@ external start_job : 'a job -> async_method -> bool = "lwt_unix_start_job"
     (* Starts the given job with given parameters. It returns [true]
        if the job is already terminated. *)
 
+[@@@ocaml.warning "-3"]
 external check_job : 'a job -> int -> bool = "lwt_unix_check_job" "noalloc"
     (* Check whether that a job has terminated or not. If it has not
        yet terminated, it is marked so it will send a notification
        when it finishes. *)
+[@@@ocaml.warning "+3"]
 
 (* For all running job, a waiter and a function to abort it. *)
 let jobs = Lwt_sequence.create ()
@@ -286,7 +288,9 @@ type file_descr = {
   (* Hooks to call when the file descriptor becomes writable. *)
 }
 
+[@@@ocaml.warning "-3"]
 external is_socket : Unix.file_descr -> bool = "lwt_unix_is_socket" "noalloc"
+[@@@ocaml.warning "+3"]
 
 external guess_blocking_job : Unix.file_descr -> bool job = "lwt_unix_guess_blocking_job"
 
@@ -2109,10 +2113,12 @@ let handle_unix_error f x =
    | System thread pool                                              |
    +-----------------------------------------------------------------+ *)
 
+[@@@ocaml.warning "-3"]
 external pool_size : unit -> int = "lwt_unix_pool_size" "noalloc"
 external set_pool_size : int -> unit = "lwt_unix_set_pool_size" "noalloc"
 external thread_count : unit -> int = "lwt_unix_thread_count" "noalloc"
 external thread_waiting_count : unit -> int = "lwt_unix_thread_waiting_count" "noalloc"
+[@@@ocaml.warning "+3"]
 
 (* +-----------------------------------------------------------------+
    | CPUs                                                            |

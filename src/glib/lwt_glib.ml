@@ -53,8 +53,10 @@ type watch =
 
 external glib_get_sources : unit -> Unix.file_descr array * watch array * float = "lwt_glib_get_sources"
 external glib_check : unit -> unit = "lwt_glib_check"
+[@@@ocaml.warning "-3"]
 external glib_mark_readable : int -> unit = "lwt_glib_mark_readable" "noalloc"
 external glib_mark_writable : int -> unit = "lwt_glib_mark_readable" "noalloc"
+[@@@ocaml.warning "+3"]
 
 let events = ref []
 let check = ref true
