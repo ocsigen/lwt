@@ -274,7 +274,7 @@ let lwt_log mapper fn args attrs loc =
       | false, true  -> String.sub func 4 (len - 4)
       | true,  true  -> String.sub func 4 (len - 6)
     in
-    let level = String.capitalize level in
+    let level = (String.capitalize [@ocaml.warning "-3"]) level in
     if level = "Debug" && (not !debug) then
       let new_exp = if ign then [%expr ()] else [%expr Lwt.return_unit] in
       mapper.expr mapper { new_exp with pexp_attributes = attrs }

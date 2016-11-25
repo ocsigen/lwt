@@ -113,7 +113,7 @@ let load_rules' str =
       []
     | (pattern, level) :: rest ->
       let pattern = split pattern in
-      match String.lowercase level with
+      match (String.lowercase [@ocaml.warning "-3"]) level with
         | "debug" -> (pattern, Debug) :: loop rest
         | "info" -> (pattern, Info) :: loop rest
         | "notice" -> (pattern, Notice) :: loop rest

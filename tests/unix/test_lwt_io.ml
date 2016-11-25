@@ -178,7 +178,7 @@ let suite = suite "lwt_io" [
       in
 
       let server =
-        Lwt_io.Versioned.establish_server_1
+        (Lwt_io.Versioned.establish_server_1 [@ocaml.warning "-3"])
           local (fun channels -> Lwt.wakeup run_handler channels)
       in
 
@@ -194,7 +194,7 @@ let suite = suite "lwt_io" [
       let wait_for_server, server_finished = Lwt.wait () in
 
       let server =
-        Lwt_io.Versioned.establish_server_1
+        (Lwt_io.Versioned.establish_server_1 [@ocaml.warning "-3"])
           local (fun (in_channel, out_channel) ->
             Lwt.async (fun () ->
               Lwt_io.close in_channel >>= fun () ->
