@@ -65,6 +65,16 @@ let define_c_library name env =
     flag ["link"; "ocaml"; tag] & S (List.map (fun arg -> S[A"-cclib"; arg]) lib)
   end
 
+let conditional_warnings_as_errors () =
+  match Sys.getenv "LWT_WARNINGS_AS_ERRORS" with
+  | "yes" ->
+    let flags = S [A "-warn-error"; A "+A"] in
+    flag ["ocaml"; "compile"] flags;
+    flag ["ocaml"; "link"] flags
+
+  | _ -> ()
+  | exception Not_found -> ()
+
 let () =
   dispatch
     (fun hook ->
@@ -119,7 +129,9 @@ let () =
              end;
 
              List.iter (fun name ->
-               mark_tag_used (c_library_tag name)) c_libraries
+               mark_tag_used (c_library_tag name)) c_libraries;
+
+             conditional_warnings_as_errors ()
 
          | _ ->
              ())

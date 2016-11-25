@@ -7,6 +7,9 @@ environment:
     - {SYSTEM: cygwin, ARCH: x86, COMPILER: 4.04}
     - {SYSTEM: mingw, ARCH: x86_64, COMPILER: 4.03}
 
+  global:
+    LWT_WARNINGS_AS_ERRORS: yes
+
 install:
   - 'IF "%ARCH%"=="x86" ( SET CYGSH=C:\Cygwin\bin\bash -lc ) ELSE ( SET CYGSH=C:\Cygwin64\bin\bash -lc )'
   - ps: '(new-object net.webclient).DownloadString("https://aantron.github.io/binaries/$env:SYSTEM/$env:ARCH/ocaml/$env:COMPILER/install.ps1") | PowerShell -Command -'

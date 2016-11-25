@@ -21,6 +21,10 @@ matrix:
     - os: osx
       env: COMPILER=4.03 PACKAGE_MANAGER=macports LIBEV=yes
 
+env:
+  global:
+    - LWT_WARNINGS_AS_ERRORS=yes
+
 script: bash -e utils/travis.sh
 
 notifications:
