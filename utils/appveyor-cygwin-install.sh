@@ -16,6 +16,7 @@ then
 
     opam pin add -y --no-action .
     opam install -y --deps-only lwt
+    opam install -y camlp4
     opam install -y ounit
 
     ( cd ~ ; tar cf $CACHE .opam )
