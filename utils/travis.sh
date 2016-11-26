@@ -118,6 +118,8 @@ fi
 # tests.
 opam pin add -y --no-action .
 opam install -y `opam list --short --depopts --required-by lwt | grep -v '^conf-'`
+# Install OUnit here; otherwie --build-test on installation of Lwt seems to
+# trigger recompilation of ocamlmod.
 opam install -y ounit
 opam install -y --build-test --keep-build-dir --verbose lwt
 
