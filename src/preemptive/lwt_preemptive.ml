@@ -227,10 +227,6 @@ let detach f args =
    | Running Lwt threads in the main thread                          |
    +-----------------------------------------------------------------+ *)
 
-type 'a result =
-  | Value of 'a
-  | Error of exn
-
 (* Queue of [unit -> unit Lwt.t] functions. *)
 let jobs = Queue.create ()
 
@@ -258,10 +254,8 @@ let run_in_main f =
   let job () =
     (* Execute [f] and wait for its result. *)
     Lwt.try_bind f
-      (fun ret -> Lwt.return (Value ret))
-      (fun exn -> Lwt.return (Error exn : _ result)) >>= fun result ->
-      (* TODO: Eliminate above type constraint after getting rid of result
-         type. *)
+      (fun ret -> Lwt.return (Result.Ok ret))
+      (fun exn -> Lwt.return (Result.Error exn)) >>= fun result ->
     (* Send the result. *)
     CELL.set cell result;
     Lwt.return_unit
@@ -274,5 +268,5 @@ let run_in_main f =
   Lwt_unix.send_notification job_notification;
   (* Wait for the result. *)
   match CELL.get cell with
-    | Value ret -> ret
-    | Error exn -> raise exn
+    | Result.Ok ret -> ret
+    | Result.Error exn -> raise exn
