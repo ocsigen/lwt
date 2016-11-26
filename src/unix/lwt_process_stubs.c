@@ -119,4 +119,12 @@ CAMLprim value lwt_process_terminate_process(value handle, value code)
   return Val_unit;
 }
 
+#else /* defined(LWT_ON_WINDOWS) */
+
+/* This is used to suppress a warning from ranlib about the object file having
+   no symbols. */
+void lwt_process_dummy_symbol()
+{
+}
+
 #endif /* defined(LWT_ON_WINDOWS) */
