@@ -7,7 +7,7 @@ DIRECTORY=$(pwd)
 
 # AppVeyor does not cache empty subdirectories of .opam, such as $SWITCH/build.
 # To get around that, create a tar archive of .opam.
-CACHE=$DIRECTORY/../opam-cache-$SYSTEM-$COMPILER.tar
+CACHE=$DIRECTORY/../opam-cache-$SYSTEM-$COMPILER-$LIBEV.tar
 
 if [ ! -f $CACHE ]
 then
@@ -24,6 +24,11 @@ then
     if [ "$SYSTEM" = cygwin ]
     then
         opam install -y ssl
+
+        if [ "$LIBEV" = yes ]
+        then
+            opam install -y conf-libev
+        fi
     fi
 
     ( cd ~ ; tar cf $CACHE .opam )

@@ -4,8 +4,9 @@ shallow_clone: true
 
 environment:
   matrix:
-    - {SYSTEM: cygwin, ARCH: x86, COMPILER: 4.04}
     - {SYSTEM: mingw, ARCH: x86_64, COMPILER: 4.03}
+    - {SYSTEM: cygwin, ARCH: x86, COMPILER: 4.04}
+    - {SYSTEM: cygwin, ARCH: x86, COMPILER: 4.04, LIBEV: yes}
 
   global:
     LWT_WARNINGS_AS_ERRORS: yes
@@ -23,6 +24,7 @@ install:
   - 'IF "%LWT_APPVEYOR_DEBUG%"=="yes" (%CYGSETUP% -q -P nano)'
 
   - 'IF "%SYSTEM%"=="cygwin" (%CYGSETUP% -q -P openssl-devel)'
+  - 'IF "%LIBEV%"=="yes" (%CYGSETUP% -q -P libev-devel)'
 
   - ps: '(new-object net.webclient).DownloadString("https://aantron.github.io/binaries/$env:SYSTEM/$env:ARCH/ocaml/$env:COMPILER/install.ps1") | PowerShell -Command -'
   - ps: '(new-object net.webclient).DownloadString("https://aantron.github.io/binaries/$env:SYSTEM/$env:ARCH/camlp4/$env:COMPILER/install.ps1") | PowerShell -Command -'
@@ -34,7 +36,7 @@ build_script:
   - '%CYGSH% "cd /cygdrive/c/projects/lwt ; utils/appveyor-cygwin-build.sh"'
 
 cache:
-  - '..\opam-cache-%SYSTEM%-%COMPILER%.tar -> opam, appveyor.yml, utils\appveyor*.sh'
+  - '..\opam-cache-%SYSTEM%-%COMPILER%-%LIBEV%.tar -> opam, appveyor.yml, utils\appveyor*.sh'
 
 on_finish:
   - ps: 'if ($env:LWT_APPVEYOR_DEBUG -eq "yes") { $blockRdp = $true; iex ((new-object net.webclient).DownloadString("https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1")) }'
