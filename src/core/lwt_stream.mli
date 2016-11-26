@@ -323,17 +323,12 @@ val concat : 'a t t -> 'a t
 val flatten : 'a list t -> 'a t
   (** [flatten st = map_list (fun l -> l) st] *)
 
-(** A value or an error. *)
-type 'a result =
-  | Value of 'a
-  | Error of exn
+val wrap_exn : 'a t -> 'a Lwt.result t
+(** [wrap_exn s] is a stream [s'] such that each time [s] yields a value [v],
+    [s'] yields [Result.Ok v], and when the source of [s] raises an exception
+    [e], [s'] yields [Result.Error e].
 
-val map_exn : 'a t -> 'a result t
-  (** [map_exn s] returns a stream that captures all exceptions raised
-      by the source of the stream (the function passed to {!from}).
-
-      Note that for push-streams (as returned by {!create}) all
-      elements of the mapped streams are values. *)
+    Note that push-streams (as returned by {!create}) never raise exceptions. *)
 
 (** {2 Parsing} *)
 
@@ -356,3 +351,28 @@ val hexdump : char t -> string t
         let () = Lwt_main.run (Lwt_io.write_lines Lwt_io.stdout (Lwt_stream.hexdump (Lwt_io.read_lines Lwt_io.stdin)))
       ]}
   *)
+
+(** {2 Deprecated} *)
+
+type 'a result =
+  | Value of 'a
+  | Error of exn
+  [@@ocaml.deprecated
+"This type is being replaced by Lwt.result and the corresponding function
+Lwt_stream.wrap_exn."]
+(** A value or an error.
+
+    @deprecated Replaced by {!wrap_exn}, which uses {!Lwt.result}. *)
+
+[@@@ocaml.warning "-3"]
+val map_exn : 'a t -> 'a result t
+  [@@ocaml.deprecated "Use Lwt_stream.wrap_exn"]
+(** [map_exn s] returns a stream that captures all exceptions raised
+    by the source of the stream (the function passed to {!from}).
+
+    Note that for push-streams (as returned by {!create}) all
+    elements of the mapped streams are values.
+
+    @deprecated Use {!wrap_exn}. *)
+
+[@@@ocaml.warning "+3"]

@@ -276,7 +276,13 @@ let suite = suite "lwt_stream" [
        (* TODO: This will no longer be a shadowing open once Lwt_stream.error
           is removed. *)
        let open! Lwt_stream in
-       let l = [Value 1; Error Exit; Error (Failure "plop"); Value 42; Error End_of_file] in
+       let l =
+         [Result.Ok 1;
+          Result.Error Exit;
+          Result.Error (Failure "plop");
+          Result.Ok 42;
+          Result.Error End_of_file]
+       in
        let q = ref l in
        let stream =
          Lwt_stream.from
@@ -284,14 +290,14 @@ let suite = suite "lwt_stream" [
               match !q with
                 | [] ->
                     return None
-                | Value x :: l ->
+                | (Result.Ok x)::l ->
                     q := l;
                     return (Some x)
-                | Error e :: l ->
+                | (Result.Error e)::l ->
                     q := l;
                     Lwt.fail e)
        in
-       Lwt_stream.to_list (Lwt_stream.map_exn stream) >>= fun l' ->
+       Lwt_stream.to_list (Lwt_stream.wrap_exn stream) >>= fun l' ->
        return (l = l'));
 
   test "is_closed"

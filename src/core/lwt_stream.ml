@@ -469,6 +469,22 @@ let rec get_exn_rec s node =
 
 let map_exn s = from (fun () -> get_exn_rec s s.node)
 
+let rec get_exn_rec' s node =
+  if node == !(s.last) then
+    Lwt.try_bind
+      (fun () -> feed s)
+      (fun () -> get_exn_rec' s node)
+      (fun exn -> Lwt.return (Some (Result.Error exn)))
+  else
+    match node.data with
+      | Some value ->
+          consume s node;
+          Lwt.return (Some (Result.Ok value))
+      | None ->
+          Lwt.return_none
+
+let wrap_exn s = from (fun () -> get_exn_rec' s s.node)
+
 let rec nget_rec node acc n s =
   if n <= 0 then
     Lwt.return (List.rev acc)
