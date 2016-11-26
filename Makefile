@@ -27,6 +27,8 @@ setup.exe: setup.ml
 	ocamlopt.opt -o $@ $< || ocamlopt -o $@ $< || ocamlc -o $@ $<
 	rm -f setup.cmx setup.cmi setup.o setup.obj setup.cmo
 
+setup: $(SETUP)
+
 build: $(SETUP) setup.data
 	./$(SETUP) -build $(BUILDFLAGS)
 
@@ -64,4 +66,4 @@ configure: $(SETUP)
 setup.data: $(SETUP)
 	./$(SETUP) -configure $(CONFIGUREFLAGS)
 
-.PHONY: default build doc test all install uninstall reinstall clean distclean configure
+.PHONY: default setup build doc test all install uninstall reinstall clean distclean configure
