@@ -2178,7 +2178,7 @@ hostent_dup(struct hostent *orig)
 nomem3:
   c_free_string_array(h->h_aliases);
 nomem2:
-  free(h->h_name);
+  free((char*)h->h_name);
 nomem1:
   free(h);
   return NULL;
@@ -2190,7 +2190,7 @@ hostent_free(struct hostent *h)
   if ( h ){
     c_free_string_array(h->h_addr_list);
     c_free_string_array(h->h_aliases);
-    free(h->h_name);
+    free((char*)h->h_name);
     free(h);
   }
 }
