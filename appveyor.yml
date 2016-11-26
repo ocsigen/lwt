@@ -30,10 +30,10 @@ install:
   - ps: '(new-object net.webclient).DownloadString("https://aantron.github.io/binaries/$env:SYSTEM/$env:ARCH/camlp4/$env:COMPILER/install.ps1") | PowerShell -Command -'
   - ps: '(new-object net.webclient).DownloadString("https://aantron.github.io/binaries/$env:SYSTEM/$env:ARCH/opam/1.2/install.ps1") | PowerShell -Command -'
 
-  - '%CYGSH% "cd /cygdrive/c/projects/lwt ; utils/appveyor-cygwin-install.sh"'
+  - '%CYGSH% "cd /cygdrive/c/projects/lwt ; utils/appveyor-install.sh"'
 
 build_script:
-  - '%CYGSH% "cd /cygdrive/c/projects/lwt ; utils/appveyor-cygwin-build.sh"'
+  - '%CYGSH% "cd /cygdrive/c/projects/lwt ; utils/appveyor-build.sh"'
 
 cache:
   - '..\opam-cache-%SYSTEM%-%COMPILER%-%LIBEV%.tar -> opam, appveyor.yml, utils\appveyor*.sh'
