@@ -8,3 +8,6 @@ setup.log
 setup.exe
 setup-dev.exe
 _opam
+
+# For local work, tests, etc.
+scratch/
