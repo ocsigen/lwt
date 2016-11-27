@@ -7,6 +7,8 @@ matrix:
     - os: linux
       env: COMPILER=4.04
     - os: linux
+      env: COMPILER=4.04 FLAMBDA=yes
+    - os: linux
       # Using 4.02 here because a binary is available from the PPA, which makes
       # the build complete faster. If the compiler for this test is switched to
       # a different version, add a separate 4.02 row.

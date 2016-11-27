@@ -81,13 +81,20 @@ packages
 
 # Initialize OPAM and switch to the right compiler, if necessary.
 case $COMPILER in
-    4.01) SWITCH=4.01.0;;
-    4.02) SWITCH=4.02.3;;
-    4.03) SWITCH=4.03.0;;
-    4.04) SWITCH=4.04.0;;
-    system) SWITCH=`ocamlc -version`;;
+    4.01) OCAML_VERSION=4.01.0;;
+    4.02) OCAML_VERSION=4.02.3;;
+    4.03) OCAML_VERSION=4.03.0;;
+    4.04) OCAML_VERSION=4.04.0;;
+    system) OCAML_VERSION=`ocamlc -version`;;
        *) echo Unsupported compiler $COMPILER; exit 1;;
 esac
+
+if [ "$FLAMBDA" = yes ]
+then
+    SWITCH="$OCAML_VERSION+flambda"
+else
+    SWITCH="$OCAML_VERSION"
+fi
 
 if [ -n "$DO_SWITCH" ]
 then
@@ -99,9 +106,9 @@ fi
 eval `opam config env`
 
 ACTUAL_COMPILER=`ocamlc -version`
-if [ "$ACTUAL_COMPILER" != "$SWITCH" ]
+if [ "$ACTUAL_COMPILER" != "$OCAML_VERSION" ]
 then
-    echo Expected OCaml $SWITCH, but $ACTUAL_COMPILER is installed
+    echo Expected OCaml $OCAML_VERSION, but $ACTUAL_COMPILER is installed
 fi
 
 
