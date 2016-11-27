@@ -49,7 +49,7 @@ val unsafe_set : t -> int -> char -> unit
 
 (** {2 Conversions} *)
 
-val of_bytes : Bytes.t -> t
+val of_bytes : bytes -> t
   (** [of_bytes buf] returns a newly allocated byte array with the
       same contents as [buf]. *)
 
@@ -57,7 +57,7 @@ val of_string : string -> t
   (** [of_string buf] returns a newly allocated byte array with the
       same contents as [buf]. *)
 
-val to_bytes : t -> Bytes.t
+val to_bytes : t -> bytes
   (** [to_bytes buf] returns newly allocated bytes with the same
       contents as [buf]. *)
 
@@ -71,21 +71,21 @@ val blit : t -> int -> t -> int -> int -> unit
   (** [blit buf1 ofs1 buf2 ofs2 len] copies [len] bytes from [buf1]
       starting at offset [ofs1] to [buf2] starting at offset [ofs2]. *)
 
-val blit_from_bytes : Bytes.t -> int -> t -> int -> int -> unit
+val blit_from_bytes : bytes -> int -> t -> int -> int -> unit
   (** Same as {!blit} but the first buffer is a string instead of a byte
       array. *)
 
-val blit_to_bytes : t -> int -> Bytes.t -> int -> int -> unit
+val blit_to_bytes : t -> int -> bytes -> int -> int -> unit
   (** Same as {!blit} but the second buffer is a string instead of a byte
       array. *)
 
 val unsafe_blit : t -> int -> t -> int -> int -> unit
   (** Same as {!blit} but without bound checking. *)
 
-val unsafe_blit_from_bytes : Bytes.t -> int -> t -> int -> int -> unit
+val unsafe_blit_from_bytes : bytes -> int -> t -> int -> int -> unit
   (** Same as {!blit_string_bytes} but without bounds checking. *)
 
-val unsafe_blit_to_bytes : t -> int -> Bytes.t -> int -> int -> unit
+val unsafe_blit_to_bytes : t -> int -> bytes -> int -> int -> unit
   (** Same as {!blit_bytes_string} but without bounds checking. *)
 
 val proxy : t -> int -> int -> t

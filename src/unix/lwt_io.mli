@@ -258,7 +258,7 @@ val read : ?count : int -> input_channel -> string Lwt.t
       returns [""] if the end of input is reached. If [count] is not
       specified, it reads all bytes until the end of input. *)
 
-val read_into : input_channel -> Bytes.t -> int -> int -> int Lwt.t
+val read_into : input_channel -> bytes -> int -> int -> int Lwt.t
   (** [read_into ic buffer offset length] reads up to [length] bytes,
       stores them in [buffer] at offset [offset], and returns the
       number of bytes read.
@@ -266,7 +266,7 @@ val read_into : input_channel -> Bytes.t -> int -> int -> int Lwt.t
       Note: [read_into] does not raise [End_of_file], it returns a
       length of [0] instead. *)
 
-val read_into_exactly : input_channel -> Bytes.t -> int -> int -> unit Lwt.t
+val read_into_exactly : input_channel -> bytes -> int -> int -> unit Lwt.t
   (** [read_into_exactly ic buffer offset length] reads exactly
       [length] bytes and stores them in [buffer] at offset [offset].
 
@@ -301,7 +301,7 @@ val write_line : output_channel -> string -> unit Lwt.t
 val write_lines : output_channel -> string Lwt_stream.t -> unit Lwt.t
   (** [write_lines oc lines] writes all lines of [lines] to [oc] *)
 
-val write_from : output_channel -> Bytes.t -> int -> int -> int Lwt.t
+val write_from : output_channel -> bytes -> int -> int -> int Lwt.t
   (** [write_from oc buffer offset length] writes up to [length] bytes
       to [oc], from [buffer] at offset [offset] and returns the number
       of bytes actually written *)
@@ -309,7 +309,7 @@ val write_from : output_channel -> Bytes.t -> int -> int -> int Lwt.t
 val write_from_string : output_channel -> string -> int -> int -> int Lwt.t
   (** See {!write}. *)
 
-val write_from_exactly : output_channel -> Bytes.t -> int -> int -> unit Lwt.t
+val write_from_exactly : output_channel -> bytes -> int -> int -> unit Lwt.t
   (** [write_from_exactly oc buffer offset length] writes all [length]
       bytes from [buffer] at offset [offset] to [oc] *)
 

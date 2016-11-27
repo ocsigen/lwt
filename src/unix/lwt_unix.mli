@@ -346,7 +346,7 @@ val close : file_descr -> unit Lwt.t
   (** Close a {b file descriptor}. This close the underlying unix {b
       file descriptor} and set its state to {!Closed} *)
 
-val read : file_descr -> Bytes.t -> int -> int -> int Lwt.t
+val read : file_descr -> bytes -> int -> int -> int Lwt.t
 (** [read fd buf ofs len] reads up to [len] bytes from [fd], and writes them to
     [buf], starting at offset [ofs]. The function immediately evaluates to an
     Lwt thread, which waits for the operation to complete. If it completes
@@ -364,7 +364,7 @@ val read : file_descr -> Bytes.t -> int -> int -> int Lwt.t
     except [Unix.Unix_error Unix.EAGAIN], [Unix.Unix_error Unix.EWOULDBLOCK] or
     [Unix.Unix_error Unix.EINTR]. *)
 
-val write : file_descr -> Bytes.t -> int -> int -> int Lwt.t
+val write : file_descr -> bytes -> int -> int -> int Lwt.t
 (** [write fd buf ofs len] writes up to [len] bytes to [fd] from [buf], starting
     at buffer offset [ofs]. The function immediately evaluates to an Lwt thread,
     which waits for the operation to complete. If the operation completes
@@ -812,24 +812,24 @@ type msg_flag =
   | MSG_DONTROUTE
   | MSG_PEEK
 
-val recv : file_descr -> Bytes.t -> int -> int -> msg_flag list -> int Lwt.t
+val recv : file_descr -> bytes -> int -> int -> msg_flag list -> int Lwt.t
 (** Wrapper for [Unix.recv].
 
     On Windows, [recv] writes data into a temporary buffer, then copies it into
     the given one. *)
 
-val recvfrom : file_descr -> Bytes.t -> int -> int -> msg_flag list -> (int * sockaddr) Lwt.t
+val recvfrom : file_descr -> bytes -> int -> int -> msg_flag list -> (int * sockaddr) Lwt.t
 (** Wrapper for [Unix.recvfrom].
 
     On Windows, [recvfrom] writes data into a temporary buffer, then copies it
     into the given one. *)
 
-val send : file_descr -> Bytes.t -> int -> int -> msg_flag list -> int Lwt.t
+val send : file_descr -> bytes -> int -> int -> msg_flag list -> int Lwt.t
 (** Wrapper for [Unix.send].
 
     On Windows, [send] copies the given buffer before writing. *)
 
-val sendto : file_descr -> Bytes.t -> int -> int -> msg_flag list -> sockaddr -> int Lwt.t
+val sendto : file_descr -> bytes -> int -> int -> msg_flag list -> sockaddr -> int Lwt.t
 (** Wrapper for [Unix.sendto].
 
     On Windows, [sendto] copies the given buffer before writing. *)
