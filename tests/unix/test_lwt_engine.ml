@@ -1,7 +1,6 @@
 (* Lightweight thread library for OCaml
  * http://www.ocsigen.org/lwt
- * Module Main
- * Copyright (C) 2009 Jérémie Dimino
+ * Copyright (C) 2016 Anton Bachin
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -20,11 +19,28 @@
  * 02111-1307, USA.
  *)
 
-Test.run "unix" [
-  Test_lwt_unix.suite;
-  Test_lwt_io.suite;
-  Test_lwt_io_non_block.suite;
-  Test_lwt_process.suite;
-  Test_lwt_engine.suite;
-  Test_mcast.suite;
+open Test
+
+let selection_tests = [
+  test "libev: default when enabled in build bot"
+    (fun () ->
+      if not Lwt_config._HAVE_LIBEV then Lwt.return_true
+      else
+        (* Check if this is running inside Travis or AppVeyor. *)
+        let in_travis =
+          try ignore (Sys.getenv "TRAVIS_COMMIT"); true
+          with Not_found -> false
+        in
+
+        let in_appveyor =
+          try ignore (Sys.getenv "APPVEYOR_REPO_COMMIT"); true
+          with Not_found -> false
+        in
+
+        if not (in_travis || in_appveyor) then Lwt.return_true
+        else Lwt.return Lwt_config.libev_default);
 ]
+
+let suite =
+  suite "lwt_engine"
+    (selection_tests)

@@ -10,6 +10,7 @@ environment:
 
   global:
     LWT_WARNINGS_AS_ERRORS: yes
+    LWT_FORCE_LIBEV_BY_DEFAULT: yes
     # Uncomment to debug build with RDP. Alternatively, create the file
     # appveyor-debug in the repository root. The latter option avoids
     # invalidating the AppVeyor dependency cache.

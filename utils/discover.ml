@@ -696,11 +696,15 @@ Lwt can use pthread or the win32 API.
   end else begin
     output_string config_ml "let android = false\n"
   end;
-  if !libev_default then begin
-    output_string config_ml "let libev_default = true\n"
-  end else begin
-    output_string config_ml "let libev_default = false\n"
-  end;
+
+  let () =
+    let force_libev_default =
+      try Sys.getenv "LWT_FORCE_LIBEV_BY_DEFAULT" = "yes"
+      with Not_found -> false
+    in
+    let libev_default = !libev_default || force_libev_default in
+    Printf.fprintf config_ml "let libev_default = %b\n" libev_default
+  in
 
   fprintf config "#endif\n";
 
