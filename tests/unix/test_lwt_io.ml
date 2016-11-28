@@ -38,16 +38,16 @@ struct
   let with_client f =
     let handler_finished, notify_handler_finished = Lwt.wait () in
 
-    let server =
-      Lwt_io.Versioned.establish_server_2
-        local
-        (fun channels ->
-          Lwt.finalize
-            (fun () -> f channels)
-            (fun () ->
-              Lwt.wakeup notify_handler_finished ();
-              Lwt.return_unit))
-    in
+    Lwt_io.Versioned.establish_server_2
+      local
+      (fun channels ->
+        Lwt.finalize
+          (fun () -> f channels)
+          (fun () ->
+            Lwt.wakeup notify_handler_finished ();
+            Lwt.return_unit))
+
+    >>= fun server ->
 
     let client_finished =
       Lwt_io.with_connection
@@ -367,8 +367,8 @@ let suite = suite "lwt_io" [
       let in_channel' = ref Lwt_io.stdin in
       let out_channel' = ref Lwt_io.stdout in
 
-      let server =
-        Lwt_io.Versioned.establish_server_2 local (fun _ -> Lwt.return_unit) in
+      Lwt_io.Versioned.establish_server_2 local (fun _ -> Lwt.return_unit)
+      >>= fun server ->
 
       Lwt_io.with_connection local (fun (in_channel, out_channel) ->
         in_channel' := in_channel;
@@ -400,12 +400,10 @@ let suite = suite "lwt_io" [
 
       let handler_started, notify_handler_started = Lwt.wait () in
       let finish_server, resume_server = Lwt.wait () in
-      let server =
-        Lwt_io.Versioned.establish_server_2 local
-          (fun _ ->
-            Lwt.wakeup notify_handler_started ();
-            finish_server)
-      in
+      Lwt_io.Versioned.establish_server_2 local
+        (fun _ ->
+          Lwt.wakeup notify_handler_started ();
+          finish_server) >>= fun server ->
 
       expecting_ebadf (fun () ->
         Lwt_io.with_connection local (fun (in_channel, out_channel) ->

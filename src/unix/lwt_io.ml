@@ -1419,14 +1419,14 @@ let shutdown_server_2 server = Lazy.force server.shutdown
 
 let shutdown_server server = Lwt.async (fun () -> shutdown_server_2 server)
 
-let establish_server ?fd ?(buffer_size = !default_buffer_size) ?(backlog=5) sockaddr f =
+let _establish_server_base
+    bind ?fd ?(buffer_size = !default_buffer_size) ?(backlog=5) sockaddr f =
   let sock = match fd with
     | None -> Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0
     | Some fd -> fd
   in
   Lwt_unix.setsockopt sock Unix.SO_REUSEADDR true;
-  (Lwt_unix.bind sock sockaddr) [@ocaml.warning "-3"];
-  Lwt_unix.listen sock backlog;
+
   let abort_waiter, abort_wakener = Lwt.wait () in
   let abort_waiter = abort_waiter >>= fun () -> Lwt.return `Shutdown in
   (* Signals that the listening socket has been closed. *)
@@ -1452,8 +1452,25 @@ let establish_server ?fd ?(buffer_size = !default_buffer_size) ?(backlog=5) sock
           Lwt.wakeup closed_wakener ();
           Lwt.return_unit
   in
-  ignore (loop ());
-  { shutdown = lazy (Lwt.wakeup abort_wakener (); closed_waiter) }
+
+  let started, signal_started = Lwt.wait () in
+  Lwt.ignore_result begin
+    bind sock sockaddr >>= fun () ->
+    Lwt_unix.listen sock backlog;
+    Lwt.wakeup signal_started ();
+    loop ()
+  end;
+
+  let server = {shutdown = lazy (Lwt.wakeup abort_wakener (); closed_waiter)} in
+
+  server, started
+
+let establish_server ?fd ?buffer_size ?backlog sockaddr f =
+  let blocking_bind fd addr =
+    Lwt.return (Lwt_unix.Versioned.bind_1 fd addr) [@ocaml.warning "-3"]
+  in
+  _establish_server_base blocking_bind ?fd ?buffer_size ?backlog sockaddr f
+  |> fst
 
 let establish_server_safe ?fd ?buffer_size ?backlog sockaddr f =
   let best_effort_close channel =
@@ -1488,7 +1505,12 @@ let establish_server_safe ?fd ?buffer_size ?backlog sockaddr f =
       >>= fun () -> best_effort_close output_channel)
   in
 
-  establish_server ?fd ?buffer_size ?backlog sockaddr handler
+  let server, started =
+    _establish_server_base
+      Lwt_unix.Versioned.bind_2
+      ?fd ?buffer_size ?backlog sockaddr handler in
+  started >>= fun () ->
+  Lwt.return server
 
 let ignore_close ch =
   ignore (close ch)

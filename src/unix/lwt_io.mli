@@ -422,7 +422,8 @@ val establish_server :
 "The signature and semantics of this function will soon change:
 - the callback parameter f will evaluate to a thread (-> unit Lwt.t),
 - channels will be closed automatically when that thread completes, to avoid
-  leaking file descriptors.
+  leaking file descriptors, and
+- the result will be a thread (-> server Lwt.t).
 This will be breaking change. See
   https://github.com/ocsigen/lwt/pull/258
 To keep the current functionality, use Lwt_io.Versioned.establish_server_1
@@ -599,7 +600,8 @@ sig
     ?fd : Lwt_unix.file_descr ->
     ?buffer_size : int ->
     ?backlog : int ->
-    Unix.sockaddr -> (input_channel * output_channel -> unit Lwt.t) -> server
+    Unix.sockaddr -> (input_channel * output_channel -> unit Lwt.t) ->
+      server Lwt.t
   (** [establish_server_safe ?fd ?buffer_size ?backlog sockaddr f] creates a
       server which listens for incoming connections. New connections are passed
       to [f]. When threads returned by [f] complete, the connections are closed
