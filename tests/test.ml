@@ -96,18 +96,21 @@ let run name suites =
   in
   loop_suites 0 0 1 suites
 
+let temp_name =
+  let rng = Random.State.make_self_init () in
+  fun () ->
+    let number = Random.State.int rng 10000 in
+    Printf.sprintf "_build/lwt-testing-%04d" number
+
 let temp_file () =
   Filename.temp_file ~temp_dir:"_build" "lwt-testing-" ""
 
-let temp_directory =
-  let rng = Random.State.make_self_init () in
-  fun () ->
-    let rec attempt () =
-      let number = Random.State.int rng 10000 in
-      let path = Printf.sprintf "_build/lwt-testing-%04d" number in
-      try
-        Unix.mkdir path 0o755;
-        path
-      with Not_found -> attempt ()
-    in
+let temp_directory () =
+  let rec attempt () =
+    let path = temp_name () in
+    try
+      Unix.mkdir path 0o755;
+      path
+    with Unix.Unix_error (Unix.EEXIST, "mkdir", _) -> attempt ()
+  in
   attempt ()

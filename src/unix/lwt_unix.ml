@@ -1579,6 +1579,14 @@ let bind ch addr =
   check_descriptor ch;
   Unix.bind ch.fd addr
 
+external bind_job : Unix.file_descr -> Unix.sockaddr -> unit job =
+  "lwt_unix_bind_job"
+
+let bind' fd addr =
+  match Sys.win32, addr with
+  | true, _ | false, Unix.ADDR_INET _ -> Lwt.return (Unix.bind fd.fd addr)
+  | false, Unix.ADDR_UNIX _ -> run_job (bind_job fd.fd addr)
+
 let listen ch cnt =
   check_descriptor ch;
   Unix.listen ch.fd cnt
@@ -2328,3 +2336,9 @@ let () =
            Some(Printf.sprintf "Unix.Unix_error(Unix.%s, %S, %S)" error func arg)
        | _ ->
            None)
+
+module Versioned =
+struct
+  let bind_1 = bind
+  let bind_2 = bind'
+end

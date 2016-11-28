@@ -835,7 +835,19 @@ val socketpair : socket_domain -> socket_type -> int -> file_descr * file_descr
   (** Wrapper for [Unix.socketpair] *)
 
 val bind : file_descr -> sockaddr -> unit
-  (** Wrapper for [Unix.bind] *)
+  [@@ocaml.deprecated
+"This function will soon return threads (-> unit Lwt.t), because the bind system
+call can block for Unix domain sockets. See
+  https://github.com/ocsigen/lwt/issues/230
+To keep using the current signature, use Lwt_unix.Versioned.bind_1
+To use the new non-blocking version immediately, use Lwt_unix.Versioned.bind_2"]
+(** Binds an address to the given socket. This is the cooperative analog of
+    {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALbind}
+    [Unix.bind]}. See also
+    {{:http://man7.org/linux/man-pages/man3/bind.3p.html} [bind(3p)]}.
+
+    @deprecated Will be replaced by {!Versioned.bind_2}, whose result type is
+      [unit Lwt.t] instead of [unit]. *)
 
 val listen : file_descr -> int -> unit
   (** Wrapper for [Unix.listen] *)
@@ -1354,6 +1366,24 @@ val get_affinity : ?pid : int -> unit -> int list
 val set_affinity : ?pid : int -> int list -> unit
   (** [set_affinity ?pid cpus] sets the list of CPUs the given process
       is allowed to run on. *)
+
+(** {2 Versioned interfaces} *)
+
+(** Versioned variants of APIs undergoing breaking changes. *)
+module Versioned :
+sig
+  val bind_1 : file_descr -> sockaddr -> unit
+    [@@ocaml.deprecated
+"Deprecated in favor of Lwt_unix.Versioned.bind_2. See
+  https://github.com/ocsigen/lwt/issues/230"]
+  (** Alias for the current {!Lwt_unix.bind}.
+
+      @deprecated Use {!bind_2}. *)
+
+  val bind_2 : file_descr -> sockaddr -> unit Lwt.t
+  (** Like {!Lwt_unix.bind}, but evaluates to an Lwt thread, in order to avoid
+      blocking the process in case the given socket is a Unix domain socket. *)
+end
 
 (**/**)
 

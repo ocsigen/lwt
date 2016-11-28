@@ -1425,7 +1425,7 @@ let establish_server ?fd ?(buffer_size = !default_buffer_size) ?(backlog=5) sock
     | Some fd -> fd
   in
   Lwt_unix.setsockopt sock Unix.SO_REUSEADDR true;
-  Lwt_unix.bind sock sockaddr;
+  (Lwt_unix.bind sock sockaddr) [@ocaml.warning "-3"];
   Lwt_unix.listen sock backlog;
   let abort_waiter, abort_wakener = Lwt.wait () in
   let abort_waiter = abort_waiter >>= fun () -> Lwt.return `Shutdown in

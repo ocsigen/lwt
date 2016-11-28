@@ -341,16 +341,6 @@ value lwt_unix_bytes_send(value fd, value buf, value ofs, value len, value flags
 extern int socket_domain_table[];
 extern int socket_type_table[];
 
-union sock_addr_union {
-  struct sockaddr s_gen;
-  struct sockaddr_un s_unix;
-  struct sockaddr_in s_inet;
-  struct sockaddr_in6 s_inet6;
-};
-
-CAMLexport value alloc_sockaddr (union sock_addr_union * addr /*in*/,
-                                 socklen_t addr_len, int close_on_error);
-
 value lwt_unix_recvfrom(value fd, value buf, value ofs, value len, value flags)
 {
   CAMLparam5(fd, buf, ofs, len, flags);
@@ -2832,6 +2822,39 @@ CAMLprim value lwt_unix_getnameinfo_job(value sockaddr, value opts)
   get_sockaddr(sockaddr, &job->addr, &job->addr_len);
   job->opts = caml_convert_flag_list(opts, getnameinfo_flag_table);
   return lwt_unix_alloc_job(&job->job);
+}
+
+/* bind */
+
+struct job_bind {
+    struct lwt_unix_job job;
+    int fd;
+    union sock_addr_union addr;
+    socklen_param_type addr_len;
+    int result;
+    int error_code;
+};
+
+static void worker_bind(struct job_bind *job)
+{
+    job->result = bind(job->fd, &job->addr.s_gen, job->addr_len);
+    job->error_code = errno;
+}
+
+static value result_bind(struct job_bind *job)
+{
+    LWT_UNIX_CHECK_JOB(job, job->result != 0, "bind");
+    lwt_unix_free_job(&job->job);
+    return Val_unit;
+}
+
+CAMLprim value lwt_unix_bind_job(value fd, value address)
+{
+    LWT_UNIX_INIT_JOB(job, bind, 0);
+    job->fd = Int_val(fd);
+    get_sockaddr(address, &job->addr, &job->addr_len);
+
+    return lwt_unix_alloc_job(&job->job);
 }
 
 /* +-----------------------------------------------------------------+

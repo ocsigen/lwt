@@ -417,8 +417,73 @@ let writev_tests =
            not (Lwt_unix.IO_vectors.is_empty io_vectors)));
   ]
 
+let bind_tests = [
+  test "bind: basic"
+    (fun () ->
+      let address = Unix.(ADDR_INET (inet_addr_loopback, 56100)) in
+      let socket = Lwt_unix.(socket PF_INET SOCK_STREAM 0) in
+
+      Lwt.finalize
+        (fun () ->
+          Lwt_unix.Versioned.bind_2 socket address >>= fun () ->
+          Lwt.return (Unix.getsockname (Lwt_unix.unix_file_descr socket)))
+        (fun () ->
+          Lwt_unix.close socket)
+
+      >>= fun address' ->
+
+      Lwt.return (address' = address));
+
+  test "bind: Unix domain" ~only_if:(fun () -> not Sys.win32)
+    (fun () ->
+      let socket = Lwt_unix.(socket PF_UNIX SOCK_STREAM 0) in
+
+      let rec bind_loop attempts =
+        if attempts <= 0 then
+          Lwt.fail (Unix.Unix_error (Unix.EADDRINUSE, "bind", ""))
+        else
+          let path = temp_name () in
+          let address = Unix.(ADDR_UNIX path) in
+          Lwt.catch
+            (fun () ->
+              Lwt_unix.Versioned.bind_2 socket address >>= fun () ->
+              Lwt.return_true)
+            (function
+              | Unix.Unix_error (Unix.EADDRINUSE, "bind", _) -> Lwt.return_false
+              | e -> Lwt.fail e) [@ocaml.warning "-4"] >>= fun bound ->
+          if bound then
+            Lwt.return path
+          else
+            bind_loop (attempts - 1)
+      in
+
+      Lwt.finalize
+        (fun () ->
+          bind_loop 5 >>= fun chosen_path ->
+          let actual_path =
+            Unix.getsockname (Lwt_unix.unix_file_descr socket) in
+          Lwt.return (chosen_path, actual_path))
+        (fun () ->
+          Lwt_unix.close socket)
+      >>= fun (chosen_path, actual_path) ->
+
+      let actual_path =
+        match actual_path with
+        | Unix.ADDR_UNIX path -> path
+        | Unix.ADDR_INET _ -> assert false
+      in
+
+      (try Unix.unlink chosen_path
+      with _ -> ());
+      (try Unix.unlink actual_path
+      with _ -> ());
+
+      Lwt.return (chosen_path = actual_path));
+]
+
 let suite =
   suite "lwt_unix"
     (utimes_tests @
      readdir_tests @
-     writev_tests)
+     writev_tests @
+     bind_tests)

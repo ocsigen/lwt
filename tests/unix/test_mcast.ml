@@ -30,7 +30,6 @@ let mcast_port = 4321
 
 let child join fd =
   (* Lwt_unix.setsockopt fd Lwt_unix.SO_REUSEADDR true; *)
-  Lwt_unix.(bind fd (ADDR_INET (Unix.inet_addr_any, mcast_port)));
   if join then Lwt_unix.mcast_add_membership fd (Unix.inet_addr_of_string mcast_addr);
   let buf = Bytes.create 50 in
   Lwt_unix.with_timeout 0.1 (fun () -> Lwt_unix.read fd buf 0 (Bytes.length buf)) >>= fun n ->
@@ -58,6 +57,8 @@ let test_mcast name join set_loop =
     let t () =
       Lwt.catch
         (fun () ->
+           Lwt_unix.(Versioned.bind_2
+             fd1 (ADDR_INET (Unix.inet_addr_any, mcast_port))) >>= fun () ->
            let t1 = child join fd1 in
            let t2 = parent set_loop fd2 in
            Lwt.join [t1; t2] >>= fun () -> Lwt.return true
