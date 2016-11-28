@@ -415,6 +415,10 @@ sig
   (** [drop vs n] adjusts the I/O vector sequence [vs] so that it no longer
       includes its first [n] bytes. *)
 
+  val is_empty : t -> bool
+  (** [is_empty vs] is [true] if and only if [vs] has no I/O vectors, or all I/O
+      vectors in [vs] have zero bytes. *)
+
   val system_limit : int option
   (** Some systems limit the number of I/O vectors that can be passed in a
       single call to their [writev] or [readv] system calls. On those systems,
@@ -445,7 +449,15 @@ val writev : file_descr -> IO_vectors.t -> int Lwt.t
     underlying [writev] system call.
 
     Not implemented on Windows. It should be possible to implement, upon
-    request, for Windows sockets only. *)
+    request, for Windows sockets only.
+
+    The behavior of [writev] when [vs] has zero slices depends on the system,
+    and may change in future versions of Lwt. On Linux, [writev] will succeed
+    and write zero bytes. On BSD (including macOS), [writev] will fail with
+    [Unix.Unix_error (Unix.EINVAL, "writev", ...)].
+
+    See {{:http://man7.org/linux/man-pages/man3/writev.3p.html}
+    [writev(3p)]}. *)
 
 val readable : file_descr -> bool
   (** Returns whether the given file descriptor is currently

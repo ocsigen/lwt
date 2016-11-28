@@ -229,8 +229,8 @@ let writev_tests =
     Lwt.return (bytes_written = data_length && blocking_matches)
   in
 
-  let reader read_fd expected_data = fun () ->
-    if expected_data = "" then
+  let reader read_fd ?(not_readable = false) expected_data = fun () ->
+    if not_readable then
       let readable = Lwt_unix.readable read_fd in
       Lwt_unix.close read_fd >>= fun () ->
       Lwt.return (not readable)
@@ -285,7 +285,7 @@ let writev_tests =
           [writer write_fd io_vectors 4;
            reader read_fd "ooar"]);
 
-    test "writev: drop" ~only_if:(fun () -> not Sys.win32)
+    test "writev: drop, is_empty" ~only_if:(fun () -> not Sys.win32)
       (fun () ->
         let io_vectors =
           make_io_vectors
@@ -296,11 +296,46 @@ let writev_tests =
 
         let read_fd, write_fd = Lwt_unix.pipe () in
 
+        let initially_empty = Lwt_unix.IO_vectors.is_empty io_vectors in
+
         Lwt_unix.IO_vectors.drop io_vectors 4;
+        let empty_after_partial_drop =
+          Lwt_unix.IO_vectors.is_empty io_vectors in
 
         Lwt_list.for_all_s (fun t -> t ())
           [writer write_fd io_vectors 5;
-           reader read_fd "arbaz"]);
+           reader read_fd "arbaz"] >>= fun io_correct ->
+
+        Lwt_unix.IO_vectors.drop io_vectors 5;
+        let empty_after_exact_drop = Lwt_unix.IO_vectors.is_empty io_vectors in
+
+        Lwt_unix.IO_vectors.drop io_vectors 100;
+        let empty_after_excess_drop = Lwt_unix.IO_vectors.is_empty io_vectors in
+
+        Lwt.return
+          (not initially_empty &&
+           not empty_after_partial_drop &&
+           io_correct &&
+           empty_after_exact_drop &&
+           empty_after_excess_drop));
+
+    test "writev: degenerate vectors" ~only_if:(fun () -> not Sys.win32)
+      (fun () ->
+        let io_vectors =
+          make_io_vectors
+            [`Bytes ("foo", 0, 0);
+             `Bigarray ("bar", 0, 0)]
+        in
+
+        let read_fd, write_fd = Lwt_unix.pipe () in
+
+        let initially_empty = Lwt_unix.IO_vectors.is_empty io_vectors in
+
+        Lwt_list.for_all_s (fun t -> t ())
+          [writer write_fd io_vectors 0;
+           reader read_fd ""] >>= fun io_correct ->
+
+        Lwt.return (initially_empty && io_correct));
 
     test "writev: bad iovec" ~only_if:(fun () -> not Sys.win32)
       (fun () ->
@@ -335,7 +370,7 @@ let writev_tests =
            writer negative_offset';
            writer negative_length';
            writer out_of_bounds';
-           reader read_fd "";
+           reader read_fd ~not_readable:true "";
            close write_fd]);
 
     test "writev: iovecs exceeding limit"
@@ -375,7 +410,11 @@ let writev_tests =
 
         Lwt_list.for_all_s (fun t -> t ())
           [writer write_fd io_vectors 3;
-           reader read_fd "foo"]);
+           reader read_fd "foo"] >>= fun io_correct ->
+
+        Lwt.return
+          (io_correct &&
+           not (Lwt_unix.IO_vectors.is_empty io_vectors)));
   ]
 
 let suite =

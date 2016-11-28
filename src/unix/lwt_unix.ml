@@ -723,6 +723,15 @@ struct
     in
     io_vectors.prefix <- loop count io_vectors.prefix
 
+  let is_empty io_vectors =
+    _flatten io_vectors;
+    let rec loop = function
+      | [] -> true
+      | {length = 0; _}::rest -> loop rest
+      | _ -> false
+    in
+    loop io_vectors.prefix
+
   external _stub_iov_max : unit -> int = "lwt_unix_iov_max"
 
   let system_limit =
