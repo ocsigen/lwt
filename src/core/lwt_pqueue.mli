@@ -40,6 +40,10 @@
     {{: http://ocaml-batteries-team.github.io/batteries-included/hdoc2/BatHeap.html}
     Batteries}. *)
 
+[@@@ocaml.deprecated
+"This module is an implementation detail of Lwt. See
+  http://ocsigen.org/lwt/dev/api/Lwt_pqueue"]
+
 (** Signature pairing an element type with an ordering function. *)
 module type OrderedType =
   sig

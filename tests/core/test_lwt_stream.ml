@@ -331,7 +331,8 @@ let suite = suite "lwt_stream" [
     (fun () ->
       let st = Lwt_stream.of_list [1; 2] in
       let b = ref false in
-      Lwt_stream.on_termination st (fun () -> b := true);
+      (Lwt_stream.on_termination [@ocaml.warning "-3"])
+        st (fun () -> b := true);
       ignore (Lwt_stream.peek st);
       let b1 = !b = false in
       ignore (Lwt_stream.junk st);
@@ -349,7 +350,8 @@ let suite = suite "lwt_stream" [
       let b1 = not (Lwt_stream.is_closed st) in
       ignore (Lwt_stream.junk st);
       let b2 = Lwt_stream.is_closed st in
-      Lwt_stream.on_termination st (fun () -> b := true);
+      (Lwt_stream.on_termination [@ocaml.warning "-3"])
+        st (fun () -> b := true);
       Lwt.return (b1 && b2 && !b));
 
   test "choose_exhausted"

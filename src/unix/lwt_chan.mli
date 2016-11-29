@@ -25,6 +25,8 @@
 
 (** Note: the {!Lwt_io} module deprecates this module. *)
 
+[@@@ocaml.deprecated "Use module Lwt_io."]
+
 (** {3 Cooperative input channels} *)
 type in_channel = Lwt_io.input_channel
 

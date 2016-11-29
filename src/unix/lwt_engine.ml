@@ -226,6 +226,7 @@ module Sleep_queue =
                     type t = sleeper
                     let compare {time = t1; _} {time = t2; _} = compare t1 t2
                   end)
+  [@@ocaml.warning "-3"]
 
 module Fd_map = Map.Make(struct type t = Unix.file_descr let compare = compare end)
 

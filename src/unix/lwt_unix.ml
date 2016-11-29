@@ -184,9 +184,9 @@ let wait_for_jobs () =
 
 let wrap_result f x =
   try
-    Lwt.make_value (f x)
+    Result.Ok (f x)
   with exn ->
-    Lwt.make_error exn
+    Result.Error exn
 
 let run_job_aux async_method job result =
   (* Starts the job. *)
@@ -242,9 +242,9 @@ external run_job_sync : 'a job -> 'a = "lwt_unix_run_job_sync"
 
 let self_result job =
   try
-    Lwt.make_value (self_result job)
+    Result.Ok (self_result job)
   with exn ->
-    Lwt.make_error exn
+    Result.Error exn
 
 let run_job ?async_method job =
   let async_method = choose_async_method async_method in
@@ -1258,15 +1258,15 @@ let files_of_directory path =
 
 let pipe () =
   let (out_fd, in_fd) = Unix.pipe() in
-  (mk_ch ~blocking:Lwt_sys.windows out_fd, mk_ch ~blocking:Lwt_sys.windows in_fd)
+  (mk_ch ~blocking:Sys.win32 out_fd, mk_ch ~blocking:Sys.win32 in_fd)
 
 let pipe_in () =
   let (out_fd, in_fd) = Unix.pipe() in
-  (mk_ch ~blocking:Lwt_sys.windows out_fd, in_fd)
+  (mk_ch ~blocking:Sys.win32 out_fd, in_fd)
 
 let pipe_out () =
   let (out_fd, in_fd) = Unix.pipe() in
-  (out_fd, mk_ch ~blocking:Lwt_sys.windows in_fd)
+  (out_fd, mk_ch ~blocking:Sys.win32 in_fd)
 
 let mkfifo name perms =
   if Sys.win32 then

@@ -1286,6 +1286,7 @@ val execute_job :
   job : 'a job ->
   result : ('a job -> 'b) ->
   free : ('a job -> unit) -> 'b Lwt.t
+  [@@ocaml.deprecated "Use Lwt_unix.run_job."]
   (** @deprecated Use [run_job]. *)
 
 (** {2 Notifications} *)
@@ -1357,7 +1358,9 @@ val set_affinity : ?pid : int -> int list -> unit
 (**/**)
 
 val run : 'a Lwt.t -> 'a
+  [@@ocaml.deprecated "Use Lwt_main.run."]
   (** @deprecated Use [Lwt_main.run]. *)
 
 val has_wait4 : bool
+  [@@ocaml.deprecated "Use Lwt_sys.have `wait4."]
   (** @deprecated Use [Lwt_sys.have `wait4]. *)

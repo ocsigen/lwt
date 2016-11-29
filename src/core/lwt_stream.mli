@@ -239,16 +239,18 @@ val closed : 'a t -> unit Lwt.t
       @since 2.6.0 *)
 
 val on_termination : 'a t -> (unit -> unit) -> unit
+  [@@ocaml.deprecated "Bind on Lwt_stream.closed."]
   (** [on_termination st f] executes [f] when the end of the stream [st]
       is reached. Note that the stream may still contain elements if
       {!peek} or similar was used.
 
-      @deprecated Use [closed]. *)
+      @deprecated Use {!closed}. *)
 
 val on_terminate : 'a t -> (unit -> unit) -> unit
-  (** Same as [on_termination].
+  [@@ocaml.deprecated "Bind on Lwt_stream.closed."]
+  (** Same as {!on_termination}.
 
-      @deprecated Use [closed]. *)
+      @deprecated Use {!closed}. *)
 
 (** {2 Stream transversal} *)
 
