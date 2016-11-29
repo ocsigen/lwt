@@ -203,6 +203,126 @@ let readdir_tests =
            "closedir", (fun () -> Lwt_unix.closedir directory)]);
   ]
 
+let readv_tests =
+  (* All buffers are initially filled with '_'. *)
+  let make_io_vectors vecs =
+    let open Lwt_unix.IO_vectors in
+    let io_vectors = create () in
+    let underlying =
+      List.map (function
+        | `Bytes (prefix, slice_length, suffix) ->
+          let buffer = Bytes.make (prefix + slice_length + suffix) '_' in
+          append_bytes io_vectors buffer prefix slice_length;
+          `Bytes buffer
+        | `Bigarray (prefix, slice_length, suffix) ->
+          let total_length = prefix + slice_length + suffix in
+          let buffer = Lwt_bytes.create total_length in
+          Lwt_bytes.fill buffer 0 total_length '_';
+          append_bigarray io_vectors buffer prefix slice_length;
+          `Bigarray buffer)
+        vecs
+    in
+    io_vectors, underlying
+  in
+
+  let writer write_fd data = fun () ->
+    let data = Bytes.unsafe_of_string data in
+    Lwt_unix.write write_fd data 0 (Bytes.length data) >>= fun bytes_written ->
+    Lwt_unix.close write_fd >>= fun () ->
+    Lwt.return (bytes_written = Bytes.length data)
+  in
+
+  let reader read_fd io_vectors underlying expected_count expected_data =
+      fun () ->
+    Gc.full_major ();
+    let t = Lwt_unix.readv read_fd io_vectors in
+    Gc.full_major ();
+    t >>= fun bytes_read ->
+    Lwt_unix.close read_fd >>= fun () ->
+
+    let actual =
+      List.fold_left (fun acc -> function
+        | `Bytes buffer -> acc ^ (Bytes.unsafe_to_string buffer)
+        | `Bigarray buffer -> acc ^ (Lwt_bytes.to_string buffer))
+        "" underlying
+    in
+
+    Lwt.return (actual = expected_data && bytes_read = expected_count)
+  in
+
+  [
+    test "readv: basic non-blocking" ~only_if:(fun () -> not Sys.win32)
+      (fun () ->
+        let io_vectors, underlying =
+          make_io_vectors
+            [`Bytes (1, 3, 1);
+             `Bigarray (1, 4, 1)]
+        in
+
+        let read_fd, write_fd = Lwt_unix.pipe () in
+
+        Lwt_list.for_all_s (fun t -> t ())
+          [writer write_fd "foobar";
+           reader read_fd io_vectors underlying 6 "_foo__bar__"]);
+
+    test "readv: basic blocking" ~only_if:(fun () -> not Sys.win32)
+      (fun () ->
+        let io_vectors, underlying =
+          make_io_vectors
+            [`Bytes (1, 3, 1);
+             `Bigarray (1, 4, 1)]
+        in
+
+        let read_fd, write_fd = Lwt_unix.pipe () in
+        Lwt_unix.set_blocking read_fd true;
+
+        Lwt_list.for_all_s (fun t -> t ())
+          [writer write_fd "foobar";
+           reader read_fd io_vectors underlying 6 "_foo__bar__"]);
+
+    test "readv: drop" ~only_if:(fun () -> not Sys.win32)
+      (fun () ->
+        let io_vectors, underlying =
+          make_io_vectors
+            [`Bytes (0, 1, 0);
+             `Bytes (1, 4, 1)]
+        in
+        Lwt_unix.IO_vectors.drop io_vectors 2;
+
+        let read_fd, write_fd = Lwt_unix.pipe () in
+
+        Lwt_list.for_all_s (fun t -> t ())
+          [writer write_fd "foobar";
+           reader read_fd io_vectors underlying 3 "___foo_"]);
+
+    test "readv: iovecs exceeding limit"
+      ~only_if:(fun () -> not Sys.win32 &&
+                          Lwt_unix.IO_vectors.system_limit <> None)
+      (fun () ->
+        let limit =
+          match Lwt_unix.IO_vectors.system_limit with
+          | Some limit -> limit
+          | None -> assert false
+        in
+
+        let underlying =
+          Array.init (limit + 1) (fun _ -> `Bytes (Bytes.make 1 '_'))
+          |> Array.to_list
+        in
+
+        let io_vectors = Lwt_unix.IO_vectors.create () in
+        List.iter (fun (`Bytes buffer) ->
+          Lwt_unix.IO_vectors.append_bytes io_vectors buffer 0 1) underlying;
+
+        let expected = String.make limit 'a' in
+
+        let read_fd, write_fd = Lwt_unix.pipe () in
+
+        Lwt_list.for_all_s (fun t -> t ())
+          [writer write_fd (expected ^ "a");
+           reader read_fd io_vectors underlying limit (expected ^ "_")]);
+  ]
+
 let writev_tests =
   let make_io_vectors vecs =
     let open Lwt_unix.IO_vectors in
@@ -219,7 +339,9 @@ let writev_tests =
   let writer ?blocking write_fd io_vectors data_length = fun () ->
     Lwt_unix.blocking write_fd >>= fun is_blocking ->
     Gc.full_major ();
-    Lwt_unix.writev write_fd io_vectors >>= fun bytes_written ->
+    let t = Lwt_unix.writev write_fd io_vectors in
+    Gc.full_major ();
+    t >>= fun bytes_written ->
     Lwt_unix.close write_fd >>= fun () ->
     let blocking_matches =
       match blocking, is_blocking with
@@ -485,5 +607,6 @@ let suite =
   suite "lwt_unix"
     (utimes_tests @
      readdir_tests @
+     readv_tests @
      writev_tests @
      bind_tests)

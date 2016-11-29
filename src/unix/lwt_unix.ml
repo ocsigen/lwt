@@ -751,6 +751,36 @@ struct
       invalid_arg tag
 end
 
+(* Flattens the I/O vectors into a single list, checks their bounds, and
+   evaluates to the minimum of: the number of vectors and the system's
+   IOV_MAX. *)
+let _check_io_vectors function_name io_vectors =
+  IO_vectors._flatten io_vectors;
+  List.iter (IO_vectors._check function_name) io_vectors.IO_vectors.prefix;
+
+  match IO_vectors.system_limit with
+  | Some limit when io_vectors.IO_vectors.count > limit -> limit
+  | _ -> io_vectors.IO_vectors.count
+
+external _stub_readv :
+  Unix.file_descr -> IO_vectors._io_vector list -> int -> int =
+  "lwt_unix_readv"
+
+external _readv_job :
+  Unix.file_descr -> IO_vectors._io_vector list -> int -> int job =
+  "lwt_unix_readv_job"
+
+let readv fd io_vectors =
+  let count = _check_io_vectors "readv" io_vectors in
+
+  Lazy.force fd.blocking >>= function
+    | true ->
+      wait_read fd >>= fun () ->
+      run_job (_readv_job fd.fd io_vectors.IO_vectors.prefix count)
+    | false ->
+      wrap_syscall Read fd (fun () ->
+        _stub_readv fd.fd io_vectors.IO_vectors.prefix count)
+
 external _stub_writev :
   Unix.file_descr -> IO_vectors._io_vector list -> int -> int =
   "lwt_unix_writev"
@@ -760,15 +790,7 @@ external _writev_job :
   "lwt_unix_writev_job"
 
 let writev fd io_vectors =
-  IO_vectors._flatten io_vectors;
-  List.iter (IO_vectors._check "writev") io_vectors.IO_vectors.prefix;
-
-  let count = io_vectors.IO_vectors.count in
-  let count =
-    match IO_vectors.system_limit with
-    | Some limit when count > limit -> limit
-    | _ -> count
-  in
+  let count = _check_io_vectors "writev" io_vectors in
 
   Lazy.force fd.blocking >>= function
     | true ->

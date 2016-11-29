@@ -431,6 +431,29 @@ sig
       A typical limit is 1024 vectors. *)
 end
 
+val readv : file_descr -> IO_vectors.t -> int Lwt.t
+(** [readv fd vs] reads bytes from [fd] into the buffer slices [vs]. If the
+    operation completes successfully, the resulting thread indicates the number
+    of bytes read.
+
+    Data is always read directly into [Bigarray] slices. If the Unix file
+    descriptor underlying [fd] is in non-blocking mode, data is also read
+    directly into [bytes] slices. Otherwise, data for [bytes] slices is first
+    read into temporary buffers, then copied.
+
+    Note that the returned Lwt thread is blocked until failure or a successful
+    read, even if the underlying file descriptor is in non-blocking mode. See
+    {!of_unix_file_descr} for a discussion of non-blocking I/O and Lwt.
+
+    If {!IO_vectors.system_limit} is [Some n] and the count of slices in [vs]
+    exceeds [n], then [Lwt_unix.readv] reads only into the first [n] slices of
+    [vs].
+
+    Not implemented on Windows. It should be possible to implement, upon
+    request, for Windows sockets only.
+
+    See {{:http://man7.org/linux/man-pages/man3/readv.3p.html} [readv(3p)]}. *)
+
 val writev : file_descr -> IO_vectors.t -> int Lwt.t
 (** [writev fd vs] writes the bytes in the buffer slices [vs] to the file
     descriptor [fd]. If the operation completes successfully, the resulting
@@ -444,9 +467,9 @@ val writev : file_descr -> IO_vectors.t -> int Lwt.t
     write, even if the underlying descriptor is in non-blocking mode. See
     {!of_unix_file_descr} for a discussion of non-blocking I/O and Lwt.
 
-    If {!IO_vectors.system_limit} is [Some n] and [IO_vectors.count vs] exceeds
-    [n], then [Lwt_unix.writev] passes only the first [n] slices in [vs] to the
-    underlying [writev] system call.
+    If {!IO_vectors.system_limit} is [Some n] and the count of slices in [vs]
+    exceeds [n], then [Lwt_unix.writev] passes only the first [n] slices in [vs]
+    to the underlying [writev] system call.
 
     Not implemented on Windows. It should be possible to implement, upon
     request, for Windows sockets only.
