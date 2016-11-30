@@ -22,5 +22,8 @@ not <src/ssl/*>: safe_string
 # Examples
 <doc/examples/**/*.ml>: ppx_lwt
 
+# Scratch directory
+"scratch": -traverse
+
 # OASIS_START
 # OASIS_STOP
