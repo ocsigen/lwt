@@ -7,8 +7,9 @@ authors: [
   "Jérémie Dimino"
 ]
 homepage: "https://github.com/ocsigen/lwt"
+doc: "https://ocsigen.org/lwt/manual/"
 dev-repo: "https://github.com/ocsigen/lwt.git"
-bug-reports: "http://github.com/ocsigen/lwt/issues"
+bug-reports: "https://github.com/ocsigen/lwt/issues"
 license: "LGPL with OpenSSL linking exception"
 build: [
   [make "setup"]
