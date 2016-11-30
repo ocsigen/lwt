@@ -144,7 +144,10 @@ val get : 'a key -> 'a option
 
 val with_value : 'a key -> 'a option -> (unit -> 'b) -> 'b
   (** [with_value key value f] executes [f] with [value] associated to
-      [key]. [key] is restored to its previous value after [f] terminates. *)
+      [key]. [key] is restored to its previous value after [f] terminates.
+
+      This function should not be applied within threads created with
+      {!Lwt_preemptive.detach}. *)
 
 (** {2 Exceptions handling} *)
 
