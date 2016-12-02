@@ -30,7 +30,11 @@ type 'a t
 
     - [_s] when the function returns a thread and calls are serialised
     - [_p] when the function returns a thread and calls are parallelised
-*)
+
+    This module may undergo redesign or deprecation in the future. See
+    {{:https://github.com/ocsigen/lwt/issues/250} Flaws of [Lwt_stream]}. In
+    the meantime, you may want to consider using alternatives such as
+    {{:https://github.com/c-cube/lwt-pipe} lwt-pipe}. *)
 
 (** {2 Construction} *)
 
