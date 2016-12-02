@@ -41,13 +41,22 @@ type 'a t
 val from : (unit -> 'a option Lwt.t) -> 'a t
   (** [from f] creates a stream from the given input function. [f] is
       called each time more input is needed, and the stream ends when
-      [f] returns [None]. *)
+      [f] returns [None].
+
+      If [f], or the thread produced by [f], raises an exception, that exception
+      is forwarded to the consumer of the stream (for example, a caller of
+      {!get}). Note that this does not end the stream. A subsequent attempt to
+      read from the stream will cause another call to [f], which may succeed
+      with a value. *)
 
 val from_direct : (unit -> 'a option) -> 'a t
   (** [from_direct f] does the same as {!from} but with a function
       that does not return a thread. It is preferred that this
       function be used rather than wrapping [f] into a function which
-      returns a thread. *)
+      returns a thread.
+
+      The behavior when [f] raises an exception is the same as for {!from},
+      except that [f] does not produce a thread. *)
 
 exception Closed
   (** Exception raised by the push function of a push-stream when
@@ -55,7 +64,13 @@ exception Closed
       pushed. *)
 
 val create : unit -> 'a t * ('a option -> unit)
-  (** [create ()] returns a new stream and a push function. *)
+  (** [create ()] returns a new stream and a push function.
+
+      To notify the stream's consumer of errors, either use a separate
+      communication channel, or use a
+      {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Pervasives.html#TYPEresult}
+      [result]} stream. There is no way to push an exception into a
+      push-stream. *)
 
 val create_with_reference : unit -> 'a t * ('a option -> unit) * ('b -> unit)
   (** [create_with_reference ()] returns a new stream and a push

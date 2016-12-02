@@ -23,6 +23,15 @@
 open Lwt
 open Test
 
+let expect_exit f =
+  Lwt.catch
+    (fun () ->
+      f () >>= fun _ ->
+      Lwt.return_false)
+    (function
+      | Exit -> Lwt.return_true
+      | e -> Lwt.fail e)
+
 let suite = suite "lwt_stream" [
   test "from"
     (fun () ->
@@ -273,9 +282,6 @@ let suite = suite "lwt_stream" [
 
   test "map_exn"
     (fun () ->
-       (* TODO: This will no longer be a shadowing open once Lwt_stream.error
-          is removed. *)
-       let open! Lwt_stream in
        let l =
          [Result.Ok 1;
           Result.Error Exit;
@@ -364,4 +370,73 @@ let suite = suite "lwt_stream" [
     (fun () ->
       let open! Lwt_stream in
       to_list (choose [of_list []]) >|= fun _ -> true);
+
+  test "exception passing: basic, from"
+    (fun () ->
+      let stream = Lwt_stream.from (fun () -> Lwt.fail Exit) in
+      expect_exit (fun () -> Lwt_stream.get stream));
+
+  test "exception passing: basic, from_direct"
+    (fun () ->
+      let stream = Lwt_stream.from_direct (fun () -> raise Exit) in
+      expect_exit (fun () -> Lwt_stream.get stream));
+
+  test "exception passing: to_list"
+    (fun () ->
+      let stream = Lwt_stream.from (fun () -> Lwt.fail Exit) in
+      expect_exit (fun () -> Lwt_stream.to_list stream));
+
+  test "exception passing: mapped"
+    (fun () ->
+      let stream = Lwt_stream.from (fun () -> Lwt.fail Exit) in
+      let stream = Lwt_stream.map (fun v -> v) stream in
+      expect_exit (fun () -> Lwt_stream.get stream));
+
+  test "exception passing: resume, not closed, from"
+    (fun () ->
+      let to_feed = ref (Lwt.fail Exit) in
+      let stream = Lwt_stream.from (fun () -> !to_feed) in
+
+      expect_exit (fun () -> Lwt_stream.get stream) >>= fun got_exit ->
+      let closed_after_exit = Lwt_stream.is_closed stream in
+
+      to_feed := Lwt.return (Some 0);
+      Lwt_stream.get stream >>= fun v ->
+      let got_zero = (v = Some 0) in
+
+      to_feed := Lwt.return_none;
+      Lwt_stream.get stream >>= fun v ->
+      let got_none = (v = None) in
+      let closed_at_end = Lwt_stream.is_closed stream in
+
+      Lwt.return
+        (got_exit &&
+         not closed_after_exit &&
+         got_zero &&
+         got_none &&
+         closed_at_end));
+
+  test "exception passing: resume, not closed, from_direct"
+    (fun () ->
+      let to_feed = ref (fun () -> raise Exit) in
+      let stream = Lwt_stream.from_direct (fun () -> !to_feed ()) in
+
+      expect_exit (fun () -> Lwt_stream.get stream) >>= fun got_exit ->
+      let closed_after_exit = Lwt_stream.is_closed stream in
+
+      to_feed := (fun () -> Some 0);
+      Lwt_stream.get stream >>= fun v ->
+      let got_zero = (v = Some 0) in
+
+      to_feed := (fun () -> None);
+      Lwt_stream.get stream >>= fun v ->
+      let got_none = (v = None) in
+      let closed_at_end = Lwt_stream.is_closed stream in
+
+      Lwt.return
+        (got_exit &&
+         not closed_after_exit &&
+         got_zero &&
+         got_none &&
+         closed_at_end));
 ]
