@@ -221,7 +221,7 @@ Library "lwt-glib"
   Modules: Lwt_glib
   CSources: lwt_glib_stubs.c
   BuildDepends: lwt, lwt.unix
-  XMETADescription: Glib integration for Lwt
+  XMETADescription: Glib integration for Lwt (deprecated; use package lwt_glib)
 
 Library "lwt-ssl"
   Build$: flag(ssl) || flag(all)
@@ -231,7 +231,7 @@ Library "lwt-ssl"
   Path: src/ssl
   Modules: Lwt_ssl
   BuildDepends: ssl, lwt.unix
-  XMETADescription: SSL support for Lwt
+  XMETADescription: SSL support for Lwt (deprecated; use package lwt_ssl)
 
 Library "lwt-syntax"
   Build$: flag(camlp4) || flag(all)

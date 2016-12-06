@@ -14,7 +14,11 @@ then
     opam init -y --auto-setup
     eval `opam config env`
 
-    opam pin add -y --no-action .
+    opam pin add -y --no-action lwt .
+    opam pin add -y --no-action lwt_ssl .
+    # lwt_glib is not tested at the moment; this is for future-proofing.
+    opam pin add -y --no-action lwt_glib .
+
     opam install -y --deps-only lwt
     # Install OUnit here; otherwie --build-test on installation of Lwt seems to
     # trigger recompilation of ocamlmod.
@@ -23,8 +27,6 @@ then
 
     if [ "$SYSTEM" = cygwin ]
     then
-        opam install -y ssl
-
         if [ "$LIBEV" = yes ]
         then
             opam install -y conf-libev

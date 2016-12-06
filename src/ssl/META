@@ -1,0 +1,3 @@
+version = "2.6.0"
+description = "SSL support for Lwt"
+requires = "lwt.ssl"

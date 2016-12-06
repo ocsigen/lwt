@@ -21,7 +21,10 @@
  * 02111-1307, USA.
  *)
 
-(** OCaml-SSL integration *)
+(** OCaml-SSL integration
+
+    This module is provided by OPAM package [lwt_ssl]. Link with ocamlfind
+    package [lwt_ssl]. *)
 
 type socket
   (** Wrapper for SSL sockets.

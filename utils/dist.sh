@@ -28,11 +28,13 @@ oasis setup
 sed 's/^SETUP := setup-dev.exe.*/SETUP := setup.exe/' Makefile > Makefile.new
 mv Makefile.new Makefile
 
-# Adjust opam file
-sed "s/^version: \"dev\"/version: \"$VERSION\"/" opam > opam.1
-grep -vi oasis opam.1 > opam.2
-mv opam.2 opam
-rm opam.1
+# Adjust opam files
+for FILE in `ls *.opam`
+do
+    sed "s/^version: \"dev\"/version: \"$VERSION\"/" $FILE > $FILE.1
+    grep -vi oasis $FILE.1 > $FILE
+    rm $FILE.1
+done
 
 # Remove dev-files
 rm -f .jenkins.sh appveyor.yml .travis.yml *.exe configure _oasis

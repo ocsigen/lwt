@@ -59,7 +59,9 @@
         waiter
       )
     ]}
- *)
+
+    This module is provided by OPAM package [lwt_glib]. Link with ocamlfind
+    package [lwt_glib]. *)
 
 val install : ?mode : [ `glib_into_lwt | `lwt_into_glib ] -> unit -> unit
   (** Install the Glib<->Lwt integration.

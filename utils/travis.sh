@@ -123,12 +123,16 @@ fi
 
 # Pin Lwt, install its optional dependencies, then install Lwt and run the
 # tests.
-opam pin add -y --no-action .
-opam install -y `opam list --short --depopts --required-by lwt | grep -v '^conf-'`
+opam pin add -y --no-action lwt .
+opam pin add -y --no-action lwt_ssl .
+opam pin add -y --no-action lwt_glib .
+
+opam install -y ocamlbuild ocamlfind oasis camlp4 ppx_tools react result
 # Install OUnit here; otherwie --build-test on installation of Lwt seems to
 # trigger recompilation of ocamlmod.
 opam install -y ounit
-opam install -y --build-test --keep-build-dir --verbose lwt
+
+opam install -y --build-test --keep-build-dir --verbose lwt lwt_ssl lwt_glib
 
 
 
