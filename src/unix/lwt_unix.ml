@@ -668,12 +668,12 @@ struct
   type _bigarray =
     (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
 
-  type _buffer =
+  type buffer =
     | Bytes of bytes
     | Bigarray of _bigarray
 
-  type _io_vector =
-    {buffer : _buffer;
+  type io_vector =
+    {buffer : buffer;
      mutable offset : int;
      mutable length : int}
 
@@ -682,23 +682,23 @@ struct
      which some number of append operations is followed by some number of
      flatten operations. *)
   type t =
-    {mutable prefix : _io_vector list;
-     mutable reversed_suffix : _io_vector list;
+    {mutable prefix : io_vector list;
+     mutable reversed_suffix : io_vector list;
      mutable count : int}
 
   let create () = {prefix = []; reversed_suffix = []; count = 0}
 
-  let _append io_vectors io_vector =
+  let append io_vectors io_vector =
     io_vectors.reversed_suffix <- io_vector::io_vectors.reversed_suffix;
     io_vectors.count <- io_vectors.count + 1
 
   let append_bytes io_vectors buffer offset length =
-    _append io_vectors {buffer = Bytes buffer; offset; length}
+    append io_vectors {buffer = Bytes buffer; offset; length}
 
   let append_bigarray io_vectors buffer offset length =
-    _append io_vectors {buffer = Bigarray buffer; offset; length}
+    append io_vectors {buffer = Bigarray buffer; offset; length}
 
-  let _flatten io_vectors =
+  let flatten io_vectors =
     match io_vectors.reversed_suffix with
     | [] -> ()
     | _ ->
@@ -707,7 +707,7 @@ struct
       io_vectors.reversed_suffix <- []
 
   let drop io_vectors count =
-    _flatten io_vectors;
+    flatten io_vectors;
     let rec loop count prefix =
       if count <= 0 then prefix
       else
@@ -724,7 +724,7 @@ struct
     io_vectors.prefix <- loop count io_vectors.prefix
 
   let is_empty io_vectors =
-    _flatten io_vectors;
+    flatten io_vectors;
     let rec loop = function
       | [] -> true
       | {length = 0; _}::rest -> loop rest
@@ -732,13 +732,13 @@ struct
     in
     loop io_vectors.prefix
 
-  external _stub_iov_max : unit -> int = "lwt_unix_iov_max"
+  external stub_iov_max : unit -> int = "lwt_unix_iov_max"
 
   let system_limit =
     if Sys.win32 then None
-    else Some (_stub_iov_max ())
+    else Some (stub_iov_max ())
 
-  let _check tag io_vector =
+  let check tag io_vector =
     let buffer_length =
       match io_vector.buffer with
       | Bytes s -> Bytes.length s
@@ -754,51 +754,51 @@ end
 (* Flattens the I/O vectors into a single list, checks their bounds, and
    evaluates to the minimum of: the number of vectors and the system's
    IOV_MAX. *)
-let _check_io_vectors function_name io_vectors =
-  IO_vectors._flatten io_vectors;
-  List.iter (IO_vectors._check function_name) io_vectors.IO_vectors.prefix;
+let check_io_vectors function_name io_vectors =
+  IO_vectors.flatten io_vectors;
+  List.iter (IO_vectors.check function_name) io_vectors.IO_vectors.prefix;
 
   match IO_vectors.system_limit with
   | Some limit when io_vectors.IO_vectors.count > limit -> limit
   | _ -> io_vectors.IO_vectors.count
 
-external _stub_readv :
-  Unix.file_descr -> IO_vectors._io_vector list -> int -> int =
+external stub_readv :
+  Unix.file_descr -> IO_vectors.io_vector list -> int -> int =
   "lwt_unix_readv"
 
-external _readv_job :
-  Unix.file_descr -> IO_vectors._io_vector list -> int -> int job =
+external readv_job :
+  Unix.file_descr -> IO_vectors.io_vector list -> int -> int job =
   "lwt_unix_readv_job"
 
 let readv fd io_vectors =
-  let count = _check_io_vectors "readv" io_vectors in
+  let count = check_io_vectors "readv" io_vectors in
 
   Lazy.force fd.blocking >>= function
     | true ->
       wait_read fd >>= fun () ->
-      run_job (_readv_job fd.fd io_vectors.IO_vectors.prefix count)
+      run_job (readv_job fd.fd io_vectors.IO_vectors.prefix count)
     | false ->
       wrap_syscall Read fd (fun () ->
-        _stub_readv fd.fd io_vectors.IO_vectors.prefix count)
+        stub_readv fd.fd io_vectors.IO_vectors.prefix count)
 
-external _stub_writev :
-  Unix.file_descr -> IO_vectors._io_vector list -> int -> int =
+external stub_writev :
+  Unix.file_descr -> IO_vectors.io_vector list -> int -> int =
   "lwt_unix_writev"
 
-external _writev_job :
-  Unix.file_descr -> IO_vectors._io_vector list -> int -> int job =
+external writev_job :
+  Unix.file_descr -> IO_vectors.io_vector list -> int -> int job =
   "lwt_unix_writev_job"
 
 let writev fd io_vectors =
-  let count = _check_io_vectors "writev" io_vectors in
+  let count = check_io_vectors "writev" io_vectors in
 
   Lazy.force fd.blocking >>= function
     | true ->
       wait_write fd >>= fun () ->
-      run_job (_writev_job fd.fd io_vectors.IO_vectors.prefix count)
+      run_job (writev_job fd.fd io_vectors.IO_vectors.prefix count)
     | false ->
       wrap_syscall Write fd (fun () ->
-        _stub_writev fd.fd io_vectors.IO_vectors.prefix count)
+        stub_writev fd.fd io_vectors.IO_vectors.prefix count)
 
 (* +-----------------------------------------------------------------+
    | Seeking and truncating                                          |
