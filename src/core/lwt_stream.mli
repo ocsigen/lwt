@@ -347,7 +347,11 @@ val wrap_exn : 'a t -> 'a Lwt.result t
     [s'] yields [Result.Ok v], and when the source of [s] raises an exception
     [e], [s'] yields [Result.Error e].
 
-    Note that push-streams (as returned by {!create}) never raise exceptions. *)
+    Note that push-streams (as returned by {!create}) never raise exceptions.
+
+    If the stream source keeps raising the same exception [e] each time the
+    stream is read, [s'] is unbounded. Reading it will produce [Result.Error e]
+    indefinitely. *)
 
 (** {2 Parsing} *)
 
@@ -391,6 +395,10 @@ val map_exn : 'a t -> 'a result t
 
     Note that for push-streams (as returned by {!create}) all
     elements of the mapped streams are values.
+
+    If the stream source keeps raising the same exception [e] each time the
+    stream is read, the stream produced by [map_exn] is unbounded. Reading it
+    will produce [Lwt_stream.Error e] indefinitely.
 
     @deprecated Use {!wrap_exn}. *)
 
