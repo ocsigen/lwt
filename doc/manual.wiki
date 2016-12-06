@@ -678,7 +678,7 @@ val s' : int Lwt_stream.t = <abstr>
   {{{libev}}} or {{{Unix.select}}}. The signature is given by the
   class {{{Lwt_engine.t}}}.
 
-  {{{libev}}} is used by default on Unix, because it supports any
+  {{{libev}}} is used by default on Linux, because it supports any
   number of file descriptors while Unix.select supports only 1024 at
   most, and is also much more efficient. On Windows {{{Unix.select}}}
   is used because {{{libev}}} does not work properly. The user may
