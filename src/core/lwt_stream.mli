@@ -137,14 +137,19 @@ val create_bounded : int -> 'a t * 'a bounded_push
       It raises [Invalid_argument] if [size < 0]. *)
 
 val of_list : 'a list -> 'a t
-  (** [of_list l] creates a stream returning all elements of [l] *)
+(** [of_list l] creates a stream returning all elements of [l]. The elements are
+    pushed into the stream immediately, resulting in a closed stream (in the
+    sense of {!is_closed}). *)
 
 val of_array : 'a array -> 'a t
-  (** [of_array a] creates a stream returning all elements of [a] *)
+(** [of_array a] creates a stream returning all elements of [a]. The elements
+    are pushed into the stream immediately, resulting in a closed stream (in the
+    sense of {!is_closed}). *)
 
 val of_string : string -> char t
-  (** [of_string str] creates a stream returning all characters of
-      [str] *)
+(** [of_string str] creates a stream returning all characters of [str]. The
+    characters are pushed into the stream immediately, resulting in a closed
+    stream (in the sense of {!is_closed}). *)
 
 val clone : 'a t -> 'a t
   (** [clone st] clone the given stream. Operations on each stream

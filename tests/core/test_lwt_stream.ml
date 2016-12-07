@@ -315,8 +315,11 @@ let suite = suite "lwt_stream" [
       let b5 = Lwt_stream.(is_closed (of_string "")) in
       let b6 = Lwt_stream.(is_closed (of_string "123")) in
       let b7 = Lwt_stream.(is_closed (from_direct (fun () -> Some 1))) in
-      let b8 = Lwt_stream.(is_closed (from_direct (fun () -> None))) in
-      return (b1 && b2 && b3 && b4 && b5 && b6 && not b7 && not b8));
+      let st = Lwt_stream.from_direct (fun () -> None) in
+      let b8 = Lwt_stream.is_closed st in
+      ignore (Lwt_stream.junk st);
+      let b9 = Lwt_stream.is_closed st in
+      return (b1 && b2 && b3 && b4 && b5 && b6 && not b7 && not b8 && b9));
 
   test "closed"
     (fun () ->
