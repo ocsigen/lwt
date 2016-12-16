@@ -1,0 +1,3 @@
+version = "2.6.0"
+description = "Reactive programming helpers for Lwt"
+requires = "lwt.react"

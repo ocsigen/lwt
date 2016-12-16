@@ -15,6 +15,7 @@ then
     eval `opam config env`
 
     opam pin add -y --no-action lwt .
+    opam pin add -y --no-action lwt_react .
     opam pin add -y --no-action lwt_ssl .
     # lwt_glib is not tested at the moment; this is for future-proofing.
     opam pin add -y --no-action lwt_glib .

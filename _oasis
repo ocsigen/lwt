@@ -200,7 +200,7 @@ Library "lwt-react"
   Path: src/react
   Modules: Lwt_react
   BuildDepends: lwt, react
-  XMETADescription: Reactive programming helpers for Lwt
+  XMETADescription: Reactive programming helpers for Lwt (deprecated; use package lwt_react)
 
 Library "lwt-preemptive"
   Build$: flag(preemptive) || flag(all)
