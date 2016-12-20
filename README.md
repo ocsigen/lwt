@@ -1,30 +1,33 @@
-# Lwt &nbsp;&nbsp; [![version 2.6.0][version]][releases] [![BSD license][license-img]][copying] [![Manual][docs-img]][manual] [![Gitter chat][gitter-img]][gitter] [![Travis status][travis-img]][travis] [![AppVeyor status][appveyor-img]][appveyor]
+# Lwt &nbsp;&nbsp; [![version 2.6.0][version]][releases] [![LGPL][license-img]][copying] [![Gitter chat][gitter-img]][gitter] [![Travis status][travis-img]][travis] [![AppVeyor status][appveyor-img]][appveyor]
 
 [version]:      https://img.shields.io/badge/version-2.6.0-blue.svg
 [releases]:     https://github.com/ocsigen/lwt/releases
 [license-img]:  https://img.shields.io/badge/license-LGPL-blue.svg
 [gitter-img]:   https://img.shields.io/badge/chat-on_gitter-lightgrey.svg
-[docs-img]:     https://img.shields.io/badge/docs-online-lightgrey.svg
 [travis]:       https://travis-ci.org/ocsigen/lwt/branches
 [travis-img]:   https://img.shields.io/travis/ocsigen/lwt/master.svg?label=travis
 [appveyor]:     https://ci.appveyor.com/project/aantron/lwt/branch/master
 [appveyor-img]: https://img.shields.io/appveyor/ci/aantron/lwt/master.svg?label=appveyor
 
-Lwt provides *lightweight* (a.k.a. *cooperative* or *green*) threads for OCaml.
-Normally-blocking operations can be run concurrently in a single OCaml process,
-without managing system threads or locking. Lwt threads are type-disciplined and
-composable – Lwt is a *monad*.
+Lwt is OCaml's concurrent programming library. It provides a single data type:
+the *promise*, which is a value that will become determined in the future.
+Creating a promise spawns a computation. When that computation is I/O, Lwt runs
+it in parallel with your OCaml code.
 
-Here is a simplistic program which requests the Google search page, and fails
+OCaml code, including creating and waiting on promises, is run in a single
+thread by default, so you don't have to worry about locking or preemption. You
+can detach code to be run in separate threads on an opt-in basis.
+
+Here is a simplistic Lwt program which requests the Google front page, and fails
 if the request is not completed in five seconds:
 
 ```ocaml
 let () =
   let request =
     let%lwt addresses = Lwt_unix.getaddrinfo "google.com" "80" [] in
-    let server = (List.hd addresses).Lwt_unix.ai_addr in
+    let google = (List.hd addresses).Lwt_unix.ai_addr in
 
-    Lwt_io.(with_connection server (fun (incoming, outgoing) ->
+    Lwt_io.(with_connection google (fun (incoming, outgoing) ->
       let%lwt () = write outgoing "GET / HTTP/1.1\r\n" in
       let%lwt () = write outgoing "Connection: close\r\n\r\n" in
       let%lwt response = read incoming in
@@ -39,14 +42,21 @@ let () =
   match Lwt_main.run (Lwt.pick [request; timeout]) with
   | Some response -> print_string response
   | None -> prerr_endline "Request timed out"; exit 1
+
+(* ocamlfind opt -package lwt.unix -package lwt.ppx -linkpkg -o request example.ml
+   ./request *)
 ```
 
-The above program can be compiled and run with
+In the program, functions such as `Lwt_io.write` create promises. The
+`let%lwt ... in` construct is used to wait for a promise to become determined;
+the code after `in` is scheduled to run in a "callback." `Lwt.pick` races
+promises against each other, and behaves as the first one to complete.
+`Lwt_main.run` forces the whole promise-computation network to be executed. All
+the visible OCaml code is run in a single thread, but Lwt internally uses a
+combination of worker threads and non-blocking file descriptors to resolve in
+parallel the promises that do I/O.
 
-```
-ocamlfind opt -package lwt.unix -package lwt.ppx -linkpkg -o request example.ml
-./request
-```
+<br/>
 
 ## Installing
 
@@ -54,13 +64,21 @@ ocamlfind opt -package lwt.unix -package lwt.ppx -linkpkg -o request example.ml
 opam install lwt
 ```
 
+<br/>
+
 ## Documentation
 
-Documentation can be found [here][manual]. There are also some examples
-available in [`doc/examples`][examples].
+The manual can be found [here][manual]. There are also some examples available
+in [`doc/examples`][examples].
+
+*Note: much of the manual still refers to `'a Lwt.t` as "lightweight threads" or
+just "threads." This will be fixed in the new manual. `'a Lwt.t` is a promise,
+and has nothing to do with system or preemptive threads.*
 
 [manual]:   http://ocsigen.org/lwt/manual/
 [examples]: https://github.com/ocsigen/lwt/tree/master/doc/examples
+
+<br/>
 
 ## Contact
 
@@ -73,6 +91,8 @@ interested in the answer, it is also possible to ask on [Stack Overflow][so].
 [email]:  mailto:antonbachin@yahoo.com
 [irc]:    http://webchat.freenode.net/?channels=#ocaml
 [so]:     http://stackoverflow.com/questions/ask?tags=ocaml,lwt,ocaml-lwt
+
+<br/>
 
 ## Contributing
 
@@ -91,6 +111,8 @@ on the wiki.
 
 [projects]: https://github.com/ocsigen/lwt/wiki/Plan#projects
 [roadmap]:  https://github.com/ocsigen/lwt/wiki/Plan#roadmap
+
+<br/>
 
 ## License
 
