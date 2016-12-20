@@ -8,9 +8,9 @@ authors: [
 ]
 homepage: "https://github.com/ocsigen/lwt"
 doc: "https://ocsigen.org/lwt/manual/"
-dev-repo: "https://github.com/ocsigen/lwt.git"
 bug-reports: "https://github.com/ocsigen/lwt/issues"
 license: "LGPL with OpenSSL linking exception"
+dev-repo: "https://github.com/ocsigen/lwt.git"
 build: [
   [make "setup"]
   ["ocaml" "setup.ml" "-configure"
@@ -36,7 +36,7 @@ depends: [
   "ocamlbuild" {build}
   "result"
   # See https://github.com/ocsigen/lwt/issues/266
-  ( "base-no-ppx" | "ppx_tools" )
+  ( "base-no-ppx" | "ppx_tools" {build} )
   ## OASIS is not required in released version
   "oasis" {build & >= "0.4.7"}
 ]

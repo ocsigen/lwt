@@ -70,7 +70,7 @@ Flag react
   Default$: flag(all)
 
 Flag glib
-  Description: Glib integration
+  Description: GLib integration
   Default$: flag(all)
 
 Flag ssl
@@ -221,7 +221,7 @@ Library "lwt-glib"
   Modules: Lwt_glib
   CSources: lwt_glib_stubs.c
   BuildDepends: lwt, lwt.unix
-  XMETADescription: Glib integration for Lwt (deprecated; use package lwt_glib)
+  XMETADescription: GLib integration for Lwt (deprecated; use package lwt_glib)
 
 Library "lwt-ssl"
   Build$: flag(ssl) || flag(all)
