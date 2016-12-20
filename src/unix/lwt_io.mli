@@ -424,10 +424,11 @@ val establish_server :
 - channels will be closed automatically when that thread completes, to avoid
   leaking file descriptors, and
 - the result will be a thread (-> server Lwt.t).
-This will be breaking change. See
+This will be breaking change in Lwt 3.0.0. See
   https://github.com/ocsigen/lwt/pull/258
 To keep the current functionality, use Lwt_io.Versioned.establish_server_1
-To use the safer version immediately, use Lwt_io.Versioned.establish_server_2"]
+To use the safer version immediately, use Lwt_io.Versioned.establish_server_2
+Both alternatives require Lwt >= 2.7.0"]
   (** [establish_server ?fd ?buffer_size ?backlog sockaddr f] creates a server
       which listens for incoming connections. New connections are passed to [f].
 
@@ -457,10 +458,12 @@ To use the safer version immediately, use Lwt_io.Versioned.establish_server_2"]
 val shutdown_server : server -> unit
 [@@ocaml.deprecated
 "This function will soon evaluate to a thread that waits for the close system
-call to complete. This will be a breaking change for some builds. See
+call to complete. This will be a breaking change in Lwt 3.0.0, for some builds.
+See
   https://github.com/ocsigen/lwt/issues/259
 To keep the current signature, use Lwt_io.Versioned.shutdown_server_1
-To use the new version immediately, use Lwt_io.Versioned.shutdown_server_2"]
+To use the new version immediately, use Lwt_io.Versioned.shutdown_server_2
+Both alternatives require Lwt >= 2.7.0"]
   (** Closes the given server's listening socket. This function does not wait
       for the [close] operation to actually complete. It does not affect the
       sockets of connections that have already been accepted, i.e. passed to [f]
@@ -594,7 +597,8 @@ sig
   https://github.com/ocsigen/lwt/pull/258"]
   (** Alias for the current {!Lwt_io.establish_server}.
 
-      @deprecated Use {!establish_server_2}. *)
+      @deprecated Use {!establish_server_2}.
+      @since 2.7.0 *)
 
   val establish_server_2 :
     ?fd : Lwt_unix.file_descr ->
@@ -620,7 +624,9 @@ sig
       [!Lwt.async_exception_hook]. Likewise, if the automatic [close] of a
       connection raises an exception, it is passed to
       [!Lwt.async_exception_hook]. To robustly handle these exceptions, you
-      should call [close] manually inside [f], and use your own handler. *)
+      should call [close] manually inside [f], and use your own handler.
+
+      @since 2.7.0 *)
 
   val shutdown_server_1 : server -> unit
   [@@ocaml.deprecated
@@ -628,7 +634,8 @@ sig
   https://github.com/ocsigen/lwt/issues/259"]
   (** Alias for the current {!Lwt_io.shutdown_server}.
 
-      @deprecated Use {!shutdown_server_2}. *)
+      @deprecated Use {!shutdown_server_2}.
+      @since 2.7.0 *)
 
   val shutdown_server_2 : server -> unit Lwt.t
   (** Closes the given server's listening socket. The thread returned by this
@@ -636,5 +643,7 @@ sig
 
       This function does not affect sockets of connections that have already
       been accepted by the server, i.e. those passed by [establish_server] to
-      its callback [f]. *)
+      its callback [f].
+
+      @since 2.7.0 *)
 end

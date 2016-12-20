@@ -452,7 +452,9 @@ val readv : file_descr -> IO_vectors.t -> int Lwt.t
     Not implemented on Windows. It should be possible to implement, upon
     request, for Windows sockets only.
 
-    See {{:http://man7.org/linux/man-pages/man3/readv.3p.html} [readv(3p)]}. *)
+    See {{:http://man7.org/linux/man-pages/man3/readv.3p.html} [readv(3p)]}.
+
+    @since 2.7.0 *)
 
 val writev : file_descr -> IO_vectors.t -> int Lwt.t
 (** [writev fd vs] writes the bytes in the buffer slices [vs] to the file
@@ -480,7 +482,9 @@ val writev : file_descr -> IO_vectors.t -> int Lwt.t
     [Unix.Unix_error (Unix.EINVAL, "writev", ...)].
 
     See {{:http://man7.org/linux/man-pages/man3/writev.3p.html}
-    [writev(3p)]}. *)
+    [writev(3p)]}.
+
+    @since 2.7.0 *)
 
 val readable : file_descr -> bool
   (** Returns whether the given file descriptor is currently
@@ -862,8 +866,10 @@ val bind : file_descr -> sockaddr -> unit
 "This function will soon return threads (-> unit Lwt.t), because the bind system
 call can block for Unix domain sockets. See
   https://github.com/ocsigen/lwt/issues/230
+This will be a breaking change in Lwt 3.0.0.
 To keep using the current signature, use Lwt_unix.Versioned.bind_1
-To use the new non-blocking version immediately, use Lwt_unix.Versioned.bind_2"]
+To use the new non-blocking version immediately, use Lwt_unix.Versioned.bind_2
+Both alternatives require Lwt >= 2.7.0"]
 (** Binds an address to the given socket. This is the cooperative analog of
     {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALbind}
     [Unix.bind]}. See also
@@ -1401,11 +1407,14 @@ sig
   https://github.com/ocsigen/lwt/issues/230"]
   (** Alias for the current {!Lwt_unix.bind}.
 
-      @deprecated Use {!bind_2}. *)
+      @deprecated Use {!bind_2}.
+      @since 2.7.0 *)
 
   val bind_2 : file_descr -> sockaddr -> unit Lwt.t
   (** Like {!Lwt_unix.bind}, but evaluates to an Lwt thread, in order to avoid
-      blocking the process in case the given socket is a Unix domain socket. *)
+      blocking the process in case the given socket is a Unix domain socket.
+
+      @since 2.7.0 *)
 end
 
 (**/**)

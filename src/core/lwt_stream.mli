@@ -356,7 +356,9 @@ val wrap_exn : 'a t -> 'a Lwt.result t
 
     If the stream source keeps raising the same exception [e] each time the
     stream is read, [s'] is unbounded. Reading it will produce [Result.Error e]
-    indefinitely. *)
+    indefinitely.
+
+    @since 2.7.0 *)
 
 (** {2 Parsing} *)
 
