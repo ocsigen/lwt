@@ -600,12 +600,18 @@ sig
     ?fd : Lwt_unix.file_descr ->
     ?buffer_size : int ->
     ?backlog : int ->
+    ?no_close : bool ->
     Unix.sockaddr -> (input_channel * output_channel -> unit Lwt.t) ->
       server Lwt.t
-  (** [establish_server_safe ?fd ?buffer_size ?backlog sockaddr f] creates a
-      server which listens for incoming connections. New connections are passed
-      to [f]. When threads returned by [f] complete, the connections are closed
-      automatically.
+  (** [establish_server_2 sockaddr f] creates a server which listens for
+      incoming connections. New connections are passed to [f]. When threads
+      returned by [f] complete, the connections are closed automatically. To
+      prevent automatic closing, apply [establish_server_2] with
+      [~no_close:true].
+
+      The [?fd] and [?backlog] arguments have the same meaning as in
+      {!Lwt_io.establish_server}. [?buffer_size] sets the internal buffer size
+      of the channels passed to [f].
 
       The server does not wait for each thread. It begins accepting new
       connections immediately.
@@ -613,8 +619,8 @@ sig
       If a thread raises an exception, it is passed to
       [!Lwt.async_exception_hook]. Likewise, if the automatic [close] of a
       connection raises an exception, it is passed to
-      [!Lwt.async_exception_hook]. To handle exceptions raised by [close], call
-      it manually inside [f]. *)
+      [!Lwt.async_exception_hook]. To robustly handle these exceptions, you
+      should call [close] manually inside [f], and use your own handler. *)
 
   val shutdown_server_1 : server -> unit
   [@@ocaml.deprecated

@@ -1419,7 +1419,7 @@ let shutdown_server_2 server = Lazy.force server.shutdown
 
 let shutdown_server server = Lwt.async (fun () -> shutdown_server_2 server)
 
-let _establish_server_base
+let establish_server_base
     bind ?fd ?(buffer_size = !default_buffer_size) ?(backlog=5) sockaddr f =
   let sock = match fd with
     | None -> Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0
@@ -1469,10 +1469,11 @@ let establish_server ?fd ?buffer_size ?backlog sockaddr f =
   let blocking_bind fd addr =
     Lwt.return (Lwt_unix.Versioned.bind_1 fd addr) [@ocaml.warning "-3"]
   in
-  _establish_server_base blocking_bind ?fd ?buffer_size ?backlog sockaddr f
+  establish_server_base blocking_bind ?fd ?buffer_size ?backlog sockaddr f
   |> fst
 
-let establish_server_safe ?fd ?buffer_size ?backlog sockaddr f =
+let establish_server_safe
+    ?fd ?buffer_size ?backlog ?(no_close = false) sockaddr f =
   let best_effort_close channel =
     (* First, check whether the channel is closed. f may have already tried to
        close the channel, received an exception, and handled it somehow. If so,
@@ -1501,12 +1502,15 @@ let establish_server_safe ?fd ?buffer_size ?backlog sockaddr f =
           !Lwt.async_exception_hook exn;
           Lwt.return_unit)
 
-      >>= fun () -> best_effort_close input_channel
-      >>= fun () -> best_effort_close output_channel)
+      >>= fun () ->
+        if no_close then Lwt.return_unit
+        else
+          best_effort_close input_channel >>= fun () ->
+          best_effort_close output_channel)
   in
 
   let server, started =
-    _establish_server_base
+    establish_server_base
       Lwt_unix.Versioned.bind_2
       ?fd ?buffer_size ?backlog sockaddr handler in
   started >>= fun () ->
