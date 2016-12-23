@@ -100,14 +100,14 @@ val load_rules : ?fail_on_error:bool -> string -> unit
       If [fail_on_error] is [true], invalid rules will cause this function to
       raise [Failure] and leave existing rules unchanged.
       If [fail_on_error] is [false] (this is the default), it tries to load as
-      many rules as possible ang ignore invalid ones.
+      many rules as possible and ignore invalid ones.
       If the rules string itself cannot be parsed, existing rules are always left
       unchanged.
 
       Example:
       {[
-        Lwt_log_core.load_rules ~fail_on_error:true "* -> nosuchlevel" (* Raises Failure *)
-        Lwt_log_core.load_rules "* -> info"
+Lwt_log_core.load_rules ~fail_on_error:true "* -> nosuchlevel" (* Raises Failure *)
+Lwt_log_core.load_rules "* -> info"
       ]}
    *)
 
