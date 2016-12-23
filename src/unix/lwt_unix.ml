@@ -1605,6 +1605,7 @@ external bind_job : Unix.file_descr -> Unix.sockaddr -> unit job =
   "lwt_unix_bind_job"
 
 let bind' fd addr =
+  check_descriptor fd;
   match Sys.win32, addr with
   | true, _ | false, Unix.ADDR_INET _ -> Lwt.return (Unix.bind fd.fd addr)
   | false, Unix.ADDR_UNIX _ -> run_job (bind_job fd.fd addr)

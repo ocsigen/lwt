@@ -539,22 +539,23 @@ let writev_tests =
            not (Lwt_unix.IO_vectors.is_empty io_vectors)));
   ]
 
+let bind_tests_address = Unix.(ADDR_INET (inet_addr_loopback, 56100))
+
 let bind_tests = [
   test "bind: basic"
     (fun () ->
-      let address = Unix.(ADDR_INET (inet_addr_loopback, 56100)) in
       let socket = Lwt_unix.(socket PF_INET SOCK_STREAM 0) in
 
       Lwt.finalize
         (fun () ->
-          Lwt_unix.Versioned.bind_2 socket address >>= fun () ->
+          Lwt_unix.Versioned.bind_2 socket bind_tests_address >>= fun () ->
           Lwt.return (Unix.getsockname (Lwt_unix.unix_file_descr socket)))
         (fun () ->
           Lwt_unix.close socket)
 
       >>= fun address' ->
 
-      Lwt.return (address' = address));
+      Lwt.return (address' = bind_tests_address));
 
   test "bind: Unix domain" ~only_if:(fun () -> not Sys.win32)
     (fun () ->
@@ -606,6 +607,33 @@ let bind_tests = [
         Lwt.return
           (chosen_path = String.sub actual_path 0 (String.length chosen_path))
       with Invalid_argument _ -> Lwt.return_false);
+
+  test "bind: closed"
+    (fun () ->
+      let socket = Lwt_unix.(socket PF_INET SOCK_STREAM 0) in
+      Lwt_unix.close socket >>= fun () ->
+      Lwt.catch
+        (fun () ->
+          Lwt_unix.Versioned.bind_2 socket bind_tests_address >>= fun () ->
+          Lwt.return_false)
+        (function
+          | Unix.Unix_error (Unix.EBADF, _, _) -> Lwt.return_true
+          | e -> Lwt.fail e) [@ocaml.warning "-4"]);
+
+  test "bind: aborted"
+    (fun () ->
+      let socket = Lwt_unix.(socket PF_INET SOCK_STREAM 0) in
+      Lwt_unix.abort socket Exit;
+      Lwt.finalize
+        (fun () ->
+          Lwt.catch
+            (fun () ->
+              Lwt_unix.Versioned.bind_2 socket bind_tests_address >>= fun () ->
+              Lwt.return_false)
+            (function
+              | Exit -> Lwt.return_true
+              | e -> Lwt.fail e))
+        (fun () -> Lwt_unix.close socket));
 ]
 
 let suite =
