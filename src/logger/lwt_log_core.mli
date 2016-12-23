@@ -86,7 +86,9 @@ type section
 
 val string_of_level : level -> string
 
-val load_rules : string -> unit
+val level_of_string : string -> (level, string) result
+
+val load_rules : ?fail_on_error:bool -> string -> unit
   (** Reset the rules set when parsing the [LWT_LOG] environment variable using this
       string. *)
 
