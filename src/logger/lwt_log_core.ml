@@ -50,13 +50,13 @@ let string_of_level = function
 let level_of_string str =
   let str = (String.lowercase [@ocaml.warning "-3"]) str in
   match str with
-  | "debug" -> Ok Debug
-  | "info" -> Ok Info
-  | "notice" -> Ok Notice
-  | "warning" -> Ok Warning
-  | "error" -> Ok Error
-  | "fatal" -> Ok Fatal
-  | _ -> Pervasives.Error (Printf.sprintf "invalid log level (%s)" str)
+  | "debug" -> Some Debug
+  | "info" -> Some Info
+  | "notice" -> Some Notice
+  | "warning" -> Some Warning
+  | "error" -> Some Error
+  | "fatal" -> Some Fatal
+  | _ -> None
 
 (* +-----------------------------------------------------------------+
    | Patterns and rules                                              |
@@ -121,15 +121,15 @@ let load_rules' str fail_on_error =
     let pattern = split pattern in
     let level = level_of_string level_str in
     match level with
-    | Ok level -> (pattern, level) :: loop rest
-    | Pervasives.Error msg ->
-      if fail_on_error then raise (Failure msg)
+    | Some level -> (pattern, level) :: loop rest
+    | None ->
+      if fail_on_error then raise (Failure "Invalid log rules")
       else log_intern "invalid log level (%s)" level_str; loop rest
   in
   match Lwt_log_rules.rules (Lexing.from_string str) with
   | None ->
     if fail_on_error then raise (Failure "Invalid log rules")
-    else Printf.eprintf "Invalid contents of the LWT_LOG variable\n%!"
+    else Printf.eprintf "Invalid log rules\n%!"
   | Some l -> rules := loop l
 
 
