@@ -86,9 +86,30 @@ type section
 
 val string_of_level : level -> string
 
-val load_rules : string -> unit
+val level_of_string : string -> level option
+
+val load_rules : ?fail_on_error:bool -> string -> unit
   (** Reset the rules set when parsing the [LWT_LOG] environment variable using this
-      string. *)
+      string.
+
+      @param fail_on_error defines if the function will raise Failure if
+      it encounters a malformed rule
+      @raise Failure if an invalid rule is found and [fail_on_error] is true
+
+      [load_rules] parses the rules string and validates the rules before loading them.
+      If [fail_on_error] is [true], invalid rules will cause this function to
+      raise [Failure] and leave existing rules unchanged.
+      If [fail_on_error] is [false] (this is the default), it tries to load as
+      many rules as possible and ignore invalid ones.
+      If the rules string itself cannot be parsed, existing rules are always left
+      unchanged.
+
+      Example:
+      {[
+Lwt_log_core.load_rules ~fail_on_error:true "* -> nosuchlevel" (* Raises Failure *)
+Lwt_log_core.load_rules "* -> info"
+      ]}
+   *)
 
 val add_rule : string -> level -> unit
   (** [add_rule pattern level] adds a rule for sections logging

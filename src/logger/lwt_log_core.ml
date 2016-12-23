@@ -47,6 +47,17 @@ let string_of_level = function
   | Error -> "error"
   | Fatal -> "fatal"
 
+let level_of_string str =
+  let str = (String.lowercase [@ocaml.warning "-3"]) str in
+  match str with
+  | "debug" -> Some Debug
+  | "info" -> Some Info
+  | "notice" -> Some Notice
+  | "warning" -> Some Warning
+  | "error" -> Some Error
+  | "fatal" -> Some Fatal
+  | _ -> None
+
 (* +-----------------------------------------------------------------+
    | Patterns and rules                                              |
    +-----------------------------------------------------------------+ *)
@@ -101,31 +112,30 @@ let split pattern =
   in
   loop 0
 
-
 let rules = ref []
 
-let load_rules' str =
+let load_rules' str fail_on_error =
   let rec loop = function
-    | [] ->
-      []
-    | (pattern, level) :: rest ->
-      let pattern = split pattern in
-      match (String.lowercase [@ocaml.warning "-3"]) level with
-        | "debug" -> (pattern, Debug) :: loop rest
-        | "info" -> (pattern, Info) :: loop rest
-        | "notice" -> (pattern, Notice) :: loop rest
-        | "warning" -> (pattern, Warning) :: loop rest
-        | "error" -> (pattern, Error) :: loop rest
-        | "fatal" -> (pattern, Fatal) :: loop rest
-        | level -> log_intern "invalid log level (%s)" level; loop rest
+  | [] -> []
+  | (pattern, level_str) :: rest ->
+    let pattern = split pattern in
+    let level = level_of_string level_str in
+    match level with
+    | Some level -> (pattern, level) :: loop rest
+    | None ->
+      if fail_on_error then raise (Failure "Invalid log rules")
+      else log_intern "invalid log level (%s)" level_str; loop rest
   in
   match Lwt_log_rules.rules (Lexing.from_string str) with
-    | None -> Printf.eprintf "Invalid contents of the LWT_LOG variable\n%!"
-    | Some l -> rules := loop l
+  | None ->
+    if fail_on_error then raise (Failure "Invalid log rules")
+    else Printf.eprintf "Invalid log rules\n%!"
+  | Some l -> rules := loop l
+
 
 let _ =
   match try Some(Sys.getenv "LWT_LOG") with Not_found -> None with
-    | Some str -> load_rules' str
+    | Some str -> load_rules' str false
     | None -> ()
 
 (* +-----------------------------------------------------------------+
@@ -197,8 +207,8 @@ end
 
 type section = Section.t
 
-let load_rules str =
-  load_rules' str;
+let load_rules ?(fail_on_error=false) str =
+  load_rules' str fail_on_error;
   Section.recompute_levels ()
 
 let add_rule pattern level =
