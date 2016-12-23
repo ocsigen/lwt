@@ -24,8 +24,8 @@
    enhanced toplevel (the utop project). This module is deprecated. *)
 
 [@@@ocaml.deprecated
-"Use utop. See
-  https://github.com/diml/utop"]
+" Use utop. See
+   https://github.com/diml/utop"]
 
 open Lwt.Infix
 

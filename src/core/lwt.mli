@@ -319,13 +319,13 @@ type +'a result = ('a, exn) Result.result
 
 val make_value : 'a -> 'a result
   [@@ocaml.deprecated
-    "Use Result.Ok, which is the same as Ok since OCaml 4.03."]
+    " Use Result.Ok, which is the same as Ok since OCaml 4.03."]
   (** [value x] creates a result containing the value [x].
       @deprecated Since 2.6.0. Use {!Result.Ok} *)
 
 val make_error : exn -> 'a result
   [@@ocaml.deprecated
-    "Use Result.Error, which is the same as Error since OCaml 4.03."]
+    " Use Result.Error, which is the same as Error since OCaml 4.03."]
   (** [error e] creates a result containing the exception [e].
       @deprecated Since 2.6.0. Use {!Result.Error} *)
 

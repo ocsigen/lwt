@@ -863,13 +863,15 @@ val socketpair : socket_domain -> socket_type -> int -> file_descr * file_descr
 
 val bind : file_descr -> sockaddr -> unit
   [@@ocaml.deprecated
-"This function will soon return threads (-> unit Lwt.t), because the bind system
-call can block for Unix domain sockets. See
-  https://github.com/ocsigen/lwt/issues/230
-This will be a breaking change in Lwt 3.0.0.
-To keep using the current signature, use Lwt_unix.Versioned.bind_1
-To use the new non-blocking version immediately, use Lwt_unix.Versioned.bind_2
-Both alternatives require Lwt >= 2.7.0"]
+" This function will soon evaluate to a promise (-> unit Lwt.t), because the
+ bind system call can block for Unix domain sockets. See
+   https://github.com/ocsigen/lwt/issues/230
+ This will be a breaking change in Lwt 3.0.0.
+ If you don't use Unix domain sockets and use Lwt_unix.bind ... ; rather than
+ let () = Lwt_unix.bind ... in, you can ignore this warning.
+ To retain the current signature, use Lwt_unix.Versioned.bind_1
+ To use the new non-blocking version immediately, use Lwt_unix.Versioned.bind_2
+ Both alternatives require Lwt >= 2.7.0"]
 (** Binds an address to the given socket. This is the cooperative analog of
     {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALbind}
     [Unix.bind]}. See also
@@ -1327,7 +1329,7 @@ val execute_job :
   job : 'a job ->
   result : ('a job -> 'b) ->
   free : ('a job -> unit) -> 'b Lwt.t
-  [@@ocaml.deprecated "Use Lwt_unix.run_job."]
+  [@@ocaml.deprecated " Use Lwt_unix.run_job."]
   (** @deprecated Use [run_job]. *)
 
 (** {2 Notifications} *)
@@ -1403,8 +1405,8 @@ module Versioned :
 sig
   val bind_1 : file_descr -> sockaddr -> unit
     [@@ocaml.deprecated
-"Deprecated in favor of Lwt_unix.Versioned.bind_2. See
-  https://github.com/ocsigen/lwt/issues/230"]
+" Deprecated in favor of Lwt_unix.Versioned.bind_2. See
+   https://github.com/ocsigen/lwt/issues/230"]
   (** Alias for the current {!Lwt_unix.bind}.
 
       @deprecated Use {!bind_2}.
@@ -1420,9 +1422,9 @@ end
 (**/**)
 
 val run : 'a Lwt.t -> 'a
-  [@@ocaml.deprecated "Use Lwt_main.run."]
+  [@@ocaml.deprecated " Use Lwt_main.run."]
   (** @deprecated Use [Lwt_main.run]. *)
 
 val has_wait4 : bool
-  [@@ocaml.deprecated "Use Lwt_sys.have `wait4."]
+  [@@ocaml.deprecated " Use Lwt_sys.have `wait4."]
   (** @deprecated Use [Lwt_sys.have `wait4]. *)

@@ -52,5 +52,5 @@ val byte_order : byte_order
   (** The byte order used by the computer running the program. *)
 
 val windows : bool
-  [@@ocaml.deprecated "Use Sys.win32."]
+  [@@ocaml.deprecated " Use Sys.win32."]
   (** @deprecated Use [Sys.win32]. *)

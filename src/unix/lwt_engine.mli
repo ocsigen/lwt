@@ -157,12 +157,12 @@ class libev : object
     (** Returns [loop]. *)
 end
 [@@ocaml.deprecated
-"This class will soon have parameters for selecting a libev backend. This will
-be a breaking change in Lwt 3.0.0. See
-  https://github.com/ocsigen/lwt/pull/269
-To preserve the current signature, use Lwt_engine.Versioned.libev_1
-To use the replacement immediately, use Lwt_engine.Versioned.libev_2 ()
-Both alternatives require Lwt >= 2.7.0."]
+" This class will soon have parameters for selecting a libev backend. This will
+ be a breaking change in Lwt 3.0.0. See
+   https://github.com/ocsigen/lwt/pull/269
+ To preserve the current signature, use Lwt_engine.Versioned.libev_1
+ To use the replacement immediately, use Lwt_engine.Versioned.libev_2 ()
+ Both alternatives require Lwt >= 2.7.0."]
 
 (** Engine based on [Unix.select]. *)
 class select : t

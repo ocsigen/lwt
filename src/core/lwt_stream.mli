@@ -263,7 +263,7 @@ val closed : 'a t -> unit Lwt.t
       @since 2.6.0 *)
 
 val on_termination : 'a t -> (unit -> unit) -> unit
-  [@@ocaml.deprecated "Bind on Lwt_stream.closed."]
+  [@@ocaml.deprecated " Bind on Lwt_stream.closed."]
   (** [on_termination st f] executes [f] when the end of the stream [st]
       is reached. Note that the stream may still contain elements if
       {!peek} or similar was used.
@@ -271,7 +271,7 @@ val on_termination : 'a t -> (unit -> unit) -> unit
       @deprecated Use {!closed}. *)
 
 val on_terminate : 'a t -> (unit -> unit) -> unit
-  [@@ocaml.deprecated "Bind on Lwt_stream.closed."]
+  [@@ocaml.deprecated " Bind on Lwt_stream.closed."]
   (** Same as {!on_termination}.
 
       @deprecated Use {!closed}. *)
@@ -388,15 +388,15 @@ type 'a result =
   | Value of 'a
   | Error of exn
   [@@ocaml.deprecated
-"This type is being replaced by Lwt.result and the corresponding function
-Lwt_stream.wrap_exn."]
+" This type is being replaced by Lwt.result and the corresponding function
+ Lwt_stream.wrap_exn."]
 (** A value or an error.
 
     @deprecated Replaced by {!wrap_exn}, which uses {!Lwt.result}. *)
 
 [@@@ocaml.warning "-3"]
 val map_exn : 'a t -> 'a result t
-  [@@ocaml.deprecated "Use Lwt_stream.wrap_exn"]
+  [@@ocaml.deprecated " Use Lwt_stream.wrap_exn"]
 (** [map_exn s] returns a stream that captures all exceptions raised
     by the source of the stream (the function passed to {!from}).
 

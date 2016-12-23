@@ -419,16 +419,16 @@ val establish_server :
   ?backlog : int ->
   Unix.sockaddr -> (input_channel * output_channel -> unit) -> server
 [@@ocaml.deprecated
-"The signature and semantics of this function will soon change:
-- the callback parameter f will evaluate to a thread (-> unit Lwt.t),
-- channels will be closed automatically when that thread completes, to avoid
-  leaking file descriptors, and
-- the result will be a thread (-> server Lwt.t).
-This will be breaking change in Lwt 3.0.0. See
-  https://github.com/ocsigen/lwt/pull/258
-To keep the current functionality, use Lwt_io.Versioned.establish_server_1
-To use the safer version immediately, use Lwt_io.Versioned.establish_server_2
-Both alternatives require Lwt >= 2.7.0"]
+" The signature and semantics of this function will soon change:
+ - the callback parameter f will evaluate to a promise (-> unit Lwt.t),
+ - channels will be closed automatically when that promise resolves, to avoid
+   leaking file descriptors, and
+ - the result will be a promise (-> server Lwt.t).
+ This will be breaking change in Lwt 3.0.0. See
+   https://github.com/ocsigen/lwt/pull/258
+ To keep the current functionality, use Lwt_io.Versioned.establish_server_1
+ To use the safer version immediately, use Lwt_io.Versioned.establish_server_2
+ Both alternatives require Lwt >= 2.7.0."]
   (** [establish_server ?fd ?buffer_size ?backlog sockaddr f] creates a server
       which listens for incoming connections. New connections are passed to [f].
 
@@ -457,13 +457,12 @@ Both alternatives require Lwt >= 2.7.0"]
 
 val shutdown_server : server -> unit
 [@@ocaml.deprecated
-"This function will soon evaluate to a thread that waits for the close system
-call to complete. This will be a breaking change in Lwt 3.0.0, for some builds.
-See
-  https://github.com/ocsigen/lwt/issues/259
-To keep the current signature, use Lwt_io.Versioned.shutdown_server_1
-To use the new version immediately, use Lwt_io.Versioned.shutdown_server_2
-Both alternatives require Lwt >= 2.7.0"]
+" This function will soon evaluate to a promise that resolves when the close
+ system call completes. This will be a breaking change in Lwt 3.0.0. See
+   https://github.com/ocsigen/lwt/issues/259
+ To keep the current signature, use Lwt_io.Versioned.shutdown_server_1
+ To use the new version immediately, use Lwt_io.Versioned.shutdown_server_2
+ Both alternatives require Lwt >= 2.7.0."]
   (** Closes the given server's listening socket. This function does not wait
       for the [close] operation to actually complete. It does not affect the
       sockets of connections that have already been accepted, i.e. passed to [f]
@@ -593,8 +592,8 @@ sig
     ?backlog : int ->
     Unix.sockaddr -> (input_channel * output_channel -> unit) -> server
   [@@ocaml.deprecated
-"Deprecated in favor of Lwt_io.Versioned.establish_server_2. See
-  https://github.com/ocsigen/lwt/pull/258"]
+" Deprecated in favor of Lwt_io.Versioned.establish_server_2. See
+   https://github.com/ocsigen/lwt/pull/258"]
   (** Alias for the current {!Lwt_io.establish_server}.
 
       @deprecated Use {!establish_server_2}.
@@ -630,8 +629,8 @@ sig
 
   val shutdown_server_1 : server -> unit
   [@@ocaml.deprecated
-"Deprecated in favor of Lwt_io.Versioned.shutdown_server_2. See
-  https://github.com/ocsigen/lwt/issues/259"]
+" Deprecated in favor of Lwt_io.Versioned.shutdown_server_2. See
+   https://github.com/ocsigen/lwt/issues/259"]
   (** Alias for the current {!Lwt_io.shutdown_server}.
 
       @deprecated Use {!shutdown_server_2}.

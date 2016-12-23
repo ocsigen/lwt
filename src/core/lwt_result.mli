@@ -25,7 +25,7 @@
 (** This module provides helpers for values of type [('a, 'b) result Lwt.t].
     The module is experimental and may change in the future. *)
 
-[@@@ocaml.deprecated "This module will be removed in the future."]
+[@@@ocaml.deprecated " This module will be removed in the future."]
 
 type (+'a, +'b) t = ('a, 'b) Result.result Lwt.t
 
