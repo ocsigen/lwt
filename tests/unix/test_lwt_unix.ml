@@ -600,7 +600,12 @@ let bind_tests = [
       (try Unix.unlink actual_path
       with _ -> ());
 
-      Lwt.return (chosen_path = actual_path));
+      (* Compare with a prefix of the actual path, due to
+         https://github.com/ocaml/ocaml/pull/987 *)
+      try
+        Lwt.return
+          (chosen_path = String.sub actual_path 0 (String.length chosen_path))
+      with Invalid_argument _ -> Lwt.return_false);
 ]
 
 let suite =
