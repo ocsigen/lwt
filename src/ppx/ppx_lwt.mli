@@ -193,6 +193,16 @@ $ ocamlfind ocamlc -package lwt.ppx \
 
    {2 Sequence}
 
+   With OCaml 4.04.0 and on a convenient syntax is available for sequencing Lwt
+   operations using [;%lwt].  This allows free mixing of standard [;]
+   sequencing and [;%lwt] sequencing without extra parentheses:
+   {[
+     let i = ref 0 in
+     write stdout "Hello, ";%lwt
+     incr i;
+     write stdout "world!"
+   ]}
+
    It is also possible to sequence Lwt operations with the [>>] operator:
    {[
      write stdout "Hello, " >> write stdout "world!"
