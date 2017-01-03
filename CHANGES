@@ -1,3 +1,69 @@
+===== 2.7.0 (2017-01-03) =====
+
+====== General ======
+
+  * Values of types a Lwt.t are now referred to as promises rather than threads
+    (#300). The manual has not yet been updated.
+
+====== Breaking ======
+
+  * After this release, Lwt will switch to semantic versioning. Future breaking
+    changes will first require deprecation, then a major version number increase
+    (#293).
+  * Lwt no longer supports OCaml 4.01 (#272).
+  * Lwt_unix.fdatasync is no longer available on macOS. It was calling an
+    undocumented system call on that system (#285, Jeremy Yallop).
+
+====== Planned to break in 3.0.0 ======
+
+  * APIs in this category have deprecation messages attached. The messages will
+    be displayed if you recompile your code, and can also be seen in #308.
+  * Lwt_engine.libev will have an argument for selecting the libev back end
+    (#269, #294, Jeremy Yallop).
+  * Lwt_io.establish_server will be replaced by a version that makes it
+    difficult to leak file descriptors (#258, #260).
+  * Lwt_io.shutdown_server will evaluate to a promise, which indicates when the
+    close operation completes (#259).
+  * Lwt_unix.bind will evaluate to a promise, since bind can block for Unix
+    domain sockets (#296, requested David Sheets).
+  * ocamlfind packages lwt.react, lwt.ssl, and lwt.glib will be replaced by the
+    new lwt_react, lwt_ssl, and lwt_glib. These are now distributed in new OPAM
+    packages with the same names, separately from OPAM package lwt (#301).
+
+====== Additions ======
+
+  * Lwt_unix.readv and Lwt_unix.writev - zero-copy scatter/gather I/O
+    (#291, #299).
+  * ?fail_on_error argument for Lwt_log.load_rules (#306, Daniil Baturin).
+  * Lwt_log.level_of_string (#306, Daniil Baturin).
+
+====== Changes ======
+
+  * Lwt_stream.of_list, Lwt_stream.of_array, Lwt_stream.of_string now
+    immediately push all elements into the created streams
+    (#239, Spiros Eliopoulos).
+
+====== Deprecations ======
+
+  * Lwt_stream.map_exn in favor of Lwt_stream.wrap_exn, which uses OCaml's
+    standard result type (#295).
+
+====== Bugs fixed ======
+
+  * Ungraceful failure if directory handle used after Lwt_unix.closedir (#292).
+  * Buffer overflow in Lwt_unix.readdir and Lwt_unix.readdir_n (#292).
+  * Unnecessary allocations in Lwt_unix.readdir_n (#292, found Jeremly Yallop).
+
+====== Miscellaneous ======
+
+  * Annotate existing deprecations with [@@ocaml.deprecated ...] (5737f5b).
+  * Improvements to the examples (#288, Rich Neswold).
+  * Documentation fixes, including by Rich Neswold.
+  * New tests and various minor internal improvements.
+  * Run tests in CI with all OCaml warnings enabled (dadb926).
+  * Much cleaner build output.
+  * Add scratch/ directory for local use by developers.
+
 ===== 2.6.0 (2016-10-27) =====
 
 ====== Additions ======
