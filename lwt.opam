@@ -55,3 +55,15 @@ conflicts: [
   "ppx_tools" {< "1.0.0" }
 ]
 available: [ocaml-version >= "4.02.0" & compiler != "4.02.1+BER"]
+messages: [
+  "For module Lwt_ssl, please install package lwt_ssl"
+  {ssl:installed & !lwt_ssl:installed}
+  "For module Lwt_glib, please install package lwt_glib"
+  {lablgtk:installed & !lwt_glib:installed}
+  "For module Lwt_react, please install package lwt_react"
+  {react:installed & !lwt_react:installed}
+]
+post-messages: [
+  "The future Lwt 3.0.0 will make minor breaking changes near 1 April 2017. See
+  https://github.com/ocsigen/lwt/issues/308"
+]
