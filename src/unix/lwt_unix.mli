@@ -871,7 +871,7 @@ val bind : file_descr -> sockaddr -> unit
  let () = Lwt_unix.bind ... in, you can ignore this warning.
  To retain the current signature, use Lwt_unix.Versioned.bind_1
  To use the new non-blocking version immediately, use Lwt_unix.Versioned.bind_2
- Both alternatives require Lwt >= 2.7.0"]
+ Both alternatives require Lwt >= 2.7.0."]
 (** Binds an address to the given socket. This is the cooperative analog of
     {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALbind}
     [Unix.bind]}. See also
