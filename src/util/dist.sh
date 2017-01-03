@@ -8,36 +8,50 @@
 # Script to build the release
 
 set -e
+set -x
 
-# Extract project parameters from _oasis
-NAME=`oasis query Name 2> /dev/null`
+# Extract project version from _oasis.
 VERSION=`oasis query Version 2> /dev/null`
-PREFIX=$NAME-$VERSION
 
 # Clean setup.data and other generated files.
 make clean
 make distclean
 
-# Create a branch for the release
+# Create a branch for the release.
 git checkout -b release-$VERSION
 
-# Generate files
+# Generate files.
 oasis setup
 
 # Set release mode in the Makefile
 sed 's/^SETUP := setup-dev.exe.*/SETUP := setup.exe/' Makefile > Makefile.new
 mv Makefile.new Makefile
 
-# Adjust opam files
-for FILE in `ls *.opam`
+# Set the version in lwt.opam to the version in _oasis, and remove the oasis
+# dependency.
+sed "s/^version: \"dev\"/version: \"$VERSION\"/" lwt.opam > lwt.opam.1
+grep -vi oasis lwt.opam.1 > lwt.opam
+rm lwt.opam.1
+
+# Set the version in additional packages based on their META files, and remove
+# the '| "dev"' constraint on lwt.
+for FILE in `ls lwt_*.opam`
 do
-    sed "s/^version: \"dev\"/version: \"$VERSION\"/" $FILE > $FILE.1
-    grep -vi oasis $FILE.1 > $FILE
-    rm $FILE.1
+    PACKAGE=${FILE#lwt_}
+    PACKAGE=${PACKAGE%.opam}
+    PACKAGE_VERSION=`cat src/$PACKAGE/META | grep version`
+    PACKAGE_VERSION=`echo $PACKAGE_VERSION | egrep -o '[0-9]+\.[0-9]+\.[0-9]+'`
+    sed "s/^version: \"dev\"/version: \"$PACKAGE_VERSION\"/" $FILE > $FILE.1
+    sed "s/\"lwt\" {(/\"lwt\" {/" $FILE.1 > $FILE
+    sed "s/) | \"dev\"//" $FILE > $FILE.1
+    mv $FILE.1 $FILE
 done
 
-# Remove dev-files
-rm -f .jenkins.sh appveyor.yml .travis.yml *.exe configure _oasis
+# Remove development files.
+rm -f \
+    .jenkins.sh appveyor.yml .travis.yml *.exe configure _oasis .merlin \
+    src/util/appveyor-build.sh src/util/appveyor-install.sh src/util/dist.sh \
+    src/util/fetch-dependees.py src/util/travis.sh
 
 # Commit
 git add --all --force
