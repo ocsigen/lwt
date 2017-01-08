@@ -9,5 +9,9 @@ setup.exe
 setup-dev.exe
 _opam
 
+# Coverage analysis.
+bisect*.out
+_coverage/
+
 # For local work, tests, etc.
 scratch/

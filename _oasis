@@ -95,6 +95,10 @@ Flag pthread
   Description: Use pthread
   Default$: !os_type(Win32)
 
+Flag coverage
+  Description: Instrument for coverage analysis
+  Default: false
+
 # +-------------------------------------------------------------------+
 # | Libraries                                                         |
 # +-------------------------------------------------------------------+

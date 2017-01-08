@@ -38,7 +38,7 @@ doc: $(SETUP) setup.data build
 doc-api: $(SETUP) setup.data build
 	./$(SETUP) -build lwt-api.docdir/index.html
 
-test: $(SETUP) setup.data build
+test: $(SETUP) setup.data build clean-coverage
 	./$(SETUP) -test $(TESTFLAGS)
 
 all: $(SETUP)
@@ -53,12 +53,16 @@ uninstall: $(SETUP) setup.data
 reinstall: $(SETUP) setup.data
 	./$(SETUP) -reinstall $(REINSTALLFLAGS)
 
-clean: $(SETUP)
+clean: $(SETUP) clean-coverage
 	./$(SETUP) -clean $(CLEANFLAGS)
 
 distclean: $(SETUP)
 	./$(SETUP) -distclean $(DISTCLEANFLAGS)
 	rm -rf setup*.exe
+
+clean-coverage:
+	rm -rf bisect*.out
+	rm -rf _coverage/
 
 configure: $(SETUP)
 	./$(SETUP) -configure $(CONFIGUREFLAGS)
@@ -66,4 +70,9 @@ configure: $(SETUP)
 setup.data: $(SETUP)
 	./$(SETUP) -configure $(CONFIGUREFLAGS)
 
-.PHONY: default setup build doc test all install uninstall reinstall clean distclean configure
+coverage: test
+	bisect-ppx-report -I _build/ -html _coverage/ bisect*.out
+	bisect-ppx-report -text - -summary-only bisect*.out
+	@echo See _coverage/index.html
+
+.PHONY: default setup build doc test all install uninstall reinstall clean distclean configure coverage

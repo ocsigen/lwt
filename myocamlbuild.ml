@@ -84,19 +84,29 @@ let conditional_warnings_as_errors () =
   | exception Not_found -> ()
 
 let () = dispatch begin fun hook ->
+  let env =
+    BaseEnvLight.load
+      ~allow_empty:true
+      ~filename:(Pathname.basename BaseEnvLight.default_filename)
+      ()
+  in
+
   dispatch_default hook;
+
   match hook with
   | Before_options ->
     Options.make_links := false
 
-  | After_rules ->
-    let env =
-      BaseEnvLight.load
-        ~allow_empty:true
-        ~filename:(Pathname.basename BaseEnvLight.default_filename)
-        ()
-    in
+  | After_options ->
+    if BaseEnvLight.var_get "coverage" env = "true" then
+      Options.tag_lines :=
+        ["<src/**>: package(bisect_ppx)";
+         "<**/lwt_config.*>: -package(bisect_ppx)";
+         "<tests/**/*.native> or <tests/**/*.byte>: package(bisect_ppx)";
+         "<doc/examples/**>: package(bisect_ppx)"]
+        @ !Options.tag_lines
 
+  | After_rules ->
     (* Determine extension of CompiledObject: best *)
     let native_suffix =
       if BaseEnvLight.var_get "is_native" env = "true"
