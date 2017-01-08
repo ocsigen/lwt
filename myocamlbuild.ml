@@ -97,16 +97,6 @@ let () =
                then "native" else "byte"
              in
 
-             (* Internal syntax extension *)
-             List.iter
-               (fun base ->
-                  let tag = "pa_" ^ base and file = "src/camlp4/pa_" ^ base ^ ".cmo" in
-                  flag ["ocaml"; "compile"; tag] & S[A"-ppopt"; A file];
-                  flag ["ocaml"; "ocamldep"; tag] & S[A"-ppopt"; A file];
-                  flag ["ocaml"; "doc"; tag] & S[A"-ppopt"; A file];
-                  dep ["ocaml"; "ocamldep"; tag] [file])
-               ["lwt_options"; "lwt"; "lwt_log"];
-
              flag ["ocaml"; "compile"; "ppx_lwt"] &
               S [A "-ppx"; A ("src/ppx/ppx_lwt_ex." ^ native_suffix)];
 
