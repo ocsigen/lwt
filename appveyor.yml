@@ -37,7 +37,7 @@ build_script:
   - '%CYGSH% "cd /cygdrive/c/projects/lwt ; src/util/appveyor-build.sh"'
 
 cache:
-  - '..\opam-cache-%SYSTEM%-%COMPILER%-%LIBEV%.tar -> opam, appveyor.yml, src\util\appveyor*.sh'
+  - '..\opam-cache-%SYSTEM%-%COMPILER%-%LIBEV%.tar -> lwt*.opam, appveyor.yml, src\util\appveyor*.sh'
 
 on_finish:
   - ps: 'if ($env:LWT_APPVEYOR_DEBUG -eq "yes") { $blockRdp = $true; iex ((new-object net.webclient).DownloadString("https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1")) }'
