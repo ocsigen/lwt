@@ -23,6 +23,8 @@ install:
   - 'IF "%ARCH%"=="x86" (SET CYGSETUP=C:\Cygwin\setup-x86) ELSE (SET CYGSETUP=C:\Cygwin64\setup-x86_64)'
 
   - 'IF "%LWT_APPVEYOR_DEBUG%"=="yes" (%CYGSETUP% -q -P nano)'
+  # Workaround for aantron/binaries#1.
+  - '%CYGSETUP% -q -P patch'
 
   - 'IF "%SYSTEM%"=="cygwin" (%CYGSETUP% -q -P openssl-devel)'
   - 'IF "%LIBEV%"=="yes" (%CYGSETUP% -q -P libev-devel)'
