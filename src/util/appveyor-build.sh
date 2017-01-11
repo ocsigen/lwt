@@ -8,4 +8,9 @@ else
     PACKAGES="lwt lwt_react"
 fi
 
-opam install -y --build-test --keep-build-dir --verbose $PACKAGES
+opam install -y --keep-build-dir --verbose $PACKAGES
+cd `opam config var lib`/../build/lwt.*
+ocaml setup.ml -configure --enable-tests
+make test
+
+! opam list -i batteries

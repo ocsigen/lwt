@@ -21,13 +21,16 @@ then
     opam pin add -y --no-action lwt_glib .
 
     opam install -y --deps-only lwt
+    opam install -y react
     # Install OUnit here; otherwie --build-test on installation of Lwt seems to
     # trigger recompilation of ocamlmod.
     opam install -y ounit
-    opam install -y camlp4 react
+    opam install -y camlp4
 
     if [ "$SYSTEM" = cygwin ]
     then
+        opam install -y ssl
+
         if [ "$LIBEV" = yes ]
         then
             opam install -y conf-libev

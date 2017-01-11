@@ -17,6 +17,6 @@ remove: [
     ["ocamlfind" "remove" "lwt_react"]
 ]
 depends: [
-  "lwt" {(>= "2.7.0" & < "3.0.0") | "dev"}
+  "lwt" {= "dev"}
   "react" {>= "1.0.0"}
 ]

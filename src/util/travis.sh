@@ -128,13 +128,16 @@ opam pin add -y --no-action lwt_react .
 opam pin add -y --no-action lwt_ssl .
 opam pin add -y --no-action lwt_glib .
 
-opam install -y ocamlbuild ocamlfind oasis camlp4 ppx_tools result
+opam install -y ocamlfind ocamlbuild oasis camlp4 ppx_tools result
+opam install -y react lablgtk ssl
 # Install OUnit here; otherwie --build-test on installation of Lwt seems to
 # trigger recompilation of ocamlmod.
 opam install -y ounit
 
-opam install -y --build-test --keep-build-dir --verbose \
-    lwt lwt_react lwt_ssl lwt_glib
+opam install -y --keep-build-dir --verbose lwt lwt_react lwt_ssl lwt_glib
+cd `opam config var lib`/../build/lwt.*
+ocaml setup.ml -configure --enable-tests
+make test
 
 
 
@@ -145,3 +148,4 @@ then
 fi
 
 opam list -i ppx_tools
+! opam list -i batteries
