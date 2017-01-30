@@ -910,6 +910,33 @@ let rec iter_p_rec node f s =
 
 let iter_p f s = iter_p_rec s.node f s
 
+let iter_n ?(max_threads = 1) f stream =
+  begin
+    if max_threads <= 0 then
+      let message =
+        Printf.sprintf "Lwt_stream.iter_n: max_threads must be > 0, %d given"
+          max_threads
+      in
+      invalid_arg message
+  end;
+  let rec loop running available =
+    begin
+      if available > 0 then (
+        Lwt.return (running, available)
+      )
+      else (
+        Lwt.nchoose_split running >>= fun (complete, running) ->
+        Lwt.return (running, available + List.length complete)
+      )
+    end >>= fun (running, available) ->
+    get stream >>= function
+    | None ->
+      Lwt.join running
+    | Some elt ->
+      loop (f elt :: running) (pred available)
+  in
+  loop [] max_threads
+
 let rec find_rec node f s =
   if node == !(s.last) then
     feed s >>= fun () -> find_rec node f s
