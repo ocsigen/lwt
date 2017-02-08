@@ -94,6 +94,15 @@ external test : unit -> unit = \"lwt_test\"
 let () = test ()
 "
 
+let trivial_code = "
+#include <caml/mlvalues.h>
+
+CAMLprim value lwt_test(value Unit)
+{
+  return Val_unit;
+}
+"
+
 let pthread_code = "
 #include <caml/mlvalues.h>
 #include <pthread.h>
@@ -549,6 +558,10 @@ let () =
   let have_pkg_config = !not_available = [] in
   not_available := [];
 
+  let test_basic_compilation () =
+    test_code ([], []) trivial_code
+  in
+
   let test_libev () =
     let opt, lib =
       lib_flags "LIBEV"
@@ -611,6 +624,14 @@ let () =
     end in
     fprintf config "#define NANOSEC%s\n" conversion
   in
+
+  if not (test_basic_compilation ()) then begin
+    printf "
+Error: failed to compile a trivial ocaml toplevel.
+You may be missing core components (compiler, ncurses, etc)
+";
+    exit 1
+  end;
 
   test_feature ~do_check:!use_libev "libev" "HAVE_LIBEV" test_libev;
   test_feature ~do_check:!use_pthread "pthread" "HAVE_PTHREAD" test_pthread;
