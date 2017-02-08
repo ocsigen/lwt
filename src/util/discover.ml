@@ -547,6 +547,18 @@ let () =
              safe_remove (Filename.chop_extension !caml_file ^ ".cmi");
              safe_remove (Filename.chop_extension !caml_file ^ ".cmo"));
 
+  let exit status =
+    if status <> 0 then begin
+      if !debug then printf "
+See %s for more details.
+      " !log_file
+      else printf "
+Run with DEBUG=y for more details.
+      ";
+    end;
+    exit status
+  in
+
   let setup_data = ref [] in
 
   (* Test for pkg-config. *)
