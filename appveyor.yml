@@ -6,7 +6,8 @@ environment:
   matrix:
     - {SYSTEM: mingw, ARCH: x86_64, COMPILER: 4.03}
     - {SYSTEM: cygwin, ARCH: x86, COMPILER: 4.04}
-    - {SYSTEM: cygwin, ARCH: x86, COMPILER: 4.04, LIBEV: yes}
+    # Temporary workaround; see commit message.
+    # - {SYSTEM: cygwin, ARCH: x86, COMPILER: 4.04, LIBEV: yes}
 
   global:
     LWT_WARNINGS_AS_ERRORS: yes
