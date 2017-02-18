@@ -906,7 +906,7 @@ let file_exists name =
     (fun _ -> Lwt.return_true)
     (fun e ->
        match e with
-       | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return_false
+       | Unix.Unix_error _ -> Lwt.return_false
        | _ -> Lwt.fail e) [@ocaml.warning "-4"]
 
 external utimes_job : string -> float -> float -> unit job =
@@ -1002,7 +1002,7 @@ struct
       (fun _ -> Lwt.return_true)
       (fun e ->
          match e with
-         | Unix.Unix_error (Unix.ENOENT, _, _) -> Lwt.return_false
+         | Unix.Unix_error _ -> Lwt.return_false
          | _ -> Lwt.fail e) [@ocaml.warning "-4"]
 
 end

@@ -570,7 +570,19 @@ val fstat : file_descr -> stats Lwt.t
   (** Wrapper for [Unix.fstat] *)
 
 val file_exists : string -> bool Lwt.t
-  (** [file_exists name] tests if a file named [name] exists. *)
+  (** [file_exists name] tests if a file named [name] exists.
+
+      Note that [file_exists] behaves similarly to
+      {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Sys.html#VALfile_exists}
+      [Sys.file_exists]}:
+
+      - "file" is interpreted as "directory entry" in this context
+
+      - [file_exists name] will return [false] in
+        circumstances that would make {!stat} raise a
+        {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#EXCEPTIONUnix_error}
+        [Unix.Unix_error]} exception.
+     *)
 
 val utimes : string -> float -> float -> unit Lwt.t
 (** [utimes path atime mtime] updates the access and modification times of the
@@ -626,7 +638,19 @@ module LargeFile : sig
     (** Wrapper for [Unix.LargeFile.fstat] *)
 
   val file_exists : string -> bool Lwt.t
-    (** [file_exists name] tests if a file named [name] exists. *)
+    (** [file_exists name] tests if a file named [name] exists.
+
+        Note that [file_exists] behaves similarly to
+        {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Sys.html#VALfile_exists}
+        [Sys.file_exists]}:
+
+        - "file" is interpreted as "directory entry" in this context
+
+        - [file_exists name] will return [false] in
+          circumstances that would make {!stat} raise a
+          {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#EXCEPTIONUnix_error}
+          [Unix.Unix_error]} exception.
+     *)
 end
 
 (** {2 Operations on file names} *)
