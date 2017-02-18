@@ -26,7 +26,7 @@
 
 val run : 'a Lwt.t -> 'a
   (** [run t] calls the Lwt scheduler repeatedly until [t] terminates,
-      then returns the value returned by the thread. It [t] fails with
+      then returns the value returned by the thread. If [t] fails with
       an exception, this exception is raised.
 
       Note that you should avoid using [run] inside threads
