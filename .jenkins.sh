@@ -1,8 +1,3 @@
-if ocaml -version | grep '4\.01'
-then
-    exit 0
-fi
-
 opam pin add --no-action lwt .
 opam install camlp4
 opam install ssl lablgtk react conf-libev
