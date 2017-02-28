@@ -9,6 +9,7 @@ packages_apt () {
         4.02) PPA=avsm/ocaml42+opam12;;
         4.03) PPA=avsm/ocaml42+opam12; DO_SWITCH=yes;;
         4.04) PPA=avsm/ocaml42+opam12; DO_SWITCH=yes;;
+        4.05) PPA=avsm/ocaml42+opam12; DO_SWITCH=yes;;
            *) echo Unsupported compiler $COMPILER; exit 1;;
     esac
 
@@ -85,6 +86,7 @@ case $COMPILER in
     4.02) OCAML_VERSION=4.02.3;;
     4.03) OCAML_VERSION=4.03.0;;
     4.04) OCAML_VERSION=4.04.0;;
+    4.05) OCAML_VERSION=4.05.0+beta2;;
     system) OCAML_VERSION=`ocamlc -version`;;
        *) echo Unsupported compiler $COMPILER; exit 1;;
 esac
