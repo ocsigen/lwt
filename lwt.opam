@@ -35,6 +35,7 @@ depends: [
   "ocamlfind" {build & >= "1.5.0"}
   "ocamlbuild" {build}
   "result"
+  "cppo"
   # See https://github.com/ocsigen/lwt/issues/266
   ( "base-no-ppx" | "ppx_tools" {build} )
   ## OASIS is not required in released version

@@ -31,7 +31,8 @@ XDevFilesEnableMakefile: false
 PostConfCommand: ocaml src/util/discover.ml -ext-obj $ext_obj -exec-name $default_executable_name -use-libev $libev -os-type $os_type -use-glib $glib -ccomp-type $ccomp_type -use-pthread $pthread -use-unix $unix -android-target $android_target -libev_default $libev_default
 PostDistCleanCommand: $rm src/unix/lwt_config.h src/unix/lwt_config.ml src/unix/lwt_unix_jobs_generated.ml src/unix/jobs-unix/*
 
-AlphaFeatures: pure_interface
+AlphaFeatures: pure_interface, ocamlbuild_more_args
+XOCamlbuildPluginTags: package(cppo_ocamlbuild)
 
 Synopsis: Monadic promises and concurrent I/O
 Description:
