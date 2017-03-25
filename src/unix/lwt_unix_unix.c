@@ -1125,19 +1125,20 @@ static int open_flag_table[] = {
   O_RSYNC,
   0,
 #ifdef O_CLOEXEC
-  O_CLOEXEC
+  O_CLOEXEC,
 #else
 #define NEED_CLOEXEC_EMULATION
-  0
+  0,
 #endif
+  0
 };
 
 #ifdef NEED_CLOEXEC_EMULATION
-static int open_cloexec_table[14] = {
+static int open_cloexec_table[15] = {
   0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0,
   0,
-  1
+  1, 0
 };
 #endif
 
