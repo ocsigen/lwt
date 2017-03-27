@@ -1125,7 +1125,7 @@ static int open_flag_table[] = {
   O_DSYNC,
   O_SYNC,
   O_RSYNC,
-  0,
+  0, /* O_SHARE_DELETE, Windows-only */
   0, /* O_CLOEXEC, treated specially */
   0  /* O_KEEPEXEC, treated specially */
 };
