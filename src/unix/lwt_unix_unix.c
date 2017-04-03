@@ -1166,12 +1166,12 @@ static void worker_open(struct job_open *job)
     cloexec = 0;
 #endif
 
-#if !defined(NEED_CLOEXEC_EMULATION)
+#if defined(O_CLOEXEC)
   if (cloexec) job->flags |= O_CLOEXEC;
 #endif
 
   fd = open(job->name, job->flags, job->perms);
-#if defined(NEED_CLOEXEC_EMULATION) && defined(FD_CLOEXEC)
+#if !defined(O_CLOEXEC) && defined(FD_CLOEXEC)
   if (fd >= 0 && cloexec) {
     int flags = fcntl(fd, F_GETFD, 0);
 
