@@ -41,7 +41,8 @@ let test_cloexec assertion flags =
           Lwt_unix.close fd >>= fun () ->
           Lwt_unix.waitpid [] n >>= function
             | _, Unix.WEXITED 0 -> Lwt.return_true
-            | _ -> Lwt.return_false
+            | _, (Unix.WEXITED _ | Unix.WSIGNALED _ | Unix.WSTOPPED _) ->
+                Lwt.return_false
 
 let openfile_tests = [
   test "openfile: O_CLOEXEC"
