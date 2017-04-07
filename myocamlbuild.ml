@@ -91,6 +91,8 @@ let () = dispatch begin fun hook ->
       ()
   in
 
+  Ocamlbuild_cppo.dispatcher hook;
+
   dispatch_default hook;
 
   match hook with

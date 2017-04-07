@@ -26,6 +26,8 @@
 
 #define ARGS(args...) args
 
+#include <caml/version.h>
+#include <caml/unixsupport.h>
 #include <sys/uio.h>
 #include <sys/un.h>
 #include <sys/time.h>
@@ -1124,28 +1126,24 @@ static int open_flag_table[] = {
   O_SYNC,
   O_RSYNC,
   0,
-#ifdef O_CLOEXEC
-  O_CLOEXEC
-#else
-#define NEED_CLOEXEC_EMULATION
-  0
-#endif
+  0, /* O_CLOEXEC, treated specially */
+  0  /* O_KEEPEXEC, treated specially */
 };
 
-#ifdef NEED_CLOEXEC_EMULATION
-static int open_cloexec_table[14] = {
+enum { CLOEXEC = 1, KEEPEXEC = 2 };
+
+static int open_cloexec_table[15] = {
   0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0,
   0,
-  1
+  CLOEXEC, KEEPEXEC
 };
-#endif
 
 struct job_open {
   struct lwt_unix_job job;
   int flags;
   int perms;
-  int fd;
+  int fd; /* will have value CLOEXEC or KEEPEXEC on entry to worker_open */
   int blocking;
   int error_code;
   char *name;
@@ -1155,10 +1153,28 @@ struct job_open {
 static void worker_open(struct job_open *job)
 {
   int fd;
+  int cloexec;
+
+  if (job->fd & CLOEXEC)
+    cloexec = 1;
+  else if (job->fd & KEEPEXEC)
+    cloexec = 0;
+  else
+#if OCAML_VERSION_MAJOR >= 4 && OCAML_VERSION_MINOR >= 5
+    cloexec = unix_cloexec_default;
+#else
+    cloexec = 0;
+#endif
+
+#if defined(O_CLOEXEC)
+  if (cloexec) job->flags |= O_CLOEXEC;
+#endif
+
   fd = open(job->name, job->flags, job->perms);
-#if defined(NEED_CLOEXEC_EMULATION) && defined(FD_CLOEXEC)
-  if (fd >= 0 && job->fd) {
+#if !defined(O_CLOEXEC) && defined(FD_CLOEXEC)
+  if (fd >= 0 && cloexec) {
     int flags = fcntl(fd, F_GETFD, 0);
+
     if (flags == -1 ||
         fcntl(fd, F_SETFD, flags | FD_CLOEXEC) == -1) {
       int serrno = errno;
@@ -1193,9 +1209,7 @@ static value result_open(struct job_open *job)
 CAMLprim value lwt_unix_open_job(value name, value flags, value perms)
 {
   LWT_UNIX_INIT_JOB_STRING(job, open, 0, name);
-#ifdef NEED_CLOEXEC_EMULATION
-  job->fd = caml_convert_flag_list(flags, open_cloexec_table) != 0;
-#endif
+  job->fd = caml_convert_flag_list(flags, open_cloexec_table);
   job->flags = caml_convert_flag_list(flags, open_flag_table);
   job->perms = Int_val(perms);
   return lwt_unix_alloc_job(&(job->job));

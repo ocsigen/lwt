@@ -1,6 +1,10 @@
 # -*- conf -*-
 not <src/ssl/*>: safe_string
 
+# cppo pre-processing for OCaml (compiler/stdlib) compatibility workarounds
+<**/*.ml>: cppo_V_OCAML
+<**/*.mli>: cppo_V_OCAML
+
 # Warnings. The order is important. This is not fully legitimate as it appears
 # to depend on how Ocamlbuild internally handles lists of warn() tags.
 <src/camlp4/*.ml> or <src/ppx/*.ml>: warn(-4)

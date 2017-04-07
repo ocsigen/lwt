@@ -35,10 +35,11 @@ depends: [
   "ocamlfind" {build & >= "1.5.0"}
   "ocamlbuild" {build}
   "result"
+  "cppo" {build}
   # See https://github.com/ocsigen/lwt/issues/266
   ( "base-no-ppx" | "ppx_tools" {build} )
   ## OASIS is not required in released version
-  "oasis" {build & >= "0.4.7"}
+  "oasis" {build & >= "0.4.8"}
 ]
 depopts: [
   "base-threads"

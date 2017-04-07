@@ -22,6 +22,47 @@
 open Test
 open Lwt.Infix
 
+let assert_fd_closed = "ASSERT_FD_CLOSED"
+let assert_fd_open   = "ASSERT_FD_OPEN"
+
+let test_cloexec assertion flags =
+  if Sys.win32 then Lwt.return true
+  else
+    Lwt_unix.openfile "/dev/zero" (Unix.O_RDONLY :: flags) 0o644 >>= fun fd ->
+    let fd_ = Lwt_unix.unix_file_descr fd in
+    match Lwt_unix.fork () with
+      | 0 ->
+          Unix.putenv assertion (string_of_int @@ Obj.magic fd_);
+          (* There's no portable way to obtain the executable name (which
+           * may even no longer exist at this point), but argv[0] fortunately
+           * has the right value when the tests are run with "make test". *)
+          Unix.execv Sys.argv.(0) [||]
+      | n ->
+          Lwt_unix.close fd >>= fun () ->
+          Lwt_unix.waitpid [] n >>= function
+            | _, Unix.WEXITED 0 -> Lwt.return_true
+            | _, (Unix.WEXITED _ | Unix.WSIGNALED _ | Unix.WSTOPPED _) ->
+                Lwt.return_false
+
+let openfile_tests = [
+  test "openfile: O_CLOEXEC"
+    (fun () -> test_cloexec assert_fd_closed [Unix.O_CLOEXEC]);
+
+  test "openfile: O_CLOEXEC not given"
+    (fun () -> test_cloexec assert_fd_open []);
+
+#if OCAML_VERSION >= (4, 05, 0)
+  test "openfile: O_KEEPEXEC"
+    (fun () -> test_cloexec assert_fd_open [Unix.O_KEEPEXEC]);
+
+  test "openfile: O_CLOEXEC, O_KEEPEXEC"
+    (fun () -> test_cloexec assert_fd_closed [Unix.O_CLOEXEC; Unix.O_KEEPEXEC]);
+
+  test "openfile: O_KEEPEXEC, O_CLOEXEC"
+    (fun () -> test_cloexec assert_fd_closed [Unix.O_KEEPEXEC; Unix.O_CLOEXEC]);
+#endif
+]
+
 let utimes_tests = [
   test "utimes: basic"
     (fun () ->
@@ -638,7 +679,8 @@ let bind_tests = [
 
 let suite =
   suite "lwt_unix"
-    (utimes_tests @
+    (openfile_tests @
+     utimes_tests @
      readdir_tests @
      readv_tests @
      writev_tests @
