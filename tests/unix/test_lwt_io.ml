@@ -58,7 +58,7 @@ struct
     in
 
     client_finished >>= fun () ->
-    Lwt_io.Versioned.shutdown_server_2 server
+    Lwt_io.shutdown_server server
 
   (* Dirty hack for forcing [Lwt_io.close] to fail, to test response to [close]
      exceptions. Impolitely closes the [n]th last file descriptor allocated by
@@ -183,7 +183,7 @@ let suite = suite "lwt_io" [
 
       Lwt_io.with_connection local (fun _ -> Lwt.return_unit) >>= fun () ->
       Lwt.wakeup client_finished ();
-      Lwt_io.Versioned.shutdown_server_2 server >>= fun () ->
+      Lwt_io.shutdown_server server >>= fun () ->
       handler);
 
   (* Counterpart to establish_server: shutdown test. Confirms that shutdown is
@@ -207,7 +207,7 @@ let suite = suite "lwt_io" [
 
       >>= fun result ->
 
-      Lwt_io.Versioned.shutdown_server_2 server >|= fun () ->
+      Lwt_io.shutdown_server server >|= fun () ->
       result);
 
   test "establish_server: implicit close"
@@ -376,7 +376,7 @@ let suite = suite "lwt_io" [
         Lwt.return_unit)
 
       >>= fun () ->
-      Lwt_io.Versioned.shutdown_server_2 server >>= fun () ->
+      Lwt_io.shutdown_server server >>= fun () ->
       is_closed_in !in_channel' >>= fun in_closed ->
       is_closed_out !out_channel' >|= fun out_closed ->
       in_closed && out_closed);
@@ -414,6 +414,6 @@ let suite = suite "lwt_io" [
 
       >>= fun () ->
       Lwt.wakeup resume_server ();
-      Lwt_io.Versioned.shutdown_server_2 server >|= fun () ->
+      Lwt_io.shutdown_server server >|= fun () ->
       !exceptions_observed = 2);
 ]

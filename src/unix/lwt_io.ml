@@ -1415,9 +1415,10 @@ type server = {
   shutdown : unit Lwt.t Lazy.t;
 }
 
-let shutdown_server_2 server = Lazy.force server.shutdown
+let shutdown_server server = Lazy.force server.shutdown
 
-let shutdown_server server = Lwt.async (fun () -> shutdown_server_2 server)
+let shutdown_server_deprecated server =
+  Lwt.async (fun () -> shutdown_server server)
 
 let establish_server_base
     bind ?fd ?(buffer_size = !default_buffer_size) ?(backlog=5) sockaddr f =
@@ -1562,6 +1563,6 @@ struct
   let establish_server_1 = establish_server_deprecated
   let establish_server_2 = establish_server
 
-  let shutdown_server_1 = shutdown_server
-  let shutdown_server_2 = shutdown_server_2
+  let shutdown_server_1 = shutdown_server_deprecated
+  let shutdown_server_2 = shutdown_server
 end
