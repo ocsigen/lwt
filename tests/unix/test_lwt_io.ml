@@ -32,13 +32,13 @@ let with_async_exception_hook hook f =
 
 let local = Unix.ADDR_INET (Unix.inet_addr_loopback, 4321)
 
-(* Helpers for [establish_server_2] tests. *)
+(* Helpers for [establish_server] tests. *)
 module Establish_server =
 struct
   let with_client f =
     let handler_finished, notify_handler_finished = Lwt.wait () in
 
-    Lwt_io.Versioned.establish_server_2
+    Lwt_io.establish_server
       local
       (fun channels ->
         Lwt.finalize
@@ -210,7 +210,7 @@ let suite = suite "lwt_io" [
       Lwt_io.Versioned.shutdown_server_2 server >|= fun () ->
       result);
 
-  test "establish_server_2: implicit close"
+  test "establish_server: implicit close"
     (fun () ->
       let open Establish_server in
 
@@ -248,7 +248,7 @@ let suite = suite "lwt_io" [
       in_closed_after_handler &&
       out_closed_after_handler);
 
-  test "establish_server_2: implicit close on exception"
+  test "establish_server: implicit close on exception"
     (fun () ->
       let open Establish_server in
 
@@ -282,7 +282,7 @@ let suite = suite "lwt_io" [
   (* This does a simple double close of the channels (second close is implicit).
      If something breaks, the test will finish with an exception, or
      Lwt.async_exception_hook will kill the process. *)
-  test "establish_server_2: explicit close"
+  test "establish_server: explicit close"
     (fun () ->
       let open Establish_server in
 
@@ -307,7 +307,7 @@ let suite = suite "lwt_io" [
      sockets again, the exception will go to Lwt.async_exception_hook and kill
      the tester. The correct behavior is for implicit close to do nothing if the
      user already tried to close the sockets. *)
-  test "establish_server_2: no duplicate exceptions"
+  test "establish_server: no duplicate exceptions"
     ~only_if:(fun () -> not Sys.win32)
     (fun () ->
       let open Establish_server in
@@ -335,7 +335,7 @@ let suite = suite "lwt_io" [
   (* Screws up the open sockets so closing them fails with EBADF. Then, raises
      an exception from the handler. Checks that the handler exception arrives
      at Lwt.async_exception_hook before the exceptions from implicit close. *)
-  test "establish_server_2: order of exceptions"
+  test "establish_server: order of exceptions"
     ~only_if:(fun () -> not Sys.win32)
     (fun () ->
       let open Establish_server in
@@ -367,7 +367,7 @@ let suite = suite "lwt_io" [
       let in_channel' = ref Lwt_io.stdin in
       let out_channel' = ref Lwt_io.stdout in
 
-      Lwt_io.Versioned.establish_server_2 local (fun _ -> Lwt.return_unit)
+      Lwt_io.establish_server local (fun _ -> Lwt.return_unit)
       >>= fun server ->
 
       Lwt_io.with_connection local (fun (in_channel, out_channel) ->
@@ -400,7 +400,7 @@ let suite = suite "lwt_io" [
 
       let handler_started, notify_handler_started = Lwt.wait () in
       let finish_server, resume_server = Lwt.wait () in
-      Lwt_io.Versioned.establish_server_2 local
+      Lwt_io.establish_server local
         (fun _ ->
           Lwt.wakeup notify_handler_started ();
           finish_server) >>= fun server ->
