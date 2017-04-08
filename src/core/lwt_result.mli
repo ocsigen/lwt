@@ -20,7 +20,7 @@
  * 02111-1307, USA.
  *)
 
-(** Module [Lwt_result]: explicit error handling *)
+(** Explicit error handling *)
 
 (** This module provides helpers for values of type [('a, 'b) result Lwt.t].
     The module is experimental and may change in the future. *)
