@@ -888,24 +888,13 @@ val socket : socket_domain -> socket_type -> int -> file_descr
 val socketpair : socket_domain -> socket_type -> int -> file_descr * file_descr
   (** Wrapper for [Unix.socketpair] *)
 
-val bind : file_descr -> sockaddr -> unit
-  [@@ocaml.deprecated
-" This function will soon evaluate to a promise (-> unit Lwt.t), because the
- bind system call can block for Unix domain sockets. See
-   https://github.com/ocsigen/lwt/issues/230
- This will be a breaking change in Lwt 3.0.0.
- If you don't use Unix domain sockets and use Lwt_unix.bind ... ; rather than
- let () = Lwt_unix.bind ... in, you can ignore this warning.
- To retain the current signature, use Lwt_unix.Versioned.bind_1
- To use the new non-blocking version immediately, use Lwt_unix.Versioned.bind_2
- Both alternatives require Lwt >= 2.7.0."]
+val bind : file_descr -> sockaddr -> unit Lwt.t
 (** Binds an address to the given socket. This is the cooperative analog of
     {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALbind}
     [Unix.bind]}. See also
     {{:http://man7.org/linux/man-pages/man3/bind.3p.html} [bind(3p)]}.
 
-    @deprecated Will be replaced by {!Versioned.bind_2}, whose result type is
-      [unit Lwt.t] instead of [unit]. *)
+    @since 3.0.0 *)
 
 val listen : file_descr -> int -> unit
   (** Wrapper for [Unix.listen] *)
@@ -1432,17 +1421,21 @@ module Versioned :
 sig
   val bind_1 : file_descr -> sockaddr -> unit
     [@@ocaml.deprecated
-" Deprecated in favor of Lwt_unix.Versioned.bind_2. See
+" Deprecated in favor of Lwt_unix.bind. See
    https://github.com/ocsigen/lwt/issues/230"]
-  (** Alias for the current {!Lwt_unix.bind}.
+  (** Old version of {!Lwt_unix.bind}. The current {!Lwt_unix.bind} evaluates to
+      a promise, because the internal [bind(2)] system call can block if the
+      given socket is a Unix domain socket.
 
-      @deprecated Use {!bind_2}.
+      @deprecated Use {!Lwt_unix.bind}.
       @since 2.7.0 *)
 
   val bind_2 : file_descr -> sockaddr -> unit Lwt.t
-  (** Like {!Lwt_unix.bind}, but evaluates to an Lwt thread, in order to avoid
-      blocking the process in case the given socket is a Unix domain socket.
+    [@@ocaml.deprecated
+" In Lwt >= 3.0.0, this is an alias for Lwt_unix.bind."]
+  (** Since Lwt 3.0.0, this is just an alias for {!Lwt_unix.bind}.
 
+      @deprecated Use {!Lwt_unix.bind}.
       @since 2.7.0 *)
 end
 
