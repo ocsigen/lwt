@@ -1,3 +1,17 @@
+===== 2.7.1 (2017-04-08) =====
+
+====== Fixes ======
+
+  * OCaml 4.05 compatibility (Mauricio Fernandez, #322).
+  * Give Lwt_unix.file_exists the same semantics as Sys.file_exists, with
+    respect to not raising Unix.Unix_error (Mauricio Fernandez, #316).
+  * Improve diagnostics from build scripts (Tim Cuthbertson, #313, #314).
+
+====== Additions ======
+
+  * Announce Lwt_result, which was originally released as an experimental module
+    in release 2.6.0 (Simon Cruanes, #320, #247).
+
 ===== 2.7.0 (2017-01-03) =====
 
 ====== General ======
