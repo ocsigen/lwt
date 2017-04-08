@@ -1,7 +1,11 @@
 opam-version: "1.2"
 name: "lwt"
 version: "dev"
-maintainer: "Anton Bachin <antonbachin@yahoo.com>"
+maintainer: [
+  "Anton Bachin <antonbachin@yahoo.com>"
+  "Mauricio Fernandez <mfp@acm.org>"
+  "Simon Cruanes <simon.cruanes.2007@m4x.org>"
+]
 authors: [
   "Jérôme Vouillon"
   "Jérémie Dimino"
