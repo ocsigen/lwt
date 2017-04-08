@@ -1,0 +1,30 @@
+# OASIS_START
+# DO NOT EDIT (digest: 810db210723744b64cf412cd5a8ef063)
+lwt_unix_stubs.o
+lwt_libev_stubs.o
+lwt_process_stubs.o
+jobs-unix/lwt_unix_job_access.o
+jobs-unix/lwt_unix_job_chdir.o
+jobs-unix/lwt_unix_job_chmod.o
+jobs-unix/lwt_unix_job_chown.o
+jobs-unix/lwt_unix_job_chroot.o
+jobs-unix/lwt_unix_job_close.o
+jobs-unix/lwt_unix_job_fchmod.o
+jobs-unix/lwt_unix_job_fchown.o
+jobs-unix/lwt_unix_job_fdatasync.o
+jobs-unix/lwt_unix_job_fsync.o
+jobs-unix/lwt_unix_job_ftruncate.o
+jobs-unix/lwt_unix_job_link.o
+jobs-unix/lwt_unix_job_lseek.o
+jobs-unix/lwt_unix_job_mkdir.o
+jobs-unix/lwt_unix_job_mkfifo.o
+jobs-unix/lwt_unix_job_rename.o
+jobs-unix/lwt_unix_job_rmdir.o
+jobs-unix/lwt_unix_job_symlink.o
+jobs-unix/lwt_unix_job_tcdrain.o
+jobs-unix/lwt_unix_job_tcflow.o
+jobs-unix/lwt_unix_job_tcflush.o
+jobs-unix/lwt_unix_job_tcsendbreak.o
+jobs-unix/lwt_unix_job_truncate.o
+jobs-unix/lwt_unix_job_unlink.o
+# OASIS_STOP
