@@ -147,7 +147,7 @@ end
 
 (** Engine based on libev. If not compiled with libev support, the
     creation of the class will raise {!Lwt_sys.Not_available}. *)
-class libev : object
+class libev : ?backend:Ev_backend.t -> unit -> object
   inherit t
 
   val loop : ev_loop
@@ -156,13 +156,6 @@ class libev : object
   method loop : ev_loop
     (** Returns [loop]. *)
 end
-[@@ocaml.deprecated
-" This class will soon have parameters for selecting a libev backend. This will
- be a breaking change in Lwt 3.0.0. See
-   https://github.com/ocsigen/lwt/pull/269
- To preserve the current signature, use Lwt_engine.Versioned.libev_1
- To use the replacement immediately, use Lwt_engine.Versioned.libev_2 ()
- Both alternatives require Lwt >= 2.7.0."]
 
 (** Engine based on [Unix.select]. *)
 class select : t
@@ -223,15 +216,23 @@ sig
     method loop : ev_loop
   end
   [@@ocaml.deprecated
-   "Deprecated in favor of Lwt_engine.Versioned.libev_2. See
+" Deprecated in favor of Lwt_engine.libev. See
   https://github.com/ocsigen/lwt/pull/269"]
-  (** @deprecated In favor of {!libev_2}.
+  (** Old version of {!Lwt_engine.libev}. The current {!Lwt_engine.libev} allows
+      selecting the libev back end.
+
+      @deprecated Use {!Lwt_engine.libev}.
       @since 2.7.0 *)
 
-  (** @since 2.7.0 *)
   class libev_2 : ?backend:Ev_backend.t -> unit -> object
     inherit t
     val loop : ev_loop
     method loop : ev_loop
   end
+  [@@ocaml.deprecated
+" In Lwt >= 3.0.0, this is an alias for Lwt_engine.libev."]
+  (** Since Lwt 3.0.0, this is just an alias for {!Lwt_engine.libev}.
+
+      @deprecated Use {!Lwt_engine.libev}.
+      @since 2.7.0 *)
 end

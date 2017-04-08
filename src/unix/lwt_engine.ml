@@ -175,7 +175,7 @@ external ev_io_stop : ev_loop -> ev_io -> unit = "lwt_libev_io_stop"
 external ev_timer_init : ev_loop -> float -> bool -> (unit -> unit) -> ev_timer = "lwt_libev_timer_init"
 external ev_timer_stop : ev_loop -> ev_timer -> unit  = "lwt_libev_timer_stop"
 
-class libev' ?(backend=Ev_backend.default) () = object
+class libev ?(backend=Ev_backend.default) () = object
   inherit abstract
 
   val loop = ev_init backend
@@ -203,7 +203,7 @@ class libev' ?(backend=Ev_backend.default) () = object
     lazy(ev_timer_stop loop ev)
 end
 
-class libev = libev' ()
+class libev_deprecated = libev ()
 
 (* +-----------------------------------------------------------------+
    | Select/poll based engines                                       |
@@ -418,7 +418,7 @@ end
 
 let current =
   if Lwt_config._HAVE_LIBEV && Lwt_config.libev_default then
-    ref (new libev :> t)
+    ref (new libev () :> t)
   else
     ref (new select :> t)
 
@@ -441,6 +441,6 @@ let timer_count () = !current#timer_count
 
 module Versioned =
 struct
-  class libev_1 = libev
-  class libev_2 = libev'
+  class libev_1 = libev_deprecated
+  class libev_2 = libev
 end
