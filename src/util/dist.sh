@@ -34,7 +34,7 @@ grep -vi oasis lwt.opam.1 > lwt.opam
 rm lwt.opam.1
 
 # Set the version in additional packages based on their META files, and remove
-# the '| "dev"' constraint on lwt.
+# the "dev" constraint on lwt.
 for FILE in `ls lwt_*.opam`
 do
     PACKAGE=${FILE#lwt_}
@@ -42,9 +42,8 @@ do
     PACKAGE_VERSION=`cat src/$PACKAGE/META | grep version`
     PACKAGE_VERSION=`echo $PACKAGE_VERSION | egrep -o '[0-9]+\.[0-9]+\.[0-9]+'`
     sed "s/^version: \"dev\"/version: \"$PACKAGE_VERSION\"/" $FILE > $FILE.1
-    sed "s/\"lwt\" {(/\"lwt\" {/" $FILE.1 > $FILE
-    sed "s/) | \"dev\"//" $FILE > $FILE.1
-    mv $FILE.1 $FILE
+    sed 's/"lwt" {.*$/"lwt" {>= "2.7.0" \& < "3.0.0"}/' $FILE.1 > $FILE
+    rm $FILE.1
 done
 
 # Remove development files.
