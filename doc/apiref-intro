@@ -9,6 +9,7 @@ any external package.
 
 {!modules:
 Lwt
+Lwt_result
 Lwt_condition
 Lwt_list
 Lwt_mutex
