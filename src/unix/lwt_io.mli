@@ -446,21 +446,13 @@ val establish_server :
 
     @since 3.0.0 *)
 
-val shutdown_server : server -> unit
-[@@ocaml.deprecated
-" This function will soon evaluate to a promise that resolves when the close
- system call completes. This will be a breaking change in Lwt 3.0.0. See
-   https://github.com/ocsigen/lwt/issues/259
- To keep the current signature, use Lwt_io.Versioned.shutdown_server_1
- To use the new version immediately, use Lwt_io.Versioned.shutdown_server_2
- Both alternatives require Lwt >= 2.7.0."]
-  (** Closes the given server's listening socket. This function does not wait
-      for the [close] operation to actually complete. It does not affect the
-      sockets of connections that have already been accepted, i.e. passed to [f]
-      by [establish_server].
+val shutdown_server : server -> unit Lwt.t
+(** Closes the given server's listening socket. The returned promise resolves
+    when the [close(2)] system call completes. This function does not affect the
+    sockets of connections that have already been accepted, i.e. passed to [f]
+    by {!establish_server}.
 
-      @deprecated Will be replaced by {!Versioned.shutdown_server_2}, which
-        evaluates to a thread that waits for [close] to complete. *)
+    @since 3.0.0 *)
 
 val lines_of_file : file_name -> string Lwt_stream.t
   (** [lines_of_file name] returns a stream of all lines of the file
@@ -610,20 +602,20 @@ sig
 
   val shutdown_server_1 : server -> unit
     [@@ocaml.deprecated
-" Deprecated in favor of Lwt_io.Versioned.shutdown_server_2. See
+" Deprecated in favor of Lwt_io.shutdown_server. See
    https://github.com/ocsigen/lwt/issues/259"]
-  (** Alias for the current {!Lwt_io.shutdown_server}.
+  (** Old version of {!Lwt_io.shutdown_server}. The current
+      {!Lwt_io.shutdown_server} returns a promise, which resolves when the
+      server's listening socket is closed.
 
-      @deprecated Use {!shutdown_server_2}.
+      @deprecated Use {!Lwt_io.shutdown_server}.
       @since 2.7.0 *)
 
   val shutdown_server_2 : server -> unit Lwt.t
-  (** Closes the given server's listening socket. The thread returned by this
-      function waits for the underlying [close] system call to complete.
+    [@@ocaml.deprecated
+" In Lwt >= 3.0.0, this is an alias for Lwt_io.shutdown_server."]
+  (** Since Lwt 3.0.0, this is just an alias for {!Lwt_io.shutdown_server}.
 
-      This function does not affect sockets of connections that have already
-      been accepted by the server, i.e. those passed by [establish_server] to
-      its callback [f].
-
+      @deprecated Use {!Lwt_io.shutdown_server}.
       @since 2.7.0 *)
 end
