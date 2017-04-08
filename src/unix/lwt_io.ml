@@ -1511,8 +1511,8 @@ let establish_server_safe
 
   let server, started =
     establish_server_base
-      Lwt_unix.Versioned.bind_2
-      ?fd ?buffer_size ?backlog sockaddr handler in
+      Lwt_unix.bind ?fd ?buffer_size ?backlog sockaddr handler
+  in
   started >>= fun () ->
   Lwt.return server
 

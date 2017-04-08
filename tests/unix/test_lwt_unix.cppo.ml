@@ -589,7 +589,7 @@ let bind_tests = [
 
       Lwt.finalize
         (fun () ->
-          Lwt_unix.Versioned.bind_2 socket bind_tests_address >>= fun () ->
+          Lwt_unix.bind socket bind_tests_address >>= fun () ->
           Lwt.return (Unix.getsockname (Lwt_unix.unix_file_descr socket)))
         (fun () ->
           Lwt_unix.close socket)
@@ -610,7 +610,7 @@ let bind_tests = [
           let address = Unix.(ADDR_UNIX path) in
           Lwt.catch
             (fun () ->
-              Lwt_unix.Versioned.bind_2 socket address >>= fun () ->
+              Lwt_unix.bind socket address >>= fun () ->
               Lwt.return_true)
             (function
               | Unix.Unix_error (Unix.EADDRINUSE, "bind", _) -> Lwt.return_false
@@ -655,7 +655,7 @@ let bind_tests = [
       Lwt_unix.close socket >>= fun () ->
       Lwt.catch
         (fun () ->
-          Lwt_unix.Versioned.bind_2 socket bind_tests_address >>= fun () ->
+          Lwt_unix.bind socket bind_tests_address >>= fun () ->
           Lwt.return_false)
         (function
           | Unix.Unix_error (Unix.EBADF, _, _) -> Lwt.return_true
@@ -669,7 +669,7 @@ let bind_tests = [
         (fun () ->
           Lwt.catch
             (fun () ->
-              Lwt_unix.Versioned.bind_2 socket bind_tests_address >>= fun () ->
+              Lwt_unix.bind socket bind_tests_address >>= fun () ->
               Lwt.return_false)
             (function
               | Exit -> Lwt.return_true

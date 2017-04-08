@@ -1606,14 +1606,10 @@ let connect ch addr =
               raise Retry
     end
 
-let bind ch addr =
-  check_descriptor ch;
-  Unix.bind ch.fd addr
-
 external bind_job : Unix.file_descr -> Unix.sockaddr -> unit job =
   "lwt_unix_bind_job"
 
-let bind' fd addr =
+let bind fd addr =
   check_descriptor fd;
   match Sys.win32, addr with
   | true, _ | false, Unix.ADDR_INET _ -> Lwt.return (Unix.bind fd.fd addr)
@@ -2371,6 +2367,9 @@ let () =
 
 module Versioned =
 struct
-  let bind_1 = bind
-  let bind_2 = bind'
+  let bind_1 ch addr =
+    check_descriptor ch;
+    Unix.bind ch.fd addr
+
+  let bind_2 = bind
 end

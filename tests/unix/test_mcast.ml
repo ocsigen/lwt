@@ -57,7 +57,7 @@ let test_mcast name join set_loop =
     let t () =
       Lwt.catch
         (fun () ->
-           Lwt_unix.(Versioned.bind_2
+           Lwt_unix.(bind
              fd1 (ADDR_INET (Unix.inet_addr_any, mcast_port))) >>= fun () ->
            let t1 = child join fd1 in
            let t2 = parent set_loop fd2 in
