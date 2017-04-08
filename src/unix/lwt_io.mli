@@ -417,43 +417,34 @@ val establish_server :
   ?fd : Lwt_unix.file_descr ->
   ?buffer_size : int ->
   ?backlog : int ->
-  Unix.sockaddr -> (input_channel * output_channel -> unit) -> server
-[@@ocaml.deprecated
-" The signature and semantics of this function will soon change:
- - the callback parameter f will evaluate to a promise (-> unit Lwt.t),
- - channels will be closed automatically when that promise resolves, to avoid
-   leaking file descriptors, and
- - the result will be a promise (-> server Lwt.t).
- This will be breaking change in Lwt 3.0.0. See
-   https://github.com/ocsigen/lwt/pull/258
- To keep the current functionality, use Lwt_io.Versioned.establish_server_1
- To use the safer version immediately, use Lwt_io.Versioned.establish_server_2
- Both alternatives require Lwt >= 2.7.0."]
-  (** [establish_server ?fd ?buffer_size ?backlog sockaddr f] creates a server
-      which listens for incoming connections. New connections are passed to [f].
+  ?no_close : bool ->
+  Unix.sockaddr -> (input_channel * output_channel -> unit Lwt.t) ->
+    server Lwt.t
+(** [establish_server sockaddr f] creates a server which listens for incoming
+    connections on [sockaddr]. New connections are passed to [f]. The
+    connections are closed automatically as promises returned by [f] complete.
 
-      [establish_server] does not start separate threads for running [f], nor
-      close the connections passed to [f]. Thus, the skeleton of a practical
-      server based on [establish_server] might look like this:
+    To prevent automatic closing, apply [establish_server] with
+    [~no_close:true].
 
-      {[
-        Lwt_io.establish_server address (fun (ic, oc) ->
-          Lwt.async (fun () ->
+    [~fd] can be specified to use an existing file descriptor for listening.
+    Otherwise, the default is for [establish_server] to create a fresh one.
 
-            (* ... *)
+    [~backlog] is the argument passed to {!Lwt_unix.listen}.
 
-            Lwt.catch (fun () -> Lwt_io.close oc) (fun _ -> Lwt.return_unit) >>=
-            Lwt.catch (fun () -> Lwt_io.close ic) (fun _ -> Lwt.return_unit)))
-      ]}
+    The server does not wait on each promise returned by [f] before accepting
+    more connections. It accepts connections concurrently.
 
-      If [fd] is not specified, a fresh file descriptor will be created for
-      listening.
+    If [f] raises an exception, or the promise fails, the exception is passed to
+    {!Lwt.async_exception_hook}. Likewise, if the automatic [close] of a
+    connection raises an exception, it is passed to {!Lwt.async_exception_hook}.
+    To robustly handle these exceptions, you should call {!close} manually
+    inside [f], and wrap it in your own handler.
 
-      [backlog] is the argument passed to [Lwt_unix.listen].
+    The returned promise (a [server Lwt.t]) resolves when the server's listening
+    socket is bound to [sockaddr], right before the server first calls [accept].
 
-      @deprecated Will be replaced by {!Versioned.establish_server_2}, which
-        closes the channels passed to [f] automatically when a thread returned
-        by [f] completes. *)
+    @since 3.0.0 *)
 
 val shutdown_server : server -> unit
 [@@ocaml.deprecated
@@ -590,13 +581,17 @@ sig
     ?fd : Lwt_unix.file_descr ->
     ?buffer_size : int ->
     ?backlog : int ->
-    Unix.sockaddr -> (input_channel * output_channel -> unit) -> server
-  [@@ocaml.deprecated
-" Deprecated in favor of Lwt_io.Versioned.establish_server_2. See
+    Unix.sockaddr -> (input_channel * output_channel -> unit) ->
+      server
+    [@@ocaml.deprecated
+" Deprecated in favor of Lwt_io.establish_server. See
    https://github.com/ocsigen/lwt/pull/258"]
-  (** Alias for the current {!Lwt_io.establish_server}.
+  (** Old version of {!Lwt_io.establish_server}. The current
+      {!Lwt_io.establish_server} automatically closes channels passed to the
+      callback, and notifies the caller when the server's listening socket is
+      bound.
 
-      @deprecated Use {!establish_server_2}.
+      @deprecated Use {!Lwt_io.establish_server}.
       @since 2.7.0 *)
 
   val establish_server_2 :
@@ -606,29 +601,15 @@ sig
     ?no_close : bool ->
     Unix.sockaddr -> (input_channel * output_channel -> unit Lwt.t) ->
       server Lwt.t
-  (** [establish_server_2 sockaddr f] creates a server which listens for
-      incoming connections. New connections are passed to [f]. When threads
-      returned by [f] complete, the connections are closed automatically. To
-      prevent automatic closing, apply [establish_server_2] with
-      [~no_close:true].
+    [@@ocaml.deprecated
+" In Lwt >= 3.0.0, this is an alias for Lwt_io.establish_server."]
+  (** Since Lwt 3.0.0, this is just an alias for {!Lwt_io.establish_server}.
 
-      The [?fd] and [?backlog] arguments have the same meaning as in
-      {!Lwt_io.establish_server}. [?buffer_size] sets the internal buffer size
-      of the channels passed to [f].
-
-      The server does not wait for each thread. It begins accepting new
-      connections immediately.
-
-      If a thread raises an exception, it is passed to
-      [!Lwt.async_exception_hook]. Likewise, if the automatic [close] of a
-      connection raises an exception, it is passed to
-      [!Lwt.async_exception_hook]. To robustly handle these exceptions, you
-      should call [close] manually inside [f], and use your own handler.
-
+      @deprecated Use {!Lwt_io.establish_server}.
       @since 2.7.0 *)
 
   val shutdown_server_1 : server -> unit
-  [@@ocaml.deprecated
+    [@@ocaml.deprecated
 " Deprecated in favor of Lwt_io.Versioned.shutdown_server_2. See
    https://github.com/ocsigen/lwt/issues/259"]
   (** Alias for the current {!Lwt_io.shutdown_server}.

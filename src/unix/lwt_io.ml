@@ -1465,14 +1465,17 @@ let establish_server_base
 
   server, started
 
-let establish_server ?fd ?buffer_size ?backlog sockaddr f =
+(* Old, deprecated version of [establish_server]. This function has to persist
+   for a while, in some form, until it is no longer exposed as
+   [Lwt_io.Versioned.establish_server_1]. *)
+let establish_server_deprecated ?fd ?buffer_size ?backlog sockaddr f =
   let blocking_bind fd addr =
     Lwt.return (Lwt_unix.Versioned.bind_1 fd addr) [@ocaml.warning "-3"]
   in
   establish_server_base blocking_bind ?fd ?buffer_size ?backlog sockaddr f
   |> fst
 
-let establish_server_safe
+let establish_server
     ?fd ?buffer_size ?backlog ?(no_close = false) sockaddr f =
   let best_effort_close channel =
     (* First, check whether the channel is closed. f may have already tried to
@@ -1556,8 +1559,8 @@ let default_buffer_size _ = !default_buffer_size
 
 module Versioned =
 struct
-  let establish_server_1 = establish_server
-  let establish_server_2 = establish_server_safe
+  let establish_server_1 = establish_server_deprecated
+  let establish_server_2 = establish_server
 
   let shutdown_server_1 = shutdown_server
   let shutdown_server_2 = shutdown_server_2
