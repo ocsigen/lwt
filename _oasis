@@ -199,6 +199,8 @@ Library "lwt-simple-top"
   BuildDepends: lwt, lwt.unix, compiler-libs.common
   XMETADescription: Lwt-OCaml top level integration (deprecated; use utop)
 
+# This library is built through this build system only in development. For the
+# release build system, see src/react/_oasis.
 Library "lwt-react"
   Build$: flag(react) || flag(all)
   Install$: flag(react) || flag(all)
@@ -219,6 +221,8 @@ Library "lwt-preemptive"
   BuildDepends: lwt, lwt.unix, threads
   XMETADescription: Preemptive thread support for Lwt
 
+# This library is built through this build system only in development. For the
+# release build system, see src/glib/_oasis.
 Library "lwt-glib"
   Build$: flag(glib) || flag(all)
   Install$: flag(glib) || flag(all)
@@ -230,6 +234,8 @@ Library "lwt-glib"
   BuildDepends: lwt, lwt.unix
   XMETADescription: GLib integration for Lwt (deprecated; use package lwt_glib)
 
+# This library is built through this build system only in development. For the
+# release build system, see src/ssl/_oasis.
 Library "lwt-ssl"
   Build$: flag(ssl) || flag(all)
   Install$: flag(ssl) || flag(all)

@@ -1,0 +1,20 @@
+# This is only for generating the release build system for this package. In
+# development, the main Lwt build system is used.
+
+# To generate, run
+#   oasis setup -setup-update none
+
+OASISFormat: 0.4
+Name: lwt_ssl
+Version: 1.0.1
+Synopsis: Lwt-friendly OpenSSL bindings
+Authors: Jérémie Dimino
+License: LGPL-2.1
+Plugins: DevFiles (0.4), META (0.4)
+
+Library lwt_ssl
+  Path: .
+  BuildTools: ocamlbuild
+  Modules: Lwt_ssl
+  BuildDepends: lwt.unix, ssl
+  XMETADescription: Lwt-friendly OpenSSL bindings

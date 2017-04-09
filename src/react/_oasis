@@ -1,0 +1,20 @@
+# This is only for generating the release build system for this package. In
+# development, the main Lwt build system is used.
+
+# To generate, run
+#   oasis setup -setup-update none
+
+OASISFormat: 0.4
+Name: lwt_react
+Version: 1.0.1
+Synopsis: Helpers for using React with Lwt
+Authors: Jérémie Dimino
+License: LGPL-2.1
+Plugins: DevFiles (0.4), META (0.4)
+
+Library lwt_react
+  Path: .
+  BuildTools: ocamlbuild
+  Modules: Lwt_react
+  BuildDepends: lwt, react
+  XMETADescription: Helpers for using React with Lwt

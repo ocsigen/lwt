@@ -1,8 +1,11 @@
 opam-version: "1.2"
-name: "lwt_glib"
-version: "dev"
-maintainer: "Anton Bachin <antonbachin@yahoo.com>"
+name: "lwt_ssl"
+version: "1.0.1"
+maintainer: [
+  "Anton Bachin <antonbachin@yahoo.com>"
+]
 authors: [
+  "Jérôme Vouillon"
   "Jérémie Dimino"
 ]
 homepage: "https://github.com/ocsigen/lwt"
@@ -10,13 +13,18 @@ doc: "https://ocsigen.org/lwt/manual/"
 dev-repo: "https://github.com/ocsigen/lwt.git"
 bug-reports: "https://github.com/ocsigen/lwt/issues"
 license: "LGPL with OpenSSL linking exception"
+build: [
+    [make "configure"]
+    [make "build"]
+]
 install: [
-    ["ocamlfind" "install" "lwt_glib" "src/glib/META"]
+    [make "install"]
 ]
 remove: [
-    ["ocamlfind" "remove" "lwt_glib"]
+    ["ocamlfind" "remove" "lwt_ssl"]
 ]
 depends: [
-  "lwt" {= "dev"}
-  "lablgtk"
+  "lwt" {>= "3.0.0"}
+  "ssl" {>= "0.5.0"}
+  "base-unix"
 ]

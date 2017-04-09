@@ -1,3 +1,0 @@
-version = "1.0.0"
-description = "Reactive programming helpers for Lwt"
-requires = "lwt.react"

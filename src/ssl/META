@@ -1,3 +1,0 @@
-version = "1.0.0"
-description = "SSL support for Lwt"
-requires = "lwt.ssl"

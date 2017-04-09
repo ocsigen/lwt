@@ -115,28 +115,36 @@ fi
 
 
 
-# Install optional dependencies.
+# Pin Lwt, install dependencies, and then install Lwt. Lwt is installed
+# separately because we want to keep the build directory for running the tests.
+opam pin add -y --no-action .
+
+opam install -y --deps-only lwt
+opam install -y camlp4
 if [ "$LIBEV" = yes ]
 then
     opam install -y conf-libev
 fi
 
+opam install --keep-build-dir --verbose lwt
 
+# Pin additional packages, generate their build systems, and install them. There
+# aren't any specific tests for these packages. Installation itself is the only
+# test. Build system generation requires OASIS; this should have been installed
+# while installing dependencies of Lwt.
+install_extra_package () {
+    PACKAGE=$1
+    ( cd src/$PACKAGE/ && oasis setup -setup-update none )
+    opam pin add -y --no-action src/$PACKAGE/
+    opam install -y --verbose lwt_$PACKAGE
+}
 
-# Pin Lwt, install its optional dependencies, then install Lwt and run the
-# tests.
-opam pin add -y --no-action lwt .
-opam pin add -y --no-action lwt_react .
-opam pin add -y --no-action lwt_ssl .
-opam pin add -y --no-action lwt_glib .
+install_extra_package react
+install_extra_package ssl
+install_extra_package glib
 
-opam install -y ocamlfind ocamlbuild oasis camlp4 ppx_tools result
-opam install -y react lablgtk ssl
-# Install OUnit here; otherwie --build-test on installation of Lwt seems to
-# trigger recompilation of ocamlmod.
+# Build and run the tests.
 opam install -y ounit
-
-opam install -y --keep-build-dir --verbose lwt lwt_react lwt_ssl lwt_glib
 cd `opam config var lib`/../build/lwt.*
 ocaml setup.ml -configure --enable-tests
 make test

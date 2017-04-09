@@ -1,4 +1,4 @@
-lib: "lwt.opam" { "opam" }
+lib: "opam/opam" { "opam" }
 doc: [
   "README.md"
   "CHANGES"

@@ -1,3 +1,0 @@
-version = "1.0.0"
-description = "GLib integration for Lwt"
-requires = "lwt.glib"

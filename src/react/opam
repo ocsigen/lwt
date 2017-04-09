@@ -1,7 +1,9 @@
 opam-version: "1.2"
 name: "lwt_react"
-version: "dev"
-maintainer: "Anton Bachin <antonbachin@yahoo.com>"
+version: "1.0.1"
+maintainer: [
+  "Anton Bachin <antonbachin@yahoo.com>"
+]
 authors: [
   "Jérémie Dimino"
 ]
@@ -10,13 +12,17 @@ doc: "https://ocsigen.org/lwt/manual/"
 dev-repo: "https://github.com/ocsigen/lwt.git"
 bug-reports: "https://github.com/ocsigen/lwt/issues"
 license: "LGPL with OpenSSL linking exception"
+build: [
+    [make "configure"]
+    [make "build"]
+]
 install: [
-    ["ocamlfind" "install" "lwt_react" "src/react/META"]
+    [make "install"]
 ]
 remove: [
     ["ocamlfind" "remove" "lwt_react"]
 ]
 depends: [
-  "lwt" {= "dev"}
+  "lwt" {>= "3.0.0"}
   "react" {>= "1.0.0"}
 ]

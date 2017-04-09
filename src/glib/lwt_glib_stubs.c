@@ -31,7 +31,7 @@
 #include <caml/callback.h>
 #include <glib.h>
 
-#include "../unix/lwt_unix.h"
+extern void *lwt_unix_malloc(size_t size);
 
 GMainContext *gc;
 GPollFD *gpollfds = NULL;

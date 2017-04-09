@@ -21,11 +21,8 @@ build: [
     "--prefix" prefix
     "--%{conf-libev:enable}%-libev"
     "--%{camlp4:enable}%-camlp4"
-    "--%{react:enable}%-react"
-    "--%{ssl:enable}%-ssl"
     "--%{base-unix:enable}%-unix"
     "--%{base-threads:enable}%-preemptive"
-    "--%{lablgtk:enable}%-glib"
     "--%{ppx_tools:enable}%-ppx"]
   [make "build"]
 ]
@@ -50,13 +47,8 @@ depopts: [
   "base-unix"
   "conf-libev"
   "camlp4"
-  "ssl"
-  "lablgtk"
-  "react"
 ]
 conflicts: [
-  "react" {< "1.0.0"}
-  "ssl" {< "0.5.0"}
   "ppx_tools" {< "1.0.0" }
 ]
 available: [ocaml-version >= "4.02.0" & compiler != "4.02.1+BER"]
