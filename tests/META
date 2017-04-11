@@ -1,0 +1,12 @@
+# OASIS_START
+# DO NOT EDIT (digest: 0302ac264ccb504852e5a03fe63813b9)
+version = "3.0.0"
+description = "Monadic promises and concurrent I/O"
+requires = "lwt unix lwt.unix"
+archive(byte) = "test.cma"
+archive(byte, plugin) = "test.cma"
+archive(native) = "test.cmxa"
+archive(native, plugin) = "test.cmxs"
+exists_if = "test.cma"
+# OASIS_STOP
+

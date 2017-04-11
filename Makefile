@@ -10,7 +10,7 @@ OCAMLFIND_IGNORE_DUPS_IN = $(shell ocamlfind query compiler-libs)
 export OCAMLFIND_IGNORE_DUPS_IN
 
 # Set to setup.exe for the release
-SETUP := setup-dev.exe
+SETUP := setup.exe
 
 # Default rule
 default: build

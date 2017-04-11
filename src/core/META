@@ -1,0 +1,134 @@
+# OASIS_START
+# DO NOT EDIT (digest: 4ee7ff8618f6f6bb32cd0d345e6ce118)
+version = "3.0.0"
+description = "Lightweight thread library for OCaml (core library)"
+requires = "bytes result"
+archive(byte) = "lwt.cma"
+archive(byte, plugin) = "lwt.cma"
+archive(native) = "lwt.cmxa"
+archive(native, plugin) = "lwt.cmxs"
+exists_if = "lwt.cma"
+package "unix" (
+ version = "3.0.0"
+ description = "Unix support for Lwt"
+ requires = "lwt lwt.log unix bigarray"
+ archive(byte) = "lwt-unix.cma"
+ archive(byte, plugin) = "lwt-unix.cma"
+ archive(native) = "lwt-unix.cmxa"
+ archive(native, plugin) = "lwt-unix.cmxs"
+ exists_if = "lwt-unix.cma"
+)
+
+package "syntax" (
+ version = "3.0.0"
+ description = "Camlp4 syntax for Lwt (deprecated; use lwt.ppx)"
+ requires = "camlp4 lwt.syntax.options"
+ archive(syntax, preprocessor) = "lwt-syntax.cma"
+ archive(syntax, toploop) = "lwt-syntax.cma"
+ archive(syntax, preprocessor, native) = "lwt-syntax.cmxa"
+ archive(syntax, preprocessor, native, plugin) = "lwt-syntax.cmxs"
+ exists_if = "lwt-syntax.cma"
+ package "options" (
+  version = "3.0.0"
+  description =
+  "Options for Lwt Camlp4 syntax extension (deprecated; use lwt.ppx)"
+  requires = "camlp4"
+  archive(syntax, preprocessor) = "lwt-syntax-options.cma"
+  archive(syntax, toploop) = "lwt-syntax-options.cma"
+  archive(syntax, preprocessor, native) = "lwt-syntax-options.cmxa"
+  archive(syntax, preprocessor, native, plugin) = "lwt-syntax-options.cmxs"
+  exists_if = "lwt-syntax-options.cma"
+ )
+ 
+ package "log" (
+  version = "3.0.0"
+  description = "Camlp4 syntax for Lwt logging (deprecated; use lwt.ppx)"
+  requires = "camlp4 lwt.syntax.options"
+  archive(syntax, preprocessor) = "lwt-syntax-log.cma"
+  archive(syntax, toploop) = "lwt-syntax-log.cma"
+  archive(syntax, preprocessor, native) = "lwt-syntax-log.cmxa"
+  archive(syntax, preprocessor, native, plugin) = "lwt-syntax-log.cmxs"
+  exists_if = "lwt-syntax-log.cma"
+ )
+)
+
+package "ssl" (
+ version = "3.0.0"
+ description = "SSL support for Lwt (deprecated; use package lwt_ssl)"
+ requires = "ssl lwt.unix"
+ archive(byte) = "lwt-ssl.cma"
+ archive(byte, plugin) = "lwt-ssl.cma"
+ archive(native) = "lwt-ssl.cmxa"
+ archive(native, plugin) = "lwt-ssl.cmxs"
+ exists_if = "lwt-ssl.cma"
+)
+
+package "simple-top" (
+ version = "3.0.0"
+ description = "Lwt-OCaml top level integration (deprecated; use utop)"
+ requires = "lwt lwt.unix compiler-libs.common"
+ archive(byte) = "lwt-simple-top.cma"
+ archive(byte, plugin) = "lwt-simple-top.cma"
+ archive(native) = "lwt-simple-top.cmxa"
+ archive(native, plugin) = "lwt-simple-top.cmxs"
+ exists_if = "lwt-simple-top.cma"
+)
+
+package "react" (
+ version = "3.0.0"
+ description =
+ "Reactive programming helpers for Lwt (deprecated; use package lwt_react)"
+ requires = "lwt react"
+ archive(byte) = "lwt-react.cma"
+ archive(byte, plugin) = "lwt-react.cma"
+ archive(native) = "lwt-react.cmxa"
+ archive(native, plugin) = "lwt-react.cmxs"
+ exists_if = "lwt-react.cma"
+)
+
+package "preemptive" (
+ version = "3.0.0"
+ description = "Preemptive thread support for Lwt"
+ requires = "lwt lwt.unix threads"
+ archive(byte) = "lwt-preemptive.cma"
+ archive(byte, plugin) = "lwt-preemptive.cma"
+ archive(native) = "lwt-preemptive.cmxa"
+ archive(native, plugin) = "lwt-preemptive.cmxs"
+ exists_if = "lwt-preemptive.cma"
+)
+
+package "ppx" (
+ version = "3.0.0"
+ description = "Lwt PPX syntax extension"
+ requires = "lwt"
+ archive(byte) = "ppx.cma"
+ archive(byte, plugin) = "ppx.cma"
+ archive(native) = "ppx.cmxa"
+ archive(native, plugin) = "ppx.cmxs"
+ ppx = "ppx_lwt"
+ exists_if = "ppx.cma"
+)
+
+package "log" (
+ version = "3.0.0"
+ description = "Logger for Lwt"
+ requires = "lwt"
+ archive(byte) = "lwt-log.cma"
+ archive(byte, plugin) = "lwt-log.cma"
+ archive(native) = "lwt-log.cmxa"
+ archive(native, plugin) = "lwt-log.cmxs"
+ exists_if = "lwt-log.cma"
+)
+
+package "glib" (
+ version = "3.0.0"
+ description = "GLib integration for Lwt (deprecated; use package lwt_glib)"
+ requires = "lwt lwt.unix"
+ archive(byte) = "lwt-glib.cma"
+ archive(byte, plugin) = "lwt-glib.cma"
+ archive(native) = "lwt-glib.cmxa"
+ archive(native, plugin) = "lwt-glib.cmxs"
+ exists_if = "lwt-glib.cma"
+)
+# OASIS_STOP
+
