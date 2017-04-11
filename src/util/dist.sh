@@ -52,12 +52,15 @@ done
 set +x
 
 echo "1. Move out packages lwt_react, lwt_ssl, lwt_glib with"
-echo "     mv src/lwt_react SOME-TEMPORARY-DIRECTORY"
-echo "   and corresponding commands for lwt_ssl, lwt_glib."
+echo "     mv src/lwt_react SOME/TMP/DIR/lwt_react-1.0.1"
+echo "   and corresponding commands for lwt_ssl, lwt_glib. If not releasing"
+echo "   extra packages:"
+echo "     rm -r src/lwt_react"
 echo
 echo "2. Pin packages in their final form, and test installation and linking:"
-echo "     opam pin add .                        # for the main lwt"
-echo "     opam pin add SOME-TEMPORARY-DIRECTORY # for each of react, ssl, glib"
+echo "     opam pin add -n .                   # for the main lwt"
+echo "     opam pin add -n SOME/TMP/DIR/lwt_react-1.0.1"
+echo "                                         # for each of react, ssl, glib"
 echo "     opam install lwt"
 echo "     opam install lwt_react"
 echo "   and so on; then compile some test programs."
@@ -73,11 +76,11 @@ echo "   When tagging, include the changelog. For an example, run:"
 echo "     git show 2.7.0"
 echo
 echo "4. Create .tar.gz archives manually for the extra packages:"
-echo "     cd SOME-TEMPORARY-DIRECTORY"
-echo "     tar cvzf lwt_react.tar.gz *"
+echo "     cd SOME/TMP/DIR"
+echo "     tar cvzf lwt_react-1.0.1.tar.gz lwt_react-1.0.1"
 echo
 echo "5. Post everything to GitHub:"
-echo "     git push origin $VERSiON"
+echo "     git push origin $VERSION"
 echo "   Attach lwt_react.tar.gz, etc., to the release manually."
 echo
 echo "X. To revert:"
