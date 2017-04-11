@@ -29,22 +29,9 @@ mv Makefile.new Makefile
 
 # Set the version in lwt.opam to the version in _oasis, and remove the oasis
 # dependency.
-sed "s/^version: \"dev\"/version: \"$VERSION\"/" lwt.opam > lwt.opam.1
-grep -vi oasis lwt.opam.1 > lwt.opam
-rm lwt.opam.1
-
-# Set the version in additional packages based on their META files, and remove
-# the "dev" constraint on lwt.
-for FILE in `ls lwt_*.opam`
-do
-    PACKAGE=${FILE#lwt_}
-    PACKAGE=${PACKAGE%.opam}
-    PACKAGE_VERSION=`cat src/$PACKAGE/META | grep version`
-    PACKAGE_VERSION=`echo $PACKAGE_VERSION | egrep -o '[0-9]+\.[0-9]+\.[0-9]+'`
-    sed "s/^version: \"dev\"/version: \"$PACKAGE_VERSION\"/" $FILE > $FILE.1
-    sed 's/"lwt" {.*$/"lwt" {>= "2.7.0" \& < "3.0.0"}/' $FILE.1 > $FILE
-    rm $FILE.1
-done
+sed "s/^version: \"dev\"/version: \"$VERSION\"/" opam/opam > opam/opam.1
+grep -vi oasis opam/opam.1 > opam/opam
+rm opam/opam.1
 
 # Remove development files.
 rm -f \
@@ -52,10 +39,49 @@ rm -f \
     src/util/appveyor-build.sh src/util/appveyor-install.sh src/util/dist.sh \
     src/util/fetch-dependees.py src/util/travis.sh
 
-# Commit
-git add --all --force
-git rm .gitignore
-git commit -m "Release $VERSION"
-git tag -a $VERSION
+# Generate extra package build systems, and remove development files.
+for PACKAGE in react ssl glib
+do
+    pushd src/$PACKAGE
+    oasis setup -setup-update none
+    rm -f _oasis configure
+    popd
+done
 
-echo "Tag $VERSION created. Run 'git push origin $VERSION' to publish."
+# Print instructions for finishing release packaging manually.
+set +x
+
+echo "1. Move out packages lwt_react, lwt_ssl, lwt_glib with"
+echo "     mv src/lwt_react SOME-TEMPORARY-DIRECTORY"
+echo "   and corresponding commands for lwt_ssl, lwt_glib."
+echo
+echo "2. Pin packages in their final form, and test installation and linking:"
+echo "     opam pin add .                        # for the main lwt"
+echo "     opam pin add SOME-TEMPORARY-DIRECTORY # for each of react, ssl, glib"
+echo "     opam install lwt"
+echo "     opam install lwt_react"
+echo "   and so on; then compile some test programs."
+echo
+echo "3. Commit to this repo and tag in it to create the main lwt release."
+echo "   GitHub will create package archives automatically once the tag is"
+echo "   pushed:"
+echo "     git add --all --force"
+echo "     git rm .gitignore"
+echo "     git commit -m \"Release $VERSION\""
+echo "     git tag -a $VERSION"
+echo "   When tagging, include the changelog. For an example, run:"
+echo "     git show 2.7.0"
+echo
+echo "4. Create .tar.gz archives manually for the extra packages:"
+echo "     cd SOME-TEMPORARY-DIRECTORY"
+echo "     tar cvzf lwt_react.tar.gz *"
+echo
+echo "5. Post everything to GitHub:"
+echo "     git push origin $VERSiON"
+echo "   Attach lwt_react.tar.gz, etc., to the release manually."
+echo
+echo "X. To revert:"
+echo "     git checkout master   # or whatever branch you were on"
+echo "     git checkout -- ."
+echo "     git clean -ffd"
+echo "     git branch -D release-$VERSION"
