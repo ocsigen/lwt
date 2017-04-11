@@ -1,3 +1,20 @@
+===== 3.0.0 (2017-04-10) =====
+
+====== Breaking ======
+
+  * These changes were originally announced in release 2.7.0 (#308).
+  * Lwt_engine.libev now has an optional argument for selecting the libev back
+    end (#269, #294, Jeremy Yallop).
+  * Lwt_io.establish_server has been changed to make it more difficult to leak
+    file descriptors (#258, #260).
+  * Lwt_io.shutdown_server now evaluates to a promise, which completes when the
+    listening socket's close(2) operation completes (#259).
+  * Lwt_unix.bind now evaluates to a promise, because the bind(2) system call
+    can block for Unix domain sockets (#296, requested David Sheets).
+  * ocamlfind packages lwt.react, lwt.ssl, lwt.glib are replaced by lwt_react,
+    lwt_ssl, lwt_glib. These have been separate OPAM packages, under those
+    names, since 2.7.0 (#301).
+
 ===== 2.7.1 (2017-04-08) =====
 
 ====== Fixes ======
