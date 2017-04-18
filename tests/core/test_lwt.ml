@@ -2384,6 +2384,8 @@ let cancel_bind_tests = [
     Lwt.on_cancel p1 (fun () -> f_ran := true);
     Lwt.on_cancel p2 (fun () -> g_ran := true);
     Lwt.cancel p2;
+    (* Canceling [p2] doesn't cancel [p1], because the function passed to
+       [Lwt.bind] never ran. *)
     Lwt.return (not !f_ran && !g_ran)
   end;
 
@@ -2397,6 +2399,8 @@ let cancel_bind_tests = [
     Lwt.on_cancel p3 (fun () -> g_ran := true);
     Lwt.wakeup r ();
     Lwt.cancel p3;
+    (* Canceling [p3] cancels [p2], because the function passed to [Lwt.bind]
+       did run, and evaluated to [p2]. *)
     Lwt.return (!f_ran && !g_ran)
   end;
 ]
@@ -2426,6 +2430,8 @@ let cancel_map_tests = [
 let tests = tests @ cancel_map_tests
 
 let cancel_catch_tests = [
+  (* In [p' = Lwt.catch (fun () -> p) f], if [p] is not cancelable, [p'] is also
+     not cancelable. *)
   test "catch: wait, pending, canceled" begin fun () ->
     let f_ran = ref false in
     let p, _ = Lwt.wait () in
@@ -2439,7 +2445,9 @@ let cancel_catch_tests = [
       (not !f_ran && Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Sleep)
   end;
 
-  (* Demonstrates that [catch] can be used to interfere with cancelation. *)
+  (* In [p' = Lwt.catch (fun () -> p) f], if [p] is cancelable, canceling [p']
+     propagates to [p], and then the cancelation exception can be "intercepted"
+     by [f], which can complete [p'] in an arbitrary way. *)
   test "catch: task, pending, canceled" begin fun () ->
     let saw = ref None in
     let p, _ = Lwt.task () in
@@ -2455,6 +2463,46 @@ let cancel_catch_tests = [
        Lwt.state p' = Lwt.Return "foo")
   end;
 
+  (* In [p' = Lwt.catch (fun () -> p) f], if [p] is cancelable, and cancel
+     callbacks are added to both [p] and [p'], and [f] does not resolve [p']
+     with [Lwt.Fail Lwt.Canceled], only the callback on [p] runs. *)
+  test "catch: task, pending, canceled, on_cancel, intercepted" begin fun () ->
+    let on_cancel_1_ran = ref false in
+    let on_cancel_2_ran = ref false in
+    let p, _ = Lwt.task () in
+    let p' =
+      Lwt.catch
+        (fun () -> p)
+        (fun _ ->
+          assert (!on_cancel_1_ran && not !on_cancel_2_ran);
+          Lwt.return "foo")
+    in
+    Lwt.on_cancel p (fun () -> on_cancel_1_ran := true);
+    Lwt.on_cancel p' (fun () -> on_cancel_2_ran := true);
+    Lwt.cancel p';
+    Lwt.return
+      (Lwt.state p = Lwt.Fail Lwt.Canceled &&
+       Lwt.state p' = Lwt.Return "foo" &&
+       not !on_cancel_2_ran)
+  end;
+
+  (* Same as above, except this time, cancelation is passed on to the outer
+     promise, so we can expect both cancel callbacks to run. *)
+  test "catch: task, pending, canceled, on_cancel, forwarded" begin fun () ->
+    let on_cancel_2_ran = ref false in
+    let p, _ = Lwt.task () in
+    let p' = Lwt.catch (fun () -> p) Lwt.fail in
+    Lwt.on_cancel p' (fun () -> on_cancel_2_ran := true);
+    Lwt.cancel p';
+    Lwt.return
+      (Lwt.state p = Lwt.Fail Lwt.Canceled &&
+       Lwt.state p' = Lwt.Fail Lwt.Canceled &&
+       !on_cancel_2_ran)
+  end;
+
+  (* (2 tests) If the handler passed to [Lwt.catch] already ran, canceling the
+     outer promise is the same as canceling the promise returned by the
+     handler. *)
   test "catch: pending, wait, canceled" begin fun () ->
     let p1, r = Lwt.wait () in
     let p2, _ = Lwt.wait () in
@@ -2708,6 +2756,18 @@ let cancel_join_tests = [
     Lwt.wakeup r ();
     Lwt.return
       (Lwt.state p1 = Lwt.Return () && Lwt.state p3 = Lwt.Fail Lwt.Canceled)
+  end;
+
+  (* In [p' = Lwt.join [p; p]], if [p'] is canceled, the cancel handler on [p]
+     is called only once, even though it is reachable by two paths in the
+     cancelation graph. *)
+  test "join: cancel diamond" begin fun () ->
+    let ran = ref 0 in
+    let p, _ = Lwt.task () in
+    let p' = Lwt.join [p; p] in
+    Lwt.on_cancel p (fun () -> ran := !ran + 1);
+    Lwt.cancel p';
+    Lwt.return (!ran = 1)
   end;
 ]
 let tests = tests @ cancel_join_tests
