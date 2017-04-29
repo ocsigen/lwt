@@ -2103,6 +2103,23 @@ let protected_tests = [
     Lwt.return
       (Lwt.state p = Lwt.Return "foo" && Lwt.state p' = Lwt.Fail Lwt.Canceled)
   end;
+
+  (* Implementation detail: [p' = Lwt.protected _] can still be completed if it
+     becomes a proxy. *)
+  test "protected: pending, proxy" begin fun () ->
+    let p1, r1 = Lwt.task () in
+    let p2 = Lwt.protected p1 in
+
+    (* Make p2 a proxy for p4; p3 is just needed to suspend the bind, in order
+       to trigger the code that makes p2 a proxy. *)
+    let p3, r3 = Lwt.wait () in
+    let _ = Lwt.bind p3 (fun () -> p2) in
+    Lwt.wakeup r3 ();
+
+    (* It should now be possible to complete p2 by completing p1. *)
+    Lwt.wakeup r1 "foo";
+    Lwt.return (Lwt.state p2 = Lwt.Return "foo")
+  end;
 ]
 let tests = tests @ protected_tests
 
