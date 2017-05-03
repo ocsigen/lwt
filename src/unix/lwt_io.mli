@@ -446,6 +446,17 @@ val establish_server :
 
     @since 3.0.0 *)
 
+val establish_server' :
+  ?fd : Lwt_unix.file_descr ->
+  ?buffer_size : int ->
+  ?backlog : int ->
+  ?no_close : bool ->
+  Unix.sockaddr ->
+  (Lwt_unix.sockaddr -> input_channel * output_channel -> unit Lwt.t) ->
+    server Lwt.t
+(** Like establish_server but allows you to access the client's socket
+    in the callback. *)
+
 val shutdown_server : server -> unit Lwt.t
 (** Closes the given server's listening socket. The returned promise resolves
     when the [close(2)] system call completes. This function does not affect the
