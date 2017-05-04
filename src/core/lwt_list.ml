@@ -29,13 +29,9 @@ let rec iter_s f l =
     f x >>= fun () ->
     iter_s f l
 
-let rec iter_p f l =
-  match l with
-  | [] ->
-    Lwt.return_unit
-  | x :: l ->
-    let tx = f x and tl = iter_p f l in
-    tx >>= fun () -> tl
+let iter_p f l =
+  let ts = List.map f l in
+  Lwt.join ts
 
 let rec iteri_s i f l =
   match l with
@@ -47,34 +43,29 @@ let rec iteri_s i f l =
 
 let iteri_s f l = iteri_s 0 f l
 
-let rec iteri_p i f l =
-  match l with
-  | [] ->
-    Lwt.return_unit
-  | x :: l ->
-    let tx = f i x and tl = iteri_p (i + 1) f l in
-    tx >>= fun () -> tl
+let iteri_p f l =
+  let ts = List.mapi f l in
+  Lwt.join ts
 
-let iteri_p f l = iteri_p 0 f l
+let map_s f l =
+  let rec inner acc = function
+    | [] -> List.rev acc |> Lwt.return
+    | hd::tl ->
+      f hd >>= fun r ->
+      inner (r::acc) tl
+  in
+  inner [] l
 
-let rec map_s f l =
-  match l with
+let rec _collect acc = function
   | [] ->
-    Lwt.return_nil
-  | x :: l ->
-    f x >>= fun x ->
-    map_s f l >|= fun l ->
-    x :: l
+    List.rev acc |> Lwt.return
+  | t::ts ->
+    t >>= fun i ->
+    _collect (i::acc) ts
 
-let rec map_p f l =
-  match l with
-  | [] ->
-    Lwt.return_nil
-  | x :: l ->
-    let tx = f x and tl = map_p f l in
-    tx >>= fun x ->
-    tl >|= fun l ->
-    x :: l
+let map_p f l =
+  let ts = List.map f l in
+  _collect [] ts
 
 let rec filter_map_s f l =
   match l with
@@ -109,17 +100,9 @@ let rec mapi_s i f l =
 
 let mapi_s f l = mapi_s 0 f l
 
-let rec mapi_p i f l =
-  match l with
-  | [] ->
-    Lwt.return_nil
-  | x :: l ->
-    let tx = f i x and tl = mapi_p (i + 1) f l in
-    tx >>= fun x ->
-    tl >|= fun l ->
-    x :: l
-
-let mapi_p f l = mapi_p 0 f l
+let mapi_p f l =
+  let ts = List.mapi f l in
+  _collect [] ts
 
 let rec rev_map_append_s acc f l =
   match l with
