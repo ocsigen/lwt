@@ -58,15 +58,15 @@ let pack_promise_list (type x) l =
 
 module Main_internal_types =
 struct
-  type 'a promise_state =
+  type 'a promise = {
+    mutable state : 'a state;
+  }
+
+  and 'a state =
     | Resolved of 'a
     | Failed of exn
     | Pending of 'a callbacks
     | Unified_with of 'a promise
-
-  and 'a promise = {
-    mutable state : 'a promise_state;
-  }
 
   and 'a callbacks = {
     mutable regular_callbacks : 'a regular_callback_list;
@@ -85,10 +85,10 @@ struct
     | Regular_callback_list_empty
     | Regular_callback_list_concat of
       'a regular_callback_list * 'a regular_callback_list
-    | Regular_callback_list_explicitly_removable_callback of
-      ('a promise_state -> unit) option ref
     | Regular_callback_list_implicitly_removed_callback of
-      ('a promise_state -> unit)
+      ('a state -> unit)
+    | Regular_callback_list_explicitly_removable_callback of
+      ('a state -> unit) option ref
 
   and 'a cancel_callback_list =
     | Cancel_callback_list_empty
@@ -345,7 +345,7 @@ and run_cancel_handlers_rec_next rem =
 module type A_queued_callbacks = sig
   type a
   val callbacks : a callbacks
-  val state : a promise_state
+  val state : a state
 end
 
 let queued_callbacks = Queue.create ()
