@@ -109,15 +109,11 @@ external to_public_promise : 'a promise -> 'a t = "%identity"
 external to_public_resolver : 'a promise -> 'a u = "%identity"
 external to_internal_resolver : 'a u -> 'a promise = "%identity"
 
-type +'a result = ('a, exn) Result.result
+  type +'a lwt_result = ('a, exn) Result.result
 
   let state_of_result = function
     | Result.Ok x -> Resolved x
     | Result.Error exn -> Failed exn
-
-let make_value v = Result.Ok v
-let make_error exn = Result.Error exn
-
 end
 include Public_types
 
@@ -395,8 +391,8 @@ let queued_callbacks = Queue.create ()
       | Resolved _ | Failed _ | Unified_with _ ->
           invalid_arg "Lwt.wakeup_result"
 
-  let wakeup r v = wakeup_result r (make_value v)
-  let wakeup_exn r exn = wakeup_result r (make_error exn)
+  let wakeup r v = wakeup_result r (Result.Ok v)
+  let wakeup_exn r exn = wakeup_result r (Result.Error exn)
 
   let wakeup_later_result (type x) r result =
     let p = underlying (to_internal_resolver r) in
@@ -418,8 +414,8 @@ let queued_callbacks = Queue.create ()
       | Resolved _ | Failed _ | Unified_with _ ->
           invalid_arg "Lwt.wakeup_later_result"
 
-  let wakeup_later r v = wakeup_later_result r (make_value v)
-  let wakeup_later_exn r exn = wakeup_later_result r (make_error exn)
+  let wakeup_later r v = wakeup_later_result r (Result.Ok v)
+  let wakeup_later_exn r exn = wakeup_later_result r (Result.Error exn)
 
 module type Packed_callbacks = sig
   type a
@@ -1271,3 +1267,14 @@ module Infix = struct
   let (<&>) = (<&>)
   let (<?>) = (<?>)
 end
+
+
+
+module Lwt_result_type =
+struct
+  type +'a result = 'a lwt_result
+
+  let make_value v = Result.Ok v
+  let make_error exn = Result.Error exn
+end
+include Lwt_result_type
