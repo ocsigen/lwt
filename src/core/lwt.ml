@@ -65,10 +65,10 @@ and 'a promise = {
 }
 
 and 'a callbacks = {
-  mutable how_to_cancel : how_to_cancel;
   mutable regular_callbacks : 'a regular_callback_list;
-  mutable cleanups_deferred : int;
   mutable cancel_callbacks : 'a cancel_callback_list;
+  mutable how_to_cancel : how_to_cancel;
+  mutable cleanups_deferred : int;
 }
 
 and how_to_cancel =
@@ -79,19 +79,19 @@ and how_to_cancel =
 
 and 'a regular_callback_list =
   | Regular_callback_list_empty
+  | Regular_callback_list_concat of
+    'a regular_callback_list * 'a regular_callback_list
   | Regular_callback_list_explicitly_removable_callback of
     ('a promise_state -> unit) option ref
   | Regular_callback_list_implicitly_removed_callback of
     ('a promise_state -> unit)
-  | Regular_callback_list_concat of
-    'a regular_callback_list * 'a regular_callback_list
 
 and 'a cancel_callback_list =
   | Cancel_callback_list_empty
-  | Cancel_callback_list_callback of storage * (unit -> unit)
-  | Cancel_callback_list_remove_sequence_node of 'a u Lwt_sequence.node
   | Cancel_callback_list_concat of
     'a cancel_callback_list * 'a cancel_callback_list
+  | Cancel_callback_list_callback of storage * (unit -> unit)
+  | Cancel_callback_list_remove_sequence_node of 'a u Lwt_sequence.node
 
 external thread_repr : 'a t -> 'a promise = "%identity"
 external thread : 'a promise -> 'a t = "%identity"
