@@ -209,6 +209,17 @@ let add_regular_callback_list_node sleeper waiter =
 let add_implicitly_removed_callback sleeper waiter =
   add_regular_callback_list_node sleeper (Regular_callback_list_implicitly_removed_callback waiter)
 
+let add_explicitly_removable_callback_to_each_of threads waiter =
+  let node = Regular_callback_list_explicitly_removable_callback waiter in
+  List.iter
+    (fun t ->
+       match (repr t).state with
+         | Pending sleeper ->
+             add_regular_callback_list_node sleeper node
+         | Resolved _ | Failed _ | Unified_with _ ->
+             assert false)
+    threads
+
 
 
 let async_exception_hook =
@@ -802,17 +813,6 @@ let count_completed_promises_in l =
     match (repr x).state with
     | Pending _ -> acc
     | Resolved _ | Failed _ | Unified_with _ -> acc + 1) 0 l
-
-let add_explicitly_removable_callback_to_each_of threads waiter =
-  let node = Regular_callback_list_explicitly_removable_callback waiter in
-  List.iter
-    (fun t ->
-       match (repr t).state with
-         | Pending sleeper ->
-             add_regular_callback_list_node sleeper node
-         | Resolved _ | Failed _ | Unified_with _ ->
-             assert false)
-    threads
 
 (* The PRNG state is initialized with a constant to make non-IO-based
    programs deterministic. *)
