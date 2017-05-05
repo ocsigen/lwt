@@ -846,6 +846,44 @@ let ignore_result t =
     | Unified_with _ ->
         assert false
 
+let join l =
+  let res = temp_many l
+  and sleeping = ref 0
+  and return_state = ref state_return_unit in
+  let handle_result state =
+    begin
+      match !return_state, state with
+        | Resolved _, Failed _ -> return_state := state
+        | _ -> ()
+    end [@ocaml.warning "-4"];
+    decr sleeping;
+    if !sleeping = 0 then complete res !return_state
+  in
+  let rec init = function
+    | [] ->
+        if !sleeping = 0 then
+          to_public_promise { state = !return_state }
+        else
+          res
+    | t :: rest ->
+        match (repr t).state with
+          | Pending sleeper ->
+              incr sleeping;
+              add_implicitly_removed_callback sleeper handle_result;
+              init rest
+          | Failed _ as state -> begin
+              match !return_state with
+                | Resolved _ ->
+                    return_state := state;
+                    init rest
+                | Failed _ | Pending _ | Unified_with _ ->
+                    init rest
+            end
+          | Resolved _ | Unified_with _ ->
+              init rest
+  in
+  init l
+
 let rec nth_completed l n =
   match l with
     | [] ->
@@ -1081,44 +1119,6 @@ let protected t =
         t
     | Unified_with _ ->
         assert false
-
-let join l =
-  let res = temp_many l
-  and sleeping = ref 0
-  and return_state = ref state_return_unit in
-  let handle_result state =
-    begin
-      match !return_state, state with
-        | Resolved _, Failed _ -> return_state := state
-        | _ -> ()
-    end [@ocaml.warning "-4"];
-    decr sleeping;
-    if !sleeping = 0 then complete res !return_state
-  in
-  let rec init = function
-    | [] ->
-        if !sleeping = 0 then
-          to_public_promise { state = !return_state }
-        else
-          res
-    | t :: rest ->
-        match (repr t).state with
-          | Pending sleeper ->
-              incr sleeping;
-              add_implicitly_removed_callback sleeper handle_result;
-              init rest
-          | Failed _ as state -> begin
-              match !return_state with
-                | Resolved _ ->
-                    return_state := state;
-                    init rest
-                | Failed _ | Pending _ | Unified_with _ ->
-                    init rest
-            end
-          | Resolved _ | Unified_with _ ->
-              init rest
-  in
-  init l
 
 let ( <?> ) t1 t2 = choose [t1; t2]
 let ( <&> ) t1 t2 = join [t1; t2]
