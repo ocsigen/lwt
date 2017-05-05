@@ -662,6 +662,25 @@ let catch x f =
     | Unified_with _ ->
         assert false
 
+let try_bind x f g =
+  let t = repr (try x () with exn -> fail exn) in
+  match t.state with
+    | Resolved v ->
+        f v
+    | Failed exn ->
+        g exn
+    | Pending sleeper ->
+        let res = temp t in
+        let data = !current_storage in
+        add_implicitly_removed_callback sleeper
+          (function
+             | Resolved v -> current_storage := data; unify res (try f v with exn -> fail exn)
+             | Failed exn -> current_storage := data; unify res (try g exn with exn -> fail exn)
+             | Pending _ | Unified_with _ -> assert false);
+        res
+    | Unified_with _ ->
+        assert false
+
 let on_success t f =
   match (repr t).state with
     | Resolved v ->
@@ -722,25 +741,6 @@ let on_any t f g =
              | Resolved v -> current_storage := data; handle_with_async_exception_hook f v
              | Failed exn -> current_storage := data; handle_with_async_exception_hook g exn
              | Pending _ | Unified_with _ -> assert false)
-    | Unified_with _ ->
-        assert false
-
-let try_bind x f g =
-  let t = repr (try x () with exn -> fail exn) in
-  match t.state with
-    | Resolved v ->
-        f v
-    | Failed exn ->
-        g exn
-    | Pending sleeper ->
-        let res = temp t in
-        let data = !current_storage in
-        add_implicitly_removed_callback sleeper
-          (function
-             | Resolved v -> current_storage := data; unify res (try f v with exn -> fail exn)
-             | Failed exn -> current_storage := data; unify res (try g exn with exn -> fail exn)
-             | Pending _ | Unified_with _ -> assert false);
-        res
     | Unified_with _ ->
         assert false
 
