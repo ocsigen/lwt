@@ -133,6 +133,24 @@ let get key =
   with Not_found ->
     None
 
+let with_value key value f =
+  let save = !current_storage in
+  let data =
+    match value with
+      | Some _ ->
+          Storage_map.add key.id (fun () -> key.store <- value) save
+      | None ->
+          Storage_map.remove key.id save
+  in
+  current_storage := data;
+  try
+    let result = f () in
+    current_storage := save;
+    result
+  with exn ->
+    current_storage := save;
+    raise exn
+
 
 
 let async_exception_hook =
@@ -1055,24 +1073,6 @@ let finalize f g =
   try_bind f
     (fun x -> g () >>= fun () -> return x)
     (fun e -> g () >>= fun () -> fail e)
-
-let with_value key value f =
-  let save = !current_storage in
-  let data =
-    match value with
-      | Some _ ->
-          Storage_map.add key.id (fun () -> key.store <- value) save
-      | None ->
-          Storage_map.remove key.id save
-  in
-  current_storage := data;
-  try
-    let result = f () in
-    current_storage := save;
-    result
-  with exn ->
-    current_storage := save;
-    raise exn
 
 
 
