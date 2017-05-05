@@ -65,29 +65,29 @@ and 'a promise = {
 }
 
 and 'a callbacks = {
-  mutable cancel : cancel;
-  mutable waiters : 'a waiter_set;
-  mutable removed : int;
-  mutable cancel_handlers : 'a cancel_handler_set;
+  mutable how_to_cancel : how_to_cancel;
+  mutable regular_callbacks : 'a regular_callback_list;
+  mutable cleanups_deferred : int;
+  mutable cancel_callbacks : 'a cancel_callback_list;
 }
 
-and cancel =
-  | Cancel_no
-  | Cancel_me
-  | Cancel_link of a_promise
-  | Cancel_links of a_promise_list
+and how_to_cancel =
+  | Not_cancelable
+  | Cancel_this_promise
+  | Propagate_cancel_to_one of a_promise
+  | Propagate_cancel_to_several of a_promise_list
 
-and 'a waiter_set =
-  | Empty
-  | Removable of ('a promise_state -> unit) option ref
-  | Immutable of ('a promise_state -> unit)
-  | Append of 'a waiter_set * 'a waiter_set
+and 'a regular_callback_list =
+  | Regular_callback_list_empty
+  | Regular_callback_list_explicitly_removable_callback of ('a promise_state -> unit) option ref
+  | Regular_callback_list_implicitly_removed_callback of ('a promise_state -> unit)
+  | Regular_callback_list_concat of 'a regular_callback_list * 'a regular_callback_list
 
-and 'a cancel_handler_set =
-  | Chs_empty
-  | Chs_func of storage * (unit -> unit)
-  | Chs_node of 'a u Lwt_sequence.node
-  | Chs_append of 'a cancel_handler_set * 'a cancel_handler_set
+and 'a cancel_callback_list =
+  | Cancel_callback_list_empty
+  | Cancel_callback_list_callback of storage * (unit -> unit)
+  | Cancel_callback_list_remove_sequence_node of 'a u Lwt_sequence.node
+  | Cancel_callback_list_concat of 'a cancel_callback_list * 'a cancel_callback_list
 
 external thread_repr : 'a t -> 'a promise = "%identity"
 external thread : 'a promise -> 'a t = "%identity"
@@ -146,17 +146,17 @@ let call_unsafe f x =
 
 let rec run_waiters_rec state ws rem =
   match ws with
-    | Empty ->
+    | Regular_callback_list_empty ->
         run_waiters_rec_next state rem
-    | Immutable f ->
+    | Regular_callback_list_implicitly_removed_callback f ->
         f state;
         run_waiters_rec_next state rem
-    | Removable { contents = None } ->
+    | Regular_callback_list_explicitly_removable_callback { contents = None } ->
         run_waiters_rec_next state rem
-    | Removable { contents = Some f } ->
+    | Regular_callback_list_explicitly_removable_callback { contents = Some f } ->
         f state;
         run_waiters_rec_next state rem
-    | Append (ws1, ws2) ->
+    | Regular_callback_list_concat (ws1, ws2) ->
         run_waiters_rec state ws1 (ws2 :: rem)
 
 and run_waiters_rec_next state rem =
@@ -168,16 +168,16 @@ and run_waiters_rec_next state rem =
 
 let rec run_cancel_handlers_rec chs rem =
   match chs with
-    | Chs_empty ->
+    | Cancel_callback_list_empty ->
         run_cancel_handlers_rec_next rem
-    | Chs_func (data, f) ->
+    | Cancel_callback_list_callback (data, f) ->
         current_data := data;
         call_unsafe f ();
         run_cancel_handlers_rec_next rem
-    | Chs_node n ->
+    | Cancel_callback_list_remove_sequence_node n ->
         Lwt_sequence.remove n;
         run_cancel_handlers_rec_next rem
-    | Chs_append (chs1, chs2) ->
+    | Cancel_callback_list_concat (chs1, chs2) ->
         run_cancel_handlers_rec chs1 (chs2 :: rem)
 
 and run_cancel_handlers_rec_next rem =
@@ -190,10 +190,10 @@ and run_cancel_handlers_rec_next rem =
 let unsafe_run_waiters sleeper state =
   (match state with
      | Failed Canceled ->
-         run_cancel_handlers_rec sleeper.cancel_handlers []
+         run_cancel_handlers_rec sleeper.cancel_callbacks []
      | Resolved _ | Failed _ | Pending _ | Unified_with _ ->
          ());
-  run_waiters_rec state sleeper.waiters []
+  run_waiters_rec state sleeper.regular_callbacks []
 
 let wakening = ref false
 
@@ -303,17 +303,17 @@ let cancel t =
   let rec collect : 'a. a_sleeper list -> 'a t -> a_sleeper list = fun acc t ->
     let t = repr t in
     match t.state with
-      | Pending ({ cancel; _ } as sleeper) -> begin
-          match cancel with
-            | Cancel_no ->
+      | Pending ({ how_to_cancel; _ } as sleeper) -> begin
+          match how_to_cancel with
+            | Not_cancelable ->
                 acc
-            | Cancel_me ->
+            | Cancel_this_promise ->
                 t.state <- state;
                 (pack_sleeper sleeper) :: acc
-            | Cancel_link m ->
+            | Propagate_cancel_to_one m ->
                 let module M = (val m : Existential_promise) in
                 collect acc M.promise
-            | Cancel_links m ->
+            | Propagate_cancel_to_several m ->
                 let module M = (val m : Existential_promise_list) in
                 List.fold_left collect acc M.promise_list
         end
@@ -325,31 +325,31 @@ let cancel t =
   List.iter
     (fun sleeper ->
        let module M = (val sleeper : A_sleeper) in
-       run_cancel_handlers_rec M.sleeper.cancel_handlers [];
-       run_waiters_rec state M.sleeper.waiters [])
+       run_cancel_handlers_rec M.sleeper.cancel_callbacks [];
+       run_waiters_rec state M.sleeper.regular_callbacks [])
     sleepers;
   leave_wakeup ctx
 
 let append l1 l2 =
   (match l1, l2 with
-    | Empty, _ -> l2
-    | _, Empty -> l1
-    | _ -> Append (l1, l2))
+    | Regular_callback_list_empty, _ -> l2
+    | _, Regular_callback_list_empty -> l1
+    | _ -> Regular_callback_list_concat (l1, l2))
   [@ocaml.warning "-4"]
 
 let chs_append l1 l2 =
   (match l1, l2 with
-    | Chs_empty, _ -> l2
-    | _, Chs_empty -> l1
-    | _ -> Chs_append (l1, l2))
+    | Cancel_callback_list_empty, _ -> l2
+    | _, Cancel_callback_list_empty -> l1
+    | _ -> Cancel_callback_list_concat (l1, l2))
   [@ocaml.warning "-4"]
 
 let rec cleanup = function
-  | Removable { contents = None } ->
-      Empty
-  | Append (l1, l2) ->
+  | Regular_callback_list_explicitly_removable_callback { contents = None } ->
+      Regular_callback_list_empty
+  | Regular_callback_list_concat (l1, l2) ->
       append (cleanup l1) (cleanup l2)
-  | Empty | Removable _ | Immutable _ as ws ->
+  | Regular_callback_list_empty | Regular_callback_list_explicitly_removable_callback _ | Regular_callback_list_implicitly_removed_callback _ as ws ->
       ws
 
 let connect t1 t2 =
@@ -363,18 +363,18 @@ let connect t1 t2 =
             | Pending sleeper2 ->
                 t2.state <- Unified_with t1;
 
-                sleeper1.cancel <- sleeper2.cancel;
+                sleeper1.how_to_cancel <- sleeper2.how_to_cancel;
 
-                let waiters = append sleeper1.waiters sleeper2.waiters
-                and removed = sleeper1.removed + sleeper2.removed in
+                let waiters = append sleeper1.regular_callbacks sleeper2.regular_callbacks
+                and removed = sleeper1.cleanups_deferred + sleeper2.cleanups_deferred in
                 if removed > max_removed then begin
-                  sleeper1.removed <- 0;
-                  sleeper1.waiters <- cleanup waiters
+                  sleeper1.cleanups_deferred <- 0;
+                  sleeper1.regular_callbacks <- cleanup waiters
                 end else begin
-                  sleeper1.removed <- removed;
-                  sleeper1.waiters <- waiters
+                  sleeper1.cleanups_deferred <- removed;
+                  sleeper1.regular_callbacks <- waiters
                 end;
-                sleeper1.cancel_handlers <- chs_append sleeper1.cancel_handlers sleeper2.cancel_handlers
+                sleeper1.cancel_callbacks <- chs_append sleeper1.cancel_callbacks sleeper2.cancel_callbacks
             | Resolved _ | Failed _ | Unified_with _ as state2 ->
                 t1.state <- state2;
                 unsafe_run_waiters sleeper1 state2
@@ -429,25 +429,25 @@ let fail_invalid_arg msg =
 
 let temp t =
   thread {
-    state = Pending { cancel = Cancel_link (pack_promise (thread t));
-                    waiters = Empty;
-                    removed = 0;
-                    cancel_handlers = Chs_empty }
+    state = Pending { how_to_cancel = Propagate_cancel_to_one (pack_promise (thread t));
+                    regular_callbacks = Regular_callback_list_empty;
+                    cleanups_deferred = 0;
+                    cancel_callbacks = Cancel_callback_list_empty }
   }
 
 let temp_many l =
   thread {
-    state = Pending { cancel = Cancel_links (pack_promise_list l);
-                    waiters = Empty;
-                    removed = 0;
-                    cancel_handlers = Chs_empty }
+    state = Pending { how_to_cancel = Propagate_cancel_to_several (pack_promise_list l);
+                    regular_callbacks = Regular_callback_list_empty;
+                    cleanups_deferred = 0;
+                    cancel_callbacks = Cancel_callback_list_empty }
   }
 
 let wait_aux () = {
-  state = Pending { cancel = Cancel_no;
-                  waiters = Empty;
-                  removed = 0;
-                  cancel_handlers = Chs_empty }
+  state = Pending { how_to_cancel = Not_cancelable;
+                  regular_callbacks = Regular_callback_list_empty;
+                  cleanups_deferred = 0;
+                  cancel_callbacks = Cancel_callback_list_empty }
 }
 
 let wait () =
@@ -455,10 +455,10 @@ let wait () =
   (thread t, wakener t)
 
 let task_aux () = {
-  state = Pending { cancel = Cancel_me;
-                  waiters = Empty;
-                  removed = 0;
-                  cancel_handlers = Chs_empty }
+  state = Pending { how_to_cancel = Cancel_this_promise;
+                  regular_callbacks = Regular_callback_list_empty;
+                  cleanups_deferred = 0;
+                  cancel_callbacks = Cancel_callback_list_empty }
 }
 
 let task () =
@@ -467,26 +467,26 @@ let task () =
 
 let add_task_r seq =
   let sleeper = {
-    cancel = Cancel_me;
-    waiters = Empty;
-    removed = 0;
-    cancel_handlers = Chs_empty
+    how_to_cancel = Cancel_this_promise;
+    regular_callbacks = Regular_callback_list_empty;
+    cleanups_deferred = 0;
+    cancel_callbacks = Cancel_callback_list_empty
   } in
   let t = { state = Pending sleeper } in
   let node = Lwt_sequence.add_r (wakener t) seq in
-  sleeper.cancel_handlers <- Chs_node node;
+  sleeper.cancel_callbacks <- Cancel_callback_list_remove_sequence_node node;
   thread t
 
 let add_task_l seq =
   let sleeper = {
-    cancel = Cancel_me;
-    waiters = Empty;
-    removed = 0;
-    cancel_handlers = Chs_empty
+    how_to_cancel = Cancel_this_promise;
+    regular_callbacks = Regular_callback_list_empty;
+    cleanups_deferred = 0;
+    cancel_callbacks = Cancel_callback_list_empty
   }in
   let t = { state = Pending sleeper } in
   let node = Lwt_sequence.add_l (wakener t) seq in
-  sleeper.cancel_handlers <- Chs_node node;
+  sleeper.cancel_callbacks <- Cancel_callback_list_remove_sequence_node node;
   thread t
 
 let waiter_of_wakener wakener = thread (wakener_repr wakener)
@@ -504,23 +504,23 @@ let wrap6 f x1 x2 x3 x4 x5 x6 = try return (f x1 x2 x3 x4 x5 x6) with exn -> fai
 let wrap7 f x1 x2 x3 x4 x5 x6 x7 = try return (f x1 x2 x3 x4 x5 x6 x7) with exn -> fail exn
 
 let add_waiter sleeper waiter =
-  sleeper.waiters <- (match sleeper.waiters with
-                        | Empty -> waiter
-                        | Immutable _ | Removable _ | Append _ as ws ->
-                          Append (waiter, ws))
+  sleeper.regular_callbacks <- (match sleeper.regular_callbacks with
+                        | Regular_callback_list_empty -> waiter
+                        | Regular_callback_list_implicitly_removed_callback _ | Regular_callback_list_explicitly_removable_callback _ | Regular_callback_list_concat _ as ws ->
+                          Regular_callback_list_concat (waiter, ws))
 
 let add_immutable_waiter sleeper waiter =
-  add_waiter sleeper (Immutable waiter)
+  add_waiter sleeper (Regular_callback_list_implicitly_removed_callback waiter)
 
 let on_cancel t f =
   match (repr t).state with
     | Pending sleeper ->
-        let handler = Chs_func (!current_data, f) in
-        sleeper.cancel_handlers <- (
-          match sleeper.cancel_handlers with
-            | Chs_empty -> handler
-            | Chs_func _ | Chs_node _ | Chs_append _ as chs ->
-              Chs_append (handler, chs)
+        let handler = Cancel_callback_list_callback (!current_data, f) in
+        sleeper.cancel_callbacks <- (
+          match sleeper.cancel_callbacks with
+            | Cancel_callback_list_empty -> handler
+            | Cancel_callback_list_callback _ | Cancel_callback_list_remove_sequence_node _ | Cancel_callback_list_concat _ as chs ->
+              Cancel_callback_list_concat (handler, chs)
         )
     | Failed Canceled ->
         call_unsafe f ()
@@ -745,21 +745,21 @@ let remove_waiters l =
   List.iter
     (fun t ->
        match (repr t).state with
-         | Pending ({ waiters = Removable _; _ } as sleeper) ->
-             sleeper.waiters <- Empty
-         | Pending ({waiters = Empty | Immutable _ | Append _; _} as sleeper) ->
-             let removed = sleeper.removed + 1 in
+         | Pending ({ regular_callbacks = Regular_callback_list_explicitly_removable_callback _; _ } as sleeper) ->
+             sleeper.regular_callbacks <- Regular_callback_list_empty
+         | Pending ({regular_callbacks = Regular_callback_list_empty | Regular_callback_list_implicitly_removed_callback _ | Regular_callback_list_concat _; _} as sleeper) ->
+             let removed = sleeper.cleanups_deferred + 1 in
              if removed > max_removed then begin
-               sleeper.removed <- 0;
-               sleeper.waiters <- cleanup sleeper.waiters
+               sleeper.cleanups_deferred <- 0;
+               sleeper.regular_callbacks <- cleanup sleeper.regular_callbacks
              end else
-               sleeper.removed <- removed
+               sleeper.cleanups_deferred <- removed
          | Resolved _ | Failed _ | Unified_with _ ->
              ())
     l
 
 let add_removable_waiter threads waiter =
-  let node = Removable waiter in
+  let node = Regular_callback_list_explicitly_removable_callback waiter in
   List.iter
     (fun t ->
        match (repr t).state with
