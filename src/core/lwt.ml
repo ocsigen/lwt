@@ -681,6 +681,11 @@ let try_bind x f g =
     | Unified_with _ ->
         assert false
 
+let finalize f g =
+  try_bind f
+    (fun x -> g () >>= fun () -> return x)
+    (fun e -> g () >>= fun () -> fail e)
+
 let on_success t f =
   match (repr t).state with
     | Resolved v ->
@@ -1051,11 +1056,6 @@ let join l =
 
 let ( <?> ) t1 t2 = choose [t1; t2]
 let ( <&> ) t1 t2 = join [t1; t2]
-
-let finalize f g =
-  try_bind f
-    (fun x -> g () >>= fun () -> return x)
-    (fun e -> g () >>= fun () -> fail e)
 
 
 
