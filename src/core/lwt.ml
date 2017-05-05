@@ -545,23 +545,6 @@ let no_cancel t =
     | Unified_with _ ->
         assert false
 
-let on_cancel t f =
-  match (repr t).state with
-    | Pending sleeper ->
-        let handler = Cancel_callback_list_callback (!current_storage, f) in
-        sleeper.cancel_callbacks <- (
-          match sleeper.cancel_callbacks with
-            | Cancel_callback_list_empty -> handler
-            | Cancel_callback_list_callback _
-            | Cancel_callback_list_remove_sequence_node _
-            | Cancel_callback_list_concat _ as chs ->
-              Cancel_callback_list_concat (handler, chs)
-        )
-    | Failed Canceled ->
-        handle_with_async_exception_hook f ()
-    | Resolved _ | Failed _ | Unified_with _ ->
-        ()
-
 let unify t1 t2 =
   let t1 = repr t1 and t2 = repr t2 in
   match t1.state with
@@ -751,6 +734,23 @@ let backtrace_finalize add_loc f g =
   backtrace_try_bind add_loc f
     (fun x -> g () >>= fun () -> return x)
     (fun e -> g () >>= fun () -> fail (add_loc e))
+
+let on_cancel t f =
+  match (repr t).state with
+    | Pending sleeper ->
+        let handler = Cancel_callback_list_callback (!current_storage, f) in
+        sleeper.cancel_callbacks <- (
+          match sleeper.cancel_callbacks with
+            | Cancel_callback_list_empty -> handler
+            | Cancel_callback_list_callback _
+            | Cancel_callback_list_remove_sequence_node _
+            | Cancel_callback_list_concat _ as chs ->
+              Cancel_callback_list_concat (handler, chs)
+        )
+    | Failed Canceled ->
+        handle_with_async_exception_hook f ()
+    | Resolved _ | Failed _ | Unified_with _ ->
+        ()
 
 let on_success t f =
   match (repr t).state with
