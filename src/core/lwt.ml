@@ -1125,33 +1125,6 @@ let ( <&> ) t1 t2 = join [t1; t2]
 
 
 
-let pause_hook = ref ignore
-
-let paused = Lwt_sequence.create ()
-let paused_count = ref 0
-
-let pause () =
-  let waiter = add_task_r paused in
-  incr paused_count;
-  !pause_hook !paused_count;
-  waiter
-
-let wakeup_paused () =
-  if Lwt_sequence.is_empty paused then
-    paused_count := 0
-  else begin
-    let tmp = Lwt_sequence.create () in
-    Lwt_sequence.transfer_r paused tmp;
-    paused_count := 0;
-    Lwt_sequence.iter_l (fun wakener -> wakeup wakener ()) tmp
-  end
-
-let register_pause_notifier f = pause_hook := f
-
-let paused_count () = !paused_count
-
-
-
 let rec is_sleeping_rec t =
   match t.state with
     | Resolved _ | Failed _ ->
@@ -1196,6 +1169,34 @@ let wrap4 f x1 x2 x3 x4 = try return (f x1 x2 x3 x4) with exn -> fail exn
 let wrap5 f x1 x2 x3 x4 x5 = try return (f x1 x2 x3 x4 x5) with exn -> fail exn
 let wrap6 f x1 x2 x3 x4 x5 x6 = try return (f x1 x2 x3 x4 x5 x6) with exn -> fail exn
 let wrap7 f x1 x2 x3 x4 x5 x6 x7 = try return (f x1 x2 x3 x4 x5 x6 x7) with exn -> fail exn
+
+
+
+let pause_hook = ref ignore
+
+let paused = Lwt_sequence.create ()
+let paused_count = ref 0
+
+let pause () =
+  let waiter = add_task_r paused in
+  incr paused_count;
+  !pause_hook !paused_count;
+  waiter
+
+let wakeup_paused () =
+  if Lwt_sequence.is_empty paused then
+    paused_count := 0
+  else begin
+    let tmp = Lwt_sequence.create () in
+    Lwt_sequence.transfer_r paused tmp;
+    paused_count := 0;
+    Lwt_sequence.iter_l (fun wakener -> wakeup wakener ()) tmp
+  end
+
+let register_pause_notifier f = pause_hook := f
+
+let paused_count () = !paused_count
+
 
 
 module Infix = struct
