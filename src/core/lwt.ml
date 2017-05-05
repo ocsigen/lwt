@@ -198,6 +198,17 @@ let remove_waiters l =
              ())
     l
 
+let add_regular_callback_list_node sleeper waiter =
+  sleeper.regular_callbacks <- (match sleeper.regular_callbacks with
+                        | Regular_callback_list_empty -> waiter
+                        | Regular_callback_list_implicitly_removed_callback _
+                        | Regular_callback_list_explicitly_removable_callback _
+                        | Regular_callback_list_concat _ as ws ->
+                          Regular_callback_list_concat (waiter, ws))
+
+let add_implicitly_removed_callback sleeper waiter =
+  add_regular_callback_list_node sleeper (Regular_callback_list_implicitly_removed_callback waiter)
+
 
 
 let async_exception_hook =
@@ -556,17 +567,6 @@ let wrap4 f x1 x2 x3 x4 = try return (f x1 x2 x3 x4) with exn -> fail exn
 let wrap5 f x1 x2 x3 x4 x5 = try return (f x1 x2 x3 x4 x5) with exn -> fail exn
 let wrap6 f x1 x2 x3 x4 x5 x6 = try return (f x1 x2 x3 x4 x5 x6) with exn -> fail exn
 let wrap7 f x1 x2 x3 x4 x5 x6 x7 = try return (f x1 x2 x3 x4 x5 x6 x7) with exn -> fail exn
-
-let add_regular_callback_list_node sleeper waiter =
-  sleeper.regular_callbacks <- (match sleeper.regular_callbacks with
-                        | Regular_callback_list_empty -> waiter
-                        | Regular_callback_list_implicitly_removed_callback _
-                        | Regular_callback_list_explicitly_removable_callback _
-                        | Regular_callback_list_concat _ as ws ->
-                          Regular_callback_list_concat (waiter, ws))
-
-let add_implicitly_removed_callback sleeper waiter =
-  add_regular_callback_list_node sleeper (Regular_callback_list_implicitly_removed_callback waiter)
 
 let on_cancel t f =
   match (repr t).state with
