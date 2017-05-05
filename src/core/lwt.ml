@@ -96,6 +96,17 @@ external to_public_promise : 'a promise -> 'a t = "%identity"
 external to_public_resolver : 'a promise -> 'a u = "%identity"
 external to_internal_resolver : 'a u -> 'a promise = "%identity"
 
+type +'a result = ('a, exn) Result.result
+
+let state_of_result
+  : 'a result -> 'a promise_state
+  = function
+  | Result.Ok x -> Resolved x
+  | Result.Error e -> Failed e
+
+let make_value v = Result.Ok v
+let make_error e = Result.Error e
+
 
 
 let rec underlying t =
@@ -341,17 +352,6 @@ let run_in_completion_loop sleeper state =
   let ctx = enter_completion_loop () in
   run_callbacks sleeper state;
   leave_completion_loop ctx
-
-type +'a result = ('a, exn) Result.result
-
-let state_of_result
-  : 'a result -> 'a promise_state
-  = function
-  | Result.Ok x -> Resolved x
-  | Result.Error e -> Failed e
-
-let make_value v = Result.Ok v
-let make_error e = Result.Error e
 
 let wakeup_result t result =
   let t = underlying (to_internal_resolver t) in
