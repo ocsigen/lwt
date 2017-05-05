@@ -290,6 +290,15 @@ let run_callbacks sleeper state =
          ());
   run_waiters_rec state sleeper.regular_callbacks []
 
+let complete t state =
+  let t = repr t in
+  match t.state with
+    | Pending sleeper ->
+        t.state <- state;
+        run_callbacks sleeper state
+    | Resolved _ | Failed _ | Unified_with _ ->
+        assert false
+
 let currently_in_completion_loop = ref false
 
 module type A_queued_callbacks = sig
@@ -457,15 +466,6 @@ let unify t1 t2 =
         end
     | Resolved _ | Failed _ | Unified_with _ ->
          assert false
-
-let complete t state =
-  let t = repr t in
-  match t.state with
-    | Pending sleeper ->
-        t.state <- state;
-        run_callbacks sleeper state
-    | Resolved _ | Failed _ | Unified_with _ ->
-        assert false
 
 let fast_connect_if t state =
   let t = repr t in
