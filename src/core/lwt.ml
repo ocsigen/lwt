@@ -153,6 +153,32 @@ let with_value key value f =
 
 
 
+let concat_regular_callbacks l1 l2 =
+  (match l1, l2 with
+    | Regular_callback_list_empty, _ -> l2
+    | _, Regular_callback_list_empty -> l1
+    | _ -> Regular_callback_list_concat (l1, l2))
+  [@ocaml.warning "-4"]
+
+let concat_cancel_callbacks l1 l2 =
+  (match l1, l2 with
+    | Cancel_callback_list_empty, _ -> l2
+    | _, Cancel_callback_list_empty -> l1
+    | _ -> Cancel_callback_list_concat (l1, l2))
+  [@ocaml.warning "-4"]
+
+let rec clean_up_callback_cells = function
+  | Regular_callback_list_explicitly_removable_callback { contents = None } ->
+      Regular_callback_list_empty
+  | Regular_callback_list_concat (l1, l2) ->
+      concat_regular_callbacks (clean_up_callback_cells l1) (clean_up_callback_cells l2)
+  | Regular_callback_list_empty
+  | Regular_callback_list_explicitly_removable_callback _
+  | Regular_callback_list_implicitly_removed_callback _ as ws ->
+      ws
+
+
+
 let async_exception_hook =
   ref (fun exn ->
          prerr_string "Fatal error: exception ";
@@ -355,30 +381,6 @@ let cancel t =
        run_waiters_rec state M.callbacks.regular_callbacks [])
     sleepers;
   leave_completion_loop ctx
-
-let concat_regular_callbacks l1 l2 =
-  (match l1, l2 with
-    | Regular_callback_list_empty, _ -> l2
-    | _, Regular_callback_list_empty -> l1
-    | _ -> Regular_callback_list_concat (l1, l2))
-  [@ocaml.warning "-4"]
-
-let concat_cancel_callbacks l1 l2 =
-  (match l1, l2 with
-    | Cancel_callback_list_empty, _ -> l2
-    | _, Cancel_callback_list_empty -> l1
-    | _ -> Cancel_callback_list_concat (l1, l2))
-  [@ocaml.warning "-4"]
-
-let rec clean_up_callback_cells = function
-  | Regular_callback_list_explicitly_removable_callback { contents = None } ->
-      Regular_callback_list_empty
-  | Regular_callback_list_concat (l1, l2) ->
-      concat_regular_callbacks (clean_up_callback_cells l1) (clean_up_callback_cells l2)
-  | Regular_callback_list_empty
-  | Regular_callback_list_explicitly_removable_callback _
-  | Regular_callback_list_implicitly_removed_callback _ as ws ->
-      ws
 
 let unify t1 t2 =
   let t1 = repr t1 and t2 = repr t2 in
