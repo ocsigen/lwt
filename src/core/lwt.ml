@@ -944,6 +944,26 @@ let choose l =
     res
   end
 
+let pick l =
+  let ready = count_completed_promises_in l in
+  if ready > 0 then
+    if ready = 1 then
+      nth_completed_and_cancel_pending l 0
+    else
+      nth_completed_and_cancel_pending l (Random.State.int (Lazy.force prng) ready)
+  else begin
+    let res = temp_many l in
+    let rec waiter = ref (Some handle_result)
+    and handle_result state =
+      waiter := None;
+      remove_waiters l;
+      List.iter cancel l;
+      complete res state
+    in
+    add_explicitly_removable_callback_to_each_of l waiter;
+    res
+  end
+
 let rec finish_nchoose_or_npick_after_pending res acc = function
   | [] ->
       complete res (Resolved (List.rev acc))
@@ -1041,26 +1061,6 @@ let nchoose_split l =
               collect acc_terminated (t :: acc_sleeping) l
   in
   init [] l
-
-let pick l =
-  let ready = count_completed_promises_in l in
-  if ready > 0 then
-    if ready = 1 then
-      nth_completed_and_cancel_pending l 0
-    else
-      nth_completed_and_cancel_pending l (Random.State.int (Lazy.force prng) ready)
-  else begin
-    let res = temp_many l in
-    let rec waiter = ref (Some handle_result)
-    and handle_result state =
-      waiter := None;
-      remove_waiters l;
-      List.iter cancel l;
-      complete res state
-    in
-    add_explicitly_removable_callback_to_each_of l waiter;
-    res
-  end
 
 let npick_sleep l =
   let res = temp_many l in
