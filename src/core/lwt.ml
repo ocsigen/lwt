@@ -534,6 +534,17 @@ let add_task_l seq =
 
 let waiter_of_wakener wakener = to_public_promise (to_internal_resolver wakener)
 
+let no_cancel t =
+  match (repr t).state with
+    | Pending sleeper ->
+        let res = to_public_promise (wait_aux ()) in
+        add_implicitly_removed_callback sleeper (complete res);
+        res
+    | Resolved _ | Failed _ ->
+        t
+    | Unified_with _ ->
+        assert false
+
 let apply f x = try f x with e -> fail e
 
 let wrap f = try return (f ()) with exn -> fail exn
@@ -780,17 +791,6 @@ let ignore_result t =
              | Resolved _ -> ()
              | Failed exn -> !async_exception_hook exn
              | Pending _ | Unified_with _ -> assert false)
-    | Unified_with _ ->
-        assert false
-
-let no_cancel t =
-  match (repr t).state with
-    | Pending sleeper ->
-        let res = to_public_promise (wait_aux ()) in
-        add_implicitly_removed_callback sleeper (complete res);
-        res
-    | Resolved _ | Failed _ ->
-        t
     | Unified_with _ ->
         assert false
 
