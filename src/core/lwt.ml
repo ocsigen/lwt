@@ -177,6 +177,27 @@ let rec clean_up_callback_cells = function
   | Regular_callback_list_implicitly_removed_callback _ as ws ->
       ws
 
+let remove_waiters l =
+  List.iter
+    (fun t ->
+       match (repr t).state with
+         | Pending ({ regular_callbacks =
+                 Regular_callback_list_explicitly_removable_callback _; _ } as sleeper) ->
+             sleeper.regular_callbacks <- Regular_callback_list_empty
+         | Pending ({regular_callbacks =
+                 Regular_callback_list_empty
+               | Regular_callback_list_implicitly_removed_callback _
+               | Regular_callback_list_concat _; _} as sleeper) ->
+             let removed = sleeper.cleanups_deferred + 1 in
+             if removed > cleanup_throttle then begin
+               sleeper.cleanups_deferred <- 0;
+               sleeper.regular_callbacks <- clean_up_callback_cells sleeper.regular_callbacks
+             end else
+               sleeper.cleanups_deferred <- removed
+         | Resolved _ | Failed _ | Unified_with _ ->
+             ())
+    l
+
 
 
 let async_exception_hook =
@@ -781,27 +802,6 @@ let count_completed_promises_in l =
     match (repr x).state with
     | Pending _ -> acc
     | Resolved _ | Failed _ | Unified_with _ -> acc + 1) 0 l
-
-let remove_waiters l =
-  List.iter
-    (fun t ->
-       match (repr t).state with
-         | Pending ({ regular_callbacks =
-                 Regular_callback_list_explicitly_removable_callback _; _ } as sleeper) ->
-             sleeper.regular_callbacks <- Regular_callback_list_empty
-         | Pending ({regular_callbacks =
-                 Regular_callback_list_empty
-               | Regular_callback_list_implicitly_removed_callback _
-               | Regular_callback_list_concat _; _} as sleeper) ->
-             let removed = sleeper.cleanups_deferred + 1 in
-             if removed > cleanup_throttle then begin
-               sleeper.cleanups_deferred <- 0;
-               sleeper.regular_callbacks <- clean_up_callback_cells sleeper.regular_callbacks
-             end else
-               sleeper.cleanups_deferred <- removed
-         | Resolved _ | Failed _ | Unified_with _ ->
-             ())
-    l
 
 let add_explicitly_removable_callback_to_each_of threads waiter =
   let node = Regular_callback_list_explicitly_removable_callback waiter in
