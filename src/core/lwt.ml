@@ -126,13 +126,13 @@ let get key =
 
 
 
-let rec repr_rec t =
+let rec underlying t =
   match t.state with
     | Unified_with t' ->
-      let t'' = repr_rec t' in if t'' != t' then t.state <- Unified_with t''; t''
+      let t'' = underlying t' in if t'' != t' then t.state <- Unified_with t''; t''
     | Resolved _ | Failed _ | Pending _ -> t
 
-let repr t = repr_rec (to_internal_promise t)
+let repr t = underlying (to_internal_promise t)
 
 let async_exception_hook =
   ref (fun exn ->
@@ -143,7 +143,7 @@ let async_exception_hook =
          flush stderr;
          exit 2)
 
-let call_unsafe f x =
+let handle_with_async_exception_hook f x =
   try
     f x
   with exn ->
@@ -177,7 +177,7 @@ let rec run_cancel_handlers_rec chs rem =
         run_cancel_handlers_rec_next rem
     | Cancel_callback_list_callback (data, f) ->
         current_storage := data;
-        call_unsafe f ();
+        handle_with_async_exception_hook f ();
         run_cancel_handlers_rec_next rem
     | Cancel_callback_list_remove_sequence_node n ->
         Lwt_sequence.remove n;
@@ -192,7 +192,7 @@ and run_cancel_handlers_rec_next rem =
     | chs :: rem ->
         run_cancel_handlers_rec chs rem
 
-let unsafe_run_waiters sleeper state =
+let run_callbacks sleeper state =
   (match state with
      | Failed Canceled ->
          run_cancel_handlers_rec sleeper.cancel_callbacks []
@@ -200,48 +200,48 @@ let unsafe_run_waiters sleeper state =
          ());
   run_waiters_rec state sleeper.regular_callbacks []
 
-let wakening = ref false
+let currently_in_completion_loop = ref false
 
-module type A_closure = sig
+module type A_queued_callbacks = sig
   type a
-  val sleeper : a callbacks
+  val callbacks : a callbacks
   val state : a promise_state
 end
 
-let to_wakeup = Queue.create ()
+let queued_callbacks = Queue.create ()
 
-let enter_wakeup () =
+let enter_completion_loop () =
   let snapshot = !current_storage in
   let already_wakening =
-    if !wakening then
+    if !currently_in_completion_loop then
       true
     else begin
-      wakening := true;
+      currently_in_completion_loop := true;
       false
     end
   in
   (already_wakening, snapshot)
 
-let leave_wakeup (already_wakening, snapshot) =
+let leave_completion_loop (already_wakening, snapshot) =
   if not already_wakening then begin
-    while not (Queue.is_empty to_wakeup) do
-      let closure = Queue.pop to_wakeup in
-      let module M = (val closure : A_closure) in
-      unsafe_run_waiters M.sleeper M.state
+    while not (Queue.is_empty queued_callbacks) do
+      let closure = Queue.pop queued_callbacks in
+      let module M = (val closure : A_queued_callbacks) in
+      run_callbacks M.callbacks M.state
     done;
-    wakening := false;
+    currently_in_completion_loop := false;
     current_storage := snapshot
   end else
     current_storage := snapshot
 
 (* See https://github.com/ocsigen/lwt/issues/48. *)
 let abandon_wakeups () =
-  if !wakening then leave_wakeup (false, Storage_map.empty)
+  if !currently_in_completion_loop then leave_completion_loop (false, Storage_map.empty)
 
-let safe_run_waiters sleeper state =
-  let ctx = enter_wakeup () in
-  unsafe_run_waiters sleeper state;
-  leave_wakeup ctx
+let run_in_completion_loop sleeper state =
+  let ctx = enter_completion_loop () in
+  run_callbacks sleeper state;
+  leave_completion_loop ctx
 
 type +'a result = ('a, exn) Result.result
 
@@ -255,12 +255,12 @@ let make_value v = Result.Ok v
 let make_error e = Result.Error e
 
 let wakeup_result t result =
-  let t = repr_rec (to_internal_resolver t) in
+  let t = underlying (to_internal_resolver t) in
   match t.state with
     | Pending sleeper ->
         let state = state_of_result result in
         t.state <- state;
-        safe_run_waiters sleeper state
+        run_in_completion_loop sleeper state
     | Failed Canceled ->
         ()
     | Resolved _ | Failed _ | Unified_with _ ->
@@ -270,20 +270,20 @@ let wakeup t v = wakeup_result t (make_value v)
 let wakeup_exn t e = wakeup_result t (make_error e)
 
 let wakeup_later_result (type x) t result =
-  let t = repr_rec (to_internal_resolver t) in
+  let t = underlying (to_internal_resolver t) in
   match t.state with
     | Pending sleeper ->
         let state = state_of_result result in
         t.state <- state;
-        if !wakening then begin
+        if !currently_in_completion_loop then begin
           let module M = struct
             type a = x
-            let sleeper = sleeper
+            let callbacks = sleeper
             let state = state
           end in
-          Queue.push (module M : A_closure) to_wakeup
+          Queue.push (module M : A_queued_callbacks) queued_callbacks
         end else
-          safe_run_waiters sleeper state
+          run_in_completion_loop sleeper state
     | Failed Canceled ->
         ()
     | Resolved _ | Failed _ | Unified_with _ ->
@@ -292,20 +292,20 @@ let wakeup_later_result (type x) t result =
 let wakeup_later t v = wakeup_later_result t (make_value v)
 let wakeup_later_exn t e = wakeup_later_result t (make_error e)
 
-module type A_sleeper = sig
+module type Packed_callbacks = sig
   type a
-  val sleeper : a callbacks
+  val callbacks : a callbacks
 end
 
-type a_sleeper = (module A_sleeper)
+type packed_callbacks = (module Packed_callbacks)
 
-let pack_sleeper (type x) sleeper =
-  let module M = struct type a = x let sleeper = sleeper end in
-  (module M : A_sleeper)
+let pack_callbacks (type x) sleeper =
+  let module M = struct type a = x let callbacks = sleeper end in
+  (module M : Packed_callbacks)
 
 let cancel t =
   let state = Failed Canceled in
-  let rec collect : 'a. a_sleeper list -> 'a t -> a_sleeper list = fun acc t ->
+  let rec collect : 'a. packed_callbacks list -> 'a t -> packed_callbacks list = fun acc t ->
     let t = repr t in
     match t.state with
       | Pending ({ how_to_cancel; _ } as sleeper) -> begin
@@ -314,7 +314,7 @@ let cancel t =
                 acc
             | Cancel_this_promise ->
                 t.state <- state;
-                (pack_sleeper sleeper) :: acc
+                (pack_callbacks sleeper) :: acc
             | Propagate_cancel_to_one m ->
                 let module M = (val m : Existential_promise) in
                 collect acc M.promise
@@ -326,40 +326,40 @@ let cancel t =
           acc
   in
   let sleepers = collect [] t in
-  let ctx = enter_wakeup () in
+  let ctx = enter_completion_loop () in
   List.iter
     (fun sleeper ->
-       let module M = (val sleeper : A_sleeper) in
-       run_cancel_handlers_rec M.sleeper.cancel_callbacks [];
-       run_waiters_rec state M.sleeper.regular_callbacks [])
+       let module M = (val sleeper : Packed_callbacks) in
+       run_cancel_handlers_rec M.callbacks.cancel_callbacks [];
+       run_waiters_rec state M.callbacks.regular_callbacks [])
     sleepers;
-  leave_wakeup ctx
+  leave_completion_loop ctx
 
-let append l1 l2 =
+let concat_regular_callbacks l1 l2 =
   (match l1, l2 with
     | Regular_callback_list_empty, _ -> l2
     | _, Regular_callback_list_empty -> l1
     | _ -> Regular_callback_list_concat (l1, l2))
   [@ocaml.warning "-4"]
 
-let chs_append l1 l2 =
+let concat_cancel_callbacks l1 l2 =
   (match l1, l2 with
     | Cancel_callback_list_empty, _ -> l2
     | _, Cancel_callback_list_empty -> l1
     | _ -> Cancel_callback_list_concat (l1, l2))
   [@ocaml.warning "-4"]
 
-let rec cleanup = function
+let rec clean_up_callback_cells = function
   | Regular_callback_list_explicitly_removable_callback { contents = None } ->
       Regular_callback_list_empty
   | Regular_callback_list_concat (l1, l2) ->
-      append (cleanup l1) (cleanup l2)
+      concat_regular_callbacks (clean_up_callback_cells l1) (clean_up_callback_cells l2)
   | Regular_callback_list_empty
   | Regular_callback_list_explicitly_removable_callback _
   | Regular_callback_list_implicitly_removed_callback _ as ws ->
       ws
 
-let connect t1 t2 =
+let unify t1 t2 =
   let t1 = repr t1 and t2 = repr t2 in
   match t1.state with
     | Pending sleeper1 ->
@@ -373,31 +373,31 @@ let connect t1 t2 =
                 sleeper1.how_to_cancel <- sleeper2.how_to_cancel;
 
                 let waiters =
-                  append sleeper1.regular_callbacks sleeper2.regular_callbacks
+                  concat_regular_callbacks sleeper1.regular_callbacks sleeper2.regular_callbacks
                 and removed =
                   sleeper1.cleanups_deferred + sleeper2.cleanups_deferred in
                 if removed > max_removed then begin
                   sleeper1.cleanups_deferred <- 0;
-                  sleeper1.regular_callbacks <- cleanup waiters
+                  sleeper1.regular_callbacks <- clean_up_callback_cells waiters
                 end else begin
                   sleeper1.cleanups_deferred <- removed;
                   sleeper1.regular_callbacks <- waiters
                 end;
                 sleeper1.cancel_callbacks <-
-                  chs_append sleeper1.cancel_callbacks sleeper2.cancel_callbacks
+                  concat_cancel_callbacks sleeper1.cancel_callbacks sleeper2.cancel_callbacks
             | Resolved _ | Failed _ | Unified_with _ as state2 ->
                 t1.state <- state2;
-                unsafe_run_waiters sleeper1 state2
+                run_callbacks sleeper1 state2
         end
     | Resolved _ | Failed _ | Unified_with _ ->
          assert false
 
-let fast_connect t state =
+let complete t state =
   let t = repr t in
   match t.state with
     | Pending sleeper ->
         t.state <- state;
-        unsafe_run_waiters sleeper state
+        run_callbacks sleeper state
     | Resolved _ | Failed _ | Unified_with _ ->
         assert false
 
@@ -406,7 +406,7 @@ let fast_connect_if t state =
   match t.state with
     | Pending sleeper ->
         t.state <- state;
-        unsafe_run_waiters sleeper state
+        run_callbacks sleeper state
     | Resolved _ | Failed _ | Unified_with _ ->
         ()
 
@@ -513,7 +513,7 @@ let wrap5 f x1 x2 x3 x4 x5 = try return (f x1 x2 x3 x4 x5) with exn -> fail exn
 let wrap6 f x1 x2 x3 x4 x5 x6 = try return (f x1 x2 x3 x4 x5 x6) with exn -> fail exn
 let wrap7 f x1 x2 x3 x4 x5 x6 x7 = try return (f x1 x2 x3 x4 x5 x6 x7) with exn -> fail exn
 
-let add_waiter sleeper waiter =
+let add_regular_callback_list_node sleeper waiter =
   sleeper.regular_callbacks <- (match sleeper.regular_callbacks with
                         | Regular_callback_list_empty -> waiter
                         | Regular_callback_list_implicitly_removed_callback _
@@ -521,8 +521,8 @@ let add_waiter sleeper waiter =
                         | Regular_callback_list_concat _ as ws ->
                           Regular_callback_list_concat (waiter, ws))
 
-let add_immutable_waiter sleeper waiter =
-  add_waiter sleeper (Regular_callback_list_implicitly_removed_callback waiter)
+let add_implicitly_removed_callback sleeper waiter =
+  add_regular_callback_list_node sleeper (Regular_callback_list_implicitly_removed_callback waiter)
 
 let on_cancel t f =
   match (repr t).state with
@@ -537,7 +537,7 @@ let on_cancel t f =
               Cancel_callback_list_concat (handler, chs)
         )
     | Failed Canceled ->
-        call_unsafe f ()
+        handle_with_async_exception_hook f ()
     | Resolved _ | Failed _ | Unified_with _ ->
         ()
 
@@ -551,11 +551,11 @@ let bind t f =
     | Pending sleeper ->
         let res = temp t in
         let data = !current_storage in
-        add_immutable_waiter sleeper
+        add_implicitly_removed_callback sleeper
           (function
              | Resolved v ->
-              current_storage := data; connect res (try f v with exn -> fail exn)
-             | Failed _ as state -> fast_connect res state
+              current_storage := data; unify res (try f v with exn -> fail exn)
+             | Failed _ as state -> complete res state
              | Pending _ | Unified_with _ -> assert false);
         res
     | Unified_with _ ->
@@ -574,12 +574,12 @@ let map f t =
     | Pending sleeper ->
         let res = temp t in
         let data = !current_storage in
-        add_immutable_waiter sleeper
+        add_implicitly_removed_callback sleeper
           (function
              | Resolved v ->
                current_storage := data;
-               fast_connect res (try Resolved (f v) with exn -> Failed exn)
-             | Failed _ as state -> fast_connect res state
+               complete res (try Resolved (f v) with exn -> Failed exn)
+             | Failed _ as state -> complete res state
              | Pending _ | Unified_with _ -> assert false);
         res
     | Unified_with _ ->
@@ -598,11 +598,11 @@ let catch x f =
     | Pending sleeper ->
         let res = temp t in
         let data = !current_storage in
-        add_immutable_waiter sleeper
+        add_implicitly_removed_callback sleeper
           (function
-             | Resolved _ as state -> fast_connect res state
+             | Resolved _ as state -> complete res state
              | Failed exn ->
-               current_storage := data; connect res (try f exn with exn -> fail exn)
+               current_storage := data; unify res (try f exn with exn -> fail exn)
              | Pending _ | Unified_with _ -> assert false);
         res
     | Unified_with _ ->
@@ -611,14 +611,14 @@ let catch x f =
 let on_success t f =
   match (repr t).state with
     | Resolved v ->
-        call_unsafe f v
+        handle_with_async_exception_hook f v
     | Failed _ ->
         ()
     | Pending sleeper ->
         let data = !current_storage in
-        add_immutable_waiter sleeper
+        add_implicitly_removed_callback sleeper
           (function
-             | Resolved v -> current_storage := data; call_unsafe f v
+             | Resolved v -> current_storage := data; handle_with_async_exception_hook f v
              | Failed _ -> ()
              | Pending _ | Unified_with _ -> assert false)
     | Unified_with _ ->
@@ -629,13 +629,13 @@ let on_failure t f =
     | Resolved _ ->
         ()
     | Failed exn ->
-        call_unsafe f exn
+        handle_with_async_exception_hook f exn
     | Pending sleeper ->
         let data = !current_storage in
-        add_immutable_waiter sleeper
+        add_implicitly_removed_callback sleeper
           (function
              | Resolved _ -> ()
-             | Failed exn -> current_storage := data; call_unsafe f exn
+             | Failed exn -> current_storage := data; handle_with_async_exception_hook f exn
              | Pending _ | Unified_with _ -> assert false)
     | Unified_with _ ->
         assert false
@@ -644,13 +644,13 @@ let on_termination t f =
   match (repr t).state with
     | Resolved _
     | Failed _ ->
-        call_unsafe f ()
+        handle_with_async_exception_hook f ()
     | Pending sleeper ->
         let data = !current_storage in
-        add_immutable_waiter sleeper
+        add_implicitly_removed_callback sleeper
           (function
              | Resolved _
-             | Failed _ -> current_storage := data; call_unsafe f ()
+             | Failed _ -> current_storage := data; handle_with_async_exception_hook f ()
              | Pending _ | Unified_with _ -> assert false)
     | Unified_with _ ->
         assert false
@@ -658,15 +658,15 @@ let on_termination t f =
 let on_any t f g =
   match (repr t).state with
     | Resolved v ->
-        call_unsafe f v
+        handle_with_async_exception_hook f v
     | Failed exn ->
-        call_unsafe g exn
+        handle_with_async_exception_hook g exn
     | Pending sleeper ->
         let data = !current_storage in
-        add_immutable_waiter sleeper
+        add_implicitly_removed_callback sleeper
           (function
-             | Resolved v -> current_storage := data; call_unsafe f v
-             | Failed exn -> current_storage := data; call_unsafe g exn
+             | Resolved v -> current_storage := data; handle_with_async_exception_hook f v
+             | Failed exn -> current_storage := data; handle_with_async_exception_hook g exn
              | Pending _ | Unified_with _ -> assert false)
     | Unified_with _ ->
         assert false
@@ -681,10 +681,10 @@ let try_bind x f g =
     | Pending sleeper ->
         let res = temp t in
         let data = !current_storage in
-        add_immutable_waiter sleeper
+        add_implicitly_removed_callback sleeper
           (function
-             | Resolved v -> current_storage := data; connect res (try f v with exn -> fail exn)
-             | Failed exn -> current_storage := data; connect res (try g exn with exn -> fail exn)
+             | Resolved v -> current_storage := data; unify res (try f v with exn -> fail exn)
+             | Failed exn -> current_storage := data; unify res (try g exn with exn -> fail exn)
              | Pending _ | Unified_with _ -> assert false);
         res
     | Unified_with _ ->
@@ -705,7 +705,7 @@ let async f =
     | Failed exn ->
         !async_exception_hook exn
     | Pending sleeper ->
-        add_immutable_waiter sleeper
+        add_implicitly_removed_callback sleeper
           (function
              | Resolved _ -> ()
              | Failed exn -> !async_exception_hook exn
@@ -720,7 +720,7 @@ let ignore_result t =
     | Failed e ->
         raise e
     | Pending sleeper ->
-        add_immutable_waiter sleeper
+        add_implicitly_removed_callback sleeper
           (function
              | Resolved _ -> ()
              | Failed exn -> !async_exception_hook exn
@@ -732,28 +732,28 @@ let no_cancel t =
   match (repr t).state with
     | Pending sleeper ->
         let res = to_public_promise (wait_aux ()) in
-        add_immutable_waiter sleeper (fast_connect res);
+        add_implicitly_removed_callback sleeper (complete res);
         res
     | Resolved _ | Failed _ ->
         t
     | Unified_with _ ->
         assert false
 
-let rec nth_ready l n =
+let rec nth_completed l n =
   match l with
     | [] ->
         assert false
     | t :: l ->
         match (repr t).state with
           | Pending _ ->
-              nth_ready l n
+              nth_completed l n
           | Resolved _ | Failed _ | Unified_with _ ->
               if n > 0 then
-                nth_ready l (n - 1)
+                nth_completed l (n - 1)
               else
                 t
 
-let ready_count l =
+let count_completed_promises_in l =
   List.fold_left (fun acc x ->
     match (repr x).state with
     | Pending _ -> acc
@@ -773,58 +773,58 @@ let remove_waiters l =
              let removed = sleeper.cleanups_deferred + 1 in
              if removed > max_removed then begin
                sleeper.cleanups_deferred <- 0;
-               sleeper.regular_callbacks <- cleanup sleeper.regular_callbacks
+               sleeper.regular_callbacks <- clean_up_callback_cells sleeper.regular_callbacks
              end else
                sleeper.cleanups_deferred <- removed
          | Resolved _ | Failed _ | Unified_with _ ->
              ())
     l
 
-let add_removable_waiter threads waiter =
+let add_explicitly_removable_callback_to_each_of threads waiter =
   let node = Regular_callback_list_explicitly_removable_callback waiter in
   List.iter
     (fun t ->
        match (repr t).state with
          | Pending sleeper ->
-             add_waiter sleeper node
+             add_regular_callback_list_node sleeper node
          | Resolved _ | Failed _ | Unified_with _ ->
              assert false)
     threads
 
 (* The PRNG state is initialized with a constant to make non-IO-based
    programs deterministic. *)
-let random_state = lazy (Random.State.make [||])
+let prng = lazy (Random.State.make [||])
 
 let choose l =
-  let ready = ready_count l in
+  let ready = count_completed_promises_in l in
   if ready > 0 then
     if ready = 1 then
-      nth_ready l 0
+      nth_completed l 0
     else
-      nth_ready l (Random.State.int (Lazy.force random_state) ready)
+      nth_completed l (Random.State.int (Lazy.force prng) ready)
   else begin
     let res = temp_many l in
     let rec waiter = ref (Some handle_result)
     and handle_result state =
       waiter := None;
       remove_waiters l;
-      fast_connect res state
+      complete res state
     in
-    add_removable_waiter l waiter;
+    add_explicitly_removable_callback_to_each_of l waiter;
     res
   end
 
-let rec nchoose_terminate res acc = function
+let rec finish_nchoose_or_npick_after_pending res acc = function
   | [] ->
-      fast_connect res (Resolved (List.rev acc))
+      complete res (Resolved (List.rev acc))
   | t :: l ->
       match (repr t).state with
         | Resolved x ->
-            nchoose_terminate res (x :: acc) l
+            finish_nchoose_or_npick_after_pending res (x :: acc) l
         | Failed _ as state ->
-            fast_connect res state
+            complete res state
         | Pending _ | Unified_with _ ->
-            nchoose_terminate res acc l
+            finish_nchoose_or_npick_after_pending res acc l
 
 let nchoose_sleep l =
   let res = temp_many l in
@@ -832,9 +832,9 @@ let nchoose_sleep l =
   and handle_result _state =
     waiter := None;
     remove_waiters l;
-    nchoose_terminate res [] l
+    finish_nchoose_or_npick_after_pending res [] l
   in
-  add_removable_waiter l waiter;
+  add_explicitly_removable_callback_to_each_of l waiter;
   res
 
 let nchoose l =
@@ -865,13 +865,13 @@ let nchoose l =
 
 let rec nchoose_split_terminate res acc_terminated acc_sleeping = function
   | [] ->
-      fast_connect res (Resolved (List.rev acc_terminated, List.rev acc_sleeping))
+      complete res (Resolved (List.rev acc_terminated, List.rev acc_sleeping))
   | t :: l ->
       match (repr t).state with
         | Resolved x ->
             nchoose_split_terminate res (x :: acc_terminated) acc_sleeping l
         | Failed _ as state ->
-            fast_connect res state
+            complete res state
         | Pending _ | Unified_with _ ->
             nchoose_split_terminate res acc_terminated (t :: acc_sleeping) l
 
@@ -883,7 +883,7 @@ let nchoose_split_sleep l =
     remove_waiters l;
     nchoose_split_terminate res [] [] l
   in
-  add_removable_waiter l waiter;
+  add_explicitly_removable_callback_to_each_of l waiter;
   res
 
 let nchoose_split l =
@@ -912,7 +912,7 @@ let nchoose_split l =
   in
   init [] l
 
-let rec cancel_and_nth_ready l n =
+let rec nth_completed_and_cancel_pending l n =
   match l with
     | [] ->
         assert false
@@ -920,22 +920,22 @@ let rec cancel_and_nth_ready l n =
         match (repr t).state with
           | Pending _ ->
               cancel t;
-              cancel_and_nth_ready l n
+              nth_completed_and_cancel_pending l n
           | Resolved _ | Failed _ | Unified_with _ ->
               if n > 0 then
-                cancel_and_nth_ready l (n - 1)
+                nth_completed_and_cancel_pending l (n - 1)
               else begin
                 List.iter cancel l;
                 t
               end
 
 let pick l =
-  let ready = ready_count l in
+  let ready = count_completed_promises_in l in
   if ready > 0 then
     if ready = 1 then
-      cancel_and_nth_ready l 0
+      nth_completed_and_cancel_pending l 0
     else
-      cancel_and_nth_ready l (Random.State.int (Lazy.force random_state) ready)
+      nth_completed_and_cancel_pending l (Random.State.int (Lazy.force prng) ready)
   else begin
     let res = temp_many l in
     let rec waiter = ref (Some handle_result)
@@ -943,9 +943,9 @@ let pick l =
       waiter := None;
       remove_waiters l;
       List.iter cancel l;
-      fast_connect res state
+      complete res state
     in
-    add_removable_waiter l waiter;
+    add_explicitly_removable_callback_to_each_of l waiter;
     res
   end
 
@@ -956,9 +956,9 @@ let npick_sleep l =
     waiter := None;
     remove_waiters l;
     List.iter cancel l;
-    nchoose_terminate res [] l
+    finish_nchoose_or_npick_after_pending res [] l
   in
-  add_removable_waiter l waiter;
+  add_explicitly_removable_callback_to_each_of l waiter;
   res
 
 let npick threads =
@@ -996,7 +996,7 @@ let protected t =
         let res = to_public_promise (task_aux ()) in
         let rec waiter_cell = ref (Some waiter)
         and waiter state = fast_connect_if res state in
-        add_removable_waiter [t] waiter_cell;
+        add_explicitly_removable_callback_to_each_of [t] waiter_cell;
         on_cancel res (fun () ->
           waiter_cell := None;
           remove_waiters [t]);
@@ -1018,7 +1018,7 @@ let join l =
         | _ -> ()
     end [@ocaml.warning "-4"];
     decr sleeping;
-    if !sleeping = 0 then fast_connect res !return_state
+    if !sleeping = 0 then complete res !return_state
   in
   let rec init = function
     | [] ->
@@ -1030,7 +1030,7 @@ let join l =
         match (repr t).state with
           | Pending sleeper ->
               incr sleeping;
-              add_immutable_waiter sleeper handle_result;
+              add_implicitly_removed_callback sleeper handle_result;
               init rest
           | Failed _ as state -> begin
               match !return_state with
@@ -1110,11 +1110,11 @@ let backtrace_bind add_loc t f =
     | Pending sleeper ->
         let res = temp t in
         let data = !current_storage in
-        add_immutable_waiter sleeper
+        add_implicitly_removed_callback sleeper
           (function
              | Resolved v ->
-               current_storage := data; connect res (try f v with exn -> fail (add_loc exn))
-             | Failed exn -> fast_connect res (Failed(add_loc exn))
+               current_storage := data; unify res (try f v with exn -> fail (add_loc exn))
+             | Failed exn -> complete res (Failed(add_loc exn))
              | Pending _ | Unified_with _ -> assert false);
         res
     | Unified_with _ ->
@@ -1130,11 +1130,11 @@ let backtrace_catch add_loc x f =
     | Pending sleeper ->
         let res = temp t in
         let data = !current_storage in
-        add_immutable_waiter sleeper
+        add_implicitly_removed_callback sleeper
           (function
-             | Resolved _ as state -> fast_connect res state
+             | Resolved _ as state -> complete res state
              | Failed exn ->
-               current_storage := data; connect res (try f exn with exn -> fail (add_loc exn))
+               current_storage := data; unify res (try f exn with exn -> fail (add_loc exn))
              | Pending _ | Unified_with _ -> assert false);
         res
     | Unified_with _ ->
@@ -1150,12 +1150,12 @@ let backtrace_try_bind add_loc x f g =
     | Pending sleeper ->
         let res = temp t in
         let data = !current_storage in
-        add_immutable_waiter sleeper
+        add_implicitly_removed_callback sleeper
           (function
              | Resolved v ->
-               current_storage := data; connect res (try f v with exn -> fail (add_loc exn))
+               current_storage := data; unify res (try f v with exn -> fail (add_loc exn))
              | Failed exn ->
-               current_storage := data; connect res (try g exn with exn -> fail (add_loc exn))
+               current_storage := data; unify res (try g exn with exn -> fail (add_loc exn))
              | Pending _ | Unified_with _ -> assert false);
         res
     | Unified_with _ ->
