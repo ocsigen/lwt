@@ -79,15 +79,19 @@ and how_to_cancel =
 
 and 'a regular_callback_list =
   | Regular_callback_list_empty
-  | Regular_callback_list_explicitly_removable_callback of ('a promise_state -> unit) option ref
-  | Regular_callback_list_implicitly_removed_callback of ('a promise_state -> unit)
-  | Regular_callback_list_concat of 'a regular_callback_list * 'a regular_callback_list
+  | Regular_callback_list_explicitly_removable_callback of
+    ('a promise_state -> unit) option ref
+  | Regular_callback_list_implicitly_removed_callback of
+    ('a promise_state -> unit)
+  | Regular_callback_list_concat of
+    'a regular_callback_list * 'a regular_callback_list
 
 and 'a cancel_callback_list =
   | Cancel_callback_list_empty
   | Cancel_callback_list_callback of storage * (unit -> unit)
   | Cancel_callback_list_remove_sequence_node of 'a u Lwt_sequence.node
-  | Cancel_callback_list_concat of 'a cancel_callback_list * 'a cancel_callback_list
+  | Cancel_callback_list_concat of
+    'a cancel_callback_list * 'a cancel_callback_list
 
 external thread_repr : 'a t -> 'a promise = "%identity"
 external thread : 'a promise -> 'a t = "%identity"
@@ -124,7 +128,8 @@ let get key =
 
 let rec repr_rec t =
   match t.state with
-    | Unified_with t' -> let t'' = repr_rec t' in if t'' != t' then t.state <- Unified_with t''; t''
+    | Unified_with t' ->
+      let t'' = repr_rec t' in if t'' != t' then t.state <- Unified_with t''; t''
     | Resolved _ | Failed _ | Pending _ -> t
 
 let repr t = repr_rec (thread_repr t)
@@ -349,7 +354,9 @@ let rec cleanup = function
       Regular_callback_list_empty
   | Regular_callback_list_concat (l1, l2) ->
       append (cleanup l1) (cleanup l2)
-  | Regular_callback_list_empty | Regular_callback_list_explicitly_removable_callback _ | Regular_callback_list_implicitly_removed_callback _ as ws ->
+  | Regular_callback_list_empty
+  | Regular_callback_list_explicitly_removable_callback _
+  | Regular_callback_list_implicitly_removed_callback _ as ws ->
       ws
 
 let connect t1 t2 =
@@ -365,8 +372,10 @@ let connect t1 t2 =
 
                 sleeper1.how_to_cancel <- sleeper2.how_to_cancel;
 
-                let waiters = append sleeper1.regular_callbacks sleeper2.regular_callbacks
-                and removed = sleeper1.cleanups_deferred + sleeper2.cleanups_deferred in
+                let waiters =
+                  append sleeper1.regular_callbacks sleeper2.regular_callbacks
+                and removed =
+                  sleeper1.cleanups_deferred + sleeper2.cleanups_deferred in
                 if removed > max_removed then begin
                   sleeper1.cleanups_deferred <- 0;
                   sleeper1.regular_callbacks <- cleanup waiters
@@ -374,7 +383,8 @@ let connect t1 t2 =
                   sleeper1.cleanups_deferred <- removed;
                   sleeper1.regular_callbacks <- waiters
                 end;
-                sleeper1.cancel_callbacks <- chs_append sleeper1.cancel_callbacks sleeper2.cancel_callbacks
+                sleeper1.cancel_callbacks <-
+                  chs_append sleeper1.cancel_callbacks sleeper2.cancel_callbacks
             | Resolved _ | Failed _ | Unified_with _ as state2 ->
                 t1.state <- state2;
                 unsafe_run_waiters sleeper1 state2
@@ -506,7 +516,9 @@ let wrap7 f x1 x2 x3 x4 x5 x6 x7 = try return (f x1 x2 x3 x4 x5 x6 x7) with exn 
 let add_waiter sleeper waiter =
   sleeper.regular_callbacks <- (match sleeper.regular_callbacks with
                         | Regular_callback_list_empty -> waiter
-                        | Regular_callback_list_implicitly_removed_callback _ | Regular_callback_list_explicitly_removable_callback _ | Regular_callback_list_concat _ as ws ->
+                        | Regular_callback_list_implicitly_removed_callback _
+                        | Regular_callback_list_explicitly_removable_callback _
+                        | Regular_callback_list_concat _ as ws ->
                           Regular_callback_list_concat (waiter, ws))
 
 let add_immutable_waiter sleeper waiter =
@@ -519,7 +531,9 @@ let on_cancel t f =
         sleeper.cancel_callbacks <- (
           match sleeper.cancel_callbacks with
             | Cancel_callback_list_empty -> handler
-            | Cancel_callback_list_callback _ | Cancel_callback_list_remove_sequence_node _ | Cancel_callback_list_concat _ as chs ->
+            | Cancel_callback_list_callback _
+            | Cancel_callback_list_remove_sequence_node _
+            | Cancel_callback_list_concat _ as chs ->
               Cancel_callback_list_concat (handler, chs)
         )
     | Failed Canceled ->
@@ -539,7 +553,8 @@ let bind t f =
         let data = !current_data in
         add_immutable_waiter sleeper
           (function
-             | Resolved v -> current_data := data; connect res (try f v with exn -> fail exn)
+             | Resolved v ->
+              current_data := data; connect res (try f v with exn -> fail exn)
              | Failed _ as state -> fast_connect res state
              | Pending _ | Unified_with _ -> assert false);
         res
@@ -561,7 +576,9 @@ let map f t =
         let data = !current_data in
         add_immutable_waiter sleeper
           (function
-             | Resolved v -> current_data := data; fast_connect res (try Resolved (f v) with exn -> Failed exn)
+             | Resolved v ->
+               current_data := data;
+               fast_connect res (try Resolved (f v) with exn -> Failed exn)
              | Failed _ as state -> fast_connect res state
              | Pending _ | Unified_with _ -> assert false);
         res
@@ -584,7 +601,8 @@ let catch x f =
         add_immutable_waiter sleeper
           (function
              | Resolved _ as state -> fast_connect res state
-             | Failed exn -> current_data := data; connect res (try f exn with exn -> fail exn)
+             | Failed exn ->
+               current_data := data; connect res (try f exn with exn -> fail exn)
              | Pending _ | Unified_with _ -> assert false);
         res
     | Unified_with _ ->
@@ -745,9 +763,13 @@ let remove_waiters l =
   List.iter
     (fun t ->
        match (repr t).state with
-         | Pending ({ regular_callbacks = Regular_callback_list_explicitly_removable_callback _; _ } as sleeper) ->
+         | Pending ({ regular_callbacks =
+                 Regular_callback_list_explicitly_removable_callback _; _ } as sleeper) ->
              sleeper.regular_callbacks <- Regular_callback_list_empty
-         | Pending ({regular_callbacks = Regular_callback_list_empty | Regular_callback_list_implicitly_removed_callback _ | Regular_callback_list_concat _; _} as sleeper) ->
+         | Pending ({regular_callbacks =
+                 Regular_callback_list_empty
+               | Regular_callback_list_implicitly_removed_callback _
+               | Regular_callback_list_concat _; _} as sleeper) ->
              let removed = sleeper.cleanups_deferred + 1 in
              if removed > max_removed then begin
                sleeper.cleanups_deferred <- 0;
@@ -1090,7 +1112,8 @@ let backtrace_bind add_loc t f =
         let data = !current_data in
         add_immutable_waiter sleeper
           (function
-             | Resolved v -> current_data := data; connect res (try f v with exn -> fail (add_loc exn))
+             | Resolved v ->
+               current_data := data; connect res (try f v with exn -> fail (add_loc exn))
              | Failed exn -> fast_connect res (Failed(add_loc exn))
              | Pending _ | Unified_with _ -> assert false);
         res
@@ -1110,7 +1133,8 @@ let backtrace_catch add_loc x f =
         add_immutable_waiter sleeper
           (function
              | Resolved _ as state -> fast_connect res state
-             | Failed exn -> current_data := data; connect res (try f exn with exn -> fail (add_loc exn))
+             | Failed exn ->
+               current_data := data; connect res (try f exn with exn -> fail (add_loc exn))
              | Pending _ | Unified_with _ -> assert false);
         res
     | Unified_with _ ->
@@ -1128,8 +1152,10 @@ let backtrace_try_bind add_loc x f g =
         let data = !current_data in
         add_immutable_waiter sleeper
           (function
-             | Resolved v -> current_data := data; connect res (try f v with exn -> fail (add_loc exn))
-             | Failed exn -> current_data := data; connect res (try g exn with exn -> fail (add_loc exn))
+             | Resolved v ->
+               current_data := data; connect res (try f v with exn -> fail (add_loc exn))
+             | Failed exn ->
+               current_data := data; connect res (try g exn with exn -> fail (add_loc exn))
              | Pending _ | Unified_with _ -> assert false);
         res
     | Unified_with _ ->
