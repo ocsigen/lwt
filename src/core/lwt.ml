@@ -615,6 +615,26 @@ let bind t f =
     | Unified_with _ ->
         assert false
 
+let backtrace_bind add_loc t f =
+  let t = repr t in
+  match t.state with
+    | Resolved v ->
+        f v
+    | Failed exn ->
+        to_public_promise { state = Failed(add_loc exn) }
+    | Pending sleeper ->
+        let res = temp t in
+        let data = !current_storage in
+        add_implicitly_removed_callback sleeper
+          (function
+             | Resolved v ->
+               current_storage := data; unify res (try f v with exn -> fail (add_loc exn))
+             | Failed exn -> complete res (Failed(add_loc exn))
+             | Pending _ | Unified_with _ -> assert false);
+        res
+    | Unified_with _ ->
+        assert false
+
 let (>>=) t f = bind t f
 let (=<<) f t = bind t f
 
@@ -662,6 +682,26 @@ let catch x f =
     | Unified_with _ ->
         assert false
 
+let backtrace_catch add_loc x f =
+  let t = repr (try x () with exn -> fail exn) in
+  match t.state with
+    | Resolved _ ->
+        to_public_promise t
+    | Failed exn ->
+        f (add_loc exn)
+    | Pending sleeper ->
+        let res = temp t in
+        let data = !current_storage in
+        add_implicitly_removed_callback sleeper
+          (function
+             | Resolved _ as state -> complete res state
+             | Failed exn ->
+               current_storage := data; unify res (try f exn with exn -> fail (add_loc exn))
+             | Pending _ | Unified_with _ -> assert false);
+        res
+    | Unified_with _ ->
+        assert false
+
 let try_bind x f g =
   let t = repr (try x () with exn -> fail exn) in
   match t.state with
@@ -681,10 +721,36 @@ let try_bind x f g =
     | Unified_with _ ->
         assert false
 
+let backtrace_try_bind add_loc x f g =
+  let t = repr (try x () with exn -> fail exn) in
+  match t.state with
+    | Resolved v ->
+        f v
+    | Failed exn ->
+        g (add_loc exn)
+    | Pending sleeper ->
+        let res = temp t in
+        let data = !current_storage in
+        add_implicitly_removed_callback sleeper
+          (function
+             | Resolved v ->
+               current_storage := data; unify res (try f v with exn -> fail (add_loc exn))
+             | Failed exn ->
+               current_storage := data; unify res (try g exn with exn -> fail (add_loc exn))
+             | Pending _ | Unified_with _ -> assert false);
+        res
+    | Unified_with _ ->
+        assert false
+
 let finalize f g =
   try_bind f
     (fun x -> g () >>= fun () -> return x)
     (fun e -> g () >>= fun () -> fail e)
+
+let backtrace_finalize add_loc f g =
+  backtrace_try_bind add_loc f
+    (fun x -> g () >>= fun () -> return x)
+    (fun e -> g () >>= fun () -> fail (add_loc e))
 
 let on_success t f =
   match (repr t).state with
@@ -1083,74 +1149,6 @@ let wakeup_paused () =
 let register_pause_notifier f = pause_hook := f
 
 let paused_count () = !paused_count
-
-
-
-let backtrace_bind add_loc t f =
-  let t = repr t in
-  match t.state with
-    | Resolved v ->
-        f v
-    | Failed exn ->
-        to_public_promise { state = Failed(add_loc exn) }
-    | Pending sleeper ->
-        let res = temp t in
-        let data = !current_storage in
-        add_implicitly_removed_callback sleeper
-          (function
-             | Resolved v ->
-               current_storage := data; unify res (try f v with exn -> fail (add_loc exn))
-             | Failed exn -> complete res (Failed(add_loc exn))
-             | Pending _ | Unified_with _ -> assert false);
-        res
-    | Unified_with _ ->
-        assert false
-
-let backtrace_catch add_loc x f =
-  let t = repr (try x () with exn -> fail exn) in
-  match t.state with
-    | Resolved _ ->
-        to_public_promise t
-    | Failed exn ->
-        f (add_loc exn)
-    | Pending sleeper ->
-        let res = temp t in
-        let data = !current_storage in
-        add_implicitly_removed_callback sleeper
-          (function
-             | Resolved _ as state -> complete res state
-             | Failed exn ->
-               current_storage := data; unify res (try f exn with exn -> fail (add_loc exn))
-             | Pending _ | Unified_with _ -> assert false);
-        res
-    | Unified_with _ ->
-        assert false
-
-let backtrace_try_bind add_loc x f g =
-  let t = repr (try x () with exn -> fail exn) in
-  match t.state with
-    | Resolved v ->
-        f v
-    | Failed exn ->
-        g (add_loc exn)
-    | Pending sleeper ->
-        let res = temp t in
-        let data = !current_storage in
-        add_implicitly_removed_callback sleeper
-          (function
-             | Resolved v ->
-               current_storage := data; unify res (try f v with exn -> fail (add_loc exn))
-             | Failed exn ->
-               current_storage := data; unify res (try g exn with exn -> fail (add_loc exn))
-             | Pending _ | Unified_with _ -> assert false);
-        res
-    | Unified_with _ ->
-        assert false
-
-let backtrace_finalize add_loc f g =
-  backtrace_try_bind add_loc f
-    (fun x -> g () >>= fun () -> return x)
-    (fun e -> g () >>= fun () -> fail (add_loc e))
 
 
 
