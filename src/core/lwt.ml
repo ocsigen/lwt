@@ -744,13 +744,6 @@ let try_bind x f g =
     | Unified_with _ ->
         assert false
 
-let poll t =
-  match (repr t).state with
-    | Failed e -> raise e
-    | Resolved v -> Some v
-    | Pending _ -> None
-    | Unified_with _ -> assert false
-
 let async f =
   let t = repr (try f () with exn -> fail exn) in
   match t.state with
@@ -1186,6 +1179,13 @@ let state t = match (repr t).state with
   | Unified_with _ -> assert false
 
 include State
+
+let poll t =
+  match (repr t).state with
+    | Failed e -> raise e
+    | Resolved v -> Some v
+    | Pending _ -> None
+    | Unified_with _ -> assert false
 
 let apply f x = try f x with e -> fail e
 
