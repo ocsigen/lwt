@@ -27,6 +27,8 @@ module Storage_map = Map.Make(struct type t = int let compare = compare end)
 
 type storage = (unit -> unit) Storage_map.t
 
+
+
 type +'a t
 type -'a u
 
@@ -51,6 +53,11 @@ type a_promise_list = (module Existential_promise_list)
 let pack_promise_list (type x) l =
   let module M = struct type a = x let promise_list = l end in
   (module M : Existential_promise_list)
+
+
+
+module Main_internal_types =
+struct
 
 type 'a promise_state =
   | Resolved of 'a
@@ -91,6 +98,14 @@ and 'a cancel_callback_list =
   | Cancel_callback_list_callback of storage * (unit -> unit)
   | Cancel_callback_list_remove_sequence_node of 'a u Lwt_sequence.node
 
+end
+open Main_internal_types
+
+
+
+module Public_types =
+struct
+
 external to_internal_promise : 'a t -> 'a promise = "%identity"
 external to_public_promise : 'a promise -> 'a t = "%identity"
 external to_public_resolver : 'a promise -> 'a u = "%identity"
@@ -107,7 +122,13 @@ let state_of_result
 let make_value v = Result.Ok v
 let make_error e = Result.Error e
 
+end
+include Public_types
 
+
+
+module Basic_helpers =
+struct
 
 let rec underlying t =
   match t.state with
@@ -117,7 +138,13 @@ let rec underlying t =
 
 let repr t = underlying (to_internal_promise t)
 
+end
+open Basic_helpers
 
+
+
+module Sequence_associated_storage =
+struct
 
 type 'a key = {
   id : int;
@@ -160,7 +187,13 @@ let with_value key value f =
     current_storage := save;
     raise exn
 
+end
+include Sequence_associated_storage
 
+
+
+module Callbacks =
+struct
 
 let concat_regular_callbacks l1 l2 =
   (match l1, l2 with
@@ -231,7 +264,13 @@ let add_explicitly_removable_callback_to_each_of threads waiter =
              assert false)
     threads
 
+end
+open Callbacks
 
+
+
+module Completion_loop =
+struct
 
 let async_exception_hook =
   ref (fun exn ->
@@ -434,6 +473,12 @@ let cancel t =
     sleepers;
   leave_completion_loop ctx
 
+end
+include Completion_loop
+
+
+
+(* This function is redundant and will be removed in refactoring. *)
 let fast_connect_if t state =
   let t = repr t in
   match t.state with
@@ -444,6 +489,9 @@ let fast_connect_if t state =
         ()
 
 
+
+module Trivial_promises =
+struct
 
 let return v =
   to_public_promise { state = Resolved v }
@@ -469,6 +517,14 @@ let fail_with msg =
 
 let fail_invalid_arg msg =
   to_public_promise { state = Failed (Invalid_argument msg) }
+
+end
+include Trivial_promises
+
+
+
+module Pending_promises =
+struct
 
 let temp t =
   to_public_promise {
@@ -544,6 +600,14 @@ let no_cancel t =
         t
     | Unified_with _ ->
         assert false
+
+end
+include Pending_promises
+
+
+
+module Sequential_composition =
+struct
 
 let unify t1 t2 =
   let t1 = repr t1 and t2 = repr t2 in
@@ -814,6 +878,13 @@ let on_any t f g =
              | Pending _ | Unified_with _ -> assert false)
     | Unified_with _ ->
         assert false
+end
+include Sequential_composition
+
+
+
+module Concurrent_composition =
+struct
 
 let async f =
   let t = repr (try f () with exn -> fail exn) in
@@ -1123,7 +1194,13 @@ let protected t =
 let ( <?> ) t1 t2 = choose [t1; t2]
 let ( <&> ) t1 t2 = join [t1; t2]
 
+end
+include Concurrent_composition
 
+
+
+module Miscellaneous =
+struct
 
 module State = struct
   type 'a state =
@@ -1196,6 +1273,9 @@ let wakeup_paused () =
 let register_pause_notifier f = pause_hook := f
 
 let paused_count () = !paused_count
+
+end
+include Miscellaneous
 
 
 
