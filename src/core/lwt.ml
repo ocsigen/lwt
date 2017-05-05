@@ -1125,17 +1125,6 @@ let ( <&> ) t1 t2 = join [t1; t2]
 
 
 
-let rec is_sleeping_rec t =
-  match t.state with
-    | Resolved _ | Failed _ ->
-        false
-    | Pending _ ->
-        true
-    | Unified_with t ->
-        is_sleeping_rec t
-
-let is_sleeping t = is_sleeping_rec (to_internal_promise t)
-
 module State = struct
   type 'a state =
     | Return of 'a
@@ -1150,6 +1139,17 @@ let state t = match (repr t).state with
   | Unified_with _ -> assert false
 
 include State
+
+let rec is_sleeping_rec t =
+  match t.state with
+    | Resolved _ | Failed _ ->
+        false
+    | Pending _ ->
+        true
+    | Unified_with t ->
+        is_sleeping_rec t
+
+let is_sleeping t = is_sleeping_rec (to_internal_promise t)
 
 let poll t =
   match (repr t).state with
