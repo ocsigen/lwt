@@ -434,39 +434,6 @@ let cancel t =
     sleepers;
   leave_completion_loop ctx
 
-let unify t1 t2 =
-  let t1 = repr t1 and t2 = repr t2 in
-  match t1.state with
-    | Pending sleeper1 ->
-        if t1 == t2 then
-          ()
-        else begin
-          match t2.state with
-            | Pending sleeper2 ->
-                t2.state <- Unified_with t1;
-
-                sleeper1.how_to_cancel <- sleeper2.how_to_cancel;
-
-                let waiters =
-                  concat_regular_callbacks sleeper1.regular_callbacks sleeper2.regular_callbacks
-                and removed =
-                  sleeper1.cleanups_deferred + sleeper2.cleanups_deferred in
-                if removed > cleanup_throttle then begin
-                  sleeper1.cleanups_deferred <- 0;
-                  sleeper1.regular_callbacks <- clean_up_callback_cells waiters
-                end else begin
-                  sleeper1.cleanups_deferred <- removed;
-                  sleeper1.regular_callbacks <- waiters
-                end;
-                sleeper1.cancel_callbacks <-
-                  concat_cancel_callbacks sleeper1.cancel_callbacks sleeper2.cancel_callbacks
-            | Resolved _ | Failed _ | Unified_with _ as state2 ->
-                t1.state <- state2;
-                run_callbacks sleeper1 state2
-        end
-    | Resolved _ | Failed _ | Unified_with _ ->
-         assert false
-
 let fast_connect_if t state =
   let t = repr t in
   match t.state with
@@ -595,6 +562,39 @@ let on_cancel t f =
         handle_with_async_exception_hook f ()
     | Resolved _ | Failed _ | Unified_with _ ->
         ()
+
+let unify t1 t2 =
+  let t1 = repr t1 and t2 = repr t2 in
+  match t1.state with
+    | Pending sleeper1 ->
+        if t1 == t2 then
+          ()
+        else begin
+          match t2.state with
+            | Pending sleeper2 ->
+                t2.state <- Unified_with t1;
+
+                sleeper1.how_to_cancel <- sleeper2.how_to_cancel;
+
+                let waiters =
+                  concat_regular_callbacks sleeper1.regular_callbacks sleeper2.regular_callbacks
+                and removed =
+                  sleeper1.cleanups_deferred + sleeper2.cleanups_deferred in
+                if removed > cleanup_throttle then begin
+                  sleeper1.cleanups_deferred <- 0;
+                  sleeper1.regular_callbacks <- clean_up_callback_cells waiters
+                end else begin
+                  sleeper1.cleanups_deferred <- removed;
+                  sleeper1.regular_callbacks <- waiters
+                end;
+                sleeper1.cancel_callbacks <-
+                  concat_cancel_callbacks sleeper1.cancel_callbacks sleeper2.cancel_callbacks
+            | Resolved _ | Failed _ | Unified_with _ as state2 ->
+                t1.state <- state2;
+                run_callbacks sleeper1 state2
+        end
+    | Resolved _ | Failed _ | Unified_with _ ->
+         assert false
 
 let bind t f =
   let t = repr t in
