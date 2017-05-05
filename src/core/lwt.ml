@@ -23,8 +23,6 @@
 
 
 
-exception Canceled
-
 module Storage_map = Map.Make(struct type t = int let compare = compare end)
 
 type storage = (unit -> unit) Storage_map.t
@@ -148,6 +146,8 @@ let handle_with_async_exception_hook f x =
     f x
   with exn ->
     !async_exception_hook exn
+
+exception Canceled
 
 let rec run_waiters_rec state ws rem =
   match ws with
