@@ -884,6 +884,12 @@ let join l =
   in
   init l
 
+let count_completed_promises_in l =
+  List.fold_left (fun acc x ->
+    match (repr x).state with
+    | Pending _ -> acc
+    | Resolved _ | Failed _ | Unified_with _ -> acc + 1) 0 l
+
 let rec nth_completed l n =
   match l with
     | [] ->
@@ -897,12 +903,6 @@ let rec nth_completed l n =
                 nth_completed l (n - 1)
               else
                 t
-
-let count_completed_promises_in l =
-  List.fold_left (fun acc x ->
-    match (repr x).state with
-    | Pending _ -> acc
-    | Resolved _ | Failed _ | Unified_with _ -> acc + 1) 0 l
 
 (* The PRNG state is initialized with a constant to make non-IO-based
    programs deterministic. *)
