@@ -1,6 +1,5 @@
-(* Lightweight thread library for OCaml
+(* OCaml promise library
  * http://www.ocsigen.org/lwt
- * Module Lwt
  * Copyright (C) 2005-2008 Jérôme Vouillon
  * Laboratoire PPS - CNRS Université Paris Diderot
  *               2009-2012 Jérémie Dimino
@@ -22,93 +21,62 @@
  * 02111-1307, USA.
  *)
 
-(* +-----------------------------------------------------------------+
-   | Types                                                           |
-   +-----------------------------------------------------------------+ *)
+
 
 exception Canceled
 
 module Int_map = Map.Make(struct type t = int let compare = compare end)
 
 type data = (unit -> unit) Int_map.t
-  (* Type of data carried by threads *)
 
 type +'a t
 type -'a u
 
-(* A type + a thread of this type. *)
 module type A_thread = sig
   type a
   val thread : a t
 end
 
 type a_thread = (module A_thread)
-    (* a_thread = exists 'a. 'a t *)
 
-(* Pack a thread into a A_thread module. *)
 let pack_thread (type x) t =
   let module M = struct type a = x let thread = t end in
   (module M : A_thread)
 
-(* A type + a list of threads of this type. *)
 module type A_threads = sig
   type a
   val threads : a t list
 end
 
 type a_threads = (module A_threads)
-    (* a_threads = exists 'a. 'a t list *)
 
-(* Pack a list of threads into a A_threads module. *)
 let pack_threads (type x) l =
   let module M = struct type a = x let threads = l end in
   (module M : A_threads)
 
 type 'a thread_state =
   | Return of 'a
-      (* [Return v] a terminated thread which has successfully
-         terminated with the value [v] *)
   | Fail of exn
-      (* [Fail exn] a terminated thread which has failed with the
-         exception [exn]. *)
   | Sleep of 'a sleeper
-      (* [Sleep sleeper] is a sleeping thread *)
   | Repr of 'a thread_repr
-      (* [Repr t] a thread which behaves the same as [t] *)
 
 and 'a thread_repr = {
   mutable state : 'a thread_state;
-  (* The state of the thread *)
 }
 
 and 'a sleeper = {
   mutable cancel : cancel;
-  (* How to cancel this thread. *)
   mutable waiters : 'a waiter_set;
-  (* All thunk functions. These functions are always called inside a
-     enter_wakeup/leave_wakeup block. *)
   mutable removed : int;
-  (* Number of waiter that have been disabled. When this number
-     reaches [max_removed], they are effectively removed from
-     [waiters]. *)
   mutable cancel_handlers : 'a cancel_handler_set;
-  (* Functions to execute when this thread is canceled. Theses
-     functions must be executed before waiters. *)
 }
 
 and cancel =
   | Cancel_no
-      (* This thread cannot be canceled, it was created with
-         [wait]. *)
   | Cancel_me
-      (* Restart this thread with [Fail Canceled]. It was created with
-         [task]. *)
   | Cancel_link of a_thread
-      (* Cancel this thread. *)
   | Cancel_links of a_threads
-      (* Cancel all these threads. *)
 
-(* Type of set of waiters: *)
 and 'a waiter_set =
   | Empty
   | Removable of ('a thread_state -> unit) option ref
@@ -118,15 +86,7 @@ and 'a waiter_set =
 and 'a cancel_handler_set =
   | Chs_empty
   | Chs_func of data * (unit -> unit)
-      (* The callback may raise an exception. *)
   | Chs_node of 'a u Lwt_sequence.node
-      (* This is the same as:
-
-         {[
-           Chs_func (fun () -> Lwt_sequence.remove node)
-         ]}
-
-         but it is the common case so it is inlined. *)
   | Chs_append of 'a cancel_handler_set * 'a cancel_handler_set
 
 external thread_repr : 'a t -> 'a thread_repr = "%identity"
@@ -134,13 +94,8 @@ external thread : 'a thread_repr -> 'a t = "%identity"
 external wakener : 'a thread_repr -> 'a u = "%identity"
 external wakener_repr : 'a u -> 'a thread_repr = "%identity"
 
-(* Maximum number of disabled waiters a waiter set can contains before
-   being cleaned: *)
 let max_removed = 42
 
-(* +-----------------------------------------------------------------+
-   | Local storage                                                   |
-   +-----------------------------------------------------------------+ *)
 
 type 'a key = {
   id : int;
@@ -165,11 +120,8 @@ let get key =
   with Not_found ->
     None
 
-(* +-----------------------------------------------------------------+
-   | Restarting/connecting threads                                   |
-   +-----------------------------------------------------------------+ *)
 
-(* Returns the representative of a thread, updating non-direct references: *)
+
 let rec repr_rec t =
   match t.state with
     | Repr t' -> let t'' = repr_rec t' in if t'' != t' then t.state <- Repr t''; t''
@@ -186,8 +138,6 @@ let async_exception_hook =
          flush stderr;
          exit 2)
 
-(* Execute [f x] and handle any raised exception with
-   [async_exception_hook]. *)
 let call_unsafe f x =
   try
     f x
@@ -237,67 +187,49 @@ and run_cancel_handlers_rec_next rem =
     | chs :: rem ->
         run_cancel_handlers_rec chs rem
 
-(* Run all waiters waiting on [t]. This must always be done inside a
-   enter_wakeup/leave_wakeup block.
-
-   This function must never raise an exception. *)
 let unsafe_run_waiters sleeper state =
-  (* Call cancel handlers if this is a thread cancellation. *)
   (match state with
      | Fail Canceled ->
          run_cancel_handlers_rec sleeper.cancel_handlers []
      | Return _ | Fail _ | Sleep _ | Repr _ ->
          ());
-  (* Restart waiters. *)
   run_waiters_rec state sleeper.waiters []
 
-(* [true] if we are in a wakeup. *)
 let wakening = ref false
 
-(* A sleeper + its state. *)
 module type A_closure = sig
   type a
   val sleeper : a sleeper
   val state : a thread_state
 end
 
-(* Queue of sleepers to wakeup. *)
 let to_wakeup = Queue.create ()
 
-(* Enter a wakeup operation. *)
 let enter_wakeup () =
   let snapshot = !current_data in
   let already_wakening =
     if !wakening then
-      (* If we are already in a wakeup, do nothing. *)
       true
     else begin
-      (* Otherwise mark that a wakeup operation has started. *)
       wakening := true;
       false
     end
   in
   (already_wakening, snapshot)
 
-(* Leave a wakeup operation. *)
 let leave_wakeup (already_wakening, snapshot) =
   if not already_wakening then begin
-    (* This was the first wakeup on the call stack, wakeup remaining
-       sleeping threads. *)
     while not (Queue.is_empty to_wakeup) do
       let closure = Queue.pop to_wakeup in
       let module M = (val closure : A_closure) in
       unsafe_run_waiters M.sleeper M.state
     done;
-    (* We are done wakening threads. *)
     wakening := false;
     current_data := snapshot
   end else
     current_data := snapshot
 
 (* See https://github.com/ocsigen/lwt/issues/48. *)
-(* This runs any existing handlers scheduled with Lwt.wakeup_later, then
-   hard-exits the current wakeup. *)
 let abandon_wakeups () =
   if !wakening then leave_wakeup (false, Int_map.empty)
 
@@ -305,9 +237,6 @@ let safe_run_waiters sleeper state =
   let ctx = enter_wakeup () in
   unsafe_run_waiters sleeper state;
   leave_wakeup ctx
-
-(* A ['a result] is either [Return of 'a] or [Fail of exn] so it is
-   covariant. *)
 
 type +'a result = ('a, exn) Result.result
 
@@ -328,7 +257,6 @@ let wakeup_result t result =
         t.state <- state;
         safe_run_waiters sleeper state
     | Fail Canceled ->
-        (* Do not fail if the thread has been canceled: *)
         ()
     | Return _ | Fail _ | Repr _ ->
         invalid_arg "Lwt.wakeup_result"
@@ -343,7 +271,6 @@ let wakeup_later_result (type x) t result =
         let state = state_of_result result in
         t.state <- state;
         if !wakening then begin
-          (* Already wakening => create the closure for later wakening. *)
           let module M = struct
             type a = x
             let sleeper = sleeper
@@ -351,7 +278,6 @@ let wakeup_later_result (type x) t result =
           end in
           Queue.push (module M : A_closure) to_wakeup
         end else
-          (* Otherwise restart threads now. *)
           safe_run_waiters sleeper state
     | Fail Canceled ->
         ()
@@ -374,8 +300,6 @@ let pack_sleeper (type x) sleeper =
 
 let cancel t =
   let state = Fail Canceled in
-  (* - collect all sleepers to restart
-     - set the state of all threads to cancel to [Fail Canceled] *)
   let rec collect : 'a. a_sleeper list -> 'a t -> a_sleeper list = fun acc t ->
     let t = repr t in
     match t.state with
@@ -384,8 +308,6 @@ let cancel t =
             | Cancel_no ->
                 acc
             | Cancel_me ->
-                (* Set the state of [t] immediately so it won't be
-                   collected again. *)
                 t.state <- state;
                 (pack_sleeper sleeper) :: acc
             | Cancel_link m ->
@@ -399,7 +321,6 @@ let cancel t =
           acc
   in
   let sleepers = collect [] t in
-  (* Restart all sleepers. *)
   let ctx = enter_wakeup () in
   List.iter
     (fun sleeper ->
@@ -423,7 +344,6 @@ let chs_append l1 l2 =
     | _ -> Chs_append (l1, l2))
   [@ocaml.warning "-4"]
 
-(* Remove all disabled waiters of a waiter set: *)
 let rec cleanup = function
   | Removable { contents = None } ->
       Empty
@@ -432,56 +352,22 @@ let rec cleanup = function
   | Empty | Removable _ | Immutable _ as ws ->
       ws
 
-(* Make [t1] and [t2] behave the same way, where [t1] is a sleeping
-   thread. This means that they must share the same representation.
-
-   [connect] assumes it is called inside a enter_wakeup/leave_wakeup
-   block. *)
 let connect t1 t2 =
   let t1 = repr t1 and t2 = repr t2 in
   match t1.state with
     | Sleep sleeper1 ->
         if t1 == t2 then
-          (* Do nothing if the two threads already have the same
-             representation *)
           ()
         else begin
           match t2.state with
             | Sleep sleeper2 ->
-                (* If [t2] is sleeping, then makes it behave as [t1]: *)
                 t2.state <- Repr t1;
-                (* Note that the order is important: the user have no
-                   access to [t2] but may keep a reference to [t1]. If
-                   we inverse the order, i.e. we do:
 
-                   [t1.state <- Repr t2]
-
-                   then we have a possible leak. For example:
-
-                   {[
-                     let rec loop ()==
-                       lwt () = Lwt_unix.yield () in
-                       loop ()
-
-                     lwt () =
-                       let t = loop () in
-                       ...
-                   ]}
-
-                   Here, after [n] iterations, [t] will contains:
-
-                   [ref(Repr(ref(Repr(ref(Repr ... ref Sleep)))))]
-                   \-------------[n]--------------/
-                *)
-
-                (* Cancelling [t1] is now the same as canceling [t2]: *)
                 sleeper1.cancel <- sleeper2.cancel;
 
-                (* Merge the two sets of waiters: *)
                 let waiters = append sleeper1.waiters sleeper2.waiters
                 and removed = sleeper1.removed + sleeper2.removed in
                 if removed > max_removed then begin
-                  (* Remove disabled threads *)
                   sleeper1.removed <- 0;
                   sleeper1.waiters <- cleanup waiters
                 end else begin
@@ -490,17 +376,12 @@ let connect t1 t2 =
                 end;
                 sleeper1.cancel_handlers <- chs_append sleeper1.cancel_handlers sleeper2.cancel_handlers
             | Return _ | Fail _ | Repr _ as state2 ->
-                (* [t2] is already terminated, assing its state to [t1]: *)
                 t1.state <- state2;
-                (* and run all the waiters of [t1]: *)
                 unsafe_run_waiters sleeper1 state2
         end
     | Return _ | Fail _ | Repr _ ->
-        (* [t1] is not asleep: *)
          assert false
 
-(* Same as [connect] except that we know that [t2] has alreayd
-   terminated. *)
 let fast_connect t state =
   let t = repr t in
   match t.state with
@@ -510,8 +391,6 @@ let fast_connect t state =
     | Return _ | Fail _ | Repr _ ->
         assert false
 
-(* Same as [fast_connect] except that it does nothing if [t] has
-   terminated. *)
 let fast_connect_if t state =
   let t = repr t in
   match t.state with
@@ -521,9 +400,7 @@ let fast_connect_if t state =
     | Return _ | Fail _ | Repr _ ->
         ()
 
-(* +-----------------------------------------------------------------+
-   | Threads conctruction and combining                              |
-   +-----------------------------------------------------------------+ *)
+
 
 let return v =
   thread { state = Return v }
@@ -614,11 +491,6 @@ let add_task_l seq =
 
 let waiter_of_wakener wakener = thread (wakener_repr wakener)
 
-(* apply function, reifying explicit exceptions into the thread type
-   apply: ('a -(exn)-> 'b t) -> ('a -(n)-> 'b t)
-   semantically a natural transformation TE -> T, where T is the thread
-   monad, which is layered over exception monad E.
-*)
 let apply f x = try f x with e -> fail e
 
 let wrap f = try return (f ()) with exn -> fail exn
@@ -874,7 +746,6 @@ let remove_waiters l =
     (fun t ->
        match (repr t).state with
          | Sleep ({ waiters = Removable _; _ } as sleeper) ->
-             (* There is only one waiter, it is the removed one. *)
              sleeper.waiters <- Empty
          | Sleep ({waiters = Empty | Immutable _ | Append _; _} as sleeper) ->
              let removed = sleeper.removed + 1 in
@@ -906,7 +777,6 @@ let choose l =
   let ready = ready_count l in
   if ready > 0 then
     if ready = 1 then
-      (* Optimisation for the common case: *)
       nth_ready l 0
     else
       nth_ready l (Random.State.int (Lazy.force random_state) ready)
@@ -914,12 +784,8 @@ let choose l =
     let res = temp_many l in
     let rec waiter = ref (Some handle_result)
     and handle_result state =
-      (* Disable the waiter now: *)
       waiter := None;
-      (* Removes all waiters so we do not leak memory: *)
       remove_waiters l;
-      (* This will not fail because it is called at most one time,
-         since all other waiters have been removed: *)
       fast_connect res state
     in
     add_removable_waiter l waiter;
@@ -1024,7 +890,6 @@ let nchoose_split l =
   in
   init [] l
 
-(* Return the nth ready thread, and cancel all others *)
 let rec cancel_and_nth_ready l n =
   match l with
     | [] ->
@@ -1046,7 +911,6 @@ let pick l =
   let ready = ready_count l in
   if ready > 0 then
     if ready = 1 then
-      (* Optimisation for the common case: *)
       cancel_and_nth_ready l 0
     else
       cancel_and_nth_ready l (Random.State.int (Lazy.force random_state) ready)
@@ -1056,7 +920,6 @@ let pick l =
     and handle_result state =
       waiter := None;
       remove_waiters l;
-      (* Cancel all other threads: *)
       List.iter cancel l;
       fast_connect res state
     in
@@ -1109,8 +972,6 @@ let protected t =
   match (repr t).state with
     | Sleep _ ->
         let res = thread (task_aux ()) in
-        (* We use [fact_connect_if] because when [res] is canceled, it
-           will always terminate before [t]. *)
         let rec waiter_cell = ref (Some waiter)
         and waiter state = fast_connect_if res state in
         add_removable_waiter [t] waiter_cell;
@@ -1126,9 +987,7 @@ let protected t =
 
 let join l =
   let res = temp_many l
-  (* Number of threads still sleeping: *)
   and sleeping = ref 0
-  (* The state that must be returned: *)
   and return_state = ref state_return_unit in
   let handle_result state =
     begin
@@ -1137,13 +996,11 @@ let join l =
         | _ -> ()
     end [@ocaml.warning "-4"];
     decr sleeping;
-    (* All threads are terminated, we can wakeup the result: *)
     if !sleeping = 0 then fast_connect res !return_state
   in
   let rec init = function
     | [] ->
         if !sleeping = 0 then
-          (* No thread is sleeping, returns immediately: *)
           thread { state = !return_state }
         else
           res
@@ -1192,9 +1049,7 @@ let with_value key value f =
     current_data := save;
     raise exn
 
-(* +-----------------------------------------------------------------+
-   | Paused threads                                                  |
-   +-----------------------------------------------------------------+ *)
+
 
 let pause_hook = ref ignore
 
@@ -1221,9 +1076,7 @@ let register_pause_notifier f = pause_hook := f
 
 let paused_count () = !paused_count
 
-(* +-----------------------------------------------------------------+
-   | Bakctrace support                                               |
-   +-----------------------------------------------------------------+ *)
+
 
 let backtrace_bind add_loc t f =
   let t = repr t in
@@ -1287,9 +1140,7 @@ let backtrace_finalize add_loc f g =
     (fun x -> g () >>= fun () -> return x)
     (fun e -> g () >>= fun () -> fail (add_loc e))
 
-(* +-----------------------------------------------------------------+
-   | Threads state query                                             |
-   +-----------------------------------------------------------------+ *)
+
 
 let rec is_sleeping_rec t =
   match t.state with
