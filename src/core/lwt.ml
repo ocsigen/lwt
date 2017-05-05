@@ -1013,6 +1013,47 @@ let nchoose l =
   in
   init l
 
+let npick_sleep l =
+  let res = temp_many l in
+  let rec waiter = ref (Some handle_result)
+  and handle_result _state =
+    waiter := None;
+    remove_waiters l;
+    List.iter cancel l;
+    finish_nchoose_or_npick_after_pending res [] l
+  in
+  add_explicitly_removable_callback_to_each_of l waiter;
+  res
+
+let npick threads =
+  let rec init = function
+    | [] ->
+        npick_sleep threads
+    | t :: l ->
+        match (repr t).state with
+          | Resolved x ->
+              collect [x] l
+          | Failed _ as state ->
+              List.iter cancel threads;
+              to_public_promise { state }
+          | Pending _ | Unified_with _ ->
+              init l
+  and collect acc = function
+    | [] ->
+        List.iter cancel threads;
+        return (List.rev acc)
+    | t :: l ->
+        match (repr t).state with
+          | Resolved x ->
+              collect (x :: acc) l
+          | Failed _ as state ->
+              List.iter cancel threads;
+              to_public_promise { state }
+          | Pending _ | Unified_with _ ->
+              collect acc l
+  in
+  init threads
+
 let rec nchoose_split_terminate res acc_terminated acc_sleeping = function
   | [] ->
       complete res (Resolved (List.rev acc_terminated, List.rev acc_sleeping))
@@ -1061,47 +1102,6 @@ let nchoose_split l =
               collect acc_terminated (t :: acc_sleeping) l
   in
   init [] l
-
-let npick_sleep l =
-  let res = temp_many l in
-  let rec waiter = ref (Some handle_result)
-  and handle_result _state =
-    waiter := None;
-    remove_waiters l;
-    List.iter cancel l;
-    finish_nchoose_or_npick_after_pending res [] l
-  in
-  add_explicitly_removable_callback_to_each_of l waiter;
-  res
-
-let npick threads =
-  let rec init = function
-    | [] ->
-        npick_sleep threads
-    | t :: l ->
-        match (repr t).state with
-          | Resolved x ->
-              collect [x] l
-          | Failed _ as state ->
-              List.iter cancel threads;
-              to_public_promise { state }
-          | Pending _ | Unified_with _ ->
-              init l
-  and collect acc = function
-    | [] ->
-        List.iter cancel threads;
-        return (List.rev acc)
-    | t :: l ->
-        match (repr t).state with
-          | Resolved x ->
-              collect (x :: acc) l
-          | Failed _ as state ->
-              List.iter cancel threads;
-              to_public_promise { state }
-          | Pending _ | Unified_with _ ->
-              collect acc l
-  in
-  init threads
 
 let protected t =
   match (repr t).state with
