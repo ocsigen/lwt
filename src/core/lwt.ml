@@ -113,11 +113,11 @@ let new_key () =
   next_key_id := id + 1;
   { id = id; store = None }
 
-let current_data = ref Storage_map.empty
+let current_storage = ref Storage_map.empty
 
 let get key =
   try
-    Storage_map.find key.id !current_data ();
+    Storage_map.find key.id !current_storage ();
     let value = key.store in
     key.store <- None;
     value
@@ -176,7 +176,7 @@ let rec run_cancel_handlers_rec chs rem =
     | Cancel_callback_list_empty ->
         run_cancel_handlers_rec_next rem
     | Cancel_callback_list_callback (data, f) ->
-        current_data := data;
+        current_storage := data;
         call_unsafe f ();
         run_cancel_handlers_rec_next rem
     | Cancel_callback_list_remove_sequence_node n ->
@@ -211,7 +211,7 @@ end
 let to_wakeup = Queue.create ()
 
 let enter_wakeup () =
-  let snapshot = !current_data in
+  let snapshot = !current_storage in
   let already_wakening =
     if !wakening then
       true
@@ -230,9 +230,9 @@ let leave_wakeup (already_wakening, snapshot) =
       unsafe_run_waiters M.sleeper M.state
     done;
     wakening := false;
-    current_data := snapshot
+    current_storage := snapshot
   end else
-    current_data := snapshot
+    current_storage := snapshot
 
 (* See https://github.com/ocsigen/lwt/issues/48. *)
 let abandon_wakeups () =
@@ -527,7 +527,7 @@ let add_immutable_waiter sleeper waiter =
 let on_cancel t f =
   match (repr t).state with
     | Pending sleeper ->
-        let handler = Cancel_callback_list_callback (!current_data, f) in
+        let handler = Cancel_callback_list_callback (!current_storage, f) in
         sleeper.cancel_callbacks <- (
           match sleeper.cancel_callbacks with
             | Cancel_callback_list_empty -> handler
@@ -550,11 +550,11 @@ let bind t f =
         to_public_promise { state }
     | Pending sleeper ->
         let res = temp t in
-        let data = !current_data in
+        let data = !current_storage in
         add_immutable_waiter sleeper
           (function
              | Resolved v ->
-              current_data := data; connect res (try f v with exn -> fail exn)
+              current_storage := data; connect res (try f v with exn -> fail exn)
              | Failed _ as state -> fast_connect res state
              | Pending _ | Unified_with _ -> assert false);
         res
@@ -573,11 +573,11 @@ let map f t =
         to_public_promise { state }
     | Pending sleeper ->
         let res = temp t in
-        let data = !current_data in
+        let data = !current_storage in
         add_immutable_waiter sleeper
           (function
              | Resolved v ->
-               current_data := data;
+               current_storage := data;
                fast_connect res (try Resolved (f v) with exn -> Failed exn)
              | Failed _ as state -> fast_connect res state
              | Pending _ | Unified_with _ -> assert false);
@@ -597,12 +597,12 @@ let catch x f =
         f exn
     | Pending sleeper ->
         let res = temp t in
-        let data = !current_data in
+        let data = !current_storage in
         add_immutable_waiter sleeper
           (function
              | Resolved _ as state -> fast_connect res state
              | Failed exn ->
-               current_data := data; connect res (try f exn with exn -> fail exn)
+               current_storage := data; connect res (try f exn with exn -> fail exn)
              | Pending _ | Unified_with _ -> assert false);
         res
     | Unified_with _ ->
@@ -615,10 +615,10 @@ let on_success t f =
     | Failed _ ->
         ()
     | Pending sleeper ->
-        let data = !current_data in
+        let data = !current_storage in
         add_immutable_waiter sleeper
           (function
-             | Resolved v -> current_data := data; call_unsafe f v
+             | Resolved v -> current_storage := data; call_unsafe f v
              | Failed _ -> ()
              | Pending _ | Unified_with _ -> assert false)
     | Unified_with _ ->
@@ -631,11 +631,11 @@ let on_failure t f =
     | Failed exn ->
         call_unsafe f exn
     | Pending sleeper ->
-        let data = !current_data in
+        let data = !current_storage in
         add_immutable_waiter sleeper
           (function
              | Resolved _ -> ()
-             | Failed exn -> current_data := data; call_unsafe f exn
+             | Failed exn -> current_storage := data; call_unsafe f exn
              | Pending _ | Unified_with _ -> assert false)
     | Unified_with _ ->
         assert false
@@ -646,11 +646,11 @@ let on_termination t f =
     | Failed _ ->
         call_unsafe f ()
     | Pending sleeper ->
-        let data = !current_data in
+        let data = !current_storage in
         add_immutable_waiter sleeper
           (function
              | Resolved _
-             | Failed _ -> current_data := data; call_unsafe f ()
+             | Failed _ -> current_storage := data; call_unsafe f ()
              | Pending _ | Unified_with _ -> assert false)
     | Unified_with _ ->
         assert false
@@ -662,11 +662,11 @@ let on_any t f g =
     | Failed exn ->
         call_unsafe g exn
     | Pending sleeper ->
-        let data = !current_data in
+        let data = !current_storage in
         add_immutable_waiter sleeper
           (function
-             | Resolved v -> current_data := data; call_unsafe f v
-             | Failed exn -> current_data := data; call_unsafe g exn
+             | Resolved v -> current_storage := data; call_unsafe f v
+             | Failed exn -> current_storage := data; call_unsafe g exn
              | Pending _ | Unified_with _ -> assert false)
     | Unified_with _ ->
         assert false
@@ -680,11 +680,11 @@ let try_bind x f g =
         g exn
     | Pending sleeper ->
         let res = temp t in
-        let data = !current_data in
+        let data = !current_storage in
         add_immutable_waiter sleeper
           (function
-             | Resolved v -> current_data := data; connect res (try f v with exn -> fail exn)
-             | Failed exn -> current_data := data; connect res (try g exn with exn -> fail exn)
+             | Resolved v -> current_storage := data; connect res (try f v with exn -> fail exn)
+             | Failed exn -> current_storage := data; connect res (try g exn with exn -> fail exn)
              | Pending _ | Unified_with _ -> assert false);
         res
     | Unified_with _ ->
@@ -1054,7 +1054,7 @@ let finalize f g =
     (fun e -> g () >>= fun () -> fail e)
 
 let with_value key value f =
-  let save = !current_data in
+  let save = !current_storage in
   let data =
     match value with
       | Some _ ->
@@ -1062,13 +1062,13 @@ let with_value key value f =
       | None ->
           Storage_map.remove key.id save
   in
-  current_data := data;
+  current_storage := data;
   try
     let result = f () in
-    current_data := save;
+    current_storage := save;
     result
   with exn ->
-    current_data := save;
+    current_storage := save;
     raise exn
 
 
@@ -1109,11 +1109,11 @@ let backtrace_bind add_loc t f =
         to_public_promise { state = Failed(add_loc exn) }
     | Pending sleeper ->
         let res = temp t in
-        let data = !current_data in
+        let data = !current_storage in
         add_immutable_waiter sleeper
           (function
              | Resolved v ->
-               current_data := data; connect res (try f v with exn -> fail (add_loc exn))
+               current_storage := data; connect res (try f v with exn -> fail (add_loc exn))
              | Failed exn -> fast_connect res (Failed(add_loc exn))
              | Pending _ | Unified_with _ -> assert false);
         res
@@ -1129,12 +1129,12 @@ let backtrace_catch add_loc x f =
         f (add_loc exn)
     | Pending sleeper ->
         let res = temp t in
-        let data = !current_data in
+        let data = !current_storage in
         add_immutable_waiter sleeper
           (function
              | Resolved _ as state -> fast_connect res state
              | Failed exn ->
-               current_data := data; connect res (try f exn with exn -> fail (add_loc exn))
+               current_storage := data; connect res (try f exn with exn -> fail (add_loc exn))
              | Pending _ | Unified_with _ -> assert false);
         res
     | Unified_with _ ->
@@ -1149,13 +1149,13 @@ let backtrace_try_bind add_loc x f g =
         g (add_loc exn)
     | Pending sleeper ->
         let res = temp t in
-        let data = !current_data in
+        let data = !current_storage in
         add_immutable_waiter sleeper
           (function
              | Resolved v ->
-               current_data := data; connect res (try f v with exn -> fail (add_loc exn))
+               current_storage := data; connect res (try f v with exn -> fail (add_loc exn))
              | Failed exn ->
-               current_data := data; connect res (try g exn with exn -> fail (add_loc exn))
+               current_storage := data; connect res (try g exn with exn -> fail (add_loc exn))
              | Pending _ | Unified_with _ -> assert false);
         res
     | Unified_with _ ->
