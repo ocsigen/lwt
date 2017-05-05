@@ -96,8 +96,6 @@ external to_public_promise : 'a promise -> 'a t = "%identity"
 external to_public_resolver : 'a promise -> 'a u = "%identity"
 external to_internal_resolver : 'a u -> 'a promise = "%identity"
 
-let cleanup_throttle = 42
-
 
 
 let rec underlying t =
@@ -176,6 +174,8 @@ let rec clean_up_callback_cells = function
   | Regular_callback_list_explicitly_removable_callback _
   | Regular_callback_list_implicitly_removed_callback _ as ws ->
       ws
+
+let cleanup_throttle = 42
 
 let remove_waiters l =
   List.iter
