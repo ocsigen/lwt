@@ -99,6 +99,17 @@ external to_internal_resolver : 'a u -> 'a promise = "%identity"
 let cleanup_throttle = 42
 
 
+
+let rec underlying t =
+  match t.state with
+    | Unified_with t' ->
+      let t'' = underlying t' in if t'' != t' then t.state <- Unified_with t''; t''
+    | Resolved _ | Failed _ | Pending _ -> t
+
+let repr t = underlying (to_internal_promise t)
+
+
+
 type 'a key = {
   id : int;
   mutable store : 'a option;
@@ -123,14 +134,6 @@ let get key =
     None
 
 
-
-let rec underlying t =
-  match t.state with
-    | Unified_with t' ->
-      let t'' = underlying t' in if t'' != t' then t.state <- Unified_with t''; t''
-    | Resolved _ | Failed _ | Pending _ -> t
-
-let repr t = underlying (to_internal_promise t)
 
 let async_exception_hook =
   ref (fun exn ->
