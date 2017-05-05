@@ -96,7 +96,7 @@ external to_public_promise : 'a promise -> 'a t = "%identity"
 external to_public_resolver : 'a promise -> 'a u = "%identity"
 external to_internal_resolver : 'a u -> 'a promise = "%identity"
 
-let max_removed = 42
+let cleanup_throttle = 42
 
 
 type 'a key = {
@@ -376,7 +376,7 @@ let unify t1 t2 =
                   concat_regular_callbacks sleeper1.regular_callbacks sleeper2.regular_callbacks
                 and removed =
                   sleeper1.cleanups_deferred + sleeper2.cleanups_deferred in
-                if removed > max_removed then begin
+                if removed > cleanup_throttle then begin
                   sleeper1.cleanups_deferred <- 0;
                   sleeper1.regular_callbacks <- clean_up_callback_cells waiters
                 end else begin
@@ -771,7 +771,7 @@ let remove_waiters l =
                | Regular_callback_list_implicitly_removed_callback _
                | Regular_callback_list_concat _; _} as sleeper) ->
              let removed = sleeper.cleanups_deferred + 1 in
-             if removed > max_removed then begin
+             if removed > cleanup_throttle then begin
                sleeper.cleanups_deferred <- 0;
                sleeper.regular_callbacks <- clean_up_callback_cells sleeper.regular_callbacks
              end else
