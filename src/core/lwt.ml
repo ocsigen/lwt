@@ -904,6 +904,23 @@ let rec nth_completed l n =
               else
                 t
 
+let rec nth_completed_and_cancel_pending l n =
+  match l with
+    | [] ->
+        assert false
+    | t :: l ->
+        match (repr t).state with
+          | Pending _ ->
+              cancel t;
+              nth_completed_and_cancel_pending l n
+          | Resolved _ | Failed _ | Unified_with _ ->
+              if n > 0 then
+                nth_completed_and_cancel_pending l (n - 1)
+              else begin
+                List.iter cancel l;
+                t
+              end
+
 (* The PRNG state is initialized with a constant to make non-IO-based
    programs deterministic. *)
 let prng = lazy (Random.State.make [||])
@@ -1024,23 +1041,6 @@ let nchoose_split l =
               collect acc_terminated (t :: acc_sleeping) l
   in
   init [] l
-
-let rec nth_completed_and_cancel_pending l n =
-  match l with
-    | [] ->
-        assert false
-    | t :: l ->
-        match (repr t).state with
-          | Pending _ ->
-              cancel t;
-              nth_completed_and_cancel_pending l n
-          | Resolved _ | Failed _ | Unified_with _ ->
-              if n > 0 then
-                nth_completed_and_cancel_pending l (n - 1)
-              else begin
-                List.iter cancel l;
-                t
-              end
 
 let pick l =
   let ready = count_completed_promises_in l in
