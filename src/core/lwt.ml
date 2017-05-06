@@ -510,44 +510,33 @@ include Trivial_promises
 
 module Pending_promises =
 struct
+  let new_pending ~how_to_cancel =
+    let state =
+      Pending {
+        regular_callbacks = Regular_callback_list_empty;
+        cancel_callbacks = Cancel_callback_list_empty;
+        how_to_cancel;
+        cleanups_deferred = 0;
+      }
+    in
+    {state}
 
-let temp t =
-  {
-    state = Pending { how_to_cancel = Propagate_cancel_to_one (pack_promise (to_public_promise t));
-                    regular_callbacks = Regular_callback_list_empty;
-                    cleanups_deferred = 0;
-                    cancel_callbacks = Cancel_callback_list_empty }
-  }
+  (* Note -- this is temporary. *)
+  let propagate_cancel_to_one p =
+    Propagate_cancel_to_one (pack_promise (to_public_promise p))
 
-let temp_many l =
-  {
-    state = Pending { how_to_cancel = Propagate_cancel_to_several (pack_promise_list l);
-                    regular_callbacks = Regular_callback_list_empty;
-                    cleanups_deferred = 0;
-                    cancel_callbacks = Cancel_callback_list_empty }
-  }
+  let propagate_cancel_to_several ps =
+    Propagate_cancel_to_several (pack_promise_list ps)
 
-let wait_aux () = {
-  state = Pending { how_to_cancel = Not_cancelable;
-                  regular_callbacks = Regular_callback_list_empty;
-                  cleanups_deferred = 0;
-                  cancel_callbacks = Cancel_callback_list_empty }
-}
+
 
   let wait () =
-    let p = wait_aux () in
-    (to_public_promise p, to_public_resolver p)
-
-let task_aux () = {
-  state = Pending { how_to_cancel = Cancel_this_promise;
-                  regular_callbacks = Regular_callback_list_empty;
-                  cleanups_deferred = 0;
-                  cancel_callbacks = Cancel_callback_list_empty }
-}
+    let p = new_pending ~how_to_cancel:Not_cancelable in
+    to_public_promise p, to_public_resolver p
 
   let task () =
-    let p = task_aux () in
-    (to_public_promise p, to_public_resolver p)
+    let p = new_pending ~how_to_cancel:Cancel_this_promise in
+    to_public_promise p, to_public_resolver p
 
   let add_task_r sequence =
     let callbacks = {
@@ -579,7 +568,7 @@ let task_aux () = {
     let p_internal = to_internal_promise p in
     match (underlying p_internal).state with
       | Pending callbacks ->
-          let p' = wait_aux () in
+      let p' = new_pending ~how_to_cancel:Not_cancelable in
           add_implicitly_removed_callback callbacks (complete p');
           to_public_promise p'
       | Resolved _ | Failed _ ->
@@ -636,7 +625,7 @@ struct
       | Failed _ as result ->
           to_public_promise { state = result }
       | Pending p_callbacks ->
-          let p'' = temp p in
+      let p'' = new_pending ~how_to_cancel:(propagate_cancel_to_one p) in
           let saved_storage = !current_storage in
           add_implicitly_removed_callback p_callbacks
             (function
@@ -665,7 +654,7 @@ struct
       | Failed exn ->
           to_public_promise { state = Failed(add_loc exn) }
       | Pending p_callbacks ->
-          let p'' = temp p in
+      let p'' = new_pending ~how_to_cancel:(propagate_cancel_to_one p) in
           let saved_storage = !current_storage in
           add_implicitly_removed_callback p_callbacks
             (function
@@ -697,7 +686,7 @@ let (=<<) f t = bind t f
       | Failed _ as result ->
           to_public_promise { state = result }
       | Pending p_callbacks ->
-          let p'' = temp p in
+      let p'' = new_pending ~how_to_cancel:(propagate_cancel_to_one p) in
           let saved_storage = !current_storage in
           add_implicitly_removed_callback p_callbacks
             (function
@@ -726,7 +715,7 @@ let (=|<) f t = map f t
       | Failed exn ->
           h exn
       | Pending p_callbacks ->
-          let p'' = temp p in
+      let p'' = new_pending ~how_to_cancel:(propagate_cancel_to_one p) in
           let saved_storage = !current_storage in
           add_implicitly_removed_callback p_callbacks
             (function
@@ -756,7 +745,7 @@ let (=|<) f t = map f t
       | Failed exn ->
           h (add_loc exn)
       | Pending p_callbacks ->
-          let p'' = temp p in
+      let p'' = new_pending ~how_to_cancel:(propagate_cancel_to_one p) in
           let saved_storage = !current_storage in
           add_implicitly_removed_callback p_callbacks
             (function
@@ -786,7 +775,7 @@ let (=|<) f t = map f t
       | Failed exn ->
           h exn
       | Pending p_callbacks ->
-          let p'' = temp p in
+      let p'' = new_pending ~how_to_cancel:(propagate_cancel_to_one p) in
           let saved_storage = !current_storage in
           add_implicitly_removed_callback p_callbacks
             (function
@@ -824,7 +813,7 @@ let (=|<) f t = map f t
       | Failed exn ->
           h (add_loc exn)
       | Pending p_callbacks ->
-          let p'' = temp p in
+      let p'' = new_pending ~how_to_cancel:(propagate_cancel_to_one p) in
           let saved_storage = !current_storage in
           add_implicitly_removed_callback p_callbacks
             (function
@@ -990,8 +979,8 @@ struct
           assert false
 
   let join ps =
-    let p' = temp_many ps
-    and number_pending_in_ps = ref 0
+    let p' = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
+    let number_pending_in_ps = ref 0
     and join_result = ref state_return_unit in
     let callback new_result =
       begin
@@ -1080,7 +1069,7 @@ struct
       else
         nth_completed ps (Random.State.int (Lazy.force prng) ready)
     else begin
-      let p = temp_many ps in
+      let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
       let rec cell = ref (Some callback)
       and callback result =
         cell := None;
@@ -1099,7 +1088,7 @@ struct
       else
         nth_completed_and_cancel_pending ps (Random.State.int (Lazy.force prng) ready)
     else begin
-      let p = temp_many ps in
+      let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
       let rec cell = ref (Some callback)
       and callback result =
         cell := None;
@@ -1126,7 +1115,7 @@ struct
               finish_nchoose_or_npick_after_pending to_complete results ps
 
 let nchoose_sleep ps =
-  let p = temp_many ps in
+  let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
   let rec cell = ref (Some callback)
   and callback _result =
     cell := None;
@@ -1165,7 +1154,7 @@ let nchoose_sleep ps =
     init ps
 
 let npick_sleep ps =
-  let p = temp_many ps in
+  let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
   let rec cell = ref (Some callback)
   and callback _result =
     cell := None;
@@ -1221,7 +1210,7 @@ let rec nchoose_split_terminate to_complete resolved pending = function
             nchoose_split_terminate to_complete resolved (p :: pending) ps
 
 let nchoose_split_sleep ps =
-  let p = temp_many ps in
+  let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
   let rec cell = ref (Some callback)
   and callback _result =
     cell := None;
@@ -1263,7 +1252,7 @@ let protected p =
     let p_internal = to_internal_promise p in
   match (underlying p_internal).state with
     | Pending _ ->
-        let p' = task_aux () in
+      let p' = new_pending ~how_to_cancel:Cancel_this_promise in
         let rec cell = ref (Some callback)
         and callback p_result = fast_connect_if p' p_result in
         add_explicitly_removable_callback_to_each_of [p] cell;
