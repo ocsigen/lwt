@@ -128,8 +128,6 @@ let rec underlying p =
       let p'' = underlying p' in if p'' != p' then p.state <- Unified_with p''; p''
     | Resolved _ | Failed _ | Pending _ -> p
 
-let repr t = underlying (to_internal_promise t)
-
 end
 open Basic_helpers
 
@@ -213,7 +211,8 @@ struct
   let remove_waiters ps =
     List.iter
       (fun p ->
-         match (repr p).state with
+      let p = to_internal_promise p in
+      match (underlying p).state with
            | Pending ({ regular_callbacks =
                    Regular_callback_list_explicitly_removable_callback _; _ } as callbacks) ->
                callbacks.regular_callbacks <- Regular_callback_list_empty
@@ -246,7 +245,8 @@ struct
     let node = Regular_callback_list_explicitly_removable_callback f in
     List.iter
       (fun p ->
-         match (repr p).state with
+      let p = to_internal_promise p in
+      match (underlying p).state with
            | Pending callbacks ->
                add_regular_callback_list_node callbacks node
            | Resolved _ | Failed _ | Unified_with _ ->
@@ -328,10 +328,10 @@ and run_cancel_handlers_rec_next rest =
     run_waiters_rec result callbacks.regular_callbacks []
 
   let complete p result =
-    let t = repr p in
-    match t.state with
+    let p = underlying p in
+    match p.state with
       | Pending callbacks ->
-          t.state <- result;
+          p.state <- result;
           run_callbacks callbacks result
       | Resolved _ | Failed _ | Unified_with _ ->
           assert false
@@ -431,7 +431,8 @@ let pack_callbacks (type x) callbacks =
   let cancel p =
     let canceled_result = Failed Canceled in
     let rec collect : 'a. packed_callbacks list -> 'a t -> packed_callbacks list = fun acc p ->
-      let p = repr p in
+        let p = to_internal_promise p in
+        let p = underlying p in
       match p.state with
         | Pending ({ how_to_cancel; _ } as callbacks) -> begin
             match how_to_cancel with
@@ -466,7 +467,7 @@ include Completion_loop
 
 (* This function is redundant and will be removed in refactoring. *)
 let fast_connect_if t state =
-  let t = repr t in
+  let t = underlying t in
   match t.state with
     | Pending callbacks ->
         t.state <- state;
@@ -511,7 +512,7 @@ module Pending_promises =
 struct
 
 let temp t =
-  to_public_promise {
+  {
     state = Pending { how_to_cancel = Propagate_cancel_to_one (pack_promise (to_public_promise t));
                     regular_callbacks = Regular_callback_list_empty;
                     cleanups_deferred = 0;
@@ -519,7 +520,7 @@ let temp t =
   }
 
 let temp_many l =
-  to_public_promise {
+  {
     state = Pending { how_to_cancel = Propagate_cancel_to_several (pack_promise_list l);
                     regular_callbacks = Regular_callback_list_empty;
                     cleanups_deferred = 0;
@@ -575,11 +576,12 @@ let task_aux () = {
   let waiter_of_wakener r = to_public_promise (to_internal_resolver r)
 
   let no_cancel p =
-    match (repr p).state with
+    let p_internal = to_internal_promise p in
+    match (underlying p_internal).state with
       | Pending callbacks ->
-          let p' = to_public_promise (wait_aux ()) in
+          let p' = wait_aux () in
           add_implicitly_removed_callback callbacks (complete p');
-          p'
+          to_public_promise p'
       | Resolved _ | Failed _ ->
           p
       | Unified_with _ ->
@@ -592,7 +594,7 @@ include Pending_promises
 module Sequential_composition =
 struct
   let unify t1 t2 =
-    let t1 = repr t1 and t2 = repr t2 in
+    let t1 = underlying t1 and t2 = underlying t2 in
     match t1.state with
       | Pending callbacks1 ->
           if t1 == t2 then
@@ -625,7 +627,9 @@ struct
            assert false
 
   let bind p f =
-    let p = repr p in
+    let p = to_internal_promise p in
+    let p = underlying p in
+
     match p.state with
       | Resolved v ->
           f v
@@ -637,15 +641,24 @@ struct
           add_implicitly_removed_callback p_callbacks
             (function
                | Resolved v ->
-                current_storage := saved_storage; unify p'' (try f v with exn -> fail exn)
+          current_storage := saved_storage;
+
+          let p' = try f v with exn -> fail exn in
+          let p' = to_internal_promise p' in
+
+          unify p'' p'
                | Failed _ as state -> complete p'' state
                | Pending _ | Unified_with _ -> assert false);
-          p''
+
+      to_public_promise p''
+
       | Unified_with _ ->
           assert false
 
   let backtrace_bind add_loc p f =
-    let p = repr p in
+    let p = to_internal_promise p in
+    let p = underlying p in
+
     match p.state with
       | Resolved v ->
           f v
@@ -657,10 +670,17 @@ struct
           add_implicitly_removed_callback p_callbacks
             (function
                | Resolved v ->
-                 current_storage := saved_storage; unify p'' (try f v with exn -> fail (add_loc exn))
+          current_storage := saved_storage;
+
+          let p' = try f v with exn -> fail (add_loc exn) in
+          let p' = to_internal_promise p' in
+
+          unify p'' p'
                | Failed exn -> complete p'' (Failed(add_loc exn))
                | Pending _ | Unified_with _ -> assert false);
-          p''
+
+      to_public_promise p''
+
       | Unified_with _ ->
           assert false
 
@@ -668,7 +688,9 @@ let (>>=) t f = bind t f
 let (=<<) f t = bind t f
 
   let map f p =
-    let p = repr p in
+    let p = to_internal_promise p in
+    let p = underlying p in
+
     match p.state with
       | Resolved v ->
           to_public_promise { state = try Resolved (f v) with exn -> Failed exn }
@@ -684,7 +706,9 @@ let (=<<) f t = bind t f
                  complete p'' (try Resolved (f v) with exn -> Failed exn)
                | Failed _ as state -> complete p'' state
                | Pending _ | Unified_with _ -> assert false);
-          p''
+
+      to_public_promise p''
+
       | Unified_with _ ->
           assert false
 
@@ -692,7 +716,10 @@ let (>|=) t f = map f t
 let (=|<) f t = map f t
 
   let catch f h =
-    let p = repr (try f () with exn -> fail exn) in
+    let p = try f () with exn -> fail exn in
+    let p = to_internal_promise p in
+    let p = underlying p in
+
     match p.state with
       | Resolved _ ->
           to_public_promise p
@@ -705,14 +732,24 @@ let (=|<) f t = map f t
             (function
                | Resolved _ as p_result -> complete p'' p_result
                | Failed exn ->
-                 current_storage := saved_storage; unify p'' (try h exn with exn -> fail exn)
+          current_storage := saved_storage;
+
+          let p' = try h exn with exn -> fail exn in
+          let p' = to_internal_promise p' in
+
+          unify p'' p'
                | Pending _ | Unified_with _ -> assert false);
-          p''
+
+      to_public_promise p''
+
       | Unified_with _ ->
           assert false
 
   let backtrace_catch add_loc f h =
-    let p = repr (try f () with exn -> fail exn) in
+    let p = try f () with exn -> fail exn in
+    let p = to_internal_promise p in
+    let p = underlying p in
+
     match p.state with
       | Resolved _ ->
           to_public_promise p
@@ -725,14 +762,24 @@ let (=|<) f t = map f t
             (function
                | Resolved _ as p_result -> complete p'' p_result
                | Failed exn ->
-                 current_storage := saved_storage; unify p'' (try h exn with exn -> fail (add_loc exn))
+          current_storage := saved_storage;
+
+          let p' = try h exn with exn -> fail (add_loc exn) in
+          let p' = to_internal_promise p' in
+
+          unify p'' p'
                | Pending _ | Unified_with _ -> assert false);
-          p''
+
+      to_public_promise p''
+
       | Unified_with _ ->
           assert false
 
   let try_bind f f' h =
-    let p = repr (try f () with exn -> fail exn) in
+    let p = try f () with exn -> fail exn in
+    let p = to_internal_promise p in
+    let p = underlying p in
+
     match p.state with
       | Resolved v ->
           f' v
@@ -743,15 +790,34 @@ let (=|<) f t = map f t
           let saved_storage = !current_storage in
           add_implicitly_removed_callback p_callbacks
             (function
-               | Resolved v -> current_storage := saved_storage; unify p'' (try f' v with exn -> fail exn)
-               | Failed exn -> current_storage := saved_storage; unify p'' (try h exn with exn -> fail exn)
+               | Resolved v ->
+          current_storage := saved_storage;
+
+          let p' = try f' v with exn -> fail exn in
+          let p' = to_internal_promise p' in
+
+          unify p'' p'
+
+               | Failed exn ->
+          current_storage := saved_storage;
+
+          let p' = try h exn with exn -> fail exn in
+          let p' = to_internal_promise p' in
+
+          unify p'' p'
+
                | Pending _ | Unified_with _ -> assert false);
-          p''
+
+      to_public_promise p''
+
       | Unified_with _ ->
           assert false
 
   let backtrace_try_bind add_loc f f' h =
-    let p = repr (try f () with exn -> fail exn) in
+    let p = try f () with exn -> fail exn in
+    let p = to_internal_promise p in
+    let p = underlying p in
+
     match p.state with
       | Resolved v ->
           f' v
@@ -763,11 +829,22 @@ let (=|<) f t = map f t
           add_implicitly_removed_callback p_callbacks
             (function
                | Resolved v ->
-                 current_storage := saved_storage; unify p'' (try f' v with exn -> fail (add_loc exn))
+          current_storage := saved_storage;
+
+          let p' = try f' v with exn -> fail (add_loc exn) in
+          let p' = to_internal_promise p' in
+
+          unify p'' p'
                | Failed exn ->
-                 current_storage := saved_storage; unify p'' (try h exn with exn -> fail (add_loc exn))
+          current_storage := saved_storage;
+
+          let p' = try h exn with exn -> fail (add_loc exn) in
+          let p' = to_internal_promise p' in
+          unify p'' p'
                | Pending _ | Unified_with _ -> assert false);
-          p''
+
+          to_public_promise p''
+
       | Unified_with _ ->
           assert false
 
@@ -782,7 +859,9 @@ let (=|<) f t = map f t
       (fun e -> f' () >>= fun () -> fail (add_loc e))
 
   let on_cancel p f =
-    match (repr p).state with
+    let p = to_internal_promise p in
+
+    match (underlying p).state with
       | Pending callbacks ->
           let handler = Cancel_callback_list_callback (!current_storage, f) in
           callbacks.cancel_callbacks <- (
@@ -799,7 +878,9 @@ let (=|<) f t = map f t
           ()
 
   let on_success p f =
-    match (repr p).state with
+    let p = to_internal_promise p in
+
+    match (underlying p).state with
       | Resolved v ->
           handle_with_async_exception_hook f v
       | Failed _ ->
@@ -815,7 +896,9 @@ let (=|<) f t = map f t
           assert false
 
   let on_failure p f =
-    match (repr p).state with
+    let p = to_internal_promise p in
+
+    match (underlying p).state with
       | Resolved _ ->
           ()
       | Failed exn ->
@@ -831,7 +914,9 @@ let (=|<) f t = map f t
           assert false
 
   let on_termination p f =
-    match (repr p).state with
+    let p = to_internal_promise p in
+
+    match (underlying p).state with
       | Resolved _
       | Failed _ ->
           handle_with_async_exception_hook f ()
@@ -846,7 +931,9 @@ let (=|<) f t = map f t
           assert false
 
   let on_any p f g =
-    match (repr p).state with
+    let p = to_internal_promise p in
+
+    match (underlying p).state with
       | Resolved v ->
           handle_with_async_exception_hook f v
       | Failed exn ->
@@ -868,8 +955,10 @@ include Sequential_composition
 module Concurrent_composition =
 struct
   let async f =
-    let p = repr (try f () with exn -> fail exn) in
-    match p.state with
+    let p = try f () with exn -> fail exn in
+    let p = to_internal_promise p in
+
+    match (underlying p).state with
       | Resolved _ ->
           ()
       | Failed exn ->
@@ -884,7 +973,9 @@ struct
           assert false
 
   let ignore_result p =
-    match (repr p).state with
+    let p = to_internal_promise p in
+
+    match (underlying p).state with
       | Resolved _ ->
           ()
       | Failed e ->
@@ -916,9 +1007,10 @@ struct
           if !number_pending_in_ps = 0 then
             to_public_promise { state = !join_result }
           else
-            p'
+            to_public_promise p'
       | p :: rest ->
-          match (repr p).state with
+        let p = to_internal_promise p in
+          match (underlying p).state with
             | Pending callbacks ->
                 incr number_pending_in_ps;
                 add_implicitly_removed_callback callbacks callback;
@@ -938,7 +1030,8 @@ struct
 
   let count_completed_promises_in ps =
     List.fold_left (fun total p ->
-      match (repr p).state with
+      let p = to_internal_promise p in
+      match (underlying p).state with
       | Pending _ -> total
       | Resolved _ | Failed _ | Unified_with _ -> total + 1) 0 ps
 
@@ -947,7 +1040,8 @@ struct
       | [] ->
           assert false
       | p :: ps ->
-          match (repr p).state with
+      let p' = to_internal_promise p in
+          match (underlying p').state with
             | Pending _ ->
                 nth_completed ps n
             | Resolved _ | Failed _ | Unified_with _ ->
@@ -961,7 +1055,8 @@ struct
       | [] ->
           assert false
       | p :: ps ->
-          match (repr p).state with
+      let p' = to_internal_promise p in
+          match (underlying p').state with
             | Pending _ ->
                 cancel p;
                 nth_completed_and_cancel_pending ps n
@@ -993,7 +1088,7 @@ struct
         complete p result
       in
       add_explicitly_removable_callback_to_each_of ps cell;
-      p
+      to_public_promise p
     end
 
   let pick ps =
@@ -1013,14 +1108,16 @@ struct
         complete p result
       in
       add_explicitly_removable_callback_to_each_of ps cell;
-      p
+      to_public_promise p
     end
 
   let rec finish_nchoose_or_npick_after_pending to_complete results = function
     | [] ->
         complete to_complete (Resolved (List.rev results))
     | p :: ps ->
-        match (repr p).state with
+      let p = to_internal_promise p in
+
+        match (underlying p).state with
           | Resolved v ->
               finish_nchoose_or_npick_after_pending to_complete (v :: results) ps
           | Failed _ as state ->
@@ -1037,14 +1134,15 @@ let nchoose_sleep ps =
     finish_nchoose_or_npick_after_pending p [] ps
   in
   add_explicitly_removable_callback_to_each_of ps cell;
-  p
+  to_public_promise p
 
   let nchoose ps =
     let rec init = function
       | [] ->
           nchoose_sleep ps
       | p :: ps ->
-          match (repr p).state with
+        let p = to_internal_promise p in
+          match (underlying p).state with
             | Resolved x ->
                 collect [x] ps
             | Failed _ as state ->
@@ -1055,7 +1153,8 @@ let nchoose_sleep ps =
       | [] ->
           return (List.rev acc)
       | p :: ps ->
-          match (repr p).state with
+        let p = to_internal_promise p in
+          match (underlying p).state with
             | Resolved v ->
                 collect (v :: acc) ps
             | Failed _ as state ->
@@ -1075,14 +1174,15 @@ let npick_sleep ps =
     finish_nchoose_or_npick_after_pending p [] ps
   in
   add_explicitly_removable_callback_to_each_of ps cell;
-  p
+  to_public_promise p
 
   let npick ps =
     let rec init = function
       | [] ->
           npick_sleep ps
       | p :: ps' ->
-          match (repr p).state with
+        let p = to_internal_promise p in
+          match (underlying p).state with
             | Resolved v ->
                 collect [v] ps'
             | Failed _ as state ->
@@ -1095,7 +1195,8 @@ let npick_sleep ps =
           List.iter cancel ps;
           return (List.rev acc)
       | p :: ps' ->
-          match (repr p).state with
+        let p = to_internal_promise p in
+          match (underlying p).state with
             | Resolved v ->
                 collect (v :: acc) ps'
             | Failed _ as state ->
@@ -1110,7 +1211,8 @@ let rec nchoose_split_terminate to_complete resolved pending = function
   | [] ->
       complete to_complete (Resolved (List.rev resolved, List.rev pending))
   | p :: ps ->
-      match (repr p).state with
+        let p_internal = to_internal_promise p in
+      match (underlying p_internal).state with
         | Resolved v ->
             nchoose_split_terminate to_complete (v :: resolved) pending ps
         | Failed _ as state ->
@@ -1127,14 +1229,15 @@ let nchoose_split_sleep ps =
     nchoose_split_terminate p [] [] ps
   in
   add_explicitly_removable_callback_to_each_of ps cell;
-  p
+  to_public_promise p
 
   let nchoose_split ps =
     let rec init acc_sleeping = function
       | [] ->
           nchoose_split_sleep ps
       | p :: ps' ->
-          match (repr p).state with
+        let p_internal = to_internal_promise p in
+          match (underlying p_internal).state with
             | Resolved v ->
                 collect [v] acc_sleeping ps'
             | Failed _ as state ->
@@ -1145,7 +1248,8 @@ let nchoose_split_sleep ps =
       | [] ->
           return (List.rev acc_terminated, acc_sleeping)
       | p :: ps ->
-          match (repr p).state with
+        let p_internal = to_internal_promise p in
+          match (underlying p_internal).state with
             | Resolved v ->
                 collect (v :: acc_terminated) acc_sleeping ps
             | Failed _ as state ->
@@ -1156,16 +1260,17 @@ let nchoose_split_sleep ps =
     init [] ps
 
 let protected p =
-  match (repr p).state with
+    let p_internal = to_internal_promise p in
+  match (underlying p_internal).state with
     | Pending _ ->
-        let p' = to_public_promise (task_aux ()) in
+        let p' = task_aux () in
         let rec cell = ref (Some callback)
         and callback p_result = fast_connect_if p' p_result in
         add_explicitly_removable_callback_to_each_of [p] cell;
-        on_cancel p' (fun () ->
+        on_cancel (to_public_promise p') (fun () ->
           cell := None;
           remove_waiters [p]);
-        p'
+        to_public_promise p'
 
     | Resolved _ | Failed _ ->
         p
@@ -1190,7 +1295,9 @@ module State = struct
     | Sleep
 end
 
-  let state t = match (repr t).state with
+  let state p =
+    let p = to_internal_promise p in
+    match (underlying p).state with
     | Resolved v -> State.Return v
     | Failed exn -> State.Fail exn
     | Pending _ -> State.Sleep
@@ -1210,7 +1317,8 @@ let rec is_sleeping_rec t =
   let is_sleeping p = is_sleeping_rec (to_internal_promise p)
 
   let poll p =
-    match (repr p).state with
+    let p = to_internal_promise p in
+    match (underlying p).state with
       | Failed e -> raise e
       | Resolved v -> Some v
       | Pending _ -> None
