@@ -32,28 +32,6 @@ type storage = (unit -> unit) Storage_map.t
 type +'a t
 type -'a u
 
-module type Existential_promise = sig
-  type a
-  val promise : a t
-end
-
-type a_promise = (module Existential_promise)
-
-let pack_promise (type x) t =
-  let module M = struct type a = x let promise = t end in
-  (module M : Existential_promise)
-
-module type Existential_promise_list = sig
-  type a
-  val promise_list : a t list
-end
-
-type a_promise_list = (module Existential_promise_list)
-
-let pack_promise_list (type x) l =
-  let module M = struct type a = x let promise_list = l end in
-  (module M : Existential_promise_list)
-
 
 
 module Main_internal_types =
@@ -76,10 +54,10 @@ struct
   }
 
   and how_to_cancel =
-    | Not_cancelable
-    | Cancel_this_promise
-    | Propagate_cancel_to_one of a_promise
-    | Propagate_cancel_to_several of a_promise_list
+    | Not_cancelable              :                           how_to_cancel
+    | Cancel_this_promise         :                           how_to_cancel
+    | Propagate_cancel_to_one     : _ promise              -> how_to_cancel
+    | Propagate_cancel_to_several : _ promise list         -> how_to_cancel
 
   and 'a regular_callback_list =
     | Regular_callback_list_empty
@@ -338,13 +316,11 @@ and run_cancel_handlers_rec_next rest =
 
   let currently_in_completion_loop = ref false
 
-module type A_queued_callbacks = sig
-  type a
-  val callbacks : a callbacks
-  val state : a state
-end
+  type queued_callbacks =
+    Queued : ('a callbacks * 'a state) -> queued_callbacks
+    [@@ocaml.unboxed]
 
-let queued_callbacks = Queue.create ()
+  let queued_callbacks : queued_callbacks Queue.t = Queue.create ()
 
   let enter_completion_loop () =
     let storage_snapshot = !current_storage in
@@ -361,9 +337,8 @@ let queued_callbacks = Queue.create ()
   let leave_completion_loop (already_wakening, storage_snapshot) =
     if not already_wakening then begin
       while not (Queue.is_empty queued_callbacks) do
-        let closure = Queue.pop queued_callbacks in
-        let module M = (val closure : A_queued_callbacks) in
-        run_callbacks M.callbacks M.state
+        let Queued (callbacks, result) = Queue.pop queued_callbacks in
+        run_callbacks callbacks result
       done;
       currently_in_completion_loop := false;
       current_storage := storage_snapshot
@@ -394,19 +369,14 @@ let queued_callbacks = Queue.create ()
   let wakeup r v = wakeup_result r (Result.Ok v)
   let wakeup_exn r exn = wakeup_result r (Result.Error exn)
 
-  let wakeup_later_result (type x) r result =
+  let wakeup_later_result r result =
     let p = underlying (to_internal_resolver r) in
     match p.state with
       | Pending callbacks ->
           let result = state_of_result result in
           p.state <- result;
           if !currently_in_completion_loop then begin
-            let module M = struct
-              type a = x
-              let callbacks = callbacks
-              let state = result
-            end in
-            Queue.push (module M : A_queued_callbacks) queued_callbacks
+          Queue.push (Queued (callbacks, result)) queued_callbacks
           end else
             run_in_completion_loop callbacks result
       | Failed Canceled ->
@@ -417,21 +387,13 @@ let queued_callbacks = Queue.create ()
   let wakeup_later r v = wakeup_later_result r (Result.Ok v)
   let wakeup_later_exn r exn = wakeup_later_result r (Result.Error exn)
 
-module type Packed_callbacks = sig
-  type a
-  val callbacks : a callbacks
-end
-
-type packed_callbacks = (module Packed_callbacks)
-
-let pack_callbacks (type x) callbacks =
-  let module M = struct type a = x let callbacks = callbacks end in
-  (module M : Packed_callbacks)
+  type packed_callbacks =
+    | Packed : _ callbacks -> packed_callbacks
+    [@@ocaml.unboxed]
 
   let cancel p =
     let canceled_result = Failed Canceled in
-    let rec collect : 'a. packed_callbacks list -> 'a t -> packed_callbacks list = fun acc p ->
-        let p = to_internal_promise p in
+    let rec collect : 'a. packed_callbacks list -> 'a promise -> packed_callbacks list = fun acc p ->
         let p = underlying p in
       match p.state with
         | Pending ({ how_to_cancel; _ } as callbacks) -> begin
@@ -440,24 +402,23 @@ let pack_callbacks (type x) callbacks =
                   acc
               | Cancel_this_promise ->
                   p.state <- canceled_result;
-                  (pack_callbacks callbacks) :: acc
-              | Propagate_cancel_to_one m ->
-                  let module M = (val m : Existential_promise) in
-                  collect acc M.promise
-              | Propagate_cancel_to_several m ->
-                  let module M = (val m : Existential_promise_list) in
-                  List.fold_left collect acc M.promise_list
+                  (Packed callbacks) :: acc
+              | Propagate_cancel_to_one p ->
+                  collect acc p
+              | Propagate_cancel_to_several ps ->
+                  List.fold_left collect acc ps
           end
         | Resolved _ | Failed _ | Unified_with _ ->
             acc
     in
+
+    let p = to_internal_promise p in
     let sleepers = collect [] p in
     let ctx = enter_completion_loop () in
     List.iter
-      (fun callbacks ->
-         let module M = (val callbacks : Packed_callbacks) in
-         run_cancel_handlers_rec M.callbacks.cancel_callbacks [];
-         run_waiters_rec canceled_result M.callbacks.regular_callbacks [])
+      (fun (Packed callbacks) ->
+         run_cancel_handlers_rec callbacks.cancel_callbacks [];
+         run_waiters_rec canceled_result callbacks.regular_callbacks [])
       sleepers;
     leave_completion_loop ctx
 end
@@ -521,12 +482,13 @@ struct
     in
     {state}
 
-  (* Note -- this is temporary. *)
-  let propagate_cancel_to_one p =
-    Propagate_cancel_to_one (pack_promise (to_public_promise p))
-
   let propagate_cancel_to_several ps =
-    Propagate_cancel_to_several (pack_promise_list ps)
+    (* Using a dirty cast here to avoid rebuilding the list :( Not bothering
+       with the invariants, because [Propagate_cancel_to_several] packs them,
+       and code that matches on [Propagate_cancel_to_several] doesn't care about
+       them anyway. *)
+    let cast_promise_list : 'a t list -> 'a promise list = Obj.magic in
+    Propagate_cancel_to_several (cast_promise_list ps)
 
 
 
@@ -625,7 +587,7 @@ struct
       | Failed _ as result ->
           to_public_promise { state = result }
       | Pending p_callbacks ->
-      let p'' = new_pending ~how_to_cancel:(propagate_cancel_to_one p) in
+      let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
           let saved_storage = !current_storage in
           add_implicitly_removed_callback p_callbacks
             (function
@@ -654,7 +616,7 @@ struct
       | Failed exn ->
           to_public_promise { state = Failed(add_loc exn) }
       | Pending p_callbacks ->
-      let p'' = new_pending ~how_to_cancel:(propagate_cancel_to_one p) in
+      let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
           let saved_storage = !current_storage in
           add_implicitly_removed_callback p_callbacks
             (function
@@ -686,7 +648,7 @@ let (=<<) f t = bind t f
       | Failed _ as result ->
           to_public_promise { state = result }
       | Pending p_callbacks ->
-      let p'' = new_pending ~how_to_cancel:(propagate_cancel_to_one p) in
+      let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
           let saved_storage = !current_storage in
           add_implicitly_removed_callback p_callbacks
             (function
@@ -715,7 +677,7 @@ let (=|<) f t = map f t
       | Failed exn ->
           h exn
       | Pending p_callbacks ->
-      let p'' = new_pending ~how_to_cancel:(propagate_cancel_to_one p) in
+      let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
           let saved_storage = !current_storage in
           add_implicitly_removed_callback p_callbacks
             (function
@@ -745,7 +707,7 @@ let (=|<) f t = map f t
       | Failed exn ->
           h (add_loc exn)
       | Pending p_callbacks ->
-      let p'' = new_pending ~how_to_cancel:(propagate_cancel_to_one p) in
+      let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
           let saved_storage = !current_storage in
           add_implicitly_removed_callback p_callbacks
             (function
@@ -775,7 +737,7 @@ let (=|<) f t = map f t
       | Failed exn ->
           h exn
       | Pending p_callbacks ->
-      let p'' = new_pending ~how_to_cancel:(propagate_cancel_to_one p) in
+      let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
           let saved_storage = !current_storage in
           add_implicitly_removed_callback p_callbacks
             (function
@@ -813,7 +775,7 @@ let (=|<) f t = map f t
       | Failed exn ->
           h (add_loc exn)
       | Pending p_callbacks ->
-      let p'' = new_pending ~how_to_cancel:(propagate_cancel_to_one p) in
+      let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
           let saved_storage = !current_storage in
           add_implicitly_removed_callback p_callbacks
             (function

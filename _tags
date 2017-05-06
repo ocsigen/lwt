@@ -9,6 +9,8 @@ not <src/ssl/*>: safe_string
 # to depend on how Ocamlbuild internally handles lists of warn() tags.
 <src/camlp4/*.ml> or <src/ppx/*.ml>: warn(-4)
 <src/camlp4/*.ml>: warn(-3)
+# Warning 4 is disabled due to https://caml.inria.fr/mantis/view.php?id=7451.
+<src/core/lwt.ml>: warn(-4)
 <**/*>: warn(+A-29-58)
 
 # Syntax extension
