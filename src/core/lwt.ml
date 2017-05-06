@@ -34,17 +34,23 @@ type -'a u
 
 
 
+type underlying
+type proxy
+
+type completed
+type pending
+
 module Main_internal_types =
 struct
-  type 'a promise = {
-    mutable state : 'a state;
+  type ('a, 'u, 'c) promise = {
+    mutable state : ('a, 'u, 'c) state;
   }
 
-  and 'a state =
-    | Resolved of 'a
-    | Failed of exn
-    | Pending of 'a callbacks
-    | Unified_with of 'a promise
+  and (_, _, _) state =
+    | Resolved     : 'a                  -> ('a, underlying, completed) state
+    | Failed       : exn                 -> ( _, underlying, completed) state
+    | Pending      : 'a callbacks        -> ('a, underlying, pending)   state
+    | Unified_with : ('a, _, 'c) promise -> ('a, proxy,      'c)        state
 
   and 'a callbacks = {
     mutable regular_callbacks : 'a regular_callback_list;
@@ -56,24 +62,30 @@ struct
   and how_to_cancel =
     | Not_cancelable              :                           how_to_cancel
     | Cancel_this_promise         :                           how_to_cancel
-    | Propagate_cancel_to_one     : _ promise              -> how_to_cancel
-    | Propagate_cancel_to_several : _ promise list         -> how_to_cancel
+    | Propagate_cancel_to_one     : (_, _, _) promise      -> how_to_cancel
+    | Propagate_cancel_to_several : (_, _, _) promise list -> how_to_cancel
 
   and 'a regular_callback_list =
     | Regular_callback_list_empty
     | Regular_callback_list_concat of
       'a regular_callback_list * 'a regular_callback_list
     | Regular_callback_list_implicitly_removed_callback of
-      ('a state -> unit)
+      (('a, underlying, completed) state -> unit)
     | Regular_callback_list_explicitly_removable_callback of
-      ('a state -> unit) option ref
+      (('a, underlying, completed) state -> unit) option ref
 
-  and 'a cancel_callback_list =
-    | Cancel_callback_list_empty
-    | Cancel_callback_list_concat of
-      'a cancel_callback_list * 'a cancel_callback_list
-    | Cancel_callback_list_callback of storage * (unit -> unit)
-    | Cancel_callback_list_remove_sequence_node of 'a u Lwt_sequence.node
+  and _ cancel_callback_list =
+    | Cancel_callback_list_empty :
+      _ cancel_callback_list
+    | Cancel_callback_list_concat :
+      'a cancel_callback_list * 'a cancel_callback_list ->
+        'a cancel_callback_list
+    | Cancel_callback_list_callback :
+      storage * (unit -> unit) ->
+        _ cancel_callback_list
+    | Cancel_callback_list_remove_sequence_node :
+      ('a, _, _) promise Lwt_sequence.node ->
+        'a cancel_callback_list
 end
 open Main_internal_types
 
@@ -81,11 +93,17 @@ open Main_internal_types
 
 module Public_types =
 struct
+  let to_public_promise : ('a, _, _) promise -> 'a t = Obj.magic
+  let to_public_resolver : ('a, _, _) promise -> 'a u = Obj.magic
 
-external to_internal_promise : 'a t -> 'a promise = "%identity"
-external to_public_promise : 'a promise -> 'a t = "%identity"
-external to_public_resolver : 'a promise -> 'a u = "%identity"
-external to_internal_resolver : 'a u -> 'a promise = "%identity"
+  type _ packed_promise =
+    | Internal : ('a, _, _) promise -> 'a packed_promise
+    [@@ocaml.unboxed]
+
+  let to_internal_promise (p : 'a t) : 'a packed_promise =
+    Internal (Obj.magic p)
+  let to_internal_resolver (r : 'a u) : 'a packed_promise =
+    Internal (Obj.magic r)
 
   type +'a lwt_result = ('a, exn) Result.result
 
@@ -99,13 +117,45 @@ include Public_types
 
 module Basic_helpers =
 struct
+  let identical p1 p2 =
+    (to_public_promise p1) == (to_public_promise p2)
 
-let rec underlying p =
-  match p.state with
+  let rec underlying
+      : 'u 'c. ('a, 'u, 'c) promise -> ('a, underlying, 'c) promise =
+    fun
+      (type u)
+      (type c)
+      (p : ('a, u, c) promise) ->
+
+    match p.state with
+    | Resolved _ -> (p : (_, underlying, _) promise)
+    | Failed _ -> p
+    | Pending _ -> p
     | Unified_with p' ->
-      let p'' = underlying p' in if p'' != p' then p.state <- Unified_with p''; p''
-    | Resolved _ | Failed _ | Pending _ -> p
+      let p'' = underlying p' in
+      if not (identical p'' p') then
+        p.state <- Unified_with p'';
+      p''
 
+
+
+  type ('a, 'u, 'c) state_changed =
+    | State_may_have_changed of ('a, 'u, 'c) promise
+    [@@ocaml.unboxed]
+
+  let set_promise_state p state =
+    let p : (_, _, _) promise = Obj.magic p in
+    p.state <- state;
+    State_may_have_changed p
+
+
+
+  type 'a may_now_be_proxy =
+    | State_may_now_be_pending_proxy :
+      ('a, _, pending) promise -> 'a may_now_be_proxy
+    [@@ocaml.unboxed]
+
+  let may_now_be_proxy p = State_may_now_be_pending_proxy p
 end
 open Basic_helpers
 
@@ -189,7 +239,7 @@ struct
   let remove_waiters ps =
     List.iter
       (fun p ->
-      let p = to_internal_promise p in
+      let Internal p = to_internal_promise p in
       match (underlying p).state with
            | Pending ({ regular_callbacks =
                    Regular_callback_list_explicitly_removable_callback _; _ } as callbacks) ->
@@ -204,8 +254,8 @@ struct
                  callbacks.regular_callbacks <- clean_up_callback_cells callbacks.regular_callbacks
                end else
                  callbacks.cleanups_deferred <- removed
-           | Resolved _ | Failed _ | Unified_with _ ->
-               ())
+           | Resolved _ -> ()
+           | Failed _ -> ())
       ps
 
   let add_regular_callback_list_node callbacks node =
@@ -223,12 +273,12 @@ struct
     let node = Regular_callback_list_explicitly_removable_callback f in
     List.iter
       (fun p ->
-      let p = to_internal_promise p in
+      let Internal p = to_internal_promise p in
       match (underlying p).state with
            | Pending callbacks ->
                add_regular_callback_list_node callbacks node
-           | Resolved _ | Failed _ | Unified_with _ ->
-               assert false)
+      | Resolved _ -> assert false
+      | Failed _ -> assert false)
       ps
 end
 open Callbacks
@@ -298,26 +348,27 @@ and run_cancel_handlers_rec_next rest =
         run_cancel_handlers_rec fs rest
 
   let run_callbacks callbacks result =
-    (match result with
-       | Failed Canceled ->
-           run_cancel_handlers_rec callbacks.cancel_callbacks []
-       | Resolved _ | Failed _ | Pending _ | Unified_with _ ->
-           ());
+    (* Pattern matching is much faster than polymorphic comparison. *)
+    let is_canceled =
+      match result with
+      | Failed Canceled -> true
+      | Failed _ -> false
+      | Resolved _ -> false
+    in
+    if is_canceled then
+      run_cancel_handlers_rec callbacks.cancel_callbacks [];
     run_waiters_rec result callbacks.regular_callbacks []
 
   let complete p result =
-    let p = underlying p in
-    match p.state with
-      | Pending callbacks ->
-          p.state <- result;
-          run_callbacks callbacks result
-      | Resolved _ | Failed _ | Unified_with _ ->
-          assert false
+    let Pending callbacks = p.state in
+    let p = set_promise_state p result in
+    run_callbacks callbacks result;
+    p
 
   let currently_in_completion_loop = ref false
 
   type queued_callbacks =
-    Queued : ('a callbacks * 'a state) -> queued_callbacks
+    Queued : ('a callbacks * ('a, underlying, completed) state) -> queued_callbacks
     [@@ocaml.unboxed]
 
   let queued_callbacks : queued_callbacks Queue.t = Queue.create ()
@@ -355,33 +406,43 @@ and run_cancel_handlers_rec_next rest =
     leave_completion_loop ctx
 
   let wakeup_result r result =
-    let t = underlying (to_internal_resolver r) in
-    match t.state with
+    let Internal p = to_internal_resolver r in
+    let p = underlying p in
+
+    match p.state with
       | Pending callbacks ->
-          let state = state_of_result result in
-          t.state <- state;
-          run_in_completion_loop callbacks state
+      let result = state_of_result result in
+      let State_may_have_changed p = set_promise_state p result in
+      ignore p;
+          run_in_completion_loop callbacks result
       | Failed Canceled ->
           ()
-      | Resolved _ | Failed _ | Unified_with _ ->
-          invalid_arg "Lwt.wakeup_result"
+      | Resolved _ ->
+        invalid_arg "Lwt.wakeup_result"
+      | Failed _ ->
+        invalid_arg "Lwt.wakeup_result"
 
   let wakeup r v = wakeup_result r (Result.Ok v)
   let wakeup_exn r exn = wakeup_result r (Result.Error exn)
 
   let wakeup_later_result r result =
-    let p = underlying (to_internal_resolver r) in
+    let Internal p = to_internal_resolver r in
+    let p = underlying p in
+
     match p.state with
       | Pending callbacks ->
-          let result = state_of_result result in
-          p.state <- result;
+      let result = state_of_result result in
+      let State_may_have_changed p = set_promise_state p result in
+      ignore p;
           if !currently_in_completion_loop then begin
           Queue.push (Queued (callbacks, result)) queued_callbacks
           end else
             run_in_completion_loop callbacks result
       | Failed Canceled ->
           ()
-      | Resolved _ | Failed _ | Unified_with _ ->
+      | Resolved _ ->
+          invalid_arg "Lwt.wakeup_later_result"
+      | Failed _ ->
           invalid_arg "Lwt.wakeup_later_result"
 
   let wakeup_later r v = wakeup_later_result r (Result.Ok v)
@@ -393,27 +454,35 @@ and run_cancel_handlers_rec_next rest =
 
   let cancel p =
     let canceled_result = Failed Canceled in
-    let rec collect : 'a. packed_callbacks list -> 'a promise -> packed_callbacks list = fun acc p ->
+
+      let rec cancel_and_collect_callbacks :
+          'a 'u 'c. packed_callbacks list -> ('a, 'u, 'c) promise ->
+            packed_callbacks list =
+          fun (type c) callbacks_accumulator (p : (_, _, c) promise) ->
+
         let p = underlying p in
       match p.state with
         | Pending ({ how_to_cancel; _ } as callbacks) -> begin
             match how_to_cancel with
               | Not_cancelable ->
-                  acc
+            callbacks_accumulator
               | Cancel_this_promise ->
-                  p.state <- canceled_result;
-                  (Packed callbacks) :: acc
+            let State_may_have_changed p = set_promise_state p canceled_result in
+            ignore p;
+            (Packed callbacks)::callbacks_accumulator
               | Propagate_cancel_to_one p ->
-                  collect acc p
+            cancel_and_collect_callbacks callbacks_accumulator p
               | Propagate_cancel_to_several ps ->
-                  List.fold_left collect acc ps
+            List.fold_left cancel_and_collect_callbacks callbacks_accumulator ps
           end
-        | Resolved _ | Failed _ | Unified_with _ ->
-            acc
+        | Resolved _ ->
+          callbacks_accumulator
+        | Failed _ ->
+          callbacks_accumulator
     in
 
-    let p = to_internal_promise p in
-    let sleepers = collect [] p in
+    let Internal p = to_internal_promise p in
+    let sleepers = cancel_and_collect_callbacks [] p in
     let ctx = enter_completion_loop () in
     List.iter
       (fun (Packed callbacks) ->
@@ -423,18 +492,6 @@ and run_cancel_handlers_rec_next rest =
     leave_completion_loop ctx
 end
 include Completion_loop
-
-
-
-(* This function is redundant and will be removed in refactoring. *)
-let fast_connect_if t state =
-  let t = underlying t in
-  match t.state with
-    | Pending callbacks ->
-        t.state <- state;
-        run_callbacks callbacks state
-    | Resolved _ | Failed _ | Unified_with _ ->
-        ()
 
 
 
@@ -487,7 +544,7 @@ struct
        with the invariants, because [Propagate_cancel_to_several] packs them,
        and code that matches on [Propagate_cancel_to_several] doesn't care about
        them anyway. *)
-    let cast_promise_list : 'a t list -> 'a promise list = Obj.magic in
+    let cast_promise_list : 'a t list -> ('a, _, _) promise list = Obj.magic in
     Propagate_cancel_to_several (cast_promise_list ps)
 
 
@@ -500,6 +557,14 @@ struct
     let p = new_pending ~how_to_cancel:Cancel_this_promise in
     to_public_promise p, to_public_resolver p
 
+
+
+  let cast_sequence_node
+      (node : 'a u Lwt_sequence.node)
+      (_actual_content:('a, 'u, 'c) promise)
+        : ('a, 'u, 'c) promise Lwt_sequence.node =
+    Obj.magic node
+
   let add_task_r sequence =
     let callbacks = {
       how_to_cancel = Cancel_this_promise;
@@ -509,6 +574,7 @@ struct
     } in
     let p = { state = Pending callbacks } in
     let node = Lwt_sequence.add_r (to_public_resolver p) sequence in
+    let node = cast_sequence_node node p in
     callbacks.cancel_callbacks <- Cancel_callback_list_remove_sequence_node node;
     to_public_promise p
 
@@ -521,22 +587,36 @@ struct
     }in
     let p = { state = Pending callbacks } in
     let node = Lwt_sequence.add_l (to_public_resolver p) sequence in
+    let node = cast_sequence_node node p in
     callbacks.cancel_callbacks <- Cancel_callback_list_remove_sequence_node node;
     to_public_promise p
 
-  let waiter_of_wakener r = to_public_promise (to_internal_resolver r)
+  let waiter_of_wakener r =
+    let Internal r = to_internal_resolver r in
+    let p = r in
+    to_public_promise p
 
   let no_cancel p =
-    let p_internal = to_internal_promise p in
+    let Internal p_internal = to_internal_promise p in
     match (underlying p_internal).state with
       | Pending callbacks ->
       let p' = new_pending ~how_to_cancel:Not_cancelable in
-          add_implicitly_removed_callback callbacks (complete p');
+
+      let callback p_result =
+        let State_may_now_be_pending_proxy p' = may_now_be_proxy p' in
+        let p' = underlying p' in
+
+        let State_may_have_changed p' =
+          complete p' p_result in
+        ignore p'
+      in
+      add_implicitly_removed_callback callbacks callback;
+
           to_public_promise p'
-      | Resolved _ | Failed _ ->
+      | Resolved _ ->
           p
-      | Unified_with _ ->
-          assert false
+      | Failed _ ->
+          p
 end
 include Pending_promises
 
@@ -544,16 +624,19 @@ include Pending_promises
 
 module Sequential_composition =
 struct
-  let unify t1 t2 =
-    let t1 = underlying t1 and t2 = underlying t2 in
-    match t1.state with
-      | Pending callbacks1 ->
-          if t1 == t2 then
-            ()
+  let unify (type c) (t1 : ('a, underlying, pending) promise) (t2 : ('a, _, c) promise) =
+    let t2 = underlying t2 in
+
+          if identical t1 t2 then
+            State_may_have_changed t2
           else begin
             match t2.state with
               | Pending callbacks2 ->
-                  t2.state <- Unified_with t1;
+        let State_may_have_changed t2 =
+          set_promise_state t2 (Unified_with t1) in
+        ignore t2;
+
+                  let Pending callbacks1 = t1.state in
 
                   callbacks1.how_to_cancel <- callbacks2.how_to_cancel;
 
@@ -569,16 +652,18 @@ struct
                     callbacks1.regular_callbacks <- waiters
                   end;
                   callbacks1.cancel_callbacks <-
-                    concat_cancel_callbacks callbacks1.cancel_callbacks callbacks2.cancel_callbacks
-              | Resolved _ | Failed _ | Unified_with _ as state2 ->
-                  t1.state <- state2;
-                  run_callbacks callbacks1 state2
+                    concat_cancel_callbacks callbacks1.cancel_callbacks callbacks2.cancel_callbacks;
+
+        State_may_have_changed t1
+
+      | Resolved _ ->
+        complete t1 t2.state
+      | Failed _ ->
+        complete t1 t2.state
           end
-      | Resolved _ | Failed _ | Unified_with _ ->
-           assert false
 
   let bind p f =
-    let p = to_internal_promise p in
+    let Internal p = to_internal_promise p in
     let p = underlying p in
 
     match p.state with
@@ -589,25 +674,34 @@ struct
       | Pending p_callbacks ->
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
           let saved_storage = !current_storage in
-          add_implicitly_removed_callback p_callbacks
-            (function
+
+      let callback p_result =
+        let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
+        let p'' = underlying p'' in
+
+        match p_result with
                | Resolved v ->
+
           current_storage := saved_storage;
 
           let p' = try f v with exn -> fail exn in
-          let p' = to_internal_promise p' in
+          let Internal p' = to_internal_promise p' in
 
-          unify p'' p'
-               | Failed _ as state -> complete p'' state
-               | Pending _ | Unified_with _ -> assert false);
+          let State_may_have_changed p'' = unify p'' p' in
+          ignore p''
+
+               | Failed _ as state ->
+
+          let State_may_have_changed p'' =
+            complete p'' state in
+          ignore p''
+      in
+      add_implicitly_removed_callback p_callbacks callback;
 
       to_public_promise p''
 
-      | Unified_with _ ->
-          assert false
-
   let backtrace_bind add_loc p f =
-    let p = to_internal_promise p in
+    let Internal p = to_internal_promise p in
     let p = underlying p in
 
     match p.state with
@@ -618,28 +712,36 @@ struct
       | Pending p_callbacks ->
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
           let saved_storage = !current_storage in
-          add_implicitly_removed_callback p_callbacks
-            (function
+
+      let callback p_result =
+        let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
+        let p'' = underlying p'' in
+
+        match p_result with
                | Resolved v ->
           current_storage := saved_storage;
 
           let p' = try f v with exn -> fail (add_loc exn) in
-          let p' = to_internal_promise p' in
+          let Internal p' = to_internal_promise p' in
 
-          unify p'' p'
-               | Failed exn -> complete p'' (Failed(add_loc exn))
-               | Pending _ | Unified_with _ -> assert false);
+          let State_may_have_changed p'' = unify p'' p' in
+          ignore p''
+
+               | Failed exn ->
+
+          let State_may_have_changed p'' =
+            complete p'' (Failed(add_loc exn)) in
+          ignore p''
+      in
+      add_implicitly_removed_callback p_callbacks callback;
 
       to_public_promise p''
-
-      | Unified_with _ ->
-          assert false
 
 let (>>=) t f = bind t f
 let (=<<) f t = bind t f
 
   let map f p =
-    let p = to_internal_promise p in
+    let Internal p = to_internal_promise p in
     let p = underlying p in
 
     match p.state with
@@ -650,25 +752,34 @@ let (=<<) f t = bind t f
       | Pending p_callbacks ->
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
           let saved_storage = !current_storage in
-          add_implicitly_removed_callback p_callbacks
-            (function
+
+      let callback p_result =
+        let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
+        let p'' = underlying p'' in
+
+        match p_result with
                | Resolved v ->
                  current_storage := saved_storage;
-                 complete p'' (try Resolved (f v) with exn -> Failed exn)
-               | Failed _ as state -> complete p'' state
-               | Pending _ | Unified_with _ -> assert false);
+
+          let p''_result = try Resolved (f v) with exn -> Failed exn in
+          let State_may_have_changed p'' = complete p'' p''_result in
+          ignore p''
+
+        | Failed _ as p_result ->
+          let State_may_have_changed p'' =
+            complete p'' p_result in
+          ignore p''
+      in
+      add_implicitly_removed_callback p_callbacks callback;
 
       to_public_promise p''
-
-      | Unified_with _ ->
-          assert false
 
 let (>|=) t f = map f t
 let (=|<) f t = map f t
 
   let catch f h =
     let p = try f () with exn -> fail exn in
-    let p = to_internal_promise p in
+    let Internal p = to_internal_promise p in
     let p = underlying p in
 
     match p.state with
@@ -679,26 +790,33 @@ let (=|<) f t = map f t
       | Pending p_callbacks ->
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
           let saved_storage = !current_storage in
-          add_implicitly_removed_callback p_callbacks
-            (function
-               | Resolved _ as p_result -> complete p'' p_result
+
+      let callback p_result =
+        let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
+        let p'' = underlying p'' in
+
+        match p_result with
+               | Resolved _ as p_result ->
+          let State_may_have_changed p'' =
+            complete p'' p_result in
+          ignore p''
+
                | Failed exn ->
           current_storage := saved_storage;
 
           let p' = try h exn with exn -> fail exn in
-          let p' = to_internal_promise p' in
+          let Internal p' = to_internal_promise p' in
 
-          unify p'' p'
-               | Pending _ | Unified_with _ -> assert false);
+          let State_may_have_changed p'' = unify p'' p' in
+          ignore p''
+      in
+      add_implicitly_removed_callback p_callbacks callback;
 
       to_public_promise p''
 
-      | Unified_with _ ->
-          assert false
-
   let backtrace_catch add_loc f h =
     let p = try f () with exn -> fail exn in
-    let p = to_internal_promise p in
+    let Internal p = to_internal_promise p in
     let p = underlying p in
 
     match p.state with
@@ -709,26 +827,33 @@ let (=|<) f t = map f t
       | Pending p_callbacks ->
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
           let saved_storage = !current_storage in
-          add_implicitly_removed_callback p_callbacks
-            (function
-               | Resolved _ as p_result -> complete p'' p_result
+
+      let callback p_result =
+        let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
+        let p'' = underlying p'' in
+
+        match p_result with
+               | Resolved _ as p_result ->
+          let State_may_have_changed p'' =
+            complete p'' p_result in
+          ignore p''
+
                | Failed exn ->
           current_storage := saved_storage;
 
           let p' = try h exn with exn -> fail (add_loc exn) in
-          let p' = to_internal_promise p' in
+          let Internal p' = to_internal_promise p' in
 
-          unify p'' p'
-               | Pending _ | Unified_with _ -> assert false);
+          let State_may_have_changed p'' = unify p'' p' in
+          ignore p''
+      in
+      add_implicitly_removed_callback p_callbacks callback;
 
       to_public_promise p''
 
-      | Unified_with _ ->
-          assert false
-
   let try_bind f f' h =
     let p = try f () with exn -> fail exn in
-    let p = to_internal_promise p in
+    let Internal p = to_internal_promise p in
     let p = underlying p in
 
     match p.state with
@@ -739,34 +864,37 @@ let (=|<) f t = map f t
       | Pending p_callbacks ->
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
           let saved_storage = !current_storage in
-          add_implicitly_removed_callback p_callbacks
-            (function
+
+      let callback p_result =
+        let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
+        let p'' = underlying p'' in
+
+        match p_result with
                | Resolved v ->
           current_storage := saved_storage;
 
           let p' = try f' v with exn -> fail exn in
-          let p' = to_internal_promise p' in
+          let Internal p' = to_internal_promise p' in
 
-          unify p'' p'
+          let State_may_have_changed p'' = unify p'' p' in
+          ignore p''
 
                | Failed exn ->
           current_storage := saved_storage;
 
           let p' = try h exn with exn -> fail exn in
-          let p' = to_internal_promise p' in
+          let Internal p' = to_internal_promise p' in
 
-          unify p'' p'
-
-               | Pending _ | Unified_with _ -> assert false);
+          let State_may_have_changed p'' = unify p'' p' in
+          ignore p''
+      in
+      add_implicitly_removed_callback p_callbacks callback;
 
       to_public_promise p''
 
-      | Unified_with _ ->
-          assert false
-
   let backtrace_try_bind add_loc f f' h =
     let p = try f () with exn -> fail exn in
-    let p = to_internal_promise p in
+    let Internal p = to_internal_promise p in
     let p = underlying p in
 
     match p.state with
@@ -777,27 +905,33 @@ let (=|<) f t = map f t
       | Pending p_callbacks ->
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
           let saved_storage = !current_storage in
-          add_implicitly_removed_callback p_callbacks
-            (function
+
+      let callback p_result =
+        let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
+        let p'' = underlying p'' in
+
+        match p_result with
                | Resolved v ->
           current_storage := saved_storage;
 
           let p' = try f' v with exn -> fail (add_loc exn) in
-          let p' = to_internal_promise p' in
+          let Internal p' = to_internal_promise p' in
 
-          unify p'' p'
+          let State_may_have_changed p'' = unify p'' p' in
+          ignore p''
+
                | Failed exn ->
           current_storage := saved_storage;
 
           let p' = try h exn with exn -> fail (add_loc exn) in
-          let p' = to_internal_promise p' in
-          unify p'' p'
-               | Pending _ | Unified_with _ -> assert false);
+          let Internal p' = to_internal_promise p' in
+
+          let State_may_have_changed p'' = unify p'' p' in
+          ignore p''
+      in
+      add_implicitly_removed_callback p_callbacks callback;
 
           to_public_promise p''
-
-      | Unified_with _ ->
-          assert false
 
   let finalize f f' =
     try_bind f
@@ -810,7 +944,7 @@ let (=|<) f t = map f t
       (fun e -> f' () >>= fun () -> fail (add_loc e))
 
   let on_cancel p f =
-    let p = to_internal_promise p in
+    let Internal p = to_internal_promise p in
 
     match (underlying p).state with
       | Pending callbacks ->
@@ -825,11 +959,11 @@ let (=|<) f t = map f t
           )
       | Failed Canceled ->
           handle_with_async_exception_hook f ()
-      | Resolved _ | Failed _ | Unified_with _ ->
-          ()
+      | Resolved _ -> ()
+      | Failed _ -> ()
 
   let on_success p f =
-    let p = to_internal_promise p in
+    let Internal p = to_internal_promise p in
 
     match (underlying p).state with
       | Resolved v ->
@@ -841,13 +975,10 @@ let (=|<) f t = map f t
           add_implicitly_removed_callback p_callbacks
             (function
                | Resolved v -> current_storage := saved_storage; handle_with_async_exception_hook f v
-               | Failed _ -> ()
-               | Pending _ | Unified_with _ -> assert false)
-      | Unified_with _ ->
-          assert false
+               | Failed _ -> ())
 
   let on_failure p f =
-    let p = to_internal_promise p in
+    let Internal p = to_internal_promise p in
 
     match (underlying p).state with
       | Resolved _ ->
@@ -859,16 +990,14 @@ let (=|<) f t = map f t
           add_implicitly_removed_callback p_callbacks
             (function
                | Resolved _ -> ()
-               | Failed exn -> current_storage := saved_storage; handle_with_async_exception_hook f exn
-               | Pending _ | Unified_with _ -> assert false)
-      | Unified_with _ ->
-          assert false
+               | Failed exn -> current_storage := saved_storage; handle_with_async_exception_hook f exn)
 
   let on_termination p f =
-    let p = to_internal_promise p in
+    let Internal p = to_internal_promise p in
 
     match (underlying p).state with
-      | Resolved _
+      | Resolved _ ->
+      handle_with_async_exception_hook f ()
       | Failed _ ->
           handle_with_async_exception_hook f ()
       | Pending p_callbacks ->
@@ -876,13 +1005,10 @@ let (=|<) f t = map f t
           add_implicitly_removed_callback p_callbacks
             (function
                | Resolved _
-               | Failed _ -> current_storage := saved_storage; handle_with_async_exception_hook f ()
-               | Pending _ | Unified_with _ -> assert false)
-      | Unified_with _ ->
-          assert false
+               | Failed _ -> current_storage := saved_storage; handle_with_async_exception_hook f ())
 
   let on_any p f g =
-    let p = to_internal_promise p in
+    let Internal p = to_internal_promise p in
 
     match (underlying p).state with
       | Resolved v ->
@@ -894,10 +1020,7 @@ let (=|<) f t = map f t
           add_implicitly_removed_callback p_callbacks
             (function
                | Resolved v -> current_storage := saved_storage; handle_with_async_exception_hook f v
-               | Failed exn -> current_storage := saved_storage; handle_with_async_exception_hook g exn
-               | Pending _ | Unified_with _ -> assert false)
-      | Unified_with _ ->
-          assert false
+               | Failed exn -> current_storage := saved_storage; handle_with_async_exception_hook g exn)
 end
 include Sequential_composition
 
@@ -907,7 +1030,7 @@ module Concurrent_composition =
 struct
   let async f =
     let p = try f () with exn -> fail exn in
-    let p = to_internal_promise p in
+    let Internal p = to_internal_promise p in
 
     match (underlying p).state with
       | Resolved _ ->
@@ -918,13 +1041,10 @@ struct
           add_implicitly_removed_callback callbacks
             (function
                | Resolved _ -> ()
-               | Failed exn -> !async_exception_hook exn
-               | Pending _ | Unified_with _ -> assert false)
-      | Unified_with _ ->
-          assert false
+               | Failed exn -> !async_exception_hook exn)
 
   let ignore_result p =
-    let p = to_internal_promise p in
+    let Internal p = to_internal_promise p in
 
     match (underlying p).state with
       | Resolved _ ->
@@ -935,23 +1055,27 @@ struct
           add_implicitly_removed_callback callbacks
             (function
                | Resolved _ -> ()
-               | Failed exn -> !async_exception_hook exn
-               | Pending _ | Unified_with _ -> assert false)
-      | Unified_with _ ->
-          assert false
+               | Failed exn -> !async_exception_hook exn)
 
   let join ps =
     let p' = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
     let number_pending_in_ps = ref 0
     and join_result = ref state_return_unit in
     let callback new_result =
+      let State_may_now_be_pending_proxy p' = may_now_be_proxy p' in
+
       begin
         match !join_result, new_result with
           | Resolved _, Failed _ -> join_result := new_result
           | _ -> ()
       end [@ocaml.warning "-4"];
       decr number_pending_in_ps;
-      if !number_pending_in_ps = 0 then complete p' !join_result
+      if !number_pending_in_ps = 0 then begin
+        let p' = underlying p' in
+        let State_may_have_changed p' =
+          complete (underlying p') !join_result in
+        ignore p'
+      end
     in
     let rec init = function
       | [] ->
@@ -960,7 +1084,7 @@ struct
           else
             to_public_promise p'
       | p :: rest ->
-        let p = to_internal_promise p in
+        let Internal p = to_internal_promise p in
           match (underlying p).state with
             | Pending callbacks ->
                 incr number_pending_in_ps;
@@ -971,53 +1095,56 @@ struct
                   | Resolved _ ->
                       join_result := p_result;
                       init rest
-                  | Failed _ | Pending _ | Unified_with _ ->
+                  | Failed _ ->
                       init rest
               end
-            | Resolved _ | Unified_with _ ->
+            | Resolved _ ->
                 init rest
     in
     init ps
 
   let count_completed_promises_in ps =
     List.fold_left (fun total p ->
-      let p = to_internal_promise p in
+      let Internal p = to_internal_promise p in
       match (underlying p).state with
       | Pending _ -> total
-      | Resolved _ | Failed _ | Unified_with _ -> total + 1) 0 ps
+      | Resolved _ -> total + 1
+      | Failed _ -> total + 1) 0 ps
 
   let rec nth_completed ps n =
     match ps with
       | [] ->
           assert false
       | p :: ps ->
-      let p' = to_internal_promise p in
+      let Internal p' = to_internal_promise p in
           match (underlying p').state with
             | Pending _ ->
                 nth_completed ps n
-            | Resolved _ | Failed _ | Unified_with _ ->
-                if n > 0 then
-                  nth_completed ps (n - 1)
-                else
-                  p
+
+      | Resolved _ ->
+        if n <= 0 then p
+        else nth_completed ps (n - 1)
+      | Failed _ ->
+        if n <= 0 then p
+        else nth_completed ps (n - 1)
 
   let rec nth_completed_and_cancel_pending ps n =
     match ps with
       | [] ->
           assert false
       | p :: ps ->
-      let p' = to_internal_promise p in
+      let Internal p' = to_internal_promise p in
           match (underlying p').state with
             | Pending _ ->
                 cancel p;
                 nth_completed_and_cancel_pending ps n
-            | Resolved _ | Failed _ | Unified_with _ ->
-                if n > 0 then
-                  nth_completed_and_cancel_pending ps (n - 1)
-                else begin
-                  List.iter cancel ps;
-                  p
-                end
+
+      | Resolved _ ->
+        if n <= 0 then (List.iter cancel ps; p)
+        else nth_completed_and_cancel_pending ps (n - 1)
+      | Failed _ ->
+        if n <= 0 then (List.iter cancel ps; p)
+        else nth_completed_and_cancel_pending ps (n - 1)
 
   (* The PRNG state is initialized with a constant to make non-IO-based
      programs deterministic. *)
@@ -1034,9 +1161,14 @@ struct
       let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
       let rec cell = ref (Some callback)
       and callback result =
+        let State_may_now_be_pending_proxy p = may_now_be_proxy p in
+        let p = underlying p in
+
         cell := None;
         remove_waiters ps;
-        complete p result
+
+        let State_may_have_changed p = complete p result in
+        ignore p
       in
       add_explicitly_removable_callback_to_each_of ps cell;
       to_public_promise p
@@ -1053,10 +1185,15 @@ struct
       let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
       let rec cell = ref (Some callback)
       and callback result =
+        let State_may_now_be_pending_proxy p = may_now_be_proxy p in
+        let p = underlying p in
+
         cell := None;
         remove_waiters ps;
         List.iter cancel ps;
-        complete p result
+
+        let State_may_have_changed p = complete p result in
+        ignore p
       in
       add_explicitly_removable_callback_to_each_of ps cell;
       to_public_promise p
@@ -1066,23 +1203,29 @@ struct
     | [] ->
         complete to_complete (Resolved (List.rev results))
     | p :: ps ->
-      let p = to_internal_promise p in
+      let Internal p = to_internal_promise p in
 
         match (underlying p).state with
           | Resolved v ->
               finish_nchoose_or_npick_after_pending to_complete (v :: results) ps
           | Failed _ as state ->
               complete to_complete state
-          | Pending _ | Unified_with _ ->
+          | Pending _ ->
               finish_nchoose_or_npick_after_pending to_complete results ps
 
 let nchoose_sleep ps =
   let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
   let rec cell = ref (Some callback)
   and callback _result =
+          let State_may_now_be_pending_proxy p = may_now_be_proxy p in
+          let p = underlying p in
+
     cell := None;
     remove_waiters ps;
-    finish_nchoose_or_npick_after_pending p [] ps
+
+          let State_may_have_changed p =
+            finish_nchoose_or_npick_after_pending p [] ps in
+          ignore p
   in
   add_explicitly_removable_callback_to_each_of ps cell;
   to_public_promise p
@@ -1092,25 +1235,25 @@ let nchoose_sleep ps =
       | [] ->
           nchoose_sleep ps
       | p :: ps ->
-        let p = to_internal_promise p in
+        let Internal p = to_internal_promise p in
           match (underlying p).state with
             | Resolved x ->
                 collect [x] ps
             | Failed _ as state ->
                 to_public_promise { state }
-            | Pending _ | Unified_with _ ->
+            | Pending _ ->
                 init ps
     and collect acc = function
       | [] ->
           return (List.rev acc)
       | p :: ps ->
-        let p = to_internal_promise p in
+        let Internal p = to_internal_promise p in
           match (underlying p).state with
             | Resolved v ->
                 collect (v :: acc) ps
             | Failed _ as state ->
                 to_public_promise { state }
-            | Pending _ | Unified_with _ ->
+            | Pending _ ->
                 collect acc ps
     in
     init ps
@@ -1119,10 +1262,16 @@ let npick_sleep ps =
   let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
   let rec cell = ref (Some callback)
   and callback _result =
+          let State_may_now_be_pending_proxy p = may_now_be_proxy p in
+          let p = underlying p in
+
     cell := None;
     remove_waiters ps;
     List.iter cancel ps;
-    finish_nchoose_or_npick_after_pending p [] ps
+
+          let State_may_have_changed p =
+            finish_nchoose_or_npick_after_pending p [] ps in
+          ignore p
   in
   add_explicitly_removable_callback_to_each_of ps cell;
   to_public_promise p
@@ -1132,28 +1281,28 @@ let npick_sleep ps =
       | [] ->
           npick_sleep ps
       | p :: ps' ->
-        let p = to_internal_promise p in
+        let Internal p = to_internal_promise p in
           match (underlying p).state with
             | Resolved v ->
                 collect [v] ps'
             | Failed _ as state ->
                 List.iter cancel ps;
                 to_public_promise { state }
-            | Pending _ | Unified_with _ ->
+            | Pending _ ->
                 init ps'
     and collect acc = function
       | [] ->
           List.iter cancel ps;
           return (List.rev acc)
       | p :: ps' ->
-        let p = to_internal_promise p in
+        let Internal p = to_internal_promise p in
           match (underlying p).state with
             | Resolved v ->
                 collect (v :: acc) ps'
             | Failed _ as state ->
                 List.iter cancel ps;
                 to_public_promise { state }
-            | Pending _ | Unified_with _ ->
+            | Pending _ ->
                 collect acc ps'
     in
     init ps
@@ -1162,22 +1311,27 @@ let rec nchoose_split_terminate to_complete resolved pending = function
   | [] ->
       complete to_complete (Resolved (List.rev resolved, List.rev pending))
   | p :: ps ->
-        let p_internal = to_internal_promise p in
+        let Internal p_internal = to_internal_promise p in
       match (underlying p_internal).state with
         | Resolved v ->
             nchoose_split_terminate to_complete (v :: resolved) pending ps
         | Failed _ as state ->
             complete to_complete state
-        | Pending _ | Unified_with _ ->
+        | Pending _ ->
             nchoose_split_terminate to_complete resolved (p :: pending) ps
 
 let nchoose_split_sleep ps =
   let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
   let rec cell = ref (Some callback)
   and callback _result =
+          let State_may_now_be_pending_proxy p = may_now_be_proxy p in
+          let p = underlying p in
+
     cell := None;
     remove_waiters ps;
-    nchoose_split_terminate p [] [] ps
+
+          let State_may_have_changed p = nchoose_split_terminate p [] [] ps in
+          ignore p
   in
   add_explicitly_removable_callback_to_each_of ps cell;
   to_public_promise p
@@ -1187,46 +1341,54 @@ let nchoose_split_sleep ps =
       | [] ->
           nchoose_split_sleep ps
       | p :: ps' ->
-        let p_internal = to_internal_promise p in
+        let Internal p_internal = to_internal_promise p in
           match (underlying p_internal).state with
             | Resolved v ->
                 collect [v] acc_sleeping ps'
             | Failed _ as state ->
                 to_public_promise { state }
-            | Pending _ | Unified_with _ ->
+            | Pending _ ->
                 init (p :: acc_sleeping) ps'
     and collect acc_terminated acc_sleeping = function
       | [] ->
           return (List.rev acc_terminated, acc_sleeping)
       | p :: ps ->
-        let p_internal = to_internal_promise p in
+        let Internal p_internal = to_internal_promise p in
           match (underlying p_internal).state with
             | Resolved v ->
                 collect (v :: acc_terminated) acc_sleeping ps
             | Failed _ as state ->
                 to_public_promise { state }
-            | Pending _ | Unified_with _ ->
+            | Pending _ ->
                 collect acc_terminated (p :: acc_sleeping) ps
     in
     init [] ps
 
 let protected p =
-    let p_internal = to_internal_promise p in
+    let Internal p_internal = to_internal_promise p in
   match (underlying p_internal).state with
     | Pending _ ->
       let p' = new_pending ~how_to_cancel:Cancel_this_promise in
         let rec cell = ref (Some callback)
-        and callback p_result = fast_connect_if p' p_result in
+
+      and callback p_result =
+        let State_may_now_be_pending_proxy p' = may_now_be_proxy p' in
+        let p' = underlying p' in
+
+        let State_may_have_changed p' =
+          complete p' p_result in
+        ignore p'
+      in
+
         add_explicitly_removable_callback_to_each_of [p] cell;
         on_cancel (to_public_promise p') (fun () ->
           cell := None;
           remove_waiters [p]);
         to_public_promise p'
 
-    | Resolved _ | Failed _ ->
+    | Resolved _ ->
         p
-    | Unified_with _ ->
-        assert false
+    | Failed _ -> p
 
 let ( <?> ) t1 t2 = choose [t1; t2]
 let ( <&> ) t1 t2 = join [t1; t2]
@@ -1247,33 +1409,27 @@ module State = struct
 end
 
   let state p =
-    let p = to_internal_promise p in
+    let Internal p = to_internal_promise p in
     match (underlying p).state with
     | Resolved v -> State.Return v
     | Failed exn -> State.Fail exn
     | Pending _ -> State.Sleep
-    | Unified_with _ -> assert false
 
   include State
 
-let rec is_sleeping_rec t =
-  match t.state with
-    | Resolved _ | Failed _ ->
-        false
-    | Pending _ ->
-        true
-    | Unified_with t ->
-        is_sleeping_rec t
-
-  let is_sleeping p = is_sleeping_rec (to_internal_promise p)
+  let is_sleeping p =
+    let Internal p = to_internal_promise p in
+    match (underlying p).state with
+    | Resolved _ -> false
+    | Failed _ -> false
+    | Pending _ -> true
 
   let poll p =
-    let p = to_internal_promise p in
+    let Internal p = to_internal_promise p in
     match (underlying p).state with
       | Failed e -> raise e
       | Resolved v -> Some v
       | Pending _ -> None
-      | Unified_with _ -> assert false
 
   let apply f x = try f x with e -> fail e
 
