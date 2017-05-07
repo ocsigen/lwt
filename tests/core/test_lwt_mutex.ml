@@ -120,4 +120,34 @@ let suite = suite "lwt_mutex" [
        *)
       Lwt.wakeup_later wake_top_level_waiter ();
       while_waking);
+
+  (* See https://github.com/ocsigen/lwt/pull/202 - This is an actual reproducer on 2.3.2 *)
+  test "mutex issue"
+    (fun () ->
+       (* Create and lock the mutex *)
+       let mtx = Lwt_mutex.create () in
+       let _prelock = Lwt_mutex.lock mtx in
+
+       (* create a task (lock-try-noop-finally-unlock) pending on the lock *)
+       let t = Lwt_mutex.with_lock mtx (fun () -> Lwt.return ()) in
+
+       (* create a task to unlock and immediately cancel t *)
+       let waiter, wakener = Lwt.task () in
+       let _ = Lwt.bind waiter (fun () ->
+           let () = Lwt_mutex.unlock mtx in
+           let () = Lwt.cancel t in
+           Lwt.return ())
+       in
+       (* run this unlock task with wakeup_later, such that
+          Lwt.wakeuping (2.3.2) or Lwt.wakening is set.
+          This pushes the unlocked task onto the Lwt.to_wakeup queue.
+          The cancel will then change the state of the task
+          while it's sitting on the queue, making the ultimate
+          ignore_wakeup (2.3.2) a noop.
+          This causes the unlock in with_lock to be lost.
+       *)
+       let () = Lwt.wakeup_later wakener () in
+       let r = Lwt.catch (fun () -> t) (fun _ -> Lwt.return ()) in
+       Lwt.bind r (fun () ->
+         Lwt.return (not (Lwt_mutex.is_locked mtx))));
 ]
