@@ -298,16 +298,20 @@ let default = ref null
    | Logging functions                                               |
    +-----------------------------------------------------------------+ *)
 
+(* knicked from stdlib/string.ml; available since 4.04.0 *)
+let split_on_char sep s =
+  let r = ref [] in
+  let j = ref (String.length s) in
+  for i = String.length s - 1 downto 0 do
+    if String.unsafe_get s i = sep then begin
+      r := String.sub s (i + 1) (!j - i - 1) :: !r;
+      j := i
+    end
+  done;
+  String.sub s 0 !j :: !r
+
 let split str =
-  let len = String.length str in
-  let rec aux i =
-    if i >= len then
-      []
-    else
-      let j = try String.index_from str i '\n' with Not_found -> String.length str in
-      String.sub str i (j - i) :: aux (j + 1)
-  in
-  aux 0
+  split_on_char '\n' str
 
 let log ?exn ?(section=Section.main) ?location ?logger ~level message =
   let logger = match logger with
