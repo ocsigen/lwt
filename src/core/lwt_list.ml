@@ -19,6 +19,21 @@
  * 02111-1307, USA.
  *)
 
+(* A survey and measurements of more optimized implementations can be found at:
+
+    https://jsthomas.github.io/map-comparison.html
+
+   See discussion in https://github.com/ocsigen/lwt/pull/347. *)
+let tail_recursive_map f l =
+  List.rev (List.rev_map f l)
+
+let tail_recursive_mapi f l =
+  let rec inner acc i = function
+    | [] -> List.rev acc
+    | hd::tl -> inner ((f i hd)::acc) (i + 1) tl
+  in
+  inner [] 0 l
+
 open Lwt.Infix
 
 let rec iter_s f l =
@@ -30,7 +45,7 @@ let rec iter_s f l =
     iter_s f l
 
 let iter_p f l =
-  let ts = List.map f l in
+  let ts = tail_recursive_map f l in
   Lwt.join ts
 
 let rec iteri_s i f l =
@@ -44,7 +59,7 @@ let rec iteri_s i f l =
 let iteri_s f l = iteri_s 0 f l
 
 let iteri_p f l =
-  let ts = List.mapi f l in
+  let ts = tail_recursive_mapi f l in
   Lwt.join ts
 
 let map_s f l =
@@ -64,7 +79,7 @@ let rec _collect acc = function
     _collect (i::acc) ts
 
 let map_p f l =
-  let ts = List.map f l in
+  let ts = tail_recursive_map f l in
   _collect [] ts
 
 let rec filter_map_s f l =
@@ -101,7 +116,7 @@ let rec mapi_s i f l =
 let mapi_s f l = mapi_s 0 f l
 
 let mapi_p f l =
-  let ts = List.mapi f l in
+  let ts = tail_recursive_mapi f l in
   _collect [] ts
 
 let rec rev_map_append_s acc f l =
