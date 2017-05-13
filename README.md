@@ -68,8 +68,13 @@ opam install lwt
 
 ## Documentation
 
-The manual can be found [here][manual]. There are also some examples available
-in [`doc/examples`][examples].
+The manual can be found [here][manual].
+
+[Concurrent Programming with Lwt][rwo-lwt] is a great source of Lwt examples.
+They are translations of code from the excellent Real World OCaml, but they are
+just as useful if you are not reading the book.
+
+Some examples are also available in Lwt's [`doc/examples`][examples].
 
 *Note: much of the manual still refers to `'a Lwt.t` as "lightweight threads" or
 just "threads." This will be fixed in the new manual. `'a Lwt.t` is a promise,
@@ -77,6 +82,7 @@ and has nothing to do with system or preemptive threads.*
 
 [manual]:   http://ocsigen.org/lwt/manual/
 [examples]: https://github.com/ocsigen/lwt/tree/master/doc/examples
+[rwo-lwt]:  https://github.com/dkim/rwo-lwt#readme
 
 <br/>
 
