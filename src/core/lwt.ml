@@ -469,17 +469,17 @@ struct
     end else
       current_storage := storage_snapshot
 
-  (* See https://github.com/ocsigen/lwt/issues/48. *)
-  let abandon_wakeups () =
-    if !currently_in_completion_loop then
-      let in_completion_loop : in_completion_loop = Obj.magic () in
-      leave_completion_loop in_completion_loop false Storage_map.empty
-
   let run_in_completion_loop (f : in_completion_loop -> unit) : unit =
     let top_level_entry, storage_snapshot = enter_completion_loop () in
     let in_completion_loop : in_completion_loop = Obj.magic () in
     f in_completion_loop;
     leave_completion_loop in_completion_loop top_level_entry storage_snapshot
+
+  (* See https://github.com/ocsigen/lwt/issues/48. *)
+  let abandon_wakeups () =
+    if !currently_in_completion_loop then
+      let in_completion_loop : in_completion_loop = Obj.magic () in
+      leave_completion_loop in_completion_loop false Storage_map.empty
 
   let wakeup_result r result =
     let Internal p = to_internal_resolver r in
@@ -575,8 +575,13 @@ struct
   let return v =
     to_public_promise { state = Resolved v }
 
-  let state_return_unit = Resolved ()
-  let return_unit = to_public_promise { state = state_return_unit }
+  let of_result result =
+    to_public_promise { state = state_of_result result }
+
+  let fail exn =
+    to_public_promise { state = Failed exn }
+
+  let return_unit = return ()
   let return_none = return None
   let return_some x = return (Some x)
   let return_nil = return []
@@ -584,12 +589,6 @@ struct
   let return_false = return false
   let return_ok x = return (Result.Ok x)
   let return_error x = return (Result.Error x)
-
-  let of_result result =
-    to_public_promise { state = state_of_result result }
-
-  let fail exn =
-    to_public_promise { state = Failed exn }
 
   let fail_with msg =
     to_public_promise { state = Failed (Failure msg) }
@@ -634,6 +633,13 @@ struct
 
 
 
+  let waiter_of_wakener r =
+    let Internal r = to_internal_resolver r in
+    let p = r in
+    to_public_promise p
+
+
+
   let cast_sequence_node
       (node : 'a u Lwt_sequence.node)
       (_actual_content:('a, 'u, 'c) promise)
@@ -658,10 +664,36 @@ struct
     callbacks.cancel_callbacks <- Cancel_callback_list_remove_sequence_node node;
     to_public_promise p
 
-  let waiter_of_wakener r =
-    let Internal r = to_internal_resolver r in
-    let p = r in
-    to_public_promise p
+
+
+  let protected p =
+    let Internal p_internal = to_internal_promise p in
+  match (underlying p_internal).state with
+    | Pending _ ->
+      let p' = new_pending ~how_to_cancel:Cancel_this_promise in
+
+      let callback in_completion_loop p_result =
+        let State_may_now_be_pending_proxy p' = may_now_be_proxy p' in
+        let p' = underlying p' in
+
+        let State_may_have_changed p' =
+          complete in_completion_loop p' p_result in
+        ignore p'
+      in
+
+      let remove_the_callback =
+        add_explicitly_removable_callback_and_give_remove_function
+          [p] callback
+      in
+
+      let Pending p'_callbacks = p'.state in
+      add_cancel_callback p'_callbacks remove_the_callback;
+
+        to_public_promise p'
+
+    | Resolved _ ->
+        p
+    | Failed _ -> p
 
   let no_cancel p =
     let Internal p_internal = to_internal_promise p in
@@ -796,9 +828,6 @@ struct
 
       to_public_promise p''
 
-let (>>=) t f = bind t f
-let (=<<) f t = bind t f
-
   let map f p =
     let Internal p = to_internal_promise p in
     let p = underlying p in
@@ -833,9 +862,6 @@ let (=<<) f t = bind t f
       add_implicitly_removed_callback p_callbacks callback;
 
       to_public_promise p''
-
-let (>|=) t f = map f t
-let (=|<) f t = map f t
 
   let catch f h =
     let p = try f () with exn -> fail exn in
@@ -995,13 +1021,13 @@ let (=|<) f t = map f t
 
   let finalize f f' =
     try_bind f
-      (fun x -> f' () >>= fun () -> return x)
-      (fun e -> f' () >>= fun () -> fail e)
+      (fun x -> bind (f' ()) (fun () -> return x))
+      (fun e -> bind (f' ()) (fun () -> fail e))
 
   let backtrace_finalize add_loc f f' =
     backtrace_try_bind add_loc f
-      (fun x -> f' () >>= fun () -> return x)
-      (fun e -> f' () >>= fun () -> fail (add_loc e))
+      (fun x -> bind (f' ()) (fun () -> return x))
+      (fun e -> bind (f' ()) (fun () -> fail (add_loc e)))
 
   let on_cancel p f =
     let Internal p = to_internal_promise p in
@@ -1141,7 +1167,7 @@ struct
   let join ps =
     let p' = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
     let number_pending_in_ps = ref 0
-    and join_result = ref state_return_unit in
+    and join_result = ref (Resolved ()) in
     let callback in_completion_loop new_result =
       let State_may_now_be_pending_proxy p' = may_now_be_proxy p' in
 
@@ -1437,39 +1463,6 @@ struct
                 collect acc_terminated (p :: acc_sleeping) ps
     in
     init [] ps
-
-let protected p =
-    let Internal p_internal = to_internal_promise p in
-  match (underlying p_internal).state with
-    | Pending _ ->
-      let p' = new_pending ~how_to_cancel:Cancel_this_promise in
-
-      let callback in_completion_loop p_result =
-        let State_may_now_be_pending_proxy p' = may_now_be_proxy p' in
-        let p' = underlying p' in
-
-        let State_may_have_changed p' =
-          complete in_completion_loop p' p_result in
-        ignore p'
-      in
-
-      let remove_the_callback =
-        add_explicitly_removable_callback_and_give_remove_function
-          [p] callback
-      in
-
-      let Pending p'_callbacks = p'.state in
-      add_cancel_callback p'_callbacks remove_the_callback;
-
-        to_public_promise p'
-
-    | Resolved _ ->
-        p
-    | Failed _ -> p
-
-let ( <?> ) t1 t2 = choose [t1; t2]
-let ( <&> ) t1 t2 = join [t1; t2]
-
 end
 include Concurrent_composition
 
@@ -1552,13 +1545,14 @@ include Miscellaneous
 
 
 module Infix = struct
-  let (>>=) = (>>=)
-  let (=<<) = (=<<)
-  let (>|=) = (>|=)
-  let (=|<) = (=|<)
-  let (<&>) = (<&>)
-  let (<?>) = (<?>)
+  let (>>=) = bind
+  let (=<<) f p = bind p f
+  let (>|=) p f = map f p
+  let (=|<) = map
+  let (<&>) p p' = join [p; p']
+  let (<?>) p p' = choose [p; p']
 end
+include Infix
 
 
 
