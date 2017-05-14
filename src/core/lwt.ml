@@ -242,7 +242,9 @@ struct
 
   let cleanup_throttle = 42
 
-  let remove_waiters ps =
+  let clear_explicitly_removable_callback_cell cell ~originally_added_to:ps =
+    cell := None;
+
     List.iter
       (fun p ->
       let Internal p = to_internal_promise p in
@@ -275,17 +277,30 @@ struct
   let add_implicitly_removed_callback callbacks f =
     add_regular_callback_list_node callbacks (Regular_callback_list_implicitly_removed_callback f)
 
-  let add_explicitly_removable_callback_to_each_of ps f =
-    let node = Regular_callback_list_explicitly_removable_callback f in
-    List.iter
-      (fun p ->
+  let add_explicitly_removable_callback_and_give_cell ps f =
+    let rec cell = ref (Some self_removing_callback_wrapper)
+    and self_removing_callback_wrapper result =
+      clear_explicitly_removable_callback_cell cell ~originally_added_to:ps;
+      f result
+    in
+
+    let node = Regular_callback_list_explicitly_removable_callback cell in
+    ps |> List.iter (fun p ->
       let Internal p = to_internal_promise p in
       match (underlying p).state with
-           | Pending callbacks ->
-               add_regular_callback_list_node callbacks node
+      | Pending callbacks -> add_regular_callback_list_node callbacks node
       | Resolved _ -> assert false
-      | Failed _ -> assert false)
-      ps
+      | Failed _ -> assert false);
+
+    cell
+
+  let add_explicitly_removable_callback_to_each_of ps f =
+    ignore (add_explicitly_removable_callback_and_give_cell ps f)
+
+  let add_explicitly_removable_callback_and_give_remove_function ps f =
+    let cell = add_explicitly_removable_callback_and_give_cell ps f in
+    fun () ->
+      clear_explicitly_removable_callback_cell cell ~originally_added_to:ps
 
   let add_cancel_callback callbacks f =
     (* Ugly cast :( *)
@@ -1219,18 +1234,14 @@ struct
         nth_completed ps (Random.State.int (Lazy.force prng) ready)
     else begin
       let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
-      let rec cell = ref (Some callback)
-      and callback in_completion_loop result =
+
+      let callback in_completion_loop result =
         let State_may_now_be_pending_proxy p = may_now_be_proxy p in
         let p = underlying p in
-
-        cell := None;
-        remove_waiters ps;
-
         let State_may_have_changed p = complete in_completion_loop p result in
         ignore p
       in
-      add_explicitly_removable_callback_to_each_of ps cell;
+      add_explicitly_removable_callback_to_each_of ps callback;
       to_public_promise p
     end
 
@@ -1243,19 +1254,15 @@ struct
         nth_completed_and_cancel_pending ps (Random.State.int (Lazy.force prng) ready)
     else begin
       let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
-      let rec cell = ref (Some callback)
-      and callback in_completion_loop result =
+
+      let callback in_completion_loop result =
         let State_may_now_be_pending_proxy p = may_now_be_proxy p in
         let p = underlying p in
-
-        cell := None;
-        remove_waiters ps;
         List.iter cancel ps;
-
         let State_may_have_changed p = complete in_completion_loop p result in
         ignore p
       in
-      add_explicitly_removable_callback_to_each_of ps cell;
+      add_explicitly_removable_callback_to_each_of ps callback;
       to_public_promise p
     end
 
@@ -1278,19 +1285,15 @@ struct
 
 let nchoose_sleep ps =
   let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
-  let rec cell = ref (Some callback)
-  and callback in_completion_loop _result =
+
+  let callback in_completion_loop _result =
           let State_may_now_be_pending_proxy p = may_now_be_proxy p in
           let p = underlying p in
-
-    cell := None;
-    remove_waiters ps;
-
           let State_may_have_changed p =
             finish_nchoose_or_npick_after_pending in_completion_loop p [] ps in
           ignore p
   in
-  add_explicitly_removable_callback_to_each_of ps cell;
+  add_explicitly_removable_callback_to_each_of ps callback;
   to_public_promise p
 
   let nchoose ps =
@@ -1323,20 +1326,16 @@ let nchoose_sleep ps =
 
 let npick_sleep ps =
   let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
-  let rec cell = ref (Some callback)
-  and callback in_completion_loop _result =
+  let callback in_completion_loop _result =
           let State_may_now_be_pending_proxy p = may_now_be_proxy p in
           let p = underlying p in
-
-    cell := None;
-    remove_waiters ps;
     List.iter cancel ps;
 
           let State_may_have_changed p =
             finish_nchoose_or_npick_after_pending in_completion_loop p [] ps in
           ignore p
   in
-  add_explicitly_removable_callback_to_each_of ps cell;
+  add_explicitly_removable_callback_to_each_of ps callback;
   to_public_promise p
 
   let npick ps =
@@ -1385,18 +1384,13 @@ let rec nchoose_split_terminate in_completion_loop to_complete resolved pending 
 
 let nchoose_split_sleep ps =
   let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
-  let rec cell = ref (Some callback)
-  and callback in_completion_loop _result =
+  let callback in_completion_loop _result =
           let State_may_now_be_pending_proxy p = may_now_be_proxy p in
           let p = underlying p in
-
-    cell := None;
-    remove_waiters ps;
-
           let State_may_have_changed p = nchoose_split_terminate in_completion_loop p [] [] ps in
           ignore p
   in
-  add_explicitly_removable_callback_to_each_of ps cell;
+  add_explicitly_removable_callback_to_each_of ps callback;
   to_public_promise p
 
   let nchoose_split ps =
@@ -1432,9 +1426,8 @@ let protected p =
   match (underlying p_internal).state with
     | Pending _ ->
       let p' = new_pending ~how_to_cancel:Cancel_this_promise in
-        let rec cell = ref (Some callback)
 
-      and callback in_completion_loop p_result =
+      let callback in_completion_loop p_result =
         let State_may_now_be_pending_proxy p' = may_now_be_proxy p' in
         let p' = underlying p' in
 
@@ -1443,10 +1436,14 @@ let protected p =
         ignore p'
       in
 
-        add_explicitly_removable_callback_to_each_of [p] cell;
-        on_cancel (to_public_promise p') (fun () ->
-          cell := None;
-          remove_waiters [p]);
+      let remove_the_callback =
+        add_explicitly_removable_callback_and_give_remove_function
+          [p] callback
+      in
+
+      let Pending p'_callbacks = p'.state in
+      add_cancel_callback p'_callbacks remove_the_callback;
+
         to_public_promise p'
 
     | Resolved _ ->
