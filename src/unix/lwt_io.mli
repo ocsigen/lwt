@@ -428,40 +428,7 @@ val with_close_connection :
 type server
   (** Type of a server *)
 
-val establish_server :
-  ?fd : Lwt_unix.file_descr ->
-  ?buffer_size : int ->
-  ?backlog : int ->
-  ?no_close : bool ->
-  Unix.sockaddr -> (input_channel * output_channel -> unit Lwt.t) ->
-    server Lwt.t
-(** [establish_server sockaddr f] creates a server which listens for incoming
-    connections on [sockaddr]. New connections are passed to [f]. The
-    connections are closed automatically as promises returned by [f] complete.
-
-    To prevent automatic closing, apply [establish_server] with
-    [~no_close:true].
-
-    [~fd] can be specified to use an existing file descriptor for listening.
-    Otherwise, the default is for [establish_server] to create a fresh one.
-
-    [~backlog] is the argument passed to {!Lwt_unix.listen}.
-
-    The server does not wait on each promise returned by [f] before accepting
-    more connections. It accepts connections concurrently.
-
-    If [f] raises an exception, or the promise fails, the exception is passed to
-    {!Lwt.async_exception_hook}. Likewise, if the automatic [close] of a
-    connection raises an exception, it is passed to {!Lwt.async_exception_hook}.
-    To robustly handle these exceptions, you should call {!close} manually
-    inside [f], and wrap it in your own handler.
-
-    The returned promise (a [server Lwt.t]) resolves when the server's listening
-    socket is bound to [sockaddr], right before the server first calls [accept].
-
-    @since 3.0.0 *)
-
-val establish_server' :
+val establish_server_with_client_address :
   ?fd : Lwt_unix.file_descr ->
   ?buffer_size : int ->
   ?backlog : int ->
@@ -469,8 +436,49 @@ val establish_server' :
   Unix.sockaddr ->
   (Lwt_unix.sockaddr -> input_channel * output_channel -> unit Lwt.t) ->
     server Lwt.t
-(** Like establish_server but allows you to access the client's socket
-    in the callback. *)
+(** [establish_server_with_client_address listen_address f] creates a server
+    which listens for incoming connections on [listen_address]. When a client
+    makes a new connection, it is passed to [f]: more precisely, the server
+    calls
+
+{[
+f client_address (in_channel, out_channel)
+]}
+
+    where [client_address] is the address (peer name) of the new client, and
+    [in_channel] and [out_channel] are two channels wrapping the socket for
+    communicating with that client.
+
+    The server does not block waiting for [f] to complete: it concurrently tries
+    to accept more client connections while [f] is handling the client.
+
+    When the promise returned by [f] completes (i.e., [f] is done handling the
+    client), [establish_server_with_client_address] automatically closes
+    [in_channel] and [out_channel]. This is a default behavior that is useful
+    for simple cases, but for a robust application you should explicitly close
+    these channels yourself, and handle any exceptions. If the channels are
+    still open when [f] completes, and their automatic closing raises an
+    exception, [establish_server_with_client_address] treats it as an unhandled
+    exception reaching the top level of the application: it passes that
+    exception to {!Lwt.async_exception_hook}, the default behavior of which is
+    to print the exception and {e terminate your process}.
+
+    Automatic closing can be completely disabled by passing [~no_close:true].
+
+    Similarly, if [f] raises an exception (or the promise it returns fails with
+    an exception), [establish_server_with_client_address] can do nothing with
+    that exception, except pass it to {!Lwt.async_exception_hook}.
+
+    [~fd] can be specified to use an existing file descriptor for listening.
+    Otherwise, a fresh socket is created internally.
+
+    [~backlog] is the argument passed to {!Lwt_unix.listen}.
+
+    The returned promise (a [server Lwt.t]) resolves when the server has just
+    started listening on [listen_address]: right after the internal call to
+    [listen], and right before the first internal call to [accept].
+
+    @since 3.1.0 *)
 
 val shutdown_server : server -> unit Lwt.t
 (** Closes the given server's listening socket. The returned promise resolves
@@ -592,6 +600,23 @@ val set_default_buffer_size : int -> unit
       @raise Invalid_argument if the given size is smaller than [16]
       or greater than [Sys.max_string_length] *)
 
+(** {2 Deprecated} *)
+
+val establish_server :
+  ?fd : Lwt_unix.file_descr ->
+  ?buffer_size : int ->
+  ?backlog : int ->
+  ?no_close : bool ->
+  Unix.sockaddr -> (input_channel * output_channel -> unit Lwt.t) ->
+    server Lwt.t
+  [@@ocaml.deprecated
+"  Since Lwt 3.1.0, use Lwt_io.establish_server_with_client_address"]
+(** Like [establish_server_with_client_address], but does not pass the client
+    address to the callback [f].
+
+    @deprecated Use {!establish_server_with_client_address}.
+    @since 3.0.0 *)
+
 (** Versioned variants of APIs undergoing breaking changes. *)
 module Versioned :
 sig
@@ -609,7 +634,7 @@ sig
       callback, and notifies the caller when the server's listening socket is
       bound.
 
-      @deprecated Use {!Lwt_io.establish_server}.
+      @deprecated Use {!Lwt_io.establish_server_with_client_address}.
       @since 2.7.0 *)
 
   val establish_server_2 :
@@ -623,7 +648,7 @@ sig
 " In Lwt >= 3.0.0, this is an alias for Lwt_io.establish_server."]
   (** Since Lwt 3.0.0, this is just an alias for {!Lwt_io.establish_server}.
 
-      @deprecated Use {!Lwt_io.establish_server}.
+      @deprecated Use {!Lwt_io.establish_server_with_client_address}.
       @since 2.7.0 *)
 
   val shutdown_server_1 : server -> unit

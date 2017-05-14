@@ -38,9 +38,9 @@ struct
   let with_client f =
     let handler_finished, notify_handler_finished = Lwt.wait () in
 
-    Lwt_io.establish_server
+    Lwt_io.establish_server_with_client_address
       local
-      (fun channels ->
+      (fun _client_address channels ->
         Lwt.finalize
           (fun () -> f channels)
           (fun () ->
@@ -261,7 +261,8 @@ let suite = suite "lwt_io" [
       let in_channel' = ref Lwt_io.stdin in
       let out_channel' = ref Lwt_io.stdout in
 
-      Lwt_io.establish_server local (fun _ -> Lwt.return_unit)
+      Lwt_io.establish_server_with_client_address local
+        (fun _client_address _channels -> Lwt.return_unit)
       >>= fun server ->
 
       Lwt_io.with_connection local (fun (in_channel, out_channel) ->

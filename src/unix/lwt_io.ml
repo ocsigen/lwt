@@ -1480,7 +1480,7 @@ let establish_server_deprecated ?fd ?buffer_size ?backlog sockaddr f =
   establish_server_base blocking_bind ?fd ?buffer_size ?backlog sockaddr f
   |> fst
 
-let establish_server'
+let establish_server_with_client_address
     ?fd ?buffer_size ?backlog ?(no_close = false) sockaddr f =
   let best_effort_close channel =
     (* First, check whether the channel is closed. f may have already tried to
@@ -1526,7 +1526,8 @@ let establish_server'
 
 let establish_server ?fd ?buffer_size ?backlog ?no_close sockaddr f =
   let f _addr c = f c in
-  establish_server' ?fd ?buffer_size ?backlog ?no_close sockaddr f
+  establish_server_with_client_address
+    ?fd ?buffer_size ?backlog ?no_close sockaddr f
 
 let ignore_close ch =
   ignore (close ch)
