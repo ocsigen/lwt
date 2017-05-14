@@ -318,50 +318,60 @@ struct
 
   exception Canceled
 
-let rec run_waiters_rec result fs rest =
-  match fs with
-    | Regular_callback_list_empty ->
-        run_waiters_rec_next result rest
-    | Regular_callback_list_implicitly_removed_callback f ->
-        f result;
-        run_waiters_rec_next result rest
-    | Regular_callback_list_explicitly_removable_callback { contents = None } ->
-        run_waiters_rec_next result rest
-    | Regular_callback_list_explicitly_removable_callback { contents = Some f } ->
-        f result;
-        run_waiters_rec_next result rest
-    | Regular_callback_list_concat (fs1, fs2) ->
-        run_waiters_rec result fs1 (fs2 :: rest)
-
-and run_waiters_rec_next result rest =
-  match rest with
-    | [] ->
-        ()
-    | fs :: rest ->
-        run_waiters_rec result fs rest
-
-let rec run_cancel_handlers_rec fs rest =
-  match fs with
-    | Cancel_callback_list_empty ->
-        run_cancel_handlers_rec_next rest
-    | Cancel_callback_list_callback (storage, f) ->
-        current_storage := storage;
-        handle_with_async_exception_hook f ();
-        run_cancel_handlers_rec_next rest
-    | Cancel_callback_list_remove_sequence_node n ->
-        Lwt_sequence.remove n;
-        run_cancel_handlers_rec_next rest
-    | Cancel_callback_list_concat (fs1, fs2) ->
-        run_cancel_handlers_rec fs1 (fs2 :: rest)
-
-and run_cancel_handlers_rec_next rest =
-  match rest with
-    | [] ->
-        ()
-    | fs :: rest ->
-        run_cancel_handlers_rec fs rest
-
   let run_callbacks callbacks result =
+    let run_cancel_callbacks fs =
+      let rec iter_callback_list fs rest =
+        match fs with
+        | Cancel_callback_list_empty ->
+          iter_list rest
+        | Cancel_callback_list_callback (storage, f) ->
+          current_storage := storage;
+          handle_with_async_exception_hook f ();
+          iter_list rest
+        | Cancel_callback_list_remove_sequence_node node ->
+          Lwt_sequence.remove node;
+          iter_list rest
+        | Cancel_callback_list_concat (fs, fs') ->
+          iter_callback_list fs (fs'::rest)
+
+      and iter_list rest =
+        match rest with
+        | [] -> ()
+        | fs::rest -> iter_callback_list fs rest
+
+      in
+
+      iter_callback_list fs []
+    in
+
+    let run_regular_callbacks fs =
+      let rec iter_callback_list fs rest =
+        match fs with
+        | Regular_callback_list_empty ->
+          iter_list rest
+        | Regular_callback_list_implicitly_removed_callback f ->
+          f result;
+          iter_list rest
+        | Regular_callback_list_explicitly_removable_callback
+            {contents = None} ->
+          iter_list rest
+        | Regular_callback_list_explicitly_removable_callback
+            {contents = Some f} ->
+          f result;
+          iter_list rest
+        | Regular_callback_list_concat (fs, fs') ->
+          iter_callback_list fs (fs'::rest)
+
+      and iter_list rest =
+        match rest with
+        | [] -> ()
+        | fs::rest -> iter_callback_list fs rest
+
+      in
+
+      iter_callback_list fs []
+    in
+
     (* Pattern matching is much faster than polymorphic comparison. *)
     let is_canceled =
       match result with
@@ -370,8 +380,8 @@ and run_cancel_handlers_rec_next rest =
       | Resolved _ -> false
     in
     if is_canceled then
-      run_cancel_handlers_rec callbacks.cancel_callbacks [];
-    run_waiters_rec result callbacks.regular_callbacks []
+      run_cancel_callbacks callbacks.cancel_callbacks;
+    run_regular_callbacks callbacks.regular_callbacks
 
   let complete p result =
     let Pending callbacks = p.state in
@@ -399,7 +409,7 @@ and run_cancel_handlers_rec_next rest =
     in
     (already_wakening, storage_snapshot)
 
-  let leave_completion_loop (already_wakening, storage_snapshot) =
+  let leave_completion_loop already_wakening storage_snapshot =
     if not already_wakening then begin
       while not (Queue.is_empty queued_callbacks) do
         let Queued (callbacks, result) = Queue.pop queued_callbacks in
@@ -412,12 +422,12 @@ and run_cancel_handlers_rec_next rest =
 
   (* See https://github.com/ocsigen/lwt/issues/48. *)
   let abandon_wakeups () =
-    if !currently_in_completion_loop then leave_completion_loop (false, Storage_map.empty)
+    if !currently_in_completion_loop then leave_completion_loop false Storage_map.empty
 
-  let run_in_completion_loop callbacks result =
-    let ctx = enter_completion_loop () in
-    run_callbacks callbacks result;
-    leave_completion_loop ctx
+  let run_in_completion_loop (f : unit -> unit) : unit =
+    let top_level_entry, storage_snapshot = enter_completion_loop () in
+    f ();
+    leave_completion_loop top_level_entry storage_snapshot
 
   let wakeup_result r result =
     let Internal p = to_internal_resolver r in
@@ -428,7 +438,8 @@ and run_cancel_handlers_rec_next rest =
       let result = state_of_result result in
       let State_may_have_changed p = set_promise_state p result in
       ignore p;
-          run_in_completion_loop callbacks result
+      run_in_completion_loop (fun () ->
+        run_callbacks callbacks result)
       | Failed Canceled ->
           ()
       | Resolved _ ->
@@ -451,7 +462,8 @@ and run_cancel_handlers_rec_next rest =
           if !currently_in_completion_loop then begin
           Queue.push (Queued (callbacks, result)) queued_callbacks
           end else
-            run_in_completion_loop callbacks result
+          run_in_completion_loop (fun () ->
+            run_callbacks callbacks result)
       | Failed Canceled ->
           ()
       | Resolved _ ->
@@ -496,14 +508,11 @@ and run_cancel_handlers_rec_next rest =
     in
 
     let Internal p = to_internal_promise p in
-    let sleepers = cancel_and_collect_callbacks [] p in
-    let ctx = enter_completion_loop () in
-    List.iter
-      (fun (Packed callbacks) ->
-         run_cancel_handlers_rec callbacks.cancel_callbacks [];
-         run_waiters_rec canceled_result callbacks.regular_callbacks [])
-      sleepers;
-    leave_completion_loop ctx
+    let callbacks = cancel_and_collect_callbacks [] p in
+
+    run_in_completion_loop (fun () ->
+      callbacks |> List.iter (fun (Packed callbacks) ->
+        run_callbacks callbacks canceled_result))
 end
 include Completion_loop
 
