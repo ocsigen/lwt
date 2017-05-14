@@ -1289,23 +1289,22 @@ struct
           | Pending _ ->
               finish_nchoose_or_npick_after_pending in_completion_loop to_complete results ps
 
-let nchoose_sleep ps =
-  let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
+  let nchoose ps =
+    let rec init = function
+      | [] ->
+        let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
 
-  let callback in_completion_loop _result =
+        let callback in_completion_loop _result =
           let State_may_now_be_pending_proxy p = may_now_be_proxy p in
           let p = underlying p in
           let State_may_have_changed p =
             finish_nchoose_or_npick_after_pending in_completion_loop p [] ps in
           ignore p
-  in
-  add_explicitly_removable_callback_to_each_of ps callback;
-  to_public_promise p
+        in
+        add_explicitly_removable_callback_to_each_of ps callback;
 
-  let nchoose ps =
-    let rec init = function
-      | [] ->
-          nchoose_sleep ps
+        to_public_promise p
+
       | p :: ps ->
         let Internal p = to_internal_promise p in
           match (underlying p).state with
@@ -1330,24 +1329,23 @@ let nchoose_sleep ps =
     in
     init ps
 
-let npick_sleep ps =
-  let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
-  let callback in_completion_loop _result =
-          let State_may_now_be_pending_proxy p = may_now_be_proxy p in
-          let p = underlying p in
-    List.iter cancel ps;
-
-          let State_may_have_changed p =
-            finish_nchoose_or_npick_after_pending in_completion_loop p [] ps in
-          ignore p
-  in
-  add_explicitly_removable_callback_to_each_of ps callback;
-  to_public_promise p
-
   let npick ps =
     let rec init = function
       | [] ->
-          npick_sleep ps
+        let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
+
+        let callback in_completion_loop _result =
+          let State_may_now_be_pending_proxy p = may_now_be_proxy p in
+          let p = underlying p in
+          List.iter cancel ps;
+          let State_may_have_changed p =
+            finish_nchoose_or_npick_after_pending in_completion_loop p [] ps in
+          ignore p
+        in
+        add_explicitly_removable_callback_to_each_of ps callback;
+
+        to_public_promise p
+
       | p :: ps' ->
         let Internal p = to_internal_promise p in
           match (underlying p).state with
@@ -1375,34 +1373,47 @@ let npick_sleep ps =
     in
     init ps
 
-let rec nchoose_split_terminate in_completion_loop to_complete resolved pending = function
-  | [] ->
-      complete in_completion_loop to_complete (Resolved (List.rev resolved, List.rev pending))
-  | p :: ps ->
-        let Internal p_internal = to_internal_promise p in
-      match (underlying p_internal).state with
-        | Resolved v ->
-            nchoose_split_terminate in_completion_loop to_complete (v :: resolved) pending ps
-        | Failed _ as state ->
-            complete in_completion_loop to_complete state
-        | Pending _ ->
-            nchoose_split_terminate in_completion_loop to_complete resolved (p :: pending) ps
-
-let nchoose_split_sleep ps =
-  let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
-  let callback in_completion_loop _result =
-          let State_may_now_be_pending_proxy p = may_now_be_proxy p in
-          let p = underlying p in
-          let State_may_have_changed p = nchoose_split_terminate in_completion_loop p [] [] ps in
-          ignore p
-  in
-  add_explicitly_removable_callback_to_each_of ps callback;
-  to_public_promise p
-
   let nchoose_split ps =
+    let rec finish
+        in_completion_loop
+        (to_complete : ('a list * 'a t list, underlying, pending) promise)
+        (resolved : 'a list)
+        (pending : 'a t list)
+        (ps : 'a t list)
+          : ('a list * 'a t list, underlying, completed) state_changed =
+
+      match ps with
+      | [] ->
+        complete in_completion_loop to_complete
+          (Resolved (List.rev resolved, List.rev pending))
+
+      | p::ps ->
+        let Internal p_internal = to_internal_promise p in
+        match (underlying p_internal).state with
+        | Resolved v ->
+          finish in_completion_loop to_complete (v::resolved) pending ps
+
+        | Failed _ as result ->
+          complete in_completion_loop to_complete result
+
+        | Pending _ ->
+          finish in_completion_loop to_complete resolved (p::pending) ps
+    in
+
     let rec init acc_sleeping = function
       | [] ->
-          nchoose_split_sleep ps
+        let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
+
+        let callback in_completion_loop _result =
+          let State_may_now_be_pending_proxy p = may_now_be_proxy p in
+          let p = underlying p in
+          let State_may_have_changed p = finish in_completion_loop p [] [] ps in
+          ignore p
+        in
+        add_explicitly_removable_callback_to_each_of ps callback;
+
+        to_public_promise p
+
       | p :: ps' ->
         let Internal p_internal = to_internal_promise p in
           match (underlying p_internal).state with
