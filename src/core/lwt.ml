@@ -29,11 +29,6 @@ type storage = (unit -> unit) Storage_map.t
 
 
 
-type +'a t
-type -'a u
-
-
-
 type underlying
 type proxy
 
@@ -99,6 +94,9 @@ open Main_internal_types
 
 module Public_types =
 struct
+  type +'a t
+  type -'a u
+
   let to_public_promise : ('a, _, _) promise -> 'a t = Obj.magic
   let to_public_resolver : ('a, _, _) promise -> 'a u = Obj.magic
 
