@@ -280,6 +280,20 @@ struct
       | Resolved _ -> assert false
       | Failed _ -> assert false)
       ps
+
+  let add_cancel_callback callbacks f =
+    let node = Cancel_callback_list_callback (!current_storage, f) in
+
+    callbacks.cancel_callbacks <-
+      match callbacks.cancel_callbacks with
+      | Cancel_callback_list_empty ->
+        node
+
+      | Cancel_callback_list_callback _
+      | Cancel_callback_list_remove_sequence_node _
+      | Cancel_callback_list_concat _ ->
+        Cancel_callback_list_concat (node, callbacks.cancel_callbacks)
+
 end
 open Callbacks
 
@@ -940,15 +954,7 @@ let (=|<) f t = map f t
 
     match (underlying p).state with
       | Pending callbacks ->
-          let handler = Cancel_callback_list_callback (!current_storage, f) in
-          callbacks.cancel_callbacks <- (
-            match callbacks.cancel_callbacks with
-              | Cancel_callback_list_empty -> handler
-              | Cancel_callback_list_callback _
-              | Cancel_callback_list_remove_sequence_node _
-              | Cancel_callback_list_concat _ as chs ->
-                Cancel_callback_list_concat (handler, chs)
-          )
+          add_cancel_callback callbacks f
       | Failed Canceled ->
           handle_with_async_exception_hook f ()
       | Resolved _ -> ()
