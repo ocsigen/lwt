@@ -23,8 +23,12 @@
 
 
 
-module Storage_map = Map.Make(struct type t = int let compare = compare end)
-
+module Storage_map =
+  Map.Make
+    (struct
+      type t = int
+      let compare = compare
+    end)
 type storage = (unit -> unit) Storage_map.t
 
 
@@ -46,6 +50,8 @@ struct
     | Failed       : exn                 -> ( _, underlying, completed) state
     | Pending      : 'a callbacks        -> ('a, underlying, pending)   state
     | Unified_with : ('a, _, 'c) promise -> ('a, proxy,      'c)        state
+
+
 
   and 'a callbacks = {
     mutable regular_callbacks : 'a regular_callback_list;
@@ -110,6 +116,8 @@ struct
     Internal (Obj.magic p)
   let to_internal_resolver (r : 'a u) : 'a packed_promise =
     Internal (Obj.magic r)
+
+
 
   type +'a lwt_result = ('a, exn) Result.result
 
@@ -179,13 +187,14 @@ struct
   let new_key () =
     let id = !next_key_id in
     next_key_id := id + 1;
-    { id = id; value = None }
+    {id = id; value = None}
 
   let current_storage = ref Storage_map.empty
 
   let get key =
     try
-      Storage_map.find key.id !current_storage ();
+      let refresh = Storage_map.find key.id !current_storage in
+      refresh ();
       let value = key.value in
       key.value <- None;
       value
@@ -193,21 +202,23 @@ struct
       None
 
   let with_value key value f =
-    let save = !current_storage in
-    let data =
+    let new_storage =
       match value with
-        | Some _ ->
-            Storage_map.add key.id (fun () -> key.value <- value) save
-        | None ->
-            Storage_map.remove key.id save
+      | Some _ ->
+        let refresh = fun () -> key.value <- value in
+        Storage_map.add key.id refresh !current_storage
+      | None ->
+        Storage_map.remove key.id !current_storage
     in
-    current_storage := data;
+
+    let saved_storage = !current_storage in
+    current_storage := new_storage;
     try
       let result = f () in
-      current_storage := save;
+      current_storage := saved_storage;
       result
     with exn ->
-      current_storage := save;
+      current_storage := saved_storage;
       raise exn
 end
 include Sequence_associated_storage
@@ -217,54 +228,67 @@ include Sequence_associated_storage
 module Callbacks =
 struct
   let concat_regular_callbacks l1 l2 =
-    (match l1, l2 with
-      | Regular_callback_list_empty, _ -> l2
-      | _, Regular_callback_list_empty -> l1
-      | _ -> Regular_callback_list_concat (l1, l2))
-    [@ocaml.warning "-4"]
+    begin match l1, l2 with
+    | Regular_callback_list_empty, _ -> l2
+    | _, Regular_callback_list_empty -> l1
+    | _, _ -> Regular_callback_list_concat (l1, l2)
+    end [@ocaml.warning "-4"]
 
   let concat_cancel_callbacks l1 l2 =
-    (match l1, l2 with
-      | Cancel_callback_list_empty, _ -> l2
-      | _, Cancel_callback_list_empty -> l1
-      | _ -> Cancel_callback_list_concat (l1, l2))
-    [@ocaml.warning "-4"]
+    begin match l1, l2 with
+    | Cancel_callback_list_empty, _ -> l2
+    | _, Cancel_callback_list_empty -> l1
+    | _, _ -> Cancel_callback_list_concat (l1, l2)
+    end [@ocaml.warning "-4"]
 
   let rec clean_up_callback_cells = function
-    | Regular_callback_list_explicitly_removable_callback { contents = None } ->
-        Regular_callback_list_empty
+    | Regular_callback_list_explicitly_removable_callback {contents = None} ->
+      Regular_callback_list_empty
+
+    | Regular_callback_list_explicitly_removable_callback {contents = Some _}
+    | Regular_callback_list_implicitly_removed_callback _
+    | Regular_callback_list_empty as callbacks ->
+      callbacks
+
     | Regular_callback_list_concat (l1, l2) ->
-        concat_regular_callbacks (clean_up_callback_cells l1) (clean_up_callback_cells l2)
-    | Regular_callback_list_empty
-    | Regular_callback_list_explicitly_removable_callback _
-    | Regular_callback_list_implicitly_removed_callback _ as ws ->
-        ws
+      let l1 = clean_up_callback_cells l1 in
+      let l2 = clean_up_callback_cells l2 in
+      concat_regular_callbacks l1 l2
 
   let cleanup_throttle = 42
 
   let clear_explicitly_removable_callback_cell cell ~originally_added_to:ps =
     cell := None;
 
-    List.iter
-      (fun p ->
+    ps |> List.iter (fun p ->
       let Internal p = to_internal_promise p in
       match (underlying p).state with
-           | Pending ({ regular_callbacks =
-                   Regular_callback_list_explicitly_removable_callback _; _ } as callbacks) ->
-               callbacks.regular_callbacks <- Regular_callback_list_empty
-           | Pending ({regular_callbacks =
-                   Regular_callback_list_empty
-                 | Regular_callback_list_implicitly_removed_callback _
-                 | Regular_callback_list_concat _; _} as callbacks) ->
-               let removed = callbacks.cleanups_deferred + 1 in
-               if removed > cleanup_throttle then begin
-                 callbacks.cleanups_deferred <- 0;
-                 callbacks.regular_callbacks <- clean_up_callback_cells callbacks.regular_callbacks
-               end else
-                 callbacks.cleanups_deferred <- removed
-           | Resolved _ -> ()
-           | Failed _ -> ())
-      ps
+      (* Some of the promises may already have completed at the time this
+         function is called. *)
+      | Resolved _ -> ()
+      | Failed _ -> ()
+
+      | Pending callbacks ->
+        match callbacks.regular_callbacks with
+        (* If the promise has only one regular callback, and it is removable, it
+           must have been the cell cleared in this function, above. In that
+           case, just set its callback list to empty. *)
+        | Regular_callback_list_explicitly_removable_callback _ ->
+          callbacks.regular_callbacks <- Regular_callback_list_empty
+
+        (* Maintainer's note: I think this function shouldn't try to trigger a
+           cleanup in the first two cases, but I am preserving them for now, as
+           this is how the code was written in the past. *)
+        | Regular_callback_list_empty
+        | Regular_callback_list_implicitly_removed_callback _
+        | Regular_callback_list_concat _ ->
+          let cleanups_deferred = callbacks.cleanups_deferred + 1 in
+          if cleanups_deferred > cleanup_throttle then begin
+            callbacks.cleanups_deferred <- 0;
+            callbacks.regular_callbacks <-
+              clean_up_callback_cells callbacks.regular_callbacks
+          end else
+            callbacks.cleanups_deferred <- cleanups_deferred)
 
   let merge_callbacks ~from ~into =
     let regular_callbacks =
@@ -285,16 +309,21 @@ struct
     into.cancel_callbacks <- cancel_callbacks;
     into.cleanups_deferred <- cleanups_deferred
 
+
+
   let add_regular_callback_list_node callbacks node =
-    callbacks.regular_callbacks <- (match callbacks.regular_callbacks with
-                          | Regular_callback_list_empty -> node
-                          | Regular_callback_list_implicitly_removed_callback _
-                          | Regular_callback_list_explicitly_removable_callback _
-                          | Regular_callback_list_concat _ as existing ->
-                            Regular_callback_list_concat (node, existing))
+    callbacks.regular_callbacks <-
+      match callbacks.regular_callbacks with
+      | Regular_callback_list_empty ->
+        node
+      | Regular_callback_list_implicitly_removed_callback _
+      | Regular_callback_list_explicitly_removable_callback _
+      | Regular_callback_list_concat _ as existing ->
+        Regular_callback_list_concat (node, existing)
 
   let add_implicitly_removed_callback callbacks f =
-    add_regular_callback_list_node callbacks (Regular_callback_list_implicitly_removed_callback f)
+    add_regular_callback_list_node
+      callbacks (Regular_callback_list_implicitly_removed_callback f)
 
   let add_explicitly_removable_callback_and_give_cell ps f =
     let rec cell = ref (Some self_removing_callback_wrapper)
@@ -348,22 +377,28 @@ module Completion_loop =
 struct
   let async_exception_hook =
     ref (fun exn ->
-           prerr_string "Fatal error: exception ";
-           prerr_string (Printexc.to_string exn);
-           prerr_char '\n';
-           Printexc.print_backtrace stderr;
-           flush stderr;
-           exit 2)
+      prerr_string "Fatal error: exception ";
+      prerr_string (Printexc.to_string exn);
+      prerr_char '\n';
+      Printexc.print_backtrace stderr;
+      flush stderr;
+      exit 2)
 
   let handle_with_async_exception_hook f v =
-    try
-      f v
-    with exn ->
-      !async_exception_hook exn
+    try f v
+    with exn -> !async_exception_hook exn
+
+
 
   exception Canceled
 
-  let run_callbacks in_completion_loop callbacks result =
+
+
+  let run_callbacks
+      in_completion_loop
+      (callbacks : 'a callbacks)
+      (result : 'a completed_state) : unit =
+
     let run_cancel_callbacks fs =
       let rec iter_callback_list fs rest =
         match fs with
@@ -428,11 +463,15 @@ struct
       run_cancel_callbacks callbacks.cancel_callbacks;
     run_regular_callbacks callbacks.regular_callbacks
 
+
+
   let complete in_completion_loop p result =
     let Pending callbacks = p.state in
     let p = set_promise_state p result in
     run_callbacks in_completion_loop callbacks result;
     p
+
+
 
   let currently_in_completion_loop = ref false
 
@@ -444,30 +483,23 @@ struct
 
   let enter_completion_loop () =
     let storage_snapshot = !current_storage in
-    let already_wakening =
-      if !currently_in_completion_loop then
-        true
-      else begin
-        currently_in_completion_loop := true;
-        false
-      end
-    in
-    (already_wakening, storage_snapshot)
+    let top_level_entry = not !currently_in_completion_loop in
+    currently_in_completion_loop := true;
+    top_level_entry, storage_snapshot
 
   let leave_completion_loop
       in_completion_loop
-      already_wakening
-      storage_snapshot =
+      (top_level_entry : bool)
+      (storage_snapshot : storage) : unit =
 
-    if not already_wakening then begin
+    if top_level_entry then begin
       while not (Queue.is_empty queued_callbacks) do
         let Queued (callbacks, result) = Queue.pop queued_callbacks in
         run_callbacks in_completion_loop callbacks result
       done;
       currently_in_completion_loop := false;
-      current_storage := storage_snapshot
-    end else
-      current_storage := storage_snapshot
+    end;
+    current_storage := storage_snapshot
 
   let run_in_completion_loop (f : in_completion_loop -> unit) : unit =
     let top_level_entry, storage_snapshot = enter_completion_loop () in
@@ -479,25 +511,31 @@ struct
   let abandon_wakeups () =
     if !currently_in_completion_loop then
       let in_completion_loop : in_completion_loop = Obj.magic () in
-      leave_completion_loop in_completion_loop false Storage_map.empty
+      leave_completion_loop in_completion_loop true Storage_map.empty
+
+
 
   let wakeup_result r result =
     let Internal p = to_internal_resolver r in
     let p = underlying p in
 
     match p.state with
-      | Pending callbacks ->
+    | Failed Canceled ->
+      ()
+    | Resolved _ ->
+      raise (Invalid_argument "Lwt.wakeup_result")
+    | Failed _ ->
+      raise (Invalid_argument "Lwt.wakeup_result")
+      (* Maintainer's note: the exception raise should probably include the name
+         of the function actually called by the user, not always
+         [Lwt.wakeup_result], and likewise in [Lwt.wakeup_later_result]. *)
+
+    | Pending callbacks ->
       let result = state_of_result result in
       let State_may_have_changed p = set_promise_state p result in
       ignore p;
       run_in_completion_loop (fun in_completion_loop ->
         run_callbacks in_completion_loop callbacks result)
-      | Failed Canceled ->
-          ()
-      | Resolved _ ->
-        invalid_arg "Lwt.wakeup_result"
-      | Failed _ ->
-        invalid_arg "Lwt.wakeup_result"
 
   let wakeup r v = wakeup_result r (Result.Ok v)
   let wakeup_exn r exn = wakeup_result r (Result.Error exn)
@@ -507,24 +545,29 @@ struct
     let p = underlying p in
 
     match p.state with
-      | Pending callbacks ->
+    | Failed Canceled ->
+      ()
+    | Resolved _ ->
+      raise (Invalid_argument "Lwt.wakeup_later_result")
+    | Failed _ ->
+      raise (Invalid_argument "Lwt.wakeup_later_result")
+
+    | Pending callbacks ->
       let result = state_of_result result in
       let State_may_have_changed p = set_promise_state p result in
       ignore p;
-          if !currently_in_completion_loop then begin
+      begin
+        if !currently_in_completion_loop then
           Queue.push (Queued (callbacks, result)) queued_callbacks
-          end else
+        else
           run_in_completion_loop (fun in_completion_loop ->
             run_callbacks in_completion_loop callbacks result)
-      | Failed Canceled ->
-          ()
-      | Resolved _ ->
-          invalid_arg "Lwt.wakeup_later_result"
-      | Failed _ ->
-          invalid_arg "Lwt.wakeup_later_result"
+      end
 
   let wakeup_later r v = wakeup_later_result r (Result.Ok v)
   let wakeup_later_exn r exn = wakeup_later_result r (Result.Error exn)
+
+
 
   type packed_callbacks =
     | Packed : _ callbacks -> packed_callbacks
@@ -533,34 +576,40 @@ struct
   let cancel p =
     let canceled_result = Failed Canceled in
 
+    let propagate_cancel : (_, _, _) promise -> packed_callbacks list =
+        fun p ->
       let rec cancel_and_collect_callbacks :
           'a 'u 'c. packed_callbacks list -> ('a, 'u, 'c) promise ->
             packed_callbacks list =
           fun (type c) callbacks_accumulator (p : (_, _, c) promise) ->
 
         let p = underlying p in
-      match p.state with
-        | Pending ({ how_to_cancel; _ } as callbacks) -> begin
-            match how_to_cancel with
-              | Not_cancelable ->
-            callbacks_accumulator
-              | Cancel_this_promise ->
-            let State_may_have_changed p = set_promise_state p canceled_result in
-            ignore p;
-            (Packed callbacks)::callbacks_accumulator
-              | Propagate_cancel_to_one p ->
-            cancel_and_collect_callbacks callbacks_accumulator p
-              | Propagate_cancel_to_several ps ->
-            List.fold_left cancel_and_collect_callbacks callbacks_accumulator ps
-          end
+        match p.state with
+        (* If the promise is not still pending, it can't be canceled. *)
         | Resolved _ ->
           callbacks_accumulator
         | Failed _ ->
           callbacks_accumulator
+
+        | Pending callbacks ->
+          match callbacks.how_to_cancel with
+          | Not_cancelable ->
+            callbacks_accumulator
+          | Cancel_this_promise ->
+            let State_may_have_changed p =
+              set_promise_state p canceled_result in
+            ignore p;
+            (Packed callbacks)::callbacks_accumulator
+          | Propagate_cancel_to_one p' ->
+            cancel_and_collect_callbacks callbacks_accumulator p'
+          | Propagate_cancel_to_several ps ->
+            List.fold_left cancel_and_collect_callbacks callbacks_accumulator ps
+      in
+      cancel_and_collect_callbacks [] p
     in
 
     let Internal p = to_internal_promise p in
-    let callbacks = cancel_and_collect_callbacks [] p in
+    let callbacks = propagate_cancel p in
 
     run_in_completion_loop (fun in_completion_loop ->
       callbacks |> List.iter (fun (Packed callbacks) ->
@@ -573,13 +622,13 @@ include Completion_loop
 module Trivial_promises =
 struct
   let return v =
-    to_public_promise { state = Resolved v }
+    to_public_promise {state = Resolved v}
 
   let of_result result =
-    to_public_promise { state = state_of_result result }
+    to_public_promise {state = state_of_result result}
 
   let fail exn =
-    to_public_promise { state = Failed exn }
+    to_public_promise {state = Failed exn}
 
   let return_unit = return ()
   let return_none = return None
@@ -591,10 +640,10 @@ struct
   let return_error x = return (Result.Error x)
 
   let fail_with msg =
-    to_public_promise { state = Failed (Failure msg) }
+    to_public_promise {state = Failed (Failure msg)}
 
   let fail_invalid_arg msg =
-    to_public_promise { state = Failed (Invalid_argument msg) }
+    to_public_promise {state = Failed (Invalid_argument msg)}
 end
 include Trivial_promises
 
@@ -652,7 +701,8 @@ struct
     let node = cast_sequence_node node p in
 
     let Pending callbacks = p.state in
-    callbacks.cancel_callbacks <- Cancel_callback_list_remove_sequence_node node;
+    callbacks.cancel_callbacks <-
+      Cancel_callback_list_remove_sequence_node node;
     to_public_promise p
 
   let add_task_l sequence =
@@ -661,14 +711,18 @@ struct
     let node = cast_sequence_node node p in
 
     let Pending callbacks = p.state in
-    callbacks.cancel_callbacks <- Cancel_callback_list_remove_sequence_node node;
+    callbacks.cancel_callbacks <-
+      Cancel_callback_list_remove_sequence_node node;
     to_public_promise p
 
 
 
   let protected p =
     let Internal p_internal = to_internal_promise p in
-  match (underlying p_internal).state with
+    match (underlying p_internal).state with
+    | Resolved _ -> p
+    | Failed _ -> p
+
     | Pending _ ->
       let p' = new_pending ~how_to_cancel:Cancel_this_promise in
 
@@ -689,33 +743,32 @@ struct
       let Pending p'_callbacks = p'.state in
       add_cancel_callback p'_callbacks remove_the_callback;
 
-        to_public_promise p'
-
-    | Resolved _ ->
-        p
-    | Failed _ -> p
+      to_public_promise p'
 
   let no_cancel p =
     let Internal p_internal = to_internal_promise p in
     match (underlying p_internal).state with
-      | Pending callbacks ->
+    | Resolved _ -> p
+    | Failed _ -> p
+
+    | Pending p_callbacks ->
       let p' = new_pending ~how_to_cancel:Not_cancelable in
 
       let callback in_completion_loop p_result =
         let State_may_now_be_pending_proxy p' = may_now_be_proxy p' in
         let p' = underlying p' in
+        (* In this callback, [p'] will either still itself be pending, or it
+           will have become a proxy for a pending promise. The reasoning for
+           this is as in [protected] and [may_now_be_proxy], but even simpler,
+           because [p'] is not cancelable. *)
 
         let State_may_have_changed p' =
           complete in_completion_loop p' p_result in
         ignore p'
       in
-      add_implicitly_removed_callback callbacks callback;
+      add_implicitly_removed_callback p_callbacks callback;
 
-          to_public_promise p'
-      | Resolved _ ->
-          p
-      | Failed _ ->
-          p
+      to_public_promise p'
 end
 include Pending_promises
 
@@ -726,65 +779,69 @@ struct
   let unify
       (type c)
       in_completion_loop
-      (t1 : ('a, underlying, pending) promise)
-      (t2 : ('a, _, c) promise) =
+      ~(outer_promise : ('a, underlying, pending) promise)
+      ~(user_provided_promise : ('a, _, c) promise)
+        : ('a, underlying, c) state_changed =
 
-    let t2 = underlying t2 in
+    let p' = underlying user_provided_promise in
 
-          if identical t1 t2 then
-            State_may_have_changed t2
-          else begin
-            match t2.state with
-              | Pending callbacks2 ->
-        let Pending callbacks1 = t1.state in
-
-        merge_callbacks ~from:callbacks2 ~into:callbacks1;
-        callbacks1.how_to_cancel <- callbacks2.how_to_cancel;
-
-        let State_may_have_changed t2 =
-          set_promise_state t2 (Unified_with t1) in
-        ignore t2;
-
-        State_may_have_changed t1
-
+    if identical p' outer_promise then
+      State_may_have_changed p'
+    else
+      match p'.state with
       | Resolved _ ->
-        complete in_completion_loop t1 t2.state
+        complete in_completion_loop outer_promise p'.state
       | Failed _ ->
-        complete in_completion_loop t1 t2.state
-          end
+        complete in_completion_loop outer_promise p'.state
+
+      | Pending p'_callbacks ->
+        let Pending outer_callbacks = outer_promise.state in
+
+        merge_callbacks ~from:p'_callbacks ~into:outer_callbacks;
+        outer_callbacks.how_to_cancel <- p'_callbacks.how_to_cancel;
+
+        let State_may_have_changed p' =
+          set_promise_state p' (Unified_with outer_promise) in
+        ignore p';
+
+        State_may_have_changed outer_promise
 
   let bind p f =
     let Internal p = to_internal_promise p in
     let p = underlying p in
 
     match p.state with
-      | Resolved v ->
-          f v
-      | Failed _ as result ->
-          to_public_promise { state = result }
-      | Pending p_callbacks ->
+    | Resolved v ->
+      f v
+    | Failed _ as result ->
+      to_public_promise {state = result}
+
+    | Pending p_callbacks ->
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
-          let saved_storage = !current_storage in
+
+      let saved_storage = !current_storage in
 
       let callback in_completion_loop p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
 
         match p_result with
-               | Resolved v ->
-
+        | Resolved v ->
           current_storage := saved_storage;
 
           let p' = try f v with exn -> fail exn in
           let Internal p' = to_internal_promise p' in
 
-          let State_may_have_changed p'' = unify in_completion_loop p'' p' in
+          let State_may_have_changed p'' =
+            unify in_completion_loop
+              ~outer_promise:p''
+              ~user_provided_promise:p'
+          in
           ignore p''
 
-               | Failed _ as state ->
-
+        | Failed _ as p_result ->
           let State_may_have_changed p'' =
-            complete in_completion_loop p'' state in
+            complete in_completion_loop p'' p_result in
           ignore p''
       in
       add_implicitly_removed_callback p_callbacks callback;
@@ -796,32 +853,37 @@ struct
     let p = underlying p in
 
     match p.state with
-      | Resolved v ->
-          f v
-      | Failed exn ->
-          to_public_promise { state = Failed(add_loc exn) }
-      | Pending p_callbacks ->
+    | Resolved v ->
+      f v
+    | Failed exn ->
+      to_public_promise {state = Failed (add_loc exn)}
+
+    | Pending p_callbacks ->
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
-          let saved_storage = !current_storage in
+
+      let saved_storage = !current_storage in
 
       let callback in_completion_loop p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
 
         match p_result with
-               | Resolved v ->
+        | Resolved v ->
           current_storage := saved_storage;
 
           let p' = try f v with exn -> fail (add_loc exn) in
           let Internal p' = to_internal_promise p' in
 
-          let State_may_have_changed p'' = unify in_completion_loop p'' p' in
+          let State_may_have_changed p'' =
+            unify in_completion_loop
+              ~outer_promise:p''
+              ~user_provided_promise:p'
+          in
           ignore p''
 
-               | Failed exn ->
-
+        | Failed exn ->
           let State_may_have_changed p'' =
-            complete in_completion_loop p'' (Failed(add_loc exn)) in
+            complete in_completion_loop p'' (Failed (add_loc exn)) in
           ignore p''
       in
       add_implicitly_removed_callback p_callbacks callback;
@@ -833,21 +895,23 @@ struct
     let p = underlying p in
 
     match p.state with
-      | Resolved v ->
-          to_public_promise { state = try Resolved (f v) with exn -> Failed exn }
-      | Failed _ as result ->
-          to_public_promise { state = result }
-      | Pending p_callbacks ->
+    | Resolved v ->
+      to_public_promise {state = try Resolved (f v) with exn -> Failed exn}
+    | Failed _ as result ->
+      to_public_promise {state = result}
+
+    | Pending p_callbacks ->
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
-          let saved_storage = !current_storage in
+
+      let saved_storage = !current_storage in
 
       let callback in_completion_loop p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
 
         match p_result with
-               | Resolved v ->
-                 current_storage := saved_storage;
+        | Resolved v ->
+          current_storage := saved_storage;
 
           let p''_result = try Resolved (f v) with exn -> Failed exn in
           let State_may_have_changed p'' =
@@ -869,31 +933,37 @@ struct
     let p = underlying p in
 
     match p.state with
-      | Resolved _ ->
-          to_public_promise p
-      | Failed exn ->
-          h exn
-      | Pending p_callbacks ->
+    | Resolved _ ->
+      to_public_promise p
+    | Failed exn ->
+      h exn
+
+    | Pending p_callbacks ->
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
-          let saved_storage = !current_storage in
+
+      let saved_storage = !current_storage in
 
       let callback in_completion_loop p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
 
         match p_result with
-               | Resolved _ as p_result ->
+        | Resolved _ as p_result ->
           let State_may_have_changed p'' =
             complete in_completion_loop p'' p_result in
           ignore p''
 
-               | Failed exn ->
+        | Failed exn ->
           current_storage := saved_storage;
 
           let p' = try h exn with exn -> fail exn in
           let Internal p' = to_internal_promise p' in
 
-          let State_may_have_changed p'' = unify in_completion_loop p'' p' in
+          let State_may_have_changed p'' =
+            unify in_completion_loop
+              ~outer_promise:p''
+              ~user_provided_promise:p'
+          in
           ignore p''
       in
       add_implicitly_removed_callback p_callbacks callback;
@@ -906,31 +976,37 @@ struct
     let p = underlying p in
 
     match p.state with
-      | Resolved _ ->
-          to_public_promise p
-      | Failed exn ->
-          h (add_loc exn)
-      | Pending p_callbacks ->
+    | Resolved _ ->
+      to_public_promise p
+    | Failed exn ->
+      h (add_loc exn)
+
+    | Pending p_callbacks ->
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
-          let saved_storage = !current_storage in
+
+      let saved_storage = !current_storage in
 
       let callback in_completion_loop p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
 
         match p_result with
-               | Resolved _ as p_result ->
+        | Resolved _ as p_result ->
           let State_may_have_changed p'' =
             complete in_completion_loop p'' p_result in
           ignore p''
 
-               | Failed exn ->
+        | Failed exn ->
           current_storage := saved_storage;
 
           let p' = try h exn with exn -> fail (add_loc exn) in
           let Internal p' = to_internal_promise p' in
 
-          let State_may_have_changed p'' = unify in_completion_loop p'' p' in
+          let State_may_have_changed p'' =
+            unify in_completion_loop
+              ~outer_promise:p''
+              ~user_provided_promise:p'
+          in
           ignore p''
       in
       add_implicitly_removed_callback p_callbacks callback;
@@ -943,35 +1019,45 @@ struct
     let p = underlying p in
 
     match p.state with
-      | Resolved v ->
-          f' v
-      | Failed exn ->
-          h exn
-      | Pending p_callbacks ->
+    | Resolved v ->
+      f' v
+    | Failed exn ->
+      h exn
+
+    | Pending p_callbacks ->
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
-          let saved_storage = !current_storage in
+
+      let saved_storage = !current_storage in
 
       let callback in_completion_loop p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
 
         match p_result with
-               | Resolved v ->
+        | Resolved v ->
           current_storage := saved_storage;
 
           let p' = try f' v with exn -> fail exn in
           let Internal p' = to_internal_promise p' in
 
-          let State_may_have_changed p'' = unify in_completion_loop p'' p' in
+          let State_may_have_changed p'' =
+            unify in_completion_loop
+              ~outer_promise:p''
+              ~user_provided_promise:p'
+          in
           ignore p''
 
-               | Failed exn ->
+        | Failed exn ->
           current_storage := saved_storage;
 
           let p' = try h exn with exn -> fail exn in
           let Internal p' = to_internal_promise p' in
 
-          let State_may_have_changed p'' = unify in_completion_loop p'' p' in
+          let State_may_have_changed p'' =
+            unify in_completion_loop
+              ~outer_promise:p''
+              ~user_provided_promise:p'
+          in
           ignore p''
       in
       add_implicitly_removed_callback p_callbacks callback;
@@ -984,40 +1070,50 @@ struct
     let p = underlying p in
 
     match p.state with
-      | Resolved v ->
-          f' v
-      | Failed exn ->
-          h (add_loc exn)
-      | Pending p_callbacks ->
+    | Resolved v ->
+      f' v
+    | Failed exn ->
+      h (add_loc exn)
+
+    | Pending p_callbacks ->
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
-          let saved_storage = !current_storage in
+
+      let saved_storage = !current_storage in
 
       let callback in_completion_loop p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
 
         match p_result with
-               | Resolved v ->
+        | Resolved v ->
           current_storage := saved_storage;
 
           let p' = try f' v with exn -> fail (add_loc exn) in
           let Internal p' = to_internal_promise p' in
 
-          let State_may_have_changed p'' = unify in_completion_loop p'' p' in
+          let State_may_have_changed p'' =
+            unify in_completion_loop
+              ~outer_promise:p''
+              ~user_provided_promise:p'
+          in
           ignore p''
 
-               | Failed exn ->
+        | Failed exn ->
           current_storage := saved_storage;
 
           let p' = try h exn with exn -> fail (add_loc exn) in
           let Internal p' = to_internal_promise p' in
 
-          let State_may_have_changed p'' = unify in_completion_loop p'' p' in
+          let State_may_have_changed p'' =
+            unify in_completion_loop
+              ~outer_promise:p''
+              ~user_provided_promise:p'
+          in
           ignore p''
       in
       add_implicitly_removed_callback p_callbacks callback;
 
-          to_public_promise p''
+      to_public_promise p''
 
   let finalize f f' =
     try_bind f
@@ -1029,27 +1125,29 @@ struct
       (fun x -> bind (f' ()) (fun () -> return x))
       (fun e -> bind (f' ()) (fun () -> fail (add_loc e)))
 
+
+
   let on_cancel p f =
     let Internal p = to_internal_promise p in
-
     match (underlying p).state with
-      | Pending callbacks ->
-          add_cancel_callback callbacks f
-      | Failed Canceled ->
-          handle_with_async_exception_hook f ()
-      | Resolved _ -> ()
-      | Failed _ -> ()
+    | Failed Canceled -> handle_with_async_exception_hook f ()
+    | Failed _ -> ()
+    | Resolved _ -> ()
+    | Pending callbacks -> add_cancel_callback callbacks f
+
+
 
   let on_success p f =
     let Internal p = to_internal_promise p in
 
     match (underlying p).state with
-      | Resolved v ->
-          handle_with_async_exception_hook f v
-      | Failed _ ->
-          ()
-      | Pending p_callbacks ->
-          let saved_storage = !current_storage in
+    | Resolved v ->
+      handle_with_async_exception_hook f v
+    | Failed _ ->
+      ()
+
+    | Pending p_callbacks ->
+      let saved_storage = !current_storage in
 
       let callback _in_completion_loop result =
         match result with
@@ -1065,12 +1163,13 @@ struct
     let Internal p = to_internal_promise p in
 
     match (underlying p).state with
-      | Resolved _ ->
-          ()
-      | Failed exn ->
-          handle_with_async_exception_hook f exn
-      | Pending p_callbacks ->
-          let saved_storage = !current_storage in
+    | Resolved _ ->
+      ()
+    | Failed exn ->
+      handle_with_async_exception_hook f exn
+
+    | Pending p_callbacks ->
+      let saved_storage = !current_storage in
 
       let callback _in_completion_loop result =
         match result with
@@ -1086,12 +1185,13 @@ struct
     let Internal p = to_internal_promise p in
 
     match (underlying p).state with
-      | Resolved _ ->
+    | Resolved _ ->
       handle_with_async_exception_hook f ()
-      | Failed _ ->
-          handle_with_async_exception_hook f ()
-      | Pending p_callbacks ->
-          let saved_storage = !current_storage in
+    | Failed _ ->
+      handle_with_async_exception_hook f ()
+
+    | Pending p_callbacks ->
+      let saved_storage = !current_storage in
 
       let callback _in_completion_loop _result =
         current_storage := saved_storage;
@@ -1103,12 +1203,13 @@ struct
     let Internal p = to_internal_promise p in
 
     match (underlying p).state with
-      | Resolved v ->
-          handle_with_async_exception_hook f v
-      | Failed exn ->
-          handle_with_async_exception_hook g exn
-      | Pending p_callbacks ->
-          let saved_storage = !current_storage in
+    | Resolved v ->
+      handle_with_async_exception_hook f v
+    | Failed exn ->
+      handle_with_async_exception_hook g exn
+
+    | Pending p_callbacks ->
+      let saved_storage = !current_storage in
 
       let callback _in_completion_loop result =
         match result with
@@ -1132,11 +1233,12 @@ struct
     let Internal p = to_internal_promise p in
 
     match (underlying p).state with
-      | Resolved _ ->
-          ()
-      | Failed exn ->
-          !async_exception_hook exn
-      | Pending p_callbacks ->
+    | Resolved _ ->
+      ()
+    | Failed exn ->
+      !async_exception_hook exn
+
+    | Pending p_callbacks ->
       let callback _in_completion_loop result =
         match result with
         | Resolved _ ->
@@ -1150,11 +1252,12 @@ struct
     let Internal p = to_internal_promise p in
 
     match (underlying p).state with
-      | Resolved _ ->
-          ()
-      | Failed e ->
-          raise e
-      | Pending p_callbacks ->
+    | Resolved _ ->
+      ()
+    | Failed exn ->
+      raise exn
+
+    | Pending p_callbacks ->
       let callback _in_completion_loop result =
         match result with
         | Resolved _ ->
@@ -1164,19 +1267,29 @@ struct
       in
       add_implicitly_removed_callback p_callbacks callback
 
+
+
   let join ps =
     let p' = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
-    let number_pending_in_ps = ref 0
-    and join_result = ref (Resolved ()) in
+
+    let number_pending_in_ps = ref 0 in
+    let join_result = ref (Resolved ()) in
+
     let callback in_completion_loop new_result =
       let State_may_now_be_pending_proxy p' = may_now_be_proxy p' in
 
-      begin
-        match !join_result, new_result with
-          | Resolved _, Failed _ -> join_result := new_result
-          | _ -> ()
-      end [@ocaml.warning "-4"];
-      decr number_pending_in_ps;
+      begin match new_result with
+      | Resolved () -> ()
+      | Failed _ ->
+      (* For the first promise in [ps] to fail, set the result of the [join] to
+         the same failure. *)
+        match !join_result with
+        | Resolved () -> join_result := new_result
+        | Failed _ -> ()
+      end;
+
+      number_pending_in_ps := !number_pending_in_ps - 1;
+
       if !number_pending_in_ps = 0 then begin
         let p' = underlying p' in
         let State_may_have_changed p' =
@@ -1184,49 +1297,59 @@ struct
         ignore p'
       end
     in
-    let rec init = function
-      | [] ->
-          if !number_pending_in_ps = 0 then
-            to_public_promise { state = !join_result }
-          else
-            to_public_promise p'
-      | p :: rest ->
-        let Internal p = to_internal_promise p in
-          match (underlying p).state with
-            | Pending callbacks ->
-                incr number_pending_in_ps;
-                add_implicitly_removed_callback callbacks callback;
-                init rest
-            | Failed _ as p_result -> begin
-                match !join_result with
-                  | Resolved _ ->
-                      join_result := p_result;
-                      init rest
-                  | Failed _ ->
-                      init rest
-              end
-            | Resolved _ ->
-                init rest
-    in
-    init ps
 
-  let count_completed_promises_in ps =
-    List.fold_left (fun total p ->
+    let rec attach_callback_or_complete_immediately ps =
+      match ps with
+      | [] ->
+        if !number_pending_in_ps = 0 then
+          to_public_promise {state = !join_result}
+        else
+          to_public_promise p'
+
+      | p::ps ->
+        let Internal p = to_internal_promise p in
+
+        match (underlying p).state with
+        | Pending p_callbacks ->
+          number_pending_in_ps := !number_pending_in_ps + 1;
+          add_implicitly_removed_callback p_callbacks callback;
+          attach_callback_or_complete_immediately ps
+
+        | Failed _ as p_result ->
+          begin match !join_result with
+          | Resolved () -> join_result := p_result;
+          | Failed _ -> ()
+          end;
+          attach_callback_or_complete_immediately ps
+
+        | Resolved () ->
+          attach_callback_or_complete_immediately ps
+    in
+
+    attach_callback_or_complete_immediately ps
+
+
+
+  let count_completed_promises_in (ps : _ t list) =
+    let accumulate total p =
       let Internal p = to_internal_promise p in
       match (underlying p).state with
-      | Pending _ -> total
       | Resolved _ -> total + 1
-      | Failed _ -> total + 1) 0 ps
+      | Failed _ -> total + 1
+      | Pending _ -> total
+    in
+    List.fold_left accumulate 0 ps
 
-  let rec nth_completed ps n =
+  let rec nth_completed (ps : 'a t list) (n : int) : 'a t =
     match ps with
-      | [] ->
-          assert false
-      | p :: ps ->
+    | [] ->
+      assert false
+
+    | p::ps ->
       let Internal p' = to_internal_promise p in
-          match (underlying p').state with
-            | Pending _ ->
-                nth_completed ps n
+      match (underlying p').state with
+      | Pending _ ->
+        nth_completed ps n
 
       | Resolved _ ->
         if n <= 0 then p
@@ -1235,16 +1358,17 @@ struct
         if n <= 0 then p
         else nth_completed ps (n - 1)
 
-  let rec nth_completed_and_cancel_pending ps n =
+  let rec nth_completed_and_cancel_pending (ps : 'a t list) (n : int) : 'a t =
     match ps with
-      | [] ->
-          assert false
-      | p :: ps ->
+    | [] ->
+      assert false
+
+    | p::ps ->
       let Internal p' = to_internal_promise p in
-          match (underlying p').state with
-            | Pending _ ->
-                cancel p;
-                nth_completed_and_cancel_pending ps n
+      match (underlying p').state with
+      | Pending _ ->
+        cancel p;
+        nth_completed_and_cancel_pending ps n
 
       | Resolved _ ->
         if n <= 0 then (List.iter cancel ps; p)
@@ -1253,18 +1377,13 @@ struct
         if n <= 0 then (List.iter cancel ps; p)
         else nth_completed_and_cancel_pending ps (n - 1)
 
-  (* The PRNG state is initialized with a constant to make non-IO-based
-     programs deterministic. *)
+  (* The PRNG state is initialized with a constant to make non-IO-based programs
+     deterministic. *)
   let prng = lazy (Random.State.make [||])
 
   let choose ps =
-    let ready = count_completed_promises_in ps in
-    if ready > 0 then
-      if ready = 1 then
-        nth_completed ps 0
-      else
-        nth_completed ps (Random.State.int (Lazy.force prng) ready)
-    else begin
+    match count_completed_promises_in ps with
+    | 0 ->
       let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
 
       let callback in_completion_loop result =
@@ -1274,49 +1393,87 @@ struct
         ignore p
       in
       add_explicitly_removable_callback_to_each_of ps callback;
+
       to_public_promise p
-    end
+
+    | 1 ->
+      nth_completed ps 0
+
+    | n ->
+      nth_completed ps (Random.State.int (Lazy.force prng) n)
 
   let pick ps =
-    let ready = count_completed_promises_in ps in
-    if ready > 0 then
-      if ready = 1 then
-        nth_completed_and_cancel_pending ps 0
-      else
-        nth_completed_and_cancel_pending ps (Random.State.int (Lazy.force prng) ready)
-    else begin
+    match count_completed_promises_in ps with
+    | 0 ->
       let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
 
       let callback in_completion_loop result =
         let State_may_now_be_pending_proxy p = may_now_be_proxy p in
-        let p = underlying p in
         List.iter cancel ps;
+        let p = underlying p in
         let State_may_have_changed p = complete in_completion_loop p result in
         ignore p
       in
       add_explicitly_removable_callback_to_each_of ps callback;
+
       to_public_promise p
-    end
+
+    | 1 ->
+      nth_completed_and_cancel_pending ps 0
+
+    | n ->
+      nth_completed_and_cancel_pending ps
+        (Random.State.int (Lazy.force prng) n)
+
+
 
   let rec finish_nchoose_or_npick_after_pending
       in_completion_loop
-      to_complete
-      results = function
+      (to_complete : ('a list, underlying, pending) promise)
+      (results : 'a list)
+      (ps : 'a t list) :
+        ('a list, underlying, completed) state_changed =
+
+    match ps with
     | [] ->
-        complete in_completion_loop to_complete (Resolved (List.rev results))
-    | p :: ps ->
+      complete in_completion_loop to_complete (Resolved (List.rev results))
+
+    | p::ps ->
       let Internal p = to_internal_promise p in
 
-        match (underlying p).state with
-          | Resolved v ->
-              finish_nchoose_or_npick_after_pending in_completion_loop to_complete (v :: results) ps
-          | Failed _ as state ->
-              complete in_completion_loop to_complete state
-          | Pending _ ->
-              finish_nchoose_or_npick_after_pending in_completion_loop to_complete results ps
+      match (underlying p).state with
+      | Resolved v ->
+        finish_nchoose_or_npick_after_pending
+          in_completion_loop to_complete (v::results) ps
+
+      | Failed _ as result ->
+        complete in_completion_loop to_complete result
+
+      | Pending _ ->
+        finish_nchoose_or_npick_after_pending
+          in_completion_loop to_complete results ps
 
   let nchoose ps =
-    let rec init = function
+    let rec collect_already_resolved_promises_or_fail acc ps =
+      match ps with
+      | [] ->
+        return (List.rev acc)
+
+      | p::ps ->
+        let Internal p = to_internal_promise p in
+        match (underlying p).state with
+        | Resolved v ->
+          collect_already_resolved_promises_or_fail (v::acc) ps
+
+        | Failed _ as result ->
+          to_public_promise {state = result}
+
+        | Pending _ ->
+          collect_already_resolved_promises_or_fail acc ps
+    in
+
+    let rec check_for_already_resolved_promises ps' =
+      match ps' with
       | [] ->
         let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
 
@@ -1331,32 +1488,45 @@ struct
 
         to_public_promise p
 
-      | p :: ps ->
+      | p::ps ->
         let Internal p = to_internal_promise p in
-          match (underlying p).state with
-            | Resolved x ->
-                collect [x] ps
-            | Failed _ as state ->
-                to_public_promise { state }
-            | Pending _ ->
-                init ps
-    and collect acc = function
-      | [] ->
-          return (List.rev acc)
-      | p :: ps ->
-        let Internal p = to_internal_promise p in
-          match (underlying p).state with
-            | Resolved v ->
-                collect (v :: acc) ps
-            | Failed _ as state ->
-                to_public_promise { state }
-            | Pending _ ->
-                collect acc ps
+        match (underlying p).state with
+        | Resolved v ->
+          collect_already_resolved_promises_or_fail [v] ps
+
+        | Failed _ as result ->
+          to_public_promise {state = result}
+
+        | Pending _ ->
+          check_for_already_resolved_promises ps
     in
-    init ps
+
+    let p = check_for_already_resolved_promises ps in
+    p
 
   let npick ps =
-    let rec init = function
+    let rec collect_already_resolved_promises_or_fail acc ps' =
+      match ps' with
+      | [] ->
+        List.iter cancel ps;
+        return (List.rev acc)
+
+      | p::ps' ->
+        let Internal p = to_internal_promise p in
+        match (underlying p).state with
+        | Resolved v ->
+          collect_already_resolved_promises_or_fail (v::acc) ps'
+
+        | Failed _ as result ->
+          List.iter cancel ps;
+          to_public_promise {state = result}
+
+        | Pending _ ->
+          collect_already_resolved_promises_or_fail acc ps'
+    in
+
+    let rec check_for_already_resolved_promises ps' =
+      match ps' with
       | [] ->
         let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
 
@@ -1372,32 +1542,24 @@ struct
 
         to_public_promise p
 
-      | p :: ps' ->
+      | p::ps' ->
         let Internal p = to_internal_promise p in
-          match (underlying p).state with
-            | Resolved v ->
-                collect [v] ps'
-            | Failed _ as state ->
-                List.iter cancel ps;
-                to_public_promise { state }
-            | Pending _ ->
-                init ps'
-    and collect acc = function
-      | [] ->
+        match (underlying p).state with
+        | Resolved v ->
+          collect_already_resolved_promises_or_fail [v] ps'
+
+        | Failed _ as result ->
           List.iter cancel ps;
-          return (List.rev acc)
-      | p :: ps' ->
-        let Internal p = to_internal_promise p in
-          match (underlying p).state with
-            | Resolved v ->
-                collect (v :: acc) ps'
-            | Failed _ as state ->
-                List.iter cancel ps;
-                to_public_promise { state }
-            | Pending _ ->
-                collect acc ps'
+          to_public_promise {state = result}
+
+        | Pending _ ->
+          check_for_already_resolved_promises ps'
     in
-    init ps
+
+    let p = check_for_already_resolved_promises ps in
+    p
+
+
 
   let nchoose_split ps =
     let rec finish
@@ -1426,7 +1588,26 @@ struct
           finish in_completion_loop to_complete resolved (p::pending) ps
     in
 
-    let rec init acc_sleeping = function
+    let rec collect_already_completed_promises results pending ps =
+      match ps with
+      | [] ->
+        return (List.rev results, pending)
+
+      | p::ps ->
+        let Internal p_internal = to_internal_promise p in
+        match (underlying p_internal).state with
+        | Resolved v ->
+          collect_already_completed_promises (v::results) pending ps
+
+        | Failed _ as result ->
+          to_public_promise {state = result}
+
+        | Pending _ ->
+          collect_already_completed_promises results (p::pending) ps
+    in
+
+    let rec check_for_already_completed_promises pending_acc ps' =
+      match ps' with
       | [] ->
         let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
 
@@ -1440,29 +1621,21 @@ struct
 
         to_public_promise p
 
-      | p :: ps' ->
+      | p::ps' ->
         let Internal p_internal = to_internal_promise p in
-          match (underlying p_internal).state with
-            | Resolved v ->
-                collect [v] acc_sleeping ps'
-            | Failed _ as state ->
-                to_public_promise { state }
-            | Pending _ ->
-                init (p :: acc_sleeping) ps'
-    and collect acc_terminated acc_sleeping = function
-      | [] ->
-          return (List.rev acc_terminated, acc_sleeping)
-      | p :: ps ->
-        let Internal p_internal = to_internal_promise p in
-          match (underlying p_internal).state with
-            | Resolved v ->
-                collect (v :: acc_terminated) acc_sleeping ps
-            | Failed _ as state ->
-                to_public_promise { state }
-            | Pending _ ->
-                collect acc_terminated (p :: acc_sleeping) ps
+        match (underlying p_internal).state with
+        | Resolved v ->
+          collect_already_completed_promises [v] pending_acc ps'
+
+        | Failed _ as result ->
+          to_public_promise {state = result}
+
+        | Pending _ ->
+          check_for_already_completed_promises (p::pending_acc) ps'
     in
-    init [] ps
+
+    let p = check_for_already_completed_promises [] ps in
+    p
 end
 include Concurrent_composition
 
@@ -1470,22 +1643,17 @@ include Concurrent_composition
 
 module Miscellaneous =
 struct
-
-module State = struct
   type 'a state =
     | Return of 'a
     | Fail of exn
     | Sleep
-end
 
   let state p =
     let Internal p = to_internal_promise p in
     match (underlying p).state with
-    | Resolved v -> State.Return v
-    | Failed exn -> State.Fail exn
-    | Pending _ -> State.Sleep
-
-  include State
+    | Resolved v -> Return v
+    | Failed exn -> Fail exn
+    | Pending _ -> Sleep
 
   let is_sleeping p =
     let Internal p = to_internal_promise p in
@@ -1497,21 +1665,43 @@ end
   let poll p =
     let Internal p = to_internal_promise p in
     match (underlying p).state with
-      | Failed e -> raise e
-      | Resolved v -> Some v
-      | Pending _ -> None
+    | Failed e -> raise e
+    | Resolved v -> Some v
+    | Pending _ -> None
 
-  let apply f x = try f x with e -> fail e
+
+
+  let apply f x = try f x with exn -> fail exn
 
   let wrap f = try return (f ()) with exn -> fail exn
 
-  let wrap1 f x1 = try return (f x1) with exn -> fail exn
-  let wrap2 f x1 x2 = try return (f x1 x2) with exn -> fail exn
-  let wrap3 f x1 x2 x3 = try return (f x1 x2 x3) with exn -> fail exn
-  let wrap4 f x1 x2 x3 x4 = try return (f x1 x2 x3 x4) with exn -> fail exn
-  let wrap5 f x1 x2 x3 x4 x5 = try return (f x1 x2 x3 x4 x5) with exn -> fail exn
-  let wrap6 f x1 x2 x3 x4 x5 x6 = try return (f x1 x2 x3 x4 x5 x6) with exn -> fail exn
-  let wrap7 f x1 x2 x3 x4 x5 x6 x7 = try return (f x1 x2 x3 x4 x5 x6 x7) with exn -> fail exn
+  let wrap1 f x1 =
+    try return (f x1)
+    with exn -> fail exn
+
+  let wrap2 f x1 x2 =
+    try return (f x1 x2)
+    with exn -> fail exn
+
+  let wrap3 f x1 x2 x3 =
+    try return (f x1 x2 x3)
+    with exn -> fail exn
+
+  let wrap4 f x1 x2 x3 x4 =
+    try return (f x1 x2 x3 x4)
+    with exn -> fail exn
+
+  let wrap5 f x1 x2 x3 x4 x5 =
+    try return (f x1 x2 x3 x4 x5)
+    with exn -> fail exn
+
+  let wrap6 f x1 x2 x3 x4 x5 x6 =
+    try return (f x1 x2 x3 x4 x5 x6)
+    with exn -> fail exn
+
+  let wrap7 f x1 x2 x3 x4 x5 x6 x7 =
+    try return (f x1 x2 x3 x4 x5 x6 x7)
+    with exn -> fail exn
 
 
 
@@ -1521,10 +1711,10 @@ end
   let paused_count = ref 0
 
   let pause () =
-    let waiter = add_task_r paused in
+    let p = add_task_r paused in
     incr paused_count;
     !pause_hook !paused_count;
-    waiter
+    p
 
   let wakeup_paused () =
     if Lwt_sequence.is_empty paused then
@@ -1533,7 +1723,7 @@ end
       let tmp = Lwt_sequence.create () in
       Lwt_sequence.transfer_r paused tmp;
       paused_count := 0;
-      Lwt_sequence.iter_l (fun wakener -> wakeup wakener ()) tmp
+      Lwt_sequence.iter_l (fun r -> wakeup r ()) tmp
     end
 
   let register_pause_notifier f = pause_hook := f
@@ -1544,7 +1734,8 @@ include Miscellaneous
 
 
 
-module Infix = struct
+module Infix =
+struct
   let (>>=) = bind
   let (=<<) f p = bind p f
   let (>|=) p f = map f p
