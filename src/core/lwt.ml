@@ -566,28 +566,20 @@ struct
     Obj.magic node
 
   let add_task_r sequence =
-    let callbacks = {
-      how_to_cancel = Cancel_this_promise;
-      regular_callbacks = Regular_callback_list_empty;
-      cleanups_deferred = 0;
-      cancel_callbacks = Cancel_callback_list_empty
-    } in
-    let p = { state = Pending callbacks } in
+    let p = new_pending ~how_to_cancel:Cancel_this_promise in
     let node = Lwt_sequence.add_r (to_public_resolver p) sequence in
     let node = cast_sequence_node node p in
+
+    let Pending callbacks = p.state in
     callbacks.cancel_callbacks <- Cancel_callback_list_remove_sequence_node node;
     to_public_promise p
 
   let add_task_l sequence =
-    let callbacks = {
-      how_to_cancel = Cancel_this_promise;
-      regular_callbacks = Regular_callback_list_empty;
-      cleanups_deferred = 0;
-      cancel_callbacks = Cancel_callback_list_empty
-    }in
-    let p = { state = Pending callbacks } in
+    let p = new_pending ~how_to_cancel:Cancel_this_promise in
     let node = Lwt_sequence.add_l (to_public_resolver p) sequence in
     let node = cast_sequence_node node p in
+
+    let Pending callbacks = p.state in
     callbacks.cancel_callbacks <- Cancel_callback_list_remove_sequence_node node;
     to_public_promise p
 
