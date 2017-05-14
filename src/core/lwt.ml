@@ -3,6 +3,7 @@
  * Copyright (C) 2005-2008 Jérôme Vouillon
  * Laboratoire PPS - CNRS Université Paris Diderot
  *               2009-2012 Jérémie Dimino
+ *               2017      Anton Bachin
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -23,6 +24,328 @@
 
 
 
+(* Reading guide
+
+   Welcome to the implementation of the Lwt core! This is a big file, but we
+   hope that reading it (parts at a time!) will not be scary :) Here is why:
+
+
+   * Sectioning
+
+   The code is broken up into sections, each one of which is an internal module.
+   Most of the modules have a signature, which serves as a neat table of
+   contents.
+
+   It is recommended that you read this file with code folding enabled. If you
+   fold all the modules, you can visualize the logical structure of Lwt quite
+   easily. You can then expand modules as needed, depending on what part of the
+   implementation you are interested in. Without code folding, you face an
+   intimidating wall of code :( You can still visually parse the file, however,
+   because there are plenty of blank lines to help section things off.
+
+   The signatures are unusual: big comments are absent. They are moved into the
+   modules, so that they are hidden by code folding when you (the reader!) are
+   not interested in those modules.
+
+
+   * Documentation
+
+   The documentation begins with an Overview of major concepts and components.
+   This overview puts everything into context. You don't have to read the whole
+   thing. The overview begins with basic concepts, moves on to advanced ones,
+   and then gets into the truly esoteric. You can read about each concept on an
+   as-needed basis. However, once you have read the whole overview, you will be
+   aware of *everything* that is needed to understand, and work with, the core
+   of Lwt.
+
+   Littered in the code are additional comments, that go in-depth on various
+   local implementation details, opportunities, regrets, and the like.
+
+   The sections (modules) of the code correspond closely to sections of the
+   overview.
+
+
+   * Please edit the code and the docs!
+
+   This code is meant to be readable, and to be edited. If you are reading
+   something, and think there is a much better way to express it, please go
+   ahead and open a pull request to the Lwt repository at
+
+     https://github.com/ocsigen/lwt
+
+   Even if your pull request somehow doesn't get merged, you will have educated
+   the maintainers, not to mention other contributors, and users. This is true
+   even if the change is trivial -- sometimes, maintainers just need to be
+   educated multiple times before they see the wisdom of it :/
+
+   Likewise, if you would like to make a code contribution to the Lwt core, it
+   is quite welcome, and we hope that this code is readable enough for you to be
+   able to make it!
+
+
+   Enjoy! *)
+
+
+
+(* Overview
+
+   In this file, there is a "model" function -- [Lwt.bind] -- which pulls
+   together many (though not all) of the concepts and helpers discussed in this
+   overview. To find it, search for "let bind," and you can examine it while
+   reading the overview. The authors of this file intend to put extra effort
+   into writing nice comments inside [Lwt.bind] :)
+
+
+   0. Main mechanism and two aspects
+
+   The Lwt interface ([lwt.mli]) provides one main mechanism, promises, and two
+   "aspects," which are *not* necessary to understand the main mechanism
+   promises, but they are still there:
+
+   - promise cancelation
+   - sequence-associated storage
+
+   If you are not interested in cancelation or storage, you can ignore these two
+   complications, and still get a pretty good understanding of the code. To
+   help, all identifiers related to cancelation contain the string "cancel," and
+   all identifiers related to storage contain "storage."
+
+
+   1. Promises
+
+   A promise is a cell that can be in one of two states: "completed" or
+   "pending."
+
+   - Completed promises
+
+     A completed promise is either "resolved" with a value, or "failed" with an
+     exception. The state of a completed promise will never change again: a
+     completed promise is immutable. A completed promise is basically equivalent
+     to an [('a, exn) Pervasives.result]. Completed promises are produced in two
+     ways:
+
+     - [Lwt.return], [Lwt.fail], and related functions, produce "trivial"
+       promises that are completed from the start.
+     - The other way is to complete a promise that started out pending.
+
+     Note that failed promises have nothing to do with unhandled exceptions.
+
+   - Pending promises
+
+     ...are those that may become completed in the future. Each pending promise
+     carries a list of callbacks. These callbacks are added by functions like
+     [Lwt.bind], and called by Lwt if/when the promise completes. Pending
+     promises are produced in three ways, according to how they can be
+     completed:
+
+     - Initial promises
+
+       ...are created by [Lwt.wait] and [Lwt.task]. The user of Lwt completes
+       these promises manually, through the resolvers returned by those
+       functions.
+
+     - Sequential composition
+
+       For example, [Lwt.bind]. These promises only complete when some sequence
+       of "preceding" promises completes. The user cannot complete these
+       promises directly.
+
+     - Concurrent composition
+
+       For example, [Lwt.join] or [Lwt.choose]. These promises only complete
+       when all or one of a set of "preceding" promises complete. The user
+       cannot complete these promises directly.
+
+
+   2. Resolvers
+
+   Resolvers are given to the user by [Lwt.wait] and [Lwt.task], and can be used
+   by the user to resolve the corresponding promises. Note that this means the
+   user only ever gets resolvers for initial promises.
+
+   Internally, resolvers are the exact same objects as the promises they
+   resolve, even though the resolver is exposed as a reference of a different
+   type by [lwt.mli].
+
+
+   3. Callbacks
+
+   ...are attached by Lwt to pending promises, and are run by Lwt if/when those
+   promises complete. These callbacks are not directly exposed through
+   [lwt.mli] -- they are a low-level mechanism. For example, to implement
+   [Lwt.bind p f], Lwt attaches a callback to [p] that does some internal Lwt
+   book-keeping, and then calls [f] if [p] resolved, and does something else if
+   [p] failed.
+
+   Callbacks come in two flavors: regular callbacks and cancel callbacks. The
+   only material differences between them are that:
+
+   - cancel callbacks are only called if a promise is canceled, and
+   - all cancel callbacks of a promise are called before any regular callback
+     is called.
+
+   Cancelation is a special case of completion, but see the section on
+   cancelation later below.
+
+
+   4. Completion loop
+
+   Completing a pending promise triggers its callbacks, and those might complete
+   more pending promises, triggering more callbacks, etc. This behavior is the
+   *completion loop*. Lwt has some machinery to avoid stack overflow and other
+   unfortunate situations during this loop.
+
+   This chaining of promise completions through callbacks can be seen as a kind
+   of promise dependency graph, in which the nodes are pending promises, and the
+   edges are callbacks. During the completion loop, Lwt starts at some initial
+   promise that is getting completed by the user, and completes a bunch of
+   dependent promises.
+
+   Some of these dependencies are explicit to Lwt, e.g. the callbacks registered
+   by [Lwt.bind]. Others are not visible to Lwt, because the user can always
+   register a callback using a function like [Lwt.on_success], and use that
+   callback to complete another initial promise. All the explicit dependencies
+   are created by Lwt's own sequential and concurrent composition functions
+   (so, [Lwt.bind], [Lwt.join], etc). Whether dependencies are explicit or not
+   is relevant only to cancelation.
+
+
+   5. Cancelation
+
+   As described above, ordinary promise completion procedes from an initial
+   promise, forward along callbacks through the dependency graph. Since it
+   starts from an initial promise, it can only be triggered using a resolver.
+
+   Cancelation is a sort of dual to ordinary completion. Instead of starting at
+   an initial promise/resolver, cancelation starts at *any* promise. It then
+   goes *backwards* through the explicit dependency graph, looking for
+   cancelable initial promises to cancel -- those that were created by
+   [Lwt.task]. After finding them, cancelation completes them normally with
+   [Failed Lwt.Canceled], causing an ordinary promise completion process.
+
+   To summarize, cancelation is a way to trigger an *ordinary* completion of
+   promises created with [Lwt.task], by first searching for them in the promise
+   dependency graph (which is assembled by [Lwt.bind], [Lwt.join], etc).
+
+   This backwards search is triggered only by [Lwt.cancel]. It is also possible
+   for the user to cancel a promise directly by failing it with [Lwt.Canceled],
+   but in all cases where the user can do so, the search would be redundant
+   anyway -- the user has only two ways of directly failing a promise with
+   [Lwt.Canceled] (or any exception, for that matter):
+
+   - The user can create an initial promise, then fail it through its resolver.
+     The search is redundant because it would find only the same initial promise
+     to cancel.
+   - The user can create a trivial promise by calling [Lwt.fail Lwt.Canceled].
+     The search is again redundant; in this case it would find nothing to
+     cancel.
+
+   Note that there is a quirk: only promises created by [Lwt.task] are
+   susceptible to being canceled by [Lwt.cancel], but the user can manually
+   cancel initial promises created by both [Lwt.task] and [Lwt.wait].
+
+   Due to [Lwt.cancel], promise cancelation, and therefore completion, can be
+   initiated by the user without access to a resolver. This is important for
+   reasoning about state changes in the implementation of Lwt, and is referenced
+   in some implementation detail comments.
+
+
+   6. No I/O
+
+   The Lwt core deliberately doesn't do I/O. The completion loop stops running
+   once no promises can be completed immediately. It has to be restarted later
+   by some external process.
+
+   On Unix and Windows, a separate top-level loop, typically [Lwt_main.run], is
+   necessary to repeatedly call [select], [epoll], or [kevent], and complete
+   promises that are blocked on I/O.
+
+   In JavaScript, references to promises are retained by JavaScript code, which
+   is, in turn, triggered by the JS engine. In other words, the top-level loop
+   is buried inside the JS engine.
+
+   This separation of the Lwt core from the top-level I/O loop keeps the core
+   portable.
+
+
+   7. Promise "unification"
+
+   In [Lwt.bind : 'a t -> ('a -> 'b t) -> 'b t], the outer ['b t] is created by
+   [bind] first, and returned to the user. The inner ['b t] is created by the
+   user later, and then returned to [bind]. At that point, [bind] needs to make
+   the inner and outer ['b t]s behave identically.
+
+   This is accomplished by "unifying" them, which simply means: making one of
+   the promises point to the other. One of the promises thus becomes a "proxy,"
+   and the other is its "underlying" promise.
+
+   After that, all operations that would be performed by Lwt on the proxy are
+   instead performed on the underlying promise. This is ensured by the numerous
+   calls to the internal function [underlying] in this file.
+
+   Because of the pervasive use of [underlying], proxies and unification can be
+   more or less ignored on a first reading the code. However, becoming a proxy
+   is a kind of state change, and any promise that is returned by a callback
+   to [bind], or to a similar Lwt function, might become a proxy. That means:
+   just about any promise that is handed to the user, might become a proxy
+   promise by the next time Lwt sees it. This is important for reasoning about
+   possible state changes in implementation of Lwt, and is referenced in some
+   implementation detail comments.
+
+
+   8. Sequence-associated storage
+
+   Lwt has a global key-value map. The map can be preserved across sequential
+   composition functions, so that it has the same state in the user's callback
+   [f] as it did at the time the user called [Lwt.bind p f].
+
+   The details are pretty straightforward, and discussed in module
+   [Sequence_associated_storage]. The main thing to be aware of is the many
+   references to [current_storage] throughout Lwt, which are needed to properly
+   save and restore the mapping.
+
+
+   9. Type system abuse
+
+   The implementation uses the type system somewhat extensively. For example,
+   the promise state is a GADT which encodes the state in its type parameters.
+   Thus, if you do [let p = underlying p], the shadowing reference [p] is
+   statically known *not* to be a proxy, and the compiler knows that the
+   corresponding match case [Unified_with _] is impossible.
+
+   The external promise type, ['a t], and the external resolver type, ['a u],
+   are not GADTs. Furthermore, they are, respectively, covariant and
+   contravariant in ['a], while the internal promise type is invariant in
+   ['a]. For these reasons, there are nasty casts between ['a t], ['a u], and
+   the internal promise type. The implementation is, of course, written in
+   terms of the internal type.
+
+   Casting from an ['a t] to an internal promise produces a reference for
+   which the state is "unknown": this is simulated with a helper GADT, which
+   encodes existential types. There are several similar casts, which are used
+   to document possible state changes between the time a promise is created,
+   and the later time it is used in a callback. You can see these casts in
+   action in [Lwt.bind]. The cast syntax is pretty light, and, besides being
+   commented in [bind], all such casts are documented in modules [Public_types]
+   and [Basic_helpers].
+
+   There is an abstract type [in_completion_loop], which is actually just
+   [unit], that is passed around to help ensure that certain functions can only
+   be called during the completion loop. Those functions can't be called without
+   a value of type [in_completion_loop], and the only way to obtain such a value
+   is to enter the loop ([run_in_completion_loop]). This mechanism is described
+   at [Completion_loop.complete].
+
+
+   If you've made it this far, you are an Lwt expert! Rejoice! *)
+
+
+
+(* Some sequence-associated storage types
+
+   Sequence-associated storage is defined and documented later, in module
+   [Sequence_associated_storage]. However, the following types are mentioned in
+   the definition of [promise], so they must be defined here first. *)
 module Storage_map =
   Map.Make
     (struct
@@ -33,6 +356,8 @@ type storage = (unit -> unit) Storage_map.t
 
 
 
+(* Phantom types for use with [promise]/[state]. These must be declared outside
+   module [Main_internal_types]. This is explained inside. *)
 type underlying
 type proxy
 
@@ -41,6 +366,8 @@ type pending
 
 module Main_internal_types =
 struct
+  (* Promises proper. *)
+
   type ('a, 'u, 'c) promise = {
     mutable state : ('a, 'u, 'c) state;
   }
@@ -51,7 +378,45 @@ struct
     | Pending      : 'a callbacks        -> ('a, underlying, pending)   state
     | Unified_with : ('a, _, 'c) promise -> ('a, proxy,      'c)        state
 
+  (* Note:
 
+     A promise whose state is [Unified_with _] is a "proxy" promise. A promise
+     whose state is *not* [Unified_with _] is an "underlying" promise.
+
+     The "underlying promise of [p]" is:
+
+     - [p], if [p] is itself underlying.
+     - Otherwise, [p] is a proxy and has state [Unified_with p']. The underlying
+       promise of [p] is the underlying promise of [p'].
+
+     In other words, to find the underlying promise of a proxy, Lwt follows the
+     [Unified_with _] links to the end. *)
+
+  (* Note:
+
+     When a promise is completed, or becomes a proxy, its state field is
+     mutated. This invalidates the type invariants on the promise. See internal
+     function [set_promise_state] for details about that.
+
+     When an Lwt function has a reference to a promise, and also registers a
+     callback that has a reference to the same promise, the invariants on the
+     reference may become invalid by the time the callback is called. All such
+     callbacks have comments explaining what the valid invariants are at that
+     point, and/or casts to (1) get the correct typing and (2) document the
+     potential state change for readers of the code. *)
+
+  (* Note:
+
+     The phantom types used in the GADT are declared as abstract types. They
+     must be declared outside the module, for OCaml's type system to know that
+     they are definitely distinct types. If they are declared inside this
+     module, OCaml sees them through an inferred signature in the rest of
+     [lwt.ml]. That signature does not guarantee that they are distinct, which
+     defeats the purpose of the GADT in pattern matching. *)
+
+
+
+  (* Callback information for pending promises. *)
 
   and 'a callbacks = {
     mutable regular_callbacks : 'a regular_callback_list;
@@ -66,7 +431,7 @@ struct
 
   and 'a completed_state = ('a, underlying, completed) state
 
-  and in_completion_loop   (* = unit. *)
+  and in_completion_loop   (* = unit, see [Completion_loop.complete]. *)
 
   and how_to_cancel =
     | Not_cancelable              :                           how_to_cancel
@@ -95,6 +460,63 @@ struct
     | Cancel_callback_list_remove_sequence_node :
       ('a, _, _) promise Lwt_sequence.node ->
         'a cancel_callback_list
+
+  (* Notes:
+
+     These type definitions are guilty of performing several optimizations,
+     without which they would be much easier to understand.
+
+     - The type parameters of ['a completed_state] guarantee that it is either
+       [Resolved _] or [Failed _]. So, it is equivalent to
+       [('a, exn) Pervasives.result], and, indeed, should have an identical
+       memory representation.
+
+     - As per the Overview, there are regular callbacks and cancel callbacks.
+       Cancel callbacks are called only on cancelation, and, then, before any
+       regular callbacks are called.
+
+       Despite the different types for the two kinds of callbacks, they are
+       otherwise the same. Cancel callbacks just don't need a result state
+       argument, because it is known to be [Failed Canceled].
+
+     - Regular callbacks are not allowed to raise exceptions. All regular
+       callbacks are created in this file, so this can be checked.
+
+       Cancel callbacks can raise exceptions, but if they do so, the exceptions
+       are passed to [async_exception_hook].
+
+     - [how_to_cancel] implements the dependency graph mentioned in the
+       Overview. It is traversed backwards during [Lwt.cancel]. It is a GADT
+       because we don't care about the actual types of the promise references
+       stored, or their invariants. The constructors correspond to pending
+       promise kinds as follows:
+         - [Not_cancelable]: initial, [Lwt.wait].
+         - [Cancel_this_promise]: initial, [Lwt.task].
+         - [Propagate_cancel_to_one]: sequential composition, e.g. [Lwt.bind].
+         - [Propagate_cancel_to_several]: concurrent composition, e.g.
+           [Lwt.join].
+
+     - The two callback list types are ordinary append-friendly lists, with two
+       optimizations inlined:
+
+       - ['a regular_callback_list] apparently has two "kinds" of regular
+         callbacks, implicitly removed and explicitly removable. All callbacks
+         are removable. It's just that, for some callbacks, they will only be
+         removed at the same time that the promise they are attached to becomes
+         completed. When that happens, the entire state of that promise changes
+         to [Resolved _] or [Failed _], and the reference to the whole callback
+         list is simply lost. This "removes" the callback. For these callbacks,
+         ['a regular_callback_list] attempts to trim an option and a reference
+         cell with the [Regular_callback_list_implicitly_removed_callback]
+         constructor.
+
+       - ['a cancel_callback_list] has
+         [Cancel_callback_list_remove_sequence_node node], which is the same as
+         [Cancel_callback_list_callback (_, (fun _ ->
+           Lwt_sequence.remove node))].
+         This was probably done to avoid a closure allocation.
+
+     - The [cleanups_deferred] field is explained in module [Callbacks]. *)
 end
 open Main_internal_types
 
@@ -117,10 +539,30 @@ struct
   let to_internal_resolver (r : 'a u) : 'a packed_promise =
     Internal (Obj.magic r)
 
+  (* Most functions that take a public promise (['a t]) convert it to an
+     internal promise as follows:
+
+       (* p : 'a t *)
+
+       let Internal p = to_internal_promise p in
+
+       (* p : ('a, u, c) promise, where u and c are fresh types, i.e. the
+          invariants on p are unknown. *)
+
+     This cast is a no-op cast. It only produces a reference with a different
+     type. The introduction and immediate elimination of [Internal _] seems to
+     be optimized away even on older versions of OCaml that don't have Flambda
+     and don't support [[@@ocaml.unboxed]]. *)
 
 
+
+  (* Internal name of the public [+'a Lwt.result]. The public name is defined
+     later in the module. This is to avoid potential confusion with
+     [Pervasives.result]/[Result.result], as the public name would not be
+     prefixed with [Lwt.] inside this file. *)
   type +'a lwt_result = ('a, exn) Result.result
 
+  (* This could probably save an allocation by using [Obj.magic]. *)
   let state_of_result = function
     | Result.Ok x -> Resolved x
     | Result.Error exn -> Failed exn
@@ -148,9 +590,15 @@ sig
     ('a, underlying, pending) promise -> 'a may_now_be_proxy
 end =
 struct
+  (* Checks physical equality ([==]) of two internal promises. Unlike [==], does
+     not force unification of their invariants. *)
   let identical p1 p2 =
     (to_public_promise p1) == (to_public_promise p2)
 
+  (* [underlying p] evaluates to the underlying promise of [p].
+
+     If multiple [Unified_with _] links are traversed, [underlying] updates all
+     the proxies to point immediately to their final underlying promise. *)
   let rec underlying
       : 'u 'c. ('a, 'u, 'c) promise -> ('a, underlying, 'c) promise =
     fun
@@ -179,6 +627,35 @@ struct
     p.state <- state;
     State_may_have_changed p
 
+  (* [set_promise_state p state] mutates the state of [p], and evaluates to a
+     (wrapped) reference to [p] with the same invariants as on [state]. The
+     original reference [p] should be shadowed when calling this function:
+
+       let State_may_have_changed p = set_promise_state p (Resolved 42) in ...
+
+     This is a kind of cheap imitation of linear typing, which is good enough
+     for the needs of [lwt.ml].
+
+     Internal functions that transitively call [set_promise_state] likewise
+     return the new reference. This ends at some top-level function, typically
+     either a callback or a function in the public API. There, the new reference
+     is still bound, but is then explicitly ignored.
+
+     The state of a promise is never updated directly outside this module
+     [Basic_helpers]. All updates elsewhere are done through
+     [set_promise_state].
+
+     To avoid problems with type-level invariants not matching reality, data
+     structures do not store promises with concrete invariants -- except
+     completed promises, which are immutable. Indeed, if one looks at
+     definitions of data structures that can store pending promises, e.g. the
+     [how_to_cancel] graph, the invariants are existentially quantified.
+
+     Note: it's possible to statically disallow the setting of the [state] field
+     by making type [promise] private. However, that seems to require writing a
+     signature that is a near-duplicate of [Main_internal_types], or some abuse
+     of functors. *)
+
 
 
   type 'a may_now_be_proxy =
@@ -187,6 +664,50 @@ struct
     [@@ocaml.unboxed]
 
   let may_now_be_proxy p = State_may_now_be_pending_proxy p
+
+  (* Many functions, for example [Lwt.bind] and [Lwt.join], create a fresh
+     pending promise [p] and return it to the user.
+
+     They do not return a corresponding resolver. That means that only the
+     function itself (typically, a callback registered by it) can resolve [p].
+     The only thing the user can do directly is try to cancel [p], but, since
+     [p] is not an initial promise, the cancelation attempt simply propagates
+     past [p] to [p]'s predecessors. If that eventually results in canceling
+     [p], it will be through the normal mechanisms of the function (e.g.
+     [Lwt.bind]'s callback).
+
+     As a result, the only possible state change, before the callback, is that
+     [p] may have been unified with another promise, i.e. it may have become a
+     proxy. Now,
+
+     - If [p] does not undergo this state change and become a proxy, it remains
+       an underlying, pending promise.
+     - If [p] does become a proxy, it will have been unified with another
+       promise [p'] created fresh by [Lwt.bind], to which this same argument
+       applies. See [unify].
+
+     So, by induction on the length of the proxy ([Unified_with _]) chain, at
+     the time the callback is called, [p] is either an underlying, pending
+     promise, or a proxy for a pending promise.
+
+     The cast
+
+       let State_may_now_be_pending_proxy p = may_now_be_proxy p in ...
+
+     encodes the possibility of this state change. It replaces a reference
+
+       p : ('a, underlying, pending)
+
+     with
+
+       p : ('a, $Unknown, pending)
+
+     and is typically seen at the beginning of callbacks registered by
+     [Lwt.bind] and similar functions.
+
+     The cast is a no-op cast. The introduction and immediate elimination of
+     [State_may_have_changed _] seems to be optimized away even on old versions
+     of OCaml. *)
 end
 open Basic_helpers
 
@@ -204,6 +725,32 @@ sig
   val current_storage : storage ref
 end =
 struct
+  (* The idea behind sequence-associated storage is to preserve some values
+     during a call to [bind] or other sequential composition operation, and
+     restore those values in the callback function:
+
+       Lwt.with_value my_key (Some "foo") (fun () ->
+       p >|= fun () ->
+       assert (Lwt.get my_key = Some "foo"))
+         (* Will succeed even if this callback is called later. *)
+
+     Note that it does not matter that the callback is defined within an
+     argument of [with_value], i.e., this does the same:
+
+       let f = fun () -> assert (Lwt.get my_key = Some "foo") in
+       Lwt.with_value my_key (Some "foo") (fun () -> p >|= f)
+
+     All that matters is that the top-most sequencing operation (in this case,
+     map) is executed by that argument.
+
+     This is implemented using a single global heterogenous key-value map.
+     Sequential composition functions snapshot this map when they are called,
+     and restore the snapshot right before calling the user's callback. The same
+     happens for cancel triggers added by [on_cancel].
+
+     Maintainer's note: I think using this mechanism should be discouraged in
+     new code. *)
+
   type 'v key = {
     id : int;
     mutable value : 'v option;
@@ -279,6 +826,8 @@ struct
     | _, _ -> Cancel_callback_list_concat (l1, l2)
     end [@ocaml.warning "-4"]
 
+  (* In a callback list, filters out cells of explicitly removable callbacks
+     that have been removed. *)
   let rec clean_up_callback_cells = function
     | Regular_callback_list_explicitly_removable_callback {contents = None} ->
       Regular_callback_list_empty
@@ -293,11 +842,33 @@ struct
       let l2 = clean_up_callback_cells l2 in
       concat_regular_callbacks l1 l2
 
+  (* See [clear_explicitly_removable_callback_cell] and [merge_callbacks]. *)
   let cleanup_throttle = 42
 
+  (* Explicitly removable callbacks are added (mainly) by [Lwt.choose] and its
+     similar functions. In [Lwt.choose [p; p']], if [p'] completes first, the
+     callback added by [Lwt.choose] to [p] is removed.
+
+     The removal itself is accomplished when this function clears the reference
+     cell [cell], which contains the reference to that callback.
+
+     If [p] is a long-pending promise that repeatedly participates in
+     [Lwt.choose], perhaps in a loop, it will accumulate a large number of
+     cleared reference cells in this fashion. To avoid a memory leak, they must
+     be cleaned up. However, the cells are not cleaned up on *every* removal,
+     presumably because scanning the callback list that often, and rebuilding
+     it, can get expensive.
+
+     Cleanup is throttled by maintaining a counter, [cleanups_deferred], on each
+     pending promise. The counter is incremented each time this function wants
+     to clean the callback list (right after after clearing a cell). When the
+     counter reaches [cleanup_throttle], the callback list is actually scanned
+     and cleared callback cells are removed. *)
   let clear_explicitly_removable_callback_cell cell ~originally_added_to:ps =
     cell := None;
 
+    (* Go through the promises the cell had originally been added to, and either
+       defer a cleanup, or actually cleanup their callback lists. *)
     ps |> List.iter (fun p ->
       let Internal p = to_internal_promise p in
       match (underlying p).state with
@@ -328,6 +899,16 @@ struct
           end else
             callbacks.cleanups_deferred <- cleanups_deferred)
 
+  (* Concatenates both kinds of callbacks on [~from] to the corresponding lists
+     of [~into]. The callback lists on [~from] are *not* then cleared, because
+     this function is called only by [Sequential_composition.unify], which
+     immediately changes the state of [~from] and loses references to the
+     original callback lists.
+
+     The [cleanups_deferred] fields of both promises are summed, and if the sum
+     exceeds [cleanup_throttle], a cleanup of regular callbacks is triggered.
+     This is to prevent memory leaks; see
+     [clear_explicitly_removable_callback_cell]. *)
   let merge_callbacks ~from ~into =
     let regular_callbacks =
       concat_regular_callbacks into.regular_callbacks from.regular_callbacks in
@@ -349,6 +930,7 @@ struct
 
 
 
+  (* General, internal, function for adding a regular callback. *)
   let add_regular_callback_list_node callbacks node =
     callbacks.regular_callbacks <-
       match callbacks.regular_callbacks with
@@ -363,6 +945,13 @@ struct
     add_regular_callback_list_node
       callbacks (Regular_callback_list_implicitly_removed_callback f)
 
+  (* Adds [callback] as removable to each promise in [ps]. The first promise in
+     [ps] to trigger [callback] removes [callback] from the other promises; this
+     guarantees that [callback] is called at most once. All the promises in [ps]
+     must be pending.
+
+     This is an internal function, indirectly used by the implementations of
+     [Lwt.choose] and related functions. *)
   let add_explicitly_removable_callback_and_give_cell ps f =
     let rec cell = ref (Some self_removing_callback_wrapper)
     and self_removing_callback_wrapper result =
@@ -383,6 +972,8 @@ struct
   let add_explicitly_removable_callback_to_each_of ps f =
     ignore (add_explicitly_removable_callback_and_give_cell ps f)
 
+  (* This is basically just to support [Lwt.protected], which needs to remove
+     the callback in circumstances other than the callback being called. *)
   let add_explicitly_removable_callback_and_give_remove_function ps f =
     let cell = add_explicitly_removable_callback_and_give_cell ps f in
     fun () ->
@@ -390,8 +981,7 @@ struct
 
   let add_cancel_callback callbacks f =
     (* Ugly cast :( *)
-    let cast_cancel_callback : (unit -> unit) -> (in_completion_loop -> unit) =
-      Obj.magic in
+    let cast_cancel_callback : (unit -> unit) -> cancel_callback = Obj.magic in
     let f = cast_cancel_callback f in
 
     let node = Cancel_callback_list_callback (!current_storage, f) in
@@ -405,7 +995,6 @@ struct
       | Cancel_callback_list_remove_sequence_node _
       | Cancel_callback_list_concat _ ->
         Cancel_callback_list_concat (node, callbacks.cancel_callbacks)
-
 end
 open Callbacks
 
@@ -441,6 +1030,41 @@ sig
   val async_exception_hook : (exn -> unit) ref
 end =
 struct
+  (* Every now and then, Lwt enters the promise completion loop. In this loop,
+     Lwt sets the state of one promise to [Resolved _] or [Failed _], i.e.
+     completes it. That triggers the running of its callbacks. The callbacks
+     might, in turn, complete more promises, triggering more callbacks, and so
+     on. The process continues until Lwt runs out of promises that it can
+     immediately complete, typically because all the remaining promises, whether
+     pre-existing or created during the loop, are blocked on I/O. So, the
+     completion loop is started by completing one promise, and then Lwt eagerly
+     completes as many more promises as it can.
+
+     The loop is triggered by calling [Lwt.wakeup_later] and related functions.
+     Lwt maintains a queue of callbacks that need to be run.
+     [Lwt.wakeup_later p _] places the callbacks of [p] onto that queue. Lwt
+     then dequeues the callbacks and runs each one. As each one runs, if it
+     completes more promises, those promises' callbacks are added to the queue
+     as well. Lwt eventually runs them, and so on.
+
+     Current Lwt is not quite as clean as suggested by the above description.
+     See [Lwt.wakeup], [Lwt.complete], [Lwt.cancel], and [Lwt.bind] for notes on
+     deviations from this idealized procedure. Basically, all the deviations
+     involve running callbacks immediately on the current stack, instead of
+     deferring them by placing them into the queue. Maintainer's note: these are
+     probably mistakes, as they create the potential for stack overflow. See
+     discussion in:
+
+       https://github.com/ocsigen/lwt/issues/329
+
+     * Context
+
+     The completion loop handles only promises that can be completed
+     immediately, without blocking on I/O. A complete program that does I/O
+     calls [Lwt_main.run]. See "No I/O" in the Overview. *)
+
+
+
   let async_exception_hook =
     ref (fun exn ->
       prerr_string "Fatal error: exception ";
@@ -451,6 +1075,10 @@ struct
       exit 2)
 
   let handle_with_async_exception_hook f v =
+    (* Note that this function does not care if [f] evaluates to a promise. In
+       particular, if [f v] evaluates to [p] and [p] is already failed or will
+       fail later, it is not the responsibility of this function to pass the
+       exception to [!async_exception_hook]. *)
     try f v
     with exn -> !async_exception_hook exn
 
@@ -460,6 +1088,14 @@ struct
 
 
 
+  (* Runs the callbacks (formerly) associated to a promise. Cancel callbacks are
+     run first, if the promise was canceled. These are followed by regular
+     callbacks.
+
+     The reason for the "formerly" is that the promise's state has already been
+     set to [Resolved _] or [Failed _], so the callbacks are no longer reachable
+     through the promise reference. This is why the direct [callbacks] record
+     must be given to this function. *)
   let run_callbacks
       in_completion_loop
       (callbacks : 'a callbacks)
@@ -531,6 +1167,26 @@ struct
 
 
 
+  (* The callbacks triggered by [complete] are run immediately on the current
+     stack. This is probably an error. If the user builds a loop that implicitly
+     works through [complete], the result can be stack overflow.
+
+     Callbacks may modify sequence-associated storage. The completion loop
+     protects storage during callbacks (see [enter_completion_loop]). As a
+     result, this function is intended to be run only while the completion loop
+     is invoked.
+
+     To help ensure this, this function requires an argument of the abstract
+     type [in_completion_loop]. The only way to obtain such a value is to pass a
+     function to [run_in_completion_loop]. Since [run_in_completion_loop] is
+     local to this module, the only way to obtain an [in_completion_loop]
+     elsewhere is through a callback that is being invoked. The
+     [in_completion_loop] eventually makes it to that callback from a
+     surrounding invocation of [run_in_completion_loop] that triggered the
+     callback.
+
+     If this function is changed to always defer callbacks, [in_completion_loop]
+     can be eliminated. *)
   let complete in_completion_loop p result =
     let Pending callbacks = p.state in
     let p = set_promise_state p result in
@@ -547,6 +1203,10 @@ struct
 
   let queued_callbacks : queued_callbacks Queue.t = Queue.create ()
 
+  (* Before entering a completion loop, it is necessary to take a snapshot of
+     the current state of sequence-associated storage. This is because many of
+     the callbacks that will be run will modify the storage. The storage is
+     restored to the snapshot when the completion loop is exited. *)
   let enter_completion_loop () =
     let storage_snapshot = !current_storage in
     let top_level_entry = not !currently_in_completion_loop in
@@ -573,7 +1233,12 @@ struct
     f in_completion_loop;
     leave_completion_loop in_completion_loop top_level_entry storage_snapshot
 
-  (* See https://github.com/ocsigen/lwt/issues/48. *)
+  (* This is basically a hack to fix https://github.com/ocsigen/lwt/issues/48.
+     If currently completing promises, it immediately exits all recursive
+     entries of the completion loop, goes to the top level, runs any deferred
+     callbacks, and exits the top-level completion loop.
+
+     The name should probably be [abaondon_completion_loop]. *)
   let abandon_wakeups () =
     if !currently_in_completion_loop then
       let in_completion_loop : in_completion_loop = Obj.magic () in
@@ -581,6 +1246,9 @@ struct
 
 
 
+  (* Note that this function deviates from the "ideal" callback deferral
+     behavior: it runs callbacks directly on the current stack. It should
+     therefore be possible to cause a stack overflow using this function. *)
   let wakeup_result r result =
     let Internal p = to_internal_resolver r in
     let p = underlying p in
@@ -639,9 +1307,23 @@ struct
     | Packed : _ callbacks -> packed_callbacks
     [@@ocaml.unboxed]
 
+  (* Note that this function deviates from the "ideal" callback deferral
+     behavior: it runs callbacks directly on the current stack. It should
+     therefore be possible to cause a stack overflow using this function. *)
   let cancel p =
     let canceled_result = Failed Canceled in
 
+    (* Walks the promise dependency graph backwards, looking for cancelable
+       initial promises, and cancels (only) them.
+
+       Found initial promises are canceled immediately, as they are found, by
+       setting their state to [Failed Canceled]. This is to prevent them from
+       being "found twice" if they are reachable by two or more distinct paths
+       through the promise dependency graph.
+
+       The callbacks of these initial promises are then run, in a separate
+       phase. These callbacks propagate cancelation forwards to any dependent
+       promises. See "Cancelation" in the Overview. *)
     let propagate_cancel : (_, _, _) promise -> packed_callbacks list =
         fun p ->
       let rec cancel_and_collect_callbacks :
@@ -804,6 +1486,7 @@ struct
     let Pending callbacks = p.state in
     callbacks.cancel_callbacks <-
       Cancel_callback_list_remove_sequence_node node;
+
     to_public_promise p
 
   let add_task_l sequence =
@@ -814,6 +1497,7 @@ struct
     let Pending callbacks = p.state in
     callbacks.cancel_callbacks <-
       Cancel_callback_list_remove_sequence_node node;
+
     to_public_promise p
 
 
@@ -830,6 +1514,19 @@ struct
       let callback in_completion_loop p_result =
         let State_may_now_be_pending_proxy p' = may_now_be_proxy p' in
         let p' = underlying p' in
+        (* In this callback, [p'] will either still itself be pending, or it
+           will have become a proxy for a pending promise. The reasoning for
+           this is almost the same as in the comment at [may_now_be_proxy]. The
+           differences are:
+
+           - [p'] *is* an initial promise, so it *can* get canceled. However, if
+             it does, the [on_cancel] handler installed below will remove this
+             callback.
+           - [p'] never gets passed to [unify], the only effect of which is that
+             it cannot be the underlying promise of another (proxy) promise. So,
+             [p'] can only appear at the head of a chain of [Unified_with _]
+             links, and it's not necessary to worry about whether the inductive
+             reasoning at [may_now_be_proxy] applies. *)
 
         let State_may_have_changed p' =
           complete in_completion_loop p' p_result in
@@ -904,6 +1601,63 @@ sig
     (exn -> exn) -> (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
 end =
 struct
+  (* There are five primary sequential composition functions: [bind], [map],
+     [catch], [finalize], and [try_bind]. Of these, [try_bind] is the most
+     general -- all the others can be implemented in terms of it.
+
+     Lwt conflates concurrency with error propagation. If Lwt did not do this,
+     there would be only two primary functions: [bind] and [map], and, of these
+     two, [bind] is the most general. Since [bind] is the most relevant
+     specifically to concurrency, and is also the most familiar function in Lwt,
+     its implementation serves as a kind of "model" for the rest. It is the most
+     commented, and all the other functions follow a similar pattern to [bind].
+
+     Four of the primary functions have [backtrace_*] versions, which are not
+     truly public, and exist to support the PPX. [backtrace_map] does not exist
+     because the PPX does not need it.
+
+     The remaining four functions in this section attach "lower-level-ish"
+     non-promise-producing callbacks to promises: these are the [on_*]
+     functions. Of these, [on_any] is the most general. If Lwt did not conflate
+     concurrency with error handling, there would only be one: [on_success]. *)
+
+
+
+  (* Makes [~user_provided_promise] into a proxy of [~outer_promise], unifying
+     them. After [unify], these two promise references "behave identically."
+
+     Note that this is not symmetric: [user_provided_promise] always becomes the
+     proxy. [unify] is called only by [bind] and similar functions in this
+     module. This means that:
+
+     - the only way for a promise to become a proxy is by being returned from
+       the callback given by the user to [bind], or a similar function, and
+     - the only way for a promise to become underlying for a promise other than
+       itself is to be the outer promise originally returned to the user from
+       [bind], or a similar function.
+
+     These two facts are important for reasoning about how and which promises
+     can become proxies, underlying, etc.; in particular, it is used in the
+     argument in [may_now_be_proxy] for correct predictions about state changes.
+
+     [~outer_promise] is always a pending promise when [unify] is called; for
+     the explanation, see [may_now_be_proxy] (though the caller of [unify]
+     always calls [underlying] first to pass the underlying pending promise to
+     [unify]).
+
+     The reasons "unification" is used, instead of adding a callback to
+     [~user_provided_promise] to complete [~outer_promise] when the former
+     becomes resolved probably are:
+
+     - Promises have more behaviors than completion. One would have to add a
+       cancelation handler to [~outer_promise] to propagate the cancelation back
+       to [~user_provided_promise], for example. It may be easier to just think
+       of them as the same promise.
+     - If using callbacks, resolving [~user_provided_promise] would not
+       immediately resolve [~outer_promise]. Another callback added to
+       [~user_provided_promise] might see [~user_provided_promise] resolved, but
+       [~outer_promise] still pending, depending on the order in which callbacks
+       are run. *)
   let unify
       (type c)
       in_completion_loop
@@ -911,10 +1665,15 @@ struct
       ~(user_provided_promise : ('a, _, c) promise)
         : ('a, underlying, c) state_changed =
 
+    (* Using [p'] as it's the name used inside [bind], etc., for promises with
+       this role -- [p'] is the promise returned by the user's function. *)
     let p' = underlying user_provided_promise in
 
     if identical p' outer_promise then
       State_may_have_changed p'
+      (* We really want to return [State_may_have_changed outer_promise], but
+         the reference through [p'] has the right type. *)
+
     else
       match p'.state with
       | Resolved _ ->
@@ -933,6 +1692,20 @@ struct
         ignore p';
 
         State_may_have_changed outer_promise
+        (* The state hasn't actually changed, but we still have to wrap
+           [outer_promise] for type checking. *)
+
+        (* The state of [p'] may instead have changed -- it may have become a
+           proxy. However, callers of [unify] don't know if
+           [user_provided_promise] was a proxy or not (that's why we call
+           underlying on it at the top of this function, to get [p']). We can
+           therefore take a dangerous shortcut and not bother returning a new
+           reference to [user_provided_promise] for shadowing. *)
+
+
+
+  (* Maintainer's note: a lot of the code below can probably be deduplicated in
+     some way, especially if assuming Flambda. *)
 
   let bind p f =
     let Internal p = to_internal_promise p in
@@ -940,18 +1713,25 @@ struct
 
     match p.state with
     | Resolved v ->
-      f v
+      f v   (* See https://github.com/ocsigen/lwt/issues/329. *)
     | Failed _ as result ->
       to_public_promise {state = result}
 
     | Pending p_callbacks ->
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
+      (* The result promise is a fresh pending promise. *)
 
       let saved_storage = !current_storage in
 
       let callback in_completion_loop p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
+        (* [p''] was an underlying promise when it was created above, but it
+           may have become a proxy by the time this callback is called. However,
+           it is still either an underlying pending promise, or a proxy for a
+           pending promise. Therefore, [may_now_be_proxy] produces a reference
+           with the right type variables. We immediately get [p'']'s current
+           underlying promise. *)
 
         match p_result with
         | Resolved v ->
@@ -959,6 +1739,7 @@ struct
 
           let p' = try f v with exn -> fail exn in
           let Internal p' = to_internal_promise p' in
+          (* Run the user's function [f]. *)
 
           let State_may_have_changed p'' =
             unify in_completion_loop
@@ -966,6 +1747,8 @@ struct
               ~user_provided_promise:p'
           in
           ignore p''
+          (* Make the outer promise [p''] behaviorally identical to the promise
+             [p'] returned by [f] -- that is, "unify" [p'] and [p'']. *)
 
         | Failed _ as p_result ->
           let State_may_have_changed p'' =
@@ -1417,6 +2200,8 @@ struct
     let number_pending_in_ps = ref 0 in
     let join_result = ref (Resolved ()) in
 
+    (* Callback attached to each promise in [ps] that is still pending at the
+       time [join] is called. *)
     let callback in_completion_loop new_result =
       let State_may_now_be_pending_proxy p' = may_now_be_proxy p' in
 
@@ -1430,8 +2215,9 @@ struct
         | Failed _ -> ()
       end;
 
+      (* In all cases, decrement the number of promises still pending, and
+         complete the [join] once all promises complete. *)
       number_pending_in_ps := !number_pending_in_ps - 1;
-
       if !number_pending_in_ps = 0 then begin
         let p' = underlying p' in
         let State_may_have_changed p' =
@@ -1440,6 +2226,9 @@ struct
       end
     in
 
+    (* Attach the above callback. Simultaneously count how many pending promises
+       there are in [ps] (initially). If that number is zero, the [join] must
+       complete immediately. *)
     let rec attach_callback_or_complete_immediately ps =
       match ps with
       | [] ->
@@ -1458,6 +2247,10 @@ struct
           attach_callback_or_complete_immediately ps
 
         | Failed _ as p_result ->
+          (* As in the callback above, but for already-completed promises in
+             [ps]: fail the [join] with the first failure found. [join] still
+             waits for any pending promises before actually completing,
+             though. *)
           begin match !join_result with
           | Resolved () -> join_result := p_result;
           | Failed _ -> ()
@@ -1472,6 +2265,11 @@ struct
 
 
 
+  (* Maintainer's note: the next few functions are helpers for [choose] and
+     [pick]. Perhaps they should be factored into some kind of generic
+     [choose]/[pick] implementation, which may actually be optimal anyway with
+     Flambda. *)
+
   let count_completed_promises_in (ps : _ t list) =
     let accumulate total p =
       let Internal p = to_internal_promise p in
@@ -1482,6 +2280,9 @@ struct
     in
     List.fold_left accumulate 0 ps
 
+  (* Evaluates to the [n]th promise in [ps], among only those promises in [ps]
+     that are completed. The caller is expected to ensure that there are at
+     least [n] completed promises in [ps]. *)
   let rec nth_completed (ps : 'a t list) (n : int) : 'a t =
     match ps with
     | [] ->
@@ -1500,6 +2301,8 @@ struct
         if n <= 0 then p
         else nth_completed ps (n - 1)
 
+  (* Like [nth_completed], but cancels all pending promises found while
+     traversing [ps]. *)
   let rec nth_completed_and_cancel_pending (ps : 'a t list) (n : int) : 'a t =
     match ps with
     | [] ->
@@ -1521,6 +2324,7 @@ struct
 
   (* The PRNG state is initialized with a constant to make non-IO-based programs
      deterministic. *)
+  (* Maintainer's note: is this necessary? *)
   let prng = lazy (Random.State.make [||])
 
   let choose ps =
@@ -1569,6 +2373,12 @@ struct
 
 
 
+  (* If [nchoose ps] or [npick ps] found all promises in [ps] pending, the
+     callback added to each promise in [ps] eventually calls this function. The
+     function collects promises in [ps] that have resolved, or finds one promise
+     in [ps] that has failed. It then completes [to_complete], the result
+     promise of [nchoose]/[npick], with the list of resolved promises, or the
+     state of the failed promise. *)
   let rec finish_nchoose_or_npick_after_pending
       in_completion_loop
       (to_complete : ('a list, underlying, pending) promise)
@@ -1596,6 +2406,8 @@ struct
           in_completion_loop to_complete results ps
 
   let nchoose ps =
+    (* If at least one promise in [ps] is found resolved, this function is
+       called to find all such promises. *)
     let rec collect_already_resolved_promises_or_fail acc ps =
       match ps with
       | [] ->
@@ -1614,6 +2426,9 @@ struct
           collect_already_resolved_promises_or_fail acc ps
     in
 
+    (* Looks for already-resolved promises in [ps]. If none are resolved or
+       failed, adds a callback to all promises in [ps] (all of which are
+       pending). *)
     let rec check_for_already_resolved_promises ps' =
       match ps' with
       | [] ->
@@ -1646,6 +2461,8 @@ struct
     let p = check_for_already_resolved_promises ps in
     p
 
+  (* See [nchoose]. This function differs only in having additional calls to
+     [cancel]. *)
   let npick ps =
     let rec collect_already_resolved_promises_or_fail acc ps' =
       match ps' with
@@ -1703,6 +2520,7 @@ struct
 
 
 
+  (* Same general pattern as [npick] and [nchoose]. *)
   let nchoose_split ps =
     let rec finish
         in_completion_loop
@@ -1733,6 +2551,8 @@ struct
     let rec collect_already_completed_promises results pending ps =
       match ps with
       | [] ->
+        (* Maintainer's note: should the pending promise list also be
+           reversed? It is reversed in finish. *)
         return (List.rev results, pending)
 
       | p::ps ->
@@ -1940,6 +2760,7 @@ module Lwt_result_type =
 struct
   type +'a result = 'a lwt_result
 
+  (* Deprecated. *)
   let make_value v = Result.Ok v
   let make_error exn = Result.Error exn
 end
