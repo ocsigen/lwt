@@ -129,7 +129,24 @@ include Public_types
 
 
 
-module Basic_helpers =
+module Basic_helpers :
+sig
+  val identical : ('a, _, _) promise -> ('a, _, _) promise -> bool
+  val underlying : ('a, 'u, 'c) promise -> ('a, underlying, 'c) promise
+
+  type ('a, 'u, 'c) state_changed =
+    | State_may_have_changed of ('a, 'u, 'c) promise
+    [@@ocaml.unboxed]
+  val set_promise_state :
+    ('a, _, _) promise -> ('a, 'u, 'c) state -> ('a, 'u, 'c) state_changed
+
+  type 'a may_now_be_proxy =
+    | State_may_now_be_pending_proxy :
+      ('a, _, pending) promise -> 'a may_now_be_proxy
+    [@@ocaml.unboxed]
+  val may_now_be_proxy :
+    ('a, underlying, pending) promise -> 'a may_now_be_proxy
+end =
 struct
   let identical p1 p2 =
     (to_public_promise p1) == (to_public_promise p2)
@@ -175,7 +192,17 @@ open Basic_helpers
 
 
 
-module Sequence_associated_storage =
+module Sequence_associated_storage :
+sig
+  (* Public interface *)
+  type 'v key
+  val new_key : unit -> _ key
+  val get : 'v key -> 'v option
+  val with_value : 'v key -> 'v option -> (unit -> 'b) -> 'b
+
+  (* Internal interface *)
+  val current_storage : storage ref
+end =
 struct
   type 'v key = {
     id : int;
@@ -225,7 +252,18 @@ include Sequence_associated_storage
 
 
 
-module Callbacks =
+module Callbacks :
+sig
+  (* Mutating callback lists attached to pending promises *)
+  val add_implicitly_removed_callback :
+    'a callbacks -> 'a regular_callback -> unit
+  val add_explicitly_removable_callback_to_each_of :
+    'a t list -> 'a regular_callback -> unit
+  val add_explicitly_removable_callback_and_give_remove_function :
+    'a t list -> 'a regular_callback -> (unit -> unit)
+  val add_cancel_callback : 'a callbacks -> (unit -> unit) -> unit
+  val merge_callbacks : from:'a callbacks -> into:'a callbacks -> unit
+end =
 struct
   let concat_regular_callbacks l1 l2 =
     begin match l1, l2 with
@@ -373,7 +411,35 @@ open Callbacks
 
 
 
-module Completion_loop =
+module Completion_loop :
+sig
+  (* Internal interface used only in this module Lwt *)
+  val complete :
+    in_completion_loop ->
+    ('a, underlying, pending) promise ->
+    'a completed_state ->
+      ('a, underlying, completed) state_changed
+
+  val handle_with_async_exception_hook : ('a -> unit) -> 'a -> unit
+
+  (* Internal interface exposed to other modules in Lwt *)
+  val abandon_wakeups : unit -> unit
+
+  (* Public interface *)
+  val wakeup_later_result : 'a u -> 'a lwt_result -> unit
+  val wakeup_later : 'a u -> 'a -> unit
+  val wakeup_later_exn : _ u -> exn -> unit
+
+  val wakeup_result : 'a u -> 'a lwt_result -> unit
+  val wakeup : 'a u -> 'a -> unit
+  val wakeup_exn : _ u -> exn -> unit
+
+  exception Canceled
+
+  val cancel : 'a t -> unit
+
+  val async_exception_hook : (exn -> unit) ref
+end =
 struct
   let async_exception_hook =
     ref (fun exn ->
@@ -619,7 +685,24 @@ include Completion_loop
 
 
 
-module Trivial_promises =
+module Trivial_promises :
+sig
+  val return : 'a -> 'a t
+  val fail : exn -> _ t
+  val of_result : 'a lwt_result -> 'a t
+
+  val return_unit : unit t
+  val return_true : bool t
+  val return_false : bool t
+  val return_none : _ option t
+  val return_some : 'a -> 'a option t
+  val return_ok : 'a -> ('a, _) Result.result t
+  val return_error : 'e -> (_, 'e) Result.result t
+  val return_nil : _ list t
+
+  val fail_with : string -> _ t
+  val fail_invalid_arg : string -> _ t
+end =
 struct
   let return v =
     to_public_promise {state = Resolved v}
@@ -649,7 +732,25 @@ include Trivial_promises
 
 
 
-module Pending_promises =
+module Pending_promises :
+sig
+  (* Internal *)
+  val new_pending :
+    how_to_cancel:how_to_cancel -> ('a, underlying, pending) promise
+  val propagate_cancel_to_several : _ t list -> how_to_cancel
+
+  (* Initial pending promises (public) *)
+  val wait : unit -> 'a t * 'a u
+  val task : unit -> 'a t * 'a u
+
+  val waiter_of_wakener : 'a u -> 'a t
+
+  val add_task_r : 'a u Lwt_sequence.t -> 'a t
+  val add_task_l : 'a u Lwt_sequence.t -> 'a t
+
+  val protected : 'a t -> 'a t
+  val no_cancel : 'a t -> 'a t
+end =
 struct
   let new_pending ~how_to_cancel =
     let state =
@@ -774,7 +875,34 @@ include Pending_promises
 
 
 
-module Sequential_composition =
+module Sequential_composition :
+sig
+  (* Main interface (public) *)
+  val bind : 'a t -> ('a -> 'b t) -> 'b t
+  val map : ('a -> 'b) -> 'a t -> 'b t
+  val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
+  val finalize : (unit -> 'a t) -> (unit -> unit t) -> 'a t
+  val try_bind : (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
+
+  (* Cancel callbacks (public). *)
+  val on_cancel : 'a t -> (unit -> unit) -> unit
+
+  (* Non-promise callbacks (public) *)
+  val on_success : 'a t -> ('a -> unit) -> unit
+  val on_failure : _ t -> (exn -> unit) -> unit
+  val on_termination : _ t -> (unit -> unit) -> unit
+  val on_any : 'a t -> ('a -> unit) -> (exn -> unit) -> unit
+
+  (* Backtrace support (internal; for use by the PPX) *)
+  val backtrace_bind :
+    (exn -> exn) -> 'a t -> ('a -> 'b t) -> 'b t
+  val backtrace_catch :
+    (exn -> exn) -> (unit -> 'a t) -> (exn -> 'a t) -> 'a t
+  val backtrace_finalize :
+    (exn -> exn) -> (unit -> 'a t) -> (unit -> unit t) -> 'a t
+  val backtrace_try_bind :
+    (exn -> exn) -> (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
+end =
 struct
   let unify
       (type c)
@@ -1226,7 +1354,21 @@ include Sequential_composition
 
 
 
-module Concurrent_composition =
+module Concurrent_composition :
+sig
+  val async : (unit -> _ t) -> unit
+  val ignore_result : _ t -> unit
+
+  val join : unit t list -> unit t
+
+  val choose : 'a t list -> 'a t
+  val pick : 'a t list -> 'a t
+
+  val nchoose : 'a t list -> 'a list t
+  val npick : 'a t list -> 'a list t
+
+  val nchoose_split : 'a t list -> ('a list * 'a t list) t
+end =
 struct
   let async f =
     let p = try f () with exn -> fail exn in
@@ -1641,7 +1783,54 @@ include Concurrent_composition
 
 
 
-module Miscellaneous =
+module Miscellaneous :
+sig
+  (* Promise state query *)
+  type 'a state =
+    | Return of 'a
+    | Fail of exn
+    | Sleep
+
+  val state : 'a t -> 'a state
+  val is_sleeping : 'a t -> bool
+
+  (* Function lifters *)
+  val apply : ('a -> 'b t) -> 'a -> 'b t
+
+  val wrap :
+    (unit -> 'b) ->
+    'b t
+  val wrap1 :
+    ('a1 -> 'b) ->
+    ('a1 -> 'b t)
+  val wrap2 :
+    ('a1 -> 'a2 -> 'b) ->
+    ('a1 -> 'a2 -> 'b t)
+  val wrap3 :
+    ('a1 -> 'a2 -> 'a3 -> 'b) ->
+    ('a1 -> 'a2 -> 'a3 -> 'b t)
+  val wrap4 :
+    ('a1 -> 'a2 -> 'a3 -> 'a4 -> 'b) ->
+    ('a1 -> 'a2 -> 'a3 -> 'a4 -> 'b t)
+  val wrap5 :
+    ('a1 -> 'a2 -> 'a3 -> 'a4 -> 'a5 -> 'b) ->
+    ('a1 -> 'a2 -> 'a3 -> 'a4 -> 'a5 -> 'b t)
+  val wrap6 :
+    ('a1 -> 'a2 -> 'a3 -> 'a4 -> 'a5 -> 'a6 -> 'b) ->
+    ('a1 -> 'a2 -> 'a3 -> 'a4 -> 'a5 -> 'a6 -> 'b t)
+  val wrap7 :
+    ('a1 -> 'a2 -> 'a3 -> 'a4 -> 'a5 -> 'a6 -> 'a7 -> 'b) ->
+    ('a1 -> 'a2 -> 'a3 -> 'a4 -> 'a5 -> 'a6 -> 'a7 -> 'b t)
+
+  (* Paused promises *)
+  val pause : unit -> unit t
+  val wakeup_paused : unit -> unit
+  val paused_count : unit -> int
+  val register_pause_notifier : (int -> unit) -> unit
+
+  (* Internal interface for other modules in Lwt *)
+  val poll : 'a t -> 'a option
+end =
 struct
   type 'a state =
     | Return of 'a
