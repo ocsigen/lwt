@@ -54,9 +54,11 @@ struct
     mutable cleanups_deferred : int;
   }
 
-  and 'a regular_callback = in_completion_loop -> ('a, underlying, completed) state -> unit
+  and 'a regular_callback = in_completion_loop -> 'a completed_state -> unit
 
   and cancel_callback = in_completion_loop -> unit
+
+  and 'a completed_state = ('a, underlying, completed) state
 
   and in_completion_loop   (* = unit. *)
 
@@ -435,7 +437,7 @@ struct
   let currently_in_completion_loop = ref false
 
   type queued_callbacks =
-    Queued : ('a callbacks * ('a, underlying, completed) state) -> queued_callbacks
+    Queued : ('a callbacks * 'a completed_state) -> queued_callbacks
     [@@ocaml.unboxed]
 
   let queued_callbacks : queued_callbacks Queue.t = Queue.create ()
