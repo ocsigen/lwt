@@ -266,6 +266,25 @@ struct
            | Failed _ -> ())
       ps
 
+  let merge_callbacks ~from ~into =
+    let regular_callbacks =
+      concat_regular_callbacks into.regular_callbacks from.regular_callbacks in
+    let cleanups_deferred = into.cleanups_deferred + from.cleanups_deferred in
+
+    let regular_callbacks, cleanups_deferred =
+      if cleanups_deferred > cleanup_throttle then
+        clean_up_callback_cells regular_callbacks, 0
+      else
+        regular_callbacks, cleanups_deferred
+    in
+
+    let cancel_callbacks =
+      concat_cancel_callbacks into.cancel_callbacks from.cancel_callbacks in
+
+    into.regular_callbacks <- regular_callbacks;
+    into.cancel_callbacks <- cancel_callbacks;
+    into.cleanups_deferred <- cleanups_deferred
+
   let add_regular_callback_list_node callbacks node =
     callbacks.regular_callbacks <- (match callbacks.regular_callbacks with
                           | Regular_callback_list_empty -> node
@@ -685,27 +704,14 @@ struct
           else begin
             match t2.state with
               | Pending callbacks2 ->
+        let Pending callbacks1 = t1.state in
+
+        merge_callbacks ~from:callbacks2 ~into:callbacks1;
+        callbacks1.how_to_cancel <- callbacks2.how_to_cancel;
+
         let State_may_have_changed t2 =
           set_promise_state t2 (Unified_with t1) in
         ignore t2;
-
-                  let Pending callbacks1 = t1.state in
-
-                  callbacks1.how_to_cancel <- callbacks2.how_to_cancel;
-
-                  let waiters =
-                    concat_regular_callbacks callbacks1.regular_callbacks callbacks2.regular_callbacks
-                  and removed =
-                    callbacks1.cleanups_deferred + callbacks2.cleanups_deferred in
-                  if removed > cleanup_throttle then begin
-                    callbacks1.cleanups_deferred <- 0;
-                    callbacks1.regular_callbacks <- clean_up_callback_cells waiters
-                  end else begin
-                    callbacks1.cleanups_deferred <- removed;
-                    callbacks1.regular_callbacks <- waiters
-                  end;
-                  callbacks1.cancel_callbacks <-
-                    concat_cancel_callbacks callbacks1.cancel_callbacks callbacks2.cancel_callbacks;
 
         State_may_have_changed t1
 
