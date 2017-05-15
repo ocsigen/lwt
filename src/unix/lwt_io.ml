@@ -1399,9 +1399,7 @@ let open_connection ?fd ?in_buffer ?out_buffer sockaddr =
       Lwt_unix.close fd >>= fun () ->
       Lwt.fail exn)
 
-let with_connection ?fd ?in_buffer ?out_buffer sockaddr f =
-  open_connection ?fd ?in_buffer ?out_buffer sockaddr >>= fun (ic, oc) ->
-
+let with_close_connection f (ic, oc) =
   (* If the user already tried to close the socket and got an exception, we
      don't want to raise that exception again during implicit close. *)
   let close_if_not_closed channel =
@@ -1410,6 +1408,10 @@ let with_connection ?fd ?in_buffer ?out_buffer sockaddr f =
   Lwt.finalize
     (fun () -> f (ic, oc))
     (fun () -> close_if_not_closed ic <&> close_if_not_closed oc)
+
+let with_connection ?fd ?in_buffer ?out_buffer sockaddr f =
+  open_connection ?fd ?in_buffer ?out_buffer sockaddr >>= fun channels ->
+  with_close_connection f channels
 
 type server = {
   shutdown : unit Lwt.t Lazy.t;

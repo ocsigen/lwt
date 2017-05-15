@@ -416,4 +416,36 @@ let suite = suite "lwt_io" [
       Lwt.wakeup resume_server ();
       Lwt_io.shutdown_server server >|= fun () ->
       !exceptions_observed = 2);
+
+  (* Makes the channel fail with EBADF on close. Tries to close the channel
+     manually, and handles the exception. When with_close_connection tries to
+     close the socket again implicitly, that should not raise the exception
+     again. *)
+  test "with_close_connection: no duplicate exceptions"
+    ( fun () ->
+        let exceptions_observed = ref 0 in
+
+        let expecting_ebadf f =
+          Lwt.catch f (function
+              | Unix.Unix_error (Unix.EBADF, _, _) ->
+                exceptions_observed := !exceptions_observed + 1;
+                Lwt.return_unit
+              | exn -> Lwt.fail exn) [@ocaml.warning "-4"]
+        in
+
+        let fd_r, fd_w = Lwt_unix.pipe () in
+        let in_channel = Lwt_io.of_fd ~mode:Lwt_io.input fd_r in
+        let out_channel = Lwt_io.of_fd ~mode:Lwt_io.output fd_w in
+
+        Unix.close (Lwt_unix.unix_file_descr fd_r);
+        Unix.close (Lwt_unix.unix_file_descr fd_w);
+
+        expecting_ebadf (fun () ->
+            Lwt_io.with_close_connection (fun _ ->
+                expecting_ebadf (fun () -> Lwt_io.close in_channel) >>= fun () ->
+                expecting_ebadf (fun () -> Lwt_io.close out_channel)
+              ) (in_channel, out_channel)
+          ) >|= fun () ->
+        !exceptions_observed = 2
+    );
 ]
