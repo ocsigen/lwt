@@ -410,6 +410,21 @@ val with_connection :
       connection to the given address and passes the channels to
       [f] *)
 
+(**/**)
+
+(** This function is not public API and can be changed or removed without
+    notice. It is exposed in order to test [with_connection].
+
+    [with_close_connection f (ic, oc)] calls [f (ic, oc)] and makes sure that
+    [ic] and [oc] are closed, whether [f] returns or fails with an exception.
+    Does not fail if [ic] or [oc] is already closed. *)
+val with_close_connection :
+  (input_channel * output_channel -> 'a Lwt.t) ->
+  input_channel * output_channel ->
+  'a Lwt.t
+
+(**/**)
+
 type server
   (** Type of a server *)
 
