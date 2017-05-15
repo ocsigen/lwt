@@ -60,53 +60,6 @@ struct
     client_finished >>= fun () ->
     Lwt_io.shutdown_server server
 
-  (* Dirty hack for forcing [Lwt_io.close] to fail, to test response to [close]
-     exceptions. Impolitely closes the [n]th last file descriptor allocated by
-     the system, without going through [Lwt_io].
-
-     This assumes that the system allocates contiguously-increasing file
-     descriptors whenever possible, and can only be "correctly" done due to
-     exact control of file descriptors during testing.
-
-     The reasons for writing this are as follows:
-     - [EBADF] is the only error we can reliably produce on [close].
-     - This requires a closed file descriptor.
-     - If we go through [Lwt_io] to close twice, it will not run the second
-       [close] operation, but simply return the result of the first.
-     - The [Lwt_io] interface does not allow retrieving a file descriptor from a
-       channel.
-     - Indeed, channels are not, in general, associated with file descriptors,
-       and the file descriptors for channels that are, are floating in closures.
-       So, there is no internal state that can be easily exposed to get the file
-       descriptor, even when there is one.
-
-     This may not work on some systems, so the corresponding tests will have to
-     be disabled. *)
-  let close_last_fd n =
-    let guess_fd () =
-      (* Using a pipe because it is easy and has no file system consequences. *)
-      let fd1, fd2 = Unix.pipe () in
-      Unix.close fd1;
-      Unix.close fd2;
-
-      (* Make it possible to do arithmetic on file descriptors. Dreams can come
-         true! *)
-      let
-        module Pierce_abstraction =
-        struct
-          external pierce_fd : Unix.file_descr -> int = "%identity"
-          external hide_fd : int -> Unix.file_descr = "%identity"
-        end
-      in
-
-      let fd1, fd2 = Pierce_abstraction.(pierce_fd fd1, pierce_fd fd2) in
-      let lowest = min fd1 fd2 in
-      let fd = lowest - n in
-      Pierce_abstraction.hide_fd fd
-    in
-
-    Unix.close (guess_fd ())
-
   (* Hacky is_closed functions that attempt to read from/write to the channels
      to see if they are closed. *)
   let is_closed_in channel =
@@ -301,65 +254,6 @@ let suite = suite "lwt_io" [
       run >|= fun () ->
       !closed_explicitly);
 
-  (* Screws up the open sockets so that shutdown or close results in EBADF.
-     Then, closes the channels and observes the expected exceptions. Then,
-     allows the implicit closing code to run. If this code tries to close the
-     sockets again, the exception will go to Lwt.async_exception_hook and kill
-     the tester. The correct behavior is for implicit close to do nothing if the
-     user already tried to close the sockets. *)
-  test "establish_server: no duplicate exceptions"
-    ~only_if:(fun () -> not Sys.win32)
-    (fun () ->
-      let open Establish_server in
-
-      let exceptions_observed = ref 0 in
-      let expecting_ebadf f =
-        Lwt.catch f (function
-          | Unix.Unix_error (Unix.EBADF, _, _) ->
-            exceptions_observed := !exceptions_observed + 1;
-            Lwt.return_unit
-          | exn -> Lwt.fail exn) [@ocaml.warning "-4"]
-      in
-
-      let run =
-        Establish_server.with_client
-          (fun (in_channel, out_channel) ->
-            close_last_fd 1;
-            expecting_ebadf (fun () -> Lwt_io.close in_channel) >>= fun () ->
-            expecting_ebadf (fun () -> Lwt_io.close out_channel))
-      in
-
-      run >|= fun () ->
-      !exceptions_observed = 2);
-
-  (* Screws up the open sockets so closing them fails with EBADF. Then, raises
-     an exception from the handler. Checks that the handler exception arrives
-     at Lwt.async_exception_hook before the exceptions from implicit close. *)
-  test "establish_server: order of exceptions"
-    ~only_if:(fun () -> not Sys.win32)
-    (fun () ->
-      let open Establish_server in
-
-      let exceptions_observed = ref 0 in
-      let correct_exceptions = ref true in
-      let see_exception exn =
-        exceptions_observed := !exceptions_observed + 1;
-        (match !exceptions_observed, exn with
-        | 1, Exit
-        | (2 | 3), Unix.Unix_error (Unix.EBADF, _, _) -> ()
-        | _ -> correct_exceptions := false) [@ocaml.warning "-4"]
-      in
-
-      let run () =
-        Establish_server.with_client
-          (fun (_in_channel, _out_channel) ->
-            close_last_fd 1;
-            raise Exit)
-      in
-
-      with_async_exception_hook see_exception run >|= fun () ->
-      !exceptions_observed = 3 && !correct_exceptions);
-
   test "with_connection"
     (fun () ->
       let open Establish_server in
@@ -380,42 +274,6 @@ let suite = suite "lwt_io" [
       is_closed_in !in_channel' >>= fun in_closed ->
       is_closed_out !out_channel' >|= fun out_closed ->
       in_closed && out_closed);
-
-  (* Makes the socket fail with EBADF on close. Tries to close the socket
-     manually, and handles the exception. When with_connection tries to close
-     the socket again implicitly, that should not raise the exception again. *)
-  test "with_connection: no duplicate exceptions"
-    ~only_if:(fun () -> not Sys.win32)
-    (fun () ->
-      let open Establish_server in
-
-      let exceptions_observed = ref 0 in
-      let expecting_ebadf f =
-        Lwt.catch f (function
-          | Unix.Unix_error (Unix.EBADF, _, _) ->
-            exceptions_observed := !exceptions_observed + 1;
-            Lwt.return_unit
-          | exn -> Lwt.fail exn) [@ocaml.warning "-4"]
-      in
-
-      let handler_started, notify_handler_started = Lwt.wait () in
-      let finish_server, resume_server = Lwt.wait () in
-      Lwt_io.establish_server local
-        (fun _ ->
-          Lwt.wakeup notify_handler_started ();
-          finish_server) >>= fun server ->
-
-      expecting_ebadf (fun () ->
-        Lwt_io.with_connection local (fun (in_channel, out_channel) ->
-          handler_started >>= fun () ->
-          close_last_fd 2;
-          expecting_ebadf (fun () -> Lwt_io.close in_channel) >>= fun () ->
-          expecting_ebadf (fun () -> Lwt_io.close out_channel)))
-
-      >>= fun () ->
-      Lwt.wakeup resume_server ();
-      Lwt_io.shutdown_server server >|= fun () ->
-      !exceptions_observed = 2);
 
   (* Makes the channel fail with EBADF on close. Tries to close the channel
      manually, and handles the exception. When with_close_connection tries to
