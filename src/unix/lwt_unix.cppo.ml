@@ -303,16 +303,16 @@ let is_blocking ?blocking ?(set_flags=true) fd =
         | Some state, false ->
             lazy(Lwt.return state)
         | Some true, true ->
-            Unix.clear_nonblock fd;
-            lazy(Lwt.return_true)
+            lazy(Unix.clear_nonblock fd;
+                 Lwt.return_true)
         | Some false, true ->
-            Unix.set_nonblock fd;
-            lazy(Lwt.return_false)
+            lazy(Unix.set_nonblock fd;
+                 Lwt.return_false)
         | None, false ->
             lazy(Lwt.return_false)
         | None, true ->
-            Unix.set_nonblock fd;
-            lazy(Lwt.return_false)
+            lazy(Unix.set_nonblock fd;
+                 Lwt.return_false)
     else
       match blocking with
         | Some state ->
@@ -324,11 +324,11 @@ let is_blocking ?blocking ?(set_flags=true) fd =
       | Some state, false ->
           lazy(Lwt.return state)
       | Some true, true ->
-          Unix.clear_nonblock fd;
-          lazy(Lwt.return_true)
+          lazy(Unix.clear_nonblock fd;
+               Lwt.return_true)
       | Some false, true ->
-          Unix.set_nonblock fd;
-          lazy(Lwt.return_false)
+          lazy(Unix.set_nonblock fd;
+               Lwt.return_false)
       | None, false ->
           lazy(guess_blocking fd)
       | None, true ->
