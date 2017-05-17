@@ -10,6 +10,7 @@ let split =
 
 (* Runs pkg-config with the given arguments. *)
 let pkg_config arguments =
+  (* Run the pkg-config command. *)
   let command = Printf.sprintf "pkg-config %s" arguments in
   let input_channel = Unix.open_process_in command in
   let result =
@@ -17,8 +18,30 @@ let pkg_config arguments =
     with End_of_file -> ""
   in
   let status = Unix.close_process_in input_channel in
+
   match status with
-  | Unix.WEXITED 0 -> split result
+  | Unix.WEXITED 0 ->
+    (* On success, split the output of pkg-config result (arguments for the
+       compiler) into tokens. *)
+    let result = split result in
+
+    (* Then, look for any -Wl,-framework tokens. Replace them with -framework
+       tokens, and remove the prefix "-Wl," from the next token. This is
+       necessary because pkg-config emits options for the compiler to pass to
+       the linker, so they are prefixed with "-Wl,". However, ocamlmktop
+       expects the -framework options unprefixed. *)
+    let rec unprefix_framework_arguments acc = function
+      | [] -> List.rev acc
+      | "-Wl,-framework"::framework::rest ->
+        let framework = String.sub framework 4 (String.length framework - 4) in
+        unprefix_framework_arguments (framework::"-framework"::acc) rest
+      | argument::rest ->
+        unprefix_framework_arguments (argument::acc) rest
+    in
+    let result = unprefix_framework_arguments [] result in
+
+    result
+
   | _ ->
     Printf.eprintf "Command failed: %s" command;
     exit 1
