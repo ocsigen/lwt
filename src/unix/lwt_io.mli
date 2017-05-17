@@ -273,7 +273,18 @@ val read_into_exactly : input_channel -> bytes -> int -> int -> unit Lwt.t
       @raise End_of_file on end of input *)
 
 val read_value : input_channel -> 'a Lwt.t
-  (** [read_value ic] reads a marshaled value from [ic] *)
+(** [read_value channel] reads a marshaled value from [channel]; it corresponds
+    to the standard library's
+    {{:https://caml.inria.fr/pub/docs/manual-ocaml/libref/Marshal.html#VALfrom_channel} [Marshal.from_channel]}.
+    The corresponding writing function is {!write_value}.
+
+    Note that reading marshaled values is {e not}, in general, type-safe. See
+    the warning in the description of module
+    {{:https://caml.inria.fr/pub/docs/manual-ocaml/libref/Marshal.html}
+    [Marshal]} for details. The short version is: if you read a value of one
+    type, such as [string], when a value of another type, such as [int] has
+    actually been marshaled to [channel], you may get arbitrary behavior,
+    including segmentation faults, access violations, security bugs, etc. *)
 
 (** {2 Writing} *)
 
@@ -317,7 +328,13 @@ val write_from_string_exactly : output_channel -> string -> int -> int -> unit L
   (** See {!write_from_exactly}. *)
 
 val write_value : output_channel -> ?flags : Marshal.extern_flags list -> 'a -> unit Lwt.t
-  (** [write_value oc ?flags x] marshals the value [x] to [oc] *)
+(** [write_value channel ?flags v] writes [v] to [channel] using the [Marshal]
+    module of the standard library. See
+    {{:https://caml.inria.fr/pub/docs/manual-ocaml/libref/Marshal.html#VALto_channel}
+    [Marshal.to_channel]} for an explanation of [?flags].
+
+    The corresponding reading function is {!read_value}. See warnings about type
+    safety in the description of {!read_value}. *)
 
 (** {2 Printing} *)
 
