@@ -288,9 +288,10 @@ Library "ppx"
   FindlibName: ppx
   FindlibParent: lwt
   Path: src/ppx
-  Modules: Ppx_lwt
+  Modules: Ppx_lwt_int, Ppx_lwt
+  BuildDepends: compiler-libs.common, ppx_tools_versioned, ppx_tools_versioned.metaquot_404, ocaml-migrate-parsetree
   XMETADescription: Lwt PPX syntax extension
-  XMETARequires:    lwt
+  XMETARequires:    lwt, ppx_tools_versioned, ocaml-migrate-parsetree
   XMETAExtraLines:  ppx = "ppx_lwt"
 
 Executable "ppx_lwt"
@@ -298,7 +299,7 @@ Executable "ppx_lwt"
   Install$: flag(ppx) || flag(all)
   Path: src/ppx
   MainIs: ppx_lwt_ex.ml
-  BuildDepends: compiler-libs.common, ppx_tools.metaquot
+  BuildDepends: compiler-libs.common, ppx_tools_versioned, ppx_tools_versioned.metaquot_404, ocaml-migrate-parsetree
   CompiledObject: best
 
 # +-------------------------------------------------------------------+

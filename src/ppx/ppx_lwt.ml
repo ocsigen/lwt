@@ -1,1 +1,2 @@
-(* Dummy ML file to workaround https://github.com/ocsigen/lwt/issues/91 *)
+
+let () = Ppx_lwt_int.register ()

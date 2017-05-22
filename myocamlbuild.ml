@@ -117,6 +117,9 @@ let () = dispatch begin fun hook ->
     flag ["ocaml"; "compile"; "ppx_lwt"] &
       S [A "-ppx"; A ("src/ppx/ppx_lwt_ex." ^ native_suffix)];
 
+    (*tag_file "src/ppx/ppx.cmxa" ["linkme"];
+    flag ["linkme"] & S[A"-linkall"];*)
+
     (* Use an introduction page with categories *)
     tag_file "lwt-api.docdir/index.html" ["apiref"];
     dep ["apiref"] ["doc/apiref-intro"];
