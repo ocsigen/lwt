@@ -29,5 +29,7 @@ not <src/ssl/*>: safe_string
 # Scratch directory
 "scratch": -traverse
 
+<src/ppx/*>: linkall
+
 # OASIS_START
 # OASIS_STOP

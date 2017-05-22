@@ -143,6 +143,19 @@ let () = dispatch begin fun hook ->
 
     conditional_warnings_as_errors ();
 
+    rule "Generate a cmxs from a cmxa"
+      ~dep:"%.cmxa"
+      ~prod:"%.cmxs"
+      ~insert:`top
+      (fun env _ ->
+         Cmd (S [ !Options.ocamlopt
+                ; A "-shared"
+                ; A "-linkall"
+                ; A "-I"; A (Pathname.dirname (env "%"))
+                ; A (env "%.cmxa")
+                ; A "-o"
+                ; A (env "%.cmxs")
+                ]))
   | _ ->
     ()
   end
