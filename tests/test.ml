@@ -99,10 +99,10 @@ let temp_name =
   let rng = Random.State.make_self_init () in
   fun () ->
     let number = Random.State.int rng 10000 in
-    Printf.sprintf "_build/lwt-testing-%04d" number
+    Printf.sprintf (*"_build/"*)"lwt-testing-%04d" number
 
 let temp_file () =
-  Filename.temp_file ~temp_dir:"_build" "lwt-testing-" ""
+  Filename.temp_file (*~temp_dir:"_build"*) "lwt-testing-" ""
 
 let temp_directory () =
   let rec attempt () =

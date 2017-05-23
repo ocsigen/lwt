@@ -1,4 +1,8 @@
-PKG ppx_tools
-PKG ppx_tools.metaquot
-
-REC
+B ../../_build/default/src/ppx
+FLG -open Ppx_js -w -40
+FLG -ppx "../../_build/default/.ppx/ppx_tools_versioned.metaquot_404/ppx.exe --as-ppx --cookie 'library-name="ppx_js"'"
+PKG compiler-libs
+PKG compiler-libs.common
+PKG ocaml-migrate-parsetree
+PKG ppx_tools_versioned
+S .

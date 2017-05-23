@@ -1,0 +1,8 @@
+(jbuild_version 1)
+
+(library 
+ ((name lwt_react)
+  (public_name lwt.react)
+  (wrapped false)
+  (libraries (lwt react))))
+

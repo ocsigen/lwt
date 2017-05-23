@@ -1,0 +1,8 @@
+(jbuild_version 1)
+
+(library 
+ ((name lwt_simple_top)
+  (public_name lwt.simple-top)
+  (wrapped false)
+  (libraries (lwt lwt.unix compiler-libs.common))))
+

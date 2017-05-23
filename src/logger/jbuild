@@ -1,0 +1,9 @@
+(jbuild_version 1)
+
+(ocamllex (lwt_log_rules))
+
+(library
+ ((name lwt_log)
+  (public_name "lwt.log")
+  (wrapped false)
+  (libraries (lwt))))

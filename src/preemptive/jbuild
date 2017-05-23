@@ -1,0 +1,8 @@
+(jbuild_version 1)
+
+(library 
+ ((name lwt_preemptive)
+  (public_name lwt.preemptive)
+  (wrapped false)
+  (libraries (lwt lwt.unix threads))))
+

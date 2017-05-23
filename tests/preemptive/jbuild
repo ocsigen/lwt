@@ -1,0 +1,11 @@
+(jbuild_version 1)
+
+(executable 
+ ((name main)
+  (libraries (lwt.preemptive lwttester))))
+
+(alias
+ ((name runtest)
+  (action (run ${exe:main.exe}))))
+
+

@@ -1,0 +1,7 @@
+(jbuild_version 1)
+
+(library 
+ ((name lwt)
+  (public_name lwt)
+  (wrapped false)
+  (libraries (bytes result))))

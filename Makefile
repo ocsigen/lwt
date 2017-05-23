@@ -29,8 +29,8 @@ setup.exe: setup.ml
 
 setup: $(SETUP)
 
-build: $(SETUP) setup.data
-	./$(SETUP) -build $(BUILDFLAGS)
+build: 
+	jbuilder build @install
 
 doc: $(SETUP) setup.data build
 	./$(SETUP) -doc $(DOCFLAGS)
@@ -38,8 +38,8 @@ doc: $(SETUP) setup.data build
 doc-api: $(SETUP) setup.data build
 	./$(SETUP) -build lwt-api.docdir/index.html
 
-test: $(SETUP) setup.data build clean-coverage
-	./$(SETUP) -test $(TESTFLAGS)
+test: 
+	jbuilder runtest
 
 all: $(SETUP)
 	./$(SETUP) -all $(ALLFLAGS)

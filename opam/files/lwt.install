@@ -1,6 +1,0 @@
-lib: "opam/opam" { "opam" }
-doc: [
-  "README.md"
-  "CHANGES"
-  "doc/COPYING" { "LICENSE" }
-]

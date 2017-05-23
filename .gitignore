@@ -15,3 +15,7 @@ _coverage/
 
 # For local work, tests, etc.
 scratch/
+
+.merlin
+*.install
+
