@@ -1,7 +1,6 @@
 (******************************************************************************)
-(* Lightweight thread library for OCaml
+(* OCaml promise library
  * http://www.ocsigen.org/lwt
- * Interface Lwt_condition
  ******************************************************************************
  * Copyright (c) 2009, Metaweb Technologies, Inc.
  * All rights reserved.
