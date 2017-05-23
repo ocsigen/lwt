@@ -1,6 +1,5 @@
-(* Lightweight thread library for OCaml
+(* OCaml promise library
  * http://www.ocsigen.org/lwt
- * Module Ppx_lwt
  * Copyright (C) 2014 Gabriel Radanne, Peter Zotov.
  *
  * This program is free software; you can redistribute it and/or modify

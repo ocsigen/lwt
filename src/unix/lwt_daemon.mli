@@ -1,6 +1,5 @@
-(* Lightweight thread library for OCaml
+(* OCaml promise library
  * http://www.ocsigen.org/lwt
- * Interface Lwt_io
  * Copyright (C) 2009 Jérémie Dimino
  *
  * This program is free software; you can redistribute it and/or modify

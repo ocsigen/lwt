@@ -1,6 +1,5 @@
-(* Lightweight thread library for OCaml
+(* OCaml promise library
  * http://www.ocsigen.org/lwt
- * Interface Lwt_chan
  * Copyright (C) 2005-2008 Jérôme Vouillon
  * Laboratoire PPS - CNRS Université Paris Diderot
  *
@@ -21,7 +20,6 @@
  * 02111-1307, USA.
  *)
 
-(** Module [Lwt_chan]: cooperative, [Pervasives]-like, I/O functions *)
 
 (** Note: the {!Lwt_io} module deprecates this module. *)
 

@@ -1,6 +1,5 @@
-(* Lightweight thread library for OCaml
+(* OCaml promise library
  * http://www.ocsigen.org/lwt
- * Module Lwt_ssl
  * Copyright (C) 2005-2008 Jérôme Vouillon
  * Laboratoire PPS - CNRS Université Paris Diderot
  *
