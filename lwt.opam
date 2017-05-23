@@ -17,7 +17,6 @@ license: "LGPL with OpenSSL linking exception"
 dev-repo: "https://github.com/ocsigen/lwt.git"
 build: [ [ "jbuilder" "build" "-p" name "-j" jobs ] ]
 depends: [
-  "ocamlfind" {build & >= "1.5.0"}
   "jbuilder" { build & >= "1.0+beta9" }
   "lwt-core"
   "lwt-log"

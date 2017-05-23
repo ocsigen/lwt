@@ -25,14 +25,14 @@ package "simple-top" (
 )
 
 package "syntax" (
-  requires = "camlp4 lwt-syntax lwt.syntax.options"
+  requires = "camlp4 lwt-camlp4 lwt.syntax.options"
 
   package "options" (
-    requires = "lwt-syntax.options"
+    requires = "lwt-camlp4.options"
   )
 
   package "log" (
-    requires = "lwt-syntax.log"
+    requires = "lwt-camlp4.log"
   )
 )
 

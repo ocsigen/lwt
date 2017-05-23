@@ -16,14 +16,14 @@ bug-reports: "https://github.com/ocsigen/lwt/issues"
 license: "LGPL with OpenSSL linking exception"
 dev-repo: "https://github.com/ocsigen/lwt.git"
 build: [ [ "jbuilder" "build" "-p" name "-j" jobs ] ]
-build-test: [ [ "jbuilder" "runtest" ] ]
+build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
 depends: [
-  "ocamlfind" {build & >= "1.5.0"}
   "jbuilder" { build & >= "1.0+beta9" }
   "cppo" { build }
   "base-unix"
   "lwt-core"
   "lwt-log"
-  ("base-threads" | "conf-libev")  # is this really for lwt-unix or lwt-preemptive
 ]
-
+depopts: [
+  "conf-libev"
+]
