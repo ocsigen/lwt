@@ -1,4 +1,4 @@
-(* Lightweight thread library for OCaml
+(* OCaml promise library
  * http://www.ocsigen.org/lwt
  * Program Connect
  * Copyright (C) 2011 Jérémie Dimino
