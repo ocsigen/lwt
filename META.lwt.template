@@ -25,7 +25,7 @@ package "simple-top" (
 )
 
 package "syntax" (
-  requires = "camlp4 lwt-camlp4 lwt.syntax.options"
+  requires = "camlp4 lwt-camlp4 lwt.camlp4.options"
 
   package "options" (
     requires = "lwt-camlp4.options"
