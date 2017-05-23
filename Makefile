@@ -30,10 +30,16 @@ setup.exe: setup.ml
 setup: $(SETUP)
 
 build: 
-	jbuilder build @install
+	jbuilder build \
+		lwt-core.install \
+		lwt-log.install \
+		lwt-unix.install \
+		lwt-preemptive.install \
+		lwt-simple-top.install \
+		lwt-ppx.install 
 
-doc: $(SETUP) setup.data build
-	./$(SETUP) -doc $(DOCFLAGS)
+build-a: 
+	jbuilder build @install
 
 doc-api: $(SETUP) setup.data build
 	./$(SETUP) -build lwt-api.docdir/index.html

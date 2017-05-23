@@ -20,6 +20,7 @@ build-test: [ [ "jbuilder" "runtest" ] ]
 depends: [
   "ocamlfind" {build & >= "1.5.0"}
   "jbuilder" { build & >= "1.0+beta9" }
+  "cppo" { build }
   "base-unix"
   "lwt-core"
   "lwt-log"

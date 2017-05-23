@@ -309,15 +309,16 @@ CAMLprim value lwt_test()
    +-----------------------------------------------------------------+ *)
 
 let ocamlc = ref "ocamlfind ocamlc"
+let ocamlc_config = ref ""
 let ext_obj = ref ".o"
 let exec_name = ref "a.out"
 let use_libev = ref true
-let use_glib = ref false
-let use_pthread = ref true
-let use_unix = ref true
-let os_type = ref "Unix"
+let use_glib = false (* glib configuration is external *)
+let use_pthread = Sys.os_type <> "Win32" (* as per default in oasis file *)
+let use_unix = true (* only called in the context of installing lwt-unix *)
 let android_target = ref false
 let ccomp_type = ref "cc"
+let system = ref ""
 let libev_default = ref true
 let debug = ref (try Sys.getenv "DEBUG" = "y" with Not_found -> false)
 
@@ -513,13 +514,10 @@ let arg_bool r =
 let () =
   let args = [
     "-ocamlc", Arg.Set_string ocamlc, "<path> ocamlc";
+    "-ocamlc_config", Arg.Set_string ocamlc_config, "<file> ocamlc config";
     "-ext-obj", Arg.Set_string ext_obj, "<ext> C object files extension";
     "-exec-name", Arg.Set_string exec_name, "<name> name of the executable produced by ocamlc";
     "-use-libev", arg_bool use_libev, " whether to check for libev";
-    "-use-glib", arg_bool use_glib, " whether to check for glib";
-    "-use-pthread", arg_bool use_pthread, " whether to use pthread";
-    "-use-unix", arg_bool use_unix, " whether to build lwt.unix";
-    "-os-type", Arg.Set_string os_type, "<name> type of the target os";
     "-android-target", arg_bool android_target, "<name> compiles for Android";
     "-ccomp-type", Arg.Set_string ccomp_type, "<ccomp-type> C compiler type";
     "-libev_default", arg_bool libev_default, " whether to use the libev backend by default";
@@ -527,7 +525,7 @@ let () =
   Arg.parse args ignore "check for external C libraries and available features\noptions are:";
 
   (* Check nothing if we do not build lwt.unix. *)
-  if not !use_unix then exit 0;
+  if not use_unix then exit 0;
 
   (* Put the caml code into a temporary file. *)
   let file, oc = Filename.open_temp_file "lwt_caml" ".ml" in
@@ -547,6 +545,52 @@ let () =
              safe_remove (Filename.chop_extension !caml_file ^ ".cmi");
              safe_remove (Filename.chop_extension !caml_file ^ ".cmo"));
 
+  (* read ocamlc -config file, if provided *)
+  let get_ocamlc_config () = 
+    let f = open_in !ocamlc_config in
+    let cfg line = 
+      let idx = String.index line ':' in
+      String.sub line 0 idx,
+      String.sub line (idx + 2) (String.length line - idx - 2) 
+    in
+    let input_line () = try Some(input_line f) with End_of_file -> None in
+    let rec lines () = 
+      match input_line () with
+      | None -> []
+      | Some(x) -> cfg x :: lines ()
+    in
+    let cfg = lines () in
+    let () = close_in f in
+    cfg
+  in
+  let ocamlc_configs = 
+    try if !ocamlc_config <> "" then get_ocamlc_config () else [] 
+    with _ -> 
+      let () = printf "failed to read ocamlc -config\n" in
+      exit 1
+  in
+  (* get params from ocamlc -config, if provided *)
+  let () = 
+    if !ocamlc_config <> "" then begin
+      let set var name = 
+        try 
+          var := List.assoc name ocamlc_configs;
+          printf "found config var %s: %s %s\n" name (String.make (29 - String.length name) '.') !var
+        with Not_found -> 
+          printf "Couldn't find var '%s' in ocamlc -config\n" name;
+          exit 1
+      in
+      set ext_obj "ext_obj";
+      set exec_name "default_executable_name";
+      set ccomp_type "ccomp_type";
+      set system "system";
+      libev_default := List.mem !system  (* from _oasis *)
+        ["linux"; "linux_elf"; "linux_aout"; "linux_eabi"; "linux_eabihf"];
+      printf "system = %s\n" !system
+    end
+  in
+
+
   let exit status =
     if status <> 0 then begin
       if !debug then printf "
@@ -562,7 +606,7 @@ Run with DEBUG=y for more details.
   let setup_data = ref [] in
 
   (* Test for pkg-config. *)
-  test_feature ~do_check:(!use_libev || !use_glib) "pkg-config" ""
+  test_feature ~do_check:(!use_libev || use_glib) "pkg-config" ""
     (fun () ->
        ksprintf Sys.command "pkg-config --version > %s 2>&1" !log_file = 0);
 
@@ -646,8 +690,8 @@ You may be missing core components (compiler, ncurses, etc)
   end;
 
   test_feature ~do_check:!use_libev "libev" "HAVE_LIBEV" test_libev;
-  test_feature ~do_check:!use_pthread "pthread" "HAVE_PTHREAD" test_pthread;
-  test_feature ~do_check:!use_glib "glib" "" test_glib;
+  test_feature ~do_check:use_pthread "pthread" "HAVE_PTHREAD" test_pthread;
+  test_feature ~do_check:use_glib "glib" "" test_glib;
 
   if !not_available <> [] then begin
     if not have_pkg_config then
@@ -669,7 +713,7 @@ Missing C libraries: %s
     exit 1
   end;
 
-  if !os_type <> "Win32" && not !use_pthread then begin
+  if Sys.os_type <> "Win32" && not use_pthread then begin
     printf "
 No threading library available!
 
@@ -680,7 +724,7 @@ Lwt can use pthread or the win32 API.
     exit 1
   end;
 
-  let do_check = !os_type <> "Win32" in
+  let do_check = Sys.os_type <> "Win32" in
   test_feature ~do_check "eventfd" "HAVE_EVENTFD" (fun () -> test_code ([], []) eventfd_code);
   test_feature ~do_check "fd passing" "HAVE_FD_PASSING" (fun () -> test_code ([], []) fd_passing_code);
   test_feature ~do_check:(do_check && not !android_target)
@@ -719,7 +763,7 @@ Lwt can use pthread or the win32 API.
     "let _HAVE_GET_CREDENTIALS = %s\n"
     (String.concat " || " (List.map (fun s -> "_" ^ s) get_cred_vars));
 
-  if !os_type = "Win32" then begin
+  if Sys.os_type = "Win32" then begin
     output_string config "#define LWT_ON_WINDOWS\n";
   end else begin
     output_string config "//#define LWT_ON_WINDOWS\n";
@@ -791,9 +835,4 @@ Lwt can use pthread or the win32 API.
 
   close_out config;
   close_out config_ml
-(*
-  (* Generate stubs. *)
-  print_endline "Generating C stubs...";
-  exit (Sys.command "ocaml src/unix/gen_stubs.ml")
-*)
 
