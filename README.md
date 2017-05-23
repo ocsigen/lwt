@@ -88,22 +88,24 @@ and has nothing to do with system or preemptive threads.*
 
 ## Contact
 
-Open an [issue][issues], visit [Gitter][gitter] chat, [email][email] the
-maintainer, or ask in [#ocaml][irc]. If you think enough people will be
-interested in the answer, it is also possible to ask on [Stack Overflow][so].
+Open an [issue][issues], visit [Gitter][gitter] chat, ask in [#ocaml][irc],
+on [discuss.ocaml.org][discourse], or on [Stack Overflow][so]. Please do ask!
+Even apparently simple questions often end up educating other users, not to
+mention enlightening the maintainers!
 
 Subscribe to the [announcements issue][announcements] to get news about Lwt
 releases. It is less noisy than watching the whole repository. Announcements are
-also made in [/r/ocaml][reddit] and on the [OCaml mailing list][caml-list].
+also made in [/r/ocaml][reddit], on the [OCaml mailing list][caml-list], and on
+[discuss.ocaml.org][discourse].
 
 [issues]: https://github.com/ocsigen/lwt/issues/new
 [gitter]: https://gitter.im/ocaml-lwt/Lobby
-[email]:  mailto:antonbachin@yahoo.com
 [irc]:    http://webchat.freenode.net/?channels=#ocaml
 [so]:     http://stackoverflow.com/questions/ask?tags=ocaml,lwt,ocaml-lwt
 [announcements]: https://github.com/ocsigen/lwt/issues/309
 [reddit]: https://www.reddit.com/r/ocaml/
 [caml-list]: https://sympa.inria.fr/sympa/arc/caml-list
+[discourse]: https://discuss.ocaml.org
 
 <br/>
 
