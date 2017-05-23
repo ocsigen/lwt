@@ -27,6 +27,7 @@ depends: [
   "result"
   "cppo" {build}
 
+  "configurator"
   "ocaml-migrate-parsetree"
   "ppx_tools_versioned"
 

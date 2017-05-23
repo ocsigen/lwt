@@ -53,8 +53,8 @@ uninstall: $(SETUP) setup.data
 reinstall: $(SETUP) setup.data
 	./$(SETUP) -reinstall $(REINSTALLFLAGS)
 
-clean: $(SETUP) clean-coverage
-	./$(SETUP) -clean $(CLEANFLAGS)
+clean: 
+	rm -fr _build
 
 distclean: $(SETUP)
 	./$(SETUP) -distclean $(DISTCLEANFLAGS)
