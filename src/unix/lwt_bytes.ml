@@ -59,7 +59,7 @@ let blit_from_bytes src_buf src_ofs dst_buf dst_ofs len =
   if (len < 0
       || src_ofs < 0 || src_ofs > Bytes.length src_buf - len
       || dst_ofs < 0 || dst_ofs > length dst_buf - len) then
-    invalid_arg "String.blit"
+    invalid_arg "Lwt_bytes.blit_from_bytes"
   else
     unsafe_blit_from_bytes src_buf src_ofs dst_buf dst_ofs len
 
@@ -67,7 +67,7 @@ let blit_to_bytes src_buf src_ofs dst_buf dst_ofs len =
   if (len < 0
       || src_ofs < 0 || src_ofs > length src_buf - len
       || dst_ofs < 0 || dst_ofs > Bytes.length dst_buf - len) then
-    invalid_arg "String.blit"
+    invalid_arg "Lwt_bytes.blit_to_bytes"
   else
     unsafe_blit_to_bytes src_buf src_ofs dst_buf dst_ofs len
 
@@ -75,7 +75,7 @@ let blit src_buf src_ofs dst_buf dst_ofs len =
   if (len < 0
       || src_ofs < 0 || src_ofs > length src_buf - len
       || dst_ofs < 0 || dst_ofs > length dst_buf - len) then
-    invalid_arg "String.blit"
+    invalid_arg "Lwt_bytes.blit"
   else
     unsafe_blit src_buf src_ofs dst_buf dst_ofs len
 
@@ -150,7 +150,7 @@ external stub_recv : Unix.file_descr -> t -> int -> int -> Unix.msg_flag list ->
 
 let recv fd buf pos len flags =
   if pos < 0 || len < 0 || pos > length buf - len then
-    invalid_arg "recv"
+    invalid_arg "Lwt_bytes.recv"
   else
     wrap_syscall Read fd (fun () -> stub_recv (unix_file_descr fd) buf pos len flags)
 
@@ -158,7 +158,7 @@ external stub_send : Unix.file_descr -> t -> int -> int -> Unix.msg_flag list ->
 
 let send fd buf pos len flags =
   if pos < 0 || len < 0 || pos > length buf - len then
-    invalid_arg "send"
+    invalid_arg "Lwt_bytes.send"
   else
     wrap_syscall Write fd (fun () -> stub_send (unix_file_descr fd) buf pos len flags)
 
@@ -180,7 +180,7 @@ let check_io_vectors func_name iovs =
        if iov.iov_offset < 0
          || iov.iov_length < 0
          || iov.iov_offset > length iov.iov_buffer - iov.iov_length then
-           invalid_arg func_name)
+           invalid_arg ("Lwt_bytes." ^ func_name))
     iovs
 
 external stub_recv_msg : Unix.file_descr -> int -> io_vector list -> int * Unix.file_descr list = "lwt_unix_bytes_recv_msg"
