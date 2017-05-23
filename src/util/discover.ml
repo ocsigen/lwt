@@ -1,6 +1,5 @@
 (* OCaml promise library
  * http://www.ocsigen.org/lwt
- * Program discover
  * Copyright (C) 2010 Jérémie Dimino
  *
  * This program is free software; you can redistribute it and/or modify

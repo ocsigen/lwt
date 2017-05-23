@@ -1,6 +1,5 @@
 (* OCaml promise library
  * http://www.ocsigen.org/lwt
- * Program Connect
  * Copyright (C) 2011 Jérémie Dimino
  *
  * This program is free software; you can redistribute it and/or modify
