@@ -2,7 +2,7 @@
 
 (library 
  ((name lwt_simple_top)
-  (public_name lwt.simple-top)
+  (public_name lwt-simple-top)
   (wrapped false)
-  (libraries (lwt lwt.unix compiler-libs.common))))
+  (libraries (lwt-core lwt-unix compiler-libs.common))))
 

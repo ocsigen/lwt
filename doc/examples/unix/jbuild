@@ -2,6 +2,6 @@
 
 (executables 
  ((names (logging relay parallelize))
-  (libraries (lwt.unix))
-  (preprocess (pps (lwt.ppx)))))
+  (libraries (lwt-unix))
+  (preprocess (pps (lwt-ppx)))))
 

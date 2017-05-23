@@ -11,5 +11,6 @@
 
 (alias
  ((name runtest)
+  (package lwt-unix)
   (action (run ${exe:main.exe}))))
 

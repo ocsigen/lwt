@@ -2,10 +2,11 @@
 
 (executable 
  ((name main)
-  (libraries (lwt.preemptive lwttester))))
+  (libraries (lwt-preemptive lwttester))))
 
 (alias
  ((name runtest)
+  (package lwt-preemptive)
   (action (run ${exe:main.exe}))))
 
 

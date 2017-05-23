@@ -4,6 +4,6 @@
 
 (library
  ((name lwt_log)
-  (public_name "lwt.log")
+  (public_name lwt-log)
   (wrapped false)
-  (libraries (lwt))))
+  (libraries (lwt-core))))

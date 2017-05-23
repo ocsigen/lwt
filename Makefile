@@ -55,6 +55,7 @@ reinstall: $(SETUP) setup.data
 
 clean: 
 	rm -fr _build
+	rm *.install
 
 distclean: $(SETUP)
 	./$(SETUP) -distclean $(DISTCLEANFLAGS)

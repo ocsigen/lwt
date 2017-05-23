@@ -2,6 +2,6 @@
 
 (library 
  ((name lwt)
-  (public_name lwt)
+  (public_name lwt-core)
   (wrapped false)
   (libraries (bytes result))))

@@ -6,5 +6,6 @@
 
 (alias
  ((name runtest)
+  (package lwt-core)
   (action (run ${exe:main.exe}))))
 

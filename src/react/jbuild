@@ -2,7 +2,7 @@
 
 (library 
  ((name lwt_react)
-  (public_name lwt.react)
+  (public_name lwt_react)
   (wrapped false)
-  (libraries (lwt react))))
+  (libraries (lwt-core react))))
 

@@ -16,15 +16,14 @@ bug-reports: "https://github.com/ocsigen/lwt/issues"
 license: "LGPL with OpenSSL linking exception"
 dev-repo: "https://github.com/ocsigen/lwt.git"
 build: [ [ "jbuilder" "build" "-p" name "-j" jobs ] ]
+build-test: [ [ "jbuilder" "runtest" ] ]
 depends: [
   "ocamlfind" {build & >= "1.5.0"}
   "jbuilder" { build & >= "1.0+beta9" }
-  "lwt-core"
-  "lwt-log"
-  "lwt-unix"
-  "lwt-preemptive"
-  "lwt-simple-top"
+  "lwt-core"                            # is this really needed, or only sensible?
+  "ppx_tools_versioned"
+  "ocaml-migrate-parsetree"
 ]
-post-messages: [
-  "Lwt+jbuilder has some major breaking changes!!!"
-]
+
+
+

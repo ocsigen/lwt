@@ -2,7 +2,7 @@
 
 (library 
  ((name lwt_preemptive)
-  (public_name lwt.preemptive)
+  (public_name lwt-preemptive)
   (wrapped false)
-  (libraries (lwt lwt.unix threads))))
+  (libraries (lwt-core lwt-unix threads))))
 

@@ -1,0 +1,38 @@
+# JBUILDER_GEN
+
+version = "dev"
+description = ""
+requires = "lwt-core"
+
+package "unix" (
+  requires = "lwt-unix"
+)
+
+package "log" (
+  requires = "lwt-log"
+)
+
+package "ppx" (
+  requires = "lwt-ppx"
+)
+
+package "preemptive" (
+  requires = "lwt-preemptive"
+)
+
+package "simple-top" (
+  requires = "lwt-simple-top"
+)
+
+package "syntax" (
+  requires = "camlp4 lwt-syntax lwt.syntax.options"
+
+  package "options" (
+    requires = "lwt-syntax.options"
+  )
+
+  package "log" (
+    requires = "lwt-syntax.log"
+  )
+)
+

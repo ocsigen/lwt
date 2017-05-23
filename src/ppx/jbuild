@@ -1,15 +1,14 @@
 (jbuild_version 1)
 
 (library
- ((name ppx_js)
-  (public_name lwt.ppx)
+ ((name ppx_lwt)
+  (public_name lwt-ppx)
   (synopsis "Lwt ppx")
   (modules (ppx_lwt))
   (libraries (compiler-libs.common
               ocaml-migrate-parsetree
               ppx_tools_versioned))
-  (ppx_runtime_libraries (lwt))
+  (ppx_runtime_libraries (lwt-core))
   (kind ppx_rewriter)
-  (preprocess (pps (ppx_tools_versioned.metaquot_404)))
-  ))
+  (preprocess (pps (ppx_tools_versioned.metaquot_404)))))
 

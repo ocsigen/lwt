@@ -1,23 +1,23 @@
 (library
  ((name lwt_syntax_options)
-  (public_name lwt.syntax-options)
+  (public_name lwt-syntax.options)
   (modules pa_lwt_options)
   (wrapped false)
   (libraries (camlp4))))
 
 (library
  ((name lwt_syntax)
-  (public_name lwt.syntax)
+  (public_name lwt-syntax)
   (modules pa_lwt)
   (wrapped false)
-  (libraries (camlp4.extend camlp4.quotations.o lwt.syntax-options))
+  (libraries (camlp4 lwt-syntax.options))
   (preprocess (action (run camlp4oof ${<})))))
 
 (library
  ((name lwt_syntax_log)
-  (public_name lwt.syntax-log)
+  (public_name lwt-syntax.log)
   (modules pa_lwt_log)
   (wrapped false)
-  (libraries (camlp4.extend camlp4.quotations.o lwt.syntax-options))
+  (libraries (camlp4 lwt-syntax.options))
   (preprocess (action (run camlp4oof ${<})))))
 
