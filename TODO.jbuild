@@ -7,3 +7,12 @@
 
 - port names from lwt-xxx to lwt_xxx ??
 
+- lwt-unix 4.03.0 fails 
+  - "Improve Android support in build system." adds -ccopt -o -ccopt <file> which
+    doesnt work
+  - needs special case for andriod
+
+- no 4.02.0 because of Base and Stdio in discover system
+  - is there a simpler way to do the sexp generation so we can drop
+    this requirement?
+
