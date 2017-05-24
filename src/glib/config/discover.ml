@@ -85,7 +85,6 @@ let libs =
 
 let write_sexp fn sexp = Out_channel.write_all fn ~data:(Sexp.to_string sexp)
 
-
 let () = 
   write_sexp "glib_c_flags.sexp"         (sexp_of_list sexp_of_string cflags);
   write_sexp "glib_c_library_flags.sexp" (sexp_of_list sexp_of_string libs)

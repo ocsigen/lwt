@@ -584,9 +584,8 @@ let () =
       set exec_name "default_executable_name";
       set ccomp_type "ccomp_type";
       set system "system";
-      libev_default := List.mem !system  (* from _oasis *)
+      libev_default := List.mem !system (* as per _oasis *)
         ["linux"; "linux_elf"; "linux_aout"; "linux_eabi"; "linux_eabihf"];
-      printf "system = %s\n" !system
     end
   in
 
@@ -834,5 +833,21 @@ Lwt can use pthread or the win32 API.
   close_out oc;
 
   close_out config;
-  close_out config_ml
+  close_out config_ml;
+
+  let open Base in
+  let open Stdio in
+
+  let get_flags lib = 
+    (try Caml.List.assoc (lib ^ "_opt") !setup_data with _ -> []),
+    (try Caml.List.assoc (lib ^ "_lib") !setup_data with _ -> [])
+  in
+  let cflags_ev, libs_ev = get_flags "libev" in
+  let cflags_pt, libs_pt = get_flags "pthread" in
+  let cflags = cflags_ev @ cflags_pt in
+  let libs = libs_ev @ libs_pt in
+
+  let write_sexp fn sexp = Out_channel.write_all fn ~data:(Sexp.to_string sexp) in
+  write_sexp ("unix_c_flags.sexp")         (sexp_of_list sexp_of_string ("-I."::cflags));
+  write_sexp ("unix_c_library_flags.sexp") (sexp_of_list sexp_of_string (libs))
 
