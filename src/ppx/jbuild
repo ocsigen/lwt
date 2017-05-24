@@ -3,7 +3,7 @@
 (library
  ((name ppx_lwt)
   (public_name lwt-ppx)
-  (synopsis "Lwt ppx")
+  (synopsis "Lwt PPX syntax extension")
   (modules (ppx_lwt))
   (libraries (compiler-libs.common
               ocaml-migrate-parsetree

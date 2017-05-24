@@ -3,5 +3,6 @@
 (library 
  ((name lwt)
   (public_name lwt-core)
+  (synopsis "Monadic promises and concurrent I/O")
   (wrapped false)
   (libraries (bytes result))))

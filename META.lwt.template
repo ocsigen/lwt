@@ -1,39 +1,47 @@
 # JBUILDER_GEN
 
 version = "dev"
-description = ""
+description = "[compatibility] maps to lwt-core"
 requires = "lwt-core"
 
 package "unix" (
   requires = "lwt-unix"
+  description = "[compatibility] maps to lwt-unix"
 )
 
 package "log" (
   requires = "lwt-log"
+  description = "[compatibility] maps to lwt-log"
 )
 
 package "ppx" (
   requires = "lwt-ppx"
+  description = "[compatibility] maps to lwt-ppx"
 )
 
 package "preemptive" (
   requires = "lwt-preemptive"
+  description = "[compatibility] maps to lwt-preemptive"
 )
 
 package "simple-top" (
   requires = "lwt-simple-top"
+  description = "[compatibility] maps to lwt-simple-top"
 )
 
 package "glib" (
   requires = "lwt-glib"
+  description = "[compatibility] maps to lwt-glib"
 )
 
 package "ssl" (
   requires = "lwt-ssl"
+  description = "[compatibility] maps to lwt-ssl"
 )
 
 package "react" (
   requires = "lwt-react"
+  description = "[compatibility] maps to lwt-react"
 )
 
 package "syntax" (

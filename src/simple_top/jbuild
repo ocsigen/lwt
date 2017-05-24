@@ -3,6 +3,7 @@
 (library 
  ((name lwt_simple_top)
   (public_name lwt-simple-top)
+  (synopsis "Lwt-OCaml top level integration (deprecated; use utop)")
   (wrapped false)
   (libraries (lwt-core lwt-unix compiler-libs.common))))
 

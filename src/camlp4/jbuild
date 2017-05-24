@@ -1,6 +1,7 @@
 (library
  ((name lwt_camlp4_options)
   (public_name lwt-camlp4.options)
+  (synopsis "Options for Lwt Camlp4 syntax extension (deprecated; use lwt.ppx)")
   (modules pa_lwt_options)
   (wrapped false)
   (libraries (camlp4))))
@@ -8,6 +9,7 @@
 (library
  ((name lwt_camlp4)
   (public_name lwt-camlp4)
+  (synopsis "Camlp4 syntax for Lwt (deprecated; use lwt.ppx)")
   (modules pa_lwt)
   (wrapped false)
   (libraries (camlp4 lwt-camlp4.options))
@@ -16,6 +18,7 @@
 (library
  ((name lwt_camlp4_log)
   (public_name lwt-camlp4.log)
+  (synopsis "Camlp4 syntax for Lwt logging (deprecated; use lwt.ppx)")
   (modules pa_lwt_log)
   (wrapped false)
   (libraries (camlp4 lwt-camlp4.options))

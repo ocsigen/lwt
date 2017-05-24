@@ -70,6 +70,7 @@
 (library
  ((name lwt_unix)
   (public_name lwt-unix)
+  (synopsis "Unix support for Lwt")
   (wrapped false)
   (libraries (lwt-core lwt-log unix bigarray))
   (c_names (
