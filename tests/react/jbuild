@@ -2,10 +2,10 @@
 
 (executable 
  ((name main)
-  (libraries (lwt_react lwttester))))
+  (libraries (lwt-react lwttester))))
 
 (alias
  ((name runtest)
-  (package lwt_react)
+  (package lwt-react)
   (action (run ${exe:main.exe}))))
 

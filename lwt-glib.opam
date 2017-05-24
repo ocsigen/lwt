@@ -22,7 +22,8 @@ depends: [
   "lwt-unix"
   "base" { build }  # needed for discover.ml
   "stdio" { build } # ...but only to write the sexps
-  "lablgtk"
+  "conf-pkg-config" {build}
+  "conf-glib-2" {build}
 ]
 
 

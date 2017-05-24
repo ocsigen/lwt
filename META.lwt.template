@@ -24,6 +24,18 @@ package "simple-top" (
   requires = "lwt-simple-top"
 )
 
+package "glib" (
+  requires = "lwt-glib"
+)
+
+package "ssl" (
+  requires = "lwt-ssl"
+)
+
+package "react" (
+  requires = "lwt-react"
+)
+
 package "syntax" (
   requires = "camlp4 lwt-camlp4 lwt.camlp4.options"
 

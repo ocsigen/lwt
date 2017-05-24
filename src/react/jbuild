@@ -2,7 +2,8 @@
 
 (library 
  ((name lwt_react)
-  (public_name lwt_react)
+  (public_name lwt-react)
+  (synopsis "Helpers for using React with Lwt")
   (wrapped false)
   (libraries (lwt-core react))))
 

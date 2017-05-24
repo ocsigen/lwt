@@ -1,8 +1,4 @@
 _build
-src/unix/lwt_config.ml
-src/unix/lwt_config.h
-src/unix/lwt_unix_jobs_generated.ml
-src/unix/jobs-unix/
 setup.data
 setup.log
 setup.exe

@@ -2,7 +2,7 @@
 
 (library 
  ((name lwt_glib)
-  (public_name lwt_glib)
+  (public_name lwt-glib)
   (wrapped false)
   (libraries (lwt-core lwt-unix))
   (c_names (lwt_glib_stubs))

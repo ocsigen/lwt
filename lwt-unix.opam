@@ -20,8 +20,8 @@ build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
 depends: [
   "jbuilder" { build & >= "1.0+beta9" }
   "cppo" { build }
-  "base" { build }
-  "stdio" { build }
+  "base" { build }    # needed for discover.ml
+  "stdio" { build }   # ...but only to write the sexps
   "base-unix"
   "lwt-core"
   "lwt-log"

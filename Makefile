@@ -9,26 +9,10 @@
 OCAMLFIND_IGNORE_DUPS_IN = $(shell ocamlfind query compiler-libs)
 export OCAMLFIND_IGNORE_DUPS_IN
 
-# Set to setup.exe for the release
-SETUP := setup-dev.exe
-
 # Default rule
 default: build
 
-# Setup for the development version
-setup-dev.exe: _oasis setup.ml
-	grep -v '^#' setup.ml > setup_dev.ml
-	ocamlfind ocamlopt -o $@ -linkpkg -package ocamlbuild,oasis.dynrun setup_dev.ml || \
-	  ocamlfind ocamlc -o $@ -linkpkg -package ocamlbuild,oasis.dynrun setup_dev.ml || true
-	rm -f setup_dev.*
-
-# Setup for the release
-setup.exe: setup.ml
-	ocamlopt.opt -o $@ $< || ocamlopt -o $@ $< || ocamlc -o $@ $<
-	rm -f setup.cmx setup.cmi setup.o setup.obj setup.cmo
-
-setup: $(SETUP)
-
+# build the usual development packages
 build: 
 	jbuilder build \
 		lwt-core.install \
@@ -38,48 +22,38 @@ build:
 		lwt-simple-top.install \
 		lwt-ppx.install 
 
-build-all: 
-	jbuilder build @install
-
 doc-api: $(SETUP) setup.data build
 	./$(SETUP) -build lwt-api.docdir/index.html
 
+# run all tests
 test: 
 	jbuilder runtest
 
-all: $(SETUP)
-	./$(SETUP) -all $(ALLFLAGS)
+# build everything
+all: 
+	jbuilder build @install
 
-install: $(SETUP) setup.data
-	./$(SETUP) -install $(INSTALLFLAGS)
+install: 
+	jbuilder install
 
-uninstall: $(SETUP) setup.data
-	./$(SETUP) -uninstall $(UNINSTALLFLAGS)
+uninstall: 
+	jbuilder uninstall
 
-reinstall: $(SETUP) setup.data
-	./$(SETUP) -reinstall $(REINSTALLFLAGS)
+reinstall: 
+	jbuilder uninstall
+	jbuilder install
 
 clean: 
 	rm -fr _build
-	rm *.install
-
-distclean: $(SETUP)
-	./$(SETUP) -distclean $(DISTCLEANFLAGS)
-	rm -rf setup*.exe
+	rm -f *.install
 
 clean-coverage:
 	rm -rf bisect*.out
 	rm -rf _coverage/
-
-configure: $(SETUP)
-	./$(SETUP) -configure $(CONFIGUREFLAGS)
-
-setup.data: $(SETUP)
-	./$(SETUP) -configure $(CONFIGUREFLAGS)
 
 coverage: test
 	bisect-ppx-report -I _build/ -html _coverage/ bisect*.out
 	bisect-ppx-report -text - -summary-only bisect*.out
 	@echo See _coverage/index.html
 
-.PHONY: default setup build doc test all install uninstall reinstall clean distclean configure coverage
+.PHONY: default build doc test all install uninstall reinstall clean coverage
