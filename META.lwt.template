@@ -7,52 +7,63 @@ requires = "lwt-core"
 package "unix" (
   requires = "lwt-unix"
   description = "[compatibility] maps to lwt-unix"
+  exists_if = "../lwt-unix/lwt_unix.cma"
 )
 
 package "log" (
   requires = "lwt-log"
   description = "[compatibility] maps to lwt-log"
+  exists_if = "../lwt-log/lwt_log.cma"
 )
 
 package "ppx" (
   requires = "lwt-ppx"
   description = "[compatibility] maps to lwt-ppx"
+  exists_if = "../lwt-ppx/ppx_lwt.cma"
 )
 
 package "preemptive" (
   requires = "lwt-preemptive"
   description = "[compatibility] maps to lwt-preemptive"
+  exists_if = "../lwt-preemptive/lwt_preemptive.cma"
 )
 
 package "simple-top" (
   requires = "lwt-simple-top"
   description = "[compatibility] maps to lwt-simple-top"
+  exists_if = "../lwt-simple-top/lwt_simple_top.cma"
 )
 
 package "glib" (
   requires = "lwt-glib"
   description = "[compatibility] maps to lwt-glib"
+  exists_if = "../lwt-glib/lwt_glib.cma"
 )
 
 package "ssl" (
   requires = "lwt-ssl"
   description = "[compatibility] maps to lwt-ssl"
+  exists_if = "../lwt-ssl/lwt_ssl.cma"
 )
 
 package "react" (
   requires = "lwt-react"
   description = "[compatibility] maps to lwt-react"
+  exists_if = "../lwt-react/lwt_react.cma"
 )
 
 package "syntax" (
   requires = "camlp4 lwt-camlp4 lwt.camlp4.options"
+  exists_if = "../lwt-camlp4/lwt_camlp4.cma"
 
   package "options" (
     requires = "lwt-camlp4.options"
+    exists_if = "../lwt-camlp4/lwt_camlp4.cma"
   )
 
   package "log" (
     requires = "lwt-camlp4.log"
+    exists_if = "../lwt-camlp4/lwt_camlp4.cma"
   )
 )
 

@@ -1,0 +1,9 @@
+- Internal modules exposed in lwt-unit
+
+- lwt-unix configuration params passed to discover.exe;
+  - use_libev (currently forced to true)
+    - how do we depend on an external opam package with no findlib library?
+  - android-target?
+
+- port names from lwt-xxx to lwt_xxx ??
+
