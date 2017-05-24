@@ -20,6 +20,7 @@
  * 02111-1307, USA.
  *)
 
+(** Module [Lwt_chan]: cooperative, [Pervasives]-like, I/O functions *)
 
 (** Note: the {!Lwt_io} module deprecates this module. *)
 
