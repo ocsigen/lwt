@@ -1,6 +1,5 @@
-(* Lightweight thread library for OCaml
+(* OCaml promise library
  * http://www.ocsigen.org/lwt
- * Module Lwt_unix
  * Copyright (C) 2010 Jérémie Dimino
  *               2010 Pierre Chambart
  *

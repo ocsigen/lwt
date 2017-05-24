@@ -1,6 +1,5 @@
-(* Lightweight thread library for OCaml
+(* OCaml promise library
  * http://www.ocsigen.org/lwt
- * Module Lwt_log
  * Copyright (C) 2002 Shawn Wagner <raevnos@pennmush.org>
  *               2009 Jérémie Dimino <jeremie@dimino.org>
  *

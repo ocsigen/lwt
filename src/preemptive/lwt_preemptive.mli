@@ -1,6 +1,5 @@
-(* Ocsigen
+(* OCaml promise library
  * http://www.ocsigen.org
- * Module lwt_preemptive.ml
  * Copyright (C) 2005 Nataliya Guts, Vincent Balat, Jérôme Vouillon
  * Laboratoire PPS - CNRS Université Paris Diderot
  *               2009 Jérémie Dimino

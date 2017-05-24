@@ -1,6 +1,5 @@
-(* Lightweight thread library for OCaml
+(* OCaml promise library
  * http://www.ocsigen.org/lwt
- * Interface Lwt_pqueue
  * Copyright (C) 1999-2004 Jérôme Vouillon
  * Laboratoire PPS - CNRS Université Paris Diderot
  *

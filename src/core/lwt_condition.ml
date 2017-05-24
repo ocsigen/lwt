@@ -1,8 +1,5 @@
-(******************************************************************************)
-(* Lightweight thread library for OCaml
+(* OCaml promise library
  * http://www.ocsigen.org/lwt
- * Module Lwt_condition
- ******************************************************************************
  * Copyright (c) 2009, Metaweb Technologies, Inc.
  * All rights reserved.
  *
@@ -27,7 +24,7 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- ******************************************************************************)
+ *)
 
 type 'a t = 'a Lwt.u Lwt_sequence.t
 

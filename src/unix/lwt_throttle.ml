@@ -1,6 +1,5 @@
-(* Lightweight thread library for OCaml
+(* OCaml promise library
  * http://www.ocsigen.org/lwt
- * Module Lwt_throttle
  * Copyright (C) 2008 Stéphane Glondu
  * Laboratoire PPS - CNRS Université Paris Diderot
  *
