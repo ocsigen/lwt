@@ -1,8 +1,0 @@
-B ../../_build/default/src/ppx
-FLG -ppx "../../_build/default/.ppx/ppx_tools_versioned.metaquot_404/ppx.exe --as-ppx --cookie 'library-name="ppx_lwt"'"
-FLG -w -40
-PKG compiler-libs
-PKG compiler-libs.common
-PKG ocaml-migrate-parsetree
-PKG ppx_tools_versioned
-S .
