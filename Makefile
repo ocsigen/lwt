@@ -38,7 +38,7 @@ build:
 		lwt-simple-top.install \
 		lwt-ppx.install 
 
-build-a: 
+build-all: 
 	jbuilder build @install
 
 doc-api: $(SETUP) setup.data build

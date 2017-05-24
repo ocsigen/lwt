@@ -20,7 +20,8 @@ build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
 depends: [
   "jbuilder" { build & >= "1.0+beta9" }
   "lwt-unix"
-  "configurator"
+  "base" { build }  # needed for discover.ml
+  "stdio" { build } # ...but only to write the sexps
   "lablgtk"
 ]
 
