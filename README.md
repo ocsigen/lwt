@@ -105,7 +105,7 @@ also made in [/r/ocaml][reddit], on the [OCaml mailing list][caml-list], and on
 [announcements]: https://github.com/ocsigen/lwt/issues/309
 [reddit]: https://www.reddit.com/r/ocaml/
 [caml-list]: https://sympa.inria.fr/sympa/arc/caml-list
-[discourse]: https://discuss.ocaml.org
+[discourse]: https://discuss.ocaml.org/c/lwt
 
 <br/>
 
