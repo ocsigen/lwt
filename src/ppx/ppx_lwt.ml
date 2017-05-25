@@ -1,4 +1,5 @@
 open Migrate_parsetree
+open OCaml_404.Ast
 open Ast_mapper
 open Ast_helper
 open Asttypes
