@@ -19,9 +19,8 @@ build: [ [ "jbuilder" "build" "-p" name "-j" jobs ] ]
 build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
 depends: [
   "jbuilder" { build & >= "1.0+beta9" }
-  "lwt-unix"
-  "base" { build }  # needed for discover.ml
-  "stdio" { build } # ...but only to write the sexps
+  "base-unix"
+  "lwt"
   "conf-pkg-config" {build}
   "conf-glib-2" {build}
 ]
