@@ -4,7 +4,8 @@
 
 (library
  ((name lwt_log)
-  (public_name lwt-log)
+  (public_name lwt.log)
   (synopsis "Logger for Lwt")
+  (optional)
   (wrapped false)
-  (libraries (lwt-core))))
+  (libraries (lwt))))

@@ -3,11 +3,10 @@
 (executable 
  ((name main)
   (libraries (lwttester))
-  (preprocess (pps (lwt-ppx)))))
+  (preprocess (pps (lwt.ppx)))))
 
 (alias
  ((name runtest)
-  (package lwt-ppx)
+  (package lwt)
   (action (run ${exe:main.exe}))))
-
 

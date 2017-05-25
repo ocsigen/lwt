@@ -69,10 +69,11 @@
 
 (library
  ((name lwt_unix)
-  (public_name lwt-unix)
+  (public_name lwt.unix)
   (synopsis "Unix support for Lwt")
+  (optional)
   (wrapped false)
-  (libraries (lwt-core lwt-log unix bigarray))
+  (libraries (lwt lwt.log unix bigarray))
   (c_names (
     lwt_unix_stubs
     lwt_libev_stubs

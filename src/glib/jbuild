@@ -2,10 +2,10 @@
 
 (library 
  ((name lwt_glib)
-  (public_name lwt-glib)
+  (public_name lwt_glib)
   (synopsis "GLib integration for Lwt")
   (wrapped false)
-  (libraries (lwt-core lwt-unix))
+  (libraries (lwt lwt.unix))
   (c_names (lwt_glib_stubs))
   (c_flags (:include glib_c_flags.sexp))
   (c_library_flags (:include glib_c_library_flags.sexp))))

@@ -15,7 +15,7 @@ default: build
 # build the usual development packages
 build: 
 	jbuilder build \
-		--only-packages lwt-core,lwt-log,lwt-unix,lwt-preemptive,lwt-simple-top,lwt-ppx \
+		--only-packages lwt \
 		@install
 
 doc-api: $(SETUP) setup.data build

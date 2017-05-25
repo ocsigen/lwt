@@ -3,5 +3,5 @@
 (library 
  ((name "lwttester")
   (wrapped false)
-  (libraries (lwt-core unix lwt-unix))))
+  (libraries (lwt unix lwt.unix))))
 
