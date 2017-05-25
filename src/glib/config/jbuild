@@ -2,4 +2,4 @@
 
 (executables
  ((names (discover))
-  (libraries (base stdio unix str))))
+  (libraries (unix str))))

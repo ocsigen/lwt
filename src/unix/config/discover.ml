@@ -835,19 +835,31 @@ Lwt can use pthread or the win32 API.
   close_out config;
   close_out config_ml;
 
-  let open Base in
-  let open Stdio in
 
   let get_flags lib = 
-    (try Caml.List.assoc (lib ^ "_opt") !setup_data with _ -> []),
-    (try Caml.List.assoc (lib ^ "_lib") !setup_data with _ -> [])
+    (try List.assoc (lib ^ "_opt") !setup_data with _ -> []),
+    (try List.assoc (lib ^ "_lib") !setup_data with _ -> [])
   in
   let cflags_ev, libs_ev = get_flags "libev" in
   let cflags_pt, libs_pt = get_flags "pthread" in
   let cflags = cflags_ev @ cflags_pt in
   let libs = libs_ev @ libs_pt in
 
+  (* do sexps properly...
+  let open Base in
+  let open Stdio in
+
   let write_sexp fn sexp = Out_channel.write_all fn ~data:(Sexp.to_string sexp) in
   write_sexp ("unix_c_flags.sexp")         (sexp_of_list sexp_of_string ("-I."::cflags));
   write_sexp ("unix_c_library_flags.sexp") (sexp_of_list sexp_of_string (libs))
+  *)
+
+  let write_sexp n x = 
+    let f = open_out n in
+    output_string f ("(" ^ String.concat " " x ^ ")");
+    close_out f
+  in
+  write_sexp ("unix_c_flags.sexp")         ("-I."::cflags);
+  write_sexp ("unix_c_library_flags.sexp") libs
+
 

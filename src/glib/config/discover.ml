@@ -1,5 +1,3 @@
-open Base
-open Stdio
 
 (* This is largely based on the Glib-related code in the main build system,
    though rewritten somewhat. *)
@@ -14,7 +12,7 @@ let pkg_config arguments =
   let command = Printf.sprintf "pkg-config %s" arguments in
   let input_channel = Unix.open_process_in command in
   let result =
-    try Caml.Pervasives.input_line input_channel
+    try Pervasives.input_line input_channel
     with End_of_file -> ""
   in
   let status = Unix.close_process_in input_channel in
@@ -43,12 +41,11 @@ let pkg_config arguments =
     result
 
   | _ ->
-    Caml.Printf.eprintf "Command failed: %s" command;
-    Caml.exit 1
+    Printf.eprintf "Command failed: %s" command;
+    exit 1
 
 (* read ocamlc -config file, if provided *)
 let get_ocamlc_config name = 
-  let open Caml in
   let f = open_in name in
   let cfg line = 
     let idx = String.index line ':' in
@@ -66,7 +63,6 @@ let get_ocamlc_config name =
   cfg
 
 let ccomp_type = 
-  let open Caml in
   try 
     let cfg = get_ocamlc_config Sys.argv.(1) in
     List.assoc "ccomp_type" cfg
@@ -82,10 +78,20 @@ let libs =
   else
     pkg_config "--libs glib-2.0"
 
-
-let write_sexp fn sexp = Out_channel.write_all fn ~data:(Sexp.to_string sexp)
-
+(* do sexps properly...
 let () = 
+  let write_sexp fn sexp = Out_channel.write_all fn ~data:(Sexp.to_string sexp) in
   write_sexp "glib_c_flags.sexp"         (sexp_of_list sexp_of_string cflags);
   write_sexp "glib_c_library_flags.sexp" (sexp_of_list sexp_of_string libs)
+*)
+
+let () = 
+  let write_sexp n x = 
+    let f = open_out n in
+    output_string f ("(" ^ String.concat " " x ^ ")");
+    close_out f
+  in
+  write_sexp ("glib_c_flags.sexp")         cflags;
+  write_sexp ("glib_c_library_flags.sexp") libs
+
 

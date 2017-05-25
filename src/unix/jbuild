@@ -18,6 +18,10 @@
  ((targets (ocamlc_config))
   (action (with-stdout-to ${@} (run ${OCAMLC} -config)))))
 
+;; note; the call to (and dependancy on) ocamlfind is avoided by adding:
+;; -ocamlc ${OCAMLC}
+;; however, this only works on ocaml >= 4.04 due to passing options to ocamlc as
+;; "-cclib -o -cclib <file>"
 (rule
  ((targets (unix_c_flags.sexp
             unix_c_library_flags.sexp
@@ -25,7 +29,6 @@
             lwt_config.ml))
   (deps (config/discover.exe ocamlc_config))
   (action (run ${<}
-    -ocamlc ${OCAMLC}                 ;; avoid call to ocamlfind
     -ocamlc_config ocamlc_config      ;; generated above
     -use-libev true                   ;; need some way to find out about conf-libev
     -android-target false             ;; XXX fixme
