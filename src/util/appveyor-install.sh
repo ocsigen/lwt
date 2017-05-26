@@ -11,7 +11,7 @@ CACHE=$DIRECTORY/../opam-cache-$SYSTEM-$COMPILER-$LIBEV.tar
 
 pin_extra_package () {
     PACKAGE=$1
-    opam pin add -y --no-action lwt_$PACKAGE
+    opam pin add -y --no-action lwt_$PACKAGE .
 }
 
 if [ ! -f $CACHE ]
