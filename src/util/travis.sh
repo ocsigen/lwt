@@ -133,7 +133,7 @@ opam install --keep-build-dir --verbose lwt
 # test. 
 install_extra_package () {
     PACKAGE=$1
-    opam pin add -y --no-action $PACKAGE .
+    opam pin add -y --no-action lwt_$PACKAGE .
     opam install -y --verbose lwt_$PACKAGE
 }
 
