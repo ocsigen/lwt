@@ -11,8 +11,7 @@ CACHE=$DIRECTORY/../opam-cache-$SYSTEM-$COMPILER-$LIBEV.tar
 
 pin_extra_package () {
     PACKAGE=$1
-    ( cd src/$PACKAGE/ && oasis setup -setup-update none )
-    opam pin add -y --no-action src/$PACKAGE/
+    opam pin add -y --no-action lwt_$PACKAGE
 }
 
 if [ ! -f $CACHE ]
@@ -20,9 +19,8 @@ then
     opam init -y --auto-setup
     eval `opam config env`
 
-    # Pin Lwt and install its dependencies. This also installs OASIS, which is
-    # needed later to generate the build systems of extra packages.s
-    opam pin add -y --no-action .
+    # Pin Lwt and install its dependencies. 
+    opam pin add -y --no-action lwt .
     opam install -y --deps-only lwt
     opam install -y camlp4
     if [ "$LIBEV" = yes ]

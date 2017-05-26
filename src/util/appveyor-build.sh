@@ -3,14 +3,13 @@ set -x
 
 if [ "$SYSTEM" = cygwin ]
 then
-    PACKAGES="lwt lwt_react lwt_ssl"
+    opam install -y --keep-build-dir --verbose lwt lwt_react lwt_ssl
+    cd `opam config var lib`/../build/lwt.*
+    jbuilder runtest --only-packages lwt,lwt_react,lwt_ssl
 else
-    PACKAGES="lwt lwt_react"
+    opam install -y --keep-build-dir --verbose lwt lwt_react
+    cd `opam config var lib`/../build/lwt.*
+    jbuilder runtest --only-packages lwt,lwt_react
 fi
-
-opam install -y --keep-build-dir --verbose $PACKAGES
-cd `opam config var lib`/../build/lwt.*
-ocaml setup.ml -configure --enable-tests
-make test
 
 ! opam list -i batteries
