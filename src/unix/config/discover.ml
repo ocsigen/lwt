@@ -714,11 +714,11 @@ You may be missing core components (compiler, ncurses, etc)
     printf "
 Some required C libraries were not found. If a C library <lib> is installed in a
 non-standard location, set <LIB>_CFLAGS and <LIB>_LIBS accordingly. You may also
-try 'ocaml setup.ml -configure --disable-<lib>' to avoid compiling support for
+try 'ocaml src/utils/configure.ml -use-<lib> false' to avoid compiling support for
 it. For example, in the case of libev missing:
     export LIBEV_CFLAGS=-I/opt/local/include
     export LIBEV_LIBS='-L/opt/local/lib -lev'
-    (* or: *)  ocaml setup.ml -configure --disable-libev
+    (* or: *)  ocaml src/utils/configure.ml -use-libev false
 
 Missing C libraries: %s
 " (String.concat ", " !not_available);
