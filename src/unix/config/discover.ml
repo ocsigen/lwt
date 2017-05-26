@@ -581,6 +581,7 @@ let () =
     get exec_name "default_executable_name";
     get ccomp_type "ccomp_type";
     get system "system";
+    get os_type "os_type";
     let get var name default = 
       try 
         let () = 
