@@ -868,6 +868,15 @@ Lwt can use pthread or the win32 API.
   write_sexp ("unix_c_library_flags.sexp") (sexp_of_list sexp_of_string (libs))
   *)
 
+  (* add Win32 linker flags *)
+  let libs = 
+    if !os_type = "Win32" then
+      if !ccomp_type = "msvc" then libs @ ["ws2_32.lib"]
+      else libs @ ["-lws2_32"]
+    else
+      libs
+  in
+
   let write_sexp n x = 
     let f = open_out n in
     output_string f ("(" ^ String.concat " " x ^ ")");
