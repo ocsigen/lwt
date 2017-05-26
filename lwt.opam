@@ -15,10 +15,15 @@ doc: "https://ocsigen.org/lwt/manual/"
 bug-reports: "https://github.com/ocsigen/lwt/issues"
 license: "LGPL with OpenSSL linking exception"
 dev-repo: "https://github.com/ocsigen/lwt.git"
-build: [ [ "jbuilder" "build" "-p" name "-j" jobs ] ]
+build: [ 
+  [ "ocaml" "src/utils/configure.ml" "-use-libev" "%{conf-libev:installed}" ]
+  [ "jbuilder" "build" "-p" name "-j" jobs ] 
+]
 depends: [
   "ocamlfind" { build & >= "1.5.0" }
   "jbuilder" { build & >= "1.0+beta9" }
+  "ocaml-migrate-parsetree" 
+  "ppx_tools_versioned" 
   "cppo" { build }
   "result"
 ]
