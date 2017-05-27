@@ -27,12 +27,19 @@ test:
 	jbuilder runtest
 
 # Use jbuilder/odoc to generate static html documentation.
-# Requires ocaml 4.03.0 to install odoc currently.
+# Currenty requires ocaml 4.03.0 to install odoc.
 doc:
 	jbuilder build @doc
 
-doc-api: $(SETUP) setup.data build
-	./$(SETUP) -build lwt-api.docdir/index.html
+# Build HTML documentation with ocamldoc
+doc-api-html: all
+	make -C doc api/html/index.html
+
+# Build wiki documentation with wikidoc
+# requires ocaml 4.03.0 and pinning the repo
+# https://github.com/ocsigen/wikidoc
+doc-api-wiki: all
+	make -C doc api/wiki/index.wiki
 
 install: 
 	jbuilder install
@@ -47,6 +54,7 @@ reinstall:
 clean: 
 	rm -fr _build
 	rm -f *.install
+	rm -fr doc/api
 
 clean-coverage:
 	rm -rf bisect*.out
