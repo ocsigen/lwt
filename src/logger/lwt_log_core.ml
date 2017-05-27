@@ -278,7 +278,7 @@ let render ~buffer ~template ~section ~level ~message =
       | "loc-file" -> file
       | "loc-line" -> string_of_int line
       | "loc-column" -> string_of_int column
-      | var -> Printf.ksprintf invalid_arg "Lwt_log.render_buffer: unknown variable %S" var)
+      | var -> Printf.ksprintf invalid_arg "Lwt_log_core.render: unknown variable %S" var)
     template
 
 (* +-----------------------------------------------------------------+

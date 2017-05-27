@@ -52,7 +52,7 @@ let date_string time =
       | 9 -> "Oct"
       | 10 -> "Nov"
       | 11 -> "Dec"
-      | _ -> Printf.ksprintf failwith "Lwt_log.ascdate: invalid month, %d" tm.Unix.tm_mon
+      | _ -> Printf.ksprintf failwith "Lwt_log.date_string: invalid month, %d" tm.Unix.tm_mon
   in
   Printf.sprintf "%s %2d %02d:%02d:%02d" month_string tm.Unix.tm_mday tm.Unix.tm_hour tm.Unix.tm_min tm.Unix.tm_sec
 
@@ -75,7 +75,7 @@ let render ~buffer ~template ~section ~level ~message =
        | "loc-file" -> file
        | "loc-line" -> string_of_int line
        | "loc-column" -> string_of_int column
-       | var -> Printf.ksprintf invalid_arg "Lwt_log.render_buffer: unknown variable %S" var)
+       | var -> Printf.ksprintf invalid_arg "Lwt_log.render: unknown variable %S" var)
     template
 
 (* +-----------------------------------------------------------------+

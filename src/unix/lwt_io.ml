@@ -183,7 +183,7 @@ let name : type mode. mode _channel -> string = fun ch ->
     | Output -> "output"
 
 let closed_channel ch = Channel_closed(name ch)
-let invalid_channel ch = Failure(Printf.sprintf "temporary atomic %s channel no more valid" (name ch))
+let invalid_channel ch = Failure(Printf.sprintf "temporary atomic channel %s no more valid" (name ch))
 
 let is_busy ch =
   match ch.state with
@@ -594,7 +594,7 @@ let resize_buffer : type m. m channel -> int -> unit Lwt.t = fun wrapper len ->
                 (* Fail if we want to decrease the buffer size and there is
                    too much unread data in the buffer: *)
                 if len < unread_count then
-                  Lwt.fail (Failure "Lwt_io.resize_buffer: cannot decrease buffer size")
+                  Lwt.fail (Failure "Lwt_io.resize_buffer: cannot decrease buffer size, too much unread data")
                 else begin
                   let buffer = Lwt_bytes.create len in
                   Lwt_bytes.unsafe_blit ch.buffer ch.ptr buffer 0 unread_count;
@@ -980,7 +980,7 @@ struct
   let perform token da ch =
     if !token then begin
       if da.da_max <> ch.max || da.da_ptr < ch.ptr || da.da_ptr > ch.max then
-        Lwt.fail (Invalid_argument "Lwt_io.direct_access.perform")
+        Lwt.fail (Invalid_argument "Lwt_io.direct_access.da_perform")
       else begin
         ch.ptr <- da.da_ptr;
         perform_io ch >>= fun count ->
@@ -989,7 +989,7 @@ struct
         Lwt.return count
       end
     end else
-      Lwt.fail (Failure "Lwt_io.direct_access.perform: this function can not be called outside Lwt_io.direct_access")
+      Lwt.fail (Failure "Lwt_io.perform: this function can not be called outside Lwt_io.direct_access")
 
   let direct_access ch f =
     let token = ref true in
@@ -1139,17 +1139,17 @@ struct
      | Random access                                                 |
      +---------------------------------------------------------------+ *)
 
-  let do_seek seek pos =
+  let do_seek fun_name seek pos =
     seek pos Unix.SEEK_SET >>= fun offset ->
     if offset <> pos then
-      Lwt.fail (Failure "Lwt_io.set_position: seek failed")
+      Lwt.fail (Failure (Printf.sprintf "Lwt_io.%s: seek failed" fun_name))
     else
       Lwt.return_unit
 
   let set_position : type m. m _channel -> int64 -> unit Lwt.t = fun ch pos -> match ch.typ, ch.mode with
     | Type_normal(_, seek), Output ->
         flush_total ch >>= fun () ->
-        do_seek seek pos >>= fun () ->
+        do_seek "set_position" seek pos >>= fun () ->
         ch.offset <- pos;
         Lwt.return_unit
     | Type_normal(_, seek), Input ->
@@ -1158,7 +1158,7 @@ struct
           ch.ptr <- ch.max - (Int64.to_int (Int64.sub ch.offset pos));
           Lwt.return_unit
         end else begin
-          do_seek seek pos >>= fun () ->
+          do_seek "set_position" seek pos >>= fun () ->
           ch.offset <- pos;
           ch.ptr <- 0;
           ch.max <- 0;
@@ -1175,7 +1175,7 @@ struct
   let length ch = match ch.typ with
     | Type_normal(_, seek) ->
         seek 0L Unix.SEEK_END >>= fun len ->
-        do_seek seek ch.offset >>= fun () ->
+        do_seek "length" seek ch.offset >>= fun () ->
         Lwt.return len
     | Type_bytes ->
         Lwt.return (Int64.of_int ch.length)
