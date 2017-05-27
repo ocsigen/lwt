@@ -51,9 +51,9 @@ let run name suites =
     match suites with
       | [] ->
           if failures = 0 then
-            Printf.printf "\r\027[JDone. %d test(s) skipped.\n%!" skipped
+            Printf.printf "Done. %d test(s) skipped.\n%!" skipped
           else begin
-            Printf.printf "\r\027[JDone. %d of %d tests failed.\n%!" failures total;
+            Printf.printf "Done. %d of %d tests failed.\n%!" failures total;
             exit 1
           end
       | suite :: suites ->
@@ -67,27 +67,27 @@ let run name suites =
           loop_suites failures skipped number suites
       | test :: tests ->
           if not (test.only_if ()) then begin
-            Printf.printf "\r\027[J(%d/%d) Skipping test %S from suite %S%!"
+            Printf.printf "(%d/%d) Skipping test %S from suite %S\b%!"
               number total test.name suite_name;
             loop_tests
               failures (skipped + 1) suite_name (number + 1) suites tests
           end
           else begin
-            Printf.printf "\r\027[J(%d/%d) Running test %S from suite %S%!"
+            Printf.printf "(%d/%d) Running test %S from suite %S\n%!"
               number total test.name suite_name;
             try
               if test.run () then
                 loop_tests failures skipped suite_name (number + 1) suites tests
               else begin
                 Printf.printf
-                  "\r\027[J\027[31;1mTest %S from suite %S failed.\027[0m\n%!"
+                  "Test %S from suite %S failed.\n%!"
                   test.name suite_name;
                 loop_tests
                   (failures + 1) skipped suite_name (number + 1) suites tests
               end
             with exn ->
               Printf.printf
-                "\r\027[J\027[31;1mTest %S from suite %S failed. It raised: %S.\027[0m\n%!"
+                "Test %S from suite %S failed. It raised: %S.\n%!"
                 test.name suite_name (Printexc.to_string exn);
               loop_tests
                 (failures + 1) skipped suite_name (number + 1) suites tests

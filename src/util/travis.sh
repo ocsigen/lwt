@@ -113,10 +113,6 @@ then
     echo Expected OCaml $OCAML_VERSION, but $ACTUAL_COMPILER is installed
 fi
 
-# XXX Temporary - pin jbuild to dev repo to check if #101 is causing the 
-# travis error on 4.02.3+libev
-opam pin add -y --no-action jbuilder -k git https://github.com/janestreet/jbuilder
-
 # Pin Lwt, install dependencies, and then install Lwt. Lwt is installed
 # separately because we want to keep the build directory for running the tests.
 opam pin add -y --no-action lwt .
