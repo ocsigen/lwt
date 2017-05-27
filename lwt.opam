@@ -19,6 +19,7 @@ build: [
   [ "ocaml" "src/util/configure.ml" "-use-libev" "%{conf-libev:installed}%" ]
   [ "jbuilder" "build" "-p" name "-j" jobs ] 
 ]
+build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
 depends: [
   "ocamlfind" { build & >= "1.5.0" }
   "jbuilder" { build & >= "1.0+beta9" }
