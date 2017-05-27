@@ -18,16 +18,21 @@ build:
 		--only-packages lwt \
 		@install
 
-doc-api: $(SETUP) setup.data build
-	./$(SETUP) -build lwt-api.docdir/index.html
+# build everything
+all: 
+	jbuilder build @install
 
 # run all tests
 test: 
 	jbuilder runtest
 
-# build everything
-all: 
-	jbuilder build @install
+# Use jbuilder/odoc to generate static html documentation.
+# Requires ocaml 4.03.0 to install odoc currently.
+doc:
+	jbuilder build @doc
+
+doc-api: $(SETUP) setup.data build
+	./$(SETUP) -build lwt-api.docdir/index.html
 
 install: 
 	jbuilder install
