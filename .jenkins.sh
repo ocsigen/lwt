@@ -1,6 +1,7 @@
 opam pin add --no-action lwt .
 opam install camlp4
 opam install ssl lablgtk react conf-libev
+opam install ocamlbuild uchar
 opam install --deps-only lwt
 opam install --verbose lwt
 
