@@ -25,10 +25,6 @@ exception Closed
 exception Full
 exception Empty
 
-type 'a result =
-  | Value of 'a
-  | Error of exn
-
 (* A node in a queue of pending data. *)
 type 'a node = {
   mutable next : 'a node;
@@ -433,14 +429,22 @@ let rec get_rec s node =
 
 let get s = get_rec s s.node
 
+type 'a result =
+  | Value of 'a
+  | Error of exn
+
 let rec get_exn_rec s node =
   if node == !(s.last) then
     Lwt.try_bind
       (fun () -> feed s)
       (fun () -> get_exn_rec s node)
       (fun exn -> Lwt.return (Some (Error exn : _ result)))
-      (* TODO: Eliminate the above type constraint once the Lwt_stream.result
-         type is eliminated. *)
+      (* Note: the [Error] constructor above is from [Lwt_stream.result], not
+         [Pervasives.result], nor its alias [Lwt.result]. [Lwt_stream.result] is
+         a deprecated type, defined right above this function.
+
+         The type constraint is necessary to avoid a warning about an ambiguous
+         constructor. *)
   else
     match node.data with
       | Some value ->
