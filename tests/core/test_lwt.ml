@@ -131,8 +131,9 @@ let tests = tests @ trivial_promise_tests
 
 
 (* Tests for promises created with [Lwt.wait] and [Lwt.task], not including
-   tests for cancelation of the latter. This also tests [Lwt.wakeup] and related
-   functions, but not [Lwt.wakeup_later]. *)
+   tests for cancelation of the latter. Tests for double use of [Lwt.wakeup]
+   and related functions are in a separated suite. So are tests for
+   [Lwt.wakeup_later] and related functions. *)
 
 let initial_promise_tests = [
   test "wait: pending" begin fun () ->
@@ -181,46 +182,6 @@ let initial_promise_tests = [
     Lwt.return (Lwt.state p = Lwt.Return "foo")
   end;
 
-  test "wait: double resolve" begin fun () ->
-    let _, r = Lwt.wait () in
-    Lwt.wakeup r "foo";
-    try
-      Lwt.wakeup r "foo";
-      Lwt.return false
-    with Invalid_argument _ ->
-      Lwt.return true
-  end;
-
-  test "task: double resolve" begin fun () ->
-    let _, r = Lwt.task () in
-    Lwt.wakeup r "foo";
-    try
-      Lwt.wakeup r "foo";
-      Lwt.return false
-    with Invalid_argument _ ->
-      Lwt.return true
-  end;
-
-  test "wait: double fail" begin fun () ->
-    let _, r = Lwt.wait () in
-    Lwt.wakeup_exn r Exception;
-    try
-      Lwt.wakeup_exn r Exception;
-      Lwt.return false
-    with Invalid_argument _ ->
-      Lwt.return true
-  end;
-
-  test "task: double fail" begin fun () ->
-    let _, r = Lwt.task () in
-    Lwt.wakeup_exn r Exception;
-    try
-      Lwt.wakeup_exn r Exception;
-      Lwt.return false
-    with Invalid_argument _ ->
-      Lwt.return true
-  end;
-
   test "waiter_of_wakener" begin fun () ->
     let p, r = Lwt.wait () in
     Lwt.return (Lwt.waiter_of_wakener r == p)
@@ -228,6 +189,69 @@ let initial_promise_tests = [
 ]
 let tests = tests @ initial_promise_tests
 
+
+let double_wakeup_tests = [
+  test "wakeup: double use on wait" begin fun () ->
+    let _, r = Lwt.wait () in
+    Lwt.wakeup r "foo";
+    try
+      Lwt.wakeup r "foo";
+      Lwt.return false
+    with Invalid_argument "Lwt.wakeup" ->
+      Lwt.return true
+  end [@ocaml.warning "-52"];
+
+  test "wakeup: double use on task" begin fun () ->
+    let _, r = Lwt.task () in
+    Lwt.wakeup r "foo";
+    try
+      Lwt.wakeup r "foo";
+      Lwt.return false
+    with Invalid_argument "Lwt.wakeup" ->
+      Lwt.return true
+  end [@ocaml.warning "-52"];
+
+  test "wakeup_exn: double use on wait" begin fun () ->
+    let _, r = Lwt.wait () in
+    Lwt.wakeup_exn r Exception;
+    try
+      Lwt.wakeup_exn r Exception;
+      Lwt.return false
+    with Invalid_argument "Lwt.wakeup_exn" ->
+      Lwt.return true
+  end [@ocaml.warning "-52"];
+
+  test "wakeup_exn: double use on task" begin fun () ->
+    let _, r = Lwt.task () in
+    Lwt.wakeup_exn r Exception;
+    try
+      Lwt.wakeup_exn r Exception;
+      Lwt.return false
+    with Invalid_argument "Lwt.wakeup_exn" ->
+      Lwt.return true
+  end [@ocaml.warning "-52"];
+
+  test "wakeup_result: double use on wait" begin fun () ->
+    let _, r = Lwt.wait () in
+    Lwt.wakeup_exn r Exception;
+    try
+      Lwt.wakeup_result r (Result.Ok ());
+      Lwt.return false
+    with Invalid_argument "Lwt.wakeup_result" ->
+      Lwt.return true
+  end [@ocaml.warning "-52"];
+
+  test "wakeup_result: double use on task" begin fun () ->
+    let _, r = Lwt.task () in
+    Lwt.wakeup_exn r Exception;
+    try
+      Lwt.wakeup_result r (Result.Ok ());
+      Lwt.return false
+    with Invalid_argument "Lwt.wakeup_result" ->
+      Lwt.return true
+  end [@ocaml.warning "-52"];
+]
+let tests = tests @ double_wakeup_tests
 
 
 (* Tests for sequential composition functions, such as [Lwt.bind], but not
@@ -1888,25 +1912,65 @@ let wakeup_later_tests = [
     Lwt.return (Lwt.state p = Lwt.Return "foobar")
   end;
 
-  test "wakeup_later_result: already resolved" begin fun () ->
+  test "wakeup_later: double use on wait" begin fun () ->
+    let _, r = Lwt.wait () in
+    Lwt.wakeup r ();
+    try
+      Lwt.wakeup_later r ();
+      Lwt.return false;
+    with Invalid_argument "Lwt.wakeup_later" ->
+      Lwt.return true
+  end [@ocaml.warning "-52"];
+
+  test "wakeup_later: double use on task" begin fun () ->
+    let _, r = Lwt.task () in
+    Lwt.wakeup r ();
+    try
+      Lwt.wakeup_later r ();
+      Lwt.return false;
+    with Invalid_argument "Lwt.wakeup_later" ->
+      Lwt.return true
+  end [@ocaml.warning "-52"];
+
+  test "wakeup_later_result: double use on wait" begin fun () ->
     let _, r = Lwt.wait () in
     Lwt.wakeup r ();
     try
       Lwt.wakeup_later_result r (Result.Ok ());
       Lwt.return false;
-    with Invalid_argument _ ->
+    with Invalid_argument "Lwt.wakeup_later_result" ->
       Lwt.return true
-  end;
+  end [@ocaml.warning "-52"];
 
-  test "wakeup_later_result: already failed" begin fun () ->
-    let _, r = Lwt.wait () in
-    Lwt.wakeup_exn r Exception;
+  test "wakeup_later_result: double use on task" begin fun () ->
+    let _, r = Lwt.task () in
+    Lwt.wakeup r ();
     try
       Lwt.wakeup_later_result r (Result.Ok ());
-      Lwt.return false
-    with Invalid_argument _ ->
+      Lwt.return false;
+    with Invalid_argument "Lwt.wakeup_later_result" ->
       Lwt.return true
-  end;
+  end [@ocaml.warning "-52"];
+
+  test "wakeup_later_exn: double use on wait" begin fun () ->
+    let _, r = Lwt.wait () in
+    Lwt.wakeup r ();
+    try
+      Lwt.wakeup_later_exn r Exception;
+      Lwt.return false;
+    with Invalid_argument "Lwt.wakeup_later_exn" ->
+      Lwt.return true
+  end [@ocaml.warning "-52"];
+
+  test "wakeup_later_exn: double use on task" begin fun () ->
+    let _, r = Lwt.task () in
+    Lwt.wakeup r ();
+    try
+      Lwt.wakeup_later_exn r Exception;
+      Lwt.return false;
+    with Invalid_argument "Lwt.wakeup_later_exn" ->
+      Lwt.return true
+  end [@ocaml.warning "-52"];
 
   test "wakeup_later_result: nested" begin fun () ->
     let f_ran = ref false in
