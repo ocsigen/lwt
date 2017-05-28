@@ -28,9 +28,9 @@ let min_buffer_size = 16
 
 let check_buffer_size fun_name buffer_size =
   if buffer_size < min_buffer_size then
-    Printf.ksprintf invalid_arg "Lwt_io.%s: too small buffer size (%d)" fun_name buffer_size
+    Printf.ksprintf invalid_arg "Lwt_io.%s: too small buffer size" fun_name
   else if buffer_size > Sys.max_string_length then
-    Printf.ksprintf invalid_arg "Lwt_io.%s: too big buffer size (%d)" fun_name buffer_size
+    Printf.ksprintf invalid_arg "Lwt_io.%s: too big buffer size" fun_name
   else
     ()
 
@@ -225,8 +225,8 @@ let perform_io : type mode. mode _channel -> int Lwt.t = fun ch -> match ch.main
                      ] >>= fun n ->
             (* Never trust user functions... *)
             if n < 0 || n > len then
-              Lwt.fail (Failure (Printf.sprintf "Lwt_io: invalid result of the [%s] function(request=%d,result=%d)"
-                                    (match ch.mode with Input -> "read" | Output -> "write") len n))
+              Lwt.fail (Failure (Printf.sprintf "Lwt_io.perform_io: invalid result of the [%s] function"
+                                    (match ch.mode with Input -> "read" | Output -> "write")))
             else begin
               (* Update the global offset: *)
               ch.offset <- Int64.add ch.offset (Int64.of_int n);
@@ -582,7 +582,7 @@ let buffered : type m. m channel -> int = fun ch ->
 let buffer_size ch = ch.channel.length
 
 let resize_buffer : type m. m channel -> int -> unit Lwt.t = fun wrapper len ->
-  if len < min_buffer_size then invalid_arg "Lwt_io.resize_buffer";
+  if len < min_buffer_size then invalid_arg "Lwt_io.resize_buffer: buffer size too small";
   match wrapper.channel.typ with
     | Type_bytes ->
         Lwt.fail (Failure "Lwt_io.resize_buffer: cannot resize the buffer of a channel created with Lwt_io.of_string")
@@ -764,9 +764,7 @@ struct
 
   let read_into ic buf ofs len =
     if ofs < 0 || len < 0 || ofs + len > Bytes.length buf then
-      Lwt.fail (Invalid_argument (Printf.sprintf
-                                    "Lwt_io.read_into(ofs=%d,len=%d,str_len=%d)"
-                                    ofs len (Bytes.length buf)))
+      Lwt.fail (Invalid_argument "Lwt_io.read_into")
     else begin
       if len = 0 then
         Lwt.return 0
@@ -787,9 +785,7 @@ struct
 
   let read_into_exactly ic buf ofs len =
     if ofs < 0 || len < 0 || ofs + len > Bytes.length buf then
-      Lwt.fail (Invalid_argument (Printf.sprintf
-                                    "Lwt_io.read_into_exactly(ofs=%d,len=%d,str_len=%d)"
-                                    ofs len (Bytes.length buf)))
+      Lwt.fail (Invalid_argument "Lwt_io.read_into_exactly")
     else begin
       if len = 0 then
         Lwt.return_unit
@@ -886,9 +882,7 @@ struct
 
   let write_from oc buf ofs len =
     if ofs < 0 || len < 0 || ofs + len > Bytes.length buf then
-      Lwt.fail (Invalid_argument (Printf.sprintf
-                                    "Lwt_io.write_from(ofs=%d,len=%d,str_len=%d)"
-                                    ofs len (Bytes.length buf)))
+      Lwt.fail (Invalid_argument "Lwt_io.write_from")
     else begin
       if len = 0 then
         Lwt.return 0
@@ -909,9 +903,7 @@ struct
 
   let write_from_exactly oc buf ofs len =
     if ofs < 0 || len < 0 || ofs + len > Bytes.length buf then
-      Lwt.fail (Invalid_argument (Printf.sprintf
-                                    "Lwt_io.write_from_exactly(ofs=%d,len=%d,str_len=%d)"
-                                    ofs len (Bytes.length buf)))
+      Lwt.fail (Invalid_argument "Lwt_io.write_from_exactly")
     else begin
       if len = 0 then
         Lwt.return_unit
@@ -964,7 +956,7 @@ struct
 
   let block : type m. m _channel -> int -> (Lwt_bytes.t -> int -> 'a Lwt.t) -> 'a Lwt.t = fun ch size f ->
     if size < 0 || size > min_buffer_size then
-      Lwt.fail (Invalid_argument(Printf.sprintf "Lwt_io.block(size=%d)" size))
+      Lwt.fail (Invalid_argument "Lwt_io.block")
     else
       if ch.max - ch.ptr >= size then begin
         let ptr = ch.ptr in
