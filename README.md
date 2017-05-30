@@ -68,21 +68,26 @@ opam install lwt
 
 ## Documentation
 
-The manual can be found [here][manual].
+We are currently working on improving the Lwt documentation (drastically; we are
+rewriting the manual). In the meantime:
 
-[Concurrent Programming with Lwt][rwo-lwt] is a great source of Lwt examples.
-They are translations of code from the excellent Real World OCaml, but they are
-just as useful if you are not reading the book.
+- The current manual can be found [here][manual].
+- Mirage has a nicely-written [Lwt tutorial][mirage-tutorial].
+- An example of a [simple server][counter-server] written in Lwt.
+- [Concurrent Programming with Lwt][rwo-lwt] is a great source of Lwt examples.
+  They are translations of code from the excellent Real World OCaml, but are
+  just as useful if you are not reading the book.
+- Some examples are also available in Lwt's [`doc/examples`][examples].
 
-Some examples are also available in Lwt's [`doc/examples`][examples].
-
-*Note: much of the manual still refers to `'a Lwt.t` as "lightweight threads" or
-just "threads." This will be fixed in the new manual. `'a Lwt.t` is a promise,
-and has nothing to do with system or preemptive threads.*
+*Note: much of the current manual refers to `'a Lwt.t` as "lightweight threads"
+or just "threads." This will be fixed in the new manual. `'a Lwt.t` is a
+promise, and has nothing to do with system or preemptive threads.*
 
 [manual]:   http://ocsigen.org/lwt/manual/
-[examples]: https://github.com/ocsigen/lwt/tree/master/doc/examples
+[examples]: https://github.com/ocsigen/lwt/tree/master/doc/examples/unix
 [rwo-lwt]:  https://github.com/dkim/rwo-lwt#readme
+[mirage-tutorial]: https://mirage.io/wiki/tutorial-lwt
+[counter-server]: http://www.baturin.org/code/lwt-counter-server/
 
 <br/>
 
