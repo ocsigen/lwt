@@ -169,7 +169,7 @@ There are several resources to help you get started:
 [all-issues]: https://github.com/ocsigen/lwt/issues
 [roadmap]:  https://github.com/ocsigen/lwt/wiki/Roadmap
 [easy-issues]: https://github.com/ocsigen/lwt/labels/easy
-[contributing-md]: https://github.com/ocsigen/lwt/blob/master/CONTRIBUTING.md
+[contributing-md]: https://github.com/ocsigen/lwt/blob/master/doc/CONTRIBUTING.md
 [tests]: https://github.com/ocsigen/lwt/tree/master/tests
 
 
