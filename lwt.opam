@@ -23,7 +23,6 @@ build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
 depends: [
   "ocamlfind" { build & >= "1.5.0" }
   "jbuilder" { build & >= "1.0+beta9" }
-  "ocaml-migrate-parsetree" 
   "ppx_tools_versioned" 
   "cppo" { build }
   "result"
@@ -43,5 +42,6 @@ messages: [
   {react:installed & !lwt_react:installed}
 ]
 post-messages: [
-  "Lwt+jbuilder has some major breaking changes!!!"
+  "Lwt 3.0.0 made some minor breaking changes, announced in 2.7.0. See
+  https://github.com/ocsigen/lwt/issues/308"
 ]

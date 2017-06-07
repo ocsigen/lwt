@@ -1,0 +1,135 @@
+#
+# This file has been copied from _build/default/META.lwt then
+# modified to add exists_if clauses to support optional
+# compilation and the camlp4 syntax extension packages have
+# been given appropriate predicates.
+#
+
+version = "dev"
+description = "Monadic promises and concurrent I/O"
+requires = "bytes result"
+archive(byte) = "lwt.cma"
+archive(native) = "lwt.cmxa"
+plugin(byte) = "lwt.cma"
+plugin(native) = "lwt.cmxs"
+package "log" (
+  directory = "log"
+  version = "dev"
+  description = "Logger for Lwt"
+  requires = "bytes lwt result"
+  archive(byte) = "lwt_log.cma"
+  archive(native) = "lwt_log.cmxa"
+  plugin(byte) = "lwt_log.cma"
+  plugin(native) = "lwt_log.cmxs"
+  exists_if = "lwt_log.cma"
+)
+package "ppx" (
+  directory = "ppx"
+  version = "dev"
+  description = "Lwt PPX syntax extension"
+  requires(ppx_driver) = "compiler-libs
+                          compiler-libs.common
+                          ocaml-migrate-parsetree
+                          ppx_tools_versioned"
+  archive(ppx_driver,byte) = "ppx_lwt.cma"
+  archive(ppx_driver,native) = "ppx_lwt.cmxa"
+  plugin(ppx_driver,byte) = "ppx_lwt.cma"
+  plugin(ppx_driver,native) = "ppx_lwt.cmxs"
+  exists_if = "ppx_lwt.cma"
+  # This is what jbuilder uses to find out the runtime dependencies of
+  # a preprocessor
+  ppx_runtime_deps = "bytes lwt result"
+  # This line makes things transparent for people mixing preprocessors
+  # and normal dependencies
+  requires(-ppx_driver) = "lwt.ppx.deprecated-ppx-method"
+  package "deprecated-ppx-method" (
+    version = "dev"
+    description = "glue package for the deprecated method of using ppx"
+    requires = "bytes lwt result"
+    ppx(-ppx_driver,-custom_ppx) = "./ppx.exe --as-ppx"
+    exists_if = "ppx_lwt.cma"
+  )
+)
+package "preemptive" (
+  directory = "preemptive"
+  version = "dev"
+  description = "Preemptive thread support for Lwt"
+  requires = "bigarray
+              bytes
+              lwt
+              lwt.log
+              lwt.unix
+              result
+              threads
+              threads.posix
+              unix"
+  archive(byte) = "lwt_preemptive.cma"
+  archive(native) = "lwt_preemptive.cmxa"
+  plugin(byte) = "lwt_preemptive.cma"
+  plugin(native) = "lwt_preemptive.cmxs"
+  exists_if = "lwt_preemptive.cma"
+)
+package "simple-top" (
+  directory = "simple-top"
+  version = "dev"
+  description = "Lwt-OCaml top level integration (deprecated; use utop)"
+  requires = "bigarray
+              bytes
+              compiler-libs
+              compiler-libs.common
+              lwt
+              lwt.log
+              lwt.unix
+              result
+              unix"
+  archive(byte) = "lwt_simple_top.cma"
+  archive(native) = "lwt_simple_top.cmxa"
+  plugin(byte) = "lwt_simple_top.cma"
+  plugin(native) = "lwt_simple_top.cmxs"
+  exists_if = "lwt_simple_top.cma"
+)
+package "syntax" (
+  directory = "syntax"
+  version = "dev"
+  description = "Camlp4 syntax for Lwt (deprecated; use lwt.ppx)"
+  requires = "camlp4 lwt.syntax.options"
+  archive(syntax, preprocessor) = "lwt_syntax.cma"
+  archive(syntax, toploop) = "lwt_syntax.cma"
+  archive(syntax, preprocessor, native) = "lwt_syntax.cmxa"
+  archive(syntax, preprocessor, native, plugin) = "lwt_syntax.cmxs"
+  exists_if = "lwt_syntax.cma"
+  package "log" (
+    directory = "log"
+    version = "dev"
+    description = "Camlp4 syntax for Lwt logging (deprecated; use lwt.ppx)"
+    requires = "camlp4 lwt.syntax.options"
+    archive(syntax, preprocessor) = "lwt_syntax_log.cma"
+    archive(syntax, toploop) = "lwt_syntax_log.cma"
+    archive(syntax, preprocessor, native) = "lwt_syntax_log.cmxa"
+    archive(syntax, preprocessor, native, plugin) = "lwt_syntax_log.cmxs"
+    exists_if = "lwt_syntax_log.cma"
+  )
+  package "options" (
+    directory = "options"
+    version = "dev"
+    description = "Options for Lwt Camlp4 syntax extension (deprecated; use lwt.ppx)"
+    requires = "camlp4"
+    archive(syntax, preprocessor) = "lwt_syntax_options.cma"
+    archive(syntax, toploop) = "lwt_syntax_options.cma"
+    archive(syntax, preprocessor, native) = "lwt_syntax_options.cmxa"
+    archive(syntax, preprocessor, native, plugin) = "lwt_syntax_options.cmxs"
+    exists_if = "lwt_syntax_options.cma"
+  )
+)
+package "unix" (
+  directory = "unix"
+  version = "dev"
+  description = "Unix support for Lwt"
+  requires = "bigarray bytes lwt lwt.log result unix"
+  archive(byte) = "lwt_unix.cma"
+  archive(native) = "lwt_unix.cmxa"
+  plugin(byte) = "lwt_unix.cma"
+  plugin(native) = "lwt_unix.cmxs"
+  exists_if = "lwt_unix.cma"
+)
+
