@@ -16,7 +16,8 @@ bug-reports: "https://github.com/ocsigen/lwt/issues"
 license: "LGPL with OpenSSL linking exception"
 dev-repo: "https://github.com/ocsigen/lwt.git"
 build: [ 
-  [ "ocaml" "src/util/configure.ml" "-use-libev" "%{conf-libev:installed}%" ]
+  [ "ocaml" "src/util/configure.ml" "-use-libev" "%{conf-libev:installed}%" 
+                                    "-use-camlp4" "%{camlp4:installed}%" ]
   [ "jbuilder" "build" "-p" name "-j" jobs ] 
 ]
 build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
