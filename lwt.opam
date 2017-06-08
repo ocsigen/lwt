@@ -22,7 +22,7 @@ build: [
 ]
 build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
 depends: [
-  "ocamlfind" { build & >= "1.5.0" }
+  "ocamlfind" {build & >= "1.5.0"}
   "jbuilder" { build & >= "1.0+beta9" }
   "ppx_tools_versioned" 
   "cppo" { build }
@@ -34,6 +34,9 @@ depopts: [
   "conf-libev"
   "camlp4"
 ]
+# In practice, Lwt requires OCaml >= 4.02.3, as that is a constraint of the
+# dependency jbuilder.
+available: [ocaml-version >= "4.02.0" & compiler != "4.02.1+BER"]
 messages: [
   "For module Lwt_ssl, please install package lwt_ssl"
   {ssl:installed & !lwt_ssl:installed}
