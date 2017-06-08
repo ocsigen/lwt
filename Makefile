@@ -48,6 +48,9 @@ doc-api-html: all
 doc-api-wiki: all
 	make -C doc api/wiki/index.wiki
 
+install: 
+	jbuilder install
+
 uninstall: 
 	jbuilder uninstall
 
