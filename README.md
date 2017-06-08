@@ -56,7 +56,6 @@ the visible OCaml code is run in a single thread, but Lwt internally uses a
 combination of worker threads and non-blocking file descriptors to resolve in
 parallel the promises that do I/O.
 
-
 <br/>
 
 ## Installing
@@ -65,32 +64,25 @@ parallel the promises that do I/O.
 opam install lwt
 ```
 
-
 <br/>
 
 ## Documentation
 
-We are currently working on improving the Lwt documentation (drastically; we are
-rewriting the manual). In the meantime:
+The manual can be found [here][manual].
 
-- The current manual can be found [here][manual].
-- Mirage has a nicely-written [Lwt tutorial][mirage-tutorial].
-- An example of a [simple server][counter-server] written in Lwt.
-- [Concurrent Programming with Lwt][rwo-lwt] is a great source of Lwt examples.
-  They are translations of code from the excellent Real World OCaml, but are
-  just as useful if you are not reading the book.
-- Some examples are also available in Lwt's [`doc/examples`][examples].
+[Concurrent Programming with Lwt][rwo-lwt] is a great source of Lwt examples.
+They are translations of code from the excellent Real World OCaml, but they are
+just as useful if you are not reading the book.
 
-*Note: much of the current manual refers to `'a Lwt.t` as "lightweight threads"
-or just "threads." This will be fixed in the new manual. `'a Lwt.t` is a
-promise, and has nothing to do with system or preemptive threads.*
+Some examples are also available in Lwt's [`doc/examples`][examples].
+
+*Note: much of the manual still refers to `'a Lwt.t` as "lightweight threads" or
+just "threads." This will be fixed in the new manual. `'a Lwt.t` is a promise,
+and has nothing to do with system or preemptive threads.*
 
 [manual]:   http://ocsigen.org/lwt/manual/
-[examples]: https://github.com/ocsigen/lwt/tree/master/doc/examples/unix
+[examples]: https://github.com/ocsigen/lwt/tree/master/doc/examples
 [rwo-lwt]:  https://github.com/dkim/rwo-lwt#readme
-[mirage-tutorial]: https://mirage.io/wiki/tutorial-lwt
-[counter-server]: http://www.baturin.org/code/lwt-counter-server/
-
 
 <br/>
 
@@ -106,6 +98,7 @@ releases. It is less noisy than watching the whole repository. Announcements are
 also made in [/r/ocaml][reddit], on the [OCaml mailing list][caml-list], and on
 [discuss.ocaml.org][discourse].
 
+[issues]: https://github.com/ocsigen/lwt/issues/new
 [gitter]: https://gitter.im/ocaml-lwt/Lobby
 [irc]:    http://webchat.freenode.net/?channels=#ocaml
 [so]:     http://stackoverflow.com/questions/ask?tags=ocaml,lwt,ocaml-lwt
@@ -113,71 +106,32 @@ also made in [/r/ocaml][reddit], on the [OCaml mailing list][caml-list], and on
 [reddit]: https://www.reddit.com/r/ocaml/
 [caml-list]: https://sympa.inria.fr/sympa/arc/caml-list
 [discourse]: https://discuss.ocaml.org/c/lwt
-[issues]: https://github.com/ocsigen/lwt/issues/new
-
 
 <br/>
 
 ## Contributing
 
-What counts as a contribution to Lwt? All kinds of things make the project
-better, and are very much appreciated:
+Lwt is a very mature library, but there is considerable room for improvement.
+Contributions are welcome. To clone the source and install a development
+version,
 
-- [Asking](#contact) anything. This helps everyone understand Lwt, including
-  long-time maintainers!
-- Making or requesting edits to the [docs](#documentation), or just reading
-  them.
-- Reading any [issue or PR][issues-and-prs], and, optionally, adding your
-  opinion or requesting clarification.
-- Explaining how to make Lwt easier to contribute to, finding problems with the
-  [contributing docs][contributing-md], etc.
-- Helping other people with Lwt, whether in this repo, or elsewhere in the
-  world.
-- Writing or clarifying [test cases][tests].
-- And, of course, the traditional kind of contribution, picking up
-  [issues][all-issues] and writing code :)
+```
+opam source --dev-repo --pin lwt
+```
 
-Contributing to Lwt is not only for OCaml "experts!" If you are near the
-beginning of your OCaml journey, we'd love to give you a little help by
-recommending appropriate issues, or even just chatting about Lwt or OCaml.
-Newcomers make valuable contributions, that maintainers often learn from – not
-the least because newcomers bring a fresh, valuable perspective :) Don't be
-afraid to ask anything.
+This will also install the development dependency OASIS.
 
-We hope you'll join us to work in a friendly community around Lwt :) On behalf
-of all users of, and contributors to, Lwt: Thank you! :tada:
+A list of [project suggestions][projects] and a [roadmap][roadmap] can be found
+on the wiki.
 
-#### Resources
-
-There are several resources to help you get started:
-
-- If you'd like to ask a question, or otherwise talk, there is the
-  [contact](#contact) information.
-- Lwt maintains a list of [easy issues][easy-issues], which you can use to try
-  out the code contribution workflow. This list works two ways! Please
-  contribute to it: if you find something that needs a fix, open an issue. It
-  might be an easy issue that another contributor would love to solve :)
-- [`CONTRIBUTING.md`][contributing-md] contains optional tips for working on the
-  code of Lwt, instructions on how to check the code out, and a high-level
-  outline of the code base.
-- The project [roadmap][roadmap] contains a list of long-term, large-scale
-  projects, so you can get an idea of where Lwt is headed, as a whole. Planned
-  upcoming releases are also listed there.
-- Watch this repository :)
-
-[issues-and-prs]: https://github.com/ocsigen/lwt/issues?utf8=%E2%9C%93&q=is%3Aopen
-[all-issues]: https://github.com/ocsigen/lwt/issues
-[roadmap]:  https://github.com/ocsigen/lwt/wiki/Roadmap
-[easy-issues]: https://github.com/ocsigen/lwt/labels/easy
-[contributing-md]: https://github.com/ocsigen/lwt/blob/master/doc/CONTRIBUTING.md#readme
-[tests]: https://github.com/ocsigen/lwt/tree/master/tests
-
+[projects]: https://github.com/ocsigen/lwt/wiki/Plan#projects
+[roadmap]:  https://github.com/ocsigen/lwt/wiki/Plan#roadmap
 
 <br/>
 
 ## License
 
-Lwt is released under the LGPL, with an OpenSSL linking exception. See
+Lwt is released under the LGPL, with the OpenSSL linking exception. See
 [`COPYING`][copying].
 
 [copying]: https://github.com/ocsigen/lwt/blob/master/doc/COPYING

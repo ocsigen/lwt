@@ -1,0 +1,20 @@
+===========================================================
+
+LWT configuration is incomplete and compilation will
+proceed with default values.
+
+Consider running 'ocaml src/util/configure.ml' or
+'make default-config' to complete configuration.
+
+$ ocaml src/util/configure.ml -help
+enable lwt.unix and camlp4 features
+options are:
+  -use-libev {true|false} whether to check for libev
+  -use-pthread {true|false} whether to use pthread
+  -android-target {true|false} compile for Android
+  -libev-default {true|false} whether to use the libev backend by default
+  -use-camlp4 {true|false} when true enable camlp4 syntax extension
+  -help  Display this list of options
+  --help  Display this list of options
+
+===========================================================

@@ -773,7 +773,7 @@ external readv_job :
   "lwt_unix_readv_job"
 
 let readv fd io_vectors =
-  let count = check_io_vectors "Lwt_unix.readv" io_vectors in
+  let count = check_io_vectors "readv" io_vectors in
 
   Lazy.force fd.blocking >>= function
     | true ->
@@ -792,7 +792,7 @@ external writev_job :
   "lwt_unix_writev_job"
 
 let writev fd io_vectors =
-  let count = check_io_vectors "Lwt_unix.writev" io_vectors in
+  let count = check_io_vectors "writev" io_vectors in
 
   Lazy.force fd.blocking >>= function
     | true ->

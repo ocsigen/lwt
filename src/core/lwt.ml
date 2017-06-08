@@ -320,7 +320,7 @@ let state_of_result
 let make_value v = Result.Ok v
 let make_error e = Result.Error e
 
-let wakeup_gen fun_name t result =
+let wakeup_result t result =
   let t = repr_rec (wakener_repr t) in
   match t.state with
     | Sleep sleeper ->
@@ -331,13 +331,12 @@ let wakeup_gen fun_name t result =
         (* Do not fail if the thread has been canceled: *)
         ()
     | Return _ | Fail _ | Repr _ ->
-        Printf.ksprintf invalid_arg "Lwt.%s" fun_name
+        invalid_arg "Lwt.wakeup_result"
 
-let wakeup_result t result = wakeup_gen "wakeup_result" t result
-let wakeup t v = wakeup_gen "wakeup" t (make_value v)
-let wakeup_exn t e = wakeup_gen "wakeup_exn" t (make_error e)
+let wakeup t v = wakeup_result t (make_value v)
+let wakeup_exn t e = wakeup_result t (make_error e)
 
-let wakeup_later_gen (type x) fun_name t result =
+let wakeup_later_result (type x) t result =
   let t = repr_rec (wakener_repr t) in
   match t.state with
     | Sleep sleeper ->
@@ -357,11 +356,10 @@ let wakeup_later_gen (type x) fun_name t result =
     | Fail Canceled ->
         ()
     | Return _ | Fail _ | Repr _ ->
-        Printf.ksprintf invalid_arg "Lwt.%s" fun_name
+        invalid_arg "Lwt.wakeup_later_result"
 
-let wakeup_later_result t result = wakeup_later_gen "wakeup_later_result" t result
-let wakeup_later t v = wakeup_later_gen "wakeup_later" t (make_value v)
-let wakeup_later_exn t e = wakeup_later_gen "wakeup_later_exn" t (make_error e)
+let wakeup_later t v = wakeup_later_result t (make_value v)
+let wakeup_later_exn t e = wakeup_later_result t (make_error e)
 
 module type A_sleeper = sig
   type a

@@ -180,7 +180,7 @@ let check_io_vectors func_name iovs =
        if iov.iov_offset < 0
          || iov.iov_length < 0
          || iov.iov_offset > length iov.iov_buffer - iov.iov_length then
-           Printf.ksprintf invalid_arg "Lwt_bytes.%s" func_name)
+           invalid_arg ("Lwt_bytes." ^ func_name))
     iovs
 
 external stub_recv_msg : Unix.file_descr -> int -> io_vector list -> int * Unix.file_descr list = "lwt_unix_bytes_recv_msg"

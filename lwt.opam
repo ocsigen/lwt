@@ -16,31 +16,17 @@ bug-reports: "https://github.com/ocsigen/lwt/issues"
 license: "LGPL with OpenSSL linking exception"
 dev-repo: "https://github.com/ocsigen/lwt.git"
 build: [
-  [make "setup"]
-  ["ocaml" "setup.ml" "-configure"
-    "--prefix" prefix
-    "--%{conf-libev:enable}%-libev"
-    "--%{camlp4:enable}%-camlp4"
-    "--%{base-unix:enable}%-unix"
-    "--%{base-threads:enable}%-preemptive"
-    "--%{ppx_tools:enable}%-ppx"]
-  [make "build"]
+  [ "ocaml" "src/util/configure.ml" "-use-libev" "%{conf-libev:installed}%"
+                                    "-use-camlp4" "%{camlp4:installed}%" ]
+  [ "jbuilder" "build" "-p" name "-j" jobs ]
 ]
-build-test: [
-  ["ocaml" "setup.ml" "-configure" "--enable-tests"]
-  [make "test"]
-]
-install: [[make "install"]]
-remove: [[ "ocamlfind" "remove" "lwt" ]]
+build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
 depends: [
   "ocamlfind" {build & >= "1.5.0"}
-  "ocamlbuild" {build}
+  "jbuilder" { build & >= "1.0+beta9" }
+  "ppx_tools_versioned"
+  "cppo" { build }
   "result"
-  "cppo" {build}
-  # See https://github.com/ocsigen/lwt/issues/266
-  ( "base-no-ppx" | "ppx_tools" {build} )
-  ## OASIS is not required in released version
-  "oasis" {build & >= "0.4.8"}
 ]
 depopts: [
   "base-threads"
@@ -48,9 +34,8 @@ depopts: [
   "conf-libev"
   "camlp4"
 ]
-conflicts: [
-  "ppx_tools" {< "1.0.0" }
-]
+# In practice, Lwt requires OCaml >= 4.02.3, as that is a constraint of the
+# dependency jbuilder.
 available: [ocaml-version >= "4.02.0" & compiler != "4.02.1+BER"]
 messages: [
   "For module Lwt_ssl, please install package lwt_ssl"

@@ -1,9 +1,11 @@
+open Migrate_parsetree
+open OCaml_404.Ast
 open Ast_mapper
 open Ast_helper
 open Asttypes
 open Parsetree
 
-open Ast_convenience
+open Ast_convenience_404
 
 (** {2 Convenient stuff} *)
 
@@ -299,15 +301,7 @@ let lwt_log mapper fn args attrs loc =
     else default_mapper.expr mapper (Exp.apply ~attrs fn args)
   | _ -> default_mapper.expr mapper (Exp.apply ~attrs fn args)
 
-let lwt_mapper args =
-  args |> List.iter (fun arg ->
-    match arg with
-    | "-no-debug" -> debug := false
-    | "-log" -> log := true
-    | "-no-log" -> log := false
-    | "-no-sequence" -> sequence := false
-    | "-no-strict-sequence" -> strict_seq := false
-    | _ -> raise (Location.Error (Location.errorf "Unknown lwt.ppx argument: %s" arg)));
+let mapper =
   { default_mapper with
     expr = (fun mapper expr ->
       match expr with
@@ -370,4 +364,16 @@ let lwt_mapper args =
       | x -> default_mapper.structure_item mapper x);
   }
 
-let () = run_main lwt_mapper
+
+let args =
+  Arg.([
+      "-no-debug", Clear debug, "disable debug mode";
+      "-log", Set log, "enable logging";
+      "-no-log", Clear log, "disable logging";
+      "-no-sequence", Clear sequence, "disable sequence operator";
+      "-no-strict-sequence", Clear strict_seq, "allow non-unit sequence operations";
+  ])
+
+let () =
+ Driver.register ~name:"ppx_lwt" ~args Versions.ocaml_404
+   (fun _config _cookies -> mapper)

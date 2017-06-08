@@ -1,0 +1,25 @@
+(jbuild_version 1)
+
+(library
+ ((name lwt_glib)
+  (public_name lwt_glib)
+  (synopsis "GLib integration for Lwt")
+  (wrapped false)
+  (libraries (lwt lwt.unix))
+  (c_names (lwt_glib_stubs))
+  (c_flags (:include glib_c_flags.sexp))
+  (c_library_flags (:include glib_c_library_flags.sexp))))
+
+;; implements pkg-config logic from glib/myocamlbuild
+
+(rule
+ ((targets (glib_c_flags.sexp
+            glib_c_library_flags.sexp))
+  (deps    (config/discover.exe ocamlc_config))
+  (action  (run ${<} ocamlc_config))))
+
+;; create ocamlc -config file
+
+(rule
+ ((targets (ocamlc_config))
+  (action (with-stdout-to ${@} (run ${OCAMLC} -config)))))

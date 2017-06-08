@@ -107,102 +107,36 @@ let test_map f test_list =
   in
   ()
 
-let test_for_all_true f =
-  let l = [true;true] in
-  f (fun x -> return (x = true)) l
-
-let test_for_all_false f =
-  let l = [true;true] in
-  f (fun x -> return (x = false)) l >>= fun b ->
-  return (not b)
-
-let test_exists_true f =
-  let l = [true;false] in
-  f (fun x -> return (x = true)) l >>= fun b ->
-  return b
-
-let test_exists_false f =
-  let l = [true;true] in
-  f (fun x -> return (x = false)) l >>= fun b ->
-  return (not b)
-
-let test_filter f =
-  let l = [1;2;3;4] in
-  f (fun x -> return (x mod 2 = 0)) l >>= fun after ->
-  return (after = [2;4])
-
-let test_partition f =
-  let l = [1;2;3;4] in
-  f (fun x -> return (x <= 2)) l >>= fun (a, b) ->
-  return (a = [1;2] && b = [3;4])
-
 let suite = suite "lwt_util" [
-    test "0"
-      (fun () ->
-         test_iter Lwt_list.iter_p [1;0;1];
-         test_exception Lwt_list.iter_p;
-         return true);
+  test "0"
+    (fun () ->
+       test_iter Lwt_list.iter_p [1;0;1];
+       test_exception Lwt_list.iter_p;
+       return true);
 
-    test "1"
-      (fun () ->
-         test_iter Lwt_list.iter_s [1;0;0];
-         test_exception Lwt_list.iter_s;
-         return true);
+  test "1"
+    (fun () ->
+       test_iter Lwt_list.iter_s [1;0;0];
+       test_exception Lwt_list.iter_s;
+       return true);
 
-    test "2"
-      (fun () ->
-         test_map Lwt_list.map_p [4;8;5];
-         test_exception Lwt_list.map_p;
-         return true);
+  test "2"
+    (fun () ->
+       test_map Lwt_list.map_p [4;8;5];
+       test_exception Lwt_list.map_p;
+       return true);
 
-    test "3"
-      (fun () ->
-         test_map Lwt_list.map_s [4;7;8];
-         test_exception Lwt_list.map_s;
-         return true);
+  test "3"
+    (fun () ->
+       test_map Lwt_list.map_s [4;7;8];
+       test_exception Lwt_list.map_s;
+       return true);
 
-    test "4"
-      (fun () ->
-         let l = [1;2;3] in
-         let f acc v = return (v::acc) in
-         let t = Lwt_list.fold_left_s f [] l in
-         t <=> Return (List.rev l);
-         return true);
-
-    test "5"
-      (fun () -> test_for_all_true Lwt_list.for_all_s);
-
-    test "6"
-      (fun () -> test_for_all_true Lwt_list.for_all_p);
-
-    test "7"
-      (fun () -> test_for_all_false Lwt_list.for_all_s);
-
-    test "8"
-      (fun () -> test_for_all_false Lwt_list.for_all_p);
-
-    test "9"
-      (fun () -> test_exists_true Lwt_list.exists_s);
-
-    test "10"
-      (fun () -> test_exists_true Lwt_list.exists_p);
-
-    test "11"
-      (fun () -> test_exists_false Lwt_list.exists_s);
-
-    test "12"
-      (fun () -> test_exists_false Lwt_list.exists_p);
-
-    test "13"
-      (fun () -> test_filter Lwt_list.filter_s);
-
-    test "14"
-      (fun () -> test_filter Lwt_list.filter_p);
-
-    test "15"
-      (fun () -> test_partition Lwt_list.partition_p);
-
-    test "16"
-      (fun () -> test_partition Lwt_list.partition_s);
-
-  ]
+  test "4"
+    (fun () ->
+       let l = [1;2;3] in
+       let f acc v = return (v::acc) in
+       let t = Lwt_list.fold_left_s f [] l in
+       t <=> Return (List.rev l);
+       return true);
+]
