@@ -13,18 +13,25 @@ export OCAMLFIND_IGNORE_DUPS_IN
 default: build
 
 # build the usual development packages
-build: 
+build: check-config
 	jbuilder build \
 		--only-packages lwt \
 		@install
 
 # build everything
-all: 
+all: check-config
 	jbuilder build @install
 
 # run all tests
-test: 
+test: check-config
 	jbuilder runtest
+
+# configuration
+check-config:
+	@[ -f src/jbuild-ignore ] && [ -f src/unix/lwt_config ] && echo "LWT configuration OK" || cat src/util/config-warn
+
+default-config:
+	ocaml src/util/configure.ml -use-libev false -use-camlp4 false
 
 # Use jbuilder/odoc to generate static html documentation.
 # Currenty requires ocaml 4.03.0 to install odoc.
@@ -41,9 +48,6 @@ doc-api-html: all
 doc-api-wiki: all
 	make -C doc api/wiki/index.wiki
 
-install: 
-	jbuilder install
-
 uninstall: 
 	jbuilder uninstall
 
@@ -55,6 +59,7 @@ clean:
 	rm -fr _build
 	rm -f *.install
 	rm -fr doc/api
+	rm -f src/jbuild-ignore src/unix/lwt_config
 
 clean-coverage:
 	rm -rf bisect*.out

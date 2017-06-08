@@ -1,5 +1,6 @@
 _build
 src/unix/lwt_config
+src/jbuild-ignore
 
 # Coverage analysis.
 bisect*.out
