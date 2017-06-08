@@ -8,5 +8,3 @@
   (wrapped false)
   (libraries (camlp4 lwt.syntax.options))
   (preprocess (action (run camlp4oof ${<})))))
-
-

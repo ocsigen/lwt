@@ -1,6 +1,6 @@
 (jbuild_version 1)
 
-(executable 
+(executable
  ((name main)
   (libraries (lwt.preemptive lwttester))))
 
@@ -8,5 +8,3 @@
  ((name runtest)
   (package lwt)
   (action (run ${exe:main.exe}))))
-
-

@@ -5,7 +5,7 @@ PKGS=\
 	-package bytes -package result \
 	-package bigarray -package unix -package camlp4 \
 	-package ocaml-migrate-parsetree -package ppx_tools_versioned \
-	-package react -package ssl 
+	-package react -package ssl
 
 INCS=\
 	-I ${BLD}/camlp4 \
@@ -29,7 +29,7 @@ MLIS=\
 	$(wildcard ${SRC}/react/*.mli) \
 	$(wildcard ${SRC}/simple_top/*.mli) \
 	$(wildcard ${SRC}/ssl/*.mli) \
-	$(filter-out ${BLD}/unix/lwt_unix.cppo.mli,$(wildcard ${BLD}/unix/*.mli)) 
+	$(filter-out ${BLD}/unix/lwt_unix.cppo.mli,$(wildcard ${BLD}/unix/*.mli))
 
 DOCOPT := -colorize-code -short-functors -charset utf-8
 
@@ -41,11 +41,10 @@ api/html/index.html: ${MLIS} apiref-intro
 		-d api/html \
 		${MLIS}
 
-wikidoc: api/wiki/index.wiki 
+wikidoc: api/wiki/index.wiki
 api/wiki/index.wiki: ${MLIS} apiref-intro
 	mkdir -p api/wiki
 	ocamlfind ocamldoc ${DOCOPT} -package ocamlbuild,uchar ${PKGS} ${INCS} -intro apiref-intro \
 		-d api/wiki \
 		-i $(shell ocamlfind query wikidoc) -g odoc_wiki.cma \
 		${MLIS}
-

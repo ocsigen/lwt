@@ -5,7 +5,7 @@
   (deps    (test_lwt_unix.cppo.ml))
   (action  (run ${bin:cppo} -V OCAML:${ocaml_version} ${<} -o ${@}))))
 
-(executable 
+(executable
  ((name main)
   (libraries (lwttester))))
 
@@ -13,4 +13,3 @@
  ((name runtest)
   (package lwt)
   (action (run ${exe:main.exe}))))
-

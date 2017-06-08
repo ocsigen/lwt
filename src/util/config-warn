@@ -1,9 +1,9 @@
 ===========================================================
 
-LWT configuration is incomplete and compilation will 
+LWT configuration is incomplete and compilation will
 proceed with default values.
 
-Consider running 'ocaml src/util/configure.ml' or 
+Consider running 'ocaml src/util/configure.ml' or
 'make default-config' to complete configuration.
 
 $ ocaml src/util/configure.ml -help

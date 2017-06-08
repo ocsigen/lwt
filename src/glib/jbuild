@@ -1,6 +1,6 @@
 (jbuild_version 1)
 
-(library 
+(library
  ((name lwt_glib)
   (public_name lwt_glib)
   (synopsis "GLib integration for Lwt")

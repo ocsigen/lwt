@@ -365,7 +365,7 @@ let mapper =
   }
 
 
-let args = 
+let args =
   Arg.([
       "-no-debug", Clear debug, "disable debug mode";
       "-log", Set log, "enable logging";
@@ -374,8 +374,6 @@ let args =
       "-no-strict-sequence", Clear strict_seq, "allow non-unit sequence operations";
   ])
 
-let () = 
+let () =
  Driver.register ~name:"ppx_lwt" ~args Versions.ocaml_404
    (fun _config _cookies -> mapper)
-
-

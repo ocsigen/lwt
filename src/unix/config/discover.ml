@@ -541,17 +541,17 @@ let () =
              safe_remove (Filename.chop_extension !caml_file ^ ".cmi");
              safe_remove (Filename.chop_extension !caml_file ^ ".cmo"));
 
-  (* read ocamlc -config and lwt config files. 
+  (* read ocamlc -config and lwt config files.
      The former must exist, but we can apply defaults for the later. *)
-  let read_config config filename = 
+  let read_config config filename =
     let f = open_in filename in
-    let cfg line = 
+    let cfg line =
       let idx = String.index line ':' in
       String.sub line 0 idx,
-      String.sub line (idx + 2) (String.length line - idx - 2) 
+      String.sub line (idx + 2) (String.length line - idx - 2)
     in
     let input_line () = try Some(input_line f) with End_of_file -> None in
-    let rec lines () = 
+    let rec lines () =
       match input_line () with
       | None -> []
       | Some(x) -> cfg x :: lines ()
@@ -567,12 +567,12 @@ let () =
   let ocamlc_config = read_config "ocamlc" !ocamlc_config in
   let lwt_config  = try read_config "lwt" !lwt_config with _ -> [] in
   (* get params from configuration files *)
-  let () = 
-    let get var name = 
-      try 
+  let () =
+    let get var name =
+      try
         var := List.assoc name ocamlc_config;
         printf "found config var %s: %s %s\n" name (String.make (29 - String.length name) '.') !var
-      with Not_found -> 
+      with Not_found ->
         printf "Couldn't find value '%s' in 'ocamlc -config'\n" name;
         exit 1
     in
@@ -581,23 +581,23 @@ let () =
     get ccomp_type "ccomp_type";
     get system "system";
     get os_type "os_type";
-    let get var name default = 
-      try 
-        let () = 
+    let get var name default =
+      try
+        let () =
           match List.assoc name lwt_config with
           | "true" -> var := true
           | "false" -> var := false
           | _ -> raise Not_found
         in
         printf "found config var %s: %s %b\n" name (String.make (29 - String.length name) '.') !var
-      with Not_found -> 
+      with Not_found ->
         var := default
     in
     (* set up the defaults as per the original _oasis file *)
     get android_target "android_target" false;
     get use_pthread "use_pthread" (!os_type <> "Win32");
     get use_libev "use_libev" (!os_type <> "Win32" && !android_target = false);
-    get libev_default "libev_default" 
+    get libev_default "libev_default"
       (List.mem !system (* as per _oasis *)
         ["linux"; "linux_elf"; "linux_aout"; "linux_eabi"; "linux_eabihf"]);
   in
@@ -849,7 +849,7 @@ Lwt can use pthread or the win32 API.
   close_out config_ml;
 
 
-  let get_flags lib = 
+  let get_flags lib =
     (try List.assoc (lib ^ "_opt") !setup_data with _ -> []),
     (try List.assoc (lib ^ "_lib") !setup_data with _ -> [])
   in
@@ -868,7 +868,7 @@ Lwt can use pthread or the win32 API.
   *)
 
   (* add Win32 linker flags *)
-  let libs = 
+  let libs =
     if !os_type = "Win32" then
       if !ccomp_type = "msvc" then libs @ ["ws2_32.lib"]
       else libs @ ["-lws2_32"]
@@ -876,12 +876,10 @@ Lwt can use pthread or the win32 API.
       libs
   in
 
-  let write_sexp n x = 
+  let write_sexp n x =
     let f = open_out n in
     output_string f ("(" ^ String.concat " " x ^ ")");
     close_out f
   in
   write_sexp ("unix_c_flags.sexp")         ("-I."::cflags);
   write_sexp ("unix_c_library_flags.sexp") libs
-
-

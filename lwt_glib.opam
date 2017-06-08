@@ -23,5 +23,3 @@ depends: [
   "conf-pkg-config" {build}
   "conf-glib-2" {build}
 ]
-
-

@@ -19,7 +19,7 @@ then
     opam init -y --auto-setup
     eval `opam config env`
 
-    # Pin Lwt and install its dependencies. 
+    # Pin Lwt and install its dependencies.
     opam pin add -y --no-action lwt .
     opam install -y --deps-only lwt
     opam install -y camlp4

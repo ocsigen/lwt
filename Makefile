@@ -48,17 +48,17 @@ doc-api-html: all
 doc-api-wiki: all
 	make -C doc api/wiki/index.wiki
 
-install: 
+install:
 	jbuilder install
 
-uninstall: 
+uninstall:
 	jbuilder uninstall
 
-reinstall: 
+reinstall:
 	jbuilder uninstall
 	jbuilder install
 
-clean: 
+clean:
 	rm -fr _build
 	rm -f *.install
 	rm -fr doc/api

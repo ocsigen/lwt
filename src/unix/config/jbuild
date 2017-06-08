@@ -1,4 +1,4 @@
 (jbuild_version 1)
 
-(executable 
+(executable
  ((name discover)))

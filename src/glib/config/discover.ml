@@ -45,15 +45,15 @@ let pkg_config arguments =
     exit 1
 
 (* read ocamlc -config file, if provided *)
-let get_ocamlc_config name = 
+let get_ocamlc_config name =
   let f = open_in name in
-  let cfg line = 
+  let cfg line =
     let idx = String.index line ':' in
     String.sub line 0 idx,
-    String.sub line (idx + 2) (String.length line - idx - 2) 
+    String.sub line (idx + 2) (String.length line - idx - 2)
   in
   let input_line () = try Some(input_line f) with End_of_file -> None in
-  let rec lines () = 
+  let rec lines () =
     match input_line () with
     | None -> []
     | Some(x) -> cfg x :: lines ()
@@ -62,15 +62,15 @@ let get_ocamlc_config name =
   let () = close_in f in
   cfg
 
-let ccomp_type = 
-  try 
+let ccomp_type =
+  try
     let cfg = get_ocamlc_config Sys.argv.(1) in
     List.assoc "ccomp_type" cfg
-  with _ -> 
+  with _ ->
     let () = Printf.eprintf "failed to read ccomp_type from ocamlc -config\n" in
     exit 1
-  
-let cflags = pkg_config "--cflags glib-2.0" 
+
+let cflags = pkg_config "--cflags glib-2.0"
 let libs =
   if String.compare ccomp_type "msvc" = 0 then
     pkg_config "--libs-only-L glib-2.0" @
@@ -79,19 +79,17 @@ let libs =
     pkg_config "--libs glib-2.0"
 
 (* do sexps properly...
-let () = 
+let () =
   let write_sexp fn sexp = Out_channel.write_all fn ~data:(Sexp.to_string sexp) in
   write_sexp "glib_c_flags.sexp"         (sexp_of_list sexp_of_string cflags);
   write_sexp "glib_c_library_flags.sexp" (sexp_of_list sexp_of_string libs)
 *)
 
-let () = 
-  let write_sexp n x = 
+let () =
+  let write_sexp n x =
     let f = open_out n in
     output_string f ("(" ^ String.concat " " x ^ ")");
     close_out f
   in
   write_sexp ("glib_c_flags.sexp")         cflags;
   write_sexp ("glib_c_library_flags.sexp") libs
-
-

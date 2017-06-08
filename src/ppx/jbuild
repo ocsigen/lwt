@@ -11,4 +11,3 @@
   (ppx_runtime_libraries (lwt))
   (kind ppx_rewriter)
   (preprocess (pps (ppx_tools_versioned.metaquot_404)))))
-
