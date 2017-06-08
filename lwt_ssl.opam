@@ -1,5 +1,5 @@
 opam-version: "1.2"
-name: "lwt"
+name: "lwt_ssl"
 version: "dev"
 maintainer: [
   "Anton Bachin <antonbachin@yahoo.com>"
@@ -19,8 +19,8 @@ build: [ [ "jbuilder" "build" "-p" name "-j" jobs ] ]
 build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
 depends: [
   "jbuilder" { build & >= "1.0+beta9" }
-  "lwt" { >= "3.0.0" }
-  "ssl" { >= "0.5.0" }
+  "lwt" {>= "3.0.0"}
+  "ssl" {>= "0.5.0"}
   "base-unix"
 ]
 

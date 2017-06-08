@@ -1,5 +1,5 @@
 opam-version: "1.2"
-name: "lwt"
+name: "lwt_react"
 version: "dev"
 maintainer: [
   "Anton Bachin <antonbachin@yahoo.com>"
@@ -19,7 +19,7 @@ build: [ [ "jbuilder" "build" "-p" name "-j" jobs ] ]
 build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
 depends: [
   "jbuilder" { build & >= "1.0+beta9" }
-  "lwt"
-  "react"
+  "lwt" {>= "3.0.0"}
+  "react" {>= "1.0.0"}
 ]
 
