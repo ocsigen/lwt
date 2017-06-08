@@ -1,0 +1,6 @@
+(jbuild_version 1)
+
+(executable
+ ((name connect)
+  (libraries (lwt-unix lwt-glib threads lablgtk2))
+  (preprocess (pps (lwt-ppx)))))

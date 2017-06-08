@@ -238,3 +238,6 @@ else
    - Debug messages are removed if the option [-no-debug] is passed.
 
 *)
+
+
+val mapper : Migrate_parsetree.OCaml_404.Ast.Ast_mapper.mapper

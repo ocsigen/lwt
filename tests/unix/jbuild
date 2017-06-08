@@ -1,0 +1,15 @@
+(jbuild_version 1)
+
+(rule
+ ((targets (test_lwt_unix.ml))
+  (deps    (test_lwt_unix.cppo.ml))
+  (action  (run ${bin:cppo} -V OCAML:${ocaml_version} ${<} -o ${@}))))
+
+(executable
+ ((name main)
+  (libraries (lwttester))))
+
+(alias
+ ((name runtest)
+  (package lwt)
+  (action (run ${exe:main.exe}))))

@@ -9,70 +9,68 @@
 OCAMLFIND_IGNORE_DUPS_IN = $(shell ocamlfind query compiler-libs)
 export OCAMLFIND_IGNORE_DUPS_IN
 
-# Set to setup.exe for the release
-SETUP := setup-dev.exe
-
 # Default rule
 default: build
 
-# Setup for the development version
-setup-dev.exe: _oasis setup.ml
-	grep -v '^#' setup.ml > setup_dev.ml
-	ocamlfind ocamlopt -o $@ -linkpkg -package ocamlbuild,oasis.dynrun setup_dev.ml || \
-	  ocamlfind ocamlc -o $@ -linkpkg -package ocamlbuild,oasis.dynrun setup_dev.ml || true
-	rm -f setup_dev.*
+# build the usual development packages
+build: check-config
+	jbuilder build \
+		--only-packages lwt \
+		@install
 
-# Setup for the release
-setup.exe: setup.ml
-	ocamlopt.opt -o $@ $< || ocamlopt -o $@ $< || ocamlc -o $@ $<
-	rm -f setup.cmx setup.cmi setup.o setup.obj setup.cmo
+# build everything
+all: check-config
+	jbuilder build @install
 
-setup: $(SETUP)
+# run all tests
+test: check-config
+	jbuilder runtest
 
-build: $(SETUP) setup.data
-	./$(SETUP) -build $(BUILDFLAGS)
+# configuration
+check-config:
+	@[ -f src/jbuild-ignore ] && [ -f src/unix/lwt_config ] && echo "LWT configuration OK" || cat src/util/config-warn
 
-doc: $(SETUP) setup.data build
-	./$(SETUP) -doc $(DOCFLAGS)
+default-config:
+	ocaml src/util/configure.ml -use-libev false -use-camlp4 false
 
-doc-api: $(SETUP) setup.data build
-	./$(SETUP) -build lwt-api.docdir/index.html
+# Use jbuilder/odoc to generate static html documentation.
+# Currenty requires ocaml 4.03.0 to install odoc.
+doc:
+	jbuilder build @doc
 
-test: $(SETUP) setup.data build clean-coverage
-	./$(SETUP) -test $(TESTFLAGS)
+# Build HTML documentation with ocamldoc
+doc-api-html: all
+	make -C doc api/html/index.html
 
-all: $(SETUP)
-	./$(SETUP) -all $(ALLFLAGS)
+# Build wiki documentation with wikidoc
+# requires ocaml 4.03.0 and pinning the repo
+# https://github.com/ocsigen/wikidoc
+doc-api-wiki: all
+	make -C doc api/wiki/index.wiki
 
-install: $(SETUP) setup.data
-	./$(SETUP) -install $(INSTALLFLAGS)
+install:
+	jbuilder install
 
-uninstall: $(SETUP) setup.data
-	./$(SETUP) -uninstall $(UNINSTALLFLAGS)
+uninstall:
+	jbuilder uninstall
 
-reinstall: $(SETUP) setup.data
-	./$(SETUP) -reinstall $(REINSTALLFLAGS)
+reinstall:
+	jbuilder uninstall
+	jbuilder install
 
-clean: $(SETUP) clean-coverage
-	./$(SETUP) -clean $(CLEANFLAGS)
-
-distclean: $(SETUP)
-	./$(SETUP) -distclean $(DISTCLEANFLAGS)
-	rm -rf setup*.exe
+clean:
+	rm -fr _build
+	rm -f *.install
+	rm -fr doc/api
+	rm -f src/jbuild-ignore src/unix/lwt_config
 
 clean-coverage:
 	rm -rf bisect*.out
 	rm -rf _coverage/
-
-configure: $(SETUP)
-	./$(SETUP) -configure $(CONFIGUREFLAGS)
-
-setup.data: $(SETUP)
-	./$(SETUP) -configure $(CONFIGUREFLAGS)
 
 coverage: test
 	bisect-ppx-report -I _build/ -html _coverage/ bisect*.out
 	bisect-ppx-report -text - -summary-only bisect*.out
 	@echo See _coverage/index.html
 
-.PHONY: default setup build doc test all install uninstall reinstall clean distclean configure coverage
+.PHONY: default build doc test all install uninstall reinstall clean coverage

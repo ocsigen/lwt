@@ -1,0 +1,6 @@
+(jbuild_version 1)
+
+(executables
+ ((names (logging relay parallelize))
+  (libraries (lwt-unix))
+  (preprocess (pps (lwt-ppx)))))

@@ -8,8 +8,8 @@ matrix:
       env: COMPILER=4.03
     - os: linux
       env: COMPILER=4.04
-    - os: linux
-      env: COMPILER=4.05
+    #- os: linux
+    #  env: COMPILER=4.05
     - os: linux
       env: COMPILER=4.04 FLAMBDA=yes
     - os: linux

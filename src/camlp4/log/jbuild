@@ -1,0 +1,10 @@
+(jbuild_version 1)
+
+(library
+ ((name lwt_syntax_log)
+  (public_name lwt.syntax.log)
+  (synopsis "Camlp4 syntax for Lwt logging (deprecated; use lwt.ppx)")
+  (optional)
+  (wrapped false)
+  (libraries (camlp4 lwt.syntax.options))
+  (preprocess (action (run camlp4oof ${<})))))

@@ -1,9 +1,0 @@
-S src/**
-
-B _build/**
-
-S tests/
-S doc/examples/
-
-PKG result
-PKG bytes

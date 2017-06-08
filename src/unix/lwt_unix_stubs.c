@@ -88,9 +88,9 @@
    +-----------------------------------------------------------------+ */
 
 #if defined(LWT_ON_WINDOWS)
-#  include "lwt_unix_windows.c"
+#  include "lwt_unix_windows.h"
 #else
-#  include "lwt_unix_unix.c"
+#  include "lwt_unix_unix.h"
 #endif
 
 /* +-----------------------------------------------------------------+

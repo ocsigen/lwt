@@ -117,7 +117,7 @@ fi
 
 # Pin Lwt, install dependencies, and then install Lwt. Lwt is installed
 # separately because we want to keep the build directory for running the tests.
-opam pin add -y --no-action .
+opam pin add -y --no-action lwt .
 
 opam install -y --deps-only lwt
 opam install -y camlp4
@@ -128,14 +128,12 @@ fi
 
 opam install --keep-build-dir --verbose lwt
 
-# Pin additional packages, generate their build systems, and install them. There
+# Pin additional packages and install them. There
 # aren't any specific tests for these packages. Installation itself is the only
-# test. Build system generation requires OASIS; this should have been installed
-# while installing dependencies of Lwt.
+# test.
 install_extra_package () {
     PACKAGE=$1
-    ( cd src/$PACKAGE/ && oasis setup -setup-update none )
-    opam pin add -y --no-action src/$PACKAGE/
+    opam pin add -y --no-action lwt_$PACKAGE .
     opam install -y --verbose lwt_$PACKAGE
 }
 
@@ -146,7 +144,6 @@ install_extra_package glib
 # Build and run the tests.
 opam install -y ounit
 cd `opam config var lib`/../build/lwt.*
-ocaml setup.ml -configure --enable-tests
 make test
 
 
@@ -157,5 +154,5 @@ then
     ! opam list -i conf-libev
 fi
 
-opam list -i ppx_tools
+opam list -i ppx_tools_versioned
 ! opam list -i batteries

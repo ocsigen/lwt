@@ -731,7 +731,7 @@ end
 
 let gen job =
   let fname = "lwt_unix_job_" ^ job.name ^ ".c" in
-  let oc = open_out ("src/unix/jobs-unix/" ^ fname) in
+  let oc = open_out fname in
   let job64 = {
     job with
       params = (
@@ -778,7 +778,7 @@ let () =
   match Sys.argv with
     | [|_|] ->
         let fname = "lwt_unix_jobs_generated.ml" in
-        ml_oc := open_out ("src/unix/" ^ fname);
+        ml_oc := open_out fname;
         let pr_header oc fname =
           fprintf oc "\
 (*
@@ -805,7 +805,7 @@ module Make(Job : Job) = struct
         output_string !ml_oc "end\n";
         close_out !ml_oc
     | [|_; "list-job-files"|] ->
-        StringMap.iter (fun name job -> printf "src/unix/jobs-unix/lwt_unix_job_%s.c\n" name) jobs
+        StringMap.iter (fun name job -> printf "lwt_unix_job_%s.c\n" name) jobs
     | [|_; "list-job-names"|] ->
         StringMap.iter (fun name job -> printf "%s\n" name) jobs
     | _ ->
