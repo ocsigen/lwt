@@ -119,6 +119,8 @@ version,
 opam source --dev-repo --pin lwt
 ```
 
+This will also install the development dependency OASIS.
+
 A list of [project suggestions][projects] and a [roadmap][roadmap] can be found
 on the wiki.
 
