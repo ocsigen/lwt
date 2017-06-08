@@ -88,6 +88,14 @@ git clone https://github.com/your-user-name/lwt.git
 cd lwt/
 ```
 
+If you want to use code coverage, you have to do this (for now):
+
+```
+git checkout -b working-coverage origin/working-coverage
+```
+
+This is a temporary result of the recent port to jbuilder.
+
 We'll use Lwt's own [`opam`][opam-depends] file to install Lwt's dependencies
 automatically. Before doing that, you may want to switch to a special OPAM
 switch just for Lwt:
@@ -97,6 +105,12 @@ opam switch 4.04-lwt --alias-of 4.04.1   # optional
 eval `opam config env`                   # optional
 opam pin add --no-action lwt .
 opam install --deps-only lwt
+```
+
+Due to a current bug in the build system, you should also install `react`:
+
+```
+opam install react
 ```
 
 [opam-depends]: https://github.com/ocsigen/lwt/blob/8bff603ae6d976e69698fa08e8ce08fe9615489d/opam/opam#L35-L44
@@ -119,6 +133,12 @@ git checkout -b my-awesome-change
 #### Testing
 
 To build Lwt and run its unit tests, first do:
+
+```
+make default-config
+```
+
+or, if working from `origin/working-coverage`:
 
 ```
 ocaml setup.ml -configure --enable-tests
@@ -167,6 +187,9 @@ Go to the GitHub web interface for your Lwt fork
 (`https://github.com/your-user-name/lwt`), and click on the New Pull Request
 button. Follow the instructions, write a nice description, and open the pull
 request.
+
+If you worked from the `working-coverage` branch, select that as the base branch
+instead of `master`!
 
 This will trigger automatic building and testing of your change on many versions
 of OCaml, and several operating systems, in [Travis][travis-ci] and
