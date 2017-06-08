@@ -7,14 +7,13 @@ maintainer: [
   "Simon Cruanes <simon.cruanes.2007@m4x.org>"
 ]
 authors: [
-  "Jérôme Vouillon"
   "Jérémie Dimino"
 ]
 homepage: "https://github.com/ocsigen/lwt"
 doc: "https://ocsigen.org/lwt/manual/"
+dev-repo: "https://github.com/ocsigen/lwt.git"
 bug-reports: "https://github.com/ocsigen/lwt/issues"
 license: "LGPL with OpenSSL linking exception"
-dev-repo: "https://github.com/ocsigen/lwt.git"
 build: [ [ "jbuilder" "build" "-p" name "-j" jobs ] ]
 build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
 depends: [
