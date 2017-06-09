@@ -116,6 +116,10 @@ let suite = suite "lwt_io" [
      Lwt_unix.shutdown, this test raises an exception from the handler's calls
      to close. *)
   test "establish_server_1: shutdown: client closes first"
+    ~only_if:(fun () ->
+      not (Lwt_config._HAVE_LIBEV && Lwt_config.libev_default))
+  (* Note: this test is currently flaky on Linux with libev enabled, so we skip
+     it in that case. *)
     (fun () ->
       let wait_for_client, client_finished = Lwt.wait () in
 
