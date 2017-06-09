@@ -28,7 +28,10 @@ test: check-config
 
 # configuration
 check-config:
-	@[ -f src/jbuild-ignore ] && [ -f src/unix/lwt_config ] && echo "LWT configuration OK" || cat src/util/config-warn
+	@if [ ! -f src/jbuild-ignore ] ; \
+	then \
+	    make default-config ; \
+	fi
 
 default-config:
 	ocaml src/util/configure.ml -use-libev false -use-camlp4 false

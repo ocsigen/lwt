@@ -132,19 +132,14 @@ git checkout -b my-awesome-change
 <a id="Testing"></a>
 #### Testing
 
-To build Lwt and run its unit tests, first do:
+If you are working from the `origin/working-coverage` branch, first enable tests
+by running
 
 ```
-make default-config
+ocaml setup.ml -configure --enable-tests --enable-coverage --disable-camlp4
 ```
 
-or, if working from `origin/working-coverage`:
-
-```
-ocaml setup.ml -configure --enable-tests
-```
-
-After that, each time you are ready to test, run
+Each time you are ready to test, run
 
 ```
 make test
