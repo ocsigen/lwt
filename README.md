@@ -61,9 +61,9 @@ parallel the promises that do I/O.
 
 ## Installing
 
-```
-opam install lwt
-```
+1. Use your system package manager to install a development libev package,
+   often called `libev-dev` or `libev-devel`.
+2. `opam install conf-libev lwt`
 
 
 <br/>
