@@ -153,31 +153,31 @@ let test_rev_map f =
   return (after = [6;4;2])
 
 let suite = suite "lwt_util" [
-    test "0"
+    test "iter_p"
       (fun () ->
          test_iter Lwt_list.iter_p [1;0;1];
          test_exception Lwt_list.iter_p;
          return true);
 
-    test "1"
+    test "iter_s"
       (fun () ->
          test_iter Lwt_list.iter_s [1;0;0];
          test_exception Lwt_list.iter_s;
          return true);
 
-    test "2"
+    test "map_p"
       (fun () ->
          test_map Lwt_list.map_p [4;8;5];
          test_exception Lwt_list.map_p;
          return true);
 
-    test "3"
+    test "map_s"
       (fun () ->
          test_map Lwt_list.map_s [4;7;8];
          test_exception Lwt_list.map_s;
          return true);
 
-    test "4"
+    test "fold_left_s"
       (fun () ->
          let l = [1;2;3] in
          let f acc v = return (v::acc) in
@@ -185,61 +185,61 @@ let suite = suite "lwt_util" [
          t <=> Return (List.rev l);
          return true);
 
-    test "5"
+    test "for_all_s"
       (fun () -> test_for_all_true Lwt_list.for_all_s);
 
-    test "6"
+    test "for_all_p"
       (fun () -> test_for_all_true Lwt_list.for_all_p);
 
-    test "7"
+    test "for_all_s"
       (fun () -> test_for_all_false Lwt_list.for_all_s);
 
-    test "8"
+    test "for_all_p"
       (fun () -> test_for_all_false Lwt_list.for_all_p);
 
-    test "9"
+    test "exists_s true"
       (fun () -> test_exists_true Lwt_list.exists_s);
 
-    test "10"
+    test "exists_p true"
       (fun () -> test_exists_true Lwt_list.exists_p);
 
-    test "11"
+    test "exists_s false"
       (fun () -> test_exists_false Lwt_list.exists_s);
 
-    test "12"
+    test "exists_p false"
       (fun () -> test_exists_false Lwt_list.exists_p);
 
-    test "13"
+    test "filter_s"
       (fun () -> test_filter Lwt_list.filter_s);
 
-    test "14"
+    test "filter_p"
       (fun () -> test_filter Lwt_list.filter_p);
 
-    test "15"
+    test "partition_p"
       (fun () -> test_partition Lwt_list.partition_p);
 
-    test "16"
+    test "partition_s"
       (fun () -> test_partition Lwt_list.partition_s);
 
-    test "17"
+    test "filter_map_p"
       (fun () -> test_filter_map Lwt_list.filter_map_p);
 
-    test "18"
+    test "filter_map_s"
       (fun () -> test_filter_map Lwt_list.filter_map_s);
 
-    test "19"
+    test "iteri_p"
       (fun () -> test_iter_i Lwt_list.iteri_p);
 
-    test "20"
+    test "iteri_s"
       (fun () -> test_iter_i Lwt_list.iteri_s);
 
-    test "21"
+    test "mapi_p"
       (fun () -> test_map_i Lwt_list.mapi_p);
 
-    test "22"
+    test "mapi_s"
       (fun () -> test_map_i Lwt_list.mapi_s);
 
-    test "23"
+    test "find_s existing"
       (
         fun () ->
           let l = [1;2;3] in
@@ -247,7 +247,7 @@ let suite = suite "lwt_util" [
           return (result = 2)
       );
 
-    test "24"
+    test "find_s missing"
       (
         fun () ->
           let l = [1;3] in
@@ -259,13 +259,13 @@ let suite = suite "lwt_util" [
               | _ -> return false)
       );
 
-    test "25"
+    test "rev_map_p"
       (fun () -> test_rev_map Lwt_list.rev_map_p);
 
-    test "26"
+    test "rev_map_s"
       (fun () -> test_rev_map Lwt_list.rev_map_s);
 
-    test "27"
+    test "fold_right_s"
       (fun () ->
          let l = [1;2;3] in
          Lwt_list.fold_right_s (fun a n -> return (a + n)) l 0 >>= fun result ->
