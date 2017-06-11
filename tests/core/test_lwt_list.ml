@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  * 02111-1307, USA.
- *)
+*)
 
 
 open Test
@@ -44,10 +44,10 @@ let test_iter f test_list =
     let t,w = wait () in
     let r = ref [incr_;(fun x -> t >>= ( fun () -> incr_ x ));incr_] in
     let t' = f (fun x ->
-		  let f = List.hd !r in
-		  let t = f x in
-		  r := List.tl !r;
-		  t ) l
+        let f = List.hd !r in
+        let t = f x in
+        r := List.tl !r;
+        t ) l
     in
     t' <=> Sleep;
     List.iter2 (fun v r -> assert (v = !r)) test_list l;
@@ -63,15 +63,9 @@ let test_exception f =
     fun _ ->
       incr r;
       match !r with
-	| 2 -> raise Exn
-	| _ -> return ()
+      | 2 -> raise Exn
+      | _ -> return ()
   in
-  (* XXX est-ce le comportement souhaite ?
-     On pourrait plutot vouloir que iter et map
-     passent leur fonctions en parametre dans Lwt.apply.
-
-     Une autre maniere serait d'avoir 2 bind, un tail recursif un non.
-  *)
   test_exn (f g) [();();()] Exn
 
 let test_map f test_list =
@@ -82,15 +76,15 @@ let test_map f test_list =
     let c = ref 0 in
     fun () ->
       let th =
-	incr c;
-	match !c with
-	  | 5 -> t
-	  | 8 -> t'
-	  | _ -> return ()
+        incr c;
+        match !c with
+        | 5 -> t
+        | 8 -> t'
+        | _ -> return ()
       in
       th >>= ( fun () ->
-		 incr r;
-		 return (!r) )
+          incr r;
+          return (!r) )
   in
   let () =
     let l = [();();()] in
