@@ -136,6 +136,28 @@ let test_partition f =
   f (fun x -> return (x <= 2)) l >>= fun (a, b) ->
   return (a = [1;2] && b = [3;4])
 
+let test_filter_map f =
+  let l = [1;2;3;4] in
+  let fn = (fun x -> if x mod 2 = 0 then return_some (x * 2) else return_none) in
+  f fn l >>= fun after ->
+  return (after = [4;8])
+
+let test_iter_i f =
+  let count = ref 0 in
+  let l = [1;2;3] in
+  f (fun i n -> count := !count + i + n; return_unit) l >>= fun () ->
+  return (!count = 9)
+
+let test_map_i f =
+  let l = [0;0;0] in
+  f (fun i n -> return (i + n)) l >>= fun after ->
+  return (after = [0;1;2])
+
+let test_rev_map f =
+  let l = [1;2;3] in
+  f (fun n -> return (n*2)) l >>= fun after ->
+  return (after = [6;4;2])
+
 let suite = suite "lwt_util" [
     test "0"
       (fun () ->
@@ -204,5 +226,56 @@ let suite = suite "lwt_util" [
 
     test "16"
       (fun () -> test_partition Lwt_list.partition_s);
+
+    test "17"
+      (fun () -> test_filter_map Lwt_list.filter_map_p);
+
+    test "18"
+      (fun () -> test_filter_map Lwt_list.filter_map_s);
+
+    test "19"
+      (fun () -> test_iter_i Lwt_list.iteri_p);
+
+    test "20"
+      (fun () -> test_iter_i Lwt_list.iteri_s);
+
+    test "21"
+      (fun () -> test_map_i Lwt_list.mapi_p);
+
+    test "22"
+      (fun () -> test_map_i Lwt_list.mapi_s);
+
+    test "23"
+      (
+        fun () ->
+          let l = [1;2;3] in
+          Lwt_list.find_s (fun n -> return ((n mod 2) = 0)) l >>= fun result ->
+          return (result = 2)
+      );
+
+    test "24"
+      (
+        fun () ->
+          let l = [1;3] in
+          catch
+            (fun () -> Lwt_list.find_s (fun n -> return ((n mod 2) = 0)) l >>= fun result ->
+              return false)
+            (function
+              | Not_found -> return true
+              | _ -> return false)
+      );
+
+    test "25"
+      (fun () -> test_rev_map Lwt_list.rev_map_p);
+
+    test "26"
+      (fun () -> test_rev_map Lwt_list.rev_map_s);
+
+    test "27"
+      (fun () ->
+         let l = [1;2;3] in
+         Lwt_list.fold_right_s (fun a n -> return (a + n)) l 0 >>= fun result ->
+         return (result = 6)
+      );
 
   ]
