@@ -152,7 +152,7 @@ let test_rev_map f =
   f (fun n -> return (n*2)) l >>= fun after ->
   return (after = [6;4;2])
 
-let suite = suite "lwt_util" [
+let suite = suite "lwt_list" [
     test "iter_p"
       (fun () ->
          test_iter Lwt_list.iter_p [1;0;1];
