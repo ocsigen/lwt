@@ -715,6 +715,9 @@ val rmdir : string -> unit Lwt.t
 val chdir : string -> unit Lwt.t
   (** Wrapper for [Unix.chdir] *)
 
+val getcwd : unit -> string Lwt.t
+  (** Wrapper for [Unix.getcwd] *)
+
 val chroot : string -> unit Lwt.t
   (** Wrapper for [Unix.chroot] *)
 
