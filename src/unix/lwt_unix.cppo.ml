@@ -1149,6 +1149,14 @@ let chdir name =
   else
     run_job (Jobs.chdir_job name)
 
+external getcwd_job : unit -> string job = "lwt_unix_getcwd_job"
+
+let getcwd () =
+  if Sys.win32 then
+    Lwt.return (Unix.getcwd ())
+  else
+    run_job (getcwd_job ())
+
 let chroot name =
   if Sys.win32 then
     Lwt.return (Unix.chroot name)
