@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  * 02111-1307, USA.
- *)
+*)
 
 open Lwt.Infix
 
@@ -120,8 +120,8 @@ end
    pending element. *)
 let clone s =
   (match s.source with
-     | Push_bounded _ -> invalid_arg "Lwt_stream.clone"
-     | From _ | From_direct _ | Push _ -> ());
+   | Push_bounded _ -> invalid_arg "Lwt_stream.clone"
+   | From _ | From_direct _ | Push _ -> ());
   {
     source = s.source;
     close = s.close;
@@ -263,14 +263,14 @@ class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last close = 
         (fun () -> info.pushb_push_waiter)
         (fun exn ->
            match exn with
-             | Lwt.Canceled ->
-                 info.pushb_pending <- None;
-                 let waiter, wakener = Lwt.task () in
-                 info.pushb_push_waiter <- waiter;
-                 info.pushb_push_wakener <- wakener;
-                 Lwt.fail exn
-             | _ ->
-                 Lwt.fail exn)
+           | Lwt.Canceled ->
+             info.pushb_pending <- None;
+             let waiter, wakener = Lwt.task () in
+             info.pushb_push_waiter <- waiter;
+             info.pushb_push_wakener <- wakener;
+             Lwt.fail exn
+           | _ ->
+             Lwt.fail exn)
     end else begin
       (* Push the element at the end of the queue. *)
       enqueue' (Some x) last;
@@ -348,36 +348,36 @@ let create_bounded size =
    of the stream. *)
 let feed s =
   match s.source with
-    | From from ->
-        (* There is already a thread started to create a new element,
-           wait for this one to terminate. *)
-        if Lwt.is_sleeping from.from_thread then
-          Lwt.protected from.from_thread
-        else begin
-          (* Otherwise request a new element. *)
-          let thread =
-            from.from_create () >>= fun x ->
-            (* Push the element to the end of the queue. *)
-            enqueue x s;
-            if x = None then Lwt.wakeup s.close ();
-            Lwt.return_unit
-          in
-          (* Allow other threads to access this thread. *)
-          from.from_thread <- thread;
-          Lwt.protected thread
-        end
-    | From_direct f ->
-        let x = f () in
+  | From from ->
+    (* There is already a thread started to create a new element,
+       wait for this one to terminate. *)
+    if Lwt.is_sleeping from.from_thread then
+      Lwt.protected from.from_thread
+    else begin
+      (* Otherwise request a new element. *)
+      let thread =
+        from.from_create () >>= fun x ->
         (* Push the element to the end of the queue. *)
         enqueue x s;
         if x = None then Lwt.wakeup s.close ();
         Lwt.return_unit
-    | Push push ->
-        push.push_waiting <- true;
-        Lwt.protected push.push_signal
-    | Push_bounded push ->
-        push.pushb_waiting <- true;
-        Lwt.protected push.pushb_signal
+      in
+      (* Allow other threads to access this thread. *)
+      from.from_thread <- thread;
+      Lwt.protected thread
+    end
+  | From_direct f ->
+    let x = f () in
+    (* Push the element to the end of the queue. *)
+    enqueue x s;
+    if x = None then Lwt.wakeup s.close ();
+    Lwt.return_unit
+  | Push push ->
+    push.push_waiting <- true;
+    Lwt.protected push.push_signal
+  | Push_bounded push ->
+    push.pushb_waiting <- true;
+    Lwt.protected push.pushb_signal
 
 (* Remove [node] from the top of the queue, or do nothing if it was
    already consumed.
@@ -388,13 +388,13 @@ let consume s node =
   if node == s.node then begin
     s.node <- node.next;
     match s.source with
-      | Push_bounded info ->
-          if info.pushb_pending = None then
-            info.pushb_count <- info.pushb_count - 1
-          else
-            notify_pusher info s.last
-      | From _ | From_direct _ | Push _ ->
-          ()
+    | Push_bounded info ->
+      if info.pushb_pending = None then
+        info.pushb_count <- info.pushb_count - 1
+      else
+        notify_pusher info s.last
+    | From _ | From_direct _ | Push _ ->
+      ()
   end
 
 let rec peek_rec s node =
@@ -412,10 +412,10 @@ let rec npeek_rec node acc n s =
     feed s >>= fun () -> npeek_rec node acc n s
   else
     match node.data with
-      | Some x ->
-          npeek_rec node.next (x :: acc) (n - 1) s
-      | None ->
-          Lwt.return (List.rev acc)
+    | Some x ->
+      npeek_rec node.next (x :: acc) (n - 1) s
+    | None ->
+      Lwt.return (List.rev acc)
 
 let npeek n s = npeek_rec s.node [] n s
 
@@ -447,11 +447,11 @@ let rec get_exn_rec s node =
          constructor. *)
   else
     match node.data with
-      | Some value ->
-          consume s node;
-          Lwt.return (Some (Value value))
-      | None ->
-          Lwt.return_none
+    | Some value ->
+      consume s node;
+      Lwt.return (Some (Value value))
+    | None ->
+      Lwt.return_none
 
 let map_exn s = from (fun () -> get_exn_rec s s.node)
 
@@ -463,11 +463,11 @@ let rec get_exn_rec' s node =
       (fun exn -> Lwt.return (Some (Result.Error exn)))
   else
     match node.data with
-      | Some value ->
-          consume s node;
-          Lwt.return (Some (Result.Ok value))
-      | None ->
-          Lwt.return_none
+    | Some value ->
+      consume s node;
+      Lwt.return (Some (Result.Ok value))
+    | None ->
+      Lwt.return_none
 
 let wrap_exn s = from (fun () -> get_exn_rec' s s.node)
 
@@ -478,11 +478,11 @@ let rec nget_rec node acc n s =
     feed s >>= fun () -> nget_rec node acc n s
   else
     match s.node.data with
-      | Some x ->
-          consume s node;
-          nget_rec node.next (x :: acc) (n - 1) s
-      | None ->
-          Lwt.return (List.rev acc)
+    | Some x ->
+      consume s node;
+      nget_rec node.next (x :: acc) (n - 1) s
+    | None ->
+      Lwt.return (List.rev acc)
 
 let nget n s = nget_rec s.node [] n s
 
@@ -491,15 +491,15 @@ let rec get_while_rec node acc f s =
     feed s >>= fun () -> get_while_rec node acc f s
   else
     match node.data with
-      | Some x ->
-          let test = f x in
-          if test then begin
-            consume s node;
-            get_while_rec node.next (x :: acc) f s
-          end else
-            Lwt.return (List.rev acc)
-      | None ->
-          Lwt.return (List.rev acc)
+    | Some x ->
+      let test = f x in
+      if test then begin
+        consume s node;
+        get_while_rec node.next (x :: acc) f s
+      end else
+        Lwt.return (List.rev acc)
+    | None ->
+      Lwt.return (List.rev acc)
 
 let get_while f s = get_while_rec s.node [] f s
 
@@ -508,16 +508,16 @@ let rec get_while_s_rec node acc f s =
     feed s >>= fun () -> get_while_s_rec node acc f s
   else
     match node.data with
-      | Some x -> begin
-          f x >>= function
-            | true ->
-                consume s node;
-                get_while_s_rec node.next (x :: acc) f s
-            | false ->
-                Lwt.return (List.rev acc)
-        end
-      | None ->
+    | Some x -> begin
+        f x >>= function
+        | true ->
+          consume s node;
+          get_while_s_rec node.next (x :: acc) f s
+        | false ->
           Lwt.return (List.rev acc)
+      end
+    | None ->
+      Lwt.return (List.rev acc)
 
 let get_while_s f s = get_while_s_rec s.node [] f s
 
@@ -526,11 +526,11 @@ let rec next_rec s node =
     feed s >>= fun () -> next_rec s node
   else
     match node.data with
-      | Some x ->
-          consume s node;
-          Lwt.return x
-      | None ->
-          Lwt.fail Empty
+    | Some x ->
+      consume s node;
+      Lwt.return x
+    | None ->
+      Lwt.fail Empty
 
 let next s = next_rec s s.node
 
@@ -538,47 +538,47 @@ let rec last_new_rec node x s =
   if node == !(s.last) then
     let thread = feed s in
     match Lwt.state thread with
-      | Lwt.Return _ ->
-          last_new_rec node x s
-      | Lwt.Fail exn ->
-          Lwt.fail exn
-      | Lwt.Sleep ->
-          Lwt.return x
+    | Lwt.Return _ ->
+      last_new_rec node x s
+    | Lwt.Fail exn ->
+      Lwt.fail exn
+    | Lwt.Sleep ->
+      Lwt.return x
   else
     match node.data with
-      | Some x ->
-          consume s node;
-          last_new_rec node.next x s
-      | None ->
-          Lwt.return x
+    | Some x ->
+      consume s node;
+      last_new_rec node.next x s
+    | None ->
+      Lwt.return x
 
 let last_new s =
   let node = s.node in
   if node == !(s.last) then
     let thread = next s in
     match Lwt.state thread with
-      | Lwt.Return x ->
-          last_new_rec node x s
-      | Lwt.Fail _ | Lwt.Sleep ->
-          thread
+    | Lwt.Return x ->
+      last_new_rec node x s
+    | Lwt.Fail _ | Lwt.Sleep ->
+      thread
   else
     match node.data with
-      | Some x ->
-          consume s node;
-          last_new_rec node.next x s
-      | None ->
-          Lwt.fail Empty
+    | Some x ->
+      consume s node;
+      last_new_rec node.next x s
+    | None ->
+      Lwt.fail Empty
 
 let rec to_list_rec node acc s =
   if node == !(s.last) then
     feed s >>= fun () -> to_list_rec node acc s
   else
     match node.data with
-      | Some x ->
-          consume s node;
-          to_list_rec node.next (x :: acc) s
-      | None ->
-          Lwt.return (List.rev acc)
+    | Some x ->
+      consume s node;
+      to_list_rec node.next (x :: acc) s
+    | None ->
+      Lwt.return (List.rev acc)
 
 let to_list s = to_list_rec s.node [] s
 
@@ -587,12 +587,12 @@ let rec to_string_rec node buf s =
     feed s >>= fun () -> to_string_rec node buf s
   else
     match node.data with
-      | Some x ->
-          consume s node;
-          Buffer.add_char buf x;
-          to_string_rec node.next buf s
-      | None ->
-          Lwt.return (Buffer.contents buf)
+    | Some x ->
+      consume s node;
+      Buffer.add_char buf x;
+      to_string_rec node.next buf s
+    | None ->
+      Lwt.return (Buffer.contents buf)
 
 let to_string s = to_string_rec s.node (Buffer.create 128) s
 
@@ -614,11 +614,11 @@ let rec njunk_rec node n s =
     feed s >>= fun () -> njunk_rec node n s
   else
     match node.data with
-      | Some _ ->
-          consume s node;
-          njunk_rec node.next (n - 1) s
-      | None ->
-          Lwt.return_unit
+    | Some _ ->
+      consume s node;
+      njunk_rec node.next (n - 1) s
+    | None ->
+      Lwt.return_unit
 
 let njunk n s = njunk_rec s.node n s
 
@@ -627,15 +627,15 @@ let rec junk_while_rec node f s =
     feed s >>= fun () -> junk_while_rec node f s
   else
     match node.data with
-      | Some x ->
-          let test = f x in
-          if test then begin
-            consume s node;
-            junk_while_rec node.next f s
-          end else
-            Lwt.return_unit
-      | None ->
-          Lwt.return_unit
+    | Some x ->
+      let test = f x in
+      if test then begin
+        consume s node;
+        junk_while_rec node.next f s
+      end else
+        Lwt.return_unit
+    | None ->
+      Lwt.return_unit
 
 let junk_while f s = junk_while_rec s.node f s
 
@@ -644,16 +644,16 @@ let rec junk_while_s_rec node f s =
     feed s >>= fun () -> junk_while_s_rec node f s
   else
     match node.data with
-      | Some x -> begin
-          f x >>= function
-            | true ->
-                consume s node;
-                junk_while_s_rec node.next f s
-            | false ->
-                Lwt.return_unit
-        end
-      | None ->
+    | Some x -> begin
+        f x >>= function
+        | true ->
+          consume s node;
+          junk_while_s_rec node.next f s
+        | false ->
           Lwt.return_unit
+      end
+    | None ->
+      Lwt.return_unit
 
 let junk_while_s f s = junk_while_s_rec s.node f s
 
@@ -661,19 +661,19 @@ let rec junk_old_rec node s =
   if node == !(s.last) then
     let thread = feed s in
     match Lwt.state thread with
-      | Lwt.Return _ ->
-          junk_old_rec node s
-      | Lwt.Fail exn ->
-          Lwt.fail exn
-      | Lwt.Sleep ->
-          Lwt.return_unit
+    | Lwt.Return _ ->
+      junk_old_rec node s
+    | Lwt.Fail exn ->
+      Lwt.fail exn
+    | Lwt.Sleep ->
+      Lwt.return_unit
   else
     match node.data with
-      | Some _ ->
-          consume s node;
-          junk_old_rec node.next s
-      | None ->
-          Lwt.return_unit
+    | Some _ ->
+      consume s node;
+      junk_old_rec node.next s
+    | None ->
+      Lwt.return_unit
 
 let junk_old s = junk_old_rec s.node s
 
@@ -681,19 +681,19 @@ let rec get_available_rec node acc s =
   if node == !(s.last) then
     let thread = feed s in
     match Lwt.state thread with
-      | Lwt.Return _ ->
-          get_available_rec node acc s
-      | Lwt.Fail exn ->
-          raise exn
-      | Lwt.Sleep ->
-          List.rev acc
+    | Lwt.Return _ ->
+      get_available_rec node acc s
+    | Lwt.Fail exn ->
+      raise exn
+    | Lwt.Sleep ->
+      List.rev acc
   else
     match node.data with
-      | Some x ->
-          consume s node;
-          get_available_rec node.next (x :: acc) s
-      | None ->
-          List.rev acc
+    | Some x ->
+      consume s node;
+      get_available_rec node.next (x :: acc) s
+    | None ->
+      List.rev acc
 
 let get_available s = get_available_rec s.node [] s
 
@@ -703,19 +703,19 @@ let rec get_available_up_to_rec node acc n s =
   else if node == !(s.last) then
     let thread = feed s in
     match Lwt.state thread with
-      | Lwt.Return _ ->
-          get_available_up_to_rec node acc n s
-      | Lwt.Fail exn ->
-          raise exn
-      | Lwt.Sleep ->
-          List.rev acc
+    | Lwt.Return _ ->
+      get_available_up_to_rec node acc n s
+    | Lwt.Fail exn ->
+      raise exn
+    | Lwt.Sleep ->
+      List.rev acc
   else
     match s.node.data with
-      | Some x ->
-          consume s node;
-          get_available_up_to_rec node.next (x :: acc) (n - 1) s
-      | None ->
-          List.rev acc
+    | Some x ->
+      consume s node;
+      get_available_up_to_rec node.next (x :: acc) (n - 1) s
+    | None ->
+      List.rev acc
 
 let get_available_up_to n s = get_available_up_to_rec s.node [] n s
 
@@ -727,31 +727,31 @@ let rec is_empty s =
 
 let map f s =
   from (fun () -> get s >|= function
-          | Some x ->
-              let x = f x in
-              Some x
-          | None ->
-              None)
+  | Some x ->
+    let x = f x in
+    Some x
+  | None ->
+    None)
 
 let map_s f s =
   from (fun () -> get s >>= function
-          | Some x ->
-              f x >|= (fun x -> Some x)
-          | None ->
-              Lwt.return_none)
+  | Some x ->
+    f x >|= (fun x -> Some x)
+  | None ->
+    Lwt.return_none)
 
 let filter f s =
   let rec next () =
     let t = get s in
     t >>= function
-      | Some x ->
-          let test = f x in
-          if test then
-            t
-          else
-            next ()
-      | None ->
-          Lwt.return_none
+    | Some x ->
+      let test = f x in
+      if test then
+        t
+      else
+        next ()
+    | None ->
+      Lwt.return_none
   in
   from next
 
@@ -759,45 +759,45 @@ let filter_s f s =
   let rec next () =
     let t = get s in
     t >>= function
-      | Some x -> begin
-          f x >>= function
-            | true ->
-                t
-            | false ->
-                next ()
-        end
-      | None ->
+    | Some x -> begin
+        f x >>= function
+        | true ->
           t
+        | false ->
+          next ()
+      end
+    | None ->
+      t
   in
   from next
 
 let filter_map f s =
   let rec next () =
     get s >>= function
-      | Some x ->
-          let x = f x in
-          (match x with
-             | Some _ ->
-                 Lwt.return x
-             | None ->
-                 next ())
-      | None ->
-          Lwt.return_none
+    | Some x ->
+      let x = f x in
+      (match x with
+       | Some _ ->
+         Lwt.return x
+       | None ->
+         next ())
+    | None ->
+      Lwt.return_none
   in
   from next
 
 let filter_map_s f s =
   let rec next () =
     get s >>= function
-      | Some x ->
-          let t = f x in
-          (t >>= function
-             | Some _ ->
-                 t
-             | None ->
-                 next ())
-      | None ->
-          Lwt.return_none
+    | Some x ->
+      let t = f x in
+      (t >>= function
+       | Some _ ->
+         t
+       | None ->
+         next ())
+    | None ->
+      Lwt.return_none
   in
   from next
 
@@ -805,17 +805,17 @@ let map_list f s =
   let pendings = ref [] in
   let rec next () =
     match !pendings with
-      | [] ->
-          (get s >>= function
-             | Some x ->
-                 let l = f x in
-                 pendings := l;
-                 next ()
-             | None ->
-                 Lwt.return_none)
-      | x :: l ->
-          pendings := l;
-          Lwt.return (Some x)
+    | [] ->
+      (get s >>= function
+       | Some x ->
+         let l = f x in
+         pendings := l;
+         next ()
+       | None ->
+         Lwt.return_none)
+    | x :: l ->
+      pendings := l;
+      Lwt.return (Some x)
   in
   from next
 
@@ -823,17 +823,17 @@ let map_list_s f s =
   let pendings = ref [] in
   let rec next () =
     match !pendings with
-      | [] ->
-          (get s >>= function
-             | Some x ->
-                 f x >>= fun l ->
-                 pendings := l;
-                 next ()
-             | None ->
-                 Lwt.return_none)
-      | x :: l ->
-          pendings := l;
-          Lwt.return (Some x)
+    | [] ->
+      (get s >>= function
+       | Some x ->
+         f x >>= fun l ->
+         pendings := l;
+         next ()
+       | None ->
+         Lwt.return_none)
+    | x :: l ->
+      pendings := l;
+      Lwt.return (Some x)
   in
   from next
 
@@ -845,12 +845,12 @@ let rec fold_rec node f s acc =
     feed s >>= fun () -> fold_rec node f s acc
   else
     match node.data with
-      | Some x ->
-          consume s node;
-          let acc = f x acc in
-          fold_rec node.next f s acc
-      | None ->
-          Lwt.return acc
+    | Some x ->
+      consume s node;
+      let acc = f x acc in
+      fold_rec node.next f s acc
+    | None ->
+      Lwt.return acc
 
 let fold f s acc = fold_rec s.node f s acc
 
@@ -859,12 +859,12 @@ let rec fold_s_rec node f s acc =
     feed s >>= fun () -> fold_s_rec node f s acc
   else
     match node.data with
-      | Some x ->
-          consume s node;
-          f x acc >>= fun acc ->
-          fold_s_rec node.next f s acc
-      | None ->
-          Lwt.return acc
+    | Some x ->
+      consume s node;
+      f x acc >>= fun acc ->
+      fold_s_rec node.next f s acc
+    | None ->
+      Lwt.return acc
 
 let fold_s f s acc = fold_s_rec s.node f s acc
 
@@ -873,12 +873,12 @@ let rec iter_rec node f s =
     feed s >>= fun () -> iter_rec node f s
   else
     match node.data with
-      | Some x ->
-          consume s node;
-          let () = f x in
-          iter_rec node.next f s
-      | None ->
-          Lwt.return_unit
+    | Some x ->
+      consume s node;
+      let () = f x in
+      iter_rec node.next f s
+    | None ->
+      Lwt.return_unit
 
 let iter f s = iter_rec s.node f s
 
@@ -887,12 +887,12 @@ let rec iter_s_rec node f s =
     feed s >>= fun () -> iter_s_rec node f s
   else
     match node.data with
-      | Some x ->
-          consume s node;
-          f x >>= fun () ->
-          iter_s_rec node.next f s
-      | None ->
-          Lwt.return_unit
+    | Some x ->
+      consume s node;
+      f x >>= fun () ->
+      iter_s_rec node.next f s
+    | None ->
+      Lwt.return_unit
 
 let iter_s f s = iter_s_rec s.node f s
 
@@ -901,11 +901,11 @@ let rec iter_p_rec node f s =
     feed s >>= fun () -> iter_p_rec node f s
   else
     match node.data with
-      | Some x ->
-          consume s node;
-          Lwt.join [f x; iter_p_rec node.next f s]
-      | None ->
-          Lwt.return_unit
+    | Some x ->
+      consume s node;
+      Lwt.join [f x; iter_p_rec node.next f s]
+    | None ->
+      Lwt.return_unit
 
 let iter_p f s = iter_p_rec s.node f s
 
@@ -914,15 +914,15 @@ let rec find_rec node f s =
     feed s >>= fun () -> find_rec node f s
   else
     match node.data with
-      | Some x as opt ->
-          consume s node;
-          let test = f x in
-          if test then
-            Lwt.return opt
-          else
-            find_rec node.next f s
-      | None ->
-          Lwt.return_none
+    | Some x as opt ->
+      consume s node;
+      let test = f x in
+      if test then
+        Lwt.return opt
+      else
+        find_rec node.next f s
+    | None ->
+      Lwt.return_none
 
 let find f s = find_rec s.node f s
 
@@ -931,16 +931,16 @@ let rec find_s_rec node f s =
     feed s >>= fun () -> find_s_rec node f s
   else
     match node.data with
-      | Some x as opt -> begin
-          consume s node;
-          f x >>= function
-            | true ->
-                Lwt.return opt
-            | false ->
-                find_s_rec node.next f s
-        end
-      | None ->
-          Lwt.return_none
+    | Some x as opt -> begin
+        consume s node;
+        f x >>= function
+        | true ->
+          Lwt.return opt
+        | false ->
+          find_s_rec node.next f s
+      end
+    | None ->
+      Lwt.return_none
 
 let find_s f s = find_s_rec s.node f s
 
@@ -949,15 +949,15 @@ let rec find_map_rec node f s =
     feed s >>= fun () -> find_map_rec node f s
   else
     match node.data with
-      | Some x ->
-          consume s node;
-          let x = f x in
-          if x = None then
-            find_map_rec node.next f s
-          else
-            Lwt.return x
-      | None ->
-          Lwt.return_none
+    | Some x ->
+      consume s node;
+      let x = f x in
+      if x = None then
+        find_map_rec node.next f s
+      else
+        Lwt.return x
+    | None ->
+      Lwt.return_none
 
 let find_map f s = find_map_rec s.node f s
 
@@ -966,16 +966,16 @@ let rec find_map_s_rec node f s =
     feed s >>= fun () -> find_map_s_rec node f s
   else
     match node.data with
-      | Some x ->
-          consume s node;
-          let t = f x in
-          (t >>= function
-             | None ->
-                 find_map_s_rec node.next f s
-             | Some _ ->
-                 t)
-      | None ->
-          Lwt.return_none
+    | Some x ->
+      consume s node;
+      let t = f x in
+      (t >>= function
+       | None ->
+         find_map_s_rec node.next f s
+       | Some _ ->
+         t)
+    | None ->
+      Lwt.return_none
 
 let find_map_s f s = find_map_s_rec s.node f s
 
@@ -985,10 +985,10 @@ let combine s1 s2 =
     t1 >>= fun n1 ->
     t2 >>= fun n2 ->
     match n1, n2 with
-      | Some x1, Some x2 ->
-          Lwt.return (Some(x1, x2))
-      | _ ->
-          Lwt.return_none
+    | Some x1, Some x2 ->
+      Lwt.return (Some(x1, x2))
+    | _ ->
+      Lwt.return_none
   in
   from next
 
@@ -997,15 +997,15 @@ let append s1 s2 =
   let rec next () =
     let t = get !current_s in
     t >>= function
-      | Some _ ->
-          t
-      | None ->
-          if !current_s == s2 then
-            Lwt.return_none
-          else begin
-            current_s := s2;
-            next ()
-          end
+    | Some _ ->
+      t
+    | None ->
+      if !current_s == s2 then
+        Lwt.return_none
+      else begin
+        current_s := s2;
+        next ()
+      end
   in
   from next
 
@@ -1014,15 +1014,15 @@ let concat s_top =
   let rec next () =
     let t = get !current_s in
     t >>= function
-      | Some _ ->
-          t
+    | Some _ ->
+      t
+    | None ->
+      get s_top >>= function
+      | Some s ->
+        current_s := s;
+        next ()
       | None ->
-          get s_top >>= function
-            | Some s ->
-                current_s := s;
-                next ()
-            | None ->
-                Lwt.return_none
+        Lwt.return_none
   in
   from next
 
@@ -1031,25 +1031,25 @@ let choose streams =
   let streams = ref (List.map source streams) in
   let rec next () =
     match !streams with
-      | [] ->
-          Lwt.return_none
-      | l ->
-          Lwt.choose (List.map snd l) >>= fun (s, x) ->
-          let l = List.remove_assq s l in
-          match x with
-            | Some _ ->
-                streams := source s :: l;
-                Lwt.return x
-            | None ->
-                streams := l;
-                next ()
+    | [] ->
+      Lwt.return_none
+    | l ->
+      Lwt.choose (List.map snd l) >>= fun (s, x) ->
+      let l = List.remove_assq s l in
+      match x with
+      | Some _ ->
+        streams := source s :: l;
+        Lwt.return x
+      | None ->
+        streams := l;
+        next ()
   in
   from next
 
 let parse s f =
   (match s.source with
-     | Push_bounded _ -> invalid_arg "Lwt_stream.parse"
-     | From _ | From_direct _ | Push _ -> ());
+   | Push_bounded _ -> invalid_arg "Lwt_stream.parse"
+   | From _ | From_direct _ | Push _ -> ());
   let node = s.node in
   Lwt.catch
     (fun () -> f s)
@@ -1061,31 +1061,31 @@ let hexdump stream =
   let buf = Buffer.create 80 and num = ref 0 in
   from begin fun _ ->
     nget 16 stream >>= function
-      | [] ->
-          Lwt.return_none
-      | l ->
-          Buffer.clear buf;
-          Printf.bprintf buf "%08x|  " !num;
-          num := !num + 16;
-          let rec bytes pos = function
-            | [] ->
-                blanks pos
-            | x :: l ->
-                if pos = 8 then Buffer.add_char buf ' ';
-                Printf.bprintf buf "%02x " (Char.code x);
-                bytes (pos + 1) l
-          and blanks pos =
-            if pos < 16 then begin
-              if pos = 8 then
-                Buffer.add_string buf "    "
-              else
-                Buffer.add_string buf "   ";
-              blanks (pos + 1)
-            end
-          in
-          bytes 0 l;
-          Buffer.add_string buf " |";
-          List.iter (fun ch -> Buffer.add_char buf (if ch >= '\x20' && ch <= '\x7e' then ch else '.')) l;
-          Buffer.add_char buf '|';
-          Lwt.return (Some(Buffer.contents buf))
+    | [] ->
+      Lwt.return_none
+    | l ->
+      Buffer.clear buf;
+      Printf.bprintf buf "%08x|  " !num;
+      num := !num + 16;
+      let rec bytes pos = function
+        | [] ->
+          blanks pos
+        | x :: l ->
+          if pos = 8 then Buffer.add_char buf ' ';
+          Printf.bprintf buf "%02x " (Char.code x);
+          bytes (pos + 1) l
+      and blanks pos =
+        if pos < 16 then begin
+          if pos = 8 then
+            Buffer.add_string buf "    "
+          else
+            Buffer.add_string buf "   ";
+          blanks (pos + 1)
+        end
+      in
+      bytes 0 l;
+      Buffer.add_string buf " |";
+      List.iter (fun ch -> Buffer.add_char buf (if ch >= '\x20' && ch <= '\x7e' then ch else '.')) l;
+      Buffer.add_char buf '|';
+      Lwt.return (Some(Buffer.contents buf))
   end
