@@ -690,6 +690,12 @@ let dir_tests = [
       Lwt_unix.getcwd () >>= fun there ->
       Lwt.return (here = there)
     );
+    test "getcwd and Unix.getcwd"
+    (fun () ->
+      let unix_here = Unix.getcwd () in
+      Lwt_unix.getcwd () >>= fun here ->
+      Lwt.return (here = unix_here)
+    );
 ]
 
 let suite =
