@@ -1,9 +1,5 @@
-# Makefile
-# --------
 # Copyright : (c) 2012, Jérémie Dimino <jeremie@dimino.org>
-# Licence   : BSD3
-#
-# Generic Makefile for oasis project
+#                 2017, Andrew Ray <evilkidder@gmail.com>
 
 # Default rule
 default: build
