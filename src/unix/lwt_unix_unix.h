@@ -3038,7 +3038,7 @@ static value result_getcwd(struct job_getcwd *job)
     return result;
 }
 
-CAMLprim value lwt_unix_getcwd_job()
+CAMLprim value lwt_unix_getcwd_job(value unit)
 {
     LWT_UNIX_INIT_JOB(job, getcwd, 0);
     return lwt_unix_alloc_job(&job->job);
