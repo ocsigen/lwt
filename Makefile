@@ -68,4 +68,6 @@ coverage: test
 	bisect-ppx-report -text - -summary-only bisect*.out
 	@echo See _coverage/index.html
 
-.PHONY: default build doc test all install uninstall reinstall clean coverage
+.PHONY: \
+    default build doc test all install uninstall reinstall clean coverage \
+    check-config default-config doc-api-html doc-api-wiki clean-coverage
