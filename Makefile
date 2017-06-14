@@ -5,10 +5,6 @@
 #
 # Generic Makefile for oasis project
 
-# Suppress duplicate topdirs.cmi warnings.
-OCAMLFIND_IGNORE_DUPS_IN = $(shell ocamlfind query compiler-libs)
-export OCAMLFIND_IGNORE_DUPS_IN
-
 # Default rule
 default: build
 
