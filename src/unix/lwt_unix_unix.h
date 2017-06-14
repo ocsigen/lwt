@@ -33,6 +33,7 @@
 #include <sys/resource.h>
 #include <sys/wait.h>
 #include <poll.h>
+#include <unistd.h>
 
 /* +-----------------------------------------------------------------+
    | Test for readability/writability                                |
@@ -3005,6 +3006,41 @@ CAMLprim value lwt_unix_bind_job(value fd, value address)
     job->fd = Int_val(fd);
     get_sockaddr(address, &job->addr, &job->addr_len);
 
+    return lwt_unix_alloc_job(&job->job);
+}
+
+/* getcwd */
+
+/*
+In the OCaml sources, getcwd is set as either
+- 4096 (in asmrun/spacetime.c, byterun/sys.c)
+- PATH_MAX, MAXPATHLEN, or 512 (in otherlibs/unix/getcwd.c)
+*/
+
+struct job_getcwd {
+    struct lwt_unix_job job;
+    char buf[4096];
+    char* result;
+    int error_code;
+};
+
+static void worker_getcwd(struct job_getcwd *job)
+{
+    job->result = getcwd(job->buf, sizeof(job->buf));
+    job->error_code = errno;
+}
+
+static value result_getcwd(struct job_getcwd *job)
+{
+    LWT_UNIX_CHECK_JOB(job, job->result == NULL, "getcwd");
+    value result = caml_copy_string(job->result);
+    lwt_unix_free_job(&job->job);
+    return result;
+}
+
+CAMLprim value lwt_unix_getcwd_job()
+{
+    LWT_UNIX_INIT_JOB(job, getcwd, 0);
     return lwt_unix_alloc_job(&job->job);
 }
 

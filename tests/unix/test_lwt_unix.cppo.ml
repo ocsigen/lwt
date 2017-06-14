@@ -677,6 +677,27 @@ let bind_tests = [
         (fun () -> Lwt_unix.close socket));
 ]
 
+let dir_tests = [
+    test "getcwd"
+    (fun () ->
+      Lwt_unix.getcwd () >>= fun (_:string) ->
+      Lwt.return_true
+    );
+    test "getcwd and chdir"
+    (fun () ->
+      Lwt_unix.getcwd () >>= fun here ->
+      Lwt_unix.chdir here >>= fun () ->
+      Lwt_unix.getcwd () >>= fun there ->
+      Lwt.return (here = there)
+    );
+    test "getcwd and Unix.getcwd"
+    (fun () ->
+      let unix_here = Unix.getcwd () in
+      Lwt_unix.getcwd () >>= fun here ->
+      Lwt.return (here = unix_here)
+    );
+]
+
 let suite =
   suite "lwt_unix"
     (openfile_tests @
@@ -684,4 +705,6 @@ let suite =
      readdir_tests @
      readv_tests @
      writev_tests @
-     bind_tests)
+     bind_tests @
+     dir_tests
+    )
