@@ -9,9 +9,9 @@ let use_camlp4 = ref None
 let arg_bool r =
   Arg.Symbol (["true"; "false"],
               function
-                | "true" -> r := Some true
-                | "false" -> r := Some false
-                | _ -> assert false)
+              | "true" -> r := Some true
+              | "false" -> r := Some false
+              | _ -> assert false)
 let args = [
   "-use-libev", arg_bool use_libev, " whether to check for libev";
   "-use-pthread", arg_bool use_pthread, " whether to use pthread";
