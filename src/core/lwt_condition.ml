@@ -34,15 +34,15 @@ let wait ?mutex cvar =
   let waiter = Lwt.add_task_r cvar in
   let () =
     match mutex with
-      | Some m -> Lwt_mutex.unlock m
-      | None -> ()
+    | Some m -> Lwt_mutex.unlock m
+    | None -> ()
   in
   Lwt.finalize
     (fun () -> waiter)
     (fun () ->
        match mutex with
-         | Some m -> Lwt_mutex.lock m
-         | None -> Lwt.return_unit)
+       | Some m -> Lwt_mutex.lock m
+       | None -> Lwt.return_unit)
 
 let signal cvar arg =
   try

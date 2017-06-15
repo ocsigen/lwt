@@ -68,29 +68,29 @@ let create_member p =
 (* Release a pool member. *)
 let release p c =
   match Lwt_sequence.take_opt_l p.waiters with
-    | Some wakener ->
-        (* A thread is waiting, give it the pool member. *)
-        Lwt.wakeup_later wakener c
-    | None ->
-        (* No one is waiting, queue it. *)
-        Queue.push c p.list
+  | Some wakener ->
+    (* A thread is waiting, give it the pool member. *)
+    Lwt.wakeup_later wakener c
+  | None ->
+    (* No one is waiting, queue it. *)
+    Queue.push c p.list
 
 (* Create a new member when one is thrown away. *)
 let replace_acquired p =
   match Lwt_sequence.take_opt_l p.waiters with
-    | None ->
-        (* No one is waiting, do not create a new member to avoid
-           loosing an error if creation fails. *)
-        p.count <- p.count - 1
-    | Some wakener ->
-        Lwt.on_any
-          (Lwt.apply p.create ())
-          (fun c ->
-             Lwt.wakeup_later wakener c)
-          (fun exn ->
-             (* Creation failed, notify the waiter of the failure. *)
-             p.count <- p.count - 1;
-             Lwt.wakeup_later_exn wakener exn)
+  | None ->
+    (* No one is waiting, do not create a new member to avoid
+       loosing an error if creation fails. *)
+    p.count <- p.count - 1
+  | Some wakener ->
+    Lwt.on_any
+      (Lwt.apply p.create ())
+      (fun c ->
+         Lwt.wakeup_later wakener c)
+      (fun exn ->
+         (* Creation failed, notify the waiter of the failure. *)
+         p.count <- p.count - 1;
+         Lwt.wakeup_later_exn wakener exn)
 
 let acquire p =
   if Queue.is_empty p.list then
@@ -108,12 +108,12 @@ let acquire p =
       (fun () ->
          p.validate c)
       (function
-         | true ->
-             Lwt.return c
-         | false ->
-             (* Remove this member and create a new one. *)
-             p.count <- p.count - 1;
-             create_member p)
+        | true ->
+          Lwt.return c
+        | false ->
+          (* Remove this member and create a new one. *)
+          p.count <- p.count - 1;
+          create_member p)
       (fun e ->
          (* Validation failed: create a new member if at least one
             thread is waiting. *)
