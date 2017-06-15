@@ -36,15 +36,15 @@ let redirect fd logger =
 
 let redirect_output dev_null fd mode = match mode with
   | `Dev_null ->
-      Unix.dup2 dev_null fd
+    Unix.dup2 dev_null fd
   | `Close ->
-      Unix.close fd
+    Unix.close fd
   | `Keep ->
-      ()
+    ()
   | `Log_default ->
-      redirect fd None
+    redirect fd None
   | `Log logger ->
-      redirect fd (Some logger)
+    redirect fd (Some logger)
 
 let daemonize ?(syslog=true) ?(stdin=`Dev_null) ?(stdout=`Log_default) ?(stderr=`Log_default) ?(directory="/") ?(umask=`Set 0o022) () =
   Unix.chdir directory;

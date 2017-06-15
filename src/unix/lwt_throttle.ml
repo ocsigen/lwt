@@ -68,7 +68,7 @@ module Make (H : Hashtbl.HashedType) : (S with type key = H.t) = struct
           let to_run = (Queue.take elt.queue)::to_run in
           update to_run (i-1)
         with
-          | Queue.Empty -> i, 0, to_run
+        | Queue.Empty -> i, 0, to_run
     in
     let not_consumed, waiting, to_run = update to_run t.rate in
     let consumed = t.rate - not_consumed in
@@ -95,10 +95,10 @@ module Make (H : Hashtbl.HashedType) : (S with type key = H.t) = struct
         Lwt_unix.sleep 1. >>= fun () ->
         Lwt.catch
           (fun () ->
-            clean_table t;
-            Lwt.return_unit)
+             clean_table t;
+             Lwt.return_unit)
           (fun exn ->
-            Lwt_log.fatal ~exn ~section "internal error")
+             Lwt_log.fatal ~exn ~section "internal error")
       in
       Some t
 
@@ -119,15 +119,15 @@ module Make (H : Hashtbl.HashedType) : (S with type key = H.t) = struct
         else (elt.consumed <- succ elt.consumed;
               Lwt.return_true)
       with
-        | Not_found ->
-          let elt = { consumed = 1;
-                      queue = Queue.create () } in
-          MH.add t.table key elt;
-          Lwt.return_true
+      | Not_found ->
+        let elt = { consumed = 1;
+                    queue = Queue.create () } in
+        MH.add t.table key elt;
+        Lwt.return_true
     in
     (match t.cleaning with
-      | None -> launch_cleaning t
-      | Some _ -> ());
+     | None -> launch_cleaning t
+     | Some _ -> ());
     res
 
 end

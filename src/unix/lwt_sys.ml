@@ -26,18 +26,18 @@ let () = Callback.register_exception "lwt:not-available" (Not_available "")
 let windows = Sys.win32
 
 type feature =
-    [ `wait4
-    | `get_cpu
-    | `get_affinity
-    | `set_affinity
-    | `recv_msg
-    | `send_msg
-    | `fd_passing
-    | `get_credentials
-    | `mincore
-    | `madvise
-    | `fdatasync
-    | `libev ]
+  [ `wait4
+  | `get_cpu
+  | `get_affinity
+  | `set_affinity
+  | `recv_msg
+  | `send_msg
+  | `fd_passing
+  | `get_credentials
+  | `mincore
+  | `madvise
+  | `fdatasync
+  | `libev ]
 
 let have = function
   | `wait4

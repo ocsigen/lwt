@@ -85,17 +85,17 @@ let set_exn_handler f = handle_exn := f
 let rec loop () =
   stopped := false;
   Lwt.bind (Lwt_unix.sleep 1.) (fun () ->
-  let s = !buckets.(!curr) in
-  while not (lst_is_empty s) do
-    let x = lst_peek s in
-    decr count;
-(*XXX Should probably report any exception *)
-    try
-      x.action ()
-    with e -> !handle_exn e
-  done;
-  curr := (!curr + 1) mod (Array.length !buckets);
-  if !count > 0 then loop () else begin stopped := true; Lwt.return_unit end)
+    let s = !buckets.(!curr) in
+    while not (lst_is_empty s) do
+      let x = lst_peek s in
+      decr count;
+      (*XXX Should probably report any exception *)
+      try
+        x.action ()
+      with e -> !handle_exn e
+    done;
+    curr := (!curr + 1) mod (Array.length !buckets);
+    if !count > 0 then loop () else begin stopped := true; Lwt.return_unit end)
 
 let start x =
   let in_list = lst_in_list x in

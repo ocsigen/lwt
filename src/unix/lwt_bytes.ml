@@ -126,11 +126,11 @@ let read fd buf pos len =
     invalid_arg "Lwt_bytes.read"
   else
     blocking fd >>= function
-      | true ->
-          wait_read fd >>= fun () ->
-          run_job (read_job (unix_file_descr fd) buf pos len)
-      | false ->
-          wrap_syscall Read fd (fun () -> stub_read (unix_file_descr fd) buf pos len)
+    | true ->
+      wait_read fd >>= fun () ->
+      run_job (read_job (unix_file_descr fd) buf pos len)
+    | false ->
+      wrap_syscall Read fd (fun () -> stub_read (unix_file_descr fd) buf pos len)
 
 external stub_write : Unix.file_descr -> t -> int -> int -> int = "lwt_unix_bytes_write"
 external write_job : Unix.file_descr -> t -> int -> int -> int job = "lwt_unix_bytes_write_job"
@@ -140,11 +140,11 @@ let write fd buf pos len =
     invalid_arg "Lwt_bytes.write"
   else
     blocking fd >>= function
-      | true ->
-          wait_write fd >>= fun () ->
-          run_job (write_job (unix_file_descr fd) buf pos len)
-      | false ->
-          wrap_syscall Write fd (fun () -> stub_write (unix_file_descr fd) buf pos len)
+    | true ->
+      wait_write fd >>= fun () ->
+      run_job (write_job (unix_file_descr fd) buf pos len)
+    | false ->
+      wrap_syscall Write fd (fun () -> stub_write (unix_file_descr fd) buf pos len)
 
 external stub_recv : Unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_bytes_recv"
 
@@ -178,9 +178,9 @@ let check_io_vectors func_name iovs =
   List.iter
     (fun (iov : io_vector) ->
        if iov.iov_offset < 0
-         || iov.iov_length < 0
-         || iov.iov_offset > length iov.iov_buffer - iov.iov_length then
-           Printf.ksprintf invalid_arg "Lwt_bytes.%s" func_name)
+       || iov.iov_length < 0
+       || iov.iov_offset > length iov.iov_buffer - iov.iov_length then
+         Printf.ksprintf invalid_arg "Lwt_bytes.%s" func_name)
     iovs
 
 external stub_recv_msg : Unix.file_descr -> int -> io_vector list -> int * Unix.file_descr list = "lwt_unix_bytes_recv_msg"
