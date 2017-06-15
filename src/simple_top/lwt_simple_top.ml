@@ -34,14 +34,14 @@ let read_input_non_interactive prompt buffer len =
       Lwt.return (i, false)
     else
       Lwt_io.read_char_opt Lwt_io.stdin >>= function
-        | Some c ->
-            Bytes.set buffer i c;
-            if c = '\n' then
-              Lwt.return (i + 1, false)
-            else
-              loop (i + 1)
-        | None ->
-            Lwt.return (i, true)
+      | Some c ->
+        Bytes.set buffer i c;
+        if c = '\n' then
+          Lwt.return (i + 1, false)
+        else
+          loop (i + 1)
+      | None ->
+        Lwt.return (i, true)
   in
   Lwt_main.run (Lwt_io.write Lwt_io.stdout prompt >>= fun () -> loop 0)
 
