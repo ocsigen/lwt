@@ -61,9 +61,9 @@ let level_of_string str =
    | Patterns and rules                                              |
    +-----------------------------------------------------------------+ *)
 
-    (* A pattern is represented by a list of literals:
+(* A pattern is represented by a list of literals:
 
-       For example ["foo*bar*"] is represented by ["foo"; "bar"; ""]. *)
+   For example ["foo*bar*"] is represented by ["foo"; "bar"; ""]. *)
 
 let sub_equal str ofs patt =
   let str_len = String.length str and patt_len = String.length patt in
@@ -79,23 +79,23 @@ let pattern_match pattern string =
       pattern = [] || pattern = [""]
     else
       match pattern with
-        | [] ->
-            false
-        | literal :: pattern ->
-            let literal_length = String.length literal in
-            let max_offset = length - literal_length in
-            let rec search offset =
-              offset <= max_offset
-              && ((sub_equal string offset literal && loop (offset + literal_length) pattern)
-                  || search (offset + 1))
-            in
-            search offset
+      | [] ->
+        false
+      | literal :: pattern ->
+        let literal_length = String.length literal in
+        let max_offset = length - literal_length in
+        let rec search offset =
+          offset <= max_offset
+          && ((sub_equal string offset literal && loop (offset + literal_length) pattern)
+              || search (offset + 1))
+        in
+        search offset
   in
   match pattern with
-    | [] ->
-        string = ""
-    | literal :: pattern ->
-        sub_equal string 0 literal && loop (String.length literal) pattern
+  | [] ->
+    string = ""
+  | literal :: pattern ->
+    sub_equal string 0 literal && loop (String.length literal) pattern
 
 let split pattern =
   let len = String.length pattern in
@@ -104,10 +104,10 @@ let split pattern =
       [""]
     else
       match try Some(String.index_from pattern ofs '*') with Not_found -> None with
-        | Some ofs' ->
-            String.sub pattern ofs (ofs' - ofs) :: loop (ofs' + 1)
-        | None ->
-            [String.sub pattern ofs (len - ofs)]
+      | Some ofs' ->
+        String.sub pattern ofs (ofs' - ofs) :: loop (ofs' + 1)
+      | None ->
+        [String.sub pattern ofs (len - ofs)]
   in
   loop 0
 
@@ -115,15 +115,15 @@ let rules = ref []
 
 let load_rules' str fail_on_error =
   let rec loop = function
-  | [] -> []
-  | (pattern, level_str) :: rest ->
-    let pattern = split pattern in
-    let level = level_of_string level_str in
-    match level with
-    | Some level -> (pattern, level) :: loop rest
-    | None ->
-      if fail_on_error then raise (Failure "Invalid log rules")
-      else log_intern "invalid log level (%s)" level_str; loop rest
+    | [] -> []
+    | (pattern, level_str) :: rest ->
+      let pattern = split pattern in
+      let level = level_of_string level_str in
+      match level with
+      | Some level -> (pattern, level) :: loop rest
+      | None ->
+        if fail_on_error then raise (Failure "Invalid log rules")
+        else log_intern "invalid log level (%s)" level_str; loop rest
   in
   match Lwt_log_rules.rules (Lexing.from_string str) with
   | None ->
@@ -134,8 +134,8 @@ let load_rules' str fail_on_error =
 
 let _ =
   match try Some(Sys.getenv "LWT_LOG") with Not_found -> None with
-    | Some str -> load_rules' str false
-    | None -> ()
+  | Some str -> load_rules' str false
+  | None -> ()
 
 (* +-----------------------------------------------------------------+
    | Sections                                                        |
@@ -152,22 +152,22 @@ struct
   type section = t
 
   module Sections = Weak.Make(struct
-                                type t = section
-                                let equal a b = a.name = b.name
-                                let hash s = Hashtbl.hash s.name
-                              end)
+      type t = section
+      let equal a b = a.name = b.name
+      let hash s = Hashtbl.hash s.name
+    end)
 
   let sections = Sections.create 32
 
   let find_level name =
     let rec loop = function
       | [] ->
-          Notice
+        Notice
       | (pattern, level) :: rest ->
-          if pattern_match pattern name then
-            level
-          else
-            loop rest
+        if pattern_match pattern name then
+          level
+        else
+          loop rest
     in
     loop !rules
 
@@ -248,7 +248,7 @@ let make ~output ~close =
 let broadcast loggers =
   make
     ~output:(fun section level lines ->
-               Lwt_list.iter_p (fun logger -> logger.lg_output section level lines) loggers)
+      Lwt_list.iter_p (fun logger -> logger.lg_output section level lines) loggers)
     ~close:Lwt.return
 
 let dispatch f =
@@ -267,8 +267,8 @@ let location_key = Lwt.new_key ()
 let render ~buffer ~template ~section ~level ~message =
   let file, line, column =
     match Lwt.get location_key with
-      | Some loc -> loc
-      | None -> ("<unknown>", -1, -1)
+    | Some loc -> loc
+    | None -> ("<unknown>", -1, -1)
   in
   Buffer.add_substitute buffer
     (function
@@ -321,17 +321,17 @@ let log ?exn ?(section=Section.main) ?location ?logger ~level message =
     Lwt.fail Logger_closed
   else if level >= section.Section.level then
     match exn with
-      | None ->
-          Lwt.with_value location_key location (fun () -> logger.lg_output section level (split message))
-      | Some exn ->
-          let bt = if Printexc.backtrace_status () then Printexc.get_backtrace ()
-                   else "" in
-          let message = message ^ ": " ^ Printexc.to_string exn in
-          let message =
-            if String.length bt = 0 then message
-            else message ^ "\nbacktrace:\n" ^ bt
-          in
-          Lwt.with_value location_key location (fun () -> logger.lg_output section level (split message))
+    | None ->
+      Lwt.with_value location_key location (fun () -> logger.lg_output section level (split message))
+    | Some exn ->
+      let bt = if Printexc.backtrace_status () then Printexc.get_backtrace ()
+        else "" in
+      let message = message ^ ": " ^ Printexc.to_string exn in
+      let message =
+        if String.length bt = 0 then message
+        else message ^ "\nbacktrace:\n" ^ bt
+      in
+      Lwt.with_value location_key location (fun () -> logger.lg_output section level (split message))
   else
     Lwt.return_unit
 
