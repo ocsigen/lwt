@@ -32,8 +32,8 @@ type uninitialized_socket = Lwt_unix.file_descr * Ssl.socket
 
 let ssl_socket (_fd, kind) =
   match kind with
-    | Plain -> None
-    | SSL socket -> Some socket
+  | Plain -> None
+  | SSL socket -> Some socket
 
 let ssl_socket_of_uninitialized_socket (_fd, socket) = socket
 
@@ -48,13 +48,13 @@ let wrap_call f () =
   with
     (Ssl.Connection_error err | Ssl.Accept_error err |
      Ssl.Read_error err | Ssl.Write_error err) as e ->
-      (match err with
-        Ssl.Error_want_read ->
-          raise Lwt_unix.Retry_read
+    (match err with
+       Ssl.Error_want_read ->
+       raise Lwt_unix.Retry_read
      | Ssl.Error_want_write ->
-          raise Lwt_unix.Retry_write
+       raise Lwt_unix.Retry_write
      | _ ->
-          raise e) [@ocaml.warning "-4"]
+       raise e) [@ocaml.warning "-4"]
 
 let repeat_call fd f =
   try
@@ -62,11 +62,11 @@ let repeat_call fd f =
     Lwt.return (wrap_call f ())
   with
     Lwt_unix.Retry_read ->
-      Lwt_unix.register_action Lwt_unix.Read fd (wrap_call f)
+    Lwt_unix.register_action Lwt_unix.Read fd (wrap_call f)
   | Lwt_unix.Retry_write ->
-      Lwt_unix.register_action Lwt_unix.Write fd (wrap_call f)
+    Lwt_unix.register_action Lwt_unix.Write fd (wrap_call f)
   | e ->
-      Lwt.fail e
+    Lwt.fail e
 
 (****)
 
@@ -79,76 +79,76 @@ let ssl_accept fd ctx =
   let socket = Ssl.embed_socket (Lwt_unix.unix_file_descr fd) ctx in
   Lwt.bind
     (repeat_call fd (fun () -> Ssl.accept socket)) (fun () ->
-  Lwt.return (fd, SSL socket))
+      Lwt.return (fd, SSL socket))
 
 let ssl_connect fd ctx =
   let socket = Ssl.embed_socket (Lwt_unix.unix_file_descr fd) ctx in
   Lwt.bind
     (repeat_call fd (fun () -> Ssl.connect socket)) (fun () ->
-  Lwt.return (fd, SSL socket))
+      Lwt.return (fd, SSL socket))
 
 let ssl_accept_handshake (fd, socket) =
   Lwt.bind
     (repeat_call fd (fun () -> Ssl.accept socket)) (fun () ->
-  Lwt.return (fd, SSL socket))
+      Lwt.return (fd, SSL socket))
 
 let ssl_perform_handshake (fd, socket) =
   Lwt.bind
     (repeat_call fd (fun () -> Ssl.connect socket)) (fun () ->
-  Lwt.return (fd, SSL socket))
+      Lwt.return (fd, SSL socket))
 
 let read (fd, s) buf pos len =
   match s with
-    | Plain ->
-        Lwt_unix.read fd buf pos len
-    | SSL s ->
-        if len = 0 then
-          Lwt.return 0
-        else
-          repeat_call fd
-            (fun () ->
-               try
-                 Ssl.read s buf pos len
-               with Ssl.Read_error Ssl.Error_zero_return ->
-                 0)
+  | Plain ->
+    Lwt_unix.read fd buf pos len
+  | SSL s ->
+    if len = 0 then
+      Lwt.return 0
+    else
+      repeat_call fd
+        (fun () ->
+           try
+             Ssl.read s buf pos len
+           with Ssl.Read_error Ssl.Error_zero_return ->
+             0)
 
 let read_bytes (fd, s) buf pos len =
   match s with
-    | Plain ->
-        Lwt_bytes.read fd buf pos len
-    | SSL s ->
-        if len = 0 then
-          Lwt.return 0
-        else
-          repeat_call fd
-            (fun () ->
-               try
-                 Ssl.read_into_bigarray s buf pos len
-               with Ssl.Read_error Ssl.Error_zero_return ->
-                 0)
+  | Plain ->
+    Lwt_bytes.read fd buf pos len
+  | SSL s ->
+    if len = 0 then
+      Lwt.return 0
+    else
+      repeat_call fd
+        (fun () ->
+           try
+             Ssl.read_into_bigarray s buf pos len
+           with Ssl.Read_error Ssl.Error_zero_return ->
+             0)
 
 let write (fd, s) buf pos len =
   match s with
-    | Plain ->
-        Lwt_unix.write fd buf pos len
-    | SSL s ->
-        if len = 0 then
-          Lwt.return 0
-        else
-          repeat_call fd
-            (fun () ->
-               Ssl.write s buf pos len)
+  | Plain ->
+    Lwt_unix.write fd buf pos len
+  | SSL s ->
+    if len = 0 then
+      Lwt.return 0
+    else
+      repeat_call fd
+        (fun () ->
+           Ssl.write s buf pos len)
 
 let write_bytes (fd, s) buf pos len =
   match s with
-    | Plain ->
-        Lwt_bytes.write fd buf pos len
-    | SSL s ->
-        if len = 0 then
-          Lwt.return 0
-        else
-          repeat_call fd
-            (fun () -> Ssl.write_bigarray s buf pos len)
+  | Plain ->
+    Lwt_bytes.write fd buf pos len
+  | SSL s ->
+    if len = 0 then
+      Lwt.return 0
+    else
+      repeat_call fd
+        (fun () -> Ssl.write_bigarray s buf pos len)
 
 let wait_read (fd, s) =
   match s with
@@ -194,8 +194,8 @@ let get_fd (fd, _socket) = fd
 
 let get_unix_fd (fd,socket) =
   match socket with
-    | Plain -> Lwt_unix.unix_file_descr fd
-    | SSL socket -> (Ssl.file_descr_of_socket socket)
+  | Plain -> Lwt_unix.unix_file_descr fd
+  | SSL socket -> (Ssl.file_descr_of_socket socket)
 
 let getsockname s =
   Unix.getsockname (get_unix_fd s)
