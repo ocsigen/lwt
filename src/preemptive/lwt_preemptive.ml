@@ -74,16 +74,16 @@ struct
   let get t =
     let rec await_value t =
       match t.cell with
-        | None ->
-            Condition.wait t.cv t.m;
-            await_value t
-        | Some v ->
-            t.cell <- None;
-            Mutex.unlock t.m;
-            v
+      | None ->
+        Condition.wait t.cv t.m;
+        await_value t
+      | Some v ->
+        t.cell <- None;
+        Mutex.unlock t.m;
+        v
     in
-      Mutex.lock t.m;
-      await_value t
+    Mutex.lock t.m;
+    await_value t
 
   let set t v =
     Mutex.lock t.m;
@@ -136,10 +136,10 @@ let make_worker () =
 (* Add a worker to the pool: *)
 let add_worker worker =
   match Lwt_sequence.take_opt_l waiters with
-    | None ->
-        Queue.add worker workers
-    | Some w ->
-        Lwt.wakeup w worker
+  | None ->
+    Queue.add worker workers
+  | Some w ->
+    Lwt.wakeup w worker
 
 (* Wait for worker to be available, then return it: *)
 let get_worker () =
@@ -207,20 +207,20 @@ let detach f args =
   in
   Lwt.finalize
     (fun () ->
-      (* Send the id and the task to the worker: *)
+       (* Send the id and the task to the worker: *)
        CELL.set worker.task_cell (id, task);
        waiter)
     (fun () ->
-      if worker.reuse then
-        (* Put back the worker to the pool: *)
-        add_worker worker
-      else begin
-        decr threads_count;
-        (* Or wait for the thread to terminates, to free its associated
-           resources: *)
-        Thread.join worker.thread
-      end;
-      Lwt.return_unit)
+       if worker.reuse then
+         (* Put back the worker to the pool: *)
+         add_worker worker
+       else begin
+         decr threads_count;
+         (* Or wait for the thread to terminates, to free its associated
+            resources: *)
+         Thread.join worker.thread
+       end;
+       Lwt.return_unit)
 
 (* +-----------------------------------------------------------------+
    | Running Lwt threads in the main thread                          |
@@ -267,5 +267,5 @@ let run_in_main f =
   Lwt_unix.send_notification job_notification;
   (* Wait for the result. *)
   match CELL.get cell with
-    | Result.Ok ret -> ret
-    | Result.Error exn -> raise exn
+  | Result.Ok ret -> ret
+  | Result.Error exn -> raise exn
