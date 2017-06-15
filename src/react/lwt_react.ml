@@ -49,15 +49,15 @@ module E = struct
              (* The limiter is sleeping, we queue the event for later
                 delivering. *)
              match !delayed with
-               | Some cell ->
-                   (* An occurence is alreayd queued, replace it. *)
-                   cell := x;
-                   None
-               | None ->
-                   let cell = ref x in
-                   delayed := Some cell;
-                   Lwt.on_success !limiter (fun () -> let x = !cell in delayed := None; push x);
-                   None
+             | Some cell ->
+               (* An occurence is alreayd queued, replace it. *)
+               cell := x;
+               None
+             | None ->
+               let cell = ref x in
+               delayed := Some cell;
+               Lwt.on_success !limiter (fun () -> let x = !cell in delayed := None; push x);
+               None
            end else begin
              (* Set the limiter for future events. *)
              limiter := f ();
@@ -96,12 +96,12 @@ module E = struct
 
   let delay thread =
     match Lwt.poll thread with
-      | Some e ->
-          e
-      | None ->
-          let event, send = create () in
-          Lwt.on_success thread (fun e -> send e; stop event);
-          switch never event
+    | Some e ->
+      e
+    | None ->
+      let event, send = create () in
+      Lwt.on_success thread (fun e -> send e; stop event);
+      switch never event
 
   let keeped = ref []
 
@@ -123,10 +123,10 @@ module E = struct
     let iter =
       fmap
         (fun t ->
-          Lwt.on_success
-            (Lwt_mutex.with_lock mutex (fun () -> t))
-            (fun v -> push v);
-          None) e
+           Lwt.on_success
+             (Lwt_mutex.with_lock mutex (fun () -> t))
+             (fun v -> push v);
+           None) e
     in
     select [iter; event]
 
@@ -141,10 +141,10 @@ module E = struct
     let iter =
       fmap
         (fun x ->
-          Lwt.on_success
-            (Lwt_mutex.with_lock mutex (fun () -> f x))
-            (fun v -> push v);
-          None) e
+           Lwt.on_success
+             (Lwt_mutex.with_lock mutex (fun () -> f x))
+             (fun v -> push v);
+           None) e
     in
     select [iter; event]
 
@@ -153,8 +153,8 @@ module E = struct
     let iter =
       fmap
         (fun (f, x) ->
-          Lwt.on_success (f x) (fun v -> push v);
-          None)
+           Lwt.on_success (f x) (fun v -> push v);
+           None)
         (app (map (fun f x -> (f, x)) ef) e)
     in
     select [iter; event]
@@ -165,10 +165,10 @@ module E = struct
     let iter =
       fmap
         (fun (f, x) ->
-          Lwt.on_success
-            (Lwt_mutex.with_lock mutex (fun () -> f x))
-            (fun v -> push v);
-          None)
+           Lwt.on_success
+             (Lwt_mutex.with_lock mutex (fun () -> f x))
+             (fun v -> push v);
+           None)
         (app (map (fun f x -> (f, x)) ef) e)
     in
     select [iter; event]
@@ -203,15 +203,15 @@ module E = struct
       fmap
         (fun x ->
            match !previous with
-             | None ->
-                 previous := Some x;
-                 None
-             | Some y ->
-                 previous := Some x;
-                 Lwt.on_success
-                   (Lwt_mutex.with_lock mutex (fun () -> f x y))
-                   (fun v -> push v);
-                 None)
+           | None ->
+             previous := Some x;
+             None
+           | Some y ->
+             previous := Some x;
+             Lwt.on_success
+               (Lwt_mutex.with_lock mutex (fun () -> f x y))
+               (fun v -> push v);
+             None)
         e
     in
     select [iter; event]
@@ -232,10 +232,10 @@ module E = struct
 
   let rec rev_fold f acc = function
     | [] ->
-        Lwt.return acc
+      Lwt.return acc
     | x :: l ->
-        rev_fold f acc l >>= fun acc ->
-        f acc x
+      rev_fold f acc l >>= fun acc ->
+      f acc x
 
   let merge_s f acc el =
     let event, push = create () in
@@ -243,10 +243,10 @@ module E = struct
     let iter =
       fmap
         (fun l ->
-          Lwt.on_success
-            (Lwt_mutex.with_lock mutex (fun () -> rev_fold f acc l))
-            (fun v -> push v);
-          None)
+           Lwt.on_success
+             (Lwt_mutex.with_lock mutex (fun () -> rev_fold f acc l))
+             (fun v -> push v);
+           None)
         (merge (fun acc x -> x :: acc) [] el)
     in
     select [iter; event]
@@ -283,15 +283,15 @@ module S = struct
              (* The limiter is sleeping, we queue the event for later
                 delivering. *)
              match !delayed with
-               | Some cell ->
-                   (* An occurence is alreayd queued, replace it. *)
-                   cell := x;
-                   None
-               | None ->
-                   let cell = ref x in
-                   delayed := Some cell;
-                   Lwt.on_success !limiter (fun () -> let x = !cell in delayed := None; push x);
-                   None
+             | Some cell ->
+               (* An occurence is alreayd queued, replace it. *)
+               cell := x;
+               None
+             | None ->
+               let cell = ref x in
+               delayed := Some cell;
+               Lwt.on_success !limiter (fun () -> let x = !cell in delayed := None; push x);
+               None
            end else begin
              (* Set the limiter for future events. *)
              limiter := f ();
@@ -319,10 +319,10 @@ module S = struct
     let iter =
       E.fmap
         (fun t ->
-          Lwt.on_success
-            (Lwt_mutex.with_lock mutex (fun () -> t))
-            (fun v -> push v);
-          None)
+           Lwt.on_success
+             (Lwt_mutex.with_lock mutex (fun () -> t))
+             (fun v -> push v);
+           None)
         (changes s)
     in
     Lwt_mutex.with_lock mutex (fun () -> value s) >>= fun x ->
@@ -334,9 +334,9 @@ module S = struct
     let iter =
       E.fmap
         (fun x ->
-          Lwt.on_success
-            (Lwt_mutex.with_lock mutex (fun () -> f x)) (fun v -> push v);
-            None)
+           Lwt.on_success
+             (Lwt_mutex.with_lock mutex (fun () -> f x)) (fun v -> push v);
+           None)
         (changes s)
     in
     Lwt_mutex.with_lock mutex (fun () -> f (value s)) >>= fun x ->
@@ -348,10 +348,10 @@ module S = struct
     let iter =
       E.fmap
         (fun (f, x) ->
-          Lwt.on_success
-            (Lwt_mutex.with_lock mutex (fun () -> f x))
-            (fun v -> push v);
-          None)
+           Lwt.on_success
+             (Lwt_mutex.with_lock mutex (fun () -> f x))
+             (fun v -> push v);
+           None)
         (E.app (E.map (fun f x -> (f, x)) (changes sf)) (changes s))
     in
     Lwt_mutex.with_lock mutex (fun () -> (value sf) (value s)) >>= fun x ->
@@ -363,20 +363,20 @@ module S = struct
     let iter = E.fmap (fun x -> Lwt.on_success (Lwt_mutex.with_lock mutex (fun () -> f x)) (function true -> push x | false -> ()); None) (changes s) in
     let x = value s in
     Lwt_mutex.with_lock mutex (fun () -> f x) >>= function
-      | true ->
-          Lwt.return (hold ?eq x (E.select [iter; event]))
-      | false ->
-          Lwt.return (hold ?eq i (E.select [iter; event]))
+    | true ->
+      Lwt.return (hold ?eq x (E.select [iter; event]))
+    | false ->
+      Lwt.return (hold ?eq i (E.select [iter; event]))
 
   let fmap_s ?eq f i s =
     let event, push = E.create () in
     let mutex = Lwt_mutex.create () in
     let iter = E.fmap (fun x -> Lwt.on_success (Lwt_mutex.with_lock mutex (fun () -> f x)) (function Some x -> push x | None -> ()); None) (changes s) in
     Lwt_mutex.with_lock mutex (fun () -> f (value s)) >>= function
-      | Some x ->
-          Lwt.return (hold ?eq x (E.select [iter; event]))
-      | None ->
-          Lwt.return (hold ?eq i (E.select [iter; event]))
+    | Some x ->
+      Lwt.return (hold ?eq x (E.select [iter; event]))
+    | None ->
+      Lwt.return (hold ?eq i (E.select [iter; event]))
 
   let diff_s f s =
     let previous = ref (value s) in
@@ -406,10 +406,10 @@ module S = struct
 
   let rec rev_fold f acc = function
     | [] ->
-        Lwt.return acc
+      Lwt.return acc
     | x :: l ->
-        rev_fold f acc l >>= fun acc ->
-        f acc x
+      rev_fold f acc l >>= fun acc ->
+      f acc x
 
   let merge_s ?eq f acc sl =
     let s = merge (fun acc x -> x :: acc) [] sl in
@@ -418,10 +418,10 @@ module S = struct
     let iter =
       E.fmap
         (fun l ->
-          Lwt.on_success
-            (Lwt_mutex.with_lock mutex (fun () -> rev_fold f acc l))
-            (fun v -> push v);
-          None)
+           Lwt.on_success
+             (Lwt_mutex.with_lock mutex (fun () -> rev_fold f acc l))
+             (fun v -> push v);
+           None)
         (changes s)
     in
     Lwt_mutex.with_lock mutex (fun () -> rev_fold f acc (value s)) >>= fun x ->
@@ -458,10 +458,10 @@ module S = struct
     let iter =
       E.fmap
         (fun x ->
-          Lwt.on_success
-            (Lwt_mutex.with_lock mutex (fun () -> f x))
-            (fun v -> push v);
-          None)
+           Lwt.on_success
+             (Lwt_mutex.with_lock mutex (fun () -> f x))
+             (fun v -> push v);
+           None)
         (changes s)
     in
     Lwt_mutex.with_lock mutex (fun () -> f (value s)) >>= fun x ->
