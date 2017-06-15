@@ -3042,17 +3042,17 @@ CAMLprim value lwt_unix_bind_job(value fd, value address)
     implement Lwt jobs (indeed, the author currently doesn't remember exactly
     how it works!).
 
-    A job is defined by providing three functions. Let's say we want to call our
-    new kind of job "`FOO`":
+    The thread pool expects jobs in a fixed format (the `struct` below) and
+    accompanying functions with fixed names. You *MUST* follow this naming
+    conventions. Specifically, for a job "`FOO`", you must define
 
-    - `lwt_unix_FOO_job` allocates the job `struct` (see next paragraph).
-    - `worker_FOO` is later called in a worker thread to actually run the job.
-    - `result_FOO` is, even later, called in the main thread to return the
-      result of the job to OCaml, and deallocate the job.
+    - the struct `struct job_FOO`
+    - the function `lwt_unix_FOO_job`
+    - the function `worker_FOO`
+    - the function `result_FOO`
 
-    It is also necessary to define a `struct` with name `struct job_FOO`. This
-    is the representation of the job that will be manipulated by the thread
-    pool. It has several purposes:
+    The struct `struct job_FOO`: This is the representation of the job that will
+    be manipulated by the thread pool. It has several purposes:
 
     - Store the pointers to `worker_FOO` and `result_FOO`, so the thread pool is
       able to run them.
@@ -3062,9 +3062,13 @@ CAMLprim value lwt_unix_bind_job(value fd, value address)
       main thread.
     - Be something that can be placed in queues, or manipulated otherwise.
 
-    So, there are three functions and a `struct` to define. It is important that
-    their names fit the pattern given above, because it is expected by Lwt job
-    helper macros.
+    The function `lwt_unix_FOO_job` allocates the job's struct.
+
+    The function `worker_FOO` is later called in a worker thread to actually run
+    the job.
+
+    The function `result_FOO` is, even later, called in the main thread to return
+    the result of the job to OCaml, and deallocate the job.
 
     It is also possible to define additional helper functions and/or types, as
     needed.
@@ -3076,9 +3080,10 @@ CAMLprim value lwt_unix_bind_job(value fd, value address)
     doesn't call the ones that aren't really defined.
 
     The `LWT_NOT_AVAILABLEx` macros are used to define dummy symbols. `x` is the
-    number of arguments the stub takes. For example, the `getcwd` job is
-    currently not defined on Windows. For this reason, `lwt_unix_windows.h` has
-    `LWT_NOT_AVAILABLE1(unix_getcwd_job)`. The `lwt_` prefix is left off.
+    number of arguments the stub takes. For example, the `getcwd` job (which
+    takes 1 argument) is currently not defined on Windows. For this reason,
+    `lwt_unix_windows.h` has `LWT_NOT_AVAILABLE1(unix_getcwd_job)`. The `lwt_`
+    prefix is left off.
 
     A typical way to discover that you need to use this kind of macro is to
     submit a PR to the Lwt repo, and wait for the CI build bots to tell you. We
@@ -3087,12 +3092,6 @@ CAMLprim value lwt_unix_bind_job(value fd, value address)
 
     See inline comments in the implementation of the `getcwd` job below for
     other details. */
-
-/*
-In the OCaml sources, getcwd is set as either
-- 4096 (in asmrun/spacetime.c, byterun/sys.c)
-- PATH_MAX, MAXPATHLEN, or 512 (in otherlibs/unix/getcwd.c)
-*/
 
 /** The first field of a job `struct` must always be `struct lwt_unix_job job`:
 
@@ -3118,6 +3117,12 @@ struct job_getcwd {
     char* result;
     int error_code;
 };
+/*
+In the OCaml sources, getcwd's buffer size is set as either
+- 4096 (in asmrun/spacetime.c, byterun/sys.c)
+- PATH_MAX, MAXPATHLEN, or 512 (in otherlibs/unix/getcwd.c)
+*/
+
 
 /* Runs in the worker thread. This function is `static` (not visible outside
    this C file) because it is called only through the function pointer that is
