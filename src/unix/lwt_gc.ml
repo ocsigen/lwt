@@ -39,11 +39,11 @@ let finaliser f =
       ~once:true
       (fun () ->
          match !opt with
-           | None ->
-               assert false
-           | Some x ->
-               opt := None;
-               ensure_termination (f x))
+         | None ->
+           assert false
+         | Some x ->
+           opt := None;
+           ensure_termination (f x))
   in
   (* The real finaliser: fill the cell and send a notification. *)
   (fun x ->
@@ -56,19 +56,19 @@ let finalise f x =
 (* Exit hook for a finalise_or_exit *)
 let foe_exit f called weak () =
   match Weak.get weak 0 with
-    | None ->
-        (* The value has been garbage collected, normally this point
-           is never reached *)
-        Lwt.return_unit
-    | Some x ->
-        (* Just to avoid double finalisation *)
-        Weak.set weak 0 None;
-        if !called then
-          Lwt.return_unit
-        else begin
-          called := true;
-          f x
-        end
+  | None ->
+    (* The value has been garbage collected, normally this point
+       is never reached *)
+    Lwt.return_unit
+  | Some x ->
+    (* Just to avoid double finalisation *)
+    Weak.set weak 0 None;
+    if !called then
+      Lwt.return_unit
+    else begin
+      called := true;
+      f x
+    end
 
 (* Finaliser for a finalise_or_exit *)
 let foe_finaliser f called hook =

@@ -31,36 +31,36 @@ let rec run t =
   (* Wakeup paused threads now. *)
   Lwt.wakeup_paused ();
   match Lwt.poll t with
-    | Some x ->
-        x
-    | None ->
-        (* Call enter hooks. *)
-        Lwt_sequence.iter_l (fun f -> f ()) enter_iter_hooks;
-        (* Do the main loop call. *)
-        Lwt_engine.iter (Lwt.paused_count () = 0 && Lwt_sequence.is_empty yielded);
-        (* Wakeup paused threads again. *)
-        Lwt.wakeup_paused ();
-        (* Wakeup yielded threads now. *)
-        if not (Lwt_sequence.is_empty yielded) then begin
-          let tmp = Lwt_sequence.create () in
-          Lwt_sequence.transfer_r yielded tmp;
-          Lwt_sequence.iter_l (fun wakener -> Lwt.wakeup wakener ()) tmp
-        end;
-        (* Call leave hooks. *)
-        Lwt_sequence.iter_l (fun f -> f ()) leave_iter_hooks;
-        run t
+  | Some x ->
+    x
+  | None ->
+    (* Call enter hooks. *)
+    Lwt_sequence.iter_l (fun f -> f ()) enter_iter_hooks;
+    (* Do the main loop call. *)
+    Lwt_engine.iter (Lwt.paused_count () = 0 && Lwt_sequence.is_empty yielded);
+    (* Wakeup paused threads again. *)
+    Lwt.wakeup_paused ();
+    (* Wakeup yielded threads now. *)
+    if not (Lwt_sequence.is_empty yielded) then begin
+      let tmp = Lwt_sequence.create () in
+      Lwt_sequence.transfer_r yielded tmp;
+      Lwt_sequence.iter_l (fun wakener -> Lwt.wakeup wakener ()) tmp
+    end;
+    (* Call leave hooks. *)
+    Lwt_sequence.iter_l (fun f -> f ()) leave_iter_hooks;
+    run t
 
 let exit_hooks = Lwt_sequence.create ()
 
 let rec call_hooks () =
   match Lwt_sequence.take_opt_l exit_hooks with
-    | None ->
-        Lwt.return_unit
-    | Some f ->
-        Lwt.catch
-          (fun () -> f ())
-          (fun _  -> Lwt.return_unit) >>= fun () ->
-        call_hooks ()
+  | None ->
+    Lwt.return_unit
+  | Some f ->
+    Lwt.catch
+      (fun () -> f ())
+      (fun _  -> Lwt.return_unit) >>= fun () ->
+    call_hooks ()
 
 let () =
   at_exit (fun () ->

@@ -39,21 +39,21 @@ let make_in_channel ?close read =
 let input_line ic =
   let rec loop buf =
     Lwt_io.read_char_opt ic >>= function
-      | None | Some '\n' ->
-          Lwt.return (Buffer.contents buf)
-      | Some char ->
-          Buffer.add_char buf char;
-          loop buf
+    | None | Some '\n' ->
+      Lwt.return (Buffer.contents buf)
+    | Some char ->
+      Buffer.add_char buf char;
+      loop buf
   in
   Lwt_io.read_char_opt ic >>= function
-    | Some '\n' ->
-        Lwt.return ""
-    | Some char ->
-        let buf = Buffer.create 128 in
-        Buffer.add_char buf char;
-        loop buf
-    | None ->
-        Lwt.fail End_of_file
+  | Some '\n' ->
+    Lwt.return ""
+  | Some char ->
+    let buf = Buffer.create 128 in
+    Buffer.add_char buf char;
+    loop buf
+  | None ->
+    Lwt.fail End_of_file
 
 let input_value = Lwt_io.read_value
 let input = Lwt_io.read_into
