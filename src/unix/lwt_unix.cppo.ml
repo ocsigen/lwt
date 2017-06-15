@@ -37,16 +37,16 @@ let default_async_method_var = ref Async_detach
 let () =
   try
     match Sys.getenv "LWT_ASYNC_METHOD" with
-      | "none" ->
-          default_async_method_var := Async_none
-      | "detach" ->
-          default_async_method_var := Async_detach
-      | "switch" ->
-          default_async_method_var := Async_switch
-      | str ->
-          Printf.eprintf
-            "%s: invalid lwt async method: '%s', must be 'none', 'detach' or 'switch'\n%!"
-            (Filename.basename Sys.executable_name) str
+    | "none" ->
+      default_async_method_var := Async_none
+    | "detach" ->
+      default_async_method_var := Async_detach
+    | "switch" ->
+      default_async_method_var := Async_switch
+    | str ->
+      Printf.eprintf
+        "%s: invalid lwt async method: '%s', must be 'none', 'detach' or 'switch'\n%!"
+        (Filename.basename Sys.executable_name) str
   with Not_found ->
     ()
 
@@ -57,8 +57,8 @@ let async_method_key = Lwt.new_key ()
 
 let async_method () =
   match Lwt.get async_method_key with
-    | Some am -> am
-    | None -> !default_async_method_var
+  | Some am -> am
+  | None -> !default_async_method_var
 
 let with_async_none f =
   Lwt.with_value async_method_key (Some Async_none) f
@@ -84,10 +84,10 @@ type notifier = {
 }
 
 module Notifiers = Hashtbl.Make(struct
-                                  type t = int
-                                  let equal (x : int) (y : int) = x = y
-                                  let hash (x : int) = x
-                                end)
+    type t = int
+    let equal (x : int) (y : int) = x = y
+    let hash (x : int) = x
+  end)
 
 let notifiers = Notifiers.create 1024
 
@@ -116,12 +116,12 @@ let set_notification id f =
 
 let call_notification id =
   match try Some(Notifiers.find notifiers id) with Not_found -> None with
-    | Some notifier ->
-        if notifier.notify_once then
-          stop_notification id;
-        notifier.notify_handler ()
-    | None ->
-        ()
+  | Some notifier ->
+    if notifier.notify_once then
+      stop_notification id;
+    notifier.notify_handler ()
+  | None ->
+    ()
 
 (* +-----------------------------------------------------------------+
    | Sleepers                                                        |
@@ -158,14 +158,14 @@ let with_timeout d f = Lwt.pick [timeout d; Lwt.apply f ()]
 type 'a job
 
 external start_job : 'a job -> async_method -> bool = "lwt_unix_start_job"
-    (* Starts the given job with given parameters. It returns [true]
-       if the job is already terminated. *)
+(* Starts the given job with given parameters. It returns [true]
+   if the job is already terminated. *)
 
 [@@@ocaml.warning "-3"]
 external check_job : 'a job -> int -> bool = "lwt_unix_check_job" "noalloc"
-    (* Check whether that a job has terminated or not. If it has not
-       yet terminated, it is marked so it will send a notification
-       when it finishes. *)
+(* Check whether that a job has terminated or not. If it has not
+   yet terminated, it is marked so it will send a notification
+   when it finishes. *)
 [@@@ocaml.warning "+3"]
 
 (* For all running job, a waiter and a function to abort it. *)
@@ -173,8 +173,8 @@ let jobs = Lwt_sequence.create ()
 
 let rec abort_jobs exn =
   match Lwt_sequence.take_opt_l jobs with
-    | Some (_, f) -> f exn; abort_jobs exn
-    | None -> ()
+  | Some (_, f) -> f exn; abort_jobs exn
+  | None -> ()
 
 let cancel_jobs () = abort_jobs Lwt.Canceled
 
@@ -198,9 +198,9 @@ let run_job_aux async_method job result =
     let waiter, wakener = Lwt.wait () in
     (* Add the job to the sequence of all jobs. *)
     let node = Lwt_sequence.add_l (
-                  (waiter >>= fun _ -> Lwt.return_unit),
-                  (fun exn -> if Lwt.state waiter = Lwt.Sleep then Lwt.wakeup_exn wakener exn))
-                jobs in
+      (waiter >>= fun _ -> Lwt.return_unit),
+      (fun exn -> if Lwt.state waiter = Lwt.Sleep then Lwt.wakeup_exn wakener exn))
+      jobs in
     ignore begin
       (* Create the notification for asynchronous wakeup. *)
       let id =
@@ -222,22 +222,22 @@ let run_job_aux async_method job result =
 
 let choose_async_method = function
   | Some async_method ->
-      async_method
+    async_method
   | None ->
-      match Lwt.get async_method_key with
-        | Some am -> am
-        | None -> !default_async_method_var
+    match Lwt.get async_method_key with
+    | Some am -> am
+    | None -> !default_async_method_var
 
 let execute_job ?async_method ~job ~result ~free =
   let async_method = choose_async_method async_method in
   run_job_aux async_method job (fun job -> let x = wrap_result result job in free job; x)
 
 external self_result : 'a job -> 'a = "lwt_unix_self_result"
-      (* returns the result of a job using the [result] field of the C
-         job structure. *)
+(* returns the result of a job using the [result] field of the C
+   job structure. *)
 
 external run_job_sync : 'a job -> 'a = "lwt_unix_run_job_sync"
-      (* Exeuctes a job synchronously and returns its result. *)
+(* Exeuctes a job synchronously and returns its result. *)
 
 let self_result job =
   try
@@ -300,45 +300,45 @@ let is_blocking ?blocking ?(set_flags=true) fd =
   if Sys.win32 then begin
     if is_socket fd then
       match blocking, set_flags with
-        | Some state, false ->
-            lazy(Lwt.return state)
-        | Some true, true ->
-            lazy(Unix.clear_nonblock fd;
-                 Lwt.return_true)
-        | Some false, true ->
-            lazy(Unix.set_nonblock fd;
-                 Lwt.return_false)
-        | None, false ->
-            lazy(Lwt.return_false)
-        | None, true ->
-            lazy(Unix.set_nonblock fd;
-                 Lwt.return_false)
+      | Some state, false ->
+        lazy(Lwt.return state)
+      | Some true, true ->
+        lazy(Unix.clear_nonblock fd;
+             Lwt.return_true)
+      | Some false, true ->
+        lazy(Unix.set_nonblock fd;
+             Lwt.return_false)
+      | None, false ->
+        lazy(Lwt.return_false)
+      | None, true ->
+        lazy(Unix.set_nonblock fd;
+             Lwt.return_false)
     else
       match blocking with
-        | Some state ->
-            lazy(Lwt.return state)
-        | None ->
-            lazy(Lwt.return_true)
+      | Some state ->
+        lazy(Lwt.return state)
+      | None ->
+        lazy(Lwt.return_true)
   end else begin
     match blocking, set_flags with
-      | Some state, false ->
-          lazy(Lwt.return state)
-      | Some true, true ->
-          lazy(Unix.clear_nonblock fd;
-               Lwt.return_true)
-      | Some false, true ->
-          lazy(Unix.set_nonblock fd;
-               Lwt.return_false)
-      | None, false ->
-          lazy(guess_blocking fd)
-      | None, true ->
-          lazy(guess_blocking fd >>= function
-                 | true ->
-                     Unix.clear_nonblock fd;
-                     Lwt.return_true
-                 | false ->
-                     Unix.set_nonblock fd;
-                     Lwt.return_false)
+    | Some state, false ->
+      lazy(Lwt.return state)
+    | Some true, true ->
+      lazy(Unix.clear_nonblock fd;
+           Lwt.return_true)
+    | Some false, true ->
+      lazy(Unix.set_nonblock fd;
+           Lwt.return_false)
+    | None, false ->
+      lazy(guess_blocking fd)
+    | None, true ->
+      lazy(guess_blocking fd >>= function
+      | true ->
+        Unix.clear_nonblock fd;
+        Lwt.return_true
+      | false ->
+        Unix.set_nonblock fd;
+        Lwt.return_false)
   end
 
 let mk_ch ?blocking ?(set_flags=true) fd = {
@@ -354,12 +354,12 @@ let mk_ch ?blocking ?(set_flags=true) fd = {
 
 let check_descriptor ch =
   match ch.state with
-    | Opened ->
-        ()
-    | Aborted e ->
-        raise e
-    | Closed ->
-        raise (Unix.Unix_error (Unix.EBADF, "check_descriptor", ""))
+  | Opened ->
+    ()
+  | Aborted e ->
+    raise e
+  | Closed ->
+    raise (Unix.Unix_error (Unix.EBADF, "check_descriptor", ""))
 
 let state ch = ch.state
 
@@ -409,19 +409,19 @@ let clear_events ch =
   Lwt_sequence.iter_node_l (fun node -> Lwt_sequence.remove node; Lwt_sequence.get node ()) ch.hooks_writable;
   begin
     match ch.event_readable with
-      | Some ev ->
-          ch.event_readable <- None;
-          Lwt_engine.stop_event ev
-      | None ->
-          ()
+    | Some ev ->
+      ch.event_readable <- None;
+      Lwt_engine.stop_event ev
+    | None ->
+      ()
   end;
   begin
     match ch.event_writable with
-      | Some ev ->
-          ch.event_writable <- None;
-          Lwt_engine.stop_event ev
-      | None ->
-          ()
+    | Some ev ->
+      ch.event_writable <- None;
+      Lwt_engine.stop_event ev
+    | None ->
+      ()
   end
 
 let abort ch e =
@@ -460,19 +460,19 @@ let stop_events ch =
     (fun () ->
        if Lwt_sequence.is_empty ch.hooks_readable then begin
          match ch.event_readable with
-           | Some ev ->
-               ch.event_readable <- None;
-               Lwt_engine.stop_event ev
-           | None ->
-               ()
+         | Some ev ->
+           ch.event_readable <- None;
+           Lwt_engine.stop_event ev
+         | None ->
+           ()
        end;
        if Lwt_sequence.is_empty ch.hooks_writable then begin
          match ch.event_writable with
-           | Some ev ->
-               ch.event_writable <- None;
-               Lwt_engine.stop_event ev
-           | None ->
-               ()
+         | Some ev ->
+           ch.event_writable <- None;
+           Lwt_engine.stop_event ev
+         | None ->
+           ()
        end)
 
 let register_readable ch =
@@ -491,59 +491,59 @@ let rec retry_syscall node event ch wakener action =
       check_descriptor ch;
       Success(action ())
     with
-      | Retry
-      | Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _)
-      | Sys_blocked_io ->
-          (* EINTR because we are catching SIG_CHLD hence the system
-             call might be interrupted to handle the signal; this lets
-             us restart the system call eventually. *)
-          Requeued event
-      | Retry_read ->
-          Requeued Read
-      | Retry_write ->
-          Requeued Write
-      | e ->
-          Exn e
+    | Retry
+    | Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _)
+    | Sys_blocked_io ->
+      (* EINTR because we are catching SIG_CHLD hence the system
+         call might be interrupted to handle the signal; this lets
+         us restart the system call eventually. *)
+      Requeued event
+    | Retry_read ->
+      Requeued Read
+    | Retry_write ->
+      Requeued Write
+    | e ->
+      Exn e
   in
   match res with
-    | Success v ->
-        Lwt_sequence.remove !node;
-        stop_events ch;
-        Lwt.wakeup wakener v
-    | Exn e ->
-        Lwt_sequence.remove !node;
-        stop_events ch;
-        Lwt.wakeup_exn wakener e
-    | Requeued event' ->
-        if event <> event' then begin
-          Lwt_sequence.remove !node;
-          stop_events ch;
-          match event' with
-            | Read ->
-                node := Lwt_sequence.add_r (fun () -> retry_syscall node Read ch wakener action) ch.hooks_readable ;
-                register_readable ch
-            | Write ->
-                node := Lwt_sequence.add_r (fun () -> retry_syscall node Write ch wakener action) ch.hooks_writable;
-                register_writable ch
-        end
+  | Success v ->
+    Lwt_sequence.remove !node;
+    stop_events ch;
+    Lwt.wakeup wakener v
+  | Exn e ->
+    Lwt_sequence.remove !node;
+    stop_events ch;
+    Lwt.wakeup_exn wakener e
+  | Requeued event' ->
+    if event <> event' then begin
+      Lwt_sequence.remove !node;
+      stop_events ch;
+      match event' with
+      | Read ->
+        node := Lwt_sequence.add_r (fun () -> retry_syscall node Read ch wakener action) ch.hooks_readable ;
+        register_readable ch
+      | Write ->
+        node := Lwt_sequence.add_r (fun () -> retry_syscall node Write ch wakener action) ch.hooks_writable;
+        register_writable ch
+    end
 
 let dummy = Lwt_sequence.add_r ignore (Lwt_sequence.create ())
 
 let register_action event ch action =
   let waiter, wakener = Lwt.task () in
   match event with
-    | Read ->
-        let node = ref dummy in
-        node := Lwt_sequence.add_r (fun () -> retry_syscall node Read ch wakener action) ch.hooks_readable;
-        Lwt.on_cancel waiter (fun () -> Lwt_sequence.remove !node; stop_events ch);
-        register_readable ch;
-        waiter
-    | Write ->
-        let node = ref dummy in
-        node := Lwt_sequence.add_r (fun () -> retry_syscall node Write ch wakener action) ch.hooks_writable;
-        Lwt.on_cancel waiter (fun () -> Lwt_sequence.remove !node; stop_events ch);
-        register_writable ch;
-        waiter
+  | Read ->
+    let node = ref dummy in
+    node := Lwt_sequence.add_r (fun () -> retry_syscall node Read ch wakener action) ch.hooks_readable;
+    Lwt.on_cancel waiter (fun () -> Lwt_sequence.remove !node; stop_events ch);
+    register_readable ch;
+    waiter
+  | Write ->
+    let node = ref dummy in
+    node := Lwt_sequence.add_r (fun () -> retry_syscall node Write ch wakener action) ch.hooks_writable;
+    Lwt.on_cancel waiter (fun () -> Lwt_sequence.remove !node; stop_events ch);
+    register_writable ch;
+    waiter
 
 (* Wraps a system call *)
 let wrap_syscall event ch action =
@@ -555,17 +555,17 @@ let wrap_syscall event ch action =
     else
       register_action event ch action
   with
-    | Retry
-    | Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _)
-    | Sys_blocked_io ->
-        (* The action could not be completed immediately, register it: *)
-        register_action event ch action
-    | Retry_read ->
-        register_action Read ch action
-    | Retry_write ->
-        register_action Write ch action
-    | e ->
-        Lwt.fail e
+  | Retry
+  | Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _)
+  | Sys_blocked_io ->
+    (* The action could not be completed immediately, register it: *)
+    register_action event ch action
+  | Retry_read ->
+    register_action Read ch action
+  | Retry_write ->
+    register_action Write ch action
+  | e ->
+    Lwt.fail e
 
 (* +-----------------------------------------------------------------+
    | Generated jobs                                                  |
@@ -578,7 +578,7 @@ module Jobs = Lwt_unix_jobs_generated.Make(struct type 'a t = 'a job end)
    +-----------------------------------------------------------------+ *)
 
 type open_flag =
-    Unix.open_flag =
+  Unix.open_flag =
   | O_RDONLY
   | O_WRONLY
   | O_RDWR
@@ -618,10 +618,10 @@ let close ch =
 let wait_read ch =
   Lwt.catch
     (fun () ->
-      if readable ch then
-        Lwt.return_unit
-      else
-        register_action Read ch ignore)
+       if readable ch then
+         Lwt.return_unit
+       else
+         register_action Read ch ignore)
     Lwt.fail
 
 external stub_read : Unix.file_descr -> Bytes.t -> int -> int -> int = "lwt_unix_read"
@@ -632,19 +632,19 @@ let read ch buf pos len =
     invalid_arg "Lwt_unix.read"
   else
     Lazy.force ch.blocking >>= function
-      | true ->
-          wait_read ch >>= fun () ->
-          run_job (read_job ch.fd buf pos len)
-      | false ->
-          wrap_syscall Read ch (fun () -> stub_read ch.fd buf pos len)
+    | true ->
+      wait_read ch >>= fun () ->
+      run_job (read_job ch.fd buf pos len)
+    | false ->
+      wrap_syscall Read ch (fun () -> stub_read ch.fd buf pos len)
 
 let wait_write ch =
   Lwt.catch
     (fun () ->
-      if writable ch then
-        Lwt.return_unit
-      else
-        register_action Write ch ignore)
+       if writable ch then
+         Lwt.return_unit
+       else
+         register_action Write ch ignore)
     Lwt.fail
 
 external stub_write : Unix.file_descr -> Bytes.t -> int -> int -> int = "lwt_unix_write"
@@ -655,11 +655,11 @@ let write ch buf pos len =
     invalid_arg "Lwt_unix.write"
   else
     Lazy.force ch.blocking >>= function
-      | true ->
-          wait_write ch >>= fun () ->
-          run_job (write_job ch.fd buf pos len)
-      | false ->
-          wrap_syscall Write ch (fun () -> stub_write ch.fd buf pos len)
+    | true ->
+      wait_write ch >>= fun () ->
+      run_job (write_job ch.fd buf pos len)
+    | false ->
+      wrap_syscall Write ch (fun () -> stub_write ch.fd buf pos len)
 
 let write_string ch buf pos len =
   let buf = Bytes.unsafe_of_string buf in
@@ -776,12 +776,12 @@ let readv fd io_vectors =
   let count = check_io_vectors "Lwt_unix.readv" io_vectors in
 
   Lazy.force fd.blocking >>= function
-    | true ->
-      wait_read fd >>= fun () ->
-      run_job (readv_job fd.fd io_vectors.IO_vectors.prefix count)
-    | false ->
-      wrap_syscall Read fd (fun () ->
-        stub_readv fd.fd io_vectors.IO_vectors.prefix count)
+  | true ->
+    wait_read fd >>= fun () ->
+    run_job (readv_job fd.fd io_vectors.IO_vectors.prefix count)
+  | false ->
+    wrap_syscall Read fd (fun () ->
+      stub_readv fd.fd io_vectors.IO_vectors.prefix count)
 
 external stub_writev :
   Unix.file_descr -> IO_vectors.io_vector list -> int -> int =
@@ -795,19 +795,19 @@ let writev fd io_vectors =
   let count = check_io_vectors "Lwt_unix.writev" io_vectors in
 
   Lazy.force fd.blocking >>= function
-    | true ->
-      wait_write fd >>= fun () ->
-      run_job (writev_job fd.fd io_vectors.IO_vectors.prefix count)
-    | false ->
-      wrap_syscall Write fd (fun () ->
-        stub_writev fd.fd io_vectors.IO_vectors.prefix count)
+  | true ->
+    wait_write fd >>= fun () ->
+    run_job (writev_job fd.fd io_vectors.IO_vectors.prefix count)
+  | false ->
+    wrap_syscall Write fd (fun () ->
+      stub_writev fd.fd io_vectors.IO_vectors.prefix count)
 
 (* +-----------------------------------------------------------------+
    | Seeking and truncating                                          |
    +-----------------------------------------------------------------+ *)
 
 type seek_command =
-    Unix.seek_command =
+  Unix.seek_command =
   | SEEK_SET
   | SEEK_CUR
   | SEEK_END
@@ -851,7 +851,7 @@ let fsync ch =
 type file_perm = Unix.file_perm
 
 type file_kind =
-    Unix.file_kind =
+  Unix.file_kind =
   | S_REG
   | S_DIR
   | S_CHR
@@ -861,21 +861,21 @@ type file_kind =
   | S_SOCK
 
 type stats =
-    Unix.stats =
-    {
-      st_dev : int;
-      st_ino : int;
-      st_kind : file_kind;
-      st_perm : file_perm;
-      st_nlink : int;
-      st_uid : int;
-      st_gid : int;
-      st_rdev : int;
-      st_size : int;
-      st_atime : float;
-      st_mtime : float;
-      st_ctime : float;
-    }
+  Unix.stats =
+  {
+    st_dev : int;
+    st_ino : int;
+    st_kind : file_kind;
+    st_perm : file_perm;
+    st_nlink : int;
+    st_uid : int;
+    st_gid : int;
+    st_rdev : int;
+    st_size : int;
+    st_atime : float;
+    st_mtime : float;
+    st_ctime : float;
+  }
 
 external stat_job : string -> Unix.stats job = "lwt_unix_stat_job"
 
@@ -937,21 +937,21 @@ module LargeFile =
 struct
 
   type stats =
-      Unix.LargeFile.stats =
-      {
-        st_dev : int;
-        st_ino : int;
-        st_kind : file_kind;
-        st_perm : file_perm;
-        st_nlink : int;
-        st_uid : int;
-        st_gid : int;
-        st_rdev : int;
-        st_size : int64;
-        st_atime : float;
-        st_mtime : float;
-        st_ctime : float;
-      }
+    Unix.LargeFile.stats =
+    {
+      st_dev : int;
+      st_ino : int;
+      st_kind : file_kind;
+      st_perm : file_perm;
+      st_nlink : int;
+      st_uid : int;
+      st_gid : int;
+      st_rdev : int;
+      st_size : int64;
+      st_atime : float;
+      st_mtime : float;
+      st_ctime : float;
+    }
 
   let lseek ch offset whence =
     check_descriptor ch;
@@ -1062,7 +1062,7 @@ let fchown ch uid gid =
     run_job (Jobs.fchown_job ch.fd uid gid)
 
 type access_permission =
-    Unix.access_permission =
+  Unix.access_permission =
   | R_OK
   | W_OK
   | X_OK
@@ -1088,12 +1088,12 @@ let dup ch =
     blocking =
       if ch.set_flags then
         lazy(Lazy.force ch.blocking >>= function
-               | true ->
-                   Unix.clear_nonblock fd;
-                   Lwt.return_true
-               | false ->
-                   Unix.set_nonblock fd;
-                   Lwt.return_false)
+        | true ->
+          Unix.clear_nonblock fd;
+          Lwt.return_true
+        | false ->
+          Unix.set_nonblock fd;
+          Lwt.return_false)
       else
         ch.blocking;
     event_readable = None;
@@ -1109,12 +1109,12 @@ let dup2 ch1 ch2 =
   ch2.blocking <- (
     if ch2.set_flags then
       lazy(Lazy.force ch1.blocking >>= function
-             | true ->
-                 Unix.clear_nonblock ch2.fd;
-                 Lwt.return_true
-             | false ->
-                 Unix.set_nonblock ch2.fd;
-                 Lwt.return_false)
+      | true ->
+        Unix.clear_nonblock ch2.fd;
+        Lwt.return_true
+      | false ->
+        Unix.set_nonblock ch2.fd;
+        Lwt.return_false)
     else
       ch1.blocking
   )
@@ -1180,10 +1180,10 @@ let readdir handle =
   if Sys.win32 then
     Lwt.return (Unix.readdir handle)
   else
-    if valid_dir handle then
-      run_job (readdir_job handle)
-    else
-      Lwt.fail (Unix.(Unix_error (EBADF, "Lwt_unix.readdir", "")))
+  if valid_dir handle then
+    run_job (readdir_job handle)
+  else
+    Lwt.fail (Unix.(Unix_error (EBADF, "Lwt_unix.readdir", "")))
 
 external readdir_n_job : Unix.dir_handle -> int -> string array job = "lwt_unix_readdir_n_job"
 
@@ -1197,17 +1197,17 @@ let readdir_n handle count =
         Lwt.return array
       else
         match try array.(i) <- Unix.readdir handle; true with End_of_file -> false with
-          | true ->
-              fill (i + 1)
-          | false ->
-              Lwt.return (Array.sub array 0 i)
+        | true ->
+          fill (i + 1)
+        | false ->
+          Lwt.return (Array.sub array 0 i)
     in
     fill 0
   else
-    if valid_dir handle then
-      run_job (readdir_n_job handle count)
-    else
-      Lwt.fail (Unix.(Unix_error (EBADF, "Lwt_unix.readdir_n", "")))
+  if valid_dir handle then
+    run_job (readdir_n_job handle count)
+  else
+    Lwt.fail (Unix.(Unix_error (EBADF, "Lwt_unix.readdir_n", "")))
 
 external rewinddir_job : Unix.dir_handle -> unit job = "lwt_unix_rewinddir_job"
 
@@ -1215,10 +1215,10 @@ let rewinddir handle =
   if Sys.win32 then
     Lwt.return (Unix.rewinddir handle)
   else
-    if valid_dir handle then
-      run_job (rewinddir_job handle)
-    else
-      Lwt.fail (Unix.(Unix_error (EBADF, "Lwt_unix.rewinddir", "")))
+  if valid_dir handle then
+    run_job (rewinddir_job handle)
+  else
+    Lwt.fail (Unix.(Unix_error (EBADF, "Lwt_unix.rewinddir", "")))
 
 external closedir_job : Unix.dir_handle -> unit job = "lwt_unix_closedir_job"
 external invalidate_dir : Unix.dir_handle -> unit = "lwt_unix_invalidate_dir"
@@ -1227,12 +1227,12 @@ let closedir handle =
   if Sys.win32 then
     Lwt.return (Unix.closedir handle)
   else
-    if valid_dir handle then
-      run_job (closedir_job handle) >>= fun () ->
-      invalidate_dir handle;
-      Lwt.return_unit
-    else
-      Lwt.fail (Unix.(Unix_error (EBADF, "Lwt_unix.closedir", "")))
+  if valid_dir handle then
+    run_job (closedir_job handle) >>= fun () ->
+    invalidate_dir handle;
+    Lwt.return_unit
+  else
+    Lwt.fail (Unix.(Unix_error (EBADF, "Lwt_unix.closedir", "")))
 
 type list_directory_state  =
   | LDS_not_started
@@ -1241,10 +1241,10 @@ type list_directory_state  =
 
 let cleanup_dir_handle state =
   match !state with
-    | LDS_listing handle ->
-        ignore (closedir handle)
-    | LDS_not_started | LDS_done ->
-        ()
+  | LDS_listing handle ->
+    ignore (closedir handle)
+  | LDS_not_started | LDS_done ->
+    ()
 
 let files_of_directory path =
   let chunk_size = 1024 in
@@ -1253,36 +1253,36 @@ let files_of_directory path =
     (Lwt_stream.from
        (fun () ->
           match !state with
-            | LDS_not_started ->
-                opendir path >>= fun handle ->
-                Lwt.catch
-                  (fun () -> readdir_n handle chunk_size)
-                  (fun exn ->
-                    closedir handle >>= fun () ->
-                    Lwt.fail exn) >>= fun entries ->
-                if Array.length entries < chunk_size then begin
-                  state := LDS_done;
-                  closedir handle >>= fun () ->
-                  Lwt.return (Some(Lwt_stream.of_array entries))
-                end else begin
-                  state := LDS_listing handle;
-                  Gc.finalise cleanup_dir_handle state;
-                  Lwt.return (Some(Lwt_stream.of_array entries))
-                end
-            | LDS_listing handle ->
-                Lwt.catch
-                  (fun () -> readdir_n handle chunk_size)
-                  (fun exn ->
-                    closedir handle >>= fun () ->
-                    Lwt.fail exn) >>= fun entries ->
-                if Array.length entries < chunk_size then begin
-                  state := LDS_done;
-                  closedir handle >>= fun () ->
-                  Lwt.return (Some(Lwt_stream.of_array entries))
-                end else
-                  Lwt.return (Some(Lwt_stream.of_array entries))
-            | LDS_done ->
-                Lwt.return_none))
+          | LDS_not_started ->
+            opendir path >>= fun handle ->
+            Lwt.catch
+              (fun () -> readdir_n handle chunk_size)
+              (fun exn ->
+                 closedir handle >>= fun () ->
+                 Lwt.fail exn) >>= fun entries ->
+            if Array.length entries < chunk_size then begin
+              state := LDS_done;
+              closedir handle >>= fun () ->
+              Lwt.return (Some(Lwt_stream.of_array entries))
+            end else begin
+              state := LDS_listing handle;
+              Gc.finalise cleanup_dir_handle state;
+              Lwt.return (Some(Lwt_stream.of_array entries))
+            end
+          | LDS_listing handle ->
+            Lwt.catch
+              (fun () -> readdir_n handle chunk_size)
+              (fun exn ->
+                 closedir handle >>= fun () ->
+                 Lwt.fail exn) >>= fun entries ->
+            if Array.length entries < chunk_size then begin
+              state := LDS_done;
+              closedir handle >>= fun () ->
+              Lwt.return (Some(Lwt_stream.of_array entries))
+            end else
+              Lwt.return (Some(Lwt_stream.of_array entries))
+          | LDS_done ->
+            Lwt.return_none))
 
 (* +-----------------------------------------------------------------+
    | Pipes and redirections                                          |
@@ -1329,7 +1329,7 @@ let readlink name =
    +-----------------------------------------------------------------+ *)
 
 type lock_command =
-    Unix.lock_command =
+  Unix.lock_command =
   | F_ULOCK
   | F_LOCK
   | F_TLOCK
@@ -1351,7 +1351,7 @@ let lockf ch cmd size =
    +-----------------------------------------------------------------+ *)
 
 type passwd_entry =
-    Unix.passwd_entry =
+  Unix.passwd_entry =
   {
     pw_name : string;
     pw_passwd : string;
@@ -1363,7 +1363,7 @@ type passwd_entry =
   }
 
 type group_entry =
-    Unix.group_entry =
+  Unix.group_entry =
   {
     gr_name : string;
     gr_passwd : string;
@@ -1416,7 +1416,7 @@ let getgrgid gid =
    +-----------------------------------------------------------------+ *)
 
 type msg_flag =
-    Unix.msg_flag =
+  Unix.msg_flag =
   | MSG_OOB
   | MSG_DONTROUTE
   | MSG_PEEK
@@ -1471,10 +1471,10 @@ let io_vector ~buffer ~offset ~length = {
 
 let check_io_vectors func_name iovs =
   List.iter (fun iov ->
-               if iov.iov_offset < 0
-                 || iov.iov_length < 0
-                 || iov.iov_offset > String.length iov.iov_buffer - iov.iov_length then
-                   invalid_arg func_name) iovs
+    if iov.iov_offset < 0
+    || iov.iov_length < 0
+    || iov.iov_offset > String.length iov.iov_buffer - iov.iov_length then
+      invalid_arg func_name) iovs
 
 external stub_recv_msg : Unix.file_descr -> int -> io_vector list -> int * Unix.file_descr list = "lwt_unix_recv_msg"
 
@@ -1495,13 +1495,13 @@ let send_msg ~socket ~io_vectors ~fds =
 type inet_addr = Unix.inet_addr
 
 type socket_domain =
-    Unix.socket_domain =
+  Unix.socket_domain =
   | PF_UNIX
   | PF_INET
   | PF_INET6
 
 type socket_type =
-    Unix.socket_type =
+  Unix.socket_type =
   | SOCK_STREAM
   | SOCK_DGRAM
   | SOCK_RAW
@@ -1514,7 +1514,7 @@ let socket dom typ proto =
   mk_ch ~blocking:false s
 
 type shutdown_command =
-    Unix.shutdown_command =
+  Unix.shutdown_command =
   | SHUTDOWN_RECEIVE
   | SHUTDOWN_SEND
   | SHUTDOWN_ALL
@@ -1544,21 +1544,21 @@ let accept_n ch n =
   Lazy.force ch.blocking >>= fun blocking ->
   Lwt.catch
     (fun () ->
-      wrap_syscall Read ch begin fun () ->
-        begin
-          try
-            for _i = 1 to n do
-              if blocking && not (unix_readable ch.fd) then raise Retry;
-              let fd, addr = Unix.accept ch.fd in
-              l := (mk_ch ~blocking:false fd, addr) :: !l
-            done
-          with
-            | (Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _) | Retry) when !l <> [] ->
-                (* Ignore blocking errors if we have at least one file-descriptor: *)
-                ()
-        end;
-        (List.rev !l, None)
-      end)
+       wrap_syscall Read ch begin fun () ->
+         begin
+           try
+             for _i = 1 to n do
+               if blocking && not (unix_readable ch.fd) then raise Retry;
+               let fd, addr = Unix.accept ch.fd in
+               l := (mk_ch ~blocking:false fd, addr) :: !l
+             done
+           with
+           | (Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _) | Retry) when !l <> [] ->
+             (* Ignore blocking errors if we have at least one file-descriptor: *)
+             ()
+         end;
+         (List.rev !l, None)
+       end)
     (fun exn -> Lwt.return (List.rev !l, Some exn))
 
 let connect ch addr =
@@ -1573,19 +1573,19 @@ let connect ch addr =
           try
             Unix.connect ch.fd addr
           with
-            | Unix.Unix_error (Unix.EISCONN, _, _) ->
-                (* This is the windows way of telling that the connection
-                   has completed. *)
-                ()
+          | Unix.Unix_error (Unix.EISCONN, _, _) ->
+            (* This is the windows way of telling that the connection
+               has completed. *)
+            ()
         else
           raise Retry
       else
         try
           Unix.connect ch.fd addr
         with
-          | Unix.Unix_error (Unix.EWOULDBLOCK, _, _) ->
-              in_progress := true;
-              raise Retry
+        | Unix.Unix_error (Unix.EWOULDBLOCK, _, _) ->
+          in_progress := true;
+          raise Retry
     end
   else
     (* [in_progress] tell wether connection has started but not
@@ -1596,21 +1596,21 @@ let connect ch addr =
         (* If the connection is in progress, [getsockopt_error] tells
            wether it succceed: *)
         match Unix.getsockopt_error ch.fd with
-          | None ->
-              (* The socket is connected *)
-              ()
-          | Some err ->
-              (* An error happened: *)
-              raise (Unix.Unix_error(err, "connect", ""))
+        | None ->
+          (* The socket is connected *)
+          ()
+        | Some err ->
+          (* An error happened: *)
+          raise (Unix.Unix_error(err, "connect", ""))
       else
         try
           (* We should pass only one time here, unless the system call
              is interrupted by a signal: *)
           Unix.connect ch.fd addr
         with
-          | Unix.Unix_error (Unix.EINPROGRESS, _, _) ->
-              in_progress := true;
-              raise Retry
+        | Unix.Unix_error (Unix.EINPROGRESS, _, _) ->
+          in_progress := true;
+          raise Retry
     end
 
 external bind_job : Unix.file_descr -> Unix.sockaddr -> unit job =
@@ -1651,7 +1651,7 @@ let get_credentials ch =
    +-----------------------------------------------------------------+ *)
 
 type socket_bool_option =
-    Unix.socket_bool_option =
+  Unix.socket_bool_option =
   | SO_DEBUG
   | SO_BROADCAST
   | SO_REUSEADDR
@@ -1663,7 +1663,7 @@ type socket_bool_option =
   | IPV6_ONLY
 
 type socket_int_option =
-    Unix.socket_int_option =
+  Unix.socket_int_option =
   | SO_SNDBUF
   | SO_RCVBUF
   | SO_ERROR
@@ -1674,7 +1674,7 @@ type socket_int_option =
 type socket_optint_option = Unix.socket_optint_option = SO_LINGER
 
 type socket_float_option =
-    Unix.socket_float_option =
+  Unix.socket_float_option =
   | SO_RCVTIMEO
   | SO_SNDTIMEO
 
@@ -1749,30 +1749,30 @@ let mcast_drop_membership ch ?(ifname = Unix.inet_addr_any) addr =
    +-----------------------------------------------------------------+ *)
 
 type host_entry =
-    Unix.host_entry =
-    {
-      h_name : string;
-      h_aliases : string array;
-      h_addrtype : socket_domain;
-      h_addr_list : inet_addr array
-    }
+  Unix.host_entry =
+  {
+    h_name : string;
+    h_aliases : string array;
+    h_addrtype : socket_domain;
+    h_addr_list : inet_addr array
+  }
 
 type protocol_entry =
-    Unix.protocol_entry =
-    {
-      p_name : string;
-      p_aliases : string array;
-      p_proto : int
-    }
+  Unix.protocol_entry =
+  {
+    p_name : string;
+    p_aliases : string array;
+    p_proto : int
+  }
 
 type service_entry =
-    Unix.service_entry =
-    {
-      s_name : string;
-      s_aliases : string array;
-      s_port : int;
-      s_proto : string
-    }
+  Unix.service_entry =
+  {
+    s_name : string;
+    s_aliases : string array;
+    s_port : int;
+    s_proto : string
+  }
 
 external gethostname_job : unit -> string job = "lwt_unix_gethostname_job"
 
@@ -1793,7 +1793,7 @@ let gethostbyname name =
     run_job (gethostbyname_job name)
   else
     Lwt_mutex.with_lock hostent_mutex ( fun () ->
-        run_job (gethostbyname_job name) )
+      run_job (gethostbyname_job name) )
 
 external gethostbyaddr_job : Unix.inet_addr -> Unix.host_entry job = "lwt_unix_gethostbyaddr_job"
 
@@ -1804,7 +1804,7 @@ let gethostbyaddr addr =
     run_job (gethostbyaddr_job addr)
   else
     Lwt_mutex.with_lock hostent_mutex ( fun () ->
-        run_job (gethostbyaddr_job addr) )
+      run_job (gethostbyaddr_job addr) )
 
 let protoent_mutex =
   if Sys.win32 || Lwt_config._HAVE_NETDB_REENTRANT then
@@ -1821,7 +1821,7 @@ let getprotobyname name =
     run_job (getprotobyname_job name)
   else
     Lwt_mutex.with_lock protoent_mutex ( fun () ->
-        run_job (getprotobyname_job name))
+      run_job (getprotobyname_job name))
 
 external getprotobynumber_job : int -> Unix.protocol_entry job = "lwt_unix_getprotobynumber_job"
 
@@ -1832,7 +1832,7 @@ let getprotobynumber number =
     run_job (getprotobynumber_job number)
   else
     Lwt_mutex.with_lock protoent_mutex ( fun () ->
-        run_job (getprotobynumber_job number))
+      run_job (getprotobynumber_job number))
 
 (* TODO: Not used anywhere, and that might be a bug. *)
 let _servent_mutex =
@@ -1850,7 +1850,7 @@ let getservbyname name x =
     run_job (getservbyname_job name x)
   else
     Lwt_mutex.with_lock protoent_mutex ( fun () ->
-        run_job (getservbyname_job name x) )
+      run_job (getservbyname_job name x) )
 
 external getservbyport_job : int -> string -> Unix.service_entry job = "lwt_unix_getservbyport_job"
 
@@ -1861,20 +1861,20 @@ let getservbyport port x =
     run_job (getservbyport_job port x)
   else
     Lwt_mutex.with_lock protoent_mutex ( fun () ->
-        run_job (getservbyport_job port x) )
+      run_job (getservbyport_job port x) )
 
 type addr_info =
-    Unix.addr_info =
-    {
-      ai_family : socket_domain;
-      ai_socktype : socket_type;
-      ai_protocol : int;
-      ai_addr : sockaddr;
-      ai_canonname : string;
-    }
+  Unix.addr_info =
+  {
+    ai_family : socket_domain;
+    ai_socktype : socket_type;
+    ai_protocol : int;
+    ai_addr : sockaddr;
+    ai_canonname : string;
+  }
 
 type getaddrinfo_option =
-    Unix.getaddrinfo_option =
+  Unix.getaddrinfo_option =
   | AI_FAMILY of socket_domain
   | AI_SOCKTYPE of socket_type
   | AI_PROTOCOL of int
@@ -1892,14 +1892,14 @@ let getaddrinfo host service opts =
     Lwt.return (List.rev l)
 
 type name_info =
-    Unix.name_info =
-    {
-      ni_hostname : string;
-      ni_service : string;
-    }
+  Unix.name_info =
+  {
+    ni_hostname : string;
+    ni_service : string;
+  }
 
 type getnameinfo_option =
-    Unix.getnameinfo_option =
+  Unix.getnameinfo_option =
   | NI_NOFQDN
   | NI_NUMERICHOST
   | NI_NAMEREQD
@@ -1919,62 +1919,62 @@ let getnameinfo addr opts =
    +-----------------------------------------------------------------+ *)
 
 type terminal_io =
-    Unix.terminal_io =
-    {
-      mutable c_ignbrk : bool;
-      mutable c_brkint : bool;
-      mutable c_ignpar : bool;
-      mutable c_parmrk : bool;
-      mutable c_inpck : bool;
-      mutable c_istrip : bool;
-      mutable c_inlcr : bool;
-      mutable c_igncr : bool;
-      mutable c_icrnl : bool;
-      mutable c_ixon : bool;
-      mutable c_ixoff : bool;
-      mutable c_opost : bool;
-      mutable c_obaud : int;
-      mutable c_ibaud : int;
-      mutable c_csize : int;
-      mutable c_cstopb : int;
-      mutable c_cread : bool;
-      mutable c_parenb : bool;
-      mutable c_parodd : bool;
-      mutable c_hupcl : bool;
-      mutable c_clocal : bool;
-      mutable c_isig : bool;
-      mutable c_icanon : bool;
-      mutable c_noflsh : bool;
-      mutable c_echo : bool;
-      mutable c_echoe : bool;
-      mutable c_echok : bool;
-      mutable c_echonl : bool;
-      mutable c_vintr : char;
-      mutable c_vquit : char;
-      mutable c_verase : char;
-      mutable c_vkill : char;
-      mutable c_veof : char;
-      mutable c_veol : char;
-      mutable c_vmin : int;
-      mutable c_vtime : int;
-      mutable c_vstart : char;
-      mutable c_vstop : char;
-    }
+  Unix.terminal_io =
+  {
+    mutable c_ignbrk : bool;
+    mutable c_brkint : bool;
+    mutable c_ignpar : bool;
+    mutable c_parmrk : bool;
+    mutable c_inpck : bool;
+    mutable c_istrip : bool;
+    mutable c_inlcr : bool;
+    mutable c_igncr : bool;
+    mutable c_icrnl : bool;
+    mutable c_ixon : bool;
+    mutable c_ixoff : bool;
+    mutable c_opost : bool;
+    mutable c_obaud : int;
+    mutable c_ibaud : int;
+    mutable c_csize : int;
+    mutable c_cstopb : int;
+    mutable c_cread : bool;
+    mutable c_parenb : bool;
+    mutable c_parodd : bool;
+    mutable c_hupcl : bool;
+    mutable c_clocal : bool;
+    mutable c_isig : bool;
+    mutable c_icanon : bool;
+    mutable c_noflsh : bool;
+    mutable c_echo : bool;
+    mutable c_echoe : bool;
+    mutable c_echok : bool;
+    mutable c_echonl : bool;
+    mutable c_vintr : char;
+    mutable c_vquit : char;
+    mutable c_verase : char;
+    mutable c_vkill : char;
+    mutable c_veof : char;
+    mutable c_veol : char;
+    mutable c_vmin : int;
+    mutable c_vtime : int;
+    mutable c_vstart : char;
+    mutable c_vstop : char;
+  }
 
 type setattr_when =
-    Unix.setattr_when =
+  Unix.setattr_when =
   | TCSANOW
   | TCSADRAIN
   | TCSAFLUSH
 
 type flush_queue =
-    Unix.flush_queue =
+  Unix.flush_queue =
   | TCIFLUSH
   | TCOFLUSH
   | TCIOFLUSH
 
 type flow_action =
-    Unix.flow_action =
+  Unix.flow_action =
   | TCOOFF
   | TCOON
   | TCIOFF
@@ -2076,9 +2076,9 @@ let on_signal_full signum handler =
       let notification =
         make_notification
           (fun () ->
-            Lwt_sequence.iter_l
-              (fun f -> f id signum)
-              actions)
+             Lwt_sequence.iter_l
+               (fun f -> f id signum)
+               actions)
       in
       (try
          set_signal signum notification
@@ -2110,10 +2110,10 @@ let disable_signal_handler id =
 
 let reinstall_signal_handler signum =
   match try Some (Signal_map.find signum !signals) with Not_found -> None with
-    | Some (notification, _) ->
-        set_signal signum notification
-    | None ->
-        ()
+  | Some (notification, _) ->
+    set_signal signum notification
+  | None ->
+    ()
 
 (* +-----------------------------------------------------------------+
    | Processes                                                       |
@@ -2123,32 +2123,32 @@ external reset_after_fork : unit -> unit = "lwt_unix_reset_after_fork"
 
 let fork () =
   match Unix.fork () with
-    | 0 ->
-        (* Reset threading. *)
-        reset_after_fork ();
-        (* Stop the old event for notifications. *)
-        Lwt_engine.stop_event !event_notifications;
-        (* Reinitialise the notification system. *)
-        event_notifications := Lwt_engine.on_readable (init_notification ()) handle_notifications;
-        (* Collect all pending jobs. *)
-        let l = Lwt_sequence.fold_l (fun (_, f) l -> f :: l) jobs [] in
-        (* Remove them all. *)
-        Lwt_sequence.iter_node_l Lwt_sequence.remove jobs;
-        (* And cancel them all. We yield first so that if the program
-           do an exec just after, it won't be executed. *)
-        Lwt.on_termination (Lwt_main.yield ()) (fun () -> List.iter (fun f -> f Lwt.Canceled) l);
-        0
-    | pid ->
-        pid
+  | 0 ->
+    (* Reset threading. *)
+    reset_after_fork ();
+    (* Stop the old event for notifications. *)
+    Lwt_engine.stop_event !event_notifications;
+    (* Reinitialise the notification system. *)
+    event_notifications := Lwt_engine.on_readable (init_notification ()) handle_notifications;
+    (* Collect all pending jobs. *)
+    let l = Lwt_sequence.fold_l (fun (_, f) l -> f :: l) jobs [] in
+    (* Remove them all. *)
+    Lwt_sequence.iter_node_l Lwt_sequence.remove jobs;
+    (* And cancel them all. We yield first so that if the program
+       do an exec just after, it won't be executed. *)
+    Lwt.on_termination (Lwt_main.yield ()) (fun () -> List.iter (fun f -> f Lwt.Canceled) l);
+    0
+  | pid ->
+    pid
 
 type process_status =
-    Unix.process_status =
+  Unix.process_status =
   | WEXITED of int
   | WSIGNALED of int
   | WSTOPPED of int
 
 type wait_flag =
-    Unix.wait_flag =
+  Unix.wait_flag =
   | WNOHANG
   | WUNTRACED
 
@@ -2217,19 +2217,19 @@ let wait4 flags pid =
   if Sys.win32 then
     Lwt.return (do_wait4 flags pid)
   else
-    if List.mem Unix.WNOHANG flags then
-      Lwt.return (do_wait4 flags pid)
-    else
-      let flags = Unix.WNOHANG :: flags in
-      let (pid', _, _) as res = do_wait4 flags pid in
-      if pid' <> 0 then
-        Lwt.return res
-      else begin
-        let (res, w) = Lwt.task () in
-        let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
-        Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
-        res
-      end
+  if List.mem Unix.WNOHANG flags then
+    Lwt.return (do_wait4 flags pid)
+  else
+    let flags = Unix.WNOHANG :: flags in
+    let (pid', _, _) as res = do_wait4 flags pid in
+    if pid' <> 0 then
+      Lwt.return res
+    else begin
+      let (res, w) = Lwt.task () in
+      let node = Lwt_sequence.add_l (w, flags, pid) wait_children in
+      Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
+      res
+    end
 
 let wait () = waitpid [] (-1)
 
@@ -2243,15 +2243,15 @@ let system cmd =
     Lwt.return (Unix.WEXITED code)
   else
     match fork () with
-      | 0 ->
-          begin try
-            Unix.execv "/bin/sh" [| "/bin/sh"; "-c"; cmd |]
-          with _ ->
-            (* Do not run at_exit hooks *)
-            sys_exit 127
-          end
-      | id ->
-          waitpid [] id >|= snd
+    | 0 ->
+      begin try
+          Unix.execv "/bin/sh" [| "/bin/sh"; "-c"; cmd |]
+        with _ ->
+          (* Do not run at_exit hooks *)
+          sys_exit 127
+      end
+    | id ->
+      waitpid [] id >|= snd
 
 (* +-----------------------------------------------------------------+
    | Misc                                                            |
@@ -2263,7 +2263,7 @@ let handle_unix_error f x =
   Lwt.catch
     (fun () -> f x)
     (fun exn ->
-      Unix.handle_unix_error (fun () -> raise exn) ())
+       Unix.handle_unix_error (fun () -> raise exn) ())
 
 (* +-----------------------------------------------------------------+
    | System thread pool                                              |
@@ -2295,82 +2295,82 @@ let set_affinity ?(pid=0) l = stub_set_affinity pid l
 let () =
   Printexc.register_printer
     (function
-       | Unix.Unix_error(error, func, arg) ->
-           let error =
-             match error with
-               | Unix.E2BIG -> "E2BIG"
-               | Unix.EACCES -> "EACCES"
-               | Unix.EAGAIN -> "EAGAIN"
-               | Unix.EBADF -> "EBADF"
-               | Unix.EBUSY -> "EBUSY"
-               | Unix.ECHILD -> "ECHILD"
-               | Unix.EDEADLK -> "EDEADLK"
-               | Unix.EDOM -> "EDOM"
-               | Unix.EEXIST -> "EEXIST"
-               | Unix.EFAULT -> "EFAULT"
-               | Unix.EFBIG -> "EFBIG"
-               | Unix.EINTR -> "EINTR"
-               | Unix.EINVAL -> "EINVAL"
-               | Unix.EIO -> "EIO"
-               | Unix.EISDIR -> "EISDIR"
-               | Unix.EMFILE -> "EMFILE"
-               | Unix.EMLINK -> "EMLINK"
-               | Unix.ENAMETOOLONG -> "ENAMETOOLONG"
-               | Unix.ENFILE -> "ENFILE"
-               | Unix.ENODEV -> "ENODEV"
-               | Unix.ENOENT -> "ENOENT"
-               | Unix.ENOEXEC -> "ENOEXEC"
-               | Unix.ENOLCK -> "ENOLCK"
-               | Unix.ENOMEM -> "ENOMEM"
-               | Unix.ENOSPC -> "ENOSPC"
-               | Unix.ENOSYS -> "ENOSYS"
-               | Unix.ENOTDIR -> "ENOTDIR"
-               | Unix.ENOTEMPTY -> "ENOTEMPTY"
-               | Unix.ENOTTY -> "ENOTTY"
-               | Unix.ENXIO -> "ENXIO"
-               | Unix.EPERM -> "EPERM"
-               | Unix.EPIPE -> "EPIPE"
-               | Unix.ERANGE -> "ERANGE"
-               | Unix.EROFS -> "EROFS"
-               | Unix.ESPIPE -> "ESPIPE"
-               | Unix.ESRCH -> "ESRCH"
-               | Unix.EXDEV -> "EXDEV"
-               | Unix.EWOULDBLOCK -> "EWOULDBLOCK"
-               | Unix.EINPROGRESS -> "EINPROGRESS"
-               | Unix.EALREADY -> "EALREADY"
-               | Unix.ENOTSOCK -> "ENOTSOCK"
-               | Unix.EDESTADDRREQ -> "EDESTADDRREQ"
-               | Unix.EMSGSIZE -> "EMSGSIZE"
-               | Unix.EPROTOTYPE -> "EPROTOTYPE"
-               | Unix.ENOPROTOOPT -> "ENOPROTOOPT"
-               | Unix.EPROTONOSUPPORT -> "EPROTONOSUPPORT"
-               | Unix.ESOCKTNOSUPPORT -> "ESOCKTNOSUPPORT"
-               | Unix.EOPNOTSUPP -> "EOPNOTSUPP"
-               | Unix.EPFNOSUPPORT -> "EPFNOSUPPORT"
-               | Unix.EAFNOSUPPORT -> "EAFNOSUPPORT"
-               | Unix.EADDRINUSE -> "EADDRINUSE"
-               | Unix.EADDRNOTAVAIL -> "EADDRNOTAVAIL"
-               | Unix.ENETDOWN -> "ENETDOWN"
-               | Unix.ENETUNREACH -> "ENETUNREACH"
-               | Unix.ENETRESET -> "ENETRESET"
-               | Unix.ECONNABORTED -> "ECONNABORTED"
-               | Unix.ECONNRESET -> "ECONNRESET"
-               | Unix.ENOBUFS -> "ENOBUFS"
-               | Unix.EISCONN -> "EISCONN"
-               | Unix.ENOTCONN -> "ENOTCONN"
-               | Unix.ESHUTDOWN -> "ESHUTDOWN"
-               | Unix.ETOOMANYREFS -> "ETOOMANYREFS"
-               | Unix.ETIMEDOUT -> "ETIMEDOUT"
-               | Unix.ECONNREFUSED -> "ECONNREFUSED"
-               | Unix.EHOSTDOWN -> "EHOSTDOWN"
-               | Unix.EHOSTUNREACH -> "EHOSTUNREACH"
-               | Unix.ELOOP -> "ELOOP"
-               | Unix.EOVERFLOW -> "EOVERFLOW"
-               | Unix.EUNKNOWNERR n -> Printf.sprintf "EUNKNOWNERR %d" n
-           in
-           Some(Printf.sprintf "Unix.Unix_error(Unix.%s, %S, %S)" error func arg)
-       | _ ->
-           None)
+      | Unix.Unix_error(error, func, arg) ->
+        let error =
+          match error with
+          | Unix.E2BIG -> "E2BIG"
+          | Unix.EACCES -> "EACCES"
+          | Unix.EAGAIN -> "EAGAIN"
+          | Unix.EBADF -> "EBADF"
+          | Unix.EBUSY -> "EBUSY"
+          | Unix.ECHILD -> "ECHILD"
+          | Unix.EDEADLK -> "EDEADLK"
+          | Unix.EDOM -> "EDOM"
+          | Unix.EEXIST -> "EEXIST"
+          | Unix.EFAULT -> "EFAULT"
+          | Unix.EFBIG -> "EFBIG"
+          | Unix.EINTR -> "EINTR"
+          | Unix.EINVAL -> "EINVAL"
+          | Unix.EIO -> "EIO"
+          | Unix.EISDIR -> "EISDIR"
+          | Unix.EMFILE -> "EMFILE"
+          | Unix.EMLINK -> "EMLINK"
+          | Unix.ENAMETOOLONG -> "ENAMETOOLONG"
+          | Unix.ENFILE -> "ENFILE"
+          | Unix.ENODEV -> "ENODEV"
+          | Unix.ENOENT -> "ENOENT"
+          | Unix.ENOEXEC -> "ENOEXEC"
+          | Unix.ENOLCK -> "ENOLCK"
+          | Unix.ENOMEM -> "ENOMEM"
+          | Unix.ENOSPC -> "ENOSPC"
+          | Unix.ENOSYS -> "ENOSYS"
+          | Unix.ENOTDIR -> "ENOTDIR"
+          | Unix.ENOTEMPTY -> "ENOTEMPTY"
+          | Unix.ENOTTY -> "ENOTTY"
+          | Unix.ENXIO -> "ENXIO"
+          | Unix.EPERM -> "EPERM"
+          | Unix.EPIPE -> "EPIPE"
+          | Unix.ERANGE -> "ERANGE"
+          | Unix.EROFS -> "EROFS"
+          | Unix.ESPIPE -> "ESPIPE"
+          | Unix.ESRCH -> "ESRCH"
+          | Unix.EXDEV -> "EXDEV"
+          | Unix.EWOULDBLOCK -> "EWOULDBLOCK"
+          | Unix.EINPROGRESS -> "EINPROGRESS"
+          | Unix.EALREADY -> "EALREADY"
+          | Unix.ENOTSOCK -> "ENOTSOCK"
+          | Unix.EDESTADDRREQ -> "EDESTADDRREQ"
+          | Unix.EMSGSIZE -> "EMSGSIZE"
+          | Unix.EPROTOTYPE -> "EPROTOTYPE"
+          | Unix.ENOPROTOOPT -> "ENOPROTOOPT"
+          | Unix.EPROTONOSUPPORT -> "EPROTONOSUPPORT"
+          | Unix.ESOCKTNOSUPPORT -> "ESOCKTNOSUPPORT"
+          | Unix.EOPNOTSUPP -> "EOPNOTSUPP"
+          | Unix.EPFNOSUPPORT -> "EPFNOSUPPORT"
+          | Unix.EAFNOSUPPORT -> "EAFNOSUPPORT"
+          | Unix.EADDRINUSE -> "EADDRINUSE"
+          | Unix.EADDRNOTAVAIL -> "EADDRNOTAVAIL"
+          | Unix.ENETDOWN -> "ENETDOWN"
+          | Unix.ENETUNREACH -> "ENETUNREACH"
+          | Unix.ENETRESET -> "ENETRESET"
+          | Unix.ECONNABORTED -> "ECONNABORTED"
+          | Unix.ECONNRESET -> "ECONNRESET"
+          | Unix.ENOBUFS -> "ENOBUFS"
+          | Unix.EISCONN -> "EISCONN"
+          | Unix.ENOTCONN -> "ENOTCONN"
+          | Unix.ESHUTDOWN -> "ESHUTDOWN"
+          | Unix.ETOOMANYREFS -> "ETOOMANYREFS"
+          | Unix.ETIMEDOUT -> "ETIMEDOUT"
+          | Unix.ECONNREFUSED -> "ECONNREFUSED"
+          | Unix.EHOSTDOWN -> "EHOSTDOWN"
+          | Unix.EHOSTUNREACH -> "EHOSTUNREACH"
+          | Unix.ELOOP -> "ELOOP"
+          | Unix.EOVERFLOW -> "EOVERFLOW"
+          | Unix.EUNKNOWNERR n -> Printf.sprintf "EUNKNOWNERR %d" n
+        in
+        Some(Printf.sprintf "Unix.Unix_error(Unix.%s, %S, %S)" error func arg)
+      | _ ->
+        None)
 
 module Versioned =
 struct
