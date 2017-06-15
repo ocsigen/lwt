@@ -21,7 +21,12 @@
  * 02111-1307, USA.
  */
 
-/* Unix (non windows) version of stubs. */
+/* Unix (non-Windows) version of Lwt C stubs.
+
+   Implementing an Lwt C stub can be a bit challenging. See lwt_unix_getcwd_job
+   (search for it in your text editor) for a well-documented "model"
+   function, including conceptual documentation, practical considerations,
+   common pitfalls, etc. */
 
 #define ARGS(args...) args
 
@@ -3009,7 +3014,79 @@ CAMLprim value lwt_unix_bind_job(value fd, value address)
     return lwt_unix_alloc_job(&job->job);
 }
 
-/* getcwd */
+/** getcwd
+
+    Lwt C stubs come in two varieties, depending on whether the underlying C
+    call is blocking or non-blocking. In all cases, the Lwt wrapper around the C
+    call must be made to appear *non*-blocking.
+
+    1. The simple case is when the underlying C call is already non-blocking. An
+       example of this is `lwt_unix_read`, which is used by Lwt to perform reads
+       from file descriptors that are in non-blocking mode. This stub is a
+       simple wrapper around `read(2)`. It converts its arguments from OCaml
+       runtime representation to normal C, machine representation, passes them
+       to `read(2)`, converts the result back to OCaml, and returns.
+
+    2. In case the underlying C call is blocking, as `getcwd(3)` is, Lwt
+       "converts" it to a non-blocking call by running it inside a worker
+       thread. The rest of this comment is concerned with such blocking calls.
+
+    For background on writing C stubs in OCaml, see
+
+      http://caml.inria.fr/pub/docs/manual-ocaml/intfc.html
+
+
+    Each Lwt stub for a blocking C call defines a *job* for the Lwt worker
+    thread pool. The actual thread pool is implemented in `lwt_unix_stubs.c` and
+    is beyond the scope of this comment. It is not necessary to understand it to
+    implement Lwt jobs (indeed, the author currently doesn't remember exactly
+    how it works!).
+
+    A job is defined by providing three functions. Let's say we want to call our
+    new kind of job "`FOO`":
+
+    - `lwt_unix_FOO_job` allocates the job `struct` (see next paragraph).
+    - `worker_FOO` is later called in a worker thread to actually run the job.
+    - `result_FOO` is, even later, called in the main thread to return the
+      result of the job to OCaml, and deallocate the job.
+
+    It is also necessary to define a `struct` with name `struct job_FOO`. This
+    is the representation of the job that will be manipulated by the thread
+    pool. It has several purposes:
+
+    - Store the pointers to `worker_FOO` and `result_FOO`, so the thread pool is
+      able to run them.
+    - Store the C call arguments, or references to them, so they can be accessed
+      by `worker_FOO` when it runs in the worker thread.
+    - Store the C call results, so they can be accessed by `result_FOO` in the
+      main thread.
+    - Be something that can be placed in queues, or manipulated otherwise.
+
+    So, there are three functions and a `struct` to define. It is important that
+    their names fit the pattern given above, because it is expected by Lwt job
+    helper macros.
+
+    It is also possible to define additional helper functions and/or types, as
+    needed.
+
+
+    Many stubs are defined on Unix-like systems, but not Windows, and vice
+    versa. However, the OCaml code lacks conditional compilation, and expects
+    all the C symbols to be available on all platforms during linking – it just
+    doesn't call the ones that aren't really defined.
+
+    The `LWT_NOT_AVAILABLEx` macros are used to define dummy symbols. `x` is the
+    number of arguments the stub takes. For example, the `getcwd` job is
+    currently not defined on Windows. For this reason, `lwt_unix_windows.h` has
+    `LWT_NOT_AVAILABLE1(unix_getcwd_job)`. The `lwt_` prefix is left off.
+
+    A typical way to discover that you need to use this kind of macro is to
+    submit a PR to the Lwt repo, and wait for the CI build bots to tell you. We
+    have pretty thorough CI coverage of the systems Lwt supports.
+
+
+    See inline comments in the implementation of the `getcwd` job below for
+    other details. */
 
 /*
 In the OCaml sources, getcwd is set as either
@@ -3017,6 +3094,24 @@ In the OCaml sources, getcwd is set as either
 - PATH_MAX, MAXPATHLEN, or 512 (in otherlibs/unix/getcwd.c)
 */
 
+/** The first field of a job `struct` must always be `struct lwt_unix_job job`:
+
+    - The `struct lwt_unix_job` contains the data the thread pool needs to
+      manage the job: function pointers, the total size of the job `struct`,
+      etc. Placing it at the start of each job `struct` type ensures that the
+      offsets to these fields are the same between all kinds of jobs.
+    - The `struct lwt_unix_job` must be called `job`, because that is what the
+      job helper macros expect.
+
+    The job `struct` should also contain a field `error_code`. This is a
+    snapshot of `errno` from the worker thread, right after the C call ran.
+    `errno` is a notorious source of pitfalls; see comments in `worker_getcwd`
+    and `result_getcwd`.
+
+    The rest of the `struct` is free-form, but typically it contains
+
+    - One field per argument to the C call.
+    - One field for the return value of the C call. */
 struct job_getcwd {
     struct lwt_unix_job job;
     char buf[4096];
@@ -3024,23 +3119,95 @@ struct job_getcwd {
     int error_code;
 };
 
+/* Runs in the worker thread. This function is `static` (not visible outside
+   this C file) because it is called only through the function pointer that is
+   stored inside `job_getcwd::job` when the job is allocated. `static` is why
+   the name is not prefixed with `lwt_unix_`. */
 static void worker_getcwd(struct job_getcwd *job)
 {
+    /* Run the C call. We don't perform any checking in the worker thread,
+       because we typically don't want to take any other action here – we want
+       to take action in the main thread. In more complex calls, pre-checks on
+       the arguments are done in the `lwt_unix_FOO_job` job-allocating
+       function, and post-checks on the results are done in the `result_FOO`
+       function. */
     job->result = getcwd(job->buf, sizeof(job->buf));
+
+    /* Store the current value of `errno`. Note that if the C call succeeded, it
+       did not reset `errno` to zero. In that case, `errno` still contains the
+       error code from the last C call to fail in this worker thread. This means
+       that `errno`/`job->error_code` *cannot* be used to determine whether the
+       C call succeeded or not. */
     job->error_code = errno;
 }
 
+/* Runs in the main thread. This function is `static` for the same reason as
+   `worker_getcwd`. */
 static value result_getcwd(struct job_getcwd *job)
 {
+    /* This macro is defined in `lwt_unix.h`. The arguments are used as follows:
+
+       - The first argument is the name of the job variable.
+       - If the check in the second argument *succeds*, the C call, and job,
+         failed (confusing!). Note that this check must *not* be based solely on
+         `job->error_code`; see comment in `worker_getcwd` above.
+       - The last argument is the name of the C call, used in a
+         `Unix.Unix_error` exception raised if the job failed.
+
+       If the check succeeds/job failed, this macro deallocates the job, raises
+       the exception, and does *not* "return" to the rest of `result_getcwd`.
+       Otherwise, if the job succeeded, the job is *not* deallocated, and
+       execution continues in the rest of `result_getcwd`.
+
+       `job->error_code` is used internally by the macro in creating the
+       `Unix.Unix_error`. If this is incorrect (i.e., some job does not set
+       `errno` on failure), it is necessary to replace the macro by its
+       expansion, and modify the behavior. */
     LWT_UNIX_CHECK_JOB(job, job->result == NULL, "getcwd");
+
+    /* Create an OCaml string from the temporary buffer into which the
+       `getcwd(3)` wrote the current directory. This copies the data.
+
+       Throughout Lwt, blocking C calls run in worker threads can't write
+       directly into OCaml strings, because the OCaml garbage collector might
+       move the strings after the pointer has already been passed to the call,
+       but while the call is still blocked. Bigarrays don't have this problem,
+       so pointers into them are passed to blocking C calls, saving a copy.
+
+       For jobs that return integers or other kinds of values, it is necessary
+       to use the various `Int_val`, `Long_val` macros, etc. See
+
+         http://caml.inria.fr/pub/docs/manual-ocaml/intfc.html#sec415 */
     value result = caml_copy_string(job->result);
+
+    /* Have to free the job manually! */
     lwt_unix_free_job(&job->job);
+
     return result;
 }
 
+/* In the case of `Lwt_unix.getcwd`, the argument is `()`, which is represented
+   in C by one argument, which we conventually call `unit`. OCaml always passes
+   the same value for this argument, and we don't use it. */
 CAMLprim value lwt_unix_getcwd_job(value unit)
 {
+    /* Allocate the `job_getcwd` on the OCaml heap. Inside it, store its size,
+       and pointers to `worker_getcwd` and `result_getcwd`. Arguments must be
+       stored manually after the macro is called, but in the case of `getcwd`,
+       there are no arguments to initialize.
+
+       The first argument is the name of the variable to be craeted to store
+       the pointer to the job `struct`, i.e.
+
+         struct job_getcwd *job = ...
+
+       The last argument is the number of bytes of storage to reserve in memory
+       immediately following the `struct`. This is for fields such as
+       `char data[]` at the end of the struct. It is typically zero. */
     LWT_UNIX_INIT_JOB(job, getcwd, 0);
+
+    /* Allocate a corresponding object in the OCaml heap. `&job->job` is the
+       same numeric address as `job`, but has type `struct lwt_unix_job`. */
     return lwt_unix_alloc_job(&job->job);
 }
 
