@@ -71,16 +71,16 @@ let enter () =
     for i = 0 to Array.length fds - 1 do
       let fd = fds.(i) in
       match watches.(i) with
-        | Watch_none ->
-            ()
-        | Watch_in ->
-            events := engine#on_readable fd (fun _ -> glib_mark_readable i) :: !events
-        | Watch_out ->
-            events := engine#on_writable fd (fun _ -> glib_mark_writable i) :: !events
-        | Watch_in_out ->
-            events := engine#on_readable fd (fun _ -> glib_mark_readable i)
-                   :: engine#on_writable fd (fun _ -> glib_mark_writable i)
-                   :: !events
+      | Watch_none ->
+        ()
+      | Watch_in ->
+        events := engine#on_readable fd (fun _ -> glib_mark_readable i) :: !events
+      | Watch_out ->
+        events := engine#on_writable fd (fun _ -> glib_mark_writable i) :: !events
+      | Watch_in_out ->
+        events := engine#on_readable fd (fun _ -> glib_mark_readable i)
+                  :: engine#on_writable fd (fun _ -> glib_mark_writable i)
+                  :: !events
     done;
     if timeout = 0. then
       ignore (Lwt_main.yield ())
@@ -102,32 +102,32 @@ let leave () =
 
 let install ?(mode=`lwt_into_glib) () =
   match !state with
-    | State_lwt_into_glib _ | State_glib_into_lwt _ ->
-        ()
-    | State_none ->
-        glib_init ();
-        match mode with
-          | `glib_into_lwt ->
-              state := State_glib_into_lwt(Lwt_sequence.add_l enter Lwt_main.enter_iter_hooks,
-                                           Lwt_sequence.add_l leave Lwt_main.leave_iter_hooks)
-          | `lwt_into_glib ->
-              let engine = Lwt_engine.get () in
-              Lwt_engine.set ~destroy:false (new engine);
-              state := State_lwt_into_glib engine
+  | State_lwt_into_glib _ | State_glib_into_lwt _ ->
+    ()
+  | State_none ->
+    glib_init ();
+    match mode with
+    | `glib_into_lwt ->
+      state := State_glib_into_lwt(Lwt_sequence.add_l enter Lwt_main.enter_iter_hooks,
+                                   Lwt_sequence.add_l leave Lwt_main.leave_iter_hooks)
+    | `lwt_into_glib ->
+      let engine = Lwt_engine.get () in
+      Lwt_engine.set ~destroy:false (new engine);
+      state := State_lwt_into_glib engine
 
 let remove () =
   match !state with
-    | State_none ->
-        ()
-    | State_glib_into_lwt(node_enter, node_leave) ->
-        state := State_none;
-        Lwt_sequence.remove node_enter;
-        Lwt_sequence.remove node_leave;
-        List.iter Lwt_engine.stop_event !events;
-        events := [];
-        glib_stop ()
-    | State_lwt_into_glib engine ->
-        Lwt_engine.set engine
+  | State_none ->
+    ()
+  | State_glib_into_lwt(node_enter, node_leave) ->
+    state := State_none;
+    Lwt_sequence.remove node_enter;
+    Lwt_sequence.remove node_leave;
+    List.iter Lwt_engine.stop_event !events;
+    events := [];
+    glib_stop ()
+  | State_lwt_into_glib engine ->
+    Lwt_engine.set engine
 
 (* +-----------------------------------------------------------------+
    | Misc                                                            |
