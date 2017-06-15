@@ -49,30 +49,30 @@ let create v =
 
 let put mvar v =
   match mvar.mvar_contents with
-    | None ->
-        begin match Lwt_sequence.take_opt_l mvar.readers with
-          | None ->
-              mvar.mvar_contents <- Some v
-          | Some w ->
-              Lwt.wakeup_later w v
-        end;
-        Lwt.return_unit
-    | Some _ ->
-        let (res, w) = Lwt.task () in
-        let node = Lwt_sequence.add_r (v, w) mvar.writers in
-        Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
-        res
+  | None ->
+    begin match Lwt_sequence.take_opt_l mvar.readers with
+      | None ->
+        mvar.mvar_contents <- Some v
+      | Some w ->
+        Lwt.wakeup_later w v
+    end;
+    Lwt.return_unit
+  | Some _ ->
+    let (res, w) = Lwt.task () in
+    let node = Lwt_sequence.add_r (v, w) mvar.writers in
+    Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
+    res
 
 let take mvar =
   match mvar.mvar_contents with
-    | Some v ->
-        begin match Lwt_sequence.take_opt_l mvar.writers with
-          | Some(v', w) ->
-              mvar.mvar_contents <- Some v';
-              Lwt.wakeup_later w ()
-          | None ->
-              mvar.mvar_contents <- None
-        end;
-        Lwt.return v
-    | None ->
-        Lwt.add_task_r mvar.readers
+  | Some v ->
+    begin match Lwt_sequence.take_opt_l mvar.writers with
+      | Some(v', w) ->
+        mvar.mvar_contents <- Some v';
+        Lwt.wakeup_later w ()
+      | None ->
+        mvar.mvar_contents <- None
+    end;
+    Lwt.return v
+  | None ->
+    Lwt.add_task_r mvar.readers

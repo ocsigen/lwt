@@ -35,8 +35,8 @@ let create () = { state = St_on { hooks = [] } }
 
 let is_on switch =
   match switch.state with
-    | St_on _ -> true
-    | St_off -> false
+  | St_on _ -> true
+  | St_off -> false
 
 let check = function
   | Some{ state = St_off } -> raise Off
@@ -44,30 +44,30 @@ let check = function
 
 let add_hook switch hook =
   match switch with
-    | Some { state = St_on os } ->
-        os.hooks <- hook :: os.hooks
-    | Some { state = St_off } ->
-        raise Off
-    | None ->
-        ()
+  | Some { state = St_on os } ->
+    os.hooks <- hook :: os.hooks
+  | Some { state = St_off } ->
+    raise Off
+  | None ->
+    ()
 
 let add_hook_or_exec switch hook =
   match switch with
-    | Some { state = St_on os } ->
-        os.hooks <- hook :: os.hooks;
-        Lwt.return_unit
-    | Some { state = St_off } ->
-        hook ()
-    | None ->
-        Lwt.return_unit
+  | Some { state = St_on os } ->
+    os.hooks <- hook :: os.hooks;
+    Lwt.return_unit
+  | Some { state = St_off } ->
+    hook ()
+  | None ->
+    Lwt.return_unit
 
 let turn_off switch =
   match switch.state with
-    | St_on { hooks = hooks } ->
-        switch.state <- St_off;
-        Lwt.join (List.map (fun hook -> Lwt.apply hook ()) hooks)
-    | St_off ->
-        Lwt.return_unit
+  | St_on { hooks = hooks } ->
+    switch.state <- St_off;
+    Lwt.join (List.map (fun hook -> Lwt.apply hook ()) hooks)
+  | St_off ->
+    Lwt.return_unit
 
 let with_switch fn =
   let switch = create () in
