@@ -2,6 +2,9 @@ _build
 src/unix/lwt_config
 src/jbuild-ignore
 
+# OPAM 2.0 local switches.
+_opam
+
 # Coverage analysis.
 bisect*.out
 _coverage/
