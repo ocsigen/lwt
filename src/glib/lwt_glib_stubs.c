@@ -21,13 +21,13 @@
 
 #define CAML_NAME_SPACE
 
-#include <caml/mlvalues.h>
-#include <caml/memory.h>
-#include <caml/custom.h>
 #include <caml/alloc.h>
-#include <caml/fail.h>
-#include <caml/signals.h>
 #include <caml/callback.h>
+#include <caml/custom.h>
+#include <caml/fail.h>
+#include <caml/memory.h>
+#include <caml/mlvalues.h>
+#include <caml/signals.h>
 #include <glib.h>
 
 extern void *lwt_unix_malloc(size_t size);
@@ -42,8 +42,8 @@ gint max_priority;
    | Polling                                                         |
    +-----------------------------------------------------------------+ */
 
-CAMLprim value lwt_glib_poll(value val_fds, value val_count, value val_timeout)
-{
+CAMLprim value lwt_glib_poll(value val_fds, value val_count,
+                             value val_timeout) {
   gint timeout, lwt_timeout;
   long count;
   int i;
@@ -58,17 +58,20 @@ CAMLprim value lwt_glib_poll(value val_fds, value val_count, value val_timeout)
   g_main_context_dispatch(gc);
   g_main_context_prepare(gc, &max_priority);
 
-  while (fds_count < count + (n_fds = g_main_context_query(gc, max_priority, &timeout, gpollfds, fds_count))) {
+  while (fds_count <
+         count + (n_fds = g_main_context_query(gc, max_priority, &timeout,
+                                               gpollfds, fds_count))) {
     free(gpollfds);
     fds_count = n_fds + count;
-    gpollfds = lwt_unix_malloc(fds_count * sizeof (GPollFD));
+    gpollfds = lwt_unix_malloc(fds_count * sizeof(GPollFD));
   }
 
   /* Clear all revents fields. */
   for (i = 0; i < n_fds + count; i++) gpollfds[i].revents = 0;
 
   /* Add all Lwt fds. */
-  for (i = n_fds, node = val_fds; i < n_fds + count; i++, node = Field(node, 1)) {
+  for (i = n_fds, node = val_fds; i < n_fds + count;
+       i++, node = Field(node, 1)) {
     src = Field(node, 0);
     gpollfd = gpollfds + i;
 #if defined(LWT_ON_WINDOWS)
@@ -95,18 +98,18 @@ CAMLprim value lwt_glib_poll(value val_fds, value val_count, value val_timeout)
 
   /* Build the result. */
   node_result = Val_int(0);
-  for (i = n_fds, node = val_fds; i < n_fds + count; i++, node = Field(node, 1)) {
+  for (i = n_fds, node = val_fds; i < n_fds + count;
+       i++, node = Field(node, 1)) {
     gpollfd = gpollfds + i;
     src_result = caml_alloc_tuple(3);
     src = Field(node, 0);
     Field(src_result, 0) = Field(src, 0);
     revents = gpollfd->revents;
     if (revents & G_IO_HUP) {
-      /* Treat HUP as ready. There's no point continuing to wait on this FD. */
-      if (gpollfd->events & G_IO_IN)
-        revents |= G_IO_IN;
-      if (gpollfd->events & G_IO_OUT)
-        revents |= G_IO_OUT;
+      /* Treat HUP as ready. There's no point
+       * continuing to wait on this FD. */
+      if (gpollfd->events & G_IO_IN) revents |= G_IO_IN;
+      if (gpollfd->events & G_IO_OUT) revents |= G_IO_OUT;
     }
     Field(src_result, 1) = Val_bool(revents & G_IO_IN);
     Field(src_result, 2) = Val_bool(revents & G_IO_OUT);
@@ -125,20 +128,19 @@ CAMLprim value lwt_glib_poll(value val_fds, value val_count, value val_timeout)
 
 #if defined(LWT_ON_WINDOWS)
 
-static value alloc_fd(HANDLE handle)
-{
+static value alloc_fd(HANDLE handle) {
   value res = win_alloc_handle(handle);
   int opt;
   int optlen = sizeof(opt);
-  if (getsockopt((SOCKET)handle, SOL_SOCKET, SO_TYPE, (char *)&opt, &optlen) == 0)
+  if (getsockopt((SOCKET)handle, SOL_SOCKET, SO_TYPE, (char *)&opt, &optlen) ==
+      0)
     Descr_kind_val(res) = KIND_SOCKET;
   return res;
 }
 
 #endif
 
-CAMLprim value lwt_glib_get_sources(value Unit)
-{
+CAMLprim value lwt_glib_get_sources(value Unit) {
   gint timeout;
   int i;
   int events;
@@ -150,10 +152,11 @@ CAMLprim value lwt_glib_get_sources(value Unit)
   g_main_context_dispatch(gc);
   g_main_context_prepare(gc, &max_priority);
 
-  while (fds_count < (n_fds = g_main_context_query(gc, max_priority, &timeout, gpollfds, fds_count))) {
+  while (fds_count < (n_fds = g_main_context_query(gc, max_priority, &timeout,
+                                                   gpollfds, fds_count))) {
     free(gpollfds);
     fds_count = n_fds;
-    gpollfds = lwt_unix_malloc(fds_count * sizeof (GPollFD));
+    gpollfds = lwt_unix_malloc(fds_count * sizeof(GPollFD));
   }
 
   fds = caml_alloc_tuple(n_fds);
@@ -189,14 +192,12 @@ CAMLprim value lwt_glib_get_sources(value Unit)
    | Marking                                                         |
    +-----------------------------------------------------------------+ */
 
-CAMLprim value lwt_glib_mark_readable(value i)
-{
+CAMLprim value lwt_glib_mark_readable(value i) {
   gpollfds[Int_val(i)].revents |= G_IO_IN;
   return Val_unit;
 }
 
-CAMLprim value lwt_glib_mark_writable(value i)
-{
+CAMLprim value lwt_glib_mark_writable(value i) {
   gpollfds[Int_val(i)].revents |= G_IO_OUT;
   return Val_unit;
 }
@@ -205,8 +206,7 @@ CAMLprim value lwt_glib_mark_writable(value i)
    | Check                                                           |
    +-----------------------------------------------------------------+ */
 
-CAMLprim value lwt_glib_check(value Unit)
-{
+CAMLprim value lwt_glib_check(value Unit) {
   g_main_context_check(gc, max_priority, gpollfds, n_fds);
   return Val_unit;
 }
@@ -215,15 +215,13 @@ CAMLprim value lwt_glib_check(value Unit)
    | Initialization/stopping                                         |
    +-----------------------------------------------------------------+ */
 
-CAMLprim value lwt_glib_init(value Unit)
-{
+CAMLprim value lwt_glib_init(value Unit) {
   gc = g_main_context_default();
   g_main_context_ref(gc);
   return Val_unit;
 }
 
-CAMLprim value lwt_glib_stop(value Unit)
-{
+CAMLprim value lwt_glib_stop(value Unit) {
   g_main_context_unref(gc);
   return Val_unit;
 }
@@ -232,8 +230,7 @@ CAMLprim value lwt_glib_stop(value Unit)
    | Misc                                                            |
    +-----------------------------------------------------------------+ */
 
-CAMLprim value lwt_glib_iter(value may_block)
-{
+CAMLprim value lwt_glib_iter(value may_block) {
   GMainContext *gc;
   gint max_priority, timeout;
   GPollFD *pollfds = NULL;
@@ -245,8 +242,7 @@ CAMLprim value lwt_glib_iter(value may_block)
   gc = g_main_context_default();
 
   /* Try to acquire it. */
-  if (!g_main_context_acquire(gc))
-    caml_failwith("Lwt_glib.iter");
+  if (!g_main_context_acquire(gc)) caml_failwith("Lwt_glib.iter");
 
   /* Dispatch pending events. */
   g_main_context_dispatch(gc);
@@ -255,10 +251,11 @@ CAMLprim value lwt_glib_iter(value may_block)
   g_main_context_prepare(gc, &max_priority);
 
   /* Get all file descriptors to poll. */
-  while (pollfds_size < (nfds = g_main_context_query(gc, max_priority, &timeout, pollfds, pollfds_size))) {
+  while (pollfds_size < (nfds = g_main_context_query(gc, max_priority, &timeout,
+                                                     pollfds, pollfds_size))) {
     free(pollfds);
     pollfds_size = nfds;
-    pollfds = lwt_unix_malloc(pollfds_size * sizeof (GPollFD));
+    pollfds = lwt_unix_malloc(pollfds_size * sizeof(GPollFD));
   }
 
   /* Clear all revents fields. */
@@ -283,8 +280,7 @@ CAMLprim value lwt_glib_iter(value may_block)
   return Val_unit;
 }
 
-CAMLprim value lwt_glib_wakeup(value Unit)
-{
+CAMLprim value lwt_glib_wakeup(value Unit) {
   g_main_context_wakeup(g_main_context_default());
   return Val_unit;
 }

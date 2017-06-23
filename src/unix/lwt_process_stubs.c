@@ -27,12 +27,11 @@
 
 #define CAML_NAME_SPACE
 
-#include <caml/memory.h>
 #include <caml/alloc.h>
 #include <caml/fail.h>
+#include <caml/memory.h>
 
-static HANDLE get_handle(value opt)
-{
+static HANDLE get_handle(value opt) {
   value fd;
   if (Is_block(opt)) {
     fd = Field(opt, 0);
@@ -48,8 +47,8 @@ static HANDLE get_handle(value opt)
 
 #define string_option(opt) (Is_block(opt) ? String_val(Field(opt, 0)) : NULL)
 
-CAMLprim value lwt_process_create_process(value prog, value cmdline, value env, value fds)
-{
+CAMLprim value lwt_process_create_process(value prog, value cmdline, value env,
+                                          value fds) {
   CAMLparam4(prog, cmdline, env, fds);
   CAMLlocal1(result);
 
@@ -64,7 +63,8 @@ CAMLprim value lwt_process_create_process(value prog, value cmdline, value env, 
   si.hStdOutput = get_handle(Field(fds, 1));
   si.hStdError = get_handle(Field(fds, 2));
 
-  if (!CreateProcess(string_option(prog), String_val(cmdline), NULL, NULL, TRUE, 0, string_option(env), NULL, &si, &pi)) {
+  if (!CreateProcess(string_option(prog), String_val(cmdline), NULL, NULL, TRUE,
+                     0, string_option(env), NULL, &si, &pi)) {
     win32_maperr(GetLastError());
     uerror("CreateProcess", Nothing);
   }
@@ -82,13 +82,11 @@ struct job_wait {
   HANDLE handle;
 };
 
-static void worker_wait(struct job_wait *job)
-{
+static void worker_wait(struct job_wait *job) {
   WaitForSingleObject(job->handle, INFINITE);
 }
 
-static value result_wait(struct job_wait *job)
-{
+static value result_wait(struct job_wait *job) {
   DWORD code, error;
   if (!GetExitCodeProcess(job->handle, &code)) {
     error = GetLastError();
@@ -102,15 +100,13 @@ static value result_wait(struct job_wait *job)
   return Val_int(code);
 }
 
-CAMLprim value lwt_process_wait_job(value handle)
-{
+CAMLprim value lwt_process_wait_job(value handle) {
   LWT_UNIX_INIT_JOB(job, wait, 0);
   job->handle = Handle_val(handle);
   return lwt_unix_alloc_job(&(job->job));
 }
 
-CAMLprim value lwt_process_terminate_process(value handle, value code)
-{
+CAMLprim value lwt_process_terminate_process(value handle, value code) {
   if (!TerminateProcess(Handle_val(handle), Int_val(code))) {
     win32_maperr(GetLastError());
     uerror("TerminateProcess", Nothing);
@@ -122,8 +118,6 @@ CAMLprim value lwt_process_terminate_process(value handle, value code)
 
 /* This is used to suppress a warning from ranlib about the object file having
    no symbols. */
-void lwt_process_dummy_symbol()
-{
-}
+void lwt_process_dummy_symbol() {}
 
 #endif /* defined(LWT_ON_WINDOWS) */
