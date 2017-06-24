@@ -58,14 +58,12 @@ clean:
 	rm -f *.install
 	rm -fr doc/api
 	rm -f src/jbuild-ignore src/unix/lwt_config
-
-clean-coverage:
 	rm -rf bisect*.out
 	rm -rf _coverage/
 
-coverage: test
-	bisect-ppx-report -I _build/ -html _coverage/ bisect*.out
-	bisect-ppx-report -text - -summary-only bisect*.out
+coverage: clean test
+	bisect-ppx-report -I _build/ -html _coverage/ `find . -name 'bisect*.out'`
+	bisect-ppx-report -text - -summary-only `find . -name 'bisect*.out'`
 	@echo See _coverage/index.html
 
 .PHONY: \
