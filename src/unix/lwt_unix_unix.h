@@ -3055,19 +3055,18 @@ CAMLprim value lwt_unix_bind_job(value fd, value address)
 
 
     Many stubs are defined on Unix-like systems, but not Windows, and vice
-    versa. However, the OCaml code lacks conditional compilation, and expects
-    all the C symbols to be available on all platforms during linking – it just
-    doesn't call the ones that aren't really defined.
+    versa. However, Lwt's OCaml code lacks conditional compilation for this, and
+    expects all the C symbols to be available on all platforms during linking.
+    It just doesn't call the ones that don't have a real implementation.
 
-    The `LWT_NOT_AVAILABLEx` macros are used to define dummy symbols. `x` is the
-    number of arguments the stub takes. For example, the `getcwd` job (which
-    takes 1 argument) is currently not defined on Windows. For this reason,
-    `lwt_unix_windows.h` has `LWT_NOT_AVAILABLE1(unix_getcwd_job)`. The `lwt_`
-    prefix is left off.
+    The unimplemented symbols are defined using the `LWT_NOT_AVAILABLEx` macros.
+    The `getcwd` job currently takes one argument, and is not implemented on
+    Windows. For this reason, `lwt_unix_windows.h` has
+    `LWT_NOT_AVAILABLE1(unix_getcwd_job)`. The `lwt_` prefix is left off.
 
-    A typical way to discover that you need to use this kind of macro is to
-    submit a PR to the Lwt repo, and wait for the CI build bots to tell you. We
-    have pretty thorough CI coverage of the systems Lwt supports.
+    In case this macro is forgotten, Lwt's CI builds should detect that when you
+    open a PR against the Lwt repo. Don't worry if this happens – it's a typical
+    oversight for all contributors and maintainers.
 
 
     See inline comments in the implementation of the `getcwd` job below for
@@ -3150,14 +3149,16 @@ static value result_getcwd(struct job_getcwd *job)
        expansion, and modify the behavior. */
     LWT_UNIX_CHECK_JOB(job, job->result == NULL, "getcwd");
 
-    /* Create an OCaml string from the temporary buffer into which the
-       `getcwd(3)` wrote the current directory. This copies the data.
+    /* Convert the job result to an OCaml value.
 
-       Throughout Lwt, blocking C calls run in worker threads can't write
+       In this case, create an OCaml string from the temporary buffer into
+       which `getcwd(3)` wrote the current directory. This copies the string.
+
+       Throughout Lwt, blocking C calls that run in worker threads can't write
        directly into OCaml strings, because the OCaml garbage collector might
        move the strings after the pointer has already been passed to the call,
        but while the call is still blocked. Bigarrays don't have this problem,
-       so pointers into them are passed to blocking C calls, saving a copy.
+       so pointers into them are passed to blocking C calls, avoiding a copy.
 
        For jobs that return integers or other kinds of values, it is necessary
        to use the various `Int_val`, `Long_val` macros, etc. See
@@ -3181,14 +3182,17 @@ CAMLprim value lwt_unix_getcwd_job(value unit)
        stored manually after the macro is called, but in the case of `getcwd`,
        there are no arguments to initialize.
 
-       The first argument is the name of the variable to be craeted to store
+       For an example of a job that has arguments, see `lwt_unix_read_job`.
+
+       The first argument is the name of the variable to be created to store
        the pointer to the job `struct`, i.e.
 
          struct job_getcwd *job = ...
 
        The last argument is the number of bytes of storage to reserve in memory
        immediately following the `struct`. This is for fields such as
-       `char data[]` at the end of the struct. It is typically zero. */
+       `char data[]` at the end of the struct. It is typically zero. For an
+       example where it is not zero, see `lwt_unix_read_job` again. */
     LWT_UNIX_INIT_JOB(job, getcwd, 0);
 
     /* Allocate a corresponding object in the OCaml heap. `&job->job` is the
