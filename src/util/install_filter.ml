@@ -3,7 +3,7 @@
    we would like to avoid this change for (at least) 1 release cycle so
    it can be announced first.
 
-   This script will be run after jbuilder and modify the generated 
+   This script will be run after jbuilder and modify the generated
    lwt.install file to remove the sub-directories.
 
    This works in concert with removing (actually commenting out for now)
@@ -16,7 +16,7 @@
 *)
 
 let filter_sub_path path s =
-  try 
+  try
     (* look for the string *)
     let start = String.index s '{' in
     let end_ = String.index_from s start '/' in
@@ -24,7 +24,7 @@ let filter_sub_path path s =
       (* remove the path bit *)
       let ofs = start + 3 + String.length path in
       String.sub s 0 (start + 2) ^ String.sub s ofs (String.length s - ofs)
-    else 
+    else
       s
   with _ -> s
 
@@ -40,9 +40,9 @@ let sub_paths = [
 
 let filter_sub_paths s = List.fold_right filter_sub_path sub_paths s
 
-let main () = 
+let main () =
   let read_line file = try Some(input_line file) with End_of_file -> None in
-  let rec read_lines file = 
+  let rec read_lines file =
     match read_line file with
     | Some(x) -> x :: read_lines file
     | None -> []

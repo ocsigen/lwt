@@ -54,7 +54,7 @@ doc-api-wiki: all
 #	jbuilder uninstall
 #	jbuilder install
 
-# Use opam-installer, rather than jbuilder while we need to 
+# Use opam-installer, rather than jbuilder while we need to
 # post-process the lwt.install file
 install:
 	ocaml src/util/install_filter.ml
