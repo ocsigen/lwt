@@ -19,6 +19,7 @@ build: [
   [ "ocaml" "src/util/configure.ml" "-use-libev" "%{conf-libev:installed}%"
                                     "-use-camlp4" "%{camlp4:installed}%" ]
   [ "jbuilder" "build" "-p" name "-j" jobs ]
+  [ "ocaml" "src/util/install_filter.ml" ]
 ]
 build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
 depends: [
@@ -48,4 +49,9 @@ messages: [
 post-messages: [
   "Lwt 3.0.0 made some minor breaking changes, announced in 2.7.0. See
   https://github.com/ocsigen/lwt/issues/308"
+  "Lwt > 3.1.0 will reorganise various packages; the old camlp4 syntax
+  extension will be moved into it's own package and the sub-libraries
+  will be installed in separate directories.  The later change affects
+  a few packages which, for example, use Lwt_unix functions, but only
+  link with Lwt"
 ]

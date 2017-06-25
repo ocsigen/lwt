@@ -13,7 +13,7 @@ archive(native) = "lwt.cmxa"
 plugin(byte) = "lwt.cma"
 plugin(native) = "lwt.cmxs"
 package "log" (
-  directory = "log"
+  #directory = "log"
   version = "dev"
   description = "Logger for Lwt"
   requires = "bytes lwt result"
@@ -24,7 +24,7 @@ package "log" (
   exists_if = "lwt_log.cma"
 )
 package "ppx" (
-  directory = "ppx"
+  #directory = "ppx"
   version = "dev"
   description = "Lwt PPX syntax extension"
   requires(ppx_driver) = "compiler-libs
@@ -51,7 +51,7 @@ package "ppx" (
   )
 )
 package "preemptive" (
-  directory = "preemptive"
+  #directory = "preemptive"
   version = "dev"
   description = "Preemptive thread support for Lwt"
   requires = "bigarray
@@ -70,7 +70,7 @@ package "preemptive" (
   exists_if = "lwt_preemptive.cma"
 )
 package "simple-top" (
-  directory = "simple-top"
+  #directory = "simple-top"
   version = "dev"
   description = "Lwt-OCaml top level integration (deprecated; use utop)"
   requires = "bigarray
@@ -89,7 +89,7 @@ package "simple-top" (
   exists_if = "lwt_simple_top.cma"
 )
 package "syntax" (
-  directory = "syntax"
+  #directory = "syntax"
   version = "dev"
   description = "Camlp4 syntax for Lwt (deprecated; use lwt.ppx)"
   requires = "camlp4 lwt.syntax.options"
@@ -99,7 +99,7 @@ package "syntax" (
   archive(syntax, preprocessor, native, plugin) = "lwt_syntax.cmxs"
   exists_if = "lwt_syntax.cma"
   package "log" (
-    directory = "log"
+    #directory = "log"
     version = "dev"
     description = "Camlp4 syntax for Lwt logging (deprecated; use lwt.ppx)"
     requires = "camlp4 lwt.syntax.options"
@@ -110,7 +110,7 @@ package "syntax" (
     exists_if = "lwt_syntax_log.cma"
   )
   package "options" (
-    directory = "options"
+    #directory = "options"
     version = "dev"
     description = "Options for Lwt Camlp4 syntax extension (deprecated; use lwt.ppx)"
     requires = "camlp4"
@@ -122,7 +122,7 @@ package "syntax" (
   )
 )
 package "unix" (
-  directory = "unix"
+  #directory = "unix"
   version = "dev"
   description = "Unix support for Lwt"
   requires = "bigarray bytes lwt lwt.log result unix"
