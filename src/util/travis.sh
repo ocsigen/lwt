@@ -148,6 +148,11 @@ make test
 
 
 
+# Run the packaging tests.
+make packaging-test
+
+
+
 # Some sanity checks.
 if [ "$LIBEV" != yes ]
 then

@@ -18,3 +18,8 @@ scratch/
 
 # Wikidoc output.
 /doc/api/
+
+# Junk from packaging tests.
+*.cm*
+*.o
+a.out
