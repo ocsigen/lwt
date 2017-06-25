@@ -14,7 +14,7 @@ build: check-config
 all: check-config
 	jbuilder build @install
 
-# run all tests
+# run all unit tests
 test: check-config
 	jbuilder runtest
 
@@ -65,11 +65,32 @@ uninstall:
 
 reinstall: uninstall install
 
+# Packaging tests. These are run with Lwt installed by OPAM, typically during
+# CI. To run locally, run the install-for-packaging-test target first.
+packaging-test:
+	ocamlfind query lwt
+	for TEST in `ls -d tests/packaging/*/*` ; \
+	do \
+	    make -wC $$TEST ; \
+	done
+
+install-for-packaging-test: clean
+	opam pin add --yes --no-action lwt .
+	opam pin add --yes --no-action lwt_react .
+	opam pin add --yes --no-action lwt_ssl .
+	opam pin add --yes --no-action lwt_glib .
+	opam install --yes camlp4
+	opam reinstall --yes lwt lwt_react lwt_ssl lwt_glib
+
 clean:
 	rm -fr _build
 	rm -f *.install
 	rm -fr doc/api
 	rm -f src/jbuild-ignore src/unix/lwt_config
+	for TEST in `ls -d tests/packaging/*/*` ; \
+	do \
+	    make -wC $$TEST clean ; \
+	done
 
 clean-coverage:
 	rm -rf bisect*.out
