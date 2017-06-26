@@ -2,44 +2,53 @@
 #                 2017, Andrew Ray <evilkidder@gmail.com>
 
 # Default rule
+.PHONY: default
 default: build
 
 # build the usual development packages
+.PHONY: build
 build: check-config
 	jbuilder build \
 		--only-packages lwt \
 		@install
 
 # build everything
+.PHONY: all
 all: check-config
 	jbuilder build @install
 
 # run all unit tests
+.PHONY: test
 test: check-config
 	jbuilder runtest
 
 # configuration
+.PHONY: check-config
 check-config:
 	@if [ ! -f src/jbuild-ignore ] ; \
 	then \
 	    make default-config ; \
 	fi
 
+.PHONY: default-config
 default-config:
 	ocaml src/util/configure.ml -use-libev false -use-camlp4 false
 
 # Use jbuilder/odoc to generate static html documentation.
 # Currenty requires ocaml 4.03.0 to install odoc.
+.PHONY: doc
 doc:
 	jbuilder build @doc
 
 # Build HTML documentation with ocamldoc
+.PHONY: doc-api-html
 doc-api-html: all
 	make -C doc api/html/index.html
 
 # Build wiki documentation with wikidoc
 # requires ocaml 4.03.0 and pinning the repo
 # https://github.com/ocsigen/wikidoc
+.PHONY: doc-api-wiki
 doc-api-wiki: all
 	make -C doc api/wiki/index.wiki
 
@@ -56,17 +65,21 @@ doc-api-wiki: all
 
 # Use opam-installer, rather than jbuilder while we need to
 # post-process the lwt.install file
+.PHONY: install
 install:
 	ocaml src/util/install_filter.ml
 	opam-installer --prefix `opam config var prefix` -i lwt.install
 
+.PHONY: uninstall
 uninstall:
 	opam-installer --prefix `opam config var prefix` -u lwt.install
 
+.PHONY: reinstall
 reinstall: uninstall install
 
 # Packaging tests. These are run with Lwt installed by OPAM, typically during
 # CI. To run locally, run the install-for-packaging-test target first.
+.PHONY: packaging-test
 packaging-test:
 	ocamlfind query lwt
 	for TEST in `ls -d tests/packaging/*/*` ; \
@@ -74,6 +87,7 @@ packaging-test:
 	    make -wC $$TEST ; \
 	done
 
+.PHONY: install-for-packaging-test
 install-for-packaging-test: clean
 	opam pin add --yes --no-action lwt .
 	opam pin add --yes --no-action lwt_react .
@@ -82,6 +96,7 @@ install-for-packaging-test: clean
 	opam install --yes camlp4
 	opam reinstall --yes lwt lwt_react lwt_ssl lwt_glib
 
+.PHONY: clean
 clean:
 	rm -fr _build
 	rm -f *.install
@@ -92,15 +107,13 @@ clean:
 	    make -wC $$TEST clean ; \
 	done
 
+.PHONY: clean-coverage
 clean-coverage:
 	rm -rf bisect*.out
 	rm -rf _coverage/
 
+.PHONY: coverage
 coverage: test
 	bisect-ppx-report -I _build/ -html _coverage/ bisect*.out
 	bisect-ppx-report -text - -summary-only bisect*.out
 	@echo See _coverage/index.html
-
-.PHONY: \
-    default build doc test all install uninstall reinstall clean coverage \
-    check-config default-config doc-api-html doc-api-wiki clean-coverage
