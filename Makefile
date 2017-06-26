@@ -12,14 +12,19 @@ build: check-config
 		--only-packages lwt \
 		@install
 
-# build everything
-.PHONY: all
-all: check-config
+# build everything, including additional packages
+.PHONY: build-all
+build-all: check-config
 	jbuilder build @install
 
-# run all unit tests
+# run unit tests for package lwt
 .PHONY: test
 test: check-config
+	jbuilder runtest --only-packages lwt
+
+# run all unit tests
+.PHONY: test-all
+test-all: check-config
 	jbuilder runtest
 
 # configuration

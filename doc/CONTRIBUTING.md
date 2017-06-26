@@ -107,12 +107,6 @@ opam pin add --no-action lwt .
 opam install --deps-only lwt
 ```
 
-Due to a current bug in the build system, you should also install `react`:
-
-```
-opam install react
-```
-
 [opam-depends]: https://github.com/ocsigen/lwt/blob/8bff603ae6d976e69698fa08e8ce08fe9615489d/opam/opam#L35-L44
 
 On most systems, you should also install libev:
