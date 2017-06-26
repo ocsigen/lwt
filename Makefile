@@ -88,6 +88,7 @@ install-for-packaging-test: clean
 .PHONY: clean
 clean:
 	jbuilder clean
+	find . -name '.merlin' | xargs rm -f
 	rm -fr doc/api
 	rm -f src/jbuild-ignore src/unix/lwt_config
 	for TEST in `ls -d test/packaging/*/*` ; \
