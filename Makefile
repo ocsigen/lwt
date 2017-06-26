@@ -87,8 +87,7 @@ install-for-packaging-test: clean
 
 .PHONY: clean
 clean:
-	rm -fr _build
-	rm -f *.install
+	jbuilder clean
 	rm -fr doc/api
 	rm -f src/jbuild-ignore src/unix/lwt_config
 	for TEST in `ls -d test/packaging/*/*` ; \

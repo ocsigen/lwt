@@ -17,7 +17,7 @@ license: "LGPL with OpenSSL linking exception"
 build: [ [ "jbuilder" "build" "-p" name "-j" jobs ] ]
 build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
 depends: [
-  "jbuilder" { build & >= "1.0+beta9" }
+  "jbuilder" {build & >= "1.0+beta10"}
   "lwt" {>= "3.0.0"}
   "react" {>= "1.0.0"}
 ]
