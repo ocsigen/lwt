@@ -71,7 +71,7 @@ reinstall: uninstall install
 .PHONY: packaging-test
 packaging-test:
 	ocamlfind query lwt
-	for TEST in `ls -d tests/packaging/*/*` ; \
+	for TEST in `ls -d test/packaging/*/*` ; \
 	do \
 	    make -wC $$TEST ; \
 	done
@@ -91,7 +91,7 @@ clean:
 	rm -f *.install
 	rm -fr doc/api
 	rm -f src/jbuild-ignore src/unix/lwt_config
-	for TEST in `ls -d tests/packaging/*/*` ; \
+	for TEST in `ls -d test/packaging/*/*` ; \
 	do \
 	    make -wC $$TEST clean ; \
 	done
