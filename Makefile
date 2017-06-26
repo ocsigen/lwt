@@ -52,17 +52,6 @@ doc-api-html: all
 doc-api-wiki: all
 	make -C doc api/wiki/index.wiki
 
-#install:
-#	ocaml src/util/install_filter.ml
-#	jbuilder install
-#
-#uninstall:
-#	jbuilder uninstall
-#
-#reinstall:
-#	jbuilder uninstall
-#	jbuilder install
-
 # Use opam-installer, rather than jbuilder while we need to
 # post-process the lwt.install file
 .PHONY: install
