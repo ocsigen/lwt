@@ -85,7 +85,7 @@ case $COMPILER in
     4.01) OCAML_VERSION=4.01.0;;
     4.02) OCAML_VERSION=4.02.3;;
     4.03) OCAML_VERSION=4.03.0;;
-    4.04) OCAML_VERSION=4.04.1;;
+    4.04) OCAML_VERSION=4.04.2;;
     4.05) OCAML_VERSION=4.05.0+trunk;;
     system) OCAML_VERSION=`ocamlc -version`;;
        *) echo Unsupported compiler $COMPILER; exit 1;;
