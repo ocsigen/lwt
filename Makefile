@@ -101,8 +101,13 @@ clean-coverage:
 	rm -rf bisect*.out
 	rm -rf _coverage/
 
+.PHONY: test-coverage
+test-coverage:
+	jbuilder runtest --enable-optional-pps=bisect_ppx
+
 .PHONY: coverage
-coverage: test
-	bisect-ppx-report -I _build/ -html _coverage/ bisect*.out
-	bisect-ppx-report -text - -summary-only bisect*.out
+coverage: clean test-coverage
+	bisect-ppx-report -I _build/ -html _coverage/ `find . -name 'bisect*.out'`
+	bisect-ppx-report -text - -summary-only `find . -name 'bisect*.out'`
 	@echo See _coverage/index.html
+
