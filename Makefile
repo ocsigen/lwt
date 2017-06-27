@@ -47,14 +47,14 @@ doc:
 
 # Build HTML documentation with ocamldoc
 .PHONY: doc-api-html
-doc-api-html: all
+doc-api-html: build-all
 	make -C doc api/html/index.html
 
 # Build wiki documentation with wikidoc
 # requires ocaml 4.03.0 and pinning the repo
 # https://github.com/ocsigen/wikidoc
 .PHONY: doc-api-wiki
-doc-api-wiki: all
+doc-api-wiki: build-all
 	make -C doc api/wiki/index.wiki
 
 # Use opam-installer, rather than jbuilder while we need to
