@@ -25,6 +25,7 @@ build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
 depends: [
   "ocamlfind" {build & >= "1.5.0"}
   "jbuilder" {build & >= "1.0+beta10"}
+  "ocaml-migrate-parsetree"
   "ppx_tools_versioned"
   "cppo" { build }
   "result"
