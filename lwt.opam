@@ -23,6 +23,7 @@ build: [
 ]
 build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
 depends: [
+  # We are only using ocamlfind during configuration of the Unix binding.
   "ocamlfind" {build & >= "1.5.0"}
   "jbuilder" {build & >= "1.0+beta10"}
   "ocaml-migrate-parsetree"
