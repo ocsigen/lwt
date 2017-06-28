@@ -15,6 +15,7 @@ doc: "https://ocsigen.org/lwt/manual/"
 bug-reports: "https://github.com/ocsigen/lwt/issues"
 license: "LGPL with OpenSSL linking exception"
 dev-repo: "https://github.com/ocsigen/lwt.git"
+
 build: [
   [ "ocaml" "src/util/configure.ml" "-use-libev" "%{conf-libev:installed}%"
                                     "-use-camlp4" "%{camlp4:installed}%" ]
@@ -22,24 +23,27 @@ build: [
   [ "ocaml" "src/util/install_filter.ml" ]
 ]
 build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
+
 depends: [
+  "cppo" {build}
+  "jbuilder" {build & >= "1.0+beta10"}
   # We are only using ocamlfind during configuration of the Unix binding.
   "ocamlfind" {build & >= "1.5.0"}
-  "jbuilder" {build & >= "1.0+beta10"}
   "ocaml-migrate-parsetree"
   "ppx_tools_versioned"
-  "cppo" { build }
+  # result is needed as long as Lwt still supports OCaml 4.02.
   "result"
 ]
 depopts: [
   "base-threads"
   "base-unix"
-  "conf-libev"
   "camlp4"
+  "conf-libev"
 ]
 # In practice, Lwt requires OCaml >= 4.02.3, as that is a constraint of the
 # dependency jbuilder.
 available: [ocaml-version >= "4.02.0" & compiler != "4.02.1+BER"]
+
 messages: [
   "For module Lwt_ssl, please install package lwt_ssl"
   {ssl:installed & !lwt_ssl:installed}

@@ -14,12 +14,14 @@ doc: "https://ocsigen.org/lwt/manual/"
 dev-repo: "https://github.com/ocsigen/lwt.git"
 bug-reports: "https://github.com/ocsigen/lwt/issues"
 license: "LGPL with OpenSSL linking exception"
+
 build: [ [ "jbuilder" "build" "-p" name "-j" jobs ] ]
 build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
+
 depends: [
+  "base-unix"
+  "conf-glib-2" {build}
+  "conf-pkg-config" {build}
   "jbuilder" {build & >= "1.0+beta10"}
   "lwt" {>= "3.0.0"}
-  "base-unix"
-  "conf-pkg-config" {build}
-  "conf-glib-2" {build}
 ]
