@@ -356,16 +356,25 @@ type storage = (unit -> unit) Storage_map.t
 
 
 
-(* Phantom types for use with [promise]/[state]. These must be declared outside
-   module [Main_internal_types]. This is explained inside. *)
-type underlying
-type proxy
-
-type completed
-type pending
-
 module Main_internal_types =
 struct
+  (* Phantom types for use with types [promise] and [state]. These are never
+     constructed; the purpose of the constructors is to prove to the type
+     checker that these types are distinct from each other. Warning 37, "unused
+     constructor," therefore has to be temporarily suppressed. *)
+
+  [@@@ocaml.warning "-37"]
+
+  type underlying = Underlying_and_this_constructor_is_not_used
+  type proxy = Proxy_and_this_constructor_is_not_used
+
+  type completed = Completed_and_this_constructor_is_not_used
+  type pending = Pending_and_this_constructor_is_not_used
+
+  [@@@ocaml.warning "+37"]
+
+
+
   (* Promises proper. *)
 
   type ('a, 'u, 'c) promise = {
@@ -404,15 +413,6 @@ struct
      callbacks have comments explaining what the valid invariants are at that
      point, and/or casts to (1) get the correct typing and (2) document the
      potential state change for readers of the code. *)
-
-  (* Note:
-
-     The phantom types used in the GADT are declared as abstract types. They
-     must be declared outside the module, for OCaml's type system to know that
-     they are definitely distinct types. If they are declared inside this
-     module, OCaml sees them through an inferred signature in the rest of
-     [lwt.ml]. That signature does not guarantee that they are distinct, which
-     defeats the purpose of the GADT in pattern matching. *)
 
 
 
