@@ -134,8 +134,11 @@
 
      ...are those that may become completed in the future. Each pending promise
      carries a list of callbacks. These callbacks are added by functions like
-     [Lwt.bind], and called by Lwt if/when the promise completes. Pending
-     promises are produced in three ways, according to how they can be
+     [Lwt.bind], and called by Lwt if/when the promise completes. These
+     callbacks typically end up completing additional promises; see section
+     "Completion loop" below.
+
+     Pending promises are produced in three ways, according to how they can be
      completed:
 
      - Initial promises
@@ -146,15 +149,16 @@
 
      - Sequential composition
 
-       For example, [Lwt.bind]. These promises only complete when some sequence
-       of "preceding" promises completes. The user cannot complete these
-       promises directly.
+       For example, [Lwt.bind]. These promises only complete when the preceding
+       sequence of promises completes. The user cannot complete these promises
+       directly (but see the section on cancelation below).
 
      - Concurrent composition
 
        For example, [Lwt.join] or [Lwt.choose]. These promises only complete
        when all or one of a set of "preceding" promises complete. The user
-       cannot complete these promises directly.
+       cannot complete these promises directly (but see the section on
+       cancelation below).
 
 
    2. Resolvers
@@ -165,7 +169,7 @@
 
    Internally, resolvers are the exact same objects as the promises they
    complete, even though the resolver is exposed as a reference of a different
-   type by [lwt.mli].
+   type by [lwt.mli]. For details on why, see section "Type system abuse" below.
 
 
    3. Callbacks
@@ -180,7 +184,8 @@
    Callbacks come in two flavors: regular callbacks and cancel callbacks. The
    only material differences between them are that:
 
-   - cancel callbacks are only called if a promise is canceled, and
+   - regular callbacks are always called when a promise is completed, but cancel
+     callbacks are called, in addition, only if the promise is canceled, and
    - all cancel callbacks of a promise are called before any regular callback
      is called.
 
@@ -198,8 +203,9 @@
    This chaining of promise completions through callbacks can be seen as a kind
    of promise dependency graph, in which the nodes are pending promises, and the
    edges are callbacks. During the completion loop, Lwt starts at some initial
-   promise that is getting completed by the user, and completes a bunch of
-   dependent promises.
+   promise that is getting completed by the user, and recursively completes all
+   dependent promises. The graph is modified: completed promises are removed
+   from it.
 
    Some of these dependencies are explicit to Lwt, e.g. the callbacks registered
    by [Lwt.bind]. Others are not visible to Lwt, because the user can always
@@ -254,11 +260,14 @@
 
    The Lwt core deliberately doesn't do I/O. The completion loop stops running
    once no promises can be completed immediately. It has to be restarted later
-   by some external process.
+   by some surrouding I/O loop. This I/O loop typically keeps track of pending
+   promises that represent blocked or in-progress I/O; other pending promises
+   that indirectly depend on I/O are not explicitly tracked. They are retained
+   in memory by references captured inside callbacks.
 
    On Unix and Windows, a separate top-level loop, typically [Lwt_main.run], is
    necessary to repeatedly call [select], [epoll], or [kevent], and complete
-   promises that are blocked on I/O.
+   blocked I/O promises.
 
    In JavaScript, references to promises are retained by JavaScript code, which
    is, in turn, triggered by the JS engine. In other words, the top-level loop
@@ -1718,7 +1727,15 @@ struct
 
     | Pending p_callbacks ->
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
-      (* The result promise is a fresh pending promise. *)
+      (* The result promise is a fresh pending promise.
+
+         Initially, trying to cancel this fresh pending promise [p''] will
+         propagate the cancelation attempt to [p] (backwards through the promise
+         dependency graph). If/when [p] is resolved, Lwt will call the user's
+         callback [f] below, which will provide a new promise [p'], and [p']
+         will become a proxy of [p'']. At that point, trying to cancel [p'']
+         will be equivalent to trying to cancel [p'], so the behavior will
+         depend on how the user obtained [p']. *)
 
       let saved_storage = !current_storage in
 
