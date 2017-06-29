@@ -212,7 +212,7 @@
 
    5. Cancelation
 
-   As described above, ordinary promise completion procedes from an initial
+   As described above, ordinary promise completion proceeds from an initial
    promise, forward along callbacks through the dependency graph. Since it
    starts from an initial promise, it can only be triggered using a resolver.
 
@@ -742,7 +742,7 @@ struct
      All that matters is that the top-most sequencing operation (in this case,
      map) is executed by that argument.
 
-     This is implemented using a single global heterogenous key-value map.
+     This is implemented using a single global heterogeneous key-value map.
      Sequential composition functions snapshot this map when they are called,
      and restore the snapshot right before calling the user's callback. The same
      happens for cancel triggers added by [on_cancel].
@@ -860,9 +860,9 @@ struct
 
      Cleanup is throttled by maintaining a counter, [cleanups_deferred], on each
      pending promise. The counter is incremented each time this function wants
-     to clean the callback list (right after after clearing a cell). When the
-     counter reaches [cleanup_throttle], the callback list is actually scanned
-     and cleared callback cells are removed. *)
+     to clean the callback list (right after clearing a cell). When the counter
+     reaches [cleanup_throttle], the callback list is actually scanned and
+     cleared callback cells are removed. *)
   let clear_explicitly_removable_callback_cell cell ~originally_added_to:ps =
     cell := None;
 
