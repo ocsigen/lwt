@@ -268,29 +268,29 @@
    portable.
 
 
-   7. Promise "unification"
+   7. Promise "proxying"
 
    In [Lwt.bind : 'a t -> ('a -> 'b t) -> 'b t], the outer ['b t] is created by
    [bind] first, and returned to the user. The inner ['b t] is created by the
    user later, and then returned to [bind]. At that point, [bind] needs to make
    the inner and outer ['b t]s behave identically.
 
-   This is accomplished by "unifying" them, which simply means: making one of
-   the promises point to the other. One of the promises thus becomes a "proxy,"
-   and the other is its "underlying" promise.
+   This is accomplished by making one of the promises point to the other. The
+   first of the promises thus becomes a "proxy," and the other is its
+   "underlying" promise.
 
    After that, all operations that would be performed by Lwt on the proxy are
    instead performed on the underlying promise. This is ensured by the numerous
    calls to the internal function [underlying] in this file.
 
-   Because of the pervasive use of [underlying], proxies and unification can be
-   more or less ignored on a first reading the code. However, becoming a proxy
-   is a kind of state change, and any promise that is returned by a callback
-   to [bind], or to a similar Lwt function, might become a proxy. That means:
-   just about any promise that is handed to the user, might become a proxy
-   promise by the next time Lwt sees it. This is important for reasoning about
-   possible state changes in implementation of Lwt, and is referenced in some
-   implementation detail comments.
+   Because of the pervasive use of [underlying], proxies can be more or less
+   ignored on a first reading the code. However, becoming a proxy is a kind of
+   state change, and any promise that is returned by a callback to [bind], or to
+   a similar Lwt function, might become a proxy. That means: just about any
+   promise that is handed to the user, might become a proxy promise by the next
+   time Lwt sees it. This is important for reasoning about possible state
+   changes in implementation of Lwt, and is referenced in some implementation
+   detail comments.
 
 
    8. Sequence-associated storage
@@ -311,7 +311,7 @@
    the promise state is a GADT which encodes the state in its type parameters.
    Thus, if you do [let p = underlying p], the shadowing reference [p] is
    statically known *not* to be a proxy, and the compiler knows that the
-   corresponding match case [Unified_with _] is impossible.
+   corresponding match case [Proxy _] is impossible.
 
    The external promise type, ['a t], and the external resolver type, ['a u],
    are not GADTs. Furthermore, they are, respectively, covariant and
@@ -382,24 +382,24 @@ struct
   }
 
   and (_, _, _) state =
-    | Resolved     : 'a                  -> ('a, underlying, completed) state
-    | Failed       : exn                 -> ( _, underlying, completed) state
-    | Pending      : 'a callbacks        -> ('a, underlying, pending)   state
-    | Unified_with : ('a, _, 'c) promise -> ('a, proxy,      'c)        state
+    | Resolved : 'a                  -> ('a, underlying, completed) state
+    | Failed   : exn                 -> ( _, underlying, completed) state
+    | Pending  : 'a callbacks        -> ('a, underlying, pending)   state
+    | Proxy    : ('a, _, 'c) promise -> ('a, proxy,      'c)        state
 
   (* Note:
 
-     A promise whose state is [Unified_with _] is a "proxy" promise. A promise
-     whose state is *not* [Unified_with _] is an "underlying" promise.
+     A promise whose state is [Proxy _] is a "proxy" promise. A promise whose
+     state is *not* [Proxy _] is an "underlying" promise.
 
      The "underlying promise of [p]" is:
 
      - [p], if [p] is itself underlying.
-     - Otherwise, [p] is a proxy and has state [Unified_with p']. The underlying
+     - Otherwise, [p] is a proxy and has state [Proxy p']. The underlying
        promise of [p] is the underlying promise of [p'].
 
      In other words, to find the underlying promise of a proxy, Lwt follows the
-     [Unified_with _] links to the end. *)
+     [Proxy _] links to the end. *)
 
   (* Note:
 
@@ -597,8 +597,8 @@ struct
 
   (* [underlying p] evaluates to the underlying promise of [p].
 
-     If multiple [Unified_with _] links are traversed, [underlying] updates all
-     the proxies to point immediately to their final underlying promise. *)
+     If multiple [Proxy _] links are traversed, [underlying] updates all the
+     proxies to point immediately to their final underlying promise. *)
   let rec underlying
       : 'u 'c. ('a, 'u, 'c) promise -> ('a, underlying, 'c) promise =
     fun
@@ -610,10 +610,10 @@ struct
     | Resolved _ -> (p : (_, underlying, _) promise)
     | Failed _ -> p
     | Pending _ -> p
-    | Unified_with p' ->
+    | Proxy p' ->
       let p'' = underlying p' in
       if not (identical p'' p') then
-        p.state <- Unified_with p'';
+        p.state <- Proxy p'';
       p''
 
 
@@ -677,18 +677,17 @@ struct
      [Lwt.bind]'s callback).
 
      As a result, the only possible state change, before the callback, is that
-     [p] may have been unified with another promise, i.e. it may have become a
-     proxy. Now,
+     [p] may have become a proxy. Now,
 
      - If [p] does not undergo this state change and become a proxy, it remains
        an underlying, pending promise.
-     - If [p] does become a proxy, it will have been unified with another
-       promise [p'] created fresh by [Lwt.bind], to which this same argument
-       applies. See [unify].
+     - If [p] does become a proxy, it will be a proxy for another promise [p']
+       created fresh by [Lwt.bind], to which this same argument applies. See
+       [make_into_proxy].
 
-     So, by induction on the length of the proxy ([Unified_with _]) chain, at
-     the time the callback is called, [p] is either an underlying, pending
-     promise, or a proxy for a pending promise.
+     So, by induction on the length of the proxy ([Proxy _]) chain, at the time
+     the callback is called, [p] is either an underlying, pending promise, or a
+     proxy for a pending promise.
 
      The cast
 
@@ -901,8 +900,8 @@ struct
 
   (* Concatenates both kinds of callbacks on [~from] to the corresponding lists
      of [~into]. The callback lists on [~from] are *not* then cleared, because
-     this function is called only by [Sequential_composition.unify], which
-     immediately changes the state of [~from] and loses references to the
+     this function is called only by [Sequential_composition.make_into_proxy],
+     which immediately changes the state of [~from] and loses references to the
      original callback lists.
 
      The [cleanups_deferred] fields of both promises are summed, and if the sum
@@ -1522,11 +1521,11 @@ struct
            - [p'] *is* an initial promise, so it *can* get canceled. However, if
              it does, the [on_cancel] handler installed below will remove this
              callback.
-           - [p'] never gets passed to [unify], the only effect of which is that
-             it cannot be the underlying promise of another (proxy) promise. So,
-             [p'] can only appear at the head of a chain of [Unified_with _]
-             links, and it's not necessary to worry about whether the inductive
-             reasoning at [may_now_be_proxy] applies. *)
+           - [p'] never gets passed to [make_into_proxy], the only effect of
+             which is that it cannot be the underlying promise of another
+             (proxy) promise. So, [p'] can only appear at the head of a chain of
+             [Proxy _] links, and it's not necessary to worry about whether the
+             inductive reasoning at [may_now_be_proxy] applies. *)
 
         let State_may_have_changed p' =
           complete in_completion_loop p' p_result in
@@ -1623,12 +1622,12 @@ struct
 
 
 
-  (* Makes [~user_provided_promise] into a proxy of [~outer_promise], unifying
-     them. After [unify], these two promise references "behave identically."
+  (* Makes [~user_provided_promise] into a proxy of [~outer_promise]. After
+     [make_into_proxy], these two promise references "behave identically."
 
      Note that this is not symmetric: [user_provided_promise] always becomes the
-     proxy. [unify] is called only by [bind] and similar functions in this
-     module. This means that:
+     proxy. [make_into_proxy] is called only by [bind] and similar functions in
+     this module. This means that:
 
      - the only way for a promise to become a proxy is by being returned from
        the callback given by the user to [bind], or a similar function, and
@@ -1640,12 +1639,12 @@ struct
      can become proxies, underlying, etc.; in particular, it is used in the
      argument in [may_now_be_proxy] for correct predictions about state changes.
 
-     [~outer_promise] is always a pending promise when [unify] is called; for
-     the explanation, see [may_now_be_proxy] (though the caller of [unify]
-     always calls [underlying] first to pass the underlying pending promise to
-     [unify]).
+     [~outer_promise] is always a pending promise when [make_into_proxy] is
+     called; for the explanation, see [may_now_be_proxy] (though the caller of
+     [make_into_proxy] always calls [underlying] first to pass the underlying
+     pending promise to [make_into_proxy]).
 
-     The reasons "unification" is used, instead of adding a callback to
+     The reasons proxying is used, instead of adding a callback to
      [~user_provided_promise] to complete [~outer_promise] when the former
      becomes resolved probably are:
 
@@ -1658,7 +1657,7 @@ struct
        [~user_provided_promise] might see [~user_provided_promise] resolved, but
        [~outer_promise] still pending, depending on the order in which callbacks
        are run. *)
-  let unify
+  let make_into_proxy
       (type c)
       in_completion_loop
       ~(outer_promise : ('a, underlying, pending) promise)
@@ -1688,7 +1687,7 @@ struct
         outer_callbacks.how_to_cancel <- p'_callbacks.how_to_cancel;
 
         let State_may_have_changed p' =
-          set_promise_state p' (Unified_with outer_promise) in
+          set_promise_state p' (Proxy outer_promise) in
         ignore p';
 
         State_may_have_changed outer_promise
@@ -1696,7 +1695,7 @@ struct
            [outer_promise] for type checking. *)
 
         (* The state of [p'] may instead have changed -- it may have become a
-           proxy. However, callers of [unify] don't know if
+           proxy. However, callers of [make_into_proxy] don't know if
            [user_provided_promise] was a proxy or not (that's why we call
            underlying on it at the top of this function, to get [p']). We can
            therefore take a dangerous shortcut and not bother returning a new
@@ -1742,13 +1741,13 @@ struct
           (* Run the user's function [f]. *)
 
           let State_may_have_changed p'' =
-            unify in_completion_loop
+            make_into_proxy in_completion_loop
               ~outer_promise:p''
               ~user_provided_promise:p'
           in
           ignore p''
           (* Make the outer promise [p''] behaviorally identical to the promise
-             [p'] returned by [f] -- that is, "unify" [p'] and [p'']. *)
+             [p'] returned by [f] by making [p'] into a proxy of [p'']. *)
 
         | Failed _ as p_result ->
           let State_may_have_changed p'' =
@@ -1786,7 +1785,7 @@ struct
           let Internal p' = to_internal_promise p' in
 
           let State_may_have_changed p'' =
-            unify in_completion_loop
+            make_into_proxy in_completion_loop
               ~outer_promise:p''
               ~user_provided_promise:p'
           in
@@ -1871,7 +1870,7 @@ struct
           let Internal p' = to_internal_promise p' in
 
           let State_may_have_changed p'' =
-            unify in_completion_loop
+            make_into_proxy in_completion_loop
               ~outer_promise:p''
               ~user_provided_promise:p'
           in
@@ -1914,7 +1913,7 @@ struct
           let Internal p' = to_internal_promise p' in
 
           let State_may_have_changed p'' =
-            unify in_completion_loop
+            make_into_proxy in_completion_loop
               ~outer_promise:p''
               ~user_provided_promise:p'
           in
@@ -1952,7 +1951,7 @@ struct
           let Internal p' = to_internal_promise p' in
 
           let State_may_have_changed p'' =
-            unify in_completion_loop
+            make_into_proxy in_completion_loop
               ~outer_promise:p''
               ~user_provided_promise:p'
           in
@@ -1965,7 +1964,7 @@ struct
           let Internal p' = to_internal_promise p' in
 
           let State_may_have_changed p'' =
-            unify in_completion_loop
+            make_into_proxy in_completion_loop
               ~outer_promise:p''
               ~user_provided_promise:p'
           in
@@ -2003,7 +2002,7 @@ struct
           let Internal p' = to_internal_promise p' in
 
           let State_may_have_changed p'' =
-            unify in_completion_loop
+            make_into_proxy in_completion_loop
               ~outer_promise:p''
               ~user_provided_promise:p'
           in
@@ -2016,7 +2015,7 @@ struct
           let Internal p' = to_internal_promise p' in
 
           let State_may_have_changed p'' =
-            unify in_completion_loop
+            make_into_proxy in_completion_loop
               ~outer_promise:p''
               ~user_provided_promise:p'
           in
