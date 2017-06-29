@@ -160,11 +160,11 @@
    2. Resolvers
 
    Resolvers are given to the user by [Lwt.wait] and [Lwt.task], and can be used
-   by the user to resolve the corresponding promises. Note that this means the
+   by the user to complete the corresponding promises. Note that this means the
    user only ever gets resolvers for initial promises.
 
    Internally, resolvers are the exact same objects as the promises they
-   resolve, even though the resolver is exposed as a reference of a different
+   complete, even though the resolver is exposed as a reference of a different
    type by [lwt.mli].
 
 
@@ -669,7 +669,7 @@ struct
      pending promise [p] and return it to the user.
 
      They do not return a corresponding resolver. That means that only the
-     function itself (typically, a callback registered by it) can resolve [p].
+     function itself (typically, a callback registered by it) can complete [p].
      The only thing the user can do directly is try to cancel [p], but, since
      [p] is not an initial promise, the cancelation attempt simply propagates
      past [p] to [p]'s predecessors. If that eventually results in canceling
@@ -1646,17 +1646,17 @@ struct
 
      The reasons proxying is used, instead of adding a callback to
      [~user_provided_promise] to complete [~outer_promise] when the former
-     becomes resolved probably are:
+     becomes completed probably are:
 
      - Promises have more behaviors than completion. One would have to add a
        cancelation handler to [~outer_promise] to propagate the cancelation back
        to [~user_provided_promise], for example. It may be easier to just think
        of them as the same promise.
-     - If using callbacks, resolving [~user_provided_promise] would not
-       immediately resolve [~outer_promise]. Another callback added to
-       [~user_provided_promise] might see [~user_provided_promise] resolved, but
-       [~outer_promise] still pending, depending on the order in which callbacks
-       are run. *)
+     - If using callbacks, completing [~user_provided_promise] would not
+       immediately complete [~outer_promise]. Another callback added to
+       [~user_provided_promise] might see [~user_provided_promise] completed,
+       but [~outer_promise] still pending, depending on the order in which
+       callbacks are run. *)
   let make_into_proxy
       (type c)
       in_completion_loop
@@ -2425,10 +2425,10 @@ struct
           collect_already_resolved_promises_or_fail acc ps
     in
 
-    (* Looks for already-resolved promises in [ps]. If none are resolved or
+    (* Looks for already-completed promises in [ps]. If none are resolved or
        failed, adds a callback to all promises in [ps] (all of which are
        pending). *)
-    let rec check_for_already_resolved_promises ps' =
+    let rec check_for_already_completed_promises ps' =
       match ps' with
       | [] ->
         let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
@@ -2454,10 +2454,10 @@ struct
           to_public_promise {state = result}
 
         | Pending _ ->
-          check_for_already_resolved_promises ps
+          check_for_already_completed_promises ps
     in
 
-    let p = check_for_already_resolved_promises ps in
+    let p = check_for_already_completed_promises ps in
     p
 
   (* See [nchoose]. This function differs only in having additional calls to
@@ -2483,7 +2483,7 @@ struct
           collect_already_resolved_promises_or_fail acc ps'
     in
 
-    let rec check_for_already_resolved_promises ps' =
+    let rec check_for_already_completed_promises ps' =
       match ps' with
       | [] ->
         let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
@@ -2511,10 +2511,10 @@ struct
           to_public_promise {state = result}
 
         | Pending _ ->
-          check_for_already_resolved_promises ps'
+          check_for_already_completed_promises ps'
     in
 
-    let p = check_for_already_resolved_promises ps in
+    let p = check_for_already_completed_promises ps in
     p
 
 
