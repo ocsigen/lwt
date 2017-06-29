@@ -41,7 +41,11 @@
    easily. You can then expand modules as needed, depending on what part of the
    implementation you are interested in. Without code folding, you face an
    intimidating wall of code :( You can still visually parse the file, however,
-   because there are plenty of blank lines to help section things off.
+   because there are plenty of blank lines to help section things off. You can
+   also view this file folded online:
+
+     https://gist.github.com/aantron/9fab0bdead98a60fccf06e0189186863
+     https://gist.github.com/aantron/97b58520d5bb4858ccac6f54700a24d7
 
    The signatures are unusual: big comments are absent. They are moved into the
    modules, so that they are hidden by code folding when you (the reader!) are
@@ -63,6 +67,17 @@
 
    The sections (modules) of the code correspond closely to sections of the
    overview.
+
+
+   * Whitespace
+
+   The total line count of this file may seem frightening, but one third of it
+   is whitespace and comments, both there to help you read the remaining two
+   thirds!
+
+   Also, within those two thirds, there are large groups of functions that are
+   repetitive and formulaic, so there is much less conceptually-unique code in
+   Lwt than you might think at first.
 
 
    * Please edit the code and the docs!
