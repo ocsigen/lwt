@@ -200,12 +200,14 @@ CAMLprim value lwt_libev_timer_init(value loop, value delay, value repeat,
                                     value callback) {
   CAMLparam4(loop, delay, repeat, callback);
   CAMLlocal1(result);
+
+  struct ev_loop* ev_loop = Ev_loop_val(loop);
   /* Create and initialise the watcher */
   struct ev_timer *watcher = lwt_unix_new(struct ev_timer);
   if (Bool_val(repeat))
-    ev_timer_init(watcher, handle_timer, Double_val(delay), Double_val(delay));
+    ev_timer_init(watcher, handle_timer, Double_val(delay) + ev_time() - ev_now(ev_loop), Double_val(delay));
   else
-    ev_timer_init(watcher, handle_timer, Double_val(delay), 0.0);
+    ev_timer_init(watcher, handle_timer, Double_val(delay) + ev_time() - ev_now(ev_loop), 0.0);
 
   /* Wrap the watcher into a custom caml value */
   result = caml_alloc_custom(&watcher_ops, sizeof(struct ev_timer *), 0, 1);
@@ -214,7 +216,7 @@ CAMLprim value lwt_libev_timer_init(value loop, value delay, value repeat,
   watcher->data = (void *)callback;
   caml_register_generational_global_root((value *)(&(watcher->data)));
   /* Start the event */
-  ev_timer_start(Ev_loop_val(loop), watcher);
+  ev_timer_start(ev_loop, watcher);
   CAMLreturn(result);
 }
 
