@@ -68,8 +68,8 @@
    * Please edit the code and the docs!
 
    This code is meant to be readable, and to be edited. If you are reading
-   something, and think there is a much better way to express it, please go
-   ahead and open a pull request to the Lwt repository at
+   something, and think there is a better way to express it, please go ahead and
+   open a pull request to the Lwt repository at
 
      https://github.com/ocsigen/lwt
 
