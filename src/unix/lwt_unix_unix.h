@@ -1754,7 +1754,6 @@ CAMLprim value lwt_unix_rewinddir_job(value dir)
     return lwt_unix_alloc_job(&(job->job));
 }
 
-
 /* +-----------------------------------------------------------------+
    | JOB: readdir                                                    |
    +-----------------------------------------------------------------+ */
@@ -1781,7 +1780,8 @@ static void worker_readdir(struct job_readdir *job)
 
 static value result_readdir(struct job_readdir *job)
 {
-    LWT_UNIX_CHECK_JOB(job, job->entry == NULL && job->error_code != 0, "readdir");
+    LWT_UNIX_CHECK_JOB(job, job->entry == NULL && job->error_code != 0,
+                       "readdir");
     if (job->entry == NULL) {
         // From the man page
         // On success, readdir() returns a pointer to a dirent structure.
