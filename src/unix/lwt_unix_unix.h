@@ -1754,21 +1754,6 @@ CAMLprim value lwt_unix_rewinddir_job(value dir)
     return lwt_unix_alloc_job(&(job->job));
 }
 
-/* struct dirent size */
-
-/* Some kind of estimate of the true size of a dirent structure, including the
-   space used for the name. This is controversial, and there is an ongoing
-   discussion (see Internet) about deprecating readdir_r because of the need to
-   guess the size in this way. */
-static size_t dirent_size(DIR *dir)
-{
-    size_t size = offsetof(struct dirent, d_name) +
-                  fpathconf(dirfd(dir), _PC_NAME_MAX) + 1;
-
-    if (size < sizeof(struct dirent)) size = sizeof(struct dirent);
-
-    return size;
-}
 
 /* +-----------------------------------------------------------------+
    | JOB: readdir                                                    |
@@ -1878,7 +1863,7 @@ CAMLprim value lwt_unix_readdir_n_job(value val_dir, value val_count)
     long count = Long_val(val_count);
     DIR *dir = DIR_Val(val_dir);
 
-    LWT_UNIX_INIT_JOB(job, readdir_n, dirent_size(dir) * count);
+    LWT_UNIX_INIT_JOB(job, readdir_n, sizeof(struct dirent) * count);
     job->dir = dir;
     job->count = count;
 
