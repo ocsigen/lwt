@@ -54,7 +54,7 @@
 
    * Documentation
 
-   The documentation begins with an Overview of major concepts and components.
+   The documentation begins with an overview of major concepts and components.
    This overview puts everything into context. You don't have to read the whole
    thing. The overview begins with basic concepts, moves on to advanced ones,
    and then gets into the truly esoteric. You can read about each concept on an
