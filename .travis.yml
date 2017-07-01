@@ -5,6 +5,8 @@ language: c
 matrix:
   include:
     - os: linux
+      env: COMPILER=4.02 LIBEV=yes
+    - os: linux
       env: COMPILER=4.03
     - os: linux
       env: COMPILER=4.04
@@ -12,11 +14,6 @@ matrix:
       env: COMPILER=4.05
     - os: linux
       env: COMPILER=4.05 FLAMBDA=yes
-    - os: linux
-      # Using 4.02 here because a binary is available from the PPA, which makes
-      # the build complete faster. If the compiler for this test is switched to
-      # a different version, add a separate 4.02 row.
-      env: COMPILER=4.02 LIBEV=yes
     - os: osx
       env: COMPILER=system
     - os: osx
