@@ -841,8 +841,6 @@ CAMLprim value lwt_unix_mcast_set_ttl(value fd, value ttl)
 #define VAL_MCAST_ACTION_ADD (Val_int(0))
 #define VAL_MCAST_ACTION_DROP (Val_int(1))
 
-#define GET_INET_ADDR(v) (*((struct in_addr *)(v)))
-
 CAMLprim value lwt_unix_mcast_modify_membership(value fd, value v_action,
                                                 value if_addr, value group_addr)
 {
@@ -2364,10 +2362,7 @@ struct job_gethostbyname {
 };
 
 CAMLexport value alloc_inet_addr(struct in_addr *inaddr);
-#define GET_INET_ADDR(v) (*((struct in_addr *)(v)))
-
 CAMLexport value alloc_inet6_addr(struct in6_addr *inaddr);
-#define GET_INET6_ADDR(v) (*((struct in6_addr *)(v)))
 
 static value alloc_one_addr(char const *a)
 {
