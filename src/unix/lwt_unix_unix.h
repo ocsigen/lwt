@@ -1835,19 +1835,21 @@ static void worker_readdir_n(struct job_readdir_n *job)
 {
     long i;
     for (i = 0; i < job->count; i++) {
-        struct dirent *ptr;
-        int result = readdir_r(job->dir, &job->entries[i], &ptr);
+        errno = 0;
+        struct dirent *entry = readdir(job->dir);
 
         /* An error happened. */
-        if (result != 0) {
-            job->error_code = result;
+        if (entry == NULL && errno != 0) {
+            job->error_code = errno;
             return;
         }
 
         /* End of directory reached */
-        if (ptr == NULL) break;
-    }
+        if (entry == NULL && errno == 0) break;
 
+        /* All is good */
+        job->entries[i] = *entry;
+    }
     job->count = i;
     job->error_code = 0;
 }
