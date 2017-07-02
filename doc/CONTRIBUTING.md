@@ -40,7 +40,7 @@ Those things having been noted, thank you! :tada:
 
 3. If you start working, but then life interferes and you don't want to
    continue, there is no shame in stopping. This can be for any reason
-   whatsoever, and you on't have to tell anyone what that reason is. Lwt
+   whatsoever, and you don't have to tell anyone what that reason is. Lwt
    respects your time and your needs. You don't really even have to tell anyone
    that you stopped working, but it would be nice if you did :)
 
