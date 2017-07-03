@@ -1813,7 +1813,7 @@ struct job_readdir_n {
     DIR *dir;
     long count;
     int error_code;
-    struct dirent entries[];
+    char *entries[];
 };
 
 static void worker_readdir_n(struct job_readdir_n *job)
@@ -1833,7 +1833,7 @@ static void worker_readdir_n(struct job_readdir_n *job)
         if (entry == NULL && errno == 0) break;
 
         /* All is good */
-        job->entries[i] = *entry;
+        job->entries[i] = strdup(entry->d_name);
     }
     job->count = i;
     job->error_code = 0;
@@ -1851,7 +1851,7 @@ static value result_readdir_n(struct job_readdir_n *job)
         result = caml_alloc(job->count, 0);
         long i;
         for (i = 0; i < job->count; i++) {
-            Store_field(result, i, caml_copy_string(job->entries[i].d_name));
+            Store_field(result, i, caml_copy_string(job->entries[i]));
         }
         lwt_unix_free_job(&job->job);
         CAMLreturn(result);
