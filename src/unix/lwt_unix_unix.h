@@ -1832,8 +1832,8 @@ static void worker_readdir_n(struct job_readdir_n *job)
 
         /* An error happened. */
         if (entry == NULL && errno != 0) {
+            job->count = i;
             job->error_code = errno;
-            job->count = i - 1;
             return;
         }
 
@@ -1843,8 +1843,8 @@ static void worker_readdir_n(struct job_readdir_n *job)
         /* readdir is good */
         char *name = strdup(entry->d_name);
         if (name == NULL) {
+            job->count = i;
             job->error_code = errno;
-            job->count = i - 1;
             return;
         }
 
@@ -3199,7 +3199,12 @@ CAMLprim value lwt_unix_getcwd_job(value unit)
        The last argument is the number of bytes of storage to reserve in memory
        immediately following the `struct`. This is for fields such as
        `char data[]` at the end of the struct. It is typically zero. For an
-       example where it is not zero, see `lwt_unix_read_job` again. */
+       example where it is not zero, see `lwt_unix_read_job` again.
+
+       If the additional data is stored inline in the job struct, it is
+       deallocated with `lwt_unix_free_job`. If the additional data is for
+       pointers to additional structure, you must remember to deallocate it
+       yourself. For an example of this, see `readdir_n`.*/
     LWT_UNIX_INIT_JOB(job, getcwd, 0);
 
     /* Allocate a corresponding object in the OCaml heap. `&job->job` is the
