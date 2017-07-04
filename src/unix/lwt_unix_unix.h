@@ -1826,11 +1826,20 @@ static void worker_readdir_n(struct job_readdir_n *job)
         /* An error happened. */
         if (entry == NULL && errno != 0) {
             job->error_code = errno;
+            job->count = i - 1;
             return;
         }
 
         /* End of directory reached */
         if (entry == NULL && errno == 0) break;
+
+        /* readdir is good */
+        char *name = strdup(entry->d_name);
+        if (name == NULL) {
+            job->error_code = errno;
+            job->count = i - 1;
+            return;
+        }
 
         /* All is good */
         job->entries[i] = strdup(entry->d_name);
@@ -1845,6 +1854,8 @@ static value result_readdir_n(struct job_readdir_n *job)
     CAMLlocal1(result);
     int error_code = job->error_code;
     if (error_code) {
+        long i;
+        for (i = 0; i < job->count; i++) free(job->entries[i]);
         lwt_unix_free_job(&job->job);
         unix_error(error_code, "readdir", Nothing);
     } else {
@@ -1853,6 +1864,7 @@ static value result_readdir_n(struct job_readdir_n *job)
         for (i = 0; i < job->count; i++) {
             Store_field(result, i, caml_copy_string(job->entries[i]));
         }
+        for (i = 0; i < job->count; i++) free(job->entries[i]);
         lwt_unix_free_job(&job->job);
         CAMLreturn(result);
     }
@@ -1863,7 +1875,7 @@ CAMLprim value lwt_unix_readdir_n_job(value val_dir, value val_count)
     long count = Long_val(val_count);
     DIR *dir = DIR_Val(val_dir);
 
-    LWT_UNIX_INIT_JOB(job, readdir_n, sizeof(struct dirent) * count);
+    LWT_UNIX_INIT_JOB(job, readdir_n, sizeof(char *) * count);
     job->dir = dir;
     job->count = count;
 
