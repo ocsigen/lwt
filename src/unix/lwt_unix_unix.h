@@ -32,6 +32,7 @@
 
 #include <caml/unixsupport.h>
 #include <caml/version.h>
+#include <dirent.h>
 #include <poll.h>
 #include <sys/resource.h>
 #include <sys/time.h>
@@ -1753,22 +1754,6 @@ CAMLprim value lwt_unix_rewinddir_job(value dir)
     return lwt_unix_alloc_job(&(job->job));
 }
 
-/* struct dirent size */
-
-/* Some kind of estimate of the true size of a dirent structure, including the
-   space used for the name. This is controversial, and there is an ongoing
-   discussion (see Internet) about deprecating readdir_r because of the need to
-   guess the size in this way. */
-static size_t dirent_size(DIR *dir)
-{
-    size_t size = offsetof(struct dirent, d_name) +
-                  fpathconf(dirfd(dir), _PC_NAME_MAX) + 1;
-
-    if (size < sizeof(struct dirent)) size = sizeof(struct dirent);
-
-    return size;
-}
-
 /* +-----------------------------------------------------------------+
    | JOB: readdir                                                    |
    +-----------------------------------------------------------------+ */
@@ -1777,30 +1762,36 @@ struct job_readdir {
     struct lwt_unix_job job;
     DIR *dir;
     struct dirent *entry;
-    struct dirent *ptr;
-    int result;
+    int error_code;
 };
 
 static void worker_readdir(struct job_readdir *job)
 {
-    job->entry = lwt_unix_malloc(dirent_size(job->dir));
-    job->result = readdir_r(job->dir, job->entry, &job->ptr);
+    // From the man page of readdir
+    // If the end of the directory stream is reached, NULL is returned and
+    // errno is not changed. If an error occurs, NULL is returned and errno
+    // is set appropriately. To distinguish end of stream and from an error,
+    // set errno to zero before calling readdir() and then check the value of
+    // errno if NULL is returned.
+    errno = 0;
+    job->entry = readdir(job->dir);
+    job->error_code = errno;
 }
 
 static value result_readdir(struct job_readdir *job)
 {
-    int result = job->result;
-    if (result) {
-        free(job->entry);
-        lwt_unix_free_job(&job->job);
-        unix_error(result, "readdir", Nothing);
-    } else if (job->ptr == NULL) {
-        free(job->entry);
+    LWT_UNIX_CHECK_JOB(job, job->entry == NULL && job->error_code != 0,
+                       "readdir");
+    if (job->entry == NULL) {
+        // From the man page
+        // On success, readdir() returns a pointer to a dirent structure.
+        // (This structure may be statically allocated; do not attempt to
+        // free(3) it.)
         lwt_unix_free_job(&job->job);
         caml_raise_end_of_file();
     } else {
         value name = caml_copy_string(job->entry->d_name);
-        free(job->entry);
+        // see above about not freeing dirent
         lwt_unix_free_job(&job->job);
         return name;
     }
@@ -1820,28 +1811,46 @@ CAMLprim value lwt_unix_readdir_job(value val_dir)
 struct job_readdir_n {
     struct lwt_unix_job job;
     DIR *dir;
+    /* count serves two purpose:
+       1. Transmit the maximum number of entries requested by the programmer.
+          See `readdir_n`'s OCaml side documentation.
+       2. Transmit the number of actually read entries from the `worker` to
+          the result parser.
+          See below `worker_readdir_n` and `result_readdir_n`
+    */
     long count;
     int error_code;
-    struct dirent entries[];
+    char *entries[];
 };
 
 static void worker_readdir_n(struct job_readdir_n *job)
 {
     long i;
     for (i = 0; i < job->count; i++) {
-        struct dirent *ptr;
-        int result = readdir_r(job->dir, &job->entries[i], &ptr);
+        errno = 0;
+        struct dirent *entry = readdir(job->dir);
 
         /* An error happened. */
-        if (result != 0) {
-            job->error_code = result;
+        if (entry == NULL && errno != 0) {
+            job->count = i;
+            job->error_code = errno;
             return;
         }
 
         /* End of directory reached */
-        if (ptr == NULL) break;
-    }
+        if (entry == NULL && errno == 0) break;
 
+        /* readdir is good */
+        char *name = strdup(entry->d_name);
+        if (name == NULL) {
+            job->count = i;
+            job->error_code = errno;
+            return;
+        }
+
+        /* All is good */
+        job->entries[i] = name;
+    }
     job->count = i;
     job->error_code = 0;
 }
@@ -1852,14 +1861,17 @@ static value result_readdir_n(struct job_readdir_n *job)
     CAMLlocal1(result);
     int error_code = job->error_code;
     if (error_code) {
+        long i;
+        for (i = 0; i < job->count; i++) free(job->entries[i]);
         lwt_unix_free_job(&job->job);
         unix_error(error_code, "readdir", Nothing);
     } else {
         result = caml_alloc(job->count, 0);
         long i;
         for (i = 0; i < job->count; i++) {
-            Store_field(result, i, caml_copy_string(job->entries[i].d_name));
+            Store_field(result, i, caml_copy_string(job->entries[i]));
         }
+        for (i = 0; i < job->count; i++) free(job->entries[i]);
         lwt_unix_free_job(&job->job);
         CAMLreturn(result);
     }
@@ -1870,7 +1882,7 @@ CAMLprim value lwt_unix_readdir_n_job(value val_dir, value val_count)
     long count = Long_val(val_count);
     DIR *dir = DIR_Val(val_dir);
 
-    LWT_UNIX_INIT_JOB(job, readdir_n, dirent_size(dir) * count);
+    LWT_UNIX_INIT_JOB(job, readdir_n, sizeof(char *) * count);
     job->dir = dir;
     job->count = count;
 
@@ -3187,7 +3199,12 @@ CAMLprim value lwt_unix_getcwd_job(value unit)
        The last argument is the number of bytes of storage to reserve in memory
        immediately following the `struct`. This is for fields such as
        `char data[]` at the end of the struct. It is typically zero. For an
-       example where it is not zero, see `lwt_unix_read_job` again. */
+       example where it is not zero, see `lwt_unix_read_job` again.
+
+       If the additional data is stored inline in the job struct, it is
+       deallocated with `lwt_unix_free_job`. If the additional data is for
+       pointers to additional structure, you must remember to deallocate it
+       yourself. For an example of this, see `readdir_n`.*/
     LWT_UNIX_INIT_JOB(job, getcwd, 0);
 
     /* Allocate a corresponding object in the OCaml heap. `&job->job` is the
