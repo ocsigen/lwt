@@ -20,6 +20,7 @@
  *)
 
 open Test
+open Lwt.Infix
 
 let selection_tests = [
   test "libev: default when enabled in build bot"
@@ -44,27 +45,34 @@ let selection_tests = [
 let tests = selection_tests
 
 let timing_tests = [
-  test "libev"
-    (fun () ->
-       let start = Unix.gettimeofday () in
-       let stop = ref start in
-       let t1 = Lwt.catch (fun () ->
-          let () = Unix.sleep 1 in
-          Lwt_unix.timeout 0.5;
-         )
-           (function
-            | Lwt_unix.Timeout ->
-              let () = stop := Unix.gettimeofday () in
-              Lwt.return ()
-            | exn -> Lwt.fail exn
-           )
-       in
-       Lwt.bind t1 (fun () -> Lwt.return ((!stop) -. start >= 1.5))
-    );
+  test "libev: timer delays are not too short" begin fun () ->
+    let start = Unix.gettimeofday () in
+
+    Lwt.catch
+      (fun () ->
+        (* Block the entire process for one second. If using libev, libev's
+           notion of the current time is not updated during this period. *)
+        let () = Unix.sleep 1 in
+
+        (* At this point, libev thinks that the time is what it was about one
+           second ago. Now schedule exception Lwt_unix.Timeout to be raised in
+           0.5 seconds. If the implementation is incorrect, the exception will
+           be raised immediately, because the 0.5 seconds will be measured
+           relative to libev's "current" time of one second ago. *)
+        Lwt_unix.timeout 0.5)
+
+      (function
+      | Lwt_unix.Timeout ->
+        Lwt.return (Unix.gettimeofday ())
+      | exn ->
+        Lwt.fail exn)
+
+    >>= fun stop ->
+
+    Lwt.return (stop -. start >= 1.5)
+  end;
 ]
 
 let tests = tests @ timing_tests
 
-let suite =
-  suite "lwt_engine"
-    (tests)
+let suite = suite "lwt_engine" tests
