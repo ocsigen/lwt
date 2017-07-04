@@ -41,6 +41,30 @@ let selection_tests = [
         else Lwt.return Lwt_config.libev_default);
 ]
 
+let tests = selection_tests
+
+let timing_tests = [
+  test "libev"
+    (fun () ->
+       let start = Unix.gettimeofday () in
+       let stop = ref start in
+       let t1 = Lwt.catch (fun () ->
+          let () = Unix.sleep 1 in
+          Lwt_unix.timeout 0.5;
+         )
+           (function
+            | Lwt_unix.Timeout ->
+              let () = stop := Unix.gettimeofday () in
+              Lwt.return ()
+            | exn -> Lwt.fail exn
+           )
+       in
+       Lwt.bind t1 (fun () -> Lwt.return ((!stop) -. start >= 1.5))
+    );
+]
+
+let tests = tests @ timing_tests
+
 let suite =
   suite "lwt_engine"
-    (selection_tests)
+    (tests)
