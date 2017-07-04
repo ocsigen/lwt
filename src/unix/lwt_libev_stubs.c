@@ -204,10 +204,12 @@ CAMLprim value lwt_libev_timer_init(value loop, value delay, value repeat,
   struct ev_loop* ev_loop = Ev_loop_val(loop);
   /* Create and initialise the watcher */
   struct ev_timer *watcher = lwt_unix_new(struct ev_timer);
+
+  ev_tstamp adjusted_delay = Double_val(delay) + ev_time() - ev_now(ev_loop);
   if (Bool_val(repeat))
-    ev_timer_init(watcher, handle_timer, Double_val(delay) + ev_time() - ev_now(ev_loop), Double_val(delay));
+    ev_timer_init(watcher, handle_timer, adjusted_delay, Double_val(delay));
   else
-    ev_timer_init(watcher, handle_timer, Double_val(delay) + ev_time() - ev_now(ev_loop), 0.0);
+    ev_timer_init(watcher, handle_timer, adjusted_delay, 0.0);
 
   /* Wrap the watcher into a custom caml value */
   result = caml_alloc_custom(&watcher_ops, sizeof(struct ev_timer *), 0, 1);
