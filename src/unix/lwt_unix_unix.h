@@ -1811,6 +1811,13 @@ CAMLprim value lwt_unix_readdir_job(value val_dir)
 struct job_readdir_n {
     struct lwt_unix_job job;
     DIR *dir;
+    /* count serves two purpose:
+       1. Transmit the maximum number of entries requested by the programmer.
+          See `readdir_n`'s OCaml side documentation.
+       2. Transmit the number of actually read entries from the `worker` to
+          the result parser.
+          See below `worker_readdir_n` and `result_readdir_n`
+    */
     long count;
     int error_code;
     char *entries[];
