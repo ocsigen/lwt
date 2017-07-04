@@ -1849,7 +1849,7 @@ static void worker_readdir_n(struct job_readdir_n *job)
         }
 
         /* All is good */
-        job->entries[i] = strdup(entry->d_name);
+        job->entries[i] = name;
     }
     job->count = i;
     job->error_code = 0;
