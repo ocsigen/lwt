@@ -203,7 +203,7 @@ let fold_r f seq acc =
       if node.node_active then
         loop node.node_prev (f node.node_data acc)
       else
-        loop node.node_next acc
+        loop node.node_prev acc
   in
   loop seq.prev acc
 
