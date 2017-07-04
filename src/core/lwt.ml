@@ -389,11 +389,11 @@ struct
 
   [@@@ocaml.warning "-37"]
 
-  type underlying = Underlying_and_this_constructor_is_not_used
-  type proxy = Proxy_and_this_constructor_is_not_used
+  type underlying = private Underlying_and_this_constructor_is_not_used
+  type proxy = private Proxy_and_this_constructor_is_not_used
 
-  type completed = Completed_and_this_constructor_is_not_used
-  type pending = Pending_and_this_constructor_is_not_used
+  type completed = private Completed_and_this_constructor_is_not_used
+  type pending = private Pending_and_this_constructor_is_not_used
 
   [@@@ocaml.warning "+37"]
 
