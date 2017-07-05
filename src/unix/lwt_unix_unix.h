@@ -3167,6 +3167,14 @@ static value result_getcwd(struct job_getcwd *job)
        but while the call is still blocked. Bigarrays don't have this problem,
        so pointers into them are passed to blocking C calls, avoiding a copy.
 
+       In addition to worker threads not being able to write into OCaml strings,
+       they typically cannot *allocate* any OCaml strings (or other values)
+       either, because the worker threads do not try to take OCaml's global
+       runtime lock. This sometimes results in extra data copies. For an
+       example, see the implementation of `readdir_n`. At the time of this
+       writing, that implementation copied each string returned by `readdir`
+       twice.
+
        For jobs that return integers or other kinds of values, it is necessary
        to use the various `Int_val`, `Long_val` macros, etc. See
 
