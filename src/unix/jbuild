@@ -34,7 +34,7 @@
  ((targets (lwt_config))
   (action (with-stdout-to lwt_config (echo "")))))
 
-;; note; the call to (and dependancy on) ocamlfind is avoided by adding:
+;; note; the call to (and dependency on) ocamlfind is avoided by adding:
 ;; -ocamlc ${OCAMLC}
 ;; however, this only works on ocaml >= 4.04 due to passing options to ocamlc as
 ;; "-cclib -o -cclib <file>"
