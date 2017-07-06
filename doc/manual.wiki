@@ -510,7 +510,7 @@ val map_p : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
   {{{Lwt_mutex}}} provides mutexes for {{{Lwt}}}. Its use is almost the
   same as the {{{Mutex}}} module of the thread library shipped with
   OCaml. In general, programs using {{{Lwt}}} do not need a lot of
-  mutexes. They are only useful for serialising operations.
+  mutexes. They are only useful for synchronising or sequencing operations.
 
 ==== Lists ====
 
