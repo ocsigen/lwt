@@ -26,7 +26,6 @@ matrix:
 
 env:
   global:
-    - LWT_WARNINGS_AS_ERRORS=yes
     - LWT_FORCE_LIBEV_BY_DEFAULT=yes
 
 script: bash -e src/util/travis.sh

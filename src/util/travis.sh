@@ -144,7 +144,7 @@ install_extra_package glib
 # Build and run the tests.
 opam install -y ounit
 cd `opam config var lib`/../build/lwt.*
-make test
+make clean build-all test-all
 
 
 
