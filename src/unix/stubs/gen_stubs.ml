@@ -339,7 +339,7 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
 
   let ins =
     List.filter
-      (fun (_, dir, { caml_type }) ->
+      (fun (_, dir, {caml_type; _}) ->
          (dir = In || dir = In_out) && caml_type <> Caml_void)
       job.params
 
@@ -347,7 +347,7 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
     List.map
       (fun (name, _, _) -> name)
       (List.filter
-         (fun (_, dir, { caml_type }) -> dir = In && caml_type = Caml_string)
+         (fun (_, dir, {caml_type; _}) -> dir = In && caml_type = Caml_string)
          job.params)
 
   let caml_return_type, is_tuple =
@@ -363,8 +363,8 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
     String.concat " -> "
       (match
          List.map
-           (fun (_, _, { caml_type }) -> caml_type_name caml_type)
-           (List.filter (fun (_, dir, { caml_type }) -> dir = In && caml_type <> Caml_void) job.params)
+           (fun (_, _, {caml_type; _}) -> caml_type_name caml_type)
+           (List.filter (fun (_, dir, {caml_type; _}) -> dir = In && caml_type <> Caml_void) job.params)
        with
          | [] -> ["unit"]
          | l -> l)
@@ -418,7 +418,7 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
            (match strings with
               | [] ->
                   pr "    unix_error(error, %S, Nothing);\n" job.name
-              | name :: _ ->
+              | _name :: _ ->
                   pr "    unix_error(error, %S, string_argument);\n" job.name);
            pr "  }\n");
     if job.result.caml_type <> Caml_void then begin
@@ -477,7 +477,7 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
     pr "  job->job.worker = (lwt_unix_job_worker)worker_%s%s;\n" job.name worker_suffix;
     pr "  job->job.result = (lwt_unix_job_result)result_%s%s;\n" job.name result_suffix;
     List.iter
-      (fun (name, dir, { caml_type; c_type; hint }) ->
+      (fun (name, _dir, { caml_type; c_type; hint }) ->
          if caml_type <> Caml_string then begin
            pr "  /* Copy the %s parameter. */\n" name;
            pr "  job->%s = " name;
@@ -545,7 +545,7 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
       job.name
       (String.concat ", "
          (List.map
-            (fun (name, dir, { c_type }) ->
+            (fun (name, dir, {c_type; _}) ->
               match dir with
                 | In -> c_type_name c_type ^ " " ^ name
                 | In_out | Out -> c_type_name (C_ptr c_type) ^ " " ^ name)
@@ -589,7 +589,7 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
 
     let converters =
       List.filter
-        (fun (name, _, { hint }) -> hint <> Hint_none)
+        (fun (_name, _, {hint; _}) -> hint <> Hint_none)
         job.params
     in
     if converters <> [] then begin
@@ -599,7 +599,7 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
    +-----------------------------------------------------------------+ */
 ";
       List.iter
-        (fun (name, _, atype) ->
+        (fun (_name, _, atype) ->
           match atype.hint with
             | Hint_none ->
               ()
@@ -610,7 +610,7 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
                   | Caml_variant (name, cstrs) -> (name, cstrs)
                   | _ -> assert false
               in
-              let path, item = split_name name in
+              let _path, item = split_name name in
               pr "\n";
               pr "/* Table mapping constructors of ocaml type %s to C values. */\n" name;
               pr "static %s %s_table[] = {\n" (c_type_name atype.c_type) item;
@@ -673,7 +673,7 @@ module MakeGen(Gen64 : Generator)(Params : Params) = struct
       pr "  int errno_copy;\n"
     end;
     List.iter
-      (fun (name, dir, { c_type }) ->
+      (fun (name, dir, {c_type; _}) ->
         pr "  /* %s parameter. */\n" (string_of_direction dir);
         pr "  %s %s;\n" (c_type_name c_type) name)
       job.params;
@@ -801,13 +801,13 @@ end
         fprintf !ml_oc "\
 module Make(Job : Job) = struct
 ";
-        StringMap.iter (fun name job -> gen job) jobs;
+        StringMap.iter (fun _name job -> gen job) jobs;
         output_string !ml_oc "end\n";
         close_out !ml_oc
     | [|_; "list-job-files"|] ->
-        StringMap.iter (fun name job -> printf "lwt_unix_job_%s.c\n" name) jobs
+        StringMap.iter (fun name _job -> printf "lwt_unix_job_%s.c\n" name) jobs
     | [|_; "list-job-names"|] ->
-        StringMap.iter (fun name job -> printf "%s\n" name) jobs
+        StringMap.iter (fun name _job -> printf "%s\n" name) jobs
     | _ ->
         log "invalid arguments";
         eprintf "usage: %s [list-job-files|list-job-names]\n" prog_name;

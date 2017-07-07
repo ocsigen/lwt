@@ -6,6 +6,7 @@
   (synopsis "GLib integration for Lwt")
   (wrapped false)
   (libraries (lwt lwt.unix))
+  (flags (:standard -w +A))
   (c_names (lwt_glib_stubs))
   (c_flags (:include glib_c_flags.sexp))
   (c_library_flags (:include glib_c_library_flags.sexp))))

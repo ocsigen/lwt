@@ -8,22 +8,22 @@ default: build
 # build the usual development packages
 .PHONY: build
 build: check-config
-	jbuilder build --only-packages lwt
+	jbuilder build --dev --only-packages lwt
 
 # build everything, including additional packages
 .PHONY: build-all
 build-all: check-config
-	jbuilder build
+	jbuilder build --dev
 
 # run unit tests for package lwt
 .PHONY: test
 test: check-config
-	jbuilder runtest --only-packages lwt
+	jbuilder runtest --dev --only-packages lwt
 
 # run all unit tests
 .PHONY: test-all
 test-all: check-config
-	jbuilder runtest
+	jbuilder runtest --dev
 
 # configuration
 .PHONY: check-config

@@ -92,6 +92,7 @@
   (optional)
   (wrapped false)
   (libraries (lwt lwt.log unix bigarray))
+  (flags (:standard -w +A-29))
   (c_names (
     lwt_unix_stubs
     lwt_libev_stubs

@@ -10,4 +10,5 @@
               ppx_tools_versioned))
   (ppx_runtime_libraries (lwt))
   (kind ppx_rewriter)
-  (preprocess (pps (ppx_tools_versioned.metaquot_404)))))
+  (preprocess (pps (ppx_tools_versioned.metaquot_404)))
+  (flags (:standard -w +A-4))))

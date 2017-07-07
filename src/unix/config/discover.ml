@@ -378,7 +378,7 @@ let safe_remove file_name =
   else
     try
       Sys.remove file_name
-    with exn ->
+    with _ ->
       ()
 
 let test_code args stub_code =
@@ -493,7 +493,7 @@ let lib_flags env_var_prefix fallback =
     | x ->
         let opt, lib = fallback () in
         match x with
-          | Some opt, Some lib ->
+          | Some _, Some _ ->
               assert false
           | Some opt, None ->
               (opt, lib)
@@ -543,7 +543,7 @@ let () =
 
   (* read ocamlc -config and lwt config files.
      The former must exist, but we can apply defaults for the later. *)
-  let read_config config filename =
+  let read_config filename =
     let f = open_in filename in
     let cfg line =
       let idx = String.index line ':' in
@@ -564,8 +564,8 @@ let () =
     printf "Configuration file for 'ocamlc -config' does not exist\n";
     exit 1;
   end in
-  let ocamlc_config = read_config "ocamlc" !ocamlc_config in
-  let lwt_config  = try read_config "lwt" !lwt_config with _ -> [] in
+  let ocamlc_config = read_config !ocamlc_config in
+  let lwt_config = try read_config !lwt_config with _ -> [] in
   (* get params from configuration files *)
   let () =
     let get var name =

@@ -5,4 +5,5 @@
   (public_name lwt_ssl)
   (synopsis "SSL support for Lwt")
   (wrapped false)
-  (libraries (ssl lwt.unix))))
+  (libraries (ssl lwt.unix))
+  (flags (:standard -w +A))))

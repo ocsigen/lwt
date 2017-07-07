@@ -1,4 +1,5 @@
 (jbuild_version 1)
 
 (executable
- ((name discover)))
+ ((name discover)
+  (flags (:standard -w +A-29))))

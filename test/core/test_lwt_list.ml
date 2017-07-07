@@ -27,7 +27,7 @@ let ( <=> ) v v' =
   assert ( state v = v')
 
 let test_exn f v e =
-  assert ( try f v;assert false with exn -> exn = e)
+  assert ( try ignore (f v);assert false with exn -> exn = e)
 
 exception Exn
 
@@ -252,7 +252,7 @@ let suite = suite "lwt_list" [
         fun () ->
           let l = [1;3] in
           catch
-            (fun () -> Lwt_list.find_s (fun n -> return ((n mod 2) = 0)) l >>= fun result ->
+            (fun () -> Lwt_list.find_s (fun n -> return ((n mod 2) = 0)) l >>= fun _result ->
               return false)
             (function
               | Not_found -> return true

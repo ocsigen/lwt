@@ -5,4 +5,5 @@
   (public_name lwt_react)
   (synopsis "Reactive programming helpers for Lwt")
   (wrapped false)
-  (libraries (lwt react))))
+  (libraries (lwt react))
+  (flags (:standard -w +A))))

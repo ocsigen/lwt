@@ -365,6 +365,15 @@
 
 
 
+(* Suppress warning 4, "fragile pattern matching," in this file only, due to
+
+     https://caml.inria.fr/mantis/view.php?id=7451
+
+   This can be removed if/when Lwt requires a minimum OCaml version 4.05. *)
+[@@@ocaml.warning "-4"]
+
+
+
 (* Some sequence-associated storage types
 
    Sequence-associated storage is defined and documented later, in module

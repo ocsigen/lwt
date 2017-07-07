@@ -1,4 +1,5 @@
 (jbuild_version 1)
 
 (executable
- ((name gen_stubs)))
+ ((name gen_stubs)
+  (flags (:standard -w +A-4-29))))
