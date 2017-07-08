@@ -22,25 +22,25 @@
 (** Helpers for test *)
 
 type t
-  (** Type of a test *)
+(** Type of a test *)
 
 type suite
-  (** Type of a suite of tests *)
+(** Type of a suite of tests *)
 
 val test_direct : string -> ?only_if:(unit -> bool) -> (unit -> bool) -> t
-  (** Defines a test. [run] must returns [true] if the test succeeded
-      and [false] otherwise. [only_if] is used to conditionally skip the
-      test. *)
+(** Defines a test. [run] must returns [true] if the test succeeded
+    and [false] otherwise. [only_if] is used to conditionally skip the
+    test. *)
 
 val test : string -> ?only_if:(unit -> bool) -> (unit -> bool Lwt.t) -> t
-  (** Like [test_direct], but defines a test which runs a thread. *)
+(** Like [test_direct], but defines a test which runs a thread. *)
 
 val suite : string -> t list -> suite
-  (** Defines a suite of tests *)
+(** Defines a suite of tests *)
 
 val run : string -> suite list -> unit
-  (** Run all the given tests and exit the program with an exit code
-      of [0] if all tests succeeded and with [1] otherwise. *)
+(** Run all the given tests and exit the program with an exit code
+    of [0] if all tests succeeded and with [1] otherwise. *)
 
 val temp_name : unit -> string
 (** Generates the name of a temporary file (or directory) in [_build/]. Note

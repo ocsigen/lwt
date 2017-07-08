@@ -23,7 +23,6 @@ open Test
 open Lwt
 
 let suite = suite "lwt_signal" [
-
   test "limit"
     (fun () ->
        let s, push = React.S.create 0 in

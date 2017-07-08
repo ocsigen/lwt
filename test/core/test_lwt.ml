@@ -2057,7 +2057,7 @@ let cancel_tests = [
 let tests = tests @ cancel_tests
 
 let on_cancel_tests = [
- test "on_cancel: pending" begin fun () ->
+  test "on_cancel: pending" begin fun () ->
     let f_ran = ref false in
     let p, _ = Lwt.task () in
     Lwt.on_cancel p (fun () -> f_ran := true);

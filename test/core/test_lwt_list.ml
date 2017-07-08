@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  * 02111-1307, USA.
-*)
+ *)
 
 
 open Test
@@ -44,10 +44,10 @@ let test_iter f test_list =
     let t,w = wait () in
     let r = ref [incr_;(fun x -> t >>= ( fun () -> incr_ x ));incr_] in
     let t' = f (fun x ->
-        let f = List.hd !r in
-        let t = f x in
-        r := List.tl !r;
-        t ) l
+      let f = List.hd !r in
+      let t = f x in
+      r := List.tl !r;
+      t ) l
     in
     t' <=> Sleep;
     List.iter2 (fun v r -> assert (v = !r)) test_list l;
@@ -83,8 +83,8 @@ let test_map f test_list =
         | _ -> return ()
       in
       th >>= ( fun () ->
-          incr r;
-          return (!r) )
+        incr r;
+        return (!r) )
   in
   let () =
     let l = [();();()] in
@@ -153,123 +153,123 @@ let test_rev_map f =
   return (after = [6;4;2])
 
 let suite = suite "lwt_list" [
-    test "iter_p"
-      (fun () ->
-         test_iter Lwt_list.iter_p [1;0;1];
-         test_exception Lwt_list.iter_p;
-         return true);
+  test "iter_p"
+    (fun () ->
+       test_iter Lwt_list.iter_p [1;0;1];
+       test_exception Lwt_list.iter_p;
+       return true);
 
-    test "iter_s"
-      (fun () ->
-         test_iter Lwt_list.iter_s [1;0;0];
-         test_exception Lwt_list.iter_s;
-         return true);
+  test "iter_s"
+    (fun () ->
+       test_iter Lwt_list.iter_s [1;0;0];
+       test_exception Lwt_list.iter_s;
+       return true);
 
-    test "map_p"
-      (fun () ->
-         test_map Lwt_list.map_p [4;8;5];
-         test_exception Lwt_list.map_p;
-         return true);
+  test "map_p"
+    (fun () ->
+       test_map Lwt_list.map_p [4;8;5];
+       test_exception Lwt_list.map_p;
+       return true);
 
-    test "map_s"
-      (fun () ->
-         test_map Lwt_list.map_s [4;7;8];
-         test_exception Lwt_list.map_s;
-         return true);
+  test "map_s"
+    (fun () ->
+       test_map Lwt_list.map_s [4;7;8];
+       test_exception Lwt_list.map_s;
+       return true);
 
-    test "fold_left_s"
-      (fun () ->
-         let l = [1;2;3] in
-         let f acc v = return (v::acc) in
-         let t = Lwt_list.fold_left_s f [] l in
-         t <=> Return (List.rev l);
-         return true);
+  test "fold_left_s"
+    (fun () ->
+       let l = [1;2;3] in
+       let f acc v = return (v::acc) in
+       let t = Lwt_list.fold_left_s f [] l in
+       t <=> Return (List.rev l);
+       return true);
 
-    test "for_all_s"
-      (fun () -> test_for_all_true Lwt_list.for_all_s);
+  test "for_all_s"
+    (fun () -> test_for_all_true Lwt_list.for_all_s);
 
-    test "for_all_p"
-      (fun () -> test_for_all_true Lwt_list.for_all_p);
+  test "for_all_p"
+    (fun () -> test_for_all_true Lwt_list.for_all_p);
 
-    test "for_all_s"
-      (fun () -> test_for_all_false Lwt_list.for_all_s);
+  test "for_all_s"
+    (fun () -> test_for_all_false Lwt_list.for_all_s);
 
-    test "for_all_p"
-      (fun () -> test_for_all_false Lwt_list.for_all_p);
+  test "for_all_p"
+    (fun () -> test_for_all_false Lwt_list.for_all_p);
 
-    test "exists_s true"
-      (fun () -> test_exists_true Lwt_list.exists_s);
+  test "exists_s true"
+    (fun () -> test_exists_true Lwt_list.exists_s);
 
-    test "exists_p true"
-      (fun () -> test_exists_true Lwt_list.exists_p);
+  test "exists_p true"
+    (fun () -> test_exists_true Lwt_list.exists_p);
 
-    test "exists_s false"
-      (fun () -> test_exists_false Lwt_list.exists_s);
+  test "exists_s false"
+    (fun () -> test_exists_false Lwt_list.exists_s);
 
-    test "exists_p false"
-      (fun () -> test_exists_false Lwt_list.exists_p);
+  test "exists_p false"
+    (fun () -> test_exists_false Lwt_list.exists_p);
 
-    test "filter_s"
-      (fun () -> test_filter Lwt_list.filter_s);
+  test "filter_s"
+    (fun () -> test_filter Lwt_list.filter_s);
 
-    test "filter_p"
-      (fun () -> test_filter Lwt_list.filter_p);
+  test "filter_p"
+    (fun () -> test_filter Lwt_list.filter_p);
 
-    test "partition_p"
-      (fun () -> test_partition Lwt_list.partition_p);
+  test "partition_p"
+    (fun () -> test_partition Lwt_list.partition_p);
 
-    test "partition_s"
-      (fun () -> test_partition Lwt_list.partition_s);
+  test "partition_s"
+    (fun () -> test_partition Lwt_list.partition_s);
 
-    test "filter_map_p"
-      (fun () -> test_filter_map Lwt_list.filter_map_p);
+  test "filter_map_p"
+    (fun () -> test_filter_map Lwt_list.filter_map_p);
 
-    test "filter_map_s"
-      (fun () -> test_filter_map Lwt_list.filter_map_s);
+  test "filter_map_s"
+    (fun () -> test_filter_map Lwt_list.filter_map_s);
 
-    test "iteri_p"
-      (fun () -> test_iter_i Lwt_list.iteri_p);
+  test "iteri_p"
+    (fun () -> test_iter_i Lwt_list.iteri_p);
 
-    test "iteri_s"
-      (fun () -> test_iter_i Lwt_list.iteri_s);
+  test "iteri_s"
+    (fun () -> test_iter_i Lwt_list.iteri_s);
 
-    test "mapi_p"
-      (fun () -> test_map_i Lwt_list.mapi_p);
+  test "mapi_p"
+    (fun () -> test_map_i Lwt_list.mapi_p);
 
-    test "mapi_s"
-      (fun () -> test_map_i Lwt_list.mapi_s);
+  test "mapi_s"
+    (fun () -> test_map_i Lwt_list.mapi_s);
 
-    test "find_s existing"
-      (
-        fun () ->
-          let l = [1;2;3] in
-          Lwt_list.find_s (fun n -> return ((n mod 2) = 0)) l >>= fun result ->
-          return (result = 2)
-      );
+  test "find_s existing"
+    (
+      fun () ->
+        let l = [1;2;3] in
+        Lwt_list.find_s (fun n -> return ((n mod 2) = 0)) l >>= fun result ->
+        return (result = 2)
+    );
 
-    test "find_s missing"
-      (
-        fun () ->
-          let l = [1;3] in
-          catch
-            (fun () -> Lwt_list.find_s (fun n -> return ((n mod 2) = 0)) l >>= fun _result ->
-              return false)
-            (function
-              | Not_found -> return true
-              | _ -> return false)
-      );
+  test "find_s missing"
+    (
+      fun () ->
+        let l = [1;3] in
+        catch
+          (fun () -> Lwt_list.find_s (fun n -> return ((n mod 2) = 0)) l >>= fun _result ->
+            return false)
+          (function
+          | Not_found -> return true
+          | _ -> return false)
+    );
 
-    test "rev_map_p"
-      (fun () -> test_rev_map Lwt_list.rev_map_p);
+  test "rev_map_p"
+    (fun () -> test_rev_map Lwt_list.rev_map_p);
 
-    test "rev_map_s"
-      (fun () -> test_rev_map Lwt_list.rev_map_s);
+  test "rev_map_s"
+    (fun () -> test_rev_map Lwt_list.rev_map_s);
 
-    test "fold_right_s"
-      (fun () ->
-         let l = [1;2;3] in
-         Lwt_list.fold_right_s (fun a n -> return (a + n)) l 0 >>= fun result ->
-         return (result = 6)
-      );
+  test "fold_right_s"
+    (fun () ->
+       let l = [1;2;3] in
+       Lwt_list.fold_right_s (fun a n -> return (a + n)) l 0 >>= fun result ->
+       return (result = 6)
+    );
 
-  ]
+]
