@@ -21,6 +21,7 @@ Those things having been noted, thank you! :tada:
 - [OPAM+git workflow](#Workflow)
   - [Getting the code](#Checkout)
   - [Testing](#Testing)
+  - [Testing with coverage analysis](#Test_with_coverage_analysis)
   - [Getting your change merged](#Getting_your_change_merged)
   - [Making additional changes](#Making_additional_changes)
   - [Cleaning up](#Cleaning_up)
@@ -88,14 +89,6 @@ git clone https://github.com/your-user-name/lwt.git
 cd lwt/
 ```
 
-If you want to use code coverage, you have to do this (for now):
-
-```
-git checkout -b working-coverage origin/working-coverage
-```
-
-This is a temporary result of the recent port to jbuilder.
-
 We'll use Lwt's own [`opam`][opam-depends] file to install Lwt's dependencies
 automatically. Before doing that, you may want to switch to a special OPAM
 switch just for Lwt:
@@ -126,13 +119,6 @@ git checkout -b my-awesome-change
 <a id="Testing"></a>
 #### Testing
 
-If you are working from the `origin/working-coverage` branch, first enable tests
-by running
-
-```
-ocaml setup.ml -configure --enable-tests --enable-coverage --disable-camlp4
-```
-
 Each time you are ready to test, run
 
 ```
@@ -155,6 +141,25 @@ opam upgrade lwt
 Since Lwt is pinned, these commands will install Lwt from your modified code.
 All installed OPAM packages that depend on Lwt will be rebuilt against your
 modified code when you run these commands.
+
+<a id="Testing_with_coverage_analysis"></a>
+#### Testing with coverage analysis
+
+Coverage analysis is only enabled for `src/core/*` for now. To generate coverage
+reports, first pin Bisect_ppx to its development version:
+
+```
+opam pin add --dev-repo bisect_ppx
+```
+
+Then run
+
+```
+make coverage
+```
+
+in the Lwt repo. To view the coverage report, open `_coverage/index.html` in
+your browser.
 
 <a id="Getting_your_change_merged"></a>
 #### Getting your change merged
