@@ -144,7 +144,17 @@ install_extra_package glib
 # Build and run the tests.
 opam install -y ounit
 cd `opam config var lib`/../build/lwt.*
-make clean build-all test-all
+make clean
+
+if [ "$LIBEV" == yes ]
+then
+    LIBEV_FLAG=true
+else
+    LIBEV_FLAG=false
+fi
+
+ocaml src/util/configure.ml -use-libev $LIBEV_FLAG -use-camlp4 true
+make build-all test-all
 
 
 
