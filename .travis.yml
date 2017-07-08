@@ -11,9 +11,9 @@ matrix:
     - os: linux
       env: COMPILER=4.04
     - os: linux
-      env: COMPILER=4.05
-    - os: linux
       env: COMPILER=4.05 FLAMBDA=yes
+    - os: linux
+      env: COMPILER=4.06 FLAMBDA=yes
     - os: osx
       env: COMPILER=system
     - os: osx
