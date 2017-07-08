@@ -30,14 +30,14 @@ let oasis_files = [
   "src/unix/lwt_unix_jobs_generated.ml";
 ]
 
-let oasis_warning_message = 
+let oasis_warning_message =
 "WARNING!!!
 
-There appear to be some files left behind by the old oasis 
-build system.  This may cause the build to fail.  Please clean 
-the repository before building.  
+There appear to be some files left behind by the old oasis
+build system.  This may cause the build to fail.  Please clean
+the repository before building.
 
-Deleting the files src/unix/lwt_config.ml and src/unix/lwt_config.h 
+Deleting the files src/unix/lwt_config.ml and src/unix/lwt_config.h
 should allow the build to work.
 
 To clean up all oasis generated files you can checkout the old
@@ -45,11 +45,11 @@ build system and run distclean ie
 
 $ git checkout 30c3fd86f9ddebc98e54276100a59c79436b174f
 $ make clean distclean
-$ git checkout master 
+$ git checkout master
 $ git clean -ffd
 "
 
-let oasis_sanity_check () = 
+let oasis_sanity_check () =
   if List.fold_left (fun b f -> b || (Sys.file_exists f)) false oasis_files then
     Printf.printf "%s" oasis_warning_message
   else ()
