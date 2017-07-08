@@ -1,3 +1,30 @@
-(context ((switch 4.02.3)))
-(context ((switch 4.03.0)))
-(context ((switch 4.04.1)))
+; To build Lwt locally on all supported compilers, do the following for each of
+; the compilers listed below (4.04.2 is used as a running example):
+;
+;   # Create the switch.
+;   opam switch 4.04.2-lwt --alias-of 4.04.2
+;   eval `opam config env`
+;
+;   # Pin Lwt and additional packages to install their dependencies.
+;   opam pin add -yn lwt .
+;   opam pin add -yn lwt_glib .
+;   opam pin add -yn lwt_react .
+;   opam pin add -yn lwt_ssl .
+;   opam install --deps-only -y lwt lwt_glib lwt_react lwt_ssl
+;   opam install -y camlp4
+;
+;   # Tell OPAM that libev is installed, unless not applicable to your system.
+;   opam install -y conf-libev
+;
+;
+; After that, you can be on any switch, and trigger the all-compilers build with
+;
+;   make build-all-on-all-compilers
+;
+; This also runs tests in each switch.
+
+(context ((switch 4.02.3-lwt)))
+(context ((switch 4.03.0-lwt)))
+(context ((switch 4.04.2-lwt)))
+(context ((switch 4.05.0+trunk+flambda-lwt)))
+(context ((switch 4.06.0+trunk+flambda-lwt)))

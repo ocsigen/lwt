@@ -15,6 +15,13 @@ build: check-config
 build-all: check-config
 	jbuilder build --dev
 
+# Build everything, including additional packages, on all compilers. See
+# jbuild-workspace.dev for instructions.
+.PHONY: build-all-on-all-compilers
+build-all-on-all-compilers: check-config
+	jbuilder build --dev --workspace jbuild-workspace.dev
+	jbuilder build --dev --workspace jbuild-workspace.dev -j 1 @runtest
+
 # run unit tests for package lwt
 .PHONY: test
 test: check-config
