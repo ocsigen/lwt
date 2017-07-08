@@ -7,4 +7,5 @@
   (optional)
   (wrapped false)
   (libraries (camlp4 lwt.syntax.options))
+  (flags (:standard -w +A-3-4-58))
   (preprocess (action (run camlp4oof ${<})))))
