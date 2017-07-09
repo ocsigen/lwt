@@ -22,28 +22,76 @@
 open Test
 open Lwt
 
+exception Dummy_exception
 
 let suite = suite "lwt_result" [
                     test "map acts on Ok values"
-                         (fun() ->
+                         (fun () ->
                            let x = Lwt_result.return 0 in
                            let correct = Lwt_result.return 1 in
                            return (Lwt_result.map ((+) 1) x = correct)
                          );
+                    test ">|= is a variant of map"
+                         (fun () ->
+                           let x = Lwt_result.return 0 in
+                           let correct = Lwt_result.return 1 in
+                           return (Lwt_result.(>|=) x ((+) 1) = correct)
+                         );
                     test "map acts as identity on Error values"
-                         (fun() ->
+                         (fun () ->
                            let x = Lwt_result.fail 0 in
                            return (Lwt_result.map ((+) 1) x = x)
                          );
                     test "map_err acts as identity on Ok values"
-                         (fun() ->
+                         (fun () ->
                            let x = Lwt_result.return 0 in
                            return (Lwt_result.map_err ((+) 1) x = x)
                          );
                     test "map_err acts on Error values"
-                         (fun() ->
+                         (fun () ->
                            let x = Lwt_result.fail 0 in
                            let correct = Lwt_result.fail 1 in
                            return (Lwt_result.map_err ((+) 1) x = correct)
                          );
+                    test "bind on Ok value"
+                         (fun () ->
+                           let x = Lwt_result.return 0 in
+                           let correct = Lwt_result.return 1 in
+                           let actual = Lwt_result.bind x (fun y -> Lwt_result.return (y + 1)) in
+                           return (actual = correct)
+                         );
+                    test "bind on Error value"
+                         (fun () ->
+                           let x = Lwt_result.fail 0 in
+                           let actual = Lwt_result.bind x (fun y -> Lwt_result.return (y + 1)) in
+                           return (actual = x)
+                         );
+                    test "ok"
+                         (fun () ->
+                           let x = Lwt.return 0 in
+                           return (Lwt_result.ok x = Lwt_result.return 0)
+                         );
+                    test "catch"
+                         (fun () ->
+                           let x = Lwt.return 0 in
+                           return (Lwt_result.catch x = Lwt_result.return 0)
+                         );
+                    test "catch, exception case"
+                         (fun () ->
+                           let exn = Dummy_exception in
+                           let x = Lwt.fail exn in
+                           return (Lwt_result.catch x = Lwt_result.fail exn)
+                         );
+                    test "get_exn"
+                         (fun () ->
+                           let x = Lwt_result.return 0 in
+                           return (Lwt_result.get_exn x = Lwt.return 0)
+                         );
+                    test "get_exn, exception case"
+                         (fun () ->
+                           let exn = Dummy_exception in
+                           let x = Lwt_result.fail exn in
+                           return (Lwt_result.get_exn x = Lwt.fail exn)
+                         );
+
                   ]
