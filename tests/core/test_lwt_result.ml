@@ -22,7 +22,7 @@
 open Test
 open Lwt
 
-exception Dummy_exception
+exception Dummy_error
 
 let suite = suite "lwt_result" [
                     test "map acts on Ok values"
@@ -78,20 +78,53 @@ let suite = suite "lwt_result" [
                          );
                     test "catch, exception case"
                          (fun () ->
-                           let exn = Dummy_exception in
-                           let x = Lwt.fail exn in
-                           return (Lwt_result.catch x = Lwt_result.fail exn)
+                           let x = Lwt.fail Dummy_error in
+                           return (Lwt_result.catch x = Lwt_result.fail Dummy_error)
                          );
                     test "get_exn"
                          (fun () ->
                            let x = Lwt_result.return 0 in
                            return (Lwt_result.get_exn x = Lwt.return 0)
                          );
-                    test "get_exn, exception case"
+                    test "get_exn, error case"
                          (fun () ->
-                           let exn = Dummy_exception in
-                           let x = Lwt_result.fail exn in
-                           return (Lwt_result.get_exn x = Lwt.fail exn)
+                           let x = Lwt_result.fail Dummy_error in
+                           return (Lwt_result.get_exn x = Lwt.fail Dummy_error)
                          );
-
+                    test "bind_lwt"
+                         (fun () ->
+                           let x = Lwt_result.return 0 in
+                           let f y = Lwt.return (y + 1) in
+                           return (Lwt_result.bind_lwt x f = Lwt_result.return 1)
+                         );
+                    test "bind_lwt, error case"
+                         (fun () ->
+                           let x = Lwt_result.fail 0 in
+                           let f y = Lwt.return (y + 1) in
+                           return (Lwt_result.bind_lwt x f = Lwt_result.fail 0)
+                         );
+                    test "bind_lwt_err"
+                         (fun () ->
+                           let x = Lwt_result.return 0 in
+                           let f y = Lwt.return (y + 1) in
+                           return (Lwt_result.bind_lwt_err x f = Lwt_result.return 0)
+                         );
+                    test "bind_lwt_err, error case"
+                         (fun () ->
+                           let x = Lwt_result.fail 0 in
+                           let f y = Lwt.return (y + 1) in
+                           return (Lwt_result.bind_lwt_err x f = Lwt_result.fail 1)
+                         );
+                    test "bind_result"
+                         (fun () ->
+                           let x = Lwt_result.return 0 in
+                           let f y = Result.Ok (y + 1) in
+                           return (Lwt_result.bind_result x f = Lwt_result.return 1)
+                         );
+                    test "bind_result, error case"
+                         (fun () ->
+                           let x = Lwt_result.fail 0 in
+                           let f y = Result.Ok (y + 1) in
+                           return (Lwt_result.bind_result x f = Lwt_result.fail 0)
+                         );
                   ]
