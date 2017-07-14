@@ -34,7 +34,7 @@ let suite =
       (fun () ->
          let x = Lwt_mvar.create 0 in
          let y = Lwt_mvar.put x 1 >>= (fun _ -> return 1) in
-         return (y != Lwt.return 1)
+         return (y <> Lwt.return 1)
       );
 
     test "put-take"
