@@ -2534,7 +2534,6 @@ struct
         let callback in_completion_loop _result =
           let State_may_now_be_pending_proxy p = may_now_be_proxy p in
           let p = underlying p in
-          List.iter cancel ps;
           let State_may_have_changed p =
             finish_nchoose_or_npick_after_pending in_completion_loop p [] ps in
           ignore p
