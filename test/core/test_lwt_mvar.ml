@@ -65,26 +65,9 @@ let suite =
 
     test "writer cancellation"
       (fun () ->
-         let x = Lwt_mvar.create_empty () in
          let y = Lwt_mvar.create 1 in
-         let t, _ = Lwt.task () in
-         let r1 = t >>= (fun _ -> Lwt_mvar.put y 2) in
-         let after_cancel () =
-           let _ = Lwt_mvar.take y >>= (fun z -> Lwt_mvar.put x z); in
-           () in
-         let _ = Lwt.on_cancel r1 after_cancel in
+         let r1 = Lwt_mvar.put y 2 in
          Lwt.cancel r1;
-         return (Lwt_mvar.take x = Lwt.return 1)
-      );
-
-    test "reader cancellation"
-      (fun () ->
-         let x = Lwt_mvar.create_empty () in
-         let t, _ = Lwt.task () in
-         let r1 = t >>= (fun _ -> Lwt_mvar.take x) in
-         let r2 = Lwt_mvar.take x in
-         let _ = Lwt.on_cancel r1 (fun _ -> let _ = Lwt_mvar.put x 1; in ()) in
-         Lwt.cancel r1;
-         return (r2 = Lwt.return 1)
-      );
+         return ((Lwt_mvar.take y = Lwt.return 1)
+                 && (Lwt_mvar.take y >>= (fun _ -> Lwt.return 2) <> Lwt.return 2)))
   ]
