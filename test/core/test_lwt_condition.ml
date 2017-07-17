@@ -1,6 +1,5 @@
 (* OCaml promise library
  * http://www.ocsigen.org/lwt
- * Copyright (C) 2009 Jérémie Dimino
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -19,12 +18,26 @@
  * 02111-1307, USA.
  *)
 
-Test.run "core" [
-  Test_lwt.suite;
-  Test_lwt_stream.suite;
-  Test_lwt_list.suite;
-  Test_lwt_switch.suite;
-  Test_lwt_mutex.suite;
-  Test_lwt_result.suite;
-  Test_lwt_condition.suite;
-]
+open Test
+open Lwt
+
+let suite =
+  suite "lwt_condition" [
+    test "basic wait"
+      (fun () ->
+         let c = Lwt_condition.create () in
+         let w = Lwt_condition.wait c in
+         let () = Lwt_condition.signal c 1 in
+         return (w = Lwt.return 1)
+      );
+
+    test "mutex wait"
+      (fun () ->
+         let c = Lwt_condition.create () in
+         let m = Lwt_mutex.create () in
+         let _ = Lwt_mutex.lock m in
+         let w = Lwt_condition.wait ~mutex:m c in
+         let () = Lwt_condition.signal c 1 in
+         return ((w = Lwt.return 1) && (Lwt_mutex.is_locked m))
+      );
+  ]
