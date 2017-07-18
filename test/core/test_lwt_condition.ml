@@ -40,4 +40,22 @@ let suite =
          let () = Lwt_condition.signal c 1 in
          return ((w = Lwt.return 1) && (Lwt_mutex.is_locked m))
       );
+
+    test "signal is not sticky"
+      (fun () ->
+         let c = Lwt_condition.create () in
+         let () = Lwt_condition.signal c 1 in
+         let w = Lwt_condition.wait c in
+         return (Lwt.state w = Lwt.Sleep));
+
+
+    test "broadcast"
+      (fun () ->
+         let c = Lwt_condition.create () in
+         let w1 = Lwt_condition.wait c in
+         let w2 = Lwt_condition.wait c in
+         let () = Lwt_condition.broadcast c 1 in
+         return ((w1 = Lwt.return 1) && (w2 = Lwt.return 1))
+      );
+
   ]
