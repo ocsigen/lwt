@@ -29,29 +29,24 @@ package "ppx" (
   #directory = "ppx"
   version = "dev"
   description = "Lwt PPX syntax extension"
-  requires(ppx_driver) = "compiler-libs
-                          compiler-libs.common
-                          ocaml-migrate-parsetree
-                          ppx_tools_versioned"
-  archive(ppx_driver,byte) = "ppx_lwt.cma"
-  archive(ppx_driver,native) = "ppx_lwt.cmxa"
-  plugin(ppx_driver,byte) = "ppx_lwt.cma"
-  plugin(ppx_driver,native) = "ppx_lwt.cmxs"
-  exists_if = "ppx_lwt.cma"
-  # This is what jbuilder uses to find out the runtime dependencies of
-  # a preprocessor
-  ppx_runtime_deps = "bytes lwt result"
-  # This line makes things transparent for people mixing preprocessors
-  # and normal dependencies
-  requires(-ppx_driver) = "lwt.ppx.deprecated-ppx-method"
+  requires(ppx_driver) = "lwt.omp"
+  requires(-ppx_driver) = "bytes lwt result"
+  ppx(-ppx_driver,-custom_ppx) = "./ppx.exe --as-ppx"
+)
 
-  package "deprecated-ppx-method" (
-    version = "dev"
-    description = "glue package for the deprecated method of using ppx"
-    requires = "bytes lwt result"
-    ppx(-ppx_driver,-custom_ppx) = "./ppx.exe --as-ppx"
-    exists_if = "ppx_lwt.cma"
-  )
+package "omp" (
+  version = "dev"
+  description = "Lwt ocaml-migrate-parsetree PPX (internal)"
+  requires = "compiler-libs
+              compiler-libs.common
+              ocaml-migrate-parsetree
+              ppx_tools_versioned"
+  ppx_runtime_deps = "bytes lwt result"
+  exists_if = "ppx_lwt.cma"
+  archive(byte) = "ppx_lwt.cma"
+  archive(native) = "ppx_lwt.cmxa"
+  plugin(byte) = "ppx_lwt.cma"
+  plugin(native) = "ppx_lwt.cmxs"
 )
 
 package "preemptive" (
