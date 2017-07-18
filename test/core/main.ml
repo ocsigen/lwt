@@ -27,4 +27,5 @@ Test.run "core" [
   Test_lwt_mutex.suite;
   Test_lwt_result.suite;
   Test_lwt_mvar.suite;
+  Test_lwt_condition.suite;
 ]
