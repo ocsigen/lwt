@@ -12,6 +12,7 @@ archive(byte) = "lwt.cma"
 archive(native) = "lwt.cmxa"
 plugin(byte) = "lwt.cma"
 plugin(native) = "lwt.cmxs"
+
 package "log" (
   #directory = "log"
   version = "dev"
@@ -23,6 +24,7 @@ package "log" (
   plugin(native) = "lwt_log.cmxs"
   exists_if = "lwt_log.cma"
 )
+
 package "ppx" (
   #directory = "ppx"
   version = "dev"
@@ -42,6 +44,7 @@ package "ppx" (
   # This line makes things transparent for people mixing preprocessors
   # and normal dependencies
   requires(-ppx_driver) = "lwt.ppx.deprecated-ppx-method"
+
   package "deprecated-ppx-method" (
     version = "dev"
     description = "glue package for the deprecated method of using ppx"
@@ -50,6 +53,7 @@ package "ppx" (
     exists_if = "ppx_lwt.cma"
   )
 )
+
 package "preemptive" (
   #directory = "preemptive"
   version = "dev"
@@ -69,6 +73,7 @@ package "preemptive" (
   plugin(native) = "lwt_preemptive.cmxs"
   exists_if = "lwt_preemptive.cma"
 )
+
 package "simple-top" (
   #directory = "simple-top"
   version = "dev"
@@ -88,6 +93,7 @@ package "simple-top" (
   plugin(native) = "lwt_simple_top.cmxs"
   exists_if = "lwt_simple_top.cma"
 )
+
 package "syntax" (
   #directory = "syntax"
   version = "dev"
@@ -98,6 +104,7 @@ package "syntax" (
   archive(syntax, preprocessor, native) = "lwt_syntax.cmxa"
   archive(syntax, preprocessor, native, plugin) = "lwt_syntax.cmxs"
   exists_if = "lwt_syntax.cma"
+
   package "log" (
     #directory = "log"
     version = "dev"
@@ -109,6 +116,7 @@ package "syntax" (
     archive(syntax, preprocessor, native, plugin) = "lwt_syntax_log.cmxs"
     exists_if = "lwt_syntax_log.cma"
   )
+
   package "options" (
     #directory = "options"
     version = "dev"
@@ -121,6 +129,7 @@ package "syntax" (
     exists_if = "lwt_syntax_options.cma"
   )
 )
+
 package "unix" (
   #directory = "unix"
   version = "dev"
