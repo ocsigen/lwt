@@ -19,7 +19,6 @@
  *)
 
 open Test
-open Lwt
 
 let suite =
   suite "lwt_mvar" [
@@ -27,40 +26,39 @@ let suite =
       (fun () ->
          let x = Lwt_mvar.create 0 in
          let y = Lwt_mvar.take x in
-         return (y = Lwt.return 0)
+         Lwt.return (Lwt.state y = Lwt.Return 0)
       );
 
     test "blocking put"
       (fun () ->
          let x = Lwt_mvar.create 0 in
-         let y = Lwt_mvar.put x 1 >>= (fun _ -> return 1) in
-         return (y <> Lwt.return 1)
+         let y = Lwt_mvar.put x 1 in
+         Lwt.return (Lwt.state y = Lwt.Sleep)
       );
 
     test "put-take"
       (fun () ->
          let x = Lwt_mvar.create_empty () in
-         let z = Lwt_mvar.put x 0 >>= (fun _ -> Lwt_mvar.take x) in
-         return (z = Lwt.return 0)
+         let _ = Lwt_mvar.put x 0 in
+         let y = Lwt_mvar.take x in
+         Lwt.return (Lwt.state y = Lwt.Return 0)
       );
 
     test "take-put"
       (fun () ->
          let x = Lwt_mvar.create 0 in
          let _ = Lwt_mvar.take x in
-         let z = Lwt_mvar.put x 1 >>= (fun _ -> return 2) in
-         return (z = Lwt.return 2)
+         let y = Lwt_mvar.put x 1 in
+         Lwt.return (Lwt.state y = Lwt.Return ())
       );
 
     test "enqueued writer"
       (fun () ->
          let x = Lwt_mvar.create 1 in
-         let _ = Lwt_mvar.put x 2 in
-         let y =
-           Lwt_mvar.take x >>= (fun v1 ->
-           Lwt_mvar.take x >>= (fun v2 ->
-             Lwt.return (v1 + v2))) in
-         return (y = Lwt.return 3)
+         let y = Lwt_mvar.put x 2 in
+         let z = Lwt_mvar.take x in
+         Lwt.return (Lwt.state y = Lwt.Return ()
+                     && Lwt.state z = Lwt.Return 1)
       );
 
     test "writer cancellation"
@@ -68,6 +66,6 @@ let suite =
          let y = Lwt_mvar.create 1 in
          let r1 = Lwt_mvar.put y 2 in
          Lwt.cancel r1;
-         return ((Lwt_mvar.take y = Lwt.return 1)
-                 && (Lwt_mvar.take y >>= (fun _ -> Lwt.return 2) <> Lwt.return 2)))
+         Lwt.return ((Lwt.state (Lwt_mvar.take y) = Lwt.Return 1)
+                     && (Lwt.state (Lwt_mvar.take y) = Lwt.Sleep)));
   ]
