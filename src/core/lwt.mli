@@ -162,8 +162,10 @@ val try_bind : (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
       exception associated to [t ()]. *)
 
 val finalize : (unit -> 'a t) -> (unit -> unit t) -> 'a t
-  (** [finalize f g] returns the same result as [f ()] whether it
-      fails or not. In both cases, [g ()] is executed after [f]. *)
+  (** [finalize f g] runs [f ()], and then [g ()], whether [f ()] fails or
+      completes normally. [Lwt.finalize] returns the result of [f ()],
+      unless [g ()] fails, in which case it returns the exception raised by
+      [g ()]. *)
 
 val wrap : (unit -> 'a) -> 'a t
   (** [wrap f] calls [f] and transforms the result into an Lwt thread.

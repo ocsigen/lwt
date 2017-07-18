@@ -179,11 +179,7 @@ git push -u origin my-awesome-change
 
 Go to the GitHub web interface for your Lwt fork
 (`https://github.com/your-user-name/lwt`), and click on the New Pull Request
-button. Follow the instructions, write a nice description, and open the pull
-request.
-
-If you worked from the `working-coverage` branch, select that as the base branch
-instead of `master`!
+button. Follow the instructions, and open the pull request.
 
 This will trigger automatic building and testing of your change on many versions
 of OCaml, and several operating systems, in [Travis][travis-ci] and

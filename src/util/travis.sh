@@ -10,6 +10,7 @@ packages_apt () {
         4.03) PPA=avsm/ocaml42+opam12; DO_SWITCH=yes;;
         4.04) PPA=avsm/ocaml42+opam12; DO_SWITCH=yes;;
         4.05) PPA=avsm/ocaml42+opam12; DO_SWITCH=yes;;
+        4.06) PPA=avsm/ocaml42+opam12; DO_SWITCH=yes; HAVE_CAMLP4=no;;
            *) echo Unsupported compiler $COMPILER; exit 1;;
     esac
 
@@ -86,7 +87,8 @@ case $COMPILER in
     4.02) OCAML_VERSION=4.02.3;;
     4.03) OCAML_VERSION=4.03.0;;
     4.04) OCAML_VERSION=4.04.2;;
-    4.05) OCAML_VERSION=4.05.0+rc1;;
+    4.05) OCAML_VERSION=4.05.0;;
+    4.06) OCAML_VERSION=4.06.0+trunk;;
     system) OCAML_VERSION=`ocamlc -version`;;
        *) echo Unsupported compiler $COMPILER; exit 1;;
 esac
@@ -120,7 +122,12 @@ fi
 opam pin add -y --no-action lwt .
 
 opam install -y --deps-only lwt
-opam install -y camlp4
+
+if [ "$HAVE_CAMLP4" != no ]
+then
+    opam install -y camlp4
+fi
+
 if [ "$LIBEV" = yes ]
 then
     opam install -y conf-libev
@@ -146,14 +153,21 @@ opam install -y ounit
 cd `opam config var lib`/../build/lwt.*
 make clean
 
-if [ "$LIBEV" == yes ]
+if [ "$LIBEV" = yes ]
 then
     LIBEV_FLAG=true
 else
     LIBEV_FLAG=false
 fi
 
-ocaml src/util/configure.ml -use-libev $LIBEV_FLAG -use-camlp4 true
+if [ "$HAVE_CAMLP4" = no ]
+then
+    CAMLP4_FLAG=false
+else
+    CAMLP4_FLAG=true
+fi
+
+ocaml src/util/configure.ml -use-libev $LIBEV_FLAG -use-camlp4 $CAMLP4_FLAG
 make build-all test-all
 
 
