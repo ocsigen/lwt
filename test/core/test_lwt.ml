@@ -2349,7 +2349,20 @@ let npick_tests = [
        Lwt.state p2 = Lwt.Return ["foo"; "bar"])
   end;
 
-  (* The behavior of [p] tested here is a current bug in [Lwt.npick]. *)
+  test "npick: all pending" begin fun () ->
+    let p1, r = Lwt.task () in
+    let p2, _ = Lwt.task () in
+    let p3 = Lwt.npick [p1; p2] in
+    Lwt.wakeup r ();
+    (* Expected: *)
+    Lwt.return (Lwt.state p3 = Lwt.Return [()])
+    (* Actual: *)
+    (*Lwt.return (Lwt.state p3 = Lwt.Fail Lwt.Canceled)*)
+  end;
+
+(* ocamlfind opt -linkpkg -package lwt npick.ml && ./a.out *)
+
+  (* The behavior of [p] tested here is a current bug in [Lwt.npick]. 
   test "npick: pending, resolves" begin fun () ->
     let p1, _ = Lwt.task () in
     let p2, r = Lwt.task () in
@@ -2361,7 +2374,7 @@ let npick_tests = [
        Lwt.state p = Lwt.Fail Lwt.Canceled)
   end;
 
-  (* This is the same bug as above. *)
+  This is the same bug as above. 
   test "npick: pending, fails" begin fun () ->
     let p1, _ = Lwt.task () in
     let p2, r = Lwt.task () in
@@ -2370,7 +2383,7 @@ let npick_tests = [
     Lwt.return
       (Lwt.state p1 = Lwt.Fail Lwt.Canceled &&
        Lwt.state p = Lwt.Fail Lwt.Canceled)
-  end;
+  end; *)
 
   test "npick: diamond" begin fun () ->
     let p, r = Lwt.wait () in

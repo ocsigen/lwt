@@ -2536,6 +2536,7 @@ struct
           let p = underlying p in
           let State_may_have_changed p =
             finish_nchoose_or_npick_after_pending in_completion_loop p [] ps in
+          List.iter cancel ps;
           ignore p
         in
         add_explicitly_removable_callback_to_each_of ps callback;
