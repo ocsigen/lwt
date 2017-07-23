@@ -24,6 +24,9 @@ matrix:
     - os: osx
       env: COMPILER=4.03 PACKAGE_MANAGER=macports LIBEV=yes
 
+  allow_failures:
+    - env: COMPILER=4.06 FLAMBDA=yes
+
 env:
   global:
     - LWT_FORCE_LIBEV_BY_DEFAULT=yes
