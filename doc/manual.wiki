@@ -369,6 +369,17 @@ lwt () =
   makes coding using {{{Lwt}}} easier. The syntax extension is documented
   <<a_api text="here" | module Ppx_lwt>>.
 
+  To use the Ppx syntax extension, add the {{{lwt.ppx}}} package when
+  compiling:
+
+<<code language="ocaml" |$ ocamlfind ocamlc -package lwt.ppx -linkpkg -o foo foo.ml
+>>
+
+  Or in the toplevel (after loading topfind):
+
+<<code language="ocaml" |# #require "lwt.ppx"
+>>
+
   For a brief overview of the syntax, see the Correspondence table below.
 
 ==== Correspondence table ====
