@@ -684,30 +684,9 @@ val s' : int Lwt_stream.t = <abstr>
 ;;
 >>
 
-  {{{Lwt}}} also provides a syntax extension, in the package
-  {{{lwt.syntax.log}}}. It does not modify the language but
-  it replaces log statements of the form:
-
-<<code language="ocaml" |Lwt_log.info_f ~section "something happened: %s" msg
->>
-
-  by:
-
-<<code language="ocaml" |if Lwt_log.Section.level section <= Lwt_log.Info then
-  Lwt_log.info_f ~section "something happened: %s" msg
-else
-  Lwt.return ()
->>
-
-  The advantages of using the syntax extension are the following:
-
-   * it checks the log level before calling the logging function, so
-     the arguments are not computed if not needed
-   * debugging logs can be removed at parsing time
-
-  By default, the syntax extension removes all logs with the level
-  {{{debug}}}. To keep them, pass the command line option
-  {{{-lwt-debug}}} to camlp4.
+  {{{Lwt}}} also provides a syntax extension for logging. For how to
+  use it, consult the Logging section of the Ppx syntax extension
+  <<a_api text="documentation" | module Ppx_lwt>>.
 
 == The Lwt.react library ==
 
