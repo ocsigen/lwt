@@ -377,7 +377,7 @@ lwt () =
 
   Or in the toplevel (after loading topfind):
 
-<<code language="ocaml" |# #require "lwt.ppx"
+<<code language="ocaml" |# #require "lwt.ppx";;
 >>
 
   For a brief overview of the syntax, see the Correspondence table below.
