@@ -365,83 +365,36 @@ lwt () =
 
 === The syntax extension ===
 
-  {{{Lwt}}} offers two syntax extensions which increases code readability and
-  makes coding using {{{Lwt}}} easier.
+  {{{Lwt}}} offers a Ppx syntax extension which increases code readability and
+  makes coding using {{{Lwt}}} easier. The syntax extension is documented
+  <<a_api text="here" | module Ppx_lwt>>.
 
-==== Ppx ====
-
-  The Ppx syntax extension is documented <<a_api text="here" | module Ppx_lwt>>.
-  This syntax extension is more recent and is recommended.
-
-==== Camlp4 ====
-
-To use it add the {{{lwt.syntax}}} package when
+  To use the Ppx syntax extension, add the {{{lwt.ppx}}} package when
   compiling:
 
-<<code language="ocaml" |$ ocamlfind ocamlc -syntax camlp4o -package lwt.syntax -linkpkg -o foo foo.ml
+<<code language="ocaml" |$ ocamlfind ocamlc -package lwt.ppx -linkpkg -o foo foo.ml
 >>
 
   Or in the toplevel (after loading topfind):
 
-<<code language="ocaml" |# #camlp4o;;
-# #require "lwt.syntax";;
+<<code language="ocaml" |# #require "lwt.ppx";;
 >>
 
-  The following constructions are added to the language:
-
-   * {{{lwt}}} //pattern,,1,,// {{{=}}} //expr,,1,,// [ {{{and}}}
-     //pattern,,2,,// {{{=}}} //expr,,2,,// ... ] {{{in}}} //expr//
-     \\
-     which is a parallel let-binding construction. For example in the
-     following code:
-
-<<code language="ocaml" |lwt x = f () and y = g () in
-expr
->>
-
-      the thread {{{f ()}}} and {{{g ()}}} are launched concurrently
-      and their results are then bound to {{{x}}} and {{{y}}} in the
-      expression //expr//.
-
-      Of course you can also launch the two threads sequentially by
-      writing your code like that:
-
-<<code language="ocaml" |lwt x = f () in
-lwt y = g () in
-expr
->>
-
-   * {{{try_lwt}}} //expr// [ {{{with}}} //pattern,,1,,//
-     {{{->}}} //expr,,1,,// ... ] [ {{{finally}}} //expr'// ]
-     \\
-     which is the equivalent of the standard {{{try-with}}}
-     construction but for {{{Lwt}}}. Both exceptions raised by
-     {{{Pervasives.raise}}} and {{{Lwt.fail}}} are caught.
-
-   * {{{for_lwt}}} //ident// {{{=}}} //expr,,init,,// ( {{{to}}} {{{|}}}
-     {{{downto}}} ) //expr,,final,,// {{{do}}} //expr//
-     {{{done}}}
-     \\
-     which is the equivalent of the standard {{{for}}} construction
-     but for {{{Lwt}}}.
-
-   * {{{raise_lwt}}} //exn//
-     \\
-     which is the same as {{{Lwt.fail}}} //exn// but with backtrace support.
+  For a brief overview of the syntax, see the Correspondence table below.
 
 ==== Correspondence table ====
 
-  You might appreciate the following table to write code using lwt:
+  You might appreciate the following table to write code using {{{Lwt}}}:
 
   |= without {{{Lwt}}}                                                               |= with {{{Lwt}}}                                                                      |
   |                                                                                  |                                                                                      |
-  | {{{let}}} //pattern,,1,,// {{{=}}} //expr,,1,,//                                 | {{{lwt}}} //pattern,,1,,// {{{=}}} //expr,,1,,//                                     |
+  | {{{let}}} //pattern,,1,,// {{{=}}} //expr,,1,,//                                 | {{{let%lwt}}} //pattern,,1,,// {{{=}}} //expr,,1,,//                                 |
   | {{{and}}} //pattern,,2,,// {{{=}}} //expr,,2,,//                                 | {{{and}}} //pattern,,2,,// {{{=}}} //expr,,2,,//                                     |
   | ...                                                                              | ...                                                                                  |
   | {{{and}}} //pattern,,n,,// {{{=}}} //expr,,n,,// {{{in}}}                        | {{{and}}} //pattern,,n,,// {{{=}}} //expr,,n,,// {{{in}}}                            |
   | //expr//                                                                         | //expr//                                                                             |
   |                                                                                  |                                                                                      |
-  | {{{try}}}                                                                        | {{{try_lwt}}}                                                                        |
+  | {{{try}}}                                                                        | {{{try%lwt}}}                                                                        |
   | // expr//                                                                        | // expr//                                                                            |
   | {{{with}}}                                                                       | {{{with}}}                                                                           |
   | // // {{{|}}} //pattern,,1,,// {{{->}}} //expr,,1,,//                            | // // {{{|}}} //pattern,,1,,// {{{->}}} //expr,,1,,//                                |
@@ -449,48 +402,42 @@ expr
   | // // ...                                                                        | // // ...                                                                            |
   | // // {{{|}}} //pattern,,n,,// {{{->}}} //expr,,n,,//                            | // // {{{|}}} //pattern,,n,,// {{{->}}} //expr,,n,,//                                |
   |                                                                                  |                                                                                      |
-  | {{{for}}} //ident// {{{=}}} //expr,,init,,// {{{to}}} //expr,,final,,// {{{do}}} | {{{for_lwt}}} //ident// {{{=}}} //expr,,init,,// {{{to}}} //expr,,final,,// {{{do}}} |
+  | {{{for}}} //ident// {{{=}}} //expr,,init,,// {{{to}}} //expr,,final,,// {{{do}}} | {{{for%lwt}}} //ident// {{{=}}} //expr,,init,,// {{{to}}} //expr,,final,,// {{{do}}} |
   | // expr//                                                                        | // expr//                                                                            |
   | {{{done}}}                                                                       | {{{done}}}                                                                           |
   |                                                                                  |                                                                                      |
-  | {{{raise}}} //exn//                                                              | {{{raise_lwt}}} //exn//                                                              |
+  | {{{while}}} //expr// {{{do}}}                                                    | {{{while%lwt}}} //expr// {{{do}}}                                                    |
+  | // expr//                                                                        | // expr//                                                                            |
+  | {{{done}}}                                                                       | {{{done}}}                                                                           |
   |                                                                                  |                                                                                      |
-  | {{{assert}}} //expr//                                                            | {{{assert_lwt}}} //expr//                                                            |
+  | {{{assert}}} //expr//                                                            | {{{assert%lwt}}} //expr//                                                            |
   |                                                                                  |                                                                                      |
-  | {{{match}}} //expr// {{{with}}}                                                  | {{{match_lwt}}} //expr// {{{with}}}                                                  |
+  | {{{match}}} //expr// {{{with}}}                                                  | {{{match%lwt}}} //expr// {{{with}}}                                                  |
   | // // {{{|}}} //pattern,,1,,// {{{->}}} //expr,,1,,//                            | // // {{{|}}} //pattern,,1,,// {{{->}}} //expr,,1,,//                                |
   | // // {{{|}}} //pattern,,2,,// {{{->}}} //expr,,2,,//                            | // // {{{|}}} //pattern,,2,,// {{{->}}} //expr,,2,,//                                |
   | // // ...                                                                        | // // ...                                                                            |
   | // // {{{|}}} //pattern,,n,,// {{{->}}} //expr,,n,,//                            | // // {{{|}}} //pattern,,n,,// {{{->}}} //expr,,n,,//                                |
   |                                                                                  |                                                                                      |
-  | {{{while}}} //expr// {{{do}}}                                                    | {{{while_lwt}}} //expr// {{{do}}}                                                    |
-  | // expr//                                                                        | // expr//                                                                            |
-  | {{{done}}}                                                                       | {{{done}}}                                                                           |
+  | {{{if}}} //expr// {{{then}}} //expr// {{{else}}} //expr//                        | {{{if%lwt}}} //expr// {{{then}}} //expr// {{{else}}} //expr//                        |
+  |                                                                                  |                                                                                      |
+  | {{{raise}}} //exn//                                                              | {{{[%lwt raise}}} //exn//{{{]}}}                                                    |
 
 === Backtrace support ===
 
   If an exception is raised inside an Lwt thread, the backtrace provided by OCaml
   will not be very useful. It will end inside the Lwt scheduler instead of
   continuing into the code that started the thread. To avoid this, and get good
-  backtraces from Lwt, use one of the syntax extensions in debug mode.
+  backtraces from Lwt, use the syntax extension in debug mode.
 
-  In debug mode, the {{{lwt}}} and {{{let%lwt}}} constructs will properly
-  propagate backtraces.
+  In debug mode, the {{{let%lwt}}} construct will properly propagate backtraces.
 
   In the <<a_api text="ppx syntax extension" | module Ppx_lwt>>, the debug mode is
   enabled by default. This has a small performance impact, so you can disable it
   by passing {{{-no-debug}}}.
 
-  In the {{{camlp4 syntax extension}}}, you need to pass the {{{-lwt-debug}}} switch:
-
-{{{
-$ ocamlfind ocamlc -syntax camlp4o -package lwt.syntax \
-    -ppopt -lwt-debug -linkpkg -o foo foo.ml
-}}}
-
-   As always, to get backtraces from an OCaml program, you need to either declare
-   the environment variable {{{OCAMLRUNPARAM=b}}} or call
-   {{{Printexc.record_backtrace true}}} at the start of your program.
+  As always, to get backtraces from an OCaml program, you need to either declare
+  the environment variable {{{OCAMLRUNPARAM=b}}} or call
+  {{{Printexc.record_backtrace true}}} at the start of your program.
 
 === Other modules of the core library ===
 
@@ -737,30 +684,9 @@ val s' : int Lwt_stream.t = <abstr>
 ;;
 >>
 
-  {{{Lwt}}} also provides a syntax extension, in the package
-  {{{lwt.syntax.log}}}. It does not modify the language but
-  it replaces log statements of the form:
-
-<<code language="ocaml" |Lwt_log.info_f ~section "something happened: %s" msg
->>
-
-  by:
-
-<<code language="ocaml" |if Lwt_log.Section.level section <= Lwt_log.Info then
-  Lwt_log.info_f ~section "something happened: %s" msg
-else
-  Lwt.return ()
->>
-
-  The advantages of using the syntax extension are the following:
-
-   * it checks the log level before calling the logging function, so
-     the arguments are not computed if not needed
-   * debugging logs can be removed at parsing time
-
-  By default, the syntax extension removes all logs with the level
-  {{{debug}}}. To keep them, pass the command line option
-  {{{-lwt-debug}}} to camlp4.
+  {{{Lwt}}} also provides a syntax extension for logging. For how to
+  use it, consult the Logging section of the Ppx syntax extension
+  <<a_api text="documentation" | module Ppx_lwt>>.
 
 == The Lwt.react library ==
 
