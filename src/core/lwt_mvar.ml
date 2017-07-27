@@ -71,14 +71,6 @@ let next_writer mvar =
   | None ->
     mvar.mvar_contents <- None
 
-let take mvar =
-  match mvar.mvar_contents with
-  | Some v ->
-    next_writer mvar;
-    Lwt.return v
-  | None ->
-    Lwt.add_task_r mvar.readers
-
 let take_available mvar =
   match mvar.mvar_contents with
   | Some v ->
@@ -86,6 +78,11 @@ let take_available mvar =
     Some v
   | None ->
     None
+
+let take mvar =
+  match take_available mvar with
+  | Some v -> Lwt.return v
+  | None -> Lwt.add_task_r mvar.readers
 
 let is_empty mvar =
   match mvar.mvar_contents with
