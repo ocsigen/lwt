@@ -57,3 +57,11 @@ val take : 'a t -> 'a Lwt.t
       mailbox variable. If no value is currently available, the
       current thread will block, awaiting a value to be [put] by
       another thread. *)
+
+val take_available : 'a t -> 'a option
+  (** [take_available mvar] immediately takes the value from [mvar] without
+      blocking, returning [None] if the mailbox is empty. *)
+
+val is_empty : 'a t -> bool
+  (** [is_empty mvar] indicates if [put mvar] can be called without
+      blocking. *)
