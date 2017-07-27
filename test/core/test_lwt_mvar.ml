@@ -43,6 +43,20 @@ let suite =
          Lwt.return (y = None)
       );
 
+    test "is_empty (full)"
+      (fun () ->
+         let x = Lwt_mvar.create 0 in
+         let y = Lwt_mvar.is_empty x in
+         Lwt.return (not y)
+      );
+
+    test "is_empty (empty)"
+      (fun () ->
+         let x = Lwt_mvar.create_empty () in
+         let y = Lwt_mvar.is_empty x in
+         Lwt.return y
+      );
+
     test "blocking put"
       (fun () ->
          let x = Lwt_mvar.create 0 in
