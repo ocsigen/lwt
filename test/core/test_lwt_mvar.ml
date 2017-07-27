@@ -43,6 +43,14 @@ let suite =
          Lwt.return (y = None)
       );
 
+    test "take_available (twice)"
+      (fun () ->
+         let x = Lwt_mvar.create 0 in
+         let (_ : int option) = Lwt_mvar.take_available x in
+         let y = Lwt_mvar.take_available x in
+         Lwt.return (y = None)
+      );
+
     test "is_empty (full)"
       (fun () ->
          let x = Lwt_mvar.create 0 in
