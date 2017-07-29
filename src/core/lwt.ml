@@ -2418,34 +2418,32 @@ struct
   (* If [nchoose ps] or [npick ps] found all promises in [ps] pending, the
      callback added to each promise in [ps] eventually calls this function. The
      function collects promises in [ps] that have resolved, or finds one promise
-     in [ps] that has failed. It then completes [to_complete], the result
-     promise of [nchoose]/[npick], with the list of resolved promises, or the
-     state of the failed promise. *)
-  let rec finish_nchoose_or_npick_after_pending
-      in_completion_loop
-      (to_complete : ('a list, underlying, pending) promise)
+     in [ps] that has failed. The resolved promises are not completed to allow 
+     the unresolved promises to be cancelled first (making npick's behavior 
+     consistent with pick's behavior) *)
+     
+  let rec collect_resolved_nchoose_or_npick_after_pending
       (results : 'a list)
-      (ps : 'a t list) :
-        ('a list, underlying, completed) state_changed =
+      (ps : 'a t list) =
 
     match ps with
     | [] ->
-      complete in_completion_loop to_complete (Resolved (List.rev results))
+      (Resolved (List.rev results))
 
     | p::ps ->
       let Internal p = to_internal_promise p in
 
       match (underlying p).state with
       | Resolved v ->
-        finish_nchoose_or_npick_after_pending
-          in_completion_loop to_complete (v::results) ps
+        collect_resolved_nchoose_or_npick_after_pending
+          (v::results) ps
 
       | Failed _ as result ->
-        complete in_completion_loop to_complete result
+        result
 
       | Pending _ ->
-        finish_nchoose_or_npick_after_pending
-          in_completion_loop to_complete results ps
+        collect_resolved_nchoose_or_npick_after_pending
+          results ps
 
   let nchoose ps =
     (* If at least one promise in [ps] is found resolved, this function is
@@ -2479,8 +2477,8 @@ struct
         let callback in_completion_loop _result =
           let State_may_now_be_pending_proxy p = may_now_be_proxy p in
           let p = underlying p in
-          let State_may_have_changed p =
-            finish_nchoose_or_npick_after_pending in_completion_loop p [] ps in
+          let resolved_promises = collect_resolved_nchoose_or_npick_after_pending [] ps in
+          let State_may_have_changed p = (complete in_completion_loop p resolved_promises) in
           ignore p
         in
         add_explicitly_removable_callback_to_each_of ps callback;
@@ -2534,9 +2532,10 @@ struct
         let callback in_completion_loop _result =
           let State_may_now_be_pending_proxy p = may_now_be_proxy p in
           let p = underlying p in
-          let State_may_have_changed p =
-            finish_nchoose_or_npick_after_pending in_completion_loop p [] ps in
+          let resolved_promises = 
+            collect_resolved_nchoose_or_npick_after_pending [] ps in
           List.iter cancel ps;
+          let State_may_have_changed p = complete in_completion_loop p resolved_promises in
           ignore p
         in
         add_explicitly_removable_callback_to_each_of ps callback;
