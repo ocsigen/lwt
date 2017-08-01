@@ -92,19 +92,10 @@ let replace_acquired p =
          p.count <- p.count - 1;
          Lwt.wakeup_later_exn wakener exn)
 
-let acquire p =
-  if Queue.is_empty p.list then
-    (* No more available member. *)
-    if p.count < p.max then
-      (* Limit not reached: create a new one. *)
-      create_member p
-    else
-      (* Limit reached: wait for a free one. *)
-      Lwt.add_task_r p.waiters
-  else
-    (* Take the first free member and validate it. *)
-    let c = Queue.take p.list in
-    Lwt.try_bind
+(* Verify a member is still valid before releasing it; try to replace
+   if it's invalid. *)
+let check_elt p c =
+  Lwt.try_bind
       (fun () ->
          p.validate c)
       (function
@@ -119,6 +110,20 @@ let acquire p =
             thread is waiting. *)
          replace_acquired p;
          Lwt.fail e)
+
+let acquire p =
+  if Queue.is_empty p.list then
+    (* No more available member. *)
+    if p.count < p.max then
+      (* Limit not reached: create a new one. *)
+      create_member p
+    else
+      (* Limit reached: wait for a free one. *)
+      Lwt.add_task_r p.waiters >>= check_elt p
+  else
+    (* Take the first free member and validate it. *)
+    let c = Queue.take p.list in
+    check_elt p c
 
 (* Release a member when its use failed. *)
 let checked_release p c =
