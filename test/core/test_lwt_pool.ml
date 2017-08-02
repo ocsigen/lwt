@@ -16,7 +16,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  * 02111-1307, USA.
- *)
+*)
 
 open Test
 
@@ -24,7 +24,6 @@ exception Dummy_error
 
 let suite =
   suite "lwt_pool" [
-
     test "basic create-use"
       (fun () ->
          let gen = fun () -> Lwt.return () in
@@ -65,17 +64,17 @@ let suite =
          Lwt.return (Lwt.state u2 = Lwt.Return 0)
       );
 
-     test "exception during validation"
-       (fun () ->
-          let c = Lwt_condition.create () in
-          let gen = (fun () -> let l = ref 0 in Lwt.return l) in
-          let v l = if !l = 0 then Lwt.return true else Lwt.fail Dummy_error in
-          let p = Lwt_pool.create 1 ~validate:v gen in
-          let u1 = Lwt_pool.use p (fun l -> l := 1; Lwt_condition.wait c) in
-          let u2 = Lwt_pool.use p (fun l -> Lwt.return !l) in
-          let () = Lwt_condition.signal c "done" in
-          Lwt.return (Lwt.state u1 = Lwt.Return "done"
-                      && Lwt.state u2 = Lwt.Return 1)
+    test "exception during validation"
+      (fun () ->
+         let c = Lwt_condition.create () in
+         let gen = (fun () -> let l = ref 0 in Lwt.return l) in
+         let v l = if !l = 0 then Lwt.return true else Lwt.fail Dummy_error in
+         let p = Lwt_pool.create 1 ~validate:v gen in
+         let u1 = Lwt_pool.use p (fun l -> l := 1; Lwt_condition.wait c) in
+         let u2 = Lwt_pool.use p (fun l -> Lwt.return !l) in
+         let () = Lwt_condition.signal c "done" in
+         Lwt.return (Lwt.state u1 = Lwt.Return "done"
+                     && Lwt.state u2 = Lwt.Fail Dummy_error)
       );
 
     test "multiple creation"

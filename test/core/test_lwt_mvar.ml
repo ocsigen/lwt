@@ -29,6 +29,42 @@ let suite =
          Lwt.return (Lwt.state y = Lwt.Return 0)
       );
 
+    test "take_available (full)"
+      (fun () ->
+         let x = Lwt_mvar.create 0 in
+         let y = Lwt_mvar.take_available x in
+         Lwt.return (y = Some 0)
+      );
+
+    test "take_available (empty)"
+      (fun () ->
+         let x = Lwt_mvar.create_empty () in
+         let y = Lwt_mvar.take_available x in
+         Lwt.return (y = None)
+      );
+
+    test "take_available (twice)"
+      (fun () ->
+         let x = Lwt_mvar.create 0 in
+         let (_ : int option) = Lwt_mvar.take_available x in
+         let y = Lwt_mvar.take_available x in
+         Lwt.return (y = None)
+      );
+
+    test "is_empty (full)"
+      (fun () ->
+         let x = Lwt_mvar.create 0 in
+         let y = Lwt_mvar.is_empty x in
+         Lwt.return (not y)
+      );
+
+    test "is_empty (empty)"
+      (fun () ->
+         let x = Lwt_mvar.create_empty () in
+         let y = Lwt_mvar.is_empty x in
+         Lwt.return y
+      );
+
     test "blocking put"
       (fun () ->
          let x = Lwt_mvar.create 0 in

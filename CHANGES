@@ -1,3 +1,51 @@
+===== 3.1.0 (2017-07-19) =====
+
+====== Additions ======
+
+  * Port to Jbuilder (#374, Andrew Ray).
+  * Lwt_io.establish_server_with_client_address (#346, Rudi Grinberg).
+  * Lwt_unix.getcwd (#403, Raphaël Proust).
+
+====== Planned to break in 4.0.0 ======
+
+  * Delete lwt.simple-top (#371).
+  * Delete Lwt_chan (#441).
+
+====== Fixes ======
+
+  * Make Lwt_log functions tail-recursive (#348, Jan Doms).
+  * Make more of Lwt_list tail-recursive (#347, Jan Doms).
+  * Improve string messages in exceptions (#368, #382, Jan Doms, Raphaël
+    Proust).
+  * Don't call Unix.set_nonblock or Unix.clear_nonblock unnecessarily on
+    some fds (#356, David Sheets).
+  * Lwt_unix.sleep and Lwt_unix.timeout returning too early when using
+    libev (#433, Stijn Devriendt).
+  * Lwt_sequence.fold_r iterating the wrong way in some cases (#405,
+    Stijn Devriendt).
+  * Build conflicts in some cases due to duplicate cst_to_constr
+    function (#362, Jérémie Dimino).
+  * Don't use deprecated readdir_r system call (#430, Raphaël Proust).
+
+====== Miscellaneous ======
+
+  * The Lwt core, lwt.ml, has been thoroughly refactored and commented
+    (#354, reviewed Gabriel Radanne, Edwin Török, Raphaël Proust, Jan
+    Doms, Fabian Hemmer, Sebastien Mondet, Simon Cruanes, Anil
+    Madhavapeddy, Pierre Chambart, and many others).
+  * Lots of tests for most of the Lwt core (#339, #389, #392, #440,
+    #448, #450, Joseph Thomas, Ryan Slade).
+  * Documentation fixes (including by Joseph Thomas, Raphaël Proust,
+    Richard Degenne, Stavros Polymenis).
+  * Contributing documentation (#379).
+  * Massively adjust whitespace for legibility (#400, #409, #416,
+    Richard Degenne).
+  * Improvements to CI (Etienne Millon, Raphael Rafatpanah, Zack Coker,
+    Yotam Barnoy).
+  * The additional packages lwt_ssl, lwt_react, lwt_glib get new minor
+    releases, the change being new Jbuilder build systems (#374, Andrew
+    Ray).
+
 ===== 3.0.0 (2017-04-10) =====
 
 ====== Breaking ======

@@ -63,16 +63,28 @@ let put mvar v =
     Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
     res
 
-let take mvar =
+let next_writer mvar =
+  match Lwt_sequence.take_opt_l mvar.writers with
+  | Some(v', w) ->
+    mvar.mvar_contents <- Some v';
+    Lwt.wakeup_later w ()
+  | None ->
+    mvar.mvar_contents <- None
+
+let take_available mvar =
   match mvar.mvar_contents with
   | Some v ->
-    begin match Lwt_sequence.take_opt_l mvar.writers with
-      | Some(v', w) ->
-        mvar.mvar_contents <- Some v';
-        Lwt.wakeup_later w ()
-      | None ->
-        mvar.mvar_contents <- None
-    end;
-    Lwt.return v
+    next_writer mvar;
+    Some v
   | None ->
-    Lwt.add_task_r mvar.readers
+    None
+
+let take mvar =
+  match take_available mvar with
+  | Some v -> Lwt.return v
+  | None -> Lwt.add_task_r mvar.readers
+
+let is_empty mvar =
+  match mvar.mvar_contents with
+  | Some _ -> false
+  | None -> true
