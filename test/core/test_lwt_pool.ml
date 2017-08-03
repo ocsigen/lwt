@@ -24,6 +24,7 @@ exception Dummy_error
 
 let suite =
   suite "lwt_pool" [
+
     test "basic create-use"
       (fun () ->
          let gen = fun () -> Lwt.return () in
