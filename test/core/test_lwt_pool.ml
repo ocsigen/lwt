@@ -36,14 +36,8 @@ let suite =
       (fun () ->
          let gen = fun () -> Lwt.fail Dummy_error in
          let p = Lwt_pool.create 1 gen in
-         let f = fun () -> Lwt_pool.use p (fun _ -> Lwt.return 0) in
-         let h =
-           (fun exn ->
-              if exn = Dummy_error
-              then Lwt.return 1
-              else Lwt.return 2) in
-         let c = Lwt.catch f h in
-         Lwt.return (Lwt.state c = Lwt.Return 1)
+         let u = Lwt_pool.use p (fun _ -> Lwt.return 0) in
+         Lwt.return (Lwt.state u = Lwt.Fail Dummy_error)
       );
 
     test "pool elements are reused"
@@ -55,7 +49,7 @@ let suite =
          Lwt.return (Lwt.state u2 = Lwt.Return 1)
       );
 
-    test "validation"
+    test "pool elements are validated when returned"
       (fun () ->
          let gen = (fun () -> let n = ref 0 in Lwt.return n) in
          let v l = Lwt.return (!l = 0) in
@@ -65,7 +59,7 @@ let suite =
          Lwt.return (Lwt.state u2 = Lwt.Return 0)
       );
 
-    test "exception during validation"
+    test "validation exceptions are propagated to users"
       (fun () ->
          let c = Lwt_condition.create () in
          let gen = (fun () -> let l = ref 0 in Lwt.return l) in
@@ -87,7 +81,7 @@ let suite =
          Lwt.return (Lwt.state u2 = Lwt.Return 0)
       );
 
-    test "wait on empty pool"
+    test "users of an empty pool will wait"
       (fun () ->
          let gen = (fun () -> Lwt.return 0) in
          let p = Lwt_pool.create 1 gen in
@@ -96,7 +90,7 @@ let suite =
          Lwt.return (Lwt.state u2 = Lwt.Sleep)
       );
 
-    test "check, elt ok"
+    test "on check, good elements are retained"
       (fun () ->
          let gen = (fun () -> let n = ref 1 in Lwt.return n) in
          let c = (fun x f -> f (!x > 0)) in
@@ -106,7 +100,7 @@ let suite =
          Lwt.return (Lwt.state u2 = Lwt.Return 2)
       );
 
-    test "checked, elt bad"
+    test "on check, bad elements are replaced"
       (fun () ->
          let gen = (fun () -> let n = ref 1 in Lwt.return n) in
          let c = (fun n f -> f (!n > 0)) in
@@ -114,8 +108,7 @@ let suite =
          let task = (fun n -> n := !n + 1; Lwt.return !n) in
          let _ = Lwt_pool.use p (fun n -> n := 0; Lwt.fail Dummy_error) in
          let u2 = Lwt_pool.use p task in
-         let u3 = Lwt_pool.use p task in (* this can go *)
-         Lwt.return (Lwt.state u2 = Lwt.Return 2 && Lwt.state u3 = Lwt.Return 3)
+         Lwt.return (Lwt.state u2 = Lwt.Return 2)
       );
 
     test "waiter are notified on replacement"
@@ -133,7 +126,7 @@ let suite =
                      && Lwt.state u3 = Lwt.Return 0)
       );
 
-    test "waiter are notified on creaton exception"
+    test "waiter are notified on replacement exception"
       (fun () ->
          let c = Lwt_condition.create () in
          let k = ref true in
@@ -154,7 +147,7 @@ let suite =
                      && Lwt.state u3 = Lwt.Fail Dummy_error)
       );
 
-    test "check and validate"
+    test "check and validate can be used together"
       (fun () ->
          let gen = (fun () -> let l = ref 0 in Lwt.return l) in
          let v l = Lwt.return (!l > 0) in
@@ -180,5 +173,4 @@ let suite =
          let () = Lwt_condition.signal cond "done" in
          Lwt.return (Lwt.state u2 = Lwt.Return 1)
       );
-
   ]
