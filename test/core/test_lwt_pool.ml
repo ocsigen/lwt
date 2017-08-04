@@ -117,4 +117,68 @@ let suite =
          let u3 = Lwt_pool.use p task in (* this can go *)
          Lwt.return (Lwt.state u2 = Lwt.Return 2 && Lwt.state u3 = Lwt.Return 3)
       );
+
+    test "waiter are notified on replacement"
+      (fun () ->
+         let c = Lwt_condition.create () in
+         let gen = (fun () -> let l = ref 0 in Lwt.return l) in
+         let v l = if !l = 0 then Lwt.return true else Lwt.fail Dummy_error in
+         let p = Lwt_pool.create 1 ~validate:v gen in
+         let u1 = Lwt_pool.use p (fun l -> l := 1; Lwt_condition.wait c) in
+         let u2 = Lwt_pool.use p (fun l -> Lwt.return !l) in
+         let u3 = Lwt_pool.use p (fun l -> Lwt.return !l) in
+         let () = Lwt_condition.signal c "done" in
+         Lwt.return (Lwt.state u1 = Lwt.Return "done"
+                     && Lwt.state u2 = Lwt.Fail Dummy_error
+                     && Lwt.state u3 = Lwt.Return 0)
+      );
+
+    test "waiter are notified on creaton exception"
+      (fun () ->
+         let c = Lwt_condition.create () in
+         let k = ref true in
+         let gen = (fun () ->
+           if !k then
+             let l = ref 0 in Lwt.return l
+           else
+             Lwt.fail Dummy_error
+         ) in
+         let v l = if !l = 0 then Lwt.return true else Lwt.fail Dummy_error in
+         let p = Lwt_pool.create 1 ~validate:v gen in
+         let u1 = Lwt_pool.use p (fun l -> l := 1; k:= false; Lwt_condition.wait c) in
+         let u2 = Lwt_pool.use p (fun l -> Lwt.return !l) in
+         let u3 = Lwt_pool.use p (fun l -> Lwt.return !l) in
+         let () = Lwt_condition.signal c "done" in
+         Lwt.return (Lwt.state u1 = Lwt.Return "done"
+                     && Lwt.state u2 = Lwt.Fail Dummy_error
+                     && Lwt.state u3 = Lwt.Fail Dummy_error)
+      );
+
+    test "check and validate"
+      (fun () ->
+         let gen = (fun () -> let l = ref 0 in Lwt.return l) in
+         let v l = Lwt.return (!l > 0) in
+         let c l f = f (!l > 1) in
+         let cond = Lwt_condition.create() in
+         let p = Lwt_pool.create 1 ~validate:v ~check:c gen in
+         let _ = Lwt_pool.use p (fun l -> l := 1; Lwt_condition.wait cond) in
+         let _ = Lwt_pool.use p (fun l -> l := 2; Lwt.fail Dummy_error) in
+         let u3 = Lwt_pool.use p (fun l -> Lwt.return !l) in
+         let () = Lwt_condition.signal cond "done" in
+         Lwt.return (Lwt.state u3 = Lwt.Return 2)
+      );
+
+    test "verify default check behavior"
+      (fun () ->
+         let gen = (fun () -> let l = ref 0 in Lwt.return l) in
+         let cond = Lwt_condition.create() in
+         let p = Lwt_pool.create 1 gen in
+         let _ = Lwt_pool.use p (fun l ->
+           Lwt.bind (Lwt_condition.wait cond)
+             (fun _ -> l:= 1; Lwt.fail Dummy_error)) in
+         let u2 = Lwt_pool.use p (fun l -> Lwt.return !l) in
+         let () = Lwt_condition.signal cond "done" in
+         Lwt.return (Lwt.state u2 = Lwt.Return 1)
+      );
+
   ]
