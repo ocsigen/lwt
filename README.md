@@ -61,8 +61,8 @@ parallel the promises that do I/O.
 
 ## Installing
 
-1. Use your system package manager to install a development libev package,
-   often called `libev-dev` or `libev-devel`.
+1. Use your system package manager to install a development libev package.
+   It is often called `libev-dev` or `libev-devel`.
 2. `opam install conf-libev lwt`
 
 
@@ -76,7 +76,7 @@ rewriting the manual). In the meantime:
 - The current manual can be found [here][manual].
 - Mirage has a nicely-written [Lwt tutorial][mirage-tutorial].
 - An example of a [simple server][counter-server] written in Lwt.
-- [Concurrent Programming with Lwt][rwo-lwt] is a great source of Lwt examples.
+- [Concurrent Programming with Lwt][rwo-lwt] is a nice source of Lwt examples.
   They are translations of code from the excellent Real World OCaml, but are
   just as useful if you are not reading the book.
 - Some examples are also available in Lwt's [`doc/examples`][examples].
@@ -120,57 +120,27 @@ also made in [/r/ocaml][reddit], on the [OCaml mailing list][caml-list], and on
 
 ## Contributing
 
-What counts as a contribution to Lwt? All kinds of things make the project
-better, and are very much appreciated:
-
-- [Asking](#contact) anything. This helps everyone understand Lwt, including
-  long-time maintainers!
-- Making or requesting edits to the [docs](#documentation), or just reading
-  them.
-- Reading any [issue or PR][issues-and-prs], and, optionally, adding your
-  opinion or requesting clarification.
-- Explaining how to make Lwt easier to contribute to, finding problems with the
-  [contributing docs][contributing-md], etc.
-- Helping other people with Lwt, whether in this repo, or elsewhere in the
-  world.
-- Writing or clarifying [test cases][tests].
-- And, of course, the traditional kind of contribution, picking up
-  [issues][all-issues] and writing code :)
-
-Contributing to Lwt is not only for OCaml "experts!" If you are near the
-beginning of your OCaml journey, we'd love to give you a little help by
-recommending appropriate issues, or even just chatting about Lwt or OCaml.
-Newcomers make valuable contributions, that maintainers often learn from – not
-the least because newcomers bring a fresh, valuable perspective :) Don't be
-afraid to ask anything.
-
-We hope you'll join us to work in a friendly community around Lwt :) On behalf
-of all users of, and contributors to, Lwt: Thank you! :tada:
-
-#### Resources
-
-There are several resources to help you get started:
-
-- If you'd like to ask a question, or otherwise talk, there is the
-  [contact](#contact) information.
-- Lwt maintains a list of [easy issues][easy-issues], which you can use to try
-  out the code contribution workflow. This list works two ways! Please
-  contribute to it: if you find something that needs a fix, open an issue. It
-  might be an easy issue that another contributor would love to solve :)
-- [`CONTRIBUTING.md`][contributing-md] contains optional tips for working on the
-  code of Lwt, instructions on how to check the code out, and a high-level
-  outline of the code base.
-- The project [roadmap][roadmap] contains a list of long-term, large-scale
-  projects, so you can get an idea of where Lwt is headed, as a whole. Planned
-  upcoming releases are also listed there.
-- Watch this repository :)
+- We maintain [easy starter issues][easy-issues]. These are thoroughly explained
+  and hyperlinked. We hope that this makes working on Lwt accessible even to
+  relative OCaml beginners :)
+- [`CONTRIBUTING.md`][contributing-md] contains tips for working on the code,
+  such as how to check the code out, how review works, etc. There is also a
+  high-level outline of the code base.
+- The overall development plan can be found in the [roadmap][roadmap].
+- [Ask](#contact) us anything, whether it's about working on Lwt, or any
+  question at all about it :)
+- The [documentation](#documentation) always needs proofreading and fixes.
+- Despite a lot of progress, Lwt still needs [more tests][testing-issues].
+- You are welcome to pick up any other [issue][issues-and-prs], review a PR, add
+  your opinion, etc.
+- Any feedback is welcome, including how to make contributing easier!
 
 [issues-and-prs]: https://github.com/ocsigen/lwt/issues?utf8=%E2%9C%93&q=is%3Aopen
 [all-issues]: https://github.com/ocsigen/lwt/issues
 [roadmap]:  https://github.com/ocsigen/lwt/wiki/Roadmap
 [easy-issues]: https://github.com/ocsigen/lwt/labels/easy
 [contributing-md]: https://github.com/ocsigen/lwt/blob/master/doc/CONTRIBUTING.md#readme
-[tests]: https://github.com/ocsigen/lwt/tree/master/test
+[testing-issues]: https://github.com/ocsigen/lwt/issues?utf8=%E2%9C%93&q=is%3Aissue%20is%3Aopen%20label%3Aeasy%20test
 
 
 <br/>

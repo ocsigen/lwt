@@ -1,16 +1,12 @@
 # Contributing to the Lwt code
 
-Contributing to Lwt doesn't only mean writing code. Asking questions, fixing
-docs, etc., are all valuable contributions! For notes on contributing in
+Contributing to Lwt doesn't only mean writing code! Asking questions, fixing
+docs, etc., are all valuable contributions. For notes on contributing in
 general, see [Contributing][contributing] in the Lwt `README`. This file
-contains extra information for those contributors that want to work on the code
-specifically.
+contains extra information for working on code specifically.
 
-This file is meant to be a friendly aid, not a hindrance. If you think you
-already have a good idea of what to do, you can go ahead and not read any of
-this file! Nobody will hold it against you :)
-
-Those things having been noted, thank you! :tada:
+This file is meant to be an aid, not a hindrance. If you think you already
+have a good idea of what to do, go ahead and work without reading this :)
 
 
 <br/>
@@ -36,34 +32,21 @@ Those things having been noted, thank you! :tada:
 
 1. If you get stuck, or have any question, please [ask][contact]!
 
-2. If these contributing docs are bad in any way, [tell][contact] maintainers
-   about it! This file should be made as helpful as possible.
-
-3. If you start working, but then life interferes and you don't want to
-   continue, there is no shame in stopping. This can be for any reason
+2. If you start working, but then life interferes and you don't want to
+   continue, there is no problem in stopping. This can be for any reason
    whatsoever, and you don't have to tell anyone what that reason is. Lwt
-   respects your time and your needs. You don't really even have to tell anyone
-   that you stopped working, but it would be nice if you did :)
+   respects your time and your needs.
 
-4. If a maintainer is wasting your patience (hopefully by accident) by making
-   you fix too many nits, do excessive history rewriting, or something else like
-   that, please let them know! It's good to have a clean history and everything,
-   but it's more important to accomodate the human beings that actually work on
-   Lwt.
+3. If a maintainer is trying your patience (hopefully by accident) by making you
+   fix too many nits, do excessive history rewriting, or something else like
+   that, please let them know! Lwt doesn't want to tire you out!
 
-    This might result in a PR being finished off by a maintainer, in additional
-    commits, or in the maintainer just letting go of their requests. In all
-    cases, this will be done by mutual agreement, and you will be credited for
-    your work.
-
-    Lwt doesn't want to burn you out!
-
-5. To find something to work on, you can look at the [easy issues][easy]. If
+4. To find something to work on, you can look at the [easy issues][easy]. If
    those don't look interesting, some [medium issues][medium] are
    self-contained. If you [contact][contact] the maintainers, they may be able
    to suggest a few. Otherwise, you are welcome to work on anything at all.
 
-6. If you begin working on an issue, it's good to leave a comment on it to claim
+5. If you begin working on an issue, it's good to leave a comment on it to claim
    it. This prevents multiple people from doing the same work.
 
 [contact]: https://github.com/ocsigen/lwt#contact
@@ -80,9 +63,9 @@ Those things having been noted, thank you! :tada:
 <a id="Checkout"></a>
 #### Getting the code
 
-To get started, fork the Lwt repo by clicking on the "Fork" button in GitHub.
-You will now have a repository at `https://github.com/your-user-name/lwt`. Let's
-clone it to your machine:
+To get started, fork the Lwt repo by clicking on the "Fork" button at the very
+top of this page. You will now have a repository at
+`https://github.com/your-user-name/lwt`. Let's clone it to your machine:
 
 ```
 git clone https://github.com/your-user-name/lwt.git
@@ -94,26 +77,27 @@ automatically. Before doing that, you may want to switch to a special OPAM
 switch just for Lwt:
 
 ```
-opam switch 4.04-lwt --alias-of 4.04.1   # optional
-eval `opam config env`                   # optional
+opam switch 4.04.02-lwt --alias-of 4.04.2   # optional
+eval `opam config env`                      # optional
 opam pin add --no-action lwt .
 opam install --deps-only lwt
 ```
 
 [opam-depends]: https://github.com/ocsigen/lwt/blob/8bff603ae6d976e69698fa08e8ce08fe9615489d/opam/opam#L35-L44
 
-On most systems, you should also install libev:
+On most systems, you should also [install libev][installing]:
 
 ```
 your-package-manager install libev-devel
 opam install conf-libev
 ```
 
+[installing]: https://github.com/ocsigen/lwt#installing
+
 Now, check out a new branch, and make your changes:
 
 ```
 git checkout -b my-awesome-change
-# code!
 ```
 
 <a id="Testing"></a>
@@ -207,6 +191,24 @@ git push
 This will push the changes to your fork, and GitHub will automatically update
 the PR.
 
+#### Tidy history
+
+In some cases, you may be asked to rebase or squash your PR for a cleaner
+history (it's normal). If that happens, you will need to run some combination of
+`git rebase master`, `git rebase -i master`, and/or `git cherry-pick`. There
+isn't really enough space to explain these commands here, but:
+
+- We encourage you to find examples and documentation for them online.
+- You can always ask a maintainer for help using them.
+- You can always ask a maintainer to do it for you (and we will usually offer).
+  We can tell you what commands we ran and why.
+
+Afterwards, `git push -f` will force the new history into the PR.
+
+If we do this rewriting, it is usually at the very end, right before merging the
+PR. This is to avoid interfering with reviewers while they are still reviewing
+it.
+
 <a id="Cleaning_up"></a>
 #### Cleaning up
 
@@ -233,15 +235,15 @@ Lwt internal documentation is currently pretty sparse, but we are working on
 fixing that.
 
 - The bulk of documentation is still the [manual][manual].
-- If you'd like to understand how Lwt works at the core, don't read the current
-  `lwt.ml`. Read [the one from PR #354][new-lwt.ml] instead. This contains a
-  thorough explanation of everything. Reviews of [that PR][pr354] would also be
-  appreciated.
+- The [internals of the Lwt core][lwt.ml] are well-documented.
+- Working on the Unix binding (`Lwt_unix`, `Lwt_bytes`, etc.) sometimes requires
+  writing C code. To make this easier, we have thoroughly
+  [documented `Lwt_unix.getcwd`][unix-model] as a model function.
 - Everything else is sparsely documented in comments.
 
 [manual]: https://ocsigen.org/lwt/manual/
-[new-lwt.ml]: https://github.com/ocsigen/lwt/blob/fdff5c09d47d2b020d4998ebed922acf383a2e9d/src/core/lwt.ml#L27
-[pr354]: https://github.com/ocsigen/lwt/pull/354
+[lwt.ml]: https://github.com/ocsigen/lwt/blob/master/src/core/lwt.ml
+[unix-model]: https://github.com/ocsigen/lwt/blob/b2eeb7b187b01e8d824dd20e807fe708c156dfcd/src/unix/lwt_unix_unix.h#L3019-L3236
 
 
 <br/>
