@@ -30,7 +30,7 @@ let tail_recursive_map f l =
 let tail_recursive_mapi f l =
   let rec inner acc i = function
     | [] -> List.rev acc
-    | hd::tl -> inner ((f i hd)::acc) (i + 1) tl
+    | hd::tl -> (inner [@ocaml.tailcall]) ((f i hd)::acc) (i + 1) tl
   in
   inner [] 0 l
 
@@ -67,7 +67,7 @@ let map_s f l =
     | [] -> List.rev acc |> Lwt.return
     | hd::tl ->
       f hd >>= fun r ->
-      inner (r::acc) tl
+      (inner [@ocaml.tailcall]) (r::acc) tl
   in
   inner [] l
 
@@ -76,7 +76,7 @@ let rec _collect acc = function
     List.rev acc |> Lwt.return
   | t::ts ->
     t >>= fun i ->
-    _collect (i::acc) ts
+    (_collect [@ocaml.tailcall]) (i::acc) ts
 
 let map_p f l =
   let ts = tail_recursive_map f l in
