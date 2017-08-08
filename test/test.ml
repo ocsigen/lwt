@@ -67,7 +67,7 @@ let run name suites =
       loop_suites failures skipped number suites
     | test :: tests ->
       if not (test.only_if ()) then begin
-        Printf.printf "(%d/%d) Skipping test %S from suite %S\b%!"
+        Printf.printf "(%d/%d) Skipping test %S from suite %S\n%!"
           number total test.name suite_name;
         loop_tests
           failures (skipped + 1) suite_name (number + 1) suites tests
