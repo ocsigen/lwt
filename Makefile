@@ -107,11 +107,14 @@ clean:
 	done
 	rm -rf _coverage/
 
-BISECT_FILES_PATTERN := _build/default/test/core/bisect*.out
+BISECT_FILES_PATTERN := _build/default/test/*/bisect*.out
+BISECT_REPORT := bisect-ppx-report
 
 .PHONY: coverage
 coverage: clean
-	BISECT_COVERAGE=yes jbuilder runtest --dev --only-packages lwt
-	bisect-ppx-report -I _build/ -html _coverage/ -text - -summary-only \
+	BISECT_ENABLE=yes jbuilder runtest --dev
+	bisect-ppx-report \
+	    -I _build/default/ -html _coverage/ \
+		-text - -summary-only \
 	    $(BISECT_FILES_PATTERN)
 	@echo See _coverage/index.html

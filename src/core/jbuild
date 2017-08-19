@@ -10,10 +10,7 @@ let top = {|
   (public_name lwt)
   (synopsis "Monadic promises and concurrent I/O")
   (wrapped false)
-|}
-
-let optional_bisect_stanza = {|
-  (preprocess (pps (bisect_ppx)))
+  (preprocess (pps (bisect_ppx -conditional)))
 |}
 
 let optional_flambda_flags = {|
@@ -32,11 +29,6 @@ let accumulate_content_if condition more_content content =
     content
 
 let () =
-  let generating_coverage =
-    try Sys.getenv "BISECT_COVERAGE" = "yes"
-    with Not_found -> false
-  in
-
   (* Compilers starting from 4.03 support Flambda flags, even if not configured
      with Flambda support. *)
   let compiler_has_flambda_flags =
@@ -45,7 +37,6 @@ let () =
   in
 
   top
-  |> accumulate_content_if generating_coverage optional_bisect_stanza
   |> accumulate_content_if compiler_has_flambda_flags optional_flambda_flags
   |> fun content -> content ^ bottom
   |> Jbuild_plugin.V1.send
