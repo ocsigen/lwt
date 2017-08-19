@@ -5,12 +5,14 @@
 (rule
  ((targets (lwt_unix.ml))
   (deps    (lwt_unix.cppo.ml))
-  (action  (run ${bin:cppo} -V OCAML:${ocaml_version} ${<} -o ${@}))))
+  (action
+   (chdir ${ROOT} (run ${bin:cppo} -V OCAML:${ocaml_version} ${<} -o ${@})))))
 
 (rule
  ((targets (lwt_unix.mli))
   (deps    (lwt_unix.cppo.mli))
-  (action  (run ${bin:cppo} -V OCAML:${ocaml_version} ${<} -o ${@}))))
+  (action
+   (chdir ${ROOT} (run ${bin:cppo} -V OCAML:${ocaml_version} ${<} -o ${@})))))
 
 ;; lwt feature discovery
 ;;
