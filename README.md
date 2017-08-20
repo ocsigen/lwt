@@ -25,7 +25,7 @@ if the request is not completed in five seconds:
 let () =
   let request =
     let%lwt addresses = Lwt_unix.getaddrinfo "google.com" "80" [] in
-    let google = (List.hd addresses).Lwt_unix.ai_addr in
+    let google = Lwt_unix.((List.hd addresses).ai_addr) in
 
     Lwt_io.(with_connection google (fun (incoming, outgoing) ->
       let%lwt () = write outgoing "GET / HTTP/1.1\r\n" in
