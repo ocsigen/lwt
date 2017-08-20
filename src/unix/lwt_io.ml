@@ -196,70 +196,81 @@ let is_busy ch =
 
 (* Flush/refill the buffer. No race condition could happen because
    this function is always called atomically: *)
-let perform_io : type mode. mode _channel -> int Lwt.t = fun ch -> match ch.main.state with
-  | Busy_primitive | Busy_atomic _ -> begin
-      match ch.typ with
-      | Type_normal(perform_io, _) ->
-        let ptr, len = match ch.mode with
-          | Input ->
-            (* Size of data in the buffer *)
-            let size = ch.max - ch.ptr in
-            (* If there are still data in the buffer, keep them: *)
-            if size > 0 then Lwt_bytes.unsafe_blit ch.buffer ch.ptr ch.buffer 0 size;
-            (* Update positions: *)
-            ch.ptr <- 0;
-            ch.max <- size;
-            (size, ch.length - size)
-          | Output ->
-            (0, ch.ptr) in
-        Lwt.pick [ch.abort_waiter;
-                  if Sys.win32 then
-                    Lwt.catch
-                      (fun () -> perform_io ch.buffer ptr len)
-                      (function
-                        | Unix.Unix_error (Unix.EPIPE, _, _) ->
-                          Lwt.return 0
-                        | exn -> Lwt.fail exn) [@ocaml.warning "-4"]
-                  else
-                    perform_io ch.buffer ptr len
-                 ] >>= fun n ->
-        (* Never trust user functions... *)
-        if n < 0 || n > len then
-          Lwt.fail (Failure (Printf.sprintf "Lwt_io.perform_io: invalid result of the [%s] function"
-                               (match ch.mode with Input -> "read" | Output -> "write")))
-        else begin
-          (* Update the global offset: *)
-          ch.offset <- Int64.add ch.offset (Int64.of_int n);
-          (* Update buffer positions: *)
-          begin match ch.mode with
-            | Input ->
-              ch.max <- ch.max + n
-            | Output ->
-              (* Shift remaining data: *)
-              let len = len - n in
-              Lwt_bytes.unsafe_blit ch.buffer n ch.buffer 0 len;
-              ch.ptr <- len
-          end;
-          Lwt.return n
-        end
-
-      | Type_bytes -> begin
-          match ch.mode with
-          | Input ->
-            Lwt.return 0
-          | Output ->
-            Lwt.fail (Failure "cannot flush a channel created with Lwt_io.of_string")
-        end
-    end
-
+let perform_io : type mode. mode _channel -> int Lwt.t = fun ch ->
+  match ch.main.state with
   | Closed ->
     Lwt.fail (closed_channel ch)
 
   | Invalid ->
     Lwt.fail (invalid_channel ch)
 
-  | Idle | Waiting_for_busy ->
+  | Idle
+  | Waiting_for_busy ->
     assert false
+
+  | Busy_primitive
+  | Busy_atomic _ ->
+    match ch.typ with
+    | Type_normal (perform, _) ->
+      let ptr, len =
+        match ch.mode with
+        | Input ->
+          (* Size of data in the buffer *)
+          let size = ch.max - ch.ptr in
+          (* If there are still data in the buffer, keep them: *)
+          if size > 0 then
+            Lwt_bytes.unsafe_blit ch.buffer ch.ptr ch.buffer 0 size;
+          (* Update positions: *)
+          ch.ptr <- 0;
+          ch.max <- size;
+          (size, ch.length - size)
+        | Output ->
+          (0, ch.ptr)
+      in
+      let perform =
+        if Sys.win32 then
+          Lwt.catch
+            (fun () ->
+              perform ch.buffer ptr len)
+            (function
+              | Unix.Unix_error (Unix.EPIPE, _, _) ->
+                Lwt.return 0
+              | exn -> Lwt.fail exn) [@ocaml.warning "-4"]
+        else
+          perform ch.buffer ptr len
+      in
+      Lwt.pick [ch.abort_waiter; perform] >>= fun n ->
+      (* Never trust user functions... *)
+      if n < 0 || n > len then
+        Lwt.fail
+          (Failure
+            (Printf.sprintf
+              "Lwt_io.perform_io: invalid result of the [%s] function"
+              (match ch.mode with Input -> "read" | Output -> "write")))
+      else begin
+        (* Update the global offset: *)
+        ch.offset <- Int64.add ch.offset (Int64.of_int n);
+        (* Update buffer positions: *)
+        begin match ch.mode with
+          | Input ->
+            ch.max <- ch.max + n
+          | Output ->
+            (* Shift remaining data: *)
+            let len = len - n in
+            Lwt_bytes.unsafe_blit ch.buffer n ch.buffer 0 len;
+            ch.ptr <- len
+        end;
+        Lwt.return n
+      end
+
+    | Type_bytes ->
+      begin match ch.mode with
+      | Input ->
+        Lwt.return 0
+      | Output ->
+        Lwt.fail
+          (Failure "cannot flush a channel created with Lwt_io.of_string")
+      end
 
 let refill = perform_io
 let flush_partial = perform_io
