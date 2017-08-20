@@ -60,7 +60,10 @@ let win32_get_fd fd redirection =
   | `FD_move fd' ->
     Some fd'
 
-external win32_create_process : string option -> string -> string option -> (Unix.file_descr option * Unix.file_descr option * Unix.file_descr option) -> proc = "lwt_process_create_process"
+external win32_create_process :
+  string option -> string -> string option ->
+  (Unix.file_descr option * Unix.file_descr option * Unix.file_descr option) ->
+    proc = "lwt_process_create_process"
 
 let win32_quote arg =
   if String.length arg > 0 && arg.[0] = '\000' then
@@ -68,14 +71,20 @@ let win32_quote arg =
   else
     Filename.quote arg
 
-let win32_spawn (prog, args) env ?(stdin:redirection=`Keep) ?(stdout:redirection=`Keep) ?(stderr:redirection=`Keep) toclose =
+let win32_spawn
+    (prog, args) env
+    ?(stdin:redirection=`Keep)
+    ?(stdout:redirection=`Keep)
+    ?(stderr:redirection=`Keep)
+    toclose =
   let cmdline = String.concat " " (List.map win32_quote (Array.to_list args)) in
   let env =
     match env with
     | None ->
       None
     | Some env ->
-      let len = Array.fold_left (fun len str -> String.length str + len + 1) 1 env in
+      let len =
+        Array.fold_left (fun len str -> String.length str + len + 1) 1 env in
       let res = Bytes.create len in
       let ofs =
         Array.fold_left
@@ -93,8 +102,11 @@ let win32_spawn (prog, args) env ?(stdin:redirection=`Keep) ?(stdout:redirection
   let stdin_fd  = win32_get_fd Unix.stdin stdin
   and stdout_fd = win32_get_fd Unix.stdout stdout
   and stderr_fd = win32_get_fd Unix.stderr stderr in
-  let proc = win32_create_process (if prog = "" then None else Some prog) cmdline env
-      (stdin_fd, stdout_fd, stderr_fd) in
+  let proc =
+    win32_create_process
+      (if prog = "" then None else Some prog) cmdline env
+      (stdin_fd, stdout_fd, stderr_fd)
+  in
   let close = function
     | `FD_move fd ->
       Unix.close fd
@@ -106,13 +118,18 @@ let win32_spawn (prog, args) env ?(stdin:redirection=`Keep) ?(stdout:redirection
   close stderr;
   proc
 
-external win32_wait_job : Unix.file_descr -> int Lwt_unix.job  = "lwt_process_wait_job"
+external win32_wait_job : Unix.file_descr -> int Lwt_unix.job =
+  "lwt_process_wait_job"
 
 let win32_waitproc proc =
   Lwt_unix.run_job (win32_wait_job proc.fd) >>= fun code ->
-  Lwt.return (proc.id, Lwt_unix.WEXITED code, { Lwt_unix.ru_utime = 0.; Lwt_unix.ru_stime = 0. })
+  Lwt.return
+    (proc.id,
+     Lwt_unix.WEXITED code,
+     {Lwt_unix.ru_utime = 0.; Lwt_unix.ru_stime = 0.})
 
-external win32_terminate_process : Unix.file_descr -> int -> unit = "lwt_process_terminate_process"
+external win32_terminate_process : Unix.file_descr -> int -> unit =
+  "lwt_process_terminate_process"
 
 let win32_terminate proc =
   win32_terminate_process proc.fd 1
@@ -137,7 +154,12 @@ let unix_redirect fd redirection = match redirection with
 
 external sys_exit : int -> 'a = "caml_sys_exit"
 
-let unix_spawn (prog, args) env ?(stdin:redirection=`Keep) ?(stdout:redirection=`Keep) ?(stderr:redirection=`Keep) toclose =
+let unix_spawn
+    (prog, args) env
+    ?(stdin:redirection=`Keep)
+    ?(stdout:redirection=`Keep)
+    ?(stderr:redirection=`Keep)
+    toclose =
   let prog = if prog = "" && Array.length args > 0 then args.(0) else prog in
   match Lwt_unix.fork () with
   | 0 ->
@@ -166,7 +188,7 @@ let unix_spawn (prog, args) env ?(stdin:redirection=`Keep) ?(stdout:redirection=
     close stdin;
     close stdout;
     close stderr;
-    { id; fd = Unix.stdin }
+    {id; fd = Unix.stdin}
 
 let unix_waitproc proc = Lwt_unix.wait4 [] proc.id
 
@@ -259,7 +281,8 @@ class process_none ?timeout ?env ?stdin ?stdout ?stderr cmd =
 
 class process_in ?timeout ?env ?stdin ?stderr cmd =
   let stdout_r, stdout_w = Unix.pipe () in
-  let proc = spawn cmd env ?stdin ~stdout:(`FD_move stdout_w) ?stderr [stdout_r] in
+  let proc =
+    spawn cmd env ?stdin ~stdout:(`FD_move stdout_w) ?stderr [stdout_r] in
   let stdout = Lwt_io.of_unix_fd ~mode:Lwt_io.input stdout_r in
   object
     inherit common timeout proc [cast_chan stdout]
@@ -268,7 +291,8 @@ class process_in ?timeout ?env ?stdin ?stderr cmd =
 
 class process_out ?timeout ?env ?stdout ?stderr cmd =
   let stdin_r, stdin_w = Unix.pipe () in
-  let proc = spawn cmd env ~stdin:(`FD_move stdin_r) ?stdout ?stderr [stdin_w] in
+  let proc =
+    spawn cmd env ~stdin:(`FD_move stdin_r) ?stdout ?stderr [stdin_w] in
   let stdin = Lwt_io.of_unix_fd ~mode:Lwt_io.output stdin_w in
   object
     inherit common timeout proc [cast_chan stdin]
@@ -278,7 +302,11 @@ class process_out ?timeout ?env ?stdout ?stderr cmd =
 class process ?timeout ?env ?stderr cmd =
   let stdin_r, stdin_w = Unix.pipe ()
   and stdout_r, stdout_w = Unix.pipe () in
-  let proc = spawn cmd env ~stdin:(`FD_move stdin_r) ~stdout:(`FD_move stdout_w) ?stderr [stdin_w; stdout_r] in
+  let proc =
+    spawn
+      cmd env ~stdin:(`FD_move stdin_r) ~stdout:(`FD_move stdout_w) ?stderr
+      [stdin_w; stdout_r]
+  in
   let stdin = Lwt_io.of_unix_fd ~mode:Lwt_io.output stdin_w
   and stdout = Lwt_io.of_unix_fd ~mode:Lwt_io.input stdout_r in
   object
@@ -291,22 +319,39 @@ class process_full ?timeout ?env cmd =
   let stdin_r, stdin_w = Unix.pipe ()
   and stdout_r, stdout_w = Unix.pipe ()
   and stderr_r, stderr_w = Unix.pipe () in
-  let proc = spawn cmd env ~stdin:(`FD_move stdin_r) ~stdout:(`FD_move stdout_w) ~stderr:(`FD_move stderr_w) [stdin_w; stdout_r; stderr_r] in
+  let proc =
+    spawn
+      cmd env
+      ~stdin:(`FD_move stdin_r)
+      ~stdout:(`FD_move stdout_w)
+      ~stderr:(`FD_move stderr_w)
+      [stdin_w; stdout_r; stderr_r]
+  in
   let stdin = Lwt_io.of_unix_fd ~mode:Lwt_io.output stdin_w
   and stdout = Lwt_io.of_unix_fd ~mode:Lwt_io.input stdout_r
   and stderr = Lwt_io.of_unix_fd ~mode:Lwt_io.input stderr_r in
   object
-    inherit common timeout proc [cast_chan stdin; cast_chan stdout; cast_chan stderr]
+    inherit
+      common timeout proc [cast_chan stdin; cast_chan stdout; cast_chan stderr]
     method stdin = stdin
     method stdout = stdout
     method stderr = stderr
   end
 
-let open_process_none ?timeout ?env ?stdin ?stdout ?stderr cmd = new process_none ?timeout ?env ?stdin ?stdout ?stderr cmd
-let open_process_in ?timeout ?env ?stdin ?stderr cmd = new process_in ?timeout ?env ?stdin ?stderr cmd
-let open_process_out ?timeout ?env ?stdout ?stderr cmd = new process_out ?timeout ?env ?stdout ?stderr cmd
-let open_process ?timeout ?env ?stderr cmd = new process ?timeout ?env ?stderr cmd
-let open_process_full ?timeout ?env cmd = new process_full ?timeout ?env cmd
+let open_process_none ?timeout ?env ?stdin ?stdout ?stderr cmd =
+  new process_none ?timeout ?env ?stdin ?stdout ?stderr cmd
+
+let open_process_in ?timeout ?env ?stdin ?stderr cmd =
+  new process_in ?timeout ?env ?stdin ?stderr cmd
+
+let open_process_out ?timeout ?env ?stdout ?stderr cmd =
+  new process_out ?timeout ?env ?stdout ?stderr cmd
+
+let open_process ?timeout ?env ?stderr cmd =
+  new process ?timeout ?env ?stderr cmd
+
+let open_process_full ?timeout ?env cmd =
+  new process_full ?timeout ?env cmd
 
 let make_with backend ?timeout ?env cmd f =
   let process = backend ?timeout ?env cmd in
@@ -316,17 +361,27 @@ let make_with backend ?timeout ?env cmd f =
        process#close >>= fun _ ->
        Lwt.return_unit)
 
-let with_process_none ?timeout ?env ?stdin ?stdout ?stderr cmd f = make_with (open_process_none ?stdin ?stdout ?stderr) ?timeout ?env cmd f
-let with_process_in ?timeout ?env ?stdin ?stderr cmd f = make_with (open_process_in ?stdin ?stderr) ?timeout ?env cmd f
-let with_process_out ?timeout ?env ?stdout ?stderr cmd f = make_with (open_process_out ?stdout ?stderr) ?timeout ?env cmd f
-let with_process ?timeout ?env ?stderr cmd f = make_with (open_process ?stderr) ?timeout ?env cmd f
-let with_process_full ?timeout ?env cmd f = make_with open_process_full ?timeout ?env cmd f
+let with_process_none ?timeout ?env ?stdin ?stdout ?stderr cmd f =
+  make_with (open_process_none ?stdin ?stdout ?stderr) ?timeout ?env cmd f
+
+let with_process_in ?timeout ?env ?stdin ?stderr cmd f =
+  make_with (open_process_in ?stdin ?stderr) ?timeout ?env cmd f
+
+let with_process_out ?timeout ?env ?stdout ?stderr cmd f =
+  make_with (open_process_out ?stdout ?stderr) ?timeout ?env cmd f
+
+let with_process ?timeout ?env ?stderr cmd f =
+  make_with (open_process ?stderr) ?timeout ?env cmd f
+
+let with_process_full ?timeout ?env cmd f =
+  make_with open_process_full ?timeout ?env cmd f
 
 (* +-----------------------------------------------------------------+
    | High-level functions                                            |
    +-----------------------------------------------------------------+ *)
 
-let exec ?timeout ?env ?stdin ?stdout ?stderr cmd = (open_process_none ?timeout ?env ?stdin ?stdout ?stderr cmd)#close
+let exec ?timeout ?env ?stdin ?stdout ?stderr cmd =
+  (open_process_none ?timeout ?env ?stdin ?stdout ?stderr cmd)#close
 
 let ignore_close ch =
   ignore (Lwt_io.close ch)
@@ -399,13 +454,22 @@ let pwrite ?timeout ?env ?stdout ?stderr cmd text =
   send Lwt_io.write (open_process_out ?timeout ?env ?stdout ?stderr cmd) text
 
 let pwrite_chars ?timeout ?env ?stdout ?stderr cmd chars =
-  send Lwt_io.write_chars (open_process_out ?timeout ?env ?stdout ?stderr cmd) chars
+  send
+    Lwt_io.write_chars
+    (open_process_out ?timeout ?env ?stdout ?stderr cmd)
+    chars
 
 let pwrite_line ?timeout ?env ?stdout ?stderr cmd line =
-  send Lwt_io.write_line (open_process_out ?timeout ?env ?stdout ?stderr cmd) line
+  send
+    Lwt_io.write_line
+    (open_process_out ?timeout ?env ?stdout ?stderr cmd)
+    line
 
 let pwrite_lines ?timeout ?env ?stdout ?stderr cmd lines =
-  send Lwt_io.write_lines (open_process_out ?timeout ?env ?stdout ?stderr cmd) lines
+  send
+    Lwt_io.write_lines
+    (open_process_out ?timeout ?env ?stdout ?stderr cmd)
+    lines
 
 (* Mapping *)
 
