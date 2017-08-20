@@ -59,6 +59,41 @@ parallel the promises that do I/O.
 
 <br/>
 
+### Overview
+
+Lwt compiles to native code on Linux, macOS, Windows, and other systems. It's
+also routinely compiled to JavaScript for the front end and Node, by js_of_ocaml
+and BuckleScript.
+
+In Lwt,
+
+- The [core library `Lwt`][core] provides promises...
+- ...and a few pure-OCaml helpers, such as promise-friendly [mutexes][mutex],
+  [condition variables][cond], and [mvars][mvar].
+- There is a big Unix binding, [`Lwt_unix`][unix] that binds almost every Unix
+  system call. A higher-level module [`Lwt_io`][io] provides nice I/O channels.
+- [`Lwt_process`][process] is for subprocess handling.
+- [`Lwt_preemptive`][preemptive] spawns system threads.
+- The [PPX syntax][ppx] allows using all of the above without going crazy!
+- There are also some other helpers, such as [`Lwt_react`][react] for reactive
+  programming, and [`Lwt_ssl`][ssl] for SSL sockets. See the table of contents
+  on the linked manual pages!
+
+[core]: https://ocsigen.org/lwt/api/Lwt
+[cond]: https://ocsigen.org/lwt/api/Lwt_condition
+[mutex]: https://ocsigen.org/lwt/api/Lwt_mutex
+[mvar]: https://ocsigen.org/lwt/api/Lwt_mvar
+[unix]: https://ocsigen.org/lwt/api/Lwt_unix
+[io]: https://ocsigen.org/lwt/api/Lwt_io
+[process]: https://ocsigen.org/lwt/api/Lwt_process
+[preemptive]: https://ocsigen.org/lwt/api/Lwt_preemptive
+[ppx]: https://ocsigen.org/lwt/api/Ppx_lwt
+[react]: https://ocsigen.org/lwt/api/Lwt_react
+[ssl]: https://ocsigen.org/lwt/api/Lwt_ssl
+
+
+<br/>
+
 ## Installing
 
 1. Use your system package manager to install a development libev package.
