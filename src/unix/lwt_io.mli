@@ -404,6 +404,17 @@ val with_file :
       file and passes the channel to [f]. It is ensured that the
       channel is closed when [f ch] terminates (even if it fails). *)
 
+val temp_filename :
+  unit -> string Lwt.t
+
+val open_temp_file :
+  ?buffer:Lwt_bytes.t ->
+  ?perm:Unix.file_perm -> unit -> output_channel Lwt.t
+
+val with_temp_file :
+  ?buffer:Lwt_bytes.t ->
+  ?perm:Unix.file_perm -> (output_channel -> 'b Lwt.t) -> 'b Lwt.t
+
 val open_connection :
   ?fd : Lwt_unix.file_descr ->
   ?in_buffer : Lwt_bytes.t -> ?out_buffer : Lwt_bytes.t ->

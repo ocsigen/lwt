@@ -310,4 +310,17 @@ let suite = suite "lwt_io" [
           ) >|= fun () ->
         !exceptions_observed = 2
     );
+
+  test "open_temp_file"
+    (fun () ->
+       Lwt_io.open_temp_file () >>= fun out_chan ->
+       Lwt_io.write out_chan "test_file_content" >>= fun () ->
+       Lwt_io.close out_chan >>= fun () ->
+       Lwt.return_true
+    );
+
+  test "get_temp_filename"
+    (fun () ->
+       Lwt_io.temp_filename () >>= Lwt_unix.file_exists >|= fun e -> not e
+    );
 ]

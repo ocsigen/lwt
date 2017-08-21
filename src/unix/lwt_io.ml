@@ -1354,6 +1354,29 @@ let with_file ?buffer ?flags ?perm ~mode filename f =
     (fun () -> f ic)
     (fun () -> close ic)
 
+let temp_filename () =
+  let rec helper n =
+    let f = "lwt_io_temp_file_" ^ string_of_int n in
+    Lwt_unix.file_exists f >>= fun exists ->
+    if exists then helper (n + 1)
+    else Lwt.return f
+  in
+  helper 0
+
+let open_temp_file:
+  ?buffer : Lwt_bytes.t ->
+  ?perm : Unix.file_perm ->
+  unit -> output_channel Lwt.t
+  = fun ?buffer ?perm ->
+    fun () -> temp_filename () >>= fun fname ->
+      open_file ?buffer:buffer ?perm:perm ~mode:Output fname
+
+let with_temp_file ?buffer ?perm f =
+  open_temp_file ?buffer ?perm () >>= fun ic ->
+  Lwt.finalize
+    (fun () -> f ic)
+    (fun () -> close ic)
+
 let file_length filename = with_file ~mode:input filename length
 
 let close_socket fd =
