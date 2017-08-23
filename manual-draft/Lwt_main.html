@@ -1,0 +1,113 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Lwt_log.html">
+<link rel="next" href="Lwt_process.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of class attributes" rel=Appendix href="index_attributes.html">
+<link title="Index of class methods" rel=Appendix href="index_methods.html">
+<link title="Index of classes" rel=Appendix href="index_classes.html">
+<link title="Index of class types" rel=Appendix href="index_class_types.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Pa_lwt" rel="Chapter" href="Pa_lwt.html">
+<link title="Lwt" rel="Chapter" href="Lwt.html">
+<link title="Lwt_condition" rel="Chapter" href="Lwt_condition.html">
+<link title="Lwt_list" rel="Chapter" href="Lwt_list.html">
+<link title="Lwt_mutex" rel="Chapter" href="Lwt_mutex.html">
+<link title="Lwt_mvar" rel="Chapter" href="Lwt_mvar.html">
+<link title="Lwt_pool" rel="Chapter" href="Lwt_pool.html">
+<link title="Lwt_pqueue" rel="Chapter" href="Lwt_pqueue.html">
+<link title="Lwt_result" rel="Chapter" href="Lwt_result.html">
+<link title="Lwt_sequence" rel="Chapter" href="Lwt_sequence.html">
+<link title="Lwt_stream" rel="Chapter" href="Lwt_stream.html">
+<link title="Lwt_switch" rel="Chapter" href="Lwt_switch.html">
+<link title="Lwt_glib" rel="Chapter" href="Lwt_glib.html">
+<link title="Lwt_log_core" rel="Chapter" href="Lwt_log_core.html">
+<link title="Lwt_log_rules" rel="Chapter" href="Lwt_log_rules.html">
+<link title="Ppx_lwt" rel="Chapter" href="Ppx_lwt.html">
+<link title="Lwt_preemptive" rel="Chapter" href="Lwt_preemptive.html">
+<link title="Lwt_react" rel="Chapter" href="Lwt_react.html">
+<link title="Lwt_ssl" rel="Chapter" href="Lwt_ssl.html">
+<link title="Lwt_bytes" rel="Chapter" href="Lwt_bytes.html">
+<link title="Lwt_chan" rel="Chapter" href="Lwt_chan.html">
+<link title="Lwt_daemon" rel="Chapter" href="Lwt_daemon.html">
+<link title="Lwt_engine" rel="Chapter" href="Lwt_engine.html">
+<link title="Lwt_gc" rel="Chapter" href="Lwt_gc.html">
+<link title="Lwt_io" rel="Chapter" href="Lwt_io.html">
+<link title="Lwt_log" rel="Chapter" href="Lwt_log.html">
+<link title="Lwt_main" rel="Chapter" href="Lwt_main.html">
+<link title="Lwt_process" rel="Chapter" href="Lwt_process.html">
+<link title="Lwt_sys" rel="Chapter" href="Lwt_sys.html">
+<link title="Lwt_throttle" rel="Chapter" href="Lwt_throttle.html">
+<link title="Lwt_timeout" rel="Chapter" href="Lwt_timeout.html">
+<link title="Lwt_unix" rel="Chapter" href="Lwt_unix.html"><title>Lwt_main</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="Lwt_log.html" title="Lwt_log">Previous</a>
+&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;<a class="post" href="Lwt_process.html" title="Lwt_process">Next</a>
+</div>
+<h1>Module <a href="type_Lwt_main.html">Lwt_main</a></h1>
+
+<pre><span class="keyword">module</span> Lwt_main: <code class="code"><span class="keyword">sig</span></code> <a href="Lwt_main.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+Main loop and event queue<br>
+</div>
+<hr width="100%">
+<br>
+This module controls the ``main-loop'' of Lwt.<br>
+
+<pre><span id="VALrun"><span class="keyword">val</span> run</span> : <code class="type">'a <a href="Lwt.html#TYPEt">Lwt.t</a> -> 'a</code></pre><div class="info ">
+<code class="code">run&nbsp;t</code> calls the Lwt scheduler repeatedly until <code class="code">t</code> terminates,
+      then returns the value returned by the thread. If <code class="code">t</code> fails with
+      an exception, this exception is raised.
+<p>
+
+      Note that you should avoid using <code class="code">run</code> inside threads<ul>
+<li>The calling threads will not resume before <code class="code">run</code>
+        returns.</li>
+<li>Successive invocations of <code class="code">run</code> are serialized: an
+        invocation of <code class="code">run</code> will not terminate before all
+        subsequent invocations are terminated.</li>
+</ul>
+
+      Note also that it is not safe to call <code class="code">run</code> in a function
+      registered with <code class="code"><span class="constructor">Pervasives</span>.at_exit</code>, use the <a href="Lwt_main.html#VALat_exit"><code class="code"><span class="constructor">Lwt_main</span>.at_exit</code></a>
+      function of this module instead.<br>
+</div>
+
+<pre><span id="VALyield"><span class="keyword">val</span> yield</span> : <code class="type">unit -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">yield&nbsp;()</code> is a threads which suspends itself and then resumes
+      as soon as possible and terminates.<br>
+</div>
+
+<pre><span id="VALenter_iter_hooks"><span class="keyword">val</span> enter_iter_hooks</span> : <code class="type">(unit -> unit) <a href="Lwt_sequence.html#TYPEt">Lwt_sequence.t</a></code></pre><div class="info ">
+Functions that are called before the main iteration.<br>
+</div>
+
+<pre><span id="VALleave_iter_hooks"><span class="keyword">val</span> leave_iter_hooks</span> : <code class="type">(unit -> unit) <a href="Lwt_sequence.html#TYPEt">Lwt_sequence.t</a></code></pre><div class="info ">
+Functions that are called after the main iteration.<br>
+</div>
+
+<pre><span id="VALexit_hooks"><span class="keyword">val</span> exit_hooks</span> : <code class="type">(unit -> unit <a href="Lwt.html#TYPEt">Lwt.t</a>) <a href="Lwt_sequence.html#TYPEt">Lwt_sequence.t</a></code></pre><div class="info ">
+Sets of functions executed just before the program exit.
+<p>
+
+      Notes:<ul>
+<li>each hook is called exactly one time</li>
+<li>exceptions raised by hooks are ignored</li>
+</ul>
+<br>
+</div>
+
+<pre><span id="VALat_exit"><span class="keyword">val</span> at_exit</span> : <code class="type">(unit -> unit <a href="Lwt.html#TYPEt">Lwt.t</a>) -> unit</code></pre><div class="info ">
+<code class="code">at_exit&nbsp;hook</code> adds hook at the left of <code class="code">exit_hooks</code><br>
+</div>
+</body></html>

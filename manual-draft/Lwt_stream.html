@@ -1,0 +1,502 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Lwt_sequence.html">
+<link rel="next" href="Lwt_switch.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of class attributes" rel=Appendix href="index_attributes.html">
+<link title="Index of class methods" rel=Appendix href="index_methods.html">
+<link title="Index of classes" rel=Appendix href="index_classes.html">
+<link title="Index of class types" rel=Appendix href="index_class_types.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Pa_lwt" rel="Chapter" href="Pa_lwt.html">
+<link title="Lwt" rel="Chapter" href="Lwt.html">
+<link title="Lwt_condition" rel="Chapter" href="Lwt_condition.html">
+<link title="Lwt_list" rel="Chapter" href="Lwt_list.html">
+<link title="Lwt_mutex" rel="Chapter" href="Lwt_mutex.html">
+<link title="Lwt_mvar" rel="Chapter" href="Lwt_mvar.html">
+<link title="Lwt_pool" rel="Chapter" href="Lwt_pool.html">
+<link title="Lwt_pqueue" rel="Chapter" href="Lwt_pqueue.html">
+<link title="Lwt_result" rel="Chapter" href="Lwt_result.html">
+<link title="Lwt_sequence" rel="Chapter" href="Lwt_sequence.html">
+<link title="Lwt_stream" rel="Chapter" href="Lwt_stream.html">
+<link title="Lwt_switch" rel="Chapter" href="Lwt_switch.html">
+<link title="Lwt_glib" rel="Chapter" href="Lwt_glib.html">
+<link title="Lwt_log_core" rel="Chapter" href="Lwt_log_core.html">
+<link title="Lwt_log_rules" rel="Chapter" href="Lwt_log_rules.html">
+<link title="Ppx_lwt" rel="Chapter" href="Ppx_lwt.html">
+<link title="Lwt_preemptive" rel="Chapter" href="Lwt_preemptive.html">
+<link title="Lwt_react" rel="Chapter" href="Lwt_react.html">
+<link title="Lwt_ssl" rel="Chapter" href="Lwt_ssl.html">
+<link title="Lwt_bytes" rel="Chapter" href="Lwt_bytes.html">
+<link title="Lwt_chan" rel="Chapter" href="Lwt_chan.html">
+<link title="Lwt_daemon" rel="Chapter" href="Lwt_daemon.html">
+<link title="Lwt_engine" rel="Chapter" href="Lwt_engine.html">
+<link title="Lwt_gc" rel="Chapter" href="Lwt_gc.html">
+<link title="Lwt_io" rel="Chapter" href="Lwt_io.html">
+<link title="Lwt_log" rel="Chapter" href="Lwt_log.html">
+<link title="Lwt_main" rel="Chapter" href="Lwt_main.html">
+<link title="Lwt_process" rel="Chapter" href="Lwt_process.html">
+<link title="Lwt_sys" rel="Chapter" href="Lwt_sys.html">
+<link title="Lwt_throttle" rel="Chapter" href="Lwt_throttle.html">
+<link title="Lwt_timeout" rel="Chapter" href="Lwt_timeout.html">
+<link title="Lwt_unix" rel="Chapter" href="Lwt_unix.html"><link title="Construction" rel="Section" href="#2_Construction">
+<link title="Destruction" rel="Section" href="#2_Destruction">
+<link title="Data retrieval" rel="Section" href="#2_Dataretrieval">
+<link title="Stream transversal" rel="Section" href="#2_Streamtransversal">
+<link title="Parsing" rel="Section" href="#2_Parsing">
+<link title="Misc" rel="Section" href="#2_Misc">
+<link title="Deprecated" rel="Section" href="#2_Deprecated">
+<title>Lwt_stream</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="Lwt_sequence.html" title="Lwt_sequence">Previous</a>
+&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;<a class="post" href="Lwt_switch.html" title="Lwt_switch">Next</a>
+</div>
+<h1>Module <a href="type_Lwt_stream.html">Lwt_stream</a></h1>
+
+<pre><span class="keyword">module</span> Lwt_stream: <code class="code"><span class="keyword">sig</span></code> <a href="Lwt_stream.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+Data streams<br>
+</div>
+<hr width="100%">
+
+<pre><span id="TYPEt"><span class="keyword">type</span> <code class="type">'a</code> t</span> </pre>
+<div class="info ">
+A stream holding values of type <code class="code"><span class="keywordsign">'</span>a</code>.
+<p>
+
+    Naming convention: in this module, all functions applying a function
+    to each element of a stream are suffixed by:
+<p>
+<ul>
+<li><code class="code">_s</code> when the function returns a thread and calls are serialised</li>
+<li><code class="code">_p</code> when the function returns a thread and calls are parallelised</li>
+</ul>
+
+    This module may undergo redesign or deprecation in the future. See
+    <a href="https://github.com/ocsigen/lwt/issues/250"> Flaws of <code class="code"><span class="constructor">Lwt_stream</span></code></a>. In
+    the meantime, you may want to consider using alternatives such as
+    <a href="https://github.com/c-cube/lwt-pipe"> lwt-pipe</a>.<br>
+</div>
+
+<br>
+<h2 id="2_Construction">Construction</h2><br>
+
+<pre><span id="VALfrom"><span class="keyword">val</span> from</span> : <code class="type">(unit -> 'a option <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_stream.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">from&nbsp;f</code> creates a stream from the given input function. <code class="code">f</code> is
+    called each time more input is needed, and the stream ends when
+    <code class="code">f</code> returns <code class="code"><span class="constructor">None</span></code>.
+<p>
+
+    If <code class="code">f</code>, or the thread produced by <code class="code">f</code>, raises an exception, that exception
+    is forwarded to the consumer of the stream (for example, a caller of
+    <a href="Lwt_stream.html#VALget"><code class="code"><span class="constructor">Lwt_stream</span>.get</code></a>). Note that this does not end the stream. A subsequent attempt to
+    read from the stream will cause another call to <code class="code">f</code>, which may succeed
+    with a value.<br>
+</div>
+
+<pre><span id="VALfrom_direct"><span class="keyword">val</span> from_direct</span> : <code class="type">(unit -> 'a option) -> 'a <a href="Lwt_stream.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">from_direct&nbsp;f</code> does the same as <a href="Lwt_stream.html#VALfrom"><code class="code"><span class="constructor">Lwt_stream</span>.from</code></a> but with a function
+    that does not return a thread. It is preferred that this
+    function be used rather than wrapping <code class="code">f</code> into a function which
+    returns a thread.
+<p>
+
+    The behavior when <code class="code">f</code> raises an exception is the same as for <a href="Lwt_stream.html#VALfrom"><code class="code"><span class="constructor">Lwt_stream</span>.from</code></a>,
+    except that <code class="code">f</code> does not produce a thread.<br>
+</div>
+
+<pre><span id="EXCEPTIONClosed"><span class="keyword">exception</span> Closed</span></pre>
+<div class="info ">
+Exception raised by the push function of a push-stream when
+    pushing an element after the end of stream (<code class="code">=&nbsp;<span class="constructor">None</span></code>) has been
+    pushed.<br>
+</div>
+
+<pre><span id="VALcreate"><span class="keyword">val</span> create</span> : <code class="type">unit -> 'a <a href="Lwt_stream.html#TYPEt">t</a> * ('a option -> unit)</code></pre><div class="info ">
+<code class="code">create&nbsp;()</code> returns a new stream and a push function.
+<p>
+
+    To notify the stream's consumer of errors, either use a separate
+    communication channel, or use a
+    <a href="http://caml.inria.fr/pub/docs/manual-ocaml/libref/Pervasives.html#TYPEresult">
+    <code class="code">result</code></a> stream. There is no way to push an exception into a
+    push-stream.<br>
+</div>
+
+<pre><span id="VALcreate_with_reference"><span class="keyword">val</span> create_with_reference</span> : <code class="type">unit -> 'a <a href="Lwt_stream.html#TYPEt">t</a> * ('a option -> unit) * ('b -> unit)</code></pre><div class="info ">
+<code class="code">create_with_reference&nbsp;()</code> returns a new stream and a push
+    function. The last function allows a reference to be set to an
+    external source. This prevents the external source from being
+    garbage collected.
+<p>
+
+    For example, to convert a reactive event to a stream:
+<p>
+
+    <pre class="codepre"><code class="code">      <span class="keyword">let</span> stream, push, set_ref = <span class="constructor">Lwt_stream</span>.create_with_reference () <span class="keyword">in</span>
+      set_ref (map_event push event)
+    </code></pre><br>
+</div>
+
+<pre><span id="EXCEPTIONFull"><span class="keyword">exception</span> Full</span></pre>
+<div class="info ">
+Exception raised by the push function of a bounded push-stream
+    when the stream queue is full and a thread is already waiting to
+    push an element.<br>
+</div>
+
+<pre><span id="TYPEbounded_push"><span class="keyword">class type</span> <code class="type">['a]</code> <a href="Lwt_stream.bounded_push-c.html">bounded_push</a></span> = <code class="code"><span class="keyword">object</span></code> <a href="Lwt_stream.bounded_push-c.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
+Type of sources for bounded push-streams.
+</div>
+
+<pre><span id="VALcreate_bounded"><span class="keyword">val</span> create_bounded</span> : <code class="type">int -> 'a <a href="Lwt_stream.html#TYPEt">t</a> * 'a <a href="Lwt_stream.bounded_push-c.html">bounded_push</a></code></pre><div class="info ">
+<code class="code">create_bounded&nbsp;size</code> returns a new stream and a bounded push
+    source. The stream can hold a maximum of <code class="code">size</code> elements.  When
+    this limit is reached, pushing a new element will block until
+    one is consumed.
+<p>
+
+    Note that you cannot clone or parse (with <a href="Lwt_stream.html#VALparse"><code class="code"><span class="constructor">Lwt_stream</span>.parse</code></a>) a bounded
+    stream. These functions will raise <code class="code"><span class="constructor">Invalid_argument</span></code> if you try
+    to do so.
+<p>
+
+    It raises <code class="code"><span class="constructor">Invalid_argument</span></code> if <code class="code">size&nbsp;&lt;&nbsp;0</code>.<br>
+</div>
+
+<pre><span id="VALof_list"><span class="keyword">val</span> of_list</span> : <code class="type">'a list -> 'a <a href="Lwt_stream.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">of_list&nbsp;l</code> creates a stream returning all elements of <code class="code">l</code>. The elements are
+    pushed into the stream immediately, resulting in a closed stream (in the
+    sense of <a href="Lwt_stream.html#VALis_closed"><code class="code"><span class="constructor">Lwt_stream</span>.is_closed</code></a>).<br>
+</div>
+
+<pre><span id="VALof_array"><span class="keyword">val</span> of_array</span> : <code class="type">'a array -> 'a <a href="Lwt_stream.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">of_array&nbsp;a</code> creates a stream returning all elements of <code class="code">a</code>. The elements
+    are pushed into the stream immediately, resulting in a closed stream (in the
+    sense of <a href="Lwt_stream.html#VALis_closed"><code class="code"><span class="constructor">Lwt_stream</span>.is_closed</code></a>).<br>
+</div>
+
+<pre><span id="VALof_string"><span class="keyword">val</span> of_string</span> : <code class="type">string -> char <a href="Lwt_stream.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">of_string&nbsp;str</code> creates a stream returning all characters of <code class="code">str</code>. The
+    characters are pushed into the stream immediately, resulting in a closed
+    stream (in the sense of <a href="Lwt_stream.html#VALis_closed"><code class="code"><span class="constructor">Lwt_stream</span>.is_closed</code></a>).<br>
+</div>
+
+<pre><span id="VALclone"><span class="keyword">val</span> clone</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'a <a href="Lwt_stream.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">clone&nbsp;st</code> clone the given stream. Operations on each stream
+    will not affect the other.
+<p>
+
+    For example:
+<p>
+
+    <pre class="codepre"><code class="code">      <span class="keywordsign">#</span> <span class="keyword">let</span> st1 = <span class="constructor">Lwt_stream</span>.of_list [1; 2; 3];;
+      <span class="keyword">val</span> st1 : int <span class="constructor">Lwt_stream</span>.t = &lt;abstr&gt;
+      <span class="keywordsign">#</span> <span class="keyword">let</span> st2 = <span class="constructor">Lwt_stream</span>.clone st1;;
+      <span class="keyword">val</span> st2 : int <span class="constructor">Lwt_stream</span>.t = &lt;abstr&gt;
+      <span class="keywordsign">#</span> lwt x = <span class="constructor">Lwt_stream</span>.next st1;;
+      <span class="keyword">val</span> x : int = 1
+      <span class="keywordsign">#</span> lwt y = <span class="constructor">Lwt_stream</span>.next st2;;
+      <span class="keyword">val</span> y : int = 1
+    </code></pre>
+<p>
+
+    It raises <code class="code"><span class="constructor">Invalid_argument</span></code> if <code class="code">st</code> is a bounded
+    push-stream.<br>
+</div>
+<br>
+<h2 id="2_Destruction">Destruction</h2><br>
+
+<pre><span id="VALto_list"><span class="keyword">val</span> to_list</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'a list <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Returns the list of elements of the given stream<br>
+</div>
+
+<pre><span id="VALto_string"><span class="keyword">val</span> to_string</span> : <code class="type">char <a href="Lwt_stream.html#TYPEt">t</a> -> string <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Returns the word composed of all characters of the given
+    stream<br>
+</div>
+<br>
+<h2 id="2_Dataretrieval">Data retrieval</h2><br>
+
+<pre><span id="EXCEPTIONEmpty"><span class="keyword">exception</span> Empty</span></pre>
+<div class="info ">
+Exception raised when trying to retrieve data from an empty
+    stream.<br>
+</div>
+
+<pre><span id="VALpeek"><span class="keyword">val</span> peek</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'a option <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">peek&nbsp;st</code> returns the first element of the stream, if any,
+    without removing it.<br>
+</div>
+
+<pre><span id="VALnpeek"><span class="keyword">val</span> npeek</span> : <code class="type">int -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'a list <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">npeek&nbsp;n&nbsp;st</code> returns at most the first <code class="code">n</code> elements of <code class="code">st</code>,
+    without removing them.<br>
+</div>
+
+<pre><span id="VALget"><span class="keyword">val</span> get</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'a option <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">get&nbsp;st</code> removes and returns the first element of the stream, if
+    any.<br>
+</div>
+
+<pre><span id="VALnget"><span class="keyword">val</span> nget</span> : <code class="type">int -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'a list <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">nget&nbsp;n&nbsp;st</code> removes and returns at most the first <code class="code">n</code> elements of
+    <code class="code">st</code>.<br>
+</div>
+
+<pre><span id="VALget_while"><span class="keyword">val</span> get_while</span> : <code class="type">('a -> bool) -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'a list <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span id="VALget_while_s"><span class="keyword">val</span> get_while_s</span> : <code class="type">('a -> bool <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'a list <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">get_while&nbsp;f&nbsp;st</code> returns the longest prefix of <code class="code">st</code> where all
+    elements satisfy <code class="code">f</code>.<br>
+</div>
+
+<pre><span id="VALnext"><span class="keyword">val</span> next</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">next&nbsp;st</code> removes and returns the next element of the stream or
+    fails with <a href="Lwt_stream.html#EXCEPTIONEmpty"><code class="code"><span class="constructor">Lwt_stream</span>.<span class="constructor">Empty</span></code></a>, if the stream is empty.<br>
+</div>
+
+<pre><span id="VALlast_new"><span class="keyword">val</span> last_new</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">last_new&nbsp;st</code> returns the last element that can be obtained
+    without sleeping, or wait for one if none is available.
+<p>
+
+    It fails with <a href="Lwt_stream.html#EXCEPTIONEmpty"><code class="code"><span class="constructor">Lwt_stream</span>.<span class="constructor">Empty</span></code></a> if the stream has no more elements.<br>
+</div>
+
+<pre><span id="VALjunk"><span class="keyword">val</span> junk</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">t</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">junk&nbsp;st</code> removes the first element of <code class="code">st</code>.<br>
+</div>
+
+<pre><span id="VALnjunk"><span class="keyword">val</span> njunk</span> : <code class="type">int -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">njunk&nbsp;n&nbsp;st</code> removes at most the first <code class="code">n</code> elements of the
+    stream.<br>
+</div>
+
+<pre><span id="VALjunk_while"><span class="keyword">val</span> junk_while</span> : <code class="type">('a -> bool) -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span id="VALjunk_while_s"><span class="keyword">val</span> junk_while_s</span> : <code class="type">('a -> bool <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">junk_while&nbsp;f&nbsp;st</code> removes all elements at the beginning of the
+    streams which satisfy <code class="code">f</code>.<br>
+</div>
+
+<pre><span id="VALjunk_old"><span class="keyword">val</span> junk_old</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">t</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">junk_old&nbsp;st</code> removes all elements that are ready to be read
+    without yielding from <code class="code">st</code>.
+<p>
+
+    For example, the <code class="code">read_password</code> function of <code class="code"><span class="constructor">Lwt_read_line</span></code>
+    uses it to flush keys previously typed by the user.<br>
+</div>
+
+<pre><span id="VALget_available"><span class="keyword">val</span> get_available</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'a list</code></pre><div class="info ">
+<code class="code">get_available&nbsp;st</code> returns all available elements of <code class="code">l</code> without
+    blocking.<br>
+</div>
+
+<pre><span id="VALget_available_up_to"><span class="keyword">val</span> get_available_up_to</span> : <code class="type">int -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'a list</code></pre><div class="info ">
+<code class="code">get_available_up_to&nbsp;n&nbsp;st</code> returns up to <code class="code">n</code> elements of <code class="code">l</code>
+    without blocking.<br>
+</div>
+
+<pre><span id="VALis_empty"><span class="keyword">val</span> is_empty</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">t</a> -> bool <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">is_empty&nbsp;st</code> returns whether the given stream is empty.<br>
+</div>
+
+<pre><span id="VALis_closed"><span class="keyword">val</span> is_closed</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">t</a> -> bool</code></pre><div class="info ">
+<code class="code">is_closed&nbsp;st</code> returns whether the given stream has been closed. A closed
+    stream is not necessarily empty. It may still contain unread elements. If
+    <code class="code">is_closed&nbsp;s&nbsp;=&nbsp;<span class="keyword">true</span></code>, then all subsequent reads until the end of the
+    stream are guaranteed not to block.<br>
+<b>Since</b> 2.6.0<br>
+</div>
+
+<pre><span id="VALclosed"><span class="keyword">val</span> closed</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">t</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">closed&nbsp;st</code> returns a thread that will sleep until the stream has been
+    closed.<br>
+<b>Since</b> 2.6.0<br>
+</div>
+
+<pre><span id="VALon_termination"><span class="keyword">val</span> on_termination</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">t</a> -> (unit -> unit) -> unit</code></pre><div class="info ">
+<span class="warning">Deprecated.</span>Use <a href="Lwt_stream.html#VALclosed"><code class="code"><span class="constructor">Lwt_stream</span>.closed</code></a>.<br>
+<code class="code">on_termination&nbsp;st&nbsp;f</code> executes <code class="code">f</code> when the end of the stream <code class="code">st</code>
+    is reached. Note that the stream may still contain elements if
+    <a href="Lwt_stream.html#VALpeek"><code class="code"><span class="constructor">Lwt_stream</span>.peek</code></a> or similar was used.<br>
+</div>
+
+<pre><span id="VALon_terminate"><span class="keyword">val</span> on_terminate</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">t</a> -> (unit -> unit) -> unit</code></pre><div class="info ">
+<span class="warning">Deprecated.</span>Use <a href="Lwt_stream.html#VALclosed"><code class="code"><span class="constructor">Lwt_stream</span>.closed</code></a>.<br>
+Same as <a href="Lwt_stream.html#VALon_termination"><code class="code"><span class="constructor">Lwt_stream</span>.on_termination</code></a>.<br>
+</div>
+<br>
+<h2 id="2_Streamtransversal">Stream transversal</h2><br>
+<br>
+Note: all the following functions are destructive.
+<p>
+
+    For example:
+<p>
+
+    <pre class="codepre"><code class="code">      <span class="keywordsign">#</span> <span class="keyword">let</span> st1 = <span class="constructor">Lwt_stream</span>.of_list [1; 2; 3];;
+      <span class="keyword">val</span> st1 : int <span class="constructor">Lwt_stream</span>.t = &lt;abstr&gt;
+      <span class="keywordsign">#</span> <span class="keyword">let</span> st2 = <span class="constructor">Lwt_stream</span>.map string_of_int st1;;
+      <span class="keyword">val</span> st2 : string <span class="constructor">Lwt_stream</span>.t = &lt;abstr&gt;
+      <span class="keywordsign">#</span> lwt x = <span class="constructor">Lwt_stream</span>.next st1;;
+      <span class="keyword">val</span> x : int = 1
+      <span class="keywordsign">#</span> lwt y = <span class="constructor">Lwt_stream</span>.next st2;;
+      <span class="keyword">val</span> y : string = <span class="string">"2"</span>
+    </code></pre><br>
+
+<pre><span id="VALchoose"><span class="keyword">val</span> choose</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">t</a> list -> 'a <a href="Lwt_stream.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">choose&nbsp;l</code> creates an stream from a list of streams. The
+    resulting stream will return elements returned by any stream of
+    <code class="code">l</code> in an unspecified order.<br>
+</div>
+
+<pre><span id="VALmap"><span class="keyword">val</span> map</span> : <code class="type">('a -> 'b) -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'b <a href="Lwt_stream.html#TYPEt">t</a></code></pre>
+<pre><span id="VALmap_s"><span class="keyword">val</span> map_s</span> : <code class="type">('a -> 'b <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'b <a href="Lwt_stream.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">map&nbsp;f&nbsp;st</code> maps the value returned by <code class="code">st</code> with <code class="code">f</code><br>
+</div>
+
+<pre><span id="VALfilter"><span class="keyword">val</span> filter</span> : <code class="type">('a -> bool) -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'a <a href="Lwt_stream.html#TYPEt">t</a></code></pre>
+<pre><span id="VALfilter_s"><span class="keyword">val</span> filter_s</span> : <code class="type">('a -> bool <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'a <a href="Lwt_stream.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">filter&nbsp;f&nbsp;st</code> keeps only values, <code class="code">x</code>, such that <code class="code">f&nbsp;x</code> is <code class="code"><span class="keyword">true</span></code><br>
+</div>
+
+<pre><span id="VALfilter_map"><span class="keyword">val</span> filter_map</span> : <code class="type">('a -> 'b option) -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'b <a href="Lwt_stream.html#TYPEt">t</a></code></pre>
+<pre><span id="VALfilter_map_s"><span class="keyword">val</span> filter_map_s</span> : <code class="type">('a -> 'b option <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'b <a href="Lwt_stream.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">filter_map&nbsp;f&nbsp;st</code> filter and map <code class="code">st</code> at the same time<br>
+</div>
+
+<pre><span id="VALmap_list"><span class="keyword">val</span> map_list</span> : <code class="type">('a -> 'b list) -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'b <a href="Lwt_stream.html#TYPEt">t</a></code></pre>
+<pre><span id="VALmap_list_s"><span class="keyword">val</span> map_list_s</span> : <code class="type">('a -> 'b list <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'b <a href="Lwt_stream.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">map_list&nbsp;f&nbsp;st</code> applies <code class="code">f</code> on each element of <code class="code">st</code> and flattens
+    the lists returned<br>
+</div>
+
+<pre><span id="VALfold"><span class="keyword">val</span> fold</span> : <code class="type">('a -> 'b -> 'b) -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'b -> 'b <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span id="VALfold_s"><span class="keyword">val</span> fold_s</span> : <code class="type">('a -> 'b -> 'b <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'b -> 'b <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">fold&nbsp;f&nbsp;s&nbsp;x</code> fold_like function for streams.<br>
+</div>
+
+<pre><span id="VALiter"><span class="keyword">val</span> iter</span> : <code class="type">('a -> unit) -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span id="VALiter_p"><span class="keyword">val</span> iter_p</span> : <code class="type">('a -> unit <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span id="VALiter_s"><span class="keyword">val</span> iter_s</span> : <code class="type">('a -> unit <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">iter&nbsp;f&nbsp;s</code> iterates over all elements of the stream.<br>
+</div>
+
+<pre><span id="VALfind"><span class="keyword">val</span> find</span> : <code class="type">('a -> bool) -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'a option <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span id="VALfind_s"><span class="keyword">val</span> find_s</span> : <code class="type">('a -> bool <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'a option <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">find&nbsp;f&nbsp;s</code> find an element in a stream.<br>
+</div>
+
+<pre><span id="VALfind_map"><span class="keyword">val</span> find_map</span> : <code class="type">('a -> 'b option) -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'b option <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span id="VALfind_map_s"><span class="keyword">val</span> find_map_s</span> : <code class="type">('a -> 'b option <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'b option <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">find_map&nbsp;f&nbsp;s</code> find and map at the same time.<br>
+</div>
+
+<pre><span id="VALcombine"><span class="keyword">val</span> combine</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'b <a href="Lwt_stream.html#TYPEt">t</a> -> ('a * 'b) <a href="Lwt_stream.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">combine&nbsp;s1&nbsp;s2</code> combines two streams. The stream will end when
+    either stream ends.<br>
+</div>
+
+<pre><span id="VALappend"><span class="keyword">val</span> append</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'a <a href="Lwt_stream.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">append&nbsp;s1&nbsp;s2</code> returns a stream which returns all elements of
+    <code class="code">s1</code>, then all elements of <code class="code">s2</code><br>
+</div>
+
+<pre><span id="VALconcat"><span class="keyword">val</span> concat</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">t</a> <a href="Lwt_stream.html#TYPEt">t</a> -> 'a <a href="Lwt_stream.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">concat&nbsp;st</code> returns the concatenation of all streams of <code class="code">st</code>.<br>
+</div>
+
+<pre><span id="VALflatten"><span class="keyword">val</span> flatten</span> : <code class="type">'a list <a href="Lwt_stream.html#TYPEt">t</a> -> 'a <a href="Lwt_stream.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">flatten&nbsp;st&nbsp;=&nbsp;map_list&nbsp;(<span class="keyword">fun</span>&nbsp;l&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;l)&nbsp;st</code><br>
+</div>
+
+<pre><span id="VALwrap_exn"><span class="keyword">val</span> wrap_exn</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'a <a href="Lwt.html#TYPEresult">Lwt.result</a> <a href="Lwt_stream.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">wrap_exn&nbsp;s</code> is a stream <code class="code">s'</code> such that each time <code class="code">s</code> yields a value <code class="code">v</code>,
+    <code class="code">s'</code> yields <code class="code"><span class="constructor">Result</span>.<span class="constructor">Ok</span>&nbsp;v</code>, and when the source of <code class="code">s</code> raises an exception
+    <code class="code">e</code>, <code class="code">s'</code> yields <code class="code"><span class="constructor">Result</span>.<span class="constructor">Error</span>&nbsp;e</code>.
+<p>
+
+    Note that push-streams (as returned by <a href="Lwt_stream.html#VALcreate"><code class="code"><span class="constructor">Lwt_stream</span>.create</code></a>) never raise exceptions.
+<p>
+
+    If the stream source keeps raising the same exception <code class="code">e</code> each time the
+    stream is read, <code class="code">s'</code> is unbounded. Reading it will produce <code class="code"><span class="constructor">Result</span>.<span class="constructor">Error</span>&nbsp;e</code>
+    indefinitely.<br>
+<b>Since</b> 2.7.0<br>
+</div>
+<br>
+<h2 id="2_Parsing">Parsing</h2><br>
+
+<pre><span id="VALparse"><span class="keyword">val</span> parse</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">t</a> -> ('a <a href="Lwt_stream.html#TYPEt">t</a> -> 'b <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'b <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">parse&nbsp;st&nbsp;f</code> parses <code class="code">st</code> with <code class="code">f</code>. If <code class="code">f</code> raise an exception,
+    <code class="code">st</code> is restored to its previous state.
+<p>
+
+    It raises <code class="code"><span class="constructor">Invalid_argument</span></code> if <code class="code">st</code> is a bounded
+    push-stream.<br>
+</div>
+<br>
+<h2 id="2_Misc">Misc</h2><br>
+
+<pre><span id="VALhexdump"><span class="keyword">val</span> hexdump</span> : <code class="type">char <a href="Lwt_stream.html#TYPEt">t</a> -> string <a href="Lwt_stream.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">hexdump&nbsp;byte_stream</code> returns a stream which is the same as the
+    output of <code class="code">hexdump&nbsp;-<span class="constructor">C</span></code>.
+<p>
+
+    Basically, here is a simple implementation of <code class="code">hexdump&nbsp;-<span class="constructor">C</span></code>:
+<p>
+
+    <pre class="codepre"><code class="code">      <span class="keyword">let</span> () = <span class="constructor">Lwt_main</span>.run (<span class="constructor">Lwt_io</span>.write_lines <span class="constructor">Lwt_io</span>.stdout (<span class="constructor">Lwt_stream</span>.hexdump (<span class="constructor">Lwt_io</span>.read_lines <span class="constructor">Lwt_io</span>.stdin)))
+    </code></pre><br>
+</div>
+<br>
+<h2 id="2_Deprecated">Deprecated</h2><br>
+
+<pre><code><span id="TYPEresult"><span class="keyword">type</span> <code class="type">'a</code> result</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTresult.Value"><span class="constructor">Value</span></span> <span class="keyword">of</span> <code class="type">'a</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTresult.Error"><span class="constructor">Error</span></span> <span class="keyword">of</span> <code class="type">exn</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<span class="warning">Deprecated.</span>Replaced by <a href="Lwt_stream.html#VALwrap_exn"><code class="code"><span class="constructor">Lwt_stream</span>.wrap_exn</code></a>, which uses <a href="Lwt.html#TYPEresult"><code class="code"><span class="constructor">Lwt</span>.result</code></a>.<br>
+A value or an error.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+
+
+
+<pre><span id="VALmap_exn"><span class="keyword">val</span> map_exn</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">t</a> -> 'a <a href="Lwt_stream.html#TYPEresult">result</a> <a href="Lwt_stream.html#TYPEt">t</a></code></pre><div class="info ">
+<span class="warning">Deprecated.</span>Use <a href="Lwt_stream.html#VALwrap_exn"><code class="code"><span class="constructor">Lwt_stream</span>.wrap_exn</code></a>.<br>
+<code class="code">map_exn&nbsp;s</code> returns a stream that captures all exceptions raised
+    by the source of the stream (the function passed to <a href="Lwt_stream.html#VALfrom"><code class="code"><span class="constructor">Lwt_stream</span>.from</code></a>).
+<p>
+
+    Note that for push-streams (as returned by <a href="Lwt_stream.html#VALcreate"><code class="code"><span class="constructor">Lwt_stream</span>.create</code></a>) all
+    elements of the mapped streams are values.
+<p>
+
+    If the stream source keeps raising the same exception <code class="code">e</code> each time the
+    stream is read, the stream produced by <code class="code">map_exn</code> is unbounded. Reading it
+    will produce <code class="code"><span class="constructor">Lwt_stream</span>.<span class="constructor">Error</span>&nbsp;e</code> indefinitely.<br>
+</div>
+</body></html>

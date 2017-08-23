@@ -1,0 +1,139 @@
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of class attributes" rel=Appendix href="index_attributes.html">
+<link title="Index of class methods" rel=Appendix href="index_methods.html">
+<link title="Index of classes" rel=Appendix href="index_classes.html">
+<link title="Index of class types" rel=Appendix href="index_class_types.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Pa_lwt" rel="Chapter" href="Pa_lwt.html">
+<link title="Lwt" rel="Chapter" href="Lwt.html">
+<link title="Lwt_condition" rel="Chapter" href="Lwt_condition.html">
+<link title="Lwt_list" rel="Chapter" href="Lwt_list.html">
+<link title="Lwt_mutex" rel="Chapter" href="Lwt_mutex.html">
+<link title="Lwt_mvar" rel="Chapter" href="Lwt_mvar.html">
+<link title="Lwt_pool" rel="Chapter" href="Lwt_pool.html">
+<link title="Lwt_pqueue" rel="Chapter" href="Lwt_pqueue.html">
+<link title="Lwt_result" rel="Chapter" href="Lwt_result.html">
+<link title="Lwt_sequence" rel="Chapter" href="Lwt_sequence.html">
+<link title="Lwt_stream" rel="Chapter" href="Lwt_stream.html">
+<link title="Lwt_switch" rel="Chapter" href="Lwt_switch.html">
+<link title="Lwt_glib" rel="Chapter" href="Lwt_glib.html">
+<link title="Lwt_log_core" rel="Chapter" href="Lwt_log_core.html">
+<link title="Lwt_log_rules" rel="Chapter" href="Lwt_log_rules.html">
+<link title="Ppx_lwt" rel="Chapter" href="Ppx_lwt.html">
+<link title="Lwt_preemptive" rel="Chapter" href="Lwt_preemptive.html">
+<link title="Lwt_react" rel="Chapter" href="Lwt_react.html">
+<link title="Lwt_ssl" rel="Chapter" href="Lwt_ssl.html">
+<link title="Lwt_bytes" rel="Chapter" href="Lwt_bytes.html">
+<link title="Lwt_chan" rel="Chapter" href="Lwt_chan.html">
+<link title="Lwt_daemon" rel="Chapter" href="Lwt_daemon.html">
+<link title="Lwt_engine" rel="Chapter" href="Lwt_engine.html">
+<link title="Lwt_gc" rel="Chapter" href="Lwt_gc.html">
+<link title="Lwt_io" rel="Chapter" href="Lwt_io.html">
+<link title="Lwt_log" rel="Chapter" href="Lwt_log.html">
+<link title="Lwt_main" rel="Chapter" href="Lwt_main.html">
+<link title="Lwt_process" rel="Chapter" href="Lwt_process.html">
+<link title="Lwt_sys" rel="Chapter" href="Lwt_sys.html">
+<link title="Lwt_throttle" rel="Chapter" href="Lwt_throttle.html">
+<link title="Lwt_timeout" rel="Chapter" href="Lwt_timeout.html">
+<link title="Lwt_unix" rel="Chapter" href="Lwt_unix.html"><title>Index of exceptions</title>
+</head>
+<body>
+<div class="navbar">&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;</div>
+<h1>Index of exceptions</h1>
+<table>
+<tr><td align="left"><br>C</td></tr>
+<tr><td><a href="Lwt.html#EXCEPTIONCanceled">Canceled</a> [<a href="Lwt.html">Lwt</a>]</td>
+<td><div class="info">
+Canceled promises are those rejected with this exception, <code class="code"><span class="constructor">Lwt</span>.<span class="constructor">Canceled</span></code>.
+</div>
+</td></tr>
+<tr><td><a href="Lwt_io.html#EXCEPTIONChannel_closed">Channel_closed</a> [<a href="Lwt_io.html">Lwt_io</a>]</td>
+<td><div class="info">
+Exception raised when a channel is closed.
+</div>
+</td></tr>
+<tr><td><a href="Lwt_stream.html#EXCEPTIONClosed">Closed</a> [<a href="Lwt_stream.html">Lwt_stream</a>]</td>
+<td><div class="info">
+Exception raised by the push function of a push-stream when
+    pushing an element after the end of stream (<code class="code">=&nbsp;<span class="constructor">None</span></code>) has been
+    pushed.
+</div>
+</td></tr>
+<tr><td align="left"><br>E</td></tr>
+<tr><td><a href="Lwt_stream.html#EXCEPTIONEmpty">Empty</a> [<a href="Lwt_stream.html">Lwt_stream</a>]</td>
+<td><div class="info">
+Exception raised when trying to retrieve data from an empty
+    stream.
+</div>
+</td></tr>
+<tr><td><a href="Lwt_sequence.html#EXCEPTIONEmpty">Empty</a> [<a href="Lwt_sequence.html">Lwt_sequence</a>]</td>
+<td><div class="info">
+Exception raised by <code class="code">take_l</code> and <code class="code">tale_s</code> and when the sequence
+      is empty
+</div>
+</td></tr>
+<tr><td align="left"><br>F</td></tr>
+<tr><td><a href="Lwt_stream.html#EXCEPTIONFull">Full</a> [<a href="Lwt_stream.html">Lwt_stream</a>]</td>
+<td><div class="info">
+Exception raised by the push function of a bounded push-stream
+    when the stream queue is full and a thread is already waiting to
+    push an element.
+</div>
+</td></tr>
+<tr><td align="left"><br>L</td></tr>
+<tr><td><a href="Lwt_log_core.html#EXCEPTIONLogger_closed">Logger_closed</a> [<a href="Lwt_log_core.html">Lwt_log_core</a>]</td>
+<td><div class="info">
+Exception raised when trying to use a closed logger
+</div>
+</td></tr>
+<tr><td align="left"><br>N</td></tr>
+<tr><td><a href="Lwt_sys.html#EXCEPTIONNot_available">Not_available</a> [<a href="Lwt_sys.html">Lwt_sys</a>]</td>
+<td><div class="info">
+<code class="code"><span class="constructor">Not_available</span>(feature)</code> is an exception that may be raised when
+      a feature is not available on the current system.
+</div>
+</td></tr>
+<tr><td align="left"><br>O</td></tr>
+<tr><td><a href="Lwt_switch.html#EXCEPTIONOff">Off</a> [<a href="Lwt_switch.html">Lwt_switch</a>]</td>
+<td><div class="info">
+Exception raised when trying to add a hook to a switch that is
+      already off.
+</div>
+</td></tr>
+<tr><td align="left"><br>R</td></tr>
+<tr><td><a href="Lwt_unix.html#EXCEPTIONRetry">Retry</a> [<a href="Lwt_unix.html">Lwt_unix</a>]</td>
+<td><div class="info">
+If an action raises <a href="Lwt_unix.html#EXCEPTIONRetry"><code class="code"><span class="constructor">Lwt_unix</span>.<span class="constructor">Retry</span></code></a>, it will be requeued until the <b>      file descriptor</b> becomes readable/writable again.
+</div>
+</td></tr>
+<tr><td><a href="Lwt_unix.html#EXCEPTIONRetry_read">Retry_read</a> [<a href="Lwt_unix.html">Lwt_unix</a>]</td>
+<td><div class="info">
+If an action raises <a href="Lwt_unix.html#EXCEPTIONRetry_read"><code class="code"><span class="constructor">Lwt_unix</span>.<span class="constructor">Retry_read</span></code></a>, it will be requeued until the
+      <b>file descriptor</b> becomes readable.
+</div>
+</td></tr>
+<tr><td><a href="Lwt_unix.html#EXCEPTIONRetry_write">Retry_write</a> [<a href="Lwt_unix.html">Lwt_unix</a>]</td>
+<td><div class="info">
+If an action raises <a href="Lwt_unix.html#EXCEPTIONRetry_read"><code class="code"><span class="constructor">Lwt_unix</span>.<span class="constructor">Retry_read</span></code></a>, it will be requeued until the
+      <b>file descriptor</b> becomes writables.
+</div>
+</td></tr>
+<tr><td align="left"><br>T</td></tr>
+<tr><td><a href="Lwt_unix.html#EXCEPTIONTimeout">Timeout</a> [<a href="Lwt_unix.html">Lwt_unix</a>]</td>
+<td><div class="info">
+Exception raised by timeout operations
+</div>
+</td></tr>
+</table>
+</body>
+</html>

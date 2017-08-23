@@ -1,0 +1,102 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Lwt_mvar.html">
+<link rel="next" href="Lwt_pqueue.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of class attributes" rel=Appendix href="index_attributes.html">
+<link title="Index of class methods" rel=Appendix href="index_methods.html">
+<link title="Index of classes" rel=Appendix href="index_classes.html">
+<link title="Index of class types" rel=Appendix href="index_class_types.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Pa_lwt" rel="Chapter" href="Pa_lwt.html">
+<link title="Lwt" rel="Chapter" href="Lwt.html">
+<link title="Lwt_condition" rel="Chapter" href="Lwt_condition.html">
+<link title="Lwt_list" rel="Chapter" href="Lwt_list.html">
+<link title="Lwt_mutex" rel="Chapter" href="Lwt_mutex.html">
+<link title="Lwt_mvar" rel="Chapter" href="Lwt_mvar.html">
+<link title="Lwt_pool" rel="Chapter" href="Lwt_pool.html">
+<link title="Lwt_pqueue" rel="Chapter" href="Lwt_pqueue.html">
+<link title="Lwt_result" rel="Chapter" href="Lwt_result.html">
+<link title="Lwt_sequence" rel="Chapter" href="Lwt_sequence.html">
+<link title="Lwt_stream" rel="Chapter" href="Lwt_stream.html">
+<link title="Lwt_switch" rel="Chapter" href="Lwt_switch.html">
+<link title="Lwt_glib" rel="Chapter" href="Lwt_glib.html">
+<link title="Lwt_log_core" rel="Chapter" href="Lwt_log_core.html">
+<link title="Lwt_log_rules" rel="Chapter" href="Lwt_log_rules.html">
+<link title="Ppx_lwt" rel="Chapter" href="Ppx_lwt.html">
+<link title="Lwt_preemptive" rel="Chapter" href="Lwt_preemptive.html">
+<link title="Lwt_react" rel="Chapter" href="Lwt_react.html">
+<link title="Lwt_ssl" rel="Chapter" href="Lwt_ssl.html">
+<link title="Lwt_bytes" rel="Chapter" href="Lwt_bytes.html">
+<link title="Lwt_chan" rel="Chapter" href="Lwt_chan.html">
+<link title="Lwt_daemon" rel="Chapter" href="Lwt_daemon.html">
+<link title="Lwt_engine" rel="Chapter" href="Lwt_engine.html">
+<link title="Lwt_gc" rel="Chapter" href="Lwt_gc.html">
+<link title="Lwt_io" rel="Chapter" href="Lwt_io.html">
+<link title="Lwt_log" rel="Chapter" href="Lwt_log.html">
+<link title="Lwt_main" rel="Chapter" href="Lwt_main.html">
+<link title="Lwt_process" rel="Chapter" href="Lwt_process.html">
+<link title="Lwt_sys" rel="Chapter" href="Lwt_sys.html">
+<link title="Lwt_throttle" rel="Chapter" href="Lwt_throttle.html">
+<link title="Lwt_timeout" rel="Chapter" href="Lwt_timeout.html">
+<link title="Lwt_unix" rel="Chapter" href="Lwt_unix.html"><title>Lwt_pool</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="Lwt_mvar.html" title="Lwt_mvar">Previous</a>
+&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;<a class="post" href="Lwt_pqueue.html" title="Lwt_pqueue">Next</a>
+</div>
+<h1>Module <a href="type_Lwt_pool.html">Lwt_pool</a></h1>
+
+<pre><span class="keyword">module</span> Lwt_pool: <code class="code"><span class="keyword">sig</span></code> <a href="Lwt_pool.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+External resource pools.<br>
+</div>
+<hr width="100%">
+<br>
+For example, instead of creating a new database connection each time you
+    need one, keep a pool of opened connections and reuse ones that are free.
+    The pool also provides a limit on the number of connections that can
+    simultaneously be open.
+<p>
+
+    Note that pools are not for keeping Lwt threads. Lwt threads are very cheap
+    to create and are pure. It is neither desirable nor possible to reuse them.
+    If you want to have a pool of <em>system</em> threads, consider module
+    <code class="code"><span class="constructor">Lwt_preemptive</span></code>.<br>
+
+<pre><span id="TYPEt"><span class="keyword">type</span> <code class="type">'a</code> t</span> </pre>
+<div class="info ">
+Pools containing values of type <code class="code"><span class="keywordsign">'</span>a</code>.<br>
+</div>
+
+
+<pre><span id="VALcreate"><span class="keyword">val</span> create</span> : <code class="type">int -><br>       ?check:('a -> (bool -> unit) -> unit) -><br>       ?validate:('a -> bool <a href="Lwt.html#TYPEt">Lwt.t</a>) -> (unit -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_pool.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">create&nbsp;n&nbsp;?check&nbsp;?validate&nbsp;f</code> creates a new pool with at most
+      <code class="code">n</code> elements. <code class="code">f</code> is the function to use to create a new element
+      Elements are created on demand.
+<p>
+
+      An element of the pool is validated by the optional <code class="code">validate</code>
+      function before its <a href="Lwt_pool.html#VALuse"><code class="code"><span class="constructor">Lwt_pool</span>.use</code></a>. Invalid elements are re-created.
+<p>
+
+      The optional function <code class="code">check</code> is called after a <code class="code">use</code> of an
+      element failed. It must call its argument exactly once with
+      <code class="code"><span class="keyword">true</span></code> if the element is still valid and <code class="code"><span class="keyword">false</span></code> otherwise.<br>
+</div>
+
+<pre><span id="VALuse"><span class="keyword">val</span> use</span> : <code class="type">'a <a href="Lwt_pool.html#TYPEt">t</a> -> ('a -> 'b <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'b <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">use&nbsp;p&nbsp;f</code> takes one free element of the pool <code class="code">p</code> and gives it to
+      the function <code class="code">f</code>. The element is put back into the pool after the
+      thread created by <code class="code">f</code> completes.<br>
+</div>
+</body></html>

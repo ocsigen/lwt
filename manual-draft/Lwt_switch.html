@@ -1,0 +1,172 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Lwt_stream.html">
+<link rel="next" href="Lwt_glib.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of class attributes" rel=Appendix href="index_attributes.html">
+<link title="Index of class methods" rel=Appendix href="index_methods.html">
+<link title="Index of classes" rel=Appendix href="index_classes.html">
+<link title="Index of class types" rel=Appendix href="index_class_types.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Pa_lwt" rel="Chapter" href="Pa_lwt.html">
+<link title="Lwt" rel="Chapter" href="Lwt.html">
+<link title="Lwt_condition" rel="Chapter" href="Lwt_condition.html">
+<link title="Lwt_list" rel="Chapter" href="Lwt_list.html">
+<link title="Lwt_mutex" rel="Chapter" href="Lwt_mutex.html">
+<link title="Lwt_mvar" rel="Chapter" href="Lwt_mvar.html">
+<link title="Lwt_pool" rel="Chapter" href="Lwt_pool.html">
+<link title="Lwt_pqueue" rel="Chapter" href="Lwt_pqueue.html">
+<link title="Lwt_result" rel="Chapter" href="Lwt_result.html">
+<link title="Lwt_sequence" rel="Chapter" href="Lwt_sequence.html">
+<link title="Lwt_stream" rel="Chapter" href="Lwt_stream.html">
+<link title="Lwt_switch" rel="Chapter" href="Lwt_switch.html">
+<link title="Lwt_glib" rel="Chapter" href="Lwt_glib.html">
+<link title="Lwt_log_core" rel="Chapter" href="Lwt_log_core.html">
+<link title="Lwt_log_rules" rel="Chapter" href="Lwt_log_rules.html">
+<link title="Ppx_lwt" rel="Chapter" href="Ppx_lwt.html">
+<link title="Lwt_preemptive" rel="Chapter" href="Lwt_preemptive.html">
+<link title="Lwt_react" rel="Chapter" href="Lwt_react.html">
+<link title="Lwt_ssl" rel="Chapter" href="Lwt_ssl.html">
+<link title="Lwt_bytes" rel="Chapter" href="Lwt_bytes.html">
+<link title="Lwt_chan" rel="Chapter" href="Lwt_chan.html">
+<link title="Lwt_daemon" rel="Chapter" href="Lwt_daemon.html">
+<link title="Lwt_engine" rel="Chapter" href="Lwt_engine.html">
+<link title="Lwt_gc" rel="Chapter" href="Lwt_gc.html">
+<link title="Lwt_io" rel="Chapter" href="Lwt_io.html">
+<link title="Lwt_log" rel="Chapter" href="Lwt_log.html">
+<link title="Lwt_main" rel="Chapter" href="Lwt_main.html">
+<link title="Lwt_process" rel="Chapter" href="Lwt_process.html">
+<link title="Lwt_sys" rel="Chapter" href="Lwt_sys.html">
+<link title="Lwt_throttle" rel="Chapter" href="Lwt_throttle.html">
+<link title="Lwt_timeout" rel="Chapter" href="Lwt_timeout.html">
+<link title="Lwt_unix" rel="Chapter" href="Lwt_unix.html"><title>Lwt_switch</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="Lwt_stream.html" title="Lwt_stream">Previous</a>
+&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;<a class="post" href="Lwt_glib.html" title="Lwt_glib">Next</a>
+</div>
+<h1>Module <a href="type_Lwt_switch.html">Lwt_switch</a></h1>
+
+<pre><span class="keyword">module</span> Lwt_switch: <code class="code"><span class="keyword">sig</span></code> <a href="Lwt_switch.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+Lwt switches<br>
+</div>
+<hr width="100%">
+<br>
+Switch has two goals:
+<p>
+<ul>
+<li>being able to free multiple resources at the same time,</li>
+<li>offer a better alternative than always returning an id to free
+      some resource.</li>
+</ul>
+
+    For example, consider the following interface:
+<p>
+
+    <pre class="codepre"><code class="code">      <span class="keyword">type</span> id
+
+      <span class="keyword">val</span> free : id <span class="keywordsign">-&gt;</span> unit <span class="constructor">Lwt</span>.t
+
+      <span class="keyword">val</span> f : unit <span class="keywordsign">-&gt;</span> id <span class="constructor">Lwt</span>.t
+      <span class="keyword">val</span> g : unit <span class="keywordsign">-&gt;</span> id <span class="constructor">Lwt</span>.t
+      <span class="keyword">val</span> h : unit <span class="keywordsign">-&gt;</span> id <span class="constructor">Lwt</span>.t
+    </code></pre>
+<p>
+
+    Now you want to call <code class="code">f</code>, <code class="code">g</code> and <code class="code">h</code> in parallel. You can
+    simply do:
+<p>
+
+    <pre class="codepre"><code class="code">      lwt idf = f () <span class="keyword">and</span> idg = g () <span class="keyword">and</span> idh = h () <span class="keyword">in</span>
+      ...
+    </code></pre>
+<p>
+
+    However, one may want to handle possible failures of <code class="code">f&nbsp;()</code>, <code class="code">g<br>
+&nbsp;&nbsp;&nbsp;&nbsp;()</code> and <code class="code">h&nbsp;()</code>, and disable all allocated resources if one of
+    these three threads fails. This may be hard since you have to
+    remember which one failed and which one returned correctly.
+<p>
+
+    Now if we change the interface a little bit:
+<p>
+
+    <pre class="codepre"><code class="code">      <span class="keyword">val</span> f : ?switch : <span class="constructor">Lwt_switch</span>.t <span class="keywordsign">-&gt;</span> unit <span class="keywordsign">-&gt;</span> id <span class="constructor">Lwt</span>.t
+      <span class="keyword">val</span> g : ?switch : <span class="constructor">Lwt_switch</span>.t <span class="keywordsign">-&gt;</span> unit <span class="keywordsign">-&gt;</span> id <span class="constructor">Lwt</span>.t
+      <span class="keyword">val</span> h : ?switch : <span class="constructor">Lwt_switch</span>.t <span class="keywordsign">-&gt;</span> unit <span class="keywordsign">-&gt;</span> id <span class="constructor">Lwt</span>.t
+    </code></pre>
+<p>
+
+    the code becomes:
+<p>
+
+    <pre class="codepre"><code class="code">      <span class="constructor">Lwt_switch</span>.with_switch (<span class="keyword">fun</span> switch <span class="keywordsign">-&gt;</span>
+        lwt idf = f ~switch ()
+        <span class="keyword">and</span> idg = g ~switch ()
+        <span class="keyword">and</span> idh = h ~switch () <span class="keyword">in</span>
+        ...
+      )
+    </code></pre><br>
+
+<pre><span id="TYPEt"><span class="keyword">type</span> <code class="type"></code>t</span> </pre>
+<div class="info ">
+Type of switches.<br>
+</div>
+
+
+<pre><span id="VALcreate"><span class="keyword">val</span> create</span> : <code class="type">unit -> <a href="Lwt_switch.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">create&nbsp;()</code> creates a new switch.<br>
+</div>
+
+<pre><span id="VALwith_switch"><span class="keyword">val</span> with_switch</span> : <code class="type">(<a href="Lwt_switch.html#TYPEt">t</a> -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">with_switch&nbsp;fn</code> is <code class="code">fn&nbsp;switch</code>, where <code class="code">switch</code> is a fresh switch
+      that is turned off when the callback thread finishes (whether it
+      succeeds or fails).<br>
+<b>Since</b> 2.6.0<br>
+</div>
+
+<pre><span id="VALis_on"><span class="keyword">val</span> is_on</span> : <code class="type"><a href="Lwt_switch.html#TYPEt">t</a> -> bool</code></pre><div class="info ">
+<code class="code">is_on&nbsp;switch</code> returns <code class="code"><span class="keyword">true</span></code> if the switch is currently on, and
+      <code class="code"><span class="keyword">false</span></code> otherwise.<br>
+</div>
+
+<pre><span id="VALturn_off"><span class="keyword">val</span> turn_off</span> : <code class="type"><a href="Lwt_switch.html#TYPEt">t</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">turn_off&nbsp;switch</code> turns off the switch. It calls all registered
+      hooks, waits for all of them to terminate, then returns. If
+      one of the hooks failed, it will fail with the exception raised
+      by the hook. If the switch is already off, it does nothing.<br>
+</div>
+
+<pre><span id="EXCEPTIONOff"><span class="keyword">exception</span> Off</span></pre>
+<div class="info ">
+Exception raised when trying to add a hook to a switch that is
+      already off.<br>
+</div>
+
+<pre><span id="VALcheck"><span class="keyword">val</span> check</span> : <code class="type"><a href="Lwt_switch.html#TYPEt">t</a> option -> unit</code></pre><div class="info ">
+<code class="code">check&nbsp;switch</code> does nothing if <code class="code">switch</code> is <code class="code"><span class="constructor">None</span></code> or contains an
+      switch that is currently on, and raises <a href="Lwt_switch.html#EXCEPTIONOff"><code class="code"><span class="constructor">Lwt_switch</span>.<span class="constructor">Off</span></code></a> otherwise.<br>
+</div>
+
+<pre><span id="VALadd_hook"><span class="keyword">val</span> add_hook</span> : <code class="type"><a href="Lwt_switch.html#TYPEt">t</a> option -> (unit -> unit <a href="Lwt.html#TYPEt">Lwt.t</a>) -> unit</code></pre><div class="info ">
+<code class="code">add_hook&nbsp;switch&nbsp;f</code> registers <code class="code">f</code> so it will be called when
+      <a href="Lwt_switch.html#VALturn_off"><code class="code"><span class="constructor">Lwt_switch</span>.turn_off</code></a> is invoked. It does nothing if <code class="code">switch</code> is
+      <code class="code"><span class="constructor">None</span></code>. If <code class="code">switch</code> contains an switch that is already off then
+      <a href="Lwt_switch.html#EXCEPTIONOff"><code class="code"><span class="constructor">Lwt_switch</span>.<span class="constructor">Off</span></code></a> is raised.<br>
+</div>
+
+<pre><span id="VALadd_hook_or_exec"><span class="keyword">val</span> add_hook_or_exec</span> : <code class="type"><a href="Lwt_switch.html#TYPEt">t</a> option -> (unit -> unit <a href="Lwt.html#TYPEt">Lwt.t</a>) -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">add_hook_or_exec&nbsp;switch&nbsp;f</code> is the same as <a href="Lwt_switch.html#VALadd_hook"><code class="code"><span class="constructor">Lwt_switch</span>.add_hook</code></a> except
+      that if the switch is already off, <code class="code">f</code> is called immediately.<br>
+</div>
+</body></html>

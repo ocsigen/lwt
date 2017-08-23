@@ -1,0 +1,411 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Lwt_glib.html">
+<link rel="next" href="Lwt_log_rules.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of class attributes" rel=Appendix href="index_attributes.html">
+<link title="Index of class methods" rel=Appendix href="index_methods.html">
+<link title="Index of classes" rel=Appendix href="index_classes.html">
+<link title="Index of class types" rel=Appendix href="index_class_types.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Pa_lwt" rel="Chapter" href="Pa_lwt.html">
+<link title="Lwt" rel="Chapter" href="Lwt.html">
+<link title="Lwt_condition" rel="Chapter" href="Lwt_condition.html">
+<link title="Lwt_list" rel="Chapter" href="Lwt_list.html">
+<link title="Lwt_mutex" rel="Chapter" href="Lwt_mutex.html">
+<link title="Lwt_mvar" rel="Chapter" href="Lwt_mvar.html">
+<link title="Lwt_pool" rel="Chapter" href="Lwt_pool.html">
+<link title="Lwt_pqueue" rel="Chapter" href="Lwt_pqueue.html">
+<link title="Lwt_result" rel="Chapter" href="Lwt_result.html">
+<link title="Lwt_sequence" rel="Chapter" href="Lwt_sequence.html">
+<link title="Lwt_stream" rel="Chapter" href="Lwt_stream.html">
+<link title="Lwt_switch" rel="Chapter" href="Lwt_switch.html">
+<link title="Lwt_glib" rel="Chapter" href="Lwt_glib.html">
+<link title="Lwt_log_core" rel="Chapter" href="Lwt_log_core.html">
+<link title="Lwt_log_rules" rel="Chapter" href="Lwt_log_rules.html">
+<link title="Ppx_lwt" rel="Chapter" href="Ppx_lwt.html">
+<link title="Lwt_preemptive" rel="Chapter" href="Lwt_preemptive.html">
+<link title="Lwt_react" rel="Chapter" href="Lwt_react.html">
+<link title="Lwt_ssl" rel="Chapter" href="Lwt_ssl.html">
+<link title="Lwt_bytes" rel="Chapter" href="Lwt_bytes.html">
+<link title="Lwt_chan" rel="Chapter" href="Lwt_chan.html">
+<link title="Lwt_daemon" rel="Chapter" href="Lwt_daemon.html">
+<link title="Lwt_engine" rel="Chapter" href="Lwt_engine.html">
+<link title="Lwt_gc" rel="Chapter" href="Lwt_gc.html">
+<link title="Lwt_io" rel="Chapter" href="Lwt_io.html">
+<link title="Lwt_log" rel="Chapter" href="Lwt_log.html">
+<link title="Lwt_main" rel="Chapter" href="Lwt_main.html">
+<link title="Lwt_process" rel="Chapter" href="Lwt_process.html">
+<link title="Lwt_sys" rel="Chapter" href="Lwt_sys.html">
+<link title="Lwt_throttle" rel="Chapter" href="Lwt_throttle.html">
+<link title="Lwt_timeout" rel="Chapter" href="Lwt_timeout.html">
+<link title="Lwt_unix" rel="Chapter" href="Lwt_unix.html"><link title="Types" rel="Section" href="#2_Types">
+<link title="Logging functions" rel="Section" href="#2_Loggingfunctions">
+<link title="Log templates" rel="Section" href="#2_Logtemplates">
+<link title="Loggers" rel="Section" href="#2_Loggers">
+<link title="Predefined loggers" rel="Section" href="#2_Predefinedloggers">
+<title>Lwt_log_core</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="Lwt_glib.html" title="Lwt_glib">Previous</a>
+&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;<a class="post" href="Lwt_log_rules.html" title="Lwt_log_rules">Next</a>
+</div>
+<h1>Module <a href="type_Lwt_log_core.html">Lwt_log_core</a></h1>
+
+<pre><span class="keyword">module</span> Lwt_log_core: <code class="code"><span class="keyword">sig</span></code> <a href="Lwt_log_core.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+Logging facility<br>
+</div>
+<hr width="100%">
+<br>
+This module provides functions to deal with logging.
+    It support:
+<p>
+<ul>
+<li>logging to multiple destination at the same time</li>
+<li>filtering logs per destination</li>
+</ul>
+<br>
+<br>
+<h2 id="2_Types">Types</h2><br>
+
+<pre><code><span id="TYPElevel"><span class="keyword">type</span> <code class="type"></code>level</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTlevel.Debug"><span class="constructor">Debug</span></span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+Debugging message. They can be automatically removed by the
+          syntax extension.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTlevel.Info"><span class="constructor">Info</span></span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+Informational message. Suitable to be displayed when the
+          program is in verbose mode.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTlevel.Notice"><span class="constructor">Notice</span></span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+Same as <code class="code"><span class="constructor">Info</span></code>, but is displayed by default.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTlevel.Warning"><span class="constructor">Warning</span></span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+Something strange happend<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTlevel.Error"><span class="constructor">Error</span></span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+An error message, which should not means the end of the
+          program.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTlevel.Fatal"><span class="constructor">Fatal</span></span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+A fatal error happened, in most cases the program will end
+          after a fatal error.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+
+<div class="info ">
+Type of log levels. A level determines the importance of a
+    message<br>
+</div>
+
+
+<pre><span id="TYPElogger"><span class="keyword">type</span> <code class="type"></code>logger</span> </pre>
+<div class="info ">
+Type of a logger. A logger is responsible for dispatching messages
+      and storing them somewhere.<br>
+</div>
+
+
+<pre><span id="TYPEsection"><span class="keyword">type</span> <code class="type"></code>section</span> </pre>
+<div class="info ">
+Each logging message has a section. Sections can be used to
+      structure your logs. For example you can choose different
+      loggers according to the section.
+<p>
+
+      Each section carries a level, and messages with a lower log
+      level than than the section level will be dropped.
+<p>
+
+      Section levels are initialised using the contents of the <code class="code"><span class="constructor">LWT_LOG</span></code>
+      environment variable, which must contain one or more rules of the form
+      <code class="code">pattern&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;level</code> separated by ";". Where <code class="code">pattern</code> is a string
+      that may contain <code class="code">*</code>.
+<p>
+
+      For example, if <code class="code"><span class="constructor">LWT_LOG</span></code> contains:
+      <pre class="codepre"><code class="code">        access <span class="keywordsign">-&gt;</span> warning;
+        foo[*] <span class="keywordsign">-&gt;</span> error
+      </code></pre>
+      then the level of the section <code class="code"><span class="string">"access"</span></code> is <code class="code"><span class="constructor">Warning</span></code> and the
+      level of any section matching <code class="code"><span class="string">"foo[*]"</span></code> is <code class="code"><span class="constructor">Error</span></code>.
+<p>
+
+      If the pattern is omited in a rule then the pattern <code class="code"><span class="string">"*"</span></code> is
+      used instead, so <code class="code"><span class="constructor">LWT_LOG</span></code> may just contain <code class="code"><span class="string">"debug"</span></code> for
+      instance.
+<p>
+
+      By default, the following rule apply : <code class="code"><span class="string">"*&nbsp;-&gt;&nbsp;notice"</span></code><br>
+</div>
+
+
+<pre><span id="VALstring_of_level"><span class="keyword">val</span> string_of_level</span> : <code class="type"><a href="Lwt_log_core.html#TYPElevel">level</a> -> string</code></pre>
+<pre><span id="VALlevel_of_string"><span class="keyword">val</span> level_of_string</span> : <code class="type">string -> <a href="Lwt_log_core.html#TYPElevel">level</a> option</code></pre>
+<pre><span id="VALload_rules"><span class="keyword">val</span> load_rules</span> : <code class="type">?fail_on_error:bool -> string -> unit</code></pre><div class="info ">
+Reset the rules set when parsing the <code class="code"><span class="constructor">LWT_LOG</span></code> environment variable using this
+      string.<br>
+<b>Raises</b> <code>Failure</code> if an invalid rule is found and <code class="code">fail_on_error</code> is true
+<p>
+
+      <code class="code">load_rules</code> parses the rules string and validates the rules before loading them.
+      If <code class="code">fail_on_error</code> is <code class="code"><span class="keyword">true</span></code>, invalid rules will cause this function to
+      raise <code class="code"><span class="constructor">Failure</span></code> and leave existing rules unchanged.
+      If <code class="code">fail_on_error</code> is <code class="code"><span class="keyword">false</span></code> (this is the default), it tries to load as
+      many rules as possible and ignore invalid ones.
+      If the rules string itself cannot be parsed, existing rules are always left
+      unchanged.
+<p>
+
+      Example:
+      <pre class="codepre"><code class="code"><span class="constructor">Lwt_log_core</span>.load_rules ~fail_on_error:<span class="keyword">true</span> <span class="string">"* -&gt; nosuchlevel"</span> <span class="comment">(* Raises Failure *)</span>
+<span class="constructor">Lwt_log_core</span>.load_rules <span class="string">"* -&gt; info"</span>
+      </code></pre><br>
+</div>
+<div class="param_info"><code class="code">fail_on_error</code> : defines if the function will raise Failure if
+      it encounters a malformed rule</div>
+
+<pre><span id="VALadd_rule"><span class="keyword">val</span> add_rule</span> : <code class="type">string -> <a href="Lwt_log_core.html#TYPElevel">level</a> -> unit</code></pre><div class="info ">
+<code class="code">add_rule&nbsp;pattern&nbsp;level</code> adds a rule for sections logging
+      levels. The rule is added before all other rules. It takes
+      effect immediately and affects all sections for which the level
+      has not been set explicitly with <a href="Lwt_log_core.Section.html#VALset_level"><code class="code"><span class="constructor">Lwt_log_core</span>.<span class="constructor">Section</span>.set_level</code></a>. <code class="code">pattern</code>
+      may contains <code class="code">*</code>. For example:
+<p>
+
+      <pre class="codepre"><code class="code">        <span class="constructor">Lwt_log_core</span>.add_rule <span class="string">"lwt*"</span> <span class="constructor">Lwt_log_core</span>.<span class="constructor">Info</span>
+      </code></pre><br>
+</div>
+
+<pre><span id="VALappend_rule"><span class="keyword">val</span> append_rule</span> : <code class="type">string -> <a href="Lwt_log_core.html#TYPElevel">level</a> -> unit</code></pre><div class="info ">
+<code class="code">append_rule&nbsp;pattern&nbsp;level</code> adds the given rule after all other
+      rules. For example to set the default fallback rule:
+<p>
+
+      <pre class="codepre"><code class="code">        <span class="constructor">Lwt_log_core</span>.append_rule <span class="string">"*"</span> <span class="constructor">Lwt_log_core</span>.<span class="constructor">Info</span>
+      </code></pre><br>
+</div>
+
+<pre><span id="VALreset_rules"><span class="keyword">val</span> reset_rules</span> : <code class="type">unit -> unit</code></pre><div class="info ">
+removes all rules.<br>
+</div>
+<br>
+<h2 id="2_Loggingfunctions">Logging functions</h2><br>
+
+<pre><span id="VALlog"><span class="keyword">val</span> log</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -><br>       level:<a href="Lwt_log_core.html#TYPElevel">level</a> -> string -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">log&nbsp;?section&nbsp;?logger&nbsp;~level&nbsp;message</code> logs a message.
+<p>
+
+      <code class="code">section</code> defaults to <a href="Lwt_log_core.Section.html#VALmain"><code class="code"><span class="constructor">Lwt_log_core</span>.<span class="constructor">Section</span>.main</code></a>. If <code class="code">logger</code> is not
+      specified, then the default one is used instead (see
+      <a href="Lwt_log_core.html#VALdefault"><code class="code"><span class="constructor">Lwt_log_core</span>.default</code></a>).
+<p>
+
+      If <code class="code">exn</code> is provided, then its string representation
+      (= <code class="code"><span class="constructor">Printexc</span>.to_string&nbsp;exn</code>) will be append to the message, and if
+      possible the backtrace will also be logged.
+<p>
+
+      <code class="code">location</code> contains the location of the logging directive, it is
+      of the form <code class="code">(file_name,&nbsp;line,&nbsp;column)</code>.<br>
+</div>
+
+<pre><span id="VALlog_f"><span class="keyword">val</span> log_f</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -><br>       level:<a href="Lwt_log_core.html#TYPElevel">level</a> -><br>       ('a, unit, string, unit <a href="Lwt.html#TYPEt">Lwt.t</a>) Pervasives.format4 -> 'a</code></pre><div class="info ">
+<code class="code">log_f</code> is the same as <code class="code">log</code> except that it takes a format
+      string<br>
+</div>
+
+<pre><span id="VALign_log"><span class="keyword">val</span> ign_log</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -> level:<a href="Lwt_log_core.html#TYPElevel">level</a> -> string -> unit</code></pre><div class="info ">
+Same as <a href="Lwt_log_core.html#VALlog"><code class="code"><span class="constructor">Lwt_log_core</span>.log</code></a> but ignore the resulting thread.<br>
+</div>
+
+<pre><span id="VALign_log_f"><span class="keyword">val</span> ign_log_f</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -><br>       level:<a href="Lwt_log_core.html#TYPElevel">level</a> -> ('a, unit, string, unit) Pervasives.format4 -> 'a</code></pre><div class="info ">
+Same as <a href="Lwt_log_core.html#VALlog_f"><code class="code"><span class="constructor">Lwt_log_core</span>.log_f</code></a> but ignore the resulting thread.<br>
+</div>
+<br>
+The following functions are the same as <a href="Lwt_log_core.html#VALlog"><code class="code"><span class="constructor">Lwt_log_core</span>.log</code></a> except that their
+    name determines which level is used.
+<p>
+
+    For example <code class="code">info&nbsp;msg</code> is the same as <code class="code">log&nbsp;~level:<span class="constructor">Info</span>&nbsp;msg</code>.<br>
+
+<pre><span id="VALdebug"><span class="keyword">val</span> debug</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -> string -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span id="VALdebug_f"><span class="keyword">val</span> debug_f</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -><br>       ('a, unit, string, unit <a href="Lwt.html#TYPEt">Lwt.t</a>) Pervasives.format4 -> 'a</code></pre>
+<pre><span id="VALign_debug"><span class="keyword">val</span> ign_debug</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -> ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -> string -> unit</code></pre>
+<pre><span id="VALign_debug_f"><span class="keyword">val</span> ign_debug_f</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -><br>       ('a, unit, string, unit) Pervasives.format4 -> 'a</code></pre>
+<pre><span id="VALinfo"><span class="keyword">val</span> info</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -> string -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span id="VALinfo_f"><span class="keyword">val</span> info_f</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -><br>       ('a, unit, string, unit <a href="Lwt.html#TYPEt">Lwt.t</a>) Pervasives.format4 -> 'a</code></pre>
+<pre><span id="VALign_info"><span class="keyword">val</span> ign_info</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -> ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -> string -> unit</code></pre>
+<pre><span id="VALign_info_f"><span class="keyword">val</span> ign_info_f</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -><br>       ('a, unit, string, unit) Pervasives.format4 -> 'a</code></pre>
+<pre><span id="VALnotice"><span class="keyword">val</span> notice</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -> string -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span id="VALnotice_f"><span class="keyword">val</span> notice_f</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -><br>       ('a, unit, string, unit <a href="Lwt.html#TYPEt">Lwt.t</a>) Pervasives.format4 -> 'a</code></pre>
+<pre><span id="VALign_notice"><span class="keyword">val</span> ign_notice</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -> ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -> string -> unit</code></pre>
+<pre><span id="VALign_notice_f"><span class="keyword">val</span> ign_notice_f</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -><br>       ('a, unit, string, unit) Pervasives.format4 -> 'a</code></pre>
+<pre><span id="VALwarning"><span class="keyword">val</span> warning</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -> string -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span id="VALwarning_f"><span class="keyword">val</span> warning_f</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -><br>       ('a, unit, string, unit <a href="Lwt.html#TYPEt">Lwt.t</a>) Pervasives.format4 -> 'a</code></pre>
+<pre><span id="VALign_warning"><span class="keyword">val</span> ign_warning</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -> ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -> string -> unit</code></pre>
+<pre><span id="VALign_warning_f"><span class="keyword">val</span> ign_warning_f</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -><br>       ('a, unit, string, unit) Pervasives.format4 -> 'a</code></pre>
+<pre><span id="VALerror"><span class="keyword">val</span> error</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -> string -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span id="VALerror_f"><span class="keyword">val</span> error_f</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -><br>       ('a, unit, string, unit <a href="Lwt.html#TYPEt">Lwt.t</a>) Pervasives.format4 -> 'a</code></pre>
+<pre><span id="VALign_error"><span class="keyword">val</span> ign_error</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -> ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -> string -> unit</code></pre>
+<pre><span id="VALign_error_f"><span class="keyword">val</span> ign_error_f</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -><br>       ('a, unit, string, unit) Pervasives.format4 -> 'a</code></pre>
+<pre><span id="VALfatal"><span class="keyword">val</span> fatal</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -> string -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span id="VALfatal_f"><span class="keyword">val</span> fatal_f</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -><br>       ('a, unit, string, unit <a href="Lwt.html#TYPEt">Lwt.t</a>) Pervasives.format4 -> 'a</code></pre>
+<pre><span id="VALign_fatal"><span class="keyword">val</span> ign_fatal</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -> ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -> string -> unit</code></pre>
+<pre><span id="VALign_fatal_f"><span class="keyword">val</span> ign_fatal_f</span> : <code class="type">?exn:exn -><br>       ?section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       ?location:string * int * int -><br>       ?logger:<a href="Lwt_log_core.html#TYPElogger">logger</a> -><br>       ('a, unit, string, unit) Pervasives.format4 -> 'a</code></pre>
+<pre><span class="keyword">module</span> <a href="Lwt_log_core.Section.html">Section</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Lwt_log_core.Section.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
+Sections
+</div>
+<br>
+<h2 id="2_Logtemplates">Log templates</h2><br>
+
+<pre><span id="TYPEtemplate"><span class="keyword">type</span> <code class="type"></code>template</span> = <code class="type">string</code> </pre>
+<div class="info ">
+A template is for generating log messages.
+<p>
+
+        It is a string which may contains variables of the form
+        <code class="code">$(var)</code>, where <code class="code">var</code> is one of:<ul>
+<li><code class="code">message</code> which will be replaced by the message emited</li>
+<li><code class="code">level</code> which will be replaced by a string representation of
+          the level</li>
+<li><code class="code">section</code> which will be replaced by the name of the
+          message's section</li>
+<li><code class="code">loc-file</code> which will be replaced by the file name of the
+          calling logging function</li>
+<li><code class="code">loc-line</code> which will be replaced by the line number of the
+          calling logging function</li>
+<li><code class="code">loc-column</code> which will be replaced by the column number of
+           the calling logging function</li>
+</ul>
+
+        For example:<ul>
+<li><code class="code"><span class="string">"$(name):&nbsp;$(message)"</span></code></li>
+<li><code class="code"><span class="string">"$(name):&nbsp;$(loc-file):&nbsp;$(loc-line):&nbsp;$(loc-column):&nbsp;$(message)"</span></code></li>
+</ul>
+<br>
+</div>
+
+
+<pre><span id="VALrender"><span class="keyword">val</span> render</span> : <code class="type">buffer:Buffer.t -><br>       template:<a href="Lwt_log_core.html#TYPEtemplate">template</a> -><br>       section:<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>       level:<a href="Lwt_log_core.html#TYPElevel">level</a> -> message:string -> unit</code></pre><div class="info ">
+<code class="code">render&nbsp;~buffer&nbsp;~template&nbsp;~section&nbsp;~level&nbsp;~message</code> instantiate
+      all variables of <code class="code">template</code>, and store the result in
+      <code class="code">buffer</code>. The location is obtained from threads local
+      storage.<br>
+</div>
+
+<pre><span id="VALlocation_key"><span class="keyword">val</span> location_key</span> : <code class="type">(string * int * int) <a href="Lwt.html#TYPEkey">Lwt.key</a></code></pre><div class="info ">
+The key for storing current location.<br>
+</div>
+<br>
+<h2 id="2_Loggers">Loggers</h2><br>
+
+<pre><span id="EXCEPTIONLogger_closed"><span class="keyword">exception</span> Logger_closed</span></pre>
+<div class="info ">
+Exception raised when trying to use a closed logger<br>
+</div>
+
+<pre><span id="VALmake"><span class="keyword">val</span> make</span> : <code class="type">output:(<a href="Lwt_log_core.html#TYPEsection">section</a> -><br>               <a href="Lwt_log_core.html#TYPElevel">level</a> -> string list -> unit <a href="Lwt.html#TYPEt">Lwt.t</a>) -><br>       close:(unit -> unit <a href="Lwt.html#TYPEt">Lwt.t</a>) -> <a href="Lwt_log_core.html#TYPElogger">logger</a></code></pre><div class="info ">
+<code class="code">make&nbsp;~output&nbsp;~close</code> creates a new logger.<br>
+</div>
+<div class="param_info"><code class="code">output</code> : is used to write logs. It is a function which
+      receive a section, a level and a list lines that must be logged
+      together.</div>
+<div class="param_info"><code class="code">close</code> : is used to close the logger.</div>
+
+<pre><span id="VALclose"><span class="keyword">val</span> close</span> : <code class="type"><a href="Lwt_log_core.html#TYPElogger">logger</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Close the given logger<br>
+</div>
+
+<pre><span id="VALdefault"><span class="keyword">val</span> default</span> : <code class="type"><a href="Lwt_log_core.html#TYPElogger">logger</a> Pervasives.ref</code></pre><div class="info ">
+The default logger. It is used as default when no one is
+      specified. If <code class="code"><span class="constructor">Lwt_core</span></code> is linked (in the package <code class="code">lwt.unix</code>)
+      the default logger sends all messages to standard error.
+      Otherwise the default logger is <a href="Lwt_log_core.html#VALnull"><code class="code"><span class="constructor">Lwt_log_core</span>.null</code></a>.<br>
+</div>
+
+<pre><span id="VALbroadcast"><span class="keyword">val</span> broadcast</span> : <code class="type"><a href="Lwt_log_core.html#TYPElogger">logger</a> list -> <a href="Lwt_log_core.html#TYPElogger">logger</a></code></pre><div class="info ">
+<code class="code">broadcast&nbsp;loggers</code> is a logger which send messages to all the
+      given loggers.
+<p>
+
+      Note: closing a broadcast logger does not close its
+      components.<br>
+</div>
+
+<pre><span id="VALdispatch"><span class="keyword">val</span> dispatch</span> : <code class="type">(<a href="Lwt_log_core.html#TYPEsection">section</a> -> <a href="Lwt_log_core.html#TYPElevel">level</a> -> <a href="Lwt_log_core.html#TYPElogger">logger</a>) -><br>       <a href="Lwt_log_core.html#TYPElogger">logger</a></code></pre><div class="info ">
+<code class="code">dispatch&nbsp;f</code> is a logger which dispatch logging instructions to
+      different logger according to their level and/or section.
+<p>
+
+      Here is an example:
+<p>
+
+      <pre class="codepre"><code class="code">        <span class="keyword">let</span> access_logger = <span class="constructor">Lwt_log</span>.file <span class="string">"access.log"</span>
+        <span class="keyword">and</span> error_logger = <span class="constructor">Lwt_log</span>.file <span class="string">"error.log"</span> <span class="keyword">in</span>
+
+        <span class="constructor">Lwt_log_core</span>.dispatch
+          (<span class="keyword">fun</span> section level <span class="keywordsign">-&gt;</span>
+            <span class="keyword">match</span> <span class="constructor">Lwt_log_core</span>.<span class="constructor">Section</span>.name section, level <span class="keyword">with</span>
+              <span class="keywordsign">|</span> <span class="string">"access"</span>, _ <span class="keywordsign">-&gt;</span> access_logger
+              <span class="keywordsign">|</span> _, <span class="constructor">Lwt_log_core</span>.<span class="constructor">Error</span> <span class="keywordsign">-&gt;</span> error_logger)
+      </code></pre><br>
+</div>
+<br>
+<h2 id="2_Predefinedloggers">Predefined loggers</h2><br>
+
+<pre><span id="VALnull"><span class="keyword">val</span> null</span> : <code class="type"><a href="Lwt_log_core.html#TYPElogger">logger</a></code></pre><div class="info ">
+Logger which drops everything<br>
+</div>
+</body></html>

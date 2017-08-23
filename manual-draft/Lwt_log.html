@@ -1,0 +1,137 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Lwt_io.html">
+<link rel="next" href="Lwt_main.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of class attributes" rel=Appendix href="index_attributes.html">
+<link title="Index of class methods" rel=Appendix href="index_methods.html">
+<link title="Index of classes" rel=Appendix href="index_classes.html">
+<link title="Index of class types" rel=Appendix href="index_class_types.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Pa_lwt" rel="Chapter" href="Pa_lwt.html">
+<link title="Lwt" rel="Chapter" href="Lwt.html">
+<link title="Lwt_condition" rel="Chapter" href="Lwt_condition.html">
+<link title="Lwt_list" rel="Chapter" href="Lwt_list.html">
+<link title="Lwt_mutex" rel="Chapter" href="Lwt_mutex.html">
+<link title="Lwt_mvar" rel="Chapter" href="Lwt_mvar.html">
+<link title="Lwt_pool" rel="Chapter" href="Lwt_pool.html">
+<link title="Lwt_pqueue" rel="Chapter" href="Lwt_pqueue.html">
+<link title="Lwt_result" rel="Chapter" href="Lwt_result.html">
+<link title="Lwt_sequence" rel="Chapter" href="Lwt_sequence.html">
+<link title="Lwt_stream" rel="Chapter" href="Lwt_stream.html">
+<link title="Lwt_switch" rel="Chapter" href="Lwt_switch.html">
+<link title="Lwt_glib" rel="Chapter" href="Lwt_glib.html">
+<link title="Lwt_log_core" rel="Chapter" href="Lwt_log_core.html">
+<link title="Lwt_log_rules" rel="Chapter" href="Lwt_log_rules.html">
+<link title="Ppx_lwt" rel="Chapter" href="Ppx_lwt.html">
+<link title="Lwt_preemptive" rel="Chapter" href="Lwt_preemptive.html">
+<link title="Lwt_react" rel="Chapter" href="Lwt_react.html">
+<link title="Lwt_ssl" rel="Chapter" href="Lwt_ssl.html">
+<link title="Lwt_bytes" rel="Chapter" href="Lwt_bytes.html">
+<link title="Lwt_chan" rel="Chapter" href="Lwt_chan.html">
+<link title="Lwt_daemon" rel="Chapter" href="Lwt_daemon.html">
+<link title="Lwt_engine" rel="Chapter" href="Lwt_engine.html">
+<link title="Lwt_gc" rel="Chapter" href="Lwt_gc.html">
+<link title="Lwt_io" rel="Chapter" href="Lwt_io.html">
+<link title="Lwt_log" rel="Chapter" href="Lwt_log.html">
+<link title="Lwt_main" rel="Chapter" href="Lwt_main.html">
+<link title="Lwt_process" rel="Chapter" href="Lwt_process.html">
+<link title="Lwt_sys" rel="Chapter" href="Lwt_sys.html">
+<link title="Lwt_throttle" rel="Chapter" href="Lwt_throttle.html">
+<link title="Lwt_timeout" rel="Chapter" href="Lwt_timeout.html">
+<link title="Lwt_unix" rel="Chapter" href="Lwt_unix.html"><title>Lwt_log</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="Lwt_io.html" title="Lwt_io">Previous</a>
+&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;<a class="post" href="Lwt_main.html" title="Lwt_main">Next</a>
+</div>
+<h1>Module <a href="type_Lwt_log.html">Lwt_log</a></h1>
+
+<pre><span class="keyword">module</span> Lwt_log: <code class="code"><span class="keyword">sig</span></code> <a href="Lwt_log.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+Logging facility<br>
+</div>
+<hr width="100%">
+<br>
+This module provides functions to deal with logging.
+    It extends <a href="Lwt_log_core.html"><code class="code"><span class="constructor">Lwt_log_core</span></code></a> with Unix features.
+    It adds:
+<p>
+<ul>
+<li>logging to the syslog daemon</li>
+<li>logging to a channel (stderr, stdout, ...)</li>
+<li>logging to a file</li>
+</ul>
+<br>
+
+<pre><span class="keyword">include</span> <a href="Lwt_log_core.html">Lwt_log_core</a></pre>
+
+<pre><span id="VALrender"><span class="keyword">val</span> render</span> : <code class="type">buffer:Buffer.t -><br>       template:template -> section:section -> level:level -> message:string -> unit</code></pre><div class="info ">
+Same as <a href="Lwt_log_core.html#VALrender"><code class="code"><span class="constructor">Lwt_log_core</span>.render</code></a>, except that the template may also contain the
+      following variables:
+<p>
+<ul>
+<li><code class="code">date</code>, which will be replaced with the current local date and time,</li>
+<li><code class="code">milliseconds</code>, which will be replaced by the fractional part of the current Unix
+        time, to millisecond accuracy.</li>
+</ul>
+
+      For example:<ul>
+<li><code class="code"><span class="string">"$(date)&nbsp;$(name)[$(pid)]:&nbsp;$(message)"</span></code></li>
+<li><code class="code"><span class="string">"$(date).$(milliseconds)&nbsp;$(name)[$(pid)]:&nbsp;$(message)"</span></code></li>
+<li><code class="code"><span class="string">"$(date):&nbsp;$(loc-file):&nbsp;$(loc-line):&nbsp;$(loc-column):&nbsp;$(message)"</span></code></li>
+</ul>
+<br>
+</div>
+
+<pre><span id="TYPEsyslog_facility"><span class="keyword">type</span> <code class="type"></code>syslog_facility</span> = <code class="type">[ `Auth<br>       | `Authpriv<br>       | `Console<br>       | `Cron<br>       | `Daemon<br>       | `FTP<br>       | `Kernel<br>       | `LPR<br>       | `Local0<br>       | `Local1<br>       | `Local2<br>       | `Local3<br>       | `Local4<br>       | `Local5<br>       | `Local6<br>       | `Local7<br>       | `Mail<br>       | `NTP<br>       | `News<br>       | `Security<br>       | `Syslog<br>       | `UUCP<br>       | `User ]</code> </pre>
+<div class="info ">
+Syslog facility. Look at the SYSLOG(3) man page for a description
+    of syslog facilities<br>
+</div>
+
+
+<pre><span id="VALsyslog"><span class="keyword">val</span> syslog</span> : <code class="type">?template:template -><br>       ?paths:string list -> facility:<a href="Lwt_log.html#TYPEsyslog_facility">syslog_facility</a> -> unit -> logger</code></pre><div class="info ">
+<code class="code">syslog&nbsp;?template&nbsp;?paths&nbsp;~facility&nbsp;()</code> creates an logger
+      which send message to the system logger.<br>
+</div>
+<div class="param_info"><code class="code">template</code> : defaults to <code class="code"><span class="string">"$(date)&nbsp;$(name)[$(pid)]:&nbsp;$(section):&nbsp;$(message)"</span></code></div>
+<div class="param_info"><code class="code">paths</code> : is a list of path to try for the syslogd socket. It
+             default to <code class="code">[<span class="string">"/dev/log"</span>;&nbsp;<span class="string">"/var/run/log"</span>]</code>.</div>
+
+<pre><span id="VALfile"><span class="keyword">val</span> file</span> : <code class="type">?template:template -><br>       ?mode:[ `Append | `Truncate ] -><br>       ?perm:Unix.file_perm -> file_name:string -> unit -> logger <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">desf_file&nbsp;?template&nbsp;?mode&nbsp;?perm&nbsp;~file_name&nbsp;()</code> creates an
+      logger which will write messages to <code class="code">file_name</code>.
+<p>
+<ul>
+<li>if <code class="code">mode&nbsp;=&nbsp;<span class="keywordsign">`</span><span class="constructor">Truncate</span></code> then the file is truncated and previous
+      contents will be lost.</li>
+</ul>
+<ul>
+<li>if <code class="code">mode&nbsp;=&nbsp;<span class="keywordsign">`</span><span class="constructor">Append</span></code>, new messages will be appended at the end
+      of the file</li>
+</ul>
+<br>
+</div>
+<div class="param_info"><code class="code">template</code> : defaults to <code class="code"><span class="string">"$(date):&nbsp;$(section):&nbsp;$(message)"</span></code></div>
+<div class="param_info"><code class="code">mode</code> : defaults to <code class="code"><span class="keywordsign">`</span><span class="constructor">Append</span></code></div>
+
+<pre><span id="VALchannel"><span class="keyword">val</span> channel</span> : <code class="type">?template:template -><br>       close_mode:[ `Close | `Keep ] -><br>       channel:<a href="Lwt_io.html#TYPEoutput_channel">Lwt_io.output_channel</a> -> unit -> logger</code></pre><div class="info ">
+<code class="code">channel&nbsp;?template&nbsp;~close_mode&nbsp;~channel&nbsp;()</code> creates a logger
+      from a channel.
+<p>
+
+      If <code class="code">close_mode&nbsp;=&nbsp;<span class="keywordsign">`</span><span class="constructor">Close</span></code> then <code class="code">channel</code> is closed when the
+      logger is closed, otherwise it is left open.<br>
+</div>
+<div class="param_info"><code class="code">template</code> : defaults to <code class="code"><span class="string">"$(name):&nbsp;$(section):&nbsp;$(message)"</span></code></div>
+</body></html>

@@ -1,0 +1,210 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Lwt_main.html">
+<link rel="next" href="Lwt_sys.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of class attributes" rel=Appendix href="index_attributes.html">
+<link title="Index of class methods" rel=Appendix href="index_methods.html">
+<link title="Index of classes" rel=Appendix href="index_classes.html">
+<link title="Index of class types" rel=Appendix href="index_class_types.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Pa_lwt" rel="Chapter" href="Pa_lwt.html">
+<link title="Lwt" rel="Chapter" href="Lwt.html">
+<link title="Lwt_condition" rel="Chapter" href="Lwt_condition.html">
+<link title="Lwt_list" rel="Chapter" href="Lwt_list.html">
+<link title="Lwt_mutex" rel="Chapter" href="Lwt_mutex.html">
+<link title="Lwt_mvar" rel="Chapter" href="Lwt_mvar.html">
+<link title="Lwt_pool" rel="Chapter" href="Lwt_pool.html">
+<link title="Lwt_pqueue" rel="Chapter" href="Lwt_pqueue.html">
+<link title="Lwt_result" rel="Chapter" href="Lwt_result.html">
+<link title="Lwt_sequence" rel="Chapter" href="Lwt_sequence.html">
+<link title="Lwt_stream" rel="Chapter" href="Lwt_stream.html">
+<link title="Lwt_switch" rel="Chapter" href="Lwt_switch.html">
+<link title="Lwt_glib" rel="Chapter" href="Lwt_glib.html">
+<link title="Lwt_log_core" rel="Chapter" href="Lwt_log_core.html">
+<link title="Lwt_log_rules" rel="Chapter" href="Lwt_log_rules.html">
+<link title="Ppx_lwt" rel="Chapter" href="Ppx_lwt.html">
+<link title="Lwt_preemptive" rel="Chapter" href="Lwt_preemptive.html">
+<link title="Lwt_react" rel="Chapter" href="Lwt_react.html">
+<link title="Lwt_ssl" rel="Chapter" href="Lwt_ssl.html">
+<link title="Lwt_bytes" rel="Chapter" href="Lwt_bytes.html">
+<link title="Lwt_chan" rel="Chapter" href="Lwt_chan.html">
+<link title="Lwt_daemon" rel="Chapter" href="Lwt_daemon.html">
+<link title="Lwt_engine" rel="Chapter" href="Lwt_engine.html">
+<link title="Lwt_gc" rel="Chapter" href="Lwt_gc.html">
+<link title="Lwt_io" rel="Chapter" href="Lwt_io.html">
+<link title="Lwt_log" rel="Chapter" href="Lwt_log.html">
+<link title="Lwt_main" rel="Chapter" href="Lwt_main.html">
+<link title="Lwt_process" rel="Chapter" href="Lwt_process.html">
+<link title="Lwt_sys" rel="Chapter" href="Lwt_sys.html">
+<link title="Lwt_throttle" rel="Chapter" href="Lwt_throttle.html">
+<link title="Lwt_timeout" rel="Chapter" href="Lwt_timeout.html">
+<link title="Lwt_unix" rel="Chapter" href="Lwt_unix.html"><link title="High-level functions" rel="Section" href="#2_Highlevelfunctions">
+<link title="Spawning processes" rel="Section" href="#2_Spawningprocesses">
+<link title="Redirections" rel="Subsection" href="#3_Redirections">
+<link title="Executing" rel="Subsection" href="#3_Executing">
+<link title="Receiving" rel="Subsection" href="#3_Receiving">
+<link title="Sending" rel="Subsection" href="#3_Sending">
+<link title="Mapping" rel="Subsection" href="#3_Mapping">
+<title>Lwt_process</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="Lwt_main.html" title="Lwt_main">Previous</a>
+&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;<a class="post" href="Lwt_sys.html" title="Lwt_sys">Next</a>
+</div>
+<h1>Module <a href="type_Lwt_process.html">Lwt_process</a></h1>
+
+<pre><span class="keyword">module</span> Lwt_process: <code class="code"><span class="keyword">sig</span></code> <a href="Lwt_process.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+Process management<br>
+</div>
+<hr width="100%">
+<br>
+This module allows you to spawn processes and communicate with them.<br>
+
+<pre><span id="TYPEcommand"><span class="keyword">type</span> <code class="type"></code>command</span> = <code class="type">string * string array</code> </pre>
+<div class="info ">
+A command. The first field is the name of the executable and
+        the second is the list of arguments. For example:
+<p>
+
+        <pre class="codepre"><code class="code">          (<span class="string">"ls"</span>, [|<span class="string">"ls"</span>; <span class="string">"-l"</span>|])
+        </code></pre>.
+<p>
+
+        Notes:
+<p>
+<ul>
+<li>if the name is the empty string, then the first argument
+        will be used. You should specify a name only if you do not
+        want the executable to be searched in the PATH. On Windows the
+        only way to enable automatic seach in PATH is to pass an empty
+        name.</li>
+</ul>
+<ul>
+<li>it is possible to ``inline'' an argument, i.e. split it into
+        multiple arguments. To do that prefix it with <code class="code"><span class="string">"\000"</span></code>. For
+        example:</li>
+</ul>
+
+        <pre class="codepre"><code class="code">          (<span class="string">""</span>, [|<span class="string">"echo"</span>; <span class="string">"\000foo bar"</span>|])
+        </code></pre>
+<p>
+
+        is the same as:
+<p>
+
+        <pre class="codepre"><code class="code">          (<span class="string">""</span>, [|<span class="string">"echo"</span>; <span class="string">"foo"</span>; <span class="string">"bar"</span>|])
+        </code></pre>.<br>
+</div>
+
+
+<pre><span id="VALshell"><span class="keyword">val</span> shell</span> : <code class="type">string -> <a href="Lwt_process.html#TYPEcommand">command</a></code></pre><div class="info ">
+A command executed with the shell. (with <code class="code"><span class="string">"/bin/sh&nbsp;-c&nbsp;&lt;cmd&gt;"</span></code> on
+      Unix and <code class="code"><span class="string">"cmd.exe&nbsp;/c&nbsp;&lt;cmd&gt;"</span></code> on Windows).<br>
+</div>
+<br>
+All the following functions take an optional argument
+    <code class="code">timeout</code>. If specified, after expiration, the process will be
+    sent a <code class="code"><span class="constructor">Unix</span>.sigkill</code> signal and channels will be closed.<br>
+<br>
+<h2 id="2_Highlevelfunctions">High-level functions</h2><br>
+<br>
+<h3 id="3_Redirections">Redirections</h3><br>
+
+<pre><span id="TYPEredirection"><span class="keyword">type</span> <code class="type"></code>redirection</span> = <code class="type">[ `Close<br>       | `Dev_null<br>       | `FD_copy of Unix.file_descr<br>       | `FD_move of Unix.file_descr<br>       | `Keep ]</code> </pre>
+<div class="info ">
+File descriptor redirections. These are used with the <code class="code">~stdin</code>, <code class="code">~stdout</code>,
+    and <code class="code">~stderr</code> arguments below to specify how the standard file descriptors
+    should be redirected in the child process.
+<p>
+<ul>
+<li><code class="code"><span class="keywordsign">`</span><span class="constructor">Keep</span></code>: point to the same file as in the parent.</li>
+<li><code class="code"><span class="keywordsign">`</span><span class="constructor">Dev_null</span></code>: redirect to <code class="code">/dev/null</code> (POSIX) or <code class="code">nul</code> (Win32).</li>
+<li><code class="code"><span class="keywordsign">`</span><span class="constructor">Close</span></code>: close the file descriptor.</li>
+<li><code class="code"><span class="keywordsign">`</span><span class="constructor">FD_copy</span>&nbsp;fd</code> redirect to the file pointed to by <code class="code">fd</code>. <code class="code">fd</code> remains open.</li>
+<li><code class="code"><span class="keywordsign">`</span><span class="constructor">FD_move</span>&nbsp;fd</code> redirect to the file pointed to by <code class="code">fd</code>. <code class="code">fd</code> is then
+      closed.</li>
+</ul>
+
+    All optional redirection arguments default to <code class="code"><span class="keywordsign">`</span><span class="constructor">Keep</span></code>.<br>
+</div>
+
+<br>
+<h3 id="3_Executing">Executing</h3><br>
+
+<pre><span id="VALexec"><span class="keyword">val</span> exec</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       ?stdin:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       ?stdout:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       <a href="Lwt_process.html#TYPEcommand">command</a> -> Unix.process_status <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Executes the given command and returns its exit status.<br>
+</div>
+<br>
+<h3 id="3_Receiving">Receiving</h3><br>
+
+<pre><span id="VALpread"><span class="keyword">val</span> pread</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       ?stdin:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -> <a href="Lwt_process.html#TYPEcommand">command</a> -> string <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span id="VALpread_chars"><span class="keyword">val</span> pread_chars</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       ?stdin:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -> <a href="Lwt_process.html#TYPEcommand">command</a> -> char <a href="Lwt_stream.html#TYPEt">Lwt_stream.t</a></code></pre>
+<pre><span id="VALpread_line"><span class="keyword">val</span> pread_line</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       ?stdin:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -> <a href="Lwt_process.html#TYPEcommand">command</a> -> string <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span id="VALpread_lines"><span class="keyword">val</span> pread_lines</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       ?stdin:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -> <a href="Lwt_process.html#TYPEcommand">command</a> -> string <a href="Lwt_stream.html#TYPEt">Lwt_stream.t</a></code></pre><br>
+<h3 id="3_Sending">Sending</h3><br>
+
+<pre><span id="VALpwrite"><span class="keyword">val</span> pwrite</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       ?stdout:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       <a href="Lwt_process.html#TYPEcommand">command</a> -> string -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span id="VALpwrite_chars"><span class="keyword">val</span> pwrite_chars</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       ?stdout:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       <a href="Lwt_process.html#TYPEcommand">command</a> -> char <a href="Lwt_stream.html#TYPEt">Lwt_stream.t</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span id="VALpwrite_line"><span class="keyword">val</span> pwrite_line</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       ?stdout:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       <a href="Lwt_process.html#TYPEcommand">command</a> -> string -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span id="VALpwrite_lines"><span class="keyword">val</span> pwrite_lines</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       ?stdout:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       <a href="Lwt_process.html#TYPEcommand">command</a> -> string <a href="Lwt_stream.html#TYPEt">Lwt_stream.t</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><br>
+<h3 id="3_Mapping">Mapping</h3><br>
+
+<pre><span id="VALpmap"><span class="keyword">val</span> pmap</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       <a href="Lwt_process.html#TYPEcommand">command</a> -> string -> string <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span id="VALpmap_chars"><span class="keyword">val</span> pmap_chars</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       <a href="Lwt_process.html#TYPEcommand">command</a> -> char <a href="Lwt_stream.html#TYPEt">Lwt_stream.t</a> -> char <a href="Lwt_stream.html#TYPEt">Lwt_stream.t</a></code></pre>
+<pre><span id="VALpmap_line"><span class="keyword">val</span> pmap_line</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       <a href="Lwt_process.html#TYPEcommand">command</a> -> string -> string <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span id="VALpmap_lines"><span class="keyword">val</span> pmap_lines</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       <a href="Lwt_process.html#TYPEcommand">command</a> -> string <a href="Lwt_stream.html#TYPEt">Lwt_stream.t</a> -> string <a href="Lwt_stream.html#TYPEt">Lwt_stream.t</a></code></pre><br>
+<h2 id="2_Spawningprocesses">Spawning processes</h2><br>
+
+<pre><code><span id="TYPEstate"><span class="keyword">type</span> <code class="type"></code>state</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstate.Running"><span class="constructor">Running</span></span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+The process is still running<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstate.Exited"><span class="constructor">Exited</span></span> <span class="keyword">of</span> <code class="type">Unix.process_status</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+The process has exited<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+
+<div class="info ">
+State of a sub-process<br>
+</div>
+
+
+<pre><span name="TYPEprocess_none"><span class="keyword">class</span> <a href="Lwt_process.process_none-c.html">process_none</a></span> : <code class="type">?timeout:float -> ?env:string array -> ?stdin:<a href="Lwt_process.html#TYPEredirection">redirection</a> -> ?stdout:<a href="Lwt_process.html#TYPEredirection">redirection</a> -> ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -> <a href="Lwt_process.html#TYPEcommand">command</a> -> </code><code class="code"><span class="keyword">object</span></code> <a href="Lwt_process.process_none-c.html">..</a> <code class="code"><span class="keyword">end</span></code></pre>
+<pre><span id="VALopen_process_none"><span class="keyword">val</span> open_process_none</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       ?stdin:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       ?stdout:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       <a href="Lwt_process.html#TYPEcommand">command</a> -> <a href="Lwt_process.process_none-c.html">process_none</a></code></pre>
+<pre><span id="VALwith_process_none"><span class="keyword">val</span> with_process_none</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       ?stdin:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       ?stdout:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       <a href="Lwt_process.html#TYPEcommand">command</a> -> (<a href="Lwt_process.process_none-c.html">process_none</a> -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span name="TYPEprocess_in"><span class="keyword">class</span> <a href="Lwt_process.process_in-c.html">process_in</a></span> : <code class="type">?timeout:float -> ?env:string array -> ?stdin:<a href="Lwt_process.html#TYPEredirection">redirection</a> -> ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -> <a href="Lwt_process.html#TYPEcommand">command</a> -> </code><code class="code"><span class="keyword">object</span></code> <a href="Lwt_process.process_in-c.html">..</a> <code class="code"><span class="keyword">end</span></code></pre>
+<pre><span id="VALopen_process_in"><span class="keyword">val</span> open_process_in</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       ?stdin:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       <a href="Lwt_process.html#TYPEcommand">command</a> -> <a href="Lwt_process.process_in-c.html">process_in</a></code></pre>
+<pre><span id="VALwith_process_in"><span class="keyword">val</span> with_process_in</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       ?stdin:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       <a href="Lwt_process.html#TYPEcommand">command</a> -> (<a href="Lwt_process.process_in-c.html">process_in</a> -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span name="TYPEprocess_out"><span class="keyword">class</span> <a href="Lwt_process.process_out-c.html">process_out</a></span> : <code class="type">?timeout:float -> ?env:string array -> ?stdout:<a href="Lwt_process.html#TYPEredirection">redirection</a> -> ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -> <a href="Lwt_process.html#TYPEcommand">command</a> -> </code><code class="code"><span class="keyword">object</span></code> <a href="Lwt_process.process_out-c.html">..</a> <code class="code"><span class="keyword">end</span></code></pre>
+<pre><span id="VALopen_process_out"><span class="keyword">val</span> open_process_out</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       ?stdout:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       <a href="Lwt_process.html#TYPEcommand">command</a> -> <a href="Lwt_process.process_out-c.html">process_out</a></code></pre>
+<pre><span id="VALwith_process_out"><span class="keyword">val</span> with_process_out</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       ?stdout:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       <a href="Lwt_process.html#TYPEcommand">command</a> -> (<a href="Lwt_process.process_out-c.html">process_out</a> -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span name="TYPEprocess"><span class="keyword">class</span> <a href="Lwt_process.process-c.html">process</a></span> : <code class="type">?timeout:float -> ?env:string array -> ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -> <a href="Lwt_process.html#TYPEcommand">command</a> -> </code><code class="code"><span class="keyword">object</span></code> <a href="Lwt_process.process-c.html">..</a> <code class="code"><span class="keyword">end</span></code></pre>
+<pre><span id="VALopen_process"><span class="keyword">val</span> open_process</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -> <a href="Lwt_process.html#TYPEcommand">command</a> -> <a href="Lwt_process.process-c.html">process</a></code></pre>
+<pre><span id="VALwith_process"><span class="keyword">val</span> with_process</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       ?stderr:<a href="Lwt_process.html#TYPEredirection">redirection</a> -><br>       <a href="Lwt_process.html#TYPEcommand">command</a> -> (<a href="Lwt_process.process-c.html">process</a> -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre>
+<pre><span name="TYPEprocess_full"><span class="keyword">class</span> <a href="Lwt_process.process_full-c.html">process_full</a></span> : <code class="type">?timeout:float -> ?env:string array -> <a href="Lwt_process.html#TYPEcommand">command</a> -> </code><code class="code"><span class="keyword">object</span></code> <a href="Lwt_process.process_full-c.html">..</a> <code class="code"><span class="keyword">end</span></code></pre>
+<pre><span id="VALopen_process_full"><span class="keyword">val</span> open_process_full</span> : <code class="type">?timeout:float -><br>       ?env:string array -> <a href="Lwt_process.html#TYPEcommand">command</a> -> <a href="Lwt_process.process_full-c.html">process_full</a></code></pre>
+<pre><span id="VALwith_process_full"><span class="keyword">val</span> with_process_full</span> : <code class="type">?timeout:float -><br>       ?env:string array -><br>       <a href="Lwt_process.html#TYPEcommand">command</a> -> (<a href="Lwt_process.process_full-c.html">process_full</a> -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre></body></html>

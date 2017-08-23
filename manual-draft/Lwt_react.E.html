@@ -1,0 +1,136 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="next" href="Lwt_react.S.html">
+<link rel="Up" href="Lwt_react.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of class attributes" rel=Appendix href="index_attributes.html">
+<link title="Index of class methods" rel=Appendix href="index_methods.html">
+<link title="Index of classes" rel=Appendix href="index_classes.html">
+<link title="Index of class types" rel=Appendix href="index_class_types.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Pa_lwt" rel="Chapter" href="Pa_lwt.html">
+<link title="Lwt" rel="Chapter" href="Lwt.html">
+<link title="Lwt_condition" rel="Chapter" href="Lwt_condition.html">
+<link title="Lwt_list" rel="Chapter" href="Lwt_list.html">
+<link title="Lwt_mutex" rel="Chapter" href="Lwt_mutex.html">
+<link title="Lwt_mvar" rel="Chapter" href="Lwt_mvar.html">
+<link title="Lwt_pool" rel="Chapter" href="Lwt_pool.html">
+<link title="Lwt_pqueue" rel="Chapter" href="Lwt_pqueue.html">
+<link title="Lwt_result" rel="Chapter" href="Lwt_result.html">
+<link title="Lwt_sequence" rel="Chapter" href="Lwt_sequence.html">
+<link title="Lwt_stream" rel="Chapter" href="Lwt_stream.html">
+<link title="Lwt_switch" rel="Chapter" href="Lwt_switch.html">
+<link title="Lwt_glib" rel="Chapter" href="Lwt_glib.html">
+<link title="Lwt_log_core" rel="Chapter" href="Lwt_log_core.html">
+<link title="Lwt_log_rules" rel="Chapter" href="Lwt_log_rules.html">
+<link title="Ppx_lwt" rel="Chapter" href="Ppx_lwt.html">
+<link title="Lwt_preemptive" rel="Chapter" href="Lwt_preemptive.html">
+<link title="Lwt_react" rel="Chapter" href="Lwt_react.html">
+<link title="Lwt_ssl" rel="Chapter" href="Lwt_ssl.html">
+<link title="Lwt_bytes" rel="Chapter" href="Lwt_bytes.html">
+<link title="Lwt_chan" rel="Chapter" href="Lwt_chan.html">
+<link title="Lwt_daemon" rel="Chapter" href="Lwt_daemon.html">
+<link title="Lwt_engine" rel="Chapter" href="Lwt_engine.html">
+<link title="Lwt_gc" rel="Chapter" href="Lwt_gc.html">
+<link title="Lwt_io" rel="Chapter" href="Lwt_io.html">
+<link title="Lwt_log" rel="Chapter" href="Lwt_log.html">
+<link title="Lwt_main" rel="Chapter" href="Lwt_main.html">
+<link title="Lwt_process" rel="Chapter" href="Lwt_process.html">
+<link title="Lwt_sys" rel="Chapter" href="Lwt_sys.html">
+<link title="Lwt_throttle" rel="Chapter" href="Lwt_throttle.html">
+<link title="Lwt_timeout" rel="Chapter" href="Lwt_timeout.html">
+<link title="Lwt_unix" rel="Chapter" href="Lwt_unix.html"><link title="Lwt-specific utilities" rel="Section" href="#2_Lwtspecificutilities">
+<link title="Threaded versions of React transformation functions" rel="Section" href="#2_ThreadedversionsofReacttransformationfunctions">
+<title>Lwt_react.E</title>
+</head>
+<body>
+<div class="navbar">&nbsp;<a class="up" href="Lwt_react.html" title="Lwt_react">Up</a>
+&nbsp;<a class="post" href="Lwt_react.S.html" title="Lwt_react.S">Next</a>
+</div>
+<h1>Module <a href="type_Lwt_react.E.html">Lwt_react.E</a></h1>
+
+<pre><span class="keyword">module</span> E: <code class="code"><span class="keyword">sig</span></code> <a href="Lwt_react.E.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><hr width="100%">
+
+<pre><span class="keyword">include</span> React.E</pre>
+<br>
+<h2 id="2_Lwtspecificutilities">Lwt-specific utilities</h2><br>
+
+<pre><span id="VALwith_finaliser"><span class="keyword">val</span> with_finaliser</span> : <code class="type">(unit -> unit) -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a></code></pre><div class="info ">
+<code class="code">with_finaliser&nbsp;f&nbsp;e</code> returns an event <code class="code">e'</code> which behave as
+        <code class="code">e</code>, except that <code class="code">f</code> is called when <code class="code">e'</code> is garbage
+        collected.<br>
+</div>
+
+<pre><span id="VALnext"><span class="keyword">val</span> next</span> : <code class="type">'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">next&nbsp;e</code> returns the next occurrence of <code class="code">e</code><br>
+</div>
+
+<pre><span id="VALlimit"><span class="keyword">val</span> limit</span> : <code class="type">(unit -> unit <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a></code></pre><div class="info ">
+<code class="code">limit&nbsp;f&nbsp;e</code> limits the rate of <code class="code">e</code> with <code class="code">f</code>.
+<p>
+
+        For example, to limit the rate of an event to 1 per second you
+        can use: <code class="code">limit&nbsp;(<span class="keyword">fun</span>&nbsp;()&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Lwt_unix</span>.sleep&nbsp;1.0)&nbsp;event</code>.<br>
+</div>
+
+<pre><span id="VALfrom"><span class="keyword">val</span> from</span> : <code class="type">(unit -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a></code></pre><div class="info ">
+<code class="code">from&nbsp;f</code> creates an event which occurs each time <code class="code">f&nbsp;()</code>
+        returns a value. If <code class="code">f</code> raises an exception, the event is just
+        stopped.<br>
+</div>
+
+<pre><span id="VALto_stream"><span class="keyword">val</span> to_stream</span> : <code class="type">'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> -> 'a <a href="Lwt_stream.html#TYPEt">Lwt_stream.t</a></code></pre><div class="info ">
+Creates a stream holding all values occurring on the given
+        event<br>
+</div>
+
+<pre><span id="VALof_stream"><span class="keyword">val</span> of_stream</span> : <code class="type">'a <a href="Lwt_stream.html#TYPEt">Lwt_stream.t</a> -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a></code></pre><div class="info ">
+<code class="code">of_stream&nbsp;stream</code> creates an event which occurs each time a
+        value is available on the stream.<br>
+</div>
+
+<pre><span id="VALdelay"><span class="keyword">val</span> delay</span> : <code class="type">'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> <a href="Lwt.html#TYPEt">Lwt.t</a> -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a></code></pre><div class="info ">
+<code class="code">delay&nbsp;thread</code> is an event which does not occurs until
+        <code class="code">thread</code> returns. Then it behaves as the event returned by
+        <code class="code">thread</code>.<br>
+</div>
+
+<pre><span id="VALkeep"><span class="keyword">val</span> keep</span> : <code class="type">'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> -> unit</code></pre><div class="info ">
+<code class="code">keep&nbsp;e</code> keeps a reference to <code class="code">e</code> so it will never be garbage
+        collected.<br>
+</div>
+<br>
+<h2 id="2_ThreadedversionsofReacttransformationfunctions">Threaded versions of React transformation functions</h2><br>
+<br>
+The following functions behave as their <code class="code"><span class="constructor">React</span></code> counterpart,
+      except that they takes functions that may yield.
+<p>
+
+      As usual the <code class="code">_s</code> suffix is used when calls are serialized, and
+      the <code class="code">_p</code> suffix is used when they are not.
+<p>
+
+      Note that <code class="code">*_p</code> functions may not preserve event order.<br>
+
+<pre><span id="VALapp_s"><span class="keyword">val</span> app_s</span> : <code class="type">('a -> 'b <a href="Lwt.html#TYPEt">Lwt.t</a>) <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> -> 'b <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a></code></pre>
+<pre><span id="VALapp_p"><span class="keyword">val</span> app_p</span> : <code class="type">('a -> 'b <a href="Lwt.html#TYPEt">Lwt.t</a>) <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> -> 'b <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a></code></pre>
+<pre><span id="VALmap_s"><span class="keyword">val</span> map_s</span> : <code class="type">('a -> 'b <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> -> 'b <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a></code></pre>
+<pre><span id="VALmap_p"><span class="keyword">val</span> map_p</span> : <code class="type">('a -> 'b <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> -> 'b <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a></code></pre>
+<pre><span id="VALfilter_s"><span class="keyword">val</span> filter_s</span> : <code class="type">('a -> bool <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a></code></pre>
+<pre><span id="VALfilter_p"><span class="keyword">val</span> filter_p</span> : <code class="type">('a -> bool <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a></code></pre>
+<pre><span id="VALfmap_s"><span class="keyword">val</span> fmap_s</span> : <code class="type">('a -> 'b option <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> -> 'b <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a></code></pre>
+<pre><span id="VALfmap_p"><span class="keyword">val</span> fmap_p</span> : <code class="type">('a -> 'b option <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> -> 'b <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a></code></pre>
+<pre><span id="VALdiff_s"><span class="keyword">val</span> diff_s</span> : <code class="type">('a -> 'a -> 'b <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> -> 'b <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a></code></pre>
+<pre><span id="VALaccum_s"><span class="keyword">val</span> accum_s</span> : <code class="type">('a -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a>) <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> -> 'a -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a></code></pre>
+<pre><span id="VALfold_s"><span class="keyword">val</span> fold_s</span> : <code class="type">('a -> 'b -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a -> 'b <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a></code></pre>
+<pre><span id="VALmerge_s"><span class="keyword">val</span> merge_s</span> : <code class="type">('a -> 'b -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a -> 'b <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> list -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a></code></pre>
+<pre><span id="VALrun_s"><span class="keyword">val</span> run_s</span> : <code class="type">'a <a href="Lwt.html#TYPEt">Lwt.t</a> <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a></code></pre>
+<pre><span id="VALrun_p"><span class="keyword">val</span> run_p</span> : <code class="type">'a <a href="Lwt.html#TYPEt">Lwt.t</a> <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a> -> 'a <a href="Lwt_react.html#TYPEevent">Lwt_react.event</a></code></pre></body></html>

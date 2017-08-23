@@ -1,0 +1,130 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Ppx_lwt.html">
+<link rel="next" href="Lwt_react.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of class attributes" rel=Appendix href="index_attributes.html">
+<link title="Index of class methods" rel=Appendix href="index_methods.html">
+<link title="Index of classes" rel=Appendix href="index_classes.html">
+<link title="Index of class types" rel=Appendix href="index_class_types.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Pa_lwt" rel="Chapter" href="Pa_lwt.html">
+<link title="Lwt" rel="Chapter" href="Lwt.html">
+<link title="Lwt_condition" rel="Chapter" href="Lwt_condition.html">
+<link title="Lwt_list" rel="Chapter" href="Lwt_list.html">
+<link title="Lwt_mutex" rel="Chapter" href="Lwt_mutex.html">
+<link title="Lwt_mvar" rel="Chapter" href="Lwt_mvar.html">
+<link title="Lwt_pool" rel="Chapter" href="Lwt_pool.html">
+<link title="Lwt_pqueue" rel="Chapter" href="Lwt_pqueue.html">
+<link title="Lwt_result" rel="Chapter" href="Lwt_result.html">
+<link title="Lwt_sequence" rel="Chapter" href="Lwt_sequence.html">
+<link title="Lwt_stream" rel="Chapter" href="Lwt_stream.html">
+<link title="Lwt_switch" rel="Chapter" href="Lwt_switch.html">
+<link title="Lwt_glib" rel="Chapter" href="Lwt_glib.html">
+<link title="Lwt_log_core" rel="Chapter" href="Lwt_log_core.html">
+<link title="Lwt_log_rules" rel="Chapter" href="Lwt_log_rules.html">
+<link title="Ppx_lwt" rel="Chapter" href="Ppx_lwt.html">
+<link title="Lwt_preemptive" rel="Chapter" href="Lwt_preemptive.html">
+<link title="Lwt_react" rel="Chapter" href="Lwt_react.html">
+<link title="Lwt_ssl" rel="Chapter" href="Lwt_ssl.html">
+<link title="Lwt_bytes" rel="Chapter" href="Lwt_bytes.html">
+<link title="Lwt_chan" rel="Chapter" href="Lwt_chan.html">
+<link title="Lwt_daemon" rel="Chapter" href="Lwt_daemon.html">
+<link title="Lwt_engine" rel="Chapter" href="Lwt_engine.html">
+<link title="Lwt_gc" rel="Chapter" href="Lwt_gc.html">
+<link title="Lwt_io" rel="Chapter" href="Lwt_io.html">
+<link title="Lwt_log" rel="Chapter" href="Lwt_log.html">
+<link title="Lwt_main" rel="Chapter" href="Lwt_main.html">
+<link title="Lwt_process" rel="Chapter" href="Lwt_process.html">
+<link title="Lwt_sys" rel="Chapter" href="Lwt_sys.html">
+<link title="Lwt_throttle" rel="Chapter" href="Lwt_throttle.html">
+<link title="Lwt_timeout" rel="Chapter" href="Lwt_timeout.html">
+<link title="Lwt_unix" rel="Chapter" href="Lwt_unix.html"><title>Lwt_preemptive</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="Ppx_lwt.html" title="Ppx_lwt">Previous</a>
+&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;<a class="post" href="Lwt_react.html" title="Lwt_react">Next</a>
+</div>
+<h1>Module <a href="type_Lwt_preemptive.html">Lwt_preemptive</a></h1>
+
+<pre><span class="keyword">module</span> Lwt_preemptive: <code class="code"><span class="keyword">sig</span></code> <a href="Lwt_preemptive.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+This module allows to mix preemptive threads with <code class="code"><span class="constructor">Lwt</span></code>
+    cooperative threads. It maintains an extensible pool of preemptive
+    threads to which you can detach computations.
+<p>
+
+    When compiling or linking programs that use <code class="code"><span class="constructor">Lwt_preemptive</span></code>, you should
+    pass the <code class="code">-thread</code> or <code class="code">-vmthread</code> option. This depends on your build system.
+    For OCamlbuild, add <code class="code"><span class="keyword">true</span>:&nbsp;thread</code> to <code class="code">_tags</code>. For OASIS, add <code class="code">threads</code> to
+    <code class="code"><span class="constructor">BuildDepends</span></code> in <code class="code">_oasis</code>.<br>
+</div>
+<hr width="100%">
+
+<pre><span id="VALdetach"><span class="keyword">val</span> detach</span> : <code class="type">('a -> 'b) -> 'a -> 'b <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">detach&nbsp;f&nbsp;x</code> runs the computation <code class="code">f&nbsp;x</code> in a separate preemptive thread.
+      <code class="code">detach</code> evaluates to an Lwt thread, which waits for the preemptive thread
+      to complete.
+<p>
+
+      Note that Lwt thread-local storage (i.e., <a href="Lwt.html#VALwith_value"><code class="code"><span class="constructor">Lwt</span>.with_value</code></a>) cannot be
+      safely used from within <code class="code">f</code>. The same goes for most of the rest of Lwt. If
+      you need to run an Lwt thread in <code class="code">f</code>, use <a href="Lwt_preemptive.html#VALrun_in_main"><code class="code"><span class="constructor">Lwt_preemptive</span>.run_in_main</code></a>.<br>
+</div>
+
+<pre><span id="VALrun_in_main"><span class="keyword">val</span> run_in_main</span> : <code class="type">(unit -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a</code></pre><div class="info ">
+<code class="code">run_in_main&nbsp;f</code> can be called from a detached computation to execute
+      <code class="code">f&nbsp;()</code> in the main preemptive thread, i.e. the one executing
+      <a href="Lwt_main.html#VALrun"><code class="code"><span class="constructor">Lwt_main</span>.run</code></a>. <code class="code">run_in_main&nbsp;f</code> blocks until <code class="code">f&nbsp;()</code> completes, then
+      returns its result. If <code class="code">f&nbsp;()</code> raises an exception, <code class="code">run_in_main&nbsp;f</code> raises
+      the same exception.
+<p>
+
+      <a href="Lwt.html#VALwith_value"><code class="code"><span class="constructor">Lwt</span>.with_value</code></a> may be used inside <code class="code">f&nbsp;()</code>. <a href="Lwt.html#VALget"><code class="code"><span class="constructor">Lwt</span>.get</code></a> can correctly
+      retrieve values set this way inside <code class="code">f&nbsp;()</code>, but not values set using
+      <a href="Lwt.html#VALwith_value"><code class="code"><span class="constructor">Lwt</span>.with_value</code></a> outside <code class="code">f&nbsp;()</code>.<br>
+</div>
+
+<pre><span id="VALinit"><span class="keyword">val</span> init</span> : <code class="type">int -> int -> (string -> unit) -> unit</code></pre><div class="info ">
+<code class="code">init&nbsp;min&nbsp;max&nbsp;log</code> initialises this module. i.e. it launches the
+      minimum number of preemptive threads and starts the <b>      dispatcher</b>.<br>
+</div>
+
+<pre><span id="VALsimple_init"><span class="keyword">val</span> simple_init</span> : <code class="type">unit -> unit</code></pre><div class="info ">
+<code class="code">simple_init&nbsp;()</code> does a <i>simple initialization</i>. i.e. with
+      default parameters if the library is not yet initialised.
+<p>
+
+      Note: this function is automatically called <a href="Lwt_preemptive.html#VALdetach"><code class="code"><span class="constructor">Lwt_preemptive</span>.detach</code></a>.<br>
+</div>
+
+<pre><span id="VALget_bounds"><span class="keyword">val</span> get_bounds</span> : <code class="type">unit -> int * int</code></pre><div class="info ">
+<code class="code">get_bounds&nbsp;()</code> returns the minimum and the maximum number of
+      preemptive threads.<br>
+</div>
+
+<pre><span id="VALset_bounds"><span class="keyword">val</span> set_bounds</span> : <code class="type">int * int -> unit</code></pre><div class="info ">
+<code class="code">set_bounds&nbsp;(min,&nbsp;max)</code> set the minimum and the maximum number
+      of preemptive threads.<br>
+</div>
+
+<pre><span id="VALset_max_number_of_threads_queued"><span class="keyword">val</span> set_max_number_of_threads_queued</span> : <code class="type">int -> unit</code></pre><div class="info ">
+Sets the size of the waiting queue, if no more preemptive
+      threads are available. When the queue is full, <a href="Lwt_preemptive.html#VALdetach"><code class="code"><span class="constructor">Lwt_preemptive</span>.detach</code></a> will
+      sleep until a thread is available.<br>
+</div>
+
+<pre><span id="VALget_max_number_of_threads_queued"><span class="keyword">val</span> get_max_number_of_threads_queued</span> : <code class="type">unit -> int</code></pre><div class="info ">
+Returns the size of the waiting queue, if no more threads are
+      available<br>
+</div>
+</body></html>

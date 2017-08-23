@@ -1,0 +1,124 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="Up" href="Lwt_pqueue.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of class attributes" rel=Appendix href="index_attributes.html">
+<link title="Index of class methods" rel=Appendix href="index_methods.html">
+<link title="Index of classes" rel=Appendix href="index_classes.html">
+<link title="Index of class types" rel=Appendix href="index_class_types.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Pa_lwt" rel="Chapter" href="Pa_lwt.html">
+<link title="Lwt" rel="Chapter" href="Lwt.html">
+<link title="Lwt_condition" rel="Chapter" href="Lwt_condition.html">
+<link title="Lwt_list" rel="Chapter" href="Lwt_list.html">
+<link title="Lwt_mutex" rel="Chapter" href="Lwt_mutex.html">
+<link title="Lwt_mvar" rel="Chapter" href="Lwt_mvar.html">
+<link title="Lwt_pool" rel="Chapter" href="Lwt_pool.html">
+<link title="Lwt_pqueue" rel="Chapter" href="Lwt_pqueue.html">
+<link title="Lwt_result" rel="Chapter" href="Lwt_result.html">
+<link title="Lwt_sequence" rel="Chapter" href="Lwt_sequence.html">
+<link title="Lwt_stream" rel="Chapter" href="Lwt_stream.html">
+<link title="Lwt_switch" rel="Chapter" href="Lwt_switch.html">
+<link title="Lwt_glib" rel="Chapter" href="Lwt_glib.html">
+<link title="Lwt_log_core" rel="Chapter" href="Lwt_log_core.html">
+<link title="Lwt_log_rules" rel="Chapter" href="Lwt_log_rules.html">
+<link title="Ppx_lwt" rel="Chapter" href="Ppx_lwt.html">
+<link title="Lwt_preemptive" rel="Chapter" href="Lwt_preemptive.html">
+<link title="Lwt_react" rel="Chapter" href="Lwt_react.html">
+<link title="Lwt_ssl" rel="Chapter" href="Lwt_ssl.html">
+<link title="Lwt_bytes" rel="Chapter" href="Lwt_bytes.html">
+<link title="Lwt_chan" rel="Chapter" href="Lwt_chan.html">
+<link title="Lwt_daemon" rel="Chapter" href="Lwt_daemon.html">
+<link title="Lwt_engine" rel="Chapter" href="Lwt_engine.html">
+<link title="Lwt_gc" rel="Chapter" href="Lwt_gc.html">
+<link title="Lwt_io" rel="Chapter" href="Lwt_io.html">
+<link title="Lwt_log" rel="Chapter" href="Lwt_log.html">
+<link title="Lwt_main" rel="Chapter" href="Lwt_main.html">
+<link title="Lwt_process" rel="Chapter" href="Lwt_process.html">
+<link title="Lwt_sys" rel="Chapter" href="Lwt_sys.html">
+<link title="Lwt_throttle" rel="Chapter" href="Lwt_throttle.html">
+<link title="Lwt_timeout" rel="Chapter" href="Lwt_timeout.html">
+<link title="Lwt_unix" rel="Chapter" href="Lwt_unix.html"><title>Lwt_pqueue.Make</title>
+</head>
+<body>
+<div class="navbar">&nbsp;<a class="up" href="Lwt_pqueue.html" title="Lwt_pqueue">Up</a>
+&nbsp;</div>
+<h1>Functor <a href="type_Lwt_pqueue.Make.html">Lwt_pqueue.Make</a></h1>
+
+<pre><span class="keyword">module</span> Make <code class="code">(</code><code class="code"><span class="constructor">Ord</span></code><code class="code">&nbsp;:&nbsp;</code><code class="type"><a href="Lwt_pqueue.OrderedType.html">OrderedType</a></code><code class="code">)&nbsp;</code>: <code class="type"><a href="Lwt_pqueue.S.html">S</a></code><code class="type">  with type elt = Ord.t</code></pre><div class="info module top">
+Generates priority queue types from ordered types.<br>
+</div>
+<table border="0" cellpadding="3" width="100%">
+<tr>
+<td align="left" valign="top" width="1%%"><b>Parameters: </b></td>
+<td>
+<table class="paramstable">
+<tr>
+<td align="center" valign="top" width="15%">
+<code>Ord</code></td>
+<td align="center" valign="top">:</td>
+<td><code class="type"><a href="Lwt_pqueue.OrderedType.html">OrderedType</a></code>
+</table>
+</td>
+</tr>
+</table>
+<hr width="100%">
+
+<pre><span id="TYPEelt"><span class="keyword">type</span> <code class="type"></code>elt</span> </pre>
+<div class="info ">
+Type of elements contained in the priority queue.<br>
+</div>
+
+
+<pre><span id="TYPEt"><span class="keyword">type</span> <code class="type"></code>t</span> </pre>
+<div class="info ">
+Type of priority queues.<br>
+</div>
+
+
+<pre><span id="VALempty"><span class="keyword">val</span> empty</span> : <code class="type"><a href="Lwt_pqueue.S.html#TYPEt">t</a></code></pre><div class="info ">
+The empty priority queue. Contains no elements.<br>
+</div>
+
+<pre><span id="VALis_empty"><span class="keyword">val</span> is_empty</span> : <code class="type"><a href="Lwt_pqueue.S.html#TYPEt">t</a> -> bool</code></pre><div class="info ">
+<code class="code">is_empty&nbsp;q</code> evaluates to <code class="code"><span class="keyword">true</span></code> iff <code class="code">q</code> is empty.<br>
+</div>
+
+<pre><span id="VALadd"><span class="keyword">val</span> add</span> : <code class="type"><a href="Lwt_pqueue.S.html#TYPEelt">elt</a> -> <a href="Lwt_pqueue.S.html#TYPEt">t</a> -> <a href="Lwt_pqueue.S.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">add&nbsp;e&nbsp;q</code> evaluates to a new priority queue, which contains all the
+        elements of <code class="code">q</code>, and the additional element <code class="code">e</code>.<br>
+</div>
+
+<pre><span id="VALunion"><span class="keyword">val</span> union</span> : <code class="type"><a href="Lwt_pqueue.S.html#TYPEt">t</a> -> <a href="Lwt_pqueue.S.html#TYPEt">t</a> -> <a href="Lwt_pqueue.S.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">union&nbsp;q&nbsp;q'</code> evaluates to a new priority queue, which contains all the
+        elements of both <code class="code">q</code> and <code class="code">q'</code>.<br>
+</div>
+
+<pre><span id="VALfind_min"><span class="keyword">val</span> find_min</span> : <code class="type"><a href="Lwt_pqueue.S.html#TYPEt">t</a> -> <a href="Lwt_pqueue.S.html#TYPEelt">elt</a></code></pre><div class="info ">
+<code class="code">find_min&nbsp;q</code> evaluates to the minimum element of <code class="code">q</code> if it is not empty,
+        and raises <code class="code"><span class="constructor">Not_found</span></code> otherwise.<br>
+</div>
+
+<pre><span id="VALlookup_min"><span class="keyword">val</span> lookup_min</span> : <code class="type"><a href="Lwt_pqueue.S.html#TYPEt">t</a> -> <a href="Lwt_pqueue.S.html#TYPEelt">elt</a> option</code></pre><div class="info ">
+<code class="code">lookup_min&nbsp;q</code> evaluates to <code class="code"><span class="constructor">Some</span>&nbsp;e</code>, where <code class="code">e</code> is the minimum element
+        of <code class="code">q</code>, if <code class="code">q</code> is not empty, and evaluates to <code class="code"><span class="constructor">None</span></code> otherwise.<br>
+</div>
+
+<pre><span id="VALremove_min"><span class="keyword">val</span> remove_min</span> : <code class="type"><a href="Lwt_pqueue.S.html#TYPEt">t</a> -> <a href="Lwt_pqueue.S.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">remove_min&nbsp;q</code> evaluates to a new priority queue, which contains all the
+        elements of <code class="code">q</code> except for its minimum element. Raises <code class="code"><span class="constructor">Not_found</span></code> if
+        <code class="code">q</code> is empty.<br>
+</div>
+
+<pre><span id="VALsize"><span class="keyword">val</span> size</span> : <code class="type"><a href="Lwt_pqueue.S.html#TYPEt">t</a> -> int</code></pre><div class="info ">
+<code class="code">size&nbsp;q</code> evaluates to the number of elements in <code class="code">q</code>.<br>
+</div>
+</body></html>

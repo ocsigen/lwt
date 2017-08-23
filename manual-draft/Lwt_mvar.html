@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Lwt_mutex.html">
+<link rel="next" href="Lwt_pool.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of class attributes" rel=Appendix href="index_attributes.html">
+<link title="Index of class methods" rel=Appendix href="index_methods.html">
+<link title="Index of classes" rel=Appendix href="index_classes.html">
+<link title="Index of class types" rel=Appendix href="index_class_types.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Pa_lwt" rel="Chapter" href="Pa_lwt.html">
+<link title="Lwt" rel="Chapter" href="Lwt.html">
+<link title="Lwt_condition" rel="Chapter" href="Lwt_condition.html">
+<link title="Lwt_list" rel="Chapter" href="Lwt_list.html">
+<link title="Lwt_mutex" rel="Chapter" href="Lwt_mutex.html">
+<link title="Lwt_mvar" rel="Chapter" href="Lwt_mvar.html">
+<link title="Lwt_pool" rel="Chapter" href="Lwt_pool.html">
+<link title="Lwt_pqueue" rel="Chapter" href="Lwt_pqueue.html">
+<link title="Lwt_result" rel="Chapter" href="Lwt_result.html">
+<link title="Lwt_sequence" rel="Chapter" href="Lwt_sequence.html">
+<link title="Lwt_stream" rel="Chapter" href="Lwt_stream.html">
+<link title="Lwt_switch" rel="Chapter" href="Lwt_switch.html">
+<link title="Lwt_glib" rel="Chapter" href="Lwt_glib.html">
+<link title="Lwt_log_core" rel="Chapter" href="Lwt_log_core.html">
+<link title="Lwt_log_rules" rel="Chapter" href="Lwt_log_rules.html">
+<link title="Ppx_lwt" rel="Chapter" href="Ppx_lwt.html">
+<link title="Lwt_preemptive" rel="Chapter" href="Lwt_preemptive.html">
+<link title="Lwt_react" rel="Chapter" href="Lwt_react.html">
+<link title="Lwt_ssl" rel="Chapter" href="Lwt_ssl.html">
+<link title="Lwt_bytes" rel="Chapter" href="Lwt_bytes.html">
+<link title="Lwt_chan" rel="Chapter" href="Lwt_chan.html">
+<link title="Lwt_daemon" rel="Chapter" href="Lwt_daemon.html">
+<link title="Lwt_engine" rel="Chapter" href="Lwt_engine.html">
+<link title="Lwt_gc" rel="Chapter" href="Lwt_gc.html">
+<link title="Lwt_io" rel="Chapter" href="Lwt_io.html">
+<link title="Lwt_log" rel="Chapter" href="Lwt_log.html">
+<link title="Lwt_main" rel="Chapter" href="Lwt_main.html">
+<link title="Lwt_process" rel="Chapter" href="Lwt_process.html">
+<link title="Lwt_sys" rel="Chapter" href="Lwt_sys.html">
+<link title="Lwt_throttle" rel="Chapter" href="Lwt_throttle.html">
+<link title="Lwt_timeout" rel="Chapter" href="Lwt_timeout.html">
+<link title="Lwt_unix" rel="Chapter" href="Lwt_unix.html"><title>Lwt_mvar</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="Lwt_mutex.html" title="Lwt_mutex">Previous</a>
+&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;<a class="post" href="Lwt_pool.html" title="Lwt_pool">Next</a>
+</div>
+<h1>Module <a href="type_Lwt_mvar.html">Lwt_mvar</a></h1>
+
+<pre><span class="keyword">module</span> Lwt_mvar: <code class="code"><span class="keyword">sig</span></code> <a href="Lwt_mvar.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+Mailbox variables<br>
+</div>
+<hr width="100%">
+<br>
+"Mailbox" variables implement a synchronising variable, used for
+    communication between concurrent threads.
+<p>
+
+    This code adapted from
+    <a href="http://eigenclass.org/hiki.rb?cmd=view&p=lightweight-threads-with-lwt">Comparing lightweight threads (eigenclass.org)</a><br>
+
+<pre><span id="TYPEt"><span class="keyword">type</span> <code class="type">'a</code> t</span> </pre>
+<div class="info ">
+The type of a mailbox variable. Mailbox variables are used to
+      communicate values between threads in a synchronous way. The
+      type parameter specifies the type of the value propagated from
+      <code class="code">put</code> to <code class="code">take</code>.<br>
+</div>
+
+
+<pre><span id="VALcreate"><span class="keyword">val</span> create</span> : <code class="type">'a -> 'a <a href="Lwt_mvar.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">create&nbsp;v</code> creates a new mailbox variable containing value <code class="code">v</code>.<br>
+</div>
+
+<pre><span id="VALcreate_empty"><span class="keyword">val</span> create_empty</span> : <code class="type">unit -> 'a <a href="Lwt_mvar.html#TYPEt">t</a></code></pre><div class="info ">
+<code class="code">create&nbsp;()</code> creates a new empty mailbox variable.<br>
+</div>
+
+<pre><span id="VALput"><span class="keyword">val</span> put</span> : <code class="type">'a <a href="Lwt_mvar.html#TYPEt">t</a> -> 'a -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">put&nbsp;mvar&nbsp;value</code> puts a value into a mailbox variable. This
+      value will remain in the mailbox until <code class="code">take</code> is called to
+      remove it. If the mailbox is not empty, the current thread will
+      block until it is emptied.<br>
+</div>
+
+<pre><span id="VALtake"><span class="keyword">val</span> take</span> : <code class="type">'a <a href="Lwt_mvar.html#TYPEt">t</a> -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">take&nbsp;mvar</code> will take any currently available value from the
+      mailbox variable. If no value is currently available, the
+      current thread will block, awaiting a value to be <code class="code">put</code> by
+      another thread.<br>
+</div>
+
+<pre><span id="VALtake_available"><span class="keyword">val</span> take_available</span> : <code class="type">'a <a href="Lwt_mvar.html#TYPEt">t</a> -> 'a option</code></pre><div class="info ">
+<code class="code">take_available&nbsp;mvar</code> immediately takes the value from <code class="code">mvar</code> without
+      blocking, returning <code class="code"><span class="constructor">None</span></code> if the mailbox is empty.<br>
+</div>
+
+<pre><span id="VALis_empty"><span class="keyword">val</span> is_empty</span> : <code class="type">'a <a href="Lwt_mvar.html#TYPEt">t</a> -> bool</code></pre><div class="info ">
+<code class="code">is_empty&nbsp;mvar</code> indicates if <code class="code">put&nbsp;mvar</code> can be called without
+      blocking.<br>
+</div>
+</body></html>

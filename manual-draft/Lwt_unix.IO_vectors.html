@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="next" href="Lwt_unix.LargeFile.html">
+<link rel="Up" href="Lwt_unix.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of class attributes" rel=Appendix href="index_attributes.html">
+<link title="Index of class methods" rel=Appendix href="index_methods.html">
+<link title="Index of classes" rel=Appendix href="index_classes.html">
+<link title="Index of class types" rel=Appendix href="index_class_types.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Pa_lwt" rel="Chapter" href="Pa_lwt.html">
+<link title="Lwt" rel="Chapter" href="Lwt.html">
+<link title="Lwt_condition" rel="Chapter" href="Lwt_condition.html">
+<link title="Lwt_list" rel="Chapter" href="Lwt_list.html">
+<link title="Lwt_mutex" rel="Chapter" href="Lwt_mutex.html">
+<link title="Lwt_mvar" rel="Chapter" href="Lwt_mvar.html">
+<link title="Lwt_pool" rel="Chapter" href="Lwt_pool.html">
+<link title="Lwt_pqueue" rel="Chapter" href="Lwt_pqueue.html">
+<link title="Lwt_result" rel="Chapter" href="Lwt_result.html">
+<link title="Lwt_sequence" rel="Chapter" href="Lwt_sequence.html">
+<link title="Lwt_stream" rel="Chapter" href="Lwt_stream.html">
+<link title="Lwt_switch" rel="Chapter" href="Lwt_switch.html">
+<link title="Lwt_glib" rel="Chapter" href="Lwt_glib.html">
+<link title="Lwt_log_core" rel="Chapter" href="Lwt_log_core.html">
+<link title="Lwt_log_rules" rel="Chapter" href="Lwt_log_rules.html">
+<link title="Ppx_lwt" rel="Chapter" href="Ppx_lwt.html">
+<link title="Lwt_preemptive" rel="Chapter" href="Lwt_preemptive.html">
+<link title="Lwt_react" rel="Chapter" href="Lwt_react.html">
+<link title="Lwt_ssl" rel="Chapter" href="Lwt_ssl.html">
+<link title="Lwt_bytes" rel="Chapter" href="Lwt_bytes.html">
+<link title="Lwt_chan" rel="Chapter" href="Lwt_chan.html">
+<link title="Lwt_daemon" rel="Chapter" href="Lwt_daemon.html">
+<link title="Lwt_engine" rel="Chapter" href="Lwt_engine.html">
+<link title="Lwt_gc" rel="Chapter" href="Lwt_gc.html">
+<link title="Lwt_io" rel="Chapter" href="Lwt_io.html">
+<link title="Lwt_log" rel="Chapter" href="Lwt_log.html">
+<link title="Lwt_main" rel="Chapter" href="Lwt_main.html">
+<link title="Lwt_process" rel="Chapter" href="Lwt_process.html">
+<link title="Lwt_sys" rel="Chapter" href="Lwt_sys.html">
+<link title="Lwt_throttle" rel="Chapter" href="Lwt_throttle.html">
+<link title="Lwt_timeout" rel="Chapter" href="Lwt_timeout.html">
+<link title="Lwt_unix" rel="Chapter" href="Lwt_unix.html"><title>Lwt_unix.IO_vectors</title>
+</head>
+<body>
+<div class="navbar">&nbsp;<a class="up" href="Lwt_unix.html" title="Lwt_unix">Up</a>
+&nbsp;<a class="post" href="Lwt_unix.LargeFile.html" title="Lwt_unix.LargeFile">Next</a>
+</div>
+<h1>Module <a href="type_Lwt_unix.IO_vectors.html">Lwt_unix.IO_vectors</a></h1>
+
+<pre><span class="keyword">module</span> IO_vectors: <code class="code"><span class="keyword">sig</span></code> <a href="Lwt_unix.IO_vectors.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+Sequences of buffer slices for <a href="Lwt_unix.html#VALwritev"><code class="code"><span class="constructor">Lwt_unix</span>.writev</code></a>.<br>
+</div>
+<hr width="100%">
+
+<pre><span id="TYPEt"><span class="keyword">type</span> <code class="type"></code>t</span> </pre>
+<div class="info ">
+Mutable sequences of I/O vectors. An I/O vector describes a slice of a
+      <code class="code">bytes</code> or <code class="code"><span class="constructor">Bigarray</span></code> buffer. Each I/O vector is a triple containing a
+      reference to the buffer, an offset into the buffer where the slice begins,
+      and the length of the slice.<br>
+</div>
+
+
+<pre><span id="TYPE_bigarray"><span class="keyword">type</span> <code class="type"></code>_bigarray</span> = <code class="type">(char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t</code> </pre>
+<div class="info ">
+Type abbreviation equivalent to <a href="Lwt_bytes.html#TYPEt"><code class="code"><span class="constructor">Lwt_bytes</span>.t</code></a>. Do not use this type name
+      directly; use <a href="Lwt_bytes.html#TYPEt"><code class="code"><span class="constructor">Lwt_bytes</span>.t</code></a> instead.<br>
+</div>
+
+
+<pre><span id="VALcreate"><span class="keyword">val</span> create</span> : <code class="type">unit -> <a href="Lwt_unix.IO_vectors.html#TYPEt">t</a></code></pre><div class="info ">
+Creates an empty I/O vector sequence.<br>
+</div>
+
+<pre><span id="VALappend_bytes"><span class="keyword">val</span> append_bytes</span> : <code class="type"><a href="Lwt_unix.IO_vectors.html#TYPEt">t</a> -> bytes -> int -> int -> unit</code></pre><div class="info ">
+<code class="code">append_bytes&nbsp;vs&nbsp;buffer&nbsp;offset&nbsp;length</code> appends a slice of the <code class="code">bytes</code>
+      buffer <code class="code">buffer</code> beginning at <code class="code">offset</code> and with length <code class="code">length</code> to the
+      I/O vector sequence <code class="code">vs</code>.<br>
+</div>
+
+<pre><span id="VALappend_bigarray"><span class="keyword">val</span> append_bigarray</span> : <code class="type"><a href="Lwt_unix.IO_vectors.html#TYPEt">t</a> -> Lwt_unix.IO_vectors._bigarray -> int -> int -> unit</code></pre><div class="info ">
+<code class="code">append_bigarray&nbsp;vs&nbsp;buffer&nbsp;offset&nbsp;length</code> appends a slice of the
+      <code class="code"><span class="constructor">Bigarray</span></code> buffer <code class="code">buffer</code> beginning at <code class="code">offset</code> and with length <code class="code">length</code>
+      to the I/O vector sequence <code class="code">vs</code>.<br>
+</div>
+
+<pre><span id="VALdrop"><span class="keyword">val</span> drop</span> : <code class="type"><a href="Lwt_unix.IO_vectors.html#TYPEt">t</a> -> int -> unit</code></pre><div class="info ">
+<code class="code">drop&nbsp;vs&nbsp;n</code> adjusts the I/O vector sequence <code class="code">vs</code> so that it no longer
+      includes its first <code class="code">n</code> bytes.<br>
+</div>
+
+<pre><span id="VALis_empty"><span class="keyword">val</span> is_empty</span> : <code class="type"><a href="Lwt_unix.IO_vectors.html#TYPEt">t</a> -> bool</code></pre><div class="info ">
+<code class="code">is_empty&nbsp;vs</code> is <code class="code"><span class="keyword">true</span></code> if and only if <code class="code">vs</code> has no I/O vectors, or all I/O
+      vectors in <code class="code">vs</code> have zero bytes.<br>
+</div>
+
+<pre><span id="VALsystem_limit"><span class="keyword">val</span> system_limit</span> : <code class="type">int option</code></pre><div class="info ">
+Some systems limit the number of I/O vectors that can be passed in a
+      single call to their <code class="code">writev</code> or <code class="code">readv</code> system calls. On those systems,
+      if the limit is <code class="code">n</code>, this value is equal to <code class="code"><span class="constructor">Some</span>&nbsp;n</code>. On systems without
+      such a limit, the value is equal to <code class="code"><span class="constructor">None</span></code>.
+<p>
+
+      Unless you need atomic I/O operations, you can ignore this limit. The Lwt
+      binding automatically respects it internally. See <a href="Lwt_unix.html#VALwritev"><code class="code"><span class="constructor">Lwt_unix</span>.writev</code></a>.
+<p>
+
+      A typical limit is 1024 vectors.<br>
+</div>
+</body></html>

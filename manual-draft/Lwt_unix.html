@@ -1,0 +1,2816 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Lwt_timeout.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of class attributes" rel=Appendix href="index_attributes.html">
+<link title="Index of class methods" rel=Appendix href="index_methods.html">
+<link title="Index of classes" rel=Appendix href="index_classes.html">
+<link title="Index of class types" rel=Appendix href="index_class_types.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Pa_lwt" rel="Chapter" href="Pa_lwt.html">
+<link title="Lwt" rel="Chapter" href="Lwt.html">
+<link title="Lwt_condition" rel="Chapter" href="Lwt_condition.html">
+<link title="Lwt_list" rel="Chapter" href="Lwt_list.html">
+<link title="Lwt_mutex" rel="Chapter" href="Lwt_mutex.html">
+<link title="Lwt_mvar" rel="Chapter" href="Lwt_mvar.html">
+<link title="Lwt_pool" rel="Chapter" href="Lwt_pool.html">
+<link title="Lwt_pqueue" rel="Chapter" href="Lwt_pqueue.html">
+<link title="Lwt_result" rel="Chapter" href="Lwt_result.html">
+<link title="Lwt_sequence" rel="Chapter" href="Lwt_sequence.html">
+<link title="Lwt_stream" rel="Chapter" href="Lwt_stream.html">
+<link title="Lwt_switch" rel="Chapter" href="Lwt_switch.html">
+<link title="Lwt_glib" rel="Chapter" href="Lwt_glib.html">
+<link title="Lwt_log_core" rel="Chapter" href="Lwt_log_core.html">
+<link title="Lwt_log_rules" rel="Chapter" href="Lwt_log_rules.html">
+<link title="Ppx_lwt" rel="Chapter" href="Ppx_lwt.html">
+<link title="Lwt_preemptive" rel="Chapter" href="Lwt_preemptive.html">
+<link title="Lwt_react" rel="Chapter" href="Lwt_react.html">
+<link title="Lwt_ssl" rel="Chapter" href="Lwt_ssl.html">
+<link title="Lwt_bytes" rel="Chapter" href="Lwt_bytes.html">
+<link title="Lwt_chan" rel="Chapter" href="Lwt_chan.html">
+<link title="Lwt_daemon" rel="Chapter" href="Lwt_daemon.html">
+<link title="Lwt_engine" rel="Chapter" href="Lwt_engine.html">
+<link title="Lwt_gc" rel="Chapter" href="Lwt_gc.html">
+<link title="Lwt_io" rel="Chapter" href="Lwt_io.html">
+<link title="Lwt_log" rel="Chapter" href="Lwt_log.html">
+<link title="Lwt_main" rel="Chapter" href="Lwt_main.html">
+<link title="Lwt_process" rel="Chapter" href="Lwt_process.html">
+<link title="Lwt_sys" rel="Chapter" href="Lwt_sys.html">
+<link title="Lwt_throttle" rel="Chapter" href="Lwt_throttle.html">
+<link title="Lwt_timeout" rel="Chapter" href="Lwt_timeout.html">
+<link title="Lwt_unix" rel="Chapter" href="Lwt_unix.html"><link title="Configuration" rel="Section" href="#2_Configuration">
+<link title="Sleeping" rel="Section" href="#2_Sleeping">
+<link title="Operation on file-descriptors" rel="Section" href="#2_Operationonfiledescriptors">
+<link title="Process handling" rel="Section" href="#2_Processhandling">
+<link title="Basic file input/output" rel="Section" href="#2_Basicfileinputoutput">
+<link title="Seeking and truncating" rel="Section" href="#2_Seekingandtruncating">
+<link title="Syncing" rel="Section" href="#2_Syncing">
+<link title="File status" rel="Section" href="#2_Filestatus">
+<link title="File operations on large files" rel="Section" href="#2_Fileoperationsonlargefiles">
+<link title="Operations on file names" rel="Section" href="#2_Operationsonfilenames">
+<link title="File permissions and ownership" rel="Section" href="#2_Filepermissionsandownership">
+<link title="Operations on file descriptors" rel="Section" href="#2_Operationsonfiledescriptors">
+<link title="Directories" rel="Section" href="#2_Directories">
+<link title="Pipes and redirections" rel="Section" href="#2_Pipesandredirections">
+<link title="Symbolic links" rel="Section" href="#2_Symboliclinks">
+<link title="Locking" rel="Section" href="#2_Locking">
+<link title="User id, group id" rel="Section" href="#2_Useridgroupid">
+<link title="Signals" rel="Section" href="#2_Signals">
+<link title="Sockets" rel="Section" href="#2_Sockets">
+<link title="Host and protocol databases" rel="Section" href="#2_Hostandprotocoldatabases">
+<link title="Terminal interface" rel="Section" href="#2_Terminalinterface">
+<link title="Low-level interaction" rel="Section" href="#2_Lowlevelinteraction">
+<link title="Notifications" rel="Section" href="#2_Notifications">
+<link title="System threads pool" rel="Section" href="#2_Systemthreadspool">
+<link title="CPUs" rel="Section" href="#2_CPUs">
+<link title="Versioned interfaces" rel="Section" href="#2_Versionedinterfaces">
+<link title="Socket options" rel="Subsection" href="#3_Socketoptions">
+<link title="Multicast functions" rel="Subsection" href="#3_Multicastfunctions">
+<title>Lwt_unix</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="Lwt_timeout.html" title="Lwt_timeout">Previous</a>
+&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;</div>
+<h1>Module <a href="type_Lwt_unix.html">Lwt_unix</a></h1>
+
+<pre><span class="keyword">module</span> Lwt_unix: <code class="code"><span class="keyword">sig</span></code> <a href="Lwt_unix.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+Cooperative system calls<br>
+</div>
+<hr width="100%">
+<br>
+This modules maps system calls, like those of the standard
+    library's <code class="code"><span class="constructor">Unix</span></code> module, to cooperative ones, which will not block
+    the program.
+<p>
+
+    The semantics of all operations is the following: if the action
+    (for example reading from a <b>file descriptor</b>) can be performed
+    immediately, it is done and returns immediately, otherwise it
+    returns a sleeping thread which is woken up when the operation
+    completes.
+<p>
+
+    Most operations on sockets and pipes (on Windows it is only
+    sockets) are <b>cancelable</b>, meaning you can cancel them
+    with <a href="Lwt.html#VALcancel"><code class="code"><span class="constructor">Lwt</span>.cancel</code></a>. For example if you want to read something from
+    a <b>file descriptor</b> with a timeout, you can cancel the action
+    after the timeout and the reading will not be performed if not
+    already done.
+<p>
+
+    For example, consider that you have two sockets <code class="code">sock1</code> and
+    <code class="code">sock2</code>. You want to read something from <code class="code">sock1</code> or exclusively
+    from <code class="code">sock2</code> and fail with an exception if a timeout of 1 second
+    expires, without reading anything from <code class="code">sock1</code> and <code class="code">sock2</code>, even
+    if they become readable in the future.
+<p>
+
+    Then you can do:
+<p>
+
+    <pre class="codepre"><code class="code">    <span class="constructor">Lwt</span>.pick
+      [<span class="constructor">Lwt_unix</span>.timeout 1.0;
+       read sock1 buf1 ofs1 len1;
+       read sock2 buf2 ofs2 len2]
+    </code></pre>
+<p>
+
+    In this case, it is guaranteed that exactly one of the three
+    operations will complete, and the others will be cancelled.<br>
+
+<pre><span id="VALhandle_unix_error"><span class="keyword">val</span> handle_unix_error</span> : <code class="type">('a -> 'b <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a -> 'b <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Same as <code class="code"><span class="constructor">Unix</span>.handle_unix_error</code> but catches lwt-level
+      exceptions<br>
+</div>
+<br>
+<h2 id="2_Configuration">Configuration</h2><br>
+
+<pre><code><span id="TYPEasync_method"><span class="keyword">type</span> <code class="type"></code>async_method</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTasync_method.Async_none"><span class="constructor">Async_none</span></span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+System calls are made synchronously, and may block the
+          entire program.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTasync_method.Async_detach"><span class="constructor">Async_detach</span></span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+System calls are made in another system thread, thus without
+          blocking other Lwt threads. The drawback is that it may
+          degrade performance in some cases.
+<p>
+
+          This is the default.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTasync_method.Async_switch"><span class="constructor">Async_switch</span></span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+System calls are made in the main thread, and if one blocks
+          the execution continue in another system thread. This method
+          is the most efficient, also you will get better performance
+          if you force all threads to run on the same cpu. On linux
+          this can be done by using the command <code class="code">taskset</code>.
+<p>
+
+          Note that this method is still experimental.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+
+<div class="info ">
+For system calls that cannot be made asynchronously, Lwt uses one
+    of the following method:<br>
+</div>
+
+
+<pre><span id="VALdefault_async_method"><span class="keyword">val</span> default_async_method</span> : <code class="type">unit -> <a href="Lwt_unix.html#TYPEasync_method">async_method</a></code></pre><div class="info ">
+Returns the default async method.
+<p>
+
+      This can be initialized using the environment variable
+      <code class="code"><span class="string">"LWT_ASYNC_METHOD"</span></code> with possible values <code class="code"><span class="string">"none"</span></code>,
+      <code class="code"><span class="string">"detach"</span></code> and <code class="code"><span class="string">"switch"</span></code>.<br>
+</div>
+
+<pre><span id="VALset_default_async_method"><span class="keyword">val</span> set_default_async_method</span> : <code class="type"><a href="Lwt_unix.html#TYPEasync_method">async_method</a> -> unit</code></pre><div class="info ">
+Sets the default async method.<br>
+</div>
+
+<pre><span id="VALasync_method"><span class="keyword">val</span> async_method</span> : <code class="type">unit -> <a href="Lwt_unix.html#TYPEasync_method">async_method</a></code></pre><div class="info ">
+<code class="code">async_method&nbsp;()</code> returns the async method used in the current
+      thread.<br>
+</div>
+
+<pre><span id="VALasync_method_key"><span class="keyword">val</span> async_method_key</span> : <code class="type"><a href="Lwt_unix.html#TYPEasync_method">async_method</a> <a href="Lwt.html#TYPEkey">Lwt.key</a></code></pre><div class="info ">
+The key for storing the local async method.<br>
+</div>
+
+<pre><span id="VALwith_async_none"><span class="keyword">val</span> with_async_none</span> : <code class="type">(unit -> 'a) -> 'a</code></pre><div class="info ">
+<code class="code">with_async_none&nbsp;f</code> is a shorthand for:
+<p>
+
+      <pre class="codepre"><code class="code">        <span class="constructor">Lwt</span>.with_value async_method_key (<span class="constructor">Some</span> <span class="constructor">Async_none</span>) f
+      </code></pre><br>
+</div>
+
+<pre><span id="VALwith_async_detach"><span class="keyword">val</span> with_async_detach</span> : <code class="type">(unit -> 'a) -> 'a</code></pre><div class="info ">
+<code class="code">with_async_detach&nbsp;f</code> is a shorthand for:
+<p>
+
+      <pre class="codepre"><code class="code">        <span class="constructor">Lwt</span>.with_value async_method_key (<span class="constructor">Some</span> <span class="constructor">Async_detach</span>) f
+      </code></pre><br>
+</div>
+
+<pre><span id="VALwith_async_switch"><span class="keyword">val</span> with_async_switch</span> : <code class="type">(unit -> 'a) -> 'a</code></pre><div class="info ">
+<code class="code">with_async_switch&nbsp;f</code> is a shorthand for:
+<p>
+
+      <pre class="codepre"><code class="code">        <span class="constructor">Lwt</span>.with_value async_method_key (<span class="constructor">Some</span> <span class="constructor">Async_switch</span>) f
+      </code></pre><br>
+</div>
+<br>
+<h2 id="2_Sleeping">Sleeping</h2><br>
+
+<pre><span id="VALsleep"><span class="keyword">val</span> sleep</span> : <code class="type">float -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">sleep&nbsp;d</code> is a thread that remains suspended for <code class="code">d</code> seconds
+      and then terminates.<br>
+</div>
+
+<pre><span id="VALyield"><span class="keyword">val</span> yield</span> : <code class="type">unit -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">yield&nbsp;()</code> is a thread that suspends itself and then resumes
+      as soon as possible and terminates.<br>
+</div>
+
+<pre><span id="VALauto_yield"><span class="keyword">val</span> auto_yield</span> : <code class="type">float -> unit -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">auto_yield&nbsp;timeout</code> returns a function <code class="code">f</code> that will yield
+      every <code class="code">timeout</code> seconds.<br>
+</div>
+
+<pre><span id="EXCEPTIONTimeout"><span class="keyword">exception</span> Timeout</span></pre>
+<div class="info ">
+Exception raised by timeout operations<br>
+</div>
+
+<pre><span id="VALtimeout"><span class="keyword">val</span> timeout</span> : <code class="type">float -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">timeout&nbsp;d</code> is a thread that remains suspended for <code class="code">d</code> seconds
+      and then fails with <a href="Lwt_unix.html#EXCEPTIONTimeout"><code class="code"><span class="constructor">Lwt_unix</span>.<span class="constructor">Timeout</span></code></a>.<br>
+</div>
+
+<pre><span id="VALwith_timeout"><span class="keyword">val</span> with_timeout</span> : <code class="type">float -> (unit -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a>) -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">with_timeout&nbsp;d&nbsp;f</code> is a short-hand for:
+<p>
+
+      <pre class="codepre"><code class="code">        <span class="constructor">Lwt</span>.pick [<span class="constructor">Lwt_unix</span>.timeout d; f ()]
+      </code></pre><br>
+</div>
+<br>
+<h2 id="2_Operationonfiledescriptors">Operation on file-descriptors</h2><br>
+
+<pre><span id="TYPEfile_descr"><span class="keyword">type</span> <code class="type"></code>file_descr</span> </pre>
+<div class="info ">
+The abstract type for <b>file descriptor</b>s. A Lwt <b>file
+      descriptor</b> is a pair of a unix <b>file descriptor</b> (of type
+      <code class="code"><span class="constructor">Unix</span>.file_descr</code>) and a <b>state</b>.
+<p>
+
+      A <b>file descriptor</b> may be:
+<p>
+<ul>
+<li><b>opened</b>, in which case it is fully usable</li>
+<li><b>closed</b> or <b>aborted</b>, in which case it is no longer
+      usable</li>
+</ul>
+<br>
+</div>
+
+
+<pre><code><span id="TYPEstate"><span class="keyword">type</span> <code class="type"></code>state</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstate.Opened"><span class="constructor">Opened</span></span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+The <b>file descriptor</b> is opened<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstate.Closed"><span class="constructor">Closed</span></span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+The <b>file descriptor</b> has been closed by <a href="Lwt_unix.html#VALclose"><code class="code"><span class="constructor">Lwt_unix</span>.close</code></a>. It must
+          not be used for any operation.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstate.Aborted"><span class="constructor">Aborted</span></span> <span class="keyword">of</span> <code class="type">exn</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+The <b>file descriptor</b> has been aborted, the only operation
+          possible is <a href="Lwt_unix.html#VALclose"><code class="code"><span class="constructor">Lwt_unix</span>.close</code></a>, all others will fail.<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+
+<div class="info ">
+State of a <b>file descriptor</b><br>
+</div>
+
+
+<pre><span id="VALstate"><span class="keyword">val</span> state</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEstate">state</a></code></pre><div class="info ">
+<code class="code">state&nbsp;fd</code> returns the state of <code class="code">fd</code><br>
+</div>
+
+<pre><span id="VALunix_file_descr"><span class="keyword">val</span> unix_file_descr</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> Unix.file_descr</code></pre><div class="info ">
+Returns the underlying unix <b>file descriptor</b>. It always
+      succeeds, even if the <b>file descriptor</b>'s state is not
+      <code class="code"><span class="constructor">Open</span></code>.<br>
+</div>
+
+<pre><span id="VALof_unix_file_descr"><span class="keyword">val</span> of_unix_file_descr</span> : <code class="type">?blocking:bool -> ?set_flags:bool -> Unix.file_descr -> <a href="Lwt_unix.html#TYPEfile_descr">file_descr</a></code></pre><div class="info ">
+Wraps a <code class="code"><span class="constructor">Unix</span></code> file descriptor <code class="code">fd</code> in an <code class="code"><span class="constructor">Lwt_unix</span>.file_descr</code> <code class="code">fd'</code>.
+<p>
+
+    <code class="code">~blocking</code> controls the <em>internal</em> strategy Lwt uses to perform I/O on
+    the underlying <code class="code">fd</code>. Regardless of <code class="code">~blocking</code>, at the API level,
+    <code class="code"><span class="constructor">Lwt_unix</span>.read</code>, <code class="code"><span class="constructor">Lwt_unix</span>.write</code>, etc. on <code class="code">fd'</code> <em>always</em> block the Lwt
+    thread, but <em>never</em> block the whole process. However, for performance
+    reasons, it is important that <code class="code">~blocking</code> match the actual blocking mode of
+    <code class="code">fd</code>.
+<p>
+
+    If <code class="code">~blocking</code> is not specified, <code class="code">of_unix_file_descr</code> chooses non-blocking
+    mode for Unix sockets, Unix pipes, and Windows sockets, and blocking mode
+    for everything else.
+<p>
+
+    <code class="code">of_unix_file_descr</code> runs a system call to set the specified or chosen
+    blocking mode on the underlying <code class="code">fd</code>.
+<p>
+
+    To prevent <code class="code">of_unix_file_descr</code> from running this system call, you can pass
+    <code class="code">~set_flags:<span class="keyword">false</span></code>. Note that, in this case, if <code class="code">~blocking</code>, whether passed
+    explicitly or chosen by Lwt, does not match the true blocking mode of the
+    underlying <code class="code">fd</code>, I/O on <code class="code">fd'</code> will suffer performance degradation.
+<p>
+
+    Note that <code class="code">~set_flags</code> is effectively always <code class="code"><span class="keyword">false</span></code> if running on Windows
+    and <code class="code">fd</code> is not a socket.
+<p>
+
+    Generally, non-blocking I/O is faster: for blocking I/O, Lwt typically has
+    to run system calls in worker threads to avoid blocking the process. See
+    your system documentation for whether particular kinds of file descriptors
+    support non-blocking I/O.<br>
+</div>
+
+<pre><span id="VALblocking"><span class="keyword">val</span> blocking</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> bool <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">blocking&nbsp;fd</code> indicates whether Lwt is internally using blocking or
+    non-blocking I/O with <code class="code">fd</code>.
+<p>
+
+    Note that this may differ from the blocking mode of the underlying <code class="code"><span class="constructor">Unix</span></code>
+    file descriptor (i.e. <code class="code">unix_file_descr&nbsp;fd</code>).
+<p>
+
+    See <a href="Lwt_unix.html#VALof_unix_file_descr"><code class="code"><span class="constructor">Lwt_unix</span>.of_unix_file_descr</code></a> for details.<br>
+</div>
+
+<pre><span id="VALset_blocking"><span class="keyword">val</span> set_blocking</span> : <code class="type">?set_flags:bool -> <a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> bool -> unit</code></pre><div class="info ">
+<code class="code">set_blocking&nbsp;fd&nbsp;b</code> causes Lwt to internally use blocking or non-blocking
+    I/O with <code class="code">fd</code>, according to the value of <code class="code">b</code>.
+<p>
+
+    If <code class="code">~set_flags</code> is <code class="code"><span class="keyword">true</span></code> (the default), Lwt also makes a system call to set
+    the underlying file descriptor's blocking mode to match. Otherwise,
+    <code class="code">set_blocking</code> is only informational for Lwt.
+<p>
+
+    It is important that the underlying file descriptor actually have the same
+    blocking mode as that indicated by <code class="code">b</code>.
+<p>
+
+    See <a href="Lwt_unix.html#VALof_unix_file_descr"><code class="code"><span class="constructor">Lwt_unix</span>.of_unix_file_descr</code></a> for details.<br>
+</div>
+
+<pre><span id="VALabort"><span class="keyword">val</span> abort</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> exn -> unit</code></pre><div class="info ">
+<code class="code">abort&nbsp;fd&nbsp;exn</code> makes all current and further uses of the file
+      descriptor fail with the given exception. This put the <b>file
+      descriptor</b> into the <code class="code"><span class="constructor">Aborted</span></code> state.
+<p>
+
+      If the <b>file descriptor</b> is closed, this does nothing, if it is
+      aborted, this replace the abort exception by <code class="code">exn</code>.
+<p>
+
+      Note that this only works for reading and writing operations on
+      file descriptors supporting non-blocking mode.<br>
+</div>
+<br>
+<h2 id="2_Processhandling">Process handling</h2><br>
+
+<pre><span id="VALfork"><span class="keyword">val</span> fork</span> : <code class="type">unit -> int</code></pre><div class="info ">
+<code class="code">fork&nbsp;()</code> does the same as <code class="code"><span class="constructor">Unix</span>.fork</code>. You must use this
+      function instead of <code class="code"><span class="constructor">Unix</span>.fork</code> when you want to use Lwt in the
+      child process.
+<p>
+
+      Notes:<ul>
+<li>in the child process all pending jobs are canceled,</li>
+<li>if you are going to use Lwt in the parent and the child, it is
+        a good idea to call <a href="Lwt_io.html#VALflush_all"><code class="code"><span class="constructor">Lwt_io</span>.flush_all</code></a> before callling
+        <a href="Lwt_unix.html#VALfork"><code class="code"><span class="constructor">Lwt_unix</span>.fork</code></a> to avoid double-flush.</li>
+</ul>
+<br>
+</div>
+
+<pre><span id="TYPEprocess_status"><span class="keyword">type</span> <code class="type"></code>process_status</span> = <code class="type">Unix.process_status</code> = </pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTprocess_status.WEXITED"><span class="constructor">WEXITED</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTprocess_status.WSIGNALED"><span class="constructor">WSIGNALED</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTprocess_status.WSTOPPED"><span class="constructor">WSTOPPED</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="TYPEwait_flag"><span class="keyword">type</span> <code class="type"></code>wait_flag</span> = <code class="type">Unix.wait_flag</code> = </pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTwait_flag.WNOHANG"><span class="constructor">WNOHANG</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTwait_flag.WUNTRACED"><span class="constructor">WUNTRACED</span></span></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="VALwait"><span class="keyword">val</span> wait</span> : <code class="type">unit -> (int * <a href="Lwt_unix.html#TYPEprocess_status">process_status</a>) <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.wait</code><br>
+</div>
+
+<pre><span id="VALwaitpid"><span class="keyword">val</span> waitpid</span> : <code class="type"><a href="Lwt_unix.html#TYPEwait_flag">wait_flag</a> list -> int -> (int * <a href="Lwt_unix.html#TYPEprocess_status">process_status</a>) <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.waitpid</code><br>
+</div>
+
+<pre><code><span id="TYPEresource_usage"><span class="keyword">type</span> <code class="type"></code>resource_usage</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTresource_usage.ru_utime">ru_utime</span>&nbsp;: <code class="type">float</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+User time used<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTresource_usage.ru_stime">ru_stime</span>&nbsp;: <code class="type">float</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+System time used<br>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+}
+
+<div class="info ">
+Resource usages<br>
+</div>
+
+
+<pre><span id="VALwait4"><span class="keyword">val</span> wait4</span> : <code class="type"><a href="Lwt_unix.html#TYPEwait_flag">wait_flag</a> list -><br>       int -> (int * <a href="Lwt_unix.html#TYPEprocess_status">process_status</a> * <a href="Lwt_unix.html#TYPEresource_usage">resource_usage</a>) <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">wait4&nbsp;flags&nbsp;pid</code> returns <code class="code">(pid,&nbsp;status,&nbsp;rusage)</code> where <code class="code">(pid,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;status)</code> is the same result as <code class="code"><span class="constructor">Unix</span>.waitpid&nbsp;flags&nbsp;pid</code>, and
+      <code class="code">rusage</code> contains accounting information about the child.
+<p>
+
+      On windows it will always returns <code class="code">{&nbsp;utime&nbsp;=&nbsp;0.0;&nbsp;stime&nbsp;=&nbsp;0.0&nbsp;}</code>.<br>
+</div>
+
+<pre><span id="VALwait_count"><span class="keyword">val</span> wait_count</span> : <code class="type">unit -> int</code></pre><div class="info ">
+Returns the number of threads waiting for a child to
+      terminate.<br>
+</div>
+
+<pre><span id="VALsystem"><span class="keyword">val</span> system</span> : <code class="type">string -> <a href="Lwt_unix.html#TYPEprocess_status">process_status</a> <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Executes the given command, waits until it terminates, and
+      return its termination status. The string is interpreted by the
+      shell <code class="code">/bin/sh</code> on Unix and <code class="code">cmd.exe</code> on Windows. The result
+      <code class="code"><span class="constructor">WEXITED</span>&nbsp;127</code> indicates that the shell couldn't be executed.<br>
+</div>
+<br>
+<h2 id="2_Basicfileinputoutput">Basic file input/output</h2><br>
+
+<pre><span id="VALstdin"><span class="keyword">val</span> stdin</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a></code></pre><div class="info ">
+The standard <b>file descriptor</b> for input. This one is usually
+      a terminal is the program is started from a terminal.<br>
+</div>
+
+<pre><span id="VALstdout"><span class="keyword">val</span> stdout</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a></code></pre><div class="info ">
+The standard <b>file descriptor</b> for output<br>
+</div>
+
+<pre><span id="VALstderr"><span class="keyword">val</span> stderr</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a></code></pre><div class="info ">
+The standard <b>file descriptor</b> for printing error messages<br>
+</div>
+
+<pre><span id="TYPEfile_perm"><span class="keyword">type</span> <code class="type"></code>file_perm</span> = <code class="type">Unix.file_perm</code> </pre>
+
+
+<pre><span id="TYPEopen_flag"><span class="keyword">type</span> <code class="type"></code>open_flag</span> = <code class="type">Unix.open_flag</code> = </pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopen_flag.O_RDONLY"><span class="constructor">O_RDONLY</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopen_flag.O_WRONLY"><span class="constructor">O_WRONLY</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopen_flag.O_RDWR"><span class="constructor">O_RDWR</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopen_flag.O_NONBLOCK"><span class="constructor">O_NONBLOCK</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopen_flag.O_APPEND"><span class="constructor">O_APPEND</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopen_flag.O_CREAT"><span class="constructor">O_CREAT</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopen_flag.O_TRUNC"><span class="constructor">O_TRUNC</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopen_flag.O_EXCL"><span class="constructor">O_EXCL</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopen_flag.O_NOCTTY"><span class="constructor">O_NOCTTY</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopen_flag.O_DSYNC"><span class="constructor">O_DSYNC</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopen_flag.O_SYNC"><span class="constructor">O_SYNC</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopen_flag.O_RSYNC"><span class="constructor">O_RSYNC</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopen_flag.O_SHARE_DELETE"><span class="constructor">O_SHARE_DELETE</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopen_flag.O_CLOEXEC"><span class="constructor">O_CLOEXEC</span></span></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="VALopenfile"><span class="keyword">val</span> openfile</span> : <code class="type">string -><br>       <a href="Lwt_unix.html#TYPEopen_flag">open_flag</a> list -> <a href="Lwt_unix.html#TYPEfile_perm">file_perm</a> -> <a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.openfile</code>.<br>
+</div>
+
+<pre><span id="VALclose"><span class="keyword">val</span> close</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Close a <b>file descriptor</b>. This close the underlying unix <b>      file descriptor</b> and set its state to <code class="code"><span class="constructor">Closed</span></code><br>
+</div>
+
+<pre><span id="VALread"><span class="keyword">val</span> read</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> bytes -> int -> int -> int <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">read&nbsp;fd&nbsp;buf&nbsp;ofs&nbsp;len</code> reads up to <code class="code">len</code> bytes from <code class="code">fd</code>, and writes them to
+    <code class="code">buf</code>, starting at offset <code class="code">ofs</code>. The function immediately evaluates to an
+    Lwt thread, which waits for the operation to complete. If it completes
+    successfully, the thread indicates the number of bytes actually read, or
+    zero if the end of file has been reached.
+<p>
+
+    Note that the Lwt thread waits for data (or end of file) even if the
+    underlying file descriptor is in non-blocking mode. See
+    <a href="Lwt_unix.html#VALof_unix_file_descr"><code class="code"><span class="constructor">Lwt_unix</span>.of_unix_file_descr</code></a> for a discussion of non-blocking I/O and Lwt.
+<p>
+
+    If Lwt is using blocking I/O on <code class="code">fd</code>, <code class="code">read</code> writes data into a temporary
+    buffer, then copies it into <code class="code">buf</code>.
+<p>
+
+    The thread can fail with any exception that can be raised by <code class="code"><span class="constructor">Unix</span>.read</code>,
+    except <code class="code"><span class="constructor">Unix</span>.<span class="constructor">Unix_error</span>&nbsp;<span class="constructor">Unix</span>.<span class="constructor">EAGAIN</span></code>, <code class="code"><span class="constructor">Unix</span>.<span class="constructor">Unix_error</span>&nbsp;<span class="constructor">Unix</span>.<span class="constructor">EWOULDBLOCK</span></code> or
+    <code class="code"><span class="constructor">Unix</span>.<span class="constructor">Unix_error</span>&nbsp;<span class="constructor">Unix</span>.<span class="constructor">EINTR</span></code>.<br>
+</div>
+
+<pre><span id="VALwrite"><span class="keyword">val</span> write</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> bytes -> int -> int -> int <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">write&nbsp;fd&nbsp;buf&nbsp;ofs&nbsp;len</code> writes up to <code class="code">len</code> bytes to <code class="code">fd</code> from <code class="code">buf</code>, starting
+    at buffer offset <code class="code">ofs</code>. The function immediately evaluates to an Lwt thread,
+    which waits for the operation to complete. If the operation completes
+    successfully, the thread indicates the number of bytes actually written,
+    which may be less than <code class="code">len</code>.
+<p>
+
+    Note that the Lwt thread waits to write even if the underlying file
+    descriptor is in non-blocking mode. See <a href="Lwt_unix.html#VALof_unix_file_descr"><code class="code"><span class="constructor">Lwt_unix</span>.of_unix_file_descr</code></a> for a
+    discussion of non-blocking I/O and Lwt.
+<p>
+
+    If Lwt is using blocking I/O on <code class="code">fd</code>, <code class="code">buf</code> is copied before writing.
+<p>
+
+    The thread can fail with any exception that can be raised by
+    <code class="code"><span class="constructor">Unix</span>.single_write</code>, except <code class="code"><span class="constructor">Unix</span>.<span class="constructor">Unix_error</span>&nbsp;<span class="constructor">Unix</span>.<span class="constructor">EAGAIN</span></code>,
+    <code class="code"><span class="constructor">Unix</span>.<span class="constructor">Unix_error</span>&nbsp;<span class="constructor">Unix</span>.<span class="constructor">EWOULDBLOCK</span></code> or <code class="code"><span class="constructor">Unix</span>.<span class="constructor">Unix_error</span>&nbsp;<span class="constructor">Unix</span>.<span class="constructor">EINTR</span></code>.<br>
+</div>
+
+<pre><span id="VALwrite_string"><span class="keyword">val</span> write_string</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> string -> int -> int -> int <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+See <a href="Lwt_unix.html#VALwrite"><code class="code"><span class="constructor">Lwt_unix</span>.write</code></a>.<br>
+</div>
+
+<pre><span class="keyword">module</span> <a href="Lwt_unix.IO_vectors.html">IO_vectors</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Lwt_unix.IO_vectors.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
+Sequences of buffer slices for <a href="Lwt_unix.html#VALwritev"><code class="code"><span class="constructor">Lwt_unix</span>.writev</code></a>.
+</div>
+
+<pre><span id="VALreadv"><span class="keyword">val</span> readv</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.IO_vectors.html#TYPEt">IO_vectors.t</a> -> int <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">readv&nbsp;fd&nbsp;vs</code> reads bytes from <code class="code">fd</code> into the buffer slices <code class="code">vs</code>. If the
+    operation completes successfully, the resulting thread indicates the number
+    of bytes read.
+<p>
+
+    Data is always read directly into <code class="code"><span class="constructor">Bigarray</span></code> slices. If the Unix file
+    descriptor underlying <code class="code">fd</code> is in non-blocking mode, data is also read
+    directly into <code class="code">bytes</code> slices. Otherwise, data for <code class="code">bytes</code> slices is first
+    read into temporary buffers, then copied.
+<p>
+
+    Note that the returned Lwt thread is blocked until failure or a successful
+    read, even if the underlying file descriptor is in non-blocking mode. See
+    <a href="Lwt_unix.html#VALof_unix_file_descr"><code class="code"><span class="constructor">Lwt_unix</span>.of_unix_file_descr</code></a> for a discussion of non-blocking I/O and Lwt.
+<p>
+
+    If <a href="Lwt_unix.IO_vectors.html#VALsystem_limit"><code class="code"><span class="constructor">Lwt_unix</span>.<span class="constructor">IO_vectors</span>.system_limit</code></a> is <code class="code"><span class="constructor">Some</span>&nbsp;n</code> and the count of slices in <code class="code">vs</code>
+    exceeds <code class="code">n</code>, then <code class="code"><span class="constructor">Lwt_unix</span>.readv</code> reads only into the first <code class="code">n</code> slices of
+    <code class="code">vs</code>.
+<p>
+
+    Not implemented on Windows. It should be possible to implement, upon
+    request, for Windows sockets only.
+<p>
+
+    See <a href="http://man7.org/linux/man-pages/man3/readv.3p.html"> <code class="code">readv(3p)</code></a>.<br>
+<b>Since</b> 2.7.0<br>
+</div>
+
+<pre><span id="VALwritev"><span class="keyword">val</span> writev</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.IO_vectors.html#TYPEt">IO_vectors.t</a> -> int <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">writev&nbsp;fd&nbsp;vs</code> writes the bytes in the buffer slices <code class="code">vs</code> to the file
+    descriptor <code class="code">fd</code>. If the operation completes successfully, the resulting
+    thread indicates the number of bytes written.
+<p>
+
+    If the Unix file descriptor underlying <code class="code">fd</code> is in non-blocking mode,
+    <code class="code">writev</code> does not make a copy the bytes before writing. Otherwise, it copies
+    <code class="code">bytes</code> slices, but not <code class="code"><span class="constructor">Bigarray</span></code> slices.
+<p>
+
+    Note that the returned Lwt thread is blocked until failure or a successful
+    write, even if the underlying descriptor is in non-blocking mode. See
+    <a href="Lwt_unix.html#VALof_unix_file_descr"><code class="code"><span class="constructor">Lwt_unix</span>.of_unix_file_descr</code></a> for a discussion of non-blocking I/O and Lwt.
+<p>
+
+    If <a href="Lwt_unix.IO_vectors.html#VALsystem_limit"><code class="code"><span class="constructor">Lwt_unix</span>.<span class="constructor">IO_vectors</span>.system_limit</code></a> is <code class="code"><span class="constructor">Some</span>&nbsp;n</code> and the count of slices in <code class="code">vs</code>
+    exceeds <code class="code">n</code>, then <code class="code"><span class="constructor">Lwt_unix</span>.writev</code> passes only the first <code class="code">n</code> slices in <code class="code">vs</code>
+    to the underlying <code class="code">writev</code> system call.
+<p>
+
+    Not implemented on Windows. It should be possible to implement, upon
+    request, for Windows sockets only.
+<p>
+
+    The behavior of <code class="code">writev</code> when <code class="code">vs</code> has zero slices depends on the system,
+    and may change in future versions of Lwt. On Linux, <code class="code">writev</code> will succeed
+    and write zero bytes. On BSD (including macOS), <code class="code">writev</code> will fail with
+    <code class="code"><span class="constructor">Unix</span>.<span class="constructor">Unix_error</span>&nbsp;(<span class="constructor">Unix</span>.<span class="constructor">EINVAL</span>,&nbsp;<span class="string">"writev"</span>,&nbsp;...)</code>.
+<p>
+
+    See <a href="http://man7.org/linux/man-pages/man3/writev.3p.html">
+    <code class="code">writev(3p)</code></a>.<br>
+<b>Since</b> 2.7.0<br>
+</div>
+
+<pre><span id="VALreadable"><span class="keyword">val</span> readable</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> bool</code></pre><div class="info ">
+Returns whether the given file descriptor is currently
+      readable.<br>
+</div>
+
+<pre><span id="VALwritable"><span class="keyword">val</span> writable</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> bool</code></pre><div class="info ">
+Returns whether the given file descriptor is currently
+      writable.<br>
+</div>
+
+<pre><span id="VALwait_read"><span class="keyword">val</span> wait_read</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+waits (without blocking other threads) until there is something
+      to read on the file descriptor<br>
+</div>
+
+<pre><span id="VALwait_write"><span class="keyword">val</span> wait_write</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+waits (without blocking other threads) until it is possible to
+      write on the file descriptor<br>
+</div>
+<br>
+<h2 id="2_Seekingandtruncating">Seeking and truncating</h2><br>
+
+<pre><span id="TYPEseek_command"><span class="keyword">type</span> <code class="type"></code>seek_command</span> = <code class="type">Unix.seek_command</code> = </pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTseek_command.SEEK_SET"><span class="constructor">SEEK_SET</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTseek_command.SEEK_CUR"><span class="constructor">SEEK_CUR</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTseek_command.SEEK_END"><span class="constructor">SEEK_END</span></span></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="VALlseek"><span class="keyword">val</span> lseek</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> int -> <a href="Lwt_unix.html#TYPEseek_command">seek_command</a> -> int <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.lseek</code><br>
+</div>
+
+<pre><span id="VALtruncate"><span class="keyword">val</span> truncate</span> : <code class="type">string -> int -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.truncate</code><br>
+</div>
+
+<pre><span id="VALftruncate"><span class="keyword">val</span> ftruncate</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> int -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.ftruncate</code><br>
+</div>
+<br>
+<h2 id="2_Syncing">Syncing</h2><br>
+
+<pre><span id="VALfsync"><span class="keyword">val</span> fsync</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Synchronise all data and metadata of the file descriptor with
+      the disk. On Windows it uses <code class="code"><span class="constructor">FlushFileBuffers</span></code>.<br>
+</div>
+
+<pre><span id="VALfdatasync"><span class="keyword">val</span> fdatasync</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Synchronise all data (but not metadata) of the file descriptor
+      with the disk.
+<p>
+
+      Note that <code class="code">fdatasync</code> is not available on Windows and OS X.<br>
+</div>
+<br>
+<h2 id="2_Filestatus">File status</h2><br>
+
+<pre><span id="TYPEfile_kind"><span class="keyword">type</span> <code class="type"></code>file_kind</span> = <code class="type">Unix.file_kind</code> = </pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTfile_kind.S_REG"><span class="constructor">S_REG</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTfile_kind.S_DIR"><span class="constructor">S_DIR</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTfile_kind.S_CHR"><span class="constructor">S_CHR</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTfile_kind.S_BLK"><span class="constructor">S_BLK</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTfile_kind.S_LNK"><span class="constructor">S_LNK</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTfile_kind.S_FIFO"><span class="constructor">S_FIFO</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTfile_kind.S_SOCK"><span class="constructor">S_SOCK</span></span></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="TYPEstats"><span class="keyword">type</span> <code class="type"></code>stats</span> = <code class="type">Unix.stats</code> = {</pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstats.st_dev">st_dev</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstats.st_ino">st_ino</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstats.st_kind">st_kind</span>&nbsp;: <code class="type"><a href="Lwt_unix.html#TYPEfile_kind">file_kind</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstats.st_perm">st_perm</span>&nbsp;: <code class="type"><a href="Lwt_unix.html#TYPEfile_perm">file_perm</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstats.st_nlink">st_nlink</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstats.st_uid">st_uid</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstats.st_gid">st_gid</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstats.st_rdev">st_rdev</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstats.st_size">st_size</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstats.st_atime">st_atime</span>&nbsp;: <code class="type">float</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstats.st_mtime">st_mtime</span>&nbsp;: <code class="type">float</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstats.st_ctime">st_ctime</span>&nbsp;: <code class="type">float</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><span id="VALstat"><span class="keyword">val</span> stat</span> : <code class="type">string -> <a href="Lwt_unix.html#TYPEstats">stats</a> <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.stat</code><br>
+</div>
+
+<pre><span id="VALlstat"><span class="keyword">val</span> lstat</span> : <code class="type">string -> <a href="Lwt_unix.html#TYPEstats">stats</a> <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.lstat</code><br>
+</div>
+
+<pre><span id="VALfstat"><span class="keyword">val</span> fstat</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEstats">stats</a> <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.fstat</code><br>
+</div>
+
+<pre><span id="VALfile_exists"><span class="keyword">val</span> file_exists</span> : <code class="type">string -> bool <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">file_exists&nbsp;name</code> tests if a file named <code class="code">name</code> exists.
+<p>
+
+      Note that <code class="code">file_exists</code> behaves similarly to
+      <a href="http://caml.inria.fr/pub/docs/manual-ocaml/libref/Sys.html#VALfile_exists">
+      <code class="code"><span class="constructor">Sys</span>.file_exists</code></a>:
+<p>
+<ul>
+<li>"file" is interpreted as "directory entry" in this context</li>
+</ul>
+<ul>
+<li><code class="code">file_exists&nbsp;name</code> will return <code class="code"><span class="keyword">false</span></code> in
+        circumstances that would make <a href="Lwt_unix.html#VALstat"><code class="code"><span class="constructor">Lwt_unix</span>.stat</code></a> raise a
+        <a href="http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#EXCEPTIONUnix_error">
+        <code class="code"><span class="constructor">Unix</span>.<span class="constructor">Unix_error</span></code></a> exception.</li>
+</ul>
+<br>
+</div>
+
+<pre><span id="VALutimes"><span class="keyword">val</span> utimes</span> : <code class="type">string -> float -> float -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">utimes&nbsp;path&nbsp;atime&nbsp;mtime</code> updates the access and modification times of the
+    file at <code class="code">path</code>. The access time is set to <code class="code">atime</code> and the modification time
+    to <code class="code">mtime</code>. To set both to the current time, call <code class="code">utimes&nbsp;path&nbsp;0.&nbsp;0.</code>.
+<p>
+
+    This function corresponds to
+    <a href="http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALutimes">
+    <code class="code"><span class="constructor">Unix</span>.utimes</code></a>. See also
+    <a href="http://man7.org/linux/man-pages/man3/utimes.3p.html"> <code class="code">utimes(3p)</code></a>.<br>
+<b>Since</b> 2.6.0<br>
+</div>
+
+<pre><span id="VALisatty"><span class="keyword">val</span> isatty</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> bool <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.isatty</code><br>
+</div>
+<br>
+<h2 id="2_Fileoperationsonlargefiles">File operations on large files</h2><br>
+
+<pre><span class="keyword">module</span> <a href="Lwt_unix.LargeFile.html">LargeFile</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Lwt_unix.LargeFile.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><br>
+<h2 id="2_Operationsonfilenames">Operations on file names</h2><br>
+
+<pre><span id="VALunlink"><span class="keyword">val</span> unlink</span> : <code class="type">string -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.unlink</code><br>
+</div>
+
+<pre><span id="VALrename"><span class="keyword">val</span> rename</span> : <code class="type">string -> string -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.rename</code><br>
+</div>
+
+<pre><span id="VALlink"><span class="keyword">val</span> link</span> : <code class="type">string -> string -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.link</code><br>
+</div>
+<br>
+<h2 id="2_Filepermissionsandownership">File permissions and ownership</h2><br>
+
+<pre><span id="VALchmod"><span class="keyword">val</span> chmod</span> : <code class="type">string -> <a href="Lwt_unix.html#TYPEfile_perm">file_perm</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.chmod</code><br>
+</div>
+
+<pre><span id="VALfchmod"><span class="keyword">val</span> fchmod</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEfile_perm">file_perm</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.fchmod</code><br>
+</div>
+
+<pre><span id="VALchown"><span class="keyword">val</span> chown</span> : <code class="type">string -> int -> int -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.chown</code><br>
+</div>
+
+<pre><span id="VALfchown"><span class="keyword">val</span> fchown</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> int -> int -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.fchown</code><br>
+</div>
+
+<pre><span id="TYPEaccess_permission"><span class="keyword">type</span> <code class="type"></code>access_permission</span> = <code class="type">Unix.access_permission</code> = </pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTaccess_permission.R_OK"><span class="constructor">R_OK</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTaccess_permission.W_OK"><span class="constructor">W_OK</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTaccess_permission.X_OK"><span class="constructor">X_OK</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTaccess_permission.F_OK"><span class="constructor">F_OK</span></span></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="VALaccess"><span class="keyword">val</span> access</span> : <code class="type">string -> <a href="Lwt_unix.html#TYPEaccess_permission">access_permission</a> list -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.access</code><br>
+</div>
+<br>
+<h2 id="2_Operationsonfiledescriptors">Operations on file descriptors</h2><br>
+
+<pre><span id="VALdup"><span class="keyword">val</span> dup</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEfile_descr">file_descr</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.dup</code><br>
+</div>
+
+<pre><span id="VALdup2"><span class="keyword">val</span> dup2</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> unit</code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.dup2</code><br>
+</div>
+
+<pre><span id="VALset_close_on_exec"><span class="keyword">val</span> set_close_on_exec</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> unit</code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.set_close_on_exec</code><br>
+</div>
+
+<pre><span id="VALclear_close_on_exec"><span class="keyword">val</span> clear_close_on_exec</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> unit</code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.clear_close_on_exec</code><br>
+</div>
+<br>
+<h2 id="2_Directories">Directories</h2><br>
+
+<pre><span id="VALmkdir"><span class="keyword">val</span> mkdir</span> : <code class="type">string -> <a href="Lwt_unix.html#TYPEfile_perm">file_perm</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.mkdir</code><br>
+</div>
+
+<pre><span id="VALrmdir"><span class="keyword">val</span> rmdir</span> : <code class="type">string -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.rmdir</code><br>
+</div>
+
+<pre><span id="VALchdir"><span class="keyword">val</span> chdir</span> : <code class="type">string -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.chdir</code><br>
+</div>
+
+<pre><span id="VALgetcwd"><span class="keyword">val</span> getcwd</span> : <code class="type">unit -> string <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.getcwd</code><br>
+</div>
+
+<pre><span id="VALchroot"><span class="keyword">val</span> chroot</span> : <code class="type">string -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.chroot</code><br>
+</div>
+
+<pre><span id="TYPEdir_handle"><span class="keyword">type</span> <code class="type"></code>dir_handle</span> = <code class="type">Unix.dir_handle</code> </pre>
+
+
+<pre><span id="VALopendir"><span class="keyword">val</span> opendir</span> : <code class="type">string -> <a href="Lwt_unix.html#TYPEdir_handle">dir_handle</a> <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Opens a directory for listing. Directories opened with this function must be
+    explicitly closed with <a href="Lwt_unix.html#VALclosedir"><code class="code"><span class="constructor">Lwt_unix</span>.closedir</code></a>. This is a cooperative analog of
+    <a href="http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALopendir">
+    <code class="code"><span class="constructor">Unix</span>.opendir</code></a>.<br>
+</div>
+
+<pre><span id="VALreaddir"><span class="keyword">val</span> readdir</span> : <code class="type"><a href="Lwt_unix.html#TYPEdir_handle">dir_handle</a> -> string <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Reads the next directory entry from the given directory. Special entries
+    such as <code class="code">.</code> and <code class="code">..</code> are included. If all entries have been read, raises
+    <code class="code"><span class="constructor">End_of_file</span></code>. This is a cooperative analog of
+    <a href="http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALreaddir">
+    <code class="code"><span class="constructor">Unix</span>.readdir</code></a>.<br>
+</div>
+
+<pre><span id="VALreaddir_n"><span class="keyword">val</span> readdir_n</span> : <code class="type"><a href="Lwt_unix.html#TYPEdir_handle">dir_handle</a> -> int -> string array <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">readdir_n&nbsp;handle&nbsp;count</code> reads at most <code class="code">count</code> entries from the
+      given directory. It is more efficient than calling <code class="code">readdir</code>
+      <code class="code">count</code> times. If the length of the returned array is smaller
+      than <code class="code">count</code>, this means that the end of the directory has been
+      reached.<br>
+</div>
+
+<pre><span id="VALrewinddir"><span class="keyword">val</span> rewinddir</span> : <code class="type"><a href="Lwt_unix.html#TYPEdir_handle">dir_handle</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Resets the given directory handle, so that directory listing can be
+    restarted. Cooperative analog of
+    <a href="http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALrewinddir">
+    <code class="code"><span class="constructor">Unix</span>.rewinddir</code></a>.<br>
+</div>
+
+<pre><span id="VALclosedir"><span class="keyword">val</span> closedir</span> : <code class="type"><a href="Lwt_unix.html#TYPEdir_handle">dir_handle</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Closes a directory handle. Cooperative analog of
+    <a href="http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALclosedir">
+    <code class="code"><span class="constructor">Unix</span>.closedir</code></a>.<br>
+</div>
+
+<pre><span id="VALfiles_of_directory"><span class="keyword">val</span> files_of_directory</span> : <code class="type">string -> string <a href="Lwt_stream.html#TYPEt">Lwt_stream.t</a></code></pre><div class="info ">
+<code class="code">files_of_directory&nbsp;dir</code> returns the stream of all files of
+      <code class="code">dir</code>.<br>
+</div>
+<br>
+<h2 id="2_Pipesandredirections">Pipes and redirections</h2><br>
+
+<pre><span id="VALpipe"><span class="keyword">val</span> pipe</span> : <code class="type">unit -> <a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> * <a href="Lwt_unix.html#TYPEfile_descr">file_descr</a></code></pre><div class="info ">
+<code class="code">pipe&nbsp;()</code> creates pipe using <code class="code"><span class="constructor">Unix</span>.pipe</code> and returns two lwt <b>      file descriptor</b>s created from unix <b>file_descriptor</b><br>
+</div>
+
+<pre><span id="VALpipe_in"><span class="keyword">val</span> pipe_in</span> : <code class="type">unit -> <a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> * Unix.file_descr</code></pre><div class="info ">
+<code class="code">pipe_in&nbsp;()</code> is the same as <a href="Lwt_unix.html#VALpipe"><code class="code"><span class="constructor">Lwt_unix</span>.pipe</code></a> but maps only the unix <b>      file descriptor</b> for reading into a lwt one. The second is not
+      put into non-blocking mode. You usually want to use this before
+      forking to receive data from the child process.<br>
+</div>
+
+<pre><span id="VALpipe_out"><span class="keyword">val</span> pipe_out</span> : <code class="type">unit -> Unix.file_descr * <a href="Lwt_unix.html#TYPEfile_descr">file_descr</a></code></pre><div class="info ">
+<code class="code">pipe_out&nbsp;()</code> is the inverse of <a href="Lwt_unix.html#VALpipe_in"><code class="code"><span class="constructor">Lwt_unix</span>.pipe_in</code></a>. You usually want to
+      use this before forking to send data to the child process<br>
+</div>
+
+<pre><span id="VALmkfifo"><span class="keyword">val</span> mkfifo</span> : <code class="type">string -> <a href="Lwt_unix.html#TYPEfile_perm">file_perm</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.mkfifo</code><br>
+</div>
+<br>
+<h2 id="2_Symboliclinks">Symbolic links</h2><br>
+
+<pre><span id="VALsymlink"><span class="keyword">val</span> symlink</span> : <code class="type">string -> string -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.symlink</code><br>
+</div>
+
+<pre><span id="VALreadlink"><span class="keyword">val</span> readlink</span> : <code class="type">string -> string <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.readlink</code><br>
+</div>
+<br>
+<h2 id="2_Locking">Locking</h2><br>
+
+<pre><span id="TYPElock_command"><span class="keyword">type</span> <code class="type"></code>lock_command</span> = <code class="type">Unix.lock_command</code> = </pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTlock_command.F_ULOCK"><span class="constructor">F_ULOCK</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTlock_command.F_LOCK"><span class="constructor">F_LOCK</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTlock_command.F_TLOCK"><span class="constructor">F_TLOCK</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTlock_command.F_TEST"><span class="constructor">F_TEST</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTlock_command.F_RLOCK"><span class="constructor">F_RLOCK</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTlock_command.F_TRLOCK"><span class="constructor">F_TRLOCK</span></span></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="VALlockf"><span class="keyword">val</span> lockf</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPElock_command">lock_command</a> -> int -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.lockf</code><br>
+</div>
+<br>
+<h2 id="2_Useridgroupid">User id, group id</h2><br>
+
+<pre><span id="TYPEpasswd_entry"><span class="keyword">type</span> <code class="type"></code>passwd_entry</span> = <code class="type">Unix.passwd_entry</code> = {</pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTpasswd_entry.pw_name">pw_name</span>&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTpasswd_entry.pw_passwd">pw_passwd</span>&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTpasswd_entry.pw_uid">pw_uid</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTpasswd_entry.pw_gid">pw_gid</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTpasswd_entry.pw_gecos">pw_gecos</span>&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTpasswd_entry.pw_dir">pw_dir</span>&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTpasswd_entry.pw_shell">pw_shell</span>&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><span id="TYPEgroup_entry"><span class="keyword">type</span> <code class="type"></code>group_entry</span> = <code class="type">Unix.group_entry</code> = {</pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTgroup_entry.gr_name">gr_name</span>&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTgroup_entry.gr_passwd">gr_passwd</span>&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTgroup_entry.gr_gid">gr_gid</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTgroup_entry.gr_mem">gr_mem</span>&nbsp;: <code class="type">string array</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><span id="VALgetlogin"><span class="keyword">val</span> getlogin</span> : <code class="type">unit -> string <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.getlogin</code><br>
+</div>
+
+<pre><span id="VALgetpwnam"><span class="keyword">val</span> getpwnam</span> : <code class="type">string -> <a href="Lwt_unix.html#TYPEpasswd_entry">passwd_entry</a> <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.getpwnam</code><br>
+</div>
+
+<pre><span id="VALgetgrnam"><span class="keyword">val</span> getgrnam</span> : <code class="type">string -> <a href="Lwt_unix.html#TYPEgroup_entry">group_entry</a> <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.getgrnam</code><br>
+</div>
+
+<pre><span id="VALgetpwuid"><span class="keyword">val</span> getpwuid</span> : <code class="type">int -> <a href="Lwt_unix.html#TYPEpasswd_entry">passwd_entry</a> <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.getpwuid</code><br>
+</div>
+
+<pre><span id="VALgetgrgid"><span class="keyword">val</span> getgrgid</span> : <code class="type">int -> <a href="Lwt_unix.html#TYPEgroup_entry">group_entry</a> <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.getgrgid</code><br>
+</div>
+<br>
+<h2 id="2_Signals">Signals</h2><br>
+
+<pre><span id="TYPEsignal_handler_id"><span class="keyword">type</span> <code class="type"></code>signal_handler_id</span> </pre>
+<div class="info ">
+Id of a signal handler, used to cancel it<br>
+</div>
+
+
+<pre><span id="VALon_signal"><span class="keyword">val</span> on_signal</span> : <code class="type">int -> (int -> unit) -> <a href="Lwt_unix.html#TYPEsignal_handler_id">signal_handler_id</a></code></pre><div class="info ">
+<code class="code">on_signal&nbsp;signum&nbsp;f</code> calls <code class="code">f</code> each time the signal with numnber
+      <code class="code">signum</code> is received by the process. It returns a signal handler
+      identifier that can be used to stop monitoring <code class="code">signum</code>.<br>
+</div>
+
+<pre><span id="VALon_signal_full"><span class="keyword">val</span> on_signal_full</span> : <code class="type">int -><br>       (<a href="Lwt_unix.html#TYPEsignal_handler_id">signal_handler_id</a> -> int -> unit) -> <a href="Lwt_unix.html#TYPEsignal_handler_id">signal_handler_id</a></code></pre><div class="info ">
+<code class="code">on_signal_full&nbsp;f</code> is the same as <code class="code">on_signal&nbsp;f</code> except that <code class="code">f</code>
+      also receive the signal handler identifier as argument so it can
+      disable it.<br>
+</div>
+
+<pre><span id="VALdisable_signal_handler"><span class="keyword">val</span> disable_signal_handler</span> : <code class="type"><a href="Lwt_unix.html#TYPEsignal_handler_id">signal_handler_id</a> -> unit</code></pre><div class="info ">
+Stops receiving this signal<br>
+</div>
+
+<pre><span id="VALsignal_count"><span class="keyword">val</span> signal_count</span> : <code class="type">unit -> int</code></pre><div class="info ">
+Returns the number of registered signal handler.<br>
+</div>
+
+<pre><span id="VALreinstall_signal_handler"><span class="keyword">val</span> reinstall_signal_handler</span> : <code class="type">int -> unit</code></pre><div class="info ">
+<code class="code">reinstall_signal_handler&nbsp;signum</code> if any signal handler is
+      registered for this signal with <a href="Lwt_unix.html#VALon_signal"><code class="code"><span class="constructor">Lwt_unix</span>.on_signal</code></a>, it reinstall the
+      signal handler (with <code class="code"><span class="constructor">Sys</span>.set_signal</code>). This is usefull in case
+      another part of the program install another signal handler.<br>
+</div>
+<br>
+<h2 id="2_Sockets">Sockets</h2><br>
+
+<pre><span id="TYPEinet_addr"><span class="keyword">type</span> <code class="type"></code>inet_addr</span> = <code class="type">Unix.inet_addr</code> </pre>
+
+
+<pre><span id="TYPEsocket_domain"><span class="keyword">type</span> <code class="type"></code>socket_domain</span> = <code class="type">Unix.socket_domain</code> = </pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_domain.PF_UNIX"><span class="constructor">PF_UNIX</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_domain.PF_INET"><span class="constructor">PF_INET</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_domain.PF_INET6"><span class="constructor">PF_INET6</span></span></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="TYPEsocket_type"><span class="keyword">type</span> <code class="type"></code>socket_type</span> = <code class="type">Unix.socket_type</code> = </pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_type.SOCK_STREAM"><span class="constructor">SOCK_STREAM</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_type.SOCK_DGRAM"><span class="constructor">SOCK_DGRAM</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_type.SOCK_RAW"><span class="constructor">SOCK_RAW</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_type.SOCK_SEQPACKET"><span class="constructor">SOCK_SEQPACKET</span></span></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="TYPEsockaddr"><span class="keyword">type</span> <code class="type"></code>sockaddr</span> = <code class="type">Unix.sockaddr</code> = </pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsockaddr.ADDR_UNIX"><span class="constructor">ADDR_UNIX</span></span> <span class="keyword">of</span> <code class="type">string</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsockaddr.ADDR_INET"><span class="constructor">ADDR_INET</span></span> <span class="keyword">of</span> <code class="type"><a href="Lwt_unix.html#TYPEinet_addr">inet_addr</a> * int</code></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="VALsocket"><span class="keyword">val</span> socket</span> : <code class="type"><a href="Lwt_unix.html#TYPEsocket_domain">socket_domain</a> -> <a href="Lwt_unix.html#TYPEsocket_type">socket_type</a> -> int -> <a href="Lwt_unix.html#TYPEfile_descr">file_descr</a></code></pre><div class="info ">
+<code class="code">socket&nbsp;domain&nbsp;<span class="keyword">type</span>&nbsp;proto</code> is the same as <code class="code"><span class="constructor">Unix</span>.socket</code> but maps
+      the result into a lwt <b>file descriptor</b><br>
+</div>
+
+<pre><span id="VALsocketpair"><span class="keyword">val</span> socketpair</span> : <code class="type"><a href="Lwt_unix.html#TYPEsocket_domain">socket_domain</a> -><br>       <a href="Lwt_unix.html#TYPEsocket_type">socket_type</a> -> int -> <a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> * <a href="Lwt_unix.html#TYPEfile_descr">file_descr</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.socketpair</code><br>
+</div>
+
+<pre><span id="VALbind"><span class="keyword">val</span> bind</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEsockaddr">sockaddr</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Binds an address to the given socket. This is the cooperative analog of
+    <a href="http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALbind">
+    <code class="code"><span class="constructor">Unix</span>.bind</code></a>. See also
+    <a href="http://man7.org/linux/man-pages/man3/bind.3p.html"> <code class="code">bind(3p)</code></a>.<br>
+<b>Since</b> 3.0.0<br>
+</div>
+
+<pre><span id="VALlisten"><span class="keyword">val</span> listen</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> int -> unit</code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.listen</code><br>
+</div>
+
+<pre><span id="VALaccept"><span class="keyword">val</span> accept</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> (<a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> * <a href="Lwt_unix.html#TYPEsockaddr">sockaddr</a>) <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.accept</code><br>
+</div>
+
+<pre><span id="VALaccept_n"><span class="keyword">val</span> accept_n</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -><br>       int -> ((<a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> * <a href="Lwt_unix.html#TYPEsockaddr">sockaddr</a>) list * exn option) <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">accept_n&nbsp;fd&nbsp;count</code> accepts up to <code class="code">count</code> connections at one time.
+<p>
+<ul>
+<li>if no connection is available right now, it returns a sleeping
+      thread</li>
+</ul>
+<ul>
+<li>if more than 1 and less than <code class="code">count</code> are available, it returns
+      all of them</li>
+</ul>
+<ul>
+<li>if more than <code class="code">count</code> are available, it returns the next
+      <code class="code">count</code> of them</li>
+</ul>
+<ul>
+<li>if an error happens, it returns the connections that have been
+      successfully accepted so far and the error</li>
+</ul>
+
+      <code class="code">accept_n</code> has the advantage of improving performance. If you
+      want a more detailed description, you can have a look at:
+<p>
+
+      <a href="http://portal.acm.org/citation.cfm?id=1247435">Acceptable strategies for improving web server performance</a><br>
+</div>
+
+<pre><span id="VALconnect"><span class="keyword">val</span> connect</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEsockaddr">sockaddr</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.connect</code><br>
+</div>
+
+<pre><span id="TYPEshutdown_command"><span class="keyword">type</span> <code class="type"></code>shutdown_command</span> = <code class="type">Unix.shutdown_command</code> = </pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTshutdown_command.SHUTDOWN_RECEIVE"><span class="constructor">SHUTDOWN_RECEIVE</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTshutdown_command.SHUTDOWN_SEND"><span class="constructor">SHUTDOWN_SEND</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTshutdown_command.SHUTDOWN_ALL"><span class="constructor">SHUTDOWN_ALL</span></span></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="VALshutdown"><span class="keyword">val</span> shutdown</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEshutdown_command">shutdown_command</a> -> unit</code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.shutdown</code><br>
+</div>
+
+<pre><span id="VALgetsockname"><span class="keyword">val</span> getsockname</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEsockaddr">sockaddr</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.getsockname</code><br>
+</div>
+
+<pre><span id="VALgetpeername"><span class="keyword">val</span> getpeername</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEsockaddr">sockaddr</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.getpeername</code><br>
+</div>
+
+<pre><span id="TYPEmsg_flag"><span class="keyword">type</span> <code class="type"></code>msg_flag</span> = <code class="type">Unix.msg_flag</code> = </pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTmsg_flag.MSG_OOB"><span class="constructor">MSG_OOB</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTmsg_flag.MSG_DONTROUTE"><span class="constructor">MSG_DONTROUTE</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTmsg_flag.MSG_PEEK"><span class="constructor">MSG_PEEK</span></span></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="VALrecv"><span class="keyword">val</span> recv</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -><br>       bytes -> int -> int -> <a href="Lwt_unix.html#TYPEmsg_flag">msg_flag</a> list -> int <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.recv</code>.
+<p>
+
+    On Windows, <code class="code">recv</code> writes data into a temporary buffer, then copies it into
+    the given one.<br>
+</div>
+
+<pre><span id="VALrecvfrom"><span class="keyword">val</span> recvfrom</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -><br>       bytes -><br>       int -> int -> <a href="Lwt_unix.html#TYPEmsg_flag">msg_flag</a> list -> (int * <a href="Lwt_unix.html#TYPEsockaddr">sockaddr</a>) <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.recvfrom</code>.
+<p>
+
+    On Windows, <code class="code">recvfrom</code> writes data into a temporary buffer, then copies it
+    into the given one.<br>
+</div>
+
+<pre><span id="VALsend"><span class="keyword">val</span> send</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -><br>       bytes -> int -> int -> <a href="Lwt_unix.html#TYPEmsg_flag">msg_flag</a> list -> int <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.send</code>.
+<p>
+
+    On Windows, <code class="code">send</code> copies the given buffer before writing.<br>
+</div>
+
+<pre><span id="VALsendto"><span class="keyword">val</span> sendto</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -><br>       bytes -><br>       int -> int -> <a href="Lwt_unix.html#TYPEmsg_flag">msg_flag</a> list -> <a href="Lwt_unix.html#TYPEsockaddr">sockaddr</a> -> int <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.sendto</code>.
+<p>
+
+    On Windows, <code class="code">sendto</code> copies the given buffer before writing.<br>
+</div>
+
+<pre><code><span id="TYPEio_vector"><span class="keyword">type</span> <code class="type"></code>io_vector</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTio_vector.iov_buffer">iov_buffer</span>&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTio_vector.iov_offset">iov_offset</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTio_vector.iov_length">iov_length</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr></table>
+}
+
+<div class="info ">
+An io-vector. Used by <a href="Lwt_unix.html#VALrecv_msg"><code class="code"><span class="constructor">Lwt_unix</span>.recv_msg</code></a> and <a href="Lwt_unix.html#VALsend_msg"><code class="code"><span class="constructor">Lwt_unix</span>.send_msg</code></a>.<br>
+</div>
+
+
+<pre><span id="VALio_vector"><span class="keyword">val</span> io_vector</span> : <code class="type">buffer:string -> offset:int -> length:int -> <a href="Lwt_unix.html#TYPEio_vector">io_vector</a></code></pre><div class="info ">
+Creates an io-vector<br>
+</div>
+
+<pre><span id="VALrecv_msg"><span class="keyword">val</span> recv_msg</span> : <code class="type">socket:<a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -><br>       io_vectors:<a href="Lwt_unix.html#TYPEio_vector">io_vector</a> list -> (int * Unix.file_descr list) <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">recv_msg&nbsp;~socket&nbsp;~io_vectors</code> receives data into a list of
+    io-vectors, plus any file-descriptors that may accompany the
+    messages. It returns a tuple whose first field is the number of
+    bytes received and second is a list of received file
+    descriptors. The messages themselves will be recorded in the
+    provided <code class="code">io_vectors</code> list. Data is written directly into the
+    <code class="code">iov_buffer</code> buffers.
+<p>
+
+    Not implemented on Windows.<br>
+</div>
+
+<pre><span id="VALsend_msg"><span class="keyword">val</span> send_msg</span> : <code class="type">socket:<a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -><br>       io_vectors:<a href="Lwt_unix.html#TYPEio_vector">io_vector</a> list -> fds:Unix.file_descr list -> int <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">send_msg&nbsp;~socket&nbsp;~io_vectors&nbsp;~fds</code> sends data from a list of
+    io-vectors, accompanied with a list of file-descriptors. It
+    returns the number of bytes sent. If fd-passing is not possible on
+    the current system and <code class="code">fds</code> is not empty, it raises
+    <code class="code"><span class="constructor">Lwt_sys</span>.<span class="constructor">Not_available</span>&nbsp;<span class="string">"fd_passing"</span></code>. Data is written directly from
+    the <code class="code">iov_buffer</code> buffers.
+<p>
+
+    Not implemented on Windows.<br>
+</div>
+
+<pre><code><span id="TYPEcredentials"><span class="keyword">type</span> <code class="type"></code>credentials</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTcredentials.cred_pid">cred_pid</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTcredentials.cred_uid">cred_uid</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTcredentials.cred_gid">cred_gid</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><span id="VALget_credentials"><span class="keyword">val</span> get_credentials</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEcredentials">credentials</a></code></pre><div class="info ">
+<code class="code">get_credentials&nbsp;fd</code> returns credentials information from the
+      given socket. On some platforms, obtaining the peer pid is not
+      possible and it will be set to <code class="code">-1</code>. If obtaining credentials
+      is not possible on the current system, it raises
+      <code class="code"><span class="constructor">Lwt_sys</span>.<span class="constructor">Not_available</span>&nbsp;<span class="string">"get_credentials"</span></code>.
+<p>
+
+      This call is not available on windows.<br>
+</div>
+<br>
+<h3 id="3_Socketoptions">Socket options</h3><br>
+
+<pre><span id="TYPEsocket_bool_option"><span class="keyword">type</span> <code class="type"></code>socket_bool_option</span> = <code class="type">Unix.socket_bool_option</code> = </pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_bool_option.SO_DEBUG"><span class="constructor">SO_DEBUG</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_bool_option.SO_BROADCAST"><span class="constructor">SO_BROADCAST</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_bool_option.SO_REUSEADDR"><span class="constructor">SO_REUSEADDR</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_bool_option.SO_KEEPALIVE"><span class="constructor">SO_KEEPALIVE</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_bool_option.SO_DONTROUTE"><span class="constructor">SO_DONTROUTE</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_bool_option.SO_OOBINLINE"><span class="constructor">SO_OOBINLINE</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_bool_option.SO_ACCEPTCONN"><span class="constructor">SO_ACCEPTCONN</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_bool_option.TCP_NODELAY"><span class="constructor">TCP_NODELAY</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_bool_option.IPV6_ONLY"><span class="constructor">IPV6_ONLY</span></span></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="TYPEsocket_int_option"><span class="keyword">type</span> <code class="type"></code>socket_int_option</span> = <code class="type">Unix.socket_int_option</code> = </pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_int_option.SO_SNDBUF"><span class="constructor">SO_SNDBUF</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_int_option.SO_RCVBUF"><span class="constructor">SO_RCVBUF</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_int_option.SO_ERROR"><span class="constructor">SO_ERROR</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_int_option.SO_TYPE"><span class="constructor">SO_TYPE</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_int_option.SO_RCVLOWAT"><span class="constructor">SO_RCVLOWAT</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_int_option.SO_SNDLOWAT"><span class="constructor">SO_SNDLOWAT</span></span></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="TYPEsocket_optint_option"><span class="keyword">type</span> <code class="type"></code>socket_optint_option</span> = <code class="type">Unix.socket_optint_option</code> = </pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_optint_option.SO_LINGER"><span class="constructor">SO_LINGER</span></span></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="TYPEsocket_float_option"><span class="keyword">type</span> <code class="type"></code>socket_float_option</span> = <code class="type">Unix.socket_float_option</code> = </pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_float_option.SO_RCVTIMEO"><span class="constructor">SO_RCVTIMEO</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsocket_float_option.SO_SNDTIMEO"><span class="constructor">SO_SNDTIMEO</span></span></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="VALgetsockopt"><span class="keyword">val</span> getsockopt</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEsocket_bool_option">socket_bool_option</a> -> bool</code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.getsockopt</code><br>
+</div>
+
+<pre><span id="VALsetsockopt"><span class="keyword">val</span> setsockopt</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEsocket_bool_option">socket_bool_option</a> -> bool -> unit</code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.setsockopt</code><br>
+</div>
+
+<pre><span id="VALgetsockopt_int"><span class="keyword">val</span> getsockopt_int</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEsocket_int_option">socket_int_option</a> -> int</code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.getsockopt_int</code><br>
+</div>
+
+<pre><span id="VALsetsockopt_int"><span class="keyword">val</span> setsockopt_int</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEsocket_int_option">socket_int_option</a> -> int -> unit</code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.setsockopt_int</code><br>
+</div>
+
+<pre><span id="VALgetsockopt_optint"><span class="keyword">val</span> getsockopt_optint</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEsocket_optint_option">socket_optint_option</a> -> int option</code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.getsockopt_optint</code><br>
+</div>
+
+<pre><span id="VALsetsockopt_optint"><span class="keyword">val</span> setsockopt_optint</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEsocket_optint_option">socket_optint_option</a> -> int option -> unit</code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.setsockopt_optint</code><br>
+</div>
+
+<pre><span id="VALgetsockopt_float"><span class="keyword">val</span> getsockopt_float</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEsocket_float_option">socket_float_option</a> -> float</code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.getsockopt_float</code><br>
+</div>
+
+<pre><span id="VALsetsockopt_float"><span class="keyword">val</span> setsockopt_float</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEsocket_float_option">socket_float_option</a> -> float -> unit</code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.setsockopt_float</code><br>
+</div>
+
+<pre><span id="VALgetsockopt_error"><span class="keyword">val</span> getsockopt_error</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> Unix.error option</code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.getsockopt_error</code><br>
+</div>
+<br>
+<h3 id="3_Multicastfunctions">Multicast functions</h3><br>
+
+<pre><span id="VALmcast_set_loop"><span class="keyword">val</span> mcast_set_loop</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> bool -> unit</code></pre><div class="info ">
+Whether sent multicast messages are received by the sending host<br>
+</div>
+
+<pre><span id="VALmcast_set_ttl"><span class="keyword">val</span> mcast_set_ttl</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> int -> unit</code></pre><div class="info ">
+Set TTL/hops value<br>
+</div>
+
+<pre><span id="VALmcast_add_membership"><span class="keyword">val</span> mcast_add_membership</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> ?ifname:Unix.inet_addr -> Unix.inet_addr -> unit</code></pre><div class="info ">
+<code class="code">mcast_add_membership&nbsp;fd&nbsp;~ifname&nbsp;addr</code> joins the multicast group <code class="code">addr</code>
+      on the network interface <code class="code">ifname</code>.<br>
+</div>
+
+<pre><span id="VALmcast_drop_membership"><span class="keyword">val</span> mcast_drop_membership</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> ?ifname:Unix.inet_addr -> Unix.inet_addr -> unit</code></pre><div class="info ">
+<code class="code">mcast_drop_membership&nbsp;fd&nbsp;~ifname&nbsp;addr</code> leaves the multicast group <code class="code">addr</code>
+      on the network interface <code class="code">ifname</code>.<br>
+</div>
+<br>
+<h2 id="2_Hostandprotocoldatabases">Host and protocol databases</h2><br>
+
+<pre><span id="TYPEhost_entry"><span class="keyword">type</span> <code class="type"></code>host_entry</span> = <code class="type">Unix.host_entry</code> = {</pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELThost_entry.h_name">h_name</span>&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELThost_entry.h_aliases">h_aliases</span>&nbsp;: <code class="type">string array</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELThost_entry.h_addrtype">h_addrtype</span>&nbsp;: <code class="type"><a href="Lwt_unix.html#TYPEsocket_domain">socket_domain</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELThost_entry.h_addr_list">h_addr_list</span>&nbsp;: <code class="type"><a href="Lwt_unix.html#TYPEinet_addr">inet_addr</a> array</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><span id="TYPEprotocol_entry"><span class="keyword">type</span> <code class="type"></code>protocol_entry</span> = <code class="type">Unix.protocol_entry</code> = {</pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTprotocol_entry.p_name">p_name</span>&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTprotocol_entry.p_aliases">p_aliases</span>&nbsp;: <code class="type">string array</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTprotocol_entry.p_proto">p_proto</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><span id="TYPEservice_entry"><span class="keyword">type</span> <code class="type"></code>service_entry</span> = <code class="type">Unix.service_entry</code> = {</pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTservice_entry.s_name">s_name</span>&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTservice_entry.s_aliases">s_aliases</span>&nbsp;: <code class="type">string array</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTservice_entry.s_port">s_port</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTservice_entry.s_proto">s_proto</span>&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><span id="VALgethostname"><span class="keyword">val</span> gethostname</span> : <code class="type">unit -> string <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.gethostname</code><br>
+</div>
+
+<pre><span id="VALgethostbyname"><span class="keyword">val</span> gethostbyname</span> : <code class="type">string -> <a href="Lwt_unix.html#TYPEhost_entry">host_entry</a> <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.gethostbyname</code><br>
+</div>
+
+<pre><span id="VALgethostbyaddr"><span class="keyword">val</span> gethostbyaddr</span> : <code class="type"><a href="Lwt_unix.html#TYPEinet_addr">inet_addr</a> -> <a href="Lwt_unix.html#TYPEhost_entry">host_entry</a> <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.gethostbyaddr</code><br>
+</div>
+
+<pre><span id="VALgetprotobyname"><span class="keyword">val</span> getprotobyname</span> : <code class="type">string -> <a href="Lwt_unix.html#TYPEprotocol_entry">protocol_entry</a> <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.getprotobyname</code><br>
+</div>
+
+<pre><span id="VALgetprotobynumber"><span class="keyword">val</span> getprotobynumber</span> : <code class="type">int -> <a href="Lwt_unix.html#TYPEprotocol_entry">protocol_entry</a> <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.getprotobynumber</code><br>
+</div>
+
+<pre><span id="VALgetservbyname"><span class="keyword">val</span> getservbyname</span> : <code class="type">string -> string -> <a href="Lwt_unix.html#TYPEservice_entry">service_entry</a> <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.getservbyname</code><br>
+</div>
+
+<pre><span id="VALgetservbyport"><span class="keyword">val</span> getservbyport</span> : <code class="type">int -> string -> <a href="Lwt_unix.html#TYPEservice_entry">service_entry</a> <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.getservbyport</code><br>
+</div>
+
+<pre><span id="TYPEaddr_info"><span class="keyword">type</span> <code class="type"></code>addr_info</span> = <code class="type">Unix.addr_info</code> = {</pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTaddr_info.ai_family">ai_family</span>&nbsp;: <code class="type"><a href="Lwt_unix.html#TYPEsocket_domain">socket_domain</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTaddr_info.ai_socktype">ai_socktype</span>&nbsp;: <code class="type"><a href="Lwt_unix.html#TYPEsocket_type">socket_type</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTaddr_info.ai_protocol">ai_protocol</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTaddr_info.ai_addr">ai_addr</span>&nbsp;: <code class="type"><a href="Lwt_unix.html#TYPEsockaddr">sockaddr</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTaddr_info.ai_canonname">ai_canonname</span>&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><span id="TYPEgetaddrinfo_option"><span class="keyword">type</span> <code class="type"></code>getaddrinfo_option</span> = <code class="type">Unix.getaddrinfo_option</code> = </pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTgetaddrinfo_option.AI_FAMILY"><span class="constructor">AI_FAMILY</span></span> <span class="keyword">of</span> <code class="type"><a href="Lwt_unix.html#TYPEsocket_domain">socket_domain</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTgetaddrinfo_option.AI_SOCKTYPE"><span class="constructor">AI_SOCKTYPE</span></span> <span class="keyword">of</span> <code class="type"><a href="Lwt_unix.html#TYPEsocket_type">socket_type</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTgetaddrinfo_option.AI_PROTOCOL"><span class="constructor">AI_PROTOCOL</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTgetaddrinfo_option.AI_NUMERICHOST"><span class="constructor">AI_NUMERICHOST</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTgetaddrinfo_option.AI_CANONNAME"><span class="constructor">AI_CANONNAME</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTgetaddrinfo_option.AI_PASSIVE"><span class="constructor">AI_PASSIVE</span></span></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="VALgetaddrinfo"><span class="keyword">val</span> getaddrinfo</span> : <code class="type">string -><br>       string -> <a href="Lwt_unix.html#TYPEgetaddrinfo_option">getaddrinfo_option</a> list -> <a href="Lwt_unix.html#TYPEaddr_info">addr_info</a> list <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.getaddrinfo</code><br>
+</div>
+
+<pre><span id="TYPEname_info"><span class="keyword">type</span> <code class="type"></code>name_info</span> = <code class="type">Unix.name_info</code> = {</pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTname_info.ni_hostname">ni_hostname</span>&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTname_info.ni_service">ni_service</span>&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><span id="TYPEgetnameinfo_option"><span class="keyword">type</span> <code class="type"></code>getnameinfo_option</span> = <code class="type">Unix.getnameinfo_option</code> = </pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTgetnameinfo_option.NI_NOFQDN"><span class="constructor">NI_NOFQDN</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTgetnameinfo_option.NI_NUMERICHOST"><span class="constructor">NI_NUMERICHOST</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTgetnameinfo_option.NI_NAMEREQD"><span class="constructor">NI_NAMEREQD</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTgetnameinfo_option.NI_NUMERICSERV"><span class="constructor">NI_NUMERICSERV</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTgetnameinfo_option.NI_DGRAM"><span class="constructor">NI_DGRAM</span></span></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="VALgetnameinfo"><span class="keyword">val</span> getnameinfo</span> : <code class="type"><a href="Lwt_unix.html#TYPEsockaddr">sockaddr</a> -><br>       <a href="Lwt_unix.html#TYPEgetnameinfo_option">getnameinfo_option</a> list -> <a href="Lwt_unix.html#TYPEname_info">name_info</a> <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.getnameinfo</code><br>
+</div>
+<br>
+<h2 id="2_Terminalinterface">Terminal interface</h2><br>
+
+<pre><span id="TYPEterminal_io"><span class="keyword">type</span> <code class="type"></code>terminal_io</span> = <code class="type">Unix.terminal_io</code> = {</pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_ignbrk">c_ignbrk</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_brkint">c_brkint</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_ignpar">c_ignpar</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_parmrk">c_parmrk</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_inpck">c_inpck</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_istrip">c_istrip</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_inlcr">c_inlcr</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_igncr">c_igncr</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_icrnl">c_icrnl</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_ixon">c_ixon</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_ixoff">c_ixoff</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_opost">c_opost</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_obaud">c_obaud</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_ibaud">c_ibaud</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_csize">c_csize</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_cstopb">c_cstopb</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_cread">c_cread</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_parenb">c_parenb</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_parodd">c_parodd</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_hupcl">c_hupcl</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_clocal">c_clocal</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_isig">c_isig</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_icanon">c_icanon</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_noflsh">c_noflsh</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_echo">c_echo</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_echoe">c_echoe</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_echok">c_echok</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_echonl">c_echonl</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_vintr">c_vintr</span>&nbsp;: <code class="type">char</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_vquit">c_vquit</span>&nbsp;: <code class="type">char</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_verase">c_verase</span>&nbsp;: <code class="type">char</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_vkill">c_vkill</span>&nbsp;: <code class="type">char</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_veof">c_veof</span>&nbsp;: <code class="type">char</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_veol">c_veol</span>&nbsp;: <code class="type">char</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_vmin">c_vmin</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_vtime">c_vtime</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_vstart">c_vstart</span>&nbsp;: <code class="type">char</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span class="keyword">mutable&nbsp;</span><span id="TYPEELTterminal_io.c_vstop">c_vstop</span>&nbsp;: <code class="type">char</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><span id="VALtcgetattr"><span class="keyword">val</span> tcgetattr</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEterminal_io">terminal_io</a> <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.tcgetattr</code><br>
+</div>
+
+<pre><span id="TYPEsetattr_when"><span class="keyword">type</span> <code class="type"></code>setattr_when</span> = <code class="type">Unix.setattr_when</code> = </pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsetattr_when.TCSANOW"><span class="constructor">TCSANOW</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsetattr_when.TCSADRAIN"><span class="constructor">TCSADRAIN</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsetattr_when.TCSAFLUSH"><span class="constructor">TCSAFLUSH</span></span></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="VALtcsetattr"><span class="keyword">val</span> tcsetattr</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -><br>       <a href="Lwt_unix.html#TYPEsetattr_when">setattr_when</a> -> <a href="Lwt_unix.html#TYPEterminal_io">terminal_io</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.tcsetattr</code><br>
+</div>
+
+<pre><span id="VALtcsendbreak"><span class="keyword">val</span> tcsendbreak</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> int -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.tcsendbreak</code><br>
+</div>
+
+<pre><span id="VALtcdrain"><span class="keyword">val</span> tcdrain</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.tcdrain</code><br>
+</div>
+
+<pre><span id="TYPEflush_queue"><span class="keyword">type</span> <code class="type"></code>flush_queue</span> = <code class="type">Unix.flush_queue</code> = </pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTflush_queue.TCIFLUSH"><span class="constructor">TCIFLUSH</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTflush_queue.TCOFLUSH"><span class="constructor">TCOFLUSH</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTflush_queue.TCIOFLUSH"><span class="constructor">TCIOFLUSH</span></span></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="VALtcflush"><span class="keyword">val</span> tcflush</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEflush_queue">flush_queue</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.tcflush</code><br>
+</div>
+
+<pre><span id="TYPEflow_action"><span class="keyword">type</span> <code class="type"></code>flow_action</span> = <code class="type">Unix.flow_action</code> = </pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTflow_action.TCOOFF"><span class="constructor">TCOOFF</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTflow_action.TCOON"><span class="constructor">TCOON</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTflow_action.TCIOFF"><span class="constructor">TCIOFF</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTflow_action.TCION"><span class="constructor">TCION</span></span></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="VALtcflow"><span class="keyword">val</span> tcflow</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> <a href="Lwt_unix.html#TYPEflow_action">flow_action</a> -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wrapper for <code class="code"><span class="constructor">Unix</span>.tcflow</code><br>
+</div>
+<br>
+<h2 id="2_Lowlevelinteraction">Low-level interaction</h2><br>
+
+<pre><span id="EXCEPTIONRetry"><span class="keyword">exception</span> Retry</span></pre>
+<div class="info ">
+If an action raises <a href="Lwt_unix.html#EXCEPTIONRetry"><code class="code"><span class="constructor">Lwt_unix</span>.<span class="constructor">Retry</span></code></a>, it will be requeued until the <b>      file descriptor</b> becomes readable/writable again.<br>
+</div>
+
+<pre><span id="EXCEPTIONRetry_read"><span class="keyword">exception</span> Retry_read</span></pre>
+<div class="info ">
+If an action raises <a href="Lwt_unix.html#EXCEPTIONRetry_read"><code class="code"><span class="constructor">Lwt_unix</span>.<span class="constructor">Retry_read</span></code></a>, it will be requeued until the
+      <b>file descriptor</b> becomes readable.<br>
+</div>
+
+<pre><span id="EXCEPTIONRetry_write"><span class="keyword">exception</span> Retry_write</span></pre>
+<div class="info ">
+If an action raises <a href="Lwt_unix.html#EXCEPTIONRetry_read"><code class="code"><span class="constructor">Lwt_unix</span>.<span class="constructor">Retry_read</span></code></a>, it will be requeued until the
+      <b>file descriptor</b> becomes writables.<br>
+</div>
+
+<pre><code><span id="TYPEio_event"><span class="keyword">type</span> <code class="type"></code>io_event</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTio_event.Read"><span class="constructor">Read</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTio_event.Write"><span class="constructor">Write</span></span></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="VALwrap_syscall"><span class="keyword">val</span> wrap_syscall</span> : <code class="type"><a href="Lwt_unix.html#TYPEio_event">io_event</a> -> <a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> (unit -> 'a) -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">wrap_syscall&nbsp;set&nbsp;fd&nbsp;action</code> wrap an action on a <b>file
+      descriptor</b>. It tries to execute action, and if it can not be
+      performed immediately without blocking, it is registered for
+      later.
+<p>
+
+      In the latter case, if the thread is canceled, <code class="code">action</code> is
+      removed from <code class="code">set</code>.<br>
+</div>
+
+<pre><span id="VALcheck_descriptor"><span class="keyword">val</span> check_descriptor</span> : <code class="type"><a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> unit</code></pre><div class="info ">
+<code class="code">check_descriptor&nbsp;fd</code> raise an exception if <code class="code">fd</code> is not in the
+      state <code class="code"><span class="constructor">Open</span></code><br>
+</div>
+
+<pre><span id="VALregister_action"><span class="keyword">val</span> register_action</span> : <code class="type"><a href="Lwt_unix.html#TYPEio_event">io_event</a> -> <a href="Lwt_unix.html#TYPEfile_descr">file_descr</a> -> (unit -> 'a) -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">register_action&nbsp;set&nbsp;fd&nbsp;action</code> registers <code class="code">action</code> on <code class="code">fd</code>. When
+      <code class="code">fd</code> becomes <code class="code">readable</code>/<code class="code">writable</code> <code class="code">action</code> is called.
+<p>
+
+      Note:
+<p>
+<ul>
+<li>you must call <code class="code">check_descriptor&nbsp;fd</code> before calling
+      <code class="code">register_action</code></li>
+</ul>
+<ul>
+<li>you should prefer using <a href="Lwt_unix.html#VALwrap_syscall"><code class="code"><span class="constructor">Lwt_unix</span>.wrap_syscall</code></a></li>
+</ul>
+<br>
+</div>
+
+<pre><span id="TYPEjob"><span class="keyword">type</span> <code class="type">'a</code> job</span> </pre>
+<div class="info ">
+Type of job descriptions. A job description describe how to call
+      a C function and how to get its result. The C function may be
+      executed in another system thread.<br>
+</div>
+
+
+<pre><span id="VALrun_job"><span class="keyword">val</span> run_job</span> : <code class="type">?async_method:<a href="Lwt_unix.html#TYPEasync_method">async_method</a> -> 'a <a href="Lwt_unix.html#TYPEjob">job</a> -> 'a <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<code class="code">run_job&nbsp;?async_method&nbsp;job</code> starts <code class="code">job</code> and wait for its
+      termination.
+<p>
+
+      The async method is choosen follow:<ul>
+<li>if the optional parameter <code class="code">async_method</code> is specified, it is
+        used,</li>
+<li>otherwise if the local key <a href="Lwt_unix.html#VALasync_method_key"><code class="code"><span class="constructor">Lwt_unix</span>.async_method_key</code></a> is set in the
+        current thread, it is used,</li>
+<li>otherwise the default method (returned by
+        <a href="Lwt_unix.html#VALdefault_async_method"><code class="code"><span class="constructor">Lwt_unix</span>.default_async_method</code></a>) is used.</li>
+</ul>
+
+      If the method is <code class="code"><span class="constructor">Async_none</span></code> then the job is run synchronously
+      and may block the current system thread, thus blocking all Lwt
+      threads.
+<p>
+
+      If the method is <code class="code"><span class="constructor">Async_detach</span></code> then the job is run in another
+      system thread, unless the the maximum number of worker threads
+      has been reached (as given by <a href="Lwt_unix.html#VALpool_size"><code class="code"><span class="constructor">Lwt_unix</span>.pool_size</code></a>).
+<p>
+
+      If the method is <code class="code"><span class="constructor">Async_switch</span></code> then the job is run
+      synchronously and if it blocks, execution will continue in
+      another system thread (unless the limit is reached).<br>
+</div>
+
+<pre><span id="VALabort_jobs"><span class="keyword">val</span> abort_jobs</span> : <code class="type">exn -> unit</code></pre><div class="info ">
+<code class="code">abort_jobs&nbsp;exn</code> make all pending jobs to fail with exn. Note
+      that this does not abort the real job (i.e. the C function
+      executing it), just the lwt thread for it.<br>
+</div>
+
+<pre><span id="VALcancel_jobs"><span class="keyword">val</span> cancel_jobs</span> : <code class="type">unit -> unit</code></pre><div class="info ">
+<code class="code">cancel_jobs&nbsp;()</code> is the same as <code class="code">abort_jobs&nbsp;<span class="constructor">Lwt</span>.<span class="constructor">Canceled</span></code>.<br>
+</div>
+
+<pre><span id="VALwait_for_jobs"><span class="keyword">val</span> wait_for_jobs</span> : <code class="type">unit -> unit <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+Wait for all pending jobs to terminate.<br>
+</div>
+
+<pre><span id="VALexecute_job"><span class="keyword">val</span> execute_job</span> : <code class="type">?async_method:<a href="Lwt_unix.html#TYPEasync_method">async_method</a> -><br>       job:'a <a href="Lwt_unix.html#TYPEjob">job</a> -><br>       result:('a <a href="Lwt_unix.html#TYPEjob">job</a> -> 'b) -> free:('a <a href="Lwt_unix.html#TYPEjob">job</a> -> unit) -> 'b <a href="Lwt.html#TYPEt">Lwt.t</a></code></pre><div class="info ">
+<span class="warning">Deprecated.</span>Use <code class="code">run_job</code>.<br>
+</div>
+<br>
+<h2 id="2_Notifications">Notifications</h2><br>
+<br>
+Lwt internally use a pipe to send notification to the main
+    thread. The following functions allow to use this pipe.<br>
+
+<pre><span id="VALmake_notification"><span class="keyword">val</span> make_notification</span> : <code class="type">?once:bool -> (unit -> unit) -> int</code></pre><div class="info ">
+<code class="code">new_notifier&nbsp;?once&nbsp;f</code> registers a new notifier. It returns the
+      id of the notifier. Each time a notification with this id is
+      received, <code class="code">f</code> is called.
+<p>
+
+      if <code class="code">once</code> is specified, then the notification is stopped after
+      the first time it is received. It defaults to <code class="code"><span class="keyword">false</span></code>.<br>
+</div>
+
+<pre><span id="VALsend_notification"><span class="keyword">val</span> send_notification</span> : <code class="type">int -> unit</code></pre><div class="info ">
+<code class="code">send_notification&nbsp;id</code> sends a notification.
+<p>
+
+      This function is thread-safe.<br>
+</div>
+
+<pre><span id="VALstop_notification"><span class="keyword">val</span> stop_notification</span> : <code class="type">int -> unit</code></pre><div class="info ">
+Stop the given notification. Note that you should not reuse the
+      id after the notification has been stopped, the result is
+      unspecified if you do so.<br>
+</div>
+
+<pre><span id="VALcall_notification"><span class="keyword">val</span> call_notification</span> : <code class="type">int -> unit</code></pre><div class="info ">
+Call the handler associated to the given notification. Note that
+      if the notification was defined with <code class="code">once&nbsp;=&nbsp;<span class="keyword">true</span></code> it is removed.<br>
+</div>
+
+<pre><span id="VALset_notification"><span class="keyword">val</span> set_notification</span> : <code class="type">int -> (unit -> unit) -> unit</code></pre><div class="info ">
+<code class="code">set_notification&nbsp;id&nbsp;f</code> replace the function associated to the
+      notification by <code class="code">f</code>. It raises <code class="code"><span class="constructor">Not_found</span></code> if the given
+      notification is not found.<br>
+</div>
+<br>
+<h2 id="2_Systemthreadspool">System threads pool</h2><br>
+<br>
+If the program is using the async method <code class="code"><span class="constructor">Async_detach</span></code> or
+    <code class="code"><span class="constructor">Async_switch</span></code>, Lwt will launch system threads to execute
+    blocking system calls asynchronously.<br>
+
+<pre><span id="VALpool_size"><span class="keyword">val</span> pool_size</span> : <code class="type">unit -> int</code></pre><div class="info ">
+Maximum number of system threads that can be started. If this
+      limit is reached, jobs will be executed synchronously.<br>
+</div>
+
+<pre><span id="VALset_pool_size"><span class="keyword">val</span> set_pool_size</span> : <code class="type">int -> unit</code></pre><div class="info ">
+Change the size of the pool.<br>
+</div>
+
+<pre><span id="VALthread_count"><span class="keyword">val</span> thread_count</span> : <code class="type">unit -> int</code></pre><div class="info ">
+The number of system threads running (excluding this one).<br>
+</div>
+
+<pre><span id="VALthread_waiting_count"><span class="keyword">val</span> thread_waiting_count</span> : <code class="type">unit -> int</code></pre><div class="info ">
+The number threads waiting for a job.<br>
+</div>
+<br>
+<h2 id="2_CPUs">CPUs</h2><br>
+
+<pre><span id="VALget_cpu"><span class="keyword">val</span> get_cpu</span> : <code class="type">unit -> int</code></pre><div class="info ">
+<code class="code">get_cpu&nbsp;()</code> returns the number of the CPU the current thread is
+      running on.<br>
+</div>
+
+<pre><span id="VALget_affinity"><span class="keyword">val</span> get_affinity</span> : <code class="type">?pid:int -> unit -> int list</code></pre><div class="info ">
+<code class="code">get_affinity&nbsp;?pid&nbsp;()</code> returns the list of CPUs the process with
+      pid <code class="code">pid</code> is allowed to run on. If <code class="code">pid</code> is not specified then
+      the affinity of the current process is returned.<br>
+</div>
+
+<pre><span id="VALset_affinity"><span class="keyword">val</span> set_affinity</span> : <code class="type">?pid:int -> int list -> unit</code></pre><div class="info ">
+<code class="code">set_affinity&nbsp;?pid&nbsp;cpus</code> sets the list of CPUs the given process
+      is allowed to run on.<br>
+</div>
+<br>
+<h2 id="2_Versionedinterfaces">Versioned interfaces</h2><br>
+
+<pre><span class="keyword">module</span> <a href="Lwt_unix.Versioned.html">Versioned</a>: <code class="code"><span class="keyword">sig</span></code> <a href="Lwt_unix.Versioned.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
+Versioned variants of APIs undergoing breaking changes.
+</div>
+</body></html>

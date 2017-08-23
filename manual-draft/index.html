@@ -1,0 +1,307 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of class attributes" rel=Appendix href="index_attributes.html">
+<link title="Index of class methods" rel=Appendix href="index_methods.html">
+<link title="Index of classes" rel=Appendix href="index_classes.html">
+<link title="Index of class types" rel=Appendix href="index_class_types.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Pa_lwt" rel="Chapter" href="Pa_lwt.html">
+<link title="Lwt" rel="Chapter" href="Lwt.html">
+<link title="Lwt_condition" rel="Chapter" href="Lwt_condition.html">
+<link title="Lwt_list" rel="Chapter" href="Lwt_list.html">
+<link title="Lwt_mutex" rel="Chapter" href="Lwt_mutex.html">
+<link title="Lwt_mvar" rel="Chapter" href="Lwt_mvar.html">
+<link title="Lwt_pool" rel="Chapter" href="Lwt_pool.html">
+<link title="Lwt_pqueue" rel="Chapter" href="Lwt_pqueue.html">
+<link title="Lwt_result" rel="Chapter" href="Lwt_result.html">
+<link title="Lwt_sequence" rel="Chapter" href="Lwt_sequence.html">
+<link title="Lwt_stream" rel="Chapter" href="Lwt_stream.html">
+<link title="Lwt_switch" rel="Chapter" href="Lwt_switch.html">
+<link title="Lwt_glib" rel="Chapter" href="Lwt_glib.html">
+<link title="Lwt_log_core" rel="Chapter" href="Lwt_log_core.html">
+<link title="Lwt_log_rules" rel="Chapter" href="Lwt_log_rules.html">
+<link title="Ppx_lwt" rel="Chapter" href="Ppx_lwt.html">
+<link title="Lwt_preemptive" rel="Chapter" href="Lwt_preemptive.html">
+<link title="Lwt_react" rel="Chapter" href="Lwt_react.html">
+<link title="Lwt_ssl" rel="Chapter" href="Lwt_ssl.html">
+<link title="Lwt_bytes" rel="Chapter" href="Lwt_bytes.html">
+<link title="Lwt_chan" rel="Chapter" href="Lwt_chan.html">
+<link title="Lwt_daemon" rel="Chapter" href="Lwt_daemon.html">
+<link title="Lwt_engine" rel="Chapter" href="Lwt_engine.html">
+<link title="Lwt_gc" rel="Chapter" href="Lwt_gc.html">
+<link title="Lwt_io" rel="Chapter" href="Lwt_io.html">
+<link title="Lwt_log" rel="Chapter" href="Lwt_log.html">
+<link title="Lwt_main" rel="Chapter" href="Lwt_main.html">
+<link title="Lwt_process" rel="Chapter" href="Lwt_process.html">
+<link title="Lwt_sys" rel="Chapter" href="Lwt_sys.html">
+<link title="Lwt_throttle" rel="Chapter" href="Lwt_throttle.html">
+<link title="Lwt_timeout" rel="Chapter" href="Lwt_timeout.html">
+<link title="Lwt_unix" rel="Chapter" href="Lwt_unix.html"><title></title>
+</head>
+<body>
+<h1></h1>
+<h1 id="1_LwtAPIReference">Lwt - API Reference</h1>
+<p>
+
+<h2 id="2_Corelibrary">Core library</h2>
+<p>
+
+The <em>core</em> library (<em>lwt</em> package) contains the <a href="Lwt.html"><code class="code"><span class="constructor">Lwt</span></code></a> module, which defines
+cooperative threads with all the primitives to manipulate them. It
+also provides several general purpose modules, which do not depend on
+any external package.
+<p>
+
+<br>
+<table class="indextable">
+<tr><td class="module"><a href="Lwt.html">Lwt</a></td><td><div class="info">
+Asynchronous programming with promises.
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_result.html">Lwt_result</a></td><td><div class="info">
+Explicit error handling
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_condition.html">Lwt_condition</a></td><td><div class="info">
+Conditions
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_list.html">Lwt_list</a></td><td><div class="info">
+List helpers
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_mutex.html">Lwt_mutex</a></td><td><div class="info">
+Cooperative locks for mutual exclusion
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_mvar.html">Lwt_mvar</a></td><td><div class="info">
+Mailbox variables
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_pool.html">Lwt_pool</a></td><td><div class="info">
+External resource pools.
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_stream.html">Lwt_stream</a></td><td><div class="info">
+Data streams
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_switch.html">Lwt_switch</a></td><td><div class="info">
+Lwt switches
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_sequence.html">Lwt_sequence</a></td><td><div class="info">
+Mutable sequence of elements (deprecated)
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_pqueue.html">Lwt_pqueue</a></td><td><div class="info">
+<span class="deprecated">Functional priority queues (deprecated).
+</span></div>
+</td></tr>
+</table>
+
+<p>
+
+<h2 id="2_Logger">Logger</h2>
+The <em>lwt.log</em> package provides a logger engine.
+<p>
+
+<br>
+<table class="indextable">
+<tr><td class="module"><a href="Lwt_log_core.html">Lwt_log_core</a></td><td><div class="info">
+Logging facility
+</div>
+</td></tr>
+</table>
+
+<p>
+
+This package depends on the <em>core</em> library
+<p>
+
+<h2 id="2_Unixbindings">Unix bindings</h2>
+<p>
+
+The <em>lwt.unix</em> package provides:<ul>
+<li>the <a href="Lwt_unix.html"><code class="code"><span class="constructor">Lwt_unix</span></code></a> module, which wrap system calls into cooperative ones</li>
+<li>the <a href="Lwt_io.html"><code class="code"><span class="constructor">Lwt_io</span></code></a> module, which defines cooperative byte channel, in
+  replacement of ones of the standard library</li>
+<li>module helpers for logging, spawning processes, ...</li>
+</ul>
+
+<br>
+<table class="indextable">
+<tr><td class="module"><a href="Lwt_daemon.html">Lwt_daemon</a></td><td><div class="info">
+Daemon helpers
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_gc.html">Lwt_gc</a></td><td><div class="info">
+Interaction with the garbage collector
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_io.html">Lwt_io</a></td><td><div class="info">
+Buffered byte channels
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_log.html">Lwt_log</a></td><td><div class="info">
+Logging facility
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_main.html">Lwt_main</a></td><td><div class="info">
+Main loop and event queue
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_engine.html">Lwt_engine</a></td><td><div class="info">
+Lwt unix main loop engine
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_process.html">Lwt_process</a></td><td><div class="info">
+Process management
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_throttle.html">Lwt_throttle</a></td><td><div class="info">
+Rate limiters
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_timeout.html">Lwt_timeout</a></td><td><div class="info">
+Timeouts
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_unix.html">Lwt_unix</a></td><td><div class="info">
+Cooperative system calls
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_bytes.html">Lwt_bytes</a></td><td><div class="info">
+Byte arrays
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_sys.html">Lwt_sys</a></td><td><div class="info">
+System informations.
+</div>
+</td></tr>
+</table>
+
+<p>
+
+This package depends on the <em>core</em> library, the <em>unix</em> package and
+the <em>lwt.log</em> package.
+<p>
+
+<h2 id="2_Reactiveprogramminghelpers">Reactive programming helpers</h2>
+<p>
+
+The <em>lwt.react</em> package provides helpers for functionnal reactive
+programming with Lwt. It is based on the <em>react</em> package. The
+<a href="Lwt_react.html"><code class="code"><span class="constructor">Lwt_react</span></code></a> module is a replacement for the <code class="code"><span class="constructor">React</span></code> module. It
+contains:
+<p>
+<ul>
+<li>all the functions of the <code class="code"><span class="constructor">React</span></code> module</li>
+<li>Lwt specific primitives</li>
+<li>cooperative versions of <em>react</em> functions</li>
+</ul>
+
+<br>
+<table class="indextable">
+<tr><td class="module"><a href="Lwt_react.html">Lwt_react</a></td><td><div class="info">
+React utilities
+</div>
+</td></tr>
+</table>
+
+<p>
+
+This package depends on the <em>core</em> library and the <em>react</em> package.
+<p>
+
+<h2 id="2_PPXsyntaxextension">PPX syntax extension</h2>
+<p>
+
+Syntactic sugar for Lwt, such as <code class="code"><span class="keyword">let</span>%lwt&nbsp;x&nbsp;=&nbsp;e&nbsp;<span class="keyword">in</span>&nbsp;e'</code> syntax for <code class="code">bind</code>.
+<p>
+
+<br>
+<table class="indextable">
+<tr><td class="module"><a href="Ppx_lwt.html">Ppx_lwt</a></td><td><div class="info">
+Ppx syntax extension for Lwt
+</div>
+</td></tr>
+</table>
+
+<p>
+
+<h2 id="2_Miscellaneous">Miscellaneous</h2>
+<p>
+
+The following modules are wrapper for integration of non-Lwt
+functions/packages into Lwt.
+<p>
+
+<br>
+<table class="indextable">
+<tr><td class="module"><a href="Lwt_glib.html">Lwt_glib</a></td><td><div class="info">
+Glib integration
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_preemptive.html">Lwt_preemptive</a></td><td><div class="info">
+This module allows to mix preemptive threads with <code class="code"><span class="constructor">Lwt</span></code>
+    cooperative threads.
+</div>
+</td></tr>
+<tr><td class="module"><a href="Lwt_ssl.html">Lwt_ssl</a></td><td><div class="info">
+OCaml-SSL integration
+</div>
+</td></tr>
+</table>
+
+<p>
+
+<h2 id="2_Camlp4syntaxextensions">Camlp4 syntax extensions</h2>
+<p>
+
+These extensions are deprecated. Use <a href="Ppx_lwt.html"><code class="code"><span class="constructor">Ppx_lwt</span></code></a> instead.
+<p>
+
+Lwt is shipped with two Camlp4 syntax extensions. The first one, contained in
+the <em>lwt.syntax</em> package, aims to make coding with Lwt easier, and
+to make code more readable. The second, contained in the package <em>lwt.syntax.log</em>, is a Camlp4 filter which decreases the performance
+penalty when using logging by inlining level tests.
+<p>
+
+<br>
+<table class="indextable">
+<tr><td class="module"><a href="Pa_lwt.html">Pa_lwt</a></td><td><div class="info">
+Syntactic sugars for Lwt (deprecated)
+</div>
+</td></tr>
+<tr><td class="module">Pa_lwt_log</td><td></td></tr>
+</table>
+
+<p>
+
+<h2 id="2_Index">Index</h2>
+<p>
+
+<ul class="indexlist">
+<li><a href="index_types.html">Index of types</a></li>
+<li><a href="index_exceptions.html">Index of exceptions</a></li>
+<li><a href="index_values.html">Index of values</a></li>
+<li><a href="index_attributes.html">Index of class attributes</a></li>
+<li><a href="index_methods.html">Index of class methods</a></li>
+<li><a href="index_classes.html">Index of classes</a></li>
+<li><a href="index_class_types.html">Index of class types</a></li>
+<li><a href="index_modules.html">Index of modules</a></li>
+<li><a href="index_module_types.html">Index of module types</a></li>
+</ul>
+<br>
+</body>
+</html>
