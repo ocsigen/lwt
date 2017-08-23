@@ -1372,10 +1372,12 @@ let open_temp_file:
       open_file ?buffer:buffer ?perm:perm ~mode:Output fname
 
 let with_temp_file ?buffer ?perm f =
-  open_temp_file ?buffer ?perm () >>= fun ic ->
+  temp_filename () >>= fun fname ->
+  open_file ?buffer:buffer ?perm:perm ~mode:Output fname >>= fun chan ->
   Lwt.finalize
-    (fun () -> f ic)
-    (fun () -> close ic)
+    (fun () -> f chan)
+    (fun () -> close chan >>= fun _ ->
+      Lwt_unix.unlink fname)
 
 let file_length filename = with_file ~mode:input filename length
 

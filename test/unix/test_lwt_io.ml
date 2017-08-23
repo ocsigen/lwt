@@ -1,7 +1,7 @@
 (* OCaml promise library
  * http://www.ocsigen.org/lwt
  * Copyright (C) 2009 Jérémie Dimino
- *
+n *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation, with linking exceptions;
@@ -21,6 +21,8 @@
 
 open Test
 open Lwt.Infix
+
+exception Dummy_error
 
 let with_async_exception_hook hook f =
   let old_hook = !Lwt.async_exception_hook in
@@ -311,6 +313,28 @@ let suite = suite "lwt_io" [
         !exceptions_observed = 2
     );
 
+  test "with_temp_filename"
+    (fun () ->
+       let startswith x y =
+         let n = String.length x and
+             m = String.length y in
+         (n >= m && String.equal y (String.sub x 0 m)) in
+       let check_no_tempfiles () =
+         let handle = Unix.opendir "." in
+         let rec helper x =
+           try
+              not (startswith (Unix.readdir x) "lwt_io_temp_file_") && helper x
+           with End_of_file -> true in
+         helper handle
+       in
+       let write_data chan = Lwt_io.write chan "test file content" in
+       let write_data_fail _ = Lwt.fail Dummy_error in
+       Lwt_io.with_temp_file write_data >>= fun _ ->
+       Lwt.return (check_no_tempfiles ()) >>= fun no_temps ->
+       Lwt_io.with_temp_file write_data_fail >>= fun _ ->
+       Lwt.return (no_temps && check_no_tempfiles ())
+    );
+
   test "open_temp_file"
     (fun () ->
        Lwt_io.open_temp_file () >>= fun out_chan ->
@@ -323,4 +347,5 @@ let suite = suite "lwt_io" [
     (fun () ->
        Lwt_io.temp_filename () >>= Lwt_unix.file_exists >|= fun e -> not e
     );
+
 ]
