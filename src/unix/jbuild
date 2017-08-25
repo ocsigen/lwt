@@ -30,12 +30,6 @@
  ((targets (ocamlc_config))
   (action (with-stdout-to ${@} (run ${OCAMLC} -config)))))
 
-;; generate an empty lwt_config if it doesn't exist.
-;; the discover script will generate defaults as appropriate.
-(rule
- ((targets (lwt_config))
-  (action (with-stdout-to lwt_config (echo "")))))
-
 ;; note; the call to (and dependency on) ocamlfind is avoided by adding:
 ;; -ocamlc ${OCAMLC}
 ;; however, this only works on ocaml >= 4.04 due to passing options to ocamlc as
