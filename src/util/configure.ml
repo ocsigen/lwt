@@ -89,7 +89,26 @@ let main () =
      though it's not actually installed. *)
   let f = open_out "src/jbuild-ignore" in
   (if !use_camlp4 = Some true then () else Printf.fprintf f "camlp4");
-  close_out f
+  close_out f;
+
+  (* Compilers starting from 4.03.0 support the -O3 flag. *)
+  let () =
+    let major, minor =
+      Scanf.sscanf Sys.ocaml_version "%u.%u"
+        (fun major minor -> major, minor)
+    in
+    let supports_o3 = major >= 4 && minor >= 3 in
+    let flags_file = open_out "src/core/flambda.flag" in
+    begin
+      if supports_o3 then
+        output_string flags_file "-O3\n"
+      else
+        output_string flags_file "()\n"
+    end;
+    close_out flags_file
+  in
+
+  ()
 
 let () =
   main ()

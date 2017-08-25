@@ -28,7 +28,7 @@ depends: [
   # removed when preparing a release.
   "bisect_ppx" {>= "1.3.0"}
   "cppo" {build & >= "1.1.0"}
-  "jbuilder" {build & >= "1.0+beta10"}
+  "jbuilder" {build & >= "1.0+beta12"}
   # We are only using ocamlfind during configuration of the Unix binding.
   "ocamlfind" {build & >= "1.5.0"}
   "ocaml-migrate-parsetree"
