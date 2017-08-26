@@ -1354,28 +1354,36 @@ let with_file ?buffer ?flags ?perm ~mode filename f =
     (fun () -> f ic)
     (fun () -> close ic)
 
-let temp_filename () =
-  let rec helper n =
-    let f = "lwt_io_temp_file_" ^ string_of_int n in
-    Lwt_unix.file_exists f >>= fun exists ->
-    if exists then helper (n + 1)
-    else Lwt.return f
-  in
-  helper 0
+let open_temp_file_with_filename:
+  ?buffer : Lwt_bytes.t ->
+  ?perm : Unix.file_perm ->
+  unit -> (string * output_channel) Lwt.t
+  = fun ?buffer ?perm ->
+    let f = Some [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_TRUNC;
+                  Unix.O_NONBLOCK; Unix.O_EXCL] in
+    let rec helper n =
+      let fname = "lwt_io_temp_file_" ^ string_of_int n in
+      Lwt.catch
+        (fun () -> open_file ?buffer:buffer ?flags:f ?perm:perm ~mode:Output fname
+          >>= fun chan -> Lwt.return (fname, chan))
+        (fun exn ->
+           match exn with
+           | Unix.Unix_error _ when n < 1000 -> helper (n + 1)
+           | _ -> raise exn)
+    in
+    fun () -> helper 0
 
 let open_temp_file:
   ?buffer : Lwt_bytes.t ->
   ?perm : Unix.file_perm ->
   unit -> output_channel Lwt.t
   = fun ?buffer ?perm ->
-    let f = Some [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_TRUNC;
-                  Unix.O_NONBLOCK; Unix.O_EXCL] in
-    fun () -> temp_filename () >>= fun fname ->
-      open_file ?buffer:buffer ?flags:f ?perm:perm ~mode:Output fname
+    let f = open_temp_file_with_filename ?buffer:buffer ?perm:perm in
+    fun () -> f () >>= (fun (_, chan) -> Lwt.return chan)
 
 let with_temp_file ?buffer ?perm f =
-  temp_filename () >>= fun fname ->
-  open_file ?buffer:buffer ?perm:perm ~mode:Output fname >>= fun chan ->
+  let otf = open_temp_file_with_filename ?buffer:buffer ?perm:perm in
+  otf () >>= fun (fname, chan) ->
   Lwt.finalize
     (fun () -> f chan)
     (fun () -> close chan >>= fun _ ->
