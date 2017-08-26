@@ -330,22 +330,37 @@ let suite = suite "lwt_io" [
        let write_data chan = Lwt_io.write chan "test file content" in
        let write_data_fail _ = Lwt.fail Dummy_error in
        Lwt_io.with_temp_file write_data >>= fun _ ->
-       Lwt.return (check_no_tempfiles ()) >>= fun no_temps ->
-       Lwt_io.with_temp_file write_data_fail >>= fun _ ->
-       Lwt.return (no_temps && check_no_tempfiles ())
+       Lwt.return (check_no_tempfiles ()) >>= fun no_temps1 ->
+       Lwt.catch
+         (fun () -> Lwt_io.with_temp_file write_data_fail)
+         (fun exn ->
+            if exn = Dummy_error
+            then Lwt.return (check_no_tempfiles ())
+            else Lwt.return_false
+         )
+       >>= fun no_temps2 ->
+       Lwt.return (no_temps1 && no_temps2)
     );
 
   test "open_temp_file"
     (fun () ->
+       let startswith x y =
+         let n = String.length x and
+             m = String.length y in
+         (n >= m && String.equal y (String.sub x 0 m)) in
+       let cleanup_temps () =
+         let handle = Unix.opendir "." in
+         let rec helper n =
+           try
+             let fname = Unix.readdir handle in
+             if startswith fname "lwt_io_temp_file_"
+             then (Unix.unlink fname; helper (n + 1))
+             else helper n
+           with End_of_file -> n in
+         helper 0 in
        Lwt_io.open_temp_file () >>= fun out_chan ->
        Lwt_io.write out_chan "test_file_content" >>= fun () ->
-       Lwt_io.close out_chan >>= fun () ->
-       Lwt.return_true
+       Lwt_io.close out_chan >>= fun _ ->
+       Lwt.return (cleanup_temps () = 1)
     );
-
-  test "get_temp_filename"
-    (fun () ->
-       Lwt_io.temp_filename () >>= Lwt_unix.file_exists >|= fun e -> not e
-    );
-
 ]

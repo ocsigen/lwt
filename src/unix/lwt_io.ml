@@ -1368,8 +1368,10 @@ let open_temp_file:
   ?perm : Unix.file_perm ->
   unit -> output_channel Lwt.t
   = fun ?buffer ?perm ->
+    let f = Some [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_TRUNC;
+                  Unix.O_NONBLOCK; Unix.O_EXCL] in
     fun () -> temp_filename () >>= fun fname ->
-      open_file ?buffer:buffer ?perm:perm ~mode:Output fname
+      open_file ?buffer:buffer ?flags:f ?perm:perm ~mode:Output fname
 
 let with_temp_file ?buffer ?perm f =
   temp_filename () >>= fun fname ->
