@@ -1,7 +1,7 @@
 (* OCaml promise library
  * http://www.ocsigen.org/lwt
  * Copyright (C) 2009 Jérémie Dimino
-n *
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation, with linking exceptions;
