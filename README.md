@@ -25,7 +25,7 @@ if the request is not completed in five seconds:
 let () =
   let request =
     let%lwt addresses = Lwt_unix.getaddrinfo "google.com" "80" [] in
-    let google = (List.hd addresses).Lwt_unix.ai_addr in
+    let google = Lwt_unix.((List.hd addresses).ai_addr) in
 
     Lwt_io.(with_connection google (fun (incoming, outgoing) ->
       let%lwt () = write outgoing "GET / HTTP/1.1\r\n" in
@@ -55,6 +55,41 @@ promises against each other, and behaves as the first one to complete.
 the visible OCaml code is run in a single thread, but Lwt internally uses a
 combination of worker threads and non-blocking file descriptors to resolve in
 parallel the promises that do I/O.
+
+
+<br/>
+
+### Overview
+
+Lwt compiles to native code on Linux, macOS, Windows, and other systems. It's
+also routinely compiled to JavaScript for the front end and Node, by js_of_ocaml
+and BuckleScript.
+
+In Lwt,
+
+- The [core library `Lwt`][core] provides promises...
+- ...and a few pure-OCaml helpers, such as promise-friendly [mutexes][mutex],
+  [condition variables][cond], and [mvars][mvar].
+- There is a big Unix binding, [`Lwt_unix`][unix] that binds almost every Unix
+  system call. A higher-level module [`Lwt_io`][io] provides nice I/O channels.
+- [`Lwt_process`][process] is for subprocess handling.
+- [`Lwt_preemptive`][preemptive] spawns system threads.
+- The [PPX syntax][ppx] allows using all of the above without going crazy!
+- There are also some other helpers, such as [`Lwt_react`][react] for reactive
+  programming, and [`Lwt_ssl`][ssl] for SSL sockets. See the table of contents
+  on the linked manual pages!
+
+[core]: https://ocsigen.org/lwt/api/Lwt
+[cond]: https://ocsigen.org/lwt/api/Lwt_condition
+[mutex]: https://ocsigen.org/lwt/api/Lwt_mutex
+[mvar]: https://ocsigen.org/lwt/api/Lwt_mvar
+[unix]: https://ocsigen.org/lwt/api/Lwt_unix
+[io]: https://ocsigen.org/lwt/api/Lwt_io
+[process]: https://ocsigen.org/lwt/api/Lwt_process
+[preemptive]: https://ocsigen.org/lwt/api/Lwt_preemptive
+[ppx]: https://ocsigen.org/lwt/api/Ppx_lwt
+[react]: https://ocsigen.org/lwt/api/Lwt_react
+[ssl]: https://ocsigen.org/lwt/api/Lwt_ssl
 
 
 <br/>

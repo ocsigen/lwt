@@ -288,7 +288,7 @@ let bind_tests = [
     let f_ran = ref false in
     let p, _ = Lwt.wait () in
     let p = Lwt.bind p (fun _ -> f_ran := true; Lwt.return ()) in
-    Lwt.return (not !f_ran && Lwt.state p = Lwt.Sleep)
+    Lwt.return (!f_ran = false && Lwt.state p = Lwt.Sleep)
   end;
 
   test "bind: pending, resolves" begin fun () ->
@@ -456,7 +456,7 @@ let map_tests = [
     let f_ran = ref false in
     let p, _ = Lwt.wait () in
     let p = Lwt.map (fun _ -> f_ran := true) p in
-    Lwt.return (not !f_ran && Lwt.state p = Lwt.Sleep)
+    Lwt.return (!f_ran = false && Lwt.state p = Lwt.Sleep)
   end;
 
   test "map: pending, resolves" begin fun () ->
@@ -898,7 +898,7 @@ let finalize_tests = [
         (fun () -> Lwt.return "foo")
         (fun () -> f'_ran := true; Lwt.return ())
     in
-    Lwt.return (!f'_ran && Lwt.state p = Lwt.Return "foo")
+    Lwt.return (!f'_ran = true && Lwt.state p = Lwt.Return "foo")
   end;
 
   test "finalize: resolved, f' fails" begin fun () ->
@@ -927,7 +927,7 @@ let finalize_tests = [
         (fun () -> Lwt.fail Exception)
         (fun () -> f'_ran := true; Lwt.return ())
     in
-    Lwt.return (!f'_ran && Lwt.state p = Lwt.Fail Exception)
+    Lwt.return (!f'_ran = true && Lwt.state p = Lwt.Fail Exception)
   end;
 
   test "finalize: failed, f' fails" begin fun () ->
@@ -957,7 +957,7 @@ let finalize_tests = [
         (fun () -> p)
         (fun () -> f'_ran := true; Lwt.return ())
     in
-    Lwt.return (not !f'_ran && Lwt.state p = Lwt.Sleep)
+    Lwt.return (!f'_ran = false && Lwt.state p = Lwt.Sleep)
   end;
 
   test "finalize: pending, resolves" begin fun () ->
@@ -969,7 +969,7 @@ let finalize_tests = [
         (fun () -> f'_ran := true; Lwt.return ())
     in
     Lwt.wakeup r "foo";
-    Lwt.return (!f'_ran && Lwt.state p = Lwt.Return "foo")
+    Lwt.return (!f'_ran = true && Lwt.state p = Lwt.Return "foo")
   end;
 
   test "finalize: pending, resolves, f' fails" begin fun () ->
@@ -1031,7 +1031,7 @@ let finalize_tests = [
         (fun () -> f'_ran := true; Lwt.return ())
     in
     Lwt.wakeup_exn r Exception;
-    Lwt.return (!f'_ran && Lwt.state p = Lwt.Fail Exception)
+    Lwt.return (!f'_ran = true && Lwt.state p = Lwt.Fail Exception)
   end;
 
   test "finalize: pending, fails, f' fails" begin fun () ->
@@ -1094,7 +1094,7 @@ let backtrace_finalize_tests = [
         (fun () -> Lwt.return "foo")
         (fun () -> f'_ran := true; Lwt.return ())
     in
-    Lwt.return (!f'_ran && Lwt.state p = Lwt.Return "foo")
+    Lwt.return (!f'_ran = true && Lwt.state p = Lwt.Return "foo")
   end;
 
   test "backtrace_finalize: resolved, f' fails" begin fun () ->
@@ -1123,7 +1123,7 @@ let backtrace_finalize_tests = [
         (fun () -> Lwt.fail Exception)
         (fun () -> f'_ran := true; Lwt.return ())
     in
-    Lwt.return (!f'_ran && Lwt.state p = Lwt.Fail Exception)
+    Lwt.return (!f'_ran = true && Lwt.state p = Lwt.Fail Exception)
   end;
 
   test "backtrace_finalize: failed, f' fails" begin fun () ->
@@ -1153,7 +1153,7 @@ let backtrace_finalize_tests = [
         (fun () -> p)
         (fun () -> f'_ran := true; Lwt.return ())
     in
-    Lwt.return (not !f'_ran && Lwt.state p = Lwt.Sleep)
+    Lwt.return (!f'_ran = false && Lwt.state p = Lwt.Sleep)
   end;
 
   test "backtrace_finalize: pending, resolves" begin fun () ->
@@ -1165,7 +1165,7 @@ let backtrace_finalize_tests = [
         (fun () -> f'_ran := true; Lwt.return ())
     in
     Lwt.wakeup r "foo";
-    Lwt.return (!f'_ran && Lwt.state p = Lwt.Return "foo")
+    Lwt.return (!f'_ran = true && Lwt.state p = Lwt.Return "foo")
   end;
 
   test "backtrace_finalize: pending, resolves, f' fails" begin fun () ->
@@ -1199,7 +1199,7 @@ let backtrace_finalize_tests = [
         (fun () -> f'_ran := true; Lwt.return ())
     in
     Lwt.wakeup_exn r Exception;
-    Lwt.return (!f'_ran && Lwt.state p = Lwt.Fail Exception)
+    Lwt.return (!f'_ran = true && Lwt.state p = Lwt.Fail Exception)
   end;
 
   test "backtrace_finalize: pending, fails, f' fails" begin fun () ->
@@ -1230,7 +1230,7 @@ let on_success_tests = [
   test "on_success: resolved" begin fun () ->
     let f_ran = ref false in
     Lwt.on_success (Lwt.return ()) (fun () -> f_ran := true);
-    Lwt.return !f_ran
+    Lwt.return (!f_ran = true)
   end;
 
   test "on_success: resolved, f raises" begin fun () ->
@@ -1244,22 +1244,22 @@ let on_success_tests = [
   test "on_success: failed" begin fun () ->
     let f_ran = ref false in
     Lwt.on_success (Lwt.fail Exception) (fun () -> f_ran := true);
-    Lwt.return (not !f_ran)
+    Lwt.return (!f_ran = false)
   end;
 
   test "on_success: pending" begin fun () ->
     let f_ran = ref false in
     Lwt.on_success (fst (Lwt.wait ())) (fun () -> f_ran := true);
-    Lwt.return (not !f_ran)
+    Lwt.return (!f_ran = false)
   end;
 
   test "on_success: pending, resolves" begin fun () ->
     let f_ran = ref false in
     let p, r = Lwt.wait () in
     Lwt.on_success p (fun () -> f_ran := true);
-    assert (not !f_ran);
+    assert (!f_ran = false);
     Lwt.wakeup r ();
-    Lwt.return !f_ran
+    Lwt.return (!f_ran = true)
   end;
 
   test "on_success: pending, resolves, f raises" begin fun () ->
@@ -1277,7 +1277,7 @@ let on_success_tests = [
     let p, r = Lwt.wait () in
     Lwt.on_success p (fun () -> f_ran := true);
     Lwt.wakeup_exn r Exception;
-    Lwt.return (not !f_ran)
+    Lwt.return (!f_ran = false)
   end;
 ]
 let tests = tests @ on_success_tests
@@ -1286,7 +1286,7 @@ let on_failure_tests = [
   test "on_failure: resolved" begin fun () ->
     let f_ran = ref false in
     Lwt.on_failure (Lwt.return ()) (fun _ -> f_ran := true);
-    Lwt.return (not !f_ran)
+    Lwt.return (!f_ran = false)
   end;
 
   test "on_failure: failed" begin fun () ->
@@ -1306,7 +1306,7 @@ let on_failure_tests = [
   test "on_failure: pending" begin fun () ->
     let f_ran = ref false in
     Lwt.on_failure (fst (Lwt.wait ())) (fun _ -> f_ran := true);
-    Lwt.return (not !f_ran)
+    Lwt.return (!f_ran = false)
   end;
 
   test "on_failure: pending, resolves" begin fun () ->
@@ -1314,7 +1314,7 @@ let on_failure_tests = [
     let p, r = Lwt.wait () in
     Lwt.on_failure p (fun _ -> f_ran := true);
     Lwt.wakeup r ();
-    Lwt.return (not !f_ran)
+    Lwt.return (!f_ran = false)
   end;
 
   test "on_failure: pending, fails" begin fun () ->
@@ -1341,7 +1341,7 @@ let on_termination_tests = [
   test "on_termination: resolved" begin fun () ->
     let f_ran = ref false in
     Lwt.on_termination (Lwt.return ()) (fun () -> f_ran := true);
-    Lwt.return !f_ran
+    Lwt.return (!f_ran = true)
   end;
 
   test "on_termination: resolved, f raises" begin fun () ->
@@ -1356,7 +1356,7 @@ let on_termination_tests = [
   test "on_termination: failed" begin fun () ->
     let f_ran = ref false in
     Lwt.on_termination (Lwt.fail Exception) (fun () -> f_ran := true);
-    Lwt.return !f_ran
+    Lwt.return (!f_ran = true)
   end;
 
   test "on_termination: failed, f raises" begin fun () ->
@@ -1371,16 +1371,16 @@ let on_termination_tests = [
   test "on_termination: pending" begin fun () ->
     let f_ran = ref false in
     Lwt.on_termination (fst (Lwt.wait ())) (fun () -> f_ran := true);
-    Lwt.return (not !f_ran)
+    Lwt.return (!f_ran = false)
   end;
 
   test "on_termination: pending, resolves" begin fun () ->
     let f_ran = ref false in
     let p, r = Lwt.wait () in
     Lwt.on_termination p (fun () -> f_ran := true);
-    assert (not !f_ran);
+    assert (!f_ran = false);
     Lwt.wakeup r ();
-    Lwt.return !f_ran
+    Lwt.return (!f_ran = true)
   end;
 
   test "on_termination: pending, resolves, f raises" begin fun () ->
@@ -1397,9 +1397,9 @@ let on_termination_tests = [
     let f_ran = ref false in
     let p, r = Lwt.wait () in
     Lwt.on_termination p (fun () -> f_ran := true);
-    assert (not !f_ran);
+    assert (!f_ran = false);
     Lwt.wakeup_exn r Exception;
-    Lwt.return !f_ran
+    Lwt.return (!f_ran = true)
   end;
 
   test "on_termination: pending, fails, f raises" begin fun () ->
@@ -1422,7 +1422,7 @@ let on_any_tests = [
       (Lwt.return ())
       (fun () -> f_ran := true)
       (fun _ -> g_ran := true);
-    Lwt.return (!f_ran && not !g_ran)
+    Lwt.return (!f_ran = true && !g_ran = false)
   end;
 
   test "on_any: resolved, f raises" begin fun () ->
@@ -1450,7 +1450,7 @@ let on_any_tests = [
   test "on_any: pending" begin fun () ->
     let g_ran = ref false in    (* f can't run due to parametricity. *)
     Lwt.on_any (fst (Lwt.wait ())) ignore (fun _ -> g_ran := true);
-    Lwt.return (not !g_ran)
+    Lwt.return (!g_ran = false)
   end;
 
   test "on_any: pending, resolves" begin fun () ->
@@ -1459,7 +1459,7 @@ let on_any_tests = [
     let p, r = Lwt.wait () in
     Lwt.on_any p (fun () -> f_ran := true) (fun _ -> g_ran := true);
     Lwt.wakeup r ();
-    Lwt.return (!f_ran && not !g_ran)
+    Lwt.return (!f_ran = true && !g_ran = false)
   end;
 
   test "on_any: pending, resolves, f raises" begin fun () ->
@@ -1502,7 +1502,7 @@ let async_tests = [
   test "async: resolved" begin fun () ->
     let f_ran = ref false in
     Lwt.async (fun () -> f_ran := true; Lwt.return ());
-    Lwt.return !f_ran
+    Lwt.return (!f_ran = true)
   end;
 
   test "async: f raises" begin fun () ->
@@ -1528,9 +1528,9 @@ let async_tests = [
       Lwt.bind p (fun () ->
         completed := true;
         Lwt.return ()));
-    assert (not !completed);
+    assert (!completed = false);
     Lwt.wakeup r ();
-    Lwt.return !completed
+    Lwt.return (!completed = true)
   end;
 
   test "async: pending, fails" begin fun () ->
@@ -1897,9 +1897,9 @@ let wakeup_tests = [
     Lwt.on_success p1 (fun s ->
       Lwt.wakeup_result r2 (Result.Ok (s ^ "bar"));
       assert (Lwt.state p2 = Lwt.Return "foobar");
-      assert !f_ran);
+      assert (!f_ran = true));
     Lwt.wakeup_result r1 (Result.Ok "foo");
-    Lwt.return (!f_ran && Lwt.state p2 = Lwt.Return "foobar")
+    Lwt.return (!f_ran = true && Lwt.state p2 = Lwt.Return "foobar")
   end;
 ]
 let tests = tests @ wakeup_tests
@@ -1980,9 +1980,9 @@ let wakeup_later_tests = [
     Lwt.on_success p1 (fun s ->
       Lwt.wakeup_later_result r2 (Result.Ok (s ^ "bar"));
       assert (Lwt.state p2 = Lwt.Return "foobar");
-      assert (not !f_ran));
+      assert (!f_ran = false));
     Lwt.wakeup_later_result r1 (Result.Ok "foo");
-    Lwt.return (!f_ran && Lwt.state p2 = Lwt.Return "foobar")
+    Lwt.return (!f_ran = true && Lwt.state p2 = Lwt.Return "foobar")
   end;
 
   (* Only basic tests for wakeup_later and wakeup_later_exn, as they are
@@ -2049,9 +2049,9 @@ let cancel_tests = [
     Lwt.on_failure p1 (fun _ ->
       Lwt.cancel p2;
       assert (Lwt.state p2 = Lwt.Fail Lwt.Canceled);
-      assert !f_ran);
+      assert (!f_ran = true));
     Lwt.cancel p1;
-    Lwt.return (!f_ran && Lwt.state p2 = Lwt.Fail Lwt.Canceled)
+    Lwt.return (!f_ran = true && Lwt.state p2 = Lwt.Fail Lwt.Canceled)
   end;
 ]
 let tests = tests @ cancel_tests
@@ -2061,9 +2061,9 @@ let on_cancel_tests = [
     let f_ran = ref false in
     let p, _ = Lwt.task () in
     Lwt.on_cancel p (fun () -> f_ran := true);
-    assert (not !f_ran);
+    assert (!f_ran = false);
     Lwt.cancel p;
-    Lwt.return !f_ran
+    Lwt.return (!f_ran = true)
   end;
 
   test "on_cancel: multiple" begin fun () ->
@@ -2075,7 +2075,7 @@ let on_cancel_tests = [
     Lwt.on_cancel p (fun () -> g_ran := true);
     Lwt.on_cancel p (fun () -> h_ran := true);
     Lwt.cancel p;
-    Lwt.return (!f_ran && !g_ran && !h_ran)
+    Lwt.return (!f_ran = true && !g_ran = true && !h_ran = true)
   end;
 
   test "on_cancel: ordering" begin fun () ->
@@ -2087,30 +2087,30 @@ let on_cancel_tests = [
     let p, _ = Lwt.task () in
     Lwt.on_cancel p (fun () -> on_cancel_1_ran := true);
     Lwt.on_failure p (fun _ ->
-      assert !on_cancel_1_ran;
-      assert !on_cancel_2_ran;
+      assert (!on_cancel_1_ran = true);
+      assert (!on_cancel_2_ran = true);
       trigger_ran := true);
     Lwt.on_cancel p (fun () -> on_cancel_2_ran := true);
     Lwt.cancel p;
-    Lwt.return !trigger_ran
+    Lwt.return (!trigger_ran = true)
   end;
 
   test "on_cancel: resolved" begin fun () ->
     let f_ran = ref false in
     Lwt.on_cancel (Lwt.return ()) (fun () -> f_ran := true);
-    Lwt.return (not !f_ran)
+    Lwt.return (!f_ran = false)
   end;
 
   test "on_cancel: failed" begin fun () ->
     let f_ran = ref false in
     Lwt.on_cancel (Lwt.fail Exception) (fun () -> f_ran := true);
-    Lwt.return (not !f_ran)
+    Lwt.return (!f_ran = false)
   end;
 
   test "on_cancel: already canceled" begin fun () ->
     let f_ran = ref false in
     Lwt.on_cancel (Lwt.fail Lwt.Canceled) (fun () -> f_ran := true);
-    Lwt.return !f_ran
+    Lwt.return (!f_ran = true)
   end;
 
   (* More generally, this tests that failing with [Lwt.Canceled] is equivalent
@@ -2121,7 +2121,7 @@ let on_cancel_tests = [
     let p, r = Lwt.wait () in
     Lwt.on_cancel p (fun () -> f_ran := true);
     Lwt.wakeup_exn r Lwt.Canceled;
-    Lwt.return !f_ran
+    Lwt.return (!f_ran = true)
   end;
 ]
 let tests = tests @ on_cancel_tests
@@ -2407,7 +2407,7 @@ let cancel_bind_tests = [
     let p' = Lwt.bind p (fun () -> f_ran := true; Lwt.return ()) in
     Lwt.cancel p';
     Lwt.return
-      (not !f_ran && Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Sleep)
+      (!f_ran = false && Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Sleep)
   end;
 
   test "bind: task, pending, canceled" begin fun () ->
@@ -2416,7 +2416,7 @@ let cancel_bind_tests = [
     let p' = Lwt.bind p (fun () -> f_ran := true; Lwt.return ()) in
     Lwt.cancel p';
     Lwt.return
-      (not !f_ran &&
+      (!f_ran = false &&
        Lwt.state p = Lwt.Fail Lwt.Canceled &&
        Lwt.state p' = Lwt.Fail Lwt.Canceled)
   end;
@@ -2468,7 +2468,7 @@ let cancel_bind_tests = [
     Lwt.cancel p2;
     (* Canceling [p2] doesn't cancel [p1], because the function passed to
        [Lwt.bind] never ran. *)
-    Lwt.return (not !f_ran && !g_ran)
+    Lwt.return (!f_ran = false && !g_ran = true)
   end;
 
   test "bind: pending, resolves, on_cancel triggers" begin fun () ->
@@ -2483,7 +2483,7 @@ let cancel_bind_tests = [
     Lwt.cancel p3;
     (* Canceling [p3] cancels [p2], because the function passed to [Lwt.bind]
        did run, and evaluated to [p2]. *)
-    Lwt.return (!f_ran && !g_ran)
+    Lwt.return (!f_ran = true && !g_ran = true)
   end;
 ]
 let tests = tests @ cancel_bind_tests
@@ -2495,7 +2495,7 @@ let cancel_map_tests = [
     let p' = Lwt.map (fun () -> f_ran := true) p in
     Lwt.cancel p';
     Lwt.return
-      (not !f_ran && Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Sleep)
+      (!f_ran = false && Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Sleep)
   end;
 
   test "map: task, pending, canceled" begin fun () ->
@@ -2504,7 +2504,7 @@ let cancel_map_tests = [
     let p' = Lwt.map (fun () -> f_ran := true) p in
     Lwt.cancel p';
     Lwt.return
-      (not !f_ran &&
+      (!f_ran = false &&
        Lwt.state p = Lwt.Fail Lwt.Canceled &&
        Lwt.state p' = Lwt.Fail Lwt.Canceled)
   end;
@@ -2524,7 +2524,7 @@ let cancel_catch_tests = [
     in
     Lwt.cancel p';
     Lwt.return
-      (not !f_ran && Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Sleep)
+      (!f_ran = false && Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Sleep)
   end;
 
   (* In [p' = Lwt.catch (fun () -> p) f], if [p] is cancelable, canceling [p']
@@ -2556,7 +2556,7 @@ let cancel_catch_tests = [
       Lwt.catch
         (fun () -> p)
         (fun _ ->
-          assert (!on_cancel_1_ran && not !on_cancel_2_ran);
+          assert (!on_cancel_1_ran = true && !on_cancel_2_ran = false);
           Lwt.return "foo")
     in
     Lwt.on_cancel p (fun () -> on_cancel_1_ran := true);
@@ -2565,7 +2565,7 @@ let cancel_catch_tests = [
     Lwt.return
       (Lwt.state p = Lwt.Fail Lwt.Canceled &&
        Lwt.state p' = Lwt.Return "foo" &&
-       not !on_cancel_2_ran)
+       !on_cancel_2_ran = false)
   end;
 
   (* Same as above, except this time, cancelation is passed on to the outer
@@ -2579,7 +2579,7 @@ let cancel_catch_tests = [
     Lwt.return
       (Lwt.state p = Lwt.Fail Lwt.Canceled &&
        Lwt.state p' = Lwt.Fail Lwt.Canceled &&
-       !on_cancel_2_ran)
+       !on_cancel_2_ran = true)
   end;
 
   (* (2 tests) If the handler passed to [Lwt.catch] already ran, canceling the
@@ -2627,7 +2627,9 @@ let cancel_try_bind_tests = [
     in
     Lwt.cancel p';
     Lwt.return
-      (not !f_or_g_ran && Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Sleep)
+      (!f_or_g_ran = false &&
+       Lwt.state p = Lwt.Sleep &&
+       Lwt.state p' = Lwt.Sleep)
   end;
 
   test "try_bind: task, pending, canceled" begin fun () ->
@@ -2642,7 +2644,7 @@ let cancel_try_bind_tests = [
     in
     Lwt.cancel p';
     Lwt.return
-      (not !f_ran &&
+      (!f_ran = false &&
        !saw = Some Lwt.Canceled &&
        Lwt.state p = Lwt.Fail Lwt.Canceled &&
        Lwt.state p' = Lwt.Return "bar")
@@ -2721,7 +2723,7 @@ let cancel_finalize_tests = [
     in
     Lwt.cancel p';
     Lwt.return
-      (not !f_ran && Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Sleep)
+      (!f_ran = false && Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Sleep)
   end;
 
   test "finalize: task, pending, canceled" begin fun () ->
@@ -2734,7 +2736,7 @@ let cancel_finalize_tests = [
     in
     Lwt.cancel p';
     Lwt.return
-      (!f_ran &&
+      (!f_ran = true &&
        Lwt.state p = Lwt.Fail Lwt.Canceled &&
        Lwt.state p' = Lwt.Fail Lwt.Canceled)
   end;
@@ -2774,7 +2776,7 @@ let cancel_direct_handler_tests = [
     let p, _ = Lwt.task () in
     Lwt.on_success p (fun () -> f_ran := true);
     Lwt.cancel p;
-    Lwt.return (not !f_ran)
+    Lwt.return (!f_ran = false)
   end;
 
   test "on_failure: pending, canceled" begin fun () ->
@@ -2790,7 +2792,7 @@ let cancel_direct_handler_tests = [
     let p, _ = Lwt.task () in
     Lwt.on_termination p (fun () -> f_ran := true);
     Lwt.cancel p;
-    Lwt.return !f_ran
+    Lwt.return (!f_ran = true)
   end;
 
   test "on_any: pending, canceled" begin fun () ->
@@ -2799,7 +2801,7 @@ let cancel_direct_handler_tests = [
     let p, _ = Lwt.task () in
     Lwt.on_any p (fun () -> f_ran := true) (fun exn -> saw := Some exn);
     Lwt.cancel p;
-    Lwt.return (not !f_ran && !saw = Some Lwt.Canceled)
+    Lwt.return (!f_ran = false && !saw = Some Lwt.Canceled)
   end;
 ]
 let tests = tests @ cancel_direct_handler_tests

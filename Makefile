@@ -17,6 +17,10 @@ build-all: check-config
 
 # Build everything, including additional packages, on all compilers. See
 # jbuild-workspace.dev for instructions.
+# This is currently broken on two targes:
+#   - For 4.02.3 to work, the configure step needs to be run per-compiler. Right
+#     now, it is run once for the whole invocation of all the ocmpilers.
+#   - 4.06 trunk is often not buildable due to parse tree changes affecting OMP.
 .PHONY: build-all-on-all-compilers
 build-all-on-all-compilers: check-config
 	jbuilder build --dev --workspace jbuild-workspace.dev
@@ -100,18 +104,21 @@ clean:
 	jbuilder clean
 	find . -name '.merlin' | xargs rm -f
 	rm -fr doc/api
-	rm -f src/jbuild-ignore src/unix/lwt_config
+	rm -f src/jbuild-ignore src/unix/lwt_config src/core/flambda.flag
 	for TEST in `ls -d test/packaging/*/*` ; \
 	do \
 	    make -wC $$TEST clean ; \
 	done
 	rm -rf _coverage/
 
-BISECT_FILES_PATTERN := _build/default/test/core/bisect*.out
+BISECT_FILES_PATTERN := _build/default/test/*/bisect*.out
+BISECT_REPORT := bisect-ppx-report
 
 .PHONY: coverage
 coverage: clean
-	BISECT_COVERAGE=yes jbuilder runtest --dev --only-packages lwt
-	bisect-ppx-report -I _build/ -html _coverage/ $(BISECT_FILES_PATTERN)
-	bisect-ppx-report -text - -summary-only $(BISECT_FILES_PATTERN)
+	BISECT_ENABLE=yes jbuilder runtest --dev
+	bisect-ppx-report \
+	    -I _build/default/ -html _coverage/ \
+		-text - -summary-only \
+	    $(BISECT_FILES_PATTERN)
 	@echo See _coverage/index.html

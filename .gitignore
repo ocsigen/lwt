@@ -1,6 +1,7 @@
 _build
 src/unix/lwt_config
 src/jbuild-ignore
+*.flag
 
 # OPAM 2.0 local switches.
 _opam

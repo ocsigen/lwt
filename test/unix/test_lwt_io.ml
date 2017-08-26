@@ -81,38 +81,46 @@ end
 let suite = suite "lwt_io" [
   test "auto-flush"
     (fun () ->
-       let sent = ref [] in
-       let oc = Lwt_io.make ~mode:Lwt_io.output (fun buf ofs len ->
-                                            let bytes = Bytes.create len in
-                                            Lwt_bytes.blit_to_bytes buf ofs bytes 0 len;
-                                            sent := bytes :: !sent;
-                                            Lwt.return len) in
-       Lwt_io.write oc "foo" >>= fun () ->
-       Lwt_io.write oc "bar" >>= fun () ->
-       if !sent <> [] then
-         Lwt.return false
-       else
-         Lwt_unix.yield () >>= fun () ->
-         Lwt.return (!sent = [Bytes.of_string "foobar"]));
+      let sent = ref [] in
+      let oc =
+        Lwt_io.make
+          ~mode:Lwt_io.output
+          (fun buf ofs len ->
+            let bytes = Bytes.create len in
+            Lwt_bytes.blit_to_bytes buf ofs bytes 0 len;
+            sent := bytes :: !sent;
+            Lwt.return len)
+      in
+      Lwt_io.write oc "foo" >>= fun () ->
+      Lwt_io.write oc "bar" >>= fun () ->
+      if !sent <> [] then
+        Lwt.return false
+      else
+        Lwt_unix.yield () >>= fun () ->
+        Lwt.return (!sent = [Bytes.of_string "foobar"]));
 
   test "auto-flush in atomic"
     (fun () ->
-       let sent = ref [] in
-       let oc = Lwt_io.make ~mode:Lwt_io.output (fun buf ofs len ->
-                                     let bytes = Bytes.create len in
-                                     Lwt_bytes.blit_to_bytes buf ofs bytes 0 len;
-                                     sent := bytes :: !sent;
-                                     Lwt.return len) in
-       Lwt_io.atomic
-         (fun oc ->
-            Lwt_io.write oc "foo" >>= fun () ->
-            Lwt_io.write oc "bar" >>= fun () ->
-            if !sent <> [] then
-              Lwt.return false
-            else
-              Lwt_unix.yield () >>= fun () ->
-              Lwt.return (!sent = [Bytes.of_string "foobar"]))
-         oc);
+      let sent = ref [] in
+      let oc =
+        Lwt_io.make
+          ~mode:Lwt_io.output
+          (fun buf ofs len ->
+            let bytes = Bytes.create len in
+            Lwt_bytes.blit_to_bytes buf ofs bytes 0 len;
+            sent := bytes :: !sent;
+            Lwt.return len)
+      in
+      Lwt_io.atomic
+        (fun oc ->
+          Lwt_io.write oc "foo" >>= fun () ->
+          Lwt_io.write oc "bar" >>= fun () ->
+          if !sent <> [] then
+            Lwt.return false
+          else
+            Lwt_unix.yield () >>= fun () ->
+            Lwt.return (!sent = [Bytes.of_string "foobar"]))
+        oc);
 
   (* Without the corresponding bugfix, which is to handle ENOTCONN from
      Lwt_unix.shutdown, this test raises an exception from the handler's calls
@@ -286,32 +294,34 @@ let suite = suite "lwt_io" [
      close the socket again implicitly, that should not raise the exception
      again. *)
   test "with_close_connection: no duplicate exceptions"
-    ( fun () ->
-        let exceptions_observed = ref 0 in
+    (fun () ->
+      let exceptions_observed = ref 0 in
 
-        let expecting_ebadf f =
-          Lwt.catch f (function
-              | Unix.Unix_error (Unix.EBADF, _, _) ->
-                exceptions_observed := !exceptions_observed + 1;
-                Lwt.return_unit
-              | exn -> Lwt.fail exn) [@ocaml.warning "-4"]
-        in
+      let expecting_ebadf f =
+        Lwt.catch f
+          (function
+            | Unix.Unix_error (Unix.EBADF, _, _) ->
+              exceptions_observed := !exceptions_observed + 1;
+              Lwt.return_unit
+            | exn ->
+              Lwt.fail exn) [@ocaml.warning "-4"]
+      in
 
-        let fd_r, fd_w = Lwt_unix.pipe () in
-        let in_channel = Lwt_io.of_fd ~mode:Lwt_io.input fd_r in
-        let out_channel = Lwt_io.of_fd ~mode:Lwt_io.output fd_w in
+      let fd_r, fd_w = Lwt_unix.pipe () in
+      let in_channel = Lwt_io.of_fd ~mode:Lwt_io.input fd_r in
+      let out_channel = Lwt_io.of_fd ~mode:Lwt_io.output fd_w in
 
-        Unix.close (Lwt_unix.unix_file_descr fd_r);
-        Unix.close (Lwt_unix.unix_file_descr fd_w);
+      Unix.close (Lwt_unix.unix_file_descr fd_r);
+      Unix.close (Lwt_unix.unix_file_descr fd_w);
 
-        expecting_ebadf (fun () ->
-            Lwt_io.with_close_connection (fun _ ->
-                expecting_ebadf (fun () -> Lwt_io.close in_channel) >>= fun () ->
-                expecting_ebadf (fun () -> Lwt_io.close out_channel)
-              ) (in_channel, out_channel)
-          ) >|= fun () ->
-        !exceptions_observed = 2
-    );
+      expecting_ebadf (fun () ->
+        Lwt_io.with_close_connection
+          (fun _ ->
+            expecting_ebadf (fun () -> Lwt_io.close in_channel) >>= fun () ->
+            expecting_ebadf (fun () -> Lwt_io.close out_channel))
+          (in_channel, out_channel))
+        >|= fun () ->
+        !exceptions_observed = 2);
 
   test "with_temp_filename"
     (fun () ->
