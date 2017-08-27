@@ -123,7 +123,7 @@ and 'mode _channel = {
 
 and typ =
   | Type_normal of
-    (Lwt_bytes.t -> int -> int -> int Lwt.t) * 
+    (Lwt_bytes.t -> int -> int -> int Lwt.t) *
       (int64 -> Unix.seek_command -> int64 Lwt.t)
   (* The channel has been created with [make]. The first argument
      is the refill/flush function and the second is the seek
@@ -1478,12 +1478,11 @@ let open_temp_file:
   ?perm : Unix.file_perm ->
   unit -> output_channel Lwt.t
   = fun ?buffer ?perm ->
-    let f = open_temp_file_with_filename ?buffer:buffer ?perm:perm in
-    fun () -> f () >>= (fun (_, chan) -> Lwt.return chan)
+    fun () ->
+      open_temp_file_with_filename ?buffer:buffer ?perm:perm () >|= snd
 
 let with_temp_file ?buffer ?perm f =
-  let otf = open_temp_file_with_filename ?buffer:buffer ?perm:perm in
-  otf () >>= fun (fname, chan) ->
+  open_temp_file_with_filename ?buffer:buffer ?perm:perm () >>= fun (fname, chan) ->
   Lwt.finalize
     (fun () -> f chan)
     (fun () -> close chan >>= fun _ ->
