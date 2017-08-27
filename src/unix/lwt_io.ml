@@ -1454,7 +1454,7 @@ let with_file ?buffer ?flags ?perm ~mode filename f =
     (fun () -> f ic)
     (fun () -> close ic)
 
-let open_temp_file_with_filename:
+let open_temp_file:
   ?buffer : Lwt_bytes.t ->
   ?perm : Unix.file_perm ->
   unit -> (string * output_channel) Lwt.t
@@ -1473,18 +1473,10 @@ let open_temp_file_with_filename:
     in
     fun () -> helper 0
 
-let open_temp_file:
-  ?buffer : Lwt_bytes.t ->
-  ?perm : Unix.file_perm ->
-  unit -> output_channel Lwt.t
-  = fun ?buffer ?perm ->
-    fun () ->
-      open_temp_file_with_filename ?buffer:buffer ?perm:perm () >|= snd
-
 let with_temp_file ?buffer ?perm f =
-  open_temp_file_with_filename ?buffer:buffer ?perm:perm () >>= fun (fname, chan) ->
+  open_temp_file ?buffer:buffer ?perm:perm () >>= fun (fname, chan) ->
   Lwt.finalize
-    (fun () -> f chan)
+    (fun () -> f (fname, chan))
     (fun () -> close chan >>= fun _ ->
       Lwt_unix.unlink fname)
 
