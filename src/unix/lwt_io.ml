@@ -1456,15 +1456,17 @@ let with_file ?buffer ?flags ?perm ~mode filename f =
 
 let open_temp_file:
   ?buffer : Lwt_bytes.t ->
+  ?flags : Unix.open_flag list ->
   ?perm : Unix.file_perm ->
   unit -> (string * output_channel) Lwt.t
-  = fun ?buffer ?perm ->
-    let f = Some [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_TRUNC;
-                  Unix.O_NONBLOCK; Unix.O_EXCL] in
+  = fun ?buffer ?flags ?perm ->
+    let flags = match flags with
+    | None -> Some [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_EXCL; Unix.O_CLOEXEC]
+    | Some l -> Some l in
     let rec helper n =
       let fname = "lwt_io_temp_file_" ^ string_of_int n in
       Lwt.catch
-        (fun () -> open_file ?buffer:buffer ?flags:f ?perm:perm ~mode:Output fname
+        (fun () -> open_file ?buffer:buffer ?flags:flags ?perm:perm ~mode:Output fname
           >>= fun chan -> Lwt.return (fname, chan))
         (fun exn ->
            match exn with
@@ -1473,8 +1475,8 @@ let open_temp_file:
     in
     fun () -> helper 0
 
-let with_temp_file ?buffer ?perm f =
-  open_temp_file ?buffer:buffer ?perm:perm () >>= fun (fname, chan) ->
+let with_temp_file ?buffer ?flags ?perm f =
+  open_temp_file ?buffer:buffer ?flags:flags ?perm:perm () >>= fun (fname, chan) ->
   Lwt.finalize
     (fun () -> f (fname, chan))
     (fun () -> close chan >>= fun _ ->

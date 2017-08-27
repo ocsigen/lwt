@@ -406,11 +406,15 @@ val with_file :
 
 val open_temp_file :
   ?buffer:Lwt_bytes.t ->
-  ?perm:Unix.file_perm -> unit -> (string * output_channel) Lwt.t
+  ?flags : Unix.open_flag list ->
+  ?perm:Unix.file_perm ->
+  unit -> (string * output_channel) Lwt.t
 
 val with_temp_file :
   ?buffer:Lwt_bytes.t ->
-  ?perm:Unix.file_perm -> (string * output_channel -> 'b Lwt.t) -> 'b Lwt.t
+  ?flags : Unix.open_flag list ->
+  ?perm:Unix.file_perm ->
+  (string * output_channel -> 'b Lwt.t) -> 'b Lwt.t
 
 val open_connection :
   ?fd : Lwt_unix.file_descr ->
