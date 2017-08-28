@@ -1454,17 +1454,31 @@ let with_file ?buffer ?flags ?perm ~mode filename f =
     (fun () -> f ic)
     (fun () -> close ic)
 
+let prng = lazy(Random.State.make_self_init ())
+
+let temp_file_name temp_dir prefix =
+  let rnd = (Random.State.bits (Lazy.force prng)) land 0xFFFFFF in
+  Filename.concat temp_dir (Printf.sprintf "%s%06x" prefix rnd)
+
 let open_temp_file:
   ?buffer : Lwt_bytes.t ->
   ?flags : Unix.open_flag list ->
   ?perm : Unix.file_perm ->
+  ?temp_dir : string ->
+  ?prefix : string ->
   unit -> (string * output_channel) Lwt.t
-  = fun ?buffer ?flags ?perm ->
+  = fun ?buffer ?flags ?perm ?temp_dir ?prefix->
     let flags = match flags with
     | None -> Some [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_EXCL; Unix.O_CLOEXEC]
     | Some l -> Some l in
+    let dir = match temp_dir with
+    | None -> Filename.get_temp_dir_name ()
+    | Some dirname -> dirname in
+    let prefix = match prefix with
+    | None -> "lwt_io_temp_file_"
+    | Some prefix -> prefix in
     let rec helper n =
-      let fname = "lwt_io_temp_file_" ^ string_of_int n in
+      let fname = temp_file_name dir prefix in
       Lwt.catch
         (fun () -> open_file ?buffer:buffer ?flags:flags ?perm:perm ~mode:Output fname
           >>= fun chan -> Lwt.return (fname, chan))
@@ -1475,8 +1489,11 @@ let open_temp_file:
     in
     fun () -> helper 0
 
-let with_temp_file ?buffer ?flags ?perm f =
-  open_temp_file ?buffer:buffer ?flags:flags ?perm:perm () >>= fun (fname, chan) ->
+let with_temp_file ?buffer ?flags ?perm ?temp_dir ?prefix f =
+  open_temp_file
+    ?buffer:buffer ?flags:flags
+    ?perm:perm ?temp_dir:temp_dir
+    ?prefix: prefix () >>= fun (fname, chan) ->
   Lwt.finalize
     (fun () -> f (fname, chan))
     (fun () -> close chan >>= fun _ ->
