@@ -412,6 +412,33 @@ val open_temp_file :
   ?prefix:string ->
   unit ->
     (string * output_channel) Lwt.t
+(** [open_temp_file ()] starts creating a new temporary file, and evaluates to a
+    promise for the pair of the file's name, and an output channel for writing
+    to the file.
+
+    The caller should take care to delete the file later. Alternatively, see
+    {!Lwt_io.with_temp_file}.
+
+    The [?buffer] and [?perm] arguments are passed directly to an internal call
+    to {!Lwt.io.open_file}.
+
+    If not specified, [?flags] defaults to
+    [[O_CREATE; O_EXCL; O_WRONLY; O_CLOEXEC]]. If specified, the specified flags
+    are used exactly. Note that these should typically contain at least
+    [O_CREAT] and [O_EXCL], otherwise [open_temp_file] may open an existing
+    file.
+
+    [?temp_dir] can be used to choose the directory in which the file is
+    created. For the current directory, use
+    {{: https://caml.inria.fr/pub/docs/manual-ocaml/libref/Filename.html#VALcurrent_dir_name}
+    Filename.current_dir_name]}. If not specified, the directory is taken from
+    {{: https://caml.inria.fr/pub/docs/manual-ocaml/libref/Filename.html#VALget_temp_dir_name}
+    Filename.get_temp_dir_name}, which is typically set to your system temporary
+    file directory.
+
+    [?prefix] helps determine the name of the file. It will be the prefix
+    concatenated with a random sequence of characters. If not specified,
+    [open_temp_file] uses some default prefix. *)
 
 val with_temp_file :
   ?buffer:Lwt_bytes.t ->
@@ -421,6 +448,11 @@ val with_temp_file :
   ?prefix:string ->
   (string * output_channel -> 'b Lwt.t) ->
     'b Lwt.t
+(** [with_temp_file f] calls {!open_temp_file}[ ()], passing all optional
+    arguments directly to it. It then attaches [f] to run after the file is
+    created, passing the filename and output channel to [f]. When the promise
+    returned by [f] is resolved, [with_temp_file] closes the channel and deletes
+    the temporary file by calling {!Lwt_unix.unlink}. *)
 
 val open_connection :
   ?fd : Lwt_unix.file_descr ->
