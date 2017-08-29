@@ -22,6 +22,8 @@
 open Test
 open Lwt.Infix
 
+exception Dummy_error
+
 let with_async_exception_hook hook f =
   let old_hook = !Lwt.async_exception_hook in
   Lwt.async_exception_hook := hook;
@@ -320,4 +322,51 @@ let suite = suite "lwt_io" [
           (in_channel, out_channel))
         >|= fun () ->
         !exceptions_observed = 2);
+
+  test "open_temp_file"
+    (fun () ->
+       Lwt_io.open_temp_file () >>= fun (fname, out_chan) ->
+       Lwt_io.write out_chan "test file content" >>= fun () ->
+       Lwt_io.close out_chan >>= fun _ ->
+       Unix.unlink fname; Lwt.return_true
+    );
+
+  test "with_temp_filename"
+    (fun () ->
+       let prefix = "test_tempfile" in
+       let startswith x y =
+         let n = String.length x and
+             m = String.length y in
+         (n >= m && y = (String.sub x 0 m)) in
+       let check_no_tempfiles () =
+         let handle = Unix.opendir "." in
+         let rec helper x =
+           try
+              not (startswith (Unix.readdir x) prefix) && helper x
+           with End_of_file -> true in
+         helper handle
+       in
+       let write_data (_, chan) = Lwt_io.write chan "test file content" in
+       let write_data_fail _ = Lwt.fail Dummy_error in
+       Lwt_io.with_temp_file write_data ~prefix >>= fun _ ->
+       Lwt.return (check_no_tempfiles ()) >>= fun no_temps1 ->
+       Lwt.catch
+         (fun () -> Lwt_io.with_temp_file write_data_fail)
+         (fun exn ->
+            if exn = Dummy_error
+            then Lwt.return (check_no_tempfiles ())
+            else Lwt.return_false
+         )
+       >>= fun no_temps2 ->
+       Lwt.return (no_temps1 && no_temps2)
+    );
+
+  (* Verify that no exceptions are thrown if the function passed to
+     with_temp_file closes the channel on its own. *)
+  test "with_temp_filename close handle"
+    (fun () ->
+       let f (_, chan) = Lwt_io.write chan "test file content" >>= fun _ ->
+         Lwt_io.close chan in
+       Lwt_io.with_temp_file f >>= fun _ -> Lwt.return_true;
+    );
 ]

@@ -123,7 +123,7 @@ and 'mode _channel = {
 
 and typ =
   | Type_normal of
-    (Lwt_bytes.t -> int -> int -> int Lwt.t) * 
+    (Lwt_bytes.t -> int -> int -> int Lwt.t) *
       (int64 -> Unix.seek_command -> int64 Lwt.t)
   (* The channel has been created with [make]. The first argument
      is the refill/flush function and the second is the seek
@@ -1453,6 +1453,49 @@ let with_file ?buffer ?flags ?perm ~mode filename f =
   Lwt.finalize
     (fun () -> f ic)
     (fun () -> close ic)
+
+let prng = lazy(Random.State.make_self_init ())
+
+let temp_file_name temp_dir prefix =
+  let rnd = (Random.State.bits (Lazy.force prng)) land 0xFFFFFF in
+  Filename.concat temp_dir (Printf.sprintf "%s%06x" prefix rnd)
+
+let open_temp_file:
+  ?buffer : Lwt_bytes.t ->
+  ?flags : Unix.open_flag list ->
+  ?perm : Unix.file_perm ->
+  ?temp_dir : string ->
+  ?prefix : string ->
+  unit -> (string * output_channel) Lwt.t
+  = fun ?buffer ?flags ?perm ?temp_dir ?prefix->
+    let flags = match flags with
+    | None -> Some [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_EXCL; Unix.O_CLOEXEC]
+    | Some l -> Some l in
+    let dir = match temp_dir with
+    | None -> Filename.get_temp_dir_name ()
+    | Some dirname -> dirname in
+    let prefix = match prefix with
+    | None -> "lwt_io_temp_file_"
+    | Some prefix -> prefix in
+    let rec helper n =
+      let fname = temp_file_name dir prefix in
+      Lwt.catch
+        (fun () -> open_file ?buffer:buffer ?flags:flags ?perm:perm ~mode:Output fname
+          >>= fun chan -> Lwt.return (fname, chan))
+        (fun exn ->
+           match exn with
+           | Unix.Unix_error _ when n < 1000 -> helper (n + 1)
+           | _ -> raise exn)
+    in
+    fun () -> helper 0
+
+let with_temp_file ?buffer ?flags ?perm ?temp_dir ?prefix f =
+  open_temp_file
+    ?buffer ?flags ?perm ?temp_dir ?prefix () >>= fun (fname, chan) ->
+  Lwt.finalize
+    (fun () -> f (fname, chan))
+    (fun () -> close chan >>= fun _ ->
+      Lwt_unix.unlink fname)
 
 let file_length filename = with_file ~mode:input filename length
 
