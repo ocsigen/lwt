@@ -337,7 +337,7 @@ let suite = suite "lwt_io" [
        let startswith x y =
          let n = String.length x and
              m = String.length y in
-         (n >= m && String.equal y (String.sub x 0 m)) in
+         (n >= m && y = (String.sub x 0 m)) in
        let check_no_tempfiles () =
          let handle = Unix.opendir "." in
          let rec helper x =
