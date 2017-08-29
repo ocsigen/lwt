@@ -348,7 +348,7 @@ let suite = suite "lwt_io" [
        in
        let write_data (_, chan) = Lwt_io.write chan "test file content" in
        let write_data_fail _ = Lwt.fail Dummy_error in
-       Lwt_io.with_temp_file write_data ~prefix:prefix >>= fun _ ->
+       Lwt_io.with_temp_file write_data ~prefix >>= fun _ ->
        Lwt.return (check_no_tempfiles ()) >>= fun no_temps1 ->
        Lwt.catch
          (fun () -> Lwt_io.with_temp_file write_data_fail)

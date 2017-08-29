@@ -1491,9 +1491,7 @@ let open_temp_file:
 
 let with_temp_file ?buffer ?flags ?perm ?temp_dir ?prefix f =
   open_temp_file
-    ?buffer:buffer ?flags:flags
-    ?perm:perm ?temp_dir:temp_dir
-    ?prefix: prefix () >>= fun (fname, chan) ->
+    ?buffer ?flags ?perm ?temp_dir ?prefix () >>= fun (fname, chan) ->
   Lwt.finalize
     (fun () -> f (fname, chan))
     (fun () -> close chan >>= fun _ ->
