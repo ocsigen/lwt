@@ -335,6 +335,7 @@ let mapper =
         ))
 
       | [%expr [%e? lhs] >> [%e? rhs]] ->
+        prerr_string "Warning: the operator >> is deprecated\n";
         if !sequence then
           let pat = if !strict_seq then [%pat? ()] else [%pat? _] in
           let lhs, rhs = mapper.expr mapper lhs, mapper.expr mapper rhs in
