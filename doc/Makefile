@@ -31,6 +31,8 @@ MLIS=\
 	$(wildcard ${SRC}/ssl/*.mli) \
 	$(filter-out ${BLD}/unix/lwt_unix.cppo.mli,$(wildcard ${BLD}/unix/*.mli))
 
+MLIS := $(filter-out %.pp.mli,$(MLIS))
+
 DOCOPT := -colorize-code -short-functors -charset utf-8
 
 .PHONY: doc wikidoc
