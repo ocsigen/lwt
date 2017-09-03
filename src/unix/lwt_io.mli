@@ -431,10 +431,10 @@ val open_temp_file :
     [?temp_dir] can be used to choose the directory in which the file is
     created. For the current directory, use
     {{: https://caml.inria.fr/pub/docs/manual-ocaml/libref/Filename.html#VALcurrent_dir_name}
-    Filename.current_dir_name]}. If not specified, the directory is taken from
+    [Filename.current_dir_name]}. If not specified, the directory is taken from
     {{: https://caml.inria.fr/pub/docs/manual-ocaml/libref/Filename.html#VALget_temp_dir_name}
-    Filename.get_temp_dir_name}, which is typically set to your system temporary
-    file directory.
+    [Filename.get_temp_dir_name]}, which is typically set to your system
+    temporary file directory.
 
     [?prefix] helps determine the name of the file. It will be the prefix
     concatenated with a random sequence of characters. If not specified,
