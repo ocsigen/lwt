@@ -25,151 +25,55 @@
 
 type +'a t
 
-val return : 'a -> 'a t
-
-val fail : exn -> 'a t
-
-val fail_with : string -> 'a t
-
-val fail_invalid_arg : string -> 'a t
-
-val bind : 'a t -> ('a -> 'b t) -> 'b t
-
-val (>>=) : 'a t -> ('a -> 'b t) -> 'b t
-
-val (=<<) : ('a -> 'b t) -> 'a t -> 'b t
-
-val map : ('a -> 'b) -> 'a t -> 'b t
-
-val (>|=) : 'a t -> ('a -> 'b) -> 'b t
-
-val (=|<) : ('a -> 'b) -> 'a t -> 'b t
-
-val return_unit : unit t
-
-val return_none : 'a option t
-
-val return_some : 'a -> 'a option t
-
-val return_nil : 'a list t
-
-val return_true : bool t
-
-val return_false : bool t
-
-val return_ok : 'a -> ('a, _) Result.result t
-
-val return_error : 'e -> (_, 'e) Result.result t
-
-type 'a key
-
-val new_key : unit -> 'a key
-
-val get : 'a key -> 'a option
-
-val with_value : 'a key -> 'a option -> (unit -> 'b) -> 'b
-
-val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
-
-val try_bind : (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
-
-val finalize : (unit -> 'a t) -> (unit -> unit t) -> 'a t
-
-val wrap : (unit -> 'a) -> 'a t
-
-val wrap1 : ('a -> 'b) -> 'a -> 'b t
-
-val wrap2 : ('a -> 'b -> 'c) -> 'a -> 'b -> 'c t
-val wrap3 : ('a -> 'b -> 'c -> 'd) -> 'a -> 'b -> 'c -> 'd t
-val wrap4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a -> 'b -> 'c -> 'd -> 'e t
-val wrap5 : ('a -> 'b -> 'c -> 'd -> 'e -> 'f) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f t
-val wrap6 : ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g t
-val wrap7 : ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h t
-
-val choose : 'a t list -> 'a t
-
-val nchoose : 'a t list -> 'a list t
-
-val nchoose_split : 'a t list -> ('a list * 'a t list) t
-
-val join : unit t list -> unit t
-
-val ( <?> ) : 'a t -> 'a t -> 'a t
-
-val ( <&> ) : unit t -> unit t -> unit t
-
-val async : (unit -> 'a t) -> unit
-
-val ignore_result : 'a t -> unit
-
-val async_exception_hook : (exn -> unit) ref
-
 type 'a u
 
-val wait : unit -> 'a t * 'a u
-
-val wakeup : 'a u -> 'a -> unit
-
-val wakeup_exn : 'a u -> exn -> unit
+val task : unit -> 'a t * 'a u
 
 val wakeup_later : 'a u -> 'a -> unit
 
 val wakeup_later_exn : 'a u -> exn -> unit
 
-val waiter_of_wakener : 'a u -> 'a t
+val return : 'a -> 'a t
 
-type +'a result = ('a, exn) Result.result
+val fail : exn -> 'a t
 
-val make_value : 'a -> 'a result
-  [@@ocaml.deprecated
-    " Use Result.Ok, which is the same as Ok since OCaml 4.03."]
+val bind : 'a t -> ('a -> 'b t) -> 'b t
 
-val make_error : exn -> 'a result
-  [@@ocaml.deprecated
-    " Use Result.Error, which is the same as Error since OCaml 4.03."]
+val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
 
-val of_result : 'a result -> 'a t
+val finalize : (unit -> 'a t) -> (unit -> unit t) -> 'a t
 
-val wakeup_result : 'a u -> 'a result -> unit
+val try_bind : (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
 
-val wakeup_later_result : 'a u -> 'a result -> unit
+val async : (unit -> 'a t) -> unit
 
-type 'a state =
-  | Return of 'a
-  | Fail of exn
-  | Sleep
+val async_exception_hook : (exn -> unit) ref
 
-val state : 'a t -> 'a state
-
-val is_sleeping : 'a t -> bool
-
-exception Canceled
-
-val task : unit -> 'a t * 'a u
-
-val on_cancel : 'a t -> (unit -> unit) -> unit
-
-val add_task_r : 'a u Lwt_sequence.t -> 'a t
-
-val add_task_l : 'a u Lwt_sequence.t -> 'a t
-
-val cancel : 'a t -> unit
+val join : unit t list -> unit t
 
 val pick : 'a t list -> 'a t
 
+val choose : 'a t list -> 'a t
+
 val npick : 'a t list -> 'a list t
+
+val nchoose : 'a t list -> 'a list t
+
+val nchoose_split : 'a t list -> ('a list * 'a t list) t
+
+exception Canceled
+
+val cancel : 'a t -> unit
+
+val on_cancel : 'a t -> (unit -> unit) -> unit
 
 val protected : 'a t -> 'a t
 
 val no_cancel : 'a t -> 'a t
 
-val pause : unit -> unit t
+val wait : unit -> 'a t * 'a u
 
-val wakeup_paused : unit -> unit
-
-val paused_count : unit -> int
-
-val register_pause_notifier : (int -> unit) -> unit
+val map : ('a -> 'b) -> 'a t -> 'b t
 
 val on_success : 'a t -> ('a -> unit) -> unit
 
@@ -183,16 +87,112 @@ module Infix : sig
 
   val (>>=) : 'a t -> ('a -> 'b t) -> 'b t
 
-  val (=<<) : ('a -> 'b t) -> 'a t -> 'b t
-
   val (>|=) : 'a t -> ('a -> 'b) -> 'b t
 
-  val (=|<) : ('a -> 'b) -> 'a t -> 'b t
+  val ( <&> ) : unit t -> unit t -> unit t
 
   val ( <?> ) : 'a t -> 'a t -> 'a t
 
-  val ( <&> ) : unit t -> unit t -> unit t
+  val (=<<) : ('a -> 'b t) -> 'a t -> 'b t
+
+  val (=|<) : ('a -> 'b) -> 'a t -> 'b t
 end
+
+val return_unit : unit t
+
+val return_none : 'a option t
+
+val return_nil : 'a list t
+
+val return_true : bool t
+
+val return_false : bool t
+
+type +'a result = ('a, exn) Result.result
+
+val of_result : 'a result -> 'a t
+
+val wakeup_later_result : 'a u -> 'a result -> unit
+
+type 'a state =
+  | Return of 'a
+  | Fail of exn
+  | Sleep
+
+val state : 'a t -> 'a state
+
+type 'a key
+
+val new_key : unit -> 'a key
+
+val get : 'a key -> 'a option
+
+val with_value : 'a key -> 'a option -> (unit -> 'b) -> 'b
+
+val wakeup : 'a u -> 'a -> unit
+
+val wakeup_exn : 'a u -> exn -> unit
+
+val wakeup_result : 'a u -> 'a result -> unit
+
+val make_value : 'a -> 'a result
+  [@@ocaml.deprecated
+    " Use Result.Ok, which is the same as Ok since OCaml 4.03."]
+
+val make_error : exn -> 'a result
+  [@@ocaml.deprecated
+    " Use Result.Error, which is the same as Error since OCaml 4.03."]
+
+val waiter_of_wakener : 'a u -> 'a t
+
+val add_task_r : 'a u Lwt_sequence.t -> 'a t
+
+val add_task_l : 'a u Lwt_sequence.t -> 'a t
+
+val pause : unit -> unit t
+
+val wakeup_paused : unit -> unit
+
+val paused_count : unit -> int
+
+val register_pause_notifier : (int -> unit) -> unit
+
+val wrap : (unit -> 'a) -> 'a t
+
+val wrap1 : ('a -> 'b) -> 'a -> 'b t
+
+val wrap2 : ('a -> 'b -> 'c) -> 'a -> 'b -> 'c t
+val wrap3 : ('a -> 'b -> 'c -> 'd) -> 'a -> 'b -> 'c -> 'd t
+val wrap4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a -> 'b -> 'c -> 'd -> 'e t
+val wrap5 : ('a -> 'b -> 'c -> 'd -> 'e -> 'f) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f t
+val wrap6 : ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g t
+val wrap7 : ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h t
+
+val return_some : 'a -> 'a option t
+
+val return_ok : 'a -> ('a, _) Result.result t
+
+val return_error : 'e -> (_, 'e) Result.result t
+
+val fail_with : string -> 'a t
+
+val fail_invalid_arg : string -> 'a t
+
+val (>>=) : 'a t -> ('a -> 'b t) -> 'b t
+
+val (>|=) : 'a t -> ('a -> 'b) -> 'b t
+
+val ( <?> ) : 'a t -> 'a t -> 'a t
+
+val ( <&> ) : unit t -> unit t -> unit t
+
+val (=<<) : ('a -> 'b t) -> 'a t -> 'b t
+
+val (=|<) : ('a -> 'b) -> 'a t -> 'b t
+
+val is_sleeping : 'a t -> bool
+
+val ignore_result : 'a t -> unit
 
 (**/**)
 
