@@ -56,7 +56,7 @@ let gen_name i = lwt_prefix ^ string_of_int i
 let gen_bindings l =
   let aux i binding =
     { binding with
-      pvb_pat = (pvar (gen_name i)) [@metaloc binding.pvb_expr.pexp_loc]
+      pvb_pat = pvar ~loc:binding.pvb_expr.pexp_loc (gen_name i)
     }
   in
   List.mapi aux l
@@ -68,7 +68,7 @@ let gen_binds e_loc l e =
     | [] -> e
     | binding :: t ->
       let name = (* __ppx_lwt_$i, at the position of $x$ *)
-        (evar (gen_name i)) [@metaloc binding.pvb_expr.pexp_loc]
+        evar ~loc:binding.pvb_expr.pexp_loc (gen_name i)
       in
       let fun_ =
         [%expr (fun [%p binding.pvb_pat] -> [%e aux (i+1) t])] [@metaloc e_loc]
