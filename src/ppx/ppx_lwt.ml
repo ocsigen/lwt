@@ -71,7 +71,7 @@ let gen_binds e_loc l e =
         (evar (gen_name i)) [@metaloc binding.pvb_expr.pexp_loc]
       in
       let fun_ =
-        [%expr (fun [%p binding.pvb_pat] -> [%e aux (i+1) t])] [@metaloc binding.pvb_loc]
+        [%expr (fun [%p binding.pvb_pat] -> [%e aux (i+1) t])] [@metaloc e_loc]
       in
       let new_exp =
         if !debug then
