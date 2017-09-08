@@ -30,7 +30,7 @@ let add_wildcard_case cases =
     List.exists is_catchall cases
   in
   if not has_wildcard
-  then cases @ [Exp.case [%pat? exn] [%expr Lwt.fail exn]]
+  then cases @ [Exp.case [%pat? exn] [%expr Lwt.fail exn]] [@metaloc Location.none]
   else cases
 
 (** {3 Internal names} *)
