@@ -48,7 +48,7 @@ let run_test name =
   let ml_name = name ^ ".ml" in
   let expect_name = name ^ ".expect" in
   let fixed_name = name ^ ".fixed" in
-  let command = Printf.sprintf "ocaml %s 2> %s" ml_name fixed_name in
+  let command = Printf.sprintf "ocaml -noinit %s 2> %s" ml_name fixed_name in
   let ocaml_return_code = _run_int command in
   begin if ocaml_return_code = 0 then
       failwith (Printf.sprintf "Unexpected toplevel return code: %d" ocaml_return_code)
