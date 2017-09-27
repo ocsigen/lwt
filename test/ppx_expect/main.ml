@@ -1,17 +1,4 @@
 let test_directory = "cases"
-let test_cases = [
-  "let_1";
-  "let_2";
-  "let_3";
-  "let_4";
-  "match_1";
-  "match_2";
-  "match_3";
-  "match_4";
-  "try_1";
-  "try_2";
-  "try_3";
-]
 
 let _read_file name =
   let buffer = Buffer.create 4096 in
@@ -69,6 +56,12 @@ let run_test name =
   diff expect_name fixed_name
 
 let () =
+  let test_cases =
+    Sys.readdir test_directory
+    |> Array.to_list
+    |> List.filter (fun file -> Filename.check_suffix file ".ml")
+    |> List.map Filename.chop_extension
+  in
   Sys.chdir test_directory;
   try
     List.iter run_test test_cases
