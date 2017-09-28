@@ -63,9 +63,18 @@ let () =
     |> List.map Filename.chop_extension
   in
   Sys.chdir test_directory;
-  try
-    List.iter run_test test_cases
-  with
-  | Failure f ->
-    prerr_endline f;
-    exit 1
+  let only_if () =
+    Sys.cygwin = false && Sys.win32 = false &&
+    (* 4.02.3 prints file paths differently *)
+    Scanf.sscanf Sys.ocaml_version "%u.%u"
+      (fun major minor -> major >= 4 && minor >= 3)
+  in
+  let suite = Test.suite "ppx_expect" (
+    List.map (fun test_case ->
+      Test.test_direct test_case ~only_if (fun () ->
+        run_test test_case;
+        true
+      )
+    ) test_cases)
+  in
+  Test.run "ppx_expect" [suite]
