@@ -97,7 +97,7 @@ let main () =
       Scanf.sscanf Sys.ocaml_version "%u.%u"
         (fun major minor -> major, minor)
     in
-    let supports_o3 = major >= 4 && minor >= 3 in
+    let supports_o3 = (major, minor) >= (4, 3) in
     let flags_file = open_out "src/core/flambda.flag" in
     begin
       if supports_o3 then
