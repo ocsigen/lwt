@@ -172,7 +172,7 @@ let () =
 ]}
 
     The way that works is everything in scope after the “[in]” in
-    “[lwt%lwt x =] ... [in] ...” goes into a callback, and “[x]” is that
+    “[let%lwt x =] ... [in] ...” goes into a callback, and “[x]” is that
     callback's argument. So, we could have been very explicit, and written the
     code like this:
 
@@ -194,7 +194,7 @@ let () =
 ]}
 
     But, as you can see, this is verbose, and the indentation gets a bit crazy.
-    So, we will always use [lwt%lwt].
+    So, we will always use [let%lwt].
 
     The code above reads two lines in sequence, because we waited for [line_1],
     before calling the second {!Lwt_io.read_line} in the callback, to start the
