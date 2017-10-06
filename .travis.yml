@@ -5,7 +5,7 @@ language: c
 matrix:
   include:
     - os: linux
-      env: COMPILER=4.02 LIBEV=yes
+      env: COMPILER=4.02 LIBEV=no
     - os: linux
       env: COMPILER=4.03
     - os: linux
@@ -15,20 +15,20 @@ matrix:
     - os: linux
       env: COMPILER=4.06 FLAMBDA=yes
     - os: linux
-      env: COMPILER=4.06 FLAMBDA=yes LIBEV=yes
+      env: COMPILER=4.06 FLAMBDA=yes LIBEV=no
     - os: osx
       env: COMPILER=system
     - os: osx
-      env: COMPILER=system LIBEV=yes
+      env: COMPILER=system LIBEV=no
     - os: osx
       # A 4.04 binary is not yet available.
       env: COMPILER=4.03 PACKAGE_MANAGER=macports
     - os: osx
-      env: COMPILER=4.03 PACKAGE_MANAGER=macports LIBEV=yes
+      env: COMPILER=4.03 PACKAGE_MANAGER=macports LIBEV=no
 
   allow_failures:
     - env: COMPILER=4.06 FLAMBDA=yes
-    - env: COMPILER=4.06 FLAMBDA=yes LIBEV=yes
+    - env: COMPILER=4.06 FLAMBDA=yes LIBEV=no
 
 env:
   global:

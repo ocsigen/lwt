@@ -24,7 +24,7 @@ packages_apt () {
 
     sudo apt-get install -qq opam
 
-    if [ "$LIBEV" = yes ]
+    if [ "$LIBEV" != no ]
     then
         sudo apt-get install -qq libev-dev
     fi
@@ -42,7 +42,7 @@ packages_homebrew () {
 
     brew install gtk+ opam
 
-    if [ "$LIBEV" = yes ]
+    if [ "$LIBEV" != no ]
     then
         brew install libev
     fi
@@ -52,7 +52,7 @@ packages_macports () {
     eval `wget -q -O - https://aantron.github.io/binaries/macports/x86_64/macports/current/install.sh | bash`
     sudo port install pkgconfig gtk2 | cat
 
-    if [ "$LIBEV" = yes ]
+    if [ "$LIBEV" != no ]
     then
         sudo port install libev | cat
     fi
@@ -128,7 +128,7 @@ then
     opam install -y camlp4
 fi
 
-if [ "$LIBEV" = yes ]
+if [ "$LIBEV" != no ]
 then
     opam install -y conf-libev
 fi
@@ -153,7 +153,7 @@ opam install -y ounit
 cd `opam config var lib`/../build/lwt.*
 make clean
 
-if [ "$LIBEV" = yes ]
+if [ "$LIBEV" != no ]
 then
     LIBEV_FLAG=true
 else
