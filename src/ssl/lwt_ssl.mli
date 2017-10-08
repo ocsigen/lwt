@@ -58,8 +58,8 @@ val ssl_perform_handshake : uninitialized_socket -> socket Lwt.t
 val ssl_accept_handshake  : uninitialized_socket -> socket Lwt.t
 (** Await a SSL/TLS handshake on the specified socket (used by servers). *)
 
-val read : socket -> string -> int -> int -> int Lwt.t
-val write : socket -> string -> int -> int -> int Lwt.t
+val read : socket -> bytes -> int -> int -> int Lwt.t
+val write : socket -> bytes -> int -> int -> int Lwt.t
 
 val read_bytes : socket -> Lwt_bytes.t -> int -> int -> int Lwt.t
 val write_bytes : socket -> Lwt_bytes.t -> int -> int -> int Lwt.t
