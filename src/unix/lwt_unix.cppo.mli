@@ -200,7 +200,10 @@ val of_unix_file_descr : ?blocking : bool -> ?set_flags : bool -> Unix.file_desc
 
     If [~blocking] is not specified, [of_unix_file_descr] chooses non-blocking
     mode for Unix sockets, Unix pipes, and Windows sockets, and blocking mode
-    for everything else.
+    for everything else. {b Note:} not specifying [~blocking] causes [fstat] to
+    be lazily called on [fd], the first time your code performs I/O on [fd'].
+    This [fstat] call can be expensive, so if you use [of_unix_file_descr] a
+    lot, be sure to specify [~blocking] explicitly.
 
     [of_unix_file_descr] runs a system call to set the specified or chosen
     blocking mode on the underlying [fd].
