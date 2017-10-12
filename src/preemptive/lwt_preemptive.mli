@@ -32,8 +32,12 @@
 
 val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
   (** [detach f x] runs the computation [f x] in a separate preemptive thread.
-      [detach] evaluates to an Lwt thread, which waits for the preemptive thread
-      to complete.
+      [detach] evaluates to an Lwt promise, which is pending until the
+      preemptive thread completes.
+
+      [detach] calls {!simple_init} internally, which means that the number of
+      preemptive threads is capped by default at four. If you would like a
+      higher limit, call {!init} or {!set_bounds} directly.
 
       Note that Lwt thread-local storage (i.e., {!Lwt.with_value}) cannot be
       safely used from within [f]. The same goes for most of the rest of Lwt. If
@@ -60,14 +64,15 @@ val init : int -> int -> (string -> unit) -> unit
       @param log is used to log error messages
 
       If {!Lwt_preemptive} has already been initialised, this call
-      only modify bounds and the log function, and return the
-      dispatcher thread. *)
+      only modify bounds and the log function. *)
 
 val simple_init : unit -> unit
-  (** [simple_init ()] does a {i simple initialization}. i.e. with
-      default parameters if the library is not yet initialised.
+(** [simple_init ()] checks if the library is not yet initialized, and if not,
+    does a {i simple initialization}. The minimum number of threads is set to
+    zero, maximum to four, and the log function is left unchanged, i.e. the
+    default built-in logging function is used. See {!Lwt_preemptive.init}.
 
-      Note: this function is automatically called {!detach}. *)
+    Note: this function is automatically called by {!detach}. *)
 
 val get_bounds : unit -> int * int
   (** [get_bounds ()] returns the minimum and the maximum number of
