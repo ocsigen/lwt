@@ -26,24 +26,25 @@
 
 (** Asynchronous programming with promises.
 
-    {b Promises} are placeholders for values that take a long time to compute.
-    Promises are similar to [ref]s – they can store one value. Here is how they
-    differ from [ref]s:
+    A {b promise} is a placeholder for a single value which might take a long
+    time to compute. Speaking roughly, a promise is a [ref] that can be filled
+    in later. To make that precise, here is how promises differ from [ref]s:
 
-    - A promise might not have a value yet. This is called a {e pending}
-      promise.
-    - Writing a value into a promise is called {e resolving} it.
-    - It's possible to attach {b callbacks} to a pending promise. They will be
-      run when the promise gets resolved.
-    - A promise can be resolved only once. Once a promise has a value, it's
-      immutable.
+    - A promise might not have a value yet. A promise in this state is called a
+      {e pending} promise.
+    - Writing a value into a promise is called {e resolving} it. A promise with
+      a value is called a {e resolved} promise.
+    - Each promise can be resolved only once. After a promise has a value, the
+      promise is immutable.
+    - It's possible to attach {b callbacks} to a promise. They will run when the
+      promise has a value, i.e. is resolved. If the promise is already resolved
+      when a callback is attached, the callback is run (almost) right away. If
+      the promise is pending, the callback is put into a list and waits.
 
-    So, promises are write-once optional references, and when they don't yet
+    So, promises are optional, write-once references, and when they don't yet
     have a value, they store a list of callbacks that are waiting for the value.
 
-    Why is this useful?
-
-    The waiting callbacks make promises a nice data type for asynchronous
+    The waiting callbacks make promises a natural data type for asynchronous
     programming. For example, you can ask Lwt to [read] a file. Lwt immediately
     returns you only a {e promise} for the data.
 
@@ -196,9 +197,9 @@ let () =
     But, as you can see, this is verbose, and the indentation gets a bit crazy.
     So, we will always use [let%lwt].
 
-    The code above reads two lines in sequence, because we waited for [line_1],
-    before calling the second {!Lwt_io.read_line} in the callback, to start the
-    second I/O.
+    The code above reads two lines in sequence, because we ask Lwt to wait for
+    [line_1], before calling the second {!Lwt_io.read_line} in the callback, to
+    start the second I/O.
 
     We could also run I/O {e concurrently}. All we have to do is not start the
     second I/O in a callback of the first. Because it doesn't make sense to read
@@ -242,23 +243,30 @@ let () =
 ]}
 
     And that's it! Concurrency in Lwt is simply a matter of whether you start an
-    operation in the callback of another one or not.
+    operation in the callback of another one or not. As a convenience, Lwt
+    provides a few {{: #2_Concurrency} helpers} for common concurrency patterns.
+
+
 
     {3 Execution model}
 
     It's important to understand that promises are a pure-OCaml data type. They
-    don't do any fancy scheduling or I/O. They are just lists of callbacks if
-    pending, and containers for one value if resolved.
+    don't do any fancy scheduling or I/O. They are just lists of callbacks (if
+    pending), or containers for one value (if resolved).
 
     The interesting function is {!Lwt_main.run}. It's a wrapper around
     {{: http://man7.org/linux/man-pages/man2/select.2.html} [select(2)]},
     {{: http://man7.org/linux/man-pages/man7/epoll.7.html} [epoll(7)]},
     {{: https://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2}
-    [kqueue(2)]}, or whatever asynchronous API your system provides. Let's take
-    [select(2)] for the example.
+    [kqueue(2)]}, or whatever asynchronous I/O API your system provides. On
+    browsers, the work of {!Lwt_main.run} is done by the surrouding JavaScript
+    engine, so you don't call {!Lwt_main.run} from inside your program. But the
+    execution model is still the same, and the description below applies!
 
-    On browsers, the [select(2)] call is inside the JavaScript engine, so you
-    don't call {!Lwt_main.run}. But the logic is still the same!
+    To avoid writing out “underlying asynchronous I/O API,” we'll assume, in
+    this section, that the API is [select(2)]. That's just for the sake of
+    abbreviation. It doesn't actually matter, for most purposes, what the
+    underlying I/O API is.
 
     Let's use the program from the tutorial that reads two lines as an example.
     Here it is, again, in its desugared form:
@@ -281,7 +289,7 @@ let () =
 ]}
 
     {!Lwt_main.run} is your program's main I/O loop. You pass it a single
-    top-level promise, and it:
+    promise, and it:
 
     + Uses [select(2)] to put your process to sleep until the next I/O
       completes.
@@ -336,7 +344,8 @@ let () =
       is nothing conceptually special about rejection – it's just that you can
       ask for callbacks to run only on fulfillment, only on rejection, etc.
     - {{: #2_Cancelation} Cancelation}. This is a special case of rejection,
-      with extra helpers in the Lwt API.
+      specifically with exception {!Lwt.Canceled}. It has extra helpers in the
+      Lwt API.
     - {{: #2_Concurrency} Concurrency helpers}. All of these could be
       implemented on top of {!Lwt.bind}. As we saw, Lwt concurrency requires
       only deciding whether to run something inside a callback, or outside it.
@@ -368,10 +377,11 @@ let () =
     - Miscellaneous modules {!Lwt_daemon}, {!Lwt_gc}, {!Lwt_log}, {!Lwt_engine},
       {!Lwt_throttle}, {!Lwt_timeout}, {!Lwt_sys}.
 
-    Finally, there are some modules, which belong in the core library or the
-    Unix binding, but are kept separate for historical or administrative
-    reasons. These are {!Lwt_react}, {!Lwt_ssl}, and {!Lwt_glib}. {!Lwt_react}
-    is belongs in the core, and the other two work like the Unix binding.
+    Finally, there are some modules, which notionally belong in the core library
+    or the Unix binding, but are kept separate because they have additional
+    dependencies on external libraries. These are {!Lwt_react}, {!Lwt_ssl}, and
+    {!Lwt_glib}. {!Lwt_react} notionally belongs in the core, and the other two
+    work like the Unix binding.
 
     Warning! Introductory material ends and detailed reference begins! *)
 
@@ -436,12 +446,12 @@ val wakeup_later : 'a u -> 'a -> unit
     If the promise is not pending, [Lwt.wakeup_later] raises
     {{: https://caml.inria.fr/pub/docs/manual-ocaml/libref/Pervasives.html#VALinvalid_arg}
     [Pervasives.Invalid_argument]}, unless the promise is {{: #VALcancel}
-    canceled}. *)
+    canceled}. If the promise is canceled, [Lwt.wakeup_later] has no effect. *)
 
 val wakeup_later_exn : _ u -> exn -> unit
-(** [Lwt.wakeup_later_exn r exn] is like {!Lwt.wakeup_later}, except it
-    {e rejects} the associated {e pending} {{: #TYPEt} promise} with [exn]
-    instead. *)
+(** [Lwt.wakeup_later_exn r exn] is like {!Lwt.wakeup_later}, except, if the
+    associated {{: #TYPEt} promise} is {e pending}, it is {e rejected} with
+    [exn]. *)
 
 val return : 'a -> 'a t
 (** [Lwt.return v] creates a new {{: #TYPEt} promise} that is {e already
@@ -478,9 +488,9 @@ val bind : 'a t -> ('a -> 'b t) -> 'b t
 (** [Lwt.bind p_1 f] makes it so that [f] will run when [p_1] is {{: #TYPEt}
     {e fulfilled}}.
 
-    The value that [p_1] is fulfilled with is passed to [f]. [f] then returns
-    another promise, [p_2]. This second promise means [f] can spawn more I/O
-    operations – they will create [p_2].
+    When [p_1] is fulfilled with value [v_1], the callback [f] is called with
+    that same value [v_1]. Eventually, after perhaps starting some I/O or other
+    computation, [f] returns promise [p_2].
 
     [Lwt.bind] itself returns immediately. It only attaches the callback [f] to
     [p_1] – it does not wait for [p_2]. {e What} [Lwt.bind] returns is yet a
@@ -504,30 +514,29 @@ let () =
     Rejection of [p_1] and [p_2], and raising an exception in [f], are all
     forwarded to rejection of [p_3].
 
-    The rest is (1) a precise description, and (2) notes on why [Lwt.bind] is
-    always written using syntactic sugar.
+    {b Precise behavior}
 
-    {b (1)} [Lwt.bind] returns a promise [p_3] immediately. [p_3] starts out
-    pending, and is resolved as follows:
+    [Lwt.bind] returns a promise [p_3] immediately. [p_3] starts out pending,
+    and is resolved as follows:
 
     - The first condition to wait for is that [p_1] becomes resolved. It does
       not matter whether [p_1] is already resolved when [Lwt.bind] is called, or
       becomes resolved later – the rest of the behavior is the same.
     - If and when [p_1] becomes resolved, it will, by definition, be either
-      fulfilled or rejected. Fulfilling is the interesting case, but rejection
-      is handled very simply, so we cover rejection of [p_1] first.
+      fulfilled or rejected.
     - If [p_1] is rejected, [p_3] is rejected with the same exception.
     - If [p_1] is fulfilled, with value [v], [f] is applied to [v].
     - [f] may finish by returning the promise [p_2], or raising an exception.
-      Again, the exception case is simpler, so we cover that first.
     - If [f] raises an exception, [p_3] is rejected with that exception.
     - Finally, the remaining case is when [f] returns [p_2]. From that point on,
       [p_3] is effectively made into a reference to [p_2]. This means they have
       the same state, undergo the same state changes, and performing any
       operation on one is equivalent to performing it on the other.
 
-    {b (2)} [Lwt.bind] is almost never written directly, because sequences of
-    [Lwt.bind] result in growing indentation and many parentheses:
+    {b Syntactic sugar}
+
+    [Lwt.bind] is almost never written directly, because sequences of [Lwt.bind]
+    result in growing indentation and many parentheses:
 
 {[
 let () =
@@ -558,8 +567,8 @@ let () =
     add package [lwt.ppx] to the command line for building this program. We will
     do that throughout this manual.
 
-    Another good way to write [Lwt.bind], that does not use the PPX, is with the
-    [>>=] operator:
+    Another way to write [Lwt.bind], that you may encounter while reading code,
+    is with the [>>=] operator:
 
 {[
 open Lwt.Infix
@@ -1417,8 +1426,8 @@ val wakeup_later_result : 'a u -> 'a result -> unit
     - If [result] is [Error exn], [p] is rejected with [exn].
 
     If [p] is not pending, [Lwt.wakeup_later_result] raises
-    [Pervasives.Invalid_argument _], except if [p] is {{: #EXCEPTIONCanceled}
-    canceled}. *)
+    [Pervasives.Invalid_argument _], except if [p] is {{: #VALcancel} canceled}.
+    If [p] is canceled, [Lwt.wakeup_later_result] has no effect. *)
 
 
 
