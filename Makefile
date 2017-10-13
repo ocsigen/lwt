@@ -93,11 +93,12 @@ packaging-test:
 .PHONY: install-for-packaging-test
 install-for-packaging-test: clean
 	opam pin add --yes --no-action lwt .
+	opam pin add --yes --no-action lwt_ppx .
 	opam pin add --yes --no-action lwt_react .
 	opam pin add --yes --no-action lwt_ssl .
 	opam pin add --yes --no-action lwt_glib .
 	opam install --yes camlp4
-	opam reinstall --yes lwt lwt_react lwt_ssl lwt_glib
+	opam reinstall --yes lwt lwt_ppx lwt_react lwt_ssl lwt_glib
 
 .PHONY: clean
 clean:

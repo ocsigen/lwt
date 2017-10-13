@@ -144,6 +144,7 @@ install_extra_package () {
     opam install -y --verbose lwt_$PACKAGE
 }
 
+install_extra_package ppx
 install_extra_package react
 install_extra_package ssl
 install_extra_package glib
