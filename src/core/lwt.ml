@@ -339,10 +339,10 @@
 
    The external promise type, ['a t], and the external resolver type, ['a u],
    are not GADTs. Furthermore, they are, respectively, covariant and
-   contravariant in ['a], while the internal promise type is invariant in
-   ['a]. For these reasons, there are nasty casts between ['a t], ['a u], and
-   the internal promise type. The implementation is, of course, written in
-   terms of the internal type.
+   invariant in ['a], while the internal promise type is invariant in ['a]. For
+   these reasons, there are nasty casts between ['a t], ['a u], and the internal
+   promise type. The implementation is, of course, written in terms of the
+   internal type.
 
    Casting from an ['a t] to an internal promise produces a reference for
    which the state is "unknown": this is simulated with a helper GADT, which
@@ -558,7 +558,11 @@ open Main_internal_types
 module Public_types =
 struct
   type +'a t
-  type -'a u
+  type 'a u
+  (* Resolvers "should" be contravariant, but the presence of
+     [Lwt.waiter_of_wakener] makes that unsound. See
+
+       https://github.com/ocsigen/lwt/issues/458 *)
 
   let to_public_promise : ('a, _, _) promise -> 'a t = Obj.magic
   let to_public_resolver : ('a, _, _) promise -> 'a u = Obj.magic
