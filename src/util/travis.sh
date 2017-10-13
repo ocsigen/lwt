@@ -10,7 +10,7 @@ packages_apt () {
         4.03) PPA=avsm/ocaml42+opam12; DO_SWITCH=yes;;
         4.04) PPA=avsm/ocaml42+opam12; DO_SWITCH=yes;;
         4.05) PPA=avsm/ocaml42+opam12; DO_SWITCH=yes;;
-        4.06) PPA=avsm/ocaml42+opam12; DO_SWITCH=yes; HAVE_CAMLP4=no;;
+        4.06) PPA=avsm/ocaml42+opam12; DO_SWITCH=yes;;
            *) echo Unsupported compiler $COMPILER; exit 1;;
     esac
 
