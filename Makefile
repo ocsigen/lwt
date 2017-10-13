@@ -87,7 +87,7 @@ packaging-test:
 	ocamlfind query lwt
 	for TEST in `ls -d test/packaging/*/*` ; \
 	do \
-	    make -wC $$TEST ; \
+	    make -wC $$TEST || exit 1 ; \
 	done
 
 .PHONY: install-for-packaging-test
