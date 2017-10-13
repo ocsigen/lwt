@@ -3,4 +3,4 @@
 (executable
  ((name user)
   (libraries (lwt))
-  (preprocess (pps (lwt.ppx -no-sequence)))))
+  (preprocess (pps (lwt_ppx -no-sequence)))))

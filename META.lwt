@@ -28,7 +28,7 @@ package "log" (
 package "ppx" (
   #directory = "ppx"
   version = "dev"
-  description = "Lwt PPX syntax extension"
+  description = "Lwt PPX syntax extension (deprecated; use lwt_ppx)"
   requires(ppx_driver) = "lwt.omp"
   requires(-ppx_driver) = "bytes lwt result"
   ppx(-ppx_driver,-custom_ppx) = "./ppx.exe --as-ppx"
@@ -92,7 +92,7 @@ package "simple-top" (
 package "syntax" (
   #directory = "syntax"
   version = "dev"
-  description = "Camlp4 syntax for Lwt (deprecated; use lwt.ppx)"
+  description = "Camlp4 syntax for Lwt (deprecated; use lwt_ppx)"
   requires = "camlp4 lwt.syntax.options"
   archive(syntax, preprocessor) = "lwt_syntax.cma"
   archive(syntax, toploop) = "lwt_syntax.cma"
@@ -103,7 +103,7 @@ package "syntax" (
   package "log" (
     #directory = "log"
     version = "dev"
-    description = "Camlp4 syntax for Lwt logging (deprecated; use lwt.ppx)"
+    description = "Camlp4 syntax for Lwt logging (deprecated; use lwt_ppx)"
     requires = "camlp4 lwt.syntax.options"
     archive(syntax, preprocessor) = "lwt_syntax_log.cma"
     archive(syntax, toploop) = "lwt_syntax_log.cma"
@@ -115,7 +115,7 @@ package "syntax" (
   package "options" (
     #directory = "options"
     version = "dev"
-    description = "Options for Lwt Camlp4 syntax extension (deprecated; use lwt.ppx)"
+    description = "Options for Lwt Camlp4 syntax extension (deprecated; use lwt_ppx)"
     requires = "camlp4"
     archive(syntax, preprocessor) = "lwt_syntax_options.cma"
     archive(syntax, toploop) = "lwt_syntax_options.cma"
