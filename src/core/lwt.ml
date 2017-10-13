@@ -128,104 +128,104 @@
 
    1. Promises
 
-   A promise is a cell that can be in one of two states: "completed" or
+   A promise is a cell that can be in one of two states: "resolved" or
    "pending."
 
-   - Completed promises
+   - Resolved promises
 
-     A completed promise is either "resolved" with a value, or "failed" with an
-     exception. The state of a completed promise will never change again: a
-     completed promise is immutable. A completed promise is basically equivalent
-     to an [('a, exn) Pervasives.result]. Completed promises are produced in two
+     A resolved promise is either "fulfilled" with a value, or "rejected" with
+     an exception. The state of a resolved promise will never change again: a
+     resolved promise is immutable. A resolved promise is basically equivalent
+     to an [('a, exn) Pervasives.result]. Resolved promises are produced in two
      ways:
 
      - [Lwt.return], [Lwt.fail], and related functions, produce "trivial"
-       promises that are completed from the start.
-     - The other way is to complete a promise that started out pending.
+       promises that are resolved from the start.
+     - The other way is to resolve a promise that started out pending.
 
-     Note that failed promises have nothing to do with unhandled exceptions.
+     Note that rejected promises have nothing to do with unhandled exceptions.
 
    - Pending promises
 
-     ...are those that may become completed in the future. Each pending promise
+     ...are those that may become resolved in the future. Each pending promise
      carries a list of callbacks. These callbacks are added by functions like
-     [Lwt.bind], and called by Lwt if/when the promise completes. These
-     callbacks typically end up completing additional promises; see section
-     "Completion loop" below.
+     [Lwt.bind], and called by Lwt if/when the promise is resolved. These
+     callbacks typically end up resolving additional promises; see section
+     "Resolution loop" below.
 
      Pending promises are produced in three ways, according to how they can be
-     completed:
+     resolved:
 
      - Initial promises
 
-       ...are created by [Lwt.wait] and [Lwt.task]. The user of Lwt completes
+       ...are created by [Lwt.wait] and [Lwt.task]. The user of Lwt resolves
        these promises manually, through the resolvers returned by those
        functions.
 
      - Sequential composition
 
-       For example, [Lwt.bind]. These promises only complete when the preceding
-       sequence of promises completes. The user cannot complete these promises
-       directly (but see the section on cancelation below).
+       For example, [Lwt.bind]. These promises only are only resolved when the
+       preceding sequence of promises resolves. The user cannot resolve these
+       promises directly (but see the section on cancelation below).
 
      - Concurrent composition
 
-       For example, [Lwt.join] or [Lwt.choose]. These promises only complete
-       when all or one of a set of "preceding" promises complete. The user
-       cannot complete these promises directly (but see the section on
-       cancelation below).
+       For example, [Lwt.join] or [Lwt.choose]. These promises are only resolved
+       when all or one of a set of "preceding" promises resolve. The user cannot
+       resolve these promises directly (but see the section on cancelation
+       below).
 
 
    2. Resolvers
 
    Resolvers are given to the user by [Lwt.wait] and [Lwt.task], and can be used
-   by the user to complete the corresponding promises. Note that this means the
+   by the user to resolve the corresponding promises. Note that this means the
    user only ever gets resolvers for initial promises.
 
    Internally, resolvers are the exact same objects as the promises they
-   complete, even though the resolver is exposed as a reference of a different
+   resolve, even though the resolver is exposed as a reference of a different
    type by [lwt.mli]. For details on why, see section "Type system abuse" below.
 
 
    3. Callbacks
 
    ...are attached by Lwt to pending promises, and are run by Lwt if/when those
-   promises complete. These callbacks are not directly exposed through
+   promises are resolved. These callbacks are not directly exposed through
    [lwt.mli] -- they are a low-level mechanism. For example, to implement
    [Lwt.bind p f], Lwt attaches a callback to [p] that does some internal Lwt
-   book-keeping, and then calls [f] if [p] resolved, and does something else if
-   [p] failed.
+   book-keeping, and then calls [f] if [p] is fulfilled, and does something else
+   if [p] is rejected.
 
    Callbacks come in two flavors: regular callbacks and cancel callbacks. The
    only material differences between them are that:
 
-   - regular callbacks are always called when a promise is completed, but cancel
+   - regular callbacks are always called when a promise is resolved, but cancel
      callbacks are called, in addition, only if the promise is canceled, and
    - all cancel callbacks of a promise are called before any regular callback
      is called.
 
-   Cancelation is a special case of completion, but see the section on
-   cancelation later below.
+   Cancelation is a special case of resolution, in particular, a special case of
+   rejection, but see the section on cancelation later below.
 
 
-   4. Completion loop
+   4. Resolution loop
 
-   Completing a pending promise triggers its callbacks, and those might complete
+   Resolving a pending promise triggers its callbacks, and those might resolve
    more pending promises, triggering more callbacks, etc. This behavior is the
-   *completion loop*. Lwt has some machinery to avoid stack overflow and other
+   *resolution loop*. Lwt has some machinery to avoid stack overflow and other
    unfortunate situations during this loop.
 
-   This chaining of promise completions through callbacks can be seen as a kind
+   This chaining of promise resolutions through callbacks can be seen as a kind
    of promise dependency graph, in which the nodes are pending promises, and the
-   edges are callbacks. During the completion loop, Lwt starts at some initial
-   promise that is getting completed by the user, and recursively completes all
-   dependent promises. The graph is modified: completed promises are removed
-   from it.
+   edges are callbacks. During the resolution loop, Lwt starts at some initial
+   promise that is getting resolved by the user, and recursively resolves all
+   dependent promises. The graph is modified: resolved promises are no longer
+   pending, so they are no longer part of the graph.
 
    Some of these dependencies are explicit to Lwt, e.g. the callbacks registered
    by [Lwt.bind]. Others are not visible to Lwt, because the user can always
    register a callback using a function like [Lwt.on_success], and use that
-   callback to complete another initial promise. All the explicit dependencies
+   callback to resolve another initial promise. All the explicit dependencies
    are created by Lwt's own sequential and concurrent composition functions
    (so, [Lwt.bind], [Lwt.join], etc). Whether dependencies are explicit or not
    is relevant only to cancelation.
@@ -233,30 +233,30 @@
 
    5. Cancelation
 
-   As described above, ordinary promise completion proceeds from an initial
+   As described above, ordinary promise resolution proceeds from an initial
    promise, forward along callbacks through the dependency graph. Since it
    starts from an initial promise, it can only be triggered using a resolver.
 
-   Cancelation is a sort of dual to ordinary completion. Instead of starting at
+   Cancelation is a sort of dual to ordinary resolution. Instead of starting at
    an initial promise/resolver, cancelation starts at *any* promise. It then
    goes *backwards* through the explicit dependency graph, looking for
    cancelable initial promises to cancel -- those that were created by
-   [Lwt.task]. After finding them, cancelation completes them normally with
-   [Failed Lwt.Canceled], causing an ordinary promise completion process.
+   [Lwt.task]. After finding them, cancelation resolves them normally with
+   [Rejected Lwt.Canceled], causing an ordinary promise resolution process.
 
-   To summarize, cancelation is a way to trigger an *ordinary* completion of
+   To summarize, cancelation is a way to trigger an *ordinary* resolution of
    promises created with [Lwt.task], by first searching for them in the promise
    dependency graph (which is assembled by [Lwt.bind], [Lwt.join], etc).
 
    This backwards search is triggered only by [Lwt.cancel]. It is also possible
-   for the user to cancel a promise directly by failing it with [Lwt.Canceled],
-   but in all cases where the user can do so, the search would be redundant
-   anyway -- the user has only two ways of directly failing a promise with
-   [Lwt.Canceled] (or any exception, for that matter):
+   for the user to cancel a promise directly by rejecting it with
+   [Lwt.Canceled], but in all cases where the user can do so, the search would
+   be redundant anyway -- the user has only two ways of directly rejecting a
+   promise with [Lwt.Canceled] (or any exception, for that matter):
 
-   - The user can create an initial promise, then fail it through its resolver.
-     The search is redundant because it would find only the same initial promise
-     to cancel.
+   - The user can create an initial promise, then reject it through its
+     resolver. The search is redundant because it would find only the same
+     initial promise to cancel.
    - The user can create a trivial promise by calling [Lwt.fail Lwt.Canceled].
      The search is again redundant; in this case it would find nothing to
      cancel.
@@ -265,7 +265,7 @@
    susceptible to being canceled by [Lwt.cancel], but the user can manually
    cancel initial promises created by both [Lwt.task] and [Lwt.wait].
 
-   Due to [Lwt.cancel], promise cancelation, and therefore completion, can be
+   Due to [Lwt.cancel], promise cancelation, and therefore resolution, can be
    initiated by the user without access to a resolver. This is important for
    reasoning about state changes in the implementation of Lwt, and is referenced
    in some implementation detail comments.
@@ -273,15 +273,15 @@
 
    6. No I/O
 
-   The Lwt core deliberately doesn't do I/O. The completion loop stops running
-   once no promises can be completed immediately. It has to be restarted later
+   The Lwt core deliberately doesn't do I/O. The resolution loop stops running
+   once no promises can be resolved immediately. It has to be restarted later
    by some surrouding I/O loop. This I/O loop typically keeps track of pending
    promises that represent blocked or in-progress I/O; other pending promises
    that indirectly depend on I/O are not explicitly tracked. They are retained
    in memory by references captured inside callbacks.
 
    On Unix and Windows, a separate top-level loop, typically [Lwt_main.run], is
-   necessary to repeatedly call [select], [epoll], or [kevent], and complete
+   necessary to repeatedly call [select], [epoll], or [kevent], and resolve
    blocked I/O promises.
 
    In JavaScript, references to promises are retained by JavaScript code, which
@@ -353,12 +353,12 @@
    commented in [bind], all such casts are documented in modules [Public_types]
    and [Basic_helpers].
 
-   There is an abstract type [in_completion_loop], which is actually just
+   There is an abstract type [in_resolution_loop], which is actually just
    [unit], that is passed around to help ensure that certain functions can only
-   be called during the completion loop. Those functions can't be called without
-   a value of type [in_completion_loop], and the only way to obtain such a value
-   is to enter the loop ([run_in_completion_loop]). This mechanism is described
-   at [Completion_loop.complete].
+   be called during the resolution loop. Those functions can't be called without
+   a value of type [in_resolution_loop], and the only way to obtain such a value
+   is to enter the loop ([run_in_resolution_loop]). This mechanism is described
+   at [Resolution_loop.resolve].
 
 
    If you've made it this far, you are an Lwt expert! Rejoice! *)
@@ -401,7 +401,7 @@ struct
   type underlying = private Underlying_and_this_constructor_is_not_used
   type proxy = private Proxy_and_this_constructor_is_not_used
 
-  type completed = private Completed_and_this_constructor_is_not_used
+  type resolved = private Resolved_and_this_constructor_is_not_used
   type pending = private Pending_and_this_constructor_is_not_used
 
   [@@@ocaml.warning "+37"]
@@ -415,10 +415,10 @@ struct
   }
 
   and (_, _, _) state =
-    | Resolved : 'a                  -> ('a, underlying, completed) state
-    | Failed   : exn                 -> ( _, underlying, completed) state
-    | Pending  : 'a callbacks        -> ('a, underlying, pending)   state
-    | Proxy    : ('a, _, 'c) promise -> ('a, proxy,      'c)        state
+    | Fulfilled : 'a                  -> ('a, underlying, resolved) state
+    | Rejected  : exn                 -> ( _, underlying, resolved) state
+    | Pending   : 'a callbacks        -> ('a, underlying, pending)   state
+    | Proxy     : ('a, _, 'c) promise -> ('a, proxy,      'c)        state
 
   (* Note:
 
@@ -436,7 +436,7 @@ struct
 
   (* Note:
 
-     When a promise is completed, or becomes a proxy, its state field is
+     When a promise is resolved, or becomes a proxy, its state field is
      mutated. This invalidates the type invariants on the promise. See internal
      function [set_promise_state] for details about that.
 
@@ -458,13 +458,13 @@ struct
     mutable cleanups_deferred : int;
   }
 
-  and 'a regular_callback = in_completion_loop -> 'a completed_state -> unit
+  and 'a regular_callback = in_resolution_loop -> 'a resolved_state -> unit
 
-  and cancel_callback = in_completion_loop -> unit
+  and cancel_callback = in_resolution_loop -> unit
 
-  and 'a completed_state = ('a, underlying, completed) state
+  and 'a resolved_state = ('a, underlying, resolved) state
 
-  and in_completion_loop   (* = unit, see [Completion_loop.complete]. *)
+  and in_resolution_loop   (* = unit, see [Resolution_loop.resolve]. *)
 
   and how_to_cancel =
     | Not_cancelable              :                           how_to_cancel
@@ -499,8 +499,8 @@ struct
      These type definitions are guilty of performing several optimizations,
      without which they would be much easier to understand.
 
-     - The type parameters of ['a completed_state] guarantee that it is either
-       [Resolved _] or [Failed _]. So, it is equivalent to
+     - The type parameters of ['a resolved_state] guarantee that it is either
+       [Fulfilled _] or [Rejected _]. So, it is equivalent to
        [('a, exn) Pervasives.result], and, indeed, should have an identical
        memory representation.
 
@@ -510,7 +510,7 @@ struct
 
        Despite the different types for the two kinds of callbacks, they are
        otherwise the same. Cancel callbacks just don't need a result state
-       argument, because it is known to be [Failed Canceled].
+       argument, because it is known to be [Rejected Canceled].
 
      - Regular callbacks are not allowed to raise exceptions. All regular
        callbacks are created in this file, so this can be checked.
@@ -536,12 +536,12 @@ struct
          callbacks, implicitly removed and explicitly removable. All callbacks
          are removable. It's just that, for some callbacks, they will only be
          removed at the same time that the promise they are attached to becomes
-         completed. When that happens, the entire state of that promise changes
-         to [Resolved _] or [Failed _], and the reference to the whole callback
-         list is simply lost. This "removes" the callback. For these callbacks,
-         ['a regular_callback_list] attempts to trim an option and a reference
-         cell with the [Regular_callback_list_implicitly_removed_callback]
-         constructor.
+         resolved. When that happens, the entire state of that promise changes
+         to [Fulfilled _] or [Rejected _], and the reference to the whole
+         callback list is simply lost. This "removes" the callback. For these
+         callbacks, ['a regular_callback_list] attempts to trim an option and a
+         reference cell with the
+         [Regular_callback_list_implicitly_removed_callback] constructor.
 
        - ['a cancel_callback_list] has
          [Cancel_callback_list_remove_sequence_node node], which is the same as
@@ -597,8 +597,8 @@ struct
 
   (* This could probably save an allocation by using [Obj.magic]. *)
   let state_of_result = function
-    | Result.Ok x -> Resolved x
-    | Result.Error exn -> Failed exn
+    | Result.Ok x -> Fulfilled x
+    | Result.Error exn -> Rejected exn
 end
 include Public_types
 
@@ -640,8 +640,8 @@ struct
       (p : ('a, u, c) promise) ->
 
     match p.state with
-    | Resolved _ -> (p : (_, underlying, _) promise)
-    | Failed _ -> p
+    | Fulfilled _ -> (p : (_, underlying, _) promise)
+    | Rejected _ -> p
     | Pending _ -> p
     | Proxy p' ->
       let p'' = underlying p' in
@@ -664,7 +664,7 @@ struct
      (wrapped) reference to [p] with the same invariants as on [state]. The
      original reference [p] should be shadowed when calling this function:
 
-       let State_may_have_changed p = set_promise_state p (Resolved 42) in ...
+       let State_may_have_changed p = set_promise_state p (Fulfilled 42) in ...
 
      This is a kind of cheap imitation of linear typing, which is good enough
      for the needs of [lwt.ml].
@@ -680,7 +680,7 @@ struct
 
      To avoid problems with type-level invariants not matching reality, data
      structures do not store promises with concrete invariants -- except
-     completed promises, which are immutable. Indeed, if one looks at
+     resolved promises, which are immutable. Indeed, if one looks at
      definitions of data structures that can store pending promises, e.g. the
      [how_to_cancel] graph, the invariants are existentially quantified.
 
@@ -702,7 +702,7 @@ struct
      pending promise [p] and return it to the user.
 
      They do not return a corresponding resolver. That means that only the
-     function itself (typically, a callback registered by it) can complete [p].
+     function itself (typically, a callback registered by it) can resolve [p].
      The only thing the user can do directly is try to cancel [p], but, since
      [p] is not an initial promise, the cancelation attempt simply propagates
      past [p] to [p]'s predecessors. If that eventually results in canceling
@@ -878,7 +878,7 @@ struct
   let cleanup_throttle = 42
 
   (* Explicitly removable callbacks are added (mainly) by [Lwt.choose] and its
-     similar functions. In [Lwt.choose [p; p']], if [p'] completes first, the
+     similar functions. In [Lwt.choose [p; p']], if [p'] resolves first, the
      callback added by [Lwt.choose] to [p] is removed.
 
      The removal itself is accomplished when this function clears the reference
@@ -904,10 +904,10 @@ struct
     ps |> List.iter (fun p ->
       let Internal p = to_internal_promise p in
       match (underlying p).state with
-      (* Some of the promises may already have completed at the time this
+      (* Some of the promises may already have been resolved at the time this
          function is called. *)
-      | Resolved _ -> ()
-      | Failed _ -> ()
+      | Fulfilled _ -> ()
+      | Rejected _ -> ()
 
       | Pending callbacks ->
         match callbacks.regular_callbacks with
@@ -996,8 +996,8 @@ struct
       let Internal p = to_internal_promise p in
       match (underlying p).state with
       | Pending callbacks -> add_regular_callback_list_node callbacks node
-      | Resolved _ -> assert false
-      | Failed _ -> assert false);
+      | Fulfilled _ -> assert false
+      | Rejected _ -> assert false);
 
     cell
 
@@ -1032,14 +1032,14 @@ open Callbacks
 
 
 
-module Completion_loop :
+module Resolution_loop :
 sig
   (* Internal interface used only in this module Lwt *)
-  val complete :
-    in_completion_loop ->
+  val resolve :
+    in_resolution_loop ->
     ('a, underlying, pending) promise ->
-    'a completed_state ->
-      ('a, underlying, completed) state_changed
+    'a resolved_state ->
+      ('a, underlying, resolved) state_changed
 
   val handle_with_async_exception_hook : ('a -> unit) -> 'a -> unit
 
@@ -1062,25 +1062,25 @@ sig
   val async_exception_hook : (exn -> unit) ref
 end =
 struct
-  (* Every now and then, Lwt enters the promise completion loop. In this loop,
-     Lwt sets the state of one promise to [Resolved _] or [Failed _], i.e.
-     completes it. That triggers the running of its callbacks. The callbacks
-     might, in turn, complete more promises, triggering more callbacks, and so
+  (* Every now and then, Lwt enters the promise resolution loop. In this loop,
+     Lwt sets the state of one promise to [Fulfilled _] or [Rejected _], i.e.
+     resolves it. That triggers the running of its callbacks. The callbacks
+     might, in turn, resolve more promises, triggering more callbacks, and so
      on. The process continues until Lwt runs out of promises that it can
-     immediately complete, typically because all the remaining promises, whether
+     immediately resolve, typically because all the remaining promises, whether
      pre-existing or created during the loop, are blocked on I/O. So, the
-     completion loop is started by completing one promise, and then Lwt eagerly
-     completes as many more promises as it can.
+     resolution loop is started by resolving one promise, and then Lwt eagerly
+     resolves as many more promises as it can.
 
      The loop is triggered by calling [Lwt.wakeup_later] and related functions.
      Lwt maintains a queue of callbacks that need to be run.
      [Lwt.wakeup_later p _] places the callbacks of [p] onto that queue. Lwt
      then dequeues the callbacks and runs each one. As each one runs, if it
-     completes more promises, those promises' callbacks are added to the queue
+     resolves more promises, those promises' callbacks are added to the queue
      as well. Lwt eventually runs them, and so on.
 
      Current Lwt is not quite as clean as suggested by the above description.
-     See [Lwt.wakeup], [Lwt.complete], [Lwt.cancel], and [Lwt.bind] for notes on
+     See [Lwt.wakeup], [Lwt.resolve], [Lwt.cancel], and [Lwt.bind] for notes on
      deviations from this idealized procedure. Basically, all the deviations
      involve running callbacks immediately on the current stack, instead of
      deferring them by placing them into the queue. Maintainer's note: these are
@@ -1091,7 +1091,7 @@ struct
 
      * Context
 
-     The completion loop handles only promises that can be completed
+     The resolution loop handles only promises that can be resolved
      immediately, without blocking on I/O. A complete program that does I/O
      calls [Lwt_main.run]. See "No I/O" in the Overview. *)
 
@@ -1108,9 +1108,9 @@ struct
 
   let handle_with_async_exception_hook f v =
     (* Note that this function does not care if [f] evaluates to a promise. In
-       particular, if [f v] evaluates to [p] and [p] is already failed or will
-       fail later, it is not the responsibility of this function to pass the
-       exception to [!async_exception_hook]. *)
+       particular, if [f v] evaluates to [p] and [p] is already rejected or will
+       be reject later, it is not the responsibility of this function to pass
+       the exception to [!async_exception_hook]. *)
     try f v
     with exn -> !async_exception_hook exn
 
@@ -1125,13 +1125,13 @@ struct
      callbacks.
 
      The reason for the "formerly" is that the promise's state has already been
-     set to [Resolved _] or [Failed _], so the callbacks are no longer reachable
-     through the promise reference. This is why the direct [callbacks] record
-     must be given to this function. *)
+     set to [Fulfilled _] or [Rejected _], so the callbacks are no longer
+     reachable through the promise reference. This is why the direct [callbacks]
+     record must be given to this function. *)
   let run_callbacks
-      in_completion_loop
+      in_resolution_loop
       (callbacks : 'a callbacks)
-      (result : 'a completed_state) : unit =
+      (result : 'a resolved_state) : unit =
 
     let run_cancel_callbacks fs =
       let rec iter_callback_list fs rest =
@@ -1140,7 +1140,7 @@ struct
           iter_list rest
         | Cancel_callback_list_callback (storage, f) ->
           current_storage := storage;
-          handle_with_async_exception_hook f in_completion_loop;
+          handle_with_async_exception_hook f in_resolution_loop;
           iter_list rest
         | Cancel_callback_list_remove_sequence_node node ->
           Lwt_sequence.remove node;
@@ -1164,14 +1164,14 @@ struct
         | Regular_callback_list_empty ->
           iter_list rest
         | Regular_callback_list_implicitly_removed_callback f ->
-          f in_completion_loop result;
+          f in_resolution_loop result;
           iter_list rest
         | Regular_callback_list_explicitly_removable_callback
             {contents = None} ->
           iter_list rest
         | Regular_callback_list_explicitly_removable_callback
             {contents = Some f} ->
-          f in_completion_loop result;
+          f in_resolution_loop result;
           iter_list rest
         | Regular_callback_list_concat (fs, fs') ->
           iter_callback_list fs (fs'::rest)
@@ -1189,9 +1189,9 @@ struct
     (* Pattern matching is much faster than polymorphic comparison. *)
     let is_canceled =
       match result with
-      | Failed Canceled -> true
-      | Failed _ -> false
-      | Resolved _ -> false
+      | Rejected Canceled -> true
+      | Rejected _ -> false
+      | Fulfilled _ -> false
     in
     if is_canceled then
       run_cancel_callbacks callbacks.cancel_callbacks;
@@ -1199,82 +1199,82 @@ struct
 
 
 
-  (* The callbacks triggered by [complete] are run immediately on the current
+  (* The callbacks triggered by [resolve] are run immediately on the current
      stack. This is probably an error. If the user builds a loop that implicitly
-     works through [complete], the result can be stack overflow.
+     works through [resolve], the result can be stack overflow.
 
-     Callbacks may modify sequence-associated storage. The completion loop
-     protects storage during callbacks (see [enter_completion_loop]). As a
-     result, this function is intended to be run only while the completion loop
+     Callbacks may modify sequence-associated storage. The resolution loop
+     protects storage during callbacks (see [enter_resolution_loop]). As a
+     result, this function is intended to be run only while the resolution loop
      is invoked.
 
      To help ensure this, this function requires an argument of the abstract
-     type [in_completion_loop]. The only way to obtain such a value is to pass a
-     function to [run_in_completion_loop]. Since [run_in_completion_loop] is
-     local to this module, the only way to obtain an [in_completion_loop]
+     type [in_resolution_loop]. The only way to obtain such a value is to pass a
+     function to [run_in_resolution_loop]. Since [run_in_resolution_loop] is
+     local to this module, the only way to obtain an [in_resolution_loop]
      elsewhere is through a callback that is being invoked. The
-     [in_completion_loop] eventually makes it to that callback from a
-     surrounding invocation of [run_in_completion_loop] that triggered the
+     [in_resolution_loop] eventually makes it to that callback from a
+     surrounding invocation of [run_in_resolution_loop] that triggered the
      callback.
 
-     If this function is changed to always defer callbacks, [in_completion_loop]
+     If this function is changed to always defer callbacks, [in_resolution_loop]
      can be eliminated. *)
-  let complete in_completion_loop p result =
+  let resolve in_resolution_loop p result =
     let Pending callbacks = p.state in
     let p = set_promise_state p result in
-    run_callbacks in_completion_loop callbacks result;
+    run_callbacks in_resolution_loop callbacks result;
     p
 
 
 
-  let currently_in_completion_loop = ref false
+  let currently_in_resolution_loop = ref false
 
   type queued_callbacks =
-    Queued : ('a callbacks * 'a completed_state) -> queued_callbacks
+    Queued : ('a callbacks * 'a resolved_state) -> queued_callbacks
     [@@ocaml.unboxed]
 
   let queued_callbacks : queued_callbacks Queue.t = Queue.create ()
 
-  (* Before entering a completion loop, it is necessary to take a snapshot of
+  (* Before entering a resolution loop, it is necessary to take a snapshot of
      the current state of sequence-associated storage. This is because many of
      the callbacks that will be run will modify the storage. The storage is
-     restored to the snapshot when the completion loop is exited. *)
-  let enter_completion_loop () =
+     restored to the snapshot when the resolution loop is exited. *)
+  let enter_resolution_loop () =
     let storage_snapshot = !current_storage in
-    let top_level_entry = not !currently_in_completion_loop in
-    currently_in_completion_loop := true;
+    let top_level_entry = not !currently_in_resolution_loop in
+    currently_in_resolution_loop := true;
     top_level_entry, storage_snapshot
 
-  let leave_completion_loop
-      in_completion_loop
+  let leave_resolution_loop
+      in_resolution_loop
       (top_level_entry : bool)
       (storage_snapshot : storage) : unit =
 
     if top_level_entry then begin
       while not (Queue.is_empty queued_callbacks) do
         let Queued (callbacks, result) = Queue.pop queued_callbacks in
-        run_callbacks in_completion_loop callbacks result
+        run_callbacks in_resolution_loop callbacks result
       done;
-      currently_in_completion_loop := false;
+      currently_in_resolution_loop := false;
     end;
     current_storage := storage_snapshot
 
-  let run_in_completion_loop (f : in_completion_loop -> unit) : unit =
-    let top_level_entry, storage_snapshot = enter_completion_loop () in
-    let in_completion_loop : in_completion_loop = Obj.magic () in
-    f in_completion_loop;
-    leave_completion_loop in_completion_loop top_level_entry storage_snapshot
+  let run_in_resolution_loop (f : in_resolution_loop -> unit) : unit =
+    let top_level_entry, storage_snapshot = enter_resolution_loop () in
+    let in_resolution_loop : in_resolution_loop = Obj.magic () in
+    f in_resolution_loop;
+    leave_resolution_loop in_resolution_loop top_level_entry storage_snapshot
 
   (* This is basically a hack to fix https://github.com/ocsigen/lwt/issues/48.
-     If currently completing promises, it immediately exits all recursive
-     entries of the completion loop, goes to the top level, runs any deferred
-     callbacks, and exits the top-level completion loop.
+     If currently resolving promises, it immediately exits all recursive
+     entries of the resolution loop, goes to the top level, runs any deferred
+     callbacks, and exits the top-level resolution loop.
 
-     The name should probably be [abaondon_completion_loop]. *)
+     The name should probably be [abaondon_resolution_loop]. *)
   let abandon_wakeups () =
-    if !currently_in_completion_loop then
-      let in_completion_loop : in_completion_loop = Obj.magic () in
-      leave_completion_loop in_completion_loop true Storage_map.empty
+    if !currently_in_resolution_loop then
+      let in_resolution_loop : in_resolution_loop = Obj.magic () in
+      leave_resolution_loop in_resolution_loop true Storage_map.empty
 
 
 
@@ -1286,19 +1286,19 @@ struct
     let p = underlying p in
 
     match p.state with
-    | Failed Canceled ->
+    | Rejected Canceled ->
       ()
-    | Resolved _ ->
+    | Fulfilled _ ->
       Printf.ksprintf Pervasives.invalid_arg "Lwt.%s" api_function_name
-    | Failed _ ->
+    | Rejected _ ->
       Printf.ksprintf Pervasives.invalid_arg "Lwt.%s" api_function_name
 
     | Pending callbacks ->
       let result = state_of_result result in
       let State_may_have_changed p = set_promise_state p result in
       ignore p;
-      run_in_completion_loop (fun in_completion_loop ->
-        run_callbacks in_completion_loop callbacks result)
+      run_in_resolution_loop (fun in_resolution_loop ->
+        run_callbacks in_resolution_loop callbacks result)
 
   let wakeup_result r result = wakeup_general "wakeup_result" r result
   let wakeup r v = wakeup_general "wakeup" r (Result.Ok v)
@@ -1309,11 +1309,11 @@ struct
     let p = underlying p in
 
     match p.state with
-    | Failed Canceled ->
+    | Rejected Canceled ->
       ()
-    | Resolved _ ->
+    | Fulfilled _ ->
       Printf.ksprintf Pervasives.invalid_arg "Lwt.%s" api_function_name
-    | Failed _ ->
+    | Rejected _ ->
       Printf.ksprintf Pervasives.invalid_arg "Lwt.%s" api_function_name
 
     | Pending callbacks ->
@@ -1321,11 +1321,11 @@ struct
       let State_may_have_changed p = set_promise_state p result in
       ignore p;
       begin
-        if !currently_in_completion_loop then
+        if !currently_in_resolution_loop then
           Queue.push (Queued (callbacks, result)) queued_callbacks
         else
-          run_in_completion_loop (fun in_completion_loop ->
-            run_callbacks in_completion_loop callbacks result)
+          run_in_resolution_loop (fun in_resolution_loop ->
+            run_callbacks in_resolution_loop callbacks result)
       end
 
   let wakeup_later_result r result =
@@ -1345,13 +1345,13 @@ struct
      behavior: it runs callbacks directly on the current stack. It should
      therefore be possible to cause a stack overflow using this function. *)
   let cancel p =
-    let canceled_result = Failed Canceled in
+    let canceled_result = Rejected Canceled in
 
     (* Walks the promise dependency graph backwards, looking for cancelable
        initial promises, and cancels (only) them.
 
        Found initial promises are canceled immediately, as they are found, by
-       setting their state to [Failed Canceled]. This is to prevent them from
+       setting their state to [Rejected Canceled]. This is to prevent them from
        being "found twice" if they are reachable by two or more distinct paths
        through the promise dependency graph.
 
@@ -1368,9 +1368,9 @@ struct
         let p = underlying p in
         match p.state with
         (* If the promise is not still pending, it can't be canceled. *)
-        | Resolved _ ->
+        | Fulfilled _ ->
           callbacks_accumulator
-        | Failed _ ->
+        | Rejected _ ->
           callbacks_accumulator
 
         | Pending callbacks ->
@@ -1393,11 +1393,11 @@ struct
     let Internal p = to_internal_promise p in
     let callbacks = propagate_cancel p in
 
-    run_in_completion_loop (fun in_completion_loop ->
+    run_in_resolution_loop (fun in_resolution_loop ->
       callbacks |> List.iter (fun (Packed callbacks) ->
-        run_callbacks in_completion_loop callbacks canceled_result))
+        run_callbacks in_resolution_loop callbacks canceled_result))
 end
-include Completion_loop
+include Resolution_loop
 
 
 
@@ -1421,13 +1421,13 @@ sig
 end =
 struct
   let return v =
-    to_public_promise {state = Resolved v}
+    to_public_promise {state = Fulfilled v}
 
   let of_result result =
     to_public_promise {state = state_of_result result}
 
   let fail exn =
-    to_public_promise {state = Failed exn}
+    to_public_promise {state = Rejected exn}
 
   let return_unit = return ()
   let return_none = return None
@@ -1439,10 +1439,10 @@ struct
   let return_error x = return (Result.Error x)
 
   let fail_with msg =
-    to_public_promise {state = Failed (Failure msg)}
+    to_public_promise {state = Rejected (Failure msg)}
 
   let fail_invalid_arg msg =
-    to_public_promise {state = Failed (Invalid_argument msg)}
+    to_public_promise {state = Rejected (Invalid_argument msg)}
 end
 include Trivial_promises
 
@@ -1539,13 +1539,13 @@ struct
   let protected p =
     let Internal p_internal = to_internal_promise p in
     match (underlying p_internal).state with
-    | Resolved _ -> p
-    | Failed _ -> p
+    | Fulfilled _ -> p
+    | Rejected _ -> p
 
     | Pending _ ->
       let p' = new_pending ~how_to_cancel:Cancel_this_promise in
 
-      let callback in_completion_loop p_result =
+      let callback in_resolution_loop p_result =
         let State_may_now_be_pending_proxy p' = may_now_be_proxy p' in
         let p' = underlying p' in
         (* In this callback, [p'] will either still itself be pending, or it
@@ -1563,7 +1563,7 @@ struct
              inductive reasoning at [may_now_be_proxy] applies. *)
 
         let State_may_have_changed p' =
-          complete in_completion_loop p' p_result in
+          resolve in_resolution_loop p' p_result in
         ignore p'
       in
 
@@ -1580,13 +1580,13 @@ struct
   let no_cancel p =
     let Internal p_internal = to_internal_promise p in
     match (underlying p_internal).state with
-    | Resolved _ -> p
-    | Failed _ -> p
+    | Fulfilled _ -> p
+    | Rejected _ -> p
 
     | Pending p_callbacks ->
       let p' = new_pending ~how_to_cancel:Not_cancelable in
 
-      let callback in_completion_loop p_result =
+      let callback in_resolution_loop p_result =
         let State_may_now_be_pending_proxy p' = may_now_be_proxy p' in
         let p' = underlying p' in
         (* In this callback, [p'] will either still itself be pending, or it
@@ -1595,7 +1595,7 @@ struct
            because [p'] is not cancelable. *)
 
         let State_may_have_changed p' =
-          complete in_completion_loop p' p_result in
+          resolve in_resolution_loop p' p_result in
         ignore p'
       in
       add_implicitly_removed_callback p_callbacks callback;
@@ -1680,21 +1680,21 @@ struct
      pending promise to [make_into_proxy]).
 
      The reasons proxying is used, instead of adding a callback to
-     [~user_provided_promise] to complete [~outer_promise] when the former
-     becomes completed probably are:
+     [~user_provided_promise] to resolve [~outer_promise] when the former
+     becomes resolved probably are:
 
-     - Promises have more behaviors than completion. One would have to add a
+     - Promises have more behaviors than resolution. One would have to add a
        cancelation handler to [~outer_promise] to propagate the cancelation back
        to [~user_provided_promise], for example. It may be easier to just think
        of them as the same promise.
-     - If using callbacks, completing [~user_provided_promise] would not
-       immediately complete [~outer_promise]. Another callback added to
-       [~user_provided_promise] might see [~user_provided_promise] completed,
+     - If using callbacks, resolving [~user_provided_promise] would not
+       immediately resolve [~outer_promise]. Another callback added to
+       [~user_provided_promise] might see [~user_provided_promise] resolved,
        but [~outer_promise] still pending, depending on the order in which
        callbacks are run. *)
   let make_into_proxy
       (type c)
-      in_completion_loop
+      in_resolution_loop
       ~(outer_promise : ('a, underlying, pending) promise)
       ~(user_provided_promise : ('a, _, c) promise)
         : ('a, underlying, c) state_changed =
@@ -1710,10 +1710,10 @@ struct
 
     else
       match p'.state with
-      | Resolved _ ->
-        complete in_completion_loop outer_promise p'.state
-      | Failed _ ->
-        complete in_completion_loop outer_promise p'.state
+      | Fulfilled _ ->
+        resolve in_resolution_loop outer_promise p'.state
+      | Rejected _ ->
+        resolve in_resolution_loop outer_promise p'.state
 
       | Pending p'_callbacks ->
         let Pending outer_callbacks = outer_promise.state in
@@ -1746,9 +1746,9 @@ struct
     let p = underlying p in
 
     match p.state with
-    | Resolved v ->
+    | Fulfilled v ->
       f v   (* See https://github.com/ocsigen/lwt/issues/329. *)
-    | Failed _ as result ->
+    | Rejected _ as result ->
       to_public_promise {state = result}
 
     | Pending p_callbacks ->
@@ -1757,7 +1757,7 @@ struct
 
          Initially, trying to cancel this fresh pending promise [p''] will
          propagate the cancelation attempt to [p] (backwards through the promise
-         dependency graph). If/when [p] is resolved, Lwt will call the user's
+         dependency graph). If/when [p] is fulfilled, Lwt will call the user's
          callback [f] below, which will provide a new promise [p'], and [p']
          will become a proxy of [p'']. At that point, trying to cancel [p'']
          will be equivalent to trying to cancel [p'], so the behavior will
@@ -1765,7 +1765,7 @@ struct
 
       let saved_storage = !current_storage in
 
-      let callback in_completion_loop p_result =
+      let callback in_resolution_loop p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
         (* [p''] was an underlying promise when it was created above, but it
@@ -1776,7 +1776,7 @@ struct
            underlying promise. *)
 
         match p_result with
-        | Resolved v ->
+        | Fulfilled v ->
           current_storage := saved_storage;
 
           let p' = try f v with exn -> fail exn in
@@ -1784,7 +1784,7 @@ struct
           (* Run the user's function [f]. *)
 
           let State_may_have_changed p'' =
-            make_into_proxy in_completion_loop
+            make_into_proxy in_resolution_loop
               ~outer_promise:p''
               ~user_provided_promise:p'
           in
@@ -1792,9 +1792,9 @@ struct
           (* Make the outer promise [p''] behaviorally identical to the promise
              [p'] returned by [f] by making [p'] into a proxy of [p'']. *)
 
-        | Failed _ as p_result ->
+        | Rejected _ as p_result ->
           let State_may_have_changed p'' =
-            complete in_completion_loop p'' p_result in
+            resolve in_resolution_loop p'' p_result in
           ignore p''
       in
       add_implicitly_removed_callback p_callbacks callback;
@@ -1806,37 +1806,37 @@ struct
     let p = underlying p in
 
     match p.state with
-    | Resolved v ->
+    | Fulfilled v ->
       f v
-    | Failed exn ->
-      to_public_promise {state = Failed (add_loc exn)}
+    | Rejected exn ->
+      to_public_promise {state = Rejected (add_loc exn)}
 
     | Pending p_callbacks ->
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
       let saved_storage = !current_storage in
 
-      let callback in_completion_loop p_result =
+      let callback in_resolution_loop p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
 
         match p_result with
-        | Resolved v ->
+        | Fulfilled v ->
           current_storage := saved_storage;
 
           let p' = try f v with exn -> fail (add_loc exn) in
           let Internal p' = to_internal_promise p' in
 
           let State_may_have_changed p'' =
-            make_into_proxy in_completion_loop
+            make_into_proxy in_resolution_loop
               ~outer_promise:p''
               ~user_provided_promise:p'
           in
           ignore p''
 
-        | Failed exn ->
+        | Rejected exn ->
           let State_may_have_changed p'' =
-            complete in_completion_loop p'' (Failed (add_loc exn)) in
+            resolve in_resolution_loop p'' (Rejected (add_loc exn)) in
           ignore p''
       in
       add_implicitly_removed_callback p_callbacks callback;
@@ -1848,9 +1848,9 @@ struct
     let p = underlying p in
 
     match p.state with
-    | Resolved v ->
-      to_public_promise {state = try Resolved (f v) with exn -> Failed exn}
-    | Failed _ as result ->
+    | Fulfilled v ->
+      to_public_promise {state = try Fulfilled (f v) with exn -> Rejected exn}
+    | Rejected _ as result ->
       to_public_promise {state = result}
 
     | Pending p_callbacks ->
@@ -1858,22 +1858,22 @@ struct
 
       let saved_storage = !current_storage in
 
-      let callback in_completion_loop p_result =
+      let callback in_resolution_loop p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
 
         match p_result with
-        | Resolved v ->
+        | Fulfilled v ->
           current_storage := saved_storage;
 
-          let p''_result = try Resolved (f v) with exn -> Failed exn in
+          let p''_result = try Fulfilled (f v) with exn -> Rejected exn in
           let State_may_have_changed p'' =
-            complete in_completion_loop p'' p''_result in
+            resolve in_resolution_loop p'' p''_result in
           ignore p''
 
-        | Failed _ as p_result ->
+        | Rejected _ as p_result ->
           let State_may_have_changed p'' =
-            complete in_completion_loop p'' p_result in
+            resolve in_resolution_loop p'' p_result in
           ignore p''
       in
       add_implicitly_removed_callback p_callbacks callback;
@@ -1886,9 +1886,9 @@ struct
     let p = underlying p in
 
     match p.state with
-    | Resolved _ ->
+    | Fulfilled _ ->
       to_public_promise p
-    | Failed exn ->
+    | Rejected exn ->
       h exn
 
     | Pending p_callbacks ->
@@ -1896,24 +1896,24 @@ struct
 
       let saved_storage = !current_storage in
 
-      let callback in_completion_loop p_result =
+      let callback in_resolution_loop p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
 
         match p_result with
-        | Resolved _ as p_result ->
+        | Fulfilled _ as p_result ->
           let State_may_have_changed p'' =
-            complete in_completion_loop p'' p_result in
+            resolve in_resolution_loop p'' p_result in
           ignore p''
 
-        | Failed exn ->
+        | Rejected exn ->
           current_storage := saved_storage;
 
           let p' = try h exn with exn -> fail exn in
           let Internal p' = to_internal_promise p' in
 
           let State_may_have_changed p'' =
-            make_into_proxy in_completion_loop
+            make_into_proxy in_resolution_loop
               ~outer_promise:p''
               ~user_provided_promise:p'
           in
@@ -1929,9 +1929,9 @@ struct
     let p = underlying p in
 
     match p.state with
-    | Resolved _ ->
+    | Fulfilled _ ->
       to_public_promise p
-    | Failed exn ->
+    | Rejected exn ->
       h (add_loc exn)
 
     | Pending p_callbacks ->
@@ -1939,24 +1939,24 @@ struct
 
       let saved_storage = !current_storage in
 
-      let callback in_completion_loop p_result =
+      let callback in_resolution_loop p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
 
         match p_result with
-        | Resolved _ as p_result ->
+        | Fulfilled _ as p_result ->
           let State_may_have_changed p'' =
-            complete in_completion_loop p'' p_result in
+            resolve in_resolution_loop p'' p_result in
           ignore p''
 
-        | Failed exn ->
+        | Rejected exn ->
           current_storage := saved_storage;
 
           let p' = try h exn with exn -> fail (add_loc exn) in
           let Internal p' = to_internal_promise p' in
 
           let State_may_have_changed p'' =
-            make_into_proxy in_completion_loop
+            make_into_proxy in_resolution_loop
               ~outer_promise:p''
               ~user_provided_promise:p'
           in
@@ -1972,9 +1972,9 @@ struct
     let p = underlying p in
 
     match p.state with
-    | Resolved v ->
+    | Fulfilled v ->
       f' v
-    | Failed exn ->
+    | Rejected exn ->
       h exn
 
     | Pending p_callbacks ->
@@ -1982,32 +1982,32 @@ struct
 
       let saved_storage = !current_storage in
 
-      let callback in_completion_loop p_result =
+      let callback in_resolution_loop p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
 
         match p_result with
-        | Resolved v ->
+        | Fulfilled v ->
           current_storage := saved_storage;
 
           let p' = try f' v with exn -> fail exn in
           let Internal p' = to_internal_promise p' in
 
           let State_may_have_changed p'' =
-            make_into_proxy in_completion_loop
+            make_into_proxy in_resolution_loop
               ~outer_promise:p''
               ~user_provided_promise:p'
           in
           ignore p''
 
-        | Failed exn ->
+        | Rejected exn ->
           current_storage := saved_storage;
 
           let p' = try h exn with exn -> fail exn in
           let Internal p' = to_internal_promise p' in
 
           let State_may_have_changed p'' =
-            make_into_proxy in_completion_loop
+            make_into_proxy in_resolution_loop
               ~outer_promise:p''
               ~user_provided_promise:p'
           in
@@ -2023,9 +2023,9 @@ struct
     let p = underlying p in
 
     match p.state with
-    | Resolved v ->
+    | Fulfilled v ->
       f' v
-    | Failed exn ->
+    | Rejected exn ->
       h (add_loc exn)
 
     | Pending p_callbacks ->
@@ -2033,32 +2033,32 @@ struct
 
       let saved_storage = !current_storage in
 
-      let callback in_completion_loop p_result =
+      let callback in_resolution_loop p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
 
         match p_result with
-        | Resolved v ->
+        | Fulfilled v ->
           current_storage := saved_storage;
 
           let p' = try f' v with exn -> fail (add_loc exn) in
           let Internal p' = to_internal_promise p' in
 
           let State_may_have_changed p'' =
-            make_into_proxy in_completion_loop
+            make_into_proxy in_resolution_loop
               ~outer_promise:p''
               ~user_provided_promise:p'
           in
           ignore p''
 
-        | Failed exn ->
+        | Rejected exn ->
           current_storage := saved_storage;
 
           let p' = try h exn with exn -> fail (add_loc exn) in
           let Internal p' = to_internal_promise p' in
 
           let State_may_have_changed p'' =
-            make_into_proxy in_completion_loop
+            make_into_proxy in_resolution_loop
               ~outer_promise:p''
               ~user_provided_promise:p'
           in
@@ -2083,9 +2083,9 @@ struct
   let on_cancel p f =
     let Internal p = to_internal_promise p in
     match (underlying p).state with
-    | Failed Canceled -> handle_with_async_exception_hook f ()
-    | Failed _ -> ()
-    | Resolved _ -> ()
+    | Rejected Canceled -> handle_with_async_exception_hook f ()
+    | Rejected _ -> ()
+    | Fulfilled _ -> ()
     | Pending callbacks -> add_cancel_callback callbacks f
 
 
@@ -2094,20 +2094,20 @@ struct
     let Internal p = to_internal_promise p in
 
     match (underlying p).state with
-    | Resolved v ->
+    | Fulfilled v ->
       handle_with_async_exception_hook f v
-    | Failed _ ->
+    | Rejected _ ->
       ()
 
     | Pending p_callbacks ->
       let saved_storage = !current_storage in
 
-      let callback _in_completion_loop result =
+      let callback _in_resolution_loop result =
         match result with
-        | Resolved v ->
+        | Fulfilled v ->
           current_storage := saved_storage;
           handle_with_async_exception_hook f v
-        | Failed _ ->
+        | Rejected _ ->
           ()
       in
       add_implicitly_removed_callback p_callbacks callback
@@ -2116,19 +2116,19 @@ struct
     let Internal p = to_internal_promise p in
 
     match (underlying p).state with
-    | Resolved _ ->
+    | Fulfilled _ ->
       ()
-    | Failed exn ->
+    | Rejected exn ->
       handle_with_async_exception_hook f exn
 
     | Pending p_callbacks ->
       let saved_storage = !current_storage in
 
-      let callback _in_completion_loop result =
+      let callback _in_resolution_loop result =
         match result with
-        | Resolved _ ->
+        | Fulfilled _ ->
           ()
-        | Failed exn ->
+        | Rejected exn ->
           current_storage := saved_storage;
           handle_with_async_exception_hook f exn
       in
@@ -2138,15 +2138,15 @@ struct
     let Internal p = to_internal_promise p in
 
     match (underlying p).state with
-    | Resolved _ ->
+    | Fulfilled _ ->
       handle_with_async_exception_hook f ()
-    | Failed _ ->
+    | Rejected _ ->
       handle_with_async_exception_hook f ()
 
     | Pending p_callbacks ->
       let saved_storage = !current_storage in
 
-      let callback _in_completion_loop _result =
+      let callback _in_resolution_loop _result =
         current_storage := saved_storage;
         handle_with_async_exception_hook f ()
       in
@@ -2156,20 +2156,20 @@ struct
     let Internal p = to_internal_promise p in
 
     match (underlying p).state with
-    | Resolved v ->
+    | Fulfilled v ->
       handle_with_async_exception_hook f v
-    | Failed exn ->
+    | Rejected exn ->
       handle_with_async_exception_hook g exn
 
     | Pending p_callbacks ->
       let saved_storage = !current_storage in
 
-      let callback _in_completion_loop result =
+      let callback _in_resolution_loop result =
         match result with
-        | Resolved v ->
+        | Fulfilled v ->
           current_storage := saved_storage;
           handle_with_async_exception_hook f v
-        | Failed exn ->
+        | Rejected exn ->
           current_storage := saved_storage;
           handle_with_async_exception_hook g exn
       in
@@ -2200,17 +2200,17 @@ struct
     let Internal p = to_internal_promise p in
 
     match (underlying p).state with
-    | Resolved _ ->
+    | Fulfilled _ ->
       ()
-    | Failed exn ->
+    | Rejected exn ->
       !async_exception_hook exn
 
     | Pending p_callbacks ->
-      let callback _in_completion_loop result =
+      let callback _in_resolution_loop result =
         match result with
-        | Resolved _ ->
+        | Fulfilled _ ->
           ()
-        | Failed exn ->
+        | Rejected exn ->
           !async_exception_hook exn
       in
       add_implicitly_removed_callback p_callbacks callback
@@ -2219,17 +2219,17 @@ struct
     let Internal p = to_internal_promise p in
 
     match (underlying p).state with
-    | Resolved _ ->
+    | Fulfilled _ ->
       ()
-    | Failed exn ->
+    | Rejected exn ->
       raise exn
 
     | Pending p_callbacks ->
-      let callback _in_completion_loop result =
+      let callback _in_resolution_loop result =
         match result with
-        | Resolved _ ->
+        | Fulfilled _ ->
           ()
-        | Failed exn ->
+        | Rejected exn ->
           !async_exception_hook exn
       in
       add_implicitly_removed_callback p_callbacks callback
@@ -2240,38 +2240,38 @@ struct
     let p' = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
 
     let number_pending_in_ps = ref 0 in
-    let join_result = ref (Resolved ()) in
+    let join_result = ref (Fulfilled ()) in
 
     (* Callback attached to each promise in [ps] that is still pending at the
        time [join] is called. *)
-    let callback in_completion_loop new_result =
+    let callback in_resolution_loop new_result =
       let State_may_now_be_pending_proxy p' = may_now_be_proxy p' in
 
       begin match new_result with
-      | Resolved () -> ()
-      | Failed _ ->
-      (* For the first promise in [ps] to fail, set the result of the [join] to
-         the same failure. *)
+      | Fulfilled () -> ()
+      | Rejected _ ->
+      (* For the first promise in [ps] to be rejected, set the result of the
+         [join] to rejected with the same exception.. *)
         match !join_result with
-        | Resolved () -> join_result := new_result
-        | Failed _ -> ()
+        | Fulfilled () -> join_result := new_result
+        | Rejected _ -> ()
       end;
 
       (* In all cases, decrement the number of promises still pending, and
-         complete the [join] once all promises complete. *)
+         resolve the [join] once all promises resolve. *)
       number_pending_in_ps := !number_pending_in_ps - 1;
       if !number_pending_in_ps = 0 then begin
         let p' = underlying p' in
         let State_may_have_changed p' =
-          complete in_completion_loop (underlying p') !join_result in
+          resolve in_resolution_loop (underlying p') !join_result in
         ignore p'
       end
     in
 
     (* Attach the above callback. Simultaneously count how many pending promises
        there are in [ps] (initially). If that number is zero, the [join] must
-       complete immediately. *)
-    let rec attach_callback_or_complete_immediately ps =
+       resolve immediately. *)
+    let rec attach_callback_or_resolve_immediately ps =
       match ps with
       | [] ->
         if !number_pending_in_ps = 0 then
@@ -2286,24 +2286,24 @@ struct
         | Pending p_callbacks ->
           number_pending_in_ps := !number_pending_in_ps + 1;
           add_implicitly_removed_callback p_callbacks callback;
-          attach_callback_or_complete_immediately ps
+          attach_callback_or_resolve_immediately ps
 
-        | Failed _ as p_result ->
-          (* As in the callback above, but for already-completed promises in
-             [ps]: fail the [join] with the first failure found. [join] still
-             waits for any pending promises before actually completing,
-             though. *)
+        | Rejected _ as p_result ->
+          (* As in the callback above, but for already-resolved promises in
+             [ps]: reject the [join] with the same exception as in the first
+             rejected promise found. [join] still waits for any pending promises
+             before actually resolving, though. *)
           begin match !join_result with
-          | Resolved () -> join_result := p_result;
-          | Failed _ -> ()
+          | Fulfilled () -> join_result := p_result;
+          | Rejected _ -> ()
           end;
-          attach_callback_or_complete_immediately ps
+          attach_callback_or_resolve_immediately ps
 
-        | Resolved () ->
-          attach_callback_or_complete_immediately ps
+        | Fulfilled () ->
+          attach_callback_or_resolve_immediately ps
     in
 
-    attach_callback_or_complete_immediately ps
+    attach_callback_or_resolve_immediately ps
 
 
 
@@ -2312,20 +2312,20 @@ struct
      [choose]/[pick] implementation, which may actually be optimal anyway with
      Flambda. *)
 
-  let count_completed_promises_in (ps : _ t list) =
+  let count_resolved_promises_in (ps : _ t list) =
     let accumulate total p =
       let Internal p = to_internal_promise p in
       match (underlying p).state with
-      | Resolved _ -> total + 1
-      | Failed _ -> total + 1
+      | Fulfilled _ -> total + 1
+      | Rejected _ -> total + 1
       | Pending _ -> total
     in
     List.fold_left accumulate 0 ps
 
   (* Evaluates to the [n]th promise in [ps], among only those promises in [ps]
-     that are completed. The caller is expected to ensure that there are at
-     least [n] completed promises in [ps]. *)
-  let rec nth_completed (ps : 'a t list) (n : int) : 'a t =
+     that are resolved. The caller is expected to ensure that there are at
+     least [n] resolved promises in [ps]. *)
+  let rec nth_resolved (ps : 'a t list) (n : int) : 'a t =
     match ps with
     | [] ->
       assert false
@@ -2334,18 +2334,18 @@ struct
       let Internal p' = to_internal_promise p in
       match (underlying p').state with
       | Pending _ ->
-        nth_completed ps n
+        nth_resolved ps n
 
-      | Resolved _ ->
+      | Fulfilled _ ->
         if n <= 0 then p
-        else nth_completed ps (n - 1)
-      | Failed _ ->
+        else nth_resolved ps (n - 1)
+      | Rejected _ ->
         if n <= 0 then p
-        else nth_completed ps (n - 1)
+        else nth_resolved ps (n - 1)
 
-  (* Like [nth_completed], but cancels all pending promises found while
+  (* Like [nth_resolved], but cancels all pending promises found while
      traversing [ps]. *)
-  let rec nth_completed_and_cancel_pending (ps : 'a t list) (n : int) : 'a t =
+  let rec nth_resolved_and_cancel_pending (ps : 'a t list) (n : int) : 'a t =
     match ps with
     | [] ->
       assert false
@@ -2355,14 +2355,14 @@ struct
       match (underlying p').state with
       | Pending _ ->
         cancel p;
-        nth_completed_and_cancel_pending ps n
+        nth_resolved_and_cancel_pending ps n
 
-      | Resolved _ ->
+      | Fulfilled _ ->
         if n <= 0 then (List.iter cancel ps; p)
-        else nth_completed_and_cancel_pending ps (n - 1)
-      | Failed _ ->
+        else nth_resolved_and_cancel_pending ps (n - 1)
+      | Rejected _ ->
         if n <= 0 then (List.iter cancel ps; p)
-        else nth_completed_and_cancel_pending ps (n - 1)
+        else nth_resolved_and_cancel_pending ps (n - 1)
 
   (* The PRNG state is initialized with a constant to make non-IO-based programs
      deterministic. *)
@@ -2370,14 +2370,14 @@ struct
   let prng = lazy (Random.State.make [||])
 
   let choose ps =
-    match count_completed_promises_in ps with
+    match count_resolved_promises_in ps with
     | 0 ->
       let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
 
-      let callback in_completion_loop result =
+      let callback in_resolution_loop result =
         let State_may_now_be_pending_proxy p = may_now_be_proxy p in
         let p = underlying p in
-        let State_may_have_changed p = complete in_completion_loop p result in
+        let State_may_have_changed p = resolve in_resolution_loop p result in
         ignore p
       in
       add_explicitly_removable_callback_to_each_of ps callback;
@@ -2385,21 +2385,21 @@ struct
       to_public_promise p
 
     | 1 ->
-      nth_completed ps 0
+      nth_resolved ps 0
 
     | n ->
-      nth_completed ps (Random.State.int (Lazy.force prng) n)
+      nth_resolved ps (Random.State.int (Lazy.force prng) n)
 
   let pick ps =
-    match count_completed_promises_in ps with
+    match count_resolved_promises_in ps with
     | 0 ->
       let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
 
-      let callback in_completion_loop result =
+      let callback in_resolution_loop result =
         let State_may_now_be_pending_proxy p = may_now_be_proxy p in
         List.iter cancel ps;
         let p = underlying p in
-        let State_may_have_changed p = complete in_completion_loop p result in
+        let State_may_have_changed p = resolve in_resolution_loop p result in
         ignore p
       in
       add_explicitly_removable_callback_to_each_of ps callback;
@@ -2407,45 +2407,46 @@ struct
       to_public_promise p
 
     | 1 ->
-      nth_completed_and_cancel_pending ps 0
+      nth_resolved_and_cancel_pending ps 0
 
     | n ->
-      nth_completed_and_cancel_pending ps
+      nth_resolved_and_cancel_pending ps
         (Random.State.int (Lazy.force prng) n)
 
 
 
   (* If [nchoose ps] or [npick ps] found all promises in [ps] pending, the
      callback added to each promise in [ps] eventually calls this function. The
-     function collects promises in [ps] that have resolved, or finds one promise
-     in [ps] that has failed. It then returns the desired state of the final
-     promise: either the list of results collected, or the exception found. *)
-  let rec collect_resolved_promises_after_pending
+     function collects promises in [ps] that have become fulfilled, or finds one
+     promise in [ps] that has been rejected. It then returns the desired state
+     of the final promise: either the list of results collected, or the
+     exception found. *)
+  let rec collect_fulfilled_promises_after_pending
       (results : 'a list)
       (ps : 'a t list) :
-        ('a list completed_state) =
+        ('a list resolved_state) =
 
     match ps with
     | [] ->
-      Resolved (List.rev results)
+      Fulfilled (List.rev results)
 
     | p::ps ->
       let Internal p = to_internal_promise p in
 
       match (underlying p).state with
-      | Resolved v ->
-        collect_resolved_promises_after_pending (v::results) ps
+      | Fulfilled v ->
+        collect_fulfilled_promises_after_pending (v::results) ps
 
-      | Failed _ as result ->
+      | Rejected _ as result ->
         result
 
       | Pending _ ->
-        collect_resolved_promises_after_pending results ps
+        collect_fulfilled_promises_after_pending results ps
 
   let nchoose ps =
-    (* If at least one promise in [ps] is found resolved, this function is
+    (* If at least one promise in [ps] is found fulfilled, this function is
        called to find all such promises. *)
-    let rec collect_already_resolved_promises_or_fail acc ps =
+    let rec collect_already_fulfilled_promises_or_find_rejected acc ps =
       match ps with
       | [] ->
         return (List.rev acc)
@@ -2453,29 +2454,29 @@ struct
       | p::ps ->
         let Internal p = to_internal_promise p in
         match (underlying p).state with
-        | Resolved v ->
-          collect_already_resolved_promises_or_fail (v::acc) ps
+        | Fulfilled v ->
+          collect_already_fulfilled_promises_or_find_rejected (v::acc) ps
 
-        | Failed _ as result ->
+        | Rejected _ as result ->
           to_public_promise {state = result}
 
         | Pending _ ->
-          collect_already_resolved_promises_or_fail acc ps
+          collect_already_fulfilled_promises_or_find_rejected acc ps
     in
 
-    (* Looks for already-completed promises in [ps]. If none are resolved or
-       failed, adds a callback to all promises in [ps] (all of which are
+    (* Looks for already-resolved promises in [ps]. If none are fulfilled or
+       rejected, adds a callback to all promises in [ps] (all of which are
        pending). *)
-    let rec check_for_already_completed_promises ps' =
+    let rec check_for_already_resolved_promises ps' =
       match ps' with
       | [] ->
         let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
 
-        let callback in_completion_loop _result =
+        let callback in_resolution_loop _result =
           let State_may_now_be_pending_proxy p = may_now_be_proxy p in
           let p = underlying p in
-          let result = collect_resolved_promises_after_pending [] ps in
-          let State_may_have_changed p = complete in_completion_loop p result in
+          let result = collect_fulfilled_promises_after_pending [] ps in
+          let State_may_have_changed p = resolve in_resolution_loop p result in
           ignore p
         in
         add_explicitly_removable_callback_to_each_of ps callback;
@@ -2485,23 +2486,23 @@ struct
       | p::ps ->
         let Internal p = to_internal_promise p in
         match (underlying p).state with
-        | Resolved v ->
-          collect_already_resolved_promises_or_fail [v] ps
+        | Fulfilled v ->
+          collect_already_fulfilled_promises_or_find_rejected [v] ps
 
-        | Failed _ as result ->
+        | Rejected _ as result ->
           to_public_promise {state = result}
 
         | Pending _ ->
-          check_for_already_completed_promises ps
+          check_for_already_resolved_promises ps
     in
 
-    let p = check_for_already_completed_promises ps in
+    let p = check_for_already_resolved_promises ps in
     p
 
   (* See [nchoose]. This function differs only in having additional calls to
      [cancel]. *)
   let npick ps =
-    let rec collect_already_resolved_promises_or_fail acc ps' =
+    let rec collect_already_fulfilled_promises_or_find_rejected acc ps' =
       match ps' with
       | [] ->
         List.iter cancel ps;
@@ -2510,28 +2511,28 @@ struct
       | p::ps' ->
         let Internal p = to_internal_promise p in
         match (underlying p).state with
-        | Resolved v ->
-          collect_already_resolved_promises_or_fail (v::acc) ps'
+        | Fulfilled v ->
+          collect_already_fulfilled_promises_or_find_rejected (v::acc) ps'
 
-        | Failed _ as result ->
+        | Rejected _ as result ->
           List.iter cancel ps;
           to_public_promise {state = result}
 
         | Pending _ ->
-          collect_already_resolved_promises_or_fail acc ps'
+          collect_already_fulfilled_promises_or_find_rejected acc ps'
     in
 
-    let rec check_for_already_completed_promises ps' =
+    let rec check_for_already_resolved_promises ps' =
       match ps' with
       | [] ->
         let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
 
-        let callback in_completion_loop _result =
+        let callback in_resolution_loop _result =
           let State_may_now_be_pending_proxy p = may_now_be_proxy p in
           let p = underlying p in
-          let result = collect_resolved_promises_after_pending [] ps in
+          let result = collect_fulfilled_promises_after_pending [] ps in
           List.iter cancel ps;
-          let State_may_have_changed p = complete in_completion_loop p result in
+          let State_may_have_changed p = resolve in_resolution_loop p result in
           ignore p
         in
         add_explicitly_removable_callback_to_each_of ps callback;
@@ -2541,18 +2542,18 @@ struct
       | p::ps' ->
         let Internal p = to_internal_promise p in
         match (underlying p).state with
-        | Resolved v ->
-          collect_already_resolved_promises_or_fail [v] ps'
+        | Fulfilled v ->
+          collect_already_fulfilled_promises_or_find_rejected [v] ps'
 
-        | Failed _ as result ->
+        | Rejected _ as result ->
           List.iter cancel ps;
           to_public_promise {state = result}
 
         | Pending _ ->
-          check_for_already_completed_promises ps'
+          check_for_already_resolved_promises ps'
     in
 
-    let p = check_for_already_completed_promises ps in
+    let p = check_for_already_resolved_promises ps in
     p
 
 
@@ -2560,32 +2561,32 @@ struct
   (* Same general pattern as [npick] and [nchoose]. *)
   let nchoose_split ps =
     let rec finish
-        in_completion_loop
-        (to_complete : ('a list * 'a t list, underlying, pending) promise)
-        (resolved : 'a list)
+        in_resolution_loop
+        (to_resolve : ('a list * 'a t list, underlying, pending) promise)
+        (fulfilled : 'a list)
         (pending : 'a t list)
         (ps : 'a t list)
-          : ('a list * 'a t list, underlying, completed) state_changed =
+          : ('a list * 'a t list, underlying, resolved) state_changed =
 
       match ps with
       | [] ->
-        complete in_completion_loop to_complete
-          (Resolved (List.rev resolved, List.rev pending))
+        resolve in_resolution_loop to_resolve
+          (Fulfilled (List.rev fulfilled, List.rev pending))
 
       | p::ps ->
         let Internal p_internal = to_internal_promise p in
         match (underlying p_internal).state with
-        | Resolved v ->
-          finish in_completion_loop to_complete (v::resolved) pending ps
+        | Fulfilled v ->
+          finish in_resolution_loop to_resolve (v::fulfilled) pending ps
 
-        | Failed _ as result ->
-          complete in_completion_loop to_complete result
+        | Rejected _ as result ->
+          resolve in_resolution_loop to_resolve result
 
         | Pending _ ->
-          finish in_completion_loop to_complete resolved (p::pending) ps
+          finish in_resolution_loop to_resolve fulfilled (p::pending) ps
     in
 
-    let rec collect_already_completed_promises results pending ps =
+    let rec collect_already_resolved_promises results pending ps =
       match ps with
       | [] ->
         (* Maintainer's note: should the pending promise list also be
@@ -2595,25 +2596,25 @@ struct
       | p::ps ->
         let Internal p_internal = to_internal_promise p in
         match (underlying p_internal).state with
-        | Resolved v ->
-          collect_already_completed_promises (v::results) pending ps
+        | Fulfilled v ->
+          collect_already_resolved_promises (v::results) pending ps
 
-        | Failed _ as result ->
+        | Rejected _ as result ->
           to_public_promise {state = result}
 
         | Pending _ ->
-          collect_already_completed_promises results (p::pending) ps
+          collect_already_resolved_promises results (p::pending) ps
     in
 
-    let rec check_for_already_completed_promises pending_acc ps' =
+    let rec check_for_already_resolved_promises pending_acc ps' =
       match ps' with
       | [] ->
         let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
 
-        let callback in_completion_loop _result =
+        let callback in_resolution_loop _result =
           let State_may_now_be_pending_proxy p = may_now_be_proxy p in
           let p = underlying p in
-          let State_may_have_changed p = finish in_completion_loop p [] [] ps in
+          let State_may_have_changed p = finish in_resolution_loop p [] [] ps in
           ignore p
         in
         add_explicitly_removable_callback_to_each_of ps callback;
@@ -2623,17 +2624,17 @@ struct
       | p::ps' ->
         let Internal p_internal = to_internal_promise p in
         match (underlying p_internal).state with
-        | Resolved v ->
-          collect_already_completed_promises [v] pending_acc ps'
+        | Fulfilled v ->
+          collect_already_resolved_promises [v] pending_acc ps'
 
-        | Failed _ as result ->
+        | Rejected _ as result ->
           to_public_promise {state = result}
 
         | Pending _ ->
-          check_for_already_completed_promises (p::pending_acc) ps'
+          check_for_already_resolved_promises (p::pending_acc) ps'
     in
 
-    let p = check_for_already_completed_promises [] ps in
+    let p = check_for_already_resolved_promises [] ps in
     p
 end
 include Concurrent_composition
@@ -2697,22 +2698,22 @@ struct
   let state p =
     let Internal p = to_internal_promise p in
     match (underlying p).state with
-    | Resolved v -> Return v
-    | Failed exn -> Fail exn
+    | Fulfilled v -> Return v
+    | Rejected exn -> Fail exn
     | Pending _ -> Sleep
 
   let is_sleeping p =
     let Internal p = to_internal_promise p in
     match (underlying p).state with
-    | Resolved _ -> false
-    | Failed _ -> false
+    | Fulfilled _ -> false
+    | Rejected _ -> false
     | Pending _ -> true
 
   let poll p =
     let Internal p = to_internal_promise p in
     match (underlying p).state with
-    | Failed e -> raise e
-    | Resolved v -> Some v
+    | Rejected e -> raise e
+    | Fulfilled v -> Some v
     | Pending _ -> None
 
 
