@@ -20,16 +20,38 @@
  * 02111-1307, USA.
  *)
 
-(** Logging facility *)
+(** Logging functions
 
-(** This module provides functions to deal with logging.
-    It extends {!Lwt_log_core} with Unix features.
-    It adds:
+    This module provides logging functions. It is actually a thin extension of
+    {!Lwt_log_core}, adding logging destinations that are only available on Unix
+    and Windows (such as files, standard output, and the system log). Being a
+    thin extension, most of the functions in this module are actually the ones
+    in {!Lwt_log_core}. They are not repeated on this page, however, so please
+    read both {!Lwt_log_core} {e and} this page for a complete understanding.
 
-    - logging to the syslog daemon
-    - logging to a channel (stderr, stdout, ...)
-    - logging to a file
-*)
+    Here is a simple, self-contained usage example:
+
+{[
+let () =
+  Lwt_log.default :=
+    Lwt_log.channel
+      ~template:"$(date).$(milliseconds) [$(level)] $(message)"
+      ~close_mode:`Keep
+      ~channel:Lwt_io.stdout
+      ();
+
+  Lwt_log.add_rule "*" Lwt_log.Info;
+
+  Lwt_main.run begin
+    Lwt_log.info "Hello world!"
+  end
+
+(* ocamlfind opt -linkpkg -package lwt.unix log_example.ml && ./a.out *)
+]}
+
+    As an alternative to this module, we suggest trying
+    {{: http://erratique.ch/software/logs/doc/Logs_lwt.html}[Logs_lwt] from the
+    {{: http://erratique.ch/software/logs} [logs]} library. *)
 
 include module type of Lwt_log_core
   with type level = Lwt_log_core.level
