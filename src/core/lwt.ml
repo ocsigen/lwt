@@ -904,7 +904,7 @@ struct
     cell := None;
 
     (* Go through the promises the cell had originally been added to, and either
-       defer a cleanup, or actually cleanup their callback lists. *)
+       defer a cleanup, or actually clean up their callback lists. *)
     ps |> List.iter (fun p ->
       let Internal p = to_internal_promise p in
       match (underlying p).state with
