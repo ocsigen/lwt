@@ -1,0 +1,7 @@
+# The Lwt log will, in the future, be moved out to this package lwt_log. For
+# now, this package is a compatibility wrapper for the log's current location in
+# lwt.log.
+
+version = "dev"
+description = "Logger for lwt"
+requires = "lwt.log"

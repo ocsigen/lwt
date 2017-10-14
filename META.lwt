@@ -16,7 +16,7 @@ plugin(native) = "lwt.cmxs"
 package "log" (
   #directory = "log"
   version = "dev"
-  description = "Logger for Lwt"
+  description = "Logger for Lwt (deprecated; use lwt_log)"
   requires = "bytes lwt result"
   archive(byte) = "lwt_log.cma"
   archive(native) = "lwt_log.cmxa"
