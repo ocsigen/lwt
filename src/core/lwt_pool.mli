@@ -27,31 +27,45 @@
     The pool also provides a limit on the number of connections that can
     simultaneously be open.
 
-    Note that pools are not for keeping Lwt threads. Lwt threads are very cheap
-    to create and are pure. It is neither desirable nor possible to reuse them.
-    If you want to have a pool of {e system} threads, consider module
+    Note that pools are not for keeping Lwt promises. Lwt promises are very
+    cheap to create. It is neither desirable nor possible to reuse them.  If
+    you want to have a pool of {e system} threads, consider using
     [Lwt_preemptive]. *)
 
 type 'a t
-  (** Pools containing values of type ['a]. *)
+  (** Pools containing elements of type ['a]. *)
 
 val create :
   int ->
   ?check : ('a -> (bool -> unit) -> unit) ->
   ?validate : ('a -> bool Lwt.t) ->
+  ?dispose : ('a -> unit Lwt.t) ->
   (unit -> 'a Lwt.t) -> 'a t
-  (** [create n ?check ?validate f] creates a new pool with at most
-      [n] elements. [f] is the function to use to create a new element
+  (** [create n ?check ?validate ?dispose f] creates a new pool with at most
+      [n] elements. [f] is the function to use to create a new element.
       Elements are created on demand.
 
-      An element of the pool is validated by the optional [validate]
-      function before its {!use}. Invalid elements are re-created.
+      An element of the pool is validated by the optional [validate] function
+      before it is accessed by {!use}. Invalid elements are passed to [dispose]
+      and then re-created with [f].
 
-      The optional function [check] is called after a [use] of an
-      element failed. It must call its argument exactly once with
-      [true] if the element is still valid and [false] otherwise. *)
+      If a call to {!use} fails with a pool element that element will be passed
+      to the optional function [check] as [check element callback].  [check]
+      must call [callback] exactly once with [true] if [element] is still valid
+      and [false] otherwise.  If [check] calls [callback false] then [dispose]
+      will be run on [element].
+
+      Note that [dispose] is {b not} guaranteed to be called on the elements in
+      a pool when the pool is garbage collected.  The {!clear} function should
+      be used if the elements of the pool need to be explicitly disposed of. *)
 
 val use : 'a t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
   (** [use p f] takes one free element of the pool [p] and gives it to
       the function [f]. The element is put back into the pool after the
-      thread created by [f] completes. *)
+      promise created by [f] completes. *)
+
+val clear : 'a t -> unit Lwt.t
+  (** [clear p] will clear all {b available} elements in [p] then call the
+      [dispose] function associated with [p] on each of the cleared elements.
+
+      Disposals are performed sequentially in an undefined order. *)

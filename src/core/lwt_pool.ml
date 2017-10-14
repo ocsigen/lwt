@@ -34,6 +34,8 @@ type 'a t = {
   (* Check a member when its use failed. *)
   validate : 'a -> bool Lwt.t;
   (* Validate old pool members. *)
+  dispose : 'a -> unit Lwt.t;
+  (* Dispose of a pool member. *)
   max : int;
   (* Size of the pool. *)
   mutable count : int;
@@ -44,11 +46,12 @@ type 'a t = {
   (* Threads waiting for a member. *)
 }
 
-let create m ?(check = fun _ f -> f true) ?(validate = fun _ -> Lwt.return_true) create =
+let create m ?(check = fun _ f -> f true) ?(validate = fun _ -> Lwt.return_true) ?(dispose = fun _ -> Lwt.return_unit) create =
   { max = m;
     create = create;
     validate = validate;
     check = check;
+    dispose = dispose;
     count = 0;
     list = Queue.create ();
     waiters = Lwt_sequence.create () }
@@ -104,10 +107,12 @@ let check_elt p c =
         | false ->
           (* Remove this member and create a new one. *)
           p.count <- p.count - 1;
+          p.dispose c >>= fun () ->
           create_member p)
       (fun e ->
          (* Validation failed: create a new member if at least one
             thread is waiting. *)
+         p.dispose c >>= fun () ->
          replace_acquired p;
          Lwt.fail e)
 
@@ -127,12 +132,19 @@ let acquire p =
 
 (* Release a member when its use failed. *)
 let checked_release p c =
-  p.check c begin fun ok ->
-    if ok then
-      release p c
-    else
-      replace_acquired p
-  end
+  let ok = ref false in
+  p.check c (fun result -> ok := result);
+  if !ok then (
+    (* Element is ok - release it back to the pool *)
+    release p c;
+    Lwt.return_unit
+  )
+  else (
+    (* Element is not ok - dispose of it and replace with a new one *)
+    p.dispose c >>= fun () ->
+    replace_acquired p;
+    Lwt.return_unit
+  )
 
 let use p f =
   acquire p >>= fun c ->
@@ -143,5 +155,10 @@ let use p f =
        release p c;
        t)
     (fun e ->
-       checked_release p c;
+       checked_release p c >>= fun () ->
        Lwt.fail e)
+
+let clear p =
+  let elements = Queue.fold (fun l element -> element :: l) [] p.list in
+  Queue.clear p.list;
+  Lwt_list.iter_s p.dispose elements
