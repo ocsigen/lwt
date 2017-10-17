@@ -42,22 +42,27 @@ val create :
   ?dispose : ('a -> unit Lwt.t) ->
   (unit -> 'a Lwt.t) -> 'a t
   (** [create n ?check ?validate ?dispose f] creates a new pool with at most
-      [n] elements. [f] is the function to use to create a new element.
-      Elements are created on demand.
+      [n] elements. [f] is used to create a new pool element.  Elements are
+      created on demand.
 
-      An element of the pool is validated by the optional [validate] function
-      before it is accessed by {!use}. Invalid elements are passed to [dispose]
-      and then re-created with [f].
+      @param check is called after the resolution of {!use}'s callback when the
+      resolution is a failed promise.  [check element is_ok] must call [is_ok]
+      exactly once with [true] if [element] is still valid and [false]
+      otherwise.  If [check] calls [callback false] then [dispose] will be run
+      on [element] and the element will not be returned to the pool.
 
-      If a call to {!use} fails with a pool element that element will be passed
-      to the optional function [check] as [check element callback].  [check]
-      must call [callback] exactly once with [true] if [element] is still valid
-      and [false] otherwise.  If [check] calls [callback false] then [dispose]
-      will be run on [element].
+      @param validate is called each time a pool element is accessed by {!use},
+      before the element is provided to {!use}'s callback.  If
+      [validate element] resolves to [true] the element is considered valid and
+      is passed to the callback for use as-is.  If [validate element] resolves
+      to [false] the tested pool element is passed to [dispose] then dropped,
+      with a new one is created to take [element]'s place in the pool.
 
-      Note that [dispose] is {b not} guaranteed to be called on the elements in
-      a pool when the pool is garbage collected.  The {!clear} function should
-      be used if the elements of the pool need to be explicitly disposed of. *)
+      @param dispose is used as described above and by {!clear} to dispose of
+      all elements in a pool.  [dispose] is {b not} guaranteed to be called on
+      the elements in a pool when the pool is garbage collected.  {!clear}
+      should be used if the elements of the pool need to be explicitly disposed
+      of. *)
 
 val use : 'a t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
   (** [use p f] takes one free element of the pool [p] and gives it to

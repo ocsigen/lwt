@@ -39,7 +39,7 @@ type 'a t = {
   max : int;
   (* Size of the pool. *)
   mutable count : int;
-  (* Number of elements in hte pool. *)
+  (* Number of elements in the pool. *)
   list : 'a Queue.t;
   (* Available pool members. *)
   waiters : 'a Lwt.u Lwt_sequence.t;
