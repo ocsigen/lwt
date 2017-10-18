@@ -1,41 +1,11 @@
-(* -*- tuareg -*- *)
-(* The above line tells Jbuilder that this file is in OCaml syntax. *)
-
-let top = {|
 (jbuild_version 1)
 
 (executable
  ((name main)
-|}
-
-let optional_flambda_flags = {|
-  (ocamlopt_flags (:standard -O3))
-|}
-
-let bottom = {|
+  (ocamlopt_flags (:standard (:include ../../src/core/flambda.flag)))
   (libraries (lwttester))))
 
 (alias
  ((name runtest)
   (package lwt)
   (action (run ${exe:main.exe}))))
-|}
-
-let accumulate_content_if condition more_content content =
-  if condition then
-    content ^ more_content
-  else
-    content
-
-let () =
-  (* Compilers starting from 4.03 support Flambda flags, even if not configured
-     with Flambda support. *)
-  let compiler_has_flambda_flags =
-    Scanf.sscanf Jbuild_plugin.V1.ocaml_version "%i.%i" (fun major minor ->
-      major >= 4 && minor >= 3)
-  in
-
-  top
-  |> accumulate_content_if compiler_has_flambda_flags optional_flambda_flags
-  |> fun content -> content ^ bottom
-  |> Jbuild_plugin.V1.send
