@@ -48,7 +48,7 @@ type 'a t = {
   (* Threads waiting for a member. *)
 }
 
-let create m ?(check = fun _ f -> f true) ?(validate = fun _ -> Lwt.return_true) ?(dispose = fun _ -> Lwt.return_unit) create =
+let create m ?(validate = fun _ -> Lwt.return_true) ?(check = fun _ f -> f true) ?(dispose = fun _ -> Lwt.return_unit) create =
   { max = m;
     create = create;
     validate = validate;
