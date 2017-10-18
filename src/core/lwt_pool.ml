@@ -36,7 +36,7 @@ type 'a t = {
   (* Validate old pool members. *)
   dispose : 'a -> unit Lwt.t;
   (* Dispose of a pool member. *)
-  mutable cleared : bool ref;
+  cleared : bool ref ref;
   (* Have the current pool elements been cleared out? *)
   max : int;
   (* Size of the pool. *)
@@ -54,7 +54,7 @@ let create m ?(validate = fun _ -> Lwt.return_true) ?(check = fun _ f -> f true)
     validate = validate;
     check = check;
     dispose = dispose;
-    cleared = ref false;
+    cleared = ref (ref false);
     count = 0;
     list = Queue.create ();
     waiters = Lwt_sequence.create () }
@@ -81,13 +81,19 @@ let release p c =
     (* No one is waiting, queue it. *)
     Queue.push c p.list
 
+(* Dispose of a pool member *)
+let dispose p c =
+  p.dispose c >>= fun () ->
+  p.count <- p.count - 1;
+  Lwt.return_unit
+
 (* Create a new member when one is thrown away. *)
 let replace_acquired p =
   match Lwt_sequence.take_opt_l p.waiters with
   | None ->
     (* No one is waiting, do not create a new member to avoid
        loosing an error if creation fails. *)
-    p.count <- p.count - 1
+    ()
   | Some wakener ->
     Lwt.on_any
       (Lwt.apply p.create ())
@@ -95,7 +101,6 @@ let replace_acquired p =
          Lwt.wakeup_later wakener c)
       (fun exn ->
          (* Creation failed, notify the waiter of the failure. *)
-         p.count <- p.count - 1;
          Lwt.wakeup_later_exn wakener exn)
 
 (* Verify a member is still valid before releasing it; try to replace
@@ -109,13 +114,12 @@ let check_elt p c =
           Lwt.return c
         | false ->
           (* Remove this member and create a new one. *)
-          p.count <- p.count - 1;
-          p.dispose c >>= fun () ->
+          dispose p c >>= fun () ->
           create_member p)
       (fun e ->
          (* Validation failed: create a new member if at least one
             thread is waiting. *)
-         p.dispose c >>= fun () ->
+         dispose p c >>= fun () ->
          replace_acquired p;
          Lwt.fail e)
 
@@ -139,7 +143,7 @@ let checked_release p c cleared =
   p.check c (fun result -> ok := result);
   if cleared || not !ok then (
     (* Element is not ok or the pool was cleared - dispose of it *)
-    p.dispose c
+    dispose p c
   )
   else (
     (* Element is ok - release it back to the pool *)
@@ -151,28 +155,30 @@ let use p f =
   acquire p >>= fun c ->
   (* Capture the current cleared state so we can see if it changes while this
      element is in use *)
-  let cleared = p.cleared in
-  Lwt.catch
-    (fun () ->
-       let t = f c in
-       t >>= fun _ ->
-       if !cleared then (
-         (* p was cleared while t was resolving - dispose of this element *)
-         p.dispose c >>= fun () ->
-         t
-       )
-       else (
-         release p c;
-         t
-       )
-    )
-    (fun e ->
-       checked_release p c !cleared >>= fun () ->
-       Lwt.fail e)
+  let cleared = !(p.cleared) in
+  let promise =
+    Lwt.catch
+      (fun () -> f c)
+      (fun e ->
+         checked_release p c !cleared >>= fun () ->
+         Lwt.fail e)
+  in
+  promise >>= fun _ ->
+  if !cleared then (
+    (* p was cleared while promise was resolving - dispose of this element *)
+    dispose p c >>= fun () ->
+    promise
+  )
+  else (
+    release p c;
+    promise
+  )
 
 let clear p =
   let elements = Queue.fold (fun l element -> element :: l) [] p.list in
   Queue.clear p.list;
-  p.cleared := true;
-  p.cleared <- ref false;
-  Lwt_list.iter_s p.dispose elements
+  (* Indicate to any currently in-use elements that we cleared the pool *)
+  let old_cleared = !(p.cleared) in
+  old_cleared := true;
+  p.cleared := ref false;
+  Lwt_list.iter_s (dispose p) elements
