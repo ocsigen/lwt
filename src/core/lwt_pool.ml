@@ -36,6 +36,8 @@ type 'a t = {
   (* Validate old pool members. *)
   dispose : 'a -> unit Lwt.t;
   (* Dispose of a pool member. *)
+  mutable cleared : bool ref;
+  (* Have the current pool elements been cleared out? *)
   max : int;
   (* Size of the pool. *)
   mutable count : int;
@@ -52,6 +54,7 @@ let create m ?(check = fun _ f -> f true) ?(validate = fun _ -> Lwt.return_true)
     validate = validate;
     check = check;
     dispose = dispose;
+    cleared = ref false;
     count = 0;
     list = Queue.create ();
     waiters = Lwt_sequence.create () }
@@ -131,34 +134,45 @@ let acquire p =
     check_elt p c
 
 (* Release a member when its use failed. *)
-let checked_release p c =
+let checked_release p c cleared =
   let ok = ref false in
   p.check c (fun result -> ok := result);
-  if !ok then (
-    (* Element is ok - release it back to the pool *)
-    release p c;
-    Lwt.return_unit
+  if cleared || not !ok then (
+    (* Element is not ok or the pool was cleared - dispose of it *)
+    p.dispose c
   )
   else (
-    (* Element is not ok - dispose of it and replace with a new one *)
-    p.dispose c >>= fun () ->
-    replace_acquired p;
+    (* Element is ok - release it back to the pool *)
+    release p c;
     Lwt.return_unit
   )
 
 let use p f =
   acquire p >>= fun c ->
+  (* Capture the current cleared state so we can see if it changes while this
+     element is in use *)
+  let cleared = p.cleared in
   Lwt.catch
     (fun () ->
        let t = f c in
        t >>= fun _ ->
-       release p c;
-       t)
+       if !cleared then (
+         (* p was cleared while t was resolving - dispose of this element *)
+         p.dispose c >>= fun () ->
+         t
+       )
+       else (
+         release p c;
+         t
+       )
+    )
     (fun e ->
-       checked_release p c >>= fun () ->
+       checked_release p c !cleared >>= fun () ->
        Lwt.fail e)
 
 let clear p =
   let elements = Queue.fold (fun l element -> element :: l) [] p.list in
   Queue.clear p.list;
+  p.cleared := true;
+  p.cleared <- ref false;
   Lwt_list.iter_s p.dispose elements

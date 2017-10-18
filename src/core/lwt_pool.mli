@@ -20,16 +20,14 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *)
 
-(** External resource pools. *)
+(** External resource pools.
 
-(** For example, instead of creating a new database connection each time you
+    For example, instead of creating a new database connection each time you
     need one, keep a pool of opened connections and reuse ones that are free.
     The pool also provides a limit on the number of connections that can
     simultaneously be open.
 
-    Note that pools are not for keeping Lwt promises. Lwt promises are very
-    cheap to create. It is neither desirable nor possible to reuse them.  If
-    you want to have a pool of {e system} threads, consider using
+    If you want to have a pool of {e system} threads, consider using
     [Lwt_preemptive]. *)
 
 type 'a t
@@ -37,19 +35,13 @@ type 'a t
 
 val create :
   int ->
-  ?check : ('a -> (bool -> unit) -> unit) ->
   ?validate : ('a -> bool Lwt.t) ->
+  ?check : ('a -> (bool -> unit) -> unit) ->
   ?dispose : ('a -> unit Lwt.t) ->
   (unit -> 'a Lwt.t) -> 'a t
   (** [create n ?check ?validate ?dispose f] creates a new pool with at most
       [n] elements. [f] is used to create a new pool element.  Elements are
-      created on demand.
-
-      @param check is called after the resolution of {!use}'s callback when the
-      resolution is a failed promise.  [check element is_ok] must call [is_ok]
-      exactly once with [true] if [element] is still valid and [false]
-      otherwise.  If [check] calls [callback false] then [dispose] will be run
-      on [element] and the element will not be returned to the pool.
+      created on demand and re-used until disposed of.
 
       @param validate is called each time a pool element is accessed by {!use},
       before the element is provided to {!use}'s callback.  If
@@ -57,6 +49,12 @@ val create :
       is passed to the callback for use as-is.  If [validate element] resolves
       to [false] the tested pool element is passed to [dispose] then dropped,
       with a new one is created to take [element]'s place in the pool.
+
+      @param check is called after the resolution of {!use}'s callback when the
+      resolution is a failed promise.  [check element is_ok] must call [is_ok]
+      exactly once with [true] if [element] is still valid and [false]
+      otherwise.  If [check] calls [is_ok false] then [dispose] will be run
+      on [element] and the element will not be returned to the pool.
 
       @param dispose is used as described above and by {!clear} to dispose of
       all elements in a pool.  [dispose] is {b not} guaranteed to be called on
@@ -70,7 +68,12 @@ val use : 'a t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
       promise created by [f] completes. *)
 
 val clear : 'a t -> unit Lwt.t
-  (** [clear p] will clear all {b available} elements in [p] then call the
-      [dispose] function associated with [p] on each of the cleared elements.
+  (** [clear p] will clear all elements in [p], calling the [dispose] function
+      associated with [p] on each of the cleared elements.  Any elements from
+      [p] which are currently in use will be disposed of once they are
+      released.
+
+      The next call to [use p] after [clear p] guarantees a freshly created
+      pool element.
 
       Disposals are performed sequentially in an undefined order. *)
