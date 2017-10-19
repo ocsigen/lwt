@@ -4,7 +4,8 @@
  ((name main)
   (libraries (lwttester))
   (preprocess (pps (lwt.ppx)))
-  (flags (:standard -w -22))))
+  (flags (:standard -w -22))
+))
 
 (alias
  ((name runtest)

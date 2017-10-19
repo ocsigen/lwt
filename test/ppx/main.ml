@@ -163,8 +163,6 @@ let suite = suite "ppx" [
        (Lwt.return (!lst = [1;2]))
     ) ;
 
-
-
   test "log"
     (fun () ->
        Lwt_log.ign_debug "bar";

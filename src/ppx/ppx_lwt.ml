@@ -339,15 +339,29 @@ let mapper =
           let pat = if !strict_seq then [%pat? ()] else [%pat? _] in
           let lhs, rhs = mapper.expr mapper lhs, mapper.expr mapper rhs in
           if !debug then
-            [%expr Lwt.backtrace_bind (fun exn -> try raise exn with exn -> exn)
-                                      [%e lhs]
-                                      (fun [%p pat] -> [%e rhs])
-              [@ocaml.ppwarning "The operator >> is deprecated"]
-            ]
+            Ast_helper.Exp.attr
+              [%expr Lwt.backtrace_bind (fun exn -> try raise exn with exn -> exn)
+                                        [%e lhs]
+                                        (fun [%p pat] -> [%e rhs])
+              ]
+              (Ast_mapper.attribute_of_warning
+                { Location.
+                  loc_start = lhs.pexp_loc.Location.loc_end;
+                  loc_end = rhs.pexp_loc.Location.loc_start;
+                  loc_ghost = false;
+                }
+                "The operator >> is deprecated"
+              )
           else
-            [%expr (Lwt.bind [%e lhs] (fun [%p pat] -> [%e rhs]))
-              [@ocaml.ppwarning "The operator >> is deprecated"]
-            ]
+            Ast_helper.Exp.attr
+              [%expr (Lwt.bind [%e lhs] (fun [%p pat] -> [%e rhs]))]
+              (Ast_mapper.attribute_of_warning
+                { Location.
+                  loc_start = lhs.pexp_loc.Location.loc_end;
+                  loc_end = rhs.pexp_loc.Location.loc_start;
+                  loc_ghost = false;
+                }
+                "The operator >> is deprecated")
         else
           default_mapper.expr mapper expr
       | { pexp_desc = Pexp_apply (fn, args); pexp_attributes; pexp_loc } when !log ->
