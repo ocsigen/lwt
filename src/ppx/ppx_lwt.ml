@@ -334,7 +334,7 @@ let mapper =
             "Lwt's finally should be used only with the syntax: \"(<expr>)[%%finally ...]\"."
         ))
 
-      | [%expr [%e? lhs] >> [%e? rhs]] ->
+      | [%expr [%e? lhs] >> [%e? rhs]] as e ->
         if !sequence then
           let pat = if !strict_seq then [%pat? ()] else [%pat? _] in
           let lhs, rhs = mapper.expr mapper lhs, mapper.expr mapper rhs in
@@ -344,23 +344,12 @@ let mapper =
                                         [%e lhs]
                                         (fun [%p pat] -> [%e rhs])
               ]
-              (Ast_mapper.attribute_of_warning
-                { Location.
-                  loc_start = lhs.pexp_loc.Location.loc_end;
-                  loc_end = rhs.pexp_loc.Location.loc_start;
-                  loc_ghost = false;
-                }
-                "The operator >> is deprecated"
-              )
+              (Ast_mapper.attribute_of_warning e.pexp_loc
+                "The operator >> is deprecated")
           else
             Ast_helper.Exp.attr
               [%expr (Lwt.bind [%e lhs] (fun [%p pat] -> [%e rhs]))]
-              (Ast_mapper.attribute_of_warning
-                { Location.
-                  loc_start = lhs.pexp_loc.Location.loc_end;
-                  loc_end = rhs.pexp_loc.Location.loc_start;
-                  loc_ghost = false;
-                }
+              (Ast_mapper.attribute_of_warning e.pexp_loc
                 "The operator >> is deprecated")
         else
           default_mapper.expr mapper expr
