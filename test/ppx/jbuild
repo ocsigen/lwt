@@ -4,7 +4,7 @@
  ((name main)
   (libraries (lwttester))
   (preprocess (pps (lwt.ppx)))
-  (flags (:standard -w -22))
+  (flags (:standard -warn-error -22))
 ))
 
 (alias
