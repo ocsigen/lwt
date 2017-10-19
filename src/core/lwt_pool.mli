@@ -20,38 +20,60 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *)
 
-(** External resource pools. *)
+(** External resource pools.
 
-(** For example, instead of creating a new database connection each time you
+    For example, instead of creating a new database connection each time you
     need one, keep a pool of opened connections and reuse ones that are free.
     The pool also provides a limit on the number of connections that can
     simultaneously be open.
 
-    Note that pools are not for keeping Lwt threads. Lwt threads are very cheap
-    to create and are pure. It is neither desirable nor possible to reuse them.
-    If you want to have a pool of {e system} threads, consider module
+    If you want to have a pool of {e system} threads, consider using
     [Lwt_preemptive]. *)
 
 type 'a t
-  (** Pools containing values of type ['a]. *)
+  (** Pools containing elements of type ['a]. *)
 
 val create :
   int ->
-  ?check : ('a -> (bool -> unit) -> unit) ->
   ?validate : ('a -> bool Lwt.t) ->
+  ?check : ('a -> (bool -> unit) -> unit) ->
+  ?dispose : ('a -> unit Lwt.t) ->
   (unit -> 'a Lwt.t) -> 'a t
-  (** [create n ?check ?validate f] creates a new pool with at most
-      [n] elements. [f] is the function to use to create a new element
-      Elements are created on demand.
+  (** [create n ?check ?validate ?dispose f] creates a new pool with at most
+      [n] elements. [f] is used to create a new pool element.  Elements are
+      created on demand and re-used until disposed of.
 
-      An element of the pool is validated by the optional [validate]
-      function before its {!use}. Invalid elements are re-created.
+      @param validate is called each time a pool element is accessed by {!use},
+      before the element is provided to {!use}'s callback.  If
+      [validate element] resolves to [true] the element is considered valid and
+      is passed to the callback for use as-is.  If [validate element] resolves
+      to [false] the tested pool element is passed to [dispose] then dropped,
+      with a new one is created to take [element]'s place in the pool.
 
-      The optional function [check] is called after a [use] of an
-      element failed. It must call its argument exactly once with
-      [true] if the element is still valid and [false] otherwise. *)
+      @param check is called after the resolution of {!use}'s callback when the
+      resolution is a failed promise.  [check element is_ok] must call [is_ok]
+      exactly once with [true] if [element] is still valid and [false]
+      otherwise.  If [check] calls [is_ok false] then [dispose] will be run
+      on [element] and the element will not be returned to the pool.
+
+      @param dispose is used as described above and by {!clear} to dispose of
+      all elements in a pool.  [dispose] is {b not} guaranteed to be called on
+      the elements in a pool when the pool is garbage collected.  {!clear}
+      should be used if the elements of the pool need to be explicitly disposed
+      of. *)
 
 val use : 'a t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
   (** [use p f] takes one free element of the pool [p] and gives it to
       the function [f]. The element is put back into the pool after the
-      thread created by [f] completes. *)
+      promise created by [f] completes. *)
+
+val clear : 'a t -> unit Lwt.t
+  (** [clear p] will clear all elements in [p], calling the [dispose] function
+      associated with [p] on each of the cleared elements.  Any elements from
+      [p] which are currently in use will be disposed of once they are
+      released.
+
+      The next call to [use p] after [clear p] guarantees a freshly created
+      pool element.
+
+      Disposals are performed sequentially in an undefined order. *)

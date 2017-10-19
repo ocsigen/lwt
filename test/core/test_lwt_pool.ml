@@ -100,15 +100,29 @@ let suite =
          Lwt.return (Lwt.state u2 = Lwt.Return 2)
       );
 
-    test "on check, bad elements are replaced"
+    test "on check, bad elements are disposed of and replaced"
       (fun () ->
          let gen = (fun () -> let n = ref 1 in Lwt.return n) in
-         let c = (fun n f -> f (!n > 0)) in
-         let p = Lwt_pool.create 1 ~check: c gen in
-         let task = (fun n -> n := !n + 1; Lwt.return !n) in
+         let check = (fun n f -> f (!n > 0)) in
+         let disposed = ref false in
+         let dispose _ = disposed := true; Lwt.return_unit in
+         let p = Lwt_pool.create 1 ~check ~dispose gen in
+         let task = (fun n -> incr n; Lwt.return !n) in
          let _ = Lwt_pool.use p (fun n -> n := 0; Lwt.fail Dummy_error) in
          let u2 = Lwt_pool.use p task in
-         Lwt.return (Lwt.state u2 = Lwt.Return 2)
+         Lwt.return (Lwt.state u2 = Lwt.Return 2 && !disposed)
+      );
+
+    test "clear disposes of all elements"
+      (fun () ->
+         let gen = (fun () -> let n = ref 1 in Lwt.return n) in
+         let count = ref 0 in
+         let dispose _ = incr count; Lwt.return_unit in
+         let p = Lwt_pool.create 2 ~dispose gen in
+         let u = Lwt_pool.use p (fun _ -> Lwt.pause ()) in
+         let _ = Lwt_pool.use p (fun _ -> Lwt.return_unit) in
+         let _ = Lwt_pool.clear p in
+         Lwt.bind u (fun () -> Lwt.return (!count = 2))
       );
 
     test "waiter are notified on replacement"
