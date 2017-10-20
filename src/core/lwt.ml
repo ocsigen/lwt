@@ -331,10 +331,17 @@
 
    9. Type system abuse
 
-   The implementation uses the type system somewhat extensively. For example,
-   the promise state is a GADT which encodes the state in its type parameters.
-   Thus, if you do [let p = underlying p], the shadowing reference [p] is
-   statically known *not* to be a proxy, and the compiler knows that the
+   The implementation uses the type system somewhat extensively. Gentle
+   introductions can be found here:
+
+     https://discuss.ocaml.org/t/161/7
+     https://discuss.ocaml.org/t/161/16
+
+   A short summary follows.
+
+   The promise state is, internally, a GADT which encodes the state in its type
+   parameters. Thus, if you do [let p = underlying p], the shadowing reference
+   [p] is statically known *not* to be a proxy, and the compiler knows that the
    corresponding match case [Proxy _] is impossible.
 
    The external promise type, ['a t], and the external resolver type, ['a u],
