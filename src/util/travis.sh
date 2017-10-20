@@ -178,6 +178,17 @@ make packaging-test
 
 
 
+# Build examples.
+jbuilder build doc/examples/unix/logging.exe
+_build/default/doc/examples/unix/logging.exe
+jbuilder build doc/examples/unix/parallelize.exe
+jbuilder build doc/examples/unix/relay.exe
+# Skipping the GTK example, as installing GTK is dubious in a headless buildbot.
+# opam install -y lablgtk
+# jbuilder build doc/examples/gtk/connect.exe
+
+
+
 # Some sanity checks.
 if [ "$LIBEV" != yes ]
 then
