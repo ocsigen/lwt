@@ -338,18 +338,22 @@ let mapper =
         if !sequence then
           let pat = if !strict_seq then [%pat? ()] else [%pat? _] in
           let lhs, rhs = mapper.expr mapper lhs, mapper.expr mapper rhs in
+          let op = match e.Parsetree.pexp_desc with
+            | Parsetree.Pexp_apply (op, _) -> op
+            | _ -> assert false
+          in
           if !debug then
             Ast_helper.Exp.attr
               [%expr Lwt.backtrace_bind (fun exn -> try raise exn with exn -> exn)
                                         [%e lhs]
                                         (fun [%p pat] -> [%e rhs])
               ]
-              (Ast_mapper.attribute_of_warning e.pexp_loc
+              (Ast_mapper.attribute_of_warning op.Parsetree.pexp_loc
                 "The operator >> is deprecated")
           else
             Ast_helper.Exp.attr
               [%expr (Lwt.bind [%e lhs] (fun [%p pat] -> [%e rhs]))]
-              (Ast_mapper.attribute_of_warning e.pexp_loc
+              (Ast_mapper.attribute_of_warning op.Parsetree.pexp_loc
                 "The operator >> is deprecated")
         else
           default_mapper.expr mapper expr
