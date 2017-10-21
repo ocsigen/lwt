@@ -5,8 +5,8 @@
   (libraries (lwttester))
   (preprocess (pps (lwt.ppx)))))
 
-(alias
- ((name runtest)
-  (package lwt)
-  (deps ((files_recursively_in cases)))
-  (action (run ${exe:main.exe}))))
+; (alias
+;  ((name runtest)
+;   (package lwt)
+;   (deps ((files_recursively_in cases)))
+;   (action (run ${exe:main.exe}))))
