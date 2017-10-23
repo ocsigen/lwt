@@ -3,7 +3,9 @@
 (executable
  ((name main)
   (libraries (lwttester))
-  (preprocess (pps (lwt.ppx)))))
+  (preprocess (pps (lwt.ppx)))
+  (flags (:standard -warn-error -22))
+))
 
 (alias
  ((name runtest)
