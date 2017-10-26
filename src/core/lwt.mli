@@ -409,7 +409,7 @@ type +'a t
     basic functions for that are {!Lwt.bind}, which attaches a callback that is
     called when a promise becomes fulfilled, and {!Lwt.catch}, for rejection.
 
-    Promises variables of this type, ['a Lwt.t], are actually {b read-only} in
+    Promise variables of this type, ['a Lwt.t], are actually {b read-only} in
     Lwt. Separate {e resolvers} of type ['a ]{!Lwt.u} are used to write to them.
     Promises and their resolvers are created together by calling {!Lwt.task}.
     There is one exception to this: most promises can be {e canceled} by calling
