@@ -19,7 +19,9 @@
  * 02111-1307, USA.
  *)
 
-(** Helpers for test *)
+
+
+(** Helpers for tests. *)
 
 type t
 (** Type of a test *)

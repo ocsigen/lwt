@@ -424,8 +424,8 @@ struct
   and (_, _, _) state =
     | Fulfilled : 'a                  -> ('a, underlying, resolved) state
     | Rejected  : exn                 -> ( _, underlying, resolved) state
-    | Pending   : 'a callbacks        -> ('a, underlying, pending)   state
-    | Proxy     : ('a, _, 'c) promise -> ('a, proxy,      'c)        state
+    | Pending   : 'a callbacks        -> ('a, underlying, pending)  state
+    | Proxy     : ('a, _, 'c) promise -> ('a, proxy,      'c)       state
 
   (* Note:
 
