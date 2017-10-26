@@ -1,6 +1,6 @@
 (* OCaml promise library
  * http://www.ocsigen.org/lwt
- * Copyright (C) 2009 Jérémie Dimino
+ * Copyright (C) 2017 Anton Bachin
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -19,25 +19,23 @@
  * 02111-1307, USA.
  *)
 
-(** Helpers for test *)
 
-type t
-(** Type of a test *)
 
-type suite
-(** Type of a suite of tests *)
+let temp_name =
+  let rng = Random.State.make_self_init () in
+  fun () ->
+    let number = Random.State.int rng 10000 in
+    Printf.sprintf (*"_build/"*)"lwt-testing-%04d" number
 
-val test_direct : string -> ?only_if:(unit -> bool) -> (unit -> bool) -> t
-(** Defines a test. [run] must returns [true] if the test succeeded
-    and [false] otherwise. [only_if] is used to conditionally skip the
-    test. *)
+let temp_file () =
+  Filename.temp_file (*~temp_dir:"_build"*) "lwt-testing-" ""
 
-val test : string -> ?only_if:(unit -> bool) -> (unit -> bool Lwt.t) -> t
-(** Like [test_direct], but defines a test which runs a thread. *)
-
-val suite : string -> t list -> suite
-(** Defines a suite of tests *)
-
-val run : string -> suite list -> unit
-(** Run all the given tests and exit the program with an exit code
-    of [0] if all tests succeeded and with [1] otherwise. *)
+let temp_directory () =
+  let rec attempt () =
+    let path = temp_name () in
+    try
+      Unix.mkdir path 0o755;
+      path
+    with Unix.Unix_error (Unix.EEXIST, "mkdir", _) -> attempt ()
+  in
+  attempt ()

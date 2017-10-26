@@ -66,7 +66,7 @@ let openfile_tests = [
 let utimes_tests = [
   test "utimes: basic"
     (fun () ->
-      let temporary_file = temp_file () in
+      let temporary_file = Test_unix.temp_file () in
 
       Lwt_unix.utimes temporary_file 1. 2. >>= fun () ->
       let stat = Unix.stat temporary_file in
@@ -83,7 +83,7 @@ let utimes_tests = [
       let acceptable_delta = if Sys.win32 then 7200. else 2. in
       let now = Unix.gettimeofday () in
 
-      let temporary_file = temp_file () in
+      let temporary_file = Test_unix.temp_file () in
 
       Lwt_unix.utimes temporary_file 1. 2. >>= fun () ->
       Lwt_unix.utimes temporary_file 0. 0. >>= fun () ->
@@ -105,7 +105,7 @@ let utimes_tests = [
 
 let readdir_tests =
   let populate n =
-    let path = temp_directory () in
+    let path = Test_unix.temp_directory () in
 
     let filenames =
       let rec loop n acc =
@@ -606,7 +606,7 @@ let bind_tests = [
         if attempts <= 0 then
           Lwt.fail (Unix.Unix_error (Unix.EADDRINUSE, "bind", ""))
         else
-          let path = temp_name () in
+          let path = Test_unix.temp_name () in
           let address = Unix.(ADDR_UNIX path) in
           Lwt.catch
             (fun () ->
