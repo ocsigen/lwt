@@ -108,7 +108,7 @@ let suite = suite "lwt_stream" [
        let acc = acc && state (push#push 6) = Fail Lwt_stream.Full in
        let acc = acc && state (Lwt_stream.get stream) = Return (Some 1) in
        (* Lwt_stream uses wakeup_later so we have to wait a bit. *)
-       Lwt_unix.yield () >>= fun () ->
+       Lwt.pause () >>= fun () ->
        let acc = acc && state t = Return () in
        let acc = acc && state (Lwt_stream.get stream) = Return (Some 2) in
        let acc = acc && state (push#push 7) = Return () in
@@ -123,9 +123,9 @@ let suite = suite "lwt_stream" [
        let acc = true in
        let acc = acc && state (push#push 1) = Return () in
        let iter_delayed = Lwt_stream.to_list stream in
-       Lwt_unix.yield () >>= fun () ->
+       Lwt.pause () >>= fun () ->
        push#close;
-       Lwt_unix.yield () >>= fun () ->
+       Lwt.pause () >>= fun () ->
        let acc = acc && state iter_delayed = Return [1] in
        return acc
     );
