@@ -158,7 +158,7 @@ let suite = suite "lwt_switch" [
       let hooks_finished = ref 0 in
 
       let hook () =
-        Lwt_unix.sleep 0.001 >>= fun () ->
+        Lwt.pause () >>= fun () ->
         hooks_finished := !hooks_finished + 1;
         Lwt.return_unit
       in
@@ -175,7 +175,7 @@ let suite = suite "lwt_switch" [
       let hooks_finished = ref 0 in
 
       let successful_hook () =
-        Lwt_unix.sleep 0.001 >>= fun () ->
+        Lwt.pause () >>= fun () ->
         hooks_finished := !hooks_finished + 1;
         Lwt.return_unit
       in
