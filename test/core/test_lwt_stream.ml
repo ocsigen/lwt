@@ -231,7 +231,8 @@ let suite = suite "lwt_stream" [
        let t2 = Lwt_stream.next stream in
        cancel t1;
        push (Some 1);
-       return (state t1 = Fail Canceled && state t2 = Return 1));
+       t2 >>= fun t2_value ->
+       return (state t1 = Fail Canceled && t2_value = 1));
 
   (* check if the push function keeps references to the elements in
      the stream *)

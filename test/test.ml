@@ -24,7 +24,7 @@
 type test = {
   name : string;
   only_if : unit -> bool;
-  run : unit -> bool;
+  run : unit -> bool Lwt.t;
 }
 
 type suite = {
@@ -32,10 +32,11 @@ type suite = {
   suite_tests : test list;
 }
 
-let test_direct name ?(only_if = fun () -> true) run = {name; only_if; run}
+let test_direct name ?(only_if = fun () -> true) run =
+  {name; only_if; run = fun () -> Lwt.return (run ())}
 
 let test name ?(only_if = fun () -> true) run =
-  {name; only_if; run = fun () -> Lwt_main.run (run ())}
+  {name; only_if; run}
 
 let suite name tests = { suite_name = name; suite_tests = tests }
 
@@ -52,8 +53,10 @@ let run name suites =
   let rec loop_suites failures skipped number suites =
     match suites with
     | [] ->
-      if failures = 0 then
-        Printf.printf "Done. %d test(s) skipped.\n%!" skipped
+      if failures = 0 then begin
+        Printf.printf "Done. %d test(s) skipped.\n%!" skipped;
+        Lwt.return_unit
+      end
       else begin
         Printf.printf "Done. %d of %d tests failed.\n%!" failures total;
         exit 1
@@ -77,22 +80,26 @@ let run name suites =
       else begin
         Printf.printf "(%d/%d) Running test %S from suite %S\n%!"
           number total test.name suite_name;
-        try
-          if test.run () then
-            loop_tests failures skipped suite_name (number + 1) suites tests
-          else begin
+        Lwt.try_bind
+          (fun () ->
+            test.run ())
+          (fun passed ->
+            if passed then
+              loop_tests failures skipped suite_name (number + 1) suites tests
+            else begin
+              Printf.printf
+                "Test %S from suite %S failed.\n%!"
+                test.name suite_name;
+              loop_tests
+                (failures + 1) skipped suite_name (number + 1) suites tests
+            end)
+          (fun exn ->
             Printf.printf
-              "Test %S from suite %S failed.\n%!"
-              test.name suite_name;
+              "Test %S from suite %S failed. It raised: %S.\n%!"
+              test.name suite_name (Printexc.to_string exn);
             loop_tests
-              (failures + 1) skipped suite_name (number + 1) suites tests
-          end
-        with exn ->
-          Printf.printf
-            "Test %S from suite %S failed. It raised: %S.\n%!"
-            test.name suite_name (Printexc.to_string exn);
-          loop_tests
-            (failures + 1) skipped suite_name (number + 1) suites tests
+              (failures + 1) skipped suite_name (number + 1) suites tests)
       end
   in
   loop_suites 0 0 1 suites
+  |> Lwt_main.run

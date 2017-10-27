@@ -29,7 +29,7 @@ let suite =
          let c = Lwt_condition.create () in
          let w = Lwt_condition.wait c in
          let () = Lwt_condition.signal c 1 in
-         Lwt.return (Lwt.state w = Lwt.Return 1)
+         Lwt.bind w (fun v -> Lwt.return (v = 1))
       );
 
     test "mutex unlocked during wait"
@@ -49,7 +49,8 @@ let suite =
          let _ = Lwt_mutex.lock m in
          let w = Lwt_condition.wait ~mutex:m c in
          let () = Lwt_condition.signal c 1 in
-         Lwt.return (Lwt.state w = Lwt.Return 1 && Lwt_mutex.is_locked m)
+         Lwt.bind w (fun v ->
+          Lwt.return (v = 1 && Lwt_mutex.is_locked m))
       );
 
     test "signal is not sticky"
@@ -65,8 +66,9 @@ let suite =
          let w1 = Lwt_condition.wait c in
          let w2 = Lwt_condition.wait c in
          let () = Lwt_condition.broadcast c 1 in
-         Lwt.return (Lwt.state w1 = Lwt.Return 1
-                     && Lwt.state w2 = Lwt.Return 1)
+         Lwt.bind w1 (fun v1 ->
+          Lwt.bind w2 (fun v2 ->
+            Lwt.return (v1 = 1 && v2 = 1)))
       );
 
     test "broadcast exception"
@@ -75,7 +77,14 @@ let suite =
          let w1 = Lwt_condition.wait c in
          let w2 = Lwt_condition.wait c in
          let () = Lwt_condition.broadcast_exn c Dummy_error in
-         Lwt.return (Lwt.state w1 = Lwt.Fail Dummy_error
-                     && Lwt.state w2 = Lwt.Fail Dummy_error)
+         Lwt.try_bind
+          (fun () -> w1)
+          (fun _ -> Lwt.return_false)
+          (fun exn1 ->
+            Lwt.try_bind
+              (fun () -> w2)
+              (fun _ -> Lwt.return_false)
+              (fun exn2 ->
+                Lwt.return (exn1 = Dummy_error && exn2 = Dummy_error)))
       );
   ]

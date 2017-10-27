@@ -68,8 +68,12 @@ let suite =
          let u1 = Lwt_pool.use p (fun l -> l := 1; Lwt_condition.wait c) in
          let u2 = Lwt_pool.use p (fun l -> Lwt.return !l) in
          let () = Lwt_condition.signal c "done" in
-         Lwt.return (Lwt.state u1 = Lwt.Return "done"
-                     && Lwt.state u2 = Lwt.Fail Dummy_error)
+         Lwt.bind u1 (fun v1 ->
+         Lwt.try_bind
+          (fun () -> u2)
+          (fun _ -> Lwt.return_false)
+          (fun exn2 ->
+            Lwt.return (v1 = "done" && exn2 = Dummy_error)))
       );
 
     test "multiple creation"
@@ -135,9 +139,13 @@ let suite =
          let u2 = Lwt_pool.use p (fun l -> Lwt.return !l) in
          let u3 = Lwt_pool.use p (fun l -> Lwt.return !l) in
          let () = Lwt_condition.signal c "done" in
-         Lwt.return (Lwt.state u1 = Lwt.Return "done"
-                     && Lwt.state u2 = Lwt.Fail Dummy_error
-                     && Lwt.state u3 = Lwt.Return 0)
+         Lwt.bind u1 (fun v1 ->
+         Lwt.bind u3 (fun v3 ->
+         Lwt.try_bind
+          (fun () -> u2)
+          (fun _ -> Lwt.return_false)
+          (fun exn2 ->
+            Lwt.return (v1 = "done" && exn2 = Dummy_error && v3 = 0))))
       );
 
     test "waiter are notified on replacement exception"
@@ -156,9 +164,17 @@ let suite =
          let u2 = Lwt_pool.use p (fun l -> Lwt.return !l) in
          let u3 = Lwt_pool.use p (fun l -> Lwt.return !l) in
          let () = Lwt_condition.signal c "done" in
-         Lwt.return (Lwt.state u1 = Lwt.Return "done"
-                     && Lwt.state u2 = Lwt.Fail Dummy_error
-                     && Lwt.state u3 = Lwt.Fail Dummy_error)
+         Lwt.bind u1 (fun v1 ->
+         Lwt.try_bind
+          (fun () -> u2)
+          (fun _ -> Lwt.return_false)
+          (fun exn2 ->
+            Lwt.try_bind
+              (fun () -> u3)
+              (fun _ -> Lwt.return_false)
+              (fun exn3 ->
+                Lwt.return
+                  (v1 = "done" && exn2 = Dummy_error && exn3 = Dummy_error))))
       );
 
     test "check and validate can be used together"
@@ -172,7 +188,8 @@ let suite =
          let _ = Lwt_pool.use p (fun l -> l := 2; Lwt.fail Dummy_error) in
          let u3 = Lwt_pool.use p (fun l -> Lwt.return !l) in
          let () = Lwt_condition.signal cond "done" in
-         Lwt.return (Lwt.state u3 = Lwt.Return 2)
+         Lwt.bind u3 (fun v ->
+         Lwt.return (v = 2))
       );
 
     test "verify default check behavior"
@@ -185,6 +202,7 @@ let suite =
              (fun _ -> l:= 1; Lwt.fail Dummy_error)) in
          let u2 = Lwt_pool.use p (fun l -> Lwt.return !l) in
          let () = Lwt_condition.signal cond "done" in
-         Lwt.return (Lwt.state u2 = Lwt.Return 1)
+         Lwt.bind u2 (fun v ->
+         Lwt.return (v = 1))
       );
   ]
