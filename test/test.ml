@@ -21,7 +21,7 @@
 
 
 
-type t = {
+type test = {
   name : string;
   only_if : unit -> bool;
   run : unit -> bool;
@@ -29,7 +29,7 @@ type t = {
 
 type suite = {
   suite_name : string;
-  suite_tests : t list;
+  suite_tests : test list;
 }
 
 let test_direct name ?(only_if = fun () -> true) run = {name; only_if; run}

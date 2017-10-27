@@ -23,21 +23,21 @@
 
 (** Helpers for tests. *)
 
-type t
+type test
 (** Type of a test *)
 
 type suite
 (** Type of a suite of tests *)
 
-val test_direct : string -> ?only_if:(unit -> bool) -> (unit -> bool) -> t
+val test_direct : string -> ?only_if:(unit -> bool) -> (unit -> bool) -> test
 (** Defines a test. [run] must returns [true] if the test succeeded
     and [false] otherwise. [only_if] is used to conditionally skip the
     test. *)
 
-val test : string -> ?only_if:(unit -> bool) -> (unit -> bool Lwt.t) -> t
+val test : string -> ?only_if:(unit -> bool) -> (unit -> bool Lwt.t) -> test
 (** Like [test_direct], but defines a test which runs a thread. *)
 
-val suite : string -> t list -> suite
+val suite : string -> test list -> suite
 (** Defines a suite of tests *)
 
 val run : string -> suite list -> unit
