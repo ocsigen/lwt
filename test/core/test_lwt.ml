@@ -1828,7 +1828,7 @@ let nchoose_split_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 ]
-let tests = nchoose_split_tests @ tests
+let tests = tests @ nchoose_split_tests
 
 
 
