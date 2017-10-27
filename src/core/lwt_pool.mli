@@ -77,3 +77,7 @@ val clear : 'a t -> unit Lwt.t
       pool element.
 
       Disposals are performed sequentially in an undefined order. *)
+
+val wait_queue_length : _ t -> int
+  (** [wait_queue_length p] returns the number of threads currently
+      waiting for an element of the pool [p] to become available. *)
