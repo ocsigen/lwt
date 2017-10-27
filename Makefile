@@ -15,17 +15,6 @@ build: check-config
 build-all: check-config
 	jbuilder build --dev
 
-# Build everything, including additional packages, on all compilers. See
-# jbuild-workspace.dev for instructions.
-# This is currently broken on two targes:
-#   - For 4.02.3 to work, the configure step needs to be run per-compiler. Right
-#     now, it is run once for the whole invocation of all the ocmpilers.
-#   - 4.06 trunk is often not buildable due to parse tree changes affecting OMP.
-.PHONY: build-all-on-all-compilers
-build-all-on-all-compilers: check-config
-	jbuilder build --dev --workspace jbuild-workspace.dev
-	jbuilder build --dev --workspace jbuild-workspace.dev -j 1 @runtest
-
 # run unit tests for package lwt
 .PHONY: test
 test: build
