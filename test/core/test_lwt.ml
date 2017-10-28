@@ -46,9 +46,11 @@ let add_loc exn = try raise exn with exn -> exn
 
 
 
-(* The list of all the tests in this file. This name is repeatedly shadowed as
-   more and more tests are defined. *)
-let tests = []
+(* The list of all the test suites in this file. This name is repeatedly
+   shadowed as more and more test suites are defined. The purpose is to keep the
+   aggregation of test suites local to their definition, instead of having to
+   maintain a list in a separate location in the code. *)
+let suites : Test.suite list = []
 
 
 
@@ -57,7 +59,7 @@ let tests = []
    These tests use assertions instead of relying on the correctness of a final
    [Lwt.return], not that it's particularly likely to be broken. *)
 
-let trivial_promise_tests = [
+let trivial_promise_tests = suite "trivial promises" [
   test "return" begin fun () ->
     assert (Lwt.state (Lwt.return "foo") = Lwt.Return "foo");
     Lwt.return true
@@ -126,7 +128,7 @@ let trivial_promise_tests = [
     Lwt.return true
   end;
 ]
-let tests = tests @ trivial_promise_tests
+let suites = suites @ [trivial_promise_tests]
 
 
 
@@ -135,7 +137,7 @@ let tests = tests @ trivial_promise_tests
    and related functions are in a separated suite. So are tests for
    [Lwt.wakeup_later] and related functions. *)
 
-let initial_promise_tests = [
+let initial_promise_tests = suite "initial promises" [
   test "wait: pending" begin fun () ->
     let p, _ = Lwt.wait () in
     Lwt.return (Lwt.state p = Lwt.Sleep)
@@ -187,10 +189,10 @@ let initial_promise_tests = [
     Lwt.return (Lwt.waiter_of_wakener r == p)
   end;
 ]
-let tests = tests @ initial_promise_tests
+let suites = suites @ [initial_promise_tests]
 
 
-let double_wakeup_tests = [
+let double_resolve_tests = suite "double resolve" [
   test "wakeup: double use on wait" begin fun () ->
     let _, r = Lwt.wait () in
     Lwt.wakeup r "foo";
@@ -251,15 +253,15 @@ let double_wakeup_tests = [
       Lwt.return true
   end [@ocaml.warning "-52"];
 ]
-let tests = tests @ double_wakeup_tests
+let suites = suites @ [double_resolve_tests]
 
 
 (* Tests for sequential composition functions, such as [Lwt.bind], but not
    including testing for interaction with cancelation and sequence-associated
    storage. Those tests come later. *)
 
-let bind_tests = [
-  test "bind: already resolved" begin fun () ->
+let bind_tests = suite "bind" [
+  test "already resolved" begin fun () ->
     let p = Lwt.return "foo" in
     let p = Lwt.bind p (fun s -> Lwt.return (s ^ "bar")) in
     Lwt.return (Lwt.state p = Lwt.Return "foobar")
@@ -269,7 +271,7 @@ let bind_tests = [
      before evaluating to a promise, [bind p f] raises, instead of evaluating to
      a promise. On the other hand, if [p] is pending, and [f] raises, the
      exception is folded into the promise resulting from [bind]. *)
-  test "bind: already resolved, f raises" begin fun () ->
+  test "already resolved, f raises" begin fun () ->
     let p = Lwt.return "foo" in
     try
       Lwt.bind p (fun _ -> raise Exception) |> ignore;
@@ -278,41 +280,41 @@ let bind_tests = [
       Lwt.return true
   end;
 
-  test "bind: already failed" begin fun () ->
+  test "already failed" begin fun () ->
     let p = Lwt.fail Exception in
     let p = Lwt.bind p (fun _ -> Lwt.return "foo") in
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "bind: pending" begin fun () ->
+  test "pending" begin fun () ->
     let f_ran = ref false in
     let p, _ = Lwt.wait () in
     let p = Lwt.bind p (fun _ -> f_ran := true; Lwt.return ()) in
     Lwt.return (!f_ran = false && Lwt.state p = Lwt.Sleep)
   end;
 
-  test "bind: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.bind p (fun s -> Lwt.return (s ^ "bar")) in
     Lwt.wakeup r "foo";
     Lwt.return (Lwt.state p = Lwt.Return "foobar")
   end;
 
-  test "bind: pending, resolves, f raises" begin fun () ->
+  test "pending, resolves, f raises" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.bind p (fun _ -> raise Exception) in
     Lwt.wakeup r ();
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "bind: pending, fails" begin fun () ->
+  test "pending, fails" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.bind p (fun _ -> Lwt.return "foo") in
     Lwt.wakeup_exn r Exception;
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "bind: chain" begin fun () ->
+  test "chain" begin fun () ->
     let p1, r1 = Lwt.wait () in
     let p2 = Lwt.bind p1 (fun s -> Lwt.return (s ^ "bar")) in
     let p3 = Lwt.bind p2 (fun s -> Lwt.return (s ^ "!!1")) in
@@ -320,7 +322,7 @@ let bind_tests = [
     Lwt.return (Lwt.state p3 = Lwt.Return "foobar!!1")
   end;
 
-  test "bind: suspended chain" begin fun () ->
+  test "suspended chain" begin fun () ->
     let p1, r = Lwt.wait () in
     let p2 = Lwt.return "foo" in
     let p3 = Lwt.bind p1 (fun () -> p2) in
@@ -329,7 +331,7 @@ let bind_tests = [
     Lwt.return (Lwt.state p4 = Lwt.Return "foo")
   end;
 
-  test "bind: fanout" begin fun () ->
+  test "fanout" begin fun () ->
     let p1, r = Lwt.wait () in
     let p2 = Lwt.bind p1 (fun s -> Lwt.return (s ^ "bar")) in
     let p3 = Lwt.bind p1 (fun s -> Lwt.return (s ^ "!!1")) in
@@ -341,7 +343,7 @@ let bind_tests = [
        Lwt.state p4 = Lwt.Return "fooomg")
   end;
 
-  test "bind: double pending" begin fun () ->
+  test "double pending" begin fun () ->
     let p1, r1 = Lwt.wait () in
     let p2, r2 = Lwt.wait () in
     let p = Lwt.bind p1 (fun _ -> p2) in
@@ -351,14 +353,14 @@ let bind_tests = [
     Lwt.return (Lwt.state p = Lwt.Return "bar")
   end;
 
-  test "bind: same pending" begin fun () ->
+  test "same pending" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.bind p (fun _ -> p) in
     Lwt.wakeup r "foo";
     Lwt.return (Lwt.state p = Lwt.Return "foo")
   end;
 
-  test "bind: nested" begin fun () ->
+  test "nested" begin fun () ->
     let p1, r1 = Lwt.wait () in
     let p2, r2 = Lwt.wait () in
     let p =
@@ -370,7 +372,7 @@ let bind_tests = [
 
   (* This tests an implementation detail, namely the construction and flattening
      of a chain of proxy promises. *)
-  test "bind: proxy chain" begin fun () ->
+  test "proxy chain" begin fun () ->
     let p1, r1 = Lwt.wait () in
     let p2, r2 = Lwt.wait () in
     let p3, r3 = Lwt.wait () in
@@ -387,7 +389,7 @@ let bind_tests = [
 
   (* This tests an implementation detail, namely that proxy promise chaining
      does not form cycles. *)
-  test "bind: cycle" begin fun () ->
+  test "cycle" begin fun () ->
     let p, r = Lwt.wait () in
     let p' = ref (Lwt.return ()) in
     p' := Lwt.bind p (fun _ -> !p');
@@ -395,95 +397,95 @@ let bind_tests = [
     Lwt.return (Lwt.state !p' = Lwt.Sleep)
   end;
 ]
-let tests = tests @ bind_tests
+let suites = suites @ [bind_tests]
 
-let backtrace_bind_tests = [
-  test "backtrace_bind: resolved" begin fun () ->
+let backtrace_bind_tests = suite "backtrace_bind" [
+  test "resolved" begin fun () ->
     let p = Lwt.return "foo" in
     let p = Lwt.backtrace_bind add_loc p (fun s -> Lwt.return @@ s ^ "bar") in
     Lwt.return (Lwt.state p = Lwt.Return "foobar")
   end;
 
-  test "backtrace_bind: failed" begin fun () ->
+  test "failed" begin fun () ->
     let p = Lwt.fail Exception in
     let p = Lwt.backtrace_bind add_loc p (fun _ -> Lwt.return "foo") in
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "backtrace_bind: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.backtrace_bind add_loc p (fun s -> Lwt.return (s ^ "bar")) in
     Lwt.wakeup r "foo";
     Lwt.return (Lwt.state p = Lwt.Return "foobar")
   end;
 
-  test "backtrace_bind: pending, resolves, f raises" begin fun () ->
+  test "pending, resolves, f raises" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.backtrace_bind add_loc p (fun () -> raise Exception) in
     Lwt.wakeup r ();
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "backtrace_bind: pending, fails" begin fun () ->
+  test "pending, fails" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.backtrace_bind add_loc p (fun _ -> Lwt.return "foo") in
     Lwt.wakeup_exn r Exception;
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 ]
-let tests = tests @ backtrace_bind_tests
+let suites = suites @ [backtrace_bind_tests]
 
-let map_tests = [
-  test "map: resolved" begin fun () ->
+let map_tests = suite "map" [
+  test "resolved" begin fun () ->
     let p = Lwt.return "foo" in
     let p = Lwt.map (fun s -> s ^ "bar") p in
     Lwt.return (Lwt.state p = Lwt.Return "foobar")
   end;
 
-  test "map: resolved, f raises" begin fun () ->
+  test "resolved, f raises" begin fun () ->
     let p = Lwt.return "foo" in
     let p = Lwt.map (fun _ -> raise Exception) p in
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "map: failed" begin fun () ->
+  test "failed" begin fun () ->
     let p = Lwt.fail Exception in
     let p = Lwt.map (fun _ -> "foo") p in
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "map: pending" begin fun () ->
+  test "pending" begin fun () ->
     let f_ran = ref false in
     let p, _ = Lwt.wait () in
     let p = Lwt.map (fun _ -> f_ran := true) p in
     Lwt.return (!f_ran = false && Lwt.state p = Lwt.Sleep)
   end;
 
-  test "map: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.map (fun s -> s ^ "bar") p in
     Lwt.wakeup r "foo";
     Lwt.return (Lwt.state p = Lwt.Return "foobar")
   end;
 
-  test "map: pending, resolves, f raises" begin fun () ->
+  test "pending, resolves, f raises" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.map (fun () -> raise Exception) p in
     Lwt.wakeup r ();
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "map: pending, fails" begin fun () ->
+  test "pending, fails" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.map (fun _ -> Lwt.return "foo") p in
     Lwt.wakeup_exn r Exception;
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 ]
-let tests = tests @ map_tests
+let suites = suites @ [map_tests]
 
-let catch_tests = [
-  test "catch: resolved" begin fun () ->
+let catch_tests = suite "catch" [
+  test "resolved" begin fun () ->
     let p =
       Lwt.catch
         (fun () -> Lwt.return "foo")
@@ -492,7 +494,7 @@ let catch_tests = [
     Lwt.return (Lwt.state p = Lwt.Return "foo")
   end;
 
-  test "catch: f raises" begin fun () ->
+  test "f raises" begin fun () ->
     let p =
       Lwt.catch
         (fun () -> raise Exception)
@@ -501,7 +503,7 @@ let catch_tests = [
     Lwt.return (Lwt.state p = Lwt.Return Exception)
   end;
 
-  test "catch: failed" begin fun () ->
+  test "failed" begin fun () ->
     let p =
       Lwt.catch
         (fun () -> Lwt.fail Exception)
@@ -510,7 +512,7 @@ let catch_tests = [
     Lwt.return (Lwt.state p = Lwt.Return Exception)
   end;
 
-  test "catch: failed, h raises" begin fun () ->
+  test "failed, h raises" begin fun () ->
     try
       ignore @@ Lwt.catch
         (fun () -> Lwt.fail Exit)
@@ -520,7 +522,7 @@ let catch_tests = [
       Lwt.return true
   end;
 
-  test "catch: pending" begin fun () ->
+  test "pending" begin fun () ->
     let h_ran = ref false in
     let p =
       Lwt.catch
@@ -530,7 +532,7 @@ let catch_tests = [
     Lwt.return (Lwt.state p = Lwt.Sleep)
   end;
 
-  test "catch: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.catch
@@ -541,7 +543,7 @@ let catch_tests = [
     Lwt.return (Lwt.state p = Lwt.Return "foo")
   end;
 
-  test "catch: pending, fails" begin fun () ->
+  test "pending, fails" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.catch
@@ -552,7 +554,7 @@ let catch_tests = [
     Lwt.return (Lwt.state p = Lwt.Return Exception)
   end;
 
-  test "catch: pending, fails, h raises" begin fun () ->
+  test "pending, fails, h raises" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.catch
@@ -563,7 +565,7 @@ let catch_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "catch: pending, fails, h pending" begin fun () ->
+  test "pending, fails, h pending" begin fun () ->
     let p1, r1 = Lwt.wait () in
     let p2, r2 = Lwt.wait () in
     let p =
@@ -577,10 +579,10 @@ let catch_tests = [
     Lwt.return (Lwt.state p = Lwt.Return "foo")
   end;
 ]
-let tests = tests @ catch_tests
+let suites = suites @ [catch_tests]
 
-let backtrace_catch_tests = [
-  test "backtrace_catch: resolved" begin fun () ->
+let backtrace_catch_tests = suite "backtrace_catch" [
+  test "resolved" begin fun () ->
     let p =
       Lwt.backtrace_catch add_loc
         (fun () -> Lwt.return "foo")
@@ -589,7 +591,7 @@ let backtrace_catch_tests = [
     Lwt.return (Lwt.state p = Lwt.Return "foo")
   end;
 
-  test "backtrace_catch: f raises" begin fun () ->
+  test "f raises" begin fun () ->
     let p =
       Lwt.backtrace_catch add_loc
         (fun () -> raise Exception)
@@ -598,7 +600,7 @@ let backtrace_catch_tests = [
     Lwt.return (Lwt.state p = Lwt.Return Exception)
   end;
 
-  test "backtrace_catch: failed" begin fun () ->
+  test "failed" begin fun () ->
     let p =
       Lwt.backtrace_catch add_loc
         (fun () -> Lwt.fail Exception)
@@ -607,7 +609,7 @@ let backtrace_catch_tests = [
     Lwt.return (Lwt.state p = Lwt.Return Exception)
   end;
 
-  test "backtrace_catch: pending" begin fun () ->
+  test "pending" begin fun () ->
     let h_ran = ref false in
     let p =
       Lwt.backtrace_catch add_loc
@@ -617,7 +619,7 @@ let backtrace_catch_tests = [
     Lwt.return (Lwt.state p = Lwt.Sleep)
   end;
 
-  test "backtrace_catch: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.backtrace_catch add_loc
@@ -628,7 +630,7 @@ let backtrace_catch_tests = [
     Lwt.return (Lwt.state p = Lwt.Return "foo")
   end;
 
-  test "backtrace_catch: pending, fails" begin fun () ->
+  test "pending, fails" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.backtrace_catch add_loc
@@ -639,7 +641,7 @@ let backtrace_catch_tests = [
     Lwt.return (Lwt.state p = Lwt.Return Exception)
   end;
 
-  test "backtrace_catch: pending, fails, h raises" begin fun () ->
+  test "pending, fails, h raises" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.backtrace_catch add_loc
@@ -650,10 +652,10 @@ let backtrace_catch_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 ]
-let tests = tests @ backtrace_catch_tests
+let suites = suites @ [backtrace_catch_tests]
 
-let try_bind_tests = [
-  test "try_bind: resolved" begin fun () ->
+let try_bind_tests = suite "try_bind" [
+  test "resolved" begin fun () ->
     let p =
       Lwt.try_bind
         (fun () -> Lwt.return "foo")
@@ -663,7 +665,7 @@ let try_bind_tests = [
     Lwt.return (Lwt.state p = Lwt.Return "foobar")
   end;
 
-  test "try_bind: resolved, f' raises" begin fun () ->
+  test "resolved, f' raises" begin fun () ->
     try
       ignore @@ Lwt.try_bind
         (fun () -> Lwt.return ())
@@ -674,7 +676,7 @@ let try_bind_tests = [
       Lwt.return true
   end;
 
-  test "try_bind: failed" begin fun () ->
+  test "failed" begin fun () ->
     let p =
       Lwt.try_bind
         (fun () -> Lwt.fail Exception)
@@ -684,7 +686,7 @@ let try_bind_tests = [
     Lwt.return (Lwt.state p = Lwt.Return Exception)
   end;
 
-  test "try_bind: f raises" begin fun () ->
+  test "f raises" begin fun () ->
     let p =
       Lwt.try_bind
         (fun () -> raise Exception)
@@ -694,7 +696,7 @@ let try_bind_tests = [
     Lwt.return (Lwt.state p = Lwt.Return Exception)
   end;
 
-  test "try_bind: failed, h raises" begin fun () ->
+  test "failed, h raises" begin fun () ->
     try
       ignore @@ Lwt.try_bind
         (fun () -> Lwt.fail Exit)
@@ -705,7 +707,7 @@ let try_bind_tests = [
       Lwt.return true
   end;
 
-  test "try_bind: pending" begin fun () ->
+  test "pending" begin fun () ->
     let f_ran = ref false in
     let p, _ = Lwt.wait () in
     let p =
@@ -717,7 +719,7 @@ let try_bind_tests = [
     Lwt.return (Lwt.state p = Lwt.Sleep)
   end;
 
-  test "try_bind: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.try_bind
@@ -729,7 +731,7 @@ let try_bind_tests = [
     Lwt.return (Lwt.state p = Lwt.Return "foobar")
   end;
 
-  test "try_bind: pending, resolves, f' raises" begin fun () ->
+  test "pending, resolves, f' raises" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.try_bind
@@ -741,7 +743,7 @@ let try_bind_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "try_bind: pending, resolves, f' pending" begin fun () ->
+  test "pending, resolves, f' pending" begin fun () ->
     let p1, r1 = Lwt.wait () in
     let p2, r2 = Lwt.wait () in
     let p =
@@ -756,7 +758,7 @@ let try_bind_tests = [
     Lwt.return (Lwt.state p = Lwt.Return "foo")
   end;
 
-  test "try_bind: pending, fails" begin fun () ->
+  test "pending, fails" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.try_bind
@@ -768,7 +770,7 @@ let try_bind_tests = [
     Lwt.return (Lwt.state p = Lwt.Return Exception)
   end;
 
-  test "try_bind: pending, fails, h raises" begin fun () ->
+  test "pending, fails, h raises" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.try_bind
@@ -780,7 +782,7 @@ let try_bind_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "try_bind: pending, fails, h pending" begin fun () ->
+  test "pending, fails, h pending" begin fun () ->
     let p1, r1 = Lwt.wait () in
     let p2, r2 = Lwt.wait () in
     let p =
@@ -795,10 +797,10 @@ let try_bind_tests = [
     Lwt.return (Lwt.state p = Lwt.Return "bar")
   end;
 ]
-let tests = tests @ try_bind_tests
+let suites = suites @ [try_bind_tests]
 
-let backtrace_try_bind_tests = [
-  test "backtrace_try_bind: resolved" begin fun () ->
+let backtrace_try_bind_tests = suite "backtrace_try_bind" [
+  test "resolved" begin fun () ->
     let p =
       Lwt.backtrace_try_bind add_loc
         (fun () -> Lwt.return "foo")
@@ -808,7 +810,7 @@ let backtrace_try_bind_tests = [
     Lwt.return (Lwt.state p = Lwt.Return "foobar")
   end;
 
-  test "backtrace_try_bind: failed" begin fun () ->
+  test "failed" begin fun () ->
     let p =
       Lwt.backtrace_try_bind add_loc
         (fun () -> Lwt.fail Exception)
@@ -818,7 +820,7 @@ let backtrace_try_bind_tests = [
     Lwt.return (Lwt.state p = Lwt.Return Exception)
   end;
 
-  test "backtrace_try_bind: f raises" begin fun () ->
+  test "f raises" begin fun () ->
     let p =
       Lwt.backtrace_try_bind add_loc
         (fun () -> raise Exception)
@@ -828,7 +830,7 @@ let backtrace_try_bind_tests = [
     Lwt.return (Lwt.state p = Lwt.Return Exception)
   end;
 
-  test "backtrace_try_bind: pending" begin fun () ->
+  test "pending" begin fun () ->
     let f_ran = ref false in
     let p, _ = Lwt.wait () in
     let p =
@@ -840,7 +842,7 @@ let backtrace_try_bind_tests = [
     Lwt.return (Lwt.state p = Lwt.Sleep)
   end;
 
-  test "backtrace_try_bind: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.backtrace_try_bind add_loc
@@ -852,7 +854,7 @@ let backtrace_try_bind_tests = [
     Lwt.return (Lwt.state p = Lwt.Return "foobar")
   end;
 
-  test "backtrace_try_bind: pending, resolves, f' raises" begin fun () ->
+  test "pending, resolves, f' raises" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.backtrace_try_bind add_loc
@@ -864,7 +866,7 @@ let backtrace_try_bind_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "backtrace_try_bind: pending, fails" begin fun () ->
+  test "pending, fails" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.backtrace_try_bind add_loc
@@ -876,7 +878,7 @@ let backtrace_try_bind_tests = [
     Lwt.return (Lwt.state p = Lwt.Return Exception)
   end;
 
-  test "backtrace_try_bind: pending, fails, h raises" begin fun () ->
+  test "pending, fails, h raises" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.backtrace_try_bind add_loc
@@ -888,10 +890,10 @@ let backtrace_try_bind_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 ]
-let tests = tests @ backtrace_try_bind_tests
+let suites = suites @ [backtrace_try_bind_tests]
 
-let finalize_tests = [
-  test "finalize: resolved" begin fun () ->
+let finalize_tests = suite "finalize" [
+  test "resolved" begin fun () ->
     let f'_ran = ref false in
     let p =
       Lwt.finalize
@@ -901,7 +903,7 @@ let finalize_tests = [
     Lwt.return (!f'_ran = true && Lwt.state p = Lwt.Return "foo")
   end;
 
-  test "finalize: resolved, f' fails" begin fun () ->
+  test "resolved, f' fails" begin fun () ->
     let p =
       Lwt.finalize
         (fun () -> Lwt.return ())
@@ -910,7 +912,7 @@ let finalize_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "finalize: resolved, f' raises" begin fun () ->
+  test "resolved, f' raises" begin fun () ->
     try
       ignore @@ Lwt.finalize
         (fun () -> Lwt.return ())
@@ -920,7 +922,7 @@ let finalize_tests = [
       Lwt.return true
   end;
 
-  test "finalize: failed" begin fun () ->
+  test "failed" begin fun () ->
     let f'_ran = ref false in
     let p =
       Lwt.finalize
@@ -930,7 +932,7 @@ let finalize_tests = [
     Lwt.return (!f'_ran = true && Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "finalize: failed, f' fails" begin fun () ->
+  test "failed, f' fails" begin fun () ->
     let p =
       Lwt.finalize
         (fun () -> Lwt.fail Exit)
@@ -939,7 +941,7 @@ let finalize_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "finalize: failed, f' raises" begin fun () ->
+  test "failed, f' raises" begin fun () ->
     try
       ignore @@ Lwt.finalize
         (fun () -> Lwt.fail Exit)
@@ -949,7 +951,7 @@ let finalize_tests = [
       Lwt.return true
   end;
 
-  test "finalize: pending" begin fun () ->
+  test "pending" begin fun () ->
     let f'_ran = ref false in
     let p, _ = Lwt.wait () in
     let p =
@@ -960,7 +962,7 @@ let finalize_tests = [
     Lwt.return (!f'_ran = false && Lwt.state p = Lwt.Sleep)
   end;
 
-  test "finalize: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let f'_ran = ref false in
     let p, r = Lwt.wait () in
     let p =
@@ -972,7 +974,7 @@ let finalize_tests = [
     Lwt.return (!f'_ran = true && Lwt.state p = Lwt.Return "foo")
   end;
 
-  test "finalize: pending, resolves, f' fails" begin fun () ->
+  test "pending, resolves, f' fails" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.finalize
@@ -983,7 +985,7 @@ let finalize_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "finalize: pending, resolves, f' raises" begin fun () ->
+  test "pending, resolves, f' raises" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.finalize
@@ -994,7 +996,7 @@ let finalize_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "finalize: pending, resolves, f' pending" begin fun () ->
+  test "pending, resolves, f' pending" begin fun () ->
     let p1, r1 = Lwt.wait () in
     let p2, r2 = Lwt.wait () in
     let p =
@@ -1008,7 +1010,7 @@ let finalize_tests = [
     Lwt.return (Lwt.state p = Lwt.Return "foo")
   end;
 
-  test "finalize: pending, resolves, f' pending, fails" begin fun () ->
+  test "pending, resolves, f' pending, fails" begin fun () ->
     let p1, r1 = Lwt.wait () in
     let p2, r2 = Lwt.wait () in
     let p =
@@ -1022,7 +1024,7 @@ let finalize_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "finalize: pending, fails" begin fun () ->
+  test "pending, fails" begin fun () ->
     let f'_ran = ref false in
     let p, r = Lwt.wait () in
     let p =
@@ -1034,7 +1036,7 @@ let finalize_tests = [
     Lwt.return (!f'_ran = true && Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "finalize: pending, fails, f' fails" begin fun () ->
+  test "pending, fails, f' fails" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.finalize
@@ -1045,7 +1047,7 @@ let finalize_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "finalize: pending, fails, f' raises" begin fun () ->
+  test "pending, fails, f' raises" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.finalize
@@ -1056,7 +1058,7 @@ let finalize_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "finalize: pending, fails, f' pending" begin fun () ->
+  test "pending, fails, f' pending" begin fun () ->
     let p1, r1 = Lwt.wait () in
     let p2, r2 = Lwt.wait () in
     let p =
@@ -1070,7 +1072,7 @@ let finalize_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "finalize: pending, fails, f' pending, fails" begin fun () ->
+  test "pending, fails, f' pending, fails" begin fun () ->
     let p1, r1 = Lwt.wait () in
     let p2, r2 = Lwt.wait () in
     let p =
@@ -1084,10 +1086,10 @@ let finalize_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 ]
-let tests = tests @ finalize_tests
+let suites = suites @ [finalize_tests]
 
-let backtrace_finalize_tests = [
-  test "backtrace_finalize: resolved" begin fun () ->
+let backtrace_finalize_tests = suite "backtrace_finalize" [
+  test "resolved" begin fun () ->
     let f'_ran = ref false in
     let p =
       Lwt.backtrace_finalize add_loc
@@ -1097,7 +1099,7 @@ let backtrace_finalize_tests = [
     Lwt.return (!f'_ran = true && Lwt.state p = Lwt.Return "foo")
   end;
 
-  test "backtrace_finalize: resolved, f' fails" begin fun () ->
+  test "resolved, f' fails" begin fun () ->
     let p =
       Lwt.backtrace_finalize add_loc
         (fun () -> Lwt.return ())
@@ -1106,7 +1108,7 @@ let backtrace_finalize_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "backtrace_finalize: resolved, f' raises" begin fun () ->
+  test "resolved, f' raises" begin fun () ->
     try
       ignore @@ Lwt.backtrace_finalize add_loc
         (fun () -> Lwt.return ())
@@ -1116,7 +1118,7 @@ let backtrace_finalize_tests = [
       Lwt.return true
   end;
 
-  test "backtrace_finalize: failed" begin fun () ->
+  test "failed" begin fun () ->
     let f'_ran = ref false in
     let p =
       Lwt.backtrace_finalize add_loc
@@ -1126,7 +1128,7 @@ let backtrace_finalize_tests = [
     Lwt.return (!f'_ran = true && Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "backtrace_finalize: failed, f' fails" begin fun () ->
+  test "failed, f' fails" begin fun () ->
     let p =
       Lwt.backtrace_finalize add_loc
         (fun () -> Lwt.fail Exit)
@@ -1135,7 +1137,7 @@ let backtrace_finalize_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "backtrace_finalize: failed, f' raises" begin fun () ->
+  test "failed, f' raises" begin fun () ->
     try
       ignore @@ Lwt.backtrace_finalize add_loc
         (fun () -> Lwt.fail Exit)
@@ -1145,7 +1147,7 @@ let backtrace_finalize_tests = [
       Lwt.return true
   end;
 
-  test "backtrace_finalize: pending" begin fun () ->
+  test "pending" begin fun () ->
     let f'_ran = ref false in
     let p, _ = Lwt.wait () in
     let p =
@@ -1156,7 +1158,7 @@ let backtrace_finalize_tests = [
     Lwt.return (!f'_ran = false && Lwt.state p = Lwt.Sleep)
   end;
 
-  test "backtrace_finalize: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let f'_ran = ref false in
     let p, r = Lwt.wait () in
     let p =
@@ -1168,7 +1170,7 @@ let backtrace_finalize_tests = [
     Lwt.return (!f'_ran = true && Lwt.state p = Lwt.Return "foo")
   end;
 
-  test "backtrace_finalize: pending, resolves, f' fails" begin fun () ->
+  test "pending, resolves, f' fails" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.backtrace_finalize add_loc
@@ -1179,7 +1181,7 @@ let backtrace_finalize_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "backtrace_finalize: pending, resolves, f' raises" begin fun () ->
+  test "pending, resolves, f' raises" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.backtrace_finalize add_loc
@@ -1190,7 +1192,7 @@ let backtrace_finalize_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "backtrace_finalize: pending, fails" begin fun () ->
+  test "pending, fails" begin fun () ->
     let f'_ran = ref false in
     let p, r = Lwt.wait () in
     let p =
@@ -1202,7 +1204,7 @@ let backtrace_finalize_tests = [
     Lwt.return (!f'_ran = true && Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "backtrace_finalize: pending, fails, f' fails" begin fun () ->
+  test "pending, fails, f' fails" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.backtrace_finalize add_loc
@@ -1213,7 +1215,7 @@ let backtrace_finalize_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "backtrace_finalize: pending, fails, f' raises" begin fun () ->
+  test "pending, fails, f' raises" begin fun () ->
     let p, r = Lwt.wait () in
     let p =
       Lwt.backtrace_finalize add_loc
@@ -1224,16 +1226,16 @@ let backtrace_finalize_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 ]
-let tests = tests @ backtrace_finalize_tests
+let suites = suites @ [backtrace_finalize_tests]
 
-let on_success_tests = [
-  test "on_success: resolved" begin fun () ->
+let on_success_tests = suite "on_success" [
+  test "resolved" begin fun () ->
     let f_ran = ref false in
     Lwt.on_success (Lwt.return ()) (fun () -> f_ran := true);
     Lwt.return (!f_ran = true)
   end;
 
-  test "on_success: resolved, f raises" begin fun () ->
+  test "resolved, f raises" begin fun () ->
     let saw = ref None in
     with_async_exception_hook
       (fun exn -> saw := Some exn)
@@ -1241,19 +1243,19 @@ let on_success_tests = [
     Lwt.return (!saw = Some Exception)
   end;
 
-  test "on_success: failed" begin fun () ->
+  test "failed" begin fun () ->
     let f_ran = ref false in
     Lwt.on_success (Lwt.fail Exception) (fun () -> f_ran := true);
     Lwt.return (!f_ran = false)
   end;
 
-  test "on_success: pending" begin fun () ->
+  test "pending" begin fun () ->
     let f_ran = ref false in
     Lwt.on_success (fst (Lwt.wait ())) (fun () -> f_ran := true);
     Lwt.return (!f_ran = false)
   end;
 
-  test "on_success: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let f_ran = ref false in
     let p, r = Lwt.wait () in
     Lwt.on_success p (fun () -> f_ran := true);
@@ -1262,7 +1264,7 @@ let on_success_tests = [
     Lwt.return (!f_ran = true)
   end;
 
-  test "on_success: pending, resolves, f raises" begin fun () ->
+  test "pending, resolves, f raises" begin fun () ->
     let saw = ref None in
     let p, r = Lwt.wait () in
     Lwt.on_success p (fun () -> raise Exception);
@@ -1272,7 +1274,7 @@ let on_success_tests = [
     Lwt.return (!saw = Some Exception)
   end;
 
-  test "on_success: pending, fails" begin fun () ->
+  test "pending, fails" begin fun () ->
     let f_ran = ref false in
     let p, r = Lwt.wait () in
     Lwt.on_success p (fun () -> f_ran := true);
@@ -1280,22 +1282,22 @@ let on_success_tests = [
     Lwt.return (!f_ran = false)
   end;
 ]
-let tests = tests @ on_success_tests
+let suites = suites @ [on_success_tests]
 
-let on_failure_tests = [
-  test "on_failure: resolved" begin fun () ->
+let on_failure_tests = suite "on_failure" [
+  test "resolved" begin fun () ->
     let f_ran = ref false in
     Lwt.on_failure (Lwt.return ()) (fun _ -> f_ran := true);
     Lwt.return (!f_ran = false)
   end;
 
-  test "on_failure: failed" begin fun () ->
+  test "failed" begin fun () ->
     let saw = ref None in
     Lwt.on_failure (Lwt.fail Exception) (fun exn -> saw := Some exn);
     Lwt.return (!saw = Some Exception)
   end;
 
-  test "on_failure: failed, f raises" begin fun () ->
+  test "failed, f raises" begin fun () ->
     let saw = ref None in
     with_async_exception_hook
       (fun exn -> saw := Some exn)
@@ -1303,13 +1305,13 @@ let on_failure_tests = [
     Lwt.return (!saw = Some Exception)
   end;
 
-  test "on_failure: pending" begin fun () ->
+  test "pending" begin fun () ->
     let f_ran = ref false in
     Lwt.on_failure (fst (Lwt.wait ())) (fun _ -> f_ran := true);
     Lwt.return (!f_ran = false)
   end;
 
-  test "on_failure: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let f_ran = ref false in
     let p, r = Lwt.wait () in
     Lwt.on_failure p (fun _ -> f_ran := true);
@@ -1317,7 +1319,7 @@ let on_failure_tests = [
     Lwt.return (!f_ran = false)
   end;
 
-  test "on_failure: pending, fails" begin fun () ->
+  test "pending, fails" begin fun () ->
     let saw = ref None in
     let p, r = Lwt.wait () in
     Lwt.on_failure p (fun exn -> saw := Some exn);
@@ -1325,7 +1327,7 @@ let on_failure_tests = [
     Lwt.return (!saw = Some Exception)
   end;
 
-  test "on_failure: pending, fails, f raises" begin fun () ->
+  test "pending, fails, f raises" begin fun () ->
     let saw = ref None in
     let p, r = Lwt.wait () in
     Lwt.on_failure p (fun _ -> raise Exception);
@@ -1335,16 +1337,16 @@ let on_failure_tests = [
     Lwt.return (!saw = Some Exception)
   end;
 ]
-let tests = tests @ on_failure_tests
+let suites = suites @ [on_failure_tests]
 
-let on_termination_tests = [
-  test "on_termination: resolved" begin fun () ->
+let on_termination_tests = suite "on_termination" [
+  test "resolved" begin fun () ->
     let f_ran = ref false in
     Lwt.on_termination (Lwt.return ()) (fun () -> f_ran := true);
     Lwt.return (!f_ran = true)
   end;
 
-  test "on_termination: resolved, f raises" begin fun () ->
+  test "resolved, f raises" begin fun () ->
     let saw = ref None in
     with_async_exception_hook
       (fun exn -> saw := Some exn)
@@ -1353,13 +1355,13 @@ let on_termination_tests = [
     Lwt.return (!saw = Some Exception)
   end;
 
-  test "on_termination: failed" begin fun () ->
+  test "failed" begin fun () ->
     let f_ran = ref false in
     Lwt.on_termination (Lwt.fail Exception) (fun () -> f_ran := true);
     Lwt.return (!f_ran = true)
   end;
 
-  test "on_termination: failed, f raises" begin fun () ->
+  test "failed, f raises" begin fun () ->
     let saw = ref None in
     with_async_exception_hook
       (fun exn -> saw := Some exn)
@@ -1368,13 +1370,13 @@ let on_termination_tests = [
     Lwt.return (!saw = Some Exception)
   end;
 
-  test "on_termination: pending" begin fun () ->
+  test "pending" begin fun () ->
     let f_ran = ref false in
     Lwt.on_termination (fst (Lwt.wait ())) (fun () -> f_ran := true);
     Lwt.return (!f_ran = false)
   end;
 
-  test "on_termination: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let f_ran = ref false in
     let p, r = Lwt.wait () in
     Lwt.on_termination p (fun () -> f_ran := true);
@@ -1383,7 +1385,7 @@ let on_termination_tests = [
     Lwt.return (!f_ran = true)
   end;
 
-  test "on_termination: pending, resolves, f raises" begin fun () ->
+  test "pending, resolves, f raises" begin fun () ->
     let saw = ref None in
     let p, r = Lwt.wait () in
     Lwt.on_termination p (fun () -> raise Exception);
@@ -1393,7 +1395,7 @@ let on_termination_tests = [
     Lwt.return (!saw = Some Exception)
   end;
 
-  test "on_termination: pending, fails" begin fun () ->
+  test "pending, fails" begin fun () ->
     let f_ran = ref false in
     let p, r = Lwt.wait () in
     Lwt.on_termination p (fun () -> f_ran := true);
@@ -1402,7 +1404,7 @@ let on_termination_tests = [
     Lwt.return (!f_ran = true)
   end;
 
-  test "on_termination: pending, fails, f raises" begin fun () ->
+  test "pending, fails, f raises" begin fun () ->
     let saw = ref None in
     let p, r = Lwt.wait () in
     Lwt.on_termination p (fun () -> raise Exception);
@@ -1412,10 +1414,10 @@ let on_termination_tests = [
     Lwt.return (!saw = Some Exception)
   end;
 ]
-let tests = tests @ on_termination_tests
+let suites = suites @ [on_termination_tests]
 
-let on_any_tests = [
-  test "on_any: resolved" begin fun () ->
+let on_any_tests = suite "on_any" [
+  test "resolved" begin fun () ->
     let f_ran = ref false in
     let g_ran = ref false in
     Lwt.on_any
@@ -1425,7 +1427,7 @@ let on_any_tests = [
     Lwt.return (!f_ran = true && !g_ran = false)
   end;
 
-  test "on_any: resolved, f raises" begin fun () ->
+  test "resolved, f raises" begin fun () ->
     let saw = ref None in
     with_async_exception_hook
       (fun exn -> saw := Some exn)
@@ -1433,13 +1435,13 @@ let on_any_tests = [
     Lwt.return (!saw = Some Exception)
   end;
 
-  test "on_any: failed" begin fun () ->
+  test "failed" begin fun () ->
     let saw = ref None in   (* f can't run due to parametricity. *)
     Lwt.on_any (Lwt.fail Exception) ignore (fun exn -> saw := Some exn);
     Lwt.return (!saw = Some Exception)
   end;
 
-  test "on_any: failed, f raises" begin fun () ->
+  test "failed, f raises" begin fun () ->
     let saw = ref None in
     with_async_exception_hook
       (fun exn -> saw := Some exn)
@@ -1447,13 +1449,13 @@ let on_any_tests = [
     Lwt.return (!saw = Some Exception)
   end;
 
-  test "on_any: pending" begin fun () ->
+  test "pending" begin fun () ->
     let g_ran = ref false in    (* f can't run due to parametricity. *)
     Lwt.on_any (fst (Lwt.wait ())) ignore (fun _ -> g_ran := true);
     Lwt.return (!g_ran = false)
   end;
 
-  test "on_any: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let f_ran = ref false in
     let g_ran = ref false in
     let p, r = Lwt.wait () in
@@ -1462,7 +1464,7 @@ let on_any_tests = [
     Lwt.return (!f_ran = true && !g_ran = false)
   end;
 
-  test "on_any: pending, resolves, f raises" begin fun () ->
+  test "pending, resolves, f raises" begin fun () ->
     let saw = ref None in
     let p, r = Lwt.wait () in
     Lwt.on_any p (fun () -> raise Exception) ignore;
@@ -1472,7 +1474,7 @@ let on_any_tests = [
     Lwt.return (!saw = Some Exception)
   end;
 
-  test "on_any: pending, fails" begin fun () ->
+  test "pending, fails" begin fun () ->
     let saw = ref None in   (* f can't run due to parametricity. *)
     let p, r = Lwt.wait () in
     Lwt.on_any p ignore (fun exn -> saw := Some exn);
@@ -1480,7 +1482,7 @@ let on_any_tests = [
     Lwt.return (!saw = Some Exception)
   end;
 
-  test "on_any: pending, fails, g raises" begin fun () ->
+  test "pending, fails, g raises" begin fun () ->
     let saw = ref None in
     let p, r = Lwt.wait () in
     Lwt.on_any p ignore (fun _ -> raise Exception);
@@ -1490,7 +1492,7 @@ let on_any_tests = [
     Lwt.return (!saw = Some Exception)
   end;
 ]
-let tests = tests @ on_any_tests
+let suites = suites @ [on_any_tests]
 
 
 
@@ -1498,14 +1500,14 @@ let tests = tests @ on_any_tests
    sequence-associated storage. Also not including [Lwt.pick] and [Lwt.npick],
    as those interact with cancelation. *)
 
-let async_tests = [
-  test "async: resolved" begin fun () ->
+let async_tests = suite "async" [
+  test "resolved" begin fun () ->
     let f_ran = ref false in
     Lwt.async (fun () -> f_ran := true; Lwt.return ());
     Lwt.return (!f_ran = true)
   end;
 
-  test "async: f raises" begin fun () ->
+  test "f raises" begin fun () ->
     let saw = ref None in
     with_async_exception_hook
       (fun exn -> saw := Some exn)
@@ -1513,7 +1515,7 @@ let async_tests = [
     Lwt.return (!saw = Some Exception)
   end;
 
-  test "async: failed" begin fun () ->
+  test "failed" begin fun () ->
     let saw = ref None in
     with_async_exception_hook
       (fun exn -> saw := Some exn)
@@ -1521,7 +1523,7 @@ let async_tests = [
     Lwt.return (!saw = Some Exception)
   end;
 
-  test "async: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let completed = ref false in
     let p, r = Lwt.wait () in
     Lwt.async (fun () ->
@@ -1533,7 +1535,7 @@ let async_tests = [
     Lwt.return (!completed = true)
   end;
 
-  test "async: pending, fails" begin fun () ->
+  test "pending, fails" begin fun () ->
     let saw = ref None in
     let p, r = Lwt.wait () in
     Lwt.async (fun () -> p);
@@ -1543,16 +1545,16 @@ let async_tests = [
     Lwt.return (!saw = Some Exception)
   end;
 ]
-let tests = tests @ async_tests
+let suites = suites @ [async_tests]
 
-let ignore_result_tests = [
-  test "ignore_result: resolved" begin fun () ->
+let ignore_result_tests = suite "ignore_result" [
+  test "resolved" begin fun () ->
     Lwt.ignore_result (Lwt.return ());
     (* Reaching this without an exception is success. *)
     Lwt.return true
   end;
 
-  test "ignore_result: failed" begin fun () ->
+  test "failed" begin fun () ->
     try
       Lwt.ignore_result (Lwt.fail Exception);
       Lwt.return false
@@ -1560,7 +1562,7 @@ let ignore_result_tests = [
       Lwt.return true
   end;
 
-  test "ignore_result: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let p, r = Lwt.wait () in
     Lwt.ignore_result p;
     Lwt.wakeup r ();
@@ -1568,7 +1570,7 @@ let ignore_result_tests = [
     Lwt.return true
   end;
 
-  test "ignore_result: pending, fails" begin fun () ->
+  test "pending, fails" begin fun () ->
     let saw = ref None in
     let p, r = Lwt.wait () in
     Lwt.ignore_result p;
@@ -1578,25 +1580,25 @@ let ignore_result_tests = [
     Lwt.return (!saw = Some Exception)
   end;
 ]
-let tests = tests @ ignore_result_tests
+let suites = suites @ [ignore_result_tests]
 
-let join_tests = [
-  test "join: empty" begin fun () ->
+let join_tests = suite "join" [
+  test "empty" begin fun () ->
     let p = Lwt.join [] in
     Lwt.return (Lwt.state p = Lwt.Return ())
   end;
 
-  test "join: all resolved" begin fun () ->
+  test "all resolved" begin fun () ->
     let p = Lwt.join [Lwt.return (); Lwt.return ()] in
     Lwt.return (Lwt.state p = Lwt.Return ())
   end;
 
-  test "join: all failed" begin fun () ->
+  test "all failed" begin fun () ->
     let p = Lwt.join [Lwt.fail Exception; Lwt.fail Exception] in
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "join: resolved and pending, resolves" begin fun () ->
+  test "resolved and pending, resolves" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.join [Lwt.return (); p] in
     assert (Lwt.state p = Lwt.Sleep);
@@ -1604,7 +1606,7 @@ let join_tests = [
     Lwt.return (Lwt.state p = Lwt.Return ())
   end;
 
-  test "join: failed and pending, resolves" begin fun () ->
+  test "failed and pending, resolves" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.join [Lwt.fail Exception; p] in
     assert (Lwt.state p = Lwt.Sleep);
@@ -1612,14 +1614,14 @@ let join_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "join: resolved and pending, fails" begin fun () ->
+  test "resolved and pending, fails" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.join [Lwt.return (); p] in
     Lwt.wakeup_exn r Exception;
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "join: failed and pending, fails" begin fun () ->
+  test "failed and pending, fails" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.join [Lwt.fail Exception; p] in
     assert (Lwt.state p = Lwt.Sleep);
@@ -1627,32 +1629,32 @@ let join_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "join: diamond" begin fun () ->
+  test "diamond" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.join [p; p] in
     Lwt.wakeup r ();
     Lwt.return (Lwt.state p = Lwt.Return ())
   end;
 ]
-let tests = tests @ join_tests
+let suites = suites @ [join_tests]
 
-let choose_tests = [
-  test "choose: empty" begin fun () ->
+let choose_tests = suite "choose" [
+  test "empty" begin fun () ->
     let p = Lwt.choose [] in
     Lwt.return (Lwt.state p = Lwt.Sleep)
   end;
 
-  test "choose: resolved" begin fun () ->
+  test "resolved" begin fun () ->
     let p = Lwt.choose [fst (Lwt.wait ()); Lwt.return "foo"] in
     Lwt.return (Lwt.state p = Lwt.Return "foo")
   end;
 
-  test "choose: failed" begin fun () ->
+  test "failed" begin fun () ->
     let p = Lwt.choose [fst (Lwt.wait ()); Lwt.fail Exception] in
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "choose: multiple completed" begin fun () ->
+  test "multiple completed" begin fun () ->
     (* This is run in a loop to exercise the internal PRNG. *)
     let outcomes = Array.make 3 0 in
     let rec repeat n =
@@ -1679,12 +1681,12 @@ let choose_tests = [
        outcomes.(0) + outcomes.(1) + outcomes.(2) = count)
   end;
 
-  test "choose: pending" begin fun () ->
+  test "pending" begin fun () ->
     let p = Lwt.choose [fst (Lwt.wait ()); fst (Lwt.wait ())] in
     Lwt.return (Lwt.state p = Lwt.Sleep)
   end;
 
-  test "choose: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let p1, r1 = Lwt.wait () in
     let p2, r2 = Lwt.wait () in
     let p = Lwt.choose [p1; p2] in
@@ -1694,43 +1696,43 @@ let choose_tests = [
     Lwt.return (Lwt.state p = Lwt.Return "foo")
   end;
 
-  test "choose: diamond" begin fun () ->
+  test "diamond" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.choose [p; p] in
     Lwt.wakeup r "foo";
     Lwt.return (Lwt.state p = Lwt.Return "foo")
   end;
 ]
-let tests = tests @ choose_tests
+let suites = suites @ [choose_tests]
 
-let nchoose_tests = [
-  test "nchoose: empty" begin fun () ->
+let nchoose_tests = suite "nchoose" [
+  test "empty" begin fun () ->
     let p = Lwt.nchoose [] in
     Lwt.return (Lwt.state p = Lwt.Sleep)
   end;
 
-  test "nchoose: all resolved" begin fun () ->
+  test "all resolved" begin fun () ->
     let p = Lwt.nchoose [Lwt.return "foo"; Lwt.return "bar"] in
     Lwt.return (Lwt.state p = Lwt.Return ["foo"; "bar"])
   end;
 
-  test "nchoose: resolved, failed" begin fun () ->
+  test "resolved, failed" begin fun () ->
     let p = Lwt.nchoose [Lwt.return "foo"; Lwt.fail Exception] in
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "nchoose: failed, resolved" begin fun () ->
+  test "failed, resolved" begin fun () ->
     let p = Lwt.nchoose [Lwt.fail Exception; Lwt.return "foo"] in
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "nchoose: some pending" begin fun () ->
+  test "some pending" begin fun () ->
     let p =
       Lwt.nchoose [Lwt.return "foo"; fst (Lwt.wait ()); Lwt.return "bar"] in
     Lwt.return (Lwt.state p = Lwt.Return ["foo"; "bar"])
   end;
 
-  test "nchoose: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.nchoose [fst (Lwt.wait ()); p] in
     assert (Lwt.state p = Lwt.Sleep);
@@ -1738,36 +1740,36 @@ let nchoose_tests = [
     Lwt.return (Lwt.state p = Lwt.Return ["foo"])
   end;
 
-  test "nchoose: pending, fails" begin fun () ->
+  test "pending, fails" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.nchoose [fst (Lwt.wait ()); p] in
     Lwt.wakeup_exn r Exception;
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "nchoose: diamond" begin fun () ->
+  test "diamond" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.nchoose [p; p] in
     Lwt.wakeup r "foo";
     Lwt.return (Lwt.state p = Lwt.Return ["foo"; "foo"])
   end;
 
-  test "nchoose: diamond, fails" begin fun () ->
+  test "diamond, fails" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.nchoose [p; p] in
     Lwt.wakeup_exn r Exception;
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 ]
-let tests = tests @ nchoose_tests
+let suites = suites @ [nchoose_tests]
 
-let nchoose_split_tests = [
-  test "nchoose_split: empty" begin fun () ->
+let nchoose_split_tests = suite "nchoose_split" [
+  test "empty" begin fun () ->
     let p = Lwt.nchoose_split [] in
     Lwt.return (Lwt.state p = Lwt.Sleep)
   end;
 
-  test "nchoose_split: some resolved" begin fun () ->
+  test "some resolved" begin fun () ->
     let p =
       Lwt.nchoose_split
         [Lwt.return "foo"; fst (Lwt.wait ()); Lwt.return "bar"]
@@ -1778,22 +1780,22 @@ let nchoose_split_tests = [
     end [@ocaml.warning "-4"]
   end;
 
-  test "nchoose_split: resolved, failed" begin fun () ->
+  test "resolved, failed" begin fun () ->
     let p = Lwt.nchoose_split [Lwt.return (); Lwt.fail Exception] in
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "nchoose_split: failed, resolved" begin fun () ->
+  test "failed, resolved" begin fun () ->
     let p = Lwt.nchoose_split [Lwt.fail Exception; Lwt.return ()] in
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "nchoose_split: pending, failed" begin fun () ->
+  test "pending, failed" begin fun () ->
     let p = Lwt.nchoose_split [fst (Lwt.wait ()); Lwt.fail Exception] in
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "nchoose_split: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.nchoose_split [p; fst (Lwt.wait ())] in
     assert (Lwt.state p = Lwt.Sleep);
@@ -1804,14 +1806,14 @@ let nchoose_split_tests = [
     end [@ocaml.warning "-4"]
   end;
 
-  test "nchoose_split: pending, fails" begin fun () ->
+  test "pending, fails" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.nchoose_split [p; fst (Lwt.wait ())] in
     Lwt.wakeup_exn r Exception;
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "nchoose_split: diamond" begin fun () ->
+  test "diamond" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.nchoose_split [p; p; fst (Lwt.wait ())] in
     Lwt.wakeup r ();
@@ -1821,21 +1823,21 @@ let nchoose_split_tests = [
     end [@ocaml.warning "-4"]
   end;
 
-  test "nchoose_split: diamond, fails" begin fun () ->
+  test "diamond, fails" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.nchoose_split [p; p; fst (Lwt.wait ())] in
     Lwt.wakeup_exn r Exception;
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 ]
-let tests = tests @ nchoose_split_tests
+let suites = suites @ [nchoose_split_tests]
 
 
 
 (* Tests functions related to [Lwt.state]; [Lwt.state] itself is tested in the
    preceding sections. *)
 
-let state_query_tests = [
+let state_query_tests = suite "state query" [
   test "is_sleeping: resolved" begin fun () ->
     Lwt.return (not @@ Lwt.is_sleeping (Lwt.return ()))
   end;
@@ -1883,12 +1885,12 @@ let state_query_tests = [
     Lwt.return (Lwt.poll p2 = None)
   end;
 ]
-let tests = tests @ state_query_tests
+let suites = suites @ [state_query_tests]
 
 
 
 (* Preceding tests exercised most of [Lwt.wakeup], but here are more checks. *)
-let wakeup_tests = [
+let wakeup_tests = suite "wakeup" [
   test "wakeup_result: nested" begin fun () ->
     let f_ran = ref false in
     let p1, r1 = Lwt.wait () in
@@ -1902,9 +1904,9 @@ let wakeup_tests = [
     Lwt.return (!f_ran = true && Lwt.state p2 = Lwt.Return "foobar")
   end;
 ]
-let tests = tests @ wakeup_tests
+let suites = suites @ [wakeup_tests]
 
-let wakeup_later_tests = [
+let wakeup_later_tests = suite "wakeup_later" [
   test "wakeup_later_result: immediate" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.bind p (fun s -> Lwt.return (s ^ "bar")) in
@@ -2000,38 +2002,38 @@ let wakeup_later_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 ]
-let tests = tests @ wakeup_later_tests
+let suites = suites @ [wakeup_later_tests]
 
 
 
 (* Cancelation and its interaction with the rest of the API. *)
 
-let cancel_tests = [
-  test "cancel: resolved" begin fun () ->
+let cancel_tests = suite "cancel" [
+  test "resolved" begin fun () ->
     let p = Lwt.return () in
     Lwt.cancel p;
     Lwt.return (Lwt.state p = Lwt.Return ())
   end;
 
-  test "cancel: failed" begin fun () ->
+  test "failed" begin fun () ->
     let p = Lwt.fail Exception in
     Lwt.cancel p;
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "cancel: wait" begin fun () ->
+  test "wait" begin fun () ->
     let p, _ = Lwt.wait () in
     Lwt.cancel p;
     Lwt.return (Lwt.state p = Lwt.Sleep)
   end;
 
-  test "cancel: task" begin fun () ->
+  test "task" begin fun () ->
     let p, _ = Lwt.task () in
     Lwt.cancel p;
     Lwt.return (Lwt.state p = Lwt.Fail Lwt.Canceled)
   end;
 
-  test "cancel: trigger" begin fun () ->
+  test "trigger" begin fun () ->
     let saw = ref None in
     let p, _ = Lwt.task () in
     Lwt.on_failure p (fun exn -> saw := Some exn);
@@ -2041,7 +2043,7 @@ let cancel_tests = [
 
   (* Behaves like wakeup rather than wakeup_later, even though that's probably
      wrong. Calling cancel in a (functional) loop will cause stack overflow. *)
-  test "cancel: nested" begin fun () ->
+  test "nested" begin fun () ->
     let f_ran = ref false in
     let p1, _ = Lwt.task () in
     let p2, _ = Lwt.task () in
@@ -2054,10 +2056,10 @@ let cancel_tests = [
     Lwt.return (!f_ran = true && Lwt.state p2 = Lwt.Fail Lwt.Canceled)
   end;
 ]
-let tests = tests @ cancel_tests
+let suites = suites @ [cancel_tests]
 
-let on_cancel_tests = [
-  test "on_cancel: pending" begin fun () ->
+let on_cancel_tests = suite "on_cancel" [
+  test "pending" begin fun () ->
     let f_ran = ref false in
     let p, _ = Lwt.task () in
     Lwt.on_cancel p (fun () -> f_ran := true);
@@ -2066,7 +2068,7 @@ let on_cancel_tests = [
     Lwt.return (!f_ran = true)
   end;
 
-  test "on_cancel: multiple" begin fun () ->
+  test "multiple" begin fun () ->
     let f_ran = ref false in
     let g_ran = ref false in
     let h_ran = ref false in
@@ -2078,7 +2080,7 @@ let on_cancel_tests = [
     Lwt.return (!f_ran = true && !g_ran = true && !h_ran = true)
   end;
 
-  test "on_cancel: ordering" begin fun () ->
+  test "ordering" begin fun () ->
     (* Two cancel triggers to make sure they both run before the ordinary
        trigger. *)
     let on_cancel_1_ran = ref false in
@@ -2095,19 +2097,19 @@ let on_cancel_tests = [
     Lwt.return (!trigger_ran = true)
   end;
 
-  test "on_cancel: resolved" begin fun () ->
+  test "resolved" begin fun () ->
     let f_ran = ref false in
     Lwt.on_cancel (Lwt.return ()) (fun () -> f_ran := true);
     Lwt.return (!f_ran = false)
   end;
 
-  test "on_cancel: failed" begin fun () ->
+  test "failed" begin fun () ->
     let f_ran = ref false in
     Lwt.on_cancel (Lwt.fail Exception) (fun () -> f_ran := true);
     Lwt.return (!f_ran = false)
   end;
 
-  test "on_cancel: already canceled" begin fun () ->
+  test "already canceled" begin fun () ->
     let f_ran = ref false in
     Lwt.on_cancel (Lwt.fail Lwt.Canceled) (fun () -> f_ran := true);
     Lwt.return (!f_ran = true)
@@ -2116,7 +2118,7 @@ let on_cancel_tests = [
   (* More generally, this tests that failing with [Lwt.Canceled] is equivalent
      to calling [Lwt.cancel]. The difference is that [Lwt.cancel] can be called
      on promises without the need of a resolver. *)
-  test "on_cancel: fail Canceled" begin fun () ->
+  test "fail Canceled" begin fun () ->
     let f_ran = ref false in
     let p, r = Lwt.wait () in
     Lwt.on_cancel p (fun () -> f_ran := true);
@@ -2124,41 +2126,41 @@ let on_cancel_tests = [
     Lwt.return (!f_ran = true)
   end;
 ]
-let tests = tests @ on_cancel_tests
+let suites = suites @ [on_cancel_tests]
 
-let protected_tests = [
-  test "protected: resolved" begin fun () ->
+let protected_tests = suite "protected" [
+  test "resolved" begin fun () ->
     let p = Lwt.protected (Lwt.return ()) in
     (* If [p] starts resolved, it can't be canceled. *)
     Lwt.return (Lwt.state p = Lwt.Return ())
   end;
 
-  test "protected: failed" begin fun () ->
+  test "failed" begin fun () ->
     let p = Lwt.protected (Lwt.fail Exception) in
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "protected: pending" begin fun () ->
+  test "pending" begin fun () ->
     let p, _ = Lwt.task () in
     let p' = Lwt.protected p in
     Lwt.return (Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Sleep)
   end;
 
-  test "protected: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let p, r = Lwt.task () in
     let p' = Lwt.protected p in
     Lwt.wakeup r "foo";
     Lwt.return (Lwt.state p' = Lwt.Return "foo")
   end;
 
-  test "protected: pending, canceled" begin fun () ->
+  test "pending, canceled" begin fun () ->
     let p, _ = Lwt.task () in
     let p' = Lwt.protected p in
     Lwt.cancel p';
     Lwt.return (Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Fail Lwt.Canceled)
   end;
 
-  test "protected: pending, canceled, resolves" begin fun () ->
+  test "pending, canceled, resolves" begin fun () ->
     let p, r = Lwt.task () in
     let p' = Lwt.protected p in
     Lwt.cancel p';
@@ -2169,7 +2171,7 @@ let protected_tests = [
 
   (* Implementation detail: [p' = Lwt.protected _] can still be completed if it
      becomes a proxy. *)
-  test "protected: pending, proxy" begin fun () ->
+  test "pending, proxy" begin fun () ->
     let p1, r1 = Lwt.task () in
     let p2 = Lwt.protected p1 in
 
@@ -2184,43 +2186,43 @@ let protected_tests = [
     Lwt.return (Lwt.state p2 = Lwt.Return "foo")
   end;
 ]
-let tests = tests @ protected_tests
+let suites = suites @ [protected_tests]
 
-let no_cancel_tests = [
-  test "no_cancel: resolved" begin fun () ->
+let no_cancel_tests = suite "no_cancel" [
+  test "resolved" begin fun () ->
     let p = Lwt.no_cancel (Lwt.return ()) in
     (* [p] starts resolved, so it can't be canceled. *)
     Lwt.return (Lwt.state p = Lwt.Return ())
   end;
 
-  test "no_cancel: failed" begin fun () ->
+  test "failed" begin fun () ->
     let p = Lwt.no_cancel (Lwt.fail Exception) in
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "no_cancel: pending" begin fun () ->
+  test "pending" begin fun () ->
     let p, _ = Lwt.task () in
     let p' = Lwt.no_cancel p in
     Lwt.return (Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Sleep)
   end;
 
-  test "no_cancel: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let p, r = Lwt.task () in
     let p = Lwt.no_cancel p in
     Lwt.wakeup r "foo";
     Lwt.return (Lwt.state p = Lwt.Return "foo")
   end;
 
-  test "no_cancel: pending, cancel attempt" begin fun () ->
+  test "pending, cancel attempt" begin fun () ->
     let p, _ = Lwt.task () in
     let p' = Lwt.no_cancel p in
     Lwt.cancel p';
     Lwt.return (Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Sleep)
   end;
 ]
-let tests = tests @ no_cancel_tests
+let suites = suites @ [no_cancel_tests]
 
-let complete_already_canceled_promise_tests = [
+let resolve_already_canceled_promise_tests = suite "resolve canceled" [
   test "wakeup: canceled" begin fun () ->
     let p, r = Lwt.task () in
     Lwt.cancel p;
@@ -2237,22 +2239,22 @@ let complete_already_canceled_promise_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Lwt.Canceled)
   end;
 ]
-let tests = tests @ complete_already_canceled_promise_tests
+let suites = suites @ [resolve_already_canceled_promise_tests]
 
-let pick_tests = [
-  test "pick: empty" begin fun () ->
+let pick_tests = suite "pick" [
+  test "empty" begin fun () ->
     let p = Lwt.pick [] in
     Lwt.return (Lwt.state p = Lwt.Sleep)
   end;
 
-  test "pick: resolved" begin fun () ->
+  test "resolved" begin fun () ->
     let p1, _ = Lwt.task () in
     let p2 = Lwt.pick [p1; Lwt.return "foo"] in
     Lwt.return
       (Lwt.state p1 = Lwt.Fail Lwt.Canceled && Lwt.state p2 = Lwt.Return "foo")
   end;
 
-  test "pick: failed" begin fun () ->
+  test "failed" begin fun () ->
     let p1, _ = Lwt.task () in
     let p2 = Lwt.pick [p1; Lwt.fail Exception] in
     Lwt.return
@@ -2260,7 +2262,7 @@ let pick_tests = [
        Lwt.state p2 = Lwt.Fail Exception)
   end;
 
-  test "pick: multiple completed" begin fun () ->
+  test "multiple completed" begin fun () ->
     (* This is run in a loop to exercise the internal PRNG. *)
     let outcomes = Array.make 3 0 in
     let rec repeat n =
@@ -2287,12 +2289,12 @@ let pick_tests = [
        outcomes.(0) + outcomes.(1) + outcomes.(2) = count)
   end;
 
-  test "pick: pending" begin fun () ->
+  test "pending" begin fun () ->
     let p = Lwt.pick [fst (Lwt.wait ()); fst (Lwt.wait ())] in
     Lwt.return (Lwt.state p = Lwt.Sleep)
   end;
 
-  test "pick: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let p1, r1 = Lwt.task () in
     let p2, _ = Lwt.task () in
     let p = Lwt.pick [p1; p2] in
@@ -2301,14 +2303,14 @@ let pick_tests = [
       (Lwt.state p2 = Lwt.Fail Lwt.Canceled && Lwt.state p = Lwt.Return "foo")
   end;
 
-  test "pick: diamond" begin fun () ->
+  test "diamond" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.pick [p; p] in
     Lwt.wakeup r "foo";
     Lwt.return (Lwt.state p = Lwt.Return "foo")
   end;
 
-  test "pick: pending, canceled" begin fun () ->
+  test "pending, canceled" begin fun () ->
     let p1, _ = Lwt.task () in
     let p2, _ = Lwt.task () in
     let p = Lwt.pick [p1; p2] in
@@ -2318,30 +2320,30 @@ let pick_tests = [
        Lwt.state p2 = Lwt.Fail Lwt.Canceled)
   end;
 ]
-let tests = tests @ pick_tests
+let suites = suites @ [pick_tests]
 
-let npick_tests = [
-  test "npick: empty" begin fun () ->
+let npick_tests = suite "npick" [
+  test "empty" begin fun () ->
     let p = Lwt.npick [] in
     Lwt.return (Lwt.state p = Lwt.Sleep)
   end;
 
-  test "npick: all resolved" begin fun () ->
+  test "all resolved" begin fun () ->
     let p = Lwt.npick [Lwt.return "foo"; Lwt.return "bar"] in
     Lwt.return (Lwt.state p = Lwt.Return ["foo"; "bar"])
   end;
 
-  test "npick: resolved, failed" begin fun () ->
+  test "resolved, failed" begin fun () ->
     let p = Lwt.npick [Lwt.return "foo"; Lwt.fail Exception] in
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "npick: failed, resolved" begin fun () ->
+  test "failed, resolved" begin fun () ->
     let p = Lwt.npick [Lwt.fail Exception; Lwt.return "foo"] in
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "npick: some pending" begin fun () ->
+  test "some pending" begin fun () ->
     let p1, _ = Lwt.task () in
     let p2 = Lwt.npick [Lwt.return "foo"; p1; Lwt.return "bar"] in
     Lwt.return
@@ -2349,12 +2351,12 @@ let npick_tests = [
        Lwt.state p2 = Lwt.Return ["foo"; "bar"])
   end;
 
-  test "npick: pending" begin fun () ->
+  test "pending" begin fun () ->
     let p = Lwt.npick [fst (Lwt.task ()); fst (Lwt.task ())] in
     Lwt.return (Lwt.state p = Lwt.Sleep)
   end;
 
-  test "npick: pending, resolves" begin fun () ->
+  test "pending, resolves" begin fun () ->
     let p1, _ = Lwt.task () in
     let p2, r = Lwt.task () in
     let p = Lwt.npick [p1; p2] in
@@ -2364,7 +2366,7 @@ let npick_tests = [
        Lwt.state p = Lwt.Return ["foo"])
   end;
 
-  test "npick: pending, fails" begin fun () ->
+  test "pending, fails" begin fun () ->
     let p1, _ = Lwt.task () in
     let p2, r = Lwt.task () in
     let p = Lwt.npick [p1; p2] in
@@ -2374,21 +2376,21 @@ let npick_tests = [
        Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "npick: diamond" begin fun () ->
+  test "diamond" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.npick [p; p] in
     Lwt.wakeup r "foo";
     Lwt.return (Lwt.state p = Lwt.Return ["foo"; "foo"])
   end;
 
-  test "npick: diamond, fails" begin fun () ->
+  test "diamond, fails" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.npick [p; p] in
     Lwt.wakeup_exn r Exception;
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
-  test "npick: pending, canceled" begin fun () ->
+  test "pending, canceled" begin fun () ->
     let p1, _ = Lwt.task () in
     let p2, _ = Lwt.task () in
     let p = Lwt.npick [p1; p2] in
@@ -2398,10 +2400,10 @@ let npick_tests = [
        Lwt.state p2 = Lwt.Fail Lwt.Canceled)
   end;
 ]
-let tests = tests @ npick_tests
+let suites = suites @ [npick_tests]
 
-let cancel_bind_tests = [
-  test "bind: wait, pending, canceled" begin fun () ->
+let cancel_bind_tests = suite "cancel bind" [
+  test "wait, pending, canceled" begin fun () ->
     let f_ran = ref false in
     let p, _ = Lwt.wait () in
     let p' = Lwt.bind p (fun () -> f_ran := true; Lwt.return ()) in
@@ -2410,7 +2412,7 @@ let cancel_bind_tests = [
       (!f_ran = false && Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Sleep)
   end;
 
-  test "bind: task, pending, canceled" begin fun () ->
+  test "task, pending, canceled" begin fun () ->
     let f_ran = ref false in
     let p, _ = Lwt.task () in
     let p' = Lwt.bind p (fun () -> f_ran := true; Lwt.return ()) in
@@ -2421,7 +2423,7 @@ let cancel_bind_tests = [
        Lwt.state p' = Lwt.Fail Lwt.Canceled)
   end;
 
-  test "bind: pending, wait, canceled" begin fun () ->
+  test "pending, wait, canceled" begin fun () ->
     let p, r = Lwt.wait () in
     let p', _ = Lwt.wait () in
     let p'' = Lwt.bind p (fun () -> p') in
@@ -2431,7 +2433,7 @@ let cancel_bind_tests = [
     Lwt.return (Lwt.state p' = Lwt.Sleep && Lwt.state p'' = Lwt.Sleep)
   end;
 
-  test "bind: pending, task, canceled" begin fun () ->
+  test "pending, task, canceled" begin fun () ->
     let p1, r = Lwt.wait () in
     let p2, _ = Lwt.task () in
     let p3 = Lwt.bind p1 (fun () -> p2) in
@@ -2443,7 +2445,7 @@ let cancel_bind_tests = [
        p2 != p3)
   end;
 
-  test "bind: pending, task, canceled, chain" begin fun () ->
+  test "pending, task, canceled, chain" begin fun () ->
     let p1, r = Lwt.wait () in
     let p2, _ = Lwt.task () in
     let p3 = Lwt.bind p1 (fun () -> p2) in
@@ -2458,7 +2460,7 @@ let cancel_bind_tests = [
        Lwt.state p4 = Lwt.Fail Lwt.Canceled)
   end;
 
-  test "bind: pending, on_cancel triggers" begin fun () ->
+  test "pending, on_cancel triggers" begin fun () ->
     let f_ran = ref false in
     let g_ran = ref false in
     let p1, _ = Lwt.task () in
@@ -2471,7 +2473,7 @@ let cancel_bind_tests = [
     Lwt.return (!f_ran = false && !g_ran = true)
   end;
 
-  test "bind: pending, resolves, on_cancel triggers" begin fun () ->
+  test "pending, resolves, on_cancel triggers" begin fun () ->
     let f_ran = ref false in
     let g_ran = ref false in
     let p1, r = Lwt.task () in
@@ -2486,10 +2488,10 @@ let cancel_bind_tests = [
     Lwt.return (!f_ran = true && !g_ran = true)
   end;
 ]
-let tests = tests @ cancel_bind_tests
+let suites = suites @ [cancel_bind_tests]
 
-let cancel_map_tests = [
-  test "map: wait, pending, canceled" begin fun () ->
+let cancel_map_tests = suite "cancel map" [
+  test "wait, pending, canceled" begin fun () ->
     let f_ran = ref false in
     let p, _ = Lwt.wait () in
     let p' = Lwt.map (fun () -> f_ran := true) p in
@@ -2498,7 +2500,7 @@ let cancel_map_tests = [
       (!f_ran = false && Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Sleep)
   end;
 
-  test "map: task, pending, canceled" begin fun () ->
+  test "task, pending, canceled" begin fun () ->
     let f_ran = ref false in
     let p, _ = Lwt.task () in
     let p' = Lwt.map (fun () -> f_ran := true) p in
@@ -2509,12 +2511,12 @@ let cancel_map_tests = [
        Lwt.state p' = Lwt.Fail Lwt.Canceled)
   end;
 ]
-let tests = tests @ cancel_map_tests
+let suites = suites @ [cancel_map_tests]
 
-let cancel_catch_tests = [
+let cancel_catch_tests = suite "cancel catch" [
   (* In [p' = Lwt.catch (fun () -> p) f], if [p] is not cancelable, [p'] is also
      not cancelable. *)
-  test "catch: wait, pending, canceled" begin fun () ->
+  test "wait, pending, canceled" begin fun () ->
     let f_ran = ref false in
     let p, _ = Lwt.wait () in
     let p' =
@@ -2530,7 +2532,7 @@ let cancel_catch_tests = [
   (* In [p' = Lwt.catch (fun () -> p) f], if [p] is cancelable, canceling [p']
      propagates to [p], and then the cancelation exception can be "intercepted"
      by [f], which can complete [p'] in an arbitrary way. *)
-  test "catch: task, pending, canceled" begin fun () ->
+  test "task, pending, canceled" begin fun () ->
     let saw = ref None in
     let p, _ = Lwt.task () in
     let p' =
@@ -2548,7 +2550,7 @@ let cancel_catch_tests = [
   (* In [p' = Lwt.catch (fun () -> p) f], if [p] is cancelable, and cancel
      callbacks are added to both [p] and [p'], and [f] does not resolve [p']
      with [Lwt.Fail Lwt.Canceled], only the callback on [p] runs. *)
-  test "catch: task, pending, canceled, on_cancel, intercepted" begin fun () ->
+  test "task, pending, canceled, on_cancel, intercepted" begin fun () ->
     let on_cancel_1_ran = ref false in
     let on_cancel_2_ran = ref false in
     let p, _ = Lwt.task () in
@@ -2570,7 +2572,7 @@ let cancel_catch_tests = [
 
   (* Same as above, except this time, cancelation is passed on to the outer
      promise, so we can expect both cancel callbacks to run. *)
-  test "catch: task, pending, canceled, on_cancel, forwarded" begin fun () ->
+  test "task, pending, canceled, on_cancel, forwarded" begin fun () ->
     let on_cancel_2_ran = ref false in
     let p, _ = Lwt.task () in
     let p' = Lwt.catch (fun () -> p) Lwt.fail in
@@ -2585,7 +2587,7 @@ let cancel_catch_tests = [
   (* (2 tests) If the handler passed to [Lwt.catch] already ran, canceling the
      outer promise is the same as canceling the promise returned by the
      handler. *)
-  test "catch: pending, wait, canceled" begin fun () ->
+  test "pending, wait, canceled" begin fun () ->
     let p1, r = Lwt.wait () in
     let p2, _ = Lwt.wait () in
     let p3 =
@@ -2598,7 +2600,7 @@ let cancel_catch_tests = [
     Lwt.return (Lwt.state p2 = Lwt.Sleep && Lwt.state p3 = Lwt.Sleep)
   end;
 
-  test "catch: pending, task, canceled" begin fun () ->
+  test "pending, task, canceled" begin fun () ->
     let p1, r = Lwt.wait () in
     let p2, _ = Lwt.task () in
     let p3 =
@@ -2613,10 +2615,10 @@ let cancel_catch_tests = [
        Lwt.state p3 = Lwt.Fail Lwt.Canceled)
   end;
 ]
-let tests = tests @ cancel_catch_tests
+let suites = suites @ [cancel_catch_tests]
 
-let cancel_try_bind_tests = [
-  test "try_bind: wait, pending, canceled" begin fun () ->
+let cancel_try_bind_tests = suite "cancel try_bind" [
+  test "wait, pending, canceled" begin fun () ->
     let f_or_g_ran = ref false in
     let p, _ = Lwt.wait () in
     let p' =
@@ -2632,7 +2634,7 @@ let cancel_try_bind_tests = [
        Lwt.state p' = Lwt.Sleep)
   end;
 
-  test "try_bind: task, pending, canceled" begin fun () ->
+  test "task, pending, canceled" begin fun () ->
     let f_ran = ref false in
     let saw = ref None in
     let p, _ = Lwt.task () in
@@ -2650,7 +2652,7 @@ let cancel_try_bind_tests = [
        Lwt.state p' = Lwt.Return "bar")
   end;
 
-  test "try_bind: pending, resolves, wait, canceled" begin fun () ->
+  test "pending, resolves, wait, canceled" begin fun () ->
     let p1, r = Lwt.wait () in
     let p2, _ = Lwt.wait () in
     let p3 =
@@ -2664,7 +2666,7 @@ let cancel_try_bind_tests = [
     Lwt.return (Lwt.state p2 = Lwt.Sleep && Lwt.state p3 = Lwt.Sleep)
   end;
 
-  test "try_bind: pending, resolves, task, canceled" begin fun () ->
+  test "pending, resolves, task, canceled" begin fun () ->
     let p1, r = Lwt.wait () in
     let p2, _ = Lwt.task () in
     let p3 =
@@ -2680,7 +2682,7 @@ let cancel_try_bind_tests = [
        Lwt.state p3 = Lwt.Fail Lwt.Canceled)
   end;
 
-  test "try_bind: pending, fails, wait, canceled" begin fun () ->
+  test "pending, fails, wait, canceled" begin fun () ->
     let p1, r = Lwt.wait () in
     let p2, _ = Lwt.wait () in
     let p3 =
@@ -2694,7 +2696,7 @@ let cancel_try_bind_tests = [
     Lwt.return (Lwt.state p2 = Lwt.Sleep && Lwt.state p3 = Lwt.Sleep)
   end;
 
-  test "try_bind: pending, fails, task, canceled" begin fun () ->
+  test "pending, fails, task, canceled" begin fun () ->
     let p1, r = Lwt.wait () in
     let p2, _ = Lwt.task () in
     let p3 =
@@ -2710,10 +2712,10 @@ let cancel_try_bind_tests = [
        Lwt.state p3 = Lwt.Fail Lwt.Canceled)
   end;
 ]
-let tests = tests @ cancel_try_bind_tests
+let suites = suites @ [cancel_try_bind_tests]
 
-let cancel_finalize_tests = [
-  test "finalize: wait, pending, canceled" begin fun () ->
+let cancel_finalize_tests = suite "cancel finalize" [
+  test "wait, pending, canceled" begin fun () ->
     let f_ran = ref false in
     let p, _ = Lwt.wait () in
     let p' =
@@ -2726,7 +2728,7 @@ let cancel_finalize_tests = [
       (!f_ran = false && Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Sleep)
   end;
 
-  test "finalize: task, pending, canceled" begin fun () ->
+  test "task, pending, canceled" begin fun () ->
     let f_ran = ref false in
     let p, _ = Lwt.task () in
     let p' =
@@ -2741,7 +2743,7 @@ let cancel_finalize_tests = [
        Lwt.state p' = Lwt.Fail Lwt.Canceled)
   end;
 
-  test "finalize: pending, wait, canceled" begin fun () ->
+  test "pending, wait, canceled" begin fun () ->
     let p1, r = Lwt.wait () in
     let p2, _ = Lwt.wait () in
     let p3 =
@@ -2754,7 +2756,7 @@ let cancel_finalize_tests = [
     Lwt.return (Lwt.state p2 = Lwt.Sleep && Lwt.state p3 = Lwt.Sleep)
   end;
 
-  test "finalize: pending, task, canceled" begin fun () ->
+  test "pending, task, canceled" begin fun () ->
     let p1, r = Lwt.wait () in
     let p2, _ = Lwt.task () in
     let p3 =
@@ -2768,9 +2770,9 @@ let cancel_finalize_tests = [
       (Lwt.state p2 = Lwt.Fail Lwt.Canceled && Lwt.state p3 = Lwt.Fail Lwt.Canceled)
   end;
 ]
-let tests = tests @ cancel_finalize_tests
+let suites = suites @ [cancel_finalize_tests]
 
-let cancel_direct_handler_tests = [
+let cancel_direct_handler_tests = suite "cancel with direct handler" [
   test "on_success: pending, canceled" begin fun () ->
     let f_ran = ref false in
     let p, _ = Lwt.task () in
@@ -2804,10 +2806,10 @@ let cancel_direct_handler_tests = [
     Lwt.return (!f_ran = false && !saw = Some Lwt.Canceled)
   end;
 ]
-let tests = tests @ cancel_direct_handler_tests
+let suites = suites @ [cancel_direct_handler_tests]
 
-let cancel_join_tests = [
-  test "join: wait, pending, cancel" begin fun () ->
+let cancel_join_tests = suite "cancel join" [
+  test "wait, pending, cancel" begin fun () ->
     let p1, _ = Lwt.wait () in
     let p2, _ = Lwt.wait () in
     let p3 = Lwt.join [p1; p2] in
@@ -2818,7 +2820,7 @@ let cancel_join_tests = [
        Lwt.state p3 = Lwt.Sleep)
   end;
 
-  test "join: task, pending, cancel" begin fun () ->
+  test "task, pending, cancel" begin fun () ->
     let p1, _ = Lwt.task () in
     let p2, _ = Lwt.task () in
     let p3 = Lwt.join [p1; p2] in
@@ -2829,7 +2831,7 @@ let cancel_join_tests = [
        Lwt.state p3 = Lwt.Fail Lwt.Canceled)
   end;
 
-  test "join: wait and task, pending, cancel" begin fun () ->
+  test "wait and task, pending, cancel" begin fun () ->
     let p1, r = Lwt.wait () in
     let p2, _ = Lwt.task () in
     let p3 = Lwt.join [p1; p2] in
@@ -2845,7 +2847,7 @@ let cancel_join_tests = [
   (* In [p' = Lwt.join [p; p]], if [p'] is canceled, the cancel handler on [p]
      is called only once, even though it is reachable by two paths in the
      cancelation graph. *)
-  test "join: cancel diamond" begin fun () ->
+  test "cancel diamond" begin fun () ->
     let ran = ref 0 in
     let p, _ = Lwt.task () in
     let p' = Lwt.join [p; p] in
@@ -2854,10 +2856,10 @@ let cancel_join_tests = [
     Lwt.return (!ran = 1)
   end;
 ]
-let tests = tests @ cancel_join_tests
+let suites = suites @ [cancel_join_tests]
 
-let cancel_choose_tests = [
-  test "choose: wait, pending, cancel" begin fun () ->
+let cancel_choose_tests = suite "cancel choose" [
+  test "wait, pending, cancel" begin fun () ->
     let p1, _ = Lwt.wait () in
     let p2, _ = Lwt.wait () in
     let p3 = Lwt.choose [p1; p2] in
@@ -2868,7 +2870,7 @@ let cancel_choose_tests = [
        Lwt.state p3 = Lwt.Sleep)
   end;
 
-  test "choose: wait and task, pending, cancel" begin fun () ->
+  test "wait and task, pending, cancel" begin fun () ->
     let p1, _ = Lwt.wait () in
     let p2, _ = Lwt.task () in
     let p3 = Lwt.choose [p1; p2] in
@@ -2879,10 +2881,10 @@ let cancel_choose_tests = [
        Lwt.state p3 = Lwt.Fail Lwt.Canceled)
   end;
 ]
-let tests = tests @ cancel_choose_tests
+let suites = suites @ [cancel_choose_tests]
 
-let cancel_pick_tests = [
-  test "pick: wait, pending, cancel" begin fun () ->
+let cancel_pick_tests = suite "cancel pick" [
+  test "wait, pending, cancel" begin fun () ->
     let p1, _ = Lwt.wait () in
     let p2, _ = Lwt.wait () in
     let p3 = Lwt.pick [p1; p2] in
@@ -2893,7 +2895,7 @@ let cancel_pick_tests = [
        Lwt.state p3 = Lwt.Sleep)
   end;
 
-  test "pick: wait and task, pending, cancel" begin fun () ->
+  test "wait and task, pending, cancel" begin fun () ->
     let p1, _ = Lwt.wait () in
     let p2, _ = Lwt.task () in
     let p3 = Lwt.pick [p1; p2] in
@@ -2904,10 +2906,10 @@ let cancel_pick_tests = [
        Lwt.state p3 = Lwt.Fail Lwt.Canceled)
   end;
 ]
-let tests = tests @ cancel_pick_tests
+let suites = suites @ [cancel_pick_tests]
 
-let cancel_nchoose_tests = [
-  test "nchoose: wait, pending, cancel" begin fun () ->
+let cancel_nchoose_tests = suite "cancel nchoose" [
+  test "wait, pending, cancel" begin fun () ->
     let p1, _ = Lwt.wait () in
     let p2, _ = Lwt.wait () in
     let p3 = Lwt.nchoose [p1; p2] in
@@ -2918,7 +2920,7 @@ let cancel_nchoose_tests = [
        Lwt.state p3 = Lwt.Sleep)
   end;
 
-  test "nchoose: wait and task, pending, cancel" begin fun () ->
+  test "wait and task, pending, cancel" begin fun () ->
     let p1, _ = Lwt.wait () in
     let p2, _ = Lwt.task () in
     let p3 = Lwt.nchoose [p1; p2] in
@@ -2929,10 +2931,10 @@ let cancel_nchoose_tests = [
        Lwt.state p3 = Lwt.Fail Lwt.Canceled)
   end;
 ]
-let tests = tests @ cancel_nchoose_tests
+let suites = suites @ [cancel_nchoose_tests]
 
-let cancel_npick_tests = [
-  test "npick: wait, pending, cancel" begin fun () ->
+let cancel_npick_tests = suite "cancel npick" [
+  test "wait, pending, cancel" begin fun () ->
     let p1, _ = Lwt.wait () in
     let p2, _ = Lwt.wait () in
     let p3 = Lwt.npick [p1; p2] in
@@ -2943,7 +2945,7 @@ let cancel_npick_tests = [
        Lwt.state p3 = Lwt.Sleep)
   end;
 
-  test "npick: wait and task, pending, cancel" begin fun () ->
+  test "wait and task, pending, cancel" begin fun () ->
     let p1, _ = Lwt.wait () in
     let p2, _ = Lwt.task () in
     let p3 = Lwt.npick [p1; p2] in
@@ -2954,10 +2956,10 @@ let cancel_npick_tests = [
        Lwt.state p3 = Lwt.Fail Lwt.Canceled)
   end;
 ]
-let tests = tests @ cancel_npick_tests
+let suites = suites @ [cancel_npick_tests]
 
-let cancel_nchoose_split_tests = [
-  test "nchoose_split: wait, pending, cancel" begin fun () ->
+let cancel_nchoose_split_tests = suite "cancel nchoose_split" [
+  test "wait, pending, cancel" begin fun () ->
     let p1, _ = Lwt.wait () in
     let p2, _ = Lwt.wait () in
     let p3 = Lwt.nchoose_split [p1; p2] in
@@ -2968,7 +2970,7 @@ let cancel_nchoose_split_tests = [
        Lwt.state p3 = Lwt.Sleep)
   end;
 
-  test "nchoose_split: wait and task, pending, cancel" begin fun () ->
+  test "wait and task, pending, cancel" begin fun () ->
     let p1, _ = Lwt.wait () in
     let p2, _ = Lwt.task () in
     let p3 = Lwt.nchoose_split [p1; p2] in
@@ -2979,31 +2981,31 @@ let cancel_nchoose_split_tests = [
        Lwt.state p3 = Lwt.Fail Lwt.Canceled)
   end;
 ]
-let tests = tests @ cancel_nchoose_split_tests
+let suites = suites @ [cancel_nchoose_split_tests]
 
 
 
 (* Sequence-associated storage, and its interaction with the rest of the API. *)
 
-let storage_tests = [
-  test "storage: initial" begin fun () ->
+let storage_tests = suite "storage" [
+  test "initial" begin fun () ->
     let key = Lwt.new_key () in
     Lwt.return (Lwt.get key = None)
   end;
 
-  test "storage: store, retrieve" begin fun () ->
+  test "store, retrieve" begin fun () ->
     let key = Lwt.new_key () in
     Lwt.with_value key (Some 42) (fun () ->
       Lwt.return (Lwt.get key = Some 42))
   end;
 
-  test "storage: store, restore" begin fun () ->
+  test "store, restore" begin fun () ->
     let key = Lwt.new_key () in
     Lwt.with_value key (Some 42) ignore;
     Lwt.return (Lwt.get key = None)
   end;
 
-  test "storage: store, f raises, restore" begin fun () ->
+  test "store, f raises, restore" begin fun () ->
     let key = Lwt.new_key () in
     try
       Lwt.with_value key (Some 42) (fun () -> raise Exception) |> ignore;
@@ -3012,28 +3014,28 @@ let storage_tests = [
       Lwt.return (Lwt.get key = None)
   end;
 
-  test "storage: store, overwrite, retrieve" begin fun () ->
+  test "store, overwrite, retrieve" begin fun () ->
     let key = Lwt.new_key () in
     Lwt.with_value key (Some 42) (fun () ->
       Lwt.with_value key (Some 1337) (fun () ->
         Lwt.return (Lwt.get key = Some 1337)))
   end;
 
-  test "storage: store, blank, retrieve" begin fun () ->
+  test "store, blank, retrieve" begin fun () ->
     let key = Lwt.new_key () in
     Lwt.with_value key (Some 42) (fun () ->
       Lwt.with_value key None (fun () ->
         Lwt.return (Lwt.get key = None)))
   end;
 
-  test "storage: distinct keys" begin fun () ->
+  test "distinct keys" begin fun () ->
     let key1 = Lwt.new_key () in
     let key2 = Lwt.new_key () in
     Lwt.with_value key1 (Some 42) (fun () ->
       Lwt.return (Lwt.get key2 = None))
   end;
 
-  test "bind: storage" begin fun () ->
+  test "bind" begin fun () ->
     let key = Lwt.new_key () in
     let f = fun () -> Lwt.return (Lwt.get key) in
     let p, r = Lwt.wait () in
@@ -3048,7 +3050,7 @@ let storage_tests = [
          Lwt.get key = Some 42))
   end;
 
-  test "map: storage" begin fun () ->
+  test "map" begin fun () ->
     let key = Lwt.new_key () in
     let f = fun () -> Lwt.get key in
     let p, r = Lwt.wait () in
@@ -3063,7 +3065,7 @@ let storage_tests = [
          Lwt.get key = Some 42))
   end;
 
-  test "catch: storage" begin fun () ->
+  test "catch" begin fun () ->
     let key = Lwt.new_key () in
     let f = fun _ -> Lwt.return (Lwt.get key) in
     let p, r = Lwt.wait () in
@@ -3078,7 +3080,7 @@ let storage_tests = [
          Lwt.get key = Some 42))
   end;
 
-  test "try_bind: storage, resolved" begin fun () ->
+  test "try_bind, resolved" begin fun () ->
     let key = Lwt.new_key () in
     let f = fun () -> Lwt.return (Lwt.get key) in
     let p, r = Lwt.wait () in
@@ -3093,7 +3095,7 @@ let storage_tests = [
          Lwt.get key = Some 42))
   end;
 
-  test "try_bind: storage, failed" begin fun () ->
+  test "try_bind, failed" begin fun () ->
     let key = Lwt.new_key () in
     let f = fun _ -> Lwt.return (Lwt.get key) in
     let p, r = Lwt.wait () in
@@ -3108,7 +3110,7 @@ let storage_tests = [
          Lwt.get key = Some 42))
   end;
 
-  test "finalize: storage" begin fun () ->
+  test "finalize" begin fun () ->
     let key = Lwt.new_key () in
     let f = fun () -> assert (Lwt.get key = Some 1337); Lwt.return () in
     let p, r = Lwt.wait () in
@@ -3119,7 +3121,7 @@ let storage_tests = [
       Lwt.return (Lwt.get key = Some 42))
   end;
 
-  test "on_success: storage" begin fun () ->
+  test "on_success" begin fun () ->
     let key = Lwt.new_key () in
     let f = fun () -> assert (Lwt.get key = Some 1337) in
     let p, r = Lwt.wait () in
@@ -3130,7 +3132,7 @@ let storage_tests = [
       Lwt.return (Lwt.get key = Some 42))
   end;
 
-  test "on_failure: storage" begin fun () ->
+  test "on_failure" begin fun () ->
     let key = Lwt.new_key () in
     let f = fun _ -> assert (Lwt.get key = Some 1337) in
     let p, r = Lwt.wait () in
@@ -3141,7 +3143,7 @@ let storage_tests = [
       Lwt.return (Lwt.get key = Some 42))
   end;
 
-  test "on_termination: storage, resolved" begin fun () ->
+  test "on_termination, resolved" begin fun () ->
     let key = Lwt.new_key () in
     let f = fun () -> assert (Lwt.get key = Some 1337) in
     let p, r = Lwt.wait () in
@@ -3152,7 +3154,7 @@ let storage_tests = [
       Lwt.return (Lwt.get key = Some 42))
   end;
 
-  test "on_termination: storage, failed" begin fun () ->
+  test "on_termination, failed" begin fun () ->
     let key = Lwt.new_key () in
     let f = fun () -> assert (Lwt.get key = Some 1337) in
     let p, r = Lwt.wait () in
@@ -3163,7 +3165,7 @@ let storage_tests = [
       Lwt.return (Lwt.get key = Some 42))
   end;
 
-  test "on_any: storage, resolved" begin fun () ->
+  test "on_any, resolved" begin fun () ->
     let key = Lwt.new_key () in
     let f = fun () -> assert (Lwt.get key = Some 1337) in
     let p, r = Lwt.wait () in
@@ -3174,7 +3176,7 @@ let storage_tests = [
       Lwt.return (Lwt.get key = Some 42))
   end;
 
-  test "on_any: storage, failed" begin fun () ->
+  test "on_any, failed" begin fun () ->
     let key = Lwt.new_key () in
     let f = fun _ -> assert (Lwt.get key = Some 1337) in
     let p, r = Lwt.wait () in
@@ -3185,7 +3187,7 @@ let storage_tests = [
       Lwt.return (Lwt.get key = Some 42))
   end;
 
-  test "on_cancel: storage" begin fun () ->
+  test "on_cancel" begin fun () ->
     let key = Lwt.new_key () in
     let f = fun () -> assert (Lwt.get key = Some 1337) in
     let p, _ = Lwt.task () in
@@ -3196,13 +3198,13 @@ let storage_tests = [
       Lwt.return (Lwt.get key = Some 42))
   end;
 ]
-let tests = tests @ storage_tests
+let suites = suites @ [storage_tests]
 
 
 
 (* These basically just test that the infix operators are exposed in the API,
    and are defined "more or less" as they should be. *)
-let infix_operator_tests = [
+let infix_operator_tests = suite "infix operators" [
   test ">>=" begin fun () ->
     let open Lwt.Infix in
     let p, r = Lwt.wait () in
@@ -3254,7 +3256,7 @@ let infix_operator_tests = [
     Lwt.return (Lwt.state p3 = Lwt.Return ())
   end;
 ]
-let tests = tests @ infix_operator_tests
+let suites = suites @ [infix_operator_tests]
 
 
 
@@ -3271,7 +3273,7 @@ let lwt_sequence_contains sequence list =
   in
   fst (Lwt_sequence.fold_l step sequence (true, list))
 
-let lwt_sequence_tests = [
+let lwt_sequence_tests = suite "add_task_l and add_task_r" [
   test "add_task_r" begin fun () ->
     let sequence = Lwt_sequence.create () in
     let p = Lwt.add_task_r sequence in
@@ -3296,11 +3298,11 @@ let lwt_sequence_tests = [
        lwt_sequence_contains sequence [Obj.magic p'])
   end;
 ]
-let tests = tests @ lwt_sequence_tests
+let suites = suites @ [lwt_sequence_tests]
 
 
 
-let pause_tests = [
+let pause_tests = suite "pause" [
   test "pause" begin fun () ->
     let p = Lwt.pause () in
     Lwt.bind p (fun () -> Lwt.pause ()) |> ignore;
@@ -3316,12 +3318,12 @@ let pause_tests = [
     Lwt.return true
   end;
 ]
-let tests = tests @ pause_tests
+let suites = suites @ [pause_tests]
 
 
 
 (* [Lwt.apply] and [Lwt.wrapN]. *)
-let lift_tests = [
+let lift_tests = suite "apply and wrap" [
   test "apply" begin fun () ->
     let p = Lwt.apply (fun s -> Lwt.return (s ^ "bar")) "foo" in
     Lwt.return (Lwt.state p = Lwt.Return "foobar")
@@ -3421,13 +3423,13 @@ let lift_tests = [
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 ]
-let tests = tests @ lift_tests
+let suites = suites @ [lift_tests]
 
 
 
 (* [Lwt.make_value] and [Lwt.make_error] are deprecated, but test them anyway,
    for good measure. *)
-let make_value_and_error_tests = [
+let make_value_and_error_tests = suite "make_value and make_error" [
   test "make_value" begin fun () ->
     Lwt.return ((Lwt.make_value [@ocaml.warning "-3"]) 42 = Result.Ok 42)
   end;
@@ -3438,7 +3440,7 @@ let make_value_and_error_tests = [
         Result.Error Exception)
   end;
 ]
-let tests = tests @ make_value_and_error_tests
+let suites = suites @ [make_value_and_error_tests]
 
 
 
@@ -3460,8 +3462,8 @@ let tests = tests @ make_value_and_error_tests
 
 let trigger_cleanup_point = 42
 
-let trigger_list_tests = [
-  test "trigger cleanup: choose" begin fun () ->
+let trigger_list_tests = suite "callback cleanup" [
+  test "choose" begin fun () ->
     let p1, r1 = Lwt.wait () in
     let p2 = Lwt.bind p1 (fun s -> Lwt.return (s ^ "bar")) in
     let p3 = Lwt.choose [p1; fst (Lwt.wait ())] in
@@ -3479,7 +3481,7 @@ let trigger_list_tests = [
       (Lwt.state p2 = Lwt.Return "foobar" && Lwt.state p3 = Lwt.Return "foo")
   end;
 
-  test "trigger cleanup: bind" begin fun () ->
+  test "bind" begin fun () ->
     let p1, r1 = Lwt.wait () in
     let p2, r2 = Lwt.wait () in
     let p3 = Lwt.bind p1 (fun () -> p2) in
@@ -3499,8 +3501,4 @@ let trigger_list_tests = [
     Lwt.return (Lwt.state p4 = Lwt.Return () && Lwt.state p5 = Lwt.Return ())
   end;
 ]
-let tests = tests @ trigger_list_tests
-
-
-
-let suite = suite "lwt" tests
+let suites = suites @ [trigger_list_tests]
