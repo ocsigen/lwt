@@ -111,13 +111,14 @@ let run_test_suite : suite -> ((string * outcome) list) Lwt.t = fun suite ->
     Pervasives.flush stdout;
 
     Lwt.return outcomes
+
   else
-  suite.suite_tests |> Lwt_list.map_s begin fun test ->
-    Lwt.bind (run_test test) (fun outcome ->
-    outcome |> outcome_to_character |> print_string;
-    Pervasives.flush stdout;
-    Lwt.return (test.test_name, outcome))
-  end
+    suite.suite_tests |> Lwt_list.map_s begin fun test ->
+      Lwt.bind (run_test test) (fun outcome ->
+      outcome |> outcome_to_character |> print_string;
+      Pervasives.flush stdout;
+      Lwt.return (test.test_name, outcome))
+    end
 
 let outcomes_all_ok : (string * outcome) list -> bool =
   List.for_all (fun (_test_name, outcome) ->
