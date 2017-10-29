@@ -37,7 +37,7 @@ val test_direct : string -> ?only_if:(unit -> bool) -> (unit -> bool) -> test
 val test : string -> ?only_if:(unit -> bool) -> (unit -> bool Lwt.t) -> test
 (** Like [test_direct], but defines a test which runs a thread. *)
 
-val suite : string -> test list -> suite
+val suite : string -> ?only_if:(unit -> bool) -> test list -> suite
 (** Defines a suite of tests *)
 
 val run : string -> suite list -> unit

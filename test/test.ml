@@ -91,12 +91,27 @@ let outcome_to_character : outcome -> string = function
 type suite = {
   suite_name : string;
   suite_tests : test list;
+  skip_suite_if_this_is_false : unit -> bool;
 }
 
-let suite name tests =
-  {suite_name = name; suite_tests = tests}
+let suite name ?(only_if = fun () -> true) tests =
+  {suite_name = name;
+   suite_tests = tests;
+   skip_suite_if_this_is_false = only_if}
 
 let run_test_suite : suite -> ((string * outcome) list) Lwt.t = fun suite ->
+  if suite.skip_suite_if_this_is_false () = false then
+    let outcomes =
+      suite.suite_tests
+      |> List.map (fun {test_name; _} -> (test_name, Skipped))
+    in
+    (outcome_to_character Skipped).[0]
+    |> String.make (List.length outcomes)
+    |> print_string;
+    Pervasives.flush stdout;
+
+    Lwt.return outcomes
+  else
   suite.suite_tests |> Lwt_list.map_s begin fun test ->
     Lwt.bind (run_test test) (fun outcome ->
     outcome |> outcome_to_character |> print_string;
