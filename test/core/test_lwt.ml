@@ -3304,18 +3304,80 @@ let suites = suites @ [lwt_sequence_tests]
 
 
 let pause_tests = suite "pause" [
-  test "pause" begin fun () ->
+  test "initial state" begin fun () ->
+    Lwt.return (Lwt.paused_count () = 0)
+  end;
+
+  test "one promise" begin fun () ->
     let p = Lwt.pause () in
-    Lwt.bind p (fun () -> Lwt.pause ()) |> ignore;
-    let unpause = fun n ->
-      assert (Lwt.paused_count () = 2);
-      assert (Lwt.paused_count () = n);
-      Lwt.register_pause_notifier ignore;
-      Lwt.wakeup_paused ();
-      assert (Lwt.paused_count () = 1);
-    in
-    Lwt.register_pause_notifier unpause;
+    assert (Lwt.state p = Lwt.Sleep);
+    assert (Lwt.paused_count () = 1);
+    Lwt.wakeup_paused ();
+    assert (Lwt.state p = Lwt.Return ());
+    assert (Lwt.paused_count () = 0);
+    Lwt.return true
+  end;
+
+  test "multiple promises" begin fun () ->
+    let p1 = Lwt.pause () in
+    let p2 = Lwt.pause () in
+    assert (Lwt.state p1 = Lwt.Sleep);
+    assert (Lwt.state p2 = Lwt.Sleep);
+    assert (Lwt.paused_count () = 2);
+    Lwt.wakeup_paused ();
+    assert (Lwt.state p1 = Lwt.Return ());
+    assert (Lwt.state p2 = Lwt.Return ());
+    assert (Lwt.paused_count () = 0);
+    Lwt.return true
+  end;
+
+  test "wakeup with no promises" begin fun () ->
+    assert (Lwt.paused_count () = 0);
+    Lwt.wakeup_paused ();
+    assert (Lwt.paused_count () = 0);
+    Lwt.return true
+  end;
+
+  test "pause notifier" begin fun () ->
+    let seen = ref None in
+    Lwt.register_pause_notifier (fun count -> seen := Some count);
     Lwt.pause () |> ignore;
+    assert (Lwt.paused_count () = 1);
+    assert (!seen = Some 1);
+    Lwt.wakeup_paused ();
+    Lwt.register_pause_notifier ignore;
+    Lwt.return true
+  end;
+
+  test "recursive pause in unpause" begin fun () ->
+    Lwt.bind (Lwt.pause ()) (fun () -> Lwt.pause ()) |> ignore;
+    assert (Lwt.paused_count () = 1);
+    Lwt.wakeup_paused ();
+    assert (Lwt.paused_count () = 1);
+    Lwt.wakeup_paused ();
+    Lwt.return true
+  end;
+
+  test "recursive pause in notifier" begin fun () ->
+    Lwt.register_pause_notifier (fun _count ->
+      (* This will be called in response to a call to [Lwt.pause ()], so we can
+         expect one paused promise to already be in the queue. *)
+      assert (Lwt.paused_count () = 1);
+      Lwt.register_pause_notifier ignore;
+      Lwt.pause () |> ignore);
+    Lwt.pause () |> ignore;
+    assert (Lwt.paused_count () = 2);
+    Lwt.wakeup_paused ();
+    Lwt.return true
+  end;
+
+  test "recursive unpause in pause" begin fun () ->
+    Lwt.register_pause_notifier (fun _count ->
+      assert (Lwt.paused_count () = 1);
+      Lwt.wakeup_paused ());
+    Lwt.pause () |> ignore;
+    assert (Lwt.paused_count () = 0);
+    Lwt.register_pause_notifier ignore;
     Lwt.return true
   end;
 ]
