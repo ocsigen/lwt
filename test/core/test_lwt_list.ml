@@ -23,36 +23,41 @@
 open Test
 open Lwt.Infix
 
-let ( <=> ) v v' =
-  assert ( Lwt.state v = v')
+let (<=>) v v' =
+  assert (Lwt.state v = v')
 
 let test_exn f v e =
-  assert ( try ignore (f v);assert false with exn -> exn = e)
+  assert
+    (try
+      ignore (f v);
+      assert false
+    with exn ->
+      exn = e)
 
 exception Exn
 
 let test_iter f test_list =
-  let incr_ x = Lwt.return ( incr x ) in
+  let incr_ x = Lwt.return (incr x) in
   let () =
-    let l = [ref 0;ref 0; ref 0] in
+    let l = [ref 0; ref 0; ref 0] in
     let t = f incr_ l in
     t <=> Lwt.Return ();
-    List.iter2 (fun v r -> assert (v = !r)) [1;1;1] l
+    List.iter2 (fun v r -> assert (v = !r)) [1; 1; 1] l
   in
   let () =
-    let l = [ref 0;ref 0; ref 0] in
-    let t,w = Lwt.wait () in
-    let r = ref [incr_;(fun x -> t >>= ( fun () -> incr_ x ));incr_] in
+    let l = [ref 0; ref 0; ref 0] in
+    let t, w = Lwt.wait () in
+    let r = ref [incr_; (fun x -> t >>= (fun () -> incr_ x)); incr_] in
     let t' = f (fun x ->
       let f = List.hd !r in
       let t = f x in
       r := List.tl !r;
-      t ) l
+      t) l
     in
     t' <=> Sleep;
     List.iter2 (fun v r -> assert (v = !r)) test_list l;
     Lwt.wakeup w ();
-    List.iter2 (fun v r -> assert (v = !r)) [1;1;1] l;
+    List.iter2 (fun v r -> assert (v = !r)) [1; 1; 1] l;
     t' <=> Lwt.Return ()
   in
   ()
@@ -66,10 +71,10 @@ let test_exception f =
       | 2 -> raise Exn
       | _ -> Lwt.return ()
   in
-  test_exn (f g) [();();()] Exn
+  test_exn (f g) [(); (); ()] Exn
 
 let test_map f test_list =
-  let t,w = Lwt.wait () in
+  let t, w = Lwt.wait () in
   let t', _ = Lwt.task () in
   let get =
     let r = ref 0 in
@@ -82,14 +87,14 @@ let test_map f test_list =
         | 8 -> t'
         | _ -> Lwt.return ()
       in
-      th >>= ( fun () ->
+      th >>= (fun () ->
         incr r;
-        Lwt.return (!r) )
+        Lwt.return (!r))
   in
   let () =
-    let l = [();();()] in
+    let l = [(); (); ()] in
     let t1 = f get l in
-    t1 <=> Lwt.Return [1;2;3];
+    t1 <=> Lwt.Return [1; 2; 3];
     let t2 = f get l in
     t2 <=> Lwt.Sleep;
     let t3 = f get l in
@@ -102,89 +107,89 @@ let test_map f test_list =
   ()
 
 let test_for_all_true f =
-  let l = [true;true] in
+  let l = [true; true] in
   f (fun x -> Lwt.return (x = true)) l
 
 let test_for_all_false f =
-  let l = [true;true] in
+  let l = [true; true] in
   f (fun x -> Lwt.return (x = false)) l >>= fun b ->
   Lwt.return (not b)
 
 let test_exists_true f =
-  let l = [true;false] in
+  let l = [true; false] in
   f (fun x -> Lwt.return (x = true)) l >>= fun b ->
   Lwt.return b
 
 let test_exists_false f =
-  let l = [true;true] in
+  let l = [true; true] in
   f (fun x -> Lwt.return (x = false)) l >>= fun b ->
   Lwt.return (not b)
 
 let test_filter f =
-  let l = [1;2;3;4] in
+  let l = [1; 2; 3; 4] in
   f (fun x -> Lwt.return (x mod 2 = 0)) l >>= fun after ->
-  Lwt.return (after = [2;4])
+  Lwt.return (after = [2; 4])
 
 let test_partition f =
-  let l = [1;2;3;4] in
+  let l = [1; 2; 3; 4] in
   f (fun x -> Lwt.return (x <= 2)) l >>= fun (a, b) ->
-  Lwt.return (a = [1;2] && b = [3;4])
+  Lwt.return (a = [1; 2] && b = [3; 4])
 
 let test_filter_map f =
-  let l = [1;2;3;4] in
+  let l = [1; 2; 3; 4] in
   let fn = (fun x ->
     if x mod 2 = 0 then Lwt.return_some (x * 2) else Lwt.return_none) in
   f fn l >>= fun after ->
-  Lwt.return (after = [4;8])
+  Lwt.return (after = [4; 8])
 
 let test_iter_i f =
   let count = ref 0 in
-  let l = [1;2;3] in
+  let l = [1; 2; 3] in
   f (fun i n -> count := !count + i + n; Lwt.return_unit) l >>= fun () ->
   Lwt.return (!count = 9)
 
 let test_map_i f =
-  let l = [0;0;0] in
+  let l = [0; 0; 0] in
   f (fun i n -> Lwt.return (i + n)) l >>= fun after ->
-  Lwt.return (after = [0;1;2])
+  Lwt.return (after = [0; 1; 2])
 
 let test_rev_map f =
-  let l = [1;2;3] in
-  f (fun n -> Lwt.return (n*2)) l >>= fun after ->
-  Lwt.return (after = [6;4;2])
+  let l = [1; 2; 3] in
+  f (fun n -> Lwt.return (n * 2)) l >>= fun after ->
+  Lwt.return (after = [6; 4; 2])
 
 let suite = suite "lwt_list" [
-  test "iter_p"
-    (fun () ->
-       test_iter Lwt_list.iter_p [1;0;1];
-       test_exception Lwt_list.iter_p;
-       Lwt.return true);
+  test "iter_p" begin fun () ->
+    test_iter Lwt_list.iter_p [1; 0; 1];
+    test_exception Lwt_list.iter_p;
+    Lwt.return true
+  end;
 
-  test "iter_s"
-    (fun () ->
-       test_iter Lwt_list.iter_s [1;0;0];
-       test_exception Lwt_list.iter_s;
-       Lwt.return true);
+  test "iter_s" begin fun () ->
+    test_iter Lwt_list.iter_s [1; 0; 0];
+    test_exception Lwt_list.iter_s;
+    Lwt.return true
+  end;
 
-  test "map_p"
-    (fun () ->
-       test_map Lwt_list.map_p [4;8;5];
-       test_exception Lwt_list.map_p;
-       Lwt.return true);
+  test "map_p" begin fun () ->
+    test_map Lwt_list.map_p [4; 8; 5];
+    test_exception Lwt_list.map_p;
+    Lwt.return true
+  end;
 
-  test "map_s"
-    (fun () ->
-       test_map Lwt_list.map_s [4;7;8];
-       test_exception Lwt_list.map_s;
-       Lwt.return true);
+  test "map_s" begin fun () ->
+    test_map Lwt_list.map_s [4; 7; 8];
+    test_exception Lwt_list.map_s;
+    Lwt.return true
+  end;
 
-  test "fold_left_s"
-    (fun () ->
-       let l = [1;2;3] in
-       let f acc v = Lwt.return (v::acc) in
-       let t = Lwt_list.fold_left_s f [] l in
-       t <=> Lwt.Return (List.rev l);
-       Lwt.return true);
+  test "fold_left_s" begin fun () ->
+    let l = [1; 2; 3] in
+    let f acc v = Lwt.return (v::acc) in
+    let t = Lwt_list.fold_left_s f [] l in
+    t <=> Lwt.Return (List.rev l);
+    Lwt.return true
+  end;
 
   test "for_all_s"
     (fun () -> test_for_all_true Lwt_list.for_all_s);
@@ -240,25 +245,23 @@ let suite = suite "lwt_list" [
   test "mapi_s"
     (fun () -> test_map_i Lwt_list.mapi_s);
 
-  test "find_s existing"
-    (
-      fun () ->
-        let l = [1;2;3] in
-        Lwt_list.find_s (fun n -> Lwt.return ((n mod 2) = 0)) l >>= fun result ->
-        Lwt.return (result = 2)
-    );
+  test "find_s existing" begin fun () ->
+    let l = [1; 2; 3] in
+    Lwt_list.find_s (fun n -> Lwt.return ((n mod 2) = 0)) l >>= fun result ->
+    Lwt.return (result = 2)
+  end;
 
-  test "find_s missing"
-    (
-      fun () ->
-        let l = [1;3] in
-        Lwt.catch
-          (fun () -> Lwt_list.find_s (fun n -> Lwt.return ((n mod 2) = 0)) l >>= fun _result ->
-            Lwt.return false)
-          (function
-          | Not_found -> Lwt.return true
-          | _ -> Lwt.return false)
-    );
+  test "find_s missing" begin fun () ->
+    let l = [1; 3] in
+    Lwt.catch
+      (fun () ->
+        Lwt_list.find_s (fun n ->
+          Lwt.return ((n mod 2) = 0)) l >>= fun _result ->
+        Lwt.return false)
+      (function
+        | Not_found -> Lwt.return true
+        | _ -> Lwt.return false)
+  end;
 
   test "rev_map_p"
     (fun () -> test_rev_map Lwt_list.rev_map_p);
@@ -266,11 +269,9 @@ let suite = suite "lwt_list" [
   test "rev_map_s"
     (fun () -> test_rev_map Lwt_list.rev_map_s);
 
-  test "fold_right_s"
-    (fun () ->
-       let l = [1;2;3] in
-       Lwt_list.fold_right_s (fun a n -> Lwt.return (a + n)) l 0 >>= fun result ->
-       Lwt.return (result = 6)
-    );
-
+  test "fold_right_s" begin fun () ->
+    let l = [1; 2; 3] in
+    Lwt_list.fold_right_s (fun a n -> Lwt.return (a + n)) l 0 >>= fun result ->
+    Lwt.return (result = 6)
+  end;
 ]
