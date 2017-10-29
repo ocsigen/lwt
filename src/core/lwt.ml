@@ -2662,6 +2662,7 @@ sig
 
   val state : 'a t -> 'a state
   val is_sleeping : 'a t -> bool
+  val debug_state_is : 'a state -> 'a t -> bool t
 
   (* Function lifters *)
   val apply : ('a -> 'b t) -> 'a -> 'b t
@@ -2712,6 +2713,9 @@ struct
     | Fulfilled v -> Return v
     | Rejected exn -> Fail exn
     | Pending _ -> Sleep
+
+  let debug_state_is expected_state p =
+    return (state p = expected_state)
 
   let is_sleeping p =
     let Internal p = to_internal_promise p in

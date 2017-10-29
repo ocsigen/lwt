@@ -1813,3 +1813,5 @@ val backtrace_try_bind :
   (exn -> exn) -> (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
 
 val abandon_wakeups : unit -> unit
+
+val debug_state_is : 'a state -> 'a t -> bool t
