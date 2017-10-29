@@ -182,6 +182,10 @@ let count_skipped : aggregated_outcomes -> int =
 (* Runs a series of test suites. If one of the test suites fails, does not run
    subsequent suites. *)
 let run library_name suites =
+  Printexc.register_printer (function
+    | Failure message -> Some (Printf.sprintf "Failure(%S)" message)
+    | _ -> None);
+
   Printf.printf "Testing library '%s'...\n" library_name;
 
   let rec loop_over_suites aggregated_outcomes suites =
