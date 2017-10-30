@@ -192,10 +192,9 @@ value lwt_unix_system_byte_order() {
 
 #if defined(HAVE_PTHREAD)
 
-void lwt_unix_launch_thread(void *(*start)(void *), void *data) {
+int lwt_unix_launch_thread(void *(*start)(void *), void *data) {
   pthread_t thread;
   pthread_attr_t attr;
-  int result;
 
   pthread_attr_init(&attr);
 
@@ -203,11 +202,12 @@ void lwt_unix_launch_thread(void *(*start)(void *), void *data) {
      it when it terminates: */
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
-  result = pthread_create(&thread, &attr, start, data);
-
-  if (result) unix_error(result, "launch_thread", Nothing);
+  int zero_if_created_otherwise_errno =
+      pthread_create(&thread, &attr, start, data);
 
   pthread_attr_destroy(&attr);
+
+  return zero_if_created_otherwise_errno;
 }
 
 lwt_unix_thread lwt_unix_thread_self() { return pthread_self(); }
@@ -253,10 +253,12 @@ void lwt_unix_condition_wait(lwt_unix_condition *condition,
 
 #elif defined(LWT_ON_WINDOWS)
 
-void lwt_unix_launch_thread(void *(*start)(void *), void *data) {
+int lwt_unix_launch_thread(void *(*start)(void *), void *data) {
   HANDLE handle =
       CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)start, data, 0, NULL);
-  if (handle) CloseHandle(handle);
+  if (handle)
+    CloseHandle(handle);
+  return 0;
 }
 
 lwt_unix_thread lwt_unix_thread_self() { return GetCurrentThreadId(); }
@@ -1282,10 +1284,23 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method) {
 
       lwt_unix_mutex_lock(&pool_mutex);
       if (thread_waiting_count == 0) {
-        /* Launch a new worker. */
-        thread_count++;
+        /* Try to start a new worker. */
+        int zero_if_started_otherwise_errno =
+            lwt_unix_launch_thread(worker_loop, (void *)job);
+
+        /* Increment the worker thread count while still holding the mutex. */
+        if (zero_if_started_otherwise_errno == 0)
+            ++thread_count;
+
         lwt_unix_mutex_unlock(&pool_mutex);
-        lwt_unix_launch_thread(worker_loop, (void *)job);
+
+        /* If the worker thread was not started, raise an exception. This must
+           be done with the mutex unlocked, as it can involve a surprising
+           control transfer. */
+        if (zero_if_started_otherwise_errno != 0) {
+            unix_error(
+                zero_if_started_otherwise_errno, "launch_thread", Nothing);
+        }
       } else {
         /* Add the job at the end of the queue. */
         if (pool_queue == NULL) {
@@ -1324,8 +1339,14 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method) {
       /* Ensures there is at least one thread that can become the main
          thread. */
       if (thread_waiting_count == 0) {
-        thread_count++;
-        lwt_unix_launch_thread(worker_loop, NULL);
+        int zero_if_started_otherwise_errno =
+            lwt_unix_launch_thread(worker_loop, NULL);
+
+        if (zero_if_started_otherwise_errno == 0)
+            ++thread_count;
+        else
+            unix_error(
+                zero_if_started_otherwise_errno, "launch_thread", Nothing);
       }
 
       if (blocking_call_enter == NULL) alloc_new_stack();

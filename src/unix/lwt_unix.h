@@ -119,7 +119,7 @@ typedef struct lwt_unix_condition lwt_unix_condition;
 #endif
 
 /* Launch a thread in detached mode. */
-void lwt_unix_launch_thread(void *(*start)(void *), void *data);
+int lwt_unix_launch_thread(void *(*start)(void *), void *data);
 
 /* Return a handle to the currently running thread. */
 lwt_unix_thread lwt_unix_thread_self();
