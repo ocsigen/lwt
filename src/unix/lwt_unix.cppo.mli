@@ -282,7 +282,10 @@ val wait : unit -> (int * process_status) Lwt.t
   (** Wrapper for [Unix.wait] *)
 
 val waitpid : wait_flag list -> int -> (int * process_status) Lwt.t
-  (** Wrapper for [Unix.waitpid] *)
+(** A promise-returning analog to
+    {{: https://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALwaitpid}
+    [Unix.waitpid]}. This call is non-blocking on Unix-like systems, but is
+    always blocking on Windows. *)
 
 (** Resource usages *)
 type resource_usage = {
