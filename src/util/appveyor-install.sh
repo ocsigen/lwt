@@ -19,6 +19,10 @@ then
     opam init -y --auto-setup
     eval `opam config env`
 
+    # Pin Jbuilder to 1.0+beta14, to avoid beta15. See
+    #   https://github.com/janestreet/jbuilder/issues/311
+    opam pin add -y --no-action jbuilder 1.0+beta14
+
     # Pin Lwt and install its dependencies.
     opam pin add -y --no-action lwt .
     opam install -y --deps-only lwt
