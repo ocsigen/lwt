@@ -1,7 +1,0 @@
-# The Lwt PPX will, in the future, be moved out to this package lwt_ppx. For
-# now, this package is a compatibility wrapper for the PPX's current location in
-# lwt.ppx.
-
-version = "dev"
-description = "Lwt PPX syntax extension"
-requires = "lwt.ppx"

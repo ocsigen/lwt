@@ -13,12 +13,10 @@ bug-reports: "https://github.com/ocsigen/lwt/issues"
 license: "LGPL with OpenSSL linking exception"
 
 depends: [
-  "jbuilder" {build}
-  # This will be constrained with an upper bound once the PPX is fully factored
-  # out of package lwt. At that point, the dependencies of lwt on
-  # ppx_tools_versioned and ocaml-migrate-parsetree need to be moved to this
-  # package.
+  "jbuilder" {build & >= "1.0+beta12"}
   "lwt"
+  "ocaml-migrate-parsetree"
+  "ppx_tools_versioned"
 ]
 
 build: [

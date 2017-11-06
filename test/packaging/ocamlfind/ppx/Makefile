@@ -5,7 +5,7 @@ test : clean
 	./a.out
 	# Expecting failure with "Unbound value >>":
 	! ocamlfind opt -package lwt_ppx \
-	    -ppxopt lwt.ppx,-no-sequence -c user.ml
+	    -ppxopt lwt_ppx,-no-sequence -c user.ml
 
 .PHONY : clean
 clean :

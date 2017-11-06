@@ -13,7 +13,7 @@ build: check-config
 # build everything, including additional packages
 .PHONY: build-all
 build-all: check-config
-	jbuilder build --dev
+	jbuilder build --dev --only-packages lwt,lwt_react,lwt_ssl,lwt_glib
 
 # run unit tests for package lwt
 .PHONY: test
@@ -23,7 +23,7 @@ test: build
 # run all unit tests
 .PHONY: test-all
 test-all: check-config
-	jbuilder runtest --dev
+	jbuilder runtest --dev --only-packages lwt,lwt_react,lwt_ssl,lwt_glib
 
 # configuration
 .PHONY: check-config
