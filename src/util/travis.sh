@@ -36,6 +36,10 @@ packages_homebrew () {
     if [ "$COMPILER" = system ]
     then
         brew install ocaml
+        # The system compiler on Homebrew is now 4.06 or higher, and there is no
+        # system Camlp4 package compatible with that (at least not yet). See:
+        #   https://github.com/ocaml/opam-repository/pull/10455
+        HAVE_CAMLP4=no
     else
         DO_SWITCH=yes
     fi
@@ -174,7 +178,10 @@ make build-all test-all
 
 
 # Run the packaging tests.
-make packaging-test
+if [ "$HAVE_CAMLP4" != no ]
+then
+    make packaging-test
+fi
 
 
 
