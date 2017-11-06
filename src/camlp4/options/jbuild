@@ -7,3 +7,10 @@
   (optional)
   (wrapped false)
   (libraries (camlp4))))
+
+(library
+ ((name lwt_camlp4_options)
+  (public_name lwt_camlp4.options)
+  (synopsis "Options for Lwt Camlp4 syntax extension (deprecated; use lwt_ppx)")
+  (wrapped false)
+  (libraries (camlp4))))

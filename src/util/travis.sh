@@ -153,6 +153,11 @@ install_extra_package react
 install_extra_package ssl
 install_extra_package glib
 
+if [ "$HAVE_CAMLP4" != no ]
+then
+    install_extra_package camlp4
+fi
+
 # Build and run the tests.
 opam install -y ounit
 cd `opam config var lib`/../build/lwt.*
@@ -165,14 +170,7 @@ else
     LIBEV_FLAG=false
 fi
 
-if [ "$HAVE_CAMLP4" = no ]
-then
-    CAMLP4_FLAG=false
-else
-    CAMLP4_FLAG=true
-fi
-
-ocaml src/util/configure.ml -use-libev $LIBEV_FLAG -use-camlp4 $CAMLP4_FLAG
+ocaml src/util/configure.ml -use-libev $LIBEV_FLAG -use-camlp4 false
 make build-all test-all
 
 

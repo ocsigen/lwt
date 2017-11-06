@@ -8,3 +8,11 @@
   (wrapped false)
   (libraries (camlp4 lwt.syntax.options))
   (preprocess (action (run camlp4oof ${<})))))
+
+(library
+ ((name lwt_camlp4)
+  (public_name lwt_camlp4)
+  (synopsis "Camlp4 syntax for Lwt (deprecated; use lwt_ppx)")
+  (wrapped false)
+  (libraries (camlp4 lwt_camlp4.options))
+  (preprocess (action (run camlp4oof ${<})))))

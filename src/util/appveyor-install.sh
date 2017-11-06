@@ -26,7 +26,6 @@ then
     # Pin Lwt and install its dependencies.
     opam pin add -y --no-action lwt .
     opam install -y --deps-only lwt
-    opam install -y camlp4
     if [ "$LIBEV" = yes ]
     then
         opam install -y conf-libev
@@ -37,6 +36,7 @@ then
     pin_extra_package react
     pin_extra_package ssl
     pin_extra_package glib
+    pin_extra_package camlp4
 
     # For the tests, obviously...
     opam install -y ounit

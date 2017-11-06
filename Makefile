@@ -86,8 +86,8 @@ install-for-packaging-test: clean
 	opam pin add --yes --no-action lwt_react .
 	opam pin add --yes --no-action lwt_ssl .
 	opam pin add --yes --no-action lwt_glib .
-	opam install --yes camlp4
-	opam reinstall --yes lwt lwt_ppx lwt_react lwt_ssl lwt_glib
+	opam pin add --yes --no-action lwt_camlp4 .
+	opam reinstall --yes lwt lwt_ppx lwt_react lwt_ssl lwt_glib lwt_camlp4
 
 .PHONY: clean
 clean:

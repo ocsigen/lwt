@@ -55,6 +55,8 @@ messages: [
     {react:installed & !lwt_react:installed}
   "For the PPX, please install package lwt_ppx"
     {!lwt_ppx:installed}
+  "For the Camlp4 syntax, please install package lwt_camlp4"
+    {camlp4:installed & !lwt_camlp4:installed}
 ]
 post-messages: [
   "Lwt 4.0.0 will make some breaking changes to packaging in late 2017. See

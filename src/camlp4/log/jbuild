@@ -9,3 +9,12 @@
   (libraries (camlp4 lwt.syntax.options))
   (flags (:standard -w +A-3-4-58))
   (preprocess (action (run camlp4oof ${<})))))
+
+(library
+ ((name lwt_camlp4_log)
+  (public_name lwt_camlp4.log)
+  (synopsis "Camlp4 syntax for Lwt logging (deprecated; use lwt_ppx)")
+  (wrapped false)
+  (libraries (camlp4 lwt_camlp4.options))
+  (flags (:standard -w +A-3-4-58))
+  (preprocess (action (run camlp4oof ${<})))))
