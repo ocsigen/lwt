@@ -27,7 +27,8 @@ type t
 val set_exn_handler : (exn -> unit) -> unit
 (** set the default handler for exception occurring after a timeout.
     The function lauched after a timeout should not raise any exception.
-    That's why the default handler will exit the program.
+    The default handler passed the exception to {!Lwt.async_exception_hook}. The
+    default behavior of {e that}, in turn, is to terminate the process.
 *)
 
 val create : int -> (unit -> unit) -> t
