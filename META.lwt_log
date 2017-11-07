@@ -3,7 +3,7 @@
 # lwt.log.
 
 version = "dev"
-description = "Logger for lwt"
+description = "Logger for lwt (deprecated; use logs library)"
 requires = "lwt_log.unix"
 
 package "core" (
