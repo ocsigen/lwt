@@ -4,7 +4,8 @@ maintainer: [
   "Anton Bachin <antonbachin@yahoo.com>"
 ]
 authors: [
-  "Gabriel Radanne"
+  "Shawn Wagner"
+  "Jérémie Dimino"
 ]
 homepage: "https://github.com/ocsigen/lwt"
 doc: "https://ocsigen.org/lwt/api/Lwt_log"
@@ -14,8 +15,8 @@ license: "LGPL"
 
 depends: [
   "jbuilder" {build}
-  # This will be constrained with an upper bound once the log is fully factored
-  # out of package lwt.
+  # This will be constrained with an upper bound once the log library is fully
+  # factored out of package lwt.
   "lwt"
 ]
 
