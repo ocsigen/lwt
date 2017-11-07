@@ -4,4 +4,16 @@
 
 version = "dev"
 description = "Logger for lwt"
-requires = "lwt.log"
+requires = "lwt_log.unix"
+
+package "core" (
+  version = "dev"
+  description = "Logger for Lwt (pure-OCaml core)"
+  requires = "lwt.log"
+)
+
+package "unix" (
+  version = "dev"
+  description = "Logger for Lwt (Unix logging destinations)"
+  requires = "lwt.log lwt.unix"
+)
