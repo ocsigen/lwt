@@ -182,3 +182,5 @@ let clear p =
   old_cleared := true;
   p.cleared := ref false;
   Lwt_list.iter_s (dispose p) elements
+
+let wait_queue_length p = Lwt_sequence.length p.waiters
