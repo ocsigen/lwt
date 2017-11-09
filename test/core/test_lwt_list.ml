@@ -26,16 +26,6 @@ open Lwt.Infix
 let (<=>) v v' =
   assert (Lwt.state v = v')
 
-let test_exn f v e =
-  assert
-    (try
-      ignore (f v);
-      assert false
-    with exn ->
-      exn = e)
-
-exception Exn
-
 let test_iter f test_list =
   let incr_ x = Lwt.return (incr x) in
   let () =
@@ -62,16 +52,33 @@ let test_iter f test_list =
   in
   ()
 
-let test_exception f =
-  let g =
-    let r = ref 0 in
-    fun _ ->
-      incr r;
-      match !r with
-      | 2 -> raise Exn
-      | _ -> Lwt.return ()
+let test_exception list_combinator =
+  (* This really should be a local exception, but local exceptions require OCaml
+     4.04, while Lwt still supports, and is tested on, 4.02. *)
+  let module E =
+    struct
+      exception Exception
+    end
   in
-  test_exn (f g) [(); (); ()] Exn
+  let open E in
+
+  let number_of_callback_calls = ref 0 in
+
+  let callback _ =
+    Pervasives.incr number_of_callback_calls;
+    match !number_of_callback_calls with
+    | 2 -> raise Exception
+    | _ -> Lwt.return ()
+  in
+
+  try
+    list_combinator callback [(); (); ()] |> ignore;
+    (* The combinator is expected to leak E.Exception, so this assertion should
+       not be reached. *)
+    assert false
+  with
+    | Exception -> ()
+    | _ -> assert false
 
 let test_map f test_list =
   let t, w = Lwt.wait () in
