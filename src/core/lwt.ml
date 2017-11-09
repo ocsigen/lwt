@@ -360,13 +360,6 @@
    commented in [bind], all such casts are documented in modules [Public_types]
    and [Basic_helpers].
 
-   There is an abstract type [in_resolution_loop], which is actually just
-   [unit], that is passed around to help ensure that certain functions can only
-   be called during the resolution loop. Those functions can't be called without
-   a value of type [in_resolution_loop], and the only way to obtain such a value
-   is to enter the loop ([run_in_resolution_loop]). This mechanism is described
-   at [Resolution_loop.resolve].
-
 
    If you've made it this far, you are an Lwt expert! Rejoice! *)
 
@@ -465,13 +458,11 @@ struct
     mutable cleanups_deferred : int;
   }
 
-  and 'a regular_callback = in_resolution_loop -> 'a resolved_state -> unit
+  and 'a regular_callback = 'a resolved_state -> unit
 
-  and cancel_callback = in_resolution_loop -> unit
+  and cancel_callback = unit -> unit
 
   and 'a resolved_state = ('a, underlying, resolved) state
-
-  and in_resolution_loop   (* = unit, see [Resolution_loop.resolve]. *)
 
   and how_to_cancel =
     | Not_cancelable              :                           how_to_cancel
@@ -1048,7 +1039,8 @@ module Resolution_loop :
 sig
   (* Internal interface used only in this module Lwt *)
   val resolve :
-    in_resolution_loop ->
+    ?allow_deferring:bool ->
+    ?maximum_callback_nesting_depth:int ->
     ('a, underlying, pending) promise ->
     'a resolved_state ->
       ('a, underlying, resolved) state_changed
@@ -1115,7 +1107,6 @@ struct
      reachable through the promise reference. This is why the direct [callbacks]
      record must be given to this function. *)
   let run_callbacks
-      in_resolution_loop
       (callbacks : 'a callbacks)
       (result : 'a resolved_state) : unit =
 
@@ -1126,7 +1117,7 @@ struct
           iter_list rest
         | Cancel_callback_list_callback (storage, f) ->
           current_storage := storage;
-          handle_with_async_exception_hook f in_resolution_loop;
+          handle_with_async_exception_hook f ();
           iter_list rest
         | Cancel_callback_list_remove_sequence_node node ->
           Lwt_sequence.remove node;
@@ -1150,14 +1141,14 @@ struct
         | Regular_callback_list_empty ->
           iter_list rest
         | Regular_callback_list_implicitly_removed_callback f ->
-          f in_resolution_loop result;
+          f result;
           iter_list rest
         | Regular_callback_list_explicitly_removable_callback
             {contents = None} ->
           iter_list rest
         | Regular_callback_list_explicitly_removable_callback
             {contents = Some f} ->
-          f in_resolution_loop result;
+          f result;
           iter_list rest
         | Regular_callback_list_concat (fs, fs') ->
           iter_callback_list fs (fs'::rest)
@@ -1185,33 +1176,7 @@ struct
 
 
 
-  (* The callbacks triggered by [resolve] are run immediately on the current
-     stack. This is probably an error. If the user builds a loop that implicitly
-     works through [resolve], the result can be stack overflow.
-
-     Callbacks may modify sequence-associated storage. The resolution loop
-     protects storage during callbacks (see [enter_resolution_loop]). As a
-     result, this function is intended to be run only while the resolution loop
-     is invoked.
-
-     To help ensure this, this function requires an argument of the abstract
-     type [in_resolution_loop]. The only way to obtain such a value is to pass a
-     function to [run_in_resolution_loop]. Since [run_in_resolution_loop] is
-     local to this module, the only way to obtain an [in_resolution_loop]
-     elsewhere is through a callback that is being invoked. The
-     [in_resolution_loop] eventually makes it to that callback from a
-     surrounding invocation of [run_in_resolution_loop] that triggered the
-     callback.
-
-     If this function is changed to always defer callbacks, [in_resolution_loop]
-     can be eliminated. *)
-  let resolve in_resolution_loop p result =
-    let Pending callbacks = p.state in
-    let p = set_promise_state p result in
-    run_callbacks in_resolution_loop callbacks result;
-    p
-
-
+  let default_maximum_callback_nesting_depth = 42
 
   let current_callback_nesting_depth = ref 0
 
@@ -1230,24 +1195,20 @@ struct
     let storage_snapshot = !current_storage in
     storage_snapshot
 
-  let leave_resolution_loop
-      in_resolution_loop
-      (storage_snapshot : storage) : unit =
-
+  let leave_resolution_loop (storage_snapshot : storage) : unit =
     if !current_callback_nesting_depth = 1 then begin
       while not (Queue.is_empty deferred_callbacks) do
         let Deferred (callbacks, result) = Queue.pop deferred_callbacks in
-        run_callbacks in_resolution_loop callbacks result
+        run_callbacks callbacks result
       done
     end;
     current_callback_nesting_depth := !current_callback_nesting_depth - 1;
     current_storage := storage_snapshot
 
-  let run_in_resolution_loop (f : in_resolution_loop -> unit) : unit =
+  let run_in_resolution_loop f : unit =
     let storage_snapshot = enter_resolution_loop () in
-    let in_resolution_loop : in_resolution_loop = Obj.magic () in
-    f in_resolution_loop;
-    leave_resolution_loop in_resolution_loop storage_snapshot
+    f ();
+    leave_resolution_loop storage_snapshot
 
   (* This is basically a hack to fix https://github.com/ocsigen/lwt/issues/48.
      If currently resolving promises, it immediately exits all recursive
@@ -1257,8 +1218,34 @@ struct
      The name should probably be [abaondon_resolution_loop]. *)
   let abandon_wakeups () =
     if !current_callback_nesting_depth <> 0 then
-      let in_resolution_loop : in_resolution_loop = Obj.magic () in
-      leave_resolution_loop in_resolution_loop Storage_map.empty
+      leave_resolution_loop Storage_map.empty
+
+
+
+  let run_callbacks_or_defer_them
+      ?(allow_deferring = true)
+      ?(maximum_callback_nesting_depth = default_maximum_callback_nesting_depth)
+      callbacks result =
+
+    let should_defer =
+      allow_deferring
+      && !current_callback_nesting_depth >= maximum_callback_nesting_depth
+    in
+
+    if should_defer then
+      Queue.push (Deferred (callbacks, result)) deferred_callbacks
+    else
+      run_in_resolution_loop (fun () ->
+        run_callbacks callbacks result)
+
+  let resolve ?allow_deferring ?maximum_callback_nesting_depth p result =
+    let Pending callbacks = p.state in
+    let p = set_promise_state p result in
+
+    run_callbacks_or_defer_them
+      ?allow_deferring ?maximum_callback_nesting_depth callbacks result;
+
+    p
 
 
 
@@ -1277,12 +1264,10 @@ struct
     | Rejected _ ->
       Printf.ksprintf Pervasives.invalid_arg "Lwt.%s" api_function_name
 
-    | Pending callbacks ->
+    | Pending _ ->
       let result = state_of_result result in
-      let State_may_have_changed p = set_promise_state p result in
-      ignore p;
-      run_in_resolution_loop (fun in_resolution_loop ->
-        run_callbacks in_resolution_loop callbacks result)
+      let State_may_have_changed p = resolve ~allow_deferring:false p result in
+      ignore p
 
   let wakeup_result r result = wakeup_general "wakeup_result" r result
   let wakeup r v = wakeup_general "wakeup" r (Result.Ok v)
@@ -1300,17 +1285,11 @@ struct
     | Rejected _ ->
       Printf.ksprintf Pervasives.invalid_arg "Lwt.%s" api_function_name
 
-    | Pending callbacks ->
+    | Pending _ ->
       let result = state_of_result result in
-      let State_may_have_changed p = set_promise_state p result in
-      ignore p;
-      begin
-        if !current_callback_nesting_depth <> 0 then
-          Queue.push (Deferred (callbacks, result)) deferred_callbacks
-        else
-          run_in_resolution_loop (fun in_resolution_loop ->
-            run_callbacks in_resolution_loop callbacks result)
-      end
+      let State_may_have_changed p =
+        resolve ~maximum_callback_nesting_depth:1 p result in
+      ignore p
 
   let wakeup_later_result r result =
     wakeup_later_general "wakeup_later_result" r result
@@ -1377,9 +1356,9 @@ struct
     let Internal p = to_internal_promise p in
     let callbacks = propagate_cancel p in
 
-    run_in_resolution_loop (fun in_resolution_loop ->
-      callbacks |> List.iter (fun (Packed callbacks) ->
-        run_callbacks in_resolution_loop callbacks canceled_result))
+    callbacks |> List.iter (fun (Packed callbacks) ->
+      run_callbacks_or_defer_them
+        ~allow_deferring:false callbacks canceled_result)
 end
 include Resolution_loop
 
@@ -1529,7 +1508,7 @@ struct
     | Pending _ ->
       let p' = new_pending ~how_to_cancel:Cancel_this_promise in
 
-      let callback in_resolution_loop p_result =
+      let callback p_result =
         let State_may_now_be_pending_proxy p' = may_now_be_proxy p' in
         let p' = underlying p' in
         (* In this callback, [p'] will either still itself be pending, or it
@@ -1547,7 +1526,7 @@ struct
              inductive reasoning at [may_now_be_proxy] applies. *)
 
         let State_may_have_changed p' =
-          resolve in_resolution_loop p' p_result in
+          resolve ~allow_deferring:false p' p_result in
         ignore p'
       in
 
@@ -1570,7 +1549,7 @@ struct
     | Pending p_callbacks ->
       let p' = new_pending ~how_to_cancel:Not_cancelable in
 
-      let callback in_resolution_loop p_result =
+      let callback p_result =
         let State_may_now_be_pending_proxy p' = may_now_be_proxy p' in
         let p' = underlying p' in
         (* In this callback, [p'] will either still itself be pending, or it
@@ -1579,7 +1558,7 @@ struct
            because [p'] is not cancelable. *)
 
         let State_may_have_changed p' =
-          resolve in_resolution_loop p' p_result in
+          resolve ~allow_deferring:false p' p_result in
         ignore p'
       in
       add_implicitly_removed_callback p_callbacks callback;
@@ -1678,7 +1657,6 @@ struct
        callbacks are run. *)
   let make_into_proxy
       (type c)
-      in_resolution_loop
       ~(outer_promise : ('a, underlying, pending) promise)
       ~(user_provided_promise : ('a, _, c) promise)
         : ('a, underlying, c) state_changed =
@@ -1695,9 +1673,9 @@ struct
     else
       match p'.state with
       | Fulfilled _ ->
-        resolve in_resolution_loop outer_promise p'.state
+        resolve ~allow_deferring:false outer_promise p'.state
       | Rejected _ ->
-        resolve in_resolution_loop outer_promise p'.state
+        resolve ~allow_deferring:false outer_promise p'.state
 
       | Pending p'_callbacks ->
         let Pending outer_callbacks = outer_promise.state in
@@ -1749,7 +1727,7 @@ struct
 
       let saved_storage = !current_storage in
 
-      let callback in_resolution_loop p_result =
+      let callback p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
         (* [p''] was an underlying promise when it was created above, but it
@@ -1768,17 +1746,14 @@ struct
           (* Run the user's function [f]. *)
 
           let State_may_have_changed p'' =
-            make_into_proxy in_resolution_loop
-              ~outer_promise:p''
-              ~user_provided_promise:p'
-          in
+            make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
           ignore p''
           (* Make the outer promise [p''] behaviorally identical to the promise
              [p'] returned by [f] by making [p'] into a proxy of [p'']. *)
 
         | Rejected _ as p_result ->
           let State_may_have_changed p'' =
-            resolve in_resolution_loop p'' p_result in
+            resolve ~allow_deferring:false p'' p_result in
           ignore p''
       in
       add_implicitly_removed_callback p_callbacks callback;
@@ -1800,7 +1775,7 @@ struct
 
       let saved_storage = !current_storage in
 
-      let callback in_resolution_loop p_result =
+      let callback p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
 
@@ -1812,15 +1787,12 @@ struct
           let Internal p' = to_internal_promise p' in
 
           let State_may_have_changed p'' =
-            make_into_proxy in_resolution_loop
-              ~outer_promise:p''
-              ~user_provided_promise:p'
-          in
+            make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
           ignore p''
 
         | Rejected exn ->
           let State_may_have_changed p'' =
-            resolve in_resolution_loop p'' (Rejected (add_loc exn)) in
+            resolve ~allow_deferring:false p'' (Rejected (add_loc exn)) in
           ignore p''
       in
       add_implicitly_removed_callback p_callbacks callback;
@@ -1842,7 +1814,7 @@ struct
 
       let saved_storage = !current_storage in
 
-      let callback in_resolution_loop p_result =
+      let callback p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
 
@@ -1852,12 +1824,12 @@ struct
 
           let p''_result = try Fulfilled (f v) with exn -> Rejected exn in
           let State_may_have_changed p'' =
-            resolve in_resolution_loop p'' p''_result in
+            resolve ~allow_deferring:false p'' p''_result in
           ignore p''
 
         | Rejected _ as p_result ->
           let State_may_have_changed p'' =
-            resolve in_resolution_loop p'' p_result in
+            resolve ~allow_deferring:false p'' p_result in
           ignore p''
       in
       add_implicitly_removed_callback p_callbacks callback;
@@ -1880,14 +1852,14 @@ struct
 
       let saved_storage = !current_storage in
 
-      let callback in_resolution_loop p_result =
+      let callback p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
 
         match p_result with
         | Fulfilled _ as p_result ->
           let State_may_have_changed p'' =
-            resolve in_resolution_loop p'' p_result in
+            resolve ~allow_deferring:false p'' p_result in
           ignore p''
 
         | Rejected exn ->
@@ -1897,10 +1869,7 @@ struct
           let Internal p' = to_internal_promise p' in
 
           let State_may_have_changed p'' =
-            make_into_proxy in_resolution_loop
-              ~outer_promise:p''
-              ~user_provided_promise:p'
-          in
+            make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
           ignore p''
       in
       add_implicitly_removed_callback p_callbacks callback;
@@ -1923,14 +1892,14 @@ struct
 
       let saved_storage = !current_storage in
 
-      let callback in_resolution_loop p_result =
+      let callback p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
 
         match p_result with
         | Fulfilled _ as p_result ->
           let State_may_have_changed p'' =
-            resolve in_resolution_loop p'' p_result in
+            resolve ~allow_deferring:false p'' p_result in
           ignore p''
 
         | Rejected exn ->
@@ -1940,10 +1909,7 @@ struct
           let Internal p' = to_internal_promise p' in
 
           let State_may_have_changed p'' =
-            make_into_proxy in_resolution_loop
-              ~outer_promise:p''
-              ~user_provided_promise:p'
-          in
+            make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
           ignore p''
       in
       add_implicitly_removed_callback p_callbacks callback;
@@ -1966,7 +1932,7 @@ struct
 
       let saved_storage = !current_storage in
 
-      let callback in_resolution_loop p_result =
+      let callback p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
 
@@ -1978,10 +1944,7 @@ struct
           let Internal p' = to_internal_promise p' in
 
           let State_may_have_changed p'' =
-            make_into_proxy in_resolution_loop
-              ~outer_promise:p''
-              ~user_provided_promise:p'
-          in
+            make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
           ignore p''
 
         | Rejected exn ->
@@ -1991,10 +1954,7 @@ struct
           let Internal p' = to_internal_promise p' in
 
           let State_may_have_changed p'' =
-            make_into_proxy in_resolution_loop
-              ~outer_promise:p''
-              ~user_provided_promise:p'
-          in
+            make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
           ignore p''
       in
       add_implicitly_removed_callback p_callbacks callback;
@@ -2017,7 +1977,7 @@ struct
 
       let saved_storage = !current_storage in
 
-      let callback in_resolution_loop p_result =
+      let callback p_result =
         let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
         let p'' = underlying p'' in
 
@@ -2029,10 +1989,7 @@ struct
           let Internal p' = to_internal_promise p' in
 
           let State_may_have_changed p'' =
-            make_into_proxy in_resolution_loop
-              ~outer_promise:p''
-              ~user_provided_promise:p'
-          in
+            make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
           ignore p''
 
         | Rejected exn ->
@@ -2042,10 +1999,7 @@ struct
           let Internal p' = to_internal_promise p' in
 
           let State_may_have_changed p'' =
-            make_into_proxy in_resolution_loop
-              ~outer_promise:p''
-              ~user_provided_promise:p'
-          in
+            make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
           ignore p''
       in
       add_implicitly_removed_callback p_callbacks callback;
@@ -2086,7 +2040,7 @@ struct
     | Pending p_callbacks ->
       let saved_storage = !current_storage in
 
-      let callback _in_resolution_loop result =
+      let callback result =
         match result with
         | Fulfilled v ->
           current_storage := saved_storage;
@@ -2108,7 +2062,7 @@ struct
     | Pending p_callbacks ->
       let saved_storage = !current_storage in
 
-      let callback _in_resolution_loop result =
+      let callback result =
         match result with
         | Fulfilled _ ->
           ()
@@ -2130,7 +2084,7 @@ struct
     | Pending p_callbacks ->
       let saved_storage = !current_storage in
 
-      let callback _in_resolution_loop _result =
+      let callback _result =
         current_storage := saved_storage;
         handle_with_async_exception_hook f ()
       in
@@ -2148,7 +2102,7 @@ struct
     | Pending p_callbacks ->
       let saved_storage = !current_storage in
 
-      let callback _in_resolution_loop result =
+      let callback result =
         match result with
         | Fulfilled v ->
           current_storage := saved_storage;
@@ -2190,7 +2144,7 @@ struct
       !async_exception_hook exn
 
     | Pending p_callbacks ->
-      let callback _in_resolution_loop result =
+      let callback result =
         match result with
         | Fulfilled _ ->
           ()
@@ -2209,7 +2163,7 @@ struct
       raise exn
 
     | Pending p_callbacks ->
-      let callback _in_resolution_loop result =
+      let callback result =
         match result with
         | Fulfilled _ ->
           ()
@@ -2228,7 +2182,7 @@ struct
 
     (* Callback attached to each promise in [ps] that is still pending at the
        time [join] is called. *)
-    let callback in_resolution_loop new_result =
+    let callback new_result =
       let State_may_now_be_pending_proxy p' = may_now_be_proxy p' in
 
       begin match new_result with
@@ -2247,7 +2201,7 @@ struct
       if !number_pending_in_ps = 0 then begin
         let p' = underlying p' in
         let State_may_have_changed p' =
-          resolve in_resolution_loop (underlying p') !join_result in
+          resolve ~allow_deferring:false (underlying p') !join_result in
         ignore p'
       end
     in
@@ -2358,10 +2312,11 @@ struct
     | 0 ->
       let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
 
-      let callback in_resolution_loop result =
+      let callback result =
         let State_may_now_be_pending_proxy p = may_now_be_proxy p in
         let p = underlying p in
-        let State_may_have_changed p = resolve in_resolution_loop p result in
+        let State_may_have_changed p =
+          resolve ~allow_deferring:false p result in
         ignore p
       in
       add_explicitly_removable_callback_to_each_of ps callback;
@@ -2379,11 +2334,12 @@ struct
     | 0 ->
       let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
 
-      let callback in_resolution_loop result =
+      let callback result =
         let State_may_now_be_pending_proxy p = may_now_be_proxy p in
         List.iter cancel ps;
         let p = underlying p in
-        let State_may_have_changed p = resolve in_resolution_loop p result in
+        let State_may_have_changed p =
+          resolve ~allow_deferring:false p result in
         ignore p
       in
       add_explicitly_removable_callback_to_each_of ps callback;
@@ -2456,11 +2412,12 @@ struct
       | [] ->
         let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
 
-        let callback in_resolution_loop _result =
+        let callback _result =
           let State_may_now_be_pending_proxy p = may_now_be_proxy p in
           let p = underlying p in
           let result = collect_fulfilled_promises_after_pending [] ps in
-          let State_may_have_changed p = resolve in_resolution_loop p result in
+          let State_may_have_changed p =
+            resolve ~allow_deferring:false p result in
           ignore p
         in
         add_explicitly_removable_callback_to_each_of ps callback;
@@ -2511,12 +2468,13 @@ struct
       | [] ->
         let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
 
-        let callback in_resolution_loop _result =
+        let callback _result =
           let State_may_now_be_pending_proxy p = may_now_be_proxy p in
           let p = underlying p in
           let result = collect_fulfilled_promises_after_pending [] ps in
           List.iter cancel ps;
-          let State_may_have_changed p = resolve in_resolution_loop p result in
+          let State_may_have_changed p =
+            resolve ~allow_deferring:false p result in
           ignore p
         in
         add_explicitly_removable_callback_to_each_of ps callback;
@@ -2545,7 +2503,6 @@ struct
   (* Same general pattern as [npick] and [nchoose]. *)
   let nchoose_split ps =
     let rec finish
-        in_resolution_loop
         (to_resolve : ('a list * 'a t list, underlying, pending) promise)
         (fulfilled : 'a list)
         (pending : 'a t list)
@@ -2554,20 +2511,20 @@ struct
 
       match ps with
       | [] ->
-        resolve in_resolution_loop to_resolve
+        resolve ~allow_deferring:false to_resolve
           (Fulfilled (List.rev fulfilled, List.rev pending))
 
       | p::ps ->
         let Internal p_internal = to_internal_promise p in
         match (underlying p_internal).state with
         | Fulfilled v ->
-          finish in_resolution_loop to_resolve (v::fulfilled) pending ps
+          finish to_resolve (v::fulfilled) pending ps
 
         | Rejected _ as result ->
-          resolve in_resolution_loop to_resolve result
+          resolve ~allow_deferring:false to_resolve result
 
         | Pending _ ->
-          finish in_resolution_loop to_resolve fulfilled (p::pending) ps
+          finish to_resolve fulfilled (p::pending) ps
     in
 
     let rec collect_already_resolved_promises results pending ps =
@@ -2595,10 +2552,10 @@ struct
       | [] ->
         let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
 
-        let callback in_resolution_loop _result =
+        let callback _result =
           let State_may_now_be_pending_proxy p = may_now_be_proxy p in
           let p = underlying p in
-          let State_may_have_changed p = finish in_resolution_loop p [] [] ps in
+          let State_may_have_changed p = finish p [] [] ps in
           ignore p
         in
         add_explicitly_removable_callback_to_each_of ps callback;
