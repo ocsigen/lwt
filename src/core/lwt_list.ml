@@ -41,11 +41,11 @@ let rec iter_s f l =
   | [] ->
     Lwt.return_unit
   | x :: l ->
-    f x >>= fun () ->
+    Lwt.apply f x >>= fun () ->
     iter_s f l
 
 let iter_p f l =
-  let ts = tail_recursive_map f l in
+  let ts = tail_recursive_map (Lwt.apply f) l in
   Lwt.join ts
 
 let rec iteri_s i f l =
@@ -66,7 +66,7 @@ let map_s f l =
   let rec inner acc = function
     | [] -> List.rev acc |> Lwt.return
     | hd::tl ->
-      f hd >>= fun r ->
+      Lwt.apply f hd >>= fun r ->
       (inner [@ocaml.tailcall]) (r::acc) tl
   in
   inner [] l
@@ -79,7 +79,7 @@ let rec _collect acc = function
     (_collect [@ocaml.tailcall]) (i::acc) ts
 
 let map_p f l =
-  let ts = tail_recursive_map f l in
+  let ts = tail_recursive_map (Lwt.apply f) l in
   _collect [] ts
 
 let rec filter_map_s f l =
