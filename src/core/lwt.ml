@@ -1222,7 +1222,7 @@ struct
 
 
 
-  let currently_in_resolution_loop = ref false
+  let current_callback_nesting_depth = ref 0
 
   type deferred_callbacks =
     Deferred : ('a callbacks * 'a resolved_state) -> deferred_callbacks
@@ -1235,30 +1235,28 @@ struct
      the callbacks that will be run will modify the storage. The storage is
      restored to the snapshot when the resolution loop is exited. *)
   let enter_resolution_loop () =
+    current_callback_nesting_depth := !current_callback_nesting_depth + 1;
     let storage_snapshot = !current_storage in
-    let top_level_entry = not !currently_in_resolution_loop in
-    currently_in_resolution_loop := true;
-    top_level_entry, storage_snapshot
+    storage_snapshot
 
   let leave_resolution_loop
       in_resolution_loop
-      (top_level_entry : bool)
       (storage_snapshot : storage) : unit =
 
-    if top_level_entry then begin
+    if !current_callback_nesting_depth = 1 then begin
       while not (Queue.is_empty deferred_callbacks) do
         let Deferred (callbacks, result) = Queue.pop deferred_callbacks in
         run_callbacks in_resolution_loop callbacks result
-      done;
-      currently_in_resolution_loop := false;
+      done
     end;
+    current_callback_nesting_depth := !current_callback_nesting_depth - 1;
     current_storage := storage_snapshot
 
   let run_in_resolution_loop (f : in_resolution_loop -> unit) : unit =
-    let top_level_entry, storage_snapshot = enter_resolution_loop () in
+    let storage_snapshot = enter_resolution_loop () in
     let in_resolution_loop : in_resolution_loop = Obj.magic () in
     f in_resolution_loop;
-    leave_resolution_loop in_resolution_loop top_level_entry storage_snapshot
+    leave_resolution_loop in_resolution_loop storage_snapshot
 
   (* This is basically a hack to fix https://github.com/ocsigen/lwt/issues/48.
      If currently resolving promises, it immediately exits all recursive
@@ -1267,9 +1265,9 @@ struct
 
      The name should probably be [abaondon_resolution_loop]. *)
   let abandon_wakeups () =
-    if !currently_in_resolution_loop then
+    if !current_callback_nesting_depth <> 0 then
       let in_resolution_loop : in_resolution_loop = Obj.magic () in
-      leave_resolution_loop in_resolution_loop true Storage_map.empty
+      leave_resolution_loop in_resolution_loop Storage_map.empty
 
 
 
@@ -1316,7 +1314,7 @@ struct
       let State_may_have_changed p = set_promise_state p result in
       ignore p;
       begin
-        if !currently_in_resolution_loop then
+        if !current_callback_nesting_depth <> 0 then
           Queue.push (Deferred (callbacks, result)) deferred_callbacks
         else
           run_in_resolution_loop (fun in_resolution_loop ->
