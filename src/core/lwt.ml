@@ -564,7 +564,8 @@ struct
            Lwt_sequence.remove node))].
          This was probably done to avoid a closure allocation.
 
-     - The [cleanups_deferred] field is explained in module [Callbacks]. *)
+     - The [cleanups_deferred] field is explained in module
+       [Pending_callbacks]. *)
 end
 open Main_internal_types
 
@@ -851,7 +852,7 @@ include Sequence_associated_storage
 
 
 
-module Callbacks :
+module Pending_callbacks :
 sig
   (* Mutating callback lists attached to pending promises *)
   val add_implicitly_removed_callback :
@@ -1048,7 +1049,7 @@ struct
       | Cancel_callback_list_concat _ ->
         Cancel_callback_list_concat (node, callbacks.cancel_callbacks)
 end
-open Callbacks
+open Pending_callbacks
 
 
 
@@ -1223,11 +1224,11 @@ struct
 
   let currently_in_resolution_loop = ref false
 
-  type queued_callbacks =
-    Queued : ('a callbacks * 'a resolved_state) -> queued_callbacks
+  type deferred_callbacks =
+    Deferred : ('a callbacks * 'a resolved_state) -> deferred_callbacks
     [@@ocaml.unboxed]
 
-  let queued_callbacks : queued_callbacks Queue.t = Queue.create ()
+  let deferred_callbacks : deferred_callbacks Queue.t = Queue.create ()
 
   (* Before entering a resolution loop, it is necessary to take a snapshot of
      the current state of sequence-associated storage. This is because many of
@@ -1245,8 +1246,8 @@ struct
       (storage_snapshot : storage) : unit =
 
     if top_level_entry then begin
-      while not (Queue.is_empty queued_callbacks) do
-        let Queued (callbacks, result) = Queue.pop queued_callbacks in
+      while not (Queue.is_empty deferred_callbacks) do
+        let Deferred (callbacks, result) = Queue.pop deferred_callbacks in
         run_callbacks in_resolution_loop callbacks result
       done;
       currently_in_resolution_loop := false;
@@ -1316,7 +1317,7 @@ struct
       ignore p;
       begin
         if !currently_in_resolution_loop then
-          Queue.push (Queued (callbacks, result)) queued_callbacks
+          Queue.push (Deferred (callbacks, result)) deferred_callbacks
         else
           run_in_resolution_loop (fun in_resolution_loop ->
             run_callbacks in_resolution_loop callbacks result)
