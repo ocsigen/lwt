@@ -1082,10 +1082,76 @@ sig
   val async_exception_hook : (exn -> unit) ref
 end =
 struct
-  (*
+  (* When Lwt needs to call a callback, it enters the resolution loop. This
+     typically happens when Lwt sets the state of one promise to [Fulfilled _]
+     or [Rejected _]. The callbacks that were attached to the promise when it
+     was pending must then be called.
+
+     This also happens in a few other situations. For example, when [Lwt.bind]
+     is called on a promise, but that promise is already resolved, the callback
+     passed to [bind] must be called.
+
+     The callbacks triggered during the resolution loop might resolve more
+     promises, triggering more callbacks, and so on. This is what makes the
+     resolution loop a {e loop}.
+
+     Lwt generally tries to call each callback immediately. However, this can
+     lead to a progressive deepening of the call stack, until there is a stack
+     overflow. This can't be avoided by doing tail calls, because Lwt always
+     needs to do book-keeping after callbacks return. Instead, what Lwt does is
+     track the current callback call depth. Once that depth reaches a certain
+     number, [default_maximum_callback_nesting_depth], defined below, further
+     callbacks are deferred into a queue instead. That queue is drained when Lwt
+     exits from the top-most callback call that triggered the resolution loop in
+     the first place.
+
+     To ensure that this deferral mechanism is always properly invoked, all
+     callbacks called by Lwt are called through one of three functions provided
+     by this module:
+
+     - [resolve], which calls all the callbacks associated to a pending promise
+       (and resolves it, changing its state).
+     - [run_callbacks_or_defer_them], which is internally used by [resolve] to
+       call callbacks that are in a record of type ['a callbacks], which records
+       are associated with pending promises. This function is exposed because
+       the current implementation of [Lwt.cancel] needs to call it directly.
+       Promise resolution and callback calling are separated in a unique way in
+       [cancel].
+     - [run_callback_or_defer_it], which is used by [Lwt.bind] and similar
+       functions to call single callbacks when the promises passed to
+       [Lwt.bind], etc., are already resolved.
+
+     Current Lwt actually has a messy mix of callback-calling behaviors. For
+     example, [Lwt.bind] is expected to always call its callback immediately,
+     while [Lwt.wakeup_later] is expected to defer all callbacks of the promise
+     resolved, {e unless} Lwt is not already inside the resolution loop.
+
+     These behaviors will be made uniform in Lwt 4.0.0. However, in the
+     meantime, the above callback-invoking functions support several optional
+     arguments to emulate the behaviors:
+
+     - [~allow_deferring:false] allows ignoring the callback stack depth, and
+       calling the callbacks immediately. This emulates the old resolution
+       behavior.
+     - [~maximum_callback_nesting_depth:1] allows limiting the depth which
+       triggers deferral on a per-call-site basis. This is used by
+       [Lwt.wakeup_later].
+     - [~run_immediately_and_ensure_tail_call:true] is like
+       [~allow_deferring:false], which ignores the callback stack depth.
+       However, to ensure that the callback is tail-called, Lwt doesn't even
+       update the callback stack depth for the benefit of *other* callback
+       calls. It just blindly calls the callback.
+
+     It should be possible to eliminate these optional arguments in Lwt 4.0.0,
+     or restrict their usage to only deprecated APIs.
+
+     See discussion of callback-calling semantics in:
+
+       https://github.com/ocsigen/lwt/issues/329
+
      * Context
 
-     The resolution loop handles only promises that can be resolved
+     The resolution loop effectively handles all promises that can be resolved
      immediately, without blocking on I/O. A complete program that does I/O
      calls [Lwt_main.run]. See "No I/O" in the Overview. *)
 
