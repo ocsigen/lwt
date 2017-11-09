@@ -1065,6 +1065,12 @@ sig
     'a resolved_state ->
       unit
 
+  val run_callback_or_defer_it :
+    ?run_immediately_and_ensure_tail_call:bool ->
+    callback:(unit -> 'a) ->
+    if_deferred:(unit -> 'a * 'b regular_callback * 'b resolved_state) ->
+      'a
+
   val handle_with_async_exception_hook : ('a -> unit) -> 'a -> unit
 
   (* Internal interface exposed to other modules in Lwt *)
@@ -1215,10 +1221,11 @@ struct
     current_callback_nesting_depth := !current_callback_nesting_depth - 1;
     current_storage := storage_snapshot
 
-  let run_in_resolution_loop f : unit =
+  let run_in_resolution_loop f =
     let storage_snapshot = enter_resolution_loop () in
-    f ();
-    leave_resolution_loop storage_snapshot
+    let result = f () in
+    leave_resolution_loop storage_snapshot;
+    result
 
   (* This is basically a hack to fix https://github.com/ocsigen/lwt/issues/48.
      If currently resolving promises, it immediately exits all recursive
@@ -1256,6 +1263,41 @@ struct
       ?allow_deferring ?maximum_callback_nesting_depth callbacks result;
 
     p
+
+  let run_callback_or_defer_it
+      ?(run_immediately_and_ensure_tail_call = false)
+      ~callback:f
+      ~if_deferred =
+
+    if run_immediately_and_ensure_tail_call then
+      f ()
+
+    else
+      let should_defer =
+        !current_callback_nesting_depth
+          >= default_maximum_callback_nesting_depth
+      in
+
+      if should_defer then begin
+        let immediate_result, deferred_callback, deferred_result =
+          if_deferred () in
+        let deferred_record =
+          {
+            regular_callbacks =
+              Regular_callback_list_implicitly_removed_callback
+                deferred_callback;
+            cancel_callbacks = Cancel_callback_list_empty;
+            how_to_cancel = Not_cancelable;
+            cleanups_deferred = 0
+          }
+        in
+        Queue.push
+          (Deferred (deferred_record, deferred_result)) deferred_callbacks;
+        immediate_result
+      end
+      else
+        run_in_resolution_loop (fun () ->
+          f ())
 end
 include Resolution_loop
 
@@ -1732,13 +1774,28 @@ struct
     let Internal p = to_internal_promise p in
     let p = underlying p in
 
-    match p.state with
-    | Fulfilled v ->
-      f v   (* See https://github.com/ocsigen/lwt/issues/329. *)
-    | Rejected _ as result ->
-      to_public_promise {state = result}
+    (* In case [Lwt.bind] needs to defer the call to [f], this function will be
+       called to create:
 
-    | Pending p_callbacks ->
+       1. The promise, [p''], that must be returned to the caller immediately.
+       2. The callback that resolves [p''].
+
+       [Lwt.bind] defers the call to [f] in two circumstances:
+
+       1. The promise [p] is pending.
+       2. The promise [p] is fulfilled, but the current callback call nesting
+          depth is such that the call to [f] must go into the callback queue, in
+          order to avoid stack overflow.
+
+      Mechanism (2) is currently disabled, to emulate pre-3.2.0 Lwt semantics.
+      It will be enabled in Lwt 4.0.0.
+
+      Functions other than [Lwt.bind] have analogous deferral behavior. For
+      example, in Lwt 4.0.0, [Lwt.catch] will defer the call to its callback [h]
+      if either the promise [f ()] is pending, or if that promise is rejected,
+      but the callback nesting depth is too high to safely call [h]
+      immediately. *)
+    let create_result_promise_and_callback_if_deferred () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
       (* The result promise is a fresh pending promise.
 
@@ -1781,21 +1838,33 @@ struct
             resolve ~allow_deferring:false p'' p_result in
           ignore p''
       in
-      add_implicitly_removed_callback p_callbacks callback;
 
-      to_public_promise p''
+      (to_public_promise p'', callback)
+    in
+
+    match p.state with
+    | Fulfilled v ->
+      run_callback_or_defer_it
+        ~run_immediately_and_ensure_tail_call:true
+        ~callback:(fun () -> f v)
+        ~if_deferred:(fun () ->
+          let (p'', callback) =
+            create_result_promise_and_callback_if_deferred () in
+          (p'', callback, p.state))
+
+    | Rejected _ as result ->
+      to_public_promise {state = result}
+
+    | Pending p_callbacks ->
+      let (p'', callback) = create_result_promise_and_callback_if_deferred () in
+      add_implicitly_removed_callback p_callbacks callback;
+      p''
 
   let backtrace_bind add_loc p f =
     let Internal p = to_internal_promise p in
     let p = underlying p in
 
-    match p.state with
-    | Fulfilled v ->
-      f v
-    | Rejected exn ->
-      to_public_promise {state = Rejected (add_loc exn)}
-
-    | Pending p_callbacks ->
+    let create_result_promise_and_callback_if_deferred () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
       let saved_storage = !current_storage in
@@ -1820,21 +1889,33 @@ struct
             resolve ~allow_deferring:false p'' (Rejected (add_loc exn)) in
           ignore p''
       in
-      add_implicitly_removed_callback p_callbacks callback;
 
-      to_public_promise p''
+      (to_public_promise p'', callback)
+    in
+
+    match p.state with
+    | Fulfilled v ->
+      run_callback_or_defer_it
+        ~run_immediately_and_ensure_tail_call:true
+        ~callback:(fun () -> f v)
+        ~if_deferred:(fun () ->
+          let (p'', callback) =
+            create_result_promise_and_callback_if_deferred () in
+          (p'', callback, p.state))
+
+    | Rejected exn ->
+      to_public_promise {state = Rejected (add_loc exn)}
+
+    | Pending p_callbacks ->
+      let (p'', callback) = create_result_promise_and_callback_if_deferred () in
+      add_implicitly_removed_callback p_callbacks callback;
+      p''
 
   let map f p =
     let Internal p = to_internal_promise p in
     let p = underlying p in
 
-    match p.state with
-    | Fulfilled v ->
-      to_public_promise {state = try Fulfilled (f v) with exn -> Rejected exn}
-    | Rejected _ as result ->
-      to_public_promise {state = result}
-
-    | Pending p_callbacks ->
+    let create_result_promise_and_callback_if_deferred () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
       let saved_storage = !current_storage in
@@ -1857,22 +1938,36 @@ struct
             resolve ~allow_deferring:false p'' p_result in
           ignore p''
       in
-      add_implicitly_removed_callback p_callbacks callback;
 
-      to_public_promise p''
+      (to_public_promise p'', callback)
+    in
+
+    match p.state with
+    | Fulfilled v ->
+      run_callback_or_defer_it
+        ~run_immediately_and_ensure_tail_call:true
+        ~callback:(fun () ->
+          to_public_promise
+            {state = try Fulfilled (f v) with exn -> Rejected exn})
+        ~if_deferred:(fun () ->
+          let (p'', callback) =
+            create_result_promise_and_callback_if_deferred () in
+          (p'', callback, p.state))
+
+    | Rejected _ as result ->
+      to_public_promise {state = result}
+
+    | Pending p_callbacks ->
+      let (p'', callback) = create_result_promise_and_callback_if_deferred () in
+      add_implicitly_removed_callback p_callbacks callback;
+      p''
 
   let catch f h =
     let p = try f () with exn -> fail exn in
     let Internal p = to_internal_promise p in
     let p = underlying p in
 
-    match p.state with
-    | Fulfilled _ ->
-      to_public_promise p
-    | Rejected exn ->
-      h exn
-
-    | Pending p_callbacks ->
+    let create_result_promise_and_callback_if_deferred () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
       let saved_storage = !current_storage in
@@ -1897,22 +1992,34 @@ struct
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
           ignore p''
       in
-      add_implicitly_removed_callback p_callbacks callback;
 
-      to_public_promise p''
+      (to_public_promise p'', callback)
+    in
+
+    match p.state with
+    | Fulfilled _ ->
+      to_public_promise p
+
+    | Rejected exn ->
+      run_callback_or_defer_it
+        ~run_immediately_and_ensure_tail_call:true
+        ~callback:(fun () -> h exn)
+        ~if_deferred:(fun () ->
+          let (p'', callback) =
+            create_result_promise_and_callback_if_deferred () in
+          (p'', callback, p.state))
+
+    | Pending p_callbacks ->
+      let (p'', callback) = create_result_promise_and_callback_if_deferred () in
+      add_implicitly_removed_callback p_callbacks callback;
+      p''
 
   let backtrace_catch add_loc f h =
     let p = try f () with exn -> fail exn in
     let Internal p = to_internal_promise p in
     let p = underlying p in
 
-    match p.state with
-    | Fulfilled _ ->
-      to_public_promise p
-    | Rejected exn ->
-      h (add_loc exn)
-
-    | Pending p_callbacks ->
+    let create_result_promise_and_callback_if_deferred () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
       let saved_storage = !current_storage in
@@ -1937,22 +2044,34 @@ struct
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
           ignore p''
       in
-      add_implicitly_removed_callback p_callbacks callback;
 
-      to_public_promise p''
+      (to_public_promise p'', callback)
+    in
+
+    match p.state with
+    | Fulfilled _ ->
+      to_public_promise p
+
+    | Rejected exn ->
+      run_callback_or_defer_it
+        ~run_immediately_and_ensure_tail_call:true
+        ~callback:(fun () -> h (add_loc exn))
+        ~if_deferred:(fun () ->
+          let (p'', callback) =
+            create_result_promise_and_callback_if_deferred () in
+          (p'', callback, p.state))
+
+    | Pending p_callbacks ->
+      let (p'', callback) = create_result_promise_and_callback_if_deferred () in
+      add_implicitly_removed_callback p_callbacks callback;
+      p''
 
   let try_bind f f' h =
     let p = try f () with exn -> fail exn in
     let Internal p = to_internal_promise p in
     let p = underlying p in
 
-    match p.state with
-    | Fulfilled v ->
-      f' v
-    | Rejected exn ->
-      h exn
-
-    | Pending p_callbacks ->
+    let create_result_promise_and_callback_if_deferred () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
       let saved_storage = !current_storage in
@@ -1982,22 +2101,40 @@ struct
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
           ignore p''
       in
-      add_implicitly_removed_callback p_callbacks callback;
 
-      to_public_promise p''
+      (to_public_promise p'', callback)
+    in
+
+    match p.state with
+    | Fulfilled v ->
+      run_callback_or_defer_it
+        ~run_immediately_and_ensure_tail_call:true
+        ~callback:(fun () -> f' v)
+        ~if_deferred:(fun () ->
+          let (p'', callback) =
+            create_result_promise_and_callback_if_deferred () in
+          (p'', callback, p.state))
+
+    | Rejected exn ->
+      run_callback_or_defer_it
+        ~run_immediately_and_ensure_tail_call:true
+        ~callback:(fun () -> h exn)
+        ~if_deferred:(fun () ->
+          let (p'', callback) =
+            create_result_promise_and_callback_if_deferred () in
+          (p'', callback, p.state))
+
+    | Pending p_callbacks ->
+      let (p'', callback) = create_result_promise_and_callback_if_deferred () in
+      add_implicitly_removed_callback p_callbacks callback;
+      p''
 
   let backtrace_try_bind add_loc f f' h =
     let p = try f () with exn -> fail exn in
     let Internal p = to_internal_promise p in
     let p = underlying p in
 
-    match p.state with
-    | Fulfilled v ->
-      f' v
-    | Rejected exn ->
-      h (add_loc exn)
-
-    | Pending p_callbacks ->
+    let create_result_promise_and_callback_if_deferred () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
       let saved_storage = !current_storage in
@@ -2027,9 +2164,33 @@ struct
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
           ignore p''
       in
-      add_implicitly_removed_callback p_callbacks callback;
 
-      to_public_promise p''
+      (to_public_promise p'', callback)
+    in
+
+    match p.state with
+    | Fulfilled v ->
+      run_callback_or_defer_it
+        ~run_immediately_and_ensure_tail_call:true
+        ~callback:(fun () -> f' v)
+        ~if_deferred:(fun () ->
+          let (p'', callback) =
+            create_result_promise_and_callback_if_deferred () in
+          (p'', callback, p.state))
+
+    | Rejected exn ->
+      run_callback_or_defer_it
+        ~run_immediately_and_ensure_tail_call:true
+        ~callback:(fun () -> h (add_loc exn))
+        ~if_deferred:(fun () ->
+          let (p'', callback) =
+            create_result_promise_and_callback_if_deferred () in
+          (p'', callback, p.state))
+
+    | Pending p_callbacks ->
+      let (p'', callback) = create_result_promise_and_callback_if_deferred () in
+      add_implicitly_removed_callback p_callbacks callback;
+      p''
 
   let finalize f f' =
     try_bind f
@@ -2045,97 +2206,163 @@ struct
 
   let on_cancel p f =
     let Internal p = to_internal_promise p in
-    match (underlying p).state with
-    | Rejected Canceled -> handle_with_async_exception_hook f ()
-    | Rejected _ -> ()
-    | Fulfilled _ -> ()
-    | Pending callbacks -> add_cancel_callback callbacks f
+    let p = underlying p in
+
+    match p.state with
+    | Rejected Canceled ->
+      run_callback_or_defer_it
+        ~run_immediately_and_ensure_tail_call:true
+        ~callback:(fun () -> handle_with_async_exception_hook f ())
+        ~if_deferred:(fun () ->
+          ((), (fun _ -> handle_with_async_exception_hook f ()), Fulfilled ()))
+
+    | Rejected _ ->
+      ()
+
+    | Fulfilled _ ->
+      ()
+
+    | Pending callbacks ->
+      add_cancel_callback callbacks f
 
 
 
   let on_success p f =
     let Internal p = to_internal_promise p in
+    let p = underlying p in
 
-    match (underlying p).state with
-    | Fulfilled v ->
-      handle_with_async_exception_hook f v
-    | Rejected _ ->
-      ()
-
-    | Pending p_callbacks ->
+    let callback_if_deferred () =
       let saved_storage = !current_storage in
 
-      let callback result =
+      fun result ->
         match result with
         | Fulfilled v ->
           current_storage := saved_storage;
           handle_with_async_exception_hook f v
+
         | Rejected _ ->
           ()
-      in
+    in
+
+    match p.state with
+    | Fulfilled v ->
+      run_callback_or_defer_it
+        ~run_immediately_and_ensure_tail_call:true
+        ~callback:(fun () -> handle_with_async_exception_hook f v)
+        ~if_deferred:(fun () ->
+          let callback = callback_if_deferred () in
+          ((), callback, p.state))
+
+    | Rejected _ ->
+      ()
+
+    | Pending p_callbacks ->
+      let callback = callback_if_deferred () in
       add_implicitly_removed_callback p_callbacks callback
 
   let on_failure p f =
     let Internal p = to_internal_promise p in
+    let p = underlying p in
 
-    match (underlying p).state with
-    | Fulfilled _ ->
-      ()
-    | Rejected exn ->
-      handle_with_async_exception_hook f exn
-
-    | Pending p_callbacks ->
+    let callback_if_deferred () =
       let saved_storage = !current_storage in
 
-      let callback result =
+      fun result ->
         match result with
         | Fulfilled _ ->
           ()
+
         | Rejected exn ->
           current_storage := saved_storage;
           handle_with_async_exception_hook f exn
-      in
+    in
+
+    match p.state with
+    | Fulfilled _ ->
+      ()
+
+    | Rejected exn ->
+      run_callback_or_defer_it
+        ~run_immediately_and_ensure_tail_call:true
+        ~callback:(fun () -> handle_with_async_exception_hook f exn)
+        ~if_deferred:(fun () ->
+          let callback = callback_if_deferred () in
+          ((), callback, p.state))
+
+    | Pending p_callbacks ->
+      let callback = callback_if_deferred () in
       add_implicitly_removed_callback p_callbacks callback
 
   let on_termination p f =
     let Internal p = to_internal_promise p in
+    let p = underlying p in
 
-    match (underlying p).state with
-    | Fulfilled _ ->
-      handle_with_async_exception_hook f ()
-    | Rejected _ ->
-      handle_with_async_exception_hook f ()
-
-    | Pending p_callbacks ->
+    let callback_if_deferred () =
       let saved_storage = !current_storage in
 
-      let callback _result =
+      fun _result ->
         current_storage := saved_storage;
         handle_with_async_exception_hook f ()
-      in
+    in
+
+    match p.state with
+    | Fulfilled _ ->
+      run_callback_or_defer_it
+        ~run_immediately_and_ensure_tail_call:true
+        ~callback:(fun () -> handle_with_async_exception_hook f ())
+        ~if_deferred:(fun () ->
+          let callback = callback_if_deferred () in
+          ((), callback, p.state))
+
+    | Rejected _ ->
+      run_callback_or_defer_it
+      ~run_immediately_and_ensure_tail_call:true
+        ~callback:(fun () -> handle_with_async_exception_hook f ())
+        ~if_deferred:(fun () ->
+          let callback = callback_if_deferred () in
+          ((), callback, p.state))
+
+    | Pending p_callbacks ->
+      let callback = callback_if_deferred () in
       add_implicitly_removed_callback p_callbacks callback
 
   let on_any p f g =
     let Internal p = to_internal_promise p in
+    let p = underlying p in
 
-    match (underlying p).state with
-    | Fulfilled v ->
-      handle_with_async_exception_hook f v
-    | Rejected exn ->
-      handle_with_async_exception_hook g exn
-
-    | Pending p_callbacks ->
+    let callback_if_deferred () =
       let saved_storage = !current_storage in
 
-      let callback result =
+      fun result ->
         match result with
         | Fulfilled v ->
           current_storage := saved_storage;
           handle_with_async_exception_hook f v
+
         | Rejected exn ->
           current_storage := saved_storage;
           handle_with_async_exception_hook g exn
-      in
+    in
+
+    match p.state with
+    | Fulfilled v ->
+      run_callback_or_defer_it
+        ~run_immediately_and_ensure_tail_call:true
+        ~callback:(fun () -> handle_with_async_exception_hook f v)
+        ~if_deferred:(fun () ->
+          let callback = callback_if_deferred () in
+          ((), callback, p.state))
+
+    | Rejected exn ->
+      run_callback_or_defer_it
+        ~run_immediately_and_ensure_tail_call:true
+        ~callback:(fun () -> handle_with_async_exception_hook g exn)
+        ~if_deferred:(fun () ->
+          let callback = callback_if_deferred () in
+          ((), callback, p.state))
+
+    | Pending p_callbacks ->
+      let callback = callback_if_deferred () in
       add_implicitly_removed_callback p_callbacks callback
 end
 include Sequential_composition
