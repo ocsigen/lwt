@@ -1046,6 +1046,10 @@ open Pending_callbacks
 
 module Resolution_loop :
 sig
+  (* All user-provided callbacks are called by Lwt only through this module. It
+     tracks the current callback stack depth, and decides whether each callback
+     call should be deferred or not. *)
+
   (* Internal interface used only in this module Lwt *)
   val resolve :
     ?allow_deferring:bool ->
@@ -1054,23 +1058,20 @@ sig
     'a resolved_state ->
       ('a, underlying, resolved) state_changed
 
+  val run_callbacks_or_defer_them :
+    ?allow_deferring:bool ->
+    ?maximum_callback_nesting_depth:int ->
+    ('a callbacks) ->
+    'a resolved_state ->
+      unit
+
   val handle_with_async_exception_hook : ('a -> unit) -> 'a -> unit
 
   (* Internal interface exposed to other modules in Lwt *)
   val abandon_wakeups : unit -> unit
 
   (* Public interface *)
-  val wakeup_later_result : 'a u -> 'a lwt_result -> unit
-  val wakeup_later : 'a u -> 'a -> unit
-  val wakeup_later_exn : _ u -> exn -> unit
-
-  val wakeup_result : 'a u -> 'a lwt_result -> unit
-  val wakeup : 'a u -> 'a -> unit
-  val wakeup_exn : _ u -> exn -> unit
-
   exception Canceled
-
-  val cancel : 'a t -> unit
 
   val async_exception_hook : (exn -> unit) ref
 end =
@@ -1255,9 +1256,24 @@ struct
       ?allow_deferring ?maximum_callback_nesting_depth callbacks result;
 
     p
+end
+include Resolution_loop
 
 
 
+module Resolving :
+sig
+  val wakeup_later_result : 'a u -> 'a lwt_result -> unit
+  val wakeup_later : 'a u -> 'a -> unit
+  val wakeup_later_exn : _ u -> exn -> unit
+
+  val wakeup_result : 'a u -> 'a lwt_result -> unit
+  val wakeup : 'a u -> 'a -> unit
+  val wakeup_exn : _ u -> exn -> unit
+
+  val cancel : 'a t -> unit
+end =
+struct
   (* Note that this function deviates from the "ideal" callback deferral
      behavior: it runs callbacks directly on the current stack. It should
      therefore be possible to cause a stack overflow using this function. *)
@@ -1369,7 +1385,7 @@ struct
       run_callbacks_or_defer_them
         ~allow_deferring:false callbacks canceled_result)
 end
-include Resolution_loop
+include Resolving
 
 
 
