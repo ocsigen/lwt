@@ -1073,33 +1073,7 @@ sig
   val async_exception_hook : (exn -> unit) ref
 end =
 struct
-  (* Every now and then, Lwt enters the promise resolution loop. In this loop,
-     Lwt sets the state of one promise to [Fulfilled _] or [Rejected _], i.e.
-     resolves it. That triggers the running of its callbacks. The callbacks
-     might, in turn, resolve more promises, triggering more callbacks, and so
-     on. The process continues until Lwt runs out of promises that it can
-     immediately resolve, typically because all the remaining promises, whether
-     pre-existing or created during the loop, are blocked on I/O. So, the
-     resolution loop is started by resolving one promise, and then Lwt eagerly
-     resolves as many more promises as it can.
-
-     The loop is triggered by calling [Lwt.wakeup_later] and related functions.
-     Lwt maintains a queue of callbacks that need to be run.
-     [Lwt.wakeup_later p _] places the callbacks of [p] onto that queue. Lwt
-     then dequeues the callbacks and runs each one. As each one runs, if it
-     resolves more promises, those promises' callbacks are added to the queue
-     as well. Lwt eventually runs them, and so on.
-
-     Current Lwt is not quite as clean as suggested by the above description.
-     See [Lwt.wakeup], [Lwt.resolve], [Lwt.cancel], and [Lwt.bind] for notes on
-     deviations from this idealized procedure. Basically, all the deviations
-     involve running callbacks immediately on the current stack, instead of
-     deferring them by placing them into the queue. Maintainer's note: these are
-     probably mistakes, as they create the potential for stack overflow. See
-     discussion in:
-
-       https://github.com/ocsigen/lwt/issues/329
-
+  (*
      * Context
 
      The resolution loop handles only promises that can be resolved
