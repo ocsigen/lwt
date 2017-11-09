@@ -71,14 +71,20 @@ let test_exception list_combinator =
     | _ -> Lwt.return ()
   in
 
-  try
-    list_combinator callback [(); (); ()] |> ignore;
-    (* The combinator is expected to leak E.Exception, so this assertion should
-       not be reached. *)
-    assert false
-  with
-    | Exception -> ()
-    | _ -> assert false
+  (* Even though the callback will raise immediately for one of the list
+     elements, we expect the final promise that represents the entire list
+     operation to be created (and rejected with the raised exception). The
+     raised exception should not be leaked up past the creation of the
+     promise. *)
+  let p =
+    try
+      list_combinator callback [(); (); ()]
+    with _exn ->
+      assert false
+  in
+
+  (* Check that the promise was rejected with the expected exception. *)
+  assert (Lwt.state p = Lwt.Fail Exception)
 
 let test_map f test_list =
   let t, w = Lwt.wait () in
