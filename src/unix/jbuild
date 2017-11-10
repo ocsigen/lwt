@@ -87,7 +87,7 @@
   (synopsis "Unix support for Lwt")
   (optional)
   (wrapped false)
-  (libraries (lwt lwt.log unix bigarray))
+  (libraries (bigarray lwt lwt.log unix threads))
   (preprocess (pps (bisect_ppx -conditional)))
   (flags (:standard -w +A-29))
   (c_names (

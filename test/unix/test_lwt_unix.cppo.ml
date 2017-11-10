@@ -698,6 +698,18 @@ let dir_tests = [
     );
 ]
 
+let lwt_preemptive_tests = [
+  test "run_in_main" begin fun () ->
+    let f () =
+      Lwt_preemptive.run_in_main (fun () ->
+        Lwt_unix.sleep 0.01 >>= fun () ->
+        Lwt.return 42)
+    in
+    Lwt_preemptive.detach f () >>= fun x ->
+    Lwt.return (x = 42)
+  end;
+]
+
 let suite =
   suite "lwt_unix"
     (openfile_tests @
@@ -706,5 +718,6 @@ let suite =
      readv_tests @
      writev_tests @
      bind_tests @
-     dir_tests
+     dir_tests @
+     lwt_preemptive_tests
     )

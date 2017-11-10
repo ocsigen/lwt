@@ -52,21 +52,8 @@ package "omp" (
 package "preemptive" (
   #directory = "preemptive"
   version = "dev"
-  description = "Preemptive thread support for Lwt"
-  requires = "bigarray
-              bytes
-              lwt
-              lwt.log
-              lwt.unix
-              result
-              threads
-              threads.posix
-              unix"
-  archive(byte) = "lwt_preemptive.cma"
-  archive(native) = "lwt_preemptive.cmxa"
-  plugin(byte) = "lwt_preemptive.cma"
-  plugin(native) = "lwt_preemptive.cmxs"
-  exists_if = "lwt_preemptive.cma"
+  description = "Preemptive thread support for Lwt (deprecated; use lwt.unix)"
+  requires = "lwt.unix"
 )
 
 package "simple-top" (
@@ -129,7 +116,7 @@ package "unix" (
   #directory = "unix"
   version = "dev"
   description = "Unix support for Lwt"
-  requires = "bigarray bytes lwt lwt.log result unix"
+  requires = "bigarray bytes lwt lwt.log result threads unix"
   archive(byte) = "lwt_unix.cma"
   archive(native) = "lwt_unix.cmxa"
   plugin(byte) = "lwt_unix.cma"
