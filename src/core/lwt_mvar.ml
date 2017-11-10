@@ -26,6 +26,12 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *)
 
+(* [Lwt_sequnece] is deprecated to prevent users from using it, but it is used
+   internally by Lwt. *)
+[@@@ocaml.warning "-3"]
+module Lwt_sequence = Lwt_sequence
+[@@@ocaml.warning "+3"]
+
 type 'a t = {
   mutable mvar_contents : 'a option;
   (* Current contents *)
@@ -82,7 +88,7 @@ let take_available mvar =
 let take mvar =
   match take_available mvar with
   | Some v -> Lwt.return v
-  | None -> Lwt.add_task_r mvar.readers
+  | None -> (Lwt.add_task_r [@ocaml.warning "-3"]) mvar.readers
 
 let is_empty mvar =
   match mvar.mvar_contents with

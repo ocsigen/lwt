@@ -19,6 +19,12 @@
  * 02111-1307, USA.
  *)
 
+(* [Lwt_sequnece] is deprecated to prevent users from using it, but it is used
+   internally by Lwt. *)
+[@@@ocaml.warning "-3"]
+module Lwt_sequence = Lwt_sequence
+[@@@ocaml.warning "+3"]
+
 open Lwt.Infix
 
 let rec copy ic logger =

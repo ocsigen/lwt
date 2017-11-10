@@ -19,6 +19,12 @@
  * 02111-1307, USA.
  *)
 
+(* [Lwt_sequnece] is deprecated to prevent users from using it, but it is used
+   internally by Lwt. *)
+[@@@ocaml.warning "-3"]
+module Lwt_sequence = Lwt_sequence
+[@@@ocaml.warning "+3"]
+
 let ensure_termination t =
   if Lwt.state t = Lwt.Sleep then begin
     let hook = Lwt_sequence.add_l (fun _ -> t) Lwt_main.exit_hooks in

@@ -381,6 +381,14 @@
 
 
 
+(* [Lwt_sequnece] is deprecated to prevent users from using it, but it is used
+   internally by Lwt. *)
+[@@@ocaml.warning "-3"]
+module Lwt_sequence = Lwt_sequence
+[@@@ocaml.warning "+3"]
+
+
+
 (* Some sequence-associated storage types
 
    Sequence-associated storage is defined and documented later, in module

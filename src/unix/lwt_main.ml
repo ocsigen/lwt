@@ -19,13 +19,19 @@
  * 02111-1307, USA.
  *)
 
+(* [Lwt_sequnece] is deprecated to prevent users from using it, but it is used
+   internally by Lwt. *)
+[@@@ocaml.warning "-3"]
+module Lwt_sequence = Lwt_sequence
+[@@@ocaml.warning "+3"]
+
 open Lwt.Infix
 
 let enter_iter_hooks = Lwt_sequence.create ()
 let leave_iter_hooks = Lwt_sequence.create ()
 let yielded = Lwt_sequence.create ()
 
-let yield () = Lwt.add_task_r yielded
+let yield () = (Lwt.add_task_r [@ocaml.warning "-3"]) yielded
 
 let rec run t =
   (* Wakeup paused threads now. *)

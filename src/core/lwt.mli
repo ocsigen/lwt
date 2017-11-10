@@ -1621,7 +1621,12 @@ val waiter_of_wakener : 'a u -> 'a t
 
 (** {3 Linked lists of promises} *)
 
+[@@@ocaml.warning "-3"]
+
 val add_task_r : ('a u) Lwt_sequence.t -> 'a t
+  [@@ocaml.deprecated
+" Deprecated because Lwt_sequence is an implementation detail of Lwt. See
+  https://github.com/ocsigen/lwt/issues/361"]
 (** [Lwt.add_task_r sequence] is equivalent to
 
 {[
@@ -1638,8 +1643,13 @@ p
       optimization, which may be removed. *)
 
 val add_task_l : ('a u) Lwt_sequence.t -> 'a t
+  [@@ocaml.deprecated
+" Deprecated because Lwt_sequence is an implementation detail of Lwt. See
+  https://github.com/ocsigen/lwt/issues/361"]
 (** Like {!Lwt.add_task_r}, but the equivalent code calls {!Lwt_sequence.add_l}
     instead. *)
+
+[@@@ocaml.warning "+3"]
 
 
 

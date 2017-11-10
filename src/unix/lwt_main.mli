@@ -43,6 +43,8 @@ val yield : unit -> unit Lwt.t
   (** [yield ()] is a threads which suspends itself and then resumes
       as soon as possible and terminates. *)
 
+[@@@ocaml.warning "-3"]
+
 val enter_iter_hooks : (unit -> unit) Lwt_sequence.t
   (** Functions that are called before the main iteration. *)
 
@@ -55,6 +57,8 @@ val exit_hooks : (unit -> unit Lwt.t) Lwt_sequence.t
       Notes:
       - each hook is called exactly one time
       - exceptions raised by hooks are ignored *)
+
+[@@@ocaml.warning "+3"]
 
 val at_exit : (unit -> unit Lwt.t) -> unit
   (** [at_exit hook] adds hook at the left of [exit_hooks]*)

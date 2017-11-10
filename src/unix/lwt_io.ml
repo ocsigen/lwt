@@ -19,6 +19,12 @@
  * 02111-1307, USA.
  *)
 
+(* [Lwt_sequnece] is deprecated to prevent users from using it, but it is used
+   internally by Lwt. *)
+[@@@ocaml.warning "-3"]
+module Lwt_sequence = Lwt_sequence
+[@@@ocaml.warning "+3"]
+
 open Lwt.Infix
 
 exception Channel_closed of string
@@ -372,7 +378,7 @@ let primitive f wrapper = match wrapper.state with
          Lwt.return_unit)
 
   | Busy_primitive | Busy_atomic _ | Waiting_for_busy ->
-    Lwt.add_task_r wrapper.queued >>= fun () ->
+    (Lwt.add_task_r [@ocaml.warning "-3"]) wrapper.queued >>= fun () ->
     begin match wrapper.state with
       | Closed ->
         (* The channel has been closed while we were waiting *)
@@ -416,7 +422,7 @@ let atomic f wrapper = match wrapper.state with
          Lwt.return_unit)
 
   | Busy_primitive | Busy_atomic _ | Waiting_for_busy ->
-    Lwt.add_task_r wrapper.queued >>= fun () ->
+    (Lwt.add_task_r [@ocaml.warning "-3"]) wrapper.queued >>= fun () ->
     begin match wrapper.state with
       | Closed ->
         (* The channel has been closed while we were waiting *)

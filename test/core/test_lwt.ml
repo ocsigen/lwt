@@ -20,6 +20,12 @@
  * 02111-1307, USA.
  *)
 
+(* [Lwt_sequnece] is deprecated to prevent users from using it, but it is used
+   internally by Lwt. *)
+[@@@ocaml.warning "-3"]
+module Lwt_sequence = Lwt_sequence
+[@@@ocaml.warning "+3"]
+
 open Test
 
 
@@ -3311,8 +3317,8 @@ let lwt_sequence_contains sequence list =
 let lwt_sequence_tests = suite "add_task_l and add_task_r" [
   test "add_task_r" begin fun () ->
     let sequence = Lwt_sequence.create () in
-    let p = Lwt.add_task_r sequence in
-    let p' = Lwt.add_task_r sequence in
+    let p = (Lwt.add_task_r [@ocaml.warning "-3"]) sequence in
+    let p' = (Lwt.add_task_r [@ocaml.warning "-3"]) sequence in
     assert (Lwt.state p = Lwt.Sleep);
     assert (lwt_sequence_contains sequence [Obj.magic p; Obj.magic p']);
     Lwt.cancel p;
@@ -3323,8 +3329,8 @@ let lwt_sequence_tests = suite "add_task_l and add_task_r" [
 
   test "add_task_l" begin fun () ->
     let sequence = Lwt_sequence.create () in
-    let p = Lwt.add_task_l sequence in
-    let p' = Lwt.add_task_l sequence in
+    let p = (Lwt.add_task_l [@ocaml.warning "-3"]) sequence in
+    let p' = (Lwt.add_task_l [@ocaml.warning "-3"]) sequence in
     assert (Lwt.state p = Lwt.Sleep);
     assert (lwt_sequence_contains sequence [Obj.magic p'; Obj.magic p]);
     Lwt.cancel p;

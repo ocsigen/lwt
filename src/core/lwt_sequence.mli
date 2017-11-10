@@ -34,6 +34,10 @@
    doubly-linked list library as an alternative.
 *)
 
+[@@@ocaml.deprecated
+" This module is an implementation detail of Lwt. See
+   https://github.com/ocsigen/lwt/issues/361"]
+
 type 'a t
   (** Type of a sequence holding values of type ['a] *)
 

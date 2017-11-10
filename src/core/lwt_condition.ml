@@ -26,12 +26,18 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *)
 
+(* [Lwt_sequnece] is deprecated to prevent users from using it, but it is used
+   internally by Lwt. *)
+[@@@ocaml.warning "-3"]
+module Lwt_sequence = Lwt_sequence
+[@@@ocaml.warning "+3"]
+
 type 'a t = 'a Lwt.u Lwt_sequence.t
 
 let create = Lwt_sequence.create
 
 let wait ?mutex cvar =
-  let waiter = Lwt.add_task_r cvar in
+  let waiter = (Lwt.add_task_r [@ocaml.warning "-3"]) cvar in
   let () =
     match mutex with
     | Some m -> Lwt_mutex.unlock m

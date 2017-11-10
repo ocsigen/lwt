@@ -20,6 +20,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *)
 
+(* [Lwt_sequnece] is deprecated to prevent users from using it, but it is used
+   internally by Lwt. *)
+[@@@ocaml.warning "-3"]
+module Lwt_sequence = Lwt_sequence
+[@@@ocaml.warning "+3"]
+
 open Lwt.Infix
 
 (*
@@ -131,7 +137,7 @@ let acquire p =
       create_member p
     else
       (* Limit reached: wait for a free one. *)
-      Lwt.add_task_r p.waiters >>= check_elt p
+      (Lwt.add_task_r [@ocaml.warning "-3"]) p.waiters >>= check_elt p
   else
     (* Take the first free member and validate it. *)
     let c = Queue.take p.list in

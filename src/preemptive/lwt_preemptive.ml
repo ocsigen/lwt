@@ -20,6 +20,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *)
 
+(* [Lwt_sequnece] is deprecated to prevent users from using it, but it is used
+   internally by Lwt. *)
+[@@@ocaml.warning "-3"]
+module Lwt_sequence = Lwt_sequence
+[@@@ocaml.warning "+3"]
+
 open Lwt.Infix
 
 (* +-----------------------------------------------------------------+
@@ -143,7 +149,7 @@ let get_worker () =
   else if !threads_count < !max_threads then
     Lwt.return (make_worker ())
   else
-    Lwt.add_task_r waiters
+    (Lwt.add_task_r [@ocaml.warning "-3"]) waiters
 
 (* +-----------------------------------------------------------------+
    | Initialisation, and dynamic parameters reset                    |
