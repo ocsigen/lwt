@@ -174,7 +174,7 @@ let initial_promise_tests = suite "initial promises" [
 
   test "waiter_of_wakener" begin fun () ->
     let p, r = Lwt.wait () in
-    Lwt.return (Lwt.waiter_of_wakener r == p)
+    Lwt.return ((Lwt.waiter_of_wakener [@ocaml.warning "-3"]) r == p)
   end;
 ]
 let suites = suites @ [initial_promise_tests]

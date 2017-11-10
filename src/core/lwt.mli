@@ -1607,6 +1607,10 @@ val make_error : exn -> _ result
     {{: https://opam.ocaml.org/packages/result/} [result]}. *)
 
 val waiter_of_wakener : 'a u -> 'a t
+  [@@ocaml.deprecated
+" This function should be avoided, because it makes subtyping of resolvers
+ unsound. See
+  https://github.com/ocsigen/lwt/issues/458"]
 (** [Lwt.waiter_of_wakener r] evaluates to the promise associated with resolver
     [r].
 

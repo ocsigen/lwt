@@ -145,7 +145,7 @@ let from_direct f =
   from_source (From_direct f)
 
 let closed s =
-  Lwt.waiter_of_wakener s.close
+  (Lwt.waiter_of_wakener [@ocaml.warning "-3"]) s.close
 
 let is_closed s =
   not (Lwt.is_sleeping (closed s))
@@ -181,7 +181,8 @@ let create_with_reference () =
   let close = t.close and last = t.last in
   (* The push function. It does not keep a reference to the stream. *)
   let push x =
-    if not (Lwt.is_sleeping (Lwt.waiter_of_wakener close)) then raise Closed;
+    let waiter_of_wakener = Lwt.waiter_of_wakener [@ocaml.warning "-3"] in
+    if not (Lwt.is_sleeping (waiter_of_wakener close)) then raise Closed;
     (* Push the element at the end of the queue. *)
     enqueue' x last;
     (* Send a signal if at least one thread is waiting for a new
