@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *)
 
-(* [Lwt_sequnece] is deprecated to prevent users from using it, but it is used
+(* [Lwt_sequence] is deprecated to prevent users from using it, but it is used
    internally by Lwt. *)
 [@@@ocaml.warning "-3"]
 module Lwt_sequence = Lwt_sequence
@@ -28,18 +28,13 @@ module Lwt_sequence = Lwt_sequence
 
 open Lwt.Infix
 
-(*
-XXX Close after some timeout
-...
-*)
-
 type 'a t = {
   create : unit -> 'a Lwt.t;
   (* Create a new pool member. *)
   check : 'a -> (bool -> unit) -> unit;
-  (* Check a member when its use failed. *)
+  (* Check validity of a pool member when use resulted in failed promise. *)
   validate : 'a -> bool Lwt.t;
-  (* Validate old pool members. *)
+  (* Validate an existing free pool member before use. *)
   dispose : 'a -> unit Lwt.t;
   (* Dispose of a pool member. *)
   cleared : bool ref ref;
@@ -51,7 +46,7 @@ type 'a t = {
   list : 'a Queue.t;
   (* Available pool members. *)
   waiters : 'a Lwt.u Lwt_sequence.t;
-  (* Threads waiting for a member. *)
+  (* Promise resolvers waiting for a free member. *)
 }
 
 let create m ?(validate = fun _ -> Lwt.return_true) ?(check = fun _ f -> f true) ?(dispose = fun _ -> Lwt.return_unit) create =
@@ -65,10 +60,11 @@ let create m ?(validate = fun _ -> Lwt.return_true) ?(check = fun _ f -> f true)
     list = Queue.create ();
     waiters = Lwt_sequence.create () }
 
+(* Create a pool member. *)
 let create_member p =
   Lwt.catch
     (fun () ->
-       (* Must be done before p.create to prevent other threads from
+       (* Must be done before p.create to prevent other resolvers from
           creating new members if the limit is reached. *)
        p.count <- p.count + 1;
        p.create ())
@@ -81,24 +77,24 @@ let create_member p =
 let release p c =
   match Lwt_sequence.take_opt_l p.waiters with
   | Some wakener ->
-    (* A thread is waiting, give it the pool member. *)
+    (* A promise resolver is waiting, give it the pool member. *)
     Lwt.wakeup_later wakener c
   | None ->
     (* No one is waiting, queue it. *)
     Queue.push c p.list
 
-(* Dispose of a pool member *)
+(* Dispose of a pool member. *)
 let dispose p c =
   p.dispose c >>= fun () ->
   p.count <- p.count - 1;
   Lwt.return_unit
 
 (* Create a new member when one is thrown away. *)
-let replace_acquired p =
+let replace_disposed p =
   match Lwt_sequence.take_opt_l p.waiters with
   | None ->
     (* No one is waiting, do not create a new member to avoid
-       loosing an error if creation fails. *)
+       losing an error if creation fails. *)
     ()
   | Some wakener ->
     Lwt.on_any
@@ -109,9 +105,8 @@ let replace_acquired p =
          (* Creation failed, notify the waiter of the failure. *)
          Lwt.wakeup_later_exn wakener exn)
 
-(* Verify a member is still valid before releasing it; try to replace
-   if it's invalid. *)
-let check_elt p c =
+(* Verify a member is still valid before using it. *)
+let validate_and_return p c =
   Lwt.try_bind
       (fun () ->
          p.validate c)
@@ -124,11 +119,12 @@ let check_elt p c =
           create_member p)
       (fun e ->
          (* Validation failed: create a new member if at least one
-            thread is waiting. *)
+            resolver is waiting. *)
          dispose p c >>= fun () ->
-         replace_acquired p;
+         replace_disposed p;
          Lwt.fail e)
 
+(* Acquire a pool member. *)
 let acquire p =
   if Queue.is_empty p.list then
     (* No more available member. *)
@@ -137,14 +133,15 @@ let acquire p =
       create_member p
     else
       (* Limit reached: wait for a free one. *)
-      (Lwt.add_task_r [@ocaml.warning "-3"]) p.waiters >>= check_elt p
+      (Lwt.add_task_r [@ocaml.warning "-3"]) p.waiters >>= validate_and_return p
   else
     (* Take the first free member and validate it. *)
     let c = Queue.take p.list in
-    check_elt p c
+    validate_and_return p c
 
-(* Release a member when its use failed. *)
-let checked_release p c cleared =
+(* Release a member when use resulted in failed promise if the member
+   is still valid. *)
+let check_and_release p c cleared =
   let ok = ref false in
   p.check c (fun result -> ok := result);
   if cleared || not !ok then (
@@ -166,7 +163,7 @@ let use p f =
     Lwt.catch
       (fun () -> f c)
       (fun e ->
-         checked_release p c !cleared >>= fun () ->
+         check_and_release p c !cleared >>= fun () ->
          Lwt.fail e)
   in
   promise >>= fun _ ->
