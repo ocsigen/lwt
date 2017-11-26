@@ -2971,6 +2971,7 @@ static value result_getnameinfo(struct job_getnameinfo *job)
         vres = caml_alloc_small(2, 0);
         Field(vres, 0) = vhost;
         Field(vres, 1) = vserv;
+        lwt_unix_free_job(&job->job);
         CAMLreturn(vres);
     }
 }
