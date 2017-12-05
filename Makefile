@@ -111,6 +111,6 @@ coverage: clean
 	BISECT_ENABLE=yes jbuilder runtest --dev
 	bisect-ppx-report \
 	    -I _build/default/ -html _coverage/ \
-		-text - -summary-only \
+	    -text - -summary-only \
 	    $(BISECT_FILES_PATTERN)
 	@echo See _coverage/index.html
