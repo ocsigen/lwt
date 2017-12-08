@@ -104,7 +104,6 @@ clean:
 	rm -rf _coverage/
 
 BISECT_FILES_PATTERN := _build/default/test/*/bisect*.out
-BISECT_REPORT := bisect-ppx-report
 
 .PHONY: coverage
 coverage: clean
