@@ -20,11 +20,6 @@ matrix:
       env: COMPILER=system
     - os: osx
       env: COMPILER=system LIBEV=no
-    - os: osx
-      # A 4.04 binary is not yet available.
-      env: COMPILER=4.03 PACKAGE_MANAGER=macports
-    - os: osx
-      env: COMPILER=4.03 PACKAGE_MANAGER=macports LIBEV=no
 
   fast_finish: true
 

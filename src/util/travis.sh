@@ -52,6 +52,9 @@ packages_homebrew () {
     fi
 }
 
+# This code is dead for now – there is some upstream problem in MacPorts, so we
+# have disabled testing on it. If that is not fixed soon, this code should be
+# removed from this script.
 packages_macports () {
     eval `wget -q -O - https://aantron.github.io/binaries/macports/x86_64/macports/current/install.sh | bash`
     sudo port install pkgconfig gtk2 | cat
