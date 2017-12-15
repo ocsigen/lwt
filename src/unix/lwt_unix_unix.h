@@ -45,16 +45,6 @@
    | Test for readability/writability                                |
    +-----------------------------------------------------------------+ */
 
-CAMLprim value lwt_unix_readable(value fd)
-{
-    struct pollfd pollfd;
-    pollfd.fd = Int_val(fd);
-    pollfd.events = POLLIN;
-    pollfd.revents = 0;
-    if (poll(&pollfd, 1, 0) < 0) uerror("readable", Nothing);
-    return (Val_bool(pollfd.revents & POLLIN));
-}
-
 CAMLprim value lwt_unix_writable(value fd)
 {
     struct pollfd pollfd;
