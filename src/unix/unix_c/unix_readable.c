@@ -1,3 +1,5 @@
+#include "lwt_config.h"
+
 #if !defined(LWT_ON_WINDOWS)
 #include <caml/mlvalues.h>
 #include <caml/unixsupport.h>
