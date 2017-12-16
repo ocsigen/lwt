@@ -1,3 +1,4 @@
+#include "lwt_config.h"
 #include <caml/mlvalues.h>
 #include <caml/unixsupport.h>
 #include <caml/version.h>
