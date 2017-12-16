@@ -29,7 +29,7 @@ type command = string * string array
 
         {[
           ("ls", [|"ls"; "-l"|])
-        ]}.
+        ]}
 
         Notes:
 
@@ -51,7 +51,7 @@ type command = string * string array
 
         {[
           ("", [|"echo"; "foo"; "bar"|])
-        ]}.
+        ]}
     *)
 
 val shell : string -> command

@@ -297,8 +297,8 @@ type resource_usage = {
 }
 
 val wait4 : wait_flag list -> int -> (int * process_status * resource_usage) Lwt.t
-  (** [wait4 flags pid] returns [(pid, status, rusage)] where [(pid,
-      status)] is the same result as [Unix.waitpid flags pid], and
+  (** [wait4 flags pid] returns [(pid, status, rusage)] where [(pid, status)]
+      is the same result as [Unix.waitpid flags pid], and
       [rusage] contains accounting information about the child.
 
       On windows it will always returns [{ utime = 0.0; stime = 0.0 }]. *)

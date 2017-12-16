@@ -164,7 +164,7 @@ val ign_log_f : ?exn : exn -> ?section : section -> ?location : (string * int * 
 (** The following functions are the same as {!log} except that their
     name determines which level is used.
 
-    For example {!info msg} is the same as {!log ~level:Info msg}.
+    For example {!info}[ msg] is the same as {!log}[ ~level:Info msg].
 *)
 
 val debug : ?exn : exn -> ?section : section -> ?location : (string * int * int) -> ?logger : logger -> string -> unit Lwt.t

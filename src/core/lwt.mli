@@ -321,9 +321,10 @@ let () =
 
     In case your callback is just using the CPU for a really long time, you can
     insert a few calls to {!Lwt_main.yield} into it, and resume your computation
-    in callbacks of [yield]. This is basically the same as {!Lwt_unix.sleep 0.}
-    – it's a promise that will be resolved by {!Lwt_main.run} {e after} any
-    other I/O resolutions that are already in its queue.
+    in callbacks of [yield]. This is basically the same as
+    {!Lwt_unix.sleep}[ 0.] – it's a promise that will be resolved by
+    {!Lwt_main.run} {e after} any other I/O resolutions that are already in its
+    queue.
 
     {b (2)} The good implication is that all your callbacks run in a single
     thread. This means that in most situations, you don't have to worry about
@@ -1675,7 +1676,7 @@ val paused_count : unit -> int
     This function is intended for internal use by Lwt. *)
 
 val register_pause_notifier : (int -> unit) -> unit
-(** {Lwt.register_pause_notifier f} causes [f] to be called every time
+(** [Lwt.register_pause_notifier f] causes [f] to be called every time
     {!Lwt.pause} is called. The result of {!Lwt.paused_count}[ ()] is passed to
     [f].
 

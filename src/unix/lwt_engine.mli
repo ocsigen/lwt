@@ -99,8 +99,8 @@ class virtual abstract : object
 
   (** Notes:
 
-      - the callback passed to register methods is of type [unit ->
-      unit] and not [event -> unit]
+      - the callback passed to register methods is of type [unit -> unit]
+      and not [event -> unit]
       - register methods return a lazy value which unregisters the
       event when forced
   *)

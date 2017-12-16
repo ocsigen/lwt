@@ -47,8 +47,8 @@
       ...
     ]}
 
-    However, one may want to handle possible failures of [f ()], [g
-    ()] and [h ()], and disable all allocated resources if one of
+    However, one may want to handle possible failures of [f ()], [g ()]
+    and [h ()], and disable all allocated resources if one of
     these three threads fails. This may be hard since you have to
     remember which one failed and which one returned correctly.
 

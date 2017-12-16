@@ -50,7 +50,7 @@ let () =
 ]}
 
     As an alternative to this module, we suggest trying
-    {{: http://erratique.ch/software/logs/doc/Logs_lwt.html}[Logs_lwt] from the
+    {{: http://erratique.ch/software/logs/doc/Logs_lwt.html}[Logs_lwt]} from the
     {{: http://erratique.ch/software/logs} [logs]} library. *)
 
 include module type of Lwt_log_core
@@ -86,7 +86,7 @@ val syslog : ?template : template -> ?paths : string list -> facility : syslog_f
       which send message to the system logger.
 
       @param paths is a list of path to try for the syslogd socket. It
-             default to [\["/dev/log"; "/var/run/log"\]].
+             default to [["/dev/log"; "/var/run/log"]].
       @param template defaults to ["$(date) $(name)[$(pid)]: $(section): $(message)"]
   *)
 
