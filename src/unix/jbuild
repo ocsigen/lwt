@@ -122,7 +122,9 @@
     lwt_unix_job_truncate
     lwt_unix_job_unlink
     unix_readable
+    unix_writable
     windows_readable
+    windows_writable
   ))
   (install_c_headers (
     lwt_config
