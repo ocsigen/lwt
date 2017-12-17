@@ -2377,7 +2377,6 @@ let pick_tests = suite "pick" [
     Lwt.wakeup_later r1 ();
     Lwt.return (a.(0) = 1 && a.(1) = 2)
   end;]
-
 let suites = suites @ [pick_tests]
 
 let npick_tests = suite "npick" [
@@ -2471,7 +2470,6 @@ let npick_tests = suite "npick" [
     Lwt.return (a.(0) = 1 && a.(1) = 2)
   end;
 ]
-
 let suites = suites @ [npick_tests]
 
 let cancel_bind_tests = suite "cancel bind" [
