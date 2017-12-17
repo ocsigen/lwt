@@ -1706,11 +1706,12 @@ let choose_tests = suite "choose" [
     let rec repeat n =
       if n <= 0 then ()
       else
-        let p = Lwt.choose
-          [fst (Lwt.wait ());
-           Lwt.return "foo";
-           Lwt.fail Exception;
-           Lwt.return "bar"]
+        let p =
+          Lwt.choose
+            [fst (Lwt.wait ());
+             Lwt.return "foo";
+             Lwt.fail Exception;
+             Lwt.return "bar"]
         in
         begin match Lwt.state p with
         | Lwt.Return "foo" -> outcomes.(0) <- outcomes.(0) + 1
@@ -2313,11 +2314,12 @@ let pick_tests = suite "pick" [
     let rec repeat n =
       if n <= 0 then ()
       else
-        let p = Lwt.pick
-          [fst (Lwt.wait ());
-           Lwt.return "foo";
-           Lwt.fail Exception;
-           Lwt.return "bar"]
+        let p =
+          Lwt.pick
+            [fst (Lwt.wait ());
+             Lwt.return "foo";
+             Lwt.fail Exception;
+             Lwt.return "bar"]
         in
         begin match Lwt.state p with
         | Lwt.Return "foo" -> outcomes.(0) <- outcomes.(0) + 1
@@ -2371,12 +2373,24 @@ let pick_tests = suite "pick" [
     let p1, r1 = Lwt.task () in
     let p2, _ = Lwt.task () in
     let p3 = Lwt.pick [p1; p2] in
-    let _ = Lwt.catch (fun () -> p2)
-                      (fun _ -> a.(!i) <- 1; i := 1; Lwt.return ()) in
-    let _ = Lwt.bind p3 (fun _ -> a.(!i) <- 2; i := 1; Lwt.return ()) in
+    let _ =
+      Lwt.catch
+        (fun () -> p2)
+        (fun _ ->
+          a.(!i) <- 1;
+          i := 1;
+          Lwt.return ())
+    in
+    let _ =
+      Lwt.bind p3 (fun _ ->
+        a.(!i) <- 2;
+        i := 1;
+        Lwt.return ())
+    in
     Lwt.wakeup_later r1 ();
     Lwt.return (a.(0) = 1 && a.(1) = 2)
-  end;]
+  end;
+]
 let suites = suites @ [pick_tests]
 
 let npick_tests = suite "npick" [
@@ -2463,9 +2477,20 @@ let npick_tests = suite "npick" [
     let p1, r1 = Lwt.task () in
     let p2, _ = Lwt.task () in
     let p3 = Lwt.npick [p1; p2] in
-    let _ = Lwt.catch (fun () -> p2)
-                      (fun _ -> a.(!i) <- 1; i := 1; Lwt.return ()) in
-    let _ = Lwt.bind p3 (fun _ -> a.(!i) <- 2; i := 1; Lwt.return ()) in
+    let _ =
+      Lwt.catch
+        (fun () -> p2)
+        (fun _ ->
+          a.(!i) <- 1;
+          i := 1;
+          Lwt.return ())
+    in
+    let _ =
+      Lwt.bind p3 (fun _ ->
+        a.(!i) <- 2;
+        i := 1;
+        Lwt.return ())
+    in
     Lwt.wakeup_later r1 ();
     Lwt.return (a.(0) = 1 && a.(1) = 2)
   end;
