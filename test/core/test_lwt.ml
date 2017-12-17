@@ -2363,8 +2363,20 @@ let pick_tests = suite "pick" [
     Lwt.return
       (Lwt.state p1 = Lwt.Fail Lwt.Canceled &&
        Lwt.state p2 = Lwt.Fail Lwt.Canceled)
-  end;
-]
+    end;
+
+  test "cancellation/resolution order" begin fun () ->
+    let a = [|0; 0|] in
+    let i = ref 0 in
+    let p1, r1 = Lwt.task () in
+    let p2, _ = Lwt.task () in
+    let p3 = Lwt.pick [p1; p2] in
+    let _ = Lwt.catch (fun () -> p2)
+                      (fun _ -> a.(!i) <- 1; i := 1; Lwt.return ()) in
+    let _ = Lwt.bind p3 (fun _ -> a.(!i) <- 2; i := 1; Lwt.return ()) in
+    Lwt.wakeup_later r1 ();
+    Lwt.return (a.(0) = 1 && a.(1) = 2)
+  end;]
 let suites = suites @ [pick_tests]
 
 let npick_tests = suite "npick" [
@@ -2443,6 +2455,19 @@ let npick_tests = suite "npick" [
     Lwt.return
       (Lwt.state p1 = Lwt.Fail Lwt.Canceled &&
        Lwt.state p2 = Lwt.Fail Lwt.Canceled)
+ end;
+
+ test "cancellation/resolution order" begin fun () ->
+    let a = [|0; 0|] in
+    let i = ref 0 in
+    let p1, r1 = Lwt.task () in
+    let p2, _ = Lwt.task () in
+    let p3 = Lwt.npick [p1; p2] in
+    let _ = Lwt.catch (fun () -> p2)
+                      (fun _ -> a.(!i) <- 1; i := 1; Lwt.return ()) in
+    let _ = Lwt.bind p3 (fun _ -> a.(!i) <- 2; i := 1; Lwt.return ()) in
+    Lwt.wakeup_later r1 ();
+    Lwt.return (a.(0) = 1 && a.(1) = 2)
   end;
 ]
 let suites = suites @ [npick_tests]
