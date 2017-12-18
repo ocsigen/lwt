@@ -2838,6 +2838,17 @@ let cancel_finalize_tests = suite "cancel finalize" [
        Lwt.state p' = Lwt.Fail Lwt.Canceled)
   end;
 
+  test "task, canceled, cancel exception replaced" begin fun () ->
+    let p, _ = Lwt.task () in
+    let p' =
+      Lwt.finalize
+        (fun () -> p)
+        (fun () -> Lwt.fail Exception)
+    in
+    Lwt.cancel p;
+    Lwt.return (Lwt.state p' = Lwt.Fail Exception)
+  end;
+
   test "pending, wait, canceled" begin fun () ->
     let p1, r = Lwt.wait () in
     let p2, _ = Lwt.wait () in
