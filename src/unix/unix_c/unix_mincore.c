@@ -31,6 +31,8 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
+#include "lwt_unix.h"
+
 #ifdef __CYGWIN__
 LWT_NOT_AVAILABLE4(unix_mincore)
 #else
