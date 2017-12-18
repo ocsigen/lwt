@@ -23,6 +23,9 @@
 
 #if defined(LWT_ON_WINDOWS)
 
+#include <caml/mlvalues.h>
+#include <caml/unixsupport.h>
+
 CAMLprim value lwt_unix_get_page_size(value Unit)
 {
     SYSTEM_INFO si;

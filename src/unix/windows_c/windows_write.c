@@ -23,6 +23,10 @@
 
 #if defined(LWT_ON_WINDOWS)
 
+#include <caml/memory.h>
+#include <caml/mlvalues.h>
+#include <caml/unixsupport.h>
+
 CAMLprim value lwt_unix_write(value fd, value buf, value vofs, value vlen)
 {
     intnat ofs, len, written;
