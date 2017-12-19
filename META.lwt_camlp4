@@ -1,4 +1,4 @@
-version = "dev"
+version = "1.0.0"
 description = "Camlp4 syntax for Lwt (deprecated; use lwt_ppx)"
 requires = "camlp4 lwt_camlp4.options"
 archive(syntax, preprocessor) = "lwt_camlp4.cma"
@@ -8,7 +8,7 @@ archive(syntax, preprocessor, native, plugin) = "lwt_camlp4.cmxs"
 
 package "log" (
   directory = "log"
-  version = "dev"
+  version = "1.0.0"
   description = "Camlp4 syntax for Lwt logging (deprecated; use library logs)"
   requires = "camlp4 lwt_camlp4.options"
   archive(syntax, preprocessor) = "lwt_camlp4_log.cma"
@@ -19,7 +19,7 @@ package "log" (
 
 package "options" (
   directory = "options"
-  version = "dev"
+  version = "1.0.0"
   description = "Options for Lwt Camlp4 syntax extension (deprecated; use lwt_ppx)"
   requires = "camlp4"
   archive(syntax, preprocessor) = "lwt_camlp4_options.cma"
