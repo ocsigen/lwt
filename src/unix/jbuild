@@ -81,7 +81,7 @@
 ;; main library
 ;; Lwt_unix_jobs_generated and Lwt_config should be hidden
 
-(copy_files unix_c/*.c)
+(copy_files unix_c/*)
 (copy_files windows_c/*.c)
 
 (library
@@ -135,6 +135,12 @@
     windows_write
     unix_bytes_write
     windows_bytes_write
+    unix_readv_writev_utils
+    unix_iov_max
+    unix_writev
+    unix_writev_job
+    unix_readv
+    unix_readv_job
     not_available
   ))
   (install_c_headers (

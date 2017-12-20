@@ -1,6 +1,8 @@
 /* OCaml promise library
  * http://www.ocsigen.org/lwt
- * Copyright (C) 2010 Jérémie Dimino
+ * Copyright (C) 2009-2010 Jérémie Dimino
+ *               2009 Mauricio Fernandez
+ *               2010 Pierre Chambart
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -21,17 +23,12 @@
 
 #include "lwt_config.h"
 
-#if defined(LWT_ON_WINDOWS)
+#if !defined(LWT_ON_WINDOWS)
 
-#include "lwt_unix.h"
+#define _GNU_SOURCE
 
-LWT_NOT_AVAILABLE1(unix_readable)
-LWT_NOT_AVAILABLE1(unix_writable)
-LWT_NOT_AVAILABLE6(unix_madvise)
-LWT_NOT_AVAILABLE4(unix_mincore)
-LWT_NOT_AVAILABLE1(unix_iov_max)
-LWT_NOT_AVAILABLE3(unix_writev)
-LWT_NOT_AVAILABLE3(unix_writev_job)
-LWT_NOT_AVAILABLE3(unix_readv)
-LWT_NOT_AVAILABLE3(unix_readv_job)
+#include <caml/mlvalues.h>
+#include <limits.h>
+
+CAMLprim value lwt_unix_iov_max(value unit) { return Val_int(IOV_MAX); }
 #endif
