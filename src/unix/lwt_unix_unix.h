@@ -43,9 +43,6 @@
 
 #include "unix_recv_send_utils.h"
 
-
-
-
 /* +-----------------------------------------------------------------+
    | Credentials                                                     |
    +-----------------------------------------------------------------+ */
@@ -2192,7 +2189,7 @@ static value cst_to_constr(int n, int *tbl, int size, int deflt)
         if (n == tbl[i]) return Val_int(i);
     return Val_int(deflt);
 }
-
+// TODO remember to include unix_recv_send_utils.h for socket_domain_table
 static value convert_addrinfo(struct addrinfo *a)
 {
     CAMLparam0();
@@ -2241,6 +2238,7 @@ static value result_getaddrinfo(struct job_getaddrinfo *job)
     lwt_unix_free_job(&job->job);
     CAMLreturn(vres);
 }
+// TODO remember to include unix_recv_send_utils.h for socket_domain_table
 
 CAMLprim value lwt_unix_getaddrinfo_job(value node, value service, value hints)
 {
