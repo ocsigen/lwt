@@ -21,6 +21,7 @@
  * 02111-1307, USA.
  */
 
+#pragma once
 #include "lwt_config.h"
 
 /*
