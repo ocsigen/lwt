@@ -141,6 +141,21 @@
     unix_writev_job
     unix_readv
     unix_readv_job
+    unix_send
+    unix_bytes_send
+    unix_recv
+    unix_bytes_recv
+    unix_recvfrom
+    unix_bytes_recvfrom
+    unix_sendto
+    unix_sendto_byte
+    unix_bytes_sendto
+    unix_bytes_sendto_byte
+    unix_recv_send_utils
+    unix_recv_msg
+    unix_bytes_recv_msg
+    unix_send_msg
+    unix_bytes_send_msg
     not_available
   ))
   (install_c_headers (

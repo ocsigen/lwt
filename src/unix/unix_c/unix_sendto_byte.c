@@ -1,6 +1,8 @@
 /* OCaml promise library
  * http://www.ocsigen.org/lwt
- * Copyright (C) 2010 Jérémie Dimino
+ * Copyright (C) 2009-2010 Jérémie Dimino
+ *               2009 Mauricio Fernandez
+ *               2010 Pierre Chambart
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as
@@ -21,31 +23,16 @@
 
 #include "lwt_config.h"
 
-#if defined(LWT_ON_WINDOWS)
+#if !defined(LWT_ON_WINDOWS)
 
-#include "lwt_unix.h"
+#include <caml/mlvalues.h>
 
-LWT_NOT_AVAILABLE1(unix_readable)
-LWT_NOT_AVAILABLE1(unix_writable)
-LWT_NOT_AVAILABLE6(unix_madvise)
-LWT_NOT_AVAILABLE4(unix_mincore)
-LWT_NOT_AVAILABLE1(unix_iov_max)
-LWT_NOT_AVAILABLE3(unix_writev)
-LWT_NOT_AVAILABLE3(unix_writev_job)
-LWT_NOT_AVAILABLE3(unix_readv)
-LWT_NOT_AVAILABLE3(unix_readv_job)
-LWT_NOT_AVAILABLE5(unix_recv)
-LWT_NOT_AVAILABLE5(unix_send)
-LWT_NOT_AVAILABLE5(unix_bytes_recv)
-LWT_NOT_AVAILABLE5(unix_bytes_send)
-LWT_NOT_AVAILABLE5(unix_recvfrom)
-LWT_NOT_AVAILABLE5(unix_bytes_recvfrom)
-LWT_NOT_AVAILABLE6(unix_sendto)
-LWT_NOT_AVAILABLE6(unix_sendto_byte)
-LWT_NOT_AVAILABLE6(unix_bytes_sendto)
-LWT_NOT_AVAILABLE6(unix_bytes_sendto_byte)
-LWT_NOT_AVAILABLE3(unix_recv_msg)
-LWT_NOT_AVAILABLE3(unix_bytes_recv_msg)
-LWT_NOT_AVAILABLE3(unix_send_msg)
-LWT_NOT_AVAILABLE3(unix_bytes_send_msg)
+extern value lwt_unix_sendto(value fd, value buf, value ofs, value len,
+                             value flags, value dest);
+
+CAMLprim value lwt_unix_sendto_byte(value *argv, int argc)
+{
+    return lwt_unix_sendto(argv[0], argv[1], argv[2], argv[3], argv[4],
+                           argv[5]);
+}
 #endif
