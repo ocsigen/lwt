@@ -48,4 +48,5 @@ LWT_NOT_AVAILABLE3(unix_recv_msg)
 LWT_NOT_AVAILABLE3(unix_bytes_recv_msg)
 LWT_NOT_AVAILABLE3(unix_send_msg)
 LWT_NOT_AVAILABLE3(unix_bytes_send_msg)
+LWT_NOT_AVAILABLE1(unix_get_credentials)
 #endif

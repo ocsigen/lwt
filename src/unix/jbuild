@@ -156,6 +156,7 @@
     unix_bytes_recv_msg
     unix_send_msg
     unix_bytes_send_msg
+    unix_get_credentials
     not_available
   ))
   (install_c_headers (
