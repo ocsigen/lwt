@@ -157,6 +157,10 @@
     unix_send_msg
     unix_bytes_send_msg
     unix_get_credentials
+    unix_mcast_utils
+    unix_mcast_set_loop
+    unix_mcast_set_ttl
+    unix_mcast_modify_membership
     not_available
   ))
   (install_c_headers (

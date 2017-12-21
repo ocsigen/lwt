@@ -49,4 +49,7 @@ LWT_NOT_AVAILABLE3(unix_bytes_recv_msg)
 LWT_NOT_AVAILABLE3(unix_send_msg)
 LWT_NOT_AVAILABLE3(unix_bytes_send_msg)
 LWT_NOT_AVAILABLE1(unix_get_credentials)
+LWT_NOT_AVAILABLE2(unix_mcast_set_loop)
+LWT_NOT_AVAILABLE2(unix_mcast_set_ttl)
+LWT_NOT_AVAILABLE4(unix_mcast_modify_membership)
 #endif
