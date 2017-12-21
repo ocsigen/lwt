@@ -374,9 +374,6 @@ CAMLprim value lwt_unix_system_job(value cmdline)
    | Unavailable primitives                                          |
    +-----------------------------------------------------------------+ */
 
-LWT_NOT_AVAILABLE1(unix_get_cpu)
-LWT_NOT_AVAILABLE1(unix_get_affinity)
-LWT_NOT_AVAILABLE2(unix_set_affinity)
 LWT_NOT_AVAILABLE2(unix_wait_mincore_job)
 LWT_NOT_AVAILABLE1(unix_guess_blocking_job)
 LWT_NOT_AVAILABLE1(unix_open_job)

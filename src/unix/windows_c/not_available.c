@@ -53,4 +53,7 @@ LWT_NOT_AVAILABLE2(unix_mcast_set_loop)
 LWT_NOT_AVAILABLE2(unix_mcast_set_ttl)
 LWT_NOT_AVAILABLE4(unix_mcast_modify_membership)
 LWT_NOT_AVAILABLE4(unix_wait4)
+LWT_NOT_AVAILABLE1(unix_get_cpu)
+LWT_NOT_AVAILABLE1(unix_get_affinity)
+LWT_NOT_AVAILABLE2(unix_set_affinity)
 #endif

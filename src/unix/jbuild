@@ -162,6 +162,9 @@
     unix_mcast_set_ttl
     unix_mcast_modify_membership
     unix_wait4
+    unix_get_cpu
+    unix_get_affinity
+    unix_set_affinity
     not_available
   ))
   (install_c_headers (
