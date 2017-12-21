@@ -165,6 +165,15 @@
     unix_get_cpu
     unix_get_affinity
     unix_set_affinity
+    unix_guess_blocking_job
+    unix_wait_mincore_job
+    unix_open_job
+    unix_read_job
+    windows_read_job
+    unix_bytes_read_job
+    windows_bytes_read_job
+    unix_write_job
+    windows_write_job
     not_available
   ))
   (install_c_headers (
