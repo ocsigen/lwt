@@ -24,6 +24,14 @@
 #pragma once
 #include "lwt_config.h"
 
+/*
+ * Included in:
+ * - unix_mcast_modify_membership.c
+ * - unix_mcast_set_loop.c
+ * - unix_mcast_set_ttl.c
+ * - unix_mcast_utils.c
+ */
+
 #if !defined(LWT_ON_WINDOWS)
 
 #include <caml/mlvalues.h>
