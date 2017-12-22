@@ -77,6 +77,8 @@ packaging-test:
 	for TEST in `ls -d test/packaging/*/*` ; \
 	do \
 	    make -wC $$TEST || exit 1 ; \
+		echo ; \
+		echo ; \
 	done
 
 .PHONY: install-for-packaging-test

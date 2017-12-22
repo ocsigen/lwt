@@ -47,18 +47,14 @@ depopts: [
 available: [ocaml-version >= "4.02.0" & compiler != "4.02.1+BER"]
 
 messages: [
-  "For module Lwt_ssl, please install package lwt_ssl"
-    {ssl:installed & !lwt_ssl:installed}
-  "For module Lwt_glib, please install package lwt_glib"
-    {lablgtk:installed & !lwt_glib:installed}
-  "For module Lwt_react, please install package lwt_react"
-    {react:installed & !lwt_react:installed}
   "For the PPX, please install package lwt_ppx"
     {!lwt_ppx:installed}
   "For the Camlp4 syntax, please install package lwt_camlp4"
     {camlp4:installed & !lwt_camlp4:installed}
+  "For Lwt_log and Lwt_daemon, please install package lwt_log"
+    {!lwt_log:installed}
 ]
 post-messages: [
-  "Lwt 4.0.0 will make some breaking changes to packaging in late 2017. See
+  "Lwt 4.0.0 will make some breaking changes in March 2018. See
   https://github.com/ocsigen/lwt/issues/453"
 ]

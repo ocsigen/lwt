@@ -81,6 +81,9 @@
 ;; main library
 ;; Lwt_unix_jobs_generated and Lwt_config should be hidden
 
+(copy_files unix_c/*.c)
+(copy_files windows_c/*.c)
+
 (library
  ((name lwt_unix)
   (public_name lwt.unix)
@@ -118,6 +121,21 @@
     lwt_unix_job_tcsendbreak
     lwt_unix_job_truncate
     lwt_unix_job_unlink
+    unix_readable
+    unix_writable
+    unix_madvise
+    unix_get_page_size
+    windows_get_page_size
+    unix_mincore
+    unix_read
+    windows_read
+    unix_bytes_read
+    windows_bytes_read
+    unix_write
+    windows_write
+    unix_bytes_write
+    windows_bytes_write
+    not_available
   ))
   (install_c_headers (
     lwt_config
