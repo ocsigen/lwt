@@ -47,34 +47,7 @@
    | JOB: opendir                                                    |
    +-----------------------------------------------------------------+ */
 
-struct job_opendir {
-    struct lwt_unix_job job;
-    DIR *result;
-    int error_code;
-    char *path;
-    char data[];
-};
 
-static void worker_opendir(struct job_opendir *job)
-{
-    job->result = opendir(job->path);
-    job->error_code = errno;
-}
-
-static value result_opendir(struct job_opendir *job)
-{
-    LWT_UNIX_CHECK_JOB_ARG(job, job->result == NULL, "opendir", job->path);
-    value result = caml_alloc_small(1, Abstract_tag);
-    DIR_Val(result) = job->result;
-    lwt_unix_free_job(&job->job);
-    return result;
-}
-
-CAMLprim value lwt_unix_opendir_job(value path)
-{
-    LWT_UNIX_INIT_JOB_STRING(job, opendir, 0, path);
-    return lwt_unix_alloc_job(&job->job);
-}
 
 /* +-----------------------------------------------------------------+
    | JOB: closedir                                                   |
