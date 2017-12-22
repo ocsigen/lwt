@@ -410,7 +410,7 @@ type +'a t
     There is one exception to this: most promises can be {e canceled} by calling
     {!Lwt.cancel}, without going through a resolver. *)
 
-type 'a u
+type -'a u
 (** Resolvers for promises of type ['a ]{!Lwt.t}.
 
     Each resolver can be thought of as the {b write end} of one promise. It can
