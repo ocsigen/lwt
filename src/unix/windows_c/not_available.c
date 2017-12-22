@@ -76,4 +76,5 @@ LWT_NOT_AVAILABLE1(unix_readdir_job)
 LWT_NOT_AVAILABLE2(unix_readdir_n_job)
 LWT_NOT_AVAILABLE1(unix_readlink_job)
 LWT_NOT_AVAILABLE3(unix_lockf_job)
+LWT_NOT_AVAILABLE1(unix_getlogin_job)
 #endif
