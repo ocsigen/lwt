@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Module Pa_lwt </title><meta charset="utf8"/><link rel="stylesheet" href="/style.css"/><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/themes/prism.min.css"/><script src="/client.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-core.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-ocaml.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-clike.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-reason.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-javascript.min.js"></script></head><body><h1>Module <span><a class="ocsforge_doclink_lwt" href="/lwt/3.1.0/api/Pa_lwt.html">Pa_lwt</a></span> </h1><pre class="ocsforge_color odocwiki_code"><span class="ocsforge_color_keyword">module</span> <span class="ocsforge_color_uid"><span class="ocsforge_color_uid">Pa_lwt</span></span> <span class="ocsforge_color_delimiter">:</span> <span class="ocsforge_color_keyword">sig</span><span><a class="ocsforge_doclink_lwt" href="/lwt/3.1.0/api/Pa_lwt.html">..</a></span><span class="ocsforge_color_keyword">end</span></pre><p>Syntactic sugars for Lwt (deprecated)
+</p><hr/><p>This extension add the following sugars:
+</p><ul><li> anonymous bind:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">write stdout &quot;Hello, &quot; ~&gt;&gt; write stdout &quot;world!&quot;</code></pre><p>If you are mixing `&gt;&gt;` and `;`, you need to use parentheses or
+`begin`/`end` to get the result you expect:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">write stdout &quot;Hello, &quot; ~&gt;&gt; (ignore (); write stdout &quot;world!&quot;)</code></pre><ul><li> lwt-binding:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">lwt ch = get_char stdin in
+         code</code></pre><p>is the same as <span class="odocwiki_inlinecode">bind (get_char stdin) (fun ch -&gt; code)</span>
+</p><p>Moreover it supports parallel binding:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">lwt x = do_something1 ()
+         and y = do_something2 in
+         code</code></pre><p>will let <span class="odocwiki_inlinecode">do_something1 ()</span> and <span class="odocwiki_inlinecode">do_something2 ()</span> runs then
+bind their result to <span class="odocwiki_inlinecode">x</span> and <span class="odocwiki_inlinecode">y</span>. It is the same as:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">let t1 = do_something1
+         and t2 = do_something2 in
+         bind t1 (fun x -&gt; bind t2 (fun y -&gt; code))</code></pre><ul><li> exception catching:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">try_lwt
+           &lt;expr&gt;</code></pre><p>,
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">try_lwt
+           &lt;expr&gt;
+         with
+           &lt;branches&gt;</code></pre><p>,
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">try_lwt
+           &lt;expr&gt;
+         finally
+           &lt;expr&gt;</code></pre><p>and:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">try_lwt
+           &lt;expr&gt;
+         with
+           &lt;branches&gt;
+         finally
+           &lt;expr&gt;</code></pre><p>For example:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">try_lwt
+           f x
+         with
+           | Failure msg -&gt;
+               prerr_endline msg;
+               return ()</code></pre><p>is expanded to:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">catch (fun _ -&gt; f x)
+           (function
+              | Failure msg -&gt;
+                  prerr_endline msg;
+                  return ()
+              | exn -&gt;
+                  Lwt.fail exn)</code></pre><p>Note that the <span class="odocwiki_inlinecode">exn -&gt; Lwt.fail exn</span> branch is automatically addedd
+when needed.
+</p><p>Note also that <span class="odocwiki_inlinecode">finally</span> is evaluated <em>before</em> <span class="odocwiki_inlinecode">with</span> if an exception is
+raised. This is not the case with the newer PPX extension: there, <span class="odocwiki_inlinecode">finally</span>
+is always evaluated last.
+</p><p>The construction <span class="odocwiki_inlinecode">try_lwt &lt;expr&gt;</span> just catch regular exception
+into lwt exception. i.e. it is the same as <span class="odocwiki_inlinecode">catch (fun _ -&gt; &lt;expr&gt;) fail</span>.
+</p><ul><li> exception raising:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">raise_lwt &lt;expr&gt;</code></pre><p>This allow exception to be traced when the -lwt-debug switch is passed
+to the syntax extension.
+</p><ul><li> assertion:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">assert_lwt &lt;expr&gt;</code></pre><ul><li> for loop:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">for_lwt i = &lt;expr&gt; to &lt;expr&gt; do
+          &lt;expr&gt;
+        done</code></pre><p>and:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">for_lwt i = &lt;expr&gt; downto &lt;expr&gt; do
+          &lt;expr&gt;
+        done</code></pre><ul><li> iteration over streams:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">for_lwt &lt;patt&gt; in &lt;expr&gt; do
+          &lt;expr&gt;
+        done</code></pre><ul><li> while loop:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">while_lwt &lt;expr&gt; do
+          &lt;expr&gt;
+        done</code></pre><ul><li> pattern matching:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">match_lwt &lt;expr&gt; with
+          | &lt;patt_1&gt; -&gt; &lt;expr_1&gt;
+          ...
+          | &lt;patt_n&gt; -&gt; &lt;expr_n&gt;</code></pre></body></html>

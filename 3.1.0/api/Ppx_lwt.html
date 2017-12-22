@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Module Ppx_lwt </title><meta charset="utf8"/><link rel="stylesheet" href="/style.css"/><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/themes/prism.min.css"/><script src="/client.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-core.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-ocaml.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-clike.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-reason.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-javascript.min.js"></script></head><body><h1>Module <span><a class="ocsforge_doclink_lwt" href="/lwt/3.1.0/api/Ppx_lwt.html">Ppx_lwt</a></span> </h1><pre class="ocsforge_color odocwiki_code"><span class="ocsforge_color_keyword">module</span> <span class="ocsforge_color_uid"><span class="ocsforge_color_uid">Ppx_lwt</span></span> <span class="ocsforge_color_delimiter">:</span> <span class="ocsforge_color_keyword">sig</span><span><a class="ocsforge_doclink_lwt" href="/lwt/3.1.0/api/Ppx_lwt.html">..</a></span><span class="ocsforge_color_keyword">end</span></pre><p>Ppx syntax extension for Lwt
+</p><hr/><h2 id="2_Ppxextensions">Ppx extensions <a class="backref" href="#2_Ppxextensions">&#182;</a></h2><p>This Ppx extension adds various syntactic shortcut for lwt programming.
+It needs OCaml &gt;= 4.02 and <a href="https://github.com/alainfrisch/ppx_tools" class="ocsimore_phrasing_link">ppx_tools</a>.
+</p><p>To use it, simply use the ocamlfind package <span class="odocwiki_inlinecode">lwt.ppx</span>.
+</p><p>This extension adds the following syntax:
+</p><ul><li> lwt-binding:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">let%lwt ch = get_char stdin in
+code</code></pre><p>is the same as <span class="odocwiki_inlinecode">bind (get_char stdin) (fun ch -&gt; code)</span>.
+</p><p>Moreover, it supports parallel binding:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">let%lwt x = do_something1 ()
+and y = do_something2 in
+code</code></pre><p>will run <span class="odocwiki_inlinecode">do_something1 ()</span> and <span class="odocwiki_inlinecode">do_something2 ()</span>, then
+bind their results to <span class="odocwiki_inlinecode">x</span> and <span class="odocwiki_inlinecode">y</span>. It is the same as:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">let t1 = do_something1
+and t2 = do_something2 in
+bind t1 (fun x -&gt; bind t2 (fun y -&gt; code))</code></pre><ul><li> exception catching:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">try%lwt
+  &lt;expr&gt;
+with
+  &lt;branches&gt;</code></pre><p>For example:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">try%lwt
+  f x
+with
+  | Failure msg -&gt;
+      prerr_endline msg;
+      return ()</code></pre><p>is expanded to:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">catch (fun () -&gt; f x)
+  (function
+    | Failure msg -&gt;
+        prerr_endline msg;
+        return ()
+    | exn -&gt;
+        Lwt.fail exn)</code></pre><p>Note that the <span class="odocwiki_inlinecode">exn -&gt; Lwt.fail exn</span> branch is automatically added
+when needed.
+</p><ul><li> finalizer:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">(&lt;expr&gt;) [%finally &lt;expr&gt;]</code></pre><p>You can use <span class="odocwiki_inlinecode">[%lwt.finally ...]</span> instead of <span class="odocwiki_inlinecode">[%finally ...]</span>.
+</p><ul><li> assertion:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">assert%lwt &lt;expr&gt;</code></pre><ul><li> for loop:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">for%lwt i = &lt;expr&gt; to &lt;expr&gt; do
+  &lt;expr&gt;
+done</code></pre><p>and:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">for%lwt i = &lt;expr&gt; downto &lt;expr&gt; do
+  &lt;expr&gt;
+done</code></pre><ul><li> while loop:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">while%lwt &lt;expr&gt; do
+  &lt;expr&gt;
+done</code></pre><ul><li> pattern matching:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">match%lwt &lt;expr&gt; with
+  | &lt;patt_1&gt; -&gt; &lt;expr_1&gt;
+      ...
+  | &lt;patt_n&gt; -&gt; &lt;expr_n&gt;</code></pre><p>Exception cases are also supported:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">match%lwt &lt;expr&gt; with
+  | exception &lt;exn&gt; -&gt; &lt;expr_1&gt;
+  | &lt;patt_2&gt; -&gt; &lt;expr_2&gt;
+      ...
+  | &lt;patt_n&gt; -&gt; &lt;expr_n&gt;</code></pre><ul><li> conditional:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">if%lwt &lt;expr&gt; then
+  &lt;expr_1&gt;
+else
+  &lt;expr_2&gt;</code></pre><p>and
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">if%lwt &lt;expr&gt; then &lt;expr_1&gt;</code></pre><ul><li> exception raising:
+</li></ul><p>For all other expression, the construct
+
+</p><pre class=""><code class="language-ocaml translatable">[%lwt &lt;expr&gt;]</code></pre><p>is expanded to:
+
+</p><pre class=""><code class="language-ocaml translatable">Lwt.catch (fun () -&gt; &lt;expr&gt;) Lwt.fail</code></pre><p>It allows to encode the old <span class="odocwiki_inlinecode">raise_lwt &lt;e&gt;</span> as <span class="odocwiki_inlinecode">[%lwt raise &lt;e&gt;]</span>, and offers a convenient way to interact with non-Lwt code.
+</p><p>
+</p><h2 id="2_Debug">Debug <a class="backref" href="#2_Debug">&#182;</a></h2><p>By default, the debug mode is enabled. This means that the <span class="odocwiki_inlinecode">backtrace</span> versions of the <span class="odocwiki_inlinecode">bind</span>, <span class="odocwiki_inlinecode">finalize</span> and <span class="odocwiki_inlinecode">catch</span> functions are used, enabling proper backtraces for the Lwt exceptions.
+</p><p>The debug mode can be disabled with the option <span class="odocwiki_inlinecode">-no-debug</span>:
+</p><pre>$ ocamlfind ocamlc -package lwt.ppx \
+    -ppxopt lwt.ppx,-no-debug -linkpkg -o foo foo.ml
+</pre><p>
+</p><h2 id="2_Sequence">Sequence <a class="backref" href="#2_Sequence">&#182;</a></h2><p>It is also possible to sequence Lwt operations with the <span class="odocwiki_inlinecode">&gt;&gt;</span> operator:
+
+</p><pre class=""><code class="language-ocaml translatable">write stdout &quot;Hello, &quot; ~&gt;&gt; write stdout &quot;world!&quot;</code></pre><p>By default, each operation must return <span class="odocwiki_inlinecode">unit Lwt.t</span>. This constraint can be
+lifted with the option <span class="odocwiki_inlinecode">-no-strict-sequence</span>. The operator can be disabled
+with the option <span class="odocwiki_inlinecode">-no-sequence</span>.
+</p><p>If you are mixing `&gt;&gt;` and `;`, you need to use parentheses or `begin`/`end`
+to get the result you expect:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">write stdout &quot;Hello, &quot; ~&gt;&gt; (ignore (); write stdout &quot;world!&quot;)</code></pre><p>Note that unlike <span class="odocwiki_inlinecode">&gt;&gt;=</span>, <span class="odocwiki_inlinecode">&gt;&gt;</span> is not an OCaml value. it is a piece of syntax
+added by the ppx rewriter - i.e., you cannot refer to <span class="odocwiki_inlinecode">(&gt;&gt;)</span>.
+</p><p>
+</p><h2 id="2_Logging">Logging <a class="backref" href="#2_Logging">&#182;</a></h2><p>The logging syntax extension is enabled with <span class="odocwiki_inlinecode">-log</span>.
+It will replace expressions of the form:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">Lwt_log.info_f ~section &quot;x = %d&quot; x</code></pre><p>by
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">if Lwt_log.Section.level section &lt;= Lwt_log.Info then
+  Lwt_log.info_f ~section &quot;x = %d&quot; x
+else
+  return ()</code></pre><p>Notes:
+</p><ul><li> The application must be complete. For example: <span class="odocwiki_inlinecode">Log.info &quot;%d&quot;</span>
+will make compilation fail.
+</li></ul><ul><li> Debug messages are removed if the option <span class="odocwiki_inlinecode">-no-debug</span> is passed.
+</li></ul><pre class="ocsforge_color odocwiki_code" id="VALmapper"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">mapper</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><span class="ocsforge_color_uid">Migrate_parsetree</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_uid">OCaml_404</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_lid">Ast</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_lid">Ast_mapper</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_lid">mapper</span></span></pre></body></html>
