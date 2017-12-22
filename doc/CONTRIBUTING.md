@@ -297,7 +297,4 @@ This list surveys them, roughly in order of importance.
 - *deprecated* `src/camlp4/` contains the Camlp4 syntax extension, which is
   deprecated in favor of the PPX (in `src/ppx`).
 
-- *deprecated* `src/simple_top/` contains the Lwt top-level, which is deprecated
-  in favor of [utop][utop].
-
 [utop]: https://github.com/diml/utop

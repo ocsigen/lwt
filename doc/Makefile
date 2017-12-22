@@ -14,7 +14,6 @@ INCS=\
 	-I ${BLD}/ppx \
 	-I ${BLD}/preemptive \
 	-I ${BLD}/react \
-	-I ${BLD}/simple_top \
 	-I ${BLD}/unix
 
 MLIS=\
@@ -24,7 +23,6 @@ MLIS=\
 	$(wildcard ${SRC}/ppx/*.mli) \
 	$(wildcard ${SRC}/preemptive/*.mli) \
 	$(wildcard ${SRC}/react/*.mli) \
-	$(wildcard ${SRC}/simple_top/*.mli) \
 	$(filter-out ${BLD}/unix/lwt_unix.cppo.mli,$(wildcard ${BLD}/unix/*.mli))
 
 MLIS := $(filter-out %.pp.mli,$(MLIS))

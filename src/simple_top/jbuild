@@ -1,9 +1,0 @@
-(jbuild_version 1)
-
-(library
- ((name lwt_simple_top)
-  (public_name lwt.simple-top)
-  (synopsis "Lwt-OCaml top level integration (deprecated; use utop)")
-  (optional)
-  (wrapped false)
-  (libraries (lwt lwt.unix compiler-libs.common))))

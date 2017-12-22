@@ -56,26 +56,6 @@ package "preemptive" (
   requires = "lwt.unix"
 )
 
-package "simple-top" (
-  #directory = "simple-top"
-  version = "dev"
-  description = "Lwt-OCaml top level integration (deprecated; use utop)"
-  requires = "bigarray
-              bytes
-              compiler-libs
-              compiler-libs.common
-              lwt
-              lwt.log
-              lwt.unix
-              result
-              unix"
-  archive(byte) = "lwt_simple_top.cma"
-  archive(native) = "lwt_simple_top.cmxa"
-  plugin(byte) = "lwt_simple_top.cma"
-  plugin(native) = "lwt_simple_top.cmxs"
-  exists_if = "lwt_simple_top.cma"
-)
-
 package "syntax" (
   #directory = "syntax"
   version = "dev"
