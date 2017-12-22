@@ -1,3 +1,6 @@
 let () =
-  let p = Lwt.return () >> Lwt.return () in
+  let p =
+    let%lwt () = Lwt.return () in
+    Lwt.return ()
+  in
   ignore p

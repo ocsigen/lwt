@@ -191,37 +191,6 @@ $ ocamlfind ocamlc -package lwt.ppx \
     -ppxopt lwt.ppx,-no-debug -linkpkg -o foo foo.ml
  v}
 
-   {2 Sequence}
-
-   With OCaml 4.04.0 and on a convenient syntax is available for sequencing Lwt
-   operations using [;%lwt].  This allows free mixing of standard [;]
-   sequencing and [;%lwt] sequencing without extra parentheses:
-   {[
-     let i = ref 0 in
-     write stdout "Hello, ";%lwt
-     incr i;
-     write stdout "world!"
-   ]}
-
-   It is also possible to sequence Lwt operations with the [>>] operator:
-   {[
-     write stdout "Hello, " >> write stdout "world!"
-   ]}
-
-   By default, each operation must return [unit Lwt.t]. This constraint can be
-   lifted with the option [-no-strict-sequence]. The operator can be disabled
-   with the option [-no-sequence].
-
-   If you are mixing `>>` and `;`, you need to use parentheses or `begin`/`end`
-   to get the result you expect:
-
-   {[
-     write stdout "Hello, " >> (ignore (); write stdout "world!")
-   ]}
-
-   Note that unlike [>>=], [>>] is not an OCaml value. it is a piece of syntax
-   added by the ppx rewriter - i.e., you cannot refer to [(>>)].
-
    {2 Logging}
 
    The logging syntax extension is enabled with [-log].
