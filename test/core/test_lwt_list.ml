@@ -287,4 +287,126 @@ let suite = suite "lwt_list" [
     Lwt_list.fold_right_s (fun a n -> Lwt.return (a + n)) l 0 >>= fun result ->
     Lwt.return (result = 6)
   end;
+
+  test "iteri_p exception" begin fun () ->
+    let i f = Lwt_list.iteri_p (fun _ x -> f x) in
+    test_exception i;
+    Lwt.return true
+  end;
+
+  test "iteri_s exception" begin fun () ->
+    let i f = Lwt_list.iteri_s (fun _ x -> f x) in
+    test_exception i;
+    Lwt.return true
+  end;
+
+  test "map_s exception" begin fun () ->
+    test_exception Lwt_list.map_s;
+    Lwt.return true
+  end;
+
+  test "map_p exception" begin fun () ->
+    test_exception Lwt_list.map_p;
+    Lwt.return true
+  end;
+
+  test "mapi_s exception" begin fun () ->
+    let m f = Lwt_list.mapi_s (fun _ x -> f x) in
+    test_exception m;
+    Lwt.return true
+  end;
+
+  test "mapi_p exception" begin fun () ->
+    let m f = Lwt_list.mapi_p (fun _ x -> f x) in
+    test_exception m;
+    Lwt.return true
+  end;
+
+  test "rev_map_s exception" begin fun () ->
+    test_exception Lwt_list.rev_map_s;
+    Lwt.return true
+  end;
+
+  test "rev_map_p exception" begin fun () ->
+    test_exception Lwt_list.rev_map_p;
+    Lwt.return true
+  end;
+
+  test "fold_left_s exception" begin fun () ->
+    let m f = Lwt_list.fold_left_s (fun _ x -> f x) () in
+    test_exception m;
+    Lwt.return true
+  end;
+
+  test "fold_right_s exception" begin fun() ->
+    let m f l = Lwt_list.fold_right_s (fun x _ -> f x) l () in
+    test_exception m;
+    Lwt.return true
+  end;
+
+  test "for_all_p exception" begin fun () ->
+    let m f = Lwt_list.for_all_p (fun x -> f x >>= (fun _ -> Lwt.return_true)) in
+    test_exception m;
+    Lwt.return true
+  end;
+
+  test "for_all_s exception" begin fun () ->
+    let m f = Lwt_list.for_all_s (fun x -> f x >>= (fun _ -> Lwt.return_true)) in
+    test_exception m;
+    Lwt.return true
+  end;
+
+  test "exists_p exception" begin fun () ->
+    let m f = Lwt_list.exists_p (fun x -> f x >>= (fun _ -> Lwt.return_false)) in
+    test_exception m;
+    Lwt.return true
+  end;
+
+  test "exists_s exception" begin fun () ->
+    let m f = Lwt_list.exists_s (fun x -> f x >>= (fun _ -> Lwt.return_false)) in
+    test_exception m;
+    Lwt.return true
+  end;
+
+  test "find_s exception" begin fun () ->
+    let m f = Lwt_list.find_s (fun x -> f x >>= (fun _ -> Lwt.return_false)) in
+    test_exception m;
+    Lwt.return true
+  end;
+
+  test "filter_p exception" begin fun () ->
+    let m f = Lwt_list.filter_p (fun x -> f x >>= (fun _ -> Lwt.return_false)) in
+    test_exception m;
+    Lwt.return true;
+  end;
+
+  test "filter_s exception" begin fun () ->
+    let m f = Lwt_list.filter_s (fun x -> f x >>= (fun _ -> Lwt.return_false)) in
+    test_exception m;
+    Lwt.return true;
+  end;
+
+  test "filter_map_p exception" begin fun () ->
+    let m f = Lwt_list.filter_map_p (fun x -> f x >>= (fun _ -> Lwt.return (Some ()))) in
+    test_exception m;
+    Lwt.return true;
+  end;
+
+  test "filter_map_s exception" begin fun () ->
+    let m f = Lwt_list.filter_map_s (fun x -> f x >>= (fun _ -> Lwt.return (Some ()))) in
+    test_exception m;
+    Lwt.return true;
+  end;
+
+  test "partition_p exception" begin fun () ->
+    let m f = Lwt_list.partition_p (fun x -> f x >>= (fun _ -> Lwt.return_false)) in
+    test_exception m;
+    Lwt.return true;
+  end;
+
+  test "partition_s exception" begin fun () ->
+    let m f = Lwt_list.partition_s (fun x -> f x >>= (fun _ -> Lwt.return_false)) in
+    test_exception m;
+    Lwt.return true;
+  end;
 ]
