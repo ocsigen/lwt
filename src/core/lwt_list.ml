@@ -53,13 +53,14 @@ let rec iteri_s i f l =
   | [] ->
     Lwt.return_unit
   | x :: l ->
-    f i x >>= fun () ->
+    Lwt.apply (f i) x >>= fun () ->
     iteri_s (i + 1) f l
 
 let iteri_s f l = iteri_s 0 f l
 
 let iteri_p f l =
-  let ts = tail_recursive_mapi f l in
+  let f' i = Lwt.apply (f i) in
+  let ts = tail_recursive_mapi f' l in
   Lwt.join ts
 
 let map_s f l =
@@ -87,7 +88,7 @@ let rec filter_map_s f l =
   | [] ->
     Lwt.return_nil
   | x :: l ->
-    f x >>= function
+    Lwt.apply f x >>= function
     | Some x ->
       filter_map_s f l >|= fun l ->
       x :: l
@@ -99,7 +100,7 @@ let rec filter_map_p f l =
   | [] ->
     Lwt.return_nil
   | x :: l ->
-    let tx = f x and tl = filter_map_p f l in
+    let tx = Lwt.apply f x and tl = filter_map_p f l in
     tx >>= function
     | Some x -> tl >|= fun l -> x :: l
     | None -> tl
@@ -109,14 +110,15 @@ let rec mapi_s i f l =
   | [] ->
     Lwt.return_nil
   | x :: l ->
-    f i x >>= fun x ->
+    Lwt.apply (f i) x >>= fun x ->
     mapi_s (i + 1) f l >|= fun l ->
     x :: l
 
 let mapi_s f l = mapi_s 0 f l
 
 let mapi_p f l =
-  let ts = tail_recursive_mapi f l in
+  let f' i = Lwt.apply (f i) in
+  let ts = tail_recursive_mapi f' l in
   _collect [] ts
 
 let rec rev_map_append_s acc f l =
@@ -124,7 +126,7 @@ let rec rev_map_append_s acc f l =
   | [] ->
     Lwt.return acc
   | x :: l ->
-    f x >>= fun x ->
+    Lwt.apply f x >>= fun x ->
     rev_map_append_s (x :: acc) f l
 
 let rev_map_s f l =
@@ -136,7 +138,7 @@ let rec rev_map_append_p acc f l =
     acc
   | x :: l ->
     rev_map_append_p
-      (f x >>= fun x ->
+      (Lwt.apply f x >>= fun x ->
        acc >|= fun l ->
        x :: l) f l
 
@@ -148,7 +150,7 @@ let rec fold_left_s f acc l =
   | [] ->
     Lwt.return acc
   | x :: l ->
-    f acc x >>= fun acc ->
+    Lwt.apply (f acc) x >>= fun acc ->
     fold_left_s f acc l
 
 let rec fold_right_s f l acc =
@@ -157,14 +159,14 @@ let rec fold_right_s f l acc =
     Lwt.return acc
   | x :: l ->
     fold_right_s f l acc >>= fun acc ->
-    f x acc
+    Lwt.apply (f x) acc
 
 let rec for_all_s f l =
   match l with
   | [] ->
     Lwt.return_true
   | x :: l ->
-    f x >>= function
+    Lwt.apply f x >>= function
     | true ->
       for_all_s f l
     | false ->
@@ -175,7 +177,7 @@ let rec for_all_p f l =
   | [] ->
     Lwt.return_true
   | x :: l ->
-    let tx = f x and tl = for_all_p f l in
+    let tx = Lwt.apply f x and tl = for_all_p f l in
     tx >>= fun bx ->
     tl >|= fun bl ->
     bx && bl
@@ -185,7 +187,7 @@ let rec exists_s f l =
   | [] ->
     Lwt.return_false
   | x :: l ->
-    f x >>= function
+    Lwt.apply f x >>= function
     | true ->
       Lwt.return_true
     | false ->
@@ -196,7 +198,7 @@ let rec exists_p f l =
   | [] ->
     Lwt.return_false
   | x :: l ->
-    let tx = f x and tl = exists_p f l in
+    let tx = Lwt.apply f x and tl = exists_p f l in
     tx >>= fun bx ->
     tl >|= fun bl ->
     bx || bl
@@ -206,7 +208,7 @@ let rec find_s f l =
   | [] ->
     Lwt.fail Not_found
   | x :: l ->
-    f x >>= function
+    Lwt.apply f x >>= function
     | true ->
       Lwt.return x
     | false ->
@@ -217,7 +219,7 @@ let rec filter_s f l =
   | [] ->
     Lwt.return_nil
   | x :: l ->
-    f x >>= function
+    Lwt.apply f x >>= function
     | true ->
       filter_s f l >|= fun l ->
       x :: l
@@ -229,7 +231,7 @@ let rec filter_p f l =
   | [] ->
     Lwt.return_nil
   | x :: l ->
-    let tx = f x and tl = filter_p f l in
+    let tx = Lwt.apply f x and tl = filter_p f l in
     tx >>= fun bx ->
     tl >|= fun l ->
     if bx then
@@ -244,7 +246,7 @@ let rec partition_s f l =
   | [] ->
     return_nil_nil
   | x :: l ->
-    f x >>= fun bx ->
+    Lwt.apply f x >>= fun bx ->
     partition_s f l >|= fun (l_l, l_r) ->
     if bx then
       (x :: l_l, l_r)
@@ -256,7 +258,7 @@ let rec partition_p f l =
   | [] ->
     return_nil_nil
   | x :: l ->
-    let tx = f x and tl = partition_p f l in
+    let tx = Lwt.apply f x and tl = partition_p f l in
     tx >>= fun bx ->
     tl >|= fun (l_l, l_r) ->
     if bx then
