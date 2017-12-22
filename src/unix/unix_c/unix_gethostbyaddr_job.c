@@ -29,6 +29,8 @@
 #include <caml/mlvalues.h>
 #include <caml/unixsupport.h>
 #include <netdb.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 
 #include "lwt_unix.h"
 
