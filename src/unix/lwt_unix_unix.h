@@ -43,23 +43,6 @@
 
 #include "unix_recv_send_utils.h"
 
-
-/* Directory handle validity. */
-
-CAMLprim value lwt_unix_valid_dir(value dir)
-{
-    CAMLparam1(dir);
-    int result = DIR_Val(dir) == NULL ? 0 : 1;
-    CAMLreturn(Val_int(result));
-}
-
-CAMLprim value lwt_unix_invalidate_dir(value dir)
-{
-    CAMLparam1(dir);
-    DIR_Val(dir) = NULL;
-    CAMLreturn(Val_unit);
-}
-
 /* +-----------------------------------------------------------------+
    | JOB: rewinddir                                                  |
    +-----------------------------------------------------------------+ */

@@ -69,4 +69,6 @@ LWT_NOT_AVAILABLE3(unix_utimes_job)
 LWT_NOT_AVAILABLE1(unix_isatty_job)
 LWT_NOT_AVAILABLE1(unix_opendir_job)
 LWT_NOT_AVAILABLE1(unix_closedir_job)
+LWT_NOT_AVAILABLE1(unix_valid_dir)
+LWT_NOT_AVAILABLE1(unix_invalidate_dir)
 #endif
