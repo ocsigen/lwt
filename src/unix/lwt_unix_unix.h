@@ -43,42 +43,6 @@
 
 #include "unix_recv_send_utils.h"
 
-/* +-----------------------------------------------------------------+
-   | JOB: opendir                                                    |
-   +-----------------------------------------------------------------+ */
-
-
-
-/* +-----------------------------------------------------------------+
-   | JOB: closedir                                                   |
-   +-----------------------------------------------------------------+ */
-
-struct job_closedir {
-    struct lwt_unix_job job;
-    int result;
-    int error_code;
-    DIR *dir;
-};
-
-static void worker_closedir(struct job_closedir *job)
-{
-    job->result = closedir(job->dir);
-    job->error_code = errno;
-}
-
-static value result_closedir(struct job_closedir *job)
-{
-    LWT_UNIX_CHECK_JOB(job, job->dir < 0, "closedir");
-    lwt_unix_free_job(&job->job);
-    return Val_unit;
-}
-
-CAMLprim value lwt_unix_closedir_job(value dir)
-{
-    LWT_UNIX_INIT_JOB(job, closedir, 0);
-    job->dir = DIR_Val(dir);
-    return lwt_unix_alloc_job(&job->job);
-}
 
 /* Directory handle validity. */
 
