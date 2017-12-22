@@ -190,6 +190,8 @@
     unix_valid_dir
     unix_invalidate_dir
     unix_rewinddir_job
+    unix_readdir_job
+    unix_readdir_n_job
     not_available
   ))
   (install_c_headers (

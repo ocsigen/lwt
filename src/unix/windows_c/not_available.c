@@ -72,4 +72,6 @@ LWT_NOT_AVAILABLE1(unix_closedir_job)
 LWT_NOT_AVAILABLE1(unix_valid_dir)
 LWT_NOT_AVAILABLE1(unix_invalidate_dir)
 LWT_NOT_AVAILABLE1(unix_rewinddir_job)
+LWT_NOT_AVAILABLE1(unix_readdir_job)
+LWT_NOT_AVAILABLE2(unix_readdir_n_job)
 #endif
