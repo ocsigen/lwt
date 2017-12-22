@@ -182,6 +182,7 @@
     unix_lstat_64_job
     unix_fstat_job
     unix_fstat_64_job
+    unix_utimes_job
     not_available
   ))
   (install_c_headers (

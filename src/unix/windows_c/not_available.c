@@ -65,4 +65,5 @@ LWT_NOT_AVAILABLE1(unix_lstat_job)
 LWT_NOT_AVAILABLE1(unix_lstat_64_job)
 LWT_NOT_AVAILABLE1(unix_fstat_job)
 LWT_NOT_AVAILABLE1(unix_fstat_64_job)
+LWT_NOT_AVAILABLE3(unix_utimes_job)
 #endif
