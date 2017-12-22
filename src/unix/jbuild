@@ -175,6 +175,7 @@
     unix_write_job
     windows_write_job
     unix_bytes_write_job
+    windows_bytes_write_job
     unix_stat_job_utils
     unix_stat_job
     unix_stat64_job
