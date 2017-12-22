@@ -29,6 +29,7 @@
  * Included in:
  * - unix_gethostname_job.c
  * - unix_gethostbyname_job.c
+ * - unix_gethostbyaddr_job.c
  */
 #if !defined(LWT_ON_WINDOWS)
 
