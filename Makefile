@@ -8,22 +8,12 @@ default: build
 # build the usual development packages
 .PHONY: build
 build: check-config
-	jbuilder build --dev --only-packages lwt
-
-# build everything, including additional packages
-.PHONY: build-all
-build-all: check-config
-	jbuilder build --dev --only-packages lwt,lwt_react
+	jbuilder build --dev
 
 # run unit tests for package lwt
 .PHONY: test
 test: build
-	jbuilder runtest --dev --only-packages lwt -j 1 --no-buffer
-
-# run all unit tests
-.PHONY: test-all
-test-all: check-config
-	jbuilder runtest --dev --only-packages lwt,lwt_react
+	jbuilder runtest --dev -j 1 --no-buffer
 
 # configuration
 .PHONY: check-config
@@ -36,6 +26,19 @@ check-config:
 .PHONY: default-config
 default-config:
 	ocaml src/util/configure.ml -use-libev false
+
+# Install dependencies needed during development.
+.PHONY : dev-deps
+dev-deps :
+	opam install --yes --unset-root \
+	  bisect_ppx \
+	  cppo \
+	  jbuilder \
+	  ocaml-migrate-parsetree \
+	  ocamlfind \
+	  ppx_tools_versioned \
+	  react \
+	  result \
 
 # Use jbuilder/odoc to generate static html documentation.
 # Currenty requires ocaml 4.03.0 to install odoc.
@@ -105,7 +108,7 @@ BISECT_FILES_PATTERN := _build/default/test/*/bisect*.out
 
 .PHONY: coverage
 coverage: clean check-config
-	BISECT_ENABLE=yes jbuilder runtest --dev --only-packages lwt,lwt_react
+	BISECT_ENABLE=yes jbuilder runtest --dev -j 1 --no-buffer
 	bisect-ppx-report \
 	    -I _build/default/ -html _coverage/ \
 	    -text - -summary-only \

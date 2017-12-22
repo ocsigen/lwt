@@ -72,15 +72,13 @@ git clone https://github.com/your-user-name/lwt.git
 cd lwt/
 ```
 
-We'll use Lwt's own [`opam`][opam-depends] file to install Lwt's dependencies
-automatically. Before doing that, you may want to switch to a special OPAM
-switch just for Lwt:
+Now, we need to install Lwt's development dependencies. Before doing that, you
+may want to switch to a special OPAM switch for working on Lwt:
 
 ```
-opam switch 4.04.02-lwt --alias-of 4.04.2   # optional
-eval `opam config env`                      # optional
-opam pin add --no-action lwt .
-opam install --deps-only lwt
+opam switch 4.06.1-lwt --alias-of 4.06.1   # optional
+eval `opam config env`                     # optional
+make dev-deps
 ```
 
 [opam-depends]: https://github.com/ocsigen/lwt/blob/8bff603ae6d976e69698fa08e8ce08fe9615489d/opam/opam#L35-L44
@@ -113,6 +111,7 @@ If you want to test your development branch using another OPAM package that
 depends on Lwt, install your development copy of Lwt with:
 
 ```
+opam pin add lwt .
 opam install lwt
 ```
 
@@ -129,14 +128,7 @@ modified code when you run these commands.
 <a id="Testing_with_coverage_analysis"></a>
 #### Testing with coverage analysis
 
-Coverage analysis is only enabled for `src/core/*` for now. To generate coverage
-reports, first pin Bisect_ppx to its development version:
-
-```
-opam pin add --dev-repo bisect_ppx
-```
-
-Then run
+To generate coverage reports, run
 
 ```
 make coverage
@@ -208,19 +200,6 @@ Afterwards, `git push -f` will force the new history into the PR.
 If we do this rewriting, it is usually at the very end, right before merging the
 PR. This is to avoid interfering with reviewers while they are still reviewing
 it.
-
-<a id="Cleaning_up"></a>
-#### Cleaning up
-
-If you don't want a development Lwt installed in your OPAM switch anymore, you
-can do
-
-```
-opam pin remove lwt
-```
-
-However, if you need your change for your purposes, you may want to keep your
-development copy pinned until the next Lwt release.
 
 [travis-ci]: https://travis-ci.org/ocsigen/lwt
 [appveyor-ci]: https://ci.appveyor.com/project/aantron/lwt

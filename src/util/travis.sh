@@ -119,37 +119,17 @@ fi
 
 
 
-# Pin Lwt, install dependencies, and then install Lwt. Lwt is installed
-# separately because we want to keep the build directory for running the tests.
-opam pin add -y --no-action lwt .
-
-opam install -y --deps-only lwt
+# Install Lwt's development dependencies.
+make dev-deps
 
 if [ "$LIBEV" != no ]
 then
     opam install -y conf-libev
 fi
 
-opam install --keep-build-dir --verbose lwt
 
-# Pin additional packages and install them. There
-# aren't any specific tests for these packages. Installation itself is the only
-# test.
-install_extra_package () {
-    PACKAGE=$1
-    opam pin add -y --no-action lwt_$PACKAGE .
-    opam install -y --verbose lwt_$PACKAGE
-}
-
-install_extra_package ppx
-install_extra_package react
-install_extra_package log
 
 # Build and run the tests.
-opam install -y ounit
-cd `opam config var lib`/../build/lwt.*
-make clean
-
 if [ "$LIBEV" != no ]
 then
     LIBEV_FLAG=true
@@ -158,18 +138,21 @@ else
 fi
 
 ocaml src/util/configure.ml -use-libev $LIBEV_FLAG
-make build-all test-all
+make build
+make test
 make coverage
 
 
 
 # Run the packaging tests.
+make clean
+make install-for-packaging-test
 make packaging-test
 
 
 
 # Some sanity checks.
-if [ "$LIBEV" != yes ]
+if [ "$LIBEV" == no ]
 then
     ! opam list -i conf-libev
 fi

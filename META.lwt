@@ -24,30 +24,6 @@ package "log" (
   exists_if = "lwt_log.cma"
 )
 
-package "ppx" (
-  #directory = "ppx"
-  version = "dev"
-  description = "Lwt PPX syntax extension (deprecated; use lwt_ppx)"
-  requires(ppx_driver) = "lwt.omp"
-  requires(-ppx_driver) = "bytes lwt result"
-  ppx(-ppx_driver,-custom_ppx) = "./ppx.exe --as-ppx"
-)
-
-package "omp" (
-  version = "dev"
-  description = "Lwt ocaml-migrate-parsetree PPX (internal)"
-  requires = "compiler-libs
-              compiler-libs.common
-              ocaml-migrate-parsetree
-              ppx_tools_versioned"
-  ppx_runtime_deps = "bytes lwt result"
-  exists_if = "ppx_lwt.cma"
-  archive(byte) = "ppx_lwt.cma"
-  archive(native) = "ppx_lwt.cmxa"
-  plugin(byte) = "ppx_lwt.cma"
-  plugin(native) = "ppx_lwt.cmxs"
-)
-
 package "preemptive" (
   #directory = "preemptive"
   version = "dev"

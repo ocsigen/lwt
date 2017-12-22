@@ -3,7 +3,7 @@
 (executable
  ((name main)
   (libraries (lwttester))
-  (preprocess (pps (lwt.ppx)))
+  (preprocess (pps (lwt_ppx)))
   (flags (:standard -warn-error -22))
 ))
 

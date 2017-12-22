@@ -37,8 +37,6 @@ depends: [
   # dependency should be converted to a conflict, and package jbuilder should be
   # constrained such that it also includes the error lines fix.
   "ocamlfind" {build & >= "1.7.3-1"}
-  "ocaml-migrate-parsetree"
-  "ppx_tools_versioned" {>= "5.0.1"}
   # result is needed as long as Lwt still supports OCaml 4.02.
   "result"
 ]
