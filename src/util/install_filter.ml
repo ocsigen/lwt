@@ -34,7 +34,6 @@ let sub_paths = [
   "log";
   "options";
   "syntax";
-  "simple-top";
   "ppx";
 ]
 
