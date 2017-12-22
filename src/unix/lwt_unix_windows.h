@@ -120,7 +120,6 @@ CAMLprim value lwt_unix_system_job(value cmdline)
    | Unavailable primitives                                          |
    +-----------------------------------------------------------------+ */
 
-LWT_NOT_AVAILABLE1(unix_isatty_job)
 LWT_NOT_AVAILABLE1(unix_opendir_job)
 LWT_NOT_AVAILABLE1(unix_readdir_job)
 LWT_NOT_AVAILABLE2(unix_readdir_n_job)
