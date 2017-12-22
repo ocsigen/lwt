@@ -47,24 +47,7 @@
    | JOB: rewinddir                                                  |
    +-----------------------------------------------------------------+ */
 
-struct job_rewinddir {
-    struct lwt_unix_job job;
-    DIR *dir;
-};
 
-static void worker_rewinddir(struct job_rewinddir *job) { rewinddir(job->dir); }
-static value result_rewinddir(struct job_rewinddir *job)
-{
-    lwt_unix_free_job(&job->job);
-    return Val_unit;
-}
-
-CAMLprim value lwt_unix_rewinddir_job(value dir)
-{
-    LWT_UNIX_INIT_JOB(job, rewinddir, 0);
-    job->dir = DIR_Val(dir);
-    return lwt_unix_alloc_job(&(job->job));
-}
 
 /* +-----------------------------------------------------------------+
    | JOB: readdir                                                    |
