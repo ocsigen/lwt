@@ -195,6 +195,11 @@
     unix_readlink_job
     unix_lockf_job
     unix_getlogin_job
+    unix_get_pw_gr_nam_id_job
+    unix_get_network_information_utils
+    unix_gethostname_job
+    unix_gethostbyname_job
+    unix_gethostbyaddr_job
     not_available
   ))
   (install_c_headers (
