@@ -21,10 +21,7 @@
 
 /* Windows version of stubs. */
 
-CAMLprim value lwt_unix_is_socket(value fd)
-{
-    return (Val_bool(Descr_kind_val(fd) == KIND_SOCKET));
-}
+
 
 /* +-----------------------------------------------------------------+
    | JOB: fsync                                                      |

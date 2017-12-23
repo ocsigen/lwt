@@ -21,31 +21,11 @@
  * 02111-1307, USA.
  */
 
-/* Unix (non-Windows) version of Lwt C stubs.
+#include "lwt_config.h"
 
-   Implementing an Lwt C stub can be a bit challenging. See lwt_unix_getcwd_job
-   (search for it in your text editor) for a well-documented "model"
-   function, including conceptual documentation, practical considerations,
-   common pitfalls, etc. */
+#if !defined(LWT_ON_WINDOWS)
 
+#include "lwt_unix.h"
 
-#include <caml/unixsupport.h>
-#include <caml/version.h>
-#include <dirent.h>
-#include <poll.h>
-#include <sys/resource.h>
-#include <sys/time.h>
-#include <sys/uio.h>
-#include <sys/un.h>
-#include <sys/wait.h>
-#include <unistd.h>
-
-/* +-----------------------------------------------------------------+
-   | Unavailable primitives                                          |
-   +-----------------------------------------------------------------+ */
-
-LWT_NOT_AVAILABLE1(unix_socketpair_stub)
-LWT_NOT_AVAILABLE1(unix_system_job)
-LWT_NOT_AVAILABLE4(process_create_process)
-LWT_NOT_AVAILABLE1(process_wait_job)
-LWT_NOT_AVAILABLE2(process_terminate_process)
+LWT_NOT_AVAILABLE1(unix_is_socket)
+#endif
