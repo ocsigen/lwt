@@ -25,6 +25,8 @@
 
 #if !defined(LWT_ON_WINDOWS)
 
+#define _GNU_SOURCE
+
 #include <caml/fail.h>
 #include <caml/mlvalues.h>
 #include <caml/unixsupport.h>
