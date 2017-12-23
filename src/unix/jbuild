@@ -210,6 +210,7 @@
     unix_tcsetattr_job
     windows_is_socket
     windows_fsync_job
+    windows_system_job
     windows_not_available
     unix_not_available
   ))

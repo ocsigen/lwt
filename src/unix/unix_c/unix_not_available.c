@@ -28,4 +28,5 @@
 #include "lwt_unix.h"
 
 LWT_NOT_AVAILABLE1(unix_is_socket)
+LWT_NOT_AVAILABLE1(unix_system_job)
 #endif

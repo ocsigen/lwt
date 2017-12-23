@@ -45,7 +45,6 @@
    +-----------------------------------------------------------------+ */
 
 LWT_NOT_AVAILABLE1(unix_socketpair_stub)
-LWT_NOT_AVAILABLE1(unix_system_job)
 LWT_NOT_AVAILABLE4(process_create_process)
 LWT_NOT_AVAILABLE1(process_wait_job)
 LWT_NOT_AVAILABLE2(process_terminate_process)
