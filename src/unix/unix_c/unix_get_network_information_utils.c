@@ -175,4 +175,58 @@ value alloc_host_entry(struct hostent *entry)
     End_roots();
     return res;
 }
+
+#if defined(NON_R_GETHOSTBYADDR) || defined(NON_R_GETHOSTBYNAME)
+struct hostent *hostent_dup(struct hostent *orig)
+{
+    if (orig == NULL) {
+        return NULL;
+    }
+    struct hostent *h = malloc(sizeof *h);
+    if (h == NULL) {
+        return NULL;
+    }
+    h->h_name = s_strdup(orig->h_name);
+    if (!h->h_name) {
+        goto nomem1;
+    }
+    if (!orig->h_aliases) {
+        h->h_aliases = NULL;
+    } else {
+        h->h_aliases = c_copy_string_array(orig->h_aliases);
+        if (!h->h_aliases) {
+            goto nomem2;
+        }
+    }
+    if (!orig->h_addr_list) {
+        h->h_addr_list = NULL;
+    } else {
+        h->h_addr_list = c_copy_addr_array(orig->h_addr_list, orig->h_length);
+        if (!h->h_addr_list) {
+            goto nomem3;
+        }
+    }
+    h->h_addrtype = orig->h_addrtype;
+    h->h_length = orig->h_length;
+    return h;
+nomem3:
+    c_free_string_array(h->h_aliases);
+nomem2:
+    free((char *)h->h_name);
+nomem1:
+    free(h);
+    return NULL;
+}
+
+void hostent_free(struct hostent *h)
+{
+    if (h) {
+        c_free_string_array(h->h_addr_list);
+        c_free_string_array(h->h_aliases);
+        free((char *)h->h_name);
+        free(h);
+    }
+}
+#endif
+
 #endif

@@ -66,4 +66,9 @@ char *s_strdup(const char *s);
 #endif
 
 value alloc_host_entry(struct hostent *entry);
+
+#if defined(NON_R_GETHOSTBYADDR) || defined(NON_R_GETHOSTBYNAME)
+struct hostent *hostent_dup(struct hostent *orig);
+void hostent_free(struct hostent *h);
+#endif
 #endif
