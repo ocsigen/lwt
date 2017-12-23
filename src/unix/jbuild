@@ -217,8 +217,6 @@
   (install_c_headers (
     lwt_config
     lwt_unix
-    lwt_unix_unix
-    lwt_unix_windows
   ))
   (c_flags (:include unix_c_flags.sexp))
   (c_library_flags (:include unix_c_library_flags.sexp))
