@@ -22,6 +22,7 @@
  */
 
 #pragma once
+
 #include "lwt_config.h"
 
 /*
@@ -37,6 +38,7 @@
  * unix_recv_msg
  * unix_bytes_recv_msg
  * unix_send_msg
+ * unix_getaddrinfo_job
  */
 
 #if !defined(LWT_ON_WINDOWS)
@@ -46,7 +48,7 @@
 #include <sys/socket.h>
 #include <sys/uio.h>
 
-static int msg_flag_table[] = {MSG_OOB, MSG_DONTROUTE, MSG_PEEK};
+static int msg_flag_table[3] = {MSG_OOB, MSG_DONTROUTE, MSG_PEEK};
 extern int socket_domain_table[];
 extern int socket_type_table[];
 extern void get_sockaddr(value mladdr, union sock_addr_union *addr /*out*/,

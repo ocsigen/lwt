@@ -120,12 +120,6 @@ CAMLprim value lwt_unix_system_job(value cmdline)
    | Unavailable primitives                                          |
    +-----------------------------------------------------------------+ */
 
-LWT_NOT_AVAILABLE1(unix_getprotobyname_job)
-LWT_NOT_AVAILABLE1(unix_getprotobynumber_job)
-LWT_NOT_AVAILABLE2(unix_getservbyname_job)
-LWT_NOT_AVAILABLE2(unix_getservbyport_job)
-LWT_NOT_AVAILABLE3(unix_getaddrinfo_job)
-LWT_NOT_AVAILABLE2(unix_getnameinfo_job)
 LWT_NOT_AVAILABLE1(unix_tcgetattr_job)
 LWT_NOT_AVAILABLE3(unix_tcsetattr_job)
 LWT_NOT_AVAILABLE2(unix_bind_job)
