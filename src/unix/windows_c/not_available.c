@@ -90,4 +90,5 @@ LWT_NOT_AVAILABLE2(unix_getservbyname_job)
 LWT_NOT_AVAILABLE2(unix_getservbyport_job)
 LWT_NOT_AVAILABLE3(unix_getaddrinfo_job)
 LWT_NOT_AVAILABLE2(unix_getnameinfo_job)
+LWT_NOT_AVAILABLE2(unix_bind_job)
 #endif

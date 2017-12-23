@@ -122,5 +122,4 @@ CAMLprim value lwt_unix_system_job(value cmdline)
 
 LWT_NOT_AVAILABLE1(unix_tcgetattr_job)
 LWT_NOT_AVAILABLE3(unix_tcsetattr_job)
-LWT_NOT_AVAILABLE2(unix_bind_job)
 LWT_NOT_AVAILABLE1(unix_getcwd_job)

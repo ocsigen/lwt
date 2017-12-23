@@ -203,6 +203,7 @@
     unix_getprotoby_getservby_job
     unix_getaddrinfo_job
     unix_getnameinfo_job
+    unix_bind_job
     not_available
   ))
   (install_c_headers (
