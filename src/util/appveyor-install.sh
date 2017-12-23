@@ -29,7 +29,6 @@ then
 
     # Generate build systems of extra packages and pin them.
     pin_extra_package react
-    pin_extra_package camlp4
 
     # For the tests, obviously...
     opam install -y ounit

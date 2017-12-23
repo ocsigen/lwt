@@ -29,7 +29,6 @@ install:
   - 'IF "%LIBEV%"=="yes" (%CYGSETUP% -q -P libev-devel)'
 
   - ps: '(new-object net.webclient).DownloadString("https://aantron.github.io/binaries/$env:SYSTEM/$env:ARCH/ocaml/$env:COMPILER/install.ps1") | PowerShell -Command -'
-  - ps: '(new-object net.webclient).DownloadString("https://aantron.github.io/binaries/$env:SYSTEM/$env:ARCH/camlp4/$env:COMPILER/install.ps1") | PowerShell -Command -'
   - ps: '(new-object net.webclient).DownloadString("https://aantron.github.io/binaries/$env:SYSTEM/$env:ARCH/opam/1.2/install.ps1") | PowerShell -Command -'
 
   - '%CYGSH% "cd /cygdrive/c/projects/lwt ; src/util/appveyor-install.sh"'

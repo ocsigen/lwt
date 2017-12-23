@@ -16,8 +16,7 @@ license: "LGPL with OpenSSL linking exception"
 dev-repo: "https://github.com/ocsigen/lwt.git"
 
 build: [
-  [ "ocaml" "src/util/configure.ml" "-use-libev" "%{conf-libev:installed}%"
-                                    "-use-camlp4" "%{camlp4:installed}%" ]
+  [ "ocaml" "src/util/configure.ml" "-use-libev" "%{conf-libev:installed}%" ]
   [ "jbuilder" "build" "-p" name "-j" jobs ]
   [ "ocaml" "src/util/install_filter.ml" ]
 ]
@@ -46,7 +45,6 @@ depends: [
 depopts: [
   "base-threads"
   "base-unix"
-  "camlp4"
   "conf-libev"
 ]
 # In practice, Lwt requires OCaml >= 4.02.3, as that is a constraint of the

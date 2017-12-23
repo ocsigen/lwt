@@ -1,15 +1,6 @@
 (jbuild_version 1)
 
 (library
- ((name lwt_syntax)
-  (public_name lwt.syntax)
-  (synopsis "Camlp4 syntax for Lwt (deprecated; use lwt.ppx)")
-  (optional)
-  (wrapped false)
-  (libraries (camlp4 lwt.syntax.options))
-  (preprocess (action (run camlp4oof ${<})))))
-
-(library
  ((name lwt_camlp4)
   (public_name lwt_camlp4)
   (synopsis "Camlp4 syntax for Lwt (deprecated; use lwt_ppx)")

@@ -35,7 +35,7 @@ check-config:
 
 .PHONY: default-config
 default-config:
-	ocaml src/util/configure.ml -use-libev false -use-camlp4 false
+	ocaml src/util/configure.ml -use-libev false
 
 # Use jbuilder/odoc to generate static html documentation.
 # Currenty requires ocaml 4.03.0 to install odoc.
@@ -87,8 +87,7 @@ install-for-packaging-test: clean
 	opam pin add --yes --no-action lwt_ppx .
 	opam pin add --yes --no-action lwt_react .
 	opam pin add --yes --no-action lwt_log .
-	opam pin add --yes --no-action lwt_camlp4 .
-	opam reinstall --yes lwt lwt_ppx lwt_react lwt_log lwt_camlp4
+	opam reinstall --yes lwt lwt_ppx lwt_react lwt_log
 
 .PHONY: clean
 clean:

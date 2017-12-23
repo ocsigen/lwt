@@ -4,7 +4,6 @@ let use_libev = ref None
 let use_pthread = ref None
 let android_target = ref None
 let libev_default = ref None
-let use_camlp4 = ref None
 
 let arg_bool r =
   Arg.Symbol (["true"; "false"],
@@ -14,7 +13,7 @@ let arg_bool r =
               | _ -> assert false)
 
 let usage =
-  "enable lwt.unix and camlp4 features\noptions are:"
+  "enable lwt.unix features\noptions are:"
 
 let args = [
   "-use-libev", arg_bool use_libev,
@@ -25,8 +24,6 @@ let args = [
     " compile for Android";
   "-libev-default", arg_bool libev_default,
     " whether to use the libev backend by default";
-  "-use-camlp4", arg_bool use_camlp4,
-    " when true enable camlp4 syntax extension";
 ]
 
 let oasis_files = [
@@ -78,17 +75,6 @@ let main () =
   print "use_pthread" !use_pthread;
   print "android_target" !android_target;
   print "libev_default" !libev_default;
-  close_out f;
-
-  (* '-use-camlp4 false' (or none) will write a jbuild-ignore file directing
-                         jbuilder to ignore the camlp4 directory.
-     '-use-camlp4 true' will write an empty file which does nothing.
-
-     This is a workaround required to overcome some weird camlp4 packaging
-     behaviour where ocamlfind sometimes installs a dummy META file for it even
-     though it's not actually installed. *)
-  let f = open_out "src/jbuild-ignore" in
-  (if !use_camlp4 = Some true then () else Printf.fprintf f "camlp4");
   close_out f;
 
   (* Compilers starting from 4.03.0 support the -O3 flag. *)

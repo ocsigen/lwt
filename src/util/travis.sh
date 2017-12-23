@@ -36,10 +36,6 @@ packages_homebrew () {
     if [ "$COMPILER" = system ]
     then
         brew install ocaml
-        # The system compiler on Homebrew is now 4.06 or higher, and there is no
-        # system Camlp4 package compatible with that (at least not yet). See:
-        #   https://github.com/ocaml/opam-repository/pull/10455
-        HAVE_CAMLP4=no
     else
         DO_SWITCH=yes
     fi
@@ -66,7 +62,6 @@ packages_macports () {
 
     wget -q -O - https://aantron.github.io/binaries/macports/x86_64/opam/1.2/install.sh | bash
     wget -q -O - https://aantron.github.io/binaries/macports/x86_64/ocaml/$COMPILER/install.sh | bash
-    wget -q -O - https://aantron.github.io/binaries/macports/x86_64/camlp4/$COMPILER/install.sh | bash
 }
 
 packages_osx () {
@@ -130,11 +125,6 @@ opam pin add -y --no-action lwt .
 
 opam install -y --deps-only lwt
 
-if [ "$HAVE_CAMLP4" != no ]
-then
-    opam install -y camlp4
-fi
-
 if [ "$LIBEV" != no ]
 then
     opam install -y conf-libev
@@ -155,11 +145,6 @@ install_extra_package ppx
 install_extra_package react
 install_extra_package log
 
-if [ "$HAVE_CAMLP4" != no ]
-then
-    install_extra_package camlp4
-fi
-
 # Build and run the tests.
 opam install -y ounit
 cd `opam config var lib`/../build/lwt.*
@@ -172,17 +157,14 @@ else
     LIBEV_FLAG=false
 fi
 
-ocaml src/util/configure.ml -use-libev $LIBEV_FLAG -use-camlp4 false
+ocaml src/util/configure.ml -use-libev $LIBEV_FLAG
 make build-all test-all
 make coverage
 
 
 
 # Run the packaging tests.
-if [ "$HAVE_CAMLP4" != no ]
-then
-    make packaging-test
-fi
+make packaging-test
 
 
 
