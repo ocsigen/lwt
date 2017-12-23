@@ -205,6 +205,9 @@
     unix_getnameinfo_job
     unix_bind_job
     unix_getcwd_job
+    unix_termios_conversion
+    unix_tcgetattr_job
+    unix_tcsetattr_job
     not_available
   ))
   (install_c_headers (

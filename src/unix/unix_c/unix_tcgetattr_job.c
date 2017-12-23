@@ -21,32 +21,45 @@
  * 02111-1307, USA.
  */
 
-/* Unix (non-Windows) version of Lwt C stubs.
+#include "lwt_config.h"
 
-   Implementing an Lwt C stub can be a bit challenging. See lwt_unix_getcwd_job
-   (search for it in your text editor) for a well-documented "model"
-   function, including conceptual documentation, practical considerations,
-   common pitfalls, etc. */
+#if !defined(LWT_ON_WINDOWS)
 
-
+#include <caml/alloc.h>
+#include <caml/mlvalues.h>
 #include <caml/unixsupport.h>
-#include <caml/version.h>
-#include <dirent.h>
-#include <poll.h>
-#include <sys/resource.h>
-#include <sys/time.h>
-#include <sys/uio.h>
-#include <sys/un.h>
-#include <sys/wait.h>
-#include <unistd.h>
+#include <errno.h>
 
-/* +-----------------------------------------------------------------+
-   | Unavailable primitives                                          |
-   +-----------------------------------------------------------------+ */
+#include "lwt_unix.h"
+#include "unix_termios_conversion.h"
 
-LWT_NOT_AVAILABLE1(unix_is_socket)
-LWT_NOT_AVAILABLE1(unix_socketpair_stub)
-LWT_NOT_AVAILABLE1(unix_system_job)
-LWT_NOT_AVAILABLE4(process_create_process)
-LWT_NOT_AVAILABLE1(process_wait_job)
-LWT_NOT_AVAILABLE2(process_terminate_process)
+struct job_tcgetattr {
+    struct lwt_unix_job job;
+    int fd;
+    struct termios termios;
+    int result;
+    int error_code;
+};
+
+static void worker_tcgetattr(struct job_tcgetattr *job)
+{
+    job->result = tcgetattr(job->fd, &job->termios);
+    job->error_code = errno;
+}
+
+static value result_tcgetattr(struct job_tcgetattr *job)
+{
+    LWT_UNIX_CHECK_JOB(job, job->result < 0, "tcgetattr");
+    value res = caml_alloc_tuple(NFIELDS);
+    encode_terminal_status(&job->termios, &Field(res, 0));
+    lwt_unix_free_job(&job->job);
+    return res;
+}
+
+CAMLprim value lwt_unix_tcgetattr_job(value fd)
+{
+    LWT_UNIX_INIT_JOB(job, tcgetattr, 0);
+    job->fd = Int_val(fd);
+    return lwt_unix_alloc_job(&job->job);
+}
+#endif

@@ -21,32 +21,27 @@
  * 02111-1307, USA.
  */
 
-/* Unix (non-Windows) version of Lwt C stubs.
+#pragma once
 
-   Implementing an Lwt C stub can be a bit challenging. See lwt_unix_getcwd_job
-   (search for it in your text editor) for a well-documented "model"
-   function, including conceptual documentation, practical considerations,
-   common pitfalls, etc. */
+#include "lwt_config.h"
 
+/* Header included in:
+ * - unix_tcsetattr_job.c
+ */
 
+#if !defined(LWT_ON_WINDOWS)
+
+#include <caml/mlvalues.h>
 #include <caml/unixsupport.h>
-#include <caml/version.h>
-#include <dirent.h>
-#include <poll.h>
-#include <sys/resource.h>
-#include <sys/time.h>
-#include <sys/uio.h>
-#include <sys/un.h>
-#include <sys/wait.h>
+#include <termios.h>
 #include <unistd.h>
 
-/* +-----------------------------------------------------------------+
-   | Unavailable primitives                                          |
-   +-----------------------------------------------------------------+ */
+#include "lwt_unix.h"
 
-LWT_NOT_AVAILABLE1(unix_is_socket)
-LWT_NOT_AVAILABLE1(unix_socketpair_stub)
-LWT_NOT_AVAILABLE1(unix_system_job)
-LWT_NOT_AVAILABLE4(process_create_process)
-LWT_NOT_AVAILABLE1(process_wait_job)
-LWT_NOT_AVAILABLE2(process_terminate_process)
+/* Number of fields in the terminal_io record field. Cf. unix.mli */
+
+#define NFIELDS 38
+
+void encode_terminal_status(struct termios *terminal_status, value *dst);
+void decode_terminal_status(struct termios *terminal_status, value *src);
+#endif
