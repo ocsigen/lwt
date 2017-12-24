@@ -29,6 +29,7 @@
 #include <caml/mlvalues.h>
 #include <caml/socketaddr.h>
 #include <caml/unixsupport.h>
+#include <string.h>
 
 #include "unix_mcast_utils.h"
 

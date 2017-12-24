@@ -30,8 +30,9 @@
 #include <caml/mlvalues.h>
 #include <caml/unixsupport.h>
 #include <dirent.h>
-#include <sys/types.h>
 #include <errno.h>
+#include <string.h>
+#include <sys/types.h>
 
 #include "lwt_unix.h"
 

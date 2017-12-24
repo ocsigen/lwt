@@ -29,6 +29,7 @@
 #include <lwt_config.h>
 
 #include <caml/socketaddr.h>
+#include <string.h>
 
 /* The macro to get the file-descriptor from a value. */
 #if defined(LWT_ON_WINDOWS)

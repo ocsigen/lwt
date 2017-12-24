@@ -29,6 +29,7 @@
 #include <caml/memory.h>
 #include <caml/mlvalues.h>
 #include <caml/unixsupport.h>
+#include <string.h>
 
 #include "lwt_unix.h"
 

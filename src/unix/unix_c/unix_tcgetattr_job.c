@@ -29,6 +29,7 @@
 #include <caml/mlvalues.h>
 #include <caml/unixsupport.h>
 #include <errno.h>
+#include <string.h>
 
 #include "lwt_unix.h"
 #include "unix_termios_conversion.h"
