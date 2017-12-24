@@ -30,7 +30,14 @@ depends: [
   "cppo" {build & >= "1.1.0"}
   "jbuilder" {build & >= "1.0+beta13"}
   # We are only using ocamlfind during configuration of the Unix binding.
-  "ocamlfind" {build & >= "1.5.0"}
+  # However, ocamlfind also installs the "threads" package, and ocamlfind
+  # 1.7.3-1 is the first one whose threads package does not have incorrect error
+  # lines. See
+  #   https://github.com/ocaml/opam-repository/pull/11071#issuecomment-353131128
+  # If ocamlfind becomes no longer necessary for configuration of Lwt, this
+  # dependency should be converted to a conflict, and package jbuilder should be
+  # constrained such that it also includes the error lines fix.
+  "ocamlfind" {build & >= "1.7.3-1"}
   "ocaml-migrate-parsetree"
   "ppx_tools_versioned"
   # result is needed as long as Lwt still supports OCaml 4.02.
