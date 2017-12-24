@@ -81,7 +81,7 @@
 ;; main library
 ;; Lwt_unix_jobs_generated and Lwt_config should be hidden
 
-(copy_files unix_c/*.c)
+(copy_files unix_c/*)
 (copy_files windows_c/*.c)
 
 (library
@@ -135,13 +135,88 @@
     windows_write
     unix_bytes_write
     windows_bytes_write
-    not_available
+    unix_readv_writev_utils
+    unix_iov_max
+    unix_writev
+    unix_writev_job
+    unix_readv
+    unix_readv_job
+    unix_send
+    unix_bytes_send
+    unix_recv
+    unix_bytes_recv
+    unix_recvfrom
+    unix_bytes_recvfrom
+    unix_sendto
+    unix_sendto_byte
+    unix_bytes_sendto
+    unix_bytes_sendto_byte
+    unix_recv_send_utils
+    unix_recv_msg
+    unix_bytes_recv_msg
+    unix_send_msg
+    unix_bytes_send_msg
+    unix_get_credentials
+    unix_mcast_utils
+    unix_mcast_set_loop
+    unix_mcast_set_ttl
+    unix_mcast_modify_membership
+    unix_wait4
+    unix_get_cpu
+    unix_get_affinity
+    unix_set_affinity
+    unix_guess_blocking_job
+    unix_wait_mincore_job
+    unix_open_job
+    unix_read_job
+    windows_read_job
+    unix_bytes_read_job
+    windows_bytes_read_job
+    unix_write_job
+    windows_write_job
+    unix_bytes_write_job
+    windows_bytes_write_job
+    unix_stat_job_utils
+    unix_stat_job
+    unix_stat64_job
+    unix_lstat_job
+    unix_lstat_64_job
+    unix_fstat_job
+    unix_fstat_64_job
+    unix_utimes_job
+    unix_isatty_job
+    unix_opendir_job
+    unix_closedir_job
+    unix_valid_dir
+    unix_invalidate_dir
+    unix_rewinddir_job
+    unix_readdir_job
+    unix_readdir_n_job
+    unix_readlink_job
+    unix_lockf_job
+    unix_getlogin_job
+    unix_get_pw_gr_nam_id_job
+    unix_get_network_information_utils
+    unix_gethostname_job
+    unix_gethostbyname_job
+    unix_gethostbyaddr_job
+    unix_getprotoby_getservby_job
+    unix_getaddrinfo_job
+    unix_getnameinfo_job
+    unix_bind_job
+    unix_getcwd_job
+    unix_termios_conversion
+    unix_tcgetattr_job
+    unix_tcsetattr_job
+    windows_is_socket
+    windows_fsync_job
+    windows_system_job
+    windows_not_available
+    unix_not_available
   ))
   (install_c_headers (
     lwt_config
     lwt_unix
-    lwt_unix_unix
-    lwt_unix_windows
   ))
   (c_flags (:include unix_c_flags.sexp))
   (c_library_flags (:include unix_c_library_flags.sexp))
