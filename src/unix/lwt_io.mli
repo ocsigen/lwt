@@ -253,9 +253,13 @@ val read_lines : input_channel -> string Lwt_stream.t
   (** [read_lines ic] returns a stream holding all lines of [ic] *)
 
 val read : ?count : int -> input_channel -> string Lwt.t
-  (** [read ?count ic] reads at most [count] characters from [ic]. It
-      returns [""] if the end of input is reached. If [count] is not
-      specified, it reads all bytes until the end of input. *)
+(** If [~count] is specified, [read ~count ic] reads at most [~count] characters
+    from [ic]. Note that fewer than [~count] characters can be read; check the
+    size of the resulting string. [read] returns [""] if the end of input is
+    reached.
+
+    If [~count] is not specified, [read ic] reads all bytes until the end of
+    input. *)
 
 val read_into : input_channel -> bytes -> int -> int -> int Lwt.t
   (** [read_into ic buffer offset length] reads up to [length] bytes,
