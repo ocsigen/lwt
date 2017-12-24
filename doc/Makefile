@@ -10,7 +10,6 @@ PKGS=\
 INCS=\
 	-I ${BLD}/camlp4 \
 	-I ${BLD}/core \
-	-I ${BLD}/glib \
 	-I ${BLD}/logger \
 	-I ${BLD}/ppx \
 	-I ${BLD}/preemptive \
@@ -22,7 +21,6 @@ INCS=\
 MLIS=\
 	$(wildcard ${SRC}/camlp4/*.mli) \
 	$(wildcard ${SRC}/core/*.mli) \
-	$(wildcard ${SRC}/glib/*.mli) \
 	$(wildcard ${SRC}/logger/*.mli) \
 	$(wildcard ${SRC}/ppx/*.mli) \
 	$(wildcard ${SRC}/preemptive/*.mli) \

@@ -13,7 +13,7 @@ build: check-config
 # build everything, including additional packages
 .PHONY: build-all
 build-all: check-config
-	jbuilder build --dev --only-packages lwt,lwt_react,lwt_ssl,lwt_glib
+	jbuilder build --dev --only-packages lwt,lwt_react,lwt_ssl
 
 # run unit tests for package lwt
 .PHONY: test
@@ -23,7 +23,7 @@ test: build
 # run all unit tests
 .PHONY: test-all
 test-all: check-config
-	jbuilder runtest --dev --only-packages lwt,lwt_react,lwt_ssl,lwt_glib
+	jbuilder runtest --dev --only-packages lwt,lwt_react,lwt_ssl
 
 # configuration
 .PHONY: check-config
@@ -87,11 +87,9 @@ install-for-packaging-test: clean
 	opam pin add --yes --no-action lwt_ppx .
 	opam pin add --yes --no-action lwt_react .
 	opam pin add --yes --no-action lwt_ssl .
-	opam pin add --yes --no-action lwt_glib .
 	opam pin add --yes --no-action lwt_log .
 	opam pin add --yes --no-action lwt_camlp4 .
-	opam reinstall --yes \
-	  lwt lwt_ppx lwt_react lwt_ssl lwt_glib lwt_log lwt_camlp4
+	opam reinstall --yes lwt lwt_ppx lwt_react lwt_ssl lwt_log lwt_camlp4
 
 .PHONY: clean
 clean:

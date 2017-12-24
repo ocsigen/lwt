@@ -214,17 +214,6 @@ CAMLprim value lwt_test(value Unit)
 }
 "
 
-let glib_code = "
-#include <caml/mlvalues.h>
-#include <glib.h>
-
-CAMLprim value lwt_test(value Unit)
-{
-  g_main_context_dispatch(0);
-  return Val_unit;
-}
-"
-
 let netdb_reentrant_code = "
 #define _POSIX_PTHREAD_SEMANTICS
 #include <caml/mlvalues.h>
@@ -313,7 +302,6 @@ let lwt_config = ref ""
 let ext_obj = ref ".o"
 let exec_name = ref "a.out"
 let use_libev = ref true
-let use_glib = ref false
 let use_pthread = ref true
 let use_unix = ref true
 let os_type = ref "Unix"
@@ -618,7 +606,7 @@ Run with DEBUG=y for more details.
   let setup_data = ref [] in
 
   (* Test for pkg-config. *)
-  test_feature ~do_check:(!use_libev || !use_glib) "pkg-config" ""
+  test_feature ~do_check:(!use_libev) "pkg-config" ""
     (fun () ->
        ksprintf Sys.command "pkg-config --version > %s 2>&1" !log_file = 0);
 
@@ -657,20 +645,6 @@ Run with DEBUG=y for more details.
     test_code (opt, lib) pthread_code
   in
 
-  let test_glib () =
-    let opt, lib =
-      lib_flags "GLIB"
-        (fun () ->
-          match if have_pkg_config then pkg_config_flags "glib-2.0" else None with
-            | Some (opt, lib) ->
-                (opt, lib)
-            | None ->
-                ([], ["-lglib-2.0"]))
-    in
-    setup_data := ("glib_opt", opt) :: ("glib_lib", lib) :: !setup_data;
-    test_code (opt, lib) glib_code
-  in
-
   let test_nanosecond_stat () =
     printf "testing for nanosecond stat support:%!";
     let conversions = [
@@ -703,7 +677,6 @@ You may be missing core components (compiler, ncurses, etc)
 
   test_feature ~do_check:!use_libev "libev" "HAVE_LIBEV" test_libev;
   test_feature ~do_check:!use_pthread "pthread" "HAVE_PTHREAD" test_pthread;
-  test_feature ~do_check:!use_glib "glib" "" test_glib;
 
   if !not_available <> [] then begin
     if not have_pkg_config then
@@ -803,8 +776,6 @@ Lwt can use pthread or the win32 API.
     "libev_lib";
     "pthread_lib";
     "pthread_opt";
-    "glib_opt";
-    "glib_lib";
   ] in
 
   (* Load setup.data *)

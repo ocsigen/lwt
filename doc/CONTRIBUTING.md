@@ -288,9 +288,9 @@ This list surveys them, roughly in order of importance.
   `Lwt_log_core` is portable, as the Lwt core is, and `Lwt_log` proper assumes
   a Unix system. `Lwt_log` is in the Unix binding.
 
-- `src/ssl/`, `src/react/`, `src/glib/` provide the separate libraries
-  `Lwt_ssl`, `Lwt_react`, `Lwt_glib`, respectively. These are basically
-  independent projects that live in the Lwt repo.
+- `src/ssl/` and `src/react/` provide the separate libraries `Lwt_ssl` and
+  `Lwt_react`, respectively. These are basically independent projects that live
+  in the Lwt repo.
 
 - `src/util/` contains various scripts, such as the configure script
   `src/util/discover.ml`, Travis and AppVeyor scripts, etc.

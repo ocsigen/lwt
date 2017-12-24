@@ -1,5 +1,0 @@
-(jbuild_version 1)
-
-(executables
- ((names (discover))
-  (libraries (unix str))))
