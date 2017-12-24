@@ -243,7 +243,7 @@ fixing that.
 
 [manual]: https://ocsigen.org/lwt/manual/
 [lwt.ml]: https://github.com/ocsigen/lwt/blob/master/src/core/lwt.ml
-[unix-model]: https://github.com/ocsigen/lwt/blob/b2eeb7b187b01e8d824dd20e807fe708c156dfcd/src/unix/lwt_unix_unix.h#L3019-L3236
+[unix-model]: https://github.com/ocsigen/lwt/blob/99d1ec8b5c159456855eb2f55ddab77207bc92b3/src/unix/unix_c/unix_getcwd_job.c#L36
 
 
 <br/>
