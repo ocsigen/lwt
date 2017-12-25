@@ -232,6 +232,31 @@ let lwt_expression mapper exp attributes =
     let new_exp = [%expr Lwt.bind [%e cond] [%e Exp.function_ cases]] in
     mapper.expr mapper { new_exp with pexp_attributes }
 
+  (* [%lwt $e1$; $e2$] ≡
+     [Lwt.bind $e1$ (function () -> $e2$)]
+   *)
+  | Pexp_sequence _->
+    let pat = if !strict_seq then [%pat? ()] else [%pat? _] in
+    let rec gen_sequence mapper expr=
+      match expr with
+      | [%expr [%e? lhs]; [%e? rhs]] ->
+        let lhs, rhs= mapper.expr mapper lhs, gen_sequence mapper rhs in
+        if !debug then
+          [%expr Lwt.backtrace_bind
+            (fun exn -> try raise exn with exn -> exn)
+            [%e lhs]
+            (fun [%p pat] -> [%e rhs])]
+            [@metaloc expr.pexp_loc]
+        else
+          [%expr Lwt.bind
+            [%e lhs]
+            (fun [%p pat] -> [%e rhs])]
+            [@metaloc expr.pexp_loc]
+      | _ -> mapper.expr mapper expr
+    in
+    let new_exp= gen_sequence mapper exp in
+    mapper.expr mapper { new_exp with pexp_attributes }
+
   (* [[%lwt $e$]] ≡ [Lwt.catch (fun () -> $e$) Lwt.fail] *)
   | _ ->
     let exp =
