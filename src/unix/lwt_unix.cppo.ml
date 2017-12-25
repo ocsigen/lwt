@@ -580,7 +580,7 @@ let wrap_syscall event ch action =
    | Generated jobs                                                  |
    +-----------------------------------------------------------------+ *)
 
-module Jobs = Lwt_unix_jobs_generated.Make(struct type 'a t = 'a job end)
+module Jobs = Lwt_unix_jobs.Make(struct type 'a t = 'a job end)
 
 (* +-----------------------------------------------------------------+
    | Basic file input/output                                         |
