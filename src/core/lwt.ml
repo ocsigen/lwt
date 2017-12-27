@@ -1101,12 +1101,13 @@ struct
      Lwt generally tries to call each callback immediately. However, this can
      lead to a progressive deepening of the call stack, until there is a stack
      overflow. This can't be avoided by doing tail calls, because Lwt always
-     needs to do book-keeping after callbacks return. Instead, what Lwt does is
-     track the current callback call depth. Once that depth reaches a certain
-     number, [default_maximum_callback_nesting_depth], defined below, further
-     callbacks are deferred into a queue instead. That queue is drained when Lwt
-     exits from the top-most callback call that triggered the resolution loop in
-     the first place.
+     needs to do exception handling around callbacks calls: each callback call
+     is followed by an exception handler. Instead, what Lwt does is track the
+     current callback call depth. Once that depth reaches a certain number,
+     [default_maximum_callback_nesting_depth], defined below, further callbacks
+     are deferred into a queue instead. That queue is drained when Lwt exits
+     from the top-most callback call that triggered the resolution loop in the
+     first place.
 
      To ensure that this deferral mechanism is always properly invoked, all
      callbacks called by Lwt are called through one of three functions provided
