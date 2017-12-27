@@ -43,10 +43,11 @@ let warn_let_lwt_rec loc attrs =
   let attr = attribute_of_warning loc "\"let%lwt rec\" is not a recursive Lwt binding" in
   attr :: attrs
 
-let debug      = ref true
-let log        = ref false
-let sequence   = ref true
-let strict_seq = ref true
+let debug          = ref true
+let log            = ref false
+let begin_sequence = ref false
+let sequence       = ref true
+let strict_seq     = ref true
 
 (** let%lwt related functions *)
 
@@ -106,6 +107,20 @@ let gen_top_binds vbs =
   in
   [Vb.mk (Pat.tuple (vbs |> List.map (fun { pvb_pat; _ } -> pvb_pat)))
      [%expr Lwt_main.run [%e gen_exp vbs 0]]]
+
+let gen_catch exp=
+  let exp =
+    match exp with
+    | { pexp_loc; pexp_desc=Pexp_let (Recursive, _, _); pexp_attributes } ->
+      let attr = attribute_of_warning pexp_loc "\"let%lwt rec\" is not a recursive Lwt binding" in
+      { exp with pexp_attributes = attr :: pexp_attributes }
+    | _ -> exp
+  in
+    if !debug then
+      [%expr Lwt.backtrace_catch (fun exn -> try raise exn with exn -> exn)
+        (fun () -> [%e exp]) Lwt.fail]
+    else
+      [%expr Lwt.catch (fun () -> [%e exp]) Lwt.fail]
 
 (** For expressions only *)
 (* We only expand the first level after a %lwt.
@@ -264,26 +279,16 @@ let lwt_expression mapper exp attributes (trigger_loc:Location.t)=
         let lhs, rhs= mapper.expr mapper lhs, mapper.expr mapper rhs in
         bind exp lhs rhs
       else
-        gen_sequence mapper exp
+        if !begin_sequence then
+          gen_sequence mapper exp
+        else
+          gen_catch exp
     in
     mapper.expr mapper { new_exp with pexp_attributes }
 
   (* [[%lwt $e$]] ≡ [Lwt.catch (fun () -> $e$) Lwt.fail] *)
   | _ ->
-    let exp =
-      match exp with
-      | { pexp_loc; pexp_desc=Pexp_let (Recursive, _, _); pexp_attributes } ->
-        let attr = attribute_of_warning pexp_loc "\"let%lwt rec\" is not a recursive Lwt binding" in
-        { exp with pexp_attributes = attr :: pexp_attributes }
-      | _ -> exp
-    in
-    let new_exp =
-      if !debug then
-        [%expr Lwt.backtrace_catch (fun exn -> try raise exn with exn -> exn)
-          (fun () -> [%e exp]) Lwt.fail]
-      else
-        [%expr Lwt.catch (fun () -> [%e exp]) Lwt.fail]
-    in
+    let new_exp = gen_catch exp in
     mapper.expr mapper { new_exp with pexp_attributes }
 
 let make_loc {Location.loc_start; _} =
@@ -426,6 +431,7 @@ let args =
     "-no-debug", Clear debug, " disable debug mode";
     "-log", Set log, " enable logging";
     "-no-log", Clear log, " disable logging";
+    "-begin-sequence", Set begin_sequence, " enable begin%lwt sequence expansion";
     "-no-sequence", Clear sequence, " disable sequence operator";
     "-no-strict-sequence", Clear strict_seq, " allow non-unit sequence operations";
   ])
