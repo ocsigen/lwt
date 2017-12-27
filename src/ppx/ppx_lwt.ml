@@ -110,7 +110,7 @@ let gen_top_binds vbs =
 (** For expressions only *)
 (* We only expand the first level after a %lwt.
    After that, we call the mapper to expand sub-expressions. *)
-let lwt_expression mapper exp attributes =
+let lwt_expression mapper exp attributes (trigger_loc:Location.t)=
   default_loc := exp.pexp_loc;
   let pexp_attributes = attributes @ exp.pexp_attributes in
   match exp.pexp_desc with
@@ -235,26 +235,37 @@ let lwt_expression mapper exp attributes =
   (* [%lwt $e1$; $e2$] ≡
      [Lwt.bind $e1$ (function () -> $e2$)]
    *)
-  | Pexp_sequence _->
-    let pat = if !strict_seq then [%pat? ()] else [%pat? _] in
+  | Pexp_sequence (lhs, rhs)->
+    let pos_trigger= trigger_loc.Location.loc_start.Lexing.pos_cnum
+    and pos_lhs= lhs.pexp_loc.Location.loc_start.Lexing.pos_cnum in
+    let bind expr lhs rhs=
+      let pat = if !strict_seq then [%pat? ()] else [%pat? _] in
+      if !debug then
+        [%expr Lwt.backtrace_bind
+          (fun exn -> try raise exn with exn -> exn)
+          [%e lhs]
+          (fun [%p pat] -> [%e rhs])]
+          [@metaloc expr.pexp_loc]
+      else
+        [%expr Lwt.bind
+          [%e lhs]
+          (fun [%p pat] -> [%e rhs])]
+          [@metaloc expr.pexp_loc]
+    in
     let rec gen_sequence mapper expr=
       match expr with
       | [%expr [%e? lhs]; [%e? rhs]] ->
         let lhs, rhs= mapper.expr mapper lhs, gen_sequence mapper rhs in
-        if !debug then
-          [%expr Lwt.backtrace_bind
-            (fun exn -> try raise exn with exn -> exn)
-            [%e lhs]
-            (fun [%p pat] -> [%e rhs])]
-            [@metaloc expr.pexp_loc]
-        else
-          [%expr Lwt.bind
-            [%e lhs]
-            (fun [%p pat] -> [%e rhs])]
-            [@metaloc expr.pexp_loc]
+        bind expr lhs rhs
       | _ -> mapper.expr mapper expr
     in
-    let new_exp= gen_sequence mapper exp in
+    let new_exp=
+      if pos_trigger > pos_lhs then (* wag tail syntax *)
+        let lhs, rhs= mapper.expr mapper lhs, mapper.expr mapper rhs in
+        bind exp lhs rhs
+      else
+        gen_sequence mapper exp
+    in
     mapper.expr mapper { new_exp with pexp_attributes }
 
   (* [[%lwt $e$]] ≡ [Lwt.catch (fun () -> $e$) Lwt.fail] *)
@@ -331,8 +342,13 @@ let mapper =
   { default_mapper with
     expr = (fun mapper expr ->
       match expr with
-      | [%expr [%lwt [%e? exp]]] ->
-        lwt_expression mapper exp expr.pexp_attributes
+      | { pexp_desc=
+            Pexp_extension (
+              {txt="lwt"; loc= trigger_loc},
+              PStr[{pstr_desc= Pstr_eval (exp, _);_}]);
+          _
+        }->
+        lwt_expression mapper exp expr.pexp_attributes trigger_loc
 
       (* [($e$)[%finally $f$]] ≡
          [Lwt.finalize (fun () -> $e$) (fun () -> $f$)] *)
