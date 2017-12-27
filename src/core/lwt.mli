@@ -943,7 +943,8 @@ let () =
     If all of the promises in [ps] become fulfilled, [Lwt.join ps] is also
     fulfilled. Otherwise, if at least one promise in [ps] becomes rejected,
     [Lwt.join ps] is rejected with the same exception as one such promise,
-    chosen arbitrary. *)
+    chosen arbitrarily. Note that this occurs only after all the promises are
+    resolved, not immediately when the first promise is rejected. *)
 
 
 
