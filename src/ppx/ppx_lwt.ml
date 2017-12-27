@@ -407,11 +407,11 @@ let mapper =
 
 let args =
   Arg.([
-    "-no-debug", Clear debug, "disable debug mode";
-    "-log", Set log, "enable logging";
-    "-no-log", Clear log, "disable logging";
-    "-no-sequence", Clear sequence, "disable sequence operator";
-    "-no-strict-sequence", Clear strict_seq, "allow non-unit sequence operations";
+    "-no-debug", Clear debug, " disable debug mode";
+    "-log", Set log, " enable logging";
+    "-no-log", Clear log, " disable logging";
+    "-no-sequence", Clear sequence, " disable sequence operator";
+    "-no-strict-sequence", Clear strict_seq, " allow non-unit sequence operations";
   ])
 
 let () =
