@@ -437,7 +437,7 @@ let args =
     "-no-log", Clear log, " disable logging";
     "-begin-sequence", Set begin_sequence, " enable begin%lwt sequence expansion";
     "-semicolon-sequence", Set semicolon_sequence, " enable ;%lwt sequence expansion";
-    "-no-sequence", Clear sequence, " disable sequence operator";
+    "-no-sequence", Clear sequence, " disable >> sequence operator";
     "-no-strict-sequence", Clear strict_seq, " allow non-unit sequence operations";
   ])
 
