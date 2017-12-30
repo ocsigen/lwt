@@ -57,8 +57,9 @@ let wrap_call f () =
        raise e) [@ocaml.warning "-4"]
 
 let repeat_call fd f =
+  (* See https://github.com/ocsigen/lwt/issues/530. *)
+  Lwt_unix.blocking fd >>= fun _blocking ->
   try
-    Lwt_unix.check_descriptor fd;
     Lwt.return (wrap_call f ())
   with
     Lwt_unix.Retry_read ->
