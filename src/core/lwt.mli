@@ -378,12 +378,6 @@ let () =
     - Miscellaneous modules {!Lwt_daemon}, {!Lwt_gc}, {!Lwt_log}, {!Lwt_engine},
       {!Lwt_throttle}, {!Lwt_timeout}, {!Lwt_sys}.
 
-    Finally, there are some modules, which notionally belong in the core library
-    or the Unix binding, but are kept separate because they have additional
-    dependencies on external libraries. These are {!Lwt_react} and {!Lwt_ssl}.
-    {!Lwt_react} notionally belongs in the core, and {!Lwt_ssl} works like the
-    Unix binding.
-
     Warning! Introductory material ends and detailed reference begins! *)
 
 

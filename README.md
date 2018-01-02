@@ -76,8 +76,7 @@ In Lwt,
 - [`Lwt_preemptive`][preemptive] spawns system threads.
 - The [PPX syntax][ppx] allows using all of the above without going crazy!
 - There are also some other helpers, such as [`Lwt_react`][react] for reactive
-  programming, and [`Lwt_ssl`][ssl] for SSL sockets. See the table of contents
-  on the linked manual pages!
+  programming. See the table of contents on the linked manual pages!
 
 [core]: https://ocsigen.org/lwt/api/Lwt
 [cond]: https://ocsigen.org/lwt/api/Lwt_condition
@@ -89,7 +88,6 @@ In Lwt,
 [preemptive]: https://ocsigen.org/lwt/api/Lwt_preemptive
 [ppx]: https://ocsigen.org/lwt/api/Ppx_lwt
 [react]: https://ocsigen.org/lwt/api/Lwt_react
-[ssl]: https://ocsigen.org/lwt/api/Lwt_ssl
 
 
 <br/>

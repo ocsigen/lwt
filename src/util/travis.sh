@@ -153,7 +153,6 @@ install_extra_package () {
 
 install_extra_package ppx
 install_extra_package react
-install_extra_package ssl
 install_extra_package log
 
 if [ "$HAVE_CAMLP4" != no ]
