@@ -274,6 +274,13 @@ let lwt_expression mapper exp attributes =
       else
         [%expr Lwt.catch (fun () -> [%e exp]) Lwt.fail]
     in
+    let warning =
+      attribute_of_warning
+        exp.pexp_loc
+        ("[%lwt ...] is deprecated\n" ^
+         "  See https://github.com/ocsigen/lwt/issues/527")
+    in
+    let pexp_attributes = warning::pexp_attributes in
     mapper.expr mapper { new_exp with pexp_attributes }
 
 let make_loc {Location.loc_start; _} =
