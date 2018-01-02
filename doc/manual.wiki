@@ -797,8 +797,7 @@ let () =
 
 === SSL support ===
 
-  The package {{{lwt.ssl}}} provides the module {{{Lwt_ssl}}}
-  which allows use of SSL asynchronously.
+  The library {{{Lwt_ssl}}} allows use of SSL asynchronously.
 
 == Writing stubs using {{{Lwt}}} ==
 

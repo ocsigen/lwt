@@ -1,9 +1,0 @@
-(jbuild_version 1)
-
-(library
- ((name lwt_ssl)
-  (public_name lwt_ssl)
-  (synopsis "SSL support for Lwt")
-  (wrapped false)
-  (libraries (ssl lwt.unix))
-  (flags (:standard -w +A))))

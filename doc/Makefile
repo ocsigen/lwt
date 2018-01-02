@@ -5,7 +5,7 @@ PKGS=\
 	-package bytes -package result \
 	-package bigarray -package unix -package camlp4 \
 	-package ocaml-migrate-parsetree -package ppx_tools_versioned \
-	-package react -package ssl
+	-package react
 
 INCS=\
 	-I ${BLD}/camlp4 \
@@ -15,7 +15,6 @@ INCS=\
 	-I ${BLD}/preemptive \
 	-I ${BLD}/react \
 	-I ${BLD}/simple_top \
-	-I ${BLD}/ssl \
 	-I ${BLD}/unix
 
 MLIS=\
@@ -26,7 +25,6 @@ MLIS=\
 	$(wildcard ${SRC}/preemptive/*.mli) \
 	$(wildcard ${SRC}/react/*.mli) \
 	$(wildcard ${SRC}/simple_top/*.mli) \
-	$(wildcard ${SRC}/ssl/*.mli) \
 	$(filter-out ${BLD}/unix/lwt_unix.cppo.mli,$(wildcard ${BLD}/unix/*.mli))
 
 MLIS := $(filter-out %.pp.mli,$(MLIS))
