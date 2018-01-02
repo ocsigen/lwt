@@ -48,6 +48,32 @@ let log        = ref false
 let sequence   = ref true
 let strict_seq = ref true
 
+let used_no_debug_option = ref false
+let used_log_option = ref false
+let used_no_log_option = ref false
+let used_no_sequence_option = ref false
+let used_no_strict_sequence_option = ref false
+
+let no_debug_option () =
+  debug := false;
+  used_no_debug_option := true
+
+let log_option () =
+  log := true;
+  used_log_option := true
+
+let no_log_option () =
+  log := false;
+  used_no_log_option := true
+
+let no_sequence_option () =
+  sequence := false;
+  used_no_sequence_option := true
+
+let no_strict_sequence_option () =
+  strict_seq := false;
+  used_no_strict_sequence_option := true
+
 (** let%lwt related functions *)
 
 let gen_name i = lwt_prefix ^ string_of_int i
@@ -302,8 +328,47 @@ let lwt_log mapper fn args attrs loc =
     else default_mapper.expr mapper (Exp.apply ~attrs fn args)
   | _ -> default_mapper.expr mapper (Exp.apply ~attrs fn args)
 
+let warned = ref false
+
 let mapper =
   { default_mapper with
+
+    structure = begin fun mapper structure ->
+      if !warned then
+        default_mapper.structure mapper structure
+
+      else begin
+        warned := true;
+        let structure = default_mapper.structure mapper structure in
+        let loc = Location.in_file !Location.input_name in
+
+        let warn_if condition message structure =
+          if condition then
+            (Str.attribute ~loc (attribute_of_warning loc message))::structure
+          else
+            structure
+        in
+
+        structure
+        |> warn_if (!used_no_strict_sequence_option)
+          ("-no-strict-sequence is a deprecated Lwt PPX option\n" ^
+           "  See https://github.com/ocsigen/lwt/issues/495")
+        |> warn_if (!used_no_sequence_option)
+          ("-no-sequence is a deprecated Lwt PPX option\n" ^
+           "  See https://github.com/ocsigen/lwt/issues/495")
+        |> warn_if (!used_no_log_option || !used_log_option)
+          ("Lwt PPX logging support is deprecated\n" ^
+           "  See https://github.com/ocsigen/lwt/issues/520")
+        |> warn_if (!used_no_log_option)
+          "-no-log is a deprecated Lwt PPX option"
+        |> warn_if (!used_log_option)
+          "-log is a deprecated Lwt PPX option"
+        |> warn_if (!used_no_debug_option)
+          ("-no-debug is a deprecated Lwt PPX option\n" ^
+           "  See https://github.com/ocsigen/lwt/issues/528")
+      end
+    end;
+
     expr = (fun mapper expr ->
       match expr with
       | [%expr [%lwt [%e? exp]]] ->
@@ -382,11 +447,25 @@ let mapper =
 
 let args =
   Arg.([
-    "-no-debug", Clear debug, " disable debug mode";
-    "-log", Set log, " enable logging";
-    "-no-log", Clear log, " disable logging";
-    "-no-sequence", Clear sequence, " disable sequence operator";
-    "-no-strict-sequence", Clear strict_seq, " allow non-unit sequence operations";
+    "-no-debug",
+      Unit no_debug_option,
+      " disable debug mode (deprecated)";
+
+    "-log",
+      Unit log_option,
+      " enable logging (deprecated)";
+
+    "-no-log",
+      Unit no_log_option,
+      " disable logging (deprecated)";
+
+    "-no-sequence",
+      Unit no_sequence_option,
+      " disable sequence operator (deprecated)";
+
+    "-no-strict-sequence",
+      Unit no_strict_sequence_option,
+      " allow non-unit sequence operations (deprecated)";
   ])
 
 let () =
