@@ -43,10 +43,11 @@ let warn_let_lwt_rec loc attrs =
   let attr = attribute_of_warning loc "\"let%lwt rec\" is not a recursive Lwt binding" in
   attr :: attrs
 
-let debug      = ref true
-let log        = ref false
-let sequence   = ref true
-let strict_seq = ref true
+let debug          = ref true
+let log            = ref false
+let begin_sequence = ref false
+let sequence       = ref true
+let strict_seq     = ref true
 
 (** let%lwt related functions *)
 
@@ -107,10 +108,24 @@ let gen_top_binds vbs =
   [Vb.mk (Pat.tuple (vbs |> List.map (fun { pvb_pat; _ } -> pvb_pat)))
      [%expr Lwt_main.run [%e gen_exp vbs 0]]]
 
+let gen_catch exp=
+  let exp =
+    match exp with
+    | { pexp_loc; pexp_desc=Pexp_let (Recursive, _, _); pexp_attributes } ->
+      let attr = attribute_of_warning pexp_loc "\"let%lwt rec\" is not a recursive Lwt binding" in
+      { exp with pexp_attributes = attr :: pexp_attributes }
+    | _ -> exp
+  in
+    if !debug then
+      [%expr Lwt.backtrace_catch (fun exn -> try raise exn with exn -> exn)
+        (fun () -> [%e exp]) Lwt.fail]
+    else
+      [%expr Lwt.catch (fun () -> [%e exp]) Lwt.fail]
+
 (** For expressions only *)
 (* We only expand the first level after a %lwt.
    After that, we call the mapper to expand sub-expressions. *)
-let lwt_expression mapper exp attributes =
+let lwt_expression mapper exp attributes (trigger_loc:Location.t)=
   default_loc := exp.pexp_loc;
   let pexp_attributes = attributes @ exp.pexp_attributes in
   match exp.pexp_desc with
@@ -232,22 +247,48 @@ let lwt_expression mapper exp attributes =
     let new_exp = [%expr Lwt.bind [%e cond] [%e Exp.function_ cases]] in
     mapper.expr mapper { new_exp with pexp_attributes }
 
+  (* [%lwt $e1$; $e2$] ≡
+     [Lwt.bind $e1$ (function () -> $e2$)]
+   *)
+  | Pexp_sequence (lhs, rhs)->
+    let pos_trigger= trigger_loc.Location.loc_start.Lexing.pos_cnum
+    and pos_lhs= lhs.pexp_loc.Location.loc_start.Lexing.pos_cnum in
+    let bind expr lhs rhs=
+      let pat = if !strict_seq then [%pat? ()] else [%pat? _] in
+      if !debug then
+        [%expr Lwt.backtrace_bind
+          (fun exn -> try raise exn with exn -> exn)
+          [%e lhs]
+          (fun [%p pat] -> [%e rhs])]
+          [@metaloc expr.pexp_loc]
+      else
+        [%expr Lwt.bind
+          [%e lhs]
+          (fun [%p pat] -> [%e rhs])]
+          [@metaloc expr.pexp_loc]
+    in
+    let rec gen_sequence mapper expr=
+      match expr with
+      | [%expr [%e? lhs]; [%e? rhs]] ->
+        let lhs, rhs= mapper.expr mapper lhs, gen_sequence mapper rhs in
+        bind expr lhs rhs
+      | _ -> mapper.expr mapper expr
+    in
+    let new_exp=
+      if pos_trigger > pos_lhs then (* wag tail syntax *)
+        let lhs, rhs= mapper.expr mapper lhs, mapper.expr mapper rhs in
+        bind exp lhs rhs
+      else
+        if !begin_sequence then
+          gen_sequence mapper exp
+        else
+          gen_catch exp
+    in
+    mapper.expr mapper { new_exp with pexp_attributes }
+
   (* [[%lwt $e$]] ≡ [Lwt.catch (fun () -> $e$) Lwt.fail] *)
   | _ ->
-    let exp =
-      match exp with
-      | { pexp_loc; pexp_desc=Pexp_let (Recursive, _, _); pexp_attributes } ->
-        let attr = attribute_of_warning pexp_loc "\"let%lwt rec\" is not a recursive Lwt binding" in
-        { exp with pexp_attributes = attr :: pexp_attributes }
-      | _ -> exp
-    in
-    let new_exp =
-      if !debug then
-        [%expr Lwt.backtrace_catch (fun exn -> try raise exn with exn -> exn)
-          (fun () -> [%e exp]) Lwt.fail]
-      else
-        [%expr Lwt.catch (fun () -> [%e exp]) Lwt.fail]
-    in
+    let new_exp = gen_catch exp in
     mapper.expr mapper { new_exp with pexp_attributes }
 
 let make_loc {Location.loc_start; _} =
@@ -306,8 +347,13 @@ let mapper =
   { default_mapper with
     expr = (fun mapper expr ->
       match expr with
-      | [%expr [%lwt [%e? exp]]] ->
-        lwt_expression mapper exp expr.pexp_attributes
+      | { pexp_desc=
+            Pexp_extension (
+              {txt="lwt"; loc= trigger_loc},
+              PStr[{pstr_desc= Pstr_eval (exp, _);_}]);
+          _
+        }->
+        lwt_expression mapper exp expr.pexp_attributes trigger_loc
 
       (* [($e$)[%finally $f$]] ≡
          [Lwt.finalize (fun () -> $e$) (fun () -> $f$)] *)
@@ -382,11 +428,12 @@ let mapper =
 
 let args =
   Arg.([
-    "-no-debug", Clear debug, "disable debug mode";
-    "-log", Set log, "enable logging";
-    "-no-log", Clear log, "disable logging";
-    "-no-sequence", Clear sequence, "disable sequence operator";
-    "-no-strict-sequence", Clear strict_seq, "allow non-unit sequence operations";
+    "-no-debug", Clear debug, " disable debug mode";
+    "-log", Set log, " enable logging";
+    "-no-log", Clear log, " disable logging";
+    "-begin-sequence", Set begin_sequence, " enable begin%lwt sequence expansion";
+    "-no-sequence", Clear sequence, " disable >> sequence operator";
+    "-no-strict-sequence", Clear strict_seq, " allow non-unit sequence operations";
   ])
 
 let () =
