@@ -43,12 +43,11 @@ let warn_let_lwt_rec loc attrs =
   let attr = attribute_of_warning loc "\"let%lwt rec\" is not a recursive Lwt binding" in
   attr :: attrs
 
-let debug              = ref true
-let log                = ref false
-let begin_sequence     = ref false
-let semicolon_sequence = ref false
-let sequence           = ref true
-let strict_seq         = ref true
+let debug          = ref true
+let log            = ref false
+let begin_sequence = ref false
+let sequence       = ref true
+let strict_seq     = ref true
 
 (** let%lwt related functions *)
 
@@ -126,7 +125,7 @@ let gen_catch exp=
 (** For expressions only *)
 (* We only expand the first level after a %lwt.
    After that, we call the mapper to expand sub-expressions. *)
-let lwt_expression mapper exp attributes trigger_loc=
+let lwt_expression mapper exp attributes (trigger_loc:Location.t)=
   default_loc := exp.pexp_loc;
   let pexp_attributes = attributes @ exp.pexp_attributes in
   match exp.pexp_desc with
@@ -277,11 +276,8 @@ let lwt_expression mapper exp attributes trigger_loc=
     in
     let new_exp=
       if pos_trigger > pos_lhs then (* wag tail syntax *)
-        if !semicolon_sequence then
-          let lhs, rhs= mapper.expr mapper lhs, mapper.expr mapper rhs in
-          bind exp lhs rhs
-        else
-          gen_catch exp
+        let lhs, rhs= mapper.expr mapper lhs, mapper.expr mapper rhs in
+        bind exp lhs rhs
       else
         if !begin_sequence then
           gen_sequence mapper exp
@@ -436,7 +432,6 @@ let args =
     "-log", Set log, " enable logging";
     "-no-log", Clear log, " disable logging";
     "-begin-sequence", Set begin_sequence, " enable begin%lwt sequence expansion";
-    "-semicolon-sequence", Set semicolon_sequence, " enable ;%lwt sequence expansion";
     "-no-sequence", Clear sequence, " disable >> sequence operator";
     "-no-strict-sequence", Clear strict_seq, " allow non-unit sequence operations";
   ])
