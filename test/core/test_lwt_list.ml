@@ -132,19 +132,16 @@ let test_map_parallelism ?(rev=false) map =
   let expected = if rev then [2; 1] else [1; 2] in
   p >>= (fun l -> Lwt.return (l = expected))
 
-let test_map_serialism ?(rev=false) map =
-  let m = Lwt_mutex.create () in
-  let g x =
-    Lwt_mutex.unlock m;
-    Lwt.return (x + 1) in
+let test_map_serialism map =
+  let l = ref [] in
   let f x =
-    Lwt_mutex.lock m >>= fun _ ->
-    if x = 0 then g x
-    else Lwt.return (x + 1)
+    let p = Lwt.pause () >>= fun _ -> Lwt.return x in
+    assert (List.length !l = 0 || not @@ Lwt.is_sleeping @@ List.hd !l);
+    l := p :: !l;
+    p
   in
-  let p = map f [0; 1] in
-  let expected = if rev then [2; 1] else [1; 2] in
-  p >>= (fun u -> Lwt.return (u = expected))
+  let p' = map f [0; 1; 2] in
+  p' >>= (fun _ -> Lwt.return_true)
 
 let test_iter_parallelism iter =
   let t, w = Lwt.wait () in
@@ -159,30 +156,26 @@ let test_iter_parallelism iter =
   p >>= (fun _ -> Lwt.return true)
 
 let test_iter_serialism iter =
-  let m = Lwt_mutex.create () in
-  let g _ =
-    Lwt_mutex.unlock m;
-    Lwt.return () in
-  let f x =
-    Lwt_mutex.lock m >>= fun _ ->
-    if x = 0 then g x
-    else Lwt.return ()
+  let l = ref [] in
+  let f _ =
+    let p = Lwt.pause () >>= fun _ -> Lwt.return () in
+    assert (List.length !l = 0 || not @@ Lwt.is_sleeping @@ List.hd !l);
+    l := p :: !l;
+    p
   in
-  let p = iter f [0; 1] in
-  p >>= (fun _ -> Lwt.return_true)
+  let p' = iter f [0; 1; 2] in
+  p' >>= (fun _ -> Lwt.return_true)
 
 let test_fold_serialism fold =
-  let m = Lwt_mutex.create () in
-  let g x =
-    Lwt_mutex.unlock m;
-    Lwt.return x in
-  let f s x =
-    Lwt_mutex.lock m >>= fun _ ->
-    if x = 0 then g x
-    else Lwt.return (s + x)
+  let l = ref [] in
+  let f _ x =
+    let p = Lwt.pause () >>= fun _ -> Lwt.return x in
+    assert (List.length !l = 0 || not @@ Lwt.is_sleeping @@ List.hd !l);
+    l := p :: !l;
+    p
   in
-  let p = fold f 0 [0; 1] in
-  p >>= (fun _ -> Lwt.return_true)
+  let p' = fold f 0 [0; 1; 2] in
+  p' >>= (fun _ -> Lwt.return_true)
 
 let test_quantifier_parallelism quantifier b =
   let t, w = Lwt.wait () in
@@ -197,17 +190,15 @@ let test_quantifier_parallelism quantifier b =
   p >>= (fun u -> Lwt.return (u = b))
 
 let test_quantifier_serialism quantifier b =
-  let m = Lwt_mutex.create () in
-  let g _ =
-    Lwt_mutex.unlock m;
-    Lwt.return b in
-  let f x =
-    Lwt_mutex.lock m >>= fun _ ->
-    if x = 0 then g x
-    else Lwt.return b
+  let l = ref [] in
+  let f _ =
+    let p = Lwt.pause () >>= fun _ -> Lwt.return b in
+    assert (List.length !l = 0 || not @@ Lwt.is_sleeping @@ List.hd !l);
+    l := p :: !l;
+    p
   in
-  let p = quantifier f [0; 1] in
-  p >>= (fun u -> Lwt.return (b = u))
+  let p' = quantifier f [0; 1; 2] in
+  p' >>= (fun _ -> Lwt.return_true)
 
 let test_for_all_true f =
   let l = [true; true] in
@@ -541,7 +532,7 @@ let suite = suite "lwt_list" [
   end;
 
   test "rev_map_s serialism" begin fun () ->
-    test_map_serialism ~rev:true Lwt_list.rev_map_s
+    test_map_serialism Lwt_list.rev_map_s
   end;
 
   test "fold_left_s serialism" begin fun () ->
@@ -580,17 +571,15 @@ let suite = suite "lwt_list" [
   end;
 
   test "find_s serialism" begin fun () ->
-      let m = Lwt_mutex.create () in
-      let g _ =
-        Lwt_mutex.unlock m;
-        Lwt.return false in
-      let f x =
-        Lwt_mutex.lock m >>= fun _ ->
-        if x = 0 then g x
-        else Lwt.return true
-      in
-      let p = Lwt_list.find_s f [0; 1] in
-      p >>= (fun _ -> Lwt.return true)
+    let l = ref [] in
+    let f x =
+      let p = Lwt.pause () >>= fun _ -> Lwt.return (x = 2) in
+      assert (List.length !l = 0 || not @@ Lwt.is_sleeping @@ List.hd !l);
+      l := p :: !l;
+      p
+    in
+    let p' = Lwt_list.find_s f [0; 1; 2] in
+    p' >>= (fun _ -> Lwt.return_true)
   end;
 
   test "filter_p parallelism" begin fun () ->
@@ -607,17 +596,15 @@ let suite = suite "lwt_list" [
   end;
 
   test "filter_s serialism" begin fun () ->
-    let m = Lwt_mutex.create () in
-    let g _ =
-      Lwt_mutex.unlock m;
-      Lwt.return_true in
-    let f x =
-      Lwt_mutex.lock m >>= fun _ ->
-      if x = 0 then g x
-      else Lwt.return_true
+    let l = ref [] in
+    let f _ =
+      let p = Lwt.pause () >>= fun _ -> Lwt.return_true in
+      assert (List.length !l = 0 || not @@ Lwt.is_sleeping @@ List.hd !l);
+      l := p :: !l;
+      p
     in
-    let p = Lwt_list.filter_s f [0; 1] in
-    p >>= (fun u -> Lwt.return (u = [0; 1]))
+    let p' = Lwt_list.filter_s f [0; 1; 2] in
+    p' >>= (fun _ -> Lwt.return_true)
   end;
 
   test "filter_map_p parallelism" begin fun () ->
@@ -625,7 +612,7 @@ let suite = suite "lwt_list" [
     test_map_parallelism map
   end;
 
-  test "filter_map_s parallelism" begin fun () ->
+  test "filter_map_s serialism" begin fun () ->
     let map f = Lwt_list.filter_map_s (fun x -> f x >>= fun u -> Lwt.return (Some u)) in
     test_map_serialism map
   end;
@@ -644,16 +631,14 @@ let suite = suite "lwt_list" [
   end;
 
   test "partition_s serialism" begin fun () ->
-    let m = Lwt_mutex.create () in
-    let g _ =
-      Lwt_mutex.unlock m;
-      Lwt.return_true in
-    let f x =
-      Lwt_mutex.lock m >>= fun _ ->
-      if x = 0 then g x
-      else Lwt.return_true
+    let l = ref [] in
+    let f _ =
+      let p = Lwt.pause () >>= fun _ -> Lwt.return_true in
+      assert (List.length !l = 0 || not @@ Lwt.is_sleeping @@ List.hd !l);
+      l := p :: !l;
+      p
     in
-    let p = Lwt_list.partition_p f [0; 1] in
-    p >>= (fun _ -> Lwt.return_true)
+    let p' = Lwt_list.partition_s f [0; 1; 2] in
+    p' >>= (fun _ -> Lwt.return_true)
   end;
 ]
