@@ -552,16 +552,8 @@ let suite = suite "lwt_list" [
   end;
 
   test "partition_p parallelism" begin fun () ->
-    let t, w = Lwt.wait () in
-    let g _ =
-      Lwt.wakeup_later w ();
-      Lwt.return_true in
-    let f x =
-      if x = 0 then t >>= (fun _ -> Lwt.return_true)
-      else g x
-    in
-    let p = Lwt_list.partition_p f [0; 1] in
-    p >>= (fun _ -> Lwt.return_true)
+    let m f l = (Lwt_list.partition_p (fun x -> f x >>= fun _ -> Lwt.return true) l) in
+    test_parallelism m
   end;
 
   test "partition_s serialism" begin fun () ->
