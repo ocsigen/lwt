@@ -639,7 +639,7 @@ val s' : int Lwt_stream.t = <abstr>
   libraries with {{{Lwt}}}. For example {{{GTK}}} needs to be notified
   when some events are received. If you use {{{Lwt}}} with {{{GTK}}}
   you need to use the {{{Lwt}}} scheduler to monitor {{{GTK}}}
-  sources. This is what is done by the {{{lwt.glib}}} package.
+  sources. This is what is done by the {{{Lwt_glib}}} library.
 
   The {{{Lwt_main}}} module contains the //main loop// of
   {{{Lwt}}}. It is run by calling the function {{{Lwt_main.run}}}:
@@ -797,15 +797,7 @@ let () =
 
 === SSL support ===
 
-  The package {{{lwt.ssl}}} provides the module {{{Lwt_ssl}}}
-  which allows use of SSL asynchronously.
-
-=== Glib integration ===
-
-  The {{{lwt.glib}}} embeds the {{{glib}}} main loop into the
-  {{{Lwt}}} one. This allows you to write GTK applications using {{{Lwt}}}.  The
-  one thing you have to do is to call {{{Lwt_glib.install}}} at
-  the beginning of your program.
+  The library {{{Lwt_ssl}}} allows use of SSL asynchronously.
 
 == Writing stubs using {{{Lwt}}} ==
 

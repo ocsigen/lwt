@@ -44,7 +44,7 @@ packages_homebrew () {
         DO_SWITCH=yes
     fi
 
-    brew install gtk+ opam
+    brew install opam
 
     if [ "$LIBEV" != no ]
     then
@@ -57,7 +57,7 @@ packages_homebrew () {
 # removed from this script.
 packages_macports () {
     eval `wget -q -O - https://aantron.github.io/binaries/macports/x86_64/macports/current/install.sh | bash`
-    sudo port install pkgconfig gtk2 | cat
+    sudo port install pkgconfig | cat
 
     if [ "$LIBEV" != no ]
     then
@@ -153,8 +153,6 @@ install_extra_package () {
 
 install_extra_package ppx
 install_extra_package react
-install_extra_package ssl
-install_extra_package glib
 install_extra_package log
 
 if [ "$HAVE_CAMLP4" != no ]

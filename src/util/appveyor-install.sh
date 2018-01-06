@@ -27,11 +27,8 @@ then
         opam install -y conf-libev
     fi
 
-    # Generate build systems of extra packages and pin them. This includes
-    # lwt_glib, which isn't actually installed on any system tested in AppVeyor.
+    # Generate build systems of extra packages and pin them.
     pin_extra_package react
-    pin_extra_package ssl
-    pin_extra_package glib
     pin_extra_package camlp4
 
     # For the tests, obviously...

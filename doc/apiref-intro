@@ -87,9 +87,7 @@ The following modules are wrapper for integration of non-Lwt
 functions/packages into Lwt.
 
 {!modules:
-Lwt_glib
 Lwt_preemptive
-Lwt_ssl
 }
 
 {2 Camlp4 syntax extensions}
