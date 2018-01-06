@@ -119,6 +119,34 @@ let test_map f test_list =
   in
   ()
 
+let test_parallelism map =
+  let t, w = Lwt.wait () in
+  let g _ =
+    Lwt.wakeup_later w ();
+    Lwt.return () in
+  let f x =
+    if x = 0 then t >>= (fun _ -> Lwt.return ())
+    else g x
+  in
+  let p = map f [0; 1] in
+  p >>= (fun _ -> Lwt.return_true)
+
+let test_serialization ?(rev=false) map =
+  let other_ran = ref false in
+  let k = if rev then 1 else 0 in
+  let f x =
+    if x = k then
+      Lwt.pause () >>= fun () ->
+      assert(not !other_ran);
+      Lwt.return ()
+    else begin
+      other_ran := true;
+      Lwt.return ()
+    end
+  in
+  let p = map f [0; 1] in
+  p >>= (fun _ -> Lwt.return_true)
+
 let test_for_all_true f =
   let l = [true; true] in
   f (fun x -> Lwt.return (x = true)) l
@@ -408,5 +436,128 @@ let suite = suite "lwt_list" [
     let m f = Lwt_list.partition_s (fun x -> f x >>= (fun _ -> Lwt.return_false)) in
     test_exception m;
     Lwt.return true;
+  end;
+
+  test "iter_p parallelism" begin fun () ->
+    test_parallelism Lwt_list.iter_p
+  end;
+
+  test "iter_s serialism" begin fun () ->
+    test_serialization Lwt_list.iter_s
+  end;
+
+  test "iteri_p parallelism" begin fun () ->
+    let iter f = Lwt_list.iteri_p (fun _ x -> f x) in
+    test_parallelism iter
+  end;
+
+  test "iteri_s serialism" begin fun () ->
+    let iter f = Lwt_list.iteri_s (fun _ x -> f x) in
+    test_serialization iter
+  end;
+
+  test "map_p parallelism" begin fun () ->
+    test_parallelism Lwt_list.map_p
+  end;
+
+  test "map_s serialism" begin fun () ->
+    test_serialization Lwt_list.map_s
+  end;
+
+  test "mapi_p parallelism" begin fun () ->
+    let m f = Lwt_list.mapi_p (fun _ x -> f x) in
+    test_parallelism m
+  end;
+
+  test "mapi_s serialism" begin fun () ->
+    let m f = Lwt_list.mapi_s (fun _ x -> f x) in
+    test_serialization m
+  end;
+
+  test "rev_map_p parallelism" begin fun () ->
+    test_parallelism Lwt_list.rev_map_p
+  end;
+
+  test "rev_map_s serialism" begin fun () ->
+    test_serialization Lwt_list.rev_map_s
+  end;
+
+  test "fold_left_s serialism" begin fun () ->
+    let m f = Lwt_list.fold_left_s (fun _ x -> f x >>= fun _ -> Lwt.return ()) () in
+    test_serialization m
+  end;
+
+  test "fold_right_s serialism" begin fun () ->
+    let m f l = Lwt_list.fold_right_s (fun x _ -> f x >>= fun _ -> Lwt.return ()) l () in
+    test_serialization ~rev:true m
+  end;
+
+  test "filter_map_p parallelism" begin fun () ->
+    let m f = Lwt_list.filter_map_p (fun x -> f x >>= fun u -> Lwt.return (Some u)) in
+    test_parallelism m
+  end;
+
+  test "filter_map_s serlialism" begin fun () ->
+    let m f = Lwt_list.filter_map_s (fun x -> f x >>= fun u -> Lwt.return (Some u)) in
+    test_serialization m
+  end;
+
+  test "for_all_p parallelism" begin fun () ->
+    let m f = Lwt_list.for_all_p (fun x -> f x >>= fun _ -> Lwt.return_true) in
+    test_parallelism m
+  end;
+
+  test "for_all_s serialism" begin fun () ->
+    let m f = Lwt_list.for_all_s (fun x -> f x >>= fun _ -> Lwt.return_true) in
+    test_serialization m
+  end;
+
+  test "exists_p parallelism" begin fun () ->
+    let m f = Lwt_list.exists_p (fun x -> f x >>= fun _ -> Lwt.return_false) in
+    test_parallelism m
+  end;
+
+  test "exists_s serialism" begin fun () ->
+    let m f = Lwt_list.exists_s (fun x -> f x >>= fun _ -> Lwt.return_false) in
+    test_serialization m
+  end;
+
+  test "find_s serialism" begin fun () ->
+    let m f = Lwt_list.find_s (fun x -> f x >>= fun _ -> Lwt.return_false) in
+    let handler e =
+      if e = Not_found then Lwt.return_true
+      else Lwt.return_false
+    in
+    Lwt.catch (fun () -> test_serialization m) handler
+  end;
+
+  test "filter_p parallelism" begin fun () ->
+    let m f = Lwt_list.filter_p (fun x -> f x >>= fun _ -> Lwt.return_true) in
+    test_parallelism m
+  end;
+
+  test "filter_s serialism" begin fun () ->
+    let m f = Lwt_list.filter_s (fun x -> f x >>= fun _ -> Lwt.return_true) in
+    test_serialization m
+  end;
+
+  test "filter_map_p parallelism" begin fun () ->
+    let m f = Lwt_list.filter_map_p (fun x -> f x >>= fun u -> Lwt.return (Some u)) in
+    test_parallelism m
+  end;
+
+  test "filter_map_s serialism" begin fun () ->
+    let m f = Lwt_list.filter_map_s (fun x -> f x >>= fun u -> Lwt.return (Some u)) in
+    test_serialization m
+  end;
+
+  test "partition_p parallelism" begin fun () ->
+    let m f l = (Lwt_list.partition_p (fun x -> f x >>= fun _ -> Lwt.return true) l) in
+    test_parallelism m
+  end;
+
+  test "partition_s serialism" begin fun () ->
+    let m f l = (Lwt_list.partition_s (fun x -> f x >>= fun _ -> Lwt.return true) l) in
+    test_serialization m
   end;
 ]
