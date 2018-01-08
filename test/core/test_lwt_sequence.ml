@@ -1,3 +1,4 @@
+
 (* OCaml promise library
  * http://www.ocsigen.org/lwt
  * Copyright (C) 2009 Jérémie Dimino
@@ -19,15 +20,8 @@
  * 02111-1307, USA.
  *)
 
-Test.run "core"
-  (Test_lwt.suites @ [
-    Test_lwt_stream.suite;
-    Test_lwt_list.suite;
-    Test_lwt_switch.suite;
-    Test_lwt_mutex.suite;
-    Test_lwt_result.suite;
-    Test_lwt_mvar.suite;
-    Test_lwt_condition.suite;
-    Test_lwt_pool.suite;
-    Test_lwt_sequence.suite;
-  ])
+open Test
+
+let suite = suite "lwt_sequence" [
+
+]
