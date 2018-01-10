@@ -380,4 +380,13 @@ let suite = suite "lwt_sequence" [
     )
     (function _ -> Lwt.return_false)
   end;
+
+  test "set" begin fun () ->
+    let s = filled_sequence () in
+    match Lwt_sequence.find_node_opt_l (fun v -> v = 1) s with
+    | None -> Lwt.return_false
+    | Some n -> let _ = Lwt_sequence.set n 10 in
+      let data = [|-3; -2; -1; 10; 2; 3|] in
+      test_iter Lwt_sequence.iter_l data s
+  end;
 ]
