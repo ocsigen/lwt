@@ -105,8 +105,8 @@ clean:
 BISECT_FILES_PATTERN := _build/default/test/*/bisect*.out
 
 .PHONY: coverage
-coverage: clean
-	BISECT_ENABLE=yes jbuilder runtest --dev
+coverage: clean check-config
+	BISECT_ENABLE=yes jbuilder runtest --dev --only-packages lwt,lwt_react
 	bisect-ppx-report \
 	    -I _build/default/ -html _coverage/ \
 	    -text - -summary-only \
