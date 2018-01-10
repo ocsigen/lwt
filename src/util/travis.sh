@@ -174,6 +174,7 @@ fi
 
 ocaml src/util/configure.ml -use-libev $LIBEV_FLAG -use-camlp4 false
 make build-all test-all
+make coverage
 
 
 
