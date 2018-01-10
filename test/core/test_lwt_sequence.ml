@@ -50,6 +50,46 @@ let transfer_sequence () =
 
 let transfer_length = 2
 
+let empty_array = [||]
+
+let l_filled_array = [|-3; -2; -1; 1; 2; 3|]
+
+let r_filled_array = [|3; 2; 1; -1; -2; -3|]
+
+let test_iter iter_f array_values seq =
+  let index = ref 0 in
+  Lwt.catch
+   (fun () ->
+    iter_f (fun v ->
+              assert (v = array_values.(!index));
+              index := (!index + 1)) seq;
+    Lwt.return_true
+   )
+   (function _ -> Lwt.return_false)
+
+let test_iter_node iter_f array_values seq =
+  let index = ref 0 in
+  Lwt.catch
+   (fun () ->
+    iter_f (fun n ->
+              assert ((Lwt_sequence.get n) = array_values.(!index));
+              index := (!index + 1)) seq;
+    Lwt.return_true
+   )
+   (function _ -> Lwt.return_false)
+
+let test_iter_rem iter_f array_values seq =
+  let index = ref 0 in
+  Lwt.catch
+   (fun () ->
+    iter_f (fun n ->
+              assert ((Lwt_sequence.get n) = array_values.(!index));
+              Lwt_sequence.remove n;
+              index := (!index + 1)) seq;
+    Lwt.return_true
+   )
+   (function _ -> Lwt.return_false)
+
 let suite = suite "lwt_sequence" [
 
   test "create" begin fun () ->
@@ -189,5 +229,145 @@ let suite = suite "lwt_sequence" [
     match Lwt_sequence.take_opt_r s with
     | None -> Lwt.return_false
     | Some v -> Lwt.return (5 = v)
+  end;
+
+  test "iter_l Empty" begin fun () ->
+    test_iter Lwt_sequence.iter_l empty_array (Lwt_sequence.create ())
+  end;
+
+  test "iter_l" begin fun () ->
+    test_iter Lwt_sequence.iter_l l_filled_array (filled_sequence ())
+  end;
+
+  test "iter_r Empty" begin fun () ->
+    test_iter Lwt_sequence.iter_r empty_array (Lwt_sequence.create ())
+  end;
+
+  test "iter_r" begin fun () ->
+    test_iter Lwt_sequence.iter_r r_filled_array (filled_sequence ())
+  end;
+
+  test "iter_node_l Empty" begin fun () ->
+    test_iter_node Lwt_sequence.iter_node_l empty_array (Lwt_sequence.create ())
+  end;
+
+  test "iter_node_l" begin fun () ->
+    test_iter_node Lwt_sequence.iter_node_l l_filled_array (filled_sequence ())
+  end;
+
+  test "iter_node_r Empty" begin fun () ->
+    test_iter_node Lwt_sequence.iter_node_r empty_array (Lwt_sequence.create ())
+  end;
+
+  test "iter_node_r" begin fun () ->
+    test_iter_node Lwt_sequence.iter_node_r r_filled_array (filled_sequence ())
+  end;
+
+  test "iter_node_l with removal" begin fun () ->
+    test_iter_rem Lwt_sequence.iter_node_l l_filled_array (filled_sequence ())
+  end;
+
+  test "iter_node_r with removal" begin fun () ->
+    test_iter_rem Lwt_sequence.iter_node_r r_filled_array (filled_sequence ())
+  end;
+
+  test "fold_l" begin fun () ->
+    let sum = Lwt_sequence.fold_l (fun v e -> v + e) (filled_sequence ()) 0 in
+    Lwt.return (sum = 0)
+  end;
+
+  test "fold_r" begin fun () ->
+    let sum = Lwt_sequence.fold_r (fun v e -> v + e) (filled_sequence ()) 0 in
+    Lwt.return (sum = 0)
+  end;
+
+  test "find_node_opt_l Empty" begin fun () ->
+    let s = Lwt_sequence.create () in
+    match Lwt_sequence.find_node_opt_l (fun v -> v = 1) s with
+    | None -> Lwt.return_true
+    | _ -> Lwt.return_false
+  end;
+
+  test "find_node_opt_l not found " begin fun () ->
+    let s = transfer_sequence () in
+    match Lwt_sequence.find_node_opt_l (fun v -> v = 1) s with
+    | None -> Lwt.return_true
+    | _ -> Lwt.return_false
+  end;
+
+  test "find_node_opt_l" begin fun () ->
+    let s = filled_sequence () in
+    match Lwt_sequence.find_node_opt_l (fun v -> v = 1) s with
+    | None -> Lwt.return_false
+    | Some n -> if ((Lwt_sequence.get n) = 1) then Lwt.return_true
+      else Lwt.return_false
+  end;
+
+  test "find_node_opt_r Empty" begin fun () ->
+    let s = Lwt_sequence.create () in
+    match Lwt_sequence.find_node_opt_r (fun v -> v = 1) s with
+    | None -> Lwt.return_true
+    | _ -> Lwt.return_false
+  end;
+
+  test "find_node_opt_r not found " begin fun () ->
+    let s = transfer_sequence () in
+    match Lwt_sequence.find_node_opt_r (fun v -> v = 1) s with
+    | None -> Lwt.return_true
+    | _ -> Lwt.return_false
+  end;
+
+  test "find_node_opt_r" begin fun () ->
+    let s = filled_sequence () in
+    match Lwt_sequence.find_node_opt_r (fun v -> v = 1) s with
+    | None -> Lwt.return_false
+    | Some n -> if ((Lwt_sequence.get n) = 1) then Lwt.return_true
+      else Lwt.return_false
+  end;
+
+  test "find_node_l Empty" begin fun () ->
+    let s = Lwt_sequence.create () in
+    Lwt.catch
+    (fun () -> let n = Lwt_sequence.find_node_l (fun v -> v = 1) s in
+       if ((Lwt_sequence.get n) = 1) then Lwt.return_false
+       else Lwt.return_false
+    )
+    (function
+      | Not_found -> Lwt.return_true
+      | _ -> Lwt.return_false
+    )
+  end;
+
+  test "find_node_l" begin fun () ->
+    let s = filled_sequence () in
+    Lwt.catch
+    (fun () -> let n = Lwt_sequence.find_node_l (fun v -> v = 1) s in
+       if ((Lwt_sequence.get n) = 1) then Lwt.return_true
+       else Lwt.return_false
+    )
+    (function _ -> Lwt.return_false)
+  end;
+
+  test "find_node_r Empty" begin fun () ->
+    let s = Lwt_sequence.create () in
+    Lwt.catch
+    (fun () -> let n = Lwt_sequence.find_node_r (fun v -> v = 1) s in
+       if ((Lwt_sequence.get n) = 1) then Lwt.return_false
+       else Lwt.return_false
+    )
+    (function
+      | Not_found -> Lwt.return_true
+      | _ -> Lwt.return_false
+    )
+  end;
+
+  test "find_node_r" begin fun () ->
+    let s = filled_sequence () in
+    Lwt.catch
+    (fun () -> let n = Lwt_sequence.find_node_r (fun v -> v = 1) s in
+       if ((Lwt_sequence.get n) = 1) then Lwt.return_true
+       else Lwt.return_false
+    )
+    (function _ -> Lwt.return_false)
   end;
 ]
