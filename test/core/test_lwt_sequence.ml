@@ -36,9 +36,19 @@ let filled_sequence () =
   let _ = Lwt_sequence.add_r 3 s in
   s
 
+let filled_length = 6
+
 let leftmost_value = (-3)
 
 let rightmost_value = 3
+
+let transfer_sequence () =
+  let s = Lwt_sequence.create () in
+  let _ = Lwt_sequence.add_r 4 s in
+  let _ = Lwt_sequence.add_r 5 s in
+  s
+
+let transfer_length = 2
 
 let suite = suite "lwt_sequence" [
 
@@ -141,5 +151,43 @@ let suite = suite "lwt_sequence" [
     match Lwt_sequence.take_opt_r s with
     | None -> Lwt.return_false
     | Some v -> Lwt.return (rightmost_value = v)
+  end;
+
+  test "transfer_l Empty" begin fun () ->
+    let s = filled_sequence () in
+    let ts = Lwt_sequence.create () in
+    let _ = Lwt_sequence.transfer_l ts s in
+    let len = Lwt_sequence.length s in
+    Lwt.return (filled_length = len)
+  end;
+
+  test "transfer_l " begin fun () ->
+    let s = filled_sequence () in
+    let ts = transfer_sequence () in
+    let _ = Lwt_sequence.transfer_l ts s in
+    let len = Lwt_sequence.length s in
+    let _ = assert ((filled_length + transfer_length) = len) in
+    match Lwt_sequence.take_opt_l s with
+    | None -> Lwt.return_false
+    | Some v -> Lwt.return (4 = v)
+  end;
+
+  test "transfer_r Empty" begin fun () ->
+    let s = filled_sequence () in
+    let ts = Lwt_sequence.create () in
+    let _ = Lwt_sequence.transfer_r ts s in
+    let len = Lwt_sequence.length s in
+    Lwt.return (filled_length = len)
+  end;
+
+  test "transfer_r " begin fun () ->
+    let s = filled_sequence () in
+    let ts = transfer_sequence () in
+    let _ = Lwt_sequence.transfer_r ts s in
+    let len = Lwt_sequence.length s in
+    let _ = assert ((filled_length + transfer_length) = len) in
+    match Lwt_sequence.take_opt_r s with
+    | None -> Lwt.return_false
+    | Some v -> Lwt.return (5 = v)
   end;
 ]
