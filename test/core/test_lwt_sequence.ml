@@ -104,4 +104,36 @@ let suite = suite "lwt_sequence" [
         | _ -> Lwt.return_false
       )
   end;
+
+  test "take_opt_l Empty" begin fun () ->
+    let s = Lwt_sequence.create () in
+    match Lwt_sequence.take_opt_l s with
+    | None -> Lwt.return_true
+    | _ -> Lwt.return_false
+  end;
+
+  test "take_opt_l" begin fun () ->
+    let s = Lwt_sequence.create () in
+    let v = 1 in
+    let _ = Lwt_sequence.add_l v s in
+    match Lwt_sequence.take_opt_l s with
+    | None -> Lwt.return_false
+    | Some v' -> Lwt.return (v = v')
+  end;
+
+  test "take_opt_r Empty" begin fun () ->
+    let s = Lwt_sequence.create () in
+    match Lwt_sequence.take_opt_r s with
+    | None -> Lwt.return_true
+    | _ -> Lwt.return_false
+  end;
+
+  test "take_opt_r" begin fun () ->
+    let s = Lwt_sequence.create () in
+    let v = 1 in
+    let _ = Lwt_sequence.add_r v s in
+    match Lwt_sequence.take_opt_r s with
+    | None -> Lwt.return_false
+    | Some v' -> Lwt.return (v = v')
+  end;
 ]
