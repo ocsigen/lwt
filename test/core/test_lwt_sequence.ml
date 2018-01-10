@@ -272,13 +272,23 @@ let suite = suite "lwt_sequence" [
   end;
 
   test "fold_l" begin fun () ->
-    let sum = Lwt_sequence.fold_l (fun v e -> v + e) (filled_sequence ()) 0 in
-    Lwt.return (sum = 0)
+    let acc = Lwt_sequence.fold_l (fun v e -> v * e) (filled_sequence ()) 1 in
+    Lwt.return (acc = (-36))
+  end;
+
+  test "fold_l Empty" begin fun () ->
+    let acc = Lwt_sequence.fold_l (fun v e -> v * e) (Lwt_sequence.create ()) 1 in
+    Lwt.return (acc = 1)
   end;
 
   test "fold_r" begin fun () ->
-    let sum = Lwt_sequence.fold_r (fun v e -> v + e) (filled_sequence ()) 0 in
-    Lwt.return (sum = 0)
+    let acc = Lwt_sequence.fold_r (fun v e -> v * e) (filled_sequence ()) 1 in
+    Lwt.return (acc = (-36))
+  end;
+
+  test "fold_r Empty" begin fun () ->
+    let acc = Lwt_sequence.fold_r (fun v e -> v * e) (Lwt_sequence.create ()) 1 in
+    Lwt.return (acc = 1)
   end;
 
   test "find_node_opt_l Empty" begin fun () ->
