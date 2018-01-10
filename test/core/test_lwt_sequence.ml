@@ -26,6 +26,20 @@ open Test
 module Lwt_sequence = Lwt_sequence
 [@@@ocaml.warning "+3"]
 
+let filled_sequence () =
+  let s = Lwt_sequence.create () in
+  let _ = Lwt_sequence.add_l (-1) s in
+  let _ = Lwt_sequence.add_l (-2) s in
+  let _ = Lwt_sequence.add_l (-3) s in
+  let _ = Lwt_sequence.add_r 1 s in
+  let _ = Lwt_sequence.add_r 2 s in
+  let _ = Lwt_sequence.add_r 3 s in
+  s
+
+let leftmost_value = (-3)
+
+let rightmost_value = 3
+
 let suite = suite "lwt_sequence" [
 
   test "create" begin fun () ->
@@ -65,13 +79,11 @@ let suite = suite "lwt_sequence" [
   end;
 
   test "take_l" begin fun () ->
-    let s = Lwt_sequence.create () in
-    let v = 1 in
-    let _ = Lwt_sequence.add_l v s in
+    let s = filled_sequence () in
     Lwt.catch
       (fun () ->
-        let v' = Lwt_sequence.take_l s in
-        Lwt.return (v' = v)
+        let v = Lwt_sequence.take_l s in
+        Lwt.return (leftmost_value = v)
       )
       (function
         | _ -> Lwt.return_false
@@ -92,13 +104,11 @@ let suite = suite "lwt_sequence" [
   end;
 
   test "take_r" begin fun () ->
-    let s = Lwt_sequence.create () in
-    let v = 1 in
-    let _ = Lwt_sequence.add_r v s in
+    let s = filled_sequence () in
     Lwt.catch
       (fun () ->
-        let v' = Lwt_sequence.take_r s in
-        Lwt.return (v' = v)
+        let v = Lwt_sequence.take_r s in
+        Lwt.return (rightmost_value = v)
       )
       (function
         | _ -> Lwt.return_false
@@ -113,12 +123,10 @@ let suite = suite "lwt_sequence" [
   end;
 
   test "take_opt_l" begin fun () ->
-    let s = Lwt_sequence.create () in
-    let v = 1 in
-    let _ = Lwt_sequence.add_l v s in
+    let s = filled_sequence () in
     match Lwt_sequence.take_opt_l s with
     | None -> Lwt.return_false
-    | Some v' -> Lwt.return (v = v')
+    | Some v -> Lwt.return (leftmost_value = v)
   end;
 
   test "take_opt_r Empty" begin fun () ->
@@ -129,11 +137,9 @@ let suite = suite "lwt_sequence" [
   end;
 
   test "take_opt_r" begin fun () ->
-    let s = Lwt_sequence.create () in
-    let v = 1 in
-    let _ = Lwt_sequence.add_r v s in
+    let s = filled_sequence () in
     match Lwt_sequence.take_opt_r s with
     | None -> Lwt.return_false
-    | Some v' -> Lwt.return (v = v')
+    | Some v -> Lwt.return (rightmost_value = v)
   end;
 ]
