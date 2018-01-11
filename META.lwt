@@ -5,7 +5,7 @@
 # been given appropriate predicates.
 #
 
-version = "dev"
+version = "3.2.1"
 description = "Monadic promises and concurrent I/O"
 requires = "bytes result"
 archive(byte) = "lwt.cma"
@@ -15,7 +15,7 @@ plugin(native) = "lwt.cmxs"
 
 package "log" (
   #directory = "log"
-  version = "dev"
+  version = "3.2.1"
   description = "Logger for Lwt (deprecated; use lwt_log)"
   requires = "bytes lwt result"
   archive(byte) = "lwt_log.cma"
@@ -27,7 +27,7 @@ package "log" (
 
 package "ppx" (
   #directory = "ppx"
-  version = "dev"
+  version = "3.2.1"
   description = "Lwt PPX syntax extension (deprecated; use lwt_ppx)"
   requires(ppx_driver) = "lwt.omp"
   requires(-ppx_driver) = "bytes lwt result"
@@ -35,7 +35,7 @@ package "ppx" (
 )
 
 package "omp" (
-  version = "dev"
+  version = "3.2.1"
   description = "Lwt ocaml-migrate-parsetree PPX (internal)"
   requires = "compiler-libs
               compiler-libs.common
@@ -51,14 +51,14 @@ package "omp" (
 
 package "preemptive" (
   #directory = "preemptive"
-  version = "dev"
+  version = "3.2.1"
   description = "Preemptive thread support for Lwt (deprecated; use lwt.unix)"
   requires = "lwt.unix"
 )
 
 package "simple-top" (
   #directory = "simple-top"
-  version = "dev"
+  version = "3.2.1"
   description = "Lwt-OCaml top level integration (deprecated; use utop)"
   requires = "bigarray
               bytes
@@ -78,7 +78,7 @@ package "simple-top" (
 
 package "syntax" (
   #directory = "syntax"
-  version = "dev"
+  version = "3.2.1"
   description = "Camlp4 syntax for Lwt (deprecated; use lwt_ppx)"
   requires = "camlp4 lwt.syntax.options"
   archive(syntax, preprocessor) = "lwt_syntax.cma"
@@ -89,7 +89,7 @@ package "syntax" (
 
   package "log" (
     #directory = "log"
-    version = "dev"
+    version = "3.2.1"
     description = "Camlp4 syntax for Lwt logging (deprecated; use lwt_ppx)"
     requires = "camlp4 lwt.syntax.options"
     archive(syntax, preprocessor) = "lwt_syntax_log.cma"
@@ -101,7 +101,7 @@ package "syntax" (
 
   package "options" (
     #directory = "options"
-    version = "dev"
+    version = "3.2.1"
     description = "Options for Lwt Camlp4 syntax extension (deprecated; use lwt_ppx)"
     requires = "camlp4"
     archive(syntax, preprocessor) = "lwt_syntax_options.cma"
@@ -114,7 +114,7 @@ package "syntax" (
 
 package "unix" (
   #directory = "unix"
-  version = "dev"
+  version = "3.2.1"
   description = "Unix support for Lwt"
   requires = "bigarray bytes lwt lwt.log result threads unix"
   archive(byte) = "lwt_unix.cma"
