@@ -1,6 +1,6 @@
-# Lwt &nbsp;&nbsp; [![version 3.2.0][version]][releases] [![LGPL][license-img]][copying] [![Gitter chat][gitter-img]][gitter] [![Travis status][travis-img]][travis] [![AppVeyor status][appveyor-img]][appveyor]
+# Lwt &nbsp;&nbsp; [![version 3.2.1][version]][releases] [![LGPL][license-img]][copying] [![Gitter chat][gitter-img]][gitter] [![Travis status][travis-img]][travis] [![AppVeyor status][appveyor-img]][appveyor]
 
-[version]:      https://img.shields.io/badge/version-3.2.0-blue.svg
+[version]:      https://img.shields.io/badge/version-3.2.1-blue.svg
 [releases]:     https://github.com/ocsigen/lwt/releases
 [license-img]:  https://img.shields.io/badge/license-LGPL-blue.svg
 [gitter-img]:   https://img.shields.io/badge/chat-on_gitter-lightgrey.svg
