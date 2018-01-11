@@ -1,3 +1,22 @@
+===== 3.2.1 (2018-01-11) =====
+
+Lwt 3.2.1 is released because it still packages lwt.ppx, a deprecated copy of
+package lwt_ppx, and the two packages should be kept in sync.
+
+====== Deprecations ======
+
+  * All PPX options are deprecated and should not be used (#534).
+  * The [%lwt ...] PPX syntax should be replaced by Lwt.catch (#534).
+
+====== Fixes ======
+
+  * Clean up PPX -help usage message output (#525, Zan Doye).
+
+====== Miscellaneous ======
+
+  * More thorough testing (#512, #535, Joseph Thomas).
+  * Clarification of the C binding (#521, @cedlemo).
+
 ===== 3.2.0 (2017-12-19) =====
 
 ====== Additions ======
