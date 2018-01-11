@@ -121,7 +121,7 @@
     windows_bytes_write_job
     unix_stat_job_utils
     unix_stat_job
-    unix_stat64_job
+    unix_stat_64_job
     unix_lstat_job
     unix_lstat_64_job
     unix_fstat_job
