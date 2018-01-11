@@ -389,4 +389,21 @@ let suite = suite "lwt_sequence" [
       let data = [|-3; -2; -1; 10; 2; 3|] in
       test_iter Lwt_sequence.iter_l data s
   end;
+
+  test "fold_r with multiple removal" begin fun () ->
+   let s = filled_sequence () in
+   let acc = Lwt_sequence.fold_r
+   (fun v e ->
+      (if v = (-1) then
+         let n = Lwt_sequence.find_node_r (fun v' -> v' = 1) s in
+         let _ = Lwt_sequence.remove n in
+         let n = Lwt_sequence.find_node_r (fun v' -> v' = (-2)) s in
+         let _ = Lwt_sequence.remove n in
+         let n = Lwt_sequence.find_node_r (fun v' -> v' = (-1)) s in
+         ignore(Lwt_sequence.remove n)
+      );
+      v * e
+    ) s 1 in
+    Lwt.return (acc = 18)
+  end;
 ]
