@@ -29,4 +29,5 @@ Test.run "core"
     Test_lwt_mvar.suite;
     Test_lwt_condition.suite;
     Test_lwt_pool.suite;
+    Test_lwt_sequence.suite;
   ])
