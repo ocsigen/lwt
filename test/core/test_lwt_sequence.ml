@@ -423,4 +423,42 @@ let suite = suite "lwt_sequence" [
    end s 1 in
     Lwt.return (acc = -18)
   end;
+
+  test "find_node_r with multiple removal" begin fun () ->
+    let s = filled_sequence () in
+    Lwt.catch
+    (fun () ->
+      let n_minus_one = Lwt_sequence.find_node_r (fun v' -> v' = (-1)) s in
+      let n_minus_two = Lwt_sequence.find_node_r (fun v' -> v' = (-2)) s in
+      let n = Lwt_sequence.find_node_r (fun v ->
+        (if v = (-1) then
+          let _ = Lwt_sequence.remove n_minus_one in
+          ignore(Lwt_sequence.remove n_minus_two)
+        );
+        v = (-3)
+      ) s in
+      let v = (Lwt_sequence.get n) in
+      Lwt.return (v = (-3))
+    )
+    (function _ -> Lwt.return_false)
+  end;
+
+  test "find_node_l with multiple removal" begin fun () ->
+    let s = filled_sequence () in
+    Lwt.catch
+    (fun () ->
+      let n_minus_one = Lwt_sequence.find_node_r (fun v' -> v' = (-1)) s in
+      let n_one = Lwt_sequence.find_node_r (fun v' -> v' = 1) s in
+      let n = Lwt_sequence.find_node_l (fun v ->
+        (if v = (-1) then
+          let _ = Lwt_sequence.remove n_minus_one in
+          ignore(Lwt_sequence.remove n_one)
+        );
+        v = 3
+      ) s in
+      let v = (Lwt_sequence.get n) in
+      Lwt.return (v = 3)
+    )
+    (function _ -> Lwt.return_false)
+  end;
 ]
