@@ -147,11 +147,6 @@ let test_serialization ?(rev=false) map =
   let p = map f [0; 1] in
   p >>= (fun _ -> Lwt.return_true)
 
-let test_big_list m =
-  let make_list n = Array.to_list @@ Array.init n (fun x -> x) in
-  let f _ = Lwt.return () in
-  m f (make_list 1_000_000) >>= (fun _ -> Lwt.return_true)
-
 let test_for_all_true f =
   let l = [true; true] in
   f (fun x -> Lwt.return (x = true)) l
@@ -204,7 +199,7 @@ let test_rev_map f =
   f (fun n -> Lwt.return (n * 2)) l >>= fun after ->
   Lwt.return (after = [6; 4; 2])
 
-let suite = suite "lwt_list" [
+let suite_primary = suite "lwt_list" [
   test "iter_p" begin fun () ->
     test_iter Lwt_list.iter_p [1; 0; 1];
     test_exception Lwt_list.iter_p;
@@ -585,7 +580,15 @@ let suite = suite "lwt_list" [
       Lwt_list.partition_s (fun x -> f x >>= fun _ -> Lwt.return true) l in
     test_serialization m
   end;
+]
 
+let test_big_list m =
+  let make_list n = Array.to_list @@ Array.init n (fun x -> x) in
+  let f _ = Lwt.return () in
+  m f (make_list 10_000_000) >>= (fun _ -> Lwt.return_true)
+
+let suite_intensive = suite "lwt_list big lists"
+    ~only_if:(fun () -> Sys.getenv_opt "LWT_STRESS_TEST" <> None) [
   test "iter_p big list" begin fun () ->
     test_big_list Lwt_list.iter_p
   end;
@@ -637,16 +640,6 @@ let suite = suite "lwt_list" [
 
   test "fold_right_s big list" begin fun () ->
     let m f l = Lwt_list.fold_right_s (fun x _ -> f x >>= fun _ -> Lwt.return ()) l () in
-    test_big_list m
-  end;
-
-  test "filter_map_p big list" begin fun () ->
-    let m f = Lwt_list.filter_map_p (fun x -> f x >>= fun u -> Lwt.return (Some u)) in
-    test_big_list m
-  end;
-
-  test "filter_map_s serlialism" begin fun () ->
-    let m f = Lwt_list.filter_map_s (fun x -> f x >>= fun u -> Lwt.return (Some u)) in
     test_big_list m
   end;
 

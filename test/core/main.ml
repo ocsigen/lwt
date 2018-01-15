@@ -22,7 +22,8 @@
 Test.run "core"
   (Test_lwt.suites @ [
     Test_lwt_stream.suite;
-    Test_lwt_list.suite;
+    Test_lwt_list.suite_primary;
+    Test_lwt_list.suite_intensive;
     Test_lwt_switch.suite;
     Test_lwt_mutex.suite;
     Test_lwt_result.suite;
