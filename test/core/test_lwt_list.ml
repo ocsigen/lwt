@@ -199,7 +199,7 @@ let test_rev_map f =
   f (fun n -> Lwt.return (n * 2)) l >>= fun after ->
   Lwt.return (after = [6; 4; 2])
 
-let suite = suite "lwt_list" [
+let suite_primary = suite "lwt_list" [
   test "iter_p" begin fun () ->
     test_iter Lwt_list.iter_p [1; 0; 1];
     test_exception Lwt_list.iter_p;
@@ -454,7 +454,7 @@ let suite = suite "lwt_list" [
     test_parallelism Lwt_list.iter_p
   end;
 
-  test "iter_s serialism" begin fun () ->
+  test "iter_s serialization" begin fun () ->
     test_serialization Lwt_list.iter_s
   end;
 
@@ -463,7 +463,7 @@ let suite = suite "lwt_list" [
     test_parallelism iter
   end;
 
-  test "iteri_s serialism" begin fun () ->
+  test "iteri_s serialization" begin fun () ->
     let iter f = Lwt_list.iteri_s (fun _ x -> f x) in
     test_serialization iter
   end;
@@ -472,7 +472,7 @@ let suite = suite "lwt_list" [
     test_parallelism Lwt_list.map_p
   end;
 
-  test "map_s serialism" begin fun () ->
+  test "map_s serialization" begin fun () ->
     test_serialization Lwt_list.map_s
   end;
 
@@ -481,7 +481,7 @@ let suite = suite "lwt_list" [
     test_parallelism m
   end;
 
-  test "mapi_s serialism" begin fun () ->
+  test "mapi_s serialization" begin fun () ->
     let m f = Lwt_list.mapi_s (fun _ x -> f x) in
     test_serialization m
   end;
@@ -490,17 +490,17 @@ let suite = suite "lwt_list" [
     test_parallelism Lwt_list.rev_map_p
   end;
 
-  test "rev_map_s serialism" begin fun () ->
+  test "rev_map_s serialization" begin fun () ->
     test_serialization Lwt_list.rev_map_s
   end;
 
-  test "fold_left_s serialism" begin fun () ->
+  test "fold_left_s serialization" begin fun () ->
     let m f =
       Lwt_list.fold_left_s (fun _ x -> f x >>= fun _ -> Lwt.return ()) () in
     test_serialization m
   end;
 
-  test "fold_right_s serialism" begin fun () ->
+  test "fold_right_s serialization" begin fun () ->
     let m f l =
       Lwt_list.fold_right_s (fun x _ -> f x >>= fun _ -> Lwt.return ()) l () in
     test_serialization ~rev:true m
@@ -523,7 +523,7 @@ let suite = suite "lwt_list" [
     test_parallelism m
   end;
 
-  test "for_all_s serialism" begin fun () ->
+  test "for_all_s serialization" begin fun () ->
     let m f = Lwt_list.for_all_s (fun x -> f x >>= fun _ -> Lwt.return_true) in
     test_serialization m
   end;
@@ -533,12 +533,12 @@ let suite = suite "lwt_list" [
     test_parallelism m
   end;
 
-  test "exists_s serialism" begin fun () ->
+  test "exists_s serialization" begin fun () ->
     let m f = Lwt_list.exists_s (fun x -> f x >>= fun _ -> Lwt.return_false) in
     test_serialization m
   end;
 
-  test "find_s serialism" begin fun () ->
+  test "find_s serialization" begin fun () ->
     let m f = Lwt_list.find_s (fun x -> f x >>= fun _ -> Lwt.return_false) in
     let handler e =
       if e = Not_found then Lwt.return_true
@@ -552,7 +552,7 @@ let suite = suite "lwt_list" [
     test_parallelism m
   end;
 
-  test "filter_s serialism" begin fun () ->
+  test "filter_s serialization" begin fun () ->
     let m f = Lwt_list.filter_s (fun x -> f x >>= fun _ -> Lwt.return_true) in
     test_serialization m
   end;
@@ -563,7 +563,7 @@ let suite = suite "lwt_list" [
     test_parallelism m
   end;
 
-  test "filter_map_s serialism" begin fun () ->
+  test "filter_map_s serialization" begin fun () ->
     let m f =
       Lwt_list.filter_map_s (fun x -> f x >>= fun u -> Lwt.return (Some u)) in
     test_serialization m
@@ -575,9 +575,132 @@ let suite = suite "lwt_list" [
     test_parallelism m
   end;
 
-  test "partition_s serialism" begin fun () ->
+  test "partition_s serialization" begin fun () ->
     let m f l =
       Lwt_list.partition_s (fun x -> f x >>= fun _ -> Lwt.return true) l in
     test_serialization m
+  end;
+]
+
+let test_big_list m =
+  let make_list n = Array.to_list @@ Array.init n (fun x -> x) in
+  let f _ = Lwt.return () in
+  m f (make_list 10_000_000) >>= (fun _ -> Lwt.return_true)
+
+let suite_intensive = suite "lwt_list big lists"
+    ~only_if:(fun () ->
+        try Sys.getenv "LWT_STRESS_TEST" = "true" with
+        | Not_found -> false) [
+  test "iter_p big list" begin fun () ->
+    test_big_list Lwt_list.iter_p
+  end;
+
+  test "iter_s big list" begin fun () ->
+    test_big_list Lwt_list.iter_s
+  end;
+
+  test "iteri_p big list" begin fun () ->
+    let iter f = Lwt_list.iteri_p (fun _ x -> f x) in
+    test_big_list iter
+  end;
+
+  test "iteri_s big list" begin fun () ->
+    let iter f = Lwt_list.iteri_s (fun _ x -> f x) in
+    test_serialization iter
+  end;
+
+  test "map_p big list" begin fun () ->
+    test_big_list Lwt_list.map_p
+  end;
+
+  test "map_s big list" begin fun () ->
+    test_serialization Lwt_list.map_s
+  end;
+
+  test "mapi_p big list" begin fun () ->
+    let m f = Lwt_list.mapi_p (fun _ x -> f x) in
+    test_big_list m
+  end;
+
+  test "mapi_s big list" begin fun () ->
+    let m f = Lwt_list.mapi_s (fun _ x -> f x) in
+    test_big_list m
+  end;
+
+  test "rev_map_p big list" begin fun () ->
+    test_big_list Lwt_list.rev_map_p
+  end;
+
+  test "rev_map_s big list" begin fun () ->
+    test_big_list Lwt_list.rev_map_s
+  end;
+
+  test "fold_left_s big list" begin fun () ->
+    let m f = Lwt_list.fold_left_s (fun _ x -> f x >>= fun _ -> Lwt.return ()) () in
+    test_big_list m
+  end;
+
+  test "fold_right_s big list" begin fun () ->
+    let m f l = Lwt_list.fold_right_s (fun x _ -> f x >>= fun _ -> Lwt.return ()) l () in
+    test_big_list m
+  end;
+
+  test "for_all_p big list" begin fun () ->
+    let m f = Lwt_list.for_all_p (fun x -> f x >>= fun _ -> Lwt.return_true) in
+    test_big_list m
+  end;
+
+  test "for_all_s big list" begin fun () ->
+    let m f = Lwt_list.for_all_s (fun x -> f x >>= fun _ -> Lwt.return_true) in
+    test_big_list m
+  end;
+
+  test "exists_p big list" begin fun () ->
+    let m f = Lwt_list.exists_p (fun x -> f x >>= fun _ -> Lwt.return_false) in
+    test_big_list m
+  end;
+
+  test "exists_s big list" begin fun () ->
+    let m f = Lwt_list.exists_s (fun x -> f x >>= fun _ -> Lwt.return_false) in
+    test_big_list m
+  end;
+
+  test "find_s big list" begin fun () ->
+    let m f = Lwt_list.find_s (fun x -> f x >>= fun _ -> Lwt.return_false) in
+    let handler e =
+      if e = Not_found then Lwt.return_true
+      else Lwt.return_false
+    in
+    Lwt.catch (fun () -> test_big_list m) handler
+  end;
+
+  test "filter_p big list" begin fun () ->
+    let m f = Lwt_list.filter_p (fun x -> f x >>= fun _ -> Lwt.return_true) in
+    test_big_list m
+  end;
+
+  test "filter_s big list" begin fun () ->
+    let m f = Lwt_list.filter_s (fun x -> f x >>= fun _ -> Lwt.return_true) in
+    test_big_list m
+  end;
+
+  test "filter_map_p big list" begin fun () ->
+    let m f = Lwt_list.filter_map_p (fun x -> f x >>= fun u -> Lwt.return (Some u)) in
+    test_big_list m
+  end;
+
+  test "filter_map_s big list" begin fun () ->
+    let m f = Lwt_list.filter_map_s (fun x -> f x >>= fun u -> Lwt.return (Some u)) in
+    test_big_list m
+  end;
+
+  test "partition_p big list" begin fun () ->
+    let m f l = (Lwt_list.partition_p (fun x -> f x >>= fun _ -> Lwt.return true) l) in
+    test_big_list m
+  end;
+
+  test "partition_s big list" begin fun () ->
+    let m f l = (Lwt_list.partition_s (fun x -> f x >>= fun _ -> Lwt.return true) l) in
+    test_big_list m
   end;
 ]
