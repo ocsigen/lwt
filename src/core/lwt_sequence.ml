@@ -69,11 +69,7 @@ let length seq =
     if curr == seq then
       len
     else
-      let node = node_of_seq curr in
-      if node.node_active then
-        loop node.node_next (len + 1)
-      else
-        loop node.node_next len
+      let node = node_of_seq curr in loop node.node_next (len + 1)
   in
   loop seq.next 0
 
