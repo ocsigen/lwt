@@ -28,33 +28,35 @@ module Lwt_sequence = Lwt_sequence
 
 let filled_sequence () =
   let s = Lwt_sequence.create () in
-  let _ = Lwt_sequence.add_l (-1) s in
-  let _ = Lwt_sequence.add_l (-2) s in
-  let _ = Lwt_sequence.add_l (-3) s in
   let _ = Lwt_sequence.add_r 1 s in
   let _ = Lwt_sequence.add_r 2 s in
   let _ = Lwt_sequence.add_r 3 s in
+  let _ = Lwt_sequence.add_r 4 s in
+  let _ = Lwt_sequence.add_r 5 s in
+  let _ = Lwt_sequence.add_r 6 s in
   s
 
 let filled_length = 6
 
-let leftmost_value = (-3)
+let leftmost_value = 1
 
-let rightmost_value = 3
+let rightmost_value = 6
 
 let transfer_sequence () =
   let s = Lwt_sequence.create () in
-  let _ = Lwt_sequence.add_r 4 s in
-  let _ = Lwt_sequence.add_r 5 s in
+  let _ = Lwt_sequence.add_r 7 s in
+  let _ = Lwt_sequence.add_r 8 s in
   s
 
 let transfer_length = 2
 
 let empty_array = [||]
 
-let l_filled_array = [|-3; -2; -1; 1; 2; 3|]
+let l_filled_array = [|1; 2; 3; 4; 5; 6|]
 
-let r_filled_array = [|3; 2; 1; -1; -2; -3|]
+let r_filled_array = [|6; 5; 4; 3; 2; 1|]
+
+let factorial_sequence = 720
 
 let test_iter iter_f array_values seq =
   let index = ref 0 in
@@ -209,7 +211,7 @@ let suite = suite "lwt_sequence" [
     let _ = assert ((filled_length + transfer_length) = len) in
     match Lwt_sequence.take_opt_l s with
     | None -> Lwt.return_false
-    | Some v -> Lwt.return (4 = v)
+    | Some v -> Lwt.return (7 = v)
   end;
 
   test "transfer_r Empty" begin fun () ->
@@ -228,7 +230,7 @@ let suite = suite "lwt_sequence" [
     let _ = assert ((filled_length + transfer_length) = len) in
     match Lwt_sequence.take_opt_r s with
     | None -> Lwt.return_false
-    | Some v -> Lwt.return (5 = v)
+    | Some v -> Lwt.return (8 = v)
   end;
 
   test "iter_l Empty" begin fun () ->
@@ -273,7 +275,7 @@ let suite = suite "lwt_sequence" [
 
   test "fold_l" begin fun () ->
     let acc = Lwt_sequence.fold_l (fun v e -> v * e) (filled_sequence ()) 1 in
-    Lwt.return (acc = (-36))
+    Lwt.return (factorial_sequence = acc)
   end;
 
   test "fold_l Empty" begin fun () ->
@@ -283,7 +285,7 @@ let suite = suite "lwt_sequence" [
 
   test "fold_r" begin fun () ->
     let acc = Lwt_sequence.fold_r (fun v e -> v * e) (filled_sequence ()) 1 in
-    Lwt.return (acc = (-36))
+    Lwt.return (factorial_sequence = acc)
   end;
 
   test "fold_r Empty" begin fun () ->
@@ -383,10 +385,10 @@ let suite = suite "lwt_sequence" [
 
   test "set" begin fun () ->
     let s = filled_sequence () in
-    match Lwt_sequence.find_node_opt_l (fun v -> v = 1) s with
+    match Lwt_sequence.find_node_opt_l (fun v -> v = 4) s with
     | None -> Lwt.return_false
     | Some n -> let _ = Lwt_sequence.set n 10 in
-      let data = [|-3; -2; -1; 10; 2; 3|] in
+      let data = [|1; 2; 3; 10; 5; 6|] in
       test_iter Lwt_sequence.iter_l data s
   end;
 
@@ -394,51 +396,51 @@ let suite = suite "lwt_sequence" [
    let s = filled_sequence () in
    let acc = Lwt_sequence.fold_r
    (fun v e ->
-      (if v = (-1) then
-         let n = Lwt_sequence.find_node_r (fun v' -> v' = (-1)) s in
+      (if v = 3 then
+         let n = Lwt_sequence.find_node_r (fun v' -> v' = 3) s in
          let _ = Lwt_sequence.remove n in
-         let n = Lwt_sequence.find_node_r (fun v' -> v' = (-2)) s in
+         let n = Lwt_sequence.find_node_r (fun v' -> v' = 2) s in
          let _ = Lwt_sequence.remove n in
-         let n = Lwt_sequence.find_node_r (fun v' -> v' = 1) s in
+         let n = Lwt_sequence.find_node_r (fun v' -> v' = 4) s in
          ignore(Lwt_sequence.remove n)
       );
       v * e
     ) s 1 in
-    Lwt.return (acc = 18)
+    Lwt.return (acc = (factorial_sequence / 2))
   end;
 
   test "fold_l multiple removal" begin fun () ->
    let s = filled_sequence () in
    let acc = Lwt_sequence.fold_l
    begin fun v e ->
-      (if v = (1) then
-         let n = Lwt_sequence.find_node_r (fun v' -> v' = 1) s in
+      (if v = 4 then
+         let n = Lwt_sequence.find_node_r (fun v' -> v' = 4) s in
          let _ = Lwt_sequence.remove n in
-         let n = Lwt_sequence.find_node_r (fun v' -> v' = (2)) s in
+         let n = Lwt_sequence.find_node_r (fun v' -> v' = 5) s in
          let _ = Lwt_sequence.remove n in
-         let n = Lwt_sequence.find_node_r (fun v' -> v' = (-1)) s in
+         let n = Lwt_sequence.find_node_r (fun v' -> v' = 3) s in
          ignore(Lwt_sequence.remove n)
       );
       v * e
    end s 1 in
-    Lwt.return (acc = -18)
+    Lwt.return (acc = (factorial_sequence / 5))
   end;
 
   test "find_node_r with multiple removal" begin fun () ->
     let s = filled_sequence () in
     Lwt.catch
     (fun () ->
-      let n_minus_one = Lwt_sequence.find_node_r (fun v' -> v' = (-1)) s in
-      let n_minus_two = Lwt_sequence.find_node_r (fun v' -> v' = (-2)) s in
+      let n_three = Lwt_sequence.find_node_r (fun v' -> v' = 3) s in
+      let n_two = Lwt_sequence.find_node_r (fun v' -> v' = 2) s in
       let n = Lwt_sequence.find_node_r (fun v ->
-        (if v = (-1) then
-          let _ = Lwt_sequence.remove n_minus_one in
-          ignore(Lwt_sequence.remove n_minus_two)
+        (if v = 3 then
+          let _ = Lwt_sequence.remove n_three in
+          ignore(Lwt_sequence.remove n_two)
         );
-        v = (-3)
+        v = 1
       ) s in
       let v = (Lwt_sequence.get n) in
-      Lwt.return (v = (-3))
+      Lwt.return (v = 1)
     )
     (function _ -> Lwt.return_false)
   end;
@@ -447,17 +449,17 @@ let suite = suite "lwt_sequence" [
     let s = filled_sequence () in
     Lwt.catch
     (fun () ->
-      let n_minus_one = Lwt_sequence.find_node_r (fun v' -> v' = (-1)) s in
-      let n_one = Lwt_sequence.find_node_r (fun v' -> v' = 1) s in
+      let n_three = Lwt_sequence.find_node_r (fun v' -> v' = 3) s in
+      let n_four = Lwt_sequence.find_node_r (fun v' -> v' = 4) s in
       let n = Lwt_sequence.find_node_l (fun v ->
-        (if v = (-1) then
-          let _ = Lwt_sequence.remove n_minus_one in
-          ignore(Lwt_sequence.remove n_one)
+        (if v = 3 then
+          let _ = Lwt_sequence.remove n_three in
+          ignore(Lwt_sequence.remove n_four)
         );
-        v = 3
+        v = 6
       ) s in
       let v = (Lwt_sequence.get n) in
-      Lwt.return (v = 3)
+      Lwt.return (v = 6)
     )
     (function _ -> Lwt.return_false)
   end;
