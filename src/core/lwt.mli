@@ -84,7 +84,7 @@ let () =
     - {{: #3_GuidetotherestofLwt} Guide to the rest of Lwt} shows how
       {e everything} else in Lwt fits into this framework.
 
-    After that is the {{: 2_Fundamentals} reference proper}, which goes into
+    After that is the {{: #2_Fundamentals} reference proper}, which goes into
     {e painful} levels of detail on every single type and value in this module,
     [Lwt]. Please be safe, and read only what you need from it :)
 
