@@ -588,7 +588,9 @@ let test_big_list m =
   m f (make_list 10_000_000) >>= (fun _ -> Lwt.return_true)
 
 let suite_intensive = suite "lwt_list big lists"
-    ~only_if:(fun () -> Sys.getenv_opt "LWT_STRESS_TEST" <> None) [
+    ~only_if:(fun () ->
+        try Sys.getenv "LWT_STRESS_TEST" = "true" with
+        | Not_found -> false) [
   test "iter_p big list" begin fun () ->
     test_big_list Lwt_list.iter_p
   end;
