@@ -26,6 +26,7 @@ matrix:
 env:
   global:
     - LWT_FORCE_LIBEV_BY_DEFAULT=yes
+    - LWT_STRESS_TEST=true
 
 script: bash -e src/util/travis.sh
 
