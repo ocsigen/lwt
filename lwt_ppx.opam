@@ -16,7 +16,7 @@ depends: [
   "jbuilder" {build & >= "1.0+beta12"}
   "lwt"
   "ocaml-migrate-parsetree"
-  "ppx_tools_versioned"
+  "ppx_tools_versioned" {>= "5.0.1"}
 ]
 
 build: [
