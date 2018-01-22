@@ -221,5 +221,6 @@ let partition_p f l =
   let g x = Lwt.apply f x >>= fun b -> Lwt.return (b, x) in
   map_p g l >>= fun tl ->
   let group1 = tail_recursive_map snd @@ List.filter fst tl in
-  let group2 = tail_recursive_map snd @@ List.filter (fun x -> not @@ fst x) tl in
+  let group2 =
+    tail_recursive_map snd @@ List.filter (fun x -> not @@ fst x) tl in
   Lwt.return (group1, group2)

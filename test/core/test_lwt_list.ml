@@ -636,12 +636,14 @@ let suite_intensive = suite "lwt_list big lists"
   end;
 
   test "fold_left_s big list" begin fun () ->
-    let m f = Lwt_list.fold_left_s (fun _ x -> f x >>= fun _ -> Lwt.return ()) () in
+    let m f =
+      Lwt_list.fold_left_s (fun _ x -> f x >>= fun _ -> Lwt.return ()) () in
     test_big_list m
   end;
 
   test "fold_right_s big list" begin fun () ->
-    let m f l = Lwt_list.fold_right_s (fun x _ -> f x >>= fun _ -> Lwt.return ()) l () in
+    let m f l =
+      Lwt_list.fold_right_s (fun x _ -> f x >>= fun _ -> Lwt.return ()) l () in
     test_big_list m
   end;
 
@@ -685,22 +687,26 @@ let suite_intensive = suite "lwt_list big lists"
   end;
 
   test "filter_map_p big list" begin fun () ->
-    let m f = Lwt_list.filter_map_p (fun x -> f x >>= fun u -> Lwt.return (Some u)) in
+    let m f =
+      Lwt_list.filter_map_p (fun x -> f x >>= fun u -> Lwt.return (Some u)) in
     test_big_list m
   end;
 
   test "filter_map_s big list" begin fun () ->
-    let m f = Lwt_list.filter_map_s (fun x -> f x >>= fun u -> Lwt.return (Some u)) in
+    let m f =
+      Lwt_list.filter_map_s (fun x -> f x >>= fun u -> Lwt.return (Some u)) in
     test_big_list m
   end;
 
   test "partition_p big list" begin fun () ->
-    let m f l = (Lwt_list.partition_p (fun x -> f x >>= fun _ -> Lwt.return true) l) in
+    let m f l =
+      Lwt_list.partition_p (fun x -> f x >>= fun _ -> Lwt.return true) l in
     test_big_list m
   end;
 
   test "partition_s big list" begin fun () ->
-    let m f l = (Lwt_list.partition_s (fun x -> f x >>= fun _ -> Lwt.return true) l) in
+    let m f l =
+      Lwt_list.partition_s (fun x -> f x >>= fun _ -> Lwt.return true) l in
     test_big_list m
   end;
 ]
