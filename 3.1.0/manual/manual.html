@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml"><head><title> Lwt manual </title><meta charset="utf8"/><link rel="stylesheet" href="/style.css"/><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/themes/prism.min.css"/><script src="/client.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-core.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-ocaml.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-clike.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-reason.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-javascript.min.js"></script></head><body><h1> Lwt manual </h1><h2> Introduction </h2><p>When writing a program, a common developer's task is to handle IO
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title> Lwt manual </title><meta charset="utf8"/><link rel="stylesheet" href="file:///home/balat/ocsigen/ocsigen.github.io/css/style.css"/><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/themes/prism.min.css"/><script src="/client.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-core.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-ocaml.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-clike.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-reason.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-javascript.min.js"></script></head><body><h1> Lwt manual </h1><h2> Introduction </h2><p>When writing a program, a common developer's task is to handle IO
 operations. Indeed most software interact with several different
 resources, such as:
 </p><ul><li> the kernel, by doing system calls
@@ -223,7 +223,7 @@ using <span class="teletype">Lwt</span>,
 hang. You must instead use asynchronous IOs operations.
 </li></ul><h3> The syntax extension </h3><p><span class="teletype">Lwt</span> offers a Ppx syntax extension which increases code readability and
 makes coding using <span class="teletype">Lwt</span> easier. The syntax extension is documented
-<span><a class="ocsforge_doclink_lwt" href="/lwt/3.1.0/api/Ppx_lwt.html">here</a></span>.
+<span><a class="ocsforge_doclink_lwt" href="/lwt/3.1.0/api/Ppx_lwt">here</a></span>.
 </p><p>To use the Ppx syntax extension, add the <span class="teletype">lwt.ppx</span> package when
 compiling:
 </p><pre class=""><code class="language-ocaml translatable">$ ocamlfind ocamlc -package lwt.ppx -linkpkg -o foo foo.ml</code></pre><p>Or in the toplevel (after loading topfind):
@@ -234,7 +234,7 @@ will not be very useful. It will end inside the Lwt scheduler instead of
 continuing into the code that started the thread. To avoid this, and get good
 backtraces from Lwt, use the syntax extension in debug mode.
 </p><p>In debug mode, the <span class="teletype">let%lwt</span> construct will properly propagate backtraces.
-</p><p>In the <span><a class="ocsforge_doclink_lwt" href="/lwt/3.1.0/api/Ppx_lwt.html">ppx syntax extension</a></span>, the debug mode is
+</p><p>In the <span><a class="ocsforge_doclink_lwt" href="/lwt/3.1.0/api/Ppx_lwt">ppx syntax extension</a></span>, the debug mode is
 enabled by default. This has a small performance impact, so you can disable it
 by passing <span class="teletype">-no-debug</span>.
 </p><p>As always, to get backtraces from an OCaml program, you need to either declare
@@ -397,7 +397,7 @@ daemon:
     ]
 ;;</code></pre><p><span class="teletype">Lwt</span> also provides a syntax extension for logging. For how to
 use it, consult the Logging section of the Ppx syntax extension
-<span><a class="ocsforge_doclink_lwt" href="/lwt/3.1.0/api/Ppx_lwt.html">documentation</a></span>.
+<span><a class="ocsforge_doclink_lwt" href="/lwt/3.1.0/api/Ppx_lwt">documentation</a></span>.
 </p><h2> The Lwt.react library </h2><p>The <span class="teletype">Lwt_react</span> module provides helpers for using the <span class="teletype">react</span>
 library with <span class="teletype">Lwt</span>. It extends the <span class="teletype">React</span> module by adding
 <span class="teletype">Lwt</span> specific functions. It can be used as a replacement of
