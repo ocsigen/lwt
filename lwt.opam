@@ -28,7 +28,7 @@ depends: [
   # removed when preparing a release.
   "bisect_ppx" {>= "1.3.0"}
   "cppo" {build & >= "1.1.0"}
-  "jbuilder" {build & >= "1.0+beta13"}
+  "jbuilder" {build & >= "1.0+beta14"}
   # We are only using ocamlfind during configuration of the Unix binding.
   # However, ocamlfind also installs the "threads" package, and ocamlfind
   # 1.7.3-1 is the first one whose threads package does not have incorrect error
