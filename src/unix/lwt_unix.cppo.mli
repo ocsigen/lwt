@@ -503,12 +503,27 @@ val writable : file_descr -> bool
       writable. *)
 
 val wait_read : file_descr -> unit Lwt.t
-  (** waits (without blocking other threads) until there is something
-      to read on the file descriptor *)
+  (** Waits (without blocking other threads) until there is something
+      to read from the file descriptor.
+
+      Note that you don't need to use this function if you are
+      using Lwt I/O functions for reading, since they provide
+      non-blocking waiting automatically.
+
+      The intended use case for this function is interfacing with
+      existing libraries that are known to be blocking. *)
 
 val wait_write : file_descr -> unit Lwt.t
-  (** waits (without blocking other threads) until it is possible to
-      write on the file descriptor *)
+  (** Waits (without blocking other threads) until it is possible to
+      write on the file descriptor.
+
+      Note that you don't need to use this function if you are
+      using Lwt I/O functions for writing, since they provide
+      non-blocking waiting automatically.
+
+      The intended use case for this function is interfacing with
+      existing libraries that are known to be blocking. *)
+
 
 (** {2 Seeking and truncating} *)
 
