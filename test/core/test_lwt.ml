@@ -264,20 +264,10 @@ let bind_tests = suite "bind" [
     state_is (Lwt.Return "foobar") p
   end;
 
-  (* A somewhat surprising behavior of native [bind] is that if [p] is fulfilled
-     and [f] raises before evaluating to a promise, [bind p f] raises, instead
-     of evaluating to a promise. On the other hand, if [p] is pending, and [f]
-     raises, the exception is folded into the promise resulting from [bind].
-     See
-
-       https://github.com/ocsigen/lwt/issues/329 *)
   test "already fulfilled, f raises" begin fun () ->
     let p = Lwt.return "foo" in
-    try
-      Lwt.bind p (fun _ -> raise Exception) |> ignore;
-      Lwt.return false
-    with Exception ->
-      Lwt.return true
+    let p = Lwt.bind p (fun _ -> raise Exception) in
+    state_is (Lwt.Fail Exception) p
   end;
 
   test "already rejected" begin fun () ->
@@ -397,6 +387,18 @@ let bind_tests = suite "bind" [
     Lwt.wakeup r ();
     Lwt.return (Lwt.state !p' = Lwt.Sleep)
   end;
+
+  test "stack safety (immediate)" begin fun () ->
+    let rec bind_loop n =
+      if n = 0 then
+        Lwt.return_unit
+      else
+        Lwt.bind Lwt.return_unit (fun () -> bind_loop (n - 1))
+    in
+    let p = bind_loop 1_000_000 in
+
+    Lwt.bind p (fun () -> Lwt.return true)
+  end;
 ]
 let suites = suites @ [bind_tests]
 
@@ -514,17 +516,13 @@ let catch_tests = suite "catch" [
     state_is (Lwt.Return Exception) p
   end;
 
-  (* This is an analog of the "bind quirk," see
-
-       https://github.com/ocsigen/lwt/issues/329 *)
   test "rejected, h raises" begin fun () ->
-    try
-      ignore @@ Lwt.catch
+    let p =
+      Lwt.catch
         (fun () -> Lwt.fail Exit)
-        (fun _ -> raise Exception);
-      Lwt.return false
-    with Exception ->
-      Lwt.return true
+        (fun _ -> raise Exception)
+    in
+    state_is (Lwt.Fail Exception) p
   end;
 
   test "pending" begin fun () ->
@@ -671,16 +669,14 @@ let try_bind_tests = suite "try_bind" [
     state_is (Lwt.Return "foobar") p
   end;
 
-  (* An analog of the bind quirk. *)
   test "fulfilled, f' raises" begin fun () ->
-    try
-      ignore @@ Lwt.try_bind
+    let p =
+      Lwt.try_bind
         (fun () -> Lwt.return ())
         (fun () -> raise Exception)
-        (fun _ -> Lwt.return ());
-      Lwt.return false
-    with Exception ->
-      Lwt.return true
+        (fun _ -> Lwt.return ())
+    in
+    state_is (Lwt.Fail Exception) p
   end;
 
   test "rejected" begin fun () ->
@@ -703,16 +699,14 @@ let try_bind_tests = suite "try_bind" [
     state_is (Lwt.Return Exception) p
   end;
 
-  (* Another analog of the bind quirk *)
   test "rejected, h raises" begin fun () ->
-    try
-      ignore @@ Lwt.try_bind
+    let p =
+      Lwt.try_bind
         (fun () -> Lwt.fail Exit)
         (fun _ -> Lwt.return ())
         (fun _ -> raise Exception);
-      Lwt.return false
-    with Exception ->
-      Lwt.return true
+    in
+    state_is (Lwt.Fail Exception) p
   end;
 
   test "pending" begin fun () ->
@@ -922,15 +916,13 @@ let finalize_tests = suite "finalize" [
     state_is (Lwt.Fail Exception) p
   end;
 
-  (* An instance of the bind quirk. *)
   test "fulfilled, f' raises" begin fun () ->
-    try
-      ignore @@ Lwt.finalize
+    let p =
+      Lwt.finalize
         (fun () -> Lwt.return ())
-        (fun () -> raise Exception);
-      Lwt.return false
-    with Exception ->
-      Lwt.return true
+        (fun () -> raise Exception)
+    in
+    state_is (Lwt.Fail Exception) p
   end;
 
   test "rejected" begin fun () ->
@@ -953,15 +945,13 @@ let finalize_tests = suite "finalize" [
     state_is (Lwt.Fail Exception) p
   end;
 
-  (* An instance of the bind quirk. *)
   test "rejected, f' raises" begin fun () ->
-    try
-      ignore @@ Lwt.finalize
+    let p =
+      Lwt.finalize
         (fun () -> Lwt.fail Exit)
-        (fun () -> raise Exception);
-      Lwt.return false
-    with Exception ->
-      Lwt.return true
+        (fun () -> raise Exception)
+    in
+    state_is (Lwt.Fail Exception) p
   end;
 
   test "pending" begin fun () ->
@@ -1125,15 +1115,13 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
     state_is (Lwt.Fail Exception) p
   end;
 
-  (* Instance of the bind quirk. *)
   test "fulfilled, f' raises" begin fun () ->
-    try
-      ignore @@ Lwt.backtrace_finalize add_loc
+    let p =
+      Lwt.backtrace_finalize add_loc
         (fun () -> Lwt.return ())
-        (fun () -> raise Exception);
-      Lwt.return false
-    with Exception ->
-      Lwt.return true
+        (fun () -> raise Exception)
+    in
+    state_is (Lwt.Fail Exception) p
   end;
 
   test "rejected" begin fun () ->
@@ -1156,15 +1144,13 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
     state_is (Lwt.Fail Exception) p
   end;
 
-  (* Instance of the bind quirk. *)
   test "rejected, f' raises" begin fun () ->
-    try
-      ignore @@ Lwt.backtrace_finalize add_loc
+    let p =
+      Lwt.backtrace_finalize add_loc
         (fun () -> Lwt.fail Exit)
-        (fun () -> raise Exception);
-      Lwt.return false
-    with Exception ->
-      Lwt.return true
+        (fun () -> raise Exception)
+    in
+    state_is (Lwt.Fail Exception) p
   end;
 
   test "pending" begin fun () ->
@@ -1681,6 +1667,20 @@ let join_tests = suite "join" [
     Lwt.wakeup r ();
     state_is (Lwt.Return ()) p
   end;
+
+  test "stack safety" begin fun () ->
+    let rec assemble_chain n last_promise =
+      if n = 0 then
+        last_promise
+      else
+        assemble_chain (n - 1) (Lwt.join [last_promise])
+    in
+    let (p1, r1) = Lwt.wait () in
+    let p2 = assemble_chain 1_000_000 p1 in
+
+    Lwt.wakeup r1 ();
+    Lwt.bind p2 (fun () -> Lwt.return true)
+  end;
 ]
 let suites = suites @ [join_tests]
 
@@ -1748,6 +1748,20 @@ let choose_tests = suite "choose" [
     Lwt.wakeup r "foo";
     state_is (Lwt.Return "foo") p
   end;
+
+  test "stack safety" begin fun () ->
+    let rec assemble_chain n last_promise =
+      if n = 0 then
+        last_promise
+      else
+        assemble_chain (n - 1) (Lwt.choose [last_promise])
+    in
+    let (p1, r1) = Lwt.wait () in
+    let p2 = assemble_chain 1_000_000 p1 in
+
+    Lwt.wakeup r1 ();
+    Lwt.bind p2 (fun () -> Lwt.return true)
+  end;
 ]
 let suites = suites @ [choose_tests]
 
@@ -1805,6 +1819,20 @@ let nchoose_tests = suite "nchoose" [
     let p = Lwt.nchoose [p; p] in
     Lwt.wakeup_exn r Exception;
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
+  end;
+
+  test "stack safety" begin fun () ->
+    let rec assemble_chain n last_promise =
+      if n = 0 then
+        last_promise
+      else
+        assemble_chain (n - 1) (Lwt.nchoose [Lwt.map ignore last_promise])
+    in
+    let (p1, r1) = Lwt.wait () in
+    let p2 = assemble_chain 1_000_000 p1 in
+
+    Lwt.wakeup r1 [];
+    Lwt.bind p2 (fun _ -> Lwt.return true)
   end;
 ]
 let suites = suites @ [nchoose_tests]
@@ -1874,6 +1902,20 @@ let nchoose_split_tests = suite "nchoose_split" [
     let p = Lwt.nchoose_split [p; p; fst (Lwt.wait ())] in
     Lwt.wakeup_exn r Exception;
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
+  end;
+
+  test "stack safety" begin fun () ->
+    let rec assemble_chain n last_promise =
+      if n = 0 then
+        last_promise
+      else
+        assemble_chain (n - 1) (Lwt.nchoose_split [Lwt.map ignore last_promise])
+    in
+    let (p1, r1) = Lwt.wait () in
+    let p2 = assemble_chain 1_000_000 p1 in
+
+    Lwt.wakeup r1 ([], []);
+    Lwt.bind p2 (fun _ -> Lwt.return true)
   end;
 ]
 let suites = suites @ [nchoose_split_tests]
@@ -1957,7 +1999,7 @@ let wakeup_later_tests = suite "wakeup_later" [
     let p, r = Lwt.wait () in
     let p = Lwt.bind p (fun s -> Lwt.return (s ^ "bar")) in
     Lwt.wakeup_later_result r (Result.Ok "foo");
-    state_is (Lwt.Return "foobar") p
+    Lwt.bind p (fun s -> Lwt.return (s = "foobar"))
   end;
 
   test "wakeup_later: double use on wait" begin fun () ->
@@ -2021,16 +2063,13 @@ let wakeup_later_tests = suite "wakeup_later" [
   end [@ocaml.warning "-52"];
 
   test "wakeup_later_result: nested" begin fun () ->
-    let f_ran = ref false in
     let p1, r1 = Lwt.wait () in
     let p2, r2 = Lwt.wait () in
-    Lwt.on_success p2 (fun _ -> f_ran := true);
     Lwt.on_success p1 (fun s ->
       Lwt.wakeup_later_result r2 (Result.Ok (s ^ "bar"));
-      assert (Lwt.state p2 = Lwt.Return "foobar");
-      assert (!f_ran = false));
+      assert (Lwt.state p2 = Lwt.Return "foobar"));
     Lwt.wakeup_later_result r1 (Result.Ok "foo");
-    Lwt.return (!f_ran = true && Lwt.state p2 = Lwt.Return "foobar")
+    Lwt.bind p2 (fun s -> Lwt.return (s = "foobar"))
   end;
 
   (* Only basic tests for wakeup_later and wakeup_later_exn, as they are
@@ -2231,6 +2270,20 @@ let protected_tests = suite "protected" [
     Lwt.wakeup r1 "foo";
     Lwt.return (Lwt.state p2 = Lwt.Return "foo")
   end;
+
+  test "stack safety" begin fun () ->
+    let rec assemble_chain n last_promise =
+      if n = 0 then
+        last_promise
+      else
+        assemble_chain (n - 1) (Lwt.protected last_promise)
+    in
+    let (p1, r1) = Lwt.wait () in
+    let p2 = assemble_chain 1_000_000 p1 in
+
+    Lwt.wakeup r1 "foo";
+    Lwt.bind p2 (fun s -> Lwt.return (s = "foo"))
+  end;
 ]
 let suites = suites @ [protected_tests]
 
@@ -2264,6 +2317,20 @@ let no_cancel_tests = suite "no_cancel" [
     let p' = Lwt.no_cancel p in
     Lwt.cancel p';
     Lwt.return (Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Sleep)
+  end;
+
+  test "stack safety" begin fun () ->
+    let rec assemble_chain n last_promise =
+      if n = 0 then
+        last_promise
+      else
+        assemble_chain (n - 1) (Lwt.no_cancel last_promise)
+    in
+    let (p1, r1) = Lwt.wait () in
+    let p2 = assemble_chain 1_000_000 p1 in
+
+    Lwt.wakeup r1 "foo";
+    Lwt.bind p2 (fun s -> Lwt.return (s = "foo"))
   end;
 ]
 let suites = suites @ [no_cancel_tests]
@@ -2390,6 +2457,20 @@ let pick_tests = suite "pick" [
     Lwt.wakeup_later r1 ();
     Lwt.return (a.(0) = 1 && a.(1) = 2)
   end;
+
+  test "stack safety" begin fun () ->
+    let rec assemble_chain n last_promise =
+      if n = 0 then
+        last_promise
+      else
+        assemble_chain (n - 1) (Lwt.pick [last_promise])
+    in
+    let (p1, r1) = Lwt.wait () in
+    let p2 = assemble_chain 1_000_000 p1 in
+
+    Lwt.wakeup r1 ();
+    Lwt.bind p2 (fun () -> Lwt.return true)
+  end;
 ]
 let suites = suites @ [pick_tests]
 
@@ -2493,6 +2574,20 @@ let npick_tests = suite "npick" [
     in
     Lwt.wakeup_later r1 ();
     Lwt.return (a.(0) = 1 && a.(1) = 2)
+  end;
+
+  test "stack safety" begin fun () ->
+    let rec assemble_chain n last_promise =
+      if n = 0 then
+        last_promise
+      else
+        assemble_chain (n - 1) (Lwt.npick [Lwt.map ignore last_promise])
+    in
+    let (p1, r1) = Lwt.wait () in
+    let p2 = assemble_chain 1_000_000 p1 in
+
+    Lwt.wakeup r1 [];
+    Lwt.bind p2 (fun _ -> Lwt.return true)
   end;
 ]
 let suites = suites @ [npick_tests]
