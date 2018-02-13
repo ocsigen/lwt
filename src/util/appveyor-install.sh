@@ -19,9 +19,6 @@ then
     opam init -y --auto-setup
     eval `opam config env`
 
-    # This is a workaround for https://github.com/ocaml/dune/issues/483.
-    opam pin add -y --no-action jbuilder 1.0+beta16
-
     # Pin Lwt and install its dependencies.
     opam pin add -y --no-action lwt .
     opam install -y --deps-only lwt
