@@ -40,7 +40,7 @@ val run : 'a Lwt.t -> 'a
           Lwt_main.run @@ main ()
       ]}
 
-      On js_of_ocaml, [Lwt_main.run] is not available but neither it's necessary since
+      When targeting JavaScript, [Lwt_main.run] is not available but neither it's necessary since
       the JS environment automatically takes care of the I/O considerations.
 
 
