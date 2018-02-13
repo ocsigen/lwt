@@ -327,10 +327,12 @@ val write_from_exactly : output_channel -> bytes -> int -> int -> unit Lwt.t
   (** [write_from_exactly oc buffer offset length] writes all [length]
       bytes from [buffer] at offset [offset] to [oc] *)
 
-val write_from_string_exactly : output_channel -> string -> int -> int -> unit Lwt.t
+val write_from_string_exactly :
+  output_channel -> string -> int -> int -> unit Lwt.t
   (** See {!write_from_exactly}. *)
 
-val write_value : output_channel -> ?flags : Marshal.extern_flags list -> 'a -> unit Lwt.t
+val write_value :
+  output_channel -> ?flags : Marshal.extern_flags list -> 'a -> unit Lwt.t
 (** [write_value channel ?flags v] writes [v] to [channel] using the [Marshal]
     module of the standard library. See
     {{:https://caml.inria.fr/pub/docs/manual-ocaml/libref/Marshal.html#VALto_channel}
@@ -371,20 +373,23 @@ val print : string -> unit Lwt.t
 val printl : string -> unit Lwt.t
 
 val printf : ('a, unit, string, unit Lwt.t) format4 -> 'a
-(** [%!] does nothing here. To flush the channel, use [Lwt_io.(flush stdout)].
-*)
+(** [%!] does nothing here. To flush the channel, use
+    [Lwt_io.(flush stdout)]. *)
 
 val printlf : ('a, unit, string, unit Lwt.t) format4 -> 'a
-(** [%!] does nothing here. To flush the channel, use [Lwt_io.(flush stdout)]. *)
+(** [%!] does nothing here. To flush the channel, use
+    [Lwt_io.(flush stdout)]. *)
 
 val eprint : string -> unit Lwt.t
 val eprintl : string -> unit Lwt.t
 
 val eprintf : ('a, unit, string, unit Lwt.t) format4 -> 'a
-(** [%!] does nothing here. To flush the channel, use [Lwt_io.(flush stderr)]. *)
+(** [%!] does nothing here. To flush the channel, use
+    [Lwt_io.(flush stderr)]. *)
 
 val eprintlf : ('a, unit, string, unit Lwt.t) format4 -> 'a
-(** [%!] does nothing here. To flush the channel, use [Lwt_io.(flush stderr)]. *)
+(** [%!] does nothing here. To flush the channel, use
+    [Lwt_io.(flush stderr)]. *)
 
 (** {2 Utilities} *)
 
@@ -664,7 +669,8 @@ type direct_access = {
   (** - for input channels:
         refills the buffer and returns how many bytes have been read
       - for output channels:
-        flush partially the buffer and returns how many bytes have been written *)
+        flush partially the buffer and returns how many bytes have been
+        written *)
 }
 
 val direct_access : 'a channel -> (direct_access -> 'b Lwt.t) -> 'b Lwt.t
