@@ -34,10 +34,9 @@ val run : 'a Lwt.t -> 'a
 
       Example:
       {[
-        let main () = Lwt_io.write_line Lwt_io.stdout "hello world"
+let main () = Lwt_io.write_line Lwt_io.stdout "hello world"
 
-        let () =
-          Lwt_main.run @@ main ()
+let () = Lwt_main.run @@ main ()
       ]}
 
       When targeting JavaScript, [Lwt_main.run] is not available but neither it's necessary since
