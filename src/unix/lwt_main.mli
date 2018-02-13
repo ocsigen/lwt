@@ -28,8 +28,9 @@ val run : 'a Lwt.t -> 'a
       and returns the value of [p] if it is fulfilled. If [p] is rejected with
       an exception, that exception is raised.
 
-      Every native or bytecode program that uses Lwt should always use this function
-      for evaluating a promise at the top level (such as its main function or main loop),
+      Every native or bytecode program that uses Lwt should always use
+      this function for evaluating a promise at the top level
+      (such as its main function or main loop),
       otherwise promises that depend on I/O operations will not be resolved.
 
       Example:
@@ -39,7 +40,8 @@ let main () = Lwt_io.write_line Lwt_io.stdout "hello world"
 let () = Lwt_main.run @@ main ()
       ]}
 
-      When targeting JavaScript, [Lwt_main.run] is not available but neither it's necessary since
+      When targeting JavaScript, [Lwt_main.run] is not available,
+      but neither it's necessary since
       the JS environment automatically takes care of the I/O considerations.
 
 
