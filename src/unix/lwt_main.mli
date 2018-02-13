@@ -28,6 +28,18 @@ val run : 'a Lwt.t -> 'a
       then returns the value returned by the thread. If [t] fails with
       an exception, this exception is raised.
 
+      Every program that uses Lwt should always use this function to launch
+      their threads, otherwise correct scheduling is not guaranteed.
+
+      Example:
+      {[
+        let main () = Lwt_io.write_line Lwt_io.stdout "hello world"
+
+        let _ =
+          Lwt_main.run @@ main ()
+      ]}
+
+
       Note that you should avoid using [run] inside threads
       - The calling threads will not resume before [run]
         returns.
