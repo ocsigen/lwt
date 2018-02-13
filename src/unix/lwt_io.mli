@@ -362,10 +362,10 @@ val fprint : output_channel -> string -> unit Lwt.t
 val fprintl : output_channel -> string -> unit Lwt.t
 
 val fprintf : output_channel -> ('a, unit, string, unit Lwt.t) format4 -> 'a
-(** [%!] does nothing here. To flush the channel, use {!flush} [ channel]. *)
+(** [%!] does nothing here. To flush the channel, use [Lwt_io.flush channel]. *)
 
 val fprintlf : output_channel -> ('a, unit, string, unit Lwt.t) format4 -> 'a
-(** [%!] does nothing here. To flush the channel, use {!flush} [ channel]. *)
+(** [%!] does nothing here. To flush the channel, use [Lwt_io.flush channel]. *)
 
 val print : string -> unit Lwt.t
 val printl : string -> unit Lwt.t
