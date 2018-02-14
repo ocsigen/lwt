@@ -21,9 +21,9 @@
 
 (** Format API for Lwt-powered IOs *)
 
-(** This module bridges the gap between [Format] and [Lwt].
+(** This module bridges the gap between {!Format} and {!Lwt}.
     Although it is not required, it is recommended to use this module with the
-    [Fmt] library.
+    {!Fmt} library.
 
     Compared to regular formatting function, the main difference is that
     printing statements will now return promises instead of blocking.
@@ -31,11 +31,11 @@
 
 val printf : ('a, Format.formatter, unit, unit Lwt.t) format4 -> 'a
 (** Returns a promise that prints on the standard output. 
-    Similar to [Format.printf]. *)
+    Similar to {!Format.printf}. *)
 
 val eprintf : ('a, Format.formatter, unit, unit Lwt.t) format4 -> 'a
 (** Returns a promise that prints on the standard error. 
-    Similar to [Format.eprintf]. *)
+    Similar to {!Format.eprintf}. *)
 
 (** {1 Formatters} *)
 
