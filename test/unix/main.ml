@@ -48,4 +48,5 @@ let () =
     Test_lwt_process.suite;
     Test_lwt_engine.suite;
     Test_mcast.suite;
+    Test_lwt_fmt.suite;
   ]
