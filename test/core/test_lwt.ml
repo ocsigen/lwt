@@ -397,6 +397,31 @@ let bind_tests = suite "bind" [
     Lwt.wakeup r ();
     Lwt.return (Lwt.state !p' = Lwt.Sleep)
   end;
+
+  (* This tests the effect of an implementation detail: if a promise is going to
+     be resolved by a callback, but that promise becomes a proxy synchronously
+     during that callback, everything still works. *)
+  test "proxy during callback" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p3 =
+      Lwt.bind
+        p1
+        (fun () ->
+          (* Synchronously resolve [p2]. Because of the [bind] below, [p3] will
+             become a proxy for [p4] while this callback is still running. We
+             then finish the callback by returning [true]. If [bind] is
+             implemented correctly, it will follow the [p3] proxy link to [p4]
+             only after the callback returns. In an earlier incorrect
+             implementation, this code could cause Lwt to hang forever, or crash
+             the process. *)
+          Lwt.wakeup r2 ();
+          Lwt.return true)
+    in
+    let p4 = Lwt.bind p2 (fun () -> p3) in
+    Lwt.wakeup r1 ();
+    p4
+  end;
 ]
 let suites = suites @ [bind_tests]
 
@@ -432,6 +457,22 @@ let backtrace_bind_tests = suite "backtrace_bind" [
     let p = Lwt.backtrace_bind add_loc p (fun _ -> Lwt.return "foo") in
     Lwt.wakeup_exn r Exception;
     state_is (Lwt.Fail Exception) p
+  end;
+
+  (* See "proxy during callback" in [bind] tests. *)
+  test "proxy during callback" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p3 =
+      Lwt.backtrace_bind add_loc
+        p1
+        (fun () ->
+          Lwt.wakeup r2 ();
+          Lwt.return true)
+    in
+    let p4 = Lwt.bind p2 (fun () -> p3) in
+    Lwt.wakeup r1 ();
+    p4
   end;
 ]
 let suites = suites @ [backtrace_bind_tests]
@@ -482,6 +523,22 @@ let map_tests = suite "map" [
     let p = Lwt.map (fun _ -> Lwt.return "foo") p in
     Lwt.wakeup_exn r Exception;
     state_is (Lwt.Fail Exception) p
+  end;
+
+  (* See "proxy during callback" in [bind] tests. *)
+  test "proxy during callback" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p3 =
+      Lwt.map
+        (fun () ->
+          Lwt.wakeup r2 ();
+          true)
+        p1
+    in
+    let p4 = Lwt.bind p2 (fun () -> p3) in
+    Lwt.wakeup r1 ();
+    p4
   end;
 ]
 let suites = suites @ [map_tests]
@@ -584,6 +641,22 @@ let catch_tests = suite "catch" [
     Lwt.wakeup r2 "foo";
     state_is (Lwt.Return "foo") p
   end;
+
+  (* See "proxy during callback" in [bind] tests. *)
+  test "proxy during callback" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p3 =
+      Lwt.catch
+        (fun () -> p1)
+        (fun _exn ->
+          Lwt.wakeup r2 ();
+          Lwt.return true)
+    in
+    let p4 = Lwt.bind p2 (fun () -> p3) in
+    Lwt.wakeup_exn r1 Exit;
+    p4
+  end;
 ]
 let suites = suites @ [catch_tests]
 
@@ -656,6 +729,22 @@ let backtrace_catch_tests = suite "backtrace_catch" [
     in
     Lwt.wakeup_exn r Exit;
     state_is (Lwt.Fail Exception) p
+  end;
+
+  (* See "proxy during callback" in [bind] tests. *)
+  test "proxy during callback" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p3 =
+      Lwt.backtrace_catch add_loc
+        (fun () -> p1)
+        (fun _exn ->
+          Lwt.wakeup r2 ();
+          Lwt.return true)
+    in
+    let p4 = Lwt.bind p2 (fun () -> p3) in
+    Lwt.wakeup_exn r1 Exit;
+    p4
   end;
 ]
 let suites = suites @ [backtrace_catch_tests]
@@ -805,6 +894,42 @@ let try_bind_tests = suite "try_bind" [
     Lwt.wakeup r2 "bar";
     state_is (Lwt.Return "bar") p
   end;
+
+  (* See "proxy during callback" in [bind] tests. *)
+  test "proxy during callback (fulfilled)" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p3 =
+      Lwt.try_bind
+        (fun () -> p1)
+        (fun () ->
+          Lwt.wakeup r2 ();
+          Lwt.return true)
+        (fun _exn ->
+          Lwt.return false)
+    in
+    let p4 = Lwt.bind p2 (fun () -> p3) in
+    Lwt.wakeup r1 ();
+    p4
+  end;
+
+  (* See "proxy during callback" in [bind] tests. *)
+  test "proxy during callback (rejected)" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p3 =
+      Lwt.try_bind
+        (fun () -> p1)
+        (fun () ->
+          Lwt.return false)
+        (fun _exn ->
+          Lwt.wakeup r2 ();
+          Lwt.return true)
+    in
+    let p4 = Lwt.bind p2 (fun () -> p3) in
+    Lwt.wakeup_exn r1 Exit;
+    p4
+  end;
 ]
 let suites = suites @ [try_bind_tests]
 
@@ -897,6 +1022,42 @@ let backtrace_try_bind_tests = suite "backtrace_try_bind" [
     in
     Lwt.wakeup_exn r Exit;
     state_is (Lwt.Fail Exception) p
+  end;
+
+  (* See "proxy during callback" in [bind] tests. *)
+  test "proxy during callback (fulfilled)" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p3 =
+      Lwt.backtrace_try_bind add_loc
+        (fun () -> p1)
+        (fun () ->
+          Lwt.wakeup r2 ();
+          Lwt.return true)
+        (fun _exn ->
+          Lwt.return false)
+    in
+    let p4 = Lwt.bind p2 (fun () -> p3) in
+    Lwt.wakeup r1 ();
+    p4
+  end;
+
+  (* See "proxy during callback" in [bind] tests. *)
+  test "proxy during callback (rejected)" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p3 =
+      Lwt.backtrace_try_bind add_loc
+        (fun () -> p1)
+        (fun () ->
+          Lwt.return false)
+        (fun _exn ->
+          Lwt.wakeup r2 ();
+          Lwt.return true)
+    in
+    let p4 = Lwt.bind p2 (fun () -> p3) in
+    Lwt.wakeup_exn r1 Exit;
+    p4
   end;
 ]
 let suites = suites @ [backtrace_try_bind_tests]
@@ -1101,6 +1262,38 @@ let finalize_tests = suite "finalize" [
     Lwt.wakeup_exn r2 Exception;
     state_is (Lwt.Fail Exception) p
   end;
+
+  (* See "proxy during callback" in [bind] tests. *)
+  test "proxy during callback (fulfilled)" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p3 =
+      Lwt.finalize
+        (fun () -> p1)
+        (fun () ->
+          Lwt.wakeup r2 ();
+          Lwt.return ())
+    in
+    let p4 = Lwt.bind p2 (fun () -> p3) in
+    Lwt.wakeup r1 ();
+    Lwt.bind p4 (fun () -> Lwt.return true)
+  end;
+
+  (* See "proxy during callback" in [bind] tests. *)
+  test "proxy during callback (rejected)" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p3 =
+      Lwt.finalize
+        (fun () -> p1)
+        (fun () ->
+          Lwt.wakeup r2 ();
+          Lwt.return ())
+    in
+    let p4 = Lwt.bind p2 (fun () -> p3) in
+    Lwt.wakeup_exn r1 Exit;
+    Lwt.catch (fun () -> p4) (fun _exn -> Lwt.return true)
+  end;
 ]
 let suites = suites @ [finalize_tests]
 
@@ -1247,6 +1440,38 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
     in
     Lwt.wakeup_exn r Exit;
     state_is (Lwt.Fail Exception) p
+  end;
+
+  (* See "proxy during callback" in [bind] tests. *)
+  test "proxy during callback (fulfilled)" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p3 =
+      Lwt.backtrace_finalize add_loc
+        (fun () -> p1)
+        (fun () ->
+          Lwt.wakeup r2 ();
+          Lwt.return ())
+    in
+    let p4 = Lwt.bind p2 (fun () -> p3) in
+    Lwt.wakeup r1 ();
+    Lwt.bind p4 (fun () -> Lwt.return true)
+  end;
+
+  (* See "proxy during callback" in [bind] tests. *)
+  test "proxy during callback (rejected)" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p3 =
+      Lwt.backtrace_finalize add_loc
+        (fun () -> p1)
+        (fun () ->
+          Lwt.wakeup r2 ();
+          Lwt.return ())
+    in
+    let p4 = Lwt.bind p2 (fun () -> p3) in
+    Lwt.wakeup_exn r1 Exit;
+    Lwt.catch (fun () -> p4) (fun _exn -> Lwt.return true)
   end;
 ]
 let suites = suites @ [backtrace_finalize_tests]

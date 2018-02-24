@@ -1880,15 +1880,6 @@ struct
       let saved_storage = !current_storage in
 
       let callback p_result =
-        let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
-        let p'' = underlying p'' in
-        (* [p''] was an underlying promise when it was created above, but it
-           may have become a proxy by the time this callback is called. However,
-           it is still either an underlying pending promise, or a proxy for a
-           pending promise. Therefore, [may_now_be_proxy] produces a reference
-           with the right type variables. We immediately get [p'']'s current
-           underlying promise. *)
-
         match p_result with
         | Fulfilled v ->
           current_storage := saved_storage;
@@ -1897,6 +1888,15 @@ struct
           let Internal p' = to_internal_promise p' in
           (* Run the user's function [f]. *)
 
+          let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
+          let p'' = underlying p'' in
+          (* [p''] was an underlying promise when it was created above, but it
+             may have become a proxy by the time this code is being executed.
+             However, it is still either an underlying pending promise, or a
+             proxy for a pending promise. Therefore, [may_now_be_proxy] produces
+             a reference with the right type variables. We immediately get
+             [p'']'s current underlying promise. *)
+
           let State_may_have_changed p'' =
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
           ignore p''
@@ -1904,6 +1904,9 @@ struct
              [p'] returned by [f] by making [p'] into a proxy of [p'']. *)
 
         | Rejected _ as p_result ->
+          let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
+          let p'' = underlying p'' in
+
           let State_may_have_changed p'' =
             resolve ~allow_deferring:false p'' p_result in
           ignore p''
@@ -1940,9 +1943,6 @@ struct
       let saved_storage = !current_storage in
 
       let callback p_result =
-        let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
-        let p'' = underlying p'' in
-
         match p_result with
         | Fulfilled v ->
           current_storage := saved_storage;
@@ -1950,11 +1950,17 @@ struct
           let p' = try f v with exn -> fail (add_loc exn) in
           let Internal p' = to_internal_promise p' in
 
+          let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
+          let p'' = underlying p'' in
+
           let State_may_have_changed p'' =
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
           ignore p''
 
         | Rejected exn ->
+          let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
+          let p'' = underlying p'' in
+
           let State_may_have_changed p'' =
             resolve ~allow_deferring:false p'' (Rejected (add_loc exn)) in
           ignore p''
@@ -1991,19 +1997,23 @@ struct
       let saved_storage = !current_storage in
 
       let callback p_result =
-        let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
-        let p'' = underlying p'' in
-
         match p_result with
         | Fulfilled v ->
           current_storage := saved_storage;
 
           let p''_result = try Fulfilled (f v) with exn -> Rejected exn in
+
+          let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
+          let p'' = underlying p'' in
+
           let State_may_have_changed p'' =
             resolve ~allow_deferring:false p'' p''_result in
           ignore p''
 
         | Rejected _ as p_result ->
+          let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
+          let p'' = underlying p'' in
+
           let State_may_have_changed p'' =
             resolve ~allow_deferring:false p'' p_result in
           ignore p''
@@ -2043,11 +2053,11 @@ struct
       let saved_storage = !current_storage in
 
       let callback p_result =
-        let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
-        let p'' = underlying p'' in
-
         match p_result with
         | Fulfilled _ as p_result ->
+          let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
+          let p'' = underlying p'' in
+
           let State_may_have_changed p'' =
             resolve ~allow_deferring:false p'' p_result in
           ignore p''
@@ -2057,6 +2067,9 @@ struct
 
           let p' = try h exn with exn -> fail exn in
           let Internal p' = to_internal_promise p' in
+
+          let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
+          let p'' = underlying p'' in
 
           let State_may_have_changed p'' =
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
@@ -2095,11 +2108,11 @@ struct
       let saved_storage = !current_storage in
 
       let callback p_result =
-        let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
-        let p'' = underlying p'' in
-
         match p_result with
         | Fulfilled _ as p_result ->
+          let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
+          let p'' = underlying p'' in
+
           let State_may_have_changed p'' =
             resolve ~allow_deferring:false p'' p_result in
           ignore p''
@@ -2109,6 +2122,9 @@ struct
 
           let p' = try h exn with exn -> fail (add_loc exn) in
           let Internal p' = to_internal_promise p' in
+
+          let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
+          let p'' = underlying p'' in
 
           let State_may_have_changed p'' =
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
@@ -2147,15 +2163,15 @@ struct
       let saved_storage = !current_storage in
 
       let callback p_result =
-        let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
-        let p'' = underlying p'' in
-
         match p_result with
         | Fulfilled v ->
           current_storage := saved_storage;
 
           let p' = try f' v with exn -> fail exn in
           let Internal p' = to_internal_promise p' in
+
+          let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
+          let p'' = underlying p'' in
 
           let State_may_have_changed p'' =
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
@@ -2166,6 +2182,9 @@ struct
 
           let p' = try h exn with exn -> fail exn in
           let Internal p' = to_internal_promise p' in
+
+          let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
+          let p'' = underlying p'' in
 
           let State_may_have_changed p'' =
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
@@ -2210,15 +2229,15 @@ struct
       let saved_storage = !current_storage in
 
       let callback p_result =
-        let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
-        let p'' = underlying p'' in
-
         match p_result with
         | Fulfilled v ->
           current_storage := saved_storage;
 
           let p' = try f' v with exn -> fail (add_loc exn) in
           let Internal p' = to_internal_promise p' in
+
+          let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
+          let p'' = underlying p'' in
 
           let State_may_have_changed p'' =
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
@@ -2229,6 +2248,9 @@ struct
 
           let p' = try h exn with exn -> fail (add_loc exn) in
           let Internal p' = to_internal_promise p' in
+
+          let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
+          let p'' = underlying p'' in
 
           let State_may_have_changed p'' =
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
