@@ -2037,7 +2037,7 @@ let suites = suites @ [nchoose_tests]
 let nchoose_split_tests = suite "nchoose_split" [
   test "empty" begin fun () ->
     let p = Lwt.nchoose_split [] in
-    Lwt.return (Lwt.state p = Lwt.Sleep)
+    Lwt.return (Lwt.state p = Lwt.Return ([], []))
   end;
 
   test "some fulfilled" begin fun () ->
