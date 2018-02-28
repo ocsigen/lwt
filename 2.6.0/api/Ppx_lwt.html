@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Module Ppx_lwt </title><meta charset="utf8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><link rel="stylesheet" href="/css/style.css"/><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/themes/prism.min.css"/><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-core.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-ocaml.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-clike.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-reason.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-javascript.min.js"></script><script src="/js/client.js"></script></head><body class="lwt 2.6.0"><div class="project-page"><div class="page-header"><p class="logo-ocsigen"><a href="/" class="ocsimore_phrasing_link"><img src="/img/ocsigen-white.svg" alt="Ocsigen"/></a>
+</p><p class="logo-subproject">Lwt
+</p><ul class="mainmenu"><li class="mainmenu-home"><a href="/" class="ocsimore_phrasing_link">Home</a>
+</li><li class="mainmenu-doc"><a href="/tuto/6.2/manual/intro" class="ocsimore_phrasing_link">Doc</a>
+</li><li><a href="/eliom/6.3/manual/intro" class="ocsimore_phrasing_link">Eliom</a>
+</li><li><a href="/js_of_ocaml/3.1.0/manual/overview" class="ocsimore_phrasing_link">Js_of_ocaml</a>
+</li><li class="mainmenu-current"><a href="/lwt/3.2.1/manual/manual" class="ocsimore_phrasing_link">Lwt</a>
+</li><li><a href="/tyxml/4.1.0/manual/intro" class="ocsimore_phrasing_link">Tyxml</a>
+</li><li><a href="/ocsigen-start/1.1.0/manual/intro" class="ocsimore_phrasing_link">Start</a>
+</li></ul><div class="how-drawer"><input id="how-drawer-toggle" type="checkbox"/><label for="how-drawer-toggle" id="how-drawer-label"><span class="how-drawer-icon"></span></label><nav class="how-drawer-content"><ul class="drawermainmenu"><li class="drawermainmenu-home"><a href="/" class="ocsimore_phrasing_link">Home</a>
+</li><li class="drawermainmenu-doc"><a href="/tuto/6.2/manual/intro" class="ocsimore_phrasing_link">Doc</a>
+</li><li><a href="/eliom/6.3/manual/intro" class="ocsimore_phrasing_link">Eliom</a>
+</li><li><a href="/js_of_ocaml/3.1.0/manual/overview" class="ocsimore_phrasing_link">Js_of_ocaml</a>
+</li><li><a href="/ocsigenserver/2.9/manual/quickstart" class="ocsimore_phrasing_link">Server</a>
+</li><li class="drawermainmenu-current"><a href="/lwt/3.2.1/manual/manual" class="ocsimore_phrasing_link">Lwt</a>
+</li><li><a href="/tyxml/4.1.0/manual/intro" class="ocsimore_phrasing_link">Tyxml</a>
+</li><li><a href="/ocsigen-toolkit/1.1.0/manual/intro" class="ocsimore_phrasing_link">Toolkit</a>
+</li><li><a href="/ocsigen-start/1.1.0/manual/intro" class="ocsimore_phrasing_link">Start</a>
+</li><li class="drawermainmenu-page"><a href="/projects" class="ocsimore_phrasing_link">Other projects</a>
+</li><li class="drawermainmenu-page"><a href="/papers" class="ocsimore_phrasing_link">Research papers</a>
+</li><li class="drawermainmenu-page"><a href="/credits" class="ocsimore_phrasing_link">Who does Ocsigen?</a>
+</li></ul><div class="how-doctree"><h1> Lwt</h1><h2><a href="/lwt/2.6.0/manual/manual" class="ocsimore_phrasing_link">Overview</a></h2></div></nav></div></div><button id="reason">Switch to </button><div class="twocols"><div class="leftcol"><div class="how-versions"><input id="how-versions-toggle" type="checkbox"/><label for="how-versions-toggle" class="how-versions-current">Version 2.6.0</label><div class="how-versions-all"><a href="/lwt/dev/api/Ppx_lwt">dev</a><a href="/lwt/3.2.1/api/Ppx_lwt">3.2.1</a><a href="/lwt/3.1.0/api/Ppx_lwt">3.1.0</a><a href="/lwt/3.0.0/api/Ppx_lwt">3.0.0</a><a href="/lwt/2.7.1/api/Ppx_lwt">2.7.1</a><a href="/lwt/2.7.0/api/Ppx_lwt">2.7.0</a><span class="how-versions-all-current">2.6.0</span><a href="/lwt/2.5.2/api/Ppx_lwt">2.5.2</a><a href="/lwt/2.5.1/api/Ppx_lwt">2.5.1</a><a href="/lwt/2.5.0/api/Ppx_lwt">2.5.0</a><a href="/lwt/2.4.8/api/Ppx_lwt">2.4.8</a><a href="/lwt/2.4.7/api/Ppx_lwt">2.4.7</a><a href="/lwt/2.4.3/api/Ppx_lwt">2.4.3</a><a href="/lwt/2.4.2/api/Ppx_lwt">2.4.2</a><a href="/lwt/2.4.1/api/Ppx_lwt">2.4.1</a><a href="/lwt/2.4.0/api/Ppx_lwt">2.4.0</a><a href="/lwt/2.3.2/api/Ppx_lwt">2.3.2</a><a href="/lwt/2.3.1/api/Ppx_lwt">2.3.1</a><a href="/lwt/2.3.0/api/Ppx_lwt">2.3.0</a><a href="/lwt/2.2.1/api/Ppx_lwt">2.2.1</a><a href="/lwt/2.2.0/api/Ppx_lwt">2.2.0</a><a href="/lwt/2.1.1/api/Ppx_lwt">2.1.1</a><a href="/lwt/2.1.0/api/Ppx_lwt">2.1.0</a><a href="/lwt/2.0.0/api/Ppx_lwt">2.0.0</a><a href="/lwt/1.1.0/api/Ppx_lwt">1.1.0</a><a href="/lwt/1.0.0/api/Ppx_lwt">1.0.0</a></div></div><form id="search"><input name="q" id="q" placeholder="search ..."/><button>Search</button></form><div class="how-doctree"><h1> Lwt</h1><h2><a href="/lwt/2.6.0/manual/manual" class="ocsimore_phrasing_link">Overview</a></h2></div></div><div class="rightcol"><h1>Module <span><a class="ocsforge_doclink_lwt" href="/lwt/2.6.0/api/Ppx_lwt">Ppx_lwt</a></span> </h1><pre class="ocsforge_color odocwiki_code"><span class="ocsforge_color_keyword">module</span> <span class="ocsforge_color_uid"><span class="ocsforge_color_uid">Ppx_lwt</span></span> <span class="ocsforge_color_delimiter">:</span> <span class="ocsforge_color_keyword">sig</span><span><a class="ocsforge_doclink_lwt" href="/lwt/2.6.0/api/Ppx_lwt">..</a></span><span class="ocsforge_color_keyword">end</span></pre><p>Ppx syntax extension for Lwt
+</p><hr/><h2 id="2_Ppxextensions">Ppx extensions <a class="backref" href="#2_Ppxextensions">&#182;</a></h2><p>This Ppx extension adds various syntactic shortcut for lwt programming.
+It needs OCaml &gt;= 4.02 and <a href="https://github.com/alainfrisch/ppx_tools" class="ocsimore_phrasing_link">ppx_tools</a>.
+</p><p>To use it, simply use the ocamlfind package <span class="odocwiki_inlinecode">lwt.ppx</span>.
+</p><p>This extension adds the following syntax:
+</p><ul><li> lwt-binding:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">let%lwt ch = get_char stdin in
+code</code></pre><p>is the same as <span class="odocwiki_inlinecode">bind (get_char stdin) (fun ch -&gt; code)</span>.
+</p><p>Moreover, it supports parallel binding:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">let%lwt x = do_something1 ()
+and y = do_something2 in
+code</code></pre><p>will run <span class="odocwiki_inlinecode">do_something1 ()</span> and <span class="odocwiki_inlinecode">do_something2 ()</span>, then
+bind their results to <span class="odocwiki_inlinecode">x</span> and <span class="odocwiki_inlinecode">y</span>. It is the same as:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">let t1 = do_something1
+and t2 = do_something2 in
+bind t1 (fun x -&gt; bind t2 (fun y -&gt; code))</code></pre><ul><li> exception catching:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">try%lwt
+  &lt;expr&gt;
+with
+  &lt;branches&gt;</code></pre><p>For example:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">try%lwt
+  f x
+with
+  | Failure msg -&gt;
+      prerr_endline msg;
+      return ()</code></pre><p>is expanded to:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">catch (fun () -&gt; f x)
+  (function
+    | Failure msg -&gt;
+        prerr_endline msg;
+        return ()
+    | exn -&gt;
+        Lwt.fail exn)</code></pre><p>Note that the <span class="odocwiki_inlinecode">exn -&gt; Lwt.fail exn</span> branch is automatically added
+when needed.
+</p><ul><li> finalizer:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">(&lt;expr&gt;) [%finally &lt;expr&gt;]</code></pre><p>You can use <span class="odocwiki_inlinecode">[%lwt.finally ...]</span> instead of <span class="odocwiki_inlinecode">[%finally ...]</span>.
+</p><ul><li> assertion:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">assert%lwt &lt;expr&gt;</code></pre><ul><li> for loop:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">for%lwt i = &lt;expr&gt; to &lt;expr&gt; do
+  &lt;expr&gt;
+done</code></pre><p>and:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">for%lwt i = &lt;expr&gt; downto &lt;expr&gt; do
+  &lt;expr&gt;
+done</code></pre><ul><li> while loop:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">while%lwt &lt;expr&gt; do
+  &lt;expr&gt;
+done</code></pre><ul><li> pattern matching:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">match%lwt &lt;expr&gt; with
+  | &lt;patt_1&gt; -&gt; &lt;expr_1&gt;
+      ...
+  | &lt;patt_n&gt; -&gt; &lt;expr_n&gt;</code></pre><p>Exception cases are also supported:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">match%lwt &lt;expr&gt; with
+  | exception &lt;exn&gt; -&gt; &lt;expr_1&gt;
+  | &lt;patt_2&gt; -&gt; &lt;expr_2&gt;
+      ...
+  | &lt;patt_n&gt; -&gt; &lt;expr_n&gt;</code></pre><ul><li> conditional:
+</li></ul><p>
+</p><pre class=""><code class="language-ocaml translatable">if%lwt &lt;expr&gt; then
+  &lt;expr_1&gt;
+else
+  &lt;expr_2&gt;</code></pre><p>and
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">if%lwt &lt;expr&gt; then &lt;expr_1&gt;</code></pre><ul><li> exception raising:
+</li></ul><p>For all other expression, the construct
+
+</p><pre class=""><code class="language-ocaml translatable">[%lwt &lt;expr&gt;]</code></pre><p>is expanded to:
+
+</p><pre class=""><code class="language-ocaml translatable">Lwt.catch (fun () -&gt; &lt;expr&gt;) Lwt.fail</code></pre><p>It allows to encode the old <span class="odocwiki_inlinecode">raise_lwt &lt;e&gt;</span> as <span class="odocwiki_inlinecode">[%lwt raise &lt;e&gt;]</span>, and offers a convenient way to interact with non-Lwt code.
+</p><p>
+</p><h2 id="2_Debug">Debug <a class="backref" href="#2_Debug">&#182;</a></h2><p>By default, the debug mode is enabled. This means that the <span class="odocwiki_inlinecode">backtrace</span> versions of the <span class="odocwiki_inlinecode">bind</span>, <span class="odocwiki_inlinecode">finalize</span> and <span class="odocwiki_inlinecode">catch</span> functions are used, enabling proper backtraces for the Lwt exceptions.
+</p><p>The debug mode can be disabled with the option <span class="odocwiki_inlinecode">-no-debug</span>:
+</p><pre>$ ocamlfind ocamlc -package lwt.ppx \
+    -ppxopt lwt.ppx,-no-debug -linkpkg -o foo foo.ml
+</pre><p>
+</p><h2 id="2_Sequence">Sequence <a class="backref" href="#2_Sequence">&#182;</a></h2><p>It is also possible to sequence Lwt operations with the <span class="odocwiki_inlinecode">&gt;&gt;</span> operator:
+
+</p><pre class=""><code class="language-ocaml translatable">write stdout &quot;Hello, &quot; ~&gt;&gt; write stdout &quot;world!&quot;</code></pre><p>By default, each operation must return <span class="odocwiki_inlinecode">unit Lwt.t</span>. This constraint can be
+lifted with the option <span class="odocwiki_inlinecode">-no-strict-sequence</span>. The operator can be disabled
+with the option <span class="odocwiki_inlinecode">-no-sequence</span>.
+</p><p>If you are mixing `&gt;&gt;` and `;`, you need to use parentheses or `begin`/`end`
+to get the result you expect:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">write stdout &quot;Hello, &quot; ~&gt;&gt; (ignore (); write stdout &quot;world!&quot;)</code></pre><p>Note that unlike <span class="odocwiki_inlinecode">&gt;&gt;=</span>, <span class="odocwiki_inlinecode">&gt;&gt;</span> is not an OCaml value. it is a piece of syntax
+added by the ppx rewriter - i.e., you cannot refer to <span class="odocwiki_inlinecode">(&gt;&gt;)</span>.
+</p><p>
+</p><h2 id="2_Logging">Logging <a class="backref" href="#2_Logging">&#182;</a></h2><p>The logging syntax extension is enabled with <span class="odocwiki_inlinecode">-log</span>.
+It will replace expressions of the form:
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">Lwt_log.info_f ~section &quot;x = %d&quot; x</code></pre><p>by
+</p><p>
+</p><pre class=""><code class="language-ocaml translatable">if Lwt_log.Section.level section &lt;= Lwt_log.Info then
+  Lwt_log.info_f ~section &quot;x = %d&quot; x
+else
+  return ()</code></pre><p>Notes:
+</p><ul><li> The application must be complete. For example: <span class="odocwiki_inlinecode">Log.info &quot;%d&quot;</span>
+will make compilation fail.
+</li></ul><ul><li> Debug messages are removed if the option <span class="odocwiki_inlinecode">-no-debug</span> is passed.
+</li></ul></div></div></div></body></html>
