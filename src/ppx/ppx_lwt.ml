@@ -101,8 +101,13 @@ let gen_binds e_loc l e =
       in
       let new_exp =
         if !debug then
-          [%expr Lwt.backtrace_bind (fun exn -> try raise exn with exn -> exn)
-            [%e name] [%e fun_]] [@metaloc e_loc]
+          [%expr
+            let module Reraise = struct external reraise : exn -> 'a = "%reraise" end in
+            Lwt.backtrace_bind
+              (fun exn -> try Reraise.reraise exn with exn -> exn)
+              [%e name]
+              [%e fun_]
+          ] [@metaloc e_loc]
         else
           [%expr Lwt.bind [%e name] [%e fun_]] [@metaloc e_loc]
       in
@@ -121,8 +126,13 @@ let gen_top_binds vbs =
     match vbs with
     | {pvb_expr; _}::_rest ->
       if !debug then
-        [%expr Lwt.backtrace_bind (fun exn -> try raise exn with exn -> exn)
-          [%e pvb_expr] (fun [%p pvar (gen_name i)] -> gen_exp _rest (i + 1))]
+        [%expr
+          let module Reraise = struct external reraise : exn -> 'a = "%reraise" end in
+          Lwt.backtrace_bind
+            (fun exn -> try Reraise.reraise exn with exn -> exn)
+            [%e pvb_expr]
+            (fun [%p pvar (gen_name i)] -> gen_exp _rest (i + 1))
+        ]
       else
         [%expr Lwt.bind [%e pvb_expr] (fun [%p pvar (gen_name i)] -> gen_exp rest (i + 1))]
     | [] ->
@@ -136,8 +146,13 @@ let gen_top_binds vbs =
 let lwt_sequence mapper ~lhs ~rhs =
   let lhs, rhs = mapper.expr mapper lhs, mapper.expr mapper rhs in
   if !debug then
-    [%expr Lwt.backtrace_bind (fun exn -> try raise exn with exn -> exn)
-              [%e lhs] (fun () -> [%e rhs])]
+    [%expr
+      let module Reraise = struct external reraise : exn -> 'a = "%reraise" end in
+      Lwt.backtrace_bind
+        (fun exn -> try Reraise.reraise exn with exn -> exn)
+        [%e lhs]
+        (fun () -> [%e rhs])
+    ] [@metaloc lhs.pexp_loc]
   else
     [%expr Lwt.bind [%e lhs] (fun () -> [%e rhs])]
 
@@ -246,8 +261,13 @@ let lwt_expression mapper exp attributes =
     let cases = add_wildcard_case cases in
     let new_exp =
       if !debug then
-        [%expr Lwt.backtrace_catch (fun exn -> try raise exn with exn -> exn)
-          (fun () -> [%e expr]) [%e Exp.function_ cases]]
+        [%expr
+          let module Reraise = struct external reraise : exn -> 'a = "%reraise" end in
+          Lwt.backtrace_catch
+            (fun exn -> try Reraise.reraise exn with exn -> exn)
+            (fun () -> [%e expr])
+            [%e Exp.function_ cases]
+        ]
       else
         [%expr Lwt.catch (fun () -> [%e expr]) [%e Exp.function_ cases]]
     in
@@ -280,8 +300,13 @@ let lwt_expression mapper exp attributes =
     in
     let new_exp =
       if !debug then
-        [%expr Lwt.backtrace_catch (fun exn -> try raise exn with exn -> exn)
-          (fun () -> [%e exp]) Lwt.fail]
+        [%expr
+          let module Reraise = struct external reraise : exn -> 'a = "%reraise" end in
+          Lwt.backtrace_catch
+            (fun exn -> try Reraise.reraise exn with exn -> exn)
+            (fun () -> [%e exp])
+            Lwt.fail
+        ]
       else
         [%expr Lwt.catch (fun () -> [%e exp]) Lwt.fail]
     in
@@ -398,9 +423,13 @@ let mapper =
       | [%expr [%e? exp ] [%lwt.finally [%e? finally]] ] ->
         let new_exp =
           if !debug then
-            [%expr Lwt.backtrace_finalize (fun exn -> try raise exn with exn -> exn)
-                                          (fun () -> [%e exp])
-                                          (fun () -> [%e finally])]
+            [%expr
+              let module Reraise = struct external reraise : exn -> 'a = "%reraise" end in
+              Lwt.backtrace_finalize
+                (fun exn -> try Reraise.reraise exn with exn -> exn)
+                (fun () -> [%e exp])
+                (fun () -> [%e finally])
+            ]
           else
             [%expr Lwt.finalize (fun () -> [%e exp]) (fun () -> [%e finally])]
         in
@@ -427,10 +456,13 @@ let mapper =
           in
           if !debug then
             Ast_helper.Exp.attr
-              [%expr Lwt.backtrace_bind (fun exn -> try raise exn with exn -> exn)
-                                        [%e lhs]
-                                        (fun [%p pat] -> [%e rhs])
-              ]
+              ([%expr
+                let module Reraise = struct external reraise : exn -> 'a = "%reraise" end in
+                Lwt.backtrace_bind
+                  (fun exn -> try Reraise.reraise exn with exn -> exn)
+                  [%e lhs]
+                  (fun [%p pat] -> [%e rhs])
+              ] [@metaloc lhs.pexp_loc])
               (Ast_mapper.attribute_of_warning op.Parsetree.pexp_loc
                 "The operator >> is deprecated")
           else
