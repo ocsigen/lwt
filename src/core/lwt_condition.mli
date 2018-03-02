@@ -45,7 +45,7 @@ val wait : ?mutex:Lwt_mutex.t -> 'a t -> 'a Lwt.t
         temporarily unlocked until the condition is notified. Upon
         notification, [mutex] is re-locked before [wait] returns and
         the thread's activity is resumed. When the awaited condition
-        is notified, the value parameter passed to [notify] is
+        is notified, the value parameter passed to [signal] is
         returned. *)
 
 val signal : 'a t -> 'a -> unit
@@ -53,7 +53,7 @@ val signal : 'a t -> 'a -> unit
         single waiting thread will be awoken and will receive the
         notification value which will be returned from [wait]. Note
         that condition notification is not "sticky", i.e. if there is
-        no waiter when [notify] is called, the notification will be
+        no waiter when [signal] is called, the notification will be
         missed and the value discarded. *)
 
 val broadcast : 'a t -> 'a -> unit
