@@ -477,21 +477,21 @@ let mapper =
         lwt_log mapper fn args pexp_attributes pexp_loc
       | _ ->
         default_mapper.expr mapper expr);
-        structure_item = (fun mapper stri ->
-          default_loc := stri.pstr_loc;
-          match stri with
-          | [%stri let%lwt [%p? var] = [%e? exp]] ->
-            [%stri let [%p var] = Lwt_main.run [%e mapper.expr mapper exp]]
+    structure_item = (fun mapper stri ->
+      default_loc := stri.pstr_loc;
+      match stri with
+      | [%stri let%lwt [%p? var] = [%e? exp]] ->
+        [%stri let [%p var] = Lwt_main.run [%e mapper.expr mapper exp]]
 
-          | {pstr_desc = Pstr_extension (({txt = "lwt"; _}, PStr [
-            {pstr_desc = Pstr_value (Recursive, _); _}]) as content, attrs); pstr_loc} ->
-            {stri with pstr_desc =
-              Pstr_extension (content, warn_let_lwt_rec pstr_loc attrs)}
+      | {pstr_desc = Pstr_extension (({txt = "lwt"; _}, PStr [
+        {pstr_desc = Pstr_value (Recursive, _); _}]) as content, attrs); pstr_loc} ->
+        {stri with pstr_desc =
+          Pstr_extension (content, warn_let_lwt_rec pstr_loc attrs)}
 
-          | {pstr_desc = Pstr_extension (({txt = "lwt"; _}, PStr [
-            {pstr_desc = Pstr_value (Nonrecursive, vbs); _}]), _); _} ->
-            mapper.structure_item mapper (Str.value Nonrecursive (gen_top_binds vbs))
-          | x -> default_mapper.structure_item mapper x);
+      | {pstr_desc = Pstr_extension (({txt = "lwt"; _}, PStr [
+        {pstr_desc = Pstr_value (Nonrecursive, vbs); _}]), _); _} ->
+        mapper.structure_item mapper (Str.value Nonrecursive (gen_top_binds vbs))
+      | x -> default_mapper.structure_item mapper x);
 }
 
 
