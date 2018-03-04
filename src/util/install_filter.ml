@@ -47,10 +47,11 @@ let main () =
     | Some(x) -> x :: read_lines file
     | None -> []
   in
-  let file = open_in "lwt.install" in
+  let package_name = Sys.argv.(1) in
+  let file = open_in (package_name ^ ".install") in
   let lines = List.map filter_sub_paths (read_lines file) in
   let () = close_in file in
-  let file = open_out "lwt.install" in
+  let file = open_out (package_name ^ ".install") in
   let () = List.iter (Printf.fprintf file "%s\n") lines in
   let () = close_out file in
   flush stdout

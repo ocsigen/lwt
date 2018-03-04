@@ -19,7 +19,7 @@ build: [
   [ "ocaml" "src/util/configure.ml" "-use-libev" "%{conf-libev:installed}%"
                                     "-use-camlp4" "%{camlp4:installed}%" ]
   [ "jbuilder" "build" "-p" name "-j" jobs ]
-  [ "ocaml" "src/util/install_filter.ml" ]
+  [ "ocaml" "src/util/install_filter.ml" name ]
 ]
 build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
 
