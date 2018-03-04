@@ -19,6 +19,8 @@ depends: [
   "ppx_tools_versioned" {>= "5.0.1"}
 ]
 
+available: [ocaml-version >= "4.02.0"]
+
 build: [
   ["jbuilder" "build" "-p" name "-j" jobs]
 ]
