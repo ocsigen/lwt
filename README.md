@@ -185,112 +185,31 @@ Lwt is released under the LGPL, with an OpenSSL linking exception. See
 
 <br/>
 
-## Lwt-Related Libraries
+## Related Libraries
 
-This list was generated with `opam list --unavailable --depends-on=lwt --depopts --recursive --short | grep lwt`.
+- [alcotest](https://github.com/mirage/alcotest/)
+A lightweight framework for unit testing
 
-[alcotest-lwt](https://opam.ocaml.org/packages/alcotest-lwt/)
+- [angstrom](https://github.com/inhabitedtype/angstrom)
+A library for building parsers with a focus on efficiency, concurrency, and reusability
 
-[angstrom-lwt-unix](https://opam.ocaml.org/packages/angstrom-lwt-unix/)
+- [cohttp](https://github.com/mirage/ocaml-cohttp)
+A lightweight library for writing HTTP clients and servers
 
-[anycache-lwt](https://opam.ocaml.org/packages/anycache-lwt/)
+- [cstruct](https://github.com/mirage/ocaml-cstruct)
+A library and syntax extension for interop with C-like structures
 
-[capnp-rpc-lwt](https://opam.ocaml.org/packages/capnp-rpc-lwt/)
+- [ezjsonm](https://github.com/mirage/ezjsonm)
+A library for easy interop with JSON
 
-[caqti-lwt](https://opam.ocaml.org/packages/caqti-lwt/)
+- [faraday](https://github.com/inhabitedtype/faraday)
+A library for fast and memory-efficient serialization
 
-[charrua-client-lwt](https://opam.ocaml.org/packages/charrua-client-lwt/)
+- [logs](https://github.com/dbuenzli/logs)
+A logging library with reporting decoupled from logging
 
-[cohttp-lwt](https://opam.ocaml.org/packages/cohttp-lwt/)
+- [lwt-parallel](https://github.com/ivg/parallel)
+A library for distributed computing
 
-[cohttp-lwt-jsoo](https://opam.ocaml.org/packages/cohttp-lwt-jsoo/)
-
-[cohttp-lwt-unix](https://opam.ocaml.org/packages/cohttp-lwt-unix/)
-
-[conduit-lwt](https://opam.ocaml.org/packages/conduit-lwt/)
-
-[conduit-lwt-unix](https://opam.ocaml.org/packages/conduit-lwt-unix/)
-
-[cstruct-lwt](https://opam.ocaml.org/packages/cstruct-lwt/)
-
-[csv-lwt](https://opam.ocaml.org/packages/csv-lwt/)
-
-[dns-forward-lwt-unix](https://opam.ocaml.org/packages/dns-forward-lwt-unix/)
-
-[dns-lwt](https://opam.ocaml.org/packages/dns-lwt/)
-
-[dns-lwt-unix](https://opam.ocaml.org/packages/dns-lwt-unix/)
-
-[ezjsonm-lwt](https://opam.ocaml.org/packages/ezjsonm-lwt/)
-
-[faraday-lwt](https://opam.ocaml.org/packages/faraday-lwt/)
-
-[faraday-lwt-unix](https://opam.ocaml.org/packages/faraday-lwt-unix/)
-
-[graphql-lwt](https://opam.ocaml.org/packages/graphql-lwt/)
-
-[imaplet-lwt](https://opam.ocaml.org/packages/imaplet-lwt/)
-
-[js_of_ocaml-lwt](https://opam.ocaml.org/packages/js_of_ocaml-lwt/)
-
-[lwt-binio](https://opam.ocaml.org/packages/lwt-binio/)
-
-[lwt-parallel](https://opam.ocaml.org/packages/lwt-parallel/)
-
-[lwt-zmq](https://opam.ocaml.org/packages/lwt-zmq/)
-
-[lwt_camlp4](https://opam.ocaml.org/packages/lwt_camlp4/)
-
-[lwt_glib](https://opam.ocaml.org/packages/lwt_glib/)
-
-[lwt_log](https://opam.ocaml.org/packages/lwt_log/)
-
-[lwt_named_threads](https://opam.ocaml.org/packages/lwt_named_threads/)
-
-[lwt_ppx](https://opam.ocaml.org/packages/lwt_ppx/)
-
-[lwt_react](https://opam.ocaml.org/packages/lwt_react/)
-
-[lwt_ssl](https://opam.ocaml.org/packages/lwt_ssl/)
-
-[macaque_lwt](https://opam.ocaml.org/packages/macaque_lwt/)
-
-[mirage-block-lwt](https://opam.ocaml.org/packages/mirage-block-lwt/)
-
-[mirage-channel-lwt](https://opam.ocaml.org/packages/mirage-channel-lwt/)
-
-[mirage-clock-lwt](https://opam.ocaml.org/packages/mirage-clock-lwt/)
-
-[mirage-console-lwt](https://opam.ocaml.org/packages/mirage-console-lwt/)
-
-[mirage-flow-lwt](https://opam.ocaml.org/packages/mirage-flow-lwt/)
-
-[mirage-fs-lwt](https://opam.ocaml.org/packages/mirage-fs-lwt/)
-
-[mirage-kv-lwt](https://opam.ocaml.org/packages/mirage-kv-lwt/)
-
-[mirage-net-lwt](https://opam.ocaml.org/packages/mirage-net-lwt/)
-
-[mirage-protocols-lwt](https://opam.ocaml.org/packages/mirage-protocols-lwt/)
-
-[mirage-stack-lwt](https://opam.ocaml.org/packages/mirage-stack-lwt/)
-
-[mirage-time-lwt](https://opam.ocaml.org/packages/mirage-time-lwt/)
-
-[mirage-types-lwt](https://opam.ocaml.org/packages/mirage-types-lwt/)
-
-[pvem_lwt_unix](https://opam.ocaml.org/packages/pvem_lwt_unix/)
-
-[redis-lwt](https://opam.ocaml.org/packages/redis-lwt/)
-
-[session-cohttp-lwt](https://opam.ocaml.org/packages/session-cohttp-lwt/)
-
-[session-postgresql-lwt](https://opam.ocaml.org/packages/session-postgresql-lwt/)
-
-[session-redis-lwt](https://opam.ocaml.org/packages/session-redis-lwt/)
-
-[shared-memory-ring-lwt](https://opam.ocaml.org/packages/shared-memory-ring-lwt/)
-
-[vhd-format-lwt](https://opam.ocaml.org/packages/vhd-format-lwt/)
-
-[websocket-lwt](https://opam.ocaml.org/packages/websocket-lwt/)
+- [opium](https://github.com/rgrinberg/opium)
+A web toolkit that uses [Sinatra](https://github.com/sinatra/sinatra)-inspired middleware
