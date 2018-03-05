@@ -182,3 +182,34 @@ Lwt is released under the LGPL, with an OpenSSL linking exception. See
 [`COPYING`][copying].
 
 [copying]: https://github.com/ocsigen/lwt/blob/master/doc/COPYING
+
+<br/>
+
+## Related Libraries
+
+- [alcotest](https://github.com/mirage/alcotest/)
+A lightweight framework for unit testing
+
+- [angstrom](https://github.com/inhabitedtype/angstrom)
+A library for building parsers with a focus on efficiency, concurrency, and reusability
+
+- [cohttp](https://github.com/mirage/ocaml-cohttp)
+A lightweight library for writing HTTP clients and servers
+
+- [cstruct](https://github.com/mirage/ocaml-cstruct)
+A library and syntax extension for interop with C-like structures
+
+- [ezjsonm](https://github.com/mirage/ezjsonm)
+A library for easy interop with JSON
+
+- [faraday](https://github.com/inhabitedtype/faraday)
+A library for fast and memory-efficient serialization
+
+- [logs](https://github.com/dbuenzli/logs)
+A logging library with reporting decoupled from logging
+
+- [lwt-parallel](https://github.com/ivg/parallel)
+A library for distributed computing
+
+- [opium](https://github.com/rgrinberg/opium)
+A web toolkit that uses [Sinatra](https://github.com/sinatra/sinatra)-inspired middleware
