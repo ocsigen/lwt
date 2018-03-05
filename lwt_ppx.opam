@@ -18,7 +18,9 @@ depends: [
   "ocaml-migrate-parsetree"
   "ppx_tools_versioned" {>= "5.0.1"}
 ]
-
+# The Lwt PPX uses the %reraise primitive, which is available on OCaml >= 4.02.
+# Even though OCaml PPX itself requires 4.02, we add this constraint for
+# thoroughness and safety.
 available: [ocaml-version >= "4.02.0"]
 
 build: [
