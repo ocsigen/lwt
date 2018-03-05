@@ -2983,6 +2983,8 @@ struct
     | Fail of exn
     | Sleep
 
+  external reraise : exn -> 'a = "%reraise"
+
   let state p =
     let Internal p = to_internal_promise p in
     match (underlying p).state with
@@ -3003,7 +3005,7 @@ struct
   let poll p =
     let Internal p = to_internal_promise p in
     match (underlying p).state with
-    | Rejected e -> raise e
+    | Rejected e -> reraise e
     | Fulfilled v -> Some v
     | Pending _ -> None
 
