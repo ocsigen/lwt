@@ -2477,6 +2477,8 @@ sig
   val nchoose_split : 'a t list -> ('a list * 'a t list) t
 end =
 struct
+  external reraise : exn -> 'a = "%reraise"
+
   let async f =
     let p = try f () with exn -> fail exn in
     let Internal p = to_internal_promise p in
@@ -2504,7 +2506,7 @@ struct
     | Fulfilled _ ->
       ()
     | Rejected exn ->
-      raise exn
+      reraise exn
 
     | Pending p_callbacks ->
       let callback result =
