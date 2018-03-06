@@ -289,7 +289,7 @@ val waiter1 : '_a Lwt.t = <abstr>
 val wakener1 : '_a Lwt.u = <abstr>
 # let waiter2, wakener2 = Lwt.wait ();;
 val waiter2 : '_a Lwt.t = <abstr>
-val wakener : '_a Lwt.u = <abstr>
+val wakener2 : '_a Lwt.u = <abstr>
 # let t = Lwt.choose [waiter1; waiter2];;
 val t : '_a Lwt.t = <abstr>
 # Lwt.state t;;
@@ -345,7 +345,7 @@ let log msg =
   in
   Lwt_io.printlf "%s: %s" thread_id msg
 
-lwt () =
+let%lwt () =
   Lwt.join [
     Lwt.with_value id_key (Some "thread 1") (fun () -> log "foo");
     Lwt.with_value id_key (Some "thread 2") (fun () -> log "bar");
