@@ -2923,6 +2923,10 @@ struct
 
     let p = check_for_already_resolved_promises [] ps in
     p
+
+  let nchoose_split = function
+    | [] -> return ([], [])
+    | l -> nchoose_split l
 end
 include Concurrent_composition
 
