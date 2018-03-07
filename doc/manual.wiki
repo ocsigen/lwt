@@ -99,7 +99,7 @@ val p : char Lwt.t = <abstr>
      operation, that you started by calling the function that returned the
      promise, has completed successfully.
    * {{{Fail exn}}}, which means that the promise has been rejected
-     with the exception {{{exn}}}. This usually means that the asychronous
+     with the exception {{{exn}}}. This usually means that the asynchronous
      operation associated with the promise has failed.
    * {{{Sleep}}}, which means that the promise is has not yet been
      fulfilled or rejected, so it is //pending//.
@@ -226,9 +226,9 @@ val p : char Lwt.t = <abstr>
   operation associated with a promise can only be canceled if its implementation
   has taken care to set an {{{on_cancel}}} callback on the promise that
   it returned to you. In practice, most operations (such as system calls)
-  can't be canceled once they are started anyway, so promise cancelation is
+  can't be canceled once they are started anyway, so promise cancellation is
   useful mainly for interrupting future operations once you know that a chain of
-  asychronous operations will not be needed.
+  asynchronous operations will not be needed.
 
   It is also possible to cancel a promise which has not been
   created directly by you with {{{Lwt.task}}}. In this case, the deepest
@@ -569,9 +569,9 @@ val s' : int Lwt_stream.t = <abstr>
   the standard library (of type {{{in_channel}}} or
   {{{out_channel}}}), but with non-blocking semantics.
 
-  {{{Lwt_gc}}} allows you to register a finaliser that returns a
+  {{{Lwt_gc}}} allows you to register a finalizer that returns a
   promise. At the end of the program, {{{Lwt}}} will wait for all these
-  finalisers to resolve.
+  finalizers to resolve.
 
 === The Lwt scheduler ===
 
@@ -611,7 +611,7 @@ val s' : int Lwt_stream.t = <abstr>
 <<code language="ocaml"|val Lwt_main.run : 'a Lwt.t -> 'a
 >>
 
-  This function continously runs the scheduler until the promise passed
+  This function continuously runs the scheduler until the promise passed
   as argument is resolved.
 
   To make sure {{{Lwt}}} is compiled with {{{libev}}} support,
@@ -656,7 +656,7 @@ val s' : int Lwt_stream.t = <abstr>
 
   Among the added functionalities we have {{{Lwt_react.E.next}}}, which
   takes an event and returns a promise which will be pending until the next
-  occurence of this event. For example:
+  occurrence of this event. For example:
 
 <<code language="ocaml" |# open Lwt_react;;
 # let event, push = E.create ();;
@@ -674,7 +674,7 @@ val p : '_a Lwt.t = <abstr>
 
   Another interesting feature is the ability to limit events
   (resp. signals) from occurring (resp. changing) too often. For example,
-  suppose you are doing a program which displays something on the screeen
+  suppose you are doing a program which displays something on the screen
   each time a signal changes. If at some point the signal changes 1000
   times per second, you probably don't want to render it 1000 times per
   second. For that you use {{{Lwt_react.S.limit}}}:
