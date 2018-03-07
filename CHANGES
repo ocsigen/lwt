@@ -1,3 +1,23 @@
+===== 3.3.0 (2018-03-07) =====
+
+====== Bugs fixed ======
+
+  * Restore backtrace support (#554, #556, Gabe Levi).
+  * Serious logic error that could cause Lwt to hang or crash (#549, reported
+    @koen-struyve).
+  * All `Lwt_list` functions are now tail-recursive (#538, Joseph Thomas).
+
+====== Additions ======
+
+  * Support `;%lwt` syntax in the PPX (#307, Hezekiah Carty).
+  * `Lwt_stream.iter_n` (#312, Hezekiah Carty).
+
+====== Miscellaneous ======
+
+  * Testing improvements (#536, #541, @cedlemo).
+  * Documentation improvements (#544, #546, #547, #553, #559, Daniil Baturin,
+    Jason Evans, Jess Smith, Milo Turner).
+
 ===== 3.2.1 (2018-01-11) =====
 
 Lwt 3.2.1 is released because it still packages lwt.ppx, a deprecated copy of
