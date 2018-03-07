@@ -2,22 +2,22 @@
 
 == Introduction ==
 
-  When writing a program, a common developer's task is to handle IO
-  operations. Indeed most software interact with several different
+  When writing a program, a common developer's task is to handle I/O
+  operations. Indeed, most software interacts with several different
   resources, such as:
 
-   * the kernel, by doing system calls
-   * the user, by reading the keyboard, the mouse, or any input device
-   * a graphical server, to build graphical user interface
-   * other computers, by using the network
-   * ...
+   * the kernel, by doing system calls,
+   * the user, by reading the keyboard, the mouse, or any input device,
+   * a graphical server, to build graphical user interface,
+   * other computers, by using the network,
+   * ...and so on.
 
   When this list contains only one item, it is pretty easy to
   handle. However as this list grows it becomes harder and harder to
-  make everything works together. Several choices have been proposed
+  make everything work together. Several choices have been proposed
   to solve this problem:
 
-   * using a main loop, and integrate all components we are
+   * using a main loop, and integrating all components we are
      interacting with into this main loop.
    * using preemptive system threads
 
@@ -29,40 +29,28 @@
   complete.
 
   If you already wrote code using preemptive threads, you should know
-  that doing it right with threads is a hard job. Moreover system
-  threads consume non negligible resources, and so you can only launch
-  a limited number of threads at the same time. Thus this is not a
-  real solution.
+  that doing it right with threads is a difficult job. Moreover, system
+  threads consume non-negligible resources, and so you can only launch
+  a limited number of threads at the same time. Thus, this is not a
+  general solution.
 
-  {{{Lwt}}} offers a new alternative. It provides very light-weight
-  cooperative threads; ``launching'' a thread is a very fast
-  operation, it does not require a new stack, a new process, or
-  anything else. Moreover context switches are very fast. In fact, it
-  is so easy that we will launch a thread for every system call. And
-  composing cooperative threads will allow us to write highly
-  asynchronous programs.
+  {{{Lwt}}} offers a third alternative. It provides promises, which are
+  very fast: a promise is just a reference that will be filled asynchronously,
+  and calling a function that returns a promise does not require a new stack,
+  new process, or anything else. It is just a normal, fast, function call.
+  Promises compose nicely, allowing us to write highly asynchronous programs.
 
-  In a first part, we will explain the concepts of {{{Lwt}}}, then we will
-  describe the many sub-libraries of {{{Lwt}}}.
+  In the first part, we will explain the concepts of {{{Lwt}}}, then we will
+  describe the main modules {{{Lwt}}} consists of.
 
 == The Lwt core library ==
 
   In this section we describe the basics of {{{Lwt}}}. It is advised to
-  start an ocaml toplevel and try the given code examples. To start,
-  launch {{{ocaml}}} in a terminal or in emacs with the tuareg
-  mode, and type:
-
-{{{
-# #use "topfind";;
-# #require "lwt.simple-top";;
-}}}
-
-  {{{lwt.simple-top}}} makes sure {{{Lwt}}} threads can run while
-  using the toplevel. You do not need it if you are using {{{utop}}}.
+  start {{{utop}}} and try the given code examples.
 
 === Lwt concepts ===
 
-  Let's take a classical function of the {{{Pervasives}}} module:
+  Let's take a classic function of the {{{Pervasives}}} module:
 
 <<code language="ocaml" |# Pervasives.input_char;;
 - : in_channel -> char = <fun>
@@ -73,117 +61,120 @@
   blocking: while it is being executed, the whole program will be
   blocked, and other events will not be handled until it returns.
 
-  Now let's look at the lwt equivalent:
+  Now, let's look at the lwt equivalent:
 
 <<code language="ocaml" |# Lwt_io.read_char;;
 - : Lwt_io.input_channel -> char Lwt.t = <fun>
 >>
 
-  As you can see, it does not return a character but something of
+  As you can see, it does not return just a character, but something of
   type {{{char Lwt.t}}}. The type {{{'a Lwt.t}}} is the type
-  of threads returning a value of type {{{'a}}}. Actually the
+  of promises that can be fulfilled later with a value of type {{{'a}}}.
   {{{Lwt_io.read_char}}} will try to read a character from the
-  given input channel and //immediately// returns a light-weight
-  thread.
+  given input channel and //immediately// return a promise, without
+  blocking, whether a character is available or not. If a character is
+  not available, the promise will just not be fulfilled //yet//.
 
-  Now, let's see what we can do with a {{{Lwt}}} thread. The following
-  code creates a pipe, and launches a thread reading on the input side:
+  Now, let's see what we can do with a {{{Lwt}}} promise. The following
+  code creates a pipe, creates a promise that is fulfilled with the result of
+  reading the input side:
 
 <<code language="ocaml" |# let ic, oc = Lwt_io.pipe ();;
 val ic : Lwt_io.input_channel = <abstr>
 val oc : Lwt_io.output_channel = <abstr>
-# let t = Lwt_io.read_char ic;;
-val t : char Lwt.t = <abstr>
+# let p = Lwt_io.read_char ic;;
+val p : char Lwt.t = <abstr>
 >>
 
-  We can now look at the state of our newly created thread:
+  We can now look at the state of our newly created promise:
 
-<<code language="ocaml" |# Lwt.state t;;
+<<code language="ocaml" |# Lwt.state p;;
 - : char Lwt.state = Lwt.Sleep
 >>
 
-  A thread may be in one of the following states:
+  A promise may be in one of the following states:
 
-   * {{{Return x}}}, which means that the thread has terminated
-     successfully and returned the value {{{x}}}
-   * {{{Fail exn}}}, which means that the thread has terminated,
-     but instead of returning a value, it failed with the exception
-     {{{exn}}}
-   * {{{Sleep}}}, which means that the thread is currently
-     sleeping and has not yet returned a value or an exception
+   * {{{Return x}}}, which means that the promise has been fulfilled
+     with the value {{{x}}}. This usually implies that the asynchronous
+     operation, that you started by calling the function that returned the
+     promise, has completed successfully.
+   * {{{Fail exn}}}, which means that the promise has been rejected
+     with the exception {{{exn}}}. This usually means that the asychronous
+     operation associated with the promise has failed.
+   * {{{Sleep}}}, which means that the promise is has not yet been
+     fulfilled or rejected, so it is //pending//.
 
-  The thread {{{t}}} is sleeping because there is currently nothing
+  The above promise {{{p}}} is pending because there is nothing yet
   to read from the pipe. Let's write something:
 
 <<code language="ocaml" |# Lwt_io.write_char oc 'a';;
 - : unit Lwt.t = <abstr>
-# Lwt.state t;;
+# Lwt.state p;;
 - : char Lwt.state = Lwt.Return 'a'
 >>
 
-  So, after we write something, the reading thread has been awoken and
-  has returned the value {{{'a'}}}.
+  So, after we write something, the reading promise has been fulfilled
+  with the value {{{'a'}}}.
 
-=== Primitives for thread creation ===
+=== Primitives for promise creation ===
 
-  There are several primitives for creating {{{Lwt}}} threads. These
+  There are several primitives for creating {{{Lwt}}} promises. These
   functions are located in the module {{{Lwt}}}.
 
   Here are the main primitives:
 
    * {{{Lwt.return : 'a -> 'a Lwt.t}}}
      \\
-     creates a thread which has already terminated and returned a value
+     creates a promise which is already fulfilled with the given value
    * {{{Lwt.fail : exn -> 'a Lwt.t}}}
      \\
-     creates a thread which has already terminated and failed with an
-     exception
+     creates a promise which is already rejected with the given exception
    * {{{Lwt.wait : unit -> 'a Lwt.t * 'a Lwt.u}}}
      \\
-     creates a sleeping thread and returns this thread plus a wakener (of
-     type {{{'a Lwt.u}}}) which must be used to wakeup the sleeping
-     thread.
+     creates a pending promise, and returns it, paired with a resolver (of
+     type {{{'a Lwt.u}}}), which must be used to resolve (fulfill or reject)
+     the promise.
 
-  To wake up a sleeping thread, you must use one of the following
+  To resolve a pending promise, use one of the following
   functions:
 
    * {{{Lwt.wakeup : 'a Lwt.u -> 'a -> unit}}}
      \\
-     wakes up the thread with a value.
+     fulfills the promise with a value.
    * {{{Lwt.wakeup_exn : 'a Lwt.u -> exn -> unit}}}
      \\
-     wakes up the thread with an exception.
+     rejects the promise with an exception.
 
-  Note that it is an error to wakeup the same thread twice. {{{Lwt}}}
+  Note that it is an error to try to resolve the same promise twice. {{{Lwt}}}
   will raise {{{Invalid_argument}}} if you try to do so.
 
   With this information, try to guess the result of each of the
-  following expression:
+  following expressions:
 
 <<code language="ocaml" |# Lwt.state (Lwt.return 42);;
 # Lwt.state (Lwt.fail Exit);;
-# let waiter, wakener = Lwt.wait ();;
-# Lwt.state waiter;;
-# Lwt.wakeup wakener 42;;
-# Lwt.state waiter;;
-# let waiter, wakener = Lwt.wait ();;
-# Lwt.state waiter;;
-# Lwt.wakeup_exn wakener Exit;;
-# Lwt.state waiter;;
+# let p, r = Lwt.wait ();;
+# Lwt.state p;;
+# Lwt.wakeup r 42;;
+# Lwt.state p;;
+# let p, r = Lwt.wait ();;
+# Lwt.state p;;
+# Lwt.wakeup_exn r Exit;;
+# Lwt.state p;;
 >>
 
-==== Primitives for thread composition ====
+==== Primitives for promise composition ====
 
   The most important operation you need to know is {{{bind}}}:
 
 <<code language="ocaml" |val bind : 'a Lwt.t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
 >>
 
-  {{{bind t f}}} creates a thread which waits for {{{t}}} to
-  terminate, then passes the result to {{{f}}}. If {{{t}}} is a
-  sleeping thread, then {{{bind t f}}} will be a sleeping thread too,
-  until {{{t}}} terminates. If {{{t}}} fails, then the resulting
-  thread will fail with the same exception. For example, consider the
+  {{{bind p f}}} creates a promise which waits for {{{p}}} to become
+  become fulfilled, then passes the resulting value to {{{f}}}. If {{{p}}} is a
+  pending promise, then {{{bind p f}}} will be a pending promise too,
+  until {{{p}}} is resolved. If {{{p}}} is rejected, then the resulting
+  promise will be rejected with the same exception. For example, consider the
   following expression:
 
 <<code language="ocaml" |Lwt.bind
@@ -195,196 +186,169 @@ val t : char Lwt.t = <abstr>
   print a message on the standard output.
 
   Similarly to {{{bind}}}, there is a function to handle the case
-  when {{{t}}} fails:
+  when {{{p}}} is rejected:
 
 <<code language="ocaml" |val catch : (unit -> 'a Lwt.t) -> (exn -> 'a Lwt.t) -> 'a Lwt.t
 >>
 
-  {{{catch f g}}} will call {{{f ()}}}, then waits for its
-  termination, and if it fails with an exception {{{exn}}}, calls
+  {{{catch f g}}} will call {{{f ()}}}, then wait for it to become
+  resolved, and if it was rejected with an exception {{{exn}}}, call
   {{{g exn}}} to handle it. Note that both exceptions raised with
   {{{Pervasives.raise}}} and {{{Lwt.fail}}} are caught by
   {{{catch}}}.
 
-==== Cancelable threads ====
+==== Cancelable promises ====
 
-  In some case, we may want to cancel a thread. For example, because it
-  has not terminated after a timeout. This can be done with cancelable
-  threads. To create a cancelable thread, you must use the
+  In some case, we may want to cancel a promise. For example, because it
+  has not resolved after a timeout. This can be done with cancelable
+  promises. To create a cancelable promise, you must use the
   {{{Lwt.task}}} function:
 
 <<code language="ocaml" |val task : unit -> 'a Lwt.t * 'a Lwt.u
 >>
 
-  It has the same semantics as {{{Lwt.wait}}} except that the
-  sleeping thread can be canceled with {{{Lwt.cancel}}}:
+  It has the same semantics as {{{Lwt.wait}}}, except that the
+  pending promise can be canceled with {{{Lwt.cancel}}}:
 
 <<code language="ocaml" |val cancel : 'a Lwt.t -> unit
 >>
 
-  The thread will then fail with the exception
-  {{{Lwt.Canceled}}}. To execute a function when the thread is
+  The promise will then be rejected with the exception
+  {{{Lwt.Canceled}}}. To execute a function when the promise is
   canceled, you must use {{{Lwt.on_cancel}}}:
 
 <<code language="ocaml" |val on_cancel : 'a Lwt.t -> (unit -> unit) -> unit
 >>
 
-  Note that it is also possible to cancel a thread which has not been
-  created with {{{Lwt.task}}}. In this case, the deepest cancelable
-  thread connected with the given thread will be cancelled.
+  Note that canceling a promise does not automatically cancel the
+  asynchronous operation that is going to resolve it. It does, however,
+  prevent any further chained operations from running. The asynchronous
+  operation associated with a promise can only be canceled if its implementation
+  has taken care to set an {{{on_cancel}}} callback on the promise that
+  it returned to you. In practice, most operations (such as system calls)
+  can't be canceled once they are started anyway, so promise cancelation is
+  useful mainly for interrupting future operations once you know that a chain of
+  asychronous operations will not be needed.
+
+  It is also possible to cancel a promise which has not been
+  created directly by you with {{{Lwt.task}}}. In this case, the deepest
+  cancelable promise that the given promise depends on will be canceled.
 
   For example, consider the following code:
 
-<<code language="ocaml" |# let waiter, wakener = Lwt.task ();;
-val waiter : '_a Lwt.t = <abstr>
-val wakener : '_a Lwt.u = <abstr>
-# let t = Lwt.bind waiter (fun x -> Lwt.return (x + 1));;
-val t : int Lwt.t = <abstr>
+<<code language="ocaml" |# let p, r = Lwt.task ();;
+val p : '_a Lwt.t = <abstr>
+val r : '_a Lwt.u = <abstr>
+# let p' = Lwt.bind p (fun x -> Lwt.return (x + 1));;
+val p' : int Lwt.t = <abstr>
 >>
 
-  Here, cancelling {{{t}}} will in fact cancel {{{waiter}}}.
-  {{{t}}} will then fail with the exception {{{Lwt.Canceled}}}:
+  Here, cancelling {{{p'}}} will in fact cancel {{{p}}}, rejecting
+  it with {{{Lwt.Canceled}}}. {{{Lwt.bind}}} will then propagate the
+  exception forward to {{{p'}}}:
 
-<<code language="ocaml" |# Lwt.cancel t;;
+<<code language="ocaml" |# Lwt.cancel p';;
 - : unit = ()
-# Lwt.state waiter;;
+# Lwt.state p;;
 - : int Lwt.state = Lwt.Fail Lwt.Canceled
-# Lwt.state t;;
+# Lwt.state p';;
 - : int Lwt.state = Lwt.Fail Lwt.Canceled
 >>
 
-  By the way, it is possible to prevent a thread from being canceled
+  It is possible to prevent a promise from being canceled
   by using the function {{{Lwt.protected}}}:
 
 <<code language="ocaml" |val protected : 'a Lwt.t -> 'a Lwt.t
 >>
 
-  Canceling {{{(proctected t)}}} will have no effect on {{{t}}}.
+  Canceling {{{(protected p)}}} will have no effect on {{{p}}}.
 
-==== Primitives for multi-thread composition ====
+==== Primitives for concurrent composition ====
 
-  We now show how to compose several concurrent threads. The
+  We now show how to compose several promises concurrently. The
   main functions for this are in the {{{Lwt}}} module: {{{join}}},
   {{{choose}}} and {{{pick}}}.
 
-  The first one, {{{join}}} takes a list of threads and waits for all
-  of them to terminate:
+  The first one, {{{join}}} takes a list of promises and returns a promise
+  that is waiting for all of them to resolve:
 
 <<code language="ocaml" |val join : unit Lwt.t list -> unit Lwt.t
 >>
 
-  Moreover, if at least one thread fails, {{{join l}}} will fail with
-  the same exception as the first to fail, after all threads terminate.
+  Moreover, if at least one promise is rejected, {{{join l}}} will be rejected
+  with the same exception as the first one, after all the promises are resolved.
 
-  Similarly {{{choose}}} waits for at least one thread to
-  terminate, then returns the same value or exception:
+  Conversely, {{{choose}}} waits for at least //one// promise to become
+  resolved, then resolves with the same value or exception:
 
 <<code language="ocaml" |val choose : 'a Lwt.t list -> 'a Lwt.t
 >>
 
   For example:
 
-<<code language="ocaml" |# let waiter1, wakener1 = Lwt.wait ();;
-val waiter1 : '_a Lwt.t = <abstr>
-val wakener1 : '_a Lwt.u = <abstr>
-# let waiter2, wakener2 = Lwt.wait ();;
-val waiter2 : '_a Lwt.t = <abstr>
-val wakener2 : '_a Lwt.u = <abstr>
-# let t = Lwt.choose [waiter1; waiter2];;
-val t : '_a Lwt.t = <abstr>
-# Lwt.state t;;
+<<code language="ocaml" |# let p1, r1 = Lwt.wait ();;
+val p1 : '_a Lwt.t = <abstr>
+val r1 : '_a Lwt.u = <abstr>
+# let p2, r2 = Lwt.wait ();;
+val p2 : '_a Lwt.t = <abstr>
+val r2 : '_a Lwt.u = <abstr>
+# let p3 = Lwt.choose [p1; p2];;
+val p3 : '_a Lwt.t = <abstr>
+# Lwt.state p3;;
 - : '_a Lwt.state = Lwt.Sleep
-# Lwt.wakeup wakener2 42;;
+# Lwt.wakeup r2 42;;
 - : unit = ()
-# Lwt.state t;;
+# Lwt.state p3;;
 - : int Lwt.state = Lwt.Return 42
 >>
 
-  The last one, {{{pick}}}, is the same as {{{choose}}} except that it cancels
-  all other threads when one terminates.
-
-==== Threads local storage ====
-
-  Lwt can store variables with different values on different
-  threads. This is called threads local storage. For example, this can
-  be used to store contexts or thread identifiers. The contents of a
-  variable can be read with:
-
-<<code language="ocaml" |val Lwt.get : 'a Lwt.key -> 'a option
->>
-
-  which takes a key to identify the variable we want to read and
-  returns either {{{None}}} if the variable is not set, or
-  {{{Some x}}} if it is. The value returned is the value of the
-  variable in the current thread.
-
-  New keys can be created with:
-
-<<code language="ocaml" |val Lwt.new_key : unit -> 'a Lwt.key
->>
-
-  To set a variable, you must use:
-
-<<code language="ocaml" |val Lwt.with_value : 'a Lwt.key -> 'a option -> (unit -> 'b) -> 'b
->>
-
-  {{{with_value key value f}}} will execute {{{f}}} with
-  the binding {{{key -> value}}}. The old value associated to
-  {{{key}}} is restored after {{{f}}} terminates.
-
-  For example, you can use local storage to store thread identifiers
-  and use them in logs:
-
-<<code language="ocaml" |let id_key = Lwt.new_key ()
-
-let log msg =
-  let thread_id =
-    match Lwt.get id_key with
-      | Some id -> id
-      | None -> "main"
-  in
-  Lwt_io.printlf "%s: %s" thread_id msg
-
-let%lwt () =
-  Lwt.join [
-    Lwt.with_value id_key (Some "thread 1") (fun () -> log "foo");
-    Lwt.with_value id_key (Some "thread 2") (fun () -> log "bar");
-  ]
->>
+  The last one, {{{pick}}}, is the same as {{{choose}}}, except that it cancels
+  all other promises when one resolves.
 
 ==== Rules ====
 
-  {{{Lwt}}} will always try to execute as much as possible before yielding and
-  switching to another cooperative thread. In order to make it work well,
-  you must follow the following rules:
+  A callback, like the {{{f}}} that you might pass to {{{Lwt.bind}}}, is
+  an ordinary OCaml function. {{{Lwt}}} just handles ordering calls to these
+  functions.
 
-   * do not write functions that may take time to complete without
-     using {{{Lwt}}},
-   * do not do IOs that may block, otherwise the whole program will
-     hang. You must instead use asynchronous IOs operations.
+  {{{Lwt}}} uses some preemptive threading internally, but all of your code
+  runs in the main thread, except when you explicitly opt into additional
+  threads with {{{Lwt_preemptive}}}.
+
+  This simplifies reasoning about critical sections: all the code in one
+  callback cannot be interrupted by any of the code in another callback.
+  However, it also carries the danger that if a single callback takes a very
+  long time, it will not give {{{Lwt}}} a chance to run your other callbacks.
+  In particular:
+
+   * do not write functions that may take time to complete, without splitting
+     them up using {{{Lwt.pause}}} or performing some {{{Lwt}}} I/O,
+   * do not do I/O that may block, otherwise the whole program will
+     hang inside that callback. You must instead use the asynchronous I/O
+     operations provided by {{{Lwt}}}.
 
 === The syntax extension ===
 
-  {{{Lwt}}} offers a Ppx syntax extension which increases code readability and
+  {{{Lwt}}} offers a PPX syntax extension which increases code readability and
   makes coding using {{{Lwt}}} easier. The syntax extension is documented
   <<a_api text="here" | module Ppx_lwt>>.
 
-  To use the Ppx syntax extension, add the {{{lwt.ppx}}} package when
+  To use the PPX syntax extension, add the {{{lwt_ppx}}} package when
   compiling:
 
-<<code language="ocaml" |$ ocamlfind ocamlc -package lwt.ppx -linkpkg -o foo foo.ml
+<<code language="ocaml" |$ ocamlfind ocamlc -package lwt_ppx -linkpkg -o foo foo.ml
 >>
 
-  Or in the toplevel (after loading topfind):
+  Or, in {{{utop}}}:
 
-<<code language="ocaml" |# #require "lwt.ppx";;
+<<code language="ocaml" |# #require "lwt_ppx";;
 >>
+
+  {{{lwt_ppx}}} is distributed in a separate opam package of that same name.
 
   For a brief overview of the syntax, see the Correspondence table below.
 
 ==== Correspondence table ====
-
-  You might appreciate the following table to write code using {{{Lwt}}}:
 
   |= without {{{Lwt}}}                                                               |= with {{{Lwt}}}                                                                      |
   |                                                                                  |                                                                                      |
@@ -424,26 +388,24 @@ let%lwt () =
 
 === Backtrace support ===
 
-  If an exception is raised inside an Lwt thread, the backtrace provided by OCaml
-  will not be very useful. It will end inside the Lwt scheduler instead of
-  continuing into the code that started the thread. To avoid this, and get good
-  backtraces from Lwt, use the syntax extension in debug mode.
-
-  In debug mode, the {{{let%lwt}}} construct will properly propagate backtraces.
-
-  In the <<a_api text="ppx syntax extension" | module Ppx_lwt>>, the debug mode is
-  enabled by default. This has a small performance impact, so you can disable it
-  by passing {{{-no-debug}}}.
+  If an exception is raised inside a callback called by Lwt, the backtrace
+  provided by OCaml will not be very useful. It will end inside the Lwt
+  scheduler instead of continuing into the code that started the operations that
+  led to the callback call. To avoid this, and get good backtraces from Lwt, use
+  the syntax extension. The {{{let%lwt}}} construct will properly propagate
+  backtraces.
 
   As always, to get backtraces from an OCaml program, you need to either declare
   the environment variable {{{OCAMLRUNPARAM=b}}} or call
-  {{{Printexc.record_backtrace true}}} at the start of your program.
+  {{{Printexc.record_backtrace true}}} at the start of your program, and be
+  sure to compile it with {{{-g}}}. Most modern build systems add {{{-g}}} by
+  default.
 
 === Other modules of the core library ===
 
   The core library contains several modules that only depend on
   {{{Lwt}}}. The following naming convention is used in {{{Lwt}}}: when a
-  function takes as argument a function returning a thread that is going
+  function takes as argument a function, returning a promise, that is going
   to be executed sequentially, it is suffixed with ``{{{_s}}}''. And
   when it is going to be executed concurrently, it is suffixed with
   ``{{{_p}}}''. For example, in the {{{Lwt_list}}} module we have:
@@ -457,27 +419,29 @@ val map_p : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
   {{{Lwt_mutex}}} provides mutexes for {{{Lwt}}}. Its use is almost the
   same as the {{{Mutex}}} module of the thread library shipped with
   OCaml. In general, programs using {{{Lwt}}} do not need a lot of
-  mutexes. They are only useful for synchronising or sequencing operations.
+  mutexes, because callbacks run without preempting each other. They are
+  only useful for synchronising or sequencing complex operations spread over
+  multiple callback calls.
 
 ==== Lists ====
 
   The {{{Lwt_list}}} module defines iteration and scanning functions
   over lists, similar to the ones of the {{{List}}} module, but using
-  functions that return a thread. For example:
+  functions that return a promise. For example:
 
 <<code language="ocaml" |val iter_s : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
 val iter_p : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
 >>
 
   In {{{iter_s f l}}}, {{{iter_s}}} will call f on each elements
-  of {{{l}}}, waiting for completion between each element. On the
+  of {{{l}}}, waiting for resolution between each element. On the
   contrary, in {{{iter_p f l}}}, {{{iter_p}}} will call f on all
-  elements of {{{l}}}, then wait for all the threads to terminate.
+  elements of {{{l}}}, only then wait for all the promises to resolve.
 
 ==== Data streams ====
 
-  {{{Lwt}}} streams are used in a lot of places in {{{Lwt}}} and its sub
-  libraries. They offer a high-level interface to manipulate data flows.
+  {{{Lwt}}} streams are used in a lot of places in {{{Lwt}}} and its
+  submodules. They offer a high-level interface to manipulate data flows.
 
   A stream is an object which returns elements sequentially and
   lazily. Lazily means that the source of the stream is touched only for new
@@ -519,7 +483,7 @@ val push : '_a option -> unit = <fun>
 >>
 
   Note that streams are consumable. Once you take an element from a
-  stream, it is removed from it. So, if you want to iterate two times
+  stream, it is removed from the stream. So, if you want to iterate two times
   over a stream, you may consider ``cloning'' it, with
   {{{Lwt_stream.clone}}}. Cloned stream will return the same
   elements in the same order. Consuming one will not consume the other.
@@ -548,54 +512,54 @@ val s' : int Lwt_stream.t = <abstr>
   full mvar will block until one is taken. Taking an element from an
   empty mvar will block until one is added.
 
-  Mailbox variables are commonly used to pass messages between threads.
+  Mailbox variables are commonly used to pass messages between chains of
+  callbacks being executed concurrently.
 
   Note that a mailbox variable can be seen as a pushable stream with a
   limited memory.
 
-== Running a Lwt program ==
+== Running an Lwt program ==
 
-  Threads you create with {{{Lwt}}} always have the type
-  {{{Lwt.t}}}. If you want to write a program and run it this is not
-  enough. Indeed you don't know when a {{{Lwt}}} thread is terminated.
+  An {{{Lwt}}} computation you have created will give you something of type
+  {{{Lwt.t}}}, a promise. However, even though you have the promise, the
+  computation may not have run yet, and the promise might still be pending.
 
   For example if your program is just:
 
 <<code language="ocaml"|let _ = Lwt_io.printl "Hello, world!"
 >>
 
-  you have no guarantee that the thread writing {{{"Hello, world!"}}}
-  on the terminal will be terminated when the program exit. In order
-  to wait for a thread to terminate, you have to call the function
+  you have no guarantee that the promise for writing {{{"Hello, world!"}}}
+  on the terminal will be resolved before the program exits. In order
+  to wait for the promise to resolve, you have to call the function
   {{{Lwt_main.run}}}:
 
 <<code language="ocaml"|val Lwt_main.run : 'a Lwt.t -> 'a
 >>
 
-  This functions wait for the given thread to terminate and returns
+  This function waits for the given promise to resolve and returns
   its result. In fact it does more than that; it also runs the
-  scheduler which is responsible for making threads progress when
-  events are received from the outside world.
+  scheduler which is responsible for making asynchronous computations progress
+  when events are received from the outside world.
 
-  So basically, when you write a {{{Lwt}}} program you must call
-  the toplevel the function {{{Lwt_main.run}}}. For instance:
+  So basically, when you write a {{{Lwt}}} program, you must call
+  {{{Lwt_main.run}}} on your top-level, outer-most promise. For instance:
 
 <<code language="ocaml"|let () = Lwt_main.run (Lwt_io.printl "Hello, world!")
 >>
 
-  Note that you must call {{{Lwt_main.run}}} only once at a time. It
-  cannot be used anywhere to get the result of a thread. It must only
-  be used in the entry point of your program.
+  Note that you must not make nested calls to {{{Lwt_main.run}}}. It
+  cannot be used anywhere else to get the result of a promise.
 
 == The {{{lwt.unix}}} library ==
 
-  The package {{{lwt.unix}}} contains all {{{unix}}} dependent
-  modules of {{{Lwt}}}. Among all its features, it implements cooperative
-  versions of functions of the standard library and the unix library.
+  The package {{{lwt.unix}}} contains all {{{Unix}}}-dependent
+  modules of {{{Lwt}}}. Among all its features, it implements Lwt-friendly,
+  non-blocking versions of functions of the OCaml standard and Unix libraries.
 
 === Unix primitives ===
 
-  The {{{Lwt_unix}}} provides cooperative system calls. For example,
+  Module {{{Lwt_unix}}} provides non-blocking system calls. For example,
   the {{{Lwt}}} counterpart of {{{Unix.read}}} is:
 
 <<code language="ocaml" |val read : file_descr -> string -> int -> int -> int Lwt.t
@@ -603,40 +567,40 @@ val s' : int Lwt_stream.t = <abstr>
 
   {{{Lwt_io}}} provides features similar to buffered channels of
   the standard library (of type {{{in_channel}}} or
-  {{{out_channel}}}) but cooperatively.
+  {{{out_channel}}}), but with non-blocking semantics.
 
   {{{Lwt_gc}}} allows you to register a finaliser that returns a
-  thread. At the end of the program, {{{Lwt}}} will wait for all the
-  finaliser to terminate.
+  promise. At the end of the program, {{{Lwt}}} will wait for all these
+  finalisers to resolve.
 
 === The Lwt scheduler ===
 
-  Threads doing IO may be put to sleep until some events are received by
-  the process. For example when you read from a file descriptor, you
+  Operations doing I/O have to be resumed when some events are received by
+  the process, so they can resolve their associated pending promises.
+  For example, when you read from a file descriptor, you
   may have to wait for the file descriptor to become readable if no
   data are immediately available on it.
 
   {{{Lwt}}} contains a scheduler which is responsible for managing
-  multiple threads waiting for events, and restart them when needed.
+  multiple operations waiting for events, and restarting them when needed.
   This scheduler is implemented by the two modules {{{Lwt_engine}}}
   and {{{Lwt_main}}}. {{{Lwt_engine}}} is a low-level module, it
-  provides signatures for IO multiplexers as well as several builtin
-  implementations. {{{Lwt}}} supports by default multiplexing IO with
-  {{{libev}}} or {{{Unix.select}}}. The signature is given by the
+  provides a signature for custom I/O multiplexers as well as two built-in
+  implementations, {{{libev}}} and {{{select}}}. The signature is given by the
   class {{{Lwt_engine.t}}}.
 
   {{{libev}}} is used by default on Linux, because it supports any
-  number of file descriptors while Unix.select supports only 1024 at
-  most, and is also much more efficient. On Windows {{{Unix.select}}}
-  is used because {{{libev}}} does not work properly. The user may
-  change at any time the backend in use.
+  number of file descriptors, while {{{select}}} supports only 1024. {{{libev}}}
+  also much more efficient. On Windows, {{{Unix.select}}} is used because
+  {{{libev}}} does not work properly. The user may change the backend in use at
+  any time.
 
   If you see an {{{Invalid_argument}}} error on {{{Unix.select}}}, it
   may be because the 1024 file descriptor limit was exceeded. Try
   switching to {{{libev}}}, if possible.
 
   The engine can also be used directly in order to integrate other
-  libraries with {{{Lwt}}}. For example {{{GTK}}} needs to be notified
+  libraries with {{{Lwt}}}. For example, {{{GTK}}} needs to be notified
   when some events are received. If you use {{{Lwt}}} with {{{GTK}}}
   you need to use the {{{Lwt}}} scheduler to monitor {{{GTK}}}
   sources. This is what is done by the {{{Lwt_glib}}} library.
@@ -647,8 +611,8 @@ val s' : int Lwt_stream.t = <abstr>
 <<code language="ocaml"|val Lwt_main.run : 'a Lwt.t -> 'a
 >>
 
-  This function continously runs the scheduler until the thread passed
-  as argument terminates.
+  This function continously runs the scheduler until the promise passed
+  as argument is resolved.
 
   To make sure {{{Lwt}}} is compiled with {{{libev}}} support,
   tell opam that the library is available on the system by installing the
@@ -663,36 +627,17 @@ val s' : int Lwt_stream.t = <abstr>
     {{{opam install conf-libev}}}.
 
 
-=== The logging facility ===
+=== Logging ===
 
-  The package {{{lwt.unix}}} contains a module {{{Lwt_log}}}
-  providing loggers. It supports logging to a file, a channel, or to the
-  syslog daemon. You can also define your own logger by providing the
-  appropriate functions (function {{{Lwt_log.make}}}).
-
-  Several loggers can be merged into one. Sending logs on the merged
-  logger will send these logs to all its components.
-
-  For example to redirect all logs to {{{stderr}}} and to the syslog
-  daemon:
-
-<<code language="ocaml" |# Lwt_log.default :=
-    Lwt_log.broadcast [
-      Lwt_log.channel ~close_mode:`Keep ~channel:Lwt_io.stderr ();
-      Lwt_log.syslog ~facility:`User ();
-    ]
-;;
->>
-
-  {{{Lwt}}} also provides a syntax extension for logging. For how to
-  use it, consult the Logging section of the Ppx syntax extension
-  <<a_api text="documentation" | module Ppx_lwt>>.
+  {{{Lwt}}} has its own support for non-blocking logging, but it is deprecated
+  in favor of the opam {{{logs}}} package, which includes an Lwt-aware module
+  {{{Logs_lwt}}}.
 
 == The Lwt.react library ==
 
   The {{{Lwt_react}}} module provides helpers for using the {{{react}}}
   library with {{{Lwt}}}. It extends the {{{React}}} module by adding
-  {{{Lwt}}} specific functions. It can be used as a replacement of
+  {{{Lwt}}}-specific functions. It can be used as a replacement of
   {{{React}}}. For example you can add at the beginning of your
   program:
 
@@ -710,20 +655,20 @@ val s' : int Lwt_stream.t = <abstr>
 >>
 
   Among the added functionalities we have {{{Lwt_react.E.next}}}, which
-  takes an event and returns a thread which will wait until the next
+  takes an event and returns a promise which will be pending until the next
   occurence of this event. For example:
 
 <<code language="ocaml" |# open Lwt_react;;
 # let event, push = E.create ();;
 val event : '_a React.event = <abstr>
 val push : '_a -> unit = <fun>
-# let t = E.next event;;
-val t : '_a Lwt.t = <abstr>
-# Lwt.state t;;
+# let p = E.next event;;
+val p : '_a Lwt.t = <abstr>
+# Lwt.state p;;
 - : '_a Lwt.state = Lwt.Sleep
 # push 42;;
 - : unit = ()
-# Lwt.state t;;
+# Lwt.state p;;
 - : int Lwt.state = Lwt.Return 42
 >>
 
@@ -739,9 +684,9 @@ val t : '_a Lwt.t = <abstr>
 
   {{{Lwt_react.S.limit f signal}}} returns a signal which varies as
   {{{signal}}} except that two consecutive updates are separated by a
-  call to {{{f}}}. For example if {{{f}}} returns a thread which sleeps
+  call to {{{f}}}. For example if {{{f}}} returns a promise which is pending
   for 0.1 seconds, then there will be no more than 10 changes per
-  second. For example:
+  second:
 
 <<code language="ocaml" |open Lwt_react
 
@@ -777,23 +722,19 @@ let () =
 >>
 
   {{{detach f x}}} will execute {{{f x}}} in another thread and
-  asynchronously wait for the result.
+  return a pending promise, usable from the main thread, which will be fulfilled
+  with the result of the preemptive thread.
 
-  If you have to run {{{Lwt}}} code in another thread, you must use
-  the function {{{Lwt_preemptive.run_in_main}}}:
+  If you want to trigger some {{{Lwt}}} operations from your detached thread,
+  you have to call back into the main thread using
+  {{{Lwt_preemptive.run_in_main}}}:
 
 <<code language="ocaml" |val run_in_main : (unit -> 'a Lwt.t) -> 'a
 >>
 
-  It works as follow:
-
-    * it sends the function to the main thread and wait
-    * the main thread execute the function
-    * when it terminates the main thread sends back the result
-    * the result is returned
-
-  Note that you cannot call {{{Lwt_main.run}}} in another system
-  thread, so you must use this function.
+  This is roughly the equivalent of {{{Lwt.main_run}}}, but for detached
+  threads, rather than for the whole process. Note that you must not call
+  {{{Lwt_main.run}}} in a detached thread.
 
 === SSL support ===
 
