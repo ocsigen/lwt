@@ -1911,9 +1911,13 @@ let suites = suites @ [join_tests]
 
 let choose_tests = suite "choose" [
   test "empty" begin fun () ->
-    let p = Lwt.choose [] in
-    state_is (Lwt.Sleep) p
-  end;
+    try
+      ignore (Lwt.choose []);
+      Lwt.return false
+    with Invalid_argument "Lwt.choose [] would return a \
+                           promise that is pending forever" ->
+      Lwt.return true
+  end [@ocaml.warning "-52"];
 
   test "fulfilled" begin fun () ->
     let p = Lwt.choose [fst (Lwt.wait ()); Lwt.return "foo"] in
@@ -1978,9 +1982,13 @@ let suites = suites @ [choose_tests]
 
 let nchoose_tests = suite "nchoose" [
   test "empty" begin fun () ->
-    let p = Lwt.nchoose [] in
-    Lwt.return (Lwt.state p = Lwt.Sleep)
-  end;
+    try
+      ignore (Lwt.nchoose []);
+      Lwt.return false
+    with Invalid_argument "Lwt.nchoose [] would return a \
+                           promise that is pending forever" ->
+      Lwt.return true
+  end [@ocaml.warning "-52"];
 
   test "all fulfilled" begin fun () ->
     let p = Lwt.nchoose [Lwt.return "foo"; Lwt.return "bar"] in
@@ -2036,9 +2044,13 @@ let suites = suites @ [nchoose_tests]
 
 let nchoose_split_tests = suite "nchoose_split" [
   test "empty" begin fun () ->
-    let p = Lwt.nchoose_split [] in
-    Lwt.return (Lwt.state p = Lwt.Sleep)
-  end;
+    try
+      ignore (Lwt.nchoose_split []);
+      Lwt.return false
+    with Invalid_argument "Lwt.nchoose_split [] would return a \
+                           promise that is pending forever" ->
+      Lwt.return true
+  end [@ocaml.warning "-52"];
 
   test "some fulfilled" begin fun () ->
     let p =
@@ -2514,9 +2526,13 @@ let suites = suites @ [resolve_already_canceled_promise_tests]
 
 let pick_tests = suite "pick" [
   test "empty" begin fun () ->
-    let p = Lwt.pick [] in
-    Lwt.return (Lwt.state p = Lwt.Sleep)
-  end;
+    try
+      ignore (Lwt.pick []);
+      Lwt.return false
+    with Invalid_argument "Lwt.pick [] would return a \
+                           promise that is pending forever" ->
+      Lwt.return true
+  end [@ocaml.warning "-52"];
 
   test "fulfilled" begin fun () ->
     let p1, _ = Lwt.task () in
@@ -2620,9 +2636,13 @@ let suites = suites @ [pick_tests]
 
 let npick_tests = suite "npick" [
   test "empty" begin fun () ->
-    let p = Lwt.npick [] in
-    Lwt.return (Lwt.state p = Lwt.Sleep)
-  end;
+    try
+      ignore (Lwt.npick []);
+      Lwt.return false
+    with Invalid_argument "Lwt.npick [] would return a \
+                           promise that is pending forever" ->
+      Lwt.return true
+  end [@ocaml.warning "-52"];
 
   test "all fulfilled" begin fun () ->
     let p = Lwt.npick [Lwt.return "foo"; Lwt.return "bar"] in
