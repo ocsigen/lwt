@@ -2654,6 +2654,9 @@ struct
   let prng = lazy (Random.State.make [||])
 
   let choose ps =
+    if ps = [] then
+      invalid_arg
+        "Lwt.choose [] would return a promise that is pending forever";
     match count_resolved_promises_in ps with
     | 0 ->
       let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
@@ -2676,6 +2679,8 @@ struct
       nth_resolved ps (Random.State.int (Lazy.force prng) n)
 
   let pick ps =
+    if ps = [] then
+      invalid_arg "Lwt.pick [] would return a promise that is pending forever";
     match count_resolved_promises_in ps with
     | 0 ->
       let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
@@ -2732,6 +2737,9 @@ struct
   let nchoose ps =
     (* If at least one promise in [ps] is found fulfilled, this function is
        called to find all such promises. *)
+    if ps = [] then
+      invalid_arg
+        "Lwt.nchoose [] would return a promise that is pending forever";
     let rec collect_already_fulfilled_promises_or_find_rejected acc ps =
       match ps with
       | [] ->
@@ -2789,6 +2797,8 @@ struct
   (* See [nchoose]. This function differs only in having additional calls to
      [cancel]. *)
   let npick ps =
+    if ps = [] then
+      invalid_arg "Lwt.npick [] would return a promise that is pending forever";
     let rec collect_already_fulfilled_promises_or_find_rejected acc ps' =
       match ps' with
       | [] ->
@@ -2848,6 +2858,9 @@ struct
 
   (* Same general pattern as [npick] and [nchoose]. *)
   let nchoose_split ps =
+    if ps = [] then
+      invalid_arg
+        "Lwt.nchoose_split [] would return a promise that is pending forever";
     let rec finish
         (to_resolve : ('a list * 'a t list, underlying, pending) promise)
         (fulfilled : 'a list)
