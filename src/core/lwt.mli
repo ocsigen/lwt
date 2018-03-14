@@ -970,8 +970,8 @@ let () =
     promise in [ps] to become resolved is rejected, [p] is rejected with the
     same exception.
 
-    If [ps] has no promises (if it is the empty list), [Lwt.pick ps] returns a
-    promise that is pending forever, and cannot be canceled.
+    If [ps] has no promises (if it is the empty list), [Lwt.pick ps] raises
+    [Pervasives.Invalid_argument _].
 
     It's possible for multiple promises in [ps] to become resolved
     simultaneously. This happens most often when some promises [ps] are already
