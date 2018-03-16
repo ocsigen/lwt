@@ -1508,7 +1508,12 @@ let with_temp_file ?buffer ?flags ?perm ?temp_dir ?prefix f =
       close chan >>= fun () ->
       Lwt_unix.unlink fname)
 
-let file_length filename = with_file ~mode:input filename length
+let file_length filename =
+  Lwt_unix.stat filename >>= fun stat ->
+  if stat.Unix.st_kind = Unix.S_DIR then
+    Lwt.fail (Unix.(Unix_error (EISDIR, "file_length", filename)))
+  else
+    with_file ~mode:input filename length
 
 let close_socket fd =
   Lwt.finalize
