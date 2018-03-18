@@ -1511,7 +1511,7 @@ let with_temp_file ?buffer ?flags ?perm ?temp_dir ?prefix f =
 let file_length filename =
   Lwt_unix.stat filename >>= fun stat ->
   if stat.Unix.st_kind = Unix.S_DIR then
-    Lwt.fail (Unix.Unix_error (Unix.EISDIR, "file_length", filename))
+    Lwt.fail (Unix.(Unix_error (EISDIR, "file_length", filename)))
   else
     with_file ~mode:input filename length
 

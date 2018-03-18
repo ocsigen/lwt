@@ -385,7 +385,7 @@ let suite = suite "lwt_io" [
         Lwt_io.file_length "." >>= fun _ ->
         Lwt.return false)
       (function
-      | Unix.(Unix_error (EISDIR, "file_length", ".")) ->
+      | Unix.Unix_error (Unix.EISDIR, "file_length", ".") ->
         Lwt.return true
       | exn -> Lwt.fail exn)
   end;
