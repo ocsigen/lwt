@@ -183,7 +183,9 @@ val atomic : ('a channel -> 'b Lwt.t) -> ('a channel -> 'b Lwt.t)
       - [atomic] can be called inside another [atomic] *)
 
 val file_length : string -> int64 Lwt.t
-  (** Returns the length of a file *)
+(** Retrieves the length of the file at the given path. If the path refers to a
+    directory, the returned promise is rejected with
+    [Unix.(Unix_error (EISDIR, _, _))]. *)
 
 val buffered : 'a channel -> int
   (** [buffered oc] returns the number of bytes in the buffer *)

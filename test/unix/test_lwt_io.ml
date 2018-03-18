@@ -378,4 +378,15 @@ let suite = suite "lwt_io" [
          Lwt_io.close chan in
        Lwt_io.with_temp_file f >>= fun _ -> Lwt.return_true;
     );
+
+  test "file_length on directory" begin fun () ->
+    Lwt.catch
+      (fun () ->
+        Lwt_io.file_length "." >>= fun _ ->
+        Lwt.return false)
+      (function
+      | Unix.Unix_error (Unix.EISDIR, "file_length", ".") ->
+        Lwt.return true
+      | exn -> Lwt.fail exn)
+  end;
 ]
