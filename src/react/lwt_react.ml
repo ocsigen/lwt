@@ -45,7 +45,7 @@ module E = struct
     let iter =
       fmap
         (fun x ->
-           if Lwt.state !limiter = Lwt.Sleep then begin
+           if Lwt.is_sleeping !limiter then begin
              (* The limiter is sleeping, we queue the event for later
                 delivering. *)
              match !delayed with
@@ -56,7 +56,7 @@ module E = struct
              | None ->
                let cell = ref x in
                delayed := Some cell;
-               Lwt.on_success !limiter (fun () -> let x = !cell in delayed := None; push x);
+               Lwt.on_success !limiter (fun () -> let x = !cell in delayed := None; limiter := f (); push x);
                None
            end else begin
              (* Set the limiter for future events. *)
@@ -279,7 +279,7 @@ module S = struct
     let iter =
       E.fmap
         (fun x ->
-           if Lwt.state !limiter = Lwt.Sleep then begin
+           if Lwt.is_sleeping !limiter then begin
              (* The limiter is sleeping, we queue the event for later
                 delivering. *)
              match !delayed with
@@ -290,7 +290,7 @@ module S = struct
              | None ->
                let cell = ref x in
                delayed := Some cell;
-               Lwt.on_success !limiter (fun () -> let x = !cell in delayed := None; push x);
+               Lwt.on_success !limiter (fun () -> let x = !cell in delayed := None; limiter := f (); push x);
                None
            end else begin
              (* Set the limiter for future events. *)

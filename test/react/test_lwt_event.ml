@@ -86,6 +86,7 @@ let suite = suite "lwt_event" [
          push 2; (* overwrites previous 0 *)
          Lwt_condition.signal cond ();
          push 3;
+         Lwt_condition.signal cond ();
          push 4;
          Lwt_condition.signal cond ();
          return (!l = [4; 3; 2; 1]));
