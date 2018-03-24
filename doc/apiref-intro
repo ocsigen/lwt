@@ -90,21 +90,6 @@ functions/packages into Lwt.
 Lwt_preemptive
 }
 
-{2 Camlp4 syntax extensions}
-
-These extensions are deprecated. Use {!Ppx_lwt} instead.
-
-Lwt is shipped with two Camlp4 syntax extensions. The first one, contained in
-the {e lwt_camlp4} package, aims to make coding with Lwt easier, and
-to make code more readable. The second, contained in the package {e
-lwt_camlp4.log}, is a Camlp4 filter which decreases the performance
-penalty when using logging by inlining level tests.
-
-{!modules:
-Pa_lwt
-Pa_lwt_log
-}
-
 {2 Index}
 
 {!indexlist}

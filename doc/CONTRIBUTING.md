@@ -294,7 +294,4 @@ This list surveys them, roughly in order of importance.
 - `src/util/` contains various scripts, such as the configure script
   `src/util/discover.ml`, Travis and AppVeyor scripts, etc.
 
-- *deprecated* `src/camlp4/` contains the Camlp4 syntax extension, which is
-  deprecated in favor of the PPX (in `src/ppx`).
-
 [utop]: https://github.com/diml/utop

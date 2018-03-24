@@ -3,12 +3,11 @@ SRC=../src
 
 PKGS=\
 	-package bytes -package result \
-	-package bigarray -package unix -package camlp4 \
+	-package bigarray -package unix \
 	-package ocaml-migrate-parsetree -package ppx_tools_versioned \
 	-package react
 
 INCS=\
-	-I ${BLD}/camlp4 \
 	-I ${BLD}/core \
 	-I ${BLD}/logger \
 	-I ${BLD}/ppx \
@@ -17,7 +16,6 @@ INCS=\
 	-I ${BLD}/unix
 
 MLIS=\
-	$(wildcard ${SRC}/camlp4/*.mli) \
 	$(wildcard ${SRC}/core/*.mli) \
 	$(wildcard ${SRC}/logger/*.mli) \
 	$(wildcard ${SRC}/ppx/*.mli) \

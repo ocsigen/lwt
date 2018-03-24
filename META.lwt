@@ -1,8 +1,7 @@
 #
 # This file has been copied from _build/default/META.lwt then
 # modified to add exists_if clauses to support optional
-# compilation and the camlp4 syntax extension packages have
-# been given appropriate predicates.
+# compilation.
 #
 
 version = "dev"
