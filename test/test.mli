@@ -29,6 +29,14 @@ type test
 type suite
 (** Type of a suite of tests *)
 
+exception Skip
+(** In some tests, it is only clear that the test should be skipped after it has
+    started running (for example, after an attempted system call raises a
+    certain exception, indicating it is not supported).
+
+    Such tests should raise [Test.Skip], or reject their final promise with
+    [Test.Skip]. *)
+
 val test_direct : string -> ?only_if:(unit -> bool) -> (unit -> bool) -> test
 (** Defines a test. [run] must returns [true] if the test succeeded
     and [false] otherwise. [only_if] is used to conditionally skip the

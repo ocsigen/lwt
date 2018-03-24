@@ -33,6 +33,8 @@ type outcome =
   | Exception of exn
   | Skipped
 
+exception Skip
+
 let test_direct test_name ?(only_if = fun () -> true) run =
   let run =
     fun () ->
@@ -69,7 +71,11 @@ let run_test : test -> outcome Lwt.t = fun test ->
               else
                 Lwt.return Failed)
 
-            (fun exn_raised_by_test ->
+            (function
+            | Skip ->
+              Lwt.return Skipped
+
+            | exn_raised_by_test ->
               Lwt.return (Exception exn_raised_by_test))
         in
 
