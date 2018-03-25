@@ -12,18 +12,6 @@ archive(native) = "lwt.cmxa"
 plugin(byte) = "lwt.cma"
 plugin(native) = "lwt.cmxs"
 
-package "log" (
-  #directory = "log"
-  version = "dev"
-  description = "Logger for Lwt (deprecated; use lwt_log)"
-  requires = "bytes lwt result"
-  archive(byte) = "lwt_log.cma"
-  archive(native) = "lwt_log.cmxa"
-  plugin(byte) = "lwt_log.cma"
-  plugin(native) = "lwt_log.cmxs"
-  exists_if = "lwt_log.cma"
-)
-
 package "preemptive" (
   #directory = "preemptive"
   version = "dev"
@@ -35,7 +23,7 @@ package "unix" (
   #directory = "unix"
   version = "dev"
   description = "Unix support for Lwt"
-  requires = "bigarray bytes lwt lwt.log result threads unix"
+  requires = "bigarray bytes lwt result threads unix"
   archive(byte) = "lwt_unix.cma"
   archive(native) = "lwt_unix.cmxa"
   plugin(byte) = "lwt_unix.cma"

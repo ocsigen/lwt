@@ -30,8 +30,6 @@ module type S = sig
   val wait : t -> key -> bool Lwt.t
 end
 
-let section = Lwt_log.Section.make "Lwt_throttle"
-
 module Make (H : Hashtbl.HashedType) : (S with type key = H.t) = struct
   module MH = Hashtbl.Make(H)
 
@@ -97,8 +95,12 @@ module Make (H : Hashtbl.HashedType) : (S with type key = H.t) = struct
           (fun () ->
              clean_table t;
              Lwt.return_unit)
-          (fun exn ->
-             Lwt_log.fatal ~exn ~section "internal error")
+          (fun _exn ->
+             (* Not good practice, but not worse than the code it is
+                replacing. *)
+             prerr_endline "internal error";
+             Printexc.print_backtrace Pervasives.stderr;
+             Lwt.return ())
       in
       Some t
 

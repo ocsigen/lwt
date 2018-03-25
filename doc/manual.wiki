@@ -629,9 +629,8 @@ val s' : int Lwt_stream.t = <abstr>
 
 === Logging ===
 
-  {{{Lwt}}} has its own support for non-blocking logging, but it is deprecated
-  in favor of the opam {{{logs}}} package, which includes an Lwt-aware module
-  {{{Logs_lwt}}}.
+  For logging, we recommend the {{{logs}}} package from opam, which includes an
+  Lwt-aware module {{{Logs_lwt}}}.
 
 == The Lwt.react library ==
 

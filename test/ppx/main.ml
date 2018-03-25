@@ -163,14 +163,6 @@ let suite = suite "ppx" [
        (Lwt.return (!lst = [1;2]))
     ) ;
 
-  test "log"
-    (fun () ->
-       Lwt_log.ign_debug "bar";
-       Lwt_log.debug "foo" >>= fun () ->
-       Lwt_log.info_f "baz" >>= fun () ->
-       return_true
-    ) ;
-
   test "structure let"
     (fun () ->
        let module M =

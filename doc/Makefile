@@ -9,7 +9,6 @@ PKGS=\
 
 INCS=\
 	-I ${BLD}/core \
-	-I ${BLD}/logger \
 	-I ${BLD}/ppx \
 	-I ${BLD}/preemptive \
 	-I ${BLD}/react \
@@ -17,7 +16,6 @@ INCS=\
 
 MLIS=\
 	$(wildcard ${SRC}/core/*.mli) \
-	$(wildcard ${SRC}/logger/*.mli) \
 	$(wildcard ${SRC}/ppx/*.mli) \
 	$(wildcard ${SRC}/preemptive/*.mli) \
 	$(wildcard ${SRC}/react/*.mli) \

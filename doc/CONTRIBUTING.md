@@ -263,10 +263,6 @@ This list surveys them, roughly in order of importance.
   available. This is almost always the case when compiling to native code (i.e.,
   when the Unix binding is available).
 
-- `src/logger/` provides `Lwt_log`. This library is separated into two portions,
-  `Lwt_log_core` is portable, as the Lwt core is, and `Lwt_log` proper assumes
-  a Unix system. `Lwt_log` is in the Unix binding.
-
 - `src/react/` provides the separate library `Lwt_react`. This is basically an
    independent project that lives in the Lwt repo.
 

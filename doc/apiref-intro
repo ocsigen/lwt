@@ -21,28 +21,18 @@ Lwt_sequence
 Lwt_pqueue
 }
 
-{2 Logger}
-The {e lwt.log} package provides a logger engine.
-
-{!modules:
-Lwt_log_core
-}
-
-This package depends on the {e core} library
-
 {2 Unix bindings}
 
 The {e lwt.unix} package provides:
 - the {!Lwt_unix} module, which wrap system calls into cooperative ones
 - the {!Lwt_io} module, which defines cooperative byte channel, in
   replacement of ones of the standard library
-- module helpers for logging, spawning processes, ...
+- module helpers for spawning processes, ...
 
 {!modules:
 Lwt_daemon
 Lwt_gc
 Lwt_io
-Lwt_log
 Lwt_main
 Lwt_engine
 Lwt_process
@@ -53,8 +43,7 @@ Lwt_bytes
 Lwt_sys
 }
 
-This package depends on the {e core} library, the {e unix} package and
-the {e lwt.log} package.
+This package depends on the {e core} library and the {e unix} package.
 
 {2 Reactive programming helpers}
 

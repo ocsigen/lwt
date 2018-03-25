@@ -89,8 +89,7 @@ install-for-packaging-test: clean
 	opam pin add --yes --no-action lwt .
 	opam pin add --yes --no-action lwt_ppx .
 	opam pin add --yes --no-action lwt_react .
-	opam pin add --yes --no-action lwt_log .
-	opam reinstall --yes lwt lwt_ppx lwt_react lwt_log
+	opam reinstall --yes lwt lwt_ppx lwt_react
 
 .PHONY: clean
 clean:
