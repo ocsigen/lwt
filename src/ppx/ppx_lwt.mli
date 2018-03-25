@@ -57,6 +57,16 @@ and t2 = do_something2 in
 bind t1 (fun x -> bind t2 (fun y -> code))
    ]}
 
+   Due to a {{:https://caml.inria.fr/mantis/view.php?id=7758} bug} in the OCaml
+   parser, if you'd like to put a type constraint on the variable, please write
+
+   {[
+let (foo : int) = do_something in
+code
+   ]}
+
+   Not using parentheses will confuse the OCaml parser.
+
    - exception catching:
 
    {[
