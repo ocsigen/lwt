@@ -189,18 +189,6 @@ else
 
    It allows to encode the old [raise_lwt <e>] as [[%lwt raise <e>]], and offers a convenient way to interact with non-Lwt code.
 
-   {2 Debug}
-
-   By default, the debug mode is enabled. This means that the [backtrace] versions of the [bind], [finalize] and [catch] functions are used, enabling proper backtraces for the Lwt exceptions.
-
-   The debug mode can be disabled with the option [-no-debug]:
-
-   {v
-
-$ ocamlfind ocamlc -package lwt.ppx \
-    -ppxopt lwt.ppx,-no-debug -linkpkg -o foo foo.ml
- v}
-
    {2 Logging}
 
    The logging syntax extension is enabled with [-log].
@@ -223,8 +211,6 @@ else
 
    - The application must be complete. For example: [Log.info "%d"]
    will make compilation fail.
-
-   - Debug messages are removed if the option [-no-debug] is passed.
 
 *)
 
