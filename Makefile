@@ -58,20 +58,6 @@ doc-api-html: build-all
 doc-api-wiki: build-all
 	make -C doc api/wiki/index.wiki
 
-# Use opam-installer, rather than jbuilder while we need to
-# post-process the lwt.install file
-.PHONY: install
-install:
-	ocaml src/util/install_filter.ml
-	opam-installer --prefix `opam config var prefix` -i lwt.install
-
-.PHONY: uninstall
-uninstall:
-	opam-installer --prefix `opam config var prefix` -u lwt.install
-
-.PHONY: reinstall
-reinstall: uninstall install
-
 # Packaging tests. These are run with Lwt installed by OPAM, typically during
 # CI. To run locally, run the install-for-packaging-test target first.
 .PHONY: packaging-test

@@ -18,7 +18,6 @@ dev-repo: "https://github.com/ocsigen/lwt.git"
 build: [
   [ "ocaml" "src/util/configure.ml" "-use-libev" "%{conf-libev:installed}%" ]
   [ "jbuilder" "build" "-p" name "-j" jobs ]
-  [ "ocaml" "src/util/install_filter.ml" ]
 ]
 build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
 
