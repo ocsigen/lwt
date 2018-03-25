@@ -10,14 +10,12 @@ PKGS=\
 INCS=\
 	-I ${BLD}/core \
 	-I ${BLD}/ppx \
-	-I ${BLD}/preemptive \
 	-I ${BLD}/react \
 	-I ${BLD}/unix
 
 MLIS=\
 	$(wildcard ${SRC}/core/*.mli) \
 	$(wildcard ${SRC}/ppx/*.mli) \
-	$(wildcard ${SRC}/preemptive/*.mli) \
 	$(wildcard ${SRC}/react/*.mli) \
 	$(filter-out ${BLD}/unix/lwt_unix.cppo.mli,$(wildcard ${BLD}/unix/*.mli))
 

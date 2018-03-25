@@ -2,4 +2,4 @@
 
 (executable
  ((name user)
-  (libraries (lwt.preemptive))))
+  (libraries (lwt.unix))))

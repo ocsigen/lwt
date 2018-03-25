@@ -714,7 +714,7 @@ let () =
   //detach// the computation to a preemptive thread.
 
   This is done by the module {{{Lwt_preemptive}}} of the
-  {{{lwt.preemptive}}} package which maintains a pool of system
+  {{{lwt.unix}}} package which maintains a pool of system
   threads. The main function is:
 
 <<code language="ocaml" |val detach : ('a -> 'b) -> 'a -> 'b Lwt.t

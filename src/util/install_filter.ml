@@ -30,7 +30,6 @@ let filter_sub_path path s =
 
 let sub_paths = [
   "unix";
-  "preemptive";
   "options";
   "syntax";
   "ppx";

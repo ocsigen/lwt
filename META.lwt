@@ -12,13 +12,6 @@ archive(native) = "lwt.cmxa"
 plugin(byte) = "lwt.cma"
 plugin(native) = "lwt.cmxs"
 
-package "preemptive" (
-  #directory = "preemptive"
-  version = "dev"
-  description = "Preemptive thread support for Lwt (deprecated; use lwt.unix)"
-  requires = "lwt.unix"
-)
-
 package "unix" (
   #directory = "unix"
   version = "dev"
