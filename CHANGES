@@ -1,3 +1,45 @@
+===== 4.0.0 (2018-03-30) =====
+
+====== Breaking ======
+
+These changes were announced in Lwt 3.1.0 and Lwt 3.2.0. See #453 about smooth
+upgrade paths.
+
+  * Delete package lwt.ppx. The PPX syntax is in package lwt_ppx since Lwt 3.2.0
+    (#338).
+  * Remove >> syntax from the PPX (#495).
+  * Delete modules Lwt_log, Lwt_daemon, Lwt_log_core, and package lwt.log. These
+    are in package lwt_log since Lwt 3.2.0, but it is recommended to use
+    Logs_lwt from the logs library instead (#484, initiated Hannes Mehnert).
+  * Delete package lwt.preemptive. It is an alias for lwt.unix since Lwt 3.2.0
+    (#487).
+  * Delete package lwt.syntax. The Camlp4 syntax is in package lwt_camlp4 since
+    Lwt 3.2.0 (#370).
+  * Delete module Lwt_chan, a predecessor of Lwt_io (#441).
+  * Delete package lwt.simple-top, a predecessor of utop (#371).
+  * Make resolvers (Lwt.u) contravariant (#458).
+
+====== Planned to break in 5.0.0 ======
+
+  * Lwt.pick will raise Invalid_argument on the empty list, instead of returning
+    a forever-pending promise. Also applies to Lwt.choose, Lwt.npick,
+    Lwt.nchoose, and Lwt.nchoose_split (#562, Tim Reinke, prompted Hezekiah
+    Carty).
+  * Remove transation of [%lwt ...] to Lwt.catch from the PPX (#527).
+  * Remove -no-debug option from the PPX (#528).
+  * Remove Lwt_log support from the PPX (#520).
+
+====== Bugs fixed ======
+
+  * Lwt_io.file_length now fails with EISDIR when used on a directory (#563,
+    requested Cedric Cellier).
+  * Lwt_react.E.limit and Lwt_react.S.limit now working more correctly (#566,
+    @Freyr666).
+
+====== Miscellaneous ======
+
+  * Documentation improvements (#561, Jason Evans).
+
 ===== 3.3.0 (2018-03-07) =====
 
 ====== Bugs fixed ======
