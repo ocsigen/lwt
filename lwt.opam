@@ -19,7 +19,6 @@ build: [
   [ "ocaml" "src/util/configure.ml" "-use-libev" "%{conf-libev:installed}%" ]
   [ "jbuilder" "build" "-p" name "-j" jobs ]
 ]
-build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
 
 depends: [
   # Bisect_ppx is used only during development. This dependency should be
