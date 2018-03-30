@@ -57,6 +57,6 @@ messages: [
     {!lwt_log:installed}
 ]
 post-messages: [
-  "Lwt 4.0.0 will make some breaking changes in March 2018. See
+  "Lwt 4.0.0 has made some breaking changes. See
   https://github.com/ocsigen/lwt/issues/453"
 ]
