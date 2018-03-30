@@ -36,6 +36,9 @@
 #include <sys/socket.h>
 
 #include "unix_recv_send_utils.h"
+
+int msg_flag_table[3] = {MSG_OOB, MSG_DONTROUTE, MSG_PEEK};
+
 /* Convert a caml list of io-vectors into a C array io io-vector
    structures */
 void store_iovs(struct iovec *iovs, value iovs_val)
