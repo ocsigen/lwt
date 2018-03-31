@@ -1268,7 +1268,7 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method) {
       return Val_true;
 
     case LWT_UNIX_ASYNC_METHOD_DETACH:
-      if (threading_initialized == 0) initialize_threading();
+      initialize_threading();
 
       lwt_unix_mutex_init(&job->mutex);
 
@@ -1321,7 +1321,7 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method) {
       if (SIGRTMIN > SIGRTMAX)
         caml_invalid_argument("the switch method is not supported");
 
-      if (threading_initialized == 0) initialize_threading();
+      initialize_threading();
 
       lwt_unix_mutex_init(&job->mutex);
       job->thread = main_thread;
