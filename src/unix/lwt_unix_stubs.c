@@ -1136,24 +1136,22 @@ static void *worker_loop(void *data) {
 
     lwt_unix_mutex_lock(&pool_mutex);
 
-    /* One more thread is waiting for work. */
-    thread_waiting_count++;
-
     DEBUG("waiting for something to do");
 
 /* Wait for something to do. */
 #if defined(LWT_UNIX_HAVE_ASYNC_SWITCH)
-    while (pool_queue == NULL && main_state == STATE_RUNNING)
+    while (pool_queue == NULL && main_state == STATE_RUNNING) {
+      ++thread_waiting_count;
       lwt_unix_condition_wait(&pool_condition, &pool_mutex);
+    }
 #else
-    while (pool_queue == NULL)
+    while (pool_queue == NULL) {
+      ++thread_waiting_count;
       lwt_unix_condition_wait(&pool_condition, &pool_mutex);
+    }
 #endif
 
     DEBUG("received something to do");
-
-    /* This thread is busy. */
-    thread_waiting_count--;
 
 #if defined(LWT_UNIX_HAVE_ASYNC_SWITCH)
     if (main_state == STATE_BLOCKED) {
@@ -1302,6 +1300,7 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method) {
           pool_queue = job;
         }
         /* Wakeup one worker. */
+        --thread_waiting_count;
         lwt_unix_condition_signal(&pool_condition);
         lwt_unix_mutex_unlock(&pool_mutex);
       }
