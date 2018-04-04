@@ -642,7 +642,7 @@ let read ch buf pos len =
   else
     Lazy.force ch.blocking >>= function
     | true ->
-      (* wait_read ch >>= fun () -> *)
+      wait_read ch >>= fun () ->
       run_job (read_job ch.fd buf pos len)
     | false ->
       wrap_syscall Read ch (fun () -> stub_read ch.fd buf pos len)
