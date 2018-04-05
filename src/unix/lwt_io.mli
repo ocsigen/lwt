@@ -413,12 +413,15 @@ val open_file :
   ?perm : Unix.file_perm ->
   mode : 'a mode ->
   file_name -> 'a channel Lwt.t
-  (** [open_file ?buffer ?flags ?perm ~mode filename] opens the
-      file with name [filename] and returns a channel for
-      reading/writing it.
+(** [open_file ?buffer ?flags ?perm ~mode filename] opens the file with name
+    [filename], and returns a channel for either reading or writing it.
 
-      @raise Unix.Unix_error on error.
-  *)
+    Note: if opening for writing ([~mode:Output]), and the file already exists,
+    [open_file] truncates (clears) the file by default. If you would like to
+    keep the pre-existing contents of the file, use the [?flags] parameter to
+    pass a custom flags list that does not include [Unix.O_TRUNC].
+
+    @raise Unix.Unix_error on error. *)
 
 val with_file :
   ?buffer : Lwt_bytes.t ->
@@ -426,9 +429,14 @@ val with_file :
   ?perm : Unix.file_perm ->
   mode : 'a mode ->
   file_name -> ('a channel -> 'b Lwt.t) -> 'b Lwt.t
-  (** [with_file ?buffer ?flags ?perm ~mode filename f] opens a
-      file and passes the channel to [f]. It is ensured that the
-      channel is closed when [f ch] terminates (even if it fails). *)
+(** [with_file ?buffer ?flags ?perm ~mode filename f] opens a file and passes
+    the channel to [f]. It is ensured that the channel is closed when [f ch]
+    resolves (even if it is rejected, or if [f] raises an exception).
+
+    Note: if opening for writing ([~mode:Output]), and the file already exists,
+    [with_file] truncates (clears) the file by default. If you would like to
+    keep the pre-existing contents of the file, use the [?flags] parameter to
+    pass a custom flags list that does not include [Unix.O_TRUNC]. *)
 
 val open_temp_file :
   ?buffer:Lwt_bytes.t ->
