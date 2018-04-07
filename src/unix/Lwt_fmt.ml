@@ -31,6 +31,8 @@ let flush ppft = Format.pp_print_flush ppft.fmt () ; ppft.commit ()
 
 let make_formatter ~commit ~fmt () = { commit ; fmt }
 
+let get_formatter x = x.fmt
+
 (** Stream formatter *)
 
 type order =
@@ -80,9 +82,9 @@ let of_channel oc =
 (** Printing functions *)
 
 let kfprintf k ppft fmt =
-  Format.kfprintf (fun ppf -> k ppf @@ ppft.commit ()) ppft.fmt fmt
+  Format.kfprintf (fun _ppf -> k ppft @@ ppft.commit ()) ppft.fmt fmt
 let ikfprintf k ppft fmt =
-  Format.ikfprintf (fun ppf -> k ppf @@ Lwt.return_unit) ppft.fmt fmt
+  Format.ikfprintf (fun _ppf -> k ppft @@ Lwt.return_unit) ppft.fmt fmt
 
 let fprintf ppft fmt =
   kfprintf (fun _ t -> t) ppft fmt
