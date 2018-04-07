@@ -65,18 +65,24 @@ val make_formatter :
     functions to update the underlying channel.
 *)
 
+val get_formatter : formatter -> Format.formatter
+(** [get_formatter fmt] returns the underlying {!Format.formatter}. 
+    To access the underlying formatter during printing, it is
+    recommended to use [%t] and [%a].
+*)
+
 (** {2 Printing} *)
 
 val fprintf : formatter -> ('a, Format.formatter, unit, unit Lwt.t) format4 -> 'a
 
 val kfprintf :
-  (Format.formatter -> unit Lwt.t -> 'a) ->
+  (formatter -> unit Lwt.t -> 'a) ->
   formatter -> ('b, Format.formatter, unit, 'a) format4 -> 'b
 
 val ifprintf : formatter -> ('a, Format.formatter, unit, unit Lwt.t) format4 -> 'a
 
 val ikfprintf :
-  (Format.formatter -> unit Lwt.t -> 'a) ->
+  (formatter -> unit Lwt.t -> 'a) ->
   formatter -> ('b, Format.formatter, unit, 'a) format4 -> 'b
 
 val flush : formatter -> unit Lwt.t
