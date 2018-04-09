@@ -170,7 +170,7 @@ also made in [/r/ocaml][reddit], on the [OCaml mailing list][caml-list], and on
 [all-issues]: https://github.com/ocsigen/lwt/issues
 [roadmap]:  https://github.com/ocsigen/lwt/wiki/Roadmap
 [easy-issues]: https://github.com/ocsigen/lwt/labels/easy
-[contributing-md]: https://github.com/ocsigen/lwt/blob/master/doc/CONTRIBUTING.md#readme
+[contributing-md]: https://github.com/ocsigen/lwt/blob/master/docs/CONTRIBUTING.md#readme
 [testing-issues]: https://github.com/ocsigen/lwt/issues?utf8=%E2%9C%93&q=is%3Aissue%20is%3Aopen%20label%3Aeasy%20test
 
 
@@ -181,7 +181,7 @@ also made in [/r/ocaml][reddit], on the [OCaml mailing list][caml-list], and on
 Lwt is released under the LGPL, with an OpenSSL linking exception. See
 [`COPYING`][copying].
 
-[copying]: https://github.com/ocsigen/lwt/blob/master/doc/COPYING
+[copying]: https://github.com/ocsigen/lwt/blob/master/docs/COPYING
 
 <br/>
 

@@ -49,14 +49,14 @@ doc:
 # Build HTML documentation with ocamldoc
 .PHONY: doc-api-html
 doc-api-html: build-all
-	make -C doc api/html/index.html
+	make -C docs api/html/index.html
 
 # Build wiki documentation with wikidoc
 # requires ocaml 4.03.0 and pinning the repo
 # https://github.com/ocsigen/wikidoc
 .PHONY: doc-api-wiki
 doc-api-wiki: build-all
-	make -C doc api/wiki/index.wiki
+	make -C docs api/wiki/index.wiki
 
 # Packaging tests. These are run with Lwt installed by OPAM, typically during
 # CI. To run locally, run the install-for-packaging-test target first.
@@ -81,7 +81,7 @@ install-for-packaging-test: clean
 clean:
 	jbuilder clean
 	find . -name '.merlin' | xargs rm -f
-	rm -fr doc/api
+	rm -fr docs/api
 	rm -f src/jbuild-ignore src/unix/lwt_config src/core/flambda.flag
 	for TEST in `ls -d test/packaging/*/*` ; \
 	do \
