@@ -25,7 +25,7 @@ upgrade paths.
     a forever-pending promise. Also applies to Lwt.choose, Lwt.npick,
     Lwt.nchoose, and Lwt.nchoose_split (#562, Tim Reinke, prompted Hezekiah
     Carty).
-  * Remove transation of [%lwt ...] to Lwt.catch from the PPX (#527).
+  * Remove translation of [%lwt ...] to Lwt.catch from the PPX (#527).
   * Remove -no-debug option from the PPX (#528).
   * Remove Lwt_log support from the PPX (#520).
 
