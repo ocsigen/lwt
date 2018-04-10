@@ -134,8 +134,7 @@ mention enlightening the maintainers!
 
 Subscribe to the [announcements issue][announcements] to get news about Lwt
 releases. It is less noisy than watching the whole repository. Announcements are
-also made in [/r/ocaml][reddit], on the [OCaml mailing list][caml-list], and on
-[discuss.ocaml.org][discourse].
+also made in [/r/ocaml][reddit], and on [discuss.ocaml.org][discourse].
 
 [gitter]: https://gitter.im/ocaml-lwt/Lobby
 [irc]:    http://webchat.freenode.net/?channels=#ocaml
@@ -185,31 +184,22 @@ Lwt is released under the LGPL, with an OpenSSL linking exception. See
 
 <br/>
 
-## Related Libraries
+## Libraries to use with Lwt
 
-- [alcotest](https://github.com/mirage/alcotest/)
-A lightweight framework for unit testing
-
-- [angstrom](https://github.com/inhabitedtype/angstrom)
-A library for building parsers with a focus on efficiency, concurrency, and reusability
-
-- [cohttp](https://github.com/mirage/ocaml-cohttp)
-A lightweight library for writing HTTP clients and servers
-
-- [cstruct](https://github.com/mirage/ocaml-cstruct)
-A library and syntax extension for interop with C-like structures
-
-- [ezjsonm](https://github.com/mirage/ezjsonm)
-A library for easy interop with JSON
-
-- [faraday](https://github.com/inhabitedtype/faraday)
-A library for fast and memory-efficient serialization
-
-- [logs](https://github.com/dbuenzli/logs)
-A logging library with reporting decoupled from logging
-
-- [lwt-parallel](https://github.com/ivg/parallel)
-A library for distributed computing
-
-- [opium](https://github.com/rgrinberg/opium)
-A web toolkit that uses [Sinatra](https://github.com/sinatra/sinatra)-inspired middleware
+- [alcotest](https://github.com/mirage/alcotest/) —
+unit testing
+- [angstrom](https://github.com/inhabitedtype/angstrom) —
+parser combinators
+- [cohttp](https://github.com/mirage/ocaml-cohttp) — HTTP client and server
+- [cstruct](https://github.com/mirage/ocaml-cstruct) —
+interop with C-like structures
+- [ezjsonm](https://github.com/mirage/ezjsonm) —
+JSON parsing and output
+- [faraday](https://github.com/inhabitedtype/faraday) —
+serialization combinators
+- [logs](https://github.com/dbuenzli/logs) —
+logging
+- [lwt-parallel](https://github.com/ivg/parallel) —
+distributed computing
+- [opium](https://github.com/rgrinberg/opium) —
+web framework
