@@ -1,3 +1,13 @@
+===== 4.0.1 (2018-04-13) =====
+
+====== Bugs fixed ======
+
+  * Race condition in worker thread management in Lwt_unix (#569, diagnosed Gabe
+    Levi).
+  * Hang in Lwt_unix.read on Windows (#574, #569, 86a6baf, diagnosed Gabe Levi).
+  * Docs: note that Lwt_io.open_file for writing truncates the file by default
+    (#570, reported Tóth Róbert).
+
 ===== 4.0.0 (2018-03-30) =====
 
 ====== Breaking ======
