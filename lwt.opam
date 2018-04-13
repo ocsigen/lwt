@@ -1,5 +1,5 @@
 opam-version: "1.2"
-version: "dev"
+version: "4.0.1"
 maintainer: [
   "Anton Bachin <antonbachin@yahoo.com>"
   "Mauricio Fernandez <mfp@acm.org>"
@@ -21,9 +21,6 @@ build: [
 ]
 
 depends: [
-  # Bisect_ppx is used only during development. This dependency should be
-  # removed when preparing a release.
-  "bisect_ppx" {>= "1.3.0"}
   "cppo" {build & >= "1.1.0"}
   "jbuilder" {build & >= "1.0+beta14"}
   # We are only using ocamlfind during configuration of the Unix binding.
