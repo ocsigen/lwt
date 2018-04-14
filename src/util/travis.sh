@@ -32,6 +32,8 @@ packages_apt () {
 
 packages_homebrew () {
     brew update > /dev/null
+    # See https://github.com/Homebrew/homebrew-core/issues/26358.
+    brew upgrade python > /dev/null
 
     if [ "$COMPILER" = system ]
     then
