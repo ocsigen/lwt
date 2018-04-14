@@ -22,16 +22,42 @@
 
 (** External resource pools.
 
-    For example, instead of creating a new database connection each time you
-    need one, keep a pool of opened connections and reuse ones that are free.
-    The pool also provides a limit on the number of connections that can
-    simultaneously be open.
+    This module provides an abstraction for managing collections of resources.
+    One example use case is for managing a pool of database connections, where
+    instead of establishing a new connection each time you need one (which is
+    expensive), you can keep a pool of opened connections and reuse ones that
+    are free.
 
-    If you want to have a pool of {e system} threads, consider using
-    [Lwt_preemptive]. *)
+    It also provides the capability of:
+    - specifying the maximum number of resources that the pool can manage
+      simultaneously,
+    - checking whether a resource is still valid before/after use, and
+    - performing cleanup logic before dropping a resource.
+
+    The following example illustrates how it is used with an imaginary
+    Lwt-aware [Db] module:
+
+    {[
+let uri = "postgresql://localhost:5432"
+
+(* Creates a database connection pool with max size of 10. *)
+let pool =
+  Lwt_pool.create 10
+    ~dispose:(fun connection -> Db.close connection)
+    (fun () -> Db.connect uri)
+
+(* Use the pool in queries. *)
+let create_user name =
+  Lwt_pool.use pool (fun connection ->
+      Db.insert "users" [("name", name)] connection
+    )
+]}
+
+    Note that this is {e not} intended to keep a pool of {e system} threads.
+    If you want to have such pool, consider using {!Lwt_preemptive}. *)
 
 type 'a t
-  (** Pools containing elements of type ['a]. *)
+  (** A pool containing elements of type ['a]. *)
 
 val create :
   int ->
