@@ -53,7 +53,7 @@ let create_user name =
     )
 ]}
 
-    Note that this is {e not} intended to keep a pool of {e system} threads.
+    Note that this is {e not} intended to keep a pool of system threads.
     If you want to have such pool, consider using {!Lwt_preemptive}. *)
 
 type 'a t
@@ -89,9 +89,12 @@ val create :
       of. *)
 
 val use : 'a t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
-  (** [use p f] takes one free element of the pool [p] and gives it to
+  (** [use p f] requests one free element of the pool [p] and gives it to
       the function [f]. The element is put back into the pool after the
-      promise created by [f] completes. *)
+      promise created by [f] completes.
+
+      In the case that [p] is exhausted and the maximum number of elements
+      is reached, [use] will wait until one becomes free. *)
 
 val clear : 'a t -> unit Lwt.t
   (** [clear p] will clear all elements in [p], calling the [dispose] function
@@ -105,5 +108,5 @@ val clear : 'a t -> unit Lwt.t
       Disposals are performed sequentially in an undefined order. *)
 
 val wait_queue_length : _ t -> int
-  (** [wait_queue_length p] returns the number of threads currently
+  (** [wait_queue_length p] returns the number of {!use} requests currently
       waiting for an element of the pool [p] to become available. *)
