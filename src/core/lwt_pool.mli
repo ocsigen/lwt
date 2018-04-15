@@ -40,16 +40,18 @@
     {[
 let uri = "postgresql://localhost:5432"
 
-(* Creates a database connection pool with max size of 10. *)
+(* Create a database connection pool with max size of 10. *)
 let pool =
   Lwt_pool.create 10
-    ~dispose:(fun connection -> Db.close connection)
-    (fun () -> Db.connect uri)
+    ~dispose:(fun connection -> Db.close connection |> Lwt.return)
+    (fun () -> Db.connect uri |> Lwt.return)
 
 (* Use the pool in queries. *)
 let create_user name =
   Lwt_pool.use pool (fun connection ->
-      Db.insert "users" [("name", name)] connection
+      connection
+      |> Db.insert "users" [("name", name)]
+      |> Lwt.return
     )
 ]}
 
