@@ -35,7 +35,7 @@
     - performing cleanup logic before dropping a resource.
 
     The following example illustrates how it is used with an imaginary
-    Lwt-aware [Db] module:
+    [Db] module:
 
     {[
 let uri = "postgresql://localhost:5432"
