@@ -16,6 +16,8 @@ matrix:
       env: COMPILER=4.06 FLAMBDA=yes
     - os: linux
       env: COMPILER=4.06 FLAMBDA=yes LIBEV=no
+    - os: linux
+      env: COMPILER=4.07
     - os: osx
       env: COMPILER=system
     - os: osx
