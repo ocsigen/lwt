@@ -324,12 +324,16 @@ val iter_p : ('a -> unit Lwt.t) -> 'a t -> unit Lwt.t
 val iter_s : ('a -> unit Lwt.t) -> 'a t -> unit Lwt.t
 (** [iter f s] iterates over all elements of the stream. *)
 
-val iter_n : ?max_threads:int -> ('a -> unit Lwt.t) -> 'a t -> unit Lwt.t
-  (** [iter_n ?max_threads f s] iterates over all elements of the stream [s].
-      Iteration is performed concurrently with up to [max_threads] concurrent
-      instances of [f].
+val iter_n : ?max_concurrency:int -> ('a -> unit Lwt.t) -> 'a t -> unit Lwt.t
+(** [iter_n ?max_concurrency f s] iterates over all elements of the stream [s].
+    Iteration is performed concurrently with up to [max_threads] concurrent
+    instances of [f].
 
-      @param max_threads defaults to [1]. *)
+    Iteration is {b not} guaranteed to be in order as this function will
+    attempt to always process [max_concurrency] elements from [s] at once.
+
+    @param max_concurrency defaults to [1].
+    @raise Invalid_argument if [max_concurrency < 1]. *)
 
 val find : ('a -> bool) -> 'a t -> 'a option Lwt.t
 val find_s : ('a -> bool Lwt.t) -> 'a t -> 'a option Lwt.t
