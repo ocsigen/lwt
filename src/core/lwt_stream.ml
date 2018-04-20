@@ -910,12 +910,13 @@ let rec iter_p_rec node f s =
 
 let iter_p f s = iter_p_rec s.node f s
 
-let iter_n ?(max_threads = 1) f stream =
+let iter_n ?(max_concurrency = 1) f stream =
   begin
-    if max_threads <= 0 then
+    if max_concurrency <= 0 then
       let message =
-        Printf.sprintf "Lwt_stream.iter_n: max_threads must be > 0, %d given"
-          max_threads
+        Printf.sprintf
+          "Lwt_stream.iter_n: max_concurrency must be > 0, %d given"
+          max_concurrency
       in
       invalid_arg message
   end;
@@ -935,7 +936,7 @@ let iter_n ?(max_threads = 1) f stream =
     | Some elt ->
       loop (f elt :: running) (pred available)
   in
-  loop [] max_threads
+  loop [] max_concurrency
 
 let rec find_rec node f s =
   if node == !(s.last) then
