@@ -51,3 +51,8 @@ val suite : string -> ?only_if:(unit -> bool) -> test list -> suite
 val run : string -> suite list -> unit
 (** Run all the given tests and exit the program with an exit code
     of [0] if all tests succeeded and with [1] otherwise. *)
+
+val with_async_exception_hook : (exn -> unit) -> (unit -> 'a Lwt.t) -> 'a Lwt.t
+(** [Test.with_async_exception_hook hook f] sets [!Lwt.async_exception_hook] to
+    [hook], runs [f ()], and then restores [!Lwt.async_exception_hook] to its
+    former value. *)

@@ -33,13 +33,6 @@ open Lwt.Infix
 
 exception Dummy_error
 
-let with_async_exception_hook hook f =
-  let old_hook = !Lwt.async_exception_hook in
-  Lwt.async_exception_hook := hook;
-  f () >|= fun v ->
-  Lwt.async_exception_hook := old_hook;
-  v
-
 let local = Unix.ADDR_INET (Unix.inet_addr_loopback, 4321)
 
 (* Helpers for [establish_server] tests. *)

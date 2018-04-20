@@ -220,3 +220,10 @@ let run library_name suites =
 
   loop_over_suites [] suites
   |> Lwt_main.run
+
+let with_async_exception_hook hook f =
+  let old_hook = !Lwt.async_exception_hook in
+  Lwt.async_exception_hook := hook;
+  Lwt.finalize f (fun () ->
+    Lwt.async_exception_hook := old_hook;
+    Lwt.return ())
