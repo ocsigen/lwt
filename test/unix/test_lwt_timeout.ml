@@ -214,4 +214,73 @@ let suite = suite "Lwt_timeout" [
       !Lwt.async_exception_hook exn);
     result
   end;
+
+  test "two" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+
+    let start_time = Unix.gettimeofday () in
+
+    Lwt_timeout.create 1 (fun () ->
+      let delta = Unix.gettimeofday () -. start_time in
+      Lwt.wakeup r1 delta)
+    |> Lwt_timeout.start;
+
+    Lwt_timeout.create 2 (fun () ->
+      let delta = Unix.gettimeofday () -. start_time in
+      Lwt.wakeup r2 delta)
+    |> Lwt_timeout.start;
+
+    p1 >>= fun delta1 ->
+    p2 >>= fun delta2 ->
+    Lwt.return (delta1 >= 2. && delta1 < 3. && delta2 >= 3. && delta2 < 4.)
+  end;
+
+  test "simultaneous" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+
+    let start_time = Unix.gettimeofday () in
+
+    Lwt_timeout.create 1 (fun () ->
+      let delta = Unix.gettimeofday () -. start_time in
+      Lwt.wakeup r1 delta)
+    |> Lwt_timeout.start;
+
+    Lwt_timeout.create 1 (fun () ->
+      let delta = Unix.gettimeofday () -. start_time in
+      Lwt.wakeup r2 delta)
+    |> Lwt_timeout.start;
+
+    p1 >>= fun delta1 ->
+    p2 >>= fun delta2 ->
+    Lwt.return (delta1 >= 1. && delta1 < 2. && delta2 >= 1. && delta2 < 2.)
+  end;
+
+  test "two, first stopped" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+
+    let start_time = Unix.gettimeofday () in
+
+    let timeout1 =
+      Lwt_timeout.create 1 (fun () ->
+        Lwt.wakeup r1 false)
+    in
+    Lwt_timeout.start timeout1;
+
+    Lwt_timeout.create 2 (fun () ->
+      let delta = Unix.gettimeofday () -. start_time in
+      Lwt.wakeup r2 delta)
+    |> Lwt_timeout.start;
+
+    Lwt_timeout.stop timeout1;
+    Lwt.async (fun () ->
+      Lwt_unix.sleep 3. >|= fun () ->
+      Lwt.wakeup r1 true);
+
+    p1 >>= fun timeout1_not_fired ->
+    p2 >>= fun delta2 ->
+    Lwt.return (timeout1_not_fired && delta2 >= 2. && delta2 < 3.)
+  end;
 ]
