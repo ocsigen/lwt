@@ -30,11 +30,11 @@
 *)
 
 val printf : ('a, Format.formatter, unit, unit Lwt.t) format4 -> 'a
-(** Returns a promise that prints on the standard output. 
+(** Returns a promise that prints on the standard output.
     Similar to {!Format.printf}. *)
 
 val eprintf : ('a, Format.formatter, unit, unit Lwt.t) format4 -> 'a
-(** Returns a promise that prints on the standard error. 
+(** Returns a promise that prints on the standard error.
     Similar to {!Format.eprintf}. *)
 
 (** {1 Formatters} *)
@@ -66,7 +66,7 @@ val make_formatter :
 *)
 
 val get_formatter : formatter -> Format.formatter
-(** [get_formatter fmt] returns the underlying {!Format.formatter}. 
+(** [get_formatter fmt] returns the underlying {!Format.formatter}.
     To access the underlying formatter during printing, it is
     recommended to use [%t] and [%a].
 *)
@@ -99,6 +99,6 @@ val write_order : Lwt_io.output_channel -> order -> unit Lwt.t
 val write_pending : formatter -> unit Lwt.t
 (** Write all the pending orders of a formatter.
     Warning: This function flush neither the internal format queues
-    nor the underlying channel and is intended for low level use only. 
+    nor the underlying channel and is intended for low level use only.
     You should probably use {!flush} instead.
 *)

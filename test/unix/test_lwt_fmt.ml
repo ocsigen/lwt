@@ -24,7 +24,7 @@ open Lwt.Infix
 
 let testchan () =
   let b = Buffer.create 6 in
-  let f buf ofs len = 
+  let f buf ofs len =
     let bytes = Bytes.create len in
     Lwt_bytes.blit_to_bytes buf ofs bytes 0 len;
     Buffer.add_bytes b bytes;
@@ -35,37 +35,37 @@ let testchan () =
   fmt, (fun () -> Buffer.contents b)
 
 let suite = suite "lwt_fmt" [
-    test "flushing" (fun () -> 
+    test "flushing" (fun () ->
         let fmt, f = testchan () in
         Lwt_fmt.fprintf fmt "%s%i%s%!" "bla" 3 "blo" >>= fun () ->
         Lwt.return (f () = {|bla3blo|})
       );
-    test "with combinator" (fun () -> 
+    test "with combinator" (fun () ->
         let fmt, f = testchan () in
         Lwt_fmt.fprintf fmt "%a%!" Format.pp_print_int 3 >>= fun () ->
         Lwt.return (f () = {|3|})
       );
-    test "box" (fun () -> 
+    test "box" (fun () ->
         let fmt, f = testchan () in
         Lwt_fmt.fprintf fmt "@[<v2>%i@,%i@]%!" 1 2 >>= fun () ->
         Lwt.return (f () = "1\n  2")
       );
-    test "boxsplit" (fun () -> 
+    test "boxsplit" (fun () ->
         let fmt, f = testchan () in
         Lwt_fmt.fprintf fmt "@[<v2>%i" 1 >>= fun () ->
         Lwt_fmt.fprintf fmt "@,%i@]" 2 >>= fun () ->
         Lwt_fmt.flush fmt >>= fun () ->
         Lwt.return (f () = "1\n  2")
       );
-    test "box close with flush" (fun () -> 
+    test "box close with flush" (fun () ->
         let fmt, f = testchan () in
         Lwt_fmt.fprintf fmt "@[<v2>%i" 1 >>= fun () ->
         Lwt_fmt.fprintf fmt "@,%i" 2 >>= fun () ->
         Lwt_fmt.flush fmt >>= fun () ->
         Lwt.return (f () = "1\n  2")
       );
-    
-    test "stream"  (fun () -> 
+
+    test "stream"  (fun () ->
         let stream, fmt = Lwt_fmt.make_stream () in
         Lwt_fmt.fprintf fmt "@[<v2>%i@,%i@]%!" 1 2 >>= fun () ->
         Lwt.return (Lwt_stream.get_available stream = [

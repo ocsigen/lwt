@@ -27,7 +27,7 @@ let suite = suite "lwt_process" [
   test "lazy_undefined" ~only_if:(fun () -> not Sys.win32)
     (fun () ->
       Lwt_process.with_process_in
-        ~timeout:1. ("sleep", [| "sleep"; "2" |]) 
+        ~timeout:1. ("sleep", [| "sleep"; "2" |])
           (fun p ->
             Lwt.catch
               (fun () -> Lwt_io.read p#stdout)
