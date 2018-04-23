@@ -1,23 +1,7 @@
-(* OCaml promise library
- * http://www.ocsigen.org/lwt
- * Copyright (C) 2018 Gabriel Radanne
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation, with linking exceptions;
- * either version 2.1 of the License, or (at your option) any later
- * version. See COPYING file for details.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
- * 02111-1307, USA.
- *)
+(* This file is part of Lwt, released under the MIT license. See LICENSE.md for
+   details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
+
+
 
 open Lwt.Infix
 
@@ -51,7 +35,7 @@ let make_stream () =
   Gc.finalise (fun _ -> push None) fmt ;
   let commit () = Lwt.return_unit in
   stream, make_formatter ~commit ~fmt ()
-          
+
 (** Channel formatter *)
 
 let write_order oc = function
@@ -67,7 +51,7 @@ let rec write_orders oc queue =
     let o = Queue.pop queue in
     write_order oc o >>= fun () ->
     write_orders oc queue
-      
+
 let of_channel oc =
   let q = Queue.create () in
   let out_string s i j =

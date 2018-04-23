@@ -1,6 +1,3 @@
-# Copyright : (c) 2012, Jérémie Dimino <jeremie@dimino.org>
-#                 2017, Andrew Ray <evilkidder@gmail.com>
-
 # Default rule
 .PHONY: default
 default: build

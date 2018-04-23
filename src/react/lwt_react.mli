@@ -1,11 +1,7 @@
-(*
- * lwt_react.mli
- * -------------
- * Copyright : (c) 2011, Jérémie Dimino <jeremie@dimino.org>
- * Licence   : BSD3
- *
- * This file is a part of lwt.
- *)
+(* This file is part of Lwt, released under the MIT license. See LICENSE.md for
+   details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
+
+
 
 (** React utilities *)
 
