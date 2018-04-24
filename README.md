@@ -2,7 +2,7 @@
 
 [version]:      https://img.shields.io/badge/version-4.0.1-blue.svg
 [releases]:     https://github.com/ocsigen/lwt/releases
-[license-img]:  https://img.shields.io/badge/license-MIT-blue.svg
+[license-img]:  https://img.shields.io/badge/License-MIT-blue.svg
 [gitter-img]:   https://img.shields.io/badge/chat-on_gitter-lightgrey.svg
 [travis]:       https://travis-ci.org/ocsigen/lwt/branches
 [travis-img]:   https://img.shields.io/travis/ocsigen/lwt/master.svg?label=travis
