@@ -1,8 +1,7 @@
-# Lwt &nbsp;&nbsp; [![version 4.0.1][version]][releases] [![LGPL][license-img]][copying] [![Gitter chat][gitter-img]][gitter] [![Travis status][travis-img]][travis] [![AppVeyor status][appveyor-img]][appveyor]
+# Lwt &nbsp;&nbsp; [![version 4.0.1][version]][releases] [![Gitter chat][gitter-img]][gitter] [![Travis status][travis-img]][travis] [![AppVeyor status][appveyor-img]][appveyor]
 
 [version]:      https://img.shields.io/badge/version-4.0.1-blue.svg
 [releases]:     https://github.com/ocsigen/lwt/releases
-[license-img]:  https://img.shields.io/badge/license-LGPL-blue.svg
 [gitter-img]:   https://img.shields.io/badge/chat-on_gitter-lightgrey.svg
 [travis]:       https://travis-ci.org/ocsigen/lwt/branches
 [travis-img]:   https://img.shields.io/travis/ocsigen/lwt/master.svg?label=travis
@@ -172,15 +171,6 @@ also made in [/r/ocaml][reddit], and on [discuss.ocaml.org][discourse].
 [contributing-md]: https://github.com/ocsigen/lwt/blob/master/docs/CONTRIBUTING.md#readme
 [testing-issues]: https://github.com/ocsigen/lwt/issues?utf8=%E2%9C%93&q=is%3Aissue%20is%3Aopen%20label%3Aeasy%20test
 
-
-<br/>
-
-## License
-
-Lwt is released under the LGPL, with an OpenSSL linking exception. See
-[`COPYING`][copying].
-
-[copying]: https://github.com/ocsigen/lwt/blob/master/docs/COPYING
 
 <br/>
 
