@@ -1,19 +1,4 @@
-Copyright (c) 1999-2008  Jérôme Vouillon
-                         Laboratoire PPS - CNRS Université Paris Diderot
-              2005       Nataliya Guts, Vincent Balat
-                         Laboratoire PPS - CNRS Université Paris Diderot
-              2008       Stéphane Glondu
-              2009       Mauricio Fernandez
-              2009, 2010 Pierre Chambart
-              2009-2012  Jérémie Dimino
-                         Laboratoire PPS - CNRS Université Paris Diderot
-              2014       Peter Zotov
-              2014, 2018 Gabriel Radanne
-              2015       Nicolas Ojeda Bar
-              2016       Simon Cruanes
-              2016-2018  Anton Bachin
-              2017       Joseph Thomas
-              2017       Andrew Ray
+Copyright (c) 1999-2018, the Authors of Lwt (docs/AUTHORS)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
