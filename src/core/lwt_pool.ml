@@ -69,6 +69,13 @@ let release p c =
     (* No one is waiting, queue it. *)
     Queue.push c p.list
 
+exception Resource_limit_exceeded
+
+let add ?(omit_max_check = false) p c =
+  if not omit_max_check && p.count >= p.max then raise Resource_limit_exceeded;
+  p.count <- p.count + 1;
+  release p c
+
 (* Dispose of a pool member. *)
 let dispose p c =
   p.dispose c >>= fun () ->

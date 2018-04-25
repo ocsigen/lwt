@@ -92,6 +92,15 @@ val clear : 'a t -> unit Lwt.t
 
       Disposals are performed sequentially in an undefined order. *)
 
+exception Resource_limit_exceeded
+
+val add : ?omit_max_check:bool -> 'a t -> 'a -> unit
+  (** By [add p c] you can add an existing resource element [c] to pool [p].
+      This function may raise a [Resource_limit_exceeded] exception. If
+      [omit_max_check] is [true] (default: [false]), then this exception will
+      not be raised. Instead the maximum number of resources might be exceeded
+      and more than [p.max] elements will be available to the user. *)
+
 val wait_queue_length : _ t -> int
   (** [wait_queue_length p] returns the number of {!use} requests currently
       waiting for an element of the pool [p] to become available. *)
