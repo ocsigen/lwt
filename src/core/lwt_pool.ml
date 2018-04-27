@@ -147,6 +147,8 @@ let check_and_release p c cleared =
     Lwt.return_unit
   )
 
+exception Resource_invalid
+
 let use p f =
   acquire p >>= fun c ->
   (* Capture the current cleared state so we can see if it changes while this
@@ -156,8 +158,11 @@ let use p f =
     Lwt.catch
       (fun () -> f c)
       (fun e ->
-         check_and_release p c !cleared >>= fun () ->
-         Lwt.fail e)
+         begin match e with
+         | Resource_invalid -> dispose p c
+         | _ -> check_and_release p c !cleared
+         end
+         >>= fun () -> Lwt.fail e)
   in
   promise >>= fun _ ->
   if !cleared then (

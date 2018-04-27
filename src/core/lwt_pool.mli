@@ -73,13 +73,21 @@ val create :
       should be used if the elements of the pool need to be explicitly disposed
       of. *)
 
+  (** exception to be thrown by the function supplied to [use] when a resource
+      is no longer valid and therefore to be disposed of *)
+exception Resource_invalid
+
 val use : 'a t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
   (** [use p f] requests one free element of the pool [p] and gives it to
       the function [f]. The element is put back into the pool after the
       promise created by [f] completes.
+      
+      In case the resource supplied to [f] is no longer valid and to be disposed
+      of, [f] can throw a [Resource_invalid] exception.
 
       In the case that [p] is exhausted and the maximum number of elements
       is reached, [use] will wait until one becomes free. *)
+>>>>>>> 9a535492... Lwt_pool: exception for disposing of invalid resources
 
 val clear : 'a t -> unit Lwt.t
   (** [clear p] will clear all elements in [p], calling the [dispose] function
