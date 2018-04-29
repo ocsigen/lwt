@@ -1659,24 +1659,6 @@ let establish_server_generic
 
   server, server_has_started
 
-(* Old, deprecated version of [establish_server]. This function has to persist
-   for a while, in some form, until it is no longer exposed as
-   [Lwt_io.Versioned.establish_server_1]. *)
-let establish_server_deprecated ?fd ?buffer_size ?backlog sockaddr f =
-  let blocking_bind fd addr =
-    Lwt.return (Lwt_unix.Versioned.bind_1 fd addr) [@ocaml.warning "-3"]
-  in
-  let f _addr c = f c in
-
-  let server, server_started =
-    establish_server_generic blocking_bind ?fd ?buffer_size ?backlog sockaddr f
-  in
-
-  (* Poll for exceptions in server startup that may have occurred synchronously.
-     This emulates an old, deprecated behavior. *)
-  Lwt.ignore_result server_started;
-  server
-
 let establish_server_with_client_address
     ?fd ?buffer_size ?backlog ?(no_close = false) sockaddr f =
   let best_effort_close channel =
@@ -1725,6 +1707,24 @@ let establish_server ?fd ?buffer_size ?backlog ?no_close sockaddr f =
   let f _addr c = f c in
   establish_server_with_client_address
     ?fd ?buffer_size ?backlog ?no_close sockaddr f
+
+(* Old, deprecated version of [establish_server]. This function has to persist
+   for a while, in some form, until it is no longer exposed as
+   [Lwt_io.Versioned.establish_server_1]. *)
+let establish_server_deprecated ?fd ?buffer_size ?backlog sockaddr f =
+  let blocking_bind fd addr =
+    Lwt.return (Lwt_unix.Versioned.bind_1 fd addr) [@ocaml.warning "-3"]
+  in
+  let f _addr c = f c in
+
+  let server, server_started =
+    establish_server_generic blocking_bind ?fd ?buffer_size ?backlog sockaddr f
+  in
+
+  (* Poll for exceptions in server startup that may have occurred synchronously.
+     This emulates an old, deprecated behavior. *)
+  Lwt.ignore_result server_started;
+  server
 
 let ignore_close ch =
   ignore (close ch)
