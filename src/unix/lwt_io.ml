@@ -1559,57 +1559,107 @@ let shutdown_server server = Lazy.force server.shutdown
 let shutdown_server_deprecated server =
   Lwt.async (fun () -> shutdown_server server)
 
-let establish_server_base
-    bind ?fd ?(buffer_size = !default_buffer_size) ?(backlog=5) sockaddr f =
-  let sock =
-    match fd with
-    | None ->
-      Lwt_unix.socket (Unix.domain_of_sockaddr sockaddr) Unix.SOCK_STREAM 0
-    | Some fd ->
-      fd
-  in
-  Lwt_unix.setsockopt sock Unix.SO_REUSEADDR true;
+(* There are several variants of establish_server that have accumulated over the
+   years in Lwt_io. This is their underlying implementation. The functions
+   exposed in the API are various wrappers around this one. *)
+let establish_server_generic
+    bind_function
+    ?fd:preexisting_socket_for_listening
+    ?(buffer_size = !default_buffer_size)
+    ?(backlog = 5)
+    listening_address
+    connection_handler_callback =
 
-  let abort_waiter, abort_wakener = Lwt.wait () in
-  let abort_waiter = abort_waiter >>= fun () -> Lwt.return `Shutdown in
-  (* Signals that the listening socket has been closed. *)
-  let closed_waiter, closed_wakener = Lwt.wait () in
-  let rec loop () =
-    Lwt.pick
-      [Lwt_unix.accept sock >|= (fun x -> `Accept x);
-       abort_waiter] >>= function
-    | `Accept(fd, addr) ->
-      (try Lwt_unix.set_close_on_exec fd with Invalid_argument _ -> ());
-      let close = lazy (close_socket fd) in
-      f addr
-        (of_fd ~buffer:(Lwt_bytes.create buffer_size) ~mode:input
-           ~close:(fun () -> Lazy.force close) fd,
-         of_fd ~buffer:(Lwt_bytes.create buffer_size) ~mode:output
-           ~close:(fun () -> Lazy.force close) fd);
-      loop ()
-    | `Shutdown ->
-      Lwt_unix.close sock >>= fun () ->
-      (match sockaddr with
-       | Unix.ADDR_UNIX path when path <> "" && path.[0] <> '\x00' ->
-         Unix.unlink path;
-         Lwt.return_unit
-       | _ ->
-         Lwt.return_unit) [@ocaml.warning "-4"] >>= fun () ->
-      Lwt.wakeup closed_wakener ();
+  let listening_socket =
+    match preexisting_socket_for_listening with
+    | None ->
+      Lwt_unix.socket
+        (Unix.domain_of_sockaddr listening_address) Unix.SOCK_STREAM 0
+    | Some socket ->
+      socket
+  in
+  Lwt_unix.setsockopt listening_socket Unix.SO_REUSEADDR true;
+
+  (* This promise gets resolved with `Should_stop when the user calls
+     Lwt_io.shutdown_server. This begins the shutdown procedure. *)
+  let should_stop, notify_should_stop =
+    Lwt.wait () in
+
+  (* Some time after Lwt_io.shutdown_server is called, this function
+     establish_server_generic will actually close the listening socket. At that
+     point, this promise is resolved. This ends the shutdown procedure. *)
+  let wait_until_listening_socket_closed, notify_listening_socket_closed =
+    Lwt.wait () in
+
+  let rec accept_loop () =
+    let try_to_accept =
+      Lwt_unix.accept listening_socket >|= fun x ->
+      `Accepted x
+    in
+
+    Lwt.pick [try_to_accept; should_stop] >>= function
+    | `Accepted (client_socket, client_address) ->
+      begin
+        try Lwt_unix.set_close_on_exec client_socket
+        with Invalid_argument _ -> ()
+      end;
+
+      let close = lazy (close_socket client_socket) in
+      let input_channel =
+        of_fd
+          ~buffer:(Lwt_bytes.create buffer_size)
+          ~mode:input
+          ~close:(fun () -> Lazy.force close)
+          client_socket
+      in
+      let output_channel =
+        of_fd
+          ~buffer:(Lwt_bytes.create buffer_size)
+          ~mode:output
+          ~close:(fun () -> Lazy.force close)
+          client_socket
+      in
+
+      connection_handler_callback
+        client_address (input_channel, output_channel);
+
+      accept_loop ()
+
+    | `Should_stop ->
+      Lwt_unix.close listening_socket >>= fun () ->
+
+      begin match listening_address with
+      | Unix.ADDR_UNIX path when path <> "" && path.[0] <> '\x00' ->
+        Unix.unlink path
+      | _ ->
+        ()
+      end [@ocaml.warning "-4"];
+
+      Lwt.wakeup notify_listening_socket_closed ();
       Lwt.return_unit
   in
 
-  let started, signal_started = Lwt.wait () in
+  let server =
+    {shutdown =
+      lazy begin
+        Lwt.wakeup notify_should_stop `Should_stop;
+        wait_until_listening_socket_closed
+      end}
+  in
+
+  (* Start the server: listen, and begin the accept loop. *)
+  let server_has_started, notify_server_has_started = Lwt.wait () in
+
   Lwt.ignore_result begin
-    bind sock sockaddr >>= fun () ->
-    Lwt_unix.listen sock backlog;
-    Lwt.wakeup signal_started ();
-    loop ()
+    bind_function listening_socket listening_address >>= fun () ->
+    Lwt_unix.listen listening_socket backlog;
+
+    Lwt.wakeup notify_server_has_started ();
+
+    accept_loop ()
   end;
 
-  let server = {shutdown = lazy (Lwt.wakeup abort_wakener (); closed_waiter)} in
-
-  server, started
+  server, server_has_started
 
 (* Old, deprecated version of [establish_server]. This function has to persist
    for a while, in some form, until it is no longer exposed as
@@ -1619,7 +1669,7 @@ let establish_server_deprecated ?fd ?buffer_size ?backlog sockaddr f =
     Lwt.return (Lwt_unix.Versioned.bind_1 fd addr) [@ocaml.warning "-3"]
   in
   let f _addr c = f c in
-  establish_server_base blocking_bind ?fd ?buffer_size ?backlog sockaddr f
+  establish_server_generic blocking_bind ?fd ?buffer_size ?backlog sockaddr f
   |> fst
 
 let establish_server_with_client_address
@@ -1660,7 +1710,7 @@ let establish_server_with_client_address
   in
 
   let server, started =
-    establish_server_base
+    establish_server_generic
       Lwt_unix.bind ?fd ?buffer_size ?backlog sockaddr handler
   in
   started >>= fun () ->
