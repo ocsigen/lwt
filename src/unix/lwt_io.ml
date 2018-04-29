@@ -1635,29 +1635,27 @@ let establish_server_generic
         ()
       end [@ocaml.warning "-4"];
 
-      Lwt.wakeup notify_listening_socket_closed ();
+      Lwt.wakeup_later notify_listening_socket_closed ();
       Lwt.return_unit
   in
 
   let server =
     {shutdown =
       lazy begin
-        Lwt.wakeup notify_should_stop `Should_stop;
+        Lwt.wakeup_later notify_should_stop `Should_stop;
         wait_until_listening_socket_closed
       end}
   in
 
-  (* Start the server: listen, and begin the accept loop. *)
-  let server_has_started, notify_server_has_started = Lwt.wait () in
-
-  Lwt.ignore_result begin
+  (* Actually start the server. *)
+  let server_has_started =
     bind_function listening_socket listening_address >>= fun () ->
     Lwt_unix.listen listening_socket backlog;
 
-    Lwt.wakeup notify_server_has_started ();
+    Lwt.async accept_loop;
 
-    accept_loop ()
-  end;
+    Lwt.return_unit
+  in
 
   server, server_has_started
 
@@ -1669,8 +1667,15 @@ let establish_server_deprecated ?fd ?buffer_size ?backlog sockaddr f =
     Lwt.return (Lwt_unix.Versioned.bind_1 fd addr) [@ocaml.warning "-3"]
   in
   let f _addr c = f c in
-  establish_server_generic blocking_bind ?fd ?buffer_size ?backlog sockaddr f
-  |> fst
+
+  let server, server_started =
+    establish_server_generic blocking_bind ?fd ?buffer_size ?backlog sockaddr f
+  in
+
+  (* Poll for exceptions in server startup that may have occurred synchronously.
+     This emulates an old, deprecated behavior. *)
+  Lwt.ignore_result server_started;
+  server
 
 let establish_server_with_client_address
     ?fd ?buffer_size ?backlog ?(no_close = false) sockaddr f =
