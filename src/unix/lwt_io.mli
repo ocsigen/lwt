@@ -530,35 +530,33 @@ val with_close_connection :
 type server
   (** Type of a server *)
 
-val establish_server_with_client_address :
-  ?fd : Lwt_unix.file_descr ->
-  ?buffer_size : int ->
-  ?backlog : int ->
-  ?no_close : bool ->
+val establish_server_with_client_socket :
+  ?server_fd:Lwt_unix.file_descr ->
+  ?backlog:int ->
+  ?no_close:bool ->
   Unix.sockaddr ->
-  (Lwt_unix.sockaddr -> input_channel * output_channel -> unit Lwt.t) ->
+  (Lwt_unix.sockaddr -> Lwt_unix.file_descr -> unit Lwt.t) ->
     server Lwt.t
-(** [establish_server_with_client_address listen_address f] creates a server
+(** [establish_server_with_client_socket listen_address f] creates a server
     which listens for incoming connections on [listen_address]. When a client
     makes a new connection, it is passed to [f]: more precisely, the server
     calls
 
 {[
-f client_address (in_channel, out_channel)
+f client_address client_socket
 ]}
 
     where [client_address] is the address (peer name) of the new client, and
-    [in_channel] and [out_channel] are two channels wrapping the socket for
-    communicating with that client.
+    [client_socket] is the socket connected to the client.
 
     The server does not block waiting for [f] to complete: it concurrently tries
     to accept more client connections while [f] is handling the client.
 
     When the promise returned by [f] completes (i.e., [f] is done handling the
-    client), [establish_server_with_client_address] automatically closes
-    [in_channel] and [out_channel]. This is a default behavior that is useful
-    for simple cases, but for a robust application you should explicitly close
-    these channels yourself, and handle any exceptions. If the channels are
+    client), [establish_server_with_client_socket] automatically closes
+    [client_socket]. This is a default behavior that is useful for simple cases,
+    but for a robust application you should explicitly close these channels
+    yourself, and handle any exceptions as appropriate. If the channels are
     still open when [f] completes, and their automatic closing raises an
     exception, [establish_server_with_client_address] treats it as an unhandled
     exception reaching the top level of the application: it passes that
@@ -571,14 +569,33 @@ f client_address (in_channel, out_channel)
     an exception), [establish_server_with_client_address] can do nothing with
     that exception, except pass it to {!Lwt.async_exception_hook}.
 
-    [~fd] can be specified to use an existing file descriptor for listening.
-    Otherwise, a fresh socket is created internally.
+    [~server_fd] can be specified to use an existing file descriptor for
+    listening. Otherwise, a fresh socket is created internally. In either case,
+    [establish_server_with_client_socket] will internally assign
+    [listen_address] to the server socket.
 
     [~backlog] is the argument passed to {!Lwt_unix.listen}.
 
     The returned promise (a [server Lwt.t]) resolves when the server has just
     started listening on [listen_address]: right after the internal call to
     [listen], and right before the first internal call to [accept].
+
+    @since 4.1.0 *)
+
+val establish_server_with_client_address :
+  ?fd:Lwt_unix.file_descr ->
+  ?buffer_size:int ->
+  ?backlog:int ->
+  ?no_close:bool ->
+  Unix.sockaddr ->
+  (Lwt_unix.sockaddr -> input_channel * output_channel -> unit Lwt.t) ->
+    server Lwt.t
+(** Like {!Lwt_io.establish_server_with_client_socket}, but passes two buffered
+    channels to the connection handler [f]. These channels wrap the client
+    socket.
+
+    The channels are closed automatically when the promise returned by [f]
+    resolves. To avoid this behavior, pass [~no_close:true].
 
     @since 3.1.0 *)
 
@@ -714,7 +731,7 @@ val establish_server :
   [@@ocaml.deprecated
 "  Since Lwt 3.1.0, use Lwt_io.establish_server_with_client_address"]
 (** Like [establish_server_with_client_address], but does not pass the client
-    address to the callback [f].
+    address or fd to the callback [f].
 
     @deprecated Use {!establish_server_with_client_address}.
     @since 3.0.0 *)
