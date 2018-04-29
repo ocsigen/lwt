@@ -1565,7 +1565,6 @@ let shutdown_server_deprecated server =
 let establish_server_generic
     bind_function
     ?fd:preexisting_socket_for_listening
-    ?(buffer_size = !default_buffer_size)
     ?(backlog = 5)
     listening_address
     connection_handler_callback =
@@ -1604,24 +1603,7 @@ let establish_server_generic
         with Invalid_argument _ -> ()
       end;
 
-      let close = lazy (close_socket client_socket) in
-      let input_channel =
-        of_fd
-          ~buffer:(Lwt_bytes.create buffer_size)
-          ~mode:input
-          ~close:(fun () -> Lazy.force close)
-          client_socket
-      in
-      let output_channel =
-        of_fd
-          ~buffer:(Lwt_bytes.create buffer_size)
-          ~mode:output
-          ~close:(fun () -> Lazy.force close)
-          client_socket
-      in
-
-      connection_handler_callback
-        client_address (input_channel, output_channel);
+      connection_handler_callback client_address client_socket;
 
       accept_loop ()
 
@@ -1659,8 +1641,49 @@ let establish_server_generic
 
   server, server_has_started
 
-let establish_server_with_client_address
-    ?fd ?buffer_size ?backlog ?(no_close = false) sockaddr f =
+let establish_server_with_client_socket
+    ?server_fd ?backlog ?(no_close = false) sockaddr f =
+  let handler client_address client_socket =
+    Lwt.async begin fun () ->
+      (* Not using Lwt.finalize here, to make sure that exceptions from [f]
+         reach !Lwt.async_exception_hook before exceptions from closing the
+         channels. *)
+      Lwt.catch
+        (fun () -> f client_address client_socket)
+        (fun exn ->
+          !Lwt.async_exception_hook exn;
+          Lwt.return_unit)
+
+      >>= fun () ->
+      if no_close then Lwt.return_unit
+      else
+        if Lwt_unix.state client_socket = Lwt_unix.Closed then
+          Lwt.return_unit
+        else
+          Lwt.catch
+            (fun () -> close_socket client_socket)
+            (fun exn ->
+              !Lwt.async_exception_hook exn;
+              Lwt.return_unit)
+    end
+  in
+
+  let server, server_started =
+    establish_server_generic
+      Lwt_unix.bind ?fd:server_fd ?backlog sockaddr handler
+  in
+  server_started >>= fun () ->
+  Lwt.return server
+
+let establish_server_with_client_address_generic
+    bind_function
+    ?fd
+    ?(buffer_size = !default_buffer_size)
+    ?backlog
+    ?(no_close = false)
+    sockaddr
+    handler =
+
   let best_effort_close channel =
     (* First, check whether the channel is closed. f may have already tried to
        close the channel, received an exception, and handled it somehow. If so,
@@ -1674,20 +1697,37 @@ let establish_server_with_client_address
       Lwt.catch
         (fun () -> close channel)
         (fun exn ->
-           !Lwt.async_exception_hook exn;
-           Lwt.return_unit)
+          !Lwt.async_exception_hook exn;
+          Lwt.return_unit)
   in
 
-  let handler addr ((input_channel, output_channel) as channels) =
+  let handler client_address client_socket =
     Lwt.async (fun () ->
+      let close = lazy (close_socket client_socket) in
+      let input_channel =
+        of_fd
+          ~buffer:(Lwt_bytes.create buffer_size)
+          ~mode:input
+          ~close:(fun () -> Lazy.force close)
+          client_socket
+      in
+      let output_channel =
+        of_fd
+          ~buffer:(Lwt_bytes.create buffer_size)
+          ~mode:output
+          ~close:(fun () -> Lazy.force close)
+          client_socket
+      in
+
       (* Not using Lwt.finalize here, to make sure that exceptions from [f]
          reach !Lwt.async_exception_hook before exceptions from closing the
          channels. *)
       Lwt.catch
-        (fun () -> f addr channels)
+        (fun () ->
+          handler client_address (input_channel, output_channel))
         (fun exn ->
-           !Lwt.async_exception_hook exn;
-           Lwt.return_unit)
+          !Lwt.async_exception_hook exn;
+          Lwt.return_unit)
 
       >>= fun () ->
       if no_close then Lwt.return_unit
@@ -1696,11 +1736,15 @@ let establish_server_with_client_address
         best_effort_close output_channel)
   in
 
-  let server, started =
-    establish_server_generic
-      Lwt_unix.bind ?fd ?buffer_size ?backlog sockaddr handler
+  establish_server_generic bind_function ?fd ?backlog sockaddr handler
+
+let establish_server_with_client_address
+    ?fd ?buffer_size ?backlog ?no_close sockaddr handler =
+  let server, server_started =
+    establish_server_with_client_address_generic
+      Lwt_unix.bind ?fd ?buffer_size ?backlog ?no_close sockaddr handler
   in
-  started >>= fun () ->
+  server_started >>= fun () ->
   Lwt.return server
 
 let establish_server ?fd ?buffer_size ?backlog ?no_close sockaddr f =
@@ -1715,10 +1759,14 @@ let establish_server_deprecated ?fd ?buffer_size ?backlog sockaddr f =
   let blocking_bind fd addr =
     Lwt.return (Lwt_unix.Versioned.bind_1 fd addr) [@ocaml.warning "-3"]
   in
-  let f _addr c = f c in
+  let f _addr c =
+    f c;
+    Lwt.return_unit
+  in
 
   let server, server_started =
-    establish_server_generic blocking_bind ?fd ?buffer_size ?backlog sockaddr f
+    establish_server_with_client_address_generic
+      blocking_bind ?fd ?buffer_size ?backlog ~no_close:true sockaddr f
   in
 
   (* Poll for exceptions in server startup that may have occurred synchronously.
