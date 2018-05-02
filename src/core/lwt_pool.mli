@@ -81,13 +81,20 @@ val use : 'a t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
   (** [use p f] requests one free element of the pool [p] and gives it to
       the function [f]. The element is put back into the pool after the
       promise created by [f] completes.
-      
-      In case the resource supplied to [f] is no longer valid and to be disposed
-      of, [f] can throw a [Resource_invalid] exception.
+
+      In case the resource supplied to [f] is no longer valid, [f] can throw a
+      [Resource_invalid] exception in which case the resource is disposed of.
+      The exception is re-reraised if [retry] is not set to [true] (see below).
+
+      If [retry] is set to [true] (default [false]), in case [f] raises a
+      [Resource_invalid] exception [use] will re-attempt to acquire another
+      resource (after disposing the invalid one) and run [f] again on that
+      resource. Be reminded to take into account any side-effects [f] might have
+      had until it raised the exception. Also note that this process may go on
+      indefinitely if [f] keeps on raisid the [Resource_invalid] exception.
 
       In the case that [p] is exhausted and the maximum number of elements
       is reached, [use] will wait until one becomes free. *)
->>>>>>> 9a535492... Lwt_pool: exception for disposing of invalid resources
 
 val clear : 'a t -> unit Lwt.t
   (** [clear p] will clear all elements in [p], calling the [dispose] function
