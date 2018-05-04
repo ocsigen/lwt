@@ -413,9 +413,9 @@ val open_file :
     ([~mode:Input]). It is also recommended to include [O_NONBLOCK], unless you
     are sure that the file cannot be a socket or a named pipe.
 
-    The default permissions used for creating new files are [0666], i.e. reading
-    and writing are allowed for the file owner, group, and everyone. These
-    default permissions can be overridden by supplying [~perm].
+    The default permissions used for creating new files are [0o666], i.e.
+    reading and writing are allowed for the file owner, group, and everyone.
+    These default permissions can be overridden by supplying [~perm].
 
     Note: if opening for writing ([~mode:Output]), and the file already exists,
     [open_file] truncates (clears) the file by default. If you would like to
