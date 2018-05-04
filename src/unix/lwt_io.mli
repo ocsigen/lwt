@@ -392,35 +392,53 @@ type file_name = string
     (** Type of file names *)
 
 val open_file :
-  ?buffer : Lwt_bytes.t ->
-  ?flags : Unix.open_flag list ->
-  ?perm : Unix.file_perm ->
-  mode : 'a mode ->
-  file_name -> 'a channel Lwt.t
-(** [open_file ?buffer ?flags ?perm ~mode filename] opens the file with name
-    [filename], and returns a channel for either reading or writing it.
+  ?buffer:Lwt_bytes.t ->
+  ?flags:Unix.open_flag list ->
+  ?perm:Unix.file_perm ->
+  mode:'a mode ->
+  file_name ->
+    'a channel Lwt.t
+(** [Lwt_io.open_file ~mode file] opens the given file, either for reading (with
+    [~mode:Input]) or for writing (with [~mode:Output]). The returned channel
+    provides buffered I/O on the file.
+
+    If [~buffer] is supplied, it is used as the I/O buffer.
+
+    If [~flags] is supplied, the file is opened with the given flags (see
+    {{: https://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#TYPEopen_flag}
+    [Unix.open_flag]}). Note that [~flags] is used {e exactly} as given. For
+    example, opening a file with [~flags] and [~mode:Input] does {e not}
+    implicitly add [O_RDONLY]. So, you should include [O_RDONLY] when opening
+    for reading ([~mode:Input]), and [O_WRONLY] when opening for writing
+    ([~mode:Input]). It is also recommended to include [O_NONBLOCK], unless you
+    are sure that the file cannot be a socket or a named pipe.
+
+    The default permissions used for creating new files are [0666], i.e. reading
+    and writing are allowed for the file owner, group, and everyone. These
+    default permissions can be overridden by supplying [~perm].
 
     Note: if opening for writing ([~mode:Output]), and the file already exists,
     [open_file] truncates (clears) the file by default. If you would like to
-    keep the pre-existing contents of the file, use the [?flags] parameter to
+    keep the pre-existing contents of the file, use the [~flags] parameter to
     pass a custom flags list that does not include [Unix.O_TRUNC].
 
     @raise Unix.Unix_error on error. *)
 
 val with_file :
-  ?buffer : Lwt_bytes.t ->
-  ?flags : Unix.open_flag list ->
-  ?perm : Unix.file_perm ->
-  mode : 'a mode ->
-  file_name -> ('a channel -> 'b Lwt.t) -> 'b Lwt.t
-(** [with_file ?buffer ?flags ?perm ~mode filename f] opens a file and passes
-    the channel to [f]. It is ensured that the channel is closed when [f ch]
-    resolves (even if it is rejected, or if [f] raises an exception).
+  ?buffer:Lwt_bytes.t ->
+  ?flags:Unix.open_flag list ->
+  ?perm:Unix.file_perm ->
+  mode:'a mode ->
+  file_name ->
+  ('a channel -> 'b Lwt.t) ->
+    'b Lwt.t
+(** [Lwt_io.with_file ~mode filename f] opens the given using
+    {!Lwt_io.open_file}, and passes the resulting channel to [f].
+    [Lwt_io.with_file] ensures that the channel is closed when the promise
+    returned by [f] resolves, or if [f] raises an exception.
 
-    Note: if opening for writing ([~mode:Output]), and the file already exists,
-    [with_file] truncates (clears) the file by default. If you would like to
-    keep the pre-existing contents of the file, use the [?flags] parameter to
-    pass a custom flags list that does not include [Unix.O_TRUNC]. *)
+    See {!Lwt_io.open_file} for a description of the arguments, warnings, and
+    other notes. *)
 
 val open_temp_file :
   ?buffer:Lwt_bytes.t ->
