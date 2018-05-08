@@ -11,7 +11,7 @@
     This Ppx extension adds various syntactic shortcut for lwt programming.
     It needs OCaml >= 4.02 and {{:https://github.com/alainfrisch/ppx_tools}ppx_tools}.
 
-    To use it, simply use the ocamlfind package [lwt.ppx].
+    To use it, simply use the ocamlfind package [lwt_ppx].
 
    This extension adds the following syntax:
 

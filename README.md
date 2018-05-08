@@ -42,7 +42,7 @@ let () =
   | Some response -> print_string response
   | None -> prerr_endline "Request timed out"; exit 1
 
-(* ocamlfind opt -package lwt.unix -package lwt.ppx -linkpkg -o request example.ml
+(* ocamlfind opt -package lwt.unix -package lwt_ppx -linkpkg -o request example.ml
    ./request *)
 ```
 
