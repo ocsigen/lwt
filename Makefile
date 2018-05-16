@@ -93,6 +93,7 @@ BISECT_FILES_PATTERN := _build/default/test/*/bisect*.out
 
 .PHONY: coverage
 coverage: clean check-config
+	BISECT_ENABLE=yes make build
 	BISECT_ENABLE=yes jbuilder runtest --dev -j 1 --no-buffer
 	bisect-ppx-report \
 	    -I _build/default/ -html _coverage/ \
