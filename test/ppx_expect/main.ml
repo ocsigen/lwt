@@ -1,4 +1,5 @@
 let test_directory = "cases"
+let package_directory = "../../../../install/default/lib"
 
 let _read_file name =
   let buffer = Buffer.create 4096 in
@@ -40,18 +41,23 @@ let diff reference result =
   | 1 ->
     let _ : int =_run_int (command ^ " > delta") in
     let delta = _read_file "delta" in
-    Printf.sprintf "> %s:\n\n%s" command delta
-    |> failwith
+    Printf.eprintf "> %s:\n\n%s" command delta;
+    failwith "Output does not match expected"
   | _ -> _command_failed command ~status
 
 let run_test name =
   let ml_name = name ^ ".ml" in
   let expect_name = name ^ ".expect" in
   let fixed_name = name ^ ".fixed" in
-  let command = Printf.sprintf "ocaml -noinit %s 2> %s" ml_name fixed_name in
+  let command =
+    Printf.sprintf
+      "OCAMLPATH=%s ocamlfind opt %s -linkpkg -package lwt,lwt_ppx %s > %s 2>&1"
+      package_directory "-color=never" ml_name fixed_name
+  in
   let ocaml_return_code = _run_int command in
   begin if ocaml_return_code = 0 then
-      failwith (Printf.sprintf "Unexpected toplevel return code: %d" ocaml_return_code)
+    failwith
+      (Printf.sprintf "Unexpected compiler return code: %d" ocaml_return_code)
   end;
   diff expect_name fixed_name
 
