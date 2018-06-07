@@ -82,7 +82,7 @@ exception Resource_invalid
 
 val use :
   ?creation_attempts:int ->
-  ?retry:bool ->
+  ?usage_attempts:int ->
   'a t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
   (** [use p f] requests one free element of the pool [p] and gives it to
       the function [f]. The element is put back into the pool after the
@@ -90,18 +90,16 @@ val use :
 
       In case the resource supplied to [f] is no longer valid, [f] can throw a
       [Resource_invalid] exception in which case the resource is disposed of.
-      The exception is re-reraised if [retry] is not set to [true] (see below).
 
       The parameter [creation_attempts] (default: [1]) controls the number of
       resource creation attempts that are made in case the creation function
       raises the [Resource_invalid] exception.
 
-      If [retry] is set to [true] (default [false]), in case [f] raises a
-      [Resource_invalid] exception [use] will re-attempt to acquire another
-      resource (after disposing the invalid one) and run [f] again on that
-      resource. Be reminded to take into account any side-effects [f] might have
-      had until it raised the exception. Also note that this process may go on
-      indefinitely if [f] keeps on raisid the [Resource_invalid] exception.
+      The parameter [usage_attempts] (default: [1]) controls the number of
+      attempts that are made in case [f] raises the [Resource_invalid]
+      exception. After each attempt the resource is disposed of. Be reminded to
+      take into account any side-effects [f] might have already trigged before
+      raising the exception.
 
       In the case that [p] is exhausted and the maximum number of elements
       is reached, [use] will wait until one becomes free. *)
