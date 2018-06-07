@@ -52,7 +52,10 @@ val create :
   (unit -> 'a Lwt.t) -> 'a t
   (** [create n ?check ?validate ?dispose f] creates a new pool with at most
       [n] elements. [f] is used to create a new pool element.  Elements are
-      created on demand and re-used until disposed of.
+      created on demand and re-used until disposed of. [f] may raise the
+      exception [Resource_invalid] to signal a failed resource creation. In this
+      case [use] will re-attempt to create the resource (according to
+      [creation_attempts]).
 
       @param validate is called each time a pool element is accessed by {!use},
       before the element is provided to {!use}'s callback.  If
@@ -77,7 +80,10 @@ val create :
       is no longer valid and therefore to be disposed of *)
 exception Resource_invalid
 
-val use : 'a t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
+val use :
+  ?creation_attempts:int ->
+  ?retry:bool ->
+  'a t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
   (** [use p f] requests one free element of the pool [p] and gives it to
       the function [f]. The element is put back into the pool after the
       promise created by [f] completes.
@@ -85,6 +91,10 @@ val use : 'a t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
       In case the resource supplied to [f] is no longer valid, [f] can throw a
       [Resource_invalid] exception in which case the resource is disposed of.
       The exception is re-reraised if [retry] is not set to [true] (see below).
+
+      The parameter [creation_attempts] (default: [1]) controls the number of
+      resource creation attempts that are made in case the creation function
+      raises the [Resource_invalid] exception.
 
       If [retry] is set to [true] (default [false]), in case [f] raises a
       [Resource_invalid] exception [use] will re-attempt to acquire another
