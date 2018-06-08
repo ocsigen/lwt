@@ -186,6 +186,12 @@ let lwt_expression mapper exp attributes =
         | {pc_lhs = [%pat? exception [%p? _]]; _} -> true
         | _ -> false)
     in
+    if cases = [] then
+        raise (Location.Error (
+          Location.errorf
+            ~loc:exp.pexp_loc
+            "match%%lwt must contain at least one non-exception pattern."
+        ));
     let exns =
       exns |> List.map (
         function
