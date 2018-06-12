@@ -73,7 +73,7 @@ let () =
     Sys.cygwin = false && Sys.win32 = false &&
     (* 4.02.3 prints file paths differently *)
     Scanf.sscanf Sys.ocaml_version "%u.%u"
-      (fun major minor -> (major, minor) >= (4, 3))
+      (fun major minor -> (major, minor) >= (4, 4))
   in
   let suite = Test.suite "ppx_expect" (
     List.map (fun test_case ->
