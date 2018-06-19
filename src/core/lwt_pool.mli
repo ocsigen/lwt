@@ -76,6 +76,9 @@ val create :
       should be used if the elements of the pool need to be explicitly disposed
       of. *)
 
+(** set the maximum size of the pool *)
+val set_max : 'a t -> int -> unit
+
   (** exception to be thrown by the function supplied to [use] when a resource
       is no longer valid and therefore to be disposed of *)
 exception Resource_invalid

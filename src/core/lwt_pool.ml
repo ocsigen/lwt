@@ -25,7 +25,7 @@ type 'a t = {
   (* Dispose of a pool member. *)
   cleared : bool ref ref;
   (* Have the current pool elements been cleared out? *)
-  max : int;
+  mutable max : int;
   (* Size of the pool. *)
   mutable count : int;
   (* Number of elements in the pool. *)
@@ -45,6 +45,8 @@ let create m ?(validate = fun _ -> Lwt.return_true) ?(check = fun _ f -> f true)
     count = 0;
     list = Queue.create ();
     waiters = Lwt_sequence.create () }
+
+let set_max p n = p.max <- n
 
 (* Create a pool member. *)
 let create_member p =
