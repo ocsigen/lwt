@@ -17,7 +17,10 @@ type 'a t
     This module may undergo redesign or deprecation in the future. See
     {{:https://github.com/ocsigen/lwt/issues/250} Flaws of [Lwt_stream]}. In
     the meantime, you may want to consider using alternatives such as
-    {{:https://github.com/c-cube/lwt-pipe} lwt-pipe}. *)
+    {{:https://github.com/c-cube/lwt-pipe} lwt-pipe}. [Lwt_stream] will remain
+    stable for the foreseeable future, but we would like to encourage users to
+    try alternatives such as lwt-pipe, to collect feedback for those
+    projects. *)
 
 (** {2 Construction} *)
 
