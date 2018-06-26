@@ -1,3 +1,23 @@
+===== 4.1.0 (2018-06-26) =====
+
+====== Additions ======
+
+  * Change license to MIT (#560).
+  * Lwt_fmt, an Lwt-aware version of Format (#548, Gabriel Radanne).
+  * Lwt_io.establish_server_with_client_socket (#586).
+
+====== Bugs fixed ======
+
+  * Lwt_stream.iter_n: rename ?max_threads argument to ?max_concurrency (#581,
+    Hezekiah Carty).
+  * PPX: reject match expressions that have only exception cases (#597, Raphaël
+    Proust).
+
+====== Miscellaneous ======
+
+  * Improvements to Lwt_pool docs (#575, Bobby Priambodo).
+  * Restore all PPX tests (#590, Jess Smith).
+
 ===== 4.0.1 (2018-04-13) =====
 
 ====== Bugs fixed ======
