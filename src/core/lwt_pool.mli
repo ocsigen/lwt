@@ -52,7 +52,10 @@ val create :
   (unit -> 'a Lwt.t) -> 'a t
   (** [create n ?check ?validate ?dispose f] creates a new pool with at most
       [n] elements. [f] is used to create a new pool element.  Elements are
-      created on demand and re-used until disposed of.
+      created on demand and re-used until disposed of. [f] may raise the
+      exception [Resource_invalid] to signal a failed resource creation. In this
+      case [use] will re-attempt to create the resource (according to
+      [creation_attempts]).
 
       @param validate is called each time a pool element is accessed by {!use},
       before the element is provided to {!use}'s callback.  If
@@ -73,10 +76,33 @@ val create :
       should be used if the elements of the pool need to be explicitly disposed
       of. *)
 
-val use : 'a t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
+(** set the maximum size of the pool *)
+val set_max : 'a t -> int -> unit
+
+  (** exception to be thrown by the function supplied to [use] when a resource
+      is no longer valid and therefore to be disposed of *)
+exception Resource_invalid
+
+val use :
+  ?creation_attempts:int ->
+  ?usage_attempts:int ->
+  'a t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
   (** [use p f] requests one free element of the pool [p] and gives it to
       the function [f]. The element is put back into the pool after the
       promise created by [f] completes.
+
+      In case the resource supplied to [f] is no longer valid, [f] can throw a
+      [Resource_invalid] exception in which case the resource is disposed of.
+
+      The parameter [creation_attempts] (default: [1]) controls the number of
+      resource creation attempts that are made in case the creation function
+      raises the [Resource_invalid] exception.
+
+      The parameter [usage_attempts] (default: [1]) controls the number of
+      attempts that are made in case [f] raises the [Resource_invalid]
+      exception. After each attempt the resource is disposed of. Be reminded to
+      take into account any side-effects [f] might have already trigged before
+      raising the exception.
 
       In the case that [p] is exhausted and the maximum number of elements
       is reached, [use] will wait until one becomes free. *)
@@ -91,6 +117,15 @@ val clear : 'a t -> unit Lwt.t
       pool element.
 
       Disposals are performed sequentially in an undefined order. *)
+
+exception Resource_limit_exceeded
+
+val add : ?omit_max_check:bool -> 'a t -> 'a -> unit
+  (** By [add p c] you can add an existing resource element [c] to pool [p].
+      This function may raise a [Resource_limit_exceeded] exception. If
+      [omit_max_check] is [true] (default: [false]), then this exception will
+      not be raised. Instead the maximum number of resources might be exceeded
+      and more than [p.max] elements will be available to the user. *)
 
 val wait_queue_length : _ t -> int
   (** [wait_queue_length p] returns the number of {!use} requests currently

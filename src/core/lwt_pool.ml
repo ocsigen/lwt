@@ -25,7 +25,7 @@ type 'a t = {
   (* Dispose of a pool member. *)
   cleared : bool ref ref;
   (* Have the current pool elements been cleared out? *)
-  max : int;
+  mutable max : int;
   (* Size of the pool. *)
   mutable count : int;
   (* Number of elements in the pool. *)
@@ -45,6 +45,8 @@ let create m ?(validate = fun _ -> Lwt.return_true) ?(check = fun _ f -> f true)
     count = 0;
     list = Queue.create ();
     waiters = Lwt_sequence.create () }
+
+let set_max p n = p.max <- n
 
 (* Create a pool member. *)
 let create_member p =
@@ -68,6 +70,13 @@ let release p c =
   | None ->
     (* No one is waiting, queue it. *)
     Queue.push c p.list
+
+exception Resource_limit_exceeded
+
+let add ?(omit_max_check = false) p c =
+  if not omit_max_check && p.count >= p.max then raise Resource_limit_exceeded;
+  p.count <- p.count + 1;
+  release p c
 
 (* Dispose of a pool member. *)
 let dispose p c =
@@ -110,20 +119,30 @@ let validate_and_return p c =
          replace_disposed p;
          Lwt.fail e)
 
+exception Resource_invalid
+
 (* Acquire a pool member. *)
-let acquire p =
-  if Queue.is_empty p.list then
-    (* No more available member. *)
-    if p.count < p.max then
-      (* Limit not reached: create a new one. *)
-      create_member p
+let acquire ~attempts p =
+  assert (attempts > 0);
+  let once () =
+    if Queue.is_empty p.list then
+      (* No more available member. *)
+      if p.count < p.max then
+        (* Limit not reached: create a new one. *)
+        create_member p
+      else
+        (* Limit reached: wait for a free one. *)
+        (Lwt.add_task_r [@ocaml.warning "-3"]) p.waiters >>= validate_and_return p
     else
-      (* Limit reached: wait for a free one. *)
-      (Lwt.add_task_r [@ocaml.warning "-3"]) p.waiters >>= validate_and_return p
-  else
-    (* Take the first free member and validate it. *)
-    let c = Queue.take p.list in
-    validate_and_return p c
+      (* Take the first free member and validate it. *)
+      let c = Queue.take p.list in
+      validate_and_return p c
+  in
+  let rec keep_trying attempts =
+    if attempts > 0
+      then try once () with Resource_invalid -> keep_trying (attempts - 1)
+      else Lwt.fail Resource_invalid
+  in keep_trying attempts
 
 (* Release a member when use resulted in failed promise if the member
    is still valid. *)
@@ -140,27 +159,34 @@ let check_and_release p c cleared =
     Lwt.return_unit
   )
 
-let use p f =
-  acquire p >>= fun c ->
+let use ?(creation_attempts = 1) ?(usage_attempts = 1) p f =
+  assert (usage_attempts > 0);
+  let cleared = !(p.cleared) in
   (* Capture the current cleared state so we can see if it changes while this
      element is in use *)
-  let cleared = !(p.cleared) in
-  let promise =
+  let rec make_promise attempts =
+    if attempts <= 0 then Lwt.fail Resource_invalid else
+    acquire ~attempts:creation_attempts p >>= fun c ->
     Lwt.catch
-      (fun () -> f c)
-      (fun e ->
-         check_and_release p c !cleared >>= fun () ->
-         Lwt.fail e)
+      (fun () -> f c >>= fun res -> Lwt.return (c,res))
+      (function
+         | Resource_invalid ->
+             dispose p c >>= fun () ->
+             make_promise (attempts - 1)
+         | e ->
+             check_and_release p c !cleared >>= fun () ->
+             Lwt.fail e)
   in
-  promise >>= fun _ ->
+  let promise = make_promise usage_attempts in
+  promise >>= fun (c,_) ->
   if !cleared then (
     (* p was cleared while promise was resolving - dispose of this element *)
     dispose p c >>= fun () ->
-    promise
+    Lwt.map snd promise
   )
   else (
     release p c;
-    promise
+    Lwt.map snd promise
   )
 
 let clear p =
