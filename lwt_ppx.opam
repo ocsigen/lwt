@@ -13,7 +13,7 @@ bug-reports: "https://github.com/ocsigen/lwt/issues"
 license: "LGPL with OpenSSL linking exception"
 
 depends: [
-  "jbuilder" {build & >= "1.0+beta12"}
+  "jbuilder" {build & >= "1.0+beta14"}
   "lwt"
   "ocaml-migrate-parsetree"
   "ppx_tools_versioned" {>= "5.0.1"}
