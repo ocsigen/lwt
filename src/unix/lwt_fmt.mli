@@ -39,8 +39,11 @@ val make_stream : unit -> order Lwt_stream.t * formatter
 val of_channel : Lwt_io.output_channel -> formatter
 (** [of_channel oc] creates a formatter that writes to the channel [oc]. *)
 
-val stdout : formatter (** Formatter printing on {!Lwt_io.stdout}. *)
-val stderr : formatter (** Formatter printing on {!Lwt_io.stdout}. *)
+val stdout : formatter
+(** Formatter printing on {!Lwt_io.stdout}. *)
+
+val stderr : formatter
+(** Formatter printing on {!Lwt_io.stdout}. *)
 
 val make_formatter :
   commit:(unit -> unit Lwt.t) -> fmt:Format.formatter -> unit -> formatter
