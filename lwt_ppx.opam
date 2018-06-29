@@ -10,7 +10,7 @@ homepage: "https://github.com/ocsigen/lwt"
 doc: "https://ocsigen.org/lwt/api/Ppx_lwt"
 dev-repo: "https://github.com/ocsigen/lwt.git"
 bug-reports: "https://github.com/ocsigen/lwt/issues"
-license: "LGPL with OpenSSL linking exception"
+license: "MIT"
 
 depends: [
   "jbuilder" {build & >= "1.0+beta14"}
