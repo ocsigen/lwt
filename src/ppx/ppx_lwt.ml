@@ -143,18 +143,19 @@ let gen_top_binds vbs =
   [Vb.mk (Pat.tuple (vbs |> List.map (fun { pvb_pat; _ } -> pvb_pat)))
      [%expr Lwt_main.run [%e gen_exp vbs 0]]]
 
-let lwt_sequence mapper ~lhs ~rhs =
+let lwt_sequence mapper ~exp ~lhs ~rhs =
   let lhs, rhs = mapper.expr mapper lhs, mapper.expr mapper rhs in
-  if !debug then
+  (if !debug then
     [%expr
       let module Reraise = struct external reraise : exn -> 'a = "%reraise" end in
       Lwt.backtrace_bind
         (fun exn -> try Reraise.reraise exn with exn -> exn)
         [%e lhs]
         (fun () -> [%e rhs])
-    ] [@metaloc lhs.pexp_loc]
+    ]
   else
-    [%expr Lwt.bind [%e lhs] (fun () -> [%e rhs])]
+    [%expr Lwt.bind [%e lhs] (fun () -> [%e rhs])])
+  [@metaloc exp.pexp_loc]
 
 (** For expressions only *)
 (* We only expand the first level after a %lwt.
@@ -166,7 +167,7 @@ let lwt_expression mapper exp attributes =
 
   (* $e$;%lwt $e'$ ≡ [Lwt.bind $e$ (fun $p$ -> $e'$)] *)
   | Pexp_sequence (lhs, rhs) ->
-     lwt_sequence mapper ~lhs ~rhs
+     lwt_sequence mapper ~exp ~lhs ~rhs
   (* [let%lwt $p$ = $e$ in $e'$] ≡ [Lwt.bind $e$ (fun $p$ -> $e'$)] *)
   | Pexp_let (Nonrecursive, vbl , e) ->
     let new_exp =
