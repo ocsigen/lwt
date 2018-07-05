@@ -143,7 +143,8 @@ let gen_top_binds vbs =
   [Vb.mk (Pat.tuple (vbs |> List.map (fun { pvb_pat; _ } -> pvb_pat)))
      [%expr Lwt_main.run [%e gen_exp vbs 0]]]
 
-let lwt_sequence mapper ~exp ~lhs ~rhs =
+let lwt_sequence mapper ~exp ~lhs ~rhs ~ext_loc =
+  let pat= [%pat? ()][@metaloc ext_loc] in
   let lhs, rhs = mapper.expr mapper lhs, mapper.expr mapper rhs in
   (if !debug then
     [%expr
@@ -151,23 +152,23 @@ let lwt_sequence mapper ~exp ~lhs ~rhs =
       Lwt.backtrace_bind
         (fun exn -> try Reraise.reraise exn with exn -> exn)
         [%e lhs]
-        (fun () -> [%e rhs])
+        (fun [%p pat] -> [%e rhs])
     ]
   else
-    [%expr Lwt.bind [%e lhs] (fun () -> [%e rhs])])
+    [%expr Lwt.bind [%e lhs] (fun [%p pat] -> [%e rhs])])
   [@metaloc exp.pexp_loc]
 
 (** For expressions only *)
 (* We only expand the first level after a %lwt.
    After that, we call the mapper to expand sub-expressions. *)
-let lwt_expression mapper exp attributes =
+let lwt_expression mapper exp attributes ext_loc =
   default_loc := exp.pexp_loc;
   let pexp_attributes = attributes @ exp.pexp_attributes in
   match exp.pexp_desc with
 
   (* $e$;%lwt $e'$ ≡ [Lwt.bind $e$ (fun $p$ -> $e'$)] *)
   | Pexp_sequence (lhs, rhs) ->
-     lwt_sequence mapper ~exp ~lhs ~rhs
+     lwt_sequence mapper ~exp ~lhs ~rhs ~ext_loc
   (* [let%lwt $p$ = $e$ in $e'$] ≡ [Lwt.bind $e$ (fun $p$ -> $e'$)] *)
   | Pexp_let (Nonrecursive, vbl , e) ->
     let new_exp =
@@ -421,9 +422,13 @@ let mapper =
 
     expr = (fun mapper expr ->
       match expr with
-      | [%expr [%lwt [%e? exp]]] ->
-        lwt_expression mapper exp expr.pexp_attributes
-
+      | { pexp_desc=
+            Pexp_extension (
+              {txt="lwt"; loc= ext_loc},
+              PStr[{pstr_desc= Pstr_eval (exp, _);_}]);
+          _
+        }->
+        lwt_expression mapper exp expr.pexp_attributes ext_loc
       (* [($e$)[%finally $f$]] ≡
          [Lwt.finalize (fun () -> $e$) (fun () -> $f$)] *)
       | [%expr [%e? exp ] [%finally     [%e? finally]] ]
