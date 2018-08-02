@@ -5,7 +5,12 @@ shallow_clone: true
 environment:
   matrix:
     - {SYSTEM: mingw, ARCH: x86_64, COMPILER: 4.03}
-    - {SYSTEM: cygwin, ARCH: x86, COMPILER: 4.04}
+    # Temporarily disabled. AppVeyor stopped hosting build artifacts
+    # indefinitely. We would have to upload the Cygwin packages to S3 or
+    # elsewhere. The most important build is MinGW anyway, because that is our
+    # only CI build testing Win32. See
+    #   https://ci.appveyor.com/project/aantron/lwt/branch/master/job/voa9bfgcllcbyjbn
+    # - {SYSTEM: cygwin, ARCH: x86, COMPILER: 4.04}
     # Temporary workaround; see commit message.
     # - {SYSTEM: cygwin, ARCH: x86, COMPILER: 4.04, LIBEV: yes}
 
