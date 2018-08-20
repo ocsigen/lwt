@@ -44,7 +44,7 @@ let suite = suite "lwt_event" [
        push 1;
        return (!l = [1]));
 
- test "limit_race"
+  test "limit_race"
     (fun () ->
        let l = ref [] in
        let event, push = Lwt_react.E.create() in
@@ -65,7 +65,7 @@ let suite = suite "lwt_event" [
        return (!l = [2;2;0]));
 
 
- test "of_stream"
+  test "of_stream"
     (fun () ->
        let stream, push = Lwt_stream.create () in
        let l = ref [] in
