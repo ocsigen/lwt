@@ -125,7 +125,7 @@ let iter_l f seq =
   let rec loop curr =
     if curr != seq then begin
       let node = node_of_seq curr in
-      if node.node_active then f node.node_data;
+      f node.node_data;
       loop node.node_next
     end
   in
@@ -135,7 +135,7 @@ let iter_r f seq =
   let rec loop curr =
     if curr != seq then begin
       let node = node_of_seq curr in
-      if node.node_active then f node.node_data;
+      f node.node_data;
       loop node.node_prev
     end
   in
@@ -145,7 +145,7 @@ let iter_node_l f seq =
   let rec loop curr =
     if curr != seq then begin
       let node = node_of_seq curr in
-      if node.node_active then f node;
+      f node;
       loop node.node_next
     end
   in
@@ -155,7 +155,7 @@ let iter_node_r f seq =
   let rec loop curr =
     if curr != seq then begin
       let node = node_of_seq curr in
-      if node.node_active then f node;
+      f node;
       loop node.node_prev
     end
   in
@@ -167,10 +167,7 @@ let fold_l f seq acc =
       acc
     else
       let node = node_of_seq curr in
-      if node.node_active then
-        loop node.node_next (f node.node_data acc)
-      else
-        loop node.node_next acc
+      loop node.node_next (f node.node_data acc)
   in
   loop seq.next acc
 
@@ -180,10 +177,7 @@ let fold_r f seq acc =
       acc
     else
       let node = node_of_seq curr in
-      if node.node_active then
-        loop node.node_prev (f node.node_data acc)
-      else
-        loop node.node_prev acc
+      loop node.node_prev (f node.node_data acc)
   in
   loop seq.prev acc
 
@@ -191,11 +185,8 @@ let find_node_l f seq =
   let rec loop curr =
     if curr != seq then
       let node = node_of_seq curr in
-      if node.node_active then
-        if f node.node_data then
-          node
-        else
-          loop node.node_next
+      if f node.node_data then
+        node
       else
         loop node.node_next
     else
@@ -207,11 +198,8 @@ let find_node_r f seq =
   let rec loop curr =
     if curr != seq then
       let node = node_of_seq curr in
-      if node.node_active then
-        if f node.node_data then
-          node
-        else
-          loop node.node_prev
+      if f node.node_data then
+        node
       else
         loop node.node_prev
     else
