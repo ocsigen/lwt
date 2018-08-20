@@ -52,7 +52,8 @@ module E = struct
              | None ->
                let cell = ref x in
                delayed := Some cell;
-               Lwt.on_success !limiter (fun () -> let x = !cell in delayed := None; limiter := f (); push x);
+               Lwt.on_success !limiter (fun () ->
+                   if Lwt.is_sleeping !limiter then delayed := None else let x = !cell in delayed := None; limiter := f (); push x);
                None
            end else begin
              (* Set the limiter for future events. *)
