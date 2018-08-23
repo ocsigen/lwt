@@ -8,25 +8,24 @@
 (** This module controls the ``main-loop'' of Lwt. *)
 
 val run : 'a Lwt.t -> 'a
-  (** [run p] calls the Lwt scheduler repeatedly until [p] resolves,
-      and returns the value of [p] if it is fulfilled. If [p] is rejected with
-      an exception, that exception is raised.
+  (** [Lwt_main.run p] calls the Lwt scheduler, performing I/O until [p]
+      resolves. [Lwt_main.run p] returns the value in [p] if [p] is fulfilled.
+      If [p] is rejected with an exception instead, [Lwt_main.run p] raises that
+      exception.
 
-      Every native or bytecode program that uses Lwt should always use
-      this function for evaluating a promise at the top level
-      (such as its main function or main loop),
-      otherwise promises that depend on I/O operations will not be resolved.
+      Every native and bytecode program that uses Lwt should call this function
+      at its top level. It implements the Lwt main loop.
 
       Example:
       {[
 let main () = Lwt_io.write_line Lwt_io.stdout "hello world"
 
-let () = Lwt_main.run @@ main ()
+let () = Lwt_main.run (main ())
       ]}
 
-      When targeting JavaScript, [Lwt_main.run] is not available,
-      but neither it's necessary since
-      the JS environment automatically takes care of the I/O considerations.
+      [Lwt_main.run] is not available when targeting JavaScript, because the
+      environment (such as Node.js or the browser's script engine) implements
+      the I/O loop.
 
       On Unix, calling [Lwt_main.run] installs a [SIGCHLD] handler, which is
       needed for the implementations of {!Lwt_unix.waitpid} and
@@ -34,16 +33,14 @@ let () = Lwt_main.run @@ main ()
       use non-Lwt system calls need to handle those system calls failing with
       [EINTR].
 
-      Note that you should avoid using [run] inside threads
-      - The calling threads will not resume before [run]
-        returns.
-      - Successive invocations of [run] are serialized: an
-        invocation of [run] will not terminate before all
-        subsequent invocations are terminated.
+      Nested calls to [Lwt_main.run] are not allowed. That is, do not call
+      [Lwt_main.run] in a callback triggered by a promise that is resolved by
+      an outer invocation of [Lwt_main.run]. If your program makes such a call,
+      [Lwt_main.run] will raise [Failure]. This should be considered a logic
+      error (i.e., code making such a call is inherently broken).
 
-      Note also that it is not safe to call [run] in a function
-      registered with [Pervasives.at_exit], use the {!at_exit}
-      function of this module instead. *)
+      It is not safe to call [Lwt_main.run] in a function registered with
+      [Pervasives.at_exit], use {!Lwt_main.at_exit} instead. *)
 
 val yield : unit -> unit Lwt.t
   (** [yield ()] is a threads which suspends itself and then resumes
