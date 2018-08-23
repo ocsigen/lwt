@@ -23,7 +23,7 @@ let yield () = (Lwt.add_task_r [@ocaml.warning "-3"]) yielded
 let run_already_called = ref `No
 let run_already_called_mutex = Mutex.create ()
 
-let run t =
+let run p =
   (* Fail in case a call to Lwt_main.run is nested under another invocation of
      Lwt_main.run. *)
   Mutex.lock run_already_called_mutex;
@@ -60,26 +60,34 @@ let run t =
   end;
 
   let rec run_loop () =
-    (* Wakeup paused threads now. *)
+    (* Fulfill paused promises now. *)
     Lwt.wakeup_paused ();
-    match Lwt.poll t with
+    match Lwt.poll p with
     | Some x ->
       x
     | None ->
       (* Call enter hooks. *)
       Lwt_sequence.iter_l (fun f -> f ()) enter_iter_hooks;
+
       (* Do the main loop call. *)
-      Lwt_engine.iter (Lwt.paused_count () = 0 && Lwt_sequence.is_empty yielded);
-      (* Wakeup paused threads again. *)
+      let should_block_waiting_for_io =
+        Lwt.paused_count () = 0 && Lwt_sequence.is_empty yielded in
+      Lwt_engine.iter should_block_waiting_for_io;
+
+      (* Fulfill paused promises again. *)
       Lwt.wakeup_paused ();
-      (* Wakeup yielded threads now. *)
+
+      (* Fulfill yield promises. *)
       if not (Lwt_sequence.is_empty yielded) then begin
         let tmp = Lwt_sequence.create () in
         Lwt_sequence.transfer_r yielded tmp;
-        Lwt_sequence.iter_l (fun wakener -> Lwt.wakeup wakener ()) tmp
+        Lwt_sequence.iter_l (fun resolver -> Lwt.wakeup resolver ()) tmp
       end;
+
       (* Call leave hooks. *)
       Lwt_sequence.iter_l (fun f -> f ()) leave_iter_hooks;
+
+      (* Repeat. *)
       run_loop ()
   in
 
