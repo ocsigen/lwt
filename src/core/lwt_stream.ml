@@ -888,7 +888,9 @@ let rec iter_p_rec node f s =
     match node.data with
     | Some x ->
       consume s node;
-      Lwt.join [f x; iter_p_rec node.next f s]
+      let res = f x in
+      let rest = iter_p_rec node.next f s in
+      res >>= fun () -> rest
     | None ->
       Lwt.return_unit
 
