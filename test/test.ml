@@ -229,6 +229,8 @@ let count_skipped : (_, _) aggregated_outcomes -> int = fun outcomes ->
 (* Runs a series of test suites. If one of the test suites fails, does not run
    subsequent suites. *)
 let run library_name suites =
+  Printexc.record_backtrace true;
+
   Printexc.register_printer (function
     | Failure message -> Some (Printf.sprintf "Failure(%S)" message)
     | _ -> None);

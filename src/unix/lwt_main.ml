@@ -20,7 +20,47 @@ let yielded = Lwt_sequence.create ()
 
 let yield () = (Lwt.add_task_r [@ocaml.warning "-3"]) yielded
 
-let rec run t =
+let run_already_called = ref `No
+let run_already_called_mutex = Mutex.create ()
+
+let run t =
+  (* Fail in case a call to Lwt_main.run is nested under another invocation of
+     Lwt_main.run. *)
+  Mutex.lock run_already_called_mutex;
+
+  let error_message_if_call_is_nested =
+    match !run_already_called with
+    | `From backtrace_string ->
+      Some (Printf.sprintf "%s\n%s\n%s"
+        "Nested calls to Lwt_main.run are not allowed"
+        "Lwt_main.run already called from:"
+        backtrace_string)
+    | `From_somewhere ->
+      Some ("Nested calls to Lwt_main.run are not allowed")
+    | `No ->
+      let called_from =
+        if Printexc.backtrace_status () then
+          let backtrace =
+            try raise Exit
+            with Exit -> Printexc.get_backtrace ()
+          in
+          `From backtrace
+        else
+          `From_somewhere
+      in
+      run_already_called := called_from;
+      None
+  in
+
+  Mutex.unlock run_already_called_mutex;
+
+  begin match error_message_if_call_is_nested with
+  | Some message -> failwith message
+  | None -> ()
+  end;
+
+  let rec run_loop () =
+
   (* Wakeup paused threads now. *)
   Lwt.wakeup_paused ();
   match Lwt.poll t with
@@ -41,7 +81,17 @@ let rec run t =
     end;
     (* Call leave hooks. *)
     Lwt_sequence.iter_l (fun f -> f ()) leave_iter_hooks;
-    run t
+    run_loop ()
+
+  in
+
+  let loop_result = run_loop () in
+
+  Mutex.lock run_already_called_mutex;
+  run_already_called := `No;
+  Mutex.unlock run_already_called_mutex;
+
+  loop_result
 
 let exit_hooks = Lwt_sequence.create ()
 

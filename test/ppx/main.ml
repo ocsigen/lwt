@@ -1,6 +1,13 @@
 open Test
 open Lwt
 
+(* Used for the "structure let" test, below. This is wrapped up by the PPX in a
+   call to Lwt_main.run, which is executed at module load time. We can't use a
+   local module inside the tester function, because that function is run inside
+   an outer call to Lwt_main.run, and nested calls to Lwt_main.run are not
+   allowed. *)
+let%lwt structure_let_result = Lwt.return true
+
 let suite = suite "ppx" [
   test "let"
     (fun () ->
@@ -157,12 +164,7 @@ let suite = suite "ppx" [
 
   test "structure let"
     (fun () ->
-       let module M =
-       struct
-         let%lwt result = Lwt.return_true
-       end
-       in
-       Lwt.return M.result
+       Lwt.return structure_let_result
     ) ;
 ]
 

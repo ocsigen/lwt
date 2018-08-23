@@ -59,4 +59,23 @@ let timing_tests = [
 
 let tests = tests @ timing_tests
 
+let run_tests = [
+  test "Lwt_main.run: nested call" ~sequential:true begin fun () ->
+    (* The test itself is already running under Lwt_main.run, so we just have to
+       call it once and make sure we get an exception. *)
+
+    (* Make sure we are running in a callback called by Lwt_main.run, not
+       synchronously when the testing executable is loaded. *)
+    Lwt_main.yield () >>= fun () ->
+
+    try
+      Lwt_main.run (Lwt.return ());
+      Lwt.return false
+    with Failure _ ->
+      Lwt.return true
+  end;
+]
+
+let tests = tests @ run_tests
+
 let suite = suite "lwt_engine" tests
