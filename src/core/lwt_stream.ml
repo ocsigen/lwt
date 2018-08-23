@@ -140,23 +140,23 @@ let on_termination s f =
 let on_terminate = on_termination
 
 let enqueue' e last =
-  let node = !last and new_last = new_node () in
+  let node = !last
+  and new_last = new_node () in
   node.data <- e;
   node.next <- new_last;
   last := new_last
-;;
 
 let enqueue e s =
   enqueue' e s.last
 
 let create_with_reference () =
   (* Create the source for notifications of new elements. *)
-  let source, wakener_cell =
-    let waiter, wakener = Lwt.wait () in
-    ({ push_signal = waiter;
+  let source, push_signal_resolver =
+    let push_signal, push_signal_resolver = Lwt.wait () in
+    ({ push_signal;
        push_waiting = false;
        push_external = Obj.repr () },
-     ref wakener)
+     ref push_signal_resolver)
   in
   let t = from_source (Push source) in
   (* [push] should not close over [t] so that it can be garbage collected even
@@ -174,12 +174,12 @@ let create_with_reference () =
     if source.push_waiting then begin
       source.push_waiting <- false;
       (* Update threads. *)
-      let old_wakener = !wakener_cell in
-      let new_waiter, new_wakener = Lwt.wait () in
+      let old_push_signal_resolver = !push_signal_resolver in
+      let new_waiter, new_push_signal_resolver = Lwt.wait () in
       source.push_signal <- new_waiter;
-      wakener_cell := new_wakener;
+      push_signal_resolver := new_push_signal_resolver;
       (* Signal that a new value has been received. *)
-      Lwt.wakeup_later old_wakener ()
+      Lwt.wakeup_later old_push_signal_resolver ()
     end;
     (* Do this at the end in case one of the function raise an
        exception. *)
