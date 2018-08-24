@@ -191,5 +191,6 @@ serialization combinators
 logging
 - [lwt-parallel](https://github.com/ivg/parallel) —
 distributed computing
+- [mwt](https://github.com/hcarty/mwt) — preemptive (system) thread pools
 - [opium](https://github.com/rgrinberg/opium) —
 web framework
