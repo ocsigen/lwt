@@ -29,10 +29,10 @@ module E = struct
     waiter
 
   let limit f e =
-    (* Thread which prevent [e] to occur while it is sleeping *)
+    (* Thread which prevents [e] from occurring while it is sleeping *)
     let limiter = ref Lwt.return_unit in
 
-    (* The occurence that is delayed until the limiter returns. *)
+    (* The occurrence that is delayed until the limiter returns. *)
     let delayed = ref None in
 
     (* The resulting event. *)
@@ -46,7 +46,7 @@ module E = struct
                 delivering. *)
              match !delayed with
              | Some cell ->
-               (* An occurence is alreayd queued, replace it. *)
+               (* An occurrence is already queued, replace it. *)
                cell := x;
                None
              | None ->
@@ -64,7 +64,7 @@ module E = struct
            end else begin
              (* Set the limiter for future events. *)
              limiter := f ();
-             (* Send the occurence now. *)
+             (* Send the occurrence now. *)
              push x;
              None
            end)
@@ -112,7 +112,7 @@ module E = struct
     keeped := map ignore e :: !keeped
 
   (* +---------------------------------------------------------------+
-     | Event transofrmations                                         |
+     | Event transformations                                         |
      +---------------------------------------------------------------+ *)
 
   let run_p e =
@@ -273,7 +273,7 @@ module S = struct
     (* Thread which prevent [s] to changes while it is sleeping *)
     let limiter = ref (f ()) in
 
-    (* The occurence that is delayed until the limiter returns. *)
+    (* The occurrence that is delayed until the limiter returns. *)
     let delayed = ref None in
 
     (* The resulting event. *)
@@ -287,7 +287,7 @@ module S = struct
                 delivering. *)
              match !delayed with
              | Some cell ->
-               (* An occurence is alreayd queued, replace it. *)
+               (* An occurrence is already queued, replace it. *)
                cell := x;
                None
              | None ->
@@ -298,7 +298,7 @@ module S = struct
            end else begin
              (* Set the limiter for future events. *)
              limiter := f ();
-             (* Send the occurence now. *)
+             (* Send the occurrence now. *)
              push x;
              None
            end)
@@ -313,7 +313,7 @@ module S = struct
     keeped := map ignore s :: !keeped
 
   (* +---------------------------------------------------------------+
-     | Signal transofrmations                                        |
+     | Signal transformations                                        |
      +---------------------------------------------------------------+ *)
 
   let run_s ?eq s =
