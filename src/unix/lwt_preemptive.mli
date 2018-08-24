@@ -7,13 +7,8 @@
     cooperative threads. It maintains an extensible pool of preemptive
     threads to which you can detach computations.
 
-    See {{:https://github.com/hcarty/mwt} Mwt} for a more modern implementation.
-
-    When compiling or linking programs that use [Lwt_preemptive], you should
-    pass the [-thread] or [-vmthread] option. This depends on your build system.
-    For OCamlbuild, add [true: thread] to [_tags]. For OASIS, add [threads] to
-    [BuildDepends] in [_oasis].
- *)
+    See {{:https://github.com/hcarty/mwt} Mwt} for a more modern
+    implementation. *)
 
 val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
   (** [detach f x] runs the computation [f x] in a separate preemptive thread.
