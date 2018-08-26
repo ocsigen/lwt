@@ -17,7 +17,7 @@ dev-repo: "https://github.com/ocsigen/lwt.git"
 
 build: [
   [ "ocaml" "src/util/configure.ml" "-use-libev" "%{conf-libev:installed}%" ]
-  [ "jbuilder" "build" "-p" name "-j" jobs ]
+  [ "dune" "build" "-p" name "-j" jobs ]
 ]
 
 depends: [
@@ -25,15 +25,14 @@ depends: [
   # removed when preparing a release.
   "bisect_ppx" {>= "1.3.0"}
   "cppo" {build & >= "1.1.0"}
-  "jbuilder" {build & >= "1.0+beta14"}
+  "dune" {build}
   # We are only using ocamlfind during configuration of the Unix binding.
   # However, ocamlfind also installs the "threads" package, and ocamlfind
   # 1.7.3-1 is the first one whose threads package does not have incorrect error
   # lines. See
   #   https://github.com/ocaml/opam-repository/pull/11071#issuecomment-353131128
   # If ocamlfind becomes no longer necessary for configuration of Lwt, this
-  # dependency should be converted to a conflict, and package jbuilder should be
-  # constrained such that it also includes the error lines fix.
+  # dependency should be converted to a conflict.
   "ocamlfind" {build & >= "1.7.3-1"}
   # result is needed as long as Lwt still supports OCaml 4.02.
   "result"
@@ -44,5 +43,5 @@ depopts: [
   "conf-libev"
 ]
 # In practice, Lwt requires OCaml >= 4.02.3, as that is a constraint of the
-# dependency jbuilder.
+# dependency Dune.
 available: [ocaml-version >= "4.02.0" & compiler != "4.02.1+BER"]

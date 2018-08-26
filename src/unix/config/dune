@@ -1,0 +1,3 @@
+(executable
+ (name discover)
+ (flags (:standard -w +A-29)))

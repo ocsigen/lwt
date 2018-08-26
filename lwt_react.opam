@@ -14,11 +14,11 @@ dev-repo: "https://github.com/ocsigen/lwt.git"
 bug-reports: "https://github.com/ocsigen/lwt/issues"
 license: "MIT"
 
-build: [ [ "jbuilder" "build" "-p" name "-j" jobs ] ]
-build-test: [ [ "jbuilder" "runtest" "-p" name ] ]
+build: [ [ "dune" "build" "-p" name "-j" jobs ] ]
+build-test: [ [ "dune" "runtest" "-p" name ] ]
 
 depends: [
-  "jbuilder" {build & >= "1.0+beta14"}
+  "dune" {build}
   "lwt" {>= "3.0.0"}
   "react" {>= "1.0.0"}
 ]
