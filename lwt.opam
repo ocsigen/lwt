@@ -46,12 +46,3 @@ depopts: [
 # In practice, Lwt requires OCaml >= 4.02.3, as that is a constraint of the
 # dependency jbuilder.
 available: [ocaml-version >= "4.02.0" & compiler != "4.02.1+BER"]
-
-messages: [
-  "For the PPX, please install package lwt_ppx"
-    {!lwt_ppx:installed}
-  "For the Camlp4 syntax, please install package lwt_camlp4"
-    {camlp4:installed & !lwt_camlp4:installed}
-  "For Lwt_log and Lwt_daemon, please install package lwt_log"
-    {!lwt_log:installed}
-]
