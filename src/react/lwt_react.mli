@@ -51,9 +51,9 @@ module E : sig
         value is available on the stream. *)
 
   val delay : 'a event Lwt.t -> 'a event
-    (** [delay thread] is an event which does not occurs until
-        [thread] returns. Then it behaves as the event returned by
-        [thread]. *)
+    (** [delay promise] is an event which does not occur until
+        [promise] resolves. Then it behaves as the event returned by
+        [promise]. *)
 
   val keep : 'a event -> unit
     (** [keep e] keeps a reference to [e] so it will never be garbage
@@ -62,7 +62,7 @@ module E : sig
   (** {2 Threaded versions of React transformation functions} *)
 
   (** The following functions behave as their [React] counterpart,
-      except that they takes functions that may yield.
+      except that they take functions that may yield.
 
       As usual the [_s] suffix is used when calls are serialized, and
       the [_p] suffix is used when they are not.
@@ -108,13 +108,13 @@ module S : sig
         [signal]. *)
 
   val bind_s : ?eq : ('b -> 'b -> bool) -> 'a signal -> ('a -> 'b signal Lwt.t) -> 'b signal Lwt.t
-    (** Same as {!bind} except that [f] returns a thread. Calls to [f]
+    (** Same as {!bind} except that [f] returns a promise. Calls to [f]
         are serialized. *)
 
   (** {2 Lwt-specific utilities} *)
 
   val with_finaliser : (unit -> unit) -> 'a signal -> 'a signal
-    (** [with_finaliser f s] returns a signal [s'] which behave as
+    (** [with_finaliser f s] returns a signal [s'] which behaves as
         [s], except that [f] is called when [s'] is garbage
         collected. *)
 
@@ -131,7 +131,7 @@ module S : sig
   (** {2 Threaded versions of React transformation functions} *)
 
   (** The following functions behave as their [React] counterpart,
-      except that they takes functions that may yield.
+      except that they take functions that may yield.
 
       The [_s] suffix means that calls are serialized.
   *)
