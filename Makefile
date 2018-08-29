@@ -5,12 +5,12 @@ default: build
 # build the usual development packages
 .PHONY: build
 build: check-config
-	jbuilder build --dev
+	dune build
 
 # run unit tests for package lwt
 .PHONY: test
 test: build
-	jbuilder runtest --dev -j 1 --no-buffer
+	dune runtest -j 1 --no-buffer
 
 # configuration
 .PHONY: check-config
@@ -30,18 +30,18 @@ dev-deps :
 	opam install --yes --unset-root \
 	  bisect_ppx \
 	  cppo \
-	  jbuilder \
+	  dune \
 	  ocaml-migrate-parsetree \
 	  ocamlfind \
 	  ppx_tools_versioned \
 	  react \
 	  result \
 
-# Use jbuilder/odoc to generate static html documentation.
+# Use Dune+odoc to generate static html documentation.
 # Currenty requires ocaml 4.03.0 to install odoc.
 .PHONY: doc
 doc:
-	jbuilder build @doc
+	dune build @doc
 
 # Build HTML documentation with ocamldoc
 .PHONY: doc-api-html
@@ -76,7 +76,7 @@ install-for-packaging-test: clean
 
 .PHONY: clean
 clean:
-	jbuilder clean
+	dune clean
 	find . -name '.merlin' | xargs rm -f
 	rm -fr docs/api
 	rm -f src/jbuild-ignore src/unix/lwt_config src/core/flambda.flag
@@ -91,7 +91,7 @@ BISECT_FILES_PATTERN := _build/default/test/*/bisect*.out
 .PHONY: coverage
 coverage: clean check-config
 	BISECT_ENABLE=yes make build
-	BISECT_ENABLE=yes jbuilder runtest --dev -j 1 --no-buffer
+	BISECT_ENABLE=yes dune runtest -j 1 --no-buffer
 	bisect-ppx-report \
 	    -I _build/default/ -html _coverage/ \
 	    -text - -summary-only \

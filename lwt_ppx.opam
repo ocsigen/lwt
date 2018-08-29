@@ -13,7 +13,7 @@ bug-reports: "https://github.com/ocsigen/lwt/issues"
 license: "MIT"
 
 depends: [
-  "jbuilder" {build & >= "1.0+beta14"}
+  "dune" {build}
   "lwt"
   "ocaml-migrate-parsetree"
   "ppx_tools_versioned" {>= "5.0.1"}
@@ -24,5 +24,5 @@ depends: [
 available: [ocaml-version >= "4.02.0"]
 
 build: [
-  ["jbuilder" "build" "-p" name "-j" jobs]
+  ["dune" "build" "-p" name "-j" jobs]
 ]
