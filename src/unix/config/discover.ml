@@ -280,7 +280,7 @@ CAMLprim value lwt_test()
    | Compilation                                                     |
    +-----------------------------------------------------------------+ *)
 
-let ocamlc = ref "ocamlfind ocamlc"
+let ocamlc = ref "ocamlc"
 let ocamlc_config = ref ""
 let lwt_config = ref ""
 let ext_obj = ref ".o"
@@ -326,6 +326,12 @@ let compile (opt, lib) stub_file =
     Sys.command s = 0) fmt in
   let obj_file = Filename.chop_suffix stub_file ".c" ^ !ext_obj
   in
+  (* Before OCaml 4.04, asking ocamlc to compile a .c file produced a .o file in
+     the current directory, instead of the same directory as the .c file. So, we
+     check for the .o file in the current directory, and move it as a
+     workaround, if it is present. See
+       https://github.com/ocaml/ocaml/commit/da56cf6dfdc13c09905c2e07f1d4849c8346eec8. *)
+  let obj_file_in_current_directory = Filename.basename obj_file in
   (* First compile the .c file using -ocamlc and CFLAGS (opt) *)
   (cmd
     "%s -c %s %s -ccopt -o -ccopt %s >> %s 2>&1"
@@ -334,6 +340,13 @@ let compile (opt, lib) stub_file =
     (Filename.quote stub_file)
     (Filename.quote obj_file)
     (Filename.quote !log_file))
+  &&
+  begin
+    if Sys.file_exists obj_file_in_current_directory then
+      cmd "mv %s %s" obj_file_in_current_directory obj_file
+    else
+      true
+  end
   &&
   (* Now link the resulting .o with the LDFLAGS (lib) *)
   (cmd

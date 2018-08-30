@@ -24,16 +24,10 @@ depends: [
   # Bisect_ppx is used only during development. This dependency should be
   # removed when preparing a release.
   "bisect_ppx" {>= "1.3.0"}
+  # ocamlfind is a development dependency of the test suite.
+  "ocamlfind" {>= "1.7.3-1"}
   "cppo" {build & >= "1.1.0"}
   "dune" {build}
-  # We are only using ocamlfind during configuration of the Unix binding.
-  # However, ocamlfind also installs the "threads" package, and ocamlfind
-  # 1.7.3-1 is the first one whose threads package does not have incorrect error
-  # lines. See
-  #   https://github.com/ocaml/opam-repository/pull/11071#issuecomment-353131128
-  # If ocamlfind becomes no longer necessary for configuration of Lwt, this
-  # dependency should be converted to a conflict.
-  "ocamlfind" {build & >= "1.7.3-1"}
   # result is needed as long as Lwt still supports OCaml 4.02.
   "result"
 ]
@@ -41,6 +35,12 @@ depopts: [
   "base-threads"
   "base-unix"
   "conf-libev"
+]
+conflicts: [
+  # ocamlfind 1.7.3-1 is the earliest release whose built-in "threads" package
+  # does not have incorrect error lines. See
+  #   https://github.com/ocaml/opam-repository/pull/11071#issuecomment-353131128
+  "ocamlfind" {< "1.7.3-1"}
 ]
 # In practice, Lwt requires OCaml >= 4.02.3, as that is a constraint of the
 # dependency Dune.
