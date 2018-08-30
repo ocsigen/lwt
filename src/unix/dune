@@ -30,6 +30,11 @@
  (targets ocamlc_config)
  (action (with-stdout-to %{targets} (run %{ocamlc} -config))))
 
+(rule
+ (targets lwt_config)
+ (deps (:exe config/configure.exe))
+ (action (run %{exe} -default-configuration true)))
+
 ;; note; the call to (and dependency on) ocamlfind is avoided by adding:
 ;; -ocamlc %{ocamlc}
 ;; however, this only works on ocaml >= 4.04 due to passing options to ocamlc as

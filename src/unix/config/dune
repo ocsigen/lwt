@@ -1,3 +1,9 @@
 (executable
+ (name configure)
+ (modules configure)
+ (flags (:standard)))
+
+(executable
  (name discover)
+ (modules discover)
  (flags (:standard -w +A-29)))
