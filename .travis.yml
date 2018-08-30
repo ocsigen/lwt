@@ -11,11 +11,11 @@ matrix:
     - os: linux
       env: COMPILER=4.04
     - os: linux
-      env: COMPILER=4.05 FLAMBDA=yes
+      env: COMPILER=4.05
     - os: linux
-      env: COMPILER=4.06 FLAMBDA=yes
+      env: COMPILER=4.06
     - os: linux
-      env: COMPILER=4.06 FLAMBDA=yes LIBEV=no
+      env: COMPILER=4.06 LIBEV=no
     - os: linux
       env: COMPILER=4.07
     - os: osx

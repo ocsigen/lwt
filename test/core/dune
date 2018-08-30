@@ -1,6 +1,5 @@
 (executable
  (name main)
- (ocamlopt_flags (:standard (:include ../../src/core/flambda.flag)))
  (libraries lwttester)
  (flags (:standard -w +A-40-42)))
 
