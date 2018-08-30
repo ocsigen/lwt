@@ -16,7 +16,7 @@ license: "MIT"
 dev-repo: "https://github.com/ocsigen/lwt.git"
 
 build: [
-  [ "ocaml" "src/util/configure.ml" "-use-libev" "%{conf-libev:installed}%" ]
+  [ "ocaml" "src/unix/config/configure.ml" "-use-libev" "%{conf-libev:installed}%" ]
   [ "dune" "build" "-p" name "-j" jobs ]
 ]
 

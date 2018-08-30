@@ -141,7 +141,7 @@ else
     LIBEV_FLAG=false
 fi
 
-ocaml src/util/configure.ml -use-libev $LIBEV_FLAG
+ocaml src/unix/config/configure.ml -use-libev $LIBEV_FLAG
 make build
 make test
 make coverage

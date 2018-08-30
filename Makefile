@@ -22,7 +22,7 @@ check-config:
 
 .PHONY: default-config
 default-config:
-	ocaml src/util/configure.ml -use-libev false
+	ocaml src/unix/config/configure.ml -use-libev false
 
 # Install dependencies needed during development.
 .PHONY : dev-deps
