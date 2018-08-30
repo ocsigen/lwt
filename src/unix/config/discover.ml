@@ -280,7 +280,7 @@ CAMLprim value lwt_test()
    | Compilation                                                     |
    +-----------------------------------------------------------------+ *)
 
-let ocamlc = ref "ocamlfind ocamlc"
+let ocamlc = ref "ocamlc"
 let ocamlc_config = ref ""
 let lwt_config = ref ""
 let ext_obj = ref ".o"
