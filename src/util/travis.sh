@@ -99,12 +99,7 @@ case $COMPILER in
        *) echo Unsupported compiler $COMPILER; exit 1;;
 esac
 
-if [ "$FLAMBDA" = yes ]
-then
-    SWITCH="$OCAML_VERSION+flambda"
-else
-    SWITCH="$OCAML_VERSION"
-fi
+SWITCH="$OCAML_VERSION"
 
 if [ -n "$DO_SWITCH" ]
 then
