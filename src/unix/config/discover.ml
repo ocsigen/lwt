@@ -581,7 +581,7 @@ let () =
     (* set up the defaults as per the original _oasis file *)
     get android_target "android_target" false;
     get use_pthread "use_pthread" (!os_type <> "Win32");
-    get use_libev "use_libev" (!os_type <> "Win32" && !android_target = false);
+    get use_libev "use_libev" false;
     get libev_default "libev_default"
       (List.mem !system (* as per _oasis *)
         ["linux"; "linux_elf"; "linux_aout"; "linux_eabi"; "linux_eabihf"]);
@@ -766,52 +766,6 @@ Lwt can use pthread or the win32 API.
   in
 
   fprintf config "#endif\n";
-
-  (* Our setup.data keys. *)
-  let setup_data_keys = [
-    "libev_opt";
-    "libev_lib";
-    "pthread_lib";
-    "pthread_opt";
-  ] in
-
-  (* Load setup.data *)
-  let setup_data_lines =
-    match try Some (open_in "setup.data") with Sys_error _ -> None with
-      | Some ic ->
-          let rec aux acc =
-            match try Some (input_line ic) with End_of_file -> None with
-              | None ->
-                  close_in ic;
-                  acc
-              | Some line ->
-                  match try Some(String.index line '=') with Not_found -> None with
-                    | Some idx ->
-                        let key = String.sub line 0 idx in
-                        if List.mem key setup_data_keys then
-                          aux acc
-                        else
-                          aux (line :: acc)
-                    | None ->
-                        aux (line :: acc)
-          in
-          aux []
-      | None ->
-          []
-  in
-
-  (* Add flags to setup.data *)
-  let setup_data_lines =
-    List.fold_left
-      (fun lines (name, args) ->
-         sprintf "%s=%S" name (String.concat " " args) :: lines)
-      setup_data_lines !setup_data
-  in
-  let oc = open_out "setup.data" in
-  List.iter
-    (fun str -> output_string oc str; output_char oc '\n')
-    (List.rev setup_data_lines);
-  close_out oc;
 
   close_out config;
   close_out config_ml;

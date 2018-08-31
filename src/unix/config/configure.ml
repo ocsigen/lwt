@@ -34,20 +34,6 @@ let main () =
 
   let config_file = "lwt_config" in
 
-  begin match !default_configuration with
-  | Some true ->
-    (* Check if we have the opam command and conf-libev is installed. If so,
-       behave as if -use-libev true was passed. *)
-    if not @@ Sys.file_exists config_file then
-      if Sys.command "opam --version > /dev/null" = 0 then
-        if Sys.command "opam list --installed conf-libev > /dev/null" = 0 then
-          use_libev := Some true
-        else
-          use_libev := Some false
-  | _ ->
-    ()
-  end;
-
   let f = open_out config_file in
   let print name var =
     match var with
