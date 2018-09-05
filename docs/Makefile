@@ -38,3 +38,7 @@ api/wiki/index.wiki: ${MLIS} apiref-intro
 		-d api/wiki \
 		-i $(shell ocamlfind query wikidoc) -g odoc_wiki.cma \
 		${MLIS}
+
+.PHONY : clean
+clean :
+	rm -rf api/
