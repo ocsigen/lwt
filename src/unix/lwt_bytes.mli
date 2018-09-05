@@ -66,10 +66,10 @@ val unsafe_blit : t -> int -> t -> int -> int -> unit
   (** Same as {!blit} but without bound checking. *)
 
 val unsafe_blit_from_bytes : bytes -> int -> t -> int -> int -> unit
-  (** Same as {!blit_string_bytes} but without bounds checking. *)
+  (** Same as {!Lwt_bytes.blit_from_bytes} but without bounds checking. *)
 
 val unsafe_blit_to_bytes : t -> int -> bytes -> int -> int -> unit
-  (** Same as {!blit_bytes_string} but without bounds checking. *)
+  (** Same as {!Lwt_bytes.blit_to_bytes} but without bounds checking. *)
 
 val proxy : t -> int -> int -> t
   (** [proxy buffer offset length] creates a ``proxy''. The returned

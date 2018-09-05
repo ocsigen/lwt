@@ -168,7 +168,7 @@ val state : file_descr -> state
 val unix_file_descr : file_descr -> Unix.file_descr
   (** Returns the underlying unix {b file descriptor}. It always
       succeeds, even if the {b file descriptor}'s state is not
-      {!Open}. *)
+      [Open]. *)
 
 val of_unix_file_descr : ?blocking : bool -> ?set_flags : bool -> Unix.file_descr -> file_descr
 (** Wraps a [Unix] file descriptor [fd] in an [Lwt_unix.file_descr] [fd'].
@@ -228,7 +228,7 @@ val set_blocking : ?set_flags : bool -> file_descr -> bool -> unit
 val abort : file_descr -> exn -> unit
   (** [abort fd exn] makes all current and further uses of the file
       descriptor fail with the given exception. This put the {b file
-      descriptor} into the {!Aborted} state.
+      descriptor} into the [Aborted] state.
 
       If the {b file descriptor} is closed, this does nothing, if it is
       aborted, this replace the abort exception by [exn].
@@ -334,7 +334,7 @@ val openfile : string -> open_flag list -> file_perm -> file_descr Lwt.t
 
 val close : file_descr -> unit Lwt.t
   (** Close a {b file descriptor}. This close the underlying unix {b
-      file descriptor} and set its state to {!Closed} *)
+      file descriptor} and set its state to [Closed]. *)
 
 val read : file_descr -> bytes -> int -> int -> int Lwt.t
 (** [read fd buf ofs len] reads up to [len] bytes from [fd], and writes them to
@@ -1290,7 +1290,7 @@ val wrap_syscall : io_event -> file_descr -> (unit -> 'a) -> 'a Lwt.t
 
 val check_descriptor : file_descr -> unit
   (** [check_descriptor fd] raise an exception if [fd] is not in the
-      state {!Open} *)
+      state [Open]. *)
 
 val register_action : io_event -> file_descr -> (unit -> 'a) -> 'a Lwt.t
   (** [register_action set fd action] registers [action] on [fd]. When
@@ -1321,15 +1321,15 @@ val run_job : ?async_method : async_method -> 'a job -> 'a Lwt.t
       - otherwise the default method (returned by
         {!default_async_method}) is used.
 
-      If the method is {!Async_none} then the job is run synchronously
+      If the method is [Async_none] then the job is run synchronously
       and may block the current system thread, thus blocking all Lwt
       threads.
 
-      If the method is {!Async_detach} then the job is run in another
+      If the method is [Async_detach] then the job is run in another
       system thread, unless the the maximum number of worker threads
       has been reached (as given by {!pool_size}).
 
-      If the method is {!Async_switch} then the job is run
+      If the method is [Async_switch] then the job is run
       synchronously and if it blocks, execution will continue in
       another system thread (unless the limit is reached).
   *)
@@ -1387,8 +1387,8 @@ val set_notification : int -> (unit -> unit) -> unit
 
 (** {2 System threads pool} *)
 
-(** If the program is using the async method {!Async_detach} or
-    {!Async_switch}, Lwt will launch system threads to execute
+(** If the program is using the async method [Async_detach] or
+    [Async_switch], Lwt will launch system threads to execute
     blocking system calls asynchronously. *)
 
 val pool_size : unit -> int

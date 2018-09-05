@@ -354,8 +354,8 @@ let () =
     - {!Lwt_io} for [Pervasives]-like high-level channels, TCP servers, etc.
     - {!Lwt_process} for managing subprocesses.
     - {!Lwt_preemptive} for spawning system threads.
-    - Miscellaneous modules {!Lwt_daemon}, {!Lwt_gc}, {!Lwt_log}, {!Lwt_engine},
-      {!Lwt_throttle}, {!Lwt_timeout}, {!Lwt_sys}.
+    - Miscellaneous modules {!Lwt_gc}, {!Lwt_engine}, {!Lwt_throttle},
+      {!Lwt_timeout}, {!Lwt_sys}.
 
     Warning! Introductory material ends and detailed reference begins! *)
 
@@ -1282,7 +1282,7 @@ let () =
   (** [p1 <?> p2] is the same as {!Lwt.choose}[ [p1; p2]]. It requires
       [Lwt.Infix] to be opened in scope.
 
-      Unlike with {!Lwt,bind} and {!Lwt.join}, there are no problems with
+      Unlike with {!Lwt.bind} and {!Lwt.join}, there are no problems with
       explicit {!Lwt.choose} syntax, so using this operator is not
       recommended.
 

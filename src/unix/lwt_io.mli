@@ -214,7 +214,7 @@ val read_char : input_channel -> char Lwt.t
       @raise End_of_file if the end of the file is reached *)
 
 val read_char_opt : input_channel -> char option Lwt.t
-  (** Same as {!read_byte} but does not raise [End_of_file] on end of
+  (** Same as {!Lwt_io.read_char}, but does not raise [End_of_file] on end of
       input *)
 
 val read_chars : input_channel -> char Lwt_stream.t
@@ -456,7 +456,7 @@ val open_temp_file :
     {!Lwt_io.with_temp_file}.
 
     The [?buffer] and [?perm] arguments are passed directly to an internal call
-    to {!Lwt.io.open_file}.
+    to {!Lwt_io.open_file}.
 
     If not specified, [?flags] defaults to
     [[O_CREATE; O_EXCL; O_WRONLY; O_CLOEXEC]]. If specified, the specified flags

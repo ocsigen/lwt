@@ -30,7 +30,6 @@ The {e lwt.unix} package provides:
 - module helpers for spawning processes, ...
 
 {!modules:
-Lwt_daemon
 Lwt_gc
 Lwt_io
 Lwt_main
