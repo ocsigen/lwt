@@ -85,4 +85,14 @@ let suite = suite "lwt_bytes" [
     let check = str = str' in
     Lwt.return check
   end;
+
+  test "blit" begin fun () ->
+    let str1 = "abc" in
+    let buf1 = Lwt_bytes.of_string str1 in
+    let str2 = "abcdef" in
+    let buf2 = Lwt_bytes.of_string str2 in
+    let () = Lwt_bytes.blit buf1 0 buf2 3 3 in
+    let check = "abcabc" = Lwt_bytes.to_string buf2 in
+    Lwt.return check
+  end;
 ]
