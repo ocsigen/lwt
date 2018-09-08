@@ -52,15 +52,4 @@ let suite = suite "lwt_bytes" [
     Lwt_bytes.unsafe_get buff 2 = 'c'
     in Lwt.return check
   end;
-
-  test "unsafe_get out of bounds" begin fun () ->
-    let buff = Lwt_bytes.create 3 in
-    (*try *)
-      let _ = Lwt_bytes.unsafe_get buff 150 in
-      Lwt.return true
-    (* with
-
-    | _ -> Lwt.return false *)
-  end;
-
 ]
