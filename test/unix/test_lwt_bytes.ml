@@ -108,4 +108,13 @@ let suite = suite "lwt_bytes" [
     | Invalid_argument _ -> Lwt.return true
     | _ -> Lwt.return false
   end;
+
+  test "blit from bytes" begin fun () ->
+    let bytes1 = Bytes.of_string "abc" in
+    let str2 = "abcdef" in
+    let buf2 = Lwt_bytes.of_string str2 in
+    let () = Lwt_bytes.blit_from_bytes bytes1 0 buf2 3 3 in
+    let check = "abcabc" = Lwt_bytes.to_string buf2 in
+    Lwt.return check
+  end;
 ]
