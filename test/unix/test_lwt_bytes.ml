@@ -77,4 +77,12 @@ let suite = suite "lwt_bytes" [
     let check = Bytes.equal bytes bytes' in
     Lwt.return check
   end;
+
+  test "to string" begin fun () ->
+    let str = "abc" in
+    let buff = Lwt_bytes.of_string str in
+    let str' = Lwt_bytes.to_string buff in
+    let check = str = str' in
+    Lwt.return check
+  end;
 ]
