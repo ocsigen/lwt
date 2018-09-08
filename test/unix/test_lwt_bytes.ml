@@ -218,4 +218,12 @@ test "copy" begin fun () ->
     let check = str = Lwt_bytes.to_string buf' in
     Lwt.return check
   end;
+
+  test "fill" begin fun () ->
+    let str = "abcdef" in
+    let buf = Lwt_bytes.of_string str in
+    let () = Lwt_bytes.fill buf 3 3 'a' in
+    let check = "abcaaa" = Lwt_bytes.to_string buf in
+    Lwt.return check
+  end;
 ]
