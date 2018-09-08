@@ -152,4 +152,15 @@ let suite = suite "lwt_bytes" [
     | Invalid_argument _ -> Lwt.return_true
     | _ -> Lwt.return_false
   end;
+
+  test "unsafe blit" begin fun () ->
+    let str1 = "abc" in
+    let buf1 = Lwt_bytes.of_string str1 in
+    let str2 = "abcdef" in
+    let buf2 = Lwt_bytes.of_string str2 in
+    let () = Lwt_bytes.unsafe_blit buf1 0 buf2 3 3 in
+    let check = "abcabc" = Lwt_bytes.to_string buf2 in
+    Lwt.return check
+  end;
+
 ]
