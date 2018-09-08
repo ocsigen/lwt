@@ -200,4 +200,14 @@ test "extract" begin fun () ->
     Lwt.return check
   end;
 
+test "extract out of bounds" begin fun () ->
+    let str = "abcdef" in
+    let buf = Lwt_bytes.of_string str in
+    try
+      let _ = Lwt_bytes.extract buf 150 150 in
+      Lwt.return_false
+    with
+    | Invalid_argument _ -> Lwt.return_true
+    | _ -> Lwt.return_false
+  end;
 ]
