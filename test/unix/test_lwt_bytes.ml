@@ -191,4 +191,13 @@ let suite = suite "lwt_bytes" [
     let check2 = "aef" = Lwt_bytes.to_string buf' in
     Lwt.return (check1 && check2)
   end;
+
+test "extract" begin fun () ->
+    let str = "abcdef" in
+    let buf = Lwt_bytes.of_string str in
+    let buf' = Lwt_bytes.extract buf 3 3 in
+    let check = "def" = Lwt_bytes.to_string buf' in
+    Lwt.return check
+  end;
+
 ]
