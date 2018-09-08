@@ -226,4 +226,15 @@ test "copy" begin fun () ->
     let check = "abcaaa" = Lwt_bytes.to_string buf in
     Lwt.return check
   end;
+
+  test "fill out of bounds" begin fun () ->
+    let str = "abcdef" in
+    let buf = Lwt_bytes.of_string str in
+    try
+      let () = Lwt_bytes.fill buf 150 150 'a' in
+      Lwt.return_false
+    with
+    | Invalid_argument _ -> Lwt.return_true
+    | _ -> Lwt.return_false
+  end;
 ]
