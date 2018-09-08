@@ -210,4 +210,12 @@ test "extract out of bounds" begin fun () ->
     | Invalid_argument _ -> Lwt.return_true
     | _ -> Lwt.return_false
   end;
+
+test "copy" begin fun () ->
+    let str = "abc" in
+    let buf = Lwt_bytes.of_string str in
+    let buf' = Lwt_bytes.copy buf in
+    let check = str = Lwt_bytes.to_string buf' in
+    Lwt.return check
+  end;
 ]
