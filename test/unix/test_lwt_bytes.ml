@@ -171,4 +171,14 @@ let suite = suite "lwt_bytes" [
     let check = "abcabc" = Lwt_bytes.to_string buf2 in
     Lwt.return check
   end;
+
+  test "unsafe blit to bytes" begin fun () ->
+    let str1 = "abc" in
+    let buf1 = Lwt_bytes.of_string str1 in
+    let str2 = "abcdef" in
+    let bytes2 = Bytes.of_string str2 in
+    let () = Lwt_bytes.unsafe_blit_to_bytes buf1 0 bytes2 3 3 in
+    let check = "abcabc" = Bytes.to_string bytes2 in
+    Lwt.return check
+  end;
 ]
