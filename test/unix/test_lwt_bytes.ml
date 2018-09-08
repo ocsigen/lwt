@@ -181,4 +181,14 @@ let suite = suite "lwt_bytes" [
     let check = "abcabc" = Bytes.to_string bytes2 in
     Lwt.return check
   end;
+
+  test "proxy" begin fun () ->
+    let str = "abcdef" in
+    let buf = Lwt_bytes.of_string str in
+    let buf' = Lwt_bytes.proxy buf 3 3 in
+    let check1 = "def" = Lwt_bytes.to_string buf' in
+    let () = Lwt_bytes.set buf 3 'a' in
+    let check2 = "aef" = Lwt_bytes.to_string buf' in
+    Lwt.return (check1 && check2)
+  end;
 ]
