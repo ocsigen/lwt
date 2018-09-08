@@ -117,4 +117,16 @@ let suite = suite "lwt_bytes" [
     let check = "abcabc" = Lwt_bytes.to_string buf2 in
     Lwt.return check
   end;
+
+  test "blit from bytes out of bounds" begin fun () ->
+    let bytes1 = Bytes.of_string "abc" in
+    let str2 = "abcdef" in
+    let buf2 = Lwt_bytes.of_string str2 in
+    try
+      let () = Lwt_bytes.blit_from_bytes bytes1 150 buf2 150 150 in
+      Lwt.return_false
+    with
+    | Invalid_argument _ -> Lwt.return_true
+    | _ -> Lwt.return_false
+  end;
 ]
