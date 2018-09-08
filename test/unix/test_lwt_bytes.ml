@@ -237,4 +237,12 @@ test "copy" begin fun () ->
     | Invalid_argument _ -> Lwt.return_true
     | _ -> Lwt.return_false
   end;
+
+  test "unsafe fill" begin fun () ->
+    let str = "abcdef" in
+    let buf = Lwt_bytes.of_string str in
+    let () = Lwt_bytes.unsafe_fill buf 3 3 'a' in
+    let check = "abcaaa" = Lwt_bytes.to_string buf in
+    Lwt.return check
+  end;
 ]
