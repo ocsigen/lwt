@@ -69,4 +69,12 @@ let suite = suite "lwt_bytes" [
                 Lwt_bytes.get buff 2 = 'c'
     in Lwt.return check
   end;
+
+  test "to bytes" begin fun () ->
+    let bytes = Bytes.of_string "abc" in
+    let buff = Lwt_bytes.of_bytes bytes in
+    let bytes' = Lwt_bytes.to_bytes buff in
+    let check = Bytes.equal bytes bytes' in
+    Lwt.return check
+  end;
 ]
