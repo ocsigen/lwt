@@ -61,4 +61,12 @@ let suite = suite "lwt_bytes" [
                 Lwt_bytes.get buff 2 = Bytes.get bytes 2
     in Lwt.return check
   end;
+
+  test "of string" begin fun () ->
+    let buff = Lwt_bytes.of_string "abc" in
+    let check = Lwt_bytes.get buff 0 = 'a' &&
+                Lwt_bytes.get buff 1 = 'b' &&
+                Lwt_bytes.get buff 2 = 'c'
+    in Lwt.return check
+  end;
 ]
