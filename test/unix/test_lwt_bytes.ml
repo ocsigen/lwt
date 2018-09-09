@@ -412,11 +412,44 @@ let suite = suite "lwt_bytes" [
       Lwt.return check
     end;
 
-    test "extract out of bounds" begin fun () ->
+    test "extract offset lower limit out of bounds" begin fun () ->
       let str = "abcdef" in
       let buf = Lwt_bytes.of_string str in
       try
-        let _ = Lwt_bytes.extract buf 150 150 in
+        let _ = Lwt_bytes.extract buf (-1) 3 in
+        Lwt.return_false
+      with
+      | Invalid_argument _ -> Lwt.return_true
+      | _ -> Lwt.return_false
+    end;
+
+    test "extract offset upper limit out of bounds" begin fun () ->
+      let str = "abcdef" in
+      let buf = Lwt_bytes.of_string str in
+      try
+        let _ = Lwt_bytes.extract buf 150 3 in
+        Lwt.return_false
+      with
+      | Invalid_argument _ -> Lwt.return_true
+      | _ -> Lwt.return_false
+    end;
+
+    test "extract length lower limit out of bounds" begin fun () ->
+      let str = "abcdef" in
+      let buf = Lwt_bytes.of_string str in
+      try
+        let _ = Lwt_bytes.extract buf 3 (-1) in
+        Lwt.return_false
+      with
+      | Invalid_argument _ -> Lwt.return_true
+      | _ -> Lwt.return_false
+    end;
+
+    test "extract length upper limit out of bounds" begin fun () ->
+      let str = "abcdef" in
+      let buf = Lwt_bytes.of_string str in
+      try
+        let _ = Lwt_bytes.extract buf 3 150 in
         Lwt.return_false
       with
       | Invalid_argument _ -> Lwt.return_true
