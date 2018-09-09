@@ -472,11 +472,44 @@ let suite = suite "lwt_bytes" [
       Lwt.return check
     end;
 
-    test "fill out of bounds" begin fun () ->
+    test "fill offset lower limit out of bounds" begin fun () ->
       let str = "abcdef" in
       let buf = Lwt_bytes.of_string str in
       try
-        let () = Lwt_bytes.fill buf 150 150 'a' in
+        let () = Lwt_bytes.fill buf (-1) 3 'a' in
+        Lwt.return_false
+      with
+      | Invalid_argument _ -> Lwt.return_true
+      | _ -> Lwt.return_false
+    end;
+
+    test "fill offset upper limit out of bounds" begin fun () ->
+      let str = "abcdef" in
+      let buf = Lwt_bytes.of_string str in
+      try
+        let () = Lwt_bytes.fill buf 150 3 'a' in
+        Lwt.return_false
+      with
+      | Invalid_argument _ -> Lwt.return_true
+      | _ -> Lwt.return_false
+    end;
+
+    test "fill length lower limit out of bounds" begin fun () ->
+      let str = "abcdef" in
+      let buf = Lwt_bytes.of_string str in
+      try
+        let () = Lwt_bytes.fill buf 3 (-1) 'a' in
+        Lwt.return_false
+      with
+      | Invalid_argument _ -> Lwt.return_true
+      | _ -> Lwt.return_false
+    end;
+
+    test "fill length upper limit out of bounds" begin fun () ->
+      let str = "abcdef" in
+      let buf = Lwt_bytes.of_string str in
+      try
+        let () = Lwt_bytes.fill buf 3 150 'a' in
         Lwt.return_false
       with
       | Invalid_argument _ -> Lwt.return_true
