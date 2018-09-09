@@ -364,6 +364,39 @@ let suite = suite "lwt_bytes" [
       Lwt.return (check1 && check2)
     end;
 
+    test "proxy offset out of bounds: lower limit" begin fun () ->
+      let str = "abcdef" in
+      let buf = Lwt_bytes.of_string str in
+      try
+      let _ = Lwt_bytes.proxy buf (-1) 3 in
+      Lwt.return_false
+      with
+      | Invalid_argument _ -> Lwt.return_true
+      | _ -> Lwt.return_false
+    end;
+
+    test "proxy offset out of bounds: upper limit" begin fun () ->
+      let str = "abcdef" in
+      let buf = Lwt_bytes.of_string str in
+      try
+      let _ = Lwt_bytes.proxy buf 4 3 in
+      Lwt.return_false
+      with
+      | Invalid_argument _ -> Lwt.return_true
+      | _ -> Lwt.return_false
+    end;
+
+    test "proxy length out of bounds: lower limit" begin fun () ->
+      let str = "abcdef" in
+      let buf = Lwt_bytes.of_string str in
+      try
+      let _ = Lwt_bytes.proxy buf 3 (-1) in
+      Lwt.return_false
+      with
+      | Invalid_argument _ -> Lwt.return_true
+      | _ -> Lwt.return_false
+    end;
+
     test "extract" begin fun () ->
       let str = "abcdef" in
       let buf = Lwt_bytes.of_string str in
