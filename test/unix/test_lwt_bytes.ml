@@ -118,7 +118,7 @@ let suite = suite "lwt_bytes" [
       Lwt.return check
     end;
 
-    test "blit source out of bound: lower limit" begin fun () ->
+    test "blit source out of bounds: lower limit" begin fun () ->
       let str1 = "abc" in
       let buf1 = Lwt_bytes.of_string str1 in
       let str2 = "abcdef" in
@@ -131,7 +131,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return false
     end;
 
-    test "blit source out of bound: upper limit" begin fun () ->
+    test "blit source out of bounds: upper limit" begin fun () ->
       let str1 = "abc" in
       let buf1 = Lwt_bytes.of_string str1 in
       let str2 = "abcdef" in
@@ -144,7 +144,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return false
     end;
 
-    test "blit destination out of bound: lower limit" begin fun () ->
+    test "blit destination out of bounds: lower limit" begin fun () ->
       let str1 = "abc" in
       let buf1 = Lwt_bytes.of_string str1 in
       let str2 = "abcdef" in
@@ -157,7 +157,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return false
     end;
 
-    test "blit destination out of bound: upper limit" begin fun () ->
+    test "blit destination out of bounds: upper limit" begin fun () ->
       let str1 = "abc" in
       let buf1 = Lwt_bytes.of_string str1 in
       let str2 = "abcdef" in
@@ -170,7 +170,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return false
     end;
 
-    test "blit length out of bound: lower limit" begin fun () ->
+    test "blit length out of bounds: lower limit" begin fun () ->
       let str1 = "abc" in
       let buf1 = Lwt_bytes.of_string str1 in
       let str2 = "abcdef" in
@@ -183,7 +183,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return false
     end;
 
-    test "blit length out of bound: upper limit" begin fun () ->
+    test "blit length out of bounds: upper limit" begin fun () ->
       let str1 = "abc" in
       let buf1 = Lwt_bytes.of_string str1 in
       let str2 = "abcdef" in
@@ -205,7 +205,7 @@ let suite = suite "lwt_bytes" [
       Lwt.return check
     end;
 
-    test "blit from bytes source lower limit out of bounds" begin fun () ->
+    test "blit from bytes source out of bounds: lower limit" begin fun () ->
       let bytes1 = Bytes.of_string "abc" in
       let str2 = "abcdef" in
       let buf2 = Lwt_bytes.of_string str2 in
@@ -217,7 +217,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return_false
     end;
 
-    test "blit from bytes source upper limit out of bounds" begin fun () ->
+    test "blit from bytes source out of bounds: upper limit" begin fun () ->
       let bytes1 = Bytes.of_string "abc" in
       let str2 = "abcdef" in
       let buf2 = Lwt_bytes.of_string str2 in
@@ -229,7 +229,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return_false
     end;
 
-    test "blit from bytes destination lower limit out of bounds" begin fun () ->
+    test "blit from bytes destination out of bounds: lower limit" begin fun () ->
       let bytes1 = Bytes.of_string "abc" in
       let str2 = "abcdef" in
       let buf2 = Lwt_bytes.of_string str2 in
@@ -241,7 +241,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return_false
     end;
 
-    test "blit from bytes destination upper limit out of bounds" begin fun () ->
+    test "blit from bytes destination out of bounds: upper limit" begin fun () ->
       let bytes1 = Bytes.of_string "abc" in
       let str2 = "abcdef" in
       let buf2 = Lwt_bytes.of_string str2 in
@@ -253,7 +253,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return_false
     end;
 
-    test "blit from bytes length lower limit out of bounds" begin fun () ->
+    test "blit from bytes length out of bounds: lower limit" begin fun () ->
       let bytes1 = Bytes.of_string "abc" in
       let str2 = "abcdef" in
       let buf2 = Lwt_bytes.of_string str2 in
@@ -265,7 +265,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return_false
     end;
 
-    test "blit from bytes length upper limit out of bounds" begin fun () ->
+    test "blit from bytes length out of bounds: upper limit" begin fun () ->
       let bytes1 = Bytes.of_string "abc" in
       let str2 = "abcdef" in
       let buf2 = Lwt_bytes.of_string str2 in
@@ -287,7 +287,7 @@ let suite = suite "lwt_bytes" [
       Lwt.return check
     end;
 
-    test "blit to bytes source lower limit out of bounds" begin fun () ->
+    test "blit to bytes source out of bounds: lower limit" begin fun () ->
       let str1 = "abc" in
       let buf1 = Lwt_bytes.of_string str1 in
       let str2 = "abcdef" in
@@ -300,7 +300,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return_false
     end;
 
-    test "blit to bytes source upper limit out of bounds" begin fun () ->
+    test "blit to bytes source out of bounds: upper limit" begin fun () ->
       let str1 = "abc" in
       let buf1 = Lwt_bytes.of_string str1 in
       let str2 = "abcdef" in
@@ -313,7 +313,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return_false
     end;
 
-    test "blit to bytes destination lower limit out of bounds" begin fun () ->
+    test "blit to bytes destination out of bounds: lower limit" begin fun () ->
       let str1 = "abc" in
       let buf1 = Lwt_bytes.of_string str1 in
       let str2 = "abcdef" in
@@ -326,7 +326,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return_false
     end;
 
-    test "blit to bytes destination upper limit out of bounds" begin fun () ->
+    test "blit to bytes destination out of bounds: upper limit" begin fun () ->
       let str1 = "abc" in
       let buf1 = Lwt_bytes.of_string str1 in
       let str2 = "abcdef" in
@@ -339,7 +339,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return_false
     end;
 
-    test "blit to bytes length lower limit out of bounds" begin fun () ->
+    test "blit to bytes length out of bounds: lower limit" begin fun () ->
       let str1 = "abc" in
       let buf1 = Lwt_bytes.of_string str1 in
       let str2 = "abcdef" in
@@ -352,7 +352,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return_false
     end;
 
-    test "blit to bytes length upper limit out of bounds" begin fun () ->
+    test "blit to bytes length out of bounds: upper limit" begin fun () ->
       let str1 = "abc" in
       let buf1 = Lwt_bytes.of_string str1 in
       let str2 = "abcdef" in
@@ -412,7 +412,7 @@ let suite = suite "lwt_bytes" [
       Lwt.return check
     end;
 
-    test "extract offset lower limit out of bounds" begin fun () ->
+    test "extract offset out of bounds: lower limit" begin fun () ->
       let str = "abcdef" in
       let buf = Lwt_bytes.of_string str in
       try
@@ -423,7 +423,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return_false
     end;
 
-    test "extract offset upper limit out of bounds" begin fun () ->
+    test "extract offset out of bounds: upper limit" begin fun () ->
       let str = "abcdef" in
       let buf = Lwt_bytes.of_string str in
       try
@@ -434,7 +434,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return_false
     end;
 
-    test "extract length lower limit out of bounds" begin fun () ->
+    test "extract length out of bounds: lower limit" begin fun () ->
       let str = "abcdef" in
       let buf = Lwt_bytes.of_string str in
       try
@@ -445,7 +445,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return_false
     end;
 
-    test "extract length upper limit out of bounds" begin fun () ->
+    test "extract length out of bounds: upper limit" begin fun () ->
       let str = "abcdef" in
       let buf = Lwt_bytes.of_string str in
       try
@@ -472,7 +472,7 @@ let suite = suite "lwt_bytes" [
       Lwt.return check
     end;
 
-    test "fill offset lower limit out of bounds" begin fun () ->
+    test "fill offset out of bounds: lower limit" begin fun () ->
       let str = "abcdef" in
       let buf = Lwt_bytes.of_string str in
       try
@@ -483,7 +483,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return_false
     end;
 
-    test "fill offset upper limit out of bounds" begin fun () ->
+    test "fill offset out of bounds: upper limit" begin fun () ->
       let str = "abcdef" in
       let buf = Lwt_bytes.of_string str in
       try
@@ -494,7 +494,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return_false
     end;
 
-    test "fill length lower limit out of bounds" begin fun () ->
+    test "fill length out of bounds lower limit" begin fun () ->
       let str = "abcdef" in
       let buf = Lwt_bytes.of_string str in
       try
@@ -505,7 +505,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return_false
     end;
 
-    test "fill length upper limit out of bounds" begin fun () ->
+    test "fill length out of bounds upper limit" begin fun () ->
       let str = "abcdef" in
       let buf = Lwt_bytes.of_string str in
       try
