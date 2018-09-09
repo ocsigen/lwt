@@ -44,7 +44,7 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return false
     end;
 
-    test "unsafe_get/unsage_set" begin fun () ->
+    test "unsafe_get/unsafe_set" begin fun () ->
       let buff = Lwt_bytes.create 4 in
       let () = Lwt_bytes.unsafe_set buff 0 'a' in
       let () = Lwt_bytes.unsafe_set buff 1 'b' in
