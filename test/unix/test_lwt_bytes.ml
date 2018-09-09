@@ -37,7 +37,7 @@ let suite = suite "lwt_bytes" [
     test "get out of bounds : upper limit" begin fun () ->
       let buff = Lwt_bytes.create 3 in
       try
-        let _ = Lwt_bytes.get buff 150 in
+        let _ = Lwt_bytes.get buff 4 in
         Lwt.return false
       with
       | Invalid_argument _ -> Lwt.return true
@@ -57,7 +57,7 @@ let suite = suite "lwt_bytes" [
     test "set out of bounds : upper limit" begin fun () ->
       let buff = Lwt_bytes.create 3 in
       try
-        let () = Lwt_bytes.set buff 150 'a' in
+        let () = Lwt_bytes.set buff 4 'a' in
         Lwt.return true
       with
       | Invalid_argument _ -> Lwt.return true
@@ -137,7 +137,7 @@ let suite = suite "lwt_bytes" [
       let str2 = "abcdef" in
       let buf2 = Lwt_bytes.of_string str2 in
       try
-        let() = Lwt_bytes.blit buf1 4 buf2 3 3 in
+        let() = Lwt_bytes.blit buf1 1 buf2 3 3 in
         Lwt.return_false
       with
       | Invalid_argument _ -> Lwt.return true
@@ -163,7 +163,7 @@ let suite = suite "lwt_bytes" [
       let str2 = "abcdef" in
       let buf2 = Lwt_bytes.of_string str2 in
       try
-        let() = Lwt_bytes.blit buf1 0 buf2 150 3 in
+        let() = Lwt_bytes.blit buf1 0 buf2 4 3 in
         Lwt.return_false
       with
       | Invalid_argument _ -> Lwt.return true
@@ -209,7 +209,7 @@ let suite = suite "lwt_bytes" [
       let str2 = "abcdef" in
       let buf2 = Lwt_bytes.of_string str2 in
       try
-        let () = Lwt_bytes.blit_from_bytes bytes1 4 buf2 3 3 in
+        let () = Lwt_bytes.blit_from_bytes bytes1 1 buf2 3 3 in
         Lwt.return_false
       with
       | Invalid_argument _ -> Lwt.return_true
@@ -233,7 +233,7 @@ let suite = suite "lwt_bytes" [
       let str2 = "abcdef" in
       let buf2 = Lwt_bytes.of_string str2 in
       try
-        let () = Lwt_bytes.blit_from_bytes bytes1 0 buf2 150 3 in
+        let () = Lwt_bytes.blit_from_bytes bytes1 0 buf2 4 3 in
         Lwt.return_false
       with
       | Invalid_argument _ -> Lwt.return_true
@@ -281,7 +281,7 @@ let suite = suite "lwt_bytes" [
       let str2 = "abcdef" in
       let bytes2 = Bytes.of_string str2 in
       try
-        let () = Lwt_bytes.blit_to_bytes buf1 4 bytes2 3 3 in
+        let () = Lwt_bytes.blit_to_bytes buf1 1 bytes2 3 3 in
         Lwt.return_false
       with
       | Invalid_argument _ -> Lwt.return_true
@@ -307,7 +307,7 @@ let suite = suite "lwt_bytes" [
       let str2 = "abcdef" in
       let bytes2 = Bytes.of_string str2 in
       try
-        let () = Lwt_bytes.blit_to_bytes buf1 0 bytes2 150 3 in
+        let () = Lwt_bytes.blit_to_bytes buf1 0 bytes2 4 3 in
         Lwt.return_false
       with
       | Invalid_argument _ -> Lwt.return_true
