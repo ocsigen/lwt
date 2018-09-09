@@ -118,13 +118,13 @@ let suite = suite "lwt_bytes" [
       Lwt.return check
     end;
 
-    test "blit out of bound" begin fun () ->
+    test "blit source out of bound: lower limit" begin fun () ->
       let str1 = "abc" in
       let buf1 = Lwt_bytes.of_string str1 in
       let str2 = "abcdef" in
       let buf2 = Lwt_bytes.of_string str2 in
       try
-        let() = Lwt_bytes.blit buf1 150 buf2 150 150 in
+        let() = Lwt_bytes.blit buf1 (-1) buf2 3 3 in
         Lwt.return_false
       with
       | Invalid_argument _ -> Lwt.return true
