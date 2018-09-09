@@ -3,6 +3,8 @@
 
 open Test
 
+let bytes_equal b1 b2 = b1 = b2
+
 let suite = suite "lwt_bytes" [
     test "create" begin fun () ->
       let len = 5 in
@@ -74,7 +76,7 @@ let suite = suite "lwt_bytes" [
       let bytes = Bytes.of_string "abc" in
       let buff = Lwt_bytes.of_bytes bytes in
       let bytes' = Lwt_bytes.to_bytes buff in
-      let check = Bytes.equal bytes bytes' in
+      let check = bytes_equal bytes bytes' in
       Lwt.return check
     end;
 
