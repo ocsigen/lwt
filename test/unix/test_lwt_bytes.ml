@@ -144,6 +144,32 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return false
     end;
 
+    test "blit destination out of bound: lower limit" begin fun () ->
+      let str1 = "abc" in
+      let buf1 = Lwt_bytes.of_string str1 in
+      let str2 = "abcdef" in
+      let buf2 = Lwt_bytes.of_string str2 in
+      try
+        let() = Lwt_bytes.blit buf1 0 buf2 (-1) 3 in
+        Lwt.return_false
+      with
+      | Invalid_argument _ -> Lwt.return true
+      | _ -> Lwt.return false
+    end;
+
+    test "blit destination out of bound: upper limit" begin fun () ->
+      let str1 = "abc" in
+      let buf1 = Lwt_bytes.of_string str1 in
+      let str2 = "abcdef" in
+      let buf2 = Lwt_bytes.of_string str2 in
+      try
+        let() = Lwt_bytes.blit buf1 0 buf2 150 3 in
+        Lwt.return_false
+      with
+      | Invalid_argument _ -> Lwt.return true
+      | _ -> Lwt.return false
+    end;
+
     test "blit from bytes" begin fun () ->
       let bytes1 = Bytes.of_string "abc" in
       let str2 = "abcdef" in
