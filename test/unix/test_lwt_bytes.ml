@@ -37,7 +37,7 @@ let suite = suite "lwt_bytes" [
     test "get out of bounds : upper limit" begin fun () ->
       let buff = Lwt_bytes.create 3 in
       try
-        let _ = Lwt_bytes.get buff 4 in
+        let _ = Lwt_bytes.get buff 3 in
         Lwt.return false
       with
       | Invalid_argument _ -> Lwt.return true
@@ -57,7 +57,7 @@ let suite = suite "lwt_bytes" [
     test "set out of bounds : upper limit" begin fun () ->
       let buff = Lwt_bytes.create 3 in
       try
-        let () = Lwt_bytes.set buff 4 'a' in
+        let () = Lwt_bytes.set buff 3 'a' in
         Lwt.return true
       with
       | Invalid_argument _ -> Lwt.return true
