@@ -34,4 +34,5 @@ let () =
     Test_mcast.suite;
     Test_lwt_fmt.suite;
     Test_lwt_timeout.suite;
+    Test_lwt_bytes.suite;
   ]
