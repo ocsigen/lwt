@@ -9,7 +9,7 @@ let suite = suite "lwt_bytes" [
     test "create" begin fun () ->
       let len = 5 in
       let buff = Lwt_bytes.create len in
-      let len' = Lwt_bytes.length buff in
+      let len' = Bigarray.Array1.dim buff in
       Lwt.return (len = len')
     end;
 
