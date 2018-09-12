@@ -39,6 +39,7 @@ Lwt_throttle
 Lwt_timeout
 Lwt_unix
 Lwt_bytes
+Lwt_fmt
 Lwt_sys
 }
 
