@@ -371,8 +371,8 @@ let suite = suite "lwt_bytes" [
       let str = "abcdef" in
       let buf = Lwt_bytes.of_string str in
       try
-      let _ = Lwt_bytes.proxy buf (-1) 3 in
-      Lwt.return_false
+        let _ = Lwt_bytes.proxy buf (-1) 3 in
+        Lwt.return_false
       with
       | Invalid_argument _ -> Lwt.return_true
       | _ -> Lwt.return_false
@@ -382,8 +382,8 @@ let suite = suite "lwt_bytes" [
       let str = "abcdef" in
       let buf = Lwt_bytes.of_string str in
       try
-      let _ = Lwt_bytes.proxy buf 4 3 in
-      Lwt.return_false
+        let _ = Lwt_bytes.proxy buf 4 3 in
+        Lwt.return_false
       with
       | Invalid_argument _ -> Lwt.return_true
       | _ -> Lwt.return_false
@@ -393,8 +393,8 @@ let suite = suite "lwt_bytes" [
       let str = "abcdef" in
       let buf = Lwt_bytes.of_string str in
       try
-      let _ = Lwt_bytes.proxy buf 3 (-1) in
-      Lwt.return_false
+        let _ = Lwt_bytes.proxy buf 3 (-1) in
+        Lwt.return_false
       with
       | Invalid_argument _ -> Lwt.return_true
       | _ -> Lwt.return_false
@@ -498,7 +498,6 @@ let suite = suite "lwt_bytes" [
       Lwt.return check
     end;
 
-
     test "bytes read" begin fun () ->
       let test_fd = "bytes_io_data.ml" in
       let unix_fd = Unix.openfile test_fd [O_RDONLY] 0 in
@@ -507,6 +506,23 @@ let suite = suite "lwt_bytes" [
       Lwt_bytes.read fd buf 0 6
       >>= fun _n ->
       let check = "abcdef" = Lwt_bytes.to_string buf in
+      Lwt.return check
+    end;
+
+    test "bytes write" begin fun () ->
+      let test_fd = "bytes_io_data_write.ml" in
+      let unix_fd = Unix.openfile test_fd [O_RDWR;O_TRUNC; O_CREAT] 0o666 in
+      let fd = Lwt_unix.of_unix_file_descr unix_fd in
+      let buf_write = Lwt_bytes.of_string "abc" in
+      Lwt_bytes.write fd buf_write 0 3
+      >>= fun _n ->
+      let () = Unix.close unix_fd in (* close to flush before test *)
+      let unix_fd = Unix.openfile test_fd [O_RDONLY] 0 in
+      let fd = Lwt_unix.of_unix_file_descr unix_fd in
+      let buf_read = Lwt_bytes.create 3 in
+      Lwt_bytes.read fd buf_read 0 3
+      >>= fun _n ->
+      let check = buf_write = buf_read in
       Lwt.return check
     end;
   ]
