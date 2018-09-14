@@ -1,6 +1,7 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
+open Lwt.Infix
 open Test
 
 let bytes_equal (b1:Bytes.t) (b2:Bytes.t) = b1 = b2
@@ -494,6 +495,18 @@ let suite = suite "lwt_bytes" [
       let buf = Lwt_bytes.of_string str in
       let () = Lwt_bytes.unsafe_fill buf 3 3 'a' in
       let check = "abcaaa" = Lwt_bytes.to_string buf in
+      Lwt.return check
+    end;
+
+
+    test "bytes of fd" begin fun () ->
+      let test_fd = "bytes_io_data.ml" in
+      let unix_fd = Unix.openfile test_fd [O_RDONLY] 0 in
+      let fd = Lwt_unix.of_unix_file_descr unix_fd in
+      let buf = Lwt_bytes.create 6 in
+      Lwt_bytes.read fd buf 0 6
+      >>= fun _n ->
+      let check = "abcdef" = Lwt_bytes.to_string buf in
       Lwt.return check
     end;
   ]
