@@ -499,7 +499,7 @@ let suite = suite "lwt_bytes" [
     end;
 
 
-    test "bytes of fd" begin fun () ->
+    test "bytes read" begin fun () ->
       let test_fd = "bytes_io_data.ml" in
       let unix_fd = Unix.openfile test_fd [O_RDONLY] 0 in
       let fd = Lwt_unix.of_unix_file_descr unix_fd in
