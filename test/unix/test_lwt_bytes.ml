@@ -499,7 +499,7 @@ let suite = suite "lwt_bytes" [
     end;
 
     test "bytes read" begin fun () ->
-      let test_fd = "bytes_io_data.ml" in
+      let test_fd = "bytes_io_data" in
       let unix_fd = Unix.openfile test_fd [O_RDONLY] 0 in
       let fd = Lwt_unix.of_unix_file_descr unix_fd in
       let buf = Lwt_bytes.create 6 in
@@ -510,7 +510,7 @@ let suite = suite "lwt_bytes" [
     end;
 
     test "bytes write" begin fun () ->
-      let test_fd = "bytes_io_data_write.ml" in
+      let test_fd = "bytes_io_data_write" in
       let unix_fd = Unix.openfile test_fd [O_RDWR;O_TRUNC; O_CREAT] 0o666 in
       let fd = Lwt_unix.of_unix_file_descr unix_fd in
       let buf_write = Lwt_bytes.of_string "abc" in

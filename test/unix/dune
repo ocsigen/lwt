@@ -10,4 +10,6 @@
 (alias
  (name runtest)
  (package lwt)
- (action (run %{exe:main.exe})))
+ (action (run %{exe:main.exe}))
+ (deps bytes_io_data)
+)
