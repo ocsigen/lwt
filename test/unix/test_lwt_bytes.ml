@@ -499,30 +499,35 @@ let suite = suite "lwt_bytes" [
     end;
 
     test "bytes read" begin fun () ->
-      let test_fd = "bytes_io_data" in
-      let unix_fd = Unix.openfile test_fd [O_RDONLY] 0 in
-      let fd = Lwt_unix.of_unix_file_descr unix_fd in
+      let test_file = "bytes_io_data" in
+      Lwt_unix.openfile test_file [O_RDONLY] 0
+      >>= fun fd ->
       let buf = Lwt_bytes.create 6 in
       Lwt_bytes.read fd buf 0 6
       >>= fun _n ->
       let check = "abcdef" = Lwt_bytes.to_string buf in
+      Lwt_unix.close fd
+      >>= fun () ->
       Lwt.return check
     end;
 
     test "bytes write" begin fun () ->
-      let test_fd = "bytes_io_data_write" in
-      let unix_fd = Unix.openfile test_fd [O_RDWR;O_TRUNC; O_CREAT] 0o666 in
-      let fd = Lwt_unix.of_unix_file_descr unix_fd in
+      let test_file = "bytes_io_data_write" in
+      Lwt_unix.openfile test_file [O_RDWR;O_TRUNC; O_CREAT] 0o666
+      >>= fun fd ->
       let buf_write = Lwt_bytes.of_string "abc" in
       Lwt_bytes.write fd buf_write 0 3
       >>= fun _n ->
-      let () = Unix.close unix_fd in (* close to flush before test *)
-      let unix_fd = Unix.openfile test_fd [O_RDONLY] 0 in
-      let fd = Lwt_unix.of_unix_file_descr unix_fd in
+      Lwt_unix.close fd
+      >>= fun () ->
+      Lwt_unix.openfile test_file [O_RDONLY] 0
+      >>= fun fd ->
       let buf_read = Lwt_bytes.create 3 in
       Lwt_bytes.read fd buf_read 0 3
       >>= fun _n ->
       let check = buf_write = buf_read in
+      Lwt_unix.close fd
+      >>= fun () ->
       Lwt.return check
     end;
   ]
