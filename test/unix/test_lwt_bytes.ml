@@ -530,4 +530,43 @@ let suite = suite "lwt_bytes" [
       >>= fun () ->
       Lwt.return check
     end;
+
+    test "bytes recv" begin fun () ->
+      let hostname = "127.0.0.1" in
+      let port = 20000 in
+      let get_socket_infos () =
+             Lwt_unix.gethostbyname hostname
+             >>= fun entry ->
+             let addr = Array.get entry.Unix.h_addr_list 0 in
+             let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_STREAM 0 in
+             let sockaddr = Lwt_unix.ADDR_INET (addr, port) in
+             Lwt.return (sock, sockaddr)
+      in
+      let buf = Lwt_bytes.create 6 in
+      let server () =
+          get_socket_infos ()
+          >>= fun (sock, sockaddr) ->
+          Lwt_unix.bind sock sockaddr
+          >>= fun () ->
+          let () = Lwt_unix.listen sock 5 in
+          Lwt_unix.accept sock
+          >>= fun (fd_client, _) ->
+          Lwt_unix.write_string fd_client "abcdefghij" 0 9
+          >>= fun _n -> Lwt_unix.close fd_client
+          >>= fun () -> Lwt_unix.close sock
+      in
+      let client () =
+          Lwt_unix.sleep 0.5
+          >>= fun () ->
+          get_socket_infos ()
+          >>= fun (sock, sockaddr) ->
+          Lwt_unix.connect sock sockaddr
+          >>= fun () ->
+          Lwt_bytes.recv sock buf 0 6 []
+          >>= fun _n -> Lwt_unix.close sock
+      in
+      let () = Lwt_main.run (Lwt.join [client (); server ()]) in
+      let check = "abcdef" = Lwt_bytes.to_string buf in
+      Lwt.return check
+    end;
   ]
