@@ -561,4 +561,36 @@ let suite = suite "lwt_bytes" [
       let check = "abcdef" = Lwt_bytes.to_string buf in
       Lwt.return check
     end;
+
+    test "bytes send" ~only_if:(fun () -> not Sys.win32) begin fun () ->
+      let server_is_ready, notify_server_is_ready = Lwt.wait () in
+      let buf = Lwt_bytes.create 6 in
+      let server () =
+        let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_STREAM 0 in
+        let sockaddr = Lwt_unix.ADDR_INET (Unix.inet_addr_loopback, 0) in
+        Lwt_unix.bind sock sockaddr
+        >>= fun () ->
+        let server_address = Lwt_unix.getsockname sock in
+        Lwt.wakeup_later notify_server_is_ready server_address;
+        let () = Lwt_unix.listen sock 5 in
+        Lwt_unix.accept sock
+        >>= fun (fd_client, _) ->
+        Lwt_bytes.send fd_client (Lwt_bytes.of_string "abcdef") 0 6 []
+        >>= fun _n -> Lwt_unix.close fd_client
+        >>= fun () -> Lwt_unix.close sock
+      in
+      let client () =
+        server_is_ready
+        >>= fun sockaddr ->
+        let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_STREAM 0 in
+        Lwt_unix.connect sock sockaddr
+        >>= fun () ->
+        Lwt_bytes.recv sock buf 0 6 []
+        >>= fun _n -> Lwt_unix.close sock
+      in
+      let () = Lwt_main.run (Lwt.join [client (); server ()]) in
+      let check = "abcdef" = Lwt_bytes.to_string buf in
+      Lwt.return check
+    end;
+
   ]
