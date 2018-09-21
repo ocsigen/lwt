@@ -531,7 +531,7 @@ let suite = suite "lwt_bytes" [
       Lwt.return check
     end;
 
-    test "bytes recv" begin fun () ->
+    test "bytes recv" ~only_if:(fun () -> not Sys.win32) begin fun () ->
       let server_is_ready, notify_server_is_ready = Lwt.wait () in
       let buf = Lwt_bytes.create 6 in
       let server () =
