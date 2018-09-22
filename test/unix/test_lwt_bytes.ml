@@ -617,4 +617,30 @@ let suite = suite "lwt_bytes" [
       let check = "abcdef" = Lwt_bytes.to_string buf in
       Lwt.return check
     end;
+
+    test "bytes sendto" ~only_if:(fun () -> not Sys.win32) begin fun () ->
+      let server_is_ready, notify_server_is_ready = Lwt.wait () in
+      let buf = Lwt_bytes.create 6 in
+      let server () =
+        let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 17 in
+        let sockaddr = Lwt_unix.ADDR_INET (Unix.inet_addr_loopback, 0) in
+        Lwt_unix.bind sock sockaddr
+        >>= fun () ->
+        let server_address = Lwt_unix.getsockname sock in
+        Lwt.wakeup_later notify_server_is_ready server_address;
+        Lwt_bytes.recvfrom sock buf 0 6 []
+        >>= fun (_n, _sockaddr) -> Lwt_unix.close sock
+      in
+      let client () =
+        server_is_ready
+        >>= fun sockaddr ->
+        let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 17 in
+        let message = Lwt_bytes.of_string "abcdefghij" in
+        Lwt_bytes.sendto sock message 0 9 [] sockaddr
+        >>= fun (_n) -> Lwt_unix.close sock
+      in
+      let () = Lwt_main.run (Lwt.join [client (); server ()]) in
+      let check = "abcdef" = Lwt_bytes.to_string buf in
+      Lwt.return check
+    end;
   ]
