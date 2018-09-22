@@ -597,7 +597,7 @@ let suite = suite "lwt_bytes" [
       let server_is_ready, notify_server_is_ready = Lwt.wait () in
       let buf = Lwt_bytes.create 6 in
       let server () =
-        let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 17 in
+        let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 0 in
         let sockaddr = Lwt_unix.ADDR_INET (Unix.inet_addr_loopback, 0) in
         Lwt_unix.bind sock sockaddr
         >>= fun () ->
@@ -609,7 +609,7 @@ let suite = suite "lwt_bytes" [
       let client () =
         server_is_ready
         >>= fun sockaddr ->
-        let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 17 in
+        let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 0 in
         Lwt_unix.sendto sock (Bytes.of_string "abcdefghij") 0 9 [] sockaddr
         >>= fun (_n) -> Lwt_unix.close sock
       in
@@ -622,7 +622,7 @@ let suite = suite "lwt_bytes" [
       let server_is_ready, notify_server_is_ready = Lwt.wait () in
       let buf = Lwt_bytes.create 6 in
       let server () =
-        let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 17 in
+        let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 0 in
         let sockaddr = Lwt_unix.ADDR_INET (Unix.inet_addr_loopback, 0) in
         Lwt_unix.bind sock sockaddr
         >>= fun () ->
