@@ -147,14 +147,3 @@ make coverage
 make clean
 make install-for-packaging-test
 make packaging-test
-
-
-
-# Some sanity checks.
-if [ "$LIBEV" == no ]
-then
-    ! opam list -i conf-libev
-fi
-
-opam list -i ppx_tools_versioned
-! opam list -i batteries
