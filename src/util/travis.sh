@@ -136,7 +136,7 @@ else
     LIBEV_FLAG=false
 fi
 
-ocaml src/unix/config/configure.ml -use-libev $LIBEV_FLAG
+dune exec src/unix/config/configure.exe -- -use-libev $LIBEV_FLAG
 make build
 make test
 make coverage
