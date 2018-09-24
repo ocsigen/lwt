@@ -35,15 +35,18 @@ let main () =
   let config_file = "lwt_config" in
 
   begin match !default_configuration with
-  | Some true ->
+  | Some true -> begin
     (* Check if we have the opam command and conf-libev is installed. If so,
-       behave as if -use-libev true was passed. *)
-    if not @@ Sys.file_exists config_file then
-      if Sys.command "opam --version > /dev/null" = 0 then
-        if Sys.command "opam list --installed conf-libev > /dev/null" = 0 then
-          use_libev := Some true
-        else
-          use_libev := Some false
+       behave as if -use-libev true was passed.
+       opam 2.0.0 returns exit code 0 for `opam list` even if the package is not available,
+       so we instead use opam config vars to detect the presence of conf-libev *)
+    try
+      let ch = Unix.open_process_in "opam config var conf-libev:installed 2>/dev/null" in
+      match input_line ch with
+      |"true" -> use_libev := Some true
+      |_ -> use_libev := Some false
+    with _ -> use_libev := Some false
+  end
   | _ ->
     ()
   end;
