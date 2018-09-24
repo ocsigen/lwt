@@ -634,7 +634,7 @@ let suite = suite "lwt_bytes" [
       let client () =
         server_is_ready
         >>= fun sockaddr ->
-        let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 17 in
+        let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 0 in
         let message = Lwt_bytes.of_string "abcdefghij" in
         Lwt_bytes.sendto sock message 0 9 [] sockaddr
         >>= fun (_n) -> Lwt_unix.close sock
