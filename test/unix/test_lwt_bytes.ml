@@ -54,6 +54,11 @@ let udp_server_client_exchange server_logic client_logic =
   in
   Lwt_main.run (Lwt.join [client (); server ()])
 
+let gen_buf n =
+  let buf = Lwt_bytes.create n in
+  let () = Lwt_bytes.fill buf 0 n '0' in
+  buf
+
 let suite = suite "lwt_bytes" [
     test "create" begin fun () ->
       let len = 5 in
@@ -580,7 +585,7 @@ let suite = suite "lwt_bytes" [
     end;
 
     test "bytes recv" ~only_if:(fun () -> not Sys.win32) begin fun () ->
-      let buf = Lwt_bytes.create 6 in
+      let buf = gen_buf 6 in
       let server_logic socket =
         Lwt_unix.write_string socket "abcdefghij" 0 9
       in
@@ -593,7 +598,7 @@ let suite = suite "lwt_bytes" [
     end;
 
     test "bytes send" ~only_if:(fun () -> not Sys.win32) begin fun () ->
-      let buf = Lwt_bytes.create 6 in
+      let buf = gen_buf 6 in
       let server_logic socket =
         Lwt_bytes.send socket (Lwt_bytes.of_string "abcdef") 0 6 []
       in
@@ -606,7 +611,7 @@ let suite = suite "lwt_bytes" [
     end;
 
     test "bytes recvfrom" ~only_if:(fun () -> not Sys.win32) begin fun () ->
-      let buf = Lwt_bytes.create 6 in
+      let buf = gen_buf 6 in
       let server_logic socket =
         Lwt_bytes.recvfrom socket buf 0 6 []
       in
@@ -619,7 +624,7 @@ let suite = suite "lwt_bytes" [
     end;
 
     test "bytes sendto" ~only_if:(fun () -> not Sys.win32) begin fun () ->
-      let buf = Lwt_bytes.create 6 in
+      let buf = gen_buf 6 in
       let server_logic socket =
         Lwt_bytes.recvfrom socket buf 0 6 []
       in
@@ -633,7 +638,7 @@ let suite = suite "lwt_bytes" [
     end;
 
     test "bytes recv_msg" ~only_if:(fun () -> not Sys.win32) begin fun () ->
-      let buffer = Lwt_bytes.create 6 in
+      let buffer = gen_buf 6 in
       let offset = 0 in
       let io_vectors = [Lwt_bytes.io_vector ~buffer ~offset ~length:6] in
       let server_logic socket =
@@ -649,7 +654,7 @@ let suite = suite "lwt_bytes" [
     end;
 
     test "bytes send_msg" ~only_if:(fun () -> not Sys.win32) begin fun () ->
-      let buffer = Lwt_bytes.create 6 in
+      let buffer = gen_buf 6 in
       let offset = 0 in
       let server_logic socket =
         let io_vectors = [Lwt_bytes.io_vector ~buffer ~offset ~length:6] in
