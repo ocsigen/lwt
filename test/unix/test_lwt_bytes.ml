@@ -33,6 +33,27 @@ let tcp_server_client_exchange server_logic client_logic =
   in
   Lwt_main.run (Lwt.join [client (); server ()])
 
+let udp_server_client_exchange server_logic client_logic =
+  let server_is_ready, notify_server_is_ready = Lwt.wait () in
+  let server () =
+    let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 0 in
+    let sockaddr = Lwt_unix.ADDR_INET (Unix.inet_addr_loopback, 0) in
+    Lwt_unix.bind sock sockaddr
+    >>= fun () ->
+    let server_address = Lwt_unix.getsockname sock in
+    Lwt.wakeup_later notify_server_is_ready server_address;
+    server_logic sock
+    >>= fun (_n, _sockaddr) -> Lwt_unix.close sock
+  in
+  let client () =
+    server_is_ready
+    >>= fun sockaddr ->
+    let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 0 in
+    client_logic sock sockaddr
+    >>= fun (_n) -> Lwt_unix.close sock
+  in
+  Lwt_main.run (Lwt.join [client (); server ()])
+
 let suite = suite "lwt_bytes" [
     test "create" begin fun () ->
       let len = 5 in
@@ -585,111 +606,63 @@ let suite = suite "lwt_bytes" [
     end;
 
     test "bytes recvfrom" ~only_if:(fun () -> not Sys.win32) begin fun () ->
-      let server_is_ready, notify_server_is_ready = Lwt.wait () in
       let buf = Lwt_bytes.create 6 in
-      let server () =
-        let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 0 in
-        let sockaddr = Lwt_unix.ADDR_INET (Unix.inet_addr_loopback, 0) in
-        Lwt_unix.bind sock sockaddr
-        >>= fun () ->
-        let server_address = Lwt_unix.getsockname sock in
-        Lwt.wakeup_later notify_server_is_ready server_address;
-        Lwt_bytes.recvfrom sock buf 0 6 []
-        >>= fun (_n, _sockaddr) -> Lwt_unix.close sock
+      let server_logic socket =
+        Lwt_bytes.recvfrom socket buf 0 6 []
       in
-      let client () =
-        server_is_ready
-        >>= fun sockaddr ->
-        let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 0 in
-        Lwt_unix.sendto sock (Bytes.of_string "abcdefghij") 0 9 [] sockaddr
-        >>= fun (_n) -> Lwt_unix.close sock
+      let client_logic socket sockaddr =
+        Lwt_unix.sendto socket (Bytes.of_string "abcdefghij") 0 9 [] sockaddr
       in
-      let () = Lwt_main.run (Lwt.join [client (); server ()]) in
+      let () = udp_server_client_exchange server_logic client_logic in
       let check = "abcdef" = Lwt_bytes.to_string buf in
       Lwt.return check
     end;
 
     test "bytes sendto" ~only_if:(fun () -> not Sys.win32) begin fun () ->
-      let server_is_ready, notify_server_is_ready = Lwt.wait () in
       let buf = Lwt_bytes.create 6 in
-      let server () =
-        let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 0 in
-        let sockaddr = Lwt_unix.ADDR_INET (Unix.inet_addr_loopback, 0) in
-        Lwt_unix.bind sock sockaddr
-        >>= fun () ->
-        let server_address = Lwt_unix.getsockname sock in
-        Lwt.wakeup_later notify_server_is_ready server_address;
-        Lwt_bytes.recvfrom sock buf 0 6 []
-        >>= fun (_n, _sockaddr) -> Lwt_unix.close sock
+      let server_logic socket =
+        Lwt_bytes.recvfrom socket buf 0 6 []
       in
-      let client () =
-        server_is_ready
-        >>= fun sockaddr ->
-        let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 0 in
+      let client_logic socket sockaddr =
         let message = Lwt_bytes.of_string "abcdefghij" in
-        Lwt_bytes.sendto sock message 0 9 [] sockaddr
-        >>= fun (_n) -> Lwt_unix.close sock
+        Lwt_bytes.sendto socket message 0 9 [] sockaddr
       in
-      let () = Lwt_main.run (Lwt.join [client (); server ()]) in
+      let () = udp_server_client_exchange server_logic client_logic in
       let check = "abcdef" = Lwt_bytes.to_string buf in
       Lwt.return check
     end;
 
     test "bytes recv_msg" ~only_if:(fun () -> not Sys.win32) begin fun () ->
-      let server_is_ready, notify_server_is_ready = Lwt.wait () in
       let buffer = Lwt_bytes.create 6 in
       let offset = 0 in
       let io_vectors = [Lwt_bytes.io_vector ~buffer ~offset ~length:6] in
-      let server () =
-        let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 0 in
-        let sockaddr = Lwt_unix.ADDR_INET (Unix.inet_addr_loopback, 0) in
-        Lwt_unix.bind sock sockaddr
-        >>= fun () ->
-        let server_address = Lwt_unix.getsockname sock in
-        Lwt.wakeup_later notify_server_is_ready server_address;
-        Lwt_bytes.recv_msg ~socket:sock ~io_vectors
-        >>= fun (_n, _sockaddr) -> Lwt_unix.close sock
+      let server_logic socket =
+        Lwt_bytes.recv_msg ~socket ~io_vectors
       in
-      let client () =
-        server_is_ready
-        >>= fun sockaddr ->
-        let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 0 in
+      let client_logic socket sockaddr =
         let message = Lwt_bytes.of_string "abcdefghij" in
-        Lwt_bytes.sendto sock message 0 9 [] sockaddr
-        >>= fun (_n) -> Lwt_unix.close sock
+        Lwt_bytes.sendto socket message 0 9 [] sockaddr
       in
-      let () = Lwt_main.run (Lwt.join [client (); server ()]) in
+      let () = udp_server_client_exchange server_logic client_logic in
       let check = "abcdef" = Lwt_bytes.to_string buffer in
       Lwt.return check
     end;
 
     test "bytes send_msg" ~only_if:(fun () -> not Sys.win32) begin fun () ->
-      let server_is_ready, notify_server_is_ready = Lwt.wait () in
       let buffer = Lwt_bytes.create 6 in
       let offset = 0 in
-      let io_vectors = [Lwt_bytes.io_vector ~buffer ~offset ~length:6] in
-      let server () =
-        let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 0 in
-        let sockaddr = Lwt_unix.ADDR_INET (Unix.inet_addr_loopback, 0) in
-        Lwt_unix.bind sock sockaddr
-        >>= fun () ->
-        let server_address = Lwt_unix.getsockname sock in
-        Lwt.wakeup_later notify_server_is_ready server_address;
-        Lwt_bytes.recv_msg ~socket:sock ~io_vectors
-        >>= fun (_n, _sockaddr) -> Lwt_unix.close sock
+      let server_logic socket =
+        let io_vectors = [Lwt_bytes.io_vector ~buffer ~offset ~length:6] in
+        Lwt_bytes.recv_msg ~socket ~io_vectors
       in
-      let client () =
-        server_is_ready
-        >>= fun sockaddr ->
-        let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 0 in
-        Lwt_unix.connect sock sockaddr
+      let client_logic socket sockaddr =
+        Lwt_unix.connect socket sockaddr
         >>= fun () ->
         let message = Lwt_bytes.of_string "abcdefghij" in
         let io_vectors = [Lwt_bytes.io_vector ~buffer:message ~offset ~length:9] in
-        Lwt_bytes.send_msg ~socket:sock ~io_vectors ~fds:[]
-        >>= fun (_n) -> Lwt_unix.close sock
+        Lwt_bytes.send_msg ~socket ~io_vectors ~fds:[]
       in
-      let () = Lwt_main.run (Lwt.join [client (); server ()]) in
+      let () = udp_server_client_exchange server_logic client_logic in
       let check = "abcdef" = Lwt_bytes.to_string buffer in
       Lwt.return check
     end;
