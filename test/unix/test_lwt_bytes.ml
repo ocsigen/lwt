@@ -56,7 +56,7 @@ let udp_server_client_exchange server_logic client_logic =
 
 let gen_buf n =
   let buf = Lwt_bytes.create n in
-  let () = Lwt_bytes.fill buf 0 n '0' in
+  let () = Lwt_bytes.fill buf 0 n '\x00' in
   buf
 
 let suite = suite "lwt_bytes" [
