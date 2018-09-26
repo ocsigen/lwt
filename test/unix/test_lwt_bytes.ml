@@ -1,9 +1,63 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
+open Lwt.Infix
 open Test
 
 let bytes_equal (b1:Bytes.t) (b2:Bytes.t) = b1 = b2
+
+let tcp_server_client_exchange server_logic client_logic =
+  let server_is_ready, notify_server_is_ready = Lwt.wait () in
+  let server () =
+    let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_STREAM 0 in
+    let sockaddr = Lwt_unix.ADDR_INET (Unix.inet_addr_loopback, 0) in
+    Lwt_unix.bind sock sockaddr
+    >>= fun () ->
+    let server_address = Lwt_unix.getsockname sock in
+    let () = Lwt_unix.listen sock 5 in
+    Lwt.wakeup_later notify_server_is_ready server_address;
+    Lwt_unix.accept sock
+    >>= fun (fd_client, _) ->
+    server_logic fd_client
+    >>= fun _n -> Lwt_unix.close fd_client
+    >>= fun () -> Lwt_unix.close sock
+  in
+  let client () =
+    server_is_ready
+    >>= fun sockaddr ->
+    let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_STREAM 0 in
+    Lwt_unix.connect sock sockaddr
+    >>= fun () ->
+    client_logic sock
+    >>= fun _n -> Lwt_unix.close sock
+  in
+  Lwt.join [client (); server ()]
+
+let udp_server_client_exchange server_logic client_logic =
+  let server_is_ready, notify_server_is_ready = Lwt.wait () in
+  let server () =
+    let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 0 in
+    let sockaddr = Lwt_unix.ADDR_INET (Unix.inet_addr_loopback, 0) in
+    Lwt_unix.bind sock sockaddr
+    >>= fun () ->
+    let server_address = Lwt_unix.getsockname sock in
+    Lwt.wakeup_later notify_server_is_ready server_address;
+    server_logic sock
+    >>= fun (_n, _sockaddr) -> Lwt_unix.close sock
+  in
+  let client () =
+    server_is_ready
+    >>= fun sockaddr ->
+    let sock = Lwt_unix.socket Lwt_unix.PF_INET Lwt_unix.SOCK_DGRAM 0 in
+    client_logic sock sockaddr
+    >>= fun (_n) -> Lwt_unix.close sock
+  in
+  Lwt.join [client (); server ()]
+
+let gen_buf n =
+  let buf = Lwt_bytes.create n in
+  let () = Lwt_bytes.fill buf 0 n '\x00' in
+  buf
 
 let suite = suite "lwt_bytes" [
     test "create" begin fun () ->
@@ -370,8 +424,8 @@ let suite = suite "lwt_bytes" [
       let str = "abcdef" in
       let buf = Lwt_bytes.of_string str in
       try
-      let _ = Lwt_bytes.proxy buf (-1) 3 in
-      Lwt.return_false
+        let _ = Lwt_bytes.proxy buf (-1) 3 in
+        Lwt.return_false
       with
       | Invalid_argument _ -> Lwt.return_true
       | _ -> Lwt.return_false
@@ -381,8 +435,8 @@ let suite = suite "lwt_bytes" [
       let str = "abcdef" in
       let buf = Lwt_bytes.of_string str in
       try
-      let _ = Lwt_bytes.proxy buf 4 3 in
-      Lwt.return_false
+        let _ = Lwt_bytes.proxy buf 4 3 in
+        Lwt.return_false
       with
       | Invalid_argument _ -> Lwt.return_true
       | _ -> Lwt.return_false
@@ -392,8 +446,8 @@ let suite = suite "lwt_bytes" [
       let str = "abcdef" in
       let buf = Lwt_bytes.of_string str in
       try
-      let _ = Lwt_bytes.proxy buf 3 (-1) in
-      Lwt.return_false
+        let _ = Lwt_bytes.proxy buf 3 (-1) in
+        Lwt.return_false
       with
       | Invalid_argument _ -> Lwt.return_true
       | _ -> Lwt.return_false
@@ -494,6 +548,133 @@ let suite = suite "lwt_bytes" [
       let buf = Lwt_bytes.of_string str in
       let () = Lwt_bytes.unsafe_fill buf 3 3 'a' in
       let check = "abcaaa" = Lwt_bytes.to_string buf in
+      Lwt.return check
+    end;
+
+    test "bytes read" begin fun () ->
+      let test_file = "bytes_io_data" in
+      Lwt_unix.openfile test_file [O_RDONLY] 0
+      >>= fun fd ->
+      let buf = Lwt_bytes.create 6 in
+      Lwt_bytes.read fd buf 0 6
+      >>= fun _n ->
+      let check = "abcdef" = Lwt_bytes.to_string buf in
+      Lwt_unix.close fd
+      >>= fun () ->
+      Lwt.return check
+    end;
+
+    test "bytes write" begin fun () ->
+      let test_file = "bytes_io_data_write" in
+      Lwt_unix.openfile test_file [O_RDWR;O_TRUNC; O_CREAT] 0o666
+      >>= fun fd ->
+      let buf_write = Lwt_bytes.of_string "abc" in
+      Lwt_bytes.write fd buf_write 0 3
+      >>= fun _n ->
+      Lwt_unix.close fd
+      >>= fun () ->
+      Lwt_unix.openfile test_file [O_RDONLY] 0
+      >>= fun fd ->
+      let buf_read = Lwt_bytes.create 3 in
+      Lwt_bytes.read fd buf_read 0 3
+      >>= fun _n ->
+      let check = buf_write = buf_read in
+      Lwt_unix.close fd
+      >>= fun () ->
+      Lwt.return check
+    end;
+
+    test "bytes recv" ~only_if:(fun () -> not Sys.win32) begin fun () ->
+      let buf = gen_buf 6 in
+      let server_logic socket =
+        Lwt_unix.write_string socket "abcdefghij" 0 9
+      in
+      let client_logic socket =
+        Lwt_bytes.recv socket buf 0 6 []
+      in
+      tcp_server_client_exchange server_logic client_logic
+      >>= fun () ->
+      let check = "abcdef" = Lwt_bytes.to_string buf in
+      Lwt.return check
+    end;
+
+    test "bytes send" ~only_if:(fun () -> not Sys.win32) begin fun () ->
+      let buf = gen_buf 6 in
+      let server_logic socket =
+        Lwt_bytes.send socket (Lwt_bytes.of_string "abcdef") 0 6 []
+      in
+      let client_logic socket =
+        Lwt_bytes.recv socket buf 0 6 []
+      in
+      tcp_server_client_exchange server_logic client_logic
+      >>= fun () ->
+      let check = "abcdef" = Lwt_bytes.to_string buf in
+      Lwt.return check
+    end;
+
+    test "bytes recvfrom" ~only_if:(fun () -> not Sys.win32) begin fun () ->
+      let buf = gen_buf 6 in
+      let server_logic socket =
+        Lwt_bytes.recvfrom socket buf 0 6 []
+      in
+      let client_logic socket sockaddr =
+        Lwt_unix.sendto socket (Bytes.of_string "abcdefghij") 0 9 [] sockaddr
+      in
+      udp_server_client_exchange server_logic client_logic
+      >>= fun () ->
+      let check = "abcdef" = Lwt_bytes.to_string buf in
+      Lwt.return check
+    end;
+
+    test "bytes sendto" ~only_if:(fun () -> not Sys.win32) begin fun () ->
+      let buf = gen_buf 6 in
+      let server_logic socket =
+        Lwt_bytes.recvfrom socket buf 0 6 []
+      in
+      let client_logic socket sockaddr =
+        let message = Lwt_bytes.of_string "abcdefghij" in
+        Lwt_bytes.sendto socket message 0 9 [] sockaddr
+      in
+      udp_server_client_exchange server_logic client_logic
+      >>= fun () ->
+      let check = "abcdef" = Lwt_bytes.to_string buf in
+      Lwt.return check
+    end;
+
+    test "bytes recv_msg" ~only_if:(fun () -> not Sys.win32) begin fun () ->
+      let buffer = gen_buf 6 in
+      let offset = 0 in
+      let io_vectors = [Lwt_bytes.io_vector ~buffer ~offset ~length:6] in
+      let server_logic socket =
+        Lwt_bytes.recv_msg ~socket ~io_vectors
+      in
+      let client_logic socket sockaddr =
+        let message = Lwt_bytes.of_string "abcdefghij" in
+        Lwt_bytes.sendto socket message 0 9 [] sockaddr
+      in
+      udp_server_client_exchange server_logic client_logic
+      >>= fun () ->
+      let check = "abcdef" = Lwt_bytes.to_string buffer in
+      Lwt.return check
+    end;
+
+    test "bytes send_msg" ~only_if:(fun () -> not Sys.win32) begin fun () ->
+      let buffer = gen_buf 6 in
+      let offset = 0 in
+      let server_logic socket =
+        let io_vectors = [Lwt_bytes.io_vector ~buffer ~offset ~length:6] in
+        Lwt_bytes.recv_msg ~socket ~io_vectors
+      in
+      let client_logic socket sockaddr =
+        Lwt_unix.connect socket sockaddr
+        >>= fun () ->
+        let message = Lwt_bytes.of_string "abcdefghij" in
+        let io_vectors = [Lwt_bytes.io_vector ~buffer:message ~offset ~length:9] in
+        Lwt_bytes.send_msg ~socket ~io_vectors ~fds:[]
+      in
+      udp_server_client_exchange server_logic client_logic
+      >>= fun () ->
+      let check = "abcdef" = Lwt_bytes.to_string buffer in
       Lwt.return check
     end;
   ]
