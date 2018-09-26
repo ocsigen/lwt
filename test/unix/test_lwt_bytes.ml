@@ -31,7 +31,7 @@ let tcp_server_client_exchange server_logic client_logic =
     client_logic sock
     >>= fun _n -> Lwt_unix.close sock
   in
-  Lwt_main.run (Lwt.join [client (); server ()])
+  Lwt.join [client (); server ()]
 
 let udp_server_client_exchange server_logic client_logic =
   let server_is_ready, notify_server_is_ready = Lwt.wait () in
@@ -52,7 +52,7 @@ let udp_server_client_exchange server_logic client_logic =
     client_logic sock sockaddr
     >>= fun (_n) -> Lwt_unix.close sock
   in
-  Lwt_main.run (Lwt.join [client (); server ()])
+  Lwt.join [client (); server ()]
 
 let gen_buf n =
   let buf = Lwt_bytes.create n in
@@ -592,7 +592,8 @@ let suite = suite "lwt_bytes" [
       let client_logic socket =
         Lwt_bytes.recv socket buf 0 6 []
       in
-      let () = tcp_server_client_exchange server_logic client_logic in
+      tcp_server_client_exchange server_logic client_logic
+      >>= fun () ->
       let check = "abcdef" = Lwt_bytes.to_string buf in
       Lwt.return check
     end;
@@ -605,7 +606,8 @@ let suite = suite "lwt_bytes" [
       let client_logic socket =
         Lwt_bytes.recv socket buf 0 6 []
       in
-      let () = tcp_server_client_exchange server_logic client_logic in
+      tcp_server_client_exchange server_logic client_logic
+      >>= fun () ->
       let check = "abcdef" = Lwt_bytes.to_string buf in
       Lwt.return check
     end;
@@ -618,7 +620,8 @@ let suite = suite "lwt_bytes" [
       let client_logic socket sockaddr =
         Lwt_unix.sendto socket (Bytes.of_string "abcdefghij") 0 9 [] sockaddr
       in
-      let () = udp_server_client_exchange server_logic client_logic in
+      udp_server_client_exchange server_logic client_logic
+      >>= fun () ->
       let check = "abcdef" = Lwt_bytes.to_string buf in
       Lwt.return check
     end;
@@ -632,7 +635,8 @@ let suite = suite "lwt_bytes" [
         let message = Lwt_bytes.of_string "abcdefghij" in
         Lwt_bytes.sendto socket message 0 9 [] sockaddr
       in
-      let () = udp_server_client_exchange server_logic client_logic in
+      udp_server_client_exchange server_logic client_logic
+      >>= fun () ->
       let check = "abcdef" = Lwt_bytes.to_string buf in
       Lwt.return check
     end;
@@ -648,7 +652,8 @@ let suite = suite "lwt_bytes" [
         let message = Lwt_bytes.of_string "abcdefghij" in
         Lwt_bytes.sendto socket message 0 9 [] sockaddr
       in
-      let () = udp_server_client_exchange server_logic client_logic in
+      udp_server_client_exchange server_logic client_logic
+      >>= fun () ->
       let check = "abcdef" = Lwt_bytes.to_string buffer in
       Lwt.return check
     end;
@@ -667,7 +672,8 @@ let suite = suite "lwt_bytes" [
         let io_vectors = [Lwt_bytes.io_vector ~buffer:message ~offset ~length:9] in
         Lwt_bytes.send_msg ~socket ~io_vectors ~fds:[]
       in
-      let () = udp_server_client_exchange server_logic client_logic in
+      udp_server_client_exchange server_logic client_logic
+      >>= fun () ->
       let check = "abcdef" = Lwt_bytes.to_string buffer in
       Lwt.return check
     end;
