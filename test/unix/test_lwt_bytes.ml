@@ -677,4 +677,15 @@ let suite = suite "lwt_bytes" [
       let check = "abcdef" = Lwt_bytes.to_string buffer in
       Lwt.return check
     end;
+
+    test "map_file" begin fun () ->
+      let test_file = "bytes_io_data" in
+      let fd = Unix.openfile test_file [O_RDONLY] 0 in
+      let shared = false in
+      let size = 6 in
+      let buffer = Lwt_bytes.map_file ~fd ~shared ~size () in
+      let check = "abcdef" = Lwt_bytes.to_string buffer in
+      let () = Unix.close fd in
+      Lwt.return check
+    end;
   ]
