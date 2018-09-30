@@ -688,4 +688,9 @@ let suite = suite "lwt_bytes" [
       let () = Unix.close fd in
       Lwt.return check
     end;
+
+    test "page_size" begin fun () ->
+      let size = 4096 in
+      Lwt.return (size = Lwt_bytes.page_size)
+    end;
   ]
