@@ -693,4 +693,17 @@ let suite = suite "lwt_bytes" [
       let size = 4096 in
       Lwt.return (size = Lwt_bytes.page_size)
     end;
+
+    test "mincore" begin fun () ->
+      let test_file = "bytes_io_data" in
+      let fd = Unix.openfile test_file [O_RDONLY] 0 in
+      let shared = false in
+      let size = 6 in
+      let buffer = Lwt_bytes.map_file ~fd ~shared ~size () in
+      let states = Array.make 1 false in
+      let () = Lwt_bytes.mincore buffer 0 states in
+      Lwt_io.printf "%d" (Array.length states)
+      >>= fun () ->
+      Lwt.return (states.(0))
+    end;
   ]
