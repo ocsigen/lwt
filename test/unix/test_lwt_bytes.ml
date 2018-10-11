@@ -711,13 +711,15 @@ let suite = suite "lwt_bytes" [
       Lwt.return (size = Lwt_bytes.page_size)
     end;
 
-    test "mincore buffer length = page_size * 2, n_states = 1" begin fun () ->
+    test "mincore buffer length = page_size * 2, n_states = 1"
+      ~only_if:(fun () -> not Sys.win32) begin fun () ->
       test_mincore (Lwt_bytes.page_size * 2) Lwt_bytes.page_size 1
       >>= fun states ->
       Lwt.return (states.(0) = true)
     end;
 
-    test "mincore buffer length = page_size * 2, n_states = 2" begin fun () ->
+    test "mincore buffer length = page_size * 2, n_states = 2"
+      ~only_if:(fun () -> not Sys.win32) begin fun () ->
       try
         test_mincore (Lwt_bytes.page_size * 2) Lwt_bytes.page_size 1
         >>= fun states ->
@@ -730,13 +732,15 @@ let suite = suite "lwt_bytes" [
       | _ -> Lwt.return false
     end;
 
-    test "mincore buffer length = page_size * 2 + 1, n_states = 2" begin fun () ->
+    test "mincore buffer length = page_size * 2 + 1, n_states = 2"
+      ~only_if:(fun () -> not Sys.win32) begin fun () ->
       test_mincore (Lwt_bytes.page_size * 2 + 1) Lwt_bytes.page_size 2
       >>= fun states ->
       Lwt.return (states.(0) = true && states.(0) = true)
     end;
 
-    test "mincore buffer length = page_size , n_states = 0" begin fun () ->
+    test "mincore buffer length = page_size , n_states = 0"
+      ~only_if:(fun () -> not Sys.win32) begin fun () ->
       test_mincore (Lwt_bytes.page_size * 2 + 1) Lwt_bytes.page_size 0
       >>= fun _states ->
       Lwt.return true
