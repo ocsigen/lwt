@@ -59,6 +59,23 @@ let gen_buf n =
   let () = Lwt_bytes.fill buf 0 n '\x00' in
   buf
 
+let test_mincore buff_len offset n_states =
+  let test_file = "bytes_mincore_write" in
+  Lwt_unix.openfile test_file [O_RDWR;O_TRUNC; O_CREAT] 0o666
+  >>= fun fd ->
+  let buf_write = gen_buf buff_len in
+  Lwt_bytes.write fd buf_write 0 buff_len
+  >>= fun _n ->
+  Lwt_unix.close fd
+  >>= fun () ->
+  let fd = Unix.openfile test_file [O_RDONLY] 0 in
+  let shared = false in
+  let size = buff_len in
+  let buffer = Lwt_bytes.map_file ~fd ~shared ~size () in
+  let states = Array.make n_states false in
+  let () = Lwt_bytes.mincore buffer offset states in
+  Lwt.return states
+
 let suite = suite "lwt_bytes" [
     test "create" begin fun () ->
       let len = 5 in
@@ -694,16 +711,34 @@ let suite = suite "lwt_bytes" [
       Lwt.return (size = Lwt_bytes.page_size)
     end;
 
-    test "mincore" begin fun () ->
-      let test_file = "bytes_io_data" in
-      let fd = Unix.openfile test_file [O_RDONLY] 0 in
-      let shared = false in
-      let size = 6 in
-      let buffer = Lwt_bytes.map_file ~fd ~shared ~size () in
-      let states = Array.make 1 false in
-      let () = Lwt_bytes.mincore buffer 0 states in
-      Lwt_io.printf "%d" (Array.length states)
-      >>= fun () ->
-      Lwt.return (states.(0))
+    test "mincore buffer length = page_size * 2, n_states = 1" begin fun () ->
+      test_mincore (Lwt_bytes.page_size * 2) Lwt_bytes.page_size 1
+      >>= fun states ->
+      Lwt.return (states.(0) = true)
+    end;
+
+    test "mincore buffer length = page_size * 2, n_states = 2" begin fun () ->
+      try
+        test_mincore (Lwt_bytes.page_size * 2) Lwt_bytes.page_size 1
+        >>= fun states ->
+        Lwt.return (states.(0) = true)
+      with
+      | Invalid_argument message ->
+        if message = "Lwt_bytes.mincore"
+        then Lwt.return true
+        else Lwt.return false
+      | _ -> Lwt.return false
+    end;
+
+    test "mincore buffer length = page_size * 2 + 1, n_states = 2" begin fun () ->
+      test_mincore (Lwt_bytes.page_size * 2 + 1) Lwt_bytes.page_size 2
+      >>= fun states ->
+      Lwt.return (states.(0) = true && states.(0) = true)
+    end;
+
+    test "mincore buffer length = page_size , n_states = 0" begin fun () ->
+      test_mincore (Lwt_bytes.page_size * 2 + 1) Lwt_bytes.page_size 0
+      >>= fun _states ->
+      Lwt.return true
     end;
   ]
