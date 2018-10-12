@@ -772,15 +772,15 @@ let suite = suite "lwt_bytes" [
     test "wait_mincore offset < 0" ~only_if:(fun () -> not Sys.win32) begin fun () ->
       Lwt.catch
         (fun () ->
-        test_wait_mincore (Lwt_bytes.page_size * 2 + 1) (-1)
-        >>= fun _ -> Lwt.return false
+           test_wait_mincore (Lwt_bytes.page_size * 2 + 1) (-1)
+           >>= fun _ -> Lwt.return false
         )
         (function
-      | Invalid_argument message ->
-        if message = "Lwt_bytes.wait_mincore"
-        then Lwt.return true
-        else Lwt.return false
-      | _ -> Lwt.return false
+          | Invalid_argument message ->
+            if message = "Lwt_bytes.wait_mincore"
+            then Lwt.return true
+            else Lwt.return false
+          | _ -> Lwt.return false
         )
     end;
 
@@ -788,16 +788,16 @@ let suite = suite "lwt_bytes" [
       ~only_if:(fun () -> not Sys.win32) begin fun () ->
       Lwt.catch
         (fun () ->
-        let buff_len = Lwt_bytes.page_size * 2 + 1 in
-        test_wait_mincore buff_len (buff_len + 1)
-        >>= fun _ -> Lwt.return false
+           let buff_len = Lwt_bytes.page_size * 2 + 1 in
+           test_wait_mincore buff_len (buff_len + 1)
+           >>= fun _ -> Lwt.return false
         )
         (function
-      | Invalid_argument message ->
-        if message = "Lwt_bytes.wait_mincore"
-        then Lwt.return true
-        else Lwt.return false
-      | _ -> Lwt.return false
+          | Invalid_argument message ->
+            if message = "Lwt_bytes.wait_mincore"
+            then Lwt.return true
+            else Lwt.return false
+          | _ -> Lwt.return false
         )
     end;
-]
+  ]
