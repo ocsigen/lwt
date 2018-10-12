@@ -76,6 +76,25 @@ let test_mincore buff_len offset n_states =
   let () = Lwt_bytes.mincore buffer offset states in
   Lwt.return states
 
+let test_wait_mincore buff_len offset =
+  let test_file = "bytes_mincore_write" in
+  Lwt_unix.openfile test_file [O_RDWR;O_TRUNC; O_CREAT] 0o666
+  >>= fun fd ->
+  let buf_write = gen_buf buff_len in
+  Lwt_bytes.write fd buf_write 0 buff_len
+  >>= fun _n ->
+  Lwt_unix.close fd
+  >>= fun () ->
+  let fd = Unix.openfile test_file [O_RDONLY] 0 in
+  let shared = false in
+  let size = buff_len in
+  let buffer = Lwt_bytes.map_file ~fd ~shared ~size () in
+  Lwt_bytes.wait_mincore buffer offset
+  >>= fun () ->
+  let states = Array.make 1 false in
+  let () = Lwt_bytes.mincore buffer offset states in
+  Lwt.return states.(0)
+
 let suite = suite "lwt_bytes" [
     test "create" begin fun () ->
       let len = 5 in
@@ -745,4 +764,40 @@ let suite = suite "lwt_bytes" [
       >>= fun _states ->
       Lwt.return true
     end;
-  ]
+
+    test "wait_mincore" ~only_if:(fun () -> not Sys.win32) begin fun () ->
+      test_wait_mincore (Lwt_bytes.page_size * 2 + 1) Lwt_bytes.page_size
+    end;
+
+    test "wait_mincore offset < 0" ~only_if:(fun () -> not Sys.win32) begin fun () ->
+      Lwt.catch
+        (fun () ->
+        test_wait_mincore (Lwt_bytes.page_size * 2 + 1) (-1)
+        >>= fun _ -> Lwt.return false
+        )
+        (function
+      | Invalid_argument message ->
+        if message = "Lwt_bytes.wait_mincore"
+        then Lwt.return true
+        else Lwt.return false
+      | _ -> Lwt.return false
+        )
+    end;
+
+    test "wait_mincore offset > buffer length"
+      ~only_if:(fun () -> not Sys.win32) begin fun () ->
+      Lwt.catch
+        (fun () ->
+        let buff_len = Lwt_bytes.page_size * 2 + 1 in
+        test_wait_mincore buff_len (buff_len + 1)
+        >>= fun _ -> Lwt.return false
+        )
+        (function
+      | Invalid_argument message ->
+        if message = "Lwt_bytes.wait_mincore"
+        then Lwt.return true
+        else Lwt.return false
+      | _ -> Lwt.return false
+        )
+    end;
+]
