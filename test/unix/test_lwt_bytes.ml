@@ -739,16 +739,19 @@ let suite = suite "lwt_bytes" [
 
     test "mincore buffer length = page_size * 2, n_states = 2"
       ~only_if:(fun () -> not Sys.win32) begin fun () ->
-      try
-        test_mincore (Lwt_bytes.page_size * 2) Lwt_bytes.page_size 1
+      Lwt.catch
+        (fun () ->
+        test_mincore (Lwt_bytes.page_size * 2) Lwt_bytes.page_size 2
         >>= fun states ->
-        Lwt.return (states.(0) = true)
-      with
+        Lwt.return (states.(0) = false)
+        )
+        (function
       | Invalid_argument message ->
         if message = "Lwt_bytes.mincore"
         then Lwt.return true
         else Lwt.return false
       | _ -> Lwt.return false
+        )
     end;
 
     test "mincore buffer length = page_size * 2 + 1, n_states = 2"
