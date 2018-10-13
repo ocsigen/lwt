@@ -765,11 +765,18 @@ let suite = suite "lwt_bytes" [
       Lwt.return true
     end;
 
-    test "wait_mincore" ~only_if:(fun () -> not Sys.win32) begin fun () ->
+    (* The following tests only focus on the behavior of Lwt_bytes.wait_mincore
+     * with different arguments that represents correct or bad bounds.
+     *
+     * The main purpose of this function is not tested.
+     * *)
+    test "wait_mincore correct bounds"
+      ~only_if:(fun () -> not Sys.win32) begin fun () ->
       test_wait_mincore (Lwt_bytes.page_size * 2 + 1) Lwt_bytes.page_size
     end;
 
-    test "wait_mincore offset < 0" ~only_if:(fun () -> not Sys.win32) begin fun () ->
+    test "wait_mincore offset < 0"
+      ~only_if:(fun () -> not Sys.win32) begin fun () ->
       Lwt.catch
         (fun () ->
            test_wait_mincore (Lwt_bytes.page_size * 2 + 1) (-1)
