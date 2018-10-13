@@ -746,10 +746,7 @@ let suite = suite "lwt_bytes" [
         Lwt.return (states.(0) = false)
         )
         (function
-      | Invalid_argument message ->
-        if message = "Lwt_bytes.mincore"
-        then Lwt.return true
-        else Lwt.return false
+      | Invalid_argument _message -> Lwt.return true
       | _ -> Lwt.return false
         )
     end;
@@ -779,10 +776,7 @@ let suite = suite "lwt_bytes" [
            >>= fun _ -> Lwt.return false
         )
         (function
-          | Invalid_argument message ->
-            if message = "Lwt_bytes.wait_mincore"
-            then Lwt.return true
-            else Lwt.return false
+          | Invalid_argument _message -> Lwt.return true
           | _ -> Lwt.return false
         )
     end;
@@ -796,10 +790,7 @@ let suite = suite "lwt_bytes" [
            >>= fun _ -> Lwt.return false
         )
         (function
-          | Invalid_argument message ->
-            if message = "Lwt_bytes.wait_mincore"
-            then Lwt.return true
-            else Lwt.return false
+          | Invalid_argument _message -> Lwt.return true
           | _ -> Lwt.return false
         )
     end;
