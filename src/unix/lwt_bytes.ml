@@ -240,7 +240,7 @@ external stub_mincore : t -> int -> int -> bool array -> unit = "lwt_unix_mincor
 let mincore buffer offset states =
   if (offset mod page_size <> 0
       || offset < 0
-      || length buffer - offset >= (Array.length states - 1) * page_size + 1)
+      || length buffer - offset < (Array.length states - 1) * page_size + 1)
   then
     invalid_arg "Lwt_bytes.mincore"
   else
