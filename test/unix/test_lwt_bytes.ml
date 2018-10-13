@@ -97,10 +97,6 @@ let test_wait_mincore buff_len offset =
   let size = buff_len in
   let buffer = Lwt_bytes.map_file ~fd ~shared ~size () in
   Lwt_bytes.wait_mincore buffer offset
-  >>= fun () ->
-  let states = Array.make 1 false in
-  let () = Lwt_bytes.mincore buffer offset states in
-  Lwt.return ()
 
 let suite = suite "lwt_bytes" [
     test "create" begin fun () ->
