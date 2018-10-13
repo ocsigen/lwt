@@ -748,7 +748,7 @@ let suite = suite "lwt_bytes" [
         )
         (function
           | Invalid_argument _message -> Lwt.return true
-          | _ -> Lwt.return false
+          | exn -> Lwt.fail exn
         )
     end;
 
@@ -780,7 +780,7 @@ let suite = suite "lwt_bytes" [
         )
         (function
           | Invalid_argument _message -> Lwt.return true
-          | _ -> Lwt.return false
+          | exn -> Lwt.fail exn
         )
     end;
 
@@ -794,7 +794,7 @@ let suite = suite "lwt_bytes" [
         )
         (function
           | Invalid_argument _message -> Lwt.return true
-          | _ -> Lwt.return false
+          | exn -> Lwt.fail exn
         )
     end;
   ]
