@@ -40,7 +40,7 @@ packages
 
 
 # Initialize opam.
-opam init -ya --compiler=$COMPILER --disable-sandboxing
+opam init -y --compiler=$COMPILER --disable-sandboxing --disable-shell-hook
 eval `opam env`
 opam --version
 ocaml -version
@@ -76,3 +76,4 @@ make coverage
 make clean
 make install-for-packaging-test
 make packaging-test
+make uninstall-after-packaging-test

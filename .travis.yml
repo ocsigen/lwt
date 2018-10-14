@@ -13,8 +13,6 @@ matrix:
     - os: linux
       env: COMPILER=4.06.1
     - os: linux
-      env: COMPILER=4.06.1 LIBEV=no
-    - os: linux
       env: COMPILER=4.07.1
     - os: osx
       env: COMPILER=4.07.1
@@ -29,6 +27,10 @@ env:
     - LWT_STRESS_TEST=true
 
 script: bash -e src/util/travis.sh
+
+cache:
+  directories:
+    - $HOME/.opam
 
 notifications:
   email:

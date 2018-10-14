@@ -62,6 +62,13 @@ install-for-packaging-test: clean
 	opam pin add --yes --no-action lwt_react .
 	opam reinstall --yes lwt lwt_ppx lwt_react
 
+.PHONY: uninstall-after-packaging-test
+uninstall-after-packaging-test:
+	opam remove --yes lwt lwt_ppx lwt_react
+	opam pin remove --yes lwt
+	opam pin remove --yes lwt_ppx
+	opam pin remove --yes lwt_react
+
 .PHONY: clean
 clean:
 	dune clean
