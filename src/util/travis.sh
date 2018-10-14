@@ -4,74 +4,27 @@ set -x
 
 # Install system packages.
 packages_apt () {
-    case $COMPILER in
-        4.01) PPA=avsm/ocaml41+opam12;;
-        4.02) PPA=avsm/ocaml42+opam12;;
-        4.03) PPA=avsm/ocaml42+opam12; DO_SWITCH=yes;;
-        4.04) PPA=avsm/ocaml42+opam12; DO_SWITCH=yes;;
-        4.05) PPA=avsm/ocaml42+opam12; DO_SWITCH=yes;;
-        4.06) PPA=avsm/ocaml42+opam12; DO_SWITCH=yes;;
-        4.07) PPA=avsm/ocaml42+opam12; DO_SWITCH=yes;;
-           *) echo Unsupported compiler $COMPILER; exit 1;;
-    esac
-
-    sudo add-apt-repository -y ppa:$PPA
-    sudo apt-get update -qq
-
-    if [ -z "$DO_SWITCH" ]
-    then
-        sudo apt-get install -qq ocaml-nox
-    fi
-
-    sudo apt-get install -qq opam
+    wget https://github.com/ocaml/opam/releases/download/2.0.0/opam-2.0.0-x86_64-linux
+    sudo mv opam-2.0.0-x86_64-linux /usr/local/bin/opam
+    sudo chmod a+x /usr/local/bin/opam
 
     if [ "$LIBEV" != no ]
     then
+        sudo apt-get update -qq
         sudo apt-get install -qq libev-dev
     fi
 }
 
-packages_homebrew () {
+packages_osx () {
     brew update > /dev/null
     # See https://github.com/Homebrew/homebrew-core/issues/26358.
     brew upgrade python > /dev/null
-
-    if [ "$COMPILER" = system ]
-    then
-        brew install ocaml
-    else
-        DO_SWITCH=yes
-    fi
-
     brew install opam
 
     if [ "$LIBEV" != no ]
     then
         brew install libev
     fi
-}
-
-# This code is dead for now – there is some upstream problem in MacPorts, so we
-# have disabled testing on it. If that is not fixed soon, this code should be
-# removed from this script.
-packages_macports () {
-    eval `wget -q -O - https://aantron.github.io/binaries/macports/x86_64/macports/current/install.sh | bash`
-    sudo port install pkgconfig | cat
-
-    if [ "$LIBEV" != no ]
-    then
-        sudo port install libev | cat
-    fi
-
-    wget -q -O - https://aantron.github.io/binaries/macports/x86_64/opam/1.2/install.sh | bash
-    wget -q -O - https://aantron.github.io/binaries/macports/x86_64/ocaml/$COMPILER/install.sh | bash
-}
-
-packages_osx () {
-    case $PACKAGE_MANAGER in
-        macports) packages_macports;;
-               *) packages_homebrew;;
-    esac
 }
 
 packages () {
@@ -86,35 +39,11 @@ packages
 
 
 
-# Initialize OPAM and switch to the right compiler, if necessary.
-case $COMPILER in
-    4.01) OCAML_VERSION=4.01.0;;
-    4.02) OCAML_VERSION=4.02.3;;
-    4.03) OCAML_VERSION=4.03.0;;
-    4.04) OCAML_VERSION=4.04.2;;
-    4.05) OCAML_VERSION=4.05.0;;
-    4.06) OCAML_VERSION=4.06.1;;
-    4.07) OCAML_VERSION=4.07.0;;
-    system) OCAML_VERSION=`ocamlc -version`;;
-       *) echo Unsupported compiler $COMPILER; exit 1;;
-esac
-
-SWITCH="$OCAML_VERSION"
-
-if [ -n "$DO_SWITCH" ]
-then
-    opam init --compiler=$SWITCH -ya
-else
-    opam init -ya
-fi
-
-eval `opam config env`
-
-ACTUAL_COMPILER=`ocamlc -version`
-if [ "$ACTUAL_COMPILER" != "$OCAML_VERSION" ]
-then
-    echo Expected OCaml $OCAML_VERSION, but $ACTUAL_COMPILER is installed
-fi
+# Initialize opam.
+opam init -ya --compiler=$COMPILER --disable-sandboxing
+eval `opam env`
+opam --version
+ocaml -version
 
 
 
