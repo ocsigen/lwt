@@ -27,4 +27,20 @@ let suite = suite "Lwt_unix sleep and timeout" [
       let check = cmp_elapsed_time start_time duration in
       Lwt.return check
     end;
+
+    test "timeout" begin fun () ->
+      let start_time = Unix.gettimeofday () in
+      let duration = 1.0 in
+      Lwt.catch
+        (fun () ->
+           Lwt_unix.timeout duration
+           >>= fun () -> Lwt.return_false
+        )
+        (function
+          | Lwt_unix.Timeout ->
+            let check = cmp_elapsed_time start_time duration in
+            Lwt.return check
+          | _ -> Lwt.return false
+        )
+    end;
   ]
