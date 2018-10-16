@@ -35,4 +35,5 @@ let () =
     Test_lwt_fmt.suite;
     Test_lwt_timeout.suite;
     Test_lwt_bytes.suite;
+    Test_sleep_and_timeout.suite;
   ]
