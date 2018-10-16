@@ -43,4 +43,38 @@ let suite = suite "Lwt_unix sleep and timeout" [
           | _ -> Lwt.return false
         )
     end;
+
+    test "with_timeout does not throw exception" begin fun () ->
+      let start_time = Unix.gettimeofday () in
+      let duration = 1.0 in
+      Lwt.catch
+        (fun () ->
+           Lwt_unix.with_timeout duration Lwt_unix.yield
+           >>= fun () -> Lwt.return_true
+        )
+        (function
+          | Lwt_unix.Timeout ->
+            let check = cmp_elapsed_time start_time duration in
+            Lwt.return check
+          | _ -> Lwt.return false
+        )
+    end;
+
+    test "with_timeout throws exception" begin fun () ->
+      let start_time = Unix.gettimeofday () in
+      let duration = 1.0 in
+      let f () = Lwt_unix.sleep 2.0 in
+      Lwt.catch
+        (fun () ->
+           Lwt_unix.with_timeout duration f
+           >>= fun () ->
+           Lwt.return false
+        )
+        (function
+          | Lwt_unix.Timeout ->
+            let check = cmp_elapsed_time start_time duration in
+            Lwt.return check
+          | _ -> Lwt.return false
+        )
+    end;
   ]
