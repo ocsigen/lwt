@@ -4,14 +4,27 @@
 open Test
 open Lwt.Infix
 
-let suite = suite "Lwt_unix sleep and timeout" [
+let cmp_elapsed_time start_time expected_time =
+  let elapsed_time = Unix.gettimeofday () -. start_time in
+  elapsed_time -. expected_time < 0.005
 
+let suite = suite "Lwt_unix sleep and timeout" [
     test "sleep" begin fun () ->
       let start_time = Unix.gettimeofday () in
       let duration = 1.0 in
       Lwt_unix.sleep duration
       >>= fun () ->
-      let elapsed_time = Unix.gettimeofday () -. start_time in
-      Lwt.return (elapsed_time -. duration < 0.005)
+      let check = cmp_elapsed_time start_time duration in
+      Lwt.return check
+    end;
+
+    test "auto_yield" begin fun () ->
+      let start_time = Unix.gettimeofday () in
+      let duration = 1.0 in
+      let wait = Lwt_unix.auto_yield duration in
+      wait ()
+      >>= fun () ->
+      let check = cmp_elapsed_time start_time duration in
+      Lwt.return check
     end;
   ]
