@@ -4,9 +4,11 @@
 open Test
 open Lwt.Infix
 
+(* None of the APIs make promises about how much larger the elapsed time will
+ * be, but they all promise that it won't be less than the expected time. *)
 let cmp_elapsed_time start_time expected_time =
   let elapsed_time = Unix.gettimeofday () -. start_time in
-  elapsed_time -. expected_time < 0.005
+  elapsed_time -. expected_time >= 0.0
 
 let suite = suite "Lwt_unix sleep and timeout" [
     test "sleep" begin fun () ->
