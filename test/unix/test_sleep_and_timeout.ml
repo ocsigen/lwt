@@ -42,7 +42,7 @@ let suite = suite "Lwt_unix sleep and timeout" [
           | Lwt_unix.Timeout ->
             let check = cmp_elapsed_time start_time duration in
             Lwt.return check
-          | _ -> Lwt.return false
+          | exn -> Lwt.fail exn
         )
     end;
 
@@ -76,7 +76,7 @@ let suite = suite "Lwt_unix sleep and timeout" [
           | Lwt_unix.Timeout ->
             let check = cmp_elapsed_time start_time duration in
             Lwt.return check
-          | _ -> Lwt.return false
+          | exn -> Lwt.fail exn
         )
     end;
   ]
