@@ -39,8 +39,8 @@ let suite = suite "Lwt_unix sleep and timeout" [
 
     test "with_timeout : no timeout" begin fun () ->
       let duration = 1.0 in
-           Lwt_unix.with_timeout duration Lwt_unix.yield
-           >>= fun () -> Lwt.return_true
+      Lwt_unix.with_timeout duration Lwt_unix.yield
+      >>= fun () -> Lwt.return_true
     end;
 
     test "with_timeout : timeout" begin fun () ->
@@ -62,13 +62,13 @@ let suite = suite "Lwt_unix sleep and timeout" [
     end;
 
     test "yield" begin fun () ->
-       let bind_callback_ran = ref false in
-       Lwt.async (fun () -> Lwt.return () >|= fun () -> bind_callback_ran := true);
-       let bind_is_immediate = !bind_callback_ran in
-       let yield_callback_ran = ref false in
-       Lwt.async (fun () -> Lwt_unix.yield () >|= fun () -> yield_callback_ran := true);
-       let yield_is_immediate = !yield_callback_ran in
-       Lwt.return (bind_is_immediate && not yield_is_immediate)
+      let bind_callback_ran = ref false in
+      Lwt.async (fun () -> Lwt.return () >|= fun () -> bind_callback_ran := true);
+      let bind_is_immediate = !bind_callback_ran in
+      let yield_callback_ran = ref false in
+      Lwt.async (fun () -> Lwt_unix.yield () >|= fun () -> yield_callback_ran := true);
+      let yield_is_immediate = !yield_callback_ran in
+      Lwt.return (bind_is_immediate && not yield_is_immediate)
     end;
 
     test "auto_yield" begin fun () ->
@@ -78,14 +78,14 @@ let suite = suite "Lwt_unix sleep and timeout" [
         Lwt.async (fun () -> f () >|= fun () -> callback_ran := true);
         !callback_ran;
       in
-        let check1 = run_auto_yield () in
-        let check2 = run_auto_yield () in
-        Lwt_unix.sleep 1.0
-        >>= fun () ->
-        let check3 = run_auto_yield () in
-        let check4 = run_auto_yield () in
-        let check5 = run_auto_yield () in
-        let check = check1 && check2 && not check3 && check4 && check5 in
-        Lwt.return check
+      let check1 = run_auto_yield () in
+      let check2 = run_auto_yield () in
+      Lwt_unix.sleep 1.0
+      >>= fun () ->
+      let check3 = run_auto_yield () in
+      let check4 = run_auto_yield () in
+      let check5 = run_auto_yield () in
+      let check = check1 && check2 && not check3 && check4 && check5 in
+      Lwt.return check
     end;
   ]
