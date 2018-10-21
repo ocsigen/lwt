@@ -21,16 +21,6 @@ let suite = suite "Lwt_unix sleep and timeout" [
       Lwt.return check
     end;
 
-    test "auto_yield" begin fun () ->
-      let start_time = Unix.gettimeofday () in
-      let duration = 1.0 in
-      let wait = Lwt_unix.auto_yield duration in
-      wait ()
-      >>= fun () ->
-      let check = cmp_elapsed_time start_time duration in
-      Lwt.return check
-    end;
-
     test "timeout" begin fun () ->
       let start_time = Unix.gettimeofday () in
       let duration = 1.0 in
@@ -69,5 +59,33 @@ let suite = suite "Lwt_unix sleep and timeout" [
             Lwt.return check
           | exn -> Lwt.fail exn
         )
+    end;
+
+    test "yield" begin fun () ->
+       let bind_callback_ran = ref false in
+       Lwt.async (fun () -> Lwt.return () >|= fun () -> bind_callback_ran := true);
+       let bind_is_immediate = !bind_callback_ran in
+       let yield_callback_ran = ref false in
+       Lwt.async (fun () -> Lwt_unix.yield () >|= fun () -> yield_callback_ran := true);
+       let yield_is_immediate = !yield_callback_ran in
+       Lwt.return (bind_is_immediate && not yield_is_immediate)
+    end;
+
+    test "auto_yield" begin fun () ->
+      let f = Lwt_unix.auto_yield 1.0 in
+      let run_auto_yield () =
+        let callback_ran = ref false in
+        Lwt.async (fun () -> f () >|= fun () -> callback_ran := true);
+        !callback_ran;
+      in
+        let check1 = run_auto_yield () in
+        let check2 = run_auto_yield () in
+        Lwt_unix.sleep 1.0
+        >>= fun () ->
+        let check3 = run_auto_yield () in
+        let check4 = run_auto_yield () in
+        let check5 = run_auto_yield () in
+        let check = check1 && check2 && not check3 && check4 && check5 in
+        Lwt.return check
     end;
   ]
