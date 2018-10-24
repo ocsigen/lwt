@@ -116,7 +116,7 @@ rewriting the manual). In the meantime:
 or just "threads." This will be fixed in the new manual. `'a Lwt.t` is a
 promise, and has nothing to do with system or preemptive threads.*
 
-[manual]:   http://ocsigen.org/lwt/manual/
+[manual]:   http://ocsigen.org/lwt/
 [rwo-lwt]:  https://github.com/dkim/rwo-lwt#readme
 [mirage-tutorial]: https://mirage.io/wiki/tutorial-lwt
 [counter-server]: http://www.baturin.org/code/lwt-counter-server/
