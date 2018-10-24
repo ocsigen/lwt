@@ -273,7 +273,13 @@ module S = struct
   let with_finaliser f signal =
     let r = ref () in
     Gc.finalise (finalise f) r;
-    map (fun x -> ignore r; x) signal
+    map
+    #if OCAML_VERSION < (4, 03, 0)
+      (fun x -> ignore r; x)
+    #else
+      (fun x -> ignore (Sys.opaque_identity r); x)
+    #endif
+      signal
 
   let limit ?eq f s =
     (* Thread which prevent [s] to changes while it is sleeping *)
