@@ -96,4 +96,21 @@ let suite = suite "lwt_event" [
          Lwt_condition.signal cond ();
          return (!l = [4; 3; 2; 1]));
 
+  test "with_finaliser lifetime" begin fun () ->
+    let e, push = React.E.create () in
+    let finalizer_ran = ref false in
+    let e' = Lwt_react.E.with_finaliser (fun () -> finalizer_ran := true) e in
+
+    Gc.full_major ();
+    let check1 = !finalizer_ran = false in
+
+    let p = Lwt_react.E.next e' in
+    push ();
+    p >>= fun () ->
+
+    Gc.full_major ();
+    let check2 = !finalizer_ran = true in
+
+    Lwt.return (check1 && check2)
+  end;
 ]
