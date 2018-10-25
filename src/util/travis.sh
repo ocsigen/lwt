@@ -39,6 +39,13 @@ packages
 
 
 
+if [ "$FLAMBDA" = yes ]
+then
+    COMPILER="$COMPILER+flambda"
+fi
+
+
+
 # Initialize opam.
 opam init -y --compiler=$COMPILER --disable-sandboxing --disable-shell-hook
 eval `opam env`
