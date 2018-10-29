@@ -121,7 +121,22 @@ val yield : unit -> unit Lwt.t
 
 val auto_yield : float -> (unit -> unit Lwt.t)
   (** [auto_yield timeout] returns a function [f] that will yield
-      every [timeout] seconds. *)
+      every [timeout] seconds.
+      Consider a function f defined with let f = auto_yield timeout. If you run
+      multiple times this function, it will behave like either Lwt.return () or
+      Lwt_unix.yield depending on the elapsed time.
+
+      t = 0
+        f acts like Lwt.return ()
+      t <= timeout
+        f acts like Lwt.return ()
+      t >= timeout
+        f acts like Lwt_unix.yield ()
+
+      if f is re-ran after it has yielded, f will act like if t = 0.
+      An example of usage can be found in the test file
+      test/unix/test_sleep_and_timeout.ml.
+     *)
 
 exception Timeout
   (** Exception raised by timeout operations *)
