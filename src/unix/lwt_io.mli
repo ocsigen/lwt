@@ -191,6 +191,10 @@ val is_busy : 'a channel -> bool
       busy. A channel is busy when there is at least one job using it
       that has not yet terminated. *)
 
+val is_closed : 'a channel -> bool
+  (** [is_closed channel] returns whether the given channel is currently
+      closed. *)
+
 (** {2 Random access} *)
 
 val position : 'a channel -> int64
