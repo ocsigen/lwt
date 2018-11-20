@@ -366,4 +366,44 @@ let suite = suite "lwt_io" [
         Lwt.return true
       | exn -> Lwt.fail exn)
   end;
+
+  test "input channel of_bytes inital position"
+    (fun () ->
+       let ichan = Lwt_io.of_bytes ~mode:Lwt_io.input @@ Lwt_bytes.of_string "abcd" in
+       Lwt.return (Lwt_io.position ichan = 0L)
+    );
+
+  test "input channel of_bytes position after read"
+    (fun () ->
+       let ichan = Lwt_io.of_bytes ~mode:Lwt_io.input @@ Lwt_bytes.of_string "abcd" in
+       Lwt_io.read_char ichan >|= fun _ ->
+       Lwt_io.position ichan = 1L
+    );
+
+  test "input channel of_bytes position after set_position"
+    (fun () ->
+       let ichan = Lwt_io.of_bytes ~mode:Lwt_io.input @@ Lwt_bytes.of_string "abcd" in
+       Lwt_io.set_position ichan 2L >|= fun () ->
+       Lwt_io.position ichan = 2L
+    );
+
+  test "output channel of_bytes inital position"
+    (fun () ->
+       let ochan = Lwt_io.of_bytes ~mode:Lwt_io.output @@ Lwt_bytes.create 4 in
+       Lwt.return (Lwt_io.position ochan = 0L)
+    );
+
+  test "output channel of_bytes position after read"
+    (fun () ->
+       let ochan = Lwt_io.of_bytes ~mode:Lwt_io.output @@ Lwt_bytes.create 4 in
+       Lwt_io.write_char ochan 'a' >|= fun _ ->
+       Lwt_io.position ochan = 1L
+    );
+
+  test "output channel of_bytes position after set_position"
+    (fun () ->
+       let ochan = Lwt_io.of_bytes ~mode:Lwt_io.output @@ Lwt_bytes.create 4 in
+       Lwt_io.set_position ochan 2L >|= fun _ ->
+       Lwt_io.position ochan = 2L
+    );
 ]
