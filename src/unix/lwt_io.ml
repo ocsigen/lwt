@@ -545,38 +545,32 @@ let make :
    | Output -> Outputs.add outputs wrapper);
   wrapper
 
-let of_bytes :
-  type m.
-  mode : m mode ->
-  Lwt_bytes.t ->
-  m channel
-  =
-  fun ~mode bytes ->
-    let length = Lwt_bytes.length bytes in
-    let abort_waiter, abort_wakener = Lwt.wait () in
-    let rec ch = {
-      buffer = bytes;
-      length = length;
-      ptr = 0;
-      max = length;
-      close = lazy(Lwt.return_unit);
-      abort_waiter = abort_waiter;
-      abort_wakener = abort_wakener;
-      main = wrapper;
-      (* Auto flush is set to [true] to prevent writing functions from
-         trying to launch the auto-fllushed. *)
-      auto_flushing = true;
-      mode = mode;
-      offset = (match mode with
-          | Output -> 0L
-          | Input -> Int64.of_int length);
-      typ = Type_bytes;
-    } and wrapper = {
-        state = Idle;
-        channel = ch;
-        queued = Lwt_sequence.create ();
-      } in
-    wrapper
+let of_bytes (type m) ~(mode : m mode) bytes =
+  let length = Lwt_bytes.length bytes in
+  let abort_waiter, abort_wakener = Lwt.wait () in
+  let rec ch = {
+    buffer = bytes;
+    length = length;
+    ptr = 0;
+    max = length;
+    close = lazy(Lwt.return_unit);
+    abort_waiter = abort_waiter;
+    abort_wakener = abort_wakener;
+    main = wrapper;
+    (* Auto flush is set to [true] to prevent writing functions from
+       trying to launch the auto-fllushed. *)
+    auto_flushing = true;
+    mode = mode;
+    offset = (match mode with
+        | Output -> 0L
+        | Input -> Int64.of_int length);
+    typ = Type_bytes;
+  } and wrapper = {
+    state = Idle;
+    channel = ch;
+    queued = Lwt_sequence.create ();
+  } in
+  wrapper
 
 let of_fd :
     type m.
