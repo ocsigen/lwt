@@ -545,7 +545,7 @@ let make :
    | Output -> Outputs.add outputs wrapper);
   wrapper
 
-let of_bytes ~mode bytes =
+let of_bytes (type m) ~(mode : m mode) bytes =
   let length = Lwt_bytes.length bytes in
   let abort_waiter, abort_wakener = Lwt.wait () in
   let rec ch = {
@@ -561,7 +561,9 @@ let of_bytes ~mode bytes =
        trying to launch the auto-fllushed. *)
     auto_flushing = true;
     mode = mode;
-    offset = 0L;
+    offset = (match mode with
+        | Output -> 0L
+        | Input -> Int64.of_int length);
     typ = Type_bytes;
   } and wrapper = {
     state = Idle;
