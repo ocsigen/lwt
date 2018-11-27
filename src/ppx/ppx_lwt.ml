@@ -19,7 +19,7 @@ let def_loc txt =
 let is_catchall case =
   let rec is_catchall_pat p = match p.ppat_desc with
     | Ppat_any | Ppat_var _ -> true
-    | Ppat_alias (p, _) -> is_catchall_pat p
+    | Ppat_alias (p, _) | Ppat_constraint (p,_) -> is_catchall_pat p
     | _ -> false
   in
   case.pc_guard = None && is_catchall_pat case.pc_lhs
