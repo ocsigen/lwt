@@ -681,9 +681,9 @@ struct
 
   let create () = {prefix = []; reversed_suffix = []; count = 0}
 
-  let length {prefix; reversed_suffix; _} =
-    (List.fold_left (fun acc {length; _} -> acc + length) 0 prefix)
-    + (List.fold_left (fun acc {length; _} -> acc + length) 0 reversed_suffix)
+  let byte_count {prefix; reversed_suffix; _} =
+    let count_buff = List.fold_left (fun acc {length; _} -> acc + length) 0 in
+    count_buff prefix + count_buff reversed_suffix
 
   let append io_vectors io_vector =
     io_vectors.reversed_suffix <- io_vector::io_vectors.reversed_suffix;

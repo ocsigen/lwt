@@ -409,10 +409,8 @@ sig
   (** [is_empty vs] is [true] if and only if [vs] has no I/O vectors, or all I/O
       vectors in [vs] have zero bytes. *)
 
-  val length : t -> int
-  (** [length vs] is the total length of the I/O vectors of [t]. In other words,
-      it is the sum of all the lengths of I/O vectors that have been appended
-      minus the sum of all the bits that have been dropped. *)
+  val byte_count : t -> int
+  (** [byte_count vs] is the total number of bytes in [vs]. *)
 
   val system_limit : int option
   (** Some systems limit the number of I/O vectors that can be passed in a
