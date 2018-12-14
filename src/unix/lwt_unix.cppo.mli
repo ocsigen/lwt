@@ -409,6 +409,9 @@ sig
   (** [is_empty vs] is [true] if and only if [vs] has no I/O vectors, or all I/O
       vectors in [vs] have zero bytes. *)
 
+  val byte_count : t -> int
+  (** [byte_count vs] is the total number of bytes in [vs]. *)
+
   val system_limit : int option
   (** Some systems limit the number of I/O vectors that can be passed in a
       single call to their [writev] or [readv] system calls. On those systems,

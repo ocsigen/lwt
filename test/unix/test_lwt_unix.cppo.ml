@@ -228,6 +228,31 @@ let readdir_tests =
            "closedir", (fun () -> Lwt_unix.closedir directory)]);
   ]
 
+let io_vectors_byte_count_tests =
+  let open Lwt_unix.IO_vectors in
+  [ test "io_vector_byte_count: basic"
+      (fun () ->
+         let iov = create () in
+         append_bytes iov (Bytes.create 10) 0 10;
+         append_bigarray iov (Lwt_bytes.create 10) 0 10;
+         Lwt.return (byte_count iov = 20));
+
+    test "io_vector_byte_count: offsets, partials"
+      (fun () ->
+         let iov = create () in
+         append_bytes iov (Bytes.create 10) 5 1;
+         append_bigarray iov (Lwt_bytes.create 10) 1 1;
+         Lwt.return (byte_count iov = 2));
+
+    test "io_vector_byte_count: drops"
+      (fun () ->
+         let iov = create () in
+         append_bytes iov (Bytes.create 10) 5 1;
+         append_bigarray iov (Lwt_bytes.create 10) 1 1;
+         drop iov 1;
+         Lwt.return (byte_count iov = 1));
+  ]
+
 let readv_tests =
   (* All buffers are initially filled with '_'. *)
   let make_io_vectors vecs =
@@ -706,6 +731,7 @@ let suite =
     (openfile_tests @
      utimes_tests @
      readdir_tests @
+     io_vectors_byte_count_tests @
      readv_tests @
      writev_tests @
      bind_tests @
