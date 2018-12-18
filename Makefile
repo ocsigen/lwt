@@ -24,6 +24,7 @@ dev-deps :
 	  ppx_tools_versioned \
 	  react \
 	  result \
+	  seq \
 
 # Use Dune+odoc to generate static html documentation.
 # Currenty requires ocaml 4.03.0 to install odoc.
