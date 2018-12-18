@@ -31,6 +31,17 @@ let suite = suite "lwt_stream" [
        t3 >>= fun x3 ->
        return ([x1; x2; x3] = [1; 1; 1]));
 
+  test "of_seq"
+    (fun () ->
+       let seq = fun () -> Seq.Cons (1, Seq.empty) in
+       let stream = Lwt_stream.of_seq seq in
+       let closed_before = Lwt_stream.is_closed stream in
+       Lwt_stream.get stream >>= fun x1 ->
+       Lwt_stream.get stream >>= fun x2 ->
+       let closed_after = Lwt_stream.is_closed stream in
+       return ([closed_before; closed_after] = [false; true]
+               && [x1; x2] = [Some 1; None]));
+
   test "of_list"
     (fun () ->
        let stream = Lwt_stream.of_list [1; 2; 3] in
