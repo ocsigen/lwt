@@ -737,8 +737,7 @@ val try_bind : (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
 (** [Lwt.try_bind f g h] applies [f ()], and then makes it so that:
 
     - [g] will run when promise [f ()] is {{: #TYPEt} {e fulfilled}},
-    - [h] will run when promise [f ()] is, alternatively, {{: #TYPEt}
-      {e rejected}}.
+    - [h] will run when promise [f ()] is {{: #TYPEt} {e rejected}}.
 
     [Lwt.try_bind] is a generalized {!Lwt.finalize}. The difference is that
     [Lwt.try_bind] runs different callbacks depending on {e how} [f ()] is
