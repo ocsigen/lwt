@@ -59,7 +59,7 @@ cat >$f <<EOF
 EOF
 quickdop -f docs _doc -t json -c $f -viu
 
-make-redir "$LATEST/manual/intro" _doc/index.html
+make-redir "$LATEST/manual/manual" _doc/index.html
 make-man-redir 2.4.3 1.0.0
 make-man-redir 2.4.3 1.1.0
 make-man-redir 2.4.3 2.0.0
