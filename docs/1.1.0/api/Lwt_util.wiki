@@ -1,0 +1,49 @@
+=Module <<a_api_type | module Lwt_util >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_util: <<span class='code'|sig>><<a_api text=".." | module Lwt_util >><<span class='code'|end>>>>~Note~: ~This lodule is deprecated~. ~Use <<a_api | module Lwt_list >> and <<a_api | module Lwt_pool >>
+    instead~.\\
+
+----
+\\
+
+==@@id="2_Listsiterators"@@~Lists iterators==
+\\
+<<div id="VALiter" class="code"|<<span class="keyword"|val>> iter : <<span class="code type"|('a -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a list -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|iter f l>> start a thread for each element in <<span class='code'|l>>~.  ~The threads
+        are started according to the list order~, but then can run
+        concurrently~.  ~It terminates when all the threads are
+        terminated~, if all threads are successful~.  ~It fails if any of
+        the threads fail~.\\
+>>
+<<div id="VALiter_serial" class="code"|<<span class="keyword"|val>> iter~_serial : <<span class="code type"|('a -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a list -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Similar to <<span class='code'|iter>> but wait for one thread to terminate before
+        starting the next one~.\\
+>>
+<<div id="VALmap" class="code"|<<span class="keyword"|val>> map : <<span class="code type"|('a -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a list -> 'b list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|map f l>> apply <<span class='code'|f>> to each element in <<span class='code'|l>> and collect the
+        results of the threads thus created~.  ~The threads are started
+        according to the list order~, but then can run concurrently~.
+        <<span class='code'|map f l>> fails if any of the threads fail~.\\
+>>
+<<div id="VALmap_with_waiting_action" class="code"|<<span class="keyword"|val>> map~_with~_waiting~_action : <<span class="code type"|('a -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) -> ('a -> unit) -> 'a list -> 'b list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|map~_with~_waiting~_action f wa l>> apply <<span class='code'|f>> to each element
+        in <<span class='code'|l>> and collect the results of the threads thus created~.
+        ~The threads are started according to the list order~, but
+        then can run concurrently~.  ~The difference with <<span class='code'|map f l>> is
+        that function wa will be called on the element that the
+        function is waiting for its termination~.\\
+>>
+<<div id="VALmap_serial" class="code"|<<span class="keyword"|val>> map~_serial : <<span class="code type"|('a -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a list -> 'b list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Similar to <<span class='code'|map>> but wait for one thread to terminate before
+        starting the next one~.\\
+>>
+<<div id="VALfold_left" class="code"|<<span class="keyword"|val>> fold~_left : <<span class="code type"|('a -> 'b -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a -> 'b list -> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Similar to <<span class='code'|~List~.fold~_left>>~.\\
+>>
+\\
+
+==@@id="2_Regions"@@~Regions==
+\\
+<<div class="code" id="TYPEregion"|<<span class="keyword"|type>> region>>
+
+<<div id="VALmake_region" class="code"|<<span class="keyword"|val>> make~_region : <<span class="code type"|int -> <<a_api text="region" | type Lwt_util.region >>>>>><<div class="info"|<<span class='code'|make~_region sz>> create a region of size <<span class='code'|sz>>~.\\
+>>
+<<div id="VALresize_region" class="code"|<<span class="keyword"|val>> resize~_region : <<span class="code type"|<<a_api text="region" | type Lwt_util.region >> -> int -> unit>>>><<div class="info"|<<span class='code'|resize~_region reg sz>> resize the region <<span class='code'|reg>> to size <<span class='code'|sz>>~.\\
+>>
+<<div id="VALrun_in_region" class="code"|<<span class="keyword"|val>> run~_in~_region : <<span class="code type"|<<a_api text="region" | type Lwt_util.region >> -> int -> (unit -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|run~_in~_region reg size f>> execute the thread produced by the
+          function <<span class='code'|f>> in the region <<span class='code'|reg>>~. ~The thread is not started
+          before some room is available in the region~.\\
+>>

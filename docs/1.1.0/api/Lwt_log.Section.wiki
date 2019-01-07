@@ -1,0 +1,19 @@
+=Module <<a_api_type | module Lwt_log.Section >> =
+<<div class="code"|<<span class="keyword"|module>> Section: <<span class='code'|sig>><<a_api text=".." | module Lwt_log.Section >><<span class='code'|end>>>>~Sections\\
+
+----
+<<div class="code" id="TYPEt"|<<span class="keyword"|type>> t = <<span class="code type"|<<a_api text="Lwt_log.section" | type Lwt_log.section >>>> >>
+
+<<div id="VALmake" class="code"|<<span class="keyword"|val>> make : <<span class="code type"|string -> <<a_api text="Lwt_log.section" | type Lwt_log.section >>>>>><<div class="info"|<<span class='code'|make name>> creates a section with the given name~, with level
+        initialised according to the <<span class='code'|~L~W~T~_~L~O~G>> environment variable~.\\
+>>
+<<div id="VALname" class="code"|<<span class="keyword"|val>> name : <<span class="code type"|<<a_api text="Lwt_log.section" | type Lwt_log.section >> -> string>>>><<div class="info"|<<span class='code'|name section>> returns the name of <<span class='code'|section>>\\
+>>
+<<div id="VALmain" class="code"|<<span class="keyword"|val>> main : <<span class="code type"|<<a_api text="Lwt_log.section" | type Lwt_log.section >>>>>><<div class="info"|~The main section~. ~It is the section used by default when no
+        one is provided~.\\
+>>
+<<div id="VALlevel" class="code"|<<span class="keyword"|val>> level : <<span class="code type"|<<a_api text="Lwt_log.section" | type Lwt_log.section >> -> <<a_api text="Lwt_log.level" | type Lwt_log.level >>>>>><<div class="info"|<<span class='code'|level section>> returns the logging level of <<span class='code'|section>>\\
+>>
+<<div id="VALset_level" class="code"|<<span class="keyword"|val>> set~_level : <<span class="code type"|<<a_api text="Lwt_log.section" | type Lwt_log.section >> -> <<a_api text="Lwt_log.level" | type Lwt_log.level >> -> unit>>>><<div class="info"|<<span class='code'|set~_level section>> sets the logging level of the given
+        section\\
+>>

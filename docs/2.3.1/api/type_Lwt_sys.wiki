@@ -1,0 +1,19 @@
+<<code language="ocaml" | sig
+  exception Not_available of string
+  val windows : bool
+  type feature =
+      [ `fd_passing
+      | `fdatasync
+      | `get_affinity
+      | `get_cpu
+      | `get_credentials
+      | `madvise
+      | `mincore
+      | `recv_msg
+      | `send_msg
+      | `set_affinity
+      | `wait4 ]
+  val have : Lwt_sys.feature -> bool
+  type byte_order = Little_endian | Big_endian
+  val byte_order : Lwt_sys.byte_order
+end >>

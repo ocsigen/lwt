@@ -1,0 +1,8 @@
+=Module <<a_api_type | module Lwt_top >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_top: <<span class='code'|sig>><<a_api text=".." | module Lwt_top >><<span class='code'|end>>>>~Toplevel configuration\\
+
+----
+<<div id="VALcompletion_mode" class="code"|<<span class="keyword"|val>> completion~_mode : <<span class="code type"|unit -> [ `classic | `none | `real_time ]>>>><<div class="info"|~Return the current completion mode~.\\
+>>
+<<div id="VALset_completion_mode" class="code"|<<span class="keyword"|val>> set~_completion~_mode : <<span class="code type"|[ `classic | `none | `real_time ] -> unit>>>><<div class="info"|~Change the completion mode\\
+>>

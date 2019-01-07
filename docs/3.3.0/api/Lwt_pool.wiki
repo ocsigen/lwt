@@ -1,0 +1,55 @@
+=Module <<a_api_type | module Lwt_pool >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_pool>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_pool >><<span class="ocsforge_color_keyword"|end>>>>~External resource pools~.
+
+
+    ~For example~, instead of creating a new database connection each time you
+    need one~, keep a pool of opened connections and reuse ones that are free~.
+    ~The pool also provides a limit on the number of connections that can
+    simultaneously be open~.
+
+
+    ~If you want to have a pool of //system// threads~, consider using
+    <<span class="odocwiki_inlinecode"|~Lwt~_preemptive>>~.
+
+----
+<<pre class="ocsforge_color odocwiki_code" id="TYPEt"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_type"|'a>> <<span class="odocwiki_name"|t>>>><<div class="odocwiki_info"|~Pools containing elements of type <<span class="odocwiki_inlinecode"|~'a>>~.
+>>
+<<pre id="VALcreate" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|create>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  int <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?validate: >><<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> bool <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?check: >><<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>bool <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?dispose: >><<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_pool.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|create n ~?check ~?validate ~?dispose f>> creates a new pool with at most
+      <<span class="odocwiki_inlinecode"|n>> elements~. <<span class="odocwiki_inlinecode"|f>> is used to create a new pool element~.  ~Elements are
+      created on demand and re~-used until disposed of~.
+>>
+<<div class="odocwiki_param_info"|<<span class="code"|validate>> : is called each time a pool element is accessed by <<a_api | val Lwt_pool.use >>~,
+      before the element is provided to <<a_api | val Lwt_pool.use >>~'s callback~.  ~If
+      <<span class="odocwiki_inlinecode"|validate element>> resolves to <<span class="odocwiki_inlinecode"|true>> the element is considered valid and
+      is passed to the callback for use as~-is~.  ~If <<span class="odocwiki_inlinecode"|validate element>> resolves
+      to <<span class="odocwiki_inlinecode"|false>> the tested pool element is passed to <<span class="odocwiki_inlinecode"|dispose>> then dropped~,
+      with a new one is created to take <<span class="odocwiki_inlinecode"|element>>~'s place in the pool~.>>
+<<div class="odocwiki_param_info"|<<span class="code"|check>> : is called after the resolution of <<a_api | val Lwt_pool.use >>~'s callback when the
+      resolution is a failed promise~.  <<span class="odocwiki_inlinecode"|check element is~_ok>> must call <<span class="odocwiki_inlinecode"|is~_ok>>
+      exactly once with <<span class="odocwiki_inlinecode"|true>> if <<span class="odocwiki_inlinecode"|element>> is still valid and <<span class="odocwiki_inlinecode"|false>>
+      otherwise~.  ~If <<span class="odocwiki_inlinecode"|check>> calls <<span class="odocwiki_inlinecode"|is~_ok false>> then <<span class="odocwiki_inlinecode"|dispose>> will be run
+      on <<span class="odocwiki_inlinecode"|element>> and the element will not be returned to the pool~.>>
+<<div class="odocwiki_param_info"|<<span class="code"|dispose>> : is used as described above and by <<a_api | val Lwt_pool.clear >> to dispose of
+      all elements in a pool~.  <<span class="odocwiki_inlinecode"|dispose>> is **not** guaranteed to be called on
+      the elements in a pool when the pool is garbage collected~.  <<a_api | val Lwt_pool.clear >>
+      should be used if the elements of the pool need to be explicitly disposed
+      of~.>>
+<<pre id="VALuse" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|use>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_pool.t >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|use p f>> takes one free element of the pool <<span class="odocwiki_inlinecode"|p>> and gives it to
+      the function <<span class="odocwiki_inlinecode"|f>>~. ~The element is put back into the pool after the
+      promise created by <<span class="odocwiki_inlinecode"|f>> completes~.
+>>
+<<pre id="VALclear" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|clear>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_pool.t >> <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|clear p>> will clear all elements in <<span class="odocwiki_inlinecode"|p>>~, calling the <<span class="odocwiki_inlinecode"|dispose>> function
+      associated with <<span class="odocwiki_inlinecode"|p>> on each of the cleared elements~.  ~Any elements from
+      <<span class="odocwiki_inlinecode"|p>> which are currently in use will be disposed of once they are
+      released~.
+
+
+      ~The next call to <<span class="odocwiki_inlinecode"|use p>> after <<span class="odocwiki_inlinecode"|clear p>> guarantees a freshly created
+      pool element~.
+
+
+      ~Disposals are performed sequentially in an undefined order~.
+>>
+<<pre id="VALwait_queue_length" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wait~_queue~_length>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_pool.t >> <<span class="ocsforge_color_delimiter"| -> >> int>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|wait~_queue~_length p>> returns the number of threads currently
+      waiting for an element of the pool <<span class="odocwiki_inlinecode"|p>> to become available~.
+>>

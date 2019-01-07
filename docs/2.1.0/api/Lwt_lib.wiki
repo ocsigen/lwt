@@ -1,0 +1,25 @@
+=Module <<a_api_type | module Lwt_lib >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_lib: <<span class='code'|sig>><<a_api text=".." | module Lwt_lib >><<span class='code'|end>>>>~Cooperative unix system calls\\
+
+----
+\\
+~This module transform non~-cooperative functions of the standard
+    library into cooperative ones by launching them into system
+    threads~.\\
+
+
+    ~Indeed~, lots of functions of the <<span class='code'|~Unix>> modules~, corresponding to
+    functions of the standard ~C library may take times to
+    complete~. ~For example <<span class='code'|gethostbyname>> may use ~D~N~S resolution~,
+    users informations may be stored in a ldap database~, ~.~.~.\\
+
+
+    ~Since these functions are implemented ~(in the standard ~C library~)
+    using blocking ~I~Os~, if you use them directly~, you program may
+    hang~.\\
+<<div id="VALgetaddrinfo" class="code"|<<span class="keyword"|val>> getaddrinfo : <<span class="code type"|string -> string -> Unix.getaddrinfo_option list -> Unix.addr_info list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Cooperative getaddrinfo with cache ~(using ~Lwt~_preemptive~.detach~)\\
+>>
+<<div id="VALgethostbyname" class="code"|<<span class="keyword"|val>> gethostbyname : <<span class="code type"|string -> Unix.host_entry <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Cooperative gethostbyname with cache ~(using ~Lwt~_preemptive~.detach~)\\
+>>
+<<div id="VALgetnameinfo" class="code"|<<span class="keyword"|val>> getnameinfo : <<span class="code type"|Unix.sockaddr -> Unix.getnameinfo_option list -> Unix.name_info <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Cooperative getnameinfo with cache ~(using ~Lwt~_preemptive~.detach~)\\
+>>

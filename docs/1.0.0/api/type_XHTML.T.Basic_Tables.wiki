@@ -1,0 +1,189 @@
+<<code language="ocaml" | sig
+  val a_align : [< `Center | `Left | `Right ] -> [> `Align ] XHTML.T.attrib
+  val a_scope : [< `Col | `Row ] -> [> `Scope ] XHTML.T.attrib
+  val a_valign : [< `Bottom | `Middle | `Top ] -> [> `Valign ] XHTML.T.attrib
+  val caption :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Caption ])
+    XHTML.T.star
+  val table :
+    ?caption:[< `Caption ] XHTML.T.elt ->
+    ([< `Class | `Id | `Summary | `Title | `Width | `XML_lang ], [< `Tr ],
+     [> `Table ])
+    XHTML.T.plus
+  val td :
+    ([< `Abbr
+      | `Align
+      | `Axis
+      | `Class
+      | `Colspan
+      | `Headers
+      | `Id
+      | `Rowspan
+      | `Scope
+      | `Title
+      | `Valign
+      | `XML_lang ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `Address
+      | `B
+      | `Bdo
+      | `Big
+      | `Blockquote
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Div
+      | `Dl
+      | `Em
+      | `Fieldset
+      | `Form
+      | `H1
+      | `H2
+      | `H3
+      | `H4
+      | `H5
+      | `H6
+      | `Hr
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `Ol
+      | `P
+      | `PCDATA
+      | `Pre
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Table
+      | `Textarea
+      | `Tt
+      | `Ul
+      | `Var ],
+     [> `Td ])
+    XHTML.T.star
+  val th :
+    ([< `Abbr
+      | `Align
+      | `Axis
+      | `Class
+      | `Colspan
+      | `Headers
+      | `Id
+      | `Rowspan
+      | `Scope
+      | `Title
+      | `Valign
+      | `XML_lang ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `Address
+      | `B
+      | `Bdo
+      | `Big
+      | `Blockquote
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Div
+      | `Dl
+      | `Em
+      | `Fieldset
+      | `Form
+      | `H1
+      | `H2
+      | `H3
+      | `H4
+      | `H5
+      | `H6
+      | `Hr
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `Ol
+      | `P
+      | `PCDATA
+      | `Pre
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Table
+      | `Textarea
+      | `Tt
+      | `Ul
+      | `Var ],
+     [> `Th ])
+    XHTML.T.star
+  val tr :
+    ([< `Align | `Class | `Id | `Title | `Valign | `XML_lang ],
+     [< `Td | `Th ], [> `Tr ])
+    XHTML.T.plus
+end >>

@@ -1,0 +1,1 @@
+<<code language="ocaml" | let attrib_list (s: string list): string = String.concat " " s >>

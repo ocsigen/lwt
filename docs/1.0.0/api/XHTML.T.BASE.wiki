@@ -1,0 +1,5 @@
+=Module <<a_api_type | module XHTML.T.BASE >> =
+<<div class="code"|<<span class="keyword"|module>> BASE: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.BASE >><<span class='code'|end>>>>
+----
+<<div class="code" id="TYPEt"|<<span class="keyword"|type>> t = <<span class="code type"|[ `Base ]>> >>
+

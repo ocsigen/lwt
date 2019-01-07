@@ -1,0 +1,4 @@
+<<code language="ocaml" | sig
+  val completion_mode : unit -> [ `classic | `none | `real_time ]
+  val set_completion_mode : [ `classic | `none | `real_time ] -> unit
+end >>

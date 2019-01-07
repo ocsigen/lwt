@@ -1,0 +1,46 @@
+<<code language="ocaml" | sig
+  exception Connection_closed
+  exception Lost_connection of exn
+  exception Timeout
+  exception Keepalive_timeout
+  exception Aborted
+  type mode = Answer | Query | Nofirstline
+  type connection
+  val create_receiver :
+    int ->
+    Ocsigen_http_com.mode -> Lwt_ssl.socket -> Ocsigen_http_com.connection
+  val lock_receiver : Ocsigen_http_com.connection -> unit Lwt.t
+  val unlock_receiver : Ocsigen_http_com.connection -> unit
+  val wakeup_next_request : Ocsigen_http_com.connection -> unit
+  val block_next_request : Ocsigen_http_com.connection -> unit Lwt.t
+  val get_http_frame :
+    ?head:bool -> Ocsigen_http_com.connection -> Ocsigen_http_frame.t Lwt.t
+  val connection_id : Ocsigen_http_com.connection -> int
+  val connection_fd : Ocsigen_http_com.connection -> Lwt_ssl.socket
+  type slot
+  val start_processing :
+    Ocsigen_http_com.connection ->
+    (Ocsigen_http_com.slot -> unit Lwt.t) -> unit
+  val wait_all_senders : Ocsigen_http_com.connection -> unit Lwt.t
+  val write_stream :
+    ?chunked:bool ->
+    Lwt_chan.out_channel -> string Ocsigen_stream.t -> unit Lwt.t
+  type sender_type
+  val create_sender :
+    ?server_name:string ->
+    ?headers:Http_headers.t ->
+    ?proto:Ocsigen_http_frame.Http_header.proto ->
+    unit -> Ocsigen_http_com.sender_type
+  val default_sender : Ocsigen_http_com.sender_type
+  val send :
+    ?reopen:(unit -> unit Lwt.t) ->
+    Ocsigen_http_com.slot ->
+    clientproto:Ocsigen_http_frame.Http_header.proto ->
+    ?mode:Ocsigen_http_frame.Http_header.http_mode ->
+    ?proto:Ocsigen_http_frame.Http_header.proto ->
+    ?keep_alive:bool ->
+    head:bool ->
+    sender:Ocsigen_http_com.sender_type ->
+    Ocsigen_http_frame.result -> unit Lwt.t
+  val abort : Ocsigen_http_com.connection -> unit
+end >>

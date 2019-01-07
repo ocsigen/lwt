@@ -1,0 +1,9 @@
+=Module <<a_api_type | module XHTML.T.TABLES >> =
+<<div class="code"|<<span class="keyword"|module>> TABLES: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.TABLES >><<span class='code'|end>>>>
+----
+<<div class="code" id="TYPEt"|<<span class="keyword"|type>> t = <<span class="code type"|[ `Caption | `Td | `Th | `Tr ]>> >>
+
+<<div class="code" id="TYPEblock"|<<span class="keyword"|type>> block = <<span class="code type"|[ `Table ]>> >>
+
+<<div class="code" id="TYPEflow"|<<span class="keyword"|type>> flow = <<span class="code type"|<<a_api text="block" | type XHTML.T.TABLES.block >>>> >>
+

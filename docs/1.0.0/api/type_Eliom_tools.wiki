@@ -1,0 +1,46 @@
+<<code language="ocaml" | sig
+  type ('a, 'b) one_page =
+      (unit, unit, 'a, [ `WithoutSuffix ], unit, unit, 'b)
+      Eliom_services.service
+  val menu :
+    ?classe:XHTML.M.nmtoken list ->
+    ([< Eliom_services.get_service_kind ] as 'a,
+     [< Eliom_services.registrable ] as 'b)
+    Eliom_tools.one_page * Xhtmltypes.a_content XHTML.M.elt list ->
+    (('a, 'b) Eliom_tools.one_page * Xhtmltypes.a_content XHTML.M.elt list)
+    list ->
+    service:('a, 'b) Eliom_tools.one_page ->
+    sp:Eliom_sessions.server_params -> [> `Ul ] XHTML.M.elt
+  type ('a, 'b, 'c) hierarchical_site_item =
+      Disabled
+    | Site_tree of ('a, 'b, 'c) Eliom_tools.hierarchical_site
+  and ('a, 'b, 'c) main_page =
+      Main_page of ('a, 'b) Eliom_tools.one_page
+    | Default_page of ('a, 'b) Eliom_tools.one_page
+    | Not_clickable
+  and ('a, 'b, 'c) hierarchical_site =
+      ('a, 'b, 'c) Eliom_tools.main_page *
+      ('c XHTML.M.elt list * ('a, 'b, 'c) Eliom_tools.hierarchical_site_item)
+      list
+  val hierarchical_menu_depth_first :
+    ?classe:XHTML.M.nmtoken list ->
+    ?whole_tree:bool ->
+    ([< Eliom_services.get_service_kind ] as 'a,
+     [< Eliom_services.registrable ] as 'b, Xhtmltypes.a_content)
+    Eliom_tools.hierarchical_site ->
+    service:('a, 'b) Eliom_tools.one_page ->
+    sp:Eliom_sessions.server_params -> [> `Ul ] XHTML.M.elt list
+  val hierarchical_menu_breadth_first :
+    ?classe:XHTML.M.nmtoken list ->
+    ([< Eliom_services.get_service_kind ] as 'a,
+     [< Eliom_services.registrable ] as 'b, Xhtmltypes.a_content)
+    Eliom_tools.hierarchical_site ->
+    service:('a, 'b) Eliom_tools.one_page ->
+    sp:Eliom_sessions.server_params -> [> `Ul ] XHTML.M.elt list
+  val structure_links :
+    ([< Eliom_services.get_service_kind ] as 'a,
+     [< Eliom_services.registrable ] as 'b, Xhtmltypes.a_content)
+    Eliom_tools.hierarchical_site ->
+    service:('a, 'b) Eliom_tools.one_page ->
+    sp:Eliom_sessions.server_params -> [> `Link ] XHTML.M.elt list
+end >>

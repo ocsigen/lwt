@@ -1,0 +1,6 @@
+=Module <<a_api_type | module XHTML.M_01_00 >> =
+<<div class="code"|<<span class="keyword"|module>> M_01_00: <<span class="code type"|<<a_api text="T_01_00" | module XHTML.T_01_00 >>>><<span class="code type"|{{{  }}}>>>>
+----
+<<div class="code"|<<span class="keyword"|include>> <<a_api | module type XHTML.T >>>>
+<<div id="VALa_name_01_00" class="code"|<<span class="keyword"|val>> a~_name~_~0~1~_~0~0 : <<span class="code type"|cdata -> [> `Name_01_00 ] attrib>>>><<div class="info"|~X~H~T~M~L ~1~.~1 has removed the name attribute from several elements~:\\
+>>

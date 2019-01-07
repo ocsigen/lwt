@@ -1,0 +1,220 @@
+=Module <<a_api_type | module Lwt_log >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_log: <<span class='code'|sig>><<a_api text=".." | module Lwt_log >><<span class='code'|end>>>>~Logging facility\\
+
+----
+\\
+~This module provides functions to deal with logging~.
+    ~It support~:\\
+
+* logging to the syslog daemon
+* logging to a channel ~(stderr~, stdout~, ~.~.~.~)
+* logging to a file
+* logging to multiple destination at the same time
+
+\\
+\\
+
+======@@id="6_Types"@@~Types======
+\\
+<<div class="code" id="TYPElevel"|<<span class="keyword"|type>> level = 
+|@@class="typetable"@ @class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Debug>>|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~Debugging message~. ~They can be automatically removed byt hte
+          syntax extension~.|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Info>>|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~Informational message~. ~Suitable to be displayed when the
+          program is in verbose mode~.|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Notice>>|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~Same as <<span class='code'|~Info>>~, but is displayed by default~.|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Warning>>|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~Something strange happend|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Error>>|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~An error message~, which should not means the end of the
+          program~.|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Fatal>>|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~A fatal error happened~, in most cases the program will end
+          after a fatal error~.|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|>>
+<<div class="info"|~Type of log levels~. ~A level determines the importance of a
+    message\\
+>>
+
+<<div class="code" id="TYPElogger"|<<span class="keyword"|type>> logger>>
+<<div class="info"|~Type of a logger~. ~A logger is responsible for dispatching messages
+      and storing them somewhere~.\\
+
+
+      ~Lwt provides loggers sending log messages to a file~, syslog~,
+      ~.~.~. but you can also create you own logger~.\\
+>>
+
+<<div class="code" id="TYPEsection"|<<span class="keyword"|type>> section>>
+<<div class="info"|~Each logging message has a section~. ~Sections can be used to
+      structure your logs~. ~For example you can choose different
+      loggers according to the section~.\\
+
+
+      ~Each section carries a level~, and messages with a lower log
+      level than than the section level will be dropped~.\\
+
+
+      ~Section levels are initialised using the <<span class='code'|~L~W~T~_~L~O~G>> environment
+      variable~, which must contains one or more rules of the form
+      <<span class='code'|pattern ~-~> level>> separated by "~;"~. ~Where <<span class='code'|pattern>> is a string
+      that may contain <<span class='code'|~*>>~.\\
+
+
+      ~For example~, if <<span class='code'|~L~W~T~_~L~O~G>> contains~:
+      
+{{{
+        access -> warning;
+        foo[*] -> error
+      
+}}}
+
+      then the level of the section <<span class='code'|"access">> is <<span class='code'|~Warning>> and the
+      level of any section matching <<span class='code'|"foo~[~*~]">> is <<span class='code'|~Error>>~.\\
+
+
+      ~If <<span class='code'|~L~W~T~_~L~O~G>> is not defined then the rule <<span class='code'|"~* ~-~> notice">> is
+      used instead~.\\
+>>
+
+\\
+
+======@@id="6_Loggingfunctions"@@~Logging functions======
+\\
+<<div id="VALlog" class="code"|<<span class="keyword"|val>> log : <<span class="code type"|\\{{{   }}}?exn:exn ->\\{{{   }}}  ?section:<<a_api text="section" | type Lwt_log.section >> ->\\{{{   }}}  ?logger:<<a_api text="logger" | type Lwt_log.logger >> -> level:<<a_api text="level" | type Lwt_log.level >> -> string -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|log ~?section ~?logger ~~level message>> logs a message~.\\
+
+
+      <<span class='code'|section>> defaults to <<a_api | val Lwt_log.Section.main >>~. ~If <<span class='code'|logger>> is not
+      specified~, then the default one is used instead ~(see
+      <<a_api | val Lwt_log.default >>~)~.\\
+
+
+      ~If <<span class='code'|exn>> is provided~, then its string representation
+      ~(~= <<span class='code'|~Printexc~.to~_string exn>>~) will be append to the message~, and if
+      possible the backtrace will also be logged~.\\
+>>
+<<div id="VALlog_f" class="code"|<<span class="keyword"|val>> log~_f : <<span class="code type"|\\{{{   }}}?exn:exn ->\\{{{   }}}  ?section:<<a_api text="section" | type Lwt_log.section >> ->\\{{{   }}}  ?logger:<<a_api text="logger" | type Lwt_log.logger >> ->\\{{{   }}}  level:<<a_api text="level" | type Lwt_log.level >> ->\\{{{   }}}  ('a, unit, string, unit <<a_api text="Lwt.t" | type Lwt.t >>) Pervasives.format4 -> 'a>>>><<div class="info"|<<span class='code'|log~_f>> is the same as <<span class='code'|log>> except that it takes a format
+      string\\
+>>
+\\
+~The following functions are the same as <<a_api | val Lwt_log.log >> except that their
+    name determines which level is used~.\\
+
+
+    ~For example <<span class='code'|info msg>> is the same as <<span class='code'|log ~~level~:~Info msg>>~.\\
+<<div id="VALdebug" class="code"|<<span class="keyword"|val>> debug : <<span class="code type"|\\{{{   }}}?exn:exn ->\\{{{   }}}  ?section:<<a_api text="section" | type Lwt_log.section >> -> ?logger:<<a_api text="logger" | type Lwt_log.logger >> -> string -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALdebug_f" class="code"|<<span class="keyword"|val>> debug~_f : <<span class="code type"|\\{{{   }}}?exn:exn ->\\{{{   }}}  ?section:<<a_api text="section" | type Lwt_log.section >> ->\\{{{   }}}  ?logger:<<a_api text="logger" | type Lwt_log.logger >> ->\\{{{   }}}  ('a, unit, string, unit <<a_api text="Lwt.t" | type Lwt.t >>) Pervasives.format4 -> 'a>>>><<div id="VALinfo" class="code"|<<span class="keyword"|val>> info : <<span class="code type"|\\{{{   }}}?exn:exn ->\\{{{   }}}  ?section:<<a_api text="section" | type Lwt_log.section >> -> ?logger:<<a_api text="logger" | type Lwt_log.logger >> -> string -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALinfo_f" class="code"|<<span class="keyword"|val>> info~_f : <<span class="code type"|\\{{{   }}}?exn:exn ->\\{{{   }}}  ?section:<<a_api text="section" | type Lwt_log.section >> ->\\{{{   }}}  ?logger:<<a_api text="logger" | type Lwt_log.logger >> ->\\{{{   }}}  ('a, unit, string, unit <<a_api text="Lwt.t" | type Lwt.t >>) Pervasives.format4 -> 'a>>>><<div id="VALnotice" class="code"|<<span class="keyword"|val>> notice : <<span class="code type"|\\{{{   }}}?exn:exn ->\\{{{   }}}  ?section:<<a_api text="section" | type Lwt_log.section >> -> ?logger:<<a_api text="logger" | type Lwt_log.logger >> -> string -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALnotice_f" class="code"|<<span class="keyword"|val>> notice~_f : <<span class="code type"|\\{{{   }}}?exn:exn ->\\{{{   }}}  ?section:<<a_api text="section" | type Lwt_log.section >> ->\\{{{   }}}  ?logger:<<a_api text="logger" | type Lwt_log.logger >> ->\\{{{   }}}  ('a, unit, string, unit <<a_api text="Lwt.t" | type Lwt.t >>) Pervasives.format4 -> 'a>>>><<div id="VALwarning" class="code"|<<span class="keyword"|val>> warning : <<span class="code type"|\\{{{   }}}?exn:exn ->\\{{{   }}}  ?section:<<a_api text="section" | type Lwt_log.section >> -> ?logger:<<a_api text="logger" | type Lwt_log.logger >> -> string -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALwarning_f" class="code"|<<span class="keyword"|val>> warning~_f : <<span class="code type"|\\{{{   }}}?exn:exn ->\\{{{   }}}  ?section:<<a_api text="section" | type Lwt_log.section >> ->\\{{{   }}}  ?logger:<<a_api text="logger" | type Lwt_log.logger >> ->\\{{{   }}}  ('a, unit, string, unit <<a_api text="Lwt.t" | type Lwt.t >>) Pervasives.format4 -> 'a>>>><<div id="VALerror" class="code"|<<span class="keyword"|val>> error : <<span class="code type"|\\{{{   }}}?exn:exn ->\\{{{   }}}  ?section:<<a_api text="section" | type Lwt_log.section >> -> ?logger:<<a_api text="logger" | type Lwt_log.logger >> -> string -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALerror_f" class="code"|<<span class="keyword"|val>> error~_f : <<span class="code type"|\\{{{   }}}?exn:exn ->\\{{{   }}}  ?section:<<a_api text="section" | type Lwt_log.section >> ->\\{{{   }}}  ?logger:<<a_api text="logger" | type Lwt_log.logger >> ->\\{{{   }}}  ('a, unit, string, unit <<a_api text="Lwt.t" | type Lwt.t >>) Pervasives.format4 -> 'a>>>><<div id="VALfatal" class="code"|<<span class="keyword"|val>> fatal : <<span class="code type"|\\{{{   }}}?exn:exn ->\\{{{   }}}  ?section:<<a_api text="section" | type Lwt_log.section >> -> ?logger:<<a_api text="logger" | type Lwt_log.logger >> -> string -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALfatal_f" class="code"|<<span class="keyword"|val>> fatal~_f : <<span class="code type"|\\{{{   }}}?exn:exn ->\\{{{   }}}  ?section:<<a_api text="section" | type Lwt_log.section >> ->\\{{{   }}}  ?logger:<<a_api text="logger" | type Lwt_log.logger >> ->\\{{{   }}}  ('a, unit, string, unit <<a_api text="Lwt.t" | type Lwt.t >>) Pervasives.format4 -> 'a>>>><<div class="code"|<<span class="keyword"|module>> <<a_api text="Section" | module Lwt_log.Section >>: <<span class='code'|sig>><<a_api text=".." | module Lwt_log.Section >><<span class='code'|end>>>><<div class="info"|~Sections
+>>
+\\
+
+======@@id="6_Logtemplates"@@~Log templates======
+\\
+<<div class="code" id="TYPEtemplate"|<<span class="keyword"|type>> template = <<span class="code type"|string>> >>
+<<div class="info"|~A template is for generating log messages~.\\
+
+
+        ~It is a string which may contains variables of the form
+        <<span class='code'|~$~(var~)>>~, where <<span class='code'|var>> is one of~:\\
+
+* <<span class='code'|date>> which will be replaced with the current date
+* <<span class='code'|milliseconds>> which will be replaced by the fractionnal part
+          of the current unix time
+* <<span class='code'|name>> which will be replaced by the program name
+* <<span class='code'|pid>> which will be replaced by the pid of the program
+* <<span class='code'|message>> which will be replaced by the message emited
+* <<span class='code'|level>> which will be replaced by a string representation of
+          the level
+* <<span class='code'|section>> which will be replaced by the name of the
+          message~'s section
+
+
+        ~For example~:* <<span class='code'|"~$~(name~)~: ~$~(message~)">>
+* <<span class='code'|"~$~(date~) ~$~(name~)~[~$~(pid~)~]~: ~$~(message~)">>
+* <<span class='code'|"~$~(date~)~.~$~(milliseconds~) ~$~(name~)~[~$~(pid~)~]~: ~$~(message~)">>
+
+\\
+>>
+
+<<div id="VALrender" class="code"|<<span class="keyword"|val>> render : <<span class="code type"|\\{{{   }}}buffer:Buffer.t ->\\{{{   }}}  template:<<a_api text="template" | type Lwt_log.template >> ->\\{{{   }}}  section:<<a_api text="section" | type Lwt_log.section >> -> level:<<a_api text="level" | type Lwt_log.level >> -> message:string -> unit>>>><<div class="info"|<<span class='code'|render ~~buffer ~~template ~~section ~~level ~~message>> instantiate
+      all variables of <<span class='code'|template>>~, and store the result in
+      <<span class='code'|buffer>>~.\\
+>>
+\\
+
+======@@id="6_Loggers"@@~Loggers======
+\\
+<<div  id="EXCEPTIONLogger_closed" class="code"|<<span class="keyword"|exception>> Logger_closed>>
+<<div class="info"|~Exception raised when trying to use a closed logger\\
+>>
+<<div id="VALmake" class="code"|<<span class="keyword"|val>> make : <<span class="code type"|\\{{{   }}}output:(<<a_api text="section" | type Lwt_log.section >> -> <<a_api text="level" | type Lwt_log.level >> -> string list -> unit <<a_api text="Lwt.t" | type Lwt.t >>) ->\\{{{   }}}  close:(unit -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> <<a_api text="logger" | type Lwt_log.logger >>>>>><<div class="info"|<<span class='code'|make ~~output ~~close>> creates a new logger~.\\
+>>
+<<div class="param_info"|<<span class="code code"|output>> : is used to write logs~. ~It is a function which
+      receive a section~, a level and a list lines that must
+      be logged together~.>>
+<<div class="param_info"|<<span class="code code"|close>> : is used to close the logger>>
+<<div id="VALclose" class="code"|<<span class="keyword"|val>> close : <<span class="code type"|<<a_api text="logger" | type Lwt_log.logger >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Close the given logger\\
+>>
+<<div id="VALdefault" class="code"|<<span class="keyword"|val>> default : <<span class="code type"|<<a_api text="logger" | type Lwt_log.logger >> Pervasives.ref>>>><<div class="info"|~The default logger~. ~It is used as default when no one is
+      specified~. ~Initially~, it sends messages to the standard output
+      for error messages~.\\
+>>
+<<div id="VALbroadcast" class="code"|<<span class="keyword"|val>> broadcast : <<span class="code type"|<<a_api text="logger" | type Lwt_log.logger >> list -> <<a_api text="logger" | type Lwt_log.logger >>>>>><<div class="info"|<<span class='code'|broadcast loggers>> is a logger which send messages to all the
+      given loggers~.\\
+
+
+      ~Note~: closing a broadcast logger does not close its
+      components~.\\
+>>
+<<div id="VALdispatch" class="code"|<<span class="keyword"|val>> dispatch : <<span class="code type"|(<<a_api text="section" | type Lwt_log.section >> -> <<a_api text="level" | type Lwt_log.level >> -> <<a_api text="logger" | type Lwt_log.logger >>) -> <<a_api text="logger" | type Lwt_log.logger >>>>>><<div class="info"|<<span class='code'|dispatch f>> is a logger which dispatch logging instructions to
+      different logger according to their level and~/or section~.\\
+
+
+      ~Here is an example~:\\
+
+
+      
+{{{
+        let access_logger = Lwt_log.file "access.log"
+        and error_logger = Lwt_log.file "error.log" in
+
+        Lwt_log.dispatch
+          (fun section level ->
+            match Lwt_log.Section.name section, level with
+              | "access", _ -> access_logger
+              | _, Lwt_log.Error -> error_logger)
+      
+}}}
+\\
+>>
+\\
+
+======@@id="6_Predefinedloggers"@@~Predefined loggers======
+\\
+<<div id="VALnull" class="code"|<<span class="keyword"|val>> null : <<span class="code type"|<<a_api text="logger" | type Lwt_log.logger >>>>>><<div class="info"|~Logger which drops everything\\
+>>
+<<div class="code" id="TYPEsyslog_facility"|<<span class="keyword"|type>> syslog~_facility = <<span class="code type"|\\{{{   }}}[ `Auth\\{{{   }}}  | `Authpriv\\{{{   }}}  | `Console\\{{{   }}}  | `Cron\\{{{   }}}  | `Daemon\\{{{   }}}  | `FTP\\{{{   }}}  | `Kernel\\{{{   }}}  | `LPR\\{{{   }}}  | `Local0\\{{{   }}}  | `Local1\\{{{   }}}  | `Local2\\{{{   }}}  | `Local3\\{{{   }}}  | `Local4\\{{{   }}}  | `Local5\\{{{   }}}  | `Local6\\{{{   }}}  | `Local7\\{{{   }}}  | `Mail\\{{{   }}}  | `NTP\\{{{   }}}  | `News\\{{{   }}}  | `Security\\{{{   }}}  | `Syslog\\{{{   }}}  | `UUCP\\{{{   }}}  | `User ]>> >>
+<<div class="info"|~Syslog facility~. ~Look at the ~S~Y~S~L~O~G~(~3~) man page for a description
+    of syslog facilities\\
+>>
+
+<<div id="VALsyslog" class="code"|<<span class="keyword"|val>> syslog : <<span class="code type"|\\{{{   }}}?template:<<a_api text="template" | type Lwt_log.template >> ->\\{{{   }}}  ?paths:string list ->\\{{{   }}}  facility:<<a_api text="syslog_facility" | type Lwt_log.syslog_facility >> -> unit -> <<a_api text="logger" | type Lwt_log.logger >>>>>><<div class="info"|<<span class='code'|syslog ~?template ~?paths ~~facility ~(~)>> creates an logger
+      which send message to the system logger~.\\
+>>
+<<div class="param_info"|<<span class="code code"|template>> : defaults to <<span class='code'|"~$~(date~) ~$~(name~)~[~$~(pid~)~]~: ~$~(section~)~: ~$~(message~)">>>>
+<<div class="param_info"|<<span class="code code"|paths>> : is a list of path to try for the syslogd socket~. ~It
+             default to <<span class='code'|~["~/dev~/log"~; "~/var~/run~/log"~]>>~.>>
+<<div id="VALfile" class="code"|<<span class="keyword"|val>> file : <<span class="code type"|\\{{{   }}}?template:<<a_api text="template" | type Lwt_log.template >> ->\\{{{   }}}  ?mode:[ `Append | `Truncate ] ->\\{{{   }}}  ?perm:Unix.file_perm -> file_name:string -> unit -> <<a_api text="logger" | type Lwt_log.logger >> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|desf~_file ~?template ~?mode ~?perm ~~file~_name ~(~)>> creates an
+      logger which will write messages to <<span class='code'|file~_name>>~.\\
+
+* if <<span class='code'|mode ~= `~Truncate>> then the file is truncated and previous
+      contents will be lost~.
+
+* if <<span class='code'|mode ~= `~Append>>~, new messages will be appended at the end
+      of the file
+
+\\
+>>
+<<div class="param_info"|<<span class="code code"|template>> : defaults to <<span class='code'|"~$~(date~)~: ~$~(section~)~: ~$~(message~)">>>>
+<<div class="param_info"|<<span class="code code"|mode>> : defaults to <<span class='code'|`~Append>>>>
+<<div id="VALchannel" class="code"|<<span class="keyword"|val>> channel : <<span class="code type"|\\{{{   }}}?template:<<a_api text="template" | type Lwt_log.template >> ->\\{{{   }}}  close_mode:[ `Close | `Keep ] ->\\{{{   }}}  channel:<<a_api text="Lwt_io.output_channel" | type Lwt_io.output_channel >> -> unit -> <<a_api text="logger" | type Lwt_log.logger >>>>>><<div class="info"|<<span class='code'|channel ~?template ~~close~_mode ~~channel ~(~)>> creates a logger
+      from a channel~.\\
+
+
+      ~If <<span class='code'|close~_mode ~= `~Close>> then <<span class='code'|channel>> is closed when the
+      logger is closed~, otherwise it is left open~.\\
+>>
+<<div class="param_info"|<<span class="code code"|template>> : defaults to <<span class='code'|"~$~(name~)~: ~$~(section~)~: ~$~(message~)">>>>

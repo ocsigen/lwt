@@ -1,0 +1,9 @@
+=Index of module types=
+
+|@@ @class="alignleft"@@\\N|
+|<<a_api text="NumberIO"| module type Lwt_io.NumberIO >> ~[<<a_api | module Lwt_io >>~]|<<div class="info"|~Common interface for reading~/writing integers in binary
+>>
+|
+|@@ @class="alignleft"@@\\S|
+|<<a_api text="S"| module type Lwt_throttle.S >> ~[<<a_api | module Lwt_throttle >>~]||
+\\

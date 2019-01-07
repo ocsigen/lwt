@@ -1,0 +1,8 @@
+<<code language="ocaml" | sig
+  type t
+  val set_exn_handler : (exn -> unit) -> unit
+  val create : int -> (unit -> unit) -> Lwt_timeout.t
+  val start : Lwt_timeout.t -> unit
+  val stop : Lwt_timeout.t -> unit
+  val change : Lwt_timeout.t -> int -> unit
+end >>

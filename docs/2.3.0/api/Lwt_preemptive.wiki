@@ -1,0 +1,30 @@
+=Module <<a_api_type | module Lwt_preemptive >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_preemptive>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_preemptive >><<span class="ocsforge_color_keyword"|end>>>>~This module allows to mix preemptive threads with <<span class="odocwiki_inlinecode"|~Lwt>>
+    cooperative threads~. ~It maintains an extensible pool of preemptive
+    threads to with you can detach computations~.\\
+
+----
+<<pre id="VALdetach" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|detach>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|detaches a computation to a preemptive thread~.\\
+>>
+<<pre id="VALinit" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|init>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int <<span class="ocsforge_color_delimiter"| -> >> int <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>string <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|init min max log>> initialises this module~. i~.e~. it launches the
+      minimum number of preemptive threads and starts the **      dispatcher**~.\\
+>>
+<<pre id="VALsimple_init" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|simple~_init>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|simple~_init ~(~)>> does a //simple initialization//~. i~.e~. with
+      default parameters if the library is not yet initialised~.\\
+
+
+      ~Note~: this function is automatically called <<a_api | val Lwt_preemptive.detach >>~.\\
+>>
+<<pre id="VALget_bounds" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|get~_bounds>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> int * int>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|get~_bounds ~(~)>> returns the minimum and the maximum number of
+      preemptive threads~.\\
+>>
+<<pre id="VALset_bounds" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|set~_bounds>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int * int <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|set~_bounds ~(min~, max~)>> set the minimum and the maximum number
+      of preemptive threads~.\\
+>>
+<<pre id="VALset_max_number_of_threads_queued" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|set~_max~_number~_of~_threads~_queued>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Sets the size of the waiting queue~, if no more preemptive
+      threads are available~. ~When the queue is full~, <<a_api | val Lwt_preemptive.detach >> will
+      sleep until a thread is available~.\\
+>>
+<<pre id="VALget_max_number_of_threads_queued" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|get~_max~_number~_of~_threads~_queued>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> int>>>><<div class="odocwiki_info"|~Returns the size of the waiting queue~, if no more threads are
+      available\\
+>>

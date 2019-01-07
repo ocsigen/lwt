@@ -1,0 +1,17 @@
+=Module <<a_api_type | module Eliom_predefmod.Streamlist >> =
+<<div class="code"|<<span class="keyword"|module>> Streamlist: \\{{{   }}}<<span class="code type"|<<a_api text="Eliom_mkreg.ELIOMREGSIG" | module Eliom_mkreg.ELIOMREGSIG >>>><<span class="code type"|{{{  }}} with \\{{{   }}}  type page = (((unit -> string Ocsigen_stream.t Lwt.t) list) * \\{{{   }}}                 string)>>>>~Allows to send raw data using ~Ocsigen~'s streams~.
+    ~The content is a pair conatining~:\\
+
+* a list of functions returning a stream and the
+    function to close it~,
+* the  content type string to send~. 
+
+
+    ~Streams are opened by calling the functions in the list~, and closed
+    automatically by a call to the closing function~.
+    ~If something goes wrong~, the current stream is closed~,
+    and the following are not opened~.\\
+
+----
+<<div class="code"|<<span class="keyword"|include>> <<a_api | module type Eliom_mkreg.ELIOMREGSIG1 >>>>
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="Cookies" | module Eliom_mkreg.ELIOMREGSIG.Cookies >>: \\{{{   }}}<<span class="code type"|<<a_api text="Eliom_mkreg.ELIOMREGSIG1" | module Eliom_mkreg.ELIOMREGSIG1 >>>><<span class="code type"|{{{  }}} \\{{{   }}}    with type page = page * Eliom_services.cookie list>>>>

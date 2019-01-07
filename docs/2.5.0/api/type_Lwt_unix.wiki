@@ -1,0 +1,466 @@
+<<code language="ocaml" | sig
+  val handle_unix_error : ('a -> 'b Lwt.t) -> 'a -> 'b Lwt.t
+  type async_method = Async_none | Async_detach | Async_switch
+  val default_async_method : unit -> Lwt_unix.async_method
+  val set_default_async_method : Lwt_unix.async_method -> unit
+  val async_method : unit -> Lwt_unix.async_method
+  val async_method_key : Lwt_unix.async_method Lwt.key
+  val with_async_none : (unit -> 'a) -> 'a
+  val with_async_detach : (unit -> 'a) -> 'a
+  val with_async_switch : (unit -> 'a) -> 'a
+  val sleep : float -> unit Lwt.t
+  val yield : unit -> unit Lwt.t
+  val auto_yield : float -> unit -> unit Lwt.t
+  exception Timeout
+  val timeout : float -> 'a Lwt.t
+  val with_timeout : float -> (unit -> 'a Lwt.t) -> 'a Lwt.t
+  type file_descr
+  type state = Opened | Closed | Aborted of exn
+  val state : Lwt_unix.file_descr -> Lwt_unix.state
+  val unix_file_descr : Lwt_unix.file_descr -> Unix.file_descr
+  val of_unix_file_descr :
+    ?blocking:bool ->
+    ?set_flags:bool -> Unix.file_descr -> Lwt_unix.file_descr
+  val blocking : Lwt_unix.file_descr -> bool Lwt.t
+  val set_blocking : ?set_flags:bool -> Lwt_unix.file_descr -> bool -> unit
+  val abort : Lwt_unix.file_descr -> exn -> unit
+  val fork : unit -> int
+  type process_status =
+    Unix.process_status =
+      WEXITED of int
+    | WSIGNALED of int
+    | WSTOPPED of int
+  type wait_flag = Unix.wait_flag = WNOHANG | WUNTRACED
+  val wait : unit -> (int * Lwt_unix.process_status) Lwt.t
+  val waitpid :
+    Lwt_unix.wait_flag list -> int -> (int * Lwt_unix.process_status) Lwt.t
+  type resource_usage = { ru_utime : float; ru_stime : float; }
+  val wait4 :
+    Lwt_unix.wait_flag list ->
+    int -> (int * Lwt_unix.process_status * Lwt_unix.resource_usage) Lwt.t
+  val wait_count : unit -> int
+  val system : string -> Lwt_unix.process_status Lwt.t
+  val stdin : Lwt_unix.file_descr
+  val stdout : Lwt_unix.file_descr
+  val stderr : Lwt_unix.file_descr
+  type file_perm = Unix.file_perm
+  type open_flag =
+    Unix.open_flag =
+      O_RDONLY
+    | O_WRONLY
+    | O_RDWR
+    | O_NONBLOCK
+    | O_APPEND
+    | O_CREAT
+    | O_TRUNC
+    | O_EXCL
+    | O_NOCTTY
+    | O_DSYNC
+    | O_SYNC
+    | O_RSYNC
+    | O_SHARE_DELETE
+    | O_CLOEXEC
+  val openfile :
+    string ->
+    Lwt_unix.open_flag list ->
+    Lwt_unix.file_perm -> Lwt_unix.file_descr Lwt.t
+  val close : Lwt_unix.file_descr -> unit Lwt.t
+  val read : Lwt_unix.file_descr -> Bytes.t -> int -> int -> int Lwt.t
+  val write : Lwt_unix.file_descr -> Bytes.t -> int -> int -> int Lwt.t
+  val write_string : Lwt_unix.file_descr -> string -> int -> int -> int Lwt.t
+  val readable : Lwt_unix.file_descr -> bool
+  val writable : Lwt_unix.file_descr -> bool
+  val wait_read : Lwt_unix.file_descr -> unit Lwt.t
+  val wait_write : Lwt_unix.file_descr -> unit Lwt.t
+  type seek_command = Unix.seek_command = SEEK_SET | SEEK_CUR | SEEK_END
+  val lseek :
+    Lwt_unix.file_descr -> int -> Lwt_unix.seek_command -> int Lwt.t
+  val truncate : string -> int -> unit Lwt.t
+  val ftruncate : Lwt_unix.file_descr -> int -> unit Lwt.t
+  val fsync : Lwt_unix.file_descr -> unit Lwt.t
+  val fdatasync : Lwt_unix.file_descr -> unit Lwt.t
+  type file_kind =
+    Unix.file_kind =
+      S_REG
+    | S_DIR
+    | S_CHR
+    | S_BLK
+    | S_LNK
+    | S_FIFO
+    | S_SOCK
+  type stats =
+    Unix.stats = {
+    st_dev : int;
+    st_ino : int;
+    st_kind : Lwt_unix.file_kind;
+    st_perm : Lwt_unix.file_perm;
+    st_nlink : int;
+    st_uid : int;
+    st_gid : int;
+    st_rdev : int;
+    st_size : int;
+    st_atime : float;
+    st_mtime : float;
+    st_ctime : float;
+  }
+  val stat : string -> Lwt_unix.stats Lwt.t
+  val lstat : string -> Lwt_unix.stats Lwt.t
+  val fstat : Lwt_unix.file_descr -> Lwt_unix.stats Lwt.t
+  val isatty : Lwt_unix.file_descr -> bool Lwt.t
+  module LargeFile :
+    sig
+      val lseek :
+        Lwt_unix.file_descr -> int64 -> Lwt_unix.seek_command -> int64 Lwt.t
+      val truncate : string -> int64 -> unit Lwt.t
+      val ftruncate : Lwt_unix.file_descr -> int64 -> unit Lwt.t
+      type stats =
+        Unix.LargeFile.stats = {
+        st_dev : int;
+        st_ino : int;
+        st_kind : Lwt_unix.file_kind;
+        st_perm : Lwt_unix.file_perm;
+        st_nlink : int;
+        st_uid : int;
+        st_gid : int;
+        st_rdev : int;
+        st_size : int64;
+        st_atime : float;
+        st_mtime : float;
+        st_ctime : float;
+      }
+      val stat : string -> Lwt_unix.LargeFile.stats Lwt.t
+      val lstat : string -> Lwt_unix.LargeFile.stats Lwt.t
+      val fstat : Lwt_unix.file_descr -> Lwt_unix.LargeFile.stats Lwt.t
+    end
+  val unlink : string -> unit Lwt.t
+  val rename : string -> string -> unit Lwt.t
+  val link : string -> string -> unit Lwt.t
+  val chmod : string -> Lwt_unix.file_perm -> unit Lwt.t
+  val fchmod : Lwt_unix.file_descr -> Lwt_unix.file_perm -> unit Lwt.t
+  val chown : string -> int -> int -> unit Lwt.t
+  val fchown : Lwt_unix.file_descr -> int -> int -> unit Lwt.t
+  type access_permission = Unix.access_permission = R_OK | W_OK | X_OK | F_OK
+  val access : string -> Lwt_unix.access_permission list -> unit Lwt.t
+  val dup : Lwt_unix.file_descr -> Lwt_unix.file_descr
+  val dup2 : Lwt_unix.file_descr -> Lwt_unix.file_descr -> unit
+  val set_close_on_exec : Lwt_unix.file_descr -> unit
+  val clear_close_on_exec : Lwt_unix.file_descr -> unit
+  val mkdir : string -> Lwt_unix.file_perm -> unit Lwt.t
+  val rmdir : string -> unit Lwt.t
+  val chdir : string -> unit Lwt.t
+  val chroot : string -> unit Lwt.t
+  type dir_handle = Unix.dir_handle
+  val opendir : string -> Lwt_unix.dir_handle Lwt.t
+  val readdir : Lwt_unix.dir_handle -> string Lwt.t
+  val readdir_n : Lwt_unix.dir_handle -> int -> string array Lwt.t
+  val rewinddir : Lwt_unix.dir_handle -> unit Lwt.t
+  val closedir : Lwt_unix.dir_handle -> unit Lwt.t
+  val files_of_directory : string -> string Lwt_stream.t
+  val pipe : unit -> Lwt_unix.file_descr * Lwt_unix.file_descr
+  val pipe_in : unit -> Lwt_unix.file_descr * Unix.file_descr
+  val pipe_out : unit -> Unix.file_descr * Lwt_unix.file_descr
+  val mkfifo : string -> Lwt_unix.file_perm -> unit Lwt.t
+  val symlink : string -> string -> unit Lwt.t
+  val readlink : string -> string Lwt.t
+  type lock_command =
+    Unix.lock_command =
+      F_ULOCK
+    | F_LOCK
+    | F_TLOCK
+    | F_TEST
+    | F_RLOCK
+    | F_TRLOCK
+  val lockf :
+    Lwt_unix.file_descr -> Lwt_unix.lock_command -> int -> unit Lwt.t
+  type passwd_entry =
+    Unix.passwd_entry = {
+    pw_name : string;
+    pw_passwd : string;
+    pw_uid : int;
+    pw_gid : int;
+    pw_gecos : string;
+    pw_dir : string;
+    pw_shell : string;
+  }
+  type group_entry =
+    Unix.group_entry = {
+    gr_name : string;
+    gr_passwd : string;
+    gr_gid : int;
+    gr_mem : string array;
+  }
+  val getlogin : unit -> string Lwt.t
+  val getpwnam : string -> Lwt_unix.passwd_entry Lwt.t
+  val getgrnam : string -> Lwt_unix.group_entry Lwt.t
+  val getpwuid : int -> Lwt_unix.passwd_entry Lwt.t
+  val getgrgid : int -> Lwt_unix.group_entry Lwt.t
+  type signal_handler_id
+  val on_signal : int -> (int -> unit) -> Lwt_unix.signal_handler_id
+  val on_signal_full :
+    int ->
+    (Lwt_unix.signal_handler_id -> int -> unit) -> Lwt_unix.signal_handler_id
+  val disable_signal_handler : Lwt_unix.signal_handler_id -> unit
+  val signal_count : unit -> int
+  val reinstall_signal_handler : int -> unit
+  type inet_addr = Unix.inet_addr
+  type socket_domain = Unix.socket_domain = PF_UNIX | PF_INET | PF_INET6
+  type socket_type =
+    Unix.socket_type =
+      SOCK_STREAM
+    | SOCK_DGRAM
+    | SOCK_RAW
+    | SOCK_SEQPACKET
+  type sockaddr =
+    Unix.sockaddr =
+      ADDR_UNIX of string
+    | ADDR_INET of Lwt_unix.inet_addr * int
+  val socket :
+    Lwt_unix.socket_domain ->
+    Lwt_unix.socket_type -> int -> Lwt_unix.file_descr
+  val socketpair :
+    Lwt_unix.socket_domain ->
+    Lwt_unix.socket_type -> int -> Lwt_unix.file_descr * Lwt_unix.file_descr
+  val bind : Lwt_unix.file_descr -> Lwt_unix.sockaddr -> unit
+  val listen : Lwt_unix.file_descr -> int -> unit
+  val accept :
+    Lwt_unix.file_descr -> (Lwt_unix.file_descr * Lwt_unix.sockaddr) Lwt.t
+  val accept_n :
+    Lwt_unix.file_descr ->
+    int ->
+    ((Lwt_unix.file_descr * Lwt_unix.sockaddr) list * exn option) Lwt.t
+  val connect : Lwt_unix.file_descr -> Lwt_unix.sockaddr -> unit Lwt.t
+  type shutdown_command =
+    Unix.shutdown_command =
+      SHUTDOWN_RECEIVE
+    | SHUTDOWN_SEND
+    | SHUTDOWN_ALL
+  val shutdown : Lwt_unix.file_descr -> Lwt_unix.shutdown_command -> unit
+  val getsockname : Lwt_unix.file_descr -> Lwt_unix.sockaddr
+  val getpeername : Lwt_unix.file_descr -> Lwt_unix.sockaddr
+  type msg_flag = Unix.msg_flag = MSG_OOB | MSG_DONTROUTE | MSG_PEEK
+  val recv :
+    Lwt_unix.file_descr ->
+    Bytes.t -> int -> int -> Lwt_unix.msg_flag list -> int Lwt.t
+  val recvfrom :
+    Lwt_unix.file_descr ->
+    Bytes.t ->
+    int -> int -> Lwt_unix.msg_flag list -> (int * Lwt_unix.sockaddr) Lwt.t
+  val send :
+    Lwt_unix.file_descr ->
+    Bytes.t -> int -> int -> Lwt_unix.msg_flag list -> int Lwt.t
+  val sendto :
+    Lwt_unix.file_descr ->
+    Bytes.t ->
+    int -> int -> Lwt_unix.msg_flag list -> Lwt_unix.sockaddr -> int Lwt.t
+  type io_vector = {
+    iov_buffer : string;
+    iov_offset : int;
+    iov_length : int;
+  }
+  val io_vector :
+    buffer:string -> offset:int -> length:int -> Lwt_unix.io_vector
+  val recv_msg :
+    socket:Lwt_unix.file_descr ->
+    io_vectors:Lwt_unix.io_vector list -> (int * Unix.file_descr list) Lwt.t
+  val send_msg :
+    socket:Lwt_unix.file_descr ->
+    io_vectors:Lwt_unix.io_vector list ->
+    fds:Unix.file_descr list -> int Lwt.t
+  type credentials = { cred_pid : int; cred_uid : int; cred_gid : int; }
+  val get_credentials : Lwt_unix.file_descr -> Lwt_unix.credentials
+  type socket_bool_option =
+    Unix.socket_bool_option =
+      SO_DEBUG
+    | SO_BROADCAST
+    | SO_REUSEADDR
+    | SO_KEEPALIVE
+    | SO_DONTROUTE
+    | SO_OOBINLINE
+    | SO_ACCEPTCONN
+    | TCP_NODELAY
+    | IPV6_ONLY
+  type socket_int_option =
+    Unix.socket_int_option =
+      SO_SNDBUF
+    | SO_RCVBUF
+    | SO_ERROR
+    | SO_TYPE
+    | SO_RCVLOWAT
+    | SO_SNDLOWAT
+  type socket_optint_option = Unix.socket_optint_option = SO_LINGER
+  type socket_float_option =
+    Unix.socket_float_option =
+      SO_RCVTIMEO
+    | SO_SNDTIMEO
+  val getsockopt : Lwt_unix.file_descr -> Lwt_unix.socket_bool_option -> bool
+  val setsockopt :
+    Lwt_unix.file_descr -> Lwt_unix.socket_bool_option -> bool -> unit
+  val getsockopt_int :
+    Lwt_unix.file_descr -> Lwt_unix.socket_int_option -> int
+  val setsockopt_int :
+    Lwt_unix.file_descr -> Lwt_unix.socket_int_option -> int -> unit
+  val getsockopt_optint :
+    Lwt_unix.file_descr -> Lwt_unix.socket_optint_option -> int option
+  val setsockopt_optint :
+    Lwt_unix.file_descr ->
+    Lwt_unix.socket_optint_option -> int option -> unit
+  val getsockopt_float :
+    Lwt_unix.file_descr -> Lwt_unix.socket_float_option -> float
+  val setsockopt_float :
+    Lwt_unix.file_descr -> Lwt_unix.socket_float_option -> float -> unit
+  val getsockopt_error : Lwt_unix.file_descr -> Unix.error option
+  val mcast_set_loop : Lwt_unix.file_descr -> bool -> unit
+  val mcast_set_ttl : Lwt_unix.file_descr -> int -> unit
+  val mcast_add_membership :
+    Lwt_unix.file_descr -> ?ifname:Unix.inet_addr -> Unix.inet_addr -> unit
+  val mcast_drop_membership :
+    Lwt_unix.file_descr -> ?ifname:Unix.inet_addr -> Unix.inet_addr -> unit
+  type host_entry =
+    Unix.host_entry = {
+    h_name : string;
+    h_aliases : string array;
+    h_addrtype : Lwt_unix.socket_domain;
+    h_addr_list : Lwt_unix.inet_addr array;
+  }
+  type protocol_entry =
+    Unix.protocol_entry = {
+    p_name : string;
+    p_aliases : string array;
+    p_proto : int;
+  }
+  type service_entry =
+    Unix.service_entry = {
+    s_name : string;
+    s_aliases : string array;
+    s_port : int;
+    s_proto : string;
+  }
+  val gethostname : unit -> string Lwt.t
+  val gethostbyname : string -> Lwt_unix.host_entry Lwt.t
+  val gethostbyaddr : Lwt_unix.inet_addr -> Lwt_unix.host_entry Lwt.t
+  val getprotobyname : string -> Lwt_unix.protocol_entry Lwt.t
+  val getprotobynumber : int -> Lwt_unix.protocol_entry Lwt.t
+  val getservbyname : string -> string -> Lwt_unix.service_entry Lwt.t
+  val getservbyport : int -> string -> Lwt_unix.service_entry Lwt.t
+  type addr_info =
+    Unix.addr_info = {
+    ai_family : Lwt_unix.socket_domain;
+    ai_socktype : Lwt_unix.socket_type;
+    ai_protocol : int;
+    ai_addr : Lwt_unix.sockaddr;
+    ai_canonname : string;
+  }
+  type getaddrinfo_option =
+    Unix.getaddrinfo_option =
+      AI_FAMILY of Lwt_unix.socket_domain
+    | AI_SOCKTYPE of Lwt_unix.socket_type
+    | AI_PROTOCOL of int
+    | AI_NUMERICHOST
+    | AI_CANONNAME
+    | AI_PASSIVE
+  val getaddrinfo :
+    string ->
+    string ->
+    Lwt_unix.getaddrinfo_option list -> Lwt_unix.addr_info list Lwt.t
+  type name_info =
+    Unix.name_info = {
+    ni_hostname : string;
+    ni_service : string;
+  }
+  type getnameinfo_option =
+    Unix.getnameinfo_option =
+      NI_NOFQDN
+    | NI_NUMERICHOST
+    | NI_NAMEREQD
+    | NI_NUMERICSERV
+    | NI_DGRAM
+  val getnameinfo :
+    Lwt_unix.sockaddr ->
+    Lwt_unix.getnameinfo_option list -> Lwt_unix.name_info Lwt.t
+  type terminal_io =
+    Unix.terminal_io = {
+    mutable c_ignbrk : bool;
+    mutable c_brkint : bool;
+    mutable c_ignpar : bool;
+    mutable c_parmrk : bool;
+    mutable c_inpck : bool;
+    mutable c_istrip : bool;
+    mutable c_inlcr : bool;
+    mutable c_igncr : bool;
+    mutable c_icrnl : bool;
+    mutable c_ixon : bool;
+    mutable c_ixoff : bool;
+    mutable c_opost : bool;
+    mutable c_obaud : int;
+    mutable c_ibaud : int;
+    mutable c_csize : int;
+    mutable c_cstopb : int;
+    mutable c_cread : bool;
+    mutable c_parenb : bool;
+    mutable c_parodd : bool;
+    mutable c_hupcl : bool;
+    mutable c_clocal : bool;
+    mutable c_isig : bool;
+    mutable c_icanon : bool;
+    mutable c_noflsh : bool;
+    mutable c_echo : bool;
+    mutable c_echoe : bool;
+    mutable c_echok : bool;
+    mutable c_echonl : bool;
+    mutable c_vintr : char;
+    mutable c_vquit : char;
+    mutable c_verase : char;
+    mutable c_vkill : char;
+    mutable c_veof : char;
+    mutable c_veol : char;
+    mutable c_vmin : int;
+    mutable c_vtime : int;
+    mutable c_vstart : char;
+    mutable c_vstop : char;
+  }
+  val tcgetattr : Lwt_unix.file_descr -> Lwt_unix.terminal_io Lwt.t
+  type setattr_when = Unix.setattr_when = TCSANOW | TCSADRAIN | TCSAFLUSH
+  val tcsetattr :
+    Lwt_unix.file_descr ->
+    Lwt_unix.setattr_when -> Lwt_unix.terminal_io -> unit Lwt.t
+  val tcsendbreak : Lwt_unix.file_descr -> int -> unit Lwt.t
+  val tcdrain : Lwt_unix.file_descr -> unit Lwt.t
+  type flush_queue = Unix.flush_queue = TCIFLUSH | TCOFLUSH | TCIOFLUSH
+  val tcflush : Lwt_unix.file_descr -> Lwt_unix.flush_queue -> unit Lwt.t
+  type flow_action = Unix.flow_action = TCOOFF | TCOON | TCIOFF | TCION
+  val tcflow : Lwt_unix.file_descr -> Lwt_unix.flow_action -> unit Lwt.t
+  exception Retry
+  exception Retry_read
+  exception Retry_write
+  type io_event = Read | Write
+  val wrap_syscall :
+    Lwt_unix.io_event -> Lwt_unix.file_descr -> (unit -> 'a) -> 'a Lwt.t
+  val check_descriptor : Lwt_unix.file_descr -> unit
+  val register_action :
+    Lwt_unix.io_event -> Lwt_unix.file_descr -> (unit -> 'a) -> 'a Lwt.t
+  type 'a job
+  val execute_job :
+    ?async_method:Lwt_unix.async_method ->
+    job:'a Lwt_unix.job ->
+    result:('a Lwt_unix.job -> 'b) ->
+    free:('a Lwt_unix.job -> unit) -> 'b Lwt.t
+  val run_job :
+    ?async_method:Lwt_unix.async_method -> 'a Lwt_unix.job -> 'a Lwt.t
+  val abort_jobs : exn -> unit
+  val cancel_jobs : unit -> unit
+  val wait_for_jobs : unit -> unit Lwt.t
+  val make_notification : ?once:bool -> (unit -> unit) -> int
+  val send_notification : int -> unit
+  val stop_notification : int -> unit
+  val call_notification : int -> unit
+  val set_notification : int -> (unit -> unit) -> unit
+  val pool_size : unit -> int
+  val set_pool_size : int -> unit
+  val thread_count : unit -> int
+  val thread_waiting_count : unit -> int
+  val get_cpu : unit -> int
+  val get_affinity : ?pid:int -> unit -> int list
+  val set_affinity : ?pid:int -> int list -> unit
+  val run : 'a Lwt.t -> 'a
+  val has_wait4 : bool
+end >>

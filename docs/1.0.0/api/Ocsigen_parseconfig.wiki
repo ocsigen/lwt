@@ -1,0 +1,5 @@
+=Module <<a_api_type | module Ocsigen_parseconfig >> =
+<<div class="code"|<<span class="keyword"|module>> Ocsigen_parseconfig: <<span class='code'|sig>><<a_api text=".." | module Ocsigen_parseconfig >><<span class='code'|end>>>>~Config file parsing\\
+
+----
+<<div id="VALparse_size" class="code"|<<span class="keyword"|val>> parse~_size : <<span class="code type"|string -> int64 option>>>><<div id="VALparse_string" class="code"|<<span class="keyword"|val>> parse~_string : <<span class="code type"|<<a_api text="Simplexmlparser.xml" | type Simplexmlparser.xml >> list -> string>>>>

@@ -1,0 +1,48 @@
+=Index of exceptions=
+
+|@@ @class="alignleft"@@\\C|
+|<<a_api text="Canceled"| exception Lwt.Canceled >> ~[<<a_api | module Lwt >>~]|<<div class="info"|~Canceled threads fails with this exception
+>>
+|
+|<<a_api text="Channel_closed"| exception Lwt_io.Channel_closed >> ~[<<a_api | module Lwt_io >>~]|<<div class="info"|~Exception raised when a channel is closed~.
+>>
+|
+|@@ @class="alignleft"@@\\E|
+|<<a_api text="Empty"| exception Lwt_stream.Empty >> ~[<<a_api | module Lwt_stream >>~]|<<div class="info"|~Exception raised when trying to retreive data from an empty
+      stream~.
+>>
+|
+|<<a_api text="Empty"| exception Lwt_sequence.Empty >> ~[<<a_api | module Lwt_sequence >>~]|<<div class="info"|~Exception raised by <<span class='code'|take~_l>> and <<span class='code'|tale~_s>> and when the sequence
+      is empty
+>>
+|
+|@@ @class="alignleft"@@\\I|
+|<<a_api text="Interrupt"| exception Lwt_read_line.Interrupt >> ~[<<a_api | module Lwt_read_line >>~]|<<div class="info"|~Exception raised when the user press <<span class='code'|~Ctrl~^~D>>
+>>
+|
+|@@ @class="alignleft"@@\\L|
+|<<a_api text="Logger_closed"| exception Lwt_log.Logger_closed >> ~[<<a_api | module Lwt_log >>~]|<<div class="info"|~Exception raised when trying to use a closed logger
+>>
+|
+|@@ @class="alignleft"@@\\O|
+|<<a_api text="Off"| exception Lwt_switch.Off >> ~[<<a_api | module Lwt_switch >>~]|<<div class="info"|~Exception raised when trying to add a hook to a switch that is
+      already off~.
+>>
+|
+|@@ @class="alignleft"@@\\R|
+|<<a_api text="Retry"| exception Lwt_unix.Retry >> ~[<<a_api | module Lwt_unix >>~]|<<div class="info"|~If an action raises <<a_api | exception Lwt_unix.Retry >>~, it will be requeued until the **      file descriptor** becomes readable~/writable again~.
+>>
+|
+|<<a_api text="Retry_read"| exception Lwt_unix.Retry_read >> ~[<<a_api | module Lwt_unix >>~]|<<div class="info"|~If an action raises <<a_api | exception Lwt_unix.Retry_read >>~, it will be requeued until the
+      **file descriptor** becomes readable~.
+>>
+|
+|<<a_api text="Retry_write"| exception Lwt_unix.Retry_write >> ~[<<a_api | module Lwt_unix >>~]|<<div class="info"|~If an action raises <<a_api | exception Lwt_unix.Retry_read >>~, it will be requeued until the
+      **file descriptor** becomes writables~.
+>>
+|
+|@@ @class="alignleft"@@\\T|
+|<<a_api text="Timeout"| exception Lwt_unix.Timeout >> ~[<<a_api | module Lwt_unix >>~]|<<div class="info"|~Exception raised by timeout operations
+>>
+|
+\\

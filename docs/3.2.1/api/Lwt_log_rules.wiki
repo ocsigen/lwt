@@ -1,0 +1,7 @@
+=Module <<a_api_type | module Lwt_log_rules >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_log_rules>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_log_rules >><<span class="ocsforge_color_keyword"|end>>>>~Logging rules parsing
+
+----
+<<pre id="VALrules" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|rules>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Lexing>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|lexbuf>> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>string * string<<span class="ocsforge_color_delimiter"| ) >> list option>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|parse lexbuf>> returns the list of rules contained in
+      <<span class="odocwiki_inlinecode"|lexbuf>> or ~None in case of parsing error
+>>

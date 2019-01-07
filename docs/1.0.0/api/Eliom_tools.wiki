@@ -1,0 +1,89 @@
+=Module <<a_api_type | module Eliom_tools >> =
+<<div class="code"|<<span class="keyword"|module>> Eliom_tools: <<span class='code'|sig>><<a_api text=".." | module Eliom_tools >><<span class='code'|end>>>>~Predefined boxes for ~Eliom\\
+
+----
+\\
+
+==@@id="2_Menus"@@~Menus ==
+\\
+<<div class="code" id="TYPEone_page"|<<span class="keyword"|type>> <<span class="code type"|('a, 'b)>> one~_page = <<span class="code type"|(unit, unit, 'a, [ `WithoutSuffix ], unit, unit, 'b) <<a_api text="Eliom_services.service" | type Eliom_services.service >>>> >>
+
+<<div id="VALmenu" class="code"|<<span class="keyword"|val>> menu : <<span class="code type"|\\{{{   }}}?classe:XHTML.M.nmtoken list ->\\{{{   }}}  ([< <<a_api text="Eliom_services.get_service_kind" | type Eliom_services.get_service_kind >> ] as 'a,\\{{{   }}}   [< <<a_api text="Eliom_services.registrable" | type Eliom_services.registrable >> ] as 'b)\\{{{   }}}  <<a_api text="one_page" | type Eliom_tools.one_page >> * <<a_api text="Xhtmltypes.a_content" | type Xhtmltypes.a_content >> XHTML.M.elt list ->\\{{{   }}}  (('a, 'b) <<a_api text="one_page" | type Eliom_tools.one_page >> * <<a_api text="Xhtmltypes.a_content" | type Xhtmltypes.a_content >> XHTML.M.elt list) list ->\\{{{   }}}  service:('a, 'b) <<a_api text="one_page" | type Eliom_tools.one_page >> ->\\{{{   }}}  sp:<<a_api text="Eliom_sessions.server_params" | type Eliom_sessions.server_params >> -> [> `Ul ] XHTML.M.elt>>>><<div class="info"|~Creates a menu \\
+
+
+   ~Example~:\\
+
+
+  <<span class='code'|menu ~~classe~:~["mainmenu"~]
+    ~[
+     ~(home~, ~<~:xmllist~< ~Home ~>~>~)~;
+     ~(infos~, ~<~:xmllist~< ~More infos ~>~>~)
+   ~] current sp>>\\
+>>
+\\
+
+==@@id="2_Hierchicalsites"@@~Hierchical sites ==
+\\
+<<div class="code" id="TYPEhierarchical_site_item"|<<span class="keyword"|type>> <<span class="code type"|('a, 'b, 'c)>> hierarchical~_site~_item = 
+|@@class="typetable"@ @class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Disabled>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Site_tree>> <<span class="keyword"|of>> <<span class="code type"|('a, 'b, 'c) <<a_api text="hierarchical_site" | type Eliom_tools.hierarchical_site >>>>|>>
+
+<<div class="code" id="TYPEmain_page"|<<span class="keyword"|type>> <<span class="code type"|('a, 'b, 'c)>> main~_page = 
+|@@class="typetable"@ @class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Main_page>> <<span class="keyword"|of>> <<span class="code type"|('a, 'b) <<a_api text="one_page" | type Eliom_tools.one_page >>>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Default_page>> <<span class="keyword"|of>> <<span class="code type"|('a, 'b) <<a_api text="one_page" | type Eliom_tools.one_page >>>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Not_clickable>>|>>
+
+<<div class="code" id="TYPEhierarchical_site"|<<span class="keyword"|type>> <<span class="code type"|('a, 'b, 'c)>> hierarchical~_site = <<span class="code type"|\\{{{   }}}('a, 'b, 'c) <<a_api text="main_page" | type Eliom_tools.main_page >> *\\{{{   }}}  ('c XHTML.M.elt list * ('a, 'b, 'c) <<a_api text="hierarchical_site_item" | type Eliom_tools.hierarchical_site_item >>) list>> >>
+<<div class="info"|~The type of hierarchical sites~.
+    ~A hierarchical site is a pair ~(main page~, subpages~)~.\\
+
+
+    ~The difference between
+    <<span class='code'|~Main~_page>>~, <<span class='code'|~Default~_page>> and <<span class='code'|~Not~_clickable>> is a bit subtle~:\\
+
+* <<span class='code'|~Main~_page>> is when you want to create a main page for your
+    subsite~. ~All the subpages are subsections of that page~.
+
+* <<span class='code'|~Default~_page>> is like <<span class='code'|~Main~_page>> but is not taken into account
+    for computing which is the current page in the menu~.
+    ~Use it for example when there is no main page~, but you want 
+    one of the subpages to be the default page for your subsite~. 
+    ~The service you use as default page
+    must appear another time in the subtree!
+
+* <<span class='code'|~Not~_clickable>> is when you do not want the menu entry to be a link
+    but you want subpages~.
+
+
+    ~Each subpage is defined by the text to be displayed in menus
+    and a <<span class='code'|hierarchical~_site~_item>>~.
+    ~If the latter is <<span class='code'|~Disabled>>~, the menu entry is disabled~.\\
+>>
+
+<<div id="VALhierarchical_menu_depth_first" class="code"|<<span class="keyword"|val>> hierarchical~_menu~_depth~_first : <<span class="code type"|\\{{{   }}}?classe:XHTML.M.nmtoken list ->\\{{{   }}}  ?whole_tree:bool ->\\{{{   }}}  ([< <<a_api text="Eliom_services.get_service_kind" | type Eliom_services.get_service_kind >> ] as 'a,\\{{{   }}}   [< <<a_api text="Eliom_services.registrable" | type Eliom_services.registrable >> ] as 'b, <<a_api text="Xhtmltypes.a_content" | type Xhtmltypes.a_content >>)\\{{{   }}}  <<a_api text="hierarchical_site" | type Eliom_tools.hierarchical_site >> ->\\{{{   }}}  service:('a, 'b) <<a_api text="one_page" | type Eliom_tools.one_page >> ->\\{{{   }}}  sp:<<a_api text="Eliom_sessions.server_params" | type Eliom_sessions.server_params >> -> [> `Ul ] XHTML.M.elt list>>>><<div class="info"|<<span class='code'|hierarchical~_menu~_depth~_first menu>> constructs a function taking
+    as parameters a service and <<span class='code'|~~sp>> ~(server parameters~)
+    and displaying a hierarchical menu for this service~.\\
+
+
+    ~The menu is constructed by exploring the tree using
+    a depth~-first algorithm~. ~It means that the first menu item will be
+    displayed~, followed by the whole sub~-menu for this item~, then the second
+    menu item with its sub~-menu~, and so on~.
+    ~By default~, only the sub~-menus corresponding to the current page
+    are displayed~. ~If you want all the sub~-menus to be displayed~, specify
+    <<span class='code'|~?whole~_tree~=true>>~.\\
+>>
+<<div id="VALhierarchical_menu_breadth_first" class="code"|<<span class="keyword"|val>> hierarchical~_menu~_breadth~_first : <<span class="code type"|\\{{{   }}}?classe:XHTML.M.nmtoken list ->\\{{{   }}}  ([< <<a_api text="Eliom_services.get_service_kind" | type Eliom_services.get_service_kind >> ] as 'a,\\{{{   }}}   [< <<a_api text="Eliom_services.registrable" | type Eliom_services.registrable >> ] as 'b, <<a_api text="Xhtmltypes.a_content" | type Xhtmltypes.a_content >>)\\{{{   }}}  <<a_api text="hierarchical_site" | type Eliom_tools.hierarchical_site >> ->\\{{{   }}}  service:('a, 'b) <<a_api text="one_page" | type Eliom_tools.one_page >> ->\\{{{   }}}  sp:<<a_api text="Eliom_sessions.server_params" | type Eliom_sessions.server_params >> -> [> `Ul ] XHTML.M.elt list>>>><<div class="info"|<<span class='code'|hierarchical~_menu~_breadth~_first menu>> constructs a function taking
+    as parameters a service and <<span class='code'|~~sp>> ~(server parameters~)
+    and displaying a hierarchical menu for this service~.\\
+
+
+    ~The menu is constructed by exploring the tree using
+    a breadth~_first algorithm~. ~It means that the whole menu for one
+    level will be displayed~, followed by all sub~-menus~.
+    ~Only the sub~-menu corresponding to the current page
+    is displayed~.\\
+>>
+<<div id="VALstructure_links" class="code"|<<span class="keyword"|val>> structure~_links : <<span class="code type"|\\{{{   }}}([< <<a_api text="Eliom_services.get_service_kind" | type Eliom_services.get_service_kind >> ] as 'a,\\{{{   }}}   [< <<a_api text="Eliom_services.registrable" | type Eliom_services.registrable >> ] as 'b, <<a_api text="Xhtmltypes.a_content" | type Xhtmltypes.a_content >>)\\{{{   }}}  <<a_api text="hierarchical_site" | type Eliom_tools.hierarchical_site >> ->\\{{{   }}}  service:('a, 'b) <<a_api text="one_page" | type Eliom_tools.one_page >> ->\\{{{   }}}  sp:<<a_api text="Eliom_sessions.server_params" | type Eliom_sessions.server_params >> -> [> `Link ] XHTML.M.elt list>>>><<div class="info"|~Returns the tags <<span class='code'|~<link rel~="subsection" ~.~.~.~>>> and 
+   <<span class='code'|~<link rev~="subsection" ~.~.~.~>>> for the given hierarchical site~.\\
+>>

@@ -1,0 +1,24 @@
+=Module <<a_api_type | module Lwt_io.BE >> =
+<<div class="code"|<<span class="keyword"|module>> BE: <<span class="code type"|<<a_api text="NumberIO" | module Lwt_io.NumberIO >>>><<span class="code type"|{{{  }}}>>>>~Reading~/writing of integers in big~-endian\\
+
+----
+\\
+
+<<div class="h8"| ~Reading>>
+\\
+<<div id="VALread_int" class="code"|<<span class="keyword"|val>> read~_int : <<span class="code type"|<<a_api text="Lwt_io.input_channel" | type Lwt_io.input_channel >> -> int <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Reads a ~3~2~-bits integer as an ocaml int\\
+>>
+<<div id="VALread_int16" class="code"|<<span class="keyword"|val>> read~_int~1~6 : <<span class="code type"|<<a_api text="Lwt_io.input_channel" | type Lwt_io.input_channel >> -> int <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALread_int32" class="code"|<<span class="keyword"|val>> read~_int~3~2 : <<span class="code type"|<<a_api text="Lwt_io.input_channel" | type Lwt_io.input_channel >> -> int32 <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALread_int64" class="code"|<<span class="keyword"|val>> read~_int~6~4 : <<span class="code type"|<<a_api text="Lwt_io.input_channel" | type Lwt_io.input_channel >> -> int64 <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALread_float32" class="code"|<<span class="keyword"|val>> read~_float~3~2 : <<span class="code type"|<<a_api text="Lwt_io.input_channel" | type Lwt_io.input_channel >> -> float <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Reads an ~I~E~E~E single precision floating point value\\
+>>
+<<div id="VALread_float64" class="code"|<<span class="keyword"|val>> read~_float~6~4 : <<span class="code type"|<<a_api text="Lwt_io.input_channel" | type Lwt_io.input_channel >> -> float <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Reads an ~I~E~E~E double precision floating point value\\
+>>
+\\
+
+<<div class="h8"| ~Writing>>
+\\
+<<div id="VALwrite_int" class="code"|<<span class="keyword"|val>> write~_int : <<span class="code type"|<<a_api text="Lwt_io.output_channel" | type Lwt_io.output_channel >> -> int -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Writes an ocaml int as a ~3~2~-bits integer\\
+>>
+<<div id="VALwrite_int16" class="code"|<<span class="keyword"|val>> write~_int~1~6 : <<span class="code type"|<<a_api text="Lwt_io.output_channel" | type Lwt_io.output_channel >> -> int -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALwrite_int32" class="code"|<<span class="keyword"|val>> write~_int~3~2 : <<span class="code type"|<<a_api text="Lwt_io.output_channel" | type Lwt_io.output_channel >> -> int32 -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALwrite_int64" class="code"|<<span class="keyword"|val>> write~_int~6~4 : <<span class="code type"|<<a_api text="Lwt_io.output_channel" | type Lwt_io.output_channel >> -> int64 -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALwrite_float32" class="code"|<<span class="keyword"|val>> write~_float~3~2 : <<span class="code type"|<<a_api text="Lwt_io.output_channel" | type Lwt_io.output_channel >> -> float -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Writes an ~I~E~E~E single precision floating point value\\
+>>
+<<div id="VALwrite_float64" class="code"|<<span class="keyword"|val>> write~_float~6~4 : <<span class="code type"|<<a_api text="Lwt_io.output_channel" | type Lwt_io.output_channel >> -> float -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Writes an ~I~E~E~E double precision floating point value\\
+>>

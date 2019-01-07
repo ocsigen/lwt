@@ -1,0 +1,16 @@
+<<code language="ocaml" | sig
+  val daemonize :
+    ?syslog:bool ->
+    ?stdin:[ `Close | `Dev_null | `Keep ] ->
+    ?stdout:[ `Close
+            | `Dev_null
+            | `Keep
+            | `Log of Lwt_log.logger
+            | `Log_default ] ->
+    ?stderr:[ `Close
+            | `Dev_null
+            | `Keep
+            | `Log of Lwt_log.logger
+            | `Log_default ] ->
+    ?directory:string -> ?umask:[ `Keep | `Set of int ] -> unit -> unit
+end >>

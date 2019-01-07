@@ -1,0 +1,19 @@
+=Class <<a_api_type | class Lwt_process.process_none >> =
+<<div class="code"|<<span name="TYPEprocess_none"|<<span class="keyword"|class>> process_none>> : <<span class="code type"|?timeout:float -> ?env:string array -> ?stdin:<<a_api text="redirection" | type Lwt_process.redirection >> -> ?stdout:<<a_api text="redirection" | type Lwt_process.redirection >> -> ?stderr:<<a_api text="redirection" | type Lwt_process.redirection >> -> <<a_api text="command" | type Lwt_process.command >> -> >><<span class='code'|object>><<a_api text=".." | class Lwt_process.process_none >><<span class='code'|end>>>>
+----
+<<div class="code"|<<span id="METHODpid"|<<span class="keyword"|method>> pid>> : <<span class="code type"|int>>>><<div class="info"|~Pid of the sub~-process\\
+>>
+<<div class="code"|<<span id="METHODstate"|<<span class="keyword"|method>> state>> : <<span class="code type"|<<a_api text="state" | type Lwt_process.state >>>>>><<div class="info"|~Return the state of the process\\
+>>
+<<div class="code"|<<span id="METHODkill"|<<span class="keyword"|method>> kill>> : <<span class="code type"|int -> unit>>>><<div class="info"|<<span class='code'|kill signum>> sends <<span class='code'|signum>> to the process if it is still
+        running\\
+>>
+<<div class="code"|<<span id="METHODstatus"|<<span class="keyword"|method>> status>> : <<span class="code type"|Unix.process_status <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Threads which wait for the sub~-process to exit then returns its
+        exit status\\
+>>
+<<div class="code"|<<span id="METHODrusage"|<<span class="keyword"|method>> rusage>> : <<span class="code type"|<<a_api text="Lwt_unix.resource_usage" | type Lwt_unix.resource_usage >> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Threads which wait for the sub~-process to exit then returns
+        its resource usages\\
+>>
+<<div class="code"|<<span id="METHODclose"|<<span class="keyword"|method>> close>> : <<span class="code type"|Unix.process_status <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Closes the process and returns its exit status~. ~This close all
+        channels used to communicate with the process\\
+>>

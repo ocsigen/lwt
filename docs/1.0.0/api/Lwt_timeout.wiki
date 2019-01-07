@@ -1,0 +1,22 @@
+=Module <<a_api_type | module Lwt_timeout >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_timeout: <<span class='code'|sig>><<a_api text=".." | module Lwt_timeout >><<span class='code'|end>>>>set the default handler for exception occurring after a timeout~. 
+    ~The function lauched after a timeout should not raise any exception~.
+    ~That~'s why the default handler will exit the program~.\\
+
+----
+<<div class="code" id="TYPEt"|<<span class="keyword"|type>> t>>
+
+<<div id="VALset_exn_handler" class="code"|<<span class="keyword"|val>> set~_exn~_handler : <<span class="code type"|(exn -> unit) -> unit>>>><<div class="info"|set the default handler for exception occurring after a timeout~. 
+    ~The function lauched after a timeout should not raise any exception~.
+    ~That~'s why the default handler will exit the program~.\\
+>>
+<<div id="VALcreate" class="code"|<<span class="keyword"|val>> create : <<span class="code type"|int -> (unit -> unit) -> <<a_api text="t" | type Lwt_timeout.t >>>>>><<div class="info"|<<span class='code'|create n f>> defines a new timeout with <<span class='code'|n>> seconds duration~. <<span class='code'|f>> is
+    the function to be called after the timeout~.
+    ~That function must not raise any exception~.\\
+>>
+<<div id="VALstart" class="code"|<<span class="keyword"|val>> start : <<span class="code type"|<<a_api text="t" | type Lwt_timeout.t >> -> unit>>>><<div class="info"|starts a timeout~.\\
+>>
+<<div id="VALstop" class="code"|<<span class="keyword"|val>> stop : <<span class="code type"|<<a_api text="t" | type Lwt_timeout.t >> -> unit>>>><<div class="info"|stops a timeout~.\\
+>>
+<<div id="VALchange" class="code"|<<span class="keyword"|val>> change : <<span class="code type"|<<a_api text="t" | type Lwt_timeout.t >> -> int -> unit>>>><<div class="info"|changes the duration of a timeout~.\\
+>>

@@ -1,0 +1,1 @@
+<<code language="ocaml" | object method contents : Text.t React.signal method set : Text.t -> unit end >>

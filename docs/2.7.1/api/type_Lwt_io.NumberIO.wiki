@@ -1,0 +1,14 @@
+<<code language="ocaml" | sig
+  val read_int : Lwt_io.input_channel -> int Lwt.t
+  val read_int16 : Lwt_io.input_channel -> int Lwt.t
+  val read_int32 : Lwt_io.input_channel -> int32 Lwt.t
+  val read_int64 : Lwt_io.input_channel -> int64 Lwt.t
+  val read_float32 : Lwt_io.input_channel -> float Lwt.t
+  val read_float64 : Lwt_io.input_channel -> float Lwt.t
+  val write_int : Lwt_io.output_channel -> int -> unit Lwt.t
+  val write_int16 : Lwt_io.output_channel -> int -> unit Lwt.t
+  val write_int32 : Lwt_io.output_channel -> int32 -> unit Lwt.t
+  val write_int64 : Lwt_io.output_channel -> int64 -> unit Lwt.t
+  val write_float32 : Lwt_io.output_channel -> float -> unit Lwt.t
+  val write_float64 : Lwt_io.output_channel -> float -> unit Lwt.t
+end >>

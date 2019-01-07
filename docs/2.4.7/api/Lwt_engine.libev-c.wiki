@@ -1,0 +1,11 @@
+=Class <<a_api_type | class Lwt_engine.libev >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span name="TYPElibev"|<<span class="ocsforge_color_keyword"|class>> <<span class="ocsforge_color_name"|libev>>>> <<span class="ocsforge_color_delimiter"|~:>>  <<span class="ocsforge_color_keyword"|object>><<a_api text=".." | class Lwt_engine.libev >><<span class="ocsforge_color_keyword"|end>>>>~Engine based on libev~. ~If not compiled with libev support~, the
+    creation of the class will raise <<a_api | exception Lwt_sys.Not_available >>~.
+**~Inherits**
+* <<a_api | class Lwt_engine.t >>
+
+----
+<<pre class="ocsforge_color odocwiki_code"|<<span id="ATTloop"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|loop>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="ev_loop" | type Lwt_engine.ev_loop >>>>>><<div class="odocwiki_info"|~The libev loop used for this engine~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span id="METHODloop"|<<span class="ocsforge_color_keyword"|method>> <<span class="odocwiki_name"|loop>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="ev_loop" | type Lwt_engine.ev_loop >>>>>><<div class="odocwiki_info"|~Returns <<span class="odocwiki_inlinecode"|loop>>~.
+>>

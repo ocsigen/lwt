@@ -1,0 +1,11 @@
+=Module <<a_api_type | module XHTML.T.TEXT >> =
+<<div class="code"|<<span class="keyword"|module>> TEXT: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.TEXT >><<span class='code'|end>>>>
+----
+<<div class="code" id="TYPEheading"|<<span class="keyword"|type>> heading = <<span class="code type"|[ `H1 | `H2 | `H3 | `H4 | `H5 | `H6 ]>> >>
+
+<<div class="code" id="TYPEblock"|<<span class="keyword"|type>> block = <<span class="code type"|[ `Address | `Blockquote | `Div | `P | `Pre ]>> >>
+
+<<div class="code" id="TYPEinline"|<<span class="keyword"|type>> inline = <<span class="code type"|\\{{{   }}}[ `Abbr\\{{{   }}}  | `Acronym\\{{{   }}}  | `Br\\{{{   }}}  | `Cite\\{{{   }}}  | `Code\\{{{   }}}  | `Dfn\\{{{   }}}  | `Em\\{{{   }}}  | `Kbd\\{{{   }}}  | `Q\\{{{   }}}  | `Samp\\{{{   }}}  | `Span\\{{{   }}}  | `Strong\\{{{   }}}  | `Var ]>> >>
+
+<<div class="code" id="TYPEflow"|<<span class="keyword"|type>> flow = <<span class="code type"|\\{{{   }}}[ `Abbr\\{{{   }}}  | `Acronym\\{{{   }}}  | `Address\\{{{   }}}  | `Blockquote\\{{{   }}}  | `Br\\{{{   }}}  | `Cite\\{{{   }}}  | `Code\\{{{   }}}  | `Dfn\\{{{   }}}  | `Div\\{{{   }}}  | `Em\\{{{   }}}  | `H1\\{{{   }}}  | `H2\\{{{   }}}  | `H3\\{{{   }}}  | `H4\\{{{   }}}  | `H5\\{{{   }}}  | `H6\\{{{   }}}  | `Kbd\\{{{   }}}  | `P\\{{{   }}}  | `Pre\\{{{   }}}  | `Q\\{{{   }}}  | `Samp\\{{{   }}}  | `Span\\{{{   }}}  | `Strong\\{{{   }}}  | `Var ]>> >>
+

@@ -1,0 +1,46 @@
+<<code language="ocaml" | sig
+  type t =
+      Nop
+    | Char of Text.t
+    | Backward_delete_char
+    | Forward_delete_char
+    | Beginning_of_line
+    | End_of_line
+    | Complete
+    | Meta_complete
+    | Kill_line
+    | Backward_kill_line
+    | Accept_line
+    | Backward_delete_word
+    | Forward_delete_word
+    | History_next
+    | History_previous
+    | Break
+    | Clear_screen
+    | Insert
+    | Refresh
+    | Backward_char
+    | Forward_char
+    | Set_mark
+    | Paste
+    | Copy
+    | Cut
+    | Uppercase
+    | Lowercase
+    | Capitalize
+    | Backward_word
+    | Forward_word
+    | Backward_search
+    | Complete_left
+    | Complete_right
+    | Complete_up
+    | Complete_down
+    | Complete_first
+    | Complete_last
+    | Undo
+    | Delete_char_or_list
+  val to_string : Lwt_read_line.Command.t -> string
+  val of_string : string -> Lwt_read_line.Command.t
+  val names : (Lwt_read_line.Command.t * string) list
+  val of_key : Lwt_term.key -> Lwt_read_line.Command.t
+end >>

@@ -1,0 +1,4 @@
+<<code language="ocaml" | sig
+  val install : ?mode:[ `glib_into_lwt | `lwt_into_glib ] -> unit -> unit
+  val remove : unit -> unit
+end >>

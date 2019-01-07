@@ -1,0 +1,90 @@
+<<code language="ocaml" | sig
+  val form :
+    action:XHTML.T.uri ->
+    ([< `Class
+      | `Enctype
+      | `Id
+      | `Method
+      | `Name_01_00
+      | `Target
+      | `Title
+      | `XML_lang ],
+     [< XHTML.T.block_sans_form ], [> `Form ])
+    XHTML.T.plus
+  val input :
+    ([< `Accesskey
+      | `Checked
+      | `Class
+      | `Id
+      | `Input_Type
+      | `Maxlength
+      | `Name
+      | `Size
+      | `Src
+      | `Tabindex
+      | `Title
+      | `Usemap
+      | `Value
+      | `XML_lang ],
+     [> `Input ])
+    XHTML.T.nullary
+  val label :
+    ([< `Accesskey | `Class | `For | `Id | `Title | `XML_lang ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Label ])
+    XHTML.T.star
+  val option :
+    ([< `Class | `Id | `Selected | `Title | `Value | `XML_lang ],
+     [< `PCDATA ], [> `Option ])
+    XHTML.T.unary
+  val select :
+    ([< `Class
+      | `Id
+      | `Multiple
+      | `Name
+      | `Size
+      | `Tabindex
+      | `Title
+      | `XML_lang ],
+     [< `Option ], [> `Select ])
+    XHTML.T.plus
+  val textarea :
+    rows:XHTML.T.number ->
+    cols:XHTML.T.number ->
+    ([< `Accesskey | `Class | `Id | `Name | `Tabindex | `Title | `XML_lang ],
+     [< `PCDATA ], [> `Textarea ])
+    XHTML.T.unary
+end >>

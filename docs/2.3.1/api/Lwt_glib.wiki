@@ -1,0 +1,29 @@
+=Module <<a_api_type | module Lwt_glib >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_glib>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_glib >><<span class="ocsforge_color_keyword"|end>>>>~Glib integration\\
+
+----
+\\
+~This modules is intended to allow the use of ~Lwt in ~G~T~K
+    applications~.\\
+
+
+    ~If you are using ~G~T~K and ~Lwt in the same application~, then you
+    must call <<a_api | val Lwt_glib.install >> at the beginning of you program~.\\
+<<pre id="VALinstall" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|install>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_label"| ?mode: >>[ `glib_into_lwt | `lwt_into_glib ] <<span class="ocsforge_color_delimiter"| -> >> unit <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Install the ~Glib~<~-~>~Lwt integration~.\\
+
+
+      ~If <<span class="odocwiki_inlinecode"|mode>> is <<span class="odocwiki_inlinecode"|`glib~_into~_lwt>> then glib will use the ~Lwt main
+      loop~, and if <<span class="odocwiki_inlinecode"|mode>> is <<span class="odocwiki_inlinecode"|`lwt~_into~_glib>> then ~Lwt will use the
+      ~Glib main loop~.\\
+
+
+      ~The first mode is better but for some unknown reason it does not
+      work under ~Windows~, so the second is used as default on ~Windows
+      while the first one is used as default on ~Unix~.\\
+
+
+      ~If the integration is already active~, this function does
+      nothing~.\\
+>>
+<<pre id="VALremove" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|remove>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Remove the ~Glib~<~-~>~Lwt integration~.\\
+>>

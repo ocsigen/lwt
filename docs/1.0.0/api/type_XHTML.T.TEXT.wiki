@@ -1,0 +1,43 @@
+<<code language="ocaml" | sig
+  type heading = [ `H1 | `H2 | `H3 | `H4 | `H5 | `H6 ]
+  type block = [ `Address | `Blockquote | `Div | `P | `Pre ]
+  type inline =
+      [ `Abbr
+      | `Acronym
+      | `Br
+      | `Cite
+      | `Code
+      | `Dfn
+      | `Em
+      | `Kbd
+      | `Q
+      | `Samp
+      | `Span
+      | `Strong
+      | `Var ]
+  type flow =
+      [ `Abbr
+      | `Acronym
+      | `Address
+      | `Blockquote
+      | `Br
+      | `Cite
+      | `Code
+      | `Dfn
+      | `Div
+      | `Em
+      | `H1
+      | `H2
+      | `H3
+      | `H4
+      | `H5
+      | `H6
+      | `Kbd
+      | `P
+      | `Pre
+      | `Q
+      | `Samp
+      | `Span
+      | `Strong
+      | `Var ]
+end >>

@@ -1,0 +1,32 @@
+=Module <<a_api_type | module Lwt_main >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_main: <<span class='code'|sig>><<a_api text=".." | module Lwt_main >><<span class='code'|end>>>>~Main loop and event queue\\
+
+----
+\\
+~This module controls the ``main~-loop~'~' of ~Lwt~.\\
+<<div id="VALrun" class="code"|<<span class="keyword"|val>> run : <<span class="code type"|'a <<a_api text="Lwt.t" | type Lwt.t >> -> 'a>>>><<div class="info"|<<span class='code'|run t>> calls the ~Lwt scheduler repeatedly until <<span class='code'|t>> terminates~,
+      then returns the value returned by the thread~. ~It <<span class='code'|t>> fails with
+      an exception~, this exception is raised~.\\
+
+
+      ~Note that you should avoid using <<span class='code'|run>> inside threads* ~The calling threads will not resume before <<span class='code'|run>>
+        returns~.
+* ~Successive invocations of <<span class='code'|run>> are serialized~: an
+        invocation of <<span class='code'|run>> will not terminate before all
+        subsequent invocations are terminated~.
+
+\\
+>>
+<<div id="VALyield" class="code"|<<span class="keyword"|val>> yield : <<span class="code type"|unit -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|yield ~(~)>> is a threads which suspends itself and then resumes
+      as soon as possible and terminates~.\\
+>>
+<<div id="VALexit_hooks" class="code"|<<span class="keyword"|val>> exit~_hooks : <<span class="code type"|(unit -> unit <<a_api text="Lwt.t" | type Lwt.t >>) <<a_api text="Lwt_sequence.t" | type Lwt_sequence.t >>>>>><<div class="info"|~Sets of functions executed just before the program exit~.\\
+
+
+      ~Notes~:* each hook is called exactly one time
+* exceptions raised by hooks are ignored
+
+\\
+>>
+<<div id="VALat_exit" class="code"|<<span class="keyword"|val>> at~_exit : <<span class="code type"|(unit -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> unit>>>><<div class="info"|<<span class='code'|at~_exit hook>> adds hook at the left of <<span class='code'|exit~_hooks>>\\
+>>

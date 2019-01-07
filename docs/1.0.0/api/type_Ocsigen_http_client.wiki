@@ -1,0 +1,29 @@
+<<code language="ocaml" | sig
+  val get :
+    ?https:bool ->
+    ?port:int ->
+    host:string -> uri:string -> unit -> Ocsigen_http_frame.t Lwt.t
+  val raw_request :
+    ?client:Ocsigen_extensions.client ->
+    ?keep_alive:bool ->
+    ?headers:Http_headers.t ->
+    ?https:bool ->
+    ?port:int ->
+    content:string Ocsigen_stream.t option ->
+    ?content_length:int64 ->
+    http_method:Ocsigen_http_frame.Http_header.http_method ->
+    host:string ->
+    inet_addr:Unix.inet_addr ->
+    uri:string -> unit -> unit -> Ocsigen_http_frame.t Lwt.t
+  val basic_raw_request :
+    ?headers:Http_headers.t ->
+    ?https:bool ->
+    ?port:int ->
+    content:string Ocsigen_stream.t option ->
+    ?content_length:int64 ->
+    http_method:Ocsigen_http_frame.Http_header.http_method ->
+    host:string ->
+    inet_addr:Unix.inet_addr ->
+    uri:string -> unit -> Ocsigen_http_frame.t Lwt.t
+  val sslcontext : Ssl.context Pervasives.ref
+end >>

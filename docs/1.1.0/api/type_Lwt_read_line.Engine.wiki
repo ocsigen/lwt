@@ -1,0 +1,29 @@
+<<code language="ocaml" | sig
+  type selection_state = {
+    sel_text : Text.t;
+    sel_mark : Text.pointer;
+    sel_cursor : Text.pointer;
+  }
+  type search_state = {
+    search_word : Text.t;
+    search_history : Lwt_read_line.history;
+    search_init_history : Lwt_read_line.history;
+  }
+  type mode =
+      Edition of Lwt_read_line.edition_state
+    | Selection of Lwt_read_line.Engine.selection_state
+    | Search of Lwt_read_line.Engine.search_state
+  type state = {
+    mode : Lwt_read_line.Engine.mode;
+    history : Lwt_read_line.history * Lwt_read_line.history;
+  }
+  val init : Lwt_read_line.history -> Lwt_read_line.Engine.state
+  val reset : Lwt_read_line.Engine.state -> Lwt_read_line.Engine.state
+  val update :
+    engine_state:Lwt_read_line.Engine.state ->
+    ?clipboard:Lwt_read_line.clipboard ->
+    command:Lwt_read_line.Command.t -> unit -> Lwt_read_line.Engine.state
+  val edition_state :
+    Lwt_read_line.Engine.state -> Lwt_read_line.edition_state
+  val all_input : Lwt_read_line.Engine.state -> Text.t
+end >>

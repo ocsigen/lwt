@@ -1,0 +1,37 @@
+<<code language="ocaml" | sig
+  type socket
+  type uninitialized_socket
+  val ssl_socket : Lwt_ssl.socket -> Ssl.socket option
+  val ssl_socket_of_uninitialized_socket :
+    Lwt_ssl.uninitialized_socket -> Ssl.socket
+  val is_ssl : Lwt_ssl.socket -> bool
+  val ssl_accept : Lwt_unix.file_descr -> Ssl.context -> Lwt_ssl.socket Lwt.t
+  val ssl_connect :
+    Lwt_unix.file_descr -> Ssl.context -> Lwt_ssl.socket Lwt.t
+  val plain : Lwt_unix.file_descr -> Lwt_ssl.socket
+  val embed_socket : Lwt_unix.file_descr -> Ssl.context -> Lwt_ssl.socket
+  val embed_uninitialized_socket :
+    Lwt_unix.file_descr -> Ssl.context -> Lwt_ssl.uninitialized_socket
+  val ssl_perform_handshake :
+    Lwt_ssl.uninitialized_socket -> Lwt_ssl.socket Lwt.t
+  val ssl_accept_handshake :
+    Lwt_ssl.uninitialized_socket -> Lwt_ssl.socket Lwt.t
+  val read : Lwt_ssl.socket -> string -> int -> int -> int Lwt.t
+  val write : Lwt_ssl.socket -> string -> int -> int -> int Lwt.t
+  val read_bytes : Lwt_ssl.socket -> Lwt_bytes.t -> int -> int -> int Lwt.t
+  val write_bytes : Lwt_ssl.socket -> Lwt_bytes.t -> int -> int -> int Lwt.t
+  val wait_read : Lwt_ssl.socket -> unit Lwt.t
+  val wait_write : Lwt_ssl.socket -> unit Lwt.t
+  val shutdown : Lwt_ssl.socket -> Unix.shutdown_command -> unit
+  val close : Lwt_ssl.socket -> unit Lwt.t
+  val in_channel_of_descr :
+    ?buffer:Lwt_bytes.t -> Lwt_ssl.socket -> Lwt_io.input_channel
+  val out_channel_of_descr :
+    ?buffer:Lwt_bytes.t -> Lwt_ssl.socket -> Lwt_io.output_channel
+  val ssl_shutdown : Lwt_ssl.socket -> unit Lwt.t
+  val abort : Lwt_ssl.socket -> exn -> unit
+  val get_fd : Lwt_ssl.socket -> Lwt_unix.file_descr
+  val get_unix_fd : Lwt_ssl.socket -> Unix.file_descr
+  val getsockname : Lwt_ssl.socket -> Unix.sockaddr
+  val getpeername : Lwt_ssl.socket -> Unix.sockaddr
+end >>

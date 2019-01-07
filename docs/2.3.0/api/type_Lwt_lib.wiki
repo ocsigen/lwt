@@ -1,0 +1,8 @@
+<<code language="ocaml" | sig
+  val getaddrinfo :
+    string ->
+    string -> Unix.getaddrinfo_option list -> Unix.addr_info list Lwt.t
+  val gethostbyname : string -> Unix.host_entry Lwt.t
+  val getnameinfo :
+    Unix.sockaddr -> Unix.getnameinfo_option list -> Unix.name_info Lwt.t
+end >>

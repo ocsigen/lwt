@@ -1,0 +1,353 @@
+<<code language="ocaml" | sig
+  exception Eliom_404
+  exception Eliom_Wrong_parameter
+  exception Eliom_Link_too_old
+  exception Eliom_Session_expired
+  exception Eliom_Service_session_expired of string list
+  exception Eliom_Typing_Error of (string * exn) list
+  exception Eliom_function_forbidden_outside_site_loading of string
+  type na_key =
+      Na_no
+    | Na_get_ of string
+    | Na_post_ of string
+    | Na_get' of string
+    | Na_post' of string
+  exception Eliom_duplicate_registration of string
+  exception Eliom_there_are_unregistered_services of
+              (string list * string list list * Eliom_common.na_key list)
+  exception Eliom_page_erasing of string
+  exception Eliom_error_while_loading_site of string
+  val defaultpagename : string
+  val eliom_suffix_name : string
+  val eliom_suffix_internal_name : string
+  val naservice_num : string
+  val naservice_name : string
+  val get_state_param_name : string
+  val post_state_param_name : string
+  val datacookiename : string
+  val servicecookiename : string
+  val persistentcookiename : string
+  val co_param_prefix : string
+  val na_co_param_prefix : string
+  val persistent_cookie_table_version : string
+  val eliom_persistent_cookie_table : string
+  type internal_state = string
+  type cookie =
+      Set of Ocsigen_extensions.url_path option * float option * string *
+        string
+    | Unset of Ocsigen_extensions.url_path option * string
+  type sess_info = {
+    si_other_get_params : (string * string) list;
+    si_all_get_params : (string * string) list;
+    si_all_post_params : (string * string) list;
+    si_service_session_cookies : string Ocsigen_http_frame.Cookievalues.t;
+    si_data_session_cookies : string Ocsigen_http_frame.Cookievalues.t;
+    si_persistent_session_cookies : string Ocsigen_http_frame.Cookievalues.t;
+    si_nonatt_info : Eliom_common.na_key;
+    si_state_info :
+      Eliom_common.internal_state option * Eliom_common.internal_state option;
+    si_config_file_charset : string;
+    si_previous_extension_error : int;
+  }
+  module SessionCookies :
+    sig
+      type key = string
+      type 'a t
+      val create : int -> 'a Eliom_common.SessionCookies.t
+      val clear : 'a Eliom_common.SessionCookies.t -> unit
+      val copy :
+        'a Eliom_common.SessionCookies.t -> 'a Eliom_common.SessionCookies.t
+      val add :
+        'a Eliom_common.SessionCookies.t ->
+        Eliom_common.SessionCookies.key -> 'a -> unit
+      val remove :
+        'a Eliom_common.SessionCookies.t ->
+        Eliom_common.SessionCookies.key -> unit
+      val find :
+        'a Eliom_common.SessionCookies.t ->
+        Eliom_common.SessionCookies.key -> 'a
+      val find_all :
+        'a Eliom_common.SessionCookies.t ->
+        Eliom_common.SessionCookies.key -> 'a list
+      val replace :
+        'a Eliom_common.SessionCookies.t ->
+        Eliom_common.SessionCookies.key -> 'a -> unit
+      val mem :
+        'a Eliom_common.SessionCookies.t ->
+        Eliom_common.SessionCookies.key -> bool
+      val iter :
+        (Eliom_common.SessionCookies.key -> 'a -> unit) ->
+        'a Eliom_common.SessionCookies.t -> unit
+      val fold :
+        (Eliom_common.SessionCookies.key -> 'a -> 'b -> 'b) ->
+        'a Eliom_common.SessionCookies.t -> 'b -> 'b
+      val length : 'a Eliom_common.SessionCookies.t -> int
+    end
+  type 'a session_cookie = SCNo_data | SCData_session_expired | SC of 'a
+  type cookie_exp = CENothing | CEBrowser | CESome of float
+  type timeout = TGlobal | TNone | TSome of float
+  type 'a one_service_cookie_info = {
+    sc_value : string;
+    sc_table : 'a Pervasives.ref;
+    sc_timeout : Eliom_common.timeout Pervasives.ref;
+    sc_exp : float option Pervasives.ref;
+    sc_cookie_exp : Eliom_common.cookie_exp Pervasives.ref;
+    sc_session_group : Eliommod_sessiongroups.sessgrp option Pervasives.ref;
+  }
+  type one_data_cookie_info = {
+    dc_value : string;
+    dc_timeout : Eliom_common.timeout Pervasives.ref;
+    dc_exp : float option Pervasives.ref;
+    dc_cookie_exp : Eliom_common.cookie_exp Pervasives.ref;
+    dc_session_group : Eliommod_sessiongroups.sessgrp option Pervasives.ref;
+  }
+  type one_persistent_cookie_info = {
+    pc_value : string;
+    pc_timeout : Eliom_common.timeout Pervasives.ref;
+    pc_cookie_exp : Eliom_common.cookie_exp Pervasives.ref;
+    pc_session_group :
+      Eliommod_sessiongroups.perssessgrp option Pervasives.ref;
+  }
+  type 'a cookie_info =
+      (string option *
+       'a Eliom_common.one_service_cookie_info Eliom_common.session_cookie
+       Pervasives.ref)
+      Ocsigen_http_frame.Cookievalues.t Pervasives.ref *
+      (string option *
+       Eliom_common.one_data_cookie_info Eliom_common.session_cookie
+       Pervasives.ref)
+      Lazy.t Ocsigen_http_frame.Cookievalues.t Pervasives.ref *
+      ((string * Eliom_common.timeout * float option *
+        Eliommod_sessiongroups.perssessgrp option)
+       option *
+       Eliom_common.one_persistent_cookie_info Eliom_common.session_cookie
+       Pervasives.ref)
+      Lwt.t Lazy.t Ocsigen_http_frame.Cookievalues.t Pervasives.ref
+  type 'a servicecookiestablecontent =
+      string * 'a * float option Pervasives.ref *
+      Eliom_common.timeout Pervasives.ref *
+      Eliommod_sessiongroups.sessgrp option Pervasives.ref
+  type 'a servicecookiestable =
+      'a Eliom_common.servicecookiestablecontent
+      Eliom_common.SessionCookies.t
+  type datacookiestablecontent =
+      string * float option Pervasives.ref *
+      Eliom_common.timeout Pervasives.ref *
+      Eliommod_sessiongroups.sessgrp option Pervasives.ref
+  type datacookiestable =
+      Eliom_common.datacookiestablecontent Eliom_common.SessionCookies.t
+  type result_to_send =
+      EliomResult of Ocsigen_http_frame.result
+    | EliomExn of (exn list * Eliom_common.cookie list)
+  type page_table_key = {
+    key_state :
+      Eliom_common.internal_state option * Eliom_common.internal_state option;
+    key_kind : Ocsigen_http_frame.Http_header.http_method;
+  }
+  module String_Table :
+    sig
+      type key = string
+      type +'a t
+      val empty : 'a Eliom_common.String_Table.t
+      val is_empty : 'a Eliom_common.String_Table.t -> bool
+      val add :
+        Eliom_common.String_Table.key ->
+        'a ->
+        'a Eliom_common.String_Table.t -> 'a Eliom_common.String_Table.t
+      val find :
+        Eliom_common.String_Table.key -> 'a Eliom_common.String_Table.t -> 'a
+      val remove :
+        Eliom_common.String_Table.key ->
+        'a Eliom_common.String_Table.t -> 'a Eliom_common.String_Table.t
+      val mem :
+        Eliom_common.String_Table.key ->
+        'a Eliom_common.String_Table.t -> bool
+      val iter :
+        (Eliom_common.String_Table.key -> 'a -> unit) ->
+        'a Eliom_common.String_Table.t -> unit
+      val map :
+        ('a -> 'b) ->
+        'a Eliom_common.String_Table.t -> 'b Eliom_common.String_Table.t
+      val mapi :
+        (Eliom_common.String_Table.key -> 'a -> 'b) ->
+        'a Eliom_common.String_Table.t -> 'b Eliom_common.String_Table.t
+      val fold :
+        (Eliom_common.String_Table.key -> 'a -> 'b -> 'b) ->
+        'a Eliom_common.String_Table.t -> 'b -> 'b
+      val compare :
+        ('a -> 'a -> int) ->
+        'a Eliom_common.String_Table.t ->
+        'a Eliom_common.String_Table.t -> int
+      val equal :
+        ('a -> 'a -> bool) ->
+        'a Eliom_common.String_Table.t ->
+        'a Eliom_common.String_Table.t -> bool
+    end
+  module NAserv_Table :
+    sig
+      type key = Eliom_common.na_key
+      type +'a t
+      val empty : 'a Eliom_common.NAserv_Table.t
+      val is_empty : 'a Eliom_common.NAserv_Table.t -> bool
+      val add :
+        Eliom_common.NAserv_Table.key ->
+        'a ->
+        'a Eliom_common.NAserv_Table.t -> 'a Eliom_common.NAserv_Table.t
+      val find :
+        Eliom_common.NAserv_Table.key -> 'a Eliom_common.NAserv_Table.t -> 'a
+      val remove :
+        Eliom_common.NAserv_Table.key ->
+        'a Eliom_common.NAserv_Table.t -> 'a Eliom_common.NAserv_Table.t
+      val mem :
+        Eliom_common.NAserv_Table.key ->
+        'a Eliom_common.NAserv_Table.t -> bool
+      val iter :
+        (Eliom_common.NAserv_Table.key -> 'a -> unit) ->
+        'a Eliom_common.NAserv_Table.t -> unit
+      val map :
+        ('a -> 'b) ->
+        'a Eliom_common.NAserv_Table.t -> 'b Eliom_common.NAserv_Table.t
+      val mapi :
+        (Eliom_common.NAserv_Table.key -> 'a -> 'b) ->
+        'a Eliom_common.NAserv_Table.t -> 'b Eliom_common.NAserv_Table.t
+      val fold :
+        (Eliom_common.NAserv_Table.key -> 'a -> 'b -> 'b) ->
+        'a Eliom_common.NAserv_Table.t -> 'b -> 'b
+      val compare :
+        ('a -> 'a -> int) ->
+        'a Eliom_common.NAserv_Table.t ->
+        'a Eliom_common.NAserv_Table.t -> int
+      val equal :
+        ('a -> 'a -> bool) ->
+        'a Eliom_common.NAserv_Table.t ->
+        'a Eliom_common.NAserv_Table.t -> bool
+    end
+  type anon_params_type = int
+  type server_params = {
+    sp_ri : Ocsigen_extensions.request_info;
+    sp_si : Eliom_common.sess_info;
+    sp_sitedata : Eliom_common.sitedata;
+    sp_cookie_info : Eliom_common.tables Eliom_common.cookie_info;
+    sp_suffix : Ocsigen_extensions.url_path;
+    sp_fullsessname : string option;
+  }
+  and page_table =
+      (Eliom_common.page_table_key *
+       ((Eliom_common.anon_params_type * Eliom_common.anon_params_type) *
+        (int *
+         (int Pervasives.ref option * (float * float Pervasives.ref) option *
+          (Eliom_common.server_params -> Eliom_common.result_to_send Lwt.t))))
+       list)
+      list
+  and naservice_table =
+      AVide
+    | ATable of
+        (int * int Pervasives.ref option *
+         (float * float Pervasives.ref) option *
+         (Eliom_common.server_params -> Eliom_common.result_to_send Lwt.t))
+        Eliom_common.NAserv_Table.t
+  and dircontent =
+      Vide
+    | Table of Eliom_common.direlt Pervasives.ref Eliom_common.String_Table.t
+  and direlt =
+      Dir of Eliom_common.dircontent Pervasives.ref
+    | File of Eliom_common.page_table Pervasives.ref
+  and tables =
+      Eliom_common.dircontent Pervasives.ref *
+      Eliom_common.naservice_table Pervasives.ref * bool Pervasives.ref *
+      bool Pervasives.ref
+  and sitedata = {
+    site_dir : Ocsigen_extensions.url_path;
+    site_dir_string : string;
+    mutable servtimeout : (string * float option) list;
+    mutable datatimeout : (string * float option) list;
+    mutable perstimeout : (string * float option) list;
+    global_services : Eliom_common.tables;
+    session_services : Eliom_common.tables Eliom_common.servicecookiestable;
+    session_data : Eliom_common.datacookiestable;
+    mutable remove_session_data : string -> unit;
+    mutable not_bound_in_data_tables : string -> bool;
+    mutable exn_handler :
+      Eliom_common.server_params -> exn -> Eliom_common.result_to_send Lwt.t;
+    mutable unregistered_services : Ocsigen_extensions.url_path list;
+    mutable unregistered_na_services : Eliom_common.na_key list;
+    mutable max_volatile_data_sessions_per_group : int option;
+    mutable max_service_sessions_per_group : int option;
+    mutable max_persistent_data_sessions_per_group : int option;
+  }
+  val make_server_params :
+    Eliom_common.sitedata ->
+    Eliom_common.tables Eliom_common.cookie_info ->
+    Ocsigen_extensions.request_info ->
+    Ocsigen_extensions.url_path ->
+    Eliom_common.sess_info -> string option -> Eliom_common.server_params
+  val empty_page_table : unit -> 'a list
+  val empty_dircontent : unit -> Eliom_common.dircontent
+  val empty_naservice_table : unit -> Eliom_common.naservice_table
+  val service_tables_are_empty :
+    Eliom_common.dircontent Pervasives.ref *
+    Eliom_common.naservice_table Pervasives.ref * 'a * 'b -> bool
+  val empty_tables :
+    unit ->
+    Eliom_common.dircontent Pervasives.ref *
+    Eliom_common.naservice_table Pervasives.ref * bool Pervasives.ref *
+    bool Pervasives.ref
+  val new_service_session_tables :
+    unit ->
+    Eliom_common.dircontent Pervasives.ref *
+    Eliom_common.naservice_table Pervasives.ref * bool Pervasives.ref *
+    bool Pervasives.ref
+  val split_prefix_param :
+    string -> (string * 'a) list -> (string * 'a) list * (string * 'a) list
+  val getcookies :
+    string ->
+    'a Ocsigen_http_frame.Cookievalues.t ->
+    'a Ocsigen_http_frame.Cookievalues.t
+  val change_request_info :
+    Ocsigen_extensions.request_info ->
+    string ->
+    int -> (Ocsigen_extensions.request_info * Eliom_common.sess_info) Lwt.t
+  type ('a, 'b) foundornot = Found of 'a | Notfound of 'b
+  val make_full_cookie_name : string -> string -> string
+  val make_fullsessname :
+    sp:Eliom_common.server_params -> string option -> string
+  val make_fullsessname2 : string -> string option -> string
+  exception Eliom_retry_with of
+              (Ocsigen_extensions.request_info * Eliom_common.sess_info *
+               Ocsigen_http_frame.cookieset *
+               Eliom_common.tables Eliom_common.cookie_info)
+  module Perstables :
+    sig
+      val empty : 'a list
+      val add : 'a -> 'a list -> 'a list
+      val fold : ('a -> 'b -> 'a) -> 'a -> 'b list -> 'a
+    end
+  val perstables : string list Pervasives.ref
+  val create_persistent_table : string -> 'a Ocsipersist.table
+  val persistent_cookies_table :
+    (string * float option * Eliom_common.timeout *
+     Eliommod_sessiongroups.perssessgrp option)
+    Ocsipersist.table
+  val remove_from_all_persistent_tables : string -> unit Lwt.t
+  val absolute_change_sitedata : Eliom_common.sitedata -> unit
+  val get_current_sitedata : unit -> Eliom_common.sitedata
+  val end_current_sitedata : unit -> unit
+  val add_unregistered :
+    Eliom_common.sitedata -> Ocsigen_extensions.url_path -> unit
+  val add_unregistered_na :
+    Eliom_common.sitedata -> Eliom_common.na_key -> unit
+  val remove_unregistered :
+    Eliom_common.sitedata -> Ocsigen_extensions.url_path -> unit
+  val remove_unregistered_na :
+    Eliom_common.sitedata -> Eliom_common.na_key -> unit
+  val verify_all_registered : Eliom_common.sitedata -> unit
+  val during_eliom_module_loading : unit -> bool
+  val begin_load_eliom_module : unit -> unit
+  val end_load_eliom_module : unit -> unit
+  val global_register_allowed :
+    unit -> (unit -> Eliom_common.sitedata) option
+  val close_service_session2 :
+    Eliom_common.sitedata ->
+    Eliommod_sessiongroups.sessgrp option ->
+    Eliom_common.SessionCookies.key -> unit
+end >>

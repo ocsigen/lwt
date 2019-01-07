@@ -1,0 +1,185 @@
+=Module <<a_api_type | module Eliom_services >> =
+<<div class="code"|<<span class="keyword"|module>> Eliom_services: <<span class='code'|sig>><<a_api text=".." | module Eliom_services >><<span class='code'|end>>>>~This module allows to define services~.\\
+
+----
+<<div id="VALsync" class="code"|<<span class="keyword"|val>> sync : <<span class="code type"|('a -> 'b -> 'c -> 'd) -> 'a -> 'b -> 'c -> 'd <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~This function may be used for services that cannot be interrupted
+  ~(no cooperation point for threads~)~. ~It is defined by
+  <<span class='code'|let sync f sp g p ~= ~Lwt~.return ~(f sp g p~)>>\\
+>>
+<<div class="code" id="TYPEcookie"|<<span class="keyword"|type>> cookie = 
+|@@class="typetable"@ @class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Set>> <<span class="keyword"|of>> <<span class="code type"|<<a_api text="Ocsigen_extensions.url_path" | type Ocsigen_extensions.url_path >> option * float option * string * string>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Unset>> <<span class="keyword"|of>> <<span class="code type"|<<a_api text="Ocsigen_extensions.url_path" | type Ocsigen_extensions.url_path >> option * string>>|>>
+<<div class="info"|~Type used for other cookies to set or unset~. 
+    ~The float option is the timestamp for the expiration date~.
+    ~The strings are names and values~.\\
+>>
+
+<<div id="VALcookie_table_of_eliom_cookies" class="code"|<<span class="keyword"|val>> cookie~_table~_of~_eliom~_cookies : <<span class="code type"|\\{{{   }}}?oldtable:<<a_api text="Ocsigen_http_frame.cookieset" | type Ocsigen_http_frame.cookieset >> ->\\{{{   }}}  sp:<<a_api text="Eliom_sessions.server_params" | type Eliom_sessions.server_params >> ->\\{{{   }}}  <<a_api text="cookie" | type Eliom_services.cookie >> list -> <<a_api text="Ocsigen_http_frame.cookieset" | type Ocsigen_http_frame.cookieset >>>>>><<div class="info"|~Conversion fonction from ~Eliom cookies to server cookies~.
+    ~If <<span class='code'|~?oldtable>> is present~, cookies are added to this table\\
+>>
+<<div class="code" id="TYPEresult_to_send"|<<span class="keyword"|type>> result~_to~_send = 
+|@@class="typetable"@ @class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|EliomResult>> <<span class="keyword"|of>> <<span class="code type"|<<a_api text="Ocsigen_http_frame.result" | type Ocsigen_http_frame.result >>>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|EliomExn>> <<span class="keyword"|of>> <<span class="code type"|(exn list * <<a_api text="cookie" | type Eliom_services.cookie >> list)>>|>>
+<<div class="info"|~The type to send if you want to create your own modules for generating
+   pages\\
+>>
+
+\\
+
+==@@id="2_Typesofservices"@@~Types of services==
+\\
+<<div class="code" id="TYPEsuff"|<<span class="keyword"|type>> suff = <<span class="code type"|[ `WithSuffix | `WithoutSuffix ]>> >>
+
+<<div class="code" id="TYPEservcoserv"|<<span class="keyword"|type>> servcoserv = <<span class="code type"|[ `Coservice | `Service ]>> >>
+
+<<div class="code" id="TYPEgetpost"|<<span class="keyword"|type>> getpost = <<span class="code type"|[ `Get | `Post ]>> >>
+
+<<div class="code" id="TYPEattached_service_kind"|<<span class="keyword"|type>> attached~_service~_kind = <<span class="code type"|[ `External | `Internal of <<a_api text="servcoserv" | type Eliom_services.servcoserv >> * <<a_api text="getpost" | type Eliom_services.getpost >> ]>> >>
+
+<<div class="code" id="TYPEget_attached_service_kind"|<<span class="keyword"|type>> get~_attached~_service~_kind = <<span class="code type"|[ `External | `Internal of <<a_api text="servcoserv" | type Eliom_services.servcoserv >> * [ `Get ] ]>> >>
+
+<<div class="code" id="TYPEpost_attached_service_kind"|<<span class="keyword"|type>> post~_attached~_service~_kind = <<span class="code type"|[ `External | `Internal of <<a_api text="servcoserv" | type Eliom_services.servcoserv >> * [ `Post ] ]>> >>
+
+<<div class="code" id="TYPEinternal"|<<span class="keyword"|type>> internal = <<span class="code type"|[ `Internal of <<a_api text="servcoserv" | type Eliom_services.servcoserv >> * <<a_api text="getpost" | type Eliom_services.getpost >> ]>> >>
+
+<<div class="code" id="TYPEregistrable"|<<span class="keyword"|type>> registrable = <<span class="code type"|[ `Registrable | `Unregistrable ]>> >>
+<<div class="info"|~You can call register function only on registrable services\\
+>>
+
+<<div class="code" id="TYPEa_s"|<<span class="keyword"|type>> <<span class="code type"|+'a>> a~_s>>
+
+<<div class="code" id="TYPEna_s"|<<span class="keyword"|type>> <<span class="code type"|+'a>> na~_s>>
+
+<<div class="code" id="TYPEservice_kind"|<<span class="keyword"|type>> service~_kind = <<span class="code type"|\\{{{   }}}[ `Attached of <<a_api text="attached_service_kind" | type Eliom_services.attached_service_kind >> <<a_api text="a_s" | type Eliom_services.a_s >>\\{{{   }}}  | `Nonattached of <<a_api text="getpost" | type Eliom_services.getpost >> <<a_api text="na_s" | type Eliom_services.na_s >> ]>> >>
+
+<<div class="code" id="TYPEget_service_kind"|<<span class="keyword"|type>> get~_service~_kind = <<span class="code type"|\\{{{   }}}[ `Attached of <<a_api text="get_attached_service_kind" | type Eliom_services.get_attached_service_kind >> <<a_api text="a_s" | type Eliom_services.a_s >>\\{{{   }}}  | `Nonattached of [ `Get ] <<a_api text="na_s" | type Eliom_services.na_s >> ]>> >>
+
+<<div class="code" id="TYPEpost_service_kind"|<<span class="keyword"|type>> post~_service~_kind = <<span class="code type"|\\{{{   }}}[ `Attached of <<a_api text="post_attached_service_kind" | type Eliom_services.post_attached_service_kind >> <<a_api text="a_s" | type Eliom_services.a_s >>\\{{{   }}}  | `Nonattached of [ `Post ] <<a_api text="na_s" | type Eliom_services.na_s >> ]>> >>
+
+<<div class="code" id="TYPEinternal_service_kind"|<<span class="keyword"|type>> internal~_service~_kind = <<span class="code type"|\\{{{   }}}[ `Attached of <<a_api text="internal" | type Eliom_services.internal >> <<a_api text="a_s" | type Eliom_services.a_s >>\\{{{   }}}  | `Nonattached of <<a_api text="getpost" | type Eliom_services.getpost >> <<a_api text="na_s" | type Eliom_services.na_s >> ]>> >>
+
+<<div class="code" id="TYPEattached"|<<span class="keyword"|type>> attached = <<span class="code type"|[ `Attached of <<a_api text="attached_service_kind" | type Eliom_services.attached_service_kind >> <<a_api text="a_s" | type Eliom_services.a_s >> ]>> >>
+
+<<div class="code" id="TYPEnonattached"|<<span class="keyword"|type>> nonattached = <<span class="code type"|[ `Nonattached of <<a_api text="getpost" | type Eliom_services.getpost >> <<a_api text="na_s" | type Eliom_services.na_s >> ]>> >>
+
+<<div class="code" id="TYPEservice"|<<span class="keyword"|type>> <<span class="code type"|('a, 'b, +'c, +'d, +'e, +'f, +'g)>> service>>
+<<div class="info"|~Type of services~.* <<span class='code'| ~'get>> is the type of ~G~E~T parameters
+* <<span class='code'| ~'post>> is the type of ~P~O~S~T parameters
+* <<span class='code'| ~'kind>> is a subtype of <<a_api | type Eliom_services.service_kind >> ~(attached or non~-attached 
+      service~, internal or external~, ~G~E~T only or with ~P~O~S~T parameters~)
+* <<span class='code'| ~'tipo>> is a phantom type stating the kind of parameters it uses
+        ~(suffix or not~)
+* <<span class='code'| ~'getnames>> is the type of ~G~E~T parameters names
+* <<span class='code'| ~'postnames>> is the type of ~P~O~S~T parameters names
+* <<span class='code'| ~'registrable>> is a phantom type~, subtype of <<a_api | type Eliom_services.registrable >>~,
+      telling if it is possible to register a handler on this service~.
+
+\\
+>>
+
+\\
+
+==@@id="2_Definitionsofservices"@@~Definitions of services==
+\\
+\\
+
+===@@id="3_Mainservices"@@~Main services===
+\\
+<<div id="VALnew_service" class="code"|<<span class="keyword"|val>> new~_service : <<span class="code type"|\\{{{   }}}?sp:<<a_api text="Eliom_sessions.server_params" | type Eliom_sessions.server_params >> ->\\{{{   }}}  path:<<a_api text="Ocsigen_extensions.url_path" | type Ocsigen_extensions.url_path >> ->\\{{{   }}}  get_params:('a, [< <<a_api text="suff" | type Eliom_services.suff >> ] as 'b, 'c)\\{{{   }}}             <<a_api text="Eliom_parameters.params_type" | type Eliom_parameters.params_type >> ->\\{{{   }}}  unit ->\\{{{   }}}  ('a, unit,\\{{{   }}}   [> `Attached of\\{{{   }}}        [> `Internal of [> `Service ] * [> `Get ] ] <<a_api text="a_s" | type Eliom_services.a_s >> ],\\{{{   }}}   'b, 'c, unit, [> `Registrable ])\\{{{   }}}  <<a_api text="service" | type Eliom_services.service >>>>>><<div class="info"|<<span class='code'|new~_service ~~path~:p ~~get~_params~:pa ~(~)>> creates an <<a_api | type Eliom_services.service >> associated
+   to the path <<span class='code'|p>>~, taking the ~G~E~T parameters <<span class='code'|pa>>~. \\
+
+
+   //~Warning~: ~If you use this function after the initialisation phase~,
+   you must give the <<span class='code'|~~sp>> parameter~, otherwise it will raise the
+   exception <<a_api | exception Eliom_common.Eliom_function_forbidden_outside_site_loading >>~.//\\
+>>
+<<div id="VALnew_service'" class="code"|<<span class="keyword"|val>> new~_service~' : <<span class="code type"|\\{{{   }}}?sp:<<a_api text="Eliom_sessions.server_params" | type Eliom_sessions.server_params >> ->\\{{{   }}}  name:string ->\\{{{   }}}  get_params:('a, [ `WithoutSuffix ], 'b) <<a_api text="Eliom_parameters.params_type" | type Eliom_parameters.params_type >> ->\\{{{   }}}  unit ->\\{{{   }}}  ('a, unit, [> `Nonattached of [> `Get ] <<a_api text="na_s" | type Eliom_services.na_s >> ],\\{{{   }}}   [ `WithoutSuffix ], 'b, unit, [> `Registrable ])\\{{{   }}}  <<a_api text="service" | type Eliom_services.service >>>>>><<div class="info"|<<span class='code'|new~_service~' ~~name~:n ~~get~_params~:pa ~(~)>> creates a non~-attached service
+    associated to the name <<span class='code'|n>>~, taking the ~G~E~T parameters <<span class='code'|pa>>~. \\
+
+
+   //~Warning~: ~If you use this function after the initialisation phase~,
+   you must give the <<span class='code'|~~sp>> parameter~, otherwise it will raise the
+   exception <<a_api | exception Eliom_common.Eliom_function_forbidden_outside_site_loading >>~.//\\
+>>
+<<div id="VALnew_external_service" class="code"|<<span class="keyword"|val>> new~_external~_service : <<span class="code type"|\\{{{   }}}prefix:string ->\\{{{   }}}  path:<<a_api text="Ocsigen_extensions.url_path" | type Ocsigen_extensions.url_path >> ->\\{{{   }}}  get_params:('a, [< <<a_api text="suff" | type Eliom_services.suff >> ] as 'b, 'c)\\{{{   }}}             <<a_api text="Eliom_parameters.params_type" | type Eliom_parameters.params_type >> ->\\{{{   }}}  post_params:('d, [ `WithoutSuffix ], 'e) <<a_api text="Eliom_parameters.params_type" | type Eliom_parameters.params_type >> ->\\{{{   }}}  unit ->\\{{{   }}}  ('a, 'd, [> `Attached of [> `External ] <<a_api text="a_s" | type Eliom_services.a_s >> ], 'b, 'c, 'e,\\{{{   }}}   [> `Unregistrable ])\\{{{   }}}  <<a_api text="service" | type Eliom_services.service >>>>>><<div class="info"|~Creates an service for an external web site~.
+   ~Allows to creates links or forms towards other ~Web sites using
+   ~Eliom~'s syntax~.\\
+
+
+   ~The parameter labelled <<span class='code'|~~path>> is the ~U~R~L path~, and each element of
+   the list will be ~U~R~L~-encoded~.\\
+
+
+   ~The parameter labelled <<span class='code'|~~prefix>> contains all what you want to put before
+   the path~. ~It usually starts with "http~:~/~/" plus
+   the name of the server~. ~The whole ~U~R~L is constructed from the prefix~,
+   the path and parameters~. ~The prefix is not encoded~. 
+   ~An empty prefix can be used to make a link to another site of the same 
+   server~.\\
+>>
+<<div id="VALnew_post_service" class="code"|<<span class="keyword"|val>> new~_post~_service : <<span class="code type"|\\{{{   }}}?sp:<<a_api text="Eliom_sessions.server_params" | type Eliom_sessions.server_params >> ->\\{{{   }}}  fallback:('a, unit,\\{{{   }}}            [ `Attached of\\{{{   }}}                [ `Internal of [ `Coservice | `Service ] * [ `Get ] ]\\{{{   }}}                <<a_api text="a_s" | type Eliom_services.a_s >> ],\\{{{   }}}            [< <<a_api text="suff" | type Eliom_services.suff >> ] as 'b, 'c, unit, [< `Registrable ])\\{{{   }}}           <<a_api text="service" | type Eliom_services.service >> ->\\{{{   }}}  post_params:('d, [ `WithoutSuffix ], 'e) <<a_api text="Eliom_parameters.params_type" | type Eliom_parameters.params_type >> ->\\{{{   }}}  unit ->\\{{{   }}}  ('a, 'd,\\{{{   }}}   [> `Attached of\\{{{   }}}        [> `Internal of [ `Coservice | `Service ] * [> `Post ] ]\\{{{   }}}        <<a_api text="a_s" | type Eliom_services.a_s >> ],\\{{{   }}}   'b, 'c, 'e, [> `Registrable ])\\{{{   }}}  <<a_api text="service" | type Eliom_services.service >>>>>><<div class="info"|~Creates an service that takes ~P~O~S~T parameters~. 
+   <<span class='code'|fallback>> is the a service without ~P~O~S~T parameters~.
+   ~You can~'t create an service with ~P~O~S~T parameters
+   if the same service does not exist without ~P~O~S~T parameters~. 
+   ~Thus~, the user can~'t bookmark a page that does not exist~.\\
+>>
+<<div id="VALnew_post_service'" class="code"|<<span class="keyword"|val>> new~_post~_service~' : <<span class="code type"|\\{{{   }}}?keep_get_na_params:bool ->\\{{{   }}}  name:string ->\\{{{   }}}  post_params:('a, [ `WithoutSuffix ], 'b) <<a_api text="Eliom_parameters.params_type" | type Eliom_parameters.params_type >> ->\\{{{   }}}  unit ->\\{{{   }}}  (unit, 'a, [> `Nonattached of [> `Post ] <<a_api text="na_s" | type Eliom_services.na_s >> ],\\{{{   }}}   [ `WithoutSuffix ], unit, 'b, [> `Registrable ])\\{{{   }}}  <<a_api text="service" | type Eliom_services.service >>>>>><<div class="info"|~Creates a non~-attached service that takes ~P~O~S~T parameters~. 
+   <<span class='code'|name>> is the name of that non~-attached service~.\\
+>>
+\\
+
+===@@id="3_Attachedcoservices"@@~Attached coservices===
+\\
+<<div id="VALnew_coservice" class="code"|<<span class="keyword"|val>> new~_coservice : <<span class="code type"|\\{{{   }}}?max_use:int ->\\{{{   }}}  ?timeout:float ->\\{{{   }}}  fallback:(unit, unit,\\{{{   }}}            [ `Attached of\\{{{   }}}                [ `Internal of [ `Service ] * [ `Get ] ] <<a_api text="a_s" | type Eliom_services.a_s >> ],\\{{{   }}}            [ `WithoutSuffix ], unit, unit, [< <<a_api text="registrable" | type Eliom_services.registrable >> ])\\{{{   }}}           <<a_api text="service" | type Eliom_services.service >> ->\\{{{   }}}  get_params:('a, [ `WithoutSuffix ], 'b) <<a_api text="Eliom_parameters.params_type" | type Eliom_parameters.params_type >> ->\\{{{   }}}  unit ->\\{{{   }}}  ('a, unit,\\{{{   }}}   [> `Attached of\\{{{   }}}        [> `Internal of [> `Coservice ] * [> `Get ] ] <<a_api text="a_s" | type Eliom_services.a_s >> ],\\{{{   }}}   [ `WithoutSuffix ], 'b, unit, [> `Registrable ])\\{{{   }}}  <<a_api text="service" | type Eliom_services.service >>>>>><<div class="info"|~Creates a coservice~. ~A coservice is another version of an
+   already existing main service~, where you can register another handler~. 
+   ~The two versions are automatically distinguished using an extra parameter
+   added automatically by ~Eliom~. 
+   ~It allows to have several links towards the same page~, 
+   that will behave differently~, or to create services dedicated to one user~. 
+   ~See the tutorial for more informations~.\\
+>>
+<<div id="VALnew_post_coservice" class="code"|<<span class="keyword"|val>> new~_post~_coservice : <<span class="code type"|\\{{{   }}}?max_use:int ->\\{{{   }}}  ?timeout:float ->\\{{{   }}}  fallback:('a, unit,\\{{{   }}}            [ `Attached of\\{{{   }}}                [ `Internal of [< `Coservice | `Service ] * [ `Get ] ]\\{{{   }}}                <<a_api text="a_s" | type Eliom_services.a_s >> ],\\{{{   }}}            [< <<a_api text="suff" | type Eliom_services.suff >> ] as 'b, 'c, unit, [< `Registrable ])\\{{{   }}}           <<a_api text="service" | type Eliom_services.service >> ->\\{{{   }}}  post_params:('d, [ `WithoutSuffix ], 'e) <<a_api text="Eliom_parameters.params_type" | type Eliom_parameters.params_type >> ->\\{{{   }}}  unit ->\\{{{   }}}  ('a, 'd,\\{{{   }}}   [> `Attached of\\{{{   }}}        [> `Internal of [> `Coservice ] * [> `Post ] ] <<a_api text="a_s" | type Eliom_services.a_s >> ],\\{{{   }}}   'b, 'c, 'e, [> `Registrable ])\\{{{   }}}  <<a_api text="service" | type Eliom_services.service >>>>>><<div class="info"|~Creates a coservice with ~P~O~S~T parameters\\
+>>
+\\
+
+===@@id="3_Nonattachedcoservices"@@~Non attached coservices===
+\\
+<<div id="VALnew_coservice'" class="code"|<<span class="keyword"|val>> new~_coservice~' : <<span class="code type"|\\{{{   }}}?max_use:int ->\\{{{   }}}  ?timeout:float ->\\{{{   }}}  get_params:('a, [ `WithoutSuffix ], 'b) <<a_api text="Eliom_parameters.params_type" | type Eliom_parameters.params_type >> ->\\{{{   }}}  unit ->\\{{{   }}}  ('a, unit, [> `Nonattached of [> `Get ] <<a_api text="na_s" | type Eliom_services.na_s >> ],\\{{{   }}}   [ `WithoutSuffix ], 'b, unit, [> `Registrable ])\\{{{   }}}  <<a_api text="service" | type Eliom_services.service >>>>>><<div class="info"|~Creates a non~-attached coservice~, that is~, services that do not
+   correspond to a precise ~U~R~L~. 
+   ~Links towards such services will not change the ~U~R~L~, 
+   just add extra parameters~. 
+   ~See the tutorial for more informations~.\\
+>>
+<<div id="VALnew_post_coservice'" class="code"|<<span class="keyword"|val>> new~_post~_coservice~' : <<span class="code type"|\\{{{   }}}?max_use:int ->\\{{{   }}}  ?timeout:float ->\\{{{   }}}  ?keep_get_na_params:bool ->\\{{{   }}}  post_params:('a, [ `WithoutSuffix ], 'b) <<a_api text="Eliom_parameters.params_type" | type Eliom_parameters.params_type >> ->\\{{{   }}}  unit ->\\{{{   }}}  (unit, 'a, [> `Nonattached of [> `Post ] <<a_api text="na_s" | type Eliom_services.na_s >> ],\\{{{   }}}   [ `WithoutSuffix ], unit, 'b, [> `Registrable ])\\{{{   }}}  <<a_api text="service" | type Eliom_services.service >>>>>><<div class="info"|~Creates a non attached coservice with ~P~O~S~T parameters~.
+    ~If the optional parameter <<span class='code'|~~keep~_get~_na~_params>> is <<span class='code'|false>>~,
+    ~G~E~T non~-attached parameters won~'t be kept in the ~U~R~L ~(if any~) when you
+    create a ~P~O~S~T form to this coservice~.
+    ~Default is <<span class='code'|true>>~.
+    ~See also <<a_api | val Eliom_mkforms.ELIOMFORMSIG.post_form >>~.\\
+>>
+\\
+
+==@@id="2_Misc"@@~Misc==
+\\
+<<div id="VALstatic_dir" class="code"|<<span class="keyword"|val>> static~_dir : <<span class="code type"|\\{{{   }}}sp:<<a_api text="Eliom_sessions.server_params" | type Eliom_sessions.server_params >> ->\\{{{   }}}  (string list, unit,\\{{{   }}}   [> `Attached of\\{{{   }}}        [> `Internal of [> `Service ] * [> `Get ] ] <<a_api text="a_s" | type Eliom_services.a_s >> ],\\{{{   }}}   [ `WithSuffix ], [ `One of string list ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >>, \\{{{   }}}   unit, [> `Unregistrable ])\\{{{   }}}  <<a_api text="service" | type Eliom_services.service >>>>>><<div class="info"|~A predefined service
+   that correponds to the directory where static pages are~.
+   ~This directory is chosen in the config file ~(ocsigen~.conf~)~.
+   ~This service takes the name of the static file as a parameter
+   ~(a string list~, slash separated~)~.\\
+>>
+<<div id="VALpreapply" class="code"|<<span class="keyword"|val>> preapply : <<span class="code type"|\\{{{   }}}service:('a, 'b, [> `Attached of 'd <<a_api text="a_s" | type Eliom_services.a_s >> ] as 'c,\\{{{   }}}           [< <<a_api text="suff" | type Eliom_services.suff >> ], 'e, 'f, 'g)\\{{{   }}}          <<a_api text="service" | type Eliom_services.service >> ->\\{{{   }}}  'a ->\\{{{   }}}  (unit, 'b, 'c, [ `WithoutSuffix ], unit, 'f, [> `Unregistrable ])\\{{{   }}}  <<a_api text="service" | type Eliom_services.service >>>>>><<div class="info"|creates a new service by preapplying a service to ~G~E~T parameters~. 
+   ~It is not possible to register a handler on an preapplied service~.
+   ~Preapplied services may be used in links or as fallbacks for coservices\\
+>>
+\\
+
+==@@id="2_Usingyourownerrorpages"@@~Using your own error pages==
+\\
+<<div id="VALset_exn_handler" class="code"|<<span class="keyword"|val>> set~_exn~_handler : <<span class="code type"|\\{{{   }}}?sp:<<a_api text="Eliom_sessions.server_params" | type Eliom_sessions.server_params >> ->\\{{{   }}}  (<<a_api text="Eliom_sessions.server_params" | type Eliom_sessions.server_params >> -> exn -> <<a_api text="result_to_send" | type Eliom_services.result_to_send >> <<a_api text="Lwt.t" | type Lwt.t >>) ->\\{{{   }}}  unit>>>><<div class="info"|allows to use your own error pages
+   ~(~4~0~4~, or any exception during page generation~)~.\\
+
+
+    //~Warning~: ~If you use this function after the initialisation phase~,
+    you must give the <<span class='code'|~~sp>> parameter~, otherwise it will raise the
+    exception <<a_api | exception Eliom_common.Eliom_function_forbidden_outside_site_loading >>~.//\\
+>>

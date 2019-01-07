@@ -1,0 +1,33 @@
+<<code language="ocaml" | sig
+  val printf :
+    ('a, Format.formatter, unit, unit Lwt.t) Pervasives.format4 -> 'a
+  val eprintf :
+    ('a, Format.formatter, unit, unit Lwt.t) Pervasives.format4 -> 'a
+  type formatter
+  type order = String of string * int * int | Flush
+  val make_stream : unit -> Lwt_fmt.order Lwt_stream.t * Lwt_fmt.formatter
+  val of_channel : Lwt_io.output_channel -> Lwt_fmt.formatter
+  val stdout : Lwt_fmt.formatter
+  val stderr : Lwt_fmt.formatter
+  val make_formatter :
+    commit:(unit -> unit Lwt.t) ->
+    fmt:Format.formatter -> unit -> Lwt_fmt.formatter
+  val get_formatter : Lwt_fmt.formatter -> Format.formatter
+  val fprintf :
+    Lwt_fmt.formatter ->
+    ('a, Format.formatter, unit, unit Lwt.t) Pervasives.format4 -> 'a
+  val kfprintf :
+    (Lwt_fmt.formatter -> unit Lwt.t -> 'a) ->
+    Lwt_fmt.formatter ->
+    ('b, Format.formatter, unit, 'a) Pervasives.format4 -> 'b
+  val ifprintf :
+    Lwt_fmt.formatter ->
+    ('a, Format.formatter, unit, unit Lwt.t) Pervasives.format4 -> 'a
+  val ikfprintf :
+    (Lwt_fmt.formatter -> unit Lwt.t -> 'a) ->
+    Lwt_fmt.formatter ->
+    ('b, Format.formatter, unit, 'a) Pervasives.format4 -> 'b
+  val flush : Lwt_fmt.formatter -> unit Lwt.t
+  val write_order : Lwt_io.output_channel -> Lwt_fmt.order -> unit Lwt.t
+  val write_pending : Lwt_fmt.formatter -> unit Lwt.t
+end >>

@@ -1,0 +1,634 @@
+=Index of types=
+
+|@@ @class="alignleft"@@\\|
+|<<a_api text="_div"| type Xhtmltypes_duce._div >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="_map"| type Xhtmltypes_duce._map >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="_object"| type Xhtmltypes_duce._object >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|@@ @class="alignleft"@@\\A|
+|<<a_api text="a"| type Xhtmltypes_duce.a >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="a"| type Xhtmltypes.a >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="a_attrib"| type Xhtmltypes.a_attrib >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="a_attrib_t"| type Eliom_mkforms.FORMCREATE.a_attrib_t >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="a_attrib_t"| type Eliom_mkforms.ELIOMFORMSIG.a_attrib_t >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="a_attrs"| type Xhtmltypes_duce.a_attrs >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="a_content"| type Xhtmltypes_duce.a_content >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="a_content"| type Xhtmltypes.a_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="a_content_elt"| type Eliom_mkforms.FORMCREATE.a_content_elt >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="a_content_elt"| type Eliom_mkforms.ELIOMFORMSIG.a_content_elt >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="a_content_elt_list"| type Eliom_mkforms.FORMCREATE.a_content_elt_list >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="a_content_elt_list"| type Eliom_mkforms.ELIOMFORMSIG.a_content_elt_list >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="a_elt"| type Eliom_mkforms.FORMCREATE.a_elt >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="a_elt"| type Eliom_mkforms.ELIOMFORMSIG.a_elt >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="a_elt_list"| type Eliom_mkforms.FORMCREATE.a_elt_list >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="a_elt_list"| type Eliom_mkforms.ELIOMFORMSIG.a_elt_list >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="a_s"| type Eliom_services.a_s >> ~[<<a_api | module Eliom_services >>~]||
+|<<a_api text="abbr"| type Xhtmltypes_duce.abbr >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="abbr_content"| type Xhtmltypes.abbr_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="acronym"| type Xhtmltypes_duce.acronym >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="acronym_content"| type Xhtmltypes.acronym_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="address"| type Xhtmltypes_duce.address >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="address_content"| type Xhtmltypes.address_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="align"| type Xhtmltypes_duce.align >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="align_attrs"| type Xhtmltypes_duce.align_attrs >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="answer"| type Ocsigen_extensions.answer >> ~[<<a_api | module Ocsigen_extensions >>~]||
+|<<a_api text="area"| type Xhtmltypes_duce.area >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="area_content"| type Xhtmltypes.area_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="attached"| type Eliom_services.attached >> ~[<<a_api | module Eliom_services >>~]||
+|<<a_api text="attached_service_kind"| type Eliom_services.attached_service_kind >> ~[<<a_api | module Eliom_services >>~]||
+|<<a_api text="attrib"| type XHTML.T.attrib >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="attribs"| type XHTML.T.attribs >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="attrs"| type Xhtmltypes_duce.attrs >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|@@ @class="alignleft"@@\\B|
+|<<a_api text="b"| type Xhtmltypes_duce.b >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="b_content"| type Xhtmltypes.b_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="base"| type Xhtmltypes_duce.base >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="base_content"| type Xhtmltypes.base_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="basic_input_type"| type Eliom_predefmod.XHTMLFORMSSIG.basic_input_type >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]||
+|<<a_api text="bdo"| type Xhtmltypes_duce.bdo >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="bdo_content"| type Xhtmltypes.bdo_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="big"| type Xhtmltypes_duce.big >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="big_content"| type Xhtmltypes.big_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="binary"| type XHTML.T.binary >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="binsum"| type Eliom_parameters.binsum >> ~[<<a_api | module Eliom_parameters >>~]||
+|<<a_api text="block"| type Xhtmltypes_duce.block >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="block"| type XHTML.T.SPECIAL.block >> ~[<<a_api | module XHTML.T.SPECIAL >>~]||
+|<<a_api text="block"| type XHTML.T.TABLES.block >> ~[<<a_api | module XHTML.T.TABLES >>~]||
+|<<a_api text="block"| type XHTML.T.FORMS.block >> ~[<<a_api | module XHTML.T.FORMS >>~]||
+|<<a_api text="block"| type XHTML.T.PRESENTATION.block >> ~[<<a_api | module XHTML.T.PRESENTATION >>~]||
+|<<a_api text="block"| type XHTML.T.TEXT.block >> ~[<<a_api | module XHTML.T.TEXT >>~]||
+|<<a_api text="block"| type XHTML.T.block >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="block_sans_form"| type XHTML.T.block_sans_form >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="blockquote"| type Xhtmltypes_duce.blockquote >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="blockquote_content"| type Xhtmltypes.blockquote_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="blocks"| type Xhtmltypes_duce.blocks >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="blocktext"| type Xhtmltypes_duce.blocktext >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="body"| type Xhtmltypes_duce.body >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="body_content"| type Xhtmltypes.body_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="br"| type Xhtmltypes_duce.br >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="br_content"| type Xhtmltypes.br_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="button"| type Xhtmltypes_duce.button >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="button"| type Xhtmltypes.button >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="button_attrib"| type Xhtmltypes.button_attrib >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="button_attrib_t"| type Eliom_mkforms.FORMCREATE.button_attrib_t >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="button_attrib_t"| type Eliom_mkforms.ELIOMFORMSIG.button_attrib_t >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="button_attrs"| type Xhtmltypes_duce.button_attrs >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="button_content"| type Xhtmltypes_duce.button_content >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="button_content"| type Xhtmltypes.button_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="button_content_elt"| type Eliom_mkforms.FORMCREATE.button_content_elt >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="button_content_elt"| type Eliom_mkforms.ELIOMFORMSIG.button_content_elt >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="button_content_elt_list"| type Eliom_mkforms.FORMCREATE.button_content_elt_list >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="button_content_elt_list"| type Eliom_mkforms.ELIOMFORMSIG.button_content_elt_list >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="button_elt"| type Eliom_mkforms.FORMCREATE.button_elt >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="button_elt"| type Eliom_mkforms.ELIOMFORMSIG.button_elt >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="button_type"| type Eliom_predefmod.XHTMLFORMSSIG.button_type >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]||
+|<<a_api text="button_type_t"| type Eliom_mkforms.FORMCREATE.button_type_t >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="button_type_t"| type Eliom_mkforms.ELIOMFORMSIG.button_type_t >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="button_type_values"| type Xhtmltypes_duce.button_type_values >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="buttoncontent"| type XHTML.T.buttoncontent >> ~[<<a_api | module XHTML.T >>~]||
+|@@ @class="alignleft"@@\\C|
+|<<a_api text="caption"| type Xhtmltypes_duce.caption >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="caption_content"| type Xhtmltypes.caption_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="cdata"| type XHTML.T.cdata >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~Character data
+>>
+|
+|<<a_api text="character"| type XHTML.T.character >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~A single character from ~I~S~O ~1~0~6~4~6~.
+>>
+|
+|<<a_api text="charset"| type XHTML.T.charset >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~A character encoding~, as per ~R~F~C~2~0~4~5 ~(~M~I~M~E~)~.
+>>
+|
+|<<a_api text="charsets"| type XHTML.T.charsets >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~A space~-separated list of character encodings~, as per ~R~F~C~2~0~4~5 ~(~M~I~M~E~)~.
+>>
+|
+|<<a_api text="cite"| type Xhtmltypes_duce.cite >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="cite_content"| type Xhtmltypes.cite_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="client"| type Ocsigen_extensions.client >> ~[<<a_api | module Ocsigen_extensions >>~]|<<div class="info"|~A value of this type represents the client who did the request~.
+>>
+|
+|<<a_api text="code"| type Xhtmltypes_duce.code >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="code_content"| type Xhtmltypes.code_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="col"| type Xhtmltypes_duce.col >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="col_content"| type Xhtmltypes.col_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="colgroup"| type Xhtmltypes_duce.colgroup >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="colgroup_content"| type Xhtmltypes.colgroup_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="color"| type XHTML.T.color >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~The attribute value type <<span class='code'|color>> refers to color definitions as specified in
+    ~S~R~G~B~.
+>>
+|
+|<<a_api text="common"| type XHTML.T.common >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="connection"| type Ocsigen_http_com.connection >> ~[<<a_api | module Ocsigen_http_com >>~]||
+|<<a_api text="contenttype"| type XHTML.T.contenttype >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~A media type~, as per ~R~F~C~2~0~4~5 ~(~M~I~M~E~)~.
+>>
+|
+|<<a_api text="contenttypes"| type XHTML.T.contenttypes >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~A comma~-separated list of media types~, as per ~R~F~C~2~0~4~5 ~(~M~I~M~E~)~.
+>>
+|
+|<<a_api text="cookie"| type Ocsigen_http_frame.cookie >> ~[<<a_api | module Ocsigen_http_frame >>~]|<<div class="info"|~Type used for cookies to set~.
+>>
+|
+|<<a_api text="cookie"| type Eliom_services.cookie >> ~[<<a_api | module Eliom_services >>~]|<<div class="info"|~Type used for other cookies to set or unset~.
+>>
+|
+|<<a_api text="cookieset"| type Ocsigen_http_frame.cookieset >> ~[<<a_api | module Ocsigen_http_frame >>~]||
+|<<a_api text="coordinates"| type Eliom_parameters.coordinates >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|<<span class='code'|coordinates>> is for the data sent by an <<span class='code'|~<input type~="image" ~.~.~.~>>>~.
+>>
+|
+|<<a_api text="coords"| type XHTML.T.coords >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~Comma~- separated list of coordinates to use in defining areas~.
+>>
+|
+|<<a_api text="core"| type XHTML.T.core >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="coreattrs"| type Xhtmltypes_duce.coreattrs >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|@@ @class="alignleft"@@\\D|
+|<<a_api text="data_session"| type Eliom_sessions.Session_admin.data_session >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]||
+|<<a_api text="datetime"| type XHTML.T.datetime >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~Date and time information~.
+>>
+|
+|<<a_api text="dd"| type Xhtmltypes_duce.dd >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="dd_content"| type Xhtmltypes.dd_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="del"| type Xhtmltypes_duce.del >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="del_content"| type Xhtmltypes.del_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="dfn"| type Xhtmltypes_duce.dfn >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="dfn_content"| type Xhtmltypes.dfn_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="div_attrib"| type Xhtmltypes.div_attrib >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="div_content"| type Xhtmltypes.div_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="div_content_elt"| type Eliom_mkforms.FORMCREATE.div_content_elt >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="div_content_elt"| type Eliom_mkforms.ELIOMFORMSIG.div_content_elt >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="div_content_elt_list"| type Eliom_mkforms.FORMCREATE.div_content_elt_list >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="div_content_elt_list"| type Eliom_mkforms.ELIOMFORMSIG.div_content_elt_list >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="dl"| type Xhtmltypes_duce.dl >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="dl_content"| type Xhtmltypes.dl_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="dt"| type Xhtmltypes_duce.dt >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="dt_content"| type Xhtmltypes.dt_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|@@ @class="alignleft"@@\\E|
+|<<a_api text="edit"| type XHTML.T.edit >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|>>
+|
+|<<a_api text="elt"| type XHTML.T.elt >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="em"| type Xhtmltypes_duce.em >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="em_content"| type Xhtmltypes.em_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="etag"| type Ocsigen_http_frame.etag >> ~[<<a_api | module Ocsigen_http_frame >>~]||
+|<<a_api text="events"| type Xhtmltypes_duce.events >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="extension"| type Ocsigen_extensions.extension >> ~[<<a_api | module Ocsigen_extensions >>~]|<<div class="info"|~For each ~<site~> tag in the configuration file~, 
+    you can set the extensions you want~.
+>>
+|
+|<<a_api text="extension2"| type Ocsigen_extensions.extension2 >> ~[<<a_api | module Ocsigen_extensions >>~]||
+|@@ @class="alignleft"@@\\F|
+|<<a_api text="fieldset"| type Xhtmltypes_duce.fieldset >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="fieldset_content"| type Xhtmltypes.fieldset_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="file_descr"| type Lwt_unix.file_descr >> ~[<<a_api | module Lwt_unix >>~]||
+|<<a_api text="file_info"| type Ocsigen_extensions.file_info >> ~[<<a_api | module Ocsigen_extensions >>~]|<<div class="info"|~The files sent in the request
+>>
+|
+|<<a_api text="flow"| type XHTML.T.SPECIAL.flow >> ~[<<a_api | module XHTML.T.SPECIAL >>~]||
+|<<a_api text="flow"| type XHTML.T.TABLES.flow >> ~[<<a_api | module XHTML.T.TABLES >>~]||
+|<<a_api text="flow"| type XHTML.T.FORMS.flow >> ~[<<a_api | module XHTML.T.FORMS >>~]||
+|<<a_api text="flow"| type XHTML.T.PRESENTATION.flow >> ~[<<a_api | module XHTML.T.PRESENTATION >>~]||
+|<<a_api text="flow"| type XHTML.T.LIST.flow >> ~[<<a_api | module XHTML.T.LIST >>~]||
+|<<a_api text="flow"| type XHTML.T.HYPERTEXT.flow >> ~[<<a_api | module XHTML.T.HYPERTEXT >>~]||
+|<<a_api text="flow"| type XHTML.T.TEXT.flow >> ~[<<a_api | module XHTML.T.TEXT >>~]||
+|<<a_api text="flow"| type XHTML.T.flow >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="flow_sans_label"| type XHTML.T.FORMS.flow_sans_label >> ~[<<a_api | module XHTML.T.FORMS >>~]||
+|<<a_api text="flow_sans_table"| type XHTML.T.flow_sans_table >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="flows"| type Xhtmltypes_duce.flows >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="focus"| type Xhtmltypes_duce.focus >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="fontstyle"| type Xhtmltypes_duce.fontstyle >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="form"| type Xhtmltypes_duce.form >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="form"| type XHTML.T.FORMS.form >> ~[<<a_api | module XHTML.T.FORMS >>~]||
+|<<a_api text="form"| type Xhtmltypes.form >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="form_attrib"| type Xhtmltypes.form_attrib >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="form_attrib_t"| type Eliom_mkforms.FORMCREATE.form_attrib_t >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="form_attrib_t"| type Eliom_mkforms.ELIOMFORMSIG.form_attrib_t >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="form_attrs"| type Xhtmltypes_duce.form_attrs >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="form_content"| type Xhtmltypes_duce.form_content >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="form_content"| type Xhtmltypes.form_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="form_content_elt"| type Eliom_mkforms.FORMCREATE.form_content_elt >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="form_content_elt"| type Eliom_mkforms.ELIOMFORMSIG.form_content_elt >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="form_content_elt_list"| type Eliom_mkforms.FORMCREATE.form_content_elt_list >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="form_content_elt_list"| type Eliom_mkforms.ELIOMFORMSIG.form_content_elt_list >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="form_elt"| type Eliom_mkforms.FORMCREATE.form_elt >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="form_elt"| type Eliom_mkforms.ELIOMFORMSIG.form_elt >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="formctrl"| type XHTML.T.FORMS.formctrl >> ~[<<a_api | module XHTML.T.FORMS >>~]||
+|<<a_api text="formctrl_sans_label"| type XHTML.T.FORMS.formctrl_sans_label >> ~[<<a_api | module XHTML.T.FORMS >>~]||
+|<<a_api text="fpi"| type XHTML.T.fpi >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~A character string representing an ~S~G~M~L ~Formal ~Public ~Identifier~.
+>>
+|
+|<<a_api text="frametarget"| type XHTML.T.frametarget >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~Frame name used as destination for results of certain actions~.
+>>
+|
+|@@ @class="alignleft"@@\\G|
+|<<a_api text="get_attached_service_kind"| type Eliom_services.get_attached_service_kind >> ~[<<a_api | module Eliom_services >>~]||
+|<<a_api text="get_service_kind"| type Eliom_services.get_service_kind >> ~[<<a_api | module Eliom_services >>~]||
+|<<a_api text="getpost"| type Eliom_services.getpost >> ~[<<a_api | module Eliom_services >>~]||
+|@@ @class="alignleft"@@\\H|
+|<<a_api text="h1"| type Xhtmltypes_duce.h1 >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="h1_content"| type Xhtmltypes.h1_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="h2"| type Xhtmltypes_duce.h2 >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="h2_content"| type Xhtmltypes.h2_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="h3"| type Xhtmltypes_duce.h3 >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="h3_content"| type Xhtmltypes.h3_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="h4"| type Xhtmltypes_duce.h4 >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="h4_content"| type Xhtmltypes.h4_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="h5"| type Xhtmltypes_duce.h5 >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="h5_content"| type Xhtmltypes.h5_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="h6"| type Xhtmltypes_duce.h6 >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="h6_content"| type Xhtmltypes.h6_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="head"| type Xhtmltypes_duce.head >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="head_content"| type Xhtmltypes.head_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="head_misc"| type Xhtmltypes_duce.head_misc >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="heading"| type Xhtmltypes_duce.heading >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="heading"| type XHTML.T.TEXT.heading >> ~[<<a_api | module XHTML.T.TEXT >>~]||
+|<<a_api text="heading"| type XHTML.T.heading >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="hierarchical_site"| type Eliom_duce_tools.hierarchical_site >> ~[<<a_api | module Eliom_duce_tools >>~]||
+|<<a_api text="hierarchical_site"| type Eliom_tools.hierarchical_site >> ~[<<a_api | module Eliom_tools >>~]|<<div class="info"|~The type of hierarchical sites~.
+>>
+|
+|<<a_api text="hierarchical_site_item"| type Eliom_duce_tools.hierarchical_site_item >> ~[<<a_api | module Eliom_duce_tools >>~]||
+|<<a_api text="hierarchical_site_item"| type Eliom_tools.hierarchical_site_item >> ~[<<a_api | module Eliom_tools >>~]||
+|<<a_api text="hr"| type Xhtmltypes_duce.hr >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="hr_content"| type Xhtmltypes.hr_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="html"| type Xhtmltypes_duce.html >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="html"| type XHTML.T.html >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="html_content"| type Xhtmltypes.html_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="http_header"| type Ocsigen_http_frame.Http_header.http_header >> ~[<<a_api | module Ocsigen_http_frame.Http_header >>~]||
+|<<a_api text="http_method"| type Ocsigen_http_frame.Http_header.http_method >> ~[<<a_api | module Ocsigen_http_frame.Http_header >>~]||
+|<<a_api text="http_mode"| type Ocsigen_http_frame.Http_header.http_mode >> ~[<<a_api | module Ocsigen_http_frame.Http_header >>~]||
+|@@ @class="alignleft"@@\\I|
+|<<a_api text="i"| type Xhtmltypes_duce.i >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="i18n"| type Xhtmltypes_duce.i18n >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="i18n"| type XHTML.T.i18n >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="i18nclass"| type XHTML.T.i18nclass >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="i_content"| type Xhtmltypes.i_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="id"| type Xhtmltypes_duce.id >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="id"| type XHTML.T.id >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~A document~-unique identifier
+>>
+|
+|<<a_api text="idref"| type XHTML.T.idref >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~A reference to a document~-unique identifier
+>>
+|
+|<<a_api text="idrefs"| type XHTML.T.idrefs >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~A space~-separated list of references to document~-unique identifiers
+>>
+|
+|<<a_api text="img"| type Xhtmltypes_duce.img >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="img"| type Xhtmltypes.img >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="img_attrib"| type Xhtmltypes.img_attrib >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="img_content"| type Xhtmltypes.img_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="in_channel"| type Lwt_chan.in_channel >> ~[<<a_api | module Lwt_chan >>~]|<<div class="info"|~Cooperative input channels
+>>
+|
+|<<a_api text="inline"| type Xhtmltypes_duce.inline >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="inline"| type XHTML.T.SPECIAL.inline >> ~[<<a_api | module XHTML.T.SPECIAL >>~]||
+|<<a_api text="inline"| type XHTML.T.IMAGE.inline >> ~[<<a_api | module XHTML.T.IMAGE >>~]||
+|<<a_api text="inline"| type XHTML.T.FORMS.inline >> ~[<<a_api | module XHTML.T.FORMS >>~]||
+|<<a_api text="inline"| type XHTML.T.PRESENTATION.inline >> ~[<<a_api | module XHTML.T.PRESENTATION >>~]||
+|<<a_api text="inline"| type XHTML.T.HYPERTEXT.inline >> ~[<<a_api | module XHTML.T.HYPERTEXT >>~]||
+|<<a_api text="inline"| type XHTML.T.TEXT.inline >> ~[<<a_api | module XHTML.T.TEXT >>~]||
+|<<a_api text="inline"| type XHTML.T.inline >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="inline_forms"| type Xhtmltypes_duce.inline_forms >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="inline_sans_a_mix"| type XHTML.T.inline_sans_a_mix >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="inline_sans_label"| type XHTML.T.FORMS.inline_sans_label >> ~[<<a_api | module XHTML.T.FORMS >>~]||
+|<<a_api text="inline_sans_label"| type XHTML.T.inline_sans_label >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="inlinemix"| type Xhtmltypes.inlinemix >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="inlines"| type Xhtmltypes_duce.inlines >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="input"| type Xhtmltypes_duce.input >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="input"| type Xhtmltypes.input >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="input_attrib"| type Xhtmltypes.input_attrib >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="input_attrib_t"| type Eliom_mkforms.FORMCREATE.input_attrib_t >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="input_attrib_t"| type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="input_attrs"| type Xhtmltypes_duce.input_attrs >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="input_content"| type Xhtmltypes.input_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="input_elt"| type Eliom_mkforms.FORMCREATE.input_elt >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="input_elt"| type Eliom_mkforms.ELIOMFORMSIG.input_elt >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="input_type_t"| type Eliom_mkforms.FORMCREATE.input_type_t >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="input_type_t"| type Eliom_mkforms.ELIOMFORMSIG.input_type_t >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="input_type_values"| type Xhtmltypes_duce.input_type_values >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="ins"| type Xhtmltypes_duce.ins >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="ins_content"| type Xhtmltypes.ins_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="internal"| type Eliom_services.internal >> ~[<<a_api | module Eliom_services >>~]||
+|<<a_api text="internal_service_kind"| type Eliom_services.internal_service_kind >> ~[<<a_api | module Eliom_services >>~]||
+|@@ @class="alignleft"@@\\K|
+|<<a_api text="kbd"| type Xhtmltypes_duce.kbd >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="kbd_content"| type Xhtmltypes.kbd_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|@@ @class="alignleft"@@\\L|
+|<<a_api text="label"| type Xhtmltypes_duce.label >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="label_content"| type Xhtmltypes.label_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="languagecode"| type XHTML.T.languagecode >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~A language code~, as per ~R~F~C~3~0~6~6~.
+>>
+|
+|<<a_api text="legend"| type Xhtmltypes_duce.legend >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="legend_content"| type Xhtmltypes.legend_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="length"| type XHTML.T.length >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~The value may be either in pixels or a percentage of the available
+    horizontal or vertical space~.
+>>
+|
+|<<a_api text="li"| type Xhtmltypes_duce.li >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="li_content"| type Xhtmltypes.li_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="link"| type Xhtmltypes_duce.link >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="link"| type Xhtmltypes.link >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="link_attrib"| type Xhtmltypes.link_attrib >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="link_attrib_t"| type Eliom_mkforms.FORMCREATE.link_attrib_t >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="link_attrib_t"| type Eliom_mkforms.ELIOMFORMSIG.link_attrib_t >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="link_attrs"| type Xhtmltypes_duce.link_attrs >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="link_content"| type Xhtmltypes.link_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="link_elt"| type Eliom_mkforms.FORMCREATE.link_elt >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="link_elt"| type Eliom_mkforms.ELIOMFORMSIG.link_elt >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="linktypes"| type XHTML.T.linktypes >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~Authors may use the following recognized link types~, listed here with
+    their conventional interpretations~.
+>>
+|
+|<<a_api text="list"| type XHTML.T.LIST.list >> ~[<<a_api | module XHTML.T.LIST >>~]||
+|<<a_api text="listnames"| type Eliom_parameters.listnames >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~Type of the iterator used to construct forms from lists
+>>
+|
+|<<a_api text="lists"| type Xhtmltypes_duce.lists >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|@@ @class="alignleft"@@\\M|
+|<<a_api text="main_page"| type Eliom_duce_tools.main_page >> ~[<<a_api | module Eliom_duce_tools >>~]||
+|<<a_api text="main_page"| type Eliom_tools.main_page >> ~[<<a_api | module Eliom_tools >>~]||
+|<<a_api text="map_content"| type Xhtmltypes.map_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="mediadesc"| type XHTML.T.mediadesc >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~The ~Media~Desc attribute is a comma~-separated list of media descriptors~.
+>>
+|
+|<<a_api text="meta"| type Xhtmltypes_duce.meta >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="meta_content"| type Xhtmltypes.meta_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="misc"| type Xhtmltypes_duce.misc >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="misc"| type XHTML.T.misc >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="misc_inline"| type Xhtmltypes_duce.misc_inline >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="mode"| type Ocsigen_http_com.mode >> ~[<<a_api | module Ocsigen_http_com >>~]||
+|<<a_api text="multilength"| type XHTML.T.multilength >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~The value may be a ~Length or a relative length~.
+>>
+|
+|<<a_api text="multilengths"| type XHTML.T.multilengths >> ~[<<a_api | module XHTML.T >>~]||
+|@@ @class="alignleft"@@\\N|
+|<<a_api text="na_s"| type Eliom_services.na_s >> ~[<<a_api | module Eliom_services >>~]||
+|<<a_api text="name"| type XHTML.T.name >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~A name with the same character constraints as ~I~D above
+>>
+|
+|<<a_api text="nmtoken"| type XHTML.T.nmtoken >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~A name composed of only name tokens as defined in ~X~M~L ~1~.~0
+>>
+|
+|<<a_api text="nmtokens"| type XHTML.T.nmtokens >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~One or more white space separated ~N~M~T~O~K~E~N values
+>>
+|
+|<<a_api text="nonattached"| type Eliom_services.nonattached >> ~[<<a_api | module Eliom_services >>~]||
+|<<a_api text="noscript"| type Xhtmltypes_duce.noscript >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="noscript_content"| type Xhtmltypes.noscript_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="notag"| type Xhtmltypes.notag >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="nullary"| type XHTML.T.nullary >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="number"| type XHTML.T.number >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~One or more digits~.
+>>
+|
+|@@ @class="alignleft"@@\\O|
+|<<a_api text="object_content"| type Xhtmltypes.object_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="ol"| type Xhtmltypes_duce.ol >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="ol_content"| type Xhtmltypes.ol_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="one_page"| type Eliom_duce_tools.one_page >> ~[<<a_api | module Eliom_duce_tools >>~]||
+|<<a_api text="one_page"| type Eliom_tools.one_page >> ~[<<a_api | module Eliom_tools >>~]||
+|<<a_api text="oneopt"| type Eliom_parameters.oneopt >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~This type is used by some form widgets like 
+   <<a_api | val Eliom_predefmod.XHTMLFORMSSIG.int_image_input >> that may be used against services 
+   expecting one parameter of that name
+   or services expecting an optional parameter of that name~.
+>>
+|
+|<<a_api text="optgroup"| type Xhtmltypes_duce.optgroup >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="optgroup"| type Xhtmltypes.optgroup >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="optgroup_attrib"| type Xhtmltypes.optgroup_attrib >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="optgroup_attrib_t"| type Eliom_mkforms.FORMCREATE.optgroup_attrib_t >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="optgroup_attrib_t"| type Eliom_mkforms.ELIOMFORMSIG.optgroup_attrib_t >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="optgroup_attrs"| type Xhtmltypes_duce.optgroup_attrs >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="optgroup_content"| type Xhtmltypes.optgroup_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="option"| type Xhtmltypes_duce.option >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="option_attrib"| type Xhtmltypes.option_attrib >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="option_attrib_t"| type Eliom_mkforms.FORMCREATE.option_attrib_t >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="option_attrib_t"| type Eliom_mkforms.ELIOMFORMSIG.option_attrib_t >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="option_attrs"| type Xhtmltypes_duce.option_attrs >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="option_content"| type Xhtmltypes.option_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="option_elt"| type Eliom_mkforms.FORMCREATE.option_elt >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="option_elt_list"| type Eliom_mkforms.FORMCREATE.option_elt_list >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="options"| type Eliom_mkreg.REGCREATE.options >> ~[<<a_api | module Eliom_mkreg.REGCREATE >>~]||
+|<<a_api text="options"| type Eliom_mkreg.ELIOMREGSIG1.options >> ~[<<a_api | module Eliom_mkreg.ELIOMREGSIG1 >>~]||
+|<<a_api text="out_channel"| type Lwt_chan.out_channel >> ~[<<a_api | module Lwt_chan >>~]||
+|@@ @class="alignleft"@@\\P|
+|<<a_api text="p"| type Xhtmltypes_duce.p >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="p_content"| type Xhtmltypes.p_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="page"| type Eliom_mkreg.REGCREATE.page >> ~[<<a_api | module Eliom_mkreg.REGCREATE >>~]||
+|<<a_api text="page"| type Eliom_mkreg.ELIOMREGSIG1.page >> ~[<<a_api | module Eliom_mkreg.ELIOMREGSIG1 >>~]||
+|<<a_api text="param"| type Xhtmltypes_duce.param >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="param_content"| type Xhtmltypes.param_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="param_name"| type Eliom_parameters.param_name >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~Type for names of page parameters ~(given to the functions
+   to construct forms~, for example in <<a_api | val Eliom_predefmod.XHTMLFORMSSIG.get_form >>~)~.
+>>
+|
+|<<a_api text="params_type"| type Eliom_parameters.params_type >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~Type for parameters of a web page~.
+>>
+|
+|<<a_api text="parse_fun"| type Ocsigen_extensions.parse_fun >> ~[<<a_api | module Ocsigen_extensions >>~]||
+|<<a_api text="parse_host"| type Ocsigen_extensions.parse_host >> ~[<<a_api | module Ocsigen_extensions >>~]||
+|<<a_api text="pcdata"| type XHTML.T.pcdata >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~Processed character data
+>>
+|
+|<<a_api text="pcdata"| type Xhtmltypes.pcdata >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="pcdata_elt"| type Eliom_mkforms.FORMCREATE.pcdata_elt >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="pcdata_elt"| type Eliom_mkforms.ELIOMFORMSIG.pcdata_elt >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="persistent_session"| type Eliom_sessions.Session_admin.persistent_session >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]||
+|<<a_api text="persistent_table"| type Eliom_sessions.persistent_table >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~The type of persistent session data tables~.
+>>
+|
+|<<a_api text="phrase"| type Xhtmltypes_duce.phrase >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="pixels"| type XHTML.T.pixels >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="plus"| type XHTML.T.plus >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~Plus ~'~+~' requires at least one child~.
+>>
+|
+|<<a_api text="post_attached_service_kind"| type Eliom_services.post_attached_service_kind >> ~[<<a_api | module Eliom_services >>~]||
+|<<a_api text="post_service_kind"| type Eliom_services.post_service_kind >> ~[<<a_api | module Eliom_services >>~]||
+|<<a_api text="pre"| type Xhtmltypes_duce.pre >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="pre_content"| type Xhtmltypes.pre_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="precontent"| type XHTML.T.precontent >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="proto"| type Ocsigen_http_frame.Http_header.proto >> ~[<<a_api | module Ocsigen_http_frame.Http_header >>~]||
+|@@ @class="alignleft"@@\\Q|
+|<<a_api text="q"| type Xhtmltypes_duce.q >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="q_content"| type Xhtmltypes.q_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|@@ @class="alignleft"@@\\R|
+|<<a_api text="region"| type Lwt_util.region >> ~[<<a_api | module Lwt_util >>~]||
+|<<a_api text="registrable"| type Eliom_services.registrable >> ~[<<a_api | module Eliom_services >>~]|<<div class="info"|~You can call register function only on registrable services
+>>
+|
+|<<a_api text="request_info"| type Ocsigen_extensions.request_info >> ~[<<a_api | module Ocsigen_extensions >>~]|<<div class="info"|~The request
+>>
+|
+|<<a_api text="request_state"| type Ocsigen_extensions.request_state >> ~[<<a_api | module Ocsigen_extensions >>~]||
+|<<a_api text="result"| type Ocsigen_http_frame.result >> ~[<<a_api | module Ocsigen_http_frame >>~]|<<div class="info"|~The type of answers to send
+>>
+|
+|<<a_api text="result_to_send"| type Eliom_services.result_to_send >> ~[<<a_api | module Eliom_services >>~]|<<div class="info"|~The type to send if you want to create your own modules for generating
+   pages
+>>
+|
+|@@ @class="alignleft"@@\\S|
+|<<a_api text="samp"| type Xhtmltypes_duce.samp >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="samp_content"| type Xhtmltypes.samp_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="scope"| type Xhtmltypes_duce.scope >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="script"| type Xhtmltypes_duce.script >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="script"| type XHTML.T.script >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~Script data can be the content of the <<span class='code'|"script">> element and the
+    value of intrinsic event attributes~.
+>>
+|
+|<<a_api text="script"| type Xhtmltypes.script >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="script_attrib"| type Xhtmltypes.script_attrib >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="script_attrib_t"| type Eliom_mkforms.FORMCREATE.script_attrib_t >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="script_attrib_t"| type Eliom_mkforms.ELIOMFORMSIG.script_attrib_t >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="script_attrs"| type Xhtmltypes_duce.script_attrs >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="script_content"| type Xhtmltypes.script_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="script_elt"| type Eliom_mkforms.FORMCREATE.script_elt >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="script_elt"| type Eliom_mkforms.ELIOMFORMSIG.script_elt >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="scripttag"| type XHTML.T.scripttag >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="select"| type Xhtmltypes_duce.select >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="select"| type Xhtmltypes.select >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="select_attrib"| type Xhtmltypes.select_attrib >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="select_attrib_t"| type Eliom_mkforms.FORMCREATE.select_attrib_t >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="select_attrib_t"| type Eliom_mkforms.ELIOMFORMSIG.select_attrib_t >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="select_attrs"| type Xhtmltypes_duce.select_attrs >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="select_content"| type Xhtmltypes_duce.select_content >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="select_content"| type Xhtmltypes.select_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="select_content_elt"| type Eliom_mkforms.FORMCREATE.select_content_elt >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="select_content_elt"| type Eliom_mkforms.ELIOMFORMSIG.select_content_elt >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="select_content_elt_list"| type Eliom_mkforms.FORMCREATE.select_content_elt_list >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="select_content_elt_list"| type Eliom_mkforms.ELIOMFORMSIG.select_content_elt_list >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="select_elt"| type Eliom_mkforms.FORMCREATE.select_elt >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="select_elt"| type Eliom_mkforms.ELIOMFORMSIG.select_elt >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="select_opt"| type Eliom_predefmod.XHTMLFORMSSIG.select_opt >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]||
+|<<a_api text="select_opt"| type Eliom_mkforms.ELIOMFORMSIG.select_opt >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="selectoption"| type Xhtmltypes.selectoption >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="sender_type"| type Ocsigen_http_com.sender_type >> ~[<<a_api | module Ocsigen_http_com >>~]||
+|<<a_api text="servcoserv"| type Eliom_services.servcoserv >> ~[<<a_api | module Eliom_services >>~]||
+|<<a_api text="server_params"| type Eliom_sessions.server_params >> ~[<<a_api | module Eliom_sessions >>~]||
+|<<a_api text="service"| type Eliom_services.service >> ~[<<a_api | module Eliom_services >>~]|<<div class="info"|~Type of services~.
+>>
+|
+|<<a_api text="service_kind"| type Eliom_services.service_kind >> ~[<<a_api | module Eliom_services >>~]||
+|<<a_api text="service_session"| type Eliom_sessions.Session_admin.service_session >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]||
+|<<a_api text="session_data"| type Eliom_sessions.session_data >> ~[<<a_api | module Eliom_sessions >>~]||
+|<<a_api text="setone"| type Eliom_parameters.setone >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~This type is used by some form widgets like 
+   <<a_api | val Eliom_predefmod.XHTMLFORMSSIG.int_button >> that may be used against services 
+   expecting one parameter of that name~, 
+   or services expecting any number of parameters of that name~.
+>>
+|
+|<<a_api text="setoneopt"| type Eliom_parameters.setoneopt >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~This type is used by some form widgets like 
+   <<a_api | val Eliom_predefmod.XHTMLFORMSSIG.int_input >> that may be used against services 
+   expecting one parameter of that name~, 
+   or services expecting an optional parameter of that name~, 
+   or services expecting any number of parameters of that name~.
+>>
+|
+|<<a_api text="shape"| type Xhtmltypes_duce.shape >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="shape"| type XHTML.T.shape >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="slot"| type Ocsigen_http_com.slot >> ~[<<a_api | module Ocsigen_http_com >>~]||
+|<<a_api text="small"| type Xhtmltypes_duce.small >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="small_content"| type Xhtmltypes.small_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="socket"| type Lwt_ssl.socket >> ~[<<a_api | module Lwt_ssl >>~]||
+|<<a_api text="soption"| type Eliom_predefmod.XHTMLFORMSSIG.soption >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]||
+|<<a_api text="soption"| type Eliom_mkforms.ELIOMFORMSIG.soption >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="span"| type Xhtmltypes_duce.span >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="span_content"| type Xhtmltypes.span_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="special"| type Xhtmltypes_duce.special >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="special_pre"| type Xhtmltypes_duce.special_pre >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="star"| type XHTML.T.star >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~Star ~'~*~' denotes any number of children~, uncluding zero~.
+>>
+|
+|<<a_api text="store"| type Ocsipersist.store >> ~[<<a_api | module Ocsipersist >>~]|<<div class="info"|~Data are divided into stores~.
+>>
+|
+|<<a_api text="strong"| type Xhtmltypes_duce.strong >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="strong_content"| type Xhtmltypes.strong_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="style"| type Xhtmltypes_duce.style >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="style_content"| type Xhtmltypes.style_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="sub"| type Xhtmltypes_duce.sub >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="sub_content"| type Xhtmltypes.sub_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="suff"| type Eliom_services.suff >> ~[<<a_api | module Eliom_services >>~]||
+|<<a_api text="sup"| type Xhtmltypes_duce.sup >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="sup_content"| type Xhtmltypes.sup_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|@@ @class="alignleft"@@\\T|
+|<<a_api text="t"| type Ocsipersist.t >> ~[<<a_api | module Ocsipersist >>~]|<<div class="info"|~Type of persistent data
+>>
+|
+|<<a_api text="t"| type Ocsigen_http_frame.HTTP_CONTENT.t >> ~[<<a_api | module Ocsigen_http_frame.HTTP_CONTENT >>~]||
+|<<a_api text="t"| type Ocsigen_http_frame.t >> ~[<<a_api | module Ocsigen_http_frame >>~]|<<div class="info"|~The type of ~H~T~T~P frames~.
+>>
+|
+|<<a_api text="t"| type XHTML.T.BASE.t >> ~[<<a_api | module XHTML.T.BASE >>~]||
+|<<a_api text="t"| type XHTML.T.LINK.t >> ~[<<a_api | module XHTML.T.LINK >>~]||
+|<<a_api text="t"| type XHTML.T.STYLE_SHEET.t >> ~[<<a_api | module XHTML.T.STYLE_SHEET >>~]||
+|<<a_api text="t"| type XHTML.T.METAINFORMATION.t >> ~[<<a_api | module XHTML.T.METAINFORMATION >>~]||
+|<<a_api text="t"| type XHTML.T.TABLES.t >> ~[<<a_api | module XHTML.T.TABLES >>~]||
+|<<a_api text="t"| type XHTML.T.FORMS.t >> ~[<<a_api | module XHTML.T.FORMS >>~]||
+|<<a_api text="t"| type XHTML.T.LIST.t >> ~[<<a_api | module XHTML.T.LIST >>~]||
+|<<a_api text="t"| type XHTML.T.STRUCTURE.t >> ~[<<a_api | module XHTML.T.STRUCTURE >>~]||
+|<<a_api text="t"| type Lwt_timeout.t >> ~[<<a_api | module Lwt_timeout >>~]||
+|<<a_api text="t"| type Lwt.t >> ~[<<a_api | module Lwt >>~]|<<div class="info"|~The type of threads returning a result of type <<span class='code'|~'a>>~.
+>>
+|
+|<<a_api text="table"| type Xhtmltypes_duce.table >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="table"| type Ocsipersist.table >> ~[<<a_api | module Ocsipersist >>~]|<<div class="info"|~Type of persistent table
+>>
+|
+|<<a_api text="table_content"| type Xhtmltypes.table_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="tbody"| type Xhtmltypes_duce.tbody >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="tbody_content"| type Xhtmltypes.tbody_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="td"| type Xhtmltypes_duce.td >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="td_content"| type Xhtmltypes.td_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="text"| type XHTML.T.text >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~Arbitrary textual data~, likely meant to be human~-readable~.
+>>
+|
+|<<a_api text="textarea"| type Xhtmltypes_duce.textarea >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="textarea"| type Xhtmltypes.textarea >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="textarea_attrib"| type Xhtmltypes.textarea_attrib >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="textarea_attrib_t"| type Eliom_mkforms.FORMCREATE.textarea_attrib_t >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="textarea_attrib_t"| type Eliom_mkforms.ELIOMFORMSIG.textarea_attrib_t >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="textarea_attrs"| type Xhtmltypes_duce.textarea_attrs >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="textarea_content"| type Xhtmltypes.textarea_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="textarea_elt"| type Eliom_mkforms.FORMCREATE.textarea_elt >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="textarea_elt"| type Eliom_mkforms.ELIOMFORMSIG.textarea_elt >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="tfoot"| type Xhtmltypes_duce.tfoot >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="tfoot_content"| type Xhtmltypes.tfoot_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="th"| type Xhtmltypes_duce.th >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="th_content"| type Xhtmltypes.th_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="thead"| type Xhtmltypes_duce.thead >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="thead_content"| type Xhtmltypes.thead_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="timeout"| type Eliom_sessions.Session_admin.timeout >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]|<<div class="info"|~Type used to describe session timeouts
+>>
+|
+|<<a_api text="title"| type Xhtmltypes_duce.title >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="title_content"| type Xhtmltypes.title_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="tr"| type Xhtmltypes_duce.tr >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="tr_content"| type Xhtmltypes.tr_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="tt"| type Xhtmltypes_duce.tt >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="tt_content"| type Xhtmltypes.tt_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|@@ @class="alignleft"@@\\U|
+|<<a_api text="ud_string"| type Ocsigen_extensions.ud_string >> ~[<<a_api | module Ocsigen_extensions >>~]|<<div class="info"|~The type for string that may contain a ~$u~(~.~.~.~)
+>>
+|
+|<<a_api text="ul"| type Xhtmltypes_duce.ul >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="ul_content"| type Xhtmltypes.ul_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="unary"| type XHTML.T.unary >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="uri"| type XHTML.T.uri >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="uri"| type Eliom_mkforms.FORMCREATE.uri >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="uri"| type Eliom_mkforms.ELIOMFORMSIG.uri >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]||
+|<<a_api text="uris"| type XHTML.T.uris >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~A space~-separated list of ~Uniform ~Resource ~Identifiers~, as per ~R~F~C~2~3~9~6~.
+>>
+|
+|<<a_api text="url_path"| type Ocsigen_http_frame.url_path >> ~[<<a_api | module Ocsigen_http_frame >>~]||
+|<<a_api text="url_path"| type Ocsigen_extensions.url_path >> ~[<<a_api | module Ocsigen_extensions >>~]|<<div class="info"|~The type of ~U~R~L paths~.
+>>
+|
+|@@ @class="alignleft"@@\\V|
+|<<a_api text="valign"| type Xhtmltypes_duce.valign >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="var"| type Xhtmltypes_duce.var >> ~[<<a_api | module Xhtmltypes_duce >>~]||
+|<<a_api text="var_content"| type Xhtmltypes.var_content >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="virtual_host_part"| type Ocsigen_extensions.virtual_host_part >> ~[<<a_api | module Ocsigen_extensions >>~]||
+|<<a_api text="virtual_hosts"| type Ocsigen_extensions.virtual_hosts >> ~[<<a_api | module Ocsigen_extensions >>~]||
+|<<a_api text="volatile_table"| type Eliom_sessions.volatile_table >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~The type of ~(volatile~) session data tables~.
+>>
+|
+|@@ @class="alignleft"@@\\X|
+|<<a_api text="xhtml"| type Xhtmltypes.xhtml >> ~[<<a_api | module Xhtmltypes >>~]||
+|<<a_api text="xml"| type Simplexmlparser.xml >> ~[<<a_api | module Simplexmlparser >>~]||
+\\

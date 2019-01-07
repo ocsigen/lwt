@@ -1,0 +1,207 @@
+==
+
+==@@id="2_OcsigenReferencemanual"@@~Ocsigen ~- ~Reference manual==
+\\
+
+
+
+===@@id="3_Ocsigen"@@~Ocsigen===
+\\
+
+
+
+====@@id="4_PersistentdatawritinginthelogsconfigurationfileextensionXhtmlprettyprinting"@@~Persistent data~, writing in the logs~, configuration file extension~, ~Xhtml pretty printing====
+
+
+|<<a_api | module Ocsipersist >>|<<div class="info"|~Persistent data on hard disk~.
+>>
+|
+|<<a_api | module Ocsigen_messages >>|<<div class="info"|~Writing messages in the logs
+>>
+|
+|<<a_api | module Ocsigen_parseconfig >>|<<div class="info"|~Config file parsing
+>>
+|
+|<<a_api | module Simplexmlparser >>|<<div class="info"|~Basic camlp~4 parser for xml
+>>
+|
+|<<a_api | module Xhtmlpretty >>|<<div class="info"|~X~H~T~M~L pretty printing
+>>
+|
+|<<a_api | module Xhtmlcompact >>|<<div class="info"|~X~H~T~M~L "compact printing" ~(no pretty printing~, no line breaks added~)
+>>
+|
+
+\\
+
+
+
+====@@id="4_ExtendingOcsigen"@@~Extending ~Ocsigen====
+
+
+|<<a_api | module Ocsigen_extensions >>|<<div class="info"|~Writing extensions for ~Ocsigen
+>>
+|
+|<<a_api | module Ocsigen_headers >>|<<div class="info"|~Getting informations from ~H~T~T~P header~.
+>>
+|
+|<<a_api | module Ocsigen_senders >>|<<div class="info"|~Functions to create results for various kinds of documents
+>>
+|
+|<<a_api | module Ocsigen_http_frame >>|<<div class="info"|~This table is to store cookie values for each path~.
+>>
+|
+|<<a_api | module Ocsigen_http_client >>|<<div class="info"|~Using ~Ocsigen as a ~H~T~T~P client
+>>
+|
+|<<a_api | module Ocsigen_http_com >>|<<div class="info"|~Sending and receiving ~H~T~T~P frames
+>>
+|
+|<<a_api | module Authbasic >>|<<div class="info"|~Module <<span class='code'|~Authbasic>>~: ~Basic ~H~T~T~P ~Authentication~.
+>>
+|
+
+\\
+
+
+
+===@@id="3_Lwt"@@~Lwt===
+\\
+
+
+
+|<<a_api | module Lwt >>|<<div class="info"|~Module <<span class='code'|~Lwt>>~: cooperative light~-weight threads~.
+>>
+|
+|<<a_api | module Lwt_unix >>|<<div class="info"|~Module <<span class='code'|~Lwt~_unix>>~: thread~-compatible system calls
+>>
+|
+|<<a_api | module Lwt_chan >>|<<div class="info"|~Module <<span class='code'|~Lwt~_chan>>~: cooperative~, <<span class='code'|~Pervasives>>~-like~, ~I~/~O functions
+>>
+|
+|<<a_api | module Lwt_ssl >>|<<div class="info"|~Are we using an ~S~S~L socket~?
+>>
+|
+|<<a_api | module Lwt_util >>|<<div class="info"|~Concurrency
+>>
+|
+|<<a_api | module Lwt_lib >>|<<div class="info"|~Cooperative getaddrinfo with cache ~(using ~Lwt~_preemptive~.detach~)
+>>
+|
+|<<a_api | module Lwt_timeout >>|<<div class="info"|set the default handler for exception occurring after a timeout~.
+>>
+|
+|<<a_api | module Lwt_preemptive >>|<<div class="info"|~This module allows to mix preemptive threads with <<a_api | module Lwt >>
+   cooperative threads~.
+>>
+|
+
+\\
+
+
+
+===@@id="3_Eliom"@@~Eliom===
+\\
+
+
+
+====@@id="4_Mainmodules"@@~Main modules====
+
+
+|<<a_api | module Eliom_services >>|<<div class="info"|~This module allows to define services~.
+>>
+|
+|<<a_api | module Eliom_parameters >>|<<div class="info"|~This module defines the values used to declare the type of service 
+   parameters~.
+>>
+|
+|<<a_api | module Eliom_sessions >>|<<div class="info"|~This module contains the functions you need to get ~(or set~)
+   information about the request or the session~.
+>>
+|
+|<<a_api | module Eliom_common >>|<<div class="info"|~Low level functions for ~Eliom~, exceptions and types~.
+>>
+|
+
+\\
+
+
+
+====@@id="4_GeneratingpageswithOcamlDuce"@@~Generating pages with ~Ocaml~Duce====
+
+
+|<<a_api | module Eliom_duce >>|<<div class="info"|~A module to generate pages using ~O~Camlduce
+>>
+|
+|<<a_api | module Xhtmltypes_duce >>|<<div class="info"|~This interface corresponds to the ~X~H~T~M~L ~1~.~0 ~Strict ~D~T~D~, for ~Ocamlduce~.
+>>
+|
+|<<a_api | module Eliom_duce_tools >>||
+
+\\
+
+
+
+====@@id="4_Generatingpagestypedwithpolymorphicvariants"@@~Generating pages typed with polymorphic variants====
+
+
+|<<a_api | module Eliom_predefmod.Xhtml >>|<<div class="info"|~Eliom forms and service registration functions for ~X~H~T~M~L
+>>
+|
+|<<a_api | module XHTML >>|<<div class="info"|~Typesafe constructors for ~X~H~T~M~L ~1~.~1 documents~.
+>>
+|
+|<<a_api | module Xhtmltypes >>|<<div class="info"|~X~H~T~M~L types with variants~.
+>>
+|
+|<<a_api | module Eliom_tools >>|<<div class="info"|~Predefined boxes for ~Eliom
+>>
+|
+
+\\
+
+
+
+====@@id="4_Otherkindsofpages"@@~Other kinds of pages====
+
+
+|<<a_api | module Eliom_predefmod >>|<<div class="info"|~This modules contains predefined modules for generating forms and
+   registering handlers~, for several types of pages~:
+   ~X~H~T~M~L pages typed with polymorphic variants~,
+   untyped ~(text~) pages~, actions~, redirections~, files ~.~.~.
+>>
+|
+
+\\
+
+
+
+====@@id="4_Creatingyourownkindsofpages"@@~Creating your own kinds of pages====
+
+
+|<<a_api | module Eliom_mkforms >>|<<div class="info"|~This module defines the functor to use to creates modules
+   generating form widgets for your own types of pages~.
+>>
+|
+|<<a_api | module Eliom_mkreg >>|<<div class="info"|~This module defines the functor to use to creates modules
+   generating functions to register services for your own types of pages~.
+>>
+|
+|<<a_api | module Xhtmlpretty >>|<<div class="info"|~X~H~T~M~L pretty printing
+>>
+|
+
+\\
+
+
+
+===@@id="3_Indexes"@@~Indexes===
+\\
+
+
+<a href="index_types.wiki">Index of types</a><br>
+<a href="index_exceptions.wiki">Index of exceptions</a><br>
+<a href="index_values.wiki">Index of values</a><br>
+<a href="index_modules.wiki">Index of modules</a><br>
+<a href="index_module_types.wiki">Index of module types</a><br>
+\\

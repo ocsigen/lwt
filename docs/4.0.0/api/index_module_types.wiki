@@ -1,0 +1,16 @@
+=Index of module types=
+
+|@@ @style="tet-align: left;"@@\\N|
+|@@class="odocwiki_index"@ @@<<a_api text="NumberIO"| module type Lwt_io.NumberIO >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~Common interface for reading~/writing integers in binary
+>>
+|
+|@@ @style="tet-align: left;"@@\\O|
+|@@class="odocwiki_index"@ @@<<a_api text="OrderedType"| module type Lwt_pqueue.OrderedType >> ~[<<a_api | module Lwt_pqueue >>~]|<<div class="odocwiki_info"|~Signature pairing an element type with an ordering function~.
+>>
+|
+|@@ @style="tet-align: left;"@@\\S|
+|@@class="odocwiki_index"@ @@<<a_api text="S"| module type Lwt_throttle.S >> ~[<<a_api | module Lwt_throttle >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="S"| module type Lwt_pqueue.S >> ~[<<a_api | module Lwt_pqueue >>~]|<<div class="odocwiki_info"|~Signature of priority queues~.
+>>
+|
+\\

@@ -1,0 +1,14 @@
+<<code language="ocaml" | ?timeout:float ->
+?env:string array ->
+?stderr:Lwt_process.redirection ->
+Lwt_process.command ->
+object
+  method close : Unix.process_status Lwt.t
+  method kill : int -> unit
+  method pid : int
+  method rusage : Lwt_unix.resource_usage Lwt.t
+  method state : state
+  method status : Unix.process_status Lwt.t
+  method stdin : Lwt_io.output_channel
+  method stdout : Lwt_io.input_channel
+end >>

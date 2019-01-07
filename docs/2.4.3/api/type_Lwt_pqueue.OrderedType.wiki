@@ -1,0 +1,4 @@
+<<code language="ocaml" | sig
+  type t
+  val compare : Lwt_pqueue.OrderedType.t -> Lwt_pqueue.OrderedType.t -> int
+end >>

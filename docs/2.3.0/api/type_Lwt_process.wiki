@@ -1,0 +1,214 @@
+<<code language="ocaml" | sig
+  type command = string * string array
+  val shell : string -> Lwt_process.command
+  type redirection =
+      [ `Close
+      | `Dev_null
+      | `FD_copy of Unix.file_descr
+      | `FD_move of Unix.file_descr
+      | `Keep ]
+  val exec :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stdin:Lwt_process.redirection ->
+    ?stdout:Lwt_process.redirection ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command -> Unix.process_status Lwt.t
+  val pread :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stdin:Lwt_process.redirection ->
+    ?stderr:Lwt_process.redirection -> Lwt_process.command -> string Lwt.t
+  val pread_chars :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stdin:Lwt_process.redirection ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command -> char Lwt_stream.t
+  val pread_line :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stdin:Lwt_process.redirection ->
+    ?stderr:Lwt_process.redirection -> Lwt_process.command -> string Lwt.t
+  val pread_lines :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stdin:Lwt_process.redirection ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command -> string Lwt_stream.t
+  val pwrite :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stdout:Lwt_process.redirection ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command -> string -> unit Lwt.t
+  val pwrite_chars :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stdout:Lwt_process.redirection ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command -> char Lwt_stream.t -> unit Lwt.t
+  val pwrite_line :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stdout:Lwt_process.redirection ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command -> string -> unit Lwt.t
+  val pwrite_lines :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stdout:Lwt_process.redirection ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command -> string Lwt_stream.t -> unit Lwt.t
+  val pmap :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command -> string -> string Lwt.t
+  val pmap_chars :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command -> char Lwt_stream.t -> char Lwt_stream.t
+  val pmap_line :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command -> string -> string Lwt.t
+  val pmap_lines :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command -> string Lwt_stream.t -> string Lwt_stream.t
+  type state = Running | Exited of Unix.process_status
+  class process_none :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stdin:Lwt_process.redirection ->
+    ?stdout:Lwt_process.redirection ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command ->
+    object
+      method close : Unix.process_status Lwt.t
+      method kill : int -> unit
+      method pid : int
+      method rusage : Lwt_unix.resource_usage Lwt.t
+      method state : Lwt_process.state
+      method status : Unix.process_status Lwt.t
+    end
+  val open_process_none :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stdin:Lwt_process.redirection ->
+    ?stdout:Lwt_process.redirection ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command -> Lwt_process.process_none
+  val with_process_none :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stdin:Lwt_process.redirection ->
+    ?stdout:Lwt_process.redirection ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command -> (Lwt_process.process_none -> 'a Lwt.t) -> 'a Lwt.t
+  class process_in :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stdin:Lwt_process.redirection ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command ->
+    object
+      method close : Unix.process_status Lwt.t
+      method kill : int -> unit
+      method pid : int
+      method rusage : Lwt_unix.resource_usage Lwt.t
+      method state : state
+      method status : Unix.process_status Lwt.t
+      method stdout : Lwt_io.input_channel
+    end
+  val open_process_in :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stdin:Lwt_process.redirection ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command -> Lwt_process.process_in
+  val with_process_in :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stdin:Lwt_process.redirection ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command -> (Lwt_process.process_in -> 'a Lwt.t) -> 'a Lwt.t
+  class process_out :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stdout:Lwt_process.redirection ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command ->
+    object
+      method close : Unix.process_status Lwt.t
+      method kill : int -> unit
+      method pid : int
+      method rusage : Lwt_unix.resource_usage Lwt.t
+      method state : state
+      method status : Unix.process_status Lwt.t
+      method stdin : Lwt_io.output_channel
+    end
+  val open_process_out :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stdout:Lwt_process.redirection ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command -> Lwt_process.process_out
+  val with_process_out :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stdout:Lwt_process.redirection ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command -> (Lwt_process.process_out -> 'a Lwt.t) -> 'a Lwt.t
+  class process :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command ->
+    object
+      method close : Unix.process_status Lwt.t
+      method kill : int -> unit
+      method pid : int
+      method rusage : Lwt_unix.resource_usage Lwt.t
+      method state : state
+      method status : Unix.process_status Lwt.t
+      method stdin : Lwt_io.output_channel
+      method stdout : Lwt_io.input_channel
+    end
+  val open_process :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command -> Lwt_process.process
+  val with_process :
+    ?timeout:float ->
+    ?env:string array ->
+    ?stderr:Lwt_process.redirection ->
+    Lwt_process.command -> (Lwt_process.process -> 'a Lwt.t) -> 'a Lwt.t
+  class process_full :
+    ?timeout:float ->
+    ?env:string array ->
+    Lwt_process.command ->
+    object
+      method close : Unix.process_status Lwt.t
+      method kill : int -> unit
+      method pid : int
+      method rusage : Lwt_unix.resource_usage Lwt.t
+      method state : state
+      method status : Unix.process_status Lwt.t
+      method stderr : Lwt_io.input_channel
+      method stdin : Lwt_io.output_channel
+      method stdout : Lwt_io.input_channel
+    end
+  val open_process_full :
+    ?timeout:float ->
+    ?env:string array -> Lwt_process.command -> Lwt_process.process_full
+  val with_process_full :
+    ?timeout:float ->
+    ?env:string array ->
+    Lwt_process.command -> (Lwt_process.process_full -> 'a Lwt.t) -> 'a Lwt.t
+end >>

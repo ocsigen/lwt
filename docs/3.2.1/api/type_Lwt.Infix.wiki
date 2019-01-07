@@ -1,0 +1,8 @@
+<<code language="ocaml" | sig
+  val ( >>= ) : 'a Lwt.t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
+  val ( >|= ) : 'a Lwt.t -> ('a -> 'b) -> 'b Lwt.t
+  val ( <&> ) : unit Lwt.t -> unit Lwt.t -> unit Lwt.t
+  val ( <?> ) : 'a Lwt.t -> 'a Lwt.t -> 'a Lwt.t
+  val ( =<< ) : ('a -> 'b Lwt.t) -> 'a Lwt.t -> 'b Lwt.t
+  val ( =|< ) : ('a -> 'b) -> 'a Lwt.t -> 'b Lwt.t
+end >>

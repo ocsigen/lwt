@@ -1,0 +1,3233 @@
+<<code language="ocaml" | sig
+  type cdata = string
+  type id = string
+  type idref = string
+  type idrefs = XHTML.T.idref list
+  type name = string
+  type nmtoken = string
+  type nmtokens = XHTML.T.nmtoken list
+  type pcdata = string
+  type character = char
+  type charset = string
+  type charsets = XHTML.T.charset list
+  type color =
+      [ `Aqua
+      | `Black
+      | `Blue
+      | `Fuchsia
+      | `Gray
+      | `Green
+      | `Hex of string
+      | `Lime
+      | `Maroon
+      | `Navy
+      | `Olive
+      | `Purple
+      | `RGB of int * int * int
+      | `Red
+      | `Silver
+      | `Teal
+      | `White
+      | `Yellow ]
+  type contenttype = string
+  type contenttypes = XHTML.T.contenttype list
+  type coords = string list
+  type datetime = string
+  type fpi = string
+  type frametarget = string
+  type languagecode = string
+  type length = [ `Percent of int | `Pixels of int ]
+  type linktypes =
+      [ `Alternate
+      | `Appendix
+      | `Bookmark
+      | `Chapter
+      | `Contents
+      | `Copyright
+      | `Glossary
+      | `Help
+      | `Index
+      | `Next
+      | `Other of string
+      | `Prev
+      | `Section
+      | `Start
+      | `Stylesheet
+      | `Subsection ] list
+  type mediadesc =
+      [ `All
+      | `Aural
+      | `Braille
+      | `Handheld
+      | `Print
+      | `Projection
+      | `Screen
+      | `TTY
+      | `TV ] list
+  type multilength = [ `Percent of int | `Pixels of int | `Relative of int ]
+  type multilengths = XHTML.T.multilength list
+  type number = int
+  type pixels = int
+  type script = string
+  type text = string
+  type uri
+  val uri_of_string : string -> XHTML.T.uri
+  val string_of_uri : XHTML.T.uri -> string
+  type uris = XHTML.T.uri
+  type +'a attrib
+  type +'a attribs
+  val to_xmlattribs : 'a XHTML.T.attrib list -> XML.attrib list
+  type core = [ `Class | `Id | `Title ]
+  val a_class : XHTML.T.nmtokens -> [> `Class ] XHTML.T.attrib
+  val a_id : XHTML.T.id -> [> `Id ] XHTML.T.attrib
+  val a_title : XHTML.T.cdata -> [> `Title ] XHTML.T.attrib
+  type i18n = [ `XML_lang ]
+  val a_xml_lang : XHTML.T.nmtoken -> [> `XML_lang ] XHTML.T.attrib
+  type common = [ `Class | `Id | `Title | `XML_lang ]
+  module STRUCTURE : sig type t = [ `Body | `Head | `Html | `Title ] end
+  val a_profile : XHTML.T.uri -> [> `Profile ] XHTML.T.attrib
+  val a_version : XHTML.T.cdata -> [> `Version ] XHTML.T.attrib
+  val a_xmlns : [< `W3_org_1999_xhtml ] -> [> `XMLns ] XHTML.T.attrib
+  module TEXT :
+    sig
+      type heading = [ `H1 | `H2 | `H3 | `H4 | `H5 | `H6 ]
+      type block = [ `Address | `Blockquote | `Div | `P | `Pre ]
+      type inline =
+          [ `Abbr
+          | `Acronym
+          | `Br
+          | `Cite
+          | `Code
+          | `Dfn
+          | `Em
+          | `Kbd
+          | `Q
+          | `Samp
+          | `Span
+          | `Strong
+          | `Var ]
+      type flow =
+          [ `Abbr
+          | `Acronym
+          | `Address
+          | `Blockquote
+          | `Br
+          | `Cite
+          | `Code
+          | `Dfn
+          | `Div
+          | `Em
+          | `H1
+          | `H2
+          | `H3
+          | `H4
+          | `H5
+          | `H6
+          | `Kbd
+          | `P
+          | `Pre
+          | `Q
+          | `Samp
+          | `Span
+          | `Strong
+          | `Var ]
+    end
+  val a_cite : XHTML.T.uri -> [> `Cite ] XHTML.T.attrib
+  val a_xml_space : [< `Preserve ] -> [> `XML_space ] XHTML.T.attrib
+  module HYPERTEXT :
+    sig type inline = [ `A ] type flow = XHTML.T.HYPERTEXT.inline end
+  val a_accesskey : XHTML.T.character -> [> `Accesskey ] XHTML.T.attrib
+  val a_charset : XHTML.T.charset -> [> `Charset ] XHTML.T.attrib
+  val a_accept_charset :
+    XHTML.T.charset -> [> `Accept_charset ] XHTML.T.attrib
+  val a_accept : XHTML.T.contenttype -> [> `Accept ] XHTML.T.attrib
+  val a_href : XHTML.T.uri -> [> `Href ] XHTML.T.attrib
+  val a_hreflang : XHTML.T.languagecode -> [> `Hreflang ] XHTML.T.attrib
+  val a_rel : XHTML.T.linktypes -> [> `Rel ] XHTML.T.attrib
+  val a_rev : XHTML.T.linktypes -> [> `Rev ] XHTML.T.attrib
+  val a_tabindex : XHTML.T.number -> [> `Tabindex ] XHTML.T.attrib
+  val a_type : XHTML.T.contenttype -> [> `Type ] XHTML.T.attrib
+  module LIST :
+    sig
+      type list = [ `Dl | `Ol | `Ul ]
+      type t = [ `Dd | `Dt | `Li ]
+      type flow = XHTML.T.LIST.list
+    end
+  module PRESENTATION :
+    sig
+      type block = [ `Hr ]
+      type inline = [ `B | `Big | `I | `Small | `Sub | `Sup | `Tt ]
+      type flow = [ `B | `Big | `Hr | `I | `Small | `Sub | `Sup | `Tt ]
+    end
+  val a_datetime : XHTML.T.cdata -> [> `Datetime ] XHTML.T.attrib
+  val a_dir : [< `Ltr | `Rtl ] -> [> `Dir ] XHTML.T.attrib
+  module FORMS :
+    sig
+      type t = [ `Option ]
+      type form = [ `Form ]
+      type formctrl_sans_label = [ `Button | `Input | `Select | `Textarea ]
+      type formctrl = [ `Button | `Input | `Label | `Select | `Textarea ]
+      type block = XHTML.T.FORMS.form
+      type inline_sans_label = XHTML.T.FORMS.formctrl_sans_label
+      type inline = XHTML.T.FORMS.formctrl
+      type flow_sans_label =
+          [ `Button | `Form | `Input | `Select | `Textarea ]
+      type flow = [ `Button | `Form | `Input | `Label | `Select | `Textarea ]
+    end
+  val a_action : XHTML.T.uri -> [> `Action ] XHTML.T.attrib
+  val a_checked : [< `Checked ] -> [> `Checked ] XHTML.T.attrib
+  val a_cols : XHTML.T.number -> [> `Cols ] XHTML.T.attrib
+  val a_enctype : XHTML.T.contenttype -> [> `Enctype ] XHTML.T.attrib
+  val a_for : XHTML.T.idref -> [> `For ] XHTML.T.attrib
+  val a_maxlength : XHTML.T.number -> [> `Maxlength ] XHTML.T.attrib
+  val a_method : [< `Get | `Post ] -> [> `Method ] XHTML.T.attrib
+  val a_multiple : [< `Multiple ] -> [> `Multiple ] XHTML.T.attrib
+  val a_name : XHTML.T.cdata -> [> `Name ] XHTML.T.attrib
+  val a_rows : XHTML.T.number -> [> `Rows ] XHTML.T.attrib
+  val a_selected : [< `Selected ] -> [> `Selected ] XHTML.T.attrib
+  val a_size : XHTML.T.number -> [> `Size ] XHTML.T.attrib
+  val a_src : XHTML.T.uri -> [> `Src ] XHTML.T.attrib
+  val a_input_type :
+    [< `Button
+     | `Checkbox
+     | `File
+     | `Hidden
+     | `Image
+     | `Password
+     | `Radio
+     | `Reset
+     | `Submit
+     | `Text ] ->
+    [> `Input_Type ] XHTML.T.attrib
+  val a_value : XHTML.T.cdata -> [> `Value ] XHTML.T.attrib
+  val a_disabled : [< `Disabled ] -> [> `Disabled ] XHTML.T.attrib
+  val a_readonly : [< `Readonly ] -> [> `Readonly ] XHTML.T.attrib
+  val a_button_type :
+    [< `Button | `Reset | `Submit ] -> [> `Button_Type ] XHTML.T.attrib
+  val a_label : XHTML.T.text -> [> `Label ] XHTML.T.attrib
+  module TABLES :
+    sig
+      type t = [ `Caption | `Td | `Th | `Tr ]
+      type block = [ `Table ]
+      type flow = XHTML.T.TABLES.block
+    end
+  val a_abbr : XHTML.T.text -> [> `Abbr ] XHTML.T.attrib
+  val a_align :
+    [< `Center | `Char | `Justify | `Left | `Right ] ->
+    [> `Align ] XHTML.T.attrib
+  val a_axis : XHTML.T.cdata -> [> `Axis ] XHTML.T.attrib
+  val a_colspan : XHTML.T.number -> [> `Colspan ] XHTML.T.attrib
+  val a_headers : XHTML.T.idrefs -> [> `Headers ] XHTML.T.attrib
+  val a_rowspan : XHTML.T.number -> [> `Rowspan ] XHTML.T.attrib
+  val a_scope :
+    [< `Col | `Colgroup | `Row | `Rowgroup ] -> [> `Scope ] XHTML.T.attrib
+  val a_summary : XHTML.T.text -> [> `Summary ] XHTML.T.attrib
+  val a_valign :
+    [< `Baseline | `Bottom | `Middle | `Top ] -> [> `Valign ] XHTML.T.attrib
+  val a_border : XHTML.T.pixels -> [> `Border ] XHTML.T.attrib
+  val a_cellpadding : XHTML.T.length -> [> `Cellpadding ] XHTML.T.attrib
+  val a_cellspacing : XHTML.T.length -> [> `Cellspacing ] XHTML.T.attrib
+  val a_datapagesize : XHTML.T.cdata -> [> `Datapagesize ] XHTML.T.attrib
+  val a_frame :
+    [< `Above
+     | `Below
+     | `Border
+     | `Box
+     | `Hsides
+     | `LHS
+     | `RHS
+     | `Void
+     | `Vsides ] ->
+    [> `Frame ] XHTML.T.attrib
+  val a_rules :
+    [< `All | `Cols | `Groups | `None | `Rows ] -> [> `Rules ] XHTML.T.attrib
+  val a_char : XHTML.T.character -> [> `Char ] XHTML.T.attrib
+  val a_charoff : XHTML.T.length -> [> `Charoff ] XHTML.T.attrib
+  module IMAGE : sig type inline = [ `Img ] end
+  val a_alt : XHTML.T.text -> [> `Alt ] XHTML.T.attrib
+  val a_height : XHTML.T.length -> [> `Height ] XHTML.T.attrib
+  val a_longdesc : XHTML.T.uri -> [> `Longdesc ] XHTML.T.attrib
+  val a_width : XHTML.T.length -> [> `Width ] XHTML.T.attrib
+  type shape = [ `Circle | `Default | `Poly | `Rect ]
+  val a_shape : XHTML.T.shape -> [ `Shape ] XHTML.T.attrib
+  val a_coords : XHTML.T.cdata -> [ `Coords ] XHTML.T.attrib
+  val a_nohref : [< `Nohref ] -> [> `Nohref ] XHTML.T.attrib
+  val a_usemap : XHTML.T.idref -> [> `Usemap ] XHTML.T.attrib
+  val a_declare : [< `Declare ] -> [> `Declare ] XHTML.T.attrib
+  val a_classid : XHTML.T.uri -> [> `Classid ] XHTML.T.attrib
+  val a_codebase : XHTML.T.uri -> [> `Codebase ] XHTML.T.attrib
+  val a_data : XHTML.T.uri -> [> `Data ] XHTML.T.attrib
+  val a_codetype : XHTML.T.contenttype -> [> `Codetype ] XHTML.T.attrib
+  val a_archive : XHTML.T.uris -> [> `Archive ] XHTML.T.attrib
+  val a_standby : XHTML.T.text -> [> `Standby ] XHTML.T.attrib
+  val a_fs_rows : XHTML.T.multilengths -> [> `FS_Rows ] XHTML.T.attrib
+  val a_fs_cols : XHTML.T.multilengths -> [> `FS_Cols ] XHTML.T.attrib
+  val a_frameborder : [< `One | `Zero ] -> [> `Frameborder ] XHTML.T.attrib
+  val a_marginheight : XHTML.T.pixels -> [> `Marginheight ] XHTML.T.attrib
+  val a_marginwidth : XHTML.T.pixels -> [> `Marginwidth ] XHTML.T.attrib
+  val a_noresize : [< `Noresize ] -> [> `Noresize ] XHTML.T.attrib
+  val a_scrolling : [< `Auto | `No | `Yes ] -> [> `Scrolling ] XHTML.T.attrib
+  val a_target : XHTML.T.frametarget -> [> `Target ] XHTML.T.attrib
+  module METAINFORMATION : sig type t = [ `Meta ] end
+  val a_content : XHTML.T.cdata -> [> `Content ] XHTML.T.attrib
+  val a_http_equiv : XHTML.T.nmtoken -> [> `Http_equiv ] XHTML.T.attrib
+  val a_scheme : XHTML.T.cdata -> [> `Scheme ] XHTML.T.attrib
+  val a_defer : [< `Defer ] -> [> `Defer ] XHTML.T.attrib
+  module STYLE_SHEET : sig type t = [ `Style ] end
+  val a_media : XHTML.T.mediadesc -> [> `Media ] XHTML.T.attrib
+  module LINK : sig type t = [ `Link ] end
+  module BASE : sig type t = [ `Base ] end
+  type edit = [ `Del | `Ins ]
+  type scripttag = [ `Noscript | `Script ]
+  type misc = [ `Del | `Ins | `Noscript | `Script ]
+  module SPECIAL :
+    sig
+      type inline = [ `Img | `Map | `Object ]
+      type block = [ `Fieldset | `Form | `Table ]
+      type flow = [ `Fieldset | `Form | `Img | `Map | `Object | `Table ]
+    end
+  type i18nclass = [ `Bdo ]
+  type block =
+      [ `Address
+      | `Blockquote
+      | `Del
+      | `Div
+      | `Dl
+      | `Fieldset
+      | `Form
+      | `H1
+      | `H2
+      | `H3
+      | `H4
+      | `H5
+      | `H6
+      | `Hr
+      | `Ins
+      | `Noscript
+      | `Ol
+      | `P
+      | `Pre
+      | `Script
+      | `Table
+      | `Ul ]
+  type block_sans_form =
+      [ `Address
+      | `Blockquote
+      | `Del
+      | `Div
+      | `Dl
+      | `H1
+      | `H2
+      | `H3
+      | `H4
+      | `H5
+      | `H6
+      | `Hr
+      | `Ins
+      | `Noscript
+      | `Ol
+      | `P
+      | `Pre
+      | `Script
+      | `Table
+      | `Ul ]
+  type flow =
+      [ `A
+      | `Abbr
+      | `Acronym
+      | `Address
+      | `B
+      | `Bdo
+      | `Big
+      | `Blockquote
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Div
+      | `Dl
+      | `Em
+      | `Fieldset
+      | `Form
+      | `H1
+      | `H2
+      | `H3
+      | `H4
+      | `H5
+      | `H6
+      | `Hr
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `Ol
+      | `P
+      | `Pre
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Table
+      | `Textarea
+      | `Tt
+      | `Ul
+      | `Var ]
+  type flow_sans_table =
+      [ `A
+      | `Abbr
+      | `Acronym
+      | `Address
+      | `B
+      | `Bdo
+      | `Big
+      | `Blockquote
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Div
+      | `Dl
+      | `Em
+      | `Fieldset
+      | `Form
+      | `H1
+      | `H2
+      | `H3
+      | `H4
+      | `H5
+      | `H6
+      | `Hr
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `Ol
+      | `P
+      | `Pre
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Table
+      | `Textarea
+      | `Tt
+      | `Ul
+      | `Var ]
+  type inline =
+      [ `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ]
+  type inline_sans_a_mix =
+      [ `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ]
+  type buttoncontent =
+      [ `Abbr
+      | `Acronym
+      | `Address
+      | `B
+      | `Bdo
+      | `Big
+      | `Blockquote
+      | `Br
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Div
+      | `Dl
+      | `Em
+      | `H1
+      | `H2
+      | `H3
+      | `H4
+      | `H5
+      | `H6
+      | `Hr
+      | `I
+      | `Img
+      | `Ins
+      | `Kbd
+      | `Map
+      | `Noscript
+      | `Object
+      | `Ol
+      | `P
+      | `Pre
+      | `Q
+      | `Samp
+      | `Script
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Table
+      | `Tt
+      | `Ul
+      | `Var ]
+  type precontent =
+      [ `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Br
+      | `Cite
+      | `Code
+      | `Dfn
+      | `Em
+      | `I
+      | `Kbd
+      | `Map
+      | `Q
+      | `Samp
+      | `Script
+      | `Span
+      | `Strong
+      | `Tt
+      | `Var ]
+  type inline_sans_label =
+      [ `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Map
+      | `Noscript
+      | `Object
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ]
+  type heading = XHTML.T.TEXT.heading
+  type +'a elt
+  type ('a, 'b) nullary = ?a:'a XHTML.T.attrib list -> unit -> 'b XHTML.T.elt
+  type ('a, 'b, 'c) unary =
+      ?a:'a XHTML.T.attrib list -> 'b XHTML.T.elt -> 'c XHTML.T.elt
+  type ('a, 'b, 'c, 'd) binary =
+      ?a:'a XHTML.T.attrib list ->
+      'b XHTML.T.elt -> 'c XHTML.T.elt -> 'd XHTML.T.elt
+  type ('a, 'b, 'c) star =
+      ?a:'a XHTML.T.attrib list -> 'b XHTML.T.elt list -> 'c XHTML.T.elt
+  type ('a, 'b, 'c) plus =
+      ?a:'a XHTML.T.attrib list ->
+      'b XHTML.T.elt -> 'b XHTML.T.elt list -> 'c XHTML.T.elt
+  type html = [ `Html ] XHTML.T.elt
+  val html :
+    ?a:[< `Version | `XML_lang | `XMLns ] XHTML.T.attrib list ->
+    [< `Head ] XHTML.T.elt ->
+    [< `Body | `Frameset ] XHTML.T.elt -> XHTML.T.html
+  val head :
+    ?a:[< `Profile | `XML_lang ] XHTML.T.attrib list ->
+    [< `Base | `Title ] XHTML.T.elt ->
+    [< `Link | `Meta | `Object | `Script | `Style ] XHTML.T.elt list ->
+    [> `Head ] XHTML.T.elt
+  val title : ([< XHTML.T.i18n ], [< `PCDATA ], [> `Title ]) XHTML.T.unary
+  val body :
+    ([< XHTML.T.common ], [< XHTML.T.block ], [> `Body ]) XHTML.T.star
+  val pcdata : string -> [> `PCDATA ] XHTML.T.elt
+  val entity : string -> [> `PCDATA ] XHTML.T.elt
+  val space : unit -> [> `PCDATA ] XHTML.T.elt
+  val cdata : string -> [ `PCDATA ] XHTML.T.elt
+  val cdata_script : string -> [ `PCDATA ] XHTML.T.elt
+  val cdata_style : string -> [ `PCDATA ] XHTML.T.elt
+  val unsafe_data : string -> [ `PCDATA ] XHTML.T.elt
+  val h1 :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `H1 ])
+    XHTML.T.star
+  val h2 :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `H2 ])
+    XHTML.T.star
+  val h3 :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `H3 ])
+    XHTML.T.star
+  val h4 :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `H4 ])
+    XHTML.T.star
+  val h5 :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `H5 ])
+    XHTML.T.star
+  val h6 :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `H6 ])
+    XHTML.T.star
+  val address :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Address ])
+    XHTML.T.star
+  val blockquote :
+    ([< `Cite | `Class | `Id | `Title | `XML_lang ],
+     [< `Address
+      | `Blockquote
+      | `Del
+      | `Div
+      | `Dl
+      | `Fieldset
+      | `Form
+      | `H1
+      | `H2
+      | `H3
+      | `H4
+      | `H5
+      | `H6
+      | `Hr
+      | `Ins
+      | `Noscript
+      | `Ol
+      | `P
+      | `PCDATA
+      | `Pre
+      | `Script
+      | `Table
+      | `Ul ],
+     [> `Blockquote ])
+    XHTML.T.star
+  val div :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `Address
+      | `B
+      | `Bdo
+      | `Big
+      | `Blockquote
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Div
+      | `Dl
+      | `Em
+      | `Fieldset
+      | `Form
+      | `H1
+      | `H2
+      | `H3
+      | `H4
+      | `H5
+      | `H6
+      | `Hr
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `Ol
+      | `P
+      | `PCDATA
+      | `Pre
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Table
+      | `Textarea
+      | `Tt
+      | `Ul
+      | `Var ],
+     [> `Div ])
+    XHTML.T.star
+  val p :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `P ])
+    XHTML.T.star
+  val pre :
+    ([< `Class | `Id | `Title | `XML_lang | `XML_space ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Br
+      | `Cite
+      | `Code
+      | `Dfn
+      | `Em
+      | `I
+      | `Kbd
+      | `Map
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Span
+      | `Strong
+      | `Tt
+      | `Var ],
+     [> `Pre ])
+    XHTML.T.star
+  val abbr :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Abbr ])
+    XHTML.T.star
+  val acronym :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Acronym ])
+    XHTML.T.star
+  val br : ([< XHTML.T.core ], [> `Br ]) XHTML.T.nullary
+  val cite :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Cite ])
+    XHTML.T.star
+  val code :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Code ])
+    XHTML.T.star
+  val dfn :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Dfn ])
+    XHTML.T.star
+  val em :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Em ])
+    XHTML.T.star
+  val kbd :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Kbd ])
+    XHTML.T.star
+  val q :
+    ([< `Cite | `Class | `Id | `Title | `XML_lang ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Q ])
+    XHTML.T.star
+  val samp :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Samp ])
+    XHTML.T.star
+  val span :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Span ])
+    XHTML.T.star
+  val strong :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Strong ])
+    XHTML.T.star
+  val var :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Var ])
+    XHTML.T.star
+  val a :
+    ([< `Accesskey
+      | `Charset
+      | `Class
+      | `Coords
+      | `Href
+      | `Hreflang
+      | `Id
+      | `Name_01_00
+      | `Rel
+      | `Rev
+      | `Shape
+      | `Tabindex
+      | `Target
+      | `Title
+      | `Type
+      | `XML_lang ],
+     [< `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `A ])
+    XHTML.T.star
+  val dl : ([< XHTML.T.common ], [< `Dd | `Dt ], [> `Dl ]) XHTML.T.plus
+  val ol : ([< XHTML.T.common ], [< `Li ], [> `Ol ]) XHTML.T.plus
+  val ul : ([< XHTML.T.common ], [< `Li ], [> `Ul ]) XHTML.T.plus
+  val dd :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `Address
+      | `B
+      | `Bdo
+      | `Big
+      | `Blockquote
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Div
+      | `Dl
+      | `Em
+      | `Fieldset
+      | `Form
+      | `H1
+      | `H2
+      | `H3
+      | `H4
+      | `H5
+      | `H6
+      | `Hr
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `Ol
+      | `P
+      | `PCDATA
+      | `Pre
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Table
+      | `Textarea
+      | `Tt
+      | `Ul
+      | `Var ],
+     [> `Dd ])
+    XHTML.T.star
+  val dt :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Dt ])
+    XHTML.T.star
+  val li :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `Address
+      | `B
+      | `Bdo
+      | `Big
+      | `Blockquote
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Div
+      | `Dl
+      | `Em
+      | `Fieldset
+      | `Form
+      | `H1
+      | `H2
+      | `H3
+      | `H4
+      | `H5
+      | `H6
+      | `Hr
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `Ol
+      | `P
+      | `PCDATA
+      | `Pre
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Table
+      | `Textarea
+      | `Tt
+      | `Ul
+      | `Var ],
+     [> `Li ])
+    XHTML.T.star
+  val hr : ([< XHTML.T.common ], [> `Hr ]) XHTML.T.nullary
+  val b :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `B ])
+    XHTML.T.star
+  val big :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Big ])
+    XHTML.T.star
+  val i :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `I ])
+    XHTML.T.star
+  val small :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Small ])
+    XHTML.T.star
+  val sub :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Sub ])
+    XHTML.T.star
+  val sup :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Sup ])
+    XHTML.T.star
+  val tt :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Tt ])
+    XHTML.T.star
+  val bdo :
+    ([< `Class | `Dir | `Id | `Title | `XML_lang ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Bdo ])
+    XHTML.T.star
+  val area :
+    alt:XHTML.T.text ->
+    ([< `Accesskey
+      | `Class
+      | `Coords
+      | `Href
+      | `Id
+      | `Nohref
+      | `Shape
+      | `Tabindex
+      | `Title
+      | `XML_lang ],
+     [> `Area ])
+    XHTML.T.nullary
+  val map :
+    id:XHTML.T.id ->
+    ([< `Class | `Title | `XML_lang | `XMLns ],
+     [< `Address
+      | `Area
+      | `Blockquote
+      | `Del
+      | `Div
+      | `Dl
+      | `Fieldset
+      | `Form
+      | `H1
+      | `H2
+      | `H3
+      | `H4
+      | `H5
+      | `H6
+      | `Hr
+      | `Ins
+      | `Noscript
+      | `Ol
+      | `P
+      | `Pre
+      | `Script
+      | `Table
+      | `Ul ],
+     [> `Map ])
+    XHTML.T.plus
+  val del :
+    ([< `Cite | `Class | `Datetime | `Id | `Title | `XML_lang ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `Address
+      | `B
+      | `Bdo
+      | `Big
+      | `Blockquote
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Div
+      | `Dl
+      | `Em
+      | `Fieldset
+      | `Form
+      | `H1
+      | `H2
+      | `H3
+      | `H4
+      | `H5
+      | `H6
+      | `Hr
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `Ol
+      | `P
+      | `PCDATA
+      | `Pre
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Table
+      | `Textarea
+      | `Tt
+      | `Ul
+      | `Var ],
+     [> `Del ])
+    XHTML.T.star
+  val ins :
+    ([< `Cite | `Class | `Datetime | `Id | `Title | `XML_lang ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `Address
+      | `B
+      | `Bdo
+      | `Big
+      | `Blockquote
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Div
+      | `Dl
+      | `Em
+      | `Fieldset
+      | `Form
+      | `H1
+      | `H2
+      | `H3
+      | `H4
+      | `H5
+      | `H6
+      | `Hr
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `Ol
+      | `P
+      | `PCDATA
+      | `Pre
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Table
+      | `Textarea
+      | `Tt
+      | `Ul
+      | `Var ],
+     [> `Ins ])
+    XHTML.T.star
+  val script :
+    contenttype:XHTML.T.contenttype ->
+    ([< `Charset | `Defer | `Src | `XML_space | `XMLns ], [< `PCDATA ],
+     [> `Script ])
+    XHTML.T.unary
+  val noscript :
+    ([< XHTML.T.common ], [< XHTML.T.block ], [> `Noscript ]) XHTML.T.plus
+  module Basic_Forms :
+    sig
+      val form :
+        action:XHTML.T.uri ->
+        ([< `Class
+          | `Enctype
+          | `Id
+          | `Method
+          | `Name_01_00
+          | `Target
+          | `Title
+          | `XML_lang ],
+         [< XHTML.T.block_sans_form ], [> `Form ])
+        XHTML.T.plus
+      val input :
+        ([< `Accesskey
+          | `Checked
+          | `Class
+          | `Id
+          | `Input_Type
+          | `Maxlength
+          | `Name
+          | `Size
+          | `Src
+          | `Tabindex
+          | `Title
+          | `Usemap
+          | `Value
+          | `XML_lang ],
+         [> `Input ])
+        XHTML.T.nullary
+      val label :
+        ([< `Accesskey | `Class | `For | `Id | `Title | `XML_lang ],
+         [< `A
+          | `Abbr
+          | `Acronym
+          | `B
+          | `Bdo
+          | `Big
+          | `Br
+          | `Button
+          | `Cite
+          | `Code
+          | `Del
+          | `Dfn
+          | `Em
+          | `I
+          | `Img
+          | `Input
+          | `Ins
+          | `Kbd
+          | `Map
+          | `Noscript
+          | `Object
+          | `PCDATA
+          | `Q
+          | `Samp
+          | `Script
+          | `Select
+          | `Small
+          | `Span
+          | `Strong
+          | `Sub
+          | `Sup
+          | `Textarea
+          | `Tt
+          | `Var ],
+         [> `Label ])
+        XHTML.T.star
+      val option :
+        ([< `Class | `Id | `Selected | `Title | `Value | `XML_lang ],
+         [< `PCDATA ], [> `Option ])
+        XHTML.T.unary
+      val select :
+        ([< `Class
+          | `Id
+          | `Multiple
+          | `Name
+          | `Size
+          | `Tabindex
+          | `Title
+          | `XML_lang ],
+         [< `Option ], [> `Select ])
+        XHTML.T.plus
+      val textarea :
+        rows:XHTML.T.number ->
+        cols:XHTML.T.number ->
+        ([< `Accesskey
+          | `Class
+          | `Id
+          | `Name
+          | `Tabindex
+          | `Title
+          | `XML_lang ],
+         [< `PCDATA ], [> `Textarea ])
+        XHTML.T.unary
+    end
+  val form :
+    action:XHTML.T.uri ->
+    ([< `Accept
+      | `Accept_charset
+      | `Class
+      | `Enctype
+      | `Id
+      | `Method
+      | `Name_01_00
+      | `Target
+      | `Title
+      | `XML_lang ],
+     [< `Address
+      | `Blockquote
+      | `Del
+      | `Div
+      | `Dl
+      | `Fieldset
+      | `H1
+      | `H2
+      | `H3
+      | `H4
+      | `H5
+      | `H6
+      | `Hr
+      | `Ins
+      | `Noscript
+      | `Ol
+      | `P
+      | `Pre
+      | `Script
+      | `Table
+      | `Ul ],
+     [> `Form ])
+    XHTML.T.plus
+  val input :
+    ([< `Accept
+      | `Accesskey
+      | `Alt
+      | `Checked
+      | `Class
+      | `Disabled
+      | `Id
+      | `Input_Type
+      | `Maxlength
+      | `Name
+      | `Readonly
+      | `Size
+      | `Src
+      | `Tabindex
+      | `Title
+      | `Usemap
+      | `Value
+      | `XML_lang ],
+     [> `Input ])
+    XHTML.T.nullary
+  val label :
+    ([< `Accesskey | `Class | `For | `Id | `Title | `XML_lang ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Label ])
+    XHTML.T.star
+  val optgroup :
+    label:XHTML.T.text ->
+    ([< `Class | `Disabled | `Id | `Title | `XML_lang ], [< `Option ],
+     [> `Optgroup ])
+    XHTML.T.plus
+  val option :
+    ([< `Class
+      | `Disabled
+      | `Id
+      | `Label
+      | `Selected
+      | `Title
+      | `Value
+      | `XML_lang ],
+     [< `PCDATA ], [> `Option ])
+    XHTML.T.unary
+  val select :
+    ([< `Class
+      | `Disabled
+      | `Id
+      | `Multiple
+      | `Name
+      | `Size
+      | `Tabindex
+      | `Title
+      | `XML_lang ],
+     [< `Optgroup | `Option ], [> `Select ])
+    XHTML.T.plus
+  val textarea :
+    rows:XHTML.T.number ->
+    cols:XHTML.T.number ->
+    ([< `Accesskey
+      | `Class
+      | `Disabled
+      | `Id
+      | `Name
+      | `Readonly
+      | `Tabindex
+      | `Title
+      | `XML_lang ],
+     [< `PCDATA ], [> `Textarea ])
+    XHTML.T.unary
+  val fieldset :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `Address
+      | `B
+      | `Bdo
+      | `Big
+      | `Blockquote
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Div
+      | `Dl
+      | `Em
+      | `Fieldset
+      | `Form
+      | `H1
+      | `H2
+      | `H3
+      | `H4
+      | `H5
+      | `H6
+      | `Hr
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Legend
+      | `Map
+      | `Noscript
+      | `Object
+      | `Ol
+      | `P
+      | `PCDATA
+      | `Pre
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Table
+      | `Textarea
+      | `Tt
+      | `Ul
+      | `Var ],
+     [> `Fieldset ])
+    XHTML.T.star
+  val legend :
+    ([< `Accesskey | `Class | `Id | `Title | `XML_lang ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Legend ])
+    XHTML.T.star
+  val button :
+    ([< `Button_Type | `Class | `Id | `Name | `Title | `Value | `XML_lang ],
+     [< `Abbr
+      | `Acronym
+      | `Address
+      | `B
+      | `Bdo
+      | `Big
+      | `Blockquote
+      | `Br
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Div
+      | `Dl
+      | `Em
+      | `H1
+      | `H2
+      | `H3
+      | `H4
+      | `H5
+      | `H6
+      | `Hr
+      | `I
+      | `Img
+      | `Ins
+      | `Kbd
+      | `Map
+      | `Noscript
+      | `Object
+      | `Ol
+      | `P
+      | `PCDATA
+      | `Pre
+      | `Q
+      | `Samp
+      | `Script
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Table
+      | `Tt
+      | `Ul
+      | `Var ],
+     [> `Button ])
+    XHTML.T.star
+  module Basic_Tables :
+    sig
+      val a_align :
+        [< `Center | `Left | `Right ] -> [> `Align ] XHTML.T.attrib
+      val a_scope : [< `Col | `Row ] -> [> `Scope ] XHTML.T.attrib
+      val a_valign :
+        [< `Bottom | `Middle | `Top ] -> [> `Valign ] XHTML.T.attrib
+      val caption :
+        ([< XHTML.T.common ],
+         [< `A
+          | `Abbr
+          | `Acronym
+          | `B
+          | `Bdo
+          | `Big
+          | `Br
+          | `Button
+          | `Cite
+          | `Code
+          | `Del
+          | `Dfn
+          | `Em
+          | `I
+          | `Img
+          | `Input
+          | `Ins
+          | `Kbd
+          | `Label
+          | `Map
+          | `Noscript
+          | `Object
+          | `PCDATA
+          | `Q
+          | `Samp
+          | `Script
+          | `Select
+          | `Small
+          | `Span
+          | `Strong
+          | `Sub
+          | `Sup
+          | `Textarea
+          | `Tt
+          | `Var ],
+         [> `Caption ])
+        XHTML.T.star
+      val table :
+        ?caption:[< `Caption ] XHTML.T.elt ->
+        ([< `Class | `Id | `Summary | `Title | `Width | `XML_lang ],
+         [< `Tr ], [> `Table ])
+        XHTML.T.plus
+      val td :
+        ([< `Abbr
+          | `Align
+          | `Axis
+          | `Class
+          | `Colspan
+          | `Headers
+          | `Id
+          | `Rowspan
+          | `Scope
+          | `Title
+          | `Valign
+          | `XML_lang ],
+         [< `A
+          | `Abbr
+          | `Acronym
+          | `Address
+          | `B
+          | `Bdo
+          | `Big
+          | `Blockquote
+          | `Br
+          | `Button
+          | `Cite
+          | `Code
+          | `Del
+          | `Dfn
+          | `Div
+          | `Dl
+          | `Em
+          | `Fieldset
+          | `Form
+          | `H1
+          | `H2
+          | `H3
+          | `H4
+          | `H5
+          | `H6
+          | `Hr
+          | `I
+          | `Img
+          | `Input
+          | `Ins
+          | `Kbd
+          | `Label
+          | `Map
+          | `Noscript
+          | `Object
+          | `Ol
+          | `P
+          | `PCDATA
+          | `Pre
+          | `Q
+          | `Samp
+          | `Script
+          | `Select
+          | `Small
+          | `Span
+          | `Strong
+          | `Sub
+          | `Sup
+          | `Table
+          | `Textarea
+          | `Tt
+          | `Ul
+          | `Var ],
+         [> `Td ])
+        XHTML.T.star
+      val th :
+        ([< `Abbr
+          | `Align
+          | `Axis
+          | `Class
+          | `Colspan
+          | `Headers
+          | `Id
+          | `Rowspan
+          | `Scope
+          | `Title
+          | `Valign
+          | `XML_lang ],
+         [< `A
+          | `Abbr
+          | `Acronym
+          | `Address
+          | `B
+          | `Bdo
+          | `Big
+          | `Blockquote
+          | `Br
+          | `Button
+          | `Cite
+          | `Code
+          | `Del
+          | `Dfn
+          | `Div
+          | `Dl
+          | `Em
+          | `Fieldset
+          | `Form
+          | `H1
+          | `H2
+          | `H3
+          | `H4
+          | `H5
+          | `H6
+          | `Hr
+          | `I
+          | `Img
+          | `Input
+          | `Ins
+          | `Kbd
+          | `Label
+          | `Map
+          | `Noscript
+          | `Object
+          | `Ol
+          | `P
+          | `PCDATA
+          | `Pre
+          | `Q
+          | `Samp
+          | `Script
+          | `Select
+          | `Small
+          | `Span
+          | `Strong
+          | `Sub
+          | `Sup
+          | `Table
+          | `Textarea
+          | `Tt
+          | `Ul
+          | `Var ],
+         [> `Th ])
+        XHTML.T.star
+      val tr :
+        ([< `Align | `Class | `Id | `Title | `Valign | `XML_lang ],
+         [< `Td | `Th ], [> `Tr ])
+        XHTML.T.plus
+    end
+  val caption :
+    ([< XHTML.T.common ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `B
+      | `Bdo
+      | `Big
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Em
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `PCDATA
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Textarea
+      | `Tt
+      | `Var ],
+     [> `Caption ])
+    XHTML.T.star
+  val table :
+    ?caption:[< `Caption ] XHTML.T.elt ->
+    ?columns:[< `Colgroups of [< `Colgroup ] XHTML.T.elt list
+              | `Cols of [< `Col ] XHTML.T.elt list ] ->
+    ([< `Border
+      | `Cellpadding
+      | `Cellspacing
+      | `Class
+      | `Datapagesize
+      | `Frame
+      | `Id
+      | `Rules
+      | `Summary
+      | `Title
+      | `Width
+      | `XML_lang ],
+     [< `Tr ], [> `Table ])
+    XHTML.T.plus
+  val tablex :
+    ?caption:[< `Caption ] XHTML.T.elt ->
+    ?columns:[< `Colgroups of [< `Colgroup ] XHTML.T.elt list
+              | `Cols of [< `Col ] XHTML.T.elt list ] ->
+    ?thead:[< `Thead ] XHTML.T.elt ->
+    ?tfoot:[< `Tfoot ] XHTML.T.elt ->
+    ([< `Border
+      | `Cellpadding
+      | `Cellspacing
+      | `Class
+      | `Datapagesize
+      | `Frame
+      | `Id
+      | `Rules
+      | `Summary
+      | `Title
+      | `Width
+      | `XML_lang ],
+     [< `Tbody ], [> `Table ])
+    XHTML.T.plus
+  val td :
+    ([< `Abbr
+      | `Align
+      | `Axis
+      | `Char
+      | `Charoff
+      | `Class
+      | `Colspan
+      | `Headers
+      | `Id
+      | `Rowspan
+      | `Scope
+      | `Title
+      | `Valign
+      | `XML_lang ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `Address
+      | `B
+      | `Bdo
+      | `Big
+      | `Blockquote
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Div
+      | `Dl
+      | `Em
+      | `Fieldset
+      | `Form
+      | `H1
+      | `H2
+      | `H3
+      | `H4
+      | `H5
+      | `H6
+      | `Hr
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `Ol
+      | `P
+      | `PCDATA
+      | `Pre
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Table
+      | `Textarea
+      | `Tt
+      | `Ul
+      | `Var ],
+     [> `Td ])
+    XHTML.T.star
+  val th :
+    ([< `Abbr
+      | `Align
+      | `Axis
+      | `Char
+      | `Charoff
+      | `Class
+      | `Colspan
+      | `Headers
+      | `Id
+      | `Rowspan
+      | `Scope
+      | `Title
+      | `Valign
+      | `XML_lang ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `Address
+      | `B
+      | `Bdo
+      | `Big
+      | `Blockquote
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Div
+      | `Dl
+      | `Em
+      | `Fieldset
+      | `Form
+      | `H1
+      | `H2
+      | `H3
+      | `H4
+      | `H5
+      | `H6
+      | `Hr
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `Ol
+      | `P
+      | `PCDATA
+      | `Pre
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Table
+      | `Textarea
+      | `Tt
+      | `Ul
+      | `Var ],
+     [> `Th ])
+    XHTML.T.star
+  val tr :
+    ([< `Align
+      | `Char
+      | `Charoff
+      | `Class
+      | `Id
+      | `Title
+      | `Valign
+      | `XML_lang ],
+     [< `Td | `Th ], [> `Tr ])
+    XHTML.T.plus
+  val col :
+    ([< `Align
+      | `Char
+      | `Charoff
+      | `Class
+      | `Id
+      | `Span
+      | `Title
+      | `Valign
+      | `Width
+      | `XML_lang ],
+     [> `Col ])
+    XHTML.T.nullary
+  val colgroup :
+    ([< `Align
+      | `Char
+      | `Charoff
+      | `Class
+      | `Id
+      | `Span
+      | `Title
+      | `Valign
+      | `Width
+      | `XML_lang ],
+     [< `Col ], [> `Colgroup ])
+    XHTML.T.star
+  val thead :
+    ([< `Align
+      | `Char
+      | `Charoff
+      | `Class
+      | `Id
+      | `Title
+      | `Valign
+      | `XML_lang ],
+     [< `Tr ], [> `Thead ])
+    XHTML.T.plus
+  val tbody :
+    ([< `Align
+      | `Char
+      | `Charoff
+      | `Class
+      | `Id
+      | `Title
+      | `Valign
+      | `XML_lang ],
+     [< `Tr ], [> `Tbody ])
+    XHTML.T.plus
+  val tfoot :
+    ([< `Align
+      | `Char
+      | `Charoff
+      | `Class
+      | `Id
+      | `Title
+      | `Valign
+      | `XML_lang ],
+     [< `Tr ], [> `Tfoot ])
+    XHTML.T.plus
+  val img :
+    src:XHTML.T.uri ->
+    alt:XHTML.T.text ->
+    ([< `Class
+      | `Height
+      | `Id
+      | `Longdesc
+      | `Name_01_00
+      | `Title
+      | `Usemap
+      | `Width
+      | `XML_lang ],
+     [> `Img ])
+    XHTML.T.nullary
+  val object_ :
+    ([< `Archive
+      | `Class
+      | `Classid
+      | `Codebase
+      | `Codetype
+      | `Data
+      | `Declare
+      | `Height
+      | `Id
+      | `Name
+      | `Standby
+      | `Tabindex
+      | `Title
+      | `Type
+      | `Width
+      | `XML_lang ],
+     [< `A
+      | `Abbr
+      | `Acronym
+      | `Address
+      | `B
+      | `Bdo
+      | `Big
+      | `Blockquote
+      | `Br
+      | `Button
+      | `Cite
+      | `Code
+      | `Del
+      | `Dfn
+      | `Div
+      | `Dl
+      | `Em
+      | `Fieldset
+      | `Form
+      | `H1
+      | `H2
+      | `H3
+      | `H4
+      | `H5
+      | `H6
+      | `Hr
+      | `I
+      | `Img
+      | `Input
+      | `Ins
+      | `Kbd
+      | `Label
+      | `Map
+      | `Noscript
+      | `Object
+      | `Ol
+      | `P
+      | `PCDATA
+      | `Param
+      | `Pre
+      | `Q
+      | `Samp
+      | `Script
+      | `Select
+      | `Small
+      | `Span
+      | `Strong
+      | `Sub
+      | `Sup
+      | `Table
+      | `Textarea
+      | `Tt
+      | `Ul
+      | `Usemap
+      | `Var ],
+     [> `Object ])
+    XHTML.T.star
+  val frameset :
+    ?noframes:[< `Noframes ] XHTML.T.elt ->
+    ([< `Class | `FS_Cols | `FS_Rows | `Id | `Title ],
+     [< `Frame | `Frameset ], [> `Frameset ])
+    XHTML.T.plus
+  val frame :
+    src:XHTML.T.uri ->
+    ([< `Class
+      | `Frameborder
+      | `Id
+      | `Longdesc
+      | `Marginheight
+      | `Marginwidth
+      | `Name_01_00
+      | `Noresize
+      | `Scrolling
+      | `Title ],
+     [> `Frame ])
+    XHTML.T.nullary
+  val noframes :
+    ([< XHTML.T.common ], [< `Body ], [> `Noframes ]) XHTML.T.unary
+  val meta :
+    content:XHTML.T.cdata ->
+    ([< `Http_equiv | `Name | `Scheme | `XML_lang ], [> `Meta ])
+    XHTML.T.nullary
+  val style :
+    contenttype:XHTML.T.contenttype ->
+    ([< `Media | `Title | `XML_lang | `XML_space ], [< `PCDATA ],
+     [> `Style ])
+    XHTML.T.star
+  val link :
+    ([< `Charset
+      | `Class
+      | `Href
+      | `Hreflang
+      | `Id
+      | `Media
+      | `Rel
+      | `Rev
+      | `Target
+      | `Title
+      | `Type
+      | `XML_lang ],
+     [> `Link ])
+    XHTML.T.nullary
+  val base : href:XHTML.T.uri -> unit -> [> `Base ] XHTML.T.elt
+  val doctype :
+    [< `HTML_v03_02 | `HTML_v04_01 | `XHTML_01_00 | `XHTML_01_01 ] -> string
+  val output :
+    ?encode:(string -> string) ->
+    ?encoding:string -> (string -> unit) -> XHTML.T.html -> unit
+  val pretty_print :
+    ?width:int ->
+    ?encode:(string -> string) ->
+    ?encoding:string -> (string -> unit) -> XHTML.T.html -> unit
+  val version : string
+  val standard : XHTML.T.uri
+  val validator : XHTML.T.uri
+  val validator_icon : unit -> [> `A ] XHTML.T.elt
+  val addto_class : string -> 'a XHTML.T.elt -> 'a XHTML.T.elt
+  val addto_class1 : string -> 'a XHTML.T.elt -> 'a XHTML.T.elt
+  val set_rowspan :
+    int -> ([< `Td | `Th ] as 'a) XHTML.T.elt -> 'a XHTML.T.elt
+  val rewrite_hrefs : (string -> string) -> 'a XHTML.T.elt -> 'a XHTML.T.elt
+  val all_hrefs : 'a XHTML.T.elt -> XHTML.T.uri list
+  val all_anchors : 'a XHTML.T.elt -> XHTML.T.id list
+  val tot : XML.elt -> 'a XHTML.T.elt
+  val totl : XML.elt list -> 'a XHTML.T.elt list
+  val toelt : 'a XHTML.T.elt -> XML.elt
+  val toeltl : 'a XHTML.T.elt list -> XML.elt list
+end >>

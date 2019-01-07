@@ -1,0 +1,36 @@
+=Module <<a_api_type | module Pa_lwt_log >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Pa_lwt_log>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Pa_lwt_log >><<span class="ocsforge_color_keyword"|end>>>>~Logging facility
+
+
+    ~It replaces expression of the form~:
+
+
+    
+<<code language='ocaml'|      Lwt_log.info_f ~section "x = %d" x
+    >>
+
+
+
+    by
+
+
+    
+<<code language='ocaml'|      if Lwt_log.Section.level section <= Lwt_log.Info then
+        Lwt_log.info_f ~section "x = %d" x
+      else
+        return ()
+    >>
+
+
+
+    ~Note~:
+
+
+* the application must be complete~. ~For example~: <<span class="odocwiki_inlinecode"|~Log~.info "~%d">>
+      will make compilation fail
+
+* it also add the command line flags "~-lwt~-debug" to keep all debug
+      messages~. ~By default debug messages are removed~.
+
+
+----

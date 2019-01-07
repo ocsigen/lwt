@@ -1,0 +1,5 @@
+=Class <<a_api_type | class Lwt_read_line.clipboard >> =
+<<div class="code"|<<span name="TYPEclipboard"|<<span class="keyword"|class>> clipboard>> : <<span class='code'|object>><<a_api text=".." | class Lwt_read_line.clipboard >><<span class='code'|end>>>>~Type of a clipboard~.\\
+
+----
+<<div class="code"|<<span id="METHODset"|<<span class="keyword"|method>> set>> : <<span class="code type"|Text.t -> unit>>>><<div class="code"|<<span id="METHODcontents"|<<span class="keyword"|method>> contents>> : <<span class="code type"|Text.t React.signal>>>>

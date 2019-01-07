@@ -1,0 +1,40 @@
+=Module <<a_api_type | module Lwt_read_line.Terminal >> =
+<<div class="code"|<<span class="keyword"|module>> Terminal: <<span class='code'|sig>><<a_api text=".." | module Lwt_read_line.Terminal >><<span class='code'|end>>>>~Rendering to the terminal\\
+
+----
+<<div class="code" id="TYPEstate"|<<span class="keyword"|type>> state>>
+<<div class="info"|~State of rendering\\
+>>
+
+<<div id="VALinit" class="code"|<<span class="keyword"|val>> init : <<span class="code type"|<<a_api text="state" | type Lwt_read_line.Terminal.state >>>>>><<div class="info"|~Initial state\\
+>>
+\\
+~The following functions are the one used by read~-line functions
+      of this module~.\\
+<<div class="code" id="TYPEbox"|<<span class="keyword"|type>> box = 
+|@@class="typetable"@ @class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Box_none>>|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~No box at all|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Box_empty>>|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~An empty box|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Box_words>> <<span class="keyword"|of>> <<span class="code type"|<<a_api text="Lwt_read_line.text_set" | type Lwt_read_line.text_set >> * int>>|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@<<span class='code'|~B~M~_words~(words~, position~)>> is a box with the given list
+            of words~. <<span class='code'|position>> is the position of the selected word
+            in the list~.~.|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Box_message>> <<span class="keyword"|of>> <<span class="code type"|string>>|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~A box containing only the given message|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|>>
+<<div class="info"|~Box for the completion~:\\
+>>
+
+<<div id="VALdraw" class="code"|<<span class="keyword"|val>> draw : <<span class="code type"|\\{{{   }}}columns:int ->\\{{{   }}}  ?map_text:(Text.t -> Text.t) ->\\{{{   }}}  ?box:<<a_api text="box" | type Lwt_read_line.Terminal.box >> ->\\{{{   }}}  render_state:<<a_api text="state" | type Lwt_read_line.Terminal.state >> ->\\{{{   }}}  engine_state:<<a_api text="Lwt_read_line.Engine.state" | type Lwt_read_line.Engine.state >> ->\\{{{   }}}  prompt:<<a_api text="Lwt_read_line.prompt" | type Lwt_read_line.prompt >> ->\\{{{   }}}  unit -> <<a_api text="Lwt_term.styled_text" | type Lwt_term.styled_text >> * <<a_api text="state" | type Lwt_read_line.Terminal.state >>>>>><<div class="info"|<<span class='code'|draw ~~column ~?map~_text ~?bar ~~render~_state ~~engine~_state
+        prompt ~(~)>> returns <<span class='code'|~(text~, state~)>> where <<span class='code'|state>> is the new
+        rendering state~, and <<span class='code'|text>> is a text containing escape
+        sequences~. ~When printed~, it will update the displayed state~.\\
+>>
+<<div class="param_info"|<<span class="code code"|map_text>> : is a function used to map user input before
+          printing it~, for example to hide passwords~.>>
+<<div class="param_info"|<<span class="code code"|box>> : defaults to <<span class='code'|~Box~_none>>~.>>
+<<div id="VALlast_draw" class="code"|<<span class="keyword"|val>> last~_draw : <<span class="code type"|\\{{{   }}}columns:int ->\\{{{   }}}  ?map_text:(Text.t -> Text.t) ->\\{{{   }}}  render_state:<<a_api text="state" | type Lwt_read_line.Terminal.state >> ->\\{{{   }}}  engine_state:<<a_api text="Lwt_read_line.Engine.state" | type Lwt_read_line.Engine.state >> ->\\{{{   }}}  prompt:<<a_api text="Lwt_read_line.prompt" | type Lwt_read_line.prompt >> -> unit -> <<a_api text="Lwt_term.styled_text" | type Lwt_term.styled_text >>>>>><<div class="info"|~Draw for the last time~, i~.e~. the cursor is left after the text
+        and not at current position~.\\
+>>
+<<div id="VALerase" class="code"|<<span class="keyword"|val>> erase : <<span class="code type"|\\{{{   }}}columns:int ->\\{{{   }}}  render_state:<<a_api text="state" | type Lwt_read_line.Terminal.state >> -> unit -> <<a_api text="Lwt_term.styled_text" | type Lwt_term.styled_text >>>>>><<div class="info"|<<span class='code'|erase ~~columns ~~render~_state ~(~)>> returns a text which will
+        erase everything ~(the prompt~, user input~, completion~, ~.~.~.~)~.\\
+
+
+        ~After an erase~, the rendering state is <<span class='code'|init>>~.\\
+>>

@@ -1,0 +1,16 @@
+=Module <<a_api_type | module Eliom_predefmod.Redirections >> =
+<<div class="code"|<<span class="keyword"|module>> Redirections: \\{{{   }}}<<span class="code type"|<<a_api text="Eliom_mkreg.ELIOMREGSIG" | module Eliom_mkreg.ELIOMREGSIG >>>><<span class="code type"|{{{  }}} with \\{{{   }}}  type page = <<a_api text="XHTML.M" | module XHTML.M >>.uri\\{{{   }}}(*VVV Would be better to define the type uri elsewhere *)\\{{{   }}}  and type options = [ `Temporary | `Permanent ]>>>>~Allows to create redirections towards other ~U~R~Ls~.
+   ~A ~3~0~1 or ~3~0~7 code is sent to the browser to ask it to redo the request to
+   another ~U~R~L~.\\
+
+
+    ~Warning~: ~The ~U~R~L given must be an absolute ~U~R~I~.\\
+
+
+   ~To choose if you want permanent or temporary redirection~, use
+   the <<span class='code'|options>> parameter of registration functions~.
+   ~For example~: <<span class='code'|register ~~options~:`~Temporary ~.~.~.>>~.\\
+
+----
+<<div class="code"|<<span class="keyword"|include>> <<a_api | module type Eliom_mkreg.ELIOMREGSIG1 >>>>
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="Cookies" | module Eliom_mkreg.ELIOMREGSIG.Cookies >>: \\{{{   }}}<<span class="code type"|<<a_api text="Eliom_mkreg.ELIOMREGSIG1" | module Eliom_mkreg.ELIOMREGSIG1 >>>><<span class="code type"|{{{  }}} \\{{{   }}}    with type page = page * Eliom_services.cookie list>>>>

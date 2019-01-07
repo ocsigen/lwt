@@ -1,0 +1,47 @@
+=Module <<a_api_type | module Lwt_util >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_util>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_util >><<span class="ocsforge_color_keyword"|end>>>>~Note~: ~This lodule is deprecated~. ~Use <<a_api | module Lwt_list >> and <<a_api | module Lwt_pool >>
+    instead~.\\
+
+----
+\\
+
+==@@id="2_Listsiterators"@@~Lists iterators==
+\\
+<<pre id="VALiter" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|iter>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a list <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|iter f l>> start a thread for each element in <<span class="odocwiki_inlinecode"|l>>~.  ~The threads
+        are started according to the list order~, but then can run
+        concurrently~.  ~It terminates when all the threads are
+        terminated~, if all threads are successful~.  ~It fails if any of
+        the threads fail~.\\
+>>
+<<pre id="VALiter_serial" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|iter~_serial>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a list <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Similar to <<span class="odocwiki_inlinecode"|iter>> but wait for one thread to terminate before
+        starting the next one~.\\
+>>
+<<pre id="VALmap" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|map>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a list <<span class="ocsforge_color_delimiter"| -> >> 'b list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|map f l>> apply <<span class="odocwiki_inlinecode"|f>> to each element in <<span class="odocwiki_inlinecode"|l>> and collect the
+        results of the threads thus created~.  ~The threads are started
+        according to the list order~, but then can run concurrently~.
+        <<span class="odocwiki_inlinecode"|map f l>> fails if any of the threads fail~.\\
+>>
+<<pre id="VALmap_with_waiting_action" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|map~_with~_waiting~_action>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a list <<span class="ocsforge_color_delimiter"| -> >> 'b list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|map~_with~_waiting~_action f wa l>> apply <<span class="odocwiki_inlinecode"|f>> to each element
+        in <<span class="odocwiki_inlinecode"|l>> and collect the results of the threads thus created~.
+        ~The threads are started according to the list order~, but
+        then can run concurrently~.  ~The difference with <<span class="odocwiki_inlinecode"|map f l>> is
+        that function wa will be called on the element that the
+        function is waiting for its termination~.\\
+>>
+<<pre id="VALmap_serial" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|map~_serial>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a list <<span class="ocsforge_color_delimiter"| -> >> 'b list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Similar to <<span class="odocwiki_inlinecode"|map>> but wait for one thread to terminate before
+        starting the next one~.\\
+>>
+<<pre id="VALfold_left" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|fold~_left>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<span class="ocsforge_color_delimiter"| -> >> 'b list <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Similar to <<span class="odocwiki_inlinecode"|~List~.fold~_left>>~.\\
+>>
+\\
+
+==@@id="2_Regions"@@~Regions==
+\\
+<<pre class="ocsforge_color odocwiki_code" id="TYPEregion"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|region>>>><<pre id="VALmake_region" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|make~_region>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="region" | type Lwt_util.region >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|make~_region sz>> create a region of size <<span class="odocwiki_inlinecode"|sz>>~.\\
+>>
+<<pre id="VALresize_region" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|resize~_region>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="region" | type Lwt_util.region >> <<span class="ocsforge_color_delimiter"| -> >> int <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|resize~_region reg sz>> resize the region <<span class="odocwiki_inlinecode"|reg>> to size <<span class="odocwiki_inlinecode"|sz>>~.\\
+>>
+<<pre id="VALrun_in_region" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|run~_in~_region>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="region" | type Lwt_util.region >> <<span class="ocsforge_color_delimiter"| -> >> int <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|run~_in~_region reg size f>> execute the thread produced by the
+          function <<span class="odocwiki_inlinecode"|f>> in the region <<span class="odocwiki_inlinecode"|reg>>~. ~The thread is not started
+          before some room is available in the region~.\\
+>>

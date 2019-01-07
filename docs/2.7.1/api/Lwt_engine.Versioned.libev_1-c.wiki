@@ -1,0 +1,8 @@
+=Class <<a_api_type | class Lwt_engine.Versioned.libev_1 >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span name="TYPElibev_1"|<<span class="ocsforge_color_keyword"|class>> <<span class="ocsforge_color_name"|libev_1>>>> <<span class="ocsforge_color_delimiter"|~:>>  <<span class="ocsforge_color_keyword"|object>><<a_api text=".." | class Lwt_engine.Versioned.libev_1 >><<span class="ocsforge_color_keyword"|end>>>><<span class="odocwiki_warning"|Deprecated.>>~In favor of <<a_api | class Lwt_engine.Versioned.libev_2 >>~.
+**Since** 2.7.0\\
+**~Inherits**
+* <<a_api | class Lwt_engine.t >>
+
+----
+<<pre class="ocsforge_color odocwiki_code"|<<span id="ATTloop"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|loop>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="Lwt_engine.ev_loop" | type Lwt_engine.ev_loop >>>>>><<pre class="ocsforge_color odocwiki_code"|<<span id="METHODloop"|<<span class="ocsforge_color_keyword"|method>> <<span class="odocwiki_name"|loop>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="Lwt_engine.ev_loop" | type Lwt_engine.ev_loop >>>>>>

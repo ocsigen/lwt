@@ -1,0 +1,5 @@
+<<code language="ocaml" | sig
+  type inline = [ `Img | `Map | `Object ]
+  type block = [ `Fieldset | `Form | `Table ]
+  type flow = [ `Fieldset | `Form | `Img | `Map | `Object | `Table ]
+end >>

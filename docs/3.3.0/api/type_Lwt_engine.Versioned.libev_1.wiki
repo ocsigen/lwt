@@ -1,0 +1,21 @@
+<<code language="ocaml" | object
+  val loop : Lwt_engine.ev_loop
+  method private cleanup : unit
+  method destroy : unit
+  method fake_io : Unix.file_descr -> unit
+  method iter : bool -> unit
+  method loop : Lwt_engine.ev_loop
+  method on_readable : Unix.file_descr -> (event -> unit) -> event
+  method on_timer : float -> bool -> (event -> unit) -> event
+  method on_writable : Unix.file_descr -> (event -> unit) -> event
+  method readable_count : int
+  method private register_readable :
+    Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+  method private register_timer :
+    float -> bool -> (unit -> unit) -> unit Lazy.t
+  method private register_writable :
+    Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+  method timer_count : int
+  method transfer : abstract -> unit
+  method writable_count : int
+end >>

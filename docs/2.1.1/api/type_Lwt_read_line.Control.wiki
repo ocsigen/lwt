@@ -1,0 +1,52 @@
+<<code language="ocaml" | sig
+  type 'a t
+  val result : 'a Lwt_read_line.Control.t -> 'a Lwt.t
+  val send_command :
+    'a Lwt_read_line.Control.t -> Lwt_read_line.Command.t -> unit
+  val accept : 'a Lwt_read_line.Control.t -> unit
+  val interrupt : 'a Lwt_read_line.Control.t -> unit
+  val hide : 'a Lwt_read_line.Control.t -> unit Lwt.t
+  val show : 'a Lwt_read_line.Control.t -> unit Lwt.t
+  type prompt =
+      Lwt_read_line.Engine.state React.signal ->
+      Lwt_term.styled_text React.signal
+  type state
+  val engine_state :
+    Lwt_read_line.Control.state -> Lwt_read_line.Engine.state
+  val render_state :
+    Lwt_read_line.Control.state -> Lwt_read_line.Terminal.state
+  val make :
+    ?history:Lwt_read_line.history ->
+    ?complete:Lwt_read_line.completion ->
+    ?clipboard:Lwt_read_line.clipboard ->
+    ?mode:[ `classic | `none | `real_time ] ->
+    ?map_text:(Text.t -> Text.t) ->
+    ?filter:(Lwt_read_line.Control.state ->
+             Lwt_read_line.Command.t -> Lwt_read_line.Command.t Lwt.t) ->
+    map_result:(Text.t -> 'a Lwt.t) ->
+    ?prompt:Lwt_read_line.Control.prompt ->
+    unit -> 'a Lwt_read_line.Control.t
+  val read_line :
+    ?history:Lwt_read_line.history ->
+    ?complete:Lwt_read_line.completion ->
+    ?clipboard:Lwt_read_line.clipboard ->
+    ?mode:Lwt_read_line.completion_mode ->
+    ?prompt:Lwt_read_line.Control.prompt ->
+    unit -> Text.t Lwt_read_line.Control.t Lwt.t
+  val read_password :
+    ?clipboard:Lwt_read_line.clipboard ->
+    ?style:Lwt_read_line.password_style ->
+    ?prompt:Lwt_read_line.Control.prompt ->
+    unit -> Text.t Lwt_read_line.Control.t Lwt.t
+  val read_keyword :
+    ?history:Lwt_read_line.history ->
+    ?case_sensitive:bool ->
+    ?mode:Lwt_read_line.completion_mode ->
+    ?prompt:Lwt_read_line.Control.prompt ->
+    values:(Text.t * 'a) list -> unit -> 'a Lwt_read_line.Control.t Lwt.t
+  val read_yes_no :
+    ?history:Lwt_read_line.history ->
+    ?mode:Lwt_read_line.completion_mode ->
+    ?prompt:Lwt_read_line.Control.prompt ->
+    unit -> bool Lwt_read_line.Control.t Lwt.t
+end >>

@@ -1,0 +1,178 @@
+<<code language="ocaml" | sig
+  exception Channel_closed of string
+  type 'mode channel
+  type input
+  type output
+  type 'a mode =
+      Input : Lwt_io.input Lwt_io.mode
+    | Output : Lwt_io.output Lwt_io.mode
+  val input : Lwt_io.input Lwt_io.mode
+  val output : Lwt_io.output Lwt_io.mode
+  type input_channel = Lwt_io.input Lwt_io.channel
+  type output_channel = Lwt_io.output Lwt_io.channel
+  val mode : 'a Lwt_io.channel -> 'a Lwt_io.mode
+  val stdin : Lwt_io.input_channel
+  val stdout : Lwt_io.output_channel
+  val stderr : Lwt_io.output_channel
+  val zero : Lwt_io.input_channel
+  val null : Lwt_io.output_channel
+  val pipe :
+    ?in_buffer:Lwt_bytes.t ->
+    ?out_buffer:Lwt_bytes.t ->
+    unit -> Lwt_io.input_channel * Lwt_io.output_channel
+  val make :
+    ?buffer:Lwt_bytes.t ->
+    ?close:(unit -> unit Lwt.t) ->
+    ?seek:(int64 -> Unix.seek_command -> int64 Lwt.t) ->
+    mode:'mode Lwt_io.mode ->
+    (Lwt_bytes.t -> int -> int -> int Lwt.t) -> 'mode Lwt_io.channel
+  val of_bytes :
+    mode:'mode Lwt_io.mode -> Lwt_bytes.t -> 'mode Lwt_io.channel
+  val of_fd :
+    ?buffer:Lwt_bytes.t ->
+    ?close:(unit -> unit Lwt.t) ->
+    mode:'mode Lwt_io.mode -> Lwt_unix.file_descr -> 'mode Lwt_io.channel
+  val of_unix_fd :
+    ?buffer:Lwt_bytes.t ->
+    ?close:(unit -> unit Lwt.t) ->
+    mode:'mode Lwt_io.mode -> Unix.file_descr -> 'mode Lwt_io.channel
+  val close : 'a Lwt_io.channel -> unit Lwt.t
+  val abort : 'a Lwt_io.channel -> unit Lwt.t
+  val atomic :
+    ('a Lwt_io.channel -> 'b Lwt.t) -> 'a Lwt_io.channel -> 'b Lwt.t
+  val file_length : string -> int64 Lwt.t
+  val buffered : 'a Lwt_io.channel -> int
+  val flush : Lwt_io.output_channel -> unit Lwt.t
+  val flush_all : unit -> unit Lwt.t
+  val buffer_size : 'a Lwt_io.channel -> int
+  val resize_buffer : 'a Lwt_io.channel -> int -> unit Lwt.t
+  val is_busy : 'a Lwt_io.channel -> bool
+  val position : 'a Lwt_io.channel -> int64
+  val set_position : 'a Lwt_io.channel -> int64 -> unit Lwt.t
+  val length : 'a Lwt_io.channel -> int64 Lwt.t
+  val read_char : Lwt_io.input_channel -> char Lwt.t
+  val read_char_opt : Lwt_io.input_channel -> char option Lwt.t
+  val read_chars : Lwt_io.input_channel -> char Lwt_stream.t
+  val read_line : Lwt_io.input_channel -> string Lwt.t
+  val read_line_opt : Lwt_io.input_channel -> string option Lwt.t
+  val read_lines : Lwt_io.input_channel -> string Lwt_stream.t
+  val read : ?count:int -> Lwt_io.input_channel -> string Lwt.t
+  val read_into : Lwt_io.input_channel -> Bytes.t -> int -> int -> int Lwt.t
+  val read_into_exactly :
+    Lwt_io.input_channel -> Bytes.t -> int -> int -> unit Lwt.t
+  val read_value : Lwt_io.input_channel -> 'a Lwt.t
+  val write_char : Lwt_io.output_channel -> char -> unit Lwt.t
+  val write_chars : Lwt_io.output_channel -> char Lwt_stream.t -> unit Lwt.t
+  val write : Lwt_io.output_channel -> string -> unit Lwt.t
+  val write_line : Lwt_io.output_channel -> string -> unit Lwt.t
+  val write_lines :
+    Lwt_io.output_channel -> string Lwt_stream.t -> unit Lwt.t
+  val write_from :
+    Lwt_io.output_channel -> Bytes.t -> int -> int -> int Lwt.t
+  val write_from_string :
+    Lwt_io.output_channel -> string -> int -> int -> int Lwt.t
+  val write_from_exactly :
+    Lwt_io.output_channel -> Bytes.t -> int -> int -> unit Lwt.t
+  val write_from_string_exactly :
+    Lwt_io.output_channel -> string -> int -> int -> unit Lwt.t
+  val write_value :
+    Lwt_io.output_channel ->
+    ?flags:Marshal.extern_flags list -> 'a -> unit Lwt.t
+  val fprint : Lwt_io.output_channel -> string -> unit Lwt.t
+  val fprintl : Lwt_io.output_channel -> string -> unit Lwt.t
+  val fprintf :
+    Lwt_io.output_channel ->
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -> 'a
+  val fprintlf :
+    Lwt_io.output_channel ->
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -> 'a
+  val print : string -> unit Lwt.t
+  val printl : string -> unit Lwt.t
+  val printf : ('a, unit, string, unit Lwt.t) Pervasives.format4 -> 'a
+  val printlf : ('a, unit, string, unit Lwt.t) Pervasives.format4 -> 'a
+  val eprint : string -> unit Lwt.t
+  val eprintl : string -> unit Lwt.t
+  val eprintf : ('a, unit, string, unit Lwt.t) Pervasives.format4 -> 'a
+  val eprintlf : ('a, unit, string, unit Lwt.t) Pervasives.format4 -> 'a
+  val hexdump_stream :
+    Lwt_io.output_channel -> char Lwt_stream.t -> unit Lwt.t
+  val hexdump : Lwt_io.output_channel -> string -> unit Lwt.t
+  type file_name = string
+  val open_file :
+    ?buffer:Lwt_bytes.t ->
+    ?flags:Unix.open_flag list ->
+    ?perm:Unix.file_perm ->
+    mode:'a Lwt_io.mode -> Lwt_io.file_name -> 'a Lwt_io.channel Lwt.t
+  val with_file :
+    ?buffer:Lwt_bytes.t ->
+    ?flags:Unix.open_flag list ->
+    ?perm:Unix.file_perm ->
+    mode:'a Lwt_io.mode ->
+    Lwt_io.file_name -> ('a Lwt_io.channel -> 'b Lwt.t) -> 'b Lwt.t
+  val open_connection :
+    ?fd:Lwt_unix.file_descr ->
+    ?in_buffer:Lwt_bytes.t ->
+    ?out_buffer:Lwt_bytes.t ->
+    Unix.sockaddr -> (Lwt_io.input_channel * Lwt_io.output_channel) Lwt.t
+  val with_connection :
+    ?fd:Lwt_unix.file_descr ->
+    ?in_buffer:Lwt_bytes.t ->
+    ?out_buffer:Lwt_bytes.t ->
+    Unix.sockaddr ->
+    (Lwt_io.input_channel * Lwt_io.output_channel -> 'a Lwt.t) -> 'a Lwt.t
+  type server
+  val establish_server :
+    ?fd:Lwt_unix.file_descr ->
+    ?buffer_size:int ->
+    ?backlog:int ->
+    Unix.sockaddr ->
+    (Lwt_io.input_channel * Lwt_io.output_channel -> unit) -> Lwt_io.server
+  val shutdown_server : Lwt_io.server -> unit
+  val lines_of_file : Lwt_io.file_name -> string Lwt_stream.t
+  val lines_to_file : Lwt_io.file_name -> string Lwt_stream.t -> unit Lwt.t
+  val chars_of_file : Lwt_io.file_name -> char Lwt_stream.t
+  val chars_to_file : Lwt_io.file_name -> char Lwt_stream.t -> unit Lwt.t
+  module type NumberIO =
+    sig
+      val read_int : Lwt_io.input_channel -> int Lwt.t
+      val read_int16 : Lwt_io.input_channel -> int Lwt.t
+      val read_int32 : Lwt_io.input_channel -> int32 Lwt.t
+      val read_int64 : Lwt_io.input_channel -> int64 Lwt.t
+      val read_float32 : Lwt_io.input_channel -> float Lwt.t
+      val read_float64 : Lwt_io.input_channel -> float Lwt.t
+      val write_int : Lwt_io.output_channel -> int -> unit Lwt.t
+      val write_int16 : Lwt_io.output_channel -> int -> unit Lwt.t
+      val write_int32 : Lwt_io.output_channel -> int32 -> unit Lwt.t
+      val write_int64 : Lwt_io.output_channel -> int64 -> unit Lwt.t
+      val write_float32 : Lwt_io.output_channel -> float -> unit Lwt.t
+      val write_float64 : Lwt_io.output_channel -> float -> unit Lwt.t
+    end
+  module LE : NumberIO
+  module BE : NumberIO
+  val read_int : input_channel -> int Lwt.t
+  val read_int16 : input_channel -> int Lwt.t
+  val read_int32 : input_channel -> int32 Lwt.t
+  val read_int64 : input_channel -> int64 Lwt.t
+  val read_float32 : input_channel -> float Lwt.t
+  val read_float64 : input_channel -> float Lwt.t
+  val write_int : output_channel -> int -> unit Lwt.t
+  val write_int16 : output_channel -> int -> unit Lwt.t
+  val write_int32 : output_channel -> int32 -> unit Lwt.t
+  val write_int64 : output_channel -> int64 -> unit Lwt.t
+  val write_float32 : output_channel -> float -> unit Lwt.t
+  val write_float64 : output_channel -> float -> unit Lwt.t
+  type byte_order = Lwt_sys.byte_order = Little_endian | Big_endian
+  val system_byte_order : Lwt_io.byte_order
+  val block :
+    'a Lwt_io.channel -> int -> (Lwt_bytes.t -> int -> 'b Lwt.t) -> 'b Lwt.t
+  type direct_access = {
+    da_buffer : Lwt_bytes.t;
+    mutable da_ptr : int;
+    mutable da_max : int;
+    da_perform : unit -> int Lwt.t;
+  }
+  val direct_access :
+    'a Lwt_io.channel -> (Lwt_io.direct_access -> 'b Lwt.t) -> 'b Lwt.t
+  val default_buffer_size : unit -> int
+  val set_default_buffer_size : int -> unit
+end >>

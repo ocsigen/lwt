@@ -1,0 +1,12 @@
+<<code language="ocaml" | sig
+  type elt
+  type t
+  val empty : Lwt_pqueue.S.t
+  val is_empty : Lwt_pqueue.S.t -> bool
+  val add : Lwt_pqueue.S.elt -> Lwt_pqueue.S.t -> Lwt_pqueue.S.t
+  val union : Lwt_pqueue.S.t -> Lwt_pqueue.S.t -> Lwt_pqueue.S.t
+  val find_min : Lwt_pqueue.S.t -> Lwt_pqueue.S.elt
+  val lookup_min : Lwt_pqueue.S.t -> Lwt_pqueue.S.elt option
+  val remove_min : Lwt_pqueue.S.t -> Lwt_pqueue.S.t
+  val size : Lwt_pqueue.S.t -> int
+end >>

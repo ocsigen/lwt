@@ -1,0 +1,74 @@
+=Module type <<a_api_type | module type Eliom_mkforms.FORMCREATE >> =
+<<div class="code"|<<span class="keyword"|module type>> FORMCREATE = <<span class='code'|sig>><<a_api text=".." | module type Eliom_mkforms.FORMCREATE >><<span class='code'|end>>>>
+----
+<<div class="code" id="TYPEform_content_elt"|<<span class="keyword"|type>> form~_content~_elt>>
+
+<<div class="code" id="TYPEform_content_elt_list"|<<span class="keyword"|type>> form~_content~_elt~_list>>
+
+<<div class="code" id="TYPEform_elt"|<<span class="keyword"|type>> form~_elt>>
+
+<<div class="code" id="TYPEa_content_elt"|<<span class="keyword"|type>> a~_content~_elt>>
+
+<<div class="code" id="TYPEa_content_elt_list"|<<span class="keyword"|type>> a~_content~_elt~_list>>
+
+<<div class="code" id="TYPEa_elt"|<<span class="keyword"|type>> a~_elt>>
+
+<<div class="code" id="TYPEa_elt_list"|<<span class="keyword"|type>> a~_elt~_list>>
+
+<<div class="code" id="TYPEdiv_content_elt"|<<span class="keyword"|type>> div~_content~_elt>>
+
+<<div class="code" id="TYPEdiv_content_elt_list"|<<span class="keyword"|type>> div~_content~_elt~_list>>
+
+<<div class="code" id="TYPEuri"|<<span class="keyword"|type>> uri>>
+
+<<div class="code" id="TYPElink_elt"|<<span class="keyword"|type>> link~_elt>>
+
+<<div class="code" id="TYPEscript_elt"|<<span class="keyword"|type>> script~_elt>>
+
+<<div class="code" id="TYPEtextarea_elt"|<<span class="keyword"|type>> textarea~_elt>>
+
+<<div class="code" id="TYPEinput_elt"|<<span class="keyword"|type>> input~_elt>>
+
+<<div class="code" id="TYPEpcdata_elt"|<<span class="keyword"|type>> pcdata~_elt>>
+
+<<div class="code" id="TYPEselect_elt"|<<span class="keyword"|type>> select~_elt>>
+
+<<div class="code" id="TYPEselect_content_elt"|<<span class="keyword"|type>> select~_content~_elt>>
+
+<<div class="code" id="TYPEselect_content_elt_list"|<<span class="keyword"|type>> select~_content~_elt~_list>>
+
+<<div class="code" id="TYPEoption_elt"|<<span class="keyword"|type>> option~_elt>>
+
+<<div class="code" id="TYPEoption_elt_list"|<<span class="keyword"|type>> option~_elt~_list>>
+
+<<div class="code" id="TYPEbutton_elt"|<<span class="keyword"|type>> button~_elt>>
+
+<<div class="code" id="TYPEbutton_content_elt"|<<span class="keyword"|type>> button~_content~_elt>>
+
+<<div class="code" id="TYPEbutton_content_elt_list"|<<span class="keyword"|type>> button~_content~_elt~_list>>
+
+<<div class="code" id="TYPEa_attrib_t"|<<span class="keyword"|type>> a~_attrib~_t>>
+
+<<div class="code" id="TYPEform_attrib_t"|<<span class="keyword"|type>> form~_attrib~_t>>
+
+<<div class="code" id="TYPEinput_attrib_t"|<<span class="keyword"|type>> input~_attrib~_t>>
+
+<<div class="code" id="TYPEtextarea_attrib_t"|<<span class="keyword"|type>> textarea~_attrib~_t>>
+
+<<div class="code" id="TYPEselect_attrib_t"|<<span class="keyword"|type>> select~_attrib~_t>>
+
+<<div class="code" id="TYPElink_attrib_t"|<<span class="keyword"|type>> link~_attrib~_t>>
+
+<<div class="code" id="TYPEscript_attrib_t"|<<span class="keyword"|type>> script~_attrib~_t>>
+
+<<div class="code" id="TYPEoptgroup_attrib_t"|<<span class="keyword"|type>> optgroup~_attrib~_t>>
+
+<<div class="code" id="TYPEoption_attrib_t"|<<span class="keyword"|type>> option~_attrib~_t>>
+
+<<div class="code" id="TYPEbutton_attrib_t"|<<span class="keyword"|type>> button~_attrib~_t>>
+
+<<div class="code" id="TYPEinput_type_t"|<<span class="keyword"|type>> input~_type~_t>>
+
+<<div class="code" id="TYPEbutton_type_t"|<<span class="keyword"|type>> button~_type~_t>>
+
+<<div id="VALhidden" class="code"|<<span class="keyword"|val>> hidden : <<span class="code type"|<<a_api text="input_type_t" | type Eliom_mkforms.FORMCREATE.input_type_t >>>>>><<div id="VALcheckbox" class="code"|<<span class="keyword"|val>> checkbox : <<span class="code type"|<<a_api text="input_type_t" | type Eliom_mkforms.FORMCREATE.input_type_t >>>>>><<div id="VALradio" class="code"|<<span class="keyword"|val>> radio : <<span class="code type"|<<a_api text="input_type_t" | type Eliom_mkforms.FORMCREATE.input_type_t >>>>>><<div id="VALsubmit" class="code"|<<span class="keyword"|val>> submit : <<span class="code type"|<<a_api text="input_type_t" | type Eliom_mkforms.FORMCREATE.input_type_t >>>>>><<div id="VALfile" class="code"|<<span class="keyword"|val>> file : <<span class="code type"|<<a_api text="input_type_t" | type Eliom_mkforms.FORMCREATE.input_type_t >>>>>><<div id="VALimage" class="code"|<<span class="keyword"|val>> image : <<span class="code type"|<<a_api text="input_type_t" | type Eliom_mkforms.FORMCREATE.input_type_t >>>>>><<div id="VALbuttonsubmit" class="code"|<<span class="keyword"|val>> buttonsubmit : <<span class="code type"|<<a_api text="button_type_t" | type Eliom_mkforms.FORMCREATE.button_type_t >>>>>><<div id="VALempty_seq" class="code"|<<span class="keyword"|val>> empty~_seq : <<span class="code type"|<<a_api text="form_content_elt_list" | type Eliom_mkforms.FORMCREATE.form_content_elt_list >>>>>><<div id="VALcons_form" class="code"|<<span class="keyword"|val>> cons~_form : <<span class="code type"|\\{{{   }}}<<a_api text="form_content_elt" | type Eliom_mkforms.FORMCREATE.form_content_elt >> ->\\{{{   }}}  <<a_api text="form_content_elt_list" | type Eliom_mkforms.FORMCREATE.form_content_elt_list >> ->\\{{{   }}}  <<a_api text="form_content_elt_list" | type Eliom_mkforms.FORMCREATE.form_content_elt_list >>>>>><<div id="VALmap_option" class="code"|<<span class="keyword"|val>> map~_option : <<span class="code type"|\\{{{   }}}('a -> <<a_api text="option_elt" | type Eliom_mkforms.FORMCREATE.option_elt >>) ->\\{{{   }}}  'a list -> <<a_api text="option_elt_list" | type Eliom_mkforms.FORMCREATE.option_elt_list >>>>>><<div id="VALmap_optgroup" class="code"|<<span class="keyword"|val>> map~_optgroup : <<span class="code type"|\\{{{   }}}('a -> <<a_api text="select_content_elt" | type Eliom_mkforms.FORMCREATE.select_content_elt >>) ->\\{{{   }}}  'a ->\\{{{   }}}  'a list ->\\{{{   }}}  <<a_api text="select_content_elt" | type Eliom_mkforms.FORMCREATE.select_content_elt >> *\\{{{   }}}  <<a_api text="select_content_elt_list" | type Eliom_mkforms.FORMCREATE.select_content_elt_list >>>>>><<div id="VALselect_content_of_option" class="code"|<<span class="keyword"|val>> select~_content~_of~_option : <<span class="code type"|\\{{{   }}}<<a_api text="option_elt" | type Eliom_mkforms.FORMCREATE.option_elt >> ->\\{{{   }}}  <<a_api text="select_content_elt" | type Eliom_mkforms.FORMCREATE.select_content_elt >>>>>><<div id="VALmake_pcdata" class="code"|<<span class="keyword"|val>> make~_pcdata : <<span class="code type"|string -> <<a_api text="pcdata_elt" | type Eliom_mkforms.FORMCREATE.pcdata_elt >>>>>><<div id="VALmake_a" class="code"|<<span class="keyword"|val>> make~_a : <<span class="code type"|\\{{{   }}}?a:<<a_api text="a_attrib_t" | type Eliom_mkforms.FORMCREATE.a_attrib_t >> ->\\{{{   }}}  href:string ->\\{{{   }}}  <<a_api text="a_content_elt_list" | type Eliom_mkforms.FORMCREATE.a_content_elt_list >> -> <<a_api text="a_elt" | type Eliom_mkforms.FORMCREATE.a_elt >>>>>><<div id="VALmake_get_form" class="code"|<<span class="keyword"|val>> make~_get~_form : <<span class="code type"|\\{{{   }}}?a:<<a_api text="form_attrib_t" | type Eliom_mkforms.FORMCREATE.form_attrib_t >> ->\\{{{   }}}  action:string ->\\{{{   }}}  <<a_api text="form_content_elt" | type Eliom_mkforms.FORMCREATE.form_content_elt >> ->\\{{{   }}}  <<a_api text="form_content_elt_list" | type Eliom_mkforms.FORMCREATE.form_content_elt_list >> ->\\{{{   }}}  <<a_api text="form_elt" | type Eliom_mkforms.FORMCREATE.form_elt >>>>>><<div id="VALmake_post_form" class="code"|<<span class="keyword"|val>> make~_post~_form : <<span class="code type"|\\{{{   }}}?a:<<a_api text="form_attrib_t" | type Eliom_mkforms.FORMCREATE.form_attrib_t >> ->\\{{{   }}}  action:string ->\\{{{   }}}  ?id:string ->\\{{{   }}}  ?inline:bool ->\\{{{   }}}  <<a_api text="form_content_elt" | type Eliom_mkforms.FORMCREATE.form_content_elt >> ->\\{{{   }}}  <<a_api text="form_content_elt_list" | type Eliom_mkforms.FORMCREATE.form_content_elt_list >> ->\\{{{   }}}  <<a_api text="form_elt" | type Eliom_mkforms.FORMCREATE.form_elt >>>>>><<div id="VALmake_hidden_field" class="code"|<<span class="keyword"|val>> make~_hidden~_field : <<span class="code type"|\\{{{   }}}<<a_api text="input_elt" | type Eliom_mkforms.FORMCREATE.input_elt >> ->\\{{{   }}}  <<a_api text="form_content_elt" | type Eliom_mkforms.FORMCREATE.form_content_elt >>>>>><<div id="VALremove_first" class="code"|<<span class="keyword"|val>> remove~_first : <<span class="code type"|\\{{{   }}}<<a_api text="form_content_elt_list" | type Eliom_mkforms.FORMCREATE.form_content_elt_list >> ->\\{{{   }}}  <<a_api text="form_content_elt" | type Eliom_mkforms.FORMCREATE.form_content_elt >> *\\{{{   }}}  <<a_api text="form_content_elt_list" | type Eliom_mkforms.FORMCREATE.form_content_elt_list >>>>>><<div id="VALmake_input" class="code"|<<span class="keyword"|val>> make~_input : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.FORMCREATE.input_attrib_t >> ->\\{{{   }}}  ?checked:bool ->\\{{{   }}}  typ:<<a_api text="input_type_t" | type Eliom_mkforms.FORMCREATE.input_type_t >> ->\\{{{   }}}  ?name:string ->\\{{{   }}}  ?src:<<a_api text="uri" | type Eliom_mkforms.FORMCREATE.uri >> ->\\{{{   }}}  ?value:string -> unit -> <<a_api text="input_elt" | type Eliom_mkforms.FORMCREATE.input_elt >>>>>><<div id="VALmake_button" class="code"|<<span class="keyword"|val>> make~_button : <<span class="code type"|\\{{{   }}}?a:<<a_api text="button_attrib_t" | type Eliom_mkforms.FORMCREATE.button_attrib_t >> ->\\{{{   }}}  button_type:<<a_api text="button_type_t" | type Eliom_mkforms.FORMCREATE.button_type_t >> ->\\{{{   }}}  ?name:string ->\\{{{   }}}  ?value:string ->\\{{{   }}}  <<a_api text="button_content_elt_list" | type Eliom_mkforms.FORMCREATE.button_content_elt_list >> ->\\{{{   }}}  <<a_api text="button_elt" | type Eliom_mkforms.FORMCREATE.button_elt >>>>>><<div id="VALmake_textarea" class="code"|<<span class="keyword"|val>> make~_textarea : <<span class="code type"|\\{{{   }}}?a:<<a_api text="textarea_attrib_t" | type Eliom_mkforms.FORMCREATE.textarea_attrib_t >> ->\\{{{   }}}  name:string ->\\{{{   }}}  ?value:<<a_api text="pcdata_elt" | type Eliom_mkforms.FORMCREATE.pcdata_elt >> ->\\{{{   }}}  rows:int -> cols:int -> unit -> <<a_api text="textarea_elt" | type Eliom_mkforms.FORMCREATE.textarea_elt >>>>>><<div id="VALmake_select" class="code"|<<span class="keyword"|val>> make~_select : <<span class="code type"|\\{{{   }}}?a:<<a_api text="select_attrib_t" | type Eliom_mkforms.FORMCREATE.select_attrib_t >> ->\\{{{   }}}  multiple:bool ->\\{{{   }}}  name:string ->\\{{{   }}}  <<a_api text="select_content_elt" | type Eliom_mkforms.FORMCREATE.select_content_elt >> ->\\{{{   }}}  <<a_api text="select_content_elt_list" | type Eliom_mkforms.FORMCREATE.select_content_elt_list >> ->\\{{{   }}}  <<a_api text="select_elt" | type Eliom_mkforms.FORMCREATE.select_elt >>>>>><<div id="VALmake_option" class="code"|<<span class="keyword"|val>> make~_option : <<span class="code type"|\\{{{   }}}?a:<<a_api text="option_attrib_t" | type Eliom_mkforms.FORMCREATE.option_attrib_t >> ->\\{{{   }}}  selected:bool ->\\{{{   }}}  ?value:string ->\\{{{   }}}  <<a_api text="pcdata_elt" | type Eliom_mkforms.FORMCREATE.pcdata_elt >> -> <<a_api text="option_elt" | type Eliom_mkforms.FORMCREATE.option_elt >>>>>><<div id="VALmake_optgroup" class="code"|<<span class="keyword"|val>> make~_optgroup : <<span class="code type"|\\{{{   }}}?a:<<a_api text="optgroup_attrib_t" | type Eliom_mkforms.FORMCREATE.optgroup_attrib_t >> ->\\{{{   }}}  label:string ->\\{{{   }}}  <<a_api text="option_elt" | type Eliom_mkforms.FORMCREATE.option_elt >> ->\\{{{   }}}  <<a_api text="option_elt_list" | type Eliom_mkforms.FORMCREATE.option_elt_list >> ->\\{{{   }}}  <<a_api text="select_content_elt" | type Eliom_mkforms.FORMCREATE.select_content_elt >>>>>><<div id="VALuri_of_string" class="code"|<<span class="keyword"|val>> uri~_of~_string : <<span class="code type"|string -> <<a_api text="uri" | type Eliom_mkforms.FORMCREATE.uri >>>>>><<div id="VALmake_css_link" class="code"|<<span class="keyword"|val>> make~_css~_link : <<span class="code type"|\\{{{   }}}?a:<<a_api text="link_attrib_t" | type Eliom_mkforms.FORMCREATE.link_attrib_t >> ->\\{{{   }}}  uri:<<a_api text="uri" | type Eliom_mkforms.FORMCREATE.uri >> -> unit -> <<a_api text="link_elt" | type Eliom_mkforms.FORMCREATE.link_elt >>>>>><<div id="VALmake_js_script" class="code"|<<span class="keyword"|val>> make~_js~_script : <<span class="code type"|\\{{{   }}}?a:<<a_api text="script_attrib_t" | type Eliom_mkforms.FORMCREATE.script_attrib_t >> ->\\{{{   }}}  uri:<<a_api text="uri" | type Eliom_mkforms.FORMCREATE.uri >> ->\\{{{   }}}  unit -> <<a_api text="script_elt" | type Eliom_mkforms.FORMCREATE.script_elt >>>>>>

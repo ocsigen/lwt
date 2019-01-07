@@ -1,0 +1,265 @@
+<<code language="ocaml" | functor (Pages : FORMCREATE) ->
+  sig
+    type form_content_elt = Pages.form_content_elt
+    type form_content_elt_list = Pages.form_content_elt_list
+    type form_elt = Pages.form_elt
+    type a_content_elt = Pages.a_content_elt
+    type a_content_elt_list = Pages.a_content_elt_list
+    type a_elt = Pages.a_elt
+    type a_elt_list = Pages.a_elt_list
+    type div_content_elt = Pages.div_content_elt
+    type div_content_elt_list = Pages.div_content_elt_list
+    type uri = Pages.uri
+    type link_elt = Pages.link_elt
+    type script_elt = Pages.script_elt
+    type textarea_elt = Pages.textarea_elt
+    type input_elt = Pages.input_elt
+    type pcdata_elt = Pages.pcdata_elt
+    type select_elt = Pages.select_elt
+    type select_content_elt
+    type select_content_elt_list
+    type button_elt = Pages.button_elt
+    type button_content_elt = Pages.button_content_elt
+    type button_content_elt_list = Pages.button_content_elt_list
+    type a_attrib_t = Pages.a_attrib_t
+    type form_attrib_t = Pages.form_attrib_t
+    type input_attrib_t = Pages.input_attrib_t
+    type textarea_attrib_t = Pages.textarea_attrib_t
+    type select_attrib_t = Pages.select_attrib_t
+    type link_attrib_t = Pages.link_attrib_t
+    type script_attrib_t = Pages.script_attrib_t
+    type optgroup_attrib_t = Pages.optgroup_attrib_t
+    type option_attrib_t = Pages.option_attrib_t
+    type button_attrib_t = Pages.button_attrib_t
+    type input_type_t = Pages.input_type_t
+    type button_type_t = Pages.button_type_t
+    val make_full_string_uri :
+      service:('a, unit, [< Eliom_services.get_service_kind ],
+               [< Eliom_services.suff ], 'b, unit,
+               [< Eliom_services.registrable ])
+              Eliom_services.service ->
+      sp:Eliom_sessions.server_params -> ?fragment:string -> 'a -> uri Lwt.t
+    val make_string_uri :
+      service:('a, unit, [< Eliom_services.get_service_kind ],
+               [< Eliom_services.suff ], 'b, unit,
+               [< Eliom_services.registrable ])
+              Eliom_services.service ->
+      sp:Eliom_sessions.server_params -> ?fragment:string -> 'a -> string
+    val make_uri :
+      service:('a, unit, [< Eliom_services.get_service_kind ],
+               [< Eliom_services.suff ], 'b, unit,
+               [< Eliom_services.registrable ])
+              Eliom_services.service ->
+      sp:Eliom_sessions.server_params -> ?fragment:string -> 'a -> uri
+    val a :
+      ?a:a_attrib_t ->
+      service:('a, unit, [< Eliom_services.get_service_kind ],
+               [< Eliom_services.suff ], 'b, 'c,
+               [< Eliom_services.registrable ])
+              Eliom_services.service ->
+      sp:Eliom_sessions.server_params ->
+      ?fragment:string -> a_content_elt_list -> 'a -> a_elt
+    val css_link : ?a:link_attrib_t -> uri:uri -> unit -> link_elt
+    val js_script : ?a:script_attrib_t -> uri:uri -> unit -> script_elt
+    val get_form :
+      ?a:form_attrib_t ->
+      service:('a, unit, [< Eliom_services.get_service_kind ],
+               [< Eliom_services.suff ], 'b, 'c,
+               [< Eliom_services.registrable ])
+              Eliom_services.service ->
+      sp:Eliom_sessions.server_params ->
+      ?fragment:string -> ('b -> form_content_elt_list) -> form_elt
+    val post_form :
+      ?a:form_attrib_t ->
+      service:('a, 'b, [< Eliom_services.post_service_kind ],
+               [< Eliom_services.suff ], 'c, 'd,
+               [< Eliom_services.registrable ])
+              Eliom_services.service ->
+      sp:Eliom_sessions.server_params ->
+      ?fragment:string ->
+      ?keep_get_na_params:bool ->
+      ('d -> form_content_elt_list) -> 'a -> form_elt
+    val int_input :
+      ?a:input_attrib_t ->
+      input_type:input_type_t ->
+      ?name:[< int Eliom_parameters.setoneopt ] Eliom_parameters.param_name ->
+      ?value:int -> unit -> input_elt
+    val float_input :
+      ?a:input_attrib_t ->
+      input_type:input_type_t ->
+      ?name:[< float Eliom_parameters.setoneopt ] Eliom_parameters.param_name ->
+      ?value:float -> unit -> input_elt
+    val string_input :
+      ?a:input_attrib_t ->
+      input_type:input_type_t ->
+      ?name:[< string Eliom_parameters.setoneopt ]
+            Eliom_parameters.param_name ->
+      ?value:string -> unit -> input_elt
+    val user_type_input :
+      ?a:input_attrib_t ->
+      input_type:input_type_t ->
+      ?name:[< 'a Eliom_parameters.setoneopt ] Eliom_parameters.param_name ->
+      ?value:'a -> ('a -> string) -> input_elt
+    val raw_input :
+      ?a:input_attrib_t ->
+      input_type:input_type_t ->
+      ?name:string -> ?value:string -> unit -> input_elt
+    val file_input :
+      ?a:input_attrib_t ->
+      name:[< Ocsigen_extensions.file_info Eliom_parameters.setoneopt ]
+           Eliom_parameters.param_name ->
+      unit -> input_elt
+    val image_input :
+      ?a:input_attrib_t ->
+      name:[< Eliom_parameters.coordinates Eliom_parameters.oneopt ]
+           Eliom_parameters.param_name ->
+      ?src:uri -> unit -> input_elt
+    val int_image_input :
+      ?a:input_attrib_t ->
+      name:[< (int * Eliom_parameters.coordinates) Eliom_parameters.oneopt ]
+           Eliom_parameters.param_name ->
+      value:int -> ?src:uri -> unit -> input_elt
+    val float_image_input :
+      ?a:input_attrib_t ->
+      name:[< (float * Eliom_parameters.coordinates) Eliom_parameters.oneopt ]
+           Eliom_parameters.param_name ->
+      value:float -> ?src:uri -> unit -> input_elt
+    val string_image_input :
+      ?a:input_attrib_t ->
+      name:[< (string * Eliom_parameters.coordinates) Eliom_parameters.oneopt ]
+           Eliom_parameters.param_name ->
+      value:string -> ?src:uri -> unit -> input_elt
+    val user_type_image_input :
+      ?a:input_attrib_t ->
+      name:[< ('a * Eliom_parameters.coordinates) Eliom_parameters.oneopt ]
+           Eliom_parameters.param_name ->
+      value:'a -> ?src:uri -> ('a -> string) -> input_elt
+    val raw_image_input :
+      ?a:input_attrib_t ->
+      name:string -> value:string -> ?src:uri -> unit -> input_elt
+    val bool_checkbox :
+      ?a:input_attrib_t ->
+      ?checked:bool ->
+      name:[ `One of bool ] Eliom_parameters.param_name -> unit -> input_elt
+    val int_checkbox :
+      ?a:input_attrib_t ->
+      ?checked:bool ->
+      name:[ `Set of int ] Eliom_parameters.param_name ->
+      value:int -> unit -> input_elt
+    val float_checkbox :
+      ?a:input_attrib_t ->
+      ?checked:bool ->
+      name:[ `Set of float ] Eliom_parameters.param_name ->
+      value:float -> unit -> input_elt
+    val string_checkbox :
+      ?a:input_attrib_t ->
+      ?checked:bool ->
+      name:[ `Set of string ] Eliom_parameters.param_name ->
+      value:string -> unit -> input_elt
+    val user_type_checkbox :
+      ?a:input_attrib_t ->
+      ?checked:bool ->
+      name:[ `Set of 'a ] Eliom_parameters.param_name ->
+      value:'a -> ('a -> string) -> input_elt
+    val raw_checkbox :
+      ?a:input_attrib_t ->
+      ?checked:bool -> name:string -> value:string -> unit -> input_elt
+    val string_radio :
+      ?a:input_attrib_t ->
+      ?checked:bool ->
+      name:[ `Opt of string ] Eliom_parameters.param_name ->
+      value:string -> unit -> input_elt
+    val int_radio :
+      ?a:input_attrib_t ->
+      ?checked:bool ->
+      name:[ `Opt of int ] Eliom_parameters.param_name ->
+      value:int -> unit -> input_elt
+    val float_radio :
+      ?a:input_attrib_t ->
+      ?checked:bool ->
+      name:[ `Opt of float ] Eliom_parameters.param_name ->
+      value:float -> unit -> input_elt
+    val user_type_radio :
+      ?a:input_attrib_t ->
+      ?checked:bool ->
+      name:[ `Opt of 'a ] Eliom_parameters.param_name ->
+      value:'a -> ('a -> string) -> input_elt
+    val raw_radio :
+      ?a:input_attrib_t ->
+      ?checked:bool -> name:string -> value:string -> unit -> input_elt
+    val string_button :
+      ?a:button_attrib_t ->
+      name:[< string Eliom_parameters.setone ] Eliom_parameters.param_name ->
+      value:string -> button_content_elt_list -> button_elt
+    val int_button :
+      ?a:button_attrib_t ->
+      name:[< int Eliom_parameters.setone ] Eliom_parameters.param_name ->
+      value:int -> button_content_elt_list -> button_elt
+    val float_button :
+      ?a:button_attrib_t ->
+      name:[< float Eliom_parameters.setone ] Eliom_parameters.param_name ->
+      value:float -> button_content_elt_list -> button_elt
+    val user_type_button :
+      ?a:button_attrib_t ->
+      name:[< 'a Eliom_parameters.setone ] Eliom_parameters.param_name ->
+      value:'a -> ('a -> string) -> button_content_elt_list -> button_elt
+    val raw_button :
+      ?a:button_attrib_t ->
+      button_type:button_type_t ->
+      name:string -> value:string -> button_content_elt_list -> button_elt
+    val button :
+      ?a:button_attrib_t ->
+      button_type:button_type_t -> button_content_elt_list -> button_elt
+    val textarea :
+      ?a:textarea_attrib_t ->
+      name:[< string Eliom_parameters.setoneopt ] Eliom_parameters.param_name ->
+      ?value:pcdata_elt -> rows:int -> cols:int -> unit -> textarea_elt
+    val raw_textarea :
+      ?a:textarea_attrib_t ->
+      name:string ->
+      ?value:pcdata_elt -> rows:int -> cols:int -> unit -> textarea_elt
+    type 'a soption = option_attrib_t * 'a * pcdata_elt option * bool
+    type 'a select_opt =
+        Optgroup of optgroup_attrib_t * string * 'a soption * 'a soption list
+      | Option of 'a soption
+    val raw_select :
+      ?a:select_attrib_t ->
+      name:string ->
+      string select_opt -> string select_opt list -> select_elt
+    val int_select :
+      ?a:select_attrib_t ->
+      name:[< `One of int ] Eliom_parameters.param_name ->
+      int select_opt -> int select_opt list -> select_elt
+    val float_select :
+      ?a:select_attrib_t ->
+      name:[< `One of float ] Eliom_parameters.param_name ->
+      float select_opt -> float select_opt list -> select_elt
+    val string_select :
+      ?a:select_attrib_t ->
+      name:[< `One of string ] Eliom_parameters.param_name ->
+      string select_opt -> string select_opt list -> select_elt
+    val user_type_select :
+      ?a:select_attrib_t ->
+      name:[< `One of 'a ] Eliom_parameters.param_name ->
+      'a select_opt -> 'a select_opt list -> ('a -> string) -> select_elt
+    val raw_multiple_select :
+      ?a:select_attrib_t ->
+      name:string ->
+      string select_opt -> string select_opt list -> select_elt
+    val int_multiple_select :
+      ?a:select_attrib_t ->
+      name:[< `Set of int ] Eliom_parameters.param_name ->
+      int select_opt -> int select_opt list -> select_elt
+    val float_multiple_select :
+      ?a:select_attrib_t ->
+      name:[< `Set of float ] Eliom_parameters.param_name ->
+      float select_opt -> float select_opt list -> select_elt
+    val string_multiple_select :
+      ?a:select_attrib_t ->
+      name:[< `Set of string ] Eliom_parameters.param_name ->
+      string select_opt -> string select_opt list -> select_elt
+    val user_type_multiple_select :
+      ?a:select_attrib_t ->
+      name:[< `Set of 'a ] Eliom_parameters.param_name ->
+      'a select_opt -> 'a select_opt list -> ('a -> string) -> select_elt
+  end >>

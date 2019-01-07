@@ -1,0 +1,56 @@
+=Module <<a_api_type | module Lwt_read_line.Control >> =
+<<div class="code"|<<span class="keyword"|module>> Control: <<span class='code'|sig>><<a_api text=".." | module Lwt_read_line.Control >><<span class='code'|end>>>>~Controlling a running read~-line instance\\
+
+----
+<<div class="code" id="TYPEt"|<<span class="keyword"|type>> <<span class="code type"|'a>> t>>
+<<div class="info"|~Type of a running read~-line instance~, returning a value of
+        type <<span class='code'|~'a>>\\
+>>
+
+\\
+
+======@@id="6_Control"@@~Control======
+\\
+<<div id="VALresult" class="code"|<<span class="keyword"|val>> result : <<span class="code type"|'a <<a_api text="t" | type Lwt_read_line.Control.t >> -> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Threads waiting for the read~-line instance to terminates\\
+>>
+<<div id="VALsend_command" class="code"|<<span class="keyword"|val>> send~_command : <<span class="code type"|'a <<a_api text="t" | type Lwt_read_line.Control.t >> -> <<a_api text="Lwt_read_line.Command.t" | type Lwt_read_line.Command.t >> -> unit>>>><<div class="info"|<<span class='code'|send~_command instance command>> sends the given command to the
+        read~-line instance\\
+>>
+<<div id="VALaccept" class="code"|<<span class="keyword"|val>> accept : <<span class="code type"|'a <<a_api text="t" | type Lwt_read_line.Control.t >> -> unit>>>><<div class="info"|<<span class='code'|accept instance ~= send~_command instance ~Command~.~Accept~_line>>\\
+>>
+<<div id="VALinterrupt" class="code"|<<span class="keyword"|val>> interrupt : <<span class="code type"|'a <<a_api text="t" | type Lwt_read_line.Control.t >> -> unit>>>><<div class="info"|<<span class='code'|accept instance ~= send~_command instance ~Command~.~Break>>\\
+>>
+<<div id="VALhide" class="code"|<<span class="keyword"|val>> hide : <<span class="code type"|'a <<a_api text="t" | type Lwt_read_line.Control.t >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Hides everything ~(prompt~, user input~, completion box~) until
+        <<a_api | val Lwt_read_line.Control.show >> is called~.\\
+>>
+<<div id="VALshow" class="code"|<<span class="keyword"|val>> show : <<span class="code type"|'a <<a_api text="t" | type Lwt_read_line.Control.t >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Un~-hide everything\\
+>>
+\\
+~Note~: in case the input is not a terminal~, read~-line instances
+      are not controllable~. i~.e~. <<a_api | val Lwt_read_line.Control.accept >>~, <<span class='code'|refresh>>~, ~.~.~. have no
+      effect~.\\
+\\
+
+======@@id="6_Creationofreadlineinstances"@@~Creation of read~-line instances======
+\\
+<<div class="code" id="TYPEprompt"|<<span class="keyword"|type>> prompt = <<span class="code type"|<<a_api text="Lwt_read_line.Engine.state" | type Lwt_read_line.Engine.state >> React.signal -> <<a_api text="Lwt_term.styled_text" | type Lwt_term.styled_text >> React.signal>> >>
+<<div class="info"|~The prompt a signal which may depends on the engine state\\
+>>
+
+<<div class="code" id="TYPEstate"|<<span class="keyword"|type>> state>>
+<<div class="info"|~State of an instance\\
+>>
+
+<<div id="VALengine_state" class="code"|<<span class="keyword"|val>> engine~_state : <<span class="code type"|<<a_api text="state" | type Lwt_read_line.Control.state >> -> <<a_api text="Lwt_read_line.Engine.state" | type Lwt_read_line.Engine.state >>>>>><<div class="info"|~Return the engine state of the given state\\
+>>
+<<div id="VALrender_state" class="code"|<<span class="keyword"|val>> render~_state : <<span class="code type"|<<a_api text="state" | type Lwt_read_line.Control.state >> -> <<a_api text="Lwt_read_line.Terminal.state" | type Lwt_read_line.Terminal.state >>>>>><<div class="info"|~Return the rendering state of the given state\\
+>>
+<<div id="VALmake" class="code"|<<span class="keyword"|val>> make : <<span class="code type"|\\{{{   }}}?history:<<a_api text="Lwt_read_line.history" | type Lwt_read_line.history >> ->\\{{{   }}}  ?complete:<<a_api text="Lwt_read_line.completion" | type Lwt_read_line.completion >> ->\\{{{   }}}  ?clipboard:<<a_api text="Lwt_read_line.clipboard" | class type Lwt_read_line.clipboard >> ->\\{{{   }}}  ?mode:[ `classic | `none | `real_time ] ->\\{{{   }}}  ?map_text:(Text.t -> Text.t) ->\\{{{   }}}  ?filter:(<<a_api text="state" | type Lwt_read_line.Control.state >> ->\\{{{   }}}           <<a_api text="Lwt_read_line.Command.t" | type Lwt_read_line.Command.t >> -> <<a_api text="Lwt_read_line.Command.t" | type Lwt_read_line.Command.t >> <<a_api text="Lwt.t" | type Lwt.t >>) ->\\{{{   }}}  map_result:(Text.t -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) ->\\{{{   }}}  ?prompt:<<a_api text="prompt" | type Lwt_read_line.Control.prompt >> -> unit -> 'a <<a_api text="t" | type Lwt_read_line.Control.t >>>>>><<div class="info"|~Creates a new read~-line instance with the given
+        parameters~. <<span class='code'|filter>> is called to handle commands~. ~You can
+        return <<span class='code'|~Command~.~Nop>> to drop a command~.\\
+>>
+\\
+
+======@@id="6_Predefinedinstances"@@~Predefined instances======
+\\
+<<div id="VALread_line" class="code"|<<span class="keyword"|val>> read~_line : <<span class="code type"|\\{{{   }}}?history:<<a_api text="Lwt_read_line.history" | type Lwt_read_line.history >> ->\\{{{   }}}  ?complete:<<a_api text="Lwt_read_line.completion" | type Lwt_read_line.completion >> ->\\{{{   }}}  ?clipboard:<<a_api text="Lwt_read_line.clipboard" | class type Lwt_read_line.clipboard >> ->\\{{{   }}}  ?mode:<<a_api text="Lwt_read_line.completion_mode" | type Lwt_read_line.completion_mode >> ->\\{{{   }}}  ?prompt:<<a_api text="prompt" | type Lwt_read_line.Control.prompt >> ->\\{{{   }}}  unit -> Text.t <<a_api text="t" | type Lwt_read_line.Control.t >> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALread_password" class="code"|<<span class="keyword"|val>> read~_password : <<span class="code type"|\\{{{   }}}?clipboard:<<a_api text="Lwt_read_line.clipboard" | class type Lwt_read_line.clipboard >> ->\\{{{   }}}  ?style:<<a_api text="Lwt_read_line.password_style" | type Lwt_read_line.password_style >> ->\\{{{   }}}  ?prompt:<<a_api text="prompt" | type Lwt_read_line.Control.prompt >> ->\\{{{   }}}  unit -> Text.t <<a_api text="t" | type Lwt_read_line.Control.t >> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALread_keyword" class="code"|<<span class="keyword"|val>> read~_keyword : <<span class="code type"|\\{{{   }}}?history:<<a_api text="Lwt_read_line.history" | type Lwt_read_line.history >> ->\\{{{   }}}  ?case_sensitive:bool ->\\{{{   }}}  ?mode:<<a_api text="Lwt_read_line.completion_mode" | type Lwt_read_line.completion_mode >> ->\\{{{   }}}  ?prompt:<<a_api text="prompt" | type Lwt_read_line.Control.prompt >> ->\\{{{   }}}  values:(Text.t * 'a) list -> unit -> 'a <<a_api text="t" | type Lwt_read_line.Control.t >> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALread_yes_no" class="code"|<<span class="keyword"|val>> read~_yes~_no : <<span class="code type"|\\{{{   }}}?history:<<a_api text="Lwt_read_line.history" | type Lwt_read_line.history >> ->\\{{{   }}}  ?mode:<<a_api text="Lwt_read_line.completion_mode" | type Lwt_read_line.completion_mode >> ->\\{{{   }}}  ?prompt:<<a_api text="prompt" | type Lwt_read_line.Control.prompt >> ->\\{{{   }}}  unit -> bool <<a_api text="t" | type Lwt_read_line.Control.t >> <<a_api text="Lwt.t" | type Lwt.t >>>>>>

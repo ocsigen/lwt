@@ -1,0 +1,34 @@
+=Module <<a_api_type | module Lwt_condition >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_condition: <<span class='code'|sig>><<a_api text=".." | module Lwt_condition >><<span class='code'|end>>>>~Conditions\\
+
+----
+\\
+~Condition variables to synchronize between threads~.\\
+<<div class="code" id="TYPEt"|<<span class="keyword"|type>> <<span class="code type"|'a>> t>>
+<<div class="info"|~Condition variable type~. ~The type parameter denotes the type of
+        value propagated from notifier to waiter~.\\
+>>
+
+<<div id="VALcreate" class="code"|<<span class="keyword"|val>> create : <<span class="code type"|unit -> 'a <<a_api text="t" | type Lwt_condition.t >>>>>><<div class="info"|<<span class='code'|create ~(~)>> creates a new condition variable~.\\
+>>
+<<div id="VALwait" class="code"|<<span class="keyword"|val>> wait : <<span class="code type"|?mutex:<<a_api text="Lwt_mutex.t" | type Lwt_mutex.t >> -> 'a <<a_api text="t" | type Lwt_condition.t >> -> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|wait mutex condvar>> will cause the current thread to block~,
+        awaiting notification for a condition variable~, <<span class='code'|condvar>>~. ~If
+        provided~, the <<span class='code'|mutex>> must have been previously locked ~(within
+        the scope of <<span class='code'|~Lwt~_mutex~.with~_lock>>~, for example~) and is
+        temporarily unlocked until the condition is notified~. ~Upon
+        notification~, <<span class='code'|mutex>> is re~-locked before <<span class='code'|wait>> returns and
+        the thread~'s activity is resumed~. ~When the awaited condition
+        is notified~, the value parameter passed to <<span class='code'|notify>> is
+        returned~.\\
+>>
+<<div id="VALsignal" class="code"|<<span class="keyword"|val>> signal : <<span class="code type"|'a <<a_api text="t" | type Lwt_condition.t >> -> 'a -> unit>>>><<div class="info"|<<span class='code'|signal condvar value>> notifies that a condition is ready~. ~A
+        single waiting thread will be awoken and will receive the
+        notification value which will be returned from <<span class='code'|wait>>~. ~Note
+        that condition notification is not "sticky"~, i~.e~. if there is
+        no waiter when <<span class='code'|notify>> is called~, the notification will be
+        missed and the value discarded~.\\
+>>
+<<div id="VALbroadcast" class="code"|<<span class="keyword"|val>> broadcast : <<span class="code type"|'a <<a_api text="t" | type Lwt_condition.t >> -> 'a -> unit>>>><<div class="info"|<<span class='code'|broadcast condvar value>> notifies all waiting threads~. ~Each
+        will be awoken in turn and will receive the same notification
+        value~.\\
+>>

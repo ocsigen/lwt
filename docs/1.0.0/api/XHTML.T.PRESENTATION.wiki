@@ -1,0 +1,9 @@
+=Module <<a_api_type | module XHTML.T.PRESENTATION >> =
+<<div class="code"|<<span class="keyword"|module>> PRESENTATION: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.PRESENTATION >><<span class='code'|end>>>>
+----
+<<div class="code" id="TYPEblock"|<<span class="keyword"|type>> block = <<span class="code type"|[ `Hr ]>> >>
+
+<<div class="code" id="TYPEinline"|<<span class="keyword"|type>> inline = <<span class="code type"|[ `B | `Big | `I | `Small | `Sub | `Sup | `Tt ]>> >>
+
+<<div class="code" id="TYPEflow"|<<span class="keyword"|type>> flow = <<span class="code type"|[ `B | `Big | `Hr | `I | `Small | `Sub | `Sup | `Tt ]>> >>
+

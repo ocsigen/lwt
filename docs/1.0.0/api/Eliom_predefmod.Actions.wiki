@@ -1,0 +1,18 @@
+=Module <<a_api_type | module Eliom_predefmod.Actions >> =
+<<div class="code"|<<span class="keyword"|module>> Actions: \\{{{   }}}<<span class="code type"|<<a_api text="Eliom_mkreg.ELIOMREGSIG" | module Eliom_mkreg.ELIOMREGSIG >>>><<span class="code type"|{{{  }}} with \\{{{   }}}  type page = exn list\\{{{   }}}  and type options = [ `Reload | `NoReload ]>>>>~Actions do not generate any page~. ~They do something~, 
+    then the page corresponding to the ~U~R~L ~(without ~P~O~S~T parameters
+    or non~-attached parameters or coservice parameters~) is sent to the browser~.\\
+
+
+   ~Actions return a list of exceptions~. 
+   ~You may use this to give information to the handler that will be called
+   to reload the page~.
+   ~Use <<a_api | val Eliom_sessions.get_exn >> to access these exceptions from this handler~.\\
+
+
+    ~If you give the optional parameter 
+    <<span class='code'|~~options~:`~No~Reload>> to the registration function~, no page will be sent~.\\
+
+----
+<<div class="code"|<<span class="keyword"|include>> <<a_api | module type Eliom_mkreg.ELIOMREGSIG1 >>>>
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="Cookies" | module Eliom_mkreg.ELIOMREGSIG.Cookies >>: \\{{{   }}}<<span class="code type"|<<a_api text="Eliom_mkreg.ELIOMREGSIG1" | module Eliom_mkreg.ELIOMREGSIG1 >>>><<span class="code type"|{{{  }}} \\{{{   }}}    with type page = page * Eliom_services.cookie list>>>>

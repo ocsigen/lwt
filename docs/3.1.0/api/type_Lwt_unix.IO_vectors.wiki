@@ -1,0 +1,13 @@
+<<code language="ocaml" | sig
+  type t
+  type _bigarray =
+      (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+  val create : unit -> Lwt_unix.IO_vectors.t
+  val append_bytes : Lwt_unix.IO_vectors.t -> bytes -> int -> int -> unit
+  val append_bigarray :
+    Lwt_unix.IO_vectors.t ->
+    Lwt_unix.IO_vectors._bigarray -> int -> int -> unit
+  val drop : Lwt_unix.IO_vectors.t -> int -> unit
+  val is_empty : Lwt_unix.IO_vectors.t -> bool
+  val system_limit : int option
+end >>

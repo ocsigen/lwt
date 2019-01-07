@@ -1,0 +1,4 @@
+=Class <<a_api_type | class Lwt_engine.select >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span name="TYPEselect"|<<span class="ocsforge_color_keyword"|class>> <<span class="ocsforge_color_name"|select>>>> <<span class="ocsforge_color_delimiter"|~:>>  <<span class="odocwiki_type"|<<a_api text="t" | class type Lwt_engine.t >>>>>>~Engine based on <<span class="odocwiki_inlinecode"|~Unix~.select>>~.
+
+----

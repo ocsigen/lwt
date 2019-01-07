@@ -1,0 +1,7 @@
+<<code language="ocaml" | functor (H : Hashtbl.HashedType) ->
+  sig
+    type key = H.t
+    type t
+    val create : rate:int -> max:int -> n:int -> t
+    val wait : t -> key -> bool Lwt.t
+  end >>

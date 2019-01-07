@@ -1,0 +1,248 @@
+=Functor <<a_api_type | module Eliom_mkforms.MakeForms >> =
+<<div class="code"|<<span class="keyword"|module>> MakeForms: <<div class="sig_block"|<<span class='code'|functor ~(>><<span class='code'|~Pages>><<span class='code'| ~: >><<span class="code type"|<<a_api text="FORMCREATE" | module Eliom_mkforms.FORMCREATE >>>><<span class='code'|~) ~-~> >>\\{{{   }}}<<span class="code type"|<<a_api text="ELIOMFORMSIG" | module Eliom_mkforms.ELIOMFORMSIG >>>><<span class="code type"|{{{  }}} with \\{{{   }}}type form_content_elt = Pages.form_content_elt\\{{{   }}}and type form_content_elt_list = Pages.form_content_elt_list\\{{{   }}}and type form_elt = Pages.form_elt\\{{{   }}}and type a_content_elt = Pages.a_content_elt\\{{{   }}}and type a_content_elt_list = Pages.a_content_elt_list\\{{{   }}}and type a_elt = Pages.a_elt\\{{{   }}}and type a_elt_list = Pages.a_elt_list\\{{{   }}}and type div_content_elt = Pages.div_content_elt\\{{{   }}}and type div_content_elt_list = Pages.div_content_elt_list\\{{{   }}}and type button_elt = Pages.button_elt\\{{{   }}}and type button_content_elt = Pages.button_content_elt\\{{{   }}}and type button_content_elt_list = Pages.button_content_elt_list\\{{{   }}}      \\{{{   }}}and type uri = Pages.uri\\{{{   }}}and type link_elt = Pages.link_elt\\{{{   }}}and type script_elt = Pages.script_elt\\{{{   }}}and type textarea_elt = Pages.textarea_elt\\{{{   }}}and type select_elt = Pages.select_elt\\{{{   }}}and type input_elt = Pages.input_elt\\{{{   }}}and type pcdata_elt = Pages.pcdata_elt\\{{{   }}}and type a_attrib_t = Pages.a_attrib_t\\{{{   }}}and type form_attrib_t = Pages.form_attrib_t\\{{{   }}}and type input_attrib_t = Pages.input_attrib_t\\{{{   }}}and type textarea_attrib_t = Pages.textarea_attrib_t\\{{{   }}}and type select_attrib_t = Pages.select_attrib_t\\{{{   }}}and type link_attrib_t = Pages.link_attrib_t\\{{{   }}}and type script_attrib_t = Pages.script_attrib_t\\{{{   }}}and type optgroup_attrib_t = Pages.optgroup_attrib_t\\{{{   }}}and type option_attrib_t = Pages.option_attrib_t\\{{{   }}}and type button_attrib_t = Pages.button_attrib_t\\{{{   }}}and type input_type_t = Pages.input_type_t\\{{{   }}}and type button_type_t = Pages.button_type_t>>>>>><<div class="module_param_list" | <<span class="param_title" |Parameters :>><<div|
+|@@class="paramstable"@ @class="centertop fifteen code"@@{{{Pages}}}|@@class="centertop"@@:|<<span class="code type"|<<a_api text="FORMCREATE" | module Eliom_mkforms.FORMCREATE >>>>|
+>>
+
+----
+<<div class="code" id="TYPEform_content_elt"|<<span class="keyword"|type>> form~_content~_elt>>
+
+<<div class="code" id="TYPEform_content_elt_list"|<<span class="keyword"|type>> form~_content~_elt~_list>>
+
+<<div class="code" id="TYPEform_elt"|<<span class="keyword"|type>> form~_elt>>
+
+<<div class="code" id="TYPEa_content_elt"|<<span class="keyword"|type>> a~_content~_elt>>
+
+<<div class="code" id="TYPEa_content_elt_list"|<<span class="keyword"|type>> a~_content~_elt~_list>>
+
+<<div class="code" id="TYPEa_elt"|<<span class="keyword"|type>> a~_elt>>
+
+<<div class="code" id="TYPEa_elt_list"|<<span class="keyword"|type>> a~_elt~_list>>
+
+<<div class="code" id="TYPEdiv_content_elt"|<<span class="keyword"|type>> div~_content~_elt>>
+
+<<div class="code" id="TYPEdiv_content_elt_list"|<<span class="keyword"|type>> div~_content~_elt~_list>>
+
+<<div class="code" id="TYPEuri"|<<span class="keyword"|type>> uri>>
+
+<<div class="code" id="TYPElink_elt"|<<span class="keyword"|type>> link~_elt>>
+
+<<div class="code" id="TYPEscript_elt"|<<span class="keyword"|type>> script~_elt>>
+
+<<div class="code" id="TYPEtextarea_elt"|<<span class="keyword"|type>> textarea~_elt>>
+
+<<div class="code" id="TYPEinput_elt"|<<span class="keyword"|type>> input~_elt>>
+
+<<div class="code" id="TYPEpcdata_elt"|<<span class="keyword"|type>> pcdata~_elt>>
+
+<<div class="code" id="TYPEselect_elt"|<<span class="keyword"|type>> select~_elt>>
+
+<<div class="code" id="TYPEselect_content_elt"|<<span class="keyword"|type>> select~_content~_elt>>
+
+<<div class="code" id="TYPEselect_content_elt_list"|<<span class="keyword"|type>> select~_content~_elt~_list>>
+
+<<div class="code" id="TYPEbutton_elt"|<<span class="keyword"|type>> button~_elt>>
+
+<<div class="code" id="TYPEbutton_content_elt"|<<span class="keyword"|type>> button~_content~_elt>>
+
+<<div class="code" id="TYPEbutton_content_elt_list"|<<span class="keyword"|type>> button~_content~_elt~_list>>
+
+<<div class="code" id="TYPEa_attrib_t"|<<span class="keyword"|type>> a~_attrib~_t>>
+
+<<div class="code" id="TYPEform_attrib_t"|<<span class="keyword"|type>> form~_attrib~_t>>
+
+<<div class="code" id="TYPEinput_attrib_t"|<<span class="keyword"|type>> input~_attrib~_t>>
+
+<<div class="code" id="TYPEtextarea_attrib_t"|<<span class="keyword"|type>> textarea~_attrib~_t>>
+
+<<div class="code" id="TYPEselect_attrib_t"|<<span class="keyword"|type>> select~_attrib~_t>>
+
+<<div class="code" id="TYPElink_attrib_t"|<<span class="keyword"|type>> link~_attrib~_t>>
+
+<<div class="code" id="TYPEscript_attrib_t"|<<span class="keyword"|type>> script~_attrib~_t>>
+
+<<div class="code" id="TYPEoptgroup_attrib_t"|<<span class="keyword"|type>> optgroup~_attrib~_t>>
+
+<<div class="code" id="TYPEoption_attrib_t"|<<span class="keyword"|type>> option~_attrib~_t>>
+
+<<div class="code" id="TYPEbutton_attrib_t"|<<span class="keyword"|type>> button~_attrib~_t>>
+
+<<div class="code" id="TYPEinput_type_t"|<<span class="keyword"|type>> input~_type~_t>>
+
+<<div class="code" id="TYPEbutton_type_t"|<<span class="keyword"|type>> button~_type~_t>>
+
+\\
+
+==@@id="2_Linksandforms"@@~Links and forms==
+\\
+<<div id="VALmake_full_string_uri" class="code"|<<span class="keyword"|val>> make~_full~_string~_uri : <<span class="code type"|\\{{{   }}}service:('a, unit, [< <<a_api text="Eliom_services.get_service_kind" | type Eliom_services.get_service_kind >> ],\\{{{   }}}           [< <<a_api text="Eliom_services.suff" | type Eliom_services.suff >> ], 'b, unit, [< <<a_api text="Eliom_services.registrable" | type Eliom_services.registrable >> ])\\{{{   }}}          <<a_api text="Eliom_services.service" | type Eliom_services.service >> ->\\{{{   }}}  sp:<<a_api text="Eliom_sessions.server_params" | type Eliom_sessions.server_params >> ->\\{{{   }}}  ?fragment:string -> 'a -> <<a_api text="uri" | type Eliom_mkforms.ELIOMFORMSIG.uri >> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Creates the string corresponding to the 
+    full ~(absolute~) ~U~R~L of a service applied to its ~G~E~T parameters~.\\
+
+
+    ~It returns a ~Lwt thread because if the hostname is not in the request
+    ~(sometimes possible with ~H~T~T~P~/~1~.~0~)~, it calls 
+    <<a_api | val Lwt_lib.getnameinfo >> to find the hostname~.\\
+>>
+<<div id="VALmake_string_uri" class="code"|<<span class="keyword"|val>> make~_string~_uri : <<span class="code type"|\\{{{   }}}service:('a, unit, [< <<a_api text="Eliom_services.get_service_kind" | type Eliom_services.get_service_kind >> ],\\{{{   }}}           [< <<a_api text="Eliom_services.suff" | type Eliom_services.suff >> ], 'b, unit, [< <<a_api text="Eliom_services.registrable" | type Eliom_services.registrable >> ])\\{{{   }}}          <<a_api text="Eliom_services.service" | type Eliom_services.service >> ->\\{{{   }}}  sp:<<a_api text="Eliom_sessions.server_params" | type Eliom_sessions.server_params >> -> ?fragment:string -> 'a -> string>>>><<div class="info"|~Creates the string corresponding to the relative ~U~R~L of a service applied to
+   its ~G~E~T parameters~.\\
+>>
+<<div id="VALmake_uri" class="code"|<<span class="keyword"|val>> make~_uri : <<span class="code type"|\\{{{   }}}service:('a, unit, [< <<a_api text="Eliom_services.get_service_kind" | type Eliom_services.get_service_kind >> ],\\{{{   }}}           [< <<a_api text="Eliom_services.suff" | type Eliom_services.suff >> ], 'b, unit, [< <<a_api text="Eliom_services.registrable" | type Eliom_services.registrable >> ])\\{{{   }}}          <<a_api text="Eliom_services.service" | type Eliom_services.service >> ->\\{{{   }}}  sp:<<a_api text="Eliom_sessions.server_params" | type Eliom_sessions.server_params >> ->\\{{{   }}}  ?fragment:string -> 'a -> <<a_api text="uri" | type Eliom_mkforms.ELIOMFORMSIG.uri >>>>>><<div class="info"|~Creates the text of ~(relative~) ~U~R~L for a service~. 
+    ~Like the <<span class='code'|a>> function~, it may take extra parameters~.\\
+>>
+<<div id="VALa" class="code"|<<span class="keyword"|val>> a : <<span class="code type"|\\{{{   }}}?a:<<a_api text="a_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.a_attrib_t >> ->\\{{{   }}}  service:('a, unit, [< <<a_api text="Eliom_services.get_service_kind" | type Eliom_services.get_service_kind >> ],\\{{{   }}}           [< <<a_api text="Eliom_services.suff" | type Eliom_services.suff >> ], 'b, 'c, [< <<a_api text="Eliom_services.registrable" | type Eliom_services.registrable >> ])\\{{{   }}}          <<a_api text="Eliom_services.service" | type Eliom_services.service >> ->\\{{{   }}}  sp:<<a_api text="Eliom_sessions.server_params" | type Eliom_sessions.server_params >> ->\\{{{   }}}  ?fragment:string ->\\{{{   }}}  <<a_api text="a_content_elt_list" | type Eliom_mkforms.ELIOMFORMSIG.a_content_elt_list >> ->\\{{{   }}}  'a -> <<a_api text="a_elt" | type Eliom_mkforms.ELIOMFORMSIG.a_elt >>>>>><<div class="info"|<<span class='code'|a service sp cont ~(~)>> creates a link to <<span class='code'|service>>~. 
+   ~The text of
+   the link is <<span class='code'|cont>>~. ~For example <<span class='code'|cont>> may be something like
+   <<span class='code'|~[pcdata "click here"~]>>~. \\
+
+
+   ~The last  parameter is for ~G~E~T parameters~.
+   ~For example <<span class='code'|a service sp cont ~(~4~2~,"hello"~)>>\\
+
+
+   ~The <<span class='code'|~~a>> optional parameter is used for extra attributes~.\\
+
+
+   ~The <<span class='code'|~~fragment>> optional parameter is used for the "fragment" part
+   of the ~U~R~L~, that is~, the part after character "~#"~.\\
+>>
+<<div id="VALcss_link" class="code"|<<span class="keyword"|val>> css~_link : <<span class="code type"|\\{{{   }}}?a:<<a_api text="link_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.link_attrib_t >> ->\\{{{   }}}  uri:<<a_api text="uri" | type Eliom_mkforms.ELIOMFORMSIG.uri >> ->\\{{{   }}}  unit -> <<a_api text="link_elt" | type Eliom_mkforms.ELIOMFORMSIG.link_elt >>>>>><<div class="info"|~Creates a <<span class='code'|~<link~>>> tag for a ~Cascading ~Style~Sheet ~(~C~S~S~)~.\\
+>>
+<<div id="VALjs_script" class="code"|<<span class="keyword"|val>> js~_script : <<span class="code type"|\\{{{   }}}?a:<<a_api text="script_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.script_attrib_t >> ->\\{{{   }}}  uri:<<a_api text="uri" | type Eliom_mkforms.ELIOMFORMSIG.uri >> ->\\{{{   }}}  unit -> <<a_api text="script_elt" | type Eliom_mkforms.ELIOMFORMSIG.script_elt >>>>>><<div class="info"|~Creates a <<span class='code'|~<script~>>> tag to add a javascript file\\
+>>
+<<div id="VALget_form" class="code"|<<span class="keyword"|val>> get~_form : <<span class="code type"|\\{{{   }}}?a:<<a_api text="form_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.form_attrib_t >> ->\\{{{   }}}  service:('a, unit, [< <<a_api text="Eliom_services.get_service_kind" | type Eliom_services.get_service_kind >> ],\\{{{   }}}           [< <<a_api text="Eliom_services.suff" | type Eliom_services.suff >> ], 'b, 'c, [< <<a_api text="Eliom_services.registrable" | type Eliom_services.registrable >> ])\\{{{   }}}          <<a_api text="Eliom_services.service" | type Eliom_services.service >> ->\\{{{   }}}  sp:<<a_api text="Eliom_sessions.server_params" | type Eliom_sessions.server_params >> ->\\{{{   }}}  ?fragment:string ->\\{{{   }}}  ('b -> <<a_api text="form_content_elt_list" | type Eliom_mkforms.ELIOMFORMSIG.form_content_elt_list >>) ->\\{{{   }}}  <<a_api text="form_elt" | type Eliom_mkforms.ELIOMFORMSIG.form_elt >>>>>><<div class="info"|<<span class='code'|get~_form service sp formgen>> creates a ~G~E~T form to <<span class='code'|service>>~. 
+   ~The content of
+   the form is generated by the function <<span class='code'|formgen>>~, that takes the names
+   of the service parameters as parameters~.\\
+>>
+<<div id="VALpost_form" class="code"|<<span class="keyword"|val>> post~_form : <<span class="code type"|\\{{{   }}}?a:<<a_api text="form_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.form_attrib_t >> ->\\{{{   }}}  service:('a, 'b, [< <<a_api text="Eliom_services.post_service_kind" | type Eliom_services.post_service_kind >> ],\\{{{   }}}           [< <<a_api text="Eliom_services.suff" | type Eliom_services.suff >> ], 'c, 'd, [< <<a_api text="Eliom_services.registrable" | type Eliom_services.registrable >> ])\\{{{   }}}          <<a_api text="Eliom_services.service" | type Eliom_services.service >> ->\\{{{   }}}  sp:<<a_api text="Eliom_sessions.server_params" | type Eliom_sessions.server_params >> ->\\{{{   }}}  ?fragment:string ->\\{{{   }}}  ?keep_get_na_params:bool ->\\{{{   }}}  ('d -> <<a_api text="form_content_elt_list" | type Eliom_mkforms.ELIOMFORMSIG.form_content_elt_list >>) ->\\{{{   }}}  'a -> <<a_api text="form_elt" | type Eliom_mkforms.ELIOMFORMSIG.form_elt >>>>>><<div class="info"|<<span class='code'|post~_form service sp formgen>> creates a ~P~O~S~T form to <<span class='code'|service>>~. 
+    ~The last parameter is for ~G~E~T parameters ~(as in the function <<span class='code'|a>>~)~.
+    ~If the optional parameter <<span class='code'|~~keep~_get~_na~_params>> is <<span class='code'|true>>~,
+    and if it is a form towards a non~-attached ~P~O~S~T coservice~,
+    ~G~E~T non~-attached parameters will be kept in the ~U~R~L ~(if any~)~.
+    ~If it is <<span class='code'|false>>~, they will be removed~.
+    ~Default is the default behaviour for this non~-attached service
+    ~(see <<a_api | val Eliom_services.new_post_coservice' >>~)~.
+    <<span class='code'|~~keep~_get~_na~_params>> has no effect on attached ~(co~)services~.\\
+>>
+\\
+
+==@@id="2_Formwidgets"@@~Form widgets==
+\\
+<<div id="VALint_input" class="code"|<<span class="keyword"|val>> int~_input : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  input_type:<<a_api text="input_type_t" | type Eliom_mkforms.ELIOMFORMSIG.input_type_t >> ->\\{{{   }}}  ?name:[< int <<a_api text="Eliom_parameters.setoneopt" | type Eliom_parameters.setoneopt >> ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  ?value:int -> unit -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates an <<span class='code'|~<input~>>> tag for an integer\\
+>>
+<<div id="VALfloat_input" class="code"|<<span class="keyword"|val>> float~_input : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  input_type:<<a_api text="input_type_t" | type Eliom_mkforms.ELIOMFORMSIG.input_type_t >> ->\\{{{   }}}  ?name:[< float <<a_api text="Eliom_parameters.setoneopt" | type Eliom_parameters.setoneopt >> ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  ?value:float -> unit -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates an <<span class='code'|~<input~>>> tag for a float\\
+>>
+<<div id="VALstring_input" class="code"|<<span class="keyword"|val>> string~_input : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  input_type:<<a_api text="input_type_t" | type Eliom_mkforms.ELIOMFORMSIG.input_type_t >> ->\\{{{   }}}  ?name:[< string <<a_api text="Eliom_parameters.setoneopt" | type Eliom_parameters.setoneopt >> ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  ?value:string -> unit -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates an <<span class='code'|~<input~>>> tag for a string\\
+>>
+<<div id="VALuser_type_input" class="code"|<<span class="keyword"|val>> user~_type~_input : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  input_type:<<a_api text="input_type_t" | type Eliom_mkforms.ELIOMFORMSIG.input_type_t >> ->\\{{{   }}}  ?name:[< 'a <<a_api text="Eliom_parameters.setoneopt" | type Eliom_parameters.setoneopt >> ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  ?value:'a -> ('a -> string) -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates an <<span class='code'|~<input~>>> tag for a user type\\
+>>
+<<div id="VALraw_input" class="code"|<<span class="keyword"|val>> raw~_input : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  input_type:<<a_api text="input_type_t" | type Eliom_mkforms.ELIOMFORMSIG.input_type_t >> ->\\{{{   }}}  ?name:string -> ?value:string -> unit -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates an untyped <<span class='code'|~<input~>>> tag~. ~You may use the name you want
+   ~(for example to use with <<a_api | val Eliom_parameters.any >>~)~.\\
+>>
+<<div id="VALfile_input" class="code"|<<span class="keyword"|val>> file~_input : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  name:[< <<a_api text="Ocsigen_extensions.file_info" | type Ocsigen_extensions.file_info >> <<a_api text="Eliom_parameters.setoneopt" | type Eliom_parameters.setoneopt >> ]\\{{{   }}}       <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  unit -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates an <<span class='code'|~<input~>>> tag for sending a file\\
+>>
+<<div id="VALimage_input" class="code"|<<span class="keyword"|val>> image~_input : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  name:[< <<a_api text="Eliom_parameters.coordinates" | type Eliom_parameters.coordinates >> <<a_api text="Eliom_parameters.oneopt" | type Eliom_parameters.oneopt >> ]\\{{{   }}}       <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  ?src:<<a_api text="uri" | type Eliom_mkforms.ELIOMFORMSIG.uri >> ->\\{{{   }}}  unit -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates an <<span class='code'|~<input type~="image" name~="~.~.~."~>>> tag that sends the coordinates 
+   the user clicked on\\
+>>
+<<div id="VALint_image_input" class="code"|<<span class="keyword"|val>> int~_image~_input : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  name:[< (int * <<a_api text="Eliom_parameters.coordinates" | type Eliom_parameters.coordinates >>) <<a_api text="Eliom_parameters.oneopt" | type Eliom_parameters.oneopt >> ]\\{{{   }}}       <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  value:int ->\\{{{   }}}  ?src:<<a_api text="uri" | type Eliom_mkforms.ELIOMFORMSIG.uri >> ->\\{{{   }}}  unit -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates an <<span class='code'|~<input type~="image" name~="~.~.~." value~="~.~.~."~>>> tag that sends
+   the coordinates the user clicked on and a value of type int\\
+>>
+<<div id="VALfloat_image_input" class="code"|<<span class="keyword"|val>> float~_image~_input : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  name:[< (float * <<a_api text="Eliom_parameters.coordinates" | type Eliom_parameters.coordinates >>) <<a_api text="Eliom_parameters.oneopt" | type Eliom_parameters.oneopt >> ]\\{{{   }}}       <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  value:float ->\\{{{   }}}  ?src:<<a_api text="uri" | type Eliom_mkforms.ELIOMFORMSIG.uri >> ->\\{{{   }}}  unit -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates an <<span class='code'|~<input type~="image" name~="~.~.~." value~="~.~.~."~>>> tag that sends
+    the coordinates the user clicked on and a value of type float\\
+>>
+<<div id="VALstring_image_input" class="code"|<<span class="keyword"|val>> string~_image~_input : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  name:[< (string * <<a_api text="Eliom_parameters.coordinates" | type Eliom_parameters.coordinates >>) <<a_api text="Eliom_parameters.oneopt" | type Eliom_parameters.oneopt >> ]\\{{{   }}}       <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  value:string ->\\{{{   }}}  ?src:<<a_api text="uri" | type Eliom_mkforms.ELIOMFORMSIG.uri >> ->\\{{{   }}}  unit -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates an <<span class='code'|~<input type~="image" name~="~.~.~." value~="~.~.~."~>>> tag that sends
+   the coordinates the user clicked on and a value of type string\\
+>>
+<<div id="VALuser_type_image_input" class="code"|<<span class="keyword"|val>> user~_type~_image~_input : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  name:[< ('a * <<a_api text="Eliom_parameters.coordinates" | type Eliom_parameters.coordinates >>) <<a_api text="Eliom_parameters.oneopt" | type Eliom_parameters.oneopt >> ]\\{{{   }}}       <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  value:'a ->\\{{{   }}}  ?src:<<a_api text="uri" | type Eliom_mkforms.ELIOMFORMSIG.uri >> ->\\{{{   }}}  ('a -> string) -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates an <<span class='code'|~<input type~="image" name~="~.~.~." value~="~.~.~."~>>> tag that sends
+   the coordinates the user clicked on and a value of user defined type\\
+>>
+<<div id="VALraw_image_input" class="code"|<<span class="keyword"|val>> raw~_image~_input : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  name:string ->\\{{{   }}}  value:string ->\\{{{   }}}  ?src:<<a_api text="uri" | type Eliom_mkforms.ELIOMFORMSIG.uri >> ->\\{{{   }}}  unit -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates an <<span class='code'|~<input type~="image" name~="~.~.~." value~="~.~.~."~>>> tag that sends
+   the coordinates the user clicked on and an untyped value\\
+>>
+<<div id="VALbool_checkbox" class="code"|<<span class="keyword"|val>> bool~_checkbox : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  ?checked:bool ->\\{{{   }}}  name:[ `One of bool ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  unit -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates a checkbox <<span class='code'|~<input~>>> tag that will have a boolean value~.
+   ~The service must declare a <<span class='code'|bool>> parameter~.\\
+>>
+<<div id="VALint_checkbox" class="code"|<<span class="keyword"|val>> int~_checkbox : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  ?checked:bool ->\\{{{   }}}  name:[ `Set of int ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  value:int -> unit -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates a checkbox <<span class='code'|~<input~>>> tag that will have an int value~.
+   ~Thus you can do several checkboxes with the same name 
+   ~(and different values~)~. 
+   ~The service must declare a parameter of type <<span class='code'|set>>~.\\
+>>
+<<div id="VALfloat_checkbox" class="code"|<<span class="keyword"|val>> float~_checkbox : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  ?checked:bool ->\\{{{   }}}  name:[ `Set of float ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  value:float -> unit -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates a checkbox <<span class='code'|~<input~>>> tag that will have a float value~.
+   ~Thus you can do several checkboxes with the same name 
+   ~(and different values~)~. 
+   ~The service must declare a parameter of type <<span class='code'|set>>~.\\
+>>
+<<div id="VALstring_checkbox" class="code"|<<span class="keyword"|val>> string~_checkbox : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  ?checked:bool ->\\{{{   }}}  name:[ `Set of string ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  value:string -> unit -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates a checkbox <<span class='code'|~<input~>>> tag that will have a string value~.
+   ~Thus you can do several checkboxes with the same name 
+   ~(and different values~)~. 
+   ~The service must declare a parameter of type <<span class='code'|set>>~.\\
+>>
+<<div id="VALuser_type_checkbox" class="code"|<<span class="keyword"|val>> user~_type~_checkbox : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  ?checked:bool ->\\{{{   }}}  name:[ `Set of 'a ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  value:'a -> ('a -> string) -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates a checkbox <<span class='code'|~<input~>>> tag that will have a "user type" value~.
+   ~Thus you can do several checkboxes with the same name 
+   ~(and different values~)~. 
+   ~The service must declare a parameter of type <<span class='code'|set>>~.\\
+>>
+<<div id="VALraw_checkbox" class="code"|<<span class="keyword"|val>> raw~_checkbox : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  ?checked:bool ->\\{{{   }}}  name:string -> value:string -> unit -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates a checkbox <<span class='code'|~<input~>>> tag with untyped content~.
+   ~Thus you can do several checkboxes with the same name 
+   ~(and different values~)~. 
+   ~The service must declare a parameter of type <<span class='code'|any>>~.\\
+>>
+<<div id="VALstring_radio" class="code"|<<span class="keyword"|val>> string~_radio : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  ?checked:bool ->\\{{{   }}}  name:[ `Opt of string ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  value:string -> unit -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates a radio <<span class='code'|~<input~>>> tag with string content\\
+>>
+<<div id="VALint_radio" class="code"|<<span class="keyword"|val>> int~_radio : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  ?checked:bool ->\\{{{   }}}  name:[ `Opt of int ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  value:int -> unit -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates a radio <<span class='code'|~<input~>>> tag with int content\\
+>>
+<<div id="VALfloat_radio" class="code"|<<span class="keyword"|val>> float~_radio : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  ?checked:bool ->\\{{{   }}}  name:[ `Opt of float ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  value:float -> unit -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates a radio <<span class='code'|~<input~>>> tag with float content\\
+>>
+<<div id="VALuser_type_radio" class="code"|<<span class="keyword"|val>> user~_type~_radio : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  ?checked:bool ->\\{{{   }}}  name:[ `Opt of 'a ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  value:'a -> ('a -> string) -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates a radio <<span class='code'|~<input~>>> tag with user~_type content\\
+>>
+<<div id="VALraw_radio" class="code"|<<span class="keyword"|val>> raw~_radio : <<span class="code type"|\\{{{   }}}?a:<<a_api text="input_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.input_attrib_t >> ->\\{{{   }}}  ?checked:bool ->\\{{{   }}}  name:string -> value:string -> unit -> <<a_api text="input_elt" | type Eliom_mkforms.ELIOMFORMSIG.input_elt >>>>>><<div class="info"|~Creates a radio <<span class='code'|~<input~>>> tag with untyped string content ~(low level~)\\
+>>
+<<div id="VALstring_button" class="code"|<<span class="keyword"|val>> string~_button : <<span class="code type"|\\{{{   }}}?a:<<a_api text="button_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.button_attrib_t >> ->\\{{{   }}}  name:[< string <<a_api text="Eliom_parameters.setone" | type Eliom_parameters.setone >> ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  value:string ->\\{{{   }}}  <<a_api text="button_content_elt_list" | type Eliom_mkforms.ELIOMFORMSIG.button_content_elt_list >> ->\\{{{   }}}  <<a_api text="button_elt" | type Eliom_mkforms.ELIOMFORMSIG.button_elt >>>>>><<div class="info"|~Creates a <<span class='code'|~<button~>>> tag with string content\\
+>>
+<<div id="VALint_button" class="code"|<<span class="keyword"|val>> int~_button : <<span class="code type"|\\{{{   }}}?a:<<a_api text="button_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.button_attrib_t >> ->\\{{{   }}}  name:[< int <<a_api text="Eliom_parameters.setone" | type Eliom_parameters.setone >> ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  value:int ->\\{{{   }}}  <<a_api text="button_content_elt_list" | type Eliom_mkforms.ELIOMFORMSIG.button_content_elt_list >> ->\\{{{   }}}  <<a_api text="button_elt" | type Eliom_mkforms.ELIOMFORMSIG.button_elt >>>>>><<div class="info"|~Creates a <<span class='code'|~<button~>>> tag with int content\\
+>>
+<<div id="VALfloat_button" class="code"|<<span class="keyword"|val>> float~_button : <<span class="code type"|\\{{{   }}}?a:<<a_api text="button_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.button_attrib_t >> ->\\{{{   }}}  name:[< float <<a_api text="Eliom_parameters.setone" | type Eliom_parameters.setone >> ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  value:float ->\\{{{   }}}  <<a_api text="button_content_elt_list" | type Eliom_mkforms.ELIOMFORMSIG.button_content_elt_list >> ->\\{{{   }}}  <<a_api text="button_elt" | type Eliom_mkforms.ELIOMFORMSIG.button_elt >>>>>><<div class="info"|~Creates a <<span class='code'|~<button~>>> tag with float content\\
+>>
+<<div id="VALuser_type_button" class="code"|<<span class="keyword"|val>> user~_type~_button : <<span class="code type"|\\{{{   }}}?a:<<a_api text="button_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.button_attrib_t >> ->\\{{{   }}}  name:[< 'a <<a_api text="Eliom_parameters.setone" | type Eliom_parameters.setone >> ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  value:'a ->\\{{{   }}}  ('a -> string) ->\\{{{   }}}  <<a_api text="button_content_elt_list" | type Eliom_mkforms.ELIOMFORMSIG.button_content_elt_list >> ->\\{{{   }}}  <<a_api text="button_elt" | type Eliom_mkforms.ELIOMFORMSIG.button_elt >>>>>><<div class="info"|~Creates a <<span class='code'|~<button~>>> tag with user~_type content\\
+>>
+<<div id="VALraw_button" class="code"|<<span class="keyword"|val>> raw~_button : <<span class="code type"|\\{{{   }}}?a:<<a_api text="button_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.button_attrib_t >> ->\\{{{   }}}  button_type:<<a_api text="button_type_t" | type Eliom_mkforms.ELIOMFORMSIG.button_type_t >> ->\\{{{   }}}  name:string ->\\{{{   }}}  value:string ->\\{{{   }}}  <<a_api text="button_content_elt_list" | type Eliom_mkforms.ELIOMFORMSIG.button_content_elt_list >> ->\\{{{   }}}  <<a_api text="button_elt" | type Eliom_mkforms.ELIOMFORMSIG.button_elt >>>>>><<div class="info"|~Creates a <<span class='code'|~<button~>>> tag with untyped string content\\
+>>
+<<div id="VALbutton" class="code"|<<span class="keyword"|val>> button : <<span class="code type"|\\{{{   }}}?a:<<a_api text="button_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.button_attrib_t >> ->\\{{{   }}}  button_type:<<a_api text="button_type_t" | type Eliom_mkforms.ELIOMFORMSIG.button_type_t >> ->\\{{{   }}}  <<a_api text="button_content_elt_list" | type Eliom_mkforms.ELIOMFORMSIG.button_content_elt_list >> ->\\{{{   }}}  <<a_api text="button_elt" | type Eliom_mkforms.ELIOMFORMSIG.button_elt >>>>>><<div class="info"|~Creates a <<span class='code'|~<button~>>> tag with no value~. ~No value is sent~.\\
+>>
+<<div id="VALtextarea" class="code"|<<span class="keyword"|val>> textarea : <<span class="code type"|\\{{{   }}}?a:<<a_api text="textarea_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.textarea_attrib_t >> ->\\{{{   }}}  name:[< string <<a_api text="Eliom_parameters.setoneopt" | type Eliom_parameters.setoneopt >> ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  ?value:<<a_api text="pcdata_elt" | type Eliom_mkforms.ELIOMFORMSIG.pcdata_elt >> ->\\{{{   }}}  rows:int -> cols:int -> unit -> <<a_api text="textarea_elt" | type Eliom_mkforms.ELIOMFORMSIG.textarea_elt >>>>>><<div class="info"|~Creates a <<span class='code'|~<textarea~>>> tag\\
+>>
+<<div id="VALraw_textarea" class="code"|<<span class="keyword"|val>> raw~_textarea : <<span class="code type"|\\{{{   }}}?a:<<a_api text="textarea_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.textarea_attrib_t >> ->\\{{{   }}}  name:string ->\\{{{   }}}  ?value:<<a_api text="pcdata_elt" | type Eliom_mkforms.ELIOMFORMSIG.pcdata_elt >> ->\\{{{   }}}  rows:int -> cols:int -> unit -> <<a_api text="textarea_elt" | type Eliom_mkforms.ELIOMFORMSIG.textarea_elt >>>>>><<div class="info"|~Creates a <<span class='code'|~<textarea~>>> tag for untyped form\\
+>>
+<<div class="code" id="TYPEsoption"|<<span class="keyword"|type>> <<span class="code type"|'a>> soption = <<span class="code type"|\\{{{   }}}<<a_api text="option_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.option_attrib_t >> * 'a *\\{{{   }}}  <<a_api text="pcdata_elt" | type Eliom_mkforms.ELIOMFORMSIG.pcdata_elt >> option * bool>> >>
+
+<<div class="code" id="TYPEselect_opt"|<<span class="keyword"|type>> <<span class="code type"|'a>> select~_opt = 
+|@@class="typetable"@ @class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Optgroup>> <<span class="keyword"|of>> <<span class="code type"|\\{{{   }}}<<a_api text="optgroup_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.optgroup_attrib_t >> * string\\{{{   }}}   * 'a <<a_api text="soption" | type Eliom_mkforms.ELIOMFORMSIG.soption >>\\{{{   }}}   * 'a <<a_api text="soption" | type Eliom_mkforms.ELIOMFORMSIG.soption >> list>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Option>> <<span class="keyword"|of>> <<span class="code type"|'a <<a_api text="soption" | type Eliom_mkforms.ELIOMFORMSIG.soption >>>>|>>
+
+\\
+~The type for <<span class='code'|~<select~>>> options and groups of options~.* ~The field of type ~'a in <<span class='code'|soption>> is the value that will be sent 
+     by the form~. 
+* ~If the <<span class='code'|pcdata elt option>> is not present it is also the
+     value displayed~.
+* ~The string in <<span class='code'|select~_opt>> is the label
+
+\\
+<<div id="VALraw_select" class="code"|<<span class="keyword"|val>> raw~_select : <<span class="code type"|\\{{{   }}}?a:<<a_api text="select_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.select_attrib_t >> ->\\{{{   }}}  name:string ->\\{{{   }}}  string <<a_api text="select_opt" | type Eliom_mkforms.ELIOMFORMSIG.select_opt >> ->\\{{{   }}}  string <<a_api text="select_opt" | type Eliom_mkforms.ELIOMFORMSIG.select_opt >> list ->\\{{{   }}}  <<a_api text="select_elt" | type Eliom_mkforms.ELIOMFORMSIG.select_elt >>>>>><<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for any ~(untyped~) value~.\\
+>>
+<<div id="VALint_select" class="code"|<<span class="keyword"|val>> int~_select : <<span class="code type"|\\{{{   }}}?a:<<a_api text="select_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.select_attrib_t >> ->\\{{{   }}}  name:[< `One of int ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  int <<a_api text="select_opt" | type Eliom_mkforms.ELIOMFORMSIG.select_opt >> ->\\{{{   }}}  int <<a_api text="select_opt" | type Eliom_mkforms.ELIOMFORMSIG.select_opt >> list ->\\{{{   }}}  <<a_api text="select_elt" | type Eliom_mkforms.ELIOMFORMSIG.select_elt >>>>>><<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for int values~.\\
+>>
+<<div id="VALfloat_select" class="code"|<<span class="keyword"|val>> float~_select : <<span class="code type"|\\{{{   }}}?a:<<a_api text="select_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.select_attrib_t >> ->\\{{{   }}}  name:[< `One of float ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  float <<a_api text="select_opt" | type Eliom_mkforms.ELIOMFORMSIG.select_opt >> ->\\{{{   }}}  float <<a_api text="select_opt" | type Eliom_mkforms.ELIOMFORMSIG.select_opt >> list ->\\{{{   }}}  <<a_api text="select_elt" | type Eliom_mkforms.ELIOMFORMSIG.select_elt >>>>>><<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for float values~.\\
+>>
+<<div id="VALstring_select" class="code"|<<span class="keyword"|val>> string~_select : <<span class="code type"|\\{{{   }}}?a:<<a_api text="select_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.select_attrib_t >> ->\\{{{   }}}  name:[< `One of string ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  string <<a_api text="select_opt" | type Eliom_mkforms.ELIOMFORMSIG.select_opt >> ->\\{{{   }}}  string <<a_api text="select_opt" | type Eliom_mkforms.ELIOMFORMSIG.select_opt >> list ->\\{{{   }}}  <<a_api text="select_elt" | type Eliom_mkforms.ELIOMFORMSIG.select_elt >>>>>><<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for string values~.\\
+>>
+<<div id="VALuser_type_select" class="code"|<<span class="keyword"|val>> user~_type~_select : <<span class="code type"|\\{{{   }}}?a:<<a_api text="select_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.select_attrib_t >> ->\\{{{   }}}  name:[< `One of 'a ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  'a <<a_api text="select_opt" | type Eliom_mkforms.ELIOMFORMSIG.select_opt >> ->\\{{{   }}}  'a <<a_api text="select_opt" | type Eliom_mkforms.ELIOMFORMSIG.select_opt >> list ->\\{{{   }}}  ('a -> string) -> <<a_api text="select_elt" | type Eliom_mkforms.ELIOMFORMSIG.select_elt >>>>>><<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for user type values~.\\
+>>
+<<div id="VALraw_multiple_select" class="code"|<<span class="keyword"|val>> raw~_multiple~_select : <<span class="code type"|\\{{{   }}}?a:<<a_api text="select_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.select_attrib_t >> ->\\{{{   }}}  name:string ->\\{{{   }}}  string <<a_api text="select_opt" | type Eliom_mkforms.ELIOMFORMSIG.select_opt >> ->\\{{{   }}}  string <<a_api text="select_opt" | type Eliom_mkforms.ELIOMFORMSIG.select_opt >> list ->\\{{{   }}}  <<a_api text="select_elt" | type Eliom_mkforms.ELIOMFORMSIG.select_elt >>>>>><<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for any ~(untyped~) value~.\\
+>>
+<<div id="VALint_multiple_select" class="code"|<<span class="keyword"|val>> int~_multiple~_select : <<span class="code type"|\\{{{   }}}?a:<<a_api text="select_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.select_attrib_t >> ->\\{{{   }}}  name:[< `Set of int ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  int <<a_api text="select_opt" | type Eliom_mkforms.ELIOMFORMSIG.select_opt >> ->\\{{{   }}}  int <<a_api text="select_opt" | type Eliom_mkforms.ELIOMFORMSIG.select_opt >> list ->\\{{{   }}}  <<a_api text="select_elt" | type Eliom_mkforms.ELIOMFORMSIG.select_elt >>>>>><<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for int values~.\\
+>>
+<<div id="VALfloat_multiple_select" class="code"|<<span class="keyword"|val>> float~_multiple~_select : <<span class="code type"|\\{{{   }}}?a:<<a_api text="select_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.select_attrib_t >> ->\\{{{   }}}  name:[< `Set of float ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  float <<a_api text="select_opt" | type Eliom_mkforms.ELIOMFORMSIG.select_opt >> ->\\{{{   }}}  float <<a_api text="select_opt" | type Eliom_mkforms.ELIOMFORMSIG.select_opt >> list ->\\{{{   }}}  <<a_api text="select_elt" | type Eliom_mkforms.ELIOMFORMSIG.select_elt >>>>>><<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for float values~.\\
+>>
+<<div id="VALstring_multiple_select" class="code"|<<span class="keyword"|val>> string~_multiple~_select : <<span class="code type"|\\{{{   }}}?a:<<a_api text="select_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.select_attrib_t >> ->\\{{{   }}}  name:[< `Set of string ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  string <<a_api text="select_opt" | type Eliom_mkforms.ELIOMFORMSIG.select_opt >> ->\\{{{   }}}  string <<a_api text="select_opt" | type Eliom_mkforms.ELIOMFORMSIG.select_opt >> list ->\\{{{   }}}  <<a_api text="select_elt" | type Eliom_mkforms.ELIOMFORMSIG.select_elt >>>>>><<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for string values~.\\
+>>
+<<div id="VALuser_type_multiple_select" class="code"|<<span class="keyword"|val>> user~_type~_multiple~_select : <<span class="code type"|\\{{{   }}}?a:<<a_api text="select_attrib_t" | type Eliom_mkforms.ELIOMFORMSIG.select_attrib_t >> ->\\{{{   }}}  name:[< `Set of 'a ] <<a_api text="Eliom_parameters.param_name" | type Eliom_parameters.param_name >> ->\\{{{   }}}  'a <<a_api text="select_opt" | type Eliom_mkforms.ELIOMFORMSIG.select_opt >> ->\\{{{   }}}  'a <<a_api text="select_opt" | type Eliom_mkforms.ELIOMFORMSIG.select_opt >> list ->\\{{{   }}}  ('a -> string) -> <<a_api text="select_elt" | type Eliom_mkforms.ELIOMFORMSIG.select_elt >>>>>><<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for user type values~.\\
+>>

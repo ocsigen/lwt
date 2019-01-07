@@ -1,0 +1,6 @@
+<<code language="ocaml" | sig
+  type key
+  type t
+  val create : rate:int -> max:int -> n:int -> Lwt_throttle.S.t
+  val wait : Lwt_throttle.S.t -> Lwt_throttle.S.key -> bool Lwt.t
+end >>

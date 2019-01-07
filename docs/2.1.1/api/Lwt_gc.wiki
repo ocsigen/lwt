@@ -1,0 +1,15 @@
+=Module <<a_api_type | module Lwt_gc >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_gc: <<span class='code'|sig>><<a_api text=".." | module Lwt_gc >><<span class='code'|end>>>>~Interaction with the garbage collector\\
+
+----
+\\
+~This module offer a convenient way to add a finaliser launching a
+    thread to a value~, without having to use <<span class='code'|~Lwt~_unix~.run>> in the
+    finaliser~.\\
+<<div id="VALfinalise" class="code"|<<span class="keyword"|val>> finalise : <<span class="code type"|('a -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a -> unit>>>><<div class="info"|<<span class='code'|finalise f x>> calls <<span class='code'|f x>> when <<span class='code'|x>> is garbage collected~. ~If <<span class='code'|f
+      x>> yields~, then ~Lwt will waits for its termination at the end of
+      the program~.\\
+>>
+<<div id="VALfinalise_or_exit" class="code"|<<span class="keyword"|val>> finalise~_or~_exit : <<span class="code type"|('a -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a -> unit>>>><<div class="info"|<<span class='code'|finalise~_or~_exit f x>> call <<span class='code'|f x>> when <<span class='code'|x>> is garbage collected
+      or ~(exclusively~) when the program exit~.\\
+>>

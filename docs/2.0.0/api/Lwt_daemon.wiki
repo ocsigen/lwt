@@ -1,0 +1,60 @@
+=Module <<a_api_type | module Lwt_daemon >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_daemon: <<span class='code'|sig>><<a_api text=".." | module Lwt_daemon >><<span class='code'|end>>>>~Daemon helpers\\
+
+----
+<<div id="VALdaemonize" class="code"|<<span class="keyword"|val>> daemonize : <<span class="code type"|\\{{{   }}}?syslog:bool ->\\{{{   }}}  ?stdin:[ `Close | `Dev_null | `Keep ] ->\\{{{   }}}  ?stdout:[ `Close | `Dev_null | `Keep | `Log of <<a_api text="Lwt_log.logger" | type Lwt_log.logger >> | `Log_default ] ->\\{{{   }}}  ?stderr:[ `Close | `Dev_null | `Keep | `Log of <<a_api text="Lwt_log.logger" | type Lwt_log.logger >> | `Log_default ] ->\\{{{   }}}  ?directory:string -> ?umask:[ `Keep | `Set of int ] -> unit -> unit>>>><<div class="info"|~Put the current running process into daemon mode~. ~I~.e~. it forks
+      and exit the parent~, detach it from its controlling terminal~,
+      and redict standard intputs~/outputs~.~.\\
+
+
+      ~Note~: if the process is already a daemon~, it does nothing~.\\
+
+
+      ~If <<span class='code'|syslog>> is <<span class='code'|true>> ~(the default~)~, then <<a_api | val Lwt_log.default >> is
+      set to <<span class='code'|~Lwt~_log~.syslog ~~facility~:`~Daemon ~(~)>>~, otherwise it is
+      kept unchanged~.\\
+
+
+      <<span class='code'|stdin>> is one of~:* <<span class='code'|`~Dev~_null>> which means that <<span class='code'|~Unix~.stdin>> is reopened as
+        <<span class='code'|~/dev~/null>>~, this is the default behavior
+* <<span class='code'|`~Close>> means that <<span class='code'|~Unix~.stdin>> is simply closed
+* <<span class='code'|`~Keep>> means that <<span class='code'|~Unix~.stdin>> is left unchanged
+
+
+      <<span class='code'|stdout>> and <<span class='code'|stderr>> control how the two associated file
+      descriptors are redirected~:* <<span class='code'|`~Dev~_null>> means that the output is redirected to <<span class='code'|~/dev~/null>>
+* <<span class='code'|`~Close>> means that the file descriptor is closed
+* <<span class='code'|`~Keep>> means that it is left unchanged
+* <<span class='code'|`~Log logger>> means that the output is redirected to this
+        logger
+* <<span class='code'|`~Log~_default>> means that the output is redirected to the
+        default logger
+
+
+      ~Both <<span class='code'|stdout>> and <<span class='code'|stderr>> defaults to <<span class='code'|`~Log~_default>>~.\\
+
+
+      ~Warning~: do not redirect an output to a logger logging into this
+      outpout~, for example this code will create an infinite loop~:\\
+
+
+      
+{{{
+        let logger = Lwt_log.channel ~close_mode:`Keep ~channel:Lwt_io.stderr () in
+        Lwt_daemon.daemonize ~syslog:false ~stderr:(`Log logger) ();
+        prerr_endline "foo"
+      
+}}}
+\\
+
+
+      ~The current working directory is set to <<span class='code'|directory>>~, which
+      defaults to <<span class='code'|"~/">>~.\\
+
+
+      <<span class='code'|umask>> may be one of~:* <<span class='code'|`~Keep>> which means that the umask is left unchanged
+* <<span class='code'|`~Set n>> which means that the umash is set to <<span class='code'|n>>
+
+
+      ~It defaults to <<span class='code'|`~Set ~0o~0~2~2>>~.\\
+>>

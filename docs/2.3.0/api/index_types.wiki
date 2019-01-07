@@ -1,0 +1,209 @@
+=Index of types=
+
+|@@ @style="tet-align: left;"@@\\A|
+|@@class="odocwiki_index"@ @@<<a_api text="access_permission"| type Lwt_unix.access_permission >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="addr_info"| type Lwt_unix.addr_info >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="advice"| type Lwt_bytes.advice >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|~Type of advise that can be sent to the kernel by the program~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="async_method"| type Lwt_unix.async_method >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~For system calls that cannot be made asynchronously~, ~Lwt uses one
+    of the following method~:
+>>
+|
+|@@ @style="tet-align: left;"@@\\B|
+|@@class="odocwiki_index"@ @@<<a_api text="byte_order"| type Lwt_sys.byte_order >> ~[<<a_api | module Lwt_sys >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="byte_order"| type Lwt_io.byte_order >> ~[<<a_api | module Lwt_io >>~]||
+|@@ @style="tet-align: left;"@@\\C|
+|@@class="odocwiki_index"@ @@<<a_api text="channel"| type Lwt_io.channel >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~Type of buffered byte channels
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="command"| type Lwt_process.command >> ~[<<a_api | module Lwt_process >>~]|<<div class="odocwiki_info"|~A command is a program name with a list of arguments
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="credentials"| type Lwt_unix.credentials >> ~[<<a_api | module Lwt_unix >>~]||
+|@@ @style="tet-align: left;"@@\\D|
+|@@class="odocwiki_index"@ @@<<a_api text="dir_handle"| type Lwt_unix.dir_handle >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="direct_access"| type Lwt_io.direct_access >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~Informations for accessing directly to the internal buffer of a
+    channel
+>>
+|
+|@@ @style="tet-align: left;"@@\\E|
+|@@class="odocwiki_index"@ @@<<a_api text="elt"| type Lwt_pqueue.S.elt >> ~[<<a_api | module Lwt_pqueue.S >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="ev_loop"| type Lwt_engine.ev_loop >> ~[<<a_api | module Lwt_engine >>~]|<<div class="odocwiki_info"|~Type of libev loops~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="event"| type Lwt_engine.event >> ~[<<a_api | module Lwt_engine >>~]|<<div class="odocwiki_info"|~Type of events~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="event"| type Lwt_react.event >> ~[<<a_api | module Lwt_react >>~]|<<div class="odocwiki_info"|~Type of events~.
+>>
+|
+|@@ @style="tet-align: left;"@@\\F|
+|@@class="odocwiki_index"@ @@<<a_api text="feature"| type Lwt_sys.feature >> ~[<<a_api | module Lwt_sys >>~]|<<div class="odocwiki_info"|~Features that can be tested~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="file_descr"| type Lwt_unix.file_descr >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~The abstract type for **file descriptor**s~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="file_kind"| type Lwt_unix.file_kind >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="file_name"| type Lwt_io.file_name >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~Type of file names
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="file_perm"| type Lwt_unix.file_perm >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="flow_action"| type Lwt_unix.flow_action >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="flush_queue"| type Lwt_unix.flush_queue >> ~[<<a_api | module Lwt_unix >>~]||
+|@@ @style="tet-align: left;"@@\\G|
+|@@class="odocwiki_index"@ @@<<a_api text="getaddrinfo_option"| type Lwt_unix.getaddrinfo_option >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="getnameinfo_option"| type Lwt_unix.getnameinfo_option >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="group_entry"| type Lwt_unix.group_entry >> ~[<<a_api | module Lwt_unix >>~]||
+|@@ @style="tet-align: left;"@@\\H|
+|@@class="odocwiki_index"@ @@<<a_api text="host_entry"| type Lwt_unix.host_entry >> ~[<<a_api | module Lwt_unix >>~]||
+|@@ @style="tet-align: left;"@@\\I|
+|@@class="odocwiki_index"@ @@<<a_api text="in_channel"| type Lwt_chan.in_channel >> ~[<<a_api | module Lwt_chan >>~]|<<div class="odocwiki_info"|~Cooperative input channels
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="inet_addr"| type Lwt_unix.inet_addr >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="input"| type Lwt_io.input >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~Input mode
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="input_channel"| type Lwt_io.input_channel >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~Type of input channels
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="io_event"| type Lwt_unix.io_event >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="io_vector"| type Lwt_unix.io_vector >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~An io~-vector~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="io_vector"| type Lwt_bytes.io_vector >> ~[<<a_api | module Lwt_bytes >>~]||
+|@@ @style="tet-align: left;"@@\\J|
+|@@class="odocwiki_index"@ @@<<a_api text="job"| type Lwt_unix.job >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~Type of jobs that run~:
+>>
+|
+|@@ @style="tet-align: left;"@@\\K|
+|@@class="odocwiki_index"@ @@<<a_api text="key"| type Lwt_throttle.S.key >> ~[<<a_api | module Lwt_throttle.S >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="key"| type Lwt.key >> ~[<<a_api | module Lwt >>~]|<<div class="odocwiki_info"|~Type of a key~.
+>>
+|
+|@@ @style="tet-align: left;"@@\\L|
+|@@class="odocwiki_index"@ @@<<a_api text="level"| type Lwt_log.level >> ~[<<a_api | module Lwt_log >>~]|<<div class="odocwiki_info"|~Type of log levels~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="lock_command"| type Lwt_unix.lock_command >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="logger"| type Lwt_log.logger >> ~[<<a_api | module Lwt_log >>~]|<<div class="odocwiki_info"|~Type of a logger~.
+>>
+|
+|@@ @style="tet-align: left;"@@\\M|
+|@@class="odocwiki_index"@ @@<<a_api text="mode"| type Lwt_io.mode >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~Channel mode
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="msg_flag"| type Lwt_unix.msg_flag >> ~[<<a_api | module Lwt_unix >>~]||
+|@@ @style="tet-align: left;"@@\\N|
+|@@class="odocwiki_index"@ @@<<a_api text="name_info"| type Lwt_unix.name_info >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="node"| type Lwt_sequence.node >> ~[<<a_api | module Lwt_sequence >>~]|<<div class="odocwiki_info"|~Type of a node holding one value of type <<span class="odocwiki_inlinecode"|~'a>> in a sequence
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="notifier"| type Lwt_signal.notifier >> ~[<<a_api | module Lwt_signal >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="notifier"| type Lwt_event.notifier >> ~[<<a_api | module Lwt_event >>~]||
+|@@ @style="tet-align: left;"@@\\O|
+|@@class="odocwiki_index"@ @@<<a_api text="open_flag"| type Lwt_unix.open_flag >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="out_channel"| type Lwt_chan.out_channel >> ~[<<a_api | module Lwt_chan >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="output"| type Lwt_io.output >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~Output mode
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="output_channel"| type Lwt_io.output_channel >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~Type of output channels
+>>
+|
+|@@ @style="tet-align: left;"@@\\P|
+|@@class="odocwiki_index"@ @@<<a_api text="passwd_entry"| type Lwt_unix.passwd_entry >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="process_status"| type Lwt_unix.process_status >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="protocol_entry"| type Lwt_unix.protocol_entry >> ~[<<a_api | module Lwt_unix >>~]||
+|@@ @style="tet-align: left;"@@\\R|
+|@@class="odocwiki_index"@ @@<<a_api text="redirection"| type Lwt_process.redirection >> ~[<<a_api | module Lwt_process >>~]|<<div class="odocwiki_info"|~A file descriptor redirection~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="region"| type Lwt_util.region >> ~[<<a_api | module Lwt_util >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="resource_usage"| type Lwt_unix.resource_usage >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~Resource usages
+>>
+|
+|@@ @style="tet-align: left;"@@\\S|
+|@@class="odocwiki_index"@ @@<<a_api text="section"| type Lwt_log.section >> ~[<<a_api | module Lwt_log >>~]|<<div class="odocwiki_info"|~Each logging message has a section~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="seek_command"| type Lwt_unix.seek_command >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="server"| type Lwt_io.server >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~Type of a server
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="service_entry"| type Lwt_unix.service_entry >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="setattr_when"| type Lwt_unix.setattr_when >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="shutdown_command"| type Lwt_unix.shutdown_command >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="signal"| type Lwt_react.signal >> ~[<<a_api | module Lwt_react >>~]|<<div class="odocwiki_info"|~Type of signals~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="signal_handler_id"| type Lwt_unix.signal_handler_id >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~Id of a signal handler~, used to cancel it
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="sockaddr"| type Lwt_unix.sockaddr >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="socket"| type Lwt_ssl.socket >> ~[<<a_api | module Lwt_ssl >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="socket_bool_option"| type Lwt_unix.socket_bool_option >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="socket_domain"| type Lwt_unix.socket_domain >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="socket_float_option"| type Lwt_unix.socket_float_option >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="socket_int_option"| type Lwt_unix.socket_int_option >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="socket_optint_option"| type Lwt_unix.socket_optint_option >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="socket_type"| type Lwt_unix.socket_type >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="state"| type Lwt_unix.state >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~State of a **file descriptor**
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="state"| type Lwt_process.state >> ~[<<a_api | module Lwt_process >>~]|<<div class="odocwiki_info"|~State of a sub~-process
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="state"| type Lwt.state >> ~[<<a_api | module Lwt >>~]|<<div class="odocwiki_info"|~State of a thread
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="stats"| type Lwt_unix.LargeFile.stats >> ~[<<a_api | module Lwt_unix.LargeFile >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="stats"| type Lwt_unix.stats >> ~[<<a_api | module Lwt_unix >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="syslog_facility"| type Lwt_log.syslog_facility >> ~[<<a_api | module Lwt_log >>~]|<<div class="odocwiki_info"|~Syslog facility~.
+>>
+|
+|@@ @style="tet-align: left;"@@\\T|
+|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_timeout.t >> ~[<<a_api | module Lwt_timeout >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_throttle.S.t >> ~[<<a_api | module Lwt_throttle.S >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_log.Section.t >> ~[<<a_api | module Lwt_log.Section >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_bytes.t >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|~Type of array of bytes~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_switch.t >> ~[<<a_api | module Lwt_switch >>~]|<<div class="odocwiki_info"|~Type of switches~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_stream.t >> ~[<<a_api | module Lwt_stream >>~]|<<div class="odocwiki_info"|~Type of a stream holding values of type <<span class="odocwiki_inlinecode"|~'a>>
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_sequence.t >> ~[<<a_api | module Lwt_sequence >>~]|<<div class="odocwiki_info"|~Type of a sequence holding values of type <<span class="odocwiki_inlinecode"|~'a>>
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_pqueue.OrderedType.t >> ~[<<a_api | module Lwt_pqueue.OrderedType >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_pqueue.S.t >> ~[<<a_api | module Lwt_pqueue.S >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_pool.t >> ~[<<a_api | module Lwt_pool >>~]|<<div class="odocwiki_info"|~Type of pools
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_mvar.t >> ~[<<a_api | module Lwt_mvar >>~]|<<div class="odocwiki_info"|~The type of a mailbox variable~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_mutex.t >> ~[<<a_api | module Lwt_mutex >>~]|<<div class="odocwiki_info"|~Type of ~Lwt mutexes
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt.t >> ~[<<a_api | module Lwt >>~]|<<div class="odocwiki_info"|~The type of threads returning a result of type <<span class="odocwiki_inlinecode"|~'a>>~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_condition.t >> ~[<<a_api | module Lwt_condition >>~]|<<div class="odocwiki_info"|~Condition variable type~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="template"| type Lwt_log.template >> ~[<<a_api | module Lwt_log >>~]|<<div class="odocwiki_info"|~A template is for generating log messages~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="terminal_io"| type Lwt_unix.terminal_io >> ~[<<a_api | module Lwt_unix >>~]||
+|@@ @style="tet-align: left;"@@\\U|
+|@@class="odocwiki_index"@ @@<<a_api text="u"| type Lwt.u >> ~[<<a_api | module Lwt >>~]|<<div class="odocwiki_info"|~The type of thread wakeners~.
+>>
+|
+|@@ @style="tet-align: left;"@@\\W|
+|@@class="odocwiki_index"@ @@<<a_api text="wait_flag"| type Lwt_unix.wait_flag >> ~[<<a_api | module Lwt_unix >>~]||
+\\

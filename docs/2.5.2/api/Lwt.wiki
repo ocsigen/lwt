@@ -1,0 +1,403 @@
+=Module <<a_api_type | module Lwt >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt >><<span class="ocsforge_color_keyword"|end>>>>~Module <<span class="odocwiki_inlinecode"|~Lwt>>~: cooperative light~-weight threads~.
+
+----
+
+~This module defines //cooperative light~-weight threads// with
+    their primitives~. ~A //light~-weight thread// represent a
+    computation that may be not terminated~, for example because it is
+    waiting for some event to happen~.
+
+
+    ~Lwt threads are cooperative in the sense that switching to another
+    thread is awlays explicit ~(with <<a_api | val Lwt.wakeup >> or <<a_api | val Lwt.wakeup_exn >>~)~. ~When a
+    thread is running~, it executes as much as possible~, and then
+    returns ~(a value or an error~) or sleeps~.
+
+
+    ~Note that inside a ~Lwt thread~, exceptions must be raised with
+    <<a_api | val Lwt.fail >> instead of <<span class="odocwiki_inlinecode"|raise>>~. ~Also the <<span class="odocwiki_inlinecode"|try ~.~.~. with ~.~.~.>>
+    construction will not catch ~Lwt errors~. ~You must use <<a_api | val Lwt.catch >>
+    instead~. ~You can also use <<a_api | val Lwt.wrap >> for functions that may raise
+    normal exception~.
+
+
+    ~Lwt also provides the syntax extension <<a_api | module Pa_lwt >> to make code
+    using ~Lwt more readable~.
+
+
+==@@id="2_Definitionsandbasics"@@~Definitions and basics==
+
+<<pre class="ocsforge_color odocwiki_code" id="TYPEt"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_type"|+'a>> <<span class="odocwiki_name"|t>>>><<div class="odocwiki_info"|~The type of threads returning a result of type <<span class="odocwiki_inlinecode"|~'a>>~.
+>>
+<<pre id="VALreturn" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|return>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|return e>> is a thread whose return value is the value of the
+      expression <<span class="odocwiki_inlinecode"|e>>~.
+>>
+<<pre id="VALfail" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|fail>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|exn <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|fail e>> is a thread that fails with the exception <<span class="odocwiki_inlinecode"|e>>~.
+>>
+<<pre id="VALfail_with" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|fail~_with>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|string <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|fail~_with msg>> is a thread that fails with the exception
+      <<span class="odocwiki_inlinecode"|~Failure msg>>~.
+>>
+<<pre id="VALfail_invalid_arg" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|fail~_invalid~_arg>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|string <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|fail~_invalid~_arg msg>> is a thread that fails with the exception
+      <<span class="odocwiki_inlinecode"|~Invalid~_argument msg>>~.
+>>
+<<pre id="VALbind" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|bind>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|bind t f>> is a thread which first waits for the thread <<span class="odocwiki_inlinecode"|t>> to
+      terminate and then~, if the thread succeeds~, behaves as the
+      application of function <<span class="odocwiki_inlinecode"|f>> to the return value of <<span class="odocwiki_inlinecode"|t>>~.  ~If the
+      thread <<span class="odocwiki_inlinecode"|t>> fails~, <<span class="odocwiki_inlinecode"|bind t f>> also fails~, with the same
+      exception~.
+
+
+      ~The expression <<span class="odocwiki_inlinecode"|bind t ~(fun x ~-~> t~'~)>> can intuitively be read as
+      <<span class="odocwiki_inlinecode"|let x ~= t in t~'>>~, and if you use the //lwt~.syntax// syntax
+      extension~, you can write a bind operation like that~: <<span class="odocwiki_inlinecode"|lwt x ~= t in t~'>>~.
+
+
+      ~Note that <<span class="odocwiki_inlinecode"|bind>> is also often used just for synchronization
+      purpose~: <<span class="odocwiki_inlinecode"|t~'>> will not execute before <<span class="odocwiki_inlinecode"|t>> is terminated~.
+
+
+      ~The result of a thread can be bound several times~.
+
+
+      ~Note that <<span class="odocwiki_inlinecode"|bind>> will not propagate backtraces correctly~.
+      ~See ~<~<a~_api project~="lwt" ~| ~The manual~>~>
+      for how to enable backtraces~.
+>>
+<<pre id="VAL(>>=)" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|~(~>~>~=~)>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|t ~>~>~= f>> is an alternative notation for <<span class="odocwiki_inlinecode"|bind t f>>~.
+>>
+<<pre id="VAL(=<<)" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|~(~=~<~<~)>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|f ~=~<~< t>> is <<span class="odocwiki_inlinecode"|t ~>~>~= f>>
+>>
+<<pre id="VALmap" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|map>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|map f m>> maps the result of a thread~. ~This is the same as <<span class="odocwiki_inlinecode"|bind
+      m ~(fun x ~-~> return ~(f x~)~)>>
+>>
+<<pre id="VAL(>|=)" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|~(~>~|~=~)>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|m ~>~|~= f>> is <<span class="odocwiki_inlinecode"|map f m>>
+>>
+<<pre id="VAL(=|<)" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|~(~=~|~<~)>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|f ~=~|~< m>> is <<span class="odocwiki_inlinecode"|map f m>>
+>>
+
+
+===@@id="3_Preallocatedthreads"@@~Pre~-allocated threads===
+
+<<pre id="VALreturn_unit" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|return~_unit>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|return~_unit ~= return ~(~)>>
+>>
+<<pre id="VALreturn_none" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|return~_none>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a option <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|return~_none ~= return ~None>>
+>>
+<<pre id="VALreturn_some" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|return~_some>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<span class="ocsforge_color_delimiter"| -> >> 'a option <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|return~_some x ~= return ~(~Some x~)>>
+>>
+<<pre id="VALreturn_nil" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|return~_nil>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a list <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|return~_nil ~= return ~[~]>>
+>>
+<<pre id="VALreturn_true" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|return~_true>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|bool <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|return~_true ~= return true>>
+>>
+<<pre id="VALreturn_false" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|return~_false>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|bool <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|return~_false ~= return false>>
+>>
+
+
+==@@id="2_Threadstorage"@@~Thread storage==
+
+<<pre class="ocsforge_color odocwiki_code" id="TYPEkey"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_type"|'a>> <<span class="odocwiki_name"|key>>>><<div class="odocwiki_info"|~Type of a key~. ~Keys are used to store local values into
+      threads~.
+>>
+<<pre id="VALnew_key" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|new~_key>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="key" | type Lwt.key >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|new~_key ~(~)>> creates a new key~.
+>>
+<<pre id="VALget" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|get>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="key" | type Lwt.key >> <<span class="ocsforge_color_delimiter"| -> >> 'a option>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|get key>> returns the value associated with <<span class="odocwiki_inlinecode"|key>> in the current
+      thread~.
+>>
+<<pre id="VALwith_value" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|with~_value>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="key" | type Lwt.key >> <<span class="ocsforge_color_delimiter"| -> >> 'a option <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'b<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'b>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|with~_value key value f>> executes <<span class="odocwiki_inlinecode"|f>> with <<span class="odocwiki_inlinecode"|value>> associated to
+      <<span class="odocwiki_inlinecode"|key>>~. <<span class="odocwiki_inlinecode"|key>> is restored to its previous value after <<span class="odocwiki_inlinecode"|f>> terminates~.
+>>
+
+
+==@@id="2_Exceptionshandling"@@~Exceptions handling==
+
+<<pre id="VALcatch" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|catch>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>exn <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|catch t f>> is a thread that behaves as the thread <<span class="odocwiki_inlinecode"|t ~(~)>> if
+      this thread succeeds~.  ~If the thread <<span class="odocwiki_inlinecode"|t ~(~)>> fails with some
+      exception~, <<span class="odocwiki_inlinecode"|catch t f>> behaves as the application of <<span class="odocwiki_inlinecode"|f>> to this
+      exception~.
+>>
+<<pre id="VALtry_bind" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|try~_bind>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>exn <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|try~_bind t f g>> behaves as <<span class="odocwiki_inlinecode"|bind ~(t ~(~)~) f>> if <<span class="odocwiki_inlinecode"|t>> does not
+      fail~.  ~Otherwise~, it behaves as the application of <<span class="odocwiki_inlinecode"|g>> to the
+      exception associated to <<span class="odocwiki_inlinecode"|t ~(~)>>~.
+>>
+<<pre id="VALfinalize" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|finalize>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|finalize f g>> returns the same result as <<span class="odocwiki_inlinecode"|f ~(~)>> whether it
+      fails or not~. ~In both cases~, <<span class="odocwiki_inlinecode"|g ~(~)>> is executed after <<span class="odocwiki_inlinecode"|f>>~.
+>>
+<<pre id="VALwrap" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wrap>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|wrap f>> calls <<span class="odocwiki_inlinecode"|f>> and transforms the result into an ~Lwt thread~.
+      ~If <<span class="odocwiki_inlinecode"|f>> raises an exception~, it is caught and converted to an ~Lwt
+      exception~.
+
+
+      ~This is actually the same as~:
+
+
+      
+<<code language='ocaml'|        try
+          return (f ())
+        with exn ->
+          fail exn
+      >>
+
+>>
+<<pre id="VALwrap1" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wrap~1>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|wrap~1 f x>> applies <<span class="odocwiki_inlinecode"|f>> on <<span class="odocwiki_inlinecode"|x>> and returns the result as a
+      thread~. ~If the application of <<span class="odocwiki_inlinecode"|f>> to <<span class="odocwiki_inlinecode"|x>> raise an exception it
+      is catched and a thread is returned~.
+
+
+      ~Note that you must use <<a_api | val Lwt.wrap >> instead of <<a_api | val Lwt.wrap1 >> if the
+      evaluation of <<span class="odocwiki_inlinecode"|x>> may raise an exception~.
+
+
+      ~For example~, the following code is incorrect~:
+
+
+      
+<<code language='ocaml'|        wrap1 f (Hashtbl.find table key)
+      >>
+
+
+
+      and should be written as~:
+
+
+      
+<<code language='ocaml'|        wrap (fun () -> f (Hashtbl.find table key))
+      >>
+
+>>
+<<pre id="VALwrap2" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wrap~2>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_delimiter"| -> >> 'c<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_delimiter"| -> >> 'c <<a_api text="t" | type Lwt.t >>>>>><<pre id="VALwrap3" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wrap~3>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_delimiter"| -> >> 'c <<span class="ocsforge_color_delimiter"| -> >> 'd<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_delimiter"| -> >> 'c <<span class="ocsforge_color_delimiter"| -> >> 'd <<a_api text="t" | type Lwt.t >>>>>><<pre id="VALwrap4" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wrap~4>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_delimiter"| -> >> 'c <<span class="ocsforge_color_delimiter"| -> >> 'd <<span class="ocsforge_color_delimiter"| -> >> 'e<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_delimiter"| -> >> 'c <<span class="ocsforge_color_delimiter"| -> >> 'd <<span class="ocsforge_color_delimiter"| -> >> 'e <<a_api text="t" | type Lwt.t >>>>>><<pre id="VALwrap5" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wrap~5>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_delimiter"| -> >> 'c <<span class="ocsforge_color_delimiter"| -> >> 'd <<span class="ocsforge_color_delimiter"| -> >> 'e <<span class="ocsforge_color_delimiter"| -> >> 'f<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >>\\  'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_delimiter"| -> >> 'c <<span class="ocsforge_color_delimiter"| -> >> 'd <<span class="ocsforge_color_delimiter"| -> >> 'e <<span class="ocsforge_color_delimiter"| -> >> 'f <<a_api text="t" | type Lwt.t >>>>>><<pre id="VALwrap6" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wrap~6>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_delimiter"| -> >> 'c <<span class="ocsforge_color_delimiter"| -> >> 'd <<span class="ocsforge_color_delimiter"| -> >> 'e <<span class="ocsforge_color_delimiter"| -> >> 'f <<span class="ocsforge_color_delimiter"| -> >> 'g<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >>\\  'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_delimiter"| -> >> 'c <<span class="ocsforge_color_delimiter"| -> >> 'd <<span class="ocsforge_color_delimiter"| -> >> 'e <<span class="ocsforge_color_delimiter"| -> >> 'f <<span class="ocsforge_color_delimiter"| -> >> 'g <<a_api text="t" | type Lwt.t >>>>>><<pre id="VALwrap7" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wrap~7>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_delimiter"| -> >> 'c <<span class="ocsforge_color_delimiter"| -> >> 'd <<span class="ocsforge_color_delimiter"| -> >> 'e <<span class="ocsforge_color_delimiter"| -> >> 'f <<span class="ocsforge_color_delimiter"| -> >> 'g <<span class="ocsforge_color_delimiter"| -> >> 'h<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >>\\  'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_delimiter"| -> >> 'c <<span class="ocsforge_color_delimiter"| -> >> 'd <<span class="ocsforge_color_delimiter"| -> >> 'e <<span class="ocsforge_color_delimiter"| -> >> 'f <<span class="ocsforge_color_delimiter"| -> >> 'g <<span class="ocsforge_color_delimiter"| -> >> 'h <<a_api text="t" | type Lwt.t >>>>>>
+
+==@@id="2_Multithreadscomposition"@@~Multi~-threads composition==
+
+<<pre id="VALchoose" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|choose>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> list <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|choose l>> behaves as the first thread in <<span class="odocwiki_inlinecode"|l>> to terminate~.  ~If
+      several threads are already terminated~, one is chosen at
+      random~.
+
+
+      ~Note~: <<a_api | val Lwt.choose >> leaves the local values of the current thread
+      unchanged~.
+>>
+<<pre id="VALnchoose" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|nchoose>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> list <<span class="ocsforge_color_delimiter"| -> >> 'a list <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|nchoose l>> returns the value of all that have succcessfully
+      terminated~. ~If all threads are sleeping~, it waits for at least
+      one to terminates~. ~If one the threads of <<span class="odocwiki_inlinecode"|l>> fails~, <<span class="odocwiki_inlinecode"|nchoose>>
+      fails with the same exception~.
+
+
+      ~Note~: <<a_api | val Lwt.nchoose >> leaves the local values of the current thread
+      unchanged~.
+>>
+<<pre id="VALnchoose_split" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|nchoose~_split>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> list <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>'a list * 'a <<a_api text="t" | type Lwt.t >> list<<span class="ocsforge_color_delimiter"| ) >> <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|nchoose~_split l>> does the same as <<a_api | val Lwt.nchoose >> but also retrurns
+      the list of threads that have not yet terminated~.
+>>
+<<pre id="VALjoin" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|join>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<a_api text="t" | type Lwt.t >> list <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|join l>> waits for all threads in <<span class="odocwiki_inlinecode"|l>> to terminate~. ~If one of
+      the threads fails~, then <<span class="odocwiki_inlinecode"|join l>> will fails with the same
+      exception as the first one to terminate~.
+
+
+      ~Note~: <<a_api | val Lwt.join >> leaves the local values of the current thread
+      unchanged~.
+>>
+<<pre id="VAL(<?>)" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|~(~<~?~>~)>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|t ~<~?~> t~'>> is the same as <<span class="odocwiki_inlinecode"|choose ~[t~; t~'~]>>
+>>
+<<pre id="VAL(<&>)" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|~(~<~&~>~)>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|t ~<~&~> t~'>> is the same as <<span class="odocwiki_inlinecode"|join ~[t~; t~'~]>>
+>>
+<<pre id="VALasync" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|async>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|async f>> starts a thread without waiting for the result~. ~If it
+      fails ~(now or later~)~, the exception is given to
+      <<a_api | val Lwt.async_exception_hook >>~.
+
+
+      ~You should use this function if you want to start a thread that
+      might fail and don~'t care what its return value is~, nor when it
+      terminates ~(for instance~, because it is looping~)~.
+>>
+<<pre id="VALignore_result" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|ignore~_result>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|ignore~_result t>> is like <<span class="odocwiki_inlinecode"|~Pervasives~.ignore t>> except that~:
+
+
+* if <<span class="odocwiki_inlinecode"|t>> already failed~, it raises the exception now~,
+* if <<span class="odocwiki_inlinecode"|t>> is sleeping and fails later~, the exception will be
+        given to <<a_api | val Lwt.async_exception_hook >>~.
+
+>>
+<<pre id="VALasync_exception_hook" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|async~_exception~_hook>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>exn <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_uid"|Pervasives>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|ref>>>>>><<div class="odocwiki_info"|~Function called when a asynchronous exception is thrown~.
+
+
+      ~The default behavior is to print an error message with a
+      backtrace if available and to exit the program~.
+
+
+      ~The behavior is undefined if this function raise an
+      exception~.
+
+
+      ~See ~<~<a~_api project~="lwt" ~| ~The manual~>~>
+      for how to enable backtraces~.
+>>
+
+
+==@@id="2_Sleepingandresuming"@@~Sleeping and resuming==
+
+<<pre class="ocsforge_color odocwiki_code" id="TYPEu"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_type"|'a>> <<span class="odocwiki_name"|u>>>><<div class="odocwiki_info"|~The type of thread wakeners~.
+>>
+<<pre id="VALwait" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wait>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >> * 'a <<a_api text="u" | type Lwt.u >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|wait ~(~)>> is a pair of a thread which sleeps forever ~(unless it
+      is resumed by one of the functions <<span class="odocwiki_inlinecode"|wakeup>>~, <<span class="odocwiki_inlinecode"|wakeup~_exn>> below~)
+      and the corresponding wakener~.  ~This thread does not block the
+      execution of the remainder of the program ~(except of course~, if
+      another thread tries to wait for its termination~)~.
+>>
+<<pre id="VALwakeup" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wakeup>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="u" | type Lwt.u >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|wakeup t e>> makes the sleeping thread <<span class="odocwiki_inlinecode"|t>> terminate and return
+      the value of the expression <<span class="odocwiki_inlinecode"|e>>~.
+>>
+<<pre id="VALwakeup_exn" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wakeup~_exn>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="u" | type Lwt.u >> <<span class="ocsforge_color_delimiter"| -> >> exn <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|wakeup~_exn t e>> makes the sleeping thread <<span class="odocwiki_inlinecode"|t>> fail with the
+      exception <<span class="odocwiki_inlinecode"|e>>~.
+>>
+<<pre id="VALwakeup_later" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wakeup~_later>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="u" | type Lwt.u >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Same as <<a_api | val Lwt.wakeup >> but it is not guaranteed that the thread will
+      be woken up immediately~.
+>>
+<<pre id="VALwakeup_later_exn" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wakeup~_later~_exn>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="u" | type Lwt.u >> <<span class="ocsforge_color_delimiter"| -> >> exn <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Same as <<a_api | val Lwt.wakeup_exn >> but it is not guaranteed that the thread
+      will be woken up immediately~.
+>>
+<<pre id="VALwaiter_of_wakener" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|waiter~_of~_wakener>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="u" | type Lwt.u >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Returns the thread associated to a wakener~.
+>>
+<<pre class="ocsforge_color odocwiki_code" id="TYPEresult"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_type"|+'a>> <<span class="odocwiki_name"|result>>>><<div class="odocwiki_info"|~Either a value of type <<span class="odocwiki_inlinecode"|~'a>>~, either an exception~.
+>>
+<<pre id="VALmake_value" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|make~_value>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="result" | type Lwt.result >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|value x>> creates a result containing the value <<span class="odocwiki_inlinecode"|x>>~.
+>>
+<<pre id="VALmake_error" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|make~_error>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|exn <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="result" | type Lwt.result >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|error e>> creates a result containing the exception <<span class="odocwiki_inlinecode"|e>>~.
+>>
+<<pre id="VALof_result" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|of~_result>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="result" | type Lwt.result >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Returns a thread from a result~.
+>>
+<<pre id="VALwakeup_result" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wakeup~_result>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="u" | type Lwt.u >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="result" | type Lwt.result >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|wakeup~_result t r>> makes the sleeping thread <<span class="odocwiki_inlinecode"|t>> terminate with
+      the result <<span class="odocwiki_inlinecode"|r>>~.
+>>
+<<pre id="VALwakeup_later_result" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wakeup~_later~_result>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="u" | type Lwt.u >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="result" | type Lwt.result >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Same as <<a_api | val Lwt.wakeup_result >> but it is not guaranteed that the
+      thread will be woken up immediately~.
+>>
+
+
+==@@id="2_Threadsstate"@@~Threads state==
+
+<<pre class="ocsforge_color odocwiki_code" id="TYPEstate"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_type"|'a>> <<span class="odocwiki_name"|state>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_variants"|<<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Return>> <<span class="ocsforge_color_keyword"|of>> <<span class="odocwiki_type"|'a>>>><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|<<div class="odocwiki_info"|~The thread which has successfully terminated
+>>
+>><<span class="odocwiki_comments_close"| ~*)>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Fail>> <<span class="ocsforge_color_keyword"|of>> <<span class="odocwiki_type"|exn>>>><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|<<div class="odocwiki_info"|~The thread raised an exception
+>>
+>><<span class="odocwiki_comments_close"| ~*)>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Sleep>>>><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|<<div class="odocwiki_info"|~The thread is sleeping
+>>
+>><<span class="odocwiki_comments_close"| ~*)>>>>>>>>>><<div class="odocwiki_info"|~State of a thread
+>>
+<<pre id="VALstate" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|state>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="state" | type Lwt.state >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|state t>> returns the state of a thread
+>>
+<<pre id="VALis_sleeping" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|is~_sleeping>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> bool>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|is~_sleeping t>> returns <<span class="odocwiki_inlinecode"|true>> iff <<span class="odocwiki_inlinecode"|t>> is sleeping~.
+>>
+
+
+==@@id="2_Cancelablethreads"@@~Cancelable threads==
+
+
+~Cancelable threads are the same as regular threads except that
+    they can be canceled~.
+<<pre id="EXCEPTIONCanceled" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|exception>> <<span class="odocwiki_name"|Canceled>>>><<div class="odocwiki_info"|~Canceled threads fails with this exception
+>>
+<<pre id="VALtask" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|task>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >> * 'a <<a_api text="u" | type Lwt.u >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|task ~(~)>> is the same as <<span class="odocwiki_inlinecode"|wait ~(~)>> except that threads created
+      with <<span class="odocwiki_inlinecode"|task>> can be canceled~.
+>>
+<<pre id="VALon_cancel" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|on~_cancel>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|on~_cancel t f>> executes <<span class="odocwiki_inlinecode"|f>> when <<span class="odocwiki_inlinecode"|t>> is canceled~. <<span class="odocwiki_inlinecode"|f>> will be
+      executed before all other threads waiting on <<span class="odocwiki_inlinecode"|t>>~.
+
+
+      ~If <<span class="odocwiki_inlinecode"|f>> raises an exception it is given to
+      <<a_api | val Lwt.async_exception_hook >>~.
+>>
+<<pre id="VALadd_task_r" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|add~_task~_r>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="u" | type Lwt.u >> <<a_api text="Lwt_sequence.t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|add~_task~_r seq>> creates a sleeping thread~, adds its wakener to
+      the right of <<span class="odocwiki_inlinecode"|seq>> and returns its waiter~. ~When the thread is
+      canceled~, it is removed from <<span class="odocwiki_inlinecode"|seq>>~.
+>>
+<<pre id="VALadd_task_l" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|add~_task~_l>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="u" | type Lwt.u >> <<a_api text="Lwt_sequence.t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|add~_task~_l seq>> creates a sleeping thread~, adds its wakener to
+      the left of <<span class="odocwiki_inlinecode"|seq>> and returns its waiter~. ~When the thread is
+      canceled~, it is removed from <<span class="odocwiki_inlinecode"|seq>>~.
+>>
+<<pre id="VALcancel" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|cancel>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|cancel t>> cancels the threads <<span class="odocwiki_inlinecode"|t>>~. ~This means that the deepest
+      sleeping thread created with <<span class="odocwiki_inlinecode"|task>> and connected to <<span class="odocwiki_inlinecode"|t>> is
+      woken up with the exception <<a_api | exception Lwt.Canceled >>~.
+
+
+      ~For example~, in the following code~:
+
+
+      
+<<code language='ocaml'|        let waiter, wakener = task () in
+        cancel (waiter ~>> printl "plop")
+      >>
+
+
+
+      <<span class="odocwiki_inlinecode"|waiter>> will be woken up with <<a_api | exception Lwt.Canceled >>~.
+>>
+<<pre id="VALpick" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|pick>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> list <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|pick l>> is the same as <<a_api | val Lwt.choose >>~, except that it cancels all
+      sleeping threads when one terminates~.
+
+
+      ~Note~: <<a_api | val Lwt.pick >> leaves the local values of the current thread
+      unchanged~.
+>>
+<<pre id="VALnpick" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|npick>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> list <<span class="ocsforge_color_delimiter"| -> >> 'a list <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|npick l>> is the same as <<a_api | val Lwt.nchoose >>~, except that it cancels all
+      sleeping threads when one terminates~.
+
+
+      ~Note~: <<a_api | val Lwt.npick >> leaves the local values of the current thread
+      unchanged~.
+>>
+<<pre id="VALprotected" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|protected>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|protected thread>> creates a new cancelable thread which behave
+      as <<span class="odocwiki_inlinecode"|thread>> except that cancelling it does not cancel
+      <<span class="odocwiki_inlinecode"|thread>>~.
+>>
+<<pre id="VALno_cancel" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|no~_cancel>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|no~_cancel thread>> creates a thread which behave as <<span class="odocwiki_inlinecode"|thread>>
+      except that it cannot be canceled~.
+>>
+
+
+==@@id="2_Pause"@@~Pause==
+
+<<pre id="VALpause" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|pause>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|pause ~(~)>> is a sleeping thread which is wake up on the next
+      call to <<a_api | val Lwt.wakeup_paused >>~. ~A thread created with <<span class="odocwiki_inlinecode"|pause>> can be
+      canceled~.
+>>
+<<pre id="VALwakeup_paused" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wakeup~_paused>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|wakeup~_paused ~(~)>> wakes up all threads which suspended
+      themselves with <<a_api | val Lwt.pause >>~.
+
+
+      ~This function is called by the scheduler~, before entering the
+      main loop~. ~You usually do not have to call it directly~, except
+      if you are writing a custom scheduler~.
+
+
+      ~Note that if a paused thread resumes and pauses again~, it will not
+      be woken up at this point~.
+>>
+<<pre id="VALpaused_count" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|paused~_count>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> int>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|paused~_count ~(~)>> returns the number of currently paused
+      threads~.
+>>
+<<pre id="VALregister_pause_notifier" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|register~_pause~_notifier>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>int <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|register~_pause~_notifier f>> register a function <<span class="odocwiki_inlinecode"|f>> that will be
+      called each time pause is called~. ~The parameter passed to <<span class="odocwiki_inlinecode"|f>> is
+      the new number of threads paused~. ~It is usefull to be able to
+      call <<a_api | val Lwt.wakeup_paused >> when there is no scheduler
+>>
+
+
+==@@id="2_Misc"@@~Misc==
+
+<<pre id="VALon_success" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|on~_success>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|on~_success t f>> executes <<span class="odocwiki_inlinecode"|f>> when <<span class="odocwiki_inlinecode"|t>> terminates without
+      failing~. ~If <<span class="odocwiki_inlinecode"|f>> raises an exception it is given to
+      <<a_api | val Lwt.async_exception_hook >>~.
+>>
+<<pre id="VALon_failure" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|on~_failure>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>exn <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|on~_failure t f>> executes <<span class="odocwiki_inlinecode"|f>> when <<span class="odocwiki_inlinecode"|t>> terminates and fails~. ~If
+      <<span class="odocwiki_inlinecode"|f>> raises an exception it is given to
+      <<a_api | val Lwt.async_exception_hook >>~.
+>>
+<<pre id="VALon_termination" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|on~_termination>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|on~_termination t f>> executes <<span class="odocwiki_inlinecode"|f>> when <<span class="odocwiki_inlinecode"|t>> terminates~. ~If <<span class="odocwiki_inlinecode"|f>>
+      raises an exception it is given to <<a_api | val Lwt.async_exception_hook >>~.
+>>
+<<pre id="VALon_any" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|on~_any>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>exn <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|on~_any t f g>> executes <<span class="odocwiki_inlinecode"|f>> or <<span class="odocwiki_inlinecode"|g>> when <<span class="odocwiki_inlinecode"|t>> terminates~. ~If <<span class="odocwiki_inlinecode"|f>>
+      or <<span class="odocwiki_inlinecode"|g>> raises an exception it is given to
+      <<a_api | val Lwt.async_exception_hook >>~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<a_api text="Infix" | module Lwt.Infix >> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt.Infix >><<span class="ocsforge_color_keyword"|end>>>><<div class="odocwiki_info"|~Infix operators~.
+>>

@@ -1,0 +1,27 @@
+=Module <<a_api_type | module Lwt_pool >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_pool>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_pool >><<span class="ocsforge_color_keyword"|end>>>>~Creating pools ~(for example pools of connections to a database~)~.
+
+----
+
+~Instead of creating a new connection each time you need one~,
+    keep a pool of opened connections and reuse opened connections
+    that are free~.
+<<pre class="ocsforge_color odocwiki_code" id="TYPEt"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_type"|'a>> <<span class="odocwiki_name"|t>>>><<div class="odocwiki_info"|~Type of pools
+>>
+<<pre id="VALcreate" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|create>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  int <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?check: >><<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>bool <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?validate: >><<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> bool <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_pool.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|create n ~?check ~?validate f>> creates a new pool with at most
+      <<span class="odocwiki_inlinecode"|n>> members~. <<span class="odocwiki_inlinecode"|f>> is the function to use to create a new pool
+      member~.
+
+
+      ~An element of the pool is validated by the optional <<span class="odocwiki_inlinecode"|validate>>
+      function before its <<a_api | val Lwt_pool.use >>~. ~Invalid elements are re~-created~.
+
+
+      ~The optional function <<span class="odocwiki_inlinecode"|check>> is called after a <<span class="odocwiki_inlinecode"|use>> of an
+      element failed~. ~It must call its argument exactly once with
+      <<span class="odocwiki_inlinecode"|true>> if the pool member is still valid and <<span class="odocwiki_inlinecode"|false>>
+      otherwise~.
+>>
+<<pre id="VALuse" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|use>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_pool.t >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|use p f>> takes one free member of the pool <<span class="odocwiki_inlinecode"|p>> and gives it to
+      the function <<span class="odocwiki_inlinecode"|f>>~.
+>>

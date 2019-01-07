@@ -1,0 +1,35 @@
+<<code language="ocaml" | sig
+  val with_finaliser : (unit -> unit) -> 'a React.event -> 'a React.event
+  val next : 'a React.event -> 'a Lwt.t
+  val limit : (unit -> unit Lwt.t) -> 'a React.event -> 'a React.event
+  val from : (unit -> 'a Lwt.t) -> 'a React.event
+  val to_stream : 'a React.event -> 'a Lwt_stream.t
+  val of_stream : 'a Lwt_stream.t -> 'a React.event
+  val delay : 'a React.event Lwt.t -> 'a React.event
+  val app_s :
+    ('a -> 'b Lwt.t) React.event -> 'a React.event -> 'b React.event
+  val app_p :
+    ('a -> 'b Lwt.t) React.event -> 'a React.event -> 'b React.event
+  val map_s : ('a -> 'b Lwt.t) -> 'a React.event -> 'b React.event
+  val map_p : ('a -> 'b Lwt.t) -> 'a React.event -> 'b React.event
+  val filter_s : ('a -> bool Lwt.t) -> 'a React.event -> 'a React.event
+  val filter_p : ('a -> bool Lwt.t) -> 'a React.event -> 'a React.event
+  val fmap_s : ('a -> 'b option Lwt.t) -> 'a React.event -> 'b React.event
+  val fmap_p : ('a -> 'b option Lwt.t) -> 'a React.event -> 'b React.event
+  val diff_s : ('a -> 'a -> 'b Lwt.t) -> 'a React.event -> 'b React.event
+  val accum_s : ('a -> 'a Lwt.t) React.event -> 'a -> 'a React.event
+  val fold_s :
+    ('a -> 'b -> 'a Lwt.t) -> 'a -> 'b React.event -> 'a React.event
+  val merge_s :
+    ('a -> 'b -> 'a Lwt.t) -> 'a -> 'b React.event list -> 'a React.event
+  val run_s : 'a Lwt.t React.event -> 'a React.event
+  val run_p : 'a Lwt.t React.event -> 'a React.event
+  type notifier
+  val disable : Lwt_event.notifier -> unit
+  val notify : ('a -> unit) -> 'a React.event -> Lwt_event.notifier
+  val notify_p : ('a -> unit Lwt.t) -> 'a React.event -> Lwt_event.notifier
+  val notify_s : ('a -> unit Lwt.t) -> 'a React.event -> Lwt_event.notifier
+  val always_notify : ('a -> unit) -> 'a React.event -> unit
+  val always_notify_p : ('a -> unit Lwt.t) -> 'a React.event -> unit
+  val always_notify_s : ('a -> unit Lwt.t) -> 'a React.event -> unit
+end >>

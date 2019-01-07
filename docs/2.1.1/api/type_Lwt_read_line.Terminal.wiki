@@ -1,0 +1,26 @@
+<<code language="ocaml" | sig
+  type state
+  val init : Lwt_read_line.Terminal.state
+  type box =
+      Box_none
+    | Box_empty
+    | Box_words of Lwt_read_line.text_set * int
+    | Box_message of string
+  val draw :
+    columns:int ->
+    ?map_text:(Text.t -> Text.t) ->
+    ?box:Lwt_read_line.Terminal.box ->
+    render_state:Lwt_read_line.Terminal.state ->
+    engine_state:Lwt_read_line.Engine.state ->
+    prompt:Lwt_read_line.prompt ->
+    unit -> Lwt_term.styled_text * Lwt_read_line.Terminal.state
+  val last_draw :
+    columns:int ->
+    ?map_text:(Text.t -> Text.t) ->
+    render_state:Lwt_read_line.Terminal.state ->
+    engine_state:Lwt_read_line.Engine.state ->
+    prompt:Lwt_read_line.prompt -> unit -> Lwt_term.styled_text
+  val erase :
+    columns:int ->
+    render_state:Lwt_read_line.Terminal.state -> unit -> Lwt_term.styled_text
+end >>

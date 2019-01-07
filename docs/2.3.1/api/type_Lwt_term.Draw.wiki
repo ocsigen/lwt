@@ -1,0 +1,15 @@
+<<code language="ocaml" | sig
+  val get : zone:Lwt_term.Zone.t -> x:int -> y:int -> Lwt_term.point
+  val set :
+    zone:Lwt_term.Zone.t -> x:int -> y:int -> point:Lwt_term.point -> unit
+  val map :
+    zone:Lwt_term.Zone.t ->
+    x:int -> y:int -> (Lwt_term.point -> Lwt_term.point) -> unit
+  val text : zone:Lwt_term.Zone.t -> x:int -> y:int -> text:Text.t -> unit
+  val textf :
+    Lwt_term.Zone.t ->
+    int -> int -> ('a, unit, string, unit) Pervasives.format4 -> 'a
+  val textc :
+    zone:Lwt_term.Zone.t ->
+    x:int -> y:int -> text:Lwt_term.styled_text -> unit
+end >>

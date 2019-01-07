@@ -1,0 +1,70 @@
+=Module <<a_api_type | module Lwt_event >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_event: <<span class='code'|sig>><<a_api text=".." | module Lwt_event >><<span class='code'|end>>>>~Events utilities\\
+
+----
+\\
+
+======@@id="6_Lwtspecificutilities"@@~Lwt~-specific utilities======
+\\
+<<div id="VALwith_finaliser" class="code"|<<span class="keyword"|val>> with~_finaliser : <<span class="code type"|(unit -> unit) -> 'a React.event -> 'a React.event>>>><<div class="info"|<<span class='code'|with~_finaliser f event>> returns an event <<span class='code'|event~'>> which behave
+      as <<span class='code'|event>>~, except that <<span class='code'|f>> is called when <<span class='code'|event~'>> is garbage
+      collected~.\\
+>>
+<<div id="VALnext" class="code"|<<span class="keyword"|val>> next : <<span class="code type"|'a React.event -> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|next ev>> returns the next occurrence of <<span class='code'|ev>>\\
+>>
+<<div id="VALlimit" class="code"|<<span class="keyword"|val>> limit : <<span class="code type"|(unit -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a React.event -> 'a React.event>>>><<div class="info"|<<span class='code'|limit f event>> limits the rate of <<span class='code'|event>> with <<span class='code'|f>>~.\\
+
+
+      ~For example~, to limit the rate of an event to ~1 per second you
+      can use~: <<span class='code'|limit ~(fun ~(~) ~-~> ~Lwt~_unix~.sleep ~1~.~0~) event>>~.\\
+>>
+<<div id="VALfrom" class="code"|<<span class="keyword"|val>> from : <<span class="code type"|(unit -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a React.event>>>><<div class="info"|<<span class='code'|from f>> creates an event which occurs each <<span class='code'|f ~(~)>> returns a
+      value~. ~If <<span class='code'|f>> raises an exception~, the event is just stopped~.\\
+>>
+<<div id="VALto_stream" class="code"|<<span class="keyword"|val>> to~_stream : <<span class="code type"|'a React.event -> 'a <<a_api text="Lwt_stream.t" | type Lwt_stream.t >>>>>><<div class="info"|~Creates a stream holding all values occurring on the given
+      event\\
+>>
+<<div id="VALof_stream" class="code"|<<span class="keyword"|val>> of~_stream : <<span class="code type"|'a <<a_api text="Lwt_stream.t" | type Lwt_stream.t >> -> 'a React.event>>>><<div class="info"|<<span class='code'|of~_stream stream>> creates an event which occurs each time a
+      value is available on the stream~.\\
+>>
+<<div id="VALdelay" class="code"|<<span class="keyword"|val>> delay : <<span class="code type"|'a React.event <<a_api text="Lwt.t" | type Lwt.t >> -> 'a React.event>>>><<div class="info"|<<span class='code'|delay thread>> is an event which does not occurs until <<span class='code'|thread>>
+      returns~. ~Then it behaves as the event returned by <<span class='code'|thread>>~.\\
+>>
+\\
+
+======@@id="6_ThreadedversionsofReacttransformationfunctions"@@~Threaded versions of ~React transformation functions======
+\\
+\\
+~The following functions behave as their <<span class='code'|~React>> counterpart~,
+    except that they takes functions that may yield~.\\
+
+
+    ~As usual the <<span class='code'|~_s>> suffix is used when calls are serialized~, and
+    the <<span class='code'|~_p>> suffix is used when they are not~.\\
+
+
+    ~Note that <<span class='code'|~*~_p>> functions may not preserve event order~.\\
+<<div id="VALapp_s" class="code"|<<span class="keyword"|val>> app~_s : <<span class="code type"|('a -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) React.event -> 'a React.event -> 'b React.event>>>><<div id="VALapp_p" class="code"|<<span class="keyword"|val>> app~_p : <<span class="code type"|('a -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) React.event -> 'a React.event -> 'b React.event>>>><<div id="VALmap_s" class="code"|<<span class="keyword"|val>> map~_s : <<span class="code type"|('a -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a React.event -> 'b React.event>>>><<div id="VALmap_p" class="code"|<<span class="keyword"|val>> map~_p : <<span class="code type"|('a -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a React.event -> 'b React.event>>>><<div id="VALfilter_s" class="code"|<<span class="keyword"|val>> filter~_s : <<span class="code type"|('a -> bool <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a React.event -> 'a React.event>>>><<div id="VALfilter_p" class="code"|<<span class="keyword"|val>> filter~_p : <<span class="code type"|('a -> bool <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a React.event -> 'a React.event>>>><<div id="VALfmap_s" class="code"|<<span class="keyword"|val>> fmap~_s : <<span class="code type"|('a -> 'b option <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a React.event -> 'b React.event>>>><<div id="VALfmap_p" class="code"|<<span class="keyword"|val>> fmap~_p : <<span class="code type"|('a -> 'b option <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a React.event -> 'b React.event>>>><<div id="VALdiff_s" class="code"|<<span class="keyword"|val>> diff~_s : <<span class="code type"|('a -> 'a -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a React.event -> 'b React.event>>>><<div id="VALaccum_s" class="code"|<<span class="keyword"|val>> accum~_s : <<span class="code type"|('a -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) React.event -> 'a -> 'a React.event>>>><<div id="VALfold_s" class="code"|<<span class="keyword"|val>> fold~_s : <<span class="code type"|('a -> 'b -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a -> 'b React.event -> 'a React.event>>>><<div id="VALmerge_s" class="code"|<<span class="keyword"|val>> merge~_s : <<span class="code type"|('a -> 'b -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a -> 'b React.event list -> 'a React.event>>>><<div id="VALrun_s" class="code"|<<span class="keyword"|val>> run~_s : <<span class="code type"|'a <<a_api text="Lwt.t" | type Lwt.t >> React.event -> 'a React.event>>>><<div id="VALrun_p" class="code"|<<span class="keyword"|val>> run~_p : <<span class="code type"|'a <<a_api text="Lwt.t" | type Lwt.t >> React.event -> 'a React.event>>>>\\
+
+======@@id="6_Notification"@@~Notification======
+\\
+<<div class="code" id="TYPEnotifier"|<<span class="keyword"|type>> notifier>>
+<<div class="info"|~Type of event notifiers\\
+>>
+
+<<div id="VALdisable" class="code"|<<span class="keyword"|val>> disable : <<span class="code type"|<<a_api text="notifier" | type Lwt_event.notifier >> -> unit>>>><<div class="info"|<<span class='code'|disable notif>> stops the corresponding event to be monitored\\
+>>
+<<div id="VALnotify" class="code"|<<span class="keyword"|val>> notify : <<span class="code type"|('a -> unit) -> 'a React.event -> <<a_api text="notifier" | type Lwt_event.notifier >>>>>><<div class="info"|<<span class='code'|notify f ev>> calls <<span class='code'|f x>> each time <<span class='code'|ev>> has a value <<span class='code'|x>>\\
+>>
+<<div id="VALnotify_p" class="code"|<<span class="keyword"|val>> notify~_p : <<span class="code type"|('a -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a React.event -> <<a_api text="notifier" | type Lwt_event.notifier >>>>>><<div class="info"|<<span class='code'|notify~_p f ev>> is the same as <<span class='code'|notify>> except that <<span class='code'|f x>> is a
+      thread~. ~Calls to <<span class='code'|f>> are made in parallel~.\\
+>>
+<<div id="VALnotify_s" class="code"|<<span class="keyword"|val>> notify~_s : <<span class="code type"|('a -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a React.event -> <<a_api text="notifier" | type Lwt_event.notifier >>>>>><<div class="info"|<<span class='code'|notify~_s f ev>> is the same as <<span class='code'|notify>> except that <<span class='code'|f x>> is a
+      thread~. ~Calls to <<span class='code'|f>> are serialized~.\\
+>>
+<<div id="VALalways_notify" class="code"|<<span class="keyword"|val>> always~_notify : <<span class="code type"|('a -> unit) -> 'a React.event -> unit>>>><<div class="info"|~Same as <<span class='code'|notify>> but does not return a notifier\\
+>>
+<<div id="VALalways_notify_p" class="code"|<<span class="keyword"|val>> always~_notify~_p : <<span class="code type"|('a -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a React.event -> unit>>>><<div class="info"|~Same as <<span class='code'|notify~_p>> but does not return a notifier\\
+>>
+<<div id="VALalways_notify_s" class="code"|<<span class="keyword"|val>> always~_notify~_s : <<span class="code type"|('a -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a React.event -> unit>>>><<div class="info"|~Same as <<span class='code'|notify~_s>> but does not return a notifier\\
+>>

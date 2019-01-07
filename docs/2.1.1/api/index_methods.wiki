@@ -1,0 +1,42 @@
+=Index of class methods=
+
+|@@ @class="alignleft"@@\\C|
+|<<a_api text="close"| method Lwt_process.process_none#close >> ~[<<a_api | module Lwt_process >>~]|<<div class="info"|~Closes the process and returns its exit status~.
+>>
+|
+|<<a_api text="contents"| method Lwt_read_line.clipboard#contents >> ~[<<a_api | module Lwt_read_line >>~]||
+|@@ @class="alignleft"@@\\K|
+|<<a_api text="kill"| method Lwt_process.process_none#kill >> ~[<<a_api | module Lwt_process >>~]|<<div class="info"|<<span class='code'|kill signum>> sends <<span class='code'|signum>> to the process if it is still
+        running
+>>
+|
+|@@ @class="alignleft"@@\\P|
+|<<a_api text="pid"| method Lwt_process.process_none#pid >> ~[<<a_api | module Lwt_process >>~]|<<div class="info"|~Pid of the sub~-process
+>>
+|
+|@@ @class="alignleft"@@\\R|
+|<<a_api text="rusage"| method Lwt_process.process_none#rusage >> ~[<<a_api | module Lwt_process >>~]|<<div class="info"|~Threads which wait for the sub~-process to exit then returns
+        its resource usages
+>>
+|
+|@@ @class="alignleft"@@\\S|
+|<<a_api text="set"| method Lwt_read_line.clipboard#set >> ~[<<a_api | module Lwt_read_line >>~]||
+|<<a_api text="state"| method Lwt_process.process_none#state >> ~[<<a_api | module Lwt_process >>~]|<<div class="info"|~Return the state of the process
+>>
+|
+|<<a_api text="status"| method Lwt_process.process_none#status >> ~[<<a_api | module Lwt_process >>~]|<<div class="info"|~Threads which wait for the sub~-process to exit then returns its
+        exit status
+>>
+|
+|<<a_api text="stderr"| method Lwt_process.process_full#stderr >> ~[<<a_api | module Lwt_process >>~]||
+|<<a_api text="stdin"| method Lwt_process.process_full#stdin >> ~[<<a_api | module Lwt_process >>~]||
+|<<a_api text="stdin"| method Lwt_process.process#stdin >> ~[<<a_api | module Lwt_process >>~]||
+|<<a_api text="stdin"| method Lwt_process.process_out#stdin >> ~[<<a_api | module Lwt_process >>~]|<<div class="info"|~The standard input of the process
+>>
+|
+|<<a_api text="stdout"| method Lwt_process.process_full#stdout >> ~[<<a_api | module Lwt_process >>~]||
+|<<a_api text="stdout"| method Lwt_process.process#stdout >> ~[<<a_api | module Lwt_process >>~]||
+|<<a_api text="stdout"| method Lwt_process.process_in#stdout >> ~[<<a_api | module Lwt_process >>~]|<<div class="info"|~The standard output of the process
+>>
+|
+\\

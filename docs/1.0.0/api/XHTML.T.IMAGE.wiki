@@ -1,0 +1,5 @@
+=Module <<a_api_type | module XHTML.T.IMAGE >> =
+<<div class="code"|<<span class="keyword"|module>> IMAGE: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.IMAGE >><<span class='code'|end>>>>
+----
+<<div class="code" id="TYPEinline"|<<span class="keyword"|type>> inline = <<span class="code type"|[ `Img ]>> >>
+

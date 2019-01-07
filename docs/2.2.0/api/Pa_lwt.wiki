@@ -1,0 +1,184 @@
+=Module <<a_api_type | module Pa_lwt >> =
+<<div class="code"|<<span class="keyword"|module>> Pa_lwt: <<span class='code'|sig>><<a_api text=".." | module Pa_lwt >><<span class='code'|end>>>>~Syntactic sugars for lwt\\
+
+----
+\\
+~This extension add the following sugars~:\\
+
+* anonymous bind~:
+
+
+      
+{{{
+         write stdio "Hello, " >> write stdio "world!"
+      
+}}}
+\\
+
+* lwt~-binding~:
+
+
+      
+{{{
+         lwt ch = get_char stdin in
+         code
+      
+}}}
+\\
+
+
+      is the same as <<span class='code'|bind ~(get~_char stdin~) ~(fun ch ~-~> code~)>>\\
+
+
+      ~Moreover it supports parallel binding~:\\
+
+
+      
+{{{
+         lwt x = do_something1 ()
+         and y = do_something2 in
+         code
+      
+}}}
+\\
+
+
+      will let <<span class='code'|do~_something~1 ~(~)>> and <<span class='code'|do~_something~2 ~(~)>> runs then
+      bind their result to <<span class='code'|x>> and <<span class='code'|y>>~. ~It is the same as~:\\
+
+
+      
+{{{
+         let t1 = do_something1
+         and t2 = do_something2 in
+         bind t1 (fun x -> bind t2 (fun y -> code))
+      
+}}}
+\\
+
+* exception catching~:
+
+
+      
+{{{
+         try_lwt
+           <expr>
+      
+}}}
+~,\\
+
+
+      
+{{{
+         try_lwt
+           <expr>
+         with
+           <branches>
+      
+}}}
+~,\\
+
+
+      
+{{{
+         try_lwt
+           <expr>
+         finally
+           <expr>
+       
+}}}
+\\
+
+
+    and~:\\
+
+
+      
+{{{
+         try_lwt
+           <expr>
+         with
+           <branches>
+         finally
+           <expr>
+      
+}}}
+\\
+
+
+    ~For example~:\\
+
+
+      
+{{{
+         try_lwt
+           f x
+         with
+           | Failure msg ->
+               prerr_endline msg;
+               return ()
+      
+}}}
+\\
+
+
+    is expanded to~:\\
+
+
+      
+{{{
+         catch (fun _ -> f x)
+           (function
+              | Failure msg ->
+                  prerr_endline msg;
+                  return ()
+              | exn ->
+                  Lwt.fail exn)
+      
+}}}
+\\
+
+
+    ~Note that the <<span class='code'|exn ~-~> ~Lwt~.fail exn>> branch is automatically addedd
+    when needed~.\\
+
+
+    ~The construction <<span class='code'|try~_lwt ~<expr~>>> just catch regular exception
+    into lwt exception~. i~.e~. it is the same as <<span class='code'|catch ~(fun ~_ ~-~> ~<expr~>~) fail>>~.\\
+
+* for loop~:
+
+
+      
+{{{
+        for_lwt i = <expr> to <expr> do
+          <expr>
+        done
+      
+}}}
+\\
+
+
+    and~:\\
+
+
+      
+{{{
+        for_lwt i = <expr> downto <expr> do
+          <expr>
+        done
+      
+}}}
+\\
+
+* iteration over streams~:
+
+
+      
+{{{
+        for_lwt <patt> in <expr> do
+          <expr>
+        done
+      
+}}}
+\\

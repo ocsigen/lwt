@@ -1,0 +1,279 @@
+=Module <<a_api_type | module Lwt_term >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_term: <<span class='code'|sig>><<a_api text=".." | module Lwt_term >><<span class='code'|end>>>>~Terminal control\\
+
+----
+\\
+~This modules allow you to write interactive programs using the
+    terminal~.\\
+<<div id="VALwith_raw_mode" class="code"|<<span class="keyword"|val>> with~_raw~_mode : <<span class="code type"|(unit -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|with~_raw~_mode f>> executes <<span class='code'|f>> while the terminal is in ``raw
+      mode~'~'~. ~Raw mode means that character are returned as the user
+      type them ~(otherwise only complete line are returned to the
+      program~)~.\\
+
+
+      ~If the terminal is already in raw mode~, it just calls <<span class='code'|f>>~.\\
+>>
+<<div id="VALraw_mode" class="code"|<<span class="keyword"|val>> raw~_mode : <<span class="code type"|unit -> bool>>>><<div class="info"|~Returns wether the terminal is currently in raw mode\\
+>>
+<<div id="VALenter_drawing_mode" class="code"|<<span class="keyword"|val>> enter~_drawing~_mode : <<span class="code type"|unit -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Put the terminal into drawing mode\\
+>>
+<<div id="VALleave_drawing_mode" class="code"|<<span class="keyword"|val>> leave~_drawing~_mode : <<span class="code type"|unit -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Restore the state of the terminal\\
+>>
+<<div id="VALshow_cursor" class="code"|<<span class="keyword"|val>> show~_cursor : <<span class="code type"|unit -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|show~_cursor ~(~)>> makes the cursor visible\\
+>>
+<<div id="VALhide_cursor" class="code"|<<span class="keyword"|val>> hide~_cursor : <<span class="code type"|unit -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|hide~_cursor ~(~)>> makes the cursor invisible\\
+>>
+<<div id="VALclear_screen" class="code"|<<span class="keyword"|val>> clear~_screen : <<span class="code type"|unit -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|clear~_screen ~(~)>> clears the entire screen\\
+>>
+<<div id="VALclear_line" class="code"|<<span class="keyword"|val>> clear~_line : <<span class="code type"|unit -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|clear~_line ~(~)>> clears the current line\\
+>>
+<<div id="VALgoto_beginning_of_line" class="code"|<<span class="keyword"|val>> goto~_beginning~_of~_line : <<span class="code type"|int -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|goto~_beginning~_of~_line n>> put the cursor at the beginning of
+      the <<span class='code'|n>>th previous line~.\\
+
+* <<span class='code'|goto~_beginning~_of~_line ~0>> goes to the beginning of the current line
+* <<span class='code'|goto~_beginning~_of~_line ~1>> goes to the beginning of the previous line
+* ~.~.~.
+
+\\
+>>
+\\
+
+======@@id="6_Terminalinformations"@@~Terminal informations======
+\\
+<<div class="code" id="TYPEsize"|<<span class="keyword"|type>> size = { 
+|@@class="typetable"@ @class="lefttop"@@{{{   }}}|@@class="lefttop"@@lines : <<span class="code type"|int>>;|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@columns : <<span class="code type"|int>>;|
+
+}
+>>
+<<div class="info"|~Terminal sizes~:\\
+>>
+
+<<div id="VALsize" class="code"|<<span class="keyword"|val>> size : <<span class="code type"|<<a_api text="size" | type Lwt_term.size >> React.signal>>>><<div class="info"|~Size of the terminal~.\\
+>>
+<<div id="VALcolumns" class="code"|<<span class="keyword"|val>> columns : <<span class="code type"|int React.signal>>>><<div class="info"|~Number of columns of the terminal\\
+>>
+<<div id="VALlines" class="code"|<<span class="keyword"|val>> lines : <<span class="code type"|int React.signal>>>><<div class="info"|~Number of lines of the terminal\\
+>>
+\\
+
+======@@id="6_Keys"@@~Keys======
+\\
+<<div id="VALparse_key_raw" class="code"|<<span class="keyword"|val>> parse~_key~_raw : <<span class="code type"|Text.t <<a_api text="Lwt_stream.t" | type Lwt_stream.t >> -> Text.t <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|parse~_key~_raw st>> recognize escape sequence in a stream of
+      unicode character~.\\
+
+
+      ~It returns either~:* either single characters~, like <<span class='code'|"a">>~, <<span class='code'|"é">>~, ~.~.~.
+* either escape sequences
+
+\\
+>>
+<<div class="code" id="TYPEkey"|<<span class="keyword"|type>> key = 
+|@@class="typetable"@ @class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Key>> <<span class="keyword"|of>> <<span class="code type"|Text.t>>|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~A unicode character or an uninterpreted sequence|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Key_up>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Key_down>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Key_left>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Key_right>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Key_f>> <<span class="keyword"|of>> <<span class="code type"|int>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Key_next_page>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Key_previous_page>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Key_home>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Key_end>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Key_insert>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Key_delete>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Key_control>> <<span class="keyword"|of>> <<span class="code type"|char>>|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~A control key|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|>>
+<<div class="info"|~Type of ``decoded~'~' keys~.\\
+
+
+    ~This list is not exhaustive~, but at least it should works on all
+    terminals~:\\
+>>
+
+<<div id="VALstring_of_key" class="code"|<<span class="keyword"|val>> string~_of~_key : <<span class="code type"|<<a_api text="key" | type Lwt_term.key >> -> string>>>><<div class="info"|<<span class='code'|string~_of~_key key>> string representation of a key\\
+>>
+<<div id="VALcontrol_mapping" class="code"|<<span class="keyword"|val>> control~_mapping : <<span class="code type"|(int * char) list>>>><<div class="info"|~Mapping from control key codes to character codes~.\\
+
+
+      ~Here is the list of control keys~:\\
+
+
+      
+{{{
+        +------+-------+------+------+------+-------+------------------------------------------------+
+        | Char |   Oct |  Dec | Name |  Hex |  Key  | Comment                                        |
+        +------+-------+------+------+------+-------+------------------------------------------------+
+        |  '@' |  0o00 |    0 |  NUL | 0x00 | ^@ \0 | Null byte                                      |
+        |  'a' |  0o01 |    1 |  SOH | 0x01 | ^A    | Start of heading                               |
+        |  'b' |  0o02 |    2 |  STX | 0x02 | ^B    | Start of text                                  |
+        |  'c' |  0o03 |    3 |  ETX | 0x03 | ^C    | End of text                                    |
+        |  'd' |  0o04 |    4 |  EOT | 0x04 | ^D    | End of transmission                            |
+        |  'e' |  0o05 |    5 |  ENQ | 0x05 | ^E    | Enquiry                                        |
+        |  'f' |  0o06 |    6 |  ACK | 0x06 | ^F    | Acknowledge                                    |
+        |  'g' |  0o07 |    7 |  BEL | 0x07 | ^G    | Ring terminal bell                             |
+        |  'h' |  0o10 |    8 |   BS | 0x08 | ^H \b | Backspace                                      |
+        |  'i' |  0o11 |    9 |   HT | 0x09 | ^I \t | Horizontal tab                                 |
+        |  'j' |  0o12 |   10 |   LF | 0x0a | ^J \n | Line feed                                      |
+        |  'k' |  0o13 |   11 |   VT | 0x0b | ^K    | Vertical tab                                   |
+        |  'l' |  0o14 |   12 |   FF | 0x0c | ^L \f | Form feed                                      |
+        |  'm' |  0o15 |   13 |   CR | 0x0d | ^M \r | Carriage return                                |
+        |  'n' |  0o16 |   14 |   SO | 0x0e | ^N    | Shift out                                      |
+        |  'o' |  0o17 |   15 |   SI | 0x0f | ^O    | Shift in                                       |
+        |  'p' |  0o20 |   16 |  DLE | 0x10 | ^P    | Data link escape                               |
+        |  'q' |  0o21 |   17 |  DC1 | 0x11 | ^Q    | Device control 1 (XON)                         |
+        |  'r' |  0o22 |   18 |  DC2 | 0x12 | ^R    | Device control 2                               |
+        |  's' |  0o23 |   19 |  DC3 | 0x13 | ^S    | Device control 3 (XOFF)                        |
+        |  't' |  0o24 |   20 |  DC4 | 0x14 | ^T    | Device control 4                               |
+        |  'u' |  0o25 |   21 |  NAK | 0x15 | ^U    | Negative acknowledge                           |
+        |  'v' |  0o26 |   22 |  SYN | 0x16 | ^V    | Synchronous idle                               |
+        |  'w' |  0o27 |   23 |  ETB | 0x17 | ^W    | End of transmission block                      |
+        |  'x' |  0o30 |   24 |  CAN | 0x18 | ^X    | Cancel                                         |
+        |  'y' |  0o31 |   25 |   EM | 0x19 | ^Y    | End of medium                                  |
+        |  'z' |  0o32 |   26 |  SUB | 0x1a | ^Z    | Substitute character                           |
+        |  '[' |  0o33 |   27 |  ESC | 0x1b | ^[    | Escape                                         |
+        |  '\' |  0o34 |   28 |   FS | 0x1c | ^\    | File separator, Information separator four     |
+        |  ']' |  0o35 |   29 |   GS | 0x1d | ^]    | Group separator, Information separator three   |
+        |  '^' |  0o36 |   30 |   RS | 0x1e | ^^    | Record separator, Information separator two    |
+        |  '_' |  0o37 |   31 |   US | 0x1f | ^_    | Unit separator, Information separator one      |
+        |  '?' | 0o177 |  127 |  DEL | 0x7f | ^?    | Delete                                         |
+        +------+-------+------+------+------+-------+------------------------------------------------+
+      
+}}}
+\\
+>>
+<<div id="VALkey_enter" class="code"|<<span class="keyword"|val>> key~_enter : <<span class="code type"|<<a_api text="key" | type Lwt_term.key >>>>>><<div class="info"|<<span class='code'|key~_enter ~= ~Key~_control ~'j~'>>\\
+>>
+<<div id="VALkey_escape" class="code"|<<span class="keyword"|val>> key~_escape : <<span class="code type"|<<a_api text="key" | type Lwt_term.key >>>>>><<div class="info"|<<span class='code'|key~_escape ~= ~Key~_control ~'~[~'>>\\
+>>
+<<div id="VALkey_tab" class="code"|<<span class="keyword"|val>> key~_tab : <<span class="code type"|<<a_api text="key" | type Lwt_term.key >>>>>><<div class="info"|<<span class='code'|key~_escape ~= ~Key~_control ~'i~'>>\\
+>>
+<<div id="VALkey_backspace" class="code"|<<span class="keyword"|val>> key~_backspace : <<span class="code type"|<<a_api text="key" | type Lwt_term.key >>>>>><<div class="info"|<<span class='code'|key~_backspace ~= ~Key~_control ~'~?~'>>\\
+>>
+<<div id="VALsequence_mapping" class="code"|<<span class="keyword"|val>> sequence~_mapping : <<span class="code type"|(Text.t * <<a_api text="key" | type Lwt_term.key >>) list>>>><<div class="info"|~Mapping from sequence to keys\\
+>>
+<<div id="VALdecode_key" class="code"|<<span class="keyword"|val>> decode~_key : <<span class="code type"|Text.t -> <<a_api text="key" | type Lwt_term.key >>>>>><<div class="info"|~Decode a key~.\\
+>>
+<<div id="VALstandard_input" class="code"|<<span class="keyword"|val>> standard~_input : <<span class="code type"|Text.t <<a_api text="Lwt_stream.t" | type Lwt_stream.t >>>>>><<div class="info"|~The input stream used by <<a_api | val Lwt_term.read_key >>\\
+>>
+<<div id="VALread_key" class="code"|<<span class="keyword"|val>> read~_key : <<span class="code type"|unit -> <<a_api text="key" | type Lwt_term.key >> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Get and decode a key from <<a_api | val Lwt_term.standard_input >>\\
+>>
+\\
+
+======@@id="6_Styles"@@~Styles======
+\\
+<<div class="code" id="TYPEcolor"|<<span class="keyword"|type>> color = <<span class="code type"|int>> >>
+<<div class="info"|~Type of a color~. ~Most modern terminals support either ~8~8 or
+        ~2~5~6 colors~.\\
+>>
+
+<<div id="VALset_color" class="code"|<<span class="keyword"|val>> set~_color : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >> -> int * int * int -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|set~_color num ~(red~, green~, blue~)>> sets the three components of
+      the color number <<span class='code'|num>>\\
+>>
+\\
+
+<<div class="h8"| ~Standard colors>>
+\\
+<<div id="VALdefault" class="code"|<<span class="keyword"|val>> default : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >>>>>><<div id="VALblack" class="code"|<<span class="keyword"|val>> black : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >>>>>><<div id="VALred" class="code"|<<span class="keyword"|val>> red : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >>>>>><<div id="VALgreen" class="code"|<<span class="keyword"|val>> green : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >>>>>><<div id="VALyellow" class="code"|<<span class="keyword"|val>> yellow : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >>>>>><<div id="VALblue" class="code"|<<span class="keyword"|val>> blue : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >>>>>><<div id="VALmagenta" class="code"|<<span class="keyword"|val>> magenta : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >>>>>><<div id="VALcyan" class="code"|<<span class="keyword"|val>> cyan : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >>>>>><<div id="VALwhite" class="code"|<<span class="keyword"|val>> white : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >>>>>>\\
+
+<<div class="h8"| ~Light colors>>
+\\
+\\
+~Note~: these colors are not supposed to works on all terminals~, but
+    in practice it works with all modern ones~. ~By the way~, using
+    standard colors ~+ bold mode will give the same result as using a
+    light color~.\\
+<<div id="VALlblack" class="code"|<<span class="keyword"|val>> lblack : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >>>>>><<div id="VALlred" class="code"|<<span class="keyword"|val>> lred : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >>>>>><<div id="VALlgreen" class="code"|<<span class="keyword"|val>> lgreen : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >>>>>><<div id="VALlyellow" class="code"|<<span class="keyword"|val>> lyellow : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >>>>>><<div id="VALlblue" class="code"|<<span class="keyword"|val>> lblue : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >>>>>><<div id="VALlmagenta" class="code"|<<span class="keyword"|val>> lmagenta : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >>>>>><<div id="VALlcyan" class="code"|<<span class="keyword"|val>> lcyan : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >>>>>><<div id="VALlwhite" class="code"|<<span class="keyword"|val>> lwhite : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >>>>>>\\
+
+<<div class="h8"| ~Text with styles>>
+\\
+<<div class="code" id="TYPEstyled_text_instruction"|<<span class="keyword"|type>> styled~_text~_instruction = 
+|@@class="typetable"@ @class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Text>> <<span class="keyword"|of>> <<span class="code type"|Text.t>>|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~Some text|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Reset>>|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~Resets all styles to default|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Bold>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Underlined>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Blink>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Inverse>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Hidden>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Foreground>> <<span class="keyword"|of>> <<span class="code type"|<<a_api text="color" | type Lwt_term.color >>>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Background>> <<span class="keyword"|of>> <<span class="code type"|<<a_api text="color" | type Lwt_term.color >>>>|>>
+<<div class="info"|~Elmement of a styled~-text\\
+>>
+
+<<div class="code" id="TYPEstyled_text"|<<span class="keyword"|type>> styled~_text = <<span class="code type"|<<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >> list>> >>
+<<div class="info"|~A styled text is a list of instructions\\
+>>
+
+<<div id="VALtextf" class="code"|<<span class="keyword"|val>> textf : <<span class="code type"|('a, unit, string, <<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >>) Pervasives.format4 -> 'a>>>><<div class="info"|<<span class='code'|textf fmt>> formats a texts with <<span class='code'|fmt>> and returns <<span class='code'|~Text txt>>\\
+>>
+<<div id="VALtext" class="code"|<<span class="keyword"|val>> text : <<span class="code type"|Text.t -> <<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >>>>>><<div id="VALreset" class="code"|<<span class="keyword"|val>> reset : <<span class="code type"|<<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >>>>>><<div id="VALbold" class="code"|<<span class="keyword"|val>> bold : <<span class="code type"|<<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >>>>>><<div id="VALunderlined" class="code"|<<span class="keyword"|val>> underlined : <<span class="code type"|<<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >>>>>><<div id="VALblink" class="code"|<<span class="keyword"|val>> blink : <<span class="code type"|<<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >>>>>><<div id="VALinverse" class="code"|<<span class="keyword"|val>> inverse : <<span class="code type"|<<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >>>>>><<div id="VALhidden" class="code"|<<span class="keyword"|val>> hidden : <<span class="code type"|<<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >>>>>><<div id="VALfg" class="code"|<<span class="keyword"|val>> fg : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >> -> <<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >>>>>><<div class="info"|<<span class='code'|fg col ~= ~Foreground col>>\\
+>>
+<<div id="VALbg" class="code"|<<span class="keyword"|val>> bg : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >> -> <<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >>>>>><<div class="info"|<<span class='code'|bg col ~= ~Background col>>\\
+>>
+<<div id="VALstrip_styles" class="code"|<<span class="keyword"|val>> strip~_styles : <<span class="code type"|<<a_api text="styled_text" | type Lwt_term.styled_text >> -> Text.t>>>><<div class="info"|~Drop all styles\\
+>>
+<<div id="VALstyled_length" class="code"|<<span class="keyword"|val>> styled~_length : <<span class="code type"|<<a_api text="styled_text" | type Lwt_term.styled_text >> -> int>>>><<div class="info"|~Returns the length ~(in unicode character~) of the given styled
+      text~. ~The following equality holds for all styled~-texts~:\\
+
+
+      <<span class='code'|styled~_length st ~= ~Text~.length ~(strip~_styles st~)>>\\
+>>
+<<div id="VALwrite_styled" class="code"|<<span class="keyword"|val>> write~_styled : <<span class="code type"|<<a_api text="Lwt_text.output_channel" | type Lwt_text.output_channel >> -> <<a_api text="styled_text" | type Lwt_term.styled_text >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|write~_styled oc st>> writes <<span class='code'|st>> on <<span class='code'|oc>> using escape
+      sequences~.\\
+>>
+<<div id="VALprintc" class="code"|<<span class="keyword"|val>> printc : <<span class="code type"|<<a_api text="styled_text" | type Lwt_term.styled_text >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|printc st>> prints the given styled text on standard output~. ~If
+      stdout is not a tty~, then styles are stripped~.\\
+
+
+      ~The text is encoded to the system encoding before being
+      output~.\\
+>>
+<<div id="VALeprintc" class="code"|<<span class="keyword"|val>> eprintc : <<span class="code type"|<<a_api text="styled_text" | type Lwt_term.styled_text >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Same as <<span class='code'|printc>> but prints on stderr~.\\
+>>
+<<div id="VALprintlc" class="code"|<<span class="keyword"|val>> printlc : <<span class="code type"|<<a_api text="styled_text" | type Lwt_term.styled_text >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|printlc st>> prints <<span class='code'|st>>~, then reset styles and prints a
+      newline\\
+>>
+<<div id="VALeprintlc" class="code"|<<span class="keyword"|val>> eprintlc : <<span class="code type"|<<a_api text="styled_text" | type Lwt_term.styled_text >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Same as <<span class='code'|printlc>> but prints on stderr\\
+>>
+\\
+
+======@@id="6_Rendering"@@~Rendering======
+\\
+<<div class="code" id="TYPEstyle"|<<span class="keyword"|type>> style = { 
+|@@class="typetable"@ @class="lefttop"@@{{{   }}}|@@class="lefttop"@@bold : <<span class="code type"|bool>>;|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@underlined : <<span class="code type"|bool>>;|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@blink : <<span class="code type"|bool>>;|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@inverse : <<span class="code type"|bool>>;|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@hidden : <<span class="code type"|bool>>;|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@foreground : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >>>>;|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@background : <<span class="code type"|<<a_api text="color" | type Lwt_term.color >>>>;|
+
+}
+>>
+<<div class="info"|~Character styles\\
+>>
+
+<<div class="code" id="TYPEpoint"|<<span class="keyword"|type>> point = { 
+|@@class="typetable"@ @class="lefttop"@@{{{   }}}|@@class="lefttop"@@char : <<span class="code type"|Text.t>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~The character~.|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@style : <<span class="code type"|<<a_api text="style" | type Lwt_term.style >>>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~The character style|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+
+}
+>>
+<<div class="info"|~A character on the screen~:\\
+>>
+
+<<div id="VALblank" class="code"|<<span class="keyword"|val>> blank : <<span class="code type"|<<a_api text="point" | type Lwt_term.point >>>>>><<div class="info"|~A space with default color and styles\\
+>>
+<<div id="VALrender" class="code"|<<span class="keyword"|val>> render : <<span class="code type"|<<a_api text="point" | type Lwt_term.point >> array array -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Render an offscreen array to the terminal~.\\
+>>
+<<div id="VALrender_update" class="code"|<<span class="keyword"|val>> render~_update : <<span class="code type"|<<a_api text="point" | type Lwt_term.point >> array array -> <<a_api text="point" | type Lwt_term.point >> array array -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|render~_update displayed to~_display>> does the same as <<span class='code'|render
+      to~_display>> but assumes that <<span class='code'|displayed>> contains the current
+      displayed text~. ~This reduces the amount of text sent to the
+      terminal~.\\
+>>
+\\
+
+======@@id="6_Drawing"@@~Drawing======
+\\
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="Zone" | module Lwt_term.Zone >>: <<span class='code'|sig>><<a_api text=".." | module Lwt_term.Zone >><<span class='code'|end>>>><<div class="info"|~Off~-screen zones
+>>
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="Draw" | module Lwt_term.Draw >>: <<span class='code'|sig>><<a_api text=".." | module Lwt_term.Draw >><<span class='code'|end>>>><<div class="info"|~Drawing helpers
+>>

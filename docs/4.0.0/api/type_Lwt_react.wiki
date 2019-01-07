@@ -1,0 +1,751 @@
+<<code language="ocaml" | sig
+  type 'a event = 'a React.event
+  type 'a signal = 'a React.signal
+  module E :
+    sig
+      type 'a t = 'a React.event
+      val never : 'a React.event
+      val create : unit -> 'a React.event * (?step:React.step -> 'a -> unit)
+      val retain : 'a React.event -> (unit -> unit) -> [ `R of unit -> unit ]
+      val stop : ?strong:bool -> 'a React.event -> unit
+      val equal : 'a React.event -> 'a React.event -> bool
+      val trace :
+        ?iff:bool React.signal ->
+        ('a -> unit) -> 'a React.event -> 'a React.event
+      val once : 'a React.event -> 'a React.event
+      val drop_once : 'a React.event -> 'a React.event
+      val app : ('a -> 'b) React.event -> 'a React.event -> 'b React.event
+      val map : ('a -> 'b) -> 'a React.event -> 'b React.event
+      val stamp : 'b React.event -> 'a -> 'a React.event
+      val filter : ('a -> bool) -> 'a React.event -> 'a React.event
+      val fmap : ('a -> 'b option) -> 'a React.event -> 'b React.event
+      val diff : ('a -> 'a -> 'b) -> 'a React.event -> 'b React.event
+      val changes :
+        ?eq:('a -> 'a -> bool) -> 'a React.event -> 'a React.event
+      val on : bool React.signal -> 'a React.event -> 'a React.event
+      val when_ : bool React.signal -> 'a React.event -> 'a React.event
+      val dismiss : 'b React.event -> 'a React.event -> 'a React.event
+      val until : 'a React.event -> 'b React.event -> 'b React.event
+      val accum : ('a -> 'a) React.event -> 'a -> 'a React.event
+      val fold : ('a -> 'b -> 'a) -> 'a -> 'b React.event -> 'a React.event
+      val select : 'a React.event list -> 'a React.event
+      val merge :
+        ('a -> 'b -> 'a) -> 'a -> 'b React.event list -> 'a React.event
+      val switch :
+        'a React.event -> 'a React.event React.event -> 'a React.event
+      val fix : ('a React.event -> 'a React.event * 'b) -> 'b
+      val l1 : ('a -> 'b) -> 'a React.event -> 'b React.event
+      val l2 :
+        ('a -> 'b -> 'c) ->
+        'a React.event -> 'b React.event -> 'c React.event
+      val l3 :
+        ('a -> 'b -> 'c -> 'd) ->
+        'a React.event -> 'b React.event -> 'c React.event -> 'd React.event
+      val l4 :
+        ('a -> 'b -> 'c -> 'd -> 'e) ->
+        'a React.event ->
+        'b React.event -> 'c React.event -> 'd React.event -> 'e React.event
+      val l5 :
+        ('a -> 'b -> 'c -> 'd -> 'e -> 'f) ->
+        'a React.event ->
+        'b React.event ->
+        'c React.event -> 'd React.event -> 'e React.event -> 'f React.event
+      val l6 :
+        ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g) ->
+        'a React.event ->
+        'b React.event ->
+        'c React.event ->
+        'd React.event -> 'e React.event -> 'f React.event -> 'g React.event
+      module Option :
+        sig
+          val some : 'a React.event -> 'a option React.event
+          val value :
+            ?default:'a React.signal ->
+            'a option React.event -> 'a React.event
+        end
+      val with_finaliser :
+        (unit -> unit) -> 'a Lwt_react.event -> 'a Lwt_react.event
+      val next : 'a Lwt_react.event -> 'a Lwt.t
+      val limit :
+        (unit -> unit Lwt.t) -> 'a Lwt_react.event -> 'a Lwt_react.event
+      val from : (unit -> 'a Lwt.t) -> 'a Lwt_react.event
+      val to_stream : 'a Lwt_react.event -> 'a Lwt_stream.t
+      val of_stream : 'a Lwt_stream.t -> 'a Lwt_react.event
+      val delay : 'a Lwt_react.event Lwt.t -> 'a Lwt_react.event
+      val keep : 'a Lwt_react.event -> unit
+      val app_s :
+        ('a -> 'b Lwt.t) Lwt_react.event ->
+        'a Lwt_react.event -> 'b Lwt_react.event
+      val app_p :
+        ('a -> 'b Lwt.t) Lwt_react.event ->
+        'a Lwt_react.event -> 'b Lwt_react.event
+      val map_s :
+        ('a -> 'b Lwt.t) -> 'a Lwt_react.event -> 'b Lwt_react.event
+      val map_p :
+        ('a -> 'b Lwt.t) -> 'a Lwt_react.event -> 'b Lwt_react.event
+      val filter_s :
+        ('a -> bool Lwt.t) -> 'a Lwt_react.event -> 'a Lwt_react.event
+      val filter_p :
+        ('a -> bool Lwt.t) -> 'a Lwt_react.event -> 'a Lwt_react.event
+      val fmap_s :
+        ('a -> 'b option Lwt.t) -> 'a Lwt_react.event -> 'b Lwt_react.event
+      val fmap_p :
+        ('a -> 'b option Lwt.t) -> 'a Lwt_react.event -> 'b Lwt_react.event
+      val diff_s :
+        ('a -> 'a -> 'b Lwt.t) -> 'a Lwt_react.event -> 'b Lwt_react.event
+      val accum_s :
+        ('a -> 'a Lwt.t) Lwt_react.event -> 'a -> 'a Lwt_react.event
+      val fold_s :
+        ('a -> 'b -> 'a Lwt.t) ->
+        'a -> 'b Lwt_react.event -> 'a Lwt_react.event
+      val merge_s :
+        ('a -> 'b -> 'a Lwt.t) ->
+        'a -> 'b Lwt_react.event list -> 'a Lwt_react.event
+      val run_s : 'a Lwt.t Lwt_react.event -> 'a Lwt_react.event
+      val run_p : 'a Lwt.t Lwt_react.event -> 'a Lwt_react.event
+    end
+  module S :
+    sig
+      type 'a t = 'a React.signal
+      val const : 'a -> 'a React.signal
+      val create :
+        ?eq:('a -> 'a -> bool) ->
+        'a -> 'a React.signal * (?step:React.step -> 'a -> unit)
+      val value : 'a React.signal -> 'a
+      val retain :
+        'a React.signal -> (unit -> unit) -> [ `R of unit -> unit ]
+      val eq_fun : 'a React.signal -> ('a -> 'a -> bool) option
+      val stop : ?strong:bool -> 'a React.signal -> unit
+      val equal :
+        ?eq:('a -> 'a -> bool) -> 'a React.signal -> 'a React.signal -> bool
+      val trace :
+        ?iff:bool t -> ('a -> unit) -> 'a React.signal -> 'a React.signal
+      val hold :
+        ?eq:('a -> 'a -> bool) -> 'a -> 'a React.event -> 'a React.signal
+      val app :
+        ?eq:('b -> 'b -> bool) ->
+        ('a -> 'b) React.signal -> 'a React.signal -> 'b React.signal
+      val map :
+        ?eq:('b -> 'b -> bool) ->
+        ('a -> 'b) -> 'a React.signal -> 'b React.signal
+      val filter :
+        ?eq:('a -> 'a -> bool) ->
+        ('a -> bool) -> 'a -> 'a React.signal -> 'a React.signal
+      val fmap :
+        ?eq:('b -> 'b -> bool) ->
+        ('a -> 'b option) -> 'b -> 'a React.signal -> 'b React.signal
+      val diff : ('a -> 'a -> 'b) -> 'a React.signal -> 'b React.event
+      val changes : 'a React.signal -> 'a React.event
+      val sample :
+        ('b -> 'a -> 'c) ->
+        'b React.event -> 'a React.signal -> 'c React.event
+      val on :
+        ?eq:('a -> 'a -> bool) ->
+        bool React.signal -> 'a -> 'a React.signal -> 'a React.signal
+      val when_ :
+        ?eq:('a -> 'a -> bool) ->
+        bool React.signal -> 'a -> 'a React.signal -> 'a React.signal
+      val dismiss :
+        ?eq:('a -> 'a -> bool) ->
+        'b React.event -> 'a -> 'a React.signal -> 'a React.signal
+      val accum :
+        ?eq:('a -> 'a -> bool) ->
+        ('a -> 'a) React.event -> 'a -> 'a React.signal
+      val fold :
+        ?eq:('a -> 'a -> bool) ->
+        ('a -> 'b -> 'a) -> 'a -> 'b React.event -> 'a React.signal
+      val merge :
+        ?eq:('a -> 'a -> bool) ->
+        ('a -> 'b -> 'a) -> 'a -> 'b React.signal list -> 'a React.signal
+      val switch :
+        ?eq:('a -> 'a -> bool) ->
+        'a React.signal React.signal -> 'a React.signal
+      val fix :
+        ?eq:('a -> 'a -> bool) ->
+        'a -> ('a React.signal -> 'a React.signal * 'b) -> 'b
+      val l1 :
+        ?eq:('b -> 'b -> bool) ->
+        ('a -> 'b) -> 'a React.signal -> 'b React.signal
+      val l2 :
+        ?eq:('c -> 'c -> bool) ->
+        ('a -> 'b -> 'c) ->
+        'a React.signal -> 'b React.signal -> 'c React.signal
+      val l3 :
+        ?eq:('d -> 'd -> bool) ->
+        ('a -> 'b -> 'c -> 'd) ->
+        'a React.signal ->
+        'b React.signal -> 'c React.signal -> 'd React.signal
+      val l4 :
+        ?eq:('e -> 'e -> bool) ->
+        ('a -> 'b -> 'c -> 'd -> 'e) ->
+        'a React.signal ->
+        'b React.signal ->
+        'c React.signal -> 'd React.signal -> 'e React.signal
+      val l5 :
+        ?eq:('f -> 'f -> bool) ->
+        ('a -> 'b -> 'c -> 'd -> 'e -> 'f) ->
+        'a React.signal ->
+        'b React.signal ->
+        'c React.signal ->
+        'd React.signal -> 'e React.signal -> 'f React.signal
+      val l6 :
+        ?eq:('g -> 'g -> bool) ->
+        ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g) ->
+        'a React.signal ->
+        'b React.signal ->
+        'c React.signal ->
+        'd React.signal ->
+        'e React.signal -> 'f React.signal -> 'g React.signal
+      module Bool :
+        sig
+          val zero : bool React.signal
+          val one : bool React.signal
+          val not : bool React.signal -> bool React.signal
+          val ( && ) :
+            bool React.signal -> bool React.signal -> bool React.signal
+          val ( || ) :
+            bool React.signal -> bool React.signal -> bool React.signal
+          val edge : bool React.signal -> bool React.event
+          val rise : bool React.signal -> unit React.event
+          val fall : bool React.signal -> unit React.event
+          val flip : bool -> 'a React.event -> bool React.signal
+        end
+      module Int :
+        sig
+          val zero : int React.signal
+          val one : int React.signal
+          val minus_one : int React.signal
+          val ( ~- ) : int React.signal -> int React.signal
+          val succ : int React.signal -> int React.signal
+          val pred : int React.signal -> int React.signal
+          val ( + ) :
+            int React.signal -> int React.signal -> int React.signal
+          val ( - ) :
+            int React.signal -> int React.signal -> int React.signal
+          val ( * ) :
+            int React.signal -> int React.signal -> int React.signal
+          val ( mod ) :
+            int React.signal -> int React.signal -> int React.signal
+          val abs : int React.signal -> int React.signal
+          val max_int : int React.signal
+          val min_int : int React.signal
+          val ( land ) :
+            int React.signal -> int React.signal -> int React.signal
+          val ( lor ) :
+            int React.signal -> int React.signal -> int React.signal
+          val ( lxor ) :
+            int React.signal -> int React.signal -> int React.signal
+          val lnot : int React.signal -> int React.signal
+          val ( lsl ) :
+            int React.signal -> int React.signal -> int React.signal
+          val ( lsr ) :
+            int React.signal -> int React.signal -> int React.signal
+          val ( asr ) :
+            int React.signal -> int React.signal -> int React.signal
+        end
+      module Float :
+        sig
+          val zero : float React.signal
+          val one : float React.signal
+          val minus_one : float React.signal
+          val ( ~-. ) : float React.signal -> float React.signal
+          val ( +. ) :
+            float React.signal -> float React.signal -> float React.signal
+          val ( -. ) :
+            float React.signal -> float React.signal -> float React.signal
+          val ( *. ) :
+            float React.signal -> float React.signal -> float React.signal
+          val ( /. ) :
+            float React.signal -> float React.signal -> float React.signal
+          val ( ** ) :
+            float React.signal -> float React.signal -> float React.signal
+          val sqrt : float React.signal -> float React.signal
+          val exp : float React.signal -> float React.signal
+          val log : float React.signal -> float React.signal
+          val log10 : float React.signal -> float React.signal
+          val cos : float React.signal -> float React.signal
+          val sin : float React.signal -> float React.signal
+          val tan : float React.signal -> float React.signal
+          val acos : float React.signal -> float React.signal
+          val asin : float React.signal -> float React.signal
+          val atan : float React.signal -> float React.signal
+          val atan2 :
+            float React.signal -> float React.signal -> float React.signal
+          val cosh : float React.signal -> float React.signal
+          val sinh : float React.signal -> float React.signal
+          val tanh : float React.signal -> float React.signal
+          val ceil : float React.signal -> float React.signal
+          val floor : float React.signal -> float React.signal
+          val abs_float : float React.signal -> float React.signal
+          val mod_float :
+            float React.signal -> float React.signal -> float React.signal
+          val frexp : float React.signal -> (float * int) React.signal
+          val ldexp :
+            float React.signal -> int React.signal -> float React.signal
+          val modf : float React.signal -> (float * float) React.signal
+          val float : int React.signal -> float React.signal
+          val float_of_int : int React.signal -> float React.signal
+          val truncate : float React.signal -> int React.signal
+          val int_of_float : float React.signal -> int React.signal
+          val infinity : float React.signal
+          val neg_infinity : float React.signal
+          val nan : float React.signal
+          val max_float : float React.signal
+          val min_float : float React.signal
+          val epsilon_float : float React.signal
+          val classify_float : float React.signal -> fpclass React.signal
+        end
+      module Pair :
+        sig
+          val pair :
+            ?eq:('a * 'b -> 'a * 'b -> bool) ->
+            'a React.signal -> 'b React.signal -> ('a * 'b) React.signal
+          val fst :
+            ?eq:('a -> 'a -> bool) ->
+            ('a * 'b) React.signal -> 'a React.signal
+          val snd :
+            ?eq:('a -> 'a -> bool) ->
+            ('b * 'a) React.signal -> 'a React.signal
+        end
+      module Option :
+        sig
+          val none : 'a option React.signal
+          val some : 'a React.signal -> 'a option React.signal
+          val value :
+            ?eq:('a -> 'a -> bool) ->
+            default:[ `Always of 'a React.signal | `Init of 'a React.signal ] ->
+            'a option React.signal -> 'a React.signal
+        end
+      module Compare :
+        sig
+          val ( = ) : 'a React.signal -> 'a React.signal -> bool React.signal
+          val ( <> ) :
+            'a React.signal -> 'a React.signal -> bool React.signal
+          val ( < ) : 'a React.signal -> 'a React.signal -> bool React.signal
+          val ( > ) : 'a React.signal -> 'a React.signal -> bool React.signal
+          val ( <= ) :
+            'a React.signal -> 'a React.signal -> bool React.signal
+          val ( >= ) :
+            'a React.signal -> 'a React.signal -> bool React.signal
+          val compare :
+            'a React.signal -> 'a React.signal -> int React.signal
+          val ( == ) :
+            'a React.signal -> 'a React.signal -> bool React.signal
+          val ( != ) :
+            'a React.signal -> 'a React.signal -> bool React.signal
+        end
+      module type EqType = sig type 'a t val equal : 'a t -> 'a t -> bool end
+      module type S =
+        sig
+          type 'a v
+          val create :
+            'a v -> 'a v React.signal * (?step:React.step -> 'a v -> unit)
+          val equal : 'a v React.signal -> 'a v React.signal -> bool
+          val hold : 'a v -> 'a v React.event -> 'a v React.signal
+          val app :
+            ('a -> 'b v) React.signal -> 'a React.signal -> 'b v React.signal
+          val map : ('a -> 'b v) -> 'a React.signal -> 'b v React.signal
+          val filter :
+            ('a v -> bool) -> 'a v -> 'a v React.signal -> 'a v React.signal
+          val fmap :
+            ('a -> 'b v option) ->
+            'b v -> 'a React.signal -> 'b v React.signal
+          val when_ :
+            bool React.signal ->
+            'a v -> 'a v React.signal -> 'a v React.signal
+          val dismiss :
+            'b React.event -> 'a v -> 'a v React.signal -> 'a v React.signal
+          val accum : ('a v -> 'a v) React.event -> 'a v -> 'a v React.signal
+          val fold :
+            ('a v -> 'b -> 'a v) ->
+            'a v -> 'b React.event -> 'a v React.signal
+          val merge :
+            ('a v -> 'b -> 'a v) ->
+            'a v -> 'b React.signal list -> 'a v React.signal
+          val switch : 'a v React.signal React.signal -> 'a v React.signal
+          val bind :
+            'b React.signal -> ('b -> 'a v React.signal) -> 'a v React.signal
+          val fix :
+            'a v -> ('a v React.signal -> 'a v React.signal * 'b) -> 'b
+          val l1 : ('a -> 'b v) -> 'a React.signal -> 'b v React.signal
+          val l2 :
+            ('a -> 'b -> 'c v) ->
+            'a React.signal -> 'b React.signal -> 'c v React.signal
+          val l3 :
+            ('a -> 'b -> 'c -> 'd v) ->
+            'a React.signal ->
+            'b React.signal -> 'c React.signal -> 'd v React.signal
+          val l4 :
+            ('a -> 'b -> 'c -> 'd -> 'e v) ->
+            'a React.signal ->
+            'b React.signal ->
+            'c React.signal -> 'd React.signal -> 'e v React.signal
+          val l5 :
+            ('a -> 'b -> 'c -> 'd -> 'e -> 'f v) ->
+            'a React.signal ->
+            'b React.signal ->
+            'c React.signal ->
+            'd React.signal -> 'e React.signal -> 'f v React.signal
+          val l6 :
+            ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g v) ->
+            'a React.signal ->
+            'b React.signal ->
+            'c React.signal ->
+            'd React.signal ->
+            'e React.signal -> 'f React.signal -> 'g v React.signal
+        end
+      module Make :
+        functor (Eq : EqType) ->
+          sig
+            type 'a v = 'a Eq.t
+            val create :
+              'a v -> 'a v React.signal * (?step:React.step -> 'a v -> unit)
+            val equal : 'a v React.signal -> 'a v React.signal -> bool
+            val hold : 'a v -> 'a v React.event -> 'a v React.signal
+            val app :
+              ('a -> 'b v) React.signal ->
+              'a React.signal -> 'b v React.signal
+            val map : ('a -> 'b v) -> 'a React.signal -> 'b v React.signal
+            val filter :
+              ('a v -> bool) ->
+              'a v -> 'a v React.signal -> 'a v React.signal
+            val fmap :
+              ('a -> 'b v option) ->
+              'b v -> 'a React.signal -> 'b v React.signal
+            val when_ :
+              bool React.signal ->
+              'a v -> 'a v React.signal -> 'a v React.signal
+            val dismiss :
+              'b React.event ->
+              'a v -> 'a v React.signal -> 'a v React.signal
+            val accum :
+              ('a v -> 'a v) React.event -> 'a v -> 'a v React.signal
+            val fold :
+              ('a v -> 'b -> 'a v) ->
+              'a v -> 'b React.event -> 'a v React.signal
+            val merge :
+              ('a v -> 'b -> 'a v) ->
+              'a v -> 'b React.signal list -> 'a v React.signal
+            val switch : 'a v React.signal React.signal -> 'a v React.signal
+            val bind :
+              'b React.signal ->
+              ('b -> 'a v React.signal) -> 'a v React.signal
+            val fix :
+              'a v -> ('a v React.signal -> 'a v React.signal * 'b) -> 'b
+            val l1 : ('a -> 'b v) -> 'a React.signal -> 'b v React.signal
+            val l2 :
+              ('a -> 'b -> 'c v) ->
+              'a React.signal -> 'b React.signal -> 'c v React.signal
+            val l3 :
+              ('a -> 'b -> 'c -> 'd v) ->
+              'a React.signal ->
+              'b React.signal -> 'c React.signal -> 'd v React.signal
+            val l4 :
+              ('a -> 'b -> 'c -> 'd -> 'e v) ->
+              'a React.signal ->
+              'b React.signal ->
+              'c React.signal -> 'd React.signal -> 'e v React.signal
+            val l5 :
+              ('a -> 'b -> 'c -> 'd -> 'e -> 'f v) ->
+              'a React.signal ->
+              'b React.signal ->
+              'c React.signal ->
+              'd React.signal -> 'e React.signal -> 'f v React.signal
+            val l6 :
+              ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g v) ->
+              'a React.signal ->
+              'b React.signal ->
+              'c React.signal ->
+              'd React.signal ->
+              'e React.signal -> 'f React.signal -> 'g v React.signal
+          end
+      module Special :
+        sig
+          module Sb :
+            sig
+              type 'a v = bool
+              val create :
+                'a v ->
+                'a v React.signal * (?step:React.step -> 'a v -> unit)
+              val equal : 'a v React.signal -> 'a v React.signal -> bool
+              val hold : 'a v -> 'a v React.event -> 'a v React.signal
+              val app :
+                ('a -> 'b v) React.signal ->
+                'a React.signal -> 'b v React.signal
+              val map : ('a -> 'b v) -> 'a React.signal -> 'b v React.signal
+              val filter :
+                ('a v -> bool) ->
+                'a v -> 'a v React.signal -> 'a v React.signal
+              val fmap :
+                ('a -> 'b v option) ->
+                'b v -> 'a React.signal -> 'b v React.signal
+              val when_ :
+                bool React.signal ->
+                'a v -> 'a v React.signal -> 'a v React.signal
+              val dismiss :
+                'b React.event ->
+                'a v -> 'a v React.signal -> 'a v React.signal
+              val accum :
+                ('a v -> 'a v) React.event -> 'a v -> 'a v React.signal
+              val fold :
+                ('a v -> 'b -> 'a v) ->
+                'a v -> 'b React.event -> 'a v React.signal
+              val merge :
+                ('a v -> 'b -> 'a v) ->
+                'a v -> 'b React.signal list -> 'a v React.signal
+              val switch :
+                'a v React.signal React.signal -> 'a v React.signal
+              val bind :
+                'b React.signal ->
+                ('b -> 'a v React.signal) -> 'a v React.signal
+              val fix :
+                'a v -> ('a v React.signal -> 'a v React.signal * 'b) -> 'b
+              val l1 : ('a -> 'b v) -> 'a React.signal -> 'b v React.signal
+              val l2 :
+                ('a -> 'b -> 'c v) ->
+                'a React.signal -> 'b React.signal -> 'c v React.signal
+              val l3 :
+                ('a -> 'b -> 'c -> 'd v) ->
+                'a React.signal ->
+                'b React.signal -> 'c React.signal -> 'd v React.signal
+              val l4 :
+                ('a -> 'b -> 'c -> 'd -> 'e v) ->
+                'a React.signal ->
+                'b React.signal ->
+                'c React.signal -> 'd React.signal -> 'e v React.signal
+              val l5 :
+                ('a -> 'b -> 'c -> 'd -> 'e -> 'f v) ->
+                'a React.signal ->
+                'b React.signal ->
+                'c React.signal ->
+                'd React.signal -> 'e React.signal -> 'f v React.signal
+              val l6 :
+                ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g v) ->
+                'a React.signal ->
+                'b React.signal ->
+                'c React.signal ->
+                'd React.signal ->
+                'e React.signal -> 'f React.signal -> 'g v React.signal
+            end
+          module Si :
+            sig
+              type 'a v = int
+              val create :
+                'a v ->
+                'a v React.signal * (?step:React.step -> 'a v -> unit)
+              val equal : 'a v React.signal -> 'a v React.signal -> bool
+              val hold : 'a v -> 'a v React.event -> 'a v React.signal
+              val app :
+                ('a -> 'b v) React.signal ->
+                'a React.signal -> 'b v React.signal
+              val map : ('a -> 'b v) -> 'a React.signal -> 'b v React.signal
+              val filter :
+                ('a v -> bool) ->
+                'a v -> 'a v React.signal -> 'a v React.signal
+              val fmap :
+                ('a -> 'b v option) ->
+                'b v -> 'a React.signal -> 'b v React.signal
+              val when_ :
+                bool React.signal ->
+                'a v -> 'a v React.signal -> 'a v React.signal
+              val dismiss :
+                'b React.event ->
+                'a v -> 'a v React.signal -> 'a v React.signal
+              val accum :
+                ('a v -> 'a v) React.event -> 'a v -> 'a v React.signal
+              val fold :
+                ('a v -> 'b -> 'a v) ->
+                'a v -> 'b React.event -> 'a v React.signal
+              val merge :
+                ('a v -> 'b -> 'a v) ->
+                'a v -> 'b React.signal list -> 'a v React.signal
+              val switch :
+                'a v React.signal React.signal -> 'a v React.signal
+              val bind :
+                'b React.signal ->
+                ('b -> 'a v React.signal) -> 'a v React.signal
+              val fix :
+                'a v -> ('a v React.signal -> 'a v React.signal * 'b) -> 'b
+              val l1 : ('a -> 'b v) -> 'a React.signal -> 'b v React.signal
+              val l2 :
+                ('a -> 'b -> 'c v) ->
+                'a React.signal -> 'b React.signal -> 'c v React.signal
+              val l3 :
+                ('a -> 'b -> 'c -> 'd v) ->
+                'a React.signal ->
+                'b React.signal -> 'c React.signal -> 'd v React.signal
+              val l4 :
+                ('a -> 'b -> 'c -> 'd -> 'e v) ->
+                'a React.signal ->
+                'b React.signal ->
+                'c React.signal -> 'd React.signal -> 'e v React.signal
+              val l5 :
+                ('a -> 'b -> 'c -> 'd -> 'e -> 'f v) ->
+                'a React.signal ->
+                'b React.signal ->
+                'c React.signal ->
+                'd React.signal -> 'e React.signal -> 'f v React.signal
+              val l6 :
+                ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g v) ->
+                'a React.signal ->
+                'b React.signal ->
+                'c React.signal ->
+                'd React.signal ->
+                'e React.signal -> 'f React.signal -> 'g v React.signal
+            end
+          module Sf :
+            sig
+              type 'a v = float
+              val create :
+                'a v ->
+                'a v React.signal * (?step:React.step -> 'a v -> unit)
+              val equal : 'a v React.signal -> 'a v React.signal -> bool
+              val hold : 'a v -> 'a v React.event -> 'a v React.signal
+              val app :
+                ('a -> 'b v) React.signal ->
+                'a React.signal -> 'b v React.signal
+              val map : ('a -> 'b v) -> 'a React.signal -> 'b v React.signal
+              val filter :
+                ('a v -> bool) ->
+                'a v -> 'a v React.signal -> 'a v React.signal
+              val fmap :
+                ('a -> 'b v option) ->
+                'b v -> 'a React.signal -> 'b v React.signal
+              val when_ :
+                bool React.signal ->
+                'a v -> 'a v React.signal -> 'a v React.signal
+              val dismiss :
+                'b React.event ->
+                'a v -> 'a v React.signal -> 'a v React.signal
+              val accum :
+                ('a v -> 'a v) React.event -> 'a v -> 'a v React.signal
+              val fold :
+                ('a v -> 'b -> 'a v) ->
+                'a v -> 'b React.event -> 'a v React.signal
+              val merge :
+                ('a v -> 'b -> 'a v) ->
+                'a v -> 'b React.signal list -> 'a v React.signal
+              val switch :
+                'a v React.signal React.signal -> 'a v React.signal
+              val bind :
+                'b React.signal ->
+                ('b -> 'a v React.signal) -> 'a v React.signal
+              val fix :
+                'a v -> ('a v React.signal -> 'a v React.signal * 'b) -> 'b
+              val l1 : ('a -> 'b v) -> 'a React.signal -> 'b v React.signal
+              val l2 :
+                ('a -> 'b -> 'c v) ->
+                'a React.signal -> 'b React.signal -> 'c v React.signal
+              val l3 :
+                ('a -> 'b -> 'c -> 'd v) ->
+                'a React.signal ->
+                'b React.signal -> 'c React.signal -> 'd v React.signal
+              val l4 :
+                ('a -> 'b -> 'c -> 'd -> 'e v) ->
+                'a React.signal ->
+                'b React.signal ->
+                'c React.signal -> 'd React.signal -> 'e v React.signal
+              val l5 :
+                ('a -> 'b -> 'c -> 'd -> 'e -> 'f v) ->
+                'a React.signal ->
+                'b React.signal ->
+                'c React.signal ->
+                'd React.signal -> 'e React.signal -> 'f v React.signal
+              val l6 :
+                ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g v) ->
+                'a React.signal ->
+                'b React.signal ->
+                'c React.signal ->
+                'd React.signal ->
+                'e React.signal -> 'f React.signal -> 'g v React.signal
+            end
+        end
+      val return : 'a -> 'a Lwt_react.signal
+      val bind :
+        ?eq:('b -> 'b -> bool) ->
+        'a Lwt_react.signal ->
+        ('a -> 'b Lwt_react.signal) -> 'b Lwt_react.signal
+      val bind_s :
+        ?eq:('b -> 'b -> bool) ->
+        'a Lwt_react.signal ->
+        ('a -> 'b Lwt_react.signal Lwt.t) -> 'b Lwt_react.signal Lwt.t
+      val with_finaliser :
+        (unit -> unit) -> 'a Lwt_react.signal -> 'a Lwt_react.signal
+      val limit :
+        ?eq:('a -> 'a -> bool) ->
+        (unit -> unit Lwt.t) -> 'a Lwt_react.signal -> 'a Lwt_react.signal
+      val keep : 'a Lwt_react.signal -> unit
+      val app_s :
+        ?eq:('b -> 'b -> bool) ->
+        ('a -> 'b Lwt.t) Lwt_react.signal ->
+        'a Lwt_react.signal -> 'b Lwt_react.signal Lwt.t
+      val map_s :
+        ?eq:('b -> 'b -> bool) ->
+        ('a -> 'b Lwt.t) -> 'a Lwt_react.signal -> 'b Lwt_react.signal Lwt.t
+      val filter_s :
+        ?eq:('a -> 'a -> bool) ->
+        ('a -> bool Lwt.t) ->
+        'a -> 'a Lwt_react.signal -> 'a Lwt_react.signal Lwt.t
+      val fmap_s :
+        ?eq:('b -> 'b -> bool) ->
+        ('a -> 'b option Lwt.t) ->
+        'b -> 'a Lwt_react.signal -> 'b Lwt_react.signal Lwt.t
+      val diff_s :
+        ('a -> 'a -> 'b Lwt.t) -> 'a Lwt_react.signal -> 'b Lwt_react.event
+      val sample_s :
+        ('b -> 'a -> 'c Lwt.t) ->
+        'b Lwt_react.event -> 'a Lwt_react.signal -> 'c Lwt_react.event
+      val accum_s :
+        ?eq:('a -> 'a -> bool) ->
+        ('a -> 'a Lwt.t) Lwt_react.event -> 'a -> 'a Lwt_react.signal
+      val fold_s :
+        ?eq:('a -> 'a -> bool) ->
+        ('a -> 'b -> 'a Lwt.t) ->
+        'a -> 'b Lwt_react.event -> 'a Lwt_react.signal
+      val merge_s :
+        ?eq:('a -> 'a -> bool) ->
+        ('a -> 'b -> 'a Lwt.t) ->
+        'a -> 'b Lwt_react.signal list -> 'a Lwt_react.signal Lwt.t
+      val l1_s :
+        ?eq:('b -> 'b -> bool) ->
+        ('a -> 'b Lwt.t) -> 'a Lwt_react.signal -> 'b Lwt_react.signal Lwt.t
+      val l2_s :
+        ?eq:('c -> 'c -> bool) ->
+        ('a -> 'b -> 'c Lwt.t) ->
+        'a Lwt_react.signal ->
+        'b Lwt_react.signal -> 'c Lwt_react.signal Lwt.t
+      val l3_s :
+        ?eq:('d -> 'd -> bool) ->
+        ('a -> 'b -> 'c -> 'd Lwt.t) ->
+        'a Lwt_react.signal ->
+        'b Lwt_react.signal ->
+        'c Lwt_react.signal -> 'd Lwt_react.signal Lwt.t
+      val l4_s :
+        ?eq:('e -> 'e -> bool) ->
+        ('a -> 'b -> 'c -> 'd -> 'e Lwt.t) ->
+        'a Lwt_react.signal ->
+        'b Lwt_react.signal ->
+        'c Lwt_react.signal ->
+        'd Lwt_react.signal -> 'e Lwt_react.signal Lwt.t
+      val l5_s :
+        ?eq:('f -> 'f -> bool) ->
+        ('a -> 'b -> 'c -> 'd -> 'e -> 'f Lwt.t) ->
+        'a Lwt_react.signal ->
+        'b Lwt_react.signal ->
+        'c Lwt_react.signal ->
+        'd Lwt_react.signal ->
+        'e Lwt_react.signal -> 'f Lwt_react.signal Lwt.t
+      val l6_s :
+        ?eq:('g -> 'g -> bool) ->
+        ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g Lwt.t) ->
+        'a Lwt_react.signal ->
+        'b Lwt_react.signal ->
+        'c Lwt_react.signal ->
+        'd Lwt_react.signal ->
+        'e Lwt_react.signal ->
+        'f Lwt_react.signal -> 'g Lwt_react.signal Lwt.t
+      val run_s :
+        ?eq:('a -> 'a -> bool) ->
+        'a Lwt.t Lwt_react.signal -> 'a Lwt_react.signal Lwt.t
+    end
+end >>

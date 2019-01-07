@@ -1,0 +1,8 @@
+<<code language="ocaml" | sig
+  val run : 'a Lwt.t -> 'a
+  val yield : unit -> unit Lwt.t
+  val enter_iter_hooks : (unit -> unit) Lwt_sequence.t
+  val leave_iter_hooks : (unit -> unit) Lwt_sequence.t
+  val exit_hooks : (unit -> unit Lwt.t) Lwt_sequence.t
+  val at_exit : (unit -> unit Lwt.t) -> unit
+end >>

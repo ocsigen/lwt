@@ -1,0 +1,8 @@
+<<code language="ocaml" | sig
+  type 'a t
+  val create :
+    int ->
+    ?check:('a -> (bool -> unit) -> unit) ->
+    ?validate:('a -> bool Lwt.t) -> (unit -> 'a Lwt.t) -> 'a Lwt_pool.t
+  val use : 'a Lwt_pool.t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
+end >>

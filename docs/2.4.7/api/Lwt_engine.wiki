@@ -1,0 +1,84 @@
+=Module <<a_api_type | module Lwt_engine >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_engine>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_engine >><<span class="ocsforge_color_keyword"|end>>>>~Lwt unix main loop engine
+
+----
+
+
+==@@id="2_Events"@@~Events==
+
+<<pre class="ocsforge_color odocwiki_code" id="TYPEevent"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|event>>>><<div class="odocwiki_info"|~Type of events~. ~An event represent a callback registered to be
+      called when some event occurs~.
+>>
+<<pre id="VALstop_event" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|stop~_event>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="event" | type Lwt_engine.event >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|stop~_event event>> stops the given event~.
+>>
+<<pre id="VALfake_event" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|fake~_event>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="event" | type Lwt_engine.event >>>>>><<div class="odocwiki_info"|~Event which does nothing when stopped~.
+>>
+
+
+==@@id="2_Eventloopfunctions"@@~Event loop functions==
+
+<<pre id="VALiter" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|iter>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|bool <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|iter block>> performs one iteration of the main loop~. ~If <<span class="odocwiki_inlinecode"|block>>
+      is <<span class="odocwiki_inlinecode"|true>> the function must blocks until one event become
+      available~, otherwise it should just check for available events
+      and return immediately~.
+>>
+<<pre id="VALon_readable" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|on~_readable>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|file_descr>> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >><<a_api text="event" | type Lwt_engine.event >> <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="event" | type Lwt_engine.event >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|on~_readable fd f>> calls <<span class="odocwiki_inlinecode"|f>> each time <<span class="odocwiki_inlinecode"|fd>> becomes readable~.
+>>
+<<pre id="VALon_writable" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|on~_writable>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|file_descr>> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >><<a_api text="event" | type Lwt_engine.event >> <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="event" | type Lwt_engine.event >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|on~_readable fd f>> calls <<span class="odocwiki_inlinecode"|f>> each time <<span class="odocwiki_inlinecode"|fd>> becomes writable~.
+>>
+<<pre id="VALon_timer" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|on~_timer>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|float <<span class="ocsforge_color_delimiter"| -> >> bool <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >><<a_api text="event" | type Lwt_engine.event >> <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="event" | type Lwt_engine.event >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|on~_timer delay repeat f>> calls <<span class="odocwiki_inlinecode"|f>> one time after <<span class="odocwiki_inlinecode"|delay>>
+      seconds~. ~If <<span class="odocwiki_inlinecode"|repeat>> is <<span class="odocwiki_inlinecode"|true>> then <<span class="odocwiki_inlinecode"|f>> is called each <<span class="odocwiki_inlinecode"|delay>>
+      seconds~, otherwise it is called only one time~.
+>>
+<<pre id="VALreadable_count" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|readable~_count>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> int>>>><<div class="odocwiki_info"|~Returns the number of events waiting for a file descriptor to
+      become readable~.
+>>
+<<pre id="VALwritable_count" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|writable~_count>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> int>>>><<div class="odocwiki_info"|~Returns the number of events waiting for a file descriptor to
+      become writable~.
+>>
+<<pre id="VALtimer_count" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|timer~_count>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> int>>>><<div class="odocwiki_info"|~Returns the number of registered timers~.
+>>
+<<pre id="VALfake_io" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|fake~_io>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|file_descr>> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Simulates activity on the given file descriptor~.
+>>
+
+
+==@@id="2_Engines"@@~Engines==
+
+
+~An engine represent a set of functions used to register different
+    kind of callbacks for different kind of events~.
+<<pre class="ocsforge_color odocwiki_code"|<<span name="TYPEabstract"|<<span class="ocsforge_color_keyword"|class>> <<span class="ocsforge_color_keyword"|virtual>> <<a_api text="abstract" | class Lwt_engine.abstract >>>> <<span class="ocsforge_color_delimiter"|~:>>  <<span class="ocsforge_color_keyword"|object>><<a_api text=".." | class Lwt_engine.abstract >><<span class="ocsforge_color_keyword"|end>>>><<div class="odocwiki_info"|~Abstract class for engines~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span id="TYPEt"|<<span class="ocsforge_color_keyword"|class type>> <<a_api text="t" | class type Lwt_engine.t >>>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="ocsforge_color_keyword"|object>><<a_api text=".." | class type Lwt_engine.t >><<span class="ocsforge_color_keyword"|end>>>><<div class="odocwiki_info"|~Type of engines~.
+>>
+
+
+==@@id="2_Predefinedengines"@@~Predefined engines==
+
+<<pre class="ocsforge_color odocwiki_code" id="TYPEev_loop"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|ev~_loop>>>><<div class="odocwiki_info"|~Type of libev loops~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span name="TYPElibev"|<<span class="ocsforge_color_keyword"|class>> <<a_api text="libev" | class Lwt_engine.libev >>>> <<span class="ocsforge_color_delimiter"|~:>>  <<span class="ocsforge_color_keyword"|object>><<a_api text=".." | class Lwt_engine.libev >><<span class="ocsforge_color_keyword"|end>>>><<div class="odocwiki_info"|~Engine based on libev~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span name="TYPEselect"|<<span class="ocsforge_color_keyword"|class>> <<a_api text="select" | class Lwt_engine.select >>>> <<span class="ocsforge_color_delimiter"|~:>>  <<span class="odocwiki_type"|<<a_api text="t" | class type Lwt_engine.t >>>>>><<div class="odocwiki_info"|~Engine based on <<span class="odocwiki_inlinecode"|~Unix~.select>>~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span name="TYPEselect_based"|<<span class="ocsforge_color_keyword"|class>> <<span class="ocsforge_color_keyword"|virtual>> <<a_api text="select_based" | class Lwt_engine.select_based >>>> <<span class="ocsforge_color_delimiter"|~:>>  <<span class="ocsforge_color_keyword"|object>><<a_api text=".." | class Lwt_engine.select_based >><<span class="ocsforge_color_keyword"|end>>>><<div class="odocwiki_info"|~Abstract class for engines based on a select~-like function~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span name="TYPEpoll_based"|<<span class="ocsforge_color_keyword"|class>> <<span class="ocsforge_color_keyword"|virtual>> <<a_api text="poll_based" | class Lwt_engine.poll_based >>>> <<span class="ocsforge_color_delimiter"|~:>>  <<span class="ocsforge_color_keyword"|object>><<a_api text=".." | class Lwt_engine.poll_based >><<span class="ocsforge_color_keyword"|end>>>><<div class="odocwiki_info"|~Abstract class for engines based on a poll~-like function~.
+>>
+
+
+==@@id="2_Thecurrentengine"@@~The current engine==
+
+<<pre id="VALget" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|get>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="t" | class type Lwt_engine.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|get ~(~)>> returns the engine currently in use~.
+>>
+<<pre id="VALset" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|set>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_label"| ?transfer: >>bool <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_label"| ?destroy: >>bool <<span class="ocsforge_color_delimiter"| -> >> ~#<<a_api text="t" | class type Lwt_engine.t >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|set ~?transfer ~?destroy engine>> replaces the current engine by
+      the given one~.
+
+
+      ~If <<span class="odocwiki_inlinecode"|transfer>> is <<span class="odocwiki_inlinecode"|true>> ~(the default~) all events from the
+      current engine are transferred to the new one~.
+
+
+      ~If <<span class="odocwiki_inlinecode"|destroy>> is <<span class="odocwiki_inlinecode"|true>> ~(the default~) then the current engine is
+      destroyed before being replaced~.
+>>

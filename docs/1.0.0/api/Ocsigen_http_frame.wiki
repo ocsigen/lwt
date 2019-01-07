@@ -1,0 +1,82 @@
+=Module <<a_api_type | module Ocsigen_http_frame >> =
+<<div class="code"|<<span class="keyword"|module>> Ocsigen_http_frame: <<span class='code'|sig>><<a_api text=".." | module Ocsigen_http_frame >><<span class='code'|end>>>>~This table is to store cookie values for each path~. 
+    ~The key has type url~_path option~: 
+    it is for the path ~(default~: root of the site~)~,\\
+
+----
+<<div class="code" id="TYPEetag"|<<span class="keyword"|type>> etag = <<span class="code type"|string>> >>
+
+<<div class="code" id="TYPEurl_path"|<<span class="keyword"|type>> url~_path = <<span class="code type"|string list>> >>
+
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="Cookies" | module Ocsigen_http_frame.Cookies >>: \\{{{   }}}<<span class="code type"|Map.S>><<span class="code type"|{{{  }}}\\{{{   }}}  with type key = url_path>>>><<div class="info"|~This table is to store cookie values for each path~.
+>>
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="Cookievalues" | module Ocsigen_http_frame.Cookievalues >>: \\{{{   }}}<<span class="code type"|Map.S>><<span class="code type"|{{{  }}}\\{{{   }}}  with type key = string>>>><<div class="info"|~This table is to store one cookie value for each cookie name~.
+>>
+<<div class="code" id="TYPEcookie"|<<span class="keyword"|type>> cookie = 
+|@@class="typetable"@ @class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|OSet>> <<span class="keyword"|of>> <<span class="code type"|float option * string>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|OUnset>>|>>
+<<div class="info"|~Type used for cookies to set~. 
+    ~The float option is the timestamp for the expiration date~.
+    ~The string is the value~.\\
+>>
+
+<<div class="code" id="TYPEcookieset"|<<span class="keyword"|type>> cookieset = <<span class="code type"|\\{{{   }}}<<a_api text="cookie" | type Ocsigen_http_frame.cookie >> Cookievalues.t\\{{{   }}}  Cookies.t>> >>
+
+<<div id="VALadd_cookie" class="code"|<<span class="keyword"|val>> add~_cookie : <<span class="code type"|\\{{{   }}}<<a_api text="url_path" | type Ocsigen_http_frame.url_path >> ->\\{{{   }}}  string ->\\{{{   }}}  <<a_api text="cookie" | type Ocsigen_http_frame.cookie >> ->\\{{{   }}}  <<a_api text="cookieset" | type Ocsigen_http_frame.cookieset >> -> <<a_api text="cookieset" | type Ocsigen_http_frame.cookieset >>>>>><<div class="info"|<<span class='code'|add~_cookie c cookie~_table>> adds the cookie <<span class='code'|c>> to the table <<span class='code'|cookie~_table>>~.
+   ~If the cookie is already bound~, the previous binding disappear~.\\
+>>
+<<div id="VALadd_cookies" class="code"|<<span class="keyword"|val>> add~_cookies : <<span class="code type"|\\{{{   }}}<<a_api text="cookie" | type Ocsigen_http_frame.cookie >> Cookievalues.t\\{{{   }}}  Cookies.t ->\\{{{   }}}  <<a_api text="cookie" | type Ocsigen_http_frame.cookie >> Cookievalues.t\\{{{   }}}  Cookies.t ->\\{{{   }}}  <<a_api text="cookie" | type Ocsigen_http_frame.cookie >> Cookievalues.t\\{{{   }}}  Cookies.t>>>><<div class="info"|<<span class='code'|add~_cookies newcookies oldcookies>> adds the cookies from <<span class='code'|newcookies>>
+   to <<span class='code'|oldcookies>>~. ~If cookies are already bound in oldcookies~, 
+   the previous binding disappear~.\\
+>>
+<<div id="VALcompute_new_ri_cookies" class="code"|<<span class="keyword"|val>> compute~_new~_ri~_cookies : <<span class="code type"|\\{{{   }}}float ->\\{{{   }}}  string list ->\\{{{   }}}  string Cookievalues.t ->\\{{{   }}}  <<a_api text="cookie" | type Ocsigen_http_frame.cookie >> Cookievalues.t\\{{{   }}}  Cookies.t -> string Cookievalues.t>>>><<div class="info"|<<span class='code'|compute~_new~_ri~_cookies now path ri~_cookies cookies~_to~_set>> 
+   adds the cookies from <<span class='code'|cookies~_to~_set>>
+   to <<span class='code'|ri~_cookies>>~, as if the cookies 
+   add been send to the browser and the browser
+   was doing a new request to the url <<span class='code'|path>>~. 
+   ~Only the cookies that match <<span class='code'|path>> ~(current path~) are added~.\\
+>>
+<<div class="code" id="TYPEresult"|<<span class="keyword"|type>> result = { 
+|@@class="typetable"@ @class="lefttop"@@{{{   }}}|@@class="lefttop"@@res_cookies : <<span class="code type"|<<a_api text="cookieset" | type Ocsigen_http_frame.cookieset >>>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@cookies to set|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@res_lastmodified : <<span class="code type"|float option>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~Default~: <<span class='code'|~None>>|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@res_etag : <<span class="code type"|<<a_api text="etag" | type Ocsigen_http_frame.etag >> option>>;|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@res_code : <<span class="code type"|int>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~H~T~T~P code~, if not ~2~0~0|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@res_stream : <<span class="code type"|string Ocsigen_stream.t>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~Default~: empty stream|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@res_stop_stream : <<span class="code type"|unit -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~A function that will be called
+                                              if sending the stream fails~.
+                                              ~It is called before the stream 
+                                              finalizer~, only in case of error~.
+                                              ~Use it if you want a different
+                                              behaviour if sending succeeds
+                                              or not~. ~Default is do nothing
+                                              ~(~Lwt~.return~)~.|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@res_content_length : <<span class="code type"|int64 option>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@<<span class='code'|~None>> means ~Transfer~-encoding~: chunked|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@res_content_type : <<span class="code type"|string option>>;|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@res_headers : <<span class="code type"|Http_headers.t>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~The headers you want to add|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@res_charset : <<span class="code type"|string option>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~Default~: ~None|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@res_location : <<span class="code type"|string option>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~Default~: ~None|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+
+}
+>>
+<<div class="info"|~The type of answers to send\\
+>>
+
+<<div id="VALdefault_result" class="code"|<<span class="keyword"|val>> default~_result : <<span class="code type"|unit -> <<a_api text="result" | type Ocsigen_http_frame.result >>>>>><<div class="info"|~Default <<span class='code'|result>> to use as a base for constructing others~.\\
+>>
+<<div id="VALempty_result" class="code"|<<span class="keyword"|val>> empty~_result : <<span class="code type"|unit -> <<a_api text="result" | type Ocsigen_http_frame.result >>>>>><<div class="info"|<<span class='code'|result>> for an empty page~.\\
+>>
+<<div class="code"|<<span class="keyword"|module type>> <<a_api text="HTTP_CONTENT" | module type Ocsigen_http_frame.HTTP_CONTENT >> = <<span class='code'|sig>><<a_api text=".." | module type Ocsigen_http_frame.HTTP_CONTENT >><<span class='code'|end>>>><<div class="code"|<<span class="keyword"|module>> <<a_api text="Http_header" | module Ocsigen_http_frame.Http_header >>: <<span class='code'|sig>><<a_api text=".." | module Ocsigen_http_frame.Http_header >><<span class='code'|end>>>><<div class="code"|<<span class="keyword"|module>> <<a_api text="Http_error" | module Ocsigen_http_frame.Http_error >>: <<span class='code'|sig>><<a_api text=".." | module Ocsigen_http_frame.Http_error >><<span class='code'|end>>>><<div class="code" id="TYPEt"|<<span class="keyword"|type>> t = { 
+|@@class="typetable"@ @class="lefttop"@@{{{   }}}|@@class="lefttop"@@header : <<span class="code type"|<<a_api text="Http_header.http_header" | type Ocsigen_http_frame.Http_header.http_header >>>>;|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@content : <<span class="code type"|string Ocsigen_stream.t option>>;|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@abort : <<span class="code type"|unit -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>;|
+
+}
+>>
+<<div class="info"|~The type of ~H~T~T~P frames~. 
+   ~The content may be void ~(no body~) or a stream~.
+   ~While sending~, a stream will be sent with chunked encoding if no 
+   content~-length is supplied~.
+   abort is the function to be called if you want to cancel the stream 
+   reading ~(closes the connection~)~.\\
+>>
+

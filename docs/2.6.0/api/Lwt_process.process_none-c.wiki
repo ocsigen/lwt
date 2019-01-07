@@ -1,0 +1,22 @@
+=Class <<a_api_type | class Lwt_process.process_none >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span name="TYPEprocess_none"|<<span class="ocsforge_color_keyword"|class>> <<span class="ocsforge_color_name"|process_none>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\<<span class="ocsforge_color_label"| ?timeout: >>float <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_label"| ?env: >>string array <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_label"| ?stdin: >><<a_api text="redirection" | type Lwt_process.redirection >> <<span class="ocsforge_color_delimiter"| -> >>\\<<span class="ocsforge_color_label"| ?stdout: >><<a_api text="redirection" | type Lwt_process.redirection >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_label"| ?stderr: >><<a_api text="redirection" | type Lwt_process.redirection >> <<span class="ocsforge_color_delimiter"| -> >>\\<<a_api text="command" | type Lwt_process.command >> <<span class="ocsforge_color_delimiter"| -> >>>> <<span class="ocsforge_color_keyword"|object>><<a_api text=".." | class Lwt_process.process_none >><<span class="ocsforge_color_keyword"|end>>>>
+----
+<<pre class="ocsforge_color odocwiki_code"|<<span id="METHODpid"|<<span class="ocsforge_color_keyword"|method>> <<span class="odocwiki_name"|pid>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int>>>><<div class="odocwiki_info"|~Pid of the sub~-process
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span id="METHODstate"|<<span class="ocsforge_color_keyword"|method>> <<span class="odocwiki_name"|state>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="state" | type Lwt_process.state >>>>>><<div class="odocwiki_info"|~Return the state of the process
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span id="METHODkill"|<<span class="ocsforge_color_keyword"|method>> <<span class="odocwiki_name"|kill>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|kill signum>> sends <<span class="odocwiki_inlinecode"|signum>> to the process if it is still
+        running~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span id="METHODterminate"|<<span class="ocsforge_color_keyword"|method>> <<span class="odocwiki_name"|terminate>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit>>>><<div class="odocwiki_info"|~Terminates the process~. ~It is equivalent to <<span class="odocwiki_inlinecode"|kill ~Sys~.sigkill>>
+        on ~Unix but also works on ~Windows ~(unlike <<a_api | method Lwt_process.process_none.kill >>~)~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span id="METHODstatus"|<<span class="ocsforge_color_keyword"|method>> <<span class="odocwiki_name"|status>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|process_status>> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Threads which wait for the sub~-process to exit then returns its
+        exit status
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span id="METHODrusage"|<<span class="ocsforge_color_keyword"|method>> <<span class="odocwiki_name"|rusage>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="Lwt_unix.resource_usage" | type Lwt_unix.resource_usage >> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Threads which wait for the sub~-process to exit then returns
+        its resource usages
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span id="METHODclose"|<<span class="ocsforge_color_keyword"|method>> <<span class="odocwiki_name"|close>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|process_status>> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Closes the process and returns its exit status~. ~This closes all
+        channels used to communicate with the process
+>>

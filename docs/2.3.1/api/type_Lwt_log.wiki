@@ -1,0 +1,132 @@
+<<code language="ocaml" | sig
+  type level = Debug | Info | Notice | Warning | Error | Fatal
+  type logger
+  type section
+  val add_rule : string -> Lwt_log.level -> unit
+  val append_rule : string -> Lwt_log.level -> unit
+  val log :
+    ?exn:exn ->
+    ?section:Lwt_log.section ->
+    ?logger:Lwt_log.logger -> level:Lwt_log.level -> string -> unit Lwt.t
+  val log_f :
+    ?exn:exn ->
+    ?section:Lwt_log.section ->
+    ?logger:Lwt_log.logger ->
+    level:Lwt_log.level ->
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -> 'a
+  val debug :
+    ?exn:exn ->
+    ?section:Lwt_log.section ->
+    ?logger:Lwt_log.logger -> string -> unit Lwt.t
+  val debug_f :
+    ?exn:exn ->
+    ?section:Lwt_log.section ->
+    ?logger:Lwt_log.logger ->
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -> 'a
+  val info :
+    ?exn:exn ->
+    ?section:Lwt_log.section ->
+    ?logger:Lwt_log.logger -> string -> unit Lwt.t
+  val info_f :
+    ?exn:exn ->
+    ?section:Lwt_log.section ->
+    ?logger:Lwt_log.logger ->
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -> 'a
+  val notice :
+    ?exn:exn ->
+    ?section:Lwt_log.section ->
+    ?logger:Lwt_log.logger -> string -> unit Lwt.t
+  val notice_f :
+    ?exn:exn ->
+    ?section:Lwt_log.section ->
+    ?logger:Lwt_log.logger ->
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -> 'a
+  val warning :
+    ?exn:exn ->
+    ?section:Lwt_log.section ->
+    ?logger:Lwt_log.logger -> string -> unit Lwt.t
+  val warning_f :
+    ?exn:exn ->
+    ?section:Lwt_log.section ->
+    ?logger:Lwt_log.logger ->
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -> 'a
+  val error :
+    ?exn:exn ->
+    ?section:Lwt_log.section ->
+    ?logger:Lwt_log.logger -> string -> unit Lwt.t
+  val error_f :
+    ?exn:exn ->
+    ?section:Lwt_log.section ->
+    ?logger:Lwt_log.logger ->
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -> 'a
+  val fatal :
+    ?exn:exn ->
+    ?section:Lwt_log.section ->
+    ?logger:Lwt_log.logger -> string -> unit Lwt.t
+  val fatal_f :
+    ?exn:exn ->
+    ?section:Lwt_log.section ->
+    ?logger:Lwt_log.logger ->
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -> 'a
+  module Section :
+    sig
+      type t = Lwt_log.section
+      val make : string -> Lwt_log.section
+      val name : Lwt_log.section -> string
+      val main : Lwt_log.section
+      val level : Lwt_log.section -> Lwt_log.level
+      val set_level : Lwt_log.section -> Lwt_log.level -> unit
+      val reset_level : Lwt_log.section -> unit
+    end
+  type template = string
+  val render :
+    buffer:Buffer.t ->
+    template:Lwt_log.template ->
+    section:Lwt_log.section -> level:Lwt_log.level -> message:string -> unit
+  exception Logger_closed
+  val make :
+    output:(Lwt_log.section -> Lwt_log.level -> string list -> unit Lwt.t) ->
+    close:(unit -> unit Lwt.t) -> Lwt_log.logger
+  val close : Lwt_log.logger -> unit Lwt.t
+  val default : Lwt_log.logger Pervasives.ref
+  val broadcast : Lwt_log.logger list -> Lwt_log.logger
+  val dispatch :
+    (Lwt_log.section -> Lwt_log.level -> Lwt_log.logger) -> Lwt_log.logger
+  val null : Lwt_log.logger
+  type syslog_facility =
+      [ `Auth
+      | `Authpriv
+      | `Console
+      | `Cron
+      | `Daemon
+      | `FTP
+      | `Kernel
+      | `LPR
+      | `Local0
+      | `Local1
+      | `Local2
+      | `Local3
+      | `Local4
+      | `Local5
+      | `Local6
+      | `Local7
+      | `Mail
+      | `NTP
+      | `News
+      | `Security
+      | `Syslog
+      | `UUCP
+      | `User ]
+  val syslog :
+    ?template:Lwt_log.template ->
+    ?paths:string list ->
+    facility:Lwt_log.syslog_facility -> unit -> Lwt_log.logger
+  val file :
+    ?template:Lwt_log.template ->
+    ?mode:[ `Append | `Truncate ] ->
+    ?perm:Unix.file_perm -> file_name:string -> unit -> Lwt_log.logger Lwt.t
+  val channel :
+    ?template:Lwt_log.template ->
+    close_mode:[ `Close | `Keep ] ->
+    channel:Lwt_io.output_channel -> unit -> Lwt_log.logger
+end >>

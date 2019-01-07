@@ -1,0 +1,149 @@
+=Module <<a_api_type | module Lwt_read_line >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_read_line>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_read_line >><<span class="ocsforge_color_keyword"|end>>>>~Interactive line input\\
+
+----
+\\
+
+======@@id="6_Definitions"@@~Definitions======
+\\
+<<pre id="EXCEPTIONInterrupt" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|exception>> <<span class="odocwiki_name"|Interrupt>>>><<div class="odocwiki_info"|~Exception raised when the user press <<span class="odocwiki_inlinecode"|~Ctrl~^~D>>\\
+>>
+<<pre class="ocsforge_color odocwiki_code" id="TYPEedition_state"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|edition~_state>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>> * <<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>>>> >><<div class="odocwiki_info"|~An edition state~, it is a pair of two ~U~T~F~-~8 encoded strings~:\\
+
+* the input before the cursor
+* the input after the cursor
+
+\\
+>>
+<<pre class="ocsforge_color odocwiki_code" id="TYPEprompt"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|prompt>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_type"|<<a_api text="Lwt_term.styled_text" | type Lwt_term.styled_text >>>> >><<div class="odocwiki_info"|~A prompt~. ~It may contains colors~.\\
+>>
+<<pre class="ocsforge_color odocwiki_code" id="TYPEtext_set"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|text~_set>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_type"|Set.Make<<span class="ocsforge_color_delimiter"| ( >>Text<<span class="ocsforge_color_delimiter"| ) >>.t>> >>\\
+
+<<div class="h8"| ~Completion>>
+\\
+<<pre class="ocsforge_color odocwiki_code" id="TYPEcompletion_result"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|completion~_result>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="ocsforge_color_delimiter"|~{>>
+<<span class="odocwiki_record"|<<span class="odocwiki_field"|<<span class="odocwiki_field_descr"|  <<span class="ocsforge_color_label"|comp_state:>> <<span class="odocwiki_type"|<<a_api text="edition_state" | type Lwt_read_line.edition_state >>>><<span class="ocsforge_color_delimiter"|~;>> >><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|~The new edition state>><<span class="odocwiki_comments_close"| ~*)>>>>>><<span class="odocwiki_field"|<<span class="odocwiki_field_descr"|  <<span class="ocsforge_color_label"|comp_words:>> <<span class="odocwiki_type"|<<a_api text="text_set" | type Lwt_read_line.text_set >>>><<span class="ocsforge_color_delimiter"|~;>> >><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|~A list of possibilities>><<span class="odocwiki_comments_close"| ~*)>>>>>>>><<span class="ocsforge_color_delimiter"|~}>>>><<div class="odocwiki_info"|~Result of a completion function~:\\
+>>
+<<pre class="ocsforge_color odocwiki_code" id="TYPEcompletion"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|completion>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_type"|<<a_api text="edition_state" | type Lwt_read_line.edition_state >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="completion_result" | type Lwt_read_line.completion_result >> <<a_api text="Lwt.t" | type Lwt.t >>>> >><<div class="odocwiki_info"|~Type of a completion function~. ~It takes as argument the
+          current edition state~.\\
+
+
+          ~Note~: the thread launched by the completion function is
+          cancelled using <<a_api | val Lwt.cancel >> if the user continue typing
+          text~.\\
+>>
+<<pre id="VALlookup" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|lookup>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="text_set" | type Lwt_read_line.text_set >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>> * <<a_api text="text_set" | type Lwt_read_line.text_set >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|lookup word words>> lookup for completion of <<span class="odocwiki_inlinecode"|word>> into
+      <<span class="odocwiki_inlinecode"|words>>~. ~It returns <<span class="odocwiki_inlinecode"|~(prefix~, possibilities~)>> where
+      <<span class="odocwiki_inlinecode"|possibilities>> are all words starting with <<span class="odocwiki_inlinecode"|word>> and <<span class="odocwiki_inlinecode"|prefix>>
+      is the longest common prefix of <<span class="odocwiki_inlinecode"|possibilities>>~.\\
+>>
+<<pre id="VALcomplete" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|complete>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_label"| ?suffix: >><<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="text_set" | type Lwt_read_line.text_set >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="completion_result" | type Lwt_read_line.completion_result >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|complete ~?suffix before word after words>> basic completion
+      functions~. <<span class="odocwiki_inlinecode"|words>> is a list of possible completions for
+      <<span class="odocwiki_inlinecode"|word>>~.\\
+
+
+      ~If completion succeed <<span class="odocwiki_inlinecode"|suffix>> is append to the resulting
+      text~. ~It defaults to <<span class="odocwiki_inlinecode"|" ">>~.\\
+>>
+<<pre id="VALprint_words" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|print~_words>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<a_api text="Lwt_text.output_channel" | type Lwt_text.output_channel >> <<span class="ocsforge_color_delimiter"| -> >> int <<span class="ocsforge_color_delimiter"| -> >> string list <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|print~_words oc columns strs>> pretty~-prints a list of words~.\\
+>>
+\\
+
+<<div class="h8"| ~History>>
+\\
+<<pre class="ocsforge_color odocwiki_code" id="TYPEhistory"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|history>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>> list>> >><<div class="odocwiki_info"|~Type of an history\\
+>>
+<<pre id="VALadd_entry" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|add~_entry>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="history" | type Lwt_read_line.history >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="history" | type Lwt_read_line.history >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|add~_entry line history>> returns the history <<span class="odocwiki_inlinecode"|history>> plus
+      <<span class="odocwiki_inlinecode"|line>> at the beginning~. ~If <<span class="odocwiki_inlinecode"|line>> already appears at the
+      beginning or contains only spaces~, it is discarded~.\\
+>>
+<<pre id="VALsave_history" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|save~_history>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|string <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="history" | type Lwt_read_line.history >> <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|save~_history filename history>> saves <<span class="odocwiki_inlinecode"|history>> to
+      <<span class="odocwiki_inlinecode"|filename>>~. ~History is saved by separating lines with a null
+      character~.\\
+>>
+<<pre id="VALload_history" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|load~_history>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|string <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="history" | type Lwt_read_line.history >> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|load~_history filename>> loads history from <<span class="odocwiki_inlinecode"|filename>>~. ~Returns
+      the empty history if the the file does not exit~.\\
+>>
+\\
+
+<<div class="h8"| ~Clipboards>>
+\\
+<<pre class="ocsforge_color odocwiki_code"|<<span name="TYPEclipboard"|<<span class="ocsforge_color_keyword"|class>> <<a_api text="clipboard" | class Lwt_read_line.clipboard >>>> <<span class="ocsforge_color_delimiter"|~:>>  <<span class="ocsforge_color_keyword"|object>><<a_api text=".." | class Lwt_read_line.clipboard >><<span class="ocsforge_color_keyword"|end>>>><<div class="odocwiki_info"|~Type of a clipboard~.
+>>
+<<pre id="VALclipboard" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|clipboard>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="clipboard" | class type Lwt_read_line.clipboard >>>>>><<div class="odocwiki_info"|~The global clipboard~. ~All read~-line instances which do not use a
+      specific clipboard use this one~.\\
+>>
+\\
+
+======@@id="6_Highlevelfunctions"@@~High~-level functions======
+\\
+<<pre class="ocsforge_color odocwiki_code" id="TYPEcompletion_mode"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|completion~_mode>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_type"|[ `classic | `none | `real_time ]>> >><<div class="odocwiki_info"|~The completion mode~.\\
+
+* <<span class="odocwiki_inlinecode"|`classic>> means that when the user hit <<span class="odocwiki_inlinecode"|~Tab>> a list of
+          possible completions is proposed~,
+
+* <<span class="odocwiki_inlinecode"|`real~_time>> means that possible completions are shown to
+          the user as he types~, and he can navigate in them with
+          <<span class="odocwiki_inlinecode"|~Meta~+left>>~, <<span class="odocwiki_inlinecode"|~Meta~+right>>
+
+* <<span class="odocwiki_inlinecode"|`none>> means no completion at all
+
+\\
+>>
+<<pre id="VALread_line" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|read~_line>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_label"| ?history: >><<a_api text="history" | type Lwt_read_line.history >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?complete: >><<a_api text="completion" | type Lwt_read_line.completion >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?clipboard: >><<a_api text="clipboard" | class type Lwt_read_line.clipboard >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?mode: >><<a_api text="completion_mode" | type Lwt_read_line.completion_mode >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?prompt: >><<a_api text="prompt" | type Lwt_read_line.prompt >> <<span class="ocsforge_color_delimiter"| -> >> unit <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|readline ~?history ~?complete ~?mode ~?prompt ~(~)>> inputs some text
+      from the user~. ~If input is not a terminal~, it defaults to
+      <<span class="odocwiki_inlinecode"|~Lwt~_text~.read~_line ~Lwt~_text~.stdin>>~.\\
+
+
+      ~If\\
+>>
+<<div class="odocwiki_param_info"|<<span class="code"|mode>> : contains the current completion mode~. ~It defaults
+      to <<span class="odocwiki_inlinecode"|`real~_time>>~.>>
+<<div class="odocwiki_param_info"|<<span class="code"|prompt>> : defaults to <<span class="odocwiki_inlinecode"|~Lwt~_term~.~Text "~# ">>>>
+<<pre class="ocsforge_color odocwiki_code" id="TYPEpassword_style"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|password~_style>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_type"|[ `clear | `empty | `text of <<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>> ]>> >><<div class="odocwiki_info"|~Style which indicate how the password is echoed to the user~:\\
+
+* with <<span class="odocwiki_inlinecode"|`empty>> nothing is printed
+* with <<span class="odocwiki_inlinecode"|`clear>> the password is displayed has it
+* with <<span class="odocwiki_inlinecode"|`text ch>> all characters are replaced by <<span class="odocwiki_inlinecode"|ch>>
+
+\\
+>>
+<<pre id="VALread_password" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|read~_password>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_label"| ?clipboard: >><<a_api text="clipboard" | class type Lwt_read_line.clipboard >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?style: >><<a_api text="password_style" | type Lwt_read_line.password_style >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?prompt: >><<a_api text="prompt" | type Lwt_read_line.prompt >> <<span class="ocsforge_color_delimiter"| -> >> unit <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|read~_password ~?clipboard ~?clear ~~prompt ~(~)>> inputs a password
+      from the user~. ~This function fails if input is not a terminal~.\\
+>>
+<<div class="odocwiki_param_info"|<<span class="code"|style>> : defaults to <<span class="odocwiki_inlinecode"|`text "~*">>~.>>
+<<pre id="VALread_keyword" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|read~_keyword>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_label"| ?history: >><<a_api text="history" | type Lwt_read_line.history >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?case_sensitive: >>bool <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?mode: >><<a_api text="completion_mode" | type Lwt_read_line.completion_mode >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?prompt: >><<a_api text="prompt" | type Lwt_read_line.prompt >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| values: >><<span class="ocsforge_color_delimiter"| ( >><<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>> * 'a<<span class="ocsforge_color_delimiter"| ) >> list <<span class="ocsforge_color_delimiter"| -> >> unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|read~_keyword ~?history ~?case~_sensitive ~?mode ~~prompt ~~keywords
+      ~(~)>> reads one word which is a member of <<span class="odocwiki_inlinecode"|words>>~. ~And returns
+      which keyword the user choosed~.\\
+
+
+      <<span class="odocwiki_inlinecode"|case~_sensitive>> default to <<span class="odocwiki_inlinecode"|false>>~.\\
+>>
+<<pre id="VALread_yes_no" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|read~_yes~_no>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_label"| ?history: >><<a_api text="history" | type Lwt_read_line.history >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?mode: >><<a_api text="completion_mode" | type Lwt_read_line.completion_mode >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?prompt: >><<a_api text="prompt" | type Lwt_read_line.prompt >> <<span class="ocsforge_color_delimiter"| -> >> unit <<span class="ocsforge_color_delimiter"| -> >> bool <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|read~_yes~_no ~?history ~?dynamic prompt ~(~)>> is the same as~:\\
+
+
+      
+<<code language='ocaml'|        read_keyword ?history ?dynamic prompt [("yes", true); ("no", false)] ()
+      >>
+\\
+>>
+\\
+
+======@@id="6_Lowlevelinteraction"@@~Low~-level interaction======
+\\
+\\
+~This part allow you to implements your own read~-line function~, or
+    just to use the readline engine in another context ~(message box~,
+    ~.~.~.~)~.\\
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<a_api text="Command" | module Lwt_read_line.Command >> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_read_line.Command >><<span class="ocsforge_color_keyword"|end>>>><<div class="odocwiki_info"|~Readline commands
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<a_api text="Engine" | module Lwt_read_line.Engine >> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_read_line.Engine >><<span class="ocsforge_color_keyword"|end>>>><<div class="odocwiki_info"|~Engine
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<a_api text="Terminal" | module Lwt_read_line.Terminal >> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_read_line.Terminal >><<span class="ocsforge_color_keyword"|end>>>><<div class="odocwiki_info"|~Rendering to the terminal
+>>
+\\
+
+======@@id="6_Advanceduse"@@~Advanced use======
+\\
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<a_api text="Control" | module Lwt_read_line.Control >> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_read_line.Control >><<span class="ocsforge_color_keyword"|end>>>><<div class="odocwiki_info"|~Controlling a running read~-line instance
+>>
