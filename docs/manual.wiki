@@ -302,8 +302,9 @@ val p3 : '_a Lwt.t = <abstr>
 - : int Lwt.state = Lwt.Return 42
 >>
 
-  The last one, {{{pick}}}, is the same as {{{choose}}}, except that it cancels
-  all other promises when one resolves.
+  The last one, {{{pick}}}, is the same as {{{choose}}}, except that it tries to cancel
+  all other promises when one resolves. Promises created via {{{Lwt.wait()}}} are not cancellable
+  and are thus not cancelled.
 
 ==== Rules ====
 
