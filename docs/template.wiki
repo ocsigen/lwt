@@ -1,4 +1,4 @@
-<<head-css href="https://ocsigen.org/css/style.css">>
+<<head-css href="https://ocsigen.org/lwt/tmp/style.css">>
 <<head-css href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/themes/prism.min.css">>
 <<head-script src="https://ocsigen.org/js/client.js">>
 <<head-script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-core.min.js">>
@@ -36,7 +36,7 @@
 >>
 
 <<when-local  |<<googlesearch icon="https://ocsigen.org/img/search.svg" domain="ocsigen.org">>>>
-<<unless-local|<<googlesearch icon="/search.svg" domain="ocsigen.org">>>>
+<<unless-local|<<googlesearch icon="https://ocsigen.org/lwt/tmp/search.svg" domain="ocsigen.org">>>>
 
 <<drawer|
 *@@class="drawermainmenu"@class="drawermainmenu-home"@@[[site:/|Home]]
