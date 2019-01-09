@@ -1,0 +1,867 @@
+@import url('https://fonts.googleapis.com/css?family=Work+Sans:400,600');
+
+/* Please put code in right sections below: */
+/****** Main style *****/
+/****** Code ******/
+/****** Switch button (from html_of_wiki) *****/
+/****** Docversion ******/
+/****** Outline ******/
+/****** Drawer ******/
+/****** Drawer content ******/
+/****** Page specific ******/
+/****** Mobile ******/
+/****** Large screen ******/
+
+
+
+/****** Main style *****/
+html {
+  box-sizing: border-box;
+}
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+a, a:visited {
+    color: #2e8eff;
+    text-decoration: none;
+}
+a.backref {
+    display: none;
+}
+h1:hover a.backref,
+h2:hover a.backref,
+h3:hover a.backref,
+h4:hover a.backref {
+    display: inline;
+}
+h1, h2, h3, h4 {
+    font-weight: normal;
+    color: #094489; /* dark blue */
+}
+.project-page h1 {
+    margin: 100px 0 70px 0;
+    font-size: 50px;
+}
+p {
+    text-align: justify;
+}
+body {
+    margin: 0;
+    font-family: 'Work Sans', sans-serif;
+    color: #555;
+}
+#gsearch-box {
+    transition: width 0.6s, border-radius 0.6s, background 0.6s, box-shadow 0.6s;
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+    background: white;
+}
+#gsearch-box + label#gsearch-icon {
+    color: black;
+}
+#gsearch-box:hover {
+    color: white;
+    background: #98fb98; /* pale green */
+    box-shadow: 0 0 0 5px #36648b; /* dark steel blue */
+}
+#gsearch-box:hover + label#gsearch-icon {
+    color: white;
+}
+#gsearch-box:focus {
+    transition: width 0.6s, border-radius 0.6s, background 0.6s;
+    border: none;
+    outline: none;
+    box-shadow: none;
+    padding-left: 15px;
+    cursor: text;
+    width: 300px;
+    border-radius: auto;
+    background: white;
+    color: black;
+}
+#gsearch-box:focus + label#gsearch-icon {
+    color: black;
+}
+#gsearch-box:not(:focus) {
+    text-indent: -5000px;
+}
+
+#gsearch-submit {
+    position: relative;
+    left: -5000px;
+}
+
+#gsearch-icon {
+    position: relative;
+    left: -30px;
+    top: 4px;
+    color: white;
+    cursor: pointer;
+    width: 20px;
+}
+
+form#googlesearch {
+    padding-top: 15px;
+    margin-right: -100px;
+    margin-left: 15px;
+}
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+    form#googlesearch {
+        margin-right: -20px;
+    }
+}
+
+.main-button {
+    display: inline-block;
+    padding: 15px 45px;
+    background-color: #64caff;
+    border-radius: 3px;
+}
+a.main-button, a.main-button:visited {
+    color: white !important;
+}
+.horiz-blocks {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin: 40px -20px;
+    flex-wrap: wrap;
+}
+.horiz-blocks > * {
+    max-width: 500px;
+    min-width: 200px;
+    margin: 20px;
+}
+.main-page-section {
+    background-color: white;
+}
+.main-page-section h2 {
+    font-size: 36px;
+    font-weight: normal;
+}
+.main-page-section h3.subtitle {
+    margin-top: -1.2rem;
+}
+.main-page-section-header {
+    position: sticky;
+    top: -510px;
+    z-index: 2;
+    background-color: #003474;
+    background-image: url("/img/cover-ocsigen.jpg");
+    background-size: cover;
+    height: 600px;
+    color: white;
+    padding: 150px 150px;
+}
+.main-page-section-header h1,
+.main-page-section-js_of_ocaml h2,
+.main-page-section-js_of_ocaml h3,
+.main-page-section-header h2 {
+    color: white;
+}
+.main-page-section-header .main-button {
+    margin-top: 50px;
+}
+.main-page-section-header h1 {
+    font-size: 40px;
+    margin-bottom: 10px;
+}
+.main-page-section-header h2 {
+    font-size: 16px;
+}
+.page-header {
+    display: flex;
+    position: fixed;
+    z-index: 3;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #001a39;
+    box-shadow: 0 3px 3px rgba(0,0,0,0.2);
+    height: 90px;
+    padding: 10px 20px;
+    text-align: right;
+}
+body.ocsigen\.github\.io.intro .page-header {
+    background-color: rgba(0,0,0,0.2);
+}
+.page-header a {
+    color: white;
+}
+.page-header p.logo-ocsigen img {
+    width: 100px;
+}
+.page-header p.logo-subproject {
+    position: absolute;
+    top: 26px;
+    left: 98px;
+    font-size: 23px;
+    color: #ff8d52;
+}
+.page-header .mainmenu {
+    flex-grow: 1;
+    line-height: 30px;
+    margin: 20px 0px;
+    font-size: 12px;
+}
+.page-header .mainmenu p {
+    display: inline;
+}
+.page-header .mainmenu p a,
+.page-header .mainmenu p span a {
+    font-size: 13px;
+    padding: 7px 10px;
+    color: white;
+}
+.page-header .mainmenu .mainmenu-current {
+    border-bottom: 4px solid #64caff;
+}
+li.drawermainmenu-page,
+li.drawermainmenu-home,
+li.drawermainmenu-doc,
+.mainmenu-home,
+.mainmenu-doc {
+    font-weight: bold;
+}
+li.drawermainmenu-project a {
+    color: #2e8eff;
+}
+li.drawermainmenu-current a {
+    font-weight: bold;
+    color: #ff8d52;
+}
+.page-header .logo-ocsigen {
+    position: absolute;
+    left: 60px;
+    top: 20px;
+}
+.main-page-section-partners {
+    text-align: center;
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+.main-page-section-partners ul {
+    display: inline-block;
+    line-height: 30px;
+    vertical-align: middle;
+    margin: 20px 0;
+}
+.main-page-section-partners li {
+    display: inline-block;
+    padding: 5px 20px;
+}
+.main-page-section-partners img {
+    width: 100px;
+}
+.main-page-section-partners img.logo-cnrs {
+    width: 50px;
+}
+.main-page-section-users ul {
+    column-count: 3;
+}
+.main-page-section-content {
+    position: relative;
+    max-width: 1200px;
+    padding: 50px;
+    margin: 0 auto;
+}
+.main-page-section-news {
+    background: linear-gradient(white, #eee);
+}
+[class^="main-page-news-"] {
+    padding: 35px;
+    border-radius: 5px;
+    background-color: white;
+}
+.main-page-section-multitier {
+    color: #222;
+}
+.main-page-schema-multitier {
+    width: 800px;
+    max-width: calc(100vw - 40px);
+}
+.main-page-section-multitier-schema {
+    position: relative;
+    height: 500px;
+    padding: 50px 0;
+}
+.main-page-section-multitier-schema > p {
+    text-align: center;
+}
+.main-page-section-js_of_ocaml {
+    background-color: #001a39;
+    color: white;
+}
+.main-page-section-js_of_ocaml-schema {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+.main-page-section-js_of_ocaml-ocaml code[class*=language-]::before,
+.main-page-section-js_of_ocaml-js code[class*=language-]::before {
+    color: rgba(255,255,255,0.2);
+    text-shadow: none;
+}
+pre[class*=language-].main-page-section-js_of_ocaml-ocaml,
+pre[class*=language-].main-page-section-js_of_ocaml-js {
+    max-width: 100vw;
+    border: 1px solid white;
+    border-radius: 10px;
+    padding: 40px !important;
+    margin: 40px;
+    background-color: transparent !important;
+}
+.darkcode code[class*=language-] {
+    text-shadow: none;
+    color: white;
+}
+.main-page-section-js_of_ocaml-arrow1 {
+    position: absolute;
+    top: 100px;
+    left: 525px;
+    font-size: 51px;
+}
+.main-page-section-js_of_ocaml-arrow2 {
+    position: absolute;
+    top: 300px;
+    left: 525px;
+    font-size: 51px;
+    transform: rotateZ(45deg);
+}
+.darkcode .token.number {
+    color: #ffaa99;
+}
+.darkcode .token.keyword {
+    color: #63caff; /* light blue */
+}
+.darkcode .token.operator {
+    background-color: transparent;
+    color: #ddccbb;
+}
+.main-page-section-about {
+    background-color: #001a39; /* dark dark blue */
+    color: #ddd;
+    padding: 30px 0;
+}
+.main-page-section-about ul {
+    list-style-type: none;
+}
+.main-page-section-about li {
+    line-height: 200%;
+}
+.main-page-section-projects {
+    background-color: white;
+    color: #888;
+}
+.main-page-schema-js_of_ocaml {
+}
+.main-page-projects {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding-bottom: 50px;
+}
+.main-page-project {
+    position: relative;
+    width: 400px;
+    max-width: 100vw;
+    height: 210px;
+    background-color: white;
+    background: url("/img/ocsigen-bubbles-shadow-small.png");
+    background-repeat: no-repeat;
+    background-position: 127% 220%;
+    margin: 20px;
+    border-radius: 4px;
+    box-shadow: 1px 1px 4px rgba(0,0,0,0.5);
+    overflow: hidden;
+}
+.main-page-project h3::before {
+    content: '';
+    position: absolute;
+    left: 30px;
+    top: 30px;
+    width: 90px;
+    display: block;
+    background-image: url("/img/ocsigen-white.svg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    height: 28px;
+}
+.main-page-project h3 {
+    background-color: #001a39;
+    color: #ff8d52;
+    padding: 44px 0 10px 92px;
+    margin: 0;
+}
+.main-page-project p {
+    margin: 0;
+    padding: 30px;
+    color: #555;
+}
+.project-page {
+    margin: 120px auto;
+    max-width: 1100px;
+}
+.twocols {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+}
+.leftcol {
+    flex-shrink: 0;
+    position: sticky;
+    top: 260px;
+    bottom: 0;
+    height: calc(100vh - 320px);
+    overflow-y: auto;
+    width: 300px;
+    margin: 140px 40px 0 0;
+    padding: 18px 18px 50px 18px;
+    background-color: rgba(255,255,255,0.9);
+    border-radius: 5px;
+    border: 1px solid #eee;
+}
+.leftcol::-webkit-scrollbar {
+  display: none;
+}
+.leftcol h1 {
+    margin: 30px 0 0 0;
+    font-size: 16px;
+}
+.leftcol h2, .leftcol h3, .leftcol h4 {
+    margin: 4px 0 4px 10px;
+    font-size: 14px;
+}
+.leftcol h2 {
+    margin: 20px 0 2px 0;
+}
+.rightcol {
+    padding: 0 20px;
+    right: 0;
+}
+
+/****** Reason switch button (from html_of_wiki) *****/
+button#reason {
+    position: fixed;
+    right: 20px;
+    top: 120px;
+    background-color: #ff8d52; /* orange */
+    border-radius: 50%;
+    border: none;
+    height: 75px;
+    width: 75px;
+    color: white;
+    cursor: pointer;
+    font-size: 12px;
+    z-index: 3;
+}
+/* Update the switch button's content */
+body:not(.reason) button#reason::after {
+	content: 'Reason syntax';
+}
+body.reason button#reason::after {
+	content: 'regular OCaml syntax';
+}
+.reasonwarning {
+    display: none;
+    font-style: italic;
+}
+body.reason .reasonwarning {
+    display: block;
+}
+
+/****** Client-server switch button *****/
+
+/* <pre> is shared among the original and automatically translated code, so we
+ * only hide those containing manually translated code, which would otherwise
+ * appear as empty boxes (with a background, because <code> is inline). */
+body:not(.reason) pre.language-reason.manually-translated,
+body.reason pre.language-ocaml.manually-translated,
+/* Hide the translated ReasonML code from OCaml users */
+body:not(.reason) code.language-reason,
+/* API pages only use <pre> elements for OCaml code... */
+body.reason pre.language-ocaml.standalone,
+body:not(.reason) pre.language-reason.standalone,
+/* Hide the original OCaml code from ReasonML users */
+body.reason code.language-ocaml:not(.error) {
+	display: none
+}
+.client-server-switch-wrapper {
+    font-size: 14px;
+}
+.client-server-switch .server {
+    display: inline-block;
+    background-color: #73c6ed;
+    padding: 5px 10px;
+}
+.client-server-switch .client {
+    display: inline-block;
+    background-color: #d4df67;
+    padding: 5px 10px;
+}
+.client-server-switch a {
+    color: white;
+}
+
+/****** Code ******/
+
+span.teletype {
+  color: #0CA9DC;
+  font-family: monospace;
+}
+
+span.ocsforge_color {
+  font-family: monospace;
+}
+
+span.ocsforge_color_delimiter,
+span.ocsforge_color_keyword   { color : #990099; }
+span.ocsforge_color_comment   { color : #ff6600; }
+span.ocsforge_color_operator  { color: black; }
+span.ocsforge_color_lid       { color: black; }
+span.ocsforge_color_uid       { color : #339900; }
+span.ocsforge_color_label     { color: #878700; }
+
+span.ocsforge_color_int,
+span.ocsforge_color_float,
+span.ocsforge_color_bin,
+span.ocsforge_color_oct,
+span.ocsforge_color_hex,
+span.ocsforge_color_char,
+span.ocsforge_color_string { color : #07ACE5; }
+
+span.odocwiki_name { color: #0033ff; }
+span.odocwiki_inlinecode { color: #08ade5; }
+
+hr + pre.odocwiki_code { margin-top: 1em; }
+
+pre,
+pre.odocwiki_code {
+  clear: both;
+  background-color: #f1f1f1;
+  border-left: 6px solid #dedede;
+  padding: 8px;
+  margin: 1em 0 1.5em 0;
+}
+
+pre.odocwiki_code {
+  margin: 2.5em 0 1em 0;
+}
+
+span.odocwiki_code {
+  display: block;
+  margin: 0;
+}
+
+span.odocwiki_inlinecode {
+  font-family: monospace;
+}
+
+
+span.odocwiki_variant,
+span.odocwiki_field {
+    display: block;
+    width: 600px; }
+
+span.odocwiki_variant_constr,
+span.odocwiki_field_descr {
+    margin-top: 0.5em;
+    display:block;
+    float: left;
+    margin-top: 0.3em;
+}
+
+span.odocwiki_comments {
+    display: table;
+    float: right;
+    margin-top: 0.3em;
+    color: #ff6600;
+    white-space: normal;
+}
+span.odocwiki_comments > span { display: table-cell; }
+span.odocwiki_comments > span:nth-child(2) { max-width: 500px; }
+span.odocwiki_comments_close { vertical-align: bottom; }
+
+span.odocwiki_variant::after,
+span.odocwiki_field::after {
+  content: ".";
+  display: block;
+  clear: both;
+  height: 0;
+  visibility: hidden;
+}
+
+/*
+
+span.odocwiki_variant > span { display: table-cell; }
+*/
+
+pre.ocsforge_color.server {
+  background-color: #ddeeff;
+}
+pre.ocsforge_color.client {
+  background-color: #ffffdd;
+}
+pre.ocsforge_color.shared {
+  background-color: #eeffee;
+}
+
+pre[class*=language-] {
+    position: relative;
+    z-index: 0;
+}
+code[class*=language-]::before {
+    z-index: -1;
+}
+
+code.language-ocaml::before {
+    content: 'OCaml';
+}
+
+code.language-reason::before {
+    content: 'Reason';
+}
+
+code.language-javascript::before {
+    content: 'JavaScript';
+}
+
+code.language-ocaml::before,
+code.language-reason::before,
+code.language-javascript::before {
+    position: absolute;
+    top: -22px;
+    right: 0;
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 50px;
+    font-family: 'Work Sans';
+}
+
+code[class*=language-], pre[class*=language-] {
+    white-space: pre-wrap !important;
+}
+
+/****** Docversion ******/
+.how-versions {
+    margin-bottom: 10px;
+}
+
+/****** Outline ******/
+.ocsimore_outline {
+    margin: 60px 0;
+}
+
+/****** Drawer *****/
+.how-drawer {
+    z-index: 1000;
+}
+#how-drawer-toggle {
+    display: none;
+}
+#how-drawer-label {
+    display: block;
+    position: fixed;
+    top: 25px;
+    right: 30px;
+    width: 40px;
+    height: 40px;
+    z-index: 1000;
+    cursor: pointer;
+}
+.how-drawer-content {
+    position: fixed;
+    width: 350px;
+    height: 100vh;
+    max-width: 100vw;
+    top: 0;
+    right:0;
+    background-color: #001a39;
+    transform: translateX(400px);
+    transition: transform .5s;
+    box-shadow: -5px 0 5px 0 rgba(0,0,0,0.2);
+}
+#how-drawer-toggle:checked ~ .how-drawer-content {
+    transform: translateX(0);
+    transition: transform .5s;
+}
+.how-drawer-icon::before,
+.how-drawer-icon::after,
+.how-drawer-icon {
+    position: absolute;
+    display: block;
+    width: 25px;
+    height: 3px;
+    background-color: white;
+    left: 0;
+    border-radius: 1px;
+    transition: transform .5s ;
+}
+.how-drawer-icon::before,
+.how-drawer-icon::after {
+    content: '';
+}
+.how-drawer-icon::before {
+    top: -8px;
+}
+.how-drawer-icon {
+    top: 18px;
+    left: 7px;
+}
+.how-drawer-icon::after {
+    top: 8px;
+}
+#how-drawer-toggle:checked ~ #how-drawer-label .how-drawer-icon {
+    background-color: transparent;
+}
+#how-drawer-toggle:checked ~ #how-drawer-label .how-drawer-icon::before {
+    transform: translateY(8px) rotate(45deg);
+}
+#how-drawer-toggle:checked ~ #how-drawer-label .how-drawer-icon::after {
+    transform: translateY(-8px) rotate(-45deg);
+}
+
+/****** Drawer content *****/
+.how-drawer-content {
+    padding: 100px 20px 50px 20px;
+    overflow: auto;
+    color: white;
+    text-align: left;
+}
+.drawermainmenu {
+    list-style-type: none;
+}
+.how-drawer-content h1 {
+    color: #2f8eff;
+    font-size: 22px;
+    margin: 50px 0 0 0;
+}
+.how-drawer-content h2 {
+    color: #2f8eff;
+    font-size: 18px;
+}
+.how-drawer-content h3 {
+    color: #2f8eff;
+    font-size: 16px;
+}
+.drawermainmenu li a {
+    display: block;
+    padding: 15px 0;
+}
+
+/****** Page specific ******/
+/* intro tuto */
+body.tuto .tutocase {
+    background-color: #f7cbb5;
+    padding: 15px 25px;
+    border-radius: 5px;
+}
+/* tuto os */
+body.tuto.start div.screenshots img {
+    max-height: 200px;
+    max-width: calc(100vw - 30px);
+}
+/****** Mobile version ******/
+@media (max-width: 720px) {
+    .smallscreen {
+        display: block;
+    }
+    .largescreen {
+        display: none;
+    }
+    .page-header .logo-ocsigen {
+        left: 30px;
+    }
+    /* We use an id because of https://github.com/ocsigen/tyxml/issues/196 */
+    #smallscreencsswitch {
+        display: block;
+        margin: 0 15px;
+    }
+    #largescreencsswitch {
+        display: none;
+    }
+    .page-header .mainmenu {
+        visibility: hidden;
+    }
+    .main-page-section-header {
+        padding: 90px 40px;
+    }
+    .main-page-section-header h1 {
+        font-size: 30px;
+    }
+    .main-page-section-content {
+        padding: 50px 20px;
+    }
+    .main-page-section-users ul {
+        column-count: 1;
+    }
+    pre[class*=language-].main-page-section-js_of_ocaml-ocaml,
+    pre[class*=language-].main-page-section-js_of_ocaml-js {
+        border: none;
+        border-radius: unset;
+        margin: 40px 0;
+        background-color: transparent !important;
+    }
+    .main-page-project {
+        border-radius: unset;
+    }
+    .leftcol {
+        display: none;
+    }
+    .project-page h1 {
+        font-size: 36px;
+    }
+}
+@media (min-width: 1180px) {
+    .main-page-section-js_of_ocaml-schema pre[class*=language-] {
+        width: 450px;
+    }
+}
+@media (max-width: 1179px) {
+    .main-page-section-js_of_ocaml-arrow1 {
+        top: 240px;
+        left: 50%;
+        transform: rotateZ(90deg);
+    }
+    .main-page-section-js_of_ocaml-arrow2 {
+        display: none;
+    }
+}
+/****** Large screen ******/
+@media (min-width: 721px) {
+    .how-drawer .how-doctree {
+        display: none;
+    }
+    .rightcol {
+        margin-left: 40px;
+    }
+    .smallscreen {
+        display: none;
+    }
+    .largescreen {
+        display: block;
+    }
+    /* We use an id because of https://github.com/ocsigen/tyxml/issues/196 */
+    #smallscreencsswitch {
+        display: none;
+    }
+    #largescreencsswitch {
+        display: block;
+    }
+}
+@media (min-width: 1200px) {
+    body {
+        background-image: url("/img/ocsigen-bubbles-large.png");
+        background-repeat: no-repeat;
+        background-position: -800px 0;
+        background-attachment: fixed;
+    }
+}

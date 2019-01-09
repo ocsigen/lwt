@@ -1,0 +1,801 @@
+<html><head><title></title><meta charset="utf8"/><link rel="stylesheet" href="https://ocsigen.org/css/style.css"/><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/themes/prism.min.css"/><script type="text/javascript" src="https://ocsigen.org/js/client.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-core.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-ocaml.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-clike.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-reason.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-javascript.min.js">
+//<![CDATA[
+
+//]]>
+</script></head><body><div class="project-page"><div class="page-header"><p class="logo-ocsigen"><a href=".././../../" class="ocsimore_phrasing_link"><img src=".././../../img/ocsigen-white.svg" alt="Ocsigen"/></a>
+</p><p class="logo-subproject">Lwt</p><div class="mainmenu"><p><span class="mainmenu-home"><a href=".././../../" class="ocsimore_phrasing_link">Home</a></span>
+<span class="mainmenu-doc"><a href=".././../../tuto/" class="ocsimore_phrasing_link">Doc</a></span>
+</p><p><a href=".././../../eliom/" class="ocsimore_phrasing_link">Eliom</a></p><p><a href=".././../../js_of_ocaml/" class="ocsimore_phrasing_link">Js_of_ocaml</a></p><p class="mainmenu-current"><a href=".././../../lwt/" class="ocsimore_phrasing_link">Lwt</a></p><p><a href=".././../../tyxml/" class="ocsimore_phrasing_link">Tyxml</a></p><p><a href=".././../../ocsigen-start/" class="ocsimore_phrasing_link">Start</a></p></div><form id="googlesearch" action="https://google.com/search"><input name="q" id="gsearch-box" placeholder="Search using Google"/><label for="gsearch-box"><img src="/search.svg" alt="" id="gsearch-icon"/></label><input type="submit" id="gsearch-submit" onclick="document.getElementById('gsearch-box').value += ' site:ocsigen.org';"/></form><aside class="how-drawer"><input id="how-drawer-toggle" type="checkbox"/><label for="how-drawer-toggle" id="how-drawer-label"><span class="how-drawer-icon"></span></label><nav class="how-drawer-content"><ul class="drawermainmenu"><li class="drawermainmenu-home"><a href=".././../../" class="ocsimore_phrasing_link">Home</a>
+</li><li class="drawermainmenu-doc"><a href=".././../../tuto/" class="ocsimore_phrasing_link">Doc</a>
+</li><li class="drawermainmenu-project"><a href=".././../../eliom/" class="ocsimore_phrasing_link">Eliom</a>
+</li><li class="drawermainmenu-project"><a href=".././../../js_of_ocaml/" class="ocsimore_phrasing_link">Js_of_ocaml</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsigenserver/" class="ocsimore_phrasing_link">Server</a>
+</li><li class="drawermainmenu-project"><a href=".././../../lwt/" class="ocsimore_phrasing_link">Lwt</a>
+</li><li class="drawermainmenu-project"><a href=".././../../tyxml/" class="ocsimore_phrasing_link">Tyxml</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsigen-toolkit/" class="ocsimore_phrasing_link">Toolkit</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsigen-start/" class="ocsimore_phrasing_link">Start</a>
+</li><li class="drawermainmenu-page"><a href=".././../../projects" class="ocsimore_phrasing_link">Other projects</a>
+</li><li class="drawermainmenu-page"><a href=".././../../papers" class="ocsimore_phrasing_link">Research papers</a>
+</li><li class="drawermainmenu-page"><a href=".././../../credits" class="ocsimore_phrasing_link">Who does Ocsigen?</a>
+</li><li class="drawermainmenu-page"><a href=".././../../blog" class="ocsimore_phrasing_link">Blog</a>
+</li><li class="drawermainmenu-page"><a href="https://github.com/ocsigen" class="ocsimore_phrasing_link">Source code</a>
+</li></ul><nav class="how-doctree"><h1>Ocsigen - Reference manual</h1><h2>Ocsigen</h2><h3>Persistent data, writing in the logs, configuration file extension, Xhtml pretty printing</h3><h4><a href=".././api/Ocsipersist" class="ocsimore_phrasing_link">Ocsipersist</a></h4><h4><a href=".././api/Ocsigen_messages" class="ocsimore_phrasing_link">Ocsigen_messages</a></h4><h4><a href=".././api/Ocsigen_parseconfig" class="ocsimore_phrasing_link">Ocsigen_parseconfig</a></h4><h4><a href=".././api/Simplexmlparser" class="ocsimore_phrasing_link">Simplexmlparser</a></h4><h4><a href=".././api/Xhtmlpretty" class="ocsimore_phrasing_link">Xhtmlpretty</a></h4><h4><a href=".././api/Xhtmlcompact" class="ocsimore_phrasing_link">Xhtmlcompact</a></h4><h3>Extending Ocsigen</h3><h4><a href=".././api/Ocsigen_extensions" class="ocsimore_phrasing_link">Ocsigen_extensions</a></h4><h4><a href=".././api/Ocsigen_headers" class="ocsimore_phrasing_link">Ocsigen_headers</a></h4><h4><a href=".././api/Ocsigen_senders" class="ocsimore_phrasing_link">Ocsigen_senders</a></h4><h4><a href=".././api/Ocsigen_http_frame" class="ocsimore_phrasing_link">Ocsigen_http_frame</a></h4><h4><a href=".././api/Ocsigen_http_client" class="ocsimore_phrasing_link">Ocsigen_http_client</a></h4><h4><a href=".././api/Ocsigen_http_com" class="ocsimore_phrasing_link">Ocsigen_http_com</a></h4><h4><a href=".././api/Authbasic" class="ocsimore_phrasing_link">Authbasic</a></h4><h2>Lwt</h2><h3><a href=".././api/Lwt" class="ocsimore_phrasing_link">Lwt</a></h3><h3><a href=".././api/Lwt_unix" class="ocsimore_phrasing_link">Lwt_unix</a></h3><h3><a href=".././api/Lwt_chan" class="ocsimore_phrasing_link">Lwt_chan</a></h3><h3><a href=".././api/Lwt_ssl" class="ocsimore_phrasing_link">Lwt_ssl</a></h3><h3><a href=".././api/Lwt_util" class="ocsimore_phrasing_link">Lwt_util</a></h3><h3><a href=".././api/Lwt_lib" class="ocsimore_phrasing_link">Lwt_lib</a></h3><h3><a href=".././api/Lwt_timeout" class="ocsimore_phrasing_link">Lwt_timeout</a></h3><h3><a href=".././api/Lwt_preemptive" class="ocsimore_phrasing_link">Lwt_preemptive</a></h3><h2>Eliom</h2><h3>Main modules</h3><h4><a href=".././api/Eliom_services" class="ocsimore_phrasing_link">Eliom_services</a></h4><h4><a href=".././api/Eliom_parameters" class="ocsimore_phrasing_link">Eliom_parameters</a></h4><h4><a href=".././api/Eliom_sessions" class="ocsimore_phrasing_link">Eliom_sessions</a></h4><h4><a href=".././api/Eliom_common" class="ocsimore_phrasing_link">Eliom_common</a></h4><h3>Generating pages with OcamlDuce</h3><h4><a href=".././api/Eliom_duce" class="ocsimore_phrasing_link">Eliom_duce</a></h4><h4><a href=".././api/Xhtmltypes_duce" class="ocsimore_phrasing_link">Xhtmltypes_duce</a></h4><h4><a href=".././api/Eliom_duce_tools" class="ocsimore_phrasing_link">Eliom_duce_tools</a></h4><h3>Generating pages typed with polymorphic variants</h3><h4><a href=".././api/Eliom_predefmod.Xhtml" class="ocsimore_phrasing_link">Eliom_predefmod.Xhtml</a></h4><h4><a href=".././api/XHTML" class="ocsimore_phrasing_link">XHTML</a></h4><h4><a href=".././api/Xhtmltypes" class="ocsimore_phrasing_link">Xhtmltypes</a></h4><h4><a href=".././api/Eliom_tools" class="ocsimore_phrasing_link">Eliom_tools</a></h4><h3>Other kinds of pages</h3><h4><a href=".././api/Eliom_predefmod" class="ocsimore_phrasing_link">Eliom_predefmod</a></h4><h3>Creating your own kinds of pages</h3><h4><a href=".././api/Eliom_mkforms" class="ocsimore_phrasing_link">Eliom_mkforms</a></h4><h4><a href=".././api/Eliom_mkreg" class="ocsimore_phrasing_link">Eliom_mkreg</a></h4><h4><a href=".././api/Xhtmlpretty" class="ocsimore_phrasing_link">Xhtmlpretty</a></h4></nav></nav></aside></div><p class="reasonwarning">Warning: Reason support is experimental.
+We are looking for beta-tester and contributors.
+</p><button id="reason">Switch to </button><div class="twocols"><nav class="leftcol">Version <select class="how-versions" onchange="location = this.value;"><option value=".././../1.0.0/api/type_Eliom_mkforms" selected="selected">1.0.0</option><option value=".././../1.1.0/api/type_Eliom_mkforms">1.1.0</option><option value=".././../2.0.0/api/type_Eliom_mkforms">2.0.0</option><option value=".././../2.1.0/api/type_Eliom_mkforms">2.1.0</option><option value=".././../2.1.1/api/type_Eliom_mkforms">2.1.1</option><option value=".././../2.2.0/api/type_Eliom_mkforms">2.2.0</option><option value=".././../2.2.1/api/type_Eliom_mkforms">2.2.1</option><option value=".././../2.3.0/api/type_Eliom_mkforms">2.3.0</option><option value=".././../2.3.1/api/type_Eliom_mkforms">2.3.1</option><option value=".././../2.3.2/api/type_Eliom_mkforms">2.3.2</option><option value=".././../2.4.0/api/type_Eliom_mkforms">2.4.0</option><option value=".././../2.4.1/api/type_Eliom_mkforms">2.4.1</option><option value=".././../2.4.2/api/type_Eliom_mkforms">2.4.2</option><option value=".././../2.4.3/api/type_Eliom_mkforms">2.4.3</option><option value=".././../2.4.7/api/type_Eliom_mkforms">2.4.7</option><option value=".././../2.4.8/api/type_Eliom_mkforms">2.4.8</option><option value=".././../2.5.0/api/type_Eliom_mkforms">2.5.0</option><option value=".././../2.5.1/api/type_Eliom_mkforms">2.5.1</option><option value=".././../2.5.2/api/type_Eliom_mkforms">2.5.2</option><option value=".././../2.6.0/api/type_Eliom_mkforms">2.6.0</option><option value=".././../2.7.0/api/type_Eliom_mkforms">2.7.0</option><option value=".././../2.7.1/api/type_Eliom_mkforms">2.7.1</option><option value=".././../3.0.0/api/type_Eliom_mkforms">3.0.0</option><option value=".././../3.1.0/api/type_Eliom_mkforms">3.1.0</option><option value=".././../3.2.1/api/type_Eliom_mkforms">3.2.1</option><option value=".././../3.3.0/api/type_Eliom_mkforms">3.3.0</option><option value=".././../4.0.0/api/type_Eliom_mkforms">4.0.0</option><option value=".././../4.0.1/api/type_Eliom_mkforms">4.0.1</option><option value=".././../4.1.0/api/type_Eliom_mkforms">4.1.0</option><option value=".././../dev/api/type_Eliom_mkforms">dev</option></select><nav class="how-doctree"><h1>Ocsigen - Reference manual</h1><h2>Ocsigen</h2><h3>Persistent data, writing in the logs, configuration file extension, Xhtml pretty printing</h3><h4><a href=".././api/Ocsipersist" class="ocsimore_phrasing_link">Ocsipersist</a></h4><h4><a href=".././api/Ocsigen_messages" class="ocsimore_phrasing_link">Ocsigen_messages</a></h4><h4><a href=".././api/Ocsigen_parseconfig" class="ocsimore_phrasing_link">Ocsigen_parseconfig</a></h4><h4><a href=".././api/Simplexmlparser" class="ocsimore_phrasing_link">Simplexmlparser</a></h4><h4><a href=".././api/Xhtmlpretty" class="ocsimore_phrasing_link">Xhtmlpretty</a></h4><h4><a href=".././api/Xhtmlcompact" class="ocsimore_phrasing_link">Xhtmlcompact</a></h4><h3>Extending Ocsigen</h3><h4><a href=".././api/Ocsigen_extensions" class="ocsimore_phrasing_link">Ocsigen_extensions</a></h4><h4><a href=".././api/Ocsigen_headers" class="ocsimore_phrasing_link">Ocsigen_headers</a></h4><h4><a href=".././api/Ocsigen_senders" class="ocsimore_phrasing_link">Ocsigen_senders</a></h4><h4><a href=".././api/Ocsigen_http_frame" class="ocsimore_phrasing_link">Ocsigen_http_frame</a></h4><h4><a href=".././api/Ocsigen_http_client" class="ocsimore_phrasing_link">Ocsigen_http_client</a></h4><h4><a href=".././api/Ocsigen_http_com" class="ocsimore_phrasing_link">Ocsigen_http_com</a></h4><h4><a href=".././api/Authbasic" class="ocsimore_phrasing_link">Authbasic</a></h4><h2>Lwt</h2><h3><a href=".././api/Lwt" class="ocsimore_phrasing_link">Lwt</a></h3><h3><a href=".././api/Lwt_unix" class="ocsimore_phrasing_link">Lwt_unix</a></h3><h3><a href=".././api/Lwt_chan" class="ocsimore_phrasing_link">Lwt_chan</a></h3><h3><a href=".././api/Lwt_ssl" class="ocsimore_phrasing_link">Lwt_ssl</a></h3><h3><a href=".././api/Lwt_util" class="ocsimore_phrasing_link">Lwt_util</a></h3><h3><a href=".././api/Lwt_lib" class="ocsimore_phrasing_link">Lwt_lib</a></h3><h3><a href=".././api/Lwt_timeout" class="ocsimore_phrasing_link">Lwt_timeout</a></h3><h3><a href=".././api/Lwt_preemptive" class="ocsimore_phrasing_link">Lwt_preemptive</a></h3><h2>Eliom</h2><h3>Main modules</h3><h4><a href=".././api/Eliom_services" class="ocsimore_phrasing_link">Eliom_services</a></h4><h4><a href=".././api/Eliom_parameters" class="ocsimore_phrasing_link">Eliom_parameters</a></h4><h4><a href=".././api/Eliom_sessions" class="ocsimore_phrasing_link">Eliom_sessions</a></h4><h4><a href=".././api/Eliom_common" class="ocsimore_phrasing_link">Eliom_common</a></h4><h3>Generating pages with OcamlDuce</h3><h4><a href=".././api/Eliom_duce" class="ocsimore_phrasing_link">Eliom_duce</a></h4><h4><a href=".././api/Xhtmltypes_duce" class="ocsimore_phrasing_link">Xhtmltypes_duce</a></h4><h4><a href=".././api/Eliom_duce_tools" class="ocsimore_phrasing_link">Eliom_duce_tools</a></h4><h3>Generating pages typed with polymorphic variants</h3><h4><a href=".././api/Eliom_predefmod.Xhtml" class="ocsimore_phrasing_link">Eliom_predefmod.Xhtml</a></h4><h4><a href=".././api/XHTML" class="ocsimore_phrasing_link">XHTML</a></h4><h4><a href=".././api/Xhtmltypes" class="ocsimore_phrasing_link">Xhtmltypes</a></h4><h4><a href=".././api/Eliom_tools" class="ocsimore_phrasing_link">Eliom_tools</a></h4><h3>Other kinds of pages</h3><h4><a href=".././api/Eliom_predefmod" class="ocsimore_phrasing_link">Eliom_predefmod</a></h4><h3>Creating your own kinds of pages</h3><h4><a href=".././api/Eliom_mkforms" class="ocsimore_phrasing_link">Eliom_mkforms</a></h4><h4><a href=".././api/Eliom_mkreg" class="ocsimore_phrasing_link">Eliom_mkreg</a></h4><h4><a href=".././api/Xhtmlpretty" class="ocsimore_phrasing_link">Xhtmlpretty</a></h4></nav></nav><article class="rightcol"><pre class=""><code class="language-ocaml translatable">sig
+  module type FORMCREATE =
+    sig
+      type form_content_elt
+      type form_content_elt_list
+      type form_elt
+      type a_content_elt
+      type a_content_elt_list
+      type a_elt
+      type a_elt_list
+      type div_content_elt
+      type div_content_elt_list
+      type uri
+      type link_elt
+      type script_elt
+      type textarea_elt
+      type input_elt
+      type pcdata_elt
+      type select_elt
+      type select_content_elt
+      type select_content_elt_list
+      type option_elt
+      type option_elt_list
+      type button_elt
+      type button_content_elt
+      type button_content_elt_list
+      type a_attrib_t
+      type form_attrib_t
+      type input_attrib_t
+      type textarea_attrib_t
+      type select_attrib_t
+      type link_attrib_t
+      type script_attrib_t
+      type optgroup_attrib_t
+      type option_attrib_t
+      type button_attrib_t
+      type input_type_t
+      type button_type_t
+      val hidden : Eliom_mkforms.FORMCREATE.input_type_t
+      val checkbox : Eliom_mkforms.FORMCREATE.input_type_t
+      val radio : Eliom_mkforms.FORMCREATE.input_type_t
+      val submit : Eliom_mkforms.FORMCREATE.input_type_t
+      val file : Eliom_mkforms.FORMCREATE.input_type_t
+      val image : Eliom_mkforms.FORMCREATE.input_type_t
+      val buttonsubmit : Eliom_mkforms.FORMCREATE.button_type_t
+      val empty_seq : Eliom_mkforms.FORMCREATE.form_content_elt_list
+      val cons_form :
+        Eliom_mkforms.FORMCREATE.form_content_elt -&gt;
+        Eliom_mkforms.FORMCREATE.form_content_elt_list -&gt;
+        Eliom_mkforms.FORMCREATE.form_content_elt_list
+      val map_option :
+        ('a -&gt; Eliom_mkforms.FORMCREATE.option_elt) -&gt;
+        'a list -&gt; Eliom_mkforms.FORMCREATE.option_elt_list
+      val map_optgroup :
+        ('a -&gt; Eliom_mkforms.FORMCREATE.select_content_elt) -&gt;
+        'a -&gt;
+        'a list -&gt;
+        Eliom_mkforms.FORMCREATE.select_content_elt *
+        Eliom_mkforms.FORMCREATE.select_content_elt_list
+      val select_content_of_option :
+        Eliom_mkforms.FORMCREATE.option_elt -&gt;
+        Eliom_mkforms.FORMCREATE.select_content_elt
+      val make_pcdata : string -&gt; Eliom_mkforms.FORMCREATE.pcdata_elt
+      val make_a :
+        ?a:Eliom_mkforms.FORMCREATE.a_attrib_t -&gt;
+        href:string -&gt;
+        Eliom_mkforms.FORMCREATE.a_content_elt_list -&gt;
+        Eliom_mkforms.FORMCREATE.a_elt
+      val make_get_form :
+        ?a:Eliom_mkforms.FORMCREATE.form_attrib_t -&gt;
+        action:string -&gt;
+        Eliom_mkforms.FORMCREATE.form_content_elt -&gt;
+        Eliom_mkforms.FORMCREATE.form_content_elt_list -&gt;
+        Eliom_mkforms.FORMCREATE.form_elt
+      val make_post_form :
+        ?a:Eliom_mkforms.FORMCREATE.form_attrib_t -&gt;
+        action:string -&gt;
+        ?id:string -&gt;
+        ?inline:bool -&gt;
+        Eliom_mkforms.FORMCREATE.form_content_elt -&gt;
+        Eliom_mkforms.FORMCREATE.form_content_elt_list -&gt;
+        Eliom_mkforms.FORMCREATE.form_elt
+      val make_hidden_field :
+        Eliom_mkforms.FORMCREATE.input_elt -&gt;
+        Eliom_mkforms.FORMCREATE.form_content_elt
+      val remove_first :
+        Eliom_mkforms.FORMCREATE.form_content_elt_list -&gt;
+        Eliom_mkforms.FORMCREATE.form_content_elt *
+        Eliom_mkforms.FORMCREATE.form_content_elt_list
+      val make_input :
+        ?a:Eliom_mkforms.FORMCREATE.input_attrib_t -&gt;
+        ?checked:bool -&gt;
+        typ:Eliom_mkforms.FORMCREATE.input_type_t -&gt;
+        ?name:string -&gt;
+        ?src:Eliom_mkforms.FORMCREATE.uri -&gt;
+        ?value:string -&gt; unit -&gt; Eliom_mkforms.FORMCREATE.input_elt
+      val make_button :
+        ?a:Eliom_mkforms.FORMCREATE.button_attrib_t -&gt;
+        button_type:Eliom_mkforms.FORMCREATE.button_type_t -&gt;
+        ?name:string -&gt;
+        ?value:string -&gt;
+        Eliom_mkforms.FORMCREATE.button_content_elt_list -&gt;
+        Eliom_mkforms.FORMCREATE.button_elt
+      val make_textarea :
+        ?a:Eliom_mkforms.FORMCREATE.textarea_attrib_t -&gt;
+        name:string -&gt;
+        ?value:Eliom_mkforms.FORMCREATE.pcdata_elt -&gt;
+        rows:int -&gt; cols:int -&gt; unit -&gt; Eliom_mkforms.FORMCREATE.textarea_elt
+      val make_select :
+        ?a:Eliom_mkforms.FORMCREATE.select_attrib_t -&gt;
+        multiple:bool -&gt;
+        name:string -&gt;
+        Eliom_mkforms.FORMCREATE.select_content_elt -&gt;
+        Eliom_mkforms.FORMCREATE.select_content_elt_list -&gt;
+        Eliom_mkforms.FORMCREATE.select_elt
+      val make_option :
+        ?a:Eliom_mkforms.FORMCREATE.option_attrib_t -&gt;
+        selected:bool -&gt;
+        ?value:string -&gt;
+        Eliom_mkforms.FORMCREATE.pcdata_elt -&gt;
+        Eliom_mkforms.FORMCREATE.option_elt
+      val make_optgroup :
+        ?a:Eliom_mkforms.FORMCREATE.optgroup_attrib_t -&gt;
+        label:string -&gt;
+        Eliom_mkforms.FORMCREATE.option_elt -&gt;
+        Eliom_mkforms.FORMCREATE.option_elt_list -&gt;
+        Eliom_mkforms.FORMCREATE.select_content_elt
+      val uri_of_string : string -&gt; Eliom_mkforms.FORMCREATE.uri
+      val make_css_link :
+        ?a:Eliom_mkforms.FORMCREATE.link_attrib_t -&gt;
+        uri:Eliom_mkforms.FORMCREATE.uri -&gt;
+        unit -&gt; Eliom_mkforms.FORMCREATE.link_elt
+      val make_js_script :
+        ?a:Eliom_mkforms.FORMCREATE.script_attrib_t -&gt;
+        uri:Eliom_mkforms.FORMCREATE.uri -&gt;
+        unit -&gt; Eliom_mkforms.FORMCREATE.script_elt
+    end
+  module type ELIOMFORMSIG =
+    sig
+      type form_content_elt
+      type form_content_elt_list
+      type form_elt
+      type a_content_elt
+      type a_content_elt_list
+      type a_elt
+      type a_elt_list
+      type div_content_elt
+      type div_content_elt_list
+      type uri
+      type link_elt
+      type script_elt
+      type textarea_elt
+      type input_elt
+      type pcdata_elt
+      type select_elt
+      type select_content_elt
+      type select_content_elt_list
+      type button_elt
+      type button_content_elt
+      type button_content_elt_list
+      type a_attrib_t
+      type form_attrib_t
+      type input_attrib_t
+      type textarea_attrib_t
+      type select_attrib_t
+      type link_attrib_t
+      type script_attrib_t
+      type optgroup_attrib_t
+      type option_attrib_t
+      type button_attrib_t
+      type input_type_t
+      type button_type_t
+      val make_full_string_uri :
+        service:('a, unit, [&lt; Eliom_services.get_service_kind ],
+                 [&lt; Eliom_services.suff ], 'b, unit,
+                 [&lt; Eliom_services.registrable ])
+                Eliom_services.service -&gt;
+        sp:Eliom_sessions.server_params -&gt;
+        ?fragment:string -&gt; 'a -&gt; Eliom_mkforms.ELIOMFORMSIG.uri Lwt.t
+      val make_string_uri :
+        service:('a, unit, [&lt; Eliom_services.get_service_kind ],
+                 [&lt; Eliom_services.suff ], 'b, unit,
+                 [&lt; Eliom_services.registrable ])
+                Eliom_services.service -&gt;
+        sp:Eliom_sessions.server_params -&gt; ?fragment:string -&gt; 'a -&gt; string
+      val make_uri :
+        service:('a, unit, [&lt; Eliom_services.get_service_kind ],
+                 [&lt; Eliom_services.suff ], 'b, unit,
+                 [&lt; Eliom_services.registrable ])
+                Eliom_services.service -&gt;
+        sp:Eliom_sessions.server_params -&gt;
+        ?fragment:string -&gt; 'a -&gt; Eliom_mkforms.ELIOMFORMSIG.uri
+      val a :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.a_attrib_t -&gt;
+        service:('a, unit, [&lt; Eliom_services.get_service_kind ],
+                 [&lt; Eliom_services.suff ], 'b, 'c,
+                 [&lt; Eliom_services.registrable ])
+                Eliom_services.service -&gt;
+        sp:Eliom_sessions.server_params -&gt;
+        ?fragment:string -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.a_content_elt_list -&gt;
+        'a -&gt; Eliom_mkforms.ELIOMFORMSIG.a_elt
+      val css_link :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.link_attrib_t -&gt;
+        uri:Eliom_mkforms.ELIOMFORMSIG.uri -&gt;
+        unit -&gt; Eliom_mkforms.ELIOMFORMSIG.link_elt
+      val js_script :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.script_attrib_t -&gt;
+        uri:Eliom_mkforms.ELIOMFORMSIG.uri -&gt;
+        unit -&gt; Eliom_mkforms.ELIOMFORMSIG.script_elt
+      val get_form :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.form_attrib_t -&gt;
+        service:('a, unit, [&lt; Eliom_services.get_service_kind ],
+                 [&lt; Eliom_services.suff ], 'b, 'c,
+                 [&lt; Eliom_services.registrable ])
+                Eliom_services.service -&gt;
+        sp:Eliom_sessions.server_params -&gt;
+        ?fragment:string -&gt;
+        ('b -&gt; Eliom_mkforms.ELIOMFORMSIG.form_content_elt_list) -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.form_elt
+      val post_form :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.form_attrib_t -&gt;
+        service:('a, 'b, [&lt; Eliom_services.post_service_kind ],
+                 [&lt; Eliom_services.suff ], 'c, 'd,
+                 [&lt; Eliom_services.registrable ])
+                Eliom_services.service -&gt;
+        sp:Eliom_sessions.server_params -&gt;
+        ?fragment:string -&gt;
+        ?keep_get_na_params:bool -&gt;
+        ('d -&gt; Eliom_mkforms.ELIOMFORMSIG.form_content_elt_list) -&gt;
+        'a -&gt; Eliom_mkforms.ELIOMFORMSIG.form_elt
+      val int_input :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        input_type:Eliom_mkforms.ELIOMFORMSIG.input_type_t -&gt;
+        ?name:[&lt; int Eliom_parameters.setoneopt ] Eliom_parameters.param_name -&gt;
+        ?value:int -&gt; unit -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val float_input :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        input_type:Eliom_mkforms.ELIOMFORMSIG.input_type_t -&gt;
+        ?name:[&lt; float Eliom_parameters.setoneopt ]
+              Eliom_parameters.param_name -&gt;
+        ?value:float -&gt; unit -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val string_input :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        input_type:Eliom_mkforms.ELIOMFORMSIG.input_type_t -&gt;
+        ?name:[&lt; string Eliom_parameters.setoneopt ]
+              Eliom_parameters.param_name -&gt;
+        ?value:string -&gt; unit -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val user_type_input :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        input_type:Eliom_mkforms.ELIOMFORMSIG.input_type_t -&gt;
+        ?name:[&lt; 'a Eliom_parameters.setoneopt ] Eliom_parameters.param_name -&gt;
+        ?value:'a -&gt; ('a -&gt; string) -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val raw_input :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        input_type:Eliom_mkforms.ELIOMFORMSIG.input_type_t -&gt;
+        ?name:string -&gt;
+        ?value:string -&gt; unit -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val file_input :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        name:[&lt; Ocsigen_extensions.file_info Eliom_parameters.setoneopt ]
+             Eliom_parameters.param_name -&gt;
+        unit -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val image_input :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        name:[&lt; Eliom_parameters.coordinates Eliom_parameters.oneopt ]
+             Eliom_parameters.param_name -&gt;
+        ?src:Eliom_mkforms.ELIOMFORMSIG.uri -&gt;
+        unit -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val int_image_input :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        name:[&lt; (int * Eliom_parameters.coordinates) Eliom_parameters.oneopt ]
+             Eliom_parameters.param_name -&gt;
+        value:int -&gt;
+        ?src:Eliom_mkforms.ELIOMFORMSIG.uri -&gt;
+        unit -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val float_image_input :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        name:[&lt; (float * Eliom_parameters.coordinates)
+                Eliom_parameters.oneopt ]
+             Eliom_parameters.param_name -&gt;
+        value:float -&gt;
+        ?src:Eliom_mkforms.ELIOMFORMSIG.uri -&gt;
+        unit -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val string_image_input :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        name:[&lt; (string * Eliom_parameters.coordinates)
+                Eliom_parameters.oneopt ]
+             Eliom_parameters.param_name -&gt;
+        value:string -&gt;
+        ?src:Eliom_mkforms.ELIOMFORMSIG.uri -&gt;
+        unit -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val user_type_image_input :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        name:[&lt; ('a * Eliom_parameters.coordinates) Eliom_parameters.oneopt ]
+             Eliom_parameters.param_name -&gt;
+        value:'a -&gt;
+        ?src:Eliom_mkforms.ELIOMFORMSIG.uri -&gt;
+        ('a -&gt; string) -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val raw_image_input :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        name:string -&gt;
+        value:string -&gt;
+        ?src:Eliom_mkforms.ELIOMFORMSIG.uri -&gt;
+        unit -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val bool_checkbox :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        ?checked:bool -&gt;
+        name:[ `One of bool ] Eliom_parameters.param_name -&gt;
+        unit -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val int_checkbox :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        ?checked:bool -&gt;
+        name:[ `Set of int ] Eliom_parameters.param_name -&gt;
+        value:int -&gt; unit -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val float_checkbox :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        ?checked:bool -&gt;
+        name:[ `Set of float ] Eliom_parameters.param_name -&gt;
+        value:float -&gt; unit -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val string_checkbox :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        ?checked:bool -&gt;
+        name:[ `Set of string ] Eliom_parameters.param_name -&gt;
+        value:string -&gt; unit -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val user_type_checkbox :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        ?checked:bool -&gt;
+        name:[ `Set of 'a ] Eliom_parameters.param_name -&gt;
+        value:'a -&gt; ('a -&gt; string) -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val raw_checkbox :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        ?checked:bool -&gt;
+        name:string -&gt;
+        value:string -&gt; unit -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val string_radio :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        ?checked:bool -&gt;
+        name:[ `Opt of string ] Eliom_parameters.param_name -&gt;
+        value:string -&gt; unit -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val int_radio :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        ?checked:bool -&gt;
+        name:[ `Opt of int ] Eliom_parameters.param_name -&gt;
+        value:int -&gt; unit -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val float_radio :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        ?checked:bool -&gt;
+        name:[ `Opt of float ] Eliom_parameters.param_name -&gt;
+        value:float -&gt; unit -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val user_type_radio :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        ?checked:bool -&gt;
+        name:[ `Opt of 'a ] Eliom_parameters.param_name -&gt;
+        value:'a -&gt; ('a -&gt; string) -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val raw_radio :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.input_attrib_t -&gt;
+        ?checked:bool -&gt;
+        name:string -&gt;
+        value:string -&gt; unit -&gt; Eliom_mkforms.ELIOMFORMSIG.input_elt
+      val string_button :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.button_attrib_t -&gt;
+        name:[&lt; string Eliom_parameters.setone ] Eliom_parameters.param_name -&gt;
+        value:string -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.button_content_elt_list -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.button_elt
+      val int_button :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.button_attrib_t -&gt;
+        name:[&lt; int Eliom_parameters.setone ] Eliom_parameters.param_name -&gt;
+        value:int -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.button_content_elt_list -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.button_elt
+      val float_button :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.button_attrib_t -&gt;
+        name:[&lt; float Eliom_parameters.setone ] Eliom_parameters.param_name -&gt;
+        value:float -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.button_content_elt_list -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.button_elt
+      val user_type_button :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.button_attrib_t -&gt;
+        name:[&lt; 'a Eliom_parameters.setone ] Eliom_parameters.param_name -&gt;
+        value:'a -&gt;
+        ('a -&gt; string) -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.button_content_elt_list -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.button_elt
+      val raw_button :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.button_attrib_t -&gt;
+        button_type:Eliom_mkforms.ELIOMFORMSIG.button_type_t -&gt;
+        name:string -&gt;
+        value:string -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.button_content_elt_list -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.button_elt
+      val button :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.button_attrib_t -&gt;
+        button_type:Eliom_mkforms.ELIOMFORMSIG.button_type_t -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.button_content_elt_list -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.button_elt
+      val textarea :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.textarea_attrib_t -&gt;
+        name:[&lt; string Eliom_parameters.setoneopt ]
+             Eliom_parameters.param_name -&gt;
+        ?value:Eliom_mkforms.ELIOMFORMSIG.pcdata_elt -&gt;
+        rows:int -&gt;
+        cols:int -&gt; unit -&gt; Eliom_mkforms.ELIOMFORMSIG.textarea_elt
+      val raw_textarea :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.textarea_attrib_t -&gt;
+        name:string -&gt;
+        ?value:Eliom_mkforms.ELIOMFORMSIG.pcdata_elt -&gt;
+        rows:int -&gt;
+        cols:int -&gt; unit -&gt; Eliom_mkforms.ELIOMFORMSIG.textarea_elt
+      type 'a soption =
+          Eliom_mkforms.ELIOMFORMSIG.option_attrib_t * 'a *
+          Eliom_mkforms.ELIOMFORMSIG.pcdata_elt option * bool
+      type 'a select_opt =
+          Optgroup of Eliom_mkforms.ELIOMFORMSIG.optgroup_attrib_t * 
+            string * 'a Eliom_mkforms.ELIOMFORMSIG.soption *
+            'a Eliom_mkforms.ELIOMFORMSIG.soption list
+        | Option of 'a Eliom_mkforms.ELIOMFORMSIG.soption
+      val raw_select :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.select_attrib_t -&gt;
+        name:string -&gt;
+        string Eliom_mkforms.ELIOMFORMSIG.select_opt -&gt;
+        string Eliom_mkforms.ELIOMFORMSIG.select_opt list -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.select_elt
+      val int_select :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.select_attrib_t -&gt;
+        name:[&lt; `One of int ] Eliom_parameters.param_name -&gt;
+        int Eliom_mkforms.ELIOMFORMSIG.select_opt -&gt;
+        int Eliom_mkforms.ELIOMFORMSIG.select_opt list -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.select_elt
+      val float_select :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.select_attrib_t -&gt;
+        name:[&lt; `One of float ] Eliom_parameters.param_name -&gt;
+        float Eliom_mkforms.ELIOMFORMSIG.select_opt -&gt;
+        float Eliom_mkforms.ELIOMFORMSIG.select_opt list -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.select_elt
+      val string_select :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.select_attrib_t -&gt;
+        name:[&lt; `One of string ] Eliom_parameters.param_name -&gt;
+        string Eliom_mkforms.ELIOMFORMSIG.select_opt -&gt;
+        string Eliom_mkforms.ELIOMFORMSIG.select_opt list -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.select_elt
+      val user_type_select :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.select_attrib_t -&gt;
+        name:[&lt; `One of 'a ] Eliom_parameters.param_name -&gt;
+        'a Eliom_mkforms.ELIOMFORMSIG.select_opt -&gt;
+        'a Eliom_mkforms.ELIOMFORMSIG.select_opt list -&gt;
+        ('a -&gt; string) -&gt; Eliom_mkforms.ELIOMFORMSIG.select_elt
+      val raw_multiple_select :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.select_attrib_t -&gt;
+        name:string -&gt;
+        string Eliom_mkforms.ELIOMFORMSIG.select_opt -&gt;
+        string Eliom_mkforms.ELIOMFORMSIG.select_opt list -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.select_elt
+      val int_multiple_select :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.select_attrib_t -&gt;
+        name:[&lt; `Set of int ] Eliom_parameters.param_name -&gt;
+        int Eliom_mkforms.ELIOMFORMSIG.select_opt -&gt;
+        int Eliom_mkforms.ELIOMFORMSIG.select_opt list -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.select_elt
+      val float_multiple_select :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.select_attrib_t -&gt;
+        name:[&lt; `Set of float ] Eliom_parameters.param_name -&gt;
+        float Eliom_mkforms.ELIOMFORMSIG.select_opt -&gt;
+        float Eliom_mkforms.ELIOMFORMSIG.select_opt list -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.select_elt
+      val string_multiple_select :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.select_attrib_t -&gt;
+        name:[&lt; `Set of string ] Eliom_parameters.param_name -&gt;
+        string Eliom_mkforms.ELIOMFORMSIG.select_opt -&gt;
+        string Eliom_mkforms.ELIOMFORMSIG.select_opt list -&gt;
+        Eliom_mkforms.ELIOMFORMSIG.select_elt
+      val user_type_multiple_select :
+        ?a:Eliom_mkforms.ELIOMFORMSIG.select_attrib_t -&gt;
+        name:[&lt; `Set of 'a ] Eliom_parameters.param_name -&gt;
+        'a Eliom_mkforms.ELIOMFORMSIG.select_opt -&gt;
+        'a Eliom_mkforms.ELIOMFORMSIG.select_opt list -&gt;
+        ('a -&gt; string) -&gt; Eliom_mkforms.ELIOMFORMSIG.select_elt
+    end
+  module MakeForms :
+    functor (Pages : FORMCREATE) -&gt;
+      sig
+        type form_content_elt = Pages.form_content_elt
+        type form_content_elt_list = Pages.form_content_elt_list
+        type form_elt = Pages.form_elt
+        type a_content_elt = Pages.a_content_elt
+        type a_content_elt_list = Pages.a_content_elt_list
+        type a_elt = Pages.a_elt
+        type a_elt_list = Pages.a_elt_list
+        type div_content_elt = Pages.div_content_elt
+        type div_content_elt_list = Pages.div_content_elt_list
+        type uri = Pages.uri
+        type link_elt = Pages.link_elt
+        type script_elt = Pages.script_elt
+        type textarea_elt = Pages.textarea_elt
+        type input_elt = Pages.input_elt
+        type pcdata_elt = Pages.pcdata_elt
+        type select_elt = Pages.select_elt
+        type select_content_elt
+        type select_content_elt_list
+        type button_elt = Pages.button_elt
+        type button_content_elt = Pages.button_content_elt
+        type button_content_elt_list = Pages.button_content_elt_list
+        type a_attrib_t = Pages.a_attrib_t
+        type form_attrib_t = Pages.form_attrib_t
+        type input_attrib_t = Pages.input_attrib_t
+        type textarea_attrib_t = Pages.textarea_attrib_t
+        type select_attrib_t = Pages.select_attrib_t
+        type link_attrib_t = Pages.link_attrib_t
+        type script_attrib_t = Pages.script_attrib_t
+        type optgroup_attrib_t = Pages.optgroup_attrib_t
+        type option_attrib_t = Pages.option_attrib_t
+        type button_attrib_t = Pages.button_attrib_t
+        type input_type_t = Pages.input_type_t
+        type button_type_t = Pages.button_type_t
+        val make_full_string_uri :
+          service:('a, unit, [&lt; Eliom_services.get_service_kind ],
+                   [&lt; Eliom_services.suff ], 'b, unit,
+                   [&lt; Eliom_services.registrable ])
+                  Eliom_services.service -&gt;
+          sp:Eliom_sessions.server_params -&gt;
+          ?fragment:string -&gt; 'a -&gt; uri Lwt.t
+        val make_string_uri :
+          service:('a, unit, [&lt; Eliom_services.get_service_kind ],
+                   [&lt; Eliom_services.suff ], 'b, unit,
+                   [&lt; Eliom_services.registrable ])
+                  Eliom_services.service -&gt;
+          sp:Eliom_sessions.server_params -&gt; ?fragment:string -&gt; 'a -&gt; string
+        val make_uri :
+          service:('a, unit, [&lt; Eliom_services.get_service_kind ],
+                   [&lt; Eliom_services.suff ], 'b, unit,
+                   [&lt; Eliom_services.registrable ])
+                  Eliom_services.service -&gt;
+          sp:Eliom_sessions.server_params -&gt; ?fragment:string -&gt; 'a -&gt; uri
+        val a :
+          ?a:a_attrib_t -&gt;
+          service:('a, unit, [&lt; Eliom_services.get_service_kind ],
+                   [&lt; Eliom_services.suff ], 'b, 'c,
+                   [&lt; Eliom_services.registrable ])
+                  Eliom_services.service -&gt;
+          sp:Eliom_sessions.server_params -&gt;
+          ?fragment:string -&gt; a_content_elt_list -&gt; 'a -&gt; a_elt
+        val css_link : ?a:link_attrib_t -&gt; uri:uri -&gt; unit -&gt; link_elt
+        val js_script : ?a:script_attrib_t -&gt; uri:uri -&gt; unit -&gt; script_elt
+        val get_form :
+          ?a:form_attrib_t -&gt;
+          service:('a, unit, [&lt; Eliom_services.get_service_kind ],
+                   [&lt; Eliom_services.suff ], 'b, 'c,
+                   [&lt; Eliom_services.registrable ])
+                  Eliom_services.service -&gt;
+          sp:Eliom_sessions.server_params -&gt;
+          ?fragment:string -&gt; ('b -&gt; form_content_elt_list) -&gt; form_elt
+        val post_form :
+          ?a:form_attrib_t -&gt;
+          service:('a, 'b, [&lt; Eliom_services.post_service_kind ],
+                   [&lt; Eliom_services.suff ], 'c, 'd,
+                   [&lt; Eliom_services.registrable ])
+                  Eliom_services.service -&gt;
+          sp:Eliom_sessions.server_params -&gt;
+          ?fragment:string -&gt;
+          ?keep_get_na_params:bool -&gt;
+          ('d -&gt; form_content_elt_list) -&gt; 'a -&gt; form_elt
+        val int_input :
+          ?a:input_attrib_t -&gt;
+          input_type:input_type_t -&gt;
+          ?name:[&lt; int Eliom_parameters.setoneopt ]
+                Eliom_parameters.param_name -&gt;
+          ?value:int -&gt; unit -&gt; input_elt
+        val float_input :
+          ?a:input_attrib_t -&gt;
+          input_type:input_type_t -&gt;
+          ?name:[&lt; float Eliom_parameters.setoneopt ]
+                Eliom_parameters.param_name -&gt;
+          ?value:float -&gt; unit -&gt; input_elt
+        val string_input :
+          ?a:input_attrib_t -&gt;
+          input_type:input_type_t -&gt;
+          ?name:[&lt; string Eliom_parameters.setoneopt ]
+                Eliom_parameters.param_name -&gt;
+          ?value:string -&gt; unit -&gt; input_elt
+        val user_type_input :
+          ?a:input_attrib_t -&gt;
+          input_type:input_type_t -&gt;
+          ?name:[&lt; 'a Eliom_parameters.setoneopt ]
+                Eliom_parameters.param_name -&gt;
+          ?value:'a -&gt; ('a -&gt; string) -&gt; input_elt
+        val raw_input :
+          ?a:input_attrib_t -&gt;
+          input_type:input_type_t -&gt;
+          ?name:string -&gt; ?value:string -&gt; unit -&gt; input_elt
+        val file_input :
+          ?a:input_attrib_t -&gt;
+          name:[&lt; Ocsigen_extensions.file_info Eliom_parameters.setoneopt ]
+               Eliom_parameters.param_name -&gt;
+          unit -&gt; input_elt
+        val image_input :
+          ?a:input_attrib_t -&gt;
+          name:[&lt; Eliom_parameters.coordinates Eliom_parameters.oneopt ]
+               Eliom_parameters.param_name -&gt;
+          ?src:uri -&gt; unit -&gt; input_elt
+        val int_image_input :
+          ?a:input_attrib_t -&gt;
+          name:[&lt; (int * Eliom_parameters.coordinates)
+                  Eliom_parameters.oneopt ]
+               Eliom_parameters.param_name -&gt;
+          value:int -&gt; ?src:uri -&gt; unit -&gt; input_elt
+        val float_image_input :
+          ?a:input_attrib_t -&gt;
+          name:[&lt; (float * Eliom_parameters.coordinates)
+                  Eliom_parameters.oneopt ]
+               Eliom_parameters.param_name -&gt;
+          value:float -&gt; ?src:uri -&gt; unit -&gt; input_elt
+        val string_image_input :
+          ?a:input_attrib_t -&gt;
+          name:[&lt; (string * Eliom_parameters.coordinates)
+                  Eliom_parameters.oneopt ]
+               Eliom_parameters.param_name -&gt;
+          value:string -&gt; ?src:uri -&gt; unit -&gt; input_elt
+        val user_type_image_input :
+          ?a:input_attrib_t -&gt;
+          name:[&lt; ('a * Eliom_parameters.coordinates) Eliom_parameters.oneopt ]
+               Eliom_parameters.param_name -&gt;
+          value:'a -&gt; ?src:uri -&gt; ('a -&gt; string) -&gt; input_elt
+        val raw_image_input :
+          ?a:input_attrib_t -&gt;
+          name:string -&gt; value:string -&gt; ?src:uri -&gt; unit -&gt; input_elt
+        val bool_checkbox :
+          ?a:input_attrib_t -&gt;
+          ?checked:bool -&gt;
+          name:[ `One of bool ] Eliom_parameters.param_name -&gt;
+          unit -&gt; input_elt
+        val int_checkbox :
+          ?a:input_attrib_t -&gt;
+          ?checked:bool -&gt;
+          name:[ `Set of int ] Eliom_parameters.param_name -&gt;
+          value:int -&gt; unit -&gt; input_elt
+        val float_checkbox :
+          ?a:input_attrib_t -&gt;
+          ?checked:bool -&gt;
+          name:[ `Set of float ] Eliom_parameters.param_name -&gt;
+          value:float -&gt; unit -&gt; input_elt
+        val string_checkbox :
+          ?a:input_attrib_t -&gt;
+          ?checked:bool -&gt;
+          name:[ `Set of string ] Eliom_parameters.param_name -&gt;
+          value:string -&gt; unit -&gt; input_elt
+        val user_type_checkbox :
+          ?a:input_attrib_t -&gt;
+          ?checked:bool -&gt;
+          name:[ `Set of 'a ] Eliom_parameters.param_name -&gt;
+          value:'a -&gt; ('a -&gt; string) -&gt; input_elt
+        val raw_checkbox :
+          ?a:input_attrib_t -&gt;
+          ?checked:bool -&gt; name:string -&gt; value:string -&gt; unit -&gt; input_elt
+        val string_radio :
+          ?a:input_attrib_t -&gt;
+          ?checked:bool -&gt;
+          name:[ `Opt of string ] Eliom_parameters.param_name -&gt;
+          value:string -&gt; unit -&gt; input_elt
+        val int_radio :
+          ?a:input_attrib_t -&gt;
+          ?checked:bool -&gt;
+          name:[ `Opt of int ] Eliom_parameters.param_name -&gt;
+          value:int -&gt; unit -&gt; input_elt
+        val float_radio :
+          ?a:input_attrib_t -&gt;
+          ?checked:bool -&gt;
+          name:[ `Opt of float ] Eliom_parameters.param_name -&gt;
+          value:float -&gt; unit -&gt; input_elt
+        val user_type_radio :
+          ?a:input_attrib_t -&gt;
+          ?checked:bool -&gt;
+          name:[ `Opt of 'a ] Eliom_parameters.param_name -&gt;
+          value:'a -&gt; ('a -&gt; string) -&gt; input_elt
+        val raw_radio :
+          ?a:input_attrib_t -&gt;
+          ?checked:bool -&gt; name:string -&gt; value:string -&gt; unit -&gt; input_elt
+        val string_button :
+          ?a:button_attrib_t -&gt;
+          name:[&lt; string Eliom_parameters.setone ]
+               Eliom_parameters.param_name -&gt;
+          value:string -&gt; button_content_elt_list -&gt; button_elt
+        val int_button :
+          ?a:button_attrib_t -&gt;
+          name:[&lt; int Eliom_parameters.setone ] Eliom_parameters.param_name -&gt;
+          value:int -&gt; button_content_elt_list -&gt; button_elt
+        val float_button :
+          ?a:button_attrib_t -&gt;
+          name:[&lt; float Eliom_parameters.setone ] Eliom_parameters.param_name -&gt;
+          value:float -&gt; button_content_elt_list -&gt; button_elt
+        val user_type_button :
+          ?a:button_attrib_t -&gt;
+          name:[&lt; 'a Eliom_parameters.setone ] Eliom_parameters.param_name -&gt;
+          value:'a -&gt; ('a -&gt; string) -&gt; button_content_elt_list -&gt; button_elt
+        val raw_button :
+          ?a:button_attrib_t -&gt;
+          button_type:button_type_t -&gt;
+          name:string -&gt;
+          value:string -&gt; button_content_elt_list -&gt; button_elt
+        val button :
+          ?a:button_attrib_t -&gt;
+          button_type:button_type_t -&gt; button_content_elt_list -&gt; button_elt
+        val textarea :
+          ?a:textarea_attrib_t -&gt;
+          name:[&lt; string Eliom_parameters.setoneopt ]
+               Eliom_parameters.param_name -&gt;
+          ?value:pcdata_elt -&gt; rows:int -&gt; cols:int -&gt; unit -&gt; textarea_elt
+        val raw_textarea :
+          ?a:textarea_attrib_t -&gt;
+          name:string -&gt;
+          ?value:pcdata_elt -&gt; rows:int -&gt; cols:int -&gt; unit -&gt; textarea_elt
+        type 'a soption = option_attrib_t * 'a * pcdata_elt option * bool
+        type 'a select_opt =
+            Optgroup of optgroup_attrib_t * string * 'a soption *
+              'a soption list
+          | Option of 'a soption
+        val raw_select :
+          ?a:select_attrib_t -&gt;
+          name:string -&gt;
+          string select_opt -&gt; string select_opt list -&gt; select_elt
+        val int_select :
+          ?a:select_attrib_t -&gt;
+          name:[&lt; `One of int ] Eliom_parameters.param_name -&gt;
+          int select_opt -&gt; int select_opt list -&gt; select_elt
+        val float_select :
+          ?a:select_attrib_t -&gt;
+          name:[&lt; `One of float ] Eliom_parameters.param_name -&gt;
+          float select_opt -&gt; float select_opt list -&gt; select_elt
+        val string_select :
+          ?a:select_attrib_t -&gt;
+          name:[&lt; `One of string ] Eliom_parameters.param_name -&gt;
+          string select_opt -&gt; string select_opt list -&gt; select_elt
+        val user_type_select :
+          ?a:select_attrib_t -&gt;
+          name:[&lt; `One of 'a ] Eliom_parameters.param_name -&gt;
+          'a select_opt -&gt; 'a select_opt list -&gt; ('a -&gt; string) -&gt; select_elt
+        val raw_multiple_select :
+          ?a:select_attrib_t -&gt;
+          name:string -&gt;
+          string select_opt -&gt; string select_opt list -&gt; select_elt
+        val int_multiple_select :
+          ?a:select_attrib_t -&gt;
+          name:[&lt; `Set of int ] Eliom_parameters.param_name -&gt;
+          int select_opt -&gt; int select_opt list -&gt; select_elt
+        val float_multiple_select :
+          ?a:select_attrib_t -&gt;
+          name:[&lt; `Set of float ] Eliom_parameters.param_name -&gt;
+          float select_opt -&gt; float select_opt list -&gt; select_elt
+        val string_multiple_select :
+          ?a:select_attrib_t -&gt;
+          name:[&lt; `Set of string ] Eliom_parameters.param_name -&gt;
+          string select_opt -&gt; string select_opt list -&gt; select_elt
+        val user_type_multiple_select :
+          ?a:select_attrib_t -&gt;
+          name:[&lt; `Set of 'a ] Eliom_parameters.param_name -&gt;
+          'a select_opt -&gt; 'a select_opt list -&gt; ('a -&gt; string) -&gt; select_elt
+      end
+end</code></pre></article></div></div></body></html>
