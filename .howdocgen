@@ -27,7 +27,7 @@ make-man-redir() {
     cd - 2>&1 >/dev/null
 }
 
-LATEST=$(find doc -maxdepth 1 -type d -not -name doc -not -name dev -exec basename {} \; | sort -nr | head -n 1)
+LATEST=$(find docs -maxdepth 1 -type d -not -name doc -not -name dev -exec basename {} \; | sort -nr | head -n 1)
 
 export OCAML_VERSION=4.06
 export PACKAGE=
