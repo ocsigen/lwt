@@ -1,0 +1,249 @@
+=Module <<a_api_type | module Ppx_lwt >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Ppx_lwt>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Ppx_lwt >><<span class="ocsforge_color_keyword"|end>>>>~Ppx syntax extension for ~Lwt
+
+----
+
+
+==@@id="2_Ppxextensions"@@~Ppx extensions==
+
+
+
+   ~This extension adds the following syntax~:
+
+
+* lwt~-binding~:
+
+   
+<<code language='ocaml'|     let%lwt ch = get_char stdin in
+     code
+   >>
+
+
+
+   is the same as <<span class="odocwiki_inlinecode"|bind ~(get~_char stdin~) ~(fun ch ~-~> code~)>>~.
+
+
+   ~Moreover~, it supports parallel binding~:
+
+
+   
+<<code language='ocaml'|     let%lwt x = do_something1 ()
+     and y = do_something2 in
+     code
+   >>
+
+
+
+   will run <<span class="odocwiki_inlinecode"|do~_something~1 ~(~)>> and <<span class="odocwiki_inlinecode"|do~_something~2 ~(~)>>~, then
+   bind their results to <<span class="odocwiki_inlinecode"|x>> and <<span class="odocwiki_inlinecode"|y>>~. ~It is the same as~:
+
+
+   
+<<code language='ocaml'|     let t1 = do_something1
+     and t2 = do_something2 in
+     bind t1 (fun x -> bind t2 (fun y -> code))
+   >>
+
+
+
+* exception catching~:
+
+   
+<<code language='ocaml'|     try%lwt
+       <expr>
+     with
+       <branches>
+   >>
+
+
+
+   ~For example~:
+
+
+   
+<<code language='ocaml'|     try%lwt
+       f x
+     with
+       | Failure msg ->
+           prerr_endline msg;
+           return ()
+   >>
+
+
+
+   is expanded to~:
+
+
+   
+<<code language='ocaml'|     catch (fun () -> f x)
+       (function
+         | Failure msg ->
+             prerr_endline msg;
+             return ()
+         | exn ->
+             Lwt.fail exn)
+   >>
+
+
+
+   ~Note that the <<span class="odocwiki_inlinecode"|exn ~-~> ~Lwt~.fail exn>> branch is automatically added
+   when needed~.
+
+
+* finalizer~:
+
+   
+<<code language='ocaml'|     (<expr>) [%finally <expr>]
+   >>
+
+
+
+   ~You can use <<span class="odocwiki_inlinecode"|~[~%lwt~.finally ~.~.~.~]>> instead of <<span class="odocwiki_inlinecode"|~[~%finally ~.~.~.~]>>~.
+
+
+* assertion~:
+
+   
+<<code language='ocaml'|     assert%lwt <expr>
+   >>
+
+
+
+* for loop~:
+
+   
+<<code language='ocaml'|     for%lwt i = <expr> to <expr> do
+       <expr>
+     done
+   >>
+
+
+
+   and~:
+
+
+   
+<<code language='ocaml'|     for%lwt i = <expr> downto <expr> do
+       <expr>
+     done
+   >>
+
+
+
+* while loop~:
+
+   
+<<code language='ocaml'|     while%lwt <expr> do
+       <expr>
+     done
+   >>
+
+
+
+* pattern matching~:
+
+   
+<<code language='ocaml'|     match%lwt <expr> with
+       | <patt_1> -> <expr_1>
+           ...
+       | <patt_n> -> <expr_n>
+   >>
+
+
+
+   ~Exception cases are also supported~:
+
+
+   
+<<code language='ocaml'|     match%lwt <expr> with
+       | exception <exn> -> <expr_1>
+       | <patt_2> -> <expr_2>
+           ...
+       | <patt_n> -> <expr_n>
+   >>
+
+
+
+* exception raising~:
+
+   ~For all other expression~, the construct
+   
+<<code language='ocaml'|     [%lwt <expr>]
+   >>
+
+
+
+   is expanded to~:
+   
+<<code language='ocaml'|     Lwt.catch (fun () -> <expr>) Lwt.fail
+   >>
+
+
+
+   ~It allows to encode the old <<span class="odocwiki_inlinecode"|raise~_lwt ~<e~>>> as <<span class="odocwiki_inlinecode"|~[~%lwt raise ~<e~>~]>>~, and offers a convenient way to interact with non~-~Lwt code~.
+
+
+   
+==@@id="2_Debug"@@~Debug==
+
+
+
+   ~By default~, the debug mode is enabled~. ~This means that the <<span class="odocwiki_inlinecode"|backtrace>> versions of the <<span class="odocwiki_inlinecode"|bind>>~, <<span class="odocwiki_inlinecode"|finalize>> and <<span class="odocwiki_inlinecode"|catch>> functions are used~, enabling proper backtraces for the ~Lwt exceptions~.
+
+
+   ~The debug mode can be disabled with the option <<span class="odocwiki_inlinecode"|~-no~-debug>>~.
+
+
+   
+==@@id="2_Sequence"@@~Sequence==
+
+
+
+   ~It is also possible to sequence ~Lwt operations with the <<span class="odocwiki_inlinecode"|~>~>>> operator~:
+   
+<<code language='ocaml'|     write stdio "Hello, " ~>> write stdio "world!"
+   >>
+
+
+
+   ~By default~, each operation must return <<span class="odocwiki_inlinecode"|unit ~Lwt~.t>>~. ~This constraint can be
+   lifted with the option <<span class="odocwiki_inlinecode"|~-no~-strict~-sequence>>~. ~The operator can be disabled
+   with the option <<span class="odocwiki_inlinecode"|~-no~-sequence>>~.
+
+
+   
+==@@id="2_Logging"@@~Logging==
+
+
+
+   ~The syntax extension will replace expression of the form~:
+
+
+   
+<<code language='ocaml'|     Lwt_log.info_f ~section "x = %d" x
+   >>
+
+
+
+   by
+
+
+   
+<<code language='ocaml'|     if Lwt_log.Section.level section <= Lwt_log.Info then
+       Lwt_log.info_f ~section "x = %d" x
+     else
+       return ()
+   >>
+
+
+
+   ~Notes~:
+
+
+* ~The application must be complete~. ~For example~: <<span class="odocwiki_inlinecode"|~Log~.info "~%d">>
+   will make compilation fail~.
+
+* ~Debug messages are removed if the option <<span class="odocwiki_inlinecode"|~-no~-debug>> is passed~.
+
+* ~The log syntax extension can be disabled with the option <<span class="odocwiki_inlinecode"|~-no~-log>>~.
+

@@ -1,0 +1,11 @@
+<<code language="ocaml" | sig
+  type t
+  val create : unit -> Lwt_switch.t
+  val is_on : Lwt_switch.t -> bool
+  val turn_off : Lwt_switch.t -> unit Lwt.t
+  exception Off
+  val check : Lwt_switch.t option -> unit
+  val add_hook : Lwt_switch.t option -> (unit -> unit Lwt.t) -> unit
+  val add_hook_or_exec :
+    Lwt_switch.t option -> (unit -> unit Lwt.t) -> unit Lwt.t
+end >>

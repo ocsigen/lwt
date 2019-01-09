@@ -1,0 +1,65 @@
+<<code language="ocaml" | sig
+  type 'a t = 'a React.event
+  val never : 'a React.event
+  val create : unit -> 'a React.event * ('a -> unit)
+  val retain : 'a React.event -> (unit -> unit) -> [ `R of unit -> unit ]
+  val stop : 'a React.event -> unit
+  val equal : 'a React.event -> 'a React.event -> bool
+  val trace :
+    ?iff:bool React.signal ->
+    ('a -> unit) -> 'a React.event -> 'a React.event
+  val once : 'a React.event -> 'a React.event
+  val drop_once : 'a React.event -> 'a React.event
+  val app : ('a -> 'b) React.event -> 'a React.event -> 'b React.event
+  val map : ('a -> 'b) -> 'a React.event -> 'b React.event
+  val stamp : 'a React.event -> 'b -> 'b React.event
+  val filter : ('a -> bool) -> 'a React.event -> 'a React.event
+  val fmap : ('a -> 'b option) -> 'a React.event -> 'b React.event
+  val diff : ('a -> 'a -> 'b) -> 'a React.event -> 'b React.event
+  val changes : ?eq:('a -> 'a -> bool) -> 'a React.event -> 'a React.event
+  val when_ : bool React.signal -> 'a React.event -> 'a React.event
+  val dismiss : 'a React.event -> 'b React.event -> 'b React.event
+  val until : 'a React.event -> 'b React.event -> 'b React.event
+  val accum : ('a -> 'a) React.event -> 'a -> 'a React.event
+  val fold : ('a -> 'b -> 'a) -> 'a -> 'b React.event -> 'a React.event
+  val select : 'a React.event list -> 'a React.event
+  val merge : ('a -> 'b -> 'a) -> 'a -> 'b React.event list -> 'a React.event
+  val switch : 'a React.event -> 'a React.event React.event -> 'a React.event
+  val fix : ('a React.event -> 'a React.event * 'b) -> 'b
+  val with_finaliser :
+    (unit -> unit) -> 'a Lwt_react.event -> 'a Lwt_react.event
+  val next : 'a Lwt_react.event -> 'a Lwt.t
+  val limit :
+    (unit -> unit Lwt.t) -> 'a Lwt_react.event -> 'a Lwt_react.event
+  val from : (unit -> 'a Lwt.t) -> 'a Lwt_react.event
+  val to_stream : 'a Lwt_react.event -> 'a Lwt_stream.t
+  val of_stream : 'a Lwt_stream.t -> 'a Lwt_react.event
+  val delay : 'a Lwt_react.event Lwt.t -> 'a Lwt_react.event
+  val keep : 'a Lwt_react.event -> unit
+  val app_s :
+    ('a -> 'b Lwt.t) Lwt_react.event ->
+    'a Lwt_react.event -> 'b Lwt_react.event
+  val app_p :
+    ('a -> 'b Lwt.t) Lwt_react.event ->
+    'a Lwt_react.event -> 'b Lwt_react.event
+  val map_s : ('a -> 'b Lwt.t) -> 'a Lwt_react.event -> 'b Lwt_react.event
+  val map_p : ('a -> 'b Lwt.t) -> 'a Lwt_react.event -> 'b Lwt_react.event
+  val filter_s :
+    ('a -> bool Lwt.t) -> 'a Lwt_react.event -> 'a Lwt_react.event
+  val filter_p :
+    ('a -> bool Lwt.t) -> 'a Lwt_react.event -> 'a Lwt_react.event
+  val fmap_s :
+    ('a -> 'b option Lwt.t) -> 'a Lwt_react.event -> 'b Lwt_react.event
+  val fmap_p :
+    ('a -> 'b option Lwt.t) -> 'a Lwt_react.event -> 'b Lwt_react.event
+  val diff_s :
+    ('a -> 'a -> 'b Lwt.t) -> 'a Lwt_react.event -> 'b Lwt_react.event
+  val accum_s : ('a -> 'a Lwt.t) Lwt_react.event -> 'a -> 'a Lwt_react.event
+  val fold_s :
+    ('a -> 'b -> 'a Lwt.t) -> 'a -> 'b Lwt_react.event -> 'a Lwt_react.event
+  val merge_s :
+    ('a -> 'b -> 'a Lwt.t) ->
+    'a -> 'b Lwt_react.event list -> 'a Lwt_react.event
+  val run_s : 'a Lwt.t Lwt_react.event -> 'a Lwt_react.event
+  val run_p : 'a Lwt.t Lwt_react.event -> 'a Lwt_react.event
+end >>

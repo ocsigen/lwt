@@ -1,0 +1,89 @@
+=Module <<a_api_type | module Lwt_signal >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_signal: <<span class='code'|sig>><<a_api text=".." | module Lwt_signal >><<span class='code'|end>>>>~Signals utilities\\
+
+----
+\\
+
+======@@id="6_Monadicinterface"@@~Monadic interface======
+\\
+<<div id="VALreturn" class="code"|<<span class="keyword"|val>> return : <<span class="code type"|'a -> 'a React.signal>>>><<div class="info"|~Same as <<span class='code'|~React~.~S~.const>>\\
+>>
+<<div id="VALbind" class="code"|<<span class="keyword"|val>> bind : <<span class="code type"|'a React.signal -> ('a -> 'b React.signal) -> 'b React.signal>>>><<div class="info"|<<span class='code'|bind signal f>> is initially <<span class='code'|f x>> where <<span class='code'|x>> is the current
+      value of <<span class='code'|signal>>~. ~Each time <<span class='code'|signal>> changes to a new value
+      <<span class='code'|y>>~, <<span class='code'|bind signal f>> is set to <<span class='code'|f y>>~, until the next change of
+      <<span class='code'|signal>>~.\\
+>>
+\\
+
+======@@id="6_Lwtspecificutilities"@@~Lwt~-specific utilities======
+\\
+<<div id="VALwith_finaliser" class="code"|<<span class="keyword"|val>> with~_finaliser : <<span class="code type"|(unit -> unit) -> 'a React.signal -> 'a React.signal>>>><<div class="info"|<<span class='code'|with~_finaliser f signal>> returns a signal <<span class='code'|signal~'>> which
+      behave as <<span class='code'|signal>>~, except that <<span class='code'|f>> is called when <<span class='code'|signal~'>> is
+      garbage collected~.\\
+>>
+<<div id="VALlimit" class="code"|<<span class="keyword"|val>> limit : <<span class="code type"|\\{{{   }}}?eq:('a -> 'a -> bool) ->\\{{{   }}}  (unit -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a React.signal -> 'a React.signal>>>><<div class="info"|<<span class='code'|limit f signal>> limits the rate of <<span class='code'|signal>> update with <<span class='code'|f>>~.\\
+
+
+      ~For example~, to limit it to ~1 per second~, you can use~: <<span class='code'|limit
+      ~(fun ~(~) ~-~> ~Lwt~_unix~.sleep ~1~.~0~) signal>>~.\\
+>>
+<<div id="VALdelay" class="code"|<<span class="keyword"|val>> delay : <<span class="code type"|'a React.signal <<a_api text="Lwt.t" | type Lwt.t >> -> 'a React.event>>>><<div class="info"|<<span class='code'|delay thread>> is an event which does not occurs until <<span class='code'|thread>>
+      returns~. ~When <<span class='code'|thread>> returns a signal <<span class='code'|s>>~, <<span class='code'|delay thread>> will
+      occurs with the current value of <<span class='code'|s>>~, and then behaves as
+      <<span class='code'|~React~.~S~.changes s>>~.\\
+>>
+\\
+
+======@@id="6_ThreadedversionsofReacttransformationfunctions"@@~Threaded versions of ~React transformation functions======
+\\
+\\
+~The following functions behave as their <<span class='code'|~React>> counterpart~,
+    except that they takes functions that may yield~. ~Also~, since
+    signals must always have a value~, several functions takes an extra
+    argument for the initial value~.\\
+
+
+    ~The <<span class='code'|~_s>> suffix means that calls are serialized~.\\
+<<div id="VALapp_s" class="code"|<<span class="keyword"|val>> app~_s : <<span class="code type"|\\{{{   }}}?eq:('a -> 'a -> bool) ->\\{{{   }}}  ('b -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) React.signal -> 'a -> 'b React.signal -> 'a React.signal>>>><<div class="info"|<<span class='code'|app~_s ~?eq signal~_f initial signal~_x>>\\
+>>
+<<div id="VALmap_s" class="code"|<<span class="keyword"|val>> map~_s : <<span class="code type"|\\{{{   }}}?eq:('a -> 'a -> bool) ->\\{{{   }}}  ('b -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a -> 'b React.signal -> 'a React.signal>>>><<div class="info"|<<span class='code'|map~_s ~?eq f initial signal>>\\
+>>
+<<div id="VALfilter_s" class="code"|<<span class="keyword"|val>> filter~_s : <<span class="code type"|\\{{{   }}}?eq:('a -> 'a -> bool) ->\\{{{   }}}  ('a -> bool <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a -> 'a React.signal -> 'a React.signal>>>><<div class="info"|<<span class='code'|filter~_s ~?eq f initial signal>>\\
+>>
+<<div id="VALfmap_s" class="code"|<<span class="keyword"|val>> fmap~_s : <<span class="code type"|\\{{{   }}}?eq:('a -> 'a -> bool) ->\\{{{   }}}  ('b -> 'a option <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a -> 'b React.signal -> 'a React.signal>>>><<div class="info"|<<span class='code'|fmap ~?eq f initial signal>>\\
+>>
+<<div id="VALdiff_s" class="code"|<<span class="keyword"|val>> diff~_s : <<span class="code type"|('a -> 'a -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a React.signal -> 'b React.event>>>><<div class="info"|<<span class='code'|diff~_s f signal>>\\
+>>
+<<div id="VALsample_s" class="code"|<<span class="keyword"|val>> sample~_s : <<span class="code type"|('a -> 'b -> 'c <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a React.event -> 'b React.signal -> 'c React.event>>>><<div class="info"|<<span class='code'|sample f event signal>>\\
+>>
+<<div id="VALaccum_s" class="code"|<<span class="keyword"|val>> accum~_s : <<span class="code type"|\\{{{   }}}?eq:('a -> 'a -> bool) ->\\{{{   }}}  ('a -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) React.event -> 'a -> 'a React.signal>>>><<div class="info"|<<span class='code'|accum ~?eq event~_f initial>>\\
+>>
+<<div id="VALfold_s" class="code"|<<span class="keyword"|val>> fold~_s : <<span class="code type"|\\{{{   }}}?eq:('a -> 'a -> bool) ->\\{{{   }}}  ('a -> 'b -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a -> 'b React.event -> 'a React.signal>>>><<div class="info"|<<span class='code'|fold ~?eq f initial event>>\\
+>>
+<<div id="VALmerge_s" class="code"|<<span class="keyword"|val>> merge~_s : <<span class="code type"|\\{{{   }}}?eq:('a -> 'a -> bool) ->\\{{{   }}}  ('a -> 'b -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a -> 'b React.signal list -> 'a React.signal>>>><<div class="info"|<<span class='code'|merge ~?eq f initial signals>>\\
+>>
+<<div id="VALl1_s" class="code"|<<span class="keyword"|val>> l~1~_s : <<span class="code type"|\\{{{   }}}?eq:('a -> 'a -> bool) ->\\{{{   }}}  ('b -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a -> 'b React.signal -> 'a React.signal>>>><<div id="VALl2_s" class="code"|<<span class="keyword"|val>> l~2~_s : <<span class="code type"|\\{{{   }}}?eq:('a -> 'a -> bool) ->\\{{{   }}}  ('b -> 'c -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) ->\\{{{   }}}  'a -> 'b React.signal -> 'c React.signal -> 'a React.signal>>>><<div id="VALl3_s" class="code"|<<span class="keyword"|val>> l~3~_s : <<span class="code type"|\\{{{   }}}?eq:('a -> 'a -> bool) ->\\{{{   }}}  ('b -> 'c -> 'd -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) ->\\{{{   }}}  'a ->\\{{{   }}}  'b React.signal -> 'c React.signal -> 'd React.signal -> 'a React.signal>>>><<div id="VALl4_s" class="code"|<<span class="keyword"|val>> l~4~_s : <<span class="code type"|\\{{{   }}}?eq:('a -> 'a -> bool) ->\\{{{   }}}  ('b -> 'c -> 'd -> 'e -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) ->\\{{{   }}}  'a ->\\{{{   }}}  'b React.signal ->\\{{{   }}}  'c React.signal -> 'd React.signal -> 'e React.signal -> 'a React.signal>>>><<div id="VALl5_s" class="code"|<<span class="keyword"|val>> l~5~_s : <<span class="code type"|\\{{{   }}}?eq:('a -> 'a -> bool) ->\\{{{   }}}  ('b -> 'c -> 'd -> 'e -> 'f -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) ->\\{{{   }}}  'a ->\\{{{   }}}  'b React.signal ->\\{{{   }}}  'c React.signal ->\\{{{   }}}  'd React.signal -> 'e React.signal -> 'f React.signal -> 'a React.signal>>>><<div id="VALl6_s" class="code"|<<span class="keyword"|val>> l~6~_s : <<span class="code type"|\\{{{   }}}?eq:('a -> 'a -> bool) ->\\{{{   }}}  ('b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) ->\\{{{   }}}  'a ->\\{{{   }}}  'b React.signal ->\\{{{   }}}  'c React.signal ->\\{{{   }}}  'd React.signal ->\\{{{   }}}  'e React.signal -> 'f React.signal -> 'g React.signal -> 'a React.signal>>>><<div id="VALrun_s" class="code"|<<span class="keyword"|val>> run~_s : <<span class="code type"|?eq:('a -> 'a -> bool) -> 'a -> 'a <<a_api text="Lwt.t" | type Lwt.t >> React.signal -> 'a React.signal>>>>\\
+
+======@@id="6_Notification"@@~Notification======
+\\
+<<div class="code" id="TYPEnotifier"|<<span class="keyword"|type>> notifier>>
+<<div class="info"|~Type of signal notifiers\\
+>>
+
+<<div id="VALdisable" class="code"|<<span class="keyword"|val>> disable : <<span class="code type"|<<a_api text="notifier" | type Lwt_signal.notifier >> -> unit>>>><<div class="info"|<<span class='code'|disable notif>> stops the corresponding signal to be
+      monitored\\
+>>
+<<div id="VALnotify" class="code"|<<span class="keyword"|val>> notify : <<span class="code type"|('a -> unit) -> 'a React.signal -> <<a_api text="notifier" | type Lwt_signal.notifier >>>>>><<div class="info"|<<span class='code'|notify f s>> calls <<span class='code'|f>> each time the value of <<span class='code'|s>> change\\
+>>
+<<div id="VALnotify_p" class="code"|<<span class="keyword"|val>> notify~_p : <<span class="code type"|('a -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a React.signal -> <<a_api text="notifier" | type Lwt_signal.notifier >>>>>><<div class="info"|<<span class='code'|notify~_p f s>> is the same as <<span class='code'|notify>> except that <<span class='code'|f x>> is a
+      thread~. ~Calls to <<span class='code'|f>> are made in parallel~.\\
+>>
+<<div id="VALnotify_s" class="code"|<<span class="keyword"|val>> notify~_s : <<span class="code type"|('a -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a React.signal -> <<a_api text="notifier" | type Lwt_signal.notifier >>>>>><<div class="info"|<<span class='code'|notify~_s f s>> is the same as <<span class='code'|notify>> except that <<span class='code'|f x>> is a
+      thread~. ~Calls to <<span class='code'|f>> are serialized~.\\
+>>
+<<div id="VALalways_notify" class="code"|<<span class="keyword"|val>> always~_notify : <<span class="code type"|('a -> unit) -> 'a React.signal -> unit>>>><<div class="info"|~Same as <<span class='code'|notify>> but does not return a notifier\\
+>>
+<<div id="VALalways_notify_p" class="code"|<<span class="keyword"|val>> always~_notify~_p : <<span class="code type"|('a -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a React.signal -> unit>>>><<div class="info"|~Same as <<span class='code'|notify~_p>> but does not return a notifier\\
+>>
+<<div id="VALalways_notify_s" class="code"|<<span class="keyword"|val>> always~_notify~_s : <<span class="code type"|('a -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a React.signal -> unit>>>><<div class="info"|~Same as <<span class='code'|notify~_s>> but does not return a notifier\\
+>>

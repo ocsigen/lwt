@@ -1,0 +1,234 @@
+==
+
+=@@id="1_LwtAPIReference"@@~Lwt ~- ~A~P~I ~Reference=
+
+
+
+
+==@@id="2_Corelibrary"@@~Core library==
+
+
+
+~The //core// library ~(//lwt// package~) contains the <<a_api | module Lwt >> module~, which defines
+cooperative threads with all the primitives to manipulate them~. ~It
+also provides several general purpose modules~, which do not depend on
+any external package~.
+
+
+
+|<<a_api | module Lwt >>|<<div class="odocwiki_info"|~Module <<span class="odocwiki_inlinecode"|~Lwt>>~: cooperative light~-weight threads~.
+>>
+|
+|<<a_api | module Lwt_result >>|<<div class="odocwiki_info"|~Explicit error handling
+>>
+|
+|<<a_api | module Lwt_condition >>|<<div class="odocwiki_info"|~Conditions
+>>
+|
+|<<a_api | module Lwt_list >>|<<div class="odocwiki_info"|~List helpers
+>>
+|
+|<<a_api | module Lwt_mutex >>|<<div class="odocwiki_info"|~Cooperative locks for mutual exclusion
+>>
+|
+|<<a_api | module Lwt_mvar >>|<<div class="odocwiki_info"|~Mailbox variables
+>>
+|
+|<<a_api | module Lwt_pool >>|<<div class="odocwiki_info"|~External resource pools~.
+>>
+|
+|<<a_api | module Lwt_stream >>|<<div class="odocwiki_info"|~Data streams
+>>
+|
+|<<a_api | module Lwt_switch >>|<<div class="odocwiki_info"|~Lwt switches
+>>
+|
+|<<a_api | module Lwt_sequence >>|<<div class="odocwiki_info"|~Mutable sequence of elements ~(deprecated~)
+>>
+|
+|<<a_api | module Lwt_pqueue >>|<<div class="odocwiki_info"|<<span class="odocwiki_deprecated"|~Functional priority queues ~(deprecated~)~.
+>>>>
+|
+
+
+
+
+
+==@@id="2_Logger"@@~Logger==
+
+~The //lwt~.log// package provides a logger engine~.
+
+
+
+|<<a_api | module Lwt_log_core >>|<<div class="odocwiki_info"|~Logging facility
+>>
+|
+
+
+
+
+~This package depends on the //core// library
+
+
+
+==@@id="2_Unixbindings"@@~Unix bindings==
+
+
+
+~The //lwt~.unix// package provides~:
+* the <<a_api | module Lwt_unix >> module~, which wrap system calls into cooperative ones
+* the <<a_api | module Lwt_io >> module~, which defines cooperative byte channel~, in
+  replacement of ones of the standard library
+* module helpers for logging~, spawning processes~, ~.~.~.
+
+
+|<<a_api | module Lwt_daemon >>|<<div class="odocwiki_info"|~Daemon helpers
+>>
+|
+|<<a_api | module Lwt_gc >>|<<div class="odocwiki_info"|~Interaction with the garbage collector
+>>
+|
+|<<a_api | module Lwt_io >>|<<div class="odocwiki_info"|~Buffered byte channels
+>>
+|
+|<<a_api | module Lwt_log >>|<<div class="odocwiki_info"|~Logging facility
+>>
+|
+|<<a_api | module Lwt_main >>|<<div class="odocwiki_info"|~Main loop and event queue
+>>
+|
+|<<a_api | module Lwt_engine >>|<<div class="odocwiki_info"|~Lwt unix main loop engine
+>>
+|
+|<<a_api | module Lwt_process >>|<<div class="odocwiki_info"|~Process management
+>>
+|
+|<<a_api | module Lwt_throttle >>|<<div class="odocwiki_info"|~Rate limiters
+>>
+|
+|<<a_api | module Lwt_timeout >>|<<div class="odocwiki_info"|~Timeouts
+>>
+|
+|<<a_api | module Lwt_unix >>|<<div class="odocwiki_info"|~Cooperative system calls
+>>
+|
+|<<a_api | module Lwt_bytes >>|<<div class="odocwiki_info"|~Byte arrays
+>>
+|
+|<<a_api | module Lwt_sys >>|<<div class="odocwiki_info"|~System informations~.
+>>
+|
+
+
+
+
+~This package depends on the //core// library~, the //unix// package and
+the //lwt~.log// package~.
+
+
+
+==@@id="2_Reactiveprogramminghelpers"@@~Reactive programming helpers==
+
+
+
+~The //lwt~.react// package provides helpers for functionnal reactive
+programming with ~Lwt~. ~It is based on the //react// package~. ~The
+<<a_api | module Lwt_react >> module is a replacement for the <<span class="odocwiki_inlinecode"|~React>> module~. ~It
+contains~:
+
+
+* all the functions of the <<span class="odocwiki_inlinecode"|~React>> module
+* ~Lwt specific primitives
+* cooperative versions of //react// functions
+
+
+|<<a_api | module Lwt_react >>|<<div class="odocwiki_info"|~React utilities
+>>
+|
+
+
+
+
+~This package depends on the //core// library and the //react// package~.
+
+
+
+==@@id="2_PPXsyntaxextension"@@~P~P~X syntax extension==
+
+
+
+~Syntactic sugar for ~Lwt~, such as <<span class="odocwiki_inlinecode"|let~%lwt x ~= e in e~'>> syntax for <<span class="odocwiki_inlinecode"|bind>>~.
+
+
+
+|<<a_api | module Ppx_lwt >>|<<div class="odocwiki_info"|~Ppx syntax extension for ~Lwt
+>>
+|
+
+
+
+
+
+==@@id="2_Miscellaneous"@@~Miscellaneous==
+
+
+
+~The following modules are wrapper for integration of non~-~Lwt
+functions~/packages into ~Lwt~.
+
+
+
+|<<a_api | module Lwt_glib >>|<<div class="odocwiki_info"|~Glib integration
+>>
+|
+|<<a_api | module Lwt_preemptive >>|<<div class="odocwiki_info"|~This module allows to mix preemptive threads with <<span class="odocwiki_inlinecode"|~Lwt>>
+    cooperative threads~.
+>>
+|
+|<<a_api | module Lwt_ssl >>|<<div class="odocwiki_info"|~O~Caml~-~S~S~L integration
+>>
+|
+
+
+
+
+
+==@@id="2_Camlp4syntaxextensions"@@~Camlp~4 syntax extensions==
+
+
+
+~These extensions are deprecated~. ~Use <<a_api | module Ppx_lwt >> instead~.
+
+
+~Lwt is shipped with two ~Camlp~4 syntax extensions~. ~The first one~, contained in
+the //lwt~.syntax// package~, aims to make coding with ~Lwt easier~, and
+to make code more readable~. ~The second~, contained in the package //lwt~.syntax~.log//~, is a ~Camlp~4 filter which decreases the performance
+penalty when using logging by inlining level tests~.
+
+
+
+|<<a_api | module Pa_lwt >>|<<div class="odocwiki_info"|~Syntactic sugars for ~Lwt ~(deprecated~)
+>>
+|
+|<<a_api | module Pa_lwt_log >>|<<div class="odocwiki_info"|~Special syntax for the logging facility ~(deprecated~)
+>>
+|
+
+
+
+
+
+==@@id="2_Index"@@~Index==
+
+
+
+* <<a_api text="Index of types" | index types >>
+* <<a_api text="Index of exceptions" | index exceptions >>
+* <<a_api text="Index of values" | index values >>
+* <<a_api text="Index of class attributes" | index attributes >>
+* <<a_api text="Index of class methods" | index methods >>
+* <<a_api text="Index of classes" | index classes >>
+* <<a_api text="Index of class types" | index class types >>
+* <<a_api text="Index of modules" | index modules >>
+* <<a_api text="Index of module types" | index module types >>
+

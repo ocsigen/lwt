@@ -1,0 +1,60 @@
+=Module <<a_api_type | module Lwt_daemon >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_daemon>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_daemon >><<span class="ocsforge_color_keyword"|end>>>>~Daemon helpers\\
+
+----
+<<pre id="VALdaemonize" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|daemonize>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_label"| ?syslog: >>bool <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?stdin: >>[ `Close | `Dev_null | `Keep ] <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?stdout: >>[ `Close\\          | `Dev_null\\          | `Keep\\          | `Log of <<a_api text="Lwt_log.logger" | type Lwt_log.logger >>\\          | `Log_default ] <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?stderr: >>[ `Close\\          | `Dev_null\\          | `Keep\\          | `Log of <<a_api text="Lwt_log.logger" | type Lwt_log.logger >>\\          | `Log_default ] <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?directory: >>string <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_label"| ?umask: >>[ `Keep | `Set of int ] <<span class="ocsforge_color_delimiter"| -> >> unit <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Put the current running process into daemon mode~. ~I~.e~. it forks
+      and exit the parent~, detach it from its controlling terminal~,
+      and redict standard intputs~/outputs~.~.\\
+
+
+      ~Notes~:* if the process is already a daemon~, it does nothing~.
+* you must be sure that there is no pending threads when
+        calling this function~, otherwise they may be canceled~.
+
+
+      ~If <<span class="odocwiki_inlinecode"|syslog>> is <<span class="odocwiki_inlinecode"|true>> ~(the default~)~, then <<a_api | val Lwt_log.default >> is
+      set to <<span class="odocwiki_inlinecode"|~Lwt~_log~.syslog ~~facility~:`~Daemon ~(~)>>~, otherwise it is
+      kept unchanged~.\\
+
+
+      <<span class="odocwiki_inlinecode"|stdin>> is one of~:* <<span class="odocwiki_inlinecode"|`~Dev~_null>> which means that <<span class="odocwiki_inlinecode"|~Unix~.stdin>> is reopened as
+        <<span class="odocwiki_inlinecode"|~/dev~/null>>~, this is the default behavior
+* <<span class="odocwiki_inlinecode"|`~Close>> means that <<span class="odocwiki_inlinecode"|~Unix~.stdin>> is simply closed
+* <<span class="odocwiki_inlinecode"|`~Keep>> means that <<span class="odocwiki_inlinecode"|~Unix~.stdin>> is left unchanged
+
+
+      <<span class="odocwiki_inlinecode"|stdout>> and <<span class="odocwiki_inlinecode"|stderr>> control how the two associated file
+      descriptors are redirected~:* <<span class="odocwiki_inlinecode"|`~Dev~_null>> means that the output is redirected to <<span class="odocwiki_inlinecode"|~/dev~/null>>
+* <<span class="odocwiki_inlinecode"|`~Close>> means that the file descriptor is closed
+* <<span class="odocwiki_inlinecode"|`~Keep>> means that it is left unchanged
+* <<span class="odocwiki_inlinecode"|`~Log logger>> means that the output is redirected to this
+        logger
+* <<span class="odocwiki_inlinecode"|`~Log~_default>> means that the output is redirected to the
+        default logger
+
+
+      ~Both <<span class="odocwiki_inlinecode"|stdout>> and <<span class="odocwiki_inlinecode"|stderr>> defaults to <<span class="odocwiki_inlinecode"|`~Log~_default>>~.\\
+
+
+      ~Warning~: do not redirect an output to a logger logging into this
+      outpout~, for example this code will create an infinite loop~:\\
+
+
+      
+<<code language='ocaml'|        let logger = Lwt_log.channel ~close_mode:`Keep ~channel:Lwt_io.stderr () in
+        Lwt_daemon.daemonize ~syslog:false ~stderr:(`Log logger) ();
+        prerr_endline "foo"
+      >>
+\\
+
+
+      ~The current working directory is set to <<span class="odocwiki_inlinecode"|directory>>~, which
+      defaults to <<span class="odocwiki_inlinecode"|"~/">>~.\\
+
+
+      <<span class="odocwiki_inlinecode"|umask>> may be one of~:* <<span class="odocwiki_inlinecode"|`~Keep>> which means that the umask is left unchanged
+* <<span class="odocwiki_inlinecode"|`~Set n>> which means that the umash is set to <<span class="odocwiki_inlinecode"|n>>
+
+
+      ~It defaults to <<span class="odocwiki_inlinecode"|`~Set ~0o~0~2~2>>~.\\
+>>

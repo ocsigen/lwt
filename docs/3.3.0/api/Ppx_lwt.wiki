@@ -1,0 +1,308 @@
+=Module <<a_api_type | module Ppx_lwt >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Ppx_lwt>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Ppx_lwt >><<span class="ocsforge_color_keyword"|end>>>>~Ppx syntax extension for ~Lwt
+
+----
+
+
+==@@id="2_Ppxextensions"@@~Ppx extensions==
+
+
+
+    ~This ~Ppx extension adds various syntactic shortcut for lwt programming~.
+    ~It needs ~O~Caml ~>~= ~4~.~0~2 and [[https://github.com/alainfrisch/ppx_tools|ppx~_tools]]~.
+
+
+    ~To use it~, simply use the ocamlfind package <<span class="odocwiki_inlinecode"|lwt~.ppx>>~.
+
+
+   ~This extension adds the following syntax~:
+
+
+* lwt~-binding~:
+
+   
+<<code language='ocaml'|let%lwt ch = get_char stdin in
+code
+   >>
+
+
+
+   is the same as <<span class="odocwiki_inlinecode"|bind ~(get~_char stdin~) ~(fun ch ~-~> code~)>>~.
+
+
+   ~Moreover~, it supports parallel binding~:
+
+
+   
+<<code language='ocaml'|let%lwt x = do_something1 ()
+and y = do_something2 in
+code
+   >>
+
+
+
+   will run <<span class="odocwiki_inlinecode"|do~_something~1 ~(~)>> and <<span class="odocwiki_inlinecode"|do~_something~2 ~(~)>>~, then
+   bind their results to <<span class="odocwiki_inlinecode"|x>> and <<span class="odocwiki_inlinecode"|y>>~. ~It is the same as~:
+
+
+   
+<<code language='ocaml'|let t1 = do_something1
+and t2 = do_something2 in
+bind t1 (fun x -> bind t2 (fun y -> code))
+   >>
+
+
+
+* exception catching~:
+
+   
+<<code language='ocaml'|try%lwt
+  <expr>
+with
+  <branches>
+   >>
+
+
+
+   ~For example~:
+
+
+   
+<<code language='ocaml'|try%lwt
+  f x
+with
+  | Failure msg ->
+      prerr_endline msg;
+      return ()
+   >>
+
+
+
+   is expanded to~:
+
+
+   
+<<code language='ocaml'|catch (fun () -> f x)
+  (function
+    | Failure msg ->
+        prerr_endline msg;
+        return ()
+    | exn ->
+        Lwt.fail exn)
+   >>
+
+
+
+   ~Note that the <<span class="odocwiki_inlinecode"|exn ~-~> ~Lwt~.fail exn>> branch is automatically added
+   when needed~.
+
+
+* finalizer~:
+
+   
+<<code language='ocaml'|     (<expr>) [%finally <expr>]
+   >>
+
+
+
+   ~You can use <<span class="odocwiki_inlinecode"|~[~%lwt~.finally ~.~.~.~]>> instead of <<span class="odocwiki_inlinecode"|~[~%finally ~.~.~.~]>>~.
+
+
+* assertion~:
+
+   
+<<code language='ocaml'|     assert%lwt <expr>
+   >>
+
+
+
+* for loop~:
+
+   
+<<code language='ocaml'|for%lwt i = <expr> to <expr> do
+  <expr>
+done
+   >>
+
+
+
+   and~:
+
+
+   
+<<code language='ocaml'|for%lwt i = <expr> downto <expr> do
+  <expr>
+done
+   >>
+
+
+
+* while loop~:
+
+   
+<<code language='ocaml'|while%lwt <expr> do
+  <expr>
+done
+   >>
+
+
+
+* pattern matching~:
+
+   
+<<code language='ocaml'|match%lwt <expr> with
+  | <patt_1> -> <expr_1>
+      ...
+  | <patt_n> -> <expr_n>
+   >>
+
+
+
+   ~Exception cases are also supported~:
+
+
+   
+<<code language='ocaml'|match%lwt <expr> with
+  | exception <exn> -> <expr_1>
+  | <patt_2> -> <expr_2>
+      ...
+  | <patt_n> -> <expr_n>
+   >>
+
+
+
+* conditional~:
+
+   
+<<code language='ocaml'|if%lwt <expr> then
+  <expr_1>
+else
+  <expr_2>
+   >>
+
+
+
+   and
+
+
+   
+<<code language='ocaml'|     if%lwt <expr> then <expr_1>
+   >>
+
+
+
+* exception raising~:
+
+   ~For all other expression~, the construct
+   
+<<code language='ocaml'|     [%lwt <expr>]
+   >>
+
+
+
+   is expanded to~:
+   
+<<code language='ocaml'|     Lwt.catch (fun () -> <expr>) Lwt.fail
+   >>
+
+
+
+   ~It allows to encode the old <<span class="odocwiki_inlinecode"|raise~_lwt ~<e~>>> as <<span class="odocwiki_inlinecode"|~[~%lwt raise ~<e~>~]>>~, and offers a convenient way to interact with non~-~Lwt code~.
+
+
+   
+==@@id="2_Debug"@@~Debug==
+
+
+
+   ~By default~, the debug mode is enabled~. ~This means that the <<span class="odocwiki_inlinecode"|backtrace>> versions of the <<span class="odocwiki_inlinecode"|bind>>~, <<span class="odocwiki_inlinecode"|finalize>> and <<span class="odocwiki_inlinecode"|catch>> functions are used~, enabling proper backtraces for the ~Lwt exceptions~.
+
+
+   ~The debug mode can be disabled with the option <<span class="odocwiki_inlinecode"|~-no~-debug>>~:
+
+
+   {{{
+$ ocamlfind ocamlc -package lwt.ppx \
+    -ppxopt lwt.ppx,-no-debug -linkpkg -o foo foo.ml
+}}}
+
+
+   
+==@@id="2_Sequence"@@~Sequence==
+
+
+
+   ~With ~O~Caml ~4~.~0~4~.~0 and on a convenient syntax is available for sequencing ~Lwt
+   operations using <<span class="odocwiki_inlinecode"|~;~%lwt>>~.  ~This allows free mixing of standard <<span class="odocwiki_inlinecode"|~;>>
+   sequencing and <<span class="odocwiki_inlinecode"|~;~%lwt>> sequencing without extra parentheses~:
+   
+<<code language='ocaml'|     let i = ref 0 in
+     write stdout "Hello, ";%lwt
+     incr i;
+     write stdout "world!"
+   >>
+
+
+
+   ~It is also possible to sequence ~Lwt operations with the <<span class="odocwiki_inlinecode"|~>~>>> operator~:
+   
+<<code language='ocaml'|     write stdout "Hello, " ~>> write stdout "world!"
+   >>
+
+
+
+   ~By default~, each operation must return <<span class="odocwiki_inlinecode"|unit ~Lwt~.t>>~. ~This constraint can be
+   lifted with the option <<span class="odocwiki_inlinecode"|~-no~-strict~-sequence>>~. ~The operator can be disabled
+   with the option <<span class="odocwiki_inlinecode"|~-no~-sequence>>~.
+
+
+   ~If you are mixing `~>~>` and `~;`~, you need to use parentheses or `begin`~/`end`
+   to get the result you expect~:
+
+
+   
+<<code language='ocaml'|     write stdout "Hello, " ~>> (ignore (); write stdout "world!")
+   >>
+
+
+
+   ~Note that unlike <<span class="odocwiki_inlinecode"|~>~>~=>>~, <<span class="odocwiki_inlinecode"|~>~>>> is not an ~O~Caml value~. it is a piece of syntax
+   added by the ppx rewriter ~- i~.e~.~, you cannot refer to <<span class="odocwiki_inlinecode"|~(~>~>~)>>~.
+
+
+   
+==@@id="2_Logging"@@~Logging==
+
+
+
+   ~The logging syntax extension is enabled with <<span class="odocwiki_inlinecode"|~-log>>~.
+   ~It will replace expressions of the form~:
+
+
+   
+<<code language='ocaml'|     Lwt_log.info_f ~section "x = %d" x
+   >>
+
+
+
+   by
+
+
+   
+<<code language='ocaml'|if Lwt_log.Section.level section <= Lwt_log.Info then
+  Lwt_log.info_f ~section "x = %d" x
+else
+  return ()
+   >>
+
+
+
+   ~Notes~:
+
+
+* ~The application must be complete~. ~For example~: <<span class="odocwiki_inlinecode"|~Log~.info "~%d">>
+   will make compilation fail~.
+
+* ~Debug messages are removed if the option <<span class="odocwiki_inlinecode"|~-no~-debug>> is passed~.
+
+<<pre id="VALmapper" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|mapper>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Migrate_parsetree>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_uid"|OCaml_404>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|Ast>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|Ast_mapper>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|mapper>>>>>>

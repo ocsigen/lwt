@@ -1,0 +1,16 @@
+=Module <<a_api_type | module Lwt_preemptive >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_preemptive: <<span class='code'|sig>><<a_api text=".." | module Lwt_preemptive >><<span class='code'|end>>>>~This module allows to mix preemptive threads with <<a_api | module Lwt >>
+   cooperative threads~. ~It maintains an extensible pool of preemptive
+   threads to with you can detach computations~.\\
+
+----
+<<div id="VALdetach" class="code"|<<span class="keyword"|val>> detach : <<span class="code type"|('a -> 'b) -> 'a -> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|detaches a computation to a preemptive thread~.\\
+>>
+<<div id="VALinit" class="code"|<<span class="keyword"|val>> init : <<span class="code type"|int -> int -> (string -> unit) -> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Should be called only once at the begining of the process~.
+    ~Arguments are~: minimum number of threads~, maximum number of threads
+    and the function to log errors~.\\
+>>
+<<div id="VALset_max_number_of_threads_queued" class="code"|<<span class="keyword"|val>> set~_max~_number~_of~_threads~_queued : <<span class="code type"|int -> unit>>>><<div class="info"|~Sets the size of the waiting queue~, if no more threads are available\\
+>>
+<<div id="VALget_max_number_of_threads_queued" class="code"|<<span class="keyword"|val>> get~_max~_number~_of~_threads~_queued : <<span class="code type"|unit -> int>>>><<div class="info"|~Returns the size of the waiting queue~, if no more threads are available\\
+>>

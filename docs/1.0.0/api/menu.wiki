@@ -1,0 +1,47 @@
+=~Ocsigen ~- ~Reference manual
+==~Ocsigen
+===~Persistent data~, writing in the logs~, configuration file extension~, ~Xhtml pretty printing
+====[[Ocsipersist|Ocsipersist]]
+====[[Ocsigen_messages|Ocsigen_messages]]
+====[[Ocsigen_parseconfig|Ocsigen_parseconfig]]
+====[[Simplexmlparser|Simplexmlparser]]
+====[[Xhtmlpretty|Xhtmlpretty]]
+====[[Xhtmlcompact|Xhtmlcompact]]
+===~Extending ~Ocsigen
+====[[Ocsigen_extensions|Ocsigen_extensions]]
+====[[Ocsigen_headers|Ocsigen_headers]]
+====[[Ocsigen_senders|Ocsigen_senders]]
+====[[Ocsigen_http_frame|Ocsigen_http_frame]]
+====[[Ocsigen_http_client|Ocsigen_http_client]]
+====[[Ocsigen_http_com|Ocsigen_http_com]]
+====[[Authbasic|Authbasic]]
+==~Lwt
+===[[Lwt|Lwt]]
+===[[Lwt_unix|Lwt_unix]]
+===[[Lwt_chan|Lwt_chan]]
+===[[Lwt_ssl|Lwt_ssl]]
+===[[Lwt_util|Lwt_util]]
+===[[Lwt_lib|Lwt_lib]]
+===[[Lwt_timeout|Lwt_timeout]]
+===[[Lwt_preemptive|Lwt_preemptive]]
+==~Eliom
+===~Main modules
+====[[Eliom_services|Eliom_services]]
+====[[Eliom_parameters|Eliom_parameters]]
+====[[Eliom_sessions|Eliom_sessions]]
+====[[Eliom_common|Eliom_common]]
+===~Generating pages with ~Ocaml~Duce
+====[[Eliom_duce|Eliom_duce]]
+====[[Xhtmltypes_duce|Xhtmltypes_duce]]
+====[[Eliom_duce_tools|Eliom_duce_tools]]
+===~Generating pages typed with polymorphic variants
+====[[Eliom_predefmod.Xhtml|Eliom_predefmod.Xhtml]]
+====[[XHTML|XHTML]]
+====[[Xhtmltypes|Xhtmltypes]]
+====[[Eliom_tools|Eliom_tools]]
+===~Other kinds of pages
+====[[Eliom_predefmod|Eliom_predefmod]]
+===~Creating your own kinds of pages
+====[[Eliom_mkforms|Eliom_mkforms]]
+====[[Eliom_mkreg|Eliom_mkreg]]
+====[[Xhtmlpretty|Xhtmlpretty]]

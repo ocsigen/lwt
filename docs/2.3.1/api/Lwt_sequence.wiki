@@ -1,0 +1,100 @@
+=Module <<a_api_type | module Lwt_sequence >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_sequence>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_sequence >><<span class="ocsforge_color_keyword"|end>>>>~Mutable sequence of elements\\
+
+----
+\\
+~A sequence is an object holding a list of elements which support
+    the following operations~:\\
+
+* adding an element to the left or the right in time and space ~O~(~1~)
+* taking an element from the left or the right in time and space ~O~(~1~)
+* removing a previously added element from a sequence in time and space ~O~(~1~)
+* removing an element while the sequence is being transversed~.
+
+\\
+<<pre class="ocsforge_color odocwiki_code" id="TYPEt"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_type"|'a>> <<span class="odocwiki_name"|t>>>><<div class="odocwiki_info"|~Type of a sequence holding values of type <<span class="odocwiki_inlinecode"|~'a>>\\
+>>
+<<pre class="ocsforge_color odocwiki_code" id="TYPEnode"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_type"|'a>> <<span class="odocwiki_name"|node>>>><<div class="odocwiki_info"|~Type of a node holding one value of type <<span class="odocwiki_inlinecode"|~'a>> in a sequence\\
+>>
+\\
+
+======@@id="6_Operationonnodes"@@~Operation on nodes======
+\\
+<<pre id="VALget" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|get>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="node" | type Lwt_sequence.node >> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|~Returns the contents of a node\\
+>>
+<<pre id="VALset" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|set>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="node" | type Lwt_sequence.node >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Change the contents of a node\\
+>>
+<<pre id="VALremove" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|remove>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="node" | type Lwt_sequence.node >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Removes a node from the sequence it is part of~. ~It does nothing
+      if the node has already been removed~.\\
+>>
+\\
+
+======@@id="6_Operationsonsequence"@@~Operations on sequence======
+\\
+<<pre id="VALcreate" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|create>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_sequence.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|create ~(~)>> creates a new empty sequence\\
+>>
+<<pre id="VALis_empty" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|is~_empty>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> bool>>>><<div class="odocwiki_info"|~Returns <<span class="odocwiki_inlinecode"|true>> iff the given sequence is empty\\
+>>
+<<pre id="VALlength" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|length>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> int>>>><<div class="odocwiki_info"|~Returns the number of elemenets in the given sequence~. ~This is a
+      ~O~(n~) operation where <<span class="odocwiki_inlinecode"|n>> is the number of elements in the
+      sequence~.\\
+>>
+<<pre id="VALadd_l" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|add~_l>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="node" | type Lwt_sequence.node >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|add~_l x s>> adds <<span class="odocwiki_inlinecode"|x>> to the left of the sequence <<span class="odocwiki_inlinecode"|s>>\\
+>>
+<<pre id="VALadd_r" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|add~_r>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="node" | type Lwt_sequence.node >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|add~_l x s>> adds <<span class="odocwiki_inlinecode"|x>> to the right of the sequence <<span class="odocwiki_inlinecode"|s>>\\
+>>
+<<pre id="EXCEPTIONEmpty" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|exception>> <<span class="odocwiki_name"|Empty>>>><<div class="odocwiki_info"|~Exception raised by <<span class="odocwiki_inlinecode"|take~_l>> and <<span class="odocwiki_inlinecode"|tale~_s>> and when the sequence
+      is empty\\
+>>
+<<pre id="VALtake_l" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|take~_l>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|take~_l x s>> remove and returns the leftmost element of <<span class="odocwiki_inlinecode"|s>>\\
+**Raises** {{{Empty}}} if the sequence is empty\\
+>>
+<<pre id="VALtake_r" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|take~_r>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|take~_l x s>> remove and returns the rightmost element of <<span class="odocwiki_inlinecode"|s>>\\
+**Raises** {{{Empty}}} if the sequence is empty\\
+>>
+<<pre id="VALtake_opt_l" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|take~_opt~_l>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a option>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|take~_opt~_l x s>> remove and returns <<span class="odocwiki_inlinecode"|~Some x>> where <<span class="odocwiki_inlinecode"|x>> is the
+      leftmost element of <<span class="odocwiki_inlinecode"|s>> or <<span class="odocwiki_inlinecode"|~None>> if <<span class="odocwiki_inlinecode"|s>> is empty\\
+>>
+<<pre id="VALtake_opt_r" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|take~_opt~_r>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a option>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|take~_opt~_l x s>> remove and returns <<span class="odocwiki_inlinecode"|~Some x>> where <<span class="odocwiki_inlinecode"|x>> is the
+      rightmost element of <<span class="odocwiki_inlinecode"|s>> or <<span class="odocwiki_inlinecode"|~None>> if <<span class="odocwiki_inlinecode"|s>> is empty\\
+>>
+<<pre id="VALtransfer_l" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|transfer~_l>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|transfer~_l s~1 s~2>> removes all elements of <<span class="odocwiki_inlinecode"|s~1>> and add them at
+      the left of <<span class="odocwiki_inlinecode"|s~2>>~. ~This operation runs in constant time and
+      space~.\\
+>>
+<<pre id="VALtransfer_r" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|transfer~_r>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|transfer~_r s~1 s~2>> removes all elements of <<span class="odocwiki_inlinecode"|s~1>> and add them at
+      the right of <<span class="odocwiki_inlinecode"|s~2>>~. ~This operation runs in constant time and
+      space~.\\
+>>
+\\
+
+======@@id="6_Sequenceiterators"@@~Sequence iterators======
+\\
+\\
+~Note~: it is ~O~K to remove a node while traversing a sequence\\
+<<pre id="VALiter_l" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|iter~_l>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|iter~_l f s>> applies <<span class="odocwiki_inlinecode"|f>> on all elements of <<span class="odocwiki_inlinecode"|s>> starting from
+      the left\\
+>>
+<<pre id="VALiter_r" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|iter~_r>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|iter~_l f s>> applies <<span class="odocwiki_inlinecode"|f>> on all elements of <<span class="odocwiki_inlinecode"|s>> starting from
+      the right\\
+>>
+<<pre id="VALiter_node_l" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|iter~_node~_l>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<a_api text="node" | type Lwt_sequence.node >> <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|iter~_l f s>> applies <<span class="odocwiki_inlinecode"|f>> on all nodes of <<span class="odocwiki_inlinecode"|s>> starting from
+      the left\\
+>>
+<<pre id="VALiter_node_r" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|iter~_node~_r>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<a_api text="node" | type Lwt_sequence.node >> <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|iter~_l f s>> applies <<span class="odocwiki_inlinecode"|f>> on all nodes of <<span class="odocwiki_inlinecode"|s>> starting from
+      the right\\
+>>
+<<pre id="VALfold_l" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|fold~_l>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_delimiter"| -> >> 'b<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_delimiter"| -> >> 'b>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|fold~_l f s>> is~:
+      
+<<code language='ocaml'|        fold_l f s x = f en (... (f e2 (f e1 x)))
+      >>
+
+      where <<span class="odocwiki_inlinecode"|e~1>>~, <<span class="odocwiki_inlinecode"|e~2>>~, ~.~.~.~, <<span class="odocwiki_inlinecode"|en>> are the elements of <<span class="odocwiki_inlinecode"|s>>\\
+>>
+<<pre id="VALfold_r" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|fold~_r>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_delimiter"| -> >> 'b<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_delimiter"| -> >> 'b>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|fold~_r f s>> is~:
+      
+<<code language='ocaml'|        fold_r f s x = f e1 (f e2 (... (f en x)))
+      >>
+
+      where <<span class="odocwiki_inlinecode"|e~1>>~, <<span class="odocwiki_inlinecode"|e~2>>~, ~.~.~.~, <<span class="odocwiki_inlinecode"|en>> are the elements of <<span class="odocwiki_inlinecode"|s>>\\
+>>

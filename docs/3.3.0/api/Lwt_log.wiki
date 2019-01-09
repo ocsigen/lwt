@@ -1,0 +1,85 @@
+=Module <<a_api_type | module Lwt_log >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_log>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_log >><<span class="ocsforge_color_keyword"|end>>>>~Logging functions
+
+
+    ~This module provides logging functions~. ~It is actually a thin extension of
+    <<a_api | module Lwt_log_core >>~, adding logging destinations that are only available on ~Unix
+    and ~Windows ~(such as files~, standard output~, and the system log~)~. ~Being a
+    thin extension~, most of the functions in this module are actually the ones
+    in <<a_api | module Lwt_log_core >>~. ~They are not repeated on this page~, however~, so please
+    read both <<a_api | module Lwt_log_core >> //and// this page for a complete understanding~.
+
+
+    ~Here is a simple~, self~-contained usage example~:
+
+
+
+<<code language='ocaml'|let () =
+  Lwt_log.default :=
+    Lwt_log.channel
+      ~template:"$(date).$(milliseconds) [$(level)] $(message)"
+      ~close_mode:`Keep
+      ~channel:Lwt_io.stdout
+      ();
+
+  Lwt_log.add_rule "*" Lwt_log.Info;
+
+  Lwt_main.run begin
+    Lwt_log.info "Hello world!"
+  end
+
+(* ocamlfind opt -linkpkg -package lwt.unix log_example.ml && ./a.out *)
+>>
+
+
+
+    ~As an alternative to this module~, we suggest trying
+    [[ http://erratique.ch/software/logs/doc/Logs_lwt.html|<<span class="odocwiki_inlinecode"|~Logs~_lwt>>]] from the
+    [[ http://erratique.ch/software/logs| <<span class="odocwiki_inlinecode"|logs>>]] library~.
+
+----
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|include>> <<a_api | module Lwt_log_core >>>>
+<<pre id="VALrender" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|render>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_label"| buffer: >><<span class="ocsforge_color_uid"|Buffer>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| template: >>template <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| section: >>section <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_label"| level: >>level <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_label"| message: >>string <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Same as <<a_api | val Lwt_log_core.render >>~, except that the template may also contain the
+      following variables~:
+
+
+* <<span class="odocwiki_inlinecode"|date>>~, which will be replaced with the current local date and time~,
+* <<span class="odocwiki_inlinecode"|milliseconds>>~, which will be replaced by the fractional part of the current ~Unix
+        time~, to millisecond accuracy~.
+
+      ~For example~:
+* <<span class="odocwiki_inlinecode"|"~$~(date~) ~$~(name~)~[~$~(pid~)~]~: ~$~(message~)">>
+* <<span class="odocwiki_inlinecode"|"~$~(date~)~.~$~(milliseconds~) ~$~(name~)~[~$~(pid~)~]~: ~$~(message~)">>
+* <<span class="odocwiki_inlinecode"|"~$~(date~)~: ~$~(loc~-file~)~: ~$~(loc~-line~)~: ~$~(loc~-column~)~: ~$~(message~)">>
+
+>>
+<<pre class="ocsforge_color odocwiki_code" id="TYPEsyslog_facility"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|syslog~_facility>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_type"|\\  [ `Auth\\  | `Authpriv\\  | `Console\\  | `Cron\\  | `Daemon\\  | `FTP\\  | `Kernel\\  | `LPR\\  | `Local0\\  | `Local1\\  | `Local2\\  | `Local3\\  | `Local4\\  | `Local5\\  | `Local6\\  | `Local7\\  | `Mail\\  | `NTP\\  | `News\\  | `Security\\  | `Syslog\\  | `UUCP\\  | `User ]>> >><<div class="odocwiki_info"|~Syslog facility~. ~Look at the ~S~Y~S~L~O~G~(~3~) man page for a description
+    of syslog facilities
+>>
+<<pre id="VALsyslog" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|syslog>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_label"| ?template: >>template <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?paths: >>string list <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| facility: >><<a_api text="syslog_facility" | type Lwt_log.syslog_facility >> <<span class="ocsforge_color_delimiter"| -> >> unit <<span class="ocsforge_color_delimiter"| -> >> logger>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|syslog ~?template ~?paths ~~facility ~(~)>> creates an logger
+      which send message to the system logger~.
+>>
+<<div class="odocwiki_param_info"|<<span class="code"|template>> : defaults to <<span class="odocwiki_inlinecode"|"~$~(date~) ~$~(name~)~[~$~(pid~)~]~: ~$~(section~)~: ~$~(message~)">>>>
+<<div class="odocwiki_param_info"|<<span class="code"|paths>> : is a list of path to try for the syslogd socket~. ~It
+             default to <<span class="odocwiki_inlinecode"|~["~/dev~/log"~; "~/var~/run~/log"~]>>~.>>
+<<pre id="VALfile" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|file>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_label"| ?template: >>template <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?mode: >>[ `Append | `Truncate ] <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?perm: >><<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|file_perm>> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_label"| file_name: >>string <<span class="ocsforge_color_delimiter"| -> >> unit <<span class="ocsforge_color_delimiter"| -> >> logger <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|desf~_file ~?template ~?mode ~?perm ~~file~_name ~(~)>> creates an
+      logger which will write messages to <<span class="odocwiki_inlinecode"|file~_name>>~.
+
+
+* if <<span class="odocwiki_inlinecode"|mode ~= `~Truncate>> then the file is truncated and previous
+      contents will be lost~.
+
+* if <<span class="odocwiki_inlinecode"|mode ~= `~Append>>~, new messages will be appended at the end
+      of the file
+
+>>
+<<div class="odocwiki_param_info"|<<span class="code"|template>> : defaults to <<span class="odocwiki_inlinecode"|"~$~(date~)~: ~$~(section~)~: ~$~(message~)">>>>
+<<div class="odocwiki_param_info"|<<span class="code"|mode>> : defaults to <<span class="odocwiki_inlinecode"|`~Append>>>>
+<<pre id="VALchannel" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|channel>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_label"| ?template: >>template <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| close_mode: >>[ `Close | `Keep ] <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| channel: >><<a_api text="Lwt_io.output_channel" | type Lwt_io.output_channel >> <<span class="ocsforge_color_delimiter"| -> >> unit <<span class="ocsforge_color_delimiter"| -> >> logger>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|channel ~?template ~~close~_mode ~~channel ~(~)>> creates a logger
+      from a channel~.
+
+
+      ~If <<span class="odocwiki_inlinecode"|close~_mode ~= `~Close>> then <<span class="odocwiki_inlinecode"|channel>> is closed when the
+      logger is closed~, otherwise it is left open~.
+>>
+<<div class="odocwiki_param_info"|<<span class="code"|template>> : defaults to <<span class="odocwiki_inlinecode"|"~$~(name~)~: ~$~(section~)~: ~$~(message~)">>>>

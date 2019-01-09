@@ -1,0 +1,7 @@
+=Module <<a_api_type | module Lwt_log_rules >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_log_rules: <<span class='code'|sig>><<a_api text=".." | module Lwt_log_rules >><<span class='code'|end>>>>~Logging rules parsing\\
+
+----
+<<div id="VALrules" class="code"|<<span class="keyword"|val>> rules : <<span class="code type"|Lexing.lexbuf -> (string * string) list>>>><<div class="info"|<<span class='code'|parse lexbuf>> returns the list of rules contained in
+      <<span class='code'|lexbuf>>\\
+>>

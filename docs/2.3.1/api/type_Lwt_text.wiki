@@ -1,0 +1,71 @@
+<<code language="ocaml" | sig
+  type 'a channel
+  type input_channel = Lwt_io.input Lwt_text.channel
+  type output_channel = Lwt_io.output Lwt_text.channel
+  val make :
+    ?strict:bool ->
+    ?encoding:Encoding.t -> 'a Lwt_io.channel -> 'a Lwt_text.channel
+  val byte_channel : 'a Lwt_text.channel -> 'a Lwt_io.channel
+  val encoding : 'a Lwt_text.channel -> Encoding.t
+  val flush : Lwt_text.output_channel -> unit Lwt.t
+  val close : 'a Lwt_text.channel -> unit Lwt.t
+  val atomic :
+    ('a Lwt_text.channel -> 'b Lwt.t) -> 'a Lwt_text.channel -> 'b Lwt.t
+  val stdin : Lwt_text.input_channel
+  val stdout : Lwt_text.output_channel
+  val stderr : Lwt_text.output_channel
+  val zero : Lwt_text.input_channel
+  val null : Lwt_text.output_channel
+  val read_char : Lwt_text.input_channel -> Text.t Lwt.t
+  val read_char_opt : Lwt_text.input_channel -> Text.t option Lwt.t
+  val read_chars : Lwt_text.input_channel -> Text.t Lwt_stream.t
+  val read_line : Lwt_text.input_channel -> Text.t Lwt.t
+  val read_line_opt : Lwt_text.input_channel -> Text.t option Lwt.t
+  val read_lines : Lwt_text.input_channel -> Text.t Lwt_stream.t
+  val read : ?count:int -> Lwt_text.input_channel -> Text.t Lwt.t
+  val write_char : Lwt_text.output_channel -> Text.t -> unit Lwt.t
+  val write_chars :
+    Lwt_text.output_channel -> Text.t Lwt_stream.t -> unit Lwt.t
+  val write : Lwt_text.output_channel -> Text.t -> unit Lwt.t
+  val write_line : Lwt_text.output_channel -> Text.t -> unit Lwt.t
+  val write_lines :
+    Lwt_text.output_channel -> Text.t Lwt_stream.t -> unit Lwt.t
+  val open_file :
+    ?buffer_size:int ->
+    ?strict:bool ->
+    ?encoding:Encoding.t ->
+    ?flags:Unix.open_flag list ->
+    ?perm:Unix.file_perm ->
+    mode:'a Lwt_io.mode -> Lwt_io.file_name -> 'a Lwt_text.channel Lwt.t
+  val with_file :
+    ?buffer_size:int ->
+    ?strict:bool ->
+    ?encoding:Encoding.t ->
+    ?flags:Unix.open_flag list ->
+    ?perm:Unix.file_perm ->
+    mode:'a Lwt_io.mode ->
+    Lwt_io.file_name -> ('a Lwt_text.channel -> 'b Lwt.t) -> 'b Lwt.t
+  val lines_of_file : Lwt_io.file_name -> Text.t Lwt_stream.t
+  val lines_to_file : Lwt_io.file_name -> Text.t Lwt_stream.t -> unit Lwt.t
+  val chars_of_file : Lwt_io.file_name -> Text.t Lwt_stream.t
+  val chars_to_file : Lwt_io.file_name -> Text.t Lwt_stream.t -> unit Lwt.t
+  val fprint : Lwt_text.output_channel -> Text.t -> unit Lwt.t
+  val fprintl : Lwt_text.output_channel -> Text.t -> unit Lwt.t
+  val fprintf :
+    Lwt_text.output_channel ->
+    ('a, unit, Text.t, unit Lwt.t) Pervasives.format4 -> 'a
+  val fprintlf :
+    Lwt_text.output_channel ->
+    ('a, unit, Text.t, unit Lwt.t) Pervasives.format4 -> 'a
+  val print : Text.t -> unit Lwt.t
+  val printl : Text.t -> unit Lwt.t
+  val printf : ('a, unit, Text.t, unit Lwt.t) Pervasives.format4 -> 'a
+  val printlf : ('a, unit, Text.t, unit Lwt.t) Pervasives.format4 -> 'a
+  val eprint : Text.t -> unit Lwt.t
+  val eprintl : Text.t -> unit Lwt.t
+  val eprintf : ('a, unit, Text.t, unit Lwt.t) Pervasives.format4 -> 'a
+  val eprintlf : ('a, unit, Text.t, unit Lwt.t) Pervasives.format4 -> 'a
+  val hexdump_stream :
+    Lwt_text.output_channel -> char Lwt_stream.t -> unit Lwt.t
+  val hexdump : Lwt_text.output_channel -> string -> unit Lwt.t
+end >>

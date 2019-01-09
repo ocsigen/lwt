@@ -1,0 +1,224 @@
+=Module <<a_api_type | module Lwt_term >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_term>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_term >><<span class="ocsforge_color_keyword"|end>>>>~Terminal control
+
+----
+
+~This modules allow you to write interactive programs using the
+    terminal~.
+<<pre id="VALwith_raw_mode" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|with~_raw~_mode>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|with~_raw~_mode f>> executes <<span class="odocwiki_inlinecode"|f>> while the terminal is in ``raw
+      mode~'~'~. ~Raw mode means that character are returned as the user
+      type them ~(otherwise only complete line are returned to the
+      program~)~.
+
+
+      ~If the terminal is already in raw mode~, it just calls <<span class="odocwiki_inlinecode"|f>>~.
+>>
+<<pre id="VALraw_mode" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|raw~_mode>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> bool>>>><<div class="odocwiki_info"|~Returns wether the terminal is currently in raw mode
+>>
+<<pre id="VALenter_drawing_mode" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|enter~_drawing~_mode>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Put the terminal into drawing mode
+>>
+<<pre id="VALleave_drawing_mode" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|leave~_drawing~_mode>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Restore the state of the terminal
+>>
+<<pre id="VALshow_cursor" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|show~_cursor>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|show~_cursor ~(~)>> makes the cursor visible
+>>
+<<pre id="VALhide_cursor" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|hide~_cursor>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|hide~_cursor ~(~)>> makes the cursor invisible
+>>
+<<pre id="VALclear_screen" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|clear~_screen>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|clear~_screen ~(~)>> clears the entire screen
+>>
+<<pre id="VALclear_line" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|clear~_line>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|clear~_line ~(~)>> clears the current line
+>>
+<<pre id="VALgoto_beginning_of_line" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|goto~_beginning~_of~_line>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|goto~_beginning~_of~_line n>> put the cursor at the beginning of
+      the <<span class="odocwiki_inlinecode"|n>>th previous line~.
+
+
+* <<span class="odocwiki_inlinecode"|goto~_beginning~_of~_line ~0>> goes to the beginning of the current line
+* <<span class="odocwiki_inlinecode"|goto~_beginning~_of~_line ~1>> goes to the beginning of the previous line
+* ~.~.~.
+
+>>
+
+
+======@@id="6_Terminalinformations"@@~Terminal informations======
+
+<<pre class="ocsforge_color odocwiki_code" id="TYPEsize"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|size>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="ocsforge_color_delimiter"|~{>>
+<<span class="odocwiki_record"|<<span class="odocwiki_field"|<<span class="odocwiki_field_descr"|  <<span class="ocsforge_color_label"|lines:>> <<span class="odocwiki_type"|int>><<span class="ocsforge_color_delimiter"|~;>> >>>><<span class="odocwiki_field"|<<span class="odocwiki_field_descr"|  <<span class="ocsforge_color_label"|columns:>> <<span class="odocwiki_type"|int>><<span class="ocsforge_color_delimiter"|~;>> >>>>>><<span class="ocsforge_color_delimiter"|~}>>>><<div class="odocwiki_info"|~Terminal sizes~:
+>>
+<<pre id="VALsize" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|size>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="size" | type Lwt_term.size >> <<span class="ocsforge_color_uid"|React>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|signal>>>>>><<div class="odocwiki_info"|~Size of the terminal~.
+>>
+<<pre id="VALcolumns" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|columns>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int <<span class="ocsforge_color_uid"|React>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|signal>>>>>><<div class="odocwiki_info"|~Number of columns of the terminal
+>>
+<<pre id="VALlines" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|lines>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int <<span class="ocsforge_color_uid"|React>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|signal>>>>>><<div class="odocwiki_info"|~Number of lines of the terminal
+>>
+
+
+======@@id="6_Keys"@@~Keys======
+
+<<pre id="VALparse_key_raw" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|parse~_key~_raw>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>> <<a_api text="Lwt_stream.t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|parse~_key~_raw st>> recognize escape sequence in a stream of
+      unicode character~.
+
+
+      ~It returns either~:
+* either single characters~, like <<span class="odocwiki_inlinecode"|"a">>~, <<span class="odocwiki_inlinecode"|"é">>~, ~.~.~.
+* either escape sequences
+
+>>
+<<pre class="ocsforge_color odocwiki_code" id="TYPEkey"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|key>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_variants"|<<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Key>> <<span class="ocsforge_color_keyword"|of>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>>>>>><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|~A unicode character or an uninterpreted sequence>><<span class="odocwiki_comments_close"| ~*)>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Key_up>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Key_down>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Key_left>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Key_right>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Key_f>> <<span class="ocsforge_color_keyword"|of>> <<span class="odocwiki_type"|int>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Key_next_page>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Key_previous_page>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Key_home>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Key_end>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Key_insert>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Key_delete>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Key_control>> <<span class="ocsforge_color_keyword"|of>> <<span class="odocwiki_type"|char>>>><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|~A control key>><<span class="odocwiki_comments_close"| ~*)>>>>>>>>>><<div class="odocwiki_info"|~Type of ``decoded~'~' keys~.
+
+
+    ~This list is not exhaustive~, but at least it should works on all
+    terminals~:
+>>
+<<pre id="VALstring_of_key" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|string~_of~_key>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="key" | type Lwt_term.key >> <<span class="ocsforge_color_delimiter"| -> >> string>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|string~_of~_key key>> string representation of a key
+>>
+<<pre id="VALcontrol_mapping" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|control~_mapping>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>int * char<<span class="ocsforge_color_delimiter"| ) >> list>>>><<div class="odocwiki_info"|~Mapping from control key codes to character codes~.
+
+
+      ~Here is the list of control keys~:
+
+
+      
+<<code language='ocaml'|        +------+-------+------+------+------+-------+------------------------------------------------+
+        | Char |   Oct |  Dec | Name |  Hex |  Key  | Comment                                        |
+        +------+-------+------+------+------+-------+------------------------------------------------+
+        |  '@' |  0o00 |    0 |  NUL | 0x00 | ^@ \0 | Null byte                                      |
+        |  'a' |  0o01 |    1 |  SOH | 0x01 | ^A    | Start of heading                               |
+        |  'b' |  0o02 |    2 |  STX | 0x02 | ^B    | Start of text                                  |
+        |  'c' |  0o03 |    3 |  ETX | 0x03 | ^C    | End of text                                    |
+        |  'd' |  0o04 |    4 |  EOT | 0x04 | ^D    | End of transmission                            |
+        |  'e' |  0o05 |    5 |  ENQ | 0x05 | ^E    | Enquiry                                        |
+        |  'f' |  0o06 |    6 |  ACK | 0x06 | ^F    | Acknowledge                                    |
+        |  'g' |  0o07 |    7 |  BEL | 0x07 | ^G    | Ring terminal bell                             |
+        |  'h' |  0o10 |    8 |   BS | 0x08 | ^H \b | Backspace                                      |
+        |  'i' |  0o11 |    9 |   HT | 0x09 | ^I \t | Horizontal tab                                 |
+        |  'j' |  0o12 |   10 |   LF | 0x0a | ^J \n | Line feed                                      |
+        |  'k' |  0o13 |   11 |   VT | 0x0b | ^K    | Vertical tab                                   |
+        |  'l' |  0o14 |   12 |   FF | 0x0c | ^L \f | Form feed                                      |
+        |  'm' |  0o15 |   13 |   CR | 0x0d | ^M \r | Carriage return                                |
+        |  'n' |  0o16 |   14 |   SO | 0x0e | ^N    | Shift out                                      |
+        |  'o' |  0o17 |   15 |   SI | 0x0f | ^O    | Shift in                                       |
+        |  'p' |  0o20 |   16 |  DLE | 0x10 | ^P    | Data link escape                               |
+        |  'q' |  0o21 |   17 |  DC1 | 0x11 | ^Q    | Device control 1 (XON)                         |
+        |  'r' |  0o22 |   18 |  DC2 | 0x12 | ^R    | Device control 2                               |
+        |  's' |  0o23 |   19 |  DC3 | 0x13 | ^S    | Device control 3 (XOFF)                        |
+        |  't' |  0o24 |   20 |  DC4 | 0x14 | ^T    | Device control 4                               |
+        |  'u' |  0o25 |   21 |  NAK | 0x15 | ^U    | Negative acknowledge                           |
+        |  'v' |  0o26 |   22 |  SYN | 0x16 | ^V    | Synchronous idle                               |
+        |  'w' |  0o27 |   23 |  ETB | 0x17 | ^W    | End of transmission block                      |
+        |  'x' |  0o30 |   24 |  CAN | 0x18 | ^X    | Cancel                                         |
+        |  'y' |  0o31 |   25 |   EM | 0x19 | ^Y    | End of medium                                  |
+        |  'z' |  0o32 |   26 |  SUB | 0x1a | ^Z    | Substitute character                           |
+        |  '[' |  0o33 |   27 |  ESC | 0x1b | ^[    | Escape                                         |
+        |  '\' |  0o34 |   28 |   FS | 0x1c | ^\    | File separator, Information separator four     |
+        |  ']' |  0o35 |   29 |   GS | 0x1d | ^]    | Group separator, Information separator three   |
+        |  '^' |  0o36 |   30 |   RS | 0x1e | ^^    | Record separator, Information separator two    |
+        |  '_' |  0o37 |   31 |   US | 0x1f | ^_    | Unit separator, Information separator one      |
+        |  '?' | 0o177 |  127 |  DEL | 0x7f | ^?    | Delete                                         |
+        +------+-------+------+------+------+-------+------------------------------------------------+
+      >>
+
+>>
+<<pre id="VALkey_enter" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|key~_enter>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="key" | type Lwt_term.key >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|key~_enter ~= ~Key~_control ~'j~'>>
+>>
+<<pre id="VALkey_escape" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|key~_escape>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="key" | type Lwt_term.key >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|key~_escape ~= ~Key~_control ~'~[~'>>
+>>
+<<pre id="VALkey_tab" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|key~_tab>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="key" | type Lwt_term.key >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|key~_escape ~= ~Key~_control ~'i~'>>
+>>
+<<pre id="VALkey_backspace" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|key~_backspace>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="key" | type Lwt_term.key >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|key~_backspace ~= ~Key~_control ~'~?~'>>
+>>
+<<pre id="VALsequence_mapping" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|sequence~_mapping>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >><<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>> * <<a_api text="key" | type Lwt_term.key >><<span class="ocsforge_color_delimiter"| ) >> list>>>><<div class="odocwiki_info"|~Mapping from sequence to keys
+>>
+<<pre id="VALdecode_key" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|decode~_key>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="key" | type Lwt_term.key >>>>>><<div class="odocwiki_info"|~Decode a key~.
+>>
+<<pre id="VALstandard_input" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|standard~_input>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>> <<a_api text="Lwt_stream.t" | type Lwt_stream.t >>>>>><<div class="odocwiki_info"|~The input stream used by <<a_api | val Lwt_term.read_key >>
+>>
+<<pre id="VALread_key" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|read~_key>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="key" | type Lwt_term.key >> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Get and decode a key from <<a_api | val Lwt_term.standard_input >>
+>>
+
+
+======@@id="6_Styles"@@~Styles======
+
+<<pre class="ocsforge_color odocwiki_code" id="TYPEcolor"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|color>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_type"|int>> >><<div class="odocwiki_info"|~Type of a color~. ~Most modern terminals support either ~8~8 or
+        ~2~5~6 colors~.
+>>
+<<pre id="VALset_color" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|set~_color>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >> <<span class="ocsforge_color_delimiter"| -> >> int * int * int <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|set~_color num ~(red~, green~, blue~)>> sets the three components of
+      the color number <<span class="odocwiki_inlinecode"|num>>
+>>
+
+
+<<div class="h8"| ~Standard colors>>
+
+<<pre id="VALdefault" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|default>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >>>>>><<pre id="VALblack" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|black>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >>>>>><<pre id="VALred" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|red>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >>>>>><<pre id="VALgreen" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|green>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >>>>>><<pre id="VALyellow" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|yellow>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >>>>>><<pre id="VALblue" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|blue>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >>>>>><<pre id="VALmagenta" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|magenta>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >>>>>><<pre id="VALcyan" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|cyan>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >>>>>><<pre id="VALwhite" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|white>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >>>>>>
+
+<<div class="h8"| ~Light colors>>
+
+
+~Note~: these colors are not supposed to works on all terminals~, but
+    in practice it works with all modern ones~. ~By the way~, using
+    standard colors ~+ bold mode will give the same result as using a
+    light color~.
+<<pre id="VALlblack" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|lblack>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >>>>>><<pre id="VALlred" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|lred>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >>>>>><<pre id="VALlgreen" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|lgreen>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >>>>>><<pre id="VALlyellow" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|lyellow>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >>>>>><<pre id="VALlblue" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|lblue>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >>>>>><<pre id="VALlmagenta" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|lmagenta>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >>>>>><<pre id="VALlcyan" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|lcyan>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >>>>>><<pre id="VALlwhite" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|lwhite>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >>>>>>
+
+<<div class="h8"| ~Text with styles>>
+
+<<pre class="ocsforge_color odocwiki_code" id="TYPEstyled_text_instruction"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|styled~_text~_instruction>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_variants"|<<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Text>> <<span class="ocsforge_color_keyword"|of>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>>>>>><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|~Some text>><<span class="odocwiki_comments_close"| ~*)>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Reset>>>><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|~Resets all styles to default>><<span class="odocwiki_comments_close"| ~*)>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Bold>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Underlined>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Blink>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Inverse>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Hidden>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Foreground>> <<span class="ocsforge_color_keyword"|of>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >>>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Background>> <<span class="ocsforge_color_keyword"|of>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >>>>>>>>>>>><<div class="odocwiki_info"|~Elmement of a styled~-text
+>>
+<<pre class="ocsforge_color odocwiki_code" id="TYPEstyled_text"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|styled~_text>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_type"|<<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >> list>> >><<div class="odocwiki_info"|~A styled text is a list of instructions
+>>
+<<pre id="VALtextf" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|textf>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_delimiter"| ( >>'a, unit, string, <<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >><<span class="ocsforge_color_delimiter"| ) >>\\  <<span class="ocsforge_color_uid"|Pervasives>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|format4>> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|textf fmt>> formats a texts with <<span class="odocwiki_inlinecode"|fmt>> and returns <<span class="odocwiki_inlinecode"|~Text txt>>
+>>
+<<pre id="VALtext" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|text>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >>>>>><<pre id="VALreset" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|reset>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >>>>>><<pre id="VALbold" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|bold>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >>>>>><<pre id="VALunderlined" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|underlined>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >>>>>><<pre id="VALblink" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|blink>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >>>>>><<pre id="VALinverse" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|inverse>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >>>>>><<pre id="VALhidden" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|hidden>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >>>>>><<pre id="VALfg" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|fg>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|fg col ~= ~Foreground col>>
+>>
+<<pre id="VALbg" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|bg>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="styled_text_instruction" | type Lwt_term.styled_text_instruction >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|bg col ~= ~Background col>>
+>>
+<<pre id="VALstrip_styles" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|strip~_styles>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="styled_text" | type Lwt_term.styled_text >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>>>>>><<div class="odocwiki_info"|~Drop all styles
+>>
+<<pre id="VALstyled_length" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|styled~_length>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="styled_text" | type Lwt_term.styled_text >> <<span class="ocsforge_color_delimiter"| -> >> int>>>><<div class="odocwiki_info"|~Returns the length ~(in unicode character~) of the given styled
+      text~. ~The following equality holds for all styled~-texts~:
+
+
+      <<span class="odocwiki_inlinecode"|styled~_length st ~= ~Text~.length ~(strip~_styles st~)>>
+>>
+<<pre id="VALwrite_styled" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|write~_styled>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="Lwt_text.output_channel" | type Lwt_text.output_channel >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="styled_text" | type Lwt_term.styled_text >> <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|write~_styled oc st>> writes <<span class="odocwiki_inlinecode"|st>> on <<span class="odocwiki_inlinecode"|oc>> using escape
+      sequences~.
+>>
+<<pre id="VALprintc" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|printc>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="styled_text" | type Lwt_term.styled_text >> <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|printc st>> prints the given styled text on standard output~. ~If
+      stdout is not a tty~, then styles are stripped~.
+
+
+      ~The text is encoded to the system encoding before being
+      output~.
+>>
+<<pre id="VALeprintc" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|eprintc>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="styled_text" | type Lwt_term.styled_text >> <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Same as <<span class="odocwiki_inlinecode"|printc>> but prints on stderr~.
+>>
+<<pre id="VALprintlc" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|printlc>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="styled_text" | type Lwt_term.styled_text >> <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|printlc st>> prints <<span class="odocwiki_inlinecode"|st>>~, then reset styles and prints a
+      newline
+>>
+<<pre id="VALeprintlc" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|eprintlc>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="styled_text" | type Lwt_term.styled_text >> <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Same as <<span class="odocwiki_inlinecode"|printlc>> but prints on stderr
+>>
+
+
+======@@id="6_Rendering"@@~Rendering======
+
+<<pre class="ocsforge_color odocwiki_code" id="TYPEstyle"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|style>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="ocsforge_color_delimiter"|~{>>
+<<span class="odocwiki_record"|<<span class="odocwiki_field"|<<span class="odocwiki_field_descr"|  <<span class="ocsforge_color_label"|bold:>> <<span class="odocwiki_type"|bool>><<span class="ocsforge_color_delimiter"|~;>> >>>><<span class="odocwiki_field"|<<span class="odocwiki_field_descr"|  <<span class="ocsforge_color_label"|underlined:>> <<span class="odocwiki_type"|bool>><<span class="ocsforge_color_delimiter"|~;>> >>>><<span class="odocwiki_field"|<<span class="odocwiki_field_descr"|  <<span class="ocsforge_color_label"|blink:>> <<span class="odocwiki_type"|bool>><<span class="ocsforge_color_delimiter"|~;>> >>>><<span class="odocwiki_field"|<<span class="odocwiki_field_descr"|  <<span class="ocsforge_color_label"|inverse:>> <<span class="odocwiki_type"|bool>><<span class="ocsforge_color_delimiter"|~;>> >>>><<span class="odocwiki_field"|<<span class="odocwiki_field_descr"|  <<span class="ocsforge_color_label"|hidden:>> <<span class="odocwiki_type"|bool>><<span class="ocsforge_color_delimiter"|~;>> >>>><<span class="odocwiki_field"|<<span class="odocwiki_field_descr"|  <<span class="ocsforge_color_label"|foreground:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >>>><<span class="ocsforge_color_delimiter"|~;>> >>>><<span class="odocwiki_field"|<<span class="odocwiki_field_descr"|  <<span class="ocsforge_color_label"|background:>> <<span class="odocwiki_type"|<<a_api text="color" | type Lwt_term.color >>>><<span class="ocsforge_color_delimiter"|~;>> >>>>>><<span class="ocsforge_color_delimiter"|~}>>>><<div class="odocwiki_info"|~Character styles
+>>
+<<pre class="ocsforge_color odocwiki_code" id="TYPEpoint"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|point>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="ocsforge_color_delimiter"|~{>>
+<<span class="odocwiki_record"|<<span class="odocwiki_field"|<<span class="odocwiki_field_descr"|  <<span class="ocsforge_color_label"|char:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Text>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>>>><<span class="ocsforge_color_delimiter"|~;>> >><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|~The character~.>><<span class="odocwiki_comments_close"| ~*)>>>>>><<span class="odocwiki_field"|<<span class="odocwiki_field_descr"|  <<span class="ocsforge_color_label"|style:>> <<span class="odocwiki_type"|<<a_api text="style" | type Lwt_term.style >>>><<span class="ocsforge_color_delimiter"|~;>> >><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|~The character style>><<span class="odocwiki_comments_close"| ~*)>>>>>>>><<span class="ocsforge_color_delimiter"|~}>>>><<div class="odocwiki_info"|~A character on the screen~:
+>>
+<<pre id="VALblank" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|blank>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="point" | type Lwt_term.point >>>>>><<div class="odocwiki_info"|~A space with default color and styles
+>>
+<<pre id="VALrender" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|render>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="point" | type Lwt_term.point >> array array <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Render an offscreen array to the terminal~.
+>>
+<<pre id="VALrender_update" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|render~_update>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="point" | type Lwt_term.point >> array array <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="point" | type Lwt_term.point >> array array <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|render~_update displayed to~_display>> does the same as <<span class="odocwiki_inlinecode"|render
+      to~_display>> but assumes that <<span class="odocwiki_inlinecode"|displayed>> contains the current
+      displayed text~. ~This reduces the amount of text sent to the
+      terminal~.
+>>
+
+
+======@@id="6_Drawing"@@~Drawing======
+
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<a_api text="Zone" | module Lwt_term.Zone >> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_term.Zone >><<span class="ocsforge_color_keyword"|end>>>><<div class="odocwiki_info"|~Off~-screen zones
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<a_api text="Draw" | module Lwt_term.Draw >> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_term.Draw >><<span class="ocsforge_color_keyword"|end>>>><<div class="odocwiki_info"|~Drawing helpers
+>>

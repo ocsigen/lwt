@@ -1,0 +1,4 @@
+<<code language="ocaml" | sig
+  val finalise : ('a -> unit Lwt.t) -> 'a -> unit
+  val finalise_or_exit : ('a -> unit Lwt.t) -> 'a -> unit
+end >>

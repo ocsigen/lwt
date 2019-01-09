@@ -1,0 +1,11 @@
+<<code language="ocaml" | sig
+  type t
+  val default : Lwt_engine.Ev_backend.t
+  val select : Lwt_engine.Ev_backend.t
+  val poll : Lwt_engine.Ev_backend.t
+  val epoll : Lwt_engine.Ev_backend.t
+  val kqueue : Lwt_engine.Ev_backend.t
+  val devpoll : Lwt_engine.Ev_backend.t
+  val port : Lwt_engine.Ev_backend.t
+  val pp : Format.formatter -> Lwt_engine.Ev_backend.t -> unit
+end >>

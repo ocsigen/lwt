@@ -1,0 +1,16 @@
+=Class virtual <<a_api_type | class Lwt_engine.select_based >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span name="TYPEselect_based"|<<span class="ocsforge_color_keyword"|class>> <<span class="ocsforge_color_keyword"|virtual>> <<span class="ocsforge_color_name"|select_based>>>> <<span class="ocsforge_color_delimiter"|~:>>  <<span class="ocsforge_color_keyword"|object>><<a_api text=".." | class Lwt_engine.select_based >><<span class="ocsforge_color_keyword"|end>>>>~Abstract class for engines based on a select~-like function~.
+**~Inherits**
+* <<a_api | class Lwt_engine.t >>
+
+----
+<<pre class="ocsforge_color odocwiki_code"|<<span id="METHODselect"|<<span class="ocsforge_color_keyword"|method>> <<span class="ocsforge_color_keyword"|private>> <<span class="ocsforge_color_keyword"|virtual>> <<span class="odocwiki_name"|select>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\<<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|file_descr>> list <<span class="ocsforge_color_delimiter"| -> >>\\<<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|file_descr>> list <<span class="ocsforge_color_delimiter"| -> >>\\float <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|file_descr>> list * <<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|file_descr>> list>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|select fds~_r fds~_w timeout>> waits for either~:
+
+
+* one of the file descriptor of <<span class="odocwiki_inlinecode"|fds~_r>> to become readable
+* one of the file descriptor of <<span class="odocwiki_inlinecode"|fds~_w>> to become writable
+* timeout to expire
+
+        and returns the list of readable file descriptor and the list
+        of writable file descriptors~.
+>>

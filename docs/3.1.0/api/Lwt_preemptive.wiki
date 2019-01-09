@@ -1,0 +1,54 @@
+=Module <<a_api_type | module Lwt_preemptive >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_preemptive>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_preemptive >><<span class="ocsforge_color_keyword"|end>>>>~This module allows to mix preemptive threads with <<span class="odocwiki_inlinecode"|~Lwt>>
+    cooperative threads~. ~It maintains an extensible pool of preemptive
+    threads to which you can detach computations~.
+
+
+    ~When compiling or linking programs that use <<span class="odocwiki_inlinecode"|~Lwt~_preemptive>>~, you should
+    pass the <<span class="odocwiki_inlinecode"|~-thread>> or <<span class="odocwiki_inlinecode"|~-vmthread>> option~. ~This depends on your build system~.
+    ~For ~O~Camlbuild~, add <<span class="odocwiki_inlinecode"|true~: thread>> to <<span class="odocwiki_inlinecode"|~_tags>>~. ~For ~O~A~S~I~S~, add <<span class="odocwiki_inlinecode"|threads>> to
+    <<span class="odocwiki_inlinecode"|~Build~Depends>> in <<span class="odocwiki_inlinecode"|~_oasis>>~.
+
+----
+<<pre id="VALdetach" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|detach>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|detach f x>> runs the computation <<span class="odocwiki_inlinecode"|f x>> in a separate preemptive thread~.
+      <<span class="odocwiki_inlinecode"|detach>> evaluates to an ~Lwt thread~, which waits for the preemptive thread
+      to complete~.
+
+
+      ~Note that ~Lwt thread~-local storage ~(i~.e~.~, <<a_api | val Lwt.with_value >>~) cannot be
+      safely used from within <<span class="odocwiki_inlinecode"|f>>~. ~The same goes for most of the rest of ~Lwt~. ~If
+      you need to run an ~Lwt thread in <<span class="odocwiki_inlinecode"|f>>~, use <<a_api | val Lwt_preemptive.run_in_main >>~.
+>>
+<<pre id="VALrun_in_main" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|run~_in~_main>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|run~_in~_main f>> can be called from a detached computation to execute
+      <<span class="odocwiki_inlinecode"|f ~(~)>> in the main preemptive thread~, i~.e~. the one executing
+      <<a_api | val Lwt_main.run >>~. <<span class="odocwiki_inlinecode"|run~_in~_main f>> blocks until <<span class="odocwiki_inlinecode"|f ~(~)>> completes~, then
+      returns its result~. ~If <<span class="odocwiki_inlinecode"|f ~(~)>> raises an exception~, <<span class="odocwiki_inlinecode"|run~_in~_main f>> raises
+      the same exception~.
+
+
+      <<a_api | val Lwt.with_value >> may be used inside <<span class="odocwiki_inlinecode"|f ~(~)>>~. <<a_api | val Lwt.get >> can correctly
+      retrieve values set this way inside <<span class="odocwiki_inlinecode"|f ~(~)>>~, but not values set using
+      <<a_api | val Lwt.with_value >> outside <<span class="odocwiki_inlinecode"|f ~(~)>>~.
+>>
+<<pre id="VALinit" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|init>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int <<span class="ocsforge_color_delimiter"| -> >> int <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>string <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|init min max log>> initialises this module~. i~.e~. it launches the
+      minimum number of preemptive threads and starts the **      dispatcher**~.
+>>
+<<pre id="VALsimple_init" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|simple~_init>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|simple~_init ~(~)>> does a //simple initialization//~. i~.e~. with
+      default parameters if the library is not yet initialised~.
+
+
+      ~Note~: this function is automatically called <<a_api | val Lwt_preemptive.detach >>~.
+>>
+<<pre id="VALget_bounds" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|get~_bounds>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> int * int>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|get~_bounds ~(~)>> returns the minimum and the maximum number of
+      preemptive threads~.
+>>
+<<pre id="VALset_bounds" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|set~_bounds>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int * int <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|set~_bounds ~(min~, max~)>> set the minimum and the maximum number
+      of preemptive threads~.
+>>
+<<pre id="VALset_max_number_of_threads_queued" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|set~_max~_number~_of~_threads~_queued>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Sets the size of the waiting queue~, if no more preemptive
+      threads are available~. ~When the queue is full~, <<a_api | val Lwt_preemptive.detach >> will
+      sleep until a thread is available~.
+>>
+<<pre id="VALget_max_number_of_threads_queued" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|get~_max~_number~_of~_threads~_queued>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> int>>>><<div class="odocwiki_info"|~Returns the size of the waiting queue~, if no more threads are
+      available
+>>

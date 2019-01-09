@@ -1,0 +1,107 @@
+=Module <<a_api_type | module Lwt_switch >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_switch: <<span class='code'|sig>><<a_api text=".." | module Lwt_switch >><<span class='code'|end>>>>~Lwt switches\\
+
+----
+\\
+~Switch have two goals~:\\
+
+* being able to free multiple resources at the same time~,
+* offer a better alternative than always returning an id to free
+      some resource~.
+
+
+    ~For example~, considers the following interface~:\\
+
+
+    
+{{{
+      type id
+
+      val free : id -> unit Lwt.t
+
+      val f : unit -> id Lwt.t
+      val g : unit -> id Lwt.t
+      val h : unit -> id Lwt.t
+    
+}}}
+\\
+
+
+    ~Now you want to calls <<span class='code'|f>>~, <<span class='code'|g>> and <<span class='code'|h>> in parallel~. ~You can
+    simply do~:\\
+
+
+    
+{{{
+      lwt idf = f () and idg = g () and idh = h () in
+      ...
+    
+}}}
+\\
+
+
+    ~However~, one may wants to handle possible failures of <<span class='code'|f ~(~)>>~, <<span class='code'|g
+    ~(~)>> and <<span class='code'|h ~(~)>>~, and disable all allocated resources if one of
+    these three threads fails~. ~This may be hard since you have to
+    remember which one failed and which one returned correctly~.\\
+
+
+    ~Now we change a little bit the interface~:\\
+
+
+    
+{{{
+      val f : ?switch : Lwt_switch.t -> unit -> id Lwt.t
+      val g : ?switch : Lwt_switch.t -> unit -> id Lwt.t
+      val h : ?switch : Lwt_switch.t -> unit -> id Lwt.t
+    
+}}}
+\\
+
+
+    and the code becomes~:\\
+
+
+    
+{{{
+      let switch = Lwt_switch.create () in
+      try_lwt
+        lwt idf = f ~switch () and idg = g ~switch () and idh = h ~switch () in
+        ...
+      with exn ->
+        lwt () = Lwt_switch.turn_off switch in
+        raise_lwt exn
+    
+}}}
+\\
+<<div class="code" id="TYPEt"|<<span class="keyword"|type>> t>>
+<<div class="info"|~Type of switches~.\\
+>>
+
+<<div id="VALcreate" class="code"|<<span class="keyword"|val>> create : <<span class="code type"|unit -> <<a_api text="t" | type Lwt_switch.t >>>>>><<div class="info"|<<span class='code'|create ~(~)>> creates a new switch~.\\
+>>
+<<div id="VALis_on" class="code"|<<span class="keyword"|val>> is~_on : <<span class="code type"|<<a_api text="t" | type Lwt_switch.t >> -> bool>>>><<div class="info"|<<span class='code'|is~_on switch>> returns <<span class='code'|true>> if the switch is currently on~, and
+      <<span class='code'|false>> otherwise~.\\
+>>
+<<div id="VALturn_off" class="code"|<<span class="keyword"|val>> turn~_off : <<span class="code type"|<<a_api text="t" | type Lwt_switch.t >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|turn~_off switch>> turns off the switch~. ~It calls all registered
+      hooks~, waits for all of them to terminates~, and the returns~. ~If
+      one of the hook failed~, then it will fail with one of the
+      exception raised by hooks~. ~If the switch is already off~, then it
+      does nothing~.\\
+>>
+<<div  id="EXCEPTIONOff" class="code"|<<span class="keyword"|exception>> Off>>
+<<div class="info"|~Exception raised when trying to add a hook to a switch that is
+      already off~.\\
+>>
+<<div id="VALcheck" class="code"|<<span class="keyword"|val>> check : <<span class="code type"|<<a_api text="t" | type Lwt_switch.t >> option -> unit>>>><<div class="info"|<<span class='code'|check switch>> does nothing if <<span class='code'|switch>> is <<span class='code'|~None>> or contains an
+      switch that is currently on~, and raise <<a_api | exception Lwt_switch.Off >> otherwise~.\\
+>>
+<<div id="VALadd_hook" class="code"|<<span class="keyword"|val>> add~_hook : <<span class="code type"|<<a_api text="t" | type Lwt_switch.t >> option -> (unit -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> unit>>>><<div class="info"|<<span class='code'|add~_hook switch f>> registers <<span class='code'|f>> so it will be called when
+      <<a_api | val Lwt_switch.turn_off >> is invoked~. ~It does nothing if <<span class='code'|switch>> is
+      <<span class='code'|~None>>~. ~If <<span class='code'|switch>> contains an switch that is already off then
+      <<a_api | exception Lwt_switch.Off >> is raised~.\\
+>>
+<<div id="VALadd_hook_or_exec" class="code"|<<span class="keyword"|val>> add~_hook~_or~_exec : <<span class="code type"|<<a_api text="t" | type Lwt_switch.t >> option -> (unit -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|add~_hook~_or~_exec switch f>> is the same as <<a_api | val Lwt_switch.add_hook >> except
+      that if the switch is already off~, then <<span class='code'|f>> is called
+      immediatly~.\\
+>>

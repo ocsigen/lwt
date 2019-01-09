@@ -1,0 +1,75 @@
+<<code language="ocaml" | sig
+  type 'a t
+  val from : (unit -> 'a option Lwt.t) -> 'a Lwt_stream.t
+  val from_direct : (unit -> 'a option) -> 'a Lwt_stream.t
+  exception Closed
+  val create : unit -> 'a Lwt_stream.t * ('a option -> unit)
+  val create_with_reference :
+    unit -> 'a Lwt_stream.t * ('a option -> unit) * ('b -> unit)
+  exception Full
+  class type ['a] bounded_push =
+    object
+      method blocked : bool
+      method close : unit
+      method closed : bool
+      method count : int
+      method push : 'a -> unit Lwt.t
+      method resize : int -> unit
+      method set_reference : 'a0 -> unit
+      method size : int
+    end
+  val create_bounded : int -> 'a Lwt_stream.t * 'a Lwt_stream.bounded_push
+  val of_list : 'a list -> 'a Lwt_stream.t
+  val of_array : 'a array -> 'a Lwt_stream.t
+  val of_string : string -> char Lwt_stream.t
+  val clone : 'a Lwt_stream.t -> 'a Lwt_stream.t
+  val to_list : 'a Lwt_stream.t -> 'a list Lwt.t
+  val to_string : char Lwt_stream.t -> string Lwt.t
+  exception Empty
+  val peek : 'a Lwt_stream.t -> 'a option Lwt.t
+  val npeek : int -> 'a Lwt_stream.t -> 'a list Lwt.t
+  val get : 'a Lwt_stream.t -> 'a option Lwt.t
+  val nget : int -> 'a Lwt_stream.t -> 'a list Lwt.t
+  val get_while : ('a -> bool) -> 'a Lwt_stream.t -> 'a list Lwt.t
+  val get_while_s : ('a -> bool Lwt.t) -> 'a Lwt_stream.t -> 'a list Lwt.t
+  val next : 'a Lwt_stream.t -> 'a Lwt.t
+  val last_new : 'a Lwt_stream.t -> 'a Lwt.t
+  val junk : 'a Lwt_stream.t -> unit Lwt.t
+  val njunk : int -> 'a Lwt_stream.t -> unit Lwt.t
+  val junk_while : ('a -> bool) -> 'a Lwt_stream.t -> unit Lwt.t
+  val junk_while_s : ('a -> bool Lwt.t) -> 'a Lwt_stream.t -> unit Lwt.t
+  val junk_old : 'a Lwt_stream.t -> unit Lwt.t
+  val get_available : 'a Lwt_stream.t -> 'a list
+  val get_available_up_to : int -> 'a Lwt_stream.t -> 'a list
+  val is_empty : 'a Lwt_stream.t -> bool Lwt.t
+  val on_terminate : 'a Lwt_stream.t -> (unit -> unit) -> unit
+  val choose : 'a Lwt_stream.t list -> 'a Lwt_stream.t
+  val map : ('a -> 'b) -> 'a Lwt_stream.t -> 'b Lwt_stream.t
+  val map_s : ('a -> 'b Lwt.t) -> 'a Lwt_stream.t -> 'b Lwt_stream.t
+  val filter : ('a -> bool) -> 'a Lwt_stream.t -> 'a Lwt_stream.t
+  val filter_s : ('a -> bool Lwt.t) -> 'a Lwt_stream.t -> 'a Lwt_stream.t
+  val filter_map : ('a -> 'b option) -> 'a Lwt_stream.t -> 'b Lwt_stream.t
+  val filter_map_s :
+    ('a -> 'b option Lwt.t) -> 'a Lwt_stream.t -> 'b Lwt_stream.t
+  val map_list : ('a -> 'b list) -> 'a Lwt_stream.t -> 'b Lwt_stream.t
+  val map_list_s :
+    ('a -> 'b list Lwt.t) -> 'a Lwt_stream.t -> 'b Lwt_stream.t
+  val fold : ('a -> 'b -> 'b) -> 'a Lwt_stream.t -> 'b -> 'b Lwt.t
+  val fold_s : ('a -> 'b -> 'b Lwt.t) -> 'a Lwt_stream.t -> 'b -> 'b Lwt.t
+  val iter : ('a -> unit) -> 'a Lwt_stream.t -> unit Lwt.t
+  val iter_p : ('a -> unit Lwt.t) -> 'a Lwt_stream.t -> unit Lwt.t
+  val iter_s : ('a -> unit Lwt.t) -> 'a Lwt_stream.t -> unit Lwt.t
+  val find : ('a -> bool) -> 'a Lwt_stream.t -> 'a option Lwt.t
+  val find_s : ('a -> bool Lwt.t) -> 'a Lwt_stream.t -> 'a option Lwt.t
+  val find_map : ('a -> 'b option) -> 'a Lwt_stream.t -> 'b option Lwt.t
+  val find_map_s :
+    ('a -> 'b option Lwt.t) -> 'a Lwt_stream.t -> 'b option Lwt.t
+  val combine : 'a Lwt_stream.t -> 'b Lwt_stream.t -> ('a * 'b) Lwt_stream.t
+  val append : 'a Lwt_stream.t -> 'a Lwt_stream.t -> 'a Lwt_stream.t
+  val concat : 'a Lwt_stream.t Lwt_stream.t -> 'a Lwt_stream.t
+  val flatten : 'a list Lwt_stream.t -> 'a Lwt_stream.t
+  type 'a result = Value of 'a | Error of exn
+  val map_exn : 'a Lwt_stream.t -> 'a Lwt_stream.result Lwt_stream.t
+  val parse : 'a Lwt_stream.t -> ('a Lwt_stream.t -> 'b Lwt.t) -> 'b Lwt.t
+  val hexdump : char Lwt_stream.t -> string Lwt_stream.t
+end >>

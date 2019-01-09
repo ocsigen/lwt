@@ -1,0 +1,324 @@
+=Module <<a_api_type | module Lwt_stream >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_stream>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_stream >><<span class="ocsforge_color_keyword"|end>>>>~Data streams
+
+----
+<<pre class="ocsforge_color odocwiki_code" id="TYPEt"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_type"|'a>> <<span class="odocwiki_name"|t>>>><<div class="odocwiki_info"|~A stream holding values of type <<span class="odocwiki_inlinecode"|~'a>>~.
+
+
+    ~Naming convention~: in this module~, all functions applying a function
+    to each element of a stream are suffixed by~:
+
+
+* <<span class="odocwiki_inlinecode"|~_s>> when the function returns a thread and calls are serialised
+* <<span class="odocwiki_inlinecode"|~_p>> when the function returns a thread and calls are parallelised
+
+    ~This module may undergo redesign or deprecation in the future~. ~See
+    [[https://github.com/ocsigen/lwt/issues/250| ~Flaws of <<span class="odocwiki_inlinecode"|~Lwt~_stream>>]]~. ~In
+    the meantime~, you may want to consider using alternatives such as
+    [[https://github.com/c-cube/lwt-pipe| lwt~-pipe]]~.
+>>
+
+
+==@@id="2_Construction"@@~Construction==
+
+<<pre id="VALfrom" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|from>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a option <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|from f>> creates a stream from the given input function~. <<span class="odocwiki_inlinecode"|f>> is
+    called each time more input is needed~, and the stream ends when
+    <<span class="odocwiki_inlinecode"|f>> returns <<span class="odocwiki_inlinecode"|~None>>~.
+
+
+    ~If <<span class="odocwiki_inlinecode"|f>>~, or the thread produced by <<span class="odocwiki_inlinecode"|f>>~, raises an exception~, that exception
+    is forwarded to the consumer of the stream ~(for example~, a caller of
+    <<a_api | val Lwt_stream.get >>~)~. ~Note that this does not end the stream~. ~A subsequent attempt to
+    read from the stream will cause another call to <<span class="odocwiki_inlinecode"|f>>~, which may succeed
+    with a value~.
+>>
+<<pre id="VALfrom_direct" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|from~_direct>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a option<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|from~_direct f>> does the same as <<a_api | val Lwt_stream.from >> but with a function
+    that does not return a thread~. ~It is preferred that this
+    function be used rather than wrapping <<span class="odocwiki_inlinecode"|f>> into a function which
+    returns a thread~.
+
+
+    ~The behavior when <<span class="odocwiki_inlinecode"|f>> raises an exception is the same as for <<a_api | val Lwt_stream.from >>~,
+    except that <<span class="odocwiki_inlinecode"|f>> does not produce a thread~.
+>>
+<<pre id="EXCEPTIONClosed" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|exception>> <<span class="odocwiki_name"|Closed>>>><<div class="odocwiki_info"|~Exception raised by the push function of a push~-stream when
+    pushing an element after the end of stream ~(<<span class="odocwiki_inlinecode"|~= ~None>>~) has been
+    pushed~.
+>>
+<<pre id="VALcreate" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|create>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> * <<span class="ocsforge_color_delimiter"| ( >>'a option <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|create ~(~)>> returns a new stream and a push function~.
+
+
+    ~To notify the stream~'s consumer of errors~, either use a separate
+    communication channel~, or use a
+    [[http://caml.inria.fr/pub/docs/manual-ocaml/libref/Pervasives.html#TYPEresult|
+    <<span class="odocwiki_inlinecode"|result>>]] stream~. ~There is no way to push an exception into a
+    push~-stream~.
+>>
+<<pre id="VALcreate_with_reference" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|create~_with~_reference>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> * <<span class="ocsforge_color_delimiter"| ( >>'a option <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> * <<span class="ocsforge_color_delimiter"| ( >>'b <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|create~_with~_reference ~(~)>> returns a new stream and a push
+    function~. ~The last function allows a reference to be set to an
+    external source~. ~This prevents the external source from being
+    garbage collected~.
+
+
+    ~For example~, to convert a reactive event to a stream~:
+
+
+    
+<<code language='ocaml'|      let stream, push, set_ref = Lwt_stream.create_with_reference () in
+      set_ref (map_event push event)
+    >>
+
+>>
+<<pre id="EXCEPTIONFull" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|exception>> <<span class="odocwiki_name"|Full>>>><<div class="odocwiki_info"|~Exception raised by the push function of a bounded push~-stream
+    when the stream queue is full and a thread is already waiting to
+    push an element~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span id="TYPEbounded_push"|<<span class="ocsforge_color_keyword"|class type>> <<span class="odocwiki_type"|['a]>><<a_api text="bounded_push" | class type Lwt_stream.bounded_push >>>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="ocsforge_color_keyword"|object>><<a_api text=".." | class type Lwt_stream.bounded_push >><<span class="ocsforge_color_keyword"|end>>>><<div class="odocwiki_info"|~Type of sources for bounded push~-streams~.
+>>
+<<pre id="VALcreate_bounded" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|create~_bounded>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> * 'a <<a_api text="bounded_push" | class type Lwt_stream.bounded_push >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|create~_bounded size>> returns a new stream and a bounded push
+    source~. ~The stream can hold a maximum of <<span class="odocwiki_inlinecode"|size>> elements~.  ~When
+    this limit is reached~, pushing a new element will block until
+    one is consumed~.
+
+
+    ~Note that you cannot clone or parse ~(with <<a_api | val Lwt_stream.parse >>~) a bounded
+    stream~. ~These functions will raise <<span class="odocwiki_inlinecode"|~Invalid~_argument>> if you try
+    to do so~.
+
+
+    ~It raises <<span class="odocwiki_inlinecode"|~Invalid~_argument>> if <<span class="odocwiki_inlinecode"|size ~< ~0>>~.
+>>
+<<pre id="VALof_list" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|of~_list>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a list <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|of~_list l>> creates a stream returning all elements of <<span class="odocwiki_inlinecode"|l>>~. ~The elements are
+    pushed into the stream immediately~, resulting in a closed stream ~(in the
+    sense of <<a_api | val Lwt_stream.is_closed >>~)~.
+>>
+<<pre id="VALof_array" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|of~_array>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a array <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|of~_array a>> creates a stream returning all elements of <<span class="odocwiki_inlinecode"|a>>~. ~The elements
+    are pushed into the stream immediately~, resulting in a closed stream ~(in the
+    sense of <<a_api | val Lwt_stream.is_closed >>~)~.
+>>
+<<pre id="VALof_string" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|of~_string>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|string <<span class="ocsforge_color_delimiter"| -> >> char <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|of~_string str>> creates a stream returning all characters of <<span class="odocwiki_inlinecode"|str>>~. ~The
+    characters are pushed into the stream immediately~, resulting in a closed
+    stream ~(in the sense of <<a_api | val Lwt_stream.is_closed >>~)~.
+>>
+<<pre id="VALclone" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|clone>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|clone st>> clone the given stream~. ~Operations on each stream
+    will not affect the other~.
+
+
+    ~For example~:
+
+
+    
+<<code language='ocaml'|      # let st1 = Lwt_stream.of_list [1; 2; 3];;
+      val st1 : int Lwt_stream.t = <abstr>
+      # let st2 = Lwt_stream.clone st1;;
+      val st2 : int Lwt_stream.t = <abstr>
+      # lwt x = Lwt_stream.next st1;;
+      val x : int = 1
+      # lwt y = Lwt_stream.next st2;;
+      val y : int = 1
+    >>
+
+
+
+    ~It raises <<span class="odocwiki_inlinecode"|~Invalid~_argument>> if <<span class="odocwiki_inlinecode"|st>> is a bounded
+    push~-stream~.
+>>
+
+
+==@@id="2_Destruction"@@~Destruction==
+
+<<pre id="VALto_list" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|to~_list>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Returns the list of elements of the given stream
+>>
+<<pre id="VALto_string" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|to~_string>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|char <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> string <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Returns the word composed of all characters of the given
+    stream
+>>
+
+
+==@@id="2_Dataretrieval"@@~Data retrieval==
+
+<<pre id="EXCEPTIONEmpty" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|exception>> <<span class="odocwiki_name"|Empty>>>><<div class="odocwiki_info"|~Exception raised when trying to retrieve data from an empty
+    stream~.
+>>
+<<pre id="VALpeek" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|peek>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a option <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|peek st>> returns the first element of the stream~, if any~,
+    without removing it~.
+>>
+<<pre id="VALnpeek" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|npeek>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|npeek n st>> returns at most the first <<span class="odocwiki_inlinecode"|n>> elements of <<span class="odocwiki_inlinecode"|st>>~,
+    without removing them~.
+>>
+<<pre id="VALget" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|get>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a option <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|get st>> removes and returns the first element of the stream~, if
+    any~.
+>>
+<<pre id="VALnget" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|nget>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|nget n st>> removes and returns at most the first <<span class="odocwiki_inlinecode"|n>> elements of
+    <<span class="odocwiki_inlinecode"|st>>~.
+>>
+<<pre id="VALget_while" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|get~_while>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> bool<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<pre id="VALget_while_s" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|get~_while~_s>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> bool <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|get~_while f st>> returns the longest prefix of <<span class="odocwiki_inlinecode"|st>> where all
+    elements satisfy <<span class="odocwiki_inlinecode"|f>>~.
+>>
+<<pre id="VALnext" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|next>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|next st>> removes and returns the next element of the stream or
+    fails with <<a_api | exception Lwt_stream.Empty >>~, if the stream is empty~.
+>>
+<<pre id="VALlast_new" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|last~_new>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|last~_new st>> returns the last element that can be obtained
+    without sleeping~, or wait for one if none is available~.
+
+
+    ~It fails with <<a_api | exception Lwt_stream.Empty >> if the stream has no more elements~.
+>>
+<<pre id="VALjunk" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|junk>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|junk st>> removes the first element of <<span class="odocwiki_inlinecode"|st>>~.
+>>
+<<pre id="VALnjunk" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|njunk>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|njunk n st>> removes at most the first <<span class="odocwiki_inlinecode"|n>> elements of the
+    stream~.
+>>
+<<pre id="VALjunk_while" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|junk~_while>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> bool<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<pre id="VALjunk_while_s" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|junk~_while~_s>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> bool <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|junk~_while f st>> removes all elements at the beginning of the
+    streams which satisfy <<span class="odocwiki_inlinecode"|f>>~.
+>>
+<<pre id="VALjunk_old" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|junk~_old>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|junk~_old st>> removes all elements that are ready to be read
+    without yielding from <<span class="odocwiki_inlinecode"|st>>~.
+
+
+    ~For example~, the <<span class="odocwiki_inlinecode"|read~_password>> function of <<span class="odocwiki_inlinecode"|~Lwt~_read~_line>>
+    uses it to flush keys previously typed by the user~.
+>>
+<<pre id="VALget_available" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|get~_available>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a list>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|get~_available st>> returns all available elements of <<span class="odocwiki_inlinecode"|l>> without
+    blocking~.
+>>
+<<pre id="VALget_available_up_to" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|get~_available~_up~_to>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a list>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|get~_available~_up~_to n st>> returns up to <<span class="odocwiki_inlinecode"|n>> elements of <<span class="odocwiki_inlinecode"|l>>
+    without blocking~.
+>>
+<<pre id="VALis_empty" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|is~_empty>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> bool <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|is~_empty st>> returns whether the given stream is empty~.
+>>
+<<pre id="VALis_closed" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|is~_closed>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> bool>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|is~_closed st>> returns whether the given stream has been closed~. ~A closed
+    stream is not necessarily empty~. ~It may still contain unread elements~. ~If
+    <<span class="odocwiki_inlinecode"|is~_closed s ~= true>>~, then all subsequent reads until the end of the
+    stream are guaranteed not to block~.
+**Since** 2.6.0\\
+>>
+<<pre id="VALclosed" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|closed>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|closed st>> returns a thread that will sleep until the stream has been
+    closed~.
+**Since** 2.6.0\\
+>>
+<<pre id="VALon_termination" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|on~_termination>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_warning"|Deprecated.>>~Use <<a_api | val Lwt_stream.closed >>~.
+<<span class="odocwiki_inlinecode"|on~_termination st f>> executes <<span class="odocwiki_inlinecode"|f>> when the end of the stream <<span class="odocwiki_inlinecode"|st>>
+    is reached~. ~Note that the stream may still contain elements if
+    <<a_api | val Lwt_stream.peek >> or similar was used~.
+>>
+<<pre id="VALon_terminate" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|on~_terminate>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_warning"|Deprecated.>>~Use <<a_api | val Lwt_stream.closed >>~.
+~Same as <<a_api | val Lwt_stream.on_termination >>~.
+>>
+
+
+==@@id="2_Streamtransversal"@@~Stream transversal==
+
+
+~Note~: all the following functions are destructive~.
+
+
+    ~For example~:
+
+
+    
+<<code language='ocaml'|      # let st1 = Lwt_stream.of_list [1; 2; 3];;
+      val st1 : int Lwt_stream.t = <abstr>
+      # let st2 = Lwt_stream.map string_of_int st1;;
+      val st2 : string Lwt_stream.t = <abstr>
+      # lwt x = Lwt_stream.next st1;;
+      val x : int = 1
+      # lwt y = Lwt_stream.next st2;;
+      val y : string = "2"
+    >>
+
+<<pre id="VALchoose" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|choose>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_stream.t >> list <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|choose l>> creates an stream from a list of streams~. ~The
+    resulting stream will return elements returned by any stream of
+    <<span class="odocwiki_inlinecode"|l>> in an unspecified order~.
+>>
+<<pre id="VALmap" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|map>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="t" | type Lwt_stream.t >>>>>><<pre id="VALmap_s" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|map~_s>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|map f st>> maps the value returned by <<span class="odocwiki_inlinecode"|st>> with <<span class="odocwiki_inlinecode"|f>>
+>>
+<<pre id="VALfilter" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|filter>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> bool<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<pre id="VALfilter_s" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|filter~_s>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> bool <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|filter f st>> keeps only values~, <<span class="odocwiki_inlinecode"|x>>~, such that <<span class="odocwiki_inlinecode"|f x>> is <<span class="odocwiki_inlinecode"|true>>
+>>
+<<pre id="VALfilter_map" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|filter~_map>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b option<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="t" | type Lwt_stream.t >>>>>><<pre id="VALfilter_map_s" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|filter~_map~_s>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b option <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|filter~_map f st>> filter and map <<span class="odocwiki_inlinecode"|st>> at the same time
+>>
+<<pre id="VALmap_list" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|map~_list>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b list<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="t" | type Lwt_stream.t >>>>>><<pre id="VALmap_list_s" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|map~_list~_s>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b list <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|map~_list f st>> applies <<span class="odocwiki_inlinecode"|f>> on each element of <<span class="odocwiki_inlinecode"|st>> and flattens
+    the lists returned
+>>
+<<pre id="VALfold" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|fold>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_delimiter"| -> >> 'b<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>><<pre id="VALfold_s" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|fold~_s>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|fold f s x>> fold~_like function for streams~.
+>>
+<<pre id="VALiter" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|iter>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<pre id="VALiter_p" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|iter~_p>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<pre id="VALiter_s" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|iter~_s>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|iter f s>> iterates over all elements of the stream~.
+>>
+<<pre id="VALiter_n" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|iter~_n>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_label"| ?max_threads: >>int <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|iter~_n ~?max~_threads f s>> iterates over all elements of the stream <<span class="odocwiki_inlinecode"|s>>~.
+      ~Iteration is performed concurrently with up to <<span class="odocwiki_inlinecode"|max~_threads>> concurrent
+      instances of <<span class="odocwiki_inlinecode"|f>>~.
+>>
+<<div class="odocwiki_param_info"|<<span class="code"|max_threads>> : defaults to <<span class="odocwiki_inlinecode"|~1>>~.>>
+<<pre id="VALfind" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|find>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> bool<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a option <<a_api text="Lwt.t" | type Lwt.t >>>>>><<pre id="VALfind_s" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|find~_s>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> bool <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a option <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|find f s>> find an element in a stream~.
+>>
+<<pre id="VALfind_map" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|find~_map>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b option<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'b option <<a_api text="Lwt.t" | type Lwt.t >>>>>><<pre id="VALfind_map_s" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|find~_map~_s>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b option <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'b option <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|find~_map f s>> find and map at the same time~.
+>>
+<<pre id="VALcombine" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|combine>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>'a * 'b<<span class="ocsforge_color_delimiter"| ) >> <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|combine s~1 s~2>> combines two streams~. ~The stream will end when
+    either stream ends~.
+>>
+<<pre id="VALappend" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|append>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|append s~1 s~2>> returns a stream which returns all elements of
+    <<span class="odocwiki_inlinecode"|s~1>>~, then all elements of <<span class="odocwiki_inlinecode"|s~2>>
+>>
+<<pre id="VALconcat" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|concat>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_stream.t >> <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|concat st>> returns the concatenation of all streams of <<span class="odocwiki_inlinecode"|st>>~.
+>>
+<<pre id="VALflatten" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|flatten>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a list <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|flatten st ~= map~_list ~(fun l ~-~> l~) st>>
+>>
+<<pre id="VALwrap_exn" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wrap~_exn>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.result" | type Lwt.result >> <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|wrap~_exn s>> is a stream <<span class="odocwiki_inlinecode"|s~'>> such that each time <<span class="odocwiki_inlinecode"|s>> yields a value <<span class="odocwiki_inlinecode"|v>>~,
+    <<span class="odocwiki_inlinecode"|s~'>> yields <<span class="odocwiki_inlinecode"|~Result~.~Ok v>>~, and when the source of <<span class="odocwiki_inlinecode"|s>> raises an exception
+    <<span class="odocwiki_inlinecode"|e>>~, <<span class="odocwiki_inlinecode"|s~'>> yields <<span class="odocwiki_inlinecode"|~Result~.~Error e>>~.
+
+
+    ~Note that push~-streams ~(as returned by <<a_api | val Lwt_stream.create >>~) never raise exceptions~.
+
+
+    ~If the stream source keeps raising the same exception <<span class="odocwiki_inlinecode"|e>> each time the
+    stream is read~, <<span class="odocwiki_inlinecode"|s~'>> is unbounded~. ~Reading it will produce <<span class="odocwiki_inlinecode"|~Result~.~Error e>>
+    indefinitely~.
+**Since** 2.7.0\\
+>>
+
+
+==@@id="2_Parsing"@@~Parsing==
+
+<<pre id="VALparse" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|parse>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|parse st f>> parses <<span class="odocwiki_inlinecode"|st>> with <<span class="odocwiki_inlinecode"|f>>~. ~If <<span class="odocwiki_inlinecode"|f>> raise an exception~,
+    <<span class="odocwiki_inlinecode"|st>> is restored to its previous state~.
+
+
+    ~It raises <<span class="odocwiki_inlinecode"|~Invalid~_argument>> if <<span class="odocwiki_inlinecode"|st>> is a bounded
+    push~-stream~.
+>>
+
+
+==@@id="2_Misc"@@~Misc==
+
+<<pre id="VALhexdump" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|hexdump>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|char <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> string <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|hexdump byte~_stream>> returns a stream which is the same as the
+    output of <<span class="odocwiki_inlinecode"|hexdump ~-~C>>~.
+
+
+    ~Basically~, here is a simple implementation of <<span class="odocwiki_inlinecode"|hexdump ~-~C>>~:
+
+
+    
+<<code language='ocaml'|      let () = Lwt_main.run (Lwt_io.write_lines Lwt_io.stdout (Lwt_stream.hexdump (Lwt_io.read_lines Lwt_io.stdin)))
+    >>
+
+>>
+
+
+==@@id="2_Deprecated"@@~Deprecated==
+
+<<pre class="ocsforge_color odocwiki_code" id="TYPEresult"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_type"|'a>> <<span class="odocwiki_name"|result>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_variants"|<<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Value>> <<span class="ocsforge_color_keyword"|of>> <<span class="odocwiki_type"|'a>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Error>> <<span class="ocsforge_color_keyword"|of>> <<span class="odocwiki_type"|exn>>>><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|<<div class="odocwiki_info"|<<span class="odocwiki_warning"|Deprecated.>>~Replaced by <<a_api | val Lwt_stream.wrap_exn >>~, which uses <<a_api | type Lwt.result >>~.
+~A value or an error~.
+>>
+>><<span class="odocwiki_comments_close"| ~*)>>>>>>>>>><<pre id="VALmap_exn" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|map~_exn>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="result" | type Lwt_stream.result >> <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_warning"|Deprecated.>>~Use <<a_api | val Lwt_stream.wrap_exn >>~.
+<<span class="odocwiki_inlinecode"|map~_exn s>> returns a stream that captures all exceptions raised
+    by the source of the stream ~(the function passed to <<a_api | val Lwt_stream.from >>~)~.
+
+
+    ~Note that for push~-streams ~(as returned by <<a_api | val Lwt_stream.create >>~) all
+    elements of the mapped streams are values~.
+
+
+    ~If the stream source keeps raising the same exception <<span class="odocwiki_inlinecode"|e>> each time the
+    stream is read~, the stream produced by <<span class="odocwiki_inlinecode"|map~_exn>> is unbounded~. ~Reading it
+    will produce <<span class="odocwiki_inlinecode"|~Lwt~_stream~.~Error e>> indefinitely~.
+>>

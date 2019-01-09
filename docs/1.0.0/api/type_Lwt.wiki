@@ -1,0 +1,18 @@
+<<code language="ocaml" | sig
+  type 'a t
+  val return : 'a -> 'a Lwt.t
+  val fail : exn -> 'a Lwt.t
+  val bind : 'a Lwt.t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
+  val ( >>= ) : 'a Lwt.t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
+  val catch : (unit -> 'a Lwt.t) -> (exn -> 'a Lwt.t) -> 'a Lwt.t
+  val try_bind :
+    (unit -> 'a Lwt.t) -> ('a -> 'b Lwt.t) -> (exn -> 'b Lwt.t) -> 'b Lwt.t
+  val choose : 'a Lwt.t list -> 'a Lwt.t
+  val ignore_result : 'a Lwt.t -> unit
+  val wait : unit -> 'a Lwt.t
+  val wakeup : 'a Lwt.t -> 'a -> unit
+  val wakeup_exn : 'a Lwt.t -> exn -> unit
+  val finalize : (unit -> 'a Lwt.t) -> (unit -> unit Lwt.t) -> 'a Lwt.t
+  val poll : 'a Lwt.t -> 'a option
+  val apply : ('a -> 'b Lwt.t) -> 'a -> 'b Lwt.t
+end >>

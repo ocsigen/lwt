@@ -1,0 +1,18 @@
+=Module <<a_api_type | module Lwt_pool >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_pool: <<span class='code'|sig>><<a_api text=".." | module Lwt_pool >><<span class='code'|end>>>>~Creating pools ~(for example pools of connections to a database~)~.\\
+
+----
+\\
+~Instead of creating a new connection each time you need one~,
+    keep a pool of opened connections and reuse opened connections
+    that are free~.\\
+<<div class="code" id="TYPEt"|<<span class="keyword"|type>> <<span class="code type"|'a>> t>>
+<<div class="info"|~Type of pools\\
+>>
+
+<<div id="VALcreate" class="code"|<<span class="keyword"|val>> create : <<span class="code type"|\\{{{   }}}int ->\\{{{   }}}  ?check:('a -> (bool -> unit) -> unit) -> (unit -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a <<a_api text="t" | type Lwt_pool.t >>>>>><<div class="info"|<<span class='code'|create n f>> creates a new pool with at most <<span class='code'|n>> members~.
+    <<span class='code'|f>> is the function to use to create a new pool member~.\\
+>>
+<<div id="VALuse" class="code"|<<span class="keyword"|val>> use : <<span class="code type"|'a <<a_api text="t" | type Lwt_pool.t >> -> ('a -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) -> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|use p f>> takes one free member of the pool <<span class='code'|p>> and gives it to the function
+    <<span class='code'|f>>~.\\
+>>

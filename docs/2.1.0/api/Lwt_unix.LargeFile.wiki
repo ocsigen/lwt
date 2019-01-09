@@ -1,0 +1,15 @@
+=Module <<a_api_type | module Lwt_unix.LargeFile >> =
+<<div class="code"|<<span class="keyword"|module>> LargeFile: <<span class='code'|sig>><<a_api text=".." | module Lwt_unix.LargeFile >><<span class='code'|end>>>>
+----
+<<div id="VALlseek" class="code"|<<span class="keyword"|val>> lseek : <<span class="code type"|<<a_api text="Lwt_unix.file_descr" | type Lwt_unix.file_descr >> -> int64 -> Unix.seek_command -> int64 <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Wrapper for <<span class='code'|~Unix~.~Large~File~.lseek>>\\
+>>
+<<div id="VALtruncate" class="code"|<<span class="keyword"|val>> truncate : <<span class="code type"|string -> int64 -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Wrapper for <<span class='code'|~Unix~.~Large~File~.truncate>>\\
+>>
+<<div id="VALftruncate" class="code"|<<span class="keyword"|val>> ftruncate : <<span class="code type"|<<a_api text="Lwt_unix.file_descr" | type Lwt_unix.file_descr >> -> int64 -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Wrapper for <<span class='code'|~Unix~.~Large~File~.ftruncate>>\\
+>>
+<<div id="VALstat" class="code"|<<span class="keyword"|val>> stat : <<span class="code type"|string -> Unix.LargeFile.stats <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Wrapper for <<span class='code'|~Unix~.~Large~File~.stat>>\\
+>>
+<<div id="VALlstat" class="code"|<<span class="keyword"|val>> lstat : <<span class="code type"|string -> Unix.LargeFile.stats <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Wrapper for <<span class='code'|~Unix~.~Large~File~.lstat>>\\
+>>
+<<div id="VALfstat" class="code"|<<span class="keyword"|val>> fstat : <<span class="code type"|<<a_api text="Lwt_unix.file_descr" | type Lwt_unix.file_descr >> -> Unix.LargeFile.stats <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Wrapper for <<span class='code'|~Unix~.~Large~File~.fstat>>\\
+>>

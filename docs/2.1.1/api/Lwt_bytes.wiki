@@ -1,0 +1,125 @@
+=Module <<a_api_type | module Lwt_bytes >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_bytes: <<span class='code'|sig>><<a_api text=".." | module Lwt_bytes >><<span class='code'|end>>>>~Byte arrays\\
+
+----
+<<div class="code" id="TYPEt"|<<span class="keyword"|type>> t = <<span class="code type"|(char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t>> >>
+<<div class="info"|~Type of array of bytes~.\\
+>>
+
+<<div id="VALcreate" class="code"|<<span class="keyword"|val>> create : <<span class="code type"|int -> <<a_api text="t" | type Lwt_bytes.t >>>>>><<div class="info"|~Creates a new byte array of the given size~.\\
+>>
+<<div id="VALlength" class="code"|<<span class="keyword"|val>> length : <<span class="code type"|<<a_api text="t" | type Lwt_bytes.t >> -> int>>>><<div class="info"|~Returns the length of the given byte array~.\\
+>>
+\\
+
+======@@id="6_Access"@@~Access======
+\\
+<<div id="VALget" class="code"|<<span class="keyword"|val>> get : <<span class="code type"|<<a_api text="t" | type Lwt_bytes.t >> -> int -> char>>>><<div class="info"|<<span class='code'|get buffer offset>> returns the byte at offset <<span class='code'|offset>> in
+      <<span class='code'|buffer>>~.\\
+>>
+<<div id="VALset" class="code"|<<span class="keyword"|val>> set : <<span class="code type"|<<a_api text="t" | type Lwt_bytes.t >> -> int -> char -> unit>>>><<div class="info"|<<span class='code'|get buffer offset value>> changes the value of the byte at
+      offset <<span class='code'|offset>> in <<span class='code'|buffer>> to <<span class='code'|value>>~.\\
+>>
+<<div id="VALunsafe_get" class="code"|<<span class="keyword"|val>> unsafe~_get : <<span class="code type"|<<a_api text="t" | type Lwt_bytes.t >> -> int -> char>>>><<div class="info"|~Same as <<a_api | val Lwt_bytes.get >> but without bound checking~.\\
+>>
+<<div id="VALunsafe_set" class="code"|<<span class="keyword"|val>> unsafe~_set : <<span class="code type"|<<a_api text="t" | type Lwt_bytes.t >> -> int -> char -> unit>>>><<div class="info"|~Same as <<a_api | val Lwt_bytes.set >> but without bound checking~.\\
+>>
+\\
+
+======@@id="6_Conversions"@@~Conversions======
+\\
+<<div id="VALof_string" class="code"|<<span class="keyword"|val>> of~_string : <<span class="code type"|string -> <<a_api text="t" | type Lwt_bytes.t >>>>>><<div class="info"|<<span class='code'|of~_string str>> returns a newly allocated byte array with the
+      same contents as <<span class='code'|str>>~.\\
+>>
+<<div id="VALto_string" class="code"|<<span class="keyword"|val>> to~_string : <<span class="code type"|<<a_api text="t" | type Lwt_bytes.t >> -> string>>>><<div class="info"|<<span class='code'|to~_string buf>> returns a newly allocated string with the same
+      contents as <<span class='code'|buf>>~.\\
+>>
+\\
+
+======@@id="6_Copying"@@~Copying======
+\\
+<<div id="VALblit" class="code"|<<span class="keyword"|val>> blit : <<span class="code type"|<<a_api text="t" | type Lwt_bytes.t >> -> int -> <<a_api text="t" | type Lwt_bytes.t >> -> int -> int -> unit>>>><<div class="info"|<<span class='code'|blit buf~1 ofs~1 buf~2 ofs~2 len>> copy <<span class='code'|len>> bytes from <<span class='code'|buf~1>>
+      starting at offset <<span class='code'|ofs~1>> to <<span class='code'|buf~2>> starting at offset <<span class='code'|ofs~2>>~.\\
+>>
+<<div id="VALblit_string_bytes" class="code"|<<span class="keyword"|val>> blit~_string~_bytes : <<span class="code type"|string -> int -> <<a_api text="t" | type Lwt_bytes.t >> -> int -> int -> unit>>>><<div class="info"|~Same as blit but the first buffer is a string instead of a byte
+      array~.\\
+>>
+<<div id="VALblit_bytes_string" class="code"|<<span class="keyword"|val>> blit~_bytes~_string : <<span class="code type"|<<a_api text="t" | type Lwt_bytes.t >> -> int -> string -> int -> int -> unit>>>><<div class="info"|~Same as blit but the second buffer is a string instead of a byte
+      array~.\\
+>>
+<<div id="VALunsafe_blit" class="code"|<<span class="keyword"|val>> unsafe~_blit : <<span class="code type"|<<a_api text="t" | type Lwt_bytes.t >> -> int -> <<a_api text="t" | type Lwt_bytes.t >> -> int -> int -> unit>>>><<div class="info"|~Same as <<a_api | val Lwt_bytes.blit >> but without bound checking~.\\
+>>
+<<div id="VALunsafe_blit_string_bytes" class="code"|<<span class="keyword"|val>> unsafe~_blit~_string~_bytes : <<span class="code type"|string -> int -> <<a_api text="t" | type Lwt_bytes.t >> -> int -> int -> unit>>>><<div class="info"|~Same as <<a_api | val Lwt_bytes.blit_string_bytes >> but without bound checking~.\\
+>>
+<<div id="VALunsafe_blit_bytes_string" class="code"|<<span class="keyword"|val>> unsafe~_blit~_bytes~_string : <<span class="code type"|<<a_api text="t" | type Lwt_bytes.t >> -> int -> string -> int -> int -> unit>>>><<div class="info"|~Same as <<a_api | val Lwt_bytes.blit_bytes_string >> but without bound checking~.\\
+>>
+<<div id="VALproxy" class="code"|<<span class="keyword"|val>> proxy : <<span class="code type"|<<a_api text="t" | type Lwt_bytes.t >> -> int -> int -> <<a_api text="t" | type Lwt_bytes.t >>>>>><<div class="info"|<<span class='code'|proxy buffer offset length>> creates a ``proxy~'~'~. ~The returned
+      byte array share the data of <<span class='code'|buffer>> but with different
+      bounds~.\\
+>>
+<<div id="VALextract" class="code"|<<span class="keyword"|val>> extract : <<span class="code type"|<<a_api text="t" | type Lwt_bytes.t >> -> int -> int -> <<a_api text="t" | type Lwt_bytes.t >>>>>><<div class="info"|<<span class='code'|extract buffer offset length>> creates a new byte array of
+      length <<span class='code'|length>> and copy the <<span class='code'|length>> bytes of <<span class='code'|buffer>> at
+      <<span class='code'|offset>> into it~.\\
+>>
+<<div id="VALcopy" class="code"|<<span class="keyword"|val>> copy : <<span class="code type"|<<a_api text="t" | type Lwt_bytes.t >> -> <<a_api text="t" | type Lwt_bytes.t >>>>>><<div class="info"|<<span class='code'|copy buffer>> creates a copy of the given byte array~.\\
+>>
+\\
+
+======@@id="6_Filling"@@~Filling======
+\\
+<<div id="VALfill" class="code"|<<span class="keyword"|val>> fill : <<span class="code type"|<<a_api text="t" | type Lwt_bytes.t >> -> int -> int -> char -> unit>>>><<div class="info"|<<span class='code'|fill buffer offset length value>> puts <<span class='code'|value>> in all <<span class='code'|length>>
+      bytes of <<span class='code'|buffer>> starting at offset <<span class='code'|offset>>~.\\
+>>
+<<div id="VALunsafe_fill" class="code"|<<span class="keyword"|val>> unsafe~_fill : <<span class="code type"|<<a_api text="t" | type Lwt_bytes.t >> -> int -> int -> char -> unit>>>><<div class="info"|~Same as <<a_api | val Lwt_bytes.fill >> but without bound checking~.\\
+>>
+\\
+
+======@@id="6_IOs"@@~I~Os======
+\\
+\\
+~The following functions does the same as the functions in
+    <<a_api | module Lwt_unix >> except that they use byte arrays instead of
+    strings~.\\
+<<div id="VALread" class="code"|<<span class="keyword"|val>> read : <<span class="code type"|<<a_api text="Lwt_unix.file_descr" | type Lwt_unix.file_descr >> -> <<a_api text="t" | type Lwt_bytes.t >> -> int -> int -> int <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALwrite" class="code"|<<span class="keyword"|val>> write : <<span class="code type"|<<a_api text="Lwt_unix.file_descr" | type Lwt_unix.file_descr >> -> <<a_api text="t" | type Lwt_bytes.t >> -> int -> int -> int <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALrecv" class="code"|<<span class="keyword"|val>> recv : <<span class="code type"|\\{{{   }}}<<a_api text="Lwt_unix.file_descr" | type Lwt_unix.file_descr >> ->\\{{{   }}}  <<a_api text="t" | type Lwt_bytes.t >> -> int -> int -> Unix.msg_flag list -> int <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALsend" class="code"|<<span class="keyword"|val>> send : <<span class="code type"|\\{{{   }}}<<a_api text="Lwt_unix.file_descr" | type Lwt_unix.file_descr >> ->\\{{{   }}}  <<a_api text="t" | type Lwt_bytes.t >> -> int -> int -> Unix.msg_flag list -> int <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALrecvfrom" class="code"|<<span class="keyword"|val>> recvfrom : <<span class="code type"|\\{{{   }}}<<a_api text="Lwt_unix.file_descr" | type Lwt_unix.file_descr >> ->\\{{{   }}}  <<a_api text="t" | type Lwt_bytes.t >> ->\\{{{   }}}  int -> int -> Unix.msg_flag list -> (int * Unix.sockaddr) <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALsendto" class="code"|<<span class="keyword"|val>> sendto : <<span class="code type"|\\{{{   }}}<<a_api text="Lwt_unix.file_descr" | type Lwt_unix.file_descr >> ->\\{{{   }}}  <<a_api text="t" | type Lwt_bytes.t >> -> int -> int -> Unix.msg_flag list -> Unix.sockaddr -> int <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="code" id="TYPEio_vector"|<<span class="keyword"|type>> io~_vector = { 
+|@@class="typetable"@ @class="lefttop"@@{{{   }}}|@@class="lefttop"@@iov_buffer : <<span class="code type"|<<a_api text="t" | type Lwt_bytes.t >>>>;|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@iov_offset : <<span class="code type"|int>>;|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@iov_length : <<span class="code type"|int>>;|
+
+}
+>>
+
+<<div id="VALio_vector" class="code"|<<span class="keyword"|val>> io~_vector : <<span class="code type"|buffer:<<a_api text="t" | type Lwt_bytes.t >> -> offset:int -> length:int -> <<a_api text="io_vector" | type Lwt_bytes.io_vector >>>>>><<div id="VALrecv_msg" class="code"|<<span class="keyword"|val>> recv~_msg : <<span class="code type"|\\{{{   }}}socket:<<a_api text="Lwt_unix.file_descr" | type Lwt_unix.file_descr >> ->\\{{{   }}}  io_vectors:<<a_api text="io_vector" | type Lwt_bytes.io_vector >> list -> (int * Unix.file_descr list) <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALsend_msg" class="code"|<<span class="keyword"|val>> send~_msg : <<span class="code type"|\\{{{   }}}socket:<<a_api text="Lwt_unix.file_descr" | type Lwt_unix.file_descr >> ->\\{{{   }}}  io_vectors:<<a_api text="io_vector" | type Lwt_bytes.io_vector >> list -> fds:Unix.file_descr list -> int <<a_api text="Lwt.t" | type Lwt.t >>>>>>\\
+
+======@@id="6_Memorymappedfiles"@@~Memory mapped files======
+\\
+<<div id="VALmap_file" class="code"|<<span class="keyword"|val>> map~_file : <<span class="code type"|\\{{{   }}}fd:Unix.file_descr ->\\{{{   }}}  ?pos:int64 -> shared:bool -> ?size:int -> unit -> <<a_api text="t" | type Lwt_bytes.t >>>>>><<div class="info"|<<span class='code'|map~_file ~~fd ~?pos ~~shared ~?size ~(~)>> maps the file descriptor
+      <<span class='code'|fd>> to an array of bytes~.\\
+>>
+<<div id="VALmapped" class="code"|<<span class="keyword"|val>> mapped : <<span class="code type"|<<a_api text="t" | type Lwt_bytes.t >> -> bool>>>><<div class="info"|<<span class='code'|mapped buffer>> returns <<span class='code'|true>> iff <<span class='code'|buffer>> is a memory mapped
+      file~.\\
+>>
+<<div class="code" id="TYPEadvice"|<<span class="keyword"|type>> advice = 
+|@@class="typetable"@ @class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|MADV_NORMAL>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|MADV_RANDOM>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|MADV_SEQUENTIAL>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|MADV_WILLNEED>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|MADV_DONTNEED>>|>>
+<<div class="info"|~Type of advise that can be sent to the kernel by the program~. ~See
+    the manual madvise~(~2~) for a description of each advices~.\\
+>>
+
+<<div id="VALmadvise" class="code"|<<span class="keyword"|val>> madvise : <<span class="code type"|<<a_api text="t" | type Lwt_bytes.t >> -> int -> int -> <<a_api text="advice" | type Lwt_bytes.advice >> -> unit>>>><<div class="info"|<<span class='code'|madvise buffer pos len advice>> advise the kernel about how the
+      program is going to use the part of the memory mapped file
+      between <<span class='code'|pos>> and <<span class='code'|pos ~+ len>>~.\\
+>>
+<<div id="VALpage_size" class="code"|<<span class="keyword"|val>> page~_size : <<span class="code type"|int>>>><<div class="info"|~Size of pages~.\\
+>>
+<<div id="VALmincore" class="code"|<<span class="keyword"|val>> mincore : <<span class="code type"|<<a_api text="t" | type Lwt_bytes.t >> -> int -> bool array -> unit>>>><<div class="info"|<<span class='code'|mincore buffer offset states>> tests whether the given pages are
+      in the system memory ~(the ~R~A~M~)~. ~The <<span class='code'|offset>> argument must be a
+      multiple of <<a_api | val Lwt_bytes.page_size >>~. <<span class='code'|states>> is used to store the result~;
+      each cases is <<span class='code'|true>> if the corresponding page in the ~R~A~M and
+      <<span class='code'|false>> otherwise~.\\
+>>
+<<div id="VALwait_mincore" class="code"|<<span class="keyword"|val>> wait~_mincore : <<span class="code type"|<<a_api text="t" | type Lwt_bytes.t >> -> int -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|wait~_mincore buffer offset>> waits until the page containing the
+      byte at offset <<span class='code'|offset>> in the the ~R~A~M~.\\
+>>

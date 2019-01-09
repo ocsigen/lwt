@@ -1,0 +1,7 @@
+=Module <<a_api_type | module Eliom_predefmod.Xhtmlcompact >> =
+<<div class="code"|<<span class="keyword"|module>> Xhtmlcompact: <<span class='code'|sig>><<a_api text=".." | module Eliom_predefmod.Xhtmlcompact >><<span class='code'|end>>>>~Eliom forms and service registration functions for ~X~H~T~M~L~, with
+         compact markup ~(i~.e~.~, without pretty~-printing~)~.\\
+
+----
+<<div class="code"|<<span class="keyword"|include>> <<a_api | module type Eliom_mkreg.ELIOMREGSIG >>>>
+<<div class="code"|<<span class="keyword"|include>> <<a_api | module type Eliom_predefmod.XHTMLFORMSSIG >>>>

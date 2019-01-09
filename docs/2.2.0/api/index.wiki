@@ -1,0 +1,214 @@
+==
+
+=@@id="1_LwtAPIReference"@@~Lwt ~- ~A~P~I ~Reference=
+\\
+
+
+
+==@@id="2_Corelibrary"@@~Core library==
+\\
+
+
+~The //core// library ~(//lwt// package~) contains the <<a_api | module Lwt >> module~, which defines
+cooperative threads with all the primitives to manipulate them~. ~It
+also provides several general purpose modules~, which do not depend on
+any external package~.\\
+
+
+
+|<<a_api | module Lwt >>|<<div class="info"|~Module <<span class='code'|~Lwt>>~: cooperative light~-weight threads~.
+>>
+|
+|<<a_api | module Lwt_condition >>|<<div class="info"|~Conditions
+>>
+|
+|<<a_api | module Lwt_list >>|<<div class="info"|~List helpers
+>>
+|
+|<<a_api | module Lwt_mutex >>|<<div class="info"|~Cooperative locks for mutual exclusion
+>>
+|
+|<<a_api | module Lwt_mvar >>|<<div class="info"|~Mailbox variables
+>>
+|
+|<<a_api | module Lwt_pool >>|<<div class="info"|~Creating pools ~(for example pools of connections to a database~)~.
+>>
+|
+|<<a_api | module Lwt_sequence >>|<<div class="info"|~Mutable sequence of elements
+>>
+|
+|<<a_api | module Lwt_stream >>|<<div class="info"|~Data streams
+>>
+|
+|<<a_api | module Lwt_switch >>|<<div class="info"|~Lwt switches
+>>
+|
+
+\\
+
+
+
+==@@id="2_Unixbindings"@@~Unix bindings==
+\\
+
+
+~The //lwt~.unix// package provides~:* the <<a_api | module Lwt_unix >> module~, which wrap system calls into cooperative ones
+* the <<a_api | module Lwt_io >> module~, which defines cooperative byte channel~, in
+  replacement of ones of the standard library
+* module helpers for logging~, spawning processes~, ~.~.~.
+
+
+
+|<<a_api | module Lwt_daemon >>|<<div class="info"|~Daemon helpers
+>>
+|
+|<<a_api | module Lwt_gc >>|<<div class="info"|~Interaction with the garbage collector
+>>
+|
+|<<a_api | module Lwt_io >>|<<div class="info"|~Buffered byte channels
+>>
+|
+|<<a_api | module Lwt_log >>|<<div class="info"|~Logging facility
+>>
+|
+|<<a_api | module Lwt_main >>|<<div class="info"|~Main loop and event queue
+>>
+|
+|<<a_api | module Lwt_process >>|<<div class="info"|~Process management
+>>
+|
+|<<a_api | module Lwt_throttle >>|<<div class="info"|~Rate limiters
+>>
+|
+|<<a_api | module Lwt_timeout >>|<<div class="info"|~Timeouts
+>>
+|
+|<<a_api | module Lwt_unix >>|<<div class="info"|~Cooperative system calls
+>>
+|
+|<<a_api | module Lwt_bytes >>|<<div class="info"|~Byte arrays
+>>
+|
+
+\\
+
+
+~This package depends on the //core// library and the //unix// package~.\\
+
+
+
+==@@id="2_Reactiveprogramminghelpers"@@~Reactive programming helpers==
+\\
+
+
+~The //lwt~.react// package provides helpers for functionnal reactive
+programming with ~Lwt~. ~It is based on the //react// package~. ~Both
+<<a_api | module Lwt_event >> and <<a_api | module Lwt_signal >> modules contains~:\\
+
+* ~Lwt specific primitives
+* cooperative versions of //react// functions
+
+
+
+|<<a_api | module Lwt_event >>|<<div class="info"|~Events utilities
+>>
+|
+|<<a_api | module Lwt_signal >>|<<div class="info"|~Signals utilities
+>>
+|
+
+\\
+
+
+~This package depends on the //core// library and the //react// package~.\\
+
+
+
+==@@id="2_Syntaxextensions"@@~Syntax extensions==
+\\
+
+
+~Lwt is shipped with two syntax extensions~. ~The first one~, contained in
+the //lwt~.syntax// package~, aims to make coding with ~Lwt easier~, and
+to make code more readable~. ~The second~, contained in the package //lwt~.syntax~.log//~, is a camlp~4 filter which decreases the performance
+penalty when using logging by inlining level tests~.\\
+
+
+
+|<<a_api | module Pa_lwt >>|<<div class="info"|~Syntactic sugars for lwt
+>>
+|
+|<<a_api | module Pa_lwt_log >>|<<div class="info"|~Logging facility
+>>
+|
+
+\\
+
+
+
+==@@id="2_Terminalmanipulation"@@~Terminal manipulation==
+\\
+
+
+~The package //lwt~.text// provides~:* terminal manipulation through the module <<a_api | module Lwt_term >>
+* text channels which behaves as byte channels but are aware of the
+  text encoding
+* a cooperative~, fully customizable read~-line facility
+
+
+
+|<<a_api | module Lwt_read_line >>|<<div class="info"|~Interactive line input
+>>
+|
+|<<a_api | module Lwt_term >>|<<div class="info"|~Terminal control
+>>
+|
+|<<a_api | module Lwt_text >>|<<div class="info"|~Text channels
+>>
+|
+
+\\
+
+
+~This package depends on the //core// library~, and the //lwt~.react//~,
+//lwt~.unix//~, //text// packages~.\\
+
+
+
+==@@id="2_Miscellaneous"@@~Miscellaneous==
+\\
+
+
+~The following modules are wrapper for integration of non~-~Lwt
+functions~/packages into ~Lwt~.\\
+
+
+
+|Lwt_glib||
+|<<a_api | module Lwt_lib >>|<<div class="info"|~Cooperative unix system calls
+>>
+|
+|<<a_api | module Lwt_preemptive >>|<<div class="info"|~This module allows to mix preemptive threads with <<span class='code'|~Lwt>>
+    cooperative threads~.
+>>
+|
+|<<a_api | module Lwt_ssl >>|<<div class="info"|~O~Caml~-~S~S~L integration
+>>
+|
+
+\\
+
+
+
+==@@id="2_Index"@@~Index==
+\\
+
+
+<a href="index_types.wiki">Index of types</a><br>
+<a href="index_exceptions.wiki">Index of exceptions</a><br>
+<a href="index_values.wiki">Index of values</a><br>
+<a href="index_methods.wiki">Index of class methods</a><br>
+<a href="index_classes.wiki">Index of classes</a><br>
+<a href="index_modules.wiki">Index of modules</a><br>
+<a href="index_module_types.wiki">Index of module types</a><br>
+\\

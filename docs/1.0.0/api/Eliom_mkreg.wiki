@@ -1,0 +1,11 @@
+=Module <<a_api_type | module Eliom_mkreg >> =
+<<div class="code"|<<span class="keyword"|module>> Eliom_mkreg: <<span class='code'|sig>><<a_api text=".." | module Eliom_mkreg >><<span class='code'|end>>>>~This module defines the functor to use to creates modules
+   generating functions to register services for your own types of pages~.
+   ~It is used for example in <<a_api | module Eliom_predefmod >>~.\\
+
+----
+\\
+
+==@@id="2_Creatingmodulestoregisterservicesforonetypeofpages"@@~Creating modules to register services for one type of pages==
+\\
+<<div class="code"|<<span class="keyword"|module type>> <<a_api text="REGCREATE" | module type Eliom_mkreg.REGCREATE >> = <<span class='code'|sig>><<a_api text=".." | module type Eliom_mkreg.REGCREATE >><<span class='code'|end>>>><<div class="code"|<<span class="keyword"|module type>> <<a_api text="ELIOMREGSIG1" | module type Eliom_mkreg.ELIOMREGSIG1 >> = <<span class='code'|sig>><<a_api text=".." | module type Eliom_mkreg.ELIOMREGSIG1 >><<span class='code'|end>>>><<div class="code"|<<span class="keyword"|module type>> <<a_api text="ELIOMREGSIG" | module type Eliom_mkreg.ELIOMREGSIG >> = <<span class='code'|sig>><<a_api text=".." | module type Eliom_mkreg.ELIOMREGSIG >><<span class='code'|end>>>><<div class="code"|<<span class="keyword"|module>> <<a_api text="MakeRegister" | module Eliom_mkreg.MakeRegister >>: <<div class="sig_block"|<<span class='code'|functor ~(>><<span class='code'|~Pages>><<span class='code'| ~: >><<span class="code type"|<<a_api text="REGCREATE" | module Eliom_mkreg.REGCREATE >>>><<span class='code'|~) ~-~> >>\\{{{   }}}<<span class="code type"|<<a_api text="ELIOMREGSIG" | module Eliom_mkreg.ELIOMREGSIG >>>><<span class="code type"|{{{  }}} with \\{{{   }}}type page = Pages.page\\{{{   }}}and type options = Pages.options>>>>>>

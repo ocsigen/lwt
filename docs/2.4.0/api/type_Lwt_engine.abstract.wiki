@@ -1,0 +1,22 @@
+<<code language="ocaml" | object
+  method private virtual cleanup : unit
+  method destroy : unit
+  method fake_io : Unix.file_descr -> unit
+  method virtual iter : bool -> unit
+  method on_readable :
+    Unix.file_descr -> (Lwt_engine.event -> unit) -> Lwt_engine.event
+  method on_timer :
+    float -> bool -> (Lwt_engine.event -> unit) -> Lwt_engine.event
+  method on_writable :
+    Unix.file_descr -> (Lwt_engine.event -> unit) -> Lwt_engine.event
+  method readable_count : int
+  method private virtual register_readable :
+    Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+  method private virtual register_timer :
+    float -> bool -> (unit -> unit) -> unit Lazy.t
+  method private virtual register_writable :
+    Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+  method timer_count : int
+  method transfer : Lwt_engine.abstract -> unit
+  method writable_count : int
+end >>

@@ -1,0 +1,60 @@
+=Index of exceptions=
+
+|@@ @style="tet-align: left;"@@\\C|
+|@@class="odocwiki_index"@ @@<<a_api text="Canceled"| exception Lwt.Canceled >> ~[<<a_api | module Lwt >>~]|<<div class="odocwiki_info"|~Canceled threads fails with this exception
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="Channel_closed"| exception Lwt_io.Channel_closed >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~Exception raised when a channel is closed~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="Closed"| exception Lwt_stream.Closed >> ~[<<a_api | module Lwt_stream >>~]|<<div class="odocwiki_info"|~Exception raised by the push function of a push~-stream when
+      pushing an element after the end of stream ~(<<span class="odocwiki_inlinecode"|~= ~None>>~) has been
+      pushed~.
+>>
+|
+|@@ @style="tet-align: left;"@@\\E|
+|@@class="odocwiki_index"@ @@<<a_api text="Empty"| exception Lwt_stream.Empty >> ~[<<a_api | module Lwt_stream >>~]|<<div class="odocwiki_info"|~Exception raised when trying to retrieve data from an empty
+      stream~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="Empty"| exception Lwt_sequence.Empty >> ~[<<a_api | module Lwt_sequence >>~]|<<div class="odocwiki_info"|~Exception raised by <<span class="odocwiki_inlinecode"|take~_l>> and <<span class="odocwiki_inlinecode"|tale~_s>> and when the sequence
+      is empty
+>>
+|
+|@@ @style="tet-align: left;"@@\\F|
+|@@class="odocwiki_index"@ @@<<a_api text="Full"| exception Lwt_stream.Full >> ~[<<a_api | module Lwt_stream >>~]|<<div class="odocwiki_info"|~Exception raised by the push function of a bounded push~-stream
+      when the stream queue is full and a thread is already waiting to
+      push an element~.
+>>
+|
+|@@ @style="tet-align: left;"@@\\L|
+|@@class="odocwiki_index"@ @@<<a_api text="Logger_closed"| exception Lwt_log_core.Logger_closed >> ~[<<a_api | module Lwt_log_core >>~]|<<div class="odocwiki_info"|~Exception raised when trying to use a closed logger
+>>
+|
+|@@ @style="tet-align: left;"@@\\N|
+|@@class="odocwiki_index"@ @@<<a_api text="Not_available"| exception Lwt_sys.Not_available >> ~[<<a_api | module Lwt_sys >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Not~_available~(feature~)>> is an exception that may be raised when
+      a feature is not available on the current system~.
+>>
+|
+|@@ @style="tet-align: left;"@@\\O|
+|@@class="odocwiki_index"@ @@<<a_api text="Off"| exception Lwt_switch.Off >> ~[<<a_api | module Lwt_switch >>~]|<<div class="odocwiki_info"|~Exception raised when trying to add a hook to a switch that is
+      already off~.
+>>
+|
+|@@ @style="tet-align: left;"@@\\R|
+|@@class="odocwiki_index"@ @@<<a_api text="Retry"| exception Lwt_unix.Retry >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~If an action raises <<a_api | exception Lwt_unix.Retry >>~, it will be requeued until the **      file descriptor** becomes readable~/writable again~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="Retry_read"| exception Lwt_unix.Retry_read >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~If an action raises <<a_api | exception Lwt_unix.Retry_read >>~, it will be requeued until the
+      **file descriptor** becomes readable~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="Retry_write"| exception Lwt_unix.Retry_write >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~If an action raises <<a_api | exception Lwt_unix.Retry_read >>~, it will be requeued until the
+      **file descriptor** becomes writables~.
+>>
+|
+|@@ @style="tet-align: left;"@@\\T|
+|@@class="odocwiki_index"@ @@<<a_api text="Timeout"| exception Lwt_unix.Timeout >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~Exception raised by timeout operations
+>>
+|
+\\

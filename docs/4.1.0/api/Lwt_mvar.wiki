@@ -1,0 +1,36 @@
+=Module <<a_api_type | module Lwt_mvar >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_mvar>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_mvar >><<span class="ocsforge_color_keyword"|end>>>>~Mailbox variables
+
+----
+
+"~Mailbox" variables implement a synchronising variable~, used for
+    communication between concurrent threads~.
+
+
+    ~This code adapted from
+    [[http://eigenclass.org/hiki.rb?cmd=view&p=lightweight-threads-with-lwt|~Comparing lightweight threads ~(eigenclass~.org~)]]
+<<pre class="ocsforge_color odocwiki_code" id="TYPEt"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_type"|'a>> <<span class="odocwiki_name"|t>>>><<div class="odocwiki_info"|~The type of a mailbox variable~. ~Mailbox variables are used to
+      communicate values between threads in a synchronous way~. ~The
+      type parameter specifies the type of the value propagated from
+      <<span class="odocwiki_inlinecode"|put>> to <<span class="odocwiki_inlinecode"|take>>~.
+>>
+<<pre id="VALcreate" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|create>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_mvar.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|create v>> creates a new mailbox variable containing value <<span class="odocwiki_inlinecode"|v>>~.
+>>
+<<pre id="VALcreate_empty" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|create~_empty>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_mvar.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|create ~(~)>> creates a new empty mailbox variable~.
+>>
+<<pre id="VALput" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|put>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_mvar.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|put mvar value>> puts a value into a mailbox variable~. ~This
+      value will remain in the mailbox until <<span class="odocwiki_inlinecode"|take>> is called to
+      remove it~. ~If the mailbox is not empty~, the current thread will
+      block until it is emptied~.
+>>
+<<pre id="VALtake" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|take>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_mvar.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|take mvar>> will take any currently available value from the
+      mailbox variable~. ~If no value is currently available~, the
+      current thread will block~, awaiting a value to be <<span class="odocwiki_inlinecode"|put>> by
+      another thread~.
+>>
+<<pre id="VALtake_available" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|take~_available>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_mvar.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a option>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|take~_available mvar>> immediately takes the value from <<span class="odocwiki_inlinecode"|mvar>> without
+      blocking~, returning <<span class="odocwiki_inlinecode"|~None>> if the mailbox is empty~.
+>>
+<<pre id="VALis_empty" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|is~_empty>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_mvar.t >> <<span class="ocsforge_color_delimiter"| -> >> bool>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|is~_empty mvar>> indicates if <<span class="odocwiki_inlinecode"|put mvar>> can be called without
+      blocking~.
+>>

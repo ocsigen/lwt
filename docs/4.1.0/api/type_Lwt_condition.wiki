@@ -1,0 +1,8 @@
+<<code language="ocaml" | sig
+  type 'a t
+  val create : unit -> 'a Lwt_condition.t
+  val wait : ?mutex:Lwt_mutex.t -> 'a Lwt_condition.t -> 'a Lwt.t
+  val signal : 'a Lwt_condition.t -> 'a -> unit
+  val broadcast : 'a Lwt_condition.t -> 'a -> unit
+  val broadcast_exn : 'a Lwt_condition.t -> exn -> unit
+end >>

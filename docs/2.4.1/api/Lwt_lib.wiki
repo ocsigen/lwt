@@ -1,0 +1,25 @@
+=Module <<a_api_type | module Lwt_lib >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_lib>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_lib >><<span class="ocsforge_color_keyword"|end>>>>~Cooperative unix system calls
+
+----
+
+~This module transform non~-cooperative functions of the standard
+    library into cooperative ones by launching them into system
+    threads~.
+
+
+    ~Indeed~, lots of functions of the <<span class="odocwiki_inlinecode"|~Unix>> modules~, corresponding to
+    functions of the standard ~C library may take times to
+    complete~. ~For example <<span class="odocwiki_inlinecode"|gethostbyname>> may use ~D~N~S resolution~,
+    users informations may be stored in a ldap database~, ~.~.~.
+
+
+    ~Since these functions are implemented ~(in the standard ~C library~)
+    using blocking ~I~Os~, if you use them directly~, you program may
+    hang~.
+<<pre id="VALgetaddrinfo" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|getaddrinfo>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  string <<span class="ocsforge_color_delimiter"| -> >>\\  string <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|getaddrinfo_option>> list <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|addr_info>> list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Cooperative getaddrinfo with cache ~(using ~Lwt~_preemptive~.detach~)
+>>
+<<pre id="VALgethostbyname" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|gethostbyname>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|string <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|host_entry>> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Cooperative gethostbyname with cache ~(using ~Lwt~_preemptive~.detach~)
+>>
+<<pre id="VALgetnameinfo" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|getnameinfo>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|sockaddr>> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|getnameinfo_option>> list <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|name_info>> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Cooperative getnameinfo with cache ~(using ~Lwt~_preemptive~.detach~)
+>>

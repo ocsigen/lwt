@@ -1,0 +1,60 @@
+=Module <<a_api_type | module Lwt_read_line.Engine >> =
+<<div class="code"|<<span class="keyword"|module>> Engine: <<span class='code'|sig>><<a_api text=".." | module Lwt_read_line.Engine >><<span class='code'|end>>>>~Engine\\
+
+----
+\\
+~Note~: this part know nothing about rendering or completion~.\\
+<<div class="code" id="TYPEselection_state"|<<span class="keyword"|type>> selection~_state = { 
+|@@class="typetable"@ @class="lefttop"@@{{{   }}}|@@class="lefttop"@@sel_text : <<span class="code type"|Text.t>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~The whole input text on which the selection is working|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@sel_mark : <<span class="code type"|Text.pointer>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~Pointer to the mark|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@sel_cursor : <<span class="code type"|Text.pointer>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~Pointer to the cursor|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+
+}
+>>
+<<div class="info"|~State when the user is doing selection~:\\
+>>
+
+<<div class="code" id="TYPEsearch_state"|<<span class="keyword"|type>> search~_state = { 
+|@@class="typetable"@ @class="lefttop"@@{{{   }}}|@@class="lefttop"@@search_word : <<span class="code type"|Text.t>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~The word we are looking for|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@search_history : <<span class="code type"|<<a_api text="Lwt_read_line.history" | type Lwt_read_line.history >>>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~Position in history~. ~The first element is a sentence
+        containing the searched word|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@search_init_history : <<span class="code type"|<<a_api text="Lwt_read_line.history" | type Lwt_read_line.history >>>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~The initial history~, before searching for a word|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+
+}
+>>
+<<div class="info"|~State when searching in the history\\
+>>
+
+<<div class="code" id="TYPEmode"|<<span class="keyword"|type>> mode = 
+|@@class="typetable"@ @class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Edition>> <<span class="keyword"|of>> <<span class="code type"|<<a_api text="Lwt_read_line.edition_state" | type Lwt_read_line.edition_state >>>>|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~The user is typing some text|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Selection>> <<span class="keyword"|of>> <<span class="code type"|<<a_api text="selection_state" | type Lwt_read_line.Engine.selection_state >>>>|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~The user is selecting some text|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Search>> <<span class="keyword"|of>> <<span class="code type"|<<a_api text="search_state" | type Lwt_read_line.Engine.search_state >>>>|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~The user is searching the given word in the history|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|>>
+<<div class="info"|~The engine mode~:\\
+>>
+
+<<div class="code" id="TYPEstate"|<<span class="keyword"|type>> state = { 
+|@@class="typetable"@ @class="lefttop"@@{{{   }}}|@@class="lefttop"@@mode : <<span class="code type"|<<a_api text="mode" | type Lwt_read_line.Engine.mode >>>>;|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@history : <<span class="code type"|<<a_api text="Lwt_read_line.history" | type Lwt_read_line.history >> * <<a_api text="Lwt_read_line.history" | type Lwt_read_line.history >>>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~Cursor to the history position~.|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+
+}
+>>
+<<div class="info"|~An engine state~:\\
+>>
+
+<<div id="VALinit" class="code"|<<span class="keyword"|val>> init : <<span class="code type"|<<a_api text="Lwt_read_line.history" | type Lwt_read_line.history >> -> <<a_api text="state" | type Lwt_read_line.Engine.state >>>>>><<div class="info"|<<span class='code'|init history>> return a initial state using the given
+        history\\
+>>
+<<div id="VALreset" class="code"|<<span class="keyword"|val>> reset : <<span class="code type"|<<a_api text="state" | type Lwt_read_line.Engine.state >> -> <<a_api text="state" | type Lwt_read_line.Engine.state >>>>>><<div class="info"|<<span class='code'|reset state>> reset the given state~, if the user was doing a
+        selection~, it is canceled\\
+>>
+<<div id="VALupdate" class="code"|<<span class="keyword"|val>> update : <<span class="code type"|\\{{{   }}}engine_state:<<a_api text="state" | type Lwt_read_line.Engine.state >> ->\\{{{   }}}  ?clipboard:<<a_api text="Lwt_read_line.clipboard" | class type Lwt_read_line.clipboard >> ->\\{{{   }}}  command:<<a_api text="Lwt_read_line.Command.t" | type Lwt_read_line.Command.t >> -> unit -> <<a_api text="state" | type Lwt_read_line.Engine.state >>>>>><<div class="info"|<<span class='code'|update ~~state ~?clipboard ~~command ~(~)>> update an engine state by
+        processing the given command~. ~It returns the new state~, and
+        may have the side effect of changing the clipboard contents~.\\
+
+
+        <<span class='code'|clipboard>> defaults to the global clipboard~.\\
+>>
+<<div id="VALedition_state" class="code"|<<span class="keyword"|val>> edition~_state : <<span class="code type"|<<a_api text="state" | type Lwt_read_line.Engine.state >> -> <<a_api text="Lwt_read_line.edition_state" | type Lwt_read_line.edition_state >>>>>><<div class="info"|~Returns the edition state of a state~, whatever its mode is~.\\
+>>
+<<div id="VALall_input" class="code"|<<span class="keyword"|val>> all~_input : <<span class="code type"|<<a_api text="state" | type Lwt_read_line.Engine.state >> -> Text.t>>>><<div class="info"|~Returns the current complete user input~.\\
+>>

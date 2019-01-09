@@ -1,0 +1,18 @@
+<<code language="ocaml" | sig
+  type socket
+  val ssl_accept : Lwt_unix.file_descr -> Ssl.context -> Lwt_ssl.socket Lwt.t
+  val ssl_connect :
+    Lwt_unix.file_descr -> Ssl.context -> Lwt_ssl.socket Lwt.t
+  val plain : Lwt_unix.file_descr -> Lwt_ssl.socket
+  val read : Lwt_ssl.socket -> string -> int -> int -> int Lwt.t
+  val write : Lwt_ssl.socket -> string -> int -> int -> int Lwt.t
+  val wait_read : Lwt_ssl.socket -> unit Lwt.t
+  val wait_write : Lwt_ssl.socket -> unit Lwt.t
+  val shutdown : Lwt_ssl.socket -> Unix.shutdown_command -> unit
+  val close : Lwt_ssl.socket -> unit
+  val out_channel_of_descr : Lwt_ssl.socket -> Lwt_chan.out_channel
+  val in_channel_of_descr : Lwt_ssl.socket -> Lwt_chan.in_channel
+  val ssl_shutdown : Lwt_ssl.socket -> unit Lwt.t
+  val abort : Lwt_ssl.socket -> exn -> unit
+  val is_ssl : Lwt_ssl.socket -> bool
+end >>

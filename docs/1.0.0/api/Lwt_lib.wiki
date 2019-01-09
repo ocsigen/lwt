@@ -1,0 +1,10 @@
+=Module <<a_api_type | module Lwt_lib >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_lib: <<span class='code'|sig>><<a_api text=".." | module Lwt_lib >><<span class='code'|end>>>>~Cooperative getaddrinfo with cache ~(using ~Lwt~_preemptive~.detach~)\\
+
+----
+<<div id="VALgetaddrinfo" class="code"|<<span class="keyword"|val>> getaddrinfo : <<span class="code type"|string -> string -> Unix.getaddrinfo_option list -> Unix.addr_info list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Cooperative getaddrinfo with cache ~(using ~Lwt~_preemptive~.detach~)\\
+>>
+<<div id="VALgethostbyname" class="code"|<<span class="keyword"|val>> gethostbyname : <<span class="code type"|string -> Unix.host_entry <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Cooperative gethostbyname with cache ~(using ~Lwt~_preemptive~.detach~)\\
+>>
+<<div id="VALgetnameinfo" class="code"|<<span class="keyword"|val>> getnameinfo : <<span class="code type"|Unix.sockaddr -> Unix.getnameinfo_option list -> Unix.name_info <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Cooperative getnameinfo with cache ~(using ~Lwt~_preemptive~.detach~)\\
+>>

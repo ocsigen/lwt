@@ -1,0 +1,79 @@
+<<code language="ocaml" | sig
+  val return : 'a -> 'a React.signal
+  val bind :
+    ?eq:('a -> 'a -> bool) ->
+    'b React.signal -> ('b -> 'a React.signal) -> 'a React.signal
+  val with_finaliser : (unit -> unit) -> 'a React.signal -> 'a React.signal
+  val limit :
+    ?eq:('a -> 'a -> bool) ->
+    (unit -> unit Lwt.t) -> 'a React.signal -> 'a React.signal
+  val delay : 'a React.signal Lwt.t -> 'a React.event
+  val app_s :
+    ?eq:('a -> 'a -> bool) ->
+    ('b -> 'a Lwt.t) React.signal -> 'a -> 'b React.signal -> 'a React.signal
+  val map_s :
+    ?eq:('a -> 'a -> bool) ->
+    ('b -> 'a Lwt.t) -> 'a -> 'b React.signal -> 'a React.signal
+  val filter_s :
+    ?eq:('a -> 'a -> bool) ->
+    ('a -> bool Lwt.t) -> 'a -> 'a React.signal -> 'a React.signal
+  val fmap_s :
+    ?eq:('a -> 'a -> bool) ->
+    ('b -> 'a option Lwt.t) -> 'a -> 'b React.signal -> 'a React.signal
+  val diff_s : ('a -> 'a -> 'b Lwt.t) -> 'a React.signal -> 'b React.event
+  val sample_s :
+    ('a -> 'b -> 'c Lwt.t) ->
+    'a React.event -> 'b React.signal -> 'c React.event
+  val accum_s :
+    ?eq:('a -> 'a -> bool) ->
+    ('a -> 'a Lwt.t) React.event -> 'a -> 'a React.signal
+  val fold_s :
+    ?eq:('a -> 'a -> bool) ->
+    ('a -> 'b -> 'a Lwt.t) -> 'a -> 'b React.event -> 'a React.signal
+  val merge_s :
+    ?eq:('a -> 'a -> bool) ->
+    ('a -> 'b -> 'a Lwt.t) -> 'a -> 'b React.signal list -> 'a React.signal
+  val l1_s :
+    ?eq:('a -> 'a -> bool) ->
+    ('b -> 'a Lwt.t) -> 'a -> 'b React.signal -> 'a React.signal
+  val l2_s :
+    ?eq:('a -> 'a -> bool) ->
+    ('b -> 'c -> 'a Lwt.t) ->
+    'a -> 'b React.signal -> 'c React.signal -> 'a React.signal
+  val l3_s :
+    ?eq:('a -> 'a -> bool) ->
+    ('b -> 'c -> 'd -> 'a Lwt.t) ->
+    'a ->
+    'b React.signal -> 'c React.signal -> 'd React.signal -> 'a React.signal
+  val l4_s :
+    ?eq:('a -> 'a -> bool) ->
+    ('b -> 'c -> 'd -> 'e -> 'a Lwt.t) ->
+    'a ->
+    'b React.signal ->
+    'c React.signal -> 'd React.signal -> 'e React.signal -> 'a React.signal
+  val l5_s :
+    ?eq:('a -> 'a -> bool) ->
+    ('b -> 'c -> 'd -> 'e -> 'f -> 'a Lwt.t) ->
+    'a ->
+    'b React.signal ->
+    'c React.signal ->
+    'd React.signal -> 'e React.signal -> 'f React.signal -> 'a React.signal
+  val l6_s :
+    ?eq:('a -> 'a -> bool) ->
+    ('b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'a Lwt.t) ->
+    'a ->
+    'b React.signal ->
+    'c React.signal ->
+    'd React.signal ->
+    'e React.signal -> 'f React.signal -> 'g React.signal -> 'a React.signal
+  val run_s :
+    ?eq:('a -> 'a -> bool) -> 'a -> 'a Lwt.t React.signal -> 'a React.signal
+  type notifier
+  val disable : Lwt_signal.notifier -> unit
+  val notify : ('a -> unit) -> 'a React.signal -> Lwt_signal.notifier
+  val notify_p : ('a -> unit Lwt.t) -> 'a React.signal -> Lwt_signal.notifier
+  val notify_s : ('a -> unit Lwt.t) -> 'a React.signal -> Lwt_signal.notifier
+  val always_notify : ('a -> unit) -> 'a React.signal -> unit
+  val always_notify_p : ('a -> unit Lwt.t) -> 'a React.signal -> unit
+  val always_notify_s : ('a -> unit Lwt.t) -> 'a React.signal -> unit
+end >>

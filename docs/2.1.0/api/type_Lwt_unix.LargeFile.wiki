@@ -1,0 +1,9 @@
+<<code language="ocaml" | sig
+  val lseek :
+    Lwt_unix.file_descr -> int64 -> Unix.seek_command -> int64 Lwt.t
+  val truncate : string -> int64 -> unit Lwt.t
+  val ftruncate : Lwt_unix.file_descr -> int64 -> unit Lwt.t
+  val stat : string -> Unix.LargeFile.stats Lwt.t
+  val lstat : string -> Unix.LargeFile.stats Lwt.t
+  val fstat : Lwt_unix.file_descr -> Unix.LargeFile.stats Lwt.t
+end >>

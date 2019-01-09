@@ -1,0 +1,212 @@
+=Module <<a_api_type | module Xhtmltypes >> =
+<<div class="code"|<<span class="keyword"|module>> Xhtmltypes: <<span class='code'|sig>><<a_api text=".." | module Xhtmltypes >><<span class='code'|end>>>>~X~H~T~M~L types with variants~. ~(~See also <<a_api | module XHTML.M >>~)\\
+
+----
+<<div class="code" id="TYPExhtml"|<<span class="keyword"|type>> xhtml = <<span class="code type"|[ `Html ]>> >>
+
+<<div class="code" id="TYPEform"|<<span class="keyword"|type>> form = <<span class="code type"|[ `Form ]>> >>
+
+<<div class="code" id="TYPEa"|<<span class="keyword"|type>> a = <<span class="code type"|[ `A ]>> >>
+
+<<div class="code" id="TYPEimg"|<<span class="keyword"|type>> img = <<span class="code type"|[ `Img ]>> >>
+
+<<div class="code" id="TYPElink"|<<span class="keyword"|type>> link = <<span class="code type"|[ `Link ]>> >>
+
+<<div class="code" id="TYPEscript"|<<span class="keyword"|type>> script = <<span class="code type"|[ `Script ]>> >>
+
+<<div class="code" id="TYPEinput"|<<span class="keyword"|type>> input = <<span class="code type"|[ `Input ]>> >>
+
+<<div class="code" id="TYPEtextarea"|<<span class="keyword"|type>> textarea = <<span class="code type"|[ `Textarea ]>> >>
+
+<<div class="code" id="TYPEselect"|<<span class="keyword"|type>> select = <<span class="code type"|[ `Select ]>> >>
+
+<<div class="code" id="TYPEselectoption"|<<span class="keyword"|type>> selectoption = <<span class="code type"|[ `Option ]>> >>
+
+<<div class="code" id="TYPEoptgroup"|<<span class="keyword"|type>> optgroup = <<span class="code type"|[ `Optgroup ]>> >>
+
+<<div class="code" id="TYPEbutton"|<<span class="keyword"|type>> button = <<span class="code type"|[ `Button ]>> >>
+
+<<div class="code" id="TYPEpcdata"|<<span class="keyword"|type>> pcdata = <<span class="code type"|[ `PCDATA ]>> >>
+
+<<div class="code" id="TYPEnotag"|<<span class="keyword"|type>> notag>>
+
+<<div class="code" id="TYPEhtml_content"|<<span class="keyword"|type>> html~_content = <<span class="code type"|[ `Body | `Frameset | `Head ]>> >>
+
+<<div class="code" id="TYPEbody_content"|<<span class="keyword"|type>> body~_content = <<span class="code type"|XHTML.M.block>> >>
+
+<<div class="code" id="TYPEdiv_content"|<<span class="keyword"|type>> div~_content = <<span class="code type"|\\{{{   }}}[ `A\\{{{   }}}  | `Abbr\\{{{   }}}  | `Acronym\\{{{   }}}  | `Address\\{{{   }}}  | `B\\{{{   }}}  | `Bdo\\{{{   }}}  | `Big\\{{{   }}}  | `Blockquote\\{{{   }}}  | `Br\\{{{   }}}  | `Button\\{{{   }}}  | `Cite\\{{{   }}}  | `Code\\{{{   }}}  | `Del\\{{{   }}}  | `Dfn\\{{{   }}}  | `Div\\{{{   }}}  | `Dl\\{{{   }}}  | `Em\\{{{   }}}  | `Fieldset\\{{{   }}}  | `Form\\{{{   }}}  | `H1\\{{{   }}}  | `H2\\{{{   }}}  | `H3\\{{{   }}}  | `H4\\{{{   }}}  | `H5\\{{{   }}}  | `H6\\{{{   }}}  | `Hr\\{{{   }}}  | `I\\{{{   }}}  | `Img\\{{{   }}}  | `Input\\{{{   }}}  | `Ins\\{{{   }}}  | `Kbd\\{{{   }}}  | `Label\\{{{   }}}  | `Map\\{{{   }}}  | `Noscript\\{{{   }}}  | `Object\\{{{   }}}  | `Ol\\{{{   }}}  | `P\\{{{   }}}  | `PCDATA\\{{{   }}}  | `Pre\\{{{   }}}  | `Q\\{{{   }}}  | `Samp\\{{{   }}}  | `Script\\{{{   }}}  | `Select\\{{{   }}}  | `Small\\{{{   }}}  | `Span\\{{{   }}}  | `Strong\\{{{   }}}  | `Sub\\{{{   }}}  | `Sup\\{{{   }}}  | `Table\\{{{   }}}  | `Textarea\\{{{   }}}  | `Tt\\{{{   }}}  | `Ul\\{{{   }}}  | `Var ]>> >>
+
+<<div class="code" id="TYPEobject_content"|<<span class="keyword"|type>> object~_content = <<span class="code type"|\\{{{   }}}[ `A\\{{{   }}}  | `Abbr\\{{{   }}}  | `Acronym\\{{{   }}}  | `Address\\{{{   }}}  | `B\\{{{   }}}  | `Bdo\\{{{   }}}  | `Big\\{{{   }}}  | `Blockquote\\{{{   }}}  | `Br\\{{{   }}}  | `Button\\{{{   }}}  | `Cite\\{{{   }}}  | `Code\\{{{   }}}  | `Del\\{{{   }}}  | `Dfn\\{{{   }}}  | `Div\\{{{   }}}  | `Dl\\{{{   }}}  | `Em\\{{{   }}}  | `Fieldset\\{{{   }}}  | `Form\\{{{   }}}  | `H1\\{{{   }}}  | `H2\\{{{   }}}  | `H3\\{{{   }}}  | `H4\\{{{   }}}  | `H5\\{{{   }}}  | `H6\\{{{   }}}  | `Hr\\{{{   }}}  | `I\\{{{   }}}  | `Img\\{{{   }}}  | `Input\\{{{   }}}  | `Ins\\{{{   }}}  | `Kbd\\{{{   }}}  | `Label\\{{{   }}}  | `Map\\{{{   }}}  | `Noscript\\{{{   }}}  | `Object\\{{{   }}}  | `Ol\\{{{   }}}  | `P\\{{{   }}}  | `PCDATA\\{{{   }}}  | `Param\\{{{   }}}  | `Pre\\{{{   }}}  | `Q\\{{{   }}}  | `Samp\\{{{   }}}  | `Script\\{{{   }}}  | `Select\\{{{   }}}  | `Small\\{{{   }}}  | `Span\\{{{   }}}  | `Strong\\{{{   }}}  | `Sub\\{{{   }}}  | `Sup\\{{{   }}}  | `Table\\{{{   }}}  | `Textarea\\{{{   }}}  | `Tt\\{{{   }}}  | `Ul\\{{{   }}}  | `Var ]>> >>
+
+<<div class="code" id="TYPEfieldset_content"|<<span class="keyword"|type>> fieldset~_content = <<span class="code type"|\\{{{   }}}[ `A\\{{{   }}}  | `Abbr\\{{{   }}}  | `Acronym\\{{{   }}}  | `Address\\{{{   }}}  | `B\\{{{   }}}  | `Bdo\\{{{   }}}  | `Big\\{{{   }}}  | `Blockquote\\{{{   }}}  | `Br\\{{{   }}}  | `Button\\{{{   }}}  | `Cite\\{{{   }}}  | `Code\\{{{   }}}  | `Del\\{{{   }}}  | `Dfn\\{{{   }}}  | `Div\\{{{   }}}  | `Dl\\{{{   }}}  | `Em\\{{{   }}}  | `Fieldset\\{{{   }}}  | `Form\\{{{   }}}  | `H1\\{{{   }}}  | `H2\\{{{   }}}  | `H3\\{{{   }}}  | `H4\\{{{   }}}  | `H5\\{{{   }}}  | `H6\\{{{   }}}  | `Hr\\{{{   }}}  | `I\\{{{   }}}  | `Img\\{{{   }}}  | `Input\\{{{   }}}  | `Ins\\{{{   }}}  | `Kbd\\{{{   }}}  | `Label\\{{{   }}}  | `Legend\\{{{   }}}  | `Map\\{{{   }}}  | `Noscript\\{{{   }}}  | `Object\\{{{   }}}  | `Ol\\{{{   }}}  | `P\\{{{   }}}  | `PCDATA\\{{{   }}}  | `Pre\\{{{   }}}  | `Q\\{{{   }}}  | `Samp\\{{{   }}}  | `Script\\{{{   }}}  | `Select\\{{{   }}}  | `Small\\{{{   }}}  | `Span\\{{{   }}}  | `Strong\\{{{   }}}  | `Sub\\{{{   }}}  | `Sup\\{{{   }}}  | `Table\\{{{   }}}  | `Textarea\\{{{   }}}  | `Tt\\{{{   }}}  | `Ul\\{{{   }}}  | `Var ]>> >>
+
+<<div class="code" id="TYPEbutton_content"|<<span class="keyword"|type>> button~_content = <<span class="code type"|\\{{{   }}}[ `Abbr\\{{{   }}}  | `Acronym\\{{{   }}}  | `Address\\{{{   }}}  | `B\\{{{   }}}  | `Bdo\\{{{   }}}  | `Big\\{{{   }}}  | `Blockquote\\{{{   }}}  | `Br\\{{{   }}}  | `Cite\\{{{   }}}  | `Code\\{{{   }}}  | `Del\\{{{   }}}  | `Dfn\\{{{   }}}  | `Div\\{{{   }}}  | `Dl\\{{{   }}}  | `Em\\{{{   }}}  | `H1\\{{{   }}}  | `H2\\{{{   }}}  | `H3\\{{{   }}}  | `H4\\{{{   }}}  | `H5\\{{{   }}}  | `H6\\{{{   }}}  | `Hr\\{{{   }}}  | `I\\{{{   }}}  | `Img\\{{{   }}}  | `Ins\\{{{   }}}  | `Kbd\\{{{   }}}  | `Map\\{{{   }}}  | `Noscript\\{{{   }}}  | `Object\\{{{   }}}  | `Ol\\{{{   }}}  | `P\\{{{   }}}  | `PCDATA\\{{{   }}}  | `Pre\\{{{   }}}  | `Q\\{{{   }}}  | `Samp\\{{{   }}}  | `Script\\{{{   }}}  | `Small\\{{{   }}}  | `Span\\{{{   }}}  | `Strong\\{{{   }}}  | `Sub\\{{{   }}}  | `Sup\\{{{   }}}  | `Table\\{{{   }}}  | `Tt\\{{{   }}}  | `Ul\\{{{   }}}  | `Var ]>> >>
+
+<<div class="code" id="TYPEhead_content"|<<span class="keyword"|type>> head~_content = <<span class="code type"|[ `Base | `Link | `Meta | `Object | `Script | `Style | `Title ]>> >>
+
+<<div class="code" id="TYPEform_content"|<<span class="keyword"|type>> form~_content = <<span class="code type"|\\{{{   }}}[ `Address\\{{{   }}}  | `Blockquote\\{{{   }}}  | `Del\\{{{   }}}  | `Div\\{{{   }}}  | `Dl\\{{{   }}}  | `Fieldset\\{{{   }}}  | `H1\\{{{   }}}  | `H2\\{{{   }}}  | `H3\\{{{   }}}  | `H4\\{{{   }}}  | `H5\\{{{   }}}  | `H6\\{{{   }}}  | `Hr\\{{{   }}}  | `Ins\\{{{   }}}  | `Noscript\\{{{   }}}  | `Ol\\{{{   }}}  | `P\\{{{   }}}  | `Pre\\{{{   }}}  | `Script\\{{{   }}}  | `Table\\{{{   }}}  | `Ul ]>> >>
+
+<<div class="code" id="TYPEblockquote_content"|<<span class="keyword"|type>> blockquote~_content = <<span class="code type"|\\{{{   }}}[ `Address\\{{{   }}}  | `Blockquote\\{{{   }}}  | `Del\\{{{   }}}  | `Div\\{{{   }}}  | `Dl\\{{{   }}}  | `Fieldset\\{{{   }}}  | `Form\\{{{   }}}  | `H1\\{{{   }}}  | `H2\\{{{   }}}  | `H3\\{{{   }}}  | `H4\\{{{   }}}  | `H5\\{{{   }}}  | `H6\\{{{   }}}  | `Hr\\{{{   }}}  | `Ins\\{{{   }}}  | `Noscript\\{{{   }}}  | `Ol\\{{{   }}}  | `P\\{{{   }}}  | `PCDATA\\{{{   }}}  | `Pre\\{{{   }}}  | `Script\\{{{   }}}  | `Table\\{{{   }}}  | `Ul ]>> >>
+
+<<div class="code" id="TYPEmap_content"|<<span class="keyword"|type>> map~_content = <<span class="code type"|\\{{{   }}}[ `Address\\{{{   }}}  | `Area\\{{{   }}}  | `Blockquote\\{{{   }}}  | `Del\\{{{   }}}  | `Div\\{{{   }}}  | `Dl\\{{{   }}}  | `Fieldset\\{{{   }}}  | `Form\\{{{   }}}  | `H1\\{{{   }}}  | `H2\\{{{   }}}  | `H3\\{{{   }}}  | `H4\\{{{   }}}  | `H5\\{{{   }}}  | `H6\\{{{   }}}  | `Hr\\{{{   }}}  | `Ins\\{{{   }}}  | `Noscript\\{{{   }}}  | `Ol\\{{{   }}}  | `P\\{{{   }}}  | `Pre\\{{{   }}}  | `Script\\{{{   }}}  | `Table\\{{{   }}}  | `Ul ]>> >>
+
+<<div class="code" id="TYPEinlinemix"|<<span class="keyword"|type>> inlinemix = <<span class="code type"|\\{{{   }}}[ `A\\{{{   }}}  | `Abbr\\{{{   }}}  | `Acronym\\{{{   }}}  | `B\\{{{   }}}  | `Bdo\\{{{   }}}  | `Big\\{{{   }}}  | `Br\\{{{   }}}  | `Button\\{{{   }}}  | `Cite\\{{{   }}}  | `Code\\{{{   }}}  | `Del\\{{{   }}}  | `Dfn\\{{{   }}}  | `Em\\{{{   }}}  | `I\\{{{   }}}  | `Img\\{{{   }}}  | `Input\\{{{   }}}  | `Ins\\{{{   }}}  | `Kbd\\{{{   }}}  | `Label\\{{{   }}}  | `Map\\{{{   }}}  | `Noscript\\{{{   }}}  | `Object\\{{{   }}}  | `PCDATA\\{{{   }}}  | `Q\\{{{   }}}  | `Samp\\{{{   }}}  | `Script\\{{{   }}}  | `Select\\{{{   }}}  | `Small\\{{{   }}}  | `Span\\{{{   }}}  | `Strong\\{{{   }}}  | `Sub\\{{{   }}}  | `Sup\\{{{   }}}  | `Textarea\\{{{   }}}  | `Tt\\{{{   }}}  | `Var ]>> >>
+
+<<div class="code" id="TYPElabel_content"|<<span class="keyword"|type>> label~_content = <<span class="code type"|\\{{{   }}}[ `A\\{{{   }}}  | `Abbr\\{{{   }}}  | `Acronym\\{{{   }}}  | `B\\{{{   }}}  | `Bdo\\{{{   }}}  | `Big\\{{{   }}}  | `Br\\{{{   }}}  | `Button\\{{{   }}}  | `Cite\\{{{   }}}  | `Code\\{{{   }}}  | `Del\\{{{   }}}  | `Dfn\\{{{   }}}  | `Em\\{{{   }}}  | `I\\{{{   }}}  | `Img\\{{{   }}}  | `Input\\{{{   }}}  | `Ins\\{{{   }}}  | `Kbd\\{{{   }}}  | `Map\\{{{   }}}  | `Noscript\\{{{   }}}  | `Object\\{{{   }}}  | `PCDATA\\{{{   }}}  | `Q\\{{{   }}}  | `Samp\\{{{   }}}  | `Script\\{{{   }}}  | `Select\\{{{   }}}  | `Small\\{{{   }}}  | `Span\\{{{   }}}  | `Strong\\{{{   }}}  | `Sub\\{{{   }}}  | `Sup\\{{{   }}}  | `Textarea\\{{{   }}}  | `Tt\\{{{   }}}  | `Var ]>> >>
+
+<<div class="code" id="TYPEa_content"|<<span class="keyword"|type>> a~_content = <<span class="code type"|\\{{{   }}}[ `Abbr\\{{{   }}}  | `Acronym\\{{{   }}}  | `B\\{{{   }}}  | `Bdo\\{{{   }}}  | `Big\\{{{   }}}  | `Br\\{{{   }}}  | `Button\\{{{   }}}  | `Cite\\{{{   }}}  | `Code\\{{{   }}}  | `Del\\{{{   }}}  | `Dfn\\{{{   }}}  | `Em\\{{{   }}}  | `I\\{{{   }}}  | `Img\\{{{   }}}  | `Input\\{{{   }}}  | `Ins\\{{{   }}}  | `Kbd\\{{{   }}}  | `Label\\{{{   }}}  | `Map\\{{{   }}}  | `Noscript\\{{{   }}}  | `Object\\{{{   }}}  | `PCDATA\\{{{   }}}  | `Q\\{{{   }}}  | `Samp\\{{{   }}}  | `Script\\{{{   }}}  | `Select\\{{{   }}}  | `Small\\{{{   }}}  | `Span\\{{{   }}}  | `Strong\\{{{   }}}  | `Sub\\{{{   }}}  | `Sup\\{{{   }}}  | `Textarea\\{{{   }}}  | `Tt\\{{{   }}}  | `Var ]>> >>
+
+<<div class="code" id="TYPEpre_content"|<<span class="keyword"|type>> pre~_content = <<span class="code type"|\\{{{   }}}[ `A\\{{{   }}}  | `Abbr\\{{{   }}}  | `Acronym\\{{{   }}}  | `B\\{{{   }}}  | `Bdo\\{{{   }}}  | `Br\\{{{   }}}  | `Cite\\{{{   }}}  | `Code\\{{{   }}}  | `Dfn\\{{{   }}}  | `Em\\{{{   }}}  | `I\\{{{   }}}  | `Kbd\\{{{   }}}  | `Map\\{{{   }}}  | `PCDATA\\{{{   }}}  | `Q\\{{{   }}}  | `Samp\\{{{   }}}  | `Script\\{{{   }}}  | `Span\\{{{   }}}  | `Strong\\{{{   }}}  | `Tt\\{{{   }}}  | `Var ]>> >>
+
+<<div class="code" id="TYPEdl_content"|<<span class="keyword"|type>> dl~_content = <<span class="code type"|[ `Dd | `Dt ]>> >>
+
+<<div class="code" id="TYPEoptgroup_content"|<<span class="keyword"|type>> optgroup~_content = <<span class="code type"|[ `Option ]>> >>
+
+<<div class="code" id="TYPEcolgroup_content"|<<span class="keyword"|type>> colgroup~_content = <<span class="code type"|[ `Col ]>> >>
+
+<<div class="code" id="TYPEul_content"|<<span class="keyword"|type>> ul~_content = <<span class="code type"|[ `Li ]>> >>
+
+<<div class="code" id="TYPEselect_content"|<<span class="keyword"|type>> select~_content = <<span class="code type"|[ `Optgroup | `Option ]>> >>
+
+<<div class="code" id="TYPEtbody_content"|<<span class="keyword"|type>> tbody~_content = <<span class="code type"|[ `Tr ]>> >>
+
+<<div class="code" id="TYPEtable_content"|<<span class="keyword"|type>> table~_content = <<span class="code type"|[ `Caption | `Col | `Colgroup | `Tbody | `Tfoot | `Thead | `Tr ]>> >>
+
+<<div class="code" id="TYPEtr_content"|<<span class="keyword"|type>> tr~_content = <<span class="code type"|[ `Td | `Th ]>> >>
+
+<<div class="code" id="TYPEabbr_content"|<<span class="keyword"|type>> abbr~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEacronym_content"|<<span class="keyword"|type>> acronym~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEaddress_content"|<<span class="keyword"|type>> address~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEb_content"|<<span class="keyword"|type>> b~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEbdo_content"|<<span class="keyword"|type>> bdo~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEbig_content"|<<span class="keyword"|type>> big~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEcaption_content"|<<span class="keyword"|type>> caption~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEcite_content"|<<span class="keyword"|type>> cite~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEcode_content"|<<span class="keyword"|type>> code~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEdfn_content"|<<span class="keyword"|type>> dfn~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEdt_content"|<<span class="keyword"|type>> dt~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEem_content"|<<span class="keyword"|type>> em~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEh1_content"|<<span class="keyword"|type>> h~1~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEh2_content"|<<span class="keyword"|type>> h~2~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEh3_content"|<<span class="keyword"|type>> h~3~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEh4_content"|<<span class="keyword"|type>> h~4~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEh5_content"|<<span class="keyword"|type>> h~5~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEh6_content"|<<span class="keyword"|type>> h~6~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEi_content"|<<span class="keyword"|type>> i~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEkbd_content"|<<span class="keyword"|type>> kbd~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPElegend_content"|<<span class="keyword"|type>> legend~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEp_content"|<<span class="keyword"|type>> p~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEq_content"|<<span class="keyword"|type>> q~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEsamp_content"|<<span class="keyword"|type>> samp~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEsmall_content"|<<span class="keyword"|type>> small~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEspan_content"|<<span class="keyword"|type>> span~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEstrong_content"|<<span class="keyword"|type>> strong~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEsub_content"|<<span class="keyword"|type>> sub~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEsup_content"|<<span class="keyword"|type>> sup~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEtt_content"|<<span class="keyword"|type>> tt~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEvar_content"|<<span class="keyword"|type>> var~_content = <<span class="code type"|<<a_api text="inlinemix" | type Xhtmltypes.inlinemix >>>> >>
+
+<<div class="code" id="TYPEdd_content"|<<span class="keyword"|type>> dd~_content = <<span class="code type"|<<a_api text="div_content" | type Xhtmltypes.div_content >>>> >>
+
+<<div class="code" id="TYPEdel_content"|<<span class="keyword"|type>> del~_content = <<span class="code type"|<<a_api text="div_content" | type Xhtmltypes.div_content >>>> >>
+
+<<div class="code" id="TYPEins_content"|<<span class="keyword"|type>> ins~_content = <<span class="code type"|<<a_api text="div_content" | type Xhtmltypes.div_content >>>> >>
+
+<<div class="code" id="TYPEli_content"|<<span class="keyword"|type>> li~_content = <<span class="code type"|<<a_api text="div_content" | type Xhtmltypes.div_content >>>> >>
+
+<<div class="code" id="TYPEth_content"|<<span class="keyword"|type>> th~_content = <<span class="code type"|<<a_api text="div_content" | type Xhtmltypes.div_content >>>> >>
+
+<<div class="code" id="TYPEtd_content"|<<span class="keyword"|type>> td~_content = <<span class="code type"|<<a_api text="div_content" | type Xhtmltypes.div_content >>>> >>
+
+<<div class="code" id="TYPEnoscript_content"|<<span class="keyword"|type>> noscript~_content = <<span class="code type"|<<a_api text="body_content" | type Xhtmltypes.body_content >>>> >>
+
+<<div class="code" id="TYPEarea_content"|<<span class="keyword"|type>> area~_content = <<span class="code type"|<<a_api text="notag" | type Xhtmltypes.notag >>>> >>
+
+<<div class="code" id="TYPEbase_content"|<<span class="keyword"|type>> base~_content = <<span class="code type"|<<a_api text="notag" | type Xhtmltypes.notag >>>> >>
+
+<<div class="code" id="TYPEbr_content"|<<span class="keyword"|type>> br~_content = <<span class="code type"|<<a_api text="notag" | type Xhtmltypes.notag >>>> >>
+
+<<div class="code" id="TYPEcol_content"|<<span class="keyword"|type>> col~_content = <<span class="code type"|<<a_api text="notag" | type Xhtmltypes.notag >>>> >>
+
+<<div class="code" id="TYPEhr_content"|<<span class="keyword"|type>> hr~_content = <<span class="code type"|<<a_api text="notag" | type Xhtmltypes.notag >>>> >>
+
+<<div class="code" id="TYPEimg_content"|<<span class="keyword"|type>> img~_content = <<span class="code type"|<<a_api text="notag" | type Xhtmltypes.notag >>>> >>
+
+<<div class="code" id="TYPEinput_content"|<<span class="keyword"|type>> input~_content = <<span class="code type"|<<a_api text="notag" | type Xhtmltypes.notag >>>> >>
+
+<<div class="code" id="TYPEmeta_content"|<<span class="keyword"|type>> meta~_content = <<span class="code type"|<<a_api text="notag" | type Xhtmltypes.notag >>>> >>
+
+<<div class="code" id="TYPEparam_content"|<<span class="keyword"|type>> param~_content = <<span class="code type"|<<a_api text="notag" | type Xhtmltypes.notag >>>> >>
+
+<<div class="code" id="TYPElink_content"|<<span class="keyword"|type>> link~_content = <<span class="code type"|<<a_api text="pcdata" | type Xhtmltypes.pcdata >>>> >>
+
+<<div class="code" id="TYPEoption_content"|<<span class="keyword"|type>> option~_content = <<span class="code type"|<<a_api text="pcdata" | type Xhtmltypes.pcdata >>>> >>
+
+<<div class="code" id="TYPEscript_content"|<<span class="keyword"|type>> script~_content = <<span class="code type"|<<a_api text="pcdata" | type Xhtmltypes.pcdata >>>> >>
+
+<<div class="code" id="TYPEstyle_content"|<<span class="keyword"|type>> style~_content = <<span class="code type"|<<a_api text="pcdata" | type Xhtmltypes.pcdata >>>> >>
+
+<<div class="code" id="TYPEtextarea_content"|<<span class="keyword"|type>> textarea~_content = <<span class="code type"|<<a_api text="pcdata" | type Xhtmltypes.pcdata >>>> >>
+
+<<div class="code" id="TYPEtitle_content"|<<span class="keyword"|type>> title~_content = <<span class="code type"|<<a_api text="pcdata" | type Xhtmltypes.pcdata >>>> >>
+
+<<div class="code" id="TYPEol_content"|<<span class="keyword"|type>> ol~_content = <<span class="code type"|<<a_api text="ul_content" | type Xhtmltypes.ul_content >>>> >>
+
+<<div class="code" id="TYPEthead_content"|<<span class="keyword"|type>> thead~_content = <<span class="code type"|<<a_api text="tbody_content" | type Xhtmltypes.tbody_content >>>> >>
+
+<<div class="code" id="TYPEtfoot_content"|<<span class="keyword"|type>> tfoot~_content = <<span class="code type"|<<a_api text="tbody_content" | type Xhtmltypes.tbody_content >>>> >>
+
+<<div class="code" id="TYPEa_attrib"|<<span class="keyword"|type>> a~_attrib = <<span class="code type"|\\{{{   }}}[ `Accesskey\\{{{   }}}  | `Charset\\{{{   }}}  | `Class\\{{{   }}}  | `Coords\\{{{   }}}  | `Href\\{{{   }}}  | `Hreflang\\{{{   }}}  | `Id\\{{{   }}}  | `Name_01_00\\{{{   }}}  | `Rel\\{{{   }}}  | `Rev\\{{{   }}}  | `Shape\\{{{   }}}  | `Tabindex\\{{{   }}}  | `Target\\{{{   }}}  | `Title\\{{{   }}}  | `Type\\{{{   }}}  | `XML_lang ]>> >>
+
+<<div class="code" id="TYPElink_attrib"|<<span class="keyword"|type>> link~_attrib = <<span class="code type"|\\{{{   }}}[ `Charset\\{{{   }}}  | `Class\\{{{   }}}  | `Href\\{{{   }}}  | `Hreflang\\{{{   }}}  | `Id\\{{{   }}}  | `Media\\{{{   }}}  | `Rel\\{{{   }}}  | `Rev\\{{{   }}}  | `Target\\{{{   }}}  | `Title\\{{{   }}}  | `Type\\{{{   }}}  | `XML_lang ]>> >>
+
+<<div class="code" id="TYPEscript_attrib"|<<span class="keyword"|type>> script~_attrib = <<span class="code type"|[ `Charset | `Defer | `Src | `XML_space | `XMLns ]>> >>
+
+<<div class="code" id="TYPEform_attrib"|<<span class="keyword"|type>> form~_attrib = <<span class="code type"|\\{{{   }}}[ `Accept\\{{{   }}}  | `Accept_charset\\{{{   }}}  | `Class\\{{{   }}}  | `Enctype\\{{{   }}}  | `Id\\{{{   }}}  | `Method\\{{{   }}}  | `Name_01_00\\{{{   }}}  | `Target\\{{{   }}}  | `Title\\{{{   }}}  | `XML_lang ]>> >>
+
+<<div class="code" id="TYPEimg_attrib"|<<span class="keyword"|type>> img~_attrib = <<span class="code type"|\\{{{   }}}[ `Class\\{{{   }}}  | `Height\\{{{   }}}  | `Id\\{{{   }}}  | `Longdesc\\{{{   }}}  | `Name_01_00\\{{{   }}}  | `Title\\{{{   }}}  | `Usemap\\{{{   }}}  | `Width\\{{{   }}}  | `XML_lang ]>> >>
+
+<<div class="code" id="TYPEdiv_attrib"|<<span class="keyword"|type>> div~_attrib = <<span class="code type"|XHTML.M.common>> >>
+
+<<div class="code" id="TYPEinput_attrib"|<<span class="keyword"|type>> input~_attrib = <<span class="code type"|\\{{{   }}}[ `Accesskey\\{{{   }}}  | `Checked\\{{{   }}}  | `Class\\{{{   }}}  | `Id\\{{{   }}}  | `Input_Type\\{{{   }}}  | `Maxlength\\{{{   }}}  | `Name\\{{{   }}}  | `Size\\{{{   }}}  | `Src\\{{{   }}}  | `Tabindex\\{{{   }}}  | `Title\\{{{   }}}  | `Usemap\\{{{   }}}  | `Value\\{{{   }}}  | `XML_lang ]>> >>
+
+<<div class="code" id="TYPEtextarea_attrib"|<<span class="keyword"|type>> textarea~_attrib = <<span class="code type"|[ `Accesskey | `Class | `Id | `Name | `Tabindex | `Title | `XML_lang ]>> >>
+
+<<div class="code" id="TYPEselect_attrib"|<<span class="keyword"|type>> select~_attrib = <<span class="code type"|\\{{{   }}}[ `Class\\{{{   }}}  | `Disabled\\{{{   }}}  | `Id\\{{{   }}}  | `Multiple\\{{{   }}}  | `Name\\{{{   }}}  | `Size\\{{{   }}}  | `Tabindex\\{{{   }}}  | `Title\\{{{   }}}  | `XML_lang ]>> >>
+
+<<div class="code" id="TYPEoptgroup_attrib"|<<span class="keyword"|type>> optgroup~_attrib = <<span class="code type"|[ `Class | `Disabled | `Id | `Label | `Title | `XML_lang ]>> >>
+
+<<div class="code" id="TYPEoption_attrib"|<<span class="keyword"|type>> option~_attrib = <<span class="code type"|[ `Class | `Disabled | `Id | `Label | `Selected | `Title | `Value | `XML_lang ]>> >>
+
+<<div class="code" id="TYPEbutton_attrib"|<<span class="keyword"|type>> button~_attrib = <<span class="code type"|[ `Button_Type | `Class | `Id | `Name | `Title | `Value | `XML_lang ]>> >>
+

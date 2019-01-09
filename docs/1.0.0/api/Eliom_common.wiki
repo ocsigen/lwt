@@ -1,0 +1,26 @@
+=Module <<a_api_type | module Eliom_common >> =
+<<div class="code"|<<span class="keyword"|module>> Eliom_common: <<span class='code'|sig>><<a_api text=".." | module Eliom_common >><<span class='code'|end>>>>~Low level functions for ~Eliom~, exceptions and types~.\\
+
+----
+<<div  id="EXCEPTIONEliom_404" class="code"|<<span class="keyword"|exception>> Eliom_404>>
+<<div class="info"|~Page not found\\
+>>
+<<div  id="EXCEPTIONEliom_Wrong_parameter" class="code"|<<span class="keyword"|exception>> Eliom_Wrong_parameter>>
+<<div class="info"|~Service called with wrong parameter names\\
+>>
+<<div  id="EXCEPTIONEliom_Link_too_old" class="code"|<<span class="keyword"|exception>> Eliom_Link_too_old>>
+<<div class="info"|~The coservice does not exist any more\\
+>>
+<<div  id="EXCEPTIONEliom_Session_expired" class="code"|<<span class="keyword"|exception>> Eliom_Session_expired>>
+<<div  id="EXCEPTIONEliom_Service_session_expired" class="code"|<<span class="keyword"|exception>> Eliom_Service_session_expired <<span class="keyword"|of>> <<span class="code type"|string list>>>>
+<<div class="info"|~The service session cookies does not exist any more~.
+        ~The string lists are the list of names of expired sessions\\
+>>
+<<div  id="EXCEPTIONEliom_Typing_Error" class="code"|<<span class="keyword"|exception>> Eliom_Typing_Error <<span class="keyword"|of>> <<span class="code type"|(string * exn) list>>>>
+<<div class="info"|~The service ~(~G~E~T or ~P~O~S~T~) parameters do not match expected type\\
+>>
+<<div  id="EXCEPTIONEliom_function_forbidden_outside_site_loading" class="code"|<<span class="keyword"|exception>> Eliom_function_forbidden_outside_site_loading <<span class="keyword"|of>> <<span class="code type"|string>>>>
+<<div class="info"|~That function cannot be used like that outside the
+       initialisation phase~. 
+       ~For some functions~, you must add the <<span class='code'|~~sp>> parameter during a session~.\\
+>>

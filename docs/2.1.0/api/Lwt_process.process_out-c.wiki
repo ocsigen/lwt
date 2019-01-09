@@ -1,0 +1,7 @@
+=Class <<a_api_type | class Lwt_process.process_out >> =
+<<div class="code"|<<span name="TYPEprocess_out"|<<span class="keyword"|class>> process_out>> : <<span class="code type"|?timeout:float -> ?env:string array -> ?stdout:<<a_api text="redirection" | type Lwt_process.redirection >> -> ?stderr:<<a_api text="redirection" | type Lwt_process.redirection >> -> <<a_api text="command" | type Lwt_process.command >> -> >><<span class='code'|object>><<a_api text=".." | class Lwt_process.process_out >><<span class='code'|end>>>>**~Inherits*** <<a_api | class Lwt_process.process_none >>
+
+
+----
+<<div class="code"|<<span id="METHODstdin"|<<span class="keyword"|method>> stdin>> : <<span class="code type"|<<a_api text="Lwt_io.output_channel" | type Lwt_io.output_channel >>>>>><<div class="info"|~The standard input of the process\\
+>>

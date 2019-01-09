@@ -1,0 +1,11 @@
+=Module <<a_api_type | module Lwt_throttle >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_throttle: <<span class='code'|sig>><<a_api text=".." | module Lwt_throttle >><<span class='code'|end>>>>~Rate limiters\\
+
+----
+\\
+~This module defines rate limiters~. ~A rate limiter is parametrized
+    by its limit and a maximum waiting time~. ~The <<span class='code'|wait>> function will
+    collaboratively hang for a delay necessary to respect the
+    limit~. ~If that delay exceeds the maximum waiting time~, <<span class='code'|wait>>
+    returns <<span class='code'|false>>~; otherwise it returns <<span class='code'|true>>~.\\
+<<div class="code"|<<span class="keyword"|module type>> <<a_api text="S" | module type Lwt_throttle.S >> = <<span class='code'|sig>><<a_api text=".." | module type Lwt_throttle.S >><<span class='code'|end>>>><<div class="code"|<<span class="keyword"|module>> <<a_api text="Make" | module Lwt_throttle.Make >>: <<div class="sig_block"|<<span class='code'|functor ~(>><<span class='code'|~H>><<span class='code'| ~: >><<span class="code type"|Hashtbl.HashedType>><<span class='code'|~) ~-~> >><<span class="code type"|<<a_api text="S" | module Lwt_throttle.S >>>><<span class="code type"|{{{  }}} with type key = H.t>>>>>>

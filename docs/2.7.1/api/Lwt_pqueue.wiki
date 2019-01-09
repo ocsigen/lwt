@@ -1,0 +1,28 @@
+=Module <<a_api_type | module Lwt_pqueue >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_pqueue>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_pqueue >><<span class="ocsforge_color_keyword"|end>>>><<span class="odocwiki_warning"|Deprecated.>>~This module is an internal implementation detail of ~Lwt~, and may
+    be removed from the ~A~P~I at some point in the future~. ~For alternatives~, see~,
+    for example~: [[ https://www.lri.fr/~filliatr/software.en.html#heap| ~Heaps]]
+    by ~Jean~-~Cristophe ~Filliatre~,
+    [[ http://cedeela.fr/~simon/software/containers/CCHeap.html| containers]]~,
+    or
+    [[ http://ocaml-batteries-team.github.io/batteries-included/hdoc2/BatHeap.html|
+    ~Batteries]]~.
+~Functional priority queues ~(deprecated~)~.
+
+
+    ~A priority queue maintains~, in the abstract sense~, a set of elements in
+    order~, and supports fast lookup and removal of the first ~("minimum"~)
+    element~. ~This is used in ~Lwt for organizing threads that are waiting for
+    timeouts~.
+
+
+    ~The priority queues in this module preserve "duplicates"~: elements that
+    compare equal in their order~.
+
+----
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module type>> <<a_api text="OrderedType" | module type Lwt_pqueue.OrderedType >> <<span class="ocsforge_color_delimiter"|~=>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module type Lwt_pqueue.OrderedType >><<span class="ocsforge_color_keyword"|end>>>><<div class="odocwiki_info"|~Signature pairing an element type with an ordering function~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module type>> <<a_api text="S" | module type Lwt_pqueue.S >> <<span class="ocsforge_color_delimiter"|~=>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module type Lwt_pqueue.S >><<span class="ocsforge_color_keyword"|end>>>><<div class="odocwiki_info"|~Signature of priority queues~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<a_api text="Make" | module Lwt_pqueue.Make >> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_sig_block"|<<span class="ocsforge_color_keyword"|functor>> <<span class="ocsforge_color_delimiter"|(>>Ord <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="OrderedType" | module Lwt_pqueue.OrderedType >>>><<span class="ocsforge_color_delimiter"|)>> <<span class="ocsforge_color_delimiter"|-~>>> \\  <<span class="odocwiki_type"|<<a_api text="S" | module Lwt_pqueue.S >>>><<span class="odocwiki_type"|  with type elt = Ord.t>>>>>><<div class="odocwiki_info"|~Generates priority queue types from ordered types~.
+>>

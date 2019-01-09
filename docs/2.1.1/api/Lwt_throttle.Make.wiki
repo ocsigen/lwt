@@ -1,0 +1,16 @@
+=Functor <<a_api_type | module Lwt_throttle.Make >> =
+<<div class="code"|<<span class="keyword"|module>> Make: <<div class="sig_block"|<<span class='code'|functor ~(>><<span class='code'|~H>><<span class='code'| ~: >><<span class="code type"|Hashtbl.HashedType>><<span class='code'|~) ~-~> >><<span class="code type"|<<a_api text="S" | module Lwt_throttle.S >>>><<span class="code type"|{{{  }}} with type key = H.t>>>>>><<div class="module_param_list" | <<span class="param_title" |Parameters :>><<div|
+|@@class="paramstable"@ @class="centertop fifteen code"@@{{{H}}}|@@class="centertop"@@:|<<span class="code type"|Hashtbl.HashedType>>|
+>>
+
+----
+<<div class="code" id="TYPEkey"|<<span class="keyword"|type>> key>>
+
+<<div class="code" id="TYPEt"|<<span class="keyword"|type>> t>>
+
+<<div id="VALcreate" class="code"|<<span class="keyword"|val>> create : <<span class="code type"|rate:int -> max:int -> n:int -> <<a_api text="t" | type Lwt_throttle.S.t >>>>>><<div class="info"|>>
+<<div class="param_info"|<<span class="code code"|rate>> : maximum number of connections per second>>
+<<div class="param_info"|<<span class="code code"|max>> : maximum waiting time ~(in seconds~)>>
+<<div class="param_info"|<<span class="code code"|n>> : initial size of the hash table>>
+<<div id="VALwait" class="code"|<<span class="keyword"|val>> wait : <<span class="code type"|<<a_api text="t" | type Lwt_throttle.S.t >> -> <<a_api text="key" | type Lwt_throttle.S.key >> -> bool <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|**Returns** <<span class='code'|false>> if maximum reached~, <<span class='code'|true>> else\\
+>>

@@ -1,0 +1,8 @@
+=Module <<a_api_type | module Lwt_top >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_top>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_top >><<span class="ocsforge_color_keyword"|end>>>>~Toplevel configuration\\
+
+----
+<<pre id="VALcompletion_mode" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|completion~_mode>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> [ `classic | `none | `real_time ]>>>><<div class="odocwiki_info"|~Return the current completion mode~.\\
+>>
+<<pre id="VALset_completion_mode" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|set~_completion~_mode>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|[ `classic | `none | `real_time ] <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Change the completion mode\\
+>>

@@ -1,0 +1,23 @@
+=Module <<a_api_type | module Lwt_log_core.Section >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Section>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_log_core.Section >><<span class="ocsforge_color_keyword"|end>>>>~Sections
+
+----
+<<pre class="ocsforge_color odocwiki_code" id="TYPEt"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|t>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_type"|<<a_api text="Lwt_log_core.section" | type Lwt_log_core.section >>>> >><<pre id="VALmake" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|make>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|string <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="Lwt_log_core.section" | type Lwt_log_core.section >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|make name>> creates a section with the given name~. ~Two calls
+        to <<a_api | val Lwt_log_core.Section.make >> with the same name will return the same section
+        object~.
+>>
+<<pre id="VALname" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|name>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="Lwt_log_core.section" | type Lwt_log_core.section >> <<span class="ocsforge_color_delimiter"| -> >> string>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|name section>> returns the name of <<span class="odocwiki_inlinecode"|section>>~.
+>>
+<<pre id="VALmain" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|main>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="Lwt_log_core.section" | type Lwt_log_core.section >>>>>><<div class="odocwiki_info"|~The main section~. ~It is the section used by default when no
+        one is provided~.
+>>
+<<pre id="VALlevel" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|level>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="Lwt_log_core.section" | type Lwt_log_core.section >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="Lwt_log_core.level" | type Lwt_log_core.level >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|level section>> returns the logging level of <<span class="odocwiki_inlinecode"|section>>~.
+>>
+<<pre id="VALset_level" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|set~_level>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="Lwt_log_core.section" | type Lwt_log_core.section >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="Lwt_log_core.level" | type Lwt_log_core.level >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|set~_level section>> sets the logging level of the given
+        section~. ~Modifications of rules using <<a_api | val Lwt_log_core.add_rule >> won~'t affect
+        the level of this section after this operation~.
+>>
+<<pre id="VALreset_level" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|reset~_level>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="Lwt_log_core.section" | type Lwt_log_core.section >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|reset~_level section>> resets the level of <<span class="odocwiki_inlinecode"|section>> to its
+        default value~, i~.e~. to the value obtained by applying
+        rules~.
+>>

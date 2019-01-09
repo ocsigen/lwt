@@ -1,0 +1,24 @@
+=Module <<a_api_type | module Lwt_term.Draw >> =
+<<div class="code"|<<span class="keyword"|module>> Draw: <<span class='code'|sig>><<a_api text=".." | module Lwt_term.Draw >><<span class='code'|end>>>>~Drawing helpers\\
+
+----
+\\
+~Note~: except for <<a_api | val Lwt_term.Draw.get >>~, all function ignore points that are
+      outside the zone\\
+<<div id="VALget" class="code"|<<span class="keyword"|val>> get : <<span class="code type"|zone:<<a_api text="Lwt_term.Zone.t" | type Lwt_term.Zone.t >> -> x:int -> y:int -> <<a_api text="Lwt_term.point" | type Lwt_term.point >>>>>><<div class="info"|<<span class='code'|get ~~zone ~~x ~~y>> returns the point at relative position <<span class='code'|x>>
+        and <<span class='code'|y>>~.\\
+**Raises** {{{Invalid_argument}}} if the coordinates are outside the
+        zone\\
+>>
+<<div id="VALset" class="code"|<<span class="keyword"|val>> set : <<span class="code type"|zone:<<a_api text="Lwt_term.Zone.t" | type Lwt_term.Zone.t >> -> x:int -> y:int -> point:<<a_api text="Lwt_term.point" | type Lwt_term.point >> -> unit>>>><<div class="info"|<<span class='code'|set ~~zone ~~x ~~y ~~popint>> sets point at relative position <<span class='code'|x>>
+        and <<span class='code'|y>>~.\\
+>>
+<<div id="VALmap" class="code"|<<span class="keyword"|val>> map : <<span class="code type"|\\{{{   }}}zone:<<a_api text="Lwt_term.Zone.t" | type Lwt_term.Zone.t >> ->\\{{{   }}}  x:int -> y:int -> (<<a_api text="Lwt_term.point" | type Lwt_term.point >> -> <<a_api text="Lwt_term.point" | type Lwt_term.point >>) -> unit>>>><<div class="info"|<<span class='code'|map ~~zone ~~x ~~y f>> replace the point at coordinates <<span class='code'|~(x~, y~)>>
+        by the result of <<span class='code'|f>> applied on it~.\\
+>>
+<<div id="VALtext" class="code"|<<span class="keyword"|val>> text : <<span class="code type"|zone:<<a_api text="Lwt_term.Zone.t" | type Lwt_term.Zone.t >> -> x:int -> y:int -> text:Text.t -> unit>>>><<div class="info"|~Draw the given text at the given positon\\
+>>
+<<div id="VALtextf" class="code"|<<span class="keyword"|val>> textf : <<span class="code type"|\\{{{   }}}<<a_api text="Lwt_term.Zone.t" | type Lwt_term.Zone.t >> ->\\{{{   }}}  int -> int -> ('a, unit, string, unit) Pervasives.format4 -> 'a>>>><<div class="info"|~Same as <<a_api | val Lwt_term.Draw.text >> but uses a format string\\
+>>
+<<div id="VALtextc" class="code"|<<span class="keyword"|val>> textc : <<span class="code type"|zone:<<a_api text="Lwt_term.Zone.t" | type Lwt_term.Zone.t >> -> x:int -> y:int -> text:<<a_api text="Lwt_term.styled_text" | type Lwt_term.styled_text >> -> unit>>>><<div class="info"|~Same as <<a_api | val Lwt_term.Draw.text >> but takes a text with styles\\
+>>

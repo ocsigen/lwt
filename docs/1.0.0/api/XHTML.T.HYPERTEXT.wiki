@@ -1,0 +1,7 @@
+=Module <<a_api_type | module XHTML.T.HYPERTEXT >> =
+<<div class="code"|<<span class="keyword"|module>> HYPERTEXT: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.HYPERTEXT >><<span class='code'|end>>>>
+----
+<<div class="code" id="TYPEinline"|<<span class="keyword"|type>> inline = <<span class="code type"|[ `A ]>> >>
+
+<<div class="code" id="TYPEflow"|<<span class="keyword"|type>> flow = <<span class="code type"|<<a_api text="inline" | type XHTML.T.HYPERTEXT.inline >>>> >>
+

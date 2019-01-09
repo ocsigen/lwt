@@ -1,0 +1,9 @@
+<<code language="ocaml" | sig
+  type t = Lwt_log_core.section
+  val make : string -> Lwt_log_core.section
+  val name : Lwt_log_core.section -> string
+  val main : Lwt_log_core.section
+  val level : Lwt_log_core.section -> Lwt_log_core.level
+  val set_level : Lwt_log_core.section -> Lwt_log_core.level -> unit
+  val reset_level : Lwt_log_core.section -> unit
+end >>

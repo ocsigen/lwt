@@ -1,0 +1,211 @@
+<<code language="ocaml" | sig
+  exception Interrupt
+  type edition_state = Text.t * Text.t
+  type prompt = Lwt_term.styled_text
+  type text_set = Set.Make(Text).t
+  type completion_result = {
+    comp_state : Lwt_read_line.edition_state;
+    comp_words : Lwt_read_line.text_set;
+  }
+  type completion =
+      Lwt_read_line.edition_state -> Lwt_read_line.completion_result Lwt.t
+  val lookup :
+    Text.t -> Lwt_read_line.text_set -> Text.t * Lwt_read_line.text_set
+  val complete :
+    ?suffix:Text.t ->
+    Text.t ->
+    Text.t ->
+    Text.t -> Lwt_read_line.text_set -> Lwt_read_line.completion_result
+  val print_words :
+    Lwt_text.output_channel -> int -> string list -> unit Lwt.t
+  type history = Text.t list
+  val add_entry : Text.t -> Lwt_read_line.history -> Lwt_read_line.history
+  val save_history : string -> Lwt_read_line.history -> unit Lwt.t
+  val load_history : string -> Lwt_read_line.history Lwt.t
+  class clipboard :
+    object
+      method contents : Text.t React.signal
+      method set : Text.t -> unit
+    end
+  val clipboard : Lwt_read_line.clipboard
+  type completion_mode = [ `classic | `none | `real_time ]
+  val read_line :
+    ?history:Lwt_read_line.history ->
+    ?complete:Lwt_read_line.completion ->
+    ?clipboard:Lwt_read_line.clipboard ->
+    ?mode:Lwt_read_line.completion_mode ->
+    ?prompt:Lwt_read_line.prompt -> unit -> Text.t Lwt.t
+  type password_style = [ `clear | `empty | `text of Text.t ]
+  val read_password :
+    ?clipboard:Lwt_read_line.clipboard ->
+    ?style:Lwt_read_line.password_style ->
+    ?prompt:Lwt_read_line.prompt -> unit -> Text.t Lwt.t
+  val read_keyword :
+    ?history:Lwt_read_line.history ->
+    ?case_sensitive:bool ->
+    ?mode:Lwt_read_line.completion_mode ->
+    ?prompt:Lwt_read_line.prompt ->
+    values:(Text.t * 'a) list -> unit -> 'a Lwt.t
+  val read_yes_no :
+    ?history:Lwt_read_line.history ->
+    ?mode:Lwt_read_line.completion_mode ->
+    ?prompt:Lwt_read_line.prompt -> unit -> bool Lwt.t
+  module Command :
+    sig
+      type t =
+          Nop
+        | Char of Text.t
+        | Backward_delete_char
+        | Forward_delete_char
+        | Beginning_of_line
+        | End_of_line
+        | Complete
+        | Meta_complete
+        | Kill_line
+        | Backward_kill_line
+        | Accept_line
+        | Backward_delete_word
+        | Forward_delete_word
+        | History_next
+        | History_previous
+        | Break
+        | Clear_screen
+        | Insert
+        | Refresh
+        | Backward_char
+        | Forward_char
+        | Set_mark
+        | Paste
+        | Copy
+        | Cut
+        | Uppercase
+        | Lowercase
+        | Capitalize
+        | Backward_word
+        | Forward_word
+        | Backward_search
+        | Complete_left
+        | Complete_right
+        | Complete_up
+        | Complete_down
+        | Complete_first
+        | Complete_last
+        | Undo
+        | Delete_char_or_list
+      val to_string : Lwt_read_line.Command.t -> string
+      val of_string : string -> Lwt_read_line.Command.t
+      val names : (Lwt_read_line.Command.t * string) list
+      val of_key : Lwt_term.key -> Lwt_read_line.Command.t
+    end
+  module Engine :
+    sig
+      type selection_state = {
+        sel_text : Text.t;
+        sel_mark : Text.pointer;
+        sel_cursor : Text.pointer;
+      }
+      type search_state = {
+        search_word : Text.t;
+        search_history : Lwt_read_line.history;
+        search_init_history : Lwt_read_line.history;
+      }
+      type mode =
+          Edition of Lwt_read_line.edition_state
+        | Selection of Lwt_read_line.Engine.selection_state
+        | Search of Lwt_read_line.Engine.search_state
+      type state = {
+        mode : Lwt_read_line.Engine.mode;
+        history : Lwt_read_line.history * Lwt_read_line.history;
+      }
+      val init : Lwt_read_line.history -> Lwt_read_line.Engine.state
+      val reset : Lwt_read_line.Engine.state -> Lwt_read_line.Engine.state
+      val update :
+        engine_state:Lwt_read_line.Engine.state ->
+        ?clipboard:Lwt_read_line.clipboard ->
+        command:Lwt_read_line.Command.t -> unit -> Lwt_read_line.Engine.state
+      val edition_state :
+        Lwt_read_line.Engine.state -> Lwt_read_line.edition_state
+      val all_input : Lwt_read_line.Engine.state -> Text.t
+    end
+  module Terminal :
+    sig
+      type state
+      val init : Lwt_read_line.Terminal.state
+      type box =
+          Box_none
+        | Box_empty
+        | Box_words of Lwt_read_line.text_set * int
+        | Box_message of string
+      val draw :
+        columns:int ->
+        ?map_text:(Text.t -> Text.t) ->
+        ?box:Lwt_read_line.Terminal.box ->
+        render_state:Lwt_read_line.Terminal.state ->
+        engine_state:Lwt_read_line.Engine.state ->
+        prompt:Lwt_read_line.prompt ->
+        unit -> Lwt_term.styled_text * Lwt_read_line.Terminal.state
+      val last_draw :
+        columns:int ->
+        ?map_text:(Text.t -> Text.t) ->
+        render_state:Lwt_read_line.Terminal.state ->
+        engine_state:Lwt_read_line.Engine.state ->
+        prompt:Lwt_read_line.prompt -> unit -> Lwt_term.styled_text
+      val erase :
+        columns:int ->
+        render_state:Lwt_read_line.Terminal.state ->
+        unit -> Lwt_term.styled_text
+    end
+  module Control :
+    sig
+      type 'a t
+      val result : 'a Lwt_read_line.Control.t -> 'a Lwt.t
+      val send_command :
+        'a Lwt_read_line.Control.t -> Lwt_read_line.Command.t -> unit
+      val accept : 'a Lwt_read_line.Control.t -> unit
+      val interrupt : 'a Lwt_read_line.Control.t -> unit
+      val hide : 'a Lwt_read_line.Control.t -> unit Lwt.t
+      val show : 'a Lwt_read_line.Control.t -> unit Lwt.t
+      type prompt =
+          Lwt_read_line.Engine.state React.signal ->
+          Lwt_term.styled_text React.signal
+      type state
+      val engine_state :
+        Lwt_read_line.Control.state -> Lwt_read_line.Engine.state
+      val render_state :
+        Lwt_read_line.Control.state -> Lwt_read_line.Terminal.state
+      val make :
+        ?history:Lwt_read_line.history ->
+        ?complete:Lwt_read_line.completion ->
+        ?clipboard:Lwt_read_line.clipboard ->
+        ?mode:[ `classic | `none | `real_time ] ->
+        ?map_text:(Text.t -> Text.t) ->
+        ?filter:(Lwt_read_line.Control.state ->
+                 Lwt_read_line.Command.t -> Lwt_read_line.Command.t Lwt.t) ->
+        map_result:(Text.t -> 'a Lwt.t) ->
+        ?prompt:Lwt_read_line.Control.prompt ->
+        unit -> 'a Lwt_read_line.Control.t
+      val read_line :
+        ?history:Lwt_read_line.history ->
+        ?complete:Lwt_read_line.completion ->
+        ?clipboard:Lwt_read_line.clipboard ->
+        ?mode:Lwt_read_line.completion_mode ->
+        ?prompt:Lwt_read_line.Control.prompt ->
+        unit -> Text.t Lwt_read_line.Control.t Lwt.t
+      val read_password :
+        ?clipboard:Lwt_read_line.clipboard ->
+        ?style:Lwt_read_line.password_style ->
+        ?prompt:Lwt_read_line.Control.prompt ->
+        unit -> Text.t Lwt_read_line.Control.t Lwt.t
+      val read_keyword :
+        ?history:Lwt_read_line.history ->
+        ?case_sensitive:bool ->
+        ?mode:Lwt_read_line.completion_mode ->
+        ?prompt:Lwt_read_line.Control.prompt ->
+        values:(Text.t * 'a) list -> unit -> 'a Lwt_read_line.Control.t Lwt.t
+      val read_yes_no :
+        ?history:Lwt_read_line.history ->
+        ?mode:Lwt_read_line.completion_mode ->
+        ?prompt:Lwt_read_line.Control.prompt ->
+        unit -> bool Lwt_read_line.Control.t Lwt.t
+    end
+end >>

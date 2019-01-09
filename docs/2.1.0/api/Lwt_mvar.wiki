@@ -1,0 +1,32 @@
+=Module <<a_api_type | module Lwt_mvar >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_mvar: <<span class='code'|sig>><<a_api text=".." | module Lwt_mvar >><<span class='code'|end>>>>~Mailbox variables\\
+
+----
+\\
+"~Mailbox" variables implement a synchronising variable~, used for
+    communication between concurrent threads~.\\
+
+
+    ~This code adapted from
+    [[http://eigenclass.org/hiki.rb?cmd=view&p=lightweight-threads-with-lwt|~Comparing lightweight threads ~(eigenclass~.org~)]]\\
+<<div class="code" id="TYPEt"|<<span class="keyword"|type>> <<span class="code type"|'a>> t>>
+<<div class="info"|~The type of a mailbox variable~. ~Mailbox variables are used to
+      communicate values between threads in a synchronous way~. ~The
+      type parameter specifies the type of the value propagated from
+      <<span class='code'|put>> to <<span class='code'|take>>~.\\
+>>
+
+<<div id="VALcreate" class="code"|<<span class="keyword"|val>> create : <<span class="code type"|'a -> 'a <<a_api text="t" | type Lwt_mvar.t >>>>>><<div class="info"|<<span class='code'|create v>> creates a new mailbox variable containing value <<span class='code'|v>>~.\\
+>>
+<<div id="VALcreate_empty" class="code"|<<span class="keyword"|val>> create~_empty : <<span class="code type"|unit -> 'a <<a_api text="t" | type Lwt_mvar.t >>>>>><<div class="info"|<<span class='code'|create ~(~)>> creates a new empty mailbox variable~.\\
+>>
+<<div id="VALput" class="code"|<<span class="keyword"|val>> put : <<span class="code type"|'a <<a_api text="t" | type Lwt_mvar.t >> -> 'a -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|put mvar value>> puts a value into a mailbox variable~. ~This
+      value will remain in the mailbox until <<span class='code'|take>> is called to
+      remove it~. ~If the mailbox is not empty~, the current thread will
+      block until it is emptied~.\\
+>>
+<<div id="VALtake" class="code"|<<span class="keyword"|val>> take : <<span class="code type"|'a <<a_api text="t" | type Lwt_mvar.t >> -> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|take mvar>> will take any currently available value from the
+      mailbox variable~. ~If no value is currently available~, the
+      current thread will block~, awaiting a value to be <<span class='code'|put>> by
+      another thread~.\\
+>>

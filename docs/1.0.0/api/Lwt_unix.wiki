@@ -1,0 +1,43 @@
+=Module <<a_api_type | module Lwt_unix >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_unix: <<span class='code'|sig>><<a_api text=".." | module Lwt_unix >><<span class='code'|end>>>>~Module <<span class='code'|~Lwt~_unix>>~: thread~-compatible system calls\\
+
+----
+<<div id="VALsleep" class="code"|<<span class="keyword"|val>> sleep : <<span class="code type"|float -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|sleep d>> is a threads which remain suspended for <<span class='code'|d>> seconds
+          ~(letting other threads run~) and then terminates~.\\
+>>
+<<div id="VALyield" class="code"|<<span class="keyword"|val>> yield : <<span class="code type"|unit -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|yield ~(~)>> is a threads which suspends itself ~(letting other
+          thread run~) and then resumes as soon as possible and
+          terminates~.\\
+>>
+<<div id="VALrun" class="code"|<<span class="keyword"|val>> run : <<span class="code type"|'a <<a_api text="Lwt.t" | type Lwt.t >> -> 'a>>>><<div class="info"|<<span class='code'|run t>> lets the thread <<span class='code'|t>> run until it terminates~.  ~It
+          evaluates to the return value of <<span class='code'|t>>~, or raise the exception
+          associated to <<span class='code'|t>> if <<span class='code'|t>> fails~.\\
+
+
+          ~You should avoid using <<span class='code'|run>> inside threads~:* ~The calling threads will not resume before <<span class='code'|run>>
+            returns~.
+* ~Successive invocations of <<span class='code'|run>> are serialized~: an
+            invocation of <<span class='code'|run>> will not terminate before all
+            subsequent invocations are terminated~.
+
+\\
+>>
+\\
+~These functions behave as their <<span class='code'|~Unix>> counterparts~, but let other
+    threads run while waiting for the completion of the system call~.\\
+<<div class="code" id="TYPEfile_descr"|<<span class="keyword"|type>> file~_descr>>
+
+<<div id="VALread" class="code"|<<span class="keyword"|val>> read : <<span class="code type"|<<a_api text="file_descr" | type Lwt_unix.file_descr >> -> string -> int -> int -> int <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALwrite" class="code"|<<span class="keyword"|val>> write : <<span class="code type"|<<a_api text="file_descr" | type Lwt_unix.file_descr >> -> string -> int -> int -> int <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALwait_read" class="code"|<<span class="keyword"|val>> wait~_read : <<span class="code type"|<<a_api text="file_descr" | type Lwt_unix.file_descr >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|waits ~(without blocking other threads~)
+    until there is something to read on the file descriptor\\
+>>
+<<div id="VALwait_write" class="code"|<<span class="keyword"|val>> wait~_write : <<span class="code type"|<<a_api text="file_descr" | type Lwt_unix.file_descr >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|waits ~(without blocking other threads~)
+    until it is possible to write on the file descriptor\\
+>>
+<<div id="VALpipe" class="code"|<<span class="keyword"|val>> pipe : <<span class="code type"|unit -> <<a_api text="file_descr" | type Lwt_unix.file_descr >> * <<a_api text="file_descr" | type Lwt_unix.file_descr >>>>>><<div id="VALpipe_in" class="code"|<<span class="keyword"|val>> pipe~_in : <<span class="code type"|unit -> <<a_api text="file_descr" | type Lwt_unix.file_descr >> * Unix.file_descr>>>><<div id="VALpipe_out" class="code"|<<span class="keyword"|val>> pipe~_out : <<span class="code type"|unit -> Unix.file_descr * <<a_api text="file_descr" | type Lwt_unix.file_descr >>>>>><<div id="VALsocket" class="code"|<<span class="keyword"|val>> socket : <<span class="code type"|Unix.socket_domain -> Unix.socket_type -> int -> <<a_api text="file_descr" | type Lwt_unix.file_descr >>>>>><<div id="VALsocketpair" class="code"|<<span class="keyword"|val>> socketpair : <<span class="code type"|\\{{{   }}}Unix.socket_domain ->\\{{{   }}}  Unix.socket_type -> int -> <<a_api text="file_descr" | type Lwt_unix.file_descr >> * <<a_api text="file_descr" | type Lwt_unix.file_descr >>>>>><<div id="VALbind" class="code"|<<span class="keyword"|val>> bind : <<span class="code type"|<<a_api text="file_descr" | type Lwt_unix.file_descr >> -> Unix.sockaddr -> unit>>>><<div id="VALlisten" class="code"|<<span class="keyword"|val>> listen : <<span class="code type"|<<a_api text="file_descr" | type Lwt_unix.file_descr >> -> int -> unit>>>><<div id="VALaccept" class="code"|<<span class="keyword"|val>> accept : <<span class="code type"|<<a_api text="file_descr" | type Lwt_unix.file_descr >> -> (<<a_api text="file_descr" | type Lwt_unix.file_descr >> * Unix.sockaddr) <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALconnect" class="code"|<<span class="keyword"|val>> connect : <<span class="code type"|<<a_api text="file_descr" | type Lwt_unix.file_descr >> -> Unix.sockaddr -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALshutdown" class="code"|<<span class="keyword"|val>> shutdown : <<span class="code type"|<<a_api text="file_descr" | type Lwt_unix.file_descr >> -> Unix.shutdown_command -> unit>>>><<div id="VALclose" class="code"|<<span class="keyword"|val>> close : <<span class="code type"|<<a_api text="file_descr" | type Lwt_unix.file_descr >> -> unit>>>><<div id="VALsetsockopt" class="code"|<<span class="keyword"|val>> setsockopt : <<span class="code type"|<<a_api text="file_descr" | type Lwt_unix.file_descr >> -> Unix.socket_bool_option -> bool -> unit>>>><<div id="VALset_close_on_exec" class="code"|<<span class="keyword"|val>> set~_close~_on~_exec : <<span class="code type"|<<a_api text="file_descr" | type Lwt_unix.file_descr >> -> unit>>>><<div id="VALwait" class="code"|<<span class="keyword"|val>> wait : <<span class="code type"|unit -> (int * Unix.process_status) <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALwaitpid" class="code"|<<span class="keyword"|val>> waitpid : <<span class="code type"|Unix.wait_flag list -> int -> (int * Unix.process_status) <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALsystem" class="code"|<<span class="keyword"|val>> system : <<span class="code type"|string -> Unix.process_status <<a_api text="Lwt.t" | type Lwt.t >>>>>>\\
+~Aborting a connection\\
+<<div id="VALabort" class="code"|<<span class="keyword"|val>> abort : <<span class="code type"|<<a_api text="file_descr" | type Lwt_unix.file_descr >> -> exn -> unit>>>><<div class="info"|~Makes all current and further uses of the file descriptor
+          fail with the given exception\\
+>>
+\\
+~File descriptor wrappings~/unwrappings\\
+<<div id="VALunix_file_descr" class="code"|<<span class="keyword"|val>> unix~_file~_descr : <<span class="code type"|<<a_api text="file_descr" | type Lwt_unix.file_descr >> -> Unix.file_descr>>>><<div id="VALof_unix_file_descr" class="code"|<<span class="keyword"|val>> of~_unix~_file~_descr : <<span class="code type"|Unix.file_descr -> <<a_api text="file_descr" | type Lwt_unix.file_descr >>>>>>

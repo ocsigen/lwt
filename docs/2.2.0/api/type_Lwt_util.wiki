@@ -1,0 +1,15 @@
+<<code language="ocaml" | sig
+  val iter : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
+  val iter_serial : ('a -> unit Lwt.t) -> 'a list -> unit Lwt.t
+  val map : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
+  val map_with_waiting_action :
+    ('a -> 'b Lwt.t) -> ('a -> unit) -> 'a list -> 'b list Lwt.t
+  val map_serial : ('a -> 'b Lwt.t) -> 'a list -> 'b list Lwt.t
+  val fold_left : ('a -> 'b -> 'a Lwt.t) -> 'a -> 'b list -> 'a Lwt.t
+  type region
+  val make_region : int -> Lwt_util.region
+  val resize_region : Lwt_util.region -> int -> unit
+  val run_in_region :
+    Lwt_util.region -> int -> (unit -> 'a Lwt.t) -> 'a Lwt.t
+  val join : unit Lwt.t list -> unit Lwt.t
+end >>

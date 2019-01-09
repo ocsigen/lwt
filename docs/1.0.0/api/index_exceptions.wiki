@@ -1,0 +1,56 @@
+=Index of exceptions=
+
+|@@ @class="alignleft"@@\\A|
+|<<a_api text="Aborted"| exception Ocsigen_http_com.Aborted >> ~[<<a_api | module Ocsigen_http_com >>~]|<<div class="info"|~Connection killed
+>>
+|
+|@@ @class="alignleft"@@\\B|
+|<<a_api text="Bad_config_tag_for_extension"| exception Ocsigen_extensions.Bad_config_tag_for_extension >> ~[<<a_api | module Ocsigen_extensions >>~]|<<div class="info"|~Try next extension
+>>
+|
+|@@ @class="alignleft"@@\\C|
+|<<a_api text="Connection_closed"| exception Ocsigen_http_com.Connection_closed >> ~[<<a_api | module Ocsigen_http_com >>~]|<<div class="info"|~The other side has cleanly closed the connection after a message
+>>
+|
+|@@ @class="alignleft"@@\\E|
+|<<a_api text="Eliom_404"| exception Eliom_common.Eliom_404 >> ~[<<a_api | module Eliom_common >>~]|<<div class="info"|~Page not found
+>>
+|
+|<<a_api text="Eliom_Link_too_old"| exception Eliom_common.Eliom_Link_too_old >> ~[<<a_api | module Eliom_common >>~]|<<div class="info"|~The coservice does not exist any more
+>>
+|
+|<<a_api text="Eliom_Service_session_expired"| exception Eliom_common.Eliom_Service_session_expired >> ~[<<a_api | module Eliom_common >>~]|<<div class="info"|~The service session cookies does not exist any more~.
+>>
+|
+|<<a_api text="Eliom_Session_expired"| exception Eliom_common.Eliom_Session_expired >> ~[<<a_api | module Eliom_common >>~]||
+|<<a_api text="Eliom_Typing_Error"| exception Eliom_common.Eliom_Typing_Error >> ~[<<a_api | module Eliom_common >>~]|<<div class="info"|~The service ~(~G~E~T or ~P~O~S~T~) parameters do not match expected type
+>>
+|
+|<<a_api text="Eliom_Wrong_parameter"| exception Eliom_common.Eliom_Wrong_parameter >> ~[<<a_api | module Eliom_common >>~]|<<div class="info"|~Service called with wrong parameter names
+>>
+|
+|<<a_api text="Eliom_function_forbidden_outside_site_loading"| exception Eliom_common.Eliom_function_forbidden_outside_site_loading >> ~[<<a_api | module Eliom_common >>~]|<<div class="info"|~That function cannot be used like that outside the
+       initialisation phase~.
+>>
+|
+|<<a_api text="Error_in_config_file"| exception Ocsigen_extensions.Error_in_config_file >> ~[<<a_api | module Ocsigen_extensions >>~]|<<div class="info"|~Stop with an error message
+>>
+|
+|@@ @class="alignleft"@@\\H|
+|<<a_api text="Http_exception"| exception Ocsigen_http_frame.Http_error.Http_exception >> ~[<<a_api | module Ocsigen_http_frame.Http_error >>~]||
+|@@ @class="alignleft"@@\\K|
+|<<a_api text="Keepalive_timeout"| exception Ocsigen_http_com.Keepalive_timeout >> ~[<<a_api | module Ocsigen_http_com >>~]||
+|@@ @class="alignleft"@@\\L|
+|<<a_api text="Lost_connection"| exception Ocsigen_http_com.Lost_connection >> ~[<<a_api | module Ocsigen_http_com >>~]|<<div class="info"|~The connection has been unexpectedly broken
+>>
+|
+|@@ @class="alignleft"@@\\O|
+|<<a_api text="Ocsigen_Internal_Error"| exception Ocsigen_extensions.Ocsigen_Internal_Error >> ~[<<a_api | module Ocsigen_extensions >>~]||
+|<<a_api text="Ocsigen_Is_a_directory"| exception Ocsigen_extensions.Ocsigen_Is_a_directory >> ~[<<a_api | module Ocsigen_extensions >>~]||
+|<<a_api text="Ocsigen_http_error"| exception Ocsigen_extensions.Ocsigen_http_error >> ~[<<a_api | module Ocsigen_extensions >>~]||
+|<<a_api text="Ocsigen_malformed_url"| exception Ocsigen_extensions.Ocsigen_malformed_url >> ~[<<a_api | module Ocsigen_extensions >>~]||
+|@@ @class="alignleft"@@\\T|
+|<<a_api text="Timeout"| exception Ocsigen_http_com.Timeout >> ~[<<a_api | module Ocsigen_http_com >>~]|<<div class="info"|~No activity on the other side
+>>
+|
+\\

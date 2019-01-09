@@ -1,0 +1,5 @@
+<<code language="ocaml" | sig
+  type t = (unit -> string Ocsigen_stream.t Lwt.t) list * string
+  val result_of_content : t -> Ocsigen_http_frame.result Lwt.t
+  val get_etag : t -> Ocsigen_http_frame.etag option
+end >>

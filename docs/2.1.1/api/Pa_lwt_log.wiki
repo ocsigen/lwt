@@ -1,0 +1,40 @@
+=Module <<a_api_type | module Pa_lwt_log >> =
+<<div class="code"|<<span class="keyword"|module>> Pa_lwt_log: <<span class='code'|sig>><<a_api text=".." | module Pa_lwt_log >><<span class='code'|end>>>>~Logging facility\\
+
+
+    ~It replaces expression of the form~:\\
+
+
+    
+{{{
+      Lwt_log.info_f ~section "x = %d" x
+    
+}}}
+\\
+
+
+    by\\
+
+
+    
+{{{
+      if Lwt_log.Section.level section <= Lwt_log.Info then
+        Lwt_log.info_f ~section "x = %d" x
+      else
+        return ()
+    
+}}}
+\\
+
+
+    ~Note~:\\
+
+* the application must be complete~. ~For example~: <<span class='code'|~Log~.info "~%d">>
+      will make compilation to fail
+
+* it also add the command line flags "~-lwt~-debug" to keep all debug
+      messages~. ~By default debug messages are removed~.
+
+\\
+
+----

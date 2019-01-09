@@ -1,0 +1,30 @@
+=Module <<a_api_type | module Lwt_preemptive >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_preemptive: <<span class='code'|sig>><<a_api text=".." | module Lwt_preemptive >><<span class='code'|end>>>>~This module allows to mix preemptive threads with <<span class='code'|~Lwt>>
+    cooperative threads~. ~It maintains an extensible pool of preemptive
+    threads to with you can detach computations~.\\
+
+----
+<<div id="VALdetach" class="code"|<<span class="keyword"|val>> detach : <<span class="code type"|('a -> 'b) -> 'a -> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|detaches a computation to a preemptive thread~.\\
+>>
+<<div id="VALinit" class="code"|<<span class="keyword"|val>> init : <<span class="code type"|int -> int -> (string -> unit) -> unit>>>><<div class="info"|<<span class='code'|init min max log>> initialises this module~. i~.e~. it launches the
+      minimum number of preemptive threads and starts the **      dispatcher**~.\\
+>>
+<<div id="VALsimple_init" class="code"|<<span class="keyword"|val>> simple~_init : <<span class="code type"|unit -> unit>>>><<div class="info"|<<span class='code'|simple~_init ~(~)>> does a //simple initialization//~. i~.e~. with
+      default parameters if the library is not yet initialised~.\\
+
+
+      ~Note~: this function is automatically called <<a_api | val Lwt_preemptive.detach >>~.\\
+>>
+<<div id="VALget_bounds" class="code"|<<span class="keyword"|val>> get~_bounds : <<span class="code type"|unit -> int * int>>>><<div class="info"|<<span class='code'|get~_bounds ~(~)>> returns the minimum and the maximum number of
+      preemptive threads~.\\
+>>
+<<div id="VALset_bounds" class="code"|<<span class="keyword"|val>> set~_bounds : <<span class="code type"|int * int -> unit>>>><<div class="info"|<<span class='code'|set~_bounds ~(min~, max~)>> set the minimum and the maximum number
+      of preemptive threads~.\\
+>>
+<<div id="VALset_max_number_of_threads_queued" class="code"|<<span class="keyword"|val>> set~_max~_number~_of~_threads~_queued : <<span class="code type"|int -> unit>>>><<div class="info"|~Sets the size of the waiting queue~, if no more preemptive
+      threads are available~. ~When the queue is full~, <<a_api | val Lwt_preemptive.detach >> will
+      sleep until a thread is available~.\\
+>>
+<<div id="VALget_max_number_of_threads_queued" class="code"|<<span class="keyword"|val>> get~_max~_number~_of~_threads~_queued : <<span class="code type"|unit -> int>>>><<div class="info"|~Returns the size of the waiting queue~, if no more threads are
+      available\\
+>>

@@ -1,0 +1,8 @@
+=Module <<a_api_type | module Eliom_predefmod.HtmlText >> =
+<<div class="code"|<<span class="keyword"|module>> HtmlText: \\{{{   }}}<<span class="code type"|<<a_api text="ELIOMSIG" | module Eliom_predefmod.ELIOMSIG >>>><<span class="code type"|{{{  }}} with \\{{{   }}}type page = string\\{{{   }}}and type form_content_elt = string\\{{{   }}}and type form_content_elt_list = string\\{{{   }}}and type form_elt = string \\{{{   }}}and type a_content_elt = string \\{{{   }}}and type a_content_elt_list = string \\{{{   }}}and type a_elt = string \\{{{   }}}and type a_elt_list = string \\{{{   }}}and type div_content_elt = string \\{{{   }}}and type div_content_elt_list = string \\{{{   }}}and type uri = string \\{{{   }}}and type link_elt = string \\{{{   }}}and type script_elt = string \\{{{   }}}and type textarea_elt = string \\{{{   }}}and type select_elt = string \\{{{   }}}and type input_elt = string \\{{{   }}}and type pcdata_elt = string \\{{{   }}}and type a_attrib_t = string \\{{{   }}}and type form_attrib_t = string \\{{{   }}}and type input_attrib_t = string \\{{{   }}}and type textarea_attrib_t = string \\{{{   }}}and type select_attrib_t = string \\{{{   }}}and type link_attrib_t = string \\{{{   }}}and type script_attrib_t = string \\{{{   }}}and type input_type_t = string>>>>
+===@@id="3_ModuletocreateformsandregisteruntypedHTMLpages"@@~Module to create forms and register untyped ~H~T~M~L pages===
+\\
+
+----
+<<div class="code"|<<span class="keyword"|include>> <<a_api | module type Eliom_mkreg.ELIOMREGSIG >>>>
+<<div class="code"|<<span class="keyword"|include>> <<a_api | module type Eliom_mkforms.ELIOMFORMSIG >>>>

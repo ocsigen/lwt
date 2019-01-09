@@ -1,0 +1,37 @@
+=Module <<a_api_type | module Lwt_mutex >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_mutex: <<span class='code'|sig>><<a_api text=".." | module Lwt_mutex >><<span class='code'|end>>>>~Cooperative locks for mutual exclusion\\
+
+----
+<<div class="code" id="TYPEt"|<<span class="keyword"|type>> t>>
+<<div class="info"|~Type of ~Lwt mutexes\\
+>>
+
+<<div id="VALcreate" class="code"|<<span class="keyword"|val>> create : <<span class="code type"|unit -> <<a_api text="t" | type Lwt_mutex.t >>>>>><<div class="info"|<<span class='code'|create ~(~)>> creates a new mutex~, which is initially unlocked\\
+>>
+<<div id="VALlock" class="code"|<<span class="keyword"|val>> lock : <<span class="code type"|<<a_api text="t" | type Lwt_mutex.t >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|lock mutex>> lockcs the mutex~, that is~:\\
+
+* if the mutex is unlocked~, then it is marked as locked and
+        <<a_api | val Lwt_mutex.lock >> returns immediatly
+
+* if it is locked~, then <<a_api | val Lwt_mutex.lock >> waits for all threads waiting on
+        the mutex to terminate~, then it resumes when the last one
+        unlocks the mutex
+
+
+      ~Note~: threads are wake up is the same order they try to lock the
+      mutex\\
+>>
+<<div id="VALunlock" class="code"|<<span class="keyword"|val>> unlock : <<span class="code type"|<<a_api text="t" | type Lwt_mutex.t >> -> unit>>>><<div class="info"|<<span class='code'|unlock mutex>> unlock the mutex if no threads is waiting on
+      it~. ~Otherwise it removes the first one and resumes it~.\\
+>>
+<<div id="VALis_locked" class="code"|<<span class="keyword"|val>> is~_locked : <<span class="code type"|<<a_api text="t" | type Lwt_mutex.t >> -> bool>>>><<div class="info"|<<span class='code'|locked mutex>> returns whether <<span class='code'|mutex>> is currently locked\\
+>>
+<<div id="VALis_empty" class="code"|<<span class="keyword"|val>> is~_empty : <<span class="code type"|<<a_api text="t" | type Lwt_mutex.t >> -> bool>>>><<div class="info"|<<span class='code'|is~_empty mutex>> returns <<span class='code'|true>> if they are no thread waiting on
+      the mutex~, and <<span class='code'|false>> otherwise\\
+>>
+<<div id="VALwith_lock" class="code"|<<span class="keyword"|val>> with~_lock : <<span class="code type"|<<a_api text="t" | type Lwt_mutex.t >> -> (unit -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|with~_lock lock f>> is used to lock a mutex within a block scope~.
+      ~The function <<span class='code'|f ~(~)>> is called with the mutex locked~, and its
+      result is returned from the call to ~. ~If an exception
+      is raised from f~, the mutex is also unlocked before the scope of
+       is exited~.\\
+>>

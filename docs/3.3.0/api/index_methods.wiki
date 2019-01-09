@@ -1,0 +1,114 @@
+=Index of class methods=
+
+|@@ @style="tet-align: left;"@@\\B|
+|@@class="odocwiki_index"@ @@<<a_api text="blocked"| method Lwt_stream.bounded_push#blocked >> ~[<<a_api | module Lwt_stream >>~]|<<div class="odocwiki_info"|~Is a thread is blocked on <<a_api | method Lwt_stream.bounded_push.push >> ~?
+>>
+|
+|@@ @style="tet-align: left;"@@\\C|
+|@@class="odocwiki_index"@ @@<<a_api text="cleanup"| method Lwt_engine.t#cleanup >> ~[<<a_api | module Lwt_engine >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="cleanup"| method Lwt_engine.abstract#cleanup >> ~[<<a_api | module Lwt_engine >>~]|<<div class="odocwiki_info"|~Cleanup resources associated with the engine~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="close"| method Lwt_process.process_none#close >> ~[<<a_api | module Lwt_process >>~]|<<div class="odocwiki_info"|~Closes the process and returns its exit status~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="close"| method Lwt_stream.bounded_push#close >> ~[<<a_api | module Lwt_stream >>~]|<<div class="odocwiki_info"|~Closes the stream~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="closed"| method Lwt_stream.bounded_push#closed >> ~[<<a_api | module Lwt_stream >>~]|<<div class="odocwiki_info"|~Is the stream closed ~?
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="count"| method Lwt_stream.bounded_push#count >> ~[<<a_api | module Lwt_stream >>~]|<<div class="odocwiki_info"|~Number of elements in the stream queue~.
+>>
+|
+|@@ @style="tet-align: left;"@@\\D|
+|@@class="odocwiki_index"@ @@<<a_api text="destroy"| method Lwt_engine.abstract#destroy >> ~[<<a_api | module Lwt_engine >>~]|<<div class="odocwiki_info"|~Destroy the engine~, remove all its events and free its
+        associated resources~.
+>>
+|
+|@@ @style="tet-align: left;"@@\\F|
+|@@class="odocwiki_index"@ @@<<a_api text="fake_io"| method Lwt_engine.abstract#fake_io >> ~[<<a_api | module Lwt_engine >>~]||
+|@@ @style="tet-align: left;"@@\\I|
+|@@class="odocwiki_index"@ @@<<a_api text="iter"| method Lwt_engine.t#iter >> ~[<<a_api | module Lwt_engine >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="iter"| method Lwt_engine.abstract#iter >> ~[<<a_api | module Lwt_engine >>~]||
+|@@ @style="tet-align: left;"@@\\K|
+|@@class="odocwiki_index"@ @@<<a_api text="kill"| method Lwt_process.process_none#kill >> ~[<<a_api | module Lwt_process >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|kill signum>> sends <<span class="odocwiki_inlinecode"|signum>> to the process if it is still
+        running~.
+>>
+|
+|@@ @style="tet-align: left;"@@\\L|
+|@@class="odocwiki_index"@ @@<<a_api text="loop"| method Lwt_engine.libev#loop >> ~[<<a_api | module Lwt_engine >>~]|<<div class="odocwiki_info"|~Returns <<span class="odocwiki_inlinecode"|loop>>~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="loop"| method Lwt_engine.Versioned.libev_2#loop >> ~[<<a_api | module Lwt_engine.Versioned >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="loop"| method Lwt_engine.Versioned.libev_1#loop >> ~[<<a_api | module Lwt_engine.Versioned >>~]||
+|@@ @style="tet-align: left;"@@\\O|
+|@@class="odocwiki_index"@ @@<<a_api text="on_readable"| method Lwt_engine.abstract#on_readable >> ~[<<a_api | module Lwt_engine >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="on_timer"| method Lwt_engine.abstract#on_timer >> ~[<<a_api | module Lwt_engine >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="on_writable"| method Lwt_engine.abstract#on_writable >> ~[<<a_api | module Lwt_engine >>~]||
+|@@ @style="tet-align: left;"@@\\P|
+|@@class="odocwiki_index"@ @@<<a_api text="pid"| method Lwt_process.process_none#pid >> ~[<<a_api | module Lwt_process >>~]|<<div class="odocwiki_info"|~Pid of the sub~-process
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="poll"| method Lwt_engine.poll_based#poll >> ~[<<a_api | module Lwt_engine >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|poll fds tiomeout>>~, where <<span class="odocwiki_inlinecode"|fds>> is a list of tuples of the
+        form <<span class="odocwiki_inlinecode"|~(fd~, check~_readable~, check~_writable~)>>~, waits for either~:
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="push"| method Lwt_stream.bounded_push#push >> ~[<<a_api | module Lwt_stream >>~]|<<div class="odocwiki_info"|~Pushes a new element to the stream~.
+>>
+|
+|@@ @style="tet-align: left;"@@\\R|
+|@@class="odocwiki_index"@ @@<<a_api text="readable_count"| method Lwt_engine.abstract#readable_count >> ~[<<a_api | module Lwt_engine >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="register_readable"| method Lwt_engine.t#register_readable >> ~[<<a_api | module Lwt_engine >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="register_readable"| method Lwt_engine.abstract#register_readable >> ~[<<a_api | module Lwt_engine >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="register_timer"| method Lwt_engine.t#register_timer >> ~[<<a_api | module Lwt_engine >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="register_timer"| method Lwt_engine.abstract#register_timer >> ~[<<a_api | module Lwt_engine >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="register_writable"| method Lwt_engine.t#register_writable >> ~[<<a_api | module Lwt_engine >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="register_writable"| method Lwt_engine.abstract#register_writable >> ~[<<a_api | module Lwt_engine >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="resize"| method Lwt_stream.bounded_push#resize >> ~[<<a_api | module Lwt_stream >>~]|<<div class="odocwiki_info"|~Change the size of the stream queue~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="rusage"| method Lwt_process.process_none#rusage >> ~[<<a_api | module Lwt_process >>~]|<<div class="odocwiki_info"|~Threads which wait for the sub~-process to exit then returns
+        its resource usages
+>>
+|
+|@@ @style="tet-align: left;"@@\\S|
+|@@class="odocwiki_index"@ @@<<a_api text="select"| method Lwt_engine.select_based#select >> ~[<<a_api | module Lwt_engine >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|select fds~_r fds~_w timeout>> waits for either~:
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="set_reference"| method Lwt_stream.bounded_push#set_reference >> ~[<<a_api | module Lwt_stream >>~]|<<div class="odocwiki_info"|~Set the reference to an external source~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="size"| method Lwt_stream.bounded_push#size >> ~[<<a_api | module Lwt_stream >>~]|<<div class="odocwiki_info"|~Size of the stream~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="state"| method Lwt_process.process_none#state >> ~[<<a_api | module Lwt_process >>~]|<<div class="odocwiki_info"|~Return the state of the process
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="status"| method Lwt_process.process_none#status >> ~[<<a_api | module Lwt_process >>~]|<<div class="odocwiki_info"|~Threads which wait for the sub~-process to exit then returns its
+        exit status
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="stderr"| method Lwt_process.process_full#stderr >> ~[<<a_api | module Lwt_process >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="stdin"| method Lwt_process.process_full#stdin >> ~[<<a_api | module Lwt_process >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="stdin"| method Lwt_process.process#stdin >> ~[<<a_api | module Lwt_process >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="stdin"| method Lwt_process.process_out#stdin >> ~[<<a_api | module Lwt_process >>~]|<<div class="odocwiki_info"|~The standard input of the process
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="stdout"| method Lwt_process.process_full#stdout >> ~[<<a_api | module Lwt_process >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="stdout"| method Lwt_process.process#stdout >> ~[<<a_api | module Lwt_process >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="stdout"| method Lwt_process.process_in#stdout >> ~[<<a_api | module Lwt_process >>~]|<<div class="odocwiki_info"|~The standard output of the process
+>>
+|
+|@@ @style="tet-align: left;"@@\\T|
+|@@class="odocwiki_index"@ @@<<a_api text="terminate"| method Lwt_process.process_none#terminate >> ~[<<a_api | module Lwt_process >>~]|<<div class="odocwiki_info"|~Terminates the process~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="timer_count"| method Lwt_engine.abstract#timer_count >> ~[<<a_api | module Lwt_engine >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="transfer"| method Lwt_engine.abstract#transfer >> ~[<<a_api | module Lwt_engine >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|transfer engine>> moves all events from the current engine to
+        <<span class="odocwiki_inlinecode"|engine>>~.
+>>
+|
+|@@ @style="tet-align: left;"@@\\W|
+|@@class="odocwiki_index"@ @@<<a_api text="writable_count"| method Lwt_engine.abstract#writable_count >> ~[<<a_api | module Lwt_engine >>~]||
+\\

@@ -1,0 +1,7 @@
+<<code language="ocaml" | sig
+  type t
+  val result_of_content :
+    Ocsigen_http_frame.HTTP_CONTENT.t -> Ocsigen_http_frame.result Lwt.t
+  val get_etag :
+    Ocsigen_http_frame.HTTP_CONTENT.t -> Ocsigen_http_frame.etag option
+end >>

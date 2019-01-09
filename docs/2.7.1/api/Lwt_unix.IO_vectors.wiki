@@ -1,0 +1,40 @@
+=Module <<a_api_type | module Lwt_unix.IO_vectors >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|IO_vectors>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_unix.IO_vectors >><<span class="ocsforge_color_keyword"|end>>>>~Sequences of buffer slices for <<a_api | val Lwt_unix.writev >>~.
+
+----
+<<pre class="ocsforge_color odocwiki_code" id="TYPEt"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|t>>>><<div class="odocwiki_info"|~Mutable sequences of ~I~/~O vectors~. ~An ~I~/~O vector describes a slice of a
+      <<span class="odocwiki_inlinecode"|bytes>> or <<span class="odocwiki_inlinecode"|~Bigarray>> buffer~. ~Each ~I~/~O vector is a triple containing a
+      reference to the buffer~, an offset into the buffer where the slice begins~,
+      and the length of the slice~.
+>>
+<<pre class="ocsforge_color odocwiki_code" id="TYPE_bigarray"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|~_bigarray>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_delimiter"| ( >>char, <<span class="ocsforge_color_uid"|Bigarray>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|int8_unsigned_elt>>, <<span class="ocsforge_color_uid"|Bigarray>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|c_layout>><<span class="ocsforge_color_delimiter"| ) >>\\  <<span class="ocsforge_color_uid"|Bigarray>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|Array1>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>>>> >><<div class="odocwiki_info"|~Type abbreviation equivalent to <<a_api | type Lwt_bytes.t >>~. ~Do not use this type name
+      directly~; use <<a_api | type Lwt_bytes.t >> instead~.
+>>
+<<pre id="VALcreate" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|create>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="t" | type Lwt_unix.IO_vectors.t >>>>>><<div class="odocwiki_info"|~Creates an empty ~I~/~O vector sequence~.
+>>
+<<pre id="VALappend_bytes" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|append~_bytes>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="t" | type Lwt_unix.IO_vectors.t >> <<span class="ocsforge_color_delimiter"| -> >> bytes <<span class="ocsforge_color_delimiter"| -> >> int <<span class="ocsforge_color_delimiter"| -> >> int <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|append~_bytes vs buffer offset length>> appends a slice of the <<span class="odocwiki_inlinecode"|bytes>>
+      buffer <<span class="odocwiki_inlinecode"|buffer>> beginning at <<span class="odocwiki_inlinecode"|offset>> and with length <<span class="odocwiki_inlinecode"|length>> to the
+      ~I~/~O vector sequence <<span class="odocwiki_inlinecode"|vs>>~.
+>>
+<<pre id="VALappend_bigarray" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|append~_bigarray>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<a_api text="t" | type Lwt_unix.IO_vectors.t >> <<span class="ocsforge_color_delimiter"| -> >>\\  Lwt_unix.IO_vectors._bigarray <<span class="ocsforge_color_delimiter"| -> >> int <<span class="ocsforge_color_delimiter"| -> >> int <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|append~_bigarray vs buffer offset length>> appends a slice of the
+      <<span class="odocwiki_inlinecode"|~Bigarray>> buffer <<span class="odocwiki_inlinecode"|buffer>> beginning at <<span class="odocwiki_inlinecode"|offset>> and with length <<span class="odocwiki_inlinecode"|length>>
+      to the ~I~/~O vector sequence <<span class="odocwiki_inlinecode"|vs>>~.
+>>
+<<pre id="VALdrop" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|drop>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="t" | type Lwt_unix.IO_vectors.t >> <<span class="ocsforge_color_delimiter"| -> >> int <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|drop vs n>> adjusts the ~I~/~O vector sequence <<span class="odocwiki_inlinecode"|vs>> so that it no longer
+      includes its first <<span class="odocwiki_inlinecode"|n>> bytes~.
+>>
+<<pre id="VALis_empty" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|is~_empty>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="t" | type Lwt_unix.IO_vectors.t >> <<span class="ocsforge_color_delimiter"| -> >> bool>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|is~_empty vs>> is <<span class="odocwiki_inlinecode"|true>> if and only if <<span class="odocwiki_inlinecode"|vs>> has no ~I~/~O vectors~, or all ~I~/~O
+      vectors in <<span class="odocwiki_inlinecode"|vs>> have zero bytes~.
+>>
+<<pre id="VALsystem_limit" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|system~_limit>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int option>>>><<div class="odocwiki_info"|~Some systems limit the number of ~I~/~O vectors that can be passed in a
+      single call to their <<span class="odocwiki_inlinecode"|writev>> or <<span class="odocwiki_inlinecode"|readv>> system calls~. ~On those systems~,
+      if the limit is <<span class="odocwiki_inlinecode"|n>>~, this value is equal to <<span class="odocwiki_inlinecode"|~Some n>>~. ~On systems without
+      such a limit~, the value is equal to <<span class="odocwiki_inlinecode"|~None>>~.
+
+
+      ~Unless you need atomic ~I~/~O operations~, you can ignore this limit~. ~The ~Lwt
+      binding automatically respects it internally~. ~See <<a_api | val Lwt_unix.writev >>~.
+
+
+      ~A typical limit is ~1~0~2~4 vectors~.
+>>

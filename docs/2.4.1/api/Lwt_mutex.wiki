@@ -1,0 +1,36 @@
+=Module <<a_api_type | module Lwt_mutex >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_mutex>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_mutex >><<span class="ocsforge_color_keyword"|end>>>>~Cooperative locks for mutual exclusion
+
+----
+<<pre class="ocsforge_color odocwiki_code" id="TYPEt"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|t>>>><<div class="odocwiki_info"|~Type of ~Lwt mutexes
+>>
+<<pre id="VALcreate" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|create>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="t" | type Lwt_mutex.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|create ~(~)>> creates a new mutex~, which is initially unlocked
+>>
+<<pre id="VALlock" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|lock>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="t" | type Lwt_mutex.t >> <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|lock mutex>> lockcs the mutex~, that is~:
+
+
+* if the mutex is unlocked~, then it is marked as locked and
+        <<a_api | val Lwt_mutex.lock >> returns immediatly
+
+* if it is locked~, then <<a_api | val Lwt_mutex.lock >> waits for all threads waiting on
+        the mutex to terminate~, then it resumes when the last one
+        unlocks the mutex
+
+      ~Note~: threads are wake up is the same order they try to lock the
+      mutex
+>>
+<<pre id="VALunlock" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|unlock>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="t" | type Lwt_mutex.t >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|unlock mutex>> unlock the mutex if no threads is waiting on
+      it~. ~Otherwise it will eventually removes the first one and
+      resumes it~.
+>>
+<<pre id="VALis_locked" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|is~_locked>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="t" | type Lwt_mutex.t >> <<span class="ocsforge_color_delimiter"| -> >> bool>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|locked mutex>> returns whether <<span class="odocwiki_inlinecode"|mutex>> is currently locked
+>>
+<<pre id="VALis_empty" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|is~_empty>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="t" | type Lwt_mutex.t >> <<span class="ocsforge_color_delimiter"| -> >> bool>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|is~_empty mutex>> returns <<span class="odocwiki_inlinecode"|true>> if they are no thread waiting on
+      the mutex~, and <<span class="odocwiki_inlinecode"|false>> otherwise
+>>
+<<pre id="VALwith_lock" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|with~_lock>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="t" | type Lwt_mutex.t >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|with~_lock lock f>> is used to lock a mutex within a block scope~.
+      ~The function <<span class="odocwiki_inlinecode"|f ~(~)>> is called with the mutex locked~, and its
+      result is returned from the call to ~. ~If an exception
+      is raised from f~, the mutex is also unlocked before the scope of
+       is exited~.
+>>

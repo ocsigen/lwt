@@ -1,0 +1,75 @@
+<<code language="ocaml" | sig
+  type t =
+      (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+  val create : int -> Lwt_bytes.t
+  val length : Lwt_bytes.t -> int
+  external get : Lwt_bytes.t -> int -> char = "%caml_ba_ref_1"
+  external set : Lwt_bytes.t -> int -> char -> unit = "%caml_ba_set_1"
+  external unsafe_get : Lwt_bytes.t -> int -> char = "%caml_ba_unsafe_ref_1"
+  external unsafe_set : Lwt_bytes.t -> int -> char -> unit
+    = "%caml_ba_unsafe_set_1"
+  val of_string : string -> Lwt_bytes.t
+  val to_string : Lwt_bytes.t -> string
+  val blit : Lwt_bytes.t -> int -> Lwt_bytes.t -> int -> int -> unit
+  val blit_string_bytes : string -> int -> Lwt_bytes.t -> int -> int -> unit
+  val blit_bytes_string : Lwt_bytes.t -> int -> string -> int -> int -> unit
+  external unsafe_blit :
+    Lwt_bytes.t -> int -> Lwt_bytes.t -> int -> int -> unit
+    = "lwt_unix_blit_bytes_bytes" "noalloc"
+  external unsafe_blit_string_bytes :
+    string -> int -> Lwt_bytes.t -> int -> int -> unit
+    = "lwt_unix_blit_string_bytes" "noalloc"
+  external unsafe_blit_bytes_string :
+    Lwt_bytes.t -> int -> string -> int -> int -> unit
+    = "lwt_unix_blit_bytes_string" "noalloc"
+  val proxy : Lwt_bytes.t -> int -> int -> Lwt_bytes.t
+  val extract : Lwt_bytes.t -> int -> int -> Lwt_bytes.t
+  val copy : Lwt_bytes.t -> Lwt_bytes.t
+  val fill : Lwt_bytes.t -> int -> int -> char -> unit
+  external unsafe_fill : Lwt_bytes.t -> int -> int -> char -> unit
+    = "lwt_unix_fill_bytes" "noalloc"
+  val read : Lwt_unix.file_descr -> Lwt_bytes.t -> int -> int -> int Lwt.t
+  val write : Lwt_unix.file_descr -> Lwt_bytes.t -> int -> int -> int Lwt.t
+  val recv :
+    Lwt_unix.file_descr ->
+    Lwt_bytes.t -> int -> int -> Unix.msg_flag list -> int Lwt.t
+  val send :
+    Lwt_unix.file_descr ->
+    Lwt_bytes.t -> int -> int -> Unix.msg_flag list -> int Lwt.t
+  val recvfrom :
+    Lwt_unix.file_descr ->
+    Lwt_bytes.t ->
+    int -> int -> Unix.msg_flag list -> (int * Unix.sockaddr) Lwt.t
+  val sendto :
+    Lwt_unix.file_descr ->
+    Lwt_bytes.t ->
+    int -> int -> Unix.msg_flag list -> Unix.sockaddr -> int Lwt.t
+  type io_vector = {
+    iov_buffer : Lwt_bytes.t;
+    iov_offset : int;
+    iov_length : int;
+  }
+  val io_vector :
+    buffer:Lwt_bytes.t -> offset:int -> length:int -> Lwt_bytes.io_vector
+  val recv_msg :
+    socket:Lwt_unix.file_descr ->
+    io_vectors:Lwt_bytes.io_vector list -> (int * Unix.file_descr list) Lwt.t
+  val send_msg :
+    socket:Lwt_unix.file_descr ->
+    io_vectors:Lwt_bytes.io_vector list ->
+    fds:Unix.file_descr list -> int Lwt.t
+  val map_file :
+    fd:Unix.file_descr ->
+    ?pos:int64 -> shared:bool -> ?size:int -> unit -> Lwt_bytes.t
+  external mapped : Lwt_bytes.t -> bool = "lwt_unix_mapped" "noalloc"
+  type advice =
+      MADV_NORMAL
+    | MADV_RANDOM
+    | MADV_SEQUENTIAL
+    | MADV_WILLNEED
+    | MADV_DONTNEED
+  val madvise : Lwt_bytes.t -> int -> int -> Lwt_bytes.advice -> unit
+  val page_size : int
+  val mincore : Lwt_bytes.t -> int -> bool array -> unit
+  val wait_mincore : Lwt_bytes.t -> int -> unit Lwt.t
+end >>

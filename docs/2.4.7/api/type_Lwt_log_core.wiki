@@ -1,0 +1,195 @@
+<<code language="ocaml" | sig
+  type level = Debug | Info | Notice | Warning | Error | Fatal
+  type logger
+  type section
+  val string_of_level : Lwt_log_core.level -> string
+  val load_rules : string -> unit
+  val add_rule : string -> Lwt_log_core.level -> unit
+  val append_rule : string -> Lwt_log_core.level -> unit
+  val log :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger ->
+    level:Lwt_log_core.level -> string -> unit Lwt.t
+  val log_f :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger ->
+    level:Lwt_log_core.level ->
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -> 'a
+  val ign_log :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger -> level:Lwt_log_core.level -> string -> unit
+  val ign_log_f :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger ->
+    level:Lwt_log_core.level ->
+    ('a, unit, string, unit) Pervasives.format4 -> 'a
+  val debug :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger -> string -> unit Lwt.t
+  val debug_f :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger ->
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -> 'a
+  val ign_debug :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger -> string -> unit
+  val ign_debug_f :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger ->
+    ('a, unit, string, unit) Pervasives.format4 -> 'a
+  val info :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger -> string -> unit Lwt.t
+  val info_f :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger ->
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -> 'a
+  val ign_info :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger -> string -> unit
+  val ign_info_f :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger ->
+    ('a, unit, string, unit) Pervasives.format4 -> 'a
+  val notice :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger -> string -> unit Lwt.t
+  val notice_f :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger ->
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -> 'a
+  val ign_notice :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger -> string -> unit
+  val ign_notice_f :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger ->
+    ('a, unit, string, unit) Pervasives.format4 -> 'a
+  val warning :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger -> string -> unit Lwt.t
+  val warning_f :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger ->
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -> 'a
+  val ign_warning :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger -> string -> unit
+  val ign_warning_f :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger ->
+    ('a, unit, string, unit) Pervasives.format4 -> 'a
+  val error :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger -> string -> unit Lwt.t
+  val error_f :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger ->
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -> 'a
+  val ign_error :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger -> string -> unit
+  val ign_error_f :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger ->
+    ('a, unit, string, unit) Pervasives.format4 -> 'a
+  val fatal :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger -> string -> unit Lwt.t
+  val fatal_f :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger ->
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -> 'a
+  val ign_fatal :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger -> string -> unit
+  val ign_fatal_f :
+    ?exn:exn ->
+    ?section:Lwt_log_core.section ->
+    ?location:string * int * int ->
+    ?logger:Lwt_log_core.logger ->
+    ('a, unit, string, unit) Pervasives.format4 -> 'a
+  module Section :
+    sig
+      type t = Lwt_log_core.section
+      val make : string -> Lwt_log_core.section
+      val name : Lwt_log_core.section -> string
+      val main : Lwt_log_core.section
+      val level : Lwt_log_core.section -> Lwt_log_core.level
+      val set_level : Lwt_log_core.section -> Lwt_log_core.level -> unit
+      val reset_level : Lwt_log_core.section -> unit
+    end
+  type template = string
+  val render :
+    buffer:Buffer.t ->
+    template:Lwt_log_core.template ->
+    section:Lwt_log_core.section ->
+    level:Lwt_log_core.level -> message:string -> unit
+  val location_key : (string * int * int) Lwt.key
+  exception Logger_closed
+  val make :
+    output:(Lwt_log_core.section ->
+            Lwt_log_core.level -> string list -> unit Lwt.t) ->
+    close:(unit -> unit Lwt.t) -> Lwt_log_core.logger
+  val close : Lwt_log_core.logger -> unit Lwt.t
+  val default : Lwt_log_core.logger Pervasives.ref
+  val broadcast : Lwt_log_core.logger list -> Lwt_log_core.logger
+  val dispatch :
+    (Lwt_log_core.section -> Lwt_log_core.level -> Lwt_log_core.logger) ->
+    Lwt_log_core.logger
+  val null : Lwt_log_core.logger
+end >>

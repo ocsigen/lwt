@@ -1,0 +1,37 @@
+<<code language="ocaml" | let menu ?(classe=[]) first l ~service:current ~sp =
+  let rec aux = function
+    | [] -> []
+    | [(url, text)] -> 
+        let classe = [last_class] in
+        if url = (* problem with preapplied services with == *) current 
+        then 
+					[{{ <li class={: attrib_list (current_class::classe) :}>{: text :} }}]
+					(* [li ~a:[a_class (current_class::classe)] text] *)
+        else 
+					[{{ <li class={: attrib_list classe :}>[{: a url sp {: text :} () :}] }}]
+					(* [li ~a:[a_class classe] [a url sp text ()] *)
+    | (url, text)::l -> 
+        (if url = (* problem with preapplied services with == *) current 
+        then
+					{{ <li class={: current_class :}>{: text :} }}
+					(* (li ~a:[a_class [current_class]] text) *)
+        else 
+					{{ <li>[{: a url sp {: text :} () :}] }})::(aux l)
+					(* (li [a url sp text ()]))::(aux l) *)
+  in match first::l with
+  | [] -> assert false
+  | [(url, text)] ->
+			{{ <ul class={: attrib_list (menu_class::classe) :}>[{:
+				let liclasse = [first_class; last_class] in
+				if url = current then
+					{{ <li class={: attrib_list (current_class::liclasse) :}>{: text :} }}
+				else
+					{{ <li class={: attrib_list liclasse :}>[{: a url sp {: text :} () :}] }} :}] }}
+  | (url, text)::l -> 
+			{{ <ul class={: attrib_list (menu_class::classe) :}>[{:
+				let liclasse = [first_class] in
+				if url = current then
+					{{ <li class={: attrib_list (current_class::liclasse) :}>{: text :} }}
+				else
+					{{ <li class={: attrib_list liclasse :}>[{: a url sp {: text :} () :}] }} :}
+					!{: aux l :}] }} >>

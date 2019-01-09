@@ -1,0 +1,49 @@
+<<code language="ocaml" | sig
+  val sleep : float -> unit Lwt.t
+  val yield : unit -> unit Lwt.t
+  val run : 'a Lwt.t -> 'a
+  type file_descr
+  val read : Lwt_unix.file_descr -> string -> int -> int -> int Lwt.t
+  val write : Lwt_unix.file_descr -> string -> int -> int -> int Lwt.t
+  val wait_read : Lwt_unix.file_descr -> unit Lwt.t
+  val wait_write : Lwt_unix.file_descr -> unit Lwt.t
+  val pipe : unit -> Lwt_unix.file_descr * Lwt_unix.file_descr
+  val pipe_in : unit -> Lwt_unix.file_descr * Unix.file_descr
+  val pipe_out : unit -> Unix.file_descr * Lwt_unix.file_descr
+  val socket :
+    Unix.socket_domain -> Unix.socket_type -> int -> Lwt_unix.file_descr
+  val socketpair :
+    Unix.socket_domain ->
+    Unix.socket_type -> int -> Lwt_unix.file_descr * Lwt_unix.file_descr
+  val bind : Lwt_unix.file_descr -> Unix.sockaddr -> unit
+  val listen : Lwt_unix.file_descr -> int -> unit
+  val accept :
+    Lwt_unix.file_descr -> (Lwt_unix.file_descr * Unix.sockaddr) Lwt.t
+  val connect : Lwt_unix.file_descr -> Unix.sockaddr -> unit Lwt.t
+  val shutdown : Lwt_unix.file_descr -> Unix.shutdown_command -> unit
+  val close : Lwt_unix.file_descr -> unit
+  val setsockopt :
+    Lwt_unix.file_descr -> Unix.socket_bool_option -> bool -> unit
+  val set_close_on_exec : Lwt_unix.file_descr -> unit
+  val wait : unit -> (int * Unix.process_status) Lwt.t
+  val waitpid :
+    Unix.wait_flag list -> int -> (int * Unix.process_status) Lwt.t
+  val system : string -> Unix.process_status Lwt.t
+  val abort : Lwt_unix.file_descr -> exn -> unit
+  val unix_file_descr : Lwt_unix.file_descr -> Unix.file_descr
+  val of_unix_file_descr : Unix.file_descr -> Lwt_unix.file_descr
+  type watchers
+  exception Retry
+  exception Retry_read
+  exception Retry_write
+  val inputs : Lwt_unix.watchers
+  val outputs : Lwt_unix.watchers
+  val register_action :
+    Lwt_unix.watchers -> Lwt_unix.file_descr -> (unit -> 'a) -> 'a Lwt.t
+  val check_descriptor : Lwt_unix.file_descr -> unit
+  val inputs_length : unit -> int
+  val outputs_length : unit -> int
+  val wait_children_length : unit -> int
+  val get_new_sleeps : unit -> int
+  val sleep_queue_size : unit -> int
+end >>

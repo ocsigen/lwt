@@ -1,0 +1,1667 @@
+=Index of values=
+
+|@@ @class="alignleft"@@\\|
+|<<a_api text="( ** )"| value Eliom_parameters.( ** ) >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~This is a combinator to allow the service to take several parameters
+   ~(see examples above~) 
+   //~Warning~: it is a binary operator~.//
+>>
+|
+|<<a_api text="(>>=)"| value Lwt.(>>=) >> ~[<<a_api | module Lwt >>~]|<<div class="info"|<<span class='code'|t ~>~>~= f>> is an alternative notation for <<span class='code'|bind t f>>~.
+>>
+|
+|@@ @class="alignleft"@@\\A|
+|<<a_api text="a"| value XHTML.T.a >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a"| value Eliom_predefmod.XHTMLFORMSSIG.a >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|<<span class='code'|a service sp cont ~(~)>> creates a link to <<span class='code'|service>>~.
+>>
+|
+|<<a_api text="a"| value Eliom_mkforms.ELIOMFORMSIG.a >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|<<span class='code'|a service sp cont ~(~)>> creates a link to <<span class='code'|service>>~.
+>>
+|
+|<<a_api text="a_abbr"| value XHTML.T.a_abbr >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_accept"| value XHTML.T.a_accept >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_accept_charset"| value XHTML.T.a_accept_charset >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_accesskey"| value XHTML.T.a_accesskey >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~This attribute assigns an access key to an element~.
+>>
+|
+|<<a_api text="a_action"| value XHTML.T.a_action >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~This attribute specifies a form processing agent~.
+>>
+|
+|<<a_api text="a_align"| value XHTML.T.Basic_Tables.a_align >> ~[<<a_api | module XHTML.T.Basic_Tables >>~]||
+|<<a_api text="a_align"| value XHTML.T.a_align >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_alt"| value XHTML.T.a_alt >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_archive"| value XHTML.T.a_archive >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_axis"| value XHTML.T.a_axis >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_border"| value XHTML.T.a_border >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_button_type"| value XHTML.T.a_button_type >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_cellpadding"| value XHTML.T.a_cellpadding >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_cellspacing"| value XHTML.T.a_cellspacing >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_char"| value XHTML.T.a_char >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_charoff"| value XHTML.T.a_charoff >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_charset"| value XHTML.T.a_charset >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~This attribute specifies the character encoding of the resource
+    designated by the link~.
+>>
+|
+|<<a_api text="a_checked"| value XHTML.T.a_checked >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~When the <<span class='code'|type>> attribute has the value <<span class='code'|"radio">> or <<span class='code'|"checkbox">>~,
+    this boolean attribute specifies that the button is on~.
+>>
+|
+|<<a_api text="a_cite"| value XHTML.T.a_cite >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_class"| value XHTML.T.a_class >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~This attribute assigns a class name or set of class names to an
+    element~.
+>>
+|
+|<<a_api text="a_classid"| value XHTML.T.a_classid >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_codebase"| value XHTML.T.a_codebase >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_codetype"| value XHTML.T.a_codetype >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_cols"| value XHTML.T.a_cols >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~This attribute specifies the visible width in average character
+    widths~.
+>>
+|
+|<<a_api text="a_colspan"| value XHTML.T.a_colspan >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_content"| value XHTML.T.a_content >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_coords"| value XHTML.T.a_coords >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_data"| value XHTML.T.a_data >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_datapagesize"| value XHTML.T.a_datapagesize >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_datetime"| value XHTML.T.a_datetime >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_declare"| value XHTML.T.a_declare >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_defer"| value XHTML.T.a_defer >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_dir"| value XHTML.T.a_dir >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_disabled"| value XHTML.T.a_disabled >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_enctype"| value XHTML.T.a_enctype >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_for"| value XHTML.T.a_for >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_frame"| value XHTML.T.a_frame >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_frameborder"| value XHTML.T.a_frameborder >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_fs_cols"| value XHTML.T.a_fs_cols >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_fs_rows"| value XHTML.T.a_fs_rows >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_headers"| value XHTML.T.a_headers >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_height"| value XHTML.T.a_height >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_href"| value XHTML.T.a_href >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~This attribute specifies the location of a ~Web resource~, thus
+    defining a link between the current element ~(the source anchor~)
+    and the destination anchor defined by this attribute~.
+>>
+|
+|<<a_api text="a_hreflang"| value XHTML.T.a_hreflang >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~This attribute specifies the base language of the resource
+    designated by href and may only be used when href is specified~.
+>>
+|
+|<<a_api text="a_http_equiv"| value XHTML.T.a_http_equiv >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_id"| value XHTML.T.a_id >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~This attribute assigns a name to an element~.
+>>
+|
+|<<a_api text="a_input_type"| value XHTML.T.a_input_type >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_label"| value XHTML.T.a_label >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_longdesc"| value XHTML.T.a_longdesc >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_marginheight"| value XHTML.T.a_marginheight >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_marginwidth"| value XHTML.T.a_marginwidth >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_maxlength"| value XHTML.T.a_maxlength >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_media"| value XHTML.T.a_media >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_method"| value XHTML.T.a_method >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_multiple"| value XHTML.T.a_multiple >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_name"| value XHTML.T.a_name >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~This attribute assigns the control name~.
+>>
+|
+|<<a_api text="a_name_01_00"| value XHTML.T_01_00.a_name_01_00 >> ~[<<a_api | module XHTML.T_01_00 >>~]|<<div class="info"|~X~H~T~M~L ~1~.~1 has removed the name attribute from several elements~:
+>>
+|
+|<<a_api text="a_nohref"| value XHTML.T.a_nohref >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_noresize"| value XHTML.T.a_noresize >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_profile"| value XHTML.T.a_profile >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_readonly"| value XHTML.T.a_readonly >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_rel"| value XHTML.T.a_rel >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~This attribute describes the relationship from the current document
+    to the anchor specified by the href attribute~.
+>>
+|
+|<<a_api text="a_rev"| value XHTML.T.a_rev >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~This attribute is used to describe a reverse link from the anchor specified
+    by the href attribute to the current document~.
+>>
+|
+|<<a_api text="a_rows"| value XHTML.T.a_rows >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~This attribute specifies the number of visible text lines~.
+>>
+|
+|<<a_api text="a_rowspan"| value XHTML.T.a_rowspan >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_rules"| value XHTML.T.a_rules >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_scheme"| value XHTML.T.a_scheme >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_scope"| value XHTML.T.Basic_Tables.a_scope >> ~[<<a_api | module XHTML.T.Basic_Tables >>~]||
+|<<a_api text="a_scope"| value XHTML.T.a_scope >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_scrolling"| value XHTML.T.a_scrolling >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_selected"| value XHTML.T.a_selected >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~When set~, this boolean attribute specifies that this option is pre~-selected~.
+>>
+|
+|<<a_api text="a_shape"| value XHTML.T.a_shape >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_size"| value XHTML.T.a_size >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_src"| value XHTML.T.a_src >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_standby"| value XHTML.T.a_standby >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_summary"| value XHTML.T.a_summary >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_tabindex"| value XHTML.T.a_tabindex >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~This attribute specifies the position of the current element in
+    the tabbing order for the current document~.
+>>
+|
+|<<a_api text="a_target"| value XHTML.T.a_target >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_title"| value XHTML.T.a_title >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~This attribute offers advisory information about the element for
+    which it is set~.
+>>
+|
+|<<a_api text="a_type"| value XHTML.T.a_type >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~This attribute gives an advisory hint as to the content type of
+    the content available at the link target address~.
+>>
+|
+|<<a_api text="a_usemap"| value XHTML.T.a_usemap >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_valign"| value XHTML.T.Basic_Tables.a_valign >> ~[<<a_api | module XHTML.T.Basic_Tables >>~]||
+|<<a_api text="a_valign"| value XHTML.T.a_valign >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_value"| value XHTML.T.a_value >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~This attribute specifies the initial value of the control~.
+>>
+|
+|<<a_api text="a_version"| value XHTML.T.a_version >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_width"| value XHTML.T.a_width >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_xml_lang"| value XHTML.T.a_xml_lang >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_xml_space"| value XHTML.T.a_xml_space >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="a_xmlns"| value XHTML.T.a_xmlns >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="abbr"| value XHTML.T.abbr >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="abort"| value Ocsigen_http_com.abort >> ~[<<a_api | module Ocsigen_http_com >>~]||
+|<<a_api text="abort"| value Lwt_ssl.abort >> ~[<<a_api | module Lwt_ssl >>~]||
+|<<a_api text="abort"| value Lwt_unix.abort >> ~[<<a_api | module Lwt_unix >>~]|<<div class="info"|~Makes all current and further uses of the file descriptor
+          fail with the given exception
+>>
+|
+|<<a_api text="accept"| value Lwt_unix.accept >> ~[<<a_api | module Lwt_unix >>~]||
+|<<a_api text="accesslog"| value Ocsigen_messages.accesslog >> ~[<<a_api | module Ocsigen_messages >>~]|<<div class="info"|~Write a message in access~.log
+>>
+|
+|<<a_api text="acronym"| value XHTML.T.acronym >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="add"| value Ocsipersist.add >> ~[<<a_api | module Ocsipersist >>~]|<<div class="info"|<<span class='code'|add table key value>> associates <<span class='code'|value>> to <<span class='code'|key>>~.
+>>
+|
+|<<a_api text="add_cookie"| value Ocsigen_http_frame.add_cookie >> ~[<<a_api | module Ocsigen_http_frame >>~]|<<div class="info"|<<span class='code'|add~_cookie c cookie~_table>> adds the cookie <<span class='code'|c>> to the table <<span class='code'|cookie~_table>>~.
+>>
+|
+|<<a_api text="add_cookies"| value Ocsigen_http_frame.add_cookies >> ~[<<a_api | module Ocsigen_http_frame >>~]|<<div class="info"|<<span class='code'|add~_cookies newcookies oldcookies>> adds the cookies from <<span class='code'|newcookies>>
+   to <<span class='code'|oldcookies>>~.
+>>
+|
+|<<a_api text="add_headers"| value Ocsigen_http_frame.Http_header.add_headers >> ~[<<a_api | module Ocsigen_http_frame.Http_header >>~]||
+|<<a_api text="address"| value XHTML.T.address >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="addto_class"| value XHTML.T.addto_class >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~Add the element and all its subelements to a class~.
+>>
+|
+|<<a_api text="addto_class1"| value XHTML.T.addto_class1 >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~Add the element to a class~.
+>>
+|
+|<<a_api text="all_anchors"| value XHTML.T.all_anchors >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="all_hrefs"| value XHTML.T.all_hrefs >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="all_suffix"| value Eliom_parameters.all_suffix >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~Takes all the suffix~, as long as possible~, as a ~(slash separated~) 
+   string list
+>>
+|
+|<<a_api text="all_suffix_regexp"| value Eliom_parameters.all_suffix_regexp >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|<<span class='code'|all~_suffix~_regexp r d s>> takes all the suffix~, as long as possible~, 
+   matching the regular expression <<span class='code'|r>>~, name <<span class='code'|s>>~, and rewrite it in <<span class='code'|d>>~.
+>>
+|
+|<<a_api text="all_suffix_string"| value Eliom_parameters.all_suffix_string >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~Takes all the suffix~, as long as possible~, as a string
+>>
+|
+|<<a_api text="all_suffix_user"| value Eliom_parameters.all_suffix_user >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~Takes all the suffix~, as long as possible~, 
+   with a type specified by the user~.
+>>
+|
+|<<a_api text="any"| value Eliom_parameters.any >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~Use this if you want to take any parameters~.
+>>
+|
+|<<a_api text="area"| value XHTML.T.area >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="attrib_list"| value Eliom_duce_tools.attrib_list >> ~[<<a_api | module Eliom_duce_tools >>~]||
+|@@ @class="alignleft"@@\\B|
+|<<a_api text="b"| value XHTML.T.b >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="badconfig"| value Ocsigen_extensions.badconfig >> ~[<<a_api | module Ocsigen_extensions >>~]|<<div class="info"|~Convenient function for raising ~Error~_in~_config~_file exceptions with
+    a sprintf~-formatted argument~.
+>>
+|
+|<<a_api text="base"| value XHTML.T.base >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="basic_raw_request"| value Ocsigen_http_client.basic_raw_request >> ~[<<a_api | module Ocsigen_http_client >>~]|<<div class="info"|~Same as <<a_api | val Ocsigen_http_client.raw_request >>~, but does not try to reuse connections~.
+>>
+|
+|<<a_api text="bdo"| value XHTML.T.bdo >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="big"| value XHTML.T.big >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="bind"| value Lwt_unix.bind >> ~[<<a_api | module Lwt_unix >>~]||
+|<<a_api text="bind"| value Lwt.bind >> ~[<<a_api | module Lwt >>~]|<<div class="info"|<<span class='code'|bind t f>> is a thread which first waits for the thread <<span class='code'|t>>
+          to terminate and then~, if the thread succeeds~, behaves as the
+          application of function <<span class='code'|f>> to the return value of <<span class='code'|t>>~.
+>>
+|
+|<<a_api text="block_next_request"| value Ocsigen_http_com.block_next_request >> ~[<<a_api | module Ocsigen_http_com >>~]||
+|<<a_api text="blockquote"| value XHTML.T.blockquote >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="body"| value XHTML.T.body >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="bool"| value Eliom_parameters.bool >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|<<span class='code'|bool s>> tells that the service takes a boolean as parameter~, labeled <<span class='code'|s>>~.
+>>
+|
+|<<a_api text="bool_checkbox"| value Eliom_predefmod.XHTMLFORMSSIG.bool_checkbox >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a checkbox <<span class='code'|~<input~>>> tag that will have a boolean value~.
+>>
+|
+|<<a_api text="bool_checkbox"| value Eliom_mkforms.ELIOMFORMSIG.bool_checkbox >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a checkbox <<span class='code'|~<input~>>> tag that will have a boolean value~.
+>>
+|
+|<<a_api text="br"| value XHTML.T.br >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="button"| value XHTML.T.button >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="button"| value Eliom_predefmod.XHTMLFORMSSIG.button >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<button~>>> tag with no value~.
+>>
+|
+|<<a_api text="button"| value Eliom_mkforms.ELIOMFORMSIG.button >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<button~>>> tag with no value~.
+>>
+|
+|<<a_api text="buttonsubmit"| value Eliom_mkforms.FORMCREATE.buttonsubmit >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|@@ @class="alignleft"@@\\C|
+|<<a_api text="caption"| value XHTML.T.Basic_Tables.caption >> ~[<<a_api | module XHTML.T.Basic_Tables >>~]||
+|<<a_api text="caption"| value XHTML.T.caption >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="catch"| value Lwt.catch >> ~[<<a_api | module Lwt >>~]|<<div class="info"|<<span class='code'|catch t f>> is a thread that behaves as the thread <<span class='code'|t ~(~)>> if
+          this thread succeeds~.
+>>
+|
+|<<a_api text="cdata"| value XHTML.T.cdata >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="cdata_script"| value XHTML.T.cdata_script >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="cdata_style"| value XHTML.T.cdata_style >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="change"| value Lwt_timeout.change >> ~[<<a_api | module Lwt_timeout >>~]|<<div class="info"|changes the duration of a timeout~.
+>>
+|
+|<<a_api text="checkbox"| value Eliom_mkforms.FORMCREATE.checkbox >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="choose"| value Lwt.choose >> ~[<<a_api | module Lwt >>~]|<<div class="info"|<<span class='code'|choose l>> behaves as the first thread in <<span class='code'|l>> to terminate~.
+>>
+|
+|<<a_api text="cite"| value XHTML.T.cite >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="client_connection"| value Ocsigen_extensions.client_connection >> ~[<<a_api | module Ocsigen_extensions >>~]|<<div class="info"|~Returns the connection
+>>
+|
+|<<a_api text="client_id"| value Ocsigen_extensions.client_id >> ~[<<a_api | module Ocsigen_extensions >>~]|<<div class="info"|~Returns the id number of the connection
+>>
+|
+|<<a_api text="close"| value Lwt_ssl.close >> ~[<<a_api | module Lwt_ssl >>~]||
+|<<a_api text="close"| value Lwt_unix.close >> ~[<<a_api | module Lwt_unix >>~]||
+|<<a_api text="close_all_persistent_data_sessions"| value Eliom_sessions.close_all_persistent_data_sessions >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Close all persistent sessions for one session name~.
+>>
+|
+|<<a_api text="close_all_service_sessions"| value Eliom_sessions.close_all_service_sessions >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Close all service sessions for one session name~.
+>>
+|
+|<<a_api text="close_all_sessions"| value Eliom_sessions.close_all_sessions >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Close all persistent and volatile sessions for one session name~.
+>>
+|
+|<<a_api text="close_all_volatile_data_sessions"| value Eliom_sessions.close_all_volatile_data_sessions >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Close all volatile data sessions for one session name~.
+>>
+|
+|<<a_api text="close_all_volatile_sessions"| value Eliom_sessions.close_all_volatile_sessions >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Close all volatile ~(service and volatile data~) sessions
+    for one session name~.
+>>
+|
+|<<a_api text="close_in"| value Lwt_chan.close_in >> ~[<<a_api | module Lwt_chan >>~]||
+|<<a_api text="close_out"| value Lwt_chan.close_out >> ~[<<a_api | module Lwt_chan >>~]||
+|<<a_api text="close_persistent_data_session"| value Eliom_sessions.Session_admin.close_persistent_data_session >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]||
+|<<a_api text="close_persistent_data_session"| value Eliom_sessions.close_persistent_data_session >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Close ~Eliom~'s current persistent session if opened
+   ~(destroying all persistent data for that user~)
+>>
+|
+|<<a_api text="close_service_session"| value Eliom_sessions.Session_admin.close_service_session >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]||
+|<<a_api text="close_service_session"| value Eliom_sessions.close_service_session >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Close ~Eliom~'s current service session~, if opened
+>>
+|
+|<<a_api text="close_session"| value Eliom_sessions.close_session >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Close ~Eliom~'s current sessions if opened ~(service session~, 
+   volatile data session and persistent session~)~.
+>>
+|
+|<<a_api text="close_volatile_data_session"| value Eliom_sessions.Session_admin.close_volatile_data_session >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]||
+|<<a_api text="close_volatile_data_session"| value Eliom_sessions.close_volatile_data_session >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Close ~Eliom~'s current data session~, if opened
+   ~(destroying all session data for that user~)
+>>
+|
+|<<a_api text="close_volatile_session"| value Eliom_sessions.close_volatile_session >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Close ~Eliom~'s current volatile session if opened
+   ~(both service session and volatile data session~)
+   ~(destroying all session data for that user~)~.
+>>
+|
+|<<a_api text="code"| value XHTML.T.code >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="col"| value XHTML.T.col >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="colgroup"| value XHTML.T.colgroup >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="compute_new_ri_cookies"| value Ocsigen_http_frame.compute_new_ri_cookies >> ~[<<a_api | module Ocsigen_http_frame >>~]|<<div class="info"|<<span class='code'|compute~_new~_ri~_cookies now path ri~_cookies cookies~_to~_set>> 
+   adds the cookies from <<span class='code'|cookies~_to~_set>>
+   to <<span class='code'|ri~_cookies>>~, as if the cookies 
+   add been send to the browser and the browser
+   was doing a new request to the url <<span class='code'|path>>~.
+>>
+|
+|<<a_api text="connect"| value Lwt_unix.connect >> ~[<<a_api | module Lwt_unix >>~]||
+|<<a_api text="connection_fd"| value Ocsigen_http_com.connection_fd >> ~[<<a_api | module Ocsigen_http_com >>~]||
+|<<a_api text="connection_id"| value Ocsigen_http_com.connection_id >> ~[<<a_api | module Ocsigen_http_com >>~]||
+|<<a_api text="cons_form"| value Eliom_mkforms.FORMCREATE.cons_form >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="console"| value Ocsigen_messages.console >> ~[<<a_api | module Ocsigen_messages >>~]|<<div class="info"|~Write a message in the console ~(if not called in silent mode~)
+>>
+|
+|<<a_api text="console2"| value Ocsigen_messages.console2 >> ~[<<a_api | module Ocsigen_messages >>~]|<<div class="info"|~Write a message in the console ~(if not called in silent mode~)
+>>
+|
+|<<a_api text="cookie_table_of_eliom_cookies"| value Eliom_services.cookie_table_of_eliom_cookies >> ~[<<a_api | module Eliom_services >>~]|<<div class="info"|~Conversion fonction from ~Eliom cookies to server cookies~.
+>>
+|
+|<<a_api text="coordinates"| value Eliom_parameters.coordinates >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|<<span class='code'|string s>> tells that the service takes as parameters the coordinates
+   of the point where the user were clicked on an image~.
+>>
+|
+|<<a_api text="create"| value Lwt_timeout.create >> ~[<<a_api | module Lwt_timeout >>~]|<<div class="info"|<<span class='code'|create n f>> defines a new timeout with <<span class='code'|n>> seconds duration~.
+>>
+|
+|<<a_api text="create_persistent_table"| value Eliom_sessions.create_persistent_table >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|creates a table on hard disk where you can store the session data for 
+   all users~.
+>>
+|
+|<<a_api text="create_receiver"| value Ocsigen_http_com.create_receiver >> ~[<<a_api | module Ocsigen_http_com >>~]||
+|<<a_api text="create_sender"| value Ocsigen_http_com.create_sender >> ~[<<a_api | module Ocsigen_http_com >>~]||
+|<<a_api text="create_volatile_table"| value Eliom_sessions.create_volatile_table >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|creates a table in memory where you can store the session data for 
+   all users~.
+>>
+|
+|<<a_api text="css_link"| value Eliom_predefmod.XHTMLFORMSSIG.css_link >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<link~>>> tag for a ~Cascading ~Style~Sheet ~(~C~S~S~)~.
+>>
+|
+|<<a_api text="css_link"| value Eliom_mkforms.ELIOMFORMSIG.css_link >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<link~>>> tag for a ~Cascading ~Style~Sheet ~(~C~S~S~)~.
+>>
+|
+|<<a_api text="current_class"| value Eliom_duce_tools.current_class >> ~[<<a_api | module Eliom_duce_tools >>~]||
+|@@ @class="alignleft"@@\\D|
+|<<a_api text="dd"| value XHTML.T.dd >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="debug"| value Ocsigen_messages.debug >> ~[<<a_api | module Ocsigen_messages >>~]|<<div class="info"|~Write a message only in debugging mode ~(~-~V option~) ~- ~Non cooperative
+>>
+|
+|<<a_api text="debug2"| value Ocsigen_messages.debug2 >> ~[<<a_api | module Ocsigen_messages >>~]|<<div class="info"|~Write a message only in debugging mode ~(~-~V option~) ~- ~Non cooperative
+>>
+|
+|<<a_api text="debug_noel"| value Ocsigen_messages.debug_noel >> ~[<<a_api | module Ocsigen_messages >>~]|<<div class="info"|~Same as <<span class='code'|debug>> without new line at the end ~- ~Non cooperative
+>>
+|
+|<<a_api text="debug_noel2"| value Ocsigen_messages.debug_noel2 >> ~[<<a_api | module Ocsigen_messages >>~]|<<div class="info"|~Same as <<span class='code'|debug>> without new line at the end ~- ~Non cooperative
+>>
+|
+|<<a_api text="default_result"| value Ocsigen_http_frame.default_result >> ~[<<a_api | module Ocsigen_http_frame >>~]|<<div class="info"|~Default <<span class='code'|result>> to use as a base for constructing others~.
+>>
+|
+|<<a_api text="default_sender"| value Ocsigen_http_com.default_sender >> ~[<<a_api | module Ocsigen_http_com >>~]|<<div class="info"|~Sender with only the server name~, and ~H~T~T~P~/~1~.~1
+>>
+|
+|<<a_api text="del"| value XHTML.T.del >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="detach"| value Lwt_preemptive.detach >> ~[<<a_api | module Lwt_preemptive >>~]|<<div class="info"|detaches a computation to a preemptive thread~.
+>>
+|
+|<<a_api text="dfn"| value XHTML.T.dfn >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="disabled_class"| value Eliom_duce_tools.disabled_class >> ~[<<a_api | module Eliom_duce_tools >>~]||
+|<<a_api text="display_http_exception"| value Ocsigen_http_frame.Http_error.display_http_exception >> ~[<<a_api | module Ocsigen_http_frame.Http_error >>~]||
+|<<a_api text="div"| value XHTML.T.div >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="dl"| value XHTML.T.dl >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="doctype"| value XHTML.T.doctype >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="dt"| value XHTML.T.dt >> ~[<<a_api | module XHTML.T >>~]||
+|@@ @class="alignleft"@@\\E|
+|<<a_api text="em"| value XHTML.T.em >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="empty_result"| value Ocsigen_http_frame.empty_result >> ~[<<a_api | module Ocsigen_http_frame >>~]|<<div class="info"|<<span class='code'|result>> for an empty page~.
+>>
+|
+|<<a_api text="empty_seq"| value Eliom_mkforms.FORMCREATE.empty_seq >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="entity"| value XHTML.T.entity >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="errlog"| value Ocsigen_messages.errlog >> ~[<<a_api | module Ocsigen_messages >>~]|<<div class="info"|~Write a message in errors~.log
+>>
+|
+|<<a_api text="expl_of_code"| value Ocsigen_http_frame.Http_error.expl_of_code >> ~[<<a_api | module Ocsigen_http_frame.Http_error >>~]||
+|@@ @class="alignleft"@@\\F|
+|<<a_api text="fail"| value Lwt.fail >> ~[<<a_api | module Lwt >>~]|<<div class="info"|<<span class='code'|fail e>> is a thread that fails with the exception <<span class='code'|e>>~.
+>>
+|
+|<<a_api text="fieldset"| value XHTML.T.fieldset >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="file"| value Eliom_parameters.file >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|<<span class='code'|file s>> tells that the service takes a file as parameter~, labeled <<span class='code'|s>>~.
+>>
+|
+|<<a_api text="file"| value Eliom_mkforms.FORMCREATE.file >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="file_input"| value Eliom_predefmod.XHTMLFORMSSIG.file_input >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input~>>> tag for sending a file
+>>
+|
+|<<a_api text="file_input"| value Eliom_mkforms.ELIOMFORMSIG.file_input >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input~>>> tag for sending a file
+>>
+|
+|<<a_api text="finalize"| value Lwt.finalize >> ~[<<a_api | module Lwt >>~]|<<div class="info"|<<span class='code'|finalize f g>> returns the same result as <<span class='code'|f ~(~)>> whether it fails 
+         or not~.
+>>
+|
+|<<a_api text="find"| value Ocsipersist.find >> ~[<<a_api | module Ocsipersist >>~]|<<div class="info"|<<span class='code'|find table key>> gives the value associated to <<span class='code'|key>>~.
+>>
+|
+|<<a_api text="find_in_hierarchy"| value Eliom_duce_tools.find_in_hierarchy >> ~[<<a_api | module Eliom_duce_tools >>~]||
+|<<a_api text="first_class"| value Eliom_duce_tools.first_class >> ~[<<a_api | module Eliom_duce_tools >>~]||
+|<<a_api text="float"| value Eliom_parameters.float >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|<<span class='code'|float s>> tells that the service takes a floating point number as parameter~, labeled <<span class='code'|s>>~.
+>>
+|
+|<<a_api text="float_button"| value Eliom_predefmod.XHTMLFORMSSIG.float_button >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<button~>>> tag with float content
+>>
+|
+|<<a_api text="float_button"| value Eliom_mkforms.ELIOMFORMSIG.float_button >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<button~>>> tag with float content
+>>
+|
+|<<a_api text="float_checkbox"| value Eliom_predefmod.XHTMLFORMSSIG.float_checkbox >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a checkbox <<span class='code'|~<input~>>> tag that will have a float value~.
+>>
+|
+|<<a_api text="float_checkbox"| value Eliom_mkforms.ELIOMFORMSIG.float_checkbox >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a checkbox <<span class='code'|~<input~>>> tag that will have a float value~.
+>>
+|
+|<<a_api text="float_coordinates"| value Eliom_parameters.float_coordinates >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~Same for a float value
+>>
+|
+|<<a_api text="float_image_input"| value Eliom_predefmod.XHTMLFORMSSIG.float_image_input >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input type~="image" name~="~.~.~." value~="~.~.~."~>>> tag that sends
+    the coordinates the user clicked on and a value of type float
+>>
+|
+|<<a_api text="float_image_input"| value Eliom_mkforms.ELIOMFORMSIG.float_image_input >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input type~="image" name~="~.~.~." value~="~.~.~."~>>> tag that sends
+    the coordinates the user clicked on and a value of type float
+>>
+|
+|<<a_api text="float_input"| value Eliom_predefmod.XHTMLFORMSSIG.float_input >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input~>>> tag for a float
+>>
+|
+|<<a_api text="float_input"| value Eliom_mkforms.ELIOMFORMSIG.float_input >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input~>>> tag for a float
+>>
+|
+|<<a_api text="float_multiple_select"| value Eliom_predefmod.XHTMLFORMSSIG.float_multiple_select >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for float values~.
+>>
+|
+|<<a_api text="float_multiple_select"| value Eliom_mkforms.ELIOMFORMSIG.float_multiple_select >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for float values~.
+>>
+|
+|<<a_api text="float_radio"| value Eliom_predefmod.XHTMLFORMSSIG.float_radio >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a radio <<span class='code'|~<input~>>> tag with float content
+>>
+|
+|<<a_api text="float_radio"| value Eliom_mkforms.ELIOMFORMSIG.float_radio >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a radio <<span class='code'|~<input~>>> tag with float content
+>>
+|
+|<<a_api text="float_select"| value Eliom_predefmod.XHTMLFORMSSIG.float_select >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for float values~.
+>>
+|
+|<<a_api text="float_select"| value Eliom_mkforms.ELIOMFORMSIG.float_select >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for float values~.
+>>
+|
+|<<a_api text="flush"| value Lwt_chan.flush >> ~[<<a_api | module Lwt_chan >>~]||
+|<<a_api text="fold_left"| value Lwt_util.fold_left >> ~[<<a_api | module Lwt_util >>~]|<<div class="info"|~Similar to <<span class='code'|~List~.fold~_left>>~.
+>>
+|
+|<<a_api text="fold_persistent_data_sessions"| value Eliom_sessions.Session_admin.fold_persistent_data_sessions >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]|<<div class="info"|~Iterator on persistent sessions~.
+>>
+|
+|<<a_api text="fold_service_sessions"| value Eliom_sessions.Session_admin.fold_service_sessions >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]|<<div class="info"|~Iterator on service sessions~.
+>>
+|
+|<<a_api text="fold_step"| value Ocsipersist.fold_step >> ~[<<a_api | module Ocsipersist >>~]|<<div class="info"|~Important warning~: this iterator may not iter on all data of the table
+    if another thread is modifying it in the same time~.
+>>
+|
+|<<a_api text="fold_table"| value Ocsipersist.fold_table >> ~[<<a_api | module Ocsipersist >>~]|<<div class="info"|~Legacy interface for iter~_step
+>>
+|
+|<<a_api text="fold_volatile_data_sessions"| value Eliom_sessions.Session_admin.fold_volatile_data_sessions >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]|<<div class="info"|~Iterator on data sessions~.
+>>
+|
+|<<a_api text="form"| value XHTML.T.Basic_Forms.form >> ~[<<a_api | module XHTML.T.Basic_Forms >>~]||
+|<<a_api text="form"| value XHTML.T.form >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~Generic forms~.
+>>
+|
+|<<a_api text="frame"| value XHTML.T.frame >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="frameset"| value XHTML.T.frameset >> ~[<<a_api | module XHTML.T >>~]||
+|@@ @class="alignleft"@@\\G|
+|<<a_api text="get"| value Ocsipersist.get >> ~[<<a_api | module Ocsipersist >>~]|<<div class="info"|<<span class='code'|get pv>> gives the value of <<span class='code'|pv>>
+>>
+|
+|<<a_api text="get"| value Ocsigen_http_client.get >> ~[<<a_api | module Ocsigen_http_client >>~]|<<div class="info"|~E~X~P~E~R~I~M~E~N~T~A~L ~-~- ~May evolve in the future~.
+>>
+|
+|<<a_api text="get_accept"| value Ocsigen_headers.get_accept >> ~[<<a_api | module Ocsigen_headers >>~]||
+|<<a_api text="get_accept_charset"| value Ocsigen_headers.get_accept_charset >> ~[<<a_api | module Ocsigen_headers >>~]||
+|<<a_api text="get_accept_encoding"| value Ocsigen_headers.get_accept_encoding >> ~[<<a_api | module Ocsigen_headers >>~]||
+|<<a_api text="get_accept_language"| value Ocsigen_headers.get_accept_language >> ~[<<a_api | module Ocsigen_headers >>~]||
+|<<a_api text="get_all_get_params"| value Eliom_sessions.get_all_get_params >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns all parameters of the ~U~R~L ~(~G~E~T parameters~)
+   ~(even those that are for another service~)
+>>
+|
+|<<a_api text="get_all_post_params"| value Eliom_sessions.get_all_post_params >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns all parameters in the body of the ~H~T~T~P request ~(~P~O~S~T parameters~)
+   ~(even those that are for another service~)
+>>
+|
+|<<a_api text="get_basic_authentication_method"| value Authbasic.get_basic_authentication_method >> ~[<<a_api | module Authbasic >>~]|<<div class="info"|~This function combines all the parsers registered with
+      <<span class='code'|register~_basic~_authentication~_method>>~.
+>>
+|
+|<<a_api text="get_config"| value Ocsigen_extensions.get_config >> ~[<<a_api | module Ocsigen_extensions >>~]|<<div class="info"|~While loading an extension~, 
+    get the configuration tree between ~<dynlink~>~<~/dynlink~>
+>>
+|
+|<<a_api text="get_config"| value Eliom_sessions.get_config >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the information of the configuration file concerning that site
+   ~(between <<span class='code'|~<site~>>> and <<span class='code'|~<~/site~>>>~)~.
+>>
+|
+|<<a_api text="get_config_file_charset"| value Eliom_sessions.get_config_file_charset >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the charset for this site ~(from the configuration file~)
+>>
+|
+|<<a_api text="get_content_length"| value Ocsigen_headers.get_content_length >> ~[<<a_api | module Ocsigen_headers >>~]||
+|<<a_api text="get_content_type"| value Ocsigen_headers.get_content_type >> ~[<<a_api | module Ocsigen_headers >>~]||
+|<<a_api text="get_cookie_string"| value Ocsigen_headers.get_cookie_string >> ~[<<a_api | module Ocsigen_headers >>~]||
+|<<a_api text="get_cookies"| value Eliom_sessions.get_cookies >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the cookies sent by the browser
+>>
+|
+|<<a_api text="get_current_full_path"| value Eliom_sessions.get_current_full_path >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the full path of the ~U~R~L using the type <<a_api | type Ocsigen_extensions.url_path >>
+>>
+|
+|<<a_api text="get_current_full_path_string"| value Eliom_sessions.get_current_full_path_string >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the full path of the ~U~R~L as a string~.
+>>
+|
+|<<a_api text="get_current_sub_path"| value Eliom_sessions.get_current_sub_path >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the sub path of the ~U~R~L using the type <<a_api | type Ocsigen_extensions.url_path >>~.
+>>
+|
+|<<a_api text="get_current_sub_path_string"| value Eliom_sessions.get_current_sub_path_string >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the sub path of the ~U~R~L as a string~.
+>>
+|
+|<<a_api text="get_default_persistent_data_session_timeout"| value Eliom_sessions.get_default_persistent_data_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the default timeout for sessions ~(server side~)~.
+>>
+|
+|<<a_api text="get_default_service_session_timeout"| value Eliom_sessions.get_default_service_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the default timeout for service sessions ~(server side~)~.
+>>
+|
+|<<a_api text="get_default_volatile_data_session_timeout"| value Eliom_sessions.get_default_volatile_data_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the default timeout for "volatile data" sessions ~(server side~)~.
+>>
+|
+|<<a_api text="get_etag"| value Ocsigen_http_frame.HTTP_CONTENT.get_etag >> ~[<<a_api | module Ocsigen_http_frame.HTTP_CONTENT >>~]||
+|<<a_api text="get_exn"| value Eliom_sessions.get_exn >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the exceptions that have been sent by the previous services
+   to their fallback~, if any~.
+>>
+|
+|<<a_api text="get_filesize"| value Eliom_sessions.get_filesize >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the size of the file~.
+>>
+|
+|<<a_api text="get_firstline"| value Ocsigen_http_frame.Http_header.get_firstline >> ~[<<a_api | module Ocsigen_http_frame.Http_header >>~]||
+|<<a_api text="get_form"| value Eliom_predefmod.XHTMLFORMSSIG.get_form >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|<<span class='code'|get~_form service sp formgen>> creates a ~G~E~T form to <<span class='code'|service>>~.
+>>
+|
+|<<a_api text="get_form"| value Eliom_mkforms.ELIOMFORMSIG.get_form >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|<<span class='code'|get~_form service sp formgen>> creates a ~G~E~T form to <<span class='code'|service>>~.
+>>
+|
+|<<a_api text="get_full_url"| value Eliom_sessions.get_full_url >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the full ~U~R~L as a string
+>>
+|
+|<<a_api text="get_get_params"| value Eliom_sessions.get_get_params >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the parameters of the ~U~R~L ~(~G~E~T parameters~) 
+   that concern the running service~.
+>>
+|
+|<<a_api text="get_global_persistent_data_session_timeout"| value Eliom_sessions.get_global_persistent_data_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Returns the timeout for persistent sessions ~(server side~)~.
+>>
+|
+|<<a_api text="get_global_service_session_timeout"| value Eliom_sessions.get_global_service_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Returns the timeout for service sessions ~(server side~)~.
+>>
+|
+|<<a_api text="get_global_volatile_data_session_timeout"| value Eliom_sessions.get_global_volatile_data_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Returns the timeout for "volatile data" sessions ~(server side~)~.
+>>
+|
+|<<a_api text="get_headers"| value Ocsigen_http_frame.Http_header.get_headers >> ~[<<a_api | module Ocsigen_http_frame.Http_header >>~]||
+|<<a_api text="get_headers_value"| value Ocsigen_http_frame.Http_header.get_headers_value >> ~[<<a_api | module Ocsigen_http_frame.Http_header >>~]||
+|<<a_api text="get_headers_values"| value Ocsigen_http_frame.Http_header.get_headers_values >> ~[<<a_api | module Ocsigen_http_frame.Http_header >>~]||
+|<<a_api text="get_host_from_host_header"| value Ocsigen_headers.get_host_from_host_header >> ~[<<a_api | module Ocsigen_headers >>~]||
+|<<a_api text="get_hostname"| value Eliom_sessions.get_hostname >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the hostname that has been sent by the user agent~, if any~.
+>>
+|
+|<<a_api text="get_http_frame"| value Ocsigen_http_com.get_http_frame >> ~[<<a_api | module Ocsigen_http_com >>~]||
+|<<a_api text="get_if_match"| value Ocsigen_headers.get_if_match >> ~[<<a_api | module Ocsigen_headers >>~]||
+|<<a_api text="get_if_modified_since"| value Ocsigen_headers.get_if_modified_since >> ~[<<a_api | module Ocsigen_headers >>~]||
+|<<a_api text="get_if_none_match"| value Ocsigen_headers.get_if_none_match >> ~[<<a_api | module Ocsigen_headers >>~]||
+|<<a_api text="get_if_unmodified_since"| value Ocsigen_headers.get_if_unmodified_since >> ~[<<a_api | module Ocsigen_headers >>~]||
+|<<a_api text="get_keepalive"| value Ocsigen_headers.get_keepalive >> ~[<<a_api | module Ocsigen_headers >>~]||
+|<<a_api text="get_max_number_of_threads_queued"| value Lwt_preemptive.get_max_number_of_threads_queued >> ~[<<a_api | module Lwt_preemptive >>~]|<<div class="info"|~Returns the size of the waiting queue~, if no more threads are available
+>>
+|
+|<<a_api text="get_original_filename"| value Eliom_sessions.get_original_filename >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the name the file had on the client when it has been sent~.
+>>
+|
+|<<a_api text="get_other_get_params"| value Eliom_sessions.get_other_get_params >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the parameters of the ~U~R~L ~(~G~E~T parameters~) 
+   that do not concern the running service~.
+>>
+|
+|<<a_api text="get_persistent_data_session_cookie"| value Eliom_sessions.get_persistent_data_session_cookie >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the value of the ~Eliom~'s cookies for one persistent session~.
+>>
+|
+|<<a_api text="get_persistent_data_session_group"| value Eliom_sessions.get_persistent_data_session_group >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the group to which belong the persistent session~.
+>>
+|
+|<<a_api text="get_persistent_data_session_name"| value Eliom_sessions.Session_admin.get_persistent_data_session_name >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]|<<div class="info"|<<span class='code'|~None>> means default session name
+>>
+|
+|<<a_api text="get_persistent_data_session_timeout"| value Eliom_sessions.Session_admin.get_persistent_data_session_timeout >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]||
+|<<a_api text="get_persistent_data_session_timeout"| value Eliom_sessions.get_persistent_data_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the persistent session timeout for one user~.
+>>
+|
+|<<a_api text="get_persistent_session_data"| value Eliom_sessions.Session_admin.get_persistent_session_data >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]|<<div class="info"|~Fails with lwt exception <<span class='code'|~Not~_found>> 
+     if no data in the table for the session~.
+>>
+|
+|<<a_api text="get_persistent_session_data"| value Eliom_sessions.get_persistent_session_data >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|gets persistent session data for the current persistent session ~(if any~)
+>>
+|
+|<<a_api text="get_post_params"| value Eliom_sessions.get_post_params >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the parameters in the body of the ~H~T~T~P request ~(~P~O~S~T parameters~)
+   that concern the running service
+>>
+|
+|<<a_api text="get_previous_extension_error_code"| value Eliom_sessions.get_previous_extension_error_code >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the ~H~T~T~P error code sent by the ~Ocsigen extension 
+   that tried to answer to the request before ~Eliom~.
+>>
+|
+|<<a_api text="get_proto"| value Ocsigen_http_frame.Http_header.get_proto >> ~[<<a_api | module Ocsigen_http_frame.Http_header >>~]||
+|<<a_api text="get_referer"| value Ocsigen_headers.get_referer >> ~[<<a_api | module Ocsigen_headers >>~]||
+|<<a_api text="get_referrer"| value Ocsigen_headers.get_referrer >> ~[<<a_api | module Ocsigen_headers >>~]||
+|<<a_api text="get_remote_inet_addr"| value Eliom_sessions.get_remote_inet_addr >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the internet address of the client~, 
+   using the type <<span class='code'|~Unix~.inet~_addr>> ~(defined in ~O~Caml~'s standard library~)~.
+>>
+|
+|<<a_api text="get_remote_ip"| value Eliom_sessions.get_remote_ip >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the internet address of the client as a string
+>>
+|
+|<<a_api text="get_ri"| value Eliom_sessions.get_ri >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns all the information about the request~.
+>>
+|
+|<<a_api text="get_server_inet_addr"| value Eliom_sessions.get_server_inet_addr >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the inet address on which the request has been done~.
+>>
+|
+|<<a_api text="get_server_port"| value Eliom_sessions.get_server_port >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the port on which the request has been done~.
+>>
+|
+|<<a_api text="get_service_session_cookie"| value Eliom_sessions.get_service_session_cookie >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the value of ~Eliom~'s cookies for one service session~.
+>>
+|
+|<<a_api text="get_service_session_group"| value Eliom_sessions.get_service_session_group >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the group to which belong the service session~.
+>>
+|
+|<<a_api text="get_service_session_name"| value Eliom_sessions.Session_admin.get_service_session_name >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]|<<div class="info"|<<span class='code'|~None>> means default session name
+>>
+|
+|<<a_api text="get_service_session_timeout"| value Eliom_sessions.Session_admin.get_service_session_timeout >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]||
+|<<a_api text="get_service_session_timeout"| value Eliom_sessions.get_service_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the timeout for current service session~.
+>>
+|
+|<<a_api text="get_session_name"| value Eliom_sessions.get_session_name >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the name of the sessions to which belongs the running service
+    ~(<<span class='code'|~None>> if it is not a session service~)
+>>
+|
+|<<a_api text="get_site_dir"| value Eliom_sessions.get_site_dir >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the root of the site~.
+>>
+|
+|<<a_api text="get_ssl"| value Eliom_sessions.get_ssl >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns true if https is used~, false if http~.
+>>
+|
+|<<a_api text="get_suffix"| value Eliom_sessions.get_suffix >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the suffix of the current ~U~R~L
+>>
+|
+|<<a_api text="get_tmp_filename"| value Eliom_sessions.get_tmp_filename >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the filename used by ~Ocsigen for the uploaded file~.
+>>
+|
+|<<a_api text="get_user_agent"| value Ocsigen_headers.get_user_agent >> ~[<<a_api | module Ocsigen_headers >>~]||
+|<<a_api text="get_user_agent"| value Eliom_sessions.get_user_agent >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the name of the user agent that did the request
+   ~(usually the name of the browser~)~.
+>>
+|
+|<<a_api text="get_volatile_data_session_cookie"| value Eliom_sessions.get_volatile_data_session_cookie >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the value of ~Eliom~'s cookies for one "volatile data" session~.
+>>
+|
+|<<a_api text="get_volatile_data_session_group"| value Eliom_sessions.get_volatile_data_session_group >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the group to which belong the data session~.
+>>
+|
+|<<a_api text="get_volatile_data_session_name"| value Eliom_sessions.Session_admin.get_volatile_data_session_name >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]|<<div class="info"|<<span class='code'|~None>> means default session name
+>>
+|
+|<<a_api text="get_volatile_data_session_timeout"| value Eliom_sessions.Session_admin.get_volatile_data_session_timeout >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]||
+|<<a_api text="get_volatile_data_session_timeout"| value Eliom_sessions.get_volatile_data_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|returns the timeout for current volatile data session~.
+>>
+|
+|<<a_api text="get_volatile_session_data"| value Eliom_sessions.Session_admin.get_volatile_session_data >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]|<<div class="info"|~Raises <<span class='code'|~Not~_found>> if no data in the table for the session~.
+>>
+|
+|<<a_api text="get_volatile_session_data"| value Eliom_sessions.get_volatile_session_data >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|gets session data for the current session ~(if any~)~.
+>>
+|
+|<<a_api text="getaddrinfo"| value Lwt_lib.getaddrinfo >> ~[<<a_api | module Lwt_lib >>~]|<<div class="info"|~Cooperative getaddrinfo with cache ~(using ~Lwt~_preemptive~.detach~)
+>>
+|
+|<<a_api text="gethostbyname"| value Lwt_lib.gethostbyname >> ~[<<a_api | module Lwt_lib >>~]|<<div class="info"|~Cooperative gethostbyname with cache ~(using ~Lwt~_preemptive~.detach~)
+>>
+|
+|<<a_api text="getnameinfo"| value Lwt_lib.getnameinfo >> ~[<<a_api | module Lwt_lib >>~]|<<div class="info"|~Cooperative getnameinfo with cache ~(using ~Lwt~_preemptive~.detach~)
+>>
+|
+|@@ @class="alignleft"@@\\H|
+|<<a_api text="h1"| value XHTML.T.h1 >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="h2"| value XHTML.T.h2 >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="h3"| value XHTML.T.h3 >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="h4"| value XHTML.T.h4 >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="h5"| value XHTML.T.h5 >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="h6"| value XHTML.T.h6 >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="head"| value XHTML.T.head >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="hidden"| value Eliom_mkforms.FORMCREATE.hidden >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="hierarchical_menu_breadth_first"| value Eliom_duce_tools.hierarchical_menu_breadth_first >> ~[<<a_api | module Eliom_duce_tools >>~]||
+|<<a_api text="hierarchical_menu_breadth_first"| value Eliom_tools.hierarchical_menu_breadth_first >> ~[<<a_api | module Eliom_tools >>~]|<<div class="info"|<<span class='code'|hierarchical~_menu~_breadth~_first menu>> constructs a function taking
+    as parameters a service and <<span class='code'|~~sp>> ~(server parameters~)
+    and displaying a hierarchical menu for this service~.
+>>
+|
+|<<a_api text="hierarchical_menu_depth_first"| value Eliom_duce_tools.hierarchical_menu_depth_first >> ~[<<a_api | module Eliom_duce_tools >>~]||
+|<<a_api text="hierarchical_menu_depth_first"| value Eliom_tools.hierarchical_menu_depth_first >> ~[<<a_api | module Eliom_tools >>~]|<<div class="info"|<<span class='code'|hierarchical~_menu~_depth~_first menu>> constructs a function taking
+    as parameters a service and <<span class='code'|~~sp>> ~(server parameters~)
+    and displaying a hierarchical menu for this service~.
+>>
+|
+|<<a_api text="hr"| value XHTML.T.hr >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="html"| value XHTML.T.html >> ~[<<a_api | module XHTML.T >>~]||
+|@@ @class="alignleft"@@\\I|
+|<<a_api text="i"| value XHTML.T.i >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="ignore_result"| value Lwt.ignore_result >> ~[<<a_api | module Lwt >>~]|<<div class="info"|<<span class='code'|ignore~_result t>> start the thread <<span class='code'|t>> and ignores its result
+          value if the thread terminates sucessfully~.
+>>
+|
+|<<a_api text="image"| value Eliom_mkforms.FORMCREATE.image >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="image_input"| value Eliom_predefmod.XHTMLFORMSSIG.image_input >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input type~="image" name~="~.~.~."~>>> tag that sends the coordinates 
+   the user clicked on
+>>
+|
+|<<a_api text="image_input"| value Eliom_mkforms.ELIOMFORMSIG.image_input >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input type~="image" name~="~.~.~."~>>> tag that sends the coordinates 
+   the user clicked on
+>>
+|
+|<<a_api text="img"| value XHTML.T.img >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="in_channel_of_descr"| value Lwt_ssl.in_channel_of_descr >> ~[<<a_api | module Lwt_ssl >>~]||
+|<<a_api text="in_channel_of_descr"| value Lwt_chan.in_channel_of_descr >> ~[<<a_api | module Lwt_chan >>~]||
+|<<a_api text="init"| value Lwt_preemptive.init >> ~[<<a_api | module Lwt_preemptive >>~]|<<div class="info"|~Should be called only once at the begining of the process~.
+>>
+|
+|<<a_api text="input"| value XHTML.T.Basic_Forms.input >> ~[<<a_api | module XHTML.T.Basic_Forms >>~]||
+|<<a_api text="input"| value XHTML.T.input >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="input"| value Lwt_chan.input >> ~[<<a_api | module Lwt_chan >>~]||
+|<<a_api text="input_char"| value Lwt_chan.input_char >> ~[<<a_api | module Lwt_chan >>~]||
+|<<a_api text="input_line"| value Lwt_chan.input_line >> ~[<<a_api | module Lwt_chan >>~]||
+|<<a_api text="input_value"| value Lwt_chan.input_value >> ~[<<a_api | module Lwt_chan >>~]||
+|<<a_api text="ins"| value XHTML.T.ins >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="int"| value Eliom_parameters.int >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|<<span class='code'|int s>> tells that the service takes an integer as parameter~, labeled <<span class='code'|s>>~.
+>>
+|
+|<<a_api text="int_button"| value Eliom_predefmod.XHTMLFORMSSIG.int_button >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<button~>>> tag with int content
+>>
+|
+|<<a_api text="int_button"| value Eliom_mkforms.ELIOMFORMSIG.int_button >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<button~>>> tag with int content
+>>
+|
+|<<a_api text="int_checkbox"| value Eliom_predefmod.XHTMLFORMSSIG.int_checkbox >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a checkbox <<span class='code'|~<input~>>> tag that will have an int value~.
+>>
+|
+|<<a_api text="int_checkbox"| value Eliom_mkforms.ELIOMFORMSIG.int_checkbox >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a checkbox <<span class='code'|~<input~>>> tag that will have an int value~.
+>>
+|
+|<<a_api text="int_coordinates"| value Eliom_parameters.int_coordinates >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~Same for an integer value
+>>
+|
+|<<a_api text="int_image_input"| value Eliom_predefmod.XHTMLFORMSSIG.int_image_input >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input type~="image" name~="~.~.~." value~="~.~.~."~>>> tag that sends
+   the coordinates the user clicked on and a value of type int
+>>
+|
+|<<a_api text="int_image_input"| value Eliom_mkforms.ELIOMFORMSIG.int_image_input >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input type~="image" name~="~.~.~." value~="~.~.~."~>>> tag that sends
+   the coordinates the user clicked on and a value of type int
+>>
+|
+|<<a_api text="int_input"| value Eliom_predefmod.XHTMLFORMSSIG.int_input >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input~>>> tag for an integer
+>>
+|
+|<<a_api text="int_input"| value Eliom_mkforms.ELIOMFORMSIG.int_input >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input~>>> tag for an integer
+>>
+|
+|<<a_api text="int_multiple_select"| value Eliom_predefmod.XHTMLFORMSSIG.int_multiple_select >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for int values~.
+>>
+|
+|<<a_api text="int_multiple_select"| value Eliom_mkforms.ELIOMFORMSIG.int_multiple_select >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for int values~.
+>>
+|
+|<<a_api text="int_radio"| value Eliom_predefmod.XHTMLFORMSSIG.int_radio >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a radio <<span class='code'|~<input~>>> tag with int content
+>>
+|
+|<<a_api text="int_radio"| value Eliom_mkforms.ELIOMFORMSIG.int_radio >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a radio <<span class='code'|~<input~>>> tag with int content
+>>
+|
+|<<a_api text="int_select"| value Eliom_predefmod.XHTMLFORMSSIG.int_select >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for int values~.
+>>
+|
+|<<a_api text="int_select"| value Eliom_mkforms.ELIOMFORMSIG.int_select >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for int values~.
+>>
+|
+|<<a_api text="is_ssl"| value Lwt_ssl.is_ssl >> ~[<<a_api | module Lwt_ssl >>~]|<<div class="info"|~Are we using an ~S~S~L socket~?
+>>
+|
+|<<a_api text="iter"| value Lwt_util.iter >> ~[<<a_api | module Lwt_util >>~]|<<div class="info"|<<span class='code'|iter f l>> start a thread for each element in <<span class='code'|l>>~.
+>>
+|
+|<<a_api text="iter_persistent_data_sessions"| value Eliom_sessions.Session_admin.iter_persistent_data_sessions >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]|<<div class="info"|~Iterator on persistent sessions~.
+>>
+|
+|<<a_api text="iter_serial"| value Lwt_util.iter_serial >> ~[<<a_api | module Lwt_util >>~]|<<div class="info"|~Similar to <<span class='code'|iter>> but wait for one thread to terminate before
+        starting the next one~.
+>>
+|
+|<<a_api text="iter_service_sessions"| value Eliom_sessions.Session_admin.iter_service_sessions >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]|<<div class="info"|~Iterator on service sessions~.
+>>
+|
+|<<a_api text="iter_step"| value Ocsipersist.iter_step >> ~[<<a_api | module Ocsipersist >>~]|<<div class="info"|~Important warning~: this iterator may not iter on all data of the table
+    if another thread is modifying it in the same time~.
+>>
+|
+|<<a_api text="iter_table"| value Ocsipersist.iter_table >> ~[<<a_api | module Ocsipersist >>~]|<<div class="info"|~Legacy interface for iter~_step
+>>
+|
+|<<a_api text="iter_volatile_data_sessions"| value Eliom_sessions.Session_admin.iter_volatile_data_sessions >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]|<<div class="info"|~Iterator on data sessions~.
+>>
+|
+|@@ @class="alignleft"@@\\J|
+|<<a_api text="join"| value Lwt_util.join >> ~[<<a_api | module Lwt_util >>~]|<<div class="info"|<<span class='code'|join l>> wait for all threads in <<span class='code'|l>> to terminate~.
+>>
+|
+|<<a_api text="js_script"| value Eliom_predefmod.XHTMLFORMSSIG.js_script >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<script~>>> tag to add a javascript file
+>>
+|
+|<<a_api text="js_script"| value Eliom_mkforms.ELIOMFORMSIG.js_script >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<script~>>> tag to add a javascript file
+>>
+|
+|@@ @class="alignleft"@@\\K|
+|<<a_api text="kbd"| value XHTML.T.kbd >> ~[<<a_api | module XHTML.T >>~]||
+|@@ @class="alignleft"@@\\L|
+|<<a_api text="label"| value XHTML.T.Basic_Forms.label >> ~[<<a_api | module XHTML.T.Basic_Forms >>~]||
+|<<a_api text="label"| value XHTML.T.label >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="last_class"| value Eliom_duce_tools.last_class >> ~[<<a_api | module Eliom_duce_tools >>~]||
+|<<a_api text="legend"| value XHTML.T.legend >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="length"| value Ocsipersist.length >> ~[<<a_api | module Ocsipersist >>~]|<<div class="info"|~Size of a table~.
+>>
+|
+|<<a_api text="level_class"| value Eliom_duce_tools.level_class >> ~[<<a_api | module Eliom_duce_tools >>~]||
+|<<a_api text="li"| value XHTML.T.li >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="link"| value XHTML.T.link >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="list"| value Eliom_parameters.list >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~The service takes a list of parameters~.
+>>
+|
+|<<a_api text="listen"| value Lwt_unix.listen >> ~[<<a_api | module Lwt_unix >>~]||
+|<<a_api text="lock_receiver"| value Ocsigen_http_com.lock_receiver >> ~[<<a_api | module Ocsigen_http_com >>~]||
+|@@ @class="alignleft"@@\\M|
+|<<a_api text="make_a"| value Eliom_mkforms.FORMCREATE.make_a >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="make_button"| value Eliom_mkforms.FORMCREATE.make_button >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="make_css_link"| value Eliom_mkforms.FORMCREATE.make_css_link >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="make_full_string_uri"| value Eliom_predefmod.XHTMLFORMSSIG.make_full_string_uri >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates the string corresponding to the 
+    full ~(absolute~) ~U~R~L of a service applied to its ~G~E~T parameters~.
+>>
+|
+|<<a_api text="make_full_string_uri"| value Eliom_mkforms.ELIOMFORMSIG.make_full_string_uri >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates the string corresponding to the 
+    full ~(absolute~) ~U~R~L of a service applied to its ~G~E~T parameters~.
+>>
+|
+|<<a_api text="make_get_form"| value Eliom_mkforms.FORMCREATE.make_get_form >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="make_hidden_field"| value Eliom_mkforms.FORMCREATE.make_hidden_field >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="make_in_channel"| value Lwt_chan.make_in_channel >> ~[<<a_api | module Lwt_chan >>~]|<<div class="info"|<<span class='code'|make~_in~_channel read>> creates an input channel from the <<span class='code'|read>>
+    function~.
+>>
+|
+|<<a_api text="make_input"| value Eliom_mkforms.FORMCREATE.make_input >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="make_js_script"| value Eliom_mkforms.FORMCREATE.make_js_script >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="make_optgroup"| value Eliom_mkforms.FORMCREATE.make_optgroup >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="make_option"| value Eliom_mkforms.FORMCREATE.make_option >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="make_out_channel"| value Lwt_chan.make_out_channel >> ~[<<a_api | module Lwt_chan >>~]|<<div class="info"|<<span class='code'|make~_out~_channel write>> creates an output channel from the <<span class='code'|write>>
+    function~.
+>>
+|
+|<<a_api text="make_pcdata"| value Eliom_mkforms.FORMCREATE.make_pcdata >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="make_persistent"| value Ocsipersist.make_persistent >> ~[<<a_api | module Ocsipersist >>~]|<<div class="info"|<<span class='code'|make~_persistent store name default>> find a persistent value
+    named <<span class='code'|name>> in store <<span class='code'|store>>
+    from database~, or create it with the default value <<span class='code'|default>> if it
+    does not exist~.
+>>
+|
+|<<a_api text="make_persistent_lazy"| value Ocsipersist.make_persistent_lazy >> ~[<<a_api | module Ocsipersist >>~]|<<div class="info"|~Same as make~_persistent but the default value is evaluated only
+    if needed
+>>
+|
+|<<a_api text="make_post_form"| value Eliom_mkforms.FORMCREATE.make_post_form >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="make_region"| value Lwt_util.make_region >> ~[<<a_api | module Lwt_util >>~]|<<div class="info"|<<span class='code'|make~_region sz>> create a region of size <<span class='code'|sz>>~.
+>>
+|
+|<<a_api text="make_select"| value Eliom_mkforms.FORMCREATE.make_select >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="make_string_uri"| value Eliom_predefmod.XHTMLFORMSSIG.make_string_uri >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates the string corresponding to the relative ~U~R~L of a service applied to
+   its ~G~E~T parameters~.
+>>
+|
+|<<a_api text="make_string_uri"| value Eliom_mkforms.ELIOMFORMSIG.make_string_uri >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates the string corresponding to the relative ~U~R~L of a service applied to
+   its ~G~E~T parameters~.
+>>
+|
+|<<a_api text="make_textarea"| value Eliom_mkforms.FORMCREATE.make_textarea >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="make_uri"| value Eliom_predefmod.XHTMLFORMSSIG.make_uri >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Create the text of the service~.
+>>
+|
+|<<a_api text="make_uri"| value Eliom_mkforms.ELIOMFORMSIG.make_uri >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates the text of ~(relative~) ~U~R~L for a service~.
+>>
+|
+|<<a_api text="map"| value XHTML.T.map >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="map"| value Lwt_util.map >> ~[<<a_api | module Lwt_util >>~]|<<div class="info"|<<span class='code'|map f l>> apply <<span class='code'|f>> to each element in <<span class='code'|l>> and collect the
+        results of the threads thus created~.
+>>
+|
+|<<a_api text="map_optgroup"| value Eliom_mkforms.FORMCREATE.map_optgroup >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="map_option"| value Eliom_mkforms.FORMCREATE.map_option >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="map_serial"| value Lwt_util.map_serial >> ~[<<a_api | module Lwt_util >>~]|<<div class="info"|~Similar to <<span class='code'|map>> but wait for one thread to terminate before
+        starting the next one~.
+>>
+|
+|<<a_api text="map_with_waiting_action"| value Lwt_util.map_with_waiting_action >> ~[<<a_api | module Lwt_util >>~]|<<div class="info"|<<span class='code'|map~_with~_waiting~_action f wa l>> apply <<span class='code'|f>> to each element
+        in <<span class='code'|l>> and collect the results of the threads thus created~.
+>>
+|
+|<<a_api text="menu"| value Eliom_duce_tools.menu >> ~[<<a_api | module Eliom_duce_tools >>~]||
+|<<a_api text="menu"| value Eliom_tools.menu >> ~[<<a_api | module Eliom_tools >>~]|<<div class="info"|~Creates a menu 
+>>
+|
+|<<a_api text="menu_class"| value Eliom_duce_tools.menu_class >> ~[<<a_api | module Eliom_duce_tools >>~]||
+|<<a_api text="meta"| value XHTML.T.meta >> ~[<<a_api | module XHTML.T >>~]||
+|@@ @class="alignleft"@@\\N|
+|<<a_api text="new_coservice"| value Eliom_services.new_coservice >> ~[<<a_api | module Eliom_services >>~]|<<div class="info"|~Creates a coservice~.
+>>
+|
+|<<a_api text="new_coservice'"| value Eliom_services.new_coservice' >> ~[<<a_api | module Eliom_services >>~]|<<div class="info"|~Creates a non~-attached coservice~, that is~, services that do not
+   correspond to a precise ~U~R~L~.
+>>
+|
+|<<a_api text="new_external_service"| value Eliom_services.new_external_service >> ~[<<a_api | module Eliom_services >>~]|<<div class="info"|~Creates an service for an external web site~.
+>>
+|
+|<<a_api text="new_post_coservice"| value Eliom_services.new_post_coservice >> ~[<<a_api | module Eliom_services >>~]|<<div class="info"|~Creates a coservice with ~P~O~S~T parameters
+>>
+|
+|<<a_api text="new_post_coservice'"| value Eliom_services.new_post_coservice' >> ~[<<a_api | module Eliom_services >>~]|<<div class="info"|~Creates a non attached coservice with ~P~O~S~T parameters~.
+>>
+|
+|<<a_api text="new_post_service"| value Eliom_services.new_post_service >> ~[<<a_api | module Eliom_services >>~]|<<div class="info"|~Creates an service that takes ~P~O~S~T parameters~.
+>>
+|
+|<<a_api text="new_post_service'"| value Eliom_services.new_post_service' >> ~[<<a_api | module Eliom_services >>~]|<<div class="info"|~Creates a non~-attached service that takes ~P~O~S~T parameters~.
+>>
+|
+|<<a_api text="new_service"| value Eliom_services.new_service >> ~[<<a_api | module Eliom_services >>~]|<<div class="info"|<<span class='code'|new~_service ~~path~:p ~~get~_params~:pa ~(~)>> creates an <<a_api | type Eliom_services.service >> associated
+   to the path <<span class='code'|p>>~, taking the ~G~E~T parameters <<span class='code'|pa>>~.
+>>
+|
+|<<a_api text="new_service'"| value Eliom_services.new_service' >> ~[<<a_api | module Eliom_services >>~]|<<div class="info"|<<span class='code'|new~_service~' ~~name~:n ~~get~_params~:pa ~(~)>> creates a non~-attached service
+    associated to the name <<span class='code'|n>>~, taking the ~G~E~T parameters <<span class='code'|pa>>~.
+>>
+|
+|<<a_api text="noframes"| value XHTML.T.noframes >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="noscript"| value XHTML.T.noscript >> ~[<<a_api | module XHTML.T >>~]||
+|@@ @class="alignleft"@@\\O|
+|<<a_api text="object_"| value XHTML.T.object_ >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="ocsigenadv"| value Xhtmlpretty.ocsigenadv >> ~[<<a_api | module Xhtmlpretty >>~]|<<div class="info"|~A text included in each page
+>>
+|
+|<<a_api text="of_unix_file_descr"| value Lwt_unix.of_unix_file_descr >> ~[<<a_api | module Lwt_unix >>~]||
+|<<a_api text="ol"| value XHTML.T.ol >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="open_in"| value Lwt_chan.open_in >> ~[<<a_api | module Lwt_chan >>~]||
+|<<a_api text="open_out"| value Lwt_chan.open_out >> ~[<<a_api | module Lwt_chan >>~]||
+|<<a_api text="open_store"| value Ocsipersist.open_store >> ~[<<a_api | module Ocsipersist >>~]|<<div class="info"|~Open a store ~(and create it if it does not exist~)
+>>
+|
+|<<a_api text="open_table"| value Ocsipersist.open_table >> ~[<<a_api | module Ocsipersist >>~]|<<div class="info"|~Open a table ~(and create it if it does not exist~)
+>>
+|
+|<<a_api text="opt"| value Eliom_parameters.opt >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~Use this if you want a parameter to be optional
+>>
+|
+|<<a_api text="optgroup"| value XHTML.T.optgroup >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="option"| value XHTML.T.Basic_Forms.option >> ~[<<a_api | module XHTML.T.Basic_Forms >>~]||
+|<<a_api text="option"| value XHTML.T.option >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="out_channel_of_descr"| value Lwt_ssl.out_channel_of_descr >> ~[<<a_api | module Lwt_ssl >>~]||
+|<<a_api text="out_channel_of_descr"| value Lwt_chan.out_channel_of_descr >> ~[<<a_api | module Lwt_chan >>~]||
+|<<a_api text="output"| value XHTML.T.output >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="output"| value Lwt_chan.output >> ~[<<a_api | module Lwt_chan >>~]||
+|<<a_api text="output_string"| value Lwt_chan.output_string >> ~[<<a_api | module Lwt_chan >>~]||
+|<<a_api text="output_value"| value Lwt_chan.output_value >> ~[<<a_api | module Lwt_chan >>~]||
+|@@ @class="alignleft"@@\\P|
+|<<a_api text="p"| value XHTML.T.p >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="parse_cookies"| value Ocsigen_headers.parse_cookies >> ~[<<a_api | module Ocsigen_headers >>~]||
+|<<a_api text="parse_mime_type"| value Ocsigen_headers.parse_mime_type >> ~[<<a_api | module Ocsigen_headers >>~]||
+|<<a_api text="parse_size"| value Ocsigen_parseconfig.parse_size >> ~[<<a_api | module Ocsigen_parseconfig >>~]||
+|<<a_api text="parse_string"| value Ocsigen_parseconfig.parse_string >> ~[<<a_api | module Ocsigen_parseconfig >>~]||
+|<<a_api text="parse_user_dir"| value Ocsigen_extensions.parse_user_dir >> ~[<<a_api | module Ocsigen_extensions >>~]||
+|<<a_api text="pcdata"| value XHTML.T.pcdata >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="pipe"| value Lwt_unix.pipe >> ~[<<a_api | module Lwt_unix >>~]||
+|<<a_api text="pipe_in"| value Lwt_unix.pipe_in >> ~[<<a_api | module Lwt_unix >>~]||
+|<<a_api text="pipe_out"| value Lwt_unix.pipe_out >> ~[<<a_api | module Lwt_unix >>~]||
+|<<a_api text="plain"| value Lwt_ssl.plain >> ~[<<a_api | module Lwt_ssl >>~]||
+|<<a_api text="post_form"| value Eliom_predefmod.XHTMLFORMSSIG.post_form >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|<<span class='code'|post~_form service sp formgen>> creates a ~P~O~S~T form to <<span class='code'|service>>~.
+>>
+|
+|<<a_api text="post_form"| value Eliom_mkforms.ELIOMFORMSIG.post_form >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|<<span class='code'|post~_form service sp formgen>> creates a ~P~O~S~T form to <<span class='code'|service>>~.
+>>
+|
+|<<a_api text="pre"| value XHTML.T.pre >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="preapply"| value Eliom_services.preapply >> ~[<<a_api | module Eliom_services >>~]|<<div class="info"|creates a new service by preapplying a service to ~G~E~T parameters~.
+>>
+|
+|<<a_api text="pretty_print"| value XHTML.T.pretty_print >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="prod"| value Eliom_parameters.prod >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~Same as <<span class='code'|~*~*>> above
+>>
+|
+|@@ @class="alignleft"@@\\Q|
+|<<a_api text="q"| value XHTML.T.q >> ~[<<a_api | module XHTML.T >>~]||
+|@@ @class="alignleft"@@\\R|
+|<<a_api text="radio"| value Eliom_mkforms.FORMCREATE.radio >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="raw_button"| value Eliom_predefmod.XHTMLFORMSSIG.raw_button >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<button~>>> tag with untyped string content
+>>
+|
+|<<a_api text="raw_button"| value Eliom_mkforms.ELIOMFORMSIG.raw_button >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<button~>>> tag with untyped string content
+>>
+|
+|<<a_api text="raw_checkbox"| value Eliom_predefmod.XHTMLFORMSSIG.raw_checkbox >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a checkbox <<span class='code'|~<input~>>> tag with untyped content~.
+>>
+|
+|<<a_api text="raw_checkbox"| value Eliom_mkforms.ELIOMFORMSIG.raw_checkbox >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a checkbox <<span class='code'|~<input~>>> tag with untyped content~.
+>>
+|
+|<<a_api text="raw_image_input"| value Eliom_predefmod.XHTMLFORMSSIG.raw_image_input >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input type~="image" name~="~.~.~." value~="~.~.~."~>>> tag that sends
+   the coordinates the user clicked on and an untyped value
+>>
+|
+|<<a_api text="raw_image_input"| value Eliom_mkforms.ELIOMFORMSIG.raw_image_input >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input type~="image" name~="~.~.~." value~="~.~.~."~>>> tag that sends
+   the coordinates the user clicked on and an untyped value
+>>
+|
+|<<a_api text="raw_input"| value Eliom_predefmod.XHTMLFORMSSIG.raw_input >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates an untyped <<span class='code'|~<input~>>> tag~.
+>>
+|
+|<<a_api text="raw_input"| value Eliom_mkforms.ELIOMFORMSIG.raw_input >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates an untyped <<span class='code'|~<input~>>> tag~.
+>>
+|
+|<<a_api text="raw_multiple_select"| value Eliom_predefmod.XHTMLFORMSSIG.raw_multiple_select >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for any ~(untyped~) value~.
+>>
+|
+|<<a_api text="raw_multiple_select"| value Eliom_mkforms.ELIOMFORMSIG.raw_multiple_select >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for any ~(untyped~) value~.
+>>
+|
+|<<a_api text="raw_radio"| value Eliom_predefmod.XHTMLFORMSSIG.raw_radio >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a radio <<span class='code'|~<input~>>> tag with untyped string content ~(low level~)
+>>
+|
+|<<a_api text="raw_radio"| value Eliom_mkforms.ELIOMFORMSIG.raw_radio >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a radio <<span class='code'|~<input~>>> tag with untyped string content ~(low level~)
+>>
+|
+|<<a_api text="raw_request"| value Ocsigen_http_client.raw_request >> ~[<<a_api | module Ocsigen_http_client >>~]|<<div class="info"|~Do an ~H~T~T~P request ~(low level~)~.
+>>
+|
+|<<a_api text="raw_select"| value Eliom_predefmod.XHTMLFORMSSIG.raw_select >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for any ~(untyped~) value~.
+>>
+|
+|<<a_api text="raw_select"| value Eliom_mkforms.ELIOMFORMSIG.raw_select >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for any ~(untyped~) value~.
+>>
+|
+|<<a_api text="raw_textarea"| value Eliom_predefmod.XHTMLFORMSSIG.raw_textarea >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<textarea~>>> tag for untyped form
+>>
+|
+|<<a_api text="raw_textarea"| value Eliom_mkforms.ELIOMFORMSIG.raw_textarea >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<textarea~>>> tag for untyped form
+>>
+|
+|<<a_api text="read"| value Lwt_ssl.read >> ~[<<a_api | module Lwt_ssl >>~]||
+|<<a_api text="read"| value Lwt_unix.read >> ~[<<a_api | module Lwt_unix >>~]||
+|<<a_api text="really_input"| value Lwt_chan.really_input >> ~[<<a_api | module Lwt_chan >>~]||
+|<<a_api text="regexp"| value Eliom_parameters.regexp >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|<<span class='code'|regexp r d s>> tells that the service takes a string
+   that matches the regular expression <<span class='code'|r>> as parameter~, 
+   labeled <<span class='code'|s>>~, and that will be rewritten in d~.
+>>
+|
+|<<a_api text="register"| value Eliom_mkreg.ELIOMREGSIG1.register >> ~[<<a_api | module Eliom_mkreg.ELIOMREGSIG1 >>~]|<<div class="info"|registers an service in the public service table
+   with the associated handler function~.
+>>
+|
+|<<a_api text="register_basic_authentication_method"| value Authbasic.register_basic_authentication_method >> ~[<<a_api | module Authbasic >>~]|<<div class="info"|~This function registers an authentication plugin~: it adds a new
+      parser to the list of available authentication schemes~.
+>>
+|
+|<<a_api text="register_extension"| value Ocsigen_extensions.register_extension >> ~[<<a_api | module Ocsigen_extensions >>~]|<<div class="info"|~For each extension generating pages~, we register four functions~: a function taking 
+    the name of the virtual ~<host~>
+     that will be called for each ~<host~>~, 
+     and that will generate a function taking~:
+    the path attribute of a ~<site~> tag
+     that will be called for each ~<site~>~, 
+     and that will generate a function taking~:
+    an item of the config file
+     that will be called on each tag inside ~<site~> and~:
+    raise <<span class='code'|~Bad~_config~_tag~_for~_extension>> if it does not recognize that tag~, return something of type <<span class='code'|extension>> ~(filter or page generator~)~, a function of same type~, that will be called every time user configuration
+    files are parsed~. ~It must define only safe options~, for example it is not
+    safe to allow such options to load a cmo specified by a user~, or to
+    execute a program~, as this program will be executed by ocsigen~'s user~.
+    ~Note that function will be called for every request~, whereas the first one
+    is called only when starting or reloading the server~.
+    ~If you do not want to allow users to use your extension~,
+    use the predefined function <<span class='code'|void~_extension>> ~(defines no option~)~.~, a function that will be called at the beginning 
+   of the initialisation phase ~(each time the config file is reloaded~)
+   ~(~Note that the extensions are not reloaded~)~, a function that will be called at the end of the initialisation phase 
+   of the server~, a function that will create an error message from the exceptions
+   that may be raised during the initialisation phase~, and raise again
+   all other exceptions
+   ~If the optional parameter <<span class='code'|~?respect~_pipeline>> is <<span class='code'|true>>~, the extension
+   will ask the server to respect the order of the pipeline~.
+>>
+|
+|<<a_api text="register_for_session"| value Eliom_mkreg.ELIOMREGSIG1.register_for_session >> ~[<<a_api | module Eliom_mkreg.ELIOMREGSIG1 >>~]|<<div class="info"|registers a handler for a service in the session table~.
+>>
+|
+|<<a_api text="register_new_coservice"| value Eliom_mkreg.ELIOMREGSIG1.register_new_coservice >> ~[<<a_api | module Eliom_mkreg.ELIOMREGSIG1 >>~]|<<div class="info"|~Same as <<span class='code'|new~_coservice>> followed by <<span class='code'|register>>
+>>
+|
+|<<a_api text="register_new_coservice'"| value Eliom_mkreg.ELIOMREGSIG1.register_new_coservice' >> ~[<<a_api | module Eliom_mkreg.ELIOMREGSIG1 >>~]|<<div class="info"|~Same as <<span class='code'|new~_coservice~'>> followed by <<span class='code'|register>>
+>>
+|
+|<<a_api text="register_new_coservice_for_session"| value Eliom_mkreg.ELIOMREGSIG1.register_new_coservice_for_session >> ~[<<a_api | module Eliom_mkreg.ELIOMREGSIG1 >>~]|<<div class="info"|~Same as <<span class='code'|new~_coservice>> followed by <<span class='code'|register~_for~_session>>
+>>
+|
+|<<a_api text="register_new_coservice_for_session'"| value Eliom_mkreg.ELIOMREGSIG1.register_new_coservice_for_session' >> ~[<<a_api | module Eliom_mkreg.ELIOMREGSIG1 >>~]|<<div class="info"|~Same as <<span class='code'|new~_coservice~'>> followed by <<span class='code'|register~_for~_session>>
+>>
+|
+|<<a_api text="register_new_post_coservice"| value Eliom_mkreg.ELIOMREGSIG1.register_new_post_coservice >> ~[<<a_api | module Eliom_mkreg.ELIOMREGSIG1 >>~]|<<div class="info"|~Same as <<span class='code'|new~_post~_coservice>> followed by <<span class='code'|register>>
+>>
+|
+|<<a_api text="register_new_post_coservice'"| value Eliom_mkreg.ELIOMREGSIG1.register_new_post_coservice' >> ~[<<a_api | module Eliom_mkreg.ELIOMREGSIG1 >>~]|<<div class="info"|~Same as <<span class='code'|new~_post~_coservice~'>> followed by <<span class='code'|register>>
+>>
+|
+|<<a_api text="register_new_post_coservice_for_session"| value Eliom_mkreg.ELIOMREGSIG1.register_new_post_coservice_for_session >> ~[<<a_api | module Eliom_mkreg.ELIOMREGSIG1 >>~]|<<div class="info"|~Same as <<span class='code'|new~_post~_coservice>> followed by <<span class='code'|register~_for~_session>>
+>>
+|
+|<<a_api text="register_new_post_coservice_for_session'"| value Eliom_mkreg.ELIOMREGSIG1.register_new_post_coservice_for_session' >> ~[<<a_api | module Eliom_mkreg.ELIOMREGSIG1 >>~]|<<div class="info"|~Same as <<span class='code'|new~_post~_coservice~'>> followed by <<span class='code'|register~_for~_session>>
+>>
+|
+|<<a_api text="register_new_post_service"| value Eliom_mkreg.ELIOMREGSIG1.register_new_post_service >> ~[<<a_api | module Eliom_mkreg.ELIOMREGSIG1 >>~]|<<div class="info"|~Same as <<span class='code'|new~_post~_service>> followed by <<span class='code'|register>>
+>>
+|
+|<<a_api text="register_new_post_service'"| value Eliom_mkreg.ELIOMREGSIG1.register_new_post_service' >> ~[<<a_api | module Eliom_mkreg.ELIOMREGSIG1 >>~]|<<div class="info"|~Same as <<span class='code'|new~_post~_service~'>> followed by <<span class='code'|register>>
+>>
+|
+|<<a_api text="register_new_service"| value Eliom_mkreg.ELIOMREGSIG1.register_new_service >> ~[<<a_api | module Eliom_mkreg.ELIOMREGSIG1 >>~]|<<div class="info"|~Same as <<span class='code'|new~_service>> followed by <<span class='code'|register>>
+>>
+|
+|<<a_api text="register_new_service'"| value Eliom_mkreg.ELIOMREGSIG1.register_new_service' >> ~[<<a_api | module Eliom_mkreg.ELIOMREGSIG1 >>~]|<<div class="info"|~Same as <<span class='code'|new~_service~'>> followed by <<span class='code'|register>>
+>>
+|
+|<<a_api text="remove"| value Ocsipersist.remove >> ~[<<a_api | module Ocsipersist >>~]|<<div class="info"|<<span class='code'|remove table key>> removes the entry in the table if it exists
+>>
+|
+|<<a_api text="remove_first"| value Eliom_mkforms.FORMCREATE.remove_first >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="remove_persistent_session_data"| value Eliom_sessions.Session_admin.remove_persistent_session_data >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]||
+|<<a_api text="remove_persistent_session_data"| value Eliom_sessions.remove_persistent_session_data >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|removes session data for the current persistent session 
+   ~(but does not close the session~)~.
+>>
+|
+|<<a_api text="remove_volatile_session_data"| value Eliom_sessions.Session_admin.remove_volatile_session_data >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]||
+|<<a_api text="remove_volatile_session_data"| value Eliom_sessions.remove_volatile_session_data >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|removes session data for the current session 
+   ~(but does not close the session~)~.
+>>
+|
+|<<a_api text="replace_if_exists"| value Ocsipersist.replace_if_exists >> ~[<<a_api | module Ocsipersist >>~]|<<div class="info"|<<span class='code'|replace~_if~_exists table key value>> 
+   associates <<span class='code'|value>> to <<span class='code'|key>> only if <<span class='code'|key>> is already bound~.
+>>
+|
+|<<a_api text="replace_user_dir"| value Ocsigen_extensions.replace_user_dir >> ~[<<a_api | module Ocsigen_extensions >>~]|<<div class="info"|raises <<span class='code'|~Not~_found>> is the directory does not exist
+>>
+|
+|<<a_api text="resize_region"| value Lwt_util.resize_region >> ~[<<a_api | module Lwt_util >>~]|<<div class="info"|<<span class='code'|resize~_region reg sz>> resize the region <<span class='code'|reg>> to size <<span class='code'|sz>>~.
+>>
+|
+|<<a_api text="result_of_content"| value Ocsigen_http_frame.HTTP_CONTENT.result_of_content >> ~[<<a_api | module Ocsigen_http_frame.HTTP_CONTENT >>~]||
+|<<a_api text="return"| value Lwt.return >> ~[<<a_api | module Lwt >>~]|<<div class="info"|<<span class='code'|return e>> is a thread whose return value is the value of
+          the expression <<span class='code'|e>>~.
+>>
+|
+|<<a_api text="rewrite_hrefs"| value XHTML.T.rewrite_hrefs >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="ri_of_url"| value Ocsigen_extensions.ri_of_url >> ~[<<a_api | module Ocsigen_extensions >>~]|<<div class="info"|~Parsing ~U~R~Ls~.
+>>
+|
+|<<a_api text="run"| value Lwt_unix.run >> ~[<<a_api | module Lwt_unix >>~]|<<div class="info"|<<span class='code'|run t>> lets the thread <<span class='code'|t>> run until it terminates~.
+>>
+|
+|<<a_api text="run_in_region"| value Lwt_util.run_in_region >> ~[<<a_api | module Lwt_util >>~]|<<div class="info"|<<span class='code'|run~_in~_region reg size f>> execute the thread produced by the
+          function <<span class='code'|f>> in the region <<span class='code'|reg>>~.
+>>
+|
+|@@ @class="alignleft"@@\\S|
+|<<a_api text="samp"| value XHTML.T.samp >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="script"| value XHTML.T.script >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="select"| value XHTML.T.Basic_Forms.select >> ~[<<a_api | module XHTML.T.Basic_Forms >>~]||
+|<<a_api text="select"| value XHTML.T.select >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="select_content_of_option"| value Eliom_mkforms.FORMCREATE.select_content_of_option >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="send"| value Ocsigen_http_com.send >> ~[<<a_api | module Ocsigen_http_com >>~]|<<div class="info"|send an ~H~T~T~P message~.
+>>
+|
+|<<a_api text="send"| value Eliom_mkreg.REGCREATE.send >> ~[<<a_api | module Eliom_mkreg.REGCREATE >>~]||
+|<<a_api text="send"| value Eliom_mkreg.ELIOMREGSIG1.send >> ~[<<a_api | module Eliom_mkreg.ELIOMREGSIG1 >>~]||
+|<<a_api text="send_error"| value Ocsigen_senders.send_error >> ~[<<a_api | module Ocsigen_senders >>~]|<<div class="info"|~Sending an error page
+>>
+|
+|<<a_api text="set"| value Ocsipersist.set >> ~[<<a_api | module Ocsipersist >>~]|<<div class="info"|<<span class='code'|set pv value>> sets a persistent value <<span class='code'|pv>> to <<span class='code'|value>>
+>>
+|
+|<<a_api text="set"| value Eliom_parameters.set >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~Use this if you want your service to take several parameters
+   with the same name~.
+>>
+|
+|<<a_api text="set_close_on_exec"| value Lwt_unix.set_close_on_exec >> ~[<<a_api | module Lwt_unix >>~]||
+|<<a_api text="set_default_max_persistent_data_sessions_per_group"| value Eliom_sessions.set_default_max_persistent_data_sessions_per_group >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Sets the maximum number of persistent data sessions in a session
+    group ~(see above~)~.
+>>
+|
+|<<a_api text="set_default_max_service_sessions_per_group"| value Eliom_sessions.set_default_max_service_sessions_per_group >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Sets the maximum number of service sessions in a session group
+    ~(see above~)~.
+>>
+|
+|<<a_api text="set_default_max_volatile_data_sessions_per_group"| value Eliom_sessions.set_default_max_volatile_data_sessions_per_group >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Sets the maximum number of volatile data sessions in a session
+    group ~(see above~)~.
+>>
+|
+|<<a_api text="set_default_persistent_data_session_timeout"| value Eliom_sessions.set_default_persistent_data_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|sets the default timeout for sessions ~(server side~)~.
+>>
+|
+|<<a_api text="set_default_service_session_timeout"| value Eliom_sessions.set_default_service_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|sets the default timeout for service sessions~.
+>>
+|
+|<<a_api text="set_default_volatile_data_session_timeout"| value Eliom_sessions.set_default_volatile_data_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|sets the default timeout for "volatile data" sessions ~(server side~)~.
+>>
+|
+|<<a_api text="set_default_volatile_session_timeout"| value Eliom_sessions.set_default_volatile_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|sets the default timeout for volatile ~(~= "in memory"~)
+   sessions ~(i~.e~.
+>>
+|
+|<<a_api text="set_exn_handler"| value Eliom_services.set_exn_handler >> ~[<<a_api | module Eliom_services >>~]|<<div class="info"|allows to use your own error pages
+   ~(~4~0~4~, or any exception during page generation~)~.
+>>
+|
+|<<a_api text="set_exn_handler"| value Lwt_timeout.set_exn_handler >> ~[<<a_api | module Lwt_timeout >>~]|<<div class="info"|set the default handler for exception occurring after a timeout~.
+>>
+|
+|<<a_api text="set_global_persistent_data_session_timeout"| value Eliom_sessions.set_global_persistent_data_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Sets the timeout for persistent sessions ~(server side~)~.
+>>
+|
+|<<a_api text="set_global_service_session_timeout"| value Eliom_sessions.set_global_service_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Sets the timeout for service sessions ~(server side~)~.
+>>
+|
+|<<a_api text="set_global_volatile_data_session_timeout"| value Eliom_sessions.set_global_volatile_data_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Sets the timeout for volatile ~(~= "in memory"~) data sessions ~(server side~)~.
+>>
+|
+|<<a_api text="set_global_volatile_session_timeout"| value Eliom_sessions.set_global_volatile_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Sets the timeout for volatile ~(~= "in memory"~) sessions ~(both
+    service session and volatile data session~) ~(server side~)~.
+>>
+|
+|<<a_api text="set_max_number_of_threads_queued"| value Lwt_preemptive.set_max_number_of_threads_queued >> ~[<<a_api | module Lwt_preemptive >>~]|<<div class="info"|~Sets the size of the waiting queue~, if no more threads are available
+>>
+|
+|<<a_api text="set_persistent_data_session_cookie_exp_date"| value Eliom_sessions.set_persistent_data_session_cookie_exp_date >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Sets the cookie expiration date for the persistent session ~(see
+    above~)~.
+>>
+|
+|<<a_api text="set_persistent_data_session_group"| value Eliom_sessions.set_persistent_data_session_group >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|sets the group to which belong the persistent session~.
+>>
+|
+|<<a_api text="set_persistent_data_session_timeout"| value Eliom_sessions.Session_admin.set_persistent_data_session_timeout >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]||
+|<<a_api text="set_persistent_data_session_timeout"| value Eliom_sessions.set_persistent_data_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|sets the timeout for persistent session ~(server side~) for one user~,
+   in seconds~.
+>>
+|
+|<<a_api text="set_persistent_session_data"| value Eliom_sessions.set_persistent_session_data >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|sets persistent session data for the current persistent session
+>>
+|
+|<<a_api text="set_rowspan"| value XHTML.T.set_rowspan >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~Set the rowspan attribute for the element~.
+>>
+|
+|<<a_api text="set_service_session_cookie_exp_date"| value Eliom_sessions.set_service_session_cookie_exp_date >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Sets the cookie expiration date for the current service session
+    ~(see above~)~.
+>>
+|
+|<<a_api text="set_service_session_group"| value Eliom_sessions.set_service_session_group >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|sets the group to which belong the service session~.
+>>
+|
+|<<a_api text="set_service_session_timeout"| value Eliom_sessions.Session_admin.set_service_session_timeout >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]||
+|<<a_api text="set_service_session_timeout"| value Eliom_sessions.set_service_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|sets the timeout for service session ~(server side~) for one user~, 
+   in seconds~.
+>>
+|
+|<<a_api text="set_volatile_data_session_cookie_exp_date"| value Eliom_sessions.set_volatile_data_session_cookie_exp_date >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Sets the cookie expiration date for the current data session ~(see
+    above~)~.
+>>
+|
+|<<a_api text="set_volatile_data_session_group"| value Eliom_sessions.set_volatile_data_session_group >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|sets the group to which belong the volatile data session~.
+>>
+|
+|<<a_api text="set_volatile_data_session_timeout"| value Eliom_sessions.Session_admin.set_volatile_data_session_timeout >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]||
+|<<a_api text="set_volatile_data_session_timeout"| value Eliom_sessions.set_volatile_data_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|sets the timeout for volatile data session ~(server side~) for one user~, 
+   in seconds~.
+>>
+|
+|<<a_api text="set_volatile_session_cookies_exp_date"| value Eliom_sessions.set_volatile_session_cookies_exp_date >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Sets the cookie expiration date for the current volatile sessions
+    ~(service and data~) ~(see above~)~.
+>>
+|
+|<<a_api text="set_volatile_session_data"| value Eliom_sessions.set_volatile_session_data >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|sets session data for the current session~.
+>>
+|
+|<<a_api text="set_volatile_session_timeout"| value Eliom_sessions.set_volatile_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|sets the timeout for volatile sessions ~(service and volatile data~)
+    ~(server side~) for one user~, 
+   in seconds~.
+>>
+|
+|<<a_api text="setsockopt"| value Lwt_unix.setsockopt >> ~[<<a_api | module Lwt_unix >>~]||
+|<<a_api text="shutdown"| value Lwt_ssl.shutdown >> ~[<<a_api | module Lwt_ssl >>~]||
+|<<a_api text="shutdown"| value Lwt_unix.shutdown >> ~[<<a_api | module Lwt_unix >>~]||
+|<<a_api text="sleep"| value Lwt_unix.sleep >> ~[<<a_api | module Lwt_unix >>~]|<<div class="info"|<<span class='code'|sleep d>> is a threads which remain suspended for <<span class='code'|d>> seconds
+          ~(letting other threads run~) and then terminates~.
+>>
+|
+|<<a_api text="small"| value XHTML.T.small >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="socket"| value Lwt_unix.socket >> ~[<<a_api | module Lwt_unix >>~]||
+|<<a_api text="socketpair"| value Lwt_unix.socketpair >> ~[<<a_api | module Lwt_unix >>~]||
+|<<a_api text="space"| value XHTML.T.space >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="span"| value XHTML.T.span >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="ssl_accept"| value Lwt_ssl.ssl_accept >> ~[<<a_api | module Lwt_ssl >>~]||
+|<<a_api text="ssl_connect"| value Lwt_ssl.ssl_connect >> ~[<<a_api | module Lwt_ssl >>~]||
+|<<a_api text="ssl_shutdown"| value Lwt_ssl.ssl_shutdown >> ~[<<a_api | module Lwt_ssl >>~]||
+|<<a_api text="standard"| value XHTML.T.standard >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="start"| value Lwt_timeout.start >> ~[<<a_api | module Lwt_timeout >>~]|<<div class="info"|starts a timeout~.
+>>
+|
+|<<a_api text="start_processing"| value Ocsigen_http_com.start_processing >> ~[<<a_api | module Ocsigen_http_com >>~]||
+|<<a_api text="static_dir"| value Eliom_services.static_dir >> ~[<<a_api | module Eliom_services >>~]|<<div class="info"|~A predefined service
+   that correponds to the directory where static pages are~.
+>>
+|
+|<<a_api text="stop"| value Lwt_timeout.stop >> ~[<<a_api | module Lwt_timeout >>~]|<<div class="info"|stops a timeout~.
+>>
+|
+|<<a_api text="string"| value Eliom_parameters.string >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|<<span class='code'|string s>> tells that the service takes a string as parameter~, labeled <<span class='code'|s>>~.
+>>
+|
+|<<a_api text="string_button"| value Eliom_predefmod.XHTMLFORMSSIG.string_button >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<button~>>> tag with string content
+>>
+|
+|<<a_api text="string_button"| value Eliom_mkforms.ELIOMFORMSIG.string_button >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<button~>>> tag with string content
+>>
+|
+|<<a_api text="string_checkbox"| value Eliom_predefmod.XHTMLFORMSSIG.string_checkbox >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a checkbox <<span class='code'|~<input~>>> tag that will have a string value~.
+>>
+|
+|<<a_api text="string_checkbox"| value Eliom_mkforms.ELIOMFORMSIG.string_checkbox >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a checkbox <<span class='code'|~<input~>>> tag that will have a string value~.
+>>
+|
+|<<a_api text="string_coordinates"| value Eliom_parameters.string_coordinates >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~It is possible to send a value together with the coordinates
+   ~(<<span class='code'|~<input type~="image" value~="~.~.~." ~.~.~.~>>>~) ~(~Here a string~)
+>>
+|
+|<<a_api text="string_image_input"| value Eliom_predefmod.XHTMLFORMSSIG.string_image_input >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input type~="image" name~="~.~.~." value~="~.~.~."~>>> tag that sends
+   the coordinates the user clicked on and a value of type string
+>>
+|
+|<<a_api text="string_image_input"| value Eliom_mkforms.ELIOMFORMSIG.string_image_input >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input type~="image" name~="~.~.~." value~="~.~.~."~>>> tag that sends
+   the coordinates the user clicked on and a value of type string
+>>
+|
+|<<a_api text="string_input"| value Eliom_predefmod.XHTMLFORMSSIG.string_input >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input~>>> tag for a string
+>>
+|
+|<<a_api text="string_input"| value Eliom_mkforms.ELIOMFORMSIG.string_input >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input~>>> tag for a string
+>>
+|
+|<<a_api text="string_multiple_select"| value Eliom_predefmod.XHTMLFORMSSIG.string_multiple_select >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for string values~.
+>>
+|
+|<<a_api text="string_multiple_select"| value Eliom_mkforms.ELIOMFORMSIG.string_multiple_select >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for string values~.
+>>
+|
+|<<a_api text="string_of_http_exception"| value Ocsigen_http_frame.Http_error.string_of_http_exception >> ~[<<a_api | module Ocsigen_http_frame.Http_error >>~]||
+|<<a_api text="string_of_uri"| value XHTML.T.string_of_uri >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~A ~Uniform ~Resource ~Identifier~, as per ~R~F~C~2~3~9~6~.
+>>
+|
+|<<a_api text="string_of_url_path"| value Ocsigen_extensions.string_of_url_path >> ~[<<a_api | module Ocsigen_extensions >>~]||
+|<<a_api text="string_radio"| value Eliom_predefmod.XHTMLFORMSSIG.string_radio >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a radio <<span class='code'|~<input~>>> tag with string content
+>>
+|
+|<<a_api text="string_radio"| value Eliom_mkforms.ELIOMFORMSIG.string_radio >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a radio <<span class='code'|~<input~>>> tag with string content
+>>
+|
+|<<a_api text="string_select"| value Eliom_predefmod.XHTMLFORMSSIG.string_select >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for string values~.
+>>
+|
+|<<a_api text="string_select"| value Eliom_mkforms.ELIOMFORMSIG.string_select >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for string values~.
+>>
+|
+|<<a_api text="strong"| value XHTML.T.strong >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="structure_links"| value Eliom_duce_tools.structure_links >> ~[<<a_api | module Eliom_duce_tools >>~]||
+|<<a_api text="structure_links"| value Eliom_tools.structure_links >> ~[<<a_api | module Eliom_tools >>~]|<<div class="info"|~Returns the tags <<span class='code'|~<link rel~="subsection" ~.~.~.~>>> and 
+   <<span class='code'|~<link rev~="subsection" ~.~.~.~>>> for the given hierarchical site~.
+>>
+|
+|<<a_api text="style"| value XHTML.T.style >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="sub"| value XHTML.T.sub >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="submit"| value Eliom_mkforms.FORMCREATE.submit >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="suffix"| value Eliom_parameters.suffix >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~Tells that the parameter of the service handler is
+   the suffix of the ~U~R~L of the current service~.
+>>
+|
+|<<a_api text="suffix_prod"| value Eliom_parameters.suffix_prod >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~Tells that the function that will generate the service takes
+   a pair whose first element is the suffix of the ~U~R~L of the current service~,
+   and the second element corresponds to other ~(regular~) parameters~.
+>>
+|
+|<<a_api text="sum"| value Eliom_parameters.sum >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~This is a combinator to allow the service to take either a parameter
+   or another one
+   //~Warning~: it is a binary operator~.//
+>>
+|
+|<<a_api text="sup"| value XHTML.T.sup >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="sync"| value Eliom_services.sync >> ~[<<a_api | module Eliom_services >>~]|<<div class="info"|~This function may be used for services that cannot be interrupted
+  ~(no cooperation point for threads~)~.
+>>
+|
+|<<a_api text="system"| value Lwt_unix.system >> ~[<<a_api | module Lwt_unix >>~]||
+|@@ @class="alignleft"@@\\T|
+|<<a_api text="table"| value XHTML.T.Basic_Tables.table >> ~[<<a_api | module XHTML.T.Basic_Tables >>~]||
+|<<a_api text="table"| value XHTML.T.table >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="table_name"| value Ocsipersist.table_name >> ~[<<a_api | module Ocsipersist >>~]|<<div class="info"|returns the name of the table
+>>
+|
+|<<a_api text="tablex"| value XHTML.T.tablex >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="tbody"| value XHTML.T.tbody >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="td"| value XHTML.T.Basic_Tables.td >> ~[<<a_api | module XHTML.T.Basic_Tables >>~]||
+|<<a_api text="td"| value XHTML.T.td >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="textarea"| value XHTML.T.Basic_Forms.textarea >> ~[<<a_api | module XHTML.T.Basic_Forms >>~]||
+|<<a_api text="textarea"| value XHTML.T.textarea >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="textarea"| value Eliom_predefmod.XHTMLFORMSSIG.textarea >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<textarea~>>> tag
+>>
+|
+|<<a_api text="textarea"| value Eliom_mkforms.ELIOMFORMSIG.textarea >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<textarea~>>> tag
+>>
+|
+|<<a_api text="tfoot"| value XHTML.T.tfoot >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="th"| value XHTML.T.Basic_Tables.th >> ~[<<a_api | module XHTML.T.Basic_Tables >>~]||
+|<<a_api text="th"| value XHTML.T.th >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="thead"| value XHTML.T.thead >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="title"| value XHTML.T.title >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="to_xmlattribs"| value XHTML.T.to_xmlattribs >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="toelt"| value XHTML.T.toelt >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="toeltl"| value XHTML.T.toeltl >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="tot"| value XHTML.T.tot >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="totl"| value XHTML.T.totl >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="tr"| value XHTML.T.Basic_Tables.tr >> ~[<<a_api | module XHTML.T.Basic_Tables >>~]||
+|<<a_api text="tr"| value XHTML.T.tr >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="try_bind"| value Lwt.try_bind >> ~[<<a_api | module Lwt >>~]|<<div class="info"|<<span class='code'|try~_bind t f g>> behaves as <<span class='code'|bind ~(t ~(~)~) f>> if <<span class='code'|t>> does not fail~.
+>>
+|
+|<<a_api text="tt"| value XHTML.T.tt >> ~[<<a_api | module XHTML.T >>~]||
+|@@ @class="alignleft"@@\\U|
+|<<a_api text="ul"| value XHTML.T.ul >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="unexpected_exception"| value Ocsigen_messages.unexpected_exception >> ~[<<a_api | module Ocsigen_messages >>~]|<<div class="info"|~Use that function for all impossible cases in exception handlers
+   ~(<<span class='code'|try ~.~.~. with ~.~.~. ~| e ~-~> unexpected~_exception ~.~.~.>> or <<span class='code'|~Lwt~.catch ~.~.~.>>~)~.
+>>
+|
+|<<a_api text="unit"| value Eliom_parameters.unit >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|used for services that don~'t have any parameters
+>>
+|
+|<<a_api text="unix_file_descr"| value Lwt_unix.unix_file_descr >> ~[<<a_api | module Lwt_unix >>~]||
+|<<a_api text="unlock_receiver"| value Ocsigen_http_com.unlock_receiver >> ~[<<a_api | module Ocsigen_http_com >>~]||
+|<<a_api text="unset_persistent_data_session_group"| value Eliom_sessions.unset_persistent_data_session_group >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Remove the session from its group
+>>
+|
+|<<a_api text="unset_persistent_data_session_timeout"| value Eliom_sessions.Session_admin.unset_persistent_data_session_timeout >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]||
+|<<a_api text="unset_persistent_data_session_timeout"| value Eliom_sessions.unset_persistent_data_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|remove the persistent session timeout for one user
+   ~(and turn back to the default~)~.
+>>
+|
+|<<a_api text="unset_service_session_group"| value Eliom_sessions.unset_service_session_group >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Remove the session from its group
+>>
+|
+|<<a_api text="unset_service_session_timeout"| value Eliom_sessions.Session_admin.unset_service_session_timeout >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]||
+|<<a_api text="unset_service_session_timeout"| value Eliom_sessions.unset_service_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|remove the service session timeout for one user
+   ~(and turn back to the default~)~.
+>>
+|
+|<<a_api text="unset_volatile_data_session_group"| value Eliom_sessions.unset_volatile_data_session_group >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|~Remove the session from its group
+>>
+|
+|<<a_api text="unset_volatile_data_session_timeout"| value Eliom_sessions.Session_admin.unset_volatile_data_session_timeout >> ~[<<a_api | module Eliom_sessions.Session_admin >>~]||
+|<<a_api text="unset_volatile_data_session_timeout"| value Eliom_sessions.unset_volatile_data_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|remove the "volatile data" session timeout for one user
+   ~(and turn back to the default~)~.
+>>
+|
+|<<a_api text="unset_volatile_session_timeout"| value Eliom_sessions.unset_volatile_session_timeout >> ~[<<a_api | module Eliom_sessions >>~]|<<div class="info"|remove the session timeout for one user for both service session and
+   volatile data session
+   ~(and turn back to the default~)~.
+>>
+|
+|<<a_api text="uri_of_string"| value XHTML.T.uri_of_string >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="uri_of_string"| value Eliom_mkforms.FORMCREATE.uri_of_string >> ~[<<a_api | module Eliom_mkforms.FORMCREATE >>~]||
+|<<a_api text="user_type"| value Eliom_parameters.user_type >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~Allows to use whatever type you want for a parameter of the service~.
+>>
+|
+|<<a_api text="user_type_button"| value Eliom_predefmod.XHTMLFORMSSIG.user_type_button >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<button~>>> tag with user~_type content
+>>
+|
+|<<a_api text="user_type_button"| value Eliom_mkforms.ELIOMFORMSIG.user_type_button >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<button~>>> tag with user~_type content
+>>
+|
+|<<a_api text="user_type_checkbox"| value Eliom_predefmod.XHTMLFORMSSIG.user_type_checkbox >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a checkbox <<span class='code'|~<input~>>> tag that will have a "user type" value~.
+>>
+|
+|<<a_api text="user_type_checkbox"| value Eliom_mkforms.ELIOMFORMSIG.user_type_checkbox >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a checkbox <<span class='code'|~<input~>>> tag that will have a "user type" value~.
+>>
+|
+|<<a_api text="user_type_coordinates"| value Eliom_parameters.user_type_coordinates >> ~[<<a_api | module Eliom_parameters >>~]|<<div class="info"|~Same for a value of your own type
+>>
+|
+|<<a_api text="user_type_image_input"| value Eliom_predefmod.XHTMLFORMSSIG.user_type_image_input >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input type~="image" name~="~.~.~." value~="~.~.~."~>>> tag that sends
+   the coordinates the user clicked on and a value of user defined type
+>>
+|
+|<<a_api text="user_type_image_input"| value Eliom_mkforms.ELIOMFORMSIG.user_type_image_input >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input type~="image" name~="~.~.~." value~="~.~.~."~>>> tag that sends
+   the coordinates the user clicked on and a value of user defined type
+>>
+|
+|<<a_api text="user_type_input"| value Eliom_predefmod.XHTMLFORMSSIG.user_type_input >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input~>>> tag for a user type
+>>
+|
+|<<a_api text="user_type_input"| value Eliom_mkforms.ELIOMFORMSIG.user_type_input >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates an <<span class='code'|~<input~>>> tag for a user type
+>>
+|
+|<<a_api text="user_type_multiple_select"| value Eliom_predefmod.XHTMLFORMSSIG.user_type_multiple_select >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for user type values~.
+>>
+|
+|<<a_api text="user_type_multiple_select"| value Eliom_mkforms.ELIOMFORMSIG.user_type_multiple_select >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for user type values~.
+>>
+|
+|<<a_api text="user_type_radio"| value Eliom_predefmod.XHTMLFORMSSIG.user_type_radio >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a radio <<span class='code'|~<input~>>> tag with user~_type content
+>>
+|
+|<<a_api text="user_type_radio"| value Eliom_mkforms.ELIOMFORMSIG.user_type_radio >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a radio <<span class='code'|~<input~>>> tag with user~_type content
+>>
+|
+|<<a_api text="user_type_select"| value Eliom_predefmod.XHTMLFORMSSIG.user_type_select >> ~[<<a_api | module Eliom_predefmod.XHTMLFORMSSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for user type values~.
+>>
+|
+|<<a_api text="user_type_select"| value Eliom_mkforms.ELIOMFORMSIG.user_type_select >> ~[<<a_api | module Eliom_mkforms.ELIOMFORMSIG >>~]|<<div class="info"|~Creates a <<span class='code'|~<select~>>> tag for user type values~.
+>>
+|
+|@@ @class="alignleft"@@\\V|
+|<<a_api text="validator"| value XHTML.T.validator >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="validator_icon"| value XHTML.T.validator_icon >> ~[<<a_api | module XHTML.T >>~]|<<div class="info"|~A hyperlink to the ~W~3~C validator~, including the logo~.
+>>
+|
+|<<a_api text="var"| value XHTML.T.var >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="version"| value XHTML.T.version >> ~[<<a_api | module XHTML.T >>~]||
+|<<a_api text="void_extension"| value Ocsigen_extensions.void_extension >> ~[<<a_api | module Ocsigen_extensions >>~]|<<div class="info"|~A predefined function to be passed to <<a_api | val Ocsigen_extensions.register_extension >>
+    that defines no option~.
+>>
+|
+|@@ @class="alignleft"@@\\W|
+|<<a_api text="wait"| value Lwt_unix.wait >> ~[<<a_api | module Lwt_unix >>~]||
+|<<a_api text="wait"| value Lwt.wait >> ~[<<a_api | module Lwt >>~]|<<div class="info"|<<span class='code'|wait ~(~)>> is a thread which sleeps forever ~(unless it is
+          resumed by one of the functions <<span class='code'|wakeup>>~, <<span class='code'|wakeup~_exn>> below~)~.
+>>
+|
+|<<a_api text="wait_all_senders"| value Ocsigen_http_com.wait_all_senders >> ~[<<a_api | module Ocsigen_http_com >>~]||
+|<<a_api text="wait_read"| value Lwt_ssl.wait_read >> ~[<<a_api | module Lwt_ssl >>~]||
+|<<a_api text="wait_read"| value Lwt_unix.wait_read >> ~[<<a_api | module Lwt_unix >>~]|<<div class="info"|waits ~(without blocking other threads~)
+    until there is something to read on the file descriptor
+>>
+|
+|<<a_api text="wait_write"| value Lwt_ssl.wait_write >> ~[<<a_api | module Lwt_ssl >>~]||
+|<<a_api text="wait_write"| value Lwt_unix.wait_write >> ~[<<a_api | module Lwt_unix >>~]|<<div class="info"|waits ~(without blocking other threads~)
+    until it is possible to write on the file descriptor
+>>
+|
+|<<a_api text="waitpid"| value Lwt_unix.waitpid >> ~[<<a_api | module Lwt_unix >>~]||
+|<<a_api text="wakeup"| value Lwt.wakeup >> ~[<<a_api | module Lwt >>~]|<<div class="info"|<<span class='code'|wakeup t e>> makes the sleeping thread <<span class='code'|t>> terminate and
+         return the value of the expression <<span class='code'|e>>~.
+>>
+|
+|<<a_api text="wakeup_exn"| value Lwt.wakeup_exn >> ~[<<a_api | module Lwt >>~]|<<div class="info"|<<span class='code'|wakeup~_exn t e>> makes the sleeping thread <<span class='code'|t>> fail with the
+         exception <<span class='code'|e>>~.
+>>
+|
+|<<a_api text="wakeup_next_request"| value Ocsigen_http_com.wakeup_next_request >> ~[<<a_api | module Ocsigen_http_com >>~]||
+|<<a_api text="warning"| value Ocsigen_messages.warning >> ~[<<a_api | module Ocsigen_messages >>~]|<<div class="info"|~Write a message in warnings~.log
+>>
+|
+|<<a_api text="write"| value Lwt_ssl.write >> ~[<<a_api | module Lwt_ssl >>~]||
+|<<a_api text="write"| value Lwt_unix.write >> ~[<<a_api | module Lwt_unix >>~]||
+|<<a_api text="write_stream"| value Ocsigen_http_com.write_stream >> ~[<<a_api | module Ocsigen_http_com >>~]|<<div class="info"|~This function may return any ~I~/~O error from the channel~, or a
+interrupted stream exception~.
+>>
+|
+|@@ @class="alignleft"@@\\X|
+|<<a_api text="xhtml_list_print"| value Xhtmlcompact.xhtml_list_print >> ~[<<a_api | module Xhtmlcompact >>~]|<<div class="info"|~Ocsigen~'s compact printer for xhtml portions~.
+>>
+|
+|<<a_api text="xhtml_list_print"| value Xhtmlpretty.xhtml_list_print >> ~[<<a_api | module Xhtmlpretty >>~]|<<div class="info"|~Ocsigen~'s pretty printer for xhtml portions~.
+>>
+|
+|<<a_api text="xhtml_list_stream"| value Xhtmlcompact.xhtml_list_stream >> ~[<<a_api | module Xhtmlcompact >>~]|<<div class="info"|~Ocsigen~'s compact printer for xhtml portions~.
+>>
+|
+|<<a_api text="xhtml_list_stream"| value Xhtmlpretty.xhtml_list_stream >> ~[<<a_api | module Xhtmlpretty >>~]|<<div class="info"|~Ocsigen~'s pretty printer for xhtml portions~.
+>>
+|
+|<<a_api text="xhtml_print"| value Xhtmlcompact.xhtml_print >> ~[<<a_api | module Xhtmlcompact >>~]|<<div class="info"|~Ocsigen~'s compact printer for xhtml~.
+>>
+|
+|<<a_api text="xhtml_print"| value Xhtmlpretty.xhtml_print >> ~[<<a_api | module Xhtmlpretty >>~]|<<div class="info"|~Ocsigen~'s pretty printer for xhtml~.
+>>
+|
+|<<a_api text="xhtml_stream"| value Xhtmlcompact.xhtml_stream >> ~[<<a_api | module Xhtmlcompact >>~]|<<div class="info"|~Ocsigen~'s compact printer for xhtml~.
+>>
+|
+|<<a_api text="xhtml_stream"| value Xhtmlpretty.xhtml_stream >> ~[<<a_api | module Xhtmlpretty >>~]|<<div class="info"|~Ocsigen~'s pretty printer for xhtml~.
+>>
+|
+|@@ @class="alignleft"@@\\Y|
+|<<a_api text="yield"| value Lwt_unix.yield >> ~[<<a_api | module Lwt_unix >>~]|<<div class="info"|<<span class='code'|yield ~(~)>> is a threads which suspends itself ~(letting other
+          thread run~) and then resumes as soon as possible and
+          terminates~.
+>>
+|
+\\

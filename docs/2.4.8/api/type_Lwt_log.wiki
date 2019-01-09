@@ -1,0 +1,206 @@
+<<code language="ocaml" | sig
+  type level =
+    Lwt_log_core.level =
+      Debug
+    | Info
+    | Notice
+    | Warning
+    | Error
+    | Fatal
+  type logger = Lwt_log_core.logger
+  type section = Lwt_log_core.section
+  val string_of_level : level -> string
+  val load_rules : string -> unit
+  val add_rule : string -> level -> unit
+  val append_rule : string -> level -> unit
+  val reset_rules : unit -> unit
+  val log :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int ->
+    ?logger:logger -> level:level -> string -> unit Lwt.t
+  val log_f :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int ->
+    ?logger:logger ->
+    level:level -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+  val ign_log :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int ->
+    ?logger:logger -> level:level -> string -> unit
+  val ign_log_f :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int ->
+    ?logger:logger -> level:level -> ('a, unit, string, unit) format4 -> 'a
+  val debug :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int -> ?logger:logger -> string -> unit Lwt.t
+  val debug_f :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int ->
+    ?logger:logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+  val ign_debug :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int -> ?logger:logger -> string -> unit
+  val ign_debug_f :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int ->
+    ?logger:logger -> ('a, unit, string, unit) format4 -> 'a
+  val info :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int -> ?logger:logger -> string -> unit Lwt.t
+  val info_f :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int ->
+    ?logger:logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+  val ign_info :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int -> ?logger:logger -> string -> unit
+  val ign_info_f :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int ->
+    ?logger:logger -> ('a, unit, string, unit) format4 -> 'a
+  val notice :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int -> ?logger:logger -> string -> unit Lwt.t
+  val notice_f :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int ->
+    ?logger:logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+  val ign_notice :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int -> ?logger:logger -> string -> unit
+  val ign_notice_f :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int ->
+    ?logger:logger -> ('a, unit, string, unit) format4 -> 'a
+  val warning :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int -> ?logger:logger -> string -> unit Lwt.t
+  val warning_f :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int ->
+    ?logger:logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+  val ign_warning :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int -> ?logger:logger -> string -> unit
+  val ign_warning_f :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int ->
+    ?logger:logger -> ('a, unit, string, unit) format4 -> 'a
+  val error :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int -> ?logger:logger -> string -> unit Lwt.t
+  val error_f :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int ->
+    ?logger:logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+  val ign_error :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int -> ?logger:logger -> string -> unit
+  val ign_error_f :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int ->
+    ?logger:logger -> ('a, unit, string, unit) format4 -> 'a
+  val fatal :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int -> ?logger:logger -> string -> unit Lwt.t
+  val fatal_f :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int ->
+    ?logger:logger -> ('a, unit, string, unit Lwt.t) format4 -> 'a
+  val ign_fatal :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int -> ?logger:logger -> string -> unit
+  val ign_fatal_f :
+    ?exn:exn ->
+    ?section:section ->
+    ?location:string * int * int ->
+    ?logger:logger -> ('a, unit, string, unit) format4 -> 'a
+  module Section :
+    sig
+      type t = Lwt_log_core.section
+      val make : string -> Lwt_log_core.section
+      val name : Lwt_log_core.section -> string
+      val main : Lwt_log_core.section
+      val level : Lwt_log_core.section -> Lwt_log_core.level
+      val set_level : Lwt_log_core.section -> Lwt_log_core.level -> unit
+      val reset_level : Lwt_log_core.section -> unit
+    end
+  type template = Lwt_log_core.template
+  val location_key : (string * int * int) Lwt.key
+  exception Logger_closed
+  val make :
+    output:(section -> level -> string list -> unit Lwt.t) ->
+    close:(unit -> unit Lwt.t) -> logger
+  val close : logger -> unit Lwt.t
+  val default : logger ref
+  val broadcast : logger list -> logger
+  val dispatch : (section -> level -> logger) -> logger
+  val null : logger
+  val render :
+    buffer:Buffer.t ->
+    template:template ->
+    section:section -> level:level -> message:string -> unit
+  type syslog_facility =
+      [ `Auth
+      | `Authpriv
+      | `Console
+      | `Cron
+      | `Daemon
+      | `FTP
+      | `Kernel
+      | `LPR
+      | `Local0
+      | `Local1
+      | `Local2
+      | `Local3
+      | `Local4
+      | `Local5
+      | `Local6
+      | `Local7
+      | `Mail
+      | `NTP
+      | `News
+      | `Security
+      | `Syslog
+      | `UUCP
+      | `User ]
+  val syslog :
+    ?template:template ->
+    ?paths:string list -> facility:Lwt_log.syslog_facility -> unit -> logger
+  val file :
+    ?template:template ->
+    ?mode:[ `Append | `Truncate ] ->
+    ?perm:Unix.file_perm -> file_name:string -> unit -> logger Lwt.t
+  val channel :
+    ?template:template ->
+    close_mode:[ `Close | `Keep ] ->
+    channel:Lwt_io.output_channel -> unit -> logger
+end >>

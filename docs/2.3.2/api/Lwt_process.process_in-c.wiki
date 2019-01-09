@@ -1,0 +1,7 @@
+=Class <<a_api_type | class Lwt_process.process_in >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span name="TYPEprocess_in"|<<span class="ocsforge_color_keyword"|class>> <<span class="ocsforge_color_name"|process_in>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\<<span class="ocsforge_color_label"| ?timeout: >>float <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_label"| ?env: >>string array <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_label"| ?stdin: >><<a_api text="redirection" | type Lwt_process.redirection >> <<span class="ocsforge_color_delimiter"| -> >>\\<<span class="ocsforge_color_label"| ?stderr: >><<a_api text="redirection" | type Lwt_process.redirection >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="command" | type Lwt_process.command >> <<span class="ocsforge_color_delimiter"| -> >>>> <<span class="ocsforge_color_keyword"|object>><<a_api text=".." | class Lwt_process.process_in >><<span class="ocsforge_color_keyword"|end>>>>**~Inherits*** <<a_api | class Lwt_process.process_none >>
+
+
+----
+<<pre class="ocsforge_color odocwiki_code"|<<span id="METHODstdout"|<<span class="ocsforge_color_keyword"|method>> <<span class="odocwiki_name"|stdout>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="Lwt_io.input_channel" | type Lwt_io.input_channel >>>>>><<div class="odocwiki_info"|~The standard output of the process\\
+>>

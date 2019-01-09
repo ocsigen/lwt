@@ -1,0 +1,20 @@
+=Module <<a_api_type | module Lwt_list >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_list: <<span class='code'|sig>><<a_api text=".." | module Lwt_list >><<span class='code'|end>>>>~List helpers\\
+
+----
+\\
+~Note~: this module use the same naming convention as
+    <<a_api | module Lwt_stream >>~.\\
+\\
+
+======@@id="6_Listiterators"@@~List iterators======
+\\
+<<div id="VALiter_s" class="code"|<<span class="keyword"|val>> iter~_s : <<span class="code type"|('a -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a list -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALiter_p" class="code"|<<span class="keyword"|val>> iter~_p : <<span class="code type"|('a -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a list -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALmap_s" class="code"|<<span class="keyword"|val>> map~_s : <<span class="code type"|('a -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a list -> 'b list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALmap_p" class="code"|<<span class="keyword"|val>> map~_p : <<span class="code type"|('a -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a list -> 'b list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALrev_map_s" class="code"|<<span class="keyword"|val>> rev~_map~_s : <<span class="code type"|('a -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a list -> 'b list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALrev_map_p" class="code"|<<span class="keyword"|val>> rev~_map~_p : <<span class="code type"|('a -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a list -> 'b list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALfold_left_s" class="code"|<<span class="keyword"|val>> fold~_left~_s : <<span class="code type"|('a -> 'b -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a -> 'b list -> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALfold_right_s" class="code"|<<span class="keyword"|val>> fold~_right~_s : <<span class="code type"|('a -> 'b -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a list -> 'b -> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>>\\
+
+======@@id="6_Listscanning"@@~List scanning======
+\\
+<<div id="VALfor_all_s" class="code"|<<span class="keyword"|val>> for~_all~_s : <<span class="code type"|('a -> bool <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a list -> bool <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALfor_all_p" class="code"|<<span class="keyword"|val>> for~_all~_p : <<span class="code type"|('a -> bool <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a list -> bool <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALexists_s" class="code"|<<span class="keyword"|val>> exists~_s : <<span class="code type"|('a -> bool <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a list -> bool <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALexists_p" class="code"|<<span class="keyword"|val>> exists~_p : <<span class="code type"|('a -> bool <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a list -> bool <<a_api text="Lwt.t" | type Lwt.t >>>>>>\\
+
+======@@id="6_Listsearching"@@~List searching======
+\\
+<<div id="VALfind_s" class="code"|<<span class="keyword"|val>> find~_s : <<span class="code type"|('a -> bool <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a list -> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALfilter_s" class="code"|<<span class="keyword"|val>> filter~_s : <<span class="code type"|('a -> bool <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a list -> 'a list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALfilter_p" class="code"|<<span class="keyword"|val>> filter~_p : <<span class="code type"|('a -> bool <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a list -> 'a list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALpartition_s" class="code"|<<span class="keyword"|val>> partition~_s : <<span class="code type"|('a -> bool <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a list -> ('a list * 'a list) <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALpartition_p" class="code"|<<span class="keyword"|val>> partition~_p : <<span class="code type"|('a -> bool <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a list -> ('a list * 'a list) <<a_api text="Lwt.t" | type Lwt.t >>>>>>

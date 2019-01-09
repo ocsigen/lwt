@@ -1,0 +1,9 @@
+=Class <<a_api_type | class Lwt_engine.Versioned.libev_2 >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span name="TYPElibev_2"|<<span class="ocsforge_color_keyword"|class>> <<span class="ocsforge_color_name"|libev_2>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_label"| ?backend: >><<a_api text="Lwt_engine.Ev_backend.t" | type Lwt_engine.Ev_backend.t >> <<span class="ocsforge_color_delimiter"| -> >> unit <<span class="ocsforge_color_delimiter"| -> >>>> <<span class="ocsforge_color_keyword"|object>><<a_api text=".." | class Lwt_engine.Versioned.libev_2 >><<span class="ocsforge_color_keyword"|end>>>><<span class="odocwiki_warning"|Deprecated.>>~Use <<a_api | class Lwt_engine.libev >>~.
+~Since ~Lwt ~3~.~0~.~0~, this is just an alias for <<a_api | class Lwt_engine.libev >>~.
+**Since** 2.7.0\\
+**~Inherits**
+* <<a_api | class Lwt_engine.t >>
+
+----
+<<pre class="ocsforge_color odocwiki_code"|<<span id="ATTloop"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|loop>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="Lwt_engine.ev_loop" | type Lwt_engine.ev_loop >>>>>><<pre class="ocsforge_color odocwiki_code"|<<span id="METHODloop"|<<span class="ocsforge_color_keyword"|method>> <<span class="odocwiki_name"|loop>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="Lwt_engine.ev_loop" | type Lwt_engine.ev_loop >>>>>>

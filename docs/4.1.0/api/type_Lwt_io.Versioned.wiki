@@ -1,0 +1,18 @@
+<<code language="ocaml" | sig
+  val establish_server_1 :
+    ?fd:Lwt_unix.file_descr ->
+    ?buffer_size:int ->
+    ?backlog:int ->
+    Unix.sockaddr ->
+    (Lwt_io.input_channel * Lwt_io.output_channel -> unit) -> Lwt_io.server
+  val establish_server_2 :
+    ?fd:Lwt_unix.file_descr ->
+    ?buffer_size:int ->
+    ?backlog:int ->
+    ?no_close:bool ->
+    Unix.sockaddr ->
+    (Lwt_io.input_channel * Lwt_io.output_channel -> unit Lwt.t) ->
+    Lwt_io.server Lwt.t
+  val shutdown_server_1 : Lwt_io.server -> unit
+  val shutdown_server_2 : Lwt_io.server -> unit Lwt.t
+end >>

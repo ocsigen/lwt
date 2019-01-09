@@ -1,0 +1,747 @@
+=Module type <<a_api_type | module type XHTML.T_01_01 >> =
+<<div class="code"|<<span class="keyword"|module type>> T_01_01 = <<span class="code type"|<<a_api text="T" | module XHTML.T >>>>>>~An alias for ~X~H~T~M~L ~1~.~1 ~(for symmetry~)~:\\
+**See also** [[http://www.w3.org/TR/xhtml11/|~X~H~T~M~L ~1~.~1 ~- ~Module~-based ~X~H~T~M~L]]\\
+
+----
+\\
+~The elements~, attributes~, attribute types and data types are given names
+    that match the names in the ~W~3~C recommendation as closely as allowed by
+    a strict typing discipline and the lexical conventions of ~O~'~Caml~:
+    * //elements// are implemented as ~O~'~Caml constructors with the same name as
+         in the ~W~3~C recommendation~.  ~The domain and codomain are specified as <<span class='code'|~'a elt>>~,
+         where <<span class='code'|~'a>> is a concrete phantom type build out of polymorphic variants~.
+* //attributes// are implemented as ~O~'~Caml constructors with <<span class='code'|a~_>> prefixed to the
+         name~.  ~The name is the same as in the ~W~3~C recommendation~, unless an additional
+         prefix is required to disambiguate~:
+         ** <<span class='code'|a~_fs~_rows>> and <<span class='code'|a~_fs~_cols>> instead of <<span class='code'|a~_rows>> and <<span class='code'|a~_cols>> for framesets~,
+              because of the different argument types~.
+
+
+* //attribute types// are implemented as ~O~'~Caml types that all have the same names
+         as in the ~W~3~C recommendation~, but are all lowercase~.
+* //data types// are also implemented as ~O~'~Caml types that all have the same names
+         as in the ~W~3~C recommendation and are again all lowercase~.
+
+\\
+
+
+    ~Finite sets of alternatives are mapped to polymorphic variants~.\\
+
+
+    ~The phantom type is always the //most general// required by any ~(supported~)
+    version of the standard~.  ~Type discipline is enforced by exporting or not~-exporting
+    the corresponding constructor~.\\
+\\
+
+=@@id="1_AttributeTypes"@@~Attribute ~Types=
+\\
+<<div class="code" id="TYPEcdata"|<<span class="keyword"|type>> cdata = <<span class="code type"|string>> >>
+<<div class="info"|~Character data\\
+>>
+
+<<div class="code" id="TYPEid"|<<span class="keyword"|type>> id = <<span class="code type"|string>> >>
+<<div class="info"|~A document~-unique identifier\\
+>>
+
+<<div class="code" id="TYPEidref"|<<span class="keyword"|type>> idref = <<span class="code type"|string>> >>
+<<div class="info"|~A reference to a document~-unique identifier\\
+>>
+
+<<div class="code" id="TYPEidrefs"|<<span class="keyword"|type>> idrefs = <<span class="code type"|<<a_api text="idref" | type XHTML.T.idref >> list>> >>
+<<div class="info"|~A space~-separated list of references to document~-unique identifiers\\
+>>
+
+<<div class="code" id="TYPEname"|<<span class="keyword"|type>> name = <<span class="code type"|string>> >>
+<<div class="info"|~A name with the same character constraints as ~I~D above\\
+>>
+
+<<div class="code" id="TYPEnmtoken"|<<span class="keyword"|type>> nmtoken = <<span class="code type"|string>> >>
+<<div class="info"|~A name composed of only name tokens as defined in ~X~M~L ~1~.~0\\
+**See also** [[http://www.w3.org/TR/2000/REC-xml-20001006|~X~M~L ~1~.~0]]\\
+>>
+
+<<div class="code" id="TYPEnmtokens"|<<span class="keyword"|type>> nmtokens = <<span class="code type"|<<a_api text="nmtoken" | type XHTML.T.nmtoken >> list>> >>
+<<div class="info"|~One or more white space separated ~N~M~T~O~K~E~N values\\
+>>
+
+<<div class="code" id="TYPEpcdata"|<<span class="keyword"|type>> pcdata = <<span class="code type"|string>> >>
+<<div class="info"|~Processed character data\\
+>>
+
+\\
+
+==@@id="2_DataTypes"@@~Data ~Types==
+\\
+<<div class="code" id="TYPEcharacter"|<<span class="keyword"|type>> character = <<span class="code type"|char>> >>
+<<div class="info"|~A single character from ~I~S~O ~1~0~6~4~6~.\\
+>>
+
+<<div class="code" id="TYPEcharset"|<<span class="keyword"|type>> charset = <<span class="code type"|string>> >>
+<<div class="info"|~A character encoding~, as per ~R~F~C~2~0~4~5 ~(~M~I~M~E~)~.\\
+**See also** [[http://www.ietf.org/rfc/rfc2045.txt|~R~F~C~2~0~4~5]]\\
+>>
+
+<<div class="code" id="TYPEcharsets"|<<span class="keyword"|type>> charsets = <<span class="code type"|<<a_api text="charset" | type XHTML.T.charset >> list>> >>
+<<div class="info"|~A space~-separated list of character encodings~, as per ~R~F~C~2~0~4~5 ~(~M~I~M~E~)~.\\
+**See also** [[http://www.ietf.org/rfc/rfc2045.txt|~R~F~C~2~0~4~5]]\\
+>>
+
+<<div class="code" id="TYPEcolor"|<<span class="keyword"|type>> color = <<span class="code type"|\\{{{   }}}[ `Aqua\\{{{   }}}  | `Black\\{{{   }}}  | `Blue\\{{{   }}}  | `Fuchsia\\{{{   }}}  | `Gray\\{{{   }}}  | `Green\\{{{   }}}  | `Hex of string\\{{{   }}}  | `Lime\\{{{   }}}  | `Maroon\\{{{   }}}  | `Navy\\{{{   }}}  | `Olive\\{{{   }}}  | `Purple\\{{{   }}}  | `RGB of int * int * int\\{{{   }}}  | `Red\\{{{   }}}  | `Silver\\{{{   }}}  | `Teal\\{{{   }}}  | `White\\{{{   }}}  | `Yellow ]>> >>
+<<div class="info"|~The attribute value type <<span class='code'|color>> refers to color definitions as specified in
+    ~S~R~G~B~.  ~A color value may either be a hexadecimal number ~(prefixed by a hash mark~)
+    or one of the following sixteen color names~. ~The color names are case~-insensitive~.\\
+**See also** [[http://www.w3.org/Graphics/Color/sRGB|~A ~Standard ~Default ~Color ~Space for the ~Internet~.]]\\
+>>
+
+<<div class="code" id="TYPEcontenttype"|<<span class="keyword"|type>> contenttype = <<span class="code type"|string>> >>
+<<div class="info"|~A media type~, as per ~R~F~C~2~0~4~5 ~(~M~I~M~E~)~.\\
+**See also** [[http://www.ietf.org/rfc/rfc2045.txt|~R~F~C~2~0~4~5]]\\
+>>
+
+<<div class="code" id="TYPEcontenttypes"|<<span class="keyword"|type>> contenttypes = <<span class="code type"|<<a_api text="contenttype" | type XHTML.T.contenttype >> list>> >>
+<<div class="info"|~A comma~-separated list of media types~, as per ~R~F~C~2~0~4~5 ~(~M~I~M~E~)~.\\
+**See also** [[http://www.ietf.org/rfc/rfc2045.txt|~R~F~C~2~0~4~5]]\\
+>>
+
+<<div class="code" id="TYPEcoords"|<<span class="keyword"|type>> coords = <<span class="code type"|string list>> >>
+<<div class="info"|~Comma~- separated list of coordinates to use in defining areas~.\\
+>>
+
+<<div class="code" id="TYPEdatetime"|<<span class="keyword"|type>> datetime = <<span class="code type"|string>> >>
+<<div class="info"|~Date and time information~.\\
+>>
+
+<<div class="code" id="TYPEfpi"|<<span class="keyword"|type>> fpi = <<span class="code type"|string>> >>
+<<div class="info"|~A character string representing an ~S~G~M~L ~Formal ~Public ~Identifier~.\\
+>>
+
+<<div class="code" id="TYPEframetarget"|<<span class="keyword"|type>> frametarget = <<span class="code type"|string>> >>
+<<div class="info"|~Frame name used as destination for results of certain actions~.\\
+>>
+
+<<div class="code" id="TYPElanguagecode"|<<span class="keyword"|type>> languagecode = <<span class="code type"|string>> >>
+<<div class="info"|~A language code~, as per ~R~F~C~3~0~6~6~.\\
+**See also** [[http://www.ietf.org/rfc/rfc3066.txt|~R~F~C~3~0~6~6]]\\
+>>
+
+<<div class="code" id="TYPElength"|<<span class="keyword"|type>> length = <<span class="code type"|[ `Percent of int | `Pixels of int ]>> >>
+<<div class="info"|~The value may be either in pixels or a percentage of the available
+    horizontal or vertical space~. ~Thus~, the value <<span class='code'|`~Percent ~5~0>> means half of
+    the available space~.\\
+>>
+
+<<div class="code" id="TYPElinktypes"|<<span class="keyword"|type>> linktypes = <<span class="code type"|\\{{{   }}}[ `Alternate\\{{{   }}}  | `Appendix\\{{{   }}}  | `Bookmark\\{{{   }}}  | `Chapter\\{{{   }}}  | `Contents\\{{{   }}}  | `Copyright\\{{{   }}}  | `Glossary\\{{{   }}}  | `Help\\{{{   }}}  | `Index\\{{{   }}}  | `Next\\{{{   }}}  | `Other of string\\{{{   }}}  | `Prev\\{{{   }}}  | `Section\\{{{   }}}  | `Start\\{{{   }}}  | `Stylesheet\\{{{   }}}  | `Subsection ] list>> >>
+<<div class="info"|~Authors may use the following recognized link types~, listed here with
+    their conventional interpretations~. ~A ~Link~Types value refers to a
+    space~-separated list of link types~. ~White space characters are not
+    permitted within link types~.  ~These link types are case~-insensitive~, i~.e~.~,
+    <<span class='code'|"~Alternate">> has the same meaning as <<span class='code'|"alternate">>~. \\
+
+
+    ~User agents~, search engines~, etc~. may interpret these link types in a
+    variety of ways~. ~For example~, user agents may provide access to linked
+    documents through a navigation bar~.\\
+
+
+    * <<span class='code'|`~Alternate>>~:
+         ~Designates substitute versions for the document in which the link occurs~.
+         ~When used together with the hreflang attribute~, it implies a translated
+         version of the document~. ~When used together with the media attribute~,
+         it implies a version designed for a different medium ~(or media~)~.
+* <<span class='code'|`~Stylesheet>>~:
+         ~Refers to an external style sheet~. ~See the ~Style ~Module for details~.
+         ~This is used together with the link type <<span class='code'|"~Alternate">> for user~-selectable
+         alternate style sheets~.
+* <<span class='code'|`~Start>>~:
+         ~Refers to the first document in a collection of documents~.
+         ~This link type tells search engines which document is considered
+         by the author to be the starting point of the collection~.
+* <<span class='code'|`~Next>>~:
+         ~Refers to the next document in a linear sequence of documents~.
+         ~User agents may choose to pre~-load the "next" document~, to reduce
+         the perceived load time~.
+* <<span class='code'|`~Prev>>~:
+         ~Refers to the previous document in an ordered series of documents~.
+         ~Some user agents also support the synonym "~Previous"~.
+* <<span class='code'|`~Contents>>~:
+         ~Refers to a document serving as a table of contents~. ~Some user
+         agents also support the synonym ~To~C ~(from "~Table of ~Contents"~)~.
+* <<span class='code'|`~Index>>~:
+         ~Refers to a document providing an index for the current document~.
+* <<span class='code'|`~Glossary>>~:
+         ~Refers to a document providing a glossary of terms that pertain to
+         the current document~.
+* <<span class='code'|`~Copyright>>~:
+         ~Refers to a copyright statement for the current document~.
+* <<span class='code'|`~Chapter>>~:
+         ~Refers to a document serving as a chapter in a collection of documents~.
+* <<span class='code'|`~Section>>~:
+         ~Refers to a document serving as a section in a collection of documents~.
+* <<span class='code'|`~Subsection>>~:
+         ~Refers to a document serving as a subsection in a collection of documents~.
+* <<span class='code'|`~Appendix>>~:
+         ~Refers to a document serving as an appendix in a collection of documents~.
+* <<span class='code'|`~Help>>~:
+         ~Refers to a document offering help ~(more information~, links to other
+         sources information~, etc~.~)
+* <<span class='code'|`~Bookmark>>~:
+         ~Refers to a bookmark~. ~A bookmark is a link to a key entry point within
+         an extended document~. ~The title attribute may be used~, for example~, to
+         label the bookmark~. ~Note that several bookmarks may be defined in each
+         document~.
+* <<span class='code'|`~Other>>~:
+         refers to any other type ~(for example <<span class='code'|icon>> or <<span class='code'|shortcut>>~)~.
+         
+
+\\
+>>
+
+<<div class="code" id="TYPEmediadesc"|<<span class="keyword"|type>> mediadesc = <<span class="code type"|\\{{{   }}}[ `All\\{{{   }}}  | `Aural\\{{{   }}}  | `Braille\\{{{   }}}  | `Handheld\\{{{   }}}  | `Print\\{{{   }}}  | `Projection\\{{{   }}}  | `Screen\\{{{   }}}  | `TTY\\{{{   }}}  | `TV ] list>> >>
+<<div class="info"|~The ~Media~Desc attribute is a comma~-separated list of media descriptors~.
+    ~The following is a list of recognized media descriptors~:
+    * <<span class='code'|`~Screen>>~:
+         ~Intended for non~-paged computer screens~.
+* <<span class='code'|`~T~T~Y>>~:
+         ~Intended for media using a fixed~-pitch character grid~, such as
+         teletypes~, terminals~, or portable devices with limited display
+         capabilities~.
+* <<span class='code'|`~T~V>>~:
+         ~Intended for television~-type devices ~(low resolution~, color~,
+         limited scrollability~)~.
+* <<span class='code'|`~Projection>>~:
+         ~Intended for projectors~.
+* <<span class='code'|`~Handheld>>~:
+         ~Intended for handheld devices ~(small screen~, monochrome~,
+         bitmapped graphics~, limited bandwidth~)~.
+* <<span class='code'|`~Print>>~:
+         ~Intended for paged~, opaque material and for documents viewed
+         on screen in print preview mode~.
+* <<span class='code'|`~Braille>>~:
+         ~Intended for braille tactile feedback devices~.
+* <<span class='code'|`~Aural>>~:
+         ~Intended for speech synthesizers~.
+* <<span class='code'|`~All>>~:
+         ~Suitable for all devices~.
+
+\\
+
+
+    ~Future versions of ~X~H~T~M~L may introduce new values and may allow
+    parameterized values~. ~To facilitate the introduction of these
+    extensions~, conforming user agents must be able to parse the media
+    attribute value as follows~:
+    # ~The value is a comma~-separated list of entries~. ~For example~,
+         <<span class='code'|media~="screen~, ~3d~-glasses~, print and resolution ~> ~9~0dpi">>
+         is mapped to~: <<span class='code'|"screen">>~, <<span class='code'|"~3d~-glasses">>~,
+         <<span class='code'|"print and resolution ~> ~9~0dpi">>~.
+# ~Each entry is truncated just before the first character that
+         isn~'t a ~U~S ~A~S~C~I~I letter <<span class='code'|~[a~-z~A~-~Z~]>> ~(~I~S~O ~1~0~6~4~6 hex ~4~1~-~5a~,
+         ~6~1~-~7a~)~, digit <<span class='code'|~[~0~-~9~]>> ~(hex ~3~0~-~3~9~)~, or hyphen~-minus ~(hex ~2d~)~.
+         ~In the example~, this gives~: <<span class='code'|"screen">>~, <<span class='code'|"~3d~-glasses">>~, <<span class='code'|"print">>~.
+# ~A case~-insensitive match is then made with the set of media
+         types defined above~. ~User agents may ignore entries that
+         don~'t match~.  ~In the example we are left with <<span class='code'|"screen">> and
+         <<span class='code'|"print">>~.
+
+\\
+
+
+    ~Note~. ~Style sheets may include media~-dependent variations within them
+    ~(e~.g~.~, the <<span class='code'|~C~S~S ~@media>> construct~)~. ~In such cases it may be appropriate
+    to use <<span class='code'|"media~=all">>~.\\
+>>
+
+<<div class="code" id="TYPEmultilength"|<<span class="keyword"|type>> multilength = <<span class="code type"|[ `Percent of int | `Pixels of int | `Relative of int ]>> >>
+<<div class="info"|~The value may be a ~Length or a relative length~. ~A relative length
+    has the form <<span class='code'|"i~*">>~, where <<span class='code'|"i">> is an integer~. ~When allotting space
+    among elements competing for that space~, user agents allot pixel
+    and percentage lengths first~, then divide up remaining available
+    space among relative lengths~. ~Each relative length receives a
+    portion of the available space that is proportional to the integer
+    preceding the <<span class='code'|"~*">>~. ~The value <<span class='code'|"~*">> is equivalent to <<span class='code'|"~1~*">>~. ~Thus~, if
+    ~6~0 pixels of space are available after the user agent allots pixel
+    and percentage space~, and the competing relative lengths are <<span class='code'|"~1~*">>~,
+    <<span class='code'|"~2~*">>~, and <<span class='code'|"~3~*">>~, the <<span class='code'|"~1~*">> will be allotted ~1~0 pixels~, the <<span class='code'|"~2~*">> will be
+    allotted ~2~0 pixels~, and the <<span class='code'|"~3~*">> will be allotted ~3~0 pixels~.\\
+>>
+
+<<div class="code" id="TYPEmultilengths"|<<span class="keyword"|type>> multilengths = <<span class="code type"|<<a_api text="multilength" | type XHTML.T.multilength >> list>> >>
+
+\\
+~A comma separated list of items of type ~Multi~Length~.\\
+<<div class="code" id="TYPEnumber"|<<span class="keyword"|type>> number = <<span class="code type"|int>> >>
+<<div class="info"|~One or more digits~.\\
+>>
+
+<<div class="code" id="TYPEpixels"|<<span class="keyword"|type>> pixels = <<span class="code type"|int>> >>
+
+\\
+~The value is an integer that represents the number of pixels of
+    the canvas ~(screen~, paper~)~. ~Thus~, the value <<span class='code'|"~5~0">> means fifty
+    pixels~. ~For normative information about the definition of a pixel~,
+    please consult ~C~S~S~2~.\\
+<<div class="code" id="TYPEscript"|<<span class="keyword"|type>> script = <<span class="code type"|string>> >>
+<<div class="info"|~Script data can be the content of the <<span class='code'|"script">> element and the
+    value of intrinsic event attributes~. ~User agents must not evaluate
+    script data as ~H~T~M~L markup but instead must pass it on as data to a
+    script engine~.\\
+
+
+    ~The case~-sensitivity of script data depends on the scripting
+    language~.\\
+
+
+    ~Please note that script data that is element content may not
+    contain character references~, but script data that is the value of
+    an attribute may contain them~.\\
+>>
+
+<<div class="code" id="TYPEtext"|<<span class="keyword"|type>> text = <<span class="code type"|string>> >>
+<<div class="info"|~Arbitrary textual data~, likely meant to be human~-readable~.\\
+>>
+
+<<div class="code" id="TYPEuri"|<<span class="keyword"|type>> uri>>
+
+<<div id="VALuri_of_string" class="code"|<<span class="keyword"|val>> uri~_of~_string : <<span class="code type"|string -> <<a_api text="uri" | type XHTML.T.uri >>>>>><<div id="VALstring_of_uri" class="code"|<<span class="keyword"|val>> string~_of~_uri : <<span class="code type"|<<a_api text="uri" | type XHTML.T.uri >> -> string>>>><<div class="info"|~A ~Uniform ~Resource ~Identifier~, as per ~R~F~C~2~3~9~6~.\\
+**See also** [[http://www.ietf.org/rfc/rfc2396.txt|~R~F~C~2~3~9~6]]\\
+>>
+<<div class="code" id="TYPEuris"|<<span class="keyword"|type>> uris = <<span class="code type"|<<a_api text="uri" | type XHTML.T.uri >>>> >>
+<<div class="info"|~A space~-separated list of ~Uniform ~Resource ~Identifiers~, as per ~R~F~C~2~3~9~6~.\\
+**See also** [[http://www.ietf.org/rfc/rfc2396.txt|~R~F~C~2~3~9~6]]\\
+>>
+
+\\
+
+=@@id="1_CommonAttributes"@@~Common ~Attributes=
+\\
+<<div class="code" id="TYPEattrib"|<<span class="keyword"|type>> <<span class="code type"|+'a>> attrib>>
+
+<<div class="code" id="TYPEattribs"|<<span class="keyword"|type>> <<span class="code type"|+'a>> attribs>>
+
+<<div id="VALto_xmlattribs" class="code"|<<span class="keyword"|val>> to~_xmlattribs : <<span class="code type"|'a <<a_api text="attrib" | type XHTML.T.attrib >> list -> XML.attrib list>>>>\\
+<<span class='code'|~'a>> is known as a //phantom type//~.  ~The implementation is
+       actually monomorphic ~(the different element types are distinguished
+       by a homogeneous variable~, such as their textual representation~)
+       and the type variable <<span class='code'|`a>> is just used by the type checker~.\\
+
+
+       ~N~B~: ~It might be possible to use polymorphic variants directly~, without
+       phantom types~, but the implementation is likely to be more involved~.\\
+\\
+
+==@@id="2_Core"@@~Core==
+\\
+<<div class="code" id="TYPEcore"|<<span class="keyword"|type>> core = <<span class="code type"|[ `Class | `Id | `Title ]>> >>
+
+<<div id="VALa_class" class="code"|<<span class="keyword"|val>> a~_class : <<span class="code type"|<<a_api text="nmtokens" | type XHTML.T.nmtokens >> -> [> `Class ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div class="info"|~This attribute assigns a class name or set of class names to an
+    element~. ~Any number of elements may be assigned the same class
+    name or names~.\\
+>>
+<<div id="VALa_id" class="code"|<<span class="keyword"|val>> a~_id : <<span class="code type"|<<a_api text="id" | type XHTML.T.id >> -> [> `Id ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div class="info"|~This attribute assigns a name to an element~. ~This name must be
+    unique in a document~.\\
+>>
+<<div id="VALa_title" class="code"|<<span class="keyword"|val>> a~_title : <<span class="code type"|<<a_api text="cdata" | type XHTML.T.cdata >> -> [> `Title ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div class="info"|~This attribute offers advisory information about the element for
+    which it is set~.\\
+>>
+\\
+~Values of the title attribute may be rendered by user agents in a
+    variety of ways~. ~For instance~, visual browsers frequently display
+    the title as a //tool tip// ~(a short message that appears when the
+    pointing device pauses over an object~)~. ~Audio user agents may
+    speak the title information in a similar context~.\\
+\\
+~The title attribute has an additional role when used with the <<span class='code'|link>>
+    element to designate an external style sheet~. ~Please consult the
+    section on links and style sheets for details~.\\
+\\
+
+==@@id="2_I18N"@@~I~1~8~N==
+\\
+<<div class="code" id="TYPEi18n"|<<span class="keyword"|type>> i~1~8n = <<span class="code type"|[ `XML_lang ]>> >>
+
+<<div id="VALa_xml_lang" class="code"|<<span class="keyword"|val>> a~_xml~_lang : <<span class="code type"|<<a_api text="nmtoken" | type XHTML.T.nmtoken >> -> [> `XML_lang ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>>\\
+
+==@@id="2_Style"@@~Style==
+
+    ~The ~Style collection is deprecated~, because the ~Style ~Attribute ~Module is
+    deprecated~.\\
+<<div class="code" id="TYPEcommon"|<<span class="keyword"|type>> common = <<span class="code type"|[ `Class | `Id | `Title | `XML_lang ]>> >>
+
+\\
+
+=@@id="1_ModulesElementSetsandAttributes"@@~Modules~, ~Element ~Sets and ~Attributes =
+\\
+\\
+
+==@@id="2_52"@@~5~.~2~. ~Core ~Modules==
+\\
+\\
+
+===@@id="3_521"@@~5~.~2~.~1~. ~Structure ~Module===
+\\
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="STRUCTURE" | module XHTML.T.STRUCTURE >>: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.STRUCTURE >><<span class='code'|end>>>><<div id="VALa_profile" class="code"|<<span class="keyword"|val>> a~_profile : <<span class="code type"|<<a_api text="uri" | type XHTML.T.uri >> -> [> `Profile ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_version" class="code"|<<span class="keyword"|val>> a~_version : <<span class="code type"|<<a_api text="cdata" | type XHTML.T.cdata >> -> [> `Version ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_xmlns" class="code"|<<span class="keyword"|val>> a~_xmlns : <<span class="code type"|[< `W3_org_1999_xhtml ] -> [> `XMLns ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>>\\
+
+===@@id="3_522"@@~5~.~2~.~2~. ~Text ~Module===
+\\
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="TEXT" | module XHTML.T.TEXT >>: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.TEXT >><<span class='code'|end>>>><<div id="VALa_cite" class="code"|<<span class="keyword"|val>> a~_cite : <<span class="code type"|<<a_api text="uri" | type XHTML.T.uri >> -> [> `Cite ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_xml_space" class="code"|<<span class="keyword"|val>> a~_xml~_space : <<span class="code type"|[< `Preserve ] -> [> `XML_space ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>>\\
+
+===@@id="3_523"@@~5~.~2~.~3~. ~Hypertext ~Module===
+\\
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="HYPERTEXT" | module XHTML.T.HYPERTEXT >>: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.HYPERTEXT >><<span class='code'|end>>>><<div id="VALa_accesskey" class="code"|<<span class="keyword"|val>> a~_accesskey : <<span class="code type"|<<a_api text="character" | type XHTML.T.character >> -> [> `Accesskey ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div class="info"|~This attribute assigns an access key to an element~. ~An access key
+    is a single character from the document character
+    set~. ~N~B~: authors should consider the input method of the
+    expected reader when specifying an accesskey~.\\
+>>
+<<div id="VALa_charset" class="code"|<<span class="keyword"|val>> a~_charset : <<span class="code type"|<<a_api text="charset" | type XHTML.T.charset >> -> [> `Charset ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div class="info"|~This attribute specifies the character encoding of the resource
+    designated by the link~. ~Please consult the section on character
+    encodings for more details~.\\
+>>
+<<div id="VALa_accept_charset" class="code"|<<span class="keyword"|val>> a~_accept~_charset : <<span class="code type"|<<a_api text="charset" | type XHTML.T.charset >> -> [> `Accept_charset ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_accept" class="code"|<<span class="keyword"|val>> a~_accept : <<span class="code type"|<<a_api text="contenttype" | type XHTML.T.contenttype >> -> [> `Accept ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_href" class="code"|<<span class="keyword"|val>> a~_href : <<span class="code type"|<<a_api text="uri" | type XHTML.T.uri >> -> [> `Href ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div class="info"|~This attribute specifies the location of a ~Web resource~, thus
+    defining a link between the current element ~(the source anchor~)
+    and the destination anchor defined by this attribute~.\\
+>>
+<<div id="VALa_hreflang" class="code"|<<span class="keyword"|val>> a~_hreflang : <<span class="code type"|<<a_api text="languagecode" | type XHTML.T.languagecode >> -> [> `Hreflang ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div class="info"|~This attribute specifies the base language of the resource
+    designated by href and may only be used when href is specified~.\\
+>>
+<<div id="VALa_rel" class="code"|<<span class="keyword"|val>> a~_rel : <<span class="code type"|<<a_api text="linktypes" | type XHTML.T.linktypes >> -> [> `Rel ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div class="info"|~This attribute describes the relationship from the current document
+    to the anchor specified by the href attribute~. ~The value of this attribute
+    is a space~-separated list of link types~.\\
+>>
+<<div id="VALa_rev" class="code"|<<span class="keyword"|val>> a~_rev : <<span class="code type"|<<a_api text="linktypes" | type XHTML.T.linktypes >> -> [> `Rev ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div class="info"|~This attribute is used to describe a reverse link from the anchor specified
+    by the href attribute to the current document~. ~The value of this attribute
+    is a space~-separated list of link types~.\\
+>>
+<<div id="VALa_tabindex" class="code"|<<span class="keyword"|val>> a~_tabindex : <<span class="code type"|<<a_api text="number" | type XHTML.T.number >> -> [> `Tabindex ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div class="info"|~This attribute specifies the position of the current element in
+    the tabbing order for the current document~. ~This value must be a
+    number between ~0 and ~3~2~7~6~7~. ~User agents should ignore leading
+    zeros~.\\
+>>
+<<div id="VALa_type" class="code"|<<span class="keyword"|val>> a~_type : <<span class="code type"|<<a_api text="contenttype" | type XHTML.T.contenttype >> -> [> `Type ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div class="info"|~This attribute gives an advisory hint as to the content type of
+    the content available at the link target address~. ~It allows user
+    agents to opt to use a fallback mechanism rather than fetch the
+    content if they are advised that they will get content in a
+    content type they do not support~.~Authors who use this attribute
+    take responsibility to manage the risk that it may become
+    inconsistent with the content available at the link target
+    address~.\\
+>>
+\\
+
+===@@id="3_523"@@~5~.~2~.~3~. ~List ~Module===
+\\
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="LIST" | module XHTML.T.LIST >>: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.LIST >><<span class='code'|end>>>>\\
+
+==@@id="2_53"@@~5~.~3~. ~Applet ~Module==
+
+    ~This module is deprecated~. ~Similar functionality
+    can be found in the ~Object ~Module~.\\
+\\
+
+==@@id="2_54"@@~5~.~4~. ~Text ~Extension ~Modules==
+\\
+\\
+
+===@@id="3_541"@@~5~.~4~.~1~. ~Presentation ~Module===
+\\
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="PRESENTATION" | module XHTML.T.PRESENTATION >>: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.PRESENTATION >><<span class='code'|end>>>>\\
+
+===@@id="3_542"@@~5~.~4~.~2~. ~Edit ~Module===
+\\
+<<div id="VALa_datetime" class="code"|<<span class="keyword"|val>> a~_datetime : <<span class="code type"|<<a_api text="cdata" | type XHTML.T.cdata >> -> [> `Datetime ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>>\\
+
+===@@id="3_543"@@~5~.~4~.~3~. ~Bi~-directional ~Text ~Module===
+\\
+<<div id="VALa_dir" class="code"|<<span class="keyword"|val>> a~_dir : <<span class="code type"|[< `Ltr | `Rtl ] -> [> `Dir ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>>\\
+
+==@@id="2_55"@@~5~.~5~. ~Forms ~Modules==
+\\
+\\
+
+===@@id="3_551"@@~5~.~5~.~1~. ~Basic ~Forms ~Module===
+\\
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="FORMS" | module XHTML.T.FORMS >>: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.FORMS >><<span class='code'|end>>>><<div id="VALa_action" class="code"|<<span class="keyword"|val>> a~_action : <<span class="code type"|<<a_api text="uri" | type XHTML.T.uri >> -> [> `Action ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div class="info"|~This attribute specifies a form processing agent~. ~User agent
+    behavior for a value other than an ~H~T~T~P ~U~R~I is undefined~.\\
+>>
+<<div id="VALa_checked" class="code"|<<span class="keyword"|val>> a~_checked : <<span class="code type"|[< `Checked ] -> [> `Checked ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div class="info"|~When the <<span class='code'|type>> attribute has the value <<span class='code'|"radio">> or <<span class='code'|"checkbox">>~,
+    this boolean attribute specifies that the button is on~. ~User
+    agents must ignore this attribute for other control types~.\\
+>>
+<<div id="VALa_cols" class="code"|<<span class="keyword"|val>> a~_cols : <<span class="code type"|<<a_api text="number" | type XHTML.T.number >> -> [> `Cols ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div class="info"|~This attribute specifies the visible width in average character
+    widths~. ~Users should be able to enter longer lines than this~, so
+    user agents should provide some means to scroll through the
+    contents of the control when the contents extend beyond the
+    visible area~. ~User agents may wrap visible text lines to keep long
+    lines visible without the need for scrolling~.\\
+>>
+<<div id="VALa_enctype" class="code"|<<span class="keyword"|val>> a~_enctype : <<span class="code type"|<<a_api text="contenttype" | type XHTML.T.contenttype >> -> [> `Enctype ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_for" class="code"|<<span class="keyword"|val>> a~_for : <<span class="code type"|<<a_api text="idref" | type XHTML.T.idref >> -> [> `For ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_maxlength" class="code"|<<span class="keyword"|val>> a~_maxlength : <<span class="code type"|<<a_api text="number" | type XHTML.T.number >> -> [> `Maxlength ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_method" class="code"|<<span class="keyword"|val>> a~_method : <<span class="code type"|[< `Get | `Post ] -> [> `Method ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_multiple" class="code"|<<span class="keyword"|val>> a~_multiple : <<span class="code type"|[< `Multiple ] -> [> `Multiple ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_name" class="code"|<<span class="keyword"|val>> a~_name : <<span class="code type"|<<a_api text="cdata" | type XHTML.T.cdata >> -> [> `Name ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div class="info"|~This attribute assigns the control name~.\\
+>>
+<<div id="VALa_rows" class="code"|<<span class="keyword"|val>> a~_rows : <<span class="code type"|<<a_api text="number" | type XHTML.T.number >> -> [> `Rows ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div class="info"|~This attribute specifies the number of visible text lines~. ~Users
+    should be able to enter more lines than this~, so user agents
+    should provide some means to scroll through the contents of the
+    control when the contents extend beyond the visible area~.\\
+>>
+<<div id="VALa_selected" class="code"|<<span class="keyword"|val>> a~_selected : <<span class="code type"|[< `Selected ] -> [> `Selected ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div class="info"|~When set~, this boolean attribute specifies that this option is pre~-selected~.\\
+>>
+<<div id="VALa_size" class="code"|<<span class="keyword"|val>> a~_size : <<span class="code type"|<<a_api text="number" | type XHTML.T.number >> -> [> `Size ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_src" class="code"|<<span class="keyword"|val>> a~_src : <<span class="code type"|<<a_api text="uri" | type XHTML.T.uri >> -> [> `Src ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_input_type" class="code"|<<span class="keyword"|val>> a~_input~_type : <<span class="code type"|\\{{{   }}}[< `Button\\{{{   }}}   | `Checkbox\\{{{   }}}   | `File\\{{{   }}}   | `Hidden\\{{{   }}}   | `Image\\{{{   }}}   | `Password\\{{{   }}}   | `Radio\\{{{   }}}   | `Reset\\{{{   }}}   | `Submit\\{{{   }}}   | `Text ] ->\\{{{   }}}  [> `Input_Type ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_value" class="code"|<<span class="keyword"|val>> a~_value : <<span class="code type"|<<a_api text="cdata" | type XHTML.T.cdata >> -> [> `Value ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div class="info"|~This attribute specifies the initial value of the control~. ~If this
+    attribute is not set~, the initial value is set to the contents of
+    the <<span class='code'|option>> element~.\\
+>>
+\\
+
+===@@id="3_552"@@~5~.~5~.~2~. ~Forms ~Module===
+\\
+<<div id="VALa_disabled" class="code"|<<span class="keyword"|val>> a~_disabled : <<span class="code type"|[< `Disabled ] -> [> `Disabled ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_readonly" class="code"|<<span class="keyword"|val>> a~_readonly : <<span class="code type"|[< `Readonly ] -> [> `Readonly ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_button_type" class="code"|<<span class="keyword"|val>> a~_button~_type : <<span class="code type"|[< `Button | `Reset | `Submit ] -> [> `Button_Type ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_label" class="code"|<<span class="keyword"|val>> a~_label : <<span class="code type"|<<a_api text="text" | type XHTML.T.text >> -> [> `Label ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>>\\
+
+==@@id="2_56"@@~5~.~6~. ~Table ~Modules==
+\\
+\\
+
+===@@id="3_561"@@~5~.~6~.~1~. ~Basic ~Tables ~Module===
+\\
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="TABLES" | module XHTML.T.TABLES >>: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.TABLES >><<span class='code'|end>>>><<div id="VALa_abbr" class="code"|<<span class="keyword"|val>> a~_abbr : <<span class="code type"|<<a_api text="text" | type XHTML.T.text >> -> [> `Abbr ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_align" class="code"|<<span class="keyword"|val>> a~_align : <<span class="code type"|\\{{{   }}}[< `Center | `Char | `Justify | `Left | `Right ] ->\\{{{   }}}  [> `Align ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_axis" class="code"|<<span class="keyword"|val>> a~_axis : <<span class="code type"|<<a_api text="cdata" | type XHTML.T.cdata >> -> [> `Axis ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_colspan" class="code"|<<span class="keyword"|val>> a~_colspan : <<span class="code type"|<<a_api text="number" | type XHTML.T.number >> -> [> `Colspan ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_headers" class="code"|<<span class="keyword"|val>> a~_headers : <<span class="code type"|<<a_api text="idrefs" | type XHTML.T.idrefs >> -> [> `Headers ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_rowspan" class="code"|<<span class="keyword"|val>> a~_rowspan : <<span class="code type"|<<a_api text="number" | type XHTML.T.number >> -> [> `Rowspan ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_scope" class="code"|<<span class="keyword"|val>> a~_scope : <<span class="code type"|[< `Col | `Colgroup | `Row | `Rowgroup ] -> [> `Scope ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_summary" class="code"|<<span class="keyword"|val>> a~_summary : <<span class="code type"|<<a_api text="text" | type XHTML.T.text >> -> [> `Summary ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_valign" class="code"|<<span class="keyword"|val>> a~_valign : <<span class="code type"|[< `Baseline | `Bottom | `Middle | `Top ] -> [> `Valign ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>>\\
+
+===@@id="3_562"@@~5~.~6~.~2~. ~Tables ~Module===
+\\
+<<div id="VALa_border" class="code"|<<span class="keyword"|val>> a~_border : <<span class="code type"|<<a_api text="pixels" | type XHTML.T.pixels >> -> [> `Border ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_cellpadding" class="code"|<<span class="keyword"|val>> a~_cellpadding : <<span class="code type"|<<a_api text="length" | type XHTML.T.length >> -> [> `Cellpadding ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_cellspacing" class="code"|<<span class="keyword"|val>> a~_cellspacing : <<span class="code type"|<<a_api text="length" | type XHTML.T.length >> -> [> `Cellspacing ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_datapagesize" class="code"|<<span class="keyword"|val>> a~_datapagesize : <<span class="code type"|<<a_api text="cdata" | type XHTML.T.cdata >> -> [> `Datapagesize ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_frame" class="code"|<<span class="keyword"|val>> a~_frame : <<span class="code type"|\\{{{   }}}[< `Above | `Below | `Border | `Box | `Hsides | `LHS | `RHS | `Void | `Vsides ] ->\\{{{   }}}  [> `Frame ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_rules" class="code"|<<span class="keyword"|val>> a~_rules : <<span class="code type"|[< `All | `Cols | `Groups | `None | `Rows ] -> [> `Rules ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_char" class="code"|<<span class="keyword"|val>> a~_char : <<span class="code type"|<<a_api text="character" | type XHTML.T.character >> -> [> `Char ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_charoff" class="code"|<<span class="keyword"|val>> a~_charoff : <<span class="code type"|<<a_api text="length" | type XHTML.T.length >> -> [> `Charoff ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>>\\
+
+==@@id="2_57"@@~5~.~7~. ~Image ~Module==
+\\
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="IMAGE" | module XHTML.T.IMAGE >>: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.IMAGE >><<span class='code'|end>>>><<div id="VALa_alt" class="code"|<<span class="keyword"|val>> a~_alt : <<span class="code type"|<<a_api text="text" | type XHTML.T.text >> -> [> `Alt ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_height" class="code"|<<span class="keyword"|val>> a~_height : <<span class="code type"|<<a_api text="length" | type XHTML.T.length >> -> [> `Height ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_longdesc" class="code"|<<span class="keyword"|val>> a~_longdesc : <<span class="code type"|<<a_api text="uri" | type XHTML.T.uri >> -> [> `Longdesc ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_width" class="code"|<<span class="keyword"|val>> a~_width : <<span class="code type"|<<a_api text="length" | type XHTML.T.length >> -> [> `Width ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>>\\
+
+==@@id="2_58"@@~5~.~8~. ~Client~-side ~Image ~Map ~Module==
+\\
+<<div class="code" id="TYPEshape"|<<span class="keyword"|type>> shape = <<span class="code type"|[ `Circle | `Default | `Poly | `Rect ]>> >>
+
+<<div id="VALa_shape" class="code"|<<span class="keyword"|val>> a~_shape : <<span class="code type"|<<a_api text="shape" | type XHTML.T.shape >> -> [ `Shape ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_coords" class="code"|<<span class="keyword"|val>> a~_coords : <<span class="code type"|<<a_api text="cdata" | type XHTML.T.cdata >> -> [ `Coords ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_nohref" class="code"|<<span class="keyword"|val>> a~_nohref : <<span class="code type"|[< `Nohref ] -> [> `Nohref ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_usemap" class="code"|<<span class="keyword"|val>> a~_usemap : <<span class="code type"|<<a_api text="idref" | type XHTML.T.idref >> -> [> `Usemap ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>>\\
+
+==@@id="2_59"@@~5~.~9~. ~Server~-side ~Image ~Map ~Module==
+\\
+\\
+
+==@@id="2_510"@@~5~.~1~0~. ~Object ~Module==
+\\
+<<div id="VALa_declare" class="code"|<<span class="keyword"|val>> a~_declare : <<span class="code type"|[< `Declare ] -> [> `Declare ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_classid" class="code"|<<span class="keyword"|val>> a~_classid : <<span class="code type"|<<a_api text="uri" | type XHTML.T.uri >> -> [> `Classid ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_codebase" class="code"|<<span class="keyword"|val>> a~_codebase : <<span class="code type"|<<a_api text="uri" | type XHTML.T.uri >> -> [> `Codebase ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_data" class="code"|<<span class="keyword"|val>> a~_data : <<span class="code type"|<<a_api text="uri" | type XHTML.T.uri >> -> [> `Data ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_codetype" class="code"|<<span class="keyword"|val>> a~_codetype : <<span class="code type"|<<a_api text="contenttype" | type XHTML.T.contenttype >> -> [> `Codetype ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_archive" class="code"|<<span class="keyword"|val>> a~_archive : <<span class="code type"|<<a_api text="uris" | type XHTML.T.uris >> -> [> `Archive ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_standby" class="code"|<<span class="keyword"|val>> a~_standby : <<span class="code type"|<<a_api text="text" | type XHTML.T.text >> -> [> `Standby ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>>\\
+
+==@@id="2_511"@@~5~.~1~1~. ~Frames ~Module==
+\\
+<<div id="VALa_fs_rows" class="code"|<<span class="keyword"|val>> a~_fs~_rows : <<span class="code type"|<<a_api text="multilengths" | type XHTML.T.multilengths >> -> [> `FS_Rows ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_fs_cols" class="code"|<<span class="keyword"|val>> a~_fs~_cols : <<span class="code type"|<<a_api text="multilengths" | type XHTML.T.multilengths >> -> [> `FS_Cols ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_frameborder" class="code"|<<span class="keyword"|val>> a~_frameborder : <<span class="code type"|[< `One | `Zero ] -> [> `Frameborder ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_marginheight" class="code"|<<span class="keyword"|val>> a~_marginheight : <<span class="code type"|<<a_api text="pixels" | type XHTML.T.pixels >> -> [> `Marginheight ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_marginwidth" class="code"|<<span class="keyword"|val>> a~_marginwidth : <<span class="code type"|<<a_api text="pixels" | type XHTML.T.pixels >> -> [> `Marginwidth ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_noresize" class="code"|<<span class="keyword"|val>> a~_noresize : <<span class="code type"|[< `Noresize ] -> [> `Noresize ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_scrolling" class="code"|<<span class="keyword"|val>> a~_scrolling : <<span class="code type"|[< `Auto | `No | `Yes ] -> [> `Scrolling ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>>\\
+
+==@@id="2_512"@@~5~.~1~2~. ~Target ~Module==
+\\
+<<div id="VALa_target" class="code"|<<span class="keyword"|val>> a~_target : <<span class="code type"|<<a_api text="frametarget" | type XHTML.T.frametarget >> -> [> `Target ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>>\\
+
+==@@id="2_513"@@~5~.~1~3~. ~Iframe ~Module==
+\\
+\\
+
+==@@id="2_514"@@~5~.~1~4~. ~Intrinsic ~Events ~Module==
+\\
+\\
+
+==@@id="2_515"@@~5~.~1~5~. ~Metainformation ~Module==
+\\
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="METAINFORMATION" | module XHTML.T.METAINFORMATION >>: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.METAINFORMATION >><<span class='code'|end>>>><<div id="VALa_content" class="code"|<<span class="keyword"|val>> a~_content : <<span class="code type"|<<a_api text="cdata" | type XHTML.T.cdata >> -> [> `Content ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_http_equiv" class="code"|<<span class="keyword"|val>> a~_http~_equiv : <<span class="code type"|<<a_api text="nmtoken" | type XHTML.T.nmtoken >> -> [> `Http_equiv ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>><<div id="VALa_scheme" class="code"|<<span class="keyword"|val>> a~_scheme : <<span class="code type"|<<a_api text="cdata" | type XHTML.T.cdata >> -> [> `Scheme ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>>\\
+
+==@@id="2_516"@@~5~.~1~6~. ~Scripting ~Module==
+\\
+<<div id="VALa_defer" class="code"|<<span class="keyword"|val>> a~_defer : <<span class="code type"|[< `Defer ] -> [> `Defer ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>>\\
+
+==@@id="2_517"@@~5~.~1~7~. ~Style ~Sheet ~Module==
+\\
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="STYLE_SHEET" | module XHTML.T.STYLE_SHEET >>: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.STYLE_SHEET >><<span class='code'|end>>>><<div id="VALa_media" class="code"|<<span class="keyword"|val>> a~_media : <<span class="code type"|<<a_api text="mediadesc" | type XHTML.T.mediadesc >> -> [> `Media ] <<a_api text="attrib" | type XHTML.T.attrib >>>>>>\\
+
+==@@id="2_518"@@~5~.~1~8~. ~Style ~Attribute ~Module==
+\\
+\\
+
+==@@id="2_519"@@~5~.~1~9~. ~Link ~Module==
+\\
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="LINK" | module XHTML.T.LINK >>: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.LINK >><<span class='code'|end>>>>\\
+
+==@@id="2_520"@@~5~.~2~0~. ~Base ~Module==
+\\
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="BASE" | module XHTML.T.BASE >>: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.BASE >><<span class='code'|end>>>>\\
+
+==@@id="2_521"@@~5~.~2~1~. ~Name ~Identification ~Module==
+
+    ~This module is deprecated in ~X~H~T~M~L ~1~.~1~, but supported for ~X~H~T~M~L ~1~.~0
+    using <<span class='code'|`~Name~_~0~1~_~0~0>> ~.\\
+\\
+
+==@@id="2_522"@@~5~.~2~2~. ~Legacy ~Module==
+\\
+<<div class="code" id="TYPEedit"|<<span class="keyword"|type>> edit = <<span class="code type"|[ `Del | `Ins ]>> >>
+<<div class="info"|>>
+
+<<div class="code" id="TYPEscripttag"|<<span class="keyword"|type>> scripttag = <<span class="code type"|[ `Noscript | `Script ]>> >>
+
+<<div class="code" id="TYPEmisc"|<<span class="keyword"|type>> misc = <<span class="code type"|[ `Del | `Ins | `Noscript | `Script ]>> >>
+
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="SPECIAL" | module XHTML.T.SPECIAL >>: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.SPECIAL >><<span class='code'|end>>>><<div class="code" id="TYPEi18nclass"|<<span class="keyword"|type>> i~1~8nclass = <<span class="code type"|[ `Bdo ]>> >>
+
+\\
+
+=@@id="1_CombinedElementSets"@@~Combined ~Element ~Sets~:=
+\\
+<<div class="code" id="TYPEblock"|<<span class="keyword"|type>> block = <<span class="code type"|\\{{{   }}}[ `Address\\{{{   }}}  | `Blockquote\\{{{   }}}  | `Del\\{{{   }}}  | `Div\\{{{   }}}  | `Dl\\{{{   }}}  | `Fieldset\\{{{   }}}  | `Form\\{{{   }}}  | `H1\\{{{   }}}  | `H2\\{{{   }}}  | `H3\\{{{   }}}  | `H4\\{{{   }}}  | `H5\\{{{   }}}  | `H6\\{{{   }}}  | `Hr\\{{{   }}}  | `Ins\\{{{   }}}  | `Noscript\\{{{   }}}  | `Ol\\{{{   }}}  | `P\\{{{   }}}  | `Pre\\{{{   }}}  | `Script\\{{{   }}}  | `Table\\{{{   }}}  | `Ul ]>> >>
+
+<<div class="code" id="TYPEblock_sans_form"|<<span class="keyword"|type>> block~_sans~_form = <<span class="code type"|\\{{{   }}}[ `Address\\{{{   }}}  | `Blockquote\\{{{   }}}  | `Del\\{{{   }}}  | `Div\\{{{   }}}  | `Dl\\{{{   }}}  | `H1\\{{{   }}}  | `H2\\{{{   }}}  | `H3\\{{{   }}}  | `H4\\{{{   }}}  | `H5\\{{{   }}}  | `H6\\{{{   }}}  | `Hr\\{{{   }}}  | `Ins\\{{{   }}}  | `Noscript\\{{{   }}}  | `Ol\\{{{   }}}  | `P\\{{{   }}}  | `Pre\\{{{   }}}  | `Script\\{{{   }}}  | `Table\\{{{   }}}  | `Ul ]>> >>
+
+<<div class="code" id="TYPEflow"|<<span class="keyword"|type>> flow = <<span class="code type"|\\{{{   }}}[ `A\\{{{   }}}  | `Abbr\\{{{   }}}  | `Acronym\\{{{   }}}  | `Address\\{{{   }}}  | `B\\{{{   }}}  | `Bdo\\{{{   }}}  | `Big\\{{{   }}}  | `Blockquote\\{{{   }}}  | `Br\\{{{   }}}  | `Button\\{{{   }}}  | `Cite\\{{{   }}}  | `Code\\{{{   }}}  | `Del\\{{{   }}}  | `Dfn\\{{{   }}}  | `Div\\{{{   }}}  | `Dl\\{{{   }}}  | `Em\\{{{   }}}  | `Fieldset\\{{{   }}}  | `Form\\{{{   }}}  | `H1\\{{{   }}}  | `H2\\{{{   }}}  | `H3\\{{{   }}}  | `H4\\{{{   }}}  | `H5\\{{{   }}}  | `H6\\{{{   }}}  | `Hr\\{{{   }}}  | `I\\{{{   }}}  | `Img\\{{{   }}}  | `Input\\{{{   }}}  | `Ins\\{{{   }}}  | `Kbd\\{{{   }}}  | `Label\\{{{   }}}  | `Map\\{{{   }}}  | `Noscript\\{{{   }}}  | `Object\\{{{   }}}  | `Ol\\{{{   }}}  | `P\\{{{   }}}  | `Pre\\{{{   }}}  | `Q\\{{{   }}}  | `Samp\\{{{   }}}  | `Script\\{{{   }}}  | `Select\\{{{   }}}  | `Small\\{{{   }}}  | `Span\\{{{   }}}  | `Strong\\{{{   }}}  | `Sub\\{{{   }}}  | `Sup\\{{{   }}}  | `Table\\{{{   }}}  | `Textarea\\{{{   }}}  | `Tt\\{{{   }}}  | `Ul\\{{{   }}}  | `Var ]>> >>
+
+<<div class="code" id="TYPEflow_sans_table"|<<span class="keyword"|type>> flow~_sans~_table = <<span class="code type"|\\{{{   }}}[ `A\\{{{   }}}  | `Abbr\\{{{   }}}  | `Acronym\\{{{   }}}  | `Address\\{{{   }}}  | `B\\{{{   }}}  | `Bdo\\{{{   }}}  | `Big\\{{{   }}}  | `Blockquote\\{{{   }}}  | `Br\\{{{   }}}  | `Button\\{{{   }}}  | `Cite\\{{{   }}}  | `Code\\{{{   }}}  | `Del\\{{{   }}}  | `Dfn\\{{{   }}}  | `Div\\{{{   }}}  | `Dl\\{{{   }}}  | `Em\\{{{   }}}  | `Fieldset\\{{{   }}}  | `Form\\{{{   }}}  | `H1\\{{{   }}}  | `H2\\{{{   }}}  | `H3\\{{{   }}}  | `H4\\{{{   }}}  | `H5\\{{{   }}}  | `H6\\{{{   }}}  | `Hr\\{{{   }}}  | `I\\{{{   }}}  | `Img\\{{{   }}}  | `Input\\{{{   }}}  | `Ins\\{{{   }}}  | `Kbd\\{{{   }}}  | `Label\\{{{   }}}  | `Map\\{{{   }}}  | `Noscript\\{{{   }}}  | `Object\\{{{   }}}  | `Ol\\{{{   }}}  | `P\\{{{   }}}  | `Pre\\{{{   }}}  | `Q\\{{{   }}}  | `Samp\\{{{   }}}  | `Script\\{{{   }}}  | `Select\\{{{   }}}  | `Small\\{{{   }}}  | `Span\\{{{   }}}  | `Strong\\{{{   }}}  | `Sub\\{{{   }}}  | `Sup\\{{{   }}}  | `Table\\{{{   }}}  | `Textarea\\{{{   }}}  | `Tt\\{{{   }}}  | `Ul\\{{{   }}}  | `Var ]>> >>
+
+<<div class="code" id="TYPEinline"|<<span class="keyword"|type>> inline = <<span class="code type"|\\{{{   }}}[ `A\\{{{   }}}  | `Abbr\\{{{   }}}  | `Acronym\\{{{   }}}  | `B\\{{{   }}}  | `Bdo\\{{{   }}}  | `Big\\{{{   }}}  | `Br\\{{{   }}}  | `Button\\{{{   }}}  | `Cite\\{{{   }}}  | `Code\\{{{   }}}  | `Del\\{{{   }}}  | `Dfn\\{{{   }}}  | `Em\\{{{   }}}  | `I\\{{{   }}}  | `Img\\{{{   }}}  | `Input\\{{{   }}}  | `Ins\\{{{   }}}  | `Kbd\\{{{   }}}  | `Label\\{{{   }}}  | `Map\\{{{   }}}  | `Noscript\\{{{   }}}  | `Object\\{{{   }}}  | `Q\\{{{   }}}  | `Samp\\{{{   }}}  | `Script\\{{{   }}}  | `Select\\{{{   }}}  | `Small\\{{{   }}}  | `Span\\{{{   }}}  | `Strong\\{{{   }}}  | `Sub\\{{{   }}}  | `Sup\\{{{   }}}  | `Textarea\\{{{   }}}  | `Tt\\{{{   }}}  | `Var ]>> >>
+
+<<div class="code" id="TYPEinline_sans_a_mix"|<<span class="keyword"|type>> inline~_sans~_a~_mix = <<span class="code type"|\\{{{   }}}[ `Abbr\\{{{   }}}  | `Acronym\\{{{   }}}  | `B\\{{{   }}}  | `Bdo\\{{{   }}}  | `Big\\{{{   }}}  | `Br\\{{{   }}}  | `Button\\{{{   }}}  | `Cite\\{{{   }}}  | `Code\\{{{   }}}  | `Del\\{{{   }}}  | `Dfn\\{{{   }}}  | `Em\\{{{   }}}  | `I\\{{{   }}}  | `Img\\{{{   }}}  | `Input\\{{{   }}}  | `Ins\\{{{   }}}  | `Kbd\\{{{   }}}  | `Label\\{{{   }}}  | `Map\\{{{   }}}  | `Noscript\\{{{   }}}  | `Object\\{{{   }}}  | `Q\\{{{   }}}  | `Samp\\{{{   }}}  | `Script\\{{{   }}}  | `Select\\{{{   }}}  | `Small\\{{{   }}}  | `Span\\{{{   }}}  | `Strong\\{{{   }}}  | `Sub\\{{{   }}}  | `Sup\\{{{   }}}  | `Textarea\\{{{   }}}  | `Tt\\{{{   }}}  | `Var ]>> >>
+
+<<div class="code" id="TYPEbuttoncontent"|<<span class="keyword"|type>> buttoncontent = <<span class="code type"|\\{{{   }}}[ `Abbr\\{{{   }}}  | `Acronym\\{{{   }}}  | `Address\\{{{   }}}  | `B\\{{{   }}}  | `Bdo\\{{{   }}}  | `Big\\{{{   }}}  | `Blockquote\\{{{   }}}  | `Br\\{{{   }}}  | `Cite\\{{{   }}}  | `Code\\{{{   }}}  | `Del\\{{{   }}}  | `Dfn\\{{{   }}}  | `Div\\{{{   }}}  | `Dl\\{{{   }}}  | `Em\\{{{   }}}  | `H1\\{{{   }}}  | `H2\\{{{   }}}  | `H3\\{{{   }}}  | `H4\\{{{   }}}  | `H5\\{{{   }}}  | `H6\\{{{   }}}  | `Hr\\{{{   }}}  | `I\\{{{   }}}  | `Img\\{{{   }}}  | `Ins\\{{{   }}}  | `Kbd\\{{{   }}}  | `Map\\{{{   }}}  | `Noscript\\{{{   }}}  | `Object\\{{{   }}}  | `Ol\\{{{   }}}  | `P\\{{{   }}}  | `Pre\\{{{   }}}  | `Q\\{{{   }}}  | `Samp\\{{{   }}}  | `Script\\{{{   }}}  | `Small\\{{{   }}}  | `Span\\{{{   }}}  | `Strong\\{{{   }}}  | `Sub\\{{{   }}}  | `Sup\\{{{   }}}  | `Table\\{{{   }}}  | `Tt\\{{{   }}}  | `Ul\\{{{   }}}  | `Var ]>> >>
+
+<<div class="code" id="TYPEprecontent"|<<span class="keyword"|type>> precontent = <<span class="code type"|\\{{{   }}}[ `A\\{{{   }}}  | `Abbr\\{{{   }}}  | `Acronym\\{{{   }}}  | `B\\{{{   }}}  | `Bdo\\{{{   }}}  | `Br\\{{{   }}}  | `Cite\\{{{   }}}  | `Code\\{{{   }}}  | `Dfn\\{{{   }}}  | `Em\\{{{   }}}  | `I\\{{{   }}}  | `Kbd\\{{{   }}}  | `Map\\{{{   }}}  | `Q\\{{{   }}}  | `Samp\\{{{   }}}  | `Script\\{{{   }}}  | `Span\\{{{   }}}  | `Strong\\{{{   }}}  | `Tt\\{{{   }}}  | `Var ]>> >>
+
+<<div class="code" id="TYPEinline_sans_label"|<<span class="keyword"|type>> inline~_sans~_label = <<span class="code type"|\\{{{   }}}[ `A\\{{{   }}}  | `Abbr\\{{{   }}}  | `Acronym\\{{{   }}}  | `B\\{{{   }}}  | `Bdo\\{{{   }}}  | `Big\\{{{   }}}  | `Br\\{{{   }}}  | `Button\\{{{   }}}  | `Cite\\{{{   }}}  | `Code\\{{{   }}}  | `Del\\{{{   }}}  | `Dfn\\{{{   }}}  | `Em\\{{{   }}}  | `I\\{{{   }}}  | `Img\\{{{   }}}  | `Input\\{{{   }}}  | `Ins\\{{{   }}}  | `Kbd\\{{{   }}}  | `Map\\{{{   }}}  | `Noscript\\{{{   }}}  | `Object\\{{{   }}}  | `Q\\{{{   }}}  | `Samp\\{{{   }}}  | `Script\\{{{   }}}  | `Select\\{{{   }}}  | `Small\\{{{   }}}  | `Span\\{{{   }}}  | `Strong\\{{{   }}}  | `Sub\\{{{   }}}  | `Sup\\{{{   }}}  | `Textarea\\{{{   }}}  | `Tt\\{{{   }}}  | `Var ]>> >>
+
+<<div class="code" id="TYPEheading"|<<span class="keyword"|type>> heading = <<span class="code type"|<<a_api text="TEXT.heading" | type XHTML.T.TEXT.heading >>>> >>
+
+\\
+
+=@@id="1_Elements"@@~Elements=
+\\
+<<div class="code" id="TYPEelt"|<<span class="keyword"|type>> <<span class="code type"|+'a>> elt>>
+
+\\
+
+==@@id="2_ElementConstructorTypes"@@~Element ~Constructor ~Types==
+\\
+<<div class="code" id="TYPEnullary"|<<span class="keyword"|type>> <<span class="code type"|('a, 'b)>> nullary = <<span class="code type"|?a:'a <<a_api text="attrib" | type XHTML.T.attrib >> list -> unit -> 'b <<a_api text="elt" | type XHTML.T.elt >>>> >>
+
+<<div class="code" id="TYPEunary"|<<span class="keyword"|type>> <<span class="code type"|('a, 'b, 'c)>> unary = <<span class="code type"|?a:'a <<a_api text="attrib" | type XHTML.T.attrib >> list -> 'b <<a_api text="elt" | type XHTML.T.elt >> -> 'c <<a_api text="elt" | type XHTML.T.elt >>>> >>
+
+<<div class="code" id="TYPEbinary"|<<span class="keyword"|type>> <<span class="code type"|('a, 'b, 'c, 'd)>> binary = <<span class="code type"|\\{{{   }}}?a:'a <<a_api text="attrib" | type XHTML.T.attrib >> list ->\\{{{   }}}  'b <<a_api text="elt" | type XHTML.T.elt >> -> 'c <<a_api text="elt" | type XHTML.T.elt >> -> 'd <<a_api text="elt" | type XHTML.T.elt >>>> >>
+
+<<div class="code" id="TYPEstar"|<<span class="keyword"|type>> <<span class="code type"|('a, 'b, 'c)>> star = <<span class="code type"|?a:'a <<a_api text="attrib" | type XHTML.T.attrib >> list -> 'b <<a_api text="elt" | type XHTML.T.elt >> list -> 'c <<a_api text="elt" | type XHTML.T.elt >>>> >>
+<<div class="info"|~Star ~'~*~' denotes any number of children~, uncluding zero~.\\
+>>
+
+<<div class="code" id="TYPEplus"|<<span class="keyword"|type>> <<span class="code type"|('a, 'b, 'c)>> plus = <<span class="code type"|\\{{{   }}}?a:'a <<a_api text="attrib" | type XHTML.T.attrib >> list ->\\{{{   }}}  'b <<a_api text="elt" | type XHTML.T.elt >> -> 'b <<a_api text="elt" | type XHTML.T.elt >> list -> 'c <<a_api text="elt" | type XHTML.T.elt >>>> >>
+<<div class="info"|~Plus ~'~+~' requires at least one child~.\\
+>>
+
+\\
+
+==@@id="2_Structure"@@~Structure==
+\\
+<<div class="code" id="TYPEhtml"|<<span class="keyword"|type>> html = <<span class="code type"|[ `Html ] <<a_api text="elt" | type XHTML.T.elt >>>> >>
+
+<<div id="VALhtml" class="code"|<<span class="keyword"|val>> html : <<span class="code type"|\\{{{   }}}?a:[< `Version | `XML_lang | `XMLns ] <<a_api text="attrib" | type XHTML.T.attrib >> list ->\\{{{   }}}  [< `Head ] <<a_api text="elt" | type XHTML.T.elt >> -> [< `Body | `Frameset ] <<a_api text="elt" | type XHTML.T.elt >> -> <<a_api text="html" | type XHTML.T.html >>>>>><<div id="VALhead" class="code"|<<span class="keyword"|val>> head : <<span class="code type"|\\{{{   }}}?a:[< `Profile | `XML_lang ] <<a_api text="attrib" | type XHTML.T.attrib >> list ->\\{{{   }}}  [< `Base | `Title ] <<a_api text="elt" | type XHTML.T.elt >> ->\\{{{   }}}  [< `Link | `Meta | `Object | `Script | `Style ] <<a_api text="elt" | type XHTML.T.elt >> list ->\\{{{   }}}  [> `Head ] <<a_api text="elt" | type XHTML.T.elt >>>>>><<div id="VALtitle" class="code"|<<span class="keyword"|val>> title : <<span class="code type"|([< <<a_api text="i18n" | type XHTML.T.i18n >> ], [< `PCDATA ], [> `Title ]) <<a_api text="unary" | type XHTML.T.unary >>>>>><<div id="VALbody" class="code"|<<span class="keyword"|val>> body : <<span class="code type"|([< <<a_api text="common" | type XHTML.T.common >> ], [< <<a_api text="block" | type XHTML.T.block >> ], [> `Body ]) <<a_api text="star" | type XHTML.T.star >>>>>>\\
+
+==@@id="2_Data"@@~Data==
+\\
+<<div id="VALpcdata" class="code"|<<span class="keyword"|val>> pcdata : <<span class="code type"|string -> [> `PCDATA ] <<a_api text="elt" | type XHTML.T.elt >>>>>><<div id="VALentity" class="code"|<<span class="keyword"|val>> entity : <<span class="code type"|string -> [> `PCDATA ] <<a_api text="elt" | type XHTML.T.elt >>>>>><<div id="VALspace" class="code"|<<span class="keyword"|val>> space : <<span class="code type"|unit -> [> `PCDATA ] <<a_api text="elt" | type XHTML.T.elt >>>>>><<div id="VALcdata" class="code"|<<span class="keyword"|val>> cdata : <<span class="code type"|string -> [ `PCDATA ] <<a_api text="elt" | type XHTML.T.elt >>>>>><<div id="VALcdata_script" class="code"|<<span class="keyword"|val>> cdata~_script : <<span class="code type"|string -> [ `PCDATA ] <<a_api text="elt" | type XHTML.T.elt >>>>>><<div id="VALcdata_style" class="code"|<<span class="keyword"|val>> cdata~_style : <<span class="code type"|string -> [ `PCDATA ] <<a_api text="elt" | type XHTML.T.elt >>>>>>\\
+
+==@@id="2_Text"@@~Text==
+\\
+<<div id="VALh1" class="code"|<<span class="keyword"|val>> h~1 : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `H1 ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALh2" class="code"|<<span class="keyword"|val>> h~2 : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `H2 ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALh3" class="code"|<<span class="keyword"|val>> h~3 : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `H3 ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALh4" class="code"|<<span class="keyword"|val>> h~4 : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `H4 ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALh5" class="code"|<<span class="keyword"|val>> h~5 : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `H5 ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALh6" class="code"|<<span class="keyword"|val>> h~6 : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `H6 ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALaddress" class="code"|<<span class="keyword"|val>> address : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Address ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALblockquote" class="code"|<<span class="keyword"|val>> blockquote : <<span class="code type"|\\{{{   }}}([< `Cite | `Class | `Id | `Title | `XML_lang ],\\{{{   }}}   [< `Address\\{{{   }}}    | `Blockquote\\{{{   }}}    | `Del\\{{{   }}}    | `Div\\{{{   }}}    | `Dl\\{{{   }}}    | `Fieldset\\{{{   }}}    | `Form\\{{{   }}}    | `H1\\{{{   }}}    | `H2\\{{{   }}}    | `H3\\{{{   }}}    | `H4\\{{{   }}}    | `H5\\{{{   }}}    | `H6\\{{{   }}}    | `Hr\\{{{   }}}    | `Ins\\{{{   }}}    | `Noscript\\{{{   }}}    | `Ol\\{{{   }}}    | `P\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Pre\\{{{   }}}    | `Script\\{{{   }}}    | `Table\\{{{   }}}    | `Ul ],\\{{{   }}}   [> `Blockquote ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALdiv" class="code"|<<span class="keyword"|val>> div : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `Address\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Blockquote\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Div\\{{{   }}}    | `Dl\\{{{   }}}    | `Em\\{{{   }}}    | `Fieldset\\{{{   }}}    | `Form\\{{{   }}}    | `H1\\{{{   }}}    | `H2\\{{{   }}}    | `H3\\{{{   }}}    | `H4\\{{{   }}}    | `H5\\{{{   }}}    | `H6\\{{{   }}}    | `Hr\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `Ol\\{{{   }}}    | `P\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Pre\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Table\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Ul\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Div ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALp" class="code"|<<span class="keyword"|val>> p : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `P ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALpre" class="code"|<<span class="keyword"|val>> pre : <<span class="code type"|\\{{{   }}}([< `Class | `Id | `Title | `XML_lang | `XML_space ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Br\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Kbd\\{{{   }}}    | `Map\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Pre ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALabbr" class="code"|<<span class="keyword"|val>> abbr : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Abbr ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALacronym" class="code"|<<span class="keyword"|val>> acronym : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Acronym ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALbr" class="code"|<<span class="keyword"|val>> br : <<span class="code type"|([< <<a_api text="core" | type XHTML.T.core >> ], [> `Br ]) <<a_api text="nullary" | type XHTML.T.nullary >>>>>><<div id="VALcite" class="code"|<<span class="keyword"|val>> cite : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Cite ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALcode" class="code"|<<span class="keyword"|val>> code : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Code ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALdfn" class="code"|<<span class="keyword"|val>> dfn : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Dfn ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALem" class="code"|<<span class="keyword"|val>> em : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Em ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALkbd" class="code"|<<span class="keyword"|val>> kbd : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Kbd ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALq" class="code"|<<span class="keyword"|val>> q : <<span class="code type"|\\{{{   }}}([< `Cite | `Class | `Id | `Title | `XML_lang ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Q ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALsamp" class="code"|<<span class="keyword"|val>> samp : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Samp ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALspan" class="code"|<<span class="keyword"|val>> span : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Span ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALstrong" class="code"|<<span class="keyword"|val>> strong : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Strong ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALvar" class="code"|<<span class="keyword"|val>> var : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Var ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>>\\
+
+==@@id="2_Hypertext"@@~Hypertext==
+\\
+<<div id="VALa" class="code"|<<span class="keyword"|val>> a : <<span class="code type"|\\{{{   }}}([< `Accesskey\\{{{   }}}    | `Charset\\{{{   }}}    | `Class\\{{{   }}}    | `Coords\\{{{   }}}    | `Href\\{{{   }}}    | `Hreflang\\{{{   }}}    | `Id\\{{{   }}}    | `Name_01_00\\{{{   }}}    | `Rel\\{{{   }}}    | `Rev\\{{{   }}}    | `Shape\\{{{   }}}    | `Tabindex\\{{{   }}}    | `Target\\{{{   }}}    | `Title\\{{{   }}}    | `Type\\{{{   }}}    | `XML_lang ],\\{{{   }}}   [< `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `A ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>>\\
+
+==@@id="2_List"@@~List==
+\\
+<<div id="VALdl" class="code"|<<span class="keyword"|val>> dl : <<span class="code type"|([< <<a_api text="common" | type XHTML.T.common >> ], [< `Dd | `Dt ], [> `Dl ]) <<a_api text="plus" | type XHTML.T.plus >>>>>><<div id="VALol" class="code"|<<span class="keyword"|val>> ol : <<span class="code type"|([< <<a_api text="common" | type XHTML.T.common >> ], [< `Li ], [> `Ol ]) <<a_api text="plus" | type XHTML.T.plus >>>>>><<div id="VALul" class="code"|<<span class="keyword"|val>> ul : <<span class="code type"|([< <<a_api text="common" | type XHTML.T.common >> ], [< `Li ], [> `Ul ]) <<a_api text="plus" | type XHTML.T.plus >>>>>><<div id="VALdd" class="code"|<<span class="keyword"|val>> dd : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `Address\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Blockquote\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Div\\{{{   }}}    | `Dl\\{{{   }}}    | `Em\\{{{   }}}    | `Fieldset\\{{{   }}}    | `Form\\{{{   }}}    | `H1\\{{{   }}}    | `H2\\{{{   }}}    | `H3\\{{{   }}}    | `H4\\{{{   }}}    | `H5\\{{{   }}}    | `H6\\{{{   }}}    | `Hr\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `Ol\\{{{   }}}    | `P\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Pre\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Table\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Ul\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Dd ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALdt" class="code"|<<span class="keyword"|val>> dt : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Dt ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALli" class="code"|<<span class="keyword"|val>> li : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `Address\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Blockquote\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Div\\{{{   }}}    | `Dl\\{{{   }}}    | `Em\\{{{   }}}    | `Fieldset\\{{{   }}}    | `Form\\{{{   }}}    | `H1\\{{{   }}}    | `H2\\{{{   }}}    | `H3\\{{{   }}}    | `H4\\{{{   }}}    | `H5\\{{{   }}}    | `H6\\{{{   }}}    | `Hr\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `Ol\\{{{   }}}    | `P\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Pre\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Table\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Ul\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Li ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>>\\
+
+==@@id="2_Presentation"@@~Presentation==
+\\
+<<div id="VALhr" class="code"|<<span class="keyword"|val>> hr : <<span class="code type"|([< <<a_api text="common" | type XHTML.T.common >> ], [> `Hr ]) <<a_api text="nullary" | type XHTML.T.nullary >>>>>><<div id="VALb" class="code"|<<span class="keyword"|val>> b : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `B ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALbig" class="code"|<<span class="keyword"|val>> big : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Big ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALi" class="code"|<<span class="keyword"|val>> i : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `I ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALsmall" class="code"|<<span class="keyword"|val>> small : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Small ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALsub" class="code"|<<span class="keyword"|val>> sub : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Sub ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALsup" class="code"|<<span class="keyword"|val>> sup : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Sup ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALtt" class="code"|<<span class="keyword"|val>> tt : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Tt ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALbdo" class="code"|<<span class="keyword"|val>> bdo : <<span class="code type"|\\{{{   }}}([< `Class | `Dir | `Id | `Title | `XML_lang ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Bdo ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALarea" class="code"|<<span class="keyword"|val>> area : <<span class="code type"|\\{{{   }}}alt:<<a_api text="text" | type XHTML.T.text >> ->\\{{{   }}}  ([< `Accesskey\\{{{   }}}    | `Class\\{{{   }}}    | `Coords\\{{{   }}}    | `Href\\{{{   }}}    | `Id\\{{{   }}}    | `Nohref\\{{{   }}}    | `Shape\\{{{   }}}    | `Tabindex\\{{{   }}}    | `Title\\{{{   }}}    | `XML_lang ],\\{{{   }}}   [> `Area ])\\{{{   }}}  <<a_api text="nullary" | type XHTML.T.nullary >>>>>><<div id="VALmap" class="code"|<<span class="keyword"|val>> map : <<span class="code type"|\\{{{   }}}id:<<a_api text="id" | type XHTML.T.id >> ->\\{{{   }}}  ([< `Class | `Title | `XML_lang | `XMLns ],\\{{{   }}}   [< `Address\\{{{   }}}    | `Area\\{{{   }}}    | `Blockquote\\{{{   }}}    | `Del\\{{{   }}}    | `Div\\{{{   }}}    | `Dl\\{{{   }}}    | `Fieldset\\{{{   }}}    | `Form\\{{{   }}}    | `H1\\{{{   }}}    | `H2\\{{{   }}}    | `H3\\{{{   }}}    | `H4\\{{{   }}}    | `H5\\{{{   }}}    | `H6\\{{{   }}}    | `Hr\\{{{   }}}    | `Ins\\{{{   }}}    | `Noscript\\{{{   }}}    | `Ol\\{{{   }}}    | `P\\{{{   }}}    | `Pre\\{{{   }}}    | `Script\\{{{   }}}    | `Table\\{{{   }}}    | `Ul ],\\{{{   }}}   [> `Map ])\\{{{   }}}  <<a_api text="plus" | type XHTML.T.plus >>>>>><<div id="VALdel" class="code"|<<span class="keyword"|val>> del : <<span class="code type"|\\{{{   }}}([< `Cite | `Class | `Datetime | `Id | `Title | `XML_lang ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `Address\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Blockquote\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Div\\{{{   }}}    | `Dl\\{{{   }}}    | `Em\\{{{   }}}    | `Fieldset\\{{{   }}}    | `Form\\{{{   }}}    | `H1\\{{{   }}}    | `H2\\{{{   }}}    | `H3\\{{{   }}}    | `H4\\{{{   }}}    | `H5\\{{{   }}}    | `H6\\{{{   }}}    | `Hr\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `Ol\\{{{   }}}    | `P\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Pre\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Table\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Ul\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Del ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALins" class="code"|<<span class="keyword"|val>> ins : <<span class="code type"|\\{{{   }}}([< `Cite | `Class | `Datetime | `Id | `Title | `XML_lang ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `Address\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Blockquote\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Div\\{{{   }}}    | `Dl\\{{{   }}}    | `Em\\{{{   }}}    | `Fieldset\\{{{   }}}    | `Form\\{{{   }}}    | `H1\\{{{   }}}    | `H2\\{{{   }}}    | `H3\\{{{   }}}    | `H4\\{{{   }}}    | `H5\\{{{   }}}    | `H6\\{{{   }}}    | `Hr\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `Ol\\{{{   }}}    | `P\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Pre\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Table\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Ul\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Ins ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALscript" class="code"|<<span class="keyword"|val>> script : <<span class="code type"|\\{{{   }}}contenttype:<<a_api text="contenttype" | type XHTML.T.contenttype >> ->\\{{{   }}}  ([< `Charset | `Defer | `Src | `XML_space | `XMLns ], [< `PCDATA ],\\{{{   }}}   [> `Script ])\\{{{   }}}  <<a_api text="unary" | type XHTML.T.unary >>>>>><<div id="VALnoscript" class="code"|<<span class="keyword"|val>> noscript : <<span class="code type"|([< <<a_api text="common" | type XHTML.T.common >> ], [< <<a_api text="block" | type XHTML.T.block >> ], [> `Noscript ]) <<a_api text="plus" | type XHTML.T.plus >>>>>>\\
+
+==@@id="2_Forms"@@~Forms==
+\\
+\\
+
+===@@id="3_BasicForms"@@~Basic ~Forms===
+\\
+\\
+~One can use <<span class='code'|open ~Basic~_~Forms>> to enable basic forms~.\\
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="Basic_Forms" | module XHTML.T.Basic_Forms >>: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.Basic_Forms >><<span class='code'|end>>>>\\
+
+===@@id="3_Forms"@@~Forms===
+\\
+<<div id="VALform" class="code"|<<span class="keyword"|val>> form : <<span class="code type"|\\{{{   }}}action:<<a_api text="uri" | type XHTML.T.uri >> ->\\{{{   }}}  ([< `Accept\\{{{   }}}    | `Accept_charset\\{{{   }}}    | `Class\\{{{   }}}    | `Enctype\\{{{   }}}    | `Id\\{{{   }}}    | `Method\\{{{   }}}    | `Name_01_00\\{{{   }}}    | `Target\\{{{   }}}    | `Title\\{{{   }}}    | `XML_lang ],\\{{{   }}}   [< `Address\\{{{   }}}    | `Blockquote\\{{{   }}}    | `Del\\{{{   }}}    | `Div\\{{{   }}}    | `Dl\\{{{   }}}    | `Fieldset\\{{{   }}}    | `H1\\{{{   }}}    | `H2\\{{{   }}}    | `H3\\{{{   }}}    | `H4\\{{{   }}}    | `H5\\{{{   }}}    | `H6\\{{{   }}}    | `Hr\\{{{   }}}    | `Ins\\{{{   }}}    | `Noscript\\{{{   }}}    | `Ol\\{{{   }}}    | `P\\{{{   }}}    | `Pre\\{{{   }}}    | `Script\\{{{   }}}    | `Table\\{{{   }}}    | `Ul ],\\{{{   }}}   [> `Form ])\\{{{   }}}  <<a_api text="plus" | type XHTML.T.plus >>>>>><<div class="info"|~Generic forms~. ~W~A~R~N~I~N~G~: ~If you find a bug or if something is missing please send a bug report to the ~Ocsigen project! ~-~- ~V~B\\
+>>
+<<div id="VALinput" class="code"|<<span class="keyword"|val>> input : <<span class="code type"|\\{{{   }}}([< `Accept\\{{{   }}}    | `Accesskey\\{{{   }}}    | `Alt\\{{{   }}}    | `Checked\\{{{   }}}    | `Class\\{{{   }}}    | `Disabled\\{{{   }}}    | `Id\\{{{   }}}    | `Input_Type\\{{{   }}}    | `Maxlength\\{{{   }}}    | `Name\\{{{   }}}    | `Readonly\\{{{   }}}    | `Size\\{{{   }}}    | `Src\\{{{   }}}    | `Tabindex\\{{{   }}}    | `Title\\{{{   }}}    | `Usemap\\{{{   }}}    | `Value\\{{{   }}}    | `XML_lang ],\\{{{   }}}   [> `Input ])\\{{{   }}}  <<a_api text="nullary" | type XHTML.T.nullary >>>>>><<div id="VALlabel" class="code"|<<span class="keyword"|val>> label : <<span class="code type"|\\{{{   }}}([< `Accesskey | `Class | `For | `Id | `Title | `XML_lang ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Label ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALoptgroup" class="code"|<<span class="keyword"|val>> optgroup : <<span class="code type"|\\{{{   }}}label:<<a_api text="text" | type XHTML.T.text >> ->\\{{{   }}}  ([< `Class | `Disabled | `Id | `Title | `XML_lang ], [< `Option ],\\{{{   }}}   [> `Optgroup ])\\{{{   }}}  <<a_api text="plus" | type XHTML.T.plus >>>>>><<div id="VALoption" class="code"|<<span class="keyword"|val>> option : <<span class="code type"|\\{{{   }}}([< `Class\\{{{   }}}    | `Disabled\\{{{   }}}    | `Id\\{{{   }}}    | `Label\\{{{   }}}    | `Selected\\{{{   }}}    | `Title\\{{{   }}}    | `Value\\{{{   }}}    | `XML_lang ],\\{{{   }}}   [< `PCDATA ], [> `Option ])\\{{{   }}}  <<a_api text="unary" | type XHTML.T.unary >>>>>><<div id="VALselect" class="code"|<<span class="keyword"|val>> select : <<span class="code type"|\\{{{   }}}([< `Class\\{{{   }}}    | `Disabled\\{{{   }}}    | `Id\\{{{   }}}    | `Multiple\\{{{   }}}    | `Name\\{{{   }}}    | `Size\\{{{   }}}    | `Tabindex\\{{{   }}}    | `Title\\{{{   }}}    | `XML_lang ],\\{{{   }}}   [< `Optgroup | `Option ], [> `Select ])\\{{{   }}}  <<a_api text="plus" | type XHTML.T.plus >>>>>><<div id="VALtextarea" class="code"|<<span class="keyword"|val>> textarea : <<span class="code type"|\\{{{   }}}rows:<<a_api text="number" | type XHTML.T.number >> ->\\{{{   }}}  cols:<<a_api text="number" | type XHTML.T.number >> ->\\{{{   }}}  ([< `Accesskey\\{{{   }}}    | `Class\\{{{   }}}    | `Disabled\\{{{   }}}    | `Id\\{{{   }}}    | `Name\\{{{   }}}    | `Readonly\\{{{   }}}    | `Tabindex\\{{{   }}}    | `Title\\{{{   }}}    | `XML_lang ],\\{{{   }}}   [< `PCDATA ], [> `Textarea ])\\{{{   }}}  <<a_api text="unary" | type XHTML.T.unary >>>>>><<div id="VALfieldset" class="code"|<<span class="keyword"|val>> fieldset : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `Address\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Blockquote\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Div\\{{{   }}}    | `Dl\\{{{   }}}    | `Em\\{{{   }}}    | `Fieldset\\{{{   }}}    | `Form\\{{{   }}}    | `H1\\{{{   }}}    | `H2\\{{{   }}}    | `H3\\{{{   }}}    | `H4\\{{{   }}}    | `H5\\{{{   }}}    | `H6\\{{{   }}}    | `Hr\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Legend\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `Ol\\{{{   }}}    | `P\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Pre\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Table\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Ul\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Fieldset ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALlegend" class="code"|<<span class="keyword"|val>> legend : <<span class="code type"|\\{{{   }}}([< `Accesskey | `Class | `Id | `Title | `XML_lang ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Legend ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALbutton" class="code"|<<span class="keyword"|val>> button : <<span class="code type"|\\{{{   }}}([< `Button_Type | `Class | `Id | `Name | `Title | `Value | `XML_lang ],\\{{{   }}}   [< `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `Address\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Blockquote\\{{{   }}}    | `Br\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Div\\{{{   }}}    | `Dl\\{{{   }}}    | `Em\\{{{   }}}    | `H1\\{{{   }}}    | `H2\\{{{   }}}    | `H3\\{{{   }}}    | `H4\\{{{   }}}    | `H5\\{{{   }}}    | `H6\\{{{   }}}    | `Hr\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `Ol\\{{{   }}}    | `P\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Pre\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Table\\{{{   }}}    | `Tt\\{{{   }}}    | `Ul\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Button ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>>\\
+
+==@@id="2_Tables"@@~Tables==
+\\
+\\
+
+===@@id="3_BasicTables"@@~Basic ~Tables===
+\\
+\\
+~One can use <<span class='code'|open ~Basic~_~Tables>> to switch globally to basic tables~.\\
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="Basic_Tables" | module XHTML.T.Basic_Tables >>: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.Basic_Tables >><<span class='code'|end>>>>\\
+
+===@@id="3_Tables"@@~Tables===
+\\
+<<div id="VALcaption" class="code"|<<span class="keyword"|val>> caption : <<span class="code type"|\\{{{   }}}([< <<a_api text="common" | type XHTML.T.common >> ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Em\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Caption ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALtable" class="code"|<<span class="keyword"|val>> table : <<span class="code type"|\\{{{   }}}?caption:[< `Caption ] <<a_api text="elt" | type XHTML.T.elt >> ->\\{{{   }}}  ?columns:[< `Colgroups of [< `Colgroup ] <<a_api text="elt" | type XHTML.T.elt >> list\\{{{   }}}            | `Cols of [< `Col ] <<a_api text="elt" | type XHTML.T.elt >> list ] ->\\{{{   }}}  ([< `Border\\{{{   }}}    | `Cellpadding\\{{{   }}}    | `Cellspacing\\{{{   }}}    | `Class\\{{{   }}}    | `Datapagesize\\{{{   }}}    | `Frame\\{{{   }}}    | `Id\\{{{   }}}    | `Rules\\{{{   }}}    | `Summary\\{{{   }}}    | `Title\\{{{   }}}    | `Width\\{{{   }}}    | `XML_lang ],\\{{{   }}}   [< `Tr ], [> `Table ])\\{{{   }}}  <<a_api text="plus" | type XHTML.T.plus >>>>>><<div id="VALtablex" class="code"|<<span class="keyword"|val>> tablex : <<span class="code type"|\\{{{   }}}?caption:[< `Caption ] <<a_api text="elt" | type XHTML.T.elt >> ->\\{{{   }}}  ?columns:[< `Colgroups of [< `Colgroup ] <<a_api text="elt" | type XHTML.T.elt >> list\\{{{   }}}            | `Cols of [< `Col ] <<a_api text="elt" | type XHTML.T.elt >> list ] ->\\{{{   }}}  ?thead:[< `Thead ] <<a_api text="elt" | type XHTML.T.elt >> ->\\{{{   }}}  ?tfoot:[< `Tfoot ] <<a_api text="elt" | type XHTML.T.elt >> ->\\{{{   }}}  ([< `Border\\{{{   }}}    | `Cellpadding\\{{{   }}}    | `Cellspacing\\{{{   }}}    | `Class\\{{{   }}}    | `Datapagesize\\{{{   }}}    | `Frame\\{{{   }}}    | `Id\\{{{   }}}    | `Rules\\{{{   }}}    | `Summary\\{{{   }}}    | `Title\\{{{   }}}    | `Width\\{{{   }}}    | `XML_lang ],\\{{{   }}}   [< `Tbody ], [> `Table ])\\{{{   }}}  <<a_api text="plus" | type XHTML.T.plus >>>>>><<div id="VALtd" class="code"|<<span class="keyword"|val>> td : <<span class="code type"|\\{{{   }}}([< `Abbr\\{{{   }}}    | `Align\\{{{   }}}    | `Axis\\{{{   }}}    | `Char\\{{{   }}}    | `Charoff\\{{{   }}}    | `Class\\{{{   }}}    | `Colspan\\{{{   }}}    | `Headers\\{{{   }}}    | `Id\\{{{   }}}    | `Rowspan\\{{{   }}}    | `Scope\\{{{   }}}    | `Title\\{{{   }}}    | `Valign\\{{{   }}}    | `XML_lang ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `Address\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Blockquote\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Div\\{{{   }}}    | `Dl\\{{{   }}}    | `Em\\{{{   }}}    | `Fieldset\\{{{   }}}    | `Form\\{{{   }}}    | `H1\\{{{   }}}    | `H2\\{{{   }}}    | `H3\\{{{   }}}    | `H4\\{{{   }}}    | `H5\\{{{   }}}    | `H6\\{{{   }}}    | `Hr\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `Ol\\{{{   }}}    | `P\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Pre\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Table\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Ul\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Td ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALth" class="code"|<<span class="keyword"|val>> th : <<span class="code type"|\\{{{   }}}([< `Abbr\\{{{   }}}    | `Align\\{{{   }}}    | `Axis\\{{{   }}}    | `Char\\{{{   }}}    | `Charoff\\{{{   }}}    | `Class\\{{{   }}}    | `Colspan\\{{{   }}}    | `Headers\\{{{   }}}    | `Id\\{{{   }}}    | `Rowspan\\{{{   }}}    | `Scope\\{{{   }}}    | `Title\\{{{   }}}    | `Valign\\{{{   }}}    | `XML_lang ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `Address\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Blockquote\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Div\\{{{   }}}    | `Dl\\{{{   }}}    | `Em\\{{{   }}}    | `Fieldset\\{{{   }}}    | `Form\\{{{   }}}    | `H1\\{{{   }}}    | `H2\\{{{   }}}    | `H3\\{{{   }}}    | `H4\\{{{   }}}    | `H5\\{{{   }}}    | `H6\\{{{   }}}    | `Hr\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `Ol\\{{{   }}}    | `P\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Pre\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Table\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Ul\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Th ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALtr" class="code"|<<span class="keyword"|val>> tr : <<span class="code type"|\\{{{   }}}([< `Align | `Char | `Charoff | `Class | `Id | `Title | `Valign | `XML_lang ],\\{{{   }}}   [< `Td | `Th ], [> `Tr ])\\{{{   }}}  <<a_api text="plus" | type XHTML.T.plus >>>>>><<div id="VALcol" class="code"|<<span class="keyword"|val>> col : <<span class="code type"|\\{{{   }}}([< `Align\\{{{   }}}    | `Char\\{{{   }}}    | `Charoff\\{{{   }}}    | `Class\\{{{   }}}    | `Id\\{{{   }}}    | `Span\\{{{   }}}    | `Title\\{{{   }}}    | `Valign\\{{{   }}}    | `Width\\{{{   }}}    | `XML_lang ],\\{{{   }}}   [> `Col ])\\{{{   }}}  <<a_api text="nullary" | type XHTML.T.nullary >>>>>><<div id="VALcolgroup" class="code"|<<span class="keyword"|val>> colgroup : <<span class="code type"|\\{{{   }}}([< `Align\\{{{   }}}    | `Char\\{{{   }}}    | `Charoff\\{{{   }}}    | `Class\\{{{   }}}    | `Id\\{{{   }}}    | `Span\\{{{   }}}    | `Title\\{{{   }}}    | `Valign\\{{{   }}}    | `Width\\{{{   }}}    | `XML_lang ],\\{{{   }}}   [< `Col ], [> `Colgroup ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>><<div id="VALthead" class="code"|<<span class="keyword"|val>> thead : <<span class="code type"|\\{{{   }}}([< `Align | `Char | `Charoff | `Class | `Id | `Title | `Valign | `XML_lang ],\\{{{   }}}   [< `Tr ], [> `Thead ])\\{{{   }}}  <<a_api text="plus" | type XHTML.T.plus >>>>>><<div id="VALtbody" class="code"|<<span class="keyword"|val>> tbody : <<span class="code type"|\\{{{   }}}([< `Align | `Char | `Charoff | `Class | `Id | `Title | `Valign | `XML_lang ],\\{{{   }}}   [< `Tr ], [> `Tbody ])\\{{{   }}}  <<a_api text="plus" | type XHTML.T.plus >>>>>><<div id="VALtfoot" class="code"|<<span class="keyword"|val>> tfoot : <<span class="code type"|\\{{{   }}}([< `Align | `Char | `Charoff | `Class | `Id | `Title | `Valign | `XML_lang ],\\{{{   }}}   [< `Tr ], [> `Tfoot ])\\{{{   }}}  <<a_api text="plus" | type XHTML.T.plus >>>>>>\\
+
+==@@id="2_Image"@@~Image==
+\\
+<<div id="VALimg" class="code"|<<span class="keyword"|val>> img : <<span class="code type"|\\{{{   }}}src:<<a_api text="uri" | type XHTML.T.uri >> ->\\{{{   }}}  alt:<<a_api text="text" | type XHTML.T.text >> ->\\{{{   }}}  ([< `Class\\{{{   }}}    | `Height\\{{{   }}}    | `Id\\{{{   }}}    | `Longdesc\\{{{   }}}    | `Name_01_00\\{{{   }}}    | `Title\\{{{   }}}    | `Usemap\\{{{   }}}    | `Width\\{{{   }}}    | `XML_lang ],\\{{{   }}}   [> `Img ])\\{{{   }}}  <<a_api text="nullary" | type XHTML.T.nullary >>>>>>\\
+
+==@@id="2_Object"@@~Object==
+ ~V~B\\
+<<div id="VALobject_" class="code"|<<span class="keyword"|val>> object~_ : <<span class="code type"|\\{{{   }}}([< `Archive\\{{{   }}}    | `Class\\{{{   }}}    | `Classid\\{{{   }}}    | `Codebase\\{{{   }}}    | `Codetype\\{{{   }}}    | `Data\\{{{   }}}    | `Declare\\{{{   }}}    | `Height\\{{{   }}}    | `Id\\{{{   }}}    | `Name\\{{{   }}}    | `Standby\\{{{   }}}    | `Tabindex\\{{{   }}}    | `Title\\{{{   }}}    | `Type\\{{{   }}}    | `Width\\{{{   }}}    | `XML_lang ],\\{{{   }}}   [< `A\\{{{   }}}    | `Abbr\\{{{   }}}    | `Acronym\\{{{   }}}    | `Address\\{{{   }}}    | `B\\{{{   }}}    | `Bdo\\{{{   }}}    | `Big\\{{{   }}}    | `Blockquote\\{{{   }}}    | `Br\\{{{   }}}    | `Button\\{{{   }}}    | `Cite\\{{{   }}}    | `Code\\{{{   }}}    | `Del\\{{{   }}}    | `Dfn\\{{{   }}}    | `Div\\{{{   }}}    | `Dl\\{{{   }}}    | `Em\\{{{   }}}    | `Fieldset\\{{{   }}}    | `Form\\{{{   }}}    | `H1\\{{{   }}}    | `H2\\{{{   }}}    | `H3\\{{{   }}}    | `H4\\{{{   }}}    | `H5\\{{{   }}}    | `H6\\{{{   }}}    | `Hr\\{{{   }}}    | `I\\{{{   }}}    | `Img\\{{{   }}}    | `Input\\{{{   }}}    | `Ins\\{{{   }}}    | `Kbd\\{{{   }}}    | `Label\\{{{   }}}    | `Map\\{{{   }}}    | `Noscript\\{{{   }}}    | `Object\\{{{   }}}    | `Ol\\{{{   }}}    | `P\\{{{   }}}    | `PCDATA\\{{{   }}}    | `Param\\{{{   }}}    | `Pre\\{{{   }}}    | `Q\\{{{   }}}    | `Samp\\{{{   }}}    | `Script\\{{{   }}}    | `Select\\{{{   }}}    | `Small\\{{{   }}}    | `Span\\{{{   }}}    | `Strong\\{{{   }}}    | `Sub\\{{{   }}}    | `Sup\\{{{   }}}    | `Table\\{{{   }}}    | `Textarea\\{{{   }}}    | `Tt\\{{{   }}}    | `Ul\\{{{   }}}    | `Usemap\\{{{   }}}    | `Var ],\\{{{   }}}   [> `Object ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>>\\
+
+==@@id="2_Frames"@@~Frames==
+\\
+<<div id="VALframeset" class="code"|<<span class="keyword"|val>> frameset : <<span class="code type"|\\{{{   }}}?noframes:[< `Noframes ] <<a_api text="elt" | type XHTML.T.elt >> ->\\{{{   }}}  ([< `Class | `FS_Cols | `FS_Rows | `Id | `Title ], [< `Frame | `Frameset ],\\{{{   }}}   [> `Frameset ])\\{{{   }}}  <<a_api text="plus" | type XHTML.T.plus >>>>>><<div id="VALframe" class="code"|<<span class="keyword"|val>> frame : <<span class="code type"|\\{{{   }}}src:<<a_api text="uri" | type XHTML.T.uri >> ->\\{{{   }}}  ([< `Class\\{{{   }}}    | `Frameborder\\{{{   }}}    | `Id\\{{{   }}}    | `Longdesc\\{{{   }}}    | `Marginheight\\{{{   }}}    | `Marginwidth\\{{{   }}}    | `Name_01_00\\{{{   }}}    | `Noresize\\{{{   }}}    | `Scrolling\\{{{   }}}    | `Title ],\\{{{   }}}   [> `Frame ])\\{{{   }}}  <<a_api text="nullary" | type XHTML.T.nullary >>>>>><<div id="VALnoframes" class="code"|<<span class="keyword"|val>> noframes : <<span class="code type"|([< <<a_api text="common" | type XHTML.T.common >> ], [< `Body ], [> `Noframes ]) <<a_api text="unary" | type XHTML.T.unary >>>>>>\\
+
+==@@id="2_Meta"@@~Meta==
+\\
+<<div id="VALmeta" class="code"|<<span class="keyword"|val>> meta : <<span class="code type"|\\{{{   }}}content:<<a_api text="cdata" | type XHTML.T.cdata >> ->\\{{{   }}}  ([< `Http_equiv | `Name | `Scheme | `XML_lang ], [> `Meta ]) <<a_api text="nullary" | type XHTML.T.nullary >>>>>>\\
+
+==@@id="2_StyleSheets"@@~Style ~Sheets==
+\\
+<<div id="VALstyle" class="code"|<<span class="keyword"|val>> style : <<span class="code type"|\\{{{   }}}contenttype:<<a_api text="contenttype" | type XHTML.T.contenttype >> ->\\{{{   }}}  ([< `Media | `Title | `XML_lang | `XML_space ], [< `PCDATA ], [> `Style ])\\{{{   }}}  <<a_api text="star" | type XHTML.T.star >>>>>>\\
+
+==@@id="2_Link"@@~Link==
+\\
+<<div id="VALlink" class="code"|<<span class="keyword"|val>> link : <<span class="code type"|\\{{{   }}}([< `Charset\\{{{   }}}    | `Class\\{{{   }}}    | `Href\\{{{   }}}    | `Hreflang\\{{{   }}}    | `Id\\{{{   }}}    | `Media\\{{{   }}}    | `Rel\\{{{   }}}    | `Rev\\{{{   }}}    | `Target\\{{{   }}}    | `Title\\{{{   }}}    | `Type\\{{{   }}}    | `XML_lang ],\\{{{   }}}   [> `Link ])\\{{{   }}}  <<a_api text="nullary" | type XHTML.T.nullary >>>>>>\\
+
+==@@id="2_Base"@@~Base==
+\\
+<<div id="VALbase" class="code"|<<span class="keyword"|val>> base : <<span class="code type"|href:<<a_api text="uri" | type XHTML.T.uri >> -> unit -> [> `Base ] <<a_api text="elt" | type XHTML.T.elt >>>>>>\\
+
+=@@id="1_Output"@@~Output=
+\\
+\\
+<<span class='code'|~?encode>> maps strings to ~H~T~M~L and //must// encode the unsafe characters
+    <<span class='code'|~'~<~'>>~, <<span class='code'|~'~>~'>>~, <<span class='code'|~'"~'>>~, <<span class='code'|~'~&~'>> and the control characters ~0~-~8~, ~1~1~-~1~2~, ~1~4~-~3~1~, ~1~2~7
+    to ~H~T~M~L entities~.  <<span class='code'|~X~M~L~.encode~_unsafe>> is the default for <<span class='code'|~?encode>> in <<span class='code'|output>>
+    and <<span class='code'|pretty~_print>> below~.  ~Other implementations are provided by the module
+    <<span class='code'|~Netencoding>> in the
+    [[http://www.ocaml-programming.de/programming/ocamlnet.html|~Ocaml~Net]] library~, e~.g~.~:
+    <<span class='code'|let encode ~= ~Netencoding~.~Html~.encode ~~in~_enc~:`~Enc~_iso~8~8~5~9~1 ~~out~_enc~:`~Enc~_usascii ~(~)>>~,
+    ~Where national characters are replaced by ~H~T~M~L entities~.
+    ~The user is of course free to write her own implementation~.\\
+\\
+<<span class='code'|~~encoding>> is the official name of the external character set encoding that
+    is used by <<span class='code'|outs ~: string ~-~> unit>>~.\\
+<<div id="VALdoctype" class="code"|<<span class="keyword"|val>> doctype : <<span class="code type"|[< `HTML_v03_02 | `HTML_v04_01 | `XHTML_01_00 | `XHTML_01_01 ] -> string>>>><<div id="VALoutput" class="code"|<<span class="keyword"|val>> output : <<span class="code type"|\\{{{   }}}?encode:(string -> string) ->\\{{{   }}}  ?encoding:string -> (string -> unit) -> <<a_api text="html" | type XHTML.T.html >> -> unit>>>><<div id="VALpretty_print" class="code"|<<span class="keyword"|val>> pretty~_print : <<span class="code type"|\\{{{   }}}?width:int ->\\{{{   }}}  ?encode:(string -> string) ->\\{{{   }}}  ?encoding:string -> (string -> unit) -> <<a_api text="html" | type XHTML.T.html >> -> unit>>>>\\
+
+=@@id="1_Tools"@@~Tools=
+\\
+<<div id="VALversion" class="code"|<<span class="keyword"|val>> version : <<span class="code type"|string>>>><<div id="VALstandard" class="code"|<<span class="keyword"|val>> standard : <<span class="code type"|<<a_api text="uri" | type XHTML.T.uri >>>>>><<div id="VALvalidator" class="code"|<<span class="keyword"|val>> validator : <<span class="code type"|<<a_api text="uri" | type XHTML.T.uri >>>>>><<div id="VALvalidator_icon" class="code"|<<span class="keyword"|val>> validator~_icon : <<span class="code type"|unit -> [> `A ] <<a_api text="elt" | type XHTML.T.elt >>>>>><<div class="info"|~A hyperlink to the ~W~3~C validator~, including the logo~.\\
+**See also** [[http://validator.w3.org|~Validator]]\\
+>>
+<<div id="VALaddto_class" class="code"|<<span class="keyword"|val>> addto~_class : <<span class="code type"|string -> 'a <<a_api text="elt" | type XHTML.T.elt >> -> 'a <<a_api text="elt" | type XHTML.T.elt >>>>>><<div class="info"|~Add the element and all its subelements to a class~.  ~Note that this
+   is only almost typesafe~, because a few elements from the structure class
+   do not support the class attribute~.   ~On the other hand~, listing all
+   allowed elements would be too tedious right now~.\\
+>>
+<<div id="VALaddto_class1" class="code"|<<span class="keyword"|val>> addto~_class~1 : <<span class="code type"|string -> 'a <<a_api text="elt" | type XHTML.T.elt >> -> 'a <<a_api text="elt" | type XHTML.T.elt >>>>>><<div class="info"|~Add the element to a class~.\\
+>>
+<<div id="VALset_rowspan" class="code"|<<span class="keyword"|val>> set~_rowspan : <<span class="code type"|int -> ([< `Td | `Th ] as 'a) <<a_api text="elt" | type XHTML.T.elt >> -> 'a <<a_api text="elt" | type XHTML.T.elt >>>>>><<div class="info"|~Set the rowspan attribute for the element~.\\
+>>
+<<div id="VALrewrite_hrefs" class="code"|<<span class="keyword"|val>> rewrite~_hrefs : <<span class="code type"|(string -> string) -> 'a <<a_api text="elt" | type XHTML.T.elt >> -> 'a <<a_api text="elt" | type XHTML.T.elt >>>>>><<div id="VALall_hrefs" class="code"|<<span class="keyword"|val>> all~_hrefs : <<span class="code type"|'a <<a_api text="elt" | type XHTML.T.elt >> -> <<a_api text="uri" | type XHTML.T.uri >> list>>>><<div id="VALall_anchors" class="code"|<<span class="keyword"|val>> all~_anchors : <<span class="code type"|'a <<a_api text="elt" | type XHTML.T.elt >> -> <<a_api text="id" | type XHTML.T.id >> list>>>><<div id="VALtot" class="code"|<<span class="keyword"|val>> tot : <<span class="code type"|XML.elt -> 'a <<a_api text="elt" | type XHTML.T.elt >>>>>><<div id="VALtotl" class="code"|<<span class="keyword"|val>> totl : <<span class="code type"|XML.elt list -> 'a <<a_api text="elt" | type XHTML.T.elt >> list>>>><<div id="VALtoelt" class="code"|<<span class="keyword"|val>> toelt : <<span class="code type"|'a <<a_api text="elt" | type XHTML.T.elt >> -> XML.elt>>>><<div id="VALtoeltl" class="code"|<<span class="keyword"|val>> toeltl : <<span class="code type"|'a <<a_api text="elt" | type XHTML.T.elt >> list -> XML.elt list>>>>

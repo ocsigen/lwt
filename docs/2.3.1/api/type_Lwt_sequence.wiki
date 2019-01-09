@@ -1,0 +1,27 @@
+<<code language="ocaml" | sig
+  type 'a t
+  type 'a node
+  val get : 'a Lwt_sequence.node -> 'a
+  val set : 'a Lwt_sequence.node -> 'a -> unit
+  val remove : 'a Lwt_sequence.node -> unit
+  val create : unit -> 'a Lwt_sequence.t
+  val is_empty : 'a Lwt_sequence.t -> bool
+  val length : 'a Lwt_sequence.t -> int
+  val add_l : 'a -> 'a Lwt_sequence.t -> 'a Lwt_sequence.node
+  val add_r : 'a -> 'a Lwt_sequence.t -> 'a Lwt_sequence.node
+  exception Empty
+  val take_l : 'a Lwt_sequence.t -> 'a
+  val take_r : 'a Lwt_sequence.t -> 'a
+  val take_opt_l : 'a Lwt_sequence.t -> 'a option
+  val take_opt_r : 'a Lwt_sequence.t -> 'a option
+  val transfer_l : 'a Lwt_sequence.t -> 'a Lwt_sequence.t -> unit
+  val transfer_r : 'a Lwt_sequence.t -> 'a Lwt_sequence.t -> unit
+  val iter_l : ('a -> unit) -> 'a Lwt_sequence.t -> unit
+  val iter_r : ('a -> unit) -> 'a Lwt_sequence.t -> unit
+  val iter_node_l :
+    ('a Lwt_sequence.node -> unit) -> 'a Lwt_sequence.t -> unit
+  val iter_node_r :
+    ('a Lwt_sequence.node -> unit) -> 'a Lwt_sequence.t -> unit
+  val fold_l : ('a -> 'b -> 'b) -> 'a Lwt_sequence.t -> 'b -> 'b
+  val fold_r : ('a -> 'b -> 'b) -> 'a Lwt_sequence.t -> 'b -> 'b
+end >>

@@ -1,0 +1,4 @@
+<<code language="ocaml" | sig
+  val bind_1 : Lwt_unix.file_descr -> Lwt_unix.sockaddr -> unit
+  val bind_2 : Lwt_unix.file_descr -> Lwt_unix.sockaddr -> unit Lwt.t
+end >>

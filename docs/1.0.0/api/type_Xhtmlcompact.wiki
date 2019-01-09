@@ -1,0 +1,26 @@
+<<code language="ocaml" | sig
+  val xhtml_print :
+    ?version:[< `HTML_v03_02 | `HTML_v04_01 | `XHTML_01_00 | `XHTML_01_01
+              > `XHTML_01_01 ] ->
+    ?width:int ->
+    ?encode:(string -> string) ->
+    ?html_compat:bool -> [ `Html ] XHTML.M.elt -> string
+  val xhtml_list_print :
+    ?version:[< `HTML_v03_02 | `HTML_v04_01 | `XHTML_01_00 | `XHTML_01_01
+              > `XHTML_01_01 ] ->
+    ?width:int ->
+    ?encode:(string -> string) ->
+    ?html_compat:bool -> 'a XHTML.M.elt list -> string
+  val xhtml_stream :
+    ?version:[< `HTML_v03_02 | `HTML_v04_01 | `XHTML_01_00 | `XHTML_01_01
+              > `XHTML_01_01 ] ->
+    ?width:int ->
+    ?encode:(string -> string) ->
+    ?html_compat:bool -> [ `Html ] XHTML.M.elt -> string Ocsigen_stream.t
+  val xhtml_list_stream :
+    ?version:[< `HTML_v03_02 | `HTML_v04_01 | `XHTML_01_00 | `XHTML_01_01
+              > `XHTML_01_01 ] ->
+    ?width:int ->
+    ?encode:(string -> string) ->
+    ?html_compat:bool -> 'a XHTML.M.elt list -> string Ocsigen_stream.t
+end >>

@@ -1,0 +1,9 @@
+<<code language="ocaml" | sig
+  val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
+  val init : int -> int -> (string -> unit) -> 'a Lwt.t
+  val set_max_number_of_threads_queued : int -> unit
+  val get_max_number_of_threads_queued : unit -> int
+  val nbthreads : unit -> int
+  val nbthreadsbusy : unit -> int
+  val nbthreadsqueued : unit -> int
+end >>

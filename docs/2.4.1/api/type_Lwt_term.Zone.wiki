@@ -1,0 +1,19 @@
+<<code language="ocaml" | sig
+  type t = {
+    points : Lwt_term.point array array;
+    x : int;
+    y : int;
+    width : int;
+    height : int;
+  }
+  val points : Lwt_term.Zone.t -> Lwt_term.point array array
+  val x : Lwt_term.Zone.t -> int
+  val y : Lwt_term.Zone.t -> int
+  val width : Lwt_term.Zone.t -> int
+  val height : Lwt_term.Zone.t -> int
+  val make : width:int -> height:int -> Lwt_term.Zone.t
+  val sub :
+    zone:Lwt_term.Zone.t ->
+    x:int -> y:int -> width:int -> height:int -> Lwt_term.Zone.t
+  val inner : Lwt_term.Zone.t -> Lwt_term.Zone.t
+end >>

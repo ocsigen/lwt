@@ -1,0 +1,199 @@
+=Module <<a_api_type | module Pa_lwt >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Pa_lwt>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Pa_lwt >><<span class="ocsforge_color_keyword"|end>>>>~Syntactic sugars for lwt
+
+----
+
+~This extension add the following sugars~:
+
+
+* anonymous bind~:
+
+      
+<<code language='ocaml'|         write stdio "Hello, " ~>> write stdio "world!"
+      >>
+
+
+
+* lwt~-binding~:
+
+      
+<<code language='ocaml'|         lwt ch = get_char stdin in
+         code
+      >>
+
+
+
+      is the same as <<span class="odocwiki_inlinecode"|bind ~(get~_char stdin~) ~(fun ch ~-~> code~)>>
+
+
+      ~Moreover it supports parallel binding~:
+
+
+      
+<<code language='ocaml'|         lwt x = do_something1 ()
+         and y = do_something2 in
+         code
+      >>
+
+
+
+      will let <<span class="odocwiki_inlinecode"|do~_something~1 ~(~)>> and <<span class="odocwiki_inlinecode"|do~_something~2 ~(~)>> runs then
+      bind their result to <<span class="odocwiki_inlinecode"|x>> and <<span class="odocwiki_inlinecode"|y>>~. ~It is the same as~:
+
+
+      
+<<code language='ocaml'|         let t1 = do_something1
+         and t2 = do_something2 in
+         bind t1 (fun x -> bind t2 (fun y -> code))
+      >>
+
+
+
+* exception catching~:
+
+      
+<<code language='ocaml'|         try_lwt
+           <expr>
+      >>
+~,
+
+
+      
+<<code language='ocaml'|         try_lwt
+           <expr>
+         with
+           <branches>
+      >>
+~,
+
+
+      
+<<code language='ocaml'|         try_lwt
+           <expr>
+         finally
+           <expr>
+       >>
+
+
+
+    and~:
+
+
+      
+<<code language='ocaml'|         try_lwt
+           <expr>
+         with
+           <branches>
+         finally
+           <expr>
+      >>
+
+
+
+    ~For example~:
+
+
+      
+<<code language='ocaml'|         try_lwt
+           f x
+         with
+           | Failure msg ->
+               prerr_endline msg;
+               return ()
+      >>
+
+
+
+    is expanded to~:
+
+
+      
+<<code language='ocaml'|         catch (fun _ -> f x)
+           (function
+              | Failure msg ->
+                  prerr_endline msg;
+                  return ()
+              | exn ->
+                  Lwt.fail exn)
+      >>
+
+
+
+    ~Note that the <<span class="odocwiki_inlinecode"|exn ~-~> ~Lwt~.fail exn>> branch is automatically addedd
+    when needed~.
+
+
+    ~The construction <<span class="odocwiki_inlinecode"|try~_lwt ~<expr~>>> just catch regular exception
+    into lwt exception~. i~.e~. it is the same as <<span class="odocwiki_inlinecode"|catch ~(fun ~_ ~-~> ~<expr~>~) fail>>~.
+
+
+* exception raising~:
+
+      
+<<code language='ocaml'|        raise_lwt <expr>
+      >>
+
+
+
+      ~This allow exception to be traced when the ~-lwt~-debug switch is passed
+      to the syntax extension~.
+
+
+* assertion~:
+
+      
+<<code language='ocaml'|        assert_lwt <expr>
+      >>
+
+
+
+* for loop~:
+
+      
+<<code language='ocaml'|        for_lwt i = <expr> to <expr> do
+          <expr>
+        done
+      >>
+
+
+
+    and~:
+
+
+      
+<<code language='ocaml'|        for_lwt i = <expr> downto <expr> do
+          <expr>
+        done
+      >>
+
+
+
+* iteration over streams~:
+
+      
+<<code language='ocaml'|        for_lwt <patt> in <expr> do
+          <expr>
+        done
+      >>
+
+
+
+* while loop~:
+
+      
+<<code language='ocaml'|        while_lwt <expr> do
+          <expr>
+        done
+      >>
+
+
+
+* pattern mattching~:
+
+      
+<<code language='ocaml'|        match_lwt <expr> with
+          | <patt_1> -> <expr_1>
+          ...
+          | <patt_n> -> <expr_n>
+      >>
+

@@ -1,0 +1,172 @@
+=Module <<a_api_type | module Lwt_read_line >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_read_line: <<span class='code'|sig>><<a_api text=".." | module Lwt_read_line >><<span class='code'|end>>>>~Interactive line input\\
+
+----
+\\
+
+======@@id="6_Definitions"@@~Definitions======
+\\
+<<div  id="EXCEPTIONInterrupt" class="code"|<<span class="keyword"|exception>> Interrupt>>
+<<div class="info"|~Exception raised when the user press <<span class='code'|~Ctrl~^~D>>\\
+>>
+<<div class="code" id="TYPEedition_state"|<<span class="keyword"|type>> edition~_state = <<span class="code type"|Text.t * Text.t>> >>
+<<div class="info"|~An edition state~, it is a pair of two ~U~T~F~-~8 encoded strings~:\\
+
+* the input before the cursor
+* the input after the cursor
+
+\\
+>>
+
+<<div class="code" id="TYPEprompt"|<<span class="keyword"|type>> prompt = <<span class="code type"|<<a_api text="Lwt_term.styled_text" | type Lwt_term.styled_text >>>> >>
+<<div class="info"|~A prompt~. ~It may contains colors~.\\
+>>
+
+<<div class="code" id="TYPEtext_set"|<<span class="keyword"|type>> text~_set = <<span class="code type"|Set.Make(Text).t>> >>
+
+\\
+
+<<div class="h8"| ~Completion>>
+\\
+<<div class="code" id="TYPEcompletion_result"|<<span class="keyword"|type>> completion~_result = { 
+|@@class="typetable"@ @class="lefttop"@@{{{   }}}|@@class="lefttop"@@comp_state : <<span class="code type"|<<a_api text="edition_state" | type Lwt_read_line.edition_state >>>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~The new edition state|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@comp_words : <<span class="code type"|<<a_api text="text_set" | type Lwt_read_line.text_set >>>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~A list of possibilities|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+
+}
+>>
+<<div class="info"|~Result of a completion function~:\\
+>>
+
+<<div class="code" id="TYPEcompletion"|<<span class="keyword"|type>> completion = <<span class="code type"|<<a_api text="edition_state" | type Lwt_read_line.edition_state >> -> <<a_api text="completion_result" | type Lwt_read_line.completion_result >> <<a_api text="Lwt.t" | type Lwt.t >>>> >>
+<<div class="info"|~Type of a completion function~. ~It takes as argument the
+          current edition state~.\\
+
+
+          ~Note~: the thread launched by the completion function is
+          cancelled using <<a_api | val Lwt.cancel >> if the user continue typing
+          text~.\\
+>>
+
+<<div id="VALlookup" class="code"|<<span class="keyword"|val>> lookup : <<span class="code type"|Text.t -> <<a_api text="text_set" | type Lwt_read_line.text_set >> -> Text.t * <<a_api text="text_set" | type Lwt_read_line.text_set >>>>>><<div class="info"|<<span class='code'|lookup word words>> lookup for completion of <<span class='code'|word>> into
+      <<span class='code'|words>>~. ~It returns <<span class='code'|~(prefix~, possibilities~)>> where
+      <<span class='code'|possibilities>> are all words starting with <<span class='code'|word>> and <<span class='code'|prefix>>
+      is the longest common prefix of <<span class='code'|possibilities>>~.\\
+>>
+<<div id="VALcomplete" class="code"|<<span class="keyword"|val>> complete : <<span class="code type"|\\{{{   }}}?suffix:Text.t ->\\{{{   }}}  Text.t ->\\{{{   }}}  Text.t -> Text.t -> <<a_api text="text_set" | type Lwt_read_line.text_set >> -> <<a_api text="completion_result" | type Lwt_read_line.completion_result >>>>>><<div class="info"|<<span class='code'|complete ~?suffix before word after words>> basic completion
+      functions~. <<span class='code'|words>> is a list of possible completions for
+      <<span class='code'|word>>~.\\
+
+
+      ~If completion succeed <<span class='code'|suffix>> is append to the resulting
+      text~. ~It defaults to <<span class='code'|" ">>~.\\
+>>
+<<div id="VALprint_words" class="code"|<<span class="keyword"|val>> print~_words : <<span class="code type"|<<a_api text="Lwt_text.output_channel" | type Lwt_text.output_channel >> -> int -> string list -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|print~_words oc columns strs>> pretty~-prints a list of words~.\\
+>>
+\\
+
+<<div class="h8"| ~History>>
+\\
+<<div class="code" id="TYPEhistory"|<<span class="keyword"|type>> history = <<span class="code type"|Text.t list>> >>
+<<div class="info"|~Type of an history\\
+>>
+
+<<div id="VALadd_entry" class="code"|<<span class="keyword"|val>> add~_entry : <<span class="code type"|Text.t -> <<a_api text="history" | type Lwt_read_line.history >> -> <<a_api text="history" | type Lwt_read_line.history >>>>>><<div class="info"|<<span class='code'|add~_entry line history>> returns the history <<span class='code'|history>> plus
+      <<span class='code'|line>> at the beginning~. ~If <<span class='code'|line>> already appears at the
+      beginning or contains only spaces~, it is discarded~.\\
+>>
+<<div id="VALsave_history" class="code"|<<span class="keyword"|val>> save~_history : <<span class="code type"|string -> <<a_api text="history" | type Lwt_read_line.history >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|save~_history filename history>> saves <<span class='code'|history>> to
+      <<span class='code'|filename>>~. ~History is saved by separating lines with a null
+      character~.\\
+>>
+<<div id="VALload_history" class="code"|<<span class="keyword"|val>> load~_history : <<span class="code type"|string -> <<a_api text="history" | type Lwt_read_line.history >> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|load~_history filename>> loads history from <<span class='code'|filename>>~. ~Returns
+      the empty history if the the file does not exit~.\\
+>>
+\\
+
+<<div class="h8"| ~Clipboards>>
+\\
+<<div class="code"|<<span name="TYPEclipboard"|<<span class="keyword"|class>> <<a_api text="clipboard" | class Lwt_read_line.clipboard >>>> : <<span class='code'|object>><<a_api text=".." | class Lwt_read_line.clipboard >><<span class='code'|end>>>><<div class="info"|~Type of a clipboard~.
+>>
+<<div id="VALclipboard" class="code"|<<span class="keyword"|val>> clipboard : <<span class="code type"|<<a_api text="clipboard" | class type Lwt_read_line.clipboard >>>>>><<div class="info"|~The global clipboard~. ~All read~-line instances which do not use a
+      specific clipboard use this one~.\\
+>>
+\\
+
+======@@id="6_Highlevelfunctions"@@~High~-level functions======
+\\
+<<div class="code" id="TYPEcompletion_mode"|<<span class="keyword"|type>> completion~_mode = <<span class="code type"|[ `classic | `none | `real_time ]>> >>
+<<div class="info"|~The completion mode~.\\
+
+* <<span class='code'|`classic>> means that when the user hit <<span class='code'|~Tab>> a list of
+          possible completions is proposed~,
+
+* <<span class='code'|`real~_time>> means that possible completions are shown to
+          the user as he types~, and he can navigate in them with
+          <<span class='code'|~Meta~+left>>~, <<span class='code'|~Meta~+right>>
+
+* <<span class='code'|`none>> means no completion at all
+
+\\
+>>
+
+<<div id="VALread_line" class="code"|<<span class="keyword"|val>> read~_line : <<span class="code type"|\\{{{   }}}?history:<<a_api text="history" | type Lwt_read_line.history >> ->\\{{{   }}}  ?complete:<<a_api text="completion" | type Lwt_read_line.completion >> ->\\{{{   }}}  ?clipboard:<<a_api text="clipboard" | class type Lwt_read_line.clipboard >> ->\\{{{   }}}  ?mode:<<a_api text="completion_mode" | type Lwt_read_line.completion_mode >> ->\\{{{   }}}  ?prompt:<<a_api text="prompt" | type Lwt_read_line.prompt >> -> unit -> Text.t <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|readline ~?history ~?complete ~?mode ~?prompt ~(~)>> inputs some text
+      from the user~. ~If input is not a terminal~, it defaults to
+      <<span class='code'|~Lwt~_text~.read~_line ~Lwt~_text~.stdin>>~.\\
+
+
+      ~If\\
+>>
+<<div class="param_info"|<<span class="code code"|mode>> : contains the current completion mode~. ~It defaults
+      to <<span class='code'|`real~_time>>~.>>
+<<div class="param_info"|<<span class="code code"|prompt>> : defaults to <<span class='code'|~Lwt~_term~.~Text "~# ">>>>
+<<div class="code" id="TYPEpassword_style"|<<span class="keyword"|type>> password~_style = <<span class="code type"|[ `clear | `empty | `text of Text.t ]>> >>
+<<div class="info"|~Style which indicate how the password is echoed to the user~:\\
+
+* with <<span class='code'|`empty>> nothing is printed
+* with <<span class='code'|`clear>> the password is displayed has it
+* with <<span class='code'|`text ch>> all characters are replaced by <<span class='code'|ch>>
+
+\\
+>>
+
+<<div id="VALread_password" class="code"|<<span class="keyword"|val>> read~_password : <<span class="code type"|\\{{{   }}}?clipboard:<<a_api text="clipboard" | class type Lwt_read_line.clipboard >> ->\\{{{   }}}  ?style:<<a_api text="password_style" | type Lwt_read_line.password_style >> ->\\{{{   }}}  ?prompt:<<a_api text="prompt" | type Lwt_read_line.prompt >> -> unit -> Text.t <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|read~_password ~?clipboard ~?clear ~~prompt ~(~)>> inputs a password
+      from the user~. ~This function fails if input is not a terminal~.\\
+>>
+<<div class="param_info"|<<span class="code code"|style>> : defaults to <<span class='code'|`text "~*">>~.>>
+<<div id="VALread_keyword" class="code"|<<span class="keyword"|val>> read~_keyword : <<span class="code type"|\\{{{   }}}?history:<<a_api text="history" | type Lwt_read_line.history >> ->\\{{{   }}}  ?case_sensitive:bool ->\\{{{   }}}  ?mode:<<a_api text="completion_mode" | type Lwt_read_line.completion_mode >> ->\\{{{   }}}  ?prompt:<<a_api text="prompt" | type Lwt_read_line.prompt >> -> values:(Text.t * 'a) list -> unit -> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|read~_keyword ~?history ~?case~_sensitive ~?mode ~~prompt ~~keywords
+      ~(~)>> reads one word which is a member of <<span class='code'|words>>~. ~And returns
+      which keyword the user choosed~.\\
+
+
+      <<span class='code'|case~_sensitive>> default to <<span class='code'|false>>~.\\
+>>
+<<div id="VALread_yes_no" class="code"|<<span class="keyword"|val>> read~_yes~_no : <<span class="code type"|\\{{{   }}}?history:<<a_api text="history" | type Lwt_read_line.history >> ->\\{{{   }}}  ?mode:<<a_api text="completion_mode" | type Lwt_read_line.completion_mode >> ->\\{{{   }}}  ?prompt:<<a_api text="prompt" | type Lwt_read_line.prompt >> -> unit -> bool <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|read~_yes~_no ~?history ~?dynamic prompt ~(~)>> is the same as~:\\
+
+
+      
+{{{
+        read_keyword ?history ?dynamic prompt [("yes", true); ("no", false)] ()
+      
+}}}
+\\
+>>
+\\
+
+======@@id="6_Lowlevelinteraction"@@~Low~-level interaction======
+\\
+\\
+~This part allow you to implements your own read~-line function~, or
+    just to use the readline engine in another context ~(message box~,
+    ~.~.~.~)~.\\
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="Command" | module Lwt_read_line.Command >>: <<span class='code'|sig>><<a_api text=".." | module Lwt_read_line.Command >><<span class='code'|end>>>><<div class="info"|~Readline commands
+>>
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="Engine" | module Lwt_read_line.Engine >>: <<span class='code'|sig>><<a_api text=".." | module Lwt_read_line.Engine >><<span class='code'|end>>>><<div class="info"|~Engine
+>>
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="Terminal" | module Lwt_read_line.Terminal >>: <<span class='code'|sig>><<a_api text=".." | module Lwt_read_line.Terminal >><<span class='code'|end>>>><<div class="info"|~Rendering to the terminal
+>>
+\\
+
+======@@id="6_Advanceduse"@@~Advanced use======
+\\
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="Control" | module Lwt_read_line.Control >>: <<span class='code'|sig>><<a_api text=".." | module Lwt_read_line.Control >><<span class='code'|end>>>><<div class="info"|~Controlling a running read~-line instance
+>>

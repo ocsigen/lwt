@@ -1,0 +1,8 @@
+=Module <<a_api_type | module Simplexmlparser >> =
+<<div class="code"|<<span class="keyword"|module>> Simplexmlparser: <<span class='code'|sig>><<a_api text=".." | module Simplexmlparser >><<span class='code'|end>>>>~Basic camlp~4 parser for xml\\
+
+----
+<<div class="code" id="TYPExml"|<<span class="keyword"|type>> xml = 
+|@@class="typetable"@ @class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Element>> <<span class="keyword"|of>> <<span class="code type"|(string * (string * string) list * <<a_api text="xml" | type Simplexmlparser.xml >> list)>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|PCData>> <<span class="keyword"|of>> <<span class="code type"|string>>|>>
+

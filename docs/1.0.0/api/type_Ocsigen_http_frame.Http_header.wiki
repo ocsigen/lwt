@@ -1,0 +1,40 @@
+<<code language="ocaml" | sig
+  type http_method =
+      GET
+    | POST
+    | HEAD
+    | PUT
+    | DELETE
+    | TRACE
+    | OPTIONS
+    | CONNECT
+    | LINK
+    | UNLINK
+    | PATCH
+  type http_mode =
+      Query of (Ocsigen_http_frame.Http_header.http_method * string)
+    | Answer of int
+    | Nofirstline
+  type proto = HTTP10 | HTTP11
+  type http_header = {
+    mode : Ocsigen_http_frame.Http_header.http_mode;
+    proto : Ocsigen_http_frame.Http_header.proto;
+    headers : Http_headers.t;
+  }
+  val get_firstline :
+    Ocsigen_http_frame.Http_header.http_header ->
+    Ocsigen_http_frame.Http_header.http_mode
+  val get_headers :
+    Ocsigen_http_frame.Http_header.http_header -> Http_headers.t
+  val get_headers_value :
+    Ocsigen_http_frame.Http_header.http_header -> Http_headers.name -> string
+  val get_headers_values :
+    Ocsigen_http_frame.Http_header.http_header ->
+    Http_headers.name -> string list
+  val get_proto :
+    Ocsigen_http_frame.Http_header.http_header ->
+    Ocsigen_http_frame.Http_header.proto
+  val add_headers :
+    Ocsigen_http_frame.Http_header.http_header ->
+    Http_headers.name -> string -> Ocsigen_http_frame.Http_header.http_header
+end >>

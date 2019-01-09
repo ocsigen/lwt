@@ -1,0 +1,202 @@
+=Module <<a_api_type | module Lwt_stream >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_stream: <<span class='code'|sig>><<a_api text=".." | module Lwt_stream >><<span class='code'|end>>>>~Data streams\\
+
+----
+<<div class="code" id="TYPEt"|<<span class="keyword"|type>> <<span class="code type"|'a>> t>>
+<<div class="info"|~Type of a stream holding values of type <<span class='code'|~'a>>\\
+>>
+
+\\
+~Naming convention~: in this module all function taking a function
+    which is applied to all element of the streams are suffixed by~:\\
+
+* <<span class='code'|~_s>> when the function returns a thread and calls are serialised
+* <<span class='code'|~_p>> when the function returns a thread and calls are parallelised
+
+\\
+\\
+
+======@@id="6_Construction"@@~Construction======
+\\
+<<div id="VALfrom" class="code"|<<span class="keyword"|val>> from : <<span class="code type"|(unit -> 'a option <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="info"|<<span class='code'|from f>> creates an stream from the given input function~. <<span class='code'|f>> is
+      called each time more input is needed~, and the stream ends when
+      <<span class='code'|f>> returns <<span class='code'|~None>>~.\\
+>>
+<<div id="VALcreate" class="code"|<<span class="keyword"|val>> create : <<span class="code type"|unit -> 'a <<a_api text="t" | type Lwt_stream.t >> * ('a option -> unit)>>>><<div class="info"|<<span class='code'|create ~(~)>> returns a new stream and a push function\\
+>>
+<<div id="VALof_list" class="code"|<<span class="keyword"|val>> of~_list : <<span class="code type"|'a list -> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="info"|<<span class='code'|of~_list l>> creates a stream returning all elements of <<span class='code'|l>>\\
+>>
+<<div id="VALof_array" class="code"|<<span class="keyword"|val>> of~_array : <<span class="code type"|'a array -> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="info"|<<span class='code'|of~_array a>> creates a stream returning all elements of <<span class='code'|a>>\\
+>>
+<<div id="VALof_string" class="code"|<<span class="keyword"|val>> of~_string : <<span class="code type"|string -> char <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="info"|<<span class='code'|of~_string str>> creates a stream returning all characters of
+      <<span class='code'|str>>\\
+>>
+<<div id="VALclone" class="code"|<<span class="keyword"|val>> clone : <<span class="code type"|'a <<a_api text="t" | type Lwt_stream.t >> -> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="info"|<<span class='code'|clone st>> clone the given stream~. ~Operations on each stream
+      will not affect the other~.\\
+
+
+      ~For example~:\\
+
+
+      
+{{{
+        # let st1 = Lwt_stream.of_list [1; 2; 3];;
+        val st1 : int Lwt_stream.t = <abstr>
+        # let st2 = Lwt_stream.clone st1;;
+        val st2 : int Lwt_stream.t = <abstr>
+        # lwt x = Lwt_stream.next st1;;
+        val x : int = 1
+        # lwt y = Lwt_stream.next st2;;
+        val y : int = 1
+      
+}}}
+\\
+>>
+\\
+
+======@@id="6_Destruction"@@~Destruction======
+\\
+<<div id="VALto_list" class="code"|<<span class="keyword"|val>> to~_list : <<span class="code type"|'a <<a_api text="t" | type Lwt_stream.t >> -> 'a list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Returns the list of elements of the given stream\\
+>>
+<<div id="VALto_string" class="code"|<<span class="keyword"|val>> to~_string : <<span class="code type"|char <<a_api text="t" | type Lwt_stream.t >> -> string <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Returns the word composed of all characters of the given
+      stream\\
+>>
+\\
+
+======@@id="6_Dataretreival"@@~Data retreival======
+\\
+<<div  id="EXCEPTIONEmpty" class="code"|<<span class="keyword"|exception>> Empty>>
+<<div class="info"|~Exception raised when trying to retreive data from an empty
+      stream~.\\
+>>
+<<div id="VALpeek" class="code"|<<span class="keyword"|val>> peek : <<span class="code type"|'a <<a_api text="t" | type Lwt_stream.t >> -> 'a option <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|peek st>> returns the first element of the stream~, if any~,
+      without removing it~.\\
+>>
+<<div id="VALnpeek" class="code"|<<span class="keyword"|val>> npeek : <<span class="code type"|int -> 'a <<a_api text="t" | type Lwt_stream.t >> -> 'a list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|npeek n st>> returns at most the first <<span class='code'|n>> elements of <<span class='code'|st>>~,
+      without removing them~.\\
+>>
+<<div id="VALget" class="code"|<<span class="keyword"|val>> get : <<span class="code type"|'a <<a_api text="t" | type Lwt_stream.t >> -> 'a option <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|get st>> remove and returns the first element of the stream~, if
+      any~.\\
+>>
+<<div id="VALnget" class="code"|<<span class="keyword"|val>> nget : <<span class="code type"|int -> 'a <<a_api text="t" | type Lwt_stream.t >> -> 'a list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|nget n st>> remove and returns at most the first <<span class='code'|n>> elements of
+      <<span class='code'|st>>~.\\
+>>
+<<div id="VALget_while" class="code"|<<span class="keyword"|val>> get~_while : <<span class="code type"|('a -> bool) -> 'a <<a_api text="t" | type Lwt_stream.t >> -> 'a list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALget_while_s" class="code"|<<span class="keyword"|val>> get~_while~_s : <<span class="code type"|('a -> bool <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a <<a_api text="t" | type Lwt_stream.t >> -> 'a list <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|get~_while f st>> returns the longest prefix of <<span class='code'|st>> where all
+      elements satisfy <<span class='code'|f>>~.\\
+>>
+<<div id="VALnext" class="code"|<<span class="keyword"|val>> next : <<span class="code type"|'a <<a_api text="t" | type Lwt_stream.t >> -> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|next st>> remove and returns the next element of the stream~, of
+      fail with <<a_api | exception Lwt_stream.Empty >> if the stream is empty~.\\
+>>
+<<div id="VALlast_new" class="code"|<<span class="keyword"|val>> last~_new : <<span class="code type"|'a <<a_api text="t" | type Lwt_stream.t >> -> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|next~_new st>> if no element are available on <<span class='code'|st>> without
+      sleeping~, then it is the same as <<span class='code'|next st>>~. ~Otherwise it removes
+      all elements of <<span class='code'|st>> that are ready except the last one~, and
+      return it~.\\
+
+
+      ~If fails with <<a_api | exception Lwt_stream.Empty >> if the stream has no more elements\\
+>>
+<<div id="VALjunk" class="code"|<<span class="keyword"|val>> junk : <<span class="code type"|'a <<a_api text="t" | type Lwt_stream.t >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|junk st>> remove the first element of <<span class='code'|st>>~.\\
+>>
+<<div id="VALnjunk" class="code"|<<span class="keyword"|val>> njunk : <<span class="code type"|int -> 'a <<a_api text="t" | type Lwt_stream.t >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|njunk n st>> removes at most the first <<span class='code'|n>> elements of the
+      stream~.\\
+>>
+<<div id="VALjunk_while" class="code"|<<span class="keyword"|val>> junk~_while : <<span class="code type"|('a -> bool) -> 'a <<a_api text="t" | type Lwt_stream.t >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALjunk_while_s" class="code"|<<span class="keyword"|val>> junk~_while~_s : <<span class="code type"|('a -> bool <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a <<a_api text="t" | type Lwt_stream.t >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|junk~_while f st>> removes all elements at the beginning of the
+      streams which satisfy <<span class='code'|f>>~.\\
+>>
+<<div id="VALjunk_old" class="code"|<<span class="keyword"|val>> junk~_old : <<span class="code type"|'a <<a_api text="t" | type Lwt_stream.t >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|junk~_old st>> removes all elements that are ready to be read
+      without yeilding from <<span class='code'|st>>~.\\
+
+
+      ~For example the <<span class='code'|read~_password>> function of <<span class='code'|~Lwt~_read~_line>> use
+      that to junk key previously typed by the user~.\\
+>>
+<<div id="VALget_available" class="code"|<<span class="keyword"|val>> get~_available : <<span class="code type"|'a <<a_api text="t" | type Lwt_stream.t >> -> 'a list>>>><<div class="info"|<<span class='code'|get~_available l>> returns all available elements of <<span class='code'|l>> without
+      blocking\\
+>>
+<<div id="VALget_available_up_to" class="code"|<<span class="keyword"|val>> get~_available~_up~_to : <<span class="code type"|int -> 'a <<a_api text="t" | type Lwt_stream.t >> -> 'a list>>>><<div class="info"|<<span class='code'|get~_available~_up~_to l n>> returns up to <<span class='code'|n>> elements of <<span class='code'|l>>
+      without blocking\\
+>>
+<<div id="VALis_empty" class="code"|<<span class="keyword"|val>> is~_empty : <<span class="code type"|'a <<a_api text="t" | type Lwt_stream.t >> -> bool <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|is~_empty enum>> returns wether the given stream is empty\\
+>>
+\\
+
+======@@id="6_Streamtransversal"@@~Stream transversal======
+\\
+\\
+~Note~: all the following functions are destructive~.\\
+
+
+    ~For example~:\\
+
+
+    
+{{{
+      # let st1 = Lwt_stream.of_list [1; 2; 3];;
+      val st1 : int Lwt_stream.t = <abstr>
+      # let st2 = Lwt_stream.map string_of_int st1;;
+      val st2 : string Lwt_stream.t = <abstr>
+      # lwt x = Lwt_stream.next st1;;
+      val x : int = 1
+      # lwt y = Lwt_stream.next st2;;
+      val y : string = "2"
+    
+}}}
+\\
+<<div id="VALchoose" class="code"|<<span class="keyword"|val>> choose : <<span class="code type"|'a <<a_api text="t" | type Lwt_stream.t >> list -> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="info"|<<span class='code'|choose l>> creates an stream from a list of streams~. ~The
+      resulting stream will returns elements returned by any stream of
+      <<span class='code'|l>> in an unspecified order~.\\
+>>
+<<div id="VALmap" class="code"|<<span class="keyword"|val>> map : <<span class="code type"|('a -> 'b) -> 'a <<a_api text="t" | type Lwt_stream.t >> -> 'b <<a_api text="t" | type Lwt_stream.t >>>>>><<div id="VALmap_s" class="code"|<<span class="keyword"|val>> map~_s : <<span class="code type"|('a -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a <<a_api text="t" | type Lwt_stream.t >> -> 'b <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="info"|<<span class='code'|map f st>> maps the value returned by <<span class='code'|st>> with <<span class='code'|f>>\\
+>>
+<<div id="VALfilter" class="code"|<<span class="keyword"|val>> filter : <<span class="code type"|('a -> bool) -> 'a <<a_api text="t" | type Lwt_stream.t >> -> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div id="VALfilter_s" class="code"|<<span class="keyword"|val>> filter~_s : <<span class="code type"|('a -> bool <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a <<a_api text="t" | type Lwt_stream.t >> -> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="info"|<<span class='code'|filter f st>> keeps only value <<span class='code'|x>> such that <<span class='code'|f x>> is <<span class='code'|true>>\\
+>>
+<<div id="VALfilter_map" class="code"|<<span class="keyword"|val>> filter~_map : <<span class="code type"|('a -> 'b option) -> 'a <<a_api text="t" | type Lwt_stream.t >> -> 'b <<a_api text="t" | type Lwt_stream.t >>>>>><<div id="VALfilter_map_s" class="code"|<<span class="keyword"|val>> filter~_map~_s : <<span class="code type"|('a -> 'b option <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a <<a_api text="t" | type Lwt_stream.t >> -> 'b <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="info"|<<span class='code'|filter~_map f st>> filter and map <<span class='code'|st>> at the same time\\
+>>
+<<div id="VALmap_list" class="code"|<<span class="keyword"|val>> map~_list : <<span class="code type"|('a -> 'b list) -> 'a <<a_api text="t" | type Lwt_stream.t >> -> 'b <<a_api text="t" | type Lwt_stream.t >>>>>><<div id="VALmap_list_s" class="code"|<<span class="keyword"|val>> map~_list~_s : <<span class="code type"|('a -> 'b list <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a <<a_api text="t" | type Lwt_stream.t >> -> 'b <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="info"|<<span class='code'|map~_list f st>> applies <<span class='code'|f>> on each element of <<span class='code'|st>> and flattens
+      the lists returned\\
+>>
+<<div id="VALfold" class="code"|<<span class="keyword"|val>> fold : <<span class="code type"|('a -> 'b -> 'b) -> 'a <<a_api text="t" | type Lwt_stream.t >> -> 'b -> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALfold_s" class="code"|<<span class="keyword"|val>> fold~_s : <<span class="code type"|('a -> 'b -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a <<a_api text="t" | type Lwt_stream.t >> -> 'b -> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|fold f s x>> fold~_like function for streams~.\\
+>>
+<<div id="VALiter" class="code"|<<span class="keyword"|val>> iter : <<span class="code type"|('a -> unit) -> 'a <<a_api text="t" | type Lwt_stream.t >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALiter_p" class="code"|<<span class="keyword"|val>> iter~_p : <<span class="code type"|('a -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a <<a_api text="t" | type Lwt_stream.t >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALiter_s" class="code"|<<span class="keyword"|val>> iter~_s : <<span class="code type"|('a -> unit <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a <<a_api text="t" | type Lwt_stream.t >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|iter f s>> iterates over all elements of the stream\\
+>>
+<<div id="VALfind" class="code"|<<span class="keyword"|val>> find : <<span class="code type"|('a -> bool) -> 'a <<a_api text="t" | type Lwt_stream.t >> -> 'a option <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALfind_s" class="code"|<<span class="keyword"|val>> find~_s : <<span class="code type"|('a -> bool <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a <<a_api text="t" | type Lwt_stream.t >> -> 'a option <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|find f s>> find an element in a stream~.\\
+>>
+<<div id="VALfind_map" class="code"|<<span class="keyword"|val>> find~_map : <<span class="code type"|('a -> 'b option) -> 'a <<a_api text="t" | type Lwt_stream.t >> -> 'b option <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALfind_map_s" class="code"|<<span class="keyword"|val>> find~_map~_s : <<span class="code type"|('a -> 'b option <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a <<a_api text="t" | type Lwt_stream.t >> -> 'b option <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|find f s>> find and map at the same time~.\\
+>>
+<<div id="VALcombine" class="code"|<<span class="keyword"|val>> combine : <<span class="code type"|'a <<a_api text="t" | type Lwt_stream.t >> -> 'b <<a_api text="t" | type Lwt_stream.t >> -> ('a * 'b) <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="info"|<<span class='code'|combine s~1 s~2>> combine two streams~. ~The stream will ends when
+      the first stream ends~.\\
+>>
+<<div id="VALappend" class="code"|<<span class="keyword"|val>> append : <<span class="code type"|'a <<a_api text="t" | type Lwt_stream.t >> -> 'a <<a_api text="t" | type Lwt_stream.t >> -> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="info"|<<span class='code'|append s~1 s~2>> returns a stream which returns all elements of
+      <<span class='code'|s~1>>~, then all elements of <<span class='code'|s~2>>\\
+>>
+<<div id="VALconcat" class="code"|<<span class="keyword"|val>> concat : <<span class="code type"|'a <<a_api text="t" | type Lwt_stream.t >> <<a_api text="t" | type Lwt_stream.t >> -> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="info"|<<span class='code'|concat st>> returns the concatenation of all streams of <<span class='code'|st>>~.\\
+>>
+<<div id="VALflatten" class="code"|<<span class="keyword"|val>> flatten : <<span class="code type"|'a list <<a_api text="t" | type Lwt_stream.t >> -> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="info"|<<span class='code'|flatten st ~= map~_list ~(fun l ~-~> l~) st>>\\
+>>
+\\
+
+======@@id="6_Parsing"@@~Parsing======
+\\
+<<div id="VALparse" class="code"|<<span class="keyword"|val>> parse : <<span class="code type"|'a <<a_api text="t" | type Lwt_stream.t >> -> ('a <<a_api text="t" | type Lwt_stream.t >> -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) -> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|parse st f>> parses <<span class='code'|st>> with <<span class='code'|f>>~. ~If <<span class='code'|f>> raise an exception~,
+      <<span class='code'|st>> is restored to its previous state~.\\
+>>
+\\
+
+======@@id="6_Misc"@@~Misc======
+\\
+<<div id="VALhexdump" class="code"|<<span class="keyword"|val>> hexdump : <<span class="code type"|char <<a_api text="t" | type Lwt_stream.t >> -> string <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="info"|<<span class='code'|hexdump byte~_stream>> returns a stream which is the same as the
+      output of <<span class='code'|hexdump ~-~C>>~.\\
+
+
+      ~Basically~, here is a simple implementation of <<span class='code'|hexdump ~-~C>>~:\\
+
+
+      
+{{{
+        open Lwt
+        open Lwt_io
+        let () = Lwt_main.run (write_lines stdout (Lwt_stream.hexdump (read_lines stdin)))
+      
+}}}
+\\
+>>

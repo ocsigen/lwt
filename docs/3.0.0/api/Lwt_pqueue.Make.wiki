@@ -1,0 +1,33 @@
+=Functor <<a_api_type | module Lwt_pqueue.Make >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Make>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_sig_block"|<<span class="ocsforge_color_keyword"|functor>> <<span class="ocsforge_color_delimiter"|(>>Ord <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="OrderedType" | module Lwt_pqueue.OrderedType >>>><<span class="ocsforge_color_delimiter"|)>> <<span class="ocsforge_color_delimiter"|-~>>> \\  <<span class="odocwiki_type"|<<a_api text="S" | module Lwt_pqueue.S >>>><<span class="odocwiki_type"|  with type elt = Ord.t>>>>>>~Generates priority queue types from ordered types~.
+<<div class="odocwiki_module_param_list" | <<span class="odocwiki_param_title" |Parameters :>><<div|
+|@@class="odocwiki_paramstable"@ @class="centertop fifteen code"@@{{{Ord}}}|@@class="centertop"@@:|<<span class="odocwiki_type"|Lwt_pqueue.OrderedType>>|
+>>>>
+
+----
+<<pre class="ocsforge_color odocwiki_code" id="TYPEelt"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|elt>>>><<div class="odocwiki_info"|~Type of elements contained in the priority queue~.
+>>
+<<pre class="ocsforge_color odocwiki_code" id="TYPEt"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|t>>>><<div class="odocwiki_info"|~Type of priority queues~.
+>>
+<<pre id="VALempty" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|empty>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="t" | type Lwt_pqueue.S.t >>>>>><<div class="odocwiki_info"|~The empty priority queue~. ~Contains no elements~.
+>>
+<<pre id="VALis_empty" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|is~_empty>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="t" | type Lwt_pqueue.S.t >> <<span class="ocsforge_color_delimiter"| -> >> bool>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|is~_empty q>> evaluates to <<span class="odocwiki_inlinecode"|true>> iff <<span class="odocwiki_inlinecode"|q>> is empty~.
+>>
+<<pre id="VALadd" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|add>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="elt" | type Lwt_pqueue.S.elt >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="t" | type Lwt_pqueue.S.t >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="t" | type Lwt_pqueue.S.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|add e q>> evaluates to a new priority queue~, which contains all the
+        elements of <<span class="odocwiki_inlinecode"|q>>~, and the additional element <<span class="odocwiki_inlinecode"|e>>~.
+>>
+<<pre id="VALunion" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|union>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="t" | type Lwt_pqueue.S.t >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="t" | type Lwt_pqueue.S.t >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="t" | type Lwt_pqueue.S.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|union q q~'>> evaluates to a new priority queue~, which contains all the
+        elements of both <<span class="odocwiki_inlinecode"|q>> and <<span class="odocwiki_inlinecode"|q~'>>~.
+>>
+<<pre id="VALfind_min" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|find~_min>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="t" | type Lwt_pqueue.S.t >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="elt" | type Lwt_pqueue.S.elt >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|find~_min q>> evaluates to the minimum element of <<span class="odocwiki_inlinecode"|q>> if it is not empty~,
+        and raises <<span class="odocwiki_inlinecode"|~Not~_found>> otherwise~.
+>>
+<<pre id="VALlookup_min" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|lookup~_min>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="t" | type Lwt_pqueue.S.t >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="elt" | type Lwt_pqueue.S.elt >> option>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|lookup~_min q>> evaluates to <<span class="odocwiki_inlinecode"|~Some e>>~, where <<span class="odocwiki_inlinecode"|e>> is the minimum element
+        of <<span class="odocwiki_inlinecode"|q>>~, if <<span class="odocwiki_inlinecode"|q>> is not empty~, and evaluates to <<span class="odocwiki_inlinecode"|~None>> otherwise~.
+>>
+<<pre id="VALremove_min" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|remove~_min>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="t" | type Lwt_pqueue.S.t >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="t" | type Lwt_pqueue.S.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|remove~_min q>> evaluates to a new priority queue~, which contains all the
+        elements of <<span class="odocwiki_inlinecode"|q>> except for its minimum element~. ~Raises <<span class="odocwiki_inlinecode"|~Not~_found>> if
+        <<span class="odocwiki_inlinecode"|q>> is empty~.
+>>
+<<pre id="VALsize" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|size>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="t" | type Lwt_pqueue.S.t >> <<span class="ocsforge_color_delimiter"| -> >> int>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|size q>> evaluates to the number of elements in <<span class="odocwiki_inlinecode"|q>>~.
+>>

@@ -1,0 +1,5 @@
+=Module <<a_api_type | module XHTML.T.LINK >> =
+<<div class="code"|<<span class="keyword"|module>> LINK: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.LINK >><<span class='code'|end>>>>
+----
+<<div class="code" id="TYPEt"|<<span class="keyword"|type>> t = <<span class="code type"|[ `Link ]>> >>
+

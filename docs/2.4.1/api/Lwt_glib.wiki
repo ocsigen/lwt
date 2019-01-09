@@ -1,0 +1,89 @@
+=Module <<a_api_type | module Lwt_glib >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_glib>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_glib >><<span class="ocsforge_color_keyword"|end>>>>~Glib integration
+
+----
+
+~This module allow to use ~Lwt in ~G~T~K applications~.
+
+
+    ~Here is what you have to do to make ~Lwt and ~G~T~K work together~:
+* call <<a_api | val Lwt_glib.install >> at the beginning of your program ~(before or
+    after ~G~Main~.init~, it does not matter~)
+* do not call ~G~Main~.main~, write your application as a normal ~Lwt
+    application instead~.
+
+    ~For example~:
+
+
+    
+<<code language='ocaml'|      let () = Lwt_main.run (
+        (* Initializes GTK. *)
+        ignore (GMain.init ());
+
+        (* Install Lwt<->Glib integration. *)
+        Lwt_glib.install ();
+
+        (* Thread which is wakeup when the main window is closed. *)
+        let waiter, wakener = Lwt.wait () in
+
+        (* Create a window. *)
+        let window = GWindow.window () in
+
+        (* Display something inside the window. *)
+        ignore (GMisc.label ~text:"Hello, world!" ~packing:window#add ());
+
+        (* Quit when the window is closed. *)
+        ignore (window#connect#destroy (Lwt.wakeup wakener));
+
+        (* Show the window. *)
+        window#show ();
+
+        (* Wait for it to be closed. *)
+        waiter
+      )
+    >>
+
+<<pre id="VALinstall" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|install>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_label"| ?mode: >>[ `glib_into_lwt | `lwt_into_glib ] <<span class="ocsforge_color_delimiter"| -> >> unit <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Install the ~Glib~<~-~>~Lwt integration~.
+
+
+      ~If <<span class="odocwiki_inlinecode"|mode>> is <<span class="odocwiki_inlinecode"|`glib~_into~_lwt>> then glib will use the ~Lwt main
+      loop~, and if <<span class="odocwiki_inlinecode"|mode>> is <<span class="odocwiki_inlinecode"|`lwt~_into~_glib>> then ~Lwt will use the
+      ~Glib main loop~.
+
+
+      ~The first mode is better but for some unknown reason it does not
+      work under ~Windows~, so the second is used as default on ~Windows
+      while the first one is used as default on ~Unix~.
+
+
+      ~If the integration is already active~, this function does
+      nothing~.
+>>
+<<pre id="VALremove" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|remove>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Remove the ~Glib~<~-~>~Lwt integration~.
+>>
+<<pre id="VALiter" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|iter>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|bool <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~This function is not related to ~Lwt~. <<span class="odocwiki_inlinecode"|iter may~_block>> does the
+      same as <<span class="odocwiki_inlinecode"|~Glib~.~Main~.iteration may~_block>> but can safely be called
+      in a multi~-threaded program~, it will not block the whole
+      program~.
+
+
+      ~For example~:
+
+
+      
+<<code language='ocaml'|        let main () =
+          while true do
+            Lwt_glib.iter true
+          done
+
+        let thread = Thread.create main ()
+      >>
+
+
+
+      ~Note~: you can call this function only from one thread at a time~,
+      otherwise it will raise <<span class="odocwiki_inlinecode"|~Failure>>~.
+>>
+<<pre id="VALwakeup" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wakeup>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~If one thread is blocking on <<a_api | val Lwt_glib.iter >>~, then <<span class="odocwiki_inlinecode"|wakeup ~(~)>> make
+      <<a_api | val Lwt_glib.iter >> to return immediatly~.
+>>

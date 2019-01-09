@@ -1,0 +1,34 @@
+=Module <<a_api_type | module Lwt_pool >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_pool>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_pool >><<span class="ocsforge_color_keyword"|end>>>>~External resource pools~.
+
+----
+
+~For example~, instead of creating a new database connection each time you
+    need one~, keep a pool of opened connections and reuse ones that are free~.
+    ~The pool also provides a limit on the number of connections that can
+    simultaneously be open~.
+
+
+    ~Note that pools are not for keeping ~Lwt threads~. ~Lwt threads are very cheap
+    to create and are pure~. ~It is neither desirable nor possible to reuse them~.
+    ~If you want to have a pool of //system// threads~, consider module
+    <<span class="odocwiki_inlinecode"|~Lwt~_preemptive>>~.
+<<pre class="ocsforge_color odocwiki_code" id="TYPEt"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_type"|'a>> <<span class="odocwiki_name"|t>>>><<div class="odocwiki_info"|~Pools containing values of type <<span class="odocwiki_inlinecode"|~'a>>~.
+>>
+<<pre id="VALcreate" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|create>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  int <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?check: >><<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>bool <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?validate: >><<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> bool <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_pool.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|create n ~?check ~?validate f>> creates a new pool with at most
+      <<span class="odocwiki_inlinecode"|n>> elements~. <<span class="odocwiki_inlinecode"|f>> is the function to use to create a new element
+      ~Elements are created on demand~.
+
+
+      ~An element of the pool is validated by the optional <<span class="odocwiki_inlinecode"|validate>>
+      function before its <<a_api | val Lwt_pool.use >>~. ~Invalid elements are re~-created~.
+
+
+      ~The optional function <<span class="odocwiki_inlinecode"|check>> is called after a <<span class="odocwiki_inlinecode"|use>> of an
+      element failed~. ~It must call its argument exactly once with
+      <<span class="odocwiki_inlinecode"|true>> if the element is still valid and <<span class="odocwiki_inlinecode"|false>> otherwise~.
+>>
+<<pre id="VALuse" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|use>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_pool.t >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|use p f>> takes one free element of the pool <<span class="odocwiki_inlinecode"|p>> and gives it to
+      the function <<span class="odocwiki_inlinecode"|f>>~. ~The element is put back into the pool after the
+      thread created by <<span class="odocwiki_inlinecode"|f>> completes~.
+>>

@@ -1,0 +1,27 @@
+=Index of module types=
+
+|@@ @class="alignleft"@@\\E|
+|<<a_api text="ELIOMFORMSIG"| module type Eliom_mkforms.ELIOMFORMSIG >> ~[<<a_api | module Eliom_mkforms >>~]||
+|<<a_api text="ELIOMREGSIG"| module type Eliom_mkreg.ELIOMREGSIG >> ~[<<a_api | module Eliom_mkreg >>~]||
+|<<a_api text="ELIOMREGSIG1"| module type Eliom_mkreg.ELIOMREGSIG1 >> ~[<<a_api | module Eliom_mkreg >>~]||
+|<<a_api text="ELIOMSIG"| module type Eliom_predefmod.ELIOMSIG >> ~[<<a_api | module Eliom_predefmod >>~]|<<div class="info"|~The signature of such modules~.
+>>
+|
+|@@ @class="alignleft"@@\\F|
+|<<a_api text="FORMCREATE"| module type Eliom_mkforms.FORMCREATE >> ~[<<a_api | module Eliom_mkforms >>~]||
+|@@ @class="alignleft"@@\\H|
+|<<a_api text="HTTP_CONTENT"| module type Ocsigen_http_frame.HTTP_CONTENT >> ~[<<a_api | module Ocsigen_http_frame >>~]||
+|@@ @class="alignleft"@@\\R|
+|<<a_api text="REGCREATE"| module type Eliom_mkreg.REGCREATE >> ~[<<a_api | module Eliom_mkreg >>~]||
+|@@ @class="alignleft"@@\\T|
+|<<a_api text="T"| module type XHTML.T >> ~[<<a_api | module XHTML >>~]||
+|<<a_api text="T_01_00"| module type XHTML.T_01_00 >> ~[<<a_api | module XHTML >>~]|<<div class="info"|~X~H~T~M~L ~1~.~0 includes some deprecated features that since
+    have been removed from ~X~H~T~M~L ~1~.~1~:
+>>
+|
+|<<a_api text="T_01_01"| module type XHTML.T_01_01 >> ~[<<a_api | module XHTML >>~]|<<div class="info"|~An alias for ~X~H~T~M~L ~1~.~1 ~(for symmetry~)~:
+>>
+|
+|@@ @class="alignleft"@@\\X|
+|<<a_api text="XHTMLFORMSSIG"| module type Eliom_predefmod.XHTMLFORMSSIG >> ~[<<a_api | module Eliom_predefmod >>~]||
+\\

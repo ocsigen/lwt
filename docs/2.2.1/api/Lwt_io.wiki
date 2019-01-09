@@ -1,0 +1,401 @@
+=Module <<a_api_type | module Lwt_io >> =
+<<div class="code"|<<span class="keyword"|module>> Lwt_io: <<span class='code'|sig>><<a_api text=".." | module Lwt_io >><<span class='code'|end>>>>~Buffered byte channels\\
+
+----
+\\
+~A **channel** is a high~-level object for performing ~I~Os~. ~It allow
+    to read~/write things from~/to the outside worlds in an efficient
+    way~, by minimising the number of system calls~.\\
+
+
+    ~An **output channel** is a channel that can be used to send data
+    and an **input channel** is a channel that can used to receive
+    data~.\\
+
+
+    ~If you are familiar with buffered channels you may be familiar too
+    with the **flush** operation~. ~Note that byte channles of this
+    modules are automatically flushed when there is nothing else to do
+    ~(i~.e~. before the program goes into idle~)~, so this means that you
+    no longer have to write~:\\
+
+
+    
+{{{
+      eprintf "log message\n";
+      flush stderr;
+    
+}}}
+\\
+
+
+    to have you messages displayed~.\\
+
+
+    ~Note about errors~: input functions of this module raise
+    <<span class='code'|~End~_of~_file>> when the end~-of~-file is reached ~(i~.e~. when the read
+    function returns <<span class='code'|~0>>~)~. ~Other exceptions are ones caused by the
+    backend read~/write functions~, such as <<span class='code'|~Unix~.~Unix~_error>>~.\\
+<<div  id="EXCEPTIONChannel_closed" class="code"|<<span class="keyword"|exception>> Channel_closed <<span class="keyword"|of>> <<span class="code type"|string>>>>
+<<div class="info"|~Exception raised when a channel is closed~. ~The parameter is a
+      description of the channel~.\\
+>>
+\\
+
+======@@id="6_Types"@@~Types======
+\\
+<<div class="code" id="TYPEchannel"|<<span class="keyword"|type>> <<span class="code type"|'a>> channel>>
+<<div class="info"|~Type of buffered byte channels\\
+>>
+
+<<div class="code" id="TYPEinput"|<<span class="keyword"|type>> input>>
+<<div class="info"|~Input mode\\
+>>
+
+<<div class="code" id="TYPEoutput"|<<span class="keyword"|type>> output>>
+<<div class="info"|~Output mode\\
+>>
+
+<<div class="code" id="TYPEmode"|<<span class="keyword"|type>> <<span class="code type"|'a>> mode = private 
+|@@class="typetable"@ @class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Input>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Output>>|>>
+<<div class="info"|~Channel mode\\
+>>
+
+<<div id="VALinput" class="code"|<<span class="keyword"|val>> input : <<span class="code type"|<<a_api text="input" | type Lwt_io.input >> <<a_api text="mode" | type Lwt_io.mode >>>>>><<div class="info"|<<span class='code'|input>> input mode representation\\
+>>
+<<div id="VALoutput" class="code"|<<span class="keyword"|val>> output : <<span class="code type"|<<a_api text="output" | type Lwt_io.output >> <<a_api text="mode" | type Lwt_io.mode >>>>>><<div class="info"|<<span class='code'|output>> output mode representation\\
+>>
+<<div class="code" id="TYPEinput_channel"|<<span class="keyword"|type>> input~_channel = <<span class="code type"|<<a_api text="input" | type Lwt_io.input >> <<a_api text="channel" | type Lwt_io.channel >>>> >>
+<<div class="info"|~Type of input channels\\
+>>
+
+<<div class="code" id="TYPEoutput_channel"|<<span class="keyword"|type>> output~_channel = <<span class="code type"|<<a_api text="output" | type Lwt_io.output >> <<a_api text="channel" | type Lwt_io.channel >>>> >>
+<<div class="info"|~Type of output channels\\
+>>
+
+<<div id="VALmode" class="code"|<<span class="keyword"|val>> mode : <<span class="code type"|'a <<a_api text="channel" | type Lwt_io.channel >> -> 'a <<a_api text="mode" | type Lwt_io.mode >>>>>><<div class="info"|<<span class='code'|mode ch>> returns the mode of a channel\\
+>>
+\\
+
+======@@id="6_Wellknowninstances"@@~Well~-known instances======
+\\
+<<div id="VALstdin" class="code"|<<span class="keyword"|val>> stdin : <<span class="code type"|<<a_api text="input_channel" | type Lwt_io.input_channel >>>>>><<div class="info"|~The standard input~, it reads data from <<a_api | val Lwt_unix.stdin >>\\
+>>
+<<div id="VALstdout" class="code"|<<span class="keyword"|val>> stdout : <<span class="code type"|<<a_api text="output_channel" | type Lwt_io.output_channel >>>>>><<div class="info"|~The standard output~, it writes data to <<a_api | val Lwt_unix.stdout >>\\
+>>
+<<div id="VALstderr" class="code"|<<span class="keyword"|val>> stderr : <<span class="code type"|<<a_api text="output_channel" | type Lwt_io.output_channel >>>>>><<div class="info"|~The standard output for error messages~, it writes data to
+      <<a_api | val Lwt_unix.stderr >>\\
+>>
+<<div id="VALzero" class="code"|<<span class="keyword"|val>> zero : <<span class="code type"|<<a_api text="input_channel" | type Lwt_io.input_channel >>>>>><<div class="info"|~Inputs which returns always <<span class='code'|~'~\x~0~0~'>>\\
+>>
+<<div id="VALnull" class="code"|<<span class="keyword"|val>> null : <<span class="code type"|<<a_api text="output_channel" | type Lwt_io.output_channel >>>>>><<div class="info"|~Output which drops everything\\
+>>
+\\
+
+======@@id="6_Channelscreationmanipulation"@@~Channels creation~/manipulation======
+\\
+<<div id="VALpipe" class="code"|<<span class="keyword"|val>> pipe : <<span class="code type"|?buffer_size:int -> unit -> <<a_api text="input_channel" | type Lwt_io.input_channel >> * <<a_api text="output_channel" | type Lwt_io.output_channel >>>>>><<div class="info"|<<span class='code'|pipe ~?buffer~_size ~(~)>> creates a pipe using <<a_api | val Lwt_unix.pipe >> and
+      makes two channels from the two returned file descriptors\\
+>>
+<<div id="VALmake" class="code"|<<span class="keyword"|val>> make : <<span class="code type"|\\{{{   }}}?buffer_size:int ->\\{{{   }}}  ?close:(unit -> unit <<a_api text="Lwt.t" | type Lwt.t >>) ->\\{{{   }}}  ?seek:(int64 -> Unix.seek_command -> int64 <<a_api text="Lwt.t" | type Lwt.t >>) ->\\{{{   }}}  mode:'a <<a_api text="mode" | type Lwt_io.mode >> ->\\{{{   }}}  (<<a_api text="Lwt_bytes.t" | type Lwt_bytes.t >> -> int -> int -> int <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a <<a_api text="channel" | type Lwt_io.channel >>>>>><<div class="info"|<<span class='code'|make ~?buffer~_size ~?close ~~mode perform~_io>> is the
+      main function for creating new channels~.\\
+>>
+<<div class="param_info"|<<span class="code code"|buffer_size>> : size of the internal buffer~. ~It must be
+      between ~1~6 and <<span class='code'|~Sys~.max~_string~_length>>>>
+<<div class="param_info"|<<span class="code code"|close>> : close function of the channel~. ~It defaults to
+      <<span class='code'|~Lwt~.return>>>>
+<<div class="param_info"|<<span class="code code"|seek>> : same meaning as <<span class='code'|~Unix~.lseek>>>>
+<<div class="param_info"|<<span class="code code"|mode>> : either <<a_api | val Lwt_io.input >> or <<a_api | val Lwt_io.output >>>>
+<<div id="VALof_bytes" class="code"|<<span class="keyword"|val>> of~_bytes : <<span class="code type"|mode:'a <<a_api text="mode" | type Lwt_io.mode >> -> <<a_api text="Lwt_bytes.t" | type Lwt_bytes.t >> -> 'a <<a_api text="channel" | type Lwt_io.channel >>>>>><<div class="info"|~Create a channel from a byte array~. ~Reading~/writing is done
+      directly on the provided array~.\\
+>>
+<<div id="VALof_fd" class="code"|<<span class="keyword"|val>> of~_fd : <<span class="code type"|\\{{{   }}}?buffer_size:int ->\\{{{   }}}  ?close:(unit -> unit <<a_api text="Lwt.t" | type Lwt.t >>) ->\\{{{   }}}  mode:'a <<a_api text="mode" | type Lwt_io.mode >> -> <<a_api text="Lwt_unix.file_descr" | type Lwt_unix.file_descr >> -> 'a <<a_api text="channel" | type Lwt_io.channel >>>>>><<div class="info"|<<span class='code'|of~_fd ~?buffer~_size ~?close ~~mode fd>> creates a channel from a
+      file descriptor~.\\
+>>
+<<div class="param_info"|<<span class="code code"|close>> : defaults to closing the file descriptor~.>>
+<<div id="VALof_unix_fd" class="code"|<<span class="keyword"|val>> of~_unix~_fd : <<span class="code type"|\\{{{   }}}?buffer_size:int ->\\{{{   }}}  ?close:(unit -> unit <<a_api text="Lwt.t" | type Lwt.t >>) ->\\{{{   }}}  mode:'a <<a_api text="mode" | type Lwt_io.mode >> -> Unix.file_descr -> 'a <<a_api text="channel" | type Lwt_io.channel >>>>>><<div class="info"|<<span class='code'|of~_unix~_fd ~?buffer~_size ~?close ~~mode fd>> is a short~-hand for~:\\
+
+
+      <<span class='code'|of~_fd ~?buffer~_size ~?close ~(~Lwt~_unix~.of~_unix~_file~_descr fd~)>>\\
+>>
+<<div id="VALclose" class="code"|<<span class="keyword"|val>> close : <<span class="code type"|'a <<a_api text="channel" | type Lwt_io.channel >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|close ch>> closes the given channel~. ~If <<span class='code'|ch>> is an output
+      channel~, it performs all pending actions~, flush it and close
+      it~. ~If <<span class='code'|ch>> is an input channel~, it just close it immediatly~.\\
+
+
+      <<span class='code'|close>> returns the result of the close function of the
+      channel~. ~Multiple calls to <<span class='code'|close>> will return exactly the same
+      value~.\\
+
+
+      ~Note~: you cannot use <<span class='code'|close>> on channel obtained with an
+      <<a_api | val Lwt_io.atomic >>~.\\
+>>
+<<div id="VALabort" class="code"|<<span class="keyword"|val>> abort : <<span class="code type"|'a <<a_api text="channel" | type Lwt_io.channel >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|abort ch>> abort current operations and close the channel
+      immediatly~.\\
+>>
+<<div id="VALatomic" class="code"|<<span class="keyword"|val>> atomic : <<span class="code type"|('a <<a_api text="channel" | type Lwt_io.channel >> -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a <<a_api text="channel" | type Lwt_io.channel >> -> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|atomic f>> transforms a sequence of io operations into one
+      single atomic io operation~.\\
+
+
+      ~Note~:* the channel passed to <<span class='code'|f>> is invalid after <<span class='code'|f>> terminates
+* <<span class='code'|atomic>> can be called inside another <<span class='code'|atomic>>
+
+\\
+>>
+<<div id="VALfile_length" class="code"|<<span class="keyword"|val>> file~_length : <<span class="code type"|string -> int64 <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Returns the length of a file\\
+>>
+<<div id="VALbuffered" class="code"|<<span class="keyword"|val>> buffered : <<span class="code type"|'a <<a_api text="channel" | type Lwt_io.channel >> -> int>>>><<div class="info"|<<span class='code'|buffered oc>> returns the number of bytes in the buffer\\
+>>
+<<div id="VALflush" class="code"|<<span class="keyword"|val>> flush : <<span class="code type"|<<a_api text="output_channel" | type Lwt_io.output_channel >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|flush oc>> performs all pending writes on <<span class='code'|oc>>\\
+>>
+<<div id="VALbuffer_size" class="code"|<<span class="keyword"|val>> buffer~_size : <<span class="code type"|'a <<a_api text="channel" | type Lwt_io.channel >> -> int>>>><<div class="info"|~Returns the size of the internal buffer~.\\
+>>
+<<div id="VALresize_buffer" class="code"|<<span class="keyword"|val>> resize~_buffer : <<span class="code type"|'a <<a_api text="channel" | type Lwt_io.channel >> -> int -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Resize the internal buffer to the given size\\
+>>
+<<div id="VALis_busy" class="code"|<<span class="keyword"|val>> is~_busy : <<span class="code type"|'a <<a_api text="channel" | type Lwt_io.channel >> -> bool>>>><<div class="info"|<<span class='code'|is~_busy channel>> returns whether the given channel is currently
+      busy~. ~A channel is busy when there is at least one job using it
+      that has not yet terminated~.\\
+>>
+\\
+
+======@@id="6_Randomaccess"@@~Random access======
+\\
+<<div id="VALposition" class="code"|<<span class="keyword"|val>> position : <<span class="code type"|'a <<a_api text="channel" | type Lwt_io.channel >> -> int64>>>><<div class="info"|<<span class='code'|position ch>> ~Returns the current position in the channel~.\\
+>>
+<<div id="VALset_position" class="code"|<<span class="keyword"|val>> set~_position : <<span class="code type"|'a <<a_api text="channel" | type Lwt_io.channel >> -> int64 -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|set~_position ch pos>> ~Sets the position in the output channel~. ~This
+      does not work if the channel do not support random access~.\\
+>>
+<<div id="VALlength" class="code"|<<span class="keyword"|val>> length : <<span class="code type"|'a <<a_api text="channel" | type Lwt_io.channel >> -> int64 <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Returns the length of the channel in bytes\\
+>>
+\\
+
+======@@id="6_Reading"@@~Reading======
+\\
+\\
+~Note~: except for functions dealing with streams ~(<<a_api | val Lwt_io.read_chars >> and
+    <<a_api | val Lwt_io.read_lines >>~) all functions are **atomic**~.\\
+<<div id="VALread_char" class="code"|<<span class="keyword"|val>> read~_char : <<span class="code type"|<<a_api text="input_channel" | type Lwt_io.input_channel >> -> char <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|read~_char ic>> reads the next character of <<span class='code'|ic>>~.\\
+**Raises** {{{End_of_file}}} if the end of the file is reached\\
+>>
+<<div id="VALread_char_opt" class="code"|<<span class="keyword"|val>> read~_char~_opt : <<span class="code type"|<<a_api text="input_channel" | type Lwt_io.input_channel >> -> char option <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Same as <<span class='code'|read~_byte>> but does not raises <<span class='code'|~End~_of~_file>> on end of
+      input\\
+>>
+<<div id="VALread_chars" class="code"|<<span class="keyword"|val>> read~_chars : <<span class="code type"|<<a_api text="input_channel" | type Lwt_io.input_channel >> -> char <<a_api text="Lwt_stream.t" | type Lwt_stream.t >>>>>><<div class="info"|<<span class='code'|read~_chars ic>> returns a stream holding all characters of
+      <<span class='code'|ic>>\\
+>>
+<<div id="VALread_line" class="code"|<<span class="keyword"|val>> read~_line : <<span class="code type"|<<a_api text="input_channel" | type Lwt_io.input_channel >> -> string <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|read~_line ic>> reads one complete line from <<span class='code'|ic>> and returns it
+      without the end of line~. ~End of line is either <<span class='code'|"~\n">> or
+      <<span class='code'|"~\r~\n">>~.\\
+
+
+      ~If the end of line is reached before reading any character~,
+      <<span class='code'|~End~_of~_file>> is raised~. ~If it is reached before reading an end
+      of line but characters have already been read~, they are
+      returned~.\\
+>>
+<<div id="VALread_line_opt" class="code"|<<span class="keyword"|val>> read~_line~_opt : <<span class="code type"|<<a_api text="input_channel" | type Lwt_io.input_channel >> -> string option <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|~Same as <<a_api | val Lwt_io.read_line >> but do not raise <<span class='code'|~End~_of~_file>> on end of
+      input~.\\
+>>
+<<div id="VALread_lines" class="code"|<<span class="keyword"|val>> read~_lines : <<span class="code type"|<<a_api text="input_channel" | type Lwt_io.input_channel >> -> string <<a_api text="Lwt_stream.t" | type Lwt_stream.t >>>>>><<div class="info"|<<span class='code'|read~_lines ic>> returns a stream holding all lines of <<span class='code'|ic>>\\
+>>
+<<div id="VALread" class="code"|<<span class="keyword"|val>> read : <<span class="code type"|?count:int -> <<a_api text="input_channel" | type Lwt_io.input_channel >> -> string <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|read ~?count ic>> reads at most <<span class='code'|len>> characters from <<span class='code'|ic>>~. ~It
+      returns <<span class='code'|"">> if the end of input is reached~. ~If <<span class='code'|count>> is not
+      specified~, it reads all bytes until the end of input~.\\
+>>
+<<div id="VALread_into" class="code"|<<span class="keyword"|val>> read~_into : <<span class="code type"|<<a_api text="input_channel" | type Lwt_io.input_channel >> -> string -> int -> int -> int <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|read~_into ic buffer offset length>> reads up to <<span class='code'|length>> bytes~,
+      stores them in <<span class='code'|buffer>> at offset <<span class='code'|offset>>~, and returns the
+      number of bytes read~.\\
+
+
+      ~Note~: <<span class='code'|read~_into>> does not raise <<span class='code'|~End~_of~_file>>~, it returns a
+      length of <<span class='code'|~0>> instead~.\\
+>>
+<<div id="VALread_into_exactly" class="code"|<<span class="keyword"|val>> read~_into~_exactly : <<span class="code type"|<<a_api text="input_channel" | type Lwt_io.input_channel >> -> string -> int -> int -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|read~_into~_exactly ic buffer offset length>> reads exactly
+      <<span class='code'|length>> bytes and stores them in <<span class='code'|buffer>> at offset <<span class='code'|offset>>~.\\
+**Raises** {{{End_of_file}}} on end of input\\
+>>
+<<div id="VALread_value" class="code"|<<span class="keyword"|val>> read~_value : <<span class="code type"|<<a_api text="input_channel" | type Lwt_io.input_channel >> -> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|read~_value ic>> reads a marshaled value from <<span class='code'|ic>>\\
+>>
+\\
+
+======@@id="6_Writing"@@~Writing======
+\\
+\\
+~Note~: as for reading functions~, all functions except
+    <<a_api | val Lwt_io.write_chars >> and <<a_api | val Lwt_io.write_lines >> are **atomic**~.\\
+
+
+    ~For example if you use <<a_api | val Lwt_io.write_line >> in to different threads~, the
+    two operations will be serialized~, and lines cannot be mixed~.\\
+<<div id="VALwrite_char" class="code"|<<span class="keyword"|val>> write~_char : <<span class="code type"|<<a_api text="output_channel" | type Lwt_io.output_channel >> -> char -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|write~_char oc char>> writes <<span class='code'|char>> on <<span class='code'|oc>>\\
+>>
+<<div id="VALwrite_chars" class="code"|<<span class="keyword"|val>> write~_chars : <<span class="code type"|<<a_api text="output_channel" | type Lwt_io.output_channel >> -> char <<a_api text="Lwt_stream.t" | type Lwt_stream.t >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|write~_chars oc chars>> writes all characters of <<span class='code'|chars>> on
+      <<span class='code'|oc>>\\
+>>
+<<div id="VALwrite" class="code"|<<span class="keyword"|val>> write : <<span class="code type"|<<a_api text="output_channel" | type Lwt_io.output_channel >> -> string -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|write oc str>> writes all characters of <<span class='code'|str>> on <<span class='code'|oc>>\\
+>>
+<<div id="VALwrite_line" class="code"|<<span class="keyword"|val>> write~_line : <<span class="code type"|<<a_api text="output_channel" | type Lwt_io.output_channel >> -> string -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|write~_line oc str>> writes <<span class='code'|str>> on <<span class='code'|oc>> followed by a
+      new~-line~.\\
+>>
+<<div id="VALwrite_lines" class="code"|<<span class="keyword"|val>> write~_lines : <<span class="code type"|<<a_api text="output_channel" | type Lwt_io.output_channel >> -> string <<a_api text="Lwt_stream.t" | type Lwt_stream.t >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|write~_lines oc lines>> writes all lines of <<span class='code'|lines>> to <<span class='code'|oc>>\\
+>>
+<<div id="VALwrite_from" class="code"|<<span class="keyword"|val>> write~_from : <<span class="code type"|<<a_api text="output_channel" | type Lwt_io.output_channel >> -> string -> int -> int -> int <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|write~_from oc buffer offset length>> writes up to <<span class='code'|length>> bytes
+      to <<span class='code'|oc>>~, from <<span class='code'|buffer>> at offset <<span class='code'|offset>> and returns the number
+      of bytes actually written\\
+>>
+<<div id="VALwrite_from_exactly" class="code"|<<span class="keyword"|val>> write~_from~_exactly : <<span class="code type"|<<a_api text="output_channel" | type Lwt_io.output_channel >> -> string -> int -> int -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|write~_from~_exactly oc buffer offset length>> writes all <<span class='code'|length>>
+      bytes from <<span class='code'|buffer>> at offset <<span class='code'|offset>> to <<span class='code'|oc>>\\
+>>
+<<div id="VALwrite_value" class="code"|<<span class="keyword"|val>> write~_value : <<span class="code type"|<<a_api text="output_channel" | type Lwt_io.output_channel >> -> ?flags:Marshal.extern_flags list -> 'a -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|write~_value oc ~?flags x>> marshals the value <<span class='code'|x>> to <<span class='code'|oc>>\\
+>>
+\\
+
+======@@id="6_Printing"@@~Printing======
+\\
+\\
+~These functions are basically helpers~. ~Also you may prefer the
+    using the name <<a_api | val Lwt_io.printl >> rather than <<a_api | val Lwt_io.write_line >> because it is
+    shorter~.\\
+
+
+    ~The general name of a printing function is <<span class='code'|~<prefix~>print~<suffixes~>>>~.\\
+
+
+    ~Where <<span class='code'|~<prefix~>>> is one of~:* <<span class='code'|~'f~'>>~, which means that the function takes as argument a channel
+* nothing~, which means that the function prints on <<a_api | val Lwt_io.stdout >>
+* <<span class='code'|~'e~'>>~, which means that the function prints on <<a_api | val Lwt_io.stderr >>
+
+
+    and <<span class='code'|~<suffixes~>>> is a combination of~:* <<span class='code'|~'l~'>> which means that a new~-line character is printed after the message
+* <<span class='code'|~'f~'>> which means that the function takes as argument a **format** instead
+    of a string
+
+\\
+<<div id="VALfprint" class="code"|<<span class="keyword"|val>> fprint : <<span class="code type"|<<a_api text="output_channel" | type Lwt_io.output_channel >> -> string -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALfprintl" class="code"|<<span class="keyword"|val>> fprintl : <<span class="code type"|<<a_api text="output_channel" | type Lwt_io.output_channel >> -> string -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALfprintf" class="code"|<<span class="keyword"|val>> fprintf : <<span class="code type"|\\{{{   }}}<<a_api text="output_channel" | type Lwt_io.output_channel >> ->\\{{{   }}}  ('a, unit, string, unit <<a_api text="Lwt.t" | type Lwt.t >>) Pervasives.format4 -> 'a>>>><<div id="VALfprintlf" class="code"|<<span class="keyword"|val>> fprintlf : <<span class="code type"|\\{{{   }}}<<a_api text="output_channel" | type Lwt_io.output_channel >> ->\\{{{   }}}  ('a, unit, string, unit <<a_api text="Lwt.t" | type Lwt.t >>) Pervasives.format4 -> 'a>>>><<div id="VALprint" class="code"|<<span class="keyword"|val>> print : <<span class="code type"|string -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALprintl" class="code"|<<span class="keyword"|val>> printl : <<span class="code type"|string -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALprintf" class="code"|<<span class="keyword"|val>> printf : <<span class="code type"|('a, unit, string, unit <<a_api text="Lwt.t" | type Lwt.t >>) Pervasives.format4 -> 'a>>>><<div id="VALprintlf" class="code"|<<span class="keyword"|val>> printlf : <<span class="code type"|('a, unit, string, unit <<a_api text="Lwt.t" | type Lwt.t >>) Pervasives.format4 -> 'a>>>><<div id="VALeprint" class="code"|<<span class="keyword"|val>> eprint : <<span class="code type"|string -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALeprintl" class="code"|<<span class="keyword"|val>> eprintl : <<span class="code type"|string -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALeprintf" class="code"|<<span class="keyword"|val>> eprintf : <<span class="code type"|('a, unit, string, unit <<a_api text="Lwt.t" | type Lwt.t >>) Pervasives.format4 -> 'a>>>><<div id="VALeprintlf" class="code"|<<span class="keyword"|val>> eprintlf : <<span class="code type"|('a, unit, string, unit <<a_api text="Lwt.t" | type Lwt.t >>) Pervasives.format4 -> 'a>>>>\\
+
+======@@id="6_Utilities"@@~Utilities======
+\\
+<<div id="VALhexdump_stream" class="code"|<<span class="keyword"|val>> hexdump~_stream : <<span class="code type"|<<a_api text="output_channel" | type Lwt_io.output_channel >> -> char <<a_api text="Lwt_stream.t" | type Lwt_stream.t >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|hexdump~_stream oc byte~_stream>> produces the same output as the
+      command <<span class='code'|hexdump ~-~C>>~.\\
+>>
+<<div id="VALhexdump" class="code"|<<span class="keyword"|val>> hexdump : <<span class="code type"|<<a_api text="output_channel" | type Lwt_io.output_channel >> -> string -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|hexdump oc str ~= hexdump~_stream oc ~(~Lwt~_stream~.of~_string str~)>>\\
+>>
+\\
+
+======@@id="6_Fileutilities"@@~File utilities======
+\\
+<<div class="code" id="TYPEfile_name"|<<span class="keyword"|type>> file~_name = <<span class="code type"|string>> >>
+<<div class="info"|~Type of file names\\
+>>
+
+<<div id="VALopen_file" class="code"|<<span class="keyword"|val>> open~_file : <<span class="code type"|\\{{{   }}}?buffer_size:int ->\\{{{   }}}  ?flags:Unix.open_flag list ->\\{{{   }}}  ?perm:Unix.file_perm ->\\{{{   }}}  mode:'a <<a_api text="mode" | type Lwt_io.mode >> -> <<a_api text="file_name" | type Lwt_io.file_name >> -> 'a <<a_api text="channel" | type Lwt_io.channel >> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|open~_file ~?buffer~_size ~?flags ~?perm ~~mode filename>> open the
+      file with name <<span class='code'|filename>> and returns a channel for
+      reading~/writing it~.\\
+**Raises** {{{Unix.Unix_error}}} on error~.\\
+>>
+<<div id="VALwith_file" class="code"|<<span class="keyword"|val>> with~_file : <<span class="code type"|\\{{{   }}}?buffer_size:int ->\\{{{   }}}  ?flags:Unix.open_flag list ->\\{{{   }}}  ?perm:Unix.file_perm ->\\{{{   }}}  mode:'a <<a_api text="mode" | type Lwt_io.mode >> ->\\{{{   }}}  <<a_api text="file_name" | type Lwt_io.file_name >> -> ('a <<a_api text="channel" | type Lwt_io.channel >> -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) -> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|with~_file ~?buffer~_size ~?flags ~?perm ~~mode filename f>> open a
+      file and passes the channel to <<span class='code'|f>>~. ~It is ensured that the
+      channel is closed when <<span class='code'|f ch>> terminates ~(even if it fails~)~.\\
+>>
+<<div id="VALopen_connection" class="code"|<<span class="keyword"|val>> open~_connection : <<span class="code type"|\\{{{   }}}?buffer_size:int ->\\{{{   }}}  Unix.sockaddr -> (<<a_api text="input_channel" | type Lwt_io.input_channel >> * <<a_api text="output_channel" | type Lwt_io.output_channel >>) <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|open~_connection ~?buffer~_size ~~mode addr>> open a connection to
+      the given address and returns two channels for using it~.\\
+
+
+      ~The connection is completly closed when you close both
+      channels~.\\
+**Raises** {{{Unix.Unix_error}}} on error~.\\
+>>
+<<div id="VALwith_connection" class="code"|<<span class="keyword"|val>> with~_connection : <<span class="code type"|\\{{{   }}}?buffer_size:int ->\\{{{   }}}  Unix.sockaddr ->\\{{{   }}}  (<<a_api text="input_channel" | type Lwt_io.input_channel >> * <<a_api text="output_channel" | type Lwt_io.output_channel >> -> 'a <<a_api text="Lwt.t" | type Lwt.t >>) -> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|with~_connection ~?buffer~_size ~~mode addr f>> open a connection to
+      the given address and passes the channels to <<span class='code'|f>>\\
+>>
+<<div class="code" id="TYPEserver"|<<span class="keyword"|type>> server>>
+<<div class="info"|~Type of a server\\
+>>
+
+<<div id="VALestablish_server" class="code"|<<span class="keyword"|val>> establish~_server : <<span class="code type"|\\{{{   }}}?buffer_size:int ->\\{{{   }}}  ?backlog:int ->\\{{{   }}}  Unix.sockaddr ->\\{{{   }}}  (<<a_api text="input_channel" | type Lwt_io.input_channel >> * <<a_api text="output_channel" | type Lwt_io.output_channel >> -> unit) -> <<a_api text="server" | type Lwt_io.server >>>>>><<div class="info"|<<span class='code'|establich~_server ~?buffer~_size ~?backlog sockaddr f>> creates a
+      server which will listen for incomming connections~. ~New
+      connections are passed to <<span class='code'|f>>~. ~Note that <<span class='code'|f>> must not raise any
+      exception~.\\
+
+
+      <<span class='code'|backlog>> is the argument passed to <<span class='code'|~Lwt~_unix~.listen>>\\
+>>
+<<div id="VALshutdown_server" class="code"|<<span class="keyword"|val>> shutdown~_server : <<span class="code type"|<<a_api text="server" | type Lwt_io.server >> -> unit>>>><<div class="info"|~Shutdown the given server\\
+>>
+<<div id="VALlines_of_file" class="code"|<<span class="keyword"|val>> lines~_of~_file : <<span class="code type"|<<a_api text="file_name" | type Lwt_io.file_name >> -> string <<a_api text="Lwt_stream.t" | type Lwt_stream.t >>>>>><<div class="info"|<<span class='code'|lines~_of~_file name>> returns a stream of all lines of the file
+      with name <<span class='code'|name>>~. ~The file is automatically closed when all
+      lines have been read~.\\
+>>
+<<div id="VALlines_to_file" class="code"|<<span class="keyword"|val>> lines~_to~_file : <<span class="code type"|<<a_api text="file_name" | type Lwt_io.file_name >> -> string <<a_api text="Lwt_stream.t" | type Lwt_stream.t >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|lines~_to~_file name lines>> writes all lines of <<span class='code'|lines>> to
+      <<span class='code'|files>>\\
+>>
+<<div id="VALchars_of_file" class="code"|<<span class="keyword"|val>> chars~_of~_file : <<span class="code type"|<<a_api text="file_name" | type Lwt_io.file_name >> -> char <<a_api text="Lwt_stream.t" | type Lwt_stream.t >>>>>><<div class="info"|<<span class='code'|chars~_of~_file name>> returns a stream of all characters of the
+      file with name <<span class='code'|name>>~. ~As for <<a_api | val Lwt_io.lines_of_file >> the file is
+      closed when all characters have been read~.\\
+>>
+<<div id="VALchars_to_file" class="code"|<<span class="keyword"|val>> chars~_to~_file : <<span class="code type"|<<a_api text="file_name" | type Lwt_io.file_name >> -> char <<a_api text="Lwt_stream.t" | type Lwt_stream.t >> -> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|chars~_to~_file name chars>> writes all characters of <<span class='code'|chars>> to
+      <<span class='code'|name>>\\
+>>
+\\
+
+======@@id="6_Inputoutputofintegers"@@~Input~/output of integers======
+\\
+<<div class="code"|<<span class="keyword"|module type>> <<a_api text="NumberIO" | module type Lwt_io.NumberIO >> = <<span class='code'|sig>><<a_api text=".." | module type Lwt_io.NumberIO >><<span class='code'|end>>>><<div class="info"|~Common interface for reading~/writing integers in binary
+>>
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="LE" | module Lwt_io.LE >>: <<span class="code type"|<<a_api text="NumberIO" | module Lwt_io.NumberIO >>>><<span class="code type"|{{{  }}}>>>><<div class="info"|~Reading~/writing of integers in little~-endian
+>>
+<<div class="code"|<<span class="keyword"|module>> <<a_api text="BE" | module Lwt_io.BE >>: <<span class="code type"|<<a_api text="NumberIO" | module Lwt_io.NumberIO >>>><<span class="code type"|{{{  }}}>>>><<div class="info"|~Reading~/writing of integers in big~-endian
+>>
+<<div class="code" id="TYPEbyte_order"|<<span class="keyword"|type>> byte~_order = 
+|@@class="typetable"@ @class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Little_endian>>|
+|@@class="lefttop"@@<<span class="keyword"|{{{|}}}>>|@@class="lefttop"@@<<span class="constructor"|Big_endian>>|>>
+<<div class="info"|~Type of byte order\\
+>>
+
+<<div id="VALsystem_byte_order" class="code"|<<span class="keyword"|val>> system~_byte~_order : <<span class="code type"|<<a_api text="byte_order" | type Lwt_io.byte_order >>>>>><<div class="info"|~The byte order used by the computer running the program\\
+>>
+\\
+
+======@@id="6_Lowlevelaccesstotheinternalbuffer"@@~Low~-level access to the internal buffer======
+\\
+<<div id="VALblock" class="code"|<<span class="keyword"|val>> block : <<span class="code type"|'a <<a_api text="channel" | type Lwt_io.channel >> -> int -> (<<a_api text="Lwt_bytes.t" | type Lwt_bytes.t >> -> int -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) -> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|block ch size f>> pass to <<span class='code'|f>> the internal buffer and an
+      offset~. ~The buffer contains <<span class='code'|size>> chars at <<span class='code'|offset>>~. <<span class='code'|f>> may
+      reads or writes these chars~.  <<span class='code'|size>> must verify <<span class='code'|~0 ~<~= size ~<~=
+      ~1~6>>\\
+>>
+<<div class="code" id="TYPEdirect_access"|<<span class="keyword"|type>> direct~_access = { 
+|@@class="typetable"@ @class="lefttop"@@{{{   }}}|@@class="lefttop"@@da_buffer : <<span class="code type"|<<a_api text="Lwt_bytes.t" | type Lwt_bytes.t >>>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~The internal buffer|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@<<span class="keyword"|mutable >>da_ptr : <<span class="code type"|int>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~The pointer to~:* the beginning of free space for output channels
+* the beginning of data for input channels
+
+|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@<<span class="keyword"|mutable >>da_max : <<span class="code type"|int>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~The maximum offset|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+|@@class="lefttop"@@{{{   }}}|@@class="lefttop"@@da_perform : <<span class="code type"|unit -> int <<a_api text="Lwt.t" | type Lwt.t >>>>;|@@class="typefieldcomment lefttop startcom"@@{{{(*}}}|@@class="typefieldcomment lefttop"@@~- for input channels~:
+        refill the buffer and returns how many bytes have been read* for output channels~:
+        flush partially the buffer and returns how many bytes have been written
+
+|@@class="typefieldcomment leftbottom endcom"@@{{{*)}}}|
+
+}
+>>
+<<div class="info"|~Informations for accessing directly to the internal buffer of a
+    channel\\
+>>
+
+<<div id="VALdirect_access" class="code"|<<span class="keyword"|val>> direct~_access : <<span class="code type"|'a <<a_api text="channel" | type Lwt_io.channel >> -> (<<a_api text="direct_access" | type Lwt_io.direct_access >> -> 'b <<a_api text="Lwt.t" | type Lwt.t >>) -> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="info"|<<span class='code'|direct~_access ch f>> pass to <<span class='code'|f>> a <<a_api | val Lwt_io.direct_access >>
+      structure~. <<span class='code'|f>> must use it and update <<span class='code'|da~_ptr>> to reflect how
+      many bytes have been read~/written~.\\
+>>
+\\
+
+======@@id="6_Misc"@@~Misc======
+\\
+<<div id="VALdefault_buffer_size" class="code"|<<span class="keyword"|val>> default~_buffer~_size : <<span class="code type"|unit -> int>>>><<div class="info"|~Return the default size for buffers~. ~Channels that are created
+      without specific size use this one~.\\
+>>
+<<div id="VALset_default_buffer_size" class="code"|<<span class="keyword"|val>> set~_default~_buffer~_size : <<span class="code type"|int -> unit>>>><<div class="info"|~Change the default buffer size~.\\
+**Raises** {{{Invalid_argument}}} if the given size is smaller than <<span class='code'|~1~6>>
+      or greater than <<span class='code'|~Sys~.max~_string~_length>>\\
+>>

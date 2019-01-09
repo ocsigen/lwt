@@ -1,0 +1,244 @@
+=Index of types=
+
+|@@ @class="alignleft"@@\\A|
+|<<a_api text="advice"| type Lwt_bytes.advice >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="info"|~Type of advise that can be sent to the kernel by the program~.
+>>
+|
+|<<a_api text="async_method"| type Lwt_unix.async_method >> ~[<<a_api | module Lwt_unix >>~]|<<div class="info"|~For system calls that cannot be made asynchronously~, ~Lwt uses one
+    of the following method~:
+>>
+|
+|@@ @class="alignleft"@@\\B|
+|<<a_api text="box"| type Lwt_read_line.Terminal.box >> ~[<<a_api | module Lwt_read_line.Terminal >>~]|<<div class="info"|~Box for the completion~:
+>>
+|
+|<<a_api text="byte_order"| type Lwt_io.byte_order >> ~[<<a_api | module Lwt_io >>~]|<<div class="info"|~Type of byte order
+>>
+|
+|@@ @class="alignleft"@@\\C|
+|<<a_api text="channel"| type Lwt_io.channel >> ~[<<a_api | module Lwt_io >>~]|<<div class="info"|~Type of buffered byte channels
+>>
+|
+|<<a_api text="channel"| type Lwt_text.channel >> ~[<<a_api | module Lwt_text >>~]|<<div class="info"|~Type of a text channel
+>>
+|
+|<<a_api text="color"| type Lwt_term.color >> ~[<<a_api | module Lwt_term >>~]|<<div class="info"|~Type of a color~.
+>>
+|
+|<<a_api text="command"| type Lwt_process.command >> ~[<<a_api | module Lwt_process >>~]|<<div class="info"|~A command is a program name with a list of arguments
+>>
+|
+|<<a_api text="completion"| type Lwt_read_line.completion >> ~[<<a_api | module Lwt_read_line >>~]|<<div class="info"|~Type of a completion function~.
+>>
+|
+|<<a_api text="completion_mode"| type Lwt_read_line.completion_mode >> ~[<<a_api | module Lwt_read_line >>~]|<<div class="info"|~The completion mode~.
+>>
+|
+|<<a_api text="completion_result"| type Lwt_read_line.completion_result >> ~[<<a_api | module Lwt_read_line >>~]|<<div class="info"|~Result of a completion function~:
+>>
+|
+|<<a_api text="credentials"| type Lwt_unix.credentials >> ~[<<a_api | module Lwt_unix >>~]||
+|@@ @class="alignleft"@@\\D|
+|<<a_api text="direct_access"| type Lwt_io.direct_access >> ~[<<a_api | module Lwt_io >>~]|<<div class="info"|~Informations for accessing directly to the internal buffer of a
+    channel
+>>
+|
+|@@ @class="alignleft"@@\\E|
+|<<a_api text="edition_state"| type Lwt_read_line.edition_state >> ~[<<a_api | module Lwt_read_line >>~]|<<div class="info"|~An edition state~, it is a pair of two ~U~T~F~-~8 encoded strings~:
+>>
+|
+|@@ @class="alignleft"@@\\F|
+|<<a_api text="file_descr"| type Lwt_unix.file_descr >> ~[<<a_api | module Lwt_unix >>~]|<<div class="info"|~The abstract type for **file descriptor**s~.
+>>
+|
+|<<a_api text="file_name"| type Lwt_io.file_name >> ~[<<a_api | module Lwt_io >>~]|<<div class="info"|~Type of file names
+>>
+|
+|@@ @class="alignleft"@@\\H|
+|<<a_api text="history"| type Lwt_read_line.history >> ~[<<a_api | module Lwt_read_line >>~]|<<div class="info"|~Type of an history
+>>
+|
+|@@ @class="alignleft"@@\\I|
+|<<a_api text="in_channel"| type Lwt_chan.in_channel >> ~[<<a_api | module Lwt_chan >>~]|<<div class="info"|~Cooperative input channels
+>>
+|
+|<<a_api text="input"| type Lwt_io.input >> ~[<<a_api | module Lwt_io >>~]|<<div class="info"|~Input mode
+>>
+|
+|<<a_api text="input_channel"| type Lwt_io.input_channel >> ~[<<a_api | module Lwt_io >>~]|<<div class="info"|~Type of input channels
+>>
+|
+|<<a_api text="input_channel"| type Lwt_text.input_channel >> ~[<<a_api | module Lwt_text >>~]|<<div class="info"|~Type of a text input channel
+>>
+|
+|<<a_api text="io_event"| type Lwt_unix.io_event >> ~[<<a_api | module Lwt_unix >>~]||
+|<<a_api text="io_vector"| type Lwt_unix.io_vector >> ~[<<a_api | module Lwt_unix >>~]|<<div class="info"|~An io~-vector~.
+>>
+|
+|<<a_api text="io_vector"| type Lwt_bytes.io_vector >> ~[<<a_api | module Lwt_bytes >>~]||
+|@@ @class="alignleft"@@\\J|
+|<<a_api text="job"| type Lwt_unix.job >> ~[<<a_api | module Lwt_unix >>~]|<<div class="info"|~Type of jobs that run~:
+>>
+|
+|@@ @class="alignleft"@@\\K|
+|<<a_api text="key"| type Lwt_throttle.S.key >> ~[<<a_api | module Lwt_throttle.S >>~]||
+|<<a_api text="key"| type Lwt_term.key >> ~[<<a_api | module Lwt_term >>~]|<<div class="info"|~Type of ``decoded~'~' keys~.
+>>
+|
+|<<a_api text="key"| type Lwt.key >> ~[<<a_api | module Lwt >>~]|<<div class="info"|~Type of a key~.
+>>
+|
+|@@ @class="alignleft"@@\\L|
+|<<a_api text="level"| type Lwt_log.level >> ~[<<a_api | module Lwt_log >>~]|<<div class="info"|~Type of log levels~.
+>>
+|
+|<<a_api text="logger"| type Lwt_log.logger >> ~[<<a_api | module Lwt_log >>~]|<<div class="info"|~Type of a logger~.
+>>
+|
+|@@ @class="alignleft"@@\\M|
+|<<a_api text="mode"| type Lwt_io.mode >> ~[<<a_api | module Lwt_io >>~]|<<div class="info"|~Channel mode
+>>
+|
+|<<a_api text="mode"| type Lwt_read_line.Engine.mode >> ~[<<a_api | module Lwt_read_line.Engine >>~]|<<div class="info"|~The engine mode~:
+>>
+|
+|@@ @class="alignleft"@@\\N|
+|<<a_api text="node"| type Lwt_sequence.node >> ~[<<a_api | module Lwt_sequence >>~]|<<div class="info"|~Type of a node holding one value of type <<span class='code'|~'a>> in a sequence
+>>
+|
+|<<a_api text="notifier"| type Lwt_signal.notifier >> ~[<<a_api | module Lwt_signal >>~]|<<div class="info"|~Type of signal notifiers
+>>
+|
+|<<a_api text="notifier"| type Lwt_event.notifier >> ~[<<a_api | module Lwt_event >>~]|<<div class="info"|~Type of event notifiers
+>>
+|
+|@@ @class="alignleft"@@\\O|
+|<<a_api text="out_channel"| type Lwt_chan.out_channel >> ~[<<a_api | module Lwt_chan >>~]||
+|<<a_api text="output"| type Lwt_io.output >> ~[<<a_api | module Lwt_io >>~]|<<div class="info"|~Output mode
+>>
+|
+|<<a_api text="output_channel"| type Lwt_io.output_channel >> ~[<<a_api | module Lwt_io >>~]|<<div class="info"|~Type of output channels
+>>
+|
+|<<a_api text="output_channel"| type Lwt_text.output_channel >> ~[<<a_api | module Lwt_text >>~]|<<div class="info"|~Type of a text output channel
+>>
+|
+|@@ @class="alignleft"@@\\P|
+|<<a_api text="password_style"| type Lwt_read_line.password_style >> ~[<<a_api | module Lwt_read_line >>~]|<<div class="info"|~Style which indicate how the password is echoed to the user~:
+>>
+|
+|<<a_api text="point"| type Lwt_term.point >> ~[<<a_api | module Lwt_term >>~]|<<div class="info"|~A character on the screen~:
+>>
+|
+|<<a_api text="prompt"| type Lwt_read_line.Control.prompt >> ~[<<a_api | module Lwt_read_line.Control >>~]|<<div class="info"|~The prompt a signal which may depends on the engine state
+>>
+|
+|<<a_api text="prompt"| type Lwt_read_line.prompt >> ~[<<a_api | module Lwt_read_line >>~]|<<div class="info"|~A prompt~.
+>>
+|
+|@@ @class="alignleft"@@\\R|
+|<<a_api text="redirection"| type Lwt_process.redirection >> ~[<<a_api | module Lwt_process >>~]|<<div class="info"|~A file descriptor redirection~.
+>>
+|
+|<<a_api text="region"| type Lwt_util.region >> ~[<<a_api | module Lwt_util >>~]||
+|<<a_api text="resource_usage"| type Lwt_unix.resource_usage >> ~[<<a_api | module Lwt_unix >>~]|<<div class="info"|~Resource usages
+>>
+|
+|@@ @class="alignleft"@@\\S|
+|<<a_api text="search_state"| type Lwt_read_line.Engine.search_state >> ~[<<a_api | module Lwt_read_line.Engine >>~]|<<div class="info"|~State when searching in the history
+>>
+|
+|<<a_api text="section"| type Lwt_log.section >> ~[<<a_api | module Lwt_log >>~]|<<div class="info"|~Each logging message has a section~.
+>>
+|
+|<<a_api text="selection_state"| type Lwt_read_line.Engine.selection_state >> ~[<<a_api | module Lwt_read_line.Engine >>~]|<<div class="info"|~State when the user is doing selection~:
+>>
+|
+|<<a_api text="server"| type Lwt_io.server >> ~[<<a_api | module Lwt_io >>~]|<<div class="info"|~Type of a server
+>>
+|
+|<<a_api text="signal_handler_id"| type Lwt_unix.signal_handler_id >> ~[<<a_api | module Lwt_unix >>~]|<<div class="info"|~Id of a signal handler~, used to cancel it
+>>
+|
+|<<a_api text="size"| type Lwt_term.size >> ~[<<a_api | module Lwt_term >>~]|<<div class="info"|~Terminal sizes~:
+>>
+|
+|<<a_api text="socket"| type Lwt_ssl.socket >> ~[<<a_api | module Lwt_ssl >>~]||
+|<<a_api text="state"| type Lwt_unix.state >> ~[<<a_api | module Lwt_unix >>~]|<<div class="info"|~State of a **file descriptor**
+>>
+|
+|<<a_api text="state"| type Lwt_process.state >> ~[<<a_api | module Lwt_process >>~]|<<div class="info"|~State of a sub~-process
+>>
+|
+|<<a_api text="state"| type Lwt_read_line.Control.state >> ~[<<a_api | module Lwt_read_line.Control >>~]|<<div class="info"|~State of an instance
+>>
+|
+|<<a_api text="state"| type Lwt_read_line.Terminal.state >> ~[<<a_api | module Lwt_read_line.Terminal >>~]|<<div class="info"|~State of rendering
+>>
+|
+|<<a_api text="state"| type Lwt_read_line.Engine.state >> ~[<<a_api | module Lwt_read_line.Engine >>~]|<<div class="info"|~An engine state~:
+>>
+|
+|<<a_api text="state"| type Lwt.state >> ~[<<a_api | module Lwt >>~]|<<div class="info"|~State of a thread
+>>
+|
+|<<a_api text="style"| type Lwt_term.style >> ~[<<a_api | module Lwt_term >>~]|<<div class="info"|~Character styles
+>>
+|
+|<<a_api text="styled_text"| type Lwt_term.styled_text >> ~[<<a_api | module Lwt_term >>~]|<<div class="info"|~A styled text is a list of instructions
+>>
+|
+|<<a_api text="styled_text_instruction"| type Lwt_term.styled_text_instruction >> ~[<<a_api | module Lwt_term >>~]|<<div class="info"|~Elmement of a styled~-text
+>>
+|
+|<<a_api text="syslog_facility"| type Lwt_log.syslog_facility >> ~[<<a_api | module Lwt_log >>~]|<<div class="info"|~Syslog facility~.
+>>
+|
+|@@ @class="alignleft"@@\\T|
+|<<a_api text="t"| type Lwt_timeout.t >> ~[<<a_api | module Lwt_timeout >>~]||
+|<<a_api text="t"| type Lwt_throttle.S.t >> ~[<<a_api | module Lwt_throttle.S >>~]||
+|<<a_api text="t"| type Lwt_log.Section.t >> ~[<<a_api | module Lwt_log.Section >>~]||
+|<<a_api text="t"| type Lwt_bytes.t >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="info"|~Type of array of bytes~.
+>>
+|
+|<<a_api text="t"| type Lwt_term.Zone.t >> ~[<<a_api | module Lwt_term.Zone >>~]||
+|<<a_api text="t"| type Lwt_read_line.Control.t >> ~[<<a_api | module Lwt_read_line.Control >>~]|<<div class="info"|~Type of a running read~-line instance~, returning a value of
+        type <<span class='code'|~'a>>
+>>
+|
+|<<a_api text="t"| type Lwt_read_line.Command.t >> ~[<<a_api | module Lwt_read_line.Command >>~]|<<div class="info"|~Type of all read~-line function~:
+>>
+|
+|<<a_api text="t"| type Lwt_switch.t >> ~[<<a_api | module Lwt_switch >>~]|<<div class="info"|~Type of switches~.
+>>
+|
+|<<a_api text="t"| type Lwt_stream.t >> ~[<<a_api | module Lwt_stream >>~]|<<div class="info"|~Type of a stream holding values of type <<span class='code'|~'a>>
+>>
+|
+|<<a_api text="t"| type Lwt_sequence.t >> ~[<<a_api | module Lwt_sequence >>~]|<<div class="info"|~Type of a sequence holding values of type <<span class='code'|~'a>>
+>>
+|
+|<<a_api text="t"| type Lwt_pool.t >> ~[<<a_api | module Lwt_pool >>~]|<<div class="info"|~Type of pools
+>>
+|
+|<<a_api text="t"| type Lwt_mvar.t >> ~[<<a_api | module Lwt_mvar >>~]|<<div class="info"|~The type of a mailbox variable~.
+>>
+|
+|<<a_api text="t"| type Lwt_mutex.t >> ~[<<a_api | module Lwt_mutex >>~]|<<div class="info"|~Type of ~Lwt mutexes
+>>
+|
+|<<a_api text="t"| type Lwt.t >> ~[<<a_api | module Lwt >>~]|<<div class="info"|~The type of threads returning a result of type <<span class='code'|~'a>>~.
+>>
+|
+|<<a_api text="t"| type Lwt_condition.t >> ~[<<a_api | module Lwt_condition >>~]|<<div class="info"|~Condition variable type~.
+>>
+|
+|<<a_api text="template"| type Lwt_log.template >> ~[<<a_api | module Lwt_log >>~]|<<div class="info"|~A template is for generating log messages~.
+>>
+|
+|<<a_api text="text_set"| type Lwt_read_line.text_set >> ~[<<a_api | module Lwt_read_line >>~]||
+|@@ @class="alignleft"@@\\U|
+|<<a_api text="u"| type Lwt.u >> ~[<<a_api | module Lwt >>~]|<<div class="info"|~The type of thread wakeners~.
+>>
+|
+\\

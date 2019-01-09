@@ -1,0 +1,27 @@
+=Class type <<a_api_type | class type Lwt_stream.bounded_push >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span id="TYPEbounded_push"|<<span class="ocsforge_color_keyword"|class type>> <<span class="odocwiki_type"|['a]>><<span class="ocsforge_color_name"|bounded_push>>>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="ocsforge_color_keyword"|object>><<a_api text=".." | class type Lwt_stream.bounded_push >><<span class="ocsforge_color_keyword"|end>>>>~Type of sources for bounded push~-streams~.
+
+----
+<<pre class="ocsforge_color odocwiki_code"|<<span id="METHODsize"|<<span class="ocsforge_color_keyword"|method>> <<span class="odocwiki_name"|size>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int>>>><<div class="odocwiki_info"|~Size of the stream~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span id="METHODresize"|<<span class="ocsforge_color_keyword"|method>> <<span class="odocwiki_name"|resize>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Change the size of the stream queue~. ~Note that the new size
+      can smaller than the current stream queue size~.
+
+
+      ~It raises <<span class="odocwiki_inlinecode"|~Invalid~_argument>> if <<span class="odocwiki_inlinecode"|size ~< ~0>>~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span id="METHODpush"|<<span class="ocsforge_color_keyword"|method>> <<span class="odocwiki_name"|push>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Pushes a new element to the stream~. ~If the stream is full then
+      it will block until one element is consumed~. ~If another thread
+      is already blocked on <<a_api | method Lwt_stream.bounded_push.push >>~, it raises <<a_api | exception Lwt_stream.Full >>~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span id="METHODclose"|<<span class="ocsforge_color_keyword"|method>> <<span class="odocwiki_name"|close>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit>>>><<div class="odocwiki_info"|~Closes the stream~. ~Any thread currently blocked on <<a_api | method Lwt_stream.bounded_push.push >>
+      fails with <<a_api | exception Lwt_stream.Closed >>~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span id="METHODcount"|<<span class="ocsforge_color_keyword"|method>> <<span class="odocwiki_name"|count>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int>>>><<div class="odocwiki_info"|~Number of elements in the stream queue~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span id="METHODblocked"|<<span class="ocsforge_color_keyword"|method>> <<span class="odocwiki_name"|blocked>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|bool>>>><<div class="odocwiki_info"|~Is a thread is blocked on <<a_api | method Lwt_stream.bounded_push.push >> ~?
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span id="METHODclosed"|<<span class="ocsforge_color_keyword"|method>> <<span class="odocwiki_name"|closed>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|bool>>>><<div class="odocwiki_info"|~Is the stream closed ~?
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span id="METHODset_reference"|<<span class="ocsforge_color_keyword"|method>> <<span class="odocwiki_name"|set_reference>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a0. 'a0 <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Set the reference to an external source~.
+>>

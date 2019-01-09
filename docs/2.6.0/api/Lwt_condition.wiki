@@ -1,0 +1,36 @@
+=Module <<a_api_type | module Lwt_condition >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_condition>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_condition >><<span class="ocsforge_color_keyword"|end>>>>~Conditions
+
+----
+
+~Condition variables to synchronize between threads~.
+<<pre class="ocsforge_color odocwiki_code" id="TYPEt"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_type"|'a>> <<span class="odocwiki_name"|t>>>><<div class="odocwiki_info"|~Condition variable type~. ~The type parameter denotes the type of
+        value propagated from notifier to waiter~.
+>>
+<<pre id="VALcreate" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|create>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_condition.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|create ~(~)>> creates a new condition variable~.
+>>
+<<pre id="VALwait" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wait>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_label"| ?mutex: >><<a_api text="Lwt_mutex.t" | type Lwt_mutex.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_condition.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|wait mutex condvar>> will cause the current thread to block~,
+        awaiting notification for a condition variable~, <<span class="odocwiki_inlinecode"|condvar>>~. ~If
+        provided~, the <<span class="odocwiki_inlinecode"|mutex>> must have been previously locked ~(within
+        the scope of <<span class="odocwiki_inlinecode"|~Lwt~_mutex~.with~_lock>>~, for example~) and is
+        temporarily unlocked until the condition is notified~. ~Upon
+        notification~, <<span class="odocwiki_inlinecode"|mutex>> is re~-locked before <<span class="odocwiki_inlinecode"|wait>> returns and
+        the thread~'s activity is resumed~. ~When the awaited condition
+        is notified~, the value parameter passed to <<span class="odocwiki_inlinecode"|notify>> is
+        returned~.
+>>
+<<pre id="VALsignal" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|signal>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_condition.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|signal condvar value>> notifies that a condition is ready~. ~A
+        single waiting thread will be awoken and will receive the
+        notification value which will be returned from <<span class="odocwiki_inlinecode"|wait>>~. ~Note
+        that condition notification is not "sticky"~, i~.e~. if there is
+        no waiter when <<span class="odocwiki_inlinecode"|notify>> is called~, the notification will be
+        missed and the value discarded~.
+>>
+<<pre id="VALbroadcast" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|broadcast>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_condition.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|broadcast condvar value>> notifies all waiting threads~. ~Each
+        will be awoken in turn and will receive the same notification
+        value~.
+>>
+<<pre id="VALbroadcast_exn" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|broadcast~_exn>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_condition.t >> <<span class="ocsforge_color_delimiter"| -> >> exn <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|broadcast~_exn condvar exn>> fails all waiting threads with exception
+        <<span class="odocwiki_inlinecode"|exn>>~.
+**Since** 2.6.0\\
+>>

@@ -1,0 +1,195 @@
+<<code language="ocaml" | sig
+  type event
+  val stop_event : Lwt_engine.event -> unit
+  val fake_event : Lwt_engine.event
+  val iter : bool -> unit
+  val on_readable :
+    Unix.file_descr -> (Lwt_engine.event -> unit) -> Lwt_engine.event
+  val on_writable :
+    Unix.file_descr -> (Lwt_engine.event -> unit) -> Lwt_engine.event
+  val on_timer :
+    float -> bool -> (Lwt_engine.event -> unit) -> Lwt_engine.event
+  val readable_count : unit -> int
+  val writable_count : unit -> int
+  val timer_count : unit -> int
+  val fake_io : Unix.file_descr -> unit
+  class virtual abstract :
+    object
+      method private virtual cleanup : unit
+      method destroy : unit
+      method fake_io : Unix.file_descr -> unit
+      method virtual iter : bool -> unit
+      method on_readable :
+        Unix.file_descr -> (Lwt_engine.event -> unit) -> Lwt_engine.event
+      method on_timer :
+        float -> bool -> (Lwt_engine.event -> unit) -> Lwt_engine.event
+      method on_writable :
+        Unix.file_descr -> (Lwt_engine.event -> unit) -> Lwt_engine.event
+      method readable_count : int
+      method private virtual register_readable :
+        Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+      method private virtual register_timer :
+        float -> bool -> (unit -> unit) -> unit Lazy.t
+      method private virtual register_writable :
+        Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+      method timer_count : int
+      method transfer : Lwt_engine.abstract -> unit
+      method writable_count : int
+    end
+  class type t =
+    object
+      method private cleanup : unit
+      method destroy : unit
+      method fake_io : Unix.file_descr -> unit
+      method iter : bool -> unit
+      method on_readable : Unix.file_descr -> (event -> unit) -> event
+      method on_timer : float -> bool -> (event -> unit) -> event
+      method on_writable : Unix.file_descr -> (event -> unit) -> event
+      method readable_count : int
+      method private register_readable :
+        Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+      method private register_timer :
+        float -> bool -> (unit -> unit) -> unit Lazy.t
+      method private register_writable :
+        Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+      method timer_count : int
+      method transfer : abstract -> unit
+      method writable_count : int
+    end
+  type ev_loop
+  module Ev_backend :
+    sig
+      type t
+      val default : Lwt_engine.Ev_backend.t
+      val select : Lwt_engine.Ev_backend.t
+      val poll : Lwt_engine.Ev_backend.t
+      val epoll : Lwt_engine.Ev_backend.t
+      val kqueue : Lwt_engine.Ev_backend.t
+      val devpoll : Lwt_engine.Ev_backend.t
+      val port : Lwt_engine.Ev_backend.t
+      val pp : Format.formatter -> Lwt_engine.Ev_backend.t -> unit
+    end
+  class libev :
+    ?backend:Lwt_engine.Ev_backend.t ->
+    unit ->
+    object
+      val loop : Lwt_engine.ev_loop
+      method private cleanup : unit
+      method destroy : unit
+      method fake_io : Unix.file_descr -> unit
+      method iter : bool -> unit
+      method loop : Lwt_engine.ev_loop
+      method on_readable : Unix.file_descr -> (event -> unit) -> event
+      method on_timer : float -> bool -> (event -> unit) -> event
+      method on_writable : Unix.file_descr -> (event -> unit) -> event
+      method readable_count : int
+      method private register_readable :
+        Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+      method private register_timer :
+        float -> bool -> (unit -> unit) -> unit Lazy.t
+      method private register_writable :
+        Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+      method timer_count : int
+      method transfer : abstract -> unit
+      method writable_count : int
+    end
+  class select : t
+  class virtual select_based :
+    object
+      method private cleanup : unit
+      method destroy : unit
+      method fake_io : Unix.file_descr -> unit
+      method iter : bool -> unit
+      method on_readable : Unix.file_descr -> (event -> unit) -> event
+      method on_timer : float -> bool -> (event -> unit) -> event
+      method on_writable : Unix.file_descr -> (event -> unit) -> event
+      method readable_count : int
+      method private register_readable :
+        Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+      method private register_timer :
+        float -> bool -> (unit -> unit) -> unit Lazy.t
+      method private register_writable :
+        Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+      method private virtual select :
+        Unix.file_descr list ->
+        Unix.file_descr list ->
+        float -> Unix.file_descr list * Unix.file_descr list
+      method timer_count : int
+      method transfer : abstract -> unit
+      method writable_count : int
+    end
+  class virtual poll_based :
+    object
+      method private cleanup : unit
+      method destroy : unit
+      method fake_io : Unix.file_descr -> unit
+      method iter : bool -> unit
+      method on_readable : Unix.file_descr -> (event -> unit) -> event
+      method on_timer : float -> bool -> (event -> unit) -> event
+      method on_writable : Unix.file_descr -> (event -> unit) -> event
+      method private virtual poll :
+        (Unix.file_descr * bool * bool) list ->
+        float -> (Unix.file_descr * bool * bool) list
+      method readable_count : int
+      method private register_readable :
+        Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+      method private register_timer :
+        float -> bool -> (unit -> unit) -> unit Lazy.t
+      method private register_writable :
+        Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+      method timer_count : int
+      method transfer : abstract -> unit
+      method writable_count : int
+    end
+  val get : unit -> Lwt_engine.t
+  val set : ?transfer:bool -> ?destroy:bool -> #Lwt_engine.t -> unit
+  module Versioned :
+    sig
+      class libev_1 :
+        object
+          val loop : Lwt_engine.ev_loop
+          method private cleanup : unit
+          method destroy : unit
+          method fake_io : Unix.file_descr -> unit
+          method iter : bool -> unit
+          method loop : Lwt_engine.ev_loop
+          method on_readable : Unix.file_descr -> (event -> unit) -> event
+          method on_timer : float -> bool -> (event -> unit) -> event
+          method on_writable : Unix.file_descr -> (event -> unit) -> event
+          method readable_count : int
+          method private register_readable :
+            Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+          method private register_timer :
+            float -> bool -> (unit -> unit) -> unit Lazy.t
+          method private register_writable :
+            Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+          method timer_count : int
+          method transfer : abstract -> unit
+          method writable_count : int
+        end
+      class libev_2 :
+        ?backend:Lwt_engine.Ev_backend.t ->
+        unit ->
+        object
+          val loop : Lwt_engine.ev_loop
+          method private cleanup : unit
+          method destroy : unit
+          method fake_io : Unix.file_descr -> unit
+          method iter : bool -> unit
+          method loop : Lwt_engine.ev_loop
+          method on_readable : Unix.file_descr -> (event -> unit) -> event
+          method on_timer : float -> bool -> (event -> unit) -> event
+          method on_writable : Unix.file_descr -> (event -> unit) -> event
+          method readable_count : int
+          method private register_readable :
+            Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+          method private register_timer :
+            float -> bool -> (unit -> unit) -> unit Lazy.t
+          method private register_writable :
+            Unix.file_descr -> (unit -> unit) -> unit Lazy.t
+          method timer_count : int
+          method transfer : abstract -> unit
+          method writable_count : int
+        end
+    end
+end >>

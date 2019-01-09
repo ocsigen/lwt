@@ -1,0 +1,11 @@
+=Module <<a_api_type | module Lwt_throttle >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_throttle>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_throttle >><<span class="ocsforge_color_keyword"|end>>>>~Rate limiters\\
+
+----
+\\
+~This module defines rate limiters~. ~A rate limiter is parametrized
+    by its limit and a maximum waiting time~. ~The <<span class="odocwiki_inlinecode"|wait>> function will
+    collaboratively hang for a delay necessary to respect the
+    limit~. ~If that delay exceeds the maximum waiting time~, <<span class="odocwiki_inlinecode"|wait>>
+    returns <<span class="odocwiki_inlinecode"|false>>~; otherwise it returns <<span class="odocwiki_inlinecode"|true>>~.\\
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module type>> <<a_api text="S" | module type Lwt_throttle.S >> <<span class="ocsforge_color_delimiter"|~=>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module type Lwt_throttle.S >><<span class="ocsforge_color_keyword"|end>>>><<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<a_api text="Make" | module Lwt_throttle.Make >> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_sig_block"|<<span class="ocsforge_color_keyword"|functor>> <<span class="ocsforge_color_delimiter"|(>>H <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Hashtbl.HashedType>>>><<span class="ocsforge_color_delimiter"|)>> <<span class="ocsforge_color_delimiter"|-~>>> \\  <<span class="odocwiki_type"|<<a_api text="S" | module Lwt_throttle.S >>>><<span class="odocwiki_type"| with type key = H.t>>>>>>
