@@ -1,0 +1,7 @@
+{
+    "project": "lwt",
+    "api": "api",
+    "menu": true,
+    "templates": ["how_template/template.wiki"],
+    "manual": "manual"
+}
