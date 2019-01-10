@@ -90,6 +90,8 @@ value lwt_unix_wait4(value flags, value pid_req)
 
 #else
 
+#include "lwt_unix.h"
+
 LWT_NOT_AVAILABLE2(unix_wait4)
 
 #endif
