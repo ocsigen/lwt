@@ -16,6 +16,7 @@ type outcome =
   | Skipped
 
 exception Skip
+exception Duplicate_Test_Names of string
 
 let test_direct test_name ?(only_if = fun () -> true) run =
   let run =
@@ -82,7 +83,24 @@ type suite = {
   skip_suite_if_this_is_false : unit -> bool;
 }
 
+let contains_dup_tests suite tests =
+  let names = List.map (fun t -> "suite:" ^ suite ^ " test:" ^ t.test_name) tests in
+  let sorted_unique_names = List.sort_uniq String.compare names in
+  let counts =
+    List.map (fun x ->
+      let tests = List.find_all (fun y -> y = x) names in
+      (x, List.length tests)) sorted_unique_names in
+  let dups = List.filter (fun (_, count) -> count > 1) counts |>
+                          List.map (fun (name, _) -> name) in
+  if List.length dups > 0 then
+    Some dups
+  else
+    None
+  
 let suite name ?(only_if = fun () -> true) tests =
+  match contains_dup_tests name tests with
+    | Some names -> raise (Duplicate_Test_Names (String.concat ", " names))
+    | None -> ();
   {suite_name = name;
    suite_tests = tests;
    skip_suite_if_this_is_false = only_if}

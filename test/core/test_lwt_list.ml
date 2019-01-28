@@ -221,12 +221,6 @@ let suite_primary = suite "lwt_list" [
   test "for_all_p"
     (fun () -> test_for_all_true Lwt_list.for_all_p);
 
-  test "for_all_s"
-    (fun () -> test_for_all_false Lwt_list.for_all_s);
-
-  test "for_all_p"
-    (fun () -> test_for_all_false Lwt_list.for_all_p);
-
   test "exists_s true"
     (fun () -> test_exists_true Lwt_list.exists_s);
 
@@ -540,11 +534,6 @@ let suite_primary = suite "lwt_list" [
     test_serialization m
   end;
 
-  test "filter_map_p parallelism" begin fun () ->
-    let m f =
-      Lwt_list.filter_map_p (fun x -> f x >>= fun u -> Lwt.return (Some u)) in
-    test_parallelism m
-  end;
 
   test "filter_map_s serialization" begin fun () ->
     let m f =
