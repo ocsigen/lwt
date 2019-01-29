@@ -122,6 +122,10 @@ val create_bounded : int -> 'a t * 'a bounded_push
 
     It raises [Invalid_argument] if [size < 0]. *)
 
+val of_seq : 'a Seq.t -> 'a t
+(** [of_seq s] creates a stream returning all elements of [s]. The elements are
+    evaluated from [s] and pushed onto the stream as the stream is consumed. *)
+
 val of_list : 'a list -> 'a t
 (** [of_list l] creates a stream returning all elements of [l]. The elements are
     pushed into the stream immediately, resulting in a closed stream (in the

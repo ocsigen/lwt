@@ -29,6 +29,8 @@ depends: [
   "dune" {build}
   # result is needed as long as Lwt still supports OCaml 4.02.
   "result"
+  # seq is needed as long as Lwt still supports OCaml < 4.07.0
+  "seq"
 ]
 depopts: [
   "base-threads"

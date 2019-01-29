@@ -187,6 +187,15 @@ let create_with_reference () =
   in
   (t, push, fun x -> source.push_external <- Obj.repr x)
 
+let of_seq s =
+  let s = ref s in
+  let get () =
+    match !s () with
+    | Seq.Nil -> None
+    | Seq.Cons (elt, s') -> s := s'; Some elt
+  in
+  from_direct get
+
 let create () =
   let source, push, _ = create_with_reference () in
   (source, push)
