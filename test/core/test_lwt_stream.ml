@@ -33,13 +33,19 @@ let suite = suite "lwt_stream" [
 
   test "of_seq"
     (fun () ->
-       let seq = fun () -> Seq.Cons (1, Seq.empty) in
+       let x = ref false in
+       let nil = fun () -> x := not !x; Seq.Nil in
+       let seq = fun () -> Seq.Cons (1, nil) in
        let stream = Lwt_stream.of_seq seq in
+       let x_before = !x in
        let closed_before = Lwt_stream.is_closed stream in
        Lwt_stream.get stream >>= fun x1 ->
+       let x_middle = !x in
        Lwt_stream.get stream >>= fun x2 ->
+       let x_after = !x in
        let closed_after = Lwt_stream.is_closed stream in
        return ([closed_before; closed_after] = [false; true]
+               && [x_before; x_middle; x_after] = [false; false; true]
                && [x1; x2] = [Some 1; None]));
 
   test "of_list"
