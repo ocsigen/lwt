@@ -39,14 +39,9 @@ let suite = suite "lwt_io non blocking io" [
   test "file exists"
     (fun () -> Lwt_unix.file_exists test_file);
 
-  test "file does not exist (invalid path)"
-    (fun () -> Lwt_unix.file_exists (test_file ^ "/foo") >|= fun r -> not r);
-
   test "file exists (LargeFile)"
     (fun () -> Lwt_unix.LargeFile.file_exists test_file);
 
-  test "file does not exist (LargeFile, invalid path)"
-    (fun () -> Lwt_unix.LargeFile.file_exists (test_file ^ "/foo") >|= fun r -> not r);
 
   test "read file"
     (fun () ->

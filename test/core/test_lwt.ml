@@ -2060,7 +2060,7 @@ let nchoose_split_tests = suite "nchoose_split" [
     end [@ocaml.warning "-4"]
   end;
 
-  test "pending, rejected" begin fun () ->
+  test "pending, rejected 2" begin fun () ->
     let p, r = Lwt.wait () in
     let p = Lwt.nchoose_split [p; fst (Lwt.wait ())] in
     Lwt.wakeup_exn r Exception;
