@@ -230,7 +230,7 @@ val read_line : input_channel -> string Lwt.t
       without the end of line. End of line is either ["\n"] or
       ["\r\n"].
 
-      If the end of line is reached before reading any character,
+      If the end of input is reached before reading any character,
       [End_of_file] is raised. If it is reached before reading an end
       of line but characters have already been read, they are
       returned. *)
