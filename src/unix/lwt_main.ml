@@ -61,3 +61,58 @@ let () =
     run (call_hooks ()))
 
 let at_exit f = ignore (Lwt_sequence.add_l f exit_hooks)
+
+module type Hooks =
+sig
+  type 'return_value kind
+  type hook
+
+  val add_first : (unit -> unit kind) -> hook
+  val add_last : (unit -> unit kind) -> hook
+  val remove : hook -> unit
+  val remove_all : unit -> unit
+end
+
+module type Hook_sequence =
+sig
+  type 'return_value kind
+  val sequence : (unit -> unit kind) Lwt_sequence.t
+end
+
+module Wrap_hooks (Sequence : Hook_sequence) =
+struct
+  type 'a kind = 'a Sequence.kind
+  type hook = (unit -> unit Sequence.kind) Lwt_sequence.node
+
+  let add_first hook_fn =
+    let hook_node = Lwt_sequence.add_l hook_fn Sequence.sequence in
+    hook_node
+
+  let add_last hook_fn =
+    let hook_node = Lwt_sequence.add_r hook_fn Sequence.sequence in
+    hook_node
+
+  let remove hook_node =
+    Lwt_sequence.remove hook_node
+
+  let remove_all () =
+    Lwt_sequence.iter_node_l Lwt_sequence.remove Sequence.sequence
+end
+
+module Enter_iter_hooks =
+  Wrap_hooks (struct
+    type 'return_value kind = 'return_value
+    let sequence = enter_iter_hooks
+  end)
+
+module Leave_iter_hooks =
+  Wrap_hooks (struct
+    type 'return_value kind = 'return_value
+    let sequence = leave_iter_hooks
+  end)
+
+module Exit_hooks =
+  Wrap_hooks (struct
+    type 'return_value kind = 'return_value Lwt.t
+    let sequence = exit_hooks
+  end)
