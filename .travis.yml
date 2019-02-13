@@ -15,7 +15,9 @@ matrix:
     - os: linux
       env: COMPILER=4.07.1
     - os: linux
-      env: COMPILER=4.07.1 FLAMBDA=yes
+      env: COMPILER=ocaml-variants.4.07.1+flambda
+    - os: linux
+      env: COMPILER=ocaml-variants.4.08.0+beta1 REPOSITORIES=--repositories=default,beta=git+https://github.com/ocaml/ocaml-beta-repository.git
     - os: osx
       env: COMPILER=4.07.1
     - os: osx

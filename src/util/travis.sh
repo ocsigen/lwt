@@ -39,15 +39,9 @@ packages
 
 
 
-if [ "$FLAMBDA" = yes ]
-then
-    COMPILER="$COMPILER+flambda"
-fi
-
-
-
 # Initialize opam.
-opam init -y --compiler=$COMPILER --disable-sandboxing --disable-shell-hook
+opam init -y --bare --disable-sandboxing --disable-shell-hook
+opam switch create . $COMPILER $REPOSITORIES --no-install
 eval `opam env`
 opam --version
 ocaml -version
