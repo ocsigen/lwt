@@ -1495,6 +1495,8 @@ sig
   val return_error : 'e -> (_, 'e) Result.result t
   val return_nil : _ list t
 
+  val ignore : _ -> unit t
+
   val fail_with : string -> _ t
   val fail_invalid_arg : string -> _ t
 end =
@@ -1516,6 +1518,7 @@ struct
   let return_false = return false
   let return_ok x = return (Result.Ok x)
   let return_error x = return (Result.Error x)
+  let ignore _ = return_unit
 
   let fail_with msg =
     to_public_promise {state = Rejected (Failure msg)}
@@ -1643,7 +1646,7 @@ struct
 
         let State_may_have_changed p' =
           resolve ~allow_deferring:false p' p_result in
-        ignore p'
+        Pervasives.ignore p'
       in
 
       let remove_the_callback =
@@ -1675,7 +1678,7 @@ struct
 
         let State_may_have_changed p' =
           resolve ~allow_deferring:false p' p_result in
-        ignore p'
+        Pervasives.ignore p'
       in
       add_implicitly_removed_callback p_callbacks callback;
 
@@ -1801,7 +1804,7 @@ struct
 
         let State_may_have_changed p' =
           set_promise_state p' (Proxy outer_promise) in
-        ignore p';
+        Pervasives.ignore p';
 
         State_may_have_changed outer_promise
         (* The state hasn't actually changed, but we still have to wrap
@@ -1878,7 +1881,7 @@ struct
 
           let State_may_have_changed p'' =
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
-          ignore p''
+          Pervasives.ignore p''
           (* Make the outer promise [p''] behaviorally identical to the promise
              [p'] returned by [f] by making [p'] into a proxy of [p'']. *)
 
@@ -1888,7 +1891,7 @@ struct
 
           let State_may_have_changed p'' =
             resolve ~allow_deferring:false p'' p_result in
-          ignore p''
+          Pervasives.ignore p''
       in
 
       (to_public_promise p'', callback)
@@ -1934,7 +1937,7 @@ struct
 
           let State_may_have_changed p'' =
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
-          ignore p''
+          Pervasives.ignore p''
 
         | Rejected exn ->
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -1942,7 +1945,7 @@ struct
 
           let State_may_have_changed p'' =
             resolve ~allow_deferring:false p'' (Rejected (add_loc exn)) in
-          ignore p''
+          Pervasives.ignore p''
       in
 
       (to_public_promise p'', callback)
@@ -1987,7 +1990,7 @@ struct
 
           let State_may_have_changed p'' =
             resolve ~allow_deferring:false p'' p''_result in
-          ignore p''
+          Pervasives.ignore p''
 
         | Rejected _ as p_result ->
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -1995,7 +1998,7 @@ struct
 
           let State_may_have_changed p'' =
             resolve ~allow_deferring:false p'' p_result in
-          ignore p''
+          Pervasives.ignore p''
       in
 
       (to_public_promise p'', callback)
@@ -2039,7 +2042,7 @@ struct
 
           let State_may_have_changed p'' =
             resolve ~allow_deferring:false p'' p_result in
-          ignore p''
+          Pervasives.ignore p''
 
         | Rejected exn ->
           current_storage := saved_storage;
@@ -2052,7 +2055,7 @@ struct
 
           let State_may_have_changed p'' =
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
-          ignore p''
+          Pervasives.ignore p''
       in
 
       (to_public_promise p'', callback)
@@ -2094,7 +2097,7 @@ struct
 
           let State_may_have_changed p'' =
             resolve ~allow_deferring:false p'' p_result in
-          ignore p''
+          Pervasives.ignore p''
 
         | Rejected exn ->
           current_storage := saved_storage;
@@ -2107,7 +2110,7 @@ struct
 
           let State_may_have_changed p'' =
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
-          ignore p''
+          Pervasives.ignore p''
       in
 
       (to_public_promise p'', callback)
@@ -2154,7 +2157,7 @@ struct
 
           let State_may_have_changed p'' =
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
-          ignore p''
+          Pervasives.ignore p''
 
         | Rejected exn ->
           current_storage := saved_storage;
@@ -2167,7 +2170,7 @@ struct
 
           let State_may_have_changed p'' =
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
-          ignore p''
+          Pervasives.ignore p''
       in
 
       (to_public_promise p'', callback)
@@ -2220,7 +2223,7 @@ struct
 
           let State_may_have_changed p'' =
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
-          ignore p''
+          Pervasives.ignore p''
 
         | Rejected exn ->
           current_storage := saved_storage;
@@ -2233,7 +2236,7 @@ struct
 
           let State_may_have_changed p'' =
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
-          ignore p''
+          Pervasives.ignore p''
       in
 
       (to_public_promise p'', callback)
@@ -2527,7 +2530,7 @@ struct
         let p' = underlying p' in
         let State_may_have_changed p' =
           resolve ~allow_deferring:false (underlying p') !join_result in
-        ignore p'
+        Pervasives.ignore p'
       end
     in
 
@@ -2642,7 +2645,7 @@ struct
         let p = underlying p in
         let State_may_have_changed p =
           resolve ~allow_deferring:false p result in
-        ignore p
+        Pervasives.ignore p
       in
       add_explicitly_removable_callback_to_each_of ps callback;
 
@@ -2665,7 +2668,7 @@ struct
         let p = underlying p in
         let State_may_have_changed p =
           resolve ~allow_deferring:false p result in
-        ignore p
+        Pervasives.ignore p
       in
       add_explicitly_removable_callback_to_each_of ps callback;
 
@@ -2743,7 +2746,7 @@ struct
           let result = collect_fulfilled_promises_after_pending [] ps in
           let State_may_have_changed p =
             resolve ~allow_deferring:false p result in
-          ignore p
+          Pervasives.ignore p
         in
         add_explicitly_removable_callback_to_each_of ps callback;
 
@@ -2800,7 +2803,7 @@ struct
           List.iter cancel ps;
           let State_may_have_changed p =
             resolve ~allow_deferring:false p result in
-          ignore p
+          Pervasives.ignore p
         in
         add_explicitly_removable_callback_to_each_of ps callback;
 
@@ -2881,7 +2884,7 @@ struct
           let State_may_now_be_pending_proxy p = may_now_be_proxy p in
           let p = underlying p in
           let State_may_have_changed p = finish p [] [] ps in
-          ignore p
+          Pervasives.ignore p
         in
         add_explicitly_removable_callback_to_each_of ps callback;
 
@@ -3024,7 +3027,7 @@ struct
 
 
 
-  let pause_hook = ref ignore
+  let pause_hook = ref Pervasives.ignore
 
   let paused = Lwt_sequence.create ()
   let paused_count = ref 0

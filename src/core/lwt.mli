@@ -1778,6 +1778,10 @@ val return_error : 'e -> ((_, 'e) Result.result) t
 
     @since Lwt 2.6.0 *)
 
+val ignore : _ -> unit t
+(** the Lwt counterpart of [Pervasives.ignore];
+    Lwt.ignore x] is an abbreviation for [ignore x; Lwt.return_unit]. *)
+
 val fail_with : string -> _ t
 (** [Lwt.fail_with s] is an abbreviation for
 
@@ -1832,8 +1836,6 @@ val ignore_result : _ t -> unit
       analogous to [Pervasives.ignore], i.e. that it waits for [p] to become
       resolved, completing any associated side effects along the way. In fact,
       the function that does {e that} is ordinary {!Lwt.bind}. *)
-
-
 
 (**/**)
 
