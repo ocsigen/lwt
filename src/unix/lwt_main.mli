@@ -44,22 +44,75 @@ val yield : unit -> unit Lwt.t
   (** [yield ()] is a threads which suspends itself and then resumes
       as soon as possible and terminates. *)
 
+
+
+(** Hook sequences. Each module of this type is a set of hooks, to be run by Lwt
+    at certain points during execution. See modules {!Enter_iter_hooks},
+    {!Leave_iter_hooks}, and {!Exit_hooks}. *)
+module type Hooks =
+sig
+  type 'return_value kind
+  (** Hooks are functions of either type [unit -> unit] or [unit -> unit Lwt.t];
+      this type constructor is used only to express both possibilities in one
+      signature. *)
+
+  type hook
+  (** Values of type [hook] represent hooks that have been added, so that they
+      can be removed later (if needed). *)
+
+  val add_first : (unit -> unit kind) -> hook
+  (** Adds a hook to the hook sequence underlying this module, to be run
+      {e first}, before any other hooks already added. *)
+
+  val add_last : (unit -> unit kind) -> hook
+  (** Adds a hook to the hook sequence underlying this module, to be run
+      {e last}, after any other hooks already added. *)
+
+  val remove : hook -> unit
+  (** Removes a hook added by {!add_first} or {!add_last}. *)
+
+  val remove_all : unit -> unit
+  (** Removes all hooks from the hook sequence underlying this module. *)
+end
+
+(** Hooks, of type [unit -> unit], that are called before each iteration of the
+    Lwt main loop. *)
+module Enter_iter_hooks :
+  Hooks with type 'return_value kind = 'return_value
+
+(** Hooks, of type [unit -> unit], that are called after each iteration of the
+    Lwt main loop. *)
+module Leave_iter_hooks :
+  Hooks with type 'return_value kind = 'return_value
+
+(** Promise-returning hooks, of type [unit -> unit Lwt.t], that are called at
+    process exit. Exceptions raised by these hooks are ignored. *)
+module Exit_hooks :
+  Hooks with type 'return_value kind = 'return_value Lwt.t
+
+
+
 [@@@ocaml.warning "-3"]
 
 val enter_iter_hooks : (unit -> unit) Lwt_sequence.t
-  (** Functions that are called before the main iteration. *)
+  [@@ocaml.deprecated
+    " Use module Lwt_main.Enter_iter_hooks."]
+(** @deprecated Use module {!Enter_iter_hooks}. *)
 
 val leave_iter_hooks : (unit -> unit) Lwt_sequence.t
-  (** Functions that are called after the main iteration. *)
+  [@@ocaml.deprecated
+    " Use module Lwt_main.Leave_iter_hooks."]
+(** @deprecated Use module {!Leave_iter_hooks}. *)
 
 val exit_hooks : (unit -> unit Lwt.t) Lwt_sequence.t
-  (** Sets of functions executed just before the program exit.
-
-      Notes:
-      - each hook is called exactly one time
-      - exceptions raised by hooks are ignored *)
+  [@@ocaml.deprecated
+    " Use module Lwt_main.Exit_hooks."]
+(** @deprecated Use module {!Exit_hooks}. *)
 
 [@@@ocaml.warning "+3"]
 
+
+
 val at_exit : (unit -> unit Lwt.t) -> unit
-  (** [at_exit hook] adds hook at the left of [exit_hooks]*)
+(** [Lwt_main.at_exit hook] is the same as
+    [ignore (Lwt_main.Exit_hooks.add_first hook)]. *)
