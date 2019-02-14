@@ -82,7 +82,7 @@ module Make (H : Hashtbl.HashedType) : (S with type key = H.t) = struct
              (* Not good practice, but not worse than the code it is
                 replacing. *)
              prerr_endline "internal error";
-             Printexc.print_backtrace Pervasives.stderr;
+             Printexc.print_backtrace stderr;
              Lwt.return ())
       in
       Some t

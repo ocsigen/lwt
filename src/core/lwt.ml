@@ -1376,9 +1376,9 @@ struct
     | Rejected Canceled ->
       ()
     | Fulfilled _ ->
-      Printf.ksprintf Pervasives.invalid_arg "Lwt.%s" api_function_name
+      Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
     | Rejected _ ->
-      Printf.ksprintf Pervasives.invalid_arg "Lwt.%s" api_function_name
+      Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
 
     | Pending _ ->
       let result = state_of_result result in
@@ -1397,9 +1397,9 @@ struct
     | Rejected Canceled ->
       ()
     | Fulfilled _ ->
-      Printf.ksprintf Pervasives.invalid_arg "Lwt.%s" api_function_name
+      Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
     | Rejected _ ->
-      Printf.ksprintf Pervasives.invalid_arg "Lwt.%s" api_function_name
+      Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
 
     | Pending _ ->
       let result = state_of_result result in
