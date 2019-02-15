@@ -1,48 +1,57 @@
-opam-version: "1.2"
+opam-version: "2.0"
+
+synopsis: "Promises and event-driven I/O"
+
 version: "dev"
+license: "MIT"
+homepage: "https://github.com/ocsigen/lwt"
+doc: "https://ocsigen.org/lwt/manual/"
+bug-reports: "https://github.com/ocsigen/lwt/issues"
+
+authors: [
+  "Jérôme Vouillon"
+  "Jérémie Dimino"
+]
 maintainer: [
   "Anton Bachin <antonbachin@yahoo.com>"
   "Mauricio Fernandez <mfp@acm.org>"
   "Simon Cruanes <simon.cruanes.2007@m4x.org>"
 ]
-authors: [
-  "Jérôme Vouillon"
-  "Jérémie Dimino"
-]
-homepage: "https://github.com/ocsigen/lwt"
-doc: "https://ocsigen.org/lwt/manual/"
-bug-reports: "https://github.com/ocsigen/lwt/issues"
-license: "MIT"
-dev-repo: "https://github.com/ocsigen/lwt.git"
-
-build: [
-  [ "dune" "build" "-p" name "-j" jobs ]
-]
+dev-repo: "git+https://github.com/ocsigen/lwt.git"
 
 depends: [
-  # Bisect_ppx is used only during development. This dependency should be
-  # removed when preparing a release.
-  "bisect_ppx" {>= "1.3.0"}
-  # ocamlfind is a development dependency of the test suite.
-  "ocamlfind" {>= "1.7.3-1"}
   "cppo" {build & >= "1.1.0"}
   "dune" {build}
-  # result is needed as long as Lwt still supports OCaml 4.02.
-  "result"
-  # seq is needed as long as Lwt still supports OCaml < 4.07.0
-  "seq"
+  "ocaml" {>= "4.02.0"}
+  "result" # result is needed as long as Lwt supports OCaml 4.02.
+  "seq" # seq is needed as long as Lwt supports OCaml < 4.07.0.
+
+  "bisect_ppx" {dev & >= "1.3.0"}
+  "ocamlfind" {dev & >= "1.7.3-1"}
 ]
 depopts: [
   "base-threads"
   "base-unix"
   "conf-libev"
 ]
+
 conflicts: [
+  "ocaml" {= "4.02.1+BER"}
   # ocamlfind 1.7.3-1 is the earliest release whose built-in "threads" package
   # does not have incorrect error lines. See
   #   https://github.com/ocaml/opam-repository/pull/11071#issuecomment-353131128
   "ocamlfind" {< "1.7.3-1"}
 ]
-# In practice, Lwt requires OCaml >= 4.02.3, as that is a constraint of the
-# dependency Dune.
-available: [ocaml-version >= "4.02.0" & compiler != "4.02.1+BER"]
+
+build: [
+  [ "dune" "build" "-p" name "-j" jobs ]
+]
+
+description: "A promise is a value that may become determined in the future.
+
+Lwt provides typed, composable promises. Promises that are resolved by I/O are
+resolved by Lwt in parallel.
+
+Meanwhile, OCaml code, including code creating and waiting on promises, runs in
+a single thread by default. This reduces the need for locks or other
+synchronization primitives. Code can be run in parallel on an opt-in basis."
