@@ -44,7 +44,7 @@ conflicts: [
 ]
 
 build: [
-  [ "dune" "build" "-p" name "-j" jobs ]
+  ["dune" "build" "-p" name "-j" jobs]
 ]
 
 description: "A promise is a value that may become determined in the future.
