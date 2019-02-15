@@ -37,10 +37,6 @@ depopts: [
 
 conflicts: [
   "ocaml" {= "4.02.1+BER"}
-  # ocamlfind 1.7.3-1 is the earliest release whose built-in "threads" package
-  # does not have incorrect error lines. See
-  #   https://github.com/ocaml/opam-repository/pull/11071#issuecomment-353131128
-  "ocamlfind" {< "1.7.3-1"}
 ]
 
 build: [
