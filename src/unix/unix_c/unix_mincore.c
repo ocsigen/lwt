@@ -12,10 +12,13 @@
 #include <caml/bigarray.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <sys/param.h>
 
 #include "lwt_unix.h"
 
 #ifdef __CYGWIN__
+LWT_NOT_AVAILABLE4(unix_mincore)
+#elif defined(__OPENBSD__) && OpenBSD >= 201811
 LWT_NOT_AVAILABLE4(unix_mincore)
 #else
 
