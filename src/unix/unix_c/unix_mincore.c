@@ -12,14 +12,16 @@
 #include <caml/bigarray.h>
 #include <unistd.h>
 #include <sys/mman.h>
-#include <sys/param.h>
 
 #include "lwt_unix.h"
 
 #ifdef __CYGWIN__
 LWT_NOT_AVAILABLE4(unix_mincore)
-#elif defined(__OPENBSD__) && OpenBSD >= 201811
+#elif defined __OpenBSD__
+#include <sys/param.h>
+#if OpenBSD >= 201811
 LWT_NOT_AVAILABLE4(unix_mincore)
+#endif
 #else
 
 #ifdef HAVE_BSD_MINCORE
