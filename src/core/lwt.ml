@@ -3072,6 +3072,18 @@ struct
   let (=|<) = map
   let (<&>) p p' = join [p; p']
   let (<?>) p p' = choose [p; p']
+
+  module Let_syntax =
+  struct
+    let return = return
+    let map t ~f = map f t
+    let bind t ~f = bind t f
+    let both = both
+
+    module Open_on_rhs =
+    struct
+    end
+  end
 end
 include Infix
 

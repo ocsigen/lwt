@@ -1266,7 +1266,8 @@ val on_any : 'a t -> ('a -> unit) -> (exn -> unit) -> unit
 
     Of the operators declared in this module, only [>|=] is recommended for new
     code. The only other commonly-used operator is [>>=]. *)
-module Infix : sig
+module Infix :
+sig
   val (>>=) : 'a t -> ('a -> 'b t) -> 'b t
   (** [p >>= f] is the same as {!Lwt.bind}[ p f]. It requires [Lwt.Infix] to be
       opened in scope:
@@ -1330,6 +1331,27 @@ let () =
 
       This operator is obscure and its use is discouraged. It is the same as
       [p >|= f]. *)
+
+  (** This module provides support for {{:https://github.com/janestreet/ppx_let}
+      ppx_let}. *)
+  module Let_syntax :
+  sig
+    val return : 'a -> 'a t
+    (** See {!Lwt.return} *)
+
+    val map : 'a t -> f:('a -> 'b) -> 'b t
+    (** See {!Lwt.map} *)
+
+    val bind : 'a t -> f:('a -> 'b t) -> 'b t
+    (** See {!Lwt.bind} *)
+
+    val both : 'a t -> 'b t -> ('a * 'b) t
+    (** See {!Lwt.both} *)
+
+    module Open_on_rhs :
+    sig
+    end
+  end
 end
 
 
