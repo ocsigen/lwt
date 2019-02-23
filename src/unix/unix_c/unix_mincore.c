@@ -22,7 +22,6 @@ LWT_NOT_AVAILABLE4(unix_mincore)
 #if !defined SYS_mincore
 LWT_NOT_AVAILABLE4(unix_mincore)
 #endif
-#endif
 #else
 
 #ifdef HAVE_BSD_MINCORE
