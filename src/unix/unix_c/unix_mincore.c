@@ -19,7 +19,7 @@
 LWT_NOT_AVAILABLE4(unix_mincore)
 #elif defined __OpenBSD__
 #include <sys/param.h>
-#if OpenBSD >= 201811
+#if OpenBSD >= 201805
 LWT_NOT_AVAILABLE4(unix_mincore)
 #endif
 #else
