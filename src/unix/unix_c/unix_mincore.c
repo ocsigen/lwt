@@ -18,9 +18,10 @@
 #ifdef __CYGWIN__
 LWT_NOT_AVAILABLE4(unix_mincore)
 #elif defined __OpenBSD__
-#include <sys/param.h>
-#if OpenBSD >= 201805
+#include <sys/syscall.h>
+#if !defined SYS_mincore
 LWT_NOT_AVAILABLE4(unix_mincore)
+#endif
 #endif
 #else
 
