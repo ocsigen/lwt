@@ -1062,11 +1062,9 @@ struct
            and v1 = get buffer (ptr + pos32_1)
            and v2 = get buffer (ptr + pos32_2)
            and v3 = get buffer (ptr + pos32_3) in
-           let v = v0 lor (v1 lsl 8) lor (v2 lsl 16) lor (v3 lsl 24) in
-           if v3 land 0x80 = 0 then
-             Lwt.return v
-           else
-             Lwt.return (v - (1 lsl 32)))
+           let n3 = if v3 >= 128 then v3 - 256 else v3 in
+           let v = v0 + (v1 lsl 8) + (v2 lsl 16) + (n3 lsl 24) in
+           Lwt.return v)
 
     let read_int16 ic =
       read_block_unsafe ic 2
