@@ -846,6 +846,7 @@ Lwt can use pthread or the win32 API.
 
   let write_sexp n x =
     let f = open_out n in
+    let x = List.map (Printf.sprintf "\"%s\"") x in
     output_string f ("(" ^ String.concat " " x ^ ")");
     close_out f
   in
