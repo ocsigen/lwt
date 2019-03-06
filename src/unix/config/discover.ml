@@ -324,6 +324,7 @@ let compile (opt, lib) stub_file =
   let cmd fmt = ksprintf (fun s ->
     dprintf "RUN: %s" s;
     Sys.command s = 0) fmt in
+  let o_flag = if !ccomp_type = "msvc" then "-Fo:" else "-o" in
   let obj_file = Filename.chop_suffix stub_file ".c" ^ !ext_obj
   in
   (* Before OCaml 4.04, asking ocamlc to compile a .c file produced a .o file in
@@ -334,10 +335,11 @@ let compile (opt, lib) stub_file =
   let obj_file_in_current_directory = Filename.basename obj_file in
   (* First compile the .c file using -ocamlc and CFLAGS (opt) *)
   (cmd
-    "%s -c %s %s -ccopt -o -ccopt %s >> %s 2>&1"
+    "%s -c %s %s -ccopt %s -ccopt %s >> %s 2>&1"
     !ocamlc
     (String.concat " " (List.map (fun x -> "-ccopt " ^ x) (List.map Filename.quote opt)))
     (Filename.quote stub_file)
+    o_flag
     (Filename.quote obj_file)
     (Filename.quote !log_file))
   &&
