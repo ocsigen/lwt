@@ -188,7 +188,7 @@ CAMLprim value lwt_test(value Unit)
 
 let fdatasync_code = "
 #include <caml/mlvalues.h>
-#include <sys/unistd.h>
+#include <unistd.h>
 
 CAMLprim value lwt_test(value Unit)
 {
