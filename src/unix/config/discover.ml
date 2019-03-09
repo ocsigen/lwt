@@ -264,14 +264,29 @@ CAMLprim value lwt_test() {
 }
 "
 
-let bsd_mincore_code = "
+let mincore_code =
+"
 #include <unistd.h>
 #include <sys/mman.h>
 #include <caml/mlvalues.h>
 
 CAMLprim value lwt_test()
 {
-    int (*mincore_ptr)(const void*, size_t, char*) = mincore;
+    mincore(NULL, 0, NULL);
+    return Val_unit;
+}
+"
+
+let mincore_type_code =
+Printf.sprintf
+"
+#include <unistd.h>
+#include <sys/mman.h>
+#include <caml/mlvalues.h>
+
+CAMLprim value lwt_test()
+{
+    int (*mincore_ptr)(%s *, size_t, %s *) = mincore;
     return Val_int(mincore_ptr == mincore_ptr);
 }
 "
@@ -725,8 +740,14 @@ Lwt can use pthread or the win32 API.
     "netdb_reentrant" "HAVE_NETDB_REENTRANT" (fun () -> test_code ([], []) netdb_reentrant_code);
   test_feature ~do_check "reentrant gethost*" "HAVE_REENTRANT_HOSTENT" (fun () -> test_code ([], []) hostent_reentrant_code);
   test_nanosecond_stat ();
-  test_feature ~do_check "BSD mincore" "HAVE_BSD_MINCORE" (fun () ->
-    test_code (["-Werror"], []) bsd_mincore_code);
+  test_feature ~do_check "mincore" "HAVE_MINCORE" (fun () ->
+    test_code (["-Werror"], []) mincore_code);
+  test_feature ~do_check "mincore (char array)" "CHAR_MINCORE" (fun () ->
+    test_code (["-Werror"], []) (mincore_type_code "void"       "char") ||
+    test_code (["-Werror"], []) (mincore_type_code "const void" "char"));
+  test_feature ~do_check "mincore (unsigned char array)" "UCHAR_MINCORE" (fun () ->
+    test_code (["-Werror"], []) (mincore_type_code "void"       "unsigned char") ||
+    test_code (["-Werror"], []) (mincore_type_code "const void" "unsigned char"));
 
   let get_cred_vars = [
     "HAVE_GET_CREDENTIALS_LINUX";

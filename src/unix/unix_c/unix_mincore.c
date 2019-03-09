@@ -15,19 +15,14 @@
 
 #include "lwt_unix.h"
 
-#ifdef __CYGWIN__
-LWT_NOT_AVAILABLE4(unix_mincore)
-#elif defined __OpenBSD__
-#include <sys/syscall.h>
-#if !defined SYS_mincore
-LWT_NOT_AVAILABLE4(unix_mincore)
-#endif
-#else
+#if defined HAVE_MINCORE
 
-#ifdef HAVE_BSD_MINCORE
+#if defined CHAR_MINCORE
 #define MINCORE_VECTOR_TYPE char
-#else
+#elif defined UCHAR_MINCORE
 #define MINCORE_VECTOR_TYPE unsigned char
+#else
+#error "Unknown vector type"
 #endif
 
 CAMLprim value lwt_unix_mincore(value val_buffer, value val_offset,
@@ -43,6 +38,9 @@ CAMLprim value lwt_unix_mincore(value val_buffer, value val_offset,
 }
 
 #undef MINCORE_VECTOR_TYPE
+
+#else
+LWT_NOT_AVAILABLE4(unix_mincore)
 
 #endif
 
