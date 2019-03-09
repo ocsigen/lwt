@@ -35,14 +35,14 @@ doc:
 # Build HTML documentation with ocamldoc
 .PHONY: doc-api-html
 doc-api-html: build-all
-	make -C docs api/html/index.html
+	$(MAKE) -C docs api/html/index.html
 
 # Build wiki documentation with wikidoc
 # requires ocaml 4.03.0 and pinning the repo
 # https://github.com/ocsigen/wikidoc
 .PHONY: doc-api-wiki
 doc-api-wiki: build-all
-	make -C docs api/wiki/index.wiki
+	$(MAKE) -C docs api/wiki/index.wiki
 
 # Packaging tests. These are run with Lwt installed by OPAM, typically during
 # CI. To run locally, run the install-for-packaging-test target first.
@@ -51,7 +51,7 @@ packaging-test:
 	ocamlfind query lwt
 	for TEST in `ls -d test/packaging/*/*` ; \
 	do \
-	    make -wC $$TEST || exit 1 ; \
+	    $(MAKE) -wC $$TEST || exit 1 ; \
 		echo ; \
 		echo ; \
 	done
@@ -78,7 +78,7 @@ clean:
 	rm -f src/jbuild-ignore src/unix/lwt_config
 	for TEST in `ls -d test/packaging/*/*` ; \
 	do \
-	    make -wC $$TEST clean ; \
+	    $(MAKE) -wC $$TEST clean ; \
 	done
 	rm -rf _coverage/
 
@@ -86,7 +86,7 @@ BISECT_FILES_PATTERN := _build/default/test/*/bisect*.out
 
 .PHONY: coverage
 coverage: clean
-	BISECT_ENABLE=yes make build
+	BISECT_ENABLE=yes $(MAKE) build
 	BISECT_ENABLE=yes dune runtest -j 1 --no-buffer
 	bisect-ppx-report \
 	    -I _build/default/ -html _coverage/ \
