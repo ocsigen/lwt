@@ -726,6 +726,39 @@ let lwt_preemptive_tests = [
   end;
 ]
 
+let lwt_user_tests = [
+  test "getlogin and Unix.getlogin" ~only_if:(fun () -> not Sys.win32) begin fun () ->
+    let unix_user = Unix.getlogin () in
+    Lwt_unix.getlogin () >>= fun user ->
+    Lwt.return (user = unix_user)
+  end;
+  test "getpwnam and Unix.getpwnam" ~only_if:(fun () -> not Sys.win32) begin fun () ->
+    let unix_user = Unix.getlogin () in
+    let unix_password = Unix.getpwnam unix_user in
+    Lwt_unix.getpwnam unix_user >>= fun password ->
+    Lwt.return (password = unix_password)
+  end;
+  test "getpwuid and Unix.getpwuid" ~only_if:(fun () -> not Sys.win32) begin fun () ->
+    let pwnam = Unix.getpwnam (Unix.getlogin ()) in
+    let unix_pwuid = Unix.getpwuid pwnam.pw_uid in
+    Lwt_unix.getpwuid pwnam.pw_uid >>= fun pwuid ->
+    Lwt.return (pwuid = unix_pwuid)
+  end;
+  test "getgrgid and Unix.getgrgid" ~only_if:(fun () -> not Sys.win32) begin fun () ->
+    let group_id = Unix.getgid () in
+    let unix_group = Unix.getgrgid group_id in
+    Lwt_unix.getgrgid group_id >>= fun group ->
+    Lwt.return (group = unix_group)
+  end;
+  test "getgrnam and Unix.getgrnam" ~only_if:(fun () -> not Sys.win32) begin fun () ->
+    let group_id = Unix.getgid () in
+    let unix_group = Unix.getgrgid group_id in
+    let group_name = unix_group.gr_name in
+    Lwt_unix.getgrnam group_name >>= fun group ->
+    Lwt.return (group = unix_group)
+  end
+]
+
 let suite =
   suite "lwt_unix"
     (openfile_tests @
@@ -736,5 +769,6 @@ let suite =
      writev_tests @
      bind_tests @
      dir_tests @
-     lwt_preemptive_tests
+     lwt_preemptive_tests @
+     lwt_user_tests
     )
