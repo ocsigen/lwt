@@ -205,12 +205,8 @@ let sendto fd buf pos len flags addr =
    +-----------------------------------------------------------------+ *)
 
 let map_file ~fd ?pos ~shared ?(size=(-1)) () =
-  Array1.map_file fd ?pos char c_layout shared size
-    [@@ocaml.warning "-3"]
-    (* BigArray.Array1.map_file is deprecated in OCaml 4.05; however, the
-       suggested replacement requires 4.05 (Lwt still supports 4.02). The
-       replacement also has slighty different exception semantics; see
-       deprecation warning on BigArray.Array1.map_file. *)
+  Mmap.V1.map_file fd ?pos char c_layout shared [|size|]
+  |> Bigarray.array1_of_genarray
 
 [@@@ocaml.warning "-3"]
 external mapped : t -> bool = "lwt_unix_mapped" "noalloc"

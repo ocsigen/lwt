@@ -19,6 +19,7 @@ dev-deps :
 	  bisect_ppx \
 	  cppo \
 	  dune \
+	  mmap \
 	  ocaml-migrate-parsetree \
 	  ocamlfind \
 	  ppx_tools_versioned \
