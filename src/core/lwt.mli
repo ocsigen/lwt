@@ -890,6 +890,8 @@ v}
 
 (** {3 Multiple wait} *)
 
+val both : 'a t -> 'b t -> ('a * 'b) t
+
 val join : (unit t) list -> unit t
 (** [Lwt.join ps] returns a promise that is pending until {e all} promises in
     the list [ps] become {{: #TYPEt} {e resolved}}.

@@ -2445,6 +2445,7 @@ sig
   val async : (unit -> _ t) -> unit
   val ignore_result : _ t -> unit
 
+  val both : 'a t -> 'b t -> ('a * 'b) t
   val join : unit t list -> unit t
 
   val choose : 'a t list -> 'a t
@@ -2567,6 +2568,16 @@ struct
     in
 
     attach_callback_or_resolve_immediately ps
+
+  let both p1 p2 =
+    let v1 = ref None in
+    let v2 = ref None in
+    let p1' = bind p1 (fun v -> v1 := Some v; return_unit) in
+    let p2' = bind p2 (fun v -> v2 := Some v; return_unit) in
+    join [p1'; p2'] |> map (fun () ->
+      match !v1, !v2 with
+      | Some v1, Some v2 -> v1, v2
+      | _ -> assert false)
 
 
 
