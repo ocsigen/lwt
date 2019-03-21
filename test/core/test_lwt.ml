@@ -1892,6 +1892,219 @@ let join_tests = suite "join" [
 ]
 let suites = suites @ [join_tests]
 
+let both_tests = suite "both" [
+  test "both fulfilled" begin fun () ->
+    let p = Lwt.both (Lwt.return 1) (Lwt.return 2) in
+    state_is (Lwt.Return (1, 2)) p
+  end;
+
+  test "all rejected" begin fun () ->
+    let p = Lwt.both (Lwt.fail Exception) (Lwt.fail Exit) in
+    state_is (Lwt.Fail Exception) p
+  end;
+
+  test "rejected, fulfilled" begin fun () ->
+    let p = Lwt.both (Lwt.fail Exception) (Lwt.return 2) in
+    state_is (Lwt.Fail Exception) p
+  end;
+
+  test "fulfilled, rejected" begin fun () ->
+    let p = Lwt.both (Lwt.return 1) (Lwt.fail Exception) in
+    state_is (Lwt.Fail Exception) p
+  end;
+
+  test "both pending" begin fun () ->
+    let p = Lwt.both (fst (Lwt.wait ())) (fst (Lwt.wait ())) in
+    state_is Lwt.Sleep p
+  end;
+
+  test "pending, fulfilled" begin fun () ->
+    let p = Lwt.both (fst (Lwt.wait ())) (Lwt.return 2) in
+    state_is Lwt.Sleep p
+  end;
+
+  test "pending, rejected" begin fun () ->
+    let p = Lwt.both (fst (Lwt.wait ())) (Lwt.fail Exception) in
+    state_is Lwt.Sleep p
+  end;
+
+  test "fulfilled, pending" begin fun () ->
+    let p = Lwt.both (Lwt.return 1) (fst (Lwt.wait ())) in
+    state_is Lwt.Sleep p
+  end;
+
+  test "rejected, pending" begin fun () ->
+    let p = Lwt.both (Lwt.fail Exception) (fst (Lwt.wait ())) in
+    state_is Lwt.Sleep p
+  end;
+
+  test "pending, fulfilled, then fulfilled" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p = Lwt.both p1 (Lwt.return 2) in
+    Lwt.wakeup_later r1 1;
+    state_is (Lwt.Return (1, 2)) p
+  end;
+
+  test "pending, rejected, then fulfilled" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p = Lwt.both p1 (Lwt.fail Exception) in
+    Lwt.wakeup_later r1 1;
+    state_is (Lwt.Fail Exception) p
+  end;
+
+  test "pending, fulfilled, then rejected" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p = Lwt.both p1 (Lwt.return 2) in
+    Lwt.wakeup_later_exn r1 Exception;
+    state_is (Lwt.Fail Exception) p
+  end;
+
+  test "pending, rejected, then rejected" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p = Lwt.both p1 (Lwt.fail Exception) in
+    Lwt.wakeup_later_exn r1 Exit;
+    state_is (Lwt.Fail Exception) p
+  end;
+
+  test "fulfilled, pending, then fulfilled" begin fun () ->
+    let p2, r2 = Lwt.wait () in
+    let p = Lwt.both (Lwt.return 1) p2 in
+    Lwt.wakeup_later r2 2;
+    state_is (Lwt.Return (1, 2)) p
+  end;
+
+  test "rejected, pending, then fulfilled" begin fun () ->
+    let p2, r2 = Lwt.wait () in
+    let p = Lwt.both (Lwt.fail Exception) p2 in
+    Lwt.wakeup_later r2 2;
+    state_is (Lwt.Fail Exception) p
+  end;
+
+  test "fulfilled, pending, then rejected" begin fun () ->
+    let p2, r2 = Lwt.wait () in
+    let p = Lwt.both (Lwt.return 1) p2 in
+    Lwt.wakeup_later_exn r2 Exception;
+    state_is (Lwt.Fail Exception) p
+  end;
+
+  test "rejected, pending, then rejected" begin fun () ->
+    let p2, r2 = Lwt.wait () in
+    let p = Lwt.both (Lwt.fail Exception) p2 in
+    Lwt.wakeup_later_exn r2 Exit;
+    state_is (Lwt.Fail Exception) p
+  end;
+
+  test "pending, then first fulfilled" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p = Lwt.both p1 (fst (Lwt.wait ())) in
+    Lwt.wakeup_later r1 1;
+    state_is Lwt.Sleep p
+  end;
+
+  test "pending, then first rejected" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p = Lwt.both p1 (fst (Lwt.wait ())) in
+    Lwt.wakeup_later_exn r1 Exception;
+    state_is Lwt.Sleep p
+  end;
+
+  test "pending, then second fulfilled" begin fun () ->
+    let p2, r2 = Lwt.wait () in
+    let p = Lwt.both (fst (Lwt.wait ())) p2 in
+    Lwt.wakeup_later r2 2;
+    state_is Lwt.Sleep p
+  end;
+
+  test "pending, then second rejected" begin fun () ->
+    let p2, r2 = Lwt.wait () in
+    let p = Lwt.both (fst (Lwt.wait ())) p2 in
+    Lwt.wakeup_later_exn r2 Exception;
+    state_is Lwt.Sleep p
+  end;
+
+  test "pending, then first fulfilled, then fulfilled" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p = Lwt.both p1 p2 in
+    Lwt.wakeup_later r1 1;
+    Lwt.wakeup_later r2 2;
+    state_is (Lwt.Return (1, 2)) p
+  end;
+
+  test "pending, then first fulfilled, then rejected" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p = Lwt.both p1 p2 in
+    Lwt.wakeup_later r1 1;
+    Lwt.wakeup_later_exn r2 Exception;
+    state_is (Lwt.Fail Exception) p
+  end;
+
+  test "pending, then first rejected, then fulfilled" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p = Lwt.both p1 p2 in
+    Lwt.wakeup_later_exn r1 Exception;
+    Lwt.wakeup_later r2 2;
+    state_is (Lwt.Fail Exception) p
+  end;
+
+  test "pending, then first rejected, then rejected" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p = Lwt.both p1 p2 in
+    Lwt.wakeup_later_exn r1 Exception;
+    Lwt.wakeup_later_exn r2 Exit;
+    state_is (Lwt.Fail Exception) p
+  end;
+
+test "pending, then second fulfilled, then fulfilled" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p = Lwt.both p1 p2 in
+    Lwt.wakeup_later r2 2;
+    Lwt.wakeup_later r1 1;
+    state_is (Lwt.Return (1, 2)) p
+  end;
+
+  test "pending, then second fulfilled, then rejected" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p = Lwt.both p1 p2 in
+    Lwt.wakeup_later r2 2;
+    Lwt.wakeup_later_exn r1 Exception;
+    state_is (Lwt.Fail Exception) p
+  end;
+
+  test "pending, then second rejected, then fulfilled" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p = Lwt.both p1 p2 in
+    Lwt.wakeup_later_exn r2 Exception;
+    Lwt.wakeup_later r1 1;
+    state_is (Lwt.Fail Exception) p
+  end;
+
+  test "pending, then second rejected, then rejected" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p = Lwt.both p1 p2 in
+    Lwt.wakeup_later_exn r2 Exception;
+    Lwt.wakeup_later_exn r1 Exit;
+    state_is (Lwt.Fail Exception) p
+  end;
+
+  test "diamond" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p = Lwt.both p1 p1 in
+    Lwt.bind (state_is Lwt.Sleep p) (fun was_pending ->
+    Lwt.wakeup_later r1 1;
+    Lwt.bind (state_is (Lwt.Return (1, 1)) p) (fun is_fulfilled ->
+    Lwt.return (was_pending && is_fulfilled)))
+  end;
+]
+let suites = suites @ [both_tests]
+
 let choose_tests = suite "choose" [
   test "empty" begin fun () ->
     let p = Lwt.choose [] in
