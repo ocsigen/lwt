@@ -891,8 +891,8 @@ v}
 (** {3 Multiple wait} *)
 
 val both : 'a t -> 'b t -> ('a * 'b) t
-(** [Lwt.both a b] returns a promise that is pending until both promises in
-    the arguments [a] and [b] become {{: #TYPEt} {e resolved}}.
+(** [Lwt.both p_1 p_2] returns a promise that is pending until {e both} promises
+    [p_1] and [p_2] become {{: #TYPEt} {e resolved}}.
 
 {[
 let () =
@@ -906,17 +906,18 @@ let () =
     Lwt_io.printl "Five seconds elapsed"
   in
 
-  let p_3 = Lwt.join p_1 p_2 in
+  let p_3 = Lwt.both p_1 p_2 in
   Lwt_main.run p_3
 
 (* ocamlfind opt -linkpkg -package lwt_ppx,lwt.unix code.ml && ./a.out *)
 ]}
 
-    If both of the promises in [a] and [b] become fulfilled, [Lwt.both a b] is
-    also fulfilled. Otherwise, if at least one of the two promises becomes
-    rejected, [Lwt.both a b] is rejected with the same exception as one such
-    promise, chosen arbitrarily. Note that can occur before both promises are
-    resolve. *)
+    If both [p_1] and [p_2] become fulfilled, [Lwt.both p_1 p_2] is also
+    fulfilled, with the pair of their final values. Otherwise, if at least one
+    of the two promises becomes rejected, [Lwt.both p_1 p_2] is rejected with
+    the same exception as one such promise, chosen arbitrarily. Note that this
+    occurs only after both promises are resolved, not immediately when the first
+    promise is rejected. *)
 
 val join : (unit t) list -> unit t
 (** [Lwt.join ps] returns a promise that is pending until {e all} promises in
