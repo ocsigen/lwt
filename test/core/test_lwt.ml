@@ -3786,6 +3786,50 @@ let suites = suites @ [infix_operator_tests]
 
 
 
+(* Like the infix operator tests, these just check that the necessary functions
+   exist in Lwt.Infix.Let_syntax, and do roughly what they should. We are not
+   testing the full syntax to avoid large dependencies for the test suite. *)
+let ppx_let_tests = suite "ppx_let" [
+  test "return" begin fun () ->
+    let p = Lwt.Infix.Let_syntax.return () in
+    state_is (Lwt.Return ()) p
+  end;
+
+  test "map" begin fun () ->
+    let p = Lwt.Infix.Let_syntax.map (Lwt.return 1) ~f:(fun x -> x + 1) in
+    state_is (Lwt.Return 2) p
+  end;
+
+  test "bind" begin fun () ->
+    let p =
+      Lwt.Infix.Let_syntax.bind
+        (Lwt.return 1) ~f:(fun x -> Lwt.return (x + 1))
+    in
+    state_is (Lwt.Return 2) p
+  end;
+
+  test "both" begin fun () ->
+    let p = Lwt.both (Lwt.return 1) (Lwt.return 2) in
+    state_is (Lwt.Return (1, 2)) p
+  end;
+
+  test "Open_on_rhs" begin fun () ->
+    let module Local =
+      struct
+        module type Empty =
+        sig
+        end
+      end
+    in
+    let x : (module Local.Empty) = (module Lwt.Infix.Let_syntax.Open_on_rhs) in
+    ignore x;
+    Lwt.return true
+  end;
+]
+let suites = suites @ [ppx_let_tests]
+
+
+
 (* Tests for [Lwt.add_task_l] and [Lwt.add_task_r]. *)
 
 let lwt_sequence_contains sequence list =
