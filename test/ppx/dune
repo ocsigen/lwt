@@ -6,5 +6,5 @@
 
 (alias
  (name runtest)
- (package lwt)
+ (package lwt_ppx)
  (action (run %{exe:main.exe})))
