@@ -78,3 +78,12 @@ make clean
 make install-for-packaging-test
 make packaging-test
 make uninstall-after-packaging-test
+
+
+
+# Run the ppx_let integratio test.
+if [ "$COMPILER" != "4.02.3" ]
+then
+    make ppx_let-test-deps
+    make ppx_let-test
+fi

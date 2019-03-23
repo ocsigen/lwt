@@ -71,6 +71,16 @@ uninstall-after-packaging-test:
 	opam pin remove --yes lwt_ppx
 	opam pin remove --yes lwt_react
 
+# ppx_let integration test.
+.PHONY : ppx_let-test
+ppx_let-test :
+	dune build test/ppx_let/test.exe
+	dune exec test/ppx_let/test.exe
+
+.PHONY : ppx_let-test-deps
+ppx_let-test-deps :
+	opam install --yes --unset-root ppx_let
+
 .PHONY: clean
 clean:
 	dune clean
