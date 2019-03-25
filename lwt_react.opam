@@ -21,6 +21,7 @@ dev-repo: "git+https://github.com/ocsigen/lwt.git"
 depends: [
   "dune" {build}
   "lwt" {>= "3.0.0"}
+  "ocaml"
   "react" {>= "1.0.0"}
 ]
 
