@@ -45,7 +45,14 @@ let main () =
       match input_line ch with
       |"true" -> use_libev := Some true
       |_ -> use_libev := Some false
-    with _ -> use_libev := Some false
+    with _ ->
+      (* Esy users won't have opam installed in the esy sandbox. *)
+      match Sys.getenv "LIBEV_CFLAGS", Sys.getenv "LIBEV_LIBS" with
+      | "", "" ->
+        use_libev := Some false
+      | exception Not_found ->
+        use_libev := Some false
+      | flags, libs -> ()
   end
   | _ ->
     ()
