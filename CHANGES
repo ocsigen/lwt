@@ -122,12 +122,12 @@ upgrade paths.
   * Restore backtrace support (#554, #556, Gabe Levi).
   * Serious logic error that could cause Lwt to hang or crash (#549, reported
     @koen-struyve).
-  * All `Lwt_list` functions are now tail-recursive (#538, Joseph Thomas).
+  * All Lwt_list functions are now tail-recursive (#538, Joseph Thomas).
 
 ====== Additions ======
 
-  * Support `;%lwt` syntax in the PPX (#307, Hezekiah Carty).
-  * `Lwt_stream.iter_n` (#312, Hezekiah Carty).
+  * Support ;%lwt syntax in the PPX (#307, Hezekiah Carty).
+  * Lwt_stream.iter_n (#312, Hezekiah Carty).
 
 ====== Miscellaneous ======
 
