@@ -1,3 +1,48 @@
+===== 4.2.0 (2019-03-25) =====
+
+====== Additions ======
+
+  * Lwt.both (#668, Brendan Long, Jeremy Yallop).
+  * ppx_let support with open Lwt.Infix (#667, Brendan Long).
+  * Lwt_stream.of_seq (#646, Hezekiah Carty).
+  * Lwt_io.is_closed (#635, Andreas Garnaes).
+  * Lwt_unix.IO_vectors.byte_count (#645, Raphaël Proust).
+  * Support for higher baud rates in Lwt_unix.tcgetattr and Lwt_unix.tcsetattr
+    (#678, Frédéric Fortier).
+  * Replacement functions in Lwt_main for deprecated functions based on
+    Lwt_sequence (#660).
+
+====== Bugs fixed ======
+
+  * 4.08 compatibility (#658).
+  * Stack overflow in Lwt_stream.iter_p (#432, Varun Kohli).
+  * Incorrect bounds check in Lwt_bytes.mincore (#627, Cédric Le Moigne).
+  * Lwt_bytes.mincore will not be available in future releases of OpenBSD (#663,
+    Kenneth Westerback).
+  * Missing header in the Android build (#652, Justus Matthiesen).
+  * Build broken on MSVC (98303de, 85535f7, Dmitry Bely).
+  * Build broken on OpenBSD (#672, Christopher Zimmermann).
+  * Lwt_io.of_bytes produces a channel with inaccurate positions (#636, Nathan
+    Rebours).
+  * Lwt_io._.read_int behaves incorrectly on 32-bit systems (#671, reported
+    Dmitry Bely).
+  * Inaccurate locations for errors related to ;%lwt (#602, @kandu).
+  * (_ : t) not recognized as a catch-all pattern by the PPX (#640, Florian
+    Angeletti).
+  * Race condition in Lwt_react.E.limit (#606, Avni Fatehpuria).
+  * Premature deallocation in Lwt_react.E.with_finaliser and
+    Lwt_react.S.with_finaliser (#626, El-Hassan Wanas).
+
+====== Miscellaneous ======
+
+  * New tests for Lwt_bytes, portions of Lwt_unix (#619, #621, #628, #630, #673,
+    Cédric Le Moigne, Anurag Soni).
+  * Test suite improvements (#656, Dave Parfitt).
+  * Clarifications for documentation of Lwt.try_bind, Lwt.pick (#648, #650,
+    Bikal Lem).
+  * Fixed documentation of Lwt_io.read_line (#657, Yoni Levy).
+  * Fixed some typos (#611, #613, Rich Neswold).
+
 ===== 4.1.0 (2018-06-26) =====
 
 ====== Additions ======
