@@ -52,7 +52,7 @@ let main () =
         use_libev := Some false
       | exception Not_found ->
         use_libev := Some false
-      | flags, libs -> ()
+      | _flags, _libs -> ()
   end
   | _ ->
     ()
