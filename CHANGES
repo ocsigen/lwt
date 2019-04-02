@@ -1,3 +1,10 @@
+===== 4.2.1 (2019-04-02) =====
+
+====== Bug fixed ======
+
+  * Detect libev correctly when building under esy (#679, Antonio Nuno
+    Monteiro).
+
 ===== 4.2.0 (2019-03-25) =====
 
 ====== Additions ======
