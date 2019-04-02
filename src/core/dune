@@ -3,6 +3,5 @@
  (public_name lwt)
  (synopsis "Monadic promises and concurrent I/O")
  (wrapped false)
- (preprocess (pps bisect_ppx -conditional))
  (libraries bytes result seq)
  (flags (:standard -w +A-29)))
