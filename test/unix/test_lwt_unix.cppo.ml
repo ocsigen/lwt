@@ -83,6 +83,7 @@ let utimes_tests = [
         (fun () -> Lwt_unix.utimes "non-existent-file" 0. 0.)
         (function
         | Unix.Unix_error (Unix.ENOENT, "utimes", _) -> Lwt.return_unit
+        | Unix.Unix_error (Unix.EUNKNOWNERR _, "utimes", _) -> Lwt.return_unit
         | e -> Lwt.fail e) [@ocaml.warning "-4"] >>= fun () ->
       Lwt.return_true);
 ]
