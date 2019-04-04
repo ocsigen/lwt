@@ -254,7 +254,7 @@
 
    The Lwt core deliberately doesn't do I/O. The resolution loop stops running
    once no promises can be resolved immediately. It has to be restarted later
-   by some surrouding I/O loop. This I/O loop typically keeps track of pending
+   by some surrounding I/O loop. This I/O loop typically keeps track of pending
    promises that represent blocked or in-progress I/O; other pending promises
    that indirectly depend on I/O are not explicitly tracked. They are retained
    in memory by references captured inside callbacks.

@@ -96,7 +96,7 @@ and 'mode _channel = {
   abort_wakener : int Lwt.u;
 
   mutable auto_flushing : bool;
-  (* Wether the auto-flusher is currently running or not *)
+  (* Whether the auto-flusher is currently running or not *)
 
   main : 'mode channel;
   (* The main wrapper *)
@@ -493,7 +493,7 @@ let flush_all () =
     wrappers
 
 let () =
-  (* Flush all opened ouput channels on exit: *)
+  (* Flush all opened output channels on exit: *)
   Lwt_main.at_exit flush_all
 
 let no_seek _pos _cmd =

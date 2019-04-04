@@ -4082,7 +4082,7 @@ let suites = suites @ [make_value_and_error_tests]
 
 
 (* These tests exercise the callback cleanup mechanism of the Lwt core, which is
-   an implementation detail. When a promise [p] is repeatedly used in fuctions
+   an implementation detail. When a promise [p] is repeatedly used in functions
    such as [Lwt.choose], but remains pending, while other promises passed to
    [Lwt.choose] resolve, [p] accumulates disabled callback cells. They need to
    be occasionally cleaned up; in particular, this should happen every

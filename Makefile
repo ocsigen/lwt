@@ -28,7 +28,7 @@ dev-deps :
 	  seq \
 
 # Use Dune+odoc to generate static html documentation.
-# Currenty requires ocaml 4.03.0 to install odoc.
+# Currently requires ocaml 4.03.0 to install odoc.
 .PHONY: doc
 doc:
 	dune build @doc
