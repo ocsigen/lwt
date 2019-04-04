@@ -238,7 +238,7 @@ let () =
     {{: http://man7.org/linux/man-pages/man7/epoll.7.html} [epoll(7)]},
     {{: https://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2}
     [kqueue(2)]}, or whatever asynchronous I/O API your system provides. On
-    browsers, the work of {!Lwt_main.run} is done by the surrouding JavaScript
+    browsers, the work of {!Lwt_main.run} is done by the surrounding JavaScript
     engine, so you don't call {!Lwt_main.run} from inside your program. But the
     execution model is still the same, and the description below applies!
 
@@ -1315,7 +1315,7 @@ let () =
       explicit {!Lwt.choose} syntax, so using this operator is not
       recommended.
 
-      Futhermore, most users actually need {!Lwt.pick} instead of
+      Furthermore, most users actually need {!Lwt.pick} instead of
       {!Lwt.choose}. *)
 
   val (=<<) : ('a -> 'b t) -> 'a t -> 'b t

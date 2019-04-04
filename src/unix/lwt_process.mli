@@ -20,7 +20,7 @@ type command = string * string array
         - if the name is the empty string, then the first argument
         will be used. You should specify a name only if you do not
         want the executable to be searched in the PATH. On Windows the
-        only way to enable automatic seach in PATH is to pass an empty
+        only way to enable automatic search in PATH is to pass an empty
         name.
 
         - it is possible to ``inline'' an argument, i.e. split it into

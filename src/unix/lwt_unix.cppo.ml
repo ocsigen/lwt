@@ -1558,7 +1558,7 @@ let accept_n ch n =
 
 let connect ch addr =
   if Sys.win32 then
-    (* [in_progress] tell wether connection has started but not
+    (* [in_progress] tell whether connection has started but not
        terminated: *)
     let in_progress = ref false in
     wrap_syscall Write ch begin fun () ->
@@ -1583,13 +1583,13 @@ let connect ch addr =
           raise Retry
     end
   else
-    (* [in_progress] tell wether connection has started but not
+    (* [in_progress] tell whether connection has started but not
        terminated: *)
     let in_progress = ref false in
     wrap_syscall Write ch begin fun () ->
       if !in_progress then
         (* If the connection is in progress, [getsockopt_error] tells
-           wether it succceed: *)
+           whether it succceed: *)
         match Unix.getsockopt_error ch.fd with
         | None ->
           (* The socket is connected *)

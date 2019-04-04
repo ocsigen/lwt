@@ -367,7 +367,7 @@ let suite = suite "lwt_io" [
       | exn -> Lwt.fail exn)
   end;
 
-  test "input channel of_bytes inital position"
+  test "input channel of_bytes initial position"
     (fun () ->
        let ichan = Lwt_io.of_bytes ~mode:Lwt_io.input @@ Lwt_bytes.of_string "abcd" in
        Lwt.return (Lwt_io.position ichan = 0L)
@@ -387,7 +387,7 @@ let suite = suite "lwt_io" [
        Lwt_io.position ichan = 2L
     );
 
-  test "output channel of_bytes inital position"
+  test "output channel of_bytes initial position"
     (fun () ->
        let ochan = Lwt_io.of_bytes ~mode:Lwt_io.output @@ Lwt_bytes.create 4 in
        Lwt.return (Lwt_io.position ochan = 0L)

@@ -416,7 +416,7 @@ See #453 for details and instructions about planned breakage in Lwt 4.0.0.
   * Improve wildcard detection in the ppx (#198)
   * Fix Lwt_stream: bounded_push#close wake the reader (#201)
   * Fix infinite loop with Lwt_stream.choose (#214)
-  * Fix lazyness failure with Lwt_io.common#close (#207)
+  * Fix laziness failure with Lwt_io.common#close (#207)
 
 ===== 2.5.1 (2015-12-07) =====
 
@@ -632,7 +632,7 @@ See #453 for details and instructions about planned breakage in Lwt 4.0.0.
   * {{{Lwt_unix}}} now use libev instead of select
   * Add thread local storage support to {{{Lwt}}}
   * Add backtrace support to {{{Lwt}}}. Now {{{Lwt}}} exceptions can
-    be recored by using the syntax extension with the {{{-lwt-debug}}}
+    be recorded by using the syntax extension with the {{{-lwt-debug}}}
     command line switch.
   * Allow blocking system calls to be executed in parallels
   * Change the type of many functions of {{{Lwt_unix}}}, which now
