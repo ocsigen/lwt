@@ -15,17 +15,7 @@ test: build
 # Install dependencies needed during development.
 .PHONY : dev-deps
 dev-deps :
-	opam install --yes --unset-root \
-	  bisect_ppx \
-	  cppo \
-	  dune \
-	  mmap \
-	  ocaml-migrate-parsetree \
-	  ocamlfind \
-	  ppx_tools_versioned \
-	  react \
-	  result \
-	  seq \
+	opam install . --deps-only --yes
 
 # Use Dune+odoc to generate static html documentation.
 # Currently requires ocaml 4.03.0 to install odoc.
