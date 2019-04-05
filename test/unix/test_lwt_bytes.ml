@@ -717,7 +717,7 @@ let suite = suite "lwt_bytes" [
       Lwt.return check
     end;
 
-    test "map_file" ~only_if:(fun () -> not Sys.win32) begin fun () ->
+    test "map_file" begin fun () ->
       let test_file = "bytes_io_data" in
       let fd = Unix.openfile test_file [O_RDONLY] 0 in
       let shared = false in
