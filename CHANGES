@@ -682,7 +682,7 @@ See #453 for details and instructions about planned breakage in Lwt 4.0.0.
   * Allow to use {{{select}}} on arbitrary high file descriptors
   * More commands and features in {{{Lwt_read_line}}}:
     ** Handle "undo" command
-    ** New controlable read-lines instances
+    ** New controllable read-lines instances
     ** More edition commands
     ** Completion as you type
     ** Backward search
