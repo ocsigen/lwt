@@ -99,10 +99,10 @@
    - promise cancellation
    - sequence-associated storage
 
-   If you are not interested in cancellation or storage, you can ignore these two
-   complications, and still get a pretty good understanding of the code. To
-   help, all identifiers related to cancellation contain the string "cancel," and
-   all identifiers related to storage contain "storage."
+   If you are not interested in cancellation or storage, you can ignore these
+   two complications, and still get a pretty good understanding of the code. To
+   help, all identifiers related to cancellation contain the string "cancel,"
+   and all identifiers related to storage contain "storage."
 
 
    1. Promises
@@ -183,8 +183,8 @@
    - all cancel callbacks of a promise are called before any regular callback
      is called.
 
-   Cancellation is a special case of resolution, in particular, a special case of
-   rejection, but see the section on cancellation later below.
+   Cancellation is a special case of resolution, in particular, a special case
+   of rejection, but see the section on cancellation later below.
 
 
    4. Resolution loop
@@ -1763,9 +1763,9 @@ struct
      becomes resolved probably are:
 
      - Promises have more behaviors than resolution. One would have to add a
-       cancellation handler to [~outer_promise] to propagate the cancellation back
-       to [~user_provided_promise], for example. It may be easier to just think
-       of them as the same promise.
+       cancellation handler to [~outer_promise] to propagate the cancellation
+       back to [~user_provided_promise], for example. It may be easier to just
+       think of them as the same promise.
      - If using callbacks, resolving [~user_provided_promise] would not
        immediately resolve [~outer_promise]. Another callback added to
        [~user_provided_promise] might see [~user_provided_promise] resolved,
@@ -1849,11 +1849,11 @@ struct
       (* The result promise is a fresh pending promise.
 
          Initially, trying to cancel this fresh pending promise [p''] will
-         propagate the cancellation attempt to [p] (backwards through the promise
-         dependency graph). If/when [p] is fulfilled, Lwt will call the user's
-         callback [f] below, which will provide a new promise [p'], and [p']
-         will become a proxy of [p'']. At that point, trying to cancel [p'']
-         will be equivalent to trying to cancel [p'], so the behavior will
+         propagate the cancellation attempt to [p] (backwards through the
+         promise dependency graph). If/when [p] is fulfilled, Lwt will call the
+         user's callback [f] below, which will provide a new promise [p'], and
+         [p'] will become a proxy of [p'']. At that point, trying to cancel
+         [p''] will be equivalent to trying to cancel [p'], so the behavior will
          depend on how the user obtained [p']. *)
 
       let saved_storage = !current_storage in
