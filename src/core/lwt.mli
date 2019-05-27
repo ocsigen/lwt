@@ -323,7 +323,7 @@ let () =
       ways: {e fulfilled} with a value, or {e rejected} with an exception. There
       is nothing conceptually special about rejection – it's just that you can
       ask for callbacks to run only on fulfillment, only on rejection, etc.
-    - {{: #2_Cancelation} Cancelation}. This is a special case of rejection,
+    - {{: #2_Cancelation} Cancellation}. This is a special case of rejection,
       specifically with exception {!Lwt.Canceled}. It has extra helpers in the
       Lwt API.
     - {{: #2_Concurrency} Concurrency helpers}. All of these could be
@@ -1017,7 +1017,7 @@ val nchoose_split : ('a t) list -> ('a list * ('a t) list) t
 
 
 
-(** {2 Cancelation} *)
+(** {2 Cancellation} *)
 
 exception Canceled
 (** Canceled promises are those rejected with this exception, [Lwt.Canceled].
@@ -1043,7 +1043,7 @@ val cancel : _ t -> unit
     propagated “forwards” by {!Lwt.bind}, {!Lwt.join}, etc., as described in the
     documentation of those functions.
 
-    {b Cancelation} is a separate phase, triggered only by {!Lwt.cancel}, that
+    {b Cancellation} is a separate phase, triggered only by {!Lwt.cancel}, that
     searches {e backwards}, strating from [p], for promises to reject with
     {!Lwt.Canceled}. Once those promises are found, they are canceled, and then
     ordinary, forwards rejection propagation takes over.
@@ -1103,7 +1103,7 @@ let () =
       rejection.
     - Suppose [p] was returned by {!Lwt.join}, {!Lwt.pick}, or similar function,
       which was applied to the promise list [ps]. {!Lwt.cancel} then recursively
-      tries to cancel each promise in [ps]. If one of those cancelations
+      tries to cancel each promise in [ps]. If one of those cancellations
       succeeds, [p] {e may} be canceled later by the normal propagation of
       rejection. *)
 
@@ -1115,7 +1115,7 @@ val on_cancel : _ t -> (unit -> unit) -> unit
     callbacks that are triggered by rejection, such as those added by
     {!Lwt.catch}.
 
-    Note that this does not interact directly with the {e cancelation}
+    Note that this does not interact directly with the {e cancellation}
     mechanism, the backwards search described in {!Lwt.cancel}. For example,
     manually rejecting a promise with {!Lwt.Canceled} is sufficient to trigger
     [f].
@@ -1125,16 +1125,16 @@ val on_cancel : _ t -> (unit -> unit) -> unit
 
 val protected : 'a t -> 'a t
 (** [Lwt.protected p] creates a {{: #VALcancel} cancelable} promise [p'] with
-    the same state as [p]. However, cancelation, the backwards search described
+    the same state as [p]. However, cancellation, the backwards search described
     in {!Lwt.cancel}, stops at [p'], and does not continue to [p]. *)
 
 val no_cancel : 'a t -> 'a t
 (** [Lwt.no_cancel p] creates a non-{{: #VALcancel}cancelable} promise [p'],
-    with the same state as [p]. Cancelation, the backwards search described in
+    with the same state as [p]. Cancellation, the backwards search described in
     {!Lwt.cancel}, stops at [p'], and does not continue to [p].
 
     Note that [p'] can still be canceled if [p] is canceled. [Lwt.no_cancel]
-    only prevents cancelation of [p] and [p'] through [p']. *)
+    only prevents cancellation of [p] and [p'] through [p']. *)
 
 val wait : unit -> ('a t * 'a u)
 (** [Lwt.wait] is the same as {!Lwt.task}, except the resulting promise [p] is
