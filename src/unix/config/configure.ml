@@ -32,10 +32,11 @@ let args = [
 let main () =
   Arg.parse args ignore usage;
 
-  let config_file = "lwt_config" in
+  let config_file = ref "lwt_config" in
 
   begin match !default_configuration with
   | Some true -> begin
+    config_file := "lwt_config.default";
     (* Check if we have the opam command and conf-libev is installed. If so,
        behave as if -use-libev true was passed.
        opam 2.0.0 returns exit code 0 for `opam list` even if the package is not available,
@@ -58,7 +59,7 @@ let main () =
     ()
   end;
 
-  let f = open_out config_file in
+  let f = open_out !config_file in
   let print name var =
     match var with
     | None -> ()
