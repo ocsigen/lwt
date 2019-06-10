@@ -31,9 +31,15 @@
  (action (with-stdout-to %{targets} (run %{ocamlc} -config))))
 
 (rule
- (targets lwt_config)
+ (targets lwt_config.default)
  (deps (:exe config/configure.exe))
  (action (run %{exe} -default-configuration true)))
+
+(rule
+ (mode fallback)
+ (targets lwt_config)
+ (deps lwt_config.default)
+ (action (copy %{deps} %{targets})))
 
 ;; note; the call to (and dependency on) ocamlfind is avoided by adding:
 ;; -ocamlc %{ocamlc}
