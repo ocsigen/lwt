@@ -148,6 +148,17 @@ type advice =
   | MADV_SEQUENTIAL
   | MADV_WILLNEED
   | MADV_DONTNEED
+  | MADV_REMOVE
+  | MADV_DONTFORK
+  | MADV_DOFORK
+  | MADV_HWPOISON
+  | MADV_SOFT_OFFLINE
+  | MADV_MERGEABLE
+  | MADV_UNMERGEABLE
+  | MADV_HUGEPAGE
+  | MADV_NOHUGEPAGE
+  | MADV_DONTDUMP
+  | MADV_DODUMP
 
 val madvise : t -> int -> int -> advice -> unit
   (** [madvise buffer pos len advice] advises the kernel how the
