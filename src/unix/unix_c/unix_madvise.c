@@ -14,6 +14,16 @@
 
 static int advise_table[] = {
     MADV_NORMAL, MADV_RANDOM, MADV_SEQUENTIAL, MADV_WILLNEED, MADV_DONTNEED,
+#if defined(MADV_MERGEABLE) && defined(MADV_UNMERGEABLE)
+	MADV_MERGEABLE, MADV_UNMERGEABLE,
+#else
+	0, 0,
+#endif
+#if defined(MADV_HUGEPAGE) && defined(MADV_NOHUGEPAGE)
+	MADV_HUGEPAGE, MADV_NOHUGEPAGE,
+#else
+	0, 0,
+#endif
 };
 
 CAMLprim value lwt_unix_madvise(value val_buffer, value val_offset,
