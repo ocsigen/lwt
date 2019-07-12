@@ -2,6 +2,8 @@ language: c
 
 matrix:
   include:
+    - os: osx
+      env: COMPILER=4.08.0 LIBEV=no
     - os: linux
       env: COMPILER=4.02.3 LIBEV=no
     - os: linux
@@ -20,10 +22,6 @@ matrix:
       env: COMPILER=4.08.0
     - os: linux
       env: COMPILER=ocaml-variants.4.09.0+beta1 REPOSITORIES=--repositories=default,beta=git+https://github.com/ocaml/ocaml-beta-repository.git
-    - os: osx
-      env: COMPILER=4.08.0
-    - os: osx
-      env: COMPILER=4.08.0 LIBEV=no
 
   allow_failures:
     - env: COMPILER=ocaml-variants.4.09.0+beta1 REPOSITORIES=--repositories=default,beta=git+https://github.com/ocaml/ocaml-beta-repository.git
