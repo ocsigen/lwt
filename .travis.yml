@@ -40,6 +40,7 @@ script: bash -e src/util/travis.sh
 cache:
   directories:
     - $HOME/.opam
+    - ./_opam
 
 notifications:
   email:
