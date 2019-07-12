@@ -67,7 +67,6 @@ fi
 (cd src/unix && dune exec config/configure.exe -- -use-libev $LIBEV_FLAG)
 make build
 make test
-make coverage
 
 
 
