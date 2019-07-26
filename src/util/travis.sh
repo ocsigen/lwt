@@ -59,12 +59,12 @@ fi
 # Build and run the tests.
 if [ "$LIBEV" != no ]
 then
-    LIBEV_FLAG=true
+    LWT_DISCOVER_ARGUMENTS="--use-libev true"
 else
-    LIBEV_FLAG=false
+    LWT_DISCOVER_ARGUMENTS="--use-libev false"
 fi
+export LWT_DISCOVER_ARGUMENTS
 
-(cd src/unix && dune exec config/configure.exe -- -use-libev $LIBEV_FLAG)
 make build
 make test
 
