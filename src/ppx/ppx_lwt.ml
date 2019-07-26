@@ -1,11 +1,11 @@
 open! Migrate_parsetree
-open! OCaml_404.Ast
+open! OCaml_408.Ast
 open Ast_mapper
 open! Ast_helper
 open Asttypes
 open Parsetree
 
-open Ast_convenience_404
+open Ast_convenience_408
 
 (** {2 Convenient stuff} *)
 
@@ -320,7 +320,7 @@ let lwt_expression mapper exp attributes ext_loc =
   | _ ->
     let exp =
       match exp with
-      | { pexp_loc; pexp_desc=Pexp_let (Recursive, _, _); pexp_attributes } ->
+      | {pexp_loc; pexp_desc=Pexp_let (Recursive, _, _); pexp_attributes; _} ->
         let attr = attribute_of_warning pexp_loc "\"let%lwt rec\" is not a recursive Lwt binding" in
         { exp with pexp_attributes = attr :: pexp_attributes }
       | _ -> exp
@@ -491,7 +491,7 @@ let mapper =
             "Lwt's finally should be used only with the syntax: \"(<expr>)[%%finally ...]\"."
         ))
 
-      | { pexp_desc = Pexp_apply (fn, args); pexp_attributes; pexp_loc } when !log ->
+      | { pexp_desc = Pexp_apply (fn, args); pexp_attributes; pexp_loc; _ } when !log ->
         default_loc := pexp_loc;
         lwt_log mapper fn args pexp_attributes pexp_loc
       | _ ->
@@ -539,5 +539,5 @@ let args =
   ])
 
 let () =
-  Driver.register ~name:"ppx_lwt" ~args Versions.ocaml_404
+  Driver.register ~name:"ppx_lwt" ~args Versions.ocaml_408
     (fun _config _cookies -> mapper)
