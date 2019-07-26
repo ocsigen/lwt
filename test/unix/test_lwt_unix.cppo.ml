@@ -727,19 +727,25 @@ let lwt_preemptive_tests = [
   end;
 ]
 
+let is_wsl =
+  if Sys.win32 then
+    false
+  else
+    Sys.command "cat /proc/version | grep Microsoft > /dev/null" = 0
+
 let lwt_user_tests = [
-  test "getlogin and Unix.getlogin" ~only_if:(fun () -> not Sys.win32) begin fun () ->
+  test "getlogin and Unix.getlogin" ~only_if:(fun () -> not Sys.win32 && not is_wsl) begin fun () ->
     let unix_user = Unix.getlogin () in
     Lwt_unix.getlogin () >>= fun user ->
     Lwt.return (user = unix_user)
   end;
-  test "getpwnam and Unix.getpwnam" ~only_if:(fun () -> not Sys.win32) begin fun () ->
+  test "getpwnam and Unix.getpwnam" ~only_if:(fun () -> not Sys.win32 && not is_wsl) begin fun () ->
     let unix_user = Unix.getlogin () in
     let unix_password = Unix.getpwnam unix_user in
     Lwt_unix.getpwnam unix_user >>= fun password ->
     Lwt.return (password = unix_password)
   end;
-  test "getpwuid and Unix.getpwuid" ~only_if:(fun () -> not Sys.win32) begin fun () ->
+  test "getpwuid and Unix.getpwuid" ~only_if:(fun () -> not Sys.win32 && not is_wsl) begin fun () ->
     let pwnam = Unix.getpwnam (Unix.getlogin ()) in
     let unix_pwuid = Unix.getpwuid pwnam.pw_uid in
     Lwt_unix.getpwuid pwnam.pw_uid >>= fun pwuid ->
