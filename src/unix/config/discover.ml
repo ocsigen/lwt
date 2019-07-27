@@ -287,7 +287,6 @@ let ext_obj = ref ".o"
 let exec_name = ref "a.out"
 let use_libev = ref true
 let use_pthread = ref true
-let use_unix = ref true
 let os_type = ref "Unix"
 let android_target = ref false
 let ccomp_type = ref "cc"
@@ -493,12 +492,6 @@ let lib_flags env_var_prefix fallback =
    | Entry point                                                     |
    +-----------------------------------------------------------------+ *)
 
-let arg_bool r =
-  Arg.Symbol (["true"; "false"],
-              function
-                | "true" -> r := true
-                | "false" -> r := false
-                | _ -> assert false)
 let () =
   let args = [
     "-ocamlc", Arg.Set_string ocamlc, "<path> ocamlc";
@@ -506,9 +499,6 @@ let () =
     "-lwt-config", Arg.Set_string lwt_config, "<file> lwt config";
   ] in
   Arg.parse args ignore "check for external C libraries and available features\noptions are:";
-
-  (* Check nothing if we do not build lwt.unix. *)
-  if not !use_unix then exit 0;
 
   (* Put the caml code into a temporary file. *)
   let file, oc = Filename.open_temp_file "lwt_caml" ".ml" in
@@ -602,7 +592,10 @@ Run with DEBUG=y for more details.
     exit status
   in
 
-  let setup_data = ref [] in
+  let cflags_ev = ref [] in
+  let libs_ev = ref [] in
+  let cflags_pt = ref [] in
+  let libs_pt = ref [] in
 
   (* Test for pkg-config. *)
   test_feature ~do_check:(!use_libev) "pkg-config" ""
@@ -631,7 +624,8 @@ Run with DEBUG=y for more details.
                   | None ->
                       ([], ["-lev"]))
     in
-    setup_data := ("libev_opt", opt) :: ("libev_lib", lib) :: !setup_data;
+    cflags_ev := opt;
+    libs_ev := lib;
     test_code (opt, lib) libev_code
   in
 
@@ -640,7 +634,8 @@ Run with DEBUG=y for more details.
       if !android_target then ([], []) else
       lib_flags "PTHREAD" (fun () -> ([], ["-lpthread"]))
     in
-    setup_data := ("pthread_opt", opt) :: ("pthread_lib", lib) :: !setup_data;
+    cflags_pt := opt;
+    libs_pt := lib;
     test_code (opt, lib) pthread_code
   in
 
@@ -769,73 +764,12 @@ Lwt can use pthread or the win32 API.
 
   fprintf config "#endif\n";
 
-  (* Our setup.data keys. *)
-  let setup_data_keys = [
-    "libev_opt";
-    "libev_lib";
-    "pthread_lib";
-    "pthread_opt";
-  ] in
-
-  (* Load setup.data *)
-  let setup_data_lines =
-    match try Some (open_in "setup.data") with Sys_error _ -> None with
-      | Some ic ->
-          let rec aux acc =
-            match try Some (input_line ic) with End_of_file -> None with
-              | None ->
-                  close_in ic;
-                  acc
-              | Some line ->
-                  match try Some(String.index line '=') with Not_found -> None with
-                    | Some idx ->
-                        let key = String.sub line 0 idx in
-                        if List.mem key setup_data_keys then
-                          aux acc
-                        else
-                          aux (line :: acc)
-                    | None ->
-                        aux (line :: acc)
-          in
-          aux []
-      | None ->
-          []
-  in
-
-  (* Add flags to setup.data *)
-  let setup_data_lines =
-    List.fold_left
-      (fun lines (name, args) ->
-         sprintf "%s=%S" name (String.concat " " args) :: lines)
-      setup_data_lines !setup_data
-  in
-  let oc = open_out "setup.data" in
-  List.iter
-    (fun str -> output_string oc str; output_char oc '\n')
-    (List.rev setup_data_lines);
-  close_out oc;
-
   close_out config;
   close_out config_ml;
 
 
-  let get_flags lib =
-    (try List.assoc (lib ^ "_opt") !setup_data with _ -> []),
-    (try List.assoc (lib ^ "_lib") !setup_data with _ -> [])
-  in
-  let cflags_ev, libs_ev = get_flags "libev" in
-  let cflags_pt, libs_pt = get_flags "pthread" in
-  let cflags = cflags_ev @ cflags_pt in
-  let libs = libs_ev @ libs_pt in
-
-  (* do sexps properly...
-  let open Base in
-  let open Stdio in
-
-  let write_sexp fn sexp = Out_channel.write_all fn ~data:(Sexp.to_string sexp) in
-  write_sexp ("unix_c_flags.sexp")         (sexp_of_list sexp_of_string ("-I."::cflags));
-  write_sexp ("unix_c_library_flags.sexp") (sexp_of_list sexp_of_string (libs))
-  *)
+  let cflags = !cflags_ev @ !cflags_pt in
+  let libs = !libs_ev @ !libs_pt in
 
   (* add Win32 linker flags *)
   let libs =
