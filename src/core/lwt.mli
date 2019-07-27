@@ -420,7 +420,14 @@ val wakeup_later : 'a u -> 'a -> unit
     If the promise is not pending, [Lwt.wakeup_later] raises
     {{: https://caml.inria.fr/pub/docs/manual-ocaml/libref/Pervasives.html#VALinvalid_arg}
     [Pervasives.Invalid_argument]}, unless the promise is {{: #VALcancel}
-    canceled}. If the promise is canceled, [Lwt.wakeup_later] has no effect. *)
+    canceled}. If the promise is canceled, [Lwt.wakeup_later] has no effect.
+
+    If your program has multiple threads, it is important to make sure that
+    [Lwt.wakeup_later] (and any similar function) is only called from the main
+    thread. [Lwt.wakeup_later] can trigger callbacks attached to promises
+    by the program, and these assume they are running in the main thread. If you
+    need to communicate from a worker thread to the main thread running Lwt, see
+    {!Lwt_preemptive} or {!Lwt_unix.send_notification}. *)
 
 val wakeup_later_exn : _ u -> exn -> unit
 (** [Lwt.wakeup_later_exn r exn] is like {!Lwt.wakeup_later}, except, if the
