@@ -156,11 +156,7 @@ let unix_spawn
         begin match cwd with
           | None -> ()
           | Some dir ->
-            try Sys.chdir dir
-            with ex ->
-              let err = Printf.sprintf "chdir(%S) failed: %s\n" dir (Printexc.to_string ex) in
-              let _ : int = Unix.write_substring Unix.stderr err 0 (String.length err) in
-              raise ex
+            Sys.chdir dir
         end;
         match env with
         | None ->
