@@ -76,6 +76,7 @@ type redirection =
 val exec :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stdin : redirection ->
   ?stdout : redirection ->
   ?stderr : redirection ->
@@ -87,24 +88,28 @@ val exec :
 val pread :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stdin : redirection ->
   ?stderr : redirection ->
   command -> string Lwt.t
 val pread_chars :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stdin : redirection ->
   ?stderr : redirection ->
   command -> char Lwt_stream.t
 val pread_line :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stdin : redirection ->
   ?stderr : redirection ->
   command -> string Lwt.t
 val pread_lines :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stdin : redirection ->
   ?stderr : redirection ->
   command -> string Lwt_stream.t
@@ -114,24 +119,28 @@ val pread_lines :
 val pwrite :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stdout : redirection ->
   ?stderr : redirection ->
   command -> string -> unit Lwt.t
 val pwrite_chars :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stdout : redirection ->
   ?stderr : redirection ->
   command -> char Lwt_stream.t -> unit Lwt.t
 val pwrite_line :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stdout : redirection ->
   ?stderr : redirection ->
   command -> string -> unit Lwt.t
 val pwrite_lines :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stdout : redirection ->
   ?stderr : redirection ->
   command -> string Lwt_stream.t -> unit Lwt.t
@@ -141,21 +150,25 @@ val pwrite_lines :
 val pmap :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stderr : redirection ->
   command -> string -> string Lwt.t
 val pmap_chars :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stderr : redirection ->
   command -> char Lwt_stream.t -> char Lwt_stream.t
 val pmap_line :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stderr : redirection ->
   command -> string -> string Lwt.t
 val pmap_lines :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stderr : redirection ->
   command -> string Lwt_stream.t -> string Lwt_stream.t
 
@@ -171,6 +184,7 @@ type state =
 class process_none :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stdin : redirection ->
   ?stdout : redirection ->
   ?stderr : redirection ->
@@ -206,6 +220,7 @@ end
 val open_process_none :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stdin : redirection ->
   ?stdout : redirection ->
   ?stderr : redirection ->
@@ -213,6 +228,7 @@ val open_process_none :
 val with_process_none :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stdin : redirection ->
   ?stdout : redirection ->
   ?stderr : redirection ->
@@ -221,6 +237,7 @@ val with_process_none :
 class process_in :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stdin : redirection ->
   ?stderr : redirection ->
   command ->
@@ -234,12 +251,14 @@ end
 val open_process_in :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stdin : redirection ->
   ?stderr : redirection ->
   command -> process_in
 val with_process_in :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stdin : redirection ->
   ?stderr : redirection ->
   command -> (process_in -> 'a Lwt.t) -> 'a Lwt.t
@@ -247,6 +266,7 @@ val with_process_in :
 class process_out :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stdout : redirection ->
   ?stderr : redirection ->
   command ->
@@ -260,12 +280,14 @@ end
 val open_process_out :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stdout : redirection ->
   ?stderr : redirection ->
   command -> process_out
 val with_process_out :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stdout : redirection ->
   ?stderr : redirection ->
   command -> (process_out -> 'a Lwt.t) -> 'a Lwt.t
@@ -273,6 +295,7 @@ val with_process_out :
 class process :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stderr : redirection ->
   command ->
 object
@@ -285,17 +308,20 @@ end
 val open_process :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stderr : redirection ->
   command -> process
 val with_process :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   ?stderr : redirection ->
   command -> (process -> 'a Lwt.t) -> 'a Lwt.t
 
 class process_full :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   command ->
 object
   inherit process_none
@@ -308,8 +334,10 @@ end
 val open_process_full :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   command -> process_full
 val with_process_full :
   ?timeout : float ->
   ?env : string array ->
+  ?cwd : string ->
   command -> (process_full -> 'a Lwt.t) -> 'a Lwt.t
