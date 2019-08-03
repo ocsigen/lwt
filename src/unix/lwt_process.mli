@@ -44,7 +44,9 @@ val shell : string -> command
 
 (** All the following functions take an optional argument
     [timeout]. If specified, after expiration, the process will be
-    sent a [Unix.sigkill] signal and channels will be closed. *)
+    sent a [Unix.sigkill] signal and channels will be closed. When the channels
+    are closed, any pending I/O operations on them (such as
+    {!Lwt_io.read_chars}) fail with exception {!Lwt_io.Channel_closed}. *)
 
 (** {2 High-level functions} *)
 
