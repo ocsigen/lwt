@@ -45,70 +45,6 @@ val handle_unix_error : ('a -> 'b Lwt.t) -> 'a -> 'b Lwt.t
   (** Same as [Unix.handle_unix_error] but catches lwt-level
       exceptions *)
 
-(** {2 Configuration} *)
-
-(** For system calls that cannot be made asynchronously, Lwt uses one
-    of the following method: *)
-type async_method =
-  | Async_none
-      (** System calls are made synchronously, and may block the
-          entire program. *)
-  | Async_detach
-      (** System calls are made in another system thread, thus without
-          blocking other Lwt threads. The drawback is that it may
-          degrade performance in some cases.
-
-          This is the default. *)
-  | Async_switch
-      (** System calls are made in the main thread, and if one blocks
-          the execution continue in another system thread. This method
-          is the most efficient, also you will get better performance
-          if you force all threads to run on the same cpu. On linux
-          this can be done by using the command [taskset].
-
-          Note that this method is still experimental. *)
-
-val default_async_method : unit -> async_method
-  (** Returns the default async method.
-
-      This can be initialized using the environment variable
-      ["LWT_ASYNC_METHOD"] with possible values ["none"],
-      ["detach"] and ["switch"]. *)
-
-val set_default_async_method : async_method -> unit
-  (** Sets the default async method. *)
-
-val async_method : unit -> async_method
-  (** [async_method ()] returns the async method used in the current
-      thread. *)
-
-val async_method_key : async_method Lwt.key
-  (** The key for storing the local async method. *)
-
-val with_async_none : (unit -> 'a) -> 'a
-  (** [with_async_none f] is a shorthand for:
-
-      {[
-        Lwt.with_value async_method_key (Some Async_none) f
-      ]}
-  *)
-
-val with_async_detach : (unit -> 'a) -> 'a
-  (** [with_async_detach f] is a shorthand for:
-
-      {[
-        Lwt.with_value async_method_key (Some Async_detach) f
-      ]}
-  *)
-
-val with_async_switch : (unit -> 'a) -> 'a
-  (** [with_async_switch f] is a shorthand for:
-
-      {[
-        Lwt.with_value async_method_key (Some Async_switch) f
-      ]}
-  *)
-
 (** {2 Sleeping} *)
 
 val sleep : float -> unit Lwt.t
@@ -1271,6 +1207,95 @@ type flow_action =
 val tcflow : file_descr -> flow_action -> unit Lwt.t
   (** Wrapper for [Unix.tcflow] *)
 
+
+
+(** {2 Configuration} *)
+
+(** For system calls that cannot be made asynchronously, Lwt uses one
+    of the following method: *)
+type async_method =
+  | Async_none
+      (** System calls are made synchronously, and may block the
+          entire program. *)
+  | Async_detach
+      (** System calls are made in another system thread, thus without
+          blocking other Lwt threads. The drawback is that it may
+          degrade performance in some cases.
+
+          This is the default. *)
+  | Async_switch
+      (** System calls are made in the main thread, and if one blocks
+          the execution continue in another system thread. This method
+          is the most efficient, also you will get better performance
+          if you force all threads to run on the same cpu. On linux
+          this can be done by using the command [taskset].
+
+          Note that this method is still experimental. *)
+
+val default_async_method : unit -> async_method
+  [@@ocaml.deprecated
+" Will always return Async_detach in Lwt >= 5.0.0. See
+   https://github.com/ocsigen/lwt/issues/572"]
+  (** Returns the default async method.
+
+      This can be initialized using the environment variable
+      ["LWT_ASYNC_METHOD"] with possible values ["none"],
+      ["detach"] and ["switch"]. *)
+
+val set_default_async_method : async_method -> unit
+  [@@ocaml.deprecated
+" Will be a no-op in Lwt >= 5.0.0. See
+   https://github.com/ocsigen/lwt/issues/572"]
+  (** Sets the default async method. *)
+
+val async_method : unit -> async_method
+  [@@ocaml.deprecated
+" Will always return Async_detach in Lwt >= 5.0.0. See
+   https://github.com/ocsigen/lwt/issues/572"]
+  (** [async_method ()] returns the async method used in the current
+      thread. *)
+
+val async_method_key : async_method Lwt.key
+  [@@ocaml.deprecated
+" Will be ignored in Lwt >= 5.0.0. See
+   https://github.com/ocsigen/lwt/issues/572"]
+  (** The key for storing the local async method. *)
+
+val with_async_none : (unit -> 'a) -> 'a
+  [@@ocaml.deprecated
+" Will have no effect in Lwt >= 5.0.0. See
+   https://github.com/ocsigen/lwt/issues/572"]
+  (** [with_async_none f] is a shorthand for:
+
+      {[
+        Lwt.with_value async_method_key (Some Async_none) f
+      ]}
+  *)
+
+val with_async_detach : (unit -> 'a) -> 'a
+  [@@ocaml.deprecated
+" Will have no effect in Lwt >= 5.0.0. See
+   https://github.com/ocsigen/lwt/issues/572"]
+  (** [with_async_detach f] is a shorthand for:
+
+      {[
+        Lwt.with_value async_method_key (Some Async_detach) f
+      ]}
+  *)
+
+val with_async_switch : (unit -> 'a) -> 'a
+  [@@ocaml.deprecated
+" Will have no effect in Lwt >= 5.0.0. See
+   https://github.com/ocsigen/lwt/issues/572"]
+  (** [with_async_switch f] is a shorthand for:
+
+      {[
+        Lwt.with_value async_method_key (Some Async_switch) f
+      ]}
+  *)
+
+
+
 (** {2 Low-level interaction} *)
 
 exception Retry
@@ -1320,6 +1345,9 @@ type 'a job
 val run_job : ?async_method : async_method -> 'a job -> 'a Lwt.t
   (** [run_job ?async_method job] starts [job] and wait for its
       termination.
+
+      The [~async_method] argument will be ignored in Lwt 5.0.0, and this
+      function will always act as if [~async_method:Async_detach] is passed.
 
       The async method is chosen follow:
       - if the optional parameter [async_method] is specified, it is
