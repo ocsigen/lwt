@@ -13,8 +13,6 @@ authors: [
 ]
 maintainer: [
   "Anton Bachin <antonbachin@yahoo.com>"
-  "Mauricio Fernandez <mfp@acm.org>"
-  "Simon Cruanes <simon.cruanes.2007@m4x.org>"
 ]
 dev-repo: "git+https://github.com/ocsigen/lwt.git"
 
