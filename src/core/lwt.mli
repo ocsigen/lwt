@@ -1034,6 +1034,9 @@ val cancel : _ t -> unit
 (** [Lwt.cancel p] attempts to {e cancel} the pending promise [p], without
     needing access to its resolver.
 
+    It is recommended to avoid [Lwt.cancel], and handle cancelation by tracking
+    the needed extra state explicitly within your library or application.
+
     A {b canceled} promise is one that has been rejected with exception
     {!Lwt.Canceled}.
 
