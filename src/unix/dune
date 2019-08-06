@@ -32,7 +32,7 @@
  (synopsis "Unix support for Lwt")
  (optional)
  (wrapped false)
- (libraries bigarray lwt mmap threads unix)
+ (libraries bigarray lwt mmap ocplib-endian.bigstring threads unix)
  (preprocess (pps bisect_ppx --conditional))
  (flags (:standard -w +A-29))
  (c_names
