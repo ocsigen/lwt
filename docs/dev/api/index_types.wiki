@@ -15,8 +15,8 @@
 >>
 |
 |@@ @style="tet-align: left;"@@\\B|
-|@@class="odocwiki_index"@ @@<<a_api text="byte_order"| type Lwt_io.byte_order >> ~[<<a_api | module Lwt_io >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="byte_order"| type Lwt_sys.byte_order >> ~[<<a_api | module Lwt_sys >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="byte_order"| type Lwt_io.byte_order >> ~[<<a_api | module Lwt_io >>~]||
 |@@ @style="tet-align: left;"@@\\C|
 |@@class="odocwiki_index"@ @@<<a_api text="channel"| type Lwt_io.channel >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~Type of buffered byte channels
 >>
@@ -64,6 +64,10 @@
 |@@class="odocwiki_index"@ @@<<a_api text="getnameinfo_option"| type Lwt_unix.getnameinfo_option >> ~[<<a_api | module Lwt_unix >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="group_entry"| type Lwt_unix.group_entry >> ~[<<a_api | module Lwt_unix >>~]||
 |@@ @style="tet-align: left;"@@\\H|
+|@@class="odocwiki_index"@ @@<<a_api text="hook"| type Lwt_main.Hooks.hook >> ~[<<a_api | module Lwt_main.Hooks >>~]|<<div class="odocwiki_info"|~Values of type <<span class="odocwiki_inlinecode"|hook>> represent hooks that have been added~, so that they
+      can be removed later ~(if needed~)~.
+>>
+|
 |@@class="odocwiki_index"@ @@<<a_api text="host_entry"| type Lwt_unix.host_entry >> ~[<<a_api | module Lwt_unix >>~]||
 |@@ @style="tet-align: left;"@@\\I|
 |@@class="odocwiki_index"@ @@<<a_api text="inet_addr"| type Lwt_unix.inet_addr >> ~[<<a_api | module Lwt_unix >>~]||
@@ -86,6 +90,11 @@
 |@@class="odocwiki_index"@ @@<<a_api text="key"| type Lwt_throttle.S.key >> ~[<<a_api | module Lwt_throttle.S >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="key"| type Lwt.key >> ~[<<a_api | module Lwt >>~]|<<div class="odocwiki_info"|~Keys into the implicit callback argument map~, for implicit arguments of type
     <<span class="odocwiki_inlinecode"|~'a option>>~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="kind"| type Lwt_main.Hooks.kind >> ~[<<a_api | module Lwt_main.Hooks >>~]|<<div class="odocwiki_info"|~Hooks are functions of either type <<span class="odocwiki_inlinecode"|unit ~-~> unit>> or <<span class="odocwiki_inlinecode"|unit ~-~> unit ~Lwt~.t>>~;
+      this type constructor is used only to express both possibilities in one
+      signature~.
 >>
 |
 |@@ @style="tet-align: left;"@@\\L|
@@ -168,6 +177,9 @@
 |@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_switch.t >> ~[<<a_api | module Lwt_switch >>~]|<<div class="odocwiki_info"|~Type of switches~.
 >>
 |
+|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_mvar.t >> ~[<<a_api | module Lwt_mvar >>~]|<<div class="odocwiki_info"|~The type of a mailbox variable~.
+>>
+|
 |@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_sequence.t >> ~[<<a_api | module Lwt_sequence >>~]|<<div class="odocwiki_info"|~Type of a sequence holding values of type <<span class="odocwiki_inlinecode"|~'a>>
 >>
 |
@@ -185,9 +197,6 @@
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt.t >> ~[<<a_api | module Lwt >>~]|<<div class="odocwiki_info"|~Promises for values of type <<span class="odocwiki_inlinecode"|~'a>>~.
->>
-|
-|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_mvar.t >> ~[<<a_api | module Lwt_mvar >>~]|<<div class="odocwiki_info"|~The type of a mailbox variable~.
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_stream.t >> ~[<<a_api | module Lwt_stream >>~]|<<div class="odocwiki_info"|~A stream holding values of type <<span class="odocwiki_inlinecode"|~'a>>~.

@@ -80,7 +80,7 @@ any external package~.
 |<<a_api | module Lwt_process >>|<<div class="odocwiki_info"|~Process management
 >>
 |
-|<<a_api | module Lwt_throttle >>|<<div class="odocwiki_info"|~Rate limiters
+|<<a_api | module Lwt_throttle >>|<<div class="odocwiki_info"|~Rate limiters~.
 >>
 |
 |<<a_api | module Lwt_timeout >>|<<div class="odocwiki_info"|~Cancelable timeouts~.
@@ -90,6 +90,9 @@ any external package~.
 >>
 |
 |<<a_api | module Lwt_bytes >>|<<div class="odocwiki_info"|~Byte arrays
+>>
+|
+|<<a_api | module Lwt_fmt >>|<<div class="odocwiki_info"|~Format ~A~P~I for ~Lwt~-powered ~I~Os
 >>
 |
 |<<a_api | module Lwt_sys >>|<<div class="odocwiki_info"|~System informations~.
@@ -107,7 +110,7 @@ any external package~.
 
 
 
-~The //lwt~.react// package provides helpers for functionnal reactive
+~The //lwt~.react// package provides helpers for functional reactive
 programming with ~Lwt~. ~It is based on the //react// package~. ~The
 <<a_api | module Lwt_react >> module is a replacement for the <<span class="odocwiki_inlinecode"|~React>> module~. ~It
 contains~:

@@ -1,0 +1,17 @@
+=Module <<a_api_type | module Lwt_react >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_react>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_react >><<span class="ocsforge_color_keyword"|end>>>>~React utilities
+
+----
+
+~This module is an overlay for the <<span class="odocwiki_inlinecode"|~React>> module~. ~You can open it
+    instead of the <<span class="odocwiki_inlinecode"|~React>> module in order to get all of <<span class="odocwiki_inlinecode"|~React>>~'s functions
+    plus ~Lwt ones~.
+
+
+    ~This module is provided by ~O~P~A~M package <<span class="odocwiki_inlinecode"|lwt~_react>>~. ~Link with ocamlfind
+    package <<span class="odocwiki_inlinecode"|lwt~_react>>~.
+<<pre class="ocsforge_color odocwiki_code" id="TYPEevent"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_type"|'a>> <<span class="odocwiki_name"|event>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_type"|'a <<span class="ocsforge_color_uid"|React>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|event>>>> >><<div class="odocwiki_info"|~Type of events~.
+>>
+<<pre class="ocsforge_color odocwiki_code" id="TYPEsignal"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_type"|'a>> <<span class="odocwiki_name"|signal>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_type"|'a <<span class="ocsforge_color_uid"|React>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|signal>>>> >><<div class="odocwiki_info"|~Type of signals~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<a_api text="E" | module Lwt_react.E >> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_react.E >><<span class="ocsforge_color_keyword"|end>>>><<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<a_api text="S" | module Lwt_react.S >> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_react.S >><<span class="ocsforge_color_keyword"|end>>>>

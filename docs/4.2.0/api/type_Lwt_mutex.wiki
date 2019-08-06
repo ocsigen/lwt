@@ -1,0 +1,9 @@
+<<code language="ocaml" | sig
+  type t
+  val create : unit -> Lwt_mutex.t
+  val lock : Lwt_mutex.t -> unit Lwt.t
+  val unlock : Lwt_mutex.t -> unit
+  val is_locked : Lwt_mutex.t -> bool
+  val is_empty : Lwt_mutex.t -> bool
+  val with_lock : Lwt_mutex.t -> (unit -> 'a Lwt.t) -> 'a Lwt.t
+end >>

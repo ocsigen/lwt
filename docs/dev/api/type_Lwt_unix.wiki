@@ -1,13 +1,5 @@
 <<code language="ocaml" | sig
   val handle_unix_error : ('a -> 'b Lwt.t) -> 'a -> 'b Lwt.t
-  type async_method = Async_none | Async_detach | Async_switch
-  val default_async_method : unit -> Lwt_unix.async_method
-  val set_default_async_method : Lwt_unix.async_method -> unit
-  val async_method : unit -> Lwt_unix.async_method
-  val async_method_key : Lwt_unix.async_method Lwt.key
-  val with_async_none : (unit -> 'a) -> 'a
-  val with_async_detach : (unit -> 'a) -> 'a
-  val with_async_switch : (unit -> 'a) -> 'a
   val sleep : float -> unit Lwt.t
   val yield : unit -> unit Lwt.t
   val auto_yield : float -> unit -> unit Lwt.t
@@ -60,6 +52,7 @@
     | O_RSYNC
     | O_SHARE_DELETE
     | O_CLOEXEC
+    | O_KEEPEXEC
   val openfile :
     string ->
     Lwt_unix.open_flag list ->
@@ -81,6 +74,7 @@
         Lwt_unix.IO_vectors._bigarray -> int -> int -> unit
       val drop : Lwt_unix.IO_vectors.t -> int -> unit
       val is_empty : Lwt_unix.IO_vectors.t -> bool
+      val byte_count : Lwt_unix.IO_vectors.t -> int
       val system_limit : int option
     end
   val readv : Lwt_unix.file_descr -> Lwt_unix.IO_vectors.t -> int Lwt.t
@@ -450,6 +444,14 @@
   val tcflush : Lwt_unix.file_descr -> Lwt_unix.flush_queue -> unit Lwt.t
   type flow_action = Unix.flow_action = TCOOFF | TCOON | TCIOFF | TCION
   val tcflow : Lwt_unix.file_descr -> Lwt_unix.flow_action -> unit Lwt.t
+  type async_method = Async_none | Async_detach | Async_switch
+  val default_async_method : unit -> Lwt_unix.async_method
+  val set_default_async_method : Lwt_unix.async_method -> unit
+  val async_method : unit -> Lwt_unix.async_method
+  val async_method_key : Lwt_unix.async_method Lwt.key
+  val with_async_none : (unit -> 'a) -> 'a
+  val with_async_detach : (unit -> 'a) -> 'a
+  val with_async_switch : (unit -> 'a) -> 'a
   exception Retry
   exception Retry_read
   exception Retry_write

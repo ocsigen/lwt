@@ -302,8 +302,9 @@ val p3 : '_a Lwt.t = <abstr>
 - : int Lwt.state = Lwt.Return 42
 >>
 
-  The last one, {{{pick}}}, is the same as {{{choose}}}, except that it cancels
-  all other promises when one resolves.
+  The last one, {{{pick}}}, is the same as {{{choose}}}, except that it tries to cancel
+  all other promises when one resolves. Promises created via {{{Lwt.wait()}}} are not cancellable
+  and are thus not cancelled.
 
 ==== Rules ====
 
@@ -400,6 +401,21 @@ val p3 : '_a Lwt.t = <abstr>
   {{{Printexc.record_backtrace true}}} at the start of your program, and be
   sure to compile it with {{{-g}}}. Most modern build systems add {{{-g}}} by
   default.
+
+=== {{{let*}}} syntax ===
+
+  To use Lwt with the {{{let*}}} syntax introduced in OCaml 4.08, you can define:
+
+<<code language="ocaml" |let (let*) = Lwt.bind
+let (and*) = Lwt.both
+>>
+
+  Then, you can write
+
+<<code language="ocaml" |let* () = Lwt_io.printl "Hello," in
+let* () = Lwt_io.printl "world!" in
+Lwt.return ()
+>>
 
 === Other modules of the core library ===
 

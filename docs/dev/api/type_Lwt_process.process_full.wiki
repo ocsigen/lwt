@@ -1,5 +1,6 @@
 <<code language="ocaml" | ?timeout:float ->
 ?env:string array ->
+?cwd:string ->
 Lwt_process.command ->
 object
   method close : Unix.process_status Lwt.t

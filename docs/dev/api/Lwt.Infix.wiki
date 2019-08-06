@@ -61,7 +61,7 @@ let () =
       recommended~.
 
 
-      ~Futhermore~, most users actually need <<a_api | val Lwt.pick >> instead of
+      ~Furthermore~, most users actually need <<a_api | val Lwt.pick >> instead of
       <<a_api | val Lwt.choose >>~.
 >>
 <<pre id="VAL(=<<)" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|~(~=~<~<~)>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|f ~=~<~< p>> is the same as <<a_api | val Lwt.bind >><<span class="odocwiki_inlinecode"| p f>>~. ~It requires <<span class="odocwiki_inlinecode"|~Lwt~.~Infix>> to be
@@ -77,4 +77,7 @@ let () =
 
       ~This operator is obscure and its use is discouraged~. ~It is the same as
       <<span class="odocwiki_inlinecode"|p ~>~|~= f>>~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<a_api text="Let_syntax" | module Lwt.Infix.Let_syntax >> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt.Infix.Let_syntax >><<span class="ocsforge_color_keyword"|end>>>><<div class="odocwiki_info"|~This module provides support for [[https://github.com/janestreet/ppx_let|
+      ppx~_let]]~.
 >>

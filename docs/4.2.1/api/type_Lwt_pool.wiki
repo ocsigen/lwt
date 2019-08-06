@@ -1,0 +1,11 @@
+<<code language="ocaml" | sig
+  type 'a t
+  val create :
+    int ->
+    ?validate:('a -> bool Lwt.t) ->
+    ?check:('a -> (bool -> unit) -> unit) ->
+    ?dispose:('a -> unit Lwt.t) -> (unit -> 'a Lwt.t) -> 'a Lwt_pool.t
+  val use : 'a Lwt_pool.t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
+  val clear : 'a Lwt_pool.t -> unit Lwt.t
+  val wait_queue_length : 'a Lwt_pool.t -> int
+end >>

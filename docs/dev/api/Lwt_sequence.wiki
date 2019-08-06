@@ -35,7 +35,7 @@
 >>
 <<pre id="VALis_empty" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|is~_empty>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> bool>>>><<div class="odocwiki_info"|~Returns <<span class="odocwiki_inlinecode"|true>> iff the given sequence is empty
 >>
-<<pre id="VALlength" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|length>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> int>>>><<div class="odocwiki_info"|~Returns the number of elemenets in the given sequence~. ~This is a
+<<pre id="VALlength" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|length>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_sequence.t >> <<span class="ocsforge_color_delimiter"| -> >> int>>>><<div class="odocwiki_info"|~Returns the number of elements in the given sequence~. ~This is a
       ~O~(n~) operation where <<span class="odocwiki_inlinecode"|n>> is the number of elements in the
       sequence~.
 >>

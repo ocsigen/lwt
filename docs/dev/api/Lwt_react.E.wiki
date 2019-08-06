@@ -10,7 +10,24 @@
         <<span class="odocwiki_inlinecode"|e>>~, except that <<span class="odocwiki_inlinecode"|f>> is called when <<span class="odocwiki_inlinecode"|e~'>> is garbage
         collected~.
 >>
-<<pre id="VALnext" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|next>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="Lwt_react.event" | type Lwt_react.event >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|next e>> returns the next occurrence of <<span class="odocwiki_inlinecode"|e>>
+<<pre id="VALnext" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|next>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="Lwt_react.event" | type Lwt_react.event >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|next e>> returns the next occurrence of <<span class="odocwiki_inlinecode"|e>>~.
+
+
+      ~Avoid trying to create an "asynchronous loop" by calling <<span class="odocwiki_inlinecode"|next e>> again in
+      a callback attached to the promise returned by <<span class="odocwiki_inlinecode"|next e>>~:
+
+
+* ~The callback is called within the ~React update step~, so calling <<span class="odocwiki_inlinecode"|next e>>
+        within it will return a promise that is fulfilled with the same value as
+        the current occurrence~.
+* ~If you instead arrange for the ~React update step to end ~(for example~, by
+        calling <<span class="odocwiki_inlinecode"|~Lwt~.pause ~(~)>> within the callback~)~, multiple ~React update steps
+        may occur before the callback calls <<span class="odocwiki_inlinecode"|next e>> again~, so some occurrences
+        can be effectively "lost~."
+
+      ~To robustly asynchronously process occurrences of <<span class="odocwiki_inlinecode"|e>> in a loop~, use
+      <<span class="odocwiki_inlinecode"|to~_stream e>>~, and repeatedly call <<a_api | val Lwt_stream.next >> on the resulting
+      stream~.
 >>
 <<pre id="VALlimit" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|limit>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt_react.event" | type Lwt_react.event >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt_react.event" | type Lwt_react.event >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|limit f e>> limits the rate of <<span class="odocwiki_inlinecode"|e>> with <<span class="odocwiki_inlinecode"|f>>~.
 
@@ -28,9 +45,9 @@
 <<pre id="VALof_stream" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|of~_stream>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="Lwt_stream.t" | type Lwt_stream.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt_react.event" | type Lwt_react.event >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|of~_stream stream>> creates an event which occurs each time a
         value is available on the stream~.
 >>
-<<pre id="VALdelay" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|delay>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="Lwt_react.event" | type Lwt_react.event >> <<a_api text="Lwt.t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt_react.event" | type Lwt_react.event >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|delay thread>> is an event which does not occurs until
-        <<span class="odocwiki_inlinecode"|thread>> returns~. ~Then it behaves as the event returned by
-        <<span class="odocwiki_inlinecode"|thread>>~.
+<<pre id="VALdelay" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|delay>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="Lwt_react.event" | type Lwt_react.event >> <<a_api text="Lwt.t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt_react.event" | type Lwt_react.event >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|delay promise>> is an event which does not occur until
+        <<span class="odocwiki_inlinecode"|promise>> resolves~. ~Then it behaves as the event returned by
+        <<span class="odocwiki_inlinecode"|promise>>~.
 >>
 <<pre id="VALkeep" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|keep>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="Lwt_react.event" | type Lwt_react.event >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|keep e>> keeps a reference to <<span class="odocwiki_inlinecode"|e>> so it will never be garbage
         collected~.
@@ -41,7 +58,7 @@
 
 
 ~The following functions behave as their <<span class="odocwiki_inlinecode"|~React>> counterpart~,
-      except that they takes functions that may yield~.
+      except that they take functions that may yield~.
 
 
       ~As usual the <<span class="odocwiki_inlinecode"|~_s>> suffix is used when calls are serialized~, and

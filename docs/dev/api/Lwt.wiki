@@ -276,7 +276,7 @@
     [[ http://man7.org/linux/man-pages/man7/epoll.7.html| <<span class="odocwiki_inlinecode"|epoll~(~7~)>>]]~,
     [[ https://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2|
     <<span class="odocwiki_inlinecode"|kqueue~(~2~)>>]]~, or whatever asynchronous ~I~/~O ~A~P~I your system provides~. ~On
-    browsers~, the work of <<a_api | val Lwt_main.run >> is done by the surrouding ~Java~Script
+    browsers~, the work of <<a_api | val Lwt_main.run >> is done by the surrounding ~Java~Script
     engine~, so you don~'t call <<a_api | val Lwt_main.run >> from inside your program~. ~But the
     execution model is still the same~, and the description below applies!
 
@@ -373,7 +373,7 @@
       ways~: //fulfilled// with a value~, or //rejected// with an exception~. ~There
       is nothing conceptually special about rejection – it~'s just that you can
       ask for callbacks to run only on fulfillment~, only on rejection~, etc~.
-* [[ #2_Cancelation| ~Cancelation]]~. ~This is a special case of rejection~,
+* [[ #2_Cancelation| ~Cancellation]]~. ~This is a special case of rejection~,
       specifically with exception <<a_api | exception Lwt.Canceled >>~. ~It has extra helpers in the
       ~Lwt ~A~P~I~.
 * [[ #2_Concurrency| ~Concurrency helpers]]~. ~All of these could be
@@ -481,6 +481,14 @@
     [[ https://caml.inria.fr/pub/docs/manual-ocaml/libref/Pervasives.html#VALinvalid_arg|
     <<span class="odocwiki_inlinecode"|~Pervasives~.~Invalid~_argument>>]]~, unless the promise is [[ #VALcancel|
     canceled]]~. ~If the promise is canceled~, <<span class="odocwiki_inlinecode"|~Lwt~.wakeup~_later>> has no effect~.
+
+
+    ~If your program has multiple threads~, it is important to make sure that
+    <<span class="odocwiki_inlinecode"|~Lwt~.wakeup~_later>> ~(and any similar function~) is only called from the main
+    thread~. <<span class="odocwiki_inlinecode"|~Lwt~.wakeup~_later>> can trigger callbacks attached to promises
+    by the program~, and these assume they are running in the main thread~. ~If you
+    need to communicate from a worker thread to the main thread running ~Lwt~, see
+    <<a_api | module Lwt_preemptive >> or <<a_api | val Lwt_unix.send_notification >>~.
 >>
 <<pre id="VALwakeup_later_exn" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wakeup~_later~_exn>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="u" | type Lwt.u >> <<span class="ocsforge_color_delimiter"| -> >> exn <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~.wakeup~_later~_exn r exn>> is like <<a_api | val Lwt.wakeup_later >>~, except~, if the
     associated [[ #TYPEt| promise]] is //pending//~, it is //rejected// with
@@ -844,8 +852,7 @@ let () =
 
 
 * <<span class="odocwiki_inlinecode"|g>> will run when promise <<span class="odocwiki_inlinecode"|f ~(~)>> is [[ #TYPEt| //fulfilled//]]~,
-* <<span class="odocwiki_inlinecode"|h>> will run when promise <<span class="odocwiki_inlinecode"|f ~(~)>> is~, alternatively~, [[ #TYPEt|
-      //rejected//]]~.
+* <<span class="odocwiki_inlinecode"|h>> will run when promise <<span class="odocwiki_inlinecode"|f ~(~)>> is [[ #TYPEt| //rejected//]]~.
 
     <<span class="odocwiki_inlinecode"|~Lwt~.try~_bind>> is a generalized <<a_api | val Lwt.finalize >>~. ~The difference is that
     <<span class="odocwiki_inlinecode"|~Lwt~.try~_bind>> runs different callbacks depending on //how// <<span class="odocwiki_inlinecode"|f ~(~)>> is
@@ -980,7 +987,7 @@ let () =
 * ~Every other top~-level promise should be wrapped in <<span class="odocwiki_inlinecode"|~Lwt~.async>>~.
 
 >>
-<<pre id="VALasync_exception_hook" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|async~_exception~_hook>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>exn <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_uid"|Pervasives>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|ref>>>>>><<div class="odocwiki_info"|~Reference to a function~, to be called on an "unhandled" exception~.
+<<pre id="VALasync_exception_hook" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|async~_exception~_hook>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>exn <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_uid"|Stdlib>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|ref>>>>>><<div class="odocwiki_info"|~Reference to a function~, to be called on an "unhandled" exception~.
 
 
     ~This reference is used by <<a_api | val Lwt.async >>~, <<a_api | val Lwt.on_cancel >>~, <<a_api | val Lwt.on_success >>~,
@@ -1023,6 +1030,37 @@ let () =
 
 ===@@id="3_Multiplewait"@@~Multiple wait===
 
+<<pre id="VALboth" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|both>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>'a * 'b<<span class="ocsforge_color_delimiter"| ) >> <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~.both p~_~1 p~_~2>> returns a promise that is pending until //both// promises
+    <<span class="odocwiki_inlinecode"|p~_~1>> and <<span class="odocwiki_inlinecode"|p~_~2>> become [[ #TYPEt| //resolved//]]~.
+
+
+
+<<code language='ocaml'|let () =
+  let p_1 =
+    let%lwt () = Lwt_unix.sleep 3. in
+    Lwt_io.printl "Three seconds elapsed"
+  in
+
+  let p_2 =
+    let%lwt () = Lwt_unix.sleep 5. in
+    Lwt_io.printl "Five seconds elapsed"
+  in
+
+  let p_3 = Lwt.both p_1 p_2 in
+  Lwt_main.run p_3
+
+(* ocamlfind opt -linkpkg -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+>>
+
+
+
+    ~If both <<span class="odocwiki_inlinecode"|p~_~1>> and <<span class="odocwiki_inlinecode"|p~_~2>> become fulfilled~, <<span class="odocwiki_inlinecode"|~Lwt~.both p~_~1 p~_~2>> is also
+    fulfilled~, with the pair of their final values~. ~Otherwise~, if at least one
+    of the two promises becomes rejected~, <<span class="odocwiki_inlinecode"|~Lwt~.both p~_~1 p~_~2>> is rejected with
+    the same exception as one such promise~, chosen arbitrarily~. ~Note that this
+    occurs only after both promises are resolved~, not immediately when the first
+    promise is rejected~.
+>>
 <<pre id="VALjoin" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|join>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<a_api text="t" | type Lwt.t >> list <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~.join ps>> returns a promise that is pending until //all// promises in
     the list <<span class="odocwiki_inlinecode"|ps>> become [[ #TYPEt| //resolved//]]~.
 
@@ -1127,13 +1165,17 @@ let () =
 >>
 
 
-==@@id="2_Cancelation"@@~Cancelation==
+==@@id="2_Cancellation"@@~Cancellation==
 
 <<pre id="EXCEPTIONCanceled" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|exception>> <<span class="odocwiki_name"|Canceled>>>><<div class="odocwiki_info"|~Canceled promises are those rejected with this exception~, <<span class="odocwiki_inlinecode"|~Lwt~.~Canceled>>~.
     ~See <<a_api | val Lwt.cancel >>~.
 >>
 <<pre id="VALcancel" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|cancel>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~.cancel p>> attempts to //cancel// the pending promise <<span class="odocwiki_inlinecode"|p>>~, without
     needing access to its resolver~.
+
+
+    ~It is recommended to avoid <<span class="odocwiki_inlinecode"|~Lwt~.cancel>>~, and handle cancelation by tracking
+    the needed extra state explicitly within your library or application~.
 
 
     ~A **canceled** promise is one that has been rejected with exception
@@ -1156,7 +1198,7 @@ let () =
     documentation of those functions~.
 
 
-    **~Cancelation** is a separate phase~, triggered only by <<a_api | val Lwt.cancel >>~, that
+    **~Cancellation** is a separate phase~, triggered only by <<a_api | val Lwt.cancel >>~, that
     searches //backwards//~, strating from <<span class="odocwiki_inlinecode"|p>>~, for promises to reject with
     <<a_api | exception Lwt.Canceled >>~. ~Once those promises are found~, they are canceled~, and then
     ordinary~, forwards rejection propagation takes over~.
@@ -1226,7 +1268,7 @@ let () =
       rejection~.
 * ~Suppose <<span class="odocwiki_inlinecode"|p>> was returned by <<a_api | val Lwt.join >>~, <<a_api | val Lwt.pick >>~, or similar function~,
       which was applied to the promise list <<span class="odocwiki_inlinecode"|ps>>~. <<a_api | val Lwt.cancel >> then recursively
-      tries to cancel each promise in <<span class="odocwiki_inlinecode"|ps>>~. ~If one of those cancelations
+      tries to cancel each promise in <<span class="odocwiki_inlinecode"|ps>>~. ~If one of those cancellations
       succeeds~, <<span class="odocwiki_inlinecode"|p>> //may// be canceled later by the normal propagation of
       rejection~.
 
@@ -1240,7 +1282,7 @@ let () =
     <<a_api | val Lwt.catch >>~.
 
 
-    ~Note that this does not interact directly with the //cancelation//
+    ~Note that this does not interact directly with the //cancellation//
     mechanism~, the backwards search described in <<a_api | val Lwt.cancel >>~. ~For example~,
     manually rejecting a promise with <<a_api | exception Lwt.Canceled >> is sufficient to trigger
     <<span class="odocwiki_inlinecode"|f>>~.
@@ -1250,16 +1292,16 @@ let () =
     <<span class="odocwiki_inlinecode"|!>><<a_api | val Lwt.async_exception_hook >>~, which terminates the process by default~.
 >>
 <<pre id="VALprotected" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|protected>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~.protected p>> creates a [[ #VALcancel| cancelable]] promise <<span class="odocwiki_inlinecode"|p~'>> with
-    the same state as <<span class="odocwiki_inlinecode"|p>>~. ~However~, cancelation~, the backwards search described
+    the same state as <<span class="odocwiki_inlinecode"|p>>~. ~However~, cancellation~, the backwards search described
     in <<a_api | val Lwt.cancel >>~, stops at <<span class="odocwiki_inlinecode"|p~'>>~, and does not continue to <<span class="odocwiki_inlinecode"|p>>~.
 >>
 <<pre id="VALno_cancel" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|no~_cancel>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~.no~_cancel p>> creates a non~-[[ #VALcancel|cancelable]] promise <<span class="odocwiki_inlinecode"|p~'>>~,
-    with the same state as <<span class="odocwiki_inlinecode"|p>>~. ~Cancelation~, the backwards search described in
+    with the same state as <<span class="odocwiki_inlinecode"|p>>~. ~Cancellation~, the backwards search described in
     <<a_api | val Lwt.cancel >>~, stops at <<span class="odocwiki_inlinecode"|p~'>>~, and does not continue to <<span class="odocwiki_inlinecode"|p>>~.
 
 
     ~Note that <<span class="odocwiki_inlinecode"|p~'>> can still be canceled if <<span class="odocwiki_inlinecode"|p>> is canceled~. <<span class="odocwiki_inlinecode"|~Lwt~.no~_cancel>>
-    only prevents cancelation of <<span class="odocwiki_inlinecode"|p>> and <<span class="odocwiki_inlinecode"|p~'>> through <<span class="odocwiki_inlinecode"|p~'>>~.
+    only prevents cancellation of <<span class="odocwiki_inlinecode"|p>> and <<span class="odocwiki_inlinecode"|p~'>> through <<span class="odocwiki_inlinecode"|p~'>>~.
 >>
 <<pre id="VALwait" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wait>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >> * 'a <<a_api text="u" | type Lwt.u >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~.wait>> is the same as <<a_api | val Lwt.task >>~, except the resulting promise <<span class="odocwiki_inlinecode"|p>> is
     //not// [[ #VALcancel| cancelable]]~.

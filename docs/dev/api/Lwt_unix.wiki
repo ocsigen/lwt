@@ -49,70 +49,6 @@
 >>
 
 
-==@@id="2_Configuration"@@~Configuration==
-
-<<pre class="ocsforge_color odocwiki_code" id="TYPEasync_method"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|async~_method>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_variants"|<<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Async_none>>>><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|<<div class="odocwiki_info"|~System calls are made synchronously~, and may block the
-          entire program~.
->>
->><<span class="odocwiki_comments_close"| ~*)>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Async_detach>>>><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|<<div class="odocwiki_info"|~System calls are made in another system thread~, thus without
-          blocking other ~Lwt threads~. ~The drawback is that it may
-          degrade performance in some cases~.
-
-
-          ~This is the default~.
->>
->><<span class="odocwiki_comments_close"| ~*)>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Async_switch>>>><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|<<div class="odocwiki_info"|~System calls are made in the main thread~, and if one blocks
-          the execution continue in another system thread~. ~This method
-          is the most efficient~, also you will get better performance
-          if you force all threads to run on the same cpu~. ~On linux
-          this can be done by using the command <<span class="odocwiki_inlinecode"|taskset>>~.
-
-
-          ~Note that this method is still experimental~.
->>
->><<span class="odocwiki_comments_close"| ~*)>>>>>>>>>><<div class="odocwiki_info"|~For system calls that cannot be made asynchronously~, ~Lwt uses one
-    of the following method~:
->>
-<<pre id="VALdefault_async_method" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|default~_async~_method>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="async_method" | type Lwt_unix.async_method >>>>>><<div class="odocwiki_info"|~Returns the default async method~.
-
-
-      ~This can be initialized using the environment variable
-      <<span class="odocwiki_inlinecode"|"~L~W~T~_~A~S~Y~N~C~_~M~E~T~H~O~D">> with possible values <<span class="odocwiki_inlinecode"|"none">>~,
-      <<span class="odocwiki_inlinecode"|"detach">> and <<span class="odocwiki_inlinecode"|"switch">>~.
->>
-<<pre id="VALset_default_async_method" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|set~_default~_async~_method>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="async_method" | type Lwt_unix.async_method >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Sets the default async method~.
->>
-<<pre id="VALasync_method" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|async~_method>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="async_method" | type Lwt_unix.async_method >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|async~_method ~(~)>> returns the async method used in the current
-      thread~.
->>
-<<pre id="VALasync_method_key" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|async~_method~_key>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="async_method" | type Lwt_unix.async_method >> <<a_api text="Lwt.key" | type Lwt.key >>>>>><<div class="odocwiki_info"|~The key for storing the local async method~.
->>
-<<pre id="VALwith_async_none" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|with~_async~_none>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|with~_async~_none f>> is a shorthand for~:
-
-
-      
-<<code language='ocaml'|        Lwt.with_value async_method_key (Some Async_none) f
-      >>
-
->>
-<<pre id="VALwith_async_detach" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|with~_async~_detach>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|with~_async~_detach f>> is a shorthand for~:
-
-
-      
-<<code language='ocaml'|        Lwt.with_value async_method_key (Some Async_detach) f
-      >>
-
->>
-<<pre id="VALwith_async_switch" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|with~_async~_switch>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|with~_async~_switch f>> is a shorthand for~:
-
-
-      
-<<code language='ocaml'|        Lwt.with_value async_method_key (Some Async_switch) f
-      >>
-
->>
-
-
 ==@@id="2_Sleeping"@@~Sleeping==
 
 <<pre id="VALsleep" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|sleep>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|float <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|sleep d>> is a thread that remains suspended for <<span class="odocwiki_inlinecode"|d>> seconds
@@ -121,8 +57,15 @@
 <<pre id="VALyield" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|yield>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|yield ~(~)>> is a thread that suspends itself and then resumes
       as soon as possible and terminates~.
 >>
-<<pre id="VALauto_yield" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|auto~_yield>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|float <<span class="ocsforge_color_delimiter"| -> >> unit <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|auto~_yield timeout>> returns a function <<span class="odocwiki_inlinecode"|f>> that will yield
-      every <<span class="odocwiki_inlinecode"|timeout>> seconds~.
+<<pre id="VALauto_yield" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|auto~_yield>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|float <<span class="ocsforge_color_delimiter"| -> >> unit <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|auto~_yield timeout>> returns a function <<span class="odocwiki_inlinecode"|f>>~, and <<span class="odocwiki_inlinecode"|f ~(~)>> has the following
+      behavior~:
+
+
+* ~If it has been more than <<span class="odocwiki_inlinecode"|timeout>> seconds since the last time <<span class="odocwiki_inlinecode"|f ~(~)>>
+        behaved like <<a_api | val Lwt_unix.yield >>~, <<span class="odocwiki_inlinecode"|f ~(~)>> calls <<a_api | val Lwt_unix.yield >>~.
+* ~Otherwise~, if it has been less than <<span class="odocwiki_inlinecode"|timeout>> seconds~, <<span class="odocwiki_inlinecode"|f ~(~)>> behaves
+        like <<a_api | val Lwt.return_unit >>~, i~.e~. it does not yield~.
+
 >>
 <<pre id="EXCEPTIONTimeout" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|exception>> <<span class="odocwiki_name"|Timeout>>>><<div class="odocwiki_info"|~Exception raised by timeout operations
 >>
@@ -301,7 +244,7 @@
 >>
 <<pre id="VALstderr" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|stderr>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="file_descr" | type Lwt_unix.file_descr >>>>>><<div class="odocwiki_info"|~The standard **file descriptor** for printing error messages
 >>
-<<pre class="ocsforge_color odocwiki_code" id="TYPEfile_perm"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|file~_perm>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|file_perm>>>> >><<pre class="ocsforge_color odocwiki_code" id="TYPEopen_flag"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|open~_flag>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|open_flag>>>>  <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_variants"|<<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_RDONLY>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_WRONLY>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_RDWR>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_NONBLOCK>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_APPEND>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_CREAT>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_TRUNC>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_EXCL>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_NOCTTY>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_DSYNC>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_SYNC>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_RSYNC>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_SHARE_DELETE>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_CLOEXEC>>>>>>>>>><<pre id="VALopenfile" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|openfile>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  string <<span class="ocsforge_color_delimiter"| -> >>\\  <<a_api text="open_flag" | type Lwt_unix.open_flag >> list <<span class="ocsforge_color_delimiter"| -> >>\\  <<a_api text="file_perm" | type Lwt_unix.file_perm >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="file_descr" | type Lwt_unix.file_descr >> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Wrapper for <<span class="odocwiki_inlinecode"|~Unix~.openfile>>~.
+<<pre class="ocsforge_color odocwiki_code" id="TYPEfile_perm"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|file~_perm>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|file_perm>>>> >><<pre class="ocsforge_color odocwiki_code" id="TYPEopen_flag"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|open~_flag>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|open_flag>>>>  <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_variants"|<<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_RDONLY>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_WRONLY>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_RDWR>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_NONBLOCK>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_APPEND>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_CREAT>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_TRUNC>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_EXCL>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_NOCTTY>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_DSYNC>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_SYNC>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_RSYNC>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_SHARE_DELETE>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_CLOEXEC>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|O_KEEPEXEC>>>>>>>>>><<pre id="VALopenfile" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|openfile>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  string <<span class="ocsforge_color_delimiter"| -> >>\\  <<a_api text="open_flag" | type Lwt_unix.open_flag >> list <<span class="ocsforge_color_delimiter"| -> >>\\  <<a_api text="file_perm" | type Lwt_unix.file_perm >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="file_descr" | type Lwt_unix.file_descr >> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Wrapper for <<span class="odocwiki_inlinecode"|~Unix~.openfile>>~.
 >>
 <<pre id="VALclose" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|close>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="file_descr" | type Lwt_unix.file_descr >> <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Close a **file descriptor**~. ~This close the underlying unix **      file descriptor** and set its state to <<span class="odocwiki_inlinecode"|~Closed>>~.
 >>
@@ -651,7 +594,7 @@
 >>
 <<pre id="VALreinstall_signal_handler" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|reinstall~_signal~_handler>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|reinstall~_signal~_handler signum>> if any signal handler is
       registered for this signal with <<a_api | val Lwt_unix.on_signal >>~, it reinstall the
-      signal handler ~(with <<span class="odocwiki_inlinecode"|~Sys~.set~_signal>>~)~. ~This is usefull in case
+      signal handler ~(with <<span class="odocwiki_inlinecode"|~Sys~.set~_signal>>~)~. ~This is useful in case
       another part of the program install another signal handler~.
 >>
 
@@ -842,6 +785,70 @@
 >>
 
 
+==@@id="2_Configuration"@@~Configuration==
+
+<<pre class="ocsforge_color odocwiki_code" id="TYPEasync_method"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|async~_method>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_variants"|<<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Async_none>>>><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|<<div class="odocwiki_info"|~System calls are made synchronously~, and may block the
+          entire program~.
+>>
+>><<span class="odocwiki_comments_close"| ~*)>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Async_detach>>>><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|<<div class="odocwiki_info"|~System calls are made in another system thread~, thus without
+          blocking other ~Lwt threads~. ~The drawback is that it may
+          degrade performance in some cases~.
+
+
+          ~This is the default~.
+>>
+>><<span class="odocwiki_comments_close"| ~*)>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Async_switch>>>><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|<<div class="odocwiki_info"|~System calls are made in the main thread~, and if one blocks
+          the execution continue in another system thread~. ~This method
+          is the most efficient~, also you will get better performance
+          if you force all threads to run on the same cpu~. ~On linux
+          this can be done by using the command <<span class="odocwiki_inlinecode"|taskset>>~.
+
+
+          ~Note that this method is still experimental~.
+>>
+>><<span class="odocwiki_comments_close"| ~*)>>>>>>>>>><<div class="odocwiki_info"|~For system calls that cannot be made asynchronously~, ~Lwt uses one
+    of the following method~:
+>>
+<<pre id="VALdefault_async_method" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|default~_async~_method>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="async_method" | type Lwt_unix.async_method >>>>>><<div class="odocwiki_info"|~Returns the default async method~.
+
+
+      ~This can be initialized using the environment variable
+      <<span class="odocwiki_inlinecode"|"~L~W~T~_~A~S~Y~N~C~_~M~E~T~H~O~D">> with possible values <<span class="odocwiki_inlinecode"|"none">>~,
+      <<span class="odocwiki_inlinecode"|"detach">> and <<span class="odocwiki_inlinecode"|"switch">>~.
+>>
+<<pre id="VALset_default_async_method" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|set~_default~_async~_method>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="async_method" | type Lwt_unix.async_method >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Sets the default async method~.
+>>
+<<pre id="VALasync_method" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|async~_method>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="async_method" | type Lwt_unix.async_method >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|async~_method ~(~)>> returns the async method used in the current
+      thread~.
+>>
+<<pre id="VALasync_method_key" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|async~_method~_key>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="async_method" | type Lwt_unix.async_method >> <<a_api text="Lwt.key" | type Lwt.key >>>>>><<div class="odocwiki_info"|~The key for storing the local async method~.
+>>
+<<pre id="VALwith_async_none" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|with~_async~_none>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|with~_async~_none f>> is a shorthand for~:
+
+
+      
+<<code language='ocaml'|        Lwt.with_value async_method_key (Some Async_none) f
+      >>
+
+>>
+<<pre id="VALwith_async_detach" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|with~_async~_detach>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|with~_async~_detach f>> is a shorthand for~:
+
+
+      
+<<code language='ocaml'|        Lwt.with_value async_method_key (Some Async_detach) f
+      >>
+
+>>
+<<pre id="VALwith_async_switch" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|with~_async~_switch>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|with~_async~_switch f>> is a shorthand for~:
+
+
+      
+<<code language='ocaml'|        Lwt.with_value async_method_key (Some Async_switch) f
+      >>
+
+>>
+
+
 ==@@id="2_Lowlevelinteraction"@@~Low~-level interaction==
 
 <<pre id="EXCEPTIONRetry" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|exception>> <<span class="odocwiki_name"|Retry>>>><<div class="odocwiki_info"|~If an action raises <<a_api | exception Lwt_unix.Retry >>~, it will be requeued until the **      file descriptor** becomes readable~/writable again~.
@@ -885,7 +892,11 @@
       termination~.
 
 
-      ~The async method is choosen follow~:
+      ~The <<span class="odocwiki_inlinecode"|~~async~_method>> argument will be ignored in ~Lwt ~5~.~0~.~0~, and this
+      function will always act as if <<span class="odocwiki_inlinecode"|~~async~_method~:~Async~_detach>> is passed~.
+
+
+      ~The async method is chosen follow~:
 * if the optional parameter <<span class="odocwiki_inlinecode"|async~_method>> is specified~, it is
         used~,
 * otherwise if the local key <<a_api | val Lwt_unix.async_method_key >> is set in the

@@ -1,0 +1,23 @@
+=Module type <<a_api_type | module type Lwt_main.Hooks >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module type>> <<span class="ocsforge_color_uid"|Hooks>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module type Lwt_main.Hooks >><<span class="ocsforge_color_keyword"|end>>>>~Hook sequences~. ~Each module of this type is a set of hooks~, to be run by ~Lwt
+    at certain points during execution~. ~See modules <<a_api | module Lwt_main.Enter_iter_hooks >>~,
+    <<a_api | module Lwt_main.Leave_iter_hooks >>~, and <<a_api | module Lwt_main.Exit_hooks >>~.
+
+----
+<<pre class="ocsforge_color odocwiki_code" id="TYPEkind"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_type"|'return_value>> <<span class="odocwiki_name"|kind>>>><<div class="odocwiki_info"|~Hooks are functions of either type <<span class="odocwiki_inlinecode"|unit ~-~> unit>> or <<span class="odocwiki_inlinecode"|unit ~-~> unit ~Lwt~.t>>~;
+      this type constructor is used only to express both possibilities in one
+      signature~.
+>>
+<<pre class="ocsforge_color odocwiki_code" id="TYPEhook"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|hook>>>><<div class="odocwiki_info"|~Values of type <<span class="odocwiki_inlinecode"|hook>> represent hooks that have been added~, so that they
+      can be removed later ~(if needed~)~.
+>>
+<<pre id="VALadd_first" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|add~_first>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="kind" | type Lwt_main.Hooks.kind >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="hook" | type Lwt_main.Hooks.hook >>>>>><<div class="odocwiki_info"|~Adds a hook to the hook sequence underlying this module~, to be run
+      //first//~, before any other hooks already added~.
+>>
+<<pre id="VALadd_last" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|add~_last>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="kind" | type Lwt_main.Hooks.kind >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="hook" | type Lwt_main.Hooks.hook >>>>>><<div class="odocwiki_info"|~Adds a hook to the hook sequence underlying this module~, to be run
+      //last//~, after any other hooks already added~.
+>>
+<<pre id="VALremove" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|remove>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="hook" | type Lwt_main.Hooks.hook >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Removes a hook added by <<a_api | val Lwt_main.Hooks.add_first >> or <<a_api | val Lwt_main.Hooks.add_last >>~.
+>>
+<<pre id="VALremove_all" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|remove~_all>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Removes all hooks from the hook sequence underlying this module~.
+>>

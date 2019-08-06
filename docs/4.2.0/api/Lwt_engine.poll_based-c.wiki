@@ -1,0 +1,19 @@
+=Class virtual <<a_api_type | class Lwt_engine.poll_based >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span name="TYPEpoll_based"|<<span class="ocsforge_color_keyword"|class>> <<span class="ocsforge_color_keyword"|virtual>> <<span class="ocsforge_color_name"|poll_based>>>> <<span class="ocsforge_color_delimiter"|~:>>  <<span class="ocsforge_color_keyword"|object>><<a_api text=".." | class Lwt_engine.poll_based >><<span class="ocsforge_color_keyword"|end>>>>~Abstract class for engines based on a poll~-like function~.
+**~Inherits**
+* <<a_api | class Lwt_engine.t >>
+
+----
+<<pre class="ocsforge_color odocwiki_code"|<<span id="METHODpoll"|<<span class="ocsforge_color_keyword"|method>> <<span class="ocsforge_color_keyword"|private>> <<span class="ocsforge_color_keyword"|virtual>> <<span class="odocwiki_name"|poll>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\<<span class="ocsforge_color_delimiter"| ( >><<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|file_descr>> * bool * bool<<span class="ocsforge_color_delimiter"| ) >> list <<span class="ocsforge_color_delimiter"| -> >>\\float <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >><<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|file_descr>> * bool * bool<<span class="ocsforge_color_delimiter"| ) >> list>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|poll fds tiomeout>>~, where <<span class="odocwiki_inlinecode"|fds>> is a list of tuples of the
+        form <<span class="odocwiki_inlinecode"|~(fd~, check~_readable~, check~_writable~)>>~, waits for either~:
+
+
+* one of the file descriptor with <<span class="odocwiki_inlinecode"|check~_readable>> set to
+          <<span class="odocwiki_inlinecode"|true>> to become readable
+* one of the file descriptor with <<span class="odocwiki_inlinecode"|check~_writable>> set to
+          <<span class="odocwiki_inlinecode"|true>> to become writable
+* timeout to expire
+
+        and returns the list of file descriptors with their readable
+        and writable status~.
+>>
