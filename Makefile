@@ -25,14 +25,14 @@ doc:
 
 # Build HTML documentation with ocamldoc
 .PHONY: doc-api-html
-doc-api-html: build-all
+doc-api-html: build
 	$(MAKE) -C docs api/html/index.html
 
 # Build wiki documentation with wikidoc
 # requires ocaml 4.03.0 and pinning the repo
 # https://github.com/ocsigen/wikidoc
 .PHONY: doc-api-wiki
-doc-api-wiki: build-all
+doc-api-wiki: build
 	$(MAKE) -C docs api/wiki/index.wiki
 
 # Packaging tests. These are run with Lwt installed by OPAM, typically during
