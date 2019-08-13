@@ -1221,7 +1221,7 @@ val tcflow : file_descr -> flow_action -> unit Lwt.t
 
 
 
-(** {2 Configuration} *)
+(** {2 Configuration (deprecated)} *)
 
 (** For system calls that cannot be made asynchronously, Lwt uses one
     of the following method: *)
@@ -1248,63 +1248,74 @@ val default_async_method : unit -> async_method
   [@@ocaml.deprecated
 " Will always return Async_detach in Lwt >= 5.0.0. See
    https://github.com/ocsigen/lwt/issues/572"]
-  (** Returns the default async method.
+(** Returns the default async method.
 
-      This can be initialized using the environment variable
-      ["LWT_ASYNC_METHOD"] with possible values ["none"],
-      ["detach"] and ["switch"]. *)
+    This can be initialized using the environment variable
+    ["LWT_ASYNC_METHOD"] with possible values ["none"],
+    ["detach"] and ["switch"].
+
+    @deprecated Will always return [Async_detach] in Lwt 5.0.0. *)
 
 val set_default_async_method : async_method -> unit
   [@@ocaml.deprecated
 " Will be a no-op in Lwt >= 5.0.0. See
    https://github.com/ocsigen/lwt/issues/572"]
-  (** Sets the default async method. *)
+(** Sets the default async method.
+
+    @deprecated Will be a no-op in Lwt 5.0.0. *)
 
 val async_method : unit -> async_method
   [@@ocaml.deprecated
 " Will always return Async_detach in Lwt >= 5.0.0. See
    https://github.com/ocsigen/lwt/issues/572"]
-  (** [async_method ()] returns the async method used in the current
-      thread. *)
+(** [async_method ()] returns the async method used in the current
+    thread.
+
+    @deprecated Will always return [Async_detach] in Lwt 5.0.0. *)
 
 val async_method_key : async_method Lwt.key
   [@@ocaml.deprecated
 " Will be ignored in Lwt >= 5.0.0. See
    https://github.com/ocsigen/lwt/issues/572"]
-  (** The key for storing the local async method. *)
+(** The key for storing the local async method.
+
+    @deprecated Will be ignored in Lwt 5.0.0. *)
 
 val with_async_none : (unit -> 'a) -> 'a
   [@@ocaml.deprecated
 " Will have no effect in Lwt >= 5.0.0. See
    https://github.com/ocsigen/lwt/issues/572"]
-  (** [with_async_none f] is a shorthand for:
+(** [with_async_none f] is a shorthand for:
 
-      {[
-        Lwt.with_value async_method_key (Some Async_none) f
-      ]}
-  *)
+    {[
+      Lwt.with_value async_method_key (Some Async_none) f
+    ]}
+
+    @deprecated Will have no effect in Lwt 5.0.0. *)
 
 val with_async_detach : (unit -> 'a) -> 'a
   [@@ocaml.deprecated
 " Will have no effect in Lwt >= 5.0.0. See
    https://github.com/ocsigen/lwt/issues/572"]
-  (** [with_async_detach f] is a shorthand for:
+(** [with_async_detach f] is a shorthand for:
 
-      {[
-        Lwt.with_value async_method_key (Some Async_detach) f
-      ]}
-  *)
+    {[
+      Lwt.with_value async_method_key (Some Async_detach) f
+    ]}
+
+    @deprecated Will have no effect in Lwt 5.0.0. *)
 
 val with_async_switch : (unit -> 'a) -> 'a
   [@@ocaml.deprecated
 " Will have no effect in Lwt >= 5.0.0. See
    https://github.com/ocsigen/lwt/issues/572"]
-  (** [with_async_switch f] is a shorthand for:
+(** [with_async_switch f] is a shorthand for:
 
-      {[
-        Lwt.with_value async_method_key (Some Async_switch) f
-      ]}
-  *)
+    {[
+      Lwt.with_value async_method_key (Some Async_switch) f
+    ]}
+
+    @deprecated Will have no effect in Lwt 5.0.0. *)
 
 
 
