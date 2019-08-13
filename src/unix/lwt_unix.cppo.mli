@@ -1478,6 +1478,26 @@ sig
 
       @deprecated Use {!Lwt_unix.bind}.
       @since 2.7.0 *)
+
+  val recv_msg_2 :
+    socket:file_descr -> io_vectors:IO_vectors.t ->
+      (int * Unix.file_descr list) Lwt.t
+  (** Upcoming version of {!Lwt_unix.recv_msg} that uses the new module
+      {!Lwt_unix.IO_vectors} rather than an argument of type
+      {!Lwt_unix.io_vector}. In Lwt 5.0.0, {!Lwt_unix.recv_msg} will become an
+      alias for this function.
+
+      @since 4.3.0 *)
+
+  val send_msg_2 :
+    socket:file_descr -> io_vectors:IO_vectors.t -> fds:Unix.file_descr list ->
+      int Lwt.t
+  (** Upcoming version of {!Lwt_unix.send_msg} that uses the new module
+      {!Lwt_unix.IO_vectors} rather than an argument of type
+      {!Lwt_unix.io_vector}. In Lwt 5.0.0, {!Lwt_unix.send_msg} will become an
+      alias for this function.
+
+      @since 4.3.0 *)
 end
 
 (**/**)

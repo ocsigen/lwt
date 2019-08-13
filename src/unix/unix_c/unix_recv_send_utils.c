@@ -21,20 +21,6 @@
 
 int msg_flag_table[3] = {MSG_OOB, MSG_DONTROUTE, MSG_PEEK};
 
-/* Convert a caml list of io-vectors into a C array io io-vector
-   structures */
-void store_iovs(struct iovec *iovs, value iovs_val)
-{
-    CAMLparam0();
-    CAMLlocal2(list, x);
-    for (list = iovs_val; Is_block(list); list = Field(list, 1), iovs++) {
-        x = Field(list, 0);
-        iovs->iov_base = &Byte(String_val(Field(x, 0)), Long_val(Field(x, 1)));
-        iovs->iov_len = Long_val(Field(x, 2));
-    }
-    CAMLreturn0;
-}
-
 void bytes_store_iovs(struct iovec *iovs, value iovs_val)
 {
     CAMLparam0();
