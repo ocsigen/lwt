@@ -71,9 +71,7 @@
   unix_bytes_sendto_byte
   unix_recv_send_utils
   unix_recv_msg
-  unix_bytes_recv_msg
   unix_send_msg
-  unix_bytes_send_msg
   unix_get_credentials
   unix_mcast_utils
   unix_mcast_set_loop
