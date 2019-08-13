@@ -928,6 +928,9 @@ val io_vector : buffer : string -> offset : int -> length : int -> io_vector
   (** Creates an io-vector *)
 
 val recv_msg : socket : file_descr -> io_vectors : io_vector list -> (int * Unix.file_descr list) Lwt.t
+  [@@ocaml.deprecated
+" Will be replaced by Lwt_unix.Versioned.recv_msg_2 in Lwt >= 5.0.0. See
+   https://github.com/ocsigen/lwt/issues/594"]
 (** [recv_msg ~socket ~io_vectors] receives data into a list of
     io-vectors, plus any file-descriptors that may accompany the
     messages. It returns a tuple whose first field is the number of
@@ -936,9 +939,15 @@ val recv_msg : socket : file_descr -> io_vectors : io_vector list -> (int * Unix
     provided [io_vectors] list. Data is written directly into the
     [iov_buffer] buffers.
 
-    Not implemented on Windows. *)
+    Not implemented on Windows.
+
+    @deprecated Will be replaced by {!Lwt_unix.Versioned.recv_msg_2} in Lwt
+                5.0.0. *)
 
 val send_msg : socket : file_descr -> io_vectors : io_vector list -> fds : Unix.file_descr list -> int Lwt.t
+  [@@ocaml.deprecated
+" Will be replaced by Lwt_unix.Versioned.send_msg_2 in Lwt >= 5.0.0. See
+   https://github.com/ocsigen/lwt/issues/594"]
 (** [send_msg ~socket ~io_vectors ~fds] sends data from a list of
     io-vectors, accompanied with a list of file-descriptors. It
     returns the number of bytes sent. If fd-passing is not possible on
@@ -946,7 +955,10 @@ val send_msg : socket : file_descr -> io_vectors : io_vector list -> fds : Unix.
     [Lwt_sys.Not_available "fd_passing"]. Data is written directly from
     the [iov_buffer] buffers.
 
-    Not implemented on Windows. *)
+    Not implemented on Windows.
+
+    @deprecated Will be replaced by {!Lwt_unix.Versioned.send_msg_2} in Lwt
+                5.0.0. *)
 
 type credentials = {
   cred_pid : int;

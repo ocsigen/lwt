@@ -595,6 +595,64 @@ let send_recv_msg_tests = [
     let socket_1, socket_2 = Lwt_unix.(socketpair PF_UNIX SOCK_STREAM 0) in
     let pipe_read, pipe_write = Lwt_unix.pipe () in
 
+    let source_buffer = Bytes.of_string "_foo_bar_" in
+    let source_iovecs = Lwt_unix.IO_vectors.create () in
+    Lwt_unix.IO_vectors.append_bytes source_iovecs source_buffer 1 3;
+    Lwt_unix.IO_vectors.append_bytes source_iovecs source_buffer 5 3;
+
+    Lwt_unix.Versioned.send_msg_2
+      ~socket:socket_1
+      ~io_vectors:source_iovecs
+      ~fds:[Lwt_unix.unix_file_descr pipe_write] >>= fun n ->
+    if n <> 6 then
+      Lwt.return false
+
+    else
+      let destination_buffer = Bytes.of_string "_________" in
+      let destination_iovecs = Lwt_unix.IO_vectors.create () in
+      Lwt_unix.IO_vectors.append_bytes
+        destination_iovecs destination_buffer 5 3;
+      Lwt_unix.IO_vectors.append_bytes
+        destination_iovecs destination_buffer 1 3;
+
+      Lwt_unix.Versioned.recv_msg_2
+        ~socket:socket_2 ~io_vectors:destination_iovecs >>= fun (n, fds) ->
+      let succeeded =
+        match n, fds, Bytes.to_string destination_buffer with
+        | 6, [fd], "_bar_foo_" -> Some fd
+        | _ -> None
+      in
+      match succeeded with
+      | None ->
+        Lwt.return false
+      | Some fd ->
+
+        let n = Unix.write fd (Bytes.of_string "baz") 0 3 in
+        if n <> 3 then
+          Lwt.return false
+
+        else
+          let buffer = Bytes.create 3 in
+          Lwt_unix.read pipe_read buffer 0 3 >>= fun n ->
+          match n, Bytes.to_string buffer with
+          | 3, "baz" ->
+            Lwt_unix.close socket_1 >>= fun () ->
+            Lwt_unix.close socket_2 >>= fun () ->
+            Lwt_unix.close pipe_read >>= fun () ->
+            Lwt_unix.close pipe_write >>= fun () ->
+            Unix.close fd;
+            Lwt.return true
+
+          | _ ->
+            Lwt.return false
+  end;
+
+  test "send_msg, recv_msg (old)" ~only_if:(fun () -> not Sys.win32)
+      begin fun () ->
+
+    let socket_1, socket_2 = Lwt_unix.(socketpair PF_UNIX SOCK_STREAM 0) in
+    let pipe_read, pipe_write = Lwt_unix.pipe () in
+
     let source_buffer = "_foo_bar_" in
     let source_iovecs = Lwt_unix.[
       {
@@ -610,7 +668,7 @@ let send_recv_msg_tests = [
     ]
     in
 
-    Lwt_unix.send_msg
+    (Lwt_unix.send_msg [@ocaml.warning "-3"])
       ~socket:socket_1
       ~io_vectors:source_iovecs
       ~fds:[Lwt_unix.unix_file_descr pipe_write] >>= fun n ->
@@ -633,7 +691,7 @@ let send_recv_msg_tests = [
       ]
       in
 
-      Lwt_unix.recv_msg
+      (Lwt_unix.recv_msg [@ocaml.warning "-3"])
         ~socket:socket_2 ~io_vectors:destination_iovecs >>= fun (n, fds) ->
       let succeeded =
         match n, fds, destination_buffer with
@@ -665,7 +723,7 @@ let send_recv_msg_tests = [
             Lwt.return false
   end;
 
-  test "send_msg, recv_msg (Lwt_bytes)" ~only_if:(fun () -> not Sys.win32)
+  test "send_msg, recv_msg (Lwt_bytes, old)" ~only_if:(fun () -> not Sys.win32)
       begin fun () ->
 
     let socket_1, socket_2 = Lwt_unix.(socketpair PF_UNIX SOCK_STREAM 0) in
@@ -686,7 +744,7 @@ let send_recv_msg_tests = [
     ]
     in
 
-    Lwt_bytes.send_msg
+    (Lwt_bytes.send_msg [@ocaml.warning "-3"])
       ~socket:socket_1
       ~io_vectors:source_iovecs
       ~fds:[Lwt_unix.unix_file_descr pipe_write] >>= fun n ->
@@ -709,7 +767,7 @@ let send_recv_msg_tests = [
       ]
       in
 
-      Lwt_bytes.recv_msg
+      (Lwt_bytes.recv_msg [@ocaml.warning "-3"])
         ~socket:socket_2 ~io_vectors:destination_iovecs >>= fun (n, fds) ->
       let succeeded =
         match n, fds, Lwt_bytes.to_string destination_buffer with
