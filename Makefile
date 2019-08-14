@@ -90,7 +90,7 @@ coverage: clean
 	BISECT_ENABLE=yes $(MAKE) build
 	BISECT_ENABLE=yes dune runtest -j 1 --no-buffer
 	bisect-ppx-report \
-	    -I _build/default/ -html _coverage/ \
-	    -text - -summary-only \
+	    -I _build/default/ --html _coverage/ \
+	    --text - --summary-only \
 	    $(BISECT_FILES_PATTERN)
 	@echo See _coverage/index.html
