@@ -44,6 +44,11 @@ conflicts: [
   "ocaml-variants" {= "4.02.1+BER"}
 ]
 
+post-messages: [
+  "Lwt 5.0.0 will make some breaking changes in November 2019. See
+  https://github.com/ocsigen/lwt/issues/584"
+]
+
 build: [
   ["dune" "build" "-p" name "-j" jobs]
 ]
