@@ -5,10 +5,13 @@
 
 import os.path
 import subprocess
+import time
 
 DEPENDEES = "dependees"
 
 def main():
+    now = time.time()
+
     subprocess.check_call(["opam", "update"])
 
     packages = subprocess.check_output([
@@ -28,11 +31,17 @@ def main():
 
     print "Downloading %i packages..." % len(packages)
 
-    subprocess.check_call(["rm", "-rf", DEPENDEES])
-
     for package in packages:
         directory = os.path.join(DEPENDEES, package)
+
+        try:
+            timestamp = os.path.getmtime(directory)
+            if now - timestamp < 24 * 60 * 60:
+                continue
+        except:
+            pass
         remove_command = ["rm", "-rf", directory]
+        subprocess.check_call(remove_command)
 
         use_opam_source = False
 
@@ -40,10 +49,16 @@ def main():
         try:
             field = subprocess.check_output(info_command)
             no_quotes = field[1:-2]
-            if no_quotes[0:9] != "git+https":
-                use_opam_source = True
-            else:
+            if no_quotes[0:9] == "git+https":
                 repo = no_quotes[4:]
+            elif no_quotes[0:16] == "git://github.com":
+                if no_quotes[-1:] == "/":
+                    no_quotes = no_quotes[:-1]
+                repo = "https" + no_quotes[3:]
+            else:
+                use_opam_source = True
+
+            if use_opam_source == False:
                 clone_command = \
                     ["git", "clone", "-q", "--depth", "1", repo, directory]
                 print "[%s]" % package, " ".join(clone_command)
@@ -55,7 +70,6 @@ def main():
             continue
 
         source_command = ["opam", "source", "--dir=" + directory]
-        subprocess.check_call(remove_command)
         try:
             subprocess.check_call(source_command + ["--dev-repo", package])
         except subprocess.CalledProcessError as e:
