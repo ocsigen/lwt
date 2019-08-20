@@ -92,8 +92,8 @@
       value~, its callbacks are called~.
 * ~Separate **resolvers** of type <<span class="odocwiki_inlinecode"|~'a >><<a_api | type Lwt.u >> are used to write values into
       promises~, through <<a_api | val Lwt.wakeup_later >>~.
-* ~Promises and resolvers are created in pairs using <<a_api | val Lwt.task >>~. ~Lwt ~I~/~O
-      functions call <<a_api | val Lwt.task >> internally~, but return only the promise~.
+* ~Promises and resolvers are created in pairs using <<a_api | val Lwt.wait >>~. ~Lwt ~I~/~O
+      functions call <<a_api | val Lwt.wait >> internally~, but return only the promise~.
 * <<a_api | val Lwt_main.run >> is used to wait on one “top~-level” promise~. ~When that
       promise gets a value~, the program terminates~.
 
@@ -444,7 +444,7 @@
 
     ~Promise variables of this type~, <<span class="odocwiki_inlinecode"|~'a ~Lwt~.t>>~, are actually **read~-only** in
     ~Lwt~. ~Separate //resolvers// of type <<span class="odocwiki_inlinecode"|~'a >><<a_api | type Lwt.u >> are used to write to them~.
-    ~Promises and their resolvers are created together by calling <<a_api | val Lwt.task >>~.
+    ~Promises and their resolvers are created together by calling <<a_api | val Lwt.wait >>~.
     ~There is one exception to this~: most promises can be //canceled// by calling
     <<a_api | val Lwt.cancel >>~, without going through a resolver~.
 >>
@@ -455,7 +455,7 @@
     be passed to <<a_api | val Lwt.wakeup_later >>~, <<a_api | val Lwt.wakeup_later_exn >>~, or
     <<a_api | val Lwt.wakeup_later_result >> to resolve that promise~.
 >>
-<<pre id="VALtask" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|task>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >> * 'a <<a_api text="u" | type Lwt.u >>>>>><<div class="odocwiki_info"|~Creates a new pending [[ #TYPEt| promise]]~, paired with its [[ #TYPEu|
+<<pre id="VALwait" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wait>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >> * 'a <<a_api text="u" | type Lwt.u >>>>>><<div class="odocwiki_info"|~Creates a new pending [[ #TYPEt| promise]]~, paired with its [[ #TYPEu|
     resolver]]~.
 
 
@@ -464,7 +464,7 @@
     the promises together using <<a_api | val Lwt.bind >>~.
 
 
-    ~However~, it is important to understand <<span class="odocwiki_inlinecode"|~Lwt~.task>> as the fundamental promise
+    ~However~, it is important to understand <<span class="odocwiki_inlinecode"|~Lwt~.wait>> as the fundamental promise
     “constructor~.” ~All other functions that evaluate to a promise can be~, or
     are~, eventually implemented in terms of it~.
 >>
@@ -1167,8 +1167,26 @@ let () =
 
 ==@@id="2_Cancellation"@@~Cancellation==
 
+
+
+    ~Note~: cancelation has proved difficult to understand~, explain~, and maintain~,
+    so use of these functions is discouraged in new code~. ~See
+    [[https://github.com/ocsigen/lwt/issues/283#issuecomment-518014539|
+    ocsigen~/lwt~#~2~8~3]]~.
 <<pre id="EXCEPTIONCanceled" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|exception>> <<span class="odocwiki_name"|Canceled>>>><<div class="odocwiki_info"|~Canceled promises are those rejected with this exception~, <<span class="odocwiki_inlinecode"|~Lwt~.~Canceled>>~.
     ~See <<a_api | val Lwt.cancel >>~.
+>>
+<<pre id="VALtask" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|task>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >> * 'a <<a_api text="u" | type Lwt.u >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~.task>> is the same as <<a_api | val Lwt.wait >>~, except the resulting promise <<span class="odocwiki_inlinecode"|p>> is
+    [[ #VALcancel| cancelable]]~.
+
+
+    ~This is significant~, because it means promises created by <<span class="odocwiki_inlinecode"|~Lwt~.task>> can be
+    resolved ~(specifically~, rejected~) by canceling them directly~, in addition to
+    being resolved through their paired resolvers~.
+
+
+    ~In contrast~, promises returned by <<a_api | val Lwt.wait >> can only be resolved through
+    their resolvers~.
 >>
 <<pre id="VALcancel" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|cancel>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~.cancel p>> attempts to //cancel// the pending promise <<span class="odocwiki_inlinecode"|p>>~, without
     needing access to its resolver~.
@@ -1302,17 +1320,6 @@ let () =
 
     ~Note that <<span class="odocwiki_inlinecode"|p~'>> can still be canceled if <<span class="odocwiki_inlinecode"|p>> is canceled~. <<span class="odocwiki_inlinecode"|~Lwt~.no~_cancel>>
     only prevents cancellation of <<span class="odocwiki_inlinecode"|p>> and <<span class="odocwiki_inlinecode"|p~'>> through <<span class="odocwiki_inlinecode"|p~'>>~.
->>
-<<pre id="VALwait" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wait>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >> * 'a <<a_api text="u" | type Lwt.u >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~.wait>> is the same as <<a_api | val Lwt.task >>~, except the resulting promise <<span class="odocwiki_inlinecode"|p>> is
-    //not// [[ #VALcancel| cancelable]]~.
-
-
-    ~This is significant~, because it means <<span class="odocwiki_inlinecode"|p>> created by <<span class="odocwiki_inlinecode"|~Lwt~.wait>> can //only//
-    be resolved through its paired resolver~.
-
-
-    ~In contrast~, promises returned by <<a_api | val Lwt.task >> can additionally be resolved
-    by canceling them directly with <<a_api | val Lwt.cancel >>~.
 >>
 
 

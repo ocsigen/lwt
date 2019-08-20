@@ -155,10 +155,10 @@
 |@@class="odocwiki_index"@ @@<<a_api text="socket_int_option"| type Lwt_unix.socket_int_option >> ~[<<a_api | module Lwt_unix >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="socket_optint_option"| type Lwt_unix.socket_optint_option >> ~[<<a_api | module Lwt_unix >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="socket_type"| type Lwt_unix.socket_type >> ~[<<a_api | module Lwt_unix >>~]||
-|@@class="odocwiki_index"@ @@<<a_api text="state"| type Lwt_process.state >> ~[<<a_api | module Lwt_process >>~]|<<div class="odocwiki_info"|~State of a sub~-process
+|@@class="odocwiki_index"@ @@<<a_api text="state"| type Lwt_unix.state >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~State of a **file descriptor**
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="state"| type Lwt_unix.state >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~State of a **file descriptor**
+|@@class="odocwiki_index"@ @@<<a_api text="state"| type Lwt_process.state >> ~[<<a_api | module Lwt_process >>~]|<<div class="odocwiki_info"|~State of a sub~-process
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="state"| type Lwt.state >> ~[<<a_api | module Lwt >>~]||

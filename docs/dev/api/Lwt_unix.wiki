@@ -672,7 +672,9 @@
 >>
 <<pre id="VALio_vector" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|io~_vector>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_label"| buffer: >>string <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_label"| offset: >>int <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_label"| length: >>int <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="io_vector" | type Lwt_unix.io_vector >>>>>><<div class="odocwiki_info"|~Creates an io~-vector
 >>
-<<pre id="VALrecv_msg" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|recv~_msg>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_label"| socket: >><<a_api text="file_descr" | type Lwt_unix.file_descr >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| io_vectors: >><<a_api text="io_vector" | type Lwt_unix.io_vector >> list <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_delimiter"| ( >>int * <<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|file_descr>> list<<span class="ocsforge_color_delimiter"| ) >> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|recv~_msg ~~socket ~~io~_vectors>> receives data into a list of
+<<pre id="VALrecv_msg" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|recv~_msg>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_label"| socket: >><<a_api text="file_descr" | type Lwt_unix.file_descr >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| io_vectors: >><<a_api text="io_vector" | type Lwt_unix.io_vector >> list <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_delimiter"| ( >>int * <<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|file_descr>> list<<span class="ocsforge_color_delimiter"| ) >> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_warning"|Deprecated.>>~Will be replaced by <<a_api | val Lwt_unix.Versioned.recv_msg_2 >> in ~Lwt
+                ~5~.~0~.~0~.
+<<span class="odocwiki_inlinecode"|recv~_msg ~~socket ~~io~_vectors>> receives data into a list of
     io~-vectors~, plus any file~-descriptors that may accompany the
     messages~. ~It returns a tuple whose first field is the number of
     bytes received and second is a list of received file
@@ -683,7 +685,9 @@
 
     ~Not implemented on ~Windows~.
 >>
-<<pre id="VALsend_msg" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|send~_msg>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_label"| socket: >><<a_api text="file_descr" | type Lwt_unix.file_descr >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| io_vectors: >><<a_api text="io_vector" | type Lwt_unix.io_vector >> list <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| fds: >><<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|file_descr>> list <<span class="ocsforge_color_delimiter"| -> >> int <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|send~_msg ~~socket ~~io~_vectors ~~fds>> sends data from a list of
+<<pre id="VALsend_msg" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|send~_msg>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_label"| socket: >><<a_api text="file_descr" | type Lwt_unix.file_descr >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| io_vectors: >><<a_api text="io_vector" | type Lwt_unix.io_vector >> list <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| fds: >><<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|file_descr>> list <<span class="ocsforge_color_delimiter"| -> >> int <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_warning"|Deprecated.>>~Will be replaced by <<a_api | val Lwt_unix.Versioned.send_msg_2 >> in ~Lwt
+                ~5~.~0~.~0~.
+<<span class="odocwiki_inlinecode"|send~_msg ~~socket ~~io~_vectors ~~fds>> sends data from a list of
     io~-vectors~, accompanied with a list of file~-descriptors~. ~It
     returns the number of bytes sent~. ~If fd~-passing is not possible on
     the current system and <<span class="odocwiki_inlinecode"|fds>> is not empty~, it raises
@@ -785,7 +789,7 @@
 >>
 
 
-==@@id="2_Configuration"@@~Configuration==
+==@@id="2_Configurationdeprecated"@@~Configuration ~(deprecated~)==
 
 <<pre class="ocsforge_color odocwiki_code" id="TYPEasync_method"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|async~_method>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_variants"|<<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Async_none>>>><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|<<div class="odocwiki_info"|~System calls are made synchronously~, and may block the
           entire program~.
@@ -809,42 +813,49 @@
 >><<span class="odocwiki_comments_close"| ~*)>>>>>>>>>><<div class="odocwiki_info"|~For system calls that cannot be made asynchronously~, ~Lwt uses one
     of the following method~:
 >>
-<<pre id="VALdefault_async_method" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|default~_async~_method>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="async_method" | type Lwt_unix.async_method >>>>>><<div class="odocwiki_info"|~Returns the default async method~.
+<<pre id="VALdefault_async_method" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|default~_async~_method>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="async_method" | type Lwt_unix.async_method >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_warning"|Deprecated.>>~Will always return <<span class="odocwiki_inlinecode"|~Async~_detach>> in ~Lwt ~5~.~0~.~0~.
+~Returns the default async method~.
 
 
-      ~This can be initialized using the environment variable
-      <<span class="odocwiki_inlinecode"|"~L~W~T~_~A~S~Y~N~C~_~M~E~T~H~O~D">> with possible values <<span class="odocwiki_inlinecode"|"none">>~,
-      <<span class="odocwiki_inlinecode"|"detach">> and <<span class="odocwiki_inlinecode"|"switch">>~.
+    ~This can be initialized using the environment variable
+    <<span class="odocwiki_inlinecode"|"~L~W~T~_~A~S~Y~N~C~_~M~E~T~H~O~D">> with possible values <<span class="odocwiki_inlinecode"|"none">>~,
+    <<span class="odocwiki_inlinecode"|"detach">> and <<span class="odocwiki_inlinecode"|"switch">>~.
 >>
-<<pre id="VALset_default_async_method" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|set~_default~_async~_method>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="async_method" | type Lwt_unix.async_method >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|~Sets the default async method~.
+<<pre id="VALset_default_async_method" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|set~_default~_async~_method>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="async_method" | type Lwt_unix.async_method >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_warning"|Deprecated.>>~Will be a no~-op in ~Lwt ~5~.~0~.~0~.
+~Sets the default async method~.
 >>
-<<pre id="VALasync_method" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|async~_method>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="async_method" | type Lwt_unix.async_method >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|async~_method ~(~)>> returns the async method used in the current
-      thread~.
+<<pre id="VALasync_method" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|async~_method>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="async_method" | type Lwt_unix.async_method >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_warning"|Deprecated.>>~Will always return <<span class="odocwiki_inlinecode"|~Async~_detach>> in ~Lwt ~5~.~0~.~0~.
+<<span class="odocwiki_inlinecode"|async~_method ~(~)>> returns the async method used in the current
+    thread~.
 >>
-<<pre id="VALasync_method_key" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|async~_method~_key>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="async_method" | type Lwt_unix.async_method >> <<a_api text="Lwt.key" | type Lwt.key >>>>>><<div class="odocwiki_info"|~The key for storing the local async method~.
+<<pre id="VALasync_method_key" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|async~_method~_key>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="async_method" | type Lwt_unix.async_method >> <<a_api text="Lwt.key" | type Lwt.key >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_warning"|Deprecated.>>~Will be ignored in ~Lwt ~5~.~0~.~0~.
+~The key for storing the local async method~.
 >>
-<<pre id="VALwith_async_none" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|with~_async~_none>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|with~_async~_none f>> is a shorthand for~:
+<<pre id="VALwith_async_none" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|with~_async~_none>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|<<span class="odocwiki_warning"|Deprecated.>>~Will have no effect in ~Lwt ~5~.~0~.~0~.
+<<span class="odocwiki_inlinecode"|with~_async~_none f>> is a shorthand for~:
 
 
-      
-<<code language='ocaml'|        Lwt.with_value async_method_key (Some Async_none) f
-      >>
-
->>
-<<pre id="VALwith_async_detach" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|with~_async~_detach>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|with~_async~_detach f>> is a shorthand for~:
-
-
-      
-<<code language='ocaml'|        Lwt.with_value async_method_key (Some Async_detach) f
-      >>
+    
+<<code language='ocaml'|      Lwt.with_value async_method_key (Some Async_none) f
+    >>
 
 >>
-<<pre id="VALwith_async_switch" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|with~_async~_switch>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|with~_async~_switch f>> is a shorthand for~:
+<<pre id="VALwith_async_detach" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|with~_async~_detach>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|<<span class="odocwiki_warning"|Deprecated.>>~Will have no effect in ~Lwt ~5~.~0~.~0~.
+<<span class="odocwiki_inlinecode"|with~_async~_detach f>> is a shorthand for~:
 
 
-      
-<<code language='ocaml'|        Lwt.with_value async_method_key (Some Async_switch) f
-      >>
+    
+<<code language='ocaml'|      Lwt.with_value async_method_key (Some Async_detach) f
+    >>
+
+>>
+<<pre id="VALwith_async_switch" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|with~_async~_switch>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|<<span class="odocwiki_warning"|Deprecated.>>~Will have no effect in ~Lwt ~5~.~0~.~0~.
+<<span class="odocwiki_inlinecode"|with~_async~_switch f>> is a shorthand for~:
+
+
+    
+<<code language='ocaml'|      Lwt.with_value async_method_key (Some Async_switch) f
+    >>
 
 >>
 

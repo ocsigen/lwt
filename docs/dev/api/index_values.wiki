@@ -110,12 +110,12 @@
 |@@class="odocwiki_index"@ @@<<a_api text="async_exception_hook"| value Lwt.async_exception_hook >> ~[<<a_api | module Lwt >>~]|<<div class="odocwiki_info"|~Reference to a function~, to be called on an "unhandled" exception~.
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="async_method"| value Lwt_unix.async_method >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|async~_method ~(~)>> returns the async method used in the current
-      thread~.
->>
+|@@class="odocwiki_index"@ @@<<a_api text="async_method"| value Lwt_unix.async_method >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_deprecated"|<<span class="odocwiki_inlinecode"|async~_method ~(~)>> returns the async method used in the current
+    thread~.
+>>>>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="async_method_key"| value Lwt_unix.async_method_key >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~The key for storing the local async method~.
->>
+|@@class="odocwiki_index"@ @@<<a_api text="async_method_key"| value Lwt_unix.async_method_key >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_deprecated"|~The key for storing the local async method~.
+>>>>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="at_exit"| value Lwt_main.at_exit >> ~[<<a_api | module Lwt_main >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~_main~.at~_exit hook>> is the same as
     <<span class="odocwiki_inlinecode"|ignore ~(~Lwt~_main~.~Exit~_hooks~.add~_first hook~)>>~.
@@ -345,8 +345,8 @@
 |
 |@@ @style="tet-align: left;"@@\\D|
 |@@class="odocwiki_index"@ @@<<a_api text="default"| value Lwt_engine.Ev_backend.default >> ~[<<a_api | module Lwt_engine.Ev_backend >>~]||
-|@@class="odocwiki_index"@ @@<<a_api text="default_async_method"| value Lwt_unix.default_async_method >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~Returns the default async method~.
->>
+|@@class="odocwiki_index"@ @@<<a_api text="default_async_method"| value Lwt_unix.default_async_method >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_deprecated"|~Returns the default async method~.
+>>>>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="default_buffer_size"| value Lwt_io.default_buffer_size >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~Return the default size for buffers~.
 >>
@@ -1374,12 +1374,17 @@
 |@@class="odocwiki_index"@ @@<<a_api text="recv"| value Lwt_unix.recv >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~Wrapper for <<span class="odocwiki_inlinecode"|~Unix~.recv>>~.
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="recv_msg"| value Lwt_bytes.recv_msg >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|~Not implemented on ~Windows~.
->>
+|@@class="odocwiki_index"@ @@<<a_api text="recv_msg"| value Lwt_bytes.recv_msg >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_deprecated"|~Not implemented on ~Windows~.
+>>>>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="recv_msg"| value Lwt_unix.recv_msg >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|recv~_msg ~~socket ~~io~_vectors>> receives data into a list of
+|@@class="odocwiki_index"@ @@<<a_api text="recv_msg"| value Lwt_unix.recv_msg >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_deprecated"|<<span class="odocwiki_inlinecode"|recv~_msg ~~socket ~~io~_vectors>> receives data into a list of
     io~-vectors~, plus any file~-descriptors that may accompany the
     messages~.
+>>>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="recv_msg_2"| value Lwt_unix.Versioned.recv_msg_2 >> ~[<<a_api | module Lwt_unix.Versioned >>~]|<<div class="odocwiki_info"|~Upcoming version of <<a_api | val Lwt_unix.recv_msg >> that uses the new module
+      <<a_api | module Lwt_unix.IO_vectors >> rather than an argument of type
+      <<a_api | val Lwt_unix.io_vector >>~.
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="recvfrom"| value Lwt_bytes.recvfrom >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|~Not implemented on ~Windows~.
@@ -1488,11 +1493,16 @@
 |@@class="odocwiki_index"@ @@<<a_api text="send"| value Lwt_unix.send >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~Wrapper for <<span class="odocwiki_inlinecode"|~Unix~.send>>~.
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="send_msg"| value Lwt_bytes.send_msg >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|~Not implemented on ~Windows~.
->>
+|@@class="odocwiki_index"@ @@<<a_api text="send_msg"| value Lwt_bytes.send_msg >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_deprecated"|~Not implemented on ~Windows~.
+>>>>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="send_msg"| value Lwt_unix.send_msg >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|send~_msg ~~socket ~~io~_vectors ~~fds>> sends data from a list of
+|@@class="odocwiki_index"@ @@<<a_api text="send_msg"| value Lwt_unix.send_msg >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_deprecated"|<<span class="odocwiki_inlinecode"|send~_msg ~~socket ~~io~_vectors ~~fds>> sends data from a list of
     io~-vectors~, accompanied with a list of file~-descriptors~.
+>>>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="send_msg_2"| value Lwt_unix.Versioned.send_msg_2 >> ~[<<a_api | module Lwt_unix.Versioned >>~]|<<div class="odocwiki_info"|~Upcoming version of <<a_api | val Lwt_unix.send_msg >> that uses the new module
+      <<a_api | module Lwt_unix.IO_vectors >> rather than an argument of type
+      <<a_api | val Lwt_unix.io_vector >>~.
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="send_notification"| value Lwt_unix.send_notification >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|send~_notification id>> sends a notification~.
@@ -1530,8 +1540,8 @@
 |@@class="odocwiki_index"@ @@<<a_api text="set_close_on_exec"| value Lwt_unix.set_close_on_exec >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~Wrapper for <<span class="odocwiki_inlinecode"|~Unix~.set~_close~_on~_exec>>
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="set_default_async_method"| value Lwt_unix.set_default_async_method >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~Sets the default async method~.
->>
+|@@class="odocwiki_index"@ @@<<a_api text="set_default_async_method"| value Lwt_unix.set_default_async_method >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_deprecated"|~Sets the default async method~.
+>>>>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="set_default_buffer_size"| value Lwt_io.set_default_buffer_size >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~Change the default buffer size~.
 >>
@@ -1691,8 +1701,8 @@
 |@@class="odocwiki_index"@ @@<<a_api text="take_r"| value Lwt_sequence.take_r >> ~[<<a_api | module Lwt_sequence >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|take~_l x s>> remove and returns the rightmost element of <<span class="odocwiki_inlinecode"|s>>
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="task"| value Lwt.task >> ~[<<a_api | module Lwt >>~]|<<div class="odocwiki_info"|~Creates a new pending [[ #TYPEt| promise]]~, paired with its [[ #TYPEu|
-    resolver]]~.
+|@@class="odocwiki_index"@ @@<<a_api text="task"| value Lwt.task >> ~[<<a_api | module Lwt >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~.task>> is the same as <<a_api | val Lwt.wait >>~, except the resulting promise <<span class="odocwiki_inlinecode"|p>> is
+    [[ #VALcancel| cancelable]]~.
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="tcdrain"| value Lwt_unix.tcdrain >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~Wrapper for <<span class="odocwiki_inlinecode"|~Unix~.tcdrain>>
@@ -1818,8 +1828,8 @@
         awaiting notification for a condition variable~, <<span class="odocwiki_inlinecode"|condvar>>~.
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="wait"| value Lwt.wait >> ~[<<a_api | module Lwt >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~.wait>> is the same as <<a_api | val Lwt.task >>~, except the resulting promise <<span class="odocwiki_inlinecode"|p>> is
-    //not// [[ #VALcancel| cancelable]]~.
+|@@class="odocwiki_index"@ @@<<a_api text="wait"| value Lwt.wait >> ~[<<a_api | module Lwt >>~]|<<div class="odocwiki_info"|~Creates a new pending [[ #TYPEt| promise]]~, paired with its [[ #TYPEu|
+    resolver]]~.
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="wait4"| value Lwt_unix.wait4 >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|wait~4 flags pid>> returns <<span class="odocwiki_inlinecode"|~(pid~, status~, rusage~)>> where <<span class="odocwiki_inlinecode"|~(pid~, status~)>>
@@ -1887,14 +1897,14 @@
 |
 |@@class="odocwiki_index"@ @@<<a_api text="windows"| value Lwt_sys.windows >> ~[<<a_api | module Lwt_sys >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_deprecated"|>>>>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="with_async_detach"| value Lwt_unix.with_async_detach >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|with~_async~_detach f>> is a shorthand for~:
->>
+|@@class="odocwiki_index"@ @@<<a_api text="with_async_detach"| value Lwt_unix.with_async_detach >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_deprecated"|<<span class="odocwiki_inlinecode"|with~_async~_detach f>> is a shorthand for~:
+>>>>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="with_async_none"| value Lwt_unix.with_async_none >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|with~_async~_none f>> is a shorthand for~:
->>
+|@@class="odocwiki_index"@ @@<<a_api text="with_async_none"| value Lwt_unix.with_async_none >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_deprecated"|<<span class="odocwiki_inlinecode"|with~_async~_none f>> is a shorthand for~:
+>>>>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="with_async_switch"| value Lwt_unix.with_async_switch >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|with~_async~_switch f>> is a shorthand for~:
->>
+|@@class="odocwiki_index"@ @@<<a_api text="with_async_switch"| value Lwt_unix.with_async_switch >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_deprecated"|<<span class="odocwiki_inlinecode"|with~_async~_switch f>> is a shorthand for~:
+>>>>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="with_connection"| value Lwt_io.with_connection >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|with~_connection ~?fd ~?in~_buffer ~?out~_buffer addr f>> opens a
       connection to the given address and passes the channels to

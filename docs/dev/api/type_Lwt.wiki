@@ -1,7 +1,7 @@
 <<code language="ocaml" | sig
   type +'a t
   type -'a u
-  val task : unit -> 'a Lwt.t * 'a Lwt.u
+  val wait : unit -> 'a Lwt.t * 'a Lwt.u
   val wakeup_later : 'a Lwt.u -> 'a -> unit
   val wakeup_later_exn : 'a Lwt.u -> exn -> unit
   val return : 'a -> 'a Lwt.t
@@ -21,11 +21,11 @@
   val nchoose : 'a Lwt.t list -> 'a list Lwt.t
   val nchoose_split : 'a Lwt.t list -> ('a list * 'a Lwt.t list) Lwt.t
   exception Canceled
+  val task : unit -> 'a Lwt.t * 'a Lwt.u
   val cancel : 'a Lwt.t -> unit
   val on_cancel : 'a Lwt.t -> (unit -> unit) -> unit
   val protected : 'a Lwt.t -> 'a Lwt.t
   val no_cancel : 'a Lwt.t -> 'a Lwt.t
-  val wait : unit -> 'a Lwt.t * 'a Lwt.u
   val map : ('a -> 'b) -> 'a Lwt.t -> 'b Lwt.t
   val on_success : 'a Lwt.t -> ('a -> unit) -> unit
   val on_failure : 'a Lwt.t -> (exn -> unit) -> unit

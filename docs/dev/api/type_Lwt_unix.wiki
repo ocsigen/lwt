@@ -488,6 +488,14 @@
     sig
       val bind_1 : Lwt_unix.file_descr -> Lwt_unix.sockaddr -> unit
       val bind_2 : Lwt_unix.file_descr -> Lwt_unix.sockaddr -> unit Lwt.t
+      val recv_msg_2 :
+        socket:Lwt_unix.file_descr ->
+        io_vectors:Lwt_unix.IO_vectors.t ->
+        (int * Unix.file_descr list) Lwt.t
+      val send_msg_2 :
+        socket:Lwt_unix.file_descr ->
+        io_vectors:Lwt_unix.IO_vectors.t ->
+        fds:Unix.file_descr list -> int Lwt.t
     end
   val run : 'a Lwt.t -> 'a
   val has_wait4 : bool
