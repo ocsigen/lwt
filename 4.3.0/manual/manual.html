@@ -1,0 +1,586 @@
+<html><head><title> Lwt manual </title><meta charset="utf8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><link rel="stylesheet" href="https://ocsigen.org/css/style.css"/><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/themes/prism.min.css"/><script type="text/javascript" src="https://ocsigen.org/js/client.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-core.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-ocaml.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-clike.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-reason.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-javascript.min.js">
+//<![CDATA[
+
+//]]>
+</script></head><body class="manual lwt"><div class="project-page"><div class="page-header"><p class="logo-ocsigen"><a href=".././../../" class="ocsimore_phrasing_link"><img src=".././../../img/ocsigen-white.svg" alt="Ocsigen"/></a>
+</p><p class="logo-subproject">Lwt</p><div class="mainmenu"><p class="mainmenu-home"><a href=".././../../" class="ocsimore_phrasing_link">Home</a></p><p class="mainmenu-doc"><a href=".././../../tuto/" class="ocsimore_phrasing_link">Doc</a></p><p><a href=".././../../eliom/" class="ocsimore_phrasing_link">Eliom</a></p><p><a href=".././../../js_of_ocaml/" class="ocsimore_phrasing_link">Js_of_ocaml</a></p><p class="mainmenu-current"><a href=".././../../lwt/" class="ocsimore_phrasing_link">Lwt</a></p><p><a href=".././../../tyxml/" class="ocsimore_phrasing_link">Tyxml</a></p><p><a href=".././../../ocsigen-start/" class="ocsimore_phrasing_link">Start</a></p></div><form id="googlesearch" action="https://google.com/search"><input name="q" id="gsearch-box" placeholder="Search using Google"/><label for="gsearch-box"><img src="/img/search.svg" alt="" id="gsearch-icon"/></label><input type="submit" id="gsearch-submit" onclick="document.getElementById('gsearch-box').value += ' site:ocsigen.org';"/></form><aside class="how-drawer"><input id="how-drawer-toggle" type="checkbox"/><label for="how-drawer-toggle" id="how-drawer-label"><span class="how-drawer-icon"></span></label><nav class="how-drawer-content"><ul class="drawermainmenu"><li class="drawermainmenu-home"><a href=".././../../" class="ocsimore_phrasing_link">Home</a>
+</li><li class="drawermainmenu-doc"><a href=".././../../tuto/" class="ocsimore_phrasing_link">Doc</a>
+</li><li class="drawermainmenu-project"><a href=".././../../eliom/" class="ocsimore_phrasing_link">Eliom</a>
+</li><li class="drawermainmenu-project"><a href=".././../../js_of_ocaml/" class="ocsimore_phrasing_link">Js_of_ocaml</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsigenserver/" class="ocsimore_phrasing_link">Server</a>
+</li><li class="drawermainmenu-project"><a href=".././../../lwt/" class="ocsimore_phrasing_link">Lwt</a>
+</li><li class="drawermainmenu-project"><a href=".././../../tyxml/" class="ocsimore_phrasing_link">Tyxml</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsigen-toolkit/" class="ocsimore_phrasing_link">Toolkit</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsigen-start/" class="ocsimore_phrasing_link">Start</a>
+</li><li class="drawermainmenu-project"><a href=".././../../html_of_wiki/" class="ocsimore_phrasing_link">html_of_wiki</a>
+</li><li class="drawermainmenu-project"><a href=".././../../deriving/" class="ocsimore_phrasing_link">deriving</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsimore/" class="ocsimore_phrasing_link">Ocsimore (<em>deprecated</em>)</a>
+</li><li class="drawermainmenu-page"><a href=".././../../projects" class="ocsimore_phrasing_link">Other projects</a>
+</li><li class="drawermainmenu-page"><a href=".././../../papers" class="ocsimore_phrasing_link">Research papers</a>
+</li><li class="drawermainmenu-page"><a href=".././../../credits" class="ocsimore_phrasing_link">Who does Ocsigen?</a>
+</li><li class="drawermainmenu-page"><a href=".././../../contributing" class="ocsimore_phrasing_link">Contributing</a>
+</li><li class="drawermainmenu-page"><a href=".././../../blog" class="ocsimore_phrasing_link">Blog</a>
+</li><li class="drawermainmenu-page"><a href=".././../../install" class="ocsimore_phrasing_link">Installation</a>
+</li><li class="drawermainmenu-page"><a href="https://github.com/ocsigen" class="ocsimore_phrasing_link">Source code</a>
+</li></ul><nav class="how-doctree"><h1> Lwt</h1><h2><a href="manual" class="ocsimore_phrasing_link">Overview</a></h2><h1>Lwt - API Reference</h1><h2>Core library</h2><h3><a href=".././api/Lwt" class="ocsimore_phrasing_link">Lwt</a></h3><h3><a href=".././api/Lwt_result" class="ocsimore_phrasing_link">Lwt_result</a></h3><h3><a href=".././api/Lwt_condition" class="ocsimore_phrasing_link">Lwt_condition</a></h3><h3><a href=".././api/Lwt_list" class="ocsimore_phrasing_link">Lwt_list</a></h3><h3><a href=".././api/Lwt_mutex" class="ocsimore_phrasing_link">Lwt_mutex</a></h3><h3><a href=".././api/Lwt_mvar" class="ocsimore_phrasing_link">Lwt_mvar</a></h3><h3><a href=".././api/Lwt_pool" class="ocsimore_phrasing_link">Lwt_pool</a></h3><h3><a href=".././api/Lwt_stream" class="ocsimore_phrasing_link">Lwt_stream</a></h3><h3><a href=".././api/Lwt_switch" class="ocsimore_phrasing_link">Lwt_switch</a></h3><h3><a href=".././api/Lwt_sequence" class="ocsimore_phrasing_link">Lwt_sequence</a></h3><h3><a href=".././api/Lwt_pqueue" class="ocsimore_phrasing_link">Lwt_pqueue</a></h3><h2>Unix bindings</h2><h3><a href=".././api/Lwt_gc" class="ocsimore_phrasing_link">Lwt_gc</a></h3><h3><a href=".././api/Lwt_io" class="ocsimore_phrasing_link">Lwt_io</a></h3><h3><a href=".././api/Lwt_main" class="ocsimore_phrasing_link">Lwt_main</a></h3><h3><a href=".././api/Lwt_engine" class="ocsimore_phrasing_link">Lwt_engine</a></h3><h3><a href=".././api/Lwt_process" class="ocsimore_phrasing_link">Lwt_process</a></h3><h3><a href=".././api/Lwt_throttle" class="ocsimore_phrasing_link">Lwt_throttle</a></h3><h3><a href=".././api/Lwt_timeout" class="ocsimore_phrasing_link">Lwt_timeout</a></h3><h3><a href=".././api/Lwt_unix" class="ocsimore_phrasing_link">Lwt_unix</a></h3><h3><a href=".././api/Lwt_bytes" class="ocsimore_phrasing_link">Lwt_bytes</a></h3><h3><a href=".././api/Lwt_fmt" class="ocsimore_phrasing_link">Lwt_fmt</a></h3><h3><a href=".././api/Lwt_sys" class="ocsimore_phrasing_link">Lwt_sys</a></h3><h2>Reactive programming helpers</h2><h3><a href=".././api/Lwt_react" class="ocsimore_phrasing_link">Lwt_react</a></h3><h2>PPX syntax extension</h2><h3><a href=".././api/Ppx_lwt" class="ocsimore_phrasing_link">Ppx_lwt</a></h3><h2>Miscellaneous</h2><h3><a href=".././api/Lwt_preemptive" class="ocsimore_phrasing_link">Lwt_preemptive</a></h3><h2>Index</h2><h3> <span><a href=".././api/index_types">Index of types</a></span></h3><h3> <span><a href=".././api/index_exceptions">Index of exceptions</a></span></h3><h3> <span><a href=".././api/index_values">Index of values</a></span></h3><h3> <span><a href=".././api/index_attributes">Index of class attributes</a></span></h3><h3> <span><a href=".././api/index_methods">Index of class methods</a></span></h3><h3> <span><a href=".././api/index_classes">Index of classes</a></span></h3><h3> <span><a href=".././api/index_class_types">Index of class types</a></span></h3><h3> <span><a href=".././api/index_modules">Index of modules</a></span></h3><h3> <span><a href=".././api/index_module_types">Index of module types</a></span></h3></nav></nav></aside></div><p class="reasonwarning">Warning: Reason support is experimental.
+We are looking for beta-tester and contributors.
+</p><button id="reason">Switch to </button><div class="twocols"><nav class="leftcol">Version <select class="how-versions" onchange="location = this.value;"><option value=".././../1.0.0/manual/manual">1.0.0</option><option value=".././../1.1.0/manual/manual">1.1.0</option><option value=".././../2.0.0/manual/manual">2.0.0</option><option value=".././../2.1.0/manual/manual">2.1.0</option><option value=".././../2.1.1/manual/manual">2.1.1</option><option value=".././../2.2.0/manual/manual">2.2.0</option><option value=".././../2.2.1/manual/manual">2.2.1</option><option value=".././../2.3.0/manual/manual">2.3.0</option><option value=".././../2.3.1/manual/manual">2.3.1</option><option value=".././../2.3.2/manual/manual">2.3.2</option><option value=".././../2.4.0/manual/manual">2.4.0</option><option value=".././../2.4.1/manual/manual">2.4.1</option><option value=".././../2.4.2/manual/manual">2.4.2</option><option value=".././../2.4.3/manual/manual">2.4.3</option><option value=".././../2.4.7/manual/manual">2.4.7</option><option value=".././../2.4.8/manual/manual">2.4.8</option><option value=".././../2.5.0/manual/manual">2.5.0</option><option value=".././../2.5.1/manual/manual">2.5.1</option><option value=".././../2.5.2/manual/manual">2.5.2</option><option value=".././../2.6.0/manual/manual">2.6.0</option><option value=".././../2.7.0/manual/manual">2.7.0</option><option value=".././../2.7.1/manual/manual">2.7.1</option><option value=".././../3.0.0/manual/manual">3.0.0</option><option value=".././../3.1.0/manual/manual">3.1.0</option><option value=".././../3.2.1/manual/manual">3.2.1</option><option value=".././../3.3.0/manual/manual">3.3.0</option><option value=".././../4.0.0/manual/manual">4.0.0</option><option value=".././../4.0.1/manual/manual">4.0.1</option><option value=".././../4.1.0/manual/manual">4.1.0</option><option value=".././../4.2.0/manual/manual">4.2.0</option><option value=".././../4.2.1/manual/manual">4.2.1</option><option value=".././../4.3.0/manual/manual" selected="selected">4.3.0</option><option value=".././../dev/manual/manual">dev</option></select><nav class="how-doctree"><h1> Lwt</h1><h2><a href="manual" class="ocsimore_phrasing_link">Overview</a></h2><h1>Lwt - API Reference</h1><h2>Core library</h2><h3><a href=".././api/Lwt" class="ocsimore_phrasing_link">Lwt</a></h3><h3><a href=".././api/Lwt_result" class="ocsimore_phrasing_link">Lwt_result</a></h3><h3><a href=".././api/Lwt_condition" class="ocsimore_phrasing_link">Lwt_condition</a></h3><h3><a href=".././api/Lwt_list" class="ocsimore_phrasing_link">Lwt_list</a></h3><h3><a href=".././api/Lwt_mutex" class="ocsimore_phrasing_link">Lwt_mutex</a></h3><h3><a href=".././api/Lwt_mvar" class="ocsimore_phrasing_link">Lwt_mvar</a></h3><h3><a href=".././api/Lwt_pool" class="ocsimore_phrasing_link">Lwt_pool</a></h3><h3><a href=".././api/Lwt_stream" class="ocsimore_phrasing_link">Lwt_stream</a></h3><h3><a href=".././api/Lwt_switch" class="ocsimore_phrasing_link">Lwt_switch</a></h3><h3><a href=".././api/Lwt_sequence" class="ocsimore_phrasing_link">Lwt_sequence</a></h3><h3><a href=".././api/Lwt_pqueue" class="ocsimore_phrasing_link">Lwt_pqueue</a></h3><h2>Unix bindings</h2><h3><a href=".././api/Lwt_gc" class="ocsimore_phrasing_link">Lwt_gc</a></h3><h3><a href=".././api/Lwt_io" class="ocsimore_phrasing_link">Lwt_io</a></h3><h3><a href=".././api/Lwt_main" class="ocsimore_phrasing_link">Lwt_main</a></h3><h3><a href=".././api/Lwt_engine" class="ocsimore_phrasing_link">Lwt_engine</a></h3><h3><a href=".././api/Lwt_process" class="ocsimore_phrasing_link">Lwt_process</a></h3><h3><a href=".././api/Lwt_throttle" class="ocsimore_phrasing_link">Lwt_throttle</a></h3><h3><a href=".././api/Lwt_timeout" class="ocsimore_phrasing_link">Lwt_timeout</a></h3><h3><a href=".././api/Lwt_unix" class="ocsimore_phrasing_link">Lwt_unix</a></h3><h3><a href=".././api/Lwt_bytes" class="ocsimore_phrasing_link">Lwt_bytes</a></h3><h3><a href=".././api/Lwt_fmt" class="ocsimore_phrasing_link">Lwt_fmt</a></h3><h3><a href=".././api/Lwt_sys" class="ocsimore_phrasing_link">Lwt_sys</a></h3><h2>Reactive programming helpers</h2><h3><a href=".././api/Lwt_react" class="ocsimore_phrasing_link">Lwt_react</a></h3><h2>PPX syntax extension</h2><h3><a href=".././api/Ppx_lwt" class="ocsimore_phrasing_link">Ppx_lwt</a></h3><h2>Miscellaneous</h2><h3><a href=".././api/Lwt_preemptive" class="ocsimore_phrasing_link">Lwt_preemptive</a></h3><h2>Index</h2><h3> <span><a href=".././api/index_types">Index of types</a></span></h3><h3> <span><a href=".././api/index_exceptions">Index of exceptions</a></span></h3><h3> <span><a href=".././api/index_values">Index of values</a></span></h3><h3> <span><a href=".././api/index_attributes">Index of class attributes</a></span></h3><h3> <span><a href=".././api/index_methods">Index of class methods</a></span></h3><h3> <span><a href=".././api/index_classes">Index of classes</a></span></h3><h3> <span><a href=".././api/index_class_types">Index of class types</a></span></h3><h3> <span><a href=".././api/index_modules">Index of modules</a></span></h3><h3> <span><a href=".././api/index_module_types">Index of module types</a></span></h3></nav></nav><article class="rightcol"><h1> Lwt manual </h1><h2> Introduction </h2><p>When writing a program, a common developer's task is to handle I/O
+operations. Indeed, most software interacts with several different
+resources, such as:
+</p><ul><li> the kernel, by doing system calls,
+</li><li> the user, by reading the keyboard, the mouse, or any input device,
+</li><li> a graphical server, to build graphical user interface,
+</li><li> other computers, by using the network,
+</li><li> ...and so on.
+</li></ul><p>When this list contains only one item, it is pretty easy to
+handle. However as this list grows it becomes harder and harder to
+make everything work together. Several choices have been proposed
+to solve this problem:
+</p><ul><li> using a main loop, and integrating all components we are
+interacting with into this main loop.
+</li><li> using preemptive system threads
+</li></ul><p>Both solutions have their advantages and their drawbacks. For the
+first one, it may work, but it becomes very complicated to write
+a piece of asynchronous sequential code. The typical example is
+graphical user interfaces freezing and not redrawing themselves
+because they are waiting for some blocking part of the code to
+complete.
+</p><p>If you already wrote code using preemptive threads, you should know
+that doing it right with threads is a difficult job. Moreover, system
+threads consume non-negligible resources, and so you can only launch
+a limited number of threads at the same time. Thus, this is not a
+general solution.
+</p><p><span class="teletype">Lwt</span> offers a third alternative. It provides promises, which are
+very fast: a promise is just a reference that will be filled asynchronously,
+and calling a function that returns a promise does not require a new stack,
+new process, or anything else. It is just a normal, fast, function call.
+Promises compose nicely, allowing us to write highly asynchronous programs.
+</p><p>In the first part, we will explain the concepts of <span class="teletype">Lwt</span>, then we will
+describe the main modules <span class="teletype">Lwt</span> consists of.
+</p><h2> The Lwt core library </h2><p>In this section we describe the basics of <span class="teletype">Lwt</span>. It is advised to
+start <span class="teletype">utop</span> and try the given code examples.
+</p><h3> Lwt concepts </h3><p>Let's take a classic function of the <span class="teletype">Pervasives</span> module:
+</p><pre class=""><code class="language-ocaml translatable"># Pervasives.input_char;;
+- : in_channel -&gt; char = &lt;fun&gt;</code></pre><p>This function will wait for a character to come on the given input
+channel, and then return it. The problem with this function is that it is
+blocking: while it is being executed, the whole program will be
+blocked, and other events will not be handled until it returns.
+</p><p>Now, let's look at the lwt equivalent:
+</p><pre class=""><code class="language-ocaml translatable"># Lwt_io.read_char;;
+- : Lwt_io.input_channel -&gt; char Lwt.t = &lt;fun&gt;</code></pre><p>As you can see, it does not return just a character, but something of
+type <span class="teletype">char Lwt.t</span>. The type <span class="teletype">'a Lwt.t</span> is the type
+of promises that can be fulfilled later with a value of type <span class="teletype">'a</span>.
+<span class="teletype">Lwt_io.read_char</span> will try to read a character from the
+given input channel and <em>immediately</em> return a promise, without
+blocking, whether a character is available or not. If a character is
+not available, the promise will just not be fulfilled <em>yet</em>.
+</p><p>Now, let's see what we can do with a <span class="teletype">Lwt</span> promise. The following
+code creates a pipe, creates a promise that is fulfilled with the result of
+reading the input side:
+</p><pre class=""><code class="language-ocaml translatable"># let ic, oc = Lwt_io.pipe ();;
+val ic : Lwt_io.input_channel = &lt;abstr&gt;
+val oc : Lwt_io.output_channel = &lt;abstr&gt;
+# let p = Lwt_io.read_char ic;;
+val p : char Lwt.t = &lt;abstr&gt;</code></pre><p>We can now look at the state of our newly created promise:
+</p><pre class=""><code class="language-ocaml translatable"># Lwt.state p;;
+- : char Lwt.state = Lwt.Sleep</code></pre><p>A promise may be in one of the following states:
+</p><ul><li> <span class="teletype">Return x</span>, which means that the promise has been fulfilled
+with the value <span class="teletype">x</span>. This usually implies that the asynchronous
+operation, that you started by calling the function that returned the
+promise, has completed successfully.
+</li><li> <span class="teletype">Fail exn</span>, which means that the promise has been rejected
+with the exception <span class="teletype">exn</span>. This usually means that the asynchronous
+operation associated with the promise has failed.
+</li><li> <span class="teletype">Sleep</span>, which means that the promise is has not yet been
+fulfilled or rejected, so it is <em>pending</em>.
+</li></ul><p>The above promise <span class="teletype">p</span> is pending because there is nothing yet
+to read from the pipe. Let's write something:
+</p><pre class=""><code class="language-ocaml translatable"># Lwt_io.write_char oc 'a';;
+- : unit Lwt.t = &lt;abstr&gt;
+# Lwt.state p;;
+- : char Lwt.state = Lwt.Return 'a'</code></pre><p>So, after we write something, the reading promise has been fulfilled
+with the value <span class="teletype">'a'</span>.
+</p><h3> Primitives for promise creation </h3><p>There are several primitives for creating <span class="teletype">Lwt</span> promises. These
+functions are located in the module <span class="teletype">Lwt</span>.
+</p><p>Here are the main primitives:
+</p><ul><li> <span class="teletype">Lwt.return : 'a -&gt; 'a Lwt.t</span>
+<br/>
+creates a promise which is already fulfilled with the given value
+</li><li> <span class="teletype">Lwt.fail : exn -&gt; 'a Lwt.t</span>
+<br/>
+creates a promise which is already rejected with the given exception
+</li><li> <span class="teletype">Lwt.wait : unit -&gt; 'a Lwt.t * 'a Lwt.u</span>
+<br/>
+creates a pending promise, and returns it, paired with a resolver (of
+type <span class="teletype">'a Lwt.u</span>), which must be used to resolve (fulfill or reject)
+the promise.
+</li></ul><p>To resolve a pending promise, use one of the following
+functions:
+</p><ul><li> <span class="teletype">Lwt.wakeup : 'a Lwt.u -&gt; 'a -&gt; unit</span>
+<br/>
+fulfills the promise with a value.
+</li><li> <span class="teletype">Lwt.wakeup_exn : 'a Lwt.u -&gt; exn -&gt; unit</span>
+<br/>
+rejects the promise with an exception.
+</li></ul><p>Note that it is an error to try to resolve the same promise twice. <span class="teletype">Lwt</span>
+will raise <span class="teletype">Invalid_argument</span> if you try to do so.
+</p><p>With this information, try to guess the result of each of the
+following expressions:
+</p><pre class=""><code class="language-ocaml translatable"># Lwt.state (Lwt.return 42);;
+# Lwt.state (Lwt.fail Exit);;
+# let p, r = Lwt.wait ();;
+# Lwt.state p;;
+# Lwt.wakeup r 42;;
+# Lwt.state p;;
+# let p, r = Lwt.wait ();;
+# Lwt.state p;;
+# Lwt.wakeup_exn r Exit;;
+# Lwt.state p;;</code></pre><h4> Primitives for promise composition </h4><p>The most important operation you need to know is <span class="teletype">bind</span>:
+</p><pre class=""><code class="language-ocaml translatable">val bind : 'a Lwt.t -&gt; ('a -&gt; 'b Lwt.t) -&gt; 'b Lwt.t</code></pre><p><span class="teletype">bind p f</span> creates a promise which waits for <span class="teletype">p</span> to become
+become fulfilled, then passes the resulting value to <span class="teletype">f</span>. If <span class="teletype">p</span> is a
+pending promise, then <span class="teletype">bind p f</span> will be a pending promise too,
+until <span class="teletype">p</span> is resolved. If <span class="teletype">p</span> is rejected, then the resulting
+promise will be rejected with the same exception. For example, consider the
+following expression:
+</p><pre class=""><code class="language-ocaml translatable">Lwt.bind
+  (Lwt_io.read_line Lwt_io.stdin)
+  (fun str -&gt; Lwt_io.printlf &quot;You typed %S&quot; str)</code></pre><p>This code will first wait for the user to enter a line of text, then
+print a message on the standard output.
+</p><p>Similarly to <span class="teletype">bind</span>, there is a function to handle the case
+when <span class="teletype">p</span> is rejected:
+</p><pre class=""><code class="language-ocaml translatable">val catch : (unit -&gt; 'a Lwt.t) -&gt; (exn -&gt; 'a Lwt.t) -&gt; 'a Lwt.t</code></pre><p><span class="teletype">catch f g</span> will call <span class="teletype">f ()</span>, then wait for it to become
+resolved, and if it was rejected with an exception <span class="teletype">exn</span>, call
+<span class="teletype">g exn</span> to handle it. Note that both exceptions raised with
+<span class="teletype">Pervasives.raise</span> and <span class="teletype">Lwt.fail</span> are caught by
+<span class="teletype">catch</span>.
+</p><h4> Cancelable promises </h4><p>In some case, we may want to cancel a promise. For example, because it
+has not resolved after a timeout. This can be done with cancelable
+promises. To create a cancelable promise, you must use the
+<span class="teletype">Lwt.task</span> function:
+</p><pre class=""><code class="language-ocaml translatable">val task : unit -&gt; 'a Lwt.t * 'a Lwt.u</code></pre><p>It has the same semantics as <span class="teletype">Lwt.wait</span>, except that the
+pending promise can be canceled with <span class="teletype">Lwt.cancel</span>:
+</p><pre class=""><code class="language-ocaml translatable">val cancel : 'a Lwt.t -&gt; unit</code></pre><p>The promise will then be rejected with the exception
+<span class="teletype">Lwt.Canceled</span>. To execute a function when the promise is
+canceled, you must use <span class="teletype">Lwt.on_cancel</span>:
+</p><pre class=""><code class="language-ocaml translatable">val on_cancel : 'a Lwt.t -&gt; (unit -&gt; unit) -&gt; unit</code></pre><p>Note that canceling a promise does not automatically cancel the
+asynchronous operation that is going to resolve it. It does, however,
+prevent any further chained operations from running. The asynchronous
+operation associated with a promise can only be canceled if its implementation
+has taken care to set an <span class="teletype">on_cancel</span> callback on the promise that
+it returned to you. In practice, most operations (such as system calls)
+can't be canceled once they are started anyway, so promise cancellation is
+useful mainly for interrupting future operations once you know that a chain of
+asynchronous operations will not be needed.
+</p><p>It is also possible to cancel a promise which has not been
+created directly by you with <span class="teletype">Lwt.task</span>. In this case, the deepest
+cancelable promise that the given promise depends on will be canceled.
+</p><p>For example, consider the following code:
+</p><pre class=""><code class="language-ocaml translatable"># let p, r = Lwt.task ();;
+val p : '_a Lwt.t = &lt;abstr&gt;
+val r : '_a Lwt.u = &lt;abstr&gt;
+# let p' = Lwt.bind p (fun x -&gt; Lwt.return (x + 1));;
+val p' : int Lwt.t = &lt;abstr&gt;</code></pre><p>Here, cancelling <span class="teletype">p'</span> will in fact cancel <span class="teletype">p</span>, rejecting
+it with <span class="teletype">Lwt.Canceled</span>. <span class="teletype">Lwt.bind</span> will then propagate the
+exception forward to <span class="teletype">p'</span>:
+</p><pre class=""><code class="language-ocaml translatable"># Lwt.cancel p';;
+- : unit = ()
+# Lwt.state p;;
+- : int Lwt.state = Lwt.Fail Lwt.Canceled
+# Lwt.state p';;
+- : int Lwt.state = Lwt.Fail Lwt.Canceled</code></pre><p>It is possible to prevent a promise from being canceled
+by using the function <span class="teletype">Lwt.protected</span>:
+</p><pre class=""><code class="language-ocaml translatable">val protected : 'a Lwt.t -&gt; 'a Lwt.t</code></pre><p>Canceling <span class="teletype">(protected p)</span> will have no effect on <span class="teletype">p</span>.
+</p><h4> Primitives for concurrent composition </h4><p>We now show how to compose several promises concurrently. The
+main functions for this are in the <span class="teletype">Lwt</span> module: <span class="teletype">join</span>,
+<span class="teletype">choose</span> and <span class="teletype">pick</span>.
+</p><p>The first one, <span class="teletype">join</span> takes a list of promises and returns a promise
+that is waiting for all of them to resolve:
+</p><pre class=""><code class="language-ocaml translatable">val join : unit Lwt.t list -&gt; unit Lwt.t</code></pre><p>Moreover, if at least one promise is rejected, <span class="teletype">join l</span> will be rejected
+with the same exception as the first one, after all the promises are resolved.
+</p><p>Conversely, <span class="teletype">choose</span> waits for at least <em>one</em> promise to become
+resolved, then resolves with the same value or exception:
+</p><pre class=""><code class="language-ocaml translatable">val choose : 'a Lwt.t list -&gt; 'a Lwt.t</code></pre><p>For example:
+</p><pre class=""><code class="language-ocaml translatable"># let p1, r1 = Lwt.wait ();;
+val p1 : '_a Lwt.t = &lt;abstr&gt;
+val r1 : '_a Lwt.u = &lt;abstr&gt;
+# let p2, r2 = Lwt.wait ();;
+val p2 : '_a Lwt.t = &lt;abstr&gt;
+val r2 : '_a Lwt.u = &lt;abstr&gt;
+# let p3 = Lwt.choose [p1; p2];;
+val p3 : '_a Lwt.t = &lt;abstr&gt;
+# Lwt.state p3;;
+- : '_a Lwt.state = Lwt.Sleep
+# Lwt.wakeup r2 42;;
+- : unit = ()
+# Lwt.state p3;;
+- : int Lwt.state = Lwt.Return 42</code></pre><p>The last one, <span class="teletype">pick</span>, is the same as <span class="teletype">choose</span>, except that it tries to cancel
+all other promises when one resolves. Promises created via <span class="teletype">Lwt.wait()</span> are not cancellable
+and are thus not cancelled.
+</p><h4> Rules </h4><p>A callback, like the <span class="teletype">f</span> that you might pass to <span class="teletype">Lwt.bind</span>, is
+an ordinary OCaml function. <span class="teletype">Lwt</span> just handles ordering calls to these
+functions.
+</p><p><span class="teletype">Lwt</span> uses some preemptive threading internally, but all of your code
+runs in the main thread, except when you explicitly opt into additional
+threads with <span class="teletype">Lwt_preemptive</span>.
+</p><p>This simplifies reasoning about critical sections: all the code in one
+callback cannot be interrupted by any of the code in another callback.
+However, it also carries the danger that if a single callback takes a very
+long time, it will not give <span class="teletype">Lwt</span> a chance to run your other callbacks.
+In particular:
+</p><ul><li> do not write functions that may take time to complete, without splitting
+them up using <span class="teletype">Lwt.pause</span> or performing some <span class="teletype">Lwt</span> I/O,
+</li><li> do not do I/O that may block, otherwise the whole program will
+hang inside that callback. You must instead use the asynchronous I/O
+operations provided by <span class="teletype">Lwt</span>.
+</li></ul><h3> The syntax extension </h3><p><span class="teletype">Lwt</span> offers a PPX syntax extension which increases code readability and
+makes coding using <span class="teletype">Lwt</span> easier. The syntax extension is documented
+<span><a href=".././api/Ppx_lwt">here</a></span>.
+</p><p>To use the PPX syntax extension, add the <span class="teletype">lwt_ppx</span> package when
+compiling:
+</p><pre class=""><code class="language-ocaml translatable">$ ocamlfind ocamlc -package lwt_ppx -linkpkg -o foo foo.ml</code></pre><p>Or, in <span class="teletype">utop</span>:
+</p><pre class=""><code class="language-ocaml translatable"># #require &quot;lwt_ppx&quot;;;</code></pre><p><span class="teletype">lwt_ppx</span> is distributed in a separate opam package of that same name.
+</p><p>For a brief overview of the syntax, see the Correspondence table below.
+</p><h4> Correspondence table </h4><table><tr><th> without <span class="teletype">Lwt</span>                                                               </th><th> with <span class="teletype">Lwt</span>                                                                      </th></tr><tr><td>                                                                                  </td><td>                                                                                      </td></tr><tr><td> <span class="teletype">let</span> <em>pattern<sub>1</sub></em> <span class="teletype">=</span> <em>expr<sub>1</sub></em>                                 </td><td> <span class="teletype">let%lwt</span> <em>pattern<sub>1</sub></em> <span class="teletype">=</span> <em>expr<sub>1</sub></em>                                 </td></tr><tr><td> <span class="teletype">and</span> <em>pattern<sub>2</sub></em> <span class="teletype">=</span> <em>expr<sub>2</sub></em>                                 </td><td> <span class="teletype">and</span> <em>pattern<sub>2</sub></em> <span class="teletype">=</span> <em>expr<sub>2</sub></em>                                     </td></tr><tr><td> ...                                                                              </td><td> ...                                                                                  </td></tr><tr><td> <span class="teletype">and</span> <em>pattern<sub>n</sub></em> <span class="teletype">=</span> <em>expr<sub>n</sub></em> <span class="teletype">in</span>                        </td><td> <span class="teletype">and</span> <em>pattern<sub>n</sub></em> <span class="teletype">=</span> <em>expr<sub>n</sub></em> <span class="teletype">in</span>                            </td></tr><tr><td> <em>expr</em>                                                                         </td><td> <em>expr</em>                                                                             </td></tr><tr><td>                                                                                  </td><td>                                                                                      </td></tr><tr><td> <span class="teletype">try</span>                                                                        </td><td> <span class="teletype">try%lwt</span>                                                                        </td></tr><tr><td> <em> expr</em>                                                                        </td><td> <em> expr</em>                                                                            </td></tr><tr><td> <span class="teletype">with</span>                                                                       </td><td> <span class="teletype">with</span>                                                                           </td></tr><tr><td> <em> </em> <span class="teletype">|</span> <em>pattern<sub>1</sub></em> <span class="teletype">-&gt;</span> <em>expr<sub>1</sub></em>                            </td><td> <em> </em> <span class="teletype">|</span> <em>pattern<sub>1</sub></em> <span class="teletype">-&gt;</span> <em>expr<sub>1</sub></em>                                </td></tr><tr><td> <em> </em> <span class="teletype">|</span> <em>pattern<sub>2</sub></em> <span class="teletype">-&gt;</span> <em>expr<sub>2</sub></em>                            </td><td> <em> </em> <span class="teletype">|</span> <em>pattern<sub>2</sub></em> <span class="teletype">-&gt;</span> <em>expr<sub>2</sub></em>                                </td></tr><tr><td> <em> </em> ...                                                                        </td><td> <em> </em> ...                                                                            </td></tr><tr><td> <em> </em> <span class="teletype">|</span> <em>pattern<sub>n</sub></em> <span class="teletype">-&gt;</span> <em>expr<sub>n</sub></em>                            </td><td> <em> </em> <span class="teletype">|</span> <em>pattern<sub>n</sub></em> <span class="teletype">-&gt;</span> <em>expr<sub>n</sub></em>                                </td></tr><tr><td>                                                                                  </td><td>                                                                                      </td></tr><tr><td> <span class="teletype">for</span> <em>ident</em> <span class="teletype">=</span> <em>expr<sub>init</sub></em> <span class="teletype">to</span> <em>expr<sub>final</sub></em> <span class="teletype">do</span> </td><td> <span class="teletype">for%lwt</span> <em>ident</em> <span class="teletype">=</span> <em>expr<sub>init</sub></em> <span class="teletype">to</span> <em>expr<sub>final</sub></em> <span class="teletype">do</span> </td></tr><tr><td> <em> expr</em>                                                                        </td><td> <em> expr</em>                                                                            </td></tr><tr><td> <span class="teletype">done</span>                                                                       </td><td> <span class="teletype">done</span>                                                                           </td></tr><tr><td>                                                                                  </td><td>                                                                                      </td></tr><tr><td> <span class="teletype">while</span> <em>expr</em> <span class="teletype">do</span>                                                    </td><td> <span class="teletype">while%lwt</span> <em>expr</em> <span class="teletype">do</span>                                                    </td></tr><tr><td> <em> expr</em>                                                                        </td><td> <em> expr</em>                                                                            </td></tr><tr><td> <span class="teletype">done</span>                                                                       </td><td> <span class="teletype">done</span>                                                                           </td></tr><tr><td>                                                                                  </td><td>                                                                                      </td></tr><tr><td> <span class="teletype">assert</span> <em>expr</em>                                                            </td><td> <span class="teletype">assert%lwt</span> <em>expr</em>                                                            </td></tr><tr><td>                                                                                  </td><td>                                                                                      </td></tr><tr><td> <span class="teletype">match</span> <em>expr</em> <span class="teletype">with</span>                                                  </td><td> <span class="teletype">match%lwt</span> <em>expr</em> <span class="teletype">with</span>                                                  </td></tr><tr><td> <em> </em> <span class="teletype">|</span> <em>pattern<sub>1</sub></em> <span class="teletype">-&gt;</span> <em>expr<sub>1</sub></em>                            </td><td> <em> </em> <span class="teletype">|</span> <em>pattern<sub>1</sub></em> <span class="teletype">-&gt;</span> <em>expr<sub>1</sub></em>                                </td></tr><tr><td> <em> </em> <span class="teletype">|</span> <em>pattern<sub>2</sub></em> <span class="teletype">-&gt;</span> <em>expr<sub>2</sub></em>                            </td><td> <em> </em> <span class="teletype">|</span> <em>pattern<sub>2</sub></em> <span class="teletype">-&gt;</span> <em>expr<sub>2</sub></em>                                </td></tr><tr><td> <em> </em> ...                                                                        </td><td> <em> </em> ...                                                                            </td></tr><tr><td> <em> </em> <span class="teletype">|</span> <em>pattern<sub>n</sub></em> <span class="teletype">-&gt;</span> <em>expr<sub>n</sub></em>                            </td><td> <em> </em> <span class="teletype">|</span> <em>pattern<sub>n</sub></em> <span class="teletype">-&gt;</span> <em>expr<sub>n</sub></em>                                </td></tr><tr><td>                                                                                  </td><td>                                                                                      </td></tr><tr><td> <span class="teletype">if</span> <em>expr</em> <span class="teletype">then</span> <em>expr</em> <span class="teletype">else</span> <em>expr</em>                        </td><td> <span class="teletype">if%lwt</span> <em>expr</em> <span class="teletype">then</span> <em>expr</em> <span class="teletype">else</span> <em>expr</em>                        </td></tr><tr><td>                                                                                  </td><td>                                                                                      </td></tr><tr><td> <span class="teletype">raise</span> <em>exn</em>                                                              </td><td> <span class="teletype">[%lwt raise</span> <em>exn</em><span class="teletype">]</span>                                                    </td></tr></table><h3> Backtrace support </h3><p>If an exception is raised inside a callback called by Lwt, the backtrace
+provided by OCaml will not be very useful. It will end inside the Lwt
+scheduler instead of continuing into the code that started the operations that
+led to the callback call. To avoid this, and get good backtraces from Lwt, use
+the syntax extension. The <span class="teletype">let%lwt</span> construct will properly propagate
+backtraces.
+</p><p>As always, to get backtraces from an OCaml program, you need to either declare
+the environment variable <span class="teletype">OCAMLRUNPARAM=b</span> or call
+<span class="teletype">Printexc.record_backtrace true</span> at the start of your program, and be
+sure to compile it with <span class="teletype">-g</span>. Most modern build systems add <span class="teletype">-g</span> by
+default.
+</p><h3> <span class="teletype">let*</span> syntax </h3><p>To use Lwt with the <span class="teletype">let*</span> syntax introduced in OCaml 4.08, you can define:
+</p><pre class=""><code class="language-ocaml translatable">let (let*) = Lwt.bind
+let (and*) = Lwt.both</code></pre><p>Then, you can write
+</p><pre class=""><code class="language-ocaml translatable">let* () = Lwt_io.printl &quot;Hello,&quot; in
+let* () = Lwt_io.printl &quot;world!&quot; in
+Lwt.return ()</code></pre><h3> Other modules of the core library </h3><p>The core library contains several modules that only depend on
+<span class="teletype">Lwt</span>. The following naming convention is used in <span class="teletype">Lwt</span>: when a
+function takes as argument a function, returning a promise, that is going
+to be executed sequentially, it is suffixed with ``<span class="teletype">_s</span>''. And
+when it is going to be executed concurrently, it is suffixed with
+``<span class="teletype">_p</span>''. For example, in the <span class="teletype">Lwt_list</span> module we have:
+</p><pre class=""><code class="language-ocaml translatable">val map_s : ('a -&gt; 'b Lwt.t) -&gt; 'a list -&gt; 'b list Lwt.t
+val map_p : ('a -&gt; 'b Lwt.t) -&gt; 'a list -&gt; 'b list Lwt.t</code></pre><h4> Mutexes </h4><p><span class="teletype">Lwt_mutex</span> provides mutexes for <span class="teletype">Lwt</span>. Its use is almost the
+same as the <span class="teletype">Mutex</span> module of the thread library shipped with
+OCaml. In general, programs using <span class="teletype">Lwt</span> do not need a lot of
+mutexes, because callbacks run without preempting each other. They are
+only useful for synchronising or sequencing complex operations spread over
+multiple callback calls.
+</p><h4> Lists </h4><p>The <span class="teletype">Lwt_list</span> module defines iteration and scanning functions
+over lists, similar to the ones of the <span class="teletype">List</span> module, but using
+functions that return a promise. For example:
+</p><pre class=""><code class="language-ocaml translatable">val iter_s : ('a -&gt; unit Lwt.t) -&gt; 'a list -&gt; unit Lwt.t
+val iter_p : ('a -&gt; unit Lwt.t) -&gt; 'a list -&gt; unit Lwt.t</code></pre><p>In <span class="teletype">iter_s f l</span>, <span class="teletype">iter_s</span> will call f on each elements
+of <span class="teletype">l</span>, waiting for resolution between each element. On the
+contrary, in <span class="teletype">iter_p f l</span>, <span class="teletype">iter_p</span> will call f on all
+elements of <span class="teletype">l</span>, only then wait for all the promises to resolve.
+</p><h4> Data streams </h4><p><span class="teletype">Lwt</span> streams are used in a lot of places in <span class="teletype">Lwt</span> and its
+submodules. They offer a high-level interface to manipulate data flows.
+</p><p>A stream is an object which returns elements sequentially and
+lazily. Lazily means that the source of the stream is touched only for new
+elements when needed. This module contains a lot of stream
+transformation, iteration, and scanning functions.
+</p><p>The common way of creating a stream is by using
+<span class="teletype">Lwt_stream.from</span> or by using <span class="teletype">Lwt_stream.create</span>:
+</p><pre class=""><code class="language-ocaml translatable">val from : (unit -&gt; 'a option Lwt.t) -&gt; 'a Lwt_stream.t
+val create : unit -&gt; 'a Lwt_stream.t * ('a option -&gt; unit)</code></pre><p>As for streams of the standard library, <span class="teletype">from</span> takes as
+argument a function which is used to create new elements.
+</p><p><span class="teletype">create</span> returns a function used to push new elements
+into the stream and the stream which will receive them.
+</p><p>For example:
+</p><pre class=""><code class="language-ocaml translatable"># let stream, push = Lwt_stream.create ();;
+val stream : '_a Lwt_stream.t = &lt;abstr&gt;
+val push : '_a option -&gt; unit = &lt;fun&gt;
+# push (Some 1);;
+- : unit = ()
+# push (Some 2);;
+- : unit = ()
+# push (Some 3);;
+- : unit = ()
+# Lwt.state (Lwt_stream.next stream);;
+- : int Lwt.state = Lwt.Return 1
+# Lwt.state (Lwt_stream.next stream);;
+- : int Lwt.state = Lwt.Return 2
+# Lwt.state (Lwt_stream.next stream);;
+- : int Lwt.state = Lwt.Return 3
+# Lwt.state (Lwt_stream.next stream);;
+- : int Lwt.state = Lwt.Sleep</code></pre><p>Note that streams are consumable. Once you take an element from a
+stream, it is removed from the stream. So, if you want to iterate two times
+over a stream, you may consider ``cloning'' it, with
+<span class="teletype">Lwt_stream.clone</span>. Cloned stream will return the same
+elements in the same order. Consuming one will not consume the other.
+For example:
+</p><pre class=""><code class="language-ocaml translatable"># let s = Lwt_stream.of_list [1; 2];;
+val s : int Lwt_stream.t = &lt;abstr&gt;
+# let s' = Lwt_stream.clone s;;
+val s' : int Lwt_stream.t = &lt;abstr&gt;
+# Lwt.state (Lwt_stream.next s);;
+- : int Lwt.state = Lwt.Return 1
+# Lwt.state (Lwt_stream.next s);;
+- : int Lwt.state = Lwt.Return 2
+# Lwt.state (Lwt_stream.next s');;
+- : int Lwt.state = Lwt.Return 1
+# Lwt.state (Lwt_stream.next s');;
+- : int Lwt.state = Lwt.Return 2</code></pre><h4> Mailbox variables </h4><p>The <span class="teletype">Lwt_mvar</span> module provides mailbox variables. A mailbox
+variable, also called a ``mvar'', is a cell which may contain 0 or 1
+element. If it contains no elements, we say that the mvar is empty,
+if it contains one, we say that it is full. Adding an element to a
+full mvar will block until one is taken. Taking an element from an
+empty mvar will block until one is added.
+</p><p>Mailbox variables are commonly used to pass messages between chains of
+callbacks being executed concurrently.
+</p><p>Note that a mailbox variable can be seen as a pushable stream with a
+limited memory.
+</p><h2> Running an Lwt program </h2><p>An <span class="teletype">Lwt</span> computation you have created will give you something of type
+<span class="teletype">Lwt.t</span>, a promise. However, even though you have the promise, the
+computation may not have run yet, and the promise might still be pending.
+</p><p>For example if your program is just:
+</p><pre class=""><code class="language-ocaml translatable">let _ = Lwt_io.printl &quot;Hello, world!&quot;</code></pre><p>you have no guarantee that the promise for writing <span class="teletype">&quot;Hello, world!&quot;</span>
+on the terminal will be resolved before the program exits. In order
+to wait for the promise to resolve, you have to call the function
+<span class="teletype">Lwt_main.run</span>:
+</p><pre class=""><code class="language-ocaml translatable">val Lwt_main.run : 'a Lwt.t -&gt; 'a</code></pre><p>This function waits for the given promise to resolve and returns
+its result. In fact it does more than that; it also runs the
+scheduler which is responsible for making asynchronous computations progress
+when events are received from the outside world.
+</p><p>So basically, when you write a <span class="teletype">Lwt</span> program, you must call
+<span class="teletype">Lwt_main.run</span> on your top-level, outer-most promise. For instance:
+</p><pre class=""><code class="language-ocaml translatable">let () = Lwt_main.run (Lwt_io.printl &quot;Hello, world!&quot;)</code></pre><p>Note that you must not make nested calls to <span class="teletype">Lwt_main.run</span>. It
+cannot be used anywhere else to get the result of a promise.
+</p><h2> The <span class="teletype">lwt.unix</span> library </h2><p>The package <span class="teletype">lwt.unix</span> contains all <span class="teletype">Unix</span>-dependent
+modules of <span class="teletype">Lwt</span>. Among all its features, it implements Lwt-friendly,
+non-blocking versions of functions of the OCaml standard and Unix libraries.
+</p><h3> Unix primitives </h3><p>Module <span class="teletype">Lwt_unix</span> provides non-blocking system calls. For example,
+the <span class="teletype">Lwt</span> counterpart of <span class="teletype">Unix.read</span> is:
+</p><pre class=""><code class="language-ocaml translatable">val read : file_descr -&gt; string -&gt; int -&gt; int -&gt; int Lwt.t</code></pre><p><span class="teletype">Lwt_io</span> provides features similar to buffered channels of
+the standard library (of type <span class="teletype">in_channel</span> or
+<span class="teletype">out_channel</span>), but with non-blocking semantics.
+</p><p><span class="teletype">Lwt_gc</span> allows you to register a finalizer that returns a
+promise. At the end of the program, <span class="teletype">Lwt</span> will wait for all these
+finalizers to resolve.
+</p><h3> The Lwt scheduler </h3><p>Operations doing I/O have to be resumed when some events are received by
+the process, so they can resolve their associated pending promises.
+For example, when you read from a file descriptor, you
+may have to wait for the file descriptor to become readable if no
+data are immediately available on it.
+</p><p><span class="teletype">Lwt</span> contains a scheduler which is responsible for managing
+multiple operations waiting for events, and restarting them when needed.
+This scheduler is implemented by the two modules <span class="teletype">Lwt_engine</span>
+and <span class="teletype">Lwt_main</span>. <span class="teletype">Lwt_engine</span> is a low-level module, it
+provides a signature for custom I/O multiplexers as well as two built-in
+implementations, <span class="teletype">libev</span> and <span class="teletype">select</span>. The signature is given by the
+class <span class="teletype">Lwt_engine.t</span>.
+</p><p><span class="teletype">libev</span> is used by default on Linux, because it supports any
+number of file descriptors, while <span class="teletype">select</span> supports only 1024. <span class="teletype">libev</span>
+also much more efficient. On Windows, <span class="teletype">Unix.select</span> is used because
+<span class="teletype">libev</span> does not work properly. The user may change the backend in use at
+any time.
+</p><p>If you see an <span class="teletype">Invalid_argument</span> error on <span class="teletype">Unix.select</span>, it
+may be because the 1024 file descriptor limit was exceeded. Try
+switching to <span class="teletype">libev</span>, if possible.
+</p><p>The engine can also be used directly in order to integrate other
+libraries with <span class="teletype">Lwt</span>. For example, <span class="teletype">GTK</span> needs to be notified
+when some events are received. If you use <span class="teletype">Lwt</span> with <span class="teletype">GTK</span>
+you need to use the <span class="teletype">Lwt</span> scheduler to monitor <span class="teletype">GTK</span>
+sources. This is what is done by the <span class="teletype">Lwt_glib</span> library.
+</p><p>The <span class="teletype">Lwt_main</span> module contains the <em>main loop</em> of
+<span class="teletype">Lwt</span>. It is run by calling the function <span class="teletype">Lwt_main.run</span>:
+</p><pre class=""><code class="language-ocaml translatable">val Lwt_main.run : 'a Lwt.t -&gt; 'a</code></pre><p>This function continuously runs the scheduler until the promise passed
+as argument is resolved.
+</p><p>To make sure <span class="teletype">Lwt</span> is compiled with <span class="teletype">libev</span> support,
+tell opam that the library is available on the system by installing the
+<a href="http://opam.ocaml.org/packages/conf-libev/conf-libev.4-11/" class="ocsimore_phrasing_link">conf-libev</a>
+package. You may get the actual library with your system package manager:
+</p><ul><li> <span class="teletype">brew install libev</span> on MacOSX,
+</li><li> <span class="teletype">apt-get install libev-dev</span> on Debian/Ubuntu, or
+</li><li> <span class="teletype">yum install libev-devel</span> on CentOS, which requires to set
+<span class="teletype">export C_INCLUDE_PATH=/usr/include/libev/</span> and
+<span class="teletype">export LIBRARY_PATH=/usr/lib64/</span> before calling
+<span class="teletype">opam install conf-libev</span>.
+</li></ul><h3> Logging </h3><p>For logging, we recommend the <span class="teletype">logs</span> package from opam, which includes an
+Lwt-aware module <span class="teletype">Logs_lwt</span>.
+</p><h2> The Lwt.react library </h2><p>The <span class="teletype">Lwt_react</span> module provides helpers for using the <span class="teletype">react</span>
+library with <span class="teletype">Lwt</span>. It extends the <span class="teletype">React</span> module by adding
+<span class="teletype">Lwt</span>-specific functions. It can be used as a replacement of
+<span class="teletype">React</span>. For example you can add at the beginning of your
+program:
+</p><pre class=""><code class="language-ocaml translatable">open Lwt_react</code></pre><p>instead of:
+</p><pre class=""><code class="language-ocaml translatable">open React</code></pre><p>or:
+</p><pre class=""><code class="language-ocaml translatable">module React = Lwt_react</code></pre><p>Among the added functionalities we have <span class="teletype">Lwt_react.E.next</span>, which
+takes an event and returns a promise which will be pending until the next
+occurrence of this event. For example:
+</p><pre class=""><code class="language-ocaml translatable"># open Lwt_react;;
+# let event, push = E.create ();;
+val event : '_a React.event = &lt;abstr&gt;
+val push : '_a -&gt; unit = &lt;fun&gt;
+# let p = E.next event;;
+val p : '_a Lwt.t = &lt;abstr&gt;
+# Lwt.state p;;
+- : '_a Lwt.state = Lwt.Sleep
+# push 42;;
+- : unit = ()
+# Lwt.state p;;
+- : int Lwt.state = Lwt.Return 42</code></pre><p>Another interesting feature is the ability to limit events
+(resp. signals) from occurring (resp. changing) too often. For example,
+suppose you are doing a program which displays something on the screen
+each time a signal changes. If at some point the signal changes 1000
+times per second, you probably don't want to render it 1000 times per
+second. For that you use <span class="teletype">Lwt_react.S.limit</span>:
+</p><pre class=""><code class="language-ocaml translatable">val limit : (unit -&gt; unit Lwt.t) -&gt; 'a React.signal -&gt; 'a React.signal</code></pre><p><span class="teletype">Lwt_react.S.limit f signal</span> returns a signal which varies as
+<span class="teletype">signal</span> except that two consecutive updates are separated by a
+call to <span class="teletype">f</span>. For example if <span class="teletype">f</span> returns a promise which is pending
+for 0.1 seconds, then there will be no more than 10 changes per
+second:
+</p><pre class=""><code class="language-ocaml translatable">open Lwt_react
+
+let draw x =
+  (* Draw the screen *)
+  ...
+
+let () =
+  (* The signal we are interested in: *)
+  let signal = ... in
+
+  (* The limited signal: *)
+  let signal' = S.limit (fun () -&gt; Lwt_unix.sleep 0.1) signal in
+
+  (* Redraw the screen each time the limited signal change: *)
+  S.notify_p draw signal'</code></pre><h2> Other libraries </h2><h3> Detaching computation to preemptive threads </h3><p>It may happen that you want to run a function which will take time to
+compute or that you want to use a blocking function that cannot be
+used in a non-blocking way. For these situations, <span class="teletype">Lwt</span> allows you to
+<em>detach</em> the computation to a preemptive thread.
+</p><p>This is done by the module <span class="teletype">Lwt_preemptive</span> of the
+<span class="teletype">lwt.unix</span> package which maintains a pool of system
+threads. The main function is:
+</p><pre class=""><code class="language-ocaml translatable">val detach : ('a -&gt; 'b) -&gt; 'a -&gt; 'b Lwt.t</code></pre><p><span class="teletype">detach f x</span> will execute <span class="teletype">f x</span> in another thread and
+return a pending promise, usable from the main thread, which will be fulfilled
+with the result of the preemptive thread.
+</p><p>If you want to trigger some <span class="teletype">Lwt</span> operations from your detached thread,
+you have to call back into the main thread using
+<span class="teletype">Lwt_preemptive.run_in_main</span>:
+</p><pre class=""><code class="language-ocaml translatable">val run_in_main : (unit -&gt; 'a Lwt.t) -&gt; 'a</code></pre><p>This is roughly the equivalent of <span class="teletype">Lwt.main_run</span>, but for detached
+threads, rather than for the whole process. Note that you must not call
+<span class="teletype">Lwt_main.run</span> in a detached thread.
+</p><h3> SSL support </h3><p>The library <span class="teletype">Lwt_ssl</span> allows use of SSL asynchronously.
+</p><h2> Writing stubs using <span class="teletype">Lwt</span> </h2><h3> Thread-safe notifications </h3><p>If you want to notify the main thread from another thread, you can use the <span class="teletype">Lwt</span>
+thread safe notification system. First you need to create a notification identifier
+(which is just an integer) from the OCaml side using the
+<span class="teletype">Lwt_unix.make_notification</span> function, then you can send it from either the
+OCaml code with <span class="teletype">Lwt_unix.send_notification</span> function, or from the C code using
+the function <span class="teletype">lwt_unix_send_notification</span> (defined in <span class="teletype">lwt_unix_.h</span>).
+</p><p>Notifications are received and processed asynchronously by the main thread.
+</p><h3> Jobs </h3><p>For operations that cannot be executed asynchronously, <span class="teletype">Lwt</span>
+uses a system of jobs that can be executed in a different threads. A
+job is composed of three functions:
+</p><ul><li> A stub function to create the job. It must allocate a new job
+structure and fill its [worker] and [result] fields. This
+function is executed in the main thread.
+The return type for the OCaml external must be of the form <span class="teletype">'a job</span>.
+</li><li> A function which executes the job. This one may be executed asynchronously
+in another thread. This function must not:
+<ul><li> access or allocate OCaml block values (tuples, strings, ...),
+</li><li> call OCaml code.
+</li></ul></li><li> A function which reads the result of the job, frees resources and
+returns the result as an OCaml value. This function is executed in
+the main thread.
+</li></ul><p>With <span class="teletype">Lwt &lt; 2.3.3</span>, 4 functions (including 3 stubs) were
+required. It is still possible to use this mode but it is
+deprecated.
+</p><p>We show as example the implementation of <span class="teletype">Lwt_unix.mkdir</span>. On the C
+side we have:
+</p><pre class="manually-translated"><code class="language-c">/**/
+/* Structure holding informations for calling [mkdir]. */
+struct job_mkdir {
+  /* Informations used by lwt.
+     It must be the first field of the structure. */
+  struct lwt_unix_job job;
+  /* This field store the result of the call. */
+  int result;
+  /* This field store the value of [errno] after the call. */
+  int errno_copy;
+  /* Pointer to a copy of the path parameter. */
+  char* path;
+  /* Copy of the mode parameter. */
+  int mode;
+  /* Buffer for storing the path. */
+  char data[];
+};
+
+/* The function calling [mkdir]. */
+static void worker_mkdir(struct job_mkdir* job)
+{
+  /* Perform the blocking call. */
+  job-&gt;result = mkdir(job-&gt;path, job-&gt;mode);
+  /* Save the value of errno. */
+  job-&gt;errno_copy = errno;
+}
+
+/* The function building the caml result. */
+static value result_mkdir(struct job_mkdir* job)
+{
+  /* Check for errors. */
+  if (job-&gt;result &lt; 0) {
+    /* Save the value of errno so we can use it
+       once the job has been freed. */
+    int error = job-&gt;errno_copy;
+    /* Copy the contents of job-&gt;path into a caml string. */
+    value string_argument = caml_copy_string(job-&gt;path);
+    /* Free the job structure. */
+    lwt_unix_free_job(&amp;job-&gt;job);
+    /* Raise the error. */
+    unix_error(error, &quot;mkdir&quot;, string_argument);
+  }
+  /* Free the job structure. */
+  lwt_unix_free_job(&amp;job-&gt;job);
+  /* Return the result. */
+  return Val_unit;
+}
+
+/* The stub creating the job structure. */
+CAMLprim value lwt_unix_mkdir_job(value path, value mode)
+{
+  /* Get the length of the path parameter. */
+  mlsize_t len_path = caml_string_length(path) + 1;
+  /* Allocate a new job. */
+  struct job_mkdir* job =
+    (struct job_mkdir*)lwt_unix_new_plus(struct job_mkdir, len_path);
+  /* Set the offset of the path parameter inside the job structure. */
+  job-&gt;path = job-&gt;data;
+  /* Copy the path parameter inside the job structure. */
+  memcpy(job-&gt;path, String_val(path), len_path);
+  /* Initialize function fields. */
+  job-&gt;job.worker = (lwt_unix_job_worker)worker_mkdir;
+  job-&gt;job.result = (lwt_unix_job_result)result_mkdir;
+  /* Copy the mode parameter. */
+  job-&gt;mode = Int_val(mode);
+  /* Wrap the structure into a caml value. */
+  return lwt_unix_alloc_job(&amp;job-&gt;job);
+}</code></pre><p>and on the ocaml side:
+</p><pre class=""><code class="language-ocaml translatable">(* The stub for creating the job. *)
+external mkdir_job : string -&gt; int -&gt; unit job = &quot;lwt_unix_mkdir_job&quot;
+
+(* The ocaml function. *)
+let mkdir name perms = Lwt_unix.run_job (mkdir_job name perms)</code></pre></article></div></div></body></html>
