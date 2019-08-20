@@ -1,0 +1,17 @@
+<<code language="ocaml" | sig
+  module type S =
+    sig
+      type key
+      type t
+      val create : rate:int -> max:int -> n:int -> Lwt_throttle.S.t
+      val wait : Lwt_throttle.S.t -> Lwt_throttle.S.key -> bool Lwt.t
+    end
+  module Make :
+    functor (H : Hashtbl.HashedType) ->
+      sig
+        type key = H.t
+        type t
+        val create : rate:int -> max:int -> n:int -> t
+        val wait : t -> key -> bool Lwt.t
+      end
+end >>
