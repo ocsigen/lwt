@@ -9,13 +9,25 @@ import subprocess
 DEPENDEES = "dependees"
 
 def main():
+    subprocess.check_call(["opam", "update"])
+
     packages = subprocess.check_output([
+        "opam", "list", "--all", "--depends-on=lwt", "--dev", "--recursive",
+        "--short"])
+
+    depopt_packages = subprocess.check_output([
         "opam", "list", "--all", "--depends-on=lwt", "--depopts", "--dev",
-        "--recursive", "--short", "--with-test", "--with-doc"])
+        "--short", "--with-test", "--with-doc"])
 
     packages = packages.strip().split("\n")
+    depopt_packages = depopt_packages.strip().split("\n")
 
-    subprocess.check_call(["opam", "update"])
+    packages = set(packages).union(set(depopt_packages))
+    packages = list(packages)
+    packages.sort()
+
+    print "Downloading %i packages..." % len(packages)
+
     subprocess.check_call(["rm", "-rf", DEPENDEES])
 
     for package in packages:
