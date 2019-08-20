@@ -10,8 +10,8 @@ DEPENDEES = "dependees"
 
 def main():
     packages = subprocess.check_output([
-        "opam", "list", "--unavailable", "--depends-on=lwt", "--depopts",
-        "--recursive", "--short"])
+        "opam", "list", "--all", "--depends-on=lwt", "--depopts", "--dev",
+        "--recursive", "--short", "--with-test", "--with-doc"])
 
     packages = packages.strip().split("\n")
 
