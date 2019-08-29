@@ -83,14 +83,19 @@ clean:
 	done
 	rm -rf _coverage/
 
-BISECT_FILES_PATTERN := _build/default/test/*/bisect*.out
+EXPECTED_FILES := \
+    --expect src/core/ \
+    --expect src/react/ \
+    --expect src/unix/ \
+    --do-not-expect src/unix/config/ \
+    --do-not-expect src/unix/lwt_gc.ml \
+    --do-not-expect src/unix/lwt_throttle.ml \
+    --do-not-expect src/unix/unix_c/
 
 .PHONY: coverage
 coverage: clean
 	BISECT_ENABLE=yes $(MAKE) build
 	BISECT_ENABLE=yes dune runtest -j 1 --no-buffer
-	bisect-ppx-report \
-	    -I _build/default/ --html _coverage/ \
-	    --text - --summary-only \
-	    $(BISECT_FILES_PATTERN)
+	bisect-ppx-report html $(EXPECTED_FILES)
+	bisect-ppx-report summary
 	@echo See _coverage/index.html
