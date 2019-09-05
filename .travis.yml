@@ -26,7 +26,7 @@ matrix:
   allow_failures:
     - env: COMPILER=ocaml-variants.4.09.0+beta1 REPOSITORIES=--repositories=default,beta=git+https://github.com/ocaml/ocaml-beta-repository.git
     - env: COMPILER=ocaml-variants.4.08.1+flambda
-    - env: COMPILER=4.07.1
+    - env: COMPILER=4.07.1 LWT_STRESS_TEST=true
     - env: COMPILER=4.06.1
     - env: COMPILER=4.05.0
     - env: COMPILER=4.04.2
