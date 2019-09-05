@@ -2,6 +2,8 @@ set -x
 
 
 
+date
+
 # Install libev, if requested.
 if [ "$LIBEV" != no ]
 then
@@ -16,6 +18,8 @@ then
 fi
 
 
+
+date
 
 # Install opam.
 case $TRAVIS_OS_NAME in
@@ -33,6 +37,8 @@ sudo chmod a+x /usr/local/bin/opam
 
 
 
+date
+
 # Initialize opam.
 opam init -y --bare --disable-sandboxing --disable-shell-hook
 if [ ! -d _opam/bin ]
@@ -46,6 +52,8 @@ ocaml -version
 
 
 
+date
+
 # Install Lwt's development dependencies.
 make dev-deps
 
@@ -55,6 +63,8 @@ then
 fi
 
 
+
+date
 
 # Build and run the tests.
 if [ "$LIBEV" != no ]
@@ -67,6 +77,8 @@ export LWT_DISCOVER_ARGUMENTS
 
 make build
 
+date
+
 if [ "$COVERAGE" != yes ]
 then
     make test
@@ -77,6 +89,8 @@ fi
 
 
 
+date
+
 # Run the packaging tests.
 make clean
 make install-for-packaging-test
@@ -85,9 +99,13 @@ make uninstall-after-packaging-test
 
 
 
+date
+
 # Run the ppx_let integratio test.
 if [ "$COMPILER" != "4.02.3" ]
 then
     make ppx_let-test-deps
     make ppx_let-test
 fi
+
+date
