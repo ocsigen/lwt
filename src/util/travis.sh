@@ -1,5 +1,12 @@
 set -x
 
+if [ "$TRAVIS_EVENT_TYPE" == cron ]
+then
+    rm -rf ~/.opam
+    rm -rf ./_opam
+    rm -rf ./_cache
+fi
+
 
 
 date
