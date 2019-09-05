@@ -11,7 +11,7 @@ matrix:
     - os: linux
       env: COMPILER=ocaml-variants.4.08.1+flambda
     - os: linux
-      env: COMPILER=4.07.1
+      env: COMPILER=4.07.1 LWT_STRESS_TEST=true
     - os: linux
       env: COMPILER=4.06.1
     - os: linux
@@ -37,7 +37,6 @@ matrix:
 env:
   global:
     - LWT_FORCE_LIBEV_BY_DEFAULT=yes
-    - LWT_STRESS_TEST=true
 
 script: bash -e src/util/travis.sh
 
