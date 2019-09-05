@@ -55,11 +55,16 @@ ocaml -version
 date
 
 # Install Lwt's development dependencies.
-make dev-deps
-
-if [ "$LIBEV" != no ]
+if [ ! -d _cache/_build ]
 then
-    opam install -y conf-libev
+    make dev-deps
+
+    if [ "$LIBEV" != no ]
+    then
+        opam install -y conf-libev
+    fi
+else
+    cp -r _cache/_build .
 fi
 
 
@@ -75,16 +80,21 @@ else
 fi
 export LWT_DISCOVER_ARGUMENTS
 
-make build
-
 date
 
 if [ "$COVERAGE" != yes ]
 then
-    make test
+    make build
+    dune runtest -j 1 --no-buffer --force
 else
-    make coverage
+    make coverage-only
     bisect-ppx-report send-to Coveralls
+fi
+
+if [ ! -d _cache/_build ]
+then
+    mkdir -p _cache
+    cp -r _build _cache
 fi
 
 

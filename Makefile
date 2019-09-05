@@ -93,9 +93,12 @@ EXPECTED_FILES := \
     --do-not-expect src/unix/unix_c/
 
 .PHONY: coverage
-coverage: clean
+coverage: clean coverage-only
+
+.PHONY : coverage-only
+coverage-only :
 	BISECT_ENABLE=yes $(MAKE) build
-	BISECT_ENABLE=yes dune runtest -j 1 --no-buffer
+	BISECT_ENABLE=yes dune runtest -j 1 --no-buffer --force
 	bisect-ppx-report html $(EXPECTED_FILES)
 	bisect-ppx-report summary
 	@echo See _coverage/index.html
