@@ -110,4 +110,11 @@ then
     make ppx_let-test
 fi
 
+
+
+date
+
+# Clean up the opam switch for better caching.
+opam clean
+
 date
