@@ -7,7 +7,7 @@ matrix:
     - os: linux
       env: COMPILER=ocaml-variants.4.09.0+beta1 REPOSITORIES=--repositories=default,beta=git+https://github.com/ocaml/ocaml-beta-repository.git
     - os: linux
-      env: COMPILER=4.08.1 LIBEV=no COVERAGE=yes
+      env: COMPILER=4.08.1 LIBEV=no PPX_LET=yes COVERAGE=yes
     - os: linux
       env: COMPILER=ocaml-variants.4.08.1+flambda
     - os: linux
@@ -21,7 +21,7 @@ matrix:
     - os: linux
       env: COMPILER=4.03.0
     - os: linux
-      env: COMPILER=4.02.3
+      env: COMPILER=4.02.3 PACKAGING=yes
 
   allow_failures:
     - env: COMPILER=ocaml-variants.4.09.0+beta1 REPOSITORIES=--repositories=default,beta=git+https://github.com/ocaml/ocaml-beta-repository.git

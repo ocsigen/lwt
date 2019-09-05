@@ -92,17 +92,19 @@ fi
 date
 
 # Run the packaging tests.
-make clean
-make install-for-packaging-test
-make packaging-test
-make uninstall-after-packaging-test
+if [ "$PACKAGING" == yes ]
+then
+    make install-for-packaging-test
+    make packaging-test
+    make uninstall-after-packaging-test
+fi
 
 
 
 date
 
 # Run the ppx_let integratio test.
-if [ "$COMPILER" != "4.02.3" ]
+if [ "$PPX_LET" == yes ]
 then
     make ppx_let-test-deps
     make ppx_let-test
