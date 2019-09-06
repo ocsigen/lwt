@@ -121,7 +121,8 @@ type suite = {
 }
 
 let contains_dup_tests suite tests =
-  let names = List.map (fun t -> "suite:" ^ suite ^ " test:" ^ t.test_name) tests in
+  let names =
+    List.map (fun t -> "suite:" ^ suite ^ " test:" ^ t.test_name) tests in
   let sorted_unique_names = List.sort_uniq String.compare names in
   let counts =
     List.map (fun x ->
