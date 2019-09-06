@@ -2,6 +2,9 @@ language: c
 
 env: HOW_DOC=docs HOW_CONFIG=how.json HOW_OUT=_doc
 
+before_install:
+    - "if [ $TRAVIS_EVENT_TYPE == cron ]; then rm -rf ~/.opam; fi"
+
 install:
     - wget https://ocsigen.org/how.sh
     - . how.sh
@@ -24,6 +27,14 @@ script:
     - how-redirect-manual 2.4.3 2.4.1
     - how-redirect-manual 2.4.3 2.4.2
     - how-redirect-manual $HOW_LATEST latest
+
+before_cache:
+    - opam clean
+    - rm -rf $HOME/.opam/ocaml-base-compiler.4.06.1/.opam-switch/sources/html_of_wiki
+
+cache:
+  directories:
+    - $HOME/.opam
 
 deploy:
   provider: pages
