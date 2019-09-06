@@ -52,7 +52,7 @@ let suite = suite "Lwt_timeout" [
     Lwt_timeout.start timeout;
     Lwt_timeout.start timeout;
 
-    Lwt_unix.sleep 5. >|= fun () ->
+    Lwt_unix.sleep 3. >|= fun () ->
     !completions = 1
   end;
 
