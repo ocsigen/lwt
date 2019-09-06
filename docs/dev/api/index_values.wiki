@@ -303,11 +303,11 @@
 |@@class="odocwiki_index"@ @@<<a_api text="create"| value Lwt_unix.IO_vectors.create >> ~[<<a_api | module Lwt_unix.IO_vectors >>~]|<<div class="odocwiki_info"|~Creates an empty ~I~/~O vector sequence~.
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="create"| value Lwt_timeout.create >> ~[<<a_api | module Lwt_timeout >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~_timeout~.create n f>> creates a new timeout object with duration <<span class="odocwiki_inlinecode"|n>>
-    seconds~.
+|@@class="odocwiki_index"@ @@<<a_api text="create"| value Lwt_throttle.S.create >> ~[<<a_api | module Lwt_throttle.S >>~]|<<div class="odocwiki_info"|~Creates a rate limiter~.
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="create"| value Lwt_throttle.S.create >> ~[<<a_api | module Lwt_throttle.S >>~]|<<div class="odocwiki_info"|~Creates a rate limiter~.
+|@@class="odocwiki_index"@ @@<<a_api text="create"| value Lwt_timeout.create >> ~[<<a_api | module Lwt_timeout >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~_timeout~.create n f>> creates a new timeout object with duration <<span class="odocwiki_inlinecode"|n>>
+    seconds~.
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="create"| value Lwt_switch.create >> ~[<<a_api | module Lwt_switch >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|create ~(~)>> creates a new switch~.

@@ -15,8 +15,8 @@
 >>
 |
 |@@ @style="tet-align: left;"@@\\B|
-|@@class="odocwiki_index"@ @@<<a_api text="byte_order"| type Lwt_sys.byte_order >> ~[<<a_api | module Lwt_sys >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="byte_order"| type Lwt_io.byte_order >> ~[<<a_api | module Lwt_io >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="byte_order"| type Lwt_sys.byte_order >> ~[<<a_api | module Lwt_sys >>~]||
 |@@ @style="tet-align: left;"@@\\C|
 |@@class="odocwiki_index"@ @@<<a_api text="channel"| type Lwt_io.channel >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~Type of buffered byte channels
 >>
@@ -155,10 +155,10 @@
 |@@class="odocwiki_index"@ @@<<a_api text="socket_int_option"| type Lwt_unix.socket_int_option >> ~[<<a_api | module Lwt_unix >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="socket_optint_option"| type Lwt_unix.socket_optint_option >> ~[<<a_api | module Lwt_unix >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="socket_type"| type Lwt_unix.socket_type >> ~[<<a_api | module Lwt_unix >>~]||
-|@@class="odocwiki_index"@ @@<<a_api text="state"| type Lwt_unix.state >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~State of a **file descriptor**
+|@@class="odocwiki_index"@ @@<<a_api text="state"| type Lwt_process.state >> ~[<<a_api | module Lwt_process >>~]|<<div class="odocwiki_info"|~State of a sub~-process
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="state"| type Lwt_process.state >> ~[<<a_api | module Lwt_process >>~]|<<div class="odocwiki_info"|~State of a sub~-process
+|@@class="odocwiki_index"@ @@<<a_api text="state"| type Lwt_unix.state >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~State of a **file descriptor**
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="state"| type Lwt.state >> ~[<<a_api | module Lwt >>~]||
@@ -172,8 +172,8 @@
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_engine.Ev_backend.t >> ~[<<a_api | module Lwt_engine.Ev_backend >>~]||
-|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_timeout.t >> ~[<<a_api | module Lwt_timeout >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_throttle.S.t >> ~[<<a_api | module Lwt_throttle.S >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_timeout.t >> ~[<<a_api | module Lwt_timeout >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_switch.t >> ~[<<a_api | module Lwt_switch >>~]|<<div class="odocwiki_info"|~Type of switches~.
 >>
 |
