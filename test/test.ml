@@ -28,11 +28,47 @@ let test_direct test_name ?(only_if = fun () -> true) run =
 let test test_name ?(only_if = fun () -> true) run =
   {test_name; skip_if_this_is_false = only_if; run}
 
+module Log =
+struct
+  let log_file =
+    let pid = Unix.getpid () in
+    let ms = Unix.gettimeofday () |> modf |> fst in
+    let filename = Printf.sprintf "test.%i.%03.0f.log" pid (ms *. 1e3) in
+    open_out filename
+  let () =
+    at_exit (fun () -> close_out_noerr log_file)
+
+  let start_time = ref None
+  let elapsed () =
+    let now = Unix.gettimeofday () in
+    match !start_time with
+    | None ->
+      start_time := Some now;
+      0.
+    | Some start_time ->
+      now -. start_time
+
+  let write identifier message =
+    Printf.ksprintf (output_string log_file) "%s [%07.3f]: %s\n"
+      identifier (mod_float (elapsed ()) 1000.) message;
+    flush log_file
+  let log k =
+    k (fun identifier ->
+      Printf.ksprintf (write identifier))
+end
+
+let log = Log.log
+
 let run_test : test -> outcome Lwt.t = fun test ->
-  if test.skip_if_this_is_false () = false then
+  if test.skip_if_this_is_false () = false then begin
+    log @@ (fun k -> k test.test_name "skipping");
     Lwt.return Skipped
+  end
 
   else begin
+    let start_time = Unix.gettimeofday () in
+    log @@ (fun k -> k test.test_name "starting");
+
     (* Lwt.async_exception_hook handling inspired by
          https://github.com/mirage/alcotest/issues/45 *)
     let async_exception_promise, async_exception_occurred = Lwt.task () in
@@ -42,7 +78,6 @@ let run_test : test -> outcome Lwt.t = fun test ->
 
     Lwt.finalize
       (fun () ->
-
         let test_completion_promise =
           Lwt.try_bind
             (fun () ->
@@ -66,6 +101,8 @@ let run_test : test -> outcome Lwt.t = fun test ->
 
       (fun () ->
         Lwt.async_exception_hook := old_async_exception_hook;
+        let elapsed = Unix.gettimeofday () -. start_time in
+        log @@ (fun k -> k test.test_name "finished in %.3f s" elapsed);
         Lwt.return_unit)
   end
 
