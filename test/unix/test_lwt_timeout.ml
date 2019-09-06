@@ -265,6 +265,6 @@ let suite = suite "Lwt_timeout" [
 
     p1 >>= fun timeout1_not_fired ->
     p2 >>= fun delta2 ->
-    Lwt.return (timeout1_not_fired && delta2 >= 1.9 && delta2 < 3.1)
+    Lwt.return (timeout1_not_fired && delta2 >= 1.5 && delta2 < 3.5)
   end;
 ]

@@ -66,8 +66,14 @@ let gen_buf n =
  * The main purposes of those functions are not tested.
  * *)
 
+let file_suffix =
+  let last_file_suffix = ref 0 in
+  fun () ->
+    incr last_file_suffix;
+    !last_file_suffix
+
 let test_mincore buff_len offset n_states =
-  let test_file = "bytes_mincore_write" in
+  let test_file = Printf.sprintf "bytes_mincore_write_%i" (file_suffix ()) in
   Lwt_unix.openfile test_file [O_RDWR;O_TRUNC; O_CREAT] 0o666
   >>= fun fd ->
   let buf_write = gen_buf buff_len in
@@ -84,7 +90,7 @@ let test_mincore buff_len offset n_states =
   Lwt.return ()
 
 let test_wait_mincore buff_len offset =
-  let test_file = "bytes_mincore_write" in
+  let test_file = Printf.sprintf "bytes_mincore_write_%i" (file_suffix ()) in
   Lwt_unix.openfile test_file [O_RDWR;O_TRUNC; O_CREAT] 0o666
   >>= fun fd ->
   let buf_write = gen_buf buff_len in
