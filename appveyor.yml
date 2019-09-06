@@ -33,6 +33,7 @@ build_script:
 
 cache:
   - C:\Cygwin64\home\appveyor\.opam
+  - _cache
 
 on_finish:
   - ps: 'if ($env:LWT_APPVEYOR_DEBUG -eq "yes") { $blockRdp = $true; iex ((new-object net.webclient).DownloadString("https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1")) }'
