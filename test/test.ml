@@ -194,13 +194,17 @@ let run library_name suites =
 
   Printf.printf "Testing library '%s'...\n" library_name;
 
+  let start_time = Unix.gettimeofday () in
+
   let rec loop_over_suites aggregated_outcomes suites =
     match suites with
     | [] ->
+      let end_time = Unix.gettimeofday () in
       Printf.printf
-        "\nOk. %i tests ran, %i tests skipped\n"
+        "\nOk. %i tests ran, %i tests skipped in %.2f seconds\n"
         (count_ran aggregated_outcomes)
-        (count_skipped aggregated_outcomes);
+        (count_skipped aggregated_outcomes)
+        (end_time -. start_time);
       Lwt.return_unit
 
     | suite::rest ->
