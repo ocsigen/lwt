@@ -1466,7 +1466,7 @@ let on_success_tests = suite "on_success" [
     later (fun () -> !f_ran = true)
   end;
 
-  test "fulfilled, f raises" begin fun () ->
+  test ~sequential:true "fulfilled, f raises" begin fun () ->
     let saw = ref None in
     let restore =
       set_async_exception_hook (fun exn -> saw := Some exn) in
@@ -1497,7 +1497,7 @@ let on_success_tests = suite "on_success" [
     later (fun () -> !f_ran = true)
   end;
 
-  test "pending, fulfilled, f raises" begin fun () ->
+  test ~sequential:true "pending, fulfilled, f raises" begin fun () ->
     let saw = ref None in
     let p, r = Lwt.wait () in
     Lwt.on_success p (fun () -> raise Exception);
@@ -1532,7 +1532,7 @@ let on_failure_tests = suite "on_failure" [
     later (fun () -> !saw = Some Exception)
   end;
 
-  test "rejected, f raises" begin fun () ->
+  test ~sequential:true "rejected, f raises" begin fun () ->
     let saw = ref None in
     let restore =
       set_async_exception_hook (fun exn -> saw := Some exn) in
@@ -1564,7 +1564,7 @@ let on_failure_tests = suite "on_failure" [
     later (fun () -> !saw = Some Exception)
   end;
 
-  test "pending, rejected, f raises" begin fun () ->
+  test ~sequential:true "pending, rejected, f raises" begin fun () ->
     let saw = ref None in
     let p, r = Lwt.wait () in
     Lwt.on_failure p (fun _ -> raise Exception);
@@ -1585,7 +1585,7 @@ let on_termination_tests = suite "on_termination" [
     later (fun () -> !f_ran = true)
   end;
 
-  test "fulfilled, f raises" begin fun () ->
+  test ~sequential:true "fulfilled, f raises" begin fun () ->
     let saw = ref None in
     let restore =
       set_async_exception_hook (fun exn -> saw := Some exn) in
@@ -1601,7 +1601,7 @@ let on_termination_tests = suite "on_termination" [
     later (fun () -> !f_ran = true)
   end;
 
-  test "rejected, f raises" begin fun () ->
+  test ~sequential:true "rejected, f raises" begin fun () ->
     let saw = ref None in
     let restore =
       set_async_exception_hook (fun exn -> saw := Some exn) in
@@ -1625,7 +1625,7 @@ let on_termination_tests = suite "on_termination" [
     later (fun () -> !f_ran = true)
   end;
 
-  test "pending, fulfilled, f raises" begin fun () ->
+  test ~sequential:true "pending, fulfilled, f raises" begin fun () ->
     let saw = ref None in
     let p, r = Lwt.wait () in
     Lwt.on_termination p (fun () -> raise Exception);
@@ -1645,7 +1645,7 @@ let on_termination_tests = suite "on_termination" [
     later (fun () -> !f_ran = true)
   end;
 
-  test "pending, rejected, f raises" begin fun () ->
+  test ~sequential:true "pending, rejected, f raises" begin fun () ->
     let saw = ref None in
     let p, r = Lwt.wait () in
     Lwt.on_termination p (fun () -> raise Exception);
@@ -1670,7 +1670,7 @@ let on_any_tests = suite "on_any" [
     later (fun () -> !f_ran = true && !g_ran = false)
   end;
 
-  test "fulfilled, f raises" begin fun () ->
+  test ~sequential:true "fulfilled, f raises" begin fun () ->
     let saw = ref None in
     let restore =
       set_async_exception_hook (fun exn -> saw := Some exn) in
@@ -1686,7 +1686,7 @@ let on_any_tests = suite "on_any" [
     later (fun () -> !saw = Some Exception)
   end;
 
-  test "rejected, f raises" begin fun () ->
+  test ~sequential:true "rejected, f raises" begin fun () ->
     let saw = ref None in
     let restore =
       set_async_exception_hook (fun exn -> saw := Some exn) in
@@ -1711,7 +1711,7 @@ let on_any_tests = suite "on_any" [
     later (fun () -> !f_ran = true && !g_ran = false)
   end;
 
-  test "pending, fulfilled, f raises" begin fun () ->
+  test ~sequential:true "pending, fulfilled, f raises" begin fun () ->
     let saw = ref None in
     let p, r = Lwt.wait () in
     Lwt.on_any p (fun () -> raise Exception) ignore;
@@ -1731,7 +1731,7 @@ let on_any_tests = suite "on_any" [
     later (fun () -> !saw = Some Exception)
   end;
 
-  test "pending, rejected, g raises" begin fun () ->
+  test ~sequential:true "pending, rejected, g raises" begin fun () ->
     let saw = ref None in
     let p, r = Lwt.wait () in
     Lwt.on_any p ignore (fun _ -> raise Exception);
@@ -1758,7 +1758,7 @@ let async_tests = suite "async" [
     later (fun () -> !f_ran = true)
   end;
 
-  test "f raises" begin fun () ->
+  test ~sequential:true "f raises" begin fun () ->
     let saw = ref None in
     let restore =
       set_async_exception_hook (fun exn -> saw := Some exn) in
@@ -1768,7 +1768,7 @@ let async_tests = suite "async" [
       !saw = Some Exception)
   end;
 
-  test "rejected" begin fun () ->
+  test ~sequential:true "rejected" begin fun () ->
     let saw = ref None in
     let restore =
       set_async_exception_hook (fun exn -> saw := Some exn) in
@@ -1789,7 +1789,7 @@ let async_tests = suite "async" [
     later (fun () -> !resolved = true)
   end;
 
-  test "pending, rejected" begin fun () ->
+  test ~sequential:true "pending, rejected" begin fun () ->
     let saw = ref None in
     let p, r = Lwt.wait () in
     Lwt.async (fun () -> p);
@@ -1826,7 +1826,7 @@ let ignore_result_tests = suite "ignore_result" [
     Lwt.return true
   end;
 
-  test "pending, rejected" begin fun () ->
+  test ~sequential:true "pending, rejected" begin fun () ->
     let saw = ref None in
     let p, r = Lwt.wait () in
     Lwt.ignore_result p;

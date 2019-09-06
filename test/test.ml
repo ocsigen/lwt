@@ -6,6 +6,7 @@
 type test = {
   test_name : string;
   skip_if_this_is_false : unit -> bool;
+  sequential : bool;
   run : unit -> bool Lwt.t;
 }
 
@@ -23,10 +24,10 @@ let test_direct test_name ?(only_if = fun () -> true) run =
     fun () ->
       Lwt.return (run ())
   in
-  {test_name; skip_if_this_is_false = only_if; run}
+  {test_name; skip_if_this_is_false = only_if; sequential = false; run}
 
-let test test_name ?(only_if = fun () -> true) run =
-  {test_name; skip_if_this_is_false = only_if; run}
+let test test_name ?(only_if = fun () -> true) ?(sequential = false) run =
+  {test_name; skip_if_this_is_false = only_if; sequential; run}
 
 module Log =
 struct
@@ -164,8 +165,9 @@ let run_test_suite : suite -> ((string * outcome) list) Lwt.t = fun suite ->
       Lwt.return (test.test_name, outcome))
     end
 
-let outcomes_all_ok : (string * outcome) list -> bool =
-  List.for_all (fun (_test_name, outcome) ->
+let outcomes_all_ok : (_ * outcome) list -> bool = fun outcomes ->
+  outcomes
+  |> List.for_all (fun (_test_name, outcome) ->
     match outcome with
     | Passed | Skipped -> true
     | Failed | Exception _ -> false)
@@ -187,36 +189,37 @@ let show_failures : (string * outcome) list -> unit =
 
 
 
-type aggregated_outcomes = (string * ((string * outcome) list)) list
+type ('a, 'b) aggregated_outcomes = ('a * (('b * outcome) list)) list
 
 let fold_over_outcomes :
-    ('a -> suite_name:string -> test_name:string -> outcome -> 'a) ->
+    ('a -> outcome -> 'a) ->
     'a ->
-    aggregated_outcomes ->
+    (_, _) aggregated_outcomes ->
       'a =
-
     fun f init outcomes ->
 
-  List.fold_left (fun accumulator (suite_name, test_outcomes) ->
-    List.fold_left (fun accumulator (test_name, test_outcome) ->
-      f accumulator ~suite_name ~test_name test_outcome)
+  List.fold_left (fun accumulator (_suite_name, test_outcomes) ->
+    List.fold_left (fun accumulator (_test_name, test_outcome) ->
+      f accumulator test_outcome)
       accumulator
       test_outcomes)
     init
     outcomes
 
-let count_ran : aggregated_outcomes -> int =
-  fold_over_outcomes
-    (fun count ~suite_name:_ ~test_name:_ -> function
+let count_ran : (_, _) aggregated_outcomes -> int = fun outcomes ->
+  outcomes
+  |> fold_over_outcomes
+    (fun count -> function
       | Skipped ->
         count
       | _ ->
         count + 1)
     0
 
-let count_skipped : aggregated_outcomes -> int =
-  fold_over_outcomes
-    (fun count ~suite_name:_ ~test_name:_ -> function
+let count_skipped : (_, _) aggregated_outcomes -> int = fun outcomes ->
+  outcomes
+  |> fold_over_outcomes
+    (fun count -> function
       | Skipped ->
         count + 1
       | _ ->
@@ -262,6 +265,78 @@ let run library_name suites =
 
   loop_over_suites [] suites
   |> Lwt_main.run
+
+let concurrent library_name suites =
+  Printexc.register_printer (function
+    | Failure message -> Some (Printf.sprintf "Failure(%S)" message)
+    | _ -> None);
+
+  Printf.printf "Testing library '%s'...\n" library_name;
+
+  let open Lwt.Infix in
+
+  let run_test (suite, test) =
+    begin
+      if suite.skip_suite_if_this_is_false () = false then
+        Lwt.return Skipped
+      else
+        run_test test
+    end
+    >|= fun outcome ->
+    print_string (outcome_to_character outcome);
+    flush stdout;
+    ((suite, test), outcome)
+  in
+
+  let start_time = Unix.gettimeofday () in
+
+  (* List all the tests. *)
+  suites
+  |> List.map (fun suite ->
+    suite.suite_tests
+    |> List.map (fun test ->
+      (suite, test)))
+  |> List.flatten
+
+  (* Separate the tests that must be run sequentially, and run them. *)
+  |> List.partition (fun (_suite, test) -> test.sequential)
+  |> fun (sequential, concurrent) ->
+    Lwt_list.map_s run_test sequential
+  >>= fun sequential_outcomes ->
+
+  (* Run the tests that can be run concurrently. *)
+  concurrent
+  |> Lwt_list.map_p run_test
+
+  (* Summarize the results. *)
+  >>= fun concurrent_outcomes ->
+  let outcomes = sequential_outcomes @ concurrent_outcomes in
+  if outcomes_all_ok outcomes then
+    let end_time = Unix.gettimeofday () in
+    let aggregated_outcomes = [(), outcomes] in
+    Printf.printf
+      "\nOk. %i tests ran, %i tests skipped in %.2f seconds\n"
+      (count_ran aggregated_outcomes)
+      (count_skipped aggregated_outcomes)
+      (end_time -. start_time);
+    Lwt.return_unit
+  else begin
+    print_newline ();
+    flush stdout;
+    outcomes |> List.iter (function
+      | (suite, test), Failed ->
+        Printf.eprintf "Test '%s' in suite '%s' produced 'false\n"
+          test.test_name suite.suite_name
+      | (suite, test), Exception exn ->
+        Printf.eprintf "Test '%s' in suite '%s' raised '%s'\n"
+          test.test_name suite.suite_name (Printexc.to_string exn)
+      | _ ->
+        ());
+    exit 1
+  end
+
+let concurrent library_name suites =
+  Lwt_main.run (concurrent library_name suites)
 
 let with_async_exception_hook hook f =
   let old_hook = !Lwt.async_exception_hook in

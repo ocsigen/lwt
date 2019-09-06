@@ -122,7 +122,7 @@ let suite = suite "Lwt_timeout" [
     Lwt_timeout.start timeout;
 
     p >|= fun delta ->
-    delta >= 2. && delta < 3.
+    delta >= 1.9 && delta < 3.1
   end;
 
   test "change does not start" begin fun () ->
@@ -155,7 +155,7 @@ let suite = suite "Lwt_timeout" [
     Lwt_timeout.change timeout 1;
 
     p >|= fun delta ->
-    delta >= 2. && delta < 3.
+    delta >= 1.9 && delta < 3.1
   end;
 
   test "change: invalid delay" begin fun () ->
@@ -167,7 +167,7 @@ let suite = suite "Lwt_timeout" [
       Lwt.return true
   end;
 
-  test "exception in action" begin fun () ->
+  test ~sequential:true "exception in action" begin fun () ->
     let p, r = Lwt.wait () in
 
     Test.with_async_exception_hook
@@ -217,7 +217,7 @@ let suite = suite "Lwt_timeout" [
 
     p1 >>= fun delta1 ->
     p2 >>= fun delta2 ->
-    Lwt.return (delta1 >= 2. && delta1 < 3. && delta2 >= 3. && delta2 < 4.)
+    Lwt.return (delta1 >= 1.9 && delta1 < 3. && delta2 >= 2.9 && delta2 < 4.)
   end;
 
   test "simultaneous" begin fun () ->
@@ -238,7 +238,7 @@ let suite = suite "Lwt_timeout" [
 
     p1 >>= fun delta1 ->
     p2 >>= fun delta2 ->
-    Lwt.return (delta1 >= 1. && delta1 < 2. && delta2 >= 1. && delta2 < 2.)
+    Lwt.return (delta1 >= 1. && delta1 < 2.1 && delta2 >= 1. && delta2 < 2.1)
   end;
 
   test "two, first stopped" begin fun () ->
@@ -265,6 +265,6 @@ let suite = suite "Lwt_timeout" [
 
     p1 >>= fun timeout1_not_fired ->
     p2 >>= fun delta2 ->
-    Lwt.return (timeout1_not_fired && delta2 >= 2. && delta2 < 3.)
+    Lwt.return (timeout1_not_fired && delta2 >= 1.9 && delta2 < 3.1)
   end;
 ]

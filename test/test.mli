@@ -24,7 +24,12 @@ val test_direct : string -> ?only_if:(unit -> bool) -> (unit -> bool) -> test
     and [false] otherwise. [only_if] is used to conditionally skip the
     test. *)
 
-val test : string -> ?only_if:(unit -> bool) -> (unit -> bool Lwt.t) -> test
+val test :
+  string ->
+  ?only_if:(unit -> bool) ->
+  ?sequential:bool ->
+  (unit -> bool Lwt.t) ->
+    test
 (** Like [test_direct], but defines a test which runs a thread. *)
 
 val suite : string -> ?only_if:(unit -> bool) -> test list -> suite
@@ -33,6 +38,9 @@ val suite : string -> ?only_if:(unit -> bool) -> test list -> suite
 val run : string -> suite list -> unit
 (** Run all the given tests and exit the program with an exit code
     of [0] if all tests succeeded and with [1] otherwise. *)
+
+val concurrent : string -> suite list -> unit
+(** Same as [run], but runs all the tests concurrently. *)
 
 val with_async_exception_hook : (exn -> unit) -> (unit -> 'a Lwt.t) -> 'a Lwt.t
 (** [Test.with_async_exception_hook hook f] sets [!Lwt.async_exception_hook] to
