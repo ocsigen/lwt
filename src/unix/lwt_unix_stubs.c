@@ -1444,6 +1444,8 @@ CAMLprim value lwt_unix_reset_after_fork(value Unit) {
 
     /* Empty the queue. */
     pool_queue = NULL;
+
+    threading_initialized = 0;
   }
 
   return Val_unit;
