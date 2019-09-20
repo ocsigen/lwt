@@ -524,6 +524,15 @@ Lwt.return (line ^ ".")
 >>
 <<pre id="VALfail" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|fail>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|exn <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~.fail exn>> is like <<a_api | val Lwt.return >>~, except the new [[ #TYPEt| promise]]
     that is //already rejected// with <<span class="odocwiki_inlinecode"|exn>>~.
+
+
+    ~Whenever possible~, it is recommended to use <<span class="odocwiki_inlinecode"|raise exn>> instead~, as <<span class="odocwiki_inlinecode"|raise>>
+    captures a backtrace~, while <<span class="odocwiki_inlinecode"|~Lwt~.fail>> does not~. ~If you call <<span class="odocwiki_inlinecode"|raise exn>> in
+    a callback that is expected by ~Lwt to return a promise~, ~Lwt will
+    automatically wrap <<span class="odocwiki_inlinecode"|exn>> in a rejected promise~, but the backtrace will have
+    been recorded by the ~O~Caml runtime~. ~Use <<span class="odocwiki_inlinecode"|~Lwt~.fail>> only when you
+    specifically want to create a rejected promise~, to pass to another function~,
+    or store in a data structure~.
 >>
 
 
@@ -1893,6 +1902,10 @@ p
 <<code language='ocaml'|Lwt.fail (Pervasives.Failure s)
 >>
 
+
+
+    ~In most cases~, it is better to use <<span class="odocwiki_inlinecode"|failwith s>> from the standard library~.
+    ~See <<a_api | val Lwt.fail >> for an explanation~.
 >>
 <<pre id="VALfail_invalid_arg" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|fail~_invalid~_arg>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|string <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~.invalid~_arg s>> is an abbreviation for
 
@@ -1901,6 +1914,10 @@ p
 <<code language='ocaml'|Lwt.fail (Pervasives.Invalid_argument s)
 >>
 
+
+
+    ~In most cases~, it is better to use <<span class="odocwiki_inlinecode"|invalid~_arg s>> from the standard
+    library~. ~See <<a_api | val Lwt.fail >> for an explanation~.
 >>
 
 

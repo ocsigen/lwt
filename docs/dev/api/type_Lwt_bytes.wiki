@@ -65,6 +65,10 @@
     | MADV_SEQUENTIAL
     | MADV_WILLNEED
     | MADV_DONTNEED
+    | MADV_MERGEABLE
+    | MADV_UNMERGEABLE
+    | MADV_HUGEPAGE
+    | MADV_NOHUGEPAGE
   val madvise : Lwt_bytes.t -> int -> int -> Lwt_bytes.advice -> unit
   val page_size : int
   val mincore : Lwt_bytes.t -> int -> bool array -> unit
