@@ -65,8 +65,16 @@ struct
       let c = Ord.compare (root t) x in
       if c < 0 then root t else x
 
-  let lookup_min t =
-    try Some(find_min t) with Not_found -> None
+  let rec lookup_min =
+    function
+    | []    -> None
+    | [t]   -> Some (root t)
+    | t::ts ->
+      match lookup_min ts with
+      | None -> None
+      | Some x as result ->
+        let c = Ord.compare (root t) x in
+        if c < 0 then Some (root t) else result
 
   let rec get_min =
     function
