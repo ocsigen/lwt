@@ -172,6 +172,7 @@ then
 
     date
 
+    opam pin remove --no-action wikidoc
     opam remove -y lwt
 fi
 
