@@ -154,6 +154,8 @@ then
     date
 
     git add -A
+    if ! git diff-index --quiet --exit-code HEAD
+    then
     MESSAGE="Development docs"
     LAST=`git log -1 --pretty=%B | head -n 1`
     if [ "$LAST" == "$MESSAGE" ]
@@ -164,6 +166,8 @@ then
     fi
     git commit $AMEND -m "$MESSAGE"
     git push --force-with-lease
+    fi
+
     cd ..
 
     date
