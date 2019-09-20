@@ -2,20 +2,11 @@ set -x
 
 date
 
-BUILD_DOCS=no
-if [ "$DOCS" == yes ]
-then
-    if [ "$TRAVIS_BRANCH" == master ]
-    then
-        if [ "$TRAVIS_PULL_REQUEST" == false ]
-        then
-            if [ "$TRAVIS_EVENT_TYPE" != cron ]
-            then
-                BUILD_DOCS=yes
-            fi
-        fi
-    fi
-fi
+BUILD_DOCS=yes
+[ "$DOCS" == yes ] || BUILD_DOCS=no
+[ "$TRAVIS_BRANCH" == master ] || BUILD_DOCS=no
+[ "$TRAVIS_PULL_REQUEST" == false ] || BUILD_DOCS=no
+[ "$TRAVIS_EVENT_TYPE" != cron ] || BUILD_DOCS=no
 
 if [ "$BUILD_DOCS" == yes ]
 then
@@ -50,16 +41,16 @@ then
     git add -A
     if ! git diff-index --quiet --exit-code HEAD
     then
-    MESSAGE="Development docs"
-    LAST=`git log -1 --pretty=%B | head -n 1`
-    if [ "$LAST" == "$MESSAGE" ]
-    then
-        AMEND=--amend
-    else
-        AMEND=
-    fi
-    git commit $AMEND -m "$MESSAGE"
-    git push --force-with-lease
+        MESSAGE="Development docs"
+        LAST=`git log -1 --pretty=%B | head -n 1`
+        if [ "$LAST" == "$MESSAGE" ]
+        then
+            AMEND=--amend
+        else
+            AMEND=
+        fi
+        git commit $AMEND -m "$MESSAGE"
+        git push --force-with-lease
     fi
 
     cd ..
