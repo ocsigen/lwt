@@ -38,7 +38,55 @@ env:
   global:
     - LWT_FORCE_LIBEV_BY_DEFAULT=yes
 
-script: bash -e src/util/travis.sh
+before_install:
+  - '[ "$TRAVIS_EVENT_TYPE" != cron ] || rm -rf ~/.opam ./_opam ./_cache'
+
+install:
+  - '[ "$LIBEV" == no ] || sudo apt-get update -qq'
+  - '[ "$LIBEV" == no ] || sudo apt-get install -qq libev-dev'
+
+  - OS=linux
+  - '[ "$TRAVIS_OS_NAME" != osx ] || OS=macos'
+  - VERSION=2.0.5
+  - PKG=opam-$VERSION-x86_64-$OS
+  - wget https://github.com/ocaml/opam/releases/download/$VERSION/$PKG
+  - sudo mv $PKG /usr/local/bin/opam
+  - sudo chmod a+x /usr/local/bin/opam
+
+  - opam init -y --bare --disable-sandboxing --disable-shell-hook
+  - CACHED=yes
+  - '[ -d _opam/bin ] || CACHED=no'
+  - '[ "$CACHED" == yes ] || rm -rf opam'
+  - '[ "$CACHED" == yes ] || opam switch create . $COMPILER $REPOSITORIES --no-install'
+  - eval `opam env`
+  - opam --version
+  - ocaml -version
+
+  - CACHED=yes
+  - '[ -d _cache/_build ] || CACHED=no'
+  - '[ "$CACHED" == yes ] || opam install . --deps-only --yes'
+  - '[ "$CACHED" == yes ] || [ "$LIBEV" == no ] || opam install -y conf-libev'
+  - '[ "$CACHED" == no ] || cp -r _cache/_build .'
+
+  - '[ "$LIBEV" == no ] || LWT_DISCOVER_ARGUMENTS="--use-libev true"'
+  - '[ "$LIBEV" != no ] || LWT_DISCOVER_ARGUMENTS="--use-libev false"'
+  - export LWT_DISCOVER_ARGUMENTS
+
+script:
+  - '[ "$COVERAGE" == yes ] || dune build'
+  - '[ "$COVERAGE" == yes ] || dune runtest -j 1 --no-buffer --force'
+  - '[ "$COVERAGE" != yes ] || make coverage-only'
+  - '[ "$COVERAGE" != yes ] || bisect-ppx-report send-to Coveralls'
+
+  - '[ "$CACHED" == yes ] || mkdir -p _cache'
+  - '[ "$CACHED" == yes ] || cp -r _build _cache'
+
+  - '[ "$DOCS" != yes ] || bash src/util/travis.sh'
+  - '[ "$PACKAGING" != yes ] || make install-for-packaging-test packaging-test uninstall-after-packaging-test'
+  - '[ "$PPX_LET" != yes ] || make ppx_let-test-deps ppx_let-test'
+
+before_cache:
+  - opam clean
 
 cache:
   directories:
