@@ -7,6 +7,8 @@ BUILD_DOCS=yes
 [ "$TRAVIS_BRANCH" == master ] || BUILD_DOCS=no
 [ "$TRAVIS_PULL_REQUEST" == false ] || BUILD_DOCS=no
 [ "$TRAVIS_EVENT_TYPE" != cron ] || BUILD_DOCS=no
+[ "$TRAVIS_REPO_SLUG" == ocsigen/lwt ] || BUILD_DOCS=no
+[ "$TRAVIS_TAG" == "" ] || BUILD_DOCS=no
 
 if [ "$BUILD_DOCS" == yes ]
 then
