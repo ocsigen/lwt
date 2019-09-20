@@ -459,7 +459,15 @@ Lwt.return (line ^ ".")
 
 val fail : exn -> _ t
 (** [Lwt.fail exn] is like {!Lwt.return}, except the new {{: #TYPEt} promise}
-    that is {e already rejected} with [exn]. *)
+    that is {e already rejected} with [exn].
+
+    Whenever possible, it is recommended to use [raise exn] instead, as [raise]
+    captures a backtrace, while [Lwt.fail] does not. If you call [raise exn] in
+    a callback that is expected by Lwt to return a promise, Lwt will
+    automatically wrap [exn] in a rejected promise, but the backtrace will have
+    been recorded by the OCaml runtime. Use [Lwt.fail] only when you
+    specifically want to create a rejected promise, to pass to another function,
+    or store in a data structure. *)
 
 
 
@@ -1850,14 +1858,20 @@ val fail_with : string -> _ t
 
 {[
 Lwt.fail (Pervasives.Failure s)
-]} *)
+]}
+
+    In most cases, it is better to use [failwith s] from the standard library.
+    See {!Lwt.fail} for an explanation. *)
 
 val fail_invalid_arg : string -> _ t
 (** [Lwt.invalid_arg s] is an abbreviation for
 
 {[
 Lwt.fail (Pervasives.Invalid_argument s)
-]} *)
+]}
+
+    In most cases, it is better to use [invalid_arg s] from the standard
+    library. See {!Lwt.fail} for an explanation. *)
 
 
 
