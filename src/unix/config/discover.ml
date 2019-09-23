@@ -72,6 +72,7 @@ sig
   val use_pthread : bool option ref
   val android_target : bool option ref
   val libev_default : bool option ref
+  val verbose : bool ref
 
   val args : (Arg.key * Arg.spec * Arg.doc) list
 
@@ -83,6 +84,7 @@ struct
   let use_pthread = ref None
   let android_target = ref None
   let libev_default = ref None
+  let verbose = ref false
 
   let set reference =
     Arg.Bool (fun value -> reference := Some value)
@@ -327,6 +329,11 @@ struct
   let feature the_feature =
     features := !features @ [the_feature]
 
+  let verbose =
+    Printf.ksprintf (fun s ->
+      if !Arguments.verbose then
+        print_string s)
+
   let dots feature to_column =
     String.make (to_column - String.length feature.pretty_name) '.'
 
@@ -335,17 +342,17 @@ struct
   let detect context =
     !features
     |> List.map begin fun feature ->
-      Printf.printf "%s %!" feature.pretty_name;
+      verbose "%s " feature.pretty_name;
       match feature.detect context with
       | None ->
-        Printf.printf "%s skipped\n%!" (dots feature right_column);
+        verbose "%s skipped\n" (dots feature right_column);
         Output.{name = feature.macro_name; found = false}
       | Some found ->
         begin
           if found then
-            Printf.printf "%s available\n%!" (dots feature (right_column - 2))
+            verbose "%s available\n" (dots feature (right_column - 2))
           else
-            Printf.printf "%s unavailable\n%!" (dots feature (right_column - 4))
+            verbose "%s unavailable\n" (dots feature (right_column - 4))
         end;
         Output.{name = feature.macro_name; found}
     end
