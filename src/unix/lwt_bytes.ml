@@ -206,6 +206,10 @@ type advice =
   | MADV_SEQUENTIAL
   | MADV_WILLNEED
   | MADV_DONTNEED
+  | MADV_MERGEABLE
+  | MADV_UNMERGEABLE
+  | MADV_HUGEPAGE
+  | MADV_NOHUGEPAGE
 
 external stub_madvise : t -> int -> int -> advice -> unit = "lwt_unix_madvise"
 
