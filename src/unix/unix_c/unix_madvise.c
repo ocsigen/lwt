@@ -14,15 +14,25 @@
 
 static int advise_table[] = {
     MADV_NORMAL, MADV_RANDOM, MADV_SEQUENTIAL, MADV_WILLNEED, MADV_DONTNEED,
-#if defined(MADV_MERGEABLE) && defined(MADV_UNMERGEABLE)
-	MADV_MERGEABLE, MADV_UNMERGEABLE,
+#if defined(MADV_MERGEABLE)
+	MADV_MERGEABLE,
 #else
-	0, 0,
+	0,
 #endif
-#if defined(MADV_HUGEPAGE) && defined(MADV_NOHUGEPAGE)
-	MADV_HUGEPAGE, MADV_NOHUGEPAGE,
+#if defined(MADV_UNMERGEABLE)
+	MADV_UNMERGEABLE,
 #else
-	0, 0,
+	0,
+#endif
+#if defined(MADV_HUGEPAGE)
+	MADV_HUGEPAGE,
+#else
+	0,
+#endif
+#if defined(MADV_NOHUGEPAGE)
+	MADV_NOHUGEPAGE,
+#else
+	0,
 #endif
 };
 
