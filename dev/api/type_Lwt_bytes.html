@@ -111,6 +111,10 @@ We are looking for beta-tester and contributors.
     | MADV_SEQUENTIAL
     | MADV_WILLNEED
     | MADV_DONTNEED
+    | MADV_MERGEABLE
+    | MADV_UNMERGEABLE
+    | MADV_HUGEPAGE
+    | MADV_NOHUGEPAGE
   val madvise : Lwt_bytes.t -&gt; int -&gt; int -&gt; Lwt_bytes.advice -&gt; unit
   val page_size : int
   val mincore : Lwt_bytes.t -&gt; int -&gt; bool array -&gt; unit
