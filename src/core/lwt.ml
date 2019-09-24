@@ -792,13 +792,14 @@ struct
   let current_storage = ref Storage_map.empty
 
   let get key =
-    try
+    if Storage_map.mem key.id !current_storage then begin
       let refresh = Storage_map.find key.id !current_storage in
       refresh ();
       let value = key.value in
       key.value <- None;
       value
-    with Not_found ->
+    end
+    else
       None
 
   let with_value key value f =
