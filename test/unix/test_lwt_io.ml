@@ -497,14 +497,16 @@ let suite = suite "lwt_io" [
     Lwt_bytes.of_string "\x70\x60\x50\x40\x30\x20\xf0\x42"
     |> Lwt_io.(of_bytes ~mode:input)
     |> Lwt_io.LE.read_float64
-    >|= (=) 283686952306183.
+    >|= Int64.bits_of_float
+    >|= (=) 0x42F0203040506070L
   end;
 
   test "NumberIO.BE.read_float64" begin fun () ->
     Lwt_bytes.of_string "\x42\xf0\x20\x30\x40\x50\x60\x70"
     |> Lwt_io.(of_bytes ~mode:input)
     |> Lwt_io.BE.read_float64
-    >|= (=) 283686952306183.
+    >|= Int64.bits_of_float
+    >|= (=) 0x42F0203040506070L
   end;
 
   test "NumberIO.LE.write_int" begin fun () ->
@@ -580,14 +582,14 @@ let suite = suite "lwt_io" [
   test "NumberIO.LE.write_float64" begin fun () ->
     let buffer = Lwt_bytes.create 8 in
     Lwt_io.LE.write_float64 (Lwt_io.(of_bytes ~mode:output) buffer)
-      283686952306183. >>= fun () ->
+      (Int64.float_of_bits 0x42F0203040506070L) >>= fun () ->
     Lwt.return (Lwt_bytes.to_string buffer = "\x70\x60\x50\x40\x30\x20\xf0\x42")
   end;
 
   test "NumberIO.BE.write_float64" begin fun () ->
     let buffer = Lwt_bytes.create 8 in
     Lwt_io.BE.write_float64 (Lwt_io.(of_bytes ~mode:output) buffer)
-      283686952306183. >>= fun () ->
+      (Int64.float_of_bits 0x42F0203040506070L) >>= fun () ->
     Lwt.return (Lwt_bytes.to_string buffer = "\x42\xf0\x20\x30\x40\x50\x60\x70")
   end;
 ]
