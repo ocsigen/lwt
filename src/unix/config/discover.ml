@@ -156,6 +156,7 @@ sig
 
   val c_flags : unit -> string list
   val link_flags : unit -> string list
+  val add_link_flags : string list -> unit
 end =
 struct
   let c_flags = ref []
@@ -164,6 +165,9 @@ struct
   let extend c_flags' link_flags' =
     c_flags := !c_flags @ c_flags';
     link_flags := !link_flags @ link_flags'
+
+  let add_link_flags flags =
+    extend [] flags
 
   let (//) = Filename.concat
 
@@ -357,7 +361,7 @@ struct
         Output.{name = feature.macro_name; found}
     end
 
-  let compiles ?(werror = false) context code =
+  let compiles ?(werror = false) ?(link_flags = []) context code =
     let c_flags = C_library_flags.c_flags () in
     let c_flags =
       if werror then
@@ -365,8 +369,8 @@ struct
       else
         c_flags
     in
-    Configurator.c_test
-      context ~c_flags ~link_flags:(C_library_flags.link_flags ()) code
+    let link_flags = link_flags @ (C_library_flags.link_flags ()) in
+    Configurator.c_test context ~c_flags ~link_flags code
     |> fun result -> Some result
 
   let skip_if_windows context k =
@@ -418,8 +422,7 @@ struct
       if not should_look_for_libev then
         None
       else begin
-        C_library_flags.detect context ~library:"ev";
-        compiles context {|
+        let code = {|
           #include <ev.h>
 
           int main()
@@ -428,6 +431,14 @@ struct
               return 0;
           }
         |}
+        in
+        match compiles context code ~link_flags:["-lev"] with
+        | Some true ->
+          C_library_flags.add_link_flags ["-lev"];
+          Some true
+        | _ ->
+          C_library_flags.detect context ~library:"ev";
+          compiles context code
       end
   }
 
