@@ -325,7 +325,7 @@ let concurrent library_name suites =
     flush stdout;
     outcomes |> List.iter (function
       | (suite, test), Failed ->
-        Printf.eprintf "Test '%s' in suite '%s' produced 'false\n"
+        Printf.eprintf "Test '%s' in suite '%s' produced 'false'\n"
           test.test_name suite.suite_name
       | (suite, test), Exception exn ->
         Printf.eprintf "Test '%s' in suite '%s' raised '%s'\n"
