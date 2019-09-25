@@ -439,9 +439,7 @@ struct
         None
       else begin
         skip_if_windows context @@ fun () ->
-        if !Arguments.android_target <> Some true then
-          C_library_flags.detect context ~library:"pthread";
-        compiles context {|
+        let code = {|
           #include <pthread.h>
 
           int main()
@@ -450,6 +448,16 @@ struct
               return 0;
           }
         |}
+        in
+        match compiles context code with
+        | Some true -> Some true
+        | no ->
+          if !Arguments.android_target = Some true then
+            no
+          else begin
+            C_library_flags.detect context ~library:"pthread";
+            compiles context code
+          end
       end
   }
 
