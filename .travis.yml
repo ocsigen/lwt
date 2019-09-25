@@ -7,7 +7,7 @@ matrix:
     - os: linux
       env: COMPILER=4.09.0 LIBEV=no PPX_LET=yes COVERAGE=yes
     - os: linux
-      env: COMPILER=ocaml-variants.4.08.1+flambda
+      env: COMPILER=4.08.1+musl+flambda MUSL=yes
     - os: linux
       env: COMPILER=4.07.1 DOCS=yes
     - os: linux
@@ -22,7 +22,7 @@ matrix:
       env: COMPILER=4.02.3 PACKAGING=yes
 
   allow_failures:
-    - env: COMPILER=ocaml-variants.4.08.1+flambda
+    - env: COMPILER=4.08.1+musl+flambda MUSL=yes
     - env: COMPILER=4.07.1 DOCS=yes
     - env: COMPILER=4.06.1 LWT_STRESS_TEST=true
     - env: COMPILER=4.05.0
@@ -39,8 +39,26 @@ before_install:
   - '[ "$TRAVIS_EVENT_TYPE" != cron ] || rm -rf ~/.opam ./_opam ./_cache'
 
 install:
-  - '[ "$LIBEV" == no ] || sudo apt-get update -qq'
-  - '[ "$LIBEV" == no ] || sudo apt-get install -qq libev-dev'
+  - |
+    if [ "$LIBEV" != no ]
+    then
+      sudo apt-get update -qq
+      if [ "$MUSL" != yes ]
+      then
+        sudo apt-get install -qq libev-dev
+      else
+        sudo apt-get install musl-tools
+        wget http://dist.schmorp.de/libev/Attic/libev-4.27.tar.gz
+        tar xf libev-4.27.tar.gz
+        cd libev-4.27
+        CC=musl-gcc ./configure --prefix `pwd`/install
+        make
+        make install
+        sudo cp install/include/* /usr/include/x86_64-linux-musl
+        sudo cp install/lib/* /usr/lib/x86_64-linux-musl
+        cd ..
+      fi
+    fi
 
   - OS=linux
   - '[ "$TRAVIS_OS_NAME" != osx ] || OS=macos'
@@ -59,6 +77,7 @@ install:
   - opam --version
   - ocaml -version
 
+  - opam pin add --no-action ounit 2.0.8 # 2.1.2 release is broken.
   - CACHED=yes
   - '[ -d _cache/_build ] || CACHED=no'
   - '[ "$CACHED" == yes ] || opam install . --deps-only --yes'
