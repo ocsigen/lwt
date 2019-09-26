@@ -1,8 +1,7 @@
-# Lwt &nbsp;&nbsp; [![version 4.3.0][version]][releases] [![Gitter chat][gitter-img]][gitter] [![Travis status][travis-img]][travis] [![AppVeyor status][appveyor-img]][appveyor]
+# Lwt &nbsp;&nbsp; [![version 4.3.0][version]][releases] [![Travis status][travis-img]][travis] [![AppVeyor status][appveyor-img]][appveyor]
 
 [version]:      https://img.shields.io/badge/version-4.3.0-blue.svg
 [releases]:     https://github.com/ocsigen/lwt/releases
-[gitter-img]:   https://img.shields.io/badge/chat-on_gitter-lightgrey.svg
 [travis]:       https://travis-ci.org/ocsigen/lwt/branches
 [travis-img]:   https://img.shields.io/travis/ocsigen/lwt/master.svg?label=travis
 [appveyor]:     https://ci.appveyor.com/project/aantron/lwt/branch/master
@@ -126,16 +125,13 @@ promise, and has nothing to do with system or preemptive threads.*
 
 ## Contact
 
-Open an [issue][issues], visit [Gitter][gitter] chat, ask in [#ocaml][irc],
-on [discuss.ocaml.org][discourse], or on [Stack Overflow][so]. Please do ask!
-Even apparently simple questions often end up educating other users, not to
-mention enlightening the maintainers!
+Open an [issue][issues], visit [Discord][discord] chat, ask on
+[discuss.ocaml.org][discourse], or on [Stack Overflow][so].
 
 Release announcements are made in [/r/ocaml][reddit], and on
 [discuss.ocaml.org][discourse]. Watching the repo for "Releases only" is also an
 option.
 
-[gitter]: https://gitter.im/ocaml-lwt/Lobby
 [irc]:    http://webchat.freenode.net/?channels=#ocaml
 [so]:     http://stackoverflow.com/questions/ask?tags=ocaml,lwt,ocaml-lwt
 [announcements]: https://github.com/ocsigen/lwt/issues/309
@@ -143,33 +139,26 @@ option.
 [caml-list]: https://sympa.inria.fr/sympa/arc/caml-list
 [discourse]: https://discuss.ocaml.org/c/lwt
 [issues]: https://github.com/ocsigen/lwt/issues/new
+[discord]: https://discordapp.com/invite/cCYQbqN
 
 
 <br/>
 
 ## Contributing
 
-- We maintain [easy starter issues][easy-issues]. These are thoroughly explained
-  and hyperlinked. We hope that this makes working on Lwt accessible even to
-  relative OCaml beginners :)
 - [`CONTRIBUTING.md`][contributing-md] contains tips for working on the code,
   such as how to check the code out, how review works, etc. There is also a
   high-level outline of the code base.
-- The overall development plan can be found in the [roadmap][roadmap].
 - [Ask](#contact) us anything, whether it's about working on Lwt, or any
   question at all about it :)
 - The [documentation](#documentation) always needs proofreading and fixes.
-- Despite a lot of progress, Lwt still needs [more tests][testing-issues].
 - You are welcome to pick up any other [issue][issues-and-prs], review a PR, add
   your opinion, etc.
 - Any feedback is welcome, including how to make contributing easier!
 
 [issues-and-prs]: https://github.com/ocsigen/lwt/issues?utf8=%E2%9C%93&q=is%3Aopen
 [all-issues]: https://github.com/ocsigen/lwt/issues
-[roadmap]:  https://github.com/ocsigen/lwt/wiki/Roadmap
-[easy-issues]: https://github.com/ocsigen/lwt/labels/easy
 [contributing-md]: https://github.com/ocsigen/lwt/blob/master/docs/CONTRIBUTING.md#readme
-[testing-issues]: https://github.com/ocsigen/lwt/issues?utf8=%E2%9C%93&q=is%3Aissue%20is%3Aopen%20label%3Aeasy%20test
 
 
 <br/>
