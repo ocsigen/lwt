@@ -1,3 +1,18 @@
+===== 4.3.1 (2019-09-26) =====
+
+====== Bugs fixed ======
+
+  * Lwt clobbered backtraces (#714, 6e855b8, 4694853, reported Volker
+    Diels-Grabsch).
+  * Lwt_unix.fork was broken on glibc 2.28 (#704, @ygrek).
+  * Fix build with musl-gcc (#718, #719, reported Fabian Hemmer).
+  * Support more Lwt_unix.madvise options (#716, Anton Kochkov).
+
+====== Miscellaneous ======
+
+  * Silence configure script (#717, requested Anil Madhavapeddy).
+  * Greatly sped up CI and tests.
+
 ===== 4.3.0 (2019-08-20) =====
 
 ====== Planned to break in 5.0.0 ======
