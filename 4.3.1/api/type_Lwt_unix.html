@@ -1,0 +1,548 @@
+<html><head><title></title><meta charset="utf8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><link rel="stylesheet" href="https://ocsigen.org/css/style.css"/><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/themes/prism.min.css"/><script type="text/javascript" src="https://ocsigen.org/js/client.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-core.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-ocaml.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-clike.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-reason.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-javascript.min.js">
+//<![CDATA[
+
+//]]>
+</script></head><body class="type_Lwt_unix lwt"><div class="project-page"><div class="page-header"><p class="logo-ocsigen"><a href=".././../../" class="ocsimore_phrasing_link"><img src=".././../../img/ocsigen-white.svg" alt="Ocsigen"/></a>
+</p><p class="logo-subproject">Lwt</p><div class="mainmenu"><p class="mainmenu-home"><a href=".././../../" class="ocsimore_phrasing_link">Home</a></p><p class="mainmenu-doc"><a href=".././../../tuto/" class="ocsimore_phrasing_link">Doc</a></p><p><a href=".././../../eliom/" class="ocsimore_phrasing_link">Eliom</a></p><p><a href=".././../../js_of_ocaml/" class="ocsimore_phrasing_link">Js_of_ocaml</a></p><p class="mainmenu-current"><a href=".././../../lwt/" class="ocsimore_phrasing_link">Lwt</a></p><p><a href=".././../../tyxml/" class="ocsimore_phrasing_link">Tyxml</a></p><p><a href=".././../../ocsigen-start/" class="ocsimore_phrasing_link">Start</a></p></div><form id="googlesearch" action="https://google.com/search"><input name="q" id="gsearch-box" placeholder="Search using Google"/><label for="gsearch-box"><img src="/img/search.svg" alt="" id="gsearch-icon"/></label><input type="submit" id="gsearch-submit" onclick="document.getElementById('gsearch-box').value += ' site:ocsigen.org';"/></form><aside class="how-drawer"><input id="how-drawer-toggle" type="checkbox"/><label for="how-drawer-toggle" id="how-drawer-label"><span class="how-drawer-icon"></span></label><nav class="how-drawer-content"><ul class="drawermainmenu"><li class="drawermainmenu-home"><a href=".././../../" class="ocsimore_phrasing_link">Home</a>
+</li><li class="drawermainmenu-doc"><a href=".././../../tuto/" class="ocsimore_phrasing_link">Doc</a>
+</li><li class="drawermainmenu-project"><a href=".././../../eliom/" class="ocsimore_phrasing_link">Eliom</a>
+</li><li class="drawermainmenu-project"><a href=".././../../js_of_ocaml/" class="ocsimore_phrasing_link">Js_of_ocaml</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsigenserver/" class="ocsimore_phrasing_link">Server</a>
+</li><li class="drawermainmenu-project"><a href=".././../../lwt/" class="ocsimore_phrasing_link">Lwt</a>
+</li><li class="drawermainmenu-project"><a href=".././../../tyxml/" class="ocsimore_phrasing_link">Tyxml</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsigen-toolkit/" class="ocsimore_phrasing_link">Toolkit</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsigen-start/" class="ocsimore_phrasing_link">Start</a>
+</li><li class="drawermainmenu-project"><a href=".././../../html_of_wiki/" class="ocsimore_phrasing_link">html_of_wiki</a>
+</li><li class="drawermainmenu-project"><a href=".././../../deriving/" class="ocsimore_phrasing_link">deriving</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsimore/" class="ocsimore_phrasing_link">Ocsimore (<em>deprecated</em>)</a>
+</li><li class="drawermainmenu-page"><a href=".././../../projects" class="ocsimore_phrasing_link">Other projects</a>
+</li><li class="drawermainmenu-page"><a href=".././../../papers" class="ocsimore_phrasing_link">Research papers</a>
+</li><li class="drawermainmenu-page"><a href=".././../../credits" class="ocsimore_phrasing_link">Who does Ocsigen?</a>
+</li><li class="drawermainmenu-page"><a href=".././../../contributing" class="ocsimore_phrasing_link">Contributing</a>
+</li><li class="drawermainmenu-page"><a href=".././../../blog" class="ocsimore_phrasing_link">Blog</a>
+</li><li class="drawermainmenu-page"><a href=".././../../install" class="ocsimore_phrasing_link">Installation</a>
+</li><li class="drawermainmenu-page"><a href="https://github.com/ocsigen" class="ocsimore_phrasing_link">Source code</a>
+</li></ul><nav class="how-doctree"><h1> Lwt</h1><h2><a href=".././manual/manual" class="ocsimore_phrasing_link">Overview</a></h2><h1>Lwt - API Reference</h1><h2>Core library</h2><h3><a href=".././api/Lwt" class="ocsimore_phrasing_link">Lwt</a></h3><h3><a href=".././api/Lwt_result" class="ocsimore_phrasing_link">Lwt_result</a></h3><h3><a href=".././api/Lwt_condition" class="ocsimore_phrasing_link">Lwt_condition</a></h3><h3><a href=".././api/Lwt_list" class="ocsimore_phrasing_link">Lwt_list</a></h3><h3><a href=".././api/Lwt_mutex" class="ocsimore_phrasing_link">Lwt_mutex</a></h3><h3><a href=".././api/Lwt_mvar" class="ocsimore_phrasing_link">Lwt_mvar</a></h3><h3><a href=".././api/Lwt_pool" class="ocsimore_phrasing_link">Lwt_pool</a></h3><h3><a href=".././api/Lwt_stream" class="ocsimore_phrasing_link">Lwt_stream</a></h3><h3><a href=".././api/Lwt_switch" class="ocsimore_phrasing_link">Lwt_switch</a></h3><h3><a href=".././api/Lwt_sequence" class="ocsimore_phrasing_link">Lwt_sequence</a></h3><h3><a href=".././api/Lwt_pqueue" class="ocsimore_phrasing_link">Lwt_pqueue</a></h3><h2>Unix bindings</h2><h3><a href=".././api/Lwt_gc" class="ocsimore_phrasing_link">Lwt_gc</a></h3><h3><a href=".././api/Lwt_io" class="ocsimore_phrasing_link">Lwt_io</a></h3><h3><a href=".././api/Lwt_main" class="ocsimore_phrasing_link">Lwt_main</a></h3><h3><a href=".././api/Lwt_engine" class="ocsimore_phrasing_link">Lwt_engine</a></h3><h3><a href=".././api/Lwt_process" class="ocsimore_phrasing_link">Lwt_process</a></h3><h3><a href=".././api/Lwt_throttle" class="ocsimore_phrasing_link">Lwt_throttle</a></h3><h3><a href=".././api/Lwt_timeout" class="ocsimore_phrasing_link">Lwt_timeout</a></h3><h3><a href=".././api/Lwt_unix" class="ocsimore_phrasing_link">Lwt_unix</a></h3><h3><a href=".././api/Lwt_bytes" class="ocsimore_phrasing_link">Lwt_bytes</a></h3><h3><a href=".././api/Lwt_fmt" class="ocsimore_phrasing_link">Lwt_fmt</a></h3><h3><a href=".././api/Lwt_sys" class="ocsimore_phrasing_link">Lwt_sys</a></h3><h2>Reactive programming helpers</h2><h3><a href=".././api/Lwt_react" class="ocsimore_phrasing_link">Lwt_react</a></h3><h2>PPX syntax extension</h2><h3><a href=".././api/Ppx_lwt" class="ocsimore_phrasing_link">Ppx_lwt</a></h3><h2>Miscellaneous</h2><h3><a href=".././api/Lwt_preemptive" class="ocsimore_phrasing_link">Lwt_preemptive</a></h3><h2>Index</h2><h3> <span><a href=".././api/index_types">Index of types</a></span></h3><h3> <span><a href=".././api/index_exceptions">Index of exceptions</a></span></h3><h3> <span><a href=".././api/index_values">Index of values</a></span></h3><h3> <span><a href=".././api/index_attributes">Index of class attributes</a></span></h3><h3> <span><a href=".././api/index_methods">Index of class methods</a></span></h3><h3> <span><a href=".././api/index_classes">Index of classes</a></span></h3><h3> <span><a href=".././api/index_class_types">Index of class types</a></span></h3><h3> <span><a href=".././api/index_modules">Index of modules</a></span></h3><h3> <span><a href=".././api/index_module_types">Index of module types</a></span></h3></nav></nav></aside></div><p class="reasonwarning">Warning: Reason support is experimental.
+We are looking for beta-tester and contributors.
+</p><button id="reason">Switch to </button><div class="twocols"><nav class="leftcol">Version <select class="how-versions" onchange="location = this.value;"><option value=".././../1.0.0/api/type_Lwt_unix">1.0.0</option><option value=".././../1.1.0/api/type_Lwt_unix">1.1.0</option><option value=".././../2.0.0/api/type_Lwt_unix">2.0.0</option><option value=".././../2.1.0/api/type_Lwt_unix">2.1.0</option><option value=".././../2.1.1/api/type_Lwt_unix">2.1.1</option><option value=".././../2.2.0/api/type_Lwt_unix">2.2.0</option><option value=".././../2.2.1/api/type_Lwt_unix">2.2.1</option><option value=".././../2.3.0/api/type_Lwt_unix">2.3.0</option><option value=".././../2.3.1/api/type_Lwt_unix">2.3.1</option><option value=".././../2.3.2/api/type_Lwt_unix">2.3.2</option><option value=".././../2.4.0/api/type_Lwt_unix">2.4.0</option><option value=".././../2.4.1/api/type_Lwt_unix">2.4.1</option><option value=".././../2.4.2/api/type_Lwt_unix">2.4.2</option><option value=".././../2.4.3/api/type_Lwt_unix">2.4.3</option><option value=".././../2.4.7/api/type_Lwt_unix">2.4.7</option><option value=".././../2.4.8/api/type_Lwt_unix">2.4.8</option><option value=".././../2.5.0/api/type_Lwt_unix">2.5.0</option><option value=".././../2.5.1/api/type_Lwt_unix">2.5.1</option><option value=".././../2.5.2/api/type_Lwt_unix">2.5.2</option><option value=".././../2.6.0/api/type_Lwt_unix">2.6.0</option><option value=".././../2.7.0/api/type_Lwt_unix">2.7.0</option><option value=".././../2.7.1/api/type_Lwt_unix">2.7.1</option><option value=".././../3.0.0/api/type_Lwt_unix">3.0.0</option><option value=".././../3.1.0/api/type_Lwt_unix">3.1.0</option><option value=".././../3.2.1/api/type_Lwt_unix">3.2.1</option><option value=".././../3.3.0/api/type_Lwt_unix">3.3.0</option><option value=".././../4.0.0/api/type_Lwt_unix">4.0.0</option><option value=".././../4.0.1/api/type_Lwt_unix">4.0.1</option><option value=".././../4.1.0/api/type_Lwt_unix">4.1.0</option><option value=".././../4.2.0/api/type_Lwt_unix">4.2.0</option><option value=".././../4.2.1/api/type_Lwt_unix">4.2.1</option><option value=".././../4.3.0/api/type_Lwt_unix">4.3.0</option><option value=".././../4.3.1/api/type_Lwt_unix" selected="selected">4.3.1</option><option value=".././../dev/api/type_Lwt_unix">dev</option></select><nav class="how-doctree"><h1> Lwt</h1><h2><a href=".././manual/manual" class="ocsimore_phrasing_link">Overview</a></h2><h1>Lwt - API Reference</h1><h2>Core library</h2><h3><a href=".././api/Lwt" class="ocsimore_phrasing_link">Lwt</a></h3><h3><a href=".././api/Lwt_result" class="ocsimore_phrasing_link">Lwt_result</a></h3><h3><a href=".././api/Lwt_condition" class="ocsimore_phrasing_link">Lwt_condition</a></h3><h3><a href=".././api/Lwt_list" class="ocsimore_phrasing_link">Lwt_list</a></h3><h3><a href=".././api/Lwt_mutex" class="ocsimore_phrasing_link">Lwt_mutex</a></h3><h3><a href=".././api/Lwt_mvar" class="ocsimore_phrasing_link">Lwt_mvar</a></h3><h3><a href=".././api/Lwt_pool" class="ocsimore_phrasing_link">Lwt_pool</a></h3><h3><a href=".././api/Lwt_stream" class="ocsimore_phrasing_link">Lwt_stream</a></h3><h3><a href=".././api/Lwt_switch" class="ocsimore_phrasing_link">Lwt_switch</a></h3><h3><a href=".././api/Lwt_sequence" class="ocsimore_phrasing_link">Lwt_sequence</a></h3><h3><a href=".././api/Lwt_pqueue" class="ocsimore_phrasing_link">Lwt_pqueue</a></h3><h2>Unix bindings</h2><h3><a href=".././api/Lwt_gc" class="ocsimore_phrasing_link">Lwt_gc</a></h3><h3><a href=".././api/Lwt_io" class="ocsimore_phrasing_link">Lwt_io</a></h3><h3><a href=".././api/Lwt_main" class="ocsimore_phrasing_link">Lwt_main</a></h3><h3><a href=".././api/Lwt_engine" class="ocsimore_phrasing_link">Lwt_engine</a></h3><h3><a href=".././api/Lwt_process" class="ocsimore_phrasing_link">Lwt_process</a></h3><h3><a href=".././api/Lwt_throttle" class="ocsimore_phrasing_link">Lwt_throttle</a></h3><h3><a href=".././api/Lwt_timeout" class="ocsimore_phrasing_link">Lwt_timeout</a></h3><h3><a href=".././api/Lwt_unix" class="ocsimore_phrasing_link">Lwt_unix</a></h3><h3><a href=".././api/Lwt_bytes" class="ocsimore_phrasing_link">Lwt_bytes</a></h3><h3><a href=".././api/Lwt_fmt" class="ocsimore_phrasing_link">Lwt_fmt</a></h3><h3><a href=".././api/Lwt_sys" class="ocsimore_phrasing_link">Lwt_sys</a></h3><h2>Reactive programming helpers</h2><h3><a href=".././api/Lwt_react" class="ocsimore_phrasing_link">Lwt_react</a></h3><h2>PPX syntax extension</h2><h3><a href=".././api/Ppx_lwt" class="ocsimore_phrasing_link">Ppx_lwt</a></h3><h2>Miscellaneous</h2><h3><a href=".././api/Lwt_preemptive" class="ocsimore_phrasing_link">Lwt_preemptive</a></h3><h2>Index</h2><h3> <span><a href=".././api/index_types">Index of types</a></span></h3><h3> <span><a href=".././api/index_exceptions">Index of exceptions</a></span></h3><h3> <span><a href=".././api/index_values">Index of values</a></span></h3><h3> <span><a href=".././api/index_attributes">Index of class attributes</a></span></h3><h3> <span><a href=".././api/index_methods">Index of class methods</a></span></h3><h3> <span><a href=".././api/index_classes">Index of classes</a></span></h3><h3> <span><a href=".././api/index_class_types">Index of class types</a></span></h3><h3> <span><a href=".././api/index_modules">Index of modules</a></span></h3><h3> <span><a href=".././api/index_module_types">Index of module types</a></span></h3></nav></nav><article class="rightcol"><pre class=""><code class="language-ocaml translatable">sig
+  val handle_unix_error : ('a -&gt; 'b Lwt.t) -&gt; 'a -&gt; 'b Lwt.t
+  val sleep : float -&gt; unit Lwt.t
+  val yield : unit -&gt; unit Lwt.t
+  val auto_yield : float -&gt; unit -&gt; unit Lwt.t
+  exception Timeout
+  val timeout : float -&gt; 'a Lwt.t
+  val with_timeout : float -&gt; (unit -&gt; 'a Lwt.t) -&gt; 'a Lwt.t
+  type file_descr
+  type state = Opened | Closed | Aborted of exn
+  val state : Lwt_unix.file_descr -&gt; Lwt_unix.state
+  val unix_file_descr : Lwt_unix.file_descr -&gt; Unix.file_descr
+  val of_unix_file_descr :
+    ?blocking:bool -&gt;
+    ?set_flags:bool -&gt; Unix.file_descr -&gt; Lwt_unix.file_descr
+  val blocking : Lwt_unix.file_descr -&gt; bool Lwt.t
+  val set_blocking : ?set_flags:bool -&gt; Lwt_unix.file_descr -&gt; bool -&gt; unit
+  val abort : Lwt_unix.file_descr -&gt; exn -&gt; unit
+  val fork : unit -&gt; int
+  type process_status =
+    Unix.process_status =
+      WEXITED of int
+    | WSIGNALED of int
+    | WSTOPPED of int
+  type wait_flag = Unix.wait_flag = WNOHANG | WUNTRACED
+  val wait : unit -&gt; (int * Lwt_unix.process_status) Lwt.t
+  val waitpid :
+    Lwt_unix.wait_flag list -&gt; int -&gt; (int * Lwt_unix.process_status) Lwt.t
+  type resource_usage = { ru_utime : float; ru_stime : float; }
+  val wait4 :
+    Lwt_unix.wait_flag list -&gt;
+    int -&gt; (int * Lwt_unix.process_status * Lwt_unix.resource_usage) Lwt.t
+  val wait_count : unit -&gt; int
+  val system : string -&gt; Lwt_unix.process_status Lwt.t
+  val stdin : Lwt_unix.file_descr
+  val stdout : Lwt_unix.file_descr
+  val stderr : Lwt_unix.file_descr
+  type file_perm = Unix.file_perm
+  type open_flag =
+    Unix.open_flag =
+      O_RDONLY
+    | O_WRONLY
+    | O_RDWR
+    | O_NONBLOCK
+    | O_APPEND
+    | O_CREAT
+    | O_TRUNC
+    | O_EXCL
+    | O_NOCTTY
+    | O_DSYNC
+    | O_SYNC
+    | O_RSYNC
+    | O_SHARE_DELETE
+    | O_CLOEXEC
+    | O_KEEPEXEC
+  val openfile :
+    string -&gt;
+    Lwt_unix.open_flag list -&gt;
+    Lwt_unix.file_perm -&gt; Lwt_unix.file_descr Lwt.t
+  val close : Lwt_unix.file_descr -&gt; unit Lwt.t
+  val read : Lwt_unix.file_descr -&gt; bytes -&gt; int -&gt; int -&gt; int Lwt.t
+  val write : Lwt_unix.file_descr -&gt; bytes -&gt; int -&gt; int -&gt; int Lwt.t
+  val write_string : Lwt_unix.file_descr -&gt; string -&gt; int -&gt; int -&gt; int Lwt.t
+  module IO_vectors :
+    sig
+      type t
+      type _bigarray =
+          (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout)
+          Bigarray.Array1.t
+      val create : unit -&gt; Lwt_unix.IO_vectors.t
+      val append_bytes : Lwt_unix.IO_vectors.t -&gt; bytes -&gt; int -&gt; int -&gt; unit
+      val append_bigarray :
+        Lwt_unix.IO_vectors.t -&gt;
+        Lwt_unix.IO_vectors._bigarray -&gt; int -&gt; int -&gt; unit
+      val drop : Lwt_unix.IO_vectors.t -&gt; int -&gt; unit
+      val is_empty : Lwt_unix.IO_vectors.t -&gt; bool
+      val byte_count : Lwt_unix.IO_vectors.t -&gt; int
+      val system_limit : int option
+    end
+  val readv : Lwt_unix.file_descr -&gt; Lwt_unix.IO_vectors.t -&gt; int Lwt.t
+  val writev : Lwt_unix.file_descr -&gt; Lwt_unix.IO_vectors.t -&gt; int Lwt.t
+  val readable : Lwt_unix.file_descr -&gt; bool
+  val writable : Lwt_unix.file_descr -&gt; bool
+  val wait_read : Lwt_unix.file_descr -&gt; unit Lwt.t
+  val wait_write : Lwt_unix.file_descr -&gt; unit Lwt.t
+  type seek_command = Unix.seek_command = SEEK_SET | SEEK_CUR | SEEK_END
+  val lseek :
+    Lwt_unix.file_descr -&gt; int -&gt; Lwt_unix.seek_command -&gt; int Lwt.t
+  val truncate : string -&gt; int -&gt; unit Lwt.t
+  val ftruncate : Lwt_unix.file_descr -&gt; int -&gt; unit Lwt.t
+  val fsync : Lwt_unix.file_descr -&gt; unit Lwt.t
+  val fdatasync : Lwt_unix.file_descr -&gt; unit Lwt.t
+  type file_kind =
+    Unix.file_kind =
+      S_REG
+    | S_DIR
+    | S_CHR
+    | S_BLK
+    | S_LNK
+    | S_FIFO
+    | S_SOCK
+  type stats =
+    Unix.stats = {
+    st_dev : int;
+    st_ino : int;
+    st_kind : Lwt_unix.file_kind;
+    st_perm : Lwt_unix.file_perm;
+    st_nlink : int;
+    st_uid : int;
+    st_gid : int;
+    st_rdev : int;
+    st_size : int;
+    st_atime : float;
+    st_mtime : float;
+    st_ctime : float;
+  }
+  val stat : string -&gt; Lwt_unix.stats Lwt.t
+  val lstat : string -&gt; Lwt_unix.stats Lwt.t
+  val fstat : Lwt_unix.file_descr -&gt; Lwt_unix.stats Lwt.t
+  val file_exists : string -&gt; bool Lwt.t
+  val utimes : string -&gt; float -&gt; float -&gt; unit Lwt.t
+  val isatty : Lwt_unix.file_descr -&gt; bool Lwt.t
+  module LargeFile :
+    sig
+      val lseek :
+        Lwt_unix.file_descr -&gt; int64 -&gt; Lwt_unix.seek_command -&gt; int64 Lwt.t
+      val truncate : string -&gt; int64 -&gt; unit Lwt.t
+      val ftruncate : Lwt_unix.file_descr -&gt; int64 -&gt; unit Lwt.t
+      type stats =
+        Unix.LargeFile.stats = {
+        st_dev : int;
+        st_ino : int;
+        st_kind : Lwt_unix.file_kind;
+        st_perm : Lwt_unix.file_perm;
+        st_nlink : int;
+        st_uid : int;
+        st_gid : int;
+        st_rdev : int;
+        st_size : int64;
+        st_atime : float;
+        st_mtime : float;
+        st_ctime : float;
+      }
+      val stat : string -&gt; Lwt_unix.LargeFile.stats Lwt.t
+      val lstat : string -&gt; Lwt_unix.LargeFile.stats Lwt.t
+      val fstat : Lwt_unix.file_descr -&gt; Lwt_unix.LargeFile.stats Lwt.t
+      val file_exists : string -&gt; bool Lwt.t
+    end
+  val unlink : string -&gt; unit Lwt.t
+  val rename : string -&gt; string -&gt; unit Lwt.t
+  val link : string -&gt; string -&gt; unit Lwt.t
+  val chmod : string -&gt; Lwt_unix.file_perm -&gt; unit Lwt.t
+  val fchmod : Lwt_unix.file_descr -&gt; Lwt_unix.file_perm -&gt; unit Lwt.t
+  val chown : string -&gt; int -&gt; int -&gt; unit Lwt.t
+  val fchown : Lwt_unix.file_descr -&gt; int -&gt; int -&gt; unit Lwt.t
+  type access_permission = Unix.access_permission = R_OK | W_OK | X_OK | F_OK
+  val access : string -&gt; Lwt_unix.access_permission list -&gt; unit Lwt.t
+  val dup : Lwt_unix.file_descr -&gt; Lwt_unix.file_descr
+  val dup2 : Lwt_unix.file_descr -&gt; Lwt_unix.file_descr -&gt; unit
+  val set_close_on_exec : Lwt_unix.file_descr -&gt; unit
+  val clear_close_on_exec : Lwt_unix.file_descr -&gt; unit
+  val mkdir : string -&gt; Lwt_unix.file_perm -&gt; unit Lwt.t
+  val rmdir : string -&gt; unit Lwt.t
+  val chdir : string -&gt; unit Lwt.t
+  val getcwd : unit -&gt; string Lwt.t
+  val chroot : string -&gt; unit Lwt.t
+  type dir_handle = Unix.dir_handle
+  val opendir : string -&gt; Lwt_unix.dir_handle Lwt.t
+  val readdir : Lwt_unix.dir_handle -&gt; string Lwt.t
+  val readdir_n : Lwt_unix.dir_handle -&gt; int -&gt; string array Lwt.t
+  val rewinddir : Lwt_unix.dir_handle -&gt; unit Lwt.t
+  val closedir : Lwt_unix.dir_handle -&gt; unit Lwt.t
+  val files_of_directory : string -&gt; string Lwt_stream.t
+  val pipe : unit -&gt; Lwt_unix.file_descr * Lwt_unix.file_descr
+  val pipe_in : unit -&gt; Lwt_unix.file_descr * Unix.file_descr
+  val pipe_out : unit -&gt; Unix.file_descr * Lwt_unix.file_descr
+  val mkfifo : string -&gt; Lwt_unix.file_perm -&gt; unit Lwt.t
+  val symlink : string -&gt; string -&gt; unit Lwt.t
+  val readlink : string -&gt; string Lwt.t
+  type lock_command =
+    Unix.lock_command =
+      F_ULOCK
+    | F_LOCK
+    | F_TLOCK
+    | F_TEST
+    | F_RLOCK
+    | F_TRLOCK
+  val lockf :
+    Lwt_unix.file_descr -&gt; Lwt_unix.lock_command -&gt; int -&gt; unit Lwt.t
+  type passwd_entry =
+    Unix.passwd_entry = {
+    pw_name : string;
+    pw_passwd : string;
+    pw_uid : int;
+    pw_gid : int;
+    pw_gecos : string;
+    pw_dir : string;
+    pw_shell : string;
+  }
+  type group_entry =
+    Unix.group_entry = {
+    gr_name : string;
+    gr_passwd : string;
+    gr_gid : int;
+    gr_mem : string array;
+  }
+  val getlogin : unit -&gt; string Lwt.t
+  val getpwnam : string -&gt; Lwt_unix.passwd_entry Lwt.t
+  val getgrnam : string -&gt; Lwt_unix.group_entry Lwt.t
+  val getpwuid : int -&gt; Lwt_unix.passwd_entry Lwt.t
+  val getgrgid : int -&gt; Lwt_unix.group_entry Lwt.t
+  type signal_handler_id
+  val on_signal : int -&gt; (int -&gt; unit) -&gt; Lwt_unix.signal_handler_id
+  val on_signal_full :
+    int -&gt;
+    (Lwt_unix.signal_handler_id -&gt; int -&gt; unit) -&gt; Lwt_unix.signal_handler_id
+  val disable_signal_handler : Lwt_unix.signal_handler_id -&gt; unit
+  val signal_count : unit -&gt; int
+  val reinstall_signal_handler : int -&gt; unit
+  type inet_addr = Unix.inet_addr
+  type socket_domain = Unix.socket_domain = PF_UNIX | PF_INET | PF_INET6
+  type socket_type =
+    Unix.socket_type =
+      SOCK_STREAM
+    | SOCK_DGRAM
+    | SOCK_RAW
+    | SOCK_SEQPACKET
+  type sockaddr =
+    Unix.sockaddr =
+      ADDR_UNIX of string
+    | ADDR_INET of Lwt_unix.inet_addr * int
+  val socket :
+    Lwt_unix.socket_domain -&gt;
+    Lwt_unix.socket_type -&gt; int -&gt; Lwt_unix.file_descr
+  val socketpair :
+    Lwt_unix.socket_domain -&gt;
+    Lwt_unix.socket_type -&gt; int -&gt; Lwt_unix.file_descr * Lwt_unix.file_descr
+  val bind : Lwt_unix.file_descr -&gt; Lwt_unix.sockaddr -&gt; unit Lwt.t
+  val listen : Lwt_unix.file_descr -&gt; int -&gt; unit
+  val accept :
+    Lwt_unix.file_descr -&gt; (Lwt_unix.file_descr * Lwt_unix.sockaddr) Lwt.t
+  val accept_n :
+    Lwt_unix.file_descr -&gt;
+    int -&gt;
+    ((Lwt_unix.file_descr * Lwt_unix.sockaddr) list * exn option) Lwt.t
+  val connect : Lwt_unix.file_descr -&gt; Lwt_unix.sockaddr -&gt; unit Lwt.t
+  type shutdown_command =
+    Unix.shutdown_command =
+      SHUTDOWN_RECEIVE
+    | SHUTDOWN_SEND
+    | SHUTDOWN_ALL
+  val shutdown : Lwt_unix.file_descr -&gt; Lwt_unix.shutdown_command -&gt; unit
+  val getsockname : Lwt_unix.file_descr -&gt; Lwt_unix.sockaddr
+  val getpeername : Lwt_unix.file_descr -&gt; Lwt_unix.sockaddr
+  type msg_flag = Unix.msg_flag = MSG_OOB | MSG_DONTROUTE | MSG_PEEK
+  val recv :
+    Lwt_unix.file_descr -&gt;
+    bytes -&gt; int -&gt; int -&gt; Lwt_unix.msg_flag list -&gt; int Lwt.t
+  val recvfrom :
+    Lwt_unix.file_descr -&gt;
+    bytes -&gt;
+    int -&gt; int -&gt; Lwt_unix.msg_flag list -&gt; (int * Lwt_unix.sockaddr) Lwt.t
+  val send :
+    Lwt_unix.file_descr -&gt;
+    bytes -&gt; int -&gt; int -&gt; Lwt_unix.msg_flag list -&gt; int Lwt.t
+  val sendto :
+    Lwt_unix.file_descr -&gt;
+    bytes -&gt;
+    int -&gt; int -&gt; Lwt_unix.msg_flag list -&gt; Lwt_unix.sockaddr -&gt; int Lwt.t
+  type io_vector = {
+    iov_buffer : string;
+    iov_offset : int;
+    iov_length : int;
+  }
+  val io_vector :
+    buffer:string -&gt; offset:int -&gt; length:int -&gt; Lwt_unix.io_vector
+  val recv_msg :
+    socket:Lwt_unix.file_descr -&gt;
+    io_vectors:Lwt_unix.io_vector list -&gt; (int * Unix.file_descr list) Lwt.t
+  val send_msg :
+    socket:Lwt_unix.file_descr -&gt;
+    io_vectors:Lwt_unix.io_vector list -&gt;
+    fds:Unix.file_descr list -&gt; int Lwt.t
+  type credentials = { cred_pid : int; cred_uid : int; cred_gid : int; }
+  val get_credentials : Lwt_unix.file_descr -&gt; Lwt_unix.credentials
+  type socket_bool_option =
+    Unix.socket_bool_option =
+      SO_DEBUG
+    | SO_BROADCAST
+    | SO_REUSEADDR
+    | SO_KEEPALIVE
+    | SO_DONTROUTE
+    | SO_OOBINLINE
+    | SO_ACCEPTCONN
+    | TCP_NODELAY
+    | IPV6_ONLY
+  type socket_int_option =
+    Unix.socket_int_option =
+      SO_SNDBUF
+    | SO_RCVBUF
+    | SO_ERROR
+    | SO_TYPE
+    | SO_RCVLOWAT
+    | SO_SNDLOWAT
+  type socket_optint_option = Unix.socket_optint_option = SO_LINGER
+  type socket_float_option =
+    Unix.socket_float_option =
+      SO_RCVTIMEO
+    | SO_SNDTIMEO
+  val getsockopt : Lwt_unix.file_descr -&gt; Lwt_unix.socket_bool_option -&gt; bool
+  val setsockopt :
+    Lwt_unix.file_descr -&gt; Lwt_unix.socket_bool_option -&gt; bool -&gt; unit
+  val getsockopt_int :
+    Lwt_unix.file_descr -&gt; Lwt_unix.socket_int_option -&gt; int
+  val setsockopt_int :
+    Lwt_unix.file_descr -&gt; Lwt_unix.socket_int_option -&gt; int -&gt; unit
+  val getsockopt_optint :
+    Lwt_unix.file_descr -&gt; Lwt_unix.socket_optint_option -&gt; int option
+  val setsockopt_optint :
+    Lwt_unix.file_descr -&gt;
+    Lwt_unix.socket_optint_option -&gt; int option -&gt; unit
+  val getsockopt_float :
+    Lwt_unix.file_descr -&gt; Lwt_unix.socket_float_option -&gt; float
+  val setsockopt_float :
+    Lwt_unix.file_descr -&gt; Lwt_unix.socket_float_option -&gt; float -&gt; unit
+  val getsockopt_error : Lwt_unix.file_descr -&gt; Unix.error option
+  val mcast_set_loop : Lwt_unix.file_descr -&gt; bool -&gt; unit
+  val mcast_set_ttl : Lwt_unix.file_descr -&gt; int -&gt; unit
+  val mcast_add_membership :
+    Lwt_unix.file_descr -&gt; ?ifname:Unix.inet_addr -&gt; Unix.inet_addr -&gt; unit
+  val mcast_drop_membership :
+    Lwt_unix.file_descr -&gt; ?ifname:Unix.inet_addr -&gt; Unix.inet_addr -&gt; unit
+  type host_entry =
+    Unix.host_entry = {
+    h_name : string;
+    h_aliases : string array;
+    h_addrtype : Lwt_unix.socket_domain;
+    h_addr_list : Lwt_unix.inet_addr array;
+  }
+  type protocol_entry =
+    Unix.protocol_entry = {
+    p_name : string;
+    p_aliases : string array;
+    p_proto : int;
+  }
+  type service_entry =
+    Unix.service_entry = {
+    s_name : string;
+    s_aliases : string array;
+    s_port : int;
+    s_proto : string;
+  }
+  val gethostname : unit -&gt; string Lwt.t
+  val gethostbyname : string -&gt; Lwt_unix.host_entry Lwt.t
+  val gethostbyaddr : Lwt_unix.inet_addr -&gt; Lwt_unix.host_entry Lwt.t
+  val getprotobyname : string -&gt; Lwt_unix.protocol_entry Lwt.t
+  val getprotobynumber : int -&gt; Lwt_unix.protocol_entry Lwt.t
+  val getservbyname : string -&gt; string -&gt; Lwt_unix.service_entry Lwt.t
+  val getservbyport : int -&gt; string -&gt; Lwt_unix.service_entry Lwt.t
+  type addr_info =
+    Unix.addr_info = {
+    ai_family : Lwt_unix.socket_domain;
+    ai_socktype : Lwt_unix.socket_type;
+    ai_protocol : int;
+    ai_addr : Lwt_unix.sockaddr;
+    ai_canonname : string;
+  }
+  type getaddrinfo_option =
+    Unix.getaddrinfo_option =
+      AI_FAMILY of Lwt_unix.socket_domain
+    | AI_SOCKTYPE of Lwt_unix.socket_type
+    | AI_PROTOCOL of int
+    | AI_NUMERICHOST
+    | AI_CANONNAME
+    | AI_PASSIVE
+  val getaddrinfo :
+    string -&gt;
+    string -&gt;
+    Lwt_unix.getaddrinfo_option list -&gt; Lwt_unix.addr_info list Lwt.t
+  type name_info =
+    Unix.name_info = {
+    ni_hostname : string;
+    ni_service : string;
+  }
+  type getnameinfo_option =
+    Unix.getnameinfo_option =
+      NI_NOFQDN
+    | NI_NUMERICHOST
+    | NI_NAMEREQD
+    | NI_NUMERICSERV
+    | NI_DGRAM
+  val getnameinfo :
+    Lwt_unix.sockaddr -&gt;
+    Lwt_unix.getnameinfo_option list -&gt; Lwt_unix.name_info Lwt.t
+  type terminal_io =
+    Unix.terminal_io = {
+    mutable c_ignbrk : bool;
+    mutable c_brkint : bool;
+    mutable c_ignpar : bool;
+    mutable c_parmrk : bool;
+    mutable c_inpck : bool;
+    mutable c_istrip : bool;
+    mutable c_inlcr : bool;
+    mutable c_igncr : bool;
+    mutable c_icrnl : bool;
+    mutable c_ixon : bool;
+    mutable c_ixoff : bool;
+    mutable c_opost : bool;
+    mutable c_obaud : int;
+    mutable c_ibaud : int;
+    mutable c_csize : int;
+    mutable c_cstopb : int;
+    mutable c_cread : bool;
+    mutable c_parenb : bool;
+    mutable c_parodd : bool;
+    mutable c_hupcl : bool;
+    mutable c_clocal : bool;
+    mutable c_isig : bool;
+    mutable c_icanon : bool;
+    mutable c_noflsh : bool;
+    mutable c_echo : bool;
+    mutable c_echoe : bool;
+    mutable c_echok : bool;
+    mutable c_echonl : bool;
+    mutable c_vintr : char;
+    mutable c_vquit : char;
+    mutable c_verase : char;
+    mutable c_vkill : char;
+    mutable c_veof : char;
+    mutable c_veol : char;
+    mutable c_vmin : int;
+    mutable c_vtime : int;
+    mutable c_vstart : char;
+    mutable c_vstop : char;
+  }
+  val tcgetattr : Lwt_unix.file_descr -&gt; Lwt_unix.terminal_io Lwt.t
+  type setattr_when = Unix.setattr_when = TCSANOW | TCSADRAIN | TCSAFLUSH
+  val tcsetattr :
+    Lwt_unix.file_descr -&gt;
+    Lwt_unix.setattr_when -&gt; Lwt_unix.terminal_io -&gt; unit Lwt.t
+  val tcsendbreak : Lwt_unix.file_descr -&gt; int -&gt; unit Lwt.t
+  val tcdrain : Lwt_unix.file_descr -&gt; unit Lwt.t
+  type flush_queue = Unix.flush_queue = TCIFLUSH | TCOFLUSH | TCIOFLUSH
+  val tcflush : Lwt_unix.file_descr -&gt; Lwt_unix.flush_queue -&gt; unit Lwt.t
+  type flow_action = Unix.flow_action = TCOOFF | TCOON | TCIOFF | TCION
+  val tcflow : Lwt_unix.file_descr -&gt; Lwt_unix.flow_action -&gt; unit Lwt.t
+  type async_method = Async_none | Async_detach | Async_switch
+  val default_async_method : unit -&gt; Lwt_unix.async_method
+  val set_default_async_method : Lwt_unix.async_method -&gt; unit
+  val async_method : unit -&gt; Lwt_unix.async_method
+  val async_method_key : Lwt_unix.async_method Lwt.key
+  val with_async_none : (unit -&gt; 'a) -&gt; 'a
+  val with_async_detach : (unit -&gt; 'a) -&gt; 'a
+  val with_async_switch : (unit -&gt; 'a) -&gt; 'a
+  exception Retry
+  exception Retry_read
+  exception Retry_write
+  type io_event = Read | Write
+  val wrap_syscall :
+    Lwt_unix.io_event -&gt; Lwt_unix.file_descr -&gt; (unit -&gt; 'a) -&gt; 'a Lwt.t
+  val check_descriptor : Lwt_unix.file_descr -&gt; unit
+  val register_action :
+    Lwt_unix.io_event -&gt; Lwt_unix.file_descr -&gt; (unit -&gt; 'a) -&gt; 'a Lwt.t
+  type 'a job
+  val run_job :
+    ?async_method:Lwt_unix.async_method -&gt; 'a Lwt_unix.job -&gt; 'a Lwt.t
+  val abort_jobs : exn -&gt; unit
+  val cancel_jobs : unit -&gt; unit
+  val wait_for_jobs : unit -&gt; unit Lwt.t
+  val execute_job :
+    ?async_method:Lwt_unix.async_method -&gt;
+    job:'a Lwt_unix.job -&gt;
+    result:('a Lwt_unix.job -&gt; 'b) -&gt;
+    free:('a Lwt_unix.job -&gt; unit) -&gt; 'b Lwt.t
+  val make_notification : ?once:bool -&gt; (unit -&gt; unit) -&gt; int
+  val send_notification : int -&gt; unit
+  val stop_notification : int -&gt; unit
+  val call_notification : int -&gt; unit
+  val set_notification : int -&gt; (unit -&gt; unit) -&gt; unit
+  val pool_size : unit -&gt; int
+  val set_pool_size : int -&gt; unit
+  val thread_count : unit -&gt; int
+  val thread_waiting_count : unit -&gt; int
+  val get_cpu : unit -&gt; int
+  val get_affinity : ?pid:int -&gt; unit -&gt; int list
+  val set_affinity : ?pid:int -&gt; int list -&gt; unit
+  module Versioned :
+    sig
+      val bind_1 : Lwt_unix.file_descr -&gt; Lwt_unix.sockaddr -&gt; unit
+      val bind_2 : Lwt_unix.file_descr -&gt; Lwt_unix.sockaddr -&gt; unit Lwt.t
+      val recv_msg_2 :
+        socket:Lwt_unix.file_descr -&gt;
+        io_vectors:Lwt_unix.IO_vectors.t -&gt;
+        (int * Unix.file_descr list) Lwt.t
+      val send_msg_2 :
+        socket:Lwt_unix.file_descr -&gt;
+        io_vectors:Lwt_unix.IO_vectors.t -&gt;
+        fds:Unix.file_descr list -&gt; int Lwt.t
+    end
+  val run : 'a Lwt.t -&gt; 'a
+  val has_wait4 : bool
+end</code></pre></article></div></div></body></html>
