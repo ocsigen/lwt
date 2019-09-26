@@ -1600,6 +1600,12 @@ let read_int : unit -> int Lwt.t = fun () ->
 
 ===@@id="3_Implicitcallbackarguments"@@~Implicit callback arguments===
 
+
+
+    ~Using this mechanism is discouraged~, because it is non~-syntactic~, and
+    because it manipulates hidden state in module <<span class="odocwiki_inlinecode"|~Lwt>>~. ~It is recommended
+    instead to pass additional values explicitly in tuples~, or maintain explicit
+    associative maps for them~.
 <<pre class="ocsforge_color odocwiki_code" id="TYPEkey"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_type"|'a>> <<span class="odocwiki_name"|key>>>><<div class="odocwiki_info"|~Keys into the implicit callback argument map~, for implicit arguments of type
     <<span class="odocwiki_inlinecode"|~'a option>>~.
 
@@ -1701,12 +1707,6 @@ let read_int : unit -> int Lwt.t = fun () ->
     and its variant <<span class="odocwiki_inlinecode"|try~%lwt>>~, <<a_api | val Lwt.finalize >> and its variant <<span class="odocwiki_inlinecode"|~%lwt~.finally>>~,
     <<a_api | val Lwt.try_bind >>~, <<a_api | val Lwt.on_success >>~, <<a_api | val Lwt.on_failure >>~,
     <<a_api | val Lwt.on_termination >>~, and <<a_api | val Lwt.on_any >>~.
-
-
-    ~Using this mechanism is discouraged~, because it is non~-syntactic~, and
-    because it manipulates hidden state in module <<span class="odocwiki_inlinecode"|~Lwt>>~. ~It is recommended
-    instead to pass additional values explicitly in tuples~, or maintain explicit
-    associative maps for them~.
 
 
     <<span class="odocwiki_inlinecode"|~Lwt~.with~_value>> should only be called in the main thread~, i~.e~. do not call

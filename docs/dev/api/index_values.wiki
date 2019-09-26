@@ -339,6 +339,10 @@
 |@@class="odocwiki_index"@ @@<<a_api text="create_empty"| value Lwt_mvar.create_empty >> ~[<<a_api | module Lwt_mvar >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|create ~(~)>> creates a new empty mailbox variable~.
 >>
 |
+|@@class="odocwiki_index"@ @@<<a_api text="create_temp_dir"| value Lwt_io.create_temp_dir >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~Creates a temporary directory~, and returns a promise that resolves to its
+    path~.
+>>
+|
 |@@class="odocwiki_index"@ @@<<a_api text="create_with_reference"| value Lwt_stream.create_with_reference >> ~[<<a_api | module Lwt_stream >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|create~_with~_reference ~(~)>> returns a new stream and a push
     function~.
 >>
@@ -1936,6 +1940,10 @@
 |@@class="odocwiki_index"@ @@<<a_api text="with_switch"| value Lwt_switch.with_switch >> ~[<<a_api | module Lwt_switch >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|with~_switch fn>> is <<span class="odocwiki_inlinecode"|fn switch>>~, where <<span class="odocwiki_inlinecode"|switch>> is a fresh switch
       that is turned off when the callback thread finishes ~(whether it
       succeeds or fails~)~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="with_temp_dir"| value Lwt_io.with_temp_dir >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|with~_temp~_dir f>> first calls <<a_api | val Lwt_io.create_temp_dir >>~, forwarding all optional
+    arguments to it~.
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="with_temp_file"| value Lwt_io.with_temp_file >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|with~_temp~_file f>> calls <<a_api | val Lwt_io.open_temp_file >><<span class="odocwiki_inlinecode"| ~(~)>>~, passing all optional

@@ -114,14 +114,24 @@
     ?flags:Unix.open_flag list ->
     ?perm:Unix.file_perm ->
     ?temp_dir:string ->
-    ?prefix:string -> unit -> (string * Lwt_io.output_channel) Lwt.t
+    ?prefix:string ->
+    ?suffix:string -> unit -> (string * Lwt_io.output_channel) Lwt.t
   val with_temp_file :
     ?buffer:Lwt_bytes.t ->
     ?flags:Unix.open_flag list ->
     ?perm:Unix.file_perm ->
     ?temp_dir:string ->
     ?prefix:string ->
+    ?suffix:string ->
     (string * Lwt_io.output_channel -> 'b Lwt.t) -> 'b Lwt.t
+  val create_temp_dir :
+    ?perm:Unix.file_perm ->
+    ?parent:string ->
+    ?prefix:string -> ?suffix:string -> unit -> string Lwt.t
+  val with_temp_dir :
+    ?perm:Unix.file_perm ->
+    ?parent:string ->
+    ?prefix:string -> ?suffix:string -> (string -> 'a Lwt.t) -> 'a Lwt.t
   val open_connection :
     ?fd:Lwt_unix.file_descr ->
     ?in_buffer:Lwt_bytes.t ->
