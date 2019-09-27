@@ -58,6 +58,9 @@ let test_mcast name join set_loop =
         (function
           | Lwt_unix.Timeout ->
             Lwt.return should_timeout
+          | Unix.Unix_error (Unix.ENODEV, "setsockopt", _)
+          | Unix.Unix_error (Unix.ENETUNREACH, "send", _) ->
+            Lwt.fail Skip
           | e ->
             Lwt.fail e
         )
