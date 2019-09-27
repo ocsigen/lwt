@@ -59,9 +59,7 @@ let test_mcast name join set_loop =
           | Lwt_unix.Timeout ->
             Lwt.return should_timeout
           | e ->
-            Printf.eprintf "\ntest_mcast: unexpected failure: %S\n%!"
-              (Printexc.to_string e);
-            Lwt.return false
+            Lwt.fail e
         )
     in
     Lwt.finalize t (fun () -> Lwt.join [Lwt_unix.close fd1; Lwt_unix.close fd2])
