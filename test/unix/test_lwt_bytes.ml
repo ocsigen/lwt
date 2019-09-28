@@ -735,8 +735,8 @@ let suite = suite "lwt_bytes" [
     end;
 
     test "page_size" begin fun () ->
-      let size = 4096 in
-      Lwt.return (size = Lwt_bytes.page_size)
+      let sizes = [4096; 65536] in
+      Lwt.return (List.mem Lwt_bytes.page_size sizes)
     end;
 
     test "mincore buffer length = page_size * 2, n_states = 1"
