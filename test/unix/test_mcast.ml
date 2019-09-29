@@ -22,7 +22,7 @@ let mcast_port =
 let child mcast_addr join fd =
   if join then Lwt_unix.mcast_add_membership fd (Unix.inet_addr_of_string mcast_addr);
   let buf = Bytes.create 50 in
-  Lwt_unix.with_timeout 0.1 (fun () -> Lwt_unix.read fd buf 0 (Bytes.length buf)) >>= fun n ->
+  Lwt_unix.with_timeout 1. (fun () -> Lwt_unix.read fd buf 0 (Bytes.length buf)) >>= fun n ->
   if debug then
     Printf.printf "\nReceived multicast message %S\n%!" (Bytes.unsafe_to_string (Bytes.sub buf 0 n));
   if Bytes.sub buf 0 n <> hello then
