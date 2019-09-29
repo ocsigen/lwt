@@ -280,6 +280,10 @@ let readv_tests =
     let data = Bytes.unsafe_of_string data in
     Lwt_unix.write write_fd data 0 (Bytes.length data) >>= fun bytes_written ->
     Lwt_unix.close write_fd >>= fun () ->
+    (* Instrumentation for debugging an unreliable test. *)
+    if bytes_written <> Bytes.length data then
+      Printf.eprintf "\nwritev: expected to write %i bytes; wrote %i\n"
+        (Bytes.length data) bytes_written;
     Lwt.return (bytes_written = Bytes.length data)
   in
 
@@ -297,6 +301,14 @@ let readv_tests =
         | `Bigarray buffer -> acc ^ (Lwt_bytes.to_string buffer))
         "" underlying
     in
+
+    (* Instrumentation for an unreliable test. *)
+    if bytes_read <> expected_count then
+      Printf.eprintf "\nreadv: expected to read %i bytes; read %i\n"
+        expected_count bytes_read;
+    if actual <> expected_data then
+      Printf.eprintf "\nreadv: expected to read %s; read %s\n"
+        expected_data actual;
 
     Lwt.return (actual = expected_data && bytes_read = expected_count)
   in
