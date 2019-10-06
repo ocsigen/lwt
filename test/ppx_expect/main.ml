@@ -51,7 +51,7 @@ let run_test name =
   let fixed_name = name ^ ".fixed" in
   let command =
     Printf.sprintf
-      "OCAMLPATH=%s ocamlfind opt %s -linkpkg -package lwt,lwt_ppx %s > %s 2>&1"
+      "OCAMLPATH=%s ocamlfind c %s -linkpkg -package lwt,lwt_ppx %s > %s 2>&1"
       package_directory "-color=never" ml_name fixed_name
   in
   let ocaml_return_code = _run_int command in
