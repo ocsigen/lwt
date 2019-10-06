@@ -51,15 +51,11 @@ let run_test name =
   let fixed_name = name ^ ".fixed" in
   let command =
     Printf.sprintf
-      "%s %s ocamlfind c %s -linkpkg -package lwt,lwt_ppx %s > %s 2>&1"
+      "%s %s ocamlfind c %s -linkpkg -thread -package %s %s > %s 2>&1"
       ("OCAMLPATH=" ^ package_directory) "OCAML_ERROR_STYLE=short"
-      "-color=never" ml_name fixed_name
+      "-color=never" "lwt.unix,lwt_ppx" ml_name fixed_name
   in
-  let ocaml_return_code = _run_int command in
-  begin if ocaml_return_code = 0 then
-    failwith
-      (Printf.sprintf "Unexpected compiler return code: %d" ocaml_return_code)
-  end;
+  ignore (_run_int command);
   diff expect_name fixed_name
 
 let () =

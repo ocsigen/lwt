@@ -1,0 +1,2 @@
+let%lwt () =
+  Lwt.return ()
