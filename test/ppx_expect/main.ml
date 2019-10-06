@@ -51,8 +51,9 @@ let run_test name =
   let fixed_name = name ^ ".fixed" in
   let command =
     Printf.sprintf
-      "OCAMLPATH=%s ocamlfind c %s -linkpkg -package lwt,lwt_ppx %s > %s 2>&1"
-      package_directory "-color=never" ml_name fixed_name
+      "%s %s ocamlfind c %s -linkpkg -package lwt,lwt_ppx %s > %s 2>&1"
+      ("OCAMLPATH=" ^ package_directory) "OCAML_ERROR_STYLE=short"
+      "-color=never" ml_name fixed_name
   in
   let ocaml_return_code = _run_int command in
   begin if ocaml_return_code = 0 then
@@ -62,15 +63,6 @@ let run_test name =
   diff expect_name fixed_name
 
 let () =
-  (* Don't run on 4.08, due to different error and warning output. *)
-  let ocaml_version =
-    Scanf.sscanf Sys.ocaml_version "%u.%u%[.]%[0-9]"
-      (fun major minor _periods patchlevel ->
-        major, minor, try Some (int_of_string patchlevel) with _ -> None)
-  in
-  if ocaml_version >= (4, 8, None) then
-    exit 0;
-
   let test_cases =
     Sys.readdir test_directory
     |> Array.to_list

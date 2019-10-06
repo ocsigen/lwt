@@ -1,3 +1,3 @@
 let _ =
-  match%lwt Lwt.return () with
-  | exception (Invalid_argument _) -> Lwt.return 0
+  (* The ugly one-line match is for error message compatibility with 4.09. *)
+  match%lwt Lwt.return () with exception Exit -> Lwt.return 0
