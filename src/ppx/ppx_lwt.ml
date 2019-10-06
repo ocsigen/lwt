@@ -465,7 +465,15 @@ let mapper =
       default_loc := stri.pstr_loc;
       match stri with
       | [%stri let%lwt [%p? var] = [%e? exp]] ->
-        [%stri let [%p var] = Lwt_main.run [%e mapper.expr mapper exp]]
+        let warning =
+          str
+            ("let%lwt should not be used at the module item level.\n" ^
+             "Replace let%lwt x = e by let x = Lwt_main.run (e)")
+        in
+        [%stri
+          let [%p var] =
+            (Lwt_main.run [@ocaml.ppwarning [%e warning]])
+              [%e mapper.expr mapper exp]]
           [@metaloc !default_loc]
 
       | x -> default_mapper.structure_item mapper x);
