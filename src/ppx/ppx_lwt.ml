@@ -39,10 +39,6 @@ let lwt_prefix = "__ppx_lwt_"
 
 (** {2 Here we go!} *)
 
-let warn_let_lwt_rec loc attrs =
-  let attr = attribute_of_warning loc "\"let%lwt rec\" is not a recursive Lwt binding" in
-  attr :: attrs
-
 let debug      = ref true
 let log        = ref false
 let sequence   = ref true
@@ -116,37 +112,6 @@ let gen_binds e_loc l e =
 
 (* Note: instances of [@metaloc !default_loc] below are workarounds for
     https://github.com/ocaml-ppx/ppx_tools_versioned/issues/21. *)
-
-(** [p = x and p' = x' and ...] ≡
-    [p, p', ... = Lwt_main.run (
-      Lwt.bind x  (fun __ppx_lwt_$i  ->
-      Lwt.bind x' (fun __ppx_lwt_$i' ->
-      ...
-      Lwt.return (__ppx_lwt_$i, __ppx_lwt_$i', ...))))] *)
-
-let gen_top_binds vbs =
-  let gen_exp vbs i =
-    match vbs with
-    | {pvb_expr; _}::_rest ->
-      if !debug then
-        [%expr
-          let module Reraise = struct external reraise : exn -> 'a = "%reraise" end in
-          Lwt.backtrace_bind
-            (fun exn -> try Reraise.reraise exn with exn -> exn)
-            [%e pvb_expr]
-            (fun [%p pvar (gen_name i)] -> gen_exp _rest (i + 1))
-        ] [@metaloc !default_loc]
-      else
-        [%expr Lwt.bind [%e pvb_expr] (fun [%p pvar (gen_name i)] -> gen_exp rest (i + 1))]
-          [@metaloc !default_loc]
-    | [] ->
-      let rec names i =
-        if i >= 0 then evar (gen_name i) :: names (i - 1) else []
-      in Exp.tuple (names i)
-  in
-  [Vb.mk (Pat.tuple (vbs |> List.map (fun { pvb_pat; _ } -> pvb_pat)))
-     [%expr Lwt_main.run [%e gen_exp vbs 0]]]
-    [@metaloc !default_loc]
 
 let lwt_sequence mapper ~exp ~lhs ~rhs ~ext_loc =
   let pat= [%pat? ()][@metaloc ext_loc] in
@@ -503,14 +468,6 @@ let mapper =
         [%stri let [%p var] = Lwt_main.run [%e mapper.expr mapper exp]]
           [@metaloc !default_loc]
 
-      | {pstr_desc = Pstr_extension (({txt = "lwt"; _}, PStr [
-        {pstr_desc = Pstr_value (Recursive, _); _}]) as content, attrs); pstr_loc} ->
-        {stri with pstr_desc =
-          Pstr_extension (content, warn_let_lwt_rec pstr_loc attrs)}
-
-      | {pstr_desc = Pstr_extension (({txt = "lwt"; _}, PStr [
-        {pstr_desc = Pstr_value (Nonrecursive, vbs); _}]), _); _} ->
-        mapper.structure_item mapper (Str.value Nonrecursive (gen_top_binds vbs))
       | x -> default_mapper.structure_item mapper x);
 }
 
