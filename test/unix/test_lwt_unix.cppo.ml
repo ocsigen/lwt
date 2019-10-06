@@ -6,19 +6,44 @@
 open Test
 open Lwt.Infix
 
-let assert_fd_closed = "ASSERT_FD_CLOSED"
-let assert_fd_open   = "ASSERT_FD_OPEN"
+(* The CLOEXEC tests use execv(2) to execute this code, by passing --cloexec to
+   the copy of the tester in the child process. This is a module side effect
+   that interprets that --cloexec argument. *)
+let () =
+  let is_fd_open fd =
+    let fd  = (Obj.magic (int_of_string fd) : Unix.file_descr) in
+    let buf = Bytes.create 1 in
+    try
+      ignore (Unix.read fd buf 0 1);
+      true
+    with Unix.Unix_error (Unix.EBADF, _, _) ->
+      false
+  in
 
-let test_cloexec assertion flags =
+  match Sys.argv with
+  | [|_; "--cloexec"; fd; "--open"|] ->
+    if is_fd_open fd then
+      exit 0
+    else
+      exit 1
+  | [|_; "--cloexec"; fd; "--closed"|] ->
+    if is_fd_open fd then
+      exit 1
+    else
+      exit 0
+  | _ ->
+    ()
+
+let test_cloexec ~closed flags =
   Lwt_unix.openfile "/dev/zero" (Unix.O_RDONLY :: flags) 0o644 >>= fun fd ->
-  let fd_ = Lwt_unix.unix_file_descr fd in
   match Lwt_unix.fork () with
   | 0 ->
-    Unix.putenv assertion (string_of_int @@ Obj.magic fd_);
-    (* There's no portable way to obtain the executable name (which
-     * may even no longer exist at this point), but argv[0] fortunately
-     * has the right value when the tests are run with "make test". *)
-    Unix.execv Sys.argv.(0) [||]
+    let fd = string_of_int (Obj.magic (Lwt_unix.unix_file_descr fd)) in
+    let expected_status = if closed then "--closed" else "--open" in
+    (* There's no portable way to obtain the tester executable name (which may
+       even no longer exist at this point), but argv[0] fortunately has the
+       right value when the tests are run in the Lwt dev environment. *)
+    Unix.execv Sys.argv.(0) [|""; "--cloexec"; fd; expected_status|]
   | n ->
     Lwt_unix.close fd >>= fun () ->
     Lwt_unix.waitpid [] n >>= function
@@ -28,20 +53,20 @@ let test_cloexec assertion flags =
 
 let openfile_tests = [
   test "openfile: O_CLOEXEC" ~only_if:(fun () -> not Sys.win32)
-    (fun () -> test_cloexec assert_fd_closed [Unix.O_CLOEXEC]);
+    (fun () -> test_cloexec ~closed:true [Unix.O_CLOEXEC]);
 
   test "openfile: O_CLOEXEC not given" ~only_if:(fun () -> not Sys.win32)
-    (fun () -> test_cloexec assert_fd_open []);
+    (fun () -> test_cloexec ~closed:false []);
 
 #if OCAML_VERSION >= (4, 05, 0)
   test "openfile: O_KEEPEXEC" ~only_if:(fun () -> not Sys.win32)
-    (fun () -> test_cloexec assert_fd_open [Unix.O_KEEPEXEC]);
+    (fun () -> test_cloexec ~closed:false [Unix.O_KEEPEXEC]);
 
   test "openfile: O_CLOEXEC, O_KEEPEXEC" ~only_if:(fun () -> not Sys.win32)
-    (fun () -> test_cloexec assert_fd_closed [Unix.O_CLOEXEC; Unix.O_KEEPEXEC]);
+    (fun () -> test_cloexec ~closed:true [Unix.O_CLOEXEC; Unix.O_KEEPEXEC]);
 
   test "openfile: O_KEEPEXEC, O_CLOEXEC" ~only_if:(fun () -> not Sys.win32)
-    (fun () -> test_cloexec assert_fd_closed [Unix.O_KEEPEXEC; Unix.O_CLOEXEC]);
+    (fun () -> test_cloexec ~closed:true [Unix.O_KEEPEXEC; Unix.O_CLOEXEC]);
 #endif
 ]
 

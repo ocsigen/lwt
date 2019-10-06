@@ -3,27 +3,6 @@
 
 
 
-let is_fd_open fd_ =
-  let fd  = (Obj.magic (int_of_string fd_) : Unix.file_descr) in
-  let buf = Bytes.create 42 in
-    try
-      ignore (Unix.read fd buf 0 42);
-      true
-    with Unix.Unix_error(Unix.EBADF, _, _) ->
-      false
-
-let () =
-  try
-    assert (not @@ is_fd_open @@ Unix.getenv Test_lwt_unix.assert_fd_closed);
-    exit 0
-  with Not_found -> ()
-
-let () =
-  try
-    assert (is_fd_open @@ Unix.getenv Test_lwt_unix.assert_fd_open);
-    exit 0
-  with Not_found -> ()
-
 let () =
   Test.concurrent "unix" [
     Test_lwt_unix.suite;
