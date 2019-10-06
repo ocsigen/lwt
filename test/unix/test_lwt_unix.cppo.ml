@@ -10,8 +10,6 @@ let assert_fd_closed = "ASSERT_FD_CLOSED"
 let assert_fd_open   = "ASSERT_FD_OPEN"
 
 let test_cloexec assertion flags =
-  if Sys.win32 then Lwt.return true
-  else
     Lwt_unix.openfile "/dev/zero" (Unix.O_RDONLY :: flags) 0o644 >>= fun fd ->
     let fd_ = Lwt_unix.unix_file_descr fd in
     match Lwt_unix.fork () with
@@ -29,20 +27,20 @@ let test_cloexec assertion flags =
                 Lwt.return_false
 
 let openfile_tests = [
-  test "openfile: O_CLOEXEC"
+  test "openfile: O_CLOEXEC" ~only_if:(fun () -> not Sys.win32)
     (fun () -> test_cloexec assert_fd_closed [Unix.O_CLOEXEC]);
 
-  test "openfile: O_CLOEXEC not given"
+  test "openfile: O_CLOEXEC not given" ~only_if:(fun () -> not Sys.win32)
     (fun () -> test_cloexec assert_fd_open []);
 
 #if OCAML_VERSION >= (4, 05, 0)
-  test "openfile: O_KEEPEXEC"
+  test "openfile: O_KEEPEXEC" ~only_if:(fun () -> not Sys.win32)
     (fun () -> test_cloexec assert_fd_open [Unix.O_KEEPEXEC]);
 
-  test "openfile: O_CLOEXEC, O_KEEPEXEC"
+  test "openfile: O_CLOEXEC, O_KEEPEXEC" ~only_if:(fun () -> not Sys.win32)
     (fun () -> test_cloexec assert_fd_closed [Unix.O_CLOEXEC; Unix.O_KEEPEXEC]);
 
-  test "openfile: O_KEEPEXEC, O_CLOEXEC"
+  test "openfile: O_KEEPEXEC, O_CLOEXEC" ~only_if:(fun () -> not Sys.win32)
     (fun () -> test_cloexec assert_fd_closed [Unix.O_KEEPEXEC; Unix.O_CLOEXEC]);
 #endif
 ]
