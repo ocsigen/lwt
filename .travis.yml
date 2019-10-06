@@ -90,7 +90,7 @@ install:
 
 script:
   - '[ "$COVERAGE" == yes ] || dune build'
-  - '[ "$COVERAGE" == yes ] || dune runtest -j 1 --no-buffer --force'
+  - '[ "$COVERAGE" == yes ] || dune runtest --force'
   - '[ "$COVERAGE" != yes ] || make coverage-only'
   - '[ "$COVERAGE" != yes ] || bisect-ppx-report send-to Coveralls'
 
