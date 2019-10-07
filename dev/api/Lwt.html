@@ -955,7 +955,11 @@ If <span class="odocwiki_inlinecode">p</span> is canceled, <span class="odocwiki
 </li><li> If <span class="odocwiki_inlinecode">p</span> is <a href=" /#TYPEt" class="ocsimore_phrasing_link"> rejected</a> with exception <span class="odocwiki_inlinecode">exn</span>, the result is
 <span class="odocwiki_inlinecode">Lwt.Fail exn</span>.
 </li><li> If <span class="odocwiki_inlinecode">p</span> is <a href=" /#TYPEt" class="ocsimore_phrasing_link"> pending</a>, the result is <span class="odocwiki_inlinecode">Lwt.Sleep</span>.
-</li></ul><p>The constructor names are historical holdovers.</p></div><h2 id="2_Deprecated">Deprecated <a class="backref" href="#2_Deprecated">&#182;</a></h2><h3 id="3_Implicitcallbackarguments">Implicit callback arguments <a class="backref" href="#3_Implicitcallbackarguments">&#182;</a></h3><pre class="ocsforge_color odocwiki_code" id="TYPEkey"><span class="ocsforge_color_keyword">type</span> <span class="odocwiki_type">'a</span> <span class="odocwiki_name">key</span></pre><div class="odocwiki_info"><p>Keys into the implicit callback argument map, for implicit arguments of type
+</li></ul><p>The constructor names are historical holdovers.</p></div><h2 id="2_Deprecated">Deprecated <a class="backref" href="#2_Deprecated">&#182;</a></h2><h3 id="3_Implicitcallbackarguments">Implicit callback arguments <a class="backref" href="#3_Implicitcallbackarguments">&#182;</a></h3><p>Using this mechanism is discouraged, because it is non-syntactic, and
+because it manipulates hidden state in module <span class="odocwiki_inlinecode">Lwt</span>. It is recommended
+instead to pass additional values explicitly in tuples, or maintain explicit
+associative maps for them.
+</p><pre class="ocsforge_color odocwiki_code" id="TYPEkey"><span class="ocsforge_color_keyword">type</span> <span class="odocwiki_type">'a</span> <span class="odocwiki_name">key</span></pre><div class="odocwiki_info"><p>Keys into the implicit callback argument map, for implicit arguments of type
 <span class="odocwiki_inlinecode">'a option</span>.
 </p><p>The keys are abstract, but they are basically integers that are all distinct
 from each other.
@@ -1023,10 +1027,6 @@ variants <span class="odocwiki_inlinecode">&gt;&gt;=</span> and <span class="odo
 and its variant <span class="odocwiki_inlinecode">try%lwt</span>, <span><a href=".././api/Lwt#VALfinalize">Lwt.finalize</a></span> and its variant <span class="odocwiki_inlinecode">%lwt.finally</span>,
 <span><a href=".././api/Lwt#VALtry_bind">Lwt.try_bind</a></span>, <span><a href=".././api/Lwt#VALon_success">Lwt.on_success</a></span>, <span><a href=".././api/Lwt#VALon_failure">Lwt.on_failure</a></span>,
 <span><a href=".././api/Lwt#VALon_termination">Lwt.on_termination</a></span>, and <span><a href=".././api/Lwt#VALon_any">Lwt.on_any</a></span>.
-</p><p>Using this mechanism is discouraged, because it is non-syntactic, and
-because it manipulates hidden state in module <span class="odocwiki_inlinecode">Lwt</span>. It is recommended
-instead to pass additional values explicitly in tuples, or maintain explicit
-associative maps for them.
 </p><p><span class="odocwiki_inlinecode">Lwt.with_value</span> should only be called in the main thread, i.e. do not call
 it inside <span><a href=".././api/Lwt_preemptive#VALdetach">Lwt_preemptive.detach</a></span>.</p></div><h3 id="3_Immediateresolving">Immediate resolving <a class="backref" href="#3_Immediateresolving">&#182;</a></h3><pre class="ocsforge_color odocwiki_code" id="VALwakeup"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">wakeup</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEu">u</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span class="ocsforge_color_delimiter">-&gt;</span> unit</span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.wakeup r v</span> is like <span><a href=".././api/Lwt#VALwakeup_later">Lwt.wakeup_later</a></span><span class="odocwiki_inlinecode">r v</span>, except it guarantees
 that callbacks associated with <span class="odocwiki_inlinecode">r</span> will be called immediately, deeper on the
