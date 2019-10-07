@@ -1505,7 +1505,12 @@ val state : 'a t -> 'a state
 
 (** {2 Deprecated} *)
 
-(** {3 Implicit callback arguments} *)
+(** {3 Implicit callback arguments}
+
+    Using this mechanism is discouraged, because it is non-syntactic, and
+    because it manipulates hidden state in module [Lwt]. It is recommended
+    instead to pass additional values explicitly in tuples, or maintain explicit
+    associative maps for them. *)
 
 type 'a key
 (** Keys into the implicit callback argument map, for implicit arguments of type
@@ -1600,11 +1605,6 @@ let () =
     and its variant [try%lwt], {!Lwt.finalize} and its variant [%lwt.finally],
     {!Lwt.try_bind}, {!Lwt.on_success}, {!Lwt.on_failure},
     {!Lwt.on_termination}, and {!Lwt.on_any}.
-
-    Using this mechanism is discouraged, because it is non-syntactic, and
-    because it manipulates hidden state in module [Lwt]. It is recommended
-    instead to pass additional values explicitly in tuples, or maintain explicit
-    associative maps for them.
 
     [Lwt.with_value] should only be called in the main thread, i.e. do not call
     it inside {!Lwt_preemptive.detach}. *)
