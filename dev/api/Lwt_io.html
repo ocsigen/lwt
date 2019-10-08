@@ -244,7 +244,8 @@ that exception, except pass it to <span><a href=".././api/Lwt#VALasync_exception
 listening. Otherwise, a fresh socket is created internally. In either case,
 <span class="odocwiki_inlinecode">establish_server_with_client_socket</span> will internally assign
 <span class="odocwiki_inlinecode">listen_address</span> to the server socket.
-</p><p><span class="odocwiki_inlinecode">~backlog</span> is the argument passed to <span><a href=".././api/Lwt_unix#VALlisten">Lwt_unix.listen</a></span>.
+</p><p><span class="odocwiki_inlinecode">~backlog</span> is the argument passed to <span><a href=".././api/Lwt_unix#VALlisten">Lwt_unix.listen</a></span>. Its default value
+is <span class="odocwiki_inlinecode">SOMAXCONN</span>, which varies by platform and socket kind.
 </p><p>The returned promise (a <span class="odocwiki_inlinecode">server Lwt.t</span>) resolves when the server has just
 started listening on <span class="odocwiki_inlinecode">listen_address</span>: right after the internal call to
 <span class="odocwiki_inlinecode">listen</span>, and right before the first internal call to <span class="odocwiki_inlinecode">accept</span>.
