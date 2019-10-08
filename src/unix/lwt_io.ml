@@ -1441,7 +1441,7 @@ let shutdown_server_deprecated server =
 let establish_server_generic
     bind_function
     ?fd:preexisting_socket_for_listening
-    ?(backlog = 5)
+    ?(backlog = Lwt_unix.somaxconn ())
     listening_address
     connection_handler_callback =
 

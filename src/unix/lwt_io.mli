@@ -578,7 +578,8 @@ f client_address client_socket
     [establish_server_with_client_socket] will internally assign
     [listen_address] to the server socket.
 
-    [~backlog] is the argument passed to {!Lwt_unix.listen}.
+    [~backlog] is the argument passed to {!Lwt_unix.listen}. Its default value
+    is [SOMAXCONN], which varies by platform and socket kind.
 
     The returned promise (a [server Lwt.t]) resolves when the server has just
     started listening on [listen_address]: right after the internal call to

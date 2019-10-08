@@ -152,7 +152,10 @@
   unix_tcflush_job
   unix_tcsendbreak_job
   unix_truncate_job
-  unix_unlink_job)
+  unix_unlink_job
+  unix_somaxconn
+  windows_somaxconn
+ )
  (install_c_headers lwt_features lwt_config lwt_unix)
  (c_flags -I. (:include unix_c_flags.sexp))
  (c_library_flags (:include unix_c_library_flags.sexp)))

@@ -1683,6 +1683,8 @@ let listen ch cnt =
   check_descriptor ch;
   Unix.listen ch.fd cnt
 
+external somaxconn : unit -> int = "lwt_unix_somaxconn"
+
 let getpeername ch =
   check_descriptor ch;
   Unix.getpeername ch.fd
