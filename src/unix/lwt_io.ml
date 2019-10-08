@@ -1325,11 +1325,11 @@ let with_file ?buffer ?flags ?perm ~mode filename f =
 
 let prng = lazy (Random.State.make_self_init ())
 
-let temp_file_name temp_dir prefix =
+let temp_file_name temp_dir prefix suffix =
   let rnd = Random.State.int (Lazy.force prng) 0x1000000 in
-  Filename.concat temp_dir (Printf.sprintf "%s%06x" prefix rnd)
+  Filename.concat temp_dir (Printf.sprintf "%s%06x%s" prefix rnd suffix)
 
-let open_temp_file ?buffer ?flags ?perm ?temp_dir ?prefix () =
+let open_temp_file ?buffer ?flags ?perm ?temp_dir ?prefix ?(suffix = "") () =
   let flags =
     match flags with
     | None -> [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_EXCL; Unix.O_CLOEXEC]
@@ -1347,7 +1347,7 @@ let open_temp_file ?buffer ?flags ?perm ?temp_dir ?prefix () =
   in
 
   let rec attempt n =
-    let fname = temp_file_name dir prefix in
+    let fname = temp_file_name dir prefix suffix in
     Lwt.catch
       (fun () ->
         open_file ?buffer ~flags ?perm ~mode:Output fname >>= fun chan ->
@@ -1358,9 +1358,9 @@ let open_temp_file ?buffer ?flags ?perm ?temp_dir ?prefix () =
   in
   attempt 0
 
-let with_temp_file ?buffer ?flags ?perm ?temp_dir ?prefix f =
+let with_temp_file ?buffer ?flags ?perm ?temp_dir ?prefix ?suffix f =
   open_temp_file
-    ?buffer ?flags ?perm ?temp_dir ?prefix () >>= fun (fname, chan) ->
+    ?buffer ?flags ?perm ?temp_dir ?prefix ?suffix () >>= fun (fname, chan) ->
   Lwt.finalize
     (fun () ->
       f (fname, chan))

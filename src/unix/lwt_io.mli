@@ -450,6 +450,7 @@ val open_temp_file :
   ?perm:Unix.file_perm ->
   ?temp_dir:string ->
   ?prefix:string ->
+  ?suffix:string ->
   unit ->
     (string * output_channel) Lwt.t
 (** [open_temp_file ()] starts creating a new temporary file, and evaluates to a
@@ -478,7 +479,10 @@ val open_temp_file :
 
     [?prefix] helps determine the name of the file. It will be the prefix
     concatenated with a random sequence of characters. If not specified,
-    [open_temp_file] uses some default prefix. *)
+    [open_temp_file] uses some default prefix.
+
+    [?suffix] is like prefix, but it is appended at the end of the filename. In
+    particular, it can be used to set the extension. *)
 
 val with_temp_file :
   ?buffer:Lwt_bytes.t ->
@@ -486,6 +490,7 @@ val with_temp_file :
   ?perm:Unix.file_perm ->
   ?temp_dir:string ->
   ?prefix:string ->
+  ?suffix:string ->
   (string * output_channel -> 'b Lwt.t) ->
     'b Lwt.t
 (** [with_temp_file f] calls {!open_temp_file}[ ()], passing all optional
