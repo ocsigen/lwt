@@ -1368,6 +1368,51 @@ let with_temp_file ?buffer ?flags ?perm ?temp_dir ?prefix ?suffix f =
       close chan >>= fun () ->
       Lwt_unix.unlink fname)
 
+let create_temp_dir
+    ?(perm = 0o755)
+    ?(parent = Filename.get_temp_dir_name ())
+    ?(prefix = "lwt_io_temp_dir_")
+    ?(suffix = "")
+    () =
+  let rec attempt n =
+    let name = temp_file_name parent prefix suffix in
+    Lwt.catch
+      (fun () ->
+        Lwt_unix.mkdir name perm >>= fun () ->
+        Lwt.return name)
+      (function
+      | Unix.Unix_error (Unix.EEXIST, _, _) when n < 1000 -> attempt (n + 1)
+      | exn -> Lwt.fail exn)
+  in
+  attempt 0
+
+(* This is likely VERY slow for directories with many files. That is probably
+   best addressed by switching to blocking calls run inside a worker thread,
+   i.e. with Lwt_preemptive. *)
+let rec delete_recursively directory =
+  Lwt_unix.files_of_directory directory
+  |> Lwt_stream.iter_s begin fun entry ->
+    if entry = Filename.current_dir_name ||
+       entry = Filename.parent_dir_name then
+      Lwt.return ()
+    else
+      let path = Filename.concat directory entry in
+      Lwt_unix.lstat path >>= fun stat ->
+      if stat.Lwt_unix.st_kind = Lwt_unix.S_DIR then
+        delete_recursively path
+      else
+        Lwt_unix.unlink path
+  end >>= fun () ->
+  Lwt_unix.rmdir directory
+
+let with_temp_dir ?perm ?parent ?prefix ?suffix f =
+  create_temp_dir ?perm ?parent ?prefix ?suffix () >>= fun name ->
+  Lwt.finalize
+    (fun () ->
+      f name)
+    (fun () ->
+      delete_recursively name)
+
 let file_length filename =
   Lwt_unix.stat filename >>= fun stat ->
   if stat.Unix.st_kind = Unix.S_DIR then

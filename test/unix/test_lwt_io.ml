@@ -358,6 +358,44 @@ let suite = suite "lwt_io" [
        Lwt_io.with_temp_file f >>= fun _ -> Lwt.return_true;
     );
 
+  test "create_temp_dir" begin fun () ->
+    let prefix = "temp_dir" in
+    let suffix = "_foo" in
+    Lwt_io.create_temp_dir ~parent:Filename.current_dir_name ~prefix ~suffix ()
+      >>= fun path ->
+
+    let name = Filename.basename path in
+    let prefix_matches = String.sub name 0 (String.length prefix) = prefix in
+    let actual_suffix =
+      String.sub
+        name (String.length name - String.length suffix) (String.length suffix)
+    in
+    let suffix_matches = actual_suffix = suffix in
+    let directory_exists = Sys.is_directory path in
+
+    Lwt_unix.rmdir path >>= fun () ->
+
+    Lwt.return (prefix_matches && suffix_matches && directory_exists)
+  end;
+
+  test "with_temp_dir" ~sequential:true begin fun () ->
+    Lwt_io.with_temp_dir ~parent:Filename.current_dir_name ~prefix:"temp_dir"
+        begin fun path ->
+
+      let directory_existed = Sys.is_directory path in
+
+      open_out (Filename.concat path "foo") |> close_out;
+      open_out (Filename.concat path "bar") |> close_out;
+      let had_files = Array.length (Sys.readdir path) = 2 in
+
+      Lwt.return (path, directory_existed, had_files)
+    end >>= fun (path, directory_existed, had_files) ->
+
+    let directory_removed = not (Sys.file_exists path) in
+
+    Lwt.return (directory_existed && had_files && directory_removed)
+  end;
+
   test "file_length on directory" begin fun () ->
     Lwt.catch
       (fun () ->

@@ -499,6 +499,40 @@ val with_temp_file :
     returned by [f] is resolved, [with_temp_file] closes the channel and deletes
     the temporary file by calling {!Lwt_unix.unlink}. *)
 
+val create_temp_dir :
+  ?perm:Unix.file_perm ->
+  ?parent:string ->
+  ?prefix:string ->
+  ?suffix:string ->
+  unit ->
+    string Lwt.t
+(** Creates a temporary directory, and returns a promise that resolves to its
+    path. The caller must take care to remove the directory. Alternatively, see
+    {!Lwt_io.with_temp_dir}.
+
+    If [~perm] is specified, the directory is created with the given
+    permissions. The default permissions are [0755].
+
+    [~parent] is the directory in which the temporary directory is created. If
+    not specified, the default value is the result of
+    [Filename.get_temp_dir_name ()].
+
+    [~prefix] is prepended to the directory name, and [~suffix] is appended to
+    it. *)
+
+val with_temp_dir :
+  ?perm:Unix.file_perm ->
+  ?parent:string ->
+  ?prefix:string ->
+  ?suffix:string ->
+  (string -> 'a Lwt.t) ->
+    'a Lwt.t
+(** [with_temp_dir f] first calls {!create_temp_dir}, forwarding all optional
+    arguments to it. Once the temporary directory is created at [path],
+    [with_temp_dir f] calls [f path]. When the promise returned by [f path] is
+    resolved, [with_temp_dir f] recursively deletes the temporary directory and
+    all its contents. *)
+
 val open_connection :
   ?fd : Lwt_unix.file_descr ->
   ?in_buffer : Lwt_bytes.t -> ?out_buffer : Lwt_bytes.t ->
