@@ -14,7 +14,7 @@ make build
 
 date
 
-dune runtest -j 1 --no-buffer --force
+dune runtest --force
 
 date
 
