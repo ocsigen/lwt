@@ -170,6 +170,14 @@ We are looking for beta-tester and contributors.
     ?prefix:string -&gt;
     ?suffix:string -&gt;
     (string * Lwt_io.output_channel -&gt; 'b Lwt.t) -&gt; 'b Lwt.t
+  val create_temp_dir :
+    ?perm:Unix.file_perm -&gt;
+    ?parent:string -&gt;
+    ?prefix:string -&gt; ?suffix:string -&gt; unit -&gt; string Lwt.t
+  val with_temp_dir :
+    ?perm:Unix.file_perm -&gt;
+    ?parent:string -&gt;
+    ?prefix:string -&gt; ?suffix:string -&gt; (string -&gt; 'a Lwt.t) -&gt; 'a Lwt.t
   val open_connection :
     ?fd:Lwt_unix.file_descr -&gt;
     ?in_buffer:Lwt_bytes.t -&gt;
