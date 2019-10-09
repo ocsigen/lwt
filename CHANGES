@@ -1,3 +1,24 @@
+===== 4.4.0 (2019-10-09) =====
+
+====== Additions ======
+
+  * ?suffix argument for Lwt_io.with_temp_file and Lwt_io.open_temp_file (#724,
+    requested Volker Diels-Grabsch).
+  * Lwt_io.with_temp_dir and Lwt_io.create_temp_dir (#724, requested Volker
+    Diels-Grabsch).
+
+====== Changes ======
+
+  * Lwt_io.establish_server: increase default backlog from 5 to SOMAXCONN (#731,
+    suggested Konstantin Olkhovskiy).
+  * PPX: use OCaml 4.09 ASTs to support recent features (074f679).
+  * PPX: deprecate let%lwt structure items (#733, prompted Didier Le Botlan).
+
+====== Miscellaneous ======
+
+  * Tests now pass in more environments (#721, #722, #725, #729, reported Olaf
+    Hering).
+
 ===== 4.3.1 (2019-09-26) =====
 
 ====== Bugs fixed ======
