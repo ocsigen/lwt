@@ -1534,4 +1534,4 @@ val has_wait4 : bool
   (** @deprecated Use [Lwt_sys.have `wait4]. *)
 
 val somaxconn : unit -> int
-  [@@ocaml.deprected " This is an internal function."]
+  [@@ocaml.deprecated " This is an internal function."]
