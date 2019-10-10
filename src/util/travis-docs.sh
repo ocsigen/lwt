@@ -47,7 +47,7 @@ then
         LAST=`git log -1 --pretty=%B | head -n 1`
         if [ "$LAST" == "$MESSAGE" ]
         then
-            AMEND=--amend
+            AMEND=--amend --reset-author
         else
             AMEND=
         fi
