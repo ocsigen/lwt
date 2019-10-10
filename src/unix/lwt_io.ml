@@ -1486,7 +1486,7 @@ let shutdown_server_deprecated server =
 let establish_server_generic
     bind_function
     ?fd:preexisting_socket_for_listening
-    ?(backlog = Lwt_unix.somaxconn ())
+    ?(backlog = Lwt_unix.somaxconn () [@ocaml.warning "-3"])
     listening_address
     connection_handler_callback =
 
