@@ -868,27 +868,27 @@ let bind_tests = [
       let socket = Lwt_unix.(socket PF_UNIX SOCK_STREAM 0) in
 
       let rec bind_loop attempts =
-          let path = Test_unix.temp_name () in
-          let address = Unix.(ADDR_UNIX path) in
-          Lwt.catch
-            (fun () ->
-              Lwt_unix.bind socket address >>= fun () ->
-              Lwt.return path)
-            (function
-              | Unix.Unix_error (Unix.EADDRINUSE, "bind", _)
-              | Unix.Unix_error (Unix.EISDIR, "bind", _) as exn ->
-                if attempts <= 1 then
-                  Lwt.fail exn
-                else
-                  bind_loop (attempts - 1)
-              | Unix.Unix_error (Unix.EPERM, "bind", _) ->
-                (* On EPERM, assume that we are under WSL, but in the Windows
-                   filesystem. If this ever results in a false positive, this
-                   test should add a check for WSL by checking for the existence
-                   of /proc/version, reading it, and checking its contents for
-                   the string "WSL". *)
-                Lwt.fail Skip
-              | e -> Lwt.fail e) [@ocaml.warning "-4"]
+        let path = Test_unix.temp_name () in
+        let address = Unix.(ADDR_UNIX path) in
+        Lwt.catch
+          (fun () ->
+            Lwt_unix.bind socket address >>= fun () ->
+            Lwt.return path)
+          (function
+            | Unix.Unix_error (Unix.EADDRINUSE, "bind", _)
+            | Unix.Unix_error (Unix.EISDIR, "bind", _) as exn ->
+              if attempts <= 1 then
+                Lwt.fail exn
+              else
+                bind_loop (attempts - 1)
+            | Unix.Unix_error (Unix.EPERM, "bind", _) ->
+              (* On EPERM, assume that we are under WSL, but in the Windows
+                 filesystem. If this ever results in a false positive, this
+                 test should add a check for WSL by checking for the existence
+                 of /proc/version, reading it, and checking its contents for the
+                 string "WSL". *)
+              Lwt.fail Skip
+            | e -> Lwt.fail e) [@ocaml.warning "-4"]
       in
 
       Lwt.finalize
