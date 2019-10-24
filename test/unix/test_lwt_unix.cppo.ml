@@ -868,17 +868,19 @@ let bind_tests = [
       let socket = Lwt_unix.(socket PF_UNIX SOCK_STREAM 0) in
 
       let rec bind_loop attempts =
-        if attempts <= 0 then
-          Lwt.fail (Unix.Unix_error (Unix.EADDRINUSE, "bind", ""))
-        else
           let path = Test_unix.temp_name () in
           let address = Unix.(ADDR_UNIX path) in
           Lwt.catch
             (fun () ->
               Lwt_unix.bind socket address >>= fun () ->
-              Lwt.return_true)
+              Lwt.return path)
             (function
-              | Unix.Unix_error (Unix.EADDRINUSE, "bind", _) -> Lwt.return_false
+              | Unix.Unix_error (Unix.EADDRINUSE, "bind", _)
+              | Unix.Unix_error (Unix.EISDIR, "bind", _) as exn ->
+                if attempts <= 1 then
+                  Lwt.fail exn
+                else
+                  bind_loop (attempts - 1)
               | Unix.Unix_error (Unix.EPERM, "bind", _) ->
                 (* On EPERM, assume that we are under WSL, but in the Windows
                    filesystem. If this ever results in a false positive, this
@@ -886,11 +888,7 @@ let bind_tests = [
                    of /proc/version, reading it, and checking its contents for
                    the string "WSL". *)
                 Lwt.fail Skip
-              | e -> Lwt.fail e) [@ocaml.warning "-4"] >>= fun bound ->
-          if bound then
-            Lwt.return path
-          else
-            bind_loop (attempts - 1)
+              | e -> Lwt.fail e) [@ocaml.warning "-4"]
       in
 
       Lwt.finalize
