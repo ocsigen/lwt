@@ -98,6 +98,10 @@ let utimes_tests = [
       let c1 = abs_float (stat.Unix.st_atime -. now) < acceptable_delta in
       let c2 = abs_float (stat.Unix.st_mtime -. now) < acceptable_delta in
 
+      if not c1 || not c2 then
+        Printf.eprintf "times: %f %f %f"
+          now stat.Unix.st_atime stat.Unix.st_mtime;
+
       Lwt.return (c1 && c2));
 
   test "utimes: missing file"
