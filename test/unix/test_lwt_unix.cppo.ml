@@ -431,9 +431,14 @@ let writev_tests =
     Lwt_unix.close write_fd >>= fun () ->
     let blocking_matches =
       match blocking, is_blocking with
-      | Some v, v' when v <> v' -> false
+      | Some v, v' when v <> v' ->
+        Printf.eprintf "\nblocking: v = %b, v' = %b\n" v v';
+        false
       | _ -> true
     in
+    if bytes_written <> data_length then
+      Printf.eprintf "\nwritev: expected to write %i bytes; wrote %i\n"
+        data_length bytes_written;
     Lwt.return (bytes_written = data_length && blocking_matches)
   in
 
@@ -441,12 +446,17 @@ let writev_tests =
     if not_readable then
       let readable = Lwt_unix.readable read_fd in
       Lwt_unix.close read_fd >>= fun () ->
+      if readable then
+        Printf.eprintf "\nreadable: %b\n" readable;
       Lwt.return (not readable)
     else
       let open! Lwt_io in
       let channel = of_fd ~mode:input read_fd in
       read channel >>= fun read_data ->
       close channel >>= fun () ->
+      if read_data <> expected_data then
+        Printf.eprintf "\nreadv: expected to read %s; read %s\n"
+          expected_data read_data;
       Lwt.return (read_data = expected_data)
   in
 
