@@ -51,11 +51,15 @@ let suite = suite "Lwt_unix sleep and timeout" [
         (fun () ->
            Lwt_unix.with_timeout duration f
            >>= fun () ->
+           Printf.eprintf "\nno timeout\n";
            Lwt.return false
         )
         (function
           | Lwt_unix.Timeout ->
             let check = cmp_elapsed_time start_time duration in
+            if not check then
+              Printf.eprintf "\nstart_time: %f, duration: %f\n"
+                start_time duration;
             Lwt.return check
           | exn -> Lwt.fail exn
         )
