@@ -459,8 +459,8 @@ let writev_tests =
       read channel >>= fun read_data ->
       close channel >>= fun () ->
       if read_data <> expected_data then
-        Printf.eprintf "\nreadv: expected to read %s; read %s\n"
-          expected_data read_data;
+        Printf.eprintf "\nreadv: expected to read %s; read %s (length %i)\n"
+          expected_data read_data (String.length read_data);
       Lwt.return (read_data = expected_data)
   in
 
