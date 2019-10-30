@@ -609,7 +609,7 @@ let suite = suite "lwt_bytes" [
       Lwt.return check
     end;
 
-    test "read: buffer retention" begin fun () ->
+    test "read: buffer retention" ~sequential:true begin fun () ->
       let buffer = Lwt_bytes.create 3 in
 
       let read_fd, write_fd = Lwt_unix.pipe () in
@@ -646,7 +646,7 @@ let suite = suite "lwt_bytes" [
       Lwt.return check
     end;
 
-    test "write: buffer retention" begin fun () ->
+    test "write: buffer retention" ~sequential:true begin fun () ->
       let buffer = Lwt_bytes.create 3 in
 
       let read_fd, write_fd = Lwt_unix.pipe () in
