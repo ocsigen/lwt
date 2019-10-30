@@ -24,6 +24,7 @@ struct job_bytes_write {
     DWORD length;
     DWORD result;
     DWORD error_code;
+    value ocaml_buffer;
 };
 
 static void worker_bytes_write(struct job_bytes_write *job)
@@ -44,6 +45,7 @@ CAMLprim value result_bytes_write(struct job_bytes_write *job)
 {
     value result;
     DWORD error = job->error_code;
+    caml_remove_generational_global_root(&job->ocaml_buffer);
     if (error) {
         lwt_unix_free_job(&job->job);
         win32_maperr(error);
@@ -68,6 +70,8 @@ CAMLprim value lwt_unix_bytes_write_job(value val_fd, value val_buffer,
     job->buffer = (char *)Caml_ba_data_val(val_buffer) + Long_val(val_offset);
     job->length = Long_val(val_length);
     job->error_code = 0;
+    job->ocaml_buffer = val_buffer;
+    caml_register_generational_global_root(&job->ocaml_buffer);
     return lwt_unix_alloc_job(&(job->job));
 }
 #endif

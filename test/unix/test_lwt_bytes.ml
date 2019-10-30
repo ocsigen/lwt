@@ -646,6 +646,21 @@ let suite = suite "lwt_bytes" [
       Lwt.return check
     end;
 
+    test "write: buffer retention" begin fun () ->
+      let buffer = Lwt_bytes.create 3 in
+
+      let read_fd, write_fd = Lwt_unix.pipe () in
+      Lwt_unix.set_blocking write_fd true;
+
+      let retained = Lwt_unix.retained buffer in
+      Lwt_bytes.write write_fd buffer 0 3 >>= fun _ ->
+
+      Lwt_unix.close write_fd >>= fun () ->
+      Lwt_unix.close read_fd >|= fun () ->
+
+      !retained
+    end;
+
     test "bytes recv" ~only_if:(fun () -> not Sys.win32) begin fun () ->
       let buf = gen_buf 6 in
       let server_logic socket =

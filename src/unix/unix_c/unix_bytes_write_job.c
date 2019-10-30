@@ -8,6 +8,7 @@
 #if !defined(LWT_ON_WINDOWS)
 
 #include <caml/bigarray.h>
+#include <caml/memory.h>
 #include <caml/mlvalues.h>
 #include <caml/unixsupport.h>
 #include <errno.h>
@@ -21,6 +22,7 @@ struct job_bytes_write {
     long length;
     long result;
     int error_code;
+    value ocaml_buffer;
 };
 
 static void worker_bytes_write(struct job_bytes_write *job)
@@ -32,6 +34,7 @@ static void worker_bytes_write(struct job_bytes_write *job)
 static value result_bytes_write(struct job_bytes_write *job)
 {
     long result = job->result;
+    caml_remove_generational_global_root(&job->ocaml_buffer);
     LWT_UNIX_CHECK_JOB(job, result < 0, "write");
     lwt_unix_free_job(&job->job);
     return Val_long(result);
@@ -44,6 +47,8 @@ CAMLprim value lwt_unix_bytes_write_job(value val_fd, value val_buffer,
     job->fd = Int_val(val_fd);
     job->buffer = (char *)Caml_ba_data_val(val_buffer) + Long_val(val_offset);
     job->length = Long_val(val_length);
+    job->ocaml_buffer = val_buffer;
+    caml_register_generational_global_root(&job->ocaml_buffer);
     return lwt_unix_alloc_job(&(job->job));
 }
 #endif
