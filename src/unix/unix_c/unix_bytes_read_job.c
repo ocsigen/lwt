@@ -8,6 +8,7 @@
 #if !defined(LWT_ON_WINDOWS)
 
 #include <caml/bigarray.h>
+#include <caml/memory.h>
 #include <caml/mlvalues.h>
 #include <caml/unixsupport.h>
 #include <errno.h>
@@ -28,6 +29,8 @@ struct job_bytes_read {
     long result;
     /* The value of errno. */
     int error_code;
+    /* OCaml buffer. */
+    value ocaml_buffer;
 };
 
 static void worker_bytes_read(struct job_bytes_read *job)
@@ -39,6 +42,7 @@ static void worker_bytes_read(struct job_bytes_read *job)
 static value result_bytes_read(struct job_bytes_read *job)
 {
     long result = job->result;
+    caml_remove_generational_global_root(&job->ocaml_buffer);
     LWT_UNIX_CHECK_JOB(job, result < 0, "read");
     lwt_unix_free_job(&job->job);
     return Val_long(result);
@@ -51,6 +55,8 @@ CAMLprim value lwt_unix_bytes_read_job(value val_fd, value val_buf,
     job->fd = Int_val(val_fd);
     job->buffer = (char *)Caml_ba_data_val(val_buf) + Long_val(val_ofs);
     job->length = Long_val(val_len);
+    job->ocaml_buffer = val_buf;
+    caml_register_generational_global_root(&job->ocaml_buffer);
     return lwt_unix_alloc_job(&(job->job));
 }
 #endif

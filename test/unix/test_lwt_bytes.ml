@@ -609,6 +609,23 @@ let suite = suite "lwt_bytes" [
       Lwt.return check
     end;
 
+    test "read: buffer retention" begin fun () ->
+      let buffer = Lwt_bytes.create 3 in
+
+      let read_fd, write_fd = Lwt_unix.pipe () in
+      Lwt_unix.set_blocking read_fd true;
+
+      Lwt_unix.write_string write_fd "foo" 0 3 >>= fun _ ->
+
+      let retained = Lwt_unix.retained buffer in
+      Lwt_bytes.read read_fd buffer 0 3 >>= fun _ ->
+
+      Lwt_unix.close write_fd >>= fun () ->
+      Lwt_unix.close read_fd >|= fun () ->
+
+      !retained
+    end;
+
     test "bytes write" begin fun () ->
       let test_file = "bytes_io_data_write" in
       Lwt_unix.openfile test_file [O_RDWR;O_TRUNC; O_CREAT] 0o666
