@@ -25,6 +25,9 @@ struct job_readv {
     size_t count;
     /* Heap-allocated iovec structures. */
     struct iovec *iovecs;
+    /* Reference to OCaml I/O vectors, to be retained for the duration of the
+       readv operation. */
+    value ocaml_io_vectors;
     /* Data to be read into bytes buffers is first read into temporary buffers
        on the C heap. This is an array of descriptors for copying that data into
        the actual bytes buffers. The array is terminated by a descriptor whose
@@ -60,6 +63,8 @@ static value result_readv(struct job_readv *job)
     }
     free(job->iovecs);
 
+    caml_remove_generational_global_root(&job->ocaml_io_vectors);
+
     /* Decide on the actual result. */
     ssize_t result = job->result;
     LWT_UNIX_CHECK_JOB(job, result < 0, "readv");
@@ -81,7 +86,13 @@ CAMLprim value lwt_unix_readv_job(value fd, value io_vectors, value val_count)
 
     /* Assemble iovec structures on the heap. */
     job->iovecs = lwt_unix_malloc(sizeof(struct iovec) * count);
-    flatten_io_vectors(job->iovecs, io_vectors, count, NULL, job->buffers);
+    flatten_io_vectors(
+        job->iovecs, Field(io_vectors, 0), count, NULL, job->buffers);
+
+    /* Retain the OCaml I/O vectors, so that the buffers don't get
+       deallocated by the GC. */
+    job->ocaml_io_vectors = io_vectors;
+    caml_register_generational_global_root(&job->ocaml_io_vectors);
 
     CAMLreturn(lwt_unix_alloc_job(&job->job));
 }

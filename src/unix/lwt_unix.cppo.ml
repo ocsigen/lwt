@@ -774,8 +774,7 @@ external stub_readv :
   Unix.file_descr -> IO_vectors.io_vector list -> int -> int =
   "lwt_unix_readv"
 
-external readv_job :
-  Unix.file_descr -> IO_vectors.io_vector list -> int -> int job =
+external readv_job : Unix.file_descr -> IO_vectors.t -> int -> int job =
   "lwt_unix_readv_job"
 
 let readv fd io_vectors =
@@ -784,7 +783,7 @@ let readv fd io_vectors =
   Lazy.force fd.blocking >>= function
   | true ->
     wait_read fd >>= fun () ->
-    run_job (readv_job fd.fd io_vectors.IO_vectors.prefix count)
+    run_job (readv_job fd.fd io_vectors count)
   | false ->
     wrap_syscall Read fd (fun () ->
       stub_readv fd.fd io_vectors.IO_vectors.prefix count)
