@@ -27,6 +27,9 @@ struct job_writev {
     /* Heap-allocated array of pointers to heap-allocated copies of bytes buffer
        slices. This array is NULL-terminated. */
     char **buffer_copies;
+    /* Reference to OCaml I/O vectors, to be retained for the duration of the
+       writev operation. */
+    value ocaml_io_vectors;
 };
 
 static void worker_writev(struct job_writev *job)
@@ -44,6 +47,7 @@ static value result_writev(struct job_writev *job)
     }
     free(job->buffer_copies);
     free(job->iovecs);
+    caml_remove_generational_global_root(&job->ocaml_io_vectors);
 
     ssize_t result = job->result;
     LWT_UNIX_CHECK_JOB(job, result < 0, "writev");
@@ -64,8 +68,14 @@ CAMLprim value lwt_unix_writev_job(value fd, value io_vectors, value val_count)
     /* The extra (+ 1) pointer is for the NULL terminator, in case all buffer
        slices are in bytes buffers. */
     job->buffer_copies = lwt_unix_malloc((job->count + 1) * sizeof(char *));
-    flatten_io_vectors(job->iovecs, io_vectors, job->count, job->buffer_copies,
-                       NULL);
+    flatten_io_vectors(
+        job->iovecs, Field(io_vectors, 0), job->count, job->buffer_copies,
+        NULL);
+
+    /* Retain the OCaml I/O vectors, so that the buffers don't get
+       deallocated by the GC. */
+    job->ocaml_io_vectors = io_vectors;
+    caml_register_generational_global_root(&job->ocaml_io_vectors);
 
     CAMLreturn(lwt_unix_alloc_job(&job->job));
 }

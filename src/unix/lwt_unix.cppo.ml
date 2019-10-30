@@ -793,8 +793,7 @@ external stub_writev :
   Unix.file_descr -> IO_vectors.io_vector list -> int -> int =
   "lwt_unix_writev"
 
-external writev_job :
-  Unix.file_descr -> IO_vectors.io_vector list -> int -> int job =
+external writev_job : Unix.file_descr -> IO_vectors.t -> int -> int job =
   "lwt_unix_writev_job"
 
 let writev fd io_vectors =
@@ -803,7 +802,7 @@ let writev fd io_vectors =
   Lazy.force fd.blocking >>= function
   | true ->
     wait_write fd >>= fun () ->
-    run_job (writev_job fd.fd io_vectors.IO_vectors.prefix count)
+    run_job (writev_job fd.fd io_vectors count)
   | false ->
     wrap_syscall Write fd (fun () ->
       stub_writev fd.fd io_vectors.IO_vectors.prefix count)

@@ -496,6 +496,26 @@ let writev_tests =
           [writer ~blocking:true write_fd io_vectors 9;
            reader read_fd "foobarbaz"]);
 
+    test "writev: buffer retention" ~sequential:true
+        ~only_if:(fun () -> not Sys.win32) begin fun () ->
+      let io_vectors =
+        make_io_vectors [
+          `Bigarray ("foo", 0, 3)
+        ]
+      in
+
+      let read_fd, write_fd = Lwt_unix.pipe () in
+      Lwt_unix.set_blocking write_fd true;
+
+      let retained = Lwt_unix.retained io_vectors in
+      Lwt_unix.writev write_fd io_vectors >>= fun _ ->
+
+      Lwt_unix.close write_fd >>= fun () ->
+      Lwt_unix.close read_fd >|= fun () ->
+
+      !retained
+    end;
+
     test "writev: slices" ~only_if:(fun () -> not Sys.win32)
       (fun () ->
         let io_vectors =
