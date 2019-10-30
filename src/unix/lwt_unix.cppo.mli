@@ -1535,3 +1535,6 @@ val has_wait4 : bool
 
 val somaxconn : unit -> int
   [@@ocaml.deprecated " This is an internal function."]
+
+val retained : 'a -> bool ref
+  (** @deprecated Used for testing. *)
