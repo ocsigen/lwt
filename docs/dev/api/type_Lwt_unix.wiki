@@ -500,4 +500,5 @@
   val run : 'a Lwt.t -> 'a
   val has_wait4 : bool
   val somaxconn : unit -> int
+  val retained : 'a -> bool Stdlib.ref
 end >>
