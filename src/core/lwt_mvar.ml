@@ -26,6 +26,9 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *)
 
+(* This code is adapted from
+   https://web.archive.org/web/20101001215425/http://eigenclass.org:80/hiki/lightweight-threads-with-lwt. *)
+
 (* [Lwt_sequence] is deprecated – we don't want users outside Lwt using it.
    However, it is still used internally by Lwt. So, briefly disable warning 3
    ("deprecated"), and create a local, non-deprecated alias for

@@ -29,10 +29,7 @@
 (** Mailbox variables *)
 
 (** "Mailbox" variables implement a synchronising variable, used for
-    communication between concurrent threads.
-
-    This code adapted from
-    {{:http://eigenclass.org/hiki.rb?cmd=view&p=lightweight-threads-with-lwt}Comparing lightweight threads (eigenclass.org)} *)
+    communication between concurrent threads. *)
 
 type 'a t
   (** The type of a mailbox variable. Mailbox variables are used to
