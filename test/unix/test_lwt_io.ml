@@ -85,11 +85,19 @@ let suite = suite "lwt_io" [
       in
       Lwt_io.write oc "foo" >>= fun () ->
       Lwt_io.write oc "bar" >>= fun () ->
-      if !sent <> [] then
+      if !sent <> [] then begin
+        prerr_endline "auto-flush: !sent empty";
         Lwt.return false
+      end
       else
         Lwt_unix.yield () >>= fun () ->
-        Lwt.return (!sent = [Bytes.of_string "foobar"]));
+        let test_result = !sent = [Bytes.of_string "foobar"] in
+        if not test_result then
+          !sent
+          |> List.map Bytes.to_string
+          |> String.concat ","
+          |> Printf.eprintf "auto-flush: !sent = %s";
+        Lwt.return test_result);
 
   test "auto-flush in atomic"
     (fun () ->
@@ -107,11 +115,19 @@ let suite = suite "lwt_io" [
         (fun oc ->
           Lwt_io.write oc "foo" >>= fun () ->
           Lwt_io.write oc "bar" >>= fun () ->
-          if !sent <> [] then
+          if !sent <> [] then begin
+            prerr_endline "auto-flush: !sent empty";
             Lwt.return false
+          end
           else
             Lwt_unix.yield () >>= fun () ->
-            Lwt.return (!sent = [Bytes.of_string "foobar"]))
+            let test_result = !sent = [Bytes.of_string "foobar"] in
+            if not test_result then
+              !sent
+              |> List.map Bytes.to_string
+              |> String.concat ","
+              |> Printf.eprintf "auto-flush: !sent = %s";
+            Lwt.return test_result)
         oc);
 
   (* Without the corresponding bugfix, which is to handle ENOTCONN from
