@@ -57,8 +57,10 @@ let rec call_hooks () =
 
 let () =
   at_exit (fun () ->
-    Lwt.abandon_wakeups ();
-    run (call_hooks ()))
+    if not (Lwt_sequence.is_empty exit_hooks) then begin
+      Lwt.abandon_wakeups ();
+      run (call_hooks ())
+    end)
 
 let at_exit f = ignore (Lwt_sequence.add_l f exit_hooks)
 

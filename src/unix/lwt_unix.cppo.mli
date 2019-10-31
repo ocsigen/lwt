@@ -188,7 +188,10 @@ val fork : unit -> int
       - in the child process all pending jobs are canceled,
       - if you are going to use Lwt in the parent and the child, it is
         a good idea to call {!Lwt_io.flush_all} before callling
-        {!fork} to avoid double-flush. *)
+        {!fork} to avoid double-flush.
+      - otherwise, if you will not use Lwt in the child, call
+        {!Lwt_main.Exit_hooks.remove_all} to avoid Lwt calling {!Lwt_main.run}
+        during process exit. *)
 
 type process_status =
     Unix.process_status =
