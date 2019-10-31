@@ -5,10 +5,6 @@
 
 "~Mailbox" variables implement a synchronising variable~, used for
     communication between concurrent threads~.
-
-
-    ~This code adapted from
-    [[http://eigenclass.org/hiki.rb?cmd=view&p=lightweight-threads-with-lwt|~Comparing lightweight threads ~(eigenclass~.org~)]]
 <<pre class="ocsforge_color odocwiki_code" id="TYPEt"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_type"|'a>> <<span class="odocwiki_name"|t>>>><<div class="odocwiki_info"|~The type of a mailbox variable~. ~Mailbox variables are used to
       communicate values between threads in a synchronous way~. ~The
       type parameter specifies the type of the value propagated from
