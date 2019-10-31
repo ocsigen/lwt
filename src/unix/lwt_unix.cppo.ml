@@ -2252,8 +2252,11 @@ let do_wait4 flags pid =
 let wait_children = Lwt_sequence.create ()
 let wait_count () = Lwt_sequence.length wait_children
 
-let () =
-  if not Sys.win32 then
+let sigchld_handler_installed = ref false
+
+let install_sigchld_handler () =
+  if not Sys.win32 && not !sigchld_handler_installed then
+    sigchld_handler_installed := true;
     ignore begin
       on_signal Sys.sigchld
         (fun _ ->
@@ -2271,6 +2274,15 @@ let () =
            end wait_children)
     end
 
+(* The callback of Lwt.pause will only be run if Lwt_main.run is called by the
+   user. In that case, the process is positively using Lwt, and we want to
+   install the SIGCHLD handler, in order to cause any EINTR-unsafe code to
+   fail (as it should). *)
+let () =
+  Lwt.async (fun () ->
+    Lwt.pause () >|= fun () ->
+    install_sigchld_handler ())
+
 let _waitpid flags pid =
   Lwt.catch
     (fun () -> Lwt.return (Unix.waitpid flags pid))
@@ -2281,6 +2293,7 @@ let waitpid =
     _waitpid
   else
     fun flags pid ->
+      install_sigchld_handler ();
       if List.mem Unix.WNOHANG flags then
         _waitpid flags pid
       else
@@ -2297,6 +2310,7 @@ let waitpid =
         end
 
 let wait4 flags pid =
+  install_sigchld_handler ();
   if Sys.win32 then
     Lwt.return (do_wait4 flags pid)
   else

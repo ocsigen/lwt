@@ -28,6 +28,11 @@ let () = Lwt_main.run @@ main ()
       but neither it's necessary since
       the JS environment automatically takes care of the I/O considerations.
 
+      On Unix, calling [Lwt_main.run] installs a [SIGCHLD] handler, which is
+      needed for the implementations of {!Lwt_unix.waitpid} and
+      {!Lwt_unix.wait4}. As a result, programs that call [Lwt_main.run] and also
+      use non-Lwt system calls need to handle those system calls failing with
+      [EINTR].
 
       Note that you should avoid using [run] inside threads
       - The calling threads will not resume before [run]
