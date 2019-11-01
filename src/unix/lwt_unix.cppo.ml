@@ -2255,7 +2255,7 @@ let wait_count () = Lwt_sequence.length wait_children
 let sigchld_handler_installed = ref false
 
 let install_sigchld_handler () =
-  if not Sys.win32 && not !sigchld_handler_installed then
+  if not Sys.win32 && not !sigchld_handler_installed then begin
     sigchld_handler_installed := true;
     ignore begin
       on_signal Sys.sigchld
@@ -2273,6 +2273,7 @@ let install_sigchld_handler () =
                Lwt.wakeup_exn wakener e
            end wait_children)
     end
+  end
 
 (* The callback of Lwt.pause will only be run if Lwt_main.run is called by the
    user. In that case, the process is positively using Lwt, and we want to
