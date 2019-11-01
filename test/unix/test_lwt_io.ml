@@ -71,7 +71,7 @@ struct
 end
 
 let suite = suite "lwt_io" [
-  test "auto-flush"
+  test "auto-flush" ~sequential:true
     (fun () ->
       let sent = ref [] in
       let oc =
@@ -86,20 +86,21 @@ let suite = suite "lwt_io" [
       Lwt_io.write oc "foo" >>= fun () ->
       Lwt_io.write oc "bar" >>= fun () ->
       if !sent <> [] then begin
-        prerr_endline "auto-flush: !sent empty";
+        prerr_endline "auto-flush: !sent not empty";
         Lwt.return false
       end
       else
-        Lwt_unix.yield () >>= fun () ->
+        Lwt_unix.sleep 0.1 >>= fun () ->
         let test_result = !sent = [Bytes.of_string "foobar"] in
         if not test_result then
           !sent
           |> List.map Bytes.to_string
+          |> List.map (Printf.sprintf "'%s'")
           |> String.concat ","
           |> Printf.eprintf "auto-flush: !sent = %s";
         Lwt.return test_result);
 
-  test "auto-flush in atomic"
+  test "auto-flush in atomic" ~sequential:true
     (fun () ->
       let sent = ref [] in
       let oc =
@@ -116,17 +117,18 @@ let suite = suite "lwt_io" [
           Lwt_io.write oc "foo" >>= fun () ->
           Lwt_io.write oc "bar" >>= fun () ->
           if !sent <> [] then begin
-            prerr_endline "auto-flush: !sent empty";
+            prerr_endline "auto-flush atomic: !sent not empty";
             Lwt.return false
           end
           else
-            Lwt_unix.yield () >>= fun () ->
+            Lwt_unix.sleep 0.1 >>= fun () ->
             let test_result = !sent = [Bytes.of_string "foobar"] in
             if not test_result then
               !sent
               |> List.map Bytes.to_string
+              |> List.map (Printf.sprintf "'%s'")
               |> String.concat ","
-              |> Printf.eprintf "auto-flush: !sent = %s";
+              |> Printf.eprintf "auto-flush atomic: !sent = %s";
             Lwt.return test_result)
         oc);
 
