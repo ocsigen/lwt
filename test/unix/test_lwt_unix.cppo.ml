@@ -6,6 +6,70 @@
 open Test
 open Lwt.Infix
 
+(* An instance of the tester for the wait/waitpid tests. *)
+let () =
+  match Sys.argv with
+  | [|_; "--child"|] ->
+    exit 42
+  | _ ->
+    ()
+
+let wait_tests = [
+  test "wait" ~sequential:true ~only_if:(fun () -> not Sys.win32) begin fun () ->
+    match Lwt_unix.fork () with
+    | 0 ->
+      Unix.execv Sys.argv.(0) [|""; "--child"|]
+    | child_pid ->
+      Lwt_unix.wait () >|= function
+      | exited_pid, Lwt_unix.WEXITED 42 when exited_pid = child_pid -> true
+      | _ -> false
+  end;
+
+  test "waitpid" ~sequential:true ~only_if:(fun () -> not Sys.win32)
+      begin fun () ->
+    match Lwt_unix.fork () with
+    | 0 ->
+      Unix.execv Sys.argv.(0) [|""; "--child"|]
+    | child_pid ->
+      Lwt_unix.waitpid [] child_pid >|= function
+      | exited_pid, Lwt_unix.WEXITED 42 when exited_pid = child_pid -> true
+      | _ -> false
+  end;
+
+  test "waitpid: any child" ~sequential:true ~only_if:(fun () -> not Sys.win32)
+      begin fun () ->
+    match Lwt_unix.fork () with
+    | 0 ->
+      Unix.execv Sys.argv.(0) [|""; "--child"|]
+    | child_pid ->
+      Lwt_unix.waitpid [] 0 >|= function
+      | exited_pid, Lwt_unix.WEXITED 42 when exited_pid = child_pid -> true
+      | _ -> false
+  end;
+
+  test "wait4" ~sequential:true ~only_if:(fun () -> not Sys.win32)
+      begin fun () ->
+    match Lwt_unix.fork () with
+    | 0 ->
+      Unix.execv Sys.argv.(0) [|""; "--child"|]
+    | child_pid ->
+      Lwt_unix.wait4 [] child_pid >|= function
+      | exited_pid, Lwt_unix.WEXITED 42, _ when exited_pid = child_pid -> true
+      | _ -> false
+  end;
+
+  test "wait4: any child" ~sequential:true ~only_if:(fun () -> not Sys.win32)
+      begin fun () ->
+    match Lwt_unix.fork () with
+    | 0 ->
+      Unix.execv Sys.argv.(0) [|""; "--child"|]
+    | child_pid ->
+      Lwt_unix.wait4 [] 0 >|= function
+      | exited_pid, Lwt_unix.WEXITED 42, _ when exited_pid = child_pid -> true
+      | _ -> false
+  end;
+]
+
 (* The CLOEXEC tests use execv(2) to execute this code, by passing --cloexec to
    the copy of the tester in the child process. This is a module side effect
    that interprets that --cloexec argument. *)
@@ -1069,7 +1133,8 @@ let lwt_user_tests = [
 
 let suite =
   suite "lwt_unix"
-    (openfile_tests @
+    (wait_tests @
+     openfile_tests @
      utimes_tests @
      readdir_tests @
      io_vectors_byte_count_tests @
