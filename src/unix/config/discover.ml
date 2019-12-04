@@ -466,8 +466,13 @@ struct
           if !Arguments.android_target = Some true then
             no
           else begin
-            C_library_flags.detect context ~library:"pthread";
-            compiles context code
+            match compiles context code ~link_flags:["-lpthread"] with
+            | Some true ->
+              C_library_flags.add_link_flags ["-lpthread"];
+              Some true
+            | _ ->
+              C_library_flags.detect context ~library:"pthread";
+              compiles context code
           end
       end
   }
