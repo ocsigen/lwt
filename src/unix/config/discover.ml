@@ -728,7 +728,7 @@ struct
         int main()
         {
         #if defined(NON_R_GETHOSTBYNAME) || defined(NON_R_GETHOSTBYNAME)
-        #error \"not available\"
+        #error "not available"
         #else
             return 0;
         #endif
@@ -741,8 +741,6 @@ struct
     #include <sys/types.h>
     #include <sys/stat.h>
     #include <unistd.h>
-
-    #define NANOSEC" ^ conversion ^ "
 
     int main() {
         struct stat *buf;
