@@ -101,6 +101,9 @@ struct
 
     "--libev-default", set libev_default,
       "BOOLEAN whether to use the libev backend by default";
+
+    "--verbose", Arg.Set verbose,
+      "BOOLEAN show results of feature detection"
   ]
 
   let environment_variable = "LWT_DISCOVER_ARGUMENTS"
