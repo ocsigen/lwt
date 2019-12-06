@@ -76,16 +76,16 @@ In Lwt,
 - There are also some other helpers, such as [`Lwt_react`][react] for reactive
   programming. See the table of contents on the linked manual pages!
 
-[core]: https://ocsigen.org/lwt/api/Lwt
-[cond]: https://ocsigen.org/lwt/api/Lwt_condition
-[mutex]: https://ocsigen.org/lwt/api/Lwt_mutex
-[mvar]: https://ocsigen.org/lwt/api/Lwt_mvar
-[unix]: https://ocsigen.org/lwt/api/Lwt_unix
-[io]: https://ocsigen.org/lwt/api/Lwt_io
-[process]: https://ocsigen.org/lwt/api/Lwt_process
-[preemptive]: https://ocsigen.org/lwt/api/Lwt_preemptive
-[ppx]: https://ocsigen.org/lwt/api/Ppx_lwt
-[react]: https://ocsigen.org/lwt/api/Lwt_react
+[core]: https://ocsigen.org/lwt/dev/api/Lwt
+[cond]: https://ocsigen.org/lwt/dev/api/Lwt_condition
+[mutex]: https://ocsigen.org/lwt/dev/api/Lwt_mutex
+[mvar]: https://ocsigen.org/lwt/dev/api/Lwt_mvar
+[unix]: https://ocsigen.org/lwt/dev/api/Lwt_unix
+[io]: https://ocsigen.org/lwt/dev/api/Lwt_io
+[process]: https://ocsigen.org/lwt/dev/api/Lwt_process
+[preemptive]: https://ocsigen.org/lwt/dev/api/Lwt_preemptive
+[ppx]: https://ocsigen.org/lwt/dev/api/Ppx_lwt
+[react]: https://ocsigen.org/lwt/dev/api/Lwt_react
 
 
 <br/>
