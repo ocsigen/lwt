@@ -2242,7 +2242,7 @@ let has_wait4 = not Sys.win32
 external stub_wait4 : Unix.wait_flag list -> int -> int * Unix.process_status * resource_usage = "lwt_unix_wait4"
 
 let do_wait4 flags pid =
-  if Sys.win32 then
+  if Sys.win32 || Lwt_config.android then
     let pid, status = Unix.waitpid flags pid in
     (pid, status, { ru_utime = 0.0; ru_stime = 0.0 })
   else
@@ -2312,7 +2312,7 @@ let waitpid =
 
 let wait4 flags pid =
   install_sigchld_handler ();
-  if Sys.win32 then
+  if Sys.win32 || Lwt_config.android then
     Lwt.return (do_wait4 flags pid)
   else
   if List.mem Unix.WNOHANG flags then
