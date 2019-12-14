@@ -10,8 +10,13 @@
 #include <caml/memory.h>
 #include <caml/mlvalues.h>
 #include <caml/unixsupport.h>
+#include <caml/version.h>
 
 #include "lwt_unix.h"
+
+#if OCAML_VERSION < 40600
+#define Bytes_val(x) String_val(x)
+#endif
 
 struct job_read {
     struct lwt_unix_job job;
@@ -52,7 +57,7 @@ static value result_read(struct job_read *job)
         win32_maperr(error);
         uerror("read", Nothing);
     }
-    memcpy(String_val(job->string) + job->offset, job->buffer, job->result);
+    memcpy(Bytes_val(job->string) + job->offset, job->buffer, job->result);
     result = Val_long(job->result);
     caml_remove_generational_global_root(&job->string);
     lwt_unix_free_job(&job->job);
