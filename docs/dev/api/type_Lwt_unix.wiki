@@ -501,4 +501,12 @@
   val has_wait4 : bool
   val somaxconn : unit -> int
   val retained : 'a -> bool Stdlib.ref
+  val read_bigarray :
+    string ->
+    Lwt_unix.file_descr ->
+    Lwt_unix.IO_vectors._bigarray -> int -> int -> int Lwt.t
+  val write_bigarray :
+    string ->
+    Lwt_unix.file_descr ->
+    Lwt_unix.IO_vectors._bigarray -> int -> int -> int Lwt.t
 end >>
