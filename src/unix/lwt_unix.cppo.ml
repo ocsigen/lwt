@@ -617,6 +617,9 @@ let close ch =
   else
     run_job (close_job ch.fd)
 
+type bigarray =
+  (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+
 let wait_read ch =
   Lwt.catch
     (fun () ->
@@ -639,6 +642,24 @@ let read ch buf pos len =
       run_job (read_job ch.fd buf pos len)
     | false ->
       wrap_syscall Read ch (fun () -> stub_read ch.fd buf pos len)
+
+external stub_read_bigarray :
+  Unix.file_descr -> bigarray -> int -> int -> int = "lwt_unix_bytes_read"
+external read_bigarray_job :
+  Unix.file_descr -> bigarray -> int -> int -> int job =
+  "lwt_unix_bytes_read_job"
+
+let read_bigarray function_name fd buf pos len =
+  if pos < 0 || len < 0 || pos > Bigarray.Array1.dim buf - len then
+    invalid_arg function_name
+  else
+    blocking fd >>= function
+    | true ->
+      wait_read fd >>= fun () ->
+      run_job (read_bigarray_job (unix_file_descr fd) buf pos len)
+    | false ->
+      wrap_syscall Read fd (fun () ->
+        stub_read_bigarray (unix_file_descr fd) buf pos len)
 
 let wait_write ch =
   Lwt.catch
@@ -667,10 +688,27 @@ let write_string ch buf pos len =
   let buf = Bytes.unsafe_of_string buf in
   write ch buf pos len
 
+external stub_write_bigarray :
+  Unix.file_descr -> bigarray -> int -> int -> int = "lwt_unix_bytes_write"
+external write_bigarray_job :
+  Unix.file_descr -> bigarray -> int -> int -> int job =
+  "lwt_unix_bytes_write_job"
+
+let write_bigarray function_name fd buf pos len =
+  if pos < 0 || len < 0 || pos > Bigarray.Array1.dim buf - len then
+    invalid_arg function_name
+  else
+    blocking fd >>= function
+    | true ->
+      wait_write fd >>= fun () ->
+      run_job (write_bigarray_job (unix_file_descr fd) buf pos len)
+    | false ->
+      wrap_syscall Write fd (fun () ->
+        stub_write_bigarray (unix_file_descr fd) buf pos len)
+
 module IO_vectors =
 struct
-  type _bigarray =
-    (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+  type _bigarray = bigarray
 
   type buffer =
     | Bytes of bytes

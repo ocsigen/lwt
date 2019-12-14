@@ -5,8 +5,6 @@
 
 open Bigarray
 
-open Lwt.Infix
-
 type t = (char, int8_unsigned_elt, c_layout) Array1.t
 
 let create size = Array1.create char c_layout size
@@ -101,33 +99,11 @@ let copy buf =
 
 open Lwt_unix
 
-external stub_read : Unix.file_descr -> t -> int -> int -> int = "lwt_unix_bytes_read"
-external read_job : Unix.file_descr -> t -> int -> int -> int job = "lwt_unix_bytes_read_job"
+let read =
+  Lwt_unix.read_bigarray "Lwt_bytes.read" [@ocaml.warning "-3"]
 
-let read fd buf pos len =
-  if pos < 0 || len < 0 || pos > length buf - len then
-    invalid_arg "Lwt_bytes.read"
-  else
-    blocking fd >>= function
-    | true ->
-      wait_read fd >>= fun () ->
-      run_job (read_job (unix_file_descr fd) buf pos len)
-    | false ->
-      wrap_syscall Read fd (fun () -> stub_read (unix_file_descr fd) buf pos len)
-
-external stub_write : Unix.file_descr -> t -> int -> int -> int = "lwt_unix_bytes_write"
-external write_job : Unix.file_descr -> t -> int -> int -> int job = "lwt_unix_bytes_write_job"
-
-let write fd buf pos len =
-  if pos < 0 || len < 0 || pos > length buf - len then
-    invalid_arg "Lwt_bytes.write"
-  else
-    blocking fd >>= function
-    | true ->
-      wait_write fd >>= fun () ->
-      run_job (write_job (unix_file_descr fd) buf pos len)
-    | false ->
-      wrap_syscall Write fd (fun () -> stub_write (unix_file_descr fd) buf pos len)
+let write =
+  Lwt_unix.write_bigarray "Lwt_bytes.write" [@ocaml.warning "-3"]
 
 external stub_recv : Unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> int = "lwt_unix_bytes_recv"
 
