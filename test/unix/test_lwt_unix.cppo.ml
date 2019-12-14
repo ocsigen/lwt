@@ -378,13 +378,22 @@ let readv_tests =
     Lwt.return (bytes_written = Bytes.length data)
   in
 
-  let reader read_fd io_vectors underlying expected_count expected_data =
+  let reader
+      ?(close = true)
+      read_fd
+      io_vectors
+      underlying
+      expected_count
+      expected_data =
       fun () ->
     Gc.full_major ();
     let t = Lwt_unix.readv read_fd io_vectors in
     Gc.full_major ();
     t >>= fun bytes_read ->
-    Lwt_unix.close read_fd >>= fun () ->
+    (if close then
+      Lwt_unix.close read_fd
+    else
+      Lwt.return ()) >>= fun () ->
 
     let actual =
       List.fold_left (fun acc -> function
@@ -497,6 +506,24 @@ let readv_tests =
         Lwt_list.for_all_s (fun t -> t ())
           [writer write_fd (expected ^ "a");
            reader read_fd io_vectors underlying limit (expected ^ "_")]);
+
+    test "readv: windows" ~only_if:(fun () -> Sys.win32) begin fun () ->
+      let read_fd, write_fd = Lwt_unix.pipe () in
+
+      let io_vectors, underlying =
+        make_io_vectors [
+          `Bytes (1, 3, 1);
+          `Bigarray (1, 4, 1)
+        ]
+      in
+
+      Lwt_list.for_all_s (fun t -> t ()) [
+        writer write_fd "foobar";
+        reader ~close:false read_fd io_vectors underlying 3 "_foo_______";
+        (fun () -> Lwt_unix.IO_vectors.drop io_vectors 3; Lwt.return true);
+        reader read_fd io_vectors underlying 3 "_foo__bar__";
+      ]
+    end;
   ]
 
 let writev_tests =
@@ -512,13 +539,17 @@ let writev_tests =
     io_vectors
   in
 
-  let writer ?blocking write_fd io_vectors data_length = fun () ->
+  let writer ?(close = true) ?blocking write_fd io_vectors data_length =
+      fun () ->
     Lwt_unix.blocking write_fd >>= fun is_blocking ->
     Gc.full_major ();
     let t = Lwt_unix.writev write_fd io_vectors in
     Gc.full_major ();
     t >>= fun bytes_written ->
-    Lwt_unix.close write_fd >>= fun () ->
+    (if close then
+      Lwt_unix.close write_fd
+    else
+      Lwt.return ()) >>= fun () ->
     let blocking_matches =
       match blocking, is_blocking with
       | Some v, v' when v <> v' ->
@@ -743,6 +774,24 @@ let writev_tests =
         Lwt.return
           (io_correct &&
            not (Lwt_unix.IO_vectors.is_empty io_vectors)));
+
+    test "writev: windows" ~only_if:(fun () -> Sys.win32) begin fun () ->
+      let io_vectors =
+        make_io_vectors [
+          `Bytes ("foo", 0, 3);
+          `Bigarray ("bar", 0, 3);
+        ]
+      in
+
+      let read_fd, write_fd = Lwt_unix.pipe () in
+
+      Lwt_list.for_all_s (fun t -> t ()) [
+        writer ~close:false write_fd io_vectors 3;
+        (fun () -> Lwt_unix.IO_vectors.drop io_vectors 3; Lwt.return true);
+        writer write_fd io_vectors 3;
+        reader read_fd "foobar";
+      ]
+    end;
   ]
 
 let send_recv_msg_tests = [

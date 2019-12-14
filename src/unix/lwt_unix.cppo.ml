@@ -818,6 +818,18 @@ external readv_job : Unix.file_descr -> IO_vectors.t -> int -> int job =
 let readv fd io_vectors =
   let count = check_io_vectors "Lwt_unix.readv" io_vectors in
 
+  if Sys.win32 then
+    match io_vectors.IO_vectors.prefix with
+    | [] ->
+      Lwt.return 0
+    | first::_ ->
+      match first.buffer with
+      | Bytes buffer ->
+        read fd buffer first.offset first.length
+      | Bigarray buffer ->
+        read_bigarray "Lwt_unix.readv" fd buffer first.offset first.length
+
+  else
   Lazy.force fd.blocking >>= function
   | true ->
     wait_read fd >>= fun () ->
@@ -836,6 +848,18 @@ external writev_job : Unix.file_descr -> IO_vectors.t -> int -> int job =
 let writev fd io_vectors =
   let count = check_io_vectors "Lwt_unix.writev" io_vectors in
 
+  if Sys.win32 then
+    match io_vectors.IO_vectors.prefix with
+    | [] ->
+      Lwt.return 0
+    | first::_ ->
+      match first.buffer with
+      | Bytes buffer ->
+        write fd buffer first.offset first.length
+      | Bigarray buffer ->
+        write_bigarray "Lwt_unix.writev" fd buffer first.offset first.length
+
+  else
   Lazy.force fd.blocking >>= function
   | true ->
     wait_write fd >>= fun () ->
