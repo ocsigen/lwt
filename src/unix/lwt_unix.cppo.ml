@@ -830,13 +830,13 @@ let readv fd io_vectors =
         read_bigarray "Lwt_unix.readv" fd buffer first.offset first.length
 
   else
-  Lazy.force fd.blocking >>= function
-  | true ->
-    wait_read fd >>= fun () ->
-    run_job (readv_job fd.fd io_vectors count)
-  | false ->
-    wrap_syscall Read fd (fun () ->
-      stub_readv fd.fd io_vectors.IO_vectors.prefix count)
+    Lazy.force fd.blocking >>= function
+    | true ->
+      wait_read fd >>= fun () ->
+      run_job (readv_job fd.fd io_vectors count)
+    | false ->
+      wrap_syscall Read fd (fun () ->
+        stub_readv fd.fd io_vectors.IO_vectors.prefix count)
 
 external stub_writev :
   Unix.file_descr -> IO_vectors.io_vector list -> int -> int =
@@ -860,13 +860,13 @@ let writev fd io_vectors =
         write_bigarray "Lwt_unix.writev" fd buffer first.offset first.length
 
   else
-  Lazy.force fd.blocking >>= function
-  | true ->
-    wait_write fd >>= fun () ->
-    run_job (writev_job fd.fd io_vectors count)
-  | false ->
-    wrap_syscall Write fd (fun () ->
-      stub_writev fd.fd io_vectors.IO_vectors.prefix count)
+    Lazy.force fd.blocking >>= function
+    | true ->
+      wait_write fd >>= fun () ->
+      run_job (writev_job fd.fd io_vectors count)
+    | false ->
+      wrap_syscall Write fd (fun () ->
+        stub_writev fd.fd io_vectors.IO_vectors.prefix count)
 
 (* +-----------------------------------------------------------------+
    | Seeking and truncating                                          |
