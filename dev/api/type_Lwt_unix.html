@@ -547,4 +547,12 @@ We are looking for beta-tester and contributors.
   val has_wait4 : bool
   val somaxconn : unit -&gt; int
   val retained : 'a -&gt; bool Stdlib.ref
+  val read_bigarray :
+    string -&gt;
+    Lwt_unix.file_descr -&gt;
+    Lwt_unix.IO_vectors._bigarray -&gt; int -&gt; int -&gt; int Lwt.t
+  val write_bigarray :
+    string -&gt;
+    Lwt_unix.file_descr -&gt;
+    Lwt_unix.IO_vectors._bigarray -&gt; int -&gt; int -&gt; int Lwt.t
 end</code></pre></article></div></div></body></html>
