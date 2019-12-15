@@ -797,7 +797,7 @@ val try_bind : (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
       performing any operation on one is equivalent to performing it on the
       other. *)
 
-val async : (unit -> _ t) -> unit
+val async : (unit -> unit t) -> unit
 (** [Lwt.async f] applies [f ()], which returns a promise, and then makes it so
     that if the promise is {{: #TYPEt} {e rejected}}, the exception is passed to
     [!]{!Lwt.async_exception_hook}.
