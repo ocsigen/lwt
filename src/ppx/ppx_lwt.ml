@@ -124,7 +124,7 @@ let lwt_expression mapper exp attributes ext_loc =
 
   (* $e$;%lwt $e'$ ≡ [Lwt.bind $e$ (fun $p$ -> $e'$)] *)
   | Pexp_sequence (lhs, rhs) ->
-     lwt_sequence mapper ~exp ~lhs ~rhs ~ext_loc
+    Some (lwt_sequence mapper ~exp ~lhs ~rhs ~ext_loc)
   (* [let%lwt $p$ = $e$ in $e'$] ≡ [Lwt.bind $e$ (fun $p$ -> $e'$)] *)
   | Pexp_let (Nonrecursive, vbl , e) ->
     let new_exp =
@@ -132,7 +132,8 @@ let lwt_expression mapper exp attributes ext_loc =
         Nonrecursive
         (gen_bindings vbl)
         (gen_binds exp.pexp_loc vbl e)
-    in mapper.expr mapper { new_exp with pexp_attributes }
+    in
+    Some (mapper.expr mapper { new_exp with pexp_attributes })
 
   (* [match%lwt $e$ with $c$] ≡ [Lwt.bind $e$ (function $c$)]
      [match%lwt $e$ with exception $x$ | $c$] ≡
@@ -167,7 +168,7 @@ let lwt_expression mapper exp attributes ext_loc =
                                    [%e Exp.function_ exns]]
           [@metaloc !default_loc]
     in
-    mapper.expr mapper { new_exp with pexp_attributes }
+    Some (mapper.expr mapper { new_exp with pexp_attributes })
 
   (* [assert%lwt $e$] ≡
      [try Lwt.return (assert $e$) with exn -> Lwt.fail exn] *)
@@ -175,7 +176,8 @@ let lwt_expression mapper exp attributes ext_loc =
     let new_exp =
       [%expr try Lwt.return (assert [%e e]) with exn -> Lwt.fail exn]
         [@metaloc !default_loc]
-    in mapper.expr mapper { new_exp with pexp_attributes }
+    in
+    Some (mapper.expr mapper { new_exp with pexp_attributes })
 
   (* [while%lwt $cond$ do $body$ done] ≡
      [let rec __ppx_lwt_loop () =
@@ -192,7 +194,8 @@ let lwt_expression mapper exp attributes ext_loc =
         in __ppx_lwt_loop ()
       ]
         [@metaloc !default_loc]
-    in mapper.expr mapper { new_exp with pexp_attributes }
+    in
+    Some (mapper.expr mapper { new_exp with pexp_attributes })
 
   (* [for%lwt $p$ = $start$ (to|downto) $end$ do $body$ done] ≡
      [let __ppx_lwt_bound = $end$ in
@@ -220,7 +223,8 @@ let lwt_expression mapper exp attributes ext_loc =
         in __ppx_lwt_loop [%e start]
       ]
         [@metaloc !default_loc]
-    in mapper.expr mapper { new_exp with pexp_attributes }
+    in
+    Some (mapper.expr mapper { new_exp with pexp_attributes })
 
 
   (* [try%lwt $e$ with $c$] ≡
@@ -242,7 +246,7 @@ let lwt_expression mapper exp attributes ext_loc =
         [%expr Lwt.catch (fun () -> [%e expr]) [%e Exp.function_ cases]]
           [@metaloc !default_loc]
     in
-    mapper.expr mapper { new_exp with pexp_attributes }
+    Some (mapper.expr mapper { new_exp with pexp_attributes })
 
   (* [if%lwt $c$ then $e1$ else $e2$] ≡
      [match%lwt $c$ with true -> $e1$ | false -> $e2$]
@@ -265,39 +269,10 @@ let lwt_expression mapper exp attributes ext_loc =
       [%expr Lwt.bind [%e cond] [%e Exp.function_ cases]]
         [@metaloc !default_loc]
     in
-    mapper.expr mapper { new_exp with pexp_attributes }
+    Some (mapper.expr mapper { new_exp with pexp_attributes })
 
-  (* [[%lwt $e$]] ≡ [Lwt.catch (fun () -> $e$) Lwt.fail] *)
   | _ ->
-    let exp =
-      match exp with
-      | {pexp_loc; pexp_desc=Pexp_let (Recursive, _, _); pexp_attributes; _} ->
-        let attr = attribute_of_warning pexp_loc "\"let%lwt rec\" is not a recursive Lwt binding" in
-        { exp with pexp_attributes = attr :: pexp_attributes }
-      | _ -> exp
-    in
-    let new_exp =
-      if !debug then
-        [%expr
-          let module Reraise = struct external reraise : exn -> 'a = "%reraise" end in
-          Lwt.backtrace_catch
-            (fun exn -> try Reraise.reraise exn with exn -> exn)
-            (fun () -> [%e exp])
-            Lwt.fail
-        ]
-          [@metaloc !default_loc]
-      else
-        [%expr Lwt.catch (fun () -> [%e exp]) Lwt.fail]
-          [@metaloc !default_loc]
-    in
-    let warning =
-      attribute_of_warning
-        exp.pexp_loc
-        ("[%lwt ...] is deprecated\n" ^
-         "  See https://github.com/ocsigen/lwt/issues/527")
-    in
-    let pexp_attributes = warning::pexp_attributes in
-    mapper.expr mapper { new_exp with pexp_attributes }
+    None
 
 let warned = ref false
 
@@ -341,7 +316,10 @@ let mapper =
               PStr[{pstr_desc= Pstr_eval (exp, _);_}]);
           _
         }->
-        lwt_expression mapper exp expr.pexp_attributes ext_loc
+        begin match lwt_expression mapper exp expr.pexp_attributes ext_loc with
+        | Some expr' -> expr'
+        | None -> expr
+        end
       (* [($e$)[%finally $f$]] ≡
          [Lwt.finalize (fun () -> $e$) (fun () -> $f$)] *)
       | [%expr [%e? exp ] [%finally     [%e? finally]] ]

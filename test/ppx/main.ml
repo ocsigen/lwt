@@ -96,12 +96,6 @@ let suite = suite "ppx" [
        in return true
     ) ;
 
-  test "raise"
-    (fun () ->
-       Lwt.catch (fun () -> [%lwt raise Not_found])
-         (fun exn -> return (exn = Not_found))
-    ) ;
-
   test "try"
     (fun () ->
        try%lwt
