@@ -57,7 +57,7 @@ We are looking for beta-tester and contributors.
   val finalize : (unit -&gt; 'a Lwt.t) -&gt; (unit -&gt; unit Lwt.t) -&gt; 'a Lwt.t
   val try_bind :
     (unit -&gt; 'a Lwt.t) -&gt; ('a -&gt; 'b Lwt.t) -&gt; (exn -&gt; 'b Lwt.t) -&gt; 'b Lwt.t
-  val async : (unit -&gt; 'a Lwt.t) -&gt; unit
+  val async : (unit -&gt; unit Lwt.t) -&gt; unit
   val async_exception_hook : (exn -&gt; unit) Stdlib.ref
   val both : 'a Lwt.t -&gt; 'b Lwt.t -&gt; ('a * 'b) Lwt.t
   val join : unit Lwt.t list -&gt; unit Lwt.t
