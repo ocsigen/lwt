@@ -33,7 +33,6 @@
  (optional)
  (wrapped false)
  (libraries bigarray lwt mmap ocplib-endian.bigstring threads unix)
- (preprocess (pps bisect_ppx --conditional))
  (c_names
   lwt_unix_stubs
   lwt_libev_stubs
