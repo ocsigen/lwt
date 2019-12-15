@@ -267,20 +267,12 @@
     Lwt_unix.file_descr ->
     bytes ->
     int -> int -> Lwt_unix.msg_flag list -> Lwt_unix.sockaddr -> int Lwt.t
-  type io_vector = {
-    iov_buffer : string;
-    iov_offset : int;
-    iov_length : int;
-  }
-  val io_vector :
-    buffer:string -> offset:int -> length:int -> Lwt_unix.io_vector
   val recv_msg :
     socket:Lwt_unix.file_descr ->
-    io_vectors:Lwt_unix.io_vector list -> (int * Unix.file_descr list) Lwt.t
+    io_vectors:Lwt_unix.IO_vectors.t -> (int * Unix.file_descr list) Lwt.t
   val send_msg :
     socket:Lwt_unix.file_descr ->
-    io_vectors:Lwt_unix.io_vector list ->
-    fds:Unix.file_descr list -> int Lwt.t
+    io_vectors:Lwt_unix.IO_vectors.t -> fds:Unix.file_descr list -> int Lwt.t
   type credentials = { cred_pid : int; cred_uid : int; cred_gid : int; }
   val get_credentials : Lwt_unix.file_descr -> Lwt_unix.credentials
   type socket_bool_option =

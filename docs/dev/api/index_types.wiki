@@ -79,9 +79,6 @@
 |
 |@@class="odocwiki_index"@ @@<<a_api text="io_event"| type Lwt_unix.io_event >> ~[<<a_api | module Lwt_unix >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="io_vector"| type Lwt_bytes.io_vector >> ~[<<a_api | module Lwt_bytes >>~]||
-|@@class="odocwiki_index"@ @@<<a_api text="io_vector"| type Lwt_unix.io_vector >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~An io~-vector~.
->>
-|
 |@@ @style="tet-align: left;"@@\\J|
 |@@class="odocwiki_index"@ @@<<a_api text="job"| type Lwt_unix.job >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~Type of job descriptions~.
 >>
