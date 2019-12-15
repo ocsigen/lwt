@@ -11,7 +11,7 @@
   val finalize : (unit -> 'a Lwt.t) -> (unit -> unit Lwt.t) -> 'a Lwt.t
   val try_bind :
     (unit -> 'a Lwt.t) -> ('a -> 'b Lwt.t) -> (exn -> 'b Lwt.t) -> 'b Lwt.t
-  val async : (unit -> 'a Lwt.t) -> unit
+  val async : (unit -> unit Lwt.t) -> unit
   val async_exception_hook : (exn -> unit) Stdlib.ref
   val both : 'a Lwt.t -> 'b Lwt.t -> ('a * 'b) Lwt.t
   val join : unit Lwt.t list -> unit Lwt.t

@@ -911,7 +911,7 @@ let () =
       other~.
 
 >>
-<<pre id="VALasync" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|async>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~.async f>> applies <<span class="odocwiki_inlinecode"|f ~(~)>>~, which returns a promise~, and then makes it so
+<<pre id="VALasync" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|async>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~.async f>> applies <<span class="odocwiki_inlinecode"|f ~(~)>>~, which returns a promise~, and then makes it so
     that if the promise is [[ #TYPEt| //rejected//]]~, the exception is passed to
     <<span class="odocwiki_inlinecode"|!>><<a_api | val Lwt.async_exception_hook >>~.
 
