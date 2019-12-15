@@ -130,16 +130,4 @@ else
 </p><pre class=""><code class="language-ocaml translatable">[%lwt &lt;expr&gt;]</code></pre><p>is expanded to:
 
 </p><pre class=""><code class="language-ocaml translatable">Lwt.catch (fun () -&gt; &lt;expr&gt;) Lwt.fail</code></pre><p>It allows to encode the old <span class="odocwiki_inlinecode">raise_lwt &lt;e&gt;</span> as <span class="odocwiki_inlinecode">[%lwt raise &lt;e&gt;]</span>, and offers a convenient way to interact with non-Lwt code.
-</p><p>
-</p><h2 id="2_Logging">Logging <a class="backref" href="#2_Logging">&#182;</a></h2><p>The logging syntax extension is enabled with <span class="odocwiki_inlinecode">-log</span>.
-It will replace expressions of the form:
-</p><p>
-</p><pre class=""><code class="language-ocaml translatable">Lwt_log.info_f ~section &quot;x = %d&quot; x</code></pre><p>by
-</p><p>
-</p><pre class=""><code class="language-ocaml translatable">if Lwt_log.Section.level section &lt;= Lwt_log.Info then
-  Lwt_log.info_f ~section &quot;x = %d&quot; x
-else
-  return ()</code></pre><p>Notes:
-</p><ul><li> The application must be complete. For example: <span class="odocwiki_inlinecode">Log.info &quot;%d&quot;</span>
-will make compilation fail.
-</li></ul><pre class="ocsforge_color odocwiki_code" id="VALmapper"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">mapper</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><span class="ocsforge_color_uid">Migrate_parsetree</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_uid">OCaml_409</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_lid">Ast</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_lid">Ast_mapper</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_lid">mapper</span></span></pre></article></div></div></body></html>
+</p><pre class="ocsforge_color odocwiki_code" id="VALmapper"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">mapper</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><span class="ocsforge_color_uid">Migrate_parsetree</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_uid">OCaml_409</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_lid">Ast</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_lid">Ast_mapper</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_lid">mapper</span></span></pre></article></div></div></body></html>
