@@ -124,10 +124,4 @@ done</code></pre><ul><li> pattern matching:
 else
   &lt;expr_2&gt;</code></pre><p>and
 </p><p>
-</p><pre class=""><code class="language-ocaml translatable">if%lwt &lt;expr&gt; then &lt;expr_1&gt;</code></pre><ul><li> exception raising:
-</li></ul><p>For all other expression, the construct
-
-</p><pre class=""><code class="language-ocaml translatable">[%lwt &lt;expr&gt;]</code></pre><p>is expanded to:
-
-</p><pre class=""><code class="language-ocaml translatable">Lwt.catch (fun () -&gt; &lt;expr&gt;) Lwt.fail</code></pre><p>It allows to encode the old <span class="odocwiki_inlinecode">raise_lwt &lt;e&gt;</span> as <span class="odocwiki_inlinecode">[%lwt raise &lt;e&gt;]</span>, and offers a convenient way to interact with non-Lwt code.
-</p><pre class="ocsforge_color odocwiki_code" id="VALmapper"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">mapper</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><span class="ocsforge_color_uid">Migrate_parsetree</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_uid">OCaml_409</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_lid">Ast</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_lid">Ast_mapper</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_lid">mapper</span></span></pre></article></div></div></body></html>
+</p><pre class=""><code class="language-ocaml translatable">if%lwt &lt;expr&gt; then &lt;expr_1&gt;</code></pre><pre class="ocsforge_color odocwiki_code" id="VALmapper"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">mapper</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><span class="ocsforge_color_uid">Migrate_parsetree</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_uid">OCaml_409</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_lid">Ast</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_lid">Ast_mapper</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_lid">mapper</span></span></pre></article></div></div></body></html>
