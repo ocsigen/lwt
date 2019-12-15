@@ -338,14 +338,8 @@ on the network interface <span class="odocwiki_inlinecode">ifname</span>.</p></d
 
 
           ~This is the default~.
-&gt;&gt;</span><span class="odocwiki_comments_close"> *)</span></span></span><span class="odocwiki_variant"><span class="odocwiki_variant_constr"><span class="ocsforge_color_keyword"> |</span> <span class="ocsforge_color_uid">Async_switch</span></span><span class="odocwiki_comments"><span class="odocwiki_comments_open">(*</span> <span>&lt;&lt;div class=&quot;odocwiki_info&quot;|~System calls are made in the main thread~, and if one blocks
-          the execution continue in another system thread~. ~This method
-          is the most efficient~, also you will get better performance
-          if you force all threads to run on the same cpu~. ~On linux
-          this can be done by using the command &lt;&lt;span class=&quot;odocwiki_inlinecode&quot;|taskset&gt;&gt;~.
-
-
-          ~Note that this method is still experimental~.
+&gt;&gt;</span><span class="odocwiki_comments_close"> *)</span></span></span><span class="odocwiki_variant"><span class="odocwiki_variant_constr"><span class="ocsforge_color_keyword"> |</span> <span class="ocsforge_color_uid">Async_switch</span></span><span class="odocwiki_comments"><span class="odocwiki_comments_open">(*</span> <span>&lt;&lt;div class=&quot;odocwiki_info&quot;|~Currently a synonym for &lt;&lt;span class=&quot;odocwiki_inlinecode&quot;|~Async~_detach&gt;&gt;~. ~This was a different method in
+          the past~.
 &gt;&gt;</span><span class="odocwiki_comments_close"> *)</span></span></span></span></pre><div class="odocwiki_info"><p>For system calls that cannot be made asynchronously, Lwt uses one
 of the following method:</p></div><pre class="ocsforge_color odocwiki_code" id="VALdefault_async_method"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">default_async_method</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">unit <span class="ocsforge_color_delimiter">-&gt;</span> <span><a href=".././api/Lwt_unix#TYPEasync_method">async_method</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_warning">Deprecated.</span>Will always return <span class="odocwiki_inlinecode">Async_detach</span> in Lwt 5.0.0.
 Returns the default async method.
