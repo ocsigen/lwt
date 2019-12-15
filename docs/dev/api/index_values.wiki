@@ -1473,8 +1473,8 @@
 |@@class="odocwiki_index"@ @@<<a_api text="rmdir"| value Lwt_unix.rmdir >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~Wrapper for <<span class="odocwiki_inlinecode"|~Unix~.rmdir>>
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="run"| value Lwt_main.run >> ~[<<a_api | module Lwt_main >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|run p>> calls the ~Lwt scheduler repeatedly until <<span class="odocwiki_inlinecode"|p>> resolves~,
-      and returns the value of <<span class="odocwiki_inlinecode"|p>> if it is fulfilled~.
+|@@class="odocwiki_index"@ @@<<a_api text="run"| value Lwt_main.run >> ~[<<a_api | module Lwt_main >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~_main~.run p>> calls the ~Lwt scheduler~, performing ~I~/~O until <<span class="odocwiki_inlinecode"|p>>
+      resolves~.
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="run_in_main"| value Lwt_preemptive.run_in_main >> ~[<<a_api | module Lwt_preemptive >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|run~_in~_main f>> can be called from a detached computation to execute

@@ -4,29 +4,28 @@
 ----
 
 ~This module controls the ``main~-loop~'~' of ~Lwt~.
-<<pre id="VALrun" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|run>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="Lwt.t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|run p>> calls the ~Lwt scheduler repeatedly until <<span class="odocwiki_inlinecode"|p>> resolves~,
-      and returns the value of <<span class="odocwiki_inlinecode"|p>> if it is fulfilled~. ~If <<span class="odocwiki_inlinecode"|p>> is rejected with
-      an exception~, that exception is raised~.
+<<pre id="VALrun" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|run>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="Lwt.t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~_main~.run p>> calls the ~Lwt scheduler~, performing ~I~/~O until <<span class="odocwiki_inlinecode"|p>>
+      resolves~. <<span class="odocwiki_inlinecode"|~Lwt~_main~.run p>> returns the value in <<span class="odocwiki_inlinecode"|p>> if <<span class="odocwiki_inlinecode"|p>> is fulfilled~.
+      ~If <<span class="odocwiki_inlinecode"|p>> is rejected with an exception instead~, <<span class="odocwiki_inlinecode"|~Lwt~_main~.run p>> raises that
+      exception~.
 
 
-      ~Every native or bytecode program that uses ~Lwt should always use
-      this function for evaluating a promise at the top level
-      ~(such as its main function or main loop~)~,
-      otherwise promises that depend on ~I~/~O operations will not be resolved~.
+      ~Every native and bytecode program that uses ~Lwt should call this function
+      at its top level~. ~It implements the ~Lwt main loop~.
 
 
       ~Example~:
       
 <<code language='ocaml'|let main () = Lwt_io.write_line Lwt_io.stdout "hello world"
 
-let () = Lwt_main.run @@ main ()
+let () = Lwt_main.run (main ())
       >>
 
 
 
-      ~When targeting ~Java~Script~, <<span class="odocwiki_inlinecode"|~Lwt~_main~.run>> is not available~,
-      but neither it~'s necessary since
-      the ~J~S environment automatically takes care of the ~I~/~O considerations~.
+      <<span class="odocwiki_inlinecode"|~Lwt~_main~.run>> is not available when targeting ~Java~Script~, because the
+      environment ~(such as ~Node~.js or the browser~'s script engine~) implements
+      the ~I~/~O loop~.
 
 
       ~On ~Unix~, calling <<span class="odocwiki_inlinecode"|~Lwt~_main~.run>> installs a <<span class="odocwiki_inlinecode"|~S~I~G~C~H~L~D>> handler~, which is
@@ -36,16 +35,15 @@ let () = Lwt_main.run @@ main ()
       <<span class="odocwiki_inlinecode"|~E~I~N~T~R>>~.
 
 
-      ~Note that you should avoid using <<span class="odocwiki_inlinecode"|run>> inside threads
-* ~The calling threads will not resume before <<span class="odocwiki_inlinecode"|run>>
-        returns~.
-* ~Successive invocations of <<span class="odocwiki_inlinecode"|run>> are serialized~: an
-        invocation of <<span class="odocwiki_inlinecode"|run>> will not terminate before all
-        subsequent invocations are terminated~.
+      ~Nested calls to <<span class="odocwiki_inlinecode"|~Lwt~_main~.run>> are not allowed~. ~That is~, do not call
+      <<span class="odocwiki_inlinecode"|~Lwt~_main~.run>> in a callback triggered by a promise that is resolved by
+      an outer invocation of <<span class="odocwiki_inlinecode"|~Lwt~_main~.run>>~. ~If your program makes such a call~,
+      <<span class="odocwiki_inlinecode"|~Lwt~_main~.run>> will raise <<span class="odocwiki_inlinecode"|~Failure>>~. ~This should be considered a logic
+      error ~(i~.e~.~, code making such a call is inherently broken~)~.
 
-      ~Note also that it is not safe to call <<span class="odocwiki_inlinecode"|run>> in a function
-      registered with <<span class="odocwiki_inlinecode"|~Pervasives~.at~_exit>>~, use the <<a_api | val Lwt_main.at_exit >>
-      function of this module instead~.
+
+      ~It is not safe to call <<span class="odocwiki_inlinecode"|~Lwt~_main~.run>> in a function registered with
+      <<span class="odocwiki_inlinecode"|~Pervasives~.at~_exit>>~, use <<a_api | val Lwt_main.at_exit >> instead~.
 >>
 <<pre id="VALyield" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|yield>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|yield ~(~)>> is a threads which suspends itself and then resumes
       as soon as possible and terminates~.

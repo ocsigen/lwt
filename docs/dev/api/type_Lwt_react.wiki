@@ -748,4 +748,5 @@
         ?eq:('a -> 'a -> bool) ->
         'a Lwt.t Lwt_react.signal -> 'a Lwt_react.signal Lwt.t
     end
+  val opaque_identity : 'a -> 'a
 end >>
