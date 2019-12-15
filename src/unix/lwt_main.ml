@@ -30,6 +30,17 @@ let run p =
 
   let error_message_if_call_is_nested =
     match !run_already_called with
+    (* `From is effectively disabled for the time being, because there is a bug,
+       present in all versions of OCaml supported by Lwt, where, with the
+       bytecode runtime, if one changes the working directory and then attempts
+       to retrieve the backtrace, the runtime calls [abort] at the C level and
+       exits the program ungracefully. It is especially likely that a daemon
+       would change directory before calling [Lwt_main.run], so we can't have it
+       retrieving the backtrace, even though a daemon is not likely to be
+       compiled to bytecode.
+
+       This can be addressed with detection. Starting with 4.04, there is a
+       type [Sys.backend_type] that could be used. *)
     | `From backtrace_string ->
       Some (Printf.sprintf "%s\n%s\n%s"
         "Nested calls to Lwt_main.run are not allowed"
@@ -39,13 +50,14 @@ let run p =
       Some ("Nested calls to Lwt_main.run are not allowed")
     | `No ->
       let called_from =
+        (* See comment above.
         if Printexc.backtrace_status () then
           let backtrace =
             try raise Exit
             with Exit -> Printexc.get_backtrace ()
           in
           `From backtrace
-        else
+        else *)
           `From_somewhere
       in
       run_already_called := called_from;
