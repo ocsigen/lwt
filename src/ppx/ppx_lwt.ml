@@ -36,17 +36,11 @@ let lwt_prefix = "__ppx_lwt_"
 
 (** {2 Here we go!} *)
 
-let debug      = ref true
 let sequence   = ref true
 let strict_seq = ref true
 
-let used_no_debug_option = ref false
 let used_no_sequence_option = ref false
 let used_no_strict_sequence_option = ref false
-
-let no_debug_option () =
-  debug := false;
-  used_no_debug_option := true
 
 let no_sequence_option () =
   sequence := false;
@@ -82,7 +76,6 @@ let gen_binds e_loc l e =
         [%expr (fun [%p binding.pvb_pat] -> [%e aux (i+1) t])] [@metaloc e_loc]
       in
       let new_exp =
-        if !debug then
           [%expr
             let module Reraise = struct external reraise : exn -> 'a = "%reraise" end in
             Lwt.backtrace_bind
@@ -90,8 +83,6 @@ let gen_binds e_loc l e =
               [%e name]
               [%e fun_]
           ] [@metaloc e_loc]
-        else
-          [%expr Lwt.bind [%e name] [%e fun_]] [@metaloc e_loc]
       in
       { new_exp with pexp_attributes = binding.pvb_attributes }
   in aux 0 l
@@ -102,7 +93,6 @@ let gen_binds e_loc l e =
 let lwt_sequence mapper ~exp ~lhs ~rhs ~ext_loc =
   let pat= [%pat? ()][@metaloc ext_loc] in
   let lhs, rhs = mapper.expr mapper lhs, mapper.expr mapper rhs in
-  (if !debug then
     [%expr
       let module Reraise = struct external reraise : exn -> 'a = "%reraise" end in
       Lwt.backtrace_bind
@@ -110,8 +100,6 @@ let lwt_sequence mapper ~exp ~lhs ~rhs ~ext_loc =
         [%e lhs]
         (fun [%p pat] -> [%e rhs])
     ]
-  else
-    [%expr Lwt.bind [%e lhs] (fun [%p pat] -> [%e rhs])])
   [@metaloc exp.pexp_loc]
 
 (** For expressions only *)
@@ -233,7 +221,6 @@ let lwt_expression mapper exp attributes ext_loc =
   | Pexp_try (expr, cases) ->
     let cases = add_wildcard_case cases in
     let new_exp =
-      if !debug then
         [%expr
           let module Reraise = struct external reraise : exn -> 'a = "%reraise" end in
           Lwt.backtrace_catch
@@ -241,9 +228,6 @@ let lwt_expression mapper exp attributes ext_loc =
             (fun () -> [%e expr])
             [%e Exp.function_ cases]
         ]
-          [@metaloc !default_loc]
-      else
-        [%expr Lwt.catch (fun () -> [%e expr]) [%e Exp.function_ cases]]
           [@metaloc !default_loc]
     in
     Some (mapper.expr mapper { new_exp with pexp_attributes })
@@ -302,9 +286,6 @@ let mapper =
         |> warn_if (!used_no_sequence_option)
           ("-no-sequence is a deprecated Lwt PPX option\n" ^
            "  See https://github.com/ocsigen/lwt/issues/495")
-        |> warn_if (!used_no_debug_option)
-          ("-no-debug is a deprecated Lwt PPX option\n" ^
-           "  See https://github.com/ocsigen/lwt/issues/528")
       end
     end;
 
@@ -325,7 +306,6 @@ let mapper =
       | [%expr [%e? exp ] [%finally     [%e? finally]] ]
       | [%expr [%e? exp ] [%lwt.finally [%e? finally]] ] ->
         let new_exp =
-          if !debug then
             [%expr
               let module Reraise = struct external reraise : exn -> 'a = "%reraise" end in
               Lwt.backtrace_finalize
@@ -333,9 +313,6 @@ let mapper =
                 (fun () -> [%e exp])
                 (fun () -> [%e finally])
             ]
-              [@metaloc !default_loc]
-          else
-            [%expr Lwt.finalize (fun () -> [%e exp]) (fun () -> [%e finally])]
               [@metaloc !default_loc]
         in
         mapper.expr mapper
@@ -374,10 +351,6 @@ let mapper =
 
 let args =
   Arg.([
-    "-no-debug",
-      Unit no_debug_option,
-      " disable debug mode (deprecated)";
-
     "-no-sequence",
       Unit no_sequence_option,
       " has no effect (deprecated)";
