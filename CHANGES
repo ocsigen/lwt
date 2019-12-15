@@ -1,3 +1,35 @@
+===== 4.5.0 (2019-12-15) =====
+
+====== Additions ======
+
+  * Implement Lwt_unix.readv and Lwt_unix.writev on Windows using Lwt_unix.read
+    and Lwt_unix.write (#745, requested Ulrik Strid).
+  * Implement Lwt_unix.wait4 on Android using Unix.waitpid, as on Windows (#752,
+    @EduardoRFS).
+  * LWT_DISCOVER_ARGUMENTS=--verbose flag, passed through environment variable,
+    for debugging the feature discovery (configuration) process (#740).
+
+====== Bugs fixed ======
+
+  * To help with fork, don't call back into Lwt_main at process exit to call Lwt
+    exit hooks when there are none (#737, prompted Martin Jambon).
+  * Properly retain references to buffers in Lwt_unix.readv, Lwt_unix.writev,
+    Lwt_bytes.read, Lwt_bytes.write, and Lwt_bytes.mincore; the references could
+    be released too early in rare circumstances (#742, prompted Olaf Hering).
+  * Don't install a SIGCHLD handler when Lwt is linked in but not used (#738,
+    requested Sam Goldman, additional information Waleed Khan).
+  * Link with -lpthread on more platforms that support and require the flag
+    (#748, Olivier Andrieu).
+  * Fix syntax errors in feature test programs (#748, Olivier Andrieu).
+  * C warning with OCaml 4.10 (#751, @kit-ty-kate).
+
+====== Miscellaneous ======
+
+  * Make tests more reliable (#726, #743, prompted Olaf Hering).
+  * Fix deprecation annotation on internal API (#735, Antonio Nuno Monteiro).
+  * Fix broken link in Lwt_mvar docs (#739, reported @tg-x).
+  * Fix broken links in README (#750, @imbsky).
+
 ===== 4.4.0 (2019-10-09) =====
 
 ====== Additions ======
