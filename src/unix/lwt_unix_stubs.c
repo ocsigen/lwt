@@ -25,13 +25,6 @@
 #include <signal.h>
 #include <stdio.h>
 
-#if !defined(LWT_ON_WINDOWS) && defined(SIGRTMIN) && defined(SIGRTMAX)
-#define LWT_UNIX_SIGNAL_ASYNC_SWITCH SIGRTMIN
-#define LWT_UNIX_HAVE_ASYNC_SWITCH
-#include <setjmp.h>
-#else
-#endif
-
 #include "lwt_unix.h"
 
 #if !defined(LWT_ON_WINDOWS)
@@ -838,9 +831,6 @@ static void execute_job(lwt_unix_job job) {
   /* Mark the job as running. */
   job->state = LWT_UNIX_JOB_STATE_RUNNING;
 
-  /* Set the thread of the job. */
-  job->thread = lwt_unix_thread_self();
-
   lwt_unix_mutex_unlock(&job->mutex);
 
   /* Execute the job. */
@@ -892,186 +882,6 @@ static lwt_unix_job pool_queue = NULL;
 static lwt_unix_mutex pool_mutex;
 
 /* +-----------------------------------------------------------------+
-   | Thread switching                                                |
-   +-----------------------------------------------------------------+ */
-
-#if defined(LWT_UNIX_HAVE_ASYNC_SWITCH)
-
-#define STACK_SIZE (256 * 1024)
-
-/* Possible states of the main thread (i.e. the one executing the
-   ocaml code). */
-enum main_state {
-  /* The main thread is running. */
-  STATE_RUNNING,
-
-  /* The main thread is doing a blocking call that has not yet
-     terminated. */
-  STATE_BLOCKED,
-};
-
-/* State of the main thread. */
-static enum main_state main_state = STATE_RUNNING;
-
-/* The main thread. */
-static lwt_unix_thread main_thread;
-
-/* A node in a list of stack frames. */
-struct stack_frame {
-  /* The stack frame itself. */
-  sigjmp_buf checkpoint;
-
-  /* The next available one. */
-  struct stack_frame *next;
-};
-
-/* Stack frames available to do a blocking call. */
-static struct stack_frame *blocking_call_enter = NULL;
-
-/* Mutex to protect access to [blocking_call_enter]. */
-static lwt_unix_mutex blocking_call_enter_mutex;
-
-/* Where to go when the blocking call is done, or when it get
-   scheduled. */
-static sigjmp_buf blocking_call_leave;
-
-/* Where to go to become a worjer */
-static struct stack_frame *become_worker = NULL;
-
-/* Value returned to the main thread when a blocking call terminates
-   without being scheduled. */
-#define CALL_SUCCEEDED 1
-
-/* Value returned to the old main thread when a blocking call
-   terminates but has been scheduled. */
-#define CALL_SCHEDULED 2
-
-/* The job to be executed on the first available alternative stack. */
-static lwt_unix_job blocking_call = NULL;
-
-/* The stack frame used for the current blocking call. */
-static struct stack_frame *blocking_call_frame = NULL;
-
-/* Flag which become [1] once the stack has been allocated. */
-static int stack_allocated;
-
-/* Function executed on an alternative stack. */
-static void altstack_worker() {
-  struct stack_frame *node;
-  sigjmp_buf buf;
-
-  if (stack_allocated == 1) return;
-  stack_allocated = 1;
-
-  /* The first passage is to register a new stack frame. */
-  node = lwt_unix_new(struct stack_frame);
-
-  if (sigsetjmp(node->checkpoint, 1) == 0) {
-    /* Add it to the list of available stack frames. */
-    lwt_unix_mutex_lock(&blocking_call_enter_mutex);
-    node->next = blocking_call_enter;
-    blocking_call_enter = node;
-    lwt_unix_mutex_unlock(&blocking_call_enter_mutex);
-
-  } else {
-    /* Save the job to execute and the current stack frame before
-       another thread can become the main thread. */
-    lwt_unix_job job = blocking_call;
-    struct stack_frame *frame = blocking_call_frame;
-
-    /* Mark the main thread as blocked. */
-    main_state = STATE_BLOCKED;
-
-    DEBUG("signaling the pool condition variable");
-
-    /* Maybe wakeup a worker so it can become the main thread. */
-    lwt_unix_mutex_lock(&pool_mutex);
-    lwt_unix_condition_signal(&pool_condition);
-    lwt_unix_mutex_unlock(&pool_mutex);
-
-    DEBUG("executing the blocking call");
-
-    /* Execute the blocking call. */
-    execute_job(job);
-
-    DEBUG("blocking call done");
-
-    lwt_unix_mutex_lock(&pool_mutex);
-
-    if (lwt_unix_thread_equal(main_thread, lwt_unix_thread_self())) {
-      /* We stayed the main thread, continue the execution
-         normally. */
-      main_state = STATE_RUNNING;
-
-      lwt_unix_mutex_unlock(&pool_mutex);
-
-      DEBUG("blocing call terminated without blocking, resuming");
-
-      /* Leave the blocking call. */
-      siglongjmp(blocking_call_leave, CALL_SUCCEEDED);
-    } else {
-      /* We did not stayed the main thread, we now become a worker. */
-
-      assert(become_worker != NULL);
-
-      /* Take and remove the first worker checkpoint. */
-      node = become_worker;
-      become_worker = node->next;
-
-      lwt_unix_mutex_unlock(&pool_mutex);
-
-      DEBUG("blocking call terminated after blocking, becoming a worker");
-
-      /* Add the stack frame used for this call to the list of
-         available ones. */
-      lwt_unix_mutex_lock(&blocking_call_enter_mutex);
-      frame->next = blocking_call_enter;
-      blocking_call_enter = frame;
-      /* Release the mutex only after the jump. */
-
-      memcpy(&buf, &(node->checkpoint), sizeof(sigjmp_buf));
-      free(node);
-      siglongjmp(buf, 1);
-    }
-  }
-}
-
-/* Allocate a new stack for doing blocking calls. */
-void alloc_new_stack() {
-  DEBUG("allocate a new stack");
-
-  stack_t old_stack, new_stack;
-  struct sigaction old_sa, new_sa;
-
-  /* Create the new stack. */
-  new_stack.ss_flags = 0;
-  new_stack.ss_size = STACK_SIZE;
-  new_stack.ss_sp = lwt_unix_malloc(STACK_SIZE);
-
-  /* Change the stack used for signals. */
-  sigaltstack(&new_stack, &old_stack);
-
-  stack_allocated = 0;
-
-  /* Set up the custom signal handler. */
-  new_sa.sa_handler = altstack_worker;
-  new_sa.sa_flags = SA_ONSTACK;
-  sigemptyset(&new_sa.sa_mask);
-  sigaction(LWT_UNIX_SIGNAL_ASYNC_SWITCH, &new_sa, &old_sa);
-
-  /* Save the stack frame. */
-  raise(LWT_UNIX_SIGNAL_ASYNC_SWITCH);
-
-  /* Restore the old signal handler. */
-  sigaction(LWT_UNIX_SIGNAL_ASYNC_SWITCH, &old_sa, NULL);
-
-  /* Restore the old alternative stack. */
-  sigaltstack(&old_stack, NULL);
-}
-
-#endif /* defined(LWT_UNIX_HAVE_ASYNC_SWITCH) */
-
-/* +-----------------------------------------------------------------+
    | Threading stuff initialization                                  |
    +-----------------------------------------------------------------+ */
 
@@ -1084,11 +894,6 @@ void initialize_threading() {
     lwt_unix_mutex_init(&pool_mutex);
     lwt_unix_condition_init(&pool_condition);
 
-#if defined(LWT_UNIX_HAVE_ASYNC_SWITCH)
-    lwt_unix_mutex_init(&blocking_call_enter_mutex);
-    main_thread = lwt_unix_thread_self();
-#endif
-
     threading_initialized = 1;
   }
 }
@@ -1100,9 +905,6 @@ void initialize_threading() {
 /* Function executed by threads of the pool. */
 static void *worker_loop(void *data) {
   lwt_unix_job job = (lwt_unix_job)data;
-#if defined(LWT_UNIX_HAVE_ASYNC_SWITCH)
-  struct stack_frame *node;
-#endif
 
 #if defined(HAVE_PTHREAD)
   /* Block all signals, otherwise ocaml handlers defined with the
@@ -1123,58 +925,13 @@ static void *worker_loop(void *data) {
     DEBUG("waiting for something to do");
 
 /* Wait for something to do. */
-#if defined(LWT_UNIX_HAVE_ASYNC_SWITCH)
-    while (pool_queue == NULL && main_state == STATE_RUNNING) {
-      ++thread_waiting_count;
-      lwt_unix_condition_wait(&pool_condition, &pool_mutex);
-    }
-#else
     while (pool_queue == NULL) {
       ++thread_waiting_count;
       lwt_unix_condition_wait(&pool_condition, &pool_mutex);
     }
-#endif
 
     DEBUG("received something to do");
 
-#if defined(LWT_UNIX_HAVE_ASYNC_SWITCH)
-    if (main_state == STATE_BLOCKED) {
-      DEBUG("main thread is blocked");
-      DEBUG("\e[1;31mswitching\e[0m");
-
-      /* If the main thread is blocked, we become the main thread. */
-      main_thread = lwt_unix_thread_self();
-
-      /* The new main thread is running again. */
-      main_state = STATE_RUNNING;
-
-      node = lwt_unix_new(struct stack_frame);
-
-      /* Save the stack frame so the old main thread can become a
-         worker when the blocking call terminates. */
-      if (sigsetjmp(node->checkpoint, 1) == 0) {
-        DEBUG("checkpoint for future worker done");
-
-        /* Save the stack frame in the list of worker checkpoints. */
-        node->next = become_worker;
-        become_worker = node;
-
-        DEBUG("going back to the ocaml code");
-
-        /* Go to before the blocking call. */
-        siglongjmp(blocking_call_leave, CALL_SCHEDULED);
-      }
-
-      DEBUG("transformation to worker done");
-
-      /* This thread is not running caml code anymore. */
-      // caml_c_thread_unregister();
-
-      /* Release this mutex. It was locked before the jump. */
-      lwt_unix_mutex_unlock(&blocking_call_enter_mutex);
-
-    } else {
-#endif /* defined(LWT_UNIX_HAVE_ASYNC_SWITCH) */
       DEBUG("taking a job to execute");
 
       /* Take the first queued job. */
@@ -1190,9 +947,6 @@ static void *worker_loop(void *data) {
 
       /* Execute the job. */
       execute_job(job);
-#if defined(LWT_UNIX_HAVE_ASYNC_SWITCH)
-    }
-#endif
   }
 
   return NULL;
@@ -1224,9 +978,6 @@ void lwt_unix_free_job(lwt_unix_job job) {
 
 CAMLprim value lwt_unix_start_job(value val_job, value val_async_method) {
   lwt_unix_job job = Job_val(val_job);
-#if defined(LWT_UNIX_HAVE_ASYNC_SWITCH)
-  struct stack_frame *node;
-#endif
   lwt_unix_async_method async_method = Int_val(val_async_method);
   int done = 0;
 
@@ -1250,6 +1001,7 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method) {
       return Val_true;
 
     case LWT_UNIX_ASYNC_METHOD_DETACH:
+    case LWT_UNIX_ASYNC_METHOD_SWITCH:
       initialize_threading();
 
       lwt_unix_mutex_init(&job->mutex);
@@ -1298,89 +1050,6 @@ CAMLprim value lwt_unix_start_job(value val_job, value val_async_method) {
       }
 
       return Val_bool(done);
-
-    case LWT_UNIX_ASYNC_METHOD_SWITCH:
-#if defined(LWT_UNIX_SIGNAL_ASYNC_SWITCH)
-      if (SIGRTMIN > SIGRTMAX)
-        caml_invalid_argument("the switch method is not supported");
-
-      initialize_threading();
-
-      lwt_unix_mutex_init(&job->mutex);
-      job->thread = main_thread;
-
-      /* Ensures there is at least one thread that can become the main
-         thread. */
-      if (thread_waiting_count == 0) {
-        int zero_if_started_otherwise_errno =
-            lwt_unix_launch_thread(worker_loop, NULL);
-
-        if (zero_if_started_otherwise_errno == 0)
-            ++thread_count;
-        else
-            unix_error(
-                zero_if_started_otherwise_errno, "launch_thread", Nothing);
-      }
-
-      if (blocking_call_enter == NULL) alloc_new_stack();
-
-      DEBUG("taking a stack frame for doing a blocking call");
-
-      /* Take and remove the first available stack frame for system
-         calls. */
-      lwt_unix_mutex_lock(&blocking_call_enter_mutex);
-      assert(blocking_call_enter != NULL);
-      node = blocking_call_enter;
-      blocking_call_enter = node->next;
-      lwt_unix_mutex_unlock(&blocking_call_enter_mutex);
-
-      /* Save the stack frame to leave the blocking call. */
-      switch (sigsetjmp(blocking_call_leave, 1)) {
-        case 0:
-          /* Save the job to do. */
-          blocking_call = job;
-
-          /* Save the stack frame that will be used for this call in case
-             it get scheduled. */
-          blocking_call_frame = node;
-
-          DEBUG("jumping to do a blocking call");
-
-          /* Jump to an alternative stack and do the call. */
-          siglongjmp(node->checkpoint, 1);
-
-        case CALL_SUCCEEDED:
-          DEBUG("resuming without being scheduled");
-
-          /* Re-add the stack frame used for the call to the list of
-             available ones. */
-          lwt_unix_mutex_lock(&blocking_call_enter_mutex);
-          node->next = blocking_call_enter;
-          blocking_call_enter = node;
-          lwt_unix_mutex_unlock(&blocking_call_enter_mutex);
-          return Val_true;
-
-        case CALL_SCHEDULED:
-          DEBUG("resuming after being scheduled");
-
-          /* This mutex was locked before we did the jump. */
-          lwt_unix_mutex_unlock(&pool_mutex);
-
-          /* This thread is now running caml code. */
-          // caml_c_thread_register();
-
-          done = job->state == LWT_UNIX_JOB_STATE_DONE;
-          if (done) {
-            lwt_unix_mutex_lock(&job->mutex);
-            lwt_unix_mutex_unlock(&job->mutex);
-          }
-
-          return Val_bool(done);
-      }
-
-#else /* defined(LWT_UNIX_SIGNAL_ASYNC_SWITCH) */
-      caml_invalid_argument("the switch method is not supported");
-#endif
   }
 
   return Val_false;
@@ -1431,11 +1100,6 @@ CAMLprim value lwt_unix_run_job_sync(value val_job) {
 
 CAMLprim value lwt_unix_reset_after_fork(value Unit) {
   if (threading_initialized) {
-#if defined(LWT_UNIX_HAVE_ASYNC_SWITCH)
-    /* Reset the main thread. */
-    main_thread = lwt_unix_thread_self();
-#endif
-
     /* There is no more waiting threads. */
     thread_waiting_count = 0;
 

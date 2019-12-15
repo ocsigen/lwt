@@ -1221,13 +1221,9 @@ type async_method =
 
           This is the default. *)
   | Async_switch
-      (** System calls are made in the main thread, and if one blocks
-          the execution continue in another system thread. This method
-          is the most efficient, also you will get better performance
-          if you force all threads to run on the same cpu. On linux
-          this can be done by using the command [taskset].
-
-          Note that this method is still experimental. *)
+    [@ocaml.deprecated " Use Lwt_unix.Async_detach."]
+      (** Currently a synonym for [Async_detach]. This was a different method in
+          the past. *)
 
 val default_async_method : unit -> async_method
   [@@ocaml.deprecated

@@ -152,8 +152,8 @@ enum lwt_unix_async_method {
     /* Asynchronously, on another thread. */
     LWT_UNIX_ASYNC_METHOD_DETACH = 1,
 
-    /* Asynchronously, on the main thread, switcing to another thread if
-       necessary. */
+    /* Currently a synonym for DETACH. This was a different strategy in the
+       past. */
     LWT_UNIX_ASYNC_METHOD_SWITCH = 2
 };
 
@@ -205,9 +205,6 @@ struct lwt_unix_job {
 
     /* Mutex to protect access to [state] and [fast]. */
     lwt_unix_mutex mutex;
-
-    /* Thread running the job. */
-    lwt_unix_thread thread;
 
     /* The async method in used by the job. */
     lwt_unix_async_method async_method;
