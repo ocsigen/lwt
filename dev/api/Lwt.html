@@ -726,8 +726,8 @@ all other promises that are still pending, using <span><a href=".././api/Lwt#VAL
 promise <span class="odocwiki_inlinecode">p</span> is also fulfilled, with the same value. Likewise, if the first
 promise in <span class="odocwiki_inlinecode">ps</span> to become resolved is rejected, <span class="odocwiki_inlinecode">p</span> is rejected with the
 same exception.
-</p><p>If <span class="odocwiki_inlinecode">ps</span> has no promises (if it is the empty list), <span class="odocwiki_inlinecode">Lwt.pick ps</span> returns a
-promise that is pending forever, and cannot be canceled.
+</p><p>If <span class="odocwiki_inlinecode">ps</span> has no promises (if it is the empty list), <span class="odocwiki_inlinecode">Lwt.pick ps</span> raises
+<span class="odocwiki_inlinecode">Pervasives.Invalid_argument _</span>.
 </p><p>It's possible for multiple promises in <span class="odocwiki_inlinecode">ps</span> to become resolved
 simultaneously. This happens most often when some promises <span class="odocwiki_inlinecode">ps</span> are already
 resolved at the time <span class="odocwiki_inlinecode">Lwt.pick</span> is called.
