@@ -1,2 +1,2 @@
-File "run_2.ml", line 1, characters 4-7:
+File "cases/run_2.ml", line 1, characters 4-7:
 Error: Uninterpreted extension 'lwt'.

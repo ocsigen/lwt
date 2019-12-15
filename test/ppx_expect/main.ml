@@ -1,5 +1,6 @@
 let test_directory = "cases"
-let package_directory = "../../../../install/default/lib"
+let package_directory = "../../../install/default/lib"
+let (//) = Filename.concat
 
 let _read_file name =
   let buffer = Buffer.create 4096 in
@@ -46,9 +47,9 @@ let diff reference result =
   | _ -> _command_failed command ~status
 
 let run_test name =
-  let ml_name = name ^ ".ml" in
-  let expect_name = name ^ ".expect" in
-  let fixed_name = name ^ ".fixed" in
+  let ml_name = test_directory // name ^ ".ml" in
+  let expect_name = test_directory // name ^ ".expect" in
+  let fixed_name = test_directory // name ^ ".fixed" in
   let command =
     Printf.sprintf
       "%s %s ocamlfind c %s -linkpkg -thread -package %s %s > %s 2>&1"
@@ -65,7 +66,6 @@ let () =
     |> List.filter (fun file -> Filename.check_suffix file ".ml")
     |> List.map Filename.chop_extension
   in
-  Sys.chdir test_directory;
   let only_if () =
     Sys.cygwin = false && Sys.win32 = false &&
     (* 4.02.3 prints file paths differently *)

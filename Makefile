@@ -12,6 +12,15 @@ build:
 test: build
 	dune runtest
 
+# Promote expect test output.
+.PHONY : promote
+promote :
+	for FILE in $$(ls _build/default/test/ppx_expect/cases/*.fixed); \
+	do \
+		EXPECT=test/ppx_expect/cases/$$(basename $${FILE%.fixed}).expect; \
+		cp $$FILE $$EXPECT; \
+	done
+
 # Install dependencies needed during development.
 .PHONY : dev-deps
 dev-deps :
