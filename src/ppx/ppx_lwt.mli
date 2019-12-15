@@ -158,20 +158,6 @@ else
    {[
      if%lwt <expr> then <expr_1>
    ]}
-
-   - exception raising:
-
-   For all other expression, the construct
-   {[
-     [%lwt <expr>]
-   ]}
-
-   is expanded to:
-   {[
-     Lwt.catch (fun () -> <expr>) Lwt.fail
-   ]}
-
-   It allows to encode the old [raise_lwt <e>] as [[%lwt raise <e>]], and offers a convenient way to interact with non-Lwt code.
 *)
 
 
