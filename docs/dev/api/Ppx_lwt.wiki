@@ -222,39 +222,4 @@ else
 
 
    ~It allows to encode the old <<span class="odocwiki_inlinecode"|raise~_lwt ~<e~>>> as <<span class="odocwiki_inlinecode"|~[~%lwt raise ~<e~>~]>>~, and offers a convenient way to interact with non~-~Lwt code~.
-
-
-   
-==@@id="2_Logging"@@~Logging==
-
-
-
-   ~The logging syntax extension is enabled with <<span class="odocwiki_inlinecode"|~-log>>~.
-   ~It will replace expressions of the form~:
-
-
-   
-<<code language='ocaml'|     Lwt_log.info_f ~section "x = %d" x
-   >>
-
-
-
-   by
-
-
-   
-<<code language='ocaml'|if Lwt_log.Section.level section <= Lwt_log.Info then
-  Lwt_log.info_f ~section "x = %d" x
-else
-  return ()
-   >>
-
-
-
-   ~Notes~:
-
-
-* ~The application must be complete~. ~For example~: <<span class="odocwiki_inlinecode"|~Log~.info "~%d">>
-   will make compilation fail~.
-
 <<pre id="VALmapper" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|mapper>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_uid"|Migrate_parsetree>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_uid"|OCaml_409>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|Ast>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|Ast_mapper>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|mapper>>>>>>
