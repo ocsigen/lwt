@@ -1,3 +1,24 @@
+===== 5.0.0 (2019-12-15) =====
+
+====== Breaking ======
+
+See #584 for an extended summary and discussion of this release as a whole, or
+individual issues for each change specifically.
+
+  * The callback passed to Lwt.async must now evaluate to unit Lwt.t, rather
+    than _ Lwt.t (#603, requested @cfcs).
+  * Lwt.choose, Lwt.nchoose, Lwt.nchoose_split, Lwt.pick, and Lwt.npick now
+    raise Invalid_argument if given the empty list (#557, Tim Reinke).
+  * Catch nested calls to Lwt_main.run (#607, #609, prompted François-René
+    Rideau).
+  * Use the new Lwt_unix.IO_vectors in Lwt_unix.recv_msg and Lwt_unix.send_msg
+    (#594, prompted Marcello Seri).
+  * Make Lwt_unix.Async_switch a synonym for Lwt_unix.Async_detach (#572).
+  * Remove the redundant configure.ml (#700).
+  * PPX: remove support for general [%lwt ...] expressions (#527).
+  * PPX: remove support for Lwt_log and the -log option (#520).
+  * PPX: remove the -no-debug option (#528).
+
 ===== 4.5.0 (2019-12-15) =====
 
 ====== Additions ======
