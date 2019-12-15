@@ -795,14 +795,8 @@
 
           ~This is the default~.
 >>
->><<span class="odocwiki_comments_close"| ~*)>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Async_switch>>>><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|<<div class="odocwiki_info"|~System calls are made in the main thread~, and if one blocks
-          the execution continue in another system thread~. ~This method
-          is the most efficient~, also you will get better performance
-          if you force all threads to run on the same cpu~. ~On linux
-          this can be done by using the command <<span class="odocwiki_inlinecode"|taskset>>~.
-
-
-          ~Note that this method is still experimental~.
+>><<span class="odocwiki_comments_close"| ~*)>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Async_switch>>>><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|<<div class="odocwiki_info"|~Currently a synonym for <<span class="odocwiki_inlinecode"|~Async~_detach>>~. ~This was a different method in
+          the past~.
 >>
 >><<span class="odocwiki_comments_close"| ~*)>>>>>>>>>><<div class="odocwiki_info"|~For system calls that cannot be made asynchronously~, ~Lwt uses one
     of the following method~:
