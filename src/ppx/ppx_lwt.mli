@@ -172,30 +172,6 @@ else
    ]}
 
    It allows to encode the old [raise_lwt <e>] as [[%lwt raise <e>]], and offers a convenient way to interact with non-Lwt code.
-
-   {2 Logging}
-
-   The logging syntax extension is enabled with [-log].
-   It will replace expressions of the form:
-
-   {[
-     Lwt_log.info_f ~section "x = %d" x
-   ]}
-
-   by
-
-   {[
-if Lwt_log.Section.level section <= Lwt_log.Info then
-  Lwt_log.info_f ~section "x = %d" x
-else
-  return ()
-   ]}
-
-   Notes:
-
-   - The application must be complete. For example: [Log.info "%d"]
-   will make compilation fail.
-
 *)
 
 

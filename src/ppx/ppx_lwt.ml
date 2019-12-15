@@ -12,9 +12,6 @@ open Ast_convenience_409
 let with_loc f {txt ; loc = _loc} =
   (f txt) [@metaloc _loc]
 
-let def_loc txt =
-  { txt; loc = !default_loc }
-
 (** Test if a case is a catchall. *)
 let is_catchall case =
   let rec is_catchall_pat p = match p.ppat_desc with
@@ -40,27 +37,16 @@ let lwt_prefix = "__ppx_lwt_"
 (** {2 Here we go!} *)
 
 let debug      = ref true
-let log        = ref false
 let sequence   = ref true
 let strict_seq = ref true
 
 let used_no_debug_option = ref false
-let used_log_option = ref false
-let used_no_log_option = ref false
 let used_no_sequence_option = ref false
 let used_no_strict_sequence_option = ref false
 
 let no_debug_option () =
   debug := false;
   used_no_debug_option := true
-
-let log_option () =
-  log := true;
-  used_log_option := true
-
-let no_log_option () =
-  log := false;
-  used_no_log_option := true
 
 let no_sequence_option () =
   sequence := false;
@@ -313,68 +299,6 @@ let lwt_expression mapper exp attributes ext_loc =
     let pexp_attributes = warning::pexp_attributes in
     mapper.expr mapper { new_exp with pexp_attributes }
 
-let make_loc {Location.loc_start; _} =
-  let (file, line, char) = Location.get_pos_info loc_start in
-  [%expr ([%e str file], [%e int line], [%e int char])]
-    [@metaloc !default_loc]
-
-(**
-   [Lwt_log.error "message"] ≡
-   [let __pa_log_section = Lwt_log.Section.main in
-   if Lwt_log.Error >= (Lwt_log.Section.level __pa_log_section)
-   then Lwt_log.error ~location:("foo.ml", 1, 0) ~section:__pa_log_section "message"
-   else Lwt.return_unit];
-   [Lwt_log.error ~section "message"] ≡
-   [let __pa_log_section = section in ...].
-   Additionally, remove debug-level statements if -no-debug is given. **)
-let lwt_log mapper fn args attrs loc =
-  let open Longident in
-  match fn with
-  | {pexp_desc = Pexp_ident {txt = Ldot (Lident "Lwt_log", func); _}; _} ->
-    let len = String.length func in
-    let fmt = len >= 2 && func.[len - 2] = '_' && func.[len - 1] = 'f'
-    and ign = len >= 4 && func.[0] = 'i' && func.[1] = 'g' && func.[2] = 'n' && func.[3] = '_' in
-    let level =
-      match fmt, ign with
-      | false, false -> func
-      | true,  false -> String.sub func 0 (len - 2)
-      | false, true  -> String.sub func 4 (len - 4)
-      | true,  true  -> String.sub func 4 (len - 6)
-    in
-    let level = (String.capitalize [@ocaml.warning "-3"]) level in
-    if level = "Debug" && (not !debug) then
-      let new_exp =
-        if ign then
-          [%expr ()] [@metaloc !default_loc]
-        else
-          [%expr Lwt.return_unit] [@metaloc !default_loc]
-      in
-      mapper.expr mapper { new_exp with pexp_attributes = attrs }
-    else if List.mem level ["Fatal"; "Error"; "Warning"; "Notice"; "Info"; "Debug"] then
-      let args = List.map (fun (l,e) -> l, mapper.expr mapper e) args in
-      let new_exp =
-        let args = (Label.labelled "location", make_loc loc) ::
-                   (Label.labelled "section",
-                    [%expr __pa_log_section] [@metaloc !default_loc]) ::
-                   List.remove_assoc (Label.labelled "section") args in
-        [%expr
-          if [%e Exp.construct (def_loc (Ldot (Lident "Lwt_log", level))) None] >=
-             Lwt_log.Section.level __pa_log_section then
-            [%e Exp.apply (Exp.ident (def_loc (Ldot (Lident "Lwt_log", func)))) args]
-          else
-            [%e if ign then [%expr ()] else [%expr Lwt.return_unit]]]
-          [@metaloc !default_loc]
-      in
-      try
-        let section = List.assoc (Label.labelled "section") args in
-        [%expr let __pa_log_section = [%e section] in [%e new_exp]]
-          [@metaloc !default_loc]
-      with Not_found ->
-        [%expr let __pa_log_section = Lwt_log.Section.main in [%e new_exp]]
-          [@metaloc !default_loc]
-    else default_mapper.expr mapper (Exp.apply ~attrs fn args)
-  | _ -> default_mapper.expr mapper (Exp.apply ~attrs fn args)
-
 let warned = ref false
 
 let mapper =
@@ -403,13 +327,6 @@ let mapper =
         |> warn_if (!used_no_sequence_option)
           ("-no-sequence is a deprecated Lwt PPX option\n" ^
            "  See https://github.com/ocsigen/lwt/issues/495")
-        |> warn_if (!used_no_log_option || !used_log_option)
-          ("Lwt PPX logging support is deprecated\n" ^
-           "  See https://github.com/ocsigen/lwt/issues/520")
-        |> warn_if (!used_no_log_option)
-          "-no-log is a deprecated Lwt PPX option"
-        |> warn_if (!used_log_option)
-          "-log is a deprecated Lwt PPX option"
         |> warn_if (!used_no_debug_option)
           ("-no-debug is a deprecated Lwt PPX option\n" ^
            "  See https://github.com/ocsigen/lwt/issues/528")
@@ -456,9 +373,6 @@ let mapper =
             "Lwt's finally should be used only with the syntax: \"(<expr>)[%%finally ...]\"."
         ))
 
-      | { pexp_desc = Pexp_apply (fn, args); pexp_attributes; pexp_loc; _ } when !log ->
-        default_loc := pexp_loc;
-        lwt_log mapper fn args pexp_attributes pexp_loc
       | _ ->
         default_mapper.expr mapper expr);
     structure_item = (fun mapper stri ->
@@ -485,14 +399,6 @@ let args =
     "-no-debug",
       Unit no_debug_option,
       " disable debug mode (deprecated)";
-
-    "-log",
-      Unit log_option,
-      " enable logging (deprecated)";
-
-    "-no-log",
-      Unit no_log_option,
-      " disable logging (deprecated)";
 
     "-no-sequence",
       Unit no_sequence_option,
