@@ -16,14 +16,18 @@ let suite = suite "lwt_signal" [
        let e       = React.E.map (fun x -> l := x :: !l) (React.S.changes s') in
          ignore e;
          Lwt_condition.signal cond ();
+         Lwt.pause () >>= fun () ->
          push 1;
          push 0;
          push 2; (* overwrites previous 0 *)
          Lwt_condition.signal cond ();
+         Lwt.pause () >>= fun () ->
          push 3;
          Lwt_condition.signal cond ();
+         Lwt.pause () >>= fun () ->
          push 4;
          Lwt_condition.signal cond ();
+         Lwt.pause () >>= fun () ->
          return (!l = [4; 3; 2; 1]));
 
   test "limit race condition" begin fun () ->

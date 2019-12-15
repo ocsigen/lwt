@@ -178,3 +178,7 @@ module S : sig
 
   val run_s : ?eq : ('a -> 'a -> bool) -> 'a Lwt.t signal -> 'a signal Lwt.t
 end
+
+(**/**)
+
+val opaque_identity : 'a -> 'a

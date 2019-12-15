@@ -50,20 +50,26 @@ let suite = suite "lwt_event" [
        let event, push = Lwt_react.E.create() in
        let prepend n = l := n :: !l
        in
-       event
-       |> Lwt_react.E.limit (fun () ->
-           let p = Lwt_unix.sleep 1. in
-           Lwt.async (fun () ->
-               Lwt_unix.sleep 0.1 >|= fun () ->
-               Lwt.on_success p (fun () -> push 2)); p)
-       |> React.E.map prepend
-       |> ignore;
+       let event' =
+        event
+        |> Lwt_react.E.limit (fun () ->
+            let p = Lwt_unix.sleep 1. in
+            Lwt.async (fun () ->
+                Lwt_unix.sleep 0.1 >|= fun () ->
+                Lwt.on_success p (fun () -> push 2)); p)
+        |> React.E.map prepend
+       in
        push 0;
        push 1;
 
-       Lwt_main.run (Lwt_unix.sleep 2.5);
-       return (!l = [2;2;0]));
-
+       Lwt_unix.sleep 2.5 >>= fun () ->
+       let result = !l = [2; 2; 0] in
+       if not result then begin
+        List.iter (Printf.eprintf "%i ") !l;
+        prerr_newline ()
+       end;
+       ignore (Lwt_react.opaque_identity event');
+       return result);
 
   test "of_stream"
     (fun () ->
@@ -90,10 +96,13 @@ let suite = suite "lwt_event" [
          push 0;
          push 2; (* overwrites previous 0 *)
          Lwt_condition.signal cond ();
+         Lwt.pause () >>= fun () ->
          push 3;
          Lwt_condition.signal cond ();
+         Lwt.pause () >>= fun () ->
          push 4;
          Lwt_condition.signal cond ();
+         Lwt.pause () >>= fun () ->
          return (!l = [4; 3; 2; 1]));
 
   test "with_finaliser lifetime" begin fun () ->
