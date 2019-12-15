@@ -141,12 +141,10 @@ let convert_io_vectors old_io_vectors =
   io_vectors
 
 let recv_msg ~socket ~io_vectors =
-  Lwt_unix.Versioned.recv_msg_2
-    ~socket ~io_vectors:(convert_io_vectors io_vectors)
+  Lwt_unix.recv_msg ~socket ~io_vectors:(convert_io_vectors io_vectors)
 
 let send_msg ~socket ~io_vectors ~fds =
-  Lwt_unix.Versioned.send_msg_2
-    ~socket ~io_vectors:(convert_io_vectors io_vectors) ~fds
+  Lwt_unix.send_msg ~socket ~io_vectors:(convert_io_vectors io_vectors) ~fds
 
 external stub_recvfrom : Unix.file_descr -> t -> int -> int -> Unix.msg_flag list -> int * Unix.sockaddr = "lwt_unix_bytes_recvfrom"
 

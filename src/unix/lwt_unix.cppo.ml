@@ -1575,37 +1575,15 @@ let sendto ch buf pos len flags addr =
     let do_sendto = if Sys.win32 then Unix.sendto else stub_sendto in
     wrap_syscall Write ch (fun () -> do_sendto ch.fd buf pos len flags addr)
 
-type io_vector = {
-  iov_buffer : string;
-  iov_offset : int;
-  iov_length : int;
-}
-
-let io_vector ~buffer ~offset ~length = {
-  iov_buffer = buffer;
-  iov_offset = offset;
-  iov_length = length;
-}
-
-let convert_io_vectors old_io_vectors =
-  let io_vectors = IO_vectors.create () in
-  old_io_vectors |> List.iter (fun {iov_buffer; iov_offset; iov_length} ->
-    IO_vectors.append_bytes
-      io_vectors (Bytes.unsafe_of_string iov_buffer) iov_offset iov_length);
-  io_vectors
-
 external stub_recv_msg :
   Unix.file_descr -> int -> IO_vectors.io_vector list ->
     int * Unix.file_descr list =
   "lwt_unix_recv_msg"
 
-let recv_msg_new ~socket ~io_vectors =
+let recv_msg ~socket ~io_vectors =
   let count = check_io_vectors "Lwt_unix.recv_msg" io_vectors in
   wrap_syscall Read socket (fun () ->
     stub_recv_msg socket.fd count io_vectors.IO_vectors.prefix)
-
-let recv_msg ~socket ~io_vectors =
-  recv_msg_new ~socket ~io_vectors:(convert_io_vectors io_vectors)
 
 external stub_send_msg :
   Unix.file_descr ->
@@ -1614,15 +1592,12 @@ external stub_send_msg :
     int =
   "lwt_unix_send_msg"
 
-let send_msg_new ~socket ~io_vectors ~fds =
+let send_msg ~socket ~io_vectors ~fds =
   let vector_count = check_io_vectors "Lwt_unix.send_msg" io_vectors in
   let fd_count = List.length fds in
   wrap_syscall Write socket (fun () ->
     stub_send_msg
       socket.fd vector_count io_vectors.IO_vectors.prefix fd_count fds)
-
-let send_msg ~socket ~io_vectors ~fds =
-  send_msg_new ~socket ~io_vectors:(convert_io_vectors io_vectors) ~fds
 
 type inet_addr = Unix.inet_addr
 
@@ -2540,7 +2515,7 @@ struct
 
   let bind_2 = bind
 
-  let recv_msg_2 = recv_msg_new
+  let recv_msg_2 = recv_msg
 
-  let send_msg_2 = send_msg_new
+  let send_msg_2 = send_msg
 end

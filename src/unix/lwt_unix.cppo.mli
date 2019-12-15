@@ -920,20 +920,9 @@ val sendto : file_descr -> bytes -> int -> int -> msg_flag list -> sockaddr -> i
 
     On Windows, [sendto] copies the given buffer before writing. *)
 
-(** An io-vector. Used by {!recv_msg} and {!send_msg}. *)
-type io_vector = {
-  iov_buffer : string;
-  iov_offset : int;
-  iov_length : int;
-}
-
-val io_vector : buffer : string -> offset : int -> length : int -> io_vector
-  (** Creates an io-vector *)
-
-val recv_msg : socket : file_descr -> io_vectors : io_vector list -> (int * Unix.file_descr list) Lwt.t
-  [@@ocaml.deprecated
-" Will be replaced by Lwt_unix.Versioned.recv_msg_2 in Lwt >= 5.0.0. See
-   https://github.com/ocsigen/lwt/issues/594"]
+val recv_msg :
+  socket:file_descr -> io_vectors:IO_vectors.t ->
+    (int * Unix.file_descr list) Lwt.t
 (** [recv_msg ~socket ~io_vectors] receives data into a list of
     io-vectors, plus any file-descriptors that may accompany the
     messages. It returns a tuple whose first field is the number of
@@ -942,26 +931,19 @@ val recv_msg : socket : file_descr -> io_vectors : io_vector list -> (int * Unix
     provided [io_vectors] list. Data is written directly into the
     [iov_buffer] buffers.
 
-    Not implemented on Windows.
+    Not implemented on Windows. *)
 
-    @deprecated Will be replaced by {!Lwt_unix.Versioned.recv_msg_2} in Lwt
-                5.0.0. *)
-
-val send_msg : socket : file_descr -> io_vectors : io_vector list -> fds : Unix.file_descr list -> int Lwt.t
-  [@@ocaml.deprecated
-" Will be replaced by Lwt_unix.Versioned.send_msg_2 in Lwt >= 5.0.0. See
-   https://github.com/ocsigen/lwt/issues/594"]
+val send_msg :
+  socket:file_descr -> io_vectors:IO_vectors.t -> fds:Unix.file_descr list ->
+    int Lwt.t
 (** [send_msg ~socket ~io_vectors ~fds] sends data from a list of
     io-vectors, accompanied with a list of file-descriptors. It
     returns the number of bytes sent. If fd-passing is not possible on
     the current system and [fds] is not empty, it raises
     [Lwt_sys.Not_available "fd_passing"]. Data is written directly from
-    the [iov_buffer] buffers.
+    the [io_vectors] buffers.
 
-    Not implemented on Windows.
-
-    @deprecated Will be replaced by {!Lwt_unix.Versioned.send_msg_2} in Lwt
-                5.0.0. *)
+    Not implemented on Windows. *)
 
 type credentials = {
   cred_pid : int;
@@ -1508,21 +1490,21 @@ sig
   val recv_msg_2 :
     socket:file_descr -> io_vectors:IO_vectors.t ->
       (int * Unix.file_descr list) Lwt.t
-  (** Upcoming version of {!Lwt_unix.recv_msg} that uses the new module
-      {!Lwt_unix.IO_vectors} rather than an argument of type
-      {!Lwt_unix.io_vector}. In Lwt 5.0.0, {!Lwt_unix.recv_msg} will become an
-      alias for this function.
+    [@@ocaml.deprecated
+" In Lwt >= 5.0.0, this is an alias for Lwt_unix.recv_msg."]
+  (** Since Lwt 5.0.0, this is an alias for {!Lwt_unix.recv_msg}.
 
+      @deprecated Use {!Lwt_unix.recv_msg}.
       @since 4.3.0 *)
 
   val send_msg_2 :
     socket:file_descr -> io_vectors:IO_vectors.t -> fds:Unix.file_descr list ->
       int Lwt.t
-  (** Upcoming version of {!Lwt_unix.send_msg} that uses the new module
-      {!Lwt_unix.IO_vectors} rather than an argument of type
-      {!Lwt_unix.io_vector}. In Lwt 5.0.0, {!Lwt_unix.send_msg} will become an
-      alias for this function.
+    [@@ocaml.deprecated
+" In Lwt >= 5.0.0, this is an alias for Lwt_unix.send_msg."]
+  (** Since Lwt 5.0.0, this is an alias for {!Lwt_unix.send_msg}.
 
+      @deprecated Use {!Lwt_unix.send_msg}.
       @since 4.3.0 *)
 end
 
