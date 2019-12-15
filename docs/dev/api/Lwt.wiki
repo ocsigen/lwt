@@ -1134,8 +1134,8 @@ let () =
     same exception~.
 
 
-    ~If <<span class="odocwiki_inlinecode"|ps>> has no promises ~(if it is the empty list~)~, <<span class="odocwiki_inlinecode"|~Lwt~.pick ps>> returns a
-    promise that is pending forever~, and cannot be canceled~.
+    ~If <<span class="odocwiki_inlinecode"|ps>> has no promises ~(if it is the empty list~)~, <<span class="odocwiki_inlinecode"|~Lwt~.pick ps>> raises
+    <<span class="odocwiki_inlinecode"|~Pervasives~.~Invalid~_argument ~_>>~.
 
 
     ~It~'s possible for multiple promises in <<span class="odocwiki_inlinecode"|ps>> to become resolved
