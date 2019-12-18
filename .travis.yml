@@ -128,6 +128,7 @@ matrix:
     - env: COMPILER=4.05.0+bytecode-only
     - env: COMPILER=4.04.2
     - env: COMPILER=4.03.0
+    - env: ESY=yes
 
   fast_finish: true
 
