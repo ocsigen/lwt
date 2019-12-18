@@ -395,9 +395,11 @@ struct
           Configurator.Process.run context
             "opam" ["config"; "var"; "conf-libev:installed"]
         in
-        match result.stdout with
-        | "true\n" -> true
-        | _ -> false
+        match result.stdout, result.exit_code with
+        | "true\n", 0 -> true
+        | "false\n", 0 -> false
+        | _, _ ->
+         failwith "OPAM exited with an error code, or isn't even installed."
       in
 
       let detect_esy_wants_libev () =
