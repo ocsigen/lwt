@@ -397,8 +397,9 @@ struct
         in
         match result.stdout, result.exit_code with
         | "true\n", 0 -> true
-        | _, 0 -> false
-        | _, _ -> raise Not_found
+        | "false\n", 0 -> false
+        | _, _ ->
+         failwith "OPAM exited with an error code, or isn't even installed."
       in
 
       let detect_esy_wants_libev () =
