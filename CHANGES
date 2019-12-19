@@ -19,6 +19,10 @@ individual issues for each change specifically.
   * PPX: remove support for Lwt_log and the -log option (#520).
   * PPX: remove the -no-debug option (#528).
 
+====== Bugs fixed ======
+
+  * libev detection under esy (#755, Antonio Nuno Monteiro).
+
 ===== 4.5.0 (2019-12-15) =====
 
 ====== Additions ======
