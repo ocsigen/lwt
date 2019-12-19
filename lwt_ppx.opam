@@ -17,7 +17,7 @@ maintainer: [
 dev-repo: "git+https://github.com/ocsigen/lwt.git"
 
 depends: [
-  "dune"
+  "dune" {>= "1.1.0"}
   "lwt"
   "ocaml" {>= "4.02.0"}
   "ocaml-migrate-parsetree" {>= "1.4.0"}
