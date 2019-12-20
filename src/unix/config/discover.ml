@@ -254,8 +254,7 @@ struct
           extend
             ["-I" ^ (path // "include")]
             ["-L" ^ (path // "lib"); "-l" ^ library]
-        with Not_found ->
-          extend [] ["-l" ^ library]
+        with Not_found -> ()
 
   let ws2_32_lib context =
     if Configurator.ocaml_config_var_exn context "os_type" = "Win32" then
