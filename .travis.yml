@@ -135,13 +135,13 @@ scripts:
     script:
       - esy install
       - esy build
-      - 'cat _build/default/src/unix/unix_c_library_flags.sexp | grep lev'
+      - 'esy sh -c "cat #{self.target_dir}/_build/default/src/unix/unix_c_library_flags.sexp"  | grep lev'
       - |
         sed -i 's#"@opam/conf-libev": "\*",##g' esy.json
       - esy install
       - esy build
       # Check `lev` isn't detected
-      - 'cat _build/default/src/unix/unix_c_library_flags.sexp | grep -v lev'
+      - 'esy sh -c "cat #{self.target_dir}/_build/default/src/unix/unix_c_library_flags.sexp"  | grep -v lev'
 
     cache:
       directories:
