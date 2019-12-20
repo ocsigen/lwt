@@ -254,7 +254,8 @@ struct
           extend
             ["-I" ^ (path // "include")]
             ["-L" ^ (path // "lib"); "-l" ^ library]
-        with Not_found -> ()
+        with Not_found ->
+          extend [] ["-l" ^ library]
 
   let ws2_32_lib context =
     if Configurator.ocaml_config_var_exn context "os_type" = "Win32" then
@@ -402,10 +403,13 @@ struct
       in
 
       let detect_esy_wants_libev () =
-        match Sys.getenv "LIBEV_CFLAGS", Sys.getenv "LIBEV_LIBS" with
-        | exception Not_found -> false
-        | "", "" -> false
-        | _ -> true
+        match Sys.getenv "cur__target_dir" with
+        | exception Not_found -> None
+        | _ ->
+          match Sys.getenv "LIBEV_CFLAGS", Sys.getenv "LIBEV_LIBS" with
+          | exception Not_found -> Some false
+          | "", "" -> Some false
+          | _ -> Some true
       in
 
       let should_look_for_libev =
@@ -415,12 +419,13 @@ struct
         | None ->
           try detect_opam_conf_libev ()
           with _ ->
-            if detect_esy_wants_libev () then
-              true
-            else begin
+            match detect_esy_wants_libev () with
+            | Some result ->
+              result
+            | None ->
+              (* we're not under esy *)
               let os = Configurator.ocaml_config_var_exn context "os_type" in
               os <> "Win32" && !Arguments.android_target <> Some true
-            end
       in
 
       if not should_look_for_libev then
