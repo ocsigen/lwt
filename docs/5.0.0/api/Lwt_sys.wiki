@@ -1,0 +1,18 @@
+=Module <<a_api_type | module Lwt_sys >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_sys>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_sys >><<span class="ocsforge_color_keyword"|end>>>>~System informations~.
+
+----
+<<pre id="EXCEPTIONNot_available" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|exception>> <<span class="odocwiki_name"|Not_available>> <<span class="ocsforge_color_keyword"|of>> <<span class="odocwiki_type"|string>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Not~_available~(feature~)>> is an exception that may be raised when
+      a feature is not available on the current system~.
+>>
+<<pre class="ocsforge_color odocwiki_code" id="TYPEfeature"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|feature>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_type"|\\  [ `fd_passing\\  | `fdatasync\\  | `get_affinity\\  | `get_cpu\\  | `get_credentials\\  | `libev\\  | `madvise\\  | `mincore\\  | `recv_msg\\  | `send_msg\\  | `set_affinity\\  | `wait4 ]>> >><<div class="odocwiki_info"|~Features that can be tested~.
+>>
+<<pre id="VALhave" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|have>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="feature" | type Lwt_sys.feature >> <<span class="ocsforge_color_delimiter"| -> >> bool>>>><<div class="odocwiki_info"|~Test whether the given feature is available on the current
+      system~.
+>>
+<<pre class="ocsforge_color odocwiki_code" id="TYPEbyte_order"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|byte~_order>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="odocwiki_variants"|<<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Little_endian>>>>>><<span class="odocwiki_variant"|<<span class="odocwiki_variant_constr"|<<span class="ocsforge_color_keyword"| ~|>> <<span class="ocsforge_color_uid"|Big_endian>>>><<span class="odocwiki_comments"|<<span class="odocwiki_comments_open"|(*>> <<span|<<div class="odocwiki_info"|~Type of byte order
+>>
+>><<span class="odocwiki_comments_close"| ~*)>>>>>>>>>><<pre id="VALbyte_order" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|byte~_order>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="byte_order" | type Lwt_sys.byte_order >>>>>><<div class="odocwiki_info"|~The byte order used by the computer running the program~.
+>>
+<<pre id="VALwindows" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|windows>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|bool>>>><<div class="odocwiki_info"|<<span class="odocwiki_warning"|Deprecated.>>~Use <<span class="odocwiki_inlinecode"|~Sys~.win~3~2>>~.
+>>

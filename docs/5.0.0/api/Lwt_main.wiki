@@ -1,0 +1,70 @@
+=Module <<a_api_type | module Lwt_main >> =
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_main>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_main >><<span class="ocsforge_color_keyword"|end>>>>~Main loop and event queue
+
+----
+
+~This module controls the ``main~-loop~'~' of ~Lwt~.
+<<pre id="VALrun" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|run>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="Lwt.t" | type Lwt.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~_main~.run p>> calls the ~Lwt scheduler~, performing ~I~/~O until <<span class="odocwiki_inlinecode"|p>>
+      resolves~. <<span class="odocwiki_inlinecode"|~Lwt~_main~.run p>> returns the value in <<span class="odocwiki_inlinecode"|p>> if <<span class="odocwiki_inlinecode"|p>> is fulfilled~.
+      ~If <<span class="odocwiki_inlinecode"|p>> is rejected with an exception instead~, <<span class="odocwiki_inlinecode"|~Lwt~_main~.run p>> raises that
+      exception~.
+
+
+      ~Every native and bytecode program that uses ~Lwt should call this function
+      at its top level~. ~It implements the ~Lwt main loop~.
+
+
+      ~Example~:
+      
+<<code language='ocaml'|let main () = Lwt_io.write_line Lwt_io.stdout "hello world"
+
+let () = Lwt_main.run (main ())
+      >>
+
+
+
+      <<span class="odocwiki_inlinecode"|~Lwt~_main~.run>> is not available when targeting ~Java~Script~, because the
+      environment ~(such as ~Node~.js or the browser~'s script engine~) implements
+      the ~I~/~O loop~.
+
+
+      ~On ~Unix~, calling <<span class="odocwiki_inlinecode"|~Lwt~_main~.run>> installs a <<span class="odocwiki_inlinecode"|~S~I~G~C~H~L~D>> handler~, which is
+      needed for the implementations of <<a_api | val Lwt_unix.waitpid >> and
+      <<a_api | val Lwt_unix.wait4 >>~. ~As a result~, programs that call <<span class="odocwiki_inlinecode"|~Lwt~_main~.run>> and also
+      use non~-~Lwt system calls need to handle those system calls failing with
+      <<span class="odocwiki_inlinecode"|~E~I~N~T~R>>~.
+
+
+      ~Nested calls to <<span class="odocwiki_inlinecode"|~Lwt~_main~.run>> are not allowed~. ~That is~, do not call
+      <<span class="odocwiki_inlinecode"|~Lwt~_main~.run>> in a callback triggered by a promise that is resolved by
+      an outer invocation of <<span class="odocwiki_inlinecode"|~Lwt~_main~.run>>~. ~If your program makes such a call~,
+      <<span class="odocwiki_inlinecode"|~Lwt~_main~.run>> will raise <<span class="odocwiki_inlinecode"|~Failure>>~. ~This should be considered a logic
+      error ~(i~.e~.~, code making such a call is inherently broken~)~.
+
+
+      ~It is not safe to call <<span class="odocwiki_inlinecode"|~Lwt~_main~.run>> in a function registered with
+      <<span class="odocwiki_inlinecode"|~Pervasives~.at~_exit>>~, use <<a_api | val Lwt_main.at_exit >> instead~.
+>>
+<<pre id="VALyield" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|yield>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|yield ~(~)>> is a threads which suspends itself and then resumes
+      as soon as possible and terminates~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module type>> <<a_api text="Hooks" | module type Lwt_main.Hooks >> <<span class="ocsforge_color_delimiter"|~=>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module type Lwt_main.Hooks >><<span class="ocsforge_color_keyword"|end>>>><<div class="odocwiki_info"|~Hook sequences~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<a_api text="Enter_iter_hooks" | module Lwt_main.Enter_iter_hooks >> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="Hooks" | module Lwt_main.Hooks >>>><<span class="odocwiki_type"|  with type 'return_value kind = 'return_value>>>><<div class="odocwiki_info"|~Hooks~, of type <<span class="odocwiki_inlinecode"|unit ~-~> unit>>~, that are called before each iteration of the
+    ~Lwt main loop~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<a_api text="Leave_iter_hooks" | module Lwt_main.Leave_iter_hooks >> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="Hooks" | module Lwt_main.Hooks >>>><<span class="odocwiki_type"|  with type 'return_value kind = 'return_value>>>><<div class="odocwiki_info"|~Hooks~, of type <<span class="odocwiki_inlinecode"|unit ~-~> unit>>~, that are called after each iteration of the
+    ~Lwt main loop~.
+>>
+<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<a_api text="Exit_hooks" | module Lwt_main.Exit_hooks >> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="Hooks" | module Lwt_main.Hooks >>>><<span class="odocwiki_type"|  with type 'return_value kind = 'return_value Lwt.t>>>><<div class="odocwiki_info"|~Promise~-returning hooks~, of type <<span class="odocwiki_inlinecode"|unit ~-~> unit ~Lwt~.t>>~, that are called at
+    process exit~.
+>>
+<<pre id="VALenter_iter_hooks" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|enter~_iter~_hooks>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<a_api text="Lwt_sequence.t" | type Lwt_sequence.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_warning"|Deprecated.>>~Use module <<a_api | module Lwt_main.Enter_iter_hooks >>~.
+>>
+<<pre id="VALleave_iter_hooks" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|leave~_iter~_hooks>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<a_api text="Lwt_sequence.t" | type Lwt_sequence.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_warning"|Deprecated.>>~Use module <<a_api | module Lwt_main.Leave_iter_hooks >>~.
+>>
+<<pre id="VALexit_hooks" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|exit~_hooks>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<a_api text="Lwt_sequence.t" | type Lwt_sequence.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_warning"|Deprecated.>>~Use module <<a_api | module Lwt_main.Exit_hooks >>~.
+>>
+<<pre id="VALat_exit" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|at~_exit>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~_main~.at~_exit hook>> is the same as
+    <<span class="odocwiki_inlinecode"|ignore ~(~Lwt~_main~.~Exit~_hooks~.add~_first hook~)>>~.
+>>
