@@ -931,7 +931,9 @@ val recv_msg :
     provided [io_vectors] list. Data is written directly into the
     [iov_buffer] buffers.
 
-    Not implemented on Windows. *)
+    Not implemented on Windows.
+
+    @since 5.0.0 *)
 
 val send_msg :
   socket:file_descr -> io_vectors:IO_vectors.t -> fds:Unix.file_descr list ->
@@ -943,7 +945,9 @@ val send_msg :
     [Lwt_sys.Not_available "fd_passing"]. Data is written directly from
     the [io_vectors] buffers.
 
-    Not implemented on Windows. *)
+    Not implemented on Windows.
+
+    @since 5.0.0 *)
 
 type credentials = {
   cred_pid : int;
