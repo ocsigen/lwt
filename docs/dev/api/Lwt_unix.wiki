@@ -680,6 +680,7 @@
 
 
     ~Not implemented on ~Windows~.
+**Since** 5.0.0\\
 >>
 <<pre id="VALsend_msg" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|send~_msg>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_label"| socket: >><<a_api text="file_descr" | type Lwt_unix.file_descr >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| io_vectors: >><<a_api text="IO_vectors.t" | type Lwt_unix.IO_vectors.t >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| fds: >><<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|file_descr>> list <<span class="ocsforge_color_delimiter"| -> >> int <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|send~_msg ~~socket ~~io~_vectors ~~fds>> sends data from a list of
     io~-vectors~, accompanied with a list of file~-descriptors~. ~It
@@ -690,6 +691,7 @@
 
 
     ~Not implemented on ~Windows~.
+**Since** 5.0.0\\
 >>
 <<pre class="ocsforge_color odocwiki_code" id="TYPEcredentials"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_name"|credentials>> <<span class="ocsforge_color_delimiter"|~=>> <<span class="ocsforge_color_delimiter"|~{>>
 <<span class="odocwiki_record"|<<span class="odocwiki_field"|<<span class="odocwiki_field_descr"|  <<span class="ocsforge_color_label"|cred_pid:>> <<span class="odocwiki_type"|int>><<span class="ocsforge_color_delimiter"|~;>> >>>><<span class="odocwiki_field"|<<span class="odocwiki_field_descr"|  <<span class="ocsforge_color_label"|cred_uid:>> <<span class="odocwiki_type"|int>><<span class="ocsforge_color_delimiter"|~;>> >>>><<span class="odocwiki_field"|<<span class="odocwiki_field_descr"|  <<span class="ocsforge_color_label"|cred_gid:>> <<span class="odocwiki_type"|int>><<span class="ocsforge_color_delimiter"|~;>> >>>>>><<span class="ocsforge_color_delimiter"|~}>>>><<pre id="VALget_credentials" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|get~_credentials>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="file_descr" | type Lwt_unix.file_descr >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="credentials" | type Lwt_unix.credentials >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|get~_credentials fd>> returns credentials information from the
