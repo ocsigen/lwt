@@ -5,7 +5,7 @@ synopsis: "Promises and event-driven I/O"
 version: "dev"
 license: "MIT"
 homepage: "https://github.com/ocsigen/lwt"
-doc: "https://ocsigen.org/lwt/manual/"
+doc: "https://ocsigen.org/lwt"
 bug-reports: "https://github.com/ocsigen/lwt/issues"
 
 authors: [

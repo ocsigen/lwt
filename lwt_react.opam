@@ -5,7 +5,7 @@ synopsis: "Helpers for using React with Lwt"
 version: "dev"
 license: "MIT"
 homepage: "https://github.com/ocsigen/lwt"
-doc: "https://ocsigen.org/lwt/api/Lwt_react"
+doc: "https://ocsigen.org/lwt/dev/api/Lwt_react"
 bug-reports: "https://github.com/ocsigen/lwt/issues"
 
 authors: [
