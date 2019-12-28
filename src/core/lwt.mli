@@ -972,8 +972,8 @@ val all : ('a t) list -> ('a list) t
     is also rejected. This means that none of the values will be available, even
     if some of the promises in [ps] were already resolved when one of them is
     rejected. For more fine-grained handling of rejection, structure the program
-    with {!Lwt_stream} or {!Lwt_list}, or use {!Lwt.join} and collect values
-    manually. *)
+    with {!Lwt_stream} or {!Lwt_list}, handle rejections explicitly, or use
+    {!Lwt.join} and collect values manually. *)
 
 
 
