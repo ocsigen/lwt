@@ -1111,8 +1111,8 @@ let () =
     is also rejected~. ~This means that none of the values will be available~, even
     if some of the promises in <<span class="odocwiki_inlinecode"|ps>> were already resolved when one of them is
     rejected~. ~For more fine~-grained handling of rejection~, structure the program
-    with <<a_api | module Lwt_stream >> or <<a_api | module Lwt_list >>~, or use <<a_api | val Lwt.join >> and collect values
-    manually~.
+    with <<a_api | module Lwt_stream >> or <<a_api | module Lwt_list >>~, handle rejections explicitly~, or use
+    <<a_api | val Lwt.join >> and collect values manually~.
 >>
 
 
