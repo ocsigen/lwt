@@ -15,6 +15,7 @@
   val async_exception_hook : (exn -> unit) Stdlib.ref
   val both : 'a Lwt.t -> 'b Lwt.t -> ('a * 'b) Lwt.t
   val join : unit Lwt.t list -> unit Lwt.t
+  val all : 'a Lwt.t list -> 'a list Lwt.t
   val pick : 'a Lwt.t list -> 'a Lwt.t
   val choose : 'a Lwt.t list -> 'a Lwt.t
   val npick : 'a Lwt.t list -> 'a list Lwt.t

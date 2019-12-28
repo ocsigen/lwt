@@ -85,6 +85,10 @@
 |@@class="odocwiki_index"@ @@<<a_api text="add_task_r"| value Lwt.add_task_r >> ~[<<a_api | module Lwt >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~.add~_task~_r sequence>> is equivalent to
 >>
 |
+|@@class="odocwiki_index"@ @@<<a_api text="all"| value Lwt.all >> ~[<<a_api | module Lwt >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~.all ps>> is like <<a_api | val Lwt.join >><<span class="odocwiki_inlinecode"| ps>>~: it waits for all promises in the list
+    <<span class="odocwiki_inlinecode"|ps>> to become [[ #TYPEt| //resolved//]]~.
+>>
+|
 |@@class="odocwiki_index"@ @@<<a_api text="app_p"| value Lwt_react.E.app_p >> ~[<<a_api | module Lwt_react.E >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="app_s"| value Lwt_react.S.app_s >> ~[<<a_api | module Lwt_react.S >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="app_s"| value Lwt_react.E.app_s >> ~[<<a_api | module Lwt_react.E >>~]||
