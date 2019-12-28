@@ -1,3 +1,16 @@
+===== 5.1.0 (2019-12-28) =====
+
+====== Additions ======
+
+  * Lwt.all (9976f67).
+
+====== Documentation ======
+
+  * Add index.mld for nicer odoc output (1059a80, prompted Anurag Soni).
+  * Link to rwo-lwt from the online manual to make it more discoverable
+    (4129a22, suggested Anurag Soni).
+  * Fix doc links in opam files (7617607).
+
 ===== 5.0.1 (2019-12-22) =====
 
 ====== Bugs fixed ======
