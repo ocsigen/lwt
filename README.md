@@ -7,8 +7,8 @@
 [appveyor]:     https://ci.appveyor.com/project/aantron/lwt/branch/master
 [appveyor-img]: https://img.shields.io/appveyor/ci/aantron/lwt/master.svg?label=appveyor
 
-Lwt is OCaml's concurrent programming library. It provides a single data type:
-the *promise*, which is a value that will become determined in the future.
+Lwt is a concurrent programming library for OCaml. It provides a single data
+type: the *promise*, which is a value that will become determined in the future.
 Creating a promise spawns a computation. When that computation is I/O, Lwt runs
 it in parallel with your OCaml code.
 
