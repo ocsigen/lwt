@@ -2448,6 +2448,7 @@ sig
 
   val both : 'a t -> 'b t -> ('a * 'b) t
   val join : unit t list -> unit t
+  val all : ('a t) list -> ('a list) t
 
   val choose : 'a t list -> 'a t
   val pick : 'a t list -> 'a t
@@ -2579,6 +2580,20 @@ struct
       match !v1, !v2 with
       | Some v1, Some v2 -> v1, v2
       | _ -> assert false)
+
+  let all ps =
+    let vs = Array.make (List.length ps) None in
+    ps
+    |> List.mapi (fun index p ->
+      bind p (fun v -> vs.(index) <- Some v; return_unit))
+    |> join
+    |> map (fun () ->
+      vs
+      |> Array.map (fun v ->
+        match v with
+        | Some v -> v
+        | None -> assert false)
+      |> Array.to_list)
 
 
 

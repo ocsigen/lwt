@@ -962,6 +962,19 @@ let () =
     chosen arbitrarily. Note that this occurs only after all the promises are
     resolved, not immediately when the first promise is rejected. *)
 
+val all : ('a t) list -> ('a list) t
+(** [Lwt.all ps] is like {!Lwt.join}[ ps]: it waits for all promises in the list
+    [ps] to become {{: #TYPEt} {e resolved}}.
+
+    It then resolves the returned promise with the list of all resulting values.
+
+    Note that if any of the promises in [ps] is rejected, the returned promise
+    is also rejected. This means that none of the values will be available, even
+    if some of the promises in [ps] were already resolved when one of them is
+    rejected. For more fine-grained handling of rejection, structure the program
+    with {!Lwt_stream} or {!Lwt_list}, or use {!Lwt.join} and collect values
+    manually. *)
+
 
 
 (** {3 Racing} *)

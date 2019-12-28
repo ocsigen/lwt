@@ -1892,13 +1892,66 @@ let join_tests = suite "join" [
 ]
 let suites = suites @ [join_tests]
 
+let all_tests = suite "all" [
+  test "empty" begin fun () ->
+    let p = Lwt.all [] in
+    state_is (Lwt.Return []) p
+  end;
+
+  test "all fulfilled" begin fun () ->
+    let p = Lwt.all [Lwt.return 1; Lwt.return 2] in
+    state_is (Lwt.Return [1; 2]) p
+  end;
+
+  test "all rejected" begin fun () ->
+    let p = Lwt.all [Lwt.fail Exception; Lwt.fail Exception] in
+    state_is (Lwt.Fail Exception) p
+  end;
+
+  test "fulfilled and pending, fulfilled" begin fun () ->
+    let p, r = Lwt.wait () in
+    let p = Lwt.all [Lwt.return 1; p] in
+    Lwt.wakeup r 2;
+    state_is (Lwt.Return [1; 2]) p
+  end;
+
+  test "rejected and pending, fulfilled" begin fun () ->
+    let p, r = Lwt.wait () in
+    let p = Lwt.all [Lwt.fail Exception; p] in
+    Lwt.wakeup r 2;
+    state_is (Lwt.Fail Exception) p
+  end;
+
+  test "fulfilled and pending, rejected" begin fun () ->
+    let p, r = Lwt.wait () in
+    let p = Lwt.all [Lwt.return 1; p] in
+    Lwt.wakeup_exn r Exception;
+    state_is (Lwt.Fail Exception) p
+  end;
+
+  test "rejected and pending, rejected" begin fun () ->
+    let p, r = Lwt.wait () in
+    let p = Lwt.all [Lwt.fail Exception; p] in
+    Lwt.wakeup_exn r Exit;
+    state_is (Lwt.Fail Exception) p
+  end;
+
+  test "diamond" begin fun () ->
+    let p, r = Lwt.wait () in
+    let p = Lwt.all [p; p] in
+    Lwt.wakeup r 1;
+    state_is (Lwt.Return [1; 1]) p
+  end;
+]
+let suites = suites @ [all_tests]
+
 let both_tests = suite "both" [
   test "both fulfilled" begin fun () ->
     let p = Lwt.both (Lwt.return 1) (Lwt.return 2) in
     state_is (Lwt.Return (1, 2)) p
   end;
 
-  test "all rejected" begin fun () ->
+  test "both rejected" begin fun () ->
     let p = Lwt.both (Lwt.fail Exception) (Lwt.fail Exit) in
     state_is (Lwt.Fail Exception) p
   end;
