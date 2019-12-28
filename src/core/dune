@@ -5,3 +5,6 @@
  (preprocess (pps bisect_ppx --conditional))
  (libraries bytes result seq)
  (flags (:standard -w +A-29)))
+
+(documentation
+ (package lwt))
