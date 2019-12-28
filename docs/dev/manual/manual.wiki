@@ -43,6 +43,14 @@
   In the first part, we will explain the concepts of {{{Lwt}}}, then we will
   describe the main modules {{{Lwt}}} consists of.
 
+=== Finding examples ===
+
+  Additional sources of examples:
+
+  - [[https://github.com/dkim/rwo-lwt#readme|Concurrent Programming with Lwt]]
+  - [[https://mirage.io/wiki/tutorial-lwt|Mirage Lwt Tutorial]]
+  - [[http://www.baturin.org/code/lwt-counter-server/|Simple Server with Lwt]]
+
 == The Lwt core library ==
 
   In this section we describe the basics of {{{Lwt}}}. It is advised to
