@@ -61,6 +61,7 @@ We are looking for beta-tester and contributors.
   val async_exception_hook : (exn -&gt; unit) Stdlib.ref
   val both : 'a Lwt.t -&gt; 'b Lwt.t -&gt; ('a * 'b) Lwt.t
   val join : unit Lwt.t list -&gt; unit Lwt.t
+  val all : 'a Lwt.t list -&gt; 'a list Lwt.t
   val pick : 'a Lwt.t list -&gt; 'a Lwt.t
   val choose : 'a Lwt.t list -&gt; 'a Lwt.t
   val npick : 'a Lwt.t list -&gt; 'a list Lwt.t
