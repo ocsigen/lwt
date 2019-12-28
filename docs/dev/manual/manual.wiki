@@ -47,9 +47,9 @@
 
   Additional sources of examples:
 
-  - [[https://github.com/dkim/rwo-lwt#readme|Concurrent Programming with Lwt]]
-  - [[https://mirage.io/wiki/tutorial-lwt|Mirage Lwt Tutorial]]
-  - [[http://www.baturin.org/code/lwt-counter-server/|Simple Server with Lwt]]
+   * [[https://github.com/dkim/rwo-lwt#readme|Concurrent Programming with Lwt]]
+   * [[https://mirage.io/wiki/tutorial-lwt|Mirage Lwt Tutorial]]
+   * [[http://www.baturin.org/code/lwt-counter-server/|Simple Server with Lwt]]
 
 == The Lwt core library ==
 
