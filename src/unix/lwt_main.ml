@@ -135,6 +135,7 @@ let () =
   at_exit (fun () ->
     if not (Lwt_sequence.is_empty exit_hooks) then begin
       Lwt.abandon_wakeups ();
+      finished ();
       run (call_hooks ())
     end)
 
