@@ -1,6 +1,7 @@
 =Module <<a_api_type | module Lwt_main.Exit_hooks >> =
 <<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Exit_hooks>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="Hooks" | module Lwt_main.Hooks >>>><<span class="odocwiki_type"|  with type 'return_value kind = 'return_value Lwt.t>>>>~Promise~-returning hooks~, of type <<span class="odocwiki_inlinecode"|unit ~-~> unit ~Lwt~.t>>~, that are called at
     process exit~. ~Exceptions raised by these hooks are ignored~.
+**Since** 4.2.0\\
 
 ----
 <<pre class="ocsforge_color odocwiki_code" id="TYPEkind"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_type"|'return_value>> <<span class="odocwiki_name"|kind>>>><<div class="odocwiki_info"|~Hooks are functions of either type <<span class="odocwiki_inlinecode"|unit ~-~> unit>> or <<span class="odocwiki_inlinecode"|unit ~-~> unit ~Lwt~.t>>~;

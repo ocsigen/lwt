@@ -500,6 +500,7 @@
 <<pre id="VALchdir" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|chdir>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|string <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Wrapper for <<span class="odocwiki_inlinecode"|~Unix~.chdir>>
 >>
 <<pre id="VALgetcwd" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|getcwd>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<span class="ocsforge_color_delimiter"| -> >> string <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Wrapper for <<span class="odocwiki_inlinecode"|~Unix~.getcwd>>
+**Since** 3.1.0\\
 >>
 <<pre id="VALchroot" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|chroot>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|string <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Wrapper for <<span class="odocwiki_inlinecode"|~Unix~.chroot>>
 >>

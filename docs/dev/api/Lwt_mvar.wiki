@@ -25,8 +25,9 @@
       another thread~.
 >>
 <<pre id="VALtake_available" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|take~_available>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_mvar.t >> <<span class="ocsforge_color_delimiter"| -> >> 'a option>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|take~_available mvar>> immediately takes the value from <<span class="odocwiki_inlinecode"|mvar>> without
-      blocking~, returning <<span class="odocwiki_inlinecode"|~None>> if the mailbox is empty~.
+    blocking~, returning <<span class="odocwiki_inlinecode"|~None>> if the mailbox is empty~.
+**Since** 3.2.0\\
 >>
-<<pre id="VALis_empty" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|is~_empty>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_mvar.t >> <<span class="ocsforge_color_delimiter"| -> >> bool>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|is~_empty mvar>> indicates if <<span class="odocwiki_inlinecode"|put mvar>> can be called without
-      blocking~.
+<<pre id="VALis_empty" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|is~_empty>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="t" | type Lwt_mvar.t >> <<span class="ocsforge_color_delimiter"| -> >> bool>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|is~_empty mvar>> indicates if <<span class="odocwiki_inlinecode"|put mvar>> can be called without blocking~.
+**Since** 3.2.0\\
 >>

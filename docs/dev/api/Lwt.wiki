@@ -1069,6 +1069,7 @@ let () =
     the same exception as one such promise~, chosen arbitrarily~. ~Note that this
     occurs only after both promises are resolved~, not immediately when the first
     promise is rejected~.
+**Since** 4.2.0\\
 >>
 <<pre id="VALjoin" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|join>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|unit <<a_api text="t" | type Lwt.t >> list <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~.join ps>> returns a promise that is pending until //all// promises in
     the list <<span class="odocwiki_inlinecode"|ps>> become [[ #TYPEt| //resolved//]]~.
@@ -1113,6 +1114,7 @@ let () =
     rejected~. ~For more fine~-grained handling of rejection~, structure the program
     with <<a_api | module Lwt_stream >> or <<a_api | module Lwt_list >>~, handle rejections explicitly~, or use
     <<a_api | val Lwt.join >> and collect values manually~.
+**Since** 5.1.0\\
 >>
 
 

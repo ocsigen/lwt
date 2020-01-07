@@ -159,6 +159,7 @@
 >>
 <<pre id="VALis_closed" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|is~_closed>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<a_api text="channel" | type Lwt_io.channel >> <<span class="ocsforge_color_delimiter"| -> >> bool>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|is~_closed channel>> returns whether the given channel is currently
       closed~.
+**Since** 4.2.0\\
 >>
 
 
@@ -406,14 +407,17 @@
     <<span class="odocwiki_inlinecode"|open~_temp~_file>> uses some default prefix~.
 
 
-    <<span class="odocwiki_inlinecode"|~?suffix>> is like prefix~, but it is appended at the end of the filename~. ~In
-    particular~, it can be used to set the extension~.
+    <<span class="odocwiki_inlinecode"|~?suffix>> is like <<span class="odocwiki_inlinecode"|prefix>>~, but it is appended at the end of the filename~.
+    ~In particular~, it can be used to set the extension~. ~This argument is
+    supported since ~Lwt ~4~.~4~.~0~.
+**Since** 3.2.0\\
 >>
 <<pre id="VALwith_temp_file" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|with~_temp~_file>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_label"| ?buffer: >><<a_api text="Lwt_bytes.t" | type Lwt_bytes.t >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?flags: >><<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|open_flag>> list <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?perm: >><<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|file_perm>> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?temp_dir: >>string <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?prefix: >>string <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?suffix: >>string <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_delimiter"| ( >>string * <<a_api text="output_channel" | type Lwt_io.output_channel >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|with~_temp~_file f>> calls <<a_api | val Lwt_io.open_temp_file >><<span class="odocwiki_inlinecode"| ~(~)>>~, passing all optional
     arguments directly to it~. ~It then attaches <<span class="odocwiki_inlinecode"|f>> to run after the file is
     created~, passing the filename and output channel to <<span class="odocwiki_inlinecode"|f>>~. ~When the promise
     returned by <<span class="odocwiki_inlinecode"|f>> is resolved~, <<span class="odocwiki_inlinecode"|with~_temp~_file>> closes the channel and deletes
     the temporary file by calling <<a_api | val Lwt_unix.unlink >>~.
+**Since** 3.2.0\\
 >>
 <<pre id="VALcreate_temp_dir" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|create~_temp~_dir>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_label"| ?perm: >><<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|file_perm>> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?parent: >>string <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?prefix: >>string <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_label"| ?suffix: >>string <<span class="ocsforge_color_delimiter"| -> >> unit <<span class="ocsforge_color_delimiter"| -> >> string <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Creates a temporary directory~, and returns a promise that resolves to its
     path~. ~The caller must take care to remove the directory~. ~Alternatively~, see
@@ -431,12 +435,14 @@
 
     <<span class="odocwiki_inlinecode"|~~prefix>> is prepended to the directory name~, and <<span class="odocwiki_inlinecode"|~~suffix>> is appended to
     it~.
+**Since** 4.4.0\\
 >>
 <<pre id="VALwith_temp_dir" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|with~_temp~_dir>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_label"| ?perm: >><<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|file_perm>> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?parent: >>string <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?prefix: >>string <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_label"| ?suffix: >>string <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>string <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|with~_temp~_dir f>> first calls <<a_api | val Lwt_io.create_temp_dir >>~, forwarding all optional
     arguments to it~. ~Once the temporary directory is created at <<span class="odocwiki_inlinecode"|path>>~,
     <<span class="odocwiki_inlinecode"|with~_temp~_dir f>> calls <<span class="odocwiki_inlinecode"|f path>>~. ~When the promise returned by <<span class="odocwiki_inlinecode"|f path>> is
     resolved~, <<span class="odocwiki_inlinecode"|with~_temp~_dir f>> recursively deletes the temporary directory and
     all its contents~.
+**Since** 4.4.0\\
 >>
 <<pre id="VALopen_connection" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|open~_connection>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<span class="ocsforge_color_label"| ?fd: >><<a_api text="Lwt_unix.file_descr" | type Lwt_unix.file_descr >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?in_buffer: >><<a_api text="Lwt_bytes.t" | type Lwt_bytes.t >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_label"| ?out_buffer: >><<a_api text="Lwt_bytes.t" | type Lwt_bytes.t >> <<span class="ocsforge_color_delimiter"| -> >>\\  <<span class="ocsforge_color_uid"|Unix>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|sockaddr>> <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >><<a_api text="input_channel" | type Lwt_io.input_channel >> * <<a_api text="output_channel" | type Lwt_io.output_channel >><<span class="ocsforge_color_delimiter"| ) >> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|open~_connection ~?fd ~?in~_buffer ~?out~_buffer addr>> opens a
       connection to the given address and returns two channels for using
@@ -479,7 +485,7 @@
     but for a robust application you should explicitly close these channels
     yourself~, and handle any exceptions as appropriate~. ~If the channels are
     still open when <<span class="odocwiki_inlinecode"|f>> completes~, and their automatic closing raises an
-    exception~, <<span class="odocwiki_inlinecode"|establish~_server~_with~_client~_address>> treats it as an unhandled
+    exception~, <<span class="odocwiki_inlinecode"|establish~_server~_with~_client~_socket>> treats it as an unhandled
     exception reaching the top level of the application~: it passes that
     exception to <<a_api | val Lwt.async_exception_hook >>~, the default behavior of which is
     to print the exception and //terminate your process//~.
@@ -489,7 +495,7 @@
 
 
     ~Similarly~, if <<span class="odocwiki_inlinecode"|f>> raises an exception ~(or the promise it returns fails with
-    an exception~)~, <<span class="odocwiki_inlinecode"|establish~_server~_with~_client~_address>> can do nothing with
+    an exception~)~, <<span class="odocwiki_inlinecode"|establish~_server~_with~_client~_socket>> can do nothing with
     that exception~, except pass it to <<a_api | val Lwt.async_exception_hook >>~.
 
 

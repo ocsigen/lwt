@@ -1,6 +1,7 @@
 =Module <<a_api_type | module Lwt_main.Leave_iter_hooks >> =
 <<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Leave_iter_hooks>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="Hooks" | module Lwt_main.Hooks >>>><<span class="odocwiki_type"|  with type 'return_value kind = 'return_value>>>>~Hooks~, of type <<span class="odocwiki_inlinecode"|unit ~-~> unit>>~, that are called after each iteration of the
     ~Lwt main loop~.
+**Since** 4.2.0\\
 
 ----
 <<pre class="ocsforge_color odocwiki_code" id="TYPEkind"|<<span class="ocsforge_color_keyword"|type>> <<span class="odocwiki_type"|'return_value>> <<span class="odocwiki_name"|kind>>>><<div class="odocwiki_info"|~Hooks are functions of either type <<span class="odocwiki_inlinecode"|unit ~-~> unit>> or <<span class="odocwiki_inlinecode"|unit ~-~> unit ~Lwt~.t>>~;

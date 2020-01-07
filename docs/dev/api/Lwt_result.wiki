@@ -1,5 +1,6 @@
 =Module <<a_api_type | module Lwt_result >> =
 <<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_result>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_result >><<span class="ocsforge_color_keyword"|end>>>>~Explicit error handling
+**Since** 2.6.0\\
 
 ----
 

@@ -1,5 +1,6 @@
 =Module <<a_api_type | module Lwt_fmt >> =
 <<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Lwt_fmt>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_fmt >><<span class="ocsforge_color_keyword"|end>>>>~Format ~A~P~I for ~Lwt~-powered ~I~Os
+**Since** 4.1.0\\
 
 ----
 

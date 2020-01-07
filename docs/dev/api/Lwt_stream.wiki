@@ -93,6 +93,7 @@
 >>
 <<pre id="VALof_seq" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|of~_seq>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<span class="ocsforge_color_uid"|Stdlib>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_uid"|Seq>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>> <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|of~_seq s>> creates a stream returning all elements of <<span class="odocwiki_inlinecode"|s>>~. ~The elements are
     evaluated from <<span class="odocwiki_inlinecode"|s>> and pushed onto the stream as the stream is consumed~.
+**Since** 4.2.0\\
 >>
 <<pre id="VALof_list" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|of~_list>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a list <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="t" | type Lwt_stream.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|of~_list l>> creates a stream returning all elements of <<span class="odocwiki_inlinecode"|l>>~. ~The elements are
     pushed into the stream immediately~, resulting in a closed stream ~(in the
@@ -256,6 +257,7 @@
 
     ~Iteration is **not** guaranteed to be in order as this function will
     attempt to always process <<span class="odocwiki_inlinecode"|max~_concurrency>> elements from <<span class="odocwiki_inlinecode"|s>> at once~.
+**Since** 3.3.0\\
 **Raises** {{{Invalid_argument}}} if <<span class="odocwiki_inlinecode"|max~_concurrency ~< ~1>>~.\\
 >>
 <<div class="odocwiki_param_info"|<<span class="code"|max_concurrency>> : defaults to <<span class="odocwiki_inlinecode"|~1>>~.>>

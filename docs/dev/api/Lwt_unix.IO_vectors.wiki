@@ -27,6 +27,7 @@
       vectors in <<span class="odocwiki_inlinecode"|vs>> have zero bytes~.
 >>
 <<pre id="VALbyte_count" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|byte~_count>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="t" | type Lwt_unix.IO_vectors.t >> <<span class="ocsforge_color_delimiter"| -> >> int>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|byte~_count vs>> is the total number of bytes in <<span class="odocwiki_inlinecode"|vs>>~.
+**Since** 4.2.0\\
 >>
 <<pre id="VALsystem_limit" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|system~_limit>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int option>>>><<div class="odocwiki_info"|~Some systems limit the number of ~I~/~O vectors that can be passed in a
       single call to their <<span class="odocwiki_inlinecode"|writev>> or <<span class="odocwiki_inlinecode"|readv>> system calls~. ~On those systems~,
