@@ -1,0 +1,10 @@
+<<code language="ocaml" | object
+  method blocked : bool
+  method close : unit
+  method closed : bool
+  method count : int
+  method push : 'a -> unit Lwt.t
+  method resize : int -> unit
+  method set_reference : 'a0 -> unit
+  method size : int
+end >>
