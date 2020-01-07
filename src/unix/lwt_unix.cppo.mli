@@ -354,7 +354,9 @@ sig
       vectors in [vs] have zero bytes. *)
 
   val byte_count : t -> int
-  (** [byte_count vs] is the total number of bytes in [vs]. *)
+  (** [byte_count vs] is the total number of bytes in [vs].
+
+      @since 4.2.0 *)
 
   val system_limit : int option
   (** Some systems limit the number of I/O vectors that can be passed in a
@@ -666,7 +668,9 @@ val chdir : string -> unit Lwt.t
   (** Wrapper for [Unix.chdir] *)
 
 val getcwd : unit -> string Lwt.t
-  (** Wrapper for [Unix.getcwd] *)
+(** Wrapper for [Unix.getcwd]
+
+    @since 3.1.0 *)
 
 val chroot : string -> unit Lwt.t
   (** Wrapper for [Unix.chroot] *)

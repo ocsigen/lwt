@@ -60,6 +60,7 @@ val create :
       is passed to the callback for use as-is.  If [validate element] resolves
       to [false] the tested pool element is passed to [dispose] then dropped,
       with a new one is created to take [element]'s place in the pool.
+      [validate] is available since Lwt 3.2.0.
 
       @param check is called after the resolution of {!use}'s callback when the
       resolution is a failed promise.  [check element is_ok] must call [is_ok]
@@ -82,16 +83,19 @@ val use : 'a t -> ('a -> 'b Lwt.t) -> 'b Lwt.t
       is reached, [use] will wait until one becomes free. *)
 
 val clear : 'a t -> unit Lwt.t
-  (** [clear p] will clear all elements in [p], calling the [dispose] function
-      associated with [p] on each of the cleared elements.  Any elements from
-      [p] which are currently in use will be disposed of once they are
-      released.
+(** [clear p] will clear all elements in [p], calling the [dispose] function
+    associated with [p] on each of the cleared elements.  Any elements from [p]
+    which are currently in use will be disposed of once they are released.
 
-      The next call to [use p] after [clear p] guarantees a freshly created
-      pool element.
+    The next call to [use p] after [clear p] guarantees a freshly created pool
+    element.
 
-      Disposals are performed sequentially in an undefined order. *)
+    Disposals are performed sequentially in an undefined order.
+
+    @since 3.2.0 *)
 
 val wait_queue_length : _ t -> int
-  (** [wait_queue_length p] returns the number of {!use} requests currently
-      waiting for an element of the pool [p] to become available. *)
+(** [wait_queue_length p] returns the number of {!use} requests currently
+    waiting for an element of the pool [p] to become available.
+
+    @since 3.2.0 *)

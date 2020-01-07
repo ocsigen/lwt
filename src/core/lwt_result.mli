@@ -3,7 +3,9 @@
 
 
 
-(** Explicit error handling *)
+(** Explicit error handling
+
+    @since 2.6.0 *)
 
 (** This module provides helpers for values of type [('a, 'b) result Lwt.t].
     The module is experimental and may change in the future. *)

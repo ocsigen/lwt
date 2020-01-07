@@ -78,17 +78,23 @@ sig
 end
 
 (** Hooks, of type [unit -> unit], that are called before each iteration of the
-    Lwt main loop. *)
+    Lwt main loop.
+
+    @since 4.2.0 *)
 module Enter_iter_hooks :
   Hooks with type 'return_value kind = 'return_value
 
 (** Hooks, of type [unit -> unit], that are called after each iteration of the
-    Lwt main loop. *)
+    Lwt main loop.
+
+    @since 4.2.0 *)
 module Leave_iter_hooks :
   Hooks with type 'return_value kind = 'return_value
 
 (** Promise-returning hooks, of type [unit -> unit Lwt.t], that are called at
-    process exit. Exceptions raised by these hooks are ignored. *)
+    process exit. Exceptions raised by these hooks are ignored.
+
+    @since 4.2.0 *)
 module Exit_hooks :
   Hooks with type 'return_value kind = 'return_value Lwt.t
 

@@ -124,7 +124,9 @@ val create_bounded : int -> 'a t * 'a bounded_push
 
 val of_seq : 'a Seq.t -> 'a t
 (** [of_seq s] creates a stream returning all elements of [s]. The elements are
-    evaluated from [s] and pushed onto the stream as the stream is consumed. *)
+    evaluated from [s] and pushed onto the stream as the stream is consumed.
+
+    @since 4.2.0 *)
 
 val of_list : 'a list -> 'a t
 (** [of_list l] creates a stream returning all elements of [l]. The elements are
@@ -324,7 +326,8 @@ val iter_n : ?max_concurrency:int -> ('a -> unit Lwt.t) -> 'a t -> unit Lwt.t
     attempt to always process [max_concurrency] elements from [s] at once.
 
     @param max_concurrency defaults to [1].
-    @raise Invalid_argument if [max_concurrency < 1]. *)
+    @raise Invalid_argument if [max_concurrency < 1].
+    @since 3.3.0 *)
 
 val find : ('a -> bool) -> 'a t -> 'a option Lwt.t
 val find_s : ('a -> bool Lwt.t) -> 'a t -> 'a option Lwt.t

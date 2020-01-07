@@ -932,7 +932,9 @@ let () =
     of the two promises becomes rejected, [Lwt.both p_1 p_2] is rejected with
     the same exception as one such promise, chosen arbitrarily. Note that this
     occurs only after both promises are resolved, not immediately when the first
-    promise is rejected. *)
+    promise is rejected.
+
+    @since 4.2.0 *)
 
 val join : (unit t) list -> unit t
 (** [Lwt.join ps] returns a promise that is pending until {e all} promises in
@@ -973,7 +975,9 @@ val all : ('a t) list -> ('a list) t
     if some of the promises in [ps] were already resolved when one of them is
     rejected. For more fine-grained handling of rejection, structure the program
     with {!Lwt_stream} or {!Lwt_list}, handle rejections explicitly, or use
-    {!Lwt.join} and collect values manually. *)
+    {!Lwt.join} and collect values manually.
+
+    @since 5.1.0 *)
 
 
 
@@ -1370,7 +1374,9 @@ let () =
       [p >|= f]. *)
 
   (** This module provides support for {{:https://github.com/janestreet/ppx_let}
-      ppx_let}. *)
+      ppx_let}.
+
+      @since 4.2.0 *)
   module Let_syntax :
   sig
     val return : 'a -> 'a t

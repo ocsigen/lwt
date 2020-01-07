@@ -193,7 +193,9 @@ val is_busy : 'a channel -> bool
 
 val is_closed : 'a channel -> bool
   (** [is_closed channel] returns whether the given channel is currently
-      closed. *)
+      closed.
+
+      @since 4.2.0 *)
 
 (** {2 Random access} *)
 
@@ -481,8 +483,11 @@ val open_temp_file :
     concatenated with a random sequence of characters. If not specified,
     [open_temp_file] uses some default prefix.
 
-    [?suffix] is like prefix, but it is appended at the end of the filename. In
-    particular, it can be used to set the extension. *)
+    [?suffix] is like [prefix], but it is appended at the end of the filename.
+    In particular, it can be used to set the extension. This argument is
+    supported since Lwt 4.4.0.
+
+    @since 3.2.0 *)
 
 val with_temp_file :
   ?buffer:Lwt_bytes.t ->
@@ -497,7 +502,9 @@ val with_temp_file :
     arguments directly to it. It then attaches [f] to run after the file is
     created, passing the filename and output channel to [f]. When the promise
     returned by [f] is resolved, [with_temp_file] closes the channel and deletes
-    the temporary file by calling {!Lwt_unix.unlink}. *)
+    the temporary file by calling {!Lwt_unix.unlink}.
+
+    @since 3.2.0 *)
 
 val create_temp_dir :
   ?perm:Unix.file_perm ->
@@ -518,7 +525,9 @@ val create_temp_dir :
     [Filename.get_temp_dir_name ()].
 
     [~prefix] is prepended to the directory name, and [~suffix] is appended to
-    it. *)
+    it.
+
+    @since 4.4.0 *)
 
 val with_temp_dir :
   ?perm:Unix.file_perm ->
@@ -531,7 +540,9 @@ val with_temp_dir :
     arguments to it. Once the temporary directory is created at [path],
     [with_temp_dir f] calls [f path]. When the promise returned by [f path] is
     resolved, [with_temp_dir f] recursively deletes the temporary directory and
-    all its contents. *)
+    all its contents.
+
+    @since 4.4.0 *)
 
 val open_connection :
   ?fd : Lwt_unix.file_descr ->
@@ -601,7 +612,7 @@ f client_address client_socket
     but for a robust application you should explicitly close these channels
     yourself, and handle any exceptions as appropriate. If the channels are
     still open when [f] completes, and their automatic closing raises an
-    exception, [establish_server_with_client_address] treats it as an unhandled
+    exception, [establish_server_with_client_socket] treats it as an unhandled
     exception reaching the top level of the application: it passes that
     exception to {!Lwt.async_exception_hook}, the default behavior of which is
     to print the exception and {e terminate your process}.
@@ -609,7 +620,7 @@ f client_address client_socket
     Automatic closing can be completely disabled by passing [~no_close:true].
 
     Similarly, if [f] raises an exception (or the promise it returns fails with
-    an exception), [establish_server_with_client_address] can do nothing with
+    an exception), [establish_server_with_client_socket] can do nothing with
     that exception, except pass it to {!Lwt.async_exception_hook}.
 
     [~server_fd] can be specified to use an existing file descriptor for

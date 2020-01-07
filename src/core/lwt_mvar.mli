@@ -56,9 +56,12 @@ val take : 'a t -> 'a Lwt.t
       another thread. *)
 
 val take_available : 'a t -> 'a option
-  (** [take_available mvar] immediately takes the value from [mvar] without
-      blocking, returning [None] if the mailbox is empty. *)
+(** [take_available mvar] immediately takes the value from [mvar] without
+    blocking, returning [None] if the mailbox is empty.
+
+    @since 3.2.0 *)
 
 val is_empty : 'a t -> bool
-  (** [is_empty mvar] indicates if [put mvar] can be called without
-      blocking. *)
+(** [is_empty mvar] indicates if [put mvar] can be called without blocking.
+
+    @since 3.2.0 *)

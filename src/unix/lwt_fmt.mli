@@ -3,7 +3,9 @@
 
 
 
-(** Format API for Lwt-powered IOs *)
+(** Format API for Lwt-powered IOs
+
+    @since 4.1.0 *)
 
 (** This module bridges the gap between
     {{:https://caml.inria.fr/pub/docs/manual-ocaml/libref/Format.html} [Format]}
