@@ -808,6 +808,24 @@ struct
         }
       |}
   }
+
+  let () = feature {
+    pretty_name = "accept4";
+    macro_name = "HAVE_ACCEPT4";
+    detect = fun context ->
+      skip_if_windows context @@ fun () ->
+      compiles context {|
+        #define _GNU_SOURCE
+        #include <sys/socket.h>
+        #include <stddef.h>
+
+        int main()
+        {
+            accept4(0, NULL, 0, 0);
+            return 0;
+        }
+      |}
+  }
 end
 
 
