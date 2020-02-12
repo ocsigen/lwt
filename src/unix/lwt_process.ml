@@ -136,7 +136,7 @@ let unix_redirect fd redirection = match redirection with
     Unix.dup2 fd' fd;
     Unix.close fd'
 
-external sys_exit : int -> 'a = "caml_sys_exit"
+external unix_exit : int -> 'a = "unix_exit"
 
 let unix_spawn
     (prog, args) env ?cwd
@@ -165,7 +165,7 @@ let unix_spawn
           Unix.execvpe prog args env
       with _ ->
         (* Do not run at_exit hooks *)
-        sys_exit 127
+        unix_exit 127
     end
   | id ->
     let close = function

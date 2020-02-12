@@ -2370,7 +2370,7 @@ let wait () = waitpid [] (-1)
 
 external system_job : string -> int job = "lwt_unix_system_job"
 
-external sys_exit : int -> 'a = "caml_sys_exit"
+external unix_exit : int -> 'a = "unix_exit"
 
 let system cmd =
   if Sys.win32 then
@@ -2383,7 +2383,7 @@ let system cmd =
           Unix.execv "/bin/sh" [| "/bin/sh"; "-c"; cmd |]
         with _ ->
           (* Do not run at_exit hooks *)
-          sys_exit 127
+          unix_exit 127
       end
     | id ->
       waitpid [] id >|= snd
