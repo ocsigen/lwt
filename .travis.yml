@@ -37,7 +37,7 @@ scripts:
         then
           OS=macos
         fi
-      - VERSION=2.0.5
+      - VERSION=2.0.6
       - PKG=opam-$VERSION-x86_64-$OS
       - wget https://github.com/ocaml/opam/releases/download/$VERSION/$PKG
       - sudo mv $PKG /usr/local/bin/opam
