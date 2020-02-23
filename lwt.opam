@@ -46,6 +46,8 @@ conflicts: [
 ]
 
 build: [
+  ["dune" "exec" "src/unix/config/discover.exe" "--root" "." "--" "--save"
+    "--use-libev" "%{conf-libev:installed}%"]
   ["dune" "build" "-p" name "-j" jobs]
 ]
 

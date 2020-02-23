@@ -1,5 +1,5 @@
 _build
-src/unix/lwt_config
+src/unix/discover_arguments
 *.flag
 
 # OPAM 2.0 local switches.

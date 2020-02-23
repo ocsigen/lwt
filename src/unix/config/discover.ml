@@ -26,7 +26,7 @@
 
     This program tries to detect everything automatically. If it is not behaving
     correctly, its behavior can be tweaked by passing it arguments. There are
-    three ways to do so:
+    four ways to do so:
 
     - By editing [src/unix/dune], to pass arguments to [discover.exe] on the
       command line.
@@ -34,6 +34,9 @@
       is the same as the command line.
     - By writing a file [src/unix/discover_arguments]. The syntax is again the
       same as the command line.
+    - By running [dune exec src/unix/config/discover.exe -- --save] with
+      additional arguments. Those arguments will be written to
+      [src/unix/discover_arguments] for the build to use later.
 
     The possible arguments can be found by running
 
@@ -103,7 +106,7 @@ struct
       "BOOLEAN whether to use the libev backend by default";
 
     "--verbose", Arg.Set verbose,
-      "BOOLEAN show results of feature detection"
+      "BOOLEAN show results of feature detection";
   ]
 
   let environment_variable = "LWT_DISCOVER_ARGUMENTS"
@@ -390,17 +393,6 @@ struct
     pretty_name = "libev";
     macro_name = "HAVE_LIBEV";
     detect = fun context ->
-      let detect_opam_conf_libev () =
-        let result =
-          Configurator.Process.run context
-            "opam" ["config"; "var"; "conf-libev:installed"]
-        in
-        match result.stdout, result.exit_code with
-        | "true\n", 0 -> true
-        | "false\n", 0 -> false
-        | _, _ -> failwith "opam exited with an error code, or isn't installed."
-      in
-
       let detect_esy_wants_libev () =
         match Sys.getenv "cur__target_dir" with
         | exception Not_found -> None
@@ -416,15 +408,13 @@ struct
         | Some argument ->
           argument
         | None ->
-          try detect_opam_conf_libev ()
-          with _ ->
-            match detect_esy_wants_libev () with
-            | Some result ->
-              result
-            | None ->
-              (* we're not under esy *)
-              let os = Configurator.ocaml_config_var_exn context "os_type" in
-              os <> "Win32" && !Arguments.android_target <> Some true
+          match detect_esy_wants_libev () with
+          | Some result ->
+            result
+          | None ->
+            (* we're not under esy *)
+            let os = Configurator.ocaml_config_var_exn context "os_type" in
+            os <> "Win32" && !Arguments.android_target <> Some true
       in
 
       if not should_look_for_libev then
@@ -812,6 +802,15 @@ end
 
 
 let () =
+  begin match List.partition ((=) "--save") (Array.to_list Sys.argv) with
+  | ["--save"], rest ->
+    Configurator.Flags.write_lines
+      "src/unix/discover_arguments" [String.concat " " (List.tl rest)];
+    exit 0
+  | _ ->
+    ()
+  end;
+
   Configurator.main ~args:Arguments.args ~name:"lwt" begin fun context ->
     (* Parse arguments from additional sources. *)
     Arguments.parse_environment_variable ();

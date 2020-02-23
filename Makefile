@@ -85,7 +85,7 @@ clean:
 	dune clean
 	find . -name '.merlin' | xargs rm -f
 	rm -fr docs/api
-	rm -f src/jbuild-ignore src/unix/lwt_config
+	rm -f src/unix/discover_arguments
 	for TEST in `ls -d test/packaging/*/*` ; \
 	do \
 	    $(MAKE) -wC $$TEST clean ; \
