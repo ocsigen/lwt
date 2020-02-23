@@ -255,7 +255,7 @@ struct
             ["-I" ^ (path // "include")]
             ["-L" ^ (path // "lib"); "-l" ^ library]
         with Not_found ->
-          extend [] ["-l" ^ library]
+          ()
 
   let ws2_32_lib context =
     if Configurator.ocaml_config_var_exn context "os_type" = "Win32" then
@@ -398,8 +398,7 @@ struct
         match result.stdout, result.exit_code with
         | "true\n", 0 -> true
         | "false\n", 0 -> false
-        | _, _ ->
-         failwith "OPAM exited with an error code, or isn't even installed."
+        | _, _ -> failwith "opam exited with an error code, or isn't installed."
       in
 
       let detect_esy_wants_libev () =
