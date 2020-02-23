@@ -95,11 +95,14 @@ typedef pthread_t lwt_unix_thread;
 typedef pthread_mutex_t lwt_unix_mutex;
 typedef pthread_cond_t lwt_unix_condition;
 
-#else
+#elif defined(LWT_ON_WINDOWS)
 
 typedef DWORD lwt_unix_thread;
 typedef CRITICAL_SECTION lwt_unix_mutex;
 typedef struct lwt_unix_condition lwt_unix_condition;
+
+#else
+#error "lwt.unix requires pthreads on Unix-like systems"
 
 #endif
 
