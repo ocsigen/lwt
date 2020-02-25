@@ -124,7 +124,7 @@ CAMLprim value lwt_unix_blit_from_bytes(value val_buf1, value val_ofs1,
 CAMLprim value lwt_unix_blit_to_bytes(value val_buf1, value val_ofs1,
                                       value val_buf2, value val_ofs2,
                                       value val_len) {
-  memcpy(String_val(val_buf2) + Long_val(val_ofs2),
+  memcpy((char *)String_val(val_buf2) + Long_val(val_ofs2),
          (char *)Caml_ba_data_val(val_buf1) + Long_val(val_ofs1),
          Long_val(val_len));
   return Val_unit;
