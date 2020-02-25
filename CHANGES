@@ -6,6 +6,7 @@
   * discover.ml: don't add flags for missing system libraries (#760, #761, Olaf
     Hering).
   * discover.ml: don't run the opam binary (#761).
+  * Warning on 4.10 in lwt_unix_stubs.c (#766).
 
 ===== 5.1.1 (2020-01-07) =====
 
