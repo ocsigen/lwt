@@ -121,6 +121,7 @@ CAMLprim value lwt_unix_blit_from_bytes(value val_buf1, value val_ofs1,
   return Val_unit;
 }
 
+/* Needed while Lwt supports OCaml < 4.06. */
 #ifdef Bytes_val
 #define Lwt_bytes_val(v) Bytes_val(v)
 #else
