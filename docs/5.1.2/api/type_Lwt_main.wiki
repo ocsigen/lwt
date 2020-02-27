@@ -1,0 +1,46 @@
+<<code language="ocaml" | sig
+  val run : 'a Lwt.t -> 'a
+  val yield : unit -> unit Lwt.t
+  module type Hooks =
+    sig
+      type 'return_value kind
+      type hook
+      val add_first :
+        (unit -> unit Lwt_main.Hooks.kind) -> Lwt_main.Hooks.hook
+      val add_last :
+        (unit -> unit Lwt_main.Hooks.kind) -> Lwt_main.Hooks.hook
+      val remove : Lwt_main.Hooks.hook -> unit
+      val remove_all : unit -> unit
+    end
+  module Enter_iter_hooks :
+    sig
+      type 'return_value kind = 'return_value
+      type hook
+      val add_first : (unit -> unit kind) -> hook
+      val add_last : (unit -> unit kind) -> hook
+      val remove : hook -> unit
+      val remove_all : unit -> unit
+    end
+  module Leave_iter_hooks :
+    sig
+      type 'return_value kind = 'return_value
+      type hook
+      val add_first : (unit -> unit kind) -> hook
+      val add_last : (unit -> unit kind) -> hook
+      val remove : hook -> unit
+      val remove_all : unit -> unit
+    end
+  module Exit_hooks :
+    sig
+      type 'return_value kind = 'return_value Lwt.t
+      type hook
+      val add_first : (unit -> unit kind) -> hook
+      val add_last : (unit -> unit kind) -> hook
+      val remove : hook -> unit
+      val remove_all : unit -> unit
+    end
+  val enter_iter_hooks : (unit -> unit) Lwt_sequence.t
+  val leave_iter_hooks : (unit -> unit) Lwt_sequence.t
+  val exit_hooks : (unit -> unit Lwt.t) Lwt_sequence.t
+  val at_exit : (unit -> unit Lwt.t) -> unit
+end >>
