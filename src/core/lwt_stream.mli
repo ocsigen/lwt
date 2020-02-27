@@ -12,15 +12,7 @@ type 'a t
     to each element of a stream are suffixed by:
 
     - [_s] when the function returns a thread and calls are serialised
-    - [_p] when the function returns a thread and calls are parallelised
-
-    This module may undergo redesign or deprecation in the future. See
-    {{:https://github.com/ocsigen/lwt/issues/250} Flaws of [Lwt_stream]}. In
-    the meantime, you may want to consider using alternatives such as
-    {{:https://github.com/c-cube/lwt-pipe} lwt-pipe}. [Lwt_stream] will remain
-    stable for the foreseeable future, but we would like to encourage users to
-    try alternatives such as lwt-pipe, to collect feedback for those
-    projects. *)
+    - [_p] when the function returns a thread and calls are parallelised *)
 
 (** {2 Construction} *)
 
