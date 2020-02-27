@@ -12,13 +12,6 @@
 * <<span class="odocwiki_inlinecode"|~_s>> when the function returns a thread and calls are serialised
 * <<span class="odocwiki_inlinecode"|~_p>> when the function returns a thread and calls are parallelised
 
-    ~This module may undergo redesign or deprecation in the future~. ~See
-    [[https://github.com/ocsigen/lwt/issues/250| ~Flaws of <<span class="odocwiki_inlinecode"|~Lwt~_stream>>]]~. ~In
-    the meantime~, you may want to consider using alternatives such as
-    [[https://github.com/c-cube/lwt-pipe| lwt~-pipe]]~. <<span class="odocwiki_inlinecode"|~Lwt~_stream>> will remain
-    stable for the foreseeable future~, but we would like to encourage users to
-    try alternatives such as lwt~-pipe~, to collect feedback for those
-    projects~.
 >>
 
 
