@@ -49,14 +49,7 @@ We are looking for beta-tester and contributors.
 </p><p>Naming convention: in this module, all functions applying a function
 to each element of a stream are suffixed by:
 </p><ul><li> <span class="odocwiki_inlinecode">_s</span> when the function returns a thread and calls are serialised
-</li><li> <span class="odocwiki_inlinecode">_p</span> when the function returns a thread and calls are parallelised
-</li></ul><p>This module may undergo redesign or deprecation in the future. See
-<a href="https://github.com/ocsigen/lwt/issues/250" class="ocsimore_phrasing_link"> Flaws of <span class="odocwiki_inlinecode">Lwt_stream</span></a>. In
-the meantime, you may want to consider using alternatives such as
-<a href="https://github.com/c-cube/lwt-pipe" class="ocsimore_phrasing_link"> lwt-pipe</a>. <span class="odocwiki_inlinecode">Lwt_stream</span> will remain
-stable for the foreseeable future, but we would like to encourage users to
-try alternatives such as lwt-pipe, to collect feedback for those
-projects.</p></div><h2 id="2_Construction">Construction <a class="backref" href="#2_Construction">&#182;</a></h2><pre class="ocsforge_color odocwiki_code" id="VALfrom"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">from</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><span class="ocsforge_color_delimiter">(</span>unit <span class="ocsforge_color_delimiter">-&gt;</span> 'a option <span><a href=".././api/Lwt#TYPEt">Lwt.t</a></span><span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt_stream#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">from f</span> creates a stream from the given input function. <span class="odocwiki_inlinecode">f</span> is
+</li><li> <span class="odocwiki_inlinecode">_p</span> when the function returns a thread and calls are parallelised</li></ul></div><h2 id="2_Construction">Construction <a class="backref" href="#2_Construction">&#182;</a></h2><pre class="ocsforge_color odocwiki_code" id="VALfrom"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">from</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><span class="ocsforge_color_delimiter">(</span>unit <span class="ocsforge_color_delimiter">-&gt;</span> 'a option <span><a href=".././api/Lwt#TYPEt">Lwt.t</a></span><span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt_stream#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">from f</span> creates a stream from the given input function. <span class="odocwiki_inlinecode">f</span> is
 called each time more input is needed, and the stream ends when
 <span class="odocwiki_inlinecode">f</span> returns <span class="odocwiki_inlinecode">None</span>.
 </p><p>If <span class="odocwiki_inlinecode">f</span>, or the thread produced by <span class="odocwiki_inlinecode">f</span>, raises an exception, that exception
