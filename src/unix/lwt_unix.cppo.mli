@@ -298,6 +298,16 @@ val read : file_descr -> bytes -> int -> int -> int Lwt.t
     except [Unix.Unix_error Unix.EAGAIN], [Unix.Unix_error Unix.EWOULDBLOCK] or
     [Unix.Unix_error Unix.EINTR]. *)
 
+val pread : file_descr -> bytes -> file_offset:int -> int -> int -> int Lwt.t
+(** [pread fd buf ~file_offset ofs len] on file descriptors allowing seek,
+    reads up to [len] bytes from [fd] at offset [file_offset] from the
+    beginning of the file, and writes them to [buf], starting at offset [ofs].
+
+    The current position of the file descriptor does not change.
+
+    The thread can fail with any exception that can be raised by [read] or
+    [lseek]. *)
+
 val write : file_descr -> bytes -> int -> int -> int Lwt.t
 (** [write fd buf ofs len] writes up to [len] bytes to [fd] from [buf], starting
     at buffer offset [ofs]. The function immediately evaluates to an Lwt thread,
@@ -315,8 +325,22 @@ val write : file_descr -> bytes -> int -> int -> int Lwt.t
     [Unix.single_write], except [Unix.Unix_error Unix.EAGAIN],
     [Unix.Unix_error Unix.EWOULDBLOCK] or [Unix.Unix_error Unix.EINTR]. *)
 
+val pwrite : file_descr -> bytes -> file_offset:int -> int -> int -> int Lwt.t
+(** [pwrite fd buf ~file_offset ofs len] on file descriptors allowing seek,
+    writes up to [len] bytes to [fd] from [buf], starting at buffer offset
+    [ofs]. The data is written at offset [file_offset] from the beginning
+    of [fd].
+
+    The current position of the file descriptor does not change.
+
+    The thread can fail with any exception that can be raised by [write] or
+    [lseek]. *)
+
 val write_string : file_descr -> string -> int -> int -> int Lwt.t
   (** See {!write}. *)
+
+val pwrite_string : file_descr -> string -> file_offset:int -> int -> int -> int Lwt.t
+  (** See {!pwrite}. *)
 
 (** Sequences of buffer slices for {!writev}. *)
 module IO_vectors :

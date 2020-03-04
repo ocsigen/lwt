@@ -45,11 +45,15 @@
   windows_get_page_size
   unix_mincore
   unix_read
+  unix_pread
   windows_read
+  windows_pread
   unix_bytes_read
   windows_bytes_read
   unix_write
+  unix_pwrite
   windows_write
+  windows_pwrite
   unix_bytes_write
   windows_bytes_write
   unix_readv_writev_utils
@@ -84,11 +88,15 @@
   unix_wait_mincore_job
   unix_open_job
   unix_read_job
+  unix_pread_job
   windows_read_job
+  windows_pread_job
   unix_bytes_read_job
   windows_bytes_read_job
   unix_write_job
   windows_write_job
+  unix_pwrite_job
+  windows_pwrite_job
   unix_bytes_write_job
   windows_bytes_write_job
   unix_stat_job_utils
