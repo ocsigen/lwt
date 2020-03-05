@@ -303,7 +303,8 @@ val pread : file_descr -> bytes -> file_offset:int -> int -> int -> int Lwt.t
     reads up to [len] bytes from [fd] at offset [file_offset] from the
     beginning of the file, and writes them to [buf], starting at offset [ofs].
 
-    The current position of the file descriptor does not change.
+    The current position of the file descriptor is undefined when [pread]
+    returns.
 
     The thread can fail with any exception that can be raised by [read] or
     [lseek]. *)
@@ -331,7 +332,8 @@ val pwrite : file_descr -> bytes -> file_offset:int -> int -> int -> int Lwt.t
     [ofs]. The data is written at offset [file_offset] from the beginning
     of [fd].
 
-    The current position of the file descriptor does not change.
+    The current position of the file descriptor is undefined when [pwrite]
+    returns.
 
     The thread can fail with any exception that can be raised by [write] or
     [lseek]. *)

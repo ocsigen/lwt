@@ -1133,17 +1133,6 @@ let pread_tests =
        Lwt_unix.close fd >>= fun () ->
        Lwt.return (read1 = "345" && read2 = "567"));
 
-  test ~sequential:true "pread does not seek"
-    (fun () ->
-       Lwt_unix.openfile test_file [O_RDWR] 0o666 >>= fun fd ->
-       let buf = Bytes.make 3 '\x00' in
-       Lwt_unix.pread fd buf ~file_offset:3 0 3 >>= fun _n ->
-       Lwt_unix.read fd buf 0 3 >>= fun n ->
-       assert(n = 3);
-       let read = Bytes.to_string buf in
-       Lwt_unix.close fd >>= fun () ->
-       Lwt.return (read = "012"));
-
   test ~sequential:true "basic pwrite"
     (fun () ->
        Lwt_unix.openfile test_file [O_RDWR] 0o666 >>= fun fd ->
@@ -1153,6 +1142,7 @@ let pread_tests =
        t1 >>= fun l1 ->
        assert(l1 = 4);
        assert(l2 = 3);
+       Lwt_unix.lseek fd 0 Lwt_unix.SEEK_SET >>= fun _pos ->
        let buf = Bytes.make (String.length file_contents) '\x00' in
        Lwt_unix.read fd buf 0 (String.length file_contents) >>= fun n ->
        assert(n = (String.length file_contents));
