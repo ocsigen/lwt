@@ -1643,8 +1643,9 @@ let socketpair dom typ proto =
   let (s1, s2) = do_socketpair dom typ proto in
   (mk_ch ~blocking:false s1, mk_ch ~blocking:false s2)
 
-
-external accept4 : close_on_exec:bool -> nonblock:bool -> Unix.file_descr -> Unix.file_descr * Unix.sockaddr = "lwt_unix_accept4"
+external accept4 :
+  close_on_exec:bool -> nonblock:bool -> Unix.file_descr ->
+    Unix.file_descr * Unix.sockaddr = "lwt_unix_accept4"
 
 let accept_and_set_nonblock ch_fd =
   if Lwt_config._HAVE_ACCEPT4 then
