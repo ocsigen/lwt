@@ -1643,8 +1643,20 @@ let socketpair dom typ proto =
   let (s1, s2) = do_socketpair dom typ proto in
   (mk_ch ~blocking:false s1, mk_ch ~blocking:false s2)
 
+external accept4 :
+  close_on_exec:bool -> nonblock:bool -> Unix.file_descr ->
+    Unix.file_descr * Unix.sockaddr = "lwt_unix_accept4"
+
+let accept_and_set_nonblock ch_fd =
+  if Lwt_config._HAVE_ACCEPT4 then
+    let (fd, addr) = accept4 ~close_on_exec:false ~nonblock:true ch_fd in
+    (mk_ch ~blocking:false ~set_flags:false fd, addr)
+  else
+    let (fd, addr) = Unix.accept ch_fd in
+    (mk_ch ~blocking:false fd, addr)
+
 let accept ch =
-  wrap_syscall Read ch (fun _ -> let (fd, addr) = Unix.accept ch.fd in (mk_ch ~blocking:false fd, addr))
+  wrap_syscall Read ch (fun _ -> accept_and_set_nonblock ch.fd)
 
 let accept_n ch n =
   let l = ref [] in
@@ -1656,8 +1668,7 @@ let accept_n ch n =
            try
              for _i = 1 to n do
                if blocking && not (unix_readable ch.fd) then raise Retry;
-               let fd, addr = Unix.accept ch.fd in
-               l := (mk_ch ~blocking:false fd, addr) :: !l
+               l := accept_and_set_nonblock ch.fd :: !l
              done
            with
            | (Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _) | Retry) when !l <> [] ->

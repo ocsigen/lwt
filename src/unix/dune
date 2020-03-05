@@ -154,6 +154,7 @@
   unix_unlink_job
   unix_somaxconn
   windows_somaxconn
+  unix_accept4
  )
  (install_c_headers lwt_features lwt_config lwt_unix)
  (c_flags -I. (:include unix_c_flags.sexp))
