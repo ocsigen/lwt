@@ -701,7 +701,7 @@ let write ch buf pos len =
 
 let pwrite ch buf ~file_offset pos len =
   if pos < 0 || len < 0 || pos > Bytes.length buf - len then
-    invalid_arg "Lwt_unix.write"
+    invalid_arg "Lwt_unix.pwrite"
   else
     Lazy.force ch.blocking >>= function
     | true ->
