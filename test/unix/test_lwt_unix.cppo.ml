@@ -1113,13 +1113,20 @@ let file_suffix =
 let test_filename name =
   Printf.sprintf "%s_%i" name (file_suffix ())
 
-let pread_tests =
+let pread_tests ~blocking =
   let test_file = test_filename "test_pread_pwrite" in
   let file_contents = "01234567890123456789" in
+  let blocking_string =
+    if blocking then
+      " blocking"
+    else
+      " nonblocking"
+  in
   [
-  test ~sequential:true "basic pread"
+  test ~sequential:true ("basic pread" ^ blocking_string)
     (fun () ->
        Lwt_unix.openfile test_file [O_RDWR; O_TRUNC; O_CREAT] 0o666 >>= fun fd ->
+       if not blocking then Lwt_unix.set_blocking ~set_flags:false fd false;
        Lwt_unix.write_string fd file_contents 0 (String.length file_contents) >>= fun n ->
        assert(n = String.length file_contents);
        (* This should always be true in practice, show it if this is the reason for failing *)
@@ -1133,9 +1140,10 @@ let pread_tests =
        Lwt_unix.close fd >>= fun () ->
        Lwt.return (read1 = "345" && read2 = "567"));
 
-  test ~sequential:true "basic pwrite"
+  test ~sequential:true ("basic pwrite" ^ blocking_string)
     (fun () ->
        Lwt_unix.openfile test_file [O_RDWR] 0o666 >>= fun fd ->
+       if not blocking then Lwt_unix.set_blocking ~set_flags:false fd false;
        let t1 = Lwt_unix.pwrite_string fd "abcd" ~file_offset:5 0 4 in
        let t2 = Lwt_unix.pwrite_string fd "efg" ~file_offset:15 0 3 in
        t2 >>= fun l2 ->
@@ -1150,7 +1158,7 @@ let pread_tests =
        let read = Bytes.to_string buf in
        Lwt.return (read = "01234abcd901234efg89"));
 
-  test ~sequential:true "remove file"
+  test ~sequential:true ("remove file" ^ blocking_string)
     (fun () ->
       Unix.unlink test_file;
       Lwt.return_true);
@@ -1170,5 +1178,6 @@ let suite =
      dir_tests @
      lwt_preemptive_tests @
      lwt_user_tests @
-     pread_tests
+     pread_tests ~blocking:true @
+     pread_tests ~blocking:false
     )
