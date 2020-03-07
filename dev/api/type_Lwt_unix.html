@@ -105,8 +105,17 @@ We are looking for beta-tester and contributors.
     Lwt_unix.file_perm -&gt; Lwt_unix.file_descr Lwt.t
   val close : Lwt_unix.file_descr -&gt; unit Lwt.t
   val read : Lwt_unix.file_descr -&gt; bytes -&gt; int -&gt; int -&gt; int Lwt.t
+  val pread :
+    Lwt_unix.file_descr -&gt;
+    bytes -&gt; file_offset:int -&gt; int -&gt; int -&gt; int Lwt.t
   val write : Lwt_unix.file_descr -&gt; bytes -&gt; int -&gt; int -&gt; int Lwt.t
+  val pwrite :
+    Lwt_unix.file_descr -&gt;
+    bytes -&gt; file_offset:int -&gt; int -&gt; int -&gt; int Lwt.t
   val write_string : Lwt_unix.file_descr -&gt; string -&gt; int -&gt; int -&gt; int Lwt.t
+  val pwrite_string :
+    Lwt_unix.file_descr -&gt;
+    string -&gt; file_offset:int -&gt; int -&gt; int -&gt; int Lwt.t
   module IO_vectors :
     sig
       type t
