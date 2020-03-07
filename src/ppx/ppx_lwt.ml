@@ -1,11 +1,11 @@
 open! Migrate_parsetree
-open! OCaml_409.Ast
+open! OCaml_410.Ast
 open Ast_mapper
 open! Ast_helper
 open Asttypes
 open Parsetree
 
-open Ast_convenience_409
+open Ast_convenience_410
 
 (** {2 Convenient stuff} *)
 
@@ -350,16 +350,16 @@ let mapper =
 
 
 let args =
-  Arg.([
+  [
     "-no-sequence",
-      Unit no_sequence_option,
+      Arg.Unit no_sequence_option,
       " has no effect (deprecated)";
 
     "-no-strict-sequence",
-      Unit no_strict_sequence_option,
+      Arg.Unit no_strict_sequence_option,
       " has no effect (deprecated)";
-  ])
+  ]
 
 let () =
-  Driver.register ~name:"ppx_lwt" ~args Versions.ocaml_409
+  Driver.register ~name:"ppx_lwt" ~args Versions.ocaml_410
     (fun _config _cookies -> mapper)
