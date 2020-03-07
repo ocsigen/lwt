@@ -162,14 +162,14 @@
 |@@class="odocwiki_index"@ @@<<a_api text="stats"| type Lwt_unix.LargeFile.stats >> ~[<<a_api | module Lwt_unix.LargeFile >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="stats"| type Lwt_unix.stats >> ~[<<a_api | module Lwt_unix >>~]||
 |@@ @style="tet-align: left;"@@\\T|
-|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_bytes.t >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|~Type of array of bytes~.
->>
-|
+|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_throttle.S.t >> ~[<<a_api | module Lwt_throttle.S >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_unix.IO_vectors.t >> ~[<<a_api | module Lwt_unix.IO_vectors >>~]|<<div class="odocwiki_info"|~Mutable sequences of ~I~/~O vectors~.
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_engine.Ev_backend.t >> ~[<<a_api | module Lwt_engine.Ev_backend >>~]||
-|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_throttle.S.t >> ~[<<a_api | module Lwt_throttle.S >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_bytes.t >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|~Type of array of bytes~.
+>>
+|
 |@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_timeout.t >> ~[<<a_api | module Lwt_timeout >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_switch.t >> ~[<<a_api | module Lwt_switch >>~]|<<div class="odocwiki_info"|~Type of switches~.
 >>

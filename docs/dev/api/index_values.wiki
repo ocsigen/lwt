@@ -301,13 +301,13 @@
 |@@class="odocwiki_index"@ @@<<a_api text="copy"| value Lwt_bytes.copy >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|copy buffer>> creates a copy of the given byte array~.
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="create"| value Lwt_bytes.create >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|~Creates a new byte array of the given size~.
+|@@class="odocwiki_index"@ @@<<a_api text="create"| value Lwt_throttle.S.create >> ~[<<a_api | module Lwt_throttle.S >>~]|<<div class="odocwiki_info"|~Creates a rate limiter~.
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="create"| value Lwt_unix.IO_vectors.create >> ~[<<a_api | module Lwt_unix.IO_vectors >>~]|<<div class="odocwiki_info"|~Creates an empty ~I~/~O vector sequence~.
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="create"| value Lwt_throttle.S.create >> ~[<<a_api | module Lwt_throttle.S >>~]|<<div class="odocwiki_info"|~Creates a rate limiter~.
+|@@class="odocwiki_index"@ @@<<a_api text="create"| value Lwt_bytes.create >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|~Creates a new byte array of the given size~.
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="create"| value Lwt_timeout.create >> ~[<<a_api | module Lwt_timeout >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~_timeout~.create n f>> creates a new timeout object with duration <<span class="odocwiki_inlinecode"|n>>
@@ -624,11 +624,11 @@
 >>
 |
 |@@ @style="tet-align: left;"@@\\G|
-|@@class="odocwiki_index"@ @@<<a_api text="get"| value Lwt_bytes.get >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|get buffer offset>> returns the byte at offset <<span class="odocwiki_inlinecode"|offset>> in
-      <<span class="odocwiki_inlinecode"|buffer>>~.
+|@@class="odocwiki_index"@ @@<<a_api text="get"| value Lwt_engine.get >> ~[<<a_api | module Lwt_engine >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|get ~(~)>> returns the engine currently in use~.
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="get"| value Lwt_engine.get >> ~[<<a_api | module Lwt_engine >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|get ~(~)>> returns the engine currently in use~.
+|@@class="odocwiki_index"@ @@<<a_api text="get"| value Lwt_bytes.get >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|get buffer offset>> returns the byte at offset <<span class="odocwiki_inlinecode"|offset>> in
+      <<span class="odocwiki_inlinecode"|buffer>>~.
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="get"| value Lwt_sequence.get >> ~[<<a_api | module Lwt_sequence >>~]|<<div class="odocwiki_info"|~Returns the contents of a node
@@ -900,10 +900,10 @@
 |
 |@@class="odocwiki_index"@ @@<<a_api text="leave_iter_hooks"| value Lwt_main.leave_iter_hooks >> ~[<<a_api | module Lwt_main >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_deprecated"|>>>>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="length"| value Lwt_bytes.length >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|~Returns the length of the given byte array~.
+|@@class="odocwiki_index"@ @@<<a_api text="length"| value Lwt_io.length >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~Returns the length of the channel in bytes
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="length"| value Lwt_io.length >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~Returns the length of the channel in bytes
+|@@class="odocwiki_index"@ @@<<a_api text="length"| value Lwt_bytes.length >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|~Returns the length of the given byte array~.
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="length"| value Lwt_sequence.length >> ~[<<a_api | module Lwt_sequence >>~]|<<div class="odocwiki_info"|~Returns the number of elements in the given sequence~.
@@ -1102,11 +1102,11 @@
 |@@class="odocwiki_index"@ @@<<a_api text="of_array"| value Lwt_stream.of_array >> ~[<<a_api | module Lwt_stream >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|of~_array a>> creates a stream returning all elements of <<span class="odocwiki_inlinecode"|a>>~.
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="of_bytes"| value Lwt_bytes.of_bytes >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|of~_bytes buf>> returns a newly allocated byte array with the
-      same contents as <<span class="odocwiki_inlinecode"|buf>>~.
+|@@class="odocwiki_index"@ @@<<a_api text="of_bytes"| value Lwt_io.of_bytes >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~Create a channel from a byte array~.
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="of_bytes"| value Lwt_io.of_bytes >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~Create a channel from a byte array~.
+|@@class="odocwiki_index"@ @@<<a_api text="of_bytes"| value Lwt_bytes.of_bytes >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|of~_bytes buf>> returns a newly allocated byte array with the
+      same contents as <<span class="odocwiki_inlinecode"|buf>>~.
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="of_channel"| value Lwt_fmt.of_channel >> ~[<<a_api | module Lwt_fmt >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|of~_channel oc>> creates a formatter that writes to the channel <<span class="odocwiki_inlinecode"|oc>>~.
@@ -1265,6 +1265,11 @@
 |
 |@@class="odocwiki_index"@ @@<<a_api text="pp"| value Lwt_engine.Ev_backend.pp >> ~[<<a_api | module Lwt_engine.Ev_backend >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="pread"| value Lwt_process.pread >> ~[<<a_api | module Lwt_process >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="pread"| value Lwt_unix.pread >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|pread fd buf ~~file~_offset ofs len>> on file descriptors allowing seek~,
+    reads up to <<span class="odocwiki_inlinecode"|len>> bytes from <<span class="odocwiki_inlinecode"|fd>> at offset <<span class="odocwiki_inlinecode"|file~_offset>> from the
+    beginning of the file~, and writes them to <<span class="odocwiki_inlinecode"|buf>>~, starting at offset <<span class="odocwiki_inlinecode"|ofs>>~.
+>>
+|
 |@@class="odocwiki_index"@ @@<<a_api text="pread_chars"| value Lwt_process.pread_chars >> ~[<<a_api | module Lwt_process >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="pread_line"| value Lwt_process.pread_line >> ~[<<a_api | module Lwt_process >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="pread_lines"| value Lwt_process.pread_lines >> ~[<<a_api | module Lwt_process >>~]||
@@ -1290,11 +1295,18 @@
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="pwrite"| value Lwt_process.pwrite >> ~[<<a_api | module Lwt_process >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="pwrite"| value Lwt_unix.pwrite >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|pwrite fd buf ~~file~_offset ofs len>> on file descriptors allowing seek~,
+    writes up to <<span class="odocwiki_inlinecode"|len>> bytes to <<span class="odocwiki_inlinecode"|fd>> from <<span class="odocwiki_inlinecode"|buf>>~, starting at buffer offset
+    <<span class="odocwiki_inlinecode"|ofs>>~.
+>>
+|
 |@@class="odocwiki_index"@ @@<<a_api text="pwrite_chars"| value Lwt_process.pwrite_chars >> ~[<<a_api | module Lwt_process >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="pwrite_line"| value Lwt_process.pwrite_line >> ~[<<a_api | module Lwt_process >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="pwrite_lines"| value Lwt_process.pwrite_lines >> ~[<<a_api | module Lwt_process >>~]||
+|@@class="odocwiki_index"@ @@<<a_api text="pwrite_string"| value Lwt_unix.pwrite_string >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~See <<a_api | val Lwt_unix.pwrite >>~.
+>>
+|
 |@@ @style="tet-align: left;"@@\\R|
-|@@class="odocwiki_index"@ @@<<a_api text="read"| value Lwt_bytes.read >> ~[<<a_api | module Lwt_bytes >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="read"| value Lwt_io.read >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~If <<span class="odocwiki_inlinecode"|~~count>> is specified~, <<span class="odocwiki_inlinecode"|read ~~count ic>> reads at most <<span class="odocwiki_inlinecode"|~~count>> characters
     from <<span class="odocwiki_inlinecode"|ic>>~.
 >>
@@ -1303,6 +1315,7 @@
     <<span class="odocwiki_inlinecode"|buf>>~, starting at offset <<span class="odocwiki_inlinecode"|ofs>>~.
 >>
 |
+|@@class="odocwiki_index"@ @@<<a_api text="read"| value Lwt_bytes.read >> ~[<<a_api | module Lwt_bytes >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="read_char"| value Lwt_io.read_char >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|read~_char ic>> reads the next character of <<span class="odocwiki_inlinecode"|ic>>~.
 >>
 |
@@ -1372,27 +1385,27 @@
 |@@class="odocwiki_index"@ @@<<a_api text="readv"| value Lwt_unix.readv >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|readv fd vs>> reads bytes from <<span class="odocwiki_inlinecode"|fd>> into the buffer slices <<span class="odocwiki_inlinecode"|vs>>~.
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="recv"| value Lwt_bytes.recv >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|~Not implemented on ~Windows~.
->>
-|
 |@@class="odocwiki_index"@ @@<<a_api text="recv"| value Lwt_unix.recv >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~Wrapper for <<span class="odocwiki_inlinecode"|~Unix~.recv>>~.
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="recv_msg"| value Lwt_bytes.recv_msg >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_deprecated"|~Not implemented on ~Windows~.
->>>>
+|@@class="odocwiki_index"@ @@<<a_api text="recv"| value Lwt_bytes.recv >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|~Not implemented on ~Windows~.
+>>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="recv_msg"| value Lwt_unix.recv_msg >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|recv~_msg ~~socket ~~io~_vectors>> receives data into a list of
     io~-vectors~, plus any file~-descriptors that may accompany the
     messages~.
 >>
 |
+|@@class="odocwiki_index"@ @@<<a_api text="recv_msg"| value Lwt_bytes.recv_msg >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_deprecated"|~Not implemented on ~Windows~.
+>>>>
+|
 |@@class="odocwiki_index"@ @@<<a_api text="recv_msg_2"| value Lwt_unix.Versioned.recv_msg_2 >> ~[<<a_api | module Lwt_unix.Versioned >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_deprecated"|~Since ~Lwt ~5~.~0~.~0~, this is an alias for <<a_api | val Lwt_unix.recv_msg >>~.
 >>>>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="recvfrom"| value Lwt_bytes.recvfrom >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|~Not implemented on ~Windows~.
+|@@class="odocwiki_index"@ @@<<a_api text="recvfrom"| value Lwt_unix.recvfrom >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~Wrapper for <<span class="odocwiki_inlinecode"|~Unix~.recvfrom>>~.
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="recvfrom"| value Lwt_unix.recvfrom >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~Wrapper for <<span class="odocwiki_inlinecode"|~Unix~.recvfrom>>~.
+|@@class="odocwiki_index"@ @@<<a_api text="recvfrom"| value Lwt_bytes.recvfrom >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|~Not implemented on ~Windows~.
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="register_action"| value Lwt_unix.register_action >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|register~_action set fd action>> registers <<span class="odocwiki_inlinecode"|action>> on <<span class="odocwiki_inlinecode"|fd>>~.
@@ -1489,18 +1502,18 @@
 |@@ @style="tet-align: left;"@@\\S|
 |@@class="odocwiki_index"@ @@<<a_api text="sample_s"| value Lwt_react.S.sample_s >> ~[<<a_api | module Lwt_react.S >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="select"| value Lwt_engine.Ev_backend.select >> ~[<<a_api | module Lwt_engine.Ev_backend >>~]||
-|@@class="odocwiki_index"@ @@<<a_api text="send"| value Lwt_bytes.send >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|~Not implemented on ~Windows~.
->>
-|
 |@@class="odocwiki_index"@ @@<<a_api text="send"| value Lwt_unix.send >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~Wrapper for <<span class="odocwiki_inlinecode"|~Unix~.send>>~.
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="send_msg"| value Lwt_bytes.send_msg >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_deprecated"|~Not implemented on ~Windows~.
->>>>
+|@@class="odocwiki_index"@ @@<<a_api text="send"| value Lwt_bytes.send >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|~Not implemented on ~Windows~.
+>>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="send_msg"| value Lwt_unix.send_msg >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|send~_msg ~~socket ~~io~_vectors ~~fds>> sends data from a list of
     io~-vectors~, accompanied with a list of file~-descriptors~.
 >>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="send_msg"| value Lwt_bytes.send_msg >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_deprecated"|~Not implemented on ~Windows~.
+>>>>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="send_msg_2"| value Lwt_unix.Versioned.send_msg_2 >> ~[<<a_api | module Lwt_unix.Versioned >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_deprecated"|~Since ~Lwt ~5~.~0~.~0~, this is an alias for <<a_api | val Lwt_unix.send_msg >>~.
 >>>>
@@ -1508,18 +1521,18 @@
 |@@class="odocwiki_index"@ @@<<a_api text="send_notification"| value Lwt_unix.send_notification >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|send~_notification id>> sends a notification~.
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="sendto"| value Lwt_bytes.sendto >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|~Not implemented on ~Windows~.
->>
-|
 |@@class="odocwiki_index"@ @@<<a_api text="sendto"| value Lwt_unix.sendto >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~Wrapper for <<span class="odocwiki_inlinecode"|~Unix~.sendto>>~.
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="set"| value Lwt_bytes.set >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|get buffer offset value>> changes the value of the byte at
-      offset <<span class="odocwiki_inlinecode"|offset>> in <<span class="odocwiki_inlinecode"|buffer>> to <<span class="odocwiki_inlinecode"|value>>~.
+|@@class="odocwiki_index"@ @@<<a_api text="sendto"| value Lwt_bytes.sendto >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|~Not implemented on ~Windows~.
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="set"| value Lwt_engine.set >> ~[<<a_api | module Lwt_engine >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|set ~?transfer ~?destroy engine>> replaces the current engine by
       the given one~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="set"| value Lwt_bytes.set >> ~[<<a_api | module Lwt_bytes >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|get buffer offset value>> changes the value of the byte at
+      offset <<span class="odocwiki_inlinecode"|offset>> in <<span class="odocwiki_inlinecode"|buffer>> to <<span class="odocwiki_inlinecode"|value>>~.
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="set"| value Lwt_sequence.set >> ~[<<a_api | module Lwt_sequence >>~]|<<div class="odocwiki_info"|~Change the contents of a node
@@ -1817,11 +1830,11 @@
 >>
 |
 |@@ @style="tet-align: left;"@@\\W|
-|@@class="odocwiki_index"@ @@<<a_api text="wait"| value Lwt_unix.wait >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~Wrapper for <<span class="odocwiki_inlinecode"|~Unix~.wait>>
->>
-|
 |@@class="odocwiki_index"@ @@<<a_api text="wait"| value Lwt_throttle.S.wait >> ~[<<a_api | module Lwt_throttle.S >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~_throttle~.wait limiter channel>> returns a new promise associated with
       the given rate limiter and channel~.
+>>
+|
+|@@class="odocwiki_index"@ @@<<a_api text="wait"| value Lwt_unix.wait >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~Wrapper for <<span class="odocwiki_inlinecode"|~Unix~.wait>>
 >>
 |
 |@@class="odocwiki_index"@ @@<<a_api text="wait"| value Lwt_condition.wait >> ~[<<a_api | module Lwt_condition >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|wait mutex condvar>> will cause the current thread to block~,
@@ -1983,7 +1996,6 @@
       become writable~.
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="write"| value Lwt_bytes.write >> ~[<<a_api | module Lwt_bytes >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="write"| value Lwt_io.write >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|write oc str>> writes all characters of <<span class="odocwiki_inlinecode"|str>> on <<span class="odocwiki_inlinecode"|oc>>
 >>
 |
@@ -1991,6 +2003,7 @@
     at buffer offset <<span class="odocwiki_inlinecode"|ofs>>~.
 >>
 |
+|@@class="odocwiki_index"@ @@<<a_api text="write"| value Lwt_bytes.write >> ~[<<a_api | module Lwt_bytes >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="write_char"| value Lwt_io.write_char >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|write~_char oc char>> writes <<span class="odocwiki_inlinecode"|char>> on <<span class="odocwiki_inlinecode"|oc>>
 >>
 |

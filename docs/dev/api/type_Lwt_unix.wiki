@@ -59,8 +59,17 @@
     Lwt_unix.file_perm -> Lwt_unix.file_descr Lwt.t
   val close : Lwt_unix.file_descr -> unit Lwt.t
   val read : Lwt_unix.file_descr -> bytes -> int -> int -> int Lwt.t
+  val pread :
+    Lwt_unix.file_descr ->
+    bytes -> file_offset:int -> int -> int -> int Lwt.t
   val write : Lwt_unix.file_descr -> bytes -> int -> int -> int Lwt.t
+  val pwrite :
+    Lwt_unix.file_descr ->
+    bytes -> file_offset:int -> int -> int -> int Lwt.t
   val write_string : Lwt_unix.file_descr -> string -> int -> int -> int Lwt.t
+  val pwrite_string :
+    Lwt_unix.file_descr ->
+    string -> file_offset:int -> int -> int -> int Lwt.t
   module IO_vectors :
     sig
       type t

@@ -271,6 +271,18 @@
     except <<span class="odocwiki_inlinecode"|~Unix~.~Unix~_error ~Unix~.~E~A~G~A~I~N>>~, <<span class="odocwiki_inlinecode"|~Unix~.~Unix~_error ~Unix~.~E~W~O~U~L~D~B~L~O~C~K>> or
     <<span class="odocwiki_inlinecode"|~Unix~.~Unix~_error ~Unix~.~E~I~N~T~R>>~.
 >>
+<<pre id="VALpread" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|pread>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<a_api text="file_descr" | type Lwt_unix.file_descr >> <<span class="ocsforge_color_delimiter"| -> >>\\  bytes <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_label"| file_offset: >>int <<span class="ocsforge_color_delimiter"| -> >> int <<span class="ocsforge_color_delimiter"| -> >> int <<span class="ocsforge_color_delimiter"| -> >> int <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|pread fd buf ~~file~_offset ofs len>> on file descriptors allowing seek~,
+    reads up to <<span class="odocwiki_inlinecode"|len>> bytes from <<span class="odocwiki_inlinecode"|fd>> at offset <<span class="odocwiki_inlinecode"|file~_offset>> from the
+    beginning of the file~, and writes them to <<span class="odocwiki_inlinecode"|buf>>~, starting at offset <<span class="odocwiki_inlinecode"|ofs>>~.
+
+
+    ~On ~Unix systems~, the file descriptor position is unaffected~. ~On ~Windows
+    it is changed to be just after the last read position~.
+
+
+    ~The thread can fail with any exception that can be raised by <<span class="odocwiki_inlinecode"|read>> or
+    <<span class="odocwiki_inlinecode"|lseek>>~.
+>>
 <<pre id="VALwrite" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|write>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="file_descr" | type Lwt_unix.file_descr >> <<span class="ocsforge_color_delimiter"| -> >> bytes <<span class="ocsforge_color_delimiter"| -> >> int <<span class="ocsforge_color_delimiter"| -> >> int <<span class="ocsforge_color_delimiter"| -> >> int <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|write fd buf ofs len>> writes up to <<span class="odocwiki_inlinecode"|len>> bytes to <<span class="odocwiki_inlinecode"|fd>> from <<span class="odocwiki_inlinecode"|buf>>~, starting
     at buffer offset <<span class="odocwiki_inlinecode"|ofs>>~. ~The function immediately evaluates to an ~Lwt thread~,
     which waits for the operation to complete~. ~If the operation completes
@@ -290,7 +302,22 @@
     <<span class="odocwiki_inlinecode"|~Unix~.single~_write>>~, except <<span class="odocwiki_inlinecode"|~Unix~.~Unix~_error ~Unix~.~E~A~G~A~I~N>>~,
     <<span class="odocwiki_inlinecode"|~Unix~.~Unix~_error ~Unix~.~E~W~O~U~L~D~B~L~O~C~K>> or <<span class="odocwiki_inlinecode"|~Unix~.~Unix~_error ~Unix~.~E~I~N~T~R>>~.
 >>
+<<pre id="VALpwrite" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|pwrite>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<a_api text="file_descr" | type Lwt_unix.file_descr >> <<span class="ocsforge_color_delimiter"| -> >>\\  bytes <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_label"| file_offset: >>int <<span class="ocsforge_color_delimiter"| -> >> int <<span class="ocsforge_color_delimiter"| -> >> int <<span class="ocsforge_color_delimiter"| -> >> int <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|pwrite fd buf ~~file~_offset ofs len>> on file descriptors allowing seek~,
+    writes up to <<span class="odocwiki_inlinecode"|len>> bytes to <<span class="odocwiki_inlinecode"|fd>> from <<span class="odocwiki_inlinecode"|buf>>~, starting at buffer offset
+    <<span class="odocwiki_inlinecode"|ofs>>~. ~The data is written at offset <<span class="odocwiki_inlinecode"|file~_offset>> from the beginning
+    of <<span class="odocwiki_inlinecode"|fd>>~.
+
+
+    ~On ~Unix systems~, the file descriptor position is unaffected~. ~On ~Windows
+    it is changed to be just after the last written position~.
+
+
+    ~The thread can fail with any exception that can be raised by <<span class="odocwiki_inlinecode"|write>> or
+    <<span class="odocwiki_inlinecode"|lseek>>~.
+>>
 <<pre id="VALwrite_string" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|write~_string>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="file_descr" | type Lwt_unix.file_descr >> <<span class="ocsforge_color_delimiter"| -> >> string <<span class="ocsforge_color_delimiter"| -> >> int <<span class="ocsforge_color_delimiter"| -> >> int <<span class="ocsforge_color_delimiter"| -> >> int <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~See <<a_api | val Lwt_unix.write >>~.
+>>
+<<pre id="VALpwrite_string" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|pwrite~_string>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|\\  <<a_api text="file_descr" | type Lwt_unix.file_descr >> <<span class="ocsforge_color_delimiter"| -> >>\\  string <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_label"| file_offset: >>int <<span class="ocsforge_color_delimiter"| -> >> int <<span class="ocsforge_color_delimiter"| -> >> int <<span class="ocsforge_color_delimiter"| -> >> int <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~See <<a_api | val Lwt_unix.pwrite >>~.
 >>
 <<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<a_api text="IO_vectors" | module Lwt_unix.IO_vectors >> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt_unix.IO_vectors >><<span class="ocsforge_color_keyword"|end>>>><<div class="odocwiki_info"|~Sequences of buffer slices for <<a_api | val Lwt_unix.writev >>~.
 >>
