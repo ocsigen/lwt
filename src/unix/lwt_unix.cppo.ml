@@ -631,6 +631,12 @@ let wait_read ch =
 
 external stub_read : Unix.file_descr -> Bytes.t -> int -> int -> int = "lwt_unix_read"
 external read_job : Unix.file_descr -> Bytes.t -> int -> int -> int job = "lwt_unix_read_job"
+external stub_pread :
+  Unix.file_descr -> Bytes.t -> file_offset:int -> int -> int -> int =
+    "lwt_unix_pread"
+external pread_job :
+  Unix.file_descr -> Bytes.t -> file_offset:int -> int -> int -> int job =
+    "lwt_unix_pread_job"
 
 let read ch buf pos len =
   if pos < 0 || len < 0 || pos > Bytes.length buf - len then
@@ -642,6 +648,17 @@ let read ch buf pos len =
       run_job (read_job ch.fd buf pos len)
     | false ->
       wrap_syscall Read ch (fun () -> stub_read ch.fd buf pos len)
+
+let pread ch buf ~file_offset pos len =
+  if pos < 0 || len < 0 || pos > Bytes.length buf - len then
+    invalid_arg "Lwt_unix.pread"
+  else
+    Lazy.force ch.blocking >>= function
+    | true ->
+      wait_read ch >>= fun () ->
+      run_job (pread_job ch.fd buf ~file_offset pos len)
+    | false ->
+      wrap_syscall Read ch (fun () -> stub_pread ch.fd buf ~file_offset pos len)
 
 external stub_read_bigarray :
   Unix.file_descr -> bigarray -> int -> int -> int = "lwt_unix_bytes_read"
@@ -672,6 +689,12 @@ let wait_write ch =
 
 external stub_write : Unix.file_descr -> Bytes.t -> int -> int -> int = "lwt_unix_write"
 external write_job : Unix.file_descr -> Bytes.t -> int -> int -> int job = "lwt_unix_write_job"
+external stub_pwrite :
+  Unix.file_descr -> Bytes.t -> file_offset:int -> int -> int -> int =
+    "lwt_unix_pwrite"
+external pwrite_job :
+  Unix.file_descr -> Bytes.t -> file_offset:int -> int -> int -> int job =
+    "lwt_unix_pwrite_job"
 
 let write ch buf pos len =
   if pos < 0 || len < 0 || pos > Bytes.length buf - len then
@@ -684,9 +707,24 @@ let write ch buf pos len =
     | false ->
       wrap_syscall Write ch (fun () -> stub_write ch.fd buf pos len)
 
+let pwrite ch buf ~file_offset pos len =
+  if pos < 0 || len < 0 || pos > Bytes.length buf - len then
+    invalid_arg "Lwt_unix.pwrite"
+  else
+    Lazy.force ch.blocking >>= function
+    | true ->
+      wait_write ch >>= fun () ->
+      run_job (pwrite_job ch.fd buf ~file_offset pos len)
+    | false ->
+      wrap_syscall Write ch (fun () -> stub_pwrite ch.fd buf ~file_offset pos len)
+
 let write_string ch buf pos len =
   let buf = Bytes.unsafe_of_string buf in
   write ch buf pos len
+
+let pwrite_string ch buf ~file_offset pos len =
+  let buf = Bytes.unsafe_of_string buf in
+  pwrite ch buf ~file_offset pos len
 
 external stub_write_bigarray :
   Unix.file_descr -> bigarray -> int -> int -> int = "lwt_unix_bytes_write"

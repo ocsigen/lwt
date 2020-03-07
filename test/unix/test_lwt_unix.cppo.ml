@@ -1104,6 +1104,69 @@ let lwt_user_tests = [
   end
 ]
 
+let file_suffix =
+  let last_file_suffix = ref 0 in
+  fun () ->
+    incr last_file_suffix;
+    !last_file_suffix
+
+let test_filename name =
+  Printf.sprintf "%s_%i" name (file_suffix ())
+
+let pread_tests ~blocking =
+  let test_file = test_filename "test_pread_pwrite" in
+  let file_contents = "01234567890123456789" in
+  let blocking_string =
+    if blocking then
+      " blocking"
+    else
+      " nonblocking"
+  in
+  [
+  test ~sequential:true ("basic pread" ^ blocking_string)
+    (fun () ->
+       Lwt_unix.openfile test_file [O_RDWR; O_TRUNC; O_CREAT] 0o666
+       >>= fun fd ->
+       if not blocking then Lwt_unix.set_blocking ~set_flags:false fd false;
+       Lwt_unix.write_string fd file_contents 0 (String.length file_contents)
+       >>= fun n ->
+       assert(n = String.length file_contents);
+       (* This should always be true in practice, show it if this is the reason
+          for failing *)
+       let buf = Bytes.make 3 '\x00' in
+       Lwt_unix.pread fd buf ~file_offset:3 0 3 >>= fun n ->
+       assert(n = 3);
+       let read1 = Bytes.to_string buf in
+       Lwt_unix.pread fd buf ~file_offset:15 0 3 >>= fun n ->
+       assert(n = 3);
+       let read2 = Bytes.to_string buf in
+       Lwt_unix.close fd >>= fun () ->
+       Lwt.return (read1 = "345" && read2 = "567"));
+
+  test ~sequential:true ("basic pwrite" ^ blocking_string)
+    (fun () ->
+       Lwt_unix.openfile test_file [O_RDWR] 0o666 >>= fun fd ->
+       if not blocking then Lwt_unix.set_blocking ~set_flags:false fd false;
+       let t1 = Lwt_unix.pwrite_string fd "abcd" ~file_offset:5 0 4 in
+       let t2 = Lwt_unix.pwrite_string fd "efg" ~file_offset:15 0 3 in
+       t2 >>= fun l2 ->
+       t1 >>= fun l1 ->
+       assert(l1 = 4);
+       assert(l2 = 3);
+       Lwt_unix.lseek fd 0 Lwt_unix.SEEK_SET >>= fun _pos ->
+       let buf = Bytes.make (String.length file_contents) '\x00' in
+       Lwt_unix.read fd buf 0 (String.length file_contents) >>= fun n ->
+       assert(n = (String.length file_contents));
+       Lwt_unix.close fd >>= fun () ->
+       let read = Bytes.to_string buf in
+       Lwt.return (read = "01234abcd901234efg89"));
+
+  test ~sequential:true ("remove file" ^ blocking_string)
+    (fun () ->
+      Unix.unlink test_file;
+      Lwt.return_true);
+]
+
 let suite =
   suite "lwt_unix"
     (wait_tests @
@@ -1117,5 +1180,7 @@ let suite =
      bind_tests @
      dir_tests @
      lwt_preemptive_tests @
-     lwt_user_tests
+     lwt_user_tests @
+     pread_tests ~blocking:true @
+     pread_tests ~blocking:false
     )
