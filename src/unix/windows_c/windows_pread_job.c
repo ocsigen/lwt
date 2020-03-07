@@ -40,7 +40,7 @@ static void worker_pread(struct job_pread *job)
     overlapped.Offset = job->Offset;
     if (!ReadFile(job->handle, job->buffer, job->length, &(job->result),
                   &overlapped))
-      job->error_code = GetLastError();
+    job->error_code = GetLastError();
 }
 
 static value result_pread(struct job_pread *job)
@@ -68,18 +68,18 @@ CAMLprim value lwt_unix_pread_job(value val_fd, value val_string,
     long length = Long_val(val_length);
     DWORDLONG file_offset = Long_val(val_file_offset);
     if (fd->kind != KIND_HANDLE) {
-      caml_invalid_argument("Lwt_unix.pread");
+        caml_invalid_argument("Lwt_unix.pread");
     } else {
-      LWT_UNIX_INIT_JOB(job, pread, length);
-      job->handle = fd->fd.handle;
-      job->length = length;
-      job->OffsetHigh = (DWORD)(file_offset >> 32);
-      job->Offset = (DWORD)(file_offset & 0xFFFFFFFFLL);
-      job->error_code = 0;
-      job->string = val_string;
-      job->offset = Long_val(val_offset);
-      caml_register_generational_global_root(&(job->string));
-      return lwt_unix_alloc_job(&(job->job));
+        LWT_UNIX_INIT_JOB(job, pread, length);
+        job->handle = fd->fd.handle;
+        job->length = length;
+        job->OffsetHigh = (DWORD)(file_offset >> 32);
+        job->Offset = (DWORD)(file_offset & 0xFFFFFFFFLL);
+        job->error_code = 0;
+        job->string = val_string;
+        job->offset = Long_val(val_offset);
+        caml_register_generational_global_root(&(job->string));
+        return lwt_unix_alloc_job(&(job->job));
     }
 }
 #endif

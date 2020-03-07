@@ -631,8 +631,12 @@ let wait_read ch =
 
 external stub_read : Unix.file_descr -> Bytes.t -> int -> int -> int = "lwt_unix_read"
 external read_job : Unix.file_descr -> Bytes.t -> int -> int -> int job = "lwt_unix_read_job"
-external stub_pread : Unix.file_descr -> Bytes.t -> file_offset:int -> int -> int -> int = "lwt_unix_pread"
-external pread_job : Unix.file_descr -> Bytes.t -> file_offset:int -> int -> int -> int job = "lwt_unix_pread_job"
+external stub_pread :
+  Unix.file_descr -> Bytes.t -> file_offset:int -> int -> int -> int =
+    "lwt_unix_pread"
+external pread_job :
+  Unix.file_descr -> Bytes.t -> file_offset:int -> int -> int -> int job =
+    "lwt_unix_pread_job"
 
 let read ch buf pos len =
   if pos < 0 || len < 0 || pos > Bytes.length buf - len then
@@ -685,8 +689,12 @@ let wait_write ch =
 
 external stub_write : Unix.file_descr -> Bytes.t -> int -> int -> int = "lwt_unix_write"
 external write_job : Unix.file_descr -> Bytes.t -> int -> int -> int job = "lwt_unix_write_job"
-external stub_pwrite : Unix.file_descr -> Bytes.t -> file_offset:int -> int -> int -> int = "lwt_unix_pwrite"
-external pwrite_job : Unix.file_descr -> Bytes.t -> file_offset:int -> int -> int -> int job = "lwt_unix_pwrite_job"
+external stub_pwrite :
+  Unix.file_descr -> Bytes.t -> file_offset:int -> int -> int -> int =
+    "lwt_unix_pwrite"
+external pwrite_job :
+  Unix.file_descr -> Bytes.t -> file_offset:int -> int -> int -> int job =
+    "lwt_unix_pwrite_job"
 
 let write ch buf pos len =
   if pos < 0 || len < 0 || pos > Bytes.length buf - len then

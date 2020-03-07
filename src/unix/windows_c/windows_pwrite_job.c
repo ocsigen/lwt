@@ -33,7 +33,7 @@ static void worker_pwrite(struct job_pwrite *job)
     overlapped.Offset = job->Offset;
     if (!WriteFile(job->handle, job->buffer, job->length, &(job->result),
                    &overlapped))
-      job->error_code = GetLastError();
+    job->error_code = GetLastError();
 }
 
 static value result_pwrite(struct job_pwrite *job)
@@ -58,16 +58,17 @@ CAMLprim value lwt_unix_pwrite_job(value val_fd, value val_string,
     long length = Long_val(val_length);
     DWORDLONG file_offset = Long_val(val_file_offset);
     if (fd->kind != KIND_HANDLE) {
-      caml_invalid_argument("Lwt_unix.pwrite");
+        caml_invalid_argument("Lwt_unix.pwrite");
     } else {
-      LWT_UNIX_INIT_JOB(job, pwrite, length);
-      job->handle = fd->fd.handle;
-      memcpy(job->buffer, String_val(val_string) + Long_val(val_offset), length);
-      job->length = length;
-      job->OffsetHigh = (DWORD)(file_offset >> 32);
-      job->Offset = (DWORD)(file_offset & 0xFFFFFFFFLL);
-      job->error_code = 0;
-      return lwt_unix_alloc_job(&(job->job));
+        LWT_UNIX_INIT_JOB(job, pwrite, length);
+        job->handle = fd->fd.handle;
+        memcpy(
+            job->buffer, String_val(val_string) + Long_val(val_offset), length);
+        job->length = length;
+        job->OffsetHigh = (DWORD)(file_offset >> 32);
+        job->Offset = (DWORD)(file_offset & 0xFFFFFFFFLL);
+        job->error_code = 0;
+        return lwt_unix_alloc_job(&(job->job));
     }
 }
 #endif

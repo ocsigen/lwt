@@ -1125,11 +1125,14 @@ let pread_tests ~blocking =
   [
   test ~sequential:true ("basic pread" ^ blocking_string)
     (fun () ->
-       Lwt_unix.openfile test_file [O_RDWR; O_TRUNC; O_CREAT] 0o666 >>= fun fd ->
+       Lwt_unix.openfile test_file [O_RDWR; O_TRUNC; O_CREAT] 0o666
+       >>= fun fd ->
        if not blocking then Lwt_unix.set_blocking ~set_flags:false fd false;
-       Lwt_unix.write_string fd file_contents 0 (String.length file_contents) >>= fun n ->
+       Lwt_unix.write_string fd file_contents 0 (String.length file_contents)
+       >>= fun n ->
        assert(n = String.length file_contents);
-       (* This should always be true in practice, show it if this is the reason for failing *)
+       (* This should always be true in practice, show it if this is the reason
+          for failing *)
        let buf = Bytes.make 3 '\x00' in
        Lwt_unix.pread fd buf ~file_offset:3 0 3 >>= fun n ->
        assert(n = 3);

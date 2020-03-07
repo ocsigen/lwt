@@ -341,7 +341,8 @@ val pwrite : file_descr -> bytes -> file_offset:int -> int -> int -> int Lwt.t
 val write_string : file_descr -> string -> int -> int -> int Lwt.t
   (** See {!write}. *)
 
-val pwrite_string : file_descr -> string -> file_offset:int -> int -> int -> int Lwt.t
+val pwrite_string :
+  file_descr -> string -> file_offset:int -> int -> int -> int Lwt.t
   (** See {!pwrite}. *)
 
 (** Sequences of buffer slices for {!writev}. *)
