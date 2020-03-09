@@ -2,7 +2,7 @@ opam-version: "2.0"
 
 synopsis: "Promises and event-driven I/O"
 
-version: "dev"
+version: "5.2.0"
 license: "MIT"
 homepage: "https://github.com/ocsigen/lwt"
 doc: "https://ocsigen.org/lwt"
@@ -35,10 +35,6 @@ depopts: [
   "base-threads"
   "base-unix"
   "conf-libev"
-]
-
-pin-depends: [
-  ["bisect_ppx.git" "git+https://github.com/aantron/bisect_ppx.git"]
 ]
 
 conflicts: [
