@@ -1,6 +1,6 @@
-# Lwt &nbsp;&nbsp; [![version 5.1.2][version]][releases] [![Travis status][travis-img]][travis] [![AppVeyor status][appveyor-img]][appveyor]
+# Lwt &nbsp;&nbsp; [![version 5.2.0][version]][releases] [![Travis status][travis-img]][travis] [![AppVeyor status][appveyor-img]][appveyor]
 
-[version]:      https://img.shields.io/badge/version-5.1.2-blue.svg
+[version]:      https://img.shields.io/badge/version-5.2.0-blue.svg
 [releases]:     https://github.com/ocsigen/lwt/releases
 [travis]:       https://travis-ci.org/ocsigen/lwt/branches
 [travis-img]:   https://img.shields.io/travis/ocsigen/lwt/master.svg?label=travis

@@ -1,3 +1,10 @@
+===== 5.2.0 (2020-03-09) =====
+
+  * Add Lwt_unix.pread, Lwt_unix.pwrite, and Lwt_unix.pwrite_string (#768,
+    Pierre Chambart).
+  * Internally use accept4(2) when available (#769, Pierre Chambart).
+  * PPX: internally use 4.10 ASTs (#765).
+
 ===== 5.1.2 (2020-02-23) =====
 
 ====== Bugs fixed ======
