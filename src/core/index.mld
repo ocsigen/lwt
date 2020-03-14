@@ -54,8 +54,7 @@ parallel the promises that do I/O.
 {1 Tour}
 
 Lwt compiles to native code on Linux, macOS, Windows, and other systems. It's
-also routinely compiled to JavaScript for the front end and Node, by js_of_ocaml
-and BuckleScript.
+also routinely compiled to JavaScript for the front end and Node by js_of_ocaml.
 
 In Lwt,
 
