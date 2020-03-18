@@ -37,10 +37,6 @@ depopts: [
   "conf-libev"
 ]
 
-pin-depends: [
-  ["bisect_ppx.git" "git+https://github.com/aantron/bisect_ppx.git"]
-]
-
 conflicts: [
   "ocaml-variants" {= "4.02.1+BER"}
 ]
