@@ -1,8 +1,0 @@
-<<code language="ocaml" | sig
-  type 'return_value kind
-  type hook
-  val add_first : (unit -> unit Lwt_main.Hooks.kind) -> Lwt_main.Hooks.hook
-  val add_last : (unit -> unit Lwt_main.Hooks.kind) -> Lwt_main.Hooks.hook
-  val remove : Lwt_main.Hooks.hook -> unit
-  val remove_all : unit -> unit
-end >>

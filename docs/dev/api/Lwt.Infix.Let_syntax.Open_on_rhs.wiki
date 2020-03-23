@@ -1,3 +1,0 @@
-=Module <<a_api_type | module Lwt.Infix.Let_syntax.Open_on_rhs >> =
-<<pre class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|module>> <<span class="ocsforge_color_uid"|<<span class="ocsforge_color_uid"|Open_on_rhs>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="ocsforge_color_keyword"|sig>><<a_api text=".." | module Lwt.Infix.Let_syntax.Open_on_rhs >><<span class="ocsforge_color_keyword"|end>>>>
-----
