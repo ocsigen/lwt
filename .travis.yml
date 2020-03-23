@@ -93,10 +93,15 @@ scripts:
       - export LWT_DISCOVER_ARGUMENTS
 
     script:
-      - '[ "$COVERAGE" == yes ] || dune build'
-      - '[ "$COVERAGE" == yes ] || dune runtest --force'
-      - '[ "$COVERAGE" != yes ] || make coverage-only'
-      - '[ "$COVERAGE" != yes ] || bisect-ppx-report send-to Coveralls'
+      - |
+        if [ "$COVERAGE" != yes ]
+        then
+          dune build
+          dune runtest --force
+        else
+          make coverage
+          bisect-ppx-report send-to Coveralls
+        fi
 
       - |
         if [ "$CACHED" == no ]

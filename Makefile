@@ -81,9 +81,8 @@ ppx_let-test-deps :
 	opam install --yes --unset-root ppx_let
 
 .PHONY: clean
-clean:
+clean :
 	dune clean
-	find . -name '.merlin' | xargs rm -f
 	rm -fr docs/api
 	rm -f src/unix/discover_arguments
 	for TEST in `ls -d test/packaging/*/*` ; \
@@ -102,11 +101,9 @@ EXPECTED_FILES := \
     --do-not-expect src/unix/unix_c/
 
 .PHONY: coverage
-coverage: clean coverage-only
-
-.PHONY : coverage-only
-coverage-only :
-	BISECT_ENABLE=yes $(MAKE) build
+coverage :
+	rm -rf _build/default/test/ppx_expect
+	find _build -name '*.coverage' | xargs rm -f
 	BISECT_ENABLE=yes dune runtest --force
 	bisect-ppx-report html $(EXPECTED_FILES)
 	bisect-ppx-report summary

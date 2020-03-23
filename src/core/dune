@@ -1,10 +1,22 @@
+(* -*- tuareg -*- *)
+
+let preprocess =
+   match Sys.getenv "BISECT_ENABLE" with
+   | "yes" -> "(preprocess (pps bisect_ppx))"
+   | _ -> ""
+   | exception _ -> ""
+
+let () = Jbuild_plugin.V1.send @@ {|
+
 (library
  (public_name lwt)
  (synopsis "Monadic promises and concurrent I/O")
  (wrapped false)
- (preprocess (pps bisect_ppx --conditional))
+ |} ^ preprocess ^ {|
  (libraries bytes result seq)
  (flags (:standard -w +A-29)))
 
 (documentation
  (package lwt))
+
+|}
