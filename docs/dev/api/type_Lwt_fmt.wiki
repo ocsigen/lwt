@@ -1,0 +1,33 @@
+<<code language="ocaml" | sig
+  val printf :
+    ('a, Stdlib.Format.formatter, unit, unit Lwt.t) Stdlib.format4 -> 'a
+  val eprintf :
+    ('a, Stdlib.Format.formatter, unit, unit Lwt.t) Stdlib.format4 -> 'a
+  type formatter
+  type order = String of string * int * int | Flush
+  val make_stream : unit -> Lwt_fmt.order Lwt_stream.t * Lwt_fmt.formatter
+  val of_channel : Lwt_io.output_channel -> Lwt_fmt.formatter
+  val stdout : Lwt_fmt.formatter
+  val stderr : Lwt_fmt.formatter
+  val make_formatter :
+    commit:(unit -> unit Lwt.t) ->
+    fmt:Stdlib.Format.formatter -> unit -> Lwt_fmt.formatter
+  val get_formatter : Lwt_fmt.formatter -> Stdlib.Format.formatter
+  val fprintf :
+    Lwt_fmt.formatter ->
+    ('a, Stdlib.Format.formatter, unit, unit Lwt.t) Stdlib.format4 -> 'a
+  val kfprintf :
+    (Lwt_fmt.formatter -> unit Lwt.t -> 'a) ->
+    Lwt_fmt.formatter ->
+    ('b, Stdlib.Format.formatter, unit, 'a) Stdlib.format4 -> 'b
+  val ifprintf :
+    Lwt_fmt.formatter ->
+    ('a, Stdlib.Format.formatter, unit, unit Lwt.t) Stdlib.format4 -> 'a
+  val ikfprintf :
+    (Lwt_fmt.formatter -> unit Lwt.t -> 'a) ->
+    Lwt_fmt.formatter ->
+    ('b, Stdlib.Format.formatter, unit, 'a) Stdlib.format4 -> 'b
+  val flush : Lwt_fmt.formatter -> unit Lwt.t
+  val write_order : Lwt_io.output_channel -> Lwt_fmt.order -> unit Lwt.t
+  val write_pending : Lwt_fmt.formatter -> unit Lwt.t
+end >>
