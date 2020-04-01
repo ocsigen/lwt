@@ -850,22 +850,11 @@ let () =
 
     (* Write lwt_features.ml. *)
     let libev_default =
-      try
-        Sys.getenv "LWT_FORCE_LIBEV_BY_DEFAULT" = "yes"
-      with Not_found ->
-        match !Arguments.libev_default with
-        | Some argument ->
-          argument
-        | None ->
-          match Configurator.ocaml_config_var_exn context "system" with
-          | "linux"
-          | "linux_elf"
-          | "linux_aout"
-          | "linux_eabi"
-          | "linux_eabihf" ->
-            true
-          | _ ->
-            false
+      match !Arguments.libev_default with
+      | Some argument ->
+        argument
+      | None ->
+        true
     in
     Output.write_ml_file
       ~extra:[

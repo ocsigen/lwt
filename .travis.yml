@@ -200,10 +200,6 @@ matrix:
 
   fast_finish: true
 
-env:
-  global:
-    - LWT_FORCE_LIBEV_BY_DEFAULT=yes
-
 notifications:
   email:
     on_success: always
