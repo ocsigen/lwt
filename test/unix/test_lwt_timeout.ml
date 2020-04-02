@@ -239,9 +239,9 @@ let suite = suite "Lwt_timeout" [
     p1 >>= fun delta1 ->
     p2 >>= fun delta2 ->
     (* Instrumentation for an occasionally failing test. *)
-    if not (delta1 >= 1. && delta1 < 2.2 && delta2 >= 1. && delta2 < 2.2) then
+    if not (delta1 >= 1. && delta1 < 2.5 && delta2 >= 1. && delta2 < 2.5) then
       Printf.eprintf "\n%f %f\n" delta1 delta2;
-    Lwt.return (delta1 >= 1. && delta1 < 2.2 && delta2 >= 1. && delta2 < 2.2)
+    Lwt.return (delta1 >= 1. && delta1 < 2.5 && delta2 >= 1. && delta2 < 2.5)
   end;
 
   test "two, first stopped" begin fun () ->
