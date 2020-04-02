@@ -6,10 +6,11 @@ open Lwt.Infix
 
 (* None of the APIs make promises about how much larger the elapsed time will
  * be, but they all promise that it won't be less than the expected time. *)
-let cmp_elapsed_time start_time expected_time =
+let cmp_elapsed_time test_name start_time expected_time =
   let elapsed_time = Unix.gettimeofday () -. start_time in
   let diff = elapsed_time -. expected_time in
-  diff >= 0. && diff <= 0.1
+  let result = diff >= 0. && diff <= 0.1 in
+  instrument result "Lwt_unix sleep and timeout: %s: %f" test_name elapsed_time
 
 let suite = suite "Lwt_unix sleep and timeout" [
     test "sleep" begin fun () ->
@@ -17,7 +18,7 @@ let suite = suite "Lwt_unix sleep and timeout" [
       let duration = 1.0 in
       Lwt_unix.sleep duration
       >>= fun () ->
-      let check = cmp_elapsed_time start_time duration in
+      let check = cmp_elapsed_time "sleep" start_time duration in
       Lwt.return check
     end;
 
@@ -31,7 +32,7 @@ let suite = suite "Lwt_unix sleep and timeout" [
         )
         (function
           | Lwt_unix.Timeout ->
-            let check = cmp_elapsed_time start_time duration in
+            let check = cmp_elapsed_time "timeout" start_time duration in
             Lwt.return check
           | exn -> Lwt.fail exn
         )
@@ -56,10 +57,8 @@ let suite = suite "Lwt_unix sleep and timeout" [
         )
         (function
           | Lwt_unix.Timeout ->
-            let check = cmp_elapsed_time start_time duration in
-            if not check then
-              Printf.eprintf "\nstart_time: %f, duration: %f\n"
-                start_time duration;
+            let check =
+              cmp_elapsed_time "with_timeout : timeout" start_time duration in
             Lwt.return check
           | exn -> Lwt.fail exn
         )
@@ -85,11 +84,12 @@ let suite = suite "Lwt_unix sleep and timeout" [
       let check1 = run_auto_yield () in
       let check2 = run_auto_yield () in
       Lwt_unix.sleep 1.0
-      >>= fun () ->
+      >|= fun () ->
       let check3 = run_auto_yield () in
       let check4 = run_auto_yield () in
       let check5 = run_auto_yield () in
       let check = check1 && check2 && not check3 && check4 && check5 in
-      Lwt.return check
+      instrument check "Lwt_unix sleep and timeout: auto_yield: %b %b %b %b %b"
+        check1 check2 check3 check4 check5
     end;
   ]

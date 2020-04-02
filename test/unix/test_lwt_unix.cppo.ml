@@ -144,7 +144,8 @@ let utimes_tests = [
       let c1 = stat.Unix.st_atime = 1. in
       let c2 = stat.Unix.st_mtime = 2. in
 
-      Lwt.return (c1 && c2));
+      Lwt.return (instrument (c1 && c2)
+        "utimes: basic: %f %f" stat.Unix.st_atime stat.Unix.st_mtime));
 
   test "utimes: current time"
     (fun () ->
@@ -162,11 +163,9 @@ let utimes_tests = [
       let c1 = abs_float (stat.Unix.st_atime -. now) < acceptable_delta in
       let c2 = abs_float (stat.Unix.st_mtime -. now) < acceptable_delta in
 
-      if not c1 || not c2 then
-        Printf.eprintf "times: %f %f %f"
-          now stat.Unix.st_atime stat.Unix.st_mtime;
-
-      Lwt.return (c1 && c2));
+      Lwt.return (instrument (c1 && c2)
+        "utimes: current time: %f %f %f"
+        now stat.Unix.st_atime stat.Unix.st_mtime));
 
   test "utimes: missing file"
     (fun () ->

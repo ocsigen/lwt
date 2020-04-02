@@ -46,3 +46,6 @@ val with_async_exception_hook : (exn -> unit) -> (unit -> 'a Lwt.t) -> 'a Lwt.t
 (** [Test.with_async_exception_hook hook f] sets [!Lwt.async_exception_hook] to
     [hook], runs [f ()], and then restores [!Lwt.async_exception_hook] to its
     former value. *)
+
+val instrument : bool -> ('a, unit, string, bool) format4 -> 'a
+(** Acts like [Printf.eprintf], but prints nothing if the boolean is [true]. *)

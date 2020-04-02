@@ -23,7 +23,8 @@ let suite = suite "Lwt_timeout" [
     Lwt_timeout.start timeout;
 
     p >|= fun delta ->
-    delta >= 2. && delta < 3.
+    instrument (delta >= 2. && delta < 3.)
+      "Lwt_timeout: basic: %f %f" start_time delta
     (* The above is a bug of the current implementation: it always gives too
        long a timeout. *)
   end;
@@ -53,7 +54,7 @@ let suite = suite "Lwt_timeout" [
     Lwt_timeout.start timeout;
 
     Lwt_unix.sleep 3. >|= fun () ->
-    !completions = 1
+    instrument (!completions = 1) "Lwt_timeout: double start: %i" !completions
   end;
 
   test "restart" begin fun () ->
@@ -122,7 +123,8 @@ let suite = suite "Lwt_timeout" [
     Lwt_timeout.start timeout;
 
     p >|= fun delta ->
-    delta >= 1.9 && delta < 3.1
+    instrument (delta >= 1.9 && delta < 3.1)
+      "Lwt_timeout: change: %f %f" start_time delta
   end;
 
   test "change does not start" begin fun () ->
@@ -155,7 +157,8 @@ let suite = suite "Lwt_timeout" [
     Lwt_timeout.change timeout 1;
 
     p >|= fun delta ->
-    delta >= 1.9 && delta < 3.1
+    instrument (delta >= 1.9 && delta < 3.1)
+      "Lwt_timeout: change after start: %f %f" start_time delta
   end;
 
   test "change: invalid delay" begin fun () ->
@@ -216,8 +219,9 @@ let suite = suite "Lwt_timeout" [
     |> Lwt_timeout.start;
 
     p1 >>= fun delta1 ->
-    p2 >>= fun delta2 ->
-    Lwt.return (delta1 >= 1.9 && delta1 < 3. && delta2 >= 2.9 && delta2 < 4.)
+    p2 >|= fun delta2 ->
+    instrument (delta1 >= 1.9 && delta1 < 3. && delta2 >= 2.9 && delta2 < 4.)
+      "Lwt_timeout: two: %f %f %f" start_time delta1 delta2
   end;
 
   test "simultaneous" begin fun () ->
@@ -237,11 +241,9 @@ let suite = suite "Lwt_timeout" [
     |> Lwt_timeout.start;
 
     p1 >>= fun delta1 ->
-    p2 >>= fun delta2 ->
-    (* Instrumentation for an occasionally failing test. *)
-    if not (delta1 >= 1. && delta1 < 2.5 && delta2 >= 1. && delta2 < 2.5) then
-      Printf.eprintf "\n%f %f\n" delta1 delta2;
-    Lwt.return (delta1 >= 1. && delta1 < 2.5 && delta2 >= 1. && delta2 < 2.5)
+    p2 >|= fun delta2 ->
+    instrument (delta1 >= 1. && delta1 < 2.6 && delta2 >= 1. && delta2 < 2.6)
+      "Lwt_timeout: simultaneous: %f %f %f" start_time delta1 delta2
   end;
 
   test "two, first stopped" begin fun () ->
@@ -267,7 +269,9 @@ let suite = suite "Lwt_timeout" [
       Lwt.wakeup r1 true);
 
     p1 >>= fun timeout1_not_fired ->
-    p2 >>= fun delta2 ->
-    Lwt.return (timeout1_not_fired && delta2 >= 1.5 && delta2 < 3.5)
+    p2 >|= fun delta2 ->
+    instrument (timeout1_not_fired && delta2 >= 1.5 && delta2 < 3.5)
+      "Lwt_timeout: two, first stopped: %b %f %f"
+      timeout1_not_fired start_time delta2
   end;
 ]

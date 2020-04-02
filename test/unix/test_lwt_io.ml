@@ -539,14 +539,14 @@ let suite = suite "lwt_io" [
     Lwt_bytes.of_string "\x80\x01\x81\x47"
     |> Lwt_io.(of_bytes ~mode:input)
     |> Lwt_io.LE.read_float32
-    >|= (=) 66051.
+    >|= fun n -> instrument (n = 66051.) "NumberIO.LE.read_float32: %f" n
   end;
 
   test "NumberIO.BE.read_float32" begin fun () ->
     Lwt_bytes.of_string "\x47\x81\x01\x80"
     |> Lwt_io.(of_bytes ~mode:input)
     |> Lwt_io.BE.read_float32
-    >|= (=) 66051.
+    >|= fun n -> instrument (n = 66051.) "NumberIO.BE.read_float32: %f" n
   end;
 
   test "NumberIO.LE.read_float64" begin fun () ->
@@ -624,15 +624,25 @@ let suite = suite "lwt_io" [
   test "NumberIO.LE.write_float32" begin fun () ->
     let buffer = Lwt_bytes.create 4 in
     Lwt_io.LE.write_float32 (Lwt_io.(of_bytes ~mode:output) buffer)
-      66051. >>= fun () ->
-    Lwt.return (Lwt_bytes.to_string buffer = "\x80\x01\x81\x47")
+      66051. >|= fun () ->
+    instrument (Lwt_bytes.to_string buffer = "\x80\x01\x81\x47")
+      "NumberIO.LE.write_float32: %02X %02X %02X %02X"
+      (Char.code (Lwt_bytes.get buffer 0))
+      (Char.code (Lwt_bytes.get buffer 1))
+      (Char.code (Lwt_bytes.get buffer 2))
+      (Char.code (Lwt_bytes.get buffer 3))
   end;
 
   test "NumberIO.BE.write_float32" begin fun () ->
     let buffer = Lwt_bytes.create 4 in
     Lwt_io.BE.write_float32 (Lwt_io.(of_bytes ~mode:output) buffer)
-      66051. >>= fun () ->
-    Lwt.return (Lwt_bytes.to_string buffer = "\x47\x81\x01\x80")
+      66051. >|= fun () ->
+    instrument (Lwt_bytes.to_string buffer = "\x47\x81\x01\x80")
+      "NumberIO.BE.write_float32: %02X %02X %02X %02X"
+      (Char.code (Lwt_bytes.get buffer 0))
+      (Char.code (Lwt_bytes.get buffer 1))
+      (Char.code (Lwt_bytes.get buffer 2))
+      (Char.code (Lwt_bytes.get buffer 3))
   end;
 
   test "NumberIO.LE.write_float64" begin fun () ->
