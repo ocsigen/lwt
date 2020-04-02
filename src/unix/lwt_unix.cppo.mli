@@ -1024,6 +1024,10 @@ type socket_float_option =
     Unix.socket_float_option =
   | SO_RCVTIMEO
   | SO_SNDTIMEO
+(** Note: these options are provided for the sake of completeness only. Lwt
+    places all sockets in non-blocking mode, for which these options are
+    meaningless. Use {!Lwt.pick} with {!Lwt_unix.sleep} or {!Lwt_unix.timeout}
+    for timeouts. *)
 
 val getsockopt : file_descr -> socket_bool_option -> bool
   (** Wrapper for [Unix.getsockopt] *)
