@@ -9,7 +9,7 @@ open Lwt.Infix
 let cmp_elapsed_time test_name start_time expected_time =
   let elapsed_time = Unix.gettimeofday () -. start_time in
   let diff = elapsed_time -. expected_time in
-  let result = diff >= 0. && diff <= 0.1 in
+  let result = diff >= 0. && diff <= 0.2 in
   instrument result "Lwt_unix sleep and timeout: %s: %f %f %f %b"
     test_name elapsed_time expected_time diff (Lwt_sys.have `libev)
 
