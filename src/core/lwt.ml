@@ -3116,6 +3116,11 @@ struct
 end
 include Infix
 
+module Syntax =
+struct
+  let (let*) = bind
+  let (and*) = both
+end
 
 
 module Lwt_result_type =

@@ -65,9 +65,21 @@ let bind_lwt_err e f =
       | Error e -> Lwt.bind (f e) fail
       | Ok x -> return x)
 
+let both a b =
+  Lwt.map
+    (function
+      | Ok x, Ok y -> Ok (x,y)
+      | Error e, _ | _, Error e -> Error e)
+    (Lwt.both a b)
+
 module Infix = struct
   let (>>=) = bind
   let (>|=) e f = map f e
+end
+
+module Syntax = struct
+  let (let*) = bind
+  let (and*) = both
 end
 
 include Infix
