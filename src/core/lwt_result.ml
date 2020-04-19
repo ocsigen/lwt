@@ -66,20 +66,23 @@ let bind_lwt_err e f =
       | Ok x -> return x)
 
 let both a b =
-  let s = ref [] in
-  let append e = s := e::(!s) in
-  let (a,b) = map_err append a,map_err append b in
-  let rec last = function
-    | [] -> assert false
-    | e::[] -> Error e
-    | _::es -> last es
+  let s = ref None in
+  let set_once e =
+    match !s with
+    | None -> s:= Some e
+    | Some _ -> ()
+  in
+  let (a,b) = map_err set_once a,map_err set_once b in
+  let some_assert = function
+    | None -> assert false
+    | Some e -> Error e
   in
   Lwt.map
     (function
       | Ok x, Ok y -> Ok (x,y)
       | Error _, Ok _
       | Ok _,Error _ 
-      | Error _, Error _ -> last !s)
+      | Error _, Error _ -> some_assert !s)
     (Lwt.both a b)
 
 module Infix = struct
