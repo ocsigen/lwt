@@ -1,13 +1,13 @@
 (* -*- tuareg -*- *)
 
 let preprocess =
-   let res =
-	   match Sys.getenv "BISECT_ENABLE" with
-     | "yes" -> "(preprocess (pps bisect_ppx))"
-     | _ -> ""
-     | exception _ -> ""
-	 in
-	 res^"\n(preprocess (future_syntax))"
+  let res =
+    match Sys.getenv "BISECT_ENABLE" with
+    | "yes" -> "(preprocess (pps bisect_ppx))"
+    | _ -> ""
+    | exception _ -> ""
+  in
+  res^"\n(preprocess (future_syntax))"
 
 let () = Jbuild_plugin.V1.send @@ {|
 
