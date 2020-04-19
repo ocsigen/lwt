@@ -46,7 +46,7 @@ val both : ('a,'e) t -> ('b,'e) t -> ('a * 'b,'e) t
     [p_1] and [p_2] become {{: #TYPEt} {e resolved}}.
     If only [p_1] is [Error e], the promise returns [Error e],
     If only [p_2] is [Error e], the promise returns [Error e],
-    If both [p_1] and [p_2] are errors, the error corresponding to [p_1] is chosen arbitrarily
+    If both [p_1] and [p_2] are errors, the error corresponding to the promise that resolved first is returned.
     *)
 
 

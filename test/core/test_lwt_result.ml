@@ -7,6 +7,9 @@ open Test
 
 exception Dummy_error
 
+let state_is =
+  Lwt.debug_state_is
+
 let suite =
   suite "lwt_result" [
     test "maps"
@@ -127,5 +130,59 @@ let suite =
          let x = Lwt_result.fail 0 in
          let f y = Result.Ok (y + 1) in
          Lwt.return (Lwt_result.bind_result x f = Lwt_result.fail 0)
+      );
+    
+    test "both ok"
+      (fun () ->
+         let p =
+           Lwt_result.both
+             (Lwt_result.return 0)
+             (Lwt_result.return 1)
+         in
+         state_is (Lwt.Return (Result.Ok (0,1))) p
+      );
+
+    test "both only fst error"
+      (fun () ->
+         let p =
+           Lwt_result.both
+             (Lwt_result.fail 0)
+             (Lwt_result.return 1)
+         in
+         state_is (Lwt.Return (Result.Error 0)) p
+      );
+
+    test "both only snd error"
+      (fun () ->
+         let p =
+           Lwt_result.both
+             (Lwt_result.return 0)
+             (Lwt_result.fail 1)
+         in
+         state_is (Lwt.Return (Result.Error 1)) p
+      );
+
+    test "both error, fst"
+      (fun () ->
+         let p2, r2 = Lwt.wait () in
+         let p =
+           Lwt_result.both
+             (Lwt_result.fail 0)
+             p2
+         in
+         Lwt.wakeup_later r2 (Result.Error 1);
+         Lwt.bind p (fun x -> Lwt.return (x = Result.Error 0))
+      );
+
+    test "both error, snd"
+      (fun () ->
+         let p1, r1 = Lwt.wait () in
+         let p =
+           Lwt_result.both
+             p1
+             (Lwt_result.fail 1)
+         in
+         Lwt.wakeup_later r1 (Result.Error 0);
+         Lwt.bind p (fun x -> Lwt.return (x = Result.Error 1))
       );
   ]
