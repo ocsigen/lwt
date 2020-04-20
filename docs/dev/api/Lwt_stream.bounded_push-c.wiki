@@ -10,7 +10,7 @@
 
       ~It raises <<span class="odocwiki_inlinecode"|~Invalid~_argument>> if <<span class="odocwiki_inlinecode"|size ~< ~0>>~.
 >>
-<<pre class="ocsforge_color odocwiki_code"|<<span id="METHODpush"|<<span class="ocsforge_color_keyword"|method>> <<span class="odocwiki_name"|push>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<span class="ocsforge_color_delimiter"| -> >> unit <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|~Pushes a new element to the stream~. ~If the stream is full then
+<<pre class="ocsforge_color odocwiki_code"|<<span id="METHODpush"|<<span class="ocsforge_color_keyword"|method>> <<span class="odocwiki_name"|push>>>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|'a <<span class="ocsforge_color_delimiter"| -> >> unit <<span class="ocsforge_color_uid"|Lwt>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>>>>>><<div class="odocwiki_info"|~Pushes a new element to the stream~. ~If the stream is full then
       it will block until one element is consumed~. ~If another thread
       is already blocked on <<a_api | method Lwt_stream.bounded_push.push >>~, it raises <<a_api | exception Lwt_stream.Full >>~.
 >>

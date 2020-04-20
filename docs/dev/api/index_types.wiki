@@ -85,10 +85,6 @@
 |
 |@@ @style="tet-align: left;"@@\\K|
 |@@class="odocwiki_index"@ @@<<a_api text="key"| type Lwt_throttle.S.key >> ~[<<a_api | module Lwt_throttle.S >>~]||
-|@@class="odocwiki_index"@ @@<<a_api text="key"| type Lwt.key >> ~[<<a_api | module Lwt >>~]|<<div class="odocwiki_info"|~Keys into the implicit callback argument map~, for implicit arguments of type
-    <<span class="odocwiki_inlinecode"|~'a option>>~.
->>
-|
 |@@class="odocwiki_index"@ @@<<a_api text="kind"| type Lwt_main.Hooks.kind >> ~[<<a_api | module Lwt_main.Hooks >>~]|<<div class="odocwiki_info"|~Hooks are functions of either type <<span class="odocwiki_inlinecode"|unit ~-~> unit>> or <<span class="odocwiki_inlinecode"|unit ~-~> unit ~Lwt~.t>>~;
       this type constructor is used only to express both possibilities in one
       signature~.
@@ -126,10 +122,6 @@
 |@@class="odocwiki_index"@ @@<<a_api text="resource_usage"| type Lwt_unix.resource_usage >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~Resource usages
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="result"| type Lwt.result >> ~[<<a_api | module Lwt >>~]|<<div class="odocwiki_info"|~Representation of the content of a resolved promise of type
-    <<span class="odocwiki_inlinecode"|~'a >><<a_api | type Lwt.t >>~.
->>
-|
 |@@class="odocwiki_index"@ @@<<a_api text="result"| type Lwt_stream.result >> ~[<<a_api | module Lwt_stream >>~]||
 |@@ @style="tet-align: left;"@@\\S|
 |@@class="odocwiki_index"@ @@<<a_api text="seek_command"| type Lwt_unix.seek_command >> ~[<<a_api | module Lwt_unix >>~]||
@@ -158,7 +150,6 @@
 |@@class="odocwiki_index"@ @@<<a_api text="state"| type Lwt_unix.state >> ~[<<a_api | module Lwt_unix >>~]|<<div class="odocwiki_info"|~State of a **file descriptor**
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="state"| type Lwt.state >> ~[<<a_api | module Lwt >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="stats"| type Lwt_unix.LargeFile.stats >> ~[<<a_api | module Lwt_unix.LargeFile >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="stats"| type Lwt_unix.stats >> ~[<<a_api | module Lwt_unix >>~]||
 |@@ @style="tet-align: left;"@@\\T|
@@ -193,18 +184,10 @@
 |@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_mutex.t >> ~[<<a_api | module Lwt_mutex >>~]|<<div class="odocwiki_info"|~Type of ~Lwt mutexes
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt.t >> ~[<<a_api | module Lwt >>~]|<<div class="odocwiki_info"|~Promises for values of type <<span class="odocwiki_inlinecode"|~'a>>~.
->>
-|
 |@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_stream.t >> ~[<<a_api | module Lwt_stream >>~]|<<div class="odocwiki_info"|~A stream holding values of type <<span class="odocwiki_inlinecode"|~'a>>~.
 >>
 |
-|@@class="odocwiki_index"@ @@<<a_api text="t"| type Lwt_result.t >> ~[<<a_api | module Lwt_result >>~]||
 |@@class="odocwiki_index"@ @@<<a_api text="terminal_io"| type Lwt_unix.terminal_io >> ~[<<a_api | module Lwt_unix >>~]||
-|@@ @style="tet-align: left;"@@\\U|
-|@@class="odocwiki_index"@ @@<<a_api text="u"| type Lwt.u >> ~[<<a_api | module Lwt >>~]|<<div class="odocwiki_info"|~Resolvers for promises of type <<span class="odocwiki_inlinecode"|~'a >><<a_api | type Lwt.t >>~.
->>
-|
 |@@ @style="tet-align: left;"@@\\W|
 |@@class="odocwiki_index"@ @@<<a_api text="wait_flag"| type Lwt_unix.wait_flag >> ~[<<a_api | module Lwt_unix >>~]||
 \\

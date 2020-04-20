@@ -9,19 +9,15 @@
 
 
 
-~The //core// library ~(//lwt// package~) contains the <<a_api | module Lwt >> module~, which defines
+~The //core// library ~(//lwt// package~) contains the <<span class="odocwiki_inlinecode"|~Lwt>> module~, which defines
 cooperative threads with all the primitives to manipulate them~. ~It
 also provides several general purpose modules~, which do not depend on
 any external package~.
 
 
 
-|<<a_api | module Lwt >>|<<div class="odocwiki_info"|~Asynchronous programming with promises~.
->>
-|
-|<<a_api | module Lwt_result >>|<<div class="odocwiki_info"|~Explicit error handling
->>
-|
+|Lwt||
+|Lwt_result||
 |<<a_api | module Lwt_condition >>|<<div class="odocwiki_info"|~Conditions
 >>
 |

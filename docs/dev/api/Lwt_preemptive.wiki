@@ -8,7 +8,7 @@
     implementation~.
 
 ----
-<<pre id="VALdetach" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|detach>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|detach f x>> runs the computation <<span class="odocwiki_inlinecode"|f x>> in a separate preemptive thread~.
+<<pre id="VALdetach" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|detach>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>'a <<span class="ocsforge_color_delimiter"| -> >> 'b<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a <<span class="ocsforge_color_delimiter"| -> >> 'b <<span class="ocsforge_color_uid"|Lwt>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|detach f x>> runs the computation <<span class="odocwiki_inlinecode"|f x>> in a separate preemptive thread~.
       <<span class="odocwiki_inlinecode"|detach>> evaluates to an ~Lwt promise~, which is pending until the
       preemptive thread completes~.
 
@@ -18,20 +18,20 @@
       higher limit~, call <<a_api | val Lwt_preemptive.init >> or <<a_api | val Lwt_preemptive.set_bounds >> directly~.
 
 
-      ~Note that ~Lwt thread~-local storage ~(i~.e~.~, <<a_api | val Lwt.with_value >>~) cannot be
+      ~Note that ~Lwt thread~-local storage ~(i~.e~.~, <<span class="odocwiki_inlinecode"|~Lwt~.with~_value>>~) cannot be
       safely used from within <<span class="odocwiki_inlinecode"|f>>~. ~The same goes for most of the rest of ~Lwt~. ~If
       you need to run an ~Lwt thread in <<span class="odocwiki_inlinecode"|f>>~, use <<a_api | val Lwt_preemptive.run_in_main >>~.
 >>
-<<pre id="VALrun_in_main" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|run~_in~_main>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<a_api text="Lwt.t" | type Lwt.t >><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|run~_in~_main f>> can be called from a detached computation to execute
+<<pre id="VALrun_in_main" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|run~_in~_main>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<span class="ocsforge_color_delimiter"| ( >>unit <<span class="ocsforge_color_delimiter"| -> >> 'a <<span class="ocsforge_color_uid"|Lwt>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>><<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> 'a>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|run~_in~_main f>> can be called from a detached computation to execute
       <<span class="odocwiki_inlinecode"|f ~(~)>> in the main preemptive thread~, i~.e~. the one executing
       <<a_api | val Lwt_main.run >>~. <<span class="odocwiki_inlinecode"|run~_in~_main f>> blocks until <<span class="odocwiki_inlinecode"|f ~(~)>> completes~, then
       returns its result~. ~If <<span class="odocwiki_inlinecode"|f ~(~)>> raises an exception~, <<span class="odocwiki_inlinecode"|run~_in~_main f>> raises
       the same exception~.
 
 
-      <<a_api | val Lwt.with_value >> may be used inside <<span class="odocwiki_inlinecode"|f ~(~)>>~. <<a_api | val Lwt.get >> can correctly
+      <<span class="odocwiki_inlinecode"|~Lwt~.with~_value>> may be used inside <<span class="odocwiki_inlinecode"|f ~(~)>>~. <<span class="odocwiki_inlinecode"|~Lwt~.get>> can correctly
       retrieve values set this way inside <<span class="odocwiki_inlinecode"|f ~(~)>>~, but not values set using
-      <<a_api | val Lwt.with_value >> outside <<span class="odocwiki_inlinecode"|f ~(~)>>~.
+      <<span class="odocwiki_inlinecode"|~Lwt~.with~_value>> outside <<span class="odocwiki_inlinecode"|f ~(~)>>~.
 >>
 <<pre id="VALinit" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|init>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|int <<span class="ocsforge_color_delimiter"| -> >> int <<span class="ocsforge_color_delimiter"| -> >> <<span class="ocsforge_color_delimiter"| ( >>string <<span class="ocsforge_color_delimiter"| -> >> unit<<span class="ocsforge_color_delimiter"| ) >> <<span class="ocsforge_color_delimiter"| -> >> unit>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|init min max log>> initialises this module~. i~.e~. it launches the
       minimum number of preemptive threads and starts the **      dispatcher**~.

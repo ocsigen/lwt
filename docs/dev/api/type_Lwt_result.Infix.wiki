@@ -1,6 +1,0 @@
-<<code language="ocaml" | sig
-  val ( >|= ) : ('a, 'e) Lwt_result.t -> ('a -> 'b) -> ('b, 'e) Lwt_result.t
-  val ( >>= ) :
-    ('a, 'e) Lwt_result.t ->
-    ('a -> ('b, 'e) Lwt_result.t) -> ('b, 'e) Lwt_result.t
-end >>

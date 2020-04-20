@@ -36,6 +36,6 @@
 
 
     ~The default behavior of <<span class="odocwiki_inlinecode"|f exn>>~, set by <<span class="odocwiki_inlinecode"|~Lwt~_timeout>> on program startup~, is
-    to pass <<span class="odocwiki_inlinecode"|exn>> to <<span class="odocwiki_inlinecode"|!>><<a_api | val Lwt.async_exception_hook >>~. ~The default behavior of
+    to pass <<span class="odocwiki_inlinecode"|exn>> to <<span class="odocwiki_inlinecode"|!>><<span class="odocwiki_inlinecode"|~Lwt~.async~_exception~_hook>>~. ~The default behavior of
     //that// is to terminate the process~.
 >>

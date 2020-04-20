@@ -8,7 +8,7 @@
         channels~.>>
 <<div class="odocwiki_param_info"|<<span class="code"|n>> : ~Initial size of the internal channel hash table~. ~This should be
         approximately the number of different channels that will be used~.>>
-<<pre id="VALwait" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wait>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="t" | type Lwt_throttle.S.t >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="key" | type Lwt_throttle.S.key >> <<span class="ocsforge_color_delimiter"| -> >> bool <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~_throttle~.wait limiter channel>> returns a new promise associated with
+<<pre id="VALwait" class="ocsforge_color odocwiki_code"|<<span class="ocsforge_color_keyword"|val>> <<span class="odocwiki_name"|wait>> <<span class="ocsforge_color_delimiter"|~:>> <<span class="odocwiki_type"|<<a_api text="t" | type Lwt_throttle.S.t >> <<span class="ocsforge_color_delimiter"| -> >> <<a_api text="key" | type Lwt_throttle.S.key >> <<span class="ocsforge_color_delimiter"| -> >> bool <<span class="ocsforge_color_uid"|Lwt>><<span class="ocsforge_color_delimiter"| . >><<span class="ocsforge_color_lid"|t>>>>>><<div class="odocwiki_info"|<<span class="odocwiki_inlinecode"|~Lwt~_throttle~.wait limiter channel>> returns a new promise associated with
       the given rate limiter and channel~.
 
 

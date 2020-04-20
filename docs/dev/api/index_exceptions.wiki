@@ -1,9 +1,6 @@
 =Index of exceptions=
 
 |@@ @style="tet-align: left;"@@\\C|
-|@@class="odocwiki_index"@ @@<<a_api text="Canceled"| exception Lwt.Canceled >> ~[<<a_api | module Lwt >>~]|<<div class="odocwiki_info"|~Canceled promises are those rejected with this exception~, <<span class="odocwiki_inlinecode"|~Lwt~.~Canceled>>~.
->>
-|
 |@@class="odocwiki_index"@ @@<<a_api text="Channel_closed"| exception Lwt_io.Channel_closed >> ~[<<a_api | module Lwt_io >>~]|<<div class="odocwiki_info"|~Exception raised when a channel is closed~.
 >>
 |
