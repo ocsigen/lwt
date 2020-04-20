@@ -65,9 +65,34 @@ let bind_lwt_err e f =
       | Error e -> Lwt.bind (f e) fail
       | Ok x -> return x)
 
+let both a b =
+  let s = ref None in
+  let set_once e =
+    match !s with
+    | None -> s:= Some e
+    | Some _ -> ()
+  in
+  let (a,b) = map_err set_once a,map_err set_once b in
+  let some_assert = function
+    | None -> assert false
+    | Some e -> Error e
+  in
+  Lwt.map
+    (function
+      | Ok x, Ok y -> Ok (x,y)
+      | Error _, Ok _
+      | Ok _,Error _ 
+      | Error _, Error _ -> some_assert !s)
+    (Lwt.both a b)
+
 module Infix = struct
   let (>>=) = bind
   let (>|=) e f = map f e
+end
+
+module Syntax = struct
+  let (let*) = bind
+  let (and*) = both
 end
 
 include Infix

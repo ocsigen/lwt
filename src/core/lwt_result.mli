@@ -41,9 +41,23 @@ val bind_lwt_err : ('a,'e1) t -> ('e1 -> 'e2 Lwt.t) -> ('a,'e2) t
 
 val bind_result : ('a,'e) t -> ('a -> ('b,'e) Result.result) -> ('b,'e) t
 
+val both : ('a,'e) t -> ('b,'e) t -> ('a * 'b,'e) t
+(** [Lwt.both p_1 p_2] returns a promise that is pending until {e both} promises
+    [p_1] and [p_2] become {{: #TYPEt} {e resolved}}.
+    If only [p_1] is [Error e], the promise returns [Error e],
+    If only [p_2] is [Error e], the promise returns [Error e],
+    If both [p_1] and [p_2] are errors, the error corresponding to the promise that resolved first is returned.
+    *)
+
+
 module Infix : sig
   val (>|=) : ('a,'e) t -> ('a -> 'b) -> ('b,'e) t
   val (>>=) : ('a,'e) t -> ('a -> ('b,'e) t) -> ('b,'e) t
+end
+
+module Syntax : sig
+  val (let*) : ('a,'e) t -> ('a -> ('b,'e) t) -> ('b,'e) t
+  val (and*) : ('a,'e) t -> ('b,'e) t -> ('a * 'b,'e) t
 end
 
 include module type of Infix
