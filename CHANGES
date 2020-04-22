@@ -1,3 +1,9 @@
+===== 5.3.0 (2020-04-22) =====
+
+  * Add let* and and* in Lwt.Syntax and Lwt_result.Syntax (#775, Rahul Kumar).
+  * Add Lwt_result.both (#775, Rahul Kumar).
+  * Always use libev if detected (#601).
+
 ===== 5.2.0 (2020-03-09) =====
 
   * Add Lwt_unix.pread, Lwt_unix.pwrite, and Lwt_unix.pwrite_string (#768,
