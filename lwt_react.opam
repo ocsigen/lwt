@@ -17,7 +17,7 @@ maintainer: [
 dev-repo: "git+https://github.com/ocsigen/lwt.git"
 
 depends: [
-  "dune" {>= "1.1.0"}
+  "dune" {>= "1.8.0"}
   "lwt" {>= "3.0.0"}
   "ocaml"
   "react" {>= "1.0.0"}
