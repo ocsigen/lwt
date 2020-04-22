@@ -131,7 +131,7 @@ let suite =
          let f y = Result.Ok (y + 1) in
          Lwt.return (Lwt_result.bind_result x f = Lwt_result.fail 0)
       );
-    
+
     test "both ok"
       (fun () ->
          let p =
@@ -184,5 +184,35 @@ let suite =
          in
          Lwt.wakeup_later r1 (Result.Error 0);
          Lwt.bind p (fun x -> Lwt.return (x = Result.Error 1))
+      );
+
+    test "let*"
+      (fun () ->
+        let p1, r1 = Lwt.wait () in
+        let p2, r2 = Lwt.wait () in
+        let p' =
+          let open Lwt_result.Syntax in
+          let* s1 = p1 in
+          let* s2 = p2 in
+          Lwt.return (Result.Ok (s1 ^ s2))
+        in
+        Lwt.wakeup r1 (Result.Ok "foo");
+        Lwt.wakeup r2 (Result.Ok "bar");
+        state_is (Lwt.Return (Result.Ok "foobar")) p'
+      );
+
+    test "and*"
+      (fun () ->
+        let p1, r1 = Lwt.wait () in
+        let p2, r2 = Lwt.wait () in
+        let p' =
+          let open Lwt_result.Syntax in
+          let* s1 = p1
+          and* s2 = p2 in
+          Lwt.return (Result.Ok (s1 ^ s2))
+        in
+        Lwt.wakeup r1 (Result.Ok "foo");
+        Lwt.wakeup r2 (Result.Ok "bar");
+        state_is (Lwt.Return (Result.Ok "foobar")) p'
       );
   ]

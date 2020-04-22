@@ -3903,6 +3903,39 @@ let suites = suites @ [ppx_let_tests]
 
 
 
+let let_syntax_tests = suite "let syntax" [
+  test "let*" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p' =
+      let open Lwt.Syntax in
+      let* s1 = p1 in
+      let* s2 = p2 in
+      Lwt.return (s1 ^ s2)
+    in
+    Lwt.wakeup r1 "foo";
+    Lwt.wakeup r2 "bar";
+    state_is (Lwt.Return "foobar") p'
+  end;
+
+  test "and*" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p' =
+      let open Lwt.Syntax in
+      let* s1 = p1
+      and* s2 = p2 in
+      Lwt.return (s1 ^ s2)
+    in
+    Lwt.wakeup r1 "foo";
+    Lwt.wakeup r2 "bar";
+    state_is (Lwt.Return "foobar") p'
+  end;
+]
+let suites = suites @ [let_syntax_tests]
+
+
+
 (* Tests for [Lwt.add_task_l] and [Lwt.add_task_r]. *)
 
 let lwt_sequence_contains sequence list =

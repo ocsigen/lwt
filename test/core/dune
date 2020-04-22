@@ -1,6 +1,7 @@
 (executable
  (name main)
  (libraries lwttester)
+ (preprocess (future_syntax))
  (flags (:standard -w +A-40-42)))
 
 (alias
