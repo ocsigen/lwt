@@ -43,11 +43,11 @@ val bind_result : ('a,'e) t -> ('a -> ('b,'e) Result.result) -> ('b,'e) t
 
 val both : ('a,'e) t -> ('b,'e) t -> ('a * 'b,'e) t
 (** [Lwt.both p_1 p_2] returns a promise that is pending until {e both} promises
-    [p_1] and [p_2] become {{: #TYPEt} {e resolved}}.
-    If only [p_1] is [Error e], the promise returns [Error e],
-    If only [p_2] is [Error e], the promise returns [Error e],
-    If both [p_1] and [p_2] are errors, the error corresponding to the promise that resolved first is returned.
-    *)
+    [p_1] and [p_2] become {e resolved}.
+    If only [p_1] is [Error e], the promise is resolved with [Error e],
+    If only [p_2] is [Error e], the promise is resolved with [Error e],
+    If both [p_1] and [p_2] resolve with [Error _], the promise is resolved with
+    the error that occurred first. *)
 
 
 module Infix : sig
