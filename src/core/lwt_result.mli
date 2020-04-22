@@ -58,6 +58,9 @@ end
 module Syntax : sig
   val (let*) : ('a,'e) t -> ('a -> ('b,'e) t) -> ('b,'e) t
   val (and*) : ('a,'e) t -> ('b,'e) t -> ('a * 'b,'e) t
+
+  val (let+) : ('a,'e) t -> ('a -> 'b) -> ('b, 'e) t
+  val (and+) : ('a,'e) t -> ('b,'e) t -> ('a * 'b,'e) t
 end
 
 include module type of Infix

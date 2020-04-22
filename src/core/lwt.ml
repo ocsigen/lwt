@@ -3120,6 +3120,9 @@ module Syntax =
 struct
   let (let*) = bind
   let (and*) = both
+
+  let (let+) x f = map f x
+  let (and+) = both
 end
 
 

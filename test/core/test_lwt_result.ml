@@ -215,4 +215,19 @@ let suite =
         Lwt.wakeup r2 (Result.Ok "bar");
         state_is (Lwt.Return (Result.Ok "foobar")) p'
       );
+
+    test "let+/and+"
+      (fun () ->
+        let p1, r1 = Lwt.wait () in
+        let p2, r2 = Lwt.wait () in
+        let p' =
+          let open Lwt_result.Syntax in
+          let+ s1 = p1
+          and+ s2 = p2 in
+          s1 ^ s2
+        in
+        Lwt.wakeup r1 (Result.Ok "foo");
+        Lwt.wakeup r2 (Result.Ok "bar");
+        state_is (Lwt.Return (Result.Ok "foobar")) p'
+      );
   ]
