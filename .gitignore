@@ -31,3 +31,9 @@ lib/
 *.cm*
 *.o
 a.out
+
+# Darwin
+*~
+
+# Nix
+result
