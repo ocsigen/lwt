@@ -14,7 +14,10 @@ let preprocess =
     | exception _ -> ""
   in
   let future_syntax = "(preprocess (future_syntax))" in
-  if older && bisect = "" then future_syntax else bisect
+  if older then
+    future_syntax
+  else
+    bisect
 
 let () = Jbuild_plugin.V1.send @@ {|
 
