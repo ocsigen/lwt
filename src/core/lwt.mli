@@ -1400,7 +1400,6 @@ end
 (** {3 Let syntax} *)
 module Syntax :
 sig
-  (**)
 
   (** {1 Monadic syntax} *)
 
