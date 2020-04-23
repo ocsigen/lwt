@@ -49,7 +49,7 @@ let () =
     Lwt.return ()
   end
 
-(* ocamlfind opt -linkpkg -package lwt_ppx,lwt.unix echo.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix echo.ml && ./a.out *)
 ]}
 
     This is all explained in the next sections:
@@ -96,8 +96,7 @@ let () =
 
 {[
 let () =
-  let line : string =
-    Pervasives.read_line () in
+  let line : string = read_line () in
   print_endline "Now unblocked!";
   ignore line
 
@@ -113,7 +112,7 @@ let () =
   print_endline "Execution just continues...";
   ignore line_promise
 
-(* ocamlfind opt -linkpkg -package lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
 ]}
 
     Indeed, this program is a little {e too} asynchronous – it exits right away!
@@ -130,7 +129,7 @@ let () =
     Lwt_main.run line_promise in
   ignore line
 
-(* ocamlfind opt -linkpkg -package lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
 ]}
 
     {!Lwt_main.run} should only be called once, on one promise, at the top level
@@ -148,7 +147,7 @@ let () =
 
   Lwt_main.run p
 
-(* ocamlfind opt -linkpkg -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
 ]}
 
     The way that works is everything in scope after the “[in]” in
@@ -170,7 +169,7 @@ let () =
 
   Lwt_main.run p
 
-(* ocamlfind opt -linkpkg -package lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
 ]}
 
     But, as you can see, this is verbose, and the indentation gets a bit crazy.
@@ -195,7 +194,7 @@ let () =
     Lwt_io.printl "Only 2 more seconds passed"
   end
 
-(* ocamlfind opt -linkpkg -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
 ]}
 
     This program takes about five seconds to run. We are still new to [let%lwt],
@@ -218,7 +217,7 @@ let () =
           Lwt_io.printl "Only 2 more seconds passed")))
   end
 
-(* ocamlfind opt -linkpkg -package lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
 ]}
 
     And that's it! Concurrency in Lwt is simply a matter of whether you start an
@@ -264,7 +263,7 @@ let () =
 
   Lwt_main.run p
 
-(* ocamlfind opt -linkpkg -package lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
 ]}
 
     {!Lwt_main.run} is your program's main I/O loop. You pass it a single
@@ -418,9 +417,9 @@ val wakeup_later : 'a u -> 'a -> unit
     triggers callbacks attached to the promise.
 
     If the promise is not pending, [Lwt.wakeup_later] raises
-    {{: https://caml.inria.fr/pub/docs/manual-ocaml/libref/Pervasives.html#VALinvalid_arg}
-    [Pervasives.Invalid_argument]}, unless the promise is {{: #VALcancel}
-    canceled}. If the promise is canceled, [Lwt.wakeup_later] has no effect.
+    {{: https://caml.inria.fr/pub/docs/manual-ocaml/libref/Stdlib.html#VALinvalid_arg}
+    [Invalid_argument]}, unless the promise is {{: #VALcancel} canceled}. If the
+    promise is canceled, [Lwt.wakeup_later] has no effect.
 
     If your program has multiple threads, it is important to make sure that
     [Lwt.wakeup_later] (and any similar function) is only called from the main
@@ -497,7 +496,7 @@ let () =
   in
   Lwt_main.run p_3
 
-(* ocamlfind opt -linkpkg -package lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
 ]}
 
     Rejection of [p_1] and [p_2], and raising an exception in [f], are all
@@ -535,7 +534,7 @@ let () =
         Lwt_io.printf "One second ago, you entered %s\n" line))
   end
 
-(* ocamlfind opt -linkpkg -package lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
 ]}
 
     The recommended way to write [Lwt.bind] is using the [let%lwt] syntactic
@@ -549,7 +548,7 @@ let () =
     Lwt_io.printf "One second ago, you entered %s\n" line
   end
 
-(* ocamlfind opt -linkpkg -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
 ]}
 
     This uses the Lwt {{: Ppx_lwt.html} PPX} (preprocessor). Note that we had to
@@ -569,7 +568,7 @@ let () =
     Lwt_io.printf "One second ago, you entered %s\n" line
   end
 
-(* ocamlfind opt -linkpkg -package lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
 ]}
 
     The [>>=] operator comes from the module {!Lwt.Infix}, which is why we
@@ -590,13 +589,13 @@ val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
 let () =
   Lwt_main.run begin
     Lwt.catch
-      (fun () -> Lwt.fail Pervasives.Exit)
+      (fun () -> Lwt.fail Exit)
       (function
-      | Pervasives.Exit -> Lwt_io.printl "Got Pervasives.Exit"
+      | Exit -> Lwt_io.printl "Got Stdlib.Exit"
       | exn -> Lwt.fail exn)
   end
 
-(* ocamlfind opt -linkpkg -package lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
 ]}
 
     Despite the above code, the recommended way to write [Lwt.catch] is using
@@ -606,11 +605,11 @@ let () =
 {[
 let () =
   Lwt_main.run begin
-    try%lwt Lwt.fail Pervasives.Exit
-    with Pervasives.Exit -> Lwt_io.printl "Got Pervasives.Exit"
+    try%lwt Lwt.fail Exit
+    with Exit -> Lwt_io.printl "Got Stdlb.Exit"
   end
 
-(* ocamlfind opt -linkpkg -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
 ]}
 
     A particular advantage of the PPX syntax is that it is not necessary to
@@ -657,15 +656,15 @@ let () =
 {[
 let () =
   Lwt_main.run begin
-    try Lwt.fail Pervasives.Exit
-    with Pervasives.Exit -> Lwt_io.printl "Got Pervasives.Exit"
+    try Lwt.fail Exit
+    with Exit -> Lwt_io.printl "Got Stdlib.Exit"
   end
 
-(* ocamlfind opt -linkpkg -package lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
 ]}
 
     This does {e not} handle the exception and does not print the message.
-    Instead, it terminates the program with an unhandled [Pervasives.Exit].
+    Instead, it terminates the program with an unhandled [Stdlib.Exit].
 
     This is because the call to {!Lwt.fail} creates a rejected promise. The
     promise is still an ordinary OCaml value, though, and not a {e raised}
@@ -698,7 +697,7 @@ let () =
         Lwt_io.close file)
   end
 
-(* ocamlfind opt -linkpkg -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
 ]}
 
     As with {!Lwt.bind} and {!Lwt.catch}, there is a syntactic sugar for
@@ -716,7 +715,7 @@ let () =
       Lwt_io.close file]
   end
 
-(* ocamlfind opt -linkpkg -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
 ]}
 
     Also as with {!Lwt.bind} and {!Lwt.catch}, three promises are involved:
@@ -829,7 +828,7 @@ let () =
     Lwt_io.printl line
   end
 
-(* ocamlfind opt -linkpkg -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
 ]}
 
     If one of the I/O operations in [show_nag] were to fail, the promise
@@ -839,7 +838,7 @@ let () =
     have a harder time finding out about the bug.
 
     A safer version differs only in using [Lwt.async] instead of
-    [Pervasives.ignore]:
+    [Stdlib.ignore]:
 
 {[
 let () =
@@ -855,7 +854,7 @@ let () =
     Lwt_io.printl line
   end
 
-(* ocamlfind opt -linkpkg -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
 ]}
 
     In this version, if I/O in [show_nag] fails with an exception, the exception
@@ -881,7 +880,7 @@ val async_exception_hook : (exn -> unit) ref
     top level of the program:
 
 {[
-let () = Lwt.async (fun () -> Lwt.fail Pervasives.Exit)
+let () = Lwt.async (fun () -> Lwt.fail Exit)
 
 (* ocamlfind opt -linkpkg -package lwt code.ml && ./a.out *)
 ]}
@@ -889,7 +888,7 @@ let () = Lwt.async (fun () -> Lwt.fail Pervasives.Exit)
     produces in the output:
 
 {v
-Fatal error: exception Pervasives.Exit
+Fatal error: exception Stdlib.Exit
 v}
 
     If you are writing an application, you are welcome to reassign the
@@ -924,7 +923,7 @@ let () =
   let p_3 = Lwt.both p_1 p_2 in
   Lwt_main.run p_3
 
-(* ocamlfind opt -linkpkg -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
 ]}
 
     If both [p_1] and [p_2] become fulfilled, [Lwt.both p_1 p_2] is also
@@ -955,7 +954,7 @@ let () =
   let p_3 = Lwt.join [p_1; p_2] in
   Lwt_main.run p_3
 
-(* ocamlfind opt -linkpkg -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
 ]}
 
     If all of the promises in [ps] become fulfilled, [Lwt.join ps] is also
@@ -1001,7 +1000,7 @@ let () =
 
   Lwt_main.run (Lwt.pick [echo; timeout])
 
-(* ocamlfind opt -linkpkg -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
 ]}
 
     If the first promise in [ps] to become resolved is fulfilled, the result
@@ -1010,7 +1009,7 @@ let () =
     same exception.
 
     If [ps] has no promises (if it is the empty list), [Lwt.pick ps] raises
-    [Pervasives.Invalid_argument _].
+    [Stdlib.Invalid_argument _].
 
     It's possible for multiple promises in [ps] to become resolved
     simultaneously. This happens most often when some promises [ps] are already
@@ -1112,7 +1111,7 @@ let () =
 
   Lwt_main.run p
 
-(* ocamlfind opt -linkpkg -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
 ]}
 
     At the time [Lwt.cancel] is called, [p] “depends” on the [sleep] promise
@@ -1198,7 +1197,7 @@ val map : ('a -> 'b) -> 'a t -> 'b t
     to return a promise.
 
     This function is more convenient that {!Lwt.bind} when [f] inherently does
-    not return a promise. An example is [Pervasives.int_of_string]:
+    not return a promise. An example is [Stdlib.int_of_string]:
 
 {[
 let read_int : unit -> int Lwt.t = fun () ->
@@ -1212,7 +1211,7 @@ let () =
     Lwt_io.printf "%i\n" number
   end
 
-(* ocamlfind opt -linkpkg -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
 ]}
 
     By comparison, the {!Lwt.bind} version is more awkward:
@@ -1320,7 +1319,7 @@ let () =
   Lwt_main.run
     (Lwt_io.(read_line stdin) >>= Lwt_io.printl)
 
-(* ocamlfind opt -linkpkg -package lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
 ]}
 
       It is recommended to use the PPX [let%lwt] syntax instead. This operator
@@ -1338,7 +1337,7 @@ let () =
   Lwt_main.run
     (Lwt_io.(read_line stdin) >|= ignore)
 
-(* ocamlfind opt -linkpkg -package lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
 ]} *)
 
   val (<&>) : unit t -> unit t -> unit t
@@ -1482,25 +1481,25 @@ type +'a Lwt.result =
     type ['a], or rejected with an exception.
 
     This corresponds to the cases of a
-    [('a, exn)]{{: https://caml.inria.fr/pub/docs/manual-ocaml/libref/Pervasives.html#TYPEresult}[Pervasives.result]}:
+    [('a, exn)]{{: https://caml.inria.fr/pub/docs/manual-ocaml/libref/Stdlib.html#TYPEresult}[Stdlib.result]}:
     fulfilled corresponds to [Ok of 'a], and rejected corresponds to
     [Error of exn].
 
     It's important to note that this type constructor, [Lwt.result], is
-    different from [Pervasives.result]. It is a specialization of
-    [Pervasives.result] so that the [Error] constructor always carries [exn].
+    different from [Stdlib.result]. It is a specialization of [Stdlib.result] so
+    that the [Error] constructor always carries [exn].
 
     For Lwt programming with [result] where the [Error] constructor can carry
     arbitrary error types, see module {!Lwt_result}.
 
-    The naming conflict between [Lwt.result] and [Pervasives.result] is an
-    unfortunate historical accident. [Pervasives.result] did not exist when
+    The naming conflict between [Lwt.result] and [Stdlib.result] is an
+    unfortunate historical accident. [Stdlib.result] did not exist when
     [Lwt.result] was created.
 
-    The type [Result.result] is equivalent to [Pervasives.result] starting from
+    The type [Result.result] is equivalent to [Stdlib.result] starting from
     OCaml 4.03. If you need compatibility with OCaml 4.02, refer to
-    [Pervasives.result] as [Result.result], and prefix the constructor names
-    with [Result], as shown in the second example. *)
+    [Stdlib.result] as [Result.result], and prefix the constructor names with
+    [Result], as shown in the second example. *)
 
 val of_result : 'a result -> 'a t
 (** [Lwt.of_result r] converts an r to a resolved promise.
@@ -1518,8 +1517,8 @@ val wakeup_later_result : 'a u -> 'a result -> unit
     - If [result] is [Error exn], [p] is rejected with [exn].
 
     If [p] is not pending, [Lwt.wakeup_later_result] raises
-    [Pervasives.Invalid_argument _], except if [p] is {{: #VALcancel} canceled}.
-    If [p] is canceled, [Lwt.wakeup_later_result] has no effect. *)
+    [Stdlib.Invalid_argument _], except if [p] is {{: #VALcancel} canceled}. If
+    [p] is canceled, [Lwt.wakeup_later_result] has no effect. *)
 
 
 
@@ -1601,7 +1600,7 @@ let () =
     end
   end
 
-(* ocamlfind opt -linkpkg -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
 ]}
 
     Note that the string [Hello world!] was passed to [say_hello] through the
@@ -1687,7 +1686,7 @@ val make_value : 'a -> 'a result
   [@@ocaml.deprecated
     " Use Result.Ok, which is the same as Ok since OCaml 4.03."]
 (** [Lwt.make_value v] is equivalent to
-    {{: https://caml.inria.fr/pub/docs/manual-ocaml/libref/Pervasives.html#TYPEresult}
+    {{: https://caml.inria.fr/pub/docs/manual-ocaml/libref/Stdlib.html#TYPEresult}
     [Ok v]} since OCaml 4.03. If you need compatibility with OCaml 4.02, use
     [Result.Ok] and depend on opam package
     {{: https://opam.ocaml.org/packages/result/} [result]}. *)
@@ -1696,7 +1695,7 @@ val make_error : exn -> _ result
   [@@ocaml.deprecated
     " Use Result.Error, which is the same as Error since OCaml 4.03."]
 (** [Lwt.make_error exn] is equivalent to
-    {{: https://caml.inria.fr/pub/docs/manual-ocaml/libref/Pervasives.html#TYPEresult}
+    {{: https://caml.inria.fr/pub/docs/manual-ocaml/libref/Stdlib.html#TYPEresult}
     [Error exn]} since OCaml 4.03. If you need compatibility with OCaml 4.02,
     use [Result.Error] and depend on opam package
     {{: https://opam.ocaml.org/packages/result/} [result]}. *)
@@ -1785,7 +1784,7 @@ let () =
   Lwt.async handle_io;
   Lwt_main.run (compute 100_000_000)
 
-(* ocamlfind opt -linkpkg -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
 ]}
 
   If you replace the call to [Lwt.pause] by [Lwt.return] in the program above,
@@ -1897,7 +1896,7 @@ val fail_with : string -> _ t
 (** [Lwt.fail_with s] is an abbreviation for
 
 {[
-Lwt.fail (Pervasives.Failure s)
+Lwt.fail (Stdlib.Failure s)
 ]}
 
     In most cases, it is better to use [failwith s] from the standard library.
@@ -1907,7 +1906,7 @@ val fail_invalid_arg : string -> _ t
 (** [Lwt.invalid_arg s] is an abbreviation for
 
 {[
-Lwt.fail (Pervasives.Invalid_argument s)
+Lwt.fail (Stdlib.Invalid_argument s)
 ]}
 
     In most cases, it is better to use [invalid_arg s] from the standard
@@ -1950,7 +1949,7 @@ val ignore_result : _ t -> unit
     - The behavior is different depending on whether [p] is rejected now or
       later.
     - The name is misleading, and has led to users thinking this function is
-      analogous to [Pervasives.ignore], i.e. that it waits for [p] to become
+      analogous to [Stdlib.ignore], i.e. that it waits for [p] to become
       resolved, completing any associated side effects along the way. In fact,
       the function that does {e that} is ordinary {!Lwt.bind}. *)
 
