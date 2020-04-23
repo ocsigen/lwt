@@ -3931,6 +3931,20 @@ let let_syntax_tests = suite "let syntax" [
     Lwt.wakeup r2 "bar";
     state_is (Lwt.Return "foobar") p'
   end;
+
+  test "let+/and+" begin fun () ->
+    let p1, r1 = Lwt.wait () in
+    let p2, r2 = Lwt.wait () in
+    let p' =
+      let open Lwt.Syntax in
+      let+ s1 = p1
+      and+ s2 = p2 in
+      (s1 ^ s2)
+    in
+    Lwt.wakeup r1 "foo";
+    Lwt.wakeup r2 "bar";
+    state_is (Lwt.Return "foobar") p'
+  end;
 ]
 let suites = suites @ [let_syntax_tests]
 
