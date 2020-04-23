@@ -55,9 +55,24 @@ module Infix : sig
   val (>>=) : ('a,'e) t -> ('a -> ('b,'e) t) -> ('b,'e) t
 end
 
+(** {3 Let syntax} *)
 module Syntax : sig
+
+  (** {1 Monadic syntax} *)
+
   val (let*) : ('a,'e) t -> ('a -> ('b,'e) t) -> ('b,'e) t
+  (** Syntax for {!bind}. *)
+
   val (and*) : ('a,'e) t -> ('b,'e) t -> ('a * 'b,'e) t
+  (** Syntax for {!both}. *)
+
+  (** {1 Applicative syntax} *)
+
+  val (let+) : ('a,'e) t -> ('a -> 'b) -> ('b, 'e) t
+  (** Syntax for {!map}. *)
+
+  val (and+) : ('a,'e) t -> ('b,'e) t -> ('a * 'b,'e) t
+  (** Syntax for {!both}. *)
 end
 
 include module type of Infix

@@ -1400,8 +1400,22 @@ end
 (** {3 Let syntax} *)
 module Syntax :
 sig
+
+  (** {1 Monadic syntax} *)
+
   val (let*) : 'a t -> ('a -> 'b t) -> 'b t
+  (** Syntax for {!bind}. *)
+
   val (and*) : 'a t -> 'b t -> ('a * 'b) t
+  (** Syntax for {!both}. *)
+
+  (** {1 Applicative syntax} *)
+
+  val (let+) : 'a t -> ('a -> 'b) -> 'b t
+  (** Syntax for {!map}. *)
+
+  val (and+) : 'a t -> 'b t -> ('a * 'b) t
+  (** Syntax for {!both}. *)
 end
 
 
