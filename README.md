@@ -20,20 +20,22 @@ Here is a simplistic Lwt program which requests the Google front page, and fails
 if the request is not completed in five seconds:
 
 ```ocaml
+open Lwt.Syntax
+
 let () =
   let request =
-    let%lwt addresses = Lwt_unix.getaddrinfo "google.com" "80" [] in
+    let* addresses = Lwt_unix.getaddrinfo "google.com" "80" [] in
     let google = Lwt_unix.((List.hd addresses).ai_addr) in
 
     Lwt_io.(with_connection google (fun (incoming, outgoing) ->
-      let%lwt () = write outgoing "GET / HTTP/1.1\r\n" in
-      let%lwt () = write outgoing "Connection: close\r\n\r\n" in
-      let%lwt response = read incoming in
+      let* () = write outgoing "GET / HTTP/1.1\r\n" in
+      let* () = write outgoing "Connection: close\r\n\r\n" in
+      let* response = read incoming in
       Lwt.return (Some response)))
   in
 
   let timeout =
-    let%lwt () = Lwt_unix.sleep 5. in
+    let* () = Lwt_unix.sleep 5. in
     Lwt.return None
   in
 
@@ -41,8 +43,7 @@ let () =
   | Some response -> print_string response
   | None -> prerr_endline "Request timed out"; exit 1
 
-(* ocamlfind opt -package lwt.unix,lwt_ppx -linkpkg -o request example.ml
-   ./request *)
+(* ocamlfind opt -package lwt.unix -linkpkg example.ml && ./a.out *)
 ```
 
 In the program, functions such as `Lwt_io.write` create promises. The
