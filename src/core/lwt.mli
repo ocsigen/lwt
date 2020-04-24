@@ -688,7 +688,7 @@ val finalize : (unit -> 'a t) -> (unit -> unit t) -> 'a t
 {[
 let () =
   Lwt_main.run begin
-    let%lwt file = Lwt_io.(open_file Input "code.ml") in
+    let%lwt file = Lwt_io.(open_file ~mode:Input "code.ml") in
     Lwt.finalize
       (fun () ->
         let%lwt content = Lwt_io.read file in
@@ -706,7 +706,7 @@ let () =
 {[
 let () =
   Lwt_main.run begin
-    let%lwt file = Lwt_io.(open_file Input "code.ml") in
+    let%lwt file = Lwt_io.(open_file ~mode:Input "code.ml") in
     begin
       let%lwt content = Lwt_io.read file in
       Lwt_io.print content
