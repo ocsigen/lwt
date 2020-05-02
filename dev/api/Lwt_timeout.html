@@ -63,5 +63,5 @@ raised by timeout actions. Recall that actions are not allowed to raise
 exceptions. If they do raise an exception <span class="odocwiki_inlinecode">exn</span> despite this, <span class="odocwiki_inlinecode">f exn</span> is
 called.
 </p><p>The default behavior of <span class="odocwiki_inlinecode">f exn</span>, set by <span class="odocwiki_inlinecode">Lwt_timeout</span> on program startup, is
-to pass <span class="odocwiki_inlinecode">exn</span> to <span class="odocwiki_inlinecode">!</span><span><a href=".././api/Lwt#VALasync_exception_hook">Lwt.async_exception_hook</a></span>. The default behavior of
+to pass <span class="odocwiki_inlinecode">exn</span> to <span class="odocwiki_inlinecode">!</span><span class="odocwiki_inlinecode">Lwt.async_exception_hook</span>. The default behavior of
 <em>that</em> is to terminate the process.</p></div></article></div></div></body></html>
