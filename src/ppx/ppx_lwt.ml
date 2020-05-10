@@ -1,11 +1,11 @@
 open! Migrate_parsetree
-open! OCaml_410.Ast
+open! OCaml_411.Ast
 open Ast_mapper
 open! Ast_helper
 open Asttypes
 open Parsetree
 
-open Ast_convenience_410
+open Ast_convenience_411
 
 (** {2 Convenient stuff} *)
 
@@ -361,5 +361,5 @@ let args =
   ]
 
 let () =
-  Driver.register ~name:"ppx_lwt" ~args Versions.ocaml_410
+  Driver.register ~name:"ppx_lwt" ~args Versions.ocaml_411
     (fun _config _cookies -> mapper)

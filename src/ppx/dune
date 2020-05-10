@@ -16,7 +16,7 @@ let () = Jbuild_plugin.V1.send @@ {|
  (libraries compiler-libs.common ocaml-migrate-parsetree ppx_tools_versioned)
  (ppx_runtime_libraries lwt)
  (kind ppx_rewriter)
- (preprocess (pps ppx_tools_versioned.metaquot_410 |} ^ bisect_ppx ^ {|))
+ (preprocess (pps ppx_tools_versioned.metaquot_411 |} ^ bisect_ppx ^ {|))
  (flags (:standard -w +A-4)))
 
 |}
