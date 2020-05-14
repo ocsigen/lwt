@@ -1550,6 +1550,7 @@ sig
 
   val protected : 'a t -> 'a t
   val no_cancel : 'a t -> 'a t
+  val wrap_in_cancelable : 'a t -> 'a t
 end =
 struct
   let new_pending ~how_to_cancel =
@@ -1684,6 +1685,28 @@ struct
       in
       add_implicitly_removed_callback p_callbacks callback;
 
+      to_public_promise p'
+
+  let wrap_in_cancelable p =
+    let Internal p_internal = to_internal_promise p in
+    let p_underlying = underlying p_internal in
+    match p_underlying.state with
+    | Fulfilled _ -> p
+    | Rejected _ -> p
+    | Pending p_callbacks ->
+      let rec p' = lazy (
+        new_pending
+          ~how_to_cancel:(
+            Propagate_cancel_to_several [p_underlying ; Lazy.force p'])) in
+      let p' = Lazy.force p' in
+      let callback p_result =
+        let State_may_now_be_pending_proxy p' = may_now_be_proxy p' in
+        let p' = underlying p' in
+        let State_may_have_changed p' =
+          resolve ~allow_deferring:false p' p_result in
+        ignore p'
+      in
+      add_implicitly_removed_callback p_callbacks callback;
       to_public_promise p'
 end
 include Pending_promises

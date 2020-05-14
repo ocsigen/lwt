@@ -1186,6 +1186,11 @@ val no_cancel : 'a t -> 'a t
     Note that [p'] can still be canceled if [p] is canceled. [Lwt.no_cancel]
     only prevents cancellation of [p] and [p'] through [p']. *)
 
+val wrap_in_cancelable : 'a t -> 'a t
+(** [Lwt.wrap_in_cancelable p] creates a {{: #VALcancel} cancelable} promise
+    [p'] with the same state as [p]. Cancellation carries onto [p], but [p'] is
+    rejected with {!Lwt.Canceled} even if [p] is not cancelable. *)
+
 
 
 (** {2 Convenience} *)
