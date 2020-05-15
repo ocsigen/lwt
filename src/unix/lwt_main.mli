@@ -43,8 +43,13 @@ let () = Lwt_main.run (main ())
       [Pervasives.at_exit], use {!Lwt_main.at_exit} instead. *)
 
 val yield : unit -> unit Lwt.t
-  (** [yield ()] is a threads which suspends itself and then resumes
-      as soon as possible and terminates. *)
+  (** [yield ()] is a pending promise that is fulfilled after Lwt finishes
+      calling all currently ready callbacks, i.e. it is fulfilled on the next
+      “tick.”
+
+      [yield] is similar to {!Lwt.pause} which exists for historical reason.
+      Prefer [pause] in order to stay compatible with other execution
+      environments such as js_of_ocaml. *)
 
 
 
