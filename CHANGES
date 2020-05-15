@@ -1,3 +1,9 @@
+===== dev =====
+
+  * Avoid double-reversing when traversing lists. This may change the order in
+    which some promises are collected, which may change which of several
+    rejection is arbitrarily selected during concurrent traversal.
+
 ===== 5.3.0 (2020-04-22) =====
 
   * Add let* and and* in Lwt.Syntax and Lwt_result.Syntax (#775, Rahul Kumar).

@@ -47,7 +47,7 @@ val yield : unit -> unit Lwt.t
       calling all currently ready callbacks, i.e. it is fulfilled on the next
       “tick.”
 
-      [yield] is similar to {!Lwt.pause} which exists for historical reason.
+      [yield] is similar to {!Lwt.pause} and it exists for historical reason.
       Prefer [pause] in order to stay compatible with other execution
       environments such as js_of_ocaml. *)
 
