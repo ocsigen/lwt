@@ -49,11 +49,11 @@ val handle_unix_error : ('a -> 'b Lwt.t) -> 'a -> 'b Lwt.t
 
 val sleep : float -> unit Lwt.t
   (** [sleep d] is a thread that remains suspended for [d] seconds
-      and then terminates. *)
+      and after which it is resolved with value [()]. *)
 
 val yield : unit -> unit Lwt.t
   (** [yield ()] is a thread that suspends itself and then resumes
-      as soon as possible and terminates. *)
+      as soon as possible and resolves with value [()]. *)
 
 val auto_yield : float -> (unit -> unit Lwt.t)
   (** [auto_yield timeout] returns a function [f], and [f ()] has the following
