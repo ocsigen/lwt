@@ -11,8 +11,8 @@
 
     The semantics of all operations is the following: if the action
     (for example reading from a {b file descriptor}) can be performed
-    immediately, it is done and returns immediately, otherwise it
-    returns a sleeping thread which is woken up when the operation
+    immediately, it is performed and returns an already resolved promise,
+    otherwise it returns a pending promise which is resolved when the operation
     completes.
 
     Most operations on sockets and pipes (on Windows it is only
@@ -68,8 +68,8 @@ exception Timeout
   (** Exception raised by timeout operations *)
 
 val timeout : float -> 'a Lwt.t
-  (** [timeout d] is a thread that remains suspended for [d] seconds
-      and then fails with {!Timeout}. *)
+  (** [timeout d] is a promise that remains pending for [d] seconds
+      and then is rejected with {!Timeout}. *)
 
 val with_timeout : float -> (unit -> 'a Lwt.t) -> 'a Lwt.t
   (** [with_timeout d f] is a short-hand for:
