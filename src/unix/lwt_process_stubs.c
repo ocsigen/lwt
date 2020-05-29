@@ -36,8 +36,21 @@ CAMLprim value lwt_process_create_process(value prog, value cmdline, value env,
   CAMLparam5(prog, cmdline, env, cwd, fds);
   CAMLlocal1(result);
 
+  size_t count;
+  LPSTR commandLine;
+  LPVOID environment = NULL;
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
+
+  count = caml_string_length(cmdline);
+  commandLine = lwt_unix_malloc(count);
+  memcpy(&commandLine, String_val(cmdline), count);
+
+  if (Is_block(env)) {
+    count = caml_string_length(Field(env, 0));
+    environment = lwt_unix_malloc(count);
+    memcpy(&environment, String_val(Field(env, 0)), count);
+  }
 
   ZeroMemory(&si, sizeof(si));
   ZeroMemory(&pi, sizeof(pi));
@@ -47,8 +60,8 @@ CAMLprim value lwt_process_create_process(value prog, value cmdline, value env,
   si.hStdOutput = get_handle(Field(fds, 1));
   si.hStdError = get_handle(Field(fds, 2));
 
-  if (!CreateProcess(string_option(prog), String_val(cmdline), NULL, NULL, TRUE,
-                     0, string_option(env), string_option(cwd), &si, &pi)) {
+  if (!CreateProcess(string_option(prog), commandLine, NULL, NULL, TRUE,
+                     0, environment, string_option(cwd), &si, &pi)) {
     win32_maperr(GetLastError());
     uerror("CreateProcess", Nothing);
   }

@@ -40,13 +40,20 @@ static value result_system(struct job_system *job)
 
 CAMLprim value lwt_unix_system_job(value cmdline)
 {
+    size_t count;
+    LPSTR commandLine;
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
+
+    count = caml_string_length(cmdline);
+    commandLine = lwt_unix_malloc(count);
+    memcpy(&commandLine, String_val(cmdline), count);
 
     ZeroMemory(&si, sizeof(si));
     ZeroMemory(&pi, sizeof(pi));
     si.cb = sizeof(si);
-    if (!CreateProcess(NULL, String_val(cmdline), NULL, NULL, TRUE, 0, NULL,
+
+    if (!CreateProcess(NULL, commandLine, NULL, NULL, TRUE, 0, NULL,
                        NULL, &si, &pi)) {
         win32_maperr(GetLastError());
         uerror("CreateProcess", Nothing);
