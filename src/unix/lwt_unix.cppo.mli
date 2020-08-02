@@ -52,7 +52,7 @@ val sleep : float -> unit Lwt.t
       and after which it is resolved with value [()]. *)
 
 val yield : unit -> unit Lwt.t
-  (** [yield ()] is a promise in a pending state. It resumes itself as soon as 
+  (** [yield ()] is a promise in a pending state. It resumes itself as soon as
       possible and resolves with value [()]. *)
 
 val auto_yield : float -> (unit -> unit Lwt.t)
@@ -185,13 +185,18 @@ val fork : unit -> int
       child process.
 
       Notes:
-      - in the child process all pending jobs are canceled,
-      - if you are going to use Lwt in the parent and the child, it is
+      - In the child process all pending [Lwt_unix] I/O jobs are abandoned.
+        This may cause the child's copy of their associated promises to remain
+        forever pending.
+      - If you are going to use Lwt in the parent and the child, it is
         a good idea to call {!Lwt_io.flush_all} before callling
         {!fork} to avoid double-flush.
-      - otherwise, if you will not use Lwt in the child, call
+      - Otherwise, if you will not use Lwt in the child, call
         {!Lwt_main.Exit_hooks.remove_all} to avoid Lwt calling {!Lwt_main.run}
-        during process exit. *)
+        during process exit.
+      - None of the above is necessary if you intend to call [exec]. Indeed, in
+        that case, it is not even necessary to use [Lwt_unix.fork]. You can use
+        [Unix.fork]. *)
 
 type process_status =
     Unix.process_status =
