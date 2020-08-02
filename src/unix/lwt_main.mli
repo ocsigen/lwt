@@ -51,6 +51,13 @@ val yield : unit -> unit Lwt.t
       Prefer [pause] in order to stay compatible with other execution
       environments such as js_of_ocaml. *)
 
+val abandon_yielded_and_paused : unit -> unit
+(** Causes promises created with {!Lwt.pause} and {!Lwt_main.yield} to remain
+    forever pending.
+
+    This is meant for use with {!Lwt.fork}, as a way to "abandon" more promise
+    chains that are pending in your process. *)
+
 
 
 (** Hook sequences. Each module of this type is a set of hooks, to be run by Lwt

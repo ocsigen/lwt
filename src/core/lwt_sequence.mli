@@ -45,6 +45,10 @@ val remove : 'a node -> unit
 val create : unit -> 'a t
   (** [create ()] creates a new empty sequence *)
 
+val clear : 'a t -> unit
+(** Removes all nodes from the given sequence. The nodes are not actually
+    mutated to note their removal. Only the sequence's pointers are updated. *)
+
 val is_empty : 'a t -> bool
   (** Returns [true] iff the given sequence is empty *)
 

@@ -1819,6 +1819,12 @@ val register_pause_notifier : (int -> unit) -> unit
 
     This function is intended for internal use by Lwt. *)
 
+val abandon_paused : unit -> unit
+(** Causes promises created with {!Lwt.pause} to remain forever pending. See
+    {!Lwt_main.abandon_yielded_and_paused}.
+
+    This function is intended for internal use by Lwt. *)
+
 (**/**)
 
 

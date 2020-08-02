@@ -185,6 +185,7 @@ val fork : unit -> int
       child process.
 
       Notes:
+
       - In the child process all pending [Lwt_unix] I/O jobs are abandoned.
         This may cause the child's copy of their associated promises to remain
         forever pending.
@@ -196,7 +197,9 @@ val fork : unit -> int
         during process exit.
       - None of the above is necessary if you intend to call [exec]. Indeed, in
         that case, it is not even necessary to use [Lwt_unix.fork]. You can use
-        [Unix.fork]. *)
+        [Unix.fork].
+      - To abandon some more promises, see
+        {!Lwt_main.abandon_yielded_and_paused}. *)
 
 type process_status =
     Unix.process_status =

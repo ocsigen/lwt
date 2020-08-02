@@ -2992,6 +2992,7 @@ sig
   val wakeup_paused : unit -> unit
   val paused_count : unit -> int
   val register_pause_notifier : (int -> unit) -> unit
+  val abandon_paused : unit -> unit
 
   (* Internal interface for other modules in Lwt *)
   val poll : 'a t -> 'a option
@@ -3086,6 +3087,10 @@ struct
     end
 
   let register_pause_notifier f = pause_hook := f
+
+  let abandon_paused () =
+    Lwt_sequence.clear paused;
+    paused_count := 0
 
   let paused_count () = !paused_count
 end
