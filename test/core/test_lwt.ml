@@ -2,6 +2,8 @@
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
 
+CamlinternalLazy.Undefined
+
 
 (* [Lwt_sequence] is deprecated – we don't want users outside Lwt using it.
    However, it is still used internally by Lwt. So, briefly disable warning 3
@@ -2727,7 +2729,7 @@ let cancelable_tests = suite "wrap_in_cancelable" [
   end;
 
   test "rejected" begin fun () ->
-    let p = Lwt.protected (Lwt.fail Exception) in
+    let p = Lwt.wrap_in_cancelable (Lwt.fail Exception) in
     Lwt.return (Lwt.state p = Lwt.Fail Exception)
   end;
 
@@ -2773,16 +2775,16 @@ let cancelable_tests = suite "wrap_in_cancelable" [
 
   test "pending(task), canceled, fulfilled" begin fun () ->
     let p, r = Lwt.task () in
-    let p' = Lwt.protected p in
+    let p' = Lwt.wrap_in_cancelable p in
     Lwt.cancel p';
     Lwt.wakeup r "foo";
     Lwt.return
-      (Lwt.state p = Lwt.Return "foo" && Lwt.state p' = Lwt.Fail Lwt.Canceled)
+      (Lwt.state p = Lwt.Fail Lwt.Canceled && Lwt.state p' = Lwt.Fail Lwt.Canceled)
   end;
 
   test "pending(wait), canceled, fulfilled" begin fun () ->
     let p, r = Lwt.wait () in
-    let p' = Lwt.protected p in
+    let p' = Lwt.wrap_in_cancelable p in
     Lwt.cancel p';
     Lwt.wakeup r "foo";
     Lwt.return
