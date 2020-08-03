@@ -2777,7 +2777,7 @@ let cancelable_tests = suite "wrap_in_cancelable" [
     Lwt.cancel p';
     Lwt.wakeup r "foo";
     Lwt.return
-      (Lwt.state p = Lwt.Fail Lwt.Canceled && Lwt.state p' = Lwt.Fail Lwt.Canceled)
+      (Lwt.state p = Lwt.Return "foo" && Lwt.state p' = Lwt.Fail Lwt.Canceled)
   end;
 
   test "pending(wait), canceled, fulfilled" begin fun () ->
@@ -2806,7 +2806,7 @@ let cancelable_tests = suite "wrap_in_cancelable" [
     Lwt.return (Lwt.state p2 = Lwt.Return "foo")
   end;
 ]
-let suites = suites @ [protected_tests]
+let suites = suites @ [cancelable_tests]
 
 let no_cancel_tests = suite "no_cancel" [
   test "fulfilled" begin fun () ->
