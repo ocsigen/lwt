@@ -2770,7 +2770,7 @@ let cancelable_tests = suite "wrap_in_cancelable" [
     let p, _ = Lwt.wait () in
     let p' = Lwt.wrap_in_cancelable p in
     Lwt.cancel p';
-    Lwt.return (Lwt.state p = Lwt.Sleep && Lwt.state p = Lwt.Fail Lwt.Canceled)
+    Lwt.return (Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Fail Lwt.Canceled)
   end;
 
   test "pending(task), canceled, fulfilled" begin fun () ->
