@@ -2720,6 +2720,94 @@ let protected_tests = suite "protected" [
 ]
 let suites = suites @ [protected_tests]
 
+let cancelable_tests = suite "wrap_in_cancelable" [
+  test "fulfilled" begin fun () ->
+    let p = Lwt.wrap_in_cancelable (Lwt.return ()) in
+    Lwt.return (Lwt.state p = Lwt.Return ())
+  end;
+
+  test "rejected" begin fun () ->
+    let p = Lwt.wrap_in_cancelable (Lwt.fail Exception) in
+    Lwt.return (Lwt.state p = Lwt.Fail Exception)
+  end;
+
+  test "pending(task)" begin fun () ->
+    let p, _ = Lwt.task () in
+    let p' = Lwt.wrap_in_cancelable p in
+    Lwt.return (Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Sleep)
+  end;
+
+  test "pending(task), fulfilled" begin fun () ->
+    let p, r = Lwt.task () in
+    let p' = Lwt.wrap_in_cancelable p in
+    Lwt.wakeup r "foo";
+    Lwt.return (Lwt.state p = Lwt.Return "foo" && Lwt.state p' = Lwt.Return "foo")
+  end;
+
+  test "pending(task), canceled" begin fun () ->
+    let p, _ = Lwt.task () in
+    let p' = Lwt.wrap_in_cancelable p in
+    Lwt.cancel p';
+    Lwt.return (Lwt.state p = Lwt.Fail Lwt.Canceled && Lwt.state p' = Lwt.Fail Lwt.Canceled)
+  end;
+
+  test "pending(wait)" begin fun () ->
+    let p, _ = Lwt.wait () in
+    let p' = Lwt.wrap_in_cancelable p in
+    Lwt.return (Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Sleep)
+  end;
+
+  test "pending(wait), fulfilled" begin fun () ->
+    let p, r = Lwt.wait () in
+    let p' = Lwt.wrap_in_cancelable p in
+    Lwt.wakeup r "foo";
+    Lwt.return (Lwt.state p = Lwt.Return "foo" && Lwt.state p' = Lwt.Return "foo")
+  end;
+
+  test "pending(wait), canceled" begin fun () ->
+    let p, _ = Lwt.wait () in
+    let p' = Lwt.wrap_in_cancelable p in
+    Lwt.cancel p';
+    Lwt.return (Lwt.state p = Lwt.Sleep && Lwt.state p' = Lwt.Fail Lwt.Canceled)
+  end;
+
+  test "pending(task), canceled, fulfilled" begin fun () ->
+    let p, r = Lwt.task () in
+    let p' = Lwt.wrap_in_cancelable p in
+    Lwt.cancel p';
+    Lwt.wakeup r "foo";
+    Lwt.return
+      (Lwt.state p = Lwt.Fail Lwt.Canceled && Lwt.state p' = Lwt.Fail Lwt.Canceled)
+  end;
+
+  test "pending(wait), canceled, fulfilled" begin fun () ->
+    let p, r = Lwt.wait () in
+    let p' = Lwt.wrap_in_cancelable p in
+    Lwt.cancel p';
+    Lwt.wakeup r "foo";
+    Lwt.return
+      (Lwt.state p = Lwt.Return "foo" && Lwt.state p' = Lwt.Fail Lwt.Canceled)
+  end;
+
+  (* Implementation detail: [p' = Lwt.wrap_in_cancelable _] can still be
+     resolved if it becomes a proxy. *)
+  test "pending, proxy" begin fun () ->
+    let p1, r1 = Lwt.task () in
+    let p2 = Lwt.wrap_in_cancelable p1 in
+
+    (* Make p2 a proxy for p4; p3 is just needed to suspend the bind, in order
+       to callback the code that makes p2 a proxy. *)
+    let p3, r3 = Lwt.wait () in
+    let _ = Lwt.bind p3 (fun () -> p2) in
+    Lwt.wakeup r3 ();
+
+    (* It should now be possible to resolve p2 by resolving p1. *)
+    Lwt.wakeup r1 "foo";
+    Lwt.return (Lwt.state p2 = Lwt.Return "foo")
+  end;
+]
+let suites = suites @ [cancelable_tests]
+
 let no_cancel_tests = suite "no_cancel" [
   test "fulfilled" begin fun () ->
     let p = Lwt.no_cancel (Lwt.return ()) in

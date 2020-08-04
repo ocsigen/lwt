@@ -2440,6 +2440,20 @@ end
 include Sequential_composition
 
 
+(* This belongs with the [protected] and such, but it depends on primitives from
+   [Sequential_composition]. *)
+let wrap_in_cancelable p =
+ let Internal p_internal = to_internal_promise p in
+ let p_underlying = underlying p_internal in
+ match p_underlying.state with
+ | Fulfilled _ -> p
+ | Rejected _ -> p
+ | Pending _ ->
+   let p', r = task () in
+   on_cancel p' (fun () -> cancel p);
+   on_any p (wakeup r) (wakeup_exn r);
+   p'
+
 
 module Concurrent_composition :
 sig
