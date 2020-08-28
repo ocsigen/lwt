@@ -61,10 +61,10 @@ val add_l : 'a -> 'a t -> 'a node
   (** [add_l x s] adds [x] to the left of the sequence [s] *)
 
 val add_r : 'a -> 'a t -> 'a node
-  (** [add_l x s] adds [x] to the right of the sequence [s] *)
+  (** [add_r x s] adds [x] to the right of the sequence [s] *)
 
 exception Empty
-  (** Exception raised by [take_l] and [tale_s] and when the sequence
+  (** Exception raised by [take_l] and [take_r] and when the sequence
       is empty *)
 
 val take_l : 'a t -> 'a
@@ -73,7 +73,7 @@ val take_l : 'a t -> 'a
       @raise Empty if the sequence is empty *)
 
 val take_r : 'a t -> 'a
-  (** [take_l x s] remove and returns the rightmost element of [s]
+  (** [take_r x s] remove and returns the rightmost element of [s]
 
       @raise Empty if the sequence is empty *)
 
@@ -82,7 +82,7 @@ val take_opt_l : 'a t -> 'a option
       leftmost element of [s] or [None] if [s] is empty *)
 
 val take_opt_r : 'a t -> 'a option
-  (** [take_opt_l x s] remove and returns [Some x] where [x] is the
+  (** [take_opt_r x s] remove and returns [Some x] where [x] is the
       rightmost element of [s] or [None] if [s] is empty *)
 
 val transfer_l : 'a t -> 'a t -> unit
@@ -104,15 +104,15 @@ val iter_l : ('a -> unit) -> 'a t -> unit
       the left *)
 
 val iter_r : ('a -> unit) -> 'a t -> unit
-  (** [iter_l f s] applies [f] on all elements of [s] starting from
+  (** [iter_r f s] applies [f] on all elements of [s] starting from
       the right *)
 
 val iter_node_l : ('a node -> unit) -> 'a t -> unit
-  (** [iter_l f s] applies [f] on all nodes of [s] starting from
+  (** [iter_node_l f s] applies [f] on all nodes of [s] starting from
       the left *)
 
 val iter_node_r : ('a node -> unit) -> 'a t -> unit
-  (** [iter_l f s] applies [f] on all nodes of [s] starting from
+  (** [iter_node_r f s] applies [f] on all nodes of [s] starting from
       the right *)
 
 val fold_l : ('a -> 'b -> 'b) -> 'a t -> 'b -> 'b
