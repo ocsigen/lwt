@@ -816,11 +816,11 @@ struct
     in
     loop io_vectors.prefix
 
-  external stub_iov_max : unit -> int = "lwt_unix_iov_max"
+  external stub_iov_max : unit -> int option = "lwt_unix_iov_max"
 
   let system_limit =
     if Sys.win32 then None
-    else Some (stub_iov_max ())
+    else stub_iov_max ()
 
   let check tag io_vector =
     let buffer_length =

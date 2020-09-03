@@ -9,8 +9,20 @@
 
 #define _GNU_SOURCE
 
+#include <caml/alloc.h>
+#include <caml/memory.h>
 #include <caml/mlvalues.h>
 #include <limits.h>
 
-CAMLprim value lwt_unix_iov_max(value unit) { return Val_int(IOV_MAX); }
+CAMLprim value lwt_unix_iov_max(value unit)
+{
+    CAMLparam1(unit);
+    CAMLlocal1(res);
+
+    res = caml_alloc(1, 0);
+    Store_field(res, 0, Val_int(IOV_MAX));
+
+    CAMLreturn(res);
+}
+
 #endif
