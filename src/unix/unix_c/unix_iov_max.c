@@ -19,8 +19,12 @@ CAMLprim value lwt_unix_iov_max(value unit)
     CAMLparam1(unit);
     CAMLlocal1(res);
 
+#ifdef IOV_MAX
     res = caml_alloc(1, 0);
     Store_field(res, 0, Val_int(IOV_MAX));
+#else
+    res = Val_int(0);
+#endif
 
     CAMLreturn(res);
 }
