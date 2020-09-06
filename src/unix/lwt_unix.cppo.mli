@@ -1010,6 +1010,9 @@ type socket_bool_option =
   | SO_DEBUG
   | SO_BROADCAST
   | SO_REUSEADDR
+#if OCAML_VERSION >= (4, 12, 0)
+  | SO_REUSEPORT
+#endif
   | SO_KEEPALIVE
   | SO_DONTROUTE
   | SO_OOBINLINE
