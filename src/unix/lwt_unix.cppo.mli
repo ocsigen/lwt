@@ -988,6 +988,10 @@ val send_msg :
 
     @since 5.0.0 *)
 
+val send_msgto :
+  socket:file_descr -> io_vectors:IO_vectors.t -> fds:Unix.file_descr list -> dest:Unix.sockaddr ->
+    int Lwt.t
+
 type credentials = {
   cred_pid : int;
   cred_uid : int;
