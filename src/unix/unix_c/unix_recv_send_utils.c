@@ -66,7 +66,7 @@ value wrapper_recv_msg(int fd, int n_iovs, struct iovec *iovs)
 value wrapper_send_msg(int fd, int n_iovs, struct iovec *iovs,
                        value val_n_fds, value val_fds, value dest)
 {
-    CAMLparam2(val_n_fds, val_fds);
+    CAMLparam3(val_n_fds, val_fds, dest);
 
     struct msghdr msg;
     memset(&msg, 0, sizeof(msg));

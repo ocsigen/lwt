@@ -1637,7 +1637,7 @@ let send_msg ~socket ~io_vectors ~fds =
       socket.fd vector_count io_vectors.IO_vectors.prefix fd_count fds None)
 
 let send_msgto ~socket ~io_vectors ~fds ~dest =
-  let vector_count = check_io_vectors "Lwt_unix.send_msg" io_vectors in
+  let vector_count = check_io_vectors "Lwt_unix.send_msgto" io_vectors in
   let fd_count = List.length fds in
   wrap_syscall Write socket (fun () ->
     stub_send_msg
