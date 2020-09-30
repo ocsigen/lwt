@@ -1951,7 +1951,7 @@ val ignore_result : _ t -> unit
 
     - If [p] is already fulfilled, [Lwt.ignore_result p] does nothing.
     - If [p] is already rejected with [exn], [Lwt.ignore_result p] raises [exn]
-      immedaitely.
+      immediately.
     - If [p] is pending, [Lwt.ignore_result p] does nothing, but if [p] becomes
       rejected later, the exception is passed to [!]{!Lwt.async_exception_hook}.
 
