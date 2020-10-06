@@ -197,6 +197,53 @@ end
 
 class libev_deprecated = libev ()
 
+class libuv () = object
+  inherit abstract
+
+  val loop = Luv.Loop.init () |> Result.get_ok
+
+  method loop = loop
+
+  method private cleanup = Luv.Loop.stop loop
+
+  method iter block =
+    try
+      match (block) with
+      | true -> Luv.Loop.run ~loop ~mode:`ONCE () |> ignore
+      | false -> Luv.Loop.run ~loop () |> ignore
+    with exn ->
+      Luv.Loop.stop loop;
+      raise exn
+
+  method private register_readable fd f =
+    let p = Luv.Poll.init ~loop (Obj.magic fd) in
+    match p with
+    | Ok poll ->
+        let () = Luv.Poll.start poll [`READABLE] (fun _ -> f ()) in
+        lazy(Luv.Poll.stop poll |> ignore)
+    | Error _ -> lazy(())
+
+  method private register_writable fd f =
+    let p = Luv.Poll.init ~loop (Obj.magic fd) in
+    match p with
+    | Ok poll ->
+        let () = Luv.Poll.start poll [`WRITABLE] (fun _ -> f ()) in
+        lazy(Luv.Poll.stop poll |> ignore)
+    | Error _ -> lazy(())
+
+  method private register_timer delay repeat f =
+    let t = Luv.Timer.init ~loop () in
+    let repeat = match repeat with
+    | true -> Some(10000)
+    | false -> None in
+    match t with
+    | Error _ -> lazy(())
+    | Ok timer ->
+      let () = Luv.Timer.start ?repeat timer (int_of_float (delay *. 1000.)) f |> Result.get_ok in 
+      lazy(Luv.Timer.stop timer |> ignore)
+    
+end
+
 (* +-----------------------------------------------------------------+
    | Select/poll based engines                                       |
    +-----------------------------------------------------------------+ *)

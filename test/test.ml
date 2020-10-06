@@ -264,6 +264,8 @@ let run library_name suites =
             ((suite.suite_name, outcomes)::aggregated_outcomes) rest
       end
   in
+  
+  Lwt_engine.set (new Lwt_engine.libuv ());
 
   loop_over_suites [] suites
   |> Lwt_main.run

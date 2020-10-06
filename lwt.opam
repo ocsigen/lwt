@@ -36,6 +36,7 @@ depopts: [
   "base-threads"
   "base-unix"
   "conf-libev"
+  "luv"
 ]
 
 conflicts: [

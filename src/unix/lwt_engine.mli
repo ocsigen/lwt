@@ -140,6 +140,16 @@ class libev : ?backend:Ev_backend.t -> unit -> object
     (** Returns [loop]. *)
 end
 
+class libuv : unit -> object
+  inherit t
+
+  val loop : Luv.Loop.t
+    (** The libuv loop used for this engine. *)
+
+  method loop : Luv.Loop.t
+    (** Returns [loop]. *)
+end
+
 (** Engine based on [Unix.select]. *)
 class select : t
 
