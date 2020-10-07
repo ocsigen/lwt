@@ -239,7 +239,9 @@ class libuv () = object
     match t with
     | Error _ -> lazy(())
     | Ok timer ->
-      let () = Luv.Timer.start ?repeat timer (int_of_float (delay *. 1000.)) f |> Result.get_ok in 
+      let () = match Luv.Timer.start ?repeat timer (int_of_float (delay *. 1000.)) f with
+      | Ok () -> ()
+      | Error _ -> () in
       lazy(Luv.Timer.stop timer |> ignore)
     
 end
