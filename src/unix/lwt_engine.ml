@@ -200,7 +200,7 @@ class libev_deprecated = libev ()
 class libuv () = object
   inherit abstract
 
-  val loop = Luv.Loop.init () |> Result.get_ok
+  val loop = Luv.Loop.default ()
 
   method loop = loop
 
@@ -210,7 +210,7 @@ class libuv () = object
     try
       match (block) with
       | true -> Luv.Loop.run ~loop ~mode:`ONCE () |> ignore
-      | false -> Luv.Loop.run ~loop () |> ignore
+      | false -> Luv.Loop.run ~loop ~mode:`NOWAIT () |> ignore
     with exn ->
       Luv.Loop.stop loop;
       raise exn
