@@ -101,6 +101,10 @@ void lwt_unix_not_available(char const *feature) {
                       caml_copy_string(feature));
 }
 
+int luv_fd_of_unix_fd(value fd) {
+  return FD_val(fd);
+}
+
 /* +-----------------------------------------------------------------+
    | Operation on bigarrays                                          |
    +-----------------------------------------------------------------+ */
