@@ -221,29 +221,29 @@ class libuv () = object
     | Ok poll ->
         let () = Luv.Poll.start poll [`READABLE] (fun _ -> f ()) in
         lazy(Luv.Poll.stop poll |> ignore)
-    | Error _ -> lazy(())
+    | Error e -> failwith (Printf.sprintf "This is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.strerror e))
 
   method private register_writable fd f =
     let p = Luv.Poll.init ~loop (Obj.magic fd) in
     match p with
     | Ok poll ->
-        let () = Luv.Poll.start poll [`WRITABLE] (fun _ -> f ()) in
-        lazy(Luv.Poll.stop poll |> ignore)
-    | Error _ -> lazy(())
+      let () = Luv.Poll.start poll [`WRITABLE] (fun _ -> f ()) in
+      lazy(Luv.Poll.stop poll |> ignore)
+    | Error e -> failwith (Printf.sprintf "This is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.strerror e))
 
   method private register_timer delay repeat f =
+    let delay_ms = (int_of_float (delay *. 1000.)) in
     let t = Luv.Timer.init ~loop () in
-    let repeat = match repeat with
-    | true -> Some(10000)
-    | false -> None in
     match t with
     | Error _ -> lazy(())
     | Ok timer ->
-      let () = match Luv.Timer.start ?repeat timer (int_of_float (delay *. 1000.)) f with
-      | Ok () -> ()
-      | Error _ -> () in
-      lazy(Luv.Timer.stop timer |> ignore)
-    
+      let timer_fn = match repeat with
+      | true -> Luv.Timer.start ~repeat:delay_ms timer
+      | false -> Luv.Timer.start timer
+      in
+      match timer_fn delay_ms f with
+      | Ok () -> lazy(Luv.Timer.stop timer |> ignore)
+      | Error _ -> lazy(())
 end
 
 (* +-----------------------------------------------------------------+
