@@ -197,6 +197,8 @@ end
 
 class libev_deprecated = libev ()
 
+let unix_fd_to_fd (fd: Unix.file_descr) : int = Obj.magic fd
+
 class libuv () = object
   inherit abstract
 
@@ -216,7 +218,7 @@ class libuv () = object
       raise exn
 
   method private register_readable fd f =
-    let p = Luv.Poll.init ~loop (Obj.magic fd) in
+    let p = Luv.Poll.init ~loop (unix_fd_to_fd fd) in
     match p with
     | Ok poll ->
         let () = Luv.Poll.start poll [`READABLE] (fun _ -> f ()) in
@@ -224,7 +226,7 @@ class libuv () = object
     | Error e -> failwith (Printf.sprintf "This is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.strerror e))
 
   method private register_writable fd f =
-    let p = Luv.Poll.init ~loop (Obj.magic fd) in
+    let p = Luv.Poll.init ~loop (unix_fd_to_fd fd) in
     match p with
     | Ok poll ->
       let () = Luv.Poll.start poll [`WRITABLE] (fun _ -> f ()) in
