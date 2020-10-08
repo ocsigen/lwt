@@ -223,7 +223,7 @@ class libuv () = object
     | Ok poll ->
         let () = Luv.Poll.start poll [`READABLE] (fun _ -> f ()) in
         lazy(Luv.Poll.stop poll |> ignore)
-    | Error e -> failwith (Printf.sprintf "This is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.strerror e))
+    | Error e -> failwith (Printf.sprintf "Could not register fd for read polling, this is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.strerror e))
 
   method private register_writable fd f =
     let p = Luv.Poll.init ~loop (unix_fd_to_fd fd) in
@@ -231,13 +231,13 @@ class libuv () = object
     | Ok poll ->
       let () = Luv.Poll.start poll [`WRITABLE] (fun _ -> f ()) in
       lazy(Luv.Poll.stop poll |> ignore)
-    | Error e -> failwith (Printf.sprintf "This is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.strerror e))
+    | Error e -> failwith (Printf.sprintf "Could not register fd for write polling, this is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.strerror e))
 
   method private register_timer delay repeat f =
     let delay_ms = (int_of_float (delay *. 1000.)) in
     let t = Luv.Timer.init ~loop () in
     match t with
-    | Error _ -> lazy(())
+    | Error e -> failwith (Printf.sprintf "Could not initialize a timer, this is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.strerror e))
     | Ok timer ->
       let timer_fn = match repeat with
       | true -> Luv.Timer.start ~repeat:delay_ms timer
@@ -245,7 +245,7 @@ class libuv () = object
       in
       match timer_fn delay_ms f with
       | Ok () -> lazy(Luv.Timer.stop timer |> ignore)
-      | Error _ -> lazy(())
+      | Error e -> failwith (Printf.sprintf "Could not start a timer, this is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.strerror e))
 end
 
 (* +-----------------------------------------------------------------+
