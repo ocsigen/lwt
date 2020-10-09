@@ -197,7 +197,7 @@ end
 
 class libev_deprecated = libev ()
 
-external unix_fd_to_fd : Unix.file_descr -> int = "luv_fd_of_unix_fd"
+let unix_fd_to_fd : Unix.file_descr -> int = Obj.magic
 
 class libuv () = object
   inherit abstract
