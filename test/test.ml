@@ -265,7 +265,7 @@ let run library_name suites =
       end
   in
   
-  Lwt_engine.set (new Lwt_engine.libuv ());
+  Lwt_engine.set new Lwt_engine.libuv;
 
   loop_over_suites [] suites
   |> Lwt_main.run
