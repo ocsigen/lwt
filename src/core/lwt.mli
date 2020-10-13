@@ -872,8 +872,8 @@ val async_exception_hook : (exn -> unit) ref
 (** Reference to a function, to be called on an "unhandled" exception.
 
     This reference is used by {!Lwt.async}, {!Lwt.on_cancel}, {!Lwt.on_success},
-    {!Lwt.on_failure}, {!Lwt.on_termination}, {!Lwt.on_any}, and the deprecated
-    {!Lwt.ignore_result}.
+    {!Lwt.on_failure}, {!Lwt.on_termination}, {!Lwt.on_any},
+    {!Lwt_react.of_stream}, and the deprecated {!Lwt.ignore_result}.
 
     The initial, default implementation prints the exception, then terminates
     the process with non-zero exit status, as if the exception had reached the
