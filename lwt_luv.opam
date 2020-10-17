@@ -2,50 +2,27 @@ opam-version: "2.0"
 
 synopsis: "Libuv engine for Lwt"
 
-version: "5.3.0"
+version: "1.0.0"
 license: "MIT"
 homepage: "https://github.com/ocsigen/lwt"
 doc: "https://ocsigen.org/lwt"
 bug-reports: "https://github.com/ocsigen/lwt/issues"
 
-authors: [
-  "Jérôme Vouillon"
-  "Jérémie Dimino"
-]
 maintainer: [
   "Anton Bachin <antonbachin@yahoo.com>"
+  "Ulrik Strid <ulrik.strid@outlook.com>"
 ]
 dev-repo: "git+https://github.com/ocsigen/lwt.git"
 
 depends: [
-  "lwt" {=version}
+  "lwt"
   "dune" {>= "1.8.0"}
   "ocaml" {>= "4.02.0"}
-  ("ocaml" {>= "4.08.0"} | "ocaml-syntax-shims")
   "luv"
 
   "bisect_ppx" {dev & >= "2.0.0"}
-  "ocamlfind" {dev & >= "1.7.3-1"}
-]
-
-depopts: [
-  "base-threads"
-  "base-unix"
-]
-
-conflicts: [
-  "ocaml-variants" {= "4.02.1+BER"}
 ]
 
 build: [
   ["dune" "build" "-p" name "-j" jobs]
 ]
-
-description: "A promise is a value that may become determined in the future.
-
-Lwt provides typed, composable promises. Promises that are resolved by I/O are
-resolved by Lwt in parallel.
-
-Meanwhile, OCaml code, including code creating and waiting on promises, runs in
-a single thread by default. This reduces the need for locks or other
-synchronization primitives. Code can be run in parallel on an opt-in basis."
