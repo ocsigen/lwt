@@ -140,8 +140,6 @@ class libev : ?backend:Ev_backend.t -> unit -> object
     (** Returns [loop]. *)
 end
 
-class libuv : t
-
 (** Engine based on [Unix.select]. *)
 class select : t
 

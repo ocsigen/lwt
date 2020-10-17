@@ -1,0 +1,18 @@
+(* -*- tuareg -*- *)
+
+let preprocess =
+   match Sys.getenv "BISECT_ENABLE" with
+   | "yes" -> "(preprocess (pps bisect_ppx))"
+   | _ -> ""
+   | exception _ -> ""
+
+let () = Jbuild_plugin.V1.send @@ {|
+
+(library
+ (name lwt_luv)
+ (public_name lwt_luv)
+ (libraries luv lwt lwt_unix)
+ |} ^ preprocess ^ {|
+ )
+
+|}

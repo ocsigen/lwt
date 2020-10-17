@@ -1,6 +1,6 @@
 opam-version: "2.0"
 
-synopsis: "Promises and event-driven I/O"
+synopsis: "Libuv engine for Lwt"
 
 version: "5.3.0"
 license: "MIT"
@@ -18,15 +18,11 @@ maintainer: [
 dev-repo: "git+https://github.com/ocsigen/lwt.git"
 
 depends: [
-  "cppo" {build & >= "1.1.0"}
+  "lwt" {=version}
   "dune" {>= "1.8.0"}
-  "dune-configurator"
-  "mmap" {>= "1.1.0"} # mmap is needed as long as Lwt supports OCaml < 4.06.0.
   "ocaml" {>= "4.02.0"}
   ("ocaml" {>= "4.08.0"} | "ocaml-syntax-shims")
-  "ocplib-endian"
-  "result" # result is needed as long as Lwt supports OCaml 4.02.
-  "seq" # seq is needed as long as Lwt supports OCaml < 4.07.0.
+  "luv"
 
   "bisect_ppx" {dev & >= "2.0.0"}
   "ocamlfind" {dev & >= "1.7.3-1"}
@@ -35,7 +31,6 @@ depends: [
 depopts: [
   "base-threads"
   "base-unix"
-  "conf-libev"
 ]
 
 conflicts: [
@@ -43,8 +38,6 @@ conflicts: [
 ]
 
 build: [
-  ["dune" "exec" "-p" name "src/unix/config/discover.exe" "--" "--save"
-    "--use-libev" "%{conf-libev:installed}%"]
   ["dune" "build" "-p" name "-j" jobs]
 ]
 
