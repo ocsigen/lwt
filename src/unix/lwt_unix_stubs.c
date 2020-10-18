@@ -101,7 +101,6 @@ void lwt_unix_not_available(char const *feature) {
                       caml_copy_string(feature));
 }
 
-
 /* +-----------------------------------------------------------------+
    | Operation on bigarrays                                          |
    +-----------------------------------------------------------------+ */

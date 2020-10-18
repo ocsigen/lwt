@@ -264,7 +264,7 @@ let run library_name suites =
             ((suite.suite_name, outcomes)::aggregated_outcomes) rest
       end
   in
-  
+
   loop_over_suites [] suites
   |> Lwt_main.run
 
