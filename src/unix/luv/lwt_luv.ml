@@ -1,4 +1,10 @@
-let unix_fd_to_fd : Unix.file_descr -> int = Obj.magic
+external from_unix_helper : Unix.file_descr -> nativeint -> unit = "luv_unix_fd_to_os_fd"
+
+let from_unix unix_fd =
+  let os_fd = Ctypes.make (Luv_c_types.Os_fd.t) in
+  let storage = Ctypes.(raw_address_of_ptr (to_voidp (addr os_fd))) in
+  from_unix_helper unix_fd storage;
+  Ctypes.(!@ (addr os_fd |> to_voidp |> from_voidp Ctypes.int))
 
 class engine = object
   inherit Lwt_engine.abstract
@@ -11,7 +17,7 @@ class engine = object
       | false -> Luv.Loop.run ~mode:`NOWAIT () |> ignore
 
   method private register_readable fd f =
-    let p = Luv.Poll.init (unix_fd_to_fd fd) in
+    let p = Luv.Poll.init (from_unix fd) in
     match p with
     | Ok poll ->
         let () = Luv.Poll.start poll [`READABLE] (fun _ -> f ()) in
@@ -19,7 +25,7 @@ class engine = object
     | Error e -> failwith (Printf.sprintf "Could not register fd for read polling, this is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.err_name e))
 
   method private register_writable fd f =
-    let p = Luv.Poll.init (unix_fd_to_fd fd) in
+    let p = Luv.Poll.init (from_unix fd) in
     match p with
     | Ok poll ->
       let () = Luv.Poll.start poll [`WRITABLE] (fun _ -> f ()) in

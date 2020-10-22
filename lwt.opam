@@ -49,6 +49,10 @@ build: [
   ["dune" "build" "-p" name "-j" jobs]
 ]
 
+pin-depends: [
+    [ "luv.dev" "git+https://github.com/aantron/luv.git#master" ]
+]
+
 description: "A promise is a value that may become determined in the future.
 
 Lwt provides typed, composable promises. Promises that are resolved by I/O are
