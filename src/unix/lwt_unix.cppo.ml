@@ -2293,6 +2293,7 @@ external reset_after_fork : unit -> unit = "lwt_unix_reset_after_fork"
 let fork () =
   match Unix.fork () with
   | 0 ->
+    let () = Luv.Loop.fork (Luv.Loop.default ()) |> ignore in
     (* Reset threading. *)
     reset_after_fork ();
     (* Stop the old event for notifications. *)
