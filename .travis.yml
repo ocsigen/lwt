@@ -94,7 +94,8 @@ scripts:
         then
           dune build
           dune runtest --force
-          dune exec test/unix/luv_main.exe
+          dune build test/unix/luv_main.exe
+          _build/default/test/unix/luv_main.exe
         else
           make coverage
           bisect-ppx-report send-to Coveralls
