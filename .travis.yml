@@ -67,11 +67,7 @@ scripts:
         then
           CACHED=no
         fi
-      - |
-        if [ "$CACHED" == no ]
-        then
-          opam install . --deps-only --yes
-        fi
+      - opam install . --deps-only --yes
       - |
         if [ "$CACHED" == no && "$LIBEV" != no ]
         then
