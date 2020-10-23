@@ -2295,9 +2295,9 @@ let fork () =
   | 0 ->
     (* Reset threading. *)
     reset_after_fork ();
-    Luv.Loop.fork (Luv.Loop.default ()) |> ignore;
     (* Stop the old event for notifications. *)
     Lwt_engine.stop_event !event_notifications;
+    Luv.Loop.fork (Luv.Loop.default ()) |> ignore;
     (* Reinitialise the notification system. *)
     event_notifications := Lwt_engine.on_readable (init_notification ()) handle_notifications;
     (* Collect all pending jobs. *)
