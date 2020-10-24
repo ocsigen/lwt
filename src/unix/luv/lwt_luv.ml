@@ -1,3 +1,15 @@
+let log message =
+  Printf.printf "%i - %s\n" (Unix.getpid ()) message
+
+let l f = function
+| Error e -> failwith (Luv.Error.err_name e)
+| Ok l -> List.iter (function
+| `DISCONNECT -> log "DISCONNECT";
+| `PRIORITIZED -> log "PRIORITIZED";
+| `READABLE -> f ()
+| `WRITABLE -> f ()
+) l;
+
 external from_unix_helper : Unix.file_descr -> nativeint -> unit = "luv_unix_fd_to_os_fd"
 
 let from_unix unix_fd =
@@ -9,32 +21,42 @@ let from_unix unix_fd =
 class engine = object
   inherit Lwt_engine.abstract
 
-  method private cleanup = Luv.Loop.stop (Luv.Loop.default ())
+  val loop = ref (Luv.Loop.default ())
+
+  method! fork =
+    let next_loop = Luv.Loop.init () |> function
+    | Ok l -> l
+    | Error e -> failwith (Printf.sprintf "Could not create new loop, this is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.err_name e)) in
+    Luv.Loop.fork next_loop |> function
+    | Ok () -> loop := next_loop
+    | Error e -> failwith (Printf.sprintf "Could not handle fork, this is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.err_name e))
+
+  method private cleanup = Luv.Loop.stop !loop
 
   method iter block =
     match (block) with
-      | true -> Luv.Loop.run ~mode:`ONCE () |> ignore
-      | false -> Luv.Loop.run ~mode:`NOWAIT () |> ignore
+      | true -> Luv.Loop.run ~loop:!loop ~mode:`ONCE () |> ignore
+      | false -> Luv.Loop.run ~loop:!loop ~mode:`NOWAIT () |> ignore
 
   method private register_readable fd f =
-    let p = Luv.Poll.init (from_unix fd) in
+    let p = Luv.Poll.init ~loop:!loop (from_unix fd) in
     match p with
     | Ok poll ->
-        let () = Luv.Poll.start poll [`READABLE] (fun _ -> f ()) in
+        let () = Luv.Poll.start poll [`READABLE; `DISCONNECT; `PRIORITIZED;] (l f) in
         lazy(Luv.Poll.stop poll |> ignore)
     | Error e -> failwith (Printf.sprintf "Could not register fd for read polling, this is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.err_name e))
 
   method private register_writable fd f =
-    let p = Luv.Poll.init (from_unix fd) in
+    let p = Luv.Poll.init ~loop:!loop (from_unix fd) in
     match p with
     | Ok poll ->
-      let () = Luv.Poll.start poll [`WRITABLE] (fun _ -> f ()) in
+      let () = Luv.Poll.start poll [`WRITABLE; `DISCONNECT; `PRIORITIZED;] (l f) in
       lazy(Luv.Poll.stop poll |> ignore)
     | Error e -> failwith (Printf.sprintf "Could not register fd for write polling, this is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.err_name e))
 
   method private register_timer delay repeat f =
     let delay_ms = (int_of_float (delay *. 1000.)) in
-    let t = Luv.Timer.init () in
+    let t = Luv.Timer.init ~loop:!loop () in
     match t with
     | Error e -> failwith (Printf.sprintf "Could not initialize a timer, this is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.err_name e))
     | Ok timer ->
