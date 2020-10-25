@@ -1,0 +1,1145 @@
+<html><head><title>Module Lwt </title><meta charset="utf8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><link rel="stylesheet" href="https://ocsigen.org/css/style.css"/><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/themes/prism.min.css"/><script type="text/javascript" src="https://ocsigen.org/js/client.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-core.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-ocaml.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-clike.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-reason.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-javascript.min.js">
+//<![CDATA[
+
+//]]>
+</script></head><body class="Lwt lwt"><div class="project-page"><div class="page-header"><p class="logo-ocsigen"><a href=".././../../" class="ocsimore_phrasing_link"><img src=".././../../img/ocsigen-white.svg" alt="Ocsigen"/></a>
+</p><p class="logo-subproject">Lwt</p><div class="mainmenu"><p class="mainmenu-home"><a href=".././../../" class="ocsimore_phrasing_link">Home</a></p><p class="mainmenu-doc"><a href=".././../../tuto/" class="ocsimore_phrasing_link">Doc</a></p><p><a href=".././../../eliom/" class="ocsimore_phrasing_link">Eliom</a></p><p><a href=".././../../js_of_ocaml/" class="ocsimore_phrasing_link">Js_of_ocaml</a></p><p class="mainmenu-current"><a href=".././../../lwt/" class="ocsimore_phrasing_link">Lwt</a></p><p><a href=".././../../tyxml/" class="ocsimore_phrasing_link">Tyxml</a></p><p><a href=".././../../ocsigen-start/" class="ocsimore_phrasing_link">Start</a></p></div><form id="googlesearch" action="https://google.com/search"><input name="q" id="gsearch-box" placeholder="Search using Google"/><label for="gsearch-box"><img src="/img/search.svg" alt="" id="gsearch-icon"/></label><input type="submit" id="gsearch-submit" onclick="document.getElementById('gsearch-box').value += ' site:ocsigen.org';"/></form><aside class="how-drawer"><input id="how-drawer-toggle" type="checkbox"/><label for="how-drawer-toggle" id="how-drawer-label"><span class="how-drawer-icon"></span></label><nav class="how-drawer-content"><ul class="drawermainmenu"><li class="drawermainmenu-home"><a href=".././../../" class="ocsimore_phrasing_link">Home</a>
+</li><li class="drawermainmenu-doc"><a href=".././../../tuto/" class="ocsimore_phrasing_link">Doc</a>
+</li><li class="drawermainmenu-project"><a href=".././../../eliom/" class="ocsimore_phrasing_link">Eliom</a>
+</li><li class="drawermainmenu-project"><a href=".././../../js_of_ocaml/" class="ocsimore_phrasing_link">Js_of_ocaml</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsigenserver/" class="ocsimore_phrasing_link">Server</a>
+</li><li class="drawermainmenu-project"><a href=".././../../lwt/" class="ocsimore_phrasing_link">Lwt</a>
+</li><li class="drawermainmenu-project"><a href=".././../../tyxml/" class="ocsimore_phrasing_link">Tyxml</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsigen-toolkit/" class="ocsimore_phrasing_link">Toolkit</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsigen-start/" class="ocsimore_phrasing_link">Start</a>
+</li><li class="drawermainmenu-project"><a href=".././../../html_of_wiki/" class="ocsimore_phrasing_link">html_of_wiki</a>
+</li><li class="drawermainmenu-project"><a href=".././../../deriving/" class="ocsimore_phrasing_link">deriving</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsimore/" class="ocsimore_phrasing_link">Ocsimore (<em>deprecated</em>)</a>
+</li><li class="drawermainmenu-page"><a href=".././../../projects" class="ocsimore_phrasing_link">Other projects</a>
+</li><li class="drawermainmenu-page"><a href=".././../../papers" class="ocsimore_phrasing_link">Research papers</a>
+</li><li class="drawermainmenu-page"><a href=".././../../credits" class="ocsimore_phrasing_link">Who does Ocsigen?</a>
+</li><li class="drawermainmenu-page"><a href=".././../../contributing" class="ocsimore_phrasing_link">Contributing</a>
+</li><li class="drawermainmenu-page"><a href=".././../../blog" class="ocsimore_phrasing_link">Blog</a>
+</li><li class="drawermainmenu-page"><a href=".././../../install" class="ocsimore_phrasing_link">Installation</a>
+</li><li class="drawermainmenu-page"><a href="https://github.com/ocsigen" class="ocsimore_phrasing_link">Source code</a>
+</li></ul><nav class="how-doctree"><h1> Lwt</h1><h2><a href=".././manual/manual" class="ocsimore_phrasing_link">Overview</a></h2><h1>Lwt - API Reference</h1><h2>Core library</h2><h3><a href=".././api/Lwt" class="ocsimore_phrasing_link">Lwt</a></h3><h3><a href=".././api/Lwt_result" class="ocsimore_phrasing_link">Lwt_result</a></h3><h3><a href=".././api/Lwt_condition" class="ocsimore_phrasing_link">Lwt_condition</a></h3><h3><a href=".././api/Lwt_list" class="ocsimore_phrasing_link">Lwt_list</a></h3><h3><a href=".././api/Lwt_mutex" class="ocsimore_phrasing_link">Lwt_mutex</a></h3><h3><a href=".././api/Lwt_mvar" class="ocsimore_phrasing_link">Lwt_mvar</a></h3><h3><a href=".././api/Lwt_pool" class="ocsimore_phrasing_link">Lwt_pool</a></h3><h3><a href=".././api/Lwt_stream" class="ocsimore_phrasing_link">Lwt_stream</a></h3><h3><a href=".././api/Lwt_switch" class="ocsimore_phrasing_link">Lwt_switch</a></h3><h3><a href=".././api/Lwt_sequence" class="ocsimore_phrasing_link">Lwt_sequence</a></h3><h3><a href=".././api/Lwt_pqueue" class="ocsimore_phrasing_link">Lwt_pqueue</a></h3><h2>Unix bindings</h2><h3><a href=".././api/Lwt_gc" class="ocsimore_phrasing_link">Lwt_gc</a></h3><h3><a href=".././api/Lwt_io" class="ocsimore_phrasing_link">Lwt_io</a></h3><h3><a href=".././api/Lwt_main" class="ocsimore_phrasing_link">Lwt_main</a></h3><h3><a href=".././api/Lwt_engine" class="ocsimore_phrasing_link">Lwt_engine</a></h3><h3><a href=".././api/Lwt_process" class="ocsimore_phrasing_link">Lwt_process</a></h3><h3><a href=".././api/Lwt_throttle" class="ocsimore_phrasing_link">Lwt_throttle</a></h3><h3><a href=".././api/Lwt_timeout" class="ocsimore_phrasing_link">Lwt_timeout</a></h3><h3><a href=".././api/Lwt_unix" class="ocsimore_phrasing_link">Lwt_unix</a></h3><h3><a href=".././api/Lwt_bytes" class="ocsimore_phrasing_link">Lwt_bytes</a></h3><h3><a href=".././api/Lwt_fmt" class="ocsimore_phrasing_link">Lwt_fmt</a></h3><h3><a href=".././api/Lwt_sys" class="ocsimore_phrasing_link">Lwt_sys</a></h3><h2>Reactive programming helpers</h2><h3><a href=".././api/Lwt_react" class="ocsimore_phrasing_link">Lwt_react</a></h3><h2>PPX syntax extension</h2><h3><a href=".././api/Ppx_lwt" class="ocsimore_phrasing_link">Ppx_lwt</a></h3><h2>Miscellaneous</h2><h3><a href=".././api/Lwt_preemptive" class="ocsimore_phrasing_link">Lwt_preemptive</a></h3><h2>Index</h2><h3> <span><a href=".././api/index_types">Index of types</a></span></h3><h3> <span><a href=".././api/index_exceptions">Index of exceptions</a></span></h3><h3> <span><a href=".././api/index_values">Index of values</a></span></h3><h3> <span><a href=".././api/index_attributes">Index of class attributes</a></span></h3><h3> <span><a href=".././api/index_methods">Index of class methods</a></span></h3><h3> <span><a href=".././api/index_classes">Index of classes</a></span></h3><h3> <span><a href=".././api/index_class_types">Index of class types</a></span></h3><h3> <span><a href=".././api/index_modules">Index of modules</a></span></h3><h3> <span><a href=".././api/index_module_types">Index of module types</a></span></h3></nav></nav></aside></div><p class="reasonwarning">Warning: Reason support is experimental.
+We are looking for beta-tester and contributors.
+</p><button id="reason">Switch to </button><div class="twocols"><nav class="leftcol">Version <select class="how-versions" onchange="location = this.value;"><option value=".././../1.0.0/api/Lwt">1.0.0</option><option value=".././../1.1.0/api/Lwt">1.1.0</option><option value=".././../2.0.0/api/Lwt">2.0.0</option><option value=".././../2.1.0/api/Lwt">2.1.0</option><option value=".././../2.1.1/api/Lwt">2.1.1</option><option value=".././../2.2.0/api/Lwt">2.2.0</option><option value=".././../2.2.1/api/Lwt">2.2.1</option><option value=".././../2.3.0/api/Lwt">2.3.0</option><option value=".././../2.3.1/api/Lwt">2.3.1</option><option value=".././../2.3.2/api/Lwt">2.3.2</option><option value=".././../2.4.0/api/Lwt">2.4.0</option><option value=".././../2.4.1/api/Lwt">2.4.1</option><option value=".././../2.4.2/api/Lwt">2.4.2</option><option value=".././../2.4.3/api/Lwt">2.4.3</option><option value=".././../2.4.7/api/Lwt">2.4.7</option><option value=".././../2.4.8/api/Lwt">2.4.8</option><option value=".././../2.5.0/api/Lwt">2.5.0</option><option value=".././../2.5.1/api/Lwt">2.5.1</option><option value=".././../2.5.2/api/Lwt">2.5.2</option><option value=".././../2.6.0/api/Lwt">2.6.0</option><option value=".././../2.7.0/api/Lwt">2.7.0</option><option value=".././../2.7.1/api/Lwt">2.7.1</option><option value=".././../3.0.0/api/Lwt">3.0.0</option><option value=".././../3.1.0/api/Lwt">3.1.0</option><option value=".././../3.2.1/api/Lwt">3.2.1</option><option value=".././../3.3.0/api/Lwt">3.3.0</option><option value=".././../4.0.0/api/Lwt">4.0.0</option><option value=".././../4.0.1/api/Lwt">4.0.1</option><option value=".././../4.1.0/api/Lwt">4.1.0</option><option value=".././../4.2.0/api/Lwt">4.2.0</option><option value=".././../4.2.1/api/Lwt">4.2.1</option><option value=".././../4.3.0/api/Lwt">4.3.0</option><option value=".././../4.3.1/api/Lwt">4.3.1</option><option value=".././../4.4.0/api/Lwt">4.4.0</option><option value=".././../4.5.0/api/Lwt">4.5.0</option><option value=".././../5.0.0/api/Lwt">5.0.0</option><option value=".././../5.0.1/api/Lwt">5.0.1</option><option value=".././../5.1.0/api/Lwt">5.1.0</option><option value=".././../5.1.1/api/Lwt">5.1.1</option><option value=".././../5.1.2/api/Lwt">5.1.2</option><option value=".././../5.2.0/api/Lwt">5.2.0</option><option value=".././../5.3.0/api/Lwt" selected="selected">5.3.0</option><option value=".././../dev/api/Lwt">dev</option></select><nav class="how-doctree"><h1> Lwt</h1><h2><a href=".././manual/manual" class="ocsimore_phrasing_link">Overview</a></h2><h1>Lwt - API Reference</h1><h2>Core library</h2><h3><a href=".././api/Lwt" class="ocsimore_phrasing_link">Lwt</a></h3><h3><a href=".././api/Lwt_result" class="ocsimore_phrasing_link">Lwt_result</a></h3><h3><a href=".././api/Lwt_condition" class="ocsimore_phrasing_link">Lwt_condition</a></h3><h3><a href=".././api/Lwt_list" class="ocsimore_phrasing_link">Lwt_list</a></h3><h3><a href=".././api/Lwt_mutex" class="ocsimore_phrasing_link">Lwt_mutex</a></h3><h3><a href=".././api/Lwt_mvar" class="ocsimore_phrasing_link">Lwt_mvar</a></h3><h3><a href=".././api/Lwt_pool" class="ocsimore_phrasing_link">Lwt_pool</a></h3><h3><a href=".././api/Lwt_stream" class="ocsimore_phrasing_link">Lwt_stream</a></h3><h3><a href=".././api/Lwt_switch" class="ocsimore_phrasing_link">Lwt_switch</a></h3><h3><a href=".././api/Lwt_sequence" class="ocsimore_phrasing_link">Lwt_sequence</a></h3><h3><a href=".././api/Lwt_pqueue" class="ocsimore_phrasing_link">Lwt_pqueue</a></h3><h2>Unix bindings</h2><h3><a href=".././api/Lwt_gc" class="ocsimore_phrasing_link">Lwt_gc</a></h3><h3><a href=".././api/Lwt_io" class="ocsimore_phrasing_link">Lwt_io</a></h3><h3><a href=".././api/Lwt_main" class="ocsimore_phrasing_link">Lwt_main</a></h3><h3><a href=".././api/Lwt_engine" class="ocsimore_phrasing_link">Lwt_engine</a></h3><h3><a href=".././api/Lwt_process" class="ocsimore_phrasing_link">Lwt_process</a></h3><h3><a href=".././api/Lwt_throttle" class="ocsimore_phrasing_link">Lwt_throttle</a></h3><h3><a href=".././api/Lwt_timeout" class="ocsimore_phrasing_link">Lwt_timeout</a></h3><h3><a href=".././api/Lwt_unix" class="ocsimore_phrasing_link">Lwt_unix</a></h3><h3><a href=".././api/Lwt_bytes" class="ocsimore_phrasing_link">Lwt_bytes</a></h3><h3><a href=".././api/Lwt_fmt" class="ocsimore_phrasing_link">Lwt_fmt</a></h3><h3><a href=".././api/Lwt_sys" class="ocsimore_phrasing_link">Lwt_sys</a></h3><h2>Reactive programming helpers</h2><h3><a href=".././api/Lwt_react" class="ocsimore_phrasing_link">Lwt_react</a></h3><h2>PPX syntax extension</h2><h3><a href=".././api/Ppx_lwt" class="ocsimore_phrasing_link">Ppx_lwt</a></h3><h2>Miscellaneous</h2><h3><a href=".././api/Lwt_preemptive" class="ocsimore_phrasing_link">Lwt_preemptive</a></h3><h2>Index</h2><h3> <span><a href=".././api/index_types">Index of types</a></span></h3><h3> <span><a href=".././api/index_exceptions">Index of exceptions</a></span></h3><h3> <span><a href=".././api/index_values">Index of values</a></span></h3><h3> <span><a href=".././api/index_attributes">Index of class attributes</a></span></h3><h3> <span><a href=".././api/index_methods">Index of class methods</a></span></h3><h3> <span><a href=".././api/index_classes">Index of classes</a></span></h3><h3> <span><a href=".././api/index_class_types">Index of class types</a></span></h3><h3> <span><a href=".././api/index_modules">Index of modules</a></span></h3><h3> <span><a href=".././api/index_module_types">Index of module types</a></span></h3></nav></nav><article class="rightcol"><h1>Module <span><a href=".././api/Lwt">Lwt</a></span> </h1><pre class="ocsforge_color odocwiki_code"><span class="ocsforge_color_keyword">module</span> <span class="ocsforge_color_uid"><span class="ocsforge_color_uid">Lwt</span></span> <span class="ocsforge_color_delimiter">:</span> <span class="ocsforge_color_keyword">sig</span><span><a href=".././api/Lwt">..</a></span><span class="ocsforge_color_keyword">end</span></pre><p>Asynchronous programming with promises.
+</p><p>A <strong>promise</strong> is a placeholder for a single value which might take a long
+time to compute. Speaking roughly, a promise is a <span class="odocwiki_inlinecode">ref</span> that can be filled
+in later. To make that precise, here is how promises differ from <span class="odocwiki_inlinecode">ref</span>s:
+</p><ul><li> A promise might not have a value yet. A promise in this state is called a
+<em>pending</em> promise.
+</li><li> Writing a value into a promise is called <em>resolving</em> it. A promise with
+a value is called a <em>resolved</em> promise.
+</li><li> Each promise can be resolved only once. After a promise has a value, the
+promise is immutable.
+</li><li> It's possible to attach <strong>callbacks</strong> to a promise. They will run when the
+promise has a value, i.e. is resolved. If the promise is already resolved
+when a callback is attached, the callback is run (almost) right away. If
+the promise is pending, the callback is put into a list and waits.
+</li></ul><p>So, promises are optional, write-once references, and when they don't yet
+have a value, they store a list of callbacks that are waiting for the value.
+</p><p>The waiting callbacks make promises a natural data type for asynchronous
+programming. For example, you can ask Lwt to <span class="odocwiki_inlinecode">read</span> a file. Lwt immediately
+returns you only a <em>promise</em> for the data.
+</p><p>You can neglect this promise for a while. You can do some other computation,
+request more I/O, etc. At some point, you might decide to attach a callback
+to the <span class="odocwiki_inlinecode">read</span> promise, maybe several callbacks.
+</p><p>In the meantime, the <span class="odocwiki_inlinecode">read</span> operation is running in the background. Once it
+finishes, Lwt <em>resolves</em> the <span class="odocwiki_inlinecode">read</span> promise by putting the data into it.
+Lwt then runs the callbacks you attached.
+</p><p>One of those might take the data, and ask Lwt to <span class="odocwiki_inlinecode">write</span> it to STDOUT. Lwt
+gives you a promise for that, too, and the process repeats.
+</p><p>Lwt has a small amount of syntactic sugar to make this look as natural as
+possible:
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  Lwt_main.run begin
+    let%lwt data = Lwt_io.(read_line stdin) in
+    let%lwt () = Lwt_io.printl data in
+    Lwt.return ()
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix echo.ml &amp;&amp; ./a.out *)</code></pre><p>This is all explained in the next sections:
+</p><ul><li> <a href=" /#3_Quickstart" class="ocsimore_phrasing_link"> Quick start</a> links these concepts to actual functions
+in Lwt – the most fundamental ones.
+</li><li> <a href=" /#3_Tutorial" class="ocsimore_phrasing_link"> Tutorial</a> shows how to write examples like the above, and
+how concurrency happens.
+</li><li> <a href=" /#3_Executionmodel" class="ocsimore_phrasing_link"> Execution model</a> clarifies control flow when using
+Lwt.
+</li><li> <a href=" /#3_GuidetotherestofLwt" class="ocsimore_phrasing_link"> Guide to the rest of Lwt</a> shows how
+<em>everything</em> else in Lwt fits into this framework.
+</li></ul><p>After that is the <a href=" /#2_Fundamentals" class="ocsimore_phrasing_link"> reference proper</a>, which goes into
+<em>painful</em> levels of detail on every single type and value in this module,
+<span class="odocwiki_inlinecode">Lwt</span>. Please be safe, and read only what you need from it :)
+</p><p>Happy asynchronous programming!
+</p><p>
+</p><h3 id="3_Quickstart">Quick start <a class="backref" href="#3_Quickstart">&#182;</a></h3><p><em>All</em> of Lwt is variations on:
+</p><ul><li> <strong>Promises</strong> of type <span class="odocwiki_inlinecode">'a</span><span><a href=".././api/Lwt#TYPEt">Lwt.t</a></span> are placeholders for values of type
+<span class="odocwiki_inlinecode">'a</span>.
+</li><li> <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span> attaches <strong>callbacks</strong> to promises. When a promise gets a
+value, its callbacks are called.
+</li><li> Separate <strong>resolvers</strong> of type <span class="odocwiki_inlinecode">'a</span><span><a href=".././api/Lwt#TYPEu">Lwt.u</a></span> are used to write values into
+promises, through <span><a href=".././api/Lwt#VALwakeup_later">Lwt.wakeup_later</a></span>.
+</li><li> Promises and resolvers are created in pairs using <span><a href=".././api/Lwt#VALwait">Lwt.wait</a></span>. Lwt I/O
+functions call <span><a href=".././api/Lwt#VALwait">Lwt.wait</a></span> internally, but return only the promise.
+</li><li> <span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span> is used to wait on one “top-level” promise. When that
+promise gets a value, the program terminates.
+</li></ul><p>
+</p><h3 id="3_Tutorial">Tutorial <a class="backref" href="#3_Tutorial">&#182;</a></h3><p>Let's read  from STDIN. The first version is written using ordinary values
+from the OCaml standard library. This makes the program block until the user
+enters a line:
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  let line : string = read_line () in
+  print_endline &quot;Now unblocked!&quot;;
+  ignore line
+
+(* ocamlfind opt -linkpkg code.ml &amp;&amp; ./a.out *)</code></pre><p>If we use a promise instead, execution continues immediately:
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  let line_promise : string Lwt.t =
+    Lwt_io.(read_line stdin) in
+  print_endline &quot;Execution just continues...&quot;;
+  ignore line_promise
+
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>Indeed, this program is a little <em>too</em> asynchronous – it exits right away!
+Let's force it to wait for <span class="odocwiki_inlinecode">line_promise</span> at the end by calling
+<span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span>:
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  let line_promise : string Lwt.t =
+    Lwt_io.(read_line stdin) in
+  print_endline &quot;Execution just continues...&quot;;
+
+  let line : string =
+    Lwt_main.run line_promise in
+  ignore line
+
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p><span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span> should only be called once, on one promise, at the top level
+of your program. Most of the time, waiting for promises is done using
+<span class="odocwiki_inlinecode">let%lwt</span>. That is the recommended syntactic sugar for <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span>, and is
+pronounced “bind”:
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  let p : unit Lwt.t =
+    let%lwt line_1 = Lwt_io.(read_line stdin) in
+    let%lwt line_2 = Lwt_io.(read_line stdin) in
+    Lwt_io.printf &quot;%s and %s\n&quot; line_1 line_2
+  in
+
+  Lwt_main.run p
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>The way that works is everything in scope after the “<span class="odocwiki_inlinecode">in</span>” in
+“<span class="odocwiki_inlinecode">let%lwt x =</span> ... <span class="odocwiki_inlinecode">in</span> ...” goes into a callback, and “<span class="odocwiki_inlinecode">x</span>” is that
+callback's argument. So, we could have been very explicit, and written the
+code like this:
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  let p : unit Lwt.t =
+    let line_1_promise : string Lwt.t = Lwt_io.(read_line stdin) in
+    Lwt.bind line_1_promise (fun (line_1 : string) -&gt;
+
+      let line_2_promise : string Lwt.t = Lwt_io.(read_line stdin) in
+      Lwt.bind line_2_promise (fun (line_2 : string) -&gt;
+
+        Lwt_io.printf &quot;%s and %s\n&quot; line_1 line_2))
+  in
+
+  Lwt_main.run p
+
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>But, as you can see, this is verbose, and the indentation gets a bit crazy.
+So, we will always use <span class="odocwiki_inlinecode">let%lwt</span>.
+</p><p>The code above reads two lines in sequence, because we ask Lwt to wait for
+<span class="odocwiki_inlinecode">line_1</span>, before calling the second <span><a href=".././api/Lwt_io#VALread_line">Lwt_io.read_line</a></span> in the callback, to
+start the second I/O.
+</p><p>We could also run I/O <em>concurrently</em>. All we have to do is not start the
+second I/O in a callback of the first. Because it doesn't make sense to read
+two lines from STDIN concurrently, let's start two waits instead:
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  Lwt_main.run begin
+    let three_seconds : unit Lwt.t = Lwt_unix.sleep 3. in
+    let five_seconds : unit Lwt.t = Lwt_unix.sleep 5. in
+    let%lwt () = three_seconds in
+    let%lwt () = Lwt_io.printl &quot;3 seconds passed&quot; in
+    let%lwt () = five_seconds in
+    Lwt_io.printl &quot;Only 2 more seconds passed&quot;
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>This program takes about five seconds to run. We are still new to <span class="odocwiki_inlinecode">let%lwt</span>,
+so let's desugar it:
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  Lwt_main.run begin
+    let three_seconds : unit Lwt.t = Lwt_unix.sleep 3. in
+    let five_seconds : unit Lwt.t = Lwt_unix.sleep 5. in
+
+    (* Both waits have already been started at this point! *)
+
+    Lwt.bind three_seconds (fun () -&gt;
+      (* This is 3 seconds later. *)
+      Lwt.bind (Lwt_io.printl &quot;3 seconds passed&quot;) (fun () -&gt;
+        Lwt.bind five_seconds (fun () -&gt;
+          (* Only 2 seconds were left in the 5-second wait, so
+              this callback runs 2 seconds after the first callback. *)
+          Lwt_io.printl &quot;Only 2 more seconds passed&quot;)))
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>And that's it! Concurrency in Lwt is simply a matter of whether you start an
+operation in the callback of another one or not. As a convenience, Lwt
+provides a few <a href=" /#2_Concurrency" class="ocsimore_phrasing_link"> helpers</a> for common concurrency patterns.
+</p><p>
+</p><h3 id="3_Executionmodel">Execution model <a class="backref" href="#3_Executionmodel">&#182;</a></h3><p>It's important to understand that promises are a pure-OCaml data type. They
+don't do any fancy scheduling or I/O. They are just lists of callbacks (if
+pending), or containers for one value (if resolved).
+</p><p>The interesting function is <span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span>. It's a wrapper around
+<a href=" http://man7.org/linux/man-pages/man2/select.2.html" class="ocsimore_phrasing_link"> <span class="odocwiki_inlinecode">select(2)</span></a>,
+<a href=" http://man7.org/linux/man-pages/man7/epoll.7.html" class="ocsimore_phrasing_link"> <span class="odocwiki_inlinecode">epoll(7)</span></a>,
+<a href=" https://www.freebsd.org/cgi/man.cgi?query=kqueue&amp;sektion=2" class="ocsimore_phrasing_link">
+<span class="odocwiki_inlinecode">kqueue(2)</span></a>, or whatever asynchronous I/O API your system provides. On
+browsers, the work of <span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span> is done by the surrounding JavaScript
+engine, so you don't call <span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span> from inside your program. But the
+execution model is still the same, and the description below applies!
+</p><p>To avoid writing out “underlying asynchronous I/O API,” we'll assume, in
+this section, that the API is <span class="odocwiki_inlinecode">select(2)</span>. That's just for the sake of
+abbreviation. It doesn't actually matter, for most purposes, what the
+underlying I/O API is.
+</p><p>Let's use the program from the tutorial that reads two lines as an example.
+Here it is, again, in its desugared form:
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  let p : unit Lwt.t =
+    let line_1_promise : string Lwt.t = Lwt_io.(read_line stdin) in
+    Lwt.bind line_1_promise (fun (line_1 : string) -&gt;
+
+      let line_2_promise : string Lwt.t = Lwt_io.(read_line stdin) in
+      Lwt.bind line_2_promise (fun (line_2 : string) -&gt;
+
+        Lwt_io.printf &quot;%s and %s\n&quot; line_1 line_2))
+  in
+
+  Lwt_main.run p
+
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p><span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span> is your program's main I/O loop. You pass it a single
+promise, and it:
+</p><ol><li> Uses <span class="odocwiki_inlinecode">select(2)</span> to put your process to sleep until the next I/O
+completes.
+</li><li> That next I/O happens to be the one that reads <span class="odocwiki_inlinecode">line_1</span>. <span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span>
+knows that I/O is supposed to resolve <span class="odocwiki_inlinecode">line_1_promise</span>, so it puts
+<span class="odocwiki_inlinecode">line_1</span> into the promise and resolves it.
+</li><li> Resolving is an ordinary OCaml operation. It causes all the callbacks of
+<span class="odocwiki_inlinecode">line_1_promise</span> to run, one after another. Each callback is also ordinary
+OCaml code. In our case, there is only one callback, but in general, there
+might be several, and they might also resolve additional promises. So,
+promise resolution triggers a “cascade” of callbacks. Eventually, however,
+we should run out of callbacks, and control will return to
+<span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span>.
+</li><li> In our example, our one callback registers a second I/O with
+<span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span> – the one that will read <span class="odocwiki_inlinecode">line_2</span>. There are no callbacks
+left to run after that, so control returns to <span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span>.
+</li><li> <span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span> goes back to sleep again by calling <span class="odocwiki_inlinecode">select(2)</span>, now
+waiting for the second I/O that we just registered. The loop repeats
+itself from step 1.
+</li></ol><p>This has two major implications, one good and one bad. Let's start with the
+bad one.
+</p><p>    <strong>(1)</strong> If one of your callbacks enters an infinite loop, calls an
+Lwt-unfriendly blocking I/O, or just runs for a really long time, it won't
+return control to <span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span> anytime soon. That means <span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span>
+won't get a chance to resolve any other Lwt I/O promises, even if the
+underlying I/O operations complete.
+</p><p>In case your callback is just using the CPU for a really long time, you can
+insert a few calls to <span><a href=".././api/Lwt_main#VALyield">Lwt_main.yield</a></span> into it, and resume your computation
+in callbacks of <span class="odocwiki_inlinecode">yield</span>. This is basically the same as
+<span><a href=".././api/Lwt_unix#VALsleep">Lwt_unix.sleep</a></span><span class="odocwiki_inlinecode">0.</span> – it's a promise that will be resolved by
+<span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span> <em>after</em> any other I/O resolutions that are already in its
+queue.
+</p><p>    <strong>(2)</strong> The good implication is that all your callbacks run in a single
+thread. This means that in most situations, you don't have to worry about
+locks, synchronization, etc. Anything that is in the same callback is
+guaranteed to run without interruption. Lwt programs are often <em>much</em>
+easier to write and refactor, than equivalent programs written with threads
+– but both are concurrent!
+</p><p>
+</p><h3 id="3_GuidetotherestofLwt">Guide to the rest of Lwt <a class="backref" href="#3_GuidetotherestofLwt">&#182;</a></h3><p>This module <span class="odocwiki_inlinecode">Lwt</span> is the pure-OCaml definition of promises and
+callback-calling. It has a few extras on top of what's described above:
+</p><ul><li> <a href=" /#2_Rejection" class="ocsimore_phrasing_link"> Rejection</a>. Lwt promises can actually be resolved in two
+ways: <em>fulfilled</em> with a value, or <em>rejected</em> with an exception. There
+is nothing conceptually special about rejection – it's just that you can
+ask for callbacks to run only on fulfillment, only on rejection, etc.
+</li><li> <a href=" /#2_Cancelation" class="ocsimore_phrasing_link"> Cancellation</a>. This is a special case of rejection,
+specifically with exception <span><a href=".././api/Lwt#EXCEPTIONCanceled">Lwt.Canceled</a></span>. It has extra helpers in the
+Lwt API.
+</li><li> <a href=" /#2_Concurrency" class="ocsimore_phrasing_link"> Concurrency helpers</a>. All of these could be
+implemented on top of <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span>. As we saw, Lwt concurrency requires
+only deciding whether to run something inside a callback, or outside it.
+These functions just implement common patterns, and make intent explicit.
+</li><li> Miscellaneous <a href=" /#2_Convenience" class="ocsimore_phrasing_link"> helpers</a>, and <a href=" /#2_Deprecated" class="ocsimore_phrasing_link">
+deprecated</a> APIs.
+</li></ul><p>The next layer above module <span class="odocwiki_inlinecode">Lwt</span> is the pure-OCaml Lwt “core” library,
+which provides some promise-friendly patterns, like streams and mvars. This
+consists of the modules <span><a href=".././api/Lwt_list">Lwt_list</a></span>, <span><a href=".././api/Lwt_stream">Lwt_stream</a></span>, <span><a href=".././api/Lwt_result">Lwt_result</a></span>,
+<span><a href=".././api/Lwt_mutex">Lwt_mutex</a></span>, <span><a href=".././api/Lwt_condition">Lwt_condition</a></span>, <span><a href=".././api/Lwt_mvar">Lwt_mvar</a></span>, <span><a href=".././api/Lwt_pool">Lwt_pool</a></span>, and <span><a href=".././api/Lwt_switch">Lwt_switch</a></span>.
+</p><p>Above that is the Lwt Unix binding, where I/O begins. This includes the
+module <span><a href=".././api/Lwt_main">Lwt_main</a></span>, including the all-important <span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span>. The rest of
+the Unix binding consists of functions, each one of which...
+</p><ul><li> ...starts a background I/O operation,
+</li><li> creates a promise for it and gives it to you,
+</li><li> registers with <span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span>, so if you attach callbacks to the promise,
+they will be called when the I/O operation completes.
+</li></ul><p>The functions are grouped into modules:
+</p><ul><li> <span><a href=".././api/Lwt_unix">Lwt_unix</a></span> for Unix system calls.
+</li><li> <span><a href=".././api/Lwt_bytes">Lwt_bytes</a></span> for Unix system calls on bigarrays.
+</li><li> <span><a href=".././api/Lwt_io">Lwt_io</a></span> for <span class="odocwiki_inlinecode">Pervasives</span>-like high-level channels, TCP servers, etc.
+</li><li> <span><a href=".././api/Lwt_process">Lwt_process</a></span> for managing subprocesses.
+</li><li> <span><a href=".././api/Lwt_preemptive">Lwt_preemptive</a></span> for spawning system threads.
+</li><li> Miscellaneous modules <span><a href=".././api/Lwt_gc">Lwt_gc</a></span>, <span><a href=".././api/Lwt_engine">Lwt_engine</a></span>, <span><a href=".././api/Lwt_throttle">Lwt_throttle</a></span>,
+<span><a href=".././api/Lwt_timeout">Lwt_timeout</a></span>, <span><a href=".././api/Lwt_sys">Lwt_sys</a></span>.
+</li></ul><p>Warning! Introductory material ends and detailed reference begins!
+</p><hr/><h2 id="2_Fundamentals">Fundamentals <a class="backref" href="#2_Fundamentals">&#182;</a></h2><h3 id="3_Promises">Promises <a class="backref" href="#3_Promises">&#182;</a></h3><pre class="ocsforge_color odocwiki_code" id="TYPEt"><span class="ocsforge_color_keyword">type</span> <span class="odocwiki_type">+'a</span> <span class="odocwiki_name">t</span></pre><div class="odocwiki_info"><p>Promises for values of type <span class="odocwiki_inlinecode">'a</span>.
+</p><p>A <strong>promise</strong> is a memory cell that is always in one of three <strong>states</strong>:
+</p><ul><li> <em>fulfilled</em>, and containing one value of type <span class="odocwiki_inlinecode">'a</span>,
+</li><li> <em>rejected</em>, and containing one exception, or
+</li><li> <em>pending</em>, in which case it may become fulfilled or rejected later.
+</li></ul><p>A <em>resolved</em> promise is one that is either fulfilled or rejected, i.e. not
+pending. Once a promise is resolved, its content cannot change. So, promises
+are <em>write-once references</em>. The only possible state changes are (1) from
+pending to fulfilled and (2) from pending to rejected.
+</p><p>Promises are typically “read” by attaching <strong>callbacks</strong> to them. The most
+basic functions for that are <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span>, which attaches a callback that is
+called when a promise becomes fulfilled, and <span><a href=".././api/Lwt#VALcatch">Lwt.catch</a></span>, for rejection.
+</p><p>Promise variables of this type, <span class="odocwiki_inlinecode">'a Lwt.t</span>, are actually <strong>read-only</strong> in
+Lwt. Separate <em>resolvers</em> of type <span class="odocwiki_inlinecode">'a</span><span><a href=".././api/Lwt#TYPEu">Lwt.u</a></span> are used to write to them.
+Promises and their resolvers are created together by calling <span><a href=".././api/Lwt#VALwait">Lwt.wait</a></span>.
+There is one exception to this: most promises can be <em>canceled</em> by calling
+<span><a href=".././api/Lwt#VALcancel">Lwt.cancel</a></span>, without going through a resolver.</p></div><pre class="ocsforge_color odocwiki_code" id="TYPEu"><span class="ocsforge_color_keyword">type</span> <span class="odocwiki_type">-'a</span> <span class="odocwiki_name">u</span></pre><div class="odocwiki_info"><p>Resolvers for promises of type <span class="odocwiki_inlinecode">'a</span><span><a href=".././api/Lwt#TYPEt">Lwt.t</a></span>.
+</p><p>Each resolver can be thought of as the <strong>write end</strong> of one promise. It can
+be passed to <span><a href=".././api/Lwt#VALwakeup_later">Lwt.wakeup_later</a></span>, <span><a href=".././api/Lwt#VALwakeup_later_exn">Lwt.wakeup_later_exn</a></span>, or
+<span><a href=".././api/Lwt#VALwakeup_later_result">Lwt.wakeup_later_result</a></span> to resolve that promise.</p></div><pre class="ocsforge_color odocwiki_code" id="VALwait"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">wait</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">unit <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span> * 'a <span><a href=".././api/Lwt#TYPEu">u</a></span></span></pre><div class="odocwiki_info"><p>Creates a new pending <a href=" /#TYPEt" class="ocsimore_phrasing_link"> promise</a>, paired with its <a href=" /#TYPEu" class="ocsimore_phrasing_link">
+resolver</a>.
+</p><p>It is rare to use this function directly. Many helpers in Lwt, and Lwt-aware
+libraries, call it internally, and return only the promise. You then chain
+the promises together using <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span>.
+</p><p>However, it is important to understand <span class="odocwiki_inlinecode">Lwt.wait</span> as the fundamental promise
+“constructor.” All other functions that evaluate to a promise can be, or
+are, eventually implemented in terms of it.</p></div><h3 id="3_Resolving">Resolving <a class="backref" href="#3_Resolving">&#182;</a></h3><pre class="ocsforge_color odocwiki_code" id="VALwakeup_later"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">wakeup_later</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEu">u</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span class="ocsforge_color_delimiter">-&gt;</span> unit</span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.wakeup_later r v</span> <em>fulfills</em>, with value <span class="odocwiki_inlinecode">v</span>, the <em>pending</em>
+<a href=" /#TYPEt" class="ocsimore_phrasing_link"> promise</a> associated with <a href=" /#TYPEu" class="ocsimore_phrasing_link"> resolver</a> <span class="odocwiki_inlinecode">r</span>. This
+triggers callbacks attached to the promise.
+</p><p>If the promise is not pending, <span class="odocwiki_inlinecode">Lwt.wakeup_later</span> raises
+<a href=" https://caml.inria.fr/pub/docs/manual-ocaml/libref/Stdlib.html/#VALinvalid_arg" class="ocsimore_phrasing_link">
+<span class="odocwiki_inlinecode">Invalid_argument</span></a>, unless the promise is <a href=" /#VALcancel" class="ocsimore_phrasing_link"> canceled</a>. If the
+promise is canceled, <span class="odocwiki_inlinecode">Lwt.wakeup_later</span> has no effect.
+</p><p>If your program has multiple threads, it is important to make sure that
+<span class="odocwiki_inlinecode">Lwt.wakeup_later</span> (and any similar function) is only called from the main
+thread. <span class="odocwiki_inlinecode">Lwt.wakeup_later</span> can trigger callbacks attached to promises
+by the program, and these assume they are running in the main thread. If you
+need to communicate from a worker thread to the main thread running Lwt, see
+<span><a href=".././api/Lwt_preemptive">Lwt_preemptive</a></span> or <span><a href=".././api/Lwt_unix#VALsend_notification">Lwt_unix.send_notification</a></span>.</p></div><pre class="ocsforge_color odocwiki_code" id="VALwakeup_later_exn"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">wakeup_later_exn</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEu">u</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> exn <span class="ocsforge_color_delimiter">-&gt;</span> unit</span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.wakeup_later_exn r exn</span> is like <span><a href=".././api/Lwt#VALwakeup_later">Lwt.wakeup_later</a></span>, except, if the
+associated <a href=" /#TYPEt" class="ocsimore_phrasing_link"> promise</a> is <em>pending</em>, it is <em>rejected</em> with
+<span class="odocwiki_inlinecode">exn</span>.</p></div><pre class="ocsforge_color odocwiki_code" id="VALreturn"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">return</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.return v</span> creates a new <a href=" /#TYPEt" class="ocsimore_phrasing_link"> promise</a> that is <em>already
+fulfilled</em> with value <span class="odocwiki_inlinecode">v</span>.
+</p><p>This is needed to satisfy the type system in some cases. For example, in a
+<span class="odocwiki_inlinecode">match</span> expression where one case evaluates to a promise, the other cases
+have to evaluate to promises as well:
+</p><pre class=""><code class="language-ocaml translatable">match need_input with
+| true -&gt; Lwt_io.(read_line stdin)   (* Has type string Lwt.t... *)
+| false -&gt; Lwt.return &quot;&quot;             (* ...so wrap empty string in a promise. *)</code></pre><p>Another typical usage is in <a href=" /#VALbind" class="ocsimore_phrasing_link"> <span class="odocwiki_inlinecode">let%lwt</span></a>. The expression after
+the “<span class="odocwiki_inlinecode">in</span>” has to evaluate to a promise. So, if you compute an ordinary
+value instead, you have to wrap it:
+</p><pre class=""><code class="language-ocaml translatable">let%lwt line = Lwt_io.(read_line stdin) in
+Lwt.return (line ^ &quot;.&quot;)</code></pre></div><pre class="ocsforge_color odocwiki_code" id="VALfail"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">fail</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">exn <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.fail exn</span> is like <span><a href=".././api/Lwt#VALreturn">Lwt.return</a></span>, except the new <a href=" /#TYPEt" class="ocsimore_phrasing_link"> promise</a>
+that is <em>already rejected</em> with <span class="odocwiki_inlinecode">exn</span>.
+</p><p>Whenever possible, it is recommended to use <span class="odocwiki_inlinecode">raise exn</span> instead, as <span class="odocwiki_inlinecode">raise</span>
+captures a backtrace, while <span class="odocwiki_inlinecode">Lwt.fail</span> does not. If you call <span class="odocwiki_inlinecode">raise exn</span> in
+a callback that is expected by Lwt to return a promise, Lwt will
+automatically wrap <span class="odocwiki_inlinecode">exn</span> in a rejected promise, but the backtrace will have
+been recorded by the OCaml runtime. Use <span class="odocwiki_inlinecode">Lwt.fail</span> only when you
+specifically want to create a rejected promise, to pass to another function,
+or store in a data structure.</p></div><h3 id="3_Callbacks">Callbacks <a class="backref" href="#3_Callbacks">&#182;</a></h3><pre class="ocsforge_color odocwiki_code" id="VALbind"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">bind</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> <span class="ocsforge_color_delimiter">(</span>'a <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span><a href=".././api/Lwt#TYPEt">t</a></span><span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.bind p_1 f</span> makes it so that <span class="odocwiki_inlinecode">f</span> will run when <span class="odocwiki_inlinecode">p_1</span> is <a href=" /#TYPEt" class="ocsimore_phrasing_link">
+<em>fulfilled</em></a>.
+</p><p>When <span class="odocwiki_inlinecode">p_1</span> is fulfilled with value <span class="odocwiki_inlinecode">v_1</span>, the callback <span class="odocwiki_inlinecode">f</span> is called with
+that same value <span class="odocwiki_inlinecode">v_1</span>. Eventually, after perhaps starting some I/O or other
+computation, <span class="odocwiki_inlinecode">f</span> returns promise <span class="odocwiki_inlinecode">p_2</span>.
+</p><p><span class="odocwiki_inlinecode">Lwt.bind</span> itself returns immediately. It only attaches the callback <span class="odocwiki_inlinecode">f</span> to
+<span class="odocwiki_inlinecode">p_1</span> – it does not wait for <span class="odocwiki_inlinecode">p_2</span>. <em>What</em> <span class="odocwiki_inlinecode">Lwt.bind</span> returns is yet a
+third promise, <span class="odocwiki_inlinecode">p_3</span>. Roughly speaking, fulfillment of <span class="odocwiki_inlinecode">p_3</span> represents both
+<span class="odocwiki_inlinecode">p_1</span> and <span class="odocwiki_inlinecode">p_2</span> becoming fulfilled, one after the other.
+</p><p>A minimal example of this is an echo program:
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  let p_3 =
+    Lwt.bind
+      Lwt_io.(read_line stdin)
+      (fun line -&gt; Lwt_io.printl line)
+  in
+  Lwt_main.run p_3
+
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>Rejection of <span class="odocwiki_inlinecode">p_1</span> and <span class="odocwiki_inlinecode">p_2</span>, and raising an exception in <span class="odocwiki_inlinecode">f</span>, are all
+forwarded to rejection of <span class="odocwiki_inlinecode">p_3</span>.
+</p><p>    <strong>Precise behavior</strong>
+</p><p><span class="odocwiki_inlinecode">Lwt.bind</span> returns a promise <span class="odocwiki_inlinecode">p_3</span> immediately. <span class="odocwiki_inlinecode">p_3</span> starts out pending,
+and is resolved as follows:
+</p><ul><li> The first condition to wait for is that <span class="odocwiki_inlinecode">p_1</span> becomes resolved. It does
+not matter whether <span class="odocwiki_inlinecode">p_1</span> is already resolved when <span class="odocwiki_inlinecode">Lwt.bind</span> is called, or
+becomes resolved later – the rest of the behavior is the same.
+</li><li> If and when <span class="odocwiki_inlinecode">p_1</span> becomes resolved, it will, by definition, be either
+fulfilled or rejected.
+</li><li> If <span class="odocwiki_inlinecode">p_1</span> is rejected, <span class="odocwiki_inlinecode">p_3</span> is rejected with the same exception.
+</li><li> If <span class="odocwiki_inlinecode">p_1</span> is fulfilled, with value <span class="odocwiki_inlinecode">v</span>, <span class="odocwiki_inlinecode">f</span> is applied to <span class="odocwiki_inlinecode">v</span>.
+</li><li> <span class="odocwiki_inlinecode">f</span> may finish by returning the promise <span class="odocwiki_inlinecode">p_2</span>, or raising an exception.
+</li><li> If <span class="odocwiki_inlinecode">f</span> raises an exception, <span class="odocwiki_inlinecode">p_3</span> is rejected with that exception.
+</li><li> Finally, the remaining case is when <span class="odocwiki_inlinecode">f</span> returns <span class="odocwiki_inlinecode">p_2</span>. From that point on,
+<span class="odocwiki_inlinecode">p_3</span> is effectively made into a reference to <span class="odocwiki_inlinecode">p_2</span>. This means they have
+the same state, undergo the same state changes, and performing any
+operation on one is equivalent to performing it on the other.
+</li></ul><p>    <strong>Syntactic sugar</strong>
+</p><p><span class="odocwiki_inlinecode">Lwt.bind</span> is almost never written directly, because sequences of <span class="odocwiki_inlinecode">Lwt.bind</span>
+result in growing indentation and many parentheses:
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  Lwt_main.run begin
+    Lwt.bind Lwt_io.(read_line stdin) (fun line -&gt;
+      Lwt.bind (Lwt_unix.sleep 1.) (fun () -&gt;
+        Lwt_io.printf &quot;One second ago, you entered %s\n&quot; line))
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>The recommended way to write <span class="odocwiki_inlinecode">Lwt.bind</span> is using the <span class="odocwiki_inlinecode">let%lwt</span> syntactic
+sugar:
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  Lwt_main.run begin
+    let%lwt line = Lwt_io.(read_line stdin) in
+    let%lwt () = Lwt_unix.sleep 1. in
+    Lwt_io.printf &quot;One second ago, you entered %s\n&quot; line
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>This uses the Lwt <a href=" Ppx_lwt.html" class="ocsimore_phrasing_link"> PPX</a> (preprocessor). Note that we had to
+add package <span class="odocwiki_inlinecode">lwt_ppx</span> to the command line for building this program. We will
+do that throughout this manual.
+</p><p>Another way to write <span class="odocwiki_inlinecode">Lwt.bind</span>, that you may encounter while reading code,
+is with the <span class="odocwiki_inlinecode">&gt;&gt;=</span> operator:
+</p><pre class=""><code class="language-ocaml translatable">open Lwt.Infix
+
+let () =
+  Lwt_main.run begin
+    Lwt_io.(read_line stdin) &gt;&gt;= fun line -&gt;
+    Lwt_unix.sleep 1. &gt;&gt;= fun () -&gt;
+    Lwt_io.printf &quot;One second ago, you entered %s\n&quot; line
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>The <span class="odocwiki_inlinecode">&gt;&gt;=</span> operator comes from the module <span><a href=".././api/Lwt.Infix">Lwt.Infix</a></span>, which is why we
+opened it at the beginning of the program.
+</p><p>See also <span><a href=".././api/Lwt#VALmap">Lwt.map</a></span>.</p></div><h2 id="2_Rejection">Rejection <a class="backref" href="#2_Rejection">&#182;</a></h2><pre class="ocsforge_color odocwiki_code" id="VALcatch"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">catch</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><span class="ocsforge_color_delimiter">(</span>unit <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span><span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> <span class="ocsforge_color_delimiter">(</span>exn <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span><span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.catch f h</span> applies <span class="odocwiki_inlinecode">f ()</span>, which returns a promise, and then makes it
+so that <span class="odocwiki_inlinecode">h</span> (“handler”) will run when that promise is <a href=" /#TYPEt" class="ocsimore_phrasing_link">
+<em>rejected</em></a>.
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  Lwt_main.run begin
+    Lwt.catch
+      (fun () -&gt; Lwt.fail Exit)
+      (function
+      | Exit -&gt; Lwt_io.printl &quot;Got Stdlib.Exit&quot;
+      | exn -&gt; Lwt.fail exn)
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>Despite the above code, the recommended way to write <span class="odocwiki_inlinecode">Lwt.catch</span> is using
+the <span class="odocwiki_inlinecode">try%lwt</span> syntactic sugar from the <a href=" Ppx_lwt.html" class="ocsimore_phrasing_link"> PPX</a>. Here is an
+equivalent example:
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  Lwt_main.run begin
+    try%lwt Lwt.fail Exit
+    with Exit -&gt; Lwt_io.printl &quot;Got Stdlb.Exit&quot;
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>A particular advantage of the PPX syntax is that it is not necessary to
+artificially insert a catch-all <span class="odocwiki_inlinecode">exn -&gt; Lwt.fail exn</span> case. Like in the core
+language's <span class="odocwiki_inlinecode">try</span> expression, the catch-all case is implied in <span class="odocwiki_inlinecode">try%lwt</span>.
+</p><p><span class="odocwiki_inlinecode">Lwt.catch</span> is a counterpart to <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span> – <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span> is for
+fulfillment, and <span><a href=".././api/Lwt#VALcatch">Lwt.catch</a></span> is for rejection.
+</p><p>As with <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span>, three promises are involved:
+</p><ul><li> <span class="odocwiki_inlinecode">p_1</span>, the promise returned from applying <span class="odocwiki_inlinecode">f ()</span>.
+</li><li> <span class="odocwiki_inlinecode">p_2</span>, the promise returned from applying <span class="odocwiki_inlinecode">h exn</span>.
+</li><li> <span class="odocwiki_inlinecode">p_3</span>, the promise returned by <span class="odocwiki_inlinecode">Lwt.catch</span> itself.
+</li></ul><p>The remainder is (1) a precise description of how <span class="odocwiki_inlinecode">p_3</span> is resolved, and
+(2) a warning about accidentally using ordinary <span class="odocwiki_inlinecode">try</span> for exception handling
+in asynchronous code.
+</p><p>    <strong>(1)</strong> <span class="odocwiki_inlinecode">Lwt.catch</span> first applies <span class="odocwiki_inlinecode">f ()</span>. It then returns <span class="odocwiki_inlinecode">p_3</span> immediately.
+<span class="odocwiki_inlinecode">p_3</span> starts out pending. It is resolved as follows:
+</p><ul><li> If <span class="odocwiki_inlinecode">f ()</span> returned a promise <span class="odocwiki_inlinecode">p_1</span>, and <span class="odocwiki_inlinecode">p_1</span> becomes fulfilled, <span class="odocwiki_inlinecode">p_3</span> is
+fulfilled with the same value.
+</li><li> <span class="odocwiki_inlinecode">p_1</span> can instead become rejected. There is one other possibility: <span class="odocwiki_inlinecode">f ()</span>
+itself raised an exception, instead of returning a promise. The behavior
+of <span class="odocwiki_inlinecode">Lwt.catch</span> is the same whether <span class="odocwiki_inlinecode">f ()</span> raised an exception, or returned
+a promise that is later rejected with an exception. Let's call the
+exception <span class="odocwiki_inlinecode">exn</span>.
+</li><li> <span class="odocwiki_inlinecode">h exn</span> is applied.
+</li><li> <span class="odocwiki_inlinecode">h exn</span> may return a promise, or might itself raise an exception. The
+first case is the interesting one, but the exception case is simple, so we
+cover the exception case first.
+</li><li> If <span class="odocwiki_inlinecode">h exn</span> raises another exception <span class="odocwiki_inlinecode">exn'</span>, <span class="odocwiki_inlinecode">p_3</span> is rejected with <span class="odocwiki_inlinecode">exn'</span>.
+</li><li> If <span class="odocwiki_inlinecode">h exn</span> instead returns the promise <span class="odocwiki_inlinecode">p_2</span>, <span class="odocwiki_inlinecode">p_3</span> is effectively made
+into a reference to <span class="odocwiki_inlinecode">p_2</span>. This means <span class="odocwiki_inlinecode">p_3</span> and <span class="odocwiki_inlinecode">p_2</span> have the same state,
+undergo the same state changes, and performing any operation one is
+equivalent to performing it on the other.
+</li></ul><p>    <strong>(2)</strong> <strong>Warning</strong>: it may be tempting to write this code, which differs
+from the second example above only in that <span class="odocwiki_inlinecode">try</span> is used instead of
+<span class="odocwiki_inlinecode">try%lwt</span>:
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  Lwt_main.run begin
+    try Lwt.fail Exit
+    with Exit -&gt; Lwt_io.printl &quot;Got Stdlib.Exit&quot;
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>This does <em>not</em> handle the exception and does not print the message.
+Instead, it terminates the program with an unhandled <span class="odocwiki_inlinecode">Stdlib.Exit</span>.
+</p><p>This is because the call to <span><a href=".././api/Lwt#VALfail">Lwt.fail</a></span> creates a rejected promise. The
+promise is still an ordinary OCaml value, though, and not a <em>raised</em>
+exception. So, <span class="odocwiki_inlinecode">try</span> considers that code to have succeeded, and doesn't run
+the handler. When that rejected promise reaches <span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span>,
+it is <span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span> that raises the exception.
+</p><p>Basically, the rule is: if the code inside <span class="odocwiki_inlinecode">try</span> evaluates to a promise
+(has type <span class="odocwiki_inlinecode">_ Lwt.t</span>), replace <span class="odocwiki_inlinecode">try</span> by <span class="odocwiki_inlinecode">try%lwt</span>.</p></div><pre class="ocsforge_color odocwiki_code" id="VALfinalize"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">finalize</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><span class="ocsforge_color_delimiter">(</span>unit <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span><span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> <span class="ocsforge_color_delimiter">(</span>unit <span class="ocsforge_color_delimiter">-&gt;</span> unit <span><a href=".././api/Lwt#TYPEt">t</a></span><span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.finalize f c</span> applies <span class="odocwiki_inlinecode">f ()</span>, which returns a promise, and then makes
+it so <span class="odocwiki_inlinecode">c</span> (“cleanup”) will run when that promise is <a href=" /#TYPEt" class="ocsimore_phrasing_link">
+<em>resolved</em></a>.
+</p><p>In other words, <span class="odocwiki_inlinecode">c</span> runs no matter whether promise <span class="odocwiki_inlinecode">f ()</span> is fulfilled or
+rejected. As the names suggest, <span class="odocwiki_inlinecode">Lwt.finalize</span> corresponds to the <span class="odocwiki_inlinecode">finally</span>
+construct found in many programming languages, and <span class="odocwiki_inlinecode">c</span> is typically used for
+cleaning up resources:
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  Lwt_main.run begin
+    let%lwt file = Lwt_io.(open_file Input &quot;code.ml&quot;) in
+    Lwt.finalize
+      (fun () -&gt;
+        let%lwt content = Lwt_io.read file in
+        Lwt_io.print content)
+      (fun () -&gt;
+        Lwt_io.close file)
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>As with <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span> and <span><a href=".././api/Lwt#VALcatch">Lwt.catch</a></span>, there is a syntactic sugar for
+<span class="odocwiki_inlinecode">Lwt.finalize</span>, though it is not as often used:
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  Lwt_main.run begin
+    let%lwt file = Lwt_io.(open_file Input &quot;code.ml&quot;) in
+    begin
+      let%lwt content = Lwt_io.read file in
+      Lwt_io.print content
+    end
+    [%lwt.finally
+      Lwt_io.close file]
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>Also as with <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span> and <span><a href=".././api/Lwt#VALcatch">Lwt.catch</a></span>, three promises are involved:
+</p><ul><li> <span class="odocwiki_inlinecode">p_1</span>, the promise returned from applying <span class="odocwiki_inlinecode">f ()</span>.
+</li><li> <span class="odocwiki_inlinecode">p_2</span>, the promise returned from applying <span class="odocwiki_inlinecode">c ()</span>.
+</li><li> <span class="odocwiki_inlinecode">p_3</span>, the promise returned by <span class="odocwiki_inlinecode">Lwt.finalize</span> itself.
+</li></ul><p><span class="odocwiki_inlinecode">p_3</span> is returned immediately. It starts out pending, and is resolved as
+follows:
+</p><ul><li> <span class="odocwiki_inlinecode">f ()</span> is applied. If it finishes, it will either return a promise <span class="odocwiki_inlinecode">p_1</span>,
+or raise an exception.
+</li><li> If <span class="odocwiki_inlinecode">f ()</span> raises an exception, <span class="odocwiki_inlinecode">p_1</span> is created artificially as a promise
+rejected with that exception. So, no matter how <span class="odocwiki_inlinecode">f ()</span> finishes, there is
+a promise <span class="odocwiki_inlinecode">p_1</span> representing the outcome.
+</li><li> After <span class="odocwiki_inlinecode">p_1</span> is resolved (fulfilled or rejected), <span class="odocwiki_inlinecode">c ()</span> is applied. This
+is meant to be the cleanup code.
+</li><li> If <span class="odocwiki_inlinecode">c ()</span> finishes, it will also either return a promise, <span class="odocwiki_inlinecode">p_2</span>, or raise
+an exception.
+</li><li> If <span class="odocwiki_inlinecode">c ()</span> raises an exception, <span class="odocwiki_inlinecode">p_2</span> is created artificially as a promise
+rejected with that exception. Again, no matter how <span class="odocwiki_inlinecode">c ()</span> finishes, there
+is a promise <span class="odocwiki_inlinecode">p_2</span> representing the outcome of cleanup.
+</li><li> If <span class="odocwiki_inlinecode">p_2</span> is fulfilled, <span class="odocwiki_inlinecode">p_3</span> is resolved the same way <span class="odocwiki_inlinecode">p_1</span> had been
+resolved. In other words, <span class="odocwiki_inlinecode">p_1</span> is forwarded to <span class="odocwiki_inlinecode">p_2</span> when cleanup is
+successful.
+</li><li> If <span class="odocwiki_inlinecode">p_2</span> is rejected, <span class="odocwiki_inlinecode">p_3</span> is rejected with the same exception. In other
+words, when cleanup fails, <span class="odocwiki_inlinecode">p_3</span> is rejected. Note this means that if
+<em>both</em> the protected code and the cleanup fail, the cleanup exception
+has precedence.</li></ul></div><pre class="ocsforge_color odocwiki_code" id="VALtry_bind"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">try_bind</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><br/>  <span class="ocsforge_color_delimiter">(</span>unit <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span><span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span><br/>  <span class="ocsforge_color_delimiter">(</span>'a <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span><a href=".././api/Lwt#TYPEt">t</a></span><span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> <span class="ocsforge_color_delimiter">(</span>exn <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span><a href=".././api/Lwt#TYPEt">t</a></span><span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.try_bind f g h</span> applies <span class="odocwiki_inlinecode">f ()</span>, and then makes it so that:
+</p><ul><li> <span class="odocwiki_inlinecode">g</span> will run when promise <span class="odocwiki_inlinecode">f ()</span> is <a href=" /#TYPEt" class="ocsimore_phrasing_link"> <em>fulfilled</em></a>,
+</li><li> <span class="odocwiki_inlinecode">h</span> will run when promise <span class="odocwiki_inlinecode">f ()</span> is <a href=" /#TYPEt" class="ocsimore_phrasing_link"> <em>rejected</em></a>.
+</li></ul><p><span class="odocwiki_inlinecode">Lwt.try_bind</span> is a generalized <span><a href=".././api/Lwt#VALfinalize">Lwt.finalize</a></span>. The difference is that
+<span class="odocwiki_inlinecode">Lwt.try_bind</span> runs different callbacks depending on <em>how</em> <span class="odocwiki_inlinecode">f ()</span> is
+resolved. This has two main implications:
+</p><ul><li> The cleanup functions <span class="odocwiki_inlinecode">g</span> and <span class="odocwiki_inlinecode">h</span> each “know” whether <span class="odocwiki_inlinecode">f ()</span> was fulfilled
+or rejected.
+</li><li> The cleanup functions <span class="odocwiki_inlinecode">g</span> and <span class="odocwiki_inlinecode">h</span> are passed the value <span class="odocwiki_inlinecode">f ()</span> was
+fulfilled with, and, respectively, the exception <span class="odocwiki_inlinecode">f ()</span> was rejected
+with.
+</li></ul><p>The rest is a detailed description of the promises involved.
+</p><p>As with <span><a href=".././api/Lwt#VALfinalize">Lwt.finalize</a></span> and the several preceding functions, three promises
+are involved.
+</p><ul><li> <span class="odocwiki_inlinecode">p_1</span> is the promise returned from applying <span class="odocwiki_inlinecode">f ()</span>.
+</li><li> <span class="odocwiki_inlinecode">p_2</span> is the promise returned from applying <span class="odocwiki_inlinecode">h</span> or <span class="odocwiki_inlinecode">g</span>, depending on which
+one is chosen.
+</li><li> <span class="odocwiki_inlinecode">p_3</span> is the promise returned by <span class="odocwiki_inlinecode">Lwt.try_bind</span> itself.
+</li></ul><p><span class="odocwiki_inlinecode">Lwt.try_bind</span> returns <span class="odocwiki_inlinecode">p_3</span> immediately. <span class="odocwiki_inlinecode">p_3</span> starts out pending, and is
+resolved as follows:
+</p><ul><li> <span class="odocwiki_inlinecode">f ()</span> is applied. If it finishes, it either returns <span class="odocwiki_inlinecode">p_1</span>, or raises an
+exception.
+</li><li> If <span class="odocwiki_inlinecode">f ()</span> raises an exception, <span class="odocwiki_inlinecode">p_1</span> is created artificially as a promise
+rejected with that exception. So, no matter how <span class="odocwiki_inlinecode">f ()</span> finishes, there is
+a promise <span class="odocwiki_inlinecode">p_1</span> representing the outcome.
+</li><li> If <span class="odocwiki_inlinecode">p_1</span> is fulfilled, <span class="odocwiki_inlinecode">g</span> is applied to the value <span class="odocwiki_inlinecode">p_1</span> is fulfilled
+with.
+</li><li> If <span class="odocwiki_inlinecode">p_1</span> is rejected, <span class="odocwiki_inlinecode">h</span> is applied to the exception <span class="odocwiki_inlinecode">p_1</span> is rejected
+with.
+</li><li> So, in either case, a callback is applied. The rest of the procedure is
+the same no matter which callback was chosen, so we will refer to it as
+“the callback.”
+</li><li> If the callback finishes, it either returns <span class="odocwiki_inlinecode">p_2</span>, or raises an exception.
+</li><li> If the callback raises an exception, <span class="odocwiki_inlinecode">p_3</span> is rejected with that
+exception.
+</li><li> If the callback returns <span class="odocwiki_inlinecode">p_2</span>, <span class="odocwiki_inlinecode">p_3</span> is effectively made into an reference
+to <span class="odocwiki_inlinecode">p_2</span>. They have the same state, including any state changes, and
+performing any operation on one is equivalent to performing it on the
+other.</li></ul></div><pre class="ocsforge_color odocwiki_code" id="VALasync"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">async</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><span class="ocsforge_color_delimiter">(</span>unit <span class="ocsforge_color_delimiter">-&gt;</span> unit <span><a href=".././api/Lwt#TYPEt">t</a></span><span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> unit</span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.async f</span> applies <span class="odocwiki_inlinecode">f ()</span>, which returns a promise, and then makes it so
+that if the promise is <a href=" /#TYPEt" class="ocsimore_phrasing_link"> <em>rejected</em></a>, the exception is passed to
+<span class="odocwiki_inlinecode">!</span><span><a href=".././api/Lwt#VALasync_exception_hook">Lwt.async_exception_hook</a></span>.
+</p><p>In addition, if <span class="odocwiki_inlinecode">f ()</span> raises an exception, it is also passed to
+<span class="odocwiki_inlinecode">!</span><span><a href=".././api/Lwt#VALasync_exception_hook">Lwt.async_exception_hook</a></span>.
+</p><p><span class="odocwiki_inlinecode">!</span><span><a href=".././api/Lwt#VALasync_exception_hook">Lwt.async_exception_hook</a></span> typically prints an error message and
+terminates the program.
+</p><p><span class="odocwiki_inlinecode">Lwt.async</span> is misleadingly named. Itself, it has nothing to do with
+asynchronous execution. It's actually a safety function for making Lwt
+programs more debuggable.
+</p><p>For example, take this program, which prints messages in a loop, while
+waiting for one line of user input:
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  let rec show_nag () : _ Lwt.t =
+    let%lwt () = Lwt_io.printl &quot;Please enter a line&quot; in
+    let%lwt () = Lwt_unix.sleep 1. in
+    show_nag ()
+  in
+  ignore (show_nag ());     (* Bad – see note for (1)! *)
+
+  Lwt_main.run begin
+    let%lwt line = Lwt_io.(read_line stdin) in
+    Lwt_io.printl line
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>If one of the I/O operations in <span class="odocwiki_inlinecode">show_nag</span> were to fail, the promise
+representing the whole loop would get rejected. However, since we are
+ignoring that promise at <strong>(1)</strong>, we never find out about the rejection. If
+this failure and resulting rejection represents a bug in the program, we
+have a harder time finding out about the bug.
+</p><p>A safer version differs only in using <span class="odocwiki_inlinecode">Lwt.async</span> instead of
+<span class="odocwiki_inlinecode">Stdlib.ignore</span>:
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  let rec show_nag () : _ Lwt.t =
+    let%lwt () = Lwt_io.printl &quot;Please enter a line&quot; in
+    let%lwt () = Lwt_unix.sleep 1. in
+    show_nag ()
+  in
+  Lwt.async (fun () -&gt; show_nag ());
+
+  Lwt_main.run begin
+    let%lwt line = Lwt_io.(read_line stdin) in
+    Lwt_io.printl line
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>In this version, if I/O in <span class="odocwiki_inlinecode">show_nag</span> fails with an exception, the exception
+is printed by <span class="odocwiki_inlinecode">Lwt.async</span>, and then the program exits.
+</p><p>The general rule for when to use <span class="odocwiki_inlinecode">Lwt.async</span> is:
+</p><ul><li> Promises which are <em>not</em> passed <em>to</em> <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span>, <span><a href=".././api/Lwt#VALcatch">Lwt.catch</a></span>,
+<span><a href=".././api/Lwt#VALjoin">Lwt.join</a></span>, etc., are <strong>top-level</strong> promises.
+</li><li> One top-level promise is passed to <span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span>, as can be seen in most
+examples in this manual.
+</li><li> Every other top-level promise should be wrapped in <span class="odocwiki_inlinecode">Lwt.async</span>.</li></ul></div><pre class="ocsforge_color odocwiki_code" id="VALasync_exception_hook"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">async_exception_hook</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><span class="ocsforge_color_delimiter">(</span>exn <span class="ocsforge_color_delimiter">-&gt;</span> unit<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_uid">Stdlib</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_lid">ref</span></span></pre><div class="odocwiki_info"><p>Reference to a function, to be called on an &quot;unhandled&quot; exception.
+</p><p>This reference is used by <span><a href=".././api/Lwt#VALasync">Lwt.async</a></span>, <span><a href=".././api/Lwt#VALon_cancel">Lwt.on_cancel</a></span>, <span><a href=".././api/Lwt#VALon_success">Lwt.on_success</a></span>,
+<span><a href=".././api/Lwt#VALon_failure">Lwt.on_failure</a></span>, <span><a href=".././api/Lwt#VALon_termination">Lwt.on_termination</a></span>, <span><a href=".././api/Lwt#VALon_any">Lwt.on_any</a></span>, and the deprecated
+<span><a href=".././api/Lwt#VALignore_result">Lwt.ignore_result</a></span>.
+</p><p>The initial, default implementation prints the exception, then terminates
+the process with non-zero exit status, as if the exception had reached the
+top level of the program:
+</p><pre class=""><code class="language-ocaml translatable">let () = Lwt.async (fun () -&gt; Lwt.fail Exit)
+
+(* ocamlfind opt -linkpkg -package lwt code.ml &amp;&amp; ./a.out *)</code></pre><p>produces in the output:
+</p><p><span class="teletype">Fatal error: exception Stdlib.Exit</span>
+</p><p>If you are writing an application, you are welcome to reassign the
+reference, and replace the function with something more appropriate for your
+needs.
+</p><p>If you are writing a library, you should leave this reference alone. Its
+behavior should be determined by the application.</p></div><h2 id="2_Concurrency">Concurrency <a class="backref" href="#2_Concurrency">&#182;</a></h2><h3 id="3_Multiplewait">Multiple wait <a class="backref" href="#3_Multiplewait">&#182;</a></h3><pre class="ocsforge_color odocwiki_code" id="VALboth"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">both</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> <span class="ocsforge_color_delimiter">(</span>'a * 'b<span class="ocsforge_color_delimiter">)</span> <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.both p_1 p_2</span> returns a promise that is pending until <em>both</em> promises
+<span class="odocwiki_inlinecode">p_1</span> and <span class="odocwiki_inlinecode">p_2</span> become <a href=" /#TYPEt" class="ocsimore_phrasing_link"> <em>resolved</em></a>.
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  let p_1 =
+    let%lwt () = Lwt_unix.sleep 3. in
+    Lwt_io.printl &quot;Three seconds elapsed&quot;
+  in
+
+  let p_2 =
+    let%lwt () = Lwt_unix.sleep 5. in
+    Lwt_io.printl &quot;Five seconds elapsed&quot;
+  in
+
+  let p_3 = Lwt.both p_1 p_2 in
+  Lwt_main.run p_3
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>If both <span class="odocwiki_inlinecode">p_1</span> and <span class="odocwiki_inlinecode">p_2</span> become fulfilled, <span class="odocwiki_inlinecode">Lwt.both p_1 p_2</span> is also
+fulfilled, with the pair of their final values. Otherwise, if at least one
+of the two promises becomes rejected, <span class="odocwiki_inlinecode">Lwt.both p_1 p_2</span> is rejected with
+the same exception as one such promise, chosen arbitrarily. Note that this
+occurs only after both promises are resolved, not immediately when the first
+promise is rejected.
+<strong>Since</strong> 4.2.0<br/></p></div><pre class="ocsforge_color odocwiki_code" id="VALjoin"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">join</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">unit <span><a href=".././api/Lwt#TYPEt">t</a></span> list <span class="ocsforge_color_delimiter">-&gt;</span> unit <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.join ps</span> returns a promise that is pending until <em>all</em> promises in
+the list <span class="odocwiki_inlinecode">ps</span> become <a href=" /#TYPEt" class="ocsimore_phrasing_link"> <em>resolved</em></a>.
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  let p_1 =
+    let%lwt () = Lwt_unix.sleep 3. in
+    Lwt_io.printl &quot;Three seconds elapsed&quot;
+  in
+
+  let p_2 =
+    let%lwt () = Lwt_unix.sleep 5. in
+    Lwt_io.printl &quot;Five seconds elapsed&quot;
+  in
+
+  let p_3 = Lwt.join [p_1; p_2] in
+  Lwt_main.run p_3
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>If all of the promises in <span class="odocwiki_inlinecode">ps</span> become fulfilled, <span class="odocwiki_inlinecode">Lwt.join ps</span> is also
+fulfilled. Otherwise, if at least one promise in <span class="odocwiki_inlinecode">ps</span> becomes rejected,
+<span class="odocwiki_inlinecode">Lwt.join ps</span> is rejected with the same exception as one such promise,
+chosen arbitrarily. Note that this occurs only after all the promises are
+resolved, not immediately when the first promise is rejected.</p></div><pre class="ocsforge_color odocwiki_code" id="VALall"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">all</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> list <span class="ocsforge_color_delimiter">-&gt;</span> 'a list <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.all ps</span> is like <span><a href=".././api/Lwt#VALjoin">Lwt.join</a></span><span class="odocwiki_inlinecode">ps</span>: it waits for all promises in the list
+<span class="odocwiki_inlinecode">ps</span> to become <a href=" /#TYPEt" class="ocsimore_phrasing_link"> <em>resolved</em></a>.
+</p><p>It then resolves the returned promise with the list of all resulting values.
+</p><p>Note that if any of the promises in <span class="odocwiki_inlinecode">ps</span> is rejected, the returned promise
+is also rejected. This means that none of the values will be available, even
+if some of the promises in <span class="odocwiki_inlinecode">ps</span> were already resolved when one of them is
+rejected. For more fine-grained handling of rejection, structure the program
+with <span><a href=".././api/Lwt_stream">Lwt_stream</a></span> or <span><a href=".././api/Lwt_list">Lwt_list</a></span>, handle rejections explicitly, or use
+<span><a href=".././api/Lwt#VALjoin">Lwt.join</a></span> and collect values manually.
+<strong>Since</strong> 5.1.0<br/></p></div><h3 id="3_Racing">Racing <a class="backref" href="#3_Racing">&#182;</a></h3><pre class="ocsforge_color odocwiki_code" id="VALpick"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">pick</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> list <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.pick ps</span> returns a promise that is pending until <em>one</em> promise in
+the list <span class="odocwiki_inlinecode">ps</span> becomes <a href=" /#TYPEt" class="ocsimore_phrasing_link"> <em>resolved</em></a>.
+</p><p>When at least one promise in <span class="odocwiki_inlinecode">ps</span> is resolved, <span class="odocwiki_inlinecode">Lwt.pick</span> tries to cancel
+all other promises that are still pending, using <span><a href=".././api/Lwt#VALcancel">Lwt.cancel</a></span>.
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  let echo =
+    let%lwt line = Lwt_io.(read_line stdin) in
+    Lwt_io.printl line
+  in
+
+  let timeout = Lwt_unix.sleep 5. in
+
+  Lwt_main.run (Lwt.pick [echo; timeout])
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>If the first promise in <span class="odocwiki_inlinecode">ps</span> to become resolved is fulfilled, the result
+promise <span class="odocwiki_inlinecode">p</span> is also fulfilled, with the same value. Likewise, if the first
+promise in <span class="odocwiki_inlinecode">ps</span> to become resolved is rejected, <span class="odocwiki_inlinecode">p</span> is rejected with the
+same exception.
+</p><p>If <span class="odocwiki_inlinecode">ps</span> has no promises (if it is the empty list), <span class="odocwiki_inlinecode">Lwt.pick ps</span> raises
+<span class="odocwiki_inlinecode">Stdlib.Invalid_argument _</span>.
+</p><p>It's possible for multiple promises in <span class="odocwiki_inlinecode">ps</span> to become resolved
+simultaneously. This happens most often when some promises <span class="odocwiki_inlinecode">ps</span> are already
+resolved at the time <span class="odocwiki_inlinecode">Lwt.pick</span> is called.
+</p><p>In that case, if at least one of the promises is rejected, the result
+promise <span class="odocwiki_inlinecode">p</span> is rejected with the same exception as one such promise, chosen
+arbitrarily. If all promises are fulfilled, <span class="odocwiki_inlinecode">p</span> is fulfilled with the value
+of one of the promises, also chosen arbitrarily.
+</p><p>The remaining functions in this section are variations on <span class="odocwiki_inlinecode">Lwt.pick</span>.</p></div><pre class="ocsforge_color odocwiki_code" id="VALchoose"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">choose</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> list <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.choose ps</span> is the same as <span><a href=".././api/Lwt#VALpick">Lwt.pick</a></span><span class="odocwiki_inlinecode">ps</span>, except that it does not try
+to cancel pending promises in <span class="odocwiki_inlinecode">ps</span>.</p></div><pre class="ocsforge_color odocwiki_code" id="VALnpick"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">npick</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> list <span class="ocsforge_color_delimiter">-&gt;</span> 'a list <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.npick ps</span> is similar to <span><a href=".././api/Lwt#VALpick">Lwt.pick</a></span><span class="odocwiki_inlinecode">ps</span>, the difference being that
+when multiple promises in <span class="odocwiki_inlinecode">ps</span> are fulfilled simultaneously (and none are
+rejected), the result promise is fulfilled with the <em>list</em> of values the
+promises were fulfilled with.
+</p><p>When at least one promise is rejected, <span class="odocwiki_inlinecode">Lwt.npick</span> still rejects the result
+promise with the same exception.</p></div><pre class="ocsforge_color odocwiki_code" id="VALnchoose"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">nchoose</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> list <span class="ocsforge_color_delimiter">-&gt;</span> 'a list <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.nchoose ps</span> is the same as <span><a href=".././api/Lwt#VALnpick">Lwt.npick</a></span><span class="odocwiki_inlinecode">ps</span>, except that it does not
+try to cancel pending promises in <span class="odocwiki_inlinecode">ps</span>.</p></div><pre class="ocsforge_color odocwiki_code" id="VALnchoose_split"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">nchoose_split</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> list <span class="ocsforge_color_delimiter">-&gt;</span> <span class="ocsforge_color_delimiter">(</span>'a list * 'a <span><a href=".././api/Lwt#TYPEt">t</a></span> list<span class="ocsforge_color_delimiter">)</span> <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.nchoose_split ps</span> is the same as <span><a href=".././api/Lwt#VALnchoose">Lwt.nchoose</a></span><span class="odocwiki_inlinecode">ps</span>, except that when
+multiple promises in <span class="odocwiki_inlinecode">ps</span> are fulfilled simultaneously (and none are
+rejected), the result promise is fulfilled with <em>both</em> the list of values
+of the fulfilled promises, and the list of promises that are still
+pending.</p></div><h2 id="2_Cancellation">Cancellation <a class="backref" href="#2_Cancellation">&#182;</a></h2><p>Note: cancelation has proved difficult to understand, explain, and maintain,
+so use of these functions is discouraged in new code. See
+<a href="https://github.com/ocsigen/lwt/issues/283/#issuecomment-518014539" class="ocsimore_phrasing_link">
+ocsigen/lwt#283</a>.
+</p><pre class="ocsforge_color odocwiki_code" id="EXCEPTIONCanceled"><span class="ocsforge_color_keyword">exception</span> <span class="odocwiki_name">Canceled</span></pre><div class="odocwiki_info"><p>Canceled promises are those rejected with this exception, <span class="odocwiki_inlinecode">Lwt.Canceled</span>.
+See <span><a href=".././api/Lwt#VALcancel">Lwt.cancel</a></span>.</p></div><pre class="ocsforge_color odocwiki_code" id="VALtask"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">task</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">unit <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span> * 'a <span><a href=".././api/Lwt#TYPEu">u</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.task</span> is the same as <span><a href=".././api/Lwt#VALwait">Lwt.wait</a></span>, except the resulting promise <span class="odocwiki_inlinecode">p</span> is
+<a href=" /#VALcancel" class="ocsimore_phrasing_link"> cancelable</a>.
+</p><p>This is significant, because it means promises created by <span class="odocwiki_inlinecode">Lwt.task</span> can be
+resolved (specifically, rejected) by canceling them directly, in addition to
+being resolved through their paired resolvers.
+</p><p>In contrast, promises returned by <span><a href=".././api/Lwt#VALwait">Lwt.wait</a></span> can only be resolved through
+their resolvers.</p></div><pre class="ocsforge_color odocwiki_code" id="VALcancel"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">cancel</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> unit</span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.cancel p</span> attempts to <em>cancel</em> the pending promise <span class="odocwiki_inlinecode">p</span>, without
+needing access to its resolver.
+</p><p>It is recommended to avoid <span class="odocwiki_inlinecode">Lwt.cancel</span>, and handle cancelation by tracking
+the needed extra state explicitly within your library or application.
+</p><p>A <strong>canceled</strong> promise is one that has been rejected with exception
+<span><a href=".././api/Lwt#EXCEPTIONCanceled">Lwt.Canceled</a></span>.
+</p><p>There are straightforward ways to make promises canceled. One could create a
+promise that <em>starts out</em> canceled, with <span><a href=".././api/Lwt#VALfail">Lwt.fail</a></span><span class="odocwiki_inlinecode">Lwt.Canceled</span>. It's
+also possible to <em>make</em> a promise canceled through its resolver, by
+calling <span><a href=".././api/Lwt#VALwakeup_later_exn">Lwt.wakeup_later_exn</a></span><span class="odocwiki_inlinecode">r Lwt.Canceled</span>.
+</p><p>This function, <span class="odocwiki_inlinecode">Lwt.cancel</span>, provides another method, which can cancel
+pending promises <em>without</em> going through their resolvers – it acts
+directly on promises.
+</p><p>Like any other promise rejection, the canceled state of a promise is
+propagated “forwards” by <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span>, <span><a href=".././api/Lwt#VALjoin">Lwt.join</a></span>, etc., as described in the
+documentation of those functions.
+</p><p>    <strong>Cancellation</strong> is a separate phase, triggered only by <span><a href=".././api/Lwt#VALcancel">Lwt.cancel</a></span>, that
+searches <em>backwards</em>, strating from <span class="odocwiki_inlinecode">p</span>, for promises to reject with
+<span><a href=".././api/Lwt#EXCEPTIONCanceled">Lwt.Canceled</a></span>. Once those promises are found, they are canceled, and then
+ordinary, forwards rejection propagation takes over.
+</p><p>All of this will be made precise, but first let's have an example:
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  let p =
+    let%lwt () = Lwt_unix.sleep 5. in
+    Lwt_io.printl &quot;Slept five seconds&quot;
+  in
+
+  Lwt.cancel p;
+
+  Lwt_main.run p
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>At the time <span class="odocwiki_inlinecode">Lwt.cancel</span> is called, <span class="odocwiki_inlinecode">p</span> “depends” on the <span class="odocwiki_inlinecode">sleep</span> promise
+(the <span class="odocwiki_inlinecode">printl</span> is not yet called, so its promise hasn't been created).
+</p><p>So, <span><a href=".././api/Lwt#VALcancel">Lwt.cancel</a></span> recursively tries to cancel the <span class="odocwiki_inlinecode">sleep</span> promise. That is
+an example of the backwards search. The <span class="odocwiki_inlinecode">sleep</span> promise is a pending promise
+that doesn't depend on anything, so backwards search stops at it. The state
+of the <span class="odocwiki_inlinecode">sleep</span> promise is set to <em>rejected</em> with <span><a href=".././api/Lwt#EXCEPTIONCanceled">Lwt.Canceled</a></span>.
+</p><p><span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span> then propagates the rejection forwards to <span class="odocwiki_inlinecode">p</span>, so <span class="odocwiki_inlinecode">p</span> also
+becomes canceled.
+</p><p>Eventually, this rejection reaches <span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span>, which raises the
+<span><a href=".././api/Lwt#EXCEPTIONCanceled">Lwt.Canceled</a></span> as an ordinary exception. The <span class="odocwiki_inlinecode">sleep</span> does not complete, and
+the <span class="odocwiki_inlinecode">printl</span> is never started.
+</p><p>Promises, like the <span class="odocwiki_inlinecode">sleep</span> promise above, that can be rejected by
+<span class="odocwiki_inlinecode">Lwt.cancel</span> are <strong>cancelable</strong>. Most promises in Lwt are either cancelable,
+or depend on cancelable promises. The functions <span><a href=".././api/Lwt#VALwait">Lwt.wait</a></span> and
+<span><a href=".././api/Lwt#VALno_cancel">Lwt.no_cancel</a></span> create promises that are <em>not</em> cancelable.
+</p><p>The rest is a detailed description of how the <span class="odocwiki_inlinecode">Lwt.cancel</span> backwards search
+works.
+</p><ul><li> If <span class="odocwiki_inlinecode">p</span> is already resolved, <span class="odocwiki_inlinecode">Lwt.cancel</span> does nothing.
+</li><li> If <span class="odocwiki_inlinecode">p</span> was created by <span><a href=".././api/Lwt#VALwait">Lwt.wait</a></span> or <span><a href=".././api/Lwt#VALno_cancel">Lwt.no_cancel</a></span>, <span class="odocwiki_inlinecode">Lwt.cancel</span> does
+nothing.
+</li><li> If <span class="odocwiki_inlinecode">p</span> was created by <span><a href=".././api/Lwt#VALtask">Lwt.task</a></span> or <span><a href=".././api/Lwt#VALprotected">Lwt.protected</a></span>, <span class="odocwiki_inlinecode">Lwt.cancel</span>
+rejects it with <span class="odocwiki_inlinecode">Lwt.Canceled</span>. This rejection then propagates normally
+through any Lwt calls that depend on <span class="odocwiki_inlinecode">p</span>. Most I/O promises are internally
+created by calling <span><a href=".././api/Lwt#VALtask">Lwt.task</a></span>.
+</li><li> Suppose <span class="odocwiki_inlinecode">p_3</span> was returned by <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span>, <span><a href=".././api/Lwt#VALmap">Lwt.map</a></span>, <span><a href=".././api/Lwt#VALcatch">Lwt.catch</a></span>,
+<span><a href=".././api/Lwt#VALfinalize">Lwt.finalize</a></span>, or <span><a href=".././api/Lwt#VALtry_bind">Lwt.try_bind</a></span>. Then, see those functions for the
+naming of the other promises involved. If <span class="odocwiki_inlinecode">p_3</span> is pending, then either
+<span class="odocwiki_inlinecode">p_1</span> is pending, or <span class="odocwiki_inlinecode">p_2</span> is pending. <span class="odocwiki_inlinecode">Lwt.cancel p_3</span> then tries
+recursively to cancel whichever of these two is still pending. If that
+succeeds, <span class="odocwiki_inlinecode">p_3</span> <em>may</em> be canceled later by the normal propagation of
+rejection.
+</li><li> Suppose <span class="odocwiki_inlinecode">p</span> was returned by <span><a href=".././api/Lwt#VALjoin">Lwt.join</a></span>, <span><a href=".././api/Lwt#VALpick">Lwt.pick</a></span>, or similar function,
+which was applied to the promise list <span class="odocwiki_inlinecode">ps</span>. <span><a href=".././api/Lwt#VALcancel">Lwt.cancel</a></span> then recursively
+tries to cancel each promise in <span class="odocwiki_inlinecode">ps</span>. If one of those cancellations
+succeeds, <span class="odocwiki_inlinecode">p</span> <em>may</em> be canceled later by the normal propagation of
+rejection.</li></ul></div><pre class="ocsforge_color odocwiki_code" id="VALon_cancel"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">on_cancel</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> <span class="ocsforge_color_delimiter">(</span>unit <span class="ocsforge_color_delimiter">-&gt;</span> unit<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> unit</span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.on_cancel p f</span> makes it so that <span class="odocwiki_inlinecode">f</span> will run when <span class="odocwiki_inlinecode">p</span> becomes
+<a href=" /#EXCEPTIONCanceled" class="ocsimore_phrasing_link"> <em>canceled</em></a>.
+</p><p>Callbacks scheduled with <span class="odocwiki_inlinecode">on_cancel</span> are guaranteed to run before any other
+callbacks that are triggered by rejection, such as those added by
+<span><a href=".././api/Lwt#VALcatch">Lwt.catch</a></span>.
+</p><p>Note that this does not interact directly with the <em>cancellation</em>
+mechanism, the backwards search described in <span><a href=".././api/Lwt#VALcancel">Lwt.cancel</a></span>. For example,
+manually rejecting a promise with <span><a href=".././api/Lwt#EXCEPTIONCanceled">Lwt.Canceled</a></span> is sufficient to trigger
+<span class="odocwiki_inlinecode">f</span>.
+</p><p><span class="odocwiki_inlinecode">f</span> should not raise exceptions. If it does, they are passed to
+<span class="odocwiki_inlinecode">!</span><span><a href=".././api/Lwt#VALasync_exception_hook">Lwt.async_exception_hook</a></span>, which terminates the process by default.</p></div><pre class="ocsforge_color odocwiki_code" id="VALprotected"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">protected</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.protected p</span> creates a <a href=" /#VALcancel" class="ocsimore_phrasing_link"> cancelable</a> promise <span class="odocwiki_inlinecode">p'</span> with
+the same state as <span class="odocwiki_inlinecode">p</span>. However, cancellation, the backwards search described
+in <span><a href=".././api/Lwt#VALcancel">Lwt.cancel</a></span>, stops at <span class="odocwiki_inlinecode">p'</span>, and does not continue to <span class="odocwiki_inlinecode">p</span>.</p></div><pre class="ocsforge_color odocwiki_code" id="VALno_cancel"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">no_cancel</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.no_cancel p</span> creates a non-<a href=" /#VALcancel" class="ocsimore_phrasing_link">cancelable</a> promise <span class="odocwiki_inlinecode">p'</span>,
+with the same state as <span class="odocwiki_inlinecode">p</span>. Cancellation, the backwards search described in
+<span><a href=".././api/Lwt#VALcancel">Lwt.cancel</a></span>, stops at <span class="odocwiki_inlinecode">p'</span>, and does not continue to <span class="odocwiki_inlinecode">p</span>.
+</p><p>Note that <span class="odocwiki_inlinecode">p'</span> can still be canceled if <span class="odocwiki_inlinecode">p</span> is canceled. <span class="odocwiki_inlinecode">Lwt.no_cancel</span>
+only prevents cancellation of <span class="odocwiki_inlinecode">p</span> and <span class="odocwiki_inlinecode">p'</span> through <span class="odocwiki_inlinecode">p'</span>.</p></div><h2 id="2_Convenience">Convenience <a class="backref" href="#2_Convenience">&#182;</a></h2><h3 id="3_Callbackhelpers">Callback helpers <a class="backref" href="#3_Callbackhelpers">&#182;</a></h3><pre class="ocsforge_color odocwiki_code" id="VALmap"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">map</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><span class="ocsforge_color_delimiter">(</span>'a <span class="ocsforge_color_delimiter">-&gt;</span> 'b<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.map f p_1</span> is similar to <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span><span class="odocwiki_inlinecode">p_1 f</span>, but <span class="odocwiki_inlinecode">f</span> is not expected
+to return a promise.
+</p><p>This function is more convenient that <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span> when <span class="odocwiki_inlinecode">f</span> inherently does
+not return a promise. An example is <span class="odocwiki_inlinecode">Stdlib.int_of_string</span>:
+</p><pre class=""><code class="language-ocaml translatable">let read_int : unit -&gt; int Lwt.t = fun () -&gt;
+  Lwt.map
+    int_of_string
+    Lwt_io.(read_line stdin)
+
+let () =
+  Lwt_main.run begin
+    let%lwt number = read_int () in
+    Lwt_io.printf &quot;%i\n&quot; number
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>By comparison, the <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span> version is more awkward:
+</p><pre class=""><code class="language-ocaml translatable">let read_int : unit -&gt; int Lwt.t = fun () -&gt;
+  Lwt.bind
+    Lwt_io.(read_line stdin)
+    (fun line -&gt; Lwt.return (int_of_string line))</code></pre><p>As with <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span>, sequences of calls to <span class="odocwiki_inlinecode">Lwt.map</span> result in excessive
+indentation and parentheses. The recommended syntactic sugar for avoiding
+this is the <a href=" /#VAL(&gt;" class="ocsimore_phrasing_link">=)| <span class="odocwiki_inlinecode">&gt;|=</span></a> operator, which comes from module
+<span class="odocwiki_inlinecode">Lwt.Infix</span>:
+</p><pre class=""><code class="language-ocaml translatable">open Lwt.Infix
+
+let read_int : unit -&gt; int Lwt.t = fun () -&gt;
+  Lwt_io.(read_line stdin) &gt;|= int_of_string</code></pre><p>The detailed operation follows. For consistency with the promises in
+<span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span>, the <em>two</em> promises involved are named <span class="odocwiki_inlinecode">p_1</span> and <span class="odocwiki_inlinecode">p_3</span>:
+</p><ul><li> <span class="odocwiki_inlinecode">p_1</span> is the promise passed to <span class="odocwiki_inlinecode">Lwt.map</span>.
+</li><li> <span class="odocwiki_inlinecode">p_3</span> is the promise returned by <span class="odocwiki_inlinecode">Lwt.map</span>.
+</li></ul><p><span class="odocwiki_inlinecode">Lwt.map</span> returns a promise <span class="odocwiki_inlinecode">p_3</span>. <span class="odocwiki_inlinecode">p_3</span> starts out pending. It is resolved
+as follows:
+</p><ul><li> <span class="odocwiki_inlinecode">p_1</span> may be, or become, resolved. In that case, by definition, it will
+become fulfilled or rejected. Fulfillment is the interesting case, but the
+behavior on rejection is simpler, so we focus on rejection first.
+</li><li> When <span class="odocwiki_inlinecode">p_1</span> becomes rejected, <span class="odocwiki_inlinecode">p_3</span> is rejected with the same exception.
+</li><li> When <span class="odocwiki_inlinecode">p_1</span> instead becomes fulfilled, call the value it is fulfilled with
+<span class="odocwiki_inlinecode">v</span>.
+</li><li> <span class="odocwiki_inlinecode">f v</span> is applied. If this finishes, it may either return another value, or
+raise an exception.
+</li><li> If <span class="odocwiki_inlinecode">f v</span> returns another value <span class="odocwiki_inlinecode">v'</span>, <span class="odocwiki_inlinecode">p_3</span> is fulfilled with <span class="odocwiki_inlinecode">v'</span>.
+</li><li> If <span class="odocwiki_inlinecode">f v</span> raises exception <span class="odocwiki_inlinecode">exn</span>, <span class="odocwiki_inlinecode">p_3</span> is rejected with <span class="odocwiki_inlinecode">exn</span>.</li></ul></div><pre class="ocsforge_color odocwiki_code" id="VALon_success"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">on_success</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> <span class="ocsforge_color_delimiter">(</span>'a <span class="ocsforge_color_delimiter">-&gt;</span> unit<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> unit</span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.on_success p f</span> makes it so that <span class="odocwiki_inlinecode">f</span> will run when <span class="odocwiki_inlinecode">p</span> is <a href=" /#TYPEt" class="ocsimore_phrasing_link">
+<em>fulfilled</em></a>.
+</p><p>It is similar to <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span>, except no new promises are created. <span class="odocwiki_inlinecode">f</span> is a
+plain, arbitrary function attached to <span class="odocwiki_inlinecode">p</span>, to perform some side effect.
+</p><p>If <span class="odocwiki_inlinecode">f</span> raises an exception, it is passed to <span class="odocwiki_inlinecode">!</span><span><a href=".././api/Lwt#VALasync_exception_hook">Lwt.async_exception_hook</a></span>.
+By default, this will terminate the process.</p></div><pre class="ocsforge_color odocwiki_code" id="VALon_failure"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">on_failure</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> <span class="ocsforge_color_delimiter">(</span>exn <span class="ocsforge_color_delimiter">-&gt;</span> unit<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> unit</span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.on_failure p f</span> makes it so that <span class="odocwiki_inlinecode">f</span> will run when <span class="odocwiki_inlinecode">p</span> is <a href=" /#TYPEt" class="ocsimore_phrasing_link">
+<em>rejected</em></a>.
+</p><p>It is similar to <span><a href=".././api/Lwt#VALcatch">Lwt.catch</a></span>, except no new promises are created.
+</p><p>If <span class="odocwiki_inlinecode">f</span> raises an exception, it is passed to <span class="odocwiki_inlinecode">!</span><span><a href=".././api/Lwt#VALasync_exception_hook">Lwt.async_exception_hook</a></span>.
+By default, this will terminate the process.</p></div><pre class="ocsforge_color odocwiki_code" id="VALon_termination"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">on_termination</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> <span class="ocsforge_color_delimiter">(</span>unit <span class="ocsforge_color_delimiter">-&gt;</span> unit<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> unit</span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.on_termination p f</span> makes it so that <span class="odocwiki_inlinecode">f</span> will run when <span class="odocwiki_inlinecode">p</span> is
+<a href=" /#TYPEt" class="ocsimore_phrasing_link"> <em>resolved</em></a> – that is, fulfilled <em>or</em> rejected.
+</p><p>It is similar to <span><a href=".././api/Lwt#VALfinalize">Lwt.finalize</a></span>, except no new promises are created.
+</p><p>If <span class="odocwiki_inlinecode">f</span> raises an exception, it is passed to <span class="odocwiki_inlinecode">!</span><span><a href=".././api/Lwt#VALasync_exception_hook">Lwt.async_exception_hook</a></span>.
+By default, this will terminate the process.</p></div><pre class="ocsforge_color odocwiki_code" id="VALon_any"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">on_any</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> <span class="ocsforge_color_delimiter">(</span>'a <span class="ocsforge_color_delimiter">-&gt;</span> unit<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> <span class="ocsforge_color_delimiter">(</span>exn <span class="ocsforge_color_delimiter">-&gt;</span> unit<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> unit</span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.on_any p f g</span> makes it so that:
+</p><ul><li> <span class="odocwiki_inlinecode">f</span> will run when <span class="odocwiki_inlinecode">p</span> is <a href=" /#TYPEt" class="ocsimore_phrasing_link"> <em>fulfilled</em></a>,
+</li><li> <span class="odocwiki_inlinecode">g</span> will run when <span class="odocwiki_inlinecode">p</span> is, alternatively, <a href=" /#TYPEt" class="ocsimore_phrasing_link"> <em>rejected</em></a>.
+</li></ul><p>It is similar to <span><a href=".././api/Lwt#VALtry_bind">Lwt.try_bind</a></span>, except no new promises are created.
+</p><p>If <span class="odocwiki_inlinecode">f</span> or <span class="odocwiki_inlinecode">g</span> raise an exception, the exception is passed to
+<span class="odocwiki_inlinecode">!</span><span><a href=".././api/Lwt#VALasync_exception_hook">Lwt.async_exception_hook</a></span>. By default, this will terminate the
+process.</p></div><h3 id="3_Infixoperators">Infix operators <a class="backref" href="#3_Infixoperators">&#182;</a></h3><pre class="ocsforge_color odocwiki_code"><span class="ocsforge_color_keyword">module</span> <span><a href=".././api/Lwt.Infix">Infix</a></span> <span class="ocsforge_color_delimiter">:</span> <span class="ocsforge_color_keyword">sig</span><span><a href=".././api/Lwt.Infix">..</a></span><span class="ocsforge_color_keyword">end</span></pre><div class="odocwiki_info"><p>This module provides several infix operators for making programming with
+Lwt more convenient.</p></div><pre class="ocsforge_color odocwiki_code"><span class="ocsforge_color_keyword">module</span> <span><a href=".././api/Lwt.Syntax">Syntax</a></span> <span class="ocsforge_color_delimiter">:</span> <span class="ocsforge_color_keyword">sig</span><span><a href=".././api/Lwt.Syntax">..</a></span><span class="ocsforge_color_keyword">end</span></pre><div class="odocwiki_info"><p>Let syntax</p></div><h3 id="3_Preallocatedpromises">Pre-allocated promises <a class="backref" href="#3_Preallocatedpromises">&#182;</a></h3><pre class="ocsforge_color odocwiki_code" id="VALreturn_unit"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">return_unit</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">unit <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.return_unit</span> is defined as <span><a href=".././api/Lwt#VALreturn">Lwt.return</a></span><span class="odocwiki_inlinecode">()</span>, but this definition is
+evaluated only once, during initialization of module <span class="odocwiki_inlinecode">Lwt</span>, at the beginning
+of your program.
+</p><p>This means the promise is allocated only once. By contrast, each time
+<span><a href=".././api/Lwt#VALreturn">Lwt.return</a></span><span class="odocwiki_inlinecode">()</span> is evaluated, it allocates a new promise.
+</p><p>It is recommended to use <span class="odocwiki_inlinecode">Lwt.return_unit</span> only where you know the
+allocations caused by an instance of <span><a href=".././api/Lwt#VALreturn">Lwt.return</a></span><span class="odocwiki_inlinecode">()</span> are a performance
+bottleneck. Generally, the cost of I/O tends to dominate the cost of
+<span><a href=".././api/Lwt#VALreturn">Lwt.return</a></span><span class="odocwiki_inlinecode">()</span> anyway.
+</p><p>In future Lwt, we hope to perform this optimization, of using a single,
+pre-allocated promise, automatically, wherever <span><a href=".././api/Lwt#VALreturn">Lwt.return</a></span><span class="odocwiki_inlinecode">()</span> is
+written.</p></div><pre class="ocsforge_color odocwiki_code" id="VALreturn_none"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">return_none</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a option <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.return_none</span> is like <span><a href=".././api/Lwt#VALreturn_unit">Lwt.return_unit</a></span>, but for
+<span><a href=".././api/Lwt#VALreturn">Lwt.return</a></span><span class="odocwiki_inlinecode">None</span>.</p></div><pre class="ocsforge_color odocwiki_code" id="VALreturn_nil"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">return_nil</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a list <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.return_nil</span> is like <span><a href=".././api/Lwt#VALreturn_unit">Lwt.return_unit</a></span>, but for <span><a href=".././api/Lwt#VALreturn">Lwt.return</a></span><span class="odocwiki_inlinecode">[]</span>.</p></div><pre class="ocsforge_color odocwiki_code" id="VALreturn_true"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">return_true</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">bool <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.return_true</span> is like <span><a href=".././api/Lwt#VALreturn_unit">Lwt.return_unit</a></span>, but for
+<span><a href=".././api/Lwt#VALreturn">Lwt.return</a></span><span class="odocwiki_inlinecode">true</span>.</p></div><pre class="ocsforge_color odocwiki_code" id="VALreturn_false"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">return_false</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">bool <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.return_false</span> is like <span><a href=".././api/Lwt#VALreturn_unit">Lwt.return_unit</a></span>, but for
+<span><a href=".././api/Lwt#VALreturn">Lwt.return</a></span><span class="odocwiki_inlinecode">false</span>.</p></div><h3 id="3_Resulttype">Result type <a class="backref" href="#3_Resulttype">&#182;</a></h3><pre class="ocsforge_color odocwiki_code" id="TYPEresult"><span class="ocsforge_color_keyword">type</span> <span class="odocwiki_type">'a</span> <span class="odocwiki_name">result</span> <span class="ocsforge_color_delimiter">=</span> <span class="odocwiki_type"><span class="ocsforge_color_delimiter">(</span>'a, exn<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_uid">Result</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_lid">result</span></span></pre><div class="odocwiki_info"><p>Representation of the content of a resolved promise of type
+<span class="odocwiki_inlinecode">'a</span><span><a href=".././api/Lwt#TYPEt">Lwt.t</a></span>.
+</p><p>This type is effectively
+</p><pre class=""><code class="language-ocaml translatable">type +'a Lwt.result =
+  | Ok of 'a
+  | Error of exn</code></pre><p>or, on OCaml 4.02:
+</p><pre class=""><code class="language-ocaml translatable">type +'a Lwt.result =
+  | Result.Ok of 'a
+  | Result.Error of exn</code></pre><p>A resolved promise of type <span class="odocwiki_inlinecode">'a</span><span><a href=".././api/Lwt#TYPEt">Lwt.t</a></span> is either fulfilled with a value of
+type <span class="odocwiki_inlinecode">'a</span>, or rejected with an exception.
+</p><p>This corresponds to the cases of a
+<span class="odocwiki_inlinecode">('a, exn)</span><a href=" https://caml.inria.fr/pub/docs/manual-ocaml/libref/Stdlib.html/#TYPEresult" class="ocsimore_phrasing_link"><span class="odocwiki_inlinecode">Stdlib.result</span></a>:
+fulfilled corresponds to <span class="odocwiki_inlinecode">Ok of 'a</span>, and rejected corresponds to
+<span class="odocwiki_inlinecode">Error of exn</span>.
+</p><p>It's important to note that this type constructor, <span class="odocwiki_inlinecode">Lwt.result</span>, is
+different from <span class="odocwiki_inlinecode">Stdlib.result</span>. It is a specialization of <span class="odocwiki_inlinecode">Stdlib.result</span> so
+that the <span class="odocwiki_inlinecode">Error</span> constructor always carries <span class="odocwiki_inlinecode">exn</span>.
+</p><p>For Lwt programming with <span class="odocwiki_inlinecode">result</span> where the <span class="odocwiki_inlinecode">Error</span> constructor can carry
+arbitrary error types, see module <span><a href=".././api/Lwt_result">Lwt_result</a></span>.
+</p><p>The naming conflict between <span class="odocwiki_inlinecode">Lwt.result</span> and <span class="odocwiki_inlinecode">Stdlib.result</span> is an
+unfortunate historical accident. <span class="odocwiki_inlinecode">Stdlib.result</span> did not exist when
+<span class="odocwiki_inlinecode">Lwt.result</span> was created.
+</p><p>The type <span class="odocwiki_inlinecode">Result.result</span> is equivalent to <span class="odocwiki_inlinecode">Stdlib.result</span> starting from
+OCaml 4.03. If you need compatibility with OCaml 4.02, refer to
+<span class="odocwiki_inlinecode">Stdlib.result</span> as <span class="odocwiki_inlinecode">Result.result</span>, and prefix the constructor names with
+<span class="odocwiki_inlinecode">Result</span>, as shown in the second example.</p></div><pre class="ocsforge_color odocwiki_code" id="VALof_result"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">of_result</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEresult">result</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.of_result r</span> converts an r to a resolved promise.
+</p><ul><li> If <span class="odocwiki_inlinecode">r</span> is <span class="odocwiki_inlinecode">Ok v</span>, <span class="odocwiki_inlinecode">Lwt.of_result r</span> is <span class="odocwiki_inlinecode">Lwt.return v</span>, i.e. a promise
+fulfilled with <span class="odocwiki_inlinecode">v</span>.
+</li><li> If <span class="odocwiki_inlinecode">r</span> is <span class="odocwiki_inlinecode">Error exn</span>, <span class="odocwiki_inlinecode">Lwt.of_result r</span> is <span class="odocwiki_inlinecode">Lwt.fail exn</span>, i.e. a promise
+rejected with <span class="odocwiki_inlinecode">exn</span>.</li></ul></div><pre class="ocsforge_color odocwiki_code" id="VALwakeup_later_result"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">wakeup_later_result</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEu">u</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEresult">result</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> unit</span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.wakeup_later_result r result</span> resolves the pending promise <span class="odocwiki_inlinecode">p</span>
+associated to resolver <span class="odocwiki_inlinecode">r</span>, according to <span class="odocwiki_inlinecode">result</span>:
+</p><ul><li> If <span class="odocwiki_inlinecode">result</span> is <span class="odocwiki_inlinecode">Ok v</span>, <span class="odocwiki_inlinecode">p</span> is fulfilled with <span class="odocwiki_inlinecode">v</span>.
+</li><li> If <span class="odocwiki_inlinecode">result</span> is <span class="odocwiki_inlinecode">Error exn</span>, <span class="odocwiki_inlinecode">p</span> is rejected with <span class="odocwiki_inlinecode">exn</span>.
+</li></ul><p>If <span class="odocwiki_inlinecode">p</span> is not pending, <span class="odocwiki_inlinecode">Lwt.wakeup_later_result</span> raises
+<span class="odocwiki_inlinecode">Stdlib.Invalid_argument _</span>, except if <span class="odocwiki_inlinecode">p</span> is <a href=" /#VALcancel" class="ocsimore_phrasing_link"> canceled</a>. If
+<span class="odocwiki_inlinecode">p</span> is canceled, <span class="odocwiki_inlinecode">Lwt.wakeup_later_result</span> has no effect.</p></div><h3 id="3_Statequery">State query <a class="backref" href="#3_Statequery">&#182;</a></h3><pre class="ocsforge_color odocwiki_code" id="TYPEstate"><span class="ocsforge_color_keyword">type</span> <span class="odocwiki_type">'a</span> <span class="odocwiki_name">state</span> <span class="ocsforge_color_delimiter">=</span> <span class="odocwiki_variants"><span class="odocwiki_variant"><span class="odocwiki_variant_constr"><span class="ocsforge_color_keyword"> |</span> <span class="ocsforge_color_uid">Return</span> <span class="ocsforge_color_keyword">of</span> <span class="odocwiki_type">'a</span></span></span><span class="odocwiki_variant"><span class="odocwiki_variant_constr"><span class="ocsforge_color_keyword"> |</span> <span class="ocsforge_color_uid">Fail</span> <span class="ocsforge_color_keyword">of</span> <span class="odocwiki_type">exn</span></span></span><span class="odocwiki_variant"><span class="odocwiki_variant_constr"><span class="ocsforge_color_keyword"> |</span> <span class="ocsforge_color_uid">Sleep</span></span></span></span></pre><pre class="ocsforge_color odocwiki_code" id="VALstate"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">state</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEstate">state</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.state p</span> evaluates to the current state of promise <span class="odocwiki_inlinecode">p</span>:
+</p><ul><li> If <span class="odocwiki_inlinecode">p</span> is <a href=" /#TYPEt" class="ocsimore_phrasing_link"> fulfilled</a> with value <span class="odocwiki_inlinecode">v</span>, the result is
+<span class="odocwiki_inlinecode">Lwt.Return v</span>.
+</li><li> If <span class="odocwiki_inlinecode">p</span> is <a href=" /#TYPEt" class="ocsimore_phrasing_link"> rejected</a> with exception <span class="odocwiki_inlinecode">exn</span>, the result is
+<span class="odocwiki_inlinecode">Lwt.Fail exn</span>.
+</li><li> If <span class="odocwiki_inlinecode">p</span> is <a href=" /#TYPEt" class="ocsimore_phrasing_link"> pending</a>, the result is <span class="odocwiki_inlinecode">Lwt.Sleep</span>.
+</li></ul><p>The constructor names are historical holdovers.</p></div><h2 id="2_Deprecated">Deprecated <a class="backref" href="#2_Deprecated">&#182;</a></h2><h3 id="3_Implicitcallbackarguments">Implicit callback arguments <a class="backref" href="#3_Implicitcallbackarguments">&#182;</a></h3><p>Using this mechanism is discouraged, because it is non-syntactic, and
+because it manipulates hidden state in module <span class="odocwiki_inlinecode">Lwt</span>. It is recommended
+instead to pass additional values explicitly in tuples, or maintain explicit
+associative maps for them.
+</p><pre class="ocsforge_color odocwiki_code" id="TYPEkey"><span class="ocsforge_color_keyword">type</span> <span class="odocwiki_type">'a</span> <span class="odocwiki_name">key</span></pre><div class="odocwiki_info"><p>Keys into the implicit callback argument map, for implicit arguments of type
+<span class="odocwiki_inlinecode">'a option</span>.
+</p><p>The keys are abstract, but they are basically integers that are all distinct
+from each other.
+</p><p>See <span><a href=".././api/Lwt#VALwith_value">Lwt.with_value</a></span>.</p></div><pre class="ocsforge_color odocwiki_code" id="VALnew_key"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">new_key</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">unit <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEkey">key</a></span></span></pre><div class="odocwiki_info"><p>Creates a fresh implicit callback argument key.
+</p><p>The key is distinct from any other key created by the current process. The
+value <span class="odocwiki_inlinecode">None</span> of type <span class="odocwiki_inlinecode">'a option</span> is immediately associated with the key.
+</p><p>See <span><a href=".././api/Lwt#VALwith_value">Lwt.with_value</a></span>.</p></div><pre class="ocsforge_color odocwiki_code" id="VALget"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">get</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEkey">key</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a option</span></pre><div class="odocwiki_info"><p>Retrieves the value currently associated with the given implicit callback
+argument key.
+</p><p>See <span><a href=".././api/Lwt#VALwith_value">Lwt.with_value</a></span>.</p></div><pre class="ocsforge_color odocwiki_code" id="VALwith_value"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">with_value</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEkey">key</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a option <span class="ocsforge_color_delimiter">-&gt;</span> <span class="ocsforge_color_delimiter">(</span>unit <span class="ocsforge_color_delimiter">-&gt;</span> 'b<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> 'b</span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.with_value k v f</span> sets <span class="odocwiki_inlinecode">k</span> to <span class="odocwiki_inlinecode">v</span> in Lwt's internal implicit callback
+argument map, then runs <span class="odocwiki_inlinecode">f ()</span>, then restores the previous value associated
+with <span class="odocwiki_inlinecode">k</span>.
+</p><p>Lwt maintains a single, global map, that can be used to “pass” extra
+arguments to callbacks:
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  let k : string Lwt.key = Lwt.new_key () in
+
+  let say_hello () =
+    match Lwt.get k with
+    | None -&gt; assert false
+    | Some s -&gt; Lwt_io.printl s
+  in
+
+  Lwt_main.run begin
+    Lwt.with_value k (Some &quot;Hello world!&quot;) begin fun () -&gt;
+      Lwt.bind
+        (Lwt_unix.sleep 1.)
+        (fun () -&gt; say_hello ())
+    end
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>Note that the string <span class="odocwiki_inlinecode">Hello world!</span> was passed to <span class="odocwiki_inlinecode">say_hello</span> through the
+key <span class="odocwiki_inlinecode">k</span>. Meanwhile, the only <em>explicit</em> argument of the callback
+<span class="odocwiki_inlinecode">say_hello</span> is <span class="odocwiki_inlinecode">()</span>.
+</p><p>The way this works is functions like <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span> take a <strong>snapshot</strong> of the
+implicit argument map. Later, right before the callback is run, the map is
+<em>restored</em> to that snapshot. In other words, the map has the same state
+inside the callback as it did at the time the callback was registered.
+</p><p>To be more precise:
+</p><ul><li> <span class="odocwiki_inlinecode">Lwt.with_value</span> associates <span class="odocwiki_inlinecode">Some &quot;Hello world!&quot;</span> with <span class="odocwiki_inlinecode">k</span>, and runs the
+function passed to it.
+</li><li> This function contains the <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span>.
+</li><li> OCaml's eager evaluation means the arguments are evaluated first. In
+particular, the <span class="odocwiki_inlinecode">Lwt_unix.sleep 1.</span> promise is created.
+</li><li> <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span> then attaches the callback in its second argument, the one
+which calls <span class="odocwiki_inlinecode">say_hello</span>, to that <span class="odocwiki_inlinecode">sleep</span> promise.
+</li><li> <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span> also takes a snapshot of the current state of the implicit
+argument map, and pairs the callback with that snapshot.
+</li><li> The callback will not run for another second or so, when the <span class="odocwiki_inlinecode">sleep</span>
+promise will be resolved.
+</li><li> Instead, <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span> returns its result promise <span class="odocwiki_inlinecode">p_3</span>. This causes
+<span class="odocwiki_inlinecode">Lwt.with_value</span> to also return <span class="odocwiki_inlinecode">p_3</span>, first restoring <span class="odocwiki_inlinecode">k</span> to be
+associated with <span class="odocwiki_inlinecode">None</span>.
+</li><li> <span><a href=".././api/Lwt_main#VALrun">Lwt_main.run</a></span> gets the pending <span class="odocwiki_inlinecode">p_3</span>, and blocks the whole process, with
+<span class="odocwiki_inlinecode">k</span> associated with <span class="odocwiki_inlinecode">None</span>.
+</li><li> One second later, the <span class="odocwiki_inlinecode">sleep</span> I/O completes, resolving the <span class="odocwiki_inlinecode">sleep</span>
+promise.
+</li><li> This triggers the <span class="odocwiki_inlinecode">say_hello</span> callback. Right before the callback is
+called, the implicit argument map is restored to its snapshot, so <span class="odocwiki_inlinecode">k</span> is
+associated with <span class="odocwiki_inlinecode">Some &quot;Hello world!&quot;</span>.
+</li><li> After the callback completes, Lwt again restores <span class="odocwiki_inlinecode">k</span> to be associated with
+<span class="odocwiki_inlinecode">None</span>.
+</li></ul><p>The Lwt functions that take snapshots of the implicit callback argument map
+are exactly those which attach callbacks to promises: <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span> and its
+variants <span class="odocwiki_inlinecode">&gt;&gt;=</span> and <span class="odocwiki_inlinecode">let%lwt</span>, <span><a href=".././api/Lwt#VALmap">Lwt.map</a></span> and its variant <span class="odocwiki_inlinecode">&gt;|=</span>, <span><a href=".././api/Lwt#VALcatch">Lwt.catch</a></span>
+and its variant <span class="odocwiki_inlinecode">try%lwt</span>, <span><a href=".././api/Lwt#VALfinalize">Lwt.finalize</a></span> and its variant <span class="odocwiki_inlinecode">%lwt.finally</span>,
+<span><a href=".././api/Lwt#VALtry_bind">Lwt.try_bind</a></span>, <span><a href=".././api/Lwt#VALon_success">Lwt.on_success</a></span>, <span><a href=".././api/Lwt#VALon_failure">Lwt.on_failure</a></span>,
+<span><a href=".././api/Lwt#VALon_termination">Lwt.on_termination</a></span>, and <span><a href=".././api/Lwt#VALon_any">Lwt.on_any</a></span>.
+</p><p><span class="odocwiki_inlinecode">Lwt.with_value</span> should only be called in the main thread, i.e. do not call
+it inside <span><a href=".././api/Lwt_preemptive#VALdetach">Lwt_preemptive.detach</a></span>.</p></div><h3 id="3_Immediateresolving">Immediate resolving <a class="backref" href="#3_Immediateresolving">&#182;</a></h3><pre class="ocsforge_color odocwiki_code" id="VALwakeup"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">wakeup</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEu">u</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span class="ocsforge_color_delimiter">-&gt;</span> unit</span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.wakeup r v</span> is like <span><a href=".././api/Lwt#VALwakeup_later">Lwt.wakeup_later</a></span><span class="odocwiki_inlinecode">r v</span>, except it guarantees
+that callbacks associated with <span class="odocwiki_inlinecode">r</span> will be called immediately, deeper on the
+current stack.
+</p><p>In contrast, <span><a href=".././api/Lwt#VALwakeup_later">Lwt.wakeup_later</a></span> <em>may</em> call callbacks immediately, or may
+queue them for execution on a shallower stack – though still before the next
+time Lwt blocks the process on I/O.
+</p><p>Using this function is discouraged, because calling it in a loop can exhaust
+the stack. The loop might be difficult to detect or predict, due to combined
+mutually-recursive calls between multiple modules and libraries.
+</p><p>Also, trying to use this function to guarantee the timing of callback calls
+for synchronization purposes is discouraged. This synchronization effect is
+obscure to readers. It is better to use explicit promises, or <span><a href=".././api/Lwt_mutex">Lwt_mutex</a></span>,
+<span><a href=".././api/Lwt_condition">Lwt_condition</a></span>, and/or <span><a href=".././api/Lwt_mvar">Lwt_mvar</a></span>.</p></div><pre class="ocsforge_color odocwiki_code" id="VALwakeup_exn"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">wakeup_exn</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEu">u</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> exn <span class="ocsforge_color_delimiter">-&gt;</span> unit</span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.wakeup_exn r exn</span> is like <span><a href=".././api/Lwt#VALwakeup_later_exn">Lwt.wakeup_later_exn</a></span><span class="odocwiki_inlinecode">r exn</span>, but has
+the same problems as <span><a href=".././api/Lwt#VALwakeup">Lwt.wakeup</a></span>.</p></div><pre class="ocsforge_color odocwiki_code" id="VALwakeup_result"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">wakeup_result</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEu">u</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEresult">result</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> unit</span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.wakeup_result r result</span> is like <span><a href=".././api/Lwt#VALwakeup_later_result">Lwt.wakeup_later_result</a></span><span class="odocwiki_inlinecode">r result</span>,
+but has the same problems as <span><a href=".././api/Lwt#VALwakeup">Lwt.wakeup</a></span>.</p></div><h3 id="3_Helpersforresolving">Helpers for resolving <a class="backref" href="#3_Helpersforresolving">&#182;</a></h3><pre class="ocsforge_color odocwiki_code" id="VALmake_value"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">make_value</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEresult">result</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.make_value v</span> is equivalent to
+<a href=" https://caml.inria.fr/pub/docs/manual-ocaml/libref/Stdlib.html/#TYPEresult" class="ocsimore_phrasing_link">
+<span class="odocwiki_inlinecode">Ok v</span></a> since OCaml 4.03. If you need compatibility with OCaml 4.02, use
+<span class="odocwiki_inlinecode">Result.Ok</span> and depend on opam package
+<a href=" https://opam.ocaml.org/packages/result/" class="ocsimore_phrasing_link"> <span class="odocwiki_inlinecode">result</span></a>.</p></div><pre class="ocsforge_color odocwiki_code" id="VALmake_error"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">make_error</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">exn <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEresult">result</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.make_error exn</span> is equivalent to
+<a href=" https://caml.inria.fr/pub/docs/manual-ocaml/libref/Stdlib.html/#TYPEresult" class="ocsimore_phrasing_link">
+<span class="odocwiki_inlinecode">Error exn</span></a> since OCaml 4.03. If you need compatibility with OCaml 4.02,
+use <span class="odocwiki_inlinecode">Result.Error</span> and depend on opam package
+<a href=" https://opam.ocaml.org/packages/result/" class="ocsimore_phrasing_link"> <span class="odocwiki_inlinecode">result</span></a>.</p></div><pre class="ocsforge_color odocwiki_code" id="VALwaiter_of_wakener"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">waiter_of_wakener</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEu">u</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.waiter_of_wakener r</span> evaluates to the promise associated with resolver
+<span class="odocwiki_inlinecode">r</span>.
+</p><p>It is recommended to explicitly keep the reference to the promise
+instead.</p></div><h3 id="3_Linkedlistsofpromises">Linked lists of promises <a class="backref" href="#3_Linkedlistsofpromises">&#182;</a></h3><pre class="ocsforge_color odocwiki_code" id="VALadd_task_r"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">add_task_r</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEu">u</a></span> <span><a href=".././api/Lwt_sequence#TYPEt">Lwt_sequence.t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.add_task_r sequence</span> is equivalent to
+</p><pre class=""><code class="language-ocaml translatable">let p, r = Lwt.task () in
+let node = Lwt_sequence.add_r r sequence in
+Lwt.on_cancel p (fun () -&gt; Lwt_sequence.remove node);
+p</code></pre><p>Use of this function is discouraged for two reasons:
+</p><ul><li> <span><a href=".././api/Lwt_sequence">Lwt_sequence</a></span> should not be used outside Lwt.
+</li><li> This function only exists because it performs a minor internal
+optimization, which may be removed.</li></ul></div><pre class="ocsforge_color odocwiki_code" id="VALadd_task_l"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">add_task_l</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEu">u</a></span> <span><a href=".././api/Lwt_sequence#TYPEt">Lwt_sequence.t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p>Like <span><a href=".././api/Lwt#VALadd_task_r">Lwt.add_task_r</a></span>, but the equivalent code calls <span><a href=".././api/Lwt_sequence#VALadd_l">Lwt_sequence.add_l</a></span>
+instead.</p></div><h3 id="3_Yielding">Yielding <a class="backref" href="#3_Yielding">&#182;</a></h3><pre class="ocsforge_color odocwiki_code" id="VALpause"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">pause</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">unit <span class="ocsforge_color_delimiter">-&gt;</span> unit <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.pause ()</span> creates a pending promise that is fulfilled after Lwt
+finishes calling all currently ready callbacks, i.e. it is fulfilled on the
+next “tick.”
+</p><p>Putting the rest of your computation into a callback of <span class="odocwiki_inlinecode">Lwt.pause ()</span>
+creates a “yield” that gives other callbacks a chance to run first.
+</p><p>For example, to break up a long-running computation, allowing I/O to be
+handled between chunks:
+</p><pre class=""><code class="language-ocaml translatable">let () =
+  let rec handle_io () =
+    let%lwt () = Lwt_io.printl &quot;Handling I/O&quot; in
+    let%lwt () = Lwt_unix.sleep 0.1 in
+    handle_io ()
+  in
+
+  let rec compute n =
+    if n = 0 then
+      Lwt.return ()
+    else
+      let%lwt () =
+        if n mod 1_000_000 = 0 then
+          Lwt.pause ()
+        else
+          Lwt.return ()
+      in
+      compute (n - 1)
+  in
+
+  Lwt.async handle_io;
+  Lwt_main.run (compute 100_000_000)
+
+(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml &amp;&amp; ./a.out *)</code></pre><p>If you replace the call to <span class="odocwiki_inlinecode">Lwt.pause</span> by <span class="odocwiki_inlinecode">Lwt.return</span> in the program above,
+<span class="odocwiki_inlinecode">&quot;Handling I/O&quot;</span> is printed only once. With <span class="odocwiki_inlinecode">Lwt.pause</span>, it is printed several
+times, depending on the speed of your machine.
+</p><p>An alternative way to handle long-running computations is to detach them to
+preemptive threads using <span><a href=".././api/Lwt_preemptive">Lwt_preemptive</a></span>.</p></div><h3 id="3_Functionlifters">Function lifters <a class="backref" href="#3_Functionlifters">&#182;</a></h3><pre class="ocsforge_color odocwiki_code" id="VALwrap"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">wrap</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><span class="ocsforge_color_delimiter">(</span>unit <span class="ocsforge_color_delimiter">-&gt;</span> 'a<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.wrap f</span> applies <span class="odocwiki_inlinecode">f ()</span>. If <span class="odocwiki_inlinecode">f ()</span> returns a value <span class="odocwiki_inlinecode">v</span>, <span class="odocwiki_inlinecode">Lwt.wrap</span>
+returns <span><a href=".././api/Lwt#VALreturn">Lwt.return</a></span><span class="odocwiki_inlinecode">v</span>. If <span class="odocwiki_inlinecode">f ()</span> raises an exception exn, <span class="odocwiki_inlinecode">Lwt.wrap</span>
+returns <span><a href=".././api/Lwt#VALfail">Lwt.fail</a></span><span class="odocwiki_inlinecode">exn</span>.</p></div><pre class="ocsforge_color odocwiki_code" id="VALwrap1"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">wrap1</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><span class="ocsforge_color_delimiter">(</span>'a <span class="ocsforge_color_delimiter">-&gt;</span> 'b<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><pre class="ocsforge_color odocwiki_code" id="VALwrap2"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">wrap2</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><span class="ocsforge_color_delimiter">(</span>'a <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span class="ocsforge_color_delimiter">-&gt;</span> 'c<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span class="ocsforge_color_delimiter">-&gt;</span> 'c <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><pre class="ocsforge_color odocwiki_code" id="VALwrap3"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">wrap3</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><span class="ocsforge_color_delimiter">(</span>'a <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span class="ocsforge_color_delimiter">-&gt;</span> 'c <span class="ocsforge_color_delimiter">-&gt;</span> 'd<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span class="ocsforge_color_delimiter">-&gt;</span> 'c <span class="ocsforge_color_delimiter">-&gt;</span> 'd <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><pre class="ocsforge_color odocwiki_code" id="VALwrap4"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">wrap4</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><span class="ocsforge_color_delimiter">(</span>'a <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span class="ocsforge_color_delimiter">-&gt;</span> 'c <span class="ocsforge_color_delimiter">-&gt;</span> 'd <span class="ocsforge_color_delimiter">-&gt;</span> 'e<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span class="ocsforge_color_delimiter">-&gt;</span> 'c <span class="ocsforge_color_delimiter">-&gt;</span> 'd <span class="ocsforge_color_delimiter">-&gt;</span> 'e <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><pre class="ocsforge_color odocwiki_code" id="VALwrap5"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">wrap5</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><br/>  <span class="ocsforge_color_delimiter">(</span>'a <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span class="ocsforge_color_delimiter">-&gt;</span> 'c <span class="ocsforge_color_delimiter">-&gt;</span> 'd <span class="ocsforge_color_delimiter">-&gt;</span> 'e <span class="ocsforge_color_delimiter">-&gt;</span> 'f<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span><br/>  'a <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span class="ocsforge_color_delimiter">-&gt;</span> 'c <span class="ocsforge_color_delimiter">-&gt;</span> 'd <span class="ocsforge_color_delimiter">-&gt;</span> 'e <span class="ocsforge_color_delimiter">-&gt;</span> 'f <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><pre class="ocsforge_color odocwiki_code" id="VALwrap6"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">wrap6</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><br/>  <span class="ocsforge_color_delimiter">(</span>'a <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span class="ocsforge_color_delimiter">-&gt;</span> 'c <span class="ocsforge_color_delimiter">-&gt;</span> 'd <span class="ocsforge_color_delimiter">-&gt;</span> 'e <span class="ocsforge_color_delimiter">-&gt;</span> 'f <span class="ocsforge_color_delimiter">-&gt;</span> 'g<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span><br/>  'a <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span class="ocsforge_color_delimiter">-&gt;</span> 'c <span class="ocsforge_color_delimiter">-&gt;</span> 'd <span class="ocsforge_color_delimiter">-&gt;</span> 'e <span class="ocsforge_color_delimiter">-&gt;</span> 'f <span class="ocsforge_color_delimiter">-&gt;</span> 'g <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><pre class="ocsforge_color odocwiki_code" id="VALwrap7"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">wrap7</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><br/>  <span class="ocsforge_color_delimiter">(</span>'a <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span class="ocsforge_color_delimiter">-&gt;</span> 'c <span class="ocsforge_color_delimiter">-&gt;</span> 'd <span class="ocsforge_color_delimiter">-&gt;</span> 'e <span class="ocsforge_color_delimiter">-&gt;</span> 'f <span class="ocsforge_color_delimiter">-&gt;</span> 'g <span class="ocsforge_color_delimiter">-&gt;</span> 'h<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span><br/>  'a <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span class="ocsforge_color_delimiter">-&gt;</span> 'c <span class="ocsforge_color_delimiter">-&gt;</span> 'd <span class="ocsforge_color_delimiter">-&gt;</span> 'e <span class="ocsforge_color_delimiter">-&gt;</span> 'f <span class="ocsforge_color_delimiter">-&gt;</span> 'g <span class="ocsforge_color_delimiter">-&gt;</span> 'h <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p>As a “prototype,” <span class="odocwiki_inlinecode">Lwt_wrap1 f</span> creates a promise-valued function <span class="odocwiki_inlinecode">g</span>:
+</p><pre class=""><code class="language-ocaml translatable">let g v =
+  try
+    let v' = f v in
+    Lwt.return v'
+  with exn -&gt;
+    Lwt.fail exn</code></pre><p>The remainder of the functions work analogously – they just work on <span class="odocwiki_inlinecode">f</span> with
+larger numbers of arguments.
+</p><p>Note that there is an important difference to <span><a href=".././api/Lwt#VALwrap">Lwt.wrap</a></span>. These functions
+don't run <span class="odocwiki_inlinecode">f</span>, nor create the final promise, immediately. In contrast,
+<span><a href=".././api/Lwt#VALwrap">Lwt.wrap</a></span> runs its argument <span class="odocwiki_inlinecode">f</span> eagerly.
+</p><p>To get a suspended function instead of the eager execution of <span><a href=".././api/Lwt#VALwrap">Lwt.wrap</a></span>,
+use <span class="odocwiki_inlinecode">Lwt.wrap1</span>.</p></div><h3 id="3_Trivialpromises">Trivial promises <a class="backref" href="#3_Trivialpromises">&#182;</a></h3><pre class="ocsforge_color odocwiki_code" id="VALreturn_some"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">return_some</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span class="ocsforge_color_delimiter">-&gt;</span> 'a option <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p>Counterpart to <span><a href=".././api/Lwt#VALreturn_none">Lwt.return_none</a></span>. However, unlike <span><a href=".././api/Lwt#VALreturn_none">Lwt.return_none</a></span>, this
+function performs no <a href=" /#VALreturn_unit" class="ocsimore_phrasing_link"> optimization</a>. This is because it
+takes an argument, so it cannot be evaluated at initialization time, at
+which time the argument is not yet available.</p></div><pre class="ocsforge_color odocwiki_code" id="VALreturn_ok"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">return_ok</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span class="ocsforge_color_delimiter">-&gt;</span> <span class="ocsforge_color_delimiter">(</span>'a, 'b<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_uid">Result</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_lid">result</span> <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p>Like <span><a href=".././api/Lwt#VALreturn_some">Lwt.return_some</a></span>, this function performs no optimization.
+<strong>Since</strong> Lwt 2.6.0<br/></p></div><pre class="ocsforge_color odocwiki_code" id="VALreturn_error"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">return_error</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'e <span class="ocsforge_color_delimiter">-&gt;</span> <span class="ocsforge_color_delimiter">(</span>'a, 'e<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_uid">Result</span><span class="ocsforge_color_delimiter">.</span><span class="ocsforge_color_lid">result</span> <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p>Like <span><a href=".././api/Lwt#VALreturn_some">Lwt.return_some</a></span>, this function performs no optimization.
+<strong>Since</strong> Lwt 2.6.0<br/></p></div><pre class="ocsforge_color odocwiki_code" id="VALfail_with"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">fail_with</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">string <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.fail_with s</span> is an abbreviation for
+</p><pre class=""><code class="language-ocaml translatable">Lwt.fail (Stdlib.Failure s)</code></pre><p>In most cases, it is better to use <span class="odocwiki_inlinecode">failwith s</span> from the standard library.
+See <span><a href=".././api/Lwt#VALfail">Lwt.fail</a></span> for an explanation.</p></div><pre class="ocsforge_color odocwiki_code" id="VALfail_invalid_arg"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">fail_invalid_arg</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">string <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.invalid_arg s</span> is an abbreviation for
+</p><pre class=""><code class="language-ocaml translatable">Lwt.fail (Stdlib.Invalid_argument s)</code></pre><p>In most cases, it is better to use <span class="odocwiki_inlinecode">invalid_arg s</span> from the standard
+library. See <span><a href=".././api/Lwt#VALfail">Lwt.fail</a></span> for an explanation.</p></div><h3 id="3_Unscopedinfixoperators">Unscoped infix operators <a class="backref" href="#3_Unscopedinfixoperators">&#182;</a></h3><pre class="ocsforge_color odocwiki_code" id="VAL(&gt;&gt;=)"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">(&gt;&gt;=)</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> <span class="ocsforge_color_delimiter">(</span>'a <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span><a href=".././api/Lwt#TYPEt">t</a></span><span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><pre class="ocsforge_color odocwiki_code" id="VAL(&gt;|=)"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">(&gt;|=)</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> <span class="ocsforge_color_delimiter">(</span>'a <span class="ocsforge_color_delimiter">-&gt;</span> 'b<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><pre class="ocsforge_color odocwiki_code" id="VAL(&lt;?&gt;)"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">(&lt;?&gt;)</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><pre class="ocsforge_color odocwiki_code" id="VAL(&lt;&amp;&gt;)"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">(&lt;&amp;&gt;)</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">unit <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> unit <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> unit <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><pre class="ocsforge_color odocwiki_code" id="VAL(=&lt;&lt;)"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">(=&lt;&lt;)</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><span class="ocsforge_color_delimiter">(</span>'a <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span><a href=".././api/Lwt#TYPEt">t</a></span><span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><pre class="ocsforge_color odocwiki_code" id="VAL(=|&lt;)"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">(=|&lt;)</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type"><span class="ocsforge_color_delimiter">(</span>'a <span class="ocsforge_color_delimiter">-&gt;</span> 'b<span class="ocsforge_color_delimiter">)</span> <span class="ocsforge_color_delimiter">-&gt;</span> 'a <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> 'b <span><a href=".././api/Lwt#TYPEt">t</a></span></span></pre><div class="odocwiki_info"><p>Use the operators in module <a href=" /#MODULEInfix" class="ocsimore_phrasing_link"> <span class="odocwiki_inlinecode">Lwt.Infix</span></a> instead. Using
+these instances of the operators directly requires opening module <span class="odocwiki_inlinecode">Lwt</span>,
+which brings an excessive number of other names into scope.</p></div><h3 id="3_Miscellaneous">Miscellaneous <a class="backref" href="#3_Miscellaneous">&#182;</a></h3><pre class="ocsforge_color odocwiki_code" id="VALis_sleeping"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">is_sleeping</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> bool</span></pre><div class="odocwiki_info"><p><span class="odocwiki_inlinecode">Lwt.is_sleeping p</span> is equivalent to <span><a href=".././api/Lwt#VALstate">Lwt.state</a></span><span class="odocwiki_inlinecode">p = Lwt.Sleep</span>.</p></div><pre class="ocsforge_color odocwiki_code" id="VALignore_result"><span class="ocsforge_color_keyword">val</span> <span class="odocwiki_name">ignore_result</span> <span class="ocsforge_color_delimiter">:</span> <span class="odocwiki_type">'a <span><a href=".././api/Lwt#TYPEt">t</a></span> <span class="ocsforge_color_delimiter">-&gt;</span> unit</span></pre><div class="odocwiki_info"><p>An obsolete variant of <span><a href=".././api/Lwt#VALasync">Lwt.async</a></span>.
+</p><p><span class="odocwiki_inlinecode">Lwt.ignore_result p</span> behaves as follows:
+</p><ul><li> If <span class="odocwiki_inlinecode">p</span> is already fulfilled, <span class="odocwiki_inlinecode">Lwt.ignore_result p</span> does nothing.
+</li><li> If <span class="odocwiki_inlinecode">p</span> is already rejected with <span class="odocwiki_inlinecode">exn</span>, <span class="odocwiki_inlinecode">Lwt.ignore_result p</span> raises <span class="odocwiki_inlinecode">exn</span>
+immedaitely.
+</li><li> If <span class="odocwiki_inlinecode">p</span> is pending, <span class="odocwiki_inlinecode">Lwt.ignore_result p</span> does nothing, but if <span class="odocwiki_inlinecode">p</span> becomes
+rejected later, the exception is passed to <span class="odocwiki_inlinecode">!</span><span><a href=".././api/Lwt#VALasync_exception_hook">Lwt.async_exception_hook</a></span>.
+</li></ul><p>Use of this function is discouraged for two reasons:
+</p><ul><li> The behavior is different depending on whether <span class="odocwiki_inlinecode">p</span> is rejected now or
+later.
+</li><li> The name is misleading, and has led to users thinking this function is
+analogous to <span class="odocwiki_inlinecode">Stdlib.ignore</span>, i.e. that it waits for <span class="odocwiki_inlinecode">p</span> to become
+resolved, completing any associated side effects along the way. In fact,
+the function that does <em>that</em> is ordinary <span><a href=".././api/Lwt#VALbind">Lwt.bind</a></span>.</li></ul></div></article></div></div></body></html>
