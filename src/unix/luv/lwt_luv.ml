@@ -1,13 +1,10 @@
-let log message =
-  Printf.printf "%i - %s\n" (Unix.getpid ()) message
-
 let l f = function
 | Error e -> failwith (Luv.Error.err_name e)
 | Ok l -> List.iter (function
-| `DISCONNECT -> log "DISCONNECT";
-| `PRIORITIZED -> log "PRIORITIZED";
-| `READABLE -> f ()
-| `WRITABLE -> f ()
+| `DISCONNECT -> ()
+| `PRIORITIZED -> ()
+| `READABLE -> if List.length l = 1 then f ()
+| `WRITABLE -> if List.length l = 1 then f ()
 ) l;
 
 external from_unix_helper : Unix.file_descr -> nativeint -> unit = "luv_unix_fd_to_os_fd"
