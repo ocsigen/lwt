@@ -134,7 +134,7 @@ scripts:
         - ./_cache
 
   - &esy
-    install: npm install -g esy
+    install: npm install -g @esy-nightly/esy@0.6.8-59ef85
     script:
       - esy install
       - esy build
