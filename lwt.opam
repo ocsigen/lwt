@@ -27,7 +27,6 @@ depends: [
   "ocplib-endian"
   "result" # result is needed as long as Lwt supports OCaml 4.02.
   "seq" # seq is needed as long as Lwt supports OCaml < 4.07.0.
-  "luv"
 
   "bisect_ppx" {dev & >= "2.0.0"}
   "ocamlfind" {dev & >= "1.7.3-1"}
@@ -47,10 +46,6 @@ build: [
   ["dune" "exec" "-p" name "src/unix/config/discover.exe" "--" "--save"
     "--use-libev" "%{conf-libev:installed}%"]
   ["dune" "build" "-p" name "-j" jobs]
-]
-
-pin-depends: [
-    [ "luv.dev" "git+https://github.com/aantron/luv.git#master" ]
 ]
 
 description: "A promise is a value that may become determined in the future.

@@ -6,7 +6,7 @@ open Tester
 let () = Lwt_engine.set (new Lwt_luv.engine)
 
 let () =
-  Test.concurrent "unix" [
+  Test.concurrent "unix with luv" [
     Test_lwt_unix.suite;
     Test_lwt_io.suite;
     Test_lwt_io_non_block.suite;
