@@ -93,7 +93,7 @@ scripts:
         if [ "$COVERAGE" != yes ]
         then
           dune build
-          dune runtest --force
+          dune runtest --force --no-buffer
         else
           make coverage
           bisect-ppx-report send-to Coveralls

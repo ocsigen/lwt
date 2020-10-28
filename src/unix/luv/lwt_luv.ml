@@ -19,7 +19,8 @@ let make_loop () =
   Luv.Loop.init () |> function
   | Ok l -> l
   | Error e -> failwith (Printf.sprintf "Could not create new loop, this is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.err_name e))
-class engine = object
+
+  class engine = object
   inherit Lwt_engine.abstract
 
   val loop = ref (make_loop ())
