@@ -24,3 +24,11 @@
  (action (run %{exe:main.exe}))
  (deps bytes_io_data)
 )
+
+(alias
+ (name runtest)
+ (package lwt)
+ (enabled_if (<> "windows" %{ocaml-config:system}))
+ (action (run %{exe:luv_main.exe}))
+ (deps bytes_io_data)
+)

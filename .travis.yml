@@ -94,8 +94,6 @@ scripts:
         then
           dune build
           dune runtest --force
-          dune build test/unix/luv_main.exe
-          _build/default/test/unix/luv_main.exe
         else
           make coverage
           bisect-ppx-report send-to Coveralls
@@ -134,7 +132,7 @@ scripts:
         - ./_cache
 
   - &esy
-    install: npm install --prefix /usr/local -g @esy-nightly/esy@0.6.8-59ef85
+    install: npm install esy
     script:
       - esy install
       - esy build
