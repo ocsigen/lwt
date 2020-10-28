@@ -28,7 +28,7 @@
 (alias
  (name runtest)
  (package lwt)
- (enabled_if (<> "windows" %{ocaml-config:system}))
+ (enabled_if (<> "mingw64" %{ocaml-config:system}))
  (action (run %{exe:luv_main.exe}))
  (deps bytes_io_data)
 )
