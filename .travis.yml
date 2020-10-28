@@ -94,6 +94,7 @@ scripts:
         then
           dune build
           dune runtest --force --no-buffer
+          rm -rf _build/default/test/unix
           dune build @runtest_libuv --force --no-buffer
         else
           make coverage
