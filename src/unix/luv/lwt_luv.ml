@@ -3,8 +3,8 @@ let l f = function
 | Ok l -> List.iter (function
 | `DISCONNECT -> ()
 | `PRIORITIZED -> ()
-| `READABLE -> if List.length l = 1 then f ()
-| `WRITABLE -> if List.length l = 1 then f ()
+| `READABLE -> f ()
+| `WRITABLE -> f ()
 ) l;
 
 external from_unix_helper : Unix.file_descr -> nativeint -> unit = "luv_unix_fd_to_os_fd"
