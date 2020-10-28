@@ -94,6 +94,7 @@ scripts:
         then
           dune build
           dune runtest --force --no-buffer
+          dune build @runtest_libuv --force --no-buffer
         else
           make coverage
           bisect-ppx-report send-to Coveralls
