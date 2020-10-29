@@ -13,7 +13,6 @@ let () = Jbuild_plugin.V1.send @@ {|
  (libraries luv lwt lwt.unix result)
  |} ^ preprocess ^ {|
  (c_names luv_unix_stubs)
- (c_flags (:standard -Iluv))
+ (c_flags (:standard -I -luv))
 )
-
 |}
