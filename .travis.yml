@@ -87,6 +87,9 @@ scripts:
           LWT_DISCOVER_ARGUMENTS="--use-libev true"
         fi
       - export LWT_DISCOVER_ARGUMENTS
+      - opam list
+      - opam pin list
+      - find _opam -name uv.h
 
     script:
       - |
