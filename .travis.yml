@@ -68,7 +68,7 @@ scripts:
           CACHED=no
         fi
       - opam install . --deps-only --yes
-      - opam update --yes && opam upgrade --yes
+      - opam reinstall -y luv
       - |
         if [ "$CACHED" == no && "$LIBEV" != no ]
         then
