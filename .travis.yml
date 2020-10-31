@@ -98,7 +98,8 @@ scripts:
         then
           dune build
           dune runtest --force --no-buffer
-          LWT_DISCOVER_ARGUMENTS="--use-libev false" dune build @runtest_libuv --force --no-buffer
+          unset LWT_DISCOVER_ARGUMENTS
+          dune build @runtest_libuv --force --no-buffer
         else
           make coverage
           bisect-ppx-report send-to Coveralls
