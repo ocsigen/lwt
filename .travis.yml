@@ -185,7 +185,7 @@ matrix:
       env: COMPILER=4.03.0
     - <<: *opam
       os: linux
-      env: COMPILER=4.02.3 PACKAGING=yes
+      env: COMPILER=4.02.3 PACKAGING=yes LIBEV=no
     - <<: *esy
       os: linux
       env: ESY=yes
