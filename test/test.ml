@@ -283,10 +283,13 @@ let concurrent library_name suites =
       if suite.skip_suite_if_this_is_false () = false then
         Lwt.return Skipped
       else
-        run_test test
+        (print_endline ("running test - " ^ test.test_name);
+        flush stdout;
+        run_test test)
     end
     >|= fun outcome ->
     print_string (outcome_to_character outcome);
+    print_endline test.test_name;
     flush stdout;
     ((suite, test), outcome)
   in
