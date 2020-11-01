@@ -274,6 +274,7 @@ let concurrent library_name suites =
     | _ -> None);
 
   Printf.printf "Testing library '%s'...\n" library_name;
+  flush_all ();
 
   let open Lwt.Infix in
 
