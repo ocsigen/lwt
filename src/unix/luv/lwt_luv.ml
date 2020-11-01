@@ -16,9 +16,10 @@ let from_unix unix_fd =
   Ctypes.(!@ (addr os_fd |> to_voidp |> from_voidp Ctypes.int))
 
 let make_loop () =
-  Luv.Loop.init () |> function
+  Luv.Loop.default ()
+  (*Luv.Loop.init () |> function
   | Ok l -> l
-  | Result.Error e -> failwith (Printf.sprintf "Could not create new loop, this is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.err_name e))
+  | Result.Error e -> failwith (Printf.sprintf "Could not create new loop, this is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.err_name e)) *)
 
   class engine = object
   inherit Lwt_engine.abstract
