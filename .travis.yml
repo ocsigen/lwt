@@ -97,9 +97,9 @@ scripts:
         if [ "$COVERAGE" != yes ]
         then
           dune build
-          dune runtest --force --no-buffer
+          dune runtest --force
           unset LWT_DISCOVER_ARGUMENTS
-          dune build @runtest_libuv --force --no-buffer --verbose
+          dune build @runtest_libuv --force
         else
           make coverage
           bisect-ppx-report send-to Coveralls
@@ -185,7 +185,7 @@ matrix:
       env: COMPILER=4.03.0
     - <<: *opam
       os: linux
-      env: COMPILER=4.02.3 PACKAGING=yes LIBEV=no
+      env: COMPILER=4.02.3 PACKAGING=yes
     - <<: *esy
       os: linux
       env: ESY=yes
