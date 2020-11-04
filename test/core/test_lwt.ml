@@ -1892,6 +1892,8 @@ let join_tests = suite "join" [
 ]
 let suites = suites @ [join_tests]
 
+let list_init i f = Array.init i f |> Array.to_list
+
 let all_tests = suite "all" [
   test "empty" begin fun () ->
     let p = Lwt.all [] in
@@ -1911,6 +1913,11 @@ let all_tests = suite "all" [
   test "all fulfilled (three)" begin fun () ->
     let p = Lwt.all [Lwt.return 1; Lwt.return 2; Lwt.return 3] in
     state_is (Lwt.Return [1; 2; 3]) p
+  end;
+
+  test "all fulfilled (long)" begin fun () ->
+    let p = Lwt.all (list_init 10 Lwt.return) in
+    state_is (Lwt.Return (list_init 10 (fun i->i))) p
   end;
 
   test "all rejected" begin fun () ->
@@ -1946,6 +1953,13 @@ let all_tests = suite "all" [
     let p = Lwt.all [Lwt.return 1; p; Lwt.return 3] in
     Lwt.wakeup r 2;
     state_is (Lwt.Return [1; 2; 3]) p
+  end;
+
+  test "fulfilled and pending, fulfilled (long)" begin fun () ->
+    let p, r = Lwt.wait () in
+    let p = Lwt.all (list_init 10 Lwt.return @ [p]) in
+    Lwt.wakeup r 10;
+    state_is (Lwt.Return (list_init 11 (fun x->x))) p
   end;
 
   test "rejected and pending, fulfilled" begin fun () ->
