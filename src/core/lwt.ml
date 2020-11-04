@@ -2596,20 +2596,26 @@ struct
       | _ -> assert false)
 
   let all ps =
-    let vs = Array.make (List.length ps) None in
-    ps
-    |> List.mapi (fun index p ->
-      bind p (fun v -> vs.(index) <- Some v; return_unit))
-    |> join
-    |> map (fun () ->
-      vs
-      |> Array.map (fun v ->
-        match v with
-        | Some v -> v
-        | None -> assert false)
-      |> Array.to_list)
-
-
+    match ps with
+    | [] -> return []
+    | [x] -> map (fun y->[y]) x
+    | [x;y] ->
+      map (fun (x,y) ->[x;y]) (both x y)
+    | _ ->
+      let vs = Array.make (List.length ps) None in
+      ps
+      |> List.mapi (fun index p ->
+        bind p (fun v -> vs.(index) <- Some v; return_unit))
+      |> join
+      |> map (fun () ->
+          let rec to_l i acc =
+            if i<0 then acc
+            else
+              match Array.unsafe_get vs i with
+              | None -> assert false
+              | Some x -> to_l (i-1) (x::acc)
+          in
+          to_l (Array.length vs-1) [])
 
   (* Maintainer's note: the next few functions are helpers for [choose] and
      [pick]. Perhaps they should be factored into some kind of generic
