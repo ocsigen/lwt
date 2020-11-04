@@ -2609,13 +2609,10 @@ struct
       map (fun (x,y) ->[x;y]) (both x y)
     | _ ->
       let vs = Array.make (List.length ps) None in
-      let waitall, wake = wait() in
-      List.iteri (fun i p ->
-          on_any p
-            (fun x -> vs.(i) <- Some x)
-            (fun e -> wakeup_later_exn wake e))
-        ps;
-      waitall
+      ps
+      |> List.mapi (fun index p ->
+        bind p (fun v -> vs.(index) <- Some v; return_unit))
+      |> join
       |> map (fun () ->
           let rec to_l i acc =
             if i<0 then acc
