@@ -58,7 +58,7 @@ scripts:
         fi
       - eval `opam env`
       - opam --version
-      - ocaml -version || true # "|| true" is a temp fix for OCaml 4.12: https://github.com/ocaml/ocaml/pull/9798
+      - ocaml -version
 
       - opam pin add --no-action ounit 2.0.8 # 2.1.2 release is broken.
       - CACHED=yes
