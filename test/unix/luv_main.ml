@@ -3,11 +3,7 @@
 
 open Tester
 
-let () = print_endline "Starting luv_main"; flush_all ()
-
 let () = Lwt_engine.set (new Lwt_luv.engine)
-
-let () = print_endline "Luv engine set, starting tests"; flush_all ()
 
 let () =
   Test.concurrent "unix with luv" [
