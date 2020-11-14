@@ -3133,6 +3133,11 @@ struct
   let (<&>) p p' = join [p; p']
   let (<?>) p p' = choose [p; p']
 
+end
+include Infix
+
+module Let_syntax =
+struct
   module Let_syntax =
   struct
     let return = return
@@ -3145,7 +3150,6 @@ struct
     end
   end
 end
-include Infix
 
 module Syntax =
 struct

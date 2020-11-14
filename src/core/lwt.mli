@@ -1377,10 +1377,14 @@ let () =
       This operator is obscure and its use is discouraged. It is the same as
       [p >|= f]. *)
 
-  (** This module provides support for {{:https://github.com/janestreet/ppx_let}
-      ppx_let}.
+end
 
-      @since 4.2.0 *)
+(** This module provides support for {{:https://github.com/janestreet/ppx_let}
+    ppx_let}.
+
+    @since 4.2.0 *)
+module Let_syntax :
+sig
   module Let_syntax :
   sig
     val return : 'a -> 'a t
