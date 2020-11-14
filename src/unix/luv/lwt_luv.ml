@@ -15,17 +15,15 @@ let from_unix unix_fd =
   from_unix_helper unix_fd storage;
   Ctypes.(!@ (addr os_fd |> to_voidp |> from_voidp Ctypes.int))
 
-let make_loop () = Luv.Loop.init () |> function
-  | Ok l -> l
-  | Result.Error e -> failwith (Printf.sprintf "Could not create new loop, this is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.err_name e))
-
 class engine = object
   inherit Lwt_engine.abstract
 
   val loop = ref (Luv.Loop.default ())
 
   method! fork =
-    loop := make_loop ()
+    Luv.Loop.fork !loop |> function
+    | Ok () -> ()
+    | Error e -> failwith (Printf.sprintf "Could not handle the fork, this is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.err_name e))
 
   method private cleanup = Luv.Loop.stop !loop
 
@@ -39,7 +37,11 @@ class engine = object
     match p with
     | Ok poll ->
         let () = Luv.Poll.start poll [`READABLE; `DISCONNECT; `PRIORITIZED;] (l f) in
-        lazy(Luv.Poll.stop poll |> ignore)
+        lazy(
+          Luv.Poll.stop poll |> function
+          | Ok () -> ()
+          | Error e -> failwith (Printf.sprintf "Could not stop read polling, this is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.err_name e))
+        )
     | Result.Error e -> failwith (Printf.sprintf "Could not register fd for read polling, this is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.err_name e))
 
   method private register_writable fd f =
@@ -47,7 +49,11 @@ class engine = object
     match p with
     | Ok poll ->
       let () = Luv.Poll.start poll [`WRITABLE; `DISCONNECT; `PRIORITIZED;] (l f) in
-      lazy(Luv.Poll.stop poll |> ignore)
+      lazy(
+          Luv.Poll.stop poll |> function
+          | Ok () -> ()
+          | Error e -> failwith (Printf.sprintf "Could not stop write polling, this is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.err_name e))
+        )
     | Result.Error e -> failwith (Printf.sprintf "Could not register fd for write polling, this is probably a error in Lwt, please open a issue on the repo. \nError message: %s" (Luv.Error.err_name e))
 
   method private register_timer delay repeat f =
