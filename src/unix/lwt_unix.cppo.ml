@@ -1626,16 +1626,22 @@ let recv_msg ~socket ~io_vectors =
 external stub_send_msg :
   Unix.file_descr ->
   int -> IO_vectors.io_vector list ->
-  int -> Unix.file_descr list ->
-    int =
-  "lwt_unix_send_msg"
+  int -> Unix.file_descr list -> Unix.sockaddr option ->
+    int = "lwt_unix_send_msg_byte" "lwt_unix_send_msg"
 
 let send_msg ~socket ~io_vectors ~fds =
   let vector_count = check_io_vectors "Lwt_unix.send_msg" io_vectors in
   let fd_count = List.length fds in
   wrap_syscall Write socket (fun () ->
     stub_send_msg
-      socket.fd vector_count io_vectors.IO_vectors.prefix fd_count fds)
+      socket.fd vector_count io_vectors.IO_vectors.prefix fd_count fds None)
+
+let send_msgto ~socket ~io_vectors ~fds ~dest =
+  let vector_count = check_io_vectors "Lwt_unix.send_msgto" io_vectors in
+  let fd_count = List.length fds in
+  wrap_syscall Write socket (fun () ->
+    stub_send_msg
+      socket.fd vector_count io_vectors.IO_vectors.prefix fd_count fds (Some dest))
 
 type inet_addr = Unix.inet_addr
 
