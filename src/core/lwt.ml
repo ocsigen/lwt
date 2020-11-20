@@ -3122,31 +3122,6 @@ struct
 end
 include Miscellaneous
 
-
-
-module Infix =
-struct
-  let (>>=) = bind
-  let (=<<) f p = bind p f
-  let (>|=) p f = map f p
-  let (=|<) = map
-  let (<&>) p p' = join [p; p']
-  let (<?>) p p' = choose [p; p']
-
-  module Let_syntax =
-  struct
-    let return = return
-    let map t ~f = map f t
-    let bind t ~f = bind t f
-    let both = both
-
-    module Open_on_rhs =
-    struct
-    end
-  end
-end
-include Infix
-
 module Let_syntax =
 struct
   module Let_syntax =
@@ -3161,6 +3136,19 @@ struct
     end
   end
 end
+
+module Infix =
+struct
+  let (>>=) = bind
+  let (=<<) f p = bind p f
+  let (>|=) p f = map f p
+  let (=|<) = map
+  let (<&>) p p' = join [p; p']
+  let (<?>) p p' = choose [p; p']
+
+  include Let_syntax
+end
+include ( Infix : module type of Infix with module Let_syntax := Let_syntax.Let_syntax )
 
 module Syntax =
 struct
