@@ -219,9 +219,11 @@ let choose_async_method = function
     | Some am -> am
     | None -> !default_async_method_var
 
+[@@@ocaml.warning "-16"]
 let execute_job ?async_method ~job ~result ~free =
   let async_method = choose_async_method async_method in
   run_job_aux async_method job (fun job -> let x = wrap_result result job in free job; x)
+[@@@ocaml.warning "+16"]
 
 external self_result : 'a job -> 'a = "lwt_unix_self_result"
 (* returns the result of a job using the [result] field of the C
@@ -1819,6 +1821,9 @@ type socket_bool_option =
   | SO_DEBUG
   | SO_BROADCAST
   | SO_REUSEADDR
+#if OCAML_VERSION >= (4, 12, 0)
+  | SO_REUSEPORT
+#endif
   | SO_KEEPALIVE
   | SO_DONTROUTE
   | SO_OOBINLINE

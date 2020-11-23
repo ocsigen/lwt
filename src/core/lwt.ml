@@ -627,11 +627,8 @@ struct
      If multiple [Proxy _] links are traversed, [underlying] updates all the
      proxies to point immediately to their final underlying promise. *)
   let rec underlying
-      : 'u 'c. ('a, 'u, 'c) promise -> ('a, underlying, 'c) promise =
-    fun
-      (type u)
-      (type c)
-      (p : ('a, u, c) promise) ->
+      : type u c. ('a, u, c) promise -> ('a, underlying, c) promise =
+    fun p ->
 
     match p.state with
     | Fulfilled _ -> (p : (_, underlying, _) promise)
