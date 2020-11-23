@@ -206,7 +206,7 @@ matrix:
       env: ESY=yes
 
   allow_failures:
-    - env: COMPILER=4.09.0 DOCS=yes
+    - env: COMPILER=4.09.1 DOCS=yes
     - env: COMPILER=4.08.1+musl+flambda MUSL=yes
     - env: COMPILER=4.07.1
     - env: COMPILER=4.06.1 LWT_STRESS_TEST=true
