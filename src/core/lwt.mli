@@ -824,7 +824,8 @@ val async : (unit -> unit t) -> unit
     [!]{!Lwt.async_exception_hook}.
 
     [!]{!Lwt.async_exception_hook} typically prints an error message and
-    terminates the program.
+    terminates the program. If you need a similar behaviour with a different
+    exception handler, you can use {!Lwt.dont_wait}.
 
     [Lwt.async] is misleadingly named. Itself, it has nothing to do with
     asynchronous execution. It's actually a safety function for making Lwt
