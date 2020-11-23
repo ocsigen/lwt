@@ -2582,31 +2582,43 @@ struct
 
     attach_callback_or_resolve_immediately ps
 
+  (* this is 3 words, smaller than the 2 times 2 words a pair of references
+     would take. *)
+  type ('a,'b) pair = {
+    mutable x1: 'a option;
+    mutable x2: 'b option;
+  }
+
   let both p1 p2 =
-    let v1 = ref None in
-    let v2 = ref None in
-    let p1' = bind p1 (fun v -> v1 := Some v; return_unit) in
-    let p2' = bind p2 (fun v -> v2 := Some v; return_unit) in
+    let pair = {x1 = None; x2 = None} in
+    let p1' = bind p1 (fun v -> pair.x1 <- Some v; return_unit) in
+    let p2' = bind p2 (fun v -> pair.x2 <- Some v; return_unit) in
     join [p1'; p2'] |> map (fun () ->
-      match !v1, !v2 with
+      match pair.x1, pair.x2 with
       | Some v1, Some v2 -> v1, v2
       | _ -> assert false)
 
   let all ps =
-    let vs = Array.make (List.length ps) None in
-    ps
-    |> List.mapi (fun index p ->
-      bind p (fun v -> vs.(index) <- Some v; return_unit))
-    |> join
-    |> map (fun () ->
-      vs
-      |> Array.map (fun v ->
-        match v with
-        | Some v -> v
-        | None -> assert false)
-      |> Array.to_list)
-
-
+    match ps with
+    | [] -> return_nil
+    | [x] -> map (fun y -> [y]) x
+    | [x; y] -> map (fun (x, y) -> [x; y]) (both x y)
+    | _ ->
+      let vs = Array.make (List.length ps) None in
+      ps
+      |> List.mapi (fun index p ->
+        bind p (fun v -> vs.(index) <- Some v; return_unit))
+      |> join
+      |> map (fun () ->
+          let rec to_list_unopt i acc =
+            if i < 0 then
+              acc
+            else
+              match Array.unsafe_get vs i with
+              | None -> assert false
+              | Some x -> to_list_unopt (i - 1) (x::acc)
+          in
+          to_list_unopt (Array.length vs - 1) [])
 
   (* Maintainer's note: the next few functions are helpers for [choose] and
      [pick]. Perhaps they should be factored into some kind of generic

@@ -70,7 +70,12 @@ scripts:
       - |
         if [ "$CACHED" == no ]
         then
-          opam install . --deps-only --yes
+          if [ "$PPX" == no ]
+          then
+            opam install ./lwt.opam ./lwt_react.opam --deps-only --yes
+          else
+            opam install . --deps-only --yes
+          fi
         fi
       - |
         if [ "$CACHED" == no && "$LIBEV" != no ]
@@ -96,8 +101,14 @@ scripts:
       - |
         if [ "$COVERAGE" != yes ]
         then
-          dune build
-          dune runtest --force
+          if [ "$PPX" == no ]
+          then
+            dune build --only-packages lwt,lwt_react
+            dune runtest --only-packages lwt,lwt_react --force
+          else
+            dune build
+            dune runtest --force
+          fi
         else
           make coverage
           bisect-ppx-report send-to Coveralls
@@ -165,7 +176,7 @@ matrix:
       env: COMPILER=4.10.1 LIBEV=no
     - <<: *opam
       os: linux
-      env: COMPILER=4.10.1 LIBEV=no PPX_LET=yes COVERAGE=yes
+      env: COMPILER=4.10.1 LIBEV=no PPX_LET=yes
     - <<: *opam
       os: linux
       env: COMPILER=4.09.1 DOCS=yes
@@ -183,13 +194,13 @@ matrix:
       env: COMPILER=4.05.0+bytecode-only
     - <<: *opam
       os: linux
-      env: COMPILER=4.04.2
+      env: COMPILER=4.04.2 PACKAGING=yes
     - <<: *opam
       os: linux
-      env: COMPILER=4.03.0
+      env: COMPILER=4.03.0 PPX=no
     - <<: *opam
       os: linux
-      env: COMPILER=4.02.3 PACKAGING=yes
+      env: COMPILER=4.02.3 PPX=no
     - <<: *esy
       os: linux
       env: ESY=yes
@@ -200,8 +211,8 @@ matrix:
     - env: COMPILER=4.07.1
     - env: COMPILER=4.06.1 LWT_STRESS_TEST=true
     - env: COMPILER=4.05.0+bytecode-only
-    - env: COMPILER=4.04.2
-    - env: COMPILER=4.03.0
+    - env: COMPILER=4.04.2 PACKAGING=yes
+    - env: COMPILER=4.03.0 PPX=no
     - env: ESY=yes
 
   fast_finish: true

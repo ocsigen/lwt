@@ -988,6 +988,18 @@ val send_msg :
 
     @since 5.0.0 *)
 
+val send_msgto :
+  socket:file_descr -> io_vectors:IO_vectors.t -> fds:Unix.file_descr list ->
+    dest:Unix.sockaddr ->
+    int Lwt.t
+(** [send_msgto ~socket ~io_vectors ~fds ~dest] is similar to [send_msg] but
+    takes an additional [dest] argument to set the address when using a
+    connection-less socket.
+
+    Not implemented on Windows.
+
+    @since 5.4.0 *)
+
 type credentials = {
   cred_pid : int;
   cred_uid : int;
