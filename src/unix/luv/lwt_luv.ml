@@ -7,13 +7,7 @@ let l f = function
 | `WRITABLE -> f ()
 ) l;
 
-external from_unix_helper : Unix.file_descr -> nativeint -> unit = "luv_unix_fd_to_os_fd"
-
-let from_unix unix_fd =
-  let os_fd = Ctypes.make (Luv_c_types.Os_fd.t) in
-  let storage = Ctypes.(raw_address_of_ptr (to_voidp (addr os_fd))) in
-  from_unix_helper unix_fd storage;
-  Ctypes.(!@ (addr os_fd |> to_voidp |> from_voidp Ctypes.int))
+let from_unix : Unix.file_descr -> int = Obj.magic
 
 class engine = object
   inherit Lwt_engine.abstract
