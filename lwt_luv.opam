@@ -27,7 +27,3 @@ depends: [
 build: [
   ["dune" "build" "-p" name "-j" jobs]
 ]
-
-pin-depends: [
-    [ "luv.dev" "git+https://github.com/aantron/luv.git#master" ]
-]
