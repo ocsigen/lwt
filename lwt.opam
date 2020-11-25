@@ -28,7 +28,8 @@ depends: [
   "result" # result is needed as long as Lwt supports OCaml 4.02.
   "seq" # seq is needed as long as Lwt supports OCaml < 4.07.0.
 
-  "bisect_ppx" {dev & >= "2.0.0"}
+  # Until https://github.com/aantron/bisect_ppx/pull/327.
+  # "bisect_ppx" {dev & >= "2.0.0"}
   "ocamlfind" {dev & >= "1.7.3-1"}
 ]
 
