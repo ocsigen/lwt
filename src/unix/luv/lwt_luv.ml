@@ -1,12 +1,3 @@
-let l f = function
-| Result.Error e -> failwith (Luv.Error.err_name e)
-| Ok l -> List.iter (function
-| `DISCONNECT -> ()
-| `PRIORITIZED -> ()
-| `READABLE -> f ()
-| `WRITABLE -> f ()
-) l;
-
 let from_unix : Unix.file_descr -> int = Obj.magic
 
 class engine = object
@@ -30,7 +21,7 @@ class engine = object
     let p = Luv.Poll.init ~loop:!loop (from_unix fd) in
     match p with
     | Ok poll ->
-        let () = Luv.Poll.start poll [`READABLE; `DISCONNECT; `PRIORITIZED;] (l f) in
+        let () = Luv.Poll.start poll [`READABLE;] (fun _ -> f ()) in
         lazy(
           Luv.Poll.stop poll |> function
           | Ok () -> ()
@@ -42,7 +33,7 @@ class engine = object
     let p = Luv.Poll.init ~loop:!loop (from_unix fd) in
     match p with
     | Ok poll ->
-      let () = Luv.Poll.start poll [`WRITABLE; `DISCONNECT; `PRIORITIZED;] (l f) in
+      let () = Luv.Poll.start poll [`WRITABLE;] (fun _ -> f ()) in
       lazy(
           Luv.Poll.stop poll |> function
           | Ok () -> ()
