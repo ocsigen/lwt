@@ -68,7 +68,6 @@ scripts:
           CACHED=no
         fi
       - opam install . --deps-only --yes
-      - opam install luv --yes
       - |
         if [ "$CACHED" == no && "$LIBEV" != no ]
         then
@@ -88,9 +87,6 @@ scripts:
           LWT_DISCOVER_ARGUMENTS="--use-libev true"
         fi
       - export LWT_DISCOVER_ARGUMENTS
-      - opam list
-      - opam pin list
-      - find _opam -name uv.h
 
     script:
       - |
@@ -138,7 +134,7 @@ scripts:
         - ./_cache
 
   - &esy
-    install: npm install esy
+    install: npm install -g esy
     script:
       - esy install
       - esy build
