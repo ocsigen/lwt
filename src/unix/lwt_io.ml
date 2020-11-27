@@ -737,20 +737,20 @@ struct
       Lwt.return len
     end
 
-  let unsafe_read_into_lwt_bytes ic buf ofs len =
+  let unsafe_read_into_bigstring ic buf ofs len =
     unsafe_read_into' ic Lwt_bytes.unsafe_blit buf ofs len
 
   let unsafe_read_into ic buf ofs len =
     unsafe_read_into' ic Lwt_bytes.unsafe_blit_to_bytes buf ofs len
 
-  let read_into_lwt_bytes ic buf ofs len =
+  let read_into_bigstring ic buf ofs len =
     if ofs < 0 || len < 0 || ofs + len > Lwt_bytes.length buf then
-      Lwt.fail (Invalid_argument "Lwt_io.read_into_lwt_bytes")
+      Lwt.fail (Invalid_argument "Lwt_io.read_into_bigstring")
     else begin
       if len = 0 then
         Lwt.return 0
       else
-        unsafe_read_into_lwt_bytes ic buf ofs len
+        unsafe_read_into_bigstring ic buf ofs len
     end
 
   let read_into ic buf ofs len =
@@ -778,20 +778,20 @@ struct
     loop ic buf ofs len
 
 
-  let unsafe_read_into_exactly_lwt_bytes ic buf ofs len =
-    unsafe_read_into_exactly' unsafe_read_into_lwt_bytes ic buf ofs len
+  let unsafe_read_into_exactly_bigstring ic buf ofs len =
+    unsafe_read_into_exactly' unsafe_read_into_bigstring ic buf ofs len
 
   let unsafe_read_into_exactly ic buf ofs len =
     unsafe_read_into_exactly' unsafe_read_into ic buf ofs len
 
-  let read_into_exactly_lwt_bytes ic buf ofs len =
+  let read_into_exactly_bigstring ic buf ofs len =
     if ofs < 0 || len < 0 || ofs + len > Lwt_bytes.length buf then
-      Lwt.fail (Invalid_argument "Lwt_io.read_into_exactly_lwt_bytes")
+      Lwt.fail (Invalid_argument "Lwt_io.read_into_exactly_bigstring")
     else begin
       if len = 0 then
         Lwt.return_unit
       else
-        unsafe_read_into_exactly_lwt_bytes ic buf ofs len
+        unsafe_read_into_exactly_bigstring ic buf ofs len
     end
 
   let read_into_exactly ic buf ofs len =
@@ -891,20 +891,20 @@ struct
         Lwt.return len
     end
 
-  let unsafe_write_from_lwt_bytes oc bytes ofs len =
+  let unsafe_write_from_bigstring oc bytes ofs len =
     unsafe_write_from' Lwt_bytes.blit oc bytes ofs len
 
   let unsafe_write_from oc str ofs len =
     unsafe_write_from' Lwt_bytes.unsafe_blit_from_bytes oc str ofs len
 
-  let write_from_lwt_bytes oc bytes ofs len =
+  let write_from_bigstring oc bytes ofs len =
     if ofs < 0 || len < 0 || ofs + len > Lwt_bytes.length bytes then
-      Lwt.fail (Invalid_argument "Lwt_io.write_from_lwt_bytes")
+      Lwt.fail (Invalid_argument "Lwt_io.write_from_bigstring")
     else begin
       if len = 0 then
         Lwt.return 0
       else
-        unsafe_write_from_lwt_bytes oc bytes ofs len >>= fun remaining ->
+        unsafe_write_from_bigstring oc bytes ofs len >>= fun remaining ->
         Lwt.return (len - remaining)
     end
 
@@ -936,8 +936,8 @@ struct
   let unsafe_write_from_exactly oc buf ofs len =
     unsafe_write_from_exactly' unsafe_write_from oc buf ofs len
 
-  let unsafe_write_from_exactly_lwt_bytes oc buf ofs len =
-    unsafe_write_from_exactly' unsafe_write_from_lwt_bytes oc buf ofs len
+  let unsafe_write_from_exactly_bigstring oc buf ofs len =
+    unsafe_write_from_exactly' unsafe_write_from_bigstring oc buf ofs len
 
   let write_from_exactly oc buf ofs len =
     if ofs < 0 || len < 0 || ofs + len > Bytes.length buf then
@@ -949,14 +949,14 @@ struct
         unsafe_write_from_exactly oc buf ofs len
     end
 
-  let write_from_exactly_lwt_bytes oc buf ofs len =
+  let write_from_exactly_bigstring oc buf ofs len =
     if ofs < 0 || len < 0 || ofs + len > Lwt_bytes.length buf then
-      Lwt.fail (Invalid_argument "Lwt_io.write_from_exactly_lwt_bytes")
+      Lwt.fail (Invalid_argument "Lwt_io.write_from_exactly_bigstring")
     else begin
       if len = 0 then
         Lwt.return_unit
       else
-        unsafe_write_from_exactly_lwt_bytes oc buf ofs len
+        unsafe_write_from_exactly_bigstring oc buf ofs len
     end
 
   let write_from_string_exactly oc buf ofs len =
@@ -1211,11 +1211,11 @@ let read_into ic str ofs len =
 let read_into_exactly ic str ofs len =
   primitive (fun ic -> Primitives.read_into_exactly ic str ofs len) ic
 
-let read_into_lwt_bytes ic bytes ofs len =
-  primitive (fun ic -> Primitives.read_into_lwt_bytes ic bytes ofs len) ic
+let read_into_bigstring ic bytes ofs len =
+  primitive (fun ic -> Primitives.read_into_bigstring ic bytes ofs len) ic
 
-let read_into_exactly_lwt_bytes ic bytes ofs len =
-  primitive (fun ic -> Primitives.read_into_exactly_lwt_bytes ic bytes ofs len) ic
+let read_into_exactly_bigstring ic bytes ofs len =
+  primitive (fun ic -> Primitives.read_into_exactly_bigstring ic bytes ofs len) ic
 
 let read_value ic =
   primitive Primitives.read_value ic
@@ -1247,8 +1247,8 @@ let write_line oc x =
 let write_from oc str ofs len =
   primitive (fun oc -> Primitives.write_from oc str ofs len) oc
 
-let write_from_lwt_bytes oc bytes ofs len =
-  primitive (fun oc -> Primitives.write_from_lwt_bytes oc bytes ofs len) oc
+let write_from_bigstring oc bytes ofs len =
+  primitive (fun oc -> Primitives.write_from_bigstring oc bytes ofs len) oc
 
 let write_from_string oc str ofs len =
   primitive (fun oc -> Primitives.write_from_string oc str ofs len) oc
@@ -1256,8 +1256,8 @@ let write_from_string oc str ofs len =
 let write_from_exactly oc str ofs len =
   primitive (fun oc -> Primitives.write_from_exactly oc str ofs len) oc
 
-let write_from_exactly_lwt_bytes oc bytes ofs len =
-  primitive (fun oc -> Primitives.write_from_exactly_lwt_bytes oc bytes ofs len) oc
+let write_from_exactly_bigstring oc bytes ofs len =
+  primitive (fun oc -> Primitives.write_from_exactly_bigstring oc bytes ofs len) oc
 
 let write_from_string_exactly oc str ofs len =
   primitive (fun oc -> Primitives.write_from_string_exactly oc str ofs len) oc

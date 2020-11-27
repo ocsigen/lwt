@@ -662,7 +662,7 @@ let suite = suite "lwt_io" [
   test "Write from Lwt_bytes" begin fun () ->
     let bytes = Lwt_bytes.of_string "Hello World" in
     let out = Lwt_bytes.create 11 in
-    Lwt_io.write_from_exactly_lwt_bytes (Lwt_io.(of_bytes ~mode:output) out)
+    Lwt_io.write_from_exactly_bigstring (Lwt_io.(of_bytes ~mode:output) out)
       bytes 0 11 >>= fun () ->
     Lwt.return (Lwt_bytes.to_string out = "Hello World")
   end;
@@ -670,7 +670,7 @@ let suite = suite "lwt_io" [
   test "Read from Lwt_bytes" begin fun () ->
     let bytes_in = Lwt_bytes.create 11 in
     let bytes = Lwt_bytes.of_string "Hello World" in
-    Lwt_io.read_into_exactly_lwt_bytes (Lwt_io.(of_bytes ~mode:input) bytes)
+    Lwt_io.read_into_exactly_bigstring (Lwt_io.(of_bytes ~mode:input) bytes)
       bytes_in 0 11 >>= fun () ->
     Lwt.return (Lwt_bytes.to_string bytes_in = "Hello World")
   end;

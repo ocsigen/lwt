@@ -268,9 +268,9 @@ val read_into_exactly : input_channel -> bytes -> int -> int -> unit Lwt.t
 
       @raise End_of_file on end of input *)
 
-val read_into_lwt_bytes : input_channel -> Lwt_bytes.t -> int -> int -> int Lwt.t
+val read_into_bigstring : input_channel -> Lwt_bytes.t -> int -> int -> int Lwt.t
 
-val read_into_exactly_lwt_bytes : input_channel -> Lwt_bytes.t -> int -> int -> unit Lwt.t
+val read_into_exactly_bigstring : input_channel -> Lwt_bytes.t -> int -> int -> unit Lwt.t
 
 val read_value : input_channel -> 'a Lwt.t
 (** [read_value channel] reads a marshaled value from [channel]; it corresponds
@@ -317,7 +317,7 @@ val write_from : output_channel -> bytes -> int -> int -> int Lwt.t
       to [oc], from [buffer] at offset [offset] and returns the number
       of bytes actually written *)
 
-val write_from_lwt_bytes : output_channel -> Lwt_bytes.t -> int -> int -> int Lwt.t
+val write_from_bigstring : output_channel -> Lwt_bytes.t -> int -> int -> int Lwt.t
 
 val write_from_string : output_channel -> string -> int -> int -> int Lwt.t
   (** See {!write}. *)
@@ -326,7 +326,7 @@ val write_from_exactly : output_channel -> bytes -> int -> int -> unit Lwt.t
   (** [write_from_exactly oc buffer offset length] writes all [length]
       bytes from [buffer] at offset [offset] to [oc] *)
 
-val write_from_exactly_lwt_bytes : output_channel -> Lwt_bytes.t -> int -> int -> unit Lwt.t
+val write_from_exactly_bigstring : output_channel -> Lwt_bytes.t -> int -> int -> unit Lwt.t
 
 val write_from_string_exactly :
   output_channel -> string -> int -> int -> unit Lwt.t
