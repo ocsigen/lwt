@@ -1174,23 +1174,82 @@ val on_cancel : _ t -> (unit -> unit) -> unit
     [!]{!Lwt.async_exception_hook}, which terminates the process by default. *)
 
 val protected : 'a t -> 'a t
-(** [Lwt.protected p] creates a {{: #VALcancel} cancelable} promise [p'] with
-    the same state as [p]. However, cancellation, the backwards search described
-    in {!Lwt.cancel}, stops at [p'], and does not continue to [p]. *)
+(** [Lwt.protected p] creates a {{: #VALcancel} cancelable} promise [p']. The
+    original state of [p'] is the same as the state of [p] at the time of the
+    call.
+
+    The state of [p'] can change in one of two ways:
+    a. if [p] changes state (i.e., is resolved), then [p'] eventually changes
+       state to match [p]'s, and
+    b. during cancellation, if the backwards search described in {!Lwt.cancel}
+       reaches [p'] then it changes state to {!Rejected} [Canceled] and the
+       search stops.
+
+    As a consequence of the b. case, [Lwt.cancel (protected p)] does not cancel
+    [p].
+
+    The promise [p] can still be canceled either directly (through [Lwt.cancel p])
+    or being reached by the backwards cancellation search via another path.
+    [Lwt.protected] only prevents cancellation of [p] through [p']. *)
 
 val no_cancel : 'a t -> 'a t
-(** [Lwt.no_cancel p] creates a non-{{: #VALcancel}cancelable} promise [p'],
-    with the same state as [p]. Cancellation, the backwards search described in
-    {!Lwt.cancel}, stops at [p'], and does not continue to [p].
+(** [Lwt.no_cancel p] creates a non-{{: #VALcancel}cancelable} promise [p']. The
+    original state of [p'] is the same as [p] at the time of the call.
 
-    Note that [p'] can still be canceled if [p] is canceled. [Lwt.no_cancel]
-    only prevents cancellation of [p] and [p'] through [p']. *)
+    If the state of [p] changes, then the state of [p'] eventually changes too
+    to match [p]'s.
+
+    Note that even though [p'] is non-{{: #VALcancel}cancelable}, it can still
+    become canceled if [p] is canceled. [Lwt.no_cancel] only prevents
+    cancellation of [p] and [p'] through [p']. *)
 
 val wrap_in_cancelable : 'a t -> 'a t
 (** [Lwt.wrap_in_cancelable p] creates a {{: #VALcancel} cancelable} promise
-    [p'] with the same state as [p]. Cancellation carries onto [p], but [p'] is
-    rejected with {!Lwt.Canceled} even if [p] is not cancelable. *)
+    [p']. The original state of [p'] is the same as [p].
 
+    The state of [p'] can change in one of two ways:
+    a. if [p] changes state (i.e., is resolved), then [p'] eventually changes
+       state to match [p]'s, and
+    b. during cancellation, if the backwards search described in {!Lwt.cancel}
+       reaches [p'] then it changes state to {!Rejected} [Canceled] and the
+       search continues to [p].
+*)
+
+(** {3 Cancellation tweaks}
+
+  The primitives [protected], [no_cancel], and [wrap_in_cancelable] give you
+  some level of control over the cancellation mechanism of Lwt. Note that
+  promises passed as arguments to either of these three functions are unchanged.
+  The functions return new promises with a specific cancellation behaviour.
+
+  The three behaviour of all three functions are summarised in the following
+  table.
+
+{[
+  +----------------------------+--------------------+--------------------+
+  |     setup - action         | cancel p           | cancel p'          |
+  +----------------------------+--------------------+--------------------+
+  | p is cancelable            | p is canceled      | p is not canceled  |
+  | p' = protected p           | p'  is canceled    | p' is canceled     |
+  +----------------------------+--------------------+--------------------+
+  | p is not cancelable        | p is not canceled  | p is not canceled  |
+  | p' = protected p           | p' is not canceled | p' is canceled     |
+  +----------------------------+--------------------+--------------------+
+  | p is cancelable            | p is canceled      | p is not canceled  |
+  | p' = no_cancel p           | p' is canceled     | p' is not canceled |
+  +----------------------------+--------------------+--------------------+
+  | p is not cancelable        | p is not canceled  | p is not canceled  |
+  | p' = no_cancel p           | p' is not canceled | p' is not canceled |
+  +----------------------------+--------------------+--------------------+
+  | p is cancelable            | p is canceled      | p is canceled      |
+  | p' = wrap_in_cancelable p  | p' is canceled     | p' is canceled     |
+  +----------------------------+--------------------+--------------------+
+  | p is not cancelable        | p is not canceled  | p is not canceled  |
+  | p' = wrap_in_cancelable p  | p' is not canceled | p' is canceled     |
+  +----------------------------+--------------------+--------------------+
+]}
+
+*)
 
 
 (** {2 Convenience} *)
