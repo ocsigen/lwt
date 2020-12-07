@@ -1803,6 +1803,54 @@ let async_tests = suite "async" [
 ]
 let suites = suites @ [async_tests]
 
+let dont_wait_tests = suite "dont_wait" [
+  test "fulfilled" begin fun () ->
+    let f_ran = ref false in
+    Lwt.dont_wait (fun () -> f_ran := true; Lwt.return ()) (fun _ -> ());
+    later (fun () -> !f_ran = true)
+  end;
+
+  test "f raises" begin fun () ->
+    let saw = ref None in
+    Lwt.dont_wait
+      (fun () -> raise Exception)
+      (fun exn -> saw := Some exn);
+    later (fun () -> !saw = Some Exception)
+  end;
+
+  test "rejected" begin fun () ->
+    let saw = ref None in
+    Lwt.dont_wait
+      (fun () -> Lwt.fail Exception)
+      (fun exn -> saw := Some exn);
+    later (fun () -> !saw = Some Exception)
+  end;
+
+  test "pending, fulfilled" begin fun () ->
+    let resolved = ref false in
+    let p, r = Lwt.wait () in
+    Lwt.dont_wait
+      (fun () ->
+        Lwt.bind p (fun () ->
+          resolved := true;
+          Lwt.return ()))
+      (fun _ -> ());
+    Lwt.wakeup r ();
+    later (fun () -> !resolved = true)
+  end;
+
+  test "pending, rejected" begin fun () ->
+    let saw = ref None in
+    let p, r = Lwt.wait () in
+    Lwt.dont_wait
+      (fun () -> p)
+      (fun exn -> saw := Some exn) ;
+    Lwt.wakeup_exn r Exception;
+    later (fun () -> !saw = Some Exception)
+  end;
+]
+let suites = suites @ [dont_wait_tests]
+
 let ignore_result_tests = suite "ignore_result" [
   test "fulfilled" begin fun () ->
     Lwt.ignore_result (Lwt.return ());

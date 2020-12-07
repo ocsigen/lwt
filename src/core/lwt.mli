@@ -796,6 +796,25 @@ val try_bind : (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
       performing any operation on one is equivalent to performing it on the
       other. *)
 
+val dont_wait : (unit -> unit t) -> (exn -> unit) -> unit
+(** [Lwt.dont_wait f handler] applies [f ()], which returns a promise, and then
+    makes it so that if the promise is {{: #TYPEt} {e rejected}}, the exception
+    is passed to [handler].
+
+    In addition, if [f ()] raises an exception, it is also passed to [handler].
+
+    As the name implies, [dont_wait (fun () -> <e>) handler] is a way to
+    evaluate the expression [<e>] (which typically has asynchronous
+    side-effects) {e without waiting} for the resolution of the promise [<e>]
+    evaluates to.
+
+    [dont_wait] is meant as an alternative to {!async} with a local, explicit,
+    predictable exception handler.
+
+    Note that [dont_wait f h] causes [f ()] to be evaluated immediately.
+    Consequently, the non-yielding/non-pausing prefix of the body of [f] is
+    evaluated immediately. *)
+
 val async : (unit -> unit t) -> unit
 (** [Lwt.async f] applies [f ()], which returns a promise, and then makes it so
     that if the promise is {{: #TYPEt} {e rejected}}, the exception is passed to
@@ -805,7 +824,8 @@ val async : (unit -> unit t) -> unit
     [!]{!Lwt.async_exception_hook}.
 
     [!]{!Lwt.async_exception_hook} typically prints an error message and
-    terminates the program.
+    terminates the program. If you need a similar behaviour with a different
+    exception handler, you can use {!Lwt.dont_wait}.
 
     [Lwt.async] is misleadingly named. Itself, it has nothing to do with
     asynchronous execution. It's actually a safety function for making Lwt

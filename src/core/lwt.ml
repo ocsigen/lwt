@@ -2454,6 +2454,7 @@ let wrap_in_cancelable p =
 
 module Concurrent_composition :
 sig
+  val dont_wait : (unit -> _ t) -> (exn -> unit) -> unit
   val async : (unit -> _ t) -> unit
   val ignore_result : _ t -> unit
 
@@ -2471,6 +2472,26 @@ sig
 end =
 struct
   external reraise : exn -> 'a = "%reraise"
+
+  let dont_wait f h =
+    let p = try f () with exn -> fail exn in
+    let Internal p = to_internal_promise p in
+
+    match (underlying p).state with
+    | Fulfilled _ ->
+      ()
+    | Rejected exn ->
+      h exn
+
+    | Pending p_callbacks ->
+      let callback result =
+        match result with
+        | Fulfilled _ ->
+          ()
+        | Rejected exn ->
+          h exn
+      in
+      add_implicitly_removed_callback p_callbacks callback
 
   let async f =
     let p = try f () with exn -> fail exn in
