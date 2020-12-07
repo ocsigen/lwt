@@ -4047,18 +4047,18 @@ let suites = suites @ [infix_operator_tests]
    testing the full syntax to avoid large dependencies for the test suite. *)
 let ppx_let_tests = suite "ppx_let" [
   test "return" begin fun () ->
-    let p = Lwt.Infix.Let_syntax.return () in
+    let p = Lwt.Let_syntax.Let_syntax.return () in
     state_is (Lwt.Return ()) p
   end;
 
   test "map" begin fun () ->
-    let p = Lwt.Infix.Let_syntax.map (Lwt.return 1) ~f:(fun x -> x + 1) in
+    let p = Lwt.Let_syntax.Let_syntax.map (Lwt.return 1) ~f:(fun x -> x + 1) in
     state_is (Lwt.Return 2) p
   end;
 
   test "bind" begin fun () ->
     let p =
-      Lwt.Infix.Let_syntax.bind
+      Lwt.Let_syntax.Let_syntax.bind
         (Lwt.return 1) ~f:(fun x -> Lwt.return (x + 1))
     in
     state_is (Lwt.Return 2) p
@@ -4077,7 +4077,7 @@ let ppx_let_tests = suite "ppx_let" [
         end
       end
     in
-    let x : (module Local.Empty) = (module Lwt.Infix.Let_syntax.Open_on_rhs) in
+    let x : (module Local.Empty) = (module Lwt.Let_syntax.Let_syntax.Open_on_rhs) in
     ignore x;
     Lwt.return true
   end;

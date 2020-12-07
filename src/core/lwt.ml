@@ -3140,17 +3140,8 @@ struct
 end
 include Miscellaneous
 
-
-
-module Infix =
+module Let_syntax =
 struct
-  let (>>=) = bind
-  let (=<<) f p = bind p f
-  let (>|=) p f = map f p
-  let (=|<) = map
-  let (<&>) p p' = join [p; p']
-  let (<?>) p p' = choose [p; p']
-
   module Let_syntax =
   struct
     let return = return
@@ -3163,7 +3154,19 @@ struct
     end
   end
 end
-include Infix
+
+module Infix =
+struct
+  let (>>=) = bind
+  let (=<<) f p = bind p f
+  let (>|=) p f = map f p
+  let (=|<) = map
+  let (<&>) p p' = join [p; p']
+  let (<?>) p p' = choose [p; p']
+
+  include Let_syntax
+end
+include ( Infix : module type of Infix with module Let_syntax := Let_syntax.Let_syntax )
 
 module Syntax =
 struct

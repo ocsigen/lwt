@@ -1480,6 +1480,28 @@ let () =
   end
 end
 
+module Let_syntax :
+sig
+  module Let_syntax :
+  sig
+    val return : 'a -> 'a t
+    (** See {!Lwt.return}. *)
+
+    val map : 'a t -> f:('a -> 'b) -> 'b t
+    (** See {!Lwt.map}. *)
+
+    val bind : 'a t -> f:('a -> 'b t) -> 'b t
+    (** See {!Lwt.bind}. *)
+
+    val both : 'a t -> 'b t -> ('a * 'b) t
+    (** See {!Lwt.both}. *)
+
+    module Open_on_rhs :
+    sig
+    end
+  end
+end
+
 (** {3 Let syntax} *)
 module Syntax :
 sig
