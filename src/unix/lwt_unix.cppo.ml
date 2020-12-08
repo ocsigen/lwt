@@ -2304,6 +2304,8 @@ external reset_after_fork : unit -> unit = "lwt_unix_reset_after_fork"
 let fork () =
   match Unix.fork () with
   | 0 ->
+    (* Let the engine handle the fork *)
+    Lwt_engine.fork ();
     (* Reset threading. *)
     reset_after_fork ();
     (* Stop the old event for notifications. *)
