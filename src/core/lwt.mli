@@ -740,7 +740,7 @@ let () =
       rejected with that exception. Again, no matter how [c ()] finishes, there
       is a promise [p_2] representing the outcome of cleanup.
     - If [p_2] is fulfilled, [p_3] is resolved the same way [p_1] had been
-      resolved. In other words, [p_1] is forwarded to [p_2] when cleanup is
+      resolved. In other words, [p_1] is forwarded to [p_3] when cleanup is
       successful.
     - If [p_2] is rejected, [p_3] is rejected with the same exception. In other
       words, when cleanup fails, [p_3] is rejected. Note this means that if
