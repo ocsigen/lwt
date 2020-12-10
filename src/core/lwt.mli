@@ -743,9 +743,9 @@ let () =
       resolved. In other words, [p_1] is forwarded to [p_3] when cleanup is
       successful.
     - If [p_2] is rejected, [p_3] is rejected with the same exception. In other
-      words, when cleanup fails, [p_3] is rejected. Note this means that if
-      {e both} the protected code and the cleanup fail, the cleanup exception
-      has precedence. *)
+      words, [p_2] is forwarded to [p_3] when cleanup is unsuccessful. Note this
+      means that if {e both} the protected code and the cleanup fail, the
+      cleanup exception has precedence. *)
 
 val try_bind : (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
 (** [Lwt.try_bind f g h] applies [f ()], and then makes it so that:
