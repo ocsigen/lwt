@@ -1619,8 +1619,14 @@ let establish_server_generic
 
   let rec accept_loop () =
     let try_to_accept =
-      Lwt_unix.accept listening_socket >|= fun x ->
-      `Accepted x
+      Lwt.catch
+        (fun () ->
+           Lwt_unix.accept listening_socket >|= fun x ->
+           `Accepted x)
+        (function
+          | Unix.Unix_error (Unix.ECONNABORTED, _, _) ->
+            Lwt.return `Try_again
+          | e -> Lwt.fail e)
     in
 
     Lwt.pick [try_to_accept; should_stop] >>= function
@@ -1646,6 +1652,8 @@ let establish_server_generic
 
       Lwt.wakeup_later notify_listening_socket_closed ();
       Lwt.return_unit
+    | `Try_again ->
+      accept_loop ()
   in
 
   let server =

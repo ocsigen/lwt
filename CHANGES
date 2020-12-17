@@ -6,7 +6,7 @@
 
   * Make temporary files created by Lwt_io.with_temp_dir deletable on Windows by removing the RO bit (#849, Antonin Décimo)
 
-
+  * Lwt_io.establish_server* handles ECONNABORTED (#829, #830, Reynir Björnsson)
 
 ===== 5.4.0 (2020-12-16) =====
 
