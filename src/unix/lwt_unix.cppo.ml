@@ -1694,12 +1694,15 @@ external accept4 :
     Unix.file_descr * Unix.sockaddr = "lwt_unix_accept4"
 
 let accept_and_set_nonblock ch_fd =
-  if Lwt_config._HAVE_ACCEPT4 then
-    let (fd, addr) = accept4 ~close_on_exec:false ~nonblock:true ch_fd in
-    (mk_ch ~blocking:false ~set_flags:false fd, addr)
-  else
-    let (fd, addr) = Unix.accept ch_fd in
-    (mk_ch ~blocking:false fd, addr)
+  try
+    if Lwt_config._HAVE_ACCEPT4 then
+      let (fd, addr) = accept4 ~close_on_exec:false ~nonblock:true ch_fd in
+      (mk_ch ~blocking:false ~set_flags:false fd, addr)
+    else
+      let (fd, addr) = Unix.accept ch_fd in
+      (mk_ch ~blocking:false fd, addr)
+  with
+  | Unix.Unix_error (Unix.ECONNABORTED, _, _) -> raise Retry
 
 let accept ch =
   wrap_syscall Read ch (fun _ -> accept_and_set_nonblock ch.fd)
