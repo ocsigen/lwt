@@ -891,7 +891,8 @@ val listen : file_descr -> int -> unit
   (** Wrapper for [Unix.listen] *)
 
 val accept : file_descr -> (file_descr * sockaddr) Lwt.t
-  (** Wrapper for [Unix.accept] *)
+  (** Wrapper for [Unix.accept]. If [Unix.accept] returns [Unix.ECONNABBORTED]
+      then accept is called again. *)
 
 val accept_n : file_descr -> int -> ((file_descr * sockaddr) list * exn option) Lwt.t
   (** [accept_n fd count] accepts up to [count] connections at one time.
