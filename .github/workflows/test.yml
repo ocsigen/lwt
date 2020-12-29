@@ -1,11 +1,11 @@
-name: Tests for lwt_react, lwt_ppx, lwt_luv and lwt
+name: Tests for lwt_react, lwt_ppx and lwt
 on: [push, pull_request]
 jobs:
   test:
     strategy:
       matrix:
         operating-system: [macos-latest, ubuntu-latest, windows-latest]
-        ocaml-version: [4.11.0, 4.10.0, 4.09.1]
+        ocaml-version: ['4.11.1', '4.10.2', '4.09.1']
     runs-on: ${{ matrix.operating-system }}
     steps:
     - uses: actions/checkout@v2
@@ -14,9 +14,9 @@ jobs:
         ocaml-version: ${{ matrix.ocaml-version }}
     - name: Pinning Package
       run: opam pin add -yn lwt_react.dev './' && opam pin add -yn lwt_ppx.dev './'
-        && opam pin add -yn lwt_luv.dev './' && opam pin add -yn lwt.dev './'
+        && opam pin add -yn lwt.dev './'
     - name: Packages
-      run: opam depext -yt lwt_react.dev lwt_ppx.dev lwt_luv.dev lwt.dev
+      run: opam depext -yt lwt_react.dev lwt_ppx.dev lwt.dev
     - name: Dependencies
       run: opam install -t -y . --deps-only
     - name: Building
