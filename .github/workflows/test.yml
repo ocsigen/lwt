@@ -18,10 +18,6 @@ jobs:
     - name: Packages
       run: opam depext -yt lwt_react.dev lwt_ppx.dev lwt.dev
     - name: Dependencies
-      run: opam install -t -y . --deps-only
-    - name: Building
-      run: opam exec -- dune build
-    - name: Installing
-      run: opam exec -- dune install
-    - name: Testing
-      run: opam exec -- dune runtest
+      run: opam install ./lwt.opam ./lwt_react.opam ./lwt_ppx.opam -yt --deps-only
+    - name: Build, Install and Test
+      run: opam exec -- dune build --only-packages lwt,lwt_react,lwt_ppx @install @runtest
