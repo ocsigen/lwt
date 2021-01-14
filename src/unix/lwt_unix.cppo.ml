@@ -14,6 +14,120 @@ module Lwt_sequence = Lwt_sequence
 
 open Lwt.Infix
 
+
+
+(* Utility. *)
+
+let rec filter_map f = function
+  | [] -> []
+  | x::l ->
+    match f x with
+    | None -> filter_map f l
+    | Some x' -> x'::(filter_map f l)
+
+
+
+(* Luv conversions. *)
+
+let to_promise f =
+  let promise, resolver = Lwt.task () in
+  f (fun value -> Lwt.wakeup_later resolver value);
+  promise
+
+(* TODO Upstream error codes that have no corresponding Unix code? *)
+let to_unix_error_code =
+  let open Unix in
+  function
+  | `E2BIG -> E2BIG
+  | `EACCES -> EACCES
+  | `EADDRINUSE -> EADDRINUSE
+  | `EADDRNOTAVAIL -> EADDRNOTAVAIL
+  | `EAFNOSUPPORT -> EAFNOSUPPORT
+  | `EAGAIN -> EAGAIN
+  | `EAI_ADDRFAMILY -> EUNKNOWNERR 1000
+  | `EAI_AGAIN -> EUNKNOWNERR 1001
+  | `EAI_BADFLAGS -> EUNKNOWNERR 1002
+  | `EAI_BADHINTS -> EUNKNOWNERR 1003
+  | `EAI_CANCELED -> EUNKNOWNERR 1004
+  | `EAI_FAIL -> EUNKNOWNERR 1005
+  | `EAI_FAMILY -> EUNKNOWNERR 1006
+  | `EAI_MEMORY -> EUNKNOWNERR 1007
+  | `EAI_NODATA -> EUNKNOWNERR 1008
+  | `EAI_NONAME -> EUNKNOWNERR 1009
+  | `EAI_OVERFLOW -> EUNKNOWNERR 1010
+  | `EAI_PROTOCOL -> EUNKNOWNERR 1011
+  | `EAI_SERVICE -> EUNKNOWNERR 1012
+  | `EAI_SOCKTYPE -> EUNKNOWNERR 1013
+  | `EALREADY -> EALREADY
+  | `EBADF -> EBADF
+  | `EBUSY -> EBUSY
+  | `ECANCELED -> EUNKNOWNERR 1014
+  | `ECONNABORTED -> ECONNABORTED
+  | `ECONNREFUSED -> ECONNREFUSED
+  | `ECONNRESET -> ECONNRESET
+  | `EDESTADDRREQ -> EDESTADDRREQ
+  | `EEXIST -> EEXIST
+  | `EFAULT -> EFAULT
+  | `EFBIG -> EFBIG
+  | `EFTYPE -> EUNKNOWNERR 1015
+  | `EHOSTUNREACH -> EHOSTUNREACH
+  | `EILSEQ -> EUNKNOWNERR 1016
+  | `EINTR -> EINTR
+  | `EINVAL -> EINVAL
+  | `EIO -> EIO
+  | `EISCONN -> EISCONN
+  | `EISDIR -> EISDIR
+  | `ELOOP -> ELOOP
+  | `EMFILE -> EMFILE
+  | `EMSGSIZE -> EMSGSIZE
+  | `ENAMETOOLONG -> ENAMETOOLONG
+  | `ENETDOWN -> ENETDOWN
+  | `ENETUNREACH -> ENETUNREACH
+  | `ENFILE -> ENFILE
+  | `ENOBUFS -> ENOBUFS
+  | `ENODEV -> ENODEV
+  | `ENOENT -> ENOENT
+  | `ENOMEM -> ENOMEM
+  | `ENONET -> EUNKNOWNERR 1017
+  | `ENOPROTOOPT -> ENOPROTOOPT
+  | `ENOSPC -> ENOSPC
+  | `ENOSYS -> ENOSYS
+  | `ENOTCONN -> ENOTCONN
+  | `ENOTDIR -> ENOTDIR
+  | `ENOTEMPTY -> ENOTEMPTY
+  | `ENOTSOCK -> ENOTSOCK
+  | `ENOTSUP -> EUNKNOWNERR 1018
+  | `ENOTTY -> ENOTTY
+  | `EPERM -> EPERM
+  | `EPIPE -> EPIPE
+  | `EPROTO -> EUNKNOWNERR 1019
+  | `EPROTONOSUPPORT -> EPROTONOSUPPORT
+  | `EPROTOTYPE -> EPROTOTYPE
+  | `ERANGE -> ERANGE
+  | `EROFS -> EROFS
+  | `ESHUTDOWN -> ESHUTDOWN
+  | `ESPIPE -> ESPIPE
+  | `ESRCH -> ESRCH
+  | `ETIMEDOUT -> ETIMEDOUT
+  | `ETXTBSY -> EUNKNOWNERR 1020
+  | `EXDEV -> EXDEV
+  | `UNKNOWN -> EUNKNOWNERR 1021
+  | `EOF -> EUNKNOWNERR 1022
+  | `ENXIO -> ENXIO
+  | `EMLINK -> EMLINK
+
+let wrap_error function_name argument error =
+  Unix.Unix_error (to_unix_error_code error, function_name, argument)
+
+let convert_errors function_name argument promise =
+  promise >>= function
+  | Result.Ok value ->
+    Lwt.return value
+  | Result.Error error ->
+    Lwt.fail (wrap_error function_name argument error)
+
+
+
 (* +-----------------------------------------------------------------+
    | Configuration                                                   |
    +-----------------------------------------------------------------+ *)
@@ -293,6 +407,14 @@ type file_descr = {
 
   hooks_writable : (unit -> unit) Lwt_sequence.t;
   (* Hooks to call when the file descriptor becomes writable. *)
+
+  (* TODO/NOTE The rest of the fields are temporary, and will need to be
+     reorganized after more progress in the libuv conversion. *)
+
+  libuv_handle : [
+    | `File of Luv.File.t
+    | `None (* TODO Temporary during the conversion. *)
+  ]
 }
 
 [@@@ocaml.warning "-3"]
@@ -358,6 +480,7 @@ let mk_ch ?blocking ?(set_flags=true) fd = {
   event_writable = None;
   hooks_readable = Lwt_sequence.create ();
   hooks_writable = Lwt_sequence.create ();
+  libuv_handle = `None;
 }
 
 let check_descriptor ch =
@@ -441,6 +564,18 @@ let abort ch e =
 let unix_file_descr ch = ch.fd
 
 let of_unix_file_descr = mk_ch
+
+let of_libuv_file file = {
+  fd = Unix.stdout;
+  state = Opened;
+  set_flags = false;
+  blocking = lazy Lwt.return_false;
+  event_readable = None;
+  event_writable = None;
+  hooks_readable = Lwt_sequence.create ();
+  hooks_writable = Lwt_sequence.create ();
+  libuv_handle = `File file;
+}
 
 let stdin = of_unix_file_descr ~set_flags:false ~blocking:true Unix.stdin
 let stdout = of_unix_file_descr ~set_flags:false ~blocking:true Unix.stdout
@@ -599,14 +734,36 @@ type open_flag =
   | O_KEEPEXEC
 #endif
 
-external open_job : string -> Unix.open_flag list -> int -> (Unix.file_descr * bool) job = "lwt_unix_open_job"
-
+(* TODO The non-libuv code checked if the file is a pipe or socket, and switched
+   to non-blocking I/O in that case. AFAIK this is not possible with libuv,
+   except perhaps with a custom open function. This applies to Unix only (not
+   Windows). *)
+(* TODO Remove unix_open_job.c once everything is ported over (fcntl, blocking
+   mode, O_SHARE_DELETE). *)
 let openfile name flags perms =
-  if Sys.win32 then
-    Lwt.return (of_unix_file_descr (Unix.openfile name flags perms))
-  else
-    run_job (open_job name flags perms) >>= fun (fd, blocking) ->
-    Lwt.return (of_unix_file_descr ~blocking fd)
+  let flags = flags |> filter_map begin function
+    | O_RDONLY -> Some `RDONLY
+    | O_WRONLY -> Some `WRONLY
+    | O_RDWR -> Some `RDWR
+    | O_NONBLOCK -> Some `NONBLOCK
+    | O_APPEND -> Some `APPEND
+    | O_CREAT -> Some `CREAT
+    | O_TRUNC -> Some `TRUNC
+    | O_EXCL -> Some `EXCL
+    | O_NOCTTY -> Some `NOCTTY
+    | O_DSYNC -> Some `DSYNC
+    | O_SYNC -> Some `SYNC
+    | O_RSYNC -> None (* TODO Bind in Luv. *)
+    | O_SHARE_DELETE -> None
+      (* TODO Bind in Luv or otherwise. This is Windows-only. *)
+    | O_CLOEXEC -> None (* TODO Needs fcntl call. *)
+    | O_KEEPEXEC -> None (* TODO Needs fcntl call. *)
+    end
+  in
+  Luv.File.open_ name flags ~mode:[`NUMERIC perms]
+  |> to_promise
+  |> convert_errors "open" name
+  >|= of_libuv_file
 
 external close_job : Unix.file_descr -> unit job = "lwt_unix_close_job"
 
@@ -618,6 +775,16 @@ let close ch =
     Lwt.return (Unix.close ch.fd)
   else
     run_job (close_job ch.fd)
+
+let close file =
+  match file.libuv_handle with
+  | `None ->
+    close file
+  | `File file ->
+    Luv.File.close file
+    |> to_promise
+    |> convert_errors "close" ""
+    (* TODO Stringify the fd/handle number for the error. *)
 
 type bigarray =
   (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
@@ -650,6 +817,34 @@ let read ch buf pos len =
       run_job (read_job ch.fd buf pos len)
     | false ->
       wrap_syscall Read ch (fun () -> stub_read ch.fd buf pos len)
+
+let read file buffer buffer_offset length =
+  if buffer_offset < 0 || length < 0 ||
+     buffer_offset > Bytes.length buffer - length then
+    invalid_arg "Lwt_unix.read"
+  else
+    match file.libuv_handle with
+    | `None ->
+      read file buffer buffer_offset length
+    | `File file ->
+      let c_buffer = Luv.Buffer.create length in
+      Luv.File.read file [c_buffer]
+      |> to_promise
+      >>= function
+      | Result.Ok count ->
+        (* This conversion should be safe because the read cannot have read more
+           bytes than were requested. The number of bytes requested is passed in
+           an OCaml int. *)
+        let count = Unsigned.Size_t.to_int count in
+        Luv.Buffer.(blit_to_bytes
+          (sub c_buffer ~offset:0 ~length:count)
+          buffer ~destination_offset:buffer_offset);
+        Lwt.return count
+      | Result.Error `EOF ->
+        Lwt.return 0
+      | Result.Error error ->
+        Lwt.fail (wrap_error "read" "" error)
+        (* TODO Stringify the fd number for the error payload. *)
 
 let pread ch buf ~file_offset pos len =
   if pos < 0 || len < 0 || pos > Bytes.length buf - len then
@@ -1246,6 +1441,7 @@ let dup ch =
     event_writable = None;
     hooks_readable = Lwt_sequence.create ();
     hooks_writable = Lwt_sequence.create ();
+    libuv_handle = ch.libuv_handle; (* TODO Need to go variand-by-variand. *)
   }
 
 let dup2 ch1 ch2 =
