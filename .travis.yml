@@ -72,7 +72,7 @@ scripts:
         then
           if [ "$PPX" == no ]
           then
-            opam install ./lwt.opam ./lwt_react.opam ./lwt_luv.opam --deps-only --yes
+            opam install ./lwt.opam ./lwt_react.opam --deps-only --yes
           else
             opam install . --deps-only --yes
           fi
@@ -105,13 +105,9 @@ scripts:
           then
             dune build --only-packages lwt,lwt_react
             dune runtest --only-packages lwt,lwt_react --force
-            unset LWT_DISCOVER_ARGUMENTS
-            dune build @runtest_libuv --force --no-buffer
           else
             dune build
             dune runtest --force
-            unset LWT_DISCOVER_ARGUMENTS
-            dune build @runtest_libuv --force --no-buffer
           fi
         else
           make coverage

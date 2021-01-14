@@ -12,6 +12,9 @@
 module Lwt_sequence = Lwt_sequence
 [@@@ocaml.warning "+3"]
 
+(* Change to the libuv engine early on in initialization. *)
+let () = Lwt_engine.set (new Lwt_luv.engine)
+
 open Lwt.Infix
 
 let enter_iter_hooks = Lwt_sequence.create ()
