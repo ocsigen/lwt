@@ -20,6 +20,7 @@ depends: [
   "dune" {>= "1.8.0"}
   "lwt"
   "ocaml" {>= "4.02.0"}
+  "ocaml-compiler-libs"
   "ppxlib" {>= "0.16.0"}
 ]
 
