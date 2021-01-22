@@ -69,9 +69,8 @@ val fold_left : ('a -> 'b -> 'a Lwt.t) -> 'a -> 'b t -> 'a Lwt.t
 (** Traverse the sequence from left to right, combining each element with the
   accumulator using the given function.
   The traversal happens immediately and will not terminate on infinite
-  sequences.
+  sequences. *)
 
-  Also see {!List.fold_left} *)
 
 val iter : ('a -> unit Lwt.t) -> 'a t -> unit Lwt.t
 (** Iterate on the sequence, calling the (imperative) function on every element.
@@ -93,3 +92,11 @@ val to_list : 'a t -> 'a list Lwt.t
 
 val of_list : 'a list -> 'a t
 (** Convert a list to a sequence, preserving order. *)
+
+val to_seq : 'a t -> 'a Seq.t Lwt.t
+(** Convert from {'a Lwt_seq.t} to {'a Stdlib.Seq.t} *)
+
+val of_seq : 'a Seq.t -> 'a t
+(** Convert from {'a Stdlib.Seq.t} to {'a Lwt_seq.t}.
+  This transformation is lazy, it only applies when the result is
+  traversed. *)

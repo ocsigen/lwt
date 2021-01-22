@@ -16,35 +16,35 @@
 
 
 open Lwt.Syntax
+open Lwt.Infix
 
 type +'a node = Nil | Cons of 'a * 'a t
 
 and 'a t = unit -> 'a node Lwt.t
 
-let empty : 'a t = fun () -> Lwt.return Nil
+let return_nil = Lwt.return Nil
+
+let empty : 'a t = fun () -> return_nil
 
 let return x : 'a t = fun () -> Lwt.return (Cons (x, empty))
 
 let cons x t () = Lwt.return (Cons (x, t))
 
 let rec append seq1 seq2 () =
-  let* seq1 = seq1 () in
-  match seq1 with
+  seq1 () >>= function
   | Nil -> seq2 ()
   | Cons (x, next) -> Lwt.return (Cons (x, append next seq2))
 
 let rec map f seq () =
-  let* seq = seq () in
-  match seq with
-  | Nil -> Lwt.return Nil
+  seq () >>= function
+  | Nil -> return_nil
   | Cons (x, next) ->
       let+ x = f x in
       Cons (x, map f next)
 
 let rec filter_map f seq () =
-  let* seq = seq () in
-  match seq with
-  | Nil -> Lwt.return Nil
+  seq () >>= function
+  | Nil -> return_nil
   | Cons (x, next) -> (
       let* x = f x in
       match x with
@@ -52,32 +52,28 @@ let rec filter_map f seq () =
       | Some y -> Lwt.return (Cons (y, filter_map f next) ))
 
 let rec filter f seq () =
-  let* seq = seq () in
-  match seq with
-  | Nil -> Lwt.return Nil
+  seq () >>= function
+  | Nil -> return_nil
   | Cons (x, next) ->
       let* ok = f x in
       if ok then Lwt.return (Cons (x, filter f next)) else filter f next ()
 
 let rec flat_map f seq () =
-  let* seq = seq () in
-  match seq with
-  | Nil -> Lwt.return Nil
+  seq () >>= function
+  | Nil -> return_nil
   | Cons (x, next) ->
       let* x = f x in
       flat_map_app f x next ()
 
 (* this is [append seq (flat_map f tail)] *)
 and flat_map_app f seq tail () =
-  let* seq = seq () in
-  match seq with
+  seq () >>= function
   | Nil -> flat_map f tail ()
   | Cons (x, next) -> Lwt.return (Cons (x, flat_map_app f next tail))
 
 let fold_left f acc seq =
   let rec aux f acc seq =
-    let* seq = seq () in
-    match seq with
+    seq () >>= function
     | Nil -> Lwt.return acc
     | Cons (x, next) ->
         let* acc = f acc x in
@@ -87,9 +83,8 @@ let fold_left f acc seq =
 
 let iter f seq =
   let rec aux seq =
-    let* seq = seq () in
-    match seq with
-    | Nil -> Lwt.return ()
+    seq () >>= function
+    | Nil -> Lwt.return_unit
     | Cons (x, next) ->
         let* () = f x in
         aux next
@@ -99,7 +94,7 @@ let iter f seq =
 let rec unfold f u () =
   let* x = f u in
   match x with
-  | None -> Lwt.return Nil
+  | None -> return_nil
   | Some (x, u') -> Lwt.return (Cons (x, unfold f u'))
 
 let rec of_list = function
@@ -107,9 +102,21 @@ let rec of_list = function
   | h :: t -> cons h (of_list t)
 
 let rec to_list seq =
-  let* seq = seq () in
-  match seq with
-  | Nil -> Lwt.return []
+  seq () >>= function
+  | Nil -> Lwt.return_nil
   | Cons (x, next) ->
     let+ l = to_list next in
     x :: l
+
+let rec of_seq seq =
+  match seq () with
+  | Seq.Nil -> empty
+  | Seq.Cons (x, next) ->
+      cons x (of_seq next)
+
+let rec to_seq seq =
+  seq () >>= function
+  |Nil -> Lwt.return Seq.empty
+  | Cons (x, next) ->
+      let+ next = to_seq next in
+      Seq.cons x next
