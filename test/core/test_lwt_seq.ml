@@ -16,11 +16,36 @@ let suite = suite "lwt_seq" [
       incr n; Lwt.return r) true a
   end;
 
+  test "map" begin fun () ->
+    let a = Lwt_seq.of_list l in
+    let v = Lwt_seq.map (fun x -> Lwt.return (x * 2)) a in
+    let+ l' = Lwt_seq.to_list v in
+    l' = [2; 4; 6; 8; 10]
+  end;
 
   test "filter" begin fun () ->
     let a = Lwt_seq.of_list l in
     let v = Lwt_seq.filter (fun x -> Lwt.return (x mod 2 = 0)) a in
     let+ l' = Lwt_seq.to_list v in
     l' = [2; 4]
+  end;
+
+  test "filter_map" begin fun () ->
+    let a = Lwt_seq.of_list l in
+    let v = Lwt_seq.filter_map (fun x -> Lwt.return (if x mod 2 = 0 then Some (x * 2) else None)) a in
+    let+ l' = Lwt_seq.to_list v in
+    l' = [4; 8]
+  end;
+
+  test "unfold" begin fun () ->
+    let range first last =
+      let step i = Lwt.return (if i > last then None
+                   else Some (i, succ i)) in
+      Lwt_seq.unfold step first
+    in
+    let* a = Lwt_seq.to_list (range 1 3) in
+    let+ b = Lwt_seq.to_list (range 1 0) in
+      ([1;2;3] = a) &&
+      ([] = b)
   end;
 ]
