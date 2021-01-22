@@ -94,9 +94,9 @@ val of_list : 'a list -> 'a t
 (** Convert a list to a sequence, preserving order. *)
 
 val to_seq : 'a t -> 'a Seq.t Lwt.t
-(** Convert from {'a Lwt_seq.t} to {'a Stdlib.Seq.t} *)
+(** Convert from ['a Lwt_seq.t] to ['a Stdlib.Seq.t] *)
 
 val of_seq : 'a Seq.t -> 'a t
-(** Convert from {'a Stdlib.Seq.t} to {'a Lwt_seq.t}.
+(** Convert from ['a Stdlib.Seq.t] to ['a Lwt_seq.t].
   This transformation is lazy, it only applies when the result is
   traversed. *)
