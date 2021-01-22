@@ -119,4 +119,4 @@ let rec to_seq seq =
   |Nil -> Lwt.return Seq.empty
   | Cons (x, next) ->
       let+ next = to_seq next in
-      Seq.cons x next
+      fun () -> Seq.Cons (x, next)
