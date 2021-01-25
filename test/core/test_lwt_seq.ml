@@ -68,4 +68,22 @@ let suite = suite "lwt_seq" [
     in
     n = 0
   end;
+
+  test "exception 2" begin fun () ->
+    let fail = fun () ->
+      let () = failwith "XXX" in
+      Lwt.return Lwt_seq.Nil
+    in
+    let seq = fun () -> Lwt.return @@ Lwt_seq.Cons (1, (fun () -> Lwt.return @@ Lwt_seq.Cons (2, fail))) in
+    let+ a = Lwt_seq.to_seq seq in
+    let n =
+      try
+        Seq.fold_left(fun acc i ->
+          acc + i
+        ) 0 a
+      with Failure x when x = "XXX" ->
+        0
+    in
+    n = 0
+  end;
 ]
