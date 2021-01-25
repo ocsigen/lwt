@@ -119,15 +119,13 @@ let rec of_seq seq =
 
 let rec to_seq seq =
   Lwt.catch
-    (fun () ->
-      seq () >|= fun x ->
-      `Result x )
+    (fun () -> seq () >>= Lwt.return_ok)
     (fun exn ->
-      Lwt.return (`Exn exn)
+      Lwt.return_error exn
   ) >>= function
-  | `Result Nil -> Lwt.return Seq.empty
-  | `Result (Cons (x, next)) ->
+  | Ok Nil -> Lwt.return Seq.empty
+  | Ok (Cons (x, next)) ->
       let+ next = to_seq next in
       fun () -> Seq.Cons (x, next)
-  | `Exn exn ->
+  | Error exn ->
       Lwt.return (fun () -> raise exn)
