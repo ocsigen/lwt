@@ -109,14 +109,25 @@ let rec to_list seq =
     x :: l
 
 let rec of_seq seq =
-  match seq () with
-  | Seq.Nil -> empty
-  | Seq.Cons (x, next) ->
+  try
+    match seq () with
+    | Seq.Nil -> empty
+    | Seq.Cons (x, next) ->
       cons x (of_seq next)
+  with exn ->
+    fun () -> raise exn
 
 let rec to_seq seq =
-  seq () >>= function
-  |Nil -> Lwt.return Seq.empty
-  | Cons (x, next) ->
+  Lwt.catch
+    (fun () ->
+      seq () >|= fun x ->
+      `Result x )
+    (fun exn ->
+      Lwt.return (`Exn exn)
+  ) >>= function
+  | `Result Nil -> Lwt.return Seq.empty
+  | `Result (Cons (x, next)) ->
       let+ next = to_seq next in
       fun () -> Seq.Cons (x, next)
+  | `Exn exn ->
+      Lwt.return (fun () -> raise exn)

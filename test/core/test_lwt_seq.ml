@@ -32,20 +32,40 @@ let suite = suite "lwt_seq" [
 
   test "filter_map" begin fun () ->
     let a = Lwt_seq.of_list l in
-    let v = Lwt_seq.filter_map (fun x -> Lwt.return (if x mod 2 = 0 then Some (x * 2) else None)) a in
+    let v = Lwt_seq.filter_map (fun x ->
+      Lwt.return (if x mod 2 = 0 then Some (x * 2) else None)) a
+    in
     let+ l' = Lwt_seq.to_list v in
     l' = [4; 8]
   end;
 
   test "unfold" begin fun () ->
     let range first last =
-      let step i = Lwt.return (if i > last then None
-                   else Some (i, succ i)) in
+      let step i = if i > last then Lwt.return_none
+                   else Lwt.return_some (i, succ i) in
       Lwt_seq.unfold step first
     in
     let* a = Lwt_seq.to_list (range 1 3) in
     let+ b = Lwt_seq.to_list (range 1 0) in
       ([1;2;3] = a) &&
       ([] = b)
+  end;
+
+  test "exception 1" begin fun () ->
+    let fail = fun () ->
+      let () = failwith "XXX" in
+      Seq.Nil
+    in
+    let seq = fun () -> Seq.Cons (1, (fun () -> Seq.Cons (2, fail))) in
+    let a = Lwt_seq.of_seq seq in
+    let+ n =
+      try
+        Lwt_seq.fold_left(fun acc i ->
+          Lwt.return (acc + i)
+        ) 0 a
+      with Failure x when x = "XXX" ->
+        Lwt.return 0
+    in
+    n = 0
   end;
 ]
