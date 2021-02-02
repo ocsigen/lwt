@@ -1,17 +1,5 @@
-(**************************************************************************)
-(*                                                                        *)
-(*                                 OCaml                                  *)
-(*                                                                        *)
-(*                 Simon Cruanes                                          *)
-(*                                                                        *)
-(*   Copyright 2017 Institut National de Recherche en Informatique et     *)
-(*     en Automatique.                                                    *)
-(*                                                                        *)
-(*   All rights reserved.  This file is distributed under the terms of    *)
-(*   the GNU Lesser General Public License version 2.1, with the          *)
-(*   special exception on linking described in the file LICENSE.          *)
-(*                                                                        *)
-(**************************************************************************)
+(* This file is part of Lwt, released under the MIT license. See LICENSE.md for
+   details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
 
 
