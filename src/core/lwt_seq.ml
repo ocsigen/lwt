@@ -105,15 +105,12 @@ let rec of_seq seq =
   with exn ->
     fun () -> raise exn
 
-let rec to_seq seq =
-  Lwt.catch
-    (fun () -> seq () >>= Lwt.return_ok)
-    (fun exn ->
-      Lwt.return_error exn
-  ) >>= function
-  | Ok Nil -> Lwt.return Seq.empty
-  | Ok (Cons (x, next)) ->
-      let+ next = to_seq next in
-      fun () -> Seq.Cons (x, next)
-  | Error exn ->
-      Lwt.return (fun () -> raise exn)
+let rec of_seq_lwt (seq: 'a Lwt.t Seq.t): 'a t Lwt.t =
+    match seq () with
+    | Seq.Nil -> Lwt.return empty
+    | Seq.Cons (x, next) ->
+        Lwt.catch (fun () ->
+          let* x = x in
+          let+ next = of_seq_lwt next in
+          cons x next)
+        (fun exc -> Lwt.return (fun () -> raise exc))

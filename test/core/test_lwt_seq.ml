@@ -53,7 +53,7 @@ let suite = suite "lwt_seq" [
       ([] = b)
   end;
 
-  test "exception 1" begin fun () ->
+  test "exception" begin fun () ->
     let fail = fun () ->
       let () = failwith "XXX" in
       Seq.Nil
@@ -71,20 +71,23 @@ let suite = suite "lwt_seq" [
     n = (-1)
   end;
 
-  test "exception 2" begin fun () ->
+  test "exception of_seq_lwt" begin fun () ->
     let fail = fun () ->
       let () = failwith "XXX" in
-      Lwt.return Lwt_seq.Nil
+      Seq.Nil
     in
-    let seq = fun () -> Lwt.return @@ Lwt_seq.Cons (1, (fun () -> Lwt.return @@ Lwt_seq.Cons (2, fail))) in
-    let+ a = Lwt_seq.to_seq seq in
-    let n =
+    let seq: int Lwt.t Seq.t = fun () ->
+      Seq.Cons (Lwt.return 1,
+        fun () ->
+          Seq.Cons (Lwt.return 2, fail)) in
+    let* a = Lwt_seq.of_seq_lwt seq in
+    let+ n =
       try
-        Seq.fold_left(fun acc i ->
-          acc + i
+        Lwt_seq.fold_left(fun acc i ->
+          Lwt.return (acc + i)
         ) 0 a
       with Failure x when x = "XXX" ->
-        0
+        Lwt.return 0
     in
     n = 0
   end;
