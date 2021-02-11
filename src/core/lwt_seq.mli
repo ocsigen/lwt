@@ -3,17 +3,17 @@
 
 
 
+(** @since 5.5.0 *)
+
 type 'a t = unit -> 'a node Lwt.t
 (** The type of delayed lists containing elements of type ['a].
   Note that the concrete list node ['a node] is delayed under a closure,
   not a [lazy] block, which means it might be recomputed every time
   we access it. *)
 
+and +'a node = Nil | Cons of 'a * 'a t
 (** A fully-evaluated list node, either empty or containing an element
   and a delayed tail. *)
-and +'a node = Nil | Cons of 'a * 'a t
-
-(**)
 
 val empty : 'a t
 (** The empty sequence, containing no elements. *)
@@ -31,9 +31,7 @@ val append : 'a t -> 'a t -> 'a t
 val map : ('a -> 'b Lwt.t) -> 'a t -> 'b t
 (** [map f seq] returns a new sequence whose elements are the elements of
   [seq], transformed by [f].
-  This transformation is lazy, it only applies when the result is traversed.
-
-  If [seq = [1;2;3]], then [map f seq = [f 1; f 2; f 3]]. *)
+  This transformation is lazy, it only applies when the result is traversed. *)
 
 val filter : ('a -> bool Lwt.t) -> 'a t -> 'a t
 (** Remove from the sequence the elements that do not satisfy the
@@ -67,11 +65,9 @@ val iter : ('a -> unit Lwt.t) -> 'a t -> unit Lwt.t
 
 val unfold : ('b -> ('a * 'b) option Lwt.t) -> 'b -> 'a t
 (** Build a sequence from a step function and an initial value.
-  [unfold f u] returns [empty] if [f u] returns [None],
-  or [fun () -> Cons (x, unfold f y)] if [f u] returns [Some (x, y)].
-
-  For example, [unfold (function [] -> None | h::t -> Some (h,t)) l]
-  is equivalent to [List.to_seq l]. *)
+  [unfold f u] returns [empty] if the promise [f u] resolves to [None],
+  or [fun () -> Lwt.return (Cons (x, unfold f y))] if the promise [f u] resolves
+  to [Some (x, y)]. *)
 
 val to_list : 'a t -> 'a list Lwt.t
 (** Convert a sequence to a list, preserving order.

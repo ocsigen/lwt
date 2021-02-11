@@ -66,9 +66,9 @@ let suite = suite "lwt_seq" [
           Lwt.return (acc + i)
         ) 0 a
       with Failure x when x = "XXX" ->
-        Lwt.return 0
+        Lwt.return (-1)
     in
-    n = 0
+    n = (-1)
   end;
 
   test "exception 2" begin fun () ->
