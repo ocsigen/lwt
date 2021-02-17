@@ -54,14 +54,19 @@ val flat_map : ('a -> 'b t Lwt.t) -> 'a t -> 'b t
 val fold_left : ('a -> 'b -> 'a Lwt.t) -> 'a -> 'b t -> 'a Lwt.t
 (** Traverse the sequence from left to right, combining each element with the
   accumulator using the given function.
-  The traversal happens immediately and will not terminate on infinite
-  sequences. *)
-
+  The traversal happens immediately and will not terminate (i.e., the promise
+  will not resolve) on infinite sequences. *)
 
 val iter : ('a -> unit Lwt.t) -> 'a t -> unit Lwt.t
 (** Iterate on the sequence, calling the (imperative) function on every element.
-  The traversal happens immediately and will not terminate on infinite
-  sequences. *)
+
+  The sequence's next node is evaluated only once the function has finished
+  processing the current element. More formally: the promise for the [n+1]th
+  node of the sequence is created only once the promise returned by [f] on the
+  [n]th element of the sequence has resolved.
+
+  The traversal happens immediately and will not terminate (i.e., the promise
+  will not resolve) on infinite sequences. *)
 
 val unfold : ('b -> ('a * 'b) option Lwt.t) -> 'b -> 'a t
 (** Build a sequence from a step function and an initial value.
@@ -71,8 +76,8 @@ val unfold : ('b -> ('a * 'b) option Lwt.t) -> 'b -> 'a t
 
 val to_list : 'a t -> 'a list Lwt.t
 (** Convert a sequence to a list, preserving order.
-  The traversal happens immediately and will not terminate on infinite
-  sequences. *)
+  The traversal happens immediately and will not terminate (i.e., the promise
+  will not resolve) on infinite sequences. *)
 
 val of_list : 'a list -> 'a t
 (** Convert a list to a sequence, preserving order. *)
