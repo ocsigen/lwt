@@ -1,5 +1,9 @@
 ===== dev =====
 
+====== Additions ======
+
+  * Lwt_seq: a Seq-like data-structure with Lwt delayed nodes (#836, Zach Shipko).
+
 ===== 5.4.0 (2020-12-16) =====
 
 ====== Installability ======
