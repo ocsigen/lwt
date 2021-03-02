@@ -74,6 +74,16 @@ let iter f seq =
     seq () >>= function
     | Nil -> Lwt.return_unit
     | Cons (x, next) ->
+        f x;
+        aux next
+  in
+  aux seq
+
+let iter_s f seq =
+  let rec aux seq =
+    seq () >>= function
+    | Nil -> Lwt.return_unit
+    | Cons (x, next) ->
         let* () = f x in
         aux next
   in

@@ -57,7 +57,8 @@ val fold_left : ('a -> 'b -> 'a Lwt.t) -> 'a -> 'b t -> 'a Lwt.t
   The traversal happens immediately and will not terminate (i.e., the promise
   will not resolve) on infinite sequences. *)
 
-val iter : ('a -> unit Lwt.t) -> 'a t -> unit Lwt.t
+val iter : ('a -> unit) -> 'a t -> unit Lwt.t
+val iter_s : ('a -> unit Lwt.t) -> 'a t -> unit Lwt.t
 (** Iterate on the sequence, calling the (imperative) function on every element.
 
   The sequence's next node is evaluated only once the function has finished
