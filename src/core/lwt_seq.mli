@@ -68,6 +68,15 @@ val iter : ('a -> unit Lwt.t) -> 'a t -> unit Lwt.t
   The traversal happens immediately and will not terminate (i.e., the promise
   will not resolve) on infinite sequences. *)
 
+val iter_p : ('a -> unit Lwt.t) -> 'a t -> unit Lwt.t
+(** Iterate on the sequence, calling the (imperative) function on every element.
+
+  The sequence's next node is evaluated as soon as the the previous node is
+  resolved.
+
+  The traversal happens immediately and will not terminate (i.e., the promise
+  will not resolve) on infinite sequences. *)
+
 val unfold : ('b -> ('a * 'b) option Lwt.t) -> 'b -> 'a t
 (** Build a sequence from a step function and an initial value.
   [unfold f u] returns [empty] if the promise [f u] resolves to [None],

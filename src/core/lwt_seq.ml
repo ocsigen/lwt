@@ -79,6 +79,16 @@ let iter f seq =
   in
   aux seq
 
+let iter_p f seq =
+  let rec aux acc seq =
+    seq () >>= function
+    | Nil -> Lwt.join acc
+    | Cons (x, next) ->
+        let p = f x in
+        aux (p::acc) next
+  in
+  aux [] seq
+
 let rec unfold f u () =
   let* x = f u in
   match x with
