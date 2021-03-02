@@ -1,5 +1,264 @@
-<!DOCTYPE html>
-<html>
-    <head><meta http-equiv="refresh" content="0; URL=../../2.4.3/api/type_Lwt_log.html" /></head>
-    <body></body>
-</html>
+<html><head><title></title><meta charset="utf8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><link rel="stylesheet" href="https://ocsigen.org/css/style.css"/><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/themes/prism.min.css"/><script type="text/javascript" src="https://ocsigen.org/js/client.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-core.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-ocaml.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-clike.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-reason.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-javascript.min.js">
+//<![CDATA[
+
+//]]>
+</script></head><body class="type_Lwt_log lwt"><div class="project-page"><div class="page-header"><p class="logo-ocsigen"><a href=".././../../" class="ocsimore_phrasing_link"><img src=".././../../img/ocsigen-white.svg" alt="Ocsigen"/></a>
+</p><p class="logo-subproject">Lwt</p><div class="mainmenu"><p class="mainmenu-home"><a href=".././../../" class="ocsimore_phrasing_link">Home</a></p><p class="mainmenu-doc"><a href=".././../../tuto/" class="ocsimore_phrasing_link">Doc</a></p><p><a href=".././../../eliom/" class="ocsimore_phrasing_link">Eliom</a></p><p><a href=".././../../js_of_ocaml/" class="ocsimore_phrasing_link">Js_of_ocaml</a></p><p class="mainmenu-current"><a href=".././../../lwt/" class="ocsimore_phrasing_link">Lwt</a></p><p><a href=".././../../tyxml/" class="ocsimore_phrasing_link">Tyxml</a></p><p><a href=".././../../ocsigen-start/" class="ocsimore_phrasing_link">Start</a></p></div><form id="googlesearch" action="https://google.com/search"><input name="q" id="gsearch-box" placeholder="Search using Google"/><label for="gsearch-box"><img src="/img/search.svg" alt="" id="gsearch-icon"/></label><input type="submit" id="gsearch-submit" onclick="document.getElementById('gsearch-box').value += ' site:ocsigen.org';"/></form><aside class="how-drawer"><input id="how-drawer-toggle" type="checkbox"/><label for="how-drawer-toggle" id="how-drawer-label"><span class="how-drawer-icon"></span></label><nav class="how-drawer-content"><ul class="drawermainmenu"><li class="drawermainmenu-home"><a href=".././../../" class="ocsimore_phrasing_link">Home</a>
+</li><li class="drawermainmenu-doc"><a href=".././../../tuto/" class="ocsimore_phrasing_link">Doc</a>
+</li><li class="drawermainmenu-project"><a href=".././../../eliom/" class="ocsimore_phrasing_link">Eliom</a>
+</li><li class="drawermainmenu-project"><a href=".././../../js_of_ocaml/" class="ocsimore_phrasing_link">Js_of_ocaml</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsigenserver/" class="ocsimore_phrasing_link">Server</a>
+</li><li class="drawermainmenu-project"><a href=".././../../lwt/" class="ocsimore_phrasing_link">Lwt</a>
+</li><li class="drawermainmenu-project"><a href=".././../../tyxml/" class="ocsimore_phrasing_link">Tyxml</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsigen-toolkit/" class="ocsimore_phrasing_link">Toolkit</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsigen-start/" class="ocsimore_phrasing_link">Start</a>
+</li><li class="drawermainmenu-project"><a href=".././../../html_of_wiki/" class="ocsimore_phrasing_link">html_of_wiki</a>
+</li><li class="drawermainmenu-project"><a href=".././../../deriving/" class="ocsimore_phrasing_link">deriving</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsimore/" class="ocsimore_phrasing_link">Ocsimore (<em>deprecated</em>)</a>
+</li><li class="drawermainmenu-page"><a href=".././../../projects" class="ocsimore_phrasing_link">Other projects</a>
+</li><li class="drawermainmenu-page"><a href=".././../../papers" class="ocsimore_phrasing_link">Research papers</a>
+</li><li class="drawermainmenu-page"><a href=".././../../credits" class="ocsimore_phrasing_link">Who does Ocsigen?</a>
+</li><li class="drawermainmenu-page"><a href=".././../../contributing" class="ocsimore_phrasing_link">Contributing</a>
+</li><li class="drawermainmenu-page"><a href=".././../../blog" class="ocsimore_phrasing_link">Blog</a>
+</li><li class="drawermainmenu-page"><a href=".././../../install" class="ocsimore_phrasing_link">Installation</a>
+</li><li class="drawermainmenu-page"><a href="https://github.com/ocsigen" class="ocsimore_phrasing_link">Source code</a>
+</li></ul><nav class="how-doctree"><h1>Lwt - API Reference</h1><h2>Core library</h2><h3><a href=".././api/Lwt" class="ocsimore_phrasing_link">Lwt</a></h3><h3><a href=".././api/Lwt_condition" class="ocsimore_phrasing_link">Lwt_condition</a></h3><h3><a href=".././api/Lwt_list" class="ocsimore_phrasing_link">Lwt_list</a></h3><h3><a href=".././api/Lwt_mutex" class="ocsimore_phrasing_link">Lwt_mutex</a></h3><h3><a href=".././api/Lwt_mvar" class="ocsimore_phrasing_link">Lwt_mvar</a></h3><h3><a href=".././api/Lwt_pool" class="ocsimore_phrasing_link">Lwt_pool</a></h3><h3><a href=".././api/Lwt_sequence" class="ocsimore_phrasing_link">Lwt_sequence</a></h3><h3><a href=".././api/Lwt_pqueue" class="ocsimore_phrasing_link">Lwt_pqueue</a></h3><h3><a href=".././api/Lwt_stream" class="ocsimore_phrasing_link">Lwt_stream</a></h3><h3><a href=".././api/Lwt_switch" class="ocsimore_phrasing_link">Lwt_switch</a></h3><h2>Unix bindings</h2><h3><a href=".././api/Lwt_daemon" class="ocsimore_phrasing_link">Lwt_daemon</a></h3><h3><a href=".././api/Lwt_gc" class="ocsimore_phrasing_link">Lwt_gc</a></h3><h3><a href=".././api/Lwt_io" class="ocsimore_phrasing_link">Lwt_io</a></h3><h3><a href=".././api/Lwt_log" class="ocsimore_phrasing_link">Lwt_log</a></h3><h3><a href=".././api/Lwt_main" class="ocsimore_phrasing_link">Lwt_main</a></h3><h3><a href=".././api/Lwt_engine" class="ocsimore_phrasing_link">Lwt_engine</a></h3><h3><a href=".././api/Lwt_process" class="ocsimore_phrasing_link">Lwt_process</a></h3><h3><a href=".././api/Lwt_throttle" class="ocsimore_phrasing_link">Lwt_throttle</a></h3><h3><a href=".././api/Lwt_timeout" class="ocsimore_phrasing_link">Lwt_timeout</a></h3><h3><a href=".././api/Lwt_unix" class="ocsimore_phrasing_link">Lwt_unix</a></h3><h3><a href=".././api/Lwt_bytes" class="ocsimore_phrasing_link">Lwt_bytes</a></h3><h3><a href=".././api/Lwt_sys" class="ocsimore_phrasing_link">Lwt_sys</a></h3><h2>Reactive programming helpers</h2><h3><a href=".././api/Lwt_react" class="ocsimore_phrasing_link">Lwt_react</a></h3><h2>Syntax extensions</h2><h3><a href=".././api/Pa_lwt" class="ocsimore_phrasing_link">Pa_lwt</a></h3><h3><a href=".././api/Pa_lwt_log" class="ocsimore_phrasing_link">Pa_lwt_log</a></h3><h2>Terminal manipulation</h2><h3><a href=".././api/Lwt_read_line" class="ocsimore_phrasing_link">Lwt_read_line</a></h3><h3><a href=".././api/Lwt_term" class="ocsimore_phrasing_link">Lwt_term</a></h3><h3><a href=".././api/Lwt_text" class="ocsimore_phrasing_link">Lwt_text</a></h3><h2>Miscellaneous</h2><h3><a href=".././api/Lwt_glib" class="ocsimore_phrasing_link">Lwt_glib</a></h3><h3><a href=".././api/Lwt_lib" class="ocsimore_phrasing_link">Lwt_lib</a></h3><h3><a href=".././api/Lwt_preemptive" class="ocsimore_phrasing_link">Lwt_preemptive</a></h3><h3><a href=".././api/Lwt_ssl" class="ocsimore_phrasing_link">Lwt_ssl</a></h3><h2>Index</h2><h3> <span><a href=".././api/index_types">Index of types</a></span></h3><h3> <span><a href=".././api/index_exceptions">Index of exceptions</a></span></h3><h3> <span><a href=".././api/index_values">Index of values</a></span></h3><h3> <span><a href=".././api/index_attributes">Index of class attributes</a></span></h3><h3> <span><a href=".././api/index_methods">Index of class methods</a></span></h3><h3> <span><a href=".././api/index_classes">Index of classes</a></span></h3><h3> <span><a href=".././api/index_class_types">Index of class types</a></span></h3><h3> <span><a href=".././api/index_modules">Index of modules</a></span></h3><h3> <span><a href=".././api/index_module_types">Index of module types</a></span></h3></nav></nav></aside></div><p class="reasonwarning">Warning: Reason support is experimental.
+We are looking for beta-tester and contributors.
+</p><button id="reason">Switch to </button><div class="twocols"><nav class="leftcol">Version <select class="how-versions" onchange="location = this.value;"><option value=".././../1.0.0/api/type_Lwt_log">1.0.0</option><option value=".././../1.1.0/api/type_Lwt_log">1.1.0</option><option value=".././../2.0.0/api/type_Lwt_log">2.0.0</option><option value=".././../2.1.0/api/type_Lwt_log">2.1.0</option><option value=".././../2.1.1/api/type_Lwt_log">2.1.1</option><option value=".././../2.2.0/api/type_Lwt_log">2.2.0</option><option value=".././../2.2.1/api/type_Lwt_log">2.2.1</option><option value=".././../2.3.0/api/type_Lwt_log">2.3.0</option><option value=".././../2.3.1/api/type_Lwt_log">2.3.1</option><option value=".././../2.3.2/api/type_Lwt_log">2.3.2</option><option value=".././../2.4.0/api/type_Lwt_log">2.4.0</option><option value=".././../2.4.1/api/type_Lwt_log">2.4.1</option><option value=".././../2.4.2/api/type_Lwt_log" selected="selected">2.4.2</option><option value=".././../2.4.3/api/type_Lwt_log">2.4.3</option><option value=".././../2.4.7/api/type_Lwt_log">2.4.7</option><option value=".././../2.4.8/api/type_Lwt_log">2.4.8</option><option value=".././../2.5.0/api/type_Lwt_log">2.5.0</option><option value=".././../2.5.1/api/type_Lwt_log">2.5.1</option><option value=".././../2.5.2/api/type_Lwt_log">2.5.2</option><option value=".././../2.6.0/api/type_Lwt_log">2.6.0</option><option value=".././../2.7.0/api/type_Lwt_log">2.7.0</option><option value=".././../2.7.1/api/type_Lwt_log">2.7.1</option><option value=".././../3.0.0/api/type_Lwt_log">3.0.0</option><option value=".././../3.1.0/api/type_Lwt_log">3.1.0</option><option value=".././../3.2.1/api/type_Lwt_log">3.2.1</option><option value=".././../3.3.0/api/type_Lwt_log">3.3.0</option><option value=".././../4.0.0/api/type_Lwt_log">4.0.0</option><option value=".././../4.0.1/api/type_Lwt_log">4.0.1</option><option value=".././../4.1.0/api/type_Lwt_log">4.1.0</option><option value=".././../4.2.0/api/type_Lwt_log">4.2.0</option><option value=".././../4.2.1/api/type_Lwt_log">4.2.1</option><option value=".././../4.3.0/api/type_Lwt_log">4.3.0</option><option value=".././../4.3.1/api/type_Lwt_log">4.3.1</option><option value=".././../4.4.0/api/type_Lwt_log">4.4.0</option><option value=".././../4.5.0/api/type_Lwt_log">4.5.0</option><option value=".././../5.0.0/api/type_Lwt_log">5.0.0</option><option value=".././../5.0.1/api/type_Lwt_log">5.0.1</option><option value=".././../5.1.0/api/type_Lwt_log">5.1.0</option><option value=".././../5.1.1/api/type_Lwt_log">5.1.1</option><option value=".././../5.1.2/api/type_Lwt_log">5.1.2</option><option value=".././../5.2.0/api/type_Lwt_log">5.2.0</option><option value=".././../5.3.0/api/type_Lwt_log">5.3.0</option><option value=".././../dev/api/type_Lwt_log">dev</option></select><nav class="how-doctree"><h1>Lwt - API Reference</h1><h2>Core library</h2><h3><a href=".././api/Lwt" class="ocsimore_phrasing_link">Lwt</a></h3><h3><a href=".././api/Lwt_condition" class="ocsimore_phrasing_link">Lwt_condition</a></h3><h3><a href=".././api/Lwt_list" class="ocsimore_phrasing_link">Lwt_list</a></h3><h3><a href=".././api/Lwt_mutex" class="ocsimore_phrasing_link">Lwt_mutex</a></h3><h3><a href=".././api/Lwt_mvar" class="ocsimore_phrasing_link">Lwt_mvar</a></h3><h3><a href=".././api/Lwt_pool" class="ocsimore_phrasing_link">Lwt_pool</a></h3><h3><a href=".././api/Lwt_sequence" class="ocsimore_phrasing_link">Lwt_sequence</a></h3><h3><a href=".././api/Lwt_pqueue" class="ocsimore_phrasing_link">Lwt_pqueue</a></h3><h3><a href=".././api/Lwt_stream" class="ocsimore_phrasing_link">Lwt_stream</a></h3><h3><a href=".././api/Lwt_switch" class="ocsimore_phrasing_link">Lwt_switch</a></h3><h2>Unix bindings</h2><h3><a href=".././api/Lwt_daemon" class="ocsimore_phrasing_link">Lwt_daemon</a></h3><h3><a href=".././api/Lwt_gc" class="ocsimore_phrasing_link">Lwt_gc</a></h3><h3><a href=".././api/Lwt_io" class="ocsimore_phrasing_link">Lwt_io</a></h3><h3><a href=".././api/Lwt_log" class="ocsimore_phrasing_link">Lwt_log</a></h3><h3><a href=".././api/Lwt_main" class="ocsimore_phrasing_link">Lwt_main</a></h3><h3><a href=".././api/Lwt_engine" class="ocsimore_phrasing_link">Lwt_engine</a></h3><h3><a href=".././api/Lwt_process" class="ocsimore_phrasing_link">Lwt_process</a></h3><h3><a href=".././api/Lwt_throttle" class="ocsimore_phrasing_link">Lwt_throttle</a></h3><h3><a href=".././api/Lwt_timeout" class="ocsimore_phrasing_link">Lwt_timeout</a></h3><h3><a href=".././api/Lwt_unix" class="ocsimore_phrasing_link">Lwt_unix</a></h3><h3><a href=".././api/Lwt_bytes" class="ocsimore_phrasing_link">Lwt_bytes</a></h3><h3><a href=".././api/Lwt_sys" class="ocsimore_phrasing_link">Lwt_sys</a></h3><h2>Reactive programming helpers</h2><h3><a href=".././api/Lwt_react" class="ocsimore_phrasing_link">Lwt_react</a></h3><h2>Syntax extensions</h2><h3><a href=".././api/Pa_lwt" class="ocsimore_phrasing_link">Pa_lwt</a></h3><h3><a href=".././api/Pa_lwt_log" class="ocsimore_phrasing_link">Pa_lwt_log</a></h3><h2>Terminal manipulation</h2><h3><a href=".././api/Lwt_read_line" class="ocsimore_phrasing_link">Lwt_read_line</a></h3><h3><a href=".././api/Lwt_term" class="ocsimore_phrasing_link">Lwt_term</a></h3><h3><a href=".././api/Lwt_text" class="ocsimore_phrasing_link">Lwt_text</a></h3><h2>Miscellaneous</h2><h3><a href=".././api/Lwt_glib" class="ocsimore_phrasing_link">Lwt_glib</a></h3><h3><a href=".././api/Lwt_lib" class="ocsimore_phrasing_link">Lwt_lib</a></h3><h3><a href=".././api/Lwt_preemptive" class="ocsimore_phrasing_link">Lwt_preemptive</a></h3><h3><a href=".././api/Lwt_ssl" class="ocsimore_phrasing_link">Lwt_ssl</a></h3><h2>Index</h2><h3> <span><a href=".././api/index_types">Index of types</a></span></h3><h3> <span><a href=".././api/index_exceptions">Index of exceptions</a></span></h3><h3> <span><a href=".././api/index_values">Index of values</a></span></h3><h3> <span><a href=".././api/index_attributes">Index of class attributes</a></span></h3><h3> <span><a href=".././api/index_methods">Index of class methods</a></span></h3><h3> <span><a href=".././api/index_classes">Index of classes</a></span></h3><h3> <span><a href=".././api/index_class_types">Index of class types</a></span></h3><h3> <span><a href=".././api/index_modules">Index of modules</a></span></h3><h3> <span><a href=".././api/index_module_types">Index of module types</a></span></h3></nav></nav><article class="rightcol"><pre class=""><code class="language-ocaml translatable">sig
+  type level = Debug | Info | Notice | Warning | Error | Fatal
+  type logger
+  type section
+  val add_rule : string -&gt; Lwt_log.level -&gt; unit
+  val append_rule : string -&gt; Lwt_log.level -&gt; unit
+  val log :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt; level:Lwt_log.level -&gt; string -&gt; unit Lwt.t
+  val log_f :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt;
+    level:Lwt_log.level -&gt;
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -&gt; 'a
+  val ign_log :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt; level:Lwt_log.level -&gt; string -&gt; unit
+  val ign_log_f :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt;
+    level:Lwt_log.level -&gt; ('a, unit, string, unit) Pervasives.format4 -&gt; 'a
+  val debug :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt; string -&gt; unit Lwt.t
+  val debug_f :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt;
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -&gt; 'a
+  val ign_debug :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt; ?logger:Lwt_log.logger -&gt; string -&gt; unit
+  val ign_debug_f :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt;
+    ('a, unit, string, unit) Pervasives.format4 -&gt; 'a
+  val info :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt; string -&gt; unit Lwt.t
+  val info_f :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt;
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -&gt; 'a
+  val ign_info :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt; ?logger:Lwt_log.logger -&gt; string -&gt; unit
+  val ign_info_f :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt;
+    ('a, unit, string, unit) Pervasives.format4 -&gt; 'a
+  val notice :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt; string -&gt; unit Lwt.t
+  val notice_f :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt;
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -&gt; 'a
+  val ign_notice :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt; ?logger:Lwt_log.logger -&gt; string -&gt; unit
+  val ign_notice_f :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt;
+    ('a, unit, string, unit) Pervasives.format4 -&gt; 'a
+  val warning :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt; string -&gt; unit Lwt.t
+  val warning_f :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt;
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -&gt; 'a
+  val ign_warning :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt; ?logger:Lwt_log.logger -&gt; string -&gt; unit
+  val ign_warning_f :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt;
+    ('a, unit, string, unit) Pervasives.format4 -&gt; 'a
+  val error :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt; string -&gt; unit Lwt.t
+  val error_f :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt;
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -&gt; 'a
+  val ign_error :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt; ?logger:Lwt_log.logger -&gt; string -&gt; unit
+  val ign_error_f :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt;
+    ('a, unit, string, unit) Pervasives.format4 -&gt; 'a
+  val fatal :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt; string -&gt; unit Lwt.t
+  val fatal_f :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt;
+    ('a, unit, string, unit Lwt.t) Pervasives.format4 -&gt; 'a
+  val ign_fatal :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt; ?logger:Lwt_log.logger -&gt; string -&gt; unit
+  val ign_fatal_f :
+    ?exn:exn -&gt;
+    ?section:Lwt_log.section -&gt;
+    ?location:string * int * int -&gt;
+    ?logger:Lwt_log.logger -&gt;
+    ('a, unit, string, unit) Pervasives.format4 -&gt; 'a
+  module Section :
+    sig
+      type t = Lwt_log.section
+      val make : string -&gt; Lwt_log.section
+      val name : Lwt_log.section -&gt; string
+      val main : Lwt_log.section
+      val level : Lwt_log.section -&gt; Lwt_log.level
+      val set_level : Lwt_log.section -&gt; Lwt_log.level -&gt; unit
+      val reset_level : Lwt_log.section -&gt; unit
+    end
+  type template = string
+  val render :
+    buffer:Buffer.t -&gt;
+    template:Lwt_log.template -&gt;
+    section:Lwt_log.section -&gt; level:Lwt_log.level -&gt; message:string -&gt; unit
+  val location_key : (string * int * int) Lwt.key
+  exception Logger_closed
+  val make :
+    output:(Lwt_log.section -&gt; Lwt_log.level -&gt; string list -&gt; unit Lwt.t) -&gt;
+    close:(unit -&gt; unit Lwt.t) -&gt; Lwt_log.logger
+  val close : Lwt_log.logger -&gt; unit Lwt.t
+  val default : Lwt_log.logger Pervasives.ref
+  val broadcast : Lwt_log.logger list -&gt; Lwt_log.logger
+  val dispatch :
+    (Lwt_log.section -&gt; Lwt_log.level -&gt; Lwt_log.logger) -&gt; Lwt_log.logger
+  val null : Lwt_log.logger
+  type syslog_facility =
+      [ `Auth
+      | `Authpriv
+      | `Console
+      | `Cron
+      | `Daemon
+      | `FTP
+      | `Kernel
+      | `LPR
+      | `Local0
+      | `Local1
+      | `Local2
+      | `Local3
+      | `Local4
+      | `Local5
+      | `Local6
+      | `Local7
+      | `Mail
+      | `NTP
+      | `News
+      | `Security
+      | `Syslog
+      | `UUCP
+      | `User ]
+  val syslog :
+    ?template:Lwt_log.template -&gt;
+    ?paths:string list -&gt;
+    facility:Lwt_log.syslog_facility -&gt; unit -&gt; Lwt_log.logger
+  val file :
+    ?template:Lwt_log.template -&gt;
+    ?mode:[ `Append | `Truncate ] -&gt;
+    ?perm:Unix.file_perm -&gt; file_name:string -&gt; unit -&gt; Lwt_log.logger Lwt.t
+  val channel :
+    ?template:Lwt_log.template -&gt;
+    close_mode:[ `Close | `Keep ] -&gt;
+    channel:Lwt_io.output_channel -&gt; unit -&gt; Lwt_log.logger
+end</code></pre></article></div></div></body></html>

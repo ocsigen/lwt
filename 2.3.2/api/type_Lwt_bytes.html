@@ -1,5 +1,121 @@
-<!DOCTYPE html>
-<html>
-    <head><meta http-equiv="refresh" content="0; URL=../../2.4.3/api/type_Lwt_bytes.html" /></head>
-    <body></body>
-</html>
+<html><head><title></title><meta charset="utf8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><link rel="stylesheet" href="https://ocsigen.org/css/style.css"/><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/themes/prism.min.css"/><script type="text/javascript" src="https://ocsigen.org/js/client.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-core.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-ocaml.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-clike.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-reason.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-javascript.min.js">
+//<![CDATA[
+
+//]]>
+</script></head><body class="type_Lwt_bytes lwt"><div class="project-page"><div class="page-header"><p class="logo-ocsigen"><a href=".././../../" class="ocsimore_phrasing_link"><img src=".././../../img/ocsigen-white.svg" alt="Ocsigen"/></a>
+</p><p class="logo-subproject">Lwt</p><div class="mainmenu"><p class="mainmenu-home"><a href=".././../../" class="ocsimore_phrasing_link">Home</a></p><p class="mainmenu-doc"><a href=".././../../tuto/" class="ocsimore_phrasing_link">Doc</a></p><p><a href=".././../../eliom/" class="ocsimore_phrasing_link">Eliom</a></p><p><a href=".././../../js_of_ocaml/" class="ocsimore_phrasing_link">Js_of_ocaml</a></p><p class="mainmenu-current"><a href=".././../../lwt/" class="ocsimore_phrasing_link">Lwt</a></p><p><a href=".././../../tyxml/" class="ocsimore_phrasing_link">Tyxml</a></p><p><a href=".././../../ocsigen-start/" class="ocsimore_phrasing_link">Start</a></p></div><form id="googlesearch" action="https://google.com/search"><input name="q" id="gsearch-box" placeholder="Search using Google"/><label for="gsearch-box"><img src="/img/search.svg" alt="" id="gsearch-icon"/></label><input type="submit" id="gsearch-submit" onclick="document.getElementById('gsearch-box').value += ' site:ocsigen.org';"/></form><aside class="how-drawer"><input id="how-drawer-toggle" type="checkbox"/><label for="how-drawer-toggle" id="how-drawer-label"><span class="how-drawer-icon"></span></label><nav class="how-drawer-content"><ul class="drawermainmenu"><li class="drawermainmenu-home"><a href=".././../../" class="ocsimore_phrasing_link">Home</a>
+</li><li class="drawermainmenu-doc"><a href=".././../../tuto/" class="ocsimore_phrasing_link">Doc</a>
+</li><li class="drawermainmenu-project"><a href=".././../../eliom/" class="ocsimore_phrasing_link">Eliom</a>
+</li><li class="drawermainmenu-project"><a href=".././../../js_of_ocaml/" class="ocsimore_phrasing_link">Js_of_ocaml</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsigenserver/" class="ocsimore_phrasing_link">Server</a>
+</li><li class="drawermainmenu-project"><a href=".././../../lwt/" class="ocsimore_phrasing_link">Lwt</a>
+</li><li class="drawermainmenu-project"><a href=".././../../tyxml/" class="ocsimore_phrasing_link">Tyxml</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsigen-toolkit/" class="ocsimore_phrasing_link">Toolkit</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsigen-start/" class="ocsimore_phrasing_link">Start</a>
+</li><li class="drawermainmenu-project"><a href=".././../../html_of_wiki/" class="ocsimore_phrasing_link">html_of_wiki</a>
+</li><li class="drawermainmenu-project"><a href=".././../../deriving/" class="ocsimore_phrasing_link">deriving</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsimore/" class="ocsimore_phrasing_link">Ocsimore (<em>deprecated</em>)</a>
+</li><li class="drawermainmenu-page"><a href=".././../../projects" class="ocsimore_phrasing_link">Other projects</a>
+</li><li class="drawermainmenu-page"><a href=".././../../papers" class="ocsimore_phrasing_link">Research papers</a>
+</li><li class="drawermainmenu-page"><a href=".././../../credits" class="ocsimore_phrasing_link">Who does Ocsigen?</a>
+</li><li class="drawermainmenu-page"><a href=".././../../contributing" class="ocsimore_phrasing_link">Contributing</a>
+</li><li class="drawermainmenu-page"><a href=".././../../blog" class="ocsimore_phrasing_link">Blog</a>
+</li><li class="drawermainmenu-page"><a href=".././../../install" class="ocsimore_phrasing_link">Installation</a>
+</li><li class="drawermainmenu-page"><a href="https://github.com/ocsigen" class="ocsimore_phrasing_link">Source code</a>
+</li></ul><nav class="how-doctree"><h1>Lwt - API Reference</h1><h2>Core library</h2><h3><a href=".././api/Lwt" class="ocsimore_phrasing_link">Lwt</a></h3><h3><a href=".././api/Lwt_condition" class="ocsimore_phrasing_link">Lwt_condition</a></h3><h3><a href=".././api/Lwt_list" class="ocsimore_phrasing_link">Lwt_list</a></h3><h3><a href=".././api/Lwt_mutex" class="ocsimore_phrasing_link">Lwt_mutex</a></h3><h3><a href=".././api/Lwt_mvar" class="ocsimore_phrasing_link">Lwt_mvar</a></h3><h3><a href=".././api/Lwt_pool" class="ocsimore_phrasing_link">Lwt_pool</a></h3><h3><a href=".././api/Lwt_sequence" class="ocsimore_phrasing_link">Lwt_sequence</a></h3><h3><a href=".././api/Lwt_pqueue" class="ocsimore_phrasing_link">Lwt_pqueue</a></h3><h3><a href=".././api/Lwt_stream" class="ocsimore_phrasing_link">Lwt_stream</a></h3><h3><a href=".././api/Lwt_switch" class="ocsimore_phrasing_link">Lwt_switch</a></h3><h2>Unix bindings</h2><h3><a href=".././api/Lwt_daemon" class="ocsimore_phrasing_link">Lwt_daemon</a></h3><h3><a href=".././api/Lwt_gc" class="ocsimore_phrasing_link">Lwt_gc</a></h3><h3><a href=".././api/Lwt_io" class="ocsimore_phrasing_link">Lwt_io</a></h3><h3><a href=".././api/Lwt_log" class="ocsimore_phrasing_link">Lwt_log</a></h3><h3><a href=".././api/Lwt_main" class="ocsimore_phrasing_link">Lwt_main</a></h3><h3><a href=".././api/Lwt_engine" class="ocsimore_phrasing_link">Lwt_engine</a></h3><h3><a href=".././api/Lwt_process" class="ocsimore_phrasing_link">Lwt_process</a></h3><h3><a href=".././api/Lwt_throttle" class="ocsimore_phrasing_link">Lwt_throttle</a></h3><h3><a href=".././api/Lwt_timeout" class="ocsimore_phrasing_link">Lwt_timeout</a></h3><h3><a href=".././api/Lwt_unix" class="ocsimore_phrasing_link">Lwt_unix</a></h3><h3><a href=".././api/Lwt_bytes" class="ocsimore_phrasing_link">Lwt_bytes</a></h3><h3><a href=".././api/Lwt_sys" class="ocsimore_phrasing_link">Lwt_sys</a></h3><h2>Reactive programming helpers</h2><h3><a href=".././api/Lwt_react" class="ocsimore_phrasing_link">Lwt_react</a></h3><h2>Syntax extensions</h2><h3><a href=".././api/Pa_lwt" class="ocsimore_phrasing_link">Pa_lwt</a></h3><h3><a href=".././api/Pa_lwt_log" class="ocsimore_phrasing_link">Pa_lwt_log</a></h3><h2>Terminal manipulation</h2><h3><a href=".././api/Lwt_read_line" class="ocsimore_phrasing_link">Lwt_read_line</a></h3><h3><a href=".././api/Lwt_term" class="ocsimore_phrasing_link">Lwt_term</a></h3><h3><a href=".././api/Lwt_text" class="ocsimore_phrasing_link">Lwt_text</a></h3><h2>Miscellaneous</h2><h3><a href=".././api/Lwt_glib" class="ocsimore_phrasing_link">Lwt_glib</a></h3><h3><a href=".././api/Lwt_lib" class="ocsimore_phrasing_link">Lwt_lib</a></h3><h3><a href=".././api/Lwt_preemptive" class="ocsimore_phrasing_link">Lwt_preemptive</a></h3><h3><a href=".././api/Lwt_ssl" class="ocsimore_phrasing_link">Lwt_ssl</a></h3><h2>Index</h2><h3> <span><a href=".././api/index_types">Index of types</a></span></h3><h3> <span><a href=".././api/index_exceptions">Index of exceptions</a></span></h3><h3> <span><a href=".././api/index_values">Index of values</a></span></h3><h3> <span><a href=".././api/index_attributes">Index of class attributes</a></span></h3><h3> <span><a href=".././api/index_methods">Index of class methods</a></span></h3><h3> <span><a href=".././api/index_classes">Index of classes</a></span></h3><h3> <span><a href=".././api/index_class_types">Index of class types</a></span></h3><h3> <span><a href=".././api/index_modules">Index of modules</a></span></h3><h3> <span><a href=".././api/index_module_types">Index of module types</a></span></h3></nav></nav></aside></div><p class="reasonwarning">Warning: Reason support is experimental.
+We are looking for beta-tester and contributors.
+</p><button id="reason">Switch to </button><div class="twocols"><nav class="leftcol">Version <select class="how-versions" onchange="location = this.value;"><option value=".././../1.0.0/api/type_Lwt_bytes">1.0.0</option><option value=".././../1.1.0/api/type_Lwt_bytes">1.1.0</option><option value=".././../2.0.0/api/type_Lwt_bytes">2.0.0</option><option value=".././../2.1.0/api/type_Lwt_bytes">2.1.0</option><option value=".././../2.1.1/api/type_Lwt_bytes">2.1.1</option><option value=".././../2.2.0/api/type_Lwt_bytes">2.2.0</option><option value=".././../2.2.1/api/type_Lwt_bytes">2.2.1</option><option value=".././../2.3.0/api/type_Lwt_bytes">2.3.0</option><option value=".././../2.3.1/api/type_Lwt_bytes">2.3.1</option><option value=".././../2.3.2/api/type_Lwt_bytes" selected="selected">2.3.2</option><option value=".././../2.4.0/api/type_Lwt_bytes">2.4.0</option><option value=".././../2.4.1/api/type_Lwt_bytes">2.4.1</option><option value=".././../2.4.2/api/type_Lwt_bytes">2.4.2</option><option value=".././../2.4.3/api/type_Lwt_bytes">2.4.3</option><option value=".././../2.4.7/api/type_Lwt_bytes">2.4.7</option><option value=".././../2.4.8/api/type_Lwt_bytes">2.4.8</option><option value=".././../2.5.0/api/type_Lwt_bytes">2.5.0</option><option value=".././../2.5.1/api/type_Lwt_bytes">2.5.1</option><option value=".././../2.5.2/api/type_Lwt_bytes">2.5.2</option><option value=".././../2.6.0/api/type_Lwt_bytes">2.6.0</option><option value=".././../2.7.0/api/type_Lwt_bytes">2.7.0</option><option value=".././../2.7.1/api/type_Lwt_bytes">2.7.1</option><option value=".././../3.0.0/api/type_Lwt_bytes">3.0.0</option><option value=".././../3.1.0/api/type_Lwt_bytes">3.1.0</option><option value=".././../3.2.1/api/type_Lwt_bytes">3.2.1</option><option value=".././../3.3.0/api/type_Lwt_bytes">3.3.0</option><option value=".././../4.0.0/api/type_Lwt_bytes">4.0.0</option><option value=".././../4.0.1/api/type_Lwt_bytes">4.0.1</option><option value=".././../4.1.0/api/type_Lwt_bytes">4.1.0</option><option value=".././../4.2.0/api/type_Lwt_bytes">4.2.0</option><option value=".././../4.2.1/api/type_Lwt_bytes">4.2.1</option><option value=".././../4.3.0/api/type_Lwt_bytes">4.3.0</option><option value=".././../4.3.1/api/type_Lwt_bytes">4.3.1</option><option value=".././../4.4.0/api/type_Lwt_bytes">4.4.0</option><option value=".././../4.5.0/api/type_Lwt_bytes">4.5.0</option><option value=".././../5.0.0/api/type_Lwt_bytes">5.0.0</option><option value=".././../5.0.1/api/type_Lwt_bytes">5.0.1</option><option value=".././../5.1.0/api/type_Lwt_bytes">5.1.0</option><option value=".././../5.1.1/api/type_Lwt_bytes">5.1.1</option><option value=".././../5.1.2/api/type_Lwt_bytes">5.1.2</option><option value=".././../5.2.0/api/type_Lwt_bytes">5.2.0</option><option value=".././../5.3.0/api/type_Lwt_bytes">5.3.0</option><option value=".././../dev/api/type_Lwt_bytes">dev</option></select><nav class="how-doctree"><h1>Lwt - API Reference</h1><h2>Core library</h2><h3><a href=".././api/Lwt" class="ocsimore_phrasing_link">Lwt</a></h3><h3><a href=".././api/Lwt_condition" class="ocsimore_phrasing_link">Lwt_condition</a></h3><h3><a href=".././api/Lwt_list" class="ocsimore_phrasing_link">Lwt_list</a></h3><h3><a href=".././api/Lwt_mutex" class="ocsimore_phrasing_link">Lwt_mutex</a></h3><h3><a href=".././api/Lwt_mvar" class="ocsimore_phrasing_link">Lwt_mvar</a></h3><h3><a href=".././api/Lwt_pool" class="ocsimore_phrasing_link">Lwt_pool</a></h3><h3><a href=".././api/Lwt_sequence" class="ocsimore_phrasing_link">Lwt_sequence</a></h3><h3><a href=".././api/Lwt_pqueue" class="ocsimore_phrasing_link">Lwt_pqueue</a></h3><h3><a href=".././api/Lwt_stream" class="ocsimore_phrasing_link">Lwt_stream</a></h3><h3><a href=".././api/Lwt_switch" class="ocsimore_phrasing_link">Lwt_switch</a></h3><h2>Unix bindings</h2><h3><a href=".././api/Lwt_daemon" class="ocsimore_phrasing_link">Lwt_daemon</a></h3><h3><a href=".././api/Lwt_gc" class="ocsimore_phrasing_link">Lwt_gc</a></h3><h3><a href=".././api/Lwt_io" class="ocsimore_phrasing_link">Lwt_io</a></h3><h3><a href=".././api/Lwt_log" class="ocsimore_phrasing_link">Lwt_log</a></h3><h3><a href=".././api/Lwt_main" class="ocsimore_phrasing_link">Lwt_main</a></h3><h3><a href=".././api/Lwt_engine" class="ocsimore_phrasing_link">Lwt_engine</a></h3><h3><a href=".././api/Lwt_process" class="ocsimore_phrasing_link">Lwt_process</a></h3><h3><a href=".././api/Lwt_throttle" class="ocsimore_phrasing_link">Lwt_throttle</a></h3><h3><a href=".././api/Lwt_timeout" class="ocsimore_phrasing_link">Lwt_timeout</a></h3><h3><a href=".././api/Lwt_unix" class="ocsimore_phrasing_link">Lwt_unix</a></h3><h3><a href=".././api/Lwt_bytes" class="ocsimore_phrasing_link">Lwt_bytes</a></h3><h3><a href=".././api/Lwt_sys" class="ocsimore_phrasing_link">Lwt_sys</a></h3><h2>Reactive programming helpers</h2><h3><a href=".././api/Lwt_react" class="ocsimore_phrasing_link">Lwt_react</a></h3><h2>Syntax extensions</h2><h3><a href=".././api/Pa_lwt" class="ocsimore_phrasing_link">Pa_lwt</a></h3><h3><a href=".././api/Pa_lwt_log" class="ocsimore_phrasing_link">Pa_lwt_log</a></h3><h2>Terminal manipulation</h2><h3><a href=".././api/Lwt_read_line" class="ocsimore_phrasing_link">Lwt_read_line</a></h3><h3><a href=".././api/Lwt_term" class="ocsimore_phrasing_link">Lwt_term</a></h3><h3><a href=".././api/Lwt_text" class="ocsimore_phrasing_link">Lwt_text</a></h3><h2>Miscellaneous</h2><h3><a href=".././api/Lwt_glib" class="ocsimore_phrasing_link">Lwt_glib</a></h3><h3><a href=".././api/Lwt_lib" class="ocsimore_phrasing_link">Lwt_lib</a></h3><h3><a href=".././api/Lwt_preemptive" class="ocsimore_phrasing_link">Lwt_preemptive</a></h3><h3><a href=".././api/Lwt_ssl" class="ocsimore_phrasing_link">Lwt_ssl</a></h3><h2>Index</h2><h3> <span><a href=".././api/index_types">Index of types</a></span></h3><h3> <span><a href=".././api/index_exceptions">Index of exceptions</a></span></h3><h3> <span><a href=".././api/index_values">Index of values</a></span></h3><h3> <span><a href=".././api/index_attributes">Index of class attributes</a></span></h3><h3> <span><a href=".././api/index_methods">Index of class methods</a></span></h3><h3> <span><a href=".././api/index_classes">Index of classes</a></span></h3><h3> <span><a href=".././api/index_class_types">Index of class types</a></span></h3><h3> <span><a href=".././api/index_modules">Index of modules</a></span></h3><h3> <span><a href=".././api/index_module_types">Index of module types</a></span></h3></nav></nav><article class="rightcol"><pre class=""><code class="language-ocaml translatable">sig
+  type t =
+      (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+  val create : int -&gt; Lwt_bytes.t
+  val length : Lwt_bytes.t -&gt; int
+  external get : Lwt_bytes.t -&gt; int -&gt; char = &quot;%caml_ba_ref_1&quot;
+  external set : Lwt_bytes.t -&gt; int -&gt; char -&gt; unit = &quot;%caml_ba_set_1&quot;
+  external unsafe_get : Lwt_bytes.t -&gt; int -&gt; char = &quot;%caml_ba_unsafe_ref_1&quot;
+  external unsafe_set : Lwt_bytes.t -&gt; int -&gt; char -&gt; unit
+    = &quot;%caml_ba_unsafe_set_1&quot;
+  val of_string : string -&gt; Lwt_bytes.t
+  val to_string : Lwt_bytes.t -&gt; string
+  val blit : Lwt_bytes.t -&gt; int -&gt; Lwt_bytes.t -&gt; int -&gt; int -&gt; unit
+  val blit_string_bytes : string -&gt; int -&gt; Lwt_bytes.t -&gt; int -&gt; int -&gt; unit
+  val blit_bytes_string : Lwt_bytes.t -&gt; int -&gt; string -&gt; int -&gt; int -&gt; unit
+  external unsafe_blit :
+    Lwt_bytes.t -&gt; int -&gt; Lwt_bytes.t -&gt; int -&gt; int -&gt; unit
+    = &quot;lwt_unix_blit_bytes_bytes&quot; &quot;noalloc&quot;
+  external unsafe_blit_string_bytes :
+    string -&gt; int -&gt; Lwt_bytes.t -&gt; int -&gt; int -&gt; unit
+    = &quot;lwt_unix_blit_string_bytes&quot; &quot;noalloc&quot;
+  external unsafe_blit_bytes_string :
+    Lwt_bytes.t -&gt; int -&gt; string -&gt; int -&gt; int -&gt; unit
+    = &quot;lwt_unix_blit_bytes_string&quot; &quot;noalloc&quot;
+  val proxy : Lwt_bytes.t -&gt; int -&gt; int -&gt; Lwt_bytes.t
+  val extract : Lwt_bytes.t -&gt; int -&gt; int -&gt; Lwt_bytes.t
+  val copy : Lwt_bytes.t -&gt; Lwt_bytes.t
+  val fill : Lwt_bytes.t -&gt; int -&gt; int -&gt; char -&gt; unit
+  external unsafe_fill : Lwt_bytes.t -&gt; int -&gt; int -&gt; char -&gt; unit
+    = &quot;lwt_unix_fill_bytes&quot; &quot;noalloc&quot;
+  val read : Lwt_unix.file_descr -&gt; Lwt_bytes.t -&gt; int -&gt; int -&gt; int Lwt.t
+  val write : Lwt_unix.file_descr -&gt; Lwt_bytes.t -&gt; int -&gt; int -&gt; int Lwt.t
+  val recv :
+    Lwt_unix.file_descr -&gt;
+    Lwt_bytes.t -&gt; int -&gt; int -&gt; Unix.msg_flag list -&gt; int Lwt.t
+  val send :
+    Lwt_unix.file_descr -&gt;
+    Lwt_bytes.t -&gt; int -&gt; int -&gt; Unix.msg_flag list -&gt; int Lwt.t
+  val recvfrom :
+    Lwt_unix.file_descr -&gt;
+    Lwt_bytes.t -&gt;
+    int -&gt; int -&gt; Unix.msg_flag list -&gt; (int * Unix.sockaddr) Lwt.t
+  val sendto :
+    Lwt_unix.file_descr -&gt;
+    Lwt_bytes.t -&gt;
+    int -&gt; int -&gt; Unix.msg_flag list -&gt; Unix.sockaddr -&gt; int Lwt.t
+  type io_vector = {
+    iov_buffer : Lwt_bytes.t;
+    iov_offset : int;
+    iov_length : int;
+  }
+  val io_vector :
+    buffer:Lwt_bytes.t -&gt; offset:int -&gt; length:int -&gt; Lwt_bytes.io_vector
+  val recv_msg :
+    socket:Lwt_unix.file_descr -&gt;
+    io_vectors:Lwt_bytes.io_vector list -&gt; (int * Unix.file_descr list) Lwt.t
+  val send_msg :
+    socket:Lwt_unix.file_descr -&gt;
+    io_vectors:Lwt_bytes.io_vector list -&gt;
+    fds:Unix.file_descr list -&gt; int Lwt.t
+  val map_file :
+    fd:Unix.file_descr -&gt;
+    ?pos:int64 -&gt; shared:bool -&gt; ?size:int -&gt; unit -&gt; Lwt_bytes.t
+  external mapped : Lwt_bytes.t -&gt; bool = &quot;lwt_unix_mapped&quot; &quot;noalloc&quot;
+  type advice =
+      MADV_NORMAL
+    | MADV_RANDOM
+    | MADV_SEQUENTIAL
+    | MADV_WILLNEED
+    | MADV_DONTNEED
+  val madvise : Lwt_bytes.t -&gt; int -&gt; int -&gt; Lwt_bytes.advice -&gt; unit
+  val page_size : int
+  val mincore : Lwt_bytes.t -&gt; int -&gt; bool array -&gt; unit
+  val wait_mincore : Lwt_bytes.t -&gt; int -&gt; unit Lwt.t
+end</code></pre></article></div></div></body></html>
