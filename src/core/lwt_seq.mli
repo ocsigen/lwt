@@ -28,30 +28,34 @@ val cons : 'a -> 'a t -> 'a t
 val append : 'a t -> 'a t -> 'a t
 (** [append xs ys] is the sequence [xs] followed by the sequence [ys] *)
 
-val map : ('a -> 'b Lwt.t) -> 'a t -> 'b t
+val map : ('a -> 'b) -> 'a t -> 'b t
+val map_s : ('a -> 'b Lwt.t) -> 'a t -> 'b t
 (** [map f seq] returns a new sequence whose elements are the elements of
   [seq], transformed by [f].
   This transformation is lazy, it only applies when the result is traversed. *)
 
-val filter : ('a -> bool Lwt.t) -> 'a t -> 'a t
+val filter : ('a -> bool) -> 'a t -> 'a t
+val filter_s : ('a -> bool Lwt.t) -> 'a t -> 'a t
 (** Remove from the sequence the elements that do not satisfy the
   given predicate.
   This transformation is lazy, it only applies when the result is
   traversed. *)
 
-val filter_map : ('a -> 'b option Lwt.t) -> 'a t -> 'b t
+val filter_map : ('a -> 'b option) -> 'a t -> 'b t
+val filter_map_s : ('a -> 'b option Lwt.t) -> 'a t -> 'b t
 (** Apply the function to every element; if [f x = None] then [x] is dropped;
   if [f x = Some y] then [y] is returned.
   This transformation is lazy, it only applies when the result is
   traversed. *)
 
-val flat_map : ('a -> 'b t Lwt.t) -> 'a t -> 'b t
+val flat_map : ('a -> 'b t) -> 'a t -> 'b t
 (** Map each element to a subsequence, then return each element of this
   sub-sequence in turn.
   This transformation is lazy, it only applies when the result is
   traversed. *)
 
-val fold_left : ('a -> 'b -> 'a Lwt.t) -> 'a -> 'b t -> 'a Lwt.t
+val fold_left : ('a -> 'b -> 'a) -> 'a -> 'b t -> 'a Lwt.t
+val fold_left_s : ('a -> 'b -> 'a Lwt.t) -> 'a -> 'b t -> 'a Lwt.t
 (** Traverse the sequence from left to right, combining each element with the
   accumulator using the given function.
   The traversal happens immediately and will not terminate (i.e., the promise
@@ -77,6 +81,24 @@ val iter_p : ('a -> unit Lwt.t) -> 'a t -> unit Lwt.t
 
   The traversal happens immediately and will not terminate (i.e., the promise
   will not resolve) on infinite sequences. *)
+
+val iter_n : ?max_concurrency:int -> ('a -> unit Lwt.t) -> 'a t -> unit Lwt.t
+(** [iter_n ~max_concurrency f s]
+
+  Iterates on the sequence [s], calling the (imperative) function [f] on every
+  element.
+
+  The sum total of unresolved promises returned by [f] never exceeds
+  [max_concurrency]. Node suspensions are evaluated only when there is capacity
+  for [f]-promises to be evaluated. Consequently, there might be significantly
+  fewer than [max_concurrency] promises being evaluated concurrently; especially
+  if the node suspensions take longer to evaluate than the [f]-promises.
+
+  The traversal happens immediately and will not terminate (i.e., the promise
+  will not resolve) on infinite sequences.
+
+  @param max_concurrency defaults to [1].
+  @raise Invalid_argument if [max_concurrency < 1]. *)
 
 val unfold : ('b -> ('a * 'b) option Lwt.t) -> 'b -> 'a t
 (** Build a sequence from a step function and an initial value.

@@ -24,33 +24,56 @@ let rec append seq1 seq2 () =
   | Cons (x, next) -> Lwt.return (Cons (x, append next seq2))
 
 let rec map f seq () =
+  seq () >|= function
+  | Nil -> Nil
+  | Cons (x, next) ->
+      let x = f x in
+      Cons (x, map f next)
+
+let rec map_s f seq () =
   seq () >>= function
   | Nil -> return_nil
   | Cons (x, next) ->
       let+ x = f x in
-      Cons (x, map f next)
+      Cons (x, map_s f next)
 
 let rec filter_map f seq () =
   seq () >>= function
   | Nil -> return_nil
   | Cons (x, next) -> (
-      let* x = f x in
+      let x = f x in
       match x with
       | None -> filter_map f next ()
       | Some y -> Lwt.return (Cons (y, filter_map f next) ))
+
+let rec filter_map_s f seq () =
+  seq () >>= function
+  | Nil -> return_nil
+  | Cons (x, next) -> (
+      let* x = f x in
+      match x with
+      | None -> filter_map_s f next ()
+      | Some y -> Lwt.return (Cons (y, filter_map_s f next) ))
 
 let rec filter f seq () =
   seq () >>= function
   | Nil -> return_nil
   | Cons (x, next) ->
-      let* ok = f x in
+      let ok = f x in
       if ok then Lwt.return (Cons (x, filter f next)) else filter f next ()
+
+let rec filter_s f seq () =
+  seq () >>= function
+  | Nil -> return_nil
+  | Cons (x, next) ->
+      let* ok = f x in
+      if ok then Lwt.return (Cons (x, filter_s f next)) else filter_s f next ()
 
 let rec flat_map f seq () =
   seq () >>= function
   | Nil -> return_nil
   | Cons (x, next) ->
-      let* x = f x in
+      let x = f x in
       flat_map_app f x next ()
 
 (* this is [append seq (flat_map f tail)] *)
@@ -60,6 +83,16 @@ and flat_map_app f seq tail () =
   | Cons (x, next) -> Lwt.return (Cons (x, flat_map_app f next tail))
 
 let fold_left f acc seq =
+  let rec aux f acc seq =
+    seq () >>= function
+    | Nil -> Lwt.return acc
+    | Cons (x, next) ->
+        let acc = f acc x in
+        aux f acc next
+  in
+  aux f acc seq
+
+let fold_left_s f acc seq =
   let rec aux f acc seq =
     seq () >>= function
     | Nil -> Lwt.return acc
@@ -98,6 +131,34 @@ let iter_p f seq =
         aux (p::acc) next
   in
   aux [] seq
+
+let iter_n ?(max_concurrency = 1) f seq =
+  begin
+    if max_concurrency <= 0 then
+      let message =
+        Printf.sprintf
+          "Lwt_seq.iter_n: max_concurrency must be > 0, %d given"
+          max_concurrency
+      in
+      invalid_arg message
+  end;
+  let rec loop running available seq =
+    begin
+      if available > 0 then (
+        Lwt.return (running, available)
+      )
+      else (
+        Lwt.nchoose_split running >>= fun (complete, running) ->
+        Lwt.return (running, available + List.length complete)
+      )
+    end >>= fun (running, available) ->
+    seq () >>= function
+    | Nil ->
+      Lwt.join running
+    | Cons (elt, seq) ->
+      loop (f elt :: running) (pred available) seq
+  in
+  loop [] max_concurrency seq
 
 let rec unfold f u () =
   let* x = f u in
