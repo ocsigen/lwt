@@ -75,7 +75,7 @@ jobs:
               *.opam
               !lwt_ppx.opam
           - os: windows-latest
-            ocaml-compiler: 4.02.x
+            ocaml-compiler: 4.06.x
             libev: false
             ppx: false
             local-packages: |

@@ -39,6 +39,7 @@
 
   * Code quality improvement: remove an uneeded Obj.magic (#844, Benoit Montagu).
 
+  * On Windows, use the Unicode API in C stubs and functions introduced in OCaml 4.06 to handle Unicode strings. Raise the minimum requirement to OCaml 4.06 (on Windows only). (#843, Antonin Décimo)
 
 ===== 5.4.2 =====
 
