@@ -8,33 +8,123 @@ open Lwt.Syntax
 open Test
 
 let l =  [1; 2; 3; 4; 5]
+let a = Lwt_seq.of_list l
+let b =
+   Lwt_seq.unfold
+     (function
+      | [] -> let+ () = Lwt.pause () in None
+      | x::xs -> let+ () = Lwt.pause () in Some (x, xs))
+     l
+let rec pause n =
+   if n <= 0 then
+      Lwt.return_unit
+   else
+      let* () = Lwt.pause () in
+      pause (n - 1)
 
 let suite_base = suite "lwt_seq" [
-  test "list" begin fun () ->
-    let a = Lwt_seq.of_list l in
+  test "fold_left" begin fun () ->
     let n = ref 1 in
     Lwt_seq.fold_left (fun acc x ->
+      let r = x = !n && acc in
+      incr n; r) true a
+  end;
+  test "fold_left_s" begin fun () ->
+    let n = ref 1 in
+    Lwt_seq.fold_left_s (fun acc x ->
       let r = x = !n && acc in
       incr n; Lwt.return r) true a
   end;
 
   test "map" begin fun () ->
-    let a = Lwt_seq.of_list l in
-    let v = Lwt_seq.map (fun x -> Lwt.return (x * 2)) a in
+    let v = Lwt_seq.map (fun x -> (x * 2)) a in
+    let+ l' = Lwt_seq.to_list v in
+    l' = [2; 4; 6; 8; 10]
+  end;
+  test "map_s" begin fun () ->
+    let v = Lwt_seq.map_s (fun x -> Lwt.return (x * 2)) a in
     let+ l' = Lwt_seq.to_list v in
     l' = [2; 4; 6; 8; 10]
   end;
 
   test "filter" begin fun () ->
-    let a = Lwt_seq.of_list l in
-    let v = Lwt_seq.filter (fun x -> Lwt.return (x mod 2 = 0)) a in
+    let v = Lwt_seq.filter (fun x -> (x mod 2 = 0)) a in
+    let+ l' = Lwt_seq.to_list v in
+    l' = [2; 4]
+  end;
+  test "filter_s" begin fun () ->
+    let v = Lwt_seq.filter_s (fun x -> Lwt.return (x mod 2 = 0)) a in
     let+ l' = Lwt_seq.to_list v in
     l' = [2; 4]
   end;
 
+  test "iter_n(1)" begin fun () ->
+    let max_concurrency = 1 in
+    let running = ref 0 in
+    let sum = ref 0 in
+    let f x =
+       incr running;
+       assert (!running <= max_concurrency);
+       let* () = pause (x mod 3) in
+       sum := !sum + x;
+       decr running;
+       Lwt.return_unit
+    in
+    let* () = Lwt_seq.iter_n ~max_concurrency f a in
+    assert (!sum = List.fold_left (+) 0 l);
+    sum := 0;
+    let* () = Lwt_seq.iter_n ~max_concurrency f b in
+    assert (!sum = List.fold_left (+) 0 l);
+    Lwt.return_true
+  end;
+  test "iter_n(2)" begin fun () ->
+    let max_concurrency = 2 in
+    let running = ref 0 in
+    let sum = ref 0 in
+    let f x =
+       incr running;
+       assert (!running <= max_concurrency);
+       let* () = pause (x mod 3) in
+       sum := !sum + x;
+       decr running;
+       Lwt.return_unit
+    in
+    let* () = Lwt_seq.iter_n ~max_concurrency f a in
+    assert (!sum = List.fold_left (+) 0 l);
+    sum := 0;
+    let* () = Lwt_seq.iter_n ~max_concurrency f b in
+    assert (!sum = List.fold_left (+) 0 l);
+    Lwt.return_true
+  end;
+  test "iter_n(100)" begin fun () ->
+    let max_concurrency = 100 in
+    let running = ref 0 in
+    let sum = ref 0 in
+    let f x =
+       incr running;
+       assert (!running <= max_concurrency);
+       let* () = pause (x mod 3) in
+       sum := !sum + x;
+       decr running;
+       Lwt.return_unit
+    in
+    let* () = Lwt_seq.iter_n ~max_concurrency f a in
+    assert (!sum = List.fold_left (+) 0 l);
+    sum := 0;
+    let* () = Lwt_seq.iter_n ~max_concurrency f b in
+    assert (!sum = List.fold_left (+) 0 l);
+    Lwt.return_true
+  end;
+
   test "filter_map" begin fun () ->
-    let a = Lwt_seq.of_list l in
     let v = Lwt_seq.filter_map (fun x ->
+      if x mod 2 = 0 then Some (x * 2) else None) a
+    in
+    let+ l' = Lwt_seq.to_list v in
+    l' = [4; 8]
+  end;
+  test "filter_map_s" begin fun () ->
+    let v = Lwt_seq.filter_map_s (fun x ->
       Lwt.return (if x mod 2 = 0 then Some (x * 2) else None)) a
     in
     let+ l' = Lwt_seq.to_list v in
@@ -61,10 +151,7 @@ let suite_base = suite "lwt_seq" [
     let seq = fun () -> Seq.Cons (1, (fun () -> Seq.Cons (2, fail))) in
     let a = Lwt_seq.of_seq seq in
     let+ n =
-      try
-        Lwt_seq.fold_left(fun acc i ->
-          Lwt.return (acc + i)
-        ) 0 a
+      try Lwt_seq.fold_left (+) 0 a
       with Failure x when x = "XXX" ->
         Lwt.return (-1)
     in
@@ -82,10 +169,7 @@ let suite_base = suite "lwt_seq" [
           Seq.Cons (Lwt.return 2, fail)) in
     let* a = Lwt_seq.of_seq_lwt seq in
     let+ n =
-      try
-        Lwt_seq.fold_left(fun acc i ->
-          Lwt.return (acc + i)
-        ) 0 a
+      try Lwt_seq.fold_left (+) 0 a
       with Failure x when x = "XXX" ->
         Lwt.return 0
     in
