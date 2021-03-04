@@ -18,13 +18,35 @@ let return x : 'a t = fun () -> Lwt.return (Cons (x, empty))
 
 let cons x t () = Lwt.return (Cons (x, t))
 
+(* A note on recursing through the seqs:
+   When traversing a seq, the first time we evaluate a suspended node we are
+   on the left of the first bind (>>=). In that case, we use apply to capture
+   exceptions into promise rejection.
+
+   This is only needed on the first iteration because we are within a callback
+   passed to Lwt on the right-hand side of a bind after that.
+
+   Throughout this file we use the same code pattern to acheive this: we
+   shadow the recursive traversal function with an identical-but-for-the-apply
+   non-recursive copy. *)
+
 let rec append seq1 seq2 () =
   seq1 () >>= function
+  | Nil -> seq2 ()
+  | Cons (x, next) -> Lwt.return (Cons (x, append next seq2))
+let append seq1 seq2 () =
+  Lwt.apply seq1 () >>= function
   | Nil -> seq2 ()
   | Cons (x, next) -> Lwt.return (Cons (x, append next seq2))
 
 let rec map f seq () =
   seq () >|= function
+  | Nil -> Nil
+  | Cons (x, next) ->
+      let x = f x in
+      Cons (x, map f next)
+let map f seq () =
+  Lwt.apply seq () >|= function
   | Nil -> Nil
   | Cons (x, next) ->
       let x = f x in
@@ -36,9 +58,23 @@ let rec map_s f seq () =
   | Cons (x, next) ->
       let+ x = f x in
       Cons (x, map_s f next)
+let map_s f seq () =
+  Lwt.apply seq () >>= function
+  | Nil -> return_nil
+  | Cons (x, next) ->
+      let+ x = f x in
+      Cons (x, map_s f next)
 
 let rec filter_map f seq () =
   seq () >>= function
+  | Nil -> return_nil
+  | Cons (x, next) -> (
+      let x = f x in
+      match x with
+      | None -> filter_map f next ()
+      | Some y -> Lwt.return (Cons (y, filter_map f next) ))
+let filter_map f seq () =
+  Lwt.apply seq () >>= function
   | Nil -> return_nil
   | Cons (x, next) -> (
       let x = f x in
@@ -54,9 +90,23 @@ let rec filter_map_s f seq () =
       match x with
       | None -> filter_map_s f next ()
       | Some y -> Lwt.return (Cons (y, filter_map_s f next) ))
+let filter_map_s f seq () =
+  Lwt.apply seq () >>= function
+  | Nil -> return_nil
+  | Cons (x, next) -> (
+      let* x = f x in
+      match x with
+      | None -> filter_map_s f next ()
+      | Some y -> Lwt.return (Cons (y, filter_map_s f next) ))
 
 let rec filter f seq () =
   seq () >>= function
+  | Nil -> return_nil
+  | Cons (x, next) ->
+      let ok = f x in
+      if ok then Lwt.return (Cons (x, filter f next)) else filter f next ()
+let filter f seq () =
+  Lwt.apply seq () >>= function
   | Nil -> return_nil
   | Cons (x, next) ->
       let ok = f x in
@@ -68,13 +118,18 @@ let rec filter_s f seq () =
   | Cons (x, next) ->
       let* ok = f x in
       if ok then Lwt.return (Cons (x, filter_s f next)) else filter_s f next ()
+let filter_s f seq () =
+  Lwt.apply seq () >>= function
+  | Nil -> return_nil
+  | Cons (x, next) ->
+      let* ok = f x in
+      if ok then Lwt.return (Cons (x, filter_s f next)) else filter_s f next ()
 
 let rec flat_map f seq () =
   seq () >>= function
   | Nil -> return_nil
   | Cons (x, next) ->
-      let x = f x in
-      flat_map_app f x next ()
+      flat_map_app f (f x) next ()
 
 (* this is [append seq (flat_map f tail)] *)
 and flat_map_app f seq tail () =
@@ -82,9 +137,22 @@ and flat_map_app f seq tail () =
   | Nil -> flat_map f tail ()
   | Cons (x, next) -> Lwt.return (Cons (x, flat_map_app f next tail))
 
+let flat_map f seq () =
+  Lwt.apply seq () >>= function
+  | Nil -> return_nil
+  | Cons (x, next) ->
+      flat_map_app f (f x) next ()
+
 let fold_left f acc seq =
   let rec aux f acc seq =
     seq () >>= function
+    | Nil -> Lwt.return acc
+    | Cons (x, next) ->
+        let acc = f acc x in
+        aux f acc next
+  in
+  let aux f acc seq =
+    Lwt.apply seq () >>= function
     | Nil -> Lwt.return acc
     | Cons (x, next) ->
         let acc = f acc x in
@@ -100,11 +168,25 @@ let fold_left_s f acc seq =
         let* acc = f acc x in
         aux f acc next
   in
+  let aux f acc seq =
+    Lwt.apply seq () >>= function
+    | Nil -> Lwt.return acc
+    | Cons (x, next) ->
+        let* acc = f acc x in
+        aux f acc next
+  in
   aux f acc seq
 
 let iter f seq =
   let rec aux seq =
     seq () >>= function
+    | Nil -> Lwt.return_unit
+    | Cons (x, next) ->
+        f x;
+        aux next
+  in
+  let aux seq =
+    Lwt.apply seq () >>= function
     | Nil -> Lwt.return_unit
     | Cons (x, next) ->
         f x;
@@ -120,11 +202,25 @@ let iter_s f seq =
         let* () = f x in
         aux next
   in
+  let aux seq =
+    Lwt.apply seq () >>= function
+    | Nil -> Lwt.return_unit
+    | Cons (x, next) ->
+        let* () = f x in
+        aux next
+  in
   aux seq
 
 let iter_p f seq =
   let rec aux acc seq =
     seq () >>= function
+    | Nil -> Lwt.join acc
+    | Cons (x, next) ->
+        let p = f x in
+        aux (p::acc) next
+  in
+  let aux acc seq =
+    Lwt.apply seq () >>= function
     | Nil -> Lwt.join acc
     | Cons (x, next) ->
         let p = f x in
@@ -158,7 +254,9 @@ let iter_n ?(max_concurrency = 1) f seq =
     | Cons (elt, seq) ->
       loop (f elt :: running) (pred available) seq
   in
-  loop [] max_concurrency seq
+  (* because the recursion is more comolicated here, we apply the seq directly at
+     the call-site instead *)
+  loop [] max_concurrency (fun () -> Lwt.apply seq ())
 
 let rec unfold f u () =
   let* x = f u in
@@ -172,6 +270,12 @@ let rec of_list = function
 
 let rec to_list seq =
   seq () >>= function
+  | Nil -> Lwt.return_nil
+  | Cons (x, next) ->
+    let+ l = to_list next in
+    x :: l
+let to_list seq =
+  Lwt.apply seq () >>= function
   | Nil -> Lwt.return_nil
   | Cons (x, next) ->
     let+ l = to_list next in
