@@ -9,7 +9,7 @@ open Test
 
 let l =  [1; 2; 3; 4; 5]
 
-let suite = suite "lwt_seq" [
+let suite_base = suite "lwt_seq" [
   test "list" begin fun () ->
     let a = Lwt_seq.of_list l in
     let n = ref 1 in
@@ -90,5 +90,76 @@ let suite = suite "lwt_seq" [
         Lwt.return 0
     in
     n = 0
+  end;
+]
+
+let fs = [(+); (-); (fun x _ -> x); (fun _ x -> x); min; max]
+let ls = [
+   [];
+   [0;1;2;3;4;5];
+   [0;0;0];
+   [max_int;0;min_int];
+   [max_int;max_int];
+]
+let cs = [0;1;max_int;min_int;44;5]
+let with_flc test =
+   Lwt_list.for_all_s
+     (fun f ->
+        Lwt_list.for_all_s
+          (fun l ->
+             Lwt_list.for_all_s
+               (fun c -> test f l c)
+               cs)
+          ls)
+     fs
+let equals l1 seq2 =
+   let* l2 = Lwt_seq.to_list seq2 in
+   Lwt.return (l1 = l2)
+let commutes lf sf l =
+   equals (lf l) (sf (Lwt_seq.of_list l))
+
+
+let suite_fuzzing = suite "lwt_seq(pseudo-fuzzing)" [
+  test "map" begin fun () ->
+     with_flc (fun f l c ->
+        let lf = List.map (fun x -> f x c) in
+        let sf = Lwt_seq.map (fun x -> f x c) in
+        commutes lf sf l
+     )
+  end;
+  test "map_s" begin fun () ->
+     with_flc (fun f l c ->
+        let lf = List.map (fun x -> f x c) in
+        let sf = Lwt_seq.map_s (fun x -> Lwt.return (f x c)) in
+        commutes lf sf l
+     )
+  end;
+  test "iter" begin fun () ->
+     with_flc (fun f l c ->
+        let lf l =
+           let r = ref c in
+           List.iter (fun x -> r := f x !r) l;
+           [!r] in
+        let sf s =
+           let r = ref c in
+           fun () ->
+             let* () = Lwt_seq.iter (fun x -> r := f x !r) s in
+             Lwt.return (Lwt_seq.Cons (!r, Lwt_seq.empty)) in
+        commutes lf sf l
+     )
+  end;
+  test "iter_s" begin fun () ->
+     with_flc (fun f l c ->
+        let lf l =
+           let r = ref c in
+           List.iter (fun x -> r := f x !r) l;
+           [!r] in
+        let sf s =
+           let r = ref c in
+           fun () ->
+             let* () = Lwt_seq.iter_s (fun x -> r := f x !r; Lwt.return_unit) s in
+             Lwt.return (Lwt_seq.Cons (!r, Lwt_seq.empty)) in
+        commutes lf sf l
+     )
   end;
 ]
