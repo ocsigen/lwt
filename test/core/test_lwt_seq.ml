@@ -21,6 +21,7 @@ let rec pause n =
    else
       let* () = Lwt.pause () in
       pause (n - 1)
+let pause n = pause (n mod 5)
 
 let suite_base = suite "lwt_seq" [
   test "fold_left" begin fun () ->
@@ -65,7 +66,7 @@ let suite_base = suite "lwt_seq" [
     let f x =
        incr running;
        assert (!running <= max_concurrency);
-       let* () = pause (x mod 3) in
+       let* () = pause x in
        sum := !sum + x;
        decr running;
        Lwt.return_unit
@@ -84,7 +85,7 @@ let suite_base = suite "lwt_seq" [
     let f x =
        incr running;
        assert (!running <= max_concurrency);
-       let* () = pause (x mod 3) in
+       let* () = pause x in
        sum := !sum + x;
        decr running;
        Lwt.return_unit
@@ -103,7 +104,7 @@ let suite_base = suite "lwt_seq" [
     let f x =
        incr running;
        assert (!running <= max_concurrency);
-       let* () = pause (x mod 3) in
+       let* () = pause x in
        sum := !sum + x;
        decr running;
        Lwt.return_unit
