@@ -281,21 +281,25 @@ let to_list seq =
     let+ l = to_list next in
     x :: l
 
-let rec of_seq seq =
-  try
-    match seq () with
-    | Seq.Nil -> empty
-    | Seq.Cons (x, next) ->
-      cons x (of_seq next)
-  with exn ->
-    fun () -> raise exn
+let rec of_seq seq () =
+  match seq () with
+  | Seq.Nil -> return_nil
+  | Seq.Cons (x, next) ->
+    Lwt.return (Cons (x, (of_seq next)))
+  | exception exn -> Lwt.fail exn
 
-let rec of_seq_lwt (seq: 'a Lwt.t Seq.t): 'a t Lwt.t =
+let rec of_seq_lwt (seq: 'a Lwt.t Seq.t): 'a t = fun () ->
     match seq () with
-    | Seq.Nil -> Lwt.return empty
+    | Seq.Nil -> return_nil
     | Seq.Cons (x, next) ->
-        Lwt.catch (fun () ->
-          let* x = x in
-          let+ next = of_seq_lwt next in
-          cons x next)
-        (fun exc -> Lwt.return (fun () -> raise exc))
+       let+ x = x in
+       let next = of_seq_lwt next in
+       Cons (x, next)
+let of_seq_lwt (seq: 'a Lwt.t Seq.t): 'a t = fun () ->
+    match seq () with
+    | Seq.Nil -> return_nil
+    | Seq.Cons (x, next) ->
+       let+ x = x in
+       let next = of_seq_lwt next in
+       Cons (x, next)
+    | exception exc -> Lwt.fail exc

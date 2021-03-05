@@ -144,36 +144,62 @@ let suite_base = suite "lwt_seq" [
   end;
 
   test "exception" begin fun () ->
-    let fail = fun () ->
-      let () = failwith "XXX" in
-      Seq.Nil
-    in
+    let fail = fun () -> failwith "XXX" in
     let seq = fun () -> Seq.Cons (1, (fun () -> Seq.Cons (2, fail))) in
     let a = Lwt_seq.of_seq seq in
     let+ n =
-      try Lwt_seq.fold_left (+) 0 a
-      with Failure x when x = "XXX" ->
-        Lwt.return (-1)
+      Lwt.catch
+        (fun () -> Lwt_seq.fold_left (+) 0 a)
+        (function
+          | Failure x when x = "XXX" -> Lwt.return (-1)
+          | exc -> raise exc)
+    in
+    n = (-1)
+  end;
+
+  test "exception-immediately" begin fun () ->
+    let fail = fun () -> failwith "XXX" in
+    let seq = fail in
+    let a = Lwt_seq.of_seq seq in
+    let+ n =
+      Lwt.catch
+        (fun () -> Lwt_seq.fold_left (+) 0 a)
+        (function
+          | Failure x when x = "XXX" -> Lwt.return (-1)
+          | exc -> raise exc)
     in
     n = (-1)
   end;
 
   test "exception of_seq_lwt" begin fun () ->
-    let fail = fun () ->
-      let () = failwith "XXX" in
-      Seq.Nil
-    in
+    let fail = fun () -> failwith "XXX" in
     let seq: int Lwt.t Seq.t = fun () ->
       Seq.Cons (Lwt.return 1,
         fun () ->
           Seq.Cons (Lwt.return 2, fail)) in
-    let* a = Lwt_seq.of_seq_lwt seq in
+    let a = Lwt_seq.of_seq_lwt seq in
     let+ n =
-      try Lwt_seq.fold_left (+) 0 a
-      with Failure x when x = "XXX" ->
-        Lwt.return 0
+      Lwt.catch
+        (fun () -> Lwt_seq.fold_left (+) 0 a)
+        (function
+          | Failure x when x = "XXX" -> Lwt.return (-1)
+          | exc -> raise exc)
     in
-    n = 0
+    n = (-1)
+  end;
+
+  test "exception of_seq_lwt immediately" begin fun () ->
+    let fail = fun () -> failwith "XXX" in
+    let seq: int Lwt.t Seq.t = fail in
+    let a = Lwt_seq.of_seq_lwt seq in
+    let+ n =
+      Lwt.catch
+        (fun () -> Lwt_seq.fold_left (+) 0 a)
+        (function
+          | Failure x when x = "XXX" -> Lwt.return (-1)
+          | exc -> raise exc)
+    in
+    n = (-1)
   end;
 ]
 

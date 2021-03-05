@@ -119,7 +119,7 @@ val of_seq : 'a Seq.t -> 'a t
   This transformation is lazy, it only applies when the result is
   traversed. *)
 
-val of_seq_lwt : 'a Lwt.t Seq.t -> 'a t Lwt.t
+val of_seq_lwt : 'a Lwt.t Seq.t -> 'a t
 (** Convert from ['a Lwt.t Stdlib.Seq.t] to ['a Lwt_seq.t].
   This transformation is lazy, it only applies when the result is
   traversed. *)
