@@ -217,7 +217,7 @@ let suite_base = suite "lwt_seq" [
   end;
 ]
 
-let fs = [(+); (-); Fun.const; min; max]
+let fs = [(+); (-); (fun x _ -> x); min; max]
 let ls = [
    [];
    l;
