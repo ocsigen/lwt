@@ -14,9 +14,17 @@ let return_nil = Lwt.return Nil
 
 let empty : 'a t = fun () -> return_nil
 
-let return x : 'a t = fun () -> Lwt.return (Cons (x, empty))
+let return (x : 'a) : 'a t = fun () -> Lwt.return (Cons (x, empty))
+
+let return_lwt (x : 'a Lwt.t) : 'a t = fun () ->
+   let+ x = x in
+   Cons (x, empty)
 
 let cons x t () = Lwt.return (Cons (x, t))
+
+let cons_lwt x t () =
+   let+ x = x in
+   Cons (x, t)
 
 (* A note on recursing through the seqs:
    When traversing a seq, the first time we evaluate a suspended node we are

@@ -21,9 +21,16 @@ val empty : 'a t
 val return : 'a -> 'a t
 (** The singleton sequence containing only the given element. *)
 
+val return_lwt : 'a Lwt.t -> 'a t
+(** The singleton sequence containing only the given promised element. *)
+
 val cons : 'a -> 'a t -> 'a t
 (** [cons x xs] is the sequence containing the element [x] followed by
   the sequence [xs] *)
+
+val cons_lwt : 'a Lwt.t -> 'a t -> 'a t
+(** [cons x xs] is the sequence containing the element promised by [x] followed
+  by the sequence [xs] *)
 
 val append : 'a t -> 'a t -> 'a t
 (** [append xs ys] is the sequence [xs] followed by the sequence [ys] *)
