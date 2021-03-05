@@ -107,7 +107,8 @@ val iter_n : ?max_concurrency:int -> ('a -> unit Lwt.t) -> 'a t -> unit Lwt.t
   @param max_concurrency defaults to [1].
   @raise Invalid_argument if [max_concurrency < 1]. *)
 
-val unfold : ('b -> ('a * 'b) option Lwt.t) -> 'b -> 'a t
+val unfold : ('b -> ('a * 'b) option) -> 'b -> 'a t
+val unfold_lwt : ('b -> ('a * 'b) option Lwt.t) -> 'b -> 'a t
 (** Build a sequence from a step function and an initial value.
   [unfold f u] returns [empty] if the promise [f u] resolves to [None],
   or [fun () -> Lwt.return (Cons (x, unfold f y))] if the promise [f u] resolves

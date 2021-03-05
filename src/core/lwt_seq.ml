@@ -267,10 +267,16 @@ let iter_n ?(max_concurrency = 1) f seq =
   loop [] max_concurrency (fun () -> Lwt.apply seq ())
 
 let rec unfold f u () =
+  match f u with
+  | None -> return_nil
+  | Some (x, u') -> Lwt.return (Cons (x, unfold f u'))
+  | exception exc -> Lwt.fail exc
+
+let rec unfold_lwt f u () =
   let* x = f u in
   match x with
   | None -> return_nil
-  | Some (x, u') -> Lwt.return (Cons (x, unfold f u'))
+  | Some (x, u') -> Lwt.return (Cons (x, unfold_lwt f u'))
 
 let rec of_list = function
   | [] -> empty

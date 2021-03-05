@@ -9,12 +9,6 @@ open Test
 
 let l =  [1; 2; 3; 4; 5]
 let a = Lwt_seq.of_list l
-let b =
-   Lwt_seq.unfold
-     (function
-      | [] -> let+ () = Lwt.pause () in None
-      | x::xs -> let+ () = Lwt.pause () in Some (x, xs))
-     l
 let rec pause n =
    if n <= 0 then
       Lwt.return_unit
@@ -22,6 +16,12 @@ let rec pause n =
       let* () = Lwt.pause () in
       pause (n - 1)
 let pause n = pause (n mod 5)
+let b =
+   Lwt_seq.unfold_lwt
+     (function
+      | [] -> let+ () = pause 2 in None
+      | x::xs -> let+ () = pause (x+2) in Some (x, xs))
+     l
 
 let suite_base = suite "lwt_seq" [
   test "fold_left" begin fun () ->
@@ -134,8 +134,7 @@ let suite_base = suite "lwt_seq" [
 
   test "unfold" begin fun () ->
     let range first last =
-      let step i = if i > last then Lwt.return_none
-                   else Lwt.return_some (i, succ i) in
+      let step i = if i > last then None else Some (i, succ i) in
       Lwt_seq.unfold step first
     in
     let* a = Lwt_seq.to_list (range 1 3) in
@@ -143,6 +142,20 @@ let suite_base = suite "lwt_seq" [
       ([1;2;3] = a) &&
       ([] = b)
   end;
+
+  test "unfold_lwt" begin fun () ->
+    let range first last =
+      let step i =
+         if i > last then Lwt.return_none else Lwt.return_some (i, succ i)
+      in
+      Lwt_seq.unfold_lwt step first
+    in
+    let* a = Lwt_seq.to_list (range 1 3) in
+    let+ b = Lwt_seq.to_list (range 1 0) in
+      ([1;2;3] = a) &&
+      ([] = b)
+  end;
+
 
   test "fold-into-exception-from-of-seq" begin fun () ->
     let fail = fun () -> failwith "XXX" in
