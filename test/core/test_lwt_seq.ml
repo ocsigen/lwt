@@ -144,7 +144,7 @@ let suite_base = suite "lwt_seq" [
       ([] = b)
   end;
 
-  test "exception" begin fun () ->
+  test "fold-into-exception-from-of-seq" begin fun () ->
     let fail = fun () -> failwith "XXX" in
     let seq = fun () -> Seq.Cons (1, (fun () -> Seq.Cons (2, fail))) in
     let a = Lwt_seq.of_seq seq in
@@ -158,7 +158,7 @@ let suite_base = suite "lwt_seq" [
     n = (-1)
   end;
 
-  test "exception-immediately" begin fun () ->
+  test "fold-into-immediate-exception-from-of-seq" begin fun () ->
     let fail = fun () -> failwith "XXX" in
     let seq = fail in
     let a = Lwt_seq.of_seq seq in
@@ -172,7 +172,7 @@ let suite_base = suite "lwt_seq" [
     n = (-1)
   end;
 
-  test "exception of_seq_lwt" begin fun () ->
+  test "fold-into-exception-from-of-seq-lwt" begin fun () ->
     let fail = fun () -> failwith "XXX" in
     let seq: int Lwt.t Seq.t = fun () ->
       Seq.Cons (Lwt.return 1,
@@ -189,7 +189,7 @@ let suite_base = suite "lwt_seq" [
     n = (-1)
   end;
 
-  test "exception of_seq_lwt immediately" begin fun () ->
+  test "fold-into-immediate-exception-from-of-seq-lwt" begin fun () ->
     let fail = fun () -> failwith "XXX" in
     let seq: int Lwt.t Seq.t = fail in
     let a = Lwt_seq.of_seq_lwt seq in
