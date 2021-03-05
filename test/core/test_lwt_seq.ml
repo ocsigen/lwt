@@ -204,10 +204,12 @@ let suite_base = suite "lwt_seq" [
   end;
 ]
 
-let fs = [(+); (-); (fun x _ -> x); (fun _ x -> x); min; max]
+let fs = [(+); (-); Fun.const; min; max]
 let ls = [
    [];
-   [0;1;2;3;4;5];
+   l;
+   l@l@l;
+   List.rev l;
    [0;0;0];
    [max_int;0;min_int];
    [max_int;max_int];
@@ -231,6 +233,7 @@ let commutes lf sf l =
 
 
 let suite_fuzzing = suite "lwt_seq(pseudo-fuzzing)" [
+
   test "map" begin fun () ->
      with_flc (fun f l c ->
         let lf = List.map (fun x -> f x c) in
@@ -238,6 +241,7 @@ let suite_fuzzing = suite "lwt_seq(pseudo-fuzzing)" [
         commutes lf sf l
      )
   end;
+
   test "map_s" begin fun () ->
      with_flc (fun f l c ->
         let lf = List.map (fun x -> f x c) in
@@ -245,32 +249,118 @@ let suite_fuzzing = suite "lwt_seq(pseudo-fuzzing)" [
         commutes lf sf l
      )
   end;
+
   test "iter" begin fun () ->
      with_flc (fun f l c ->
         let lf l =
            let r = ref c in
-           List.iter (fun x -> r := f x !r) l;
+           List.iter (fun x -> r := f !r x) l;
            [!r] in
         let sf s =
            let r = ref c in
            fun () ->
-             let* () = Lwt_seq.iter (fun x -> r := f x !r) s in
+             let* () = Lwt_seq.iter (fun x -> r := f !r x) s in
              Lwt.return (Lwt_seq.Cons (!r, Lwt_seq.empty)) in
         commutes lf sf l
      )
   end;
+
   test "iter_s" begin fun () ->
      with_flc (fun f l c ->
         let lf l =
            let r = ref c in
-           List.iter (fun x -> r := f x !r) l;
+           List.iter (fun x -> r := f !r x) l;
            [!r] in
         let sf s =
            let r = ref c in
            fun () ->
-             let* () = Lwt_seq.iter_s (fun x -> r := f x !r; Lwt.return_unit) s in
+             let* () = Lwt_seq.iter_s (fun x -> r := f !r x; Lwt.return_unit) s in
              Lwt.return (Lwt_seq.Cons (!r, Lwt_seq.empty)) in
         commutes lf sf l
      )
   end;
+
+  (* the [f]s commute sufficiently for parallel execution *)
+  test "iter_p" begin fun () ->
+     with_flc (fun f l c ->
+        let lf l =
+           let r = ref c in
+           List.iter (fun x -> r := f !r x) l;
+           [!r]
+        in
+        let sf s =
+           Lwt_seq.return_lwt @@
+           let r = ref c in
+           let+ () = Lwt_seq.iter_p (fun x -> r := f !r x; Lwt.return_unit) s in
+           !r
+        in
+        commutes lf sf l
+     )
+  end;
+
+  test "iter_p (pause)" begin fun () ->
+     with_flc (fun f l c ->
+        let lf l =
+           let r = ref c in
+           List.iter (fun x -> r := f !r x) l;
+           [!r]
+        in
+        let sf s =
+           Lwt_seq.return_lwt @@
+           let r = ref c in
+           let+ () =
+              Lwt_seq.iter_p
+                (fun x ->
+                   let* () = pause x in
+                   r := f !r x;
+                   pause x)
+                s
+           in
+           !r
+        in
+        commutes lf sf l
+     )
+  end;
+
+  test "iter_n" begin fun () ->
+     l |> Lwt_list.for_all_s @@ fun max_concurrency ->
+     with_flc (fun f l c ->
+        let lf l =
+           let r = ref c in
+           List.iter (fun x -> r := f !r x) l;
+           [!r] in
+        let sf s =
+           Lwt_seq.return_lwt @@
+           let r = ref c in
+           let+ () = Lwt_seq.iter_n ~max_concurrency (fun x -> r := f !r x; Lwt.return_unit) s in
+           !r
+        in
+        commutes lf sf l
+     )
+  end;
+
+  test "iter_n (pause)" begin fun () ->
+     l |> Lwt_list.for_all_s @@ fun max_concurrency ->
+     with_flc (fun f l c ->
+        let lf l =
+           let r = ref c in
+           List.iter (fun x -> r := f !r x) l;
+           [!r] in
+        let sf s =
+           Lwt_seq.return_lwt @@
+           let r = ref c in
+           let+ () =
+              Lwt_seq.iter_n ~max_concurrency
+                 (fun x ->
+                    let* () = pause x in
+                    r := f !r x;
+                    pause x)
+                 s
+           in
+           !r
+        in
+        commutes lf sf l
+     )
+  end;
+
 ]
