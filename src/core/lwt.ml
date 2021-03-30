@@ -1004,10 +1004,6 @@ struct
       clear_explicitly_removable_callback_cell cell ~originally_added_to:ps
 
   let add_cancel_callback callbacks f =
-    (* Ugly cast :( *)
-    let cast_cancel_callback : (unit -> unit) -> cancel_callback = Obj.magic in
-    let f = cast_cancel_callback f in
-
     let node = Cancel_callback_list_callback (!current_storage, f) in
 
     callbacks.cancel_callbacks <-
