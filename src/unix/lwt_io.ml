@@ -1470,6 +1470,22 @@ let create_temp_dir
   in
   attempt 0
 
+let win32_unlink fn =
+  try Lwt_unix.unlink fn with
+  | Unix.Unix_error (Unix.EACCES, _, _) as e -> (
+    try
+      (* Try removing the read-only attribute *)
+      Lwt_unix.chmod fn 0o666 >>= fun () ->
+      Lwt_unix.unlink fn
+    with
+    | _ -> raise e)
+
+let unlink =
+  if Sys.win32 then
+    win32_unlink
+  else
+    Lwt_unix.unlink
+
 (* This is likely VERY slow for directories with many files. That is probably
    best addressed by switching to blocking calls run inside a worker thread,
    i.e. with Lwt_preemptive. *)
@@ -1485,7 +1501,7 @@ let rec delete_recursively directory =
       if stat.Lwt_unix.st_kind = Lwt_unix.S_DIR then
         delete_recursively path
       else
-        Lwt_unix.unlink path
+        unlink path
   end >>= fun () ->
   Lwt_unix.rmdir directory
 
