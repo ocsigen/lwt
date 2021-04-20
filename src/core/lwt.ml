@@ -744,8 +744,23 @@ sig
   val get : 'v key -> 'v option
   val with_value : 'v key -> 'v option -> (unit -> 'b) -> 'b
 
+  type 'x setup = unit -> 'x
+  type 'x teardown = 'x -> unit
+  val with_setup_teardown : 'x setup -> 'x teardown -> (unit -> 'c) -> 'c
+
   (* Internal interface *)
   val current_storage : storage ref
+
+  type 'x setup_teardown = {
+    setup : 'x setup;
+    teardown : 'x teardown;
+  }
+
+  type 'x setup_data = {
+    setup_teardown : 'x setup_teardown option;
+  }
+
+  val current_setup : 'x setup_data ref
 end =
 struct
   (* The idea behind sequence-associated storage is to preserve some values
@@ -788,6 +803,20 @@ struct
 
   let current_storage = ref Storage_map.empty
 
+  type 'x setup = unit -> 'x
+  type 'x teardown = 'x -> unit
+
+  type 'x setup_teardown = {
+    setup : 'x setup;
+    teardown : 'x teardown;
+  }
+
+  type 'x setup_data = {
+    setup_teardown : 'x setup_teardown option;
+  }
+
+  let current_setup : 'x setup_data ref = ref {setup_teardown=None}
+
   let get key =
     if Storage_map.mem key.id !current_storage then begin
       let refresh = Storage_map.find key.id !current_storage in
@@ -818,6 +847,20 @@ struct
     with exn ->
       current_storage := saved_storage;
       raise exn
+
+  let with_setup_teardown (setup:'x setup) (teardown:'x teardown) (f:(unit -> 'c)) : 'c =
+    let saved_setup = !current_setup in
+    current_setup := ({setup_teardown=Some {setup;teardown}});
+    try
+      (* Maybe should call setup and teardown here *)
+      let result = f () in
+      current_setup := saved_setup;
+      result
+    with exn ->
+      current_setup := saved_setup;
+      raise exn
+
+
 end
 include Sequence_associated_storage
 
@@ -1855,13 +1898,17 @@ struct
          depend on how the user obtained [p']. *)
 
       let saved_storage = !current_storage in
+      let saved_setup = !current_setup in
 
       let callback p_result =
         match p_result with
         | Fulfilled v ->
           current_storage := saved_storage;
+          current_setup := saved_setup;
 
+          let setup_res = Option.map (fun {setup;teardown} -> (setup (),teardown)) (!current_setup).setup_teardown in
           let p' = try f v with exn -> fail exn in
+          let () = match setup_res with | None -> () | Some (v,teardown) -> teardown v in
           let Internal p' = to_internal_promise p' in
           (* Run the user's function [f]. *)
 
