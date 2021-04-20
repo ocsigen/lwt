@@ -1,6 +1,0 @@
-<<code language="ocaml" | sig
-  val register_basic_authentication_method :
-    (Simplexmlparser.xml -> string -> string -> bool Lwt.t) -> unit
-  val get_basic_authentication_method :
-    Simplexmlparser.xml -> string -> string -> bool Lwt.t
-end >>

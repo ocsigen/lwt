@@ -1,6 +1,0 @@
-=Module <<a_api_type | module Ocsigen_http_frame.Cookies >> =
-<<div class="code"|<<span class="keyword"|module>> Cookies: \\{{{   }}}<<span class="code type"|Map.S>><<span class="code type"|{{{  }}}\\{{{   }}}  with type key = url_path>>>>~This table is to store cookie values for each path~. 
-    ~The key has type url~_path option~: 
-    it is for the path ~(default~: root of the site~)~,\\
-
-----

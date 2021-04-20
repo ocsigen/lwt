@@ -1,5 +1,0 @@
-<<code language="ocaml" | sig
-  type block = [ `Hr ]
-  type inline = [ `B | `Big | `I | `Small | `Sub | `Sup | `Tt ]
-  type flow = [ `B | `Big | `Hr | `I | `Small | `Sub | `Sup | `Tt ]
-end >>

@@ -1,7 +1,0 @@
-<<code language="ocaml" | sig
-  type xml =
-      Element of (string * (string * string) list * Simplexmlparser.xml list)
-    | PCData of string
-  exception Xml_parser_error of string
-  val xmlparser : string -> Simplexmlparser.xml list
-end >>

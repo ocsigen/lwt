@@ -1,9 +1,0 @@
-=Module <<a_api_type | module Eliom_predefmod.Any >> =
-<<div class="code"|<<span class="keyword"|module>> Any: \\{{{   }}}<<span class="code type"|<<a_api text="Eliom_mkreg.ELIOMREGSIG" | module Eliom_mkreg.ELIOMREGSIG >>>><<span class="code type"|{{{  }}} with \\{{{   }}}  type page = Eliom_services.result_to_send>>>>~Allows to create services that choose dynamically what they want
-   to send~. ~The content is created using one <<a_api | val Eliom_mkreg.ELIOMREGSIG1.send >>
-   function~, for ex <<span class='code'|~Xhtml~.send>> or <<span class='code'|~Files~.send>>~.
-   ~.\\
-
-----
-<<div class="code"|<<span class="keyword"|include>> <<a_api | module type Eliom_mkreg.ELIOMREGSIG1 >>>>
-<<div class="code"|<<span class="keyword"|module>> <<a_api text="Cookies" | module Eliom_mkreg.ELIOMREGSIG.Cookies >>: \\{{{   }}}<<span class="code type"|<<a_api text="Eliom_mkreg.ELIOMREGSIG1" | module Eliom_mkreg.ELIOMREGSIG1 >>>><<span class="code type"|{{{  }}} \\{{{   }}}    with type page = page * Eliom_services.cookie list>>>>

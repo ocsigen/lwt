@@ -1,8 +1,0 @@
-=Module <<a_api_type | module Eliom_predefmod.Unit >> =
-<<div class="code"|<<span class="keyword"|module>> Unit: \\{{{   }}}<<span class="code type"|<<a_api text="Eliom_mkreg.ELIOMREGSIG" | module Eliom_mkreg.ELIOMREGSIG >>>><<span class="code type"|{{{  }}} with \\{{{   }}}  type page = unit>>>>~Like actions~, but the page is not reloaded~. ~Just do something and do
-   not generate any page~. ~To be used carefully~. ~Probably not usefull at all~. 
-   ~(~Same as <<a_api | module Eliom_predefmod.Actions >> with <<span class='code'|`~No~Reload>> option~)~.\\
-
-----
-<<div class="code"|<<span class="keyword"|include>> <<a_api | module type Eliom_mkreg.ELIOMREGSIG1 >>>>
-<<div class="code"|<<span class="keyword"|module>> <<a_api text="Cookies" | module Eliom_mkreg.ELIOMREGSIG.Cookies >>: \\{{{   }}}<<span class="code type"|<<a_api text="Eliom_mkreg.ELIOMREGSIG1" | module Eliom_mkreg.ELIOMREGSIG1 >>>><<span class="code type"|{{{  }}} \\{{{   }}}    with type page = page * Eliom_services.cookie list>>>>

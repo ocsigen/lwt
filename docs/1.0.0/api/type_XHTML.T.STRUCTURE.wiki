@@ -1,1 +1,0 @@
-<<code language="ocaml" | sig type t = [ `Body | `Head | `Html | `Title ] end >>

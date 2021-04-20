@@ -1,6 +1,0 @@
-=Module <<a_api_type | module Eliom_predefmod.Blocks >> =
-<<div class="code"|<<span class="keyword"|module>> Blocks: <<span class='code'|sig>><<a_api text=".." | module Eliom_predefmod.Blocks >><<span class='code'|end>>>>~Use this module for example for ~X~M~L~Http~Requests for block tags ~(e~.g~. ~<div~>~)\\
-
-----
-<<div class="code"|<<span class="keyword"|include>> <<a_api | module type Eliom_mkreg.ELIOMREGSIG >>>>
-<<div class="code"|<<span class="keyword"|include>> <<a_api | module type Eliom_predefmod.XHTMLFORMSSIG >>>>

@@ -1,6 +1,0 @@
-=Module type <<a_api_type | module type Ocsigen_http_frame.HTTP_CONTENT >> =
-<<div class="code"|<<span class="keyword"|module type>> HTTP_CONTENT = <<span class='code'|sig>><<a_api text=".." | module type Ocsigen_http_frame.HTTP_CONTENT >><<span class='code'|end>>>>
-----
-<<div class="code" id="TYPEt"|<<span class="keyword"|type>> t>>
-
-<<div id="VALresult_of_content" class="code"|<<span class="keyword"|val>> result~_of~_content : <<span class="code type"|<<a_api text="t" | type Ocsigen_http_frame.HTTP_CONTENT.t >> -> <<a_api text="Ocsigen_http_frame.result" | type Ocsigen_http_frame.result >> <<a_api text="Lwt.t" | type Lwt.t >>>>>><<div id="VALget_etag" class="code"|<<span class="keyword"|val>> get~_etag : <<span class="code type"|<<a_api text="t" | type Ocsigen_http_frame.HTTP_CONTENT.t >> -> <<a_api text="Ocsigen_http_frame.etag" | type Ocsigen_http_frame.etag >> option>>>>

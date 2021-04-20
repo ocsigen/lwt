@@ -1,8 +1,0 @@
-=Module type <<a_api_type | module type Eliom_mkreg.REGCREATE >> =
-<<div class="code"|<<span class="keyword"|module type>> REGCREATE = <<span class='code'|sig>><<a_api text=".." | module type Eliom_mkreg.REGCREATE >><<span class='code'|end>>>>
-----
-<<div class="code" id="TYPEpage"|<<span class="keyword"|type>> page>>
-
-<<div class="code" id="TYPEoptions"|<<span class="keyword"|type>> options>>
-
-<<div id="VALsend" class="code"|<<span class="keyword"|val>> send : <<span class="code type"|\\{{{   }}}?options:<<a_api text="options" | type Eliom_mkreg.REGCREATE.options >> ->\\{{{   }}}  ?cookies:<<a_api text="Eliom_services.cookie" | type Eliom_services.cookie >> list ->\\{{{   }}}  ?charset:string ->\\{{{   }}}  ?code:int ->\\{{{   }}}  sp:<<a_api text="Eliom_sessions.server_params" | type Eliom_sessions.server_params >> ->\\{{{   }}}  <<a_api text="page" | type Eliom_mkreg.REGCREATE.page >> -> <<a_api text="Eliom_services.result_to_send" | type Eliom_services.result_to_send >> <<a_api text="Lwt.t" | type Lwt.t >>>>>>

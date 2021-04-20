@@ -1,6 +1,0 @@
-=Module <<a_api_type | module Eliom_predefmod.Xhtml >> =
-<<div class="code"|<<span class="keyword"|module>> Xhtml: <<span class='code'|sig>><<a_api text=".." | module Eliom_predefmod.Xhtml >><<span class='code'|end>>>>~Eliom forms and service registration functions for ~X~H~T~M~L\\
-
-----
-<<div class="code"|<<span class="keyword"|include>> <<a_api | module type Eliom_mkreg.ELIOMREGSIG >>>>
-<<div class="code"|<<span class="keyword"|include>> <<a_api | module type Eliom_predefmod.XHTMLFORMSSIG >>>>

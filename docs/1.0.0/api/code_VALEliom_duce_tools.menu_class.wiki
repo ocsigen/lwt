@@ -1,1 +1,0 @@
-<<code language="ocaml" | let menu_class = "eliomtools_menu" >>

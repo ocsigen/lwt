@@ -1,1 +1,0 @@
-<<code language="ocaml" | let current_class = "eliomtools_current" >>

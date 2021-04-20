@@ -1,9 +1,0 @@
-=Module <<a_api_type | module XHTML.T.SPECIAL >> =
-<<div class="code"|<<span class="keyword"|module>> SPECIAL: <<span class='code'|sig>><<a_api text=".." | module XHTML.T.SPECIAL >><<span class='code'|end>>>>
-----
-<<div class="code" id="TYPEinline"|<<span class="keyword"|type>> inline = <<span class="code type"|[ `Img | `Map | `Object ]>> >>
-
-<<div class="code" id="TYPEblock"|<<span class="keyword"|type>> block = <<span class="code type"|[ `Fieldset | `Form | `Table ]>> >>
-
-<<div class="code" id="TYPEflow"|<<span class="keyword"|type>> flow = <<span class="code type"|[ `Fieldset | `Form | `Img | `Map | `Object | `Table ]>> >>
-

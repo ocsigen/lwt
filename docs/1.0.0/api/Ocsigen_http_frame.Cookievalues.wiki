@@ -1,4 +1,0 @@
-=Module <<a_api_type | module Ocsigen_http_frame.Cookievalues >> =
-<<div class="code"|<<span class="keyword"|module>> Cookievalues: \\{{{   }}}<<span class="code type"|Map.S>><<span class="code type"|{{{  }}}\\{{{   }}}  with type key = string>>>>~This table is to store one cookie value for each cookie name~.\\
-
-----

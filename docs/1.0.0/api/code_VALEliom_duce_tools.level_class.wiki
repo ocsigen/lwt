@@ -1,1 +1,0 @@
-<<code language="ocaml" | let level_class = "eliomtools_level" >>

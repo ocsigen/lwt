@@ -1,5 +1,0 @@
-=Module <<a_api_type | module Ocsigen_http_frame.Http_error >> =
-<<div class="code"|<<span class="keyword"|module>> Http_error: <<span class='code'|sig>><<a_api text=".." | module Ocsigen_http_frame.Http_error >><<span class='code'|end>>>>
-----
-<<div  id="EXCEPTIONHttp_exception" class="code"|<<span class="keyword"|exception>> Http_exception <<span class="keyword"|of>> <<span class="code type"|int * string option * Http_headers.t option>>>>
-<<div id="VALexpl_of_code" class="code"|<<span class="keyword"|val>> expl~_of~_code : <<span class="code type"|int -> string>>>><<div id="VALdisplay_http_exception" class="code"|<<span class="keyword"|val>> display~_http~_exception : <<span class="code type"|exn -> unit>>>><<div id="VALstring_of_http_exception" class="code"|<<span class="keyword"|val>> string~_of~_http~_exception : <<span class="code type"|exn -> string>>>>

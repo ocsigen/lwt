@@ -1,5 +1,0 @@
-<<code language="ocaml" | sig
-  type list = [ `Dl | `Ol | `Ul ]
-  type t = [ `Dd | `Dt | `Li ]
-  type flow = XHTML.T.LIST.list
-end >>
