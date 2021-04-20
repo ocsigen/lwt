@@ -756,11 +756,7 @@ sig
     teardown : 'x teardown;
   }
 
-  type 'x setup_data = {
-    setup_teardown : 'x setup_teardown option;
-  }
-
-  val current_setup : 'x setup_data ref
+  val current_setup : 'x setup_teardown list ref
 end =
 struct
   (* The idea behind sequence-associated storage is to preserve some values
@@ -811,11 +807,7 @@ struct
     teardown : 'x teardown;
   }
 
-  type 'x setup_data = {
-    setup_teardown : 'x setup_teardown option;
-  }
-
-  let current_setup : 'x setup_data ref = ref {setup_teardown=None}
+  let current_setup : 'x setup_teardown list ref = ref []
 
   let get key =
     if Storage_map.mem key.id !current_storage then begin
@@ -850,7 +842,7 @@ struct
 
   let with_setup_teardown (setup:'x setup) (teardown:'x teardown) (f:(unit -> 'c)) : 'c =
     let saved_setup = !current_setup in
-    current_setup := ({setup_teardown=Some {setup;teardown}});
+    current_setup := ({setup;teardown}::(saved_setup));
     try
       (* Maybe should call setup and teardown here *)
       let result = f () in
@@ -1906,9 +1898,9 @@ struct
           current_storage := saved_storage;
           current_setup := saved_setup;
 
-          let setup_res = Option.map (fun {setup;teardown} -> (setup (),teardown)) (!current_setup).setup_teardown in
+          let setup_res = List.map (fun {setup;teardown} -> (setup (),teardown)) (!current_setup) in
           let p' = try f v with exn -> fail exn in
-          let () = match setup_res with | None -> () | Some (v,teardown) -> teardown v in
+          let () = List.fold_left (fun () (v,teardown) -> teardown v) () setup_res in
           let Internal p' = to_internal_promise p' in
           (* Run the user's function [f]. *)
 
