@@ -1,11 +1,13 @@
-# Lwt &nbsp;&nbsp; [![version][version]][releases] [![Travis status][travis-img]][travis] [![AppVeyor status][appveyor-img]][appveyor]
+# Lwt
 
-[version]:      https://img.shields.io/badge/version-5.3.0-blue.svg
-[releases]:     https://github.com/ocsigen/lwt/releases
-[travis]:       https://travis-ci.org/ocsigen/lwt/branches
-[travis-img]:   https://img.shields.io/travis/ocsigen/lwt/master.svg?label=travis
-[appveyor]:     https://ci.appveyor.com/project/aantron/lwt/branch/master
-[appveyor-img]: https://img.shields.io/appveyor/ci/aantron/lwt/master.svg?label=appveyor
+[![version][version]][releases] [![GitHub Actions status][github-actions-img]][github-actions]
+
+[version]:            https://img.shields.io/badge/version-5.3.0-blue.svg
+[releases]:           https://github.com/ocsigen/lwt/releases
+[github-actions]:     https://github.com/ocsigen/lwt/actions
+[github-actions-img]: https://github.com/ocsigen/lwt/actions/workflows/workflow.yml/badge.svg?branch=master
+[appveyor]:           https://ci.appveyor.com/project/aantron/lwt/branch/master
+[appveyor-img]:       https://img.shields.io/appveyor/ci/aantron/lwt/master.svg?label=appveyor
 
 Lwt is a concurrent programming library for OCaml. It provides a single data
 type: the *promise*, which is a value that will become determined in the future.
