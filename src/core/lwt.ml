@@ -831,8 +831,8 @@ sig
   val add_explicitly_removable_callback_to_each_of :
     'a t list -> 'a regular_callback -> unit
   val add_explicitly_removable_callback_and_give_remove_function :
-    'a t list -> 'a regular_callback -> (unit -> unit)
-  val add_cancel_callback : 'a callbacks -> (unit -> unit) -> unit
+    'a t list -> 'a regular_callback -> cancel_callback
+  val add_cancel_callback : 'a callbacks -> cancel_callback -> unit
   val merge_callbacks : from:'a callbacks -> into:'a callbacks -> unit
 end =
 struct
