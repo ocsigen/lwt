@@ -277,6 +277,11 @@ let rec unfold_lwt f u () =
   match x with
   | None -> return_nil
   | Some (x, u') -> Lwt.return (Cons (x, unfold_lwt f u'))
+let unfold_lwt f u () =
+  let* x = Lwt.apply f u in
+  match x with
+  | None -> return_nil
+  | Some (x, u') -> Lwt.return (Cons (x, unfold_lwt f u'))
 
 let rec of_list = function
   | [] -> empty
