@@ -1900,9 +1900,9 @@ struct
           current_storage := saved_storage;
           current_setup := saved_setup;
 
-          let res_teardown = Option.map (fun {setup;teardown} -> setup (),teardown) saved_setup in
+          let res_teardown = match saved_setup with | None -> None | Some {setup;teardown} -> Some (setup (),teardown) in
           let p' = try f v with exn -> fail exn in
-          Option.iter (fun (res,teardown) -> teardown res) res_teardown;
+          let _ = match res_teardown with | None -> None | Some (res,teardown) -> Some (teardown res) in
           let Internal p' = to_internal_promise p' in
           (* Run the user's function [f]. *)
 
