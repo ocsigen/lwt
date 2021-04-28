@@ -744,19 +744,19 @@ sig
   val get : 'v key -> 'v option
   val with_value : 'v key -> 'v option -> (unit -> 'b) -> 'b
 
-  type 'x setup = unit -> 'x
-  type 'x teardown = 'x -> unit
-  val with_setup_teardown : 'x setup -> 'x teardown -> (unit -> 'c) -> 'c
+  type setup = unit -> unit
+  type teardown = unit -> unit
+  val with_setup_teardown : setup:setup -> teardown:teardown -> (unit -> 'c) -> 'c
 
   (* Internal interface *)
   val current_storage : storage ref
 
-  type 'x setup_teardown = {
-    setup : 'x setup;
-    teardown : 'x teardown;
+  type setup_teardown = {
+    setup : setup;
+    teardown : teardown;
   }
 
-  val current_setup : 'x setup_teardown list ref
+  val current_setup : setup_teardown option ref
 end =
 struct
   (* The idea behind sequence-associated storage is to preserve some values
@@ -799,15 +799,15 @@ struct
 
   let current_storage = ref Storage_map.empty
 
-  type 'x setup = unit -> 'x
-  type 'x teardown = 'x -> unit
+  type setup = unit -> unit
+  type teardown = unit -> unit
 
-  type 'x setup_teardown = {
-    setup : 'x setup;
-    teardown : 'x teardown;
+  type setup_teardown = {
+    setup : setup;
+    teardown : teardown;
   }
 
-  let current_setup : 'x setup_teardown list ref = ref []
+  let current_setup : setup_teardown option ref = ref None
 
   let get key =
     if Storage_map.mem key.id !current_storage then begin
@@ -840,12 +840,14 @@ struct
       current_storage := saved_storage;
       raise exn
 
-  let with_setup_teardown (setup:'x setup) (teardown:'x teardown) (f:(unit -> 'c)) : 'c =
+  let with_setup_teardown ~setup ~teardown (f:(unit -> 'c)) : 'c =
     let saved_setup = !current_setup in
-    current_setup := ({setup;teardown}::(saved_setup));
+    current_setup := Some { setup;teardown };
     try
       (* Maybe should call setup and teardown here *)
+      let res = setup () in
       let result = f () in
+      let () = teardown res in
       current_setup := saved_setup;
       result
     with exn ->
@@ -1890,7 +1892,7 @@ struct
          depend on how the user obtained [p']. *)
 
       let saved_storage = !current_storage in
-      let saved_setup = !current_setup in
+      let saved_setup : setup_teardown option = !current_setup in
 
       let callback p_result =
         match p_result with
@@ -1898,9 +1900,9 @@ struct
           current_storage := saved_storage;
           current_setup := saved_setup;
 
-          let setup_res = List.map (fun {setup;teardown} -> (setup (),teardown)) (!current_setup) in
+          let res_teardown = Option.map (fun {setup;teardown} -> setup (),teardown) saved_setup in
           let p' = try f v with exn -> fail exn in
-          let () = List.fold_left (fun () (v,teardown) -> teardown v) () setup_res in
+          Option.iter (fun (res,teardown) -> teardown res) res_teardown;
           let Internal p' = to_internal_promise p' in
           (* Run the user's function [f]. *)
 

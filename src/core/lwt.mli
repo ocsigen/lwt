@@ -1650,7 +1650,7 @@ val state : 'a t -> 'a state
 
 (** {2 Deprecated} *)
 
-val with_setup_teardown : (unit -> 'x) -> ('x -> unit) -> (unit -> 'c) -> 'c
+val with_setup_teardown : setup:(unit -> unit) -> teardown:(unit -> unit) -> (unit -> 'c) -> 'c
 
 (** {3 Implicit callback arguments}
 
