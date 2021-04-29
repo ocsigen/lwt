@@ -1471,14 +1471,20 @@ let create_temp_dir
   attempt 0
 
 let win32_unlink fn =
-  try Lwt_unix.unlink fn with
-  | Unix.Unix_error (Unix.EACCES, _, _) as e -> (
-    try
-      (* Try removing the read-only attribute *)
-      Lwt_unix.chmod fn 0o666 >>= fun () ->
-      Lwt_unix.unlink fn
-    with
-    | _ -> raise e)
+  Lwt.catch
+    (fun () -> Lwt_unix.unlink fn)
+    (function
+     | Unix.Unix_error (Unix.EACCES, _, _) ->
+       Lwt_unix.lstat fn >>= fun {st_perm; _} ->
+       (* Try removing the read-only attribute *)
+       Lwt_unix.chmod fn 0o666 >>= fun () ->
+       Lwt.catch
+         (fun () -> Lwt_unix.unlink fn)
+         (function exn ->
+            (* Restore original permissions *)
+            Lwt_unix.chmod fn st_perm >>= fun () ->
+            Lwt.fail exn)
+     | exn -> Lwt.fail exn)
 
 let unlink =
   if Sys.win32 then
