@@ -1,4 +1,10 @@
-===== dev =====
+===== 5.4.1 =====
+
+====== Bugfixes ======
+
+  * Fix Lwt_fmt.stderr to actually point to stderr (#852, #850, Volker Diels-Grabsch).
+
+
 
 ===== 5.4.0 (2020-12-16) =====
 
