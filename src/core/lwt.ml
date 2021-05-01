@@ -830,14 +830,14 @@ struct
   let with_setup_teardown setup_teardown f =
       let saved_setup = !current_setup in
       current_setup := Some setup_teardown;
+      let teardown = setup_teardown () in
       try
-        let teardown = setup_teardown () in
-        (* Should we call setup/teardown here ? *)
         let result = f () in
         teardown ();
         current_setup := saved_setup;
         result
       with exn ->
+        teardown ();
         current_setup := saved_setup;
         raise exn
 
@@ -1888,8 +1888,7 @@ struct
           current_setup := saved_setup;
           let teardown_opt =
             match saved_setup with
-            | None -> 
-              None
+            | None -> None
             | Some setup -> Some (setup ())
           in
           let p' = try f v with exn -> fail exn in
