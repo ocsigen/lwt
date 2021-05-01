@@ -4442,20 +4442,62 @@ let callback_list_tests = suite "callback cleanup" [
   end;
 ]
 
-let limit = 100_000_000
-let performance_tests = suite "performance" [
+let limit = 1_000_000
+let setup_teardown_tests = suite "setup_teardown" [
  
   test "already fulfilled" begin fun () ->
     Printf.printf "Starting perf test\n%!";
     let t_start = Sys.time () in
-    let p = Lwt.with_setup_teardown ~setup:(fun () -> let _ = 5. ** 5. in ()) ~teardown:(fun () -> ()) (fun () -> Lwt.return 0) in
     let rec binder = function
-      | x when x = limit -> Lwt.return limit
-      | x -> Lwt.bind (Lwt.return (x+1)) binder
+      | x when x = limit -> 
+        let t_end = Sys.time () in
+        Printf.printf "\nDone perf for setup_teardown. Time taken=%f (ms)\n%!" ((t_end -. t_start) *. 1000.);
+          Lwt.return limit
+      | x ->
+          let p,wait = Lwt.wait () in
+          let p2 = Lwt.bind p (fun x -> Lwt.return (x+1)) in
+          Lwt.wakeup wait x;
+          Lwt.bind p2 binder
     in
-    let p = Lwt.bind p binder in
-    let t_end = Sys.time () in
-    Printf.printf "\nDone perf for setup_teardown. Time taken=%f (ms)\n%!" ((t_end -. t_start) *. 1000.);
+    let count = ref 0 in
+    let p = 
+      Lwt.with_setup_teardown
+        (fun () -> 
+          let counter = !count in
+          fun () -> count := counter + 1)
+        (fun () -> Lwt.bind (Lwt.return 0) binder)
+    in
+    state_is (Lwt.Return limit) p
+  end;
+
+
+
+  test "pending" begin fun () ->
+    Printf.printf "Starting perf test\n%!";
+    let t_start = Sys.time () in
+    let rec binder = function
+      | x when x = limit ->
+        let t_end = Sys.time () in
+        Printf.printf "\nDone perf for setup_teardown. Time taken=%f (ms)\n%!" ((t_end -. t_start) *. 1000.);
+          Lwt.return limit
+      | x ->
+          let p,wait = Lwt.wait () in
+          let p2 = Lwt.bind p (fun x -> Lwt.return (x+1)) in
+          Lwt.wakeup wait x;
+          Lwt.bind p2 binder
+    in
+    let count = ref 0 in
+    let p = 
+      Lwt.with_setup_teardown
+        (fun () -> 
+          let counter = !count in
+          fun () -> count := counter + 1)
+        (fun () -> 
+          let p,wake = Lwt.wait () in
+          let p = Lwt.bind p binder in
+          Lwt.wakeup wake 0;
+          p)
+    in
     state_is (Lwt.Return limit) p
   end;
 
@@ -4464,16 +4506,43 @@ let performance_tests = suite "performance" [
     let t_start = Sys.time () in
     let p = Lwt.return 0 in
     let rec binder = function
-      | x when x = limit -> Lwt.return limit
+      | x when x = 
+        limit -> 
+        let t_end = Sys.time () in
+        Printf.printf "\nDone perf test. Time taken=%f (ms)\n%!" ((t_end -. t_start) *. 1000.);
+          Lwt.return limit
       | x -> Lwt.bind (Lwt.return (x+1)) binder
     in
     let p = Lwt.bind p binder in
-    let t_end = Sys.time () in
-    Printf.printf "\nDone perf test. Time taken=%f (ms)\n%!" ((t_end -. t_start) *. 1000.);
     state_is (Lwt.Return limit) p
+  end;
+
+  test "simple instrument" begin fun () ->
+    Printf.printf "Starting perf test\n%!";
+    let t_start = Sys.time () in
+    let open Lwt.Infix in
+    let count = ref 0 in
+    let rec binder = function
+      | x when x = 
+        limit -> 
+        let t_end = Sys.time () in
+        Printf.printf "\nDone perf test. Time taken=%f (ms)\n%!" ((t_end -. t_start) *. 1000.);
+          Lwt.return limit
+      | x -> Lwt.bind (Lwt.return (x+1)) binder
+    in
+    let p =
+      Lwt.with_setup_teardown
+        (fun () ->
+          let counter = !count in
+          fun () -> count := counter + 1)
+        (fun () -> Lwt.return 0 |> Lwt.map (fun x -> x))
+    in
+    let p = Lwt.bind p binder in
+    state_is (Lwt.Return limit) p
+    >|= fun n -> instrument (n = true) "Done setup"
   end;
 
 
 ]
 
-let suites = suites @ [callback_list_tests] @ [performance_tests]
+let suites = suites @ [callback_list_tests] @ [setup_teardown_tests]

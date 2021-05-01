@@ -744,18 +744,12 @@ sig
   val get : 'v key -> 'v option
   val with_value : 'v key -> 'v option -> (unit -> 'b) -> 'b
 
-  type setup = unit -> unit
-  type teardown = unit -> unit
-  val with_setup_teardown : setup:setup -> teardown:teardown -> (unit -> 'c) -> 'c
 
   (* Internal interface *)
   val current_storage : storage ref
 
-  type setup_teardown = {
-    setup : setup;
-    teardown : teardown;
-  }
-
+  type setup_teardown = unit -> (unit -> unit)
+  val with_setup_teardown : setup_teardown -> (unit -> 'c) -> 'c
   val current_setup : setup_teardown option ref
 end =
 struct
@@ -799,16 +793,6 @@ struct
 
   let current_storage = ref Storage_map.empty
 
-  type setup = unit -> unit
-  type teardown = unit -> unit
-
-  type setup_teardown = {
-    setup : setup;
-    teardown : teardown;
-  }
-
-  let current_setup : setup_teardown option ref = ref None
-
   let get key =
     if Storage_map.mem key.id !current_storage then begin
       let refresh = Storage_map.find key.id !current_storage in
@@ -840,19 +824,22 @@ struct
       current_storage := saved_storage;
       raise exn
 
-  let with_setup_teardown ~setup ~teardown (f:(unit -> 'c)) : 'c =
-    let saved_setup = !current_setup in
-    current_setup := Some { setup;teardown };
-    try
-      (* Maybe should call setup and teardown here *)
-      let res = setup () in
-      let result = f () in
-      let () = teardown res in
-      current_setup := saved_setup;
-      result
-    with exn ->
-      current_setup := saved_setup;
-      raise exn
+  type setup_teardown = unit -> (unit -> unit)
+  let current_setup : setup_teardown option ref = ref None
+
+  let with_setup_teardown setup_teardown f =
+      let saved_setup = !current_setup in
+      current_setup := Some setup_teardown;
+      try
+        let teardown = setup_teardown () in
+        (* Should we call setup/teardown here ? *)
+        let result = f () in
+        teardown ();
+        current_setup := saved_setup;
+        result
+      with exn ->
+        current_setup := saved_setup;
+        raise exn
 
 
 end
@@ -1892,17 +1879,25 @@ struct
          depend on how the user obtained [p']. *)
 
       let saved_storage = !current_storage in
-      let saved_setup : setup_teardown option = !current_setup in
+      let saved_setup = !current_setup in
 
       let callback p_result =
         match p_result with
         | Fulfilled v ->
           current_storage := saved_storage;
           current_setup := saved_setup;
-
-          let res_teardown = match saved_setup with | None -> None | Some {setup;teardown} -> Some (setup (),teardown) in
+          let teardown_opt =
+            match saved_setup with
+            | None -> 
+              None
+            | Some setup -> Some (setup ())
+          in
           let p' = try f v with exn -> fail exn in
-          let _ = match res_teardown with | None -> None | Some (res,teardown) -> Some (teardown res) in
+          let _ =
+            match teardown_opt with
+            | None -> None
+            | Some teardown -> Some (teardown ())
+          in
           let Internal p' = to_internal_promise p' in
           (* Run the user's function [f]. *)
 
