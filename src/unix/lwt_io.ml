@@ -1474,13 +1474,13 @@ let win32_unlink fn =
   Lwt.catch
     (fun () -> Lwt_unix.unlink fn)
     (function
-     | Unix.Unix_error (Unix.EACCES, _, _) ->
+     | Unix.Unix_error (Unix.EACCES, _, _) as exn ->
        Lwt_unix.lstat fn >>= fun {st_perm; _} ->
        (* Try removing the read-only attribute *)
        Lwt_unix.chmod fn 0o666 >>= fun () ->
        Lwt.catch
          (fun () -> Lwt_unix.unlink fn)
-         (function exn ->
+         (function _ ->
             (* Restore original permissions *)
             Lwt_unix.chmod fn st_perm >>= fun () ->
             Lwt.fail exn)
