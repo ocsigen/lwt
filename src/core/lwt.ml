@@ -1886,17 +1886,9 @@ struct
         | Fulfilled v ->
           current_storage := saved_storage;
           current_setup := saved_setup;
-          let teardown_opt =
-            match saved_setup with
-            | None -> None
-            | Some setup -> Some (setup ())
-          in
+          let teardown_opt = match saved_setup with | None -> None | Some setup -> Some (setup ()) in
           let p' = try f v with exn -> fail exn in
-          let _ =
-            match teardown_opt with
-            | None -> None
-            | Some teardown -> Some (teardown ())
-          in
+          let _ = match teardown_opt with | None -> None | Some teardown -> Some (teardown ()) in
           let Internal p' = to_internal_promise p' in
           (* Run the user's function [f]. *)
 
@@ -1953,13 +1945,16 @@ struct
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
       let saved_storage = !current_storage in
+      let saved_setup = !current_setup in
 
       let callback p_result =
         match p_result with
         | Fulfilled v ->
           current_storage := saved_storage;
-
+          current_setup := saved_setup;
+          let teardown_opt = match saved_setup with | None -> None | Some setup -> Some (setup ()) in
           let p' = try f v with exn -> fail (add_loc exn) in
+          let _ = match teardown_opt with | None -> None | Some f -> Some (f ()) in
           let Internal p' = to_internal_promise p' in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -2007,13 +2002,16 @@ struct
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
       let saved_storage = !current_storage in
+      let saved_setup = !current_setup in
 
       let callback p_result =
         match p_result with
         | Fulfilled v ->
           current_storage := saved_storage;
-
+          current_setup := saved_setup;
+          let teardown_opt = match saved_setup with | None -> None | Some setup -> Some (setup ()) in
           let p''_result = try Fulfilled (f v) with exn -> Rejected exn in
+          let _ = match teardown_opt with | None -> None | Some f -> Some (f ()) in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
           let p'' = underlying p'' in
@@ -2063,6 +2061,7 @@ struct
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
       let saved_storage = !current_storage in
+      let saved_setup = !current_setup in
 
       let callback p_result =
         match p_result with
@@ -2076,8 +2075,10 @@ struct
 
         | Rejected exn ->
           current_storage := saved_storage;
-
+          current_setup := saved_setup;
+          let teardown_opt = match saved_setup with | None -> None | Some setup -> Some (setup ()) in
           let p' = try h exn with exn -> fail exn in
+          let _ = match teardown_opt with | None -> None | Some f -> Some (f ()) in
           let Internal p' = to_internal_promise p' in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -2118,6 +2119,7 @@ struct
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
       let saved_storage = !current_storage in
+      let saved_setup = !current_setup in
 
       let callback p_result =
         match p_result with
@@ -2132,7 +2134,10 @@ struct
         | Rejected exn ->
           current_storage := saved_storage;
 
+          current_setup := saved_setup;
+          let teardown_opt = match saved_setup with | None -> None | Some setup -> Some (setup ()) in
           let p' = try h exn with exn -> fail (add_loc exn) in
+          let _ = match teardown_opt with | None -> None | Some f -> Some (f ()) in
           let Internal p' = to_internal_promise p' in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -2173,13 +2178,16 @@ struct
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
       let saved_storage = !current_storage in
+      let saved_setup = !current_setup in
 
       let callback p_result =
         match p_result with
         | Fulfilled v ->
           current_storage := saved_storage;
-
+          current_setup := saved_setup;
+          let teardown_opt = match saved_setup with | None -> None | Some setup -> Some (setup ()) in
           let p' = try f' v with exn -> fail exn in
+          let _ = match teardown_opt with | None -> None | Some f -> Some (f ()) in
           let Internal p' = to_internal_promise p' in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -2191,8 +2199,11 @@ struct
 
         | Rejected exn ->
           current_storage := saved_storage;
-
+          current_setup := saved_setup;
+          let teardown_opt = match saved_setup with | None -> None | Some setup -> Some (setup ()) in
           let p' = try h exn with exn -> fail exn in
+          let _ = match teardown_opt with | None -> None | Some f -> Some (f ()) in
+
           let Internal p' = to_internal_promise p' in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -2239,13 +2250,17 @@ struct
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
       let saved_storage = !current_storage in
+      let saved_setup = !current_setup in
 
       let callback p_result =
         match p_result with
         | Fulfilled v ->
           current_storage := saved_storage;
 
+          current_setup := saved_setup;
+          let teardown_opt = match saved_setup with | None -> None | Some setup -> Some (setup ()) in
           let p' = try f' v with exn -> fail (add_loc exn) in
+          let _ = match teardown_opt with | None -> None | Some f -> Some (f ()) in
           let Internal p' = to_internal_promise p' in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -2258,7 +2273,10 @@ struct
         | Rejected exn ->
           current_storage := saved_storage;
 
+          current_setup := saved_setup;
+          let teardown_opt = match saved_setup with | None -> None | Some setup -> Some (setup ()) in
           let p' = try h exn with exn -> fail (add_loc exn) in
+          let _ = match teardown_opt with | None -> None | Some f -> Some (f ()) in
           let Internal p' = to_internal_promise p' in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
