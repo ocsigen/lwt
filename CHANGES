@@ -4,6 +4,8 @@
 
   * Fix Lwt_fmt.stderr to actually point to stderr (#852, #850, Volker Diels-Grabsch).
 
+  * Make temporary files created by Lwt_io.with_temp_dir deletable on Windows by removing the RO bit (#849, Antonin Décimo)
+
 
 
 ===== 5.4.0 (2020-12-16) =====

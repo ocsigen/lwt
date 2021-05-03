@@ -1470,6 +1470,28 @@ let create_temp_dir
   in
   attempt 0
 
+let win32_unlink fn =
+  Lwt.catch
+    (fun () -> Lwt_unix.unlink fn)
+    (function
+     | Unix.Unix_error (Unix.EACCES, _, _) as exn ->
+       Lwt_unix.lstat fn >>= fun {st_perm; _} ->
+       (* Try removing the read-only attribute *)
+       Lwt_unix.chmod fn 0o666 >>= fun () ->
+       Lwt.catch
+         (fun () -> Lwt_unix.unlink fn)
+         (function _ ->
+            (* Restore original permissions *)
+            Lwt_unix.chmod fn st_perm >>= fun () ->
+            Lwt.fail exn)
+     | exn -> Lwt.fail exn)
+
+let unlink =
+  if Sys.win32 then
+    win32_unlink
+  else
+    Lwt_unix.unlink
+
 (* This is likely VERY slow for directories with many files. That is probably
    best addressed by switching to blocking calls run inside a worker thread,
    i.e. with Lwt_preemptive. *)
@@ -1485,7 +1507,7 @@ let rec delete_recursively directory =
       if stat.Lwt_unix.st_kind = Lwt_unix.S_DIR then
         delete_recursively path
       else
-        Lwt_unix.unlink path
+        unlink path
   end >>= fun () ->
   Lwt_unix.rmdir directory
 
