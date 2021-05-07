@@ -4462,7 +4462,8 @@ let setup_teardown_tests = suite "setup_teardown" [
     let count = ref 0 in
     let p =
       Lwt.with_setup_teardown
-        (fun () -> fun () -> ())
+        ~setup:(fun () -> ())
+        ~teardown:(fun () -> ())
         (fun () -> Lwt.bind (Lwt.return 0) binder |> Lwt.map (fun _ -> !count))
     in
     state_is (Lwt.Return 0) p
@@ -4484,12 +4485,10 @@ let setup_teardown_tests = suite "setup_teardown" [
           Lwt.bind p2 binder
     in
     let count = ref 0 in
-    let p = 
+    let p =
       Lwt.with_setup_teardown
-        (fun () -> 
-          let counter = !count in
-          fun () -> 
-            count := counter + 1)
+        ~setup:(fun () -> !count)
+        ~teardown:(fun counter -> count := counter + 1)
         (fun () -> Lwt.bind (Lwt.return 0) binder |> Lwt.map (fun _ -> !count))
     in
     state_is (Lwt.Return limit) p
@@ -4529,9 +4528,8 @@ let setup_teardown_tests = suite "setup_teardown" [
     let count = ref 0 in
     let p = 
       Lwt.with_setup_teardown
-        (fun () -> 
-          let counter = !count in
-          fun () -> count := counter + 1)
+        ~setup:(fun () -> !count)
+        ~teardown:(fun counter -> count := counter + 1)
         (fun () -> 
           let p,wake = Lwt.wait () in
           let p = Lwt.bind p binder in

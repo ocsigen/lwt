@@ -1647,11 +1647,9 @@ val state : 'a t -> 'a state
     The constructor names are historical holdovers. *)
 
 
+val with_setup_teardown : setup:(unit -> 'a) -> teardown:('a -> unit) -> (unit -> 'c) -> 'c
 
 (** {2 Deprecated} *)
-
-type setup_teardown = unit -> (unit -> unit)
-val with_setup_teardown : setup_teardown -> (unit -> 'c) -> 'c
 
 (** {3 Implicit callback arguments}
 

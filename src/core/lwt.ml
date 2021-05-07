@@ -748,8 +748,8 @@ sig
   (* Internal interface *)
   val current_storage : storage ref
 
+  val with_setup_teardown : setup:(unit -> 'a) -> teardown:('a -> unit) -> (unit -> 'c) -> 'c
   type setup_teardown = unit -> (unit -> unit)
-  val with_setup_teardown : setup_teardown -> (unit -> 'c) -> 'c
   val current_setup : setup_teardown option ref
 end =
 struct
@@ -827,8 +827,9 @@ struct
   type setup_teardown = unit -> (unit -> unit)
   let current_setup : setup_teardown option ref = ref None
 
-  let with_setup_teardown setup_teardown f =
+  let with_setup_teardown ~setup ~teardown f =
       let saved_setup = !current_setup in
+      let setup_teardown = (fun () -> let res = setup () in fun () -> teardown res) in
       current_setup := Some setup_teardown;
       let teardown = setup_teardown () in
       try
