@@ -744,7 +744,6 @@ sig
   val get : 'v key -> 'v option
   val with_value : 'v key -> 'v option -> (unit -> 'b) -> 'b
 
-
   (* Internal interface *)
   val current_storage : storage ref
 
