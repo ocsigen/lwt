@@ -750,6 +750,7 @@ sig
   val with_setup_teardown : setup:(unit -> 'a) -> teardown:('a -> unit) -> (unit -> 'c) -> 'c
   type setup_teardown = unit -> (unit -> unit)
   val current_setup : setup_teardown option ref
+
 end =
 struct
   (* The idea behind sequence-associated storage is to preserve some values
