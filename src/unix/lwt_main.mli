@@ -42,7 +42,7 @@ let () = Lwt_main.run (main ())
       It is not safe to call [Lwt_main.run] in a function registered with
       [Pervasives.at_exit], use {!Lwt_main.at_exit} instead. *)
 
-val yield : unit -> unit Lwt.t
+val yield : unit -> unit Lwt.t [@@deprecated "Use Lwt.pause instead"]
   (** [yield ()] is a pending promise that is fulfilled after Lwt finishes
       calling all currently ready callbacks, i.e. it is fulfilled on the next
       “tick.”
@@ -53,7 +53,8 @@ val yield : unit -> unit Lwt.t
 
 val abandon_yielded_and_paused : unit -> unit
 (** Causes promises created with {!Lwt.pause} and {!Lwt_main.yield} to remain
-    forever pending.
+    forever pending. Once [yield] is phased out, this function will be deprecated
+    as well.
 
     This is meant for use with {!Lwt.fork}, as a way to "abandon" more promise
     chains that are pending in your process. *)
