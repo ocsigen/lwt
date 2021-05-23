@@ -124,7 +124,7 @@ let sleep delay =
   Lwt.on_cancel waiter (fun () -> Lwt_engine.stop_event ev);
   waiter
 
-let yield = Lwt_main.yield
+let[@warning "-3"] yield = Lwt_main.yield
 
 let auto_yield timeout =
   let limit = ref (Unix.gettimeofday () +. timeout) in
@@ -133,6 +133,16 @@ let auto_yield timeout =
     if current >= !limit then begin
       limit := current +. timeout;
       yield ();
+    end else
+      Lwt.return_unit
+
+let auto_pause timeout =
+  let limit = ref (Unix.gettimeofday () +. timeout) in
+  fun () ->
+    let current = Unix.gettimeofday () in
+    if current >= !limit then begin
+      limit := current +. timeout;
+      Lwt.pause ();
     end else
       Lwt.return_unit
 
@@ -2318,7 +2328,7 @@ let fork () =
     Lwt_sequence.iter_node_l Lwt_sequence.remove jobs;
     (* And cancel them all. We yield first so that if the program
        do an exec just after, it won't be executed. *)
-    Lwt.on_termination (Lwt_main.yield ()) (fun () -> List.iter (fun f -> f Lwt.Canceled) l);
+    Lwt.on_termination (Lwt_main.yield () [@warning "-3"]) (fun () -> List.iter (fun f -> f Lwt.Canceled) l);
     0
   | pid ->
     pid
