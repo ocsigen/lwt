@@ -32,6 +32,7 @@ depends: [
   # Until https://github.com/aantron/bisect_ppx/pull/327.
   # "bisect_ppx" {dev & >= "2.0.0"}
   "ocamlfind" {dev & >= "1.7.3-1"}
+  "domainslib" #multicore
 ]
 
 depopts: [
