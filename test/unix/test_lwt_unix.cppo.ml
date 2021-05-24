@@ -1173,6 +1173,14 @@ let pread_tests ~blocking =
       Lwt.return_true);
 ]
 
+let lwt_domain_test = [
+  test "run_in_domain" begin fun () ->
+    let f () = 40 + 2 in
+    Lwt_domain.detach f () >>= fun x ->
+    Lwt.return (x = 42)
+  end;
+]
+
 let suite =
   suite "lwt_unix"
     (wait_tests @
@@ -1188,5 +1196,6 @@ let suite =
      lwt_preemptive_tests @
      lwt_user_tests @
      pread_tests ~blocking:true @
-     pread_tests ~blocking:false
+     pread_tests ~blocking:false @
+     lwt_domain_test
     )
