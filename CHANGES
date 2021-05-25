@@ -1,8 +1,13 @@
 ===== dev =====
 
+====== Deprecations ======
+
+  * Lwt_main.yield and Lwt_unix.yield are deprecated in favor of the generic Lwt.pause, and Lwt_unix.auto_yield is deprecated in favor of the new Lwt_unix.auto_pause (#855, #858, Favonia). Currently, Lwt.main resolves paused promises more frequently than yielded promises. The difference is unintended but existing applications could depend on it. Once the migration has been completed, Lwt_main.abandon_yielded_and_paused will also be deprecated in favor of Lwt.abandon_paused.
+
 ====== Additions ======
 
   * Lwt_seq: a Seq-like data-structure with Lwt delayed nodes (#836, #842, Zach Shipko).
+  * Lwt_unix.auto_pause: the replacement of Lwt_unix.auto_yield that uses Lwt.pause instead of Lwt_unix.yield (#855, #858, Favonia).
 
 ====== Misc ======
 
