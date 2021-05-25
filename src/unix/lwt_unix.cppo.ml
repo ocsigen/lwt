@@ -124,7 +124,7 @@ let sleep delay =
   Lwt.on_cancel waiter (fun () -> Lwt_engine.stop_event ev);
   waiter
 
-let[@warning "-3"] yield = Lwt_main.yield
+let yield = (Lwt_main.yield [@warning "-3"])
 
 let auto_yield timeout =
   let limit = ref (Unix.gettimeofday () +. timeout) in
