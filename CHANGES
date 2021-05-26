@@ -1,10 +1,10 @@
 ===== dev =====
 
-====== Breaking ======
+====== Deprecations ======
 
   * Lwt_main.yield and Lwt_unix.yield are deprecated in favor of the generic Lwt.pause, and Lwt_unix.auto_yield is deprecated in favor of the new Lwt_unix.auto_pause (#855, #858, Favonia).
 
-    Currently, Lwt.main resolves paused promises more frequently than the yielded promises. The difference is unintended but existing applications could depend on it. Unifying the two pools of promises into one would eliminate possible discrepancies and simplify Lwt.main. As the first step, all yield-related functions are deprecated except for Lwt_main.abandon_yielded_and_paused to work with existing libraries still using yield. Eventually, Lwt_main.abandon_yielded_and_paused will also be deprecated in favor of Lwt.abandon_paused.
+    Currently, Lwt.main resolves paused promises more frequently than yielded promises. The difference is unintended but existing applications could depend on it. Unifying the two pools of promises into one would eliminate possible discrepancies and simplify Lwt_main. As the first step, all yield-related functions are deprecated except for Lwt_main.abandon_yielded_and_paused for applications to work with existing libraries that still use yield. Once the migration has been completed, Lwt_main.abandon_yielded_and_paused will also be deprecated in favor of Lwt.abandon_paused.
 
 ====== Additions ======
 
