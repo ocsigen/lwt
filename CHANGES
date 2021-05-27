@@ -8,6 +8,11 @@
 
   * Fix Lwt_fmt.stderr to actually point to stderr (#852, #850, Volker Diels-Grabsch).
 
+====== Misc ======
+
+  * Code quality improvement: remove an uneeded Obj.magic (#844, Benoit Montagu).
+
+
 ===== 5.4.0 (2020-12-16) =====
 
 ====== Installability ======
