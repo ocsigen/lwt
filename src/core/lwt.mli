@@ -298,8 +298,8 @@ let () =
     underlying I/O operations complete.
 
     In case your callback is just using the CPU for a really long time, you can
-    insert a few calls to {!Lwt_main.yield} into it, and resume your computation
-    in callbacks of [yield]. This is basically the same as
+    insert a few calls to {!Lwt.pause} into it, and resume your computation
+    in callbacks of [pause]. This is basically the same as
     {!Lwt_unix.sleep}[ 0.] – it's a promise that will be resolved by
     {!Lwt_main.run} {e after} any other I/O resolutions that are already in its
     queue.
@@ -1927,7 +1927,7 @@ val register_pause_notifier : (int -> unit) -> unit
 
 val abandon_paused : unit -> unit
 (** Causes promises created with {!Lwt.pause} to remain forever pending. See
-    {!Lwt_main.abandon_yielded_and_paused}.
+    {!Lwt_main.abandon_yielded_and_paused} before {!Lwt_main.yield} is phased out.
 
     This function is intended for internal use by Lwt. *)
 

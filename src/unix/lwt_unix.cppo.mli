@@ -51,16 +51,18 @@ val sleep : float -> unit Lwt.t
   (** [sleep d] is a promise that remains in a pending state for [d] seconds
       and after which it is resolved with value [()]. *)
 
-val yield : unit -> unit Lwt.t
+val yield : unit -> unit Lwt.t [@@deprecated "Use Lwt.pause instead"]
   (** [yield ()] is a promise in a pending state. It resumes itself as soon as
       possible and resolves with value [()]. *)
 
-val auto_yield : float -> (unit -> unit Lwt.t)
-  (** [auto_yield timeout] returns a function [f], and [f ()] has the following
+val auto_yield : float -> (unit -> unit Lwt.t) [@@deprecated "Use Lwt.auto_pause instead"]
+
+val auto_pause : float -> (unit -> unit Lwt.t)
+  (** [auto_pause timeout] returns a function [f], and [f ()] has the following
       behavior:
 
       - If it has been more than [timeout] seconds since the last time [f ()]
-        behaved like {!Lwt_unix.yield}, [f ()] calls {!Lwt_unix.yield}.
+        behaved like {!Lwt.pause}, [f ()] calls {!Lwt.pause}.
       - Otherwise, if it has been less than [timeout] seconds, [f ()] behaves
         like {!Lwt.return_unit}, i.e. it does not yield. *)
 
