@@ -1,12 +1,14 @@
 ===== 5.4.1 =====
 
-====== Bugfixes ======
+====== Bugs fixed ======
 
   * Fix Lwt_fmt.stderr to actually point to stderr (#852, #850, Volker Diels-Grabsch).
 
-  * Make temporary files created by Lwt_io.with_temp_dir deletable on Windows by removing the RO bit (#849, Antonin Décimo)
+  * Make temporary files created by Lwt_io.with_temp_dir deletable on Windows by removing the RO bit (#849, #861, Antonin Décimo).
 
-  * Lwt_io.establish_server* handles ECONNABORTED (#829, #830, Reynir Björnsson)
+  * Handle ECONNABORTED in Lwt_io.establish_server* (#829, #830, Reynir Björnsson, Hannes Mehnert).
+
+
 
 ===== 5.4.0 (2020-12-16) =====
 
