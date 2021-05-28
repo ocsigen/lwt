@@ -2,7 +2,7 @@ opam-version: "2.0"
 
 synopsis: "Promises and event-driven I/O"
 
-version: "5.4.0"
+version: "5.4.1"
 license: "MIT"
 homepage: "https://github.com/ocsigen/lwt"
 doc: "https://ocsigen.org/lwt"
