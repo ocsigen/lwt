@@ -135,6 +135,16 @@ val of_string : string -> char t
     characters are pushed into the stream immediately, resulting in a closed
     stream (in the sense of {!is_closed}). *)
 
+val of_lwt : 'a Lwt.t -> 'a t
+(** [of_lwt l] creates a stream returning the value of [l]. The value is pushed
+    into the stream immediately after the promise becomes resolved, resulting in
+    a closed stream (in the sense of {!is_closed}). *)
+
+val of_list_lwt : 'a list Lwt.t -> 'a t
+(** [of_list_lwt l] creates a stream returning all elements of [l]. The elements
+    are pushed into stream immediately after the promise becomes resolved,
+    resulting in a closed stream (in the sense of {!is_closed}). *)
+
 val clone : 'a t -> 'a t
 (** [clone st] clone the given stream. Operations on each stream
     will not affect the other.

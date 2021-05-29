@@ -215,6 +215,18 @@ let of_array a =
 let of_string s =
   of_iter String.iter s
 
+let of_list_lwt l =
+  let source, push, _ = create_with_reference () in
+  Lwt.bind l (fun i ->
+    List.iter (fun x -> push (Some x)) i;
+    push None;
+    Lwt.return_unit
+  ) |> ignore;
+  source
+
+let of_lwt l =
+  [l] |> Lwt.all |> of_list_lwt
+
 (* Add the pending element to the queue and notify the blocked pushed.
 
    Precondition: info.pushb_pending = Some _
