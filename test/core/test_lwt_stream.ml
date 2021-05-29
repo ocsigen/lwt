@@ -56,6 +56,22 @@ let suite = suite "lwt_stream" [
        Lwt_stream.next stream >>= fun x3 ->
        return ([x1; x2; x3] = [1; 2; 3]));
 
+  test "of_lwt"
+    (fun () ->
+       let lwt = Lwt.return 123 in
+       let stream = Lwt_stream.of_lwt lwt in
+       Lwt_stream.next stream >>= fun x ->
+       return (x = 123));
+
+  test "of_list_lwt"
+    (fun () ->
+       let l = Lwt.return [1; 2; 3;] in
+       let stream = Lwt_stream.of_list_lwt l in
+       Lwt_stream.next stream >>= fun x1 ->
+       Lwt_stream.next stream >>= fun x2 ->
+       Lwt_stream.next stream >>= fun x3 ->
+       return ([x1; x2; x3] = [1; 2; 3]));
+
   test "clone"
     (fun () ->
        let stream1 = Lwt_stream.of_list [1; 2; 3] in
