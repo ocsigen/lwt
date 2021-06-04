@@ -1173,6 +1173,36 @@ let pread_tests ~blocking =
       Lwt.return_true);
 ]
 
+let lwt_domain_test = [
+  test "run_in_domain" begin fun () ->
+    let f () = 40 + 2 in
+    Lwt_domain.detach f () >>= fun x ->
+    Lwt.return (x = 42)
+  end;
+  test "run_in_main_domain" begin fun () ->
+    let f () =
+      Lwt_domain.run_in_main (fun () ->
+        Lwt_unix.sleep 0.01 >>= fun () ->
+        Lwt.return 42)
+    in
+    Lwt_domain.detach f () >>= fun x ->
+    Lwt.return (x = 42)
+  end;
+  test "fib_domain" begin fun () ->
+    let rec fib n =
+      if n < 2 then n
+      else fib (n - 1) + fib (n - 2)
+    in
+    let l1 =
+      List.init 10 (fun i -> Lwt_domain.detach fib i) in
+    let l2 =
+      List.init 10 (fun i -> Lwt.return (fib i)) in
+    let s1 = Lwt.all l1 in
+    let s2 = Lwt.all l2 in
+    Lwt.return (s1 = s2)
+  end;
+]
+
 let suite =
   suite "lwt_unix"
     (wait_tests @
@@ -1188,5 +1218,6 @@ let suite =
      lwt_preemptive_tests @
      lwt_user_tests @
      pread_tests ~blocking:true @
-     pread_tests ~blocking:false
+     pread_tests ~blocking:false @
+     lwt_domain_test
     )
