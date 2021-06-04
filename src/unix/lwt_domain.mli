@@ -28,9 +28,9 @@
         retrieve values set this way inside [f ()], but not values set using
         {!Lwt.with_value} outside [f ()]. *)
 
-  val init : int -> int -> (string -> unit) -> unit
-    (** [init min max log] initialises this module. i.e. it launches the
-        minimum number of domains and starts the {b
+  val init : int -> (string -> unit) -> unit
+    (** [init num log] initialises this module. i.e. it launches the
+        num number of domains and starts the {b
         dispatcher}.
         @param min is the minimum number of domains
         @param max is the maximum number of domains
@@ -40,18 +40,16 @@
 
   val simple_init : unit -> unit
   (** [simple_init ()] checks if the library is not yet initialized, and if not,
-      does a {i simple initialization}. The minimum number of domains is set to
-      zero, maximum to four, and the log function is left unchanged, i.e. the
-      default built-in logging function is used. See {!Lwt_preemptive.init}.
-      Note: this function is automatically called by {!detach}. *)
+      does a {i simple initialization}. The number of domains is set to four,
+      and the log function is left unchanged, i.e. the default built-in
+      logging function is used. See {!Lwt_preemptive.init}. Note: this
+      function is automatically called by {!detach}. *)
 
-  val get_bounds : unit -> int * int
-    (** [get_bounds ()] returns the minimum and the maximum number of
-        domains. *)
+  val get_bounds : unit -> int
+    (** [get_bounds ()] returns the number of domains. *)
 
-  val set_bounds : int * int -> unit
-    (** [set_bounds (min, max)] set the minimum and the maximum number
-        of domains. *)
+  val set_bounds : int -> unit
+    (** [set_bounds num] sets the number of domains. *)
 
   val set_max_number_of_domains_queued : int -> unit
     (** Sets the size of the waiting queue, if no more domains are available.
@@ -64,5 +62,3 @@
 
   (**/**)
   val nbdomains : unit -> int
-  val nbdomainsbusy : unit -> int
-  val nbdomainsqueued : unit -> int
