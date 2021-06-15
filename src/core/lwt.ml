@@ -800,6 +800,9 @@ struct
       None
 
   let with_value key value f =
+    if Storage_map.mem key.id !current_storage
+      then print_endline @@ "WARNING lwt: value already defined";
+
     let new_storage =
       match value with
       | Some _ ->
