@@ -1224,46 +1224,28 @@ let access name mode =
    | Operations on file descriptors                                  |
    +-----------------------------------------------------------------+ *)
 
-let dup ch =
-  check_descriptor ch;
-  let fd = Unix.dup ch.fd in
-  {
-    fd = fd;
+let dup ch1 =
+  check_descriptor ch1;
+  let ch2 = {
+    fd = Unix.dup ch1.fd;
+    set_flags = true;                 (* overridden *)
+    blocking = lazy(Lwt.return_true); (* overridden *)
     state = Opened;
-    set_flags = ch.set_flags;
-    blocking =
-      if ch.set_flags then
-        lazy(Lazy.force ch.blocking >>= function
-        | true ->
-          Unix.clear_nonblock fd;
-          Lwt.return_true
-        | false ->
-          Unix.set_nonblock fd;
-          Lwt.return_false)
-      else
-        ch.blocking;
     event_readable = None;
     event_writable = None;
     hooks_readable = Lwt_sequence.create ();
     hooks_writable = Lwt_sequence.create ();
-  }
+  } in
+  set_blocking ~set_flags:ch1.set_flags ch2 ch1.set_flags;
+  ch2
 
 let dup2 ch1 ch2 =
   check_descriptor ch1;
   Unix.dup2 ch1.fd ch2.fd;
-  ch2.set_flags <- ch1.set_flags;
   ch2.blocking <- (
-    if ch2.set_flags then
-      lazy(Lazy.force ch1.blocking >>= function
-      | true ->
-        Unix.clear_nonblock ch2.fd;
-        Lwt.return_true
-      | false ->
-        Unix.set_nonblock ch2.fd;
-        Lwt.return_false)
-    else
-      ch1.blocking
-  )
+    lazy(Lazy.force ch1.blocking >>= fun blocking ->
+         set_blocking ~set_flags:ch1.set_flags ch2 blocking;
+         Lwt.return blocking))
 
 let set_close_on_exec ch =
   check_descriptor ch;
