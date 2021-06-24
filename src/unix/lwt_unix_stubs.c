@@ -390,7 +390,7 @@ failure:
   uerror("socketpair", Nothing);
 }
 
-static int socket_domain_table[] = {PF_UNIX, PF_INET};
+static int socket_domain_table[] = {PF_UNIX, PF_INET, PF_INET6};
 
 static int socket_type_table[] = {SOCK_STREAM, SOCK_DGRAM, SOCK_RAW,
                                   SOCK_SEQPACKET};
