@@ -7,7 +7,6 @@ let bisect_ppx =
   | exception _ -> ""
 
 let () = Jbuild_plugin.V1.send @@ {|
-
 (library
  (name ppx_lwt)
  (public_name lwt_ppx)
@@ -16,7 +15,6 @@ let () = Jbuild_plugin.V1.send @@ {|
  (libraries ppxlib)
  (ppx_runtime_libraries lwt)
  (kind ppx_rewriter)
- (preprocess (pps ppxlib.metaquot|} ^ bisect_ppx ^ {|))
+ (preprocess (pps ppxlib.metaquot |} ^ bisect_ppx ^ {|))
  (flags (:standard -w +A-4)))
-
 |}

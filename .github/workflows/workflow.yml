@@ -31,22 +31,33 @@ jobs:
           - true
         local-packages:
           - "*.opam"
+        coverage:
+          - false
         include:
           - os: ubuntu-latest
             ocaml-compiler: ocaml-variants.4.12.0+options,ocaml-option-flambda,ocaml-option-musl,ocaml-option-static
             libev: false
             ppx: true
             local-packages: "*.opam"
+            coverage: false
+          - os: ubuntu-latest
+            ocaml-compiler: 4.12.x
+            libev: true
+            ppx: true
+            local-packages: "*.opam"
+            coverage: true
           - os: macos-latest
             ocaml-compiler: 4.12.x
             libev: true
             ppx: true
             local-packages: "*.opam"
+            coverage: false
           - os: windows-latest
             ocaml-compiler: 4.12.x
             libev: false
             ppx: true
             local-packages: "*.opam"
+            coverage: false
           - os: ubuntu-latest
             ocaml-compiler: 4.02.x
             libev: true
@@ -54,6 +65,7 @@ jobs:
             local-packages: |
               *.opam
               !lwt_ppx.opam
+            coverage: false
           - os: ubuntu-latest
             ocaml-compiler: 4.02.x
             libev: false
@@ -61,6 +73,7 @@ jobs:
             local-packages: |
               *.opam
               !lwt_ppx.opam
+            coverage: false
           - os: ubuntu-latest
             ocaml-compiler: 4.03.x
             libev: true
@@ -68,6 +81,7 @@ jobs:
             local-packages: |
               *.opam
               !lwt_ppx.opam
+            coverage: false
           - os: ubuntu-latest
             ocaml-compiler: 4.03.x
             libev: false
@@ -75,6 +89,7 @@ jobs:
             local-packages: |
               *.opam
               !lwt_ppx.opam
+            coverage: false
 
     runs-on: ${{ matrix.os }}
 
@@ -112,3 +127,15 @@ jobs:
 
       - run: opam exec -- make ppx_let-test-deps ppx_let-test
         if: ${{ matrix.ppx == true }}
+
+      - run: opam install bisect_ppx
+        if: ${{ matrix.coverage == true }}
+
+      - run: opam exec -- make coverage
+        if: ${{ matrix.coverage == true }}
+
+      - run: opam exec -- bisect-ppx-report send-to Coveralls
+        if: ${{ matrix.coverage == true }}
+        env:
+          COVERALLS_REPO_TOKEN: ${{ github.token }}
+          PULL_REQUEST_NUMBER: ${{ github.event.number }}
