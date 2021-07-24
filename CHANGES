@@ -2,13 +2,31 @@
 
 ====== Additions ======
 
-  * Lwt_seq: a Seq-like data-structure with Lwt delayed nodes (#836, Zach Shipko).
+  * Lwt_seq: a Seq-like data-structure with Lwt delayed nodes (#836, #842, Zach Shipko).
+
+====== Misc ======
+
+  * Code quality improvement: remove an uneeded Obj.magic (#844, Benoit Montagu).
+
+
+===== 5.4.1 =====
+
+====== Bugs fixed ======
+
+  * Fix Lwt_fmt.stderr to actually point to stderr (#852, #850, Volker Diels-Grabsch).
+
+  * Make temporary files created by Lwt_io.with_temp_dir deletable on Windows by removing the RO bit (#849, #861, Antonin Décimo).
+
+  * Handle ECONNABORTED in Lwt_io.establish_server* (#829, #830, Reynir Björnsson, Hannes Mehnert).
+
+
 
 ====== Bugfixes ======
 
   * Fix Lwt_fmt.stderr to actually point to stderr (#852, #850, Volker Diels-Grabsch).
 
   * Lwt_io.establish_server* handles ECONNABORTED (#829, #830, Reynir Björnsson)
+
 
 ===== 5.4.0 (2020-12-16) =====
 
