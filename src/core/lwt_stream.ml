@@ -187,6 +187,21 @@ let create_with_reference () =
   in
   (t, push, fun x -> source.push_external <- Obj.repr x)
 
+let return a =
+  let stream, push, _ = create_with_reference () in
+  push (Some a);
+  push None;
+  stream
+
+let return_lwt a =
+  let source, push, _ = create_with_reference () in
+  Lwt.bind a (fun x ->
+    push (Some x);
+    push None;
+    Lwt.return_unit
+  ) |> ignore;
+  source
+
 let of_seq s =
   let s = ref s in
   let get () =
@@ -214,18 +229,6 @@ let of_array a =
 
 let of_string s =
   of_iter String.iter s
-
-let of_list_lwt l =
-  let source, push, _ = create_with_reference () in
-  Lwt.bind l (fun i ->
-    List.iter (fun x -> push (Some x)) i;
-    push None;
-    Lwt.return_unit
-  ) |> ignore;
-  source
-
-let of_lwt l =
-  [l] |> Lwt.all |> of_list_lwt
 
 (* Add the pending element to the queue and notify the blocked pushed.
 
