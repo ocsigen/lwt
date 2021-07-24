@@ -34,7 +34,7 @@ let cons_lwt x t () =
    This is only needed on the first iteration because we are within a callback
    passed to Lwt on the right-hand side of a bind after that.
 
-   Throughout this file we use the same code pattern to acheive this: we
+   Throughout this file we use the same code pattern to achieve this: we
    shadow the recursive traversal function with an identical-but-for-the-apply
    non-recursive copy. *)
 
@@ -262,7 +262,7 @@ let iter_n ?(max_concurrency = 1) f seq =
     | Cons (elt, seq) ->
       loop (f elt :: running) (pred available) seq
   in
-  (* because the recursion is more comolicated here, we apply the seq directly at
+  (* because the recursion is more complicated here, we apply the seq directly at
      the call-site instead *)
   loop [] max_concurrency (fun () -> Lwt.apply seq ())
 
