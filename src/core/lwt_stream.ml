@@ -213,6 +213,16 @@ let of_seq s =
   in
   from_direct get
 
+let of_lwt_seq s =
+  let s = ref s in
+  let get () =
+    !s () >|= function
+    | Lwt_seq.Nil -> None
+    | Lwt_seq.Cons (elt, s') -> s := s'; Some elt
+  in
+  from get
+
+
 let create () =
   let source, push, _ = create_with_reference () in
   (source, push)

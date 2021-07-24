@@ -137,6 +137,12 @@ val of_seq : 'a Seq.t -> 'a t
 
     @since 4.2.0 *)
 
+val of_lwt_seq : 'a Lwt_seq.t -> 'a t
+(** [of_lwt_seq s] creates a stream returning all elements of [s]. The elements
+    are evaluated from [s] and pushed onto the stream as the stream is consumed.
+
+    @since 5.5.0 *)
+
 val of_list : 'a list -> 'a t
 (** [of_list l] creates a stream returning all elements of [l]. The elements are
     pushed into the stream immediately, resulting in a closed stream (in the
