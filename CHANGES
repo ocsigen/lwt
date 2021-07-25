@@ -4,6 +4,8 @@
 
   * Lwt_seq: a Seq-like data-structure with Lwt delayed nodes (#836, #842, Zach Shipko).
 
+  * Lwt_stream.return, Lwt_stream.return_lwt: singleton stream constructors (#864, Boning Dong)
+
 ====== Misc ======
 
   * Code quality improvement: remove an uneeded Obj.magic (#844, Benoit Montagu).
