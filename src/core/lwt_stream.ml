@@ -195,11 +195,13 @@ let return a =
 
 let return_lwt a =
   let source, push, _ = create_with_reference () in
-  Lwt.bind a (fun x ->
-    push (Some x);
-    push None;
-    Lwt.return_unit
-  ) |> ignore;
+  Lwt.dont_wait
+    (fun () ->
+      Lwt.bind a (fun x ->
+        push (Some x);
+        push None;
+        Lwt.return_unit))
+    (fun _exc -> push None);
   source
 
 let of_seq s =

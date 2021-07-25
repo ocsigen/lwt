@@ -115,14 +115,21 @@ val create_bounded : int -> 'a t * 'a bounded_push
     It raises [Invalid_argument] if [size < 0]. *)
 
 val return : 'a -> 'a t
-(** [return a] creates a stream returning the value of [a]. The elements are
-      pushed into the stream immediately, resulting in a closed stream (in the
-          sense of {!is_closed}). *)
+(** [return a] creates a stream containing the value [a] and being immediately
+    closed stream (in the sense of {!is_closed}).
+
+    @since 5.5.0 *)
 
 val return_lwt : 'a Lwt.t -> 'a t
-(** [return_lwt l] creates a stream returning the value of [l]. The value is pushed
-    into the stream immediately after the promise becomes resolved, resulting in
-    a closed stream (in the sense of {!is_closed}). *)
+(** [return_lwt l] creates a stream returning the value that [l] resolves to.
+    The value is pushed into the stream immediately after the promise becomes
+    resolved and the stream is then immediately closed (in the sense of
+    {!is_closed}).
+
+    If, instead, [l] becomes rejected, then the stream is closed without any
+    elements in it. Attempting to fetch elements from it will raise !{Empty}.
+
+    @since 5.5.0 *)
 
 val of_seq : 'a Seq.t -> 'a t
 (** [of_seq s] creates a stream returning all elements of [s]. The elements are
