@@ -187,6 +187,23 @@ let create_with_reference () =
   in
   (t, push, fun x -> source.push_external <- Obj.repr x)
 
+let return a =
+  let stream, push, _ = create_with_reference () in
+  push (Some a);
+  push None;
+  stream
+
+let return_lwt a =
+  let source, push, _ = create_with_reference () in
+  Lwt.dont_wait
+    (fun () ->
+      Lwt.bind a (fun x ->
+        push (Some x);
+        push None;
+        Lwt.return_unit))
+    (fun _exc -> push None);
+  source
+
 let of_seq s =
   let s = ref s in
   let get () =

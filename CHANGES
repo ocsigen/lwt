@@ -10,6 +10,8 @@
 
   * Lwt_unix.auto_pause: the replacement of Lwt_unix.auto_yield that uses Lwt.pause instead of Lwt_unix.yield (#855, #858, Favonia).
 
+  * Lwt_stream.return, Lwt_stream.return_lwt: singleton stream constructors (#864, Boning Dong).
+
 ====== Misc ======
 
   * Code quality improvement: remove an uneeded Obj.magic (#844, Benoit Montagu).
