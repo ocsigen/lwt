@@ -4,6 +4,10 @@
 
   * Lwt_main.yield and Lwt_unix.yield are deprecated in favor of the generic Lwt.pause, and Lwt_unix.auto_yield is deprecated in favor of the new Lwt_unix.auto_pause. Currently, Lwt_main.run resolves paused promises more frequently than yielded promises; the difference is unintended but existing applications could unintentionally depend on it (#855, #858, Favonia).
 
+====== Fixes ======
+
+  * Support IPv6 socketpair on Windows (#870, #876, Antonin Décimo, David Allsopp).
+
 ====== Additions ======
 
   * Lwt_seq: a Seq-like data-structure with Lwt delayed nodes (#836, #842, Zach Shipko).
