@@ -44,7 +44,9 @@ char *lwt_unix_strdup(char *string);
     (type *)lwt_unix_malloc(sizeof(type) + size)
 
 /* Raise [Lwt_unix.Not_available]. */
-void lwt_unix_not_available(char const *feature) Noreturn;
+CAMLnoreturn_start
+void lwt_unix_not_available(char const *feature)
+CAMLnoreturn_end;
 
 #define LWT_NOT_AVAILABLE_BYTE(prim)             \
     CAMLprim value lwt_##prim(value *a1, int a2) \
