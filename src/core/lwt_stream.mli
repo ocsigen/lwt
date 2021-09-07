@@ -127,7 +127,7 @@ val return_lwt : 'a Lwt.t -> 'a t
     {!is_closed}).
 
     If, instead, [l] becomes rejected, then the stream is closed without any
-    elements in it. Attempting to fetch elements from it will raise !{Empty}.
+    elements in it. Attempting to fetch elements from it will raise {!Empty}.
 
     @since 5.5.0 *)
 
