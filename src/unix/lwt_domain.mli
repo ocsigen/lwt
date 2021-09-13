@@ -51,14 +51,5 @@
   val set_bounds : int -> unit
     (** [set_bounds num] sets the number of domains. *)
 
-  val set_max_number_of_domains_queued : int -> unit
-    (** Sets the size of the waiting queue, if no more domains are available.
-        When the queue is full, {!detach} will
-        sleep until a thread is available. *)
-
-  val get_max_number_of_domains_queued : unit -> int
-    (** Returns the size of the waiting queue, if no more domains are
-        available *)
-
   (**/**)
   val nbdomains : unit -> int
