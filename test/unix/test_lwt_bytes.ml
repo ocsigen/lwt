@@ -349,7 +349,77 @@ let suite = suite "lwt_bytes" [
       with
       | Invalid_argument _ -> Lwt.return_true
       | _ -> Lwt.return_false
+      end;
+
+    test "blit from string" begin fun () ->
+      let string1 = "abc" in
+      let str2 = "abcdef" in
+      let buf2 = Lwt_bytes.of_string str2 in
+      let () = Lwt_bytes.blit_from_string string1 0 buf2 3 3 in
+      let check = "abcabc" = Lwt_bytes.to_string buf2 in
+      Lwt.return check
     end;
+
+    test "blit from string source out of bounds: lower limit" begin fun () ->
+      let string1 = "abc" in
+      let str2 = "abcdef" in
+      let buf2 = Lwt_bytes.of_string str2 in
+      try
+        let () = Lwt_bytes.blit_from_string string1 (-1) buf2 3 3 in
+        Lwt.return_false
+      with
+      | Invalid_argument _ -> Lwt.return_true
+      | _ -> Lwt.return_false
+    end;
+
+    test "blit from string source out of bounds: upper limit" begin fun () ->
+      let string1 = "abc" in
+      let str2 = "abcdef" in
+      let buf2 = Lwt_bytes.of_string str2 in
+      try
+        let () = Lwt_bytes.blit_from_string string1 1 buf2 3 3 in
+        Lwt.return_false
+      with
+      | Invalid_argument _ -> Lwt.return_true
+      | _ -> Lwt.return_false
+    end;
+
+    test "blit from string destination out of bounds: lower limit" begin fun () ->
+      let string1 = "abc" in
+      let str2 = "abcdef" in
+      let buf2 = Lwt_bytes.of_string str2 in
+      try
+        let () = Lwt_bytes.blit_from_string string1 0 buf2 (-1) 3 in
+        Lwt.return_false
+      with
+      | Invalid_argument _ -> Lwt.return_true
+      | _ -> Lwt.return_false
+    end;
+
+    test "blit from string destination out of bounds: upper limit" begin fun () ->
+      let string1 = "abc" in
+      let str2 = "abcdef" in
+      let buf2 = Lwt_bytes.of_string str2 in
+      try
+        let () = Lwt_bytes.blit_from_string string1 0 buf2 4 3 in
+        Lwt.return_false
+      with
+      | Invalid_argument _ -> Lwt.return_true
+      | _ -> Lwt.return_false
+    end;
+
+    test "blit from string length out of bounds: lower limit" begin fun () ->
+      let string1 = "abc" in
+      let str2 = "abcdef" in
+      let buf2 = Lwt_bytes.of_string str2 in
+      try
+        let () = Lwt_bytes.blit_from_string string1 0 buf2 3 (-1) in
+        Lwt.return_false
+      with
+      | Invalid_argument _ -> Lwt.return_true
+      | _ -> Lwt.return_false
+    end;
+
 
     test "blit to bytes" begin fun () ->
       let str1 = "abc" in
@@ -441,6 +511,15 @@ let suite = suite "lwt_bytes" [
       let str2 = "abcdef" in
       let buf2 = Lwt_bytes.of_string str2 in
       let () = Lwt_bytes.unsafe_blit_from_bytes bytes1 0 buf2 3 3 in
+      let check = "abcabc" = Lwt_bytes.to_string buf2 in
+      Lwt.return check
+    end;
+
+    test "unsafe blit from string" begin fun () ->
+      let string1 = "abc" in
+      let str2 = "abcdef" in
+      let buf2 = Lwt_bytes.of_string str2 in
+      let () = Lwt_bytes.unsafe_blit_from_string string1 0 buf2 3 3 in
       let check = "abcabc" = Lwt_bytes.to_string buf2 in
       Lwt.return check
     end;

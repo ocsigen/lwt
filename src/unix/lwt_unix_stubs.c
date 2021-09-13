@@ -105,6 +105,13 @@ void lwt_unix_not_available(char const *feature) {
    | Operation on bigarrays                                          |
    +-----------------------------------------------------------------+ */
 
+/* Needed while Lwt supports OCaml < 4.06. */
+#ifdef Bytes_val
+#define Lwt_bytes_val(v) Bytes_val(v)
+#else
+#define Lwt_bytes_val(v) String_val(v)
+#endif
+
 CAMLprim value lwt_unix_blit(value val_buf1, value val_ofs1, value val_buf2,
                              value val_ofs2, value val_len) {
   memmove((char *)Caml_ba_data_val(val_buf2) + Long_val(val_ofs2),
@@ -117,16 +124,18 @@ CAMLprim value lwt_unix_blit_from_bytes(value val_buf1, value val_ofs1,
                                         value val_buf2, value val_ofs2,
                                         value val_len) {
   memcpy((char *)Caml_ba_data_val(val_buf2) + Long_val(val_ofs2),
+         Lwt_bytes_val(val_buf1) + Long_val(val_ofs1), Long_val(val_len));
+  return Val_unit;
+}
+
+CAMLprim value lwt_unix_blit_from_string(value val_buf1, value val_ofs1,
+                                        value val_buf2, value val_ofs2,
+                                        value val_len) {
+  memcpy((char *)Caml_ba_data_val(val_buf2) + Long_val(val_ofs2),
          String_val(val_buf1) + Long_val(val_ofs1), Long_val(val_len));
   return Val_unit;
 }
 
-/* Needed while Lwt supports OCaml < 4.06. */
-#ifdef Bytes_val
-#define Lwt_bytes_val(v) Bytes_val(v)
-#else
-#define Lwt_bytes_val(v) String_val(v)
-#endif
 
 CAMLprim value lwt_unix_blit_to_bytes(value val_buf1, value val_ofs1,
                                       value val_buf2, value val_ofs2,
