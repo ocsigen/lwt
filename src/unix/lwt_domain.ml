@@ -6,22 +6,12 @@ module T = Domainslib.Task
 (* Maximum number of domains: *)
 let max_domains : int ref = ref 0
 
-(* Size of the waiting queue: *)
-let max_domains_queued = ref 128
-
-let get_max_number_of_domains_queued _ =
-  !max_domains_queued
-
-let set_max_number_of_domains_queued n =
-  if n < 0 then invalid_arg "Lwt_domain.set_max_number_of_domains_queued";
-  max_domains_queued := n
-(* Number of live domains *)
 let domains_count = ref 0
 
 let get_bounds () = !max_domains
 
 (* Initial pool with only the parent domain *)
-let pool = ref (T.setup_pool ~num_domains:0)
+let pool = ref (T.setup_pool ~num_additional_domains:0)
 
 let initialized = ref false
 
@@ -29,7 +19,7 @@ let initialized = ref false
 let set_bounds num =
   max_domains := num;
   T.teardown_pool !pool;
-  pool := T.setup_pool ~num_domains:!max_domains;
+  pool := T.setup_pool ~num_additional_domains:(!max_domains - 1);
   domains_count := !max_domains
 
 let init max _errlog =

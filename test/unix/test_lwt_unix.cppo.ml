@@ -1199,6 +1199,7 @@ let lwt_domain_test = [
       List.init 10 (fun i -> Lwt.return (fib i)) in
     let s1 = Lwt.all l1 in
     let s2 = Lwt.all l2 in
+    Lwt_unix.sleep 0.01 >>= fun () ->
     Lwt.return (s1 = s2)
   end;
 ]
