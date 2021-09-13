@@ -104,7 +104,7 @@ external unsafe_fill : t -> int -> int -> char -> unit = "lwt_unix_fill_bytes" "
 (** {2 IOs} *)
 
 (** The following functions behave similarly to the ones in {!Lwt_unix}, except
-    they use byte arrays instead of strings, and they never perform extra copies
+    they use byte arrays instead of [Bytes.t], and they never perform extra copies
     of the data. *)
 
 val read : Lwt_unix.file_descr -> t -> int -> int -> int Lwt.t
