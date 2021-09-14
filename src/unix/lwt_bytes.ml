@@ -41,7 +41,7 @@ let blit_from_string src_buf src_ofs dst_buf dst_ofs len =
   if (len < 0
       || src_ofs < 0 || src_ofs > String.length src_buf - len
       || dst_ofs < 0 || dst_ofs > length dst_buf - len) then
-    invalid_arg "Lwt_bytes.blit_from_bytes"
+    invalid_arg "Lwt_bytes.blit_from_string"
   else
     unsafe_blit_from_string src_buf src_ofs dst_buf dst_ofs len
 
