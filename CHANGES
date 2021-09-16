@@ -22,6 +22,8 @@
 
   * Lwt_stream.return, Lwt_stream.return_lwt: singleton stream constructors (#864, Boning Dong).
 
+  * Add ?to_dir param from Unix.symlink to Lwt_unix.symlink wrapper (#884, Antonin Décimo)
+
 ====== Misc ======
 
   * Code quality improvement: remove an uneeded Obj.magic (#844, Benoit Montagu).
