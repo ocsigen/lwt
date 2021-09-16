@@ -46,7 +46,7 @@ val create : unit -> 'a t * ('a option -> unit)
 
     To notify the stream's consumer of errors, either use a separate
     communication channel, or use a
-    {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Pervasives.html#TYPEresult}
+    {{:https://ocaml.org/api/Stdlib.html#TYPEresult}
     [result]} stream. There is no way to push an exception into a
     push-stream. *)
 
