@@ -1017,7 +1017,7 @@ external lstat_job : string -> Unix.stats job = "lwt_unix_lstat_job"
 
 let lstat name =
   if Sys.win32 then
-    Lwt.return (Unix.stat name)
+    Lwt.return (Unix.lstat name)
   else
     run_job (lstat_job name)
 

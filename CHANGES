@@ -8,6 +8,10 @@
 
   * Support IPv6 socketpair on Windows (#870, #876, Antonin Décimo, David Allsopp).
 
+  * Lwt_unix.lstat was incorrectly calling Unix.stat on Win32. Fixes
+    the behavior of Lwt_io.with_temp_dir following symlinks to
+    directories on Win32. (#883, Antonin Décimo)
+
 ====== Additions ======
 
   * Lwt_seq: a Seq-like data-structure with Lwt delayed nodes (#836, #842, Zach Shipko).
