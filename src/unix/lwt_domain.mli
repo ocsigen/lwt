@@ -13,7 +13,7 @@
         domain completes execution.
         [detach] calls {!simple_init} internally, which means that the number of
         domains is capped by default at four. If you would like a
-        higher limit, call {!init} or {!set_bounds} directly.
+        higher limit, call {!set_num_domains} directly.
         Note that Lwt thread-local storage (i.e., {!Lwt.with_value}) cannot be
         safely used from within [f]. The same goes for most of the rest of Lwt. If
         you need to run an Lwt thread in [f], use {!run_in_main}. *)
@@ -28,28 +28,13 @@
         retrieve values set this way inside [f ()], but not values set using
         {!Lwt.with_value} outside [f ()]. *)
 
-  val init : int -> (string -> unit) -> unit
-    (** [init num log] initialises this module. i.e. it launches the
-        num number of domains and starts the {b
-        dispatcher}.
-        @param min is the minimum number of domains
-        @param max is the maximum number of domains
-        @param log is used to log error messages
-        If {!Lwt_preemptive} has already been initialised, this call
-        only modify bounds and the log function. *)
+  val set_num_domains : int -> unit
+  (** [set_num_domains n] initializes the library if not done, sets the number
+      of domains to [n]. It shuts down any previously created domains. Hence, it
+      should be used infrequently; ideally once in a program. *)
 
-  val simple_init : unit -> unit
-  (** [simple_init ()] checks if the library is not yet initialized, and if not,
-      does a {i simple initialization}. The number of domains is set to four,
-      and the log function is left unchanged, i.e. the default built-in
-      logging function is used. See {!Lwt_preemptive.init}. Note: this
-      function is automatically called by {!detach}. *)
-
-  val get_bounds : unit -> int
-    (** [get_bounds ()] returns the number of domains. *)
-
-  val set_bounds : int -> unit
-    (** [set_bounds num] sets the number of domains. *)
+  val get_num_domains : unit -> int
+    (** [get_num_domains ()] returns the number of domains. *)
 
   (**/**)
   val nbdomains : unit -> int
