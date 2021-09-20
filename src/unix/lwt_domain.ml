@@ -8,7 +8,7 @@ let max_domains : int ref = ref 0
 
 let domains_count = ref 0
 
-let get_bounds () = !max_domains
+let get_num_domains () = !max_domains
 
 (* Initial pool with only the parent domain *)
 let pool = ref (T.setup_pool ~num_additional_domains:0)
@@ -16,20 +16,16 @@ let pool = ref (T.setup_pool ~num_additional_domains:0)
 let initialized = ref false
 
 (* Destroys old pool and creates a new pool with `num` domains *)
-let set_bounds num =
+let set_num_domains num =
+  initialized := true;
   max_domains := num;
   T.teardown_pool !pool;
   pool := T.setup_pool ~num_additional_domains:(!max_domains - 1);
   domains_count := !max_domains
 
-let init max _errlog =
-  initialized := true;
-  set_bounds max
-
 let simple_init () =
   if not !initialized then begin
-    initialized := true;
-    set_bounds 4
+    set_num_domains 4
   end
 
 let init_result = Result.Error (Failure "Lwt_domain.detach")
