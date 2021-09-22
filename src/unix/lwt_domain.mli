@@ -15,7 +15,7 @@
 
         [detach f x] evaluates to an Lwt promise which is pending until the
         domain completes the execution of [f x] at which point it becomes
-        resolved. If [f x] raises an exception, then the promise is 
+        resolved. If [f x] raises an exception, then the promise is rejected.
 
         If the task pool has not been initialised yet (see {!set_num_domains}),
         then [detach] initializes it. The default number of domains is four (4).
