@@ -3,48 +3,62 @@
 
 
 
-(** This module allows to mix multicore parallelism with [Lwt]
-    cooperative threads. It maintains an extensible task pool of domains
-    to which you can detach computations.
-
-    For more details about task pool, please refer:
-    https://github.com/ocaml-multicore/domainslib/blob/master/lib/task.mli*)
+(** This module provides the necessary function ({!detach}) to schedule some
+    computations to be ran in parallel in a separate domain. The result of such
+    a computation is exposed to the caller of {!detach} as a promise. Thus, this
+    module allows to mix multicore parallelism with the concurrent-only
+    scheduling of the rest of Lwt. *)
 
     val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
     (** [detach f x] runs the computation [f x] in a separate domain in
-        parallel. [detach] evaluates to an Lwt promise, which is pending until
-        the domain completes execution.
+        parallel.
 
-        [detach] initializes the task pool if it's not already initialized. The
-        default number of domains is capped at four. If you would like a higher
-        limit, call {!set_num_domains} directly. Usually number of domains equal
-        to the number of physical cores give best results.
+        [detach f x] evaluates to an Lwt promise which is pending until the
+        domain completes the execution of [f x] at which point it becomes
+        resolved. If [f x] raises an exception, then the promise is 
 
-        Note that Lwt thread-local storage (i.e., {!Lwt.with_value}) cannot be
-        safely used from within [f]. The same goes for most of the rest of Lwt.
-        If you need to run an Lwt thread in [f], use {!run_in_main}. *)
+        If the task pool has not been initialised yet (see {!set_num_domains}),
+        then [detach] initializes it. The default number of domains is four (4).
+        four. It is recommended you initialise the task pool using
+        {!set_num_domains} with a number of domains equal to the number of
+        physical cores.
+
+        Note that the function [f] passed to [detach] cannot safely use {!Lwt}.
+        This is true even for implicit callback arguments (i.e.,
+        {!Lwt.with_value}). If you need to use {!Lwt} or interact with promises,
+        you must use {!run_in_main}. *)
 
   val run_in_main : (unit -> 'a Lwt.t) -> 'a
     (** [run_in_main f] can be called from a detached computation to execute [f
         ()] in the parent domain, i.e. the one executing {!Lwt_main.run}.
-        [run_in_main f] blocks until [f ()] completes, then returns its
+
+        [run_in_main f] blocks until [f ()] completes, then it returns its
         result. If [f ()] raises an exception, [run_in_main f] raises the same
-        exception. {!Lwt.with_value} may be used inside [f ()]. {!Lwt.get} can
-        correctly retrieve values set this way inside [f ()], but not values
-        set using {!Lwt.with_value} outside [f ()].
+        exception. The whole of {!Lwt} can be safely used from within [f].
+        However, note that implicit callback arguments are local to [f]. I.e.,
+        {!Lwt.get} can only retrieve values set inside of [f], and not those set
+        inside the promise that called [detach] that called [run_in_main].
 
         Note that the calling domain will be idle until [f ()] completes
-        execution and returns the result. This could lead to domains freezing
-        when called from multiple domains. It's also possible to end up with a
-        deadlock when [run_in_main f] waits for a promise to resolve, and the
-        promise waits for this in-turn. It is recommended to use this function
-        sparingly. *)
+        execution and returns the result. Thus, heavy use of [run_in_main] may
+        lead to most or all domains being frozen. It's also possible to create a
+        dead-lock when [run_in_main] is called (thus freezing a domain) with a
+        function that calls [detach] (thus needing a domain). Consequently, it
+        is recommended to use this function sparingly. *)
 
   val set_num_domains : int -> unit
-  (** [set_num_domains n] initializes the library if it's uninitalizes, sets the
-      number of domains to [n]. It shuts down any previously created domain
-      pools and creates a new one with [n] domains. Hence, it should be used
-      infrequently. *)
+  (** [set_num_domains n] initializes the task pool with [n] domains. If it is
+      called again, or if the task pool was already initialised by [detach], it
+      shuts down the previously created task pool and creates a new one with
+      [n] domains.
+
+      It is recommended to use this function once before calling [Lwt_main.run]
+      and to not call it again afterwards. Multiple calls to [resize] the domain
+      pool are safe but costly.
+
+      For more details about task pool, please refer:
+      https://github.com/ocaml-multicore/domainslib/blob/master/lib/task.mli
+      *)
 
   val get_num_domains : unit -> int
     (** [get_num_domains ()] returns the number of domains in the current task
