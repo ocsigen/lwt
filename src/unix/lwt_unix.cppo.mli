@@ -219,7 +219,7 @@ val wait : unit -> (int * process_status) Lwt.t
 
 val waitpid : wait_flag list -> int -> (int * process_status) Lwt.t
 (** A promise-returning analog to
-    {{: https://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALwaitpid}
+    {{: https://ocaml.org/api/Unix.html#VALwaitpid}
     [Unix.waitpid]}. This call is non-blocking on Unix-like systems, but is
     always blocking on Windows. *)
 
@@ -564,14 +564,14 @@ val file_exists : string -> bool Lwt.t
   (** [file_exists name] tests if a file named [name] exists.
 
       Note that [file_exists] behaves similarly to
-      {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Sys.html#VALfile_exists}
+      {{:https://ocaml.org/api/Sys.html#VALfile_exists}
       [Sys.file_exists]}:
 
       - "file" is interpreted as "directory entry" in this context
 
       - [file_exists name] will return [false] in
         circumstances that would make {!stat} raise a
-        {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#EXCEPTIONUnix_error}
+        {{:https://ocaml.org/api/Unix.html#EXCEPTIONUnix_error}
         [Unix.Unix_error]} exception.
      *)
 
@@ -581,7 +581,7 @@ val utimes : string -> float -> float -> unit Lwt.t
     to [mtime]. To set both to the current time, call [utimes path 0. 0.].
 
     This function corresponds to
-    {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALutimes}
+    {{:https://ocaml.org/api/Unix.html#VALutimes}
     [Unix.utimes]}. See also
     {{:http://man7.org/linux/man-pages/man3/utimes.3p.html} [utimes(3p)]}.
 
@@ -632,14 +632,14 @@ module LargeFile : sig
     (** [file_exists name] tests if a file named [name] exists.
 
         Note that [file_exists] behaves similarly to
-        {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Sys.html#VALfile_exists}
+        {{:https://ocaml.org/api/Sys.html#VALfile_exists}
         [Sys.file_exists]}:
 
         - "file" is interpreted as "directory entry" in this context
 
         - [file_exists name] will return [false] in
           circumstances that would make {!stat} raise a
-          {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#EXCEPTIONUnix_error}
+          {{:https://ocaml.org/api/Unix.html#EXCEPTIONUnix_error}
           [Unix.Unix_error]} exception.
      *)
 end
@@ -717,14 +717,14 @@ type dir_handle = Unix.dir_handle
 val opendir : string -> dir_handle Lwt.t
 (** Opens a directory for listing. Directories opened with this function must be
     explicitly closed with {!closedir}. This is a cooperative analog of
-    {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALopendir}
+    {{:https://ocaml.org/api/Unix.html#VALopendir}
     [Unix.opendir]}. *)
 
 val readdir : dir_handle -> string Lwt.t
 (** Reads the next directory entry from the given directory. Special entries
     such as [.] and [..] are included. If all entries have been read, raises
     [End_of_file]. This is a cooperative analog of
-    {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALreaddir}
+    {{:https://ocaml.org/api/Unix.html#VALreaddir}
     [Unix.readdir]}. *)
 
 val readdir_n : dir_handle -> int -> string array Lwt.t
@@ -737,12 +737,12 @@ val readdir_n : dir_handle -> int -> string array Lwt.t
 val rewinddir : dir_handle -> unit Lwt.t
 (** Resets the given directory handle, so that directory listing can be
     restarted. Cooperative analog of
-    {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALrewinddir}
+    {{:https://ocaml.org/api/Unix.html#VALrewinddir}
     [Unix.rewinddir]}. *)
 
 val closedir : dir_handle -> unit Lwt.t
 (** Closes a directory handle. Cooperative analog of
-    {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALclosedir}
+    {{:https://ocaml.org/api/Unix.html#VALclosedir}
     [Unix.closedir]}. *)
 
 val files_of_directory : string -> string Lwt_stream.t
@@ -883,7 +883,7 @@ val socketpair : socket_domain -> socket_type -> int -> file_descr * file_descr
 
 val bind : file_descr -> sockaddr -> unit Lwt.t
 (** Binds an address to the given socket. This is the cooperative analog of
-    {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Unix.html#VALbind}
+    {{:https://ocaml.org/api/Unix.html#VALbind}
     [Unix.bind]}. See also
     {{:http://man7.org/linux/man-pages/man3/bind.3p.html} [bind(3p)]}.
 

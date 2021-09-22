@@ -2,7 +2,7 @@
 
 [![version][version]][releases] [![GitHub Actions status][github-actions-img]][github-actions]
 
-[version]:            https://img.shields.io/badge/version-5.3.0-blue.svg
+[version]:            https://img.shields.io/github/release/ocsigen/lwt
 [releases]:           https://github.com/ocsigen/lwt/releases
 [github-actions]:     https://github.com/ocsigen/lwt/actions
 [github-actions-img]: https://github.com/ocsigen/lwt/actions/workflows/workflow.yml/badge.svg?branch=master
