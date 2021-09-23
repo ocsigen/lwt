@@ -17,6 +17,7 @@ let initialized = ref false
 
 (* Destroys old pool and creates a new pool with `num` domains *)
 let set_num_domains num =
+  if num <= 0 then raise (Invalid_argument "Lwt_domain.set_num_domains");
   initialized := true;
   max_domains := num;
   T.teardown_pool !pool;

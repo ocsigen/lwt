@@ -58,7 +58,9 @@
 
       For more details about task pool, please refer:
       https://github.com/ocaml-multicore/domainslib/blob/master/lib/task.mli
-      *)
+
+      @raise Invalid_argument if given number of domains [n] is smaller than
+      [1] *)
 
   val get_num_domains : unit -> int
     (** [get_num_domains ()] returns the number of domains in the current task
