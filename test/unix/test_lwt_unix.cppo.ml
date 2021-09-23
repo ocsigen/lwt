@@ -1202,6 +1202,22 @@ let lwt_domain_test = [
     Lwt_unix.sleep 0.01 >>= fun () ->
     Lwt.return (s1 = s2)
   end;
+  test "invalid_num_domains" begin fun () ->
+    let set () =
+      Lwt_domain.set_num_domains (-1);
+      Lwt.return_true
+    in
+    Lwt.try_bind (fun () -> set ())
+      (fun _ -> Lwt.return_false)
+      (fun exn ->
+        Lwt.return (exn = Invalid_argument "Lwt_domain.set_num_domains"))
+  end;
+  test "detach_exception" begin fun () ->
+    let r = Lwt_domain.detach (fun () -> 10 / 0) () in
+    Lwt.try_bind (fun () -> r)
+      (fun _ -> Lwt.return_false)
+      (fun exn -> Lwt.return (exn = Division_by_zero))
+  end
 ]
 
 let suite =
