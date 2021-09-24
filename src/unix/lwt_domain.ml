@@ -41,12 +41,19 @@ let detach f args =
       result := Result.Error exn
   in
   let waiter, wakener = Lwt.wait () in
-  let id =
-    Lwt_unix.make_notification ~once:true
-      (fun () -> Lwt.wakeup_result wakener !result)
-  in
-  let _ = T.async !pool (fun _ -> task ();
-  Lwt_unix.send_notification id) in
+  if (!max_domains = 1) then begin
+    task ();
+    Lwt.wakeup_result wakener !result;
+  end
+  else begin
+    let id =
+      Lwt_unix.make_notification ~once:true
+        (fun () -> Lwt.wakeup_result wakener !result)
+    in
+    let _ = T.async !pool (fun _ -> task ();
+    Lwt_unix.send_notification id) in
+    ()
+  end;
   waiter
 
 let nbdomains () = !domains_count

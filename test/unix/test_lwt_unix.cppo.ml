@@ -1217,6 +1217,12 @@ let lwt_domain_test = [
     Lwt.try_bind (fun () -> r)
       (fun _ -> Lwt.return_false)
       (fun exn -> Lwt.return (exn = Division_by_zero))
+  end;
+  test "one_domain" begin fun () ->
+    Lwt_domain.set_num_domains 1;
+    let f n = n * 10 in
+    Lwt_domain.detach f 100 >>= fun x ->
+      Lwt.return (x = 1000)
   end
 ]
 
