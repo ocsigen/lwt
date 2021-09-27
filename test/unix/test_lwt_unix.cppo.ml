@@ -1204,13 +1204,14 @@ let lwt_domain_test = [
   end;
   test "invalid_num_domains" begin fun () ->
     let set () =
-      Lwt_domain.set_num_domains (-1);
+      Lwt_domain.teardown_pool ();
+      Lwt_domain.setup_pool (-1);
       Lwt.return_true
     in
     Lwt.try_bind (fun () -> set ())
       (fun _ -> Lwt.return_false)
       (fun exn ->
-        Lwt.return (exn = Invalid_argument "Lwt_domain.set_num_domains"))
+        Lwt.return (exn = Invalid_argument "Lwt_domain.setup_pool"))
   end;
   test "detach_exception" begin fun () ->
     let r = Lwt_domain.detach (fun () -> 10 / 0) () in
@@ -1219,10 +1220,28 @@ let lwt_domain_test = [
       (fun exn -> Lwt.return (exn = Division_by_zero))
   end;
   test "one_domain" begin fun () ->
-    Lwt_domain.set_num_domains 1;
+    Lwt_domain.teardown_pool ();
+    Lwt_domain.setup_pool 1;
     let f n = n * 10 in
     Lwt_domain.detach f 100 >>= fun x ->
       Lwt.return (x = 1000)
+  end;
+  test "pool_already_initialized" begin fun () ->
+    let init () =
+      Lwt_domain.setup_pool 8;
+      Lwt.return_true
+    in
+    Lwt.try_bind (fun () -> init ())
+      (fun _ -> Lwt.return_false)
+      (fun exn -> Lwt.return
+        (exn = Failure "Lwt_domain.setup_pool: Pool already initialized"))
+  end;
+  test "pool_already_shutdown" begin fun () ->
+    Lwt_domain.teardown_pool ();
+    Lwt.try_bind (fun () -> Lwt_domain.teardown_pool (); Lwt.return_true)
+      (fun _ -> Lwt.return_false)
+      (fun exn -> Lwt.return
+        (exn = Failure "Lwt_domain.teardown_pool: Pool uninitialized"))
   end
 ]
 
