@@ -6,8 +6,6 @@ module T = Domainslib.Task
 (* Maximum number of domains: *)
 let max_domains : int ref = ref 0
 
-let domains_count = ref 0
-
 let get_num_domains () = !max_domains
 
 (* Initial pool with only the parent domain *)
@@ -15,18 +13,26 @@ let pool = ref (T.setup_pool ~num_additional_domains:0)
 
 let initialized = ref false
 
-(* Destroys old pool and creates a new pool with `num` domains *)
-let set_num_domains num =
-  if num <= 0 then raise (Invalid_argument "Lwt_domain.set_num_domains");
-  initialized := true;
-  max_domains := num;
-  T.teardown_pool !pool;
-  pool := T.setup_pool ~num_additional_domains:(!max_domains - 1);
-  domains_count := !max_domains
+let setup_pool n =
+  if !initialized = true then
+    failwith ("Lwt_domain.setup_pool: Pool already initialized")
+  else if n < 1 then
+    raise (Invalid_argument "Lwt_domain.setup_pool")
+  else
+    max_domains := n;
+    pool := T.setup_pool ~num_additional_domains:(n - 1);
+    initialized := true
+
+let teardown_pool () =
+  if !initialized = false then
+    failwith ("Lwt_domain.teardown_pool: Pool uninitialized")
+  else
+    T.teardown_pool !pool;
+    initialized := false
 
 let simple_init () =
   if not !initialized then begin
-    set_num_domains 4
+    setup_pool 4
   end
 
 let init_result = Result.Error (Failure "Lwt_domain.detach")
@@ -56,7 +62,7 @@ let detach f args =
   end;
   waiter
 
-let nbdomains () = !domains_count
+let nbdomains () = !max_domains
 
 (* +-----------------------------------------------------------------+
    | Running Lwt threads in the main domain                          |

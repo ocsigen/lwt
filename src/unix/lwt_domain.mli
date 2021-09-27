@@ -17,10 +17,10 @@
         domain completes the execution of [f x] at which point it becomes
         resolved. If [f x] raises an exception, then the promise is rejected.
 
-        If the task pool has not been initialised yet (see {!set_num_domains}),
+        If the task pool has not been initialised yet (see {!setup_pool}),
         then [detach] initializes it. The default number of domains is four (4).
-        four. It is recommended you initialise the task pool using
-        {!set_num_domains} with a number of domains equal to the number of
+        It is recommended you initialise the task pool using
+        {!setup_pool} with a number of domains equal to the number of
         physical cores.
 
         Note that the function [f] passed to [detach] cannot safely use {!Lwt}.
@@ -46,21 +46,25 @@
         function that calls [detach] (thus needing a domain). Consequently, it
         is recommended to use this function sparingly. *)
 
-  val set_num_domains : int -> unit
-  (** [set_num_domains n] initializes the task pool with [n] domains. If it is
-      called again, or if the task pool was already initialised by [detach], it
-      shuts down the previously created task pool and creates a new one with
-      [n] domains.
+  val setup_pool : int -> unit
+  (** [setup_pool n] initializes the task pool with [n] domains. If it is called
+      again, or if the task pool was already initialised by [detach], it
+      raises an exception.
 
       It is recommended to use this function once before calling [Lwt_main.run]
-      and to not call it again afterwards. Multiple calls to [resize] the domain
-      pool are safe but costly.
+      and to not call it again afterwards. To resize the pool, call
+      [teardown_pool ()] first before calling [setup_pool] again. Multiple calls
+      to [resize] the domain pool are safe but costly.
 
       For more details about task pool, please refer:
       https://github.com/ocaml-multicore/domainslib/blob/master/lib/task.mli
 
-      @raise Invalid_argument if given number of domains [n] is smaller than
-      [1] *)
+      @raise Invalid_argument if given number of domains [n] is smaller than [1]
+      *)
+
+  val teardown_pool : unit -> unit
+  (** [teardown_pool ()] shuts down the task pool if it was initialized. Raises
+      an exception if the task pool was not initialized.*)
 
   val get_num_domains : unit -> int
     (** [get_num_domains ()] returns the number of domains in the current task
