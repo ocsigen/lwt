@@ -26,7 +26,13 @@
         Note that the function [f] passed to [detach] cannot safely use {!Lwt}.
         This is true even for implicit callback arguments (i.e.,
         {!Lwt.with_value}). If you need to use {!Lwt} or interact with promises,
-        you must use {!run_in_main}. *)
+        you must use {!run_in_main}.
+
+        In the special case where the task pool has size one (i.e., when there
+        is no additional domain to detach the computation to), the computation
+        runs immediately on the main domain. In other words, when the number of
+        domains is one (1), then [detach f x] is identical to
+        [Lwt.return (f x)]. *)
 
   val run_in_main : (unit -> 'a Lwt.t) -> 'a
     (** [run_in_main f] can be called from a detached computation to execute [f
@@ -47,24 +53,32 @@
         is recommended to use this function sparingly. *)
 
   val setup_pool : int -> unit
-  (** [setup_pool n] initializes the task pool with [n] domains. If it is called
-      again, or if the task pool was already initialised by [detach], it
-      raises an exception.
+  (** [setup_pool n] initializes the task pool with [n] domains.
 
       It is recommended to use this function once before calling [Lwt_main.run]
       and to not call it again afterwards. To resize the pool, call
       [teardown_pool ()] first before calling [setup_pool] again. Multiple calls
-      to [resize] the domain pool are safe but costly.
+      to resize the domain pool are safe but costly.
 
       For more details about task pool, please refer:
       https://github.com/ocaml-multicore/domainslib/blob/master/lib/task.mli
 
-      @raise Invalid_argument if given number of domains [n] is smaller than [1]
+      @raise [Invalid_argument] if given number of domains [n] is smaller than
+      [1].
+
+      @raise [Failure] if the pool is already initialised when the function is
+      called.
       *)
 
   val teardown_pool : unit -> unit
-  (** [teardown_pool ()] shuts down the task pool if it was initialized. Raises
-      an exception if the task pool was not initialized.*)
+  (** [teardown_pool ()] shuts down the task pool. It is safe to call
+      [setup_pool] again after [teardown_pool] returns.
+
+      This function is useful if different portions of your program have benefit
+      from different degree of parallelism.
+
+      @raise [Failure] if the pool is not initialized when the function is
+      called. *)
 
   val get_num_domains : unit -> int
     (** [get_num_domains ()] returns the number of domains in the current task
