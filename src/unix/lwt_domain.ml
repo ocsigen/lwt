@@ -39,28 +39,25 @@ let init_result = Result.Error (Failure "Lwt_domain.detach")
 
 let detach f args =
   simple_init ();
-  let result = ref init_result in
-  let task () =
-    try
-      result := Result.Ok (f args)
-    with exn ->
-      result := Result.Error exn
-  in
-  let waiter, wakener = Lwt.wait () in
-  if (!max_domains = 1) then begin
-    task ();
-    Lwt.wakeup_result wakener !result;
-  end
+  if (!max_domains = 1) then
+    Lwt.wrap1 f args
   else begin
+    let result = ref init_result in
+    let task () =
+      try
+        result := Result.Ok (f args)
+      with exn ->
+        result := Result.Error exn
+    in
+    let waiter, wakener = Lwt.wait () in
     let id =
       Lwt_unix.make_notification ~once:true
         (fun () -> Lwt.wakeup_result wakener !result)
     in
     let _ = T.async !pool (fun _ -> task ();
     Lwt_unix.send_notification id) in
-    ()
-  end;
-  waiter
+    waiter
+  end
 
 let nbdomains () = !max_domains
 
