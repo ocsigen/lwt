@@ -9,16 +9,17 @@
     module allows to mix multicore parallelism with the concurrent-only
     scheduling of the rest of Lwt. *)
 
-    val detach : ('a -> 'b) -> 'a -> 'b Lwt.t
-    (** [detach f x] runs the computation [f x] in a separate domain in
+    type pool
+    (** Domainslib Task pool *)
+
+    val detach : pool-> ('a -> 'b) -> 'a -> 'b Lwt.t
+    (** [detach pool f x] runs the computation [f x] in a separate domain in
         parallel.
 
-        [detach f x] evaluates to an Lwt promise which is pending until the
+        [detach pool f x] evaluates to an Lwt promise which is pending until the
         domain completes the execution of [f x] at which point it becomes
         resolved. If [f x] raises an exception, then the promise is rejected.
 
-        If the task pool has not been initialised yet (see {!setup_pool}),
-        then [detach] initializes it. The default number of domains is four (4).
         It is recommended you initialise the task pool using
         {!setup_pool} with a number of domains equal to the number of
         physical cores.
@@ -32,7 +33,9 @@
         is no additional domain to detach the computation to), the computation
         runs immediately on the main domain. In other words, when the number of
         domains is one (1), then [detach f x] is identical to
-        [Lwt.return (f x)]. *)
+        [Lwt.return (f x)].
+
+        @raise [Invalid_argument] if pool is already torn down. *)
 
   val run_in_main : (unit -> 'a Lwt.t) -> 'a
     (** [run_in_main f] can be called from a detached computation to execute [f
@@ -52,13 +55,17 @@
         function that calls [detach] (thus needing a domain). Consequently, it
         is recommended to use this function sparingly. *)
 
-  val setup_pool : int -> unit
-  (** [setup_pool n] initializes the task pool with [n] domains.
+  val setup_pool : ?name:string -> int -> pool
+  (** [setup_pool name num_additional_domains] returns a task pool with
+      [num_additional_domains] domains including the current domain.
 
-      It is recommended to use this function once before calling [Lwt_main.run]
-      and to not call it again afterwards. To resize the pool, call
-      [teardown_pool ()] first before calling [setup_pool] again. Multiple calls
-      to resize the domain pool are safe but costly.
+      It is recommended to use this function to create a pool once before
+      calling [Lwt_main.run] and to not call it again afterwards. To resize the
+      pool, call [teardown_pool ()] first before creating a new pool again.
+      Multiple calls to resize the domain pool are safe but costly.
+
+      If [name] is provided, the pool is mapped to name. It can be obtained
+      later with [lookup_pool name].
 
       For more details about task pool, please refer:
       https://github.com/ocaml-multicore/domainslib/blob/master/lib/task.mli
@@ -70,19 +77,22 @@
       called.
       *)
 
-  val teardown_pool : unit -> unit
+  val teardown_pool : pool -> unit
   (** [teardown_pool ()] shuts down the task pool. It is safe to call
       [setup_pool] again after [teardown_pool] returns.
 
       This function is useful if different portions of your program have benefit
       from different degree of parallelism.
 
-      @raise [Failure] if the pool is not initialized when the function is
-      called. *)
+      @raise [TasksActive] if any tasks in the pool are currently active.
 
-  val get_num_domains : unit -> int
-    (** [get_num_domains ()] returns the number of domains in the current task
-        pool. *)
+      @raise [Invalid_argument] if pool is already torn down. *)
+
+  val lookup_pool : string -> pool option
+  (** [lookup_pool name] returns [Some pool] if [pool] is associated to [name]
+      or returns [None] if no value is associated to it. *)
+
+  val get_num_domains : pool -> int
+    (** [get_num_domains pool] returns the number of domains in [pool]. *)
 
   (**/**)
-  val nbdomains : unit -> int

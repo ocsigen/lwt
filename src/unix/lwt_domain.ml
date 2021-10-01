@@ -3,43 +3,26 @@ open Lwt.Infix
 module C = Domainslib.Chan
 module T = Domainslib.Task
 
-(* Maximum number of domains: *)
-let max_domains : int ref = ref 0
+type pool = Domainslib.Task.pool
 
-let get_num_domains () = !max_domains
+let setup_pool ?name num_additional_domains =
+  match name with
+  | Some x ->
+    T.setup_pool ~name:x ~num_additional_domains:num_additional_domains ()
+  | None ->
+    T.setup_pool ~num_additional_domains:num_additional_domains ()
 
-(* Initial pool with only the parent domain *)
-let pool = ref (T.setup_pool ~num_additional_domains:0)
 
-let initialized = ref false
+let teardown_pool = T.teardown_pool
 
-let setup_pool n =
-  if !initialized = true then
-    failwith ("Lwt_domain.setup_pool: Pool already initialized")
-  else if n < 1 then
-    raise (Invalid_argument "Lwt_domain.setup_pool")
-  else
-    max_domains := n;
-    pool := T.setup_pool ~num_additional_domains:(n - 1);
-    initialized := true
+let lookup_pool = T.lookup_pool
 
-let teardown_pool () =
-  if !initialized = false then
-    failwith ("Lwt_domain.teardown_pool: Pool uninitialized")
-  else
-    T.teardown_pool !pool;
-    initialized := false
-
-let simple_init () =
-  if not !initialized then begin
-    setup_pool 4
-  end
+let get_num_domains = T.get_num_domains
 
 let init_result = Result.Error (Failure "Lwt_domain.detach")
 
-let detach f args =
-  simple_init ();
-  if (!max_domains = 1) then
+let detach pool f args =
+  if (get_num_domains pool = 1) then
     Lwt.wrap1 f args
   else begin
     let result = ref init_result in
@@ -54,12 +37,10 @@ let detach f args =
       Lwt_unix.make_notification ~once:true
         (fun () -> Lwt.wakeup_result wakener !result)
     in
-    let _ = T.async !pool (fun _ -> task ();
+    let _ = T.async pool (fun _ -> task ();
     Lwt_unix.send_notification id) in
     waiter
   end
-
-let nbdomains () = !max_domains
 
 (* +-----------------------------------------------------------------+
    | Running Lwt threads in the main domain                          |
