@@ -8,6 +8,10 @@
 
   * Support IPv6 socketpair on Windows (#870, #876, Antonin Décimo, David Allsopp).
 
+  * Lwt_unix.lstat was incorrectly calling Unix.stat on Win32. Fixes
+    the behavior of Lwt_io.with_temp_dir following symlinks to
+    directories on Win32. (#883, Antonin Décimo)
+
 ====== Additions ======
 
   * Lwt_bytes.blit_from_string: string complement of Lwt_bytes.blit (#882, Hugo Heuzard).
