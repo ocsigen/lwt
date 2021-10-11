@@ -1463,7 +1463,7 @@ val execute_job :
     thread. The following functions allow to use this pipe. *)
 
 val make_notification : ?once : bool -> (unit -> unit) -> int
-  (** [new_notifier ?once f] registers a new notifier. It returns the
+  (** [make_notification ?once f] registers a new notifier. It returns the
       id of the notifier. Each time a notification with this id is
       received, [f] is called.
 
