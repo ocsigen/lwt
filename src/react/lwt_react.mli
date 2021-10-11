@@ -66,7 +66,7 @@ module E : sig
         value is available on the stream.
 
         If updating the event causes an exception at any point during the update
-        step, the excpetion is passed to [!]{!Lwt.async_exception_hook}, which
+        step, the exception is passed to [!]{!Lwt.async_exception_hook}, which
         terminates the process by default. *)
 
   val delay : 'a event Lwt.t -> 'a event

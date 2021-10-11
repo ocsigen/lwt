@@ -205,7 +205,7 @@ struct lwt_unix_job {
     /* The function to call to extract the result and free memory
        allocated by the job.
 
-       Note: if you want to raise an excpetion, be sure to free
+       Note: if you want to raise an exception, be sure to free
        resources before raising it!
 
        It has been introduced in Lwt 2.3.3. */

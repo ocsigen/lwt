@@ -1280,7 +1280,7 @@ val map : ('a -> 'b) -> 'a t -> 'b t
 (** [Lwt.map f p_1] is similar to {!Lwt.bind}[ p_1 f], but [f] is not expected
     to return a promise.
 
-    This function is more convenient that {!Lwt.bind} when [f] inherently does
+    This function is more convenient than {!Lwt.bind} when [f] inherently does
     not return a promise. An example is [Stdlib.int_of_string]:
 
 {[
