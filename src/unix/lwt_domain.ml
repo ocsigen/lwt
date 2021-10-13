@@ -6,11 +6,7 @@ module T = Domainslib.Task
 type pool = Domainslib.Task.pool
 
 let setup_pool ?name num_additional_domains =
-  match name with
-  | Some x ->
-    T.setup_pool ~name:x ~num_additional_domains:num_additional_domains ()
-  | None ->
-    T.setup_pool ~num_additional_domains:num_additional_domains ()
+    T.setup_pool ?name ~num_additional_domains:num_additional_domains ()
 
 
 let teardown_pool = T.teardown_pool
@@ -27,10 +23,7 @@ let detach pool f args =
   else begin
     let result = ref init_result in
     let task () =
-      try
-        result := Result.Ok (f args)
-      with exn ->
-        result := Result.Error exn
+      result := try Result.Ok (f args) with exn -> Result.Error exn
     in
     let waiter, wakener = Lwt.wait () in
     let id =
