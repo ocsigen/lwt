@@ -106,13 +106,12 @@ let set_notification id f =
   Notifiers.replace notifiers id { notifier with notify_handler = f }
 
 let call_notification id =
-  match try Some(Notifiers.find notifiers id) with Not_found -> None with
-  | Some notifier ->
+  match Notifiers.find notifiers id with
+  | exception Not_found -> ()
+  | notifier ->
     if notifier.notify_once then
       stop_notification id;
     notifier.notify_handler ()
-  | None ->
-    ()
 
 (* +-----------------------------------------------------------------+
    | Sleepers                                                        |
@@ -1360,11 +1359,9 @@ let readdir_n handle count =
       if i = count then
         Lwt.return array
       else
-        match try array.(i) <- Unix.readdir handle; true with End_of_file -> false with
-        | true ->
-          fill (i + 1)
-        | false ->
-          Lwt.return (Array.sub array 0 i)
+        match array.(i) <- Unix.readdir handle with
+        | exception End_of_file -> Lwt.return (Array.sub array 0 i)
+        | () -> fill (i + 1)
     in
     fill 0
   else
@@ -2299,11 +2296,10 @@ let disable_signal_handler id =
     end
 
 let reinstall_signal_handler signum =
-  match try Some (Signal_map.find signum !signals) with Not_found -> None with
-  | Some (notification, _) ->
+  match Signal_map.find signum !signals with
+  | exception Not_found -> ()
+  | notification, _ ->
     set_signal signum notification
-  | None ->
-    ()
 
 (* +-----------------------------------------------------------------+
    | Processes                                                       |
