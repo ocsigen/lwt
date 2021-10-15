@@ -45,10 +45,8 @@ val create : unit -> 'a t * ('a option -> unit)
 (** [create ()] returns a new stream and a push function.
 
     To notify the stream's consumer of errors, either use a separate
-    communication channel, or use a
-    {{:https://ocaml.org/api/Stdlib.html#TYPEresult}
-    [result]} stream. There is no way to push an exception into a
-    push-stream. *)
+    communication channel, or use a {!Stdlib.result} stream. There is
+    no way to push an exception into a push-stream. *)
 
 val create_with_reference : unit -> 'a t * ('a option -> unit) * ('b -> unit)
 (** [create_with_reference ()] returns a new stream and a push
@@ -78,22 +76,22 @@ class type ['a] bounded_push = object
   (** Change the size of the stream queue. Note that the new size
       can smaller than the current stream queue size.
 
-      It raises [Invalid_argument] if [size < 0]. *)
+      It raises {!Stdlib.Invalid_argument} if [size < 0]. *)
 
   method push : 'a -> unit Lwt.t
   (** Pushes a new element to the stream. If the stream is full then
       it will block until one element is consumed. If another thread
-      is already blocked on {!push}, it raises {!Full}. *)
+      is already blocked on [push], it raises {!Lwt_stream.Full}. *)
 
   method close : unit
-  (** Closes the stream. Any thread currently blocked on {!push}
-      fails with {!Closed}. *)
+  (** Closes the stream. Any thread currently blocked on
+      {!Lwt_stream.bounded_push.push} fails with {!Lwt_stream.Closed}. *)
 
   method count : int
   (** Number of elements in the stream queue. *)
 
   method blocked : bool
-  (** Is a thread is blocked on {!push} ? *)
+  (** Is a thread is blocked on {!Lwt_stream.bounded_push.push} ? *)
 
   method closed : bool
   (** Is the stream closed ? *)

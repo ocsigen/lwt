@@ -63,8 +63,8 @@ val abandon_yielded_and_paused : unit -> unit
     [yield] is now deprecated in favor of the more general {!Lwt.pause}.
     Once [yield] is phased out, this function will be deprecated as well.
 
-    This is meant for use with {!Lwt.fork}, as a way to "abandon" more promise
-    chains that are pending in your process. *)
+    This is meant for use with {!Lwt_unix.fork}, as a way to "abandon" more
+    promise chains that are pending in your process. *)
 
 
 

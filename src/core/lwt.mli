@@ -396,8 +396,7 @@ type -'a u
     {!Lwt.wakeup_later_result} to resolve that promise. *)
 
 val wait : unit -> ('a t * 'a u)
-(** Creates a new pending {{: #TYPEt} promise}, paired with its {{: #TYPEu}
-    resolver}.
+(** Creates a new pending {{!t} promise}, paired with its {{!u} resolver}.
 
     It is rare to use this function directly. Many helpers in Lwt, and Lwt-aware
     libraries, call it internally, and return only the promise. You then chain
@@ -413,13 +412,12 @@ val wait : unit -> ('a t * 'a u)
 
 val wakeup_later : 'a u -> 'a -> unit
 (** [Lwt.wakeup_later r v] {e fulfills}, with value [v], the {e pending}
-    {{: #TYPEt} promise} associated with {{: #TYPEu} resolver} [r]. This
-    triggers callbacks attached to the promise.
+    {{!t} promise} associated with {{!u} resolver} [r]. This triggers callbacks
+    attached to the promise.
 
     If the promise is not pending, [Lwt.wakeup_later] raises
-    {{: https://ocaml.org/api/Stdlib.html#VALinvalid_arg}
-    [Invalid_argument]}, unless the promise is {{: #VALcancel} canceled}. If the
-    promise is canceled, [Lwt.wakeup_later] has no effect.
+    {!Stdlib.Invalid_argument}, unless the promise is {{!Lwt.cancel} canceled}.
+    If the promise is canceled, [Lwt.wakeup_later] has no effect.
 
     If your program has multiple threads, it is important to make sure that
     [Lwt.wakeup_later] (and any similar function) is only called from the main
@@ -430,12 +428,11 @@ val wakeup_later : 'a u -> 'a -> unit
 
 val wakeup_later_exn : _ u -> exn -> unit
 (** [Lwt.wakeup_later_exn r exn] is like {!Lwt.wakeup_later}, except, if the
-    associated {{: #TYPEt} promise} is {e pending}, it is {e rejected} with
-    [exn]. *)
+    associated {{!t} promise} is {e pending}, it is {e rejected} with [exn]. *)
 
 val return : 'a -> 'a t
-(** [Lwt.return v] creates a new {{: #TYPEt} promise} that is {e already
-    fulfilled} with value [v].
+(** [Lwt.return v] creates a new {{!t} promise} that is {e already fulfilled}
+    with value [v].
 
     This is needed to satisfy the type system in some cases. For example, in a
     [match] expression where one case evaluates to a promise, the other cases
@@ -447,7 +444,7 @@ match need_input with
 | false -> Lwt.return ""             (* ...so wrap empty string in a promise. *)
 ]}
 
-    Another typical usage is in {{: #VALbind} [let%lwt]}. The expression after
+    Another typical usage is in {{!Lwt.bind} [let%lwt]}. The expression after
     the “[in]” has to evaluate to a promise. So, if you compute an ordinary
     value instead, you have to wrap it:
 
@@ -457,8 +454,8 @@ Lwt.return (line ^ ".")
 ]} *)
 
 val fail : exn -> _ t
-(** [Lwt.fail exn] is like {!Lwt.return}, except the new {{: #TYPEt} promise}
-    that is {e already rejected} with [exn].
+(** [Lwt.fail exn] is like {!Lwt.return}, except the new {{!t} promise} that is
+    {e already rejected} with [exn].
 
     Whenever possible, it is recommended to use [raise exn] instead, as [raise]
     captures a backtrace, while [Lwt.fail] does not. If you call [raise exn] in
@@ -473,8 +470,8 @@ val fail : exn -> _ t
 (** {3 Callbacks} *)
 
 val bind : 'a t -> ('a -> 'b t) -> 'b t
-(** [Lwt.bind p_1 f] makes it so that [f] will run when [p_1] is {{: #TYPEt}
-    {e fulfilled}}.
+(** [Lwt.bind p_1 f] makes it so that [f] will run when [p_1] is
+    {{!t} {e fulfilled}}.
 
     When [p_1] is fulfilled with value [v_1], the callback [f] is called with
     that same value [v_1]. Eventually, after perhaps starting some I/O or other
@@ -582,8 +579,7 @@ let () =
 
 val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
 (** [Lwt.catch f h] applies [f ()], which returns a promise, and then makes it
-    so that [h] (“handler”) will run when that promise is {{: #TYPEt}
-    {e rejected}}.
+    so that [h] (“handler”) will run when that promise is {{!t} {e rejected}}.
 
 {[
 let () =
@@ -677,8 +673,7 @@ let () =
 
 val finalize : (unit -> 'a t) -> (unit -> unit t) -> 'a t
 (** [Lwt.finalize f c] applies [f ()], which returns a promise, and then makes
-    it so [c] (“cleanup”) will run when that promise is {{: #TYPEt}
-    {e resolved}}.
+    it so [c] (“cleanup”) will run when that promise is {{!t} {e resolved}}.
 
     In other words, [c] runs no matter whether promise [f ()] is fulfilled or
     rejected. As the names suggest, [Lwt.finalize] corresponds to the [finally]
@@ -750,8 +745,8 @@ let () =
 val try_bind : (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
 (** [Lwt.try_bind f g h] applies [f ()], and then makes it so that:
 
-    - [g] will run when promise [f ()] is {{: #TYPEt} {e fulfilled}},
-    - [h] will run when promise [f ()] is {{: #TYPEt} {e rejected}}.
+    - [g] will run when promise [f ()] is {{!t} {e fulfilled}},
+    - [h] will run when promise [f ()] is {{!t} {e rejected}}.
 
     [Lwt.try_bind] is a generalized {!Lwt.finalize}. The difference is that
     [Lwt.try_bind] runs different callbacks depending on {e how} [f ()] is
@@ -798,8 +793,8 @@ val try_bind : (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
 
 val dont_wait : (unit -> unit t) -> (exn -> unit) -> unit
 (** [Lwt.dont_wait f handler] applies [f ()], which returns a promise, and then
-    makes it so that if the promise is {{: #TYPEt} {e rejected}}, the exception
-    is passed to [handler].
+    makes it so that if the promise is {{!t} {e rejected}}, the exception is
+    passed to [handler].
 
     In addition, if [f ()] raises an exception, it is also passed to [handler].
 
@@ -817,7 +812,7 @@ val dont_wait : (unit -> unit t) -> (exn -> unit) -> unit
 
 val async : (unit -> unit t) -> unit
 (** [Lwt.async f] applies [f ()], which returns a promise, and then makes it so
-    that if the promise is {{: #TYPEt} {e rejected}}, the exception is passed to
+    that if the promise is {{!t} {e rejected}}, the exception is passed to
     [!]{!Lwt.async_exception_hook}.
 
     In addition, if [f ()] raises an exception, it is also passed to
@@ -926,7 +921,7 @@ v}
 
 val both : 'a t -> 'b t -> ('a * 'b) t
 (** [Lwt.both p_1 p_2] returns a promise that is pending until {e both} promises
-    [p_1] and [p_2] become {{: #TYPEt} {e resolved}}.
+    [p_1] and [p_2] become {{!t} {e resolved}}.
 
 {[
 let () =
@@ -957,7 +952,7 @@ let () =
 
 val join : (unit t) list -> unit t
 (** [Lwt.join ps] returns a promise that is pending until {e all} promises in
-    the list [ps] become {{: #TYPEt} {e resolved}}.
+    the list [ps] become {{!t} {e resolved}}.
 
 {[
 let () =
@@ -985,7 +980,7 @@ let () =
 
 val all : ('a t) list -> ('a list) t
 (** [Lwt.all ps] is like {!Lwt.join}[ ps]: it waits for all promises in the list
-    [ps] to become {{: #TYPEt} {e resolved}}.
+    [ps] to become {{!t} {e resolved}}.
 
     It then resolves the returned promise with the list of all resulting values.
 
@@ -1003,8 +998,8 @@ val all : ('a t) list -> ('a list) t
 (** {3 Racing} *)
 
 val pick : ('a t) list -> 'a t
-(** [Lwt.pick ps] returns a promise that is pending until {e one} promise in
-    the list [ps] becomes {{: #TYPEt} {e resolved}}.
+(** [Lwt.pick ps] returns a promise that is pending until {e one} promise in the
+    list [ps] becomes {{!t} {e resolved}}.
 
     When at least one promise in [ps] is resolved, [Lwt.pick] tries to cancel
     all other promises that are still pending, using {!Lwt.cancel}.
@@ -1081,7 +1076,7 @@ exception Canceled
 
 val task : unit -> ('a t * 'a u)
 (** [Lwt.task] is the same as {!Lwt.wait}, except the resulting promise [p] is
-    {{: #VALcancel} cancelable}.
+    {{!Lwt.cancel} cancelable}.
 
     This is significant, because it means promises created by [Lwt.task] can be
     resolved (specifically, rejected) by canceling them directly, in addition to
@@ -1194,7 +1189,7 @@ val on_cancel : _ t -> (unit -> unit) -> unit
     [!]{!Lwt.async_exception_hook}, which terminates the process by default. *)
 
 val protected : 'a t -> 'a t
-(** [Lwt.protected p] creates a {{: #VALcancel} cancelable} promise [p']. The
+(** [Lwt.protected p] creates a {{!Lwt.cancel} cancelable} promise [p']. The
     original state of [p'] is the same as the state of [p] at the time of the
     call.
 
@@ -1202,7 +1197,7 @@ val protected : 'a t -> 'a t
     a. if [p] changes state (i.e., is resolved), then [p'] eventually changes
        state to match [p]'s, and
     b. during cancellation, if the backwards search described in {!Lwt.cancel}
-       reaches [p'] then it changes state to {!Rejected} [Canceled] and the
+       reaches [p'] then it changes state to rejected [Canceled] and the
        search stops.
 
     As a consequence of the b. case, [Lwt.cancel (protected p)] does not cancel
@@ -1213,25 +1208,25 @@ val protected : 'a t -> 'a t
     [Lwt.protected] only prevents cancellation of [p] through [p']. *)
 
 val no_cancel : 'a t -> 'a t
-(** [Lwt.no_cancel p] creates a non-{{: #VALcancel}cancelable} promise [p']. The
+(** [Lwt.no_cancel p] creates a non-{{!Lwt.cancel}cancelable} promise [p']. The
     original state of [p'] is the same as [p] at the time of the call.
 
     If the state of [p] changes, then the state of [p'] eventually changes too
     to match [p]'s.
 
-    Note that even though [p'] is non-{{: #VALcancel}cancelable}, it can still
+    Note that even though [p'] is non-{{!Lwt.cancel}cancelable}, it can still
     become canceled if [p] is canceled. [Lwt.no_cancel] only prevents
     cancellation of [p] and [p'] through [p']. *)
 
 val wrap_in_cancelable : 'a t -> 'a t
-(** [Lwt.wrap_in_cancelable p] creates a {{: #VALcancel} cancelable} promise
+(** [Lwt.wrap_in_cancelable p] creates a {{!Lwt.cancel} cancelable} promise
     [p']. The original state of [p'] is the same as [p].
 
     The state of [p'] can change in one of two ways:
     a. if [p] changes state (i.e., is resolved), then [p'] eventually changes
        state to match [p]'s, and
     b. during cancellation, if the backwards search described in {!Lwt.cancel}
-       reaches [p'] then it changes state to {!Rejected} [Canceled] and the
+       reaches [p'] then it changes state to rejected [Canceled] and the
        search continues to [p].
 *)
 
@@ -1309,7 +1304,7 @@ let read_int : unit -> int Lwt.t = fun () ->
 
     As with {!Lwt.bind}, sequences of calls to [Lwt.map] result in excessive
     indentation and parentheses. The recommended syntactic sugar for avoiding
-    this is the {{: #VAL(>|=)} [>|=]} operator, which comes from module
+    this is the {{!Lwt.Infix.(>|=)} [>|=]} operator, which comes from module
     [Lwt.Infix]:
 
 {[
@@ -1340,8 +1335,8 @@ let read_int : unit -> int Lwt.t = fun () ->
     - If [f v] raises exception [exn], [p_3] is rejected with [exn]. *)
 
 val on_success : 'a t -> ('a -> unit) -> unit
-(** [Lwt.on_success p f] makes it so that [f] will run when [p] is {{: #TYPEt}
-    {e fulfilled}}.
+(** [Lwt.on_success p f] makes it so that [f] will run when [p] is
+    {{!t} {e fulfilled}}.
 
     It is similar to {!Lwt.bind}, except no new promises are created. [f] is a
     plain, arbitrary function attached to [p], to perform some side effect.
@@ -1350,8 +1345,8 @@ val on_success : 'a t -> ('a -> unit) -> unit
     By default, this will terminate the process. *)
 
 val on_failure : _ t -> (exn -> unit) -> unit
-(** [Lwt.on_failure p f] makes it so that [f] will run when [p] is {{: #TYPEt}
-    {e rejected}}.
+(** [Lwt.on_failure p f] makes it so that [f] will run when [p] is
+    {{!t} {e rejected}}.
 
     It is similar to {!Lwt.catch}, except no new promises are created.
 
@@ -1360,7 +1355,7 @@ val on_failure : _ t -> (exn -> unit) -> unit
 
 val on_termination : _ t -> (unit -> unit) -> unit
 (** [Lwt.on_termination p f] makes it so that [f] will run when [p] is
-    {{: #TYPEt} {e resolved}} – that is, fulfilled {e or} rejected.
+    {{!t} {e resolved}} – that is, fulfilled {e or} rejected.
 
     It is similar to {!Lwt.finalize}, except no new promises are created.
 
@@ -1370,8 +1365,8 @@ val on_termination : _ t -> (unit -> unit) -> unit
 val on_any : 'a t -> ('a -> unit) -> (exn -> unit) -> unit
 (** [Lwt.on_any p f g] makes it so that:
 
-    - [f] will run when [p] is {{: #TYPEt} {e fulfilled}},
-    - [g] will run when [p] is, alternatively, {{: #TYPEt} {e rejected}}.
+    - [f] will run when [p] is {{!t} {e fulfilled}},
+    - [g] will run when [p] is, alternatively, {{!t} {e rejected}}.
 
     It is similar to {!Lwt.try_bind}, except no new promises are created.
 
@@ -1626,8 +1621,7 @@ type +'a Lwt.result =
     A resolved promise of type ['a ]{!Lwt.t} is either fulfilled with a value of
     type ['a], or rejected with an exception.
 
-    This corresponds to the cases of a
-    [('a, exn)]{{: https://ocaml.org/api/Stdlib.html#TYPEresult}[Stdlib.result]}:
+    This corresponds to the cases of a [('a, exn)]{!Stdlib.result}:
     fulfilled corresponds to [Ok of 'a], and rejected corresponds to
     [Error of exn].
 
@@ -1663,7 +1657,7 @@ val wakeup_later_result : 'a u -> 'a result -> unit
     - If [result] is [Error exn], [p] is rejected with [exn].
 
     If [p] is not pending, [Lwt.wakeup_later_result] raises
-    [Stdlib.Invalid_argument _], except if [p] is {{: #VALcancel} canceled}. If
+    [Stdlib.Invalid_argument _], except if [p] is {{!Lwt.cancel} canceled}. If
     [p] is canceled, [Lwt.wakeup_later_result] has no effect. *)
 
 
@@ -1678,11 +1672,10 @@ type 'a state =
 val state : 'a t -> 'a state
 (** [Lwt.state p] evaluates to the current state of promise [p]:
 
-    - If [p] is {{: #TYPEt} fulfilled} with value [v], the result is
-      [Lwt.Return v].
-    - If [p] is {{: #TYPEt} rejected} with exception [exn], the result is
+    - If [p] is {{!t} fulfilled} with value [v], the result is [Lwt.Return v].
+    - If [p] is {{!t} rejected} with exception [exn], the result is
       [Lwt.Fail exn].
-    - If [p] is {{: #TYPEt} pending}, the result is [Lwt.Sleep].
+    - If [p] is {{!t} pending}, the result is [Lwt.Sleep].
 
     The constructor names are historical holdovers. *)
 
@@ -1831,21 +1824,18 @@ val wakeup_result : 'a u -> 'a result -> unit
 val make_value : 'a -> 'a result
   [@@ocaml.deprecated
     " Use Result.Ok, which is the same as Ok since OCaml 4.03."]
-(** [Lwt.make_value v] is equivalent to
-    {{: https://ocaml.org/api/Stdlib.html#TYPEresult}
-    [Ok v]} since OCaml 4.03. If you need compatibility with OCaml 4.02, use
-    [Result.Ok] and depend on opam package
-    {{: https://opam.ocaml.org/packages/result/} [result]}.
+(** [Lwt.make_value v] is equivalent to {!Stdlib.Result.Ok} since OCaml 4.03.
+    If you need compatibility with OCaml 4.02, use [Result.Ok] and depend on
+    opam package {{: https://opam.ocaml.org/packages/result/} [result]}.
 
     @deprecated Use [Result.Ok] instead *)
 
 val make_error : exn -> _ result
   [@@ocaml.deprecated
     " Use Result.Error, which is the same as Error since OCaml 4.03."]
-(** [Lwt.make_error exn] is equivalent to
-    {{: https://ocaml.org/api/Stdlib.html#TYPEresult}
-    [Error exn]} since OCaml 4.03. If you need compatibility with OCaml 4.02,
-    use [Result.Error] and depend on opam package
+(** [Lwt.make_error exn] is equivalent to {!Stdlib.Result.Error} since OCaml
+    4.03. If you need compatibility with OCaml 4.02, use [Result.Error] and
+    depend on opam package
     {{: https://opam.ocaml.org/packages/result/} [result]}.
 
     @deprecated Use [Result.Error] instead. *)
@@ -1956,13 +1946,13 @@ val wakeup_paused : unit -> unit
 
 val paused_count : unit -> int
 (** Returns the number of promises that would be fulfilled by calling
-    {!Lwt.wakeup_paused} right now.
+    [Lwt.wakeup_paused] right now.
 
     This function is intended for internal use by Lwt. *)
 
 val register_pause_notifier : (int -> unit) -> unit
 (** [Lwt.register_pause_notifier f] causes [f] to be called every time
-    {!Lwt.pause} is called. The result of {!Lwt.paused_count}[ ()] is passed to
+    {!Lwt.pause} is called. The result of [Lwt.paused_count ()] is passed to
     [f].
 
     Only one such function can be registered at a time. There is only a single
@@ -2031,7 +2021,11 @@ let g v =
 
 
 
-(** {3 Unscoped infix operators} *)
+(** {3 Unscoped infix operators}
+
+Use the operators in module {!Lwt.Infix} instead. Using these
+instances of the operators directly requires opening module [Lwt],
+which brings an excessive number of other names into scope. *)
 
 val (>>=) : 'a t -> ('a -> 'b t) -> 'b t
 val (>|=) : 'a t -> ('a -> 'b) -> 'b t
@@ -2039,16 +2033,13 @@ val (<?>) : 'a t -> 'a t -> 'a t
 val (<&>) : unit t -> unit t -> unit t
 val (=<<) : ('a -> 'b t) -> 'a t -> 'b t
 val (=|<) : ('a -> 'b) -> 'a t -> 'b t
-(** Use the operators in module {{: #MODULEInfix} [Lwt.Infix]} instead. Using
-    these instances of the operators directly requires opening module [Lwt],
-    which brings an excessive number of other names into scope. *)
 
 
 
 (** {3 Miscellaneous} *)
 
 val is_sleeping : _ t -> bool
-(** [Lwt.is_sleeping p] is equivalent to {!Lwt.state}[ p = Lwt.Sleep]. *)
+(** [Lwt.is_sleeping p] is equivalent to {!val:Lwt.state}[ p = Lwt.Sleep]. *)
 
 val ignore_result : _ t -> unit
 (** An obsolete variant of {!Lwt.async}.
@@ -2066,7 +2057,7 @@ val ignore_result : _ t -> unit
     - The behavior is different depending on whether [p] is rejected now or
       later.
     - The name is misleading, and has led to users thinking this function is
-      analogous to [Stdlib.ignore], i.e. that it waits for [p] to become
+      analogous to {!Stdlib.ignore}, i.e. that it waits for [p] to become
       resolved, completing any associated side effects along the way. In fact,
       the function that does {e that} is ordinary {!Lwt.bind}. *)
 

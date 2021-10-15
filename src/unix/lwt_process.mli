@@ -44,7 +44,7 @@ val shell : string -> command
 
 (** All the following functions take an optional argument
     [timeout]. If specified, after expiration, the process will be
-    sent a [Unix.sigkill] signal and channels will be closed. When the channels
+    sent a {!Unix.sigkill} signal and channels will be closed. When the channels
     are closed, any pending I/O operations on them (such as
     {!Lwt_io.read_chars}) fail with exception {!Lwt_io.Channel_closed}. *)
 
@@ -202,7 +202,8 @@ object
 
   method terminate : unit
     (** Terminates the process. It is equivalent to [kill Sys.sigkill]
-        on Unix but also works on Windows (unlike {!kill}). *)
+        on Unix but also works on Windows
+        (unlike {!Lwt_process.process_none.kill}). *)
 
   method status : Unix.process_status Lwt.t
     (** Threads which wait for the sub-process to exit then returns its
