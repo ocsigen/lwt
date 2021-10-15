@@ -61,21 +61,21 @@ jobs:
               *.opam
               !lwt_ppx.opam
           - os: ubuntu-latest
-            ocaml-compiler: 4.02.x
-            libev: false
-            ppx: false
-            local-packages: |
-              *.opam
-              !lwt_ppx.opam
-          - os: ubuntu-latest
             ocaml-compiler: 4.03.x
             libev: true
             ppx: false
             local-packages: |
               *.opam
               !lwt_ppx.opam
-          - os: ubuntu-latest
-            ocaml-compiler: 4.03.x
+          - os: macos-latest
+            ocaml-compiler: 4.02.x
+            libev: true
+            ppx: false
+            local-packages: |
+              *.opam
+              !lwt_ppx.opam
+          - os: windows-latest
+            ocaml-compiler: 4.02.x
             libev: false
             ppx: false
             local-packages: |
