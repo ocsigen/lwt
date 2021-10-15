@@ -54,16 +54,15 @@ let () =
 
     This is all explained in the next sections:
 
-    - {{: #3_Quickstart} Quick start} links these concepts to actual functions
-      in Lwt – the most fundamental ones.
-    - {{: #3_Tutorial} Tutorial} shows how to write examples like the above, and
-      how concurrency happens.
-    - {{: #3_Executionmodel} Execution model} clarifies control flow when using
-      Lwt.
-    - {{: #3_GuidetotherestofLwt} Guide to the rest of Lwt} shows how
-      {e everything} else in Lwt fits into this framework.
+    - {!3_Quickstart} links these concepts to actual functions in Lwt – the most
+      fundamental ones.
+    - {!3_Tutorial} shows how to write examples like the above, and how
+      concurrency happens.
+    - {!3_Executionmodel} clarifies control flow when using Lwt.
+    - {!3_GuidetotherestofLwt} shows how {e everything} else in Lwt fits into
+      this framework.
 
-    After that is the {{: #2_Fundamentals} reference proper}, which goes into
+    After that is the {{!2_Fundamentals} reference proper}, which goes into
     {e painful} levels of detail on every single type and value in this module,
     [Lwt]. Please be safe, and read only what you need from it :)
 
@@ -71,7 +70,7 @@ let () =
 
 
 
-    {3 Quick start}
+    {3:3_Quickstart Quick start}
 
     {e All} of Lwt is variations on:
 
@@ -88,7 +87,7 @@ let () =
 
 
 
-    {3 Tutorial}
+    {3:3_Tutorial Tutorial}
 
     Let's read  from STDIN. The first version is written using ordinary values
     from the OCaml standard library. This makes the program block until the user
@@ -222,11 +221,10 @@ let () =
 
     And that's it! Concurrency in Lwt is simply a matter of whether you start an
     operation in the callback of another one or not. As a convenience, Lwt
-    provides a few {{: #2_Concurrency} helpers} for common concurrency patterns.
+    provides a few {{!2_Concurrency} helpers} for common concurrency patterns.
 
 
-
-    {3 Execution model}
+    {3:3_Executionmodel Execution model}
 
     It's important to understand that promises are a pure-OCaml data type. They
     don't do any fancy scheduling or I/O. They are just lists of callbacks (if
@@ -313,24 +311,23 @@ let () =
 
 
 
-    {3 Guide to the rest of Lwt}
+    {3:3_GuidetotherestofLwt Guide to the rest of Lwt}
 
     This module [Lwt] is the pure-OCaml definition of promises and
     callback-calling. It has a few extras on top of what's described above:
 
-    - {{: #2_Rejection} Rejection}. Lwt promises can actually be resolved in two
-      ways: {e fulfilled} with a value, or {e rejected} with an exception. There
-      is nothing conceptually special about rejection – it's just that you can
-      ask for callbacks to run only on fulfillment, only on rejection, etc.
-    - {{: #2_Cancelation} Cancellation}. This is a special case of rejection,
-      specifically with exception {!Lwt.Canceled}. It has extra helpers in the
-      Lwt API.
-    - {{: #2_Concurrency} Concurrency helpers}. All of these could be
-      implemented on top of {!Lwt.bind}. As we saw, Lwt concurrency requires
-      only deciding whether to run something inside a callback, or outside it.
-      These functions just implement common patterns, and make intent explicit.
-    - Miscellaneous {{: #2_Convenience} helpers}, and {{: #2_Deprecated}
-      deprecated} APIs.
+    - {!2_Rejection}. Lwt promises can actually be resolved in two ways:
+      {e fulfilled} with a value, or {e rejected} with an exception. There is
+      nothing conceptually special about rejection – it's just that you can ask
+      for callbacks to run only on fulfillment, only on rejection, etc.
+    - {!2_Cancellation}. This is a special case of rejection, specifically with
+      exception {!Lwt.Canceled}. It has extra helpers in the Lwt API.
+    - {{!2_Concurrency} Concurrency helpers}. All of these could be implemented
+      on top of {!Lwt.bind}. As we saw, Lwt concurrency requires only deciding
+      whether to run something inside a callback, or outside it. These functions
+      just implement common patterns, and make intent explicit.
+    - Miscellaneous {{!2_Convenience} helpers}, and {{!2_Deprecated} deprecated}
+      APIs.
 
     The next layer above module [Lwt] is the pure-OCaml Lwt “core” library,
     which provides some promise-friendly patterns, like streams and mvars. This
@@ -360,7 +357,7 @@ let () =
 
 
 
-(** {2 Fundamentals} *)
+(** {2:2_Fundamentals Fundamentals} *)
 
 (** {3 Promises} *)
 
@@ -575,7 +572,7 @@ let () =
 
 
 
-(** {2 Rejection} *)
+(** {2:2_Rejection Rejection} *)
 
 val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
 (** [Lwt.catch f h] applies [f ()], which returns a promise, and then makes it
@@ -915,7 +912,7 @@ v}
 
 
 
-(** {2 Concurrency} *)
+(** {2:2_Concurrency Concurrency} *)
 
 (** {3 Multiple wait} *)
 
@@ -1063,7 +1060,7 @@ val nchoose_split : ('a t) list -> ('a list * ('a t) list) t
 
 
 
-(** {2 Cancellation}
+(** {2:2_Cancellation Cancellation}
 
     Note: cancelation has proved difficult to understand, explain, and maintain,
     so use of these functions is discouraged in new code. See
@@ -1267,7 +1264,7 @@ val wrap_in_cancelable : 'a t -> 'a t
 *)
 
 
-(** {2 Convenience} *)
+(** {2:2_Convenience Convenience} *)
 
 (** {3 Callback helpers} *)
 
@@ -1681,7 +1678,7 @@ val state : 'a t -> 'a state
 
 
 
-(** {2 Deprecated} *)
+(** {2:2_Deprecated Deprecated} *)
 
 (** {3 Implicit callback arguments}
 
