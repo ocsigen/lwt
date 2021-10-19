@@ -45,7 +45,7 @@ type push = {
   (* Thread signaled when a new element is added to the stream. *)
   mutable push_waiting : bool;
   (* Is a thread waiting on [push_signal] ? *)
-  mutable push_external : Obj.t;
+  mutable push_external : Obj.t [@ocaml.warning "-69"];
   (* Reference to an external source. *)
 }
 
@@ -66,7 +66,7 @@ type 'a push_bounded = {
   mutable pushb_push_waiter : unit Lwt.t;
   mutable pushb_push_wakener : unit Lwt.u;
   (* Thread blocked on push. *)
-  mutable pushb_external : Obj.t;
+  mutable pushb_external : Obj.t [@ocaml.warning "-69"];
   (* Reference to an external source. *)
 }
 
