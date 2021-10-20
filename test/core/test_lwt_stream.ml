@@ -31,6 +31,40 @@ let suite = suite "lwt_stream" [
        t3 >>= fun x3 ->
        return ([x1; x2; x3] = [1; 1; 1]));
 
+  test "return"
+    (fun () ->
+       let stream = Lwt_stream.return 123 in
+       if Lwt_stream.is_closed stream then
+         Lwt_stream.next stream >>= fun x -> return (x = 123)
+       else
+         Lwt.return_false);
+
+  test "return_lwt"
+    (fun () ->
+       let lwt = Lwt.return 123 in
+       let stream = Lwt_stream.return_lwt lwt in
+       Lwt_stream.next stream >>= fun x ->
+       return (x = 123 && Lwt_stream.is_closed stream));
+
+  test "return_lwt_with_pause"
+    (fun () ->
+       let lwt = Lwt.pause () >>= fun () -> Lwt.return 123 in
+       let stream = Lwt_stream.return_lwt lwt in
+       Lwt_stream.next stream >>= fun x ->
+       return (x = 123 && Lwt_stream.is_closed stream));
+
+  test "return_lwt_with_fail"
+    (fun () ->
+       let lwt = Lwt.pause () >>= fun () -> raise (Failure "not today no") in
+       let stream = Lwt_stream.return_lwt lwt in
+       Lwt.catch
+         (fun () ->
+           Lwt_stream.next stream >>= fun _ ->
+           Lwt.return_false)
+         (function
+           | Lwt_stream.Empty -> Lwt.return_true
+           | exc -> raise exc));
+
   test "of_seq"
     (fun () ->
        let x = ref false in

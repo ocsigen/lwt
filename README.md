@@ -2,7 +2,7 @@
 
 [![version][version]][releases] [![GitHub Actions status][github-actions-img]][github-actions]
 
-[version]:            https://img.shields.io/badge/version-5.3.0-blue.svg
+[version]:            https://img.shields.io/github/release/ocsigen/lwt
 [releases]:           https://github.com/ocsigen/lwt/releases
 [github-actions]:     https://github.com/ocsigen/lwt/actions
 [github-actions-img]: https://github.com/ocsigen/lwt/actions/workflows/workflow.yml/badge.svg?branch=master
@@ -78,16 +78,16 @@ In Lwt,
 - There are also some other helpers, such as [`Lwt_react`][react] for reactive
   programming. See the table of contents on the linked manual pages!
 
-[core]: https://ocsigen.org/lwt/dev/api/Lwt
-[cond]: https://ocsigen.org/lwt/dev/api/Lwt_condition
-[mutex]: https://ocsigen.org/lwt/dev/api/Lwt_mutex
-[mvar]: https://ocsigen.org/lwt/dev/api/Lwt_mvar
-[unix]: https://ocsigen.org/lwt/dev/api/Lwt_unix
-[io]: https://ocsigen.org/lwt/dev/api/Lwt_io
-[process]: https://ocsigen.org/lwt/dev/api/Lwt_process
-[preemptive]: https://ocsigen.org/lwt/dev/api/Lwt_preemptive
-[ppx]: https://ocsigen.org/lwt/dev/api/Ppx_lwt
-[react]: https://ocsigen.org/lwt/dev/api/Lwt_react
+[core]: https://ocsigen.org/lwt/latest/api/Lwt
+[cond]: https://ocsigen.org/lwt/latest/api/Lwt_condition
+[mutex]: https://ocsigen.org/lwt/latest/api/Lwt_mutex
+[mvar]: https://ocsigen.org/lwt/latest/api/Lwt_mvar
+[unix]: https://ocsigen.org/lwt/latest/api/Lwt_unix
+[io]: https://ocsigen.org/lwt/latest/api/Lwt_io
+[process]: https://ocsigen.org/lwt/latest/api/Lwt_process
+[preemptive]: https://ocsigen.org/lwt/latest/api/Lwt_preemptive
+[ppx]: https://ocsigen.org/lwt/latest/api/Ppx_lwt
+[react]: https://ocsigen.org/lwt/latest/api/Lwt_react
 
 
 <br/>

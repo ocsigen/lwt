@@ -1,12 +1,57 @@
 ===== dev =====
 
+====== Deprecations ======
+
+  * Lwt_main.yield and Lwt_unix.yield are deprecated in favor of the generic Lwt.pause, and Lwt_unix.auto_yield is deprecated in favor of the new Lwt_unix.auto_pause. Currently, Lwt_main.run resolves paused promises more frequently than yielded promises; the difference is unintended but existing applications could unintentionally depend on it (#855, #858, Favonia).
+
+====== Fixes ======
+
+  * Support IPv6 socketpair on Windows (#870, #876, Antonin Décimo, David Allsopp).
+
+  * Lwt_unix.lstat was incorrectly calling Unix.stat on Win32. Fixes
+    the behavior of Lwt_io.with_temp_dir following symlinks to
+    directories on Win32. (#883, Antonin Décimo)
+
 ====== Additions ======
 
-  * Lwt_seq: a Seq-like data-structure with Lwt delayed nodes (#836, Zach Shipko).
+  * Lwt_bytes.blit_from_string: string complement of Lwt_bytes.blit (#882, Hugo Heuzard).
+
+  * Lwt_seq: a Seq-like data-structure with Lwt delayed nodes (#836, #842, Zach Shipko).
+
+  * Lwt_unix.auto_pause: the replacement of Lwt_unix.auto_yield that uses Lwt.pause instead of Lwt_unix.yield (#855, #858, Favonia).
+
+  * Lwt_stream.return, Lwt_stream.return_lwt: singleton stream constructors (#864, Boning Dong).
+
+====== Misc ======
+
+  * Code quality improvement: remove an uneeded Obj.magic (#844, Benoit Montagu).
+
+
+===== 5.4.2 =====
+
+====== Bugs fixed ======
+
+  * Fix compilation on Windows by providing missing dummy stubs (#868, Andreas Hauptmann, Antonin Décimo).
+
+
+===== 5.4.1 =====
+
+====== Bugs fixed ======
+
+  * Fix Lwt_fmt.stderr to actually point to stderr (#852, #850, Volker Diels-Grabsch).
+
+  * Make temporary files created by Lwt_io.with_temp_dir deletable on Windows by removing the RO bit (#849, #861, Antonin Décimo).
+
+  * Handle ECONNABORTED in Lwt_io.establish_server* (#829, #830, Reynir Björnsson, Hannes Mehnert).
+
+
 
 ====== Bugfixes ======
 
   * Fix Lwt_fmt.stderr to actually point to stderr (#852, #850, Volker Diels-Grabsch).
+
+  * Lwt_io.establish_server* handles ECONNABORTED (#829, #830, Reynir Björnsson)
+
 
 ===== 5.4.0 (2020-12-16) =====
 

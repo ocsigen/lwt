@@ -46,7 +46,7 @@ val create : unit -> 'a t * ('a option -> unit)
 
     To notify the stream's consumer of errors, either use a separate
     communication channel, or use a
-    {{:http://caml.inria.fr/pub/docs/manual-ocaml/libref/Pervasives.html#TYPEresult}
+    {{:https://ocaml.org/api/Stdlib.html#TYPEresult}
     [result]} stream. There is no way to push an exception into a
     push-stream. *)
 
@@ -113,6 +113,23 @@ val create_bounded : int -> 'a t * 'a bounded_push
     to do so.
 
     It raises [Invalid_argument] if [size < 0]. *)
+
+val return : 'a -> 'a t
+(** [return a] creates a stream containing the value [a] and being immediately
+    closed stream (in the sense of {!is_closed}).
+
+    @since 5.5.0 *)
+
+val return_lwt : 'a Lwt.t -> 'a t
+(** [return_lwt l] creates a stream returning the value that [l] resolves to.
+    The value is pushed into the stream immediately after the promise becomes
+    resolved and the stream is then immediately closed (in the sense of
+    {!is_closed}).
+
+    If, instead, [l] becomes rejected, then the stream is closed without any
+    elements in it. Attempting to fetch elements from it will raise {!Empty}.
+
+    @since 5.5.0 *)
 
 val of_seq : 'a Seq.t -> 'a t
 (** [of_seq s] creates a stream returning all elements of [s]. The elements are

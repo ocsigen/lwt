@@ -106,13 +106,12 @@ let set_notification id f =
   Notifiers.replace notifiers id { notifier with notify_handler = f }
 
 let call_notification id =
-  match try Some(Notifiers.find notifiers id) with Not_found -> None with
-  | Some notifier ->
+  match Notifiers.find notifiers id with
+  | exception Not_found -> ()
+  | notifier ->
     if notifier.notify_once then
       stop_notification id;
     notifier.notify_handler ()
-  | None ->
-    ()
 
 (* +-----------------------------------------------------------------+
    | Sleepers                                                        |
@@ -124,7 +123,7 @@ let sleep delay =
   Lwt.on_cancel waiter (fun () -> Lwt_engine.stop_event ev);
   waiter
 
-let yield = Lwt_main.yield
+let yield = (Lwt_main.yield [@warning "-3"])
 
 let auto_yield timeout =
   let limit = ref (Unix.gettimeofday () +. timeout) in
@@ -133,6 +132,16 @@ let auto_yield timeout =
     if current >= !limit then begin
       limit := current +. timeout;
       yield ();
+    end else
+      Lwt.return_unit
+
+let auto_pause timeout =
+  let limit = ref (Unix.gettimeofday () +. timeout) in
+  fun () ->
+    let current = Unix.gettimeofday () in
+    if current >= !limit then begin
+      limit := current +. timeout;
+      Lwt.pause ();
     end else
       Lwt.return_unit
 
@@ -1007,7 +1016,7 @@ external lstat_job : string -> Unix.stats job = "lwt_unix_lstat_job"
 
 let lstat name =
   if Sys.win32 then
-    Lwt.return (Unix.stat name)
+    Lwt.return (Unix.lstat name)
   else
     run_job (lstat_job name)
 
@@ -1350,11 +1359,9 @@ let readdir_n handle count =
       if i = count then
         Lwt.return array
       else
-        match try array.(i) <- Unix.readdir handle; true with End_of_file -> false with
-        | true ->
-          fill (i + 1)
-        | false ->
-          Lwt.return (Array.sub array 0 i)
+        match array.(i) <- Unix.readdir handle with
+        | exception End_of_file -> Lwt.return (Array.sub array 0 i)
+        | () -> fill (i + 1)
     in
     fill 0
   else
@@ -2289,11 +2296,10 @@ let disable_signal_handler id =
     end
 
 let reinstall_signal_handler signum =
-  match try Some (Signal_map.find signum !signals) with Not_found -> None with
-  | Some (notification, _) ->
+  match Signal_map.find signum !signals with
+  | exception Not_found -> ()
+  | notification, _ ->
     set_signal signum notification
-  | None ->
-    ()
 
 (* +-----------------------------------------------------------------+
    | Processes                                                       |
@@ -2318,7 +2324,7 @@ let fork () =
     Lwt_sequence.iter_node_l Lwt_sequence.remove jobs;
     (* And cancel them all. We yield first so that if the program
        do an exec just after, it won't be executed. *)
-    Lwt.on_termination (Lwt_main.yield ()) (fun () -> List.iter (fun f -> f Lwt.Canceled) l);
+    Lwt.on_termination (Lwt_main.yield () [@warning "-3"]) (fun () -> List.iter (fun f -> f Lwt.Canceled) l);
     0
   | pid ->
     pid
