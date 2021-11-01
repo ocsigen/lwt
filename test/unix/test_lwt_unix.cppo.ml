@@ -1190,6 +1190,17 @@ let lwt_domain_test = [
     Lwt_domain.detach pool f () >>= fun x ->
     Lwt.return (x = 42)
   end;
+  test "run_in_main_domain_exception" begin fun () ->
+    let pool = Option.get (Lwt_domain.lookup_pool "pool_1") in
+    let f () = Lwt_domain.detach pool (fun () ->
+      Lwt_domain.run_in_main (fun () ->
+        Lwt_unix.sleep 0.01 >>= fun () ->
+        Lwt.return (5/0))) ()
+    in
+    Lwt.try_bind f
+    (fun _ -> Lwt.return_false)
+    (fun exn -> Lwt.return (exn = Division_by_zero))
+  end;
   test "fib_domain" begin fun () ->
     let pool = Option.get (Lwt_domain.lookup_pool "pool_1") in
     let rec fib n =
