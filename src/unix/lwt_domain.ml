@@ -6,8 +6,7 @@ module T = Domainslib.Task
 type pool = Domainslib.Task.pool
 
 let setup_pool ?name num_additional_domains =
-    T.setup_pool ?name ~num_additional_domains:num_additional_domains ()
-
+    T.setup_pool ?name ~num_additional_domains ()
 
 let teardown_pool = T.teardown_pool
 
@@ -15,7 +14,7 @@ let lookup_pool = T.lookup_pool
 
 let get_num_domains = T.get_num_domains
 
-let init_result = Result.Error (Failure "Lwt_domain.detach")
+let init_result = Error (Failure "Lwt_domain.detach")
 
 let detach pool f args =
   if (get_num_domains pool = 1) then
@@ -23,7 +22,7 @@ let detach pool f args =
   else begin
     let result = ref init_result in
     let task () =
-      result := try Result.Ok (f args) with exn -> Result.Error exn
+      result := try Ok (f args) with exn -> Error exn
     in
     let waiter, wakener = Lwt.wait () in
     let id =
@@ -55,13 +54,13 @@ let run_in_main f =
       (fun ret -> Lwt.return (Result.Ok ret))
       (fun exn -> Lwt.return (Result.Error exn)) >>= fun result ->
     res := result;
-    C.send job_done 1;
+    C.send job_done ();
     Lwt.return_unit
   in
   C.send jobs job;
   Lwt_unix.send_notification job_notification;
   (* blocks calling domain until the job is executed *)
-  ignore @@ C.recv job_done;
+  C.recv job_done;
   match !res with
   | Result.Ok ret -> ret
   | Result.Error exn -> raise exn
