@@ -455,6 +455,8 @@ module S = struct
     map_s ?eq f s1
 
   let l2_s ?eq f s1 s2 =
+    (* Some details about the use of [fun _ _ -> false] on
+       https://github.com/ocsigen/lwt/pull/893#pullrequestreview-783083496 *)
     map_s ?eq (fun (x1, x2) -> f x1 x2) (l2 ~eq:(fun _ _ -> false) (fun x1 x2 -> (x1, x2)) s1 s2)
 
   let l3_s ?eq f s1 s2 s3 =
