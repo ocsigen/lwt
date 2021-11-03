@@ -12,6 +12,9 @@
     the behavior of Lwt_io.with_temp_dir following symlinks to
     directories on Win32. (#883, Antonin Décimo)
 
+  * Lwt_react.S.l[2-6]_s used polymorphic equality which could cause errors when
+    handling functional values. (#893, Jérôme Vouillon)
+
 ====== Additions ======
 
   * Lwt_bytes.blit_from_string: string complement of Lwt_bytes.blit (#882, Hugo Heuzard).
