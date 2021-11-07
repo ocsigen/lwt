@@ -1475,10 +1475,15 @@ let mkfifo name perms =
 
 external symlink_job : string -> string -> unit job = "lwt_unix_symlink_job"
 
-let symlink name1 name2 =
-  if Sys.win32 then
+let symlink ?to_dir name1 name2 =
+  if Sys.win32 then begin
+#if OCAML_VERSION >= (4, 03, 0)
+    Lwt.return (Unix.symlink ?to_dir name1 name2)
+  #else
+    ignore to_dir;
     Lwt.return (Unix.symlink name1 name2)
-  else
+#endif
+  end else
     run_job (symlink_job name1 name2)
 
 external readlink_job : string -> string job = "lwt_unix_readlink_job"

@@ -770,7 +770,7 @@ val mkfifo : string -> file_perm -> unit Lwt.t
 
 (** {2 Symbolic links} *)
 
-val symlink : string -> string -> unit Lwt.t
+val symlink : ?to_dir:bool -> string -> string -> unit Lwt.t
   (** Wrapper for [Unix.symlink] *)
 
 val readlink : string -> string Lwt.t
