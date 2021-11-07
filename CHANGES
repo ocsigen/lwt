@@ -9,8 +9,6 @@
   * Use is_blocking in dup and dup2 to fix ENOTSOCK on Windows.
     (#869, Antonin Décimo)
 
-  * Support IPv6 socketpair on Windows (#870, #876, Antonin Décimo, David Allsopp).
-
   * Lwt_unix.lstat was incorrectly calling Unix.stat on Win32. Fixes
     the behavior of Lwt_io.with_temp_dir following symlinks to
     directories on Win32. (#883, Antonin Décimo)
@@ -34,6 +32,8 @@
   * Lwt_stream.return, Lwt_stream.return_lwt: singleton stream constructors (#864, Boning Dong).
 
   * Add ?to_dir param from Unix.symlink to Lwt_unix.symlink wrapper (#884, Antonin Décimo)
+
+  * Support IPv6 (always) and PF_UNIX (with OCaml >= 4.14) socketpair on Windows (#870, #876, Antonin Décimo, David Allsopp).
 
 ====== Misc ======
 
