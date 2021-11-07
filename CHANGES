@@ -12,6 +12,8 @@
     the behavior of Lwt_io.with_temp_dir following symlinks to
     directories on Win32. (#883, Antonin Décimo)
 
+  * Support deleting symlinks on Windows during cleanup of Lwt_io.with_temp_dir (#886, Antonin Décimo)
+
   * Lwt_react.S.l[2-6]_s used polymorphic equality which could cause errors when
     handling functional values. (#893, Jérôme Vouillon)
 
