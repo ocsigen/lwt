@@ -1691,7 +1691,11 @@ let shutdown ch shutdown_command =
 external stub_socketpair : socket_domain -> socket_type -> int -> Unix.file_descr * Unix.file_descr = "lwt_unix_socketpair_stub"
 
 let socketpair dom typ proto =
-#if OCAML_VERSION >= (4, 05, 0)
+#if OCAML_VERSION >= (4, 14, 0)
+  let do_socketpair =
+    if Sys.win32 && (dom <> Unix.PF_UNIX) then stub_socketpair
+    else Unix.socketpair ?cloexec:None in
+#elif OCAML_VERSION >= (4, 05, 0)
   let do_socketpair =
     if Sys.win32 then stub_socketpair
     else Unix.socketpair ?cloexec:None in
