@@ -6,6 +6,9 @@
 
 ====== Fixes ======
 
+  * Use is_blocking in dup and dup2 to fix ENOTSOCK on Windows.
+    (#869, Antonin Décimo)
+
   * Support IPv6 socketpair on Windows (#870, #876, Antonin Décimo, David Allsopp).
 
   * Lwt_unix.lstat was incorrectly calling Unix.stat on Win32. Fixes

@@ -1242,13 +1242,8 @@ let dup ch =
     set_flags = ch.set_flags;
     blocking =
       if ch.set_flags then
-        lazy(Lazy.force ch.blocking >>= function
-        | true ->
-          Unix.clear_nonblock fd;
-          Lwt.return_true
-        | false ->
-          Unix.set_nonblock fd;
-          Lwt.return_false)
+        lazy(Lazy.force ch.blocking >>= function blocking ->
+               Lazy.force (is_blocking ~blocking fd))
       else
         ch.blocking;
     event_readable = None;
@@ -1263,13 +1258,8 @@ let dup2 ch1 ch2 =
   ch2.set_flags <- ch1.set_flags;
   ch2.blocking <- (
     if ch2.set_flags then
-      lazy(Lazy.force ch1.blocking >>= function
-      | true ->
-        Unix.clear_nonblock ch2.fd;
-        Lwt.return_true
-      | false ->
-        Unix.set_nonblock ch2.fd;
-        Lwt.return_false)
+      lazy(Lazy.force ch1.blocking >>= function blocking ->
+             Lazy.force (is_blocking ~blocking ch2.fd))
     else
       ch1.blocking
   )
