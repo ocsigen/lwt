@@ -17,6 +17,9 @@
   * Lwt_react.S.l[2-6]_s used polymorphic equality which could cause errors when
     handling functional values. (#893, Jérôme Vouillon)
 
+  * On Windows, treat ERROR_BROKEN_PIPE on read as zero-read instead
+    of error. See OCaml PR #4790. (#898, Antonin Décimo)
+
 ====== Additions ======
 
   * Lwt_bytes.blit_from_string: string complement of Lwt_bytes.blit (#882, Hugo Heuzard).
