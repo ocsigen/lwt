@@ -25,7 +25,9 @@
 
   * Lwt_stream.return, Lwt_stream.return_lwt: singleton stream constructors (#864, Boning Dong).
 
-  * Add ?to_dir param from Unix.symlink to Lwt_unix.symlink wrapper (#884, Antonin Décimo)
+  * Add ?to_dir param from Unix.symlink to Lwt_unix.symlink wrapper (#884, Antonin Décimo).
+
+  * Lwt_stream.of_lwt_seq to convert an Lwt-sequence into an Lwt-stream (#873)
 
 ====== Misc ======
 
