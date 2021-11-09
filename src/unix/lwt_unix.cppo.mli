@@ -681,10 +681,12 @@ val access : string -> access_permission list -> unit Lwt.t
 
 (** {2 Operations on file descriptors} *)
 
-val dup : file_descr -> file_descr
+val dup : ?cloexec:bool ->
+          file_descr -> file_descr
   (** Wrapper for [Unix.dup] *)
 
-val dup2 : file_descr -> file_descr -> unit
+val dup2 : ?cloexec:bool ->
+           file_descr -> file_descr -> unit
   (** Wrapper for [Unix.dup2] *)
 
 val set_close_on_exec : file_descr -> unit
@@ -751,17 +753,20 @@ val files_of_directory : string -> string Lwt_stream.t
 
 (** {2 Pipes and redirections} *)
 
-val pipe : unit -> file_descr * file_descr
+val pipe : ?cloexec:bool ->
+           unit -> file_descr * file_descr
   (** [pipe ()] creates pipe using [Unix.pipe] and returns two lwt {b
       file descriptor}s created from unix {b file_descriptor} *)
 
-val pipe_in : unit -> file_descr * Unix.file_descr
+val pipe_in : ?cloexec:bool ->
+              unit -> file_descr * Unix.file_descr
   (** [pipe_in ()] is the same as {!pipe} but maps only the unix {b
       file descriptor} for reading into a lwt one. The second is not
       put into non-blocking mode. You usually want to use this before
       forking to receive data from the child process. *)
 
-val pipe_out : unit -> Unix.file_descr * file_descr
+val pipe_out : ?cloexec:bool ->
+               unit -> Unix.file_descr * file_descr
   (** [pipe_out ()] is the inverse of {!pipe_in}. You usually want to
       use this before forking to send data to the child process *)
 
@@ -874,11 +879,13 @@ type socket_type =
 
 type sockaddr = Unix.sockaddr = ADDR_UNIX of string | ADDR_INET of inet_addr * int
 
-val socket : socket_domain -> socket_type -> int -> file_descr
+val socket : ?cloexec:bool ->
+             socket_domain -> socket_type -> int -> file_descr
   (** [socket domain type proto] is the same as [Unix.socket] but maps
       the result into a lwt {b file descriptor} *)
 
-val socketpair : socket_domain -> socket_type -> int -> file_descr * file_descr
+val socketpair : ?cloexec:bool ->
+                 socket_domain -> socket_type -> int -> file_descr * file_descr
   (** Wrapper for [Unix.socketpair] *)
 
 val bind : file_descr -> sockaddr -> unit Lwt.t
@@ -892,10 +899,12 @@ val bind : file_descr -> sockaddr -> unit Lwt.t
 val listen : file_descr -> int -> unit
   (** Wrapper for [Unix.listen] *)
 
-val accept : file_descr -> (file_descr * sockaddr) Lwt.t
+val accept : ?cloexec:bool ->
+             file_descr -> (file_descr * sockaddr) Lwt.t
   (** Wrapper for [Unix.accept] *)
 
-val accept_n : file_descr -> int -> ((file_descr * sockaddr) list * exn option) Lwt.t
+val accept_n : ?cloexec:bool ->
+               file_descr -> int -> ((file_descr * sockaddr) list * exn option) Lwt.t
   (** [accept_n fd count] accepts up to [count] connections at one time.
 
       - if no connection is available right now, it returns a sleeping

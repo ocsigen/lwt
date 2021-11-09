@@ -1233,9 +1233,14 @@ let access name mode =
    | Operations on file descriptors                                  |
    +-----------------------------------------------------------------+ *)
 
-let dup ch =
+let dup ?cloexec ch =
   check_descriptor ch;
+#if OCAML_VERSION >= (4, 05, 0)
+  let fd = Unix.dup ?cloexec ch.fd in
+#else
   let fd = Unix.dup ch.fd in
+  if cloexec = Some true then Unix.set_close_on_exec fd;
+#endif
   {
     fd = fd;
     state = Opened;
@@ -1252,9 +1257,14 @@ let dup ch =
     hooks_writable = Lwt_sequence.create ();
   }
 
-let dup2 ch1 ch2 =
+let dup2 ?cloexec ch1 ch2 =
   check_descriptor ch1;
+#if OCAML_VERSION >= (4, 05, 0)
+  Unix.dup2 ?cloexec ch1.fd ch2.fd;
+#else
   Unix.dup2 ch1.fd ch2.fd;
+  if cloexec = Some true then Unix.set_close_on_exec ch2.fd;
+#endif
   ch2.set_flags <- ch1.set_flags;
   ch2.blocking <- (
     if ch2.set_flags then
@@ -1439,16 +1449,40 @@ let files_of_directory path =
    | Pipes and redirections                                          |
    +-----------------------------------------------------------------+ *)
 
-let pipe () =
-  let (out_fd, in_fd) = Unix.pipe() in
+let pipe ?cloexec () =
+#if OCAML_VERSION >= (4, 05, 0)
+  let (out_fd, in_fd) = Unix.pipe ?cloexec () in
+#else
+  let (out_fd, in_fd) = Unix.pipe () in
+  if cloexec = Some true then begin
+    Unix.set_close_on_exec out_fd;
+    Unix.set_close_on_exec in_fd
+  end;
+#endif
   (mk_ch ~blocking:Sys.win32 out_fd, mk_ch ~blocking:Sys.win32 in_fd)
 
-let pipe_in () =
-  let (out_fd, in_fd) = Unix.pipe() in
+let pipe_in ?cloexec () =
+#if OCAML_VERSION >= (4, 05, 0)
+   let (out_fd, in_fd) = Unix.pipe ?cloexec () in
+#else
+   let (out_fd, in_fd) = Unix.pipe () in
+   if cloexec = Some true then begin
+     Unix.set_close_on_exec out_fd;
+     Unix.set_close_on_exec in_fd
+   end;
+#endif
   (mk_ch ~blocking:Sys.win32 out_fd, in_fd)
 
-let pipe_out () =
-  let (out_fd, in_fd) = Unix.pipe() in
+let pipe_out ?cloexec () =
+#if OCAML_VERSION >= (4, 05, 0)
+  let (out_fd, in_fd) = Unix.pipe ?cloexec () in
+#else
+  let (out_fd, in_fd) = Unix.pipe () in
+  if cloexec = Some true then begin
+    Unix.set_close_on_exec out_fd;
+    Unix.set_close_on_exec in_fd
+  end;
+#endif
   (out_fd, mk_ch ~blocking:Sys.win32 in_fd)
 
 external mkfifo_job : string -> int -> unit job = "lwt_unix_mkfifo_job"
@@ -1664,8 +1698,13 @@ type socket_type =
 
 type sockaddr = Unix.sockaddr = ADDR_UNIX of string | ADDR_INET of inet_addr * int
 
-let socket dom typ proto =
+let socket ?cloexec dom typ proto =
+#if OCAML_VERSION >= (4, 05, 0)
+  let s = Unix.socket ?cloexec dom typ proto in
+#else
   let s = Unix.socket dom typ proto in
+  if cloexec = Some true then Unix.set_close_on_exec s;
+#endif
   mk_ch ~blocking:false s
 
 type shutdown_command =
@@ -1680,37 +1719,56 @@ let shutdown ch shutdown_command =
 
 external stub_socketpair : socket_domain -> socket_type -> int -> Unix.file_descr * Unix.file_descr = "lwt_unix_socketpair_stub"
 
-let socketpair dom typ proto =
-#if OCAML_VERSION >= (4, 14, 0)
-  let do_socketpair =
-    if Sys.win32 && (dom <> Unix.PF_UNIX) then stub_socketpair
-    else Unix.socketpair ?cloexec:None in
-#elif OCAML_VERSION >= (4, 05, 0)
-  let do_socketpair =
-    if Sys.win32 then stub_socketpair
-    else Unix.socketpair ?cloexec:None in
-#else
-  let do_socketpair = if Sys.win32 then stub_socketpair else Unix.socketpair  in
+#if OCAML_VERSION >= (4, 05, 0)
+let stub_socketpair ?cloexec dom typ proto =
+  let (s1, s2) = stub_socketpair dom typ proto in
+  if cloexec = Some true then begin
+    Unix.set_close_on_exec s1;
+    Unix.set_close_on_exec s2
+  end;
+  (s1, s2)
 #endif
-  let (s1, s2) = do_socketpair dom typ proto in
+
+let socketpair ?cloexec dom typ proto =
+  let (s1, s2) =
+#if OCAML_VERSION >= (4, 14, 0)
+    if Sys.win32 && (dom <> Unix.PF_UNIX) then
+      stub_socketpair ?cloexec dom typ proto
+    else Unix.socketpair ?cloexec dom typ proto in
+#elif OCAML_VERSION >= (4, 05, 0)
+    if Sys.win32 then stub_socketpair ?cloexec dom typ proto
+    else Unix.socketpair ?cloexec dom typ proto in
+#else
+    if Sys.win32 then stub_socketpair dom typ proto
+    else Unix.socketpair dom typ proto in
+  if cloexec = Some true then begin
+    Unix.set_close_on_exec s1;
+    Unix.set_close_on_exec s2
+  end;
+#endif
   (mk_ch ~blocking:false s1, mk_ch ~blocking:false s2)
 
 external accept4 :
-  close_on_exec:bool -> nonblock:bool -> Unix.file_descr ->
-    Unix.file_descr * Unix.sockaddr = "lwt_unix_accept4"
+  ?cloexec:bool -> nonblock:bool ->
+  Unix.file_descr -> Unix.file_descr * Unix.sockaddr = "lwt_unix_accept4"
 
-let accept_and_set_nonblock ch_fd =
+let accept_and_set_nonblock ?cloexec ch_fd =
   if Lwt_config._HAVE_ACCEPT4 then
-    let (fd, addr) = accept4 ~close_on_exec:false ~nonblock:true ch_fd in
+    let (fd, addr) = accept4 ?cloexec ~nonblock:true ch_fd in
     (mk_ch ~blocking:false ~set_flags:false fd, addr)
   else
+#if OCAML_VERSION >= (4, 05, 0)
+    let (fd, addr) = Unix.accept ?cloexec ch_fd in
+#else
     let (fd, addr) = Unix.accept ch_fd in
+    if cloexec = Some true then Unix.set_close_on_exec fd;
+#endif
     (mk_ch ~blocking:false fd, addr)
 
-let accept ch =
-  wrap_syscall Read ch (fun _ -> accept_and_set_nonblock ch.fd)
+let accept ?cloexec ch =
+  wrap_syscall Read ch (fun _ -> accept_and_set_nonblock ?cloexec ch.fd)
 
-let accept_n ch n =
+let accept_n ?cloexec ch n =
   let l = ref [] in
   Lazy.force ch.blocking >>= fun blocking ->
   Lwt.catch
@@ -1720,7 +1778,7 @@ let accept_n ch n =
            try
              for _i = 1 to n do
                if blocking && not (unix_readable ch.fd) then raise Retry;
-               l := accept_and_set_nonblock ch.fd :: !l
+               l := accept_and_set_nonblock ?cloexec ch.fd :: !l
              done
            with
            | (Unix.Unix_error((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _) | Retry) when !l <> [] ->
