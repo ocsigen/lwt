@@ -2645,7 +2645,7 @@ struct
   let count_resolved_promises_in (ps : 'a t list) =
     let rec count_and_gather_rejected total rejected ps =
        match ps with
-       | [] -> Error (total, rejected)
+       | [] -> Result.Error (total, rejected)
        | p :: ps ->
             let Internal q = to_internal_promise p in
             match (underlying q).state with
@@ -2655,7 +2655,7 @@ struct
     in
     let rec count_fulfilled total ps =
        match ps with
-       | [] -> Ok total
+       | [] -> Result.Ok total
        | p :: ps ->
             let Internal q = to_internal_promise p in
             match (underlying q).state with
@@ -2717,7 +2717,7 @@ struct
       invalid_arg
         "Lwt.choose [] would return a promise that is pending forever";
     match count_resolved_promises_in ps with
-    | Ok 0 ->
+    | Result.Ok 0 ->
       let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
 
       let callback result =
@@ -2731,13 +2731,13 @@ struct
 
       to_public_promise p
 
-    | Ok 1 ->
+    | Result.Ok 1 ->
       nth_resolved ps 0
 
-    | Ok n ->
+    | Result.Ok n ->
       nth_resolved ps (Random.State.int (Lazy.force prng) n)
 
-    | Error (n, ps) ->
+    | Result.Error (n, ps) ->
       nth_resolved ps (Random.State.int (Lazy.force prng) n)
 
   let pick ps =
