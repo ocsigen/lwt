@@ -127,7 +127,6 @@ jobs:
         if: ${{ matrix.libev == true }}
 
       - run: opam install lwt_luv lwt_react lwt --deps-only --with-test
-        if: ${{ matrix.ppx == false }}
 
       - run: opam install lwt_ppx --deps-only --with-test
         if: ${{ matrix.ppx == true }}
