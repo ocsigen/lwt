@@ -42,7 +42,7 @@ let () = Jbuild_plugin.V1.send @@ {|
  (synopsis "Unix support for Lwt")
  (optional)
  (wrapped false)
- (libraries bigarray lwt mmap ocplib-endian.bigstring threads unix domainslib)
+ (libraries bigarray lwt mmap ocplib-endian.bigstring threads unix)
  |} ^ preprocess ^ {|
  (c_names
   lwt_unix_stubs
