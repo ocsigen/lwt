@@ -32,9 +32,10 @@ jobs:
           - true
         domains:
           - false
-        local-packages: |
-          *.opam
-          !lwt_domain.opam
+        local-packages:
+          - |
+            *.opam
+            !lwt_domain.opam
         include:
           - os: ubuntu-latest
             ocaml-compiler: ocaml-variants.4.13.1+options,ocaml-option-flambda,ocaml-option-musl,ocaml-option-static
