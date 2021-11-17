@@ -41,7 +41,6 @@ jobs:
             libev: false
             ppx: true
             domains: false
-            local-packages: "*.opam"
             local-packages: |
               *.opam
               !lwt_domain.opam
