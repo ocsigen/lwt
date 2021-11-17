@@ -4,6 +4,6 @@
 
 (alias
  (name runtest)
- (package lwt)
+ (package lwt_domain)
  (action (run %{exe:main.exe}))
 )
