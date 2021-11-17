@@ -125,7 +125,7 @@ jobs:
       - run: opam install lwt_ppx --deps-only --with-test
         if: ${{ matrix.ppx == true }}
 
-      - run: opam install lwt_domaain --deps-only --with-test
+      - run: opam install lwt_domain --deps-only --with-test
         if: ${{ matrix.domain == true }}
 
       - run: opam exec -- dune build --only-packages lwt_luv,lwt_react,lwt
