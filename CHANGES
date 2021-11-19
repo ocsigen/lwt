@@ -37,6 +37,8 @@
 
   * Support IPv6 (always) and PF_UNIX (with OCaml >= 4.14) socketpair on Windows (#870, #876, Antonin Décimo, David Allsopp).
 
+  * In the Lwt_unix module, add `?cloexec:bool` optional arguments to functions that create file descriptors (`dup`, `dup2`, `pipe`, `pipe_in`, `pipe_out`, `socket`, `socketpair`, `accept`, `accept_n`). The `?cloexec` argument is simply forwarded to the wrapped Unix function (with OCaml >= 4.05, see PR ocaml/ocaml#650), or emulated as best-effort with `Unix.set_close_on_exec` on older OCaml versions (#327, #847, #872, #901, Antonin Décimo).
+
 ====== Misc ======
 
   * Code quality improvement: remove an uneeded Obj.magic (#844, Benoit Montagu).
