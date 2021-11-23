@@ -41,6 +41,7 @@ CAMLprim value lwt_process_create_process(value prog, value cmdline, value env,
 
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
+  DWORD flags = CREATE_UNICODE_ENVIRONMENT;
   BOOL ret;
 
 #define string_option(opt) \
@@ -62,7 +63,7 @@ CAMLprim value lwt_process_create_process(value prog, value cmdline, value env,
   si.hStdOutput = get_handle(Field(fds, 1));
   si.hStdError = get_handle(Field(fds, 2));
 
-  ret = CreateProcess(progs, cmdlines, NULL, NULL, TRUE, 0,
+  ret = CreateProcess(progs, cmdlines, NULL, NULL, TRUE, flags,
                       envs, cwds, &si, &pi);
   caml_stat_free(progs);
   caml_stat_free(cmdlines);

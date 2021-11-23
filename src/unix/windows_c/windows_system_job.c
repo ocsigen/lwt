@@ -51,6 +51,7 @@ CAMLprim value lwt_unix_system_job(value cmdline)
     CAMLparam1(cmdline);
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
+    DWORD flags = CREATE_UNICODE_ENVIRONMENT;
     BOOL ret;
 
     char_os *cmdlines = caml_stat_strdup_to_os(String_val(cmdline));
@@ -59,7 +60,7 @@ CAMLprim value lwt_unix_system_job(value cmdline)
     ZeroMemory(&pi, sizeof(pi));
     si.cb = sizeof(si);
 
-    ret = CreateProcess(NULL, cmdlines, NULL, NULL, TRUE, 0,
+    ret = CreateProcess(NULL, cmdlines, NULL, NULL, TRUE, flags,
                         NULL, NULL, &si, &pi);
     caml_stat_free(cmdlines);
     if (!ret) {
