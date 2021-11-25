@@ -2,7 +2,7 @@ opam-version: "2.0"
 
 synopsis: "Helpers for using Domainslib with Lwt"
 
-version: "1.1.4"
+version: "0.1.0"
 license: "MIT"
 homepage: "https://github.com/ocsigen/lwt"
 doc: "https://ocsigen.org/lwt/dev/api/Lwt_domain"
