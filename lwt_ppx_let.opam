@@ -2,7 +2,7 @@ opam-version: "2.0"
 
 synopsis: "Dummy package context for ppx_let tests"
 
-version: "5.4.2"
+version: "5.5.0"
 license: "MIT"
 homepage: "https://github.com/ocsigen/lwt"
 doc: "https://ocsigen.org/lwt"
