@@ -165,8 +165,9 @@
   val fchown : Lwt_unix.file_descr -> int -> int -> unit Lwt.t
   type access_permission = Unix.access_permission = R_OK | W_OK | X_OK | F_OK
   val access : string -> Lwt_unix.access_permission list -> unit Lwt.t
-  val dup : Lwt_unix.file_descr -> Lwt_unix.file_descr
-  val dup2 : Lwt_unix.file_descr -> Lwt_unix.file_descr -> unit
+  val dup : ?cloexec:bool -> Lwt_unix.file_descr -> Lwt_unix.file_descr
+  val dup2 :
+    ?cloexec:bool -> Lwt_unix.file_descr -> Lwt_unix.file_descr -> unit
   val set_close_on_exec : Lwt_unix.file_descr -> unit
   val clear_close_on_exec : Lwt_unix.file_descr -> unit
   val mkdir : string -> Lwt_unix.file_perm -> unit Lwt.t
@@ -181,11 +182,14 @@
   val rewinddir : Lwt_unix.dir_handle -> unit Lwt.t
   val closedir : Lwt_unix.dir_handle -> unit Lwt.t
   val files_of_directory : string -> string Lwt_stream.t
-  val pipe : unit -> Lwt_unix.file_descr * Lwt_unix.file_descr
-  val pipe_in : unit -> Lwt_unix.file_descr * Unix.file_descr
-  val pipe_out : unit -> Unix.file_descr * Lwt_unix.file_descr
+  val pipe :
+    ?cloexec:bool -> unit -> Lwt_unix.file_descr * Lwt_unix.file_descr
+  val pipe_in :
+    ?cloexec:bool -> unit -> Lwt_unix.file_descr * Unix.file_descr
+  val pipe_out :
+    ?cloexec:bool -> unit -> Unix.file_descr * Lwt_unix.file_descr
   val mkfifo : string -> Lwt_unix.file_perm -> unit Lwt.t
-  val symlink : string -> string -> unit Lwt.t
+  val symlink : ?to_dir:bool -> string -> string -> unit Lwt.t
   val readlink : string -> string Lwt.t
   type lock_command =
     Unix.lock_command =
@@ -240,16 +244,20 @@
       ADDR_UNIX of string
     | ADDR_INET of Lwt_unix.inet_addr * int
   val socket :
+    ?cloexec:bool ->
     Lwt_unix.socket_domain ->
     Lwt_unix.socket_type -> int -> Lwt_unix.file_descr
   val socketpair :
+    ?cloexec:bool ->
     Lwt_unix.socket_domain ->
     Lwt_unix.socket_type -> int -> Lwt_unix.file_descr * Lwt_unix.file_descr
   val bind : Lwt_unix.file_descr -> Lwt_unix.sockaddr -> unit Lwt.t
   val listen : Lwt_unix.file_descr -> int -> unit
   val accept :
+    ?cloexec:bool ->
     Lwt_unix.file_descr -> (Lwt_unix.file_descr * Lwt_unix.sockaddr) Lwt.t
   val accept_n :
+    ?cloexec:bool ->
     Lwt_unix.file_descr ->
     int ->
     ((Lwt_unix.file_descr * Lwt_unix.sockaddr) list * exn option) Lwt.t
