@@ -412,10 +412,10 @@ val p3 : '_a Lwt.t = <abstr>
 
 === {{{let*}}} syntax ===
 
-  To use Lwt with the {{{let*}}} syntax introduced in OCaml 4.08, you can define:
+  To use Lwt with the {{{let*}}} syntax introduced in OCaml 4.08, you can open
+  the {{{Syntax}}} module:
 
-<<code language="ocaml" |let (let*) = Lwt.bind
-let (and*) = Lwt.both
+<<code language="ocaml" |open Syntax
 >>
 
   Then, you can write
