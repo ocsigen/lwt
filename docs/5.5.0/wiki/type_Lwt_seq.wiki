@@ -1,0 +1,30 @@
+<<code language="ocaml" | sig
+  type 'a t = unit -> 'a Lwt_seq.node Lwt.t
+  and 'a node = Nil | Cons of 'a * 'a Lwt_seq.t
+  val empty : 'a Lwt_seq.t
+  val return : 'a -> 'a Lwt_seq.t
+  val return_lwt : 'a Lwt.t -> 'a Lwt_seq.t
+  val cons : 'a -> 'a Lwt_seq.t -> 'a Lwt_seq.t
+  val cons_lwt : 'a Lwt.t -> 'a Lwt_seq.t -> 'a Lwt_seq.t
+  val append : 'a Lwt_seq.t -> 'a Lwt_seq.t -> 'a Lwt_seq.t
+  val map : ('a -> 'b) -> 'a Lwt_seq.t -> 'b Lwt_seq.t
+  val map_s : ('a -> 'b Lwt.t) -> 'a Lwt_seq.t -> 'b Lwt_seq.t
+  val filter : ('a -> bool) -> 'a Lwt_seq.t -> 'a Lwt_seq.t
+  val filter_s : ('a -> bool Lwt.t) -> 'a Lwt_seq.t -> 'a Lwt_seq.t
+  val filter_map : ('a -> 'b option) -> 'a Lwt_seq.t -> 'b Lwt_seq.t
+  val filter_map_s : ('a -> 'b option Lwt.t) -> 'a Lwt_seq.t -> 'b Lwt_seq.t
+  val flat_map : ('a -> 'b Lwt_seq.t) -> 'a Lwt_seq.t -> 'b Lwt_seq.t
+  val fold_left : ('a -> 'b -> 'a) -> 'a -> 'b Lwt_seq.t -> 'a Lwt.t
+  val fold_left_s : ('a -> 'b -> 'a Lwt.t) -> 'a -> 'b Lwt_seq.t -> 'a Lwt.t
+  val iter : ('a -> unit) -> 'a Lwt_seq.t -> unit Lwt.t
+  val iter_s : ('a -> unit Lwt.t) -> 'a Lwt_seq.t -> unit Lwt.t
+  val iter_p : ('a -> unit Lwt.t) -> 'a Lwt_seq.t -> unit Lwt.t
+  val iter_n :
+    ?max_concurrency:int -> ('a -> unit Lwt.t) -> 'a Lwt_seq.t -> unit Lwt.t
+  val unfold : ('b -> ('a * 'b) option) -> 'b -> 'a Lwt_seq.t
+  val unfold_lwt : ('b -> ('a * 'b) option Lwt.t) -> 'b -> 'a Lwt_seq.t
+  val to_list : 'a Lwt_seq.t -> 'a list Lwt.t
+  val of_list : 'a list -> 'a Lwt_seq.t
+  val of_seq : 'a Stdlib.Seq.t -> 'a Lwt_seq.t
+  val of_seq_lwt : 'a Lwt.t Stdlib.Seq.t -> 'a Lwt_seq.t
+end >>

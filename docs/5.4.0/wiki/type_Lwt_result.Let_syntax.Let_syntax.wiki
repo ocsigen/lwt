@@ -1,0 +1,11 @@
+<<code language="ocaml" | sig
+  val return : 'a -> ('a, 'b) Lwt_result.t
+  val map : ('a, 'e) Lwt_result.t -> f:('a -> 'b) -> ('b, 'e) Lwt_result.t
+  val bind :
+    ('a, 'e) Lwt_result.t ->
+    f:('a -> ('b, 'e) Lwt_result.t) -> ('b, 'e) Lwt_result.t
+  val both :
+    ('a, 'e) Lwt_result.t ->
+    ('b, 'e) Lwt_result.t -> ('a * 'b, 'e) Lwt_result.t
+  module Open_on_rhs : sig end
+end >>

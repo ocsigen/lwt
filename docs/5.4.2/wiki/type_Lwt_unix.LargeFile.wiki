@@ -1,0 +1,25 @@
+<<code language="ocaml" | sig
+  val lseek :
+    Lwt_unix.file_descr -> int64 -> Lwt_unix.seek_command -> int64 Lwt.t
+  val truncate : string -> int64 -> unit Lwt.t
+  val ftruncate : Lwt_unix.file_descr -> int64 -> unit Lwt.t
+  type stats =
+    Unix.LargeFile.stats = {
+    st_dev : int;
+    st_ino : int;
+    st_kind : Lwt_unix.file_kind;
+    st_perm : Lwt_unix.file_perm;
+    st_nlink : int;
+    st_uid : int;
+    st_gid : int;
+    st_rdev : int;
+    st_size : int64;
+    st_atime : float;
+    st_mtime : float;
+    st_ctime : float;
+  }
+  val stat : string -> Lwt_unix.LargeFile.stats Lwt.t
+  val lstat : string -> Lwt_unix.LargeFile.stats Lwt.t
+  val fstat : Lwt_unix.file_descr -> Lwt_unix.LargeFile.stats Lwt.t
+  val file_exists : string -> bool Lwt.t
+end >>

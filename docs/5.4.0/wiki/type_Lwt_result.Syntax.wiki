@@ -1,0 +1,12 @@
+<<code language="ocaml" | sig
+  val ( let* ) :
+    ('a, 'e) Lwt_result.t ->
+    ('a -> ('b, 'e) Lwt_result.t) -> ('b, 'e) Lwt_result.t
+  val ( and* ) :
+    ('a, 'e) Lwt_result.t ->
+    ('b, 'e) Lwt_result.t -> ('a * 'b, 'e) Lwt_result.t
+  val ( let+ ) : ('a, 'e) Lwt_result.t -> ('a -> 'b) -> ('b, 'e) Lwt_result.t
+  val ( and+ ) :
+    ('a, 'e) Lwt_result.t ->
+    ('b, 'e) Lwt_result.t -> ('a * 'b, 'e) Lwt_result.t
+end >>
