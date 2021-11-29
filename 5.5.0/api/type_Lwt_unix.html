@@ -211,8 +211,9 @@ We are looking for beta-tester and contributors.
   val fchown : Lwt_unix.file_descr -&gt; int -&gt; int -&gt; unit Lwt.t
   type access_permission = Unix.access_permission = R_OK | W_OK | X_OK | F_OK
   val access : string -&gt; Lwt_unix.access_permission list -&gt; unit Lwt.t
-  val dup : Lwt_unix.file_descr -&gt; Lwt_unix.file_descr
-  val dup2 : Lwt_unix.file_descr -&gt; Lwt_unix.file_descr -&gt; unit
+  val dup : ?cloexec:bool -&gt; Lwt_unix.file_descr -&gt; Lwt_unix.file_descr
+  val dup2 :
+    ?cloexec:bool -&gt; Lwt_unix.file_descr -&gt; Lwt_unix.file_descr -&gt; unit
   val set_close_on_exec : Lwt_unix.file_descr -&gt; unit
   val clear_close_on_exec : Lwt_unix.file_descr -&gt; unit
   val mkdir : string -&gt; Lwt_unix.file_perm -&gt; unit Lwt.t
@@ -227,11 +228,14 @@ We are looking for beta-tester and contributors.
   val rewinddir : Lwt_unix.dir_handle -&gt; unit Lwt.t
   val closedir : Lwt_unix.dir_handle -&gt; unit Lwt.t
   val files_of_directory : string -&gt; string Lwt_stream.t
-  val pipe : unit -&gt; Lwt_unix.file_descr * Lwt_unix.file_descr
-  val pipe_in : unit -&gt; Lwt_unix.file_descr * Unix.file_descr
-  val pipe_out : unit -&gt; Unix.file_descr * Lwt_unix.file_descr
+  val pipe :
+    ?cloexec:bool -&gt; unit -&gt; Lwt_unix.file_descr * Lwt_unix.file_descr
+  val pipe_in :
+    ?cloexec:bool -&gt; unit -&gt; Lwt_unix.file_descr * Unix.file_descr
+  val pipe_out :
+    ?cloexec:bool -&gt; unit -&gt; Unix.file_descr * Lwt_unix.file_descr
   val mkfifo : string -&gt; Lwt_unix.file_perm -&gt; unit Lwt.t
-  val symlink : string -&gt; string -&gt; unit Lwt.t
+  val symlink : ?to_dir:bool -&gt; string -&gt; string -&gt; unit Lwt.t
   val readlink : string -&gt; string Lwt.t
   type lock_command =
     Unix.lock_command =
@@ -286,16 +290,20 @@ We are looking for beta-tester and contributors.
       ADDR_UNIX of string
     | ADDR_INET of Lwt_unix.inet_addr * int
   val socket :
+    ?cloexec:bool -&gt;
     Lwt_unix.socket_domain -&gt;
     Lwt_unix.socket_type -&gt; int -&gt; Lwt_unix.file_descr
   val socketpair :
+    ?cloexec:bool -&gt;
     Lwt_unix.socket_domain -&gt;
     Lwt_unix.socket_type -&gt; int -&gt; Lwt_unix.file_descr * Lwt_unix.file_descr
   val bind : Lwt_unix.file_descr -&gt; Lwt_unix.sockaddr -&gt; unit Lwt.t
   val listen : Lwt_unix.file_descr -&gt; int -&gt; unit
   val accept :
+    ?cloexec:bool -&gt;
     Lwt_unix.file_descr -&gt; (Lwt_unix.file_descr * Lwt_unix.sockaddr) Lwt.t
   val accept_n :
+    ?cloexec:bool -&gt;
     Lwt_unix.file_descr -&gt;
     int -&gt;
     ((Lwt_unix.file_descr * Lwt_unix.sockaddr) list * exn option) Lwt.t
