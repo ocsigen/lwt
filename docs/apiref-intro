@@ -18,6 +18,7 @@ Lwt_pool
 Lwt_stream
 Lwt_switch
 Lwt_sequence
+Lwt_seq
 Lwt_pqueue
 }
 
