@@ -1,0 +1,132 @@
+<html><head><title></title><meta charset="utf8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><link rel="stylesheet" href="https://ocsigen.org/css/style.css"/><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/themes/prism.min.css"/><script type="text/javascript" src="https://ocsigen.org/js/client.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-core.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-ocaml.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-clike.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-reason.min.js">
+//<![CDATA[
+
+//]]>
+</script><script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.9.0/components/prism-javascript.min.js">
+//<![CDATA[
+
+//]]>
+</script></head><body class="type_Lwt_stream lwt"><div class="project-page"><div class="page-header"><p class="logo-ocsigen"><a href=".././../../" class="ocsimore_phrasing_link"><img src=".././../../img/ocsigen-white.svg" alt="Ocsigen"/></a>
+</p><p class="logo-subproject">Lwt</p><div class="mainmenu"><p class="mainmenu-home"><a href=".././../../" class="ocsimore_phrasing_link">Home</a></p><p class="mainmenu-doc"><a href=".././../../tuto/" class="ocsimore_phrasing_link">Doc</a></p><p><a href=".././../../eliom/" class="ocsimore_phrasing_link">Eliom</a></p><p><a href=".././../../js_of_ocaml/" class="ocsimore_phrasing_link">Js_of_ocaml</a></p><p class="mainmenu-current"><a href=".././../../lwt/" class="ocsimore_phrasing_link">Lwt</a></p><p><a href=".././../../tyxml/" class="ocsimore_phrasing_link">Tyxml</a></p><p><a href=".././../../ocsigen-start/" class="ocsimore_phrasing_link">Start</a></p></div><form id="googlesearch" action="https://google.com/search"><input name="q" id="gsearch-box" placeholder="Search using Google"/><label for="gsearch-box"><img src="/img/search.svg" alt="" id="gsearch-icon"/></label><input type="submit" id="gsearch-submit" onclick="document.getElementById('gsearch-box').value += ' site:ocsigen.org';"/></form><aside class="how-drawer"><input id="how-drawer-toggle" type="checkbox"/><label for="how-drawer-toggle" id="how-drawer-label"><span class="how-drawer-icon"></span></label><nav class="how-drawer-content"><ul class="drawermainmenu"><li class="drawermainmenu-home"><a href=".././../../" class="ocsimore_phrasing_link">Home</a>
+</li><li class="drawermainmenu-doc"><a href=".././../../tuto/" class="ocsimore_phrasing_link">Doc</a>
+</li><li class="drawermainmenu-project"><a href=".././../../eliom/" class="ocsimore_phrasing_link">Eliom</a>
+</li><li class="drawermainmenu-project"><a href=".././../../js_of_ocaml/" class="ocsimore_phrasing_link">Js_of_ocaml</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsigenserver/" class="ocsimore_phrasing_link">Server</a>
+</li><li class="drawermainmenu-project"><a href=".././../../lwt/" class="ocsimore_phrasing_link">Lwt</a>
+</li><li class="drawermainmenu-project"><a href=".././../../tyxml/" class="ocsimore_phrasing_link">Tyxml</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsigen-toolkit/" class="ocsimore_phrasing_link">Toolkit</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsigen-start/" class="ocsimore_phrasing_link">Start</a>
+</li><li class="drawermainmenu-project"><a href=".././../../html_of_wiki/" class="ocsimore_phrasing_link">html_of_wiki</a>
+</li><li class="drawermainmenu-project"><a href=".././../../deriving/" class="ocsimore_phrasing_link">deriving</a>
+</li><li class="drawermainmenu-project"><a href=".././../../ocsimore/" class="ocsimore_phrasing_link">Ocsimore (<em>deprecated</em>)</a>
+</li><li class="drawermainmenu-page"><a href=".././../../projects" class="ocsimore_phrasing_link">Other projects</a>
+</li><li class="drawermainmenu-page"><a href=".././../../papers" class="ocsimore_phrasing_link">Research papers</a>
+</li><li class="drawermainmenu-page"><a href=".././../../credits" class="ocsimore_phrasing_link">Who does Ocsigen?</a>
+</li><li class="drawermainmenu-page"><a href=".././../../contributing" class="ocsimore_phrasing_link">Contributing</a>
+</li><li class="drawermainmenu-page"><a href=".././../../blog" class="ocsimore_phrasing_link">Blog</a>
+</li><li class="drawermainmenu-page"><a href=".././../../install" class="ocsimore_phrasing_link">Installation</a>
+</li><li class="drawermainmenu-page"><a href="https://github.com/ocsigen" class="ocsimore_phrasing_link">Source code</a>
+</li></ul><nav class="how-doctree"></nav></nav></aside></div><p class="reasonwarning">Warning: Reason support is experimental.
+We are looking for beta-tester and contributors.
+</p><button id="reason">Switch to </button><div class="twocols"><nav class="leftcol">Version <select class="how-versions" onchange="location = this.value;"><option value=".././../1.0.0/wiki/type_Lwt_stream">1.0.0</option><option value=".././../1.1.0/wiki/type_Lwt_stream">1.1.0</option><option value=".././../2.0.0/wiki/type_Lwt_stream">2.0.0</option><option value=".././../2.1.0/wiki/type_Lwt_stream">2.1.0</option><option value=".././../2.1.1/wiki/type_Lwt_stream">2.1.1</option><option value=".././../2.2.0/wiki/type_Lwt_stream">2.2.0</option><option value=".././../2.2.1/wiki/type_Lwt_stream">2.2.1</option><option value=".././../2.3.0/wiki/type_Lwt_stream">2.3.0</option><option value=".././../2.3.1/wiki/type_Lwt_stream">2.3.1</option><option value=".././../2.3.2/wiki/type_Lwt_stream">2.3.2</option><option value=".././../2.4.0/wiki/type_Lwt_stream">2.4.0</option><option value=".././../2.4.1/wiki/type_Lwt_stream">2.4.1</option><option value=".././../2.4.2/wiki/type_Lwt_stream">2.4.2</option><option value=".././../2.4.3/wiki/type_Lwt_stream">2.4.3</option><option value=".././../2.4.7/wiki/type_Lwt_stream">2.4.7</option><option value=".././../2.4.8/wiki/type_Lwt_stream">2.4.8</option><option value=".././../2.5.0/wiki/type_Lwt_stream">2.5.0</option><option value=".././../2.5.1/wiki/type_Lwt_stream">2.5.1</option><option value=".././../2.5.2/wiki/type_Lwt_stream">2.5.2</option><option value=".././../2.6.0/wiki/type_Lwt_stream">2.6.0</option><option value=".././../2.7.0/wiki/type_Lwt_stream">2.7.0</option><option value=".././../2.7.1/wiki/type_Lwt_stream">2.7.1</option><option value=".././../3.0.0/wiki/type_Lwt_stream">3.0.0</option><option value=".././../3.1.0/wiki/type_Lwt_stream">3.1.0</option><option value=".././../3.2.1/wiki/type_Lwt_stream">3.2.1</option><option value=".././../3.3.0/wiki/type_Lwt_stream">3.3.0</option><option value=".././../4.0.0/wiki/type_Lwt_stream">4.0.0</option><option value=".././../4.0.1/wiki/type_Lwt_stream">4.0.1</option><option value=".././../4.1.0/wiki/type_Lwt_stream">4.1.0</option><option value=".././../4.2.0/wiki/type_Lwt_stream">4.2.0</option><option value=".././../4.2.1/wiki/type_Lwt_stream">4.2.1</option><option value=".././../4.3.0/wiki/type_Lwt_stream">4.3.0</option><option value=".././../4.3.1/wiki/type_Lwt_stream">4.3.1</option><option value=".././../4.4.0/wiki/type_Lwt_stream">4.4.0</option><option value=".././../4.5.0/wiki/type_Lwt_stream">4.5.0</option><option value=".././../5.0.0/wiki/type_Lwt_stream">5.0.0</option><option value=".././../5.0.1/wiki/type_Lwt_stream">5.0.1</option><option value=".././../5.1.0/wiki/type_Lwt_stream">5.1.0</option><option value=".././../5.1.1/wiki/type_Lwt_stream">5.1.1</option><option value=".././../5.1.2/wiki/type_Lwt_stream">5.1.2</option><option value=".././../5.2.0/wiki/type_Lwt_stream">5.2.0</option><option value=".././../5.3.0/wiki/type_Lwt_stream">5.3.0</option><option value=".././../5.4.0/wiki/type_Lwt_stream">5.4.0</option><option value=".././../5.4.1/wiki/type_Lwt_stream">5.4.1</option><option value=".././../5.4.2/wiki/type_Lwt_stream">5.4.2</option><option value=".././../5.5.0/wiki/type_Lwt_stream" selected="selected">5.5.0</option><option value=".././../dev/wiki/type_Lwt_stream">dev</option></select><nav class="how-doctree"></nav></nav><article class="rightcol"><pre class=""><code class="language-ocaml translatable">sig
+  type 'a t
+  val from : (unit -&gt; 'a option Lwt.t) -&gt; 'a Lwt_stream.t
+  val from_direct : (unit -&gt; 'a option) -&gt; 'a Lwt_stream.t
+  exception Closed
+  val create : unit -&gt; 'a Lwt_stream.t * ('a option -&gt; unit)
+  val create_with_reference :
+    unit -&gt; 'a Lwt_stream.t * ('a option -&gt; unit) * ('b -&gt; unit)
+  exception Full
+  class type ['a] bounded_push =
+    object
+      method blocked : bool
+      method close : unit
+      method closed : bool
+      method count : int
+      method push : 'a -&gt; unit Lwt.t
+      method resize : int -&gt; unit
+      method set_reference : 'a0 -&gt; unit
+      method size : int
+    end
+  val create_bounded : int -&gt; 'a Lwt_stream.t * 'a Lwt_stream.bounded_push
+  val return : 'a -&gt; 'a Lwt_stream.t
+  val return_lwt : 'a Lwt.t -&gt; 'a Lwt_stream.t
+  val of_seq : 'a Stdlib.Seq.t -&gt; 'a Lwt_stream.t
+  val of_lwt_seq : 'a Lwt_seq.t -&gt; 'a Lwt_stream.t
+  val of_list : 'a list -&gt; 'a Lwt_stream.t
+  val of_array : 'a array -&gt; 'a Lwt_stream.t
+  val of_string : string -&gt; char Lwt_stream.t
+  val clone : 'a Lwt_stream.t -&gt; 'a Lwt_stream.t
+  val to_list : 'a Lwt_stream.t -&gt; 'a list Lwt.t
+  val to_string : char Lwt_stream.t -&gt; string Lwt.t
+  exception Empty
+  val peek : 'a Lwt_stream.t -&gt; 'a option Lwt.t
+  val npeek : int -&gt; 'a Lwt_stream.t -&gt; 'a list Lwt.t
+  val get : 'a Lwt_stream.t -&gt; 'a option Lwt.t
+  val nget : int -&gt; 'a Lwt_stream.t -&gt; 'a list Lwt.t
+  val get_while : ('a -&gt; bool) -&gt; 'a Lwt_stream.t -&gt; 'a list Lwt.t
+  val get_while_s : ('a -&gt; bool Lwt.t) -&gt; 'a Lwt_stream.t -&gt; 'a list Lwt.t
+  val next : 'a Lwt_stream.t -&gt; 'a Lwt.t
+  val last_new : 'a Lwt_stream.t -&gt; 'a Lwt.t
+  val junk : 'a Lwt_stream.t -&gt; unit Lwt.t
+  val njunk : int -&gt; 'a Lwt_stream.t -&gt; unit Lwt.t
+  val junk_while : ('a -&gt; bool) -&gt; 'a Lwt_stream.t -&gt; unit Lwt.t
+  val junk_while_s : ('a -&gt; bool Lwt.t) -&gt; 'a Lwt_stream.t -&gt; unit Lwt.t
+  val junk_old : 'a Lwt_stream.t -&gt; unit Lwt.t
+  val get_available : 'a Lwt_stream.t -&gt; 'a list
+  val get_available_up_to : int -&gt; 'a Lwt_stream.t -&gt; 'a list
+  val is_empty : 'a Lwt_stream.t -&gt; bool Lwt.t
+  val is_closed : 'a Lwt_stream.t -&gt; bool
+  val closed : 'a Lwt_stream.t -&gt; unit Lwt.t
+  val on_termination : 'a Lwt_stream.t -&gt; (unit -&gt; unit) -&gt; unit
+  val on_terminate : 'a Lwt_stream.t -&gt; (unit -&gt; unit) -&gt; unit
+  val choose : 'a Lwt_stream.t list -&gt; 'a Lwt_stream.t
+  val map : ('a -&gt; 'b) -&gt; 'a Lwt_stream.t -&gt; 'b Lwt_stream.t
+  val map_s : ('a -&gt; 'b Lwt.t) -&gt; 'a Lwt_stream.t -&gt; 'b Lwt_stream.t
+  val filter : ('a -&gt; bool) -&gt; 'a Lwt_stream.t -&gt; 'a Lwt_stream.t
+  val filter_s : ('a -&gt; bool Lwt.t) -&gt; 'a Lwt_stream.t -&gt; 'a Lwt_stream.t
+  val filter_map : ('a -&gt; 'b option) -&gt; 'a Lwt_stream.t -&gt; 'b Lwt_stream.t
+  val filter_map_s :
+    ('a -&gt; 'b option Lwt.t) -&gt; 'a Lwt_stream.t -&gt; 'b Lwt_stream.t
+  val map_list : ('a -&gt; 'b list) -&gt; 'a Lwt_stream.t -&gt; 'b Lwt_stream.t
+  val map_list_s :
+    ('a -&gt; 'b list Lwt.t) -&gt; 'a Lwt_stream.t -&gt; 'b Lwt_stream.t
+  val fold : ('a -&gt; 'b -&gt; 'b) -&gt; 'a Lwt_stream.t -&gt; 'b -&gt; 'b Lwt.t
+  val fold_s : ('a -&gt; 'b -&gt; 'b Lwt.t) -&gt; 'a Lwt_stream.t -&gt; 'b -&gt; 'b Lwt.t
+  val iter : ('a -&gt; unit) -&gt; 'a Lwt_stream.t -&gt; unit Lwt.t
+  val iter_p : ('a -&gt; unit Lwt.t) -&gt; 'a Lwt_stream.t -&gt; unit Lwt.t
+  val iter_s : ('a -&gt; unit Lwt.t) -&gt; 'a Lwt_stream.t -&gt; unit Lwt.t
+  val iter_n :
+    ?max_concurrency:int -&gt;
+    ('a -&gt; unit Lwt.t) -&gt; 'a Lwt_stream.t -&gt; unit Lwt.t
+  val find : ('a -&gt; bool) -&gt; 'a Lwt_stream.t -&gt; 'a option Lwt.t
+  val find_s : ('a -&gt; bool Lwt.t) -&gt; 'a Lwt_stream.t -&gt; 'a option Lwt.t
+  val find_map : ('a -&gt; 'b option) -&gt; 'a Lwt_stream.t -&gt; 'b option Lwt.t
+  val find_map_s :
+    ('a -&gt; 'b option Lwt.t) -&gt; 'a Lwt_stream.t -&gt; 'b option Lwt.t
+  val combine : 'a Lwt_stream.t -&gt; 'b Lwt_stream.t -&gt; ('a * 'b) Lwt_stream.t
+  val append : 'a Lwt_stream.t -&gt; 'a Lwt_stream.t -&gt; 'a Lwt_stream.t
+  val concat : 'a Lwt_stream.t Lwt_stream.t -&gt; 'a Lwt_stream.t
+  val flatten : 'a list Lwt_stream.t -&gt; 'a Lwt_stream.t
+  val wrap_exn : 'a Lwt_stream.t -&gt; 'a Lwt.result Lwt_stream.t
+  val parse : 'a Lwt_stream.t -&gt; ('a Lwt_stream.t -&gt; 'b Lwt.t) -&gt; 'b Lwt.t
+  val hexdump : char Lwt_stream.t -&gt; string Lwt_stream.t
+  type 'a result = Value of 'a | Error of exn
+  val map_exn : 'a Lwt_stream.t -&gt; 'a Lwt_stream.result Lwt_stream.t
+end</code></pre></article></div></div></body></html>
