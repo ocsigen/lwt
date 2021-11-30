@@ -1,3 +1,9 @@
+===== dev =====
+
+====== Fixes ======
+
+  * Fix win32_spawn leaking dev_null fd in the parent process. (#906, Antonin Décimo)
+
 ===== 5.5.0 =====
 
 ====== Deprecations ======
