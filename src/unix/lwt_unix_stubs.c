@@ -608,16 +608,11 @@ value lwt_unix_recv_notifications() {
 
 #if defined(LWT_ON_WINDOWS)
 
-static SOCKET set_close_on_exec(SOCKET socket) {
-  SOCKET new_socket;
-  if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)socket, GetCurrentProcess(),
-                       (HANDLE *)&new_socket, 0L, FALSE,
-                       DUPLICATE_SAME_ACCESS)) {
+static void set_close_on_exec(SOCKET socket) {
+  if (!SetHandleInformation(socket, HANDLE_FLAG_INHERIT, 0)) {
     win32_maperr(GetLastError());
     uerror("set_close_on_exec", Nothing);
   }
-  closesocket(socket);
-  return new_socket;
 }
 
 static SOCKET socket_r, socket_w;
@@ -655,8 +650,10 @@ value lwt_unix_init_notification() {
      sockets. */
   lwt_unix_socketpair(AF_INET, SOCK_STREAM, IPPROTO_TCP, sockets);
 
-  socket_r = set_close_on_exec(sockets[0]);
-  socket_w = set_close_on_exec(sockets[1]);
+  set_close_on_exec(sockets[0]);
+  set_close_on_exec(sockets[1]);
+  socket_r = sockets[0];
+  socket_w = sockets[1];
   notification_mode = NOTIFICATION_MODE_WINDOWS;
   notification_send = windows_notification_send;
   notification_recv = windows_notification_recv;
