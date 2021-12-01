@@ -55,7 +55,7 @@ val yield : unit -> unit Lwt.t [@@deprecated "Use Lwt.pause instead"]
   (** [yield ()] is a promise in a pending state. It resumes itself as soon as
       possible and resolves with value [()]. *)
 
-val auto_yield : float -> (unit -> unit Lwt.t) [@@deprecated "Use Lwt.auto_pause instead"]
+val auto_yield : float -> (unit -> unit Lwt.t) [@@deprecated "Use Lwt_unix.auto_pause instead"]
 
 val auto_pause : float -> (unit -> unit Lwt.t)
   (** [auto_pause timeout] returns a function [f], and [f ()] has the following
