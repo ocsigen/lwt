@@ -1795,7 +1795,9 @@ val make_value : 'a -> 'a result
     {{: https://ocaml.org/api/Stdlib.html#TYPEresult}
     [Ok v]} since OCaml 4.03. If you need compatibility with OCaml 4.02, use
     [Result.Ok] and depend on opam package
-    {{: https://opam.ocaml.org/packages/result/} [result]}. *)
+    {{: https://opam.ocaml.org/packages/result/} [result]}.
+
+    @deprecated Use [Result.Ok] instead *)
 
 val make_error : exn -> _ result
   [@@ocaml.deprecated
@@ -1804,7 +1806,9 @@ val make_error : exn -> _ result
     {{: https://ocaml.org/api/Stdlib.html#TYPEresult}
     [Error exn]} since OCaml 4.03. If you need compatibility with OCaml 4.02,
     use [Result.Error] and depend on opam package
-    {{: https://opam.ocaml.org/packages/result/} [result]}. *)
+    {{: https://opam.ocaml.org/packages/result/} [result]}.
+
+    @deprecated Use [Result.Error] instead. *)
 
 val waiter_of_wakener : 'a u -> 'a t
   [@@ocaml.deprecated
@@ -1814,8 +1818,7 @@ val waiter_of_wakener : 'a u -> 'a t
 (** [Lwt.waiter_of_wakener r] evaluates to the promise associated with resolver
     [r].
 
-    It is recommended to explicitly keep the reference to the promise
-    instead. *)
+    @deprecated Keep the reference to the promise instead. *)
 
 
 
@@ -1836,7 +1839,7 @@ Lwt.on_cancel p (fun () -> Lwt_sequence.remove node);
 p
 ]}
 
-    Use of this function is discouraged for two reasons:
+    @deprecated Use of this function is discouraged for two reasons:
 
     - {!Lwt_sequence} should not be used outside Lwt.
     - This function only exists because it performs a minor internal
@@ -1847,7 +1850,9 @@ val add_task_l : ('a u) Lwt_sequence.t -> 'a t
 " Deprecated because Lwt_sequence is an implementation detail of Lwt. See
   https://github.com/ocsigen/lwt/issues/361"]
 (** Like {!Lwt.add_task_r}, but the equivalent code calls {!Lwt_sequence.add_l}
-    instead. *)
+    instead.
+
+    @deprecated See [add_task_r]. *)
 
 [@@@ocaml.warning "+3"]
 

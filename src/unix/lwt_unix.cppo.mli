@@ -53,9 +53,13 @@ val sleep : float -> unit Lwt.t
 
 val yield : unit -> unit Lwt.t [@@deprecated "Use Lwt.pause instead"]
   (** [yield ()] is a promise in a pending state. It resumes itself as soon as
-      possible and resolves with value [()]. *)
+      possible and resolves with value [()].
+
+      @deprecated Since 5.5.0 [yield] is deprecated. Use the more general
+      {!Lwt.pause} instead. See {!Lwt_main.yield} for additional details. *)
 
 val auto_yield : float -> (unit -> unit Lwt.t) [@@deprecated "Use Lwt_unix.auto_pause instead"]
+(** @deprecated Since 5.5.0. Use {!auto_pause} instead. *)
 
 val auto_pause : float -> (unit -> unit Lwt.t)
   (** [auto_pause timeout] returns a function [f], and [f ()] has the following
@@ -1295,8 +1299,8 @@ type async_method =
           This is the default. *)
   | Async_switch
     [@ocaml.deprecated " Use Lwt_unix.Async_detach."]
-      (** Currently a synonym for [Async_detach]. This was a different method in
-          the past. *)
+      (** @deprecated A synonym for [Async_detach]. This was a
+          different method in the past. *)
 
 val default_async_method : unit -> async_method
   [@@ocaml.deprecated
@@ -1589,6 +1593,7 @@ val has_wait4 : bool
 
 val somaxconn : unit -> int
   [@@ocaml.deprecated " This is an internal function."]
+  (** @deprecated This is for internal use only. *)
 
 val retained : 'a -> bool ref
   (** @deprecated Used for testing. *)
@@ -1596,7 +1601,9 @@ val retained : 'a -> bool ref
 val read_bigarray :
   string -> file_descr -> IO_vectors._bigarray -> int -> int -> int Lwt.t
   [@@ocaml.deprecated " This is an internal function."]
+  (** @deprecated This is for internal use only. *)
 
 val write_bigarray :
   string -> file_descr -> IO_vectors._bigarray -> int -> int -> int Lwt.t
   [@@ocaml.deprecated " This is an internal function."]
+  (** @deprecated This is for internal use only. *)
