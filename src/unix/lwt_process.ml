@@ -91,15 +91,21 @@ let win32_spawn
       (if prog = "" then None else Some prog) cmdline env cwd
       (stdin_fd, stdout_fd, stderr_fd)
   in
-  let close = function
+  let close fd fd' =
+    match fd with
     | `FD_move fd ->
       Unix.close fd
+    | `Dev_null ->
+      begin match fd' with
+        | Some fd' -> Unix.close fd'
+        | None -> assert false
+      end
     | _ ->
       ()
   in
-  close stdin;
-  close stdout;
-  close stderr;
+  close stdin stdin_fd;
+  close stdout stdout_fd;
+  close stderr stderr_fd;
   proc
 
 external win32_wait_job : Unix.file_descr -> int Lwt_unix.job =
