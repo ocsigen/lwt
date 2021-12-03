@@ -1724,17 +1724,7 @@ let shutdown ch shutdown_command =
   check_descriptor ch;
   Unix.shutdown ch.fd shutdown_command
 
-external stub_socketpair : socket_domain -> socket_type -> int -> Unix.file_descr * Unix.file_descr = "lwt_unix_socketpair_stub"
-
-#if OCAML_VERSION >= (4, 05, 0)
-let stub_socketpair ?cloexec dom typ proto =
-  let (s1, s2) = stub_socketpair dom typ proto in
-  if cloexec = Some true then begin
-    Unix.set_close_on_exec s1;
-    Unix.set_close_on_exec s2
-  end;
-  (s1, s2)
-#endif
+external stub_socketpair : ?cloexec:bool -> socket_domain -> socket_type -> int -> Unix.file_descr * Unix.file_descr = "lwt_unix_socketpair_stub"
 
 let socketpair ?cloexec dom typ proto =
   let (s1, s2) =
@@ -1746,12 +1736,15 @@ let socketpair ?cloexec dom typ proto =
     if Sys.win32 then stub_socketpair ?cloexec dom typ proto
     else Unix.socketpair ?cloexec dom typ proto in
 #else
-    if Sys.win32 then stub_socketpair dom typ proto
-    else Unix.socketpair dom typ proto in
-  if cloexec = Some true then begin
-    Unix.set_close_on_exec s1;
-    Unix.set_close_on_exec s2
-  end;
+    if Sys.win32 then stub_socketpair ?cloexec dom typ proto
+    else begin
+      let (s1, s2) = Unix.socketpair dom typ proto in
+      if cloexec = Some true then begin
+        Unix.set_close_on_exec s1;
+        Unix.set_close_on_exec s2
+      end;
+      (s1, s2)
+    end in
 #endif
   (mk_ch ~blocking:false s1, mk_ch ~blocking:false s2)
 
