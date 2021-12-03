@@ -360,7 +360,7 @@ static void lwt_unix_socketpair(int domain, int type, int protocol,
   sockets[0] = INVALID_SOCKET;
   sockets[1] = INVALID_SOCKET;
 
-  listener = socket(domain, type, protocol);
+  listener = WSASocket(domain, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
   if (listener == INVALID_SOCKET) goto failure;
 
   memset(&a, 0, sizeof(a));
@@ -394,7 +394,7 @@ static void lwt_unix_socketpair(int domain, int type, int protocol,
 
   if (listen(listener, 1) == SOCKET_ERROR) goto failure;
 
-  sockets[0] = socket(domain, type, protocol);
+  sockets[0] = WSASocket(domain, type, protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
   if (sockets[0] == INVALID_SOCKET) goto failure;
 
   addrlen = domain == PF_INET ? sizeof(a.inaddr) : sizeof(a.inaddr6);
