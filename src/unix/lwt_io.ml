@@ -1367,8 +1367,8 @@ let eprintl txt = write_line stderr txt
 let eprintf fmt = Printf.ksprintf eprint fmt
 let eprintlf fmt = Printf.ksprintf eprintl fmt
 
-let pipe ?in_buffer ?out_buffer _ =
-  let fd_r, fd_w = Lwt_unix.pipe () in
+let pipe ?cloexec ?in_buffer ?out_buffer _ =
+  let fd_r, fd_w = Lwt_unix.pipe ?cloexec () in
   (of_fd ?buffer:in_buffer ~mode:input fd_r,
    of_fd ?buffer:out_buffer ~mode:output fd_w)
 
