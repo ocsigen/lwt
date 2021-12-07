@@ -1,8 +1,6 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
-
-
 (** Asynchronous programming with promises.
 
     A {b promise} is a placeholder for a single value which might take a long
@@ -41,35 +39,32 @@
     Lwt has a small amount of syntactic sugar to make this look as natural as
     possible:
 
-{[
-let () =
-  Lwt_main.run begin
-    let%lwt data = Lwt_io.(read_line stdin) in
-    let%lwt () = Lwt_io.printl data in
-    Lwt.return ()
-  end
+    {[
+      let () =
+        Lwt_main.run
+          (let%lwt data = Lwt_io.(read_line stdin) in
+           let%lwt () = Lwt_io.printl data in
+           Lwt.return ())
 
-(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix echo.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix echo.ml && ./a.out *)
+    ]}
 
     This is all explained in the next sections:
 
-    - {{: #3_Quickstart} Quick start} links these concepts to actual functions
-      in Lwt – the most fundamental ones.
-    - {{: #3_Tutorial} Tutorial} shows how to write examples like the above, and
+    - {{:#3_Quickstart} Quick start} links these concepts to actual functions in
+      Lwt – the most fundamental ones.
+    - {{:#3_Tutorial} Tutorial} shows how to write examples like the above, and
       how concurrency happens.
-    - {{: #3_Executionmodel} Execution model} clarifies control flow when using
+    - {{:#3_Executionmodel} Execution model} clarifies control flow when using
       Lwt.
-    - {{: #3_GuidetotherestofLwt} Guide to the rest of Lwt} shows how
+    - {{:#3_GuidetotherestofLwt} Guide to the rest of Lwt} shows how
       {e everything} else in Lwt fits into this framework.
 
-    After that is the {{: #2_Fundamentals} reference proper}, which goes into
+    After that is the {{:#2_Fundamentals} reference proper}, which goes into
     {e painful} levels of detail on every single type and value in this module,
     [Lwt]. Please be safe, and read only what you need from it :)
 
     Happy asynchronous programming!
-
-
 
     {3 Quick start}
 
@@ -86,91 +81,83 @@ let () =
     - {!Lwt_main.run} is used to wait on one “top-level” promise. When that
       promise gets a value, the program terminates.
 
-
-
     {3 Tutorial}
 
-    Let's read  from STDIN. The first version is written using ordinary values
+    Let's read from STDIN. The first version is written using ordinary values
     from the OCaml standard library. This makes the program block until the user
     enters a line:
 
-{[
-let () =
-  let line : string = read_line () in
-  print_endline "Now unblocked!";
-  ignore line
+    {[
+      let () =
+        let line : string = read_line () in
+        print_endline "Now unblocked!";
+        ignore line
 
-(* ocamlfind opt -linkpkg code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg code.ml && ./a.out *)
+    ]}
 
     If we use a promise instead, execution continues immediately:
 
-{[
-let () =
-  let line_promise : string Lwt.t =
-    Lwt_io.(read_line stdin) in
-  print_endline "Execution just continues...";
-  ignore line_promise
+    {[
+      let () =
+        let line_promise : string Lwt.t = Lwt_io.(read_line stdin) in
+        print_endline "Execution just continues...";
+        ignore line_promise
 
-(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+    ]}
 
     Indeed, this program is a little {e too} asynchronous – it exits right away!
     Let's force it to wait for [line_promise] at the end by calling
     {!Lwt_main.run}:
 
-{[
-let () =
-  let line_promise : string Lwt.t =
-    Lwt_io.(read_line stdin) in
-  print_endline "Execution just continues...";
+    {[
+      let () =
+        let line_promise : string Lwt.t = Lwt_io.(read_line stdin) in
+        print_endline "Execution just continues...";
 
-  let line : string =
-    Lwt_main.run line_promise in
-  ignore line
+        let line : string = Lwt_main.run line_promise in
+        ignore line
 
-(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+    ]}
 
     {!Lwt_main.run} should only be called once, on one promise, at the top level
     of your program. Most of the time, waiting for promises is done using
     [let%lwt]. That is the recommended syntactic sugar for {!Lwt.bind}, and is
     pronounced “bind”:
 
-{[
-let () =
-  let p : unit Lwt.t =
-    let%lwt line_1 = Lwt_io.(read_line stdin) in
-    let%lwt line_2 = Lwt_io.(read_line stdin) in
-    Lwt_io.printf "%s and %s\n" line_1 line_2
-  in
+    {[
+      let () =
+        let p : unit Lwt.t =
+          let%lwt line_1 = Lwt_io.(read_line stdin) in
+          let%lwt line_2 = Lwt_io.(read_line stdin) in
+          Lwt_io.printf "%s and %s\n" line_1 line_2
+        in
 
-  Lwt_main.run p
+        Lwt_main.run p
 
-(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+    ]}
 
-    The way that works is everything in scope after the “[in]” in
-    “[let%lwt x =] ... [in] ...” goes into a callback, and “[x]” is that
-    callback's argument. So, we could have been very explicit, and written the
-    code like this:
+    The way that works is everything in scope after the “[in]” in “[let%lwt x =]
+    ... [in] ...” goes into a callback, and “[x]” is that callback's argument.
+    So, we could have been very explicit, and written the code like this:
 
-{[
-let () =
-  let p : unit Lwt.t =
-    let line_1_promise : string Lwt.t = Lwt_io.(read_line stdin) in
-    Lwt.bind line_1_promise (fun (line_1 : string) ->
+    {[
+      let () =
+        let p : unit Lwt.t =
+          let line_1_promise : string Lwt.t = Lwt_io.(read_line stdin) in
+          Lwt.bind line_1_promise (fun (line_1 : string) ->
+              let line_2_promise : string Lwt.t = Lwt_io.(read_line stdin) in
+              Lwt.bind line_2_promise (fun (line_2 : string) ->
+                  Lwt_io.printf "%s and %s\n" line_1 line_2))
+        in
 
-      let line_2_promise : string Lwt.t = Lwt_io.(read_line stdin) in
-      Lwt.bind line_2_promise (fun (line_2 : string) ->
+        Lwt_main.run p
 
-        Lwt_io.printf "%s and %s\n" line_1 line_2))
-  in
-
-  Lwt_main.run p
-
-(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+    ]}
 
     But, as you can see, this is verbose, and the indentation gets a bit crazy.
     So, we will always use [let%lwt].
@@ -183,48 +170,43 @@ let () =
     second I/O in a callback of the first. Because it doesn't make sense to read
     two lines from STDIN concurrently, let's start two waits instead:
 
-{[
-let () =
-  Lwt_main.run begin
-    let three_seconds : unit Lwt.t = Lwt_unix.sleep 3. in
-    let five_seconds : unit Lwt.t = Lwt_unix.sleep 5. in
-    let%lwt () = three_seconds in
-    let%lwt () = Lwt_io.printl "3 seconds passed" in
-    let%lwt () = five_seconds in
-    Lwt_io.printl "Only 2 more seconds passed"
-  end
+    {[
+      let () =
+        Lwt_main.run
+          (let three_seconds : unit Lwt.t = Lwt_unix.sleep 3. in
+           let five_seconds : unit Lwt.t = Lwt_unix.sleep 5. in
+           let%lwt () = three_seconds in
+           let%lwt () = Lwt_io.printl "3 seconds passed" in
+           let%lwt () = five_seconds in
+           Lwt_io.printl "Only 2 more seconds passed")
 
-(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+    ]}
 
     This program takes about five seconds to run. We are still new to [let%lwt],
     so let's desugar it:
 
-{[
-let () =
-  Lwt_main.run begin
-    let three_seconds : unit Lwt.t = Lwt_unix.sleep 3. in
-    let five_seconds : unit Lwt.t = Lwt_unix.sleep 5. in
+    {[
+      let () =
+        Lwt_main.run
+          (let three_seconds : unit Lwt.t = Lwt_unix.sleep 3. in
+           let five_seconds : unit Lwt.t = Lwt_unix.sleep 5. in
 
-    (* Both waits have already been started at this point! *)
+           (* Both waits have already been started at this point! *)
+           Lwt.bind three_seconds (fun () ->
+               (* This is 3 seconds later. *)
+               Lwt.bind (Lwt_io.printl "3 seconds passed") (fun () ->
+                   Lwt.bind five_seconds (fun () ->
+                       (* Only 2 seconds were left in the 5-second wait, so
+                           this callback runs 2 seconds after the first callback. *)
+                       Lwt_io.printl "Only 2 more seconds passed"))))
 
-    Lwt.bind three_seconds (fun () ->
-      (* This is 3 seconds later. *)
-      Lwt.bind (Lwt_io.printl "3 seconds passed") (fun () ->
-        Lwt.bind five_seconds (fun () ->
-          (* Only 2 seconds were left in the 5-second wait, so
-              this callback runs 2 seconds after the first callback. *)
-          Lwt_io.printl "Only 2 more seconds passed")))
-  end
-
-(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+    ]}
 
     And that's it! Concurrency in Lwt is simply a matter of whether you start an
     operation in the callback of another one or not. As a convenience, Lwt
-    provides a few {{: #2_Concurrency} helpers} for common concurrency patterns.
-
-
+    provides a few {{:#2_Concurrency} helpers} for common concurrency patterns.
 
     {3 Execution model}
 
@@ -233,13 +215,13 @@ let () =
     pending), or containers for one value (if resolved).
 
     The interesting function is {!Lwt_main.run}. It's a wrapper around
-    {{: http://man7.org/linux/man-pages/man2/select.2.html} [select(2)]},
-    {{: http://man7.org/linux/man-pages/man7/epoll.7.html} [epoll(7)]},
-    {{: https://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2}
-    [kqueue(2)]}, or whatever asynchronous I/O API your system provides. On
-    browsers, the work of {!Lwt_main.run} is done by the surrounding JavaScript
-    engine, so you don't call {!Lwt_main.run} from inside your program. But the
-    execution model is still the same, and the description below applies!
+    {{:http://man7.org/linux/man-pages/man2/select.2.html} [select(2)]},
+    {{:http://man7.org/linux/man-pages/man7/epoll.7.html} [epoll(7)]},
+    {{:https://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2} [kqueue(2)]},
+    or whatever asynchronous I/O API your system provides. On browsers, the work
+    of {!Lwt_main.run} is done by the surrounding JavaScript engine, so you
+    don't call {!Lwt_main.run} from inside your program. But the execution model
+    is still the same, and the description below applies!
 
     To avoid writing out “underlying asynchronous I/O API,” we'll assume, in
     this section, that the API is [select(2)]. That's just for the sake of
@@ -249,22 +231,20 @@ let () =
     Let's use the program from the tutorial that reads two lines as an example.
     Here it is, again, in its desugared form:
 
-{[
-let () =
-  let p : unit Lwt.t =
-    let line_1_promise : string Lwt.t = Lwt_io.(read_line stdin) in
-    Lwt.bind line_1_promise (fun (line_1 : string) ->
+    {[
+      let () =
+        let p : unit Lwt.t =
+          let line_1_promise : string Lwt.t = Lwt_io.(read_line stdin) in
+          Lwt.bind line_1_promise (fun (line_1 : string) ->
+              let line_2_promise : string Lwt.t = Lwt_io.(read_line stdin) in
+              Lwt.bind line_2_promise (fun (line_2 : string) ->
+                  Lwt_io.printf "%s and %s\n" line_1 line_2))
+        in
 
-      let line_2_promise : string Lwt.t = Lwt_io.(read_line stdin) in
-      Lwt.bind line_2_promise (fun (line_2 : string) ->
+        Lwt_main.run p
 
-        Lwt_io.printf "%s and %s\n" line_1 line_2))
-  in
-
-  Lwt_main.run p
-
-(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+    ]}
 
     {!Lwt_main.run} is your program's main I/O loop. You pass it a single
     promise, and it:
@@ -298,11 +278,10 @@ let () =
     underlying I/O operations complete.
 
     In case your callback is just using the CPU for a really long time, you can
-    insert a few calls to {!Lwt.pause} into it, and resume your computation
-    in callbacks of [pause]. This is basically the same as
-    {!Lwt_unix.sleep}[ 0.] – it's a promise that will be resolved by
-    {!Lwt_main.run} {e after} any other I/O resolutions that are already in its
-    queue.
+    insert a few calls to {!Lwt.pause} into it, and resume your computation in
+    callbacks of [pause]. This is basically the same as {!Lwt_unix.sleep}[ 0.] –
+    it's a promise that will be resolved by {!Lwt_main.run} {e after} any other
+    I/O resolutions that are already in its queue.
 
     {b (2)} The good implication is that all your callbacks run in a single
     thread. This means that in most situations, you don't have to worry about
@@ -311,25 +290,23 @@ let () =
     easier to write and refactor, than equivalent programs written with threads
     – but both are concurrent!
 
-
-
     {3 Guide to the rest of Lwt}
 
     This module [Lwt] is the pure-OCaml definition of promises and
     callback-calling. It has a few extras on top of what's described above:
 
-    - {{: #2_Rejection} Rejection}. Lwt promises can actually be resolved in two
+    - {{:#2_Rejection} Rejection}. Lwt promises can actually be resolved in two
       ways: {e fulfilled} with a value, or {e rejected} with an exception. There
       is nothing conceptually special about rejection – it's just that you can
       ask for callbacks to run only on fulfillment, only on rejection, etc.
-    - {{: #2_Cancelation} Cancellation}. This is a special case of rejection,
+    - {{:#2_Cancelation} Cancellation}. This is a special case of rejection,
       specifically with exception {!Lwt.Canceled}. It has extra helpers in the
       Lwt API.
-    - {{: #2_Concurrency} Concurrency helpers}. All of these could be
-      implemented on top of {!Lwt.bind}. As we saw, Lwt concurrency requires
-      only deciding whether to run something inside a callback, or outside it.
-      These functions just implement common patterns, and make intent explicit.
-    - Miscellaneous {{: #2_Convenience} helpers}, and {{: #2_Deprecated}
+    - {{:#2_Concurrency} Concurrency helpers}. All of these could be implemented
+      on top of {!Lwt.bind}. As we saw, Lwt concurrency requires only deciding
+      whether to run something inside a callback, or outside it. These functions
+      just implement common patterns, and make intent explicit.
+    - Miscellaneous {{:#2_Convenience} helpers}, and {{:#2_Deprecated}
       deprecated} APIs.
 
     The next layer above module [Lwt] is the pure-OCaml Lwt “core” library,
@@ -357,8 +334,6 @@ let () =
       {!Lwt_timeout}, {!Lwt_sys}.
 
     Warning! Introductory material ends and detailed reference begins! *)
-
-
 
 (** {2 Fundamentals} *)
 
@@ -395,8 +370,8 @@ type -'a u
     be passed to {!Lwt.wakeup_later}, {!Lwt.wakeup_later_exn}, or
     {!Lwt.wakeup_later_result} to resolve that promise. *)
 
-val wait : unit -> ('a t * 'a u)
-(** Creates a new pending {{: #TYPEt} promise}, paired with its {{: #TYPEu}
+val wait : unit -> 'a t * 'a u
+(** Creates a new pending {{:#TYPEt} promise}, paired with its {{:#TYPEu}
     resolver}.
 
     It is rare to use this function directly. Many helpers in Lwt, and Lwt-aware
@@ -407,57 +382,56 @@ val wait : unit -> ('a t * 'a u)
     “constructor.” All other functions that evaluate to a promise can be, or
     are, eventually implemented in terms of it. *)
 
-
-
 (** {3 Resolving} *)
 
 val wakeup_later : 'a u -> 'a -> unit
 (** [Lwt.wakeup_later r v] {e fulfills}, with value [v], the {e pending}
-    {{: #TYPEt} promise} associated with {{: #TYPEu} resolver} [r]. This
-    triggers callbacks attached to the promise.
+    {{:#TYPEt} promise} associated with {{:#TYPEu} resolver} [r]. This triggers
+    callbacks attached to the promise.
 
     If the promise is not pending, [Lwt.wakeup_later] raises
-    {{: https://ocaml.org/api/Stdlib.html#VALinvalid_arg}
-    [Invalid_argument]}, unless the promise is {{: #VALcancel} canceled}. If the
-    promise is canceled, [Lwt.wakeup_later] has no effect.
+    {{:https://ocaml.org/api/Stdlib.html#VALinvalid_arg} [Invalid_argument]},
+    unless the promise is {{:#VALcancel} canceled}. If the promise is canceled,
+    [Lwt.wakeup_later] has no effect.
 
     If your program has multiple threads, it is important to make sure that
     [Lwt.wakeup_later] (and any similar function) is only called from the main
-    thread. [Lwt.wakeup_later] can trigger callbacks attached to promises
-    by the program, and these assume they are running in the main thread. If you
-    need to communicate from a worker thread to the main thread running Lwt, see
+    thread. [Lwt.wakeup_later] can trigger callbacks attached to promises by the
+    program, and these assume they are running in the main thread. If you need
+    to communicate from a worker thread to the main thread running Lwt, see
     {!Lwt_preemptive} or {!Lwt_unix.send_notification}. *)
 
 val wakeup_later_exn : _ u -> exn -> unit
 (** [Lwt.wakeup_later_exn r exn] is like {!Lwt.wakeup_later}, except, if the
-    associated {{: #TYPEt} promise} is {e pending}, it is {e rejected} with
+    associated {{:#TYPEt} promise} is {e pending}, it is {e rejected} with
     [exn]. *)
 
 val return : 'a -> 'a t
-(** [Lwt.return v] creates a new {{: #TYPEt} promise} that is {e already
-    fulfilled} with value [v].
+(** [Lwt.return v] creates a new {{:#TYPEt} promise} that is
+    {e already fulfilled} with value [v].
 
     This is needed to satisfy the type system in some cases. For example, in a
     [match] expression where one case evaluates to a promise, the other cases
     have to evaluate to promises as well:
 
-{[
-match need_input with
-| true -> Lwt_io.(read_line stdin)   (* Has type string Lwt.t... *)
-| false -> Lwt.return ""             (* ...so wrap empty string in a promise. *)
-]}
+    {[
+      match need_input with
+      | true -> Lwt_io.(read_line stdin) (* Has type string Lwt.t... *)
+      | false -> Lwt.return ""
+      (* ...so wrap empty string in a promise. *)
+    ]}
 
-    Another typical usage is in {{: #VALbind} [let%lwt]}. The expression after
+    Another typical usage is in {{:#VALbind} [let%lwt]}. The expression after
     the “[in]” has to evaluate to a promise. So, if you compute an ordinary
     value instead, you have to wrap it:
 
-{[
-let%lwt line = Lwt_io.(read_line stdin) in
-Lwt.return (line ^ ".")
-]} *)
+    {[
+      let%lwt line = Lwt_io.(read_line stdin) in
+      Lwt.return (line ^ ".")
+    ]} *)
 
 val fail : exn -> _ t
-(** [Lwt.fail exn] is like {!Lwt.return}, except the new {{: #TYPEt} promise}
+(** [Lwt.fail exn] is like {!Lwt.return}, except the new {{:#TYPEt} promise}
     that is {e already rejected} with [exn].
 
     Whenever possible, it is recommended to use [raise exn] instead, as [raise]
@@ -468,12 +442,10 @@ val fail : exn -> _ t
     specifically want to create a rejected promise, to pass to another function,
     or store in a data structure. *)
 
-
-
 (** {3 Callbacks} *)
 
 val bind : 'a t -> ('a -> 'b t) -> 'b t
-(** [Lwt.bind p_1 f] makes it so that [f] will run when [p_1] is {{: #TYPEt}
+(** [Lwt.bind p_1 f] makes it so that [f] will run when [p_1] is {{:#TYPEt}
     {e fulfilled}}.
 
     When [p_1] is fulfilled with value [v_1], the callback [f] is called with
@@ -487,17 +459,15 @@ val bind : 'a t -> ('a -> 'b t) -> 'b t
 
     A minimal example of this is an echo program:
 
-{[
-let () =
-  let p_3 =
-    Lwt.bind
-      Lwt_io.(read_line stdin)
-      (fun line -> Lwt_io.printl line)
-  in
-  Lwt_main.run p_3
+    {[
+      let () =
+        let p_3 =
+          Lwt.bind Lwt_io.(read_line stdin) (fun line -> Lwt_io.printl line)
+        in
+        Lwt_main.run p_3
 
-(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+    ]}
 
     Rejection of [p_1] and [p_2], and raising an exception in [f], are all
     forwarded to rejection of [p_3].
@@ -526,91 +496,84 @@ let () =
     [Lwt.bind] is almost never written directly, because sequences of [Lwt.bind]
     result in growing indentation and many parentheses:
 
-{[
-let () =
-  Lwt_main.run begin
-    Lwt.bind Lwt_io.(read_line stdin) (fun line ->
-      Lwt.bind (Lwt_unix.sleep 1.) (fun () ->
-        Lwt_io.printf "One second ago, you entered %s\n" line))
-  end
+    {[
+      let () =
+        Lwt_main.run
+          (Lwt.bind
+             Lwt_io.(read_line stdin)
+             (fun line ->
+               Lwt.bind (Lwt_unix.sleep 1.) (fun () ->
+                   Lwt_io.printf "One second ago, you entered %s\n" line)))
 
-(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+    ]}
 
     The recommended way to write [Lwt.bind] is using the [let%lwt] syntactic
     sugar:
 
-{[
-let () =
-  Lwt_main.run begin
-    let%lwt line = Lwt_io.(read_line stdin) in
-    let%lwt () = Lwt_unix.sleep 1. in
-    Lwt_io.printf "One second ago, you entered %s\n" line
-  end
+    {[
+      let () =
+        Lwt_main.run
+          (let%lwt line = Lwt_io.(read_line stdin) in
+           let%lwt () = Lwt_unix.sleep 1. in
+           Lwt_io.printf "One second ago, you entered %s\n" line)
 
-(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+    ]}
 
-    This uses the Lwt {{: Ppx_lwt.html} PPX} (preprocessor). Note that we had to
+    This uses the Lwt {{:Ppx_lwt.html} PPX} (preprocessor). Note that we had to
     add package [lwt_ppx] to the command line for building this program. We will
     do that throughout this manual.
 
     Another way to write [Lwt.bind], that you may encounter while reading code,
     is with the [>>=] operator:
 
-{[
-open Lwt.Infix
+    {[
+      open Lwt.Infix
 
-let () =
-  Lwt_main.run begin
-    Lwt_io.(read_line stdin) >>= fun line ->
-    Lwt_unix.sleep 1. >>= fun () ->
-    Lwt_io.printf "One second ago, you entered %s\n" line
-  end
+      let () =
+        Lwt_main.run
+          ( Lwt_io.(read_line stdin) >>= fun line ->
+            Lwt_unix.sleep 1. >>= fun () ->
+            Lwt_io.printf "One second ago, you entered %s\n" line )
 
-(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+    ]}
 
     The [>>=] operator comes from the module {!Lwt.Infix}, which is why we
     opened it at the beginning of the program.
 
     See also {!Lwt.map}. *)
 
-
-
 (** {2 Rejection} *)
 
 val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
 (** [Lwt.catch f h] applies [f ()], which returns a promise, and then makes it
-    so that [h] (“handler”) will run when that promise is {{: #TYPEt}
+    so that [h] (“handler”) will run when that promise is {{:#TYPEt}
     {e rejected}}.
 
-{[
-let () =
-  Lwt_main.run begin
-    Lwt.catch
-      (fun () -> Lwt.fail Exit)
-      (function
-      | Exit -> Lwt_io.printl "Got Stdlib.Exit"
-      | exn -> Lwt.fail exn)
-  end
+    {[
+      let () =
+        Lwt_main.run
+          (Lwt.catch
+             (fun () -> Lwt.fail Exit)
+             (function
+               | Exit -> Lwt_io.printl "Got Stdlib.Exit" | exn -> Lwt.fail exn))
 
-(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+    ]}
 
     Despite the above code, the recommended way to write [Lwt.catch] is using
-    the [try%lwt] syntactic sugar from the {{: Ppx_lwt.html} PPX}. Here is an
+    the [try%lwt] syntactic sugar from the {{:Ppx_lwt.html} PPX}. Here is an
     equivalent example:
 
-{[
-let () =
-  Lwt_main.run begin
-    try%lwt Lwt.fail Exit
-    with Exit -> Lwt_io.printl "Got Stdlb.Exit"
-  end
+    {[
+      let () =
+        Lwt_main.run
+          (try%lwt Lwt.fail Exit with Exit -> Lwt_io.printl "Got Stdlb.Exit")
 
-(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+    ]}
 
     A particular advantage of the PPX syntax is that it is not necessary to
     artificially insert a catch-all [exn -> Lwt.fail exn] case. Like in the core
@@ -625,9 +588,9 @@ let () =
     - [p_2], the promise returned from applying [h exn].
     - [p_3], the promise returned by [Lwt.catch] itself.
 
-    The remainder is (1) a precise description of how [p_3] is resolved, and
-    (2) a warning about accidentally using ordinary [try] for exception handling
-    in asynchronous code.
+    The remainder is (1) a precise description of how [p_3] is resolved, and (2)
+    a warning about accidentally using ordinary [try] for exception handling in
+    asynchronous code.
 
     {b (1)} [Lwt.catch] first applies [f ()]. It then returns [p_3] immediately.
     [p_3] starts out pending. It is resolved as follows:
@@ -653,15 +616,13 @@ let () =
     from the second example above only in that [try] is used instead of
     [try%lwt]:
 
-{[
-let () =
-  Lwt_main.run begin
-    try Lwt.fail Exit
-    with Exit -> Lwt_io.printl "Got Stdlib.Exit"
-  end
+    {[
+      let () =
+        Lwt_main.run
+          (try Lwt.fail Exit with Exit -> Lwt_io.printl "Got Stdlib.Exit")
 
-(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+    ]}
 
     This does {e not} handle the exception and does not print the message.
     Instead, it terminates the program with an unhandled [Stdlib.Exit].
@@ -669,15 +630,15 @@ let () =
     This is because the call to {!Lwt.fail} creates a rejected promise. The
     promise is still an ordinary OCaml value, though, and not a {e raised}
     exception. So, [try] considers that code to have succeeded, and doesn't run
-    the handler. When that rejected promise reaches {!Lwt_main.run},
-    it is {!Lwt_main.run} that raises the exception.
+    the handler. When that rejected promise reaches {!Lwt_main.run}, it is
+    {!Lwt_main.run} that raises the exception.
 
-    Basically, the rule is: if the code inside [try] evaluates to a promise
-    (has type [_ Lwt.t]), replace [try] by [try%lwt]. *)
+    Basically, the rule is: if the code inside [try] evaluates to a promise (has
+    type [_ Lwt.t]), replace [try] by [try%lwt]. *)
 
 val finalize : (unit -> 'a t) -> (unit -> unit t) -> 'a t
 (** [Lwt.finalize f c] applies [f ()], which returns a promise, and then makes
-    it so [c] (“cleanup”) will run when that promise is {{: #TYPEt}
+    it so [c] (“cleanup”) will run when that promise is {{:#TYPEt}
     {e resolved}}.
 
     In other words, [c] runs no matter whether promise [f ()] is fulfilled or
@@ -685,38 +646,32 @@ val finalize : (unit -> 'a t) -> (unit -> unit t) -> 'a t
     construct found in many programming languages, and [c] is typically used for
     cleaning up resources:
 
-{[
-let () =
-  Lwt_main.run begin
-    let%lwt file = Lwt_io.(open_file ~mode:Input "code.ml") in
-    Lwt.finalize
-      (fun () ->
-        let%lwt content = Lwt_io.read file in
-        Lwt_io.print content)
-      (fun () ->
-        Lwt_io.close file)
-  end
+    {[
+      let () =
+        Lwt_main.run
+          (let%lwt file = Lwt_io.(open_file ~mode:Input "code.ml") in
+           Lwt.finalize
+             (fun () ->
+               let%lwt content = Lwt_io.read file in
+               Lwt_io.print content)
+             (fun () -> Lwt_io.close file))
 
-(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+    ]}
 
     As with {!Lwt.bind} and {!Lwt.catch}, there is a syntactic sugar for
     [Lwt.finalize], though it is not as often used:
 
-{[
-let () =
-  Lwt_main.run begin
-    let%lwt file = Lwt_io.(open_file ~mode:Input "code.ml") in
-    begin
-      let%lwt content = Lwt_io.read file in
-      Lwt_io.print content
-    end
-    [%lwt.finally
-      Lwt_io.close file]
-  end
+    {[
+      let () =
+        Lwt_main.run
+          (let%lwt file = Lwt_io.(open_file ~mode:Input "code.ml") in
+           (let%lwt content = Lwt_io.read file in
+            Lwt_io.print content)
+             [%lwt.finally Lwt_io.close file])
 
-(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+    ]}
 
     Also as with {!Lwt.bind} and {!Lwt.catch}, three promises are involved:
 
@@ -750,8 +705,8 @@ let () =
 val try_bind : (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
 (** [Lwt.try_bind f g h] applies [f ()], and then makes it so that:
 
-    - [g] will run when promise [f ()] is {{: #TYPEt} {e fulfilled}},
-    - [h] will run when promise [f ()] is {{: #TYPEt} {e rejected}}.
+    - [g] will run when promise [f ()] is {{:#TYPEt} {e fulfilled}},
+    - [h] will run when promise [f ()] is {{:#TYPEt} {e rejected}}.
 
     [Lwt.try_bind] is a generalized {!Lwt.finalize}. The difference is that
     [Lwt.try_bind] runs different callbacks depending on {e how} [f ()] is
@@ -760,8 +715,7 @@ val try_bind : (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
     - The cleanup functions [g] and [h] each “know” whether [f ()] was fulfilled
       or rejected.
     - The cleanup functions [g] and [h] are passed the value [f ()] was
-      fulfilled with, and, respectively, the exception [f ()] was rejected
-      with.
+      fulfilled with, and, respectively, the exception [f ()] was rejected with.
 
     The rest is a detailed description of the promises involved.
 
@@ -798,7 +752,7 @@ val try_bind : (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
 
 val dont_wait : (unit -> unit t) -> (exn -> unit) -> unit
 (** [Lwt.dont_wait f handler] applies [f ()], which returns a promise, and then
-    makes it so that if the promise is {{: #TYPEt} {e rejected}}, the exception
+    makes it so that if the promise is {{:#TYPEt} {e rejected}}, the exception
     is passed to [handler].
 
     In addition, if [f ()] raises an exception, it is also passed to [handler].
@@ -817,7 +771,7 @@ val dont_wait : (unit -> unit t) -> (exn -> unit) -> unit
 
 val async : (unit -> unit t) -> unit
 (** [Lwt.async f] applies [f ()], which returns a promise, and then makes it so
-    that if the promise is {{: #TYPEt} {e rejected}}, the exception is passed to
+    that if the promise is {{:#TYPEt} {e rejected}}, the exception is passed to
     [!]{!Lwt.async_exception_hook}.
 
     In addition, if [f ()] raises an exception, it is also passed to
@@ -834,22 +788,22 @@ val async : (unit -> unit t) -> unit
     For example, take this program, which prints messages in a loop, while
     waiting for one line of user input:
 
-{[
-let () =
-  let rec show_nag () : _ Lwt.t =
-    let%lwt () = Lwt_io.printl "Please enter a line" in
-    let%lwt () = Lwt_unix.sleep 1. in
-    show_nag ()
-  in
-  ignore (show_nag ());     (* Bad – see note for (1)! *)
+    {[
+      let () =
+        let rec show_nag () : _ Lwt.t =
+          let%lwt () = Lwt_io.printl "Please enter a line" in
+          let%lwt () = Lwt_unix.sleep 1. in
+          show_nag ()
+        in
+        ignore (show_nag ());
 
-  Lwt_main.run begin
-    let%lwt line = Lwt_io.(read_line stdin) in
-    Lwt_io.printl line
-  end
+        (* Bad – see note for (1)! *)
+        Lwt_main.run
+          (let%lwt line = Lwt_io.(read_line stdin) in
+           Lwt_io.printl line)
 
-(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+    ]}
 
     If one of the I/O operations in [show_nag] were to fail, the promise
     representing the whole loop would get rejected. However, since we are
@@ -860,22 +814,21 @@ let () =
     A safer version differs only in using [Lwt.async] instead of
     [Stdlib.ignore]:
 
-{[
-let () =
-  let rec show_nag () : _ Lwt.t =
-    let%lwt () = Lwt_io.printl "Please enter a line" in
-    let%lwt () = Lwt_unix.sleep 1. in
-    show_nag ()
-  in
-  Lwt.async (fun () -> show_nag ());
+    {[
+      let () =
+        let rec show_nag () : _ Lwt.t =
+          let%lwt () = Lwt_io.printl "Please enter a line" in
+          let%lwt () = Lwt_unix.sleep 1. in
+          show_nag ()
+        in
+        Lwt.async (fun () -> show_nag ());
 
-  Lwt_main.run begin
-    let%lwt line = Lwt_io.(read_line stdin) in
-    Lwt_io.printl line
-  end
+        Lwt_main.run
+          (let%lwt line = Lwt_io.(read_line stdin) in
+           Lwt_io.printl line)
 
-(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+    ]}
 
     In this version, if I/O in [show_nag] fails with an exception, the exception
     is printed by [Lwt.async], and then the program exits.
@@ -899,17 +852,15 @@ val async_exception_hook : (exn -> unit) ref
     the process with non-zero exit status, as if the exception had reached the
     top level of the program:
 
-{[
-let () = Lwt.async (fun () -> Lwt.fail Exit)
+    {[
+      let () = Lwt.async (fun () -> Lwt.fail Exit)
 
-(* ocamlfind opt -linkpkg -package lwt code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -package lwt code.ml && ./a.out *)
+    ]}
 
     produces in the output:
 
-{v
-Fatal error: exception Stdlib.Exit
-v}
+    {v Fatal error: exception Stdlib.Exit v}
 
     If you are writing an application, you are welcome to reassign the
     reference, and replace the function with something more appropriate for your
@@ -918,33 +869,31 @@ v}
     If you are writing a library, you should leave this reference alone. Its
     behavior should be determined by the application. *)
 
-
-
 (** {2 Concurrency} *)
 
 (** {3 Multiple wait} *)
 
 val both : 'a t -> 'b t -> ('a * 'b) t
 (** [Lwt.both p_1 p_2] returns a promise that is pending until {e both} promises
-    [p_1] and [p_2] become {{: #TYPEt} {e resolved}}.
+    [p_1] and [p_2] become {{:#TYPEt} {e resolved}}.
 
-{[
-let () =
-  let p_1 =
-    let%lwt () = Lwt_unix.sleep 3. in
-    Lwt_io.printl "Three seconds elapsed"
-  in
+    {[
+      let () =
+        let p_1 =
+          let%lwt () = Lwt_unix.sleep 3. in
+          Lwt_io.printl "Three seconds elapsed"
+        in
 
-  let p_2 =
-    let%lwt () = Lwt_unix.sleep 5. in
-    Lwt_io.printl "Five seconds elapsed"
-  in
+        let p_2 =
+          let%lwt () = Lwt_unix.sleep 5. in
+          Lwt_io.printl "Five seconds elapsed"
+        in
 
-  let p_3 = Lwt.both p_1 p_2 in
-  Lwt_main.run p_3
+        let p_3 = Lwt.both p_1 p_2 in
+        Lwt_main.run p_3
 
-(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+    ]}
 
     If both [p_1] and [p_2] become fulfilled, [Lwt.both p_1 p_2] is also
     fulfilled, with the pair of their final values. Otherwise, if at least one
@@ -955,27 +904,27 @@ let () =
 
     @since 4.2.0 *)
 
-val join : (unit t) list -> unit t
+val join : unit t list -> unit t
 (** [Lwt.join ps] returns a promise that is pending until {e all} promises in
-    the list [ps] become {{: #TYPEt} {e resolved}}.
+    the list [ps] become {{:#TYPEt} {e resolved}}.
 
-{[
-let () =
-  let p_1 =
-    let%lwt () = Lwt_unix.sleep 3. in
-    Lwt_io.printl "Three seconds elapsed"
-  in
+    {[
+      let () =
+        let p_1 =
+          let%lwt () = Lwt_unix.sleep 3. in
+          Lwt_io.printl "Three seconds elapsed"
+        in
 
-  let p_2 =
-    let%lwt () = Lwt_unix.sleep 5. in
-    Lwt_io.printl "Five seconds elapsed"
-  in
+        let p_2 =
+          let%lwt () = Lwt_unix.sleep 5. in
+          Lwt_io.printl "Five seconds elapsed"
+        in
 
-  let p_3 = Lwt.join [p_1; p_2] in
-  Lwt_main.run p_3
+        let p_3 = Lwt.join [ p_1; p_2 ] in
+        Lwt_main.run p_3
 
-(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+    ]}
 
     If all of the promises in [ps] become fulfilled, [Lwt.join ps] is also
     fulfilled. Otherwise, if at least one promise in [ps] becomes rejected,
@@ -983,9 +932,9 @@ let () =
     chosen arbitrarily. Note that this occurs only after all the promises are
     resolved, not immediately when the first promise is rejected. *)
 
-val all : ('a t) list -> ('a list) t
+val all : 'a t list -> 'a list t
 (** [Lwt.all ps] is like {!Lwt.join}[ ps]: it waits for all promises in the list
-    [ps] to become {{: #TYPEt} {e resolved}}.
+    [ps] to become {{:#TYPEt} {e resolved}}.
 
     It then resolves the returned promise with the list of all resulting values.
 
@@ -998,30 +947,28 @@ val all : ('a t) list -> ('a list) t
 
     @since 5.1.0 *)
 
-
-
 (** {3 Racing} *)
 
-val pick : ('a t) list -> 'a t
-(** [Lwt.pick ps] returns a promise that is pending until {e one} promise in
-    the list [ps] becomes {{: #TYPEt} {e resolved}}.
+val pick : 'a t list -> 'a t
+(** [Lwt.pick ps] returns a promise that is pending until {e one} promise in the
+    list [ps] becomes {{:#TYPEt} {e resolved}}.
 
     When at least one promise in [ps] is resolved, [Lwt.pick] tries to cancel
     all other promises that are still pending, using {!Lwt.cancel}.
 
-{[
-let () =
-  let echo =
-    let%lwt line = Lwt_io.(read_line stdin) in
-    Lwt_io.printl line
-  in
+    {[
+      let () =
+        let echo =
+          let%lwt line = Lwt_io.(read_line stdin) in
+          Lwt_io.printl line
+        in
 
-  let timeout = Lwt_unix.sleep 5. in
+        let timeout = Lwt_unix.sleep 5. in
 
-  Lwt_main.run (Lwt.pick [echo; timeout])
+        Lwt_main.run (Lwt.pick [ echo; timeout ])
 
-(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+    ]}
 
     If the first promise in [ps] to become resolved is fulfilled, the result
     promise [p] is also fulfilled, with the same value. Likewise, if the first
@@ -1042,11 +989,11 @@ let () =
 
     The remaining functions in this section are variations on [Lwt.pick]. *)
 
-val choose : ('a t) list -> 'a t
+val choose : 'a t list -> 'a t
 (** [Lwt.choose ps] is the same as {!Lwt.pick}[ ps], except that it does not try
     to cancel pending promises in [ps]. *)
 
-val npick : ('a t) list -> ('a list) t
+val npick : 'a t list -> 'a list t
 (** [Lwt.npick ps] is similar to {!Lwt.pick}[ ps], the difference being that
     when multiple promises in [ps] are fulfilled simultaneously (and none are
     rejected), the result promise is fulfilled with the {e list} of values the
@@ -1055,18 +1002,15 @@ val npick : ('a t) list -> ('a list) t
     When at least one promise is rejected, [Lwt.npick] still rejects the result
     promise with the same exception. *)
 
-val nchoose : ('a t) list -> ('a list) t
+val nchoose : 'a t list -> 'a list t
 (** [Lwt.nchoose ps] is the same as {!Lwt.npick}[ ps], except that it does not
     try to cancel pending promises in [ps]. *)
 
-val nchoose_split : ('a t) list -> ('a list * ('a t) list) t
+val nchoose_split : 'a t list -> ('a list * 'a t list) t
 (** [Lwt.nchoose_split ps] is the same as {!Lwt.nchoose}[ ps], except that when
     multiple promises in [ps] are fulfilled simultaneously (and none are
     rejected), the result promise is fulfilled with {e both} the list of values
-    of the fulfilled promises, and the list of promises that are still
-    pending. *)
-
-
+    of the fulfilled promises, and the list of promises that are still pending. *)
 
 (** {2 Cancellation}
 
@@ -1079,9 +1023,9 @@ exception Canceled
 (** Canceled promises are those rejected with this exception, [Lwt.Canceled].
     See {!Lwt.cancel}. *)
 
-val task : unit -> ('a t * 'a u)
+val task : unit -> 'a t * 'a u
 (** [Lwt.task] is the same as {!Lwt.wait}, except the resulting promise [p] is
-    {{: #VALcancel} cancelable}.
+    {{:#VALcancel} cancelable}.
 
     This is significant, because it means promises created by [Lwt.task] can be
     resolved (specifically, rejected) by canceling them directly, in addition to
@@ -1120,19 +1064,19 @@ val cancel : _ t -> unit
 
     All of this will be made precise, but first let's have an example:
 
-{[
-let () =
-  let p =
-    let%lwt () = Lwt_unix.sleep 5. in
-    Lwt_io.printl "Slept five seconds"
-  in
+    {[
+      let () =
+        let p =
+          let%lwt () = Lwt_unix.sleep 5. in
+          Lwt_io.printl "Slept five seconds"
+        in
 
-  Lwt.cancel p;
+        Lwt.cancel p;
 
-  Lwt_main.run p
+        Lwt_main.run p
 
-(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+    ]}
 
     At the time [Lwt.cancel] is called, [p] “depends” on the [sleep] promise
     (the [printl] is not yet called, so its promise hasn't been created).
@@ -1179,7 +1123,7 @@ let () =
 
 val on_cancel : _ t -> (unit -> unit) -> unit
 (** [Lwt.on_cancel p f] makes it so that [f] will run when [p] becomes
-    {{: #EXCEPTIONCanceled} {e canceled}}.
+    {{:#EXCEPTIONCanceled} {e canceled}}.
 
     Callbacks scheduled with [on_cancel] are guaranteed to run before any other
     callbacks that are triggered by rejection, such as those added by
@@ -1194,83 +1138,79 @@ val on_cancel : _ t -> (unit -> unit) -> unit
     [!]{!Lwt.async_exception_hook}, which terminates the process by default. *)
 
 val protected : 'a t -> 'a t
-(** [Lwt.protected p] creates a {{: #VALcancel} cancelable} promise [p']. The
+(** [Lwt.protected p] creates a {{:#VALcancel} cancelable} promise [p']. The
     original state of [p'] is the same as the state of [p] at the time of the
     call.
 
-    The state of [p'] can change in one of two ways:
-    a. if [p] changes state (i.e., is resolved), then [p'] eventually changes
-       state to match [p]'s, and
+    The state of [p'] can change in one of two ways: a. if [p] changes state
+    (i.e., is resolved), then [p'] eventually changes state to match [p]'s, and
     b. during cancellation, if the backwards search described in {!Lwt.cancel}
-       reaches [p'] then it changes state to {!Rejected} [Canceled] and the
-       search stops.
+    reaches [p'] then it changes state to {!Rejected} [Canceled] and the search
+    stops.
 
     As a consequence of the b. case, [Lwt.cancel (protected p)] does not cancel
     [p].
 
-    The promise [p] can still be canceled either directly (through [Lwt.cancel p])
-    or being reached by the backwards cancellation search via another path.
-    [Lwt.protected] only prevents cancellation of [p] through [p']. *)
+    The promise [p] can still be canceled either directly (through
+    [Lwt.cancel p]) or being reached by the backwards cancellation search via
+    another path. [Lwt.protected] only prevents cancellation of [p] through
+    [p']. *)
 
 val no_cancel : 'a t -> 'a t
-(** [Lwt.no_cancel p] creates a non-{{: #VALcancel}cancelable} promise [p']. The
+(** [Lwt.no_cancel p] creates a non-{{:#VALcancel} cancelable} promise [p']. The
     original state of [p'] is the same as [p] at the time of the call.
 
     If the state of [p] changes, then the state of [p'] eventually changes too
     to match [p]'s.
 
-    Note that even though [p'] is non-{{: #VALcancel}cancelable}, it can still
+    Note that even though [p'] is non-{{:#VALcancel} cancelable}, it can still
     become canceled if [p] is canceled. [Lwt.no_cancel] only prevents
     cancellation of [p] and [p'] through [p']. *)
 
 val wrap_in_cancelable : 'a t -> 'a t
-(** [Lwt.wrap_in_cancelable p] creates a {{: #VALcancel} cancelable} promise
+(** [Lwt.wrap_in_cancelable p] creates a {{:#VALcancel} cancelable} promise
     [p']. The original state of [p'] is the same as [p].
 
-    The state of [p'] can change in one of two ways:
-    a. if [p] changes state (i.e., is resolved), then [p'] eventually changes
-       state to match [p]'s, and
+    The state of [p'] can change in one of two ways: a. if [p] changes state
+    (i.e., is resolved), then [p'] eventually changes state to match [p]'s, and
     b. during cancellation, if the backwards search described in {!Lwt.cancel}
-       reaches [p'] then it changes state to {!Rejected} [Canceled] and the
-       search continues to [p].
-*)
+    reaches [p'] then it changes state to {!Rejected} [Canceled] and the search
+    continues to [p]. *)
 
 (** {3 Cancellation tweaks}
 
-  The primitives [protected], [no_cancel], and [wrap_in_cancelable] give you
-  some level of control over the cancellation mechanism of Lwt. Note that
-  promises passed as arguments to either of these three functions are unchanged.
-  The functions return new promises with a specific cancellation behaviour.
+    The primitives [protected], [no_cancel], and [wrap_in_cancelable] give you
+    some level of control over the cancellation mechanism of Lwt. Note that
+    promises passed as arguments to either of these three functions are
+    unchanged. The functions return new promises with a specific cancellation
+    behaviour.
 
-  The three behaviour of all three functions are summarised in the following
-  table.
+    The three behaviour of all three functions are summarised in the following
+    table.
 
-{[
-  +----------------------------+--------------------+--------------------+
-  |     setup - action         | cancel p           | cancel p'          |
-  +----------------------------+--------------------+--------------------+
-  | p is cancelable            | p is canceled      | p is not canceled  |
-  | p' = protected p           | p'  is canceled    | p' is canceled     |
-  +----------------------------+--------------------+--------------------+
-  | p is not cancelable        | p is not canceled  | p is not canceled  |
-  | p' = protected p           | p' is not canceled | p' is canceled     |
-  +----------------------------+--------------------+--------------------+
-  | p is cancelable            | p is canceled      | p is not canceled  |
-  | p' = no_cancel p           | p' is canceled     | p' is not canceled |
-  +----------------------------+--------------------+--------------------+
-  | p is not cancelable        | p is not canceled  | p is not canceled  |
-  | p' = no_cancel p           | p' is not canceled | p' is not canceled |
-  +----------------------------+--------------------+--------------------+
-  | p is cancelable            | p is canceled      | p is canceled      |
-  | p' = wrap_in_cancelable p  | p' is canceled     | p' is canceled     |
-  +----------------------------+--------------------+--------------------+
-  | p is not cancelable        | p is not canceled  | p is not canceled  |
-  | p' = wrap_in_cancelable p  | p' is not canceled | p' is canceled     |
-  +----------------------------+--------------------+--------------------+
-]}
-
-*)
-
+    {[
+      +----------------------------+--------------------+--------------------+
+      |     setup - action         | cancel p           | cancel p'          |
+      +----------------------------+--------------------+--------------------+
+      | p is cancelable            | p is canceled      | p is not canceled  |
+      | p' = protected p           | p'  is canceled    | p' is canceled     |
+      +----------------------------+--------------------+--------------------+
+      | p is not cancelable        | p is not canceled  | p is not canceled  |
+      | p' = protected p           | p' is not canceled | p' is canceled     |
+      +----------------------------+--------------------+--------------------+
+      | p is cancelable            | p is canceled      | p is not canceled  |
+      | p' = no_cancel p           | p' is canceled     | p' is not canceled |
+      +----------------------------+--------------------+--------------------+
+      | p is not cancelable        | p is not canceled  | p is not canceled  |
+      | p' = no_cancel p           | p' is not canceled | p' is not canceled |
+      +----------------------------+--------------------+--------------------+
+      | p is cancelable            | p is canceled      | p is canceled      |
+      | p' = wrap_in_cancelable p  | p' is canceled     | p' is canceled     |
+      +----------------------------+--------------------+--------------------+
+      | p is not cancelable        | p is not canceled  | p is not canceled  |
+      | p' = wrap_in_cancelable p  | p' is not canceled | p' is canceled     |
+      +----------------------------+--------------------+--------------------+
+    ]} *)
 
 (** {2 Convenience} *)
 
@@ -1283,41 +1223,39 @@ val map : ('a -> 'b) -> 'a t -> 'b t
     This function is more convenient that {!Lwt.bind} when [f] inherently does
     not return a promise. An example is [Stdlib.int_of_string]:
 
-{[
-let read_int : unit -> int Lwt.t = fun () ->
-  Lwt.map
-    int_of_string
-    Lwt_io.(read_line stdin)
+    {[
+      let read_int : unit -> int Lwt.t =
+       fun () -> Lwt.map int_of_string Lwt_io.(read_line stdin)
 
-let () =
-  Lwt_main.run begin
-    let%lwt number = read_int () in
-    Lwt_io.printf "%i\n" number
-  end
+      let () =
+        Lwt_main.run
+          (let%lwt number = read_int () in
+           Lwt_io.printf "%i\n" number)
 
-(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+    ]}
 
     By comparison, the {!Lwt.bind} version is more awkward:
 
-{[
-let read_int : unit -> int Lwt.t = fun () ->
-  Lwt.bind
-    Lwt_io.(read_line stdin)
-    (fun line -> Lwt.return (int_of_string line))
-]}
+    {[
+      let read_int : unit -> int Lwt.t =
+       fun () ->
+        Lwt.bind
+          Lwt_io.(read_line stdin)
+          (fun line -> Lwt.return (int_of_string line))
+    ]}
 
     As with {!Lwt.bind}, sequences of calls to [Lwt.map] result in excessive
     indentation and parentheses. The recommended syntactic sugar for avoiding
-    this is the {{: #VAL(>|=)} [>|=]} operator, which comes from module
+    this is the {{:#VAL(>|=)} [>|=]} operator, which comes from module
     [Lwt.Infix]:
 
-{[
-open Lwt.Infix
+    {[
+      open Lwt.Infix
 
-let read_int : unit -> int Lwt.t = fun () ->
-  Lwt_io.(read_line stdin) >|= int_of_string
-]}
+      let read_int : unit -> int Lwt.t =
+       fun () -> Lwt_io.(read_line stdin) >|= int_of_string
+    ]}
 
     The detailed operation follows. For consistency with the promises in
     {!Lwt.bind}, the {e two} promises involved are named [p_1] and [p_3]:
@@ -1340,7 +1278,7 @@ let read_int : unit -> int Lwt.t = fun () ->
     - If [f v] raises exception [exn], [p_3] is rejected with [exn]. *)
 
 val on_success : 'a t -> ('a -> unit) -> unit
-(** [Lwt.on_success p f] makes it so that [f] will run when [p] is {{: #TYPEt}
+(** [Lwt.on_success p f] makes it so that [f] will run when [p] is {{:#TYPEt}
     {e fulfilled}}.
 
     It is similar to {!Lwt.bind}, except no new promises are created. [f] is a
@@ -1350,7 +1288,7 @@ val on_success : 'a t -> ('a -> unit) -> unit
     By default, this will terminate the process. *)
 
 val on_failure : _ t -> (exn -> unit) -> unit
-(** [Lwt.on_failure p f] makes it so that [f] will run when [p] is {{: #TYPEt}
+(** [Lwt.on_failure p f] makes it so that [f] will run when [p] is {{:#TYPEt}
     {e rejected}}.
 
     It is similar to {!Lwt.catch}, except no new promises are created.
@@ -1360,7 +1298,7 @@ val on_failure : _ t -> (exn -> unit) -> unit
 
 val on_termination : _ t -> (unit -> unit) -> unit
 (** [Lwt.on_termination p f] makes it so that [f] will run when [p] is
-    {{: #TYPEt} {e resolved}} – that is, fulfilled {e or} rejected.
+    {{:#TYPEt} {e resolved}} – that is, fulfilled {e or} rejected.
 
     It is similar to {!Lwt.finalize}, except no new promises are created.
 
@@ -1370,86 +1308,77 @@ val on_termination : _ t -> (unit -> unit) -> unit
 val on_any : 'a t -> ('a -> unit) -> (exn -> unit) -> unit
 (** [Lwt.on_any p f g] makes it so that:
 
-    - [f] will run when [p] is {{: #TYPEt} {e fulfilled}},
-    - [g] will run when [p] is, alternatively, {{: #TYPEt} {e rejected}}.
+    - [f] will run when [p] is {{:#TYPEt} {e fulfilled}},
+    - [g] will run when [p] is, alternatively, {{:#TYPEt} {e rejected}}.
 
     It is similar to {!Lwt.try_bind}, except no new promises are created.
 
     If [f] or [g] raise an exception, the exception is passed to
-    [!]{!Lwt.async_exception_hook}. By default, this will terminate the
-    process. *)
-
-
+    [!]{!Lwt.async_exception_hook}. By default, this will terminate the process. *)
 
 (** {3 Infix operators} *)
 
-(** This module provides several infix operators for making programming with
-    Lwt more convenient.
+(** This module provides several infix operators for making programming with Lwt
+    more convenient.
 
     To use it, open [Lwt.Infix].
 
     Of the operators declared in this module, only [>|=] is recommended for new
     code. The only other commonly-used operator is [>>=]. *)
-module Infix :
-sig
-  val (>>=) : 'a t -> ('a -> 'b t) -> 'b t
+module Infix : sig
+  val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
   (** [p >>= f] is the same as {!Lwt.bind}[ p f]. It requires [Lwt.Infix] to be
       opened in scope:
 
-{[
-open Lwt.Infix
+      {[
+        open Lwt.Infix
 
-let () =
-  Lwt_main.run
-    (Lwt_io.(read_line stdin) >>= Lwt_io.printl)
+        let () = Lwt_main.run (Lwt_io.(read_line stdin) >>= Lwt_io.printl)
 
-(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
-]}
+        (* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+      ]}
 
       It is recommended to use the PPX [let%lwt] syntax instead. This operator
-      is the next-best choice. It is frequently found while reading existing
-      Lwt code. *)
+      is the next-best choice. It is frequently found while reading existing Lwt
+      code. *)
 
-  val (>|=) : 'a t -> ('a -> 'b) -> 'b t
+  val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
   (** [p >|= f] is the same as {!Lwt.map}[ f p]. It requires [Lwt.Infix] to be
       opened in scope.
 
-{[
-open Lwt.Infix
+      {[
+        open Lwt.Infix
 
-let () =
-  Lwt_main.run
-    (Lwt_io.(read_line stdin) >|= ignore)
+        let () = Lwt_main.run (Lwt_io.(read_line stdin) >|= ignore)
 
-(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
-]} *)
+        (* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+      ]} *)
 
-  val (<&>) : unit t -> unit t -> unit t
-  (** [p1 <&> p2] is the same as {!Lwt.join}[ [p1; p2]]. It requires [Lwt.Infix]
-      to be opened in scope.
+  val ( <&> ) : unit t -> unit t -> unit t
+  (** [p1 <&> p2] is the same as {!Lwt.join}[ \[p1; p2\]]. It requires
+      [Lwt.Infix] to be opened in scope.
 
       Unlike with {!Lwt.bind} and {!Lwt.map}, there are no problems with
       explicit {!Lwt.join} syntax, so using this operator is not recommended. *)
 
-  val (<?>) : 'a t -> 'a t -> 'a t
-  (** [p1 <?> p2] is the same as {!Lwt.choose}[ [p1; p2]]. It requires
+  val ( <?> ) : 'a t -> 'a t -> 'a t
+  (** [p1 <?> p2] is the same as {!Lwt.choose}[ \[p1; p2\]]. It requires
       [Lwt.Infix] to be opened in scope.
 
       Unlike with {!Lwt.bind} and {!Lwt.join}, there are no problems with
-      explicit {!Lwt.choose} syntax, so using this operator is not
-      recommended.
+      explicit {!Lwt.choose} syntax, so using this operator is not recommended.
 
       Furthermore, most users actually need {!Lwt.pick} instead of
       {!Lwt.choose}. *)
 
-  val (=<<) : ('a -> 'b t) -> 'a t -> 'b t
+  val ( =<< ) : ('a -> 'b t) -> 'a t -> 'b t
   (** [f =<< p] is the same as {!Lwt.bind}[ p f]. It requires [Lwt.Infix] to be
       opened in scope.
 
       This operator is obscure and its use is discouraged. It is the same as
       [p >>= f]. *)
 
-  val (=|<) : ('a -> 'b) -> 'a t -> 'b t
+  val ( =|< ) : ('a -> 'b) -> 'a t -> 'b t
   (** [f =|< p] is the same as {!Lwt.map}[ f p]. It requires [Lwt.Infix] to be
       opened in scope.
 
@@ -1460,8 +1389,7 @@ let () =
       ppx_let}.
 
       @since 4.2.0 *)
-  module Let_syntax :
-  sig
+  module Let_syntax : sig
     val return : 'a -> 'a t
     (** See {!Lwt.return}. *)
 
@@ -1474,16 +1402,12 @@ let () =
     val both : 'a t -> 'b t -> ('a * 'b) t
     (** See {!Lwt.both}. *)
 
-    module Open_on_rhs :
-    sig
-    end
+    module Open_on_rhs : sig end
   end
 end
 
-module Let_syntax :
-sig
-  module Let_syntax :
-  sig
+module Let_syntax : sig
+  module Let_syntax : sig
     val return : 'a -> 'a t
     (** See {!Lwt.return}. *)
 
@@ -1496,34 +1420,28 @@ sig
     val both : 'a t -> 'b t -> ('a * 'b) t
     (** See {!Lwt.both}. *)
 
-    module Open_on_rhs :
-    sig
-    end
+    module Open_on_rhs : sig end
   end
 end
 
 (** {3 Let syntax} *)
-module Syntax :
-sig
-
+module Syntax : sig
   (** {1 Monadic syntax} *)
 
-  val (let*) : 'a t -> ('a -> 'b t) -> 'b t
+  val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
   (** Syntax for {!bind}. *)
 
-  val (and*) : 'a t -> 'b t -> ('a * 'b) t
+  val ( and* ) : 'a t -> 'b t -> ('a * 'b) t
   (** Syntax for {!both}. *)
 
   (** {1 Applicative syntax} *)
 
-  val (let+) : 'a t -> ('a -> 'b) -> 'b t
+  val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
   (** Syntax for {!map}. *)
 
-  val (and+) : 'a t -> 'b t -> ('a * 'b) t
+  val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
   (** Syntax for {!both}. *)
 end
-
-
 
 (** {3 Pre-allocated promises} *)
 
@@ -1544,52 +1462,47 @@ val return_unit : unit t
     pre-allocated promise, automatically, wherever {!Lwt.return}[ ()] is
     written. *)
 
-val return_none : (_ option) t
-(** [Lwt.return_none] is like {!Lwt.return_unit}, but for
-    {!Lwt.return}[ None]. *)
+val return_none : _ option t
+(** [Lwt.return_none] is like {!Lwt.return_unit}, but for {!Lwt.return}[ None]. *)
 
-val return_nil : (_ list) t
-(** [Lwt.return_nil] is like {!Lwt.return_unit}, but for {!Lwt.return}[ []]. *)
+val return_nil : _ list t
+(** [Lwt.return_nil] is like {!Lwt.return_unit}, but for {!Lwt.return}[ \[\]]. *)
 
 val return_true : bool t
-(** [Lwt.return_true] is like {!Lwt.return_unit}, but for
-    {!Lwt.return}[ true]. *)
+(** [Lwt.return_true] is like {!Lwt.return_unit}, but for {!Lwt.return}[ true]. *)
 
 val return_false : bool t
 (** [Lwt.return_false] is like {!Lwt.return_unit}, but for
     {!Lwt.return}[ false]. *)
 
-
-
 (** {3 Result type} *)
 
 type +'a result = ('a, exn) Result.result
-(** Representation of the content of a resolved promise of type
-    ['a ]{!Lwt.t}.
+(** Representation of the content of a resolved promise of type ['a ]{!Lwt.t}.
 
     This type is effectively
 
-{[
-type +'a Lwt.result =
-  | Ok of 'a
-  | Error of exn
-]}
+    {[
+      type +'a Lwt.result =
+        | Ok of 'a
+        | Error of exn
+    ]}
 
     or, on OCaml 4.02:
 
-{[
-type +'a Lwt.result =
-  | Result.Ok of 'a
-  | Result.Error of exn
-]}
+    {[
+      type +'a Lwt.result =
+        | Result.Ok of 'a
+        | Result.Error of exn
+    ]}
 
     A resolved promise of type ['a ]{!Lwt.t} is either fulfilled with a value of
     type ['a], or rejected with an exception.
 
     This corresponds to the cases of a
-    [('a, exn)]{{: https://ocaml.org/api/Stdlib.html#TYPEresult}[Stdlib.result]}:
-    fulfilled corresponds to [Ok of 'a], and rejected corresponds to
-    [Error of exn].
+    [('a, exn)]{{:https://ocaml.org/api/Stdlib.html#TYPEresult}
+    [Stdlib.result]}: fulfilled corresponds to [Ok of 'a], and rejected
+    corresponds to [Error of exn].
 
     It's important to note that this type constructor, [Lwt.result], is
     different from [Stdlib.result]. It is a specialization of [Stdlib.result] so
@@ -1623,30 +1536,23 @@ val wakeup_later_result : 'a u -> 'a result -> unit
     - If [result] is [Error exn], [p] is rejected with [exn].
 
     If [p] is not pending, [Lwt.wakeup_later_result] raises
-    [Stdlib.Invalid_argument _], except if [p] is {{: #VALcancel} canceled}. If
+    [Stdlib.Invalid_argument _], except if [p] is {{:#VALcancel} canceled}. If
     [p] is canceled, [Lwt.wakeup_later_result] has no effect. *)
-
-
 
 (** {3 State query} *)
 
-type 'a state =
-  | Return of 'a
-  | Fail of exn
-  | Sleep
+type 'a state = Return of 'a | Fail of exn | Sleep
 
 val state : 'a t -> 'a state
 (** [Lwt.state p] evaluates to the current state of promise [p]:
 
-    - If [p] is {{: #TYPEt} fulfilled} with value [v], the result is
+    - If [p] is {{:#TYPEt} fulfilled} with value [v], the result is
       [Lwt.Return v].
-    - If [p] is {{: #TYPEt} rejected} with exception [exn], the result is
+    - If [p] is {{:#TYPEt} rejected} with exception [exn], the result is
       [Lwt.Fail exn].
-    - If [p] is {{: #TYPEt} pending}, the result is [Lwt.Sleep].
+    - If [p] is {{:#TYPEt} pending}, the result is [Lwt.Sleep].
 
     The constructor names are historical holdovers. *)
-
-
 
 (** {2 Deprecated} *)
 
@@ -1688,26 +1594,22 @@ val with_value : 'a key -> 'a option -> (unit -> 'b) -> 'b
     Lwt maintains a single, global map, that can be used to “pass” extra
     arguments to callbacks:
 
-{[
-let () =
-  let k : string Lwt.key = Lwt.new_key () in
+    {[
+      let () =
+        let k : string Lwt.key = Lwt.new_key () in
 
-  let say_hello () =
-    match Lwt.get k with
-    | None -> assert false
-    | Some s -> Lwt_io.printl s
-  in
+        let say_hello () =
+          match Lwt.get k with
+          | None -> assert false
+          | Some s -> Lwt_io.printl s
+        in
 
-  Lwt_main.run begin
-    Lwt.with_value k (Some "Hello world!") begin fun () ->
-      Lwt.bind
-        (Lwt_unix.sleep 1.)
-        (fun () -> say_hello ())
-    end
-  end
+        Lwt_main.run
+          (Lwt.with_value k (Some "Hello world!") (fun () ->
+               Lwt.bind (Lwt_unix.sleep 1.) (fun () -> say_hello ())))
 
-(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+    ]}
 
     Note that the string [Hello world!] was passed to [say_hello] through the
     key [k]. Meanwhile, the only {e explicit} argument of the callback
@@ -1754,8 +1656,6 @@ let () =
     [Lwt.with_value] should only be called in the main thread, i.e. do not call
     it inside {!Lwt_preemptive.detach}. *)
 
-
-
 (** {3 Immediate resolving} *)
 
 val wakeup : 'a u -> 'a -> unit
@@ -1777,14 +1677,12 @@ val wakeup : 'a u -> 'a -> unit
     {!Lwt_condition}, and/or {!Lwt_mvar}. *)
 
 val wakeup_exn : _ u -> exn -> unit
-(** [Lwt.wakeup_exn r exn] is like {!Lwt.wakeup_later_exn}[ r exn], but has
-    the same problems as {!Lwt.wakeup}. *)
+(** [Lwt.wakeup_exn r exn] is like {!Lwt.wakeup_later_exn}[ r exn], but has the
+    same problems as {!Lwt.wakeup}. *)
 
 val wakeup_result : 'a u -> 'a result -> unit
 (** [Lwt.wakeup_result r result] is like {!Lwt.wakeup_later_result}[ r result],
     but has the same problems as {!Lwt.wakeup}. *)
-
-
 
 (** {3 Helpers for resolving} *)
 
@@ -1792,10 +1690,9 @@ val make_value : 'a -> 'a result
   [@@ocaml.deprecated
     " Use Result.Ok, which is the same as Ok since OCaml 4.03."]
 (** [Lwt.make_value v] is equivalent to
-    {{: https://ocaml.org/api/Stdlib.html#TYPEresult}
-    [Ok v]} since OCaml 4.03. If you need compatibility with OCaml 4.02, use
-    [Result.Ok] and depend on opam package
-    {{: https://opam.ocaml.org/packages/result/} [result]}.
+    {{:https://ocaml.org/api/Stdlib.html#TYPEresult} [Ok v]} since OCaml 4.03.
+    If you need compatibility with OCaml 4.02, use [Result.Ok] and depend on
+    opam package {{:https://opam.ocaml.org/packages/result/} [result]}.
 
     @deprecated Use [Result.Ok] instead *)
 
@@ -1803,60 +1700,57 @@ val make_error : exn -> _ result
   [@@ocaml.deprecated
     " Use Result.Error, which is the same as Error since OCaml 4.03."]
 (** [Lwt.make_error exn] is equivalent to
-    {{: https://ocaml.org/api/Stdlib.html#TYPEresult}
-    [Error exn]} since OCaml 4.03. If you need compatibility with OCaml 4.02,
-    use [Result.Error] and depend on opam package
-    {{: https://opam.ocaml.org/packages/result/} [result]}.
+    {{:https://ocaml.org/api/Stdlib.html#TYPEresult} [Error exn]} since OCaml
+    4.03. If you need compatibility with OCaml 4.02, use [Result.Error] and
+    depend on opam package {{:https://opam.ocaml.org/packages/result/}
+    [result]}.
 
     @deprecated Use [Result.Error] instead. *)
 
 val waiter_of_wakener : 'a u -> 'a t
   [@@ocaml.deprecated
-" This function should be avoided, because it makes subtyping of resolvers
- unsound. See
-  https://github.com/ocsigen/lwt/issues/458"]
+    " This function should be avoided, because it makes subtyping of resolvers\n\
+    \ unsound. See\n\
+    \  https://github.com/ocsigen/lwt/issues/458"]
 (** [Lwt.waiter_of_wakener r] evaluates to the promise associated with resolver
     [r].
 
     @deprecated Keep the reference to the promise instead. *)
 
-
-
 (** {3 Linked lists of promises} *)
 
 [@@@ocaml.warning "-3"]
 
-val add_task_r : ('a u) Lwt_sequence.t -> 'a t
+val add_task_r : 'a u Lwt_sequence.t -> 'a t
   [@@ocaml.deprecated
-" Deprecated because Lwt_sequence is an implementation detail of Lwt. See
-  https://github.com/ocsigen/lwt/issues/361"]
+    " Deprecated because Lwt_sequence is an implementation detail of Lwt. See\n\
+    \  https://github.com/ocsigen/lwt/issues/361"]
 (** [Lwt.add_task_r sequence] is equivalent to
 
-{[
-let p, r = Lwt.task () in
-let node = Lwt_sequence.add_r r sequence in
-Lwt.on_cancel p (fun () -> Lwt_sequence.remove node);
-p
-]}
+    {[
+      let p, r = Lwt.task () in
+      let node = Lwt_sequence.add_r r sequence in
+      Lwt.on_cancel p (fun () -> Lwt_sequence.remove node);
+      p
+    ]}
+    @deprecated
+      Use of this function is discouraged for two
+      reasons:
 
-    @deprecated Use of this function is discouraged for two reasons:
+      - {!Lwt_sequence} should not be used outside Lwt.
+      - This function only exists because it performs a minor internal
+        optimization, which may be removed. *)
 
-    - {!Lwt_sequence} should not be used outside Lwt.
-    - This function only exists because it performs a minor internal
-      optimization, which may be removed. *)
-
-val add_task_l : ('a u) Lwt_sequence.t -> 'a t
+val add_task_l : 'a u Lwt_sequence.t -> 'a t
   [@@ocaml.deprecated
-" Deprecated because Lwt_sequence is an implementation detail of Lwt. See
-  https://github.com/ocsigen/lwt/issues/361"]
+    " Deprecated because Lwt_sequence is an implementation detail of Lwt. See\n\
+    \  https://github.com/ocsigen/lwt/issues/361"]
 (** Like {!Lwt.add_task_r}, but the equivalent code calls {!Lwt_sequence.add_l}
     instead.
 
     @deprecated See [add_task_r]. *)
 
 [@@@ocaml.warning "+3"]
-
-
 
 (** {3 Yielding} *)
 
@@ -1871,39 +1765,35 @@ val pause : unit -> unit t
     For example, to break up a long-running computation, allowing I/O to be
     handled between chunks:
 
-{[
-let () =
-  let rec handle_io () =
-    let%lwt () = Lwt_io.printl "Handling I/O" in
-    let%lwt () = Lwt_unix.sleep 0.1 in
-    handle_io ()
-  in
+    {[
+      let () =
+        let rec handle_io () =
+          let%lwt () = Lwt_io.printl "Handling I/O" in
+          let%lwt () = Lwt_unix.sleep 0.1 in
+          handle_io ()
+        in
 
-  let rec compute n =
-    if n = 0 then
-      Lwt.return ()
-    else
-      let%lwt () =
-        if n mod 1_000_000 = 0 then
-          Lwt.pause ()
-        else
-          Lwt.return ()
-      in
-      compute (n - 1)
-  in
+        let rec compute n =
+          if n = 0 then Lwt.return ()
+          else
+            let%lwt () =
+              if n mod 1_000_000 = 0 then Lwt.pause () else Lwt.return ()
+            in
+            compute (n - 1)
+        in
 
-  Lwt.async handle_io;
-  Lwt_main.run (compute 100_000_000)
+        Lwt.async handle_io;
+        Lwt_main.run (compute 100_000_000)
 
-(* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
-]}
+      (* ocamlfind opt -linkpkg -thread -package lwt_ppx,lwt.unix code.ml && ./a.out *)
+    ]}
 
-  If you replace the call to [Lwt.pause] by [Lwt.return] in the program above,
-  ["Handling I/O"] is printed only once. With [Lwt.pause], it is printed several
-  times, depending on the speed of your machine.
+    If you replace the call to [Lwt.pause] by [Lwt.return] in the program above,
+    ["Handling I/O"] is printed only once. With [Lwt.pause], it is printed
+    several times, depending on the speed of your machine.
 
-  An alternative way to handle long-running computations is to detach them to
-  preemptive threads using {!Lwt_preemptive}. *)
+    An alternative way to handle long-running computations is to detach them to
+    preemptive threads using {!Lwt_preemptive}. *)
 
 (**/**)
 
@@ -1932,13 +1822,12 @@ val register_pause_notifier : (int -> unit) -> unit
 
 val abandon_paused : unit -> unit
 (** Causes promises created with {!Lwt.pause} to remain forever pending. See
-    {!Lwt_main.abandon_yielded_and_paused} before {!Lwt_main.yield} is phased out.
+    {!Lwt_main.abandon_yielded_and_paused} before {!Lwt_main.yield} is phased
+    out.
 
     This function is intended for internal use by Lwt. *)
 
 (**/**)
-
-
 
 (** {3 Function lifters} *)
 
@@ -1947,37 +1836,43 @@ val wrap : (unit -> 'a) -> 'a t
     returns {!Lwt.return}[ v]. If [f ()] raises an exception exn, [Lwt.wrap]
     returns {!Lwt.fail}[ exn]. *)
 
-val wrap1 :
-  ('a -> 'b) ->
-    ('a -> 'b t)
-val wrap2 :
-  ('a -> 'b -> 'c) ->
-    ('a -> 'b -> 'c t)
-val wrap3 :
-  ('a -> 'b -> 'c -> 'd) ->
-    ('a -> 'b -> 'c -> 'd t)
-val wrap4 :
-  ('a -> 'b -> 'c -> 'd -> 'e) ->
-    ('a -> 'b -> 'c -> 'd -> 'e t)
+val wrap1 : ('a -> 'b) -> 'a -> 'b t
+val wrap2 : ('a -> 'b -> 'c) -> 'a -> 'b -> 'c t
+val wrap3 : ('a -> 'b -> 'c -> 'd) -> 'a -> 'b -> 'c -> 'd t
+val wrap4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a -> 'b -> 'c -> 'd -> 'e t
+
 val wrap5 :
-  ('a -> 'b -> 'c -> 'd -> 'e -> 'f) ->
-    ('a -> 'b -> 'c -> 'd -> 'e -> 'f t)
+  ('a -> 'b -> 'c -> 'd -> 'e -> 'f) -> 'a -> 'b -> 'c -> 'd -> 'e -> 'f t
+
 val wrap6 :
   ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g) ->
-    ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g t)
+  'a ->
+  'b ->
+  'c ->
+  'd ->
+  'e ->
+  'f ->
+  'g t
+
 val wrap7 :
   ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h) ->
-    ('a -> 'b -> 'c -> 'd -> 'e -> 'f -> 'g -> 'h t)
+  'a ->
+  'b ->
+  'c ->
+  'd ->
+  'e ->
+  'f ->
+  'g ->
+  'h t
 (** As a “prototype,” [Lwt_wrap1 f] creates a promise-valued function [g]:
 
-{[
-let g v =
-  try
-    let v' = f v in
-    Lwt.return v'
-  with exn ->
-    Lwt.fail exn
-]}
+    {[
+      let g v =
+        try
+          let v' = f v in
+          Lwt.return v'
+        with exn -> Lwt.fail exn
+    ]}
 
     The remainder of the functions work analogously – they just work on [f] with
     larger numbers of arguments.
@@ -1989,22 +1884,20 @@ let g v =
     To get a suspended function instead of the eager execution of {!Lwt.wrap},
     use [Lwt.wrap1]. *)
 
-
-
 (** {3 Trivial promises} *)
 
-val return_some : 'a -> ('a option) t
+val return_some : 'a -> 'a option t
 (** Counterpart to {!Lwt.return_none}. However, unlike {!Lwt.return_none}, this
-    function performs no {{: #VALreturn_unit} optimization}. This is because it
+    function performs no {{:#VALreturn_unit} optimization}. This is because it
     takes an argument, so it cannot be evaluated at initialization time, at
     which time the argument is not yet available. *)
 
-val return_ok : 'a -> (('a, _) Result.result) t
+val return_ok : 'a -> ('a, _) Result.result t
 (** Like {!Lwt.return_some}, this function performs no optimization.
 
     @since Lwt 2.6.0 *)
 
-val return_error : 'e -> ((_, 'e) Result.result) t
+val return_error : 'e -> (_, 'e) Result.result t
 (** Like {!Lwt.return_some}, this function performs no optimization.
 
     @since Lwt 2.6.0 *)
@@ -2012,9 +1905,7 @@ val return_error : 'e -> ((_, 'e) Result.result) t
 val fail_with : string -> _ t
 (** [Lwt.fail_with s] is an abbreviation for
 
-{[
-Lwt.fail (Stdlib.Failure s)
-]}
+    {[ Lwt.fail (Stdlib.Failure s) ]}
 
     In most cases, it is better to use [failwith s] from the standard library.
     See {!Lwt.fail} for an explanation. *)
@@ -2022,28 +1913,23 @@ Lwt.fail (Stdlib.Failure s)
 val fail_invalid_arg : string -> _ t
 (** [Lwt.invalid_arg s] is an abbreviation for
 
-{[
-Lwt.fail (Stdlib.Invalid_argument s)
-]}
+    {[ Lwt.fail (Stdlib.Invalid_argument s) ]}
 
     In most cases, it is better to use [invalid_arg s] from the standard
     library. See {!Lwt.fail} for an explanation. *)
 
-
-
 (** {3 Unscoped infix operators} *)
 
-val (>>=) : 'a t -> ('a -> 'b t) -> 'b t
-val (>|=) : 'a t -> ('a -> 'b) -> 'b t
-val (<?>) : 'a t -> 'a t -> 'a t
-val (<&>) : unit t -> unit t -> unit t
-val (=<<) : ('a -> 'b t) -> 'a t -> 'b t
-val (=|<) : ('a -> 'b) -> 'a t -> 'b t
-(** Use the operators in module {{: #MODULEInfix} [Lwt.Infix]} instead. Using
+val ( >>= ) : 'a t -> ('a -> 'b t) -> 'b t
+val ( >|= ) : 'a t -> ('a -> 'b) -> 'b t
+val ( <?> ) : 'a t -> 'a t -> 'a t
+val ( <&> ) : unit t -> unit t -> unit t
+val ( =<< ) : ('a -> 'b t) -> 'a t -> 'b t
+
+val ( =|< ) : ('a -> 'b) -> 'a t -> 'b t
+(** Use the operators in module {{:#MODULEInfix} [Lwt.Infix]} instead. Using
     these instances of the operators directly requires opening module [Lwt],
     which brings an excessive number of other names into scope. *)
-
-
 
 (** {3 Miscellaneous} *)
 
@@ -2070,22 +1956,18 @@ val ignore_result : _ t -> unit
       resolved, completing any associated side effects along the way. In fact,
       the function that does {e that} is ordinary {!Lwt.bind}. *)
 
-
-
 (**/**)
 
 val poll : 'a t -> 'a option
 val apply : ('a -> 'b t) -> 'a -> 'b t
+val backtrace_bind : (exn -> exn) -> 'a t -> ('a -> 'b t) -> 'b t
+val backtrace_catch : (exn -> exn) -> (unit -> 'a t) -> (exn -> 'a t) -> 'a t
 
-val backtrace_bind :
-  (exn -> exn) -> 'a t -> ('a -> 'b t) -> 'b t
-val backtrace_catch :
-  (exn -> exn) -> (unit -> 'a t) -> (exn -> 'a t) -> 'a t
 val backtrace_finalize :
   (exn -> exn) -> (unit -> 'a t) -> (unit -> unit t) -> 'a t
+
 val backtrace_try_bind :
   (exn -> exn) -> (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
 
 val abandon_wakeups : unit -> unit
-
 val debug_state_is : 'a state -> 'a t -> bool t

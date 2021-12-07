@@ -1,8 +1,6 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
-
-
 (** Rate limiters.
 
     A rate limiter allows generating sets of promises that will be resolved in
@@ -20,9 +18,10 @@ module type S = sig
   (** Creates a rate limiter.
 
       @param rate Maximum number of promise resolutions per second, per channel.
-      @param max Maximum number of pending promises allowed at once, over all
-        channels.
-      @param n Initial size of the internal channel hash table. This should be
+      @param max
+        Maximum number of pending promises allowed at once, over all channels.
+      @param n
+        Initial size of the internal channel hash table. This should be
         approximately the number of different channels that will be used. *)
 
   val wait : t -> key -> bool Lwt.t

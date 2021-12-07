@@ -35,61 +35,58 @@
    [Lwt_sequence] that can be referred to by the rest of the code in this
    module without triggering any more warnings. *)
 [@@@ocaml.warning "-3"]
+
 module Lwt_sequence = Lwt_sequence
+
 [@@@ocaml.warning "+3"]
 
 type 'a t = {
-  mutable mvar_contents : 'a option;
-  (* Current contents *)
-
+  mutable mvar_contents : 'a option; (* Current contents *)
   writers : ('a * unit Lwt.u) Lwt_sequence.t;
   (* Threads waiting to put a value *)
-
-  readers : 'a Lwt.u Lwt_sequence.t;
-  (* Threads waiting for a value *)
+  readers : 'a Lwt.u Lwt_sequence.t; (* Threads waiting for a value *)
 }
 
 let create_empty () =
-  { mvar_contents = None;
+  {
+    mvar_contents = None;
     writers = Lwt_sequence.create ();
-    readers = Lwt_sequence.create () }
+    readers = Lwt_sequence.create ();
+  }
 
 let create v =
-  { mvar_contents = Some v;
+  {
+    mvar_contents = Some v;
     writers = Lwt_sequence.create ();
-    readers = Lwt_sequence.create () }
+    readers = Lwt_sequence.create ();
+  }
 
 let put mvar v =
   match mvar.mvar_contents with
   | None ->
-    begin match Lwt_sequence.take_opt_l mvar.readers with
-      | None ->
-        mvar.mvar_contents <- Some v
-      | Some w ->
-        Lwt.wakeup_later w v
-    end;
-    Lwt.return_unit
+      (match Lwt_sequence.take_opt_l mvar.readers with
+      | None -> mvar.mvar_contents <- Some v
+      | Some w -> Lwt.wakeup_later w v);
+      Lwt.return_unit
   | Some _ ->
-    let (res, w) = Lwt.task () in
-    let node = Lwt_sequence.add_r (v, w) mvar.writers in
-    Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
-    res
+      let res, w = Lwt.task () in
+      let node = Lwt_sequence.add_r (v, w) mvar.writers in
+      Lwt.on_cancel res (fun _ -> Lwt_sequence.remove node);
+      res
 
 let next_writer mvar =
   match Lwt_sequence.take_opt_l mvar.writers with
-  | Some(v', w) ->
-    mvar.mvar_contents <- Some v';
-    Lwt.wakeup_later w ()
-  | None ->
-    mvar.mvar_contents <- None
+  | Some (v', w) ->
+      mvar.mvar_contents <- Some v';
+      Lwt.wakeup_later w ()
+  | None -> mvar.mvar_contents <- None
 
 let take_available mvar =
   match mvar.mvar_contents with
   | Some v ->
-    next_writer mvar;
-    Some v
-  | None ->
-    None
+      next_writer mvar;
+      Some v
+  | None -> None
 
 let take mvar =
   match take_available mvar with
@@ -97,6 +94,4 @@ let take mvar =
   | None -> (Lwt.add_task_r [@ocaml.warning "-3"]) mvar.readers
 
 let is_empty mvar =
-  match mvar.mvar_contents with
-  | Some _ -> false
-  | None -> true
+  match mvar.mvar_contents with Some _ -> false | None -> true

@@ -1,277 +1,229 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
-
-
 open Test
 open Lwt.Infix
 
 (* Note: due to the time delays in the tests of this suite, it could really
    benefit from an option to run tests in parallel. *)
 
-let suite = suite "Lwt_timeout" [
-  test "basic" begin fun () ->
-    let p, r = Lwt.wait () in
+let suite =
+  suite "Lwt_timeout"
+    [
+      test "basic" (fun () ->
+          let p, r = Lwt.wait () in
 
-    let start_time = Unix.gettimeofday () in
+          let start_time = Unix.gettimeofday () in
 
-    let timeout =
-      Lwt_timeout.create 1 (fun () ->
-        let delta = Unix.gettimeofday () -. start_time in
-        Lwt.wakeup_later r delta)
-    in
-    Lwt_timeout.start timeout;
+          let timeout =
+            Lwt_timeout.create 1 (fun () ->
+                let delta = Unix.gettimeofday () -. start_time in
+                Lwt.wakeup_later r delta)
+          in
+          Lwt_timeout.start timeout;
 
-    p >|= fun delta ->
-    instrument (delta >= 2. && delta < 3.)
-      "Lwt_timeout: basic: %f %f" start_time delta
-    (* The above is a bug of the current implementation: it always gives too
-       long a timeout. *)
-  end;
+          p >|= fun delta ->
+          instrument
+            (delta >= 2. && delta < 3.)
+            "Lwt_timeout: basic: %f %f" start_time delta
+          (* The above is a bug of the current implementation: it always gives too
+             long a timeout. *));
+      test "not started" (fun () ->
+          let p, r = Lwt.wait () in
 
-  test "not started" begin fun () ->
-    let p, r = Lwt.wait () in
+          Lwt_timeout.create 1 (fun () -> Lwt.wakeup_later r false) |> ignore;
 
-    Lwt_timeout.create 1 (fun () ->
-      Lwt.wakeup_later r false)
-    |> ignore;
+          Lwt.async (fun () ->
+              Lwt_unix.sleep 3. >|= fun () -> Lwt.wakeup_later r true);
 
-    Lwt.async (fun () ->
-      Lwt_unix.sleep 3. >|= fun () ->
-      Lwt.wakeup_later r true);
+          p);
+      test "double start" (fun () ->
+          let completions = ref 0 in
 
-    p
-  end;
+          let timeout =
+            Lwt_timeout.create 1 (fun () -> completions := !completions + 1)
+          in
+          Lwt_timeout.start timeout;
+          Lwt_timeout.start timeout;
 
-  test "double start" begin fun () ->
-    let completions = ref 0 in
+          Lwt_unix.sleep 3. >|= fun () ->
+          instrument (!completions = 1) "Lwt_timeout: double start: %i"
+            !completions);
+      test "restart" (fun () ->
+          let p, r = Lwt.wait () in
 
-    let timeout =
-      Lwt_timeout.create 1 (fun () ->
-        completions := !completions + 1)
-    in
-    Lwt_timeout.start timeout;
-    Lwt_timeout.start timeout;
+          let completions = ref 0 in
 
-    Lwt_unix.sleep 3. >|= fun () ->
-    instrument (!completions = 1) "Lwt_timeout: double start: %i" !completions
-  end;
+          (* A dummy timeout, just to set up the reference. *)
+          let timeout = ref (Lwt_timeout.create 1 ignore) in
 
-  test "restart" begin fun () ->
-    let p, r = Lwt.wait () in
+          timeout :=
+            Lwt_timeout.create 1 (fun () ->
+                completions := !completions + 1;
+                if !completions < 2 then Lwt_timeout.start !timeout
+                else Lwt.wakeup_later r true);
+          Lwt_timeout.start !timeout;
 
-    let completions = ref 0 in
+          p);
+      test "stop" (fun () ->
+          let p, r = Lwt.wait () in
 
-    (* A dummy timeout, just to set up the reference. *)
-    let timeout = ref (Lwt_timeout.create 1 ignore) in
+          let timeout =
+            Lwt_timeout.create 1 (fun () -> Lwt.wakeup_later r false)
+          in
+          Lwt_timeout.start timeout;
+          Lwt_timeout.stop timeout;
 
-    timeout :=
-      Lwt_timeout.create 1 (fun () ->
-        completions := !completions + 1;
-        if !completions < 2 then
-          Lwt_timeout.start !timeout
-        else
-          Lwt.wakeup_later r true);
-    Lwt_timeout.start !timeout;
+          Lwt.async (fun () ->
+              Lwt_unix.sleep 3. >|= fun () -> Lwt.wakeup_later r true);
 
-    p
-  end;
+          p);
+      test "stop when not stopped" (fun () ->
+          Lwt_timeout.create 1 ignore |> Lwt_timeout.stop;
 
-  test "stop" begin fun () ->
-    let p, r = Lwt.wait () in
+          Lwt.return true);
+      test "invalid delay" (fun () ->
+          try
+            ignore (Lwt_timeout.create 0 ignore);
+            Lwt.return false
+          with Invalid_argument _ -> Lwt.return true);
+      test "change" (fun () ->
+          let p, r = Lwt.wait () in
 
-    let timeout =
-      Lwt_timeout.create 1 (fun () ->
-        Lwt.wakeup_later r false)
-    in
-    Lwt_timeout.start timeout;
-    Lwt_timeout.stop timeout;
+          let start_time = Unix.gettimeofday () in
 
-    Lwt.async (fun () ->
-      Lwt_unix.sleep 3. >|= fun () ->
-      Lwt.wakeup_later r true);
+          let timeout =
+            Lwt_timeout.create 5 (fun () ->
+                let delta = Unix.gettimeofday () -. start_time in
+                Lwt.wakeup_later r delta)
+          in
+          Lwt_timeout.change timeout 1;
+          Lwt_timeout.start timeout;
 
-    p
-  end;
+          p >|= fun delta ->
+          instrument
+            (delta >= 1.9 && delta < 3.1)
+            "Lwt_timeout: change: %f %f" start_time delta);
+      test "change does not start" (fun () ->
+          let p, r = Lwt.wait () in
 
-  test "stop when not stopped" begin fun () ->
-    Lwt_timeout.create 1 ignore
-    |> Lwt_timeout.stop;
+          let timeout =
+            Lwt_timeout.create 1 (fun () -> Lwt.wakeup_later r false)
+          in
+          Lwt_timeout.change timeout 1;
 
-    Lwt.return true
-  end;
+          Lwt.async (fun () ->
+              Lwt_unix.sleep 3. >|= fun () -> Lwt.wakeup_later r true);
 
-  test "invalid delay" begin fun () ->
-    try
-      ignore (Lwt_timeout.create 0 ignore);
-      Lwt.return false
-    with Invalid_argument _ ->
-      Lwt.return true
-  end;
+          p);
+      test "change after start" (fun () ->
+          let p, r = Lwt.wait () in
 
-  test "change" begin fun () ->
-    let p, r = Lwt.wait () in
+          let start_time = Unix.gettimeofday () in
 
-    let start_time = Unix.gettimeofday () in
+          let timeout =
+            Lwt_timeout.create 5 (fun () ->
+                let delta = Unix.gettimeofday () -. start_time in
+                Lwt.wakeup_later r delta)
+          in
+          Lwt_timeout.start timeout;
+          Lwt_timeout.change timeout 1;
 
-    let timeout =
-      Lwt_timeout.create 5 (fun () ->
-        let delta = Unix.gettimeofday () -. start_time in
-        Lwt.wakeup_later r delta)
-    in
-    Lwt_timeout.change timeout 1;
-    Lwt_timeout.start timeout;
+          p >|= fun delta ->
+          instrument
+            (delta >= 1.9 && delta < 3.1)
+            "Lwt_timeout: change after start: %f %f" start_time delta);
+      test "change: invalid delay" (fun () ->
+          let timeout = Lwt_timeout.create 1 ignore in
+          try
+            Lwt_timeout.change timeout 0;
+            Lwt.return false
+          with Invalid_argument _ -> Lwt.return true);
+      test ~sequential:true "exception in action" (fun () ->
+          let p, r = Lwt.wait () in
 
-    p >|= fun delta ->
-    instrument (delta >= 1.9 && delta < 3.1)
-      "Lwt_timeout: change: %f %f" start_time delta
-  end;
+          Test.with_async_exception_hook
+            (fun exn ->
+              match exn with Exit -> Lwt.wakeup_later r true | _ -> raise exn)
+            (fun () ->
+              Lwt_timeout.create 1 (fun () -> raise Exit) |> Lwt_timeout.start;
 
-  test "change does not start" begin fun () ->
-    let p, r = Lwt.wait () in
+              p));
+      test "set_exn_handler" (fun () ->
+          let p, r = Lwt.wait () in
 
-    let timeout =
-      Lwt_timeout.create 1 (fun () ->
-        Lwt.wakeup_later r false)
-    in
-    Lwt_timeout.change timeout 1;
+          Lwt_timeout.set_exn_handler (fun exn ->
+              match exn with Exit -> Lwt.wakeup_later r true | _ -> raise exn);
 
-    Lwt.async (fun () ->
-      Lwt_unix.sleep 3. >|= fun () ->
-      Lwt.wakeup_later r true);
+          Lwt_timeout.create 1 (fun () -> raise Exit) |> Lwt_timeout.start;
 
-    p
-  end;
+          p >|= fun result ->
+          Lwt_timeout.set_exn_handler (fun exn -> !Lwt.async_exception_hook exn);
+          result);
+      test "two" (fun () ->
+          let p1, r1 = Lwt.wait () in
+          let p2, r2 = Lwt.wait () in
 
-  test "change after start" begin fun () ->
-    let p, r = Lwt.wait () in
+          let start_time = Unix.gettimeofday () in
 
-    let start_time = Unix.gettimeofday () in
+          Lwt_timeout.create 1 (fun () ->
+              let delta = Unix.gettimeofday () -. start_time in
+              Lwt.wakeup r1 delta)
+          |> Lwt_timeout.start;
 
-    let timeout =
-      Lwt_timeout.create 5 (fun () ->
-        let delta = Unix.gettimeofday () -. start_time in
-        Lwt.wakeup_later r delta)
-    in
-    Lwt_timeout.start timeout;
-    Lwt_timeout.change timeout 1;
+          Lwt_timeout.create 2 (fun () ->
+              let delta = Unix.gettimeofday () -. start_time in
+              Lwt.wakeup r2 delta)
+          |> Lwt_timeout.start;
 
-    p >|= fun delta ->
-    instrument (delta >= 1.9 && delta < 3.1)
-      "Lwt_timeout: change after start: %f %f" start_time delta
-  end;
+          p1 >>= fun delta1 ->
+          p2 >|= fun delta2 ->
+          instrument
+            (delta1 >= 1.9 && delta1 < 3. && delta2 >= 2.9 && delta2 < 4.)
+            "Lwt_timeout: two: %f %f %f" start_time delta1 delta2);
+      test "simultaneous" (fun () ->
+          let p1, r1 = Lwt.wait () in
+          let p2, r2 = Lwt.wait () in
 
-  test "change: invalid delay" begin fun () ->
-    let timeout = (Lwt_timeout.create 1 ignore) in
-    try
-      Lwt_timeout.change timeout 0;
-      Lwt.return false
-    with Invalid_argument _ ->
-      Lwt.return true
-  end;
+          let start_time = Unix.gettimeofday () in
 
-  test ~sequential:true "exception in action" begin fun () ->
-    let p, r = Lwt.wait () in
+          Lwt_timeout.create 1 (fun () ->
+              let delta = Unix.gettimeofday () -. start_time in
+              Lwt.wakeup r1 delta)
+          |> Lwt_timeout.start;
 
-    Test.with_async_exception_hook
-      (fun exn ->
-        match exn with
-        | Exit -> Lwt.wakeup_later r true
-        | _ -> raise exn)
-      (fun () ->
-        Lwt_timeout.create 1 (fun () -> raise Exit)
-        |> Lwt_timeout.start;
+          Lwt_timeout.create 1 (fun () ->
+              let delta = Unix.gettimeofday () -. start_time in
+              Lwt.wakeup r2 delta)
+          |> Lwt_timeout.start;
 
-        p)
-  end;
+          p1 >>= fun delta1 ->
+          p2 >|= fun delta2 ->
+          instrument
+            (delta1 >= 1. && delta1 < 2.6 && delta2 >= 1. && delta2 < 2.6)
+            "Lwt_timeout: simultaneous: %f %f %f" start_time delta1 delta2);
+      test "two, first stopped" (fun () ->
+          let p1, r1 = Lwt.wait () in
+          let p2, r2 = Lwt.wait () in
 
-  test "set_exn_handler" begin fun () ->
-    let p, r = Lwt.wait () in
+          let start_time = Unix.gettimeofday () in
 
-    Lwt_timeout.set_exn_handler (fun exn ->
-      match exn with
-      | Exit -> Lwt.wakeup_later r true
-      | _ -> raise exn);
+          let timeout1 = Lwt_timeout.create 1 (fun () -> Lwt.wakeup r1 false) in
+          Lwt_timeout.start timeout1;
 
-    Lwt_timeout.create 1 (fun () -> raise Exit)
-    |> Lwt_timeout.start;
+          Lwt_timeout.create 2 (fun () ->
+              let delta = Unix.gettimeofday () -. start_time in
+              Lwt.wakeup r2 delta)
+          |> Lwt_timeout.start;
 
-    p >|= fun result ->
-    Lwt_timeout.set_exn_handler (fun exn ->
-      !Lwt.async_exception_hook exn);
-    result
-  end;
+          Lwt_timeout.stop timeout1;
+          Lwt.async (fun () ->
+              Lwt_unix.sleep 3. >|= fun () -> Lwt.wakeup r1 true);
 
-  test "two" begin fun () ->
-    let p1, r1 = Lwt.wait () in
-    let p2, r2 = Lwt.wait () in
-
-    let start_time = Unix.gettimeofday () in
-
-    Lwt_timeout.create 1 (fun () ->
-      let delta = Unix.gettimeofday () -. start_time in
-      Lwt.wakeup r1 delta)
-    |> Lwt_timeout.start;
-
-    Lwt_timeout.create 2 (fun () ->
-      let delta = Unix.gettimeofday () -. start_time in
-      Lwt.wakeup r2 delta)
-    |> Lwt_timeout.start;
-
-    p1 >>= fun delta1 ->
-    p2 >|= fun delta2 ->
-    instrument (delta1 >= 1.9 && delta1 < 3. && delta2 >= 2.9 && delta2 < 4.)
-      "Lwt_timeout: two: %f %f %f" start_time delta1 delta2
-  end;
-
-  test "simultaneous" begin fun () ->
-    let p1, r1 = Lwt.wait () in
-    let p2, r2 = Lwt.wait () in
-
-    let start_time = Unix.gettimeofday () in
-
-    Lwt_timeout.create 1 (fun () ->
-      let delta = Unix.gettimeofday () -. start_time in
-      Lwt.wakeup r1 delta)
-    |> Lwt_timeout.start;
-
-    Lwt_timeout.create 1 (fun () ->
-      let delta = Unix.gettimeofday () -. start_time in
-      Lwt.wakeup r2 delta)
-    |> Lwt_timeout.start;
-
-    p1 >>= fun delta1 ->
-    p2 >|= fun delta2 ->
-    instrument (delta1 >= 1. && delta1 < 2.6 && delta2 >= 1. && delta2 < 2.6)
-      "Lwt_timeout: simultaneous: %f %f %f" start_time delta1 delta2
-  end;
-
-  test "two, first stopped" begin fun () ->
-    let p1, r1 = Lwt.wait () in
-    let p2, r2 = Lwt.wait () in
-
-    let start_time = Unix.gettimeofday () in
-
-    let timeout1 =
-      Lwt_timeout.create 1 (fun () ->
-        Lwt.wakeup r1 false)
-    in
-    Lwt_timeout.start timeout1;
-
-    Lwt_timeout.create 2 (fun () ->
-      let delta = Unix.gettimeofday () -. start_time in
-      Lwt.wakeup r2 delta)
-    |> Lwt_timeout.start;
-
-    Lwt_timeout.stop timeout1;
-    Lwt.async (fun () ->
-      Lwt_unix.sleep 3. >|= fun () ->
-      Lwt.wakeup r1 true);
-
-    p1 >>= fun timeout1_not_fired ->
-    p2 >|= fun delta2 ->
-    instrument (timeout1_not_fired && delta2 >= 1.5 && delta2 < 3.5)
-      "Lwt_timeout: two, first stopped: %b %f %f"
-      timeout1_not_fired start_time delta2
-  end;
-]
+          p1 >>= fun timeout1_not_fired ->
+          p2 >|= fun delta2 ->
+          instrument
+            (timeout1_not_fired && delta2 >= 1.5 && delta2 < 3.5)
+            "Lwt_timeout: two, first stopped: %b %f %f" timeout1_not_fired
+            start_time delta2);
+    ]

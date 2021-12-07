@@ -1,2 +1,1 @@
-let () =
-  Lwt_preemptive.simple_init |> ignore
+let () = Lwt_preemptive.simple_init |> ignore

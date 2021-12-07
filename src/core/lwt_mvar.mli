@@ -32,28 +32,25 @@
     communication between concurrent threads. *)
 
 type 'a t
-  (** The type of a mailbox variable. Mailbox variables are used to
-      communicate values between threads in a synchronous way. The
-      type parameter specifies the type of the value propagated from
-      [put] to [take]. *)
+(** The type of a mailbox variable. Mailbox variables are used to communicate
+    values between threads in a synchronous way. The type parameter specifies
+    the type of the value propagated from [put] to [take]. *)
 
 val create : 'a -> 'a t
-  (** [create v] creates a new mailbox variable containing value [v]. *)
+(** [create v] creates a new mailbox variable containing value [v]. *)
 
 val create_empty : unit -> 'a t
-  (** [create ()] creates a new empty mailbox variable. *)
+(** [create ()] creates a new empty mailbox variable. *)
 
 val put : 'a t -> 'a -> unit Lwt.t
-  (** [put mvar value] puts a value into a mailbox variable. This
-      value will remain in the mailbox until [take] is called to
-      remove it. If the mailbox is not empty, the current thread will
-      block until it is emptied. *)
+(** [put mvar value] puts a value into a mailbox variable. This value will
+    remain in the mailbox until [take] is called to remove it. If the mailbox is
+    not empty, the current thread will block until it is emptied. *)
 
 val take : 'a t -> 'a Lwt.t
-  (** [take mvar] will take any currently available value from the
-      mailbox variable. If no value is currently available, the
-      current thread will block, awaiting a value to be [put] by
-      another thread. *)
+(** [take mvar] will take any currently available value from the mailbox
+    variable. If no value is currently available, the current thread will block,
+    awaiting a value to be [put] by another thread. *)
 
 val take_available : 'a t -> 'a option
 (** [take_available mvar] immediately takes the value from [mvar] without

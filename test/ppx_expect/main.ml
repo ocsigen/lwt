@@ -1,6 +1,6 @@
 let test_directory = "cases"
 let package_directory = "../../../install/default/lib"
-let (//) = Filename.concat
+let ( // ) = Filename.concat
 
 let _read_file name =
   let buffer = Buffer.create 4096 in
@@ -8,14 +8,15 @@ let _read_file name =
 
   try
     let rec read () =
-      try input_char channel |> Buffer.add_char buffer; read ()
+      try
+        input_char channel |> Buffer.add_char buffer;
+        read ()
       with End_of_file -> ()
     in
     read ();
     close_in channel;
 
     Buffer.contents buffer
-
   with exn ->
     close_in_noerr channel;
     raise exn
@@ -40,21 +41,22 @@ let diff reference result =
   match status with
   | 0 -> ()
   | 1 ->
-    let _ : int =_run_int (command ^ " > delta") in
-    let delta = _read_file "delta" in
-    Printf.eprintf "> %s:\n\n%s" command delta;
-    failwith "Output does not match expected"
+      let (_ : int) = _run_int (command ^ " > delta") in
+      let delta = _read_file "delta" in
+      Printf.eprintf "> %s:\n\n%s" command delta;
+      failwith "Output does not match expected"
   | _ -> _command_failed command ~status
 
 let run_test name =
-  let ml_name = test_directory // name ^ ".ml" in
-  let expect_name = test_directory // name ^ ".expect" in
-  let fixed_name = test_directory // name ^ ".fixed" in
+  let ml_name = (test_directory // name) ^ ".ml" in
+  let expect_name = (test_directory // name) ^ ".expect" in
+  let fixed_name = (test_directory // name) ^ ".fixed" in
   let command =
     Printf.sprintf
       "%s %s ocamlfind c %s -linkpkg -thread -package %s %s > %s 2>&1"
-      ("OCAMLPATH=" ^ package_directory) "OCAML_ERROR_STYLE=short"
-      "-color=never" "lwt.unix,lwt_ppx" ml_name fixed_name
+      ("OCAMLPATH=" ^ package_directory)
+      "OCAML_ERROR_STYLE=short" "-color=never" "lwt.unix,lwt_ppx" ml_name
+      fixed_name
   in
   ignore (_run_int command);
   diff expect_name fixed_name
@@ -67,17 +69,19 @@ let () =
     |> List.map Filename.chop_extension
   in
   let only_if () =
-    Sys.cygwin = false && Sys.win32 = false &&
-    (* 4.02.3 prints file paths differently *)
-    Scanf.sscanf Sys.ocaml_version "%u.%u"
-      (fun major minor -> (major, minor) >= (4, 4))
+    Sys.cygwin = false
+    && Sys.win32 = false
+    && (* 4.02.3 prints file paths differently *)
+    Scanf.sscanf Sys.ocaml_version "%u.%u" (fun major minor ->
+        (major, minor) >= (4, 4))
   in
-  let suite = Test.suite "ppx_expect" (
-    List.map (fun test_case ->
-      Test.test_direct test_case ~only_if (fun () ->
-        run_test test_case;
-        true
-      )
-    ) test_cases)
+  let suite =
+    Test.suite "ppx_expect"
+      (List.map
+         (fun test_case ->
+           Test.test_direct test_case ~only_if (fun () ->
+               run_test test_case;
+               true))
+         test_cases)
   in
-  Test.run "ppx_expect" [suite]
+  Test.run "ppx_expect" [ suite ]

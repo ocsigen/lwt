@@ -1,2 +1,1 @@
-let () =
-  Lwt.return () |> ignore
+let () = Lwt.return () |> ignore

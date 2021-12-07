@@ -1,4 +1,1 @@
-let _ =
-  try%lwt
-    Lwt.return ()
-  with _ -> 5;;
+let _ = try%lwt Lwt.return () with _ -> 5
