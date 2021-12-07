@@ -1,2 +1,1 @@
-let () =
-  Lwt_unix.stdout |> ignore
+let () = Lwt_unix.stdout |> ignore

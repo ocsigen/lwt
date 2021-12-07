@@ -1,15 +1,15 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
-
-
 (* [Lwt_sequence] is deprecated – we don't want users outside Lwt using it.
    However, it is still used internally by Lwt. So, briefly disable warning 3
    ("deprecated"), and create a local, non-deprecated alias for
    [Lwt_sequence] that can be referred to by the rest of the code in this
    module without triggering any more warnings. *)
 [@@@ocaml.warning "-3"]
+
 module Lwt_sequence = Lwt_sequence
+
 [@@@ocaml.warning "+3"]
 
 open Lwt.Infix
@@ -26,9 +26,7 @@ let max_threads : int ref = ref 0
 
 (* Size of the waiting queue: *)
 let max_thread_queued = ref 1000
-
-let get_max_number_of_threads_queued _ =
-  !max_thread_queued
+let get_max_number_of_threads_queued _ = !max_thread_queued
 
 let set_max_number_of_threads_queued n =
   if n < 0 then invalid_arg "Lwt_preemptive.set_max_number_of_threads_queued";
@@ -41,20 +39,14 @@ let threads_count = ref 0
    | Preemptive threads management                                   |
    +-----------------------------------------------------------------+ *)
 
-module CELL :
-sig
+module CELL : sig
   type 'a t
 
   val make : unit -> 'a t
   val get : 'a t -> 'a
   val set : 'a t -> 'a -> unit
-end =
-struct
-  type 'a t = {
-    m  : Mutex.t;
-    cv : Condition.t;
-    mutable cell : 'a option;
-  }
+end = struct
+  type 'a t = { m : Mutex.t; cv : Condition.t; mutable cell : 'a option }
 
   let make () = { m = Mutex.create (); cv = Condition.create (); cell = None }
 
@@ -62,12 +54,12 @@ struct
     let rec await_value t =
       match t.cell with
       | None ->
-        Condition.wait t.cv t.m;
-        await_value t
+          Condition.wait t.cv t.m;
+          await_value t
       | Some v ->
-        t.cell <- None;
-        Mutex.unlock t.m;
-        v
+          t.cell <- None;
+          Mutex.unlock t.m;
+          v
     in
     Mutex.lock t.m;
     await_value t
@@ -80,16 +72,13 @@ struct
 end
 
 type thread = {
-  task_cell: (int * (unit -> unit)) CELL.t;
+  task_cell : (int * (unit -> unit)) CELL.t;
   (* Channel used to communicate notification id and tasks to the
      worker thread. *)
-
-  mutable thread : Thread.t;
-  (* The worker thread. *)
-
+  mutable thread : Thread.t; (* The worker thread. *)
   mutable reuse : bool;
-  (* Whether the thread must be re-added to the pool when the work is
-     done. *)
+      (* Whether the thread must be re-added to the pool when the work is
+         done. *)
 }
 
 (* Pool of worker threads: *)
@@ -112,30 +101,23 @@ let rec worker_loop worker =
 (* create a new worker: *)
 let make_worker () =
   incr threads_count;
-  let worker = {
-    task_cell = CELL.make ();
-    thread = Thread.self ();
-    reuse = true;
-  } in
+  let worker =
+    { task_cell = CELL.make (); thread = Thread.self (); reuse = true }
+  in
   worker.thread <- Thread.create worker_loop worker;
   worker
 
 (* Add a worker to the pool: *)
 let add_worker worker =
   match Lwt_sequence.take_opt_l waiters with
-  | None ->
-    Queue.add worker workers
-  | Some w ->
-    Lwt.wakeup w worker
+  | None -> Queue.add worker workers
+  | Some w -> Lwt.wakeup w worker
 
 (* Wait for worker to be available, then return it: *)
 let get_worker () =
-  if not (Queue.is_empty workers) then
-    Lwt.return (Queue.take workers)
-  else if !threads_count < !max_threads then
-    Lwt.return (make_worker ())
-  else
-    (Lwt.add_task_r [@ocaml.warning "-3"]) waiters
+  if not (Queue.is_empty workers) then Lwt.return (Queue.take workers)
+  else if !threads_count < !max_threads then Lwt.return (make_worker ())
+  else (Lwt.add_task_r [@ocaml.warning "-3"]) waiters
 
 (* +-----------------------------------------------------------------+
    | Initialisation, and dynamic parameters reset                    |
@@ -160,10 +142,9 @@ let init min max _errlog =
   set_bounds (min, max)
 
 let simple_init () =
-  if not !initialized then begin
+  if not !initialized then (
     initialized := true;
-    set_bounds (0, 4)
-  end
+    set_bounds (0, 4))
 
 let nbthreads () = !threads_count
 let nbthreadsqueued () = Lwt_sequence.fold_l (fun _ x -> x + 1) waiters 0
@@ -180,33 +161,29 @@ let detach f args =
   let result = ref init_result in
   (* The task for the worker thread: *)
   let task () =
-    try
-      result := Result.Ok (f args)
-    with exn ->
-      result := Result.Error exn
+    try result := Result.Ok (f args) with exn -> result := Result.Error exn
   in
   get_worker () >>= fun worker ->
   let waiter, wakener = Lwt.wait () in
   let id =
-    Lwt_unix.make_notification ~once:true
-      (fun () -> Lwt.wakeup_result wakener !result)
+    Lwt_unix.make_notification ~once:true (fun () ->
+        Lwt.wakeup_result wakener !result)
   in
   Lwt.finalize
     (fun () ->
-       (* Send the id and the task to the worker: *)
-       CELL.set worker.task_cell (id, task);
-       waiter)
+      (* Send the id and the task to the worker: *)
+      CELL.set worker.task_cell (id, task);
+      waiter)
     (fun () ->
-       if worker.reuse then
-         (* Put back the worker to the pool: *)
-         add_worker worker
-       else begin
-         decr threads_count;
-         (* Or wait for the thread to terminates, to free its associated
-            resources: *)
-         Thread.join worker.thread
-       end;
-       Lwt.return_unit)
+      if worker.reuse then
+        (* Put back the worker to the pool: *)
+        add_worker worker
+      else (
+        decr threads_count;
+        (* Or wait for the thread to terminates, to free its associated
+           resources: *)
+        Thread.join worker.thread);
+      Lwt.return_unit)
 
 (* +-----------------------------------------------------------------+
    | Running Lwt threads in the main thread                          |
@@ -219,14 +196,13 @@ let jobs = Queue.create ()
 let jobs_mutex = Mutex.create ()
 
 let job_notification =
-  Lwt_unix.make_notification
-    (fun () ->
-       (* Take the first job. The queue is never empty at this
-          point. *)
-       Mutex.lock jobs_mutex;
-       let thunk = Queue.take jobs in
-       Mutex.unlock jobs_mutex;
-       ignore (thunk ()))
+  Lwt_unix.make_notification (fun () ->
+      (* Take the first job. The queue is never empty at this
+         point. *)
+      Mutex.lock jobs_mutex;
+      let thunk = Queue.take jobs in
+      Mutex.unlock jobs_mutex;
+      ignore (thunk ()))
 
 (* There is a potential performance issue from creating a cell every time this
    function is called. See:
@@ -240,7 +216,8 @@ let run_in_main f =
     (* Execute [f] and wait for its result. *)
     Lwt.try_bind f
       (fun ret -> Lwt.return (Result.Ok ret))
-      (fun exn -> Lwt.return (Result.Error exn)) >>= fun result ->
+      (fun exn -> Lwt.return (Result.Error exn))
+    >>= fun result ->
     (* Send the result. *)
     CELL.set cell result;
     Lwt.return_unit

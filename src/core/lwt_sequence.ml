@@ -1,14 +1,9 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
-
-
 exception Empty
 
-type 'a t = {
-  mutable prev : 'a t;
-  mutable next : 'a t;
-}
+type 'a t = { mutable prev : 'a t; mutable next : 'a t }
 
 type 'a node = {
   node_prev : 'a t;
@@ -24,19 +19,15 @@ external node_of_seq : 'a t -> 'a node = "%identity"
    | Operations on nodes                                             |
    +-----------------------------------------------------------------+ *)
 
-let get node =
-  node.node_data
-
-let set node data =
-  node.node_data <- data
+let get node = node.node_data
+let set node data = node.node_data <- data
 
 let remove node =
-  if node.node_active then begin
+  if node.node_active then (
     node.node_active <- false;
     let seq = seq_of_node node in
     seq.prev.next <- seq.next;
-    seq.next.prev <- seq.prev
-  end
+    seq.next.prev <- seq.prev)
 
 (* +-----------------------------------------------------------------+
    | Operations on sequences                                         |
@@ -54,60 +45,66 @@ let is_empty seq = seq.next == seq
 
 let length seq =
   let rec loop curr len =
-    if curr == seq then
-      len
+    if curr == seq then len
     else
-      let node = node_of_seq curr in loop node.node_next (len + 1)
+      let node = node_of_seq curr in
+      loop node.node_next (len + 1)
   in
   loop seq.next 0
 
 let add_l data seq =
-  let node = { node_prev = seq; node_next = seq.next; node_data = data; node_active = true } in
+  let node =
+    {
+      node_prev = seq;
+      node_next = seq.next;
+      node_data = data;
+      node_active = true;
+    }
+  in
   seq.next.prev <- seq_of_node node;
   seq.next <- seq_of_node node;
   node
 
 let add_r data seq =
-  let node = { node_prev = seq.prev; node_next = seq; node_data = data; node_active = true } in
+  let node =
+    {
+      node_prev = seq.prev;
+      node_next = seq;
+      node_data = data;
+      node_active = true;
+    }
+  in
   seq.prev.next <- seq_of_node node;
   seq.prev <- seq_of_node node;
   node
 
 let take_l seq =
-  if is_empty seq then
-    raise Empty
-  else begin
+  if is_empty seq then raise Empty
+  else
     let node = node_of_seq seq.next in
     remove node;
     node.node_data
-  end
 
 let take_r seq =
-  if is_empty seq then
-    raise Empty
-  else begin
+  if is_empty seq then raise Empty
+  else
     let node = node_of_seq seq.prev in
     remove node;
     node.node_data
-  end
 
 let take_opt_l seq =
-  if is_empty seq then
-    None
-  else begin
+  if is_empty seq then None
+  else
     let node = node_of_seq seq.next in
     remove node;
     Some node.node_data
-  end
 
 let take_opt_r seq =
-  if is_empty seq then
-    None
-  else begin
+  if is_empty seq then None
+  else
     let node = node_of_seq seq.prev in
     remove node;
     Some node.node_data
-  end
 
 let transfer_l s1 s2 =
   s2.next.prev <- s1.prev;
@@ -127,67 +124,57 @@ let transfer_r s1 s2 =
 
 let iter_l f seq =
   let rec loop curr =
-    if curr != seq then begin
+    if curr != seq then (
       let node = node_of_seq curr in
       if node.node_active then f node.node_data;
-      loop node.node_next
-    end
+      loop node.node_next)
   in
   loop seq.next
 
 let iter_r f seq =
   let rec loop curr =
-    if curr != seq then begin
+    if curr != seq then (
       let node = node_of_seq curr in
       if node.node_active then f node.node_data;
-      loop node.node_prev
-    end
+      loop node.node_prev)
   in
   loop seq.prev
 
 let iter_node_l f seq =
   let rec loop curr =
-    if curr != seq then begin
+    if curr != seq then (
       let node = node_of_seq curr in
       if node.node_active then f node;
-      loop node.node_next
-    end
+      loop node.node_next)
   in
   loop seq.next
 
 let iter_node_r f seq =
   let rec loop curr =
-    if curr != seq then begin
+    if curr != seq then (
       let node = node_of_seq curr in
       if node.node_active then f node;
-      loop node.node_prev
-    end
+      loop node.node_prev)
   in
   loop seq.prev
 
 let fold_l f seq acc =
   let rec loop curr acc =
-    if curr == seq then
-      acc
+    if curr == seq then acc
     else
       let node = node_of_seq curr in
-      if node.node_active then
-        loop node.node_next (f node.node_data acc)
-      else
-        loop node.node_next acc
+      if node.node_active then loop node.node_next (f node.node_data acc)
+      else loop node.node_next acc
   in
   loop seq.next acc
 
 let fold_r f seq acc =
   let rec loop curr acc =
-    if curr == seq then
-      acc
+    if curr == seq then acc
     else
       let node = node_of_seq curr in
-      if node.node_active then
-        loop node.node_prev (f node.node_data acc)
-      else
-        loop node.node_prev acc
+      if node.node_active then loop node.node_prev (f node.node_data acc)
+      else loop node.node_prev acc
   in
   loop seq.prev acc
 
@@ -196,14 +183,9 @@ let find_node_l f seq =
     if curr != seq then
       let node = node_of_seq curr in
       if node.node_active then
-        if f node.node_data then
-          node
-        else
-          loop node.node_next
-      else
-        loop node.node_next
-    else
-      raise Not_found
+        if f node.node_data then node else loop node.node_next
+      else loop node.node_next
+    else raise Not_found
   in
   loop seq.next
 
@@ -212,14 +194,9 @@ let find_node_r f seq =
     if curr != seq then
       let node = node_of_seq curr in
       if node.node_active then
-        if f node.node_data then
-          node
-        else
-          loop node.node_prev
-      else
-        loop node.node_prev
-    else
-      raise Not_found
+        if f node.node_data then node else loop node.node_prev
+      else loop node.node_prev
+    else raise Not_found
   in
   loop seq.prev
 

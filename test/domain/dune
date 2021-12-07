@@ -2,8 +2,8 @@
  (name main)
  (libraries lwt_domain lwttester tester))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package lwt_domain)
- (action (run %{exe:main.exe}))
-)
+ (action
+  (run %{exe:main.exe})))

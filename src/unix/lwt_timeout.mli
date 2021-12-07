@@ -1,8 +1,6 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
-
-
 (** Cancelable timeouts. *)
 
 type t
@@ -18,12 +16,11 @@ val start : t -> unit
 (** Starts the given timeout.
 
     Starting a timeout that has already been started has the same effect as
-    stopping it, and then restarting it with its original duration. So,
-    suppose you have [timeout] with a duration of three seconds, which was
-    started two seconds ago. The next call to its action is scheduled for one
-    second in the future. Calling [Lwt_timeout.start timeout] at this point
-    cancels this upcoming action call, and schedules a call three seconds from
-    now. *)
+    stopping it, and then restarting it with its original duration. So, suppose
+    you have [timeout] with a duration of three seconds, which was started two
+    seconds ago. The next call to its action is scheduled for one second in the
+    future. Calling [Lwt_timeout.start timeout] at this point cancels this
+    upcoming action call, and schedules a call three seconds from now. *)
 
 val stop : t -> unit
 (** Stops (cancels) the given timeout. *)

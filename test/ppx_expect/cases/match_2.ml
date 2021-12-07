@@ -1,6 +1,1 @@
-let _ =
-  match%lwt
-    ()
-  with
-  | () ->
-    Lwt.return ();;
+let _ = match%lwt () with () -> Lwt.return ()
