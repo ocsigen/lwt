@@ -2,9 +2,11 @@
  (name main)
  (libraries lwttester)
  (preprocess (future_syntax))
- (flags (:standard -w +A-40-42)))
+ (flags
+  (:standard -w +A-40-42)))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package lwt)
- (action (run %{exe:main.exe})))
+ (action
+  (run %{exe:main.exe})))
