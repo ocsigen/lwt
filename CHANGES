@@ -1,5 +1,9 @@
 ===== dev =====
 
+====== Additions ======
+
+  * In the Lwt_io module, add `?cloexec:bool` optional arguments to functions that create file descriptors (`pipe`). The `?cloexec` argument is simply forwarded to the wrapped Lwt_unix function. (#872, #911, Antonin Décimo)
+
 ====== Fixes ======
 
   * Fix win32_spawn leaking dev_null fd in the parent process. (#906, Antonin Décimo)

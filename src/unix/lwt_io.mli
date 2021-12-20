@@ -86,9 +86,10 @@ val null : output_channel
 
 (** {2 Channels creation/manipulation} *)
 
-val pipe : ?in_buffer : Lwt_bytes.t -> ?out_buffer : Lwt_bytes.t -> unit ->
+val pipe : ?cloexec : bool ->
+  ?in_buffer : Lwt_bytes.t -> ?out_buffer : Lwt_bytes.t -> unit ->
   input_channel * output_channel
-  (** [pipe ?in_buffer ?out_buffer ()] creates a pipe using
+  (** [pipe ?cloexec ?in_buffer ?out_buffer ()] creates a pipe using
       {!Lwt_unix.pipe} and makes two channels from the two returned file
       descriptors *)
 
