@@ -26,8 +26,6 @@ let abandon_yielded_and_paused () =
 
 let run p =
   let rec run_loop () =
-    (* Fulfill paused promises now. *)
-    Lwt.wakeup_paused ();
     match Lwt.poll p with
     | Some x ->
       x
@@ -40,7 +38,7 @@ let run p =
         Lwt.paused_count () = 0 && Lwt_sequence.is_empty yielded in
       Lwt_engine.iter should_block_waiting_for_io;
 
-      (* Fulfill paused promises again. *)
+      (* Fulfill paused promises. *)
       Lwt.wakeup_paused ();
 
       (* Fulfill yield promises. *)
