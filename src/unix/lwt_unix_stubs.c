@@ -1021,7 +1021,10 @@ static void *worker_loop(void *data) {
 /* Description of jobs. */
 struct custom_operations job_ops = {
     "lwt.unix.job",      custom_finalize_default,  custom_compare_default,
-    custom_hash_default, custom_serialize_default, custom_deserialize_default};
+    custom_hash_default, custom_serialize_default, custom_deserialize_default,
+    custom_compare_ext_default,
+    NULL
+};
 
 /* Get the job structure contained in a custom value. */
 #define Job_val(v) *(lwt_unix_job *)Data_custom_val(v)
