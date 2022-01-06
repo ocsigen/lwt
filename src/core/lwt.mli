@@ -1836,6 +1836,9 @@ val pause : unit -> unit t
     Putting the rest of your computation into a callback of [Lwt.pause ()]
     creates a “yield” that gives other callbacks a chance to run first.
 
+    To wait for one complete iteration of the main loop you need to wait for
+    [Lwt.pause () >>= Lwt.pause]
+
     For example, to break up a long-running computation, allowing I/O to be
     handled between chunks:
 
