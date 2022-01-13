@@ -26,4 +26,9 @@
 #define NANOSEC(buf, field) 0.0
 #endif
 
+#include <caml/version.h>
+#if OCAML_VERSION < 50000
+#define CAML_NAME_SPACE
+#endif
+
 #endif // #ifndef _LWT_CONFIG_H_

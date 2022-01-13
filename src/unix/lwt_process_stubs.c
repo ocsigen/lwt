@@ -3,14 +3,12 @@
 
 
 
-#include <lwt_config.h>
+#include "lwt_config.h"
 
 #if defined(LWT_ON_WINDOWS)
 
 #include <lwt_unix.h>
 
-#define CAML_NAME_SPACE
-#include <caml/version.h>
 #if OCAML_VERSION < 41300
 #define CAML_INTERNALS
 #endif
