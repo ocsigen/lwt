@@ -20,8 +20,8 @@
 
 static HANDLE get_handle(value opt) {
   value fd;
-  if (Is_block(opt)) {
-    fd = Field(opt, 0);
+  if (Is_some(opt)) {
+    fd = Some_val(opt);
     if (Descr_kind_val(fd) == KIND_SOCKET) {
       win32_maperr(ERROR_INVALID_HANDLE);
       uerror("CreateProcess", Nothing);
