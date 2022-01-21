@@ -8,6 +8,8 @@
 
   * Fix win32_spawn leaking dev_null fd in the parent process. (#906, Antonin Décimo)
   * Prefer SetHandleInformation to DuplicateHandle in set_close_on_exec for sockets. DuplicateHandle mustn't be used on sockets. (#907, Antonin Décimo)
+  * Lwt.pick and Lwt.choose select preferentially failed promises as per
+  documentation (#856, #874, Raman Varabets)
 
 ===== 5.5.0 =====
 
