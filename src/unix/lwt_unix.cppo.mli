@@ -49,7 +49,7 @@ val handle_unix_error : ('a -> 'b Lwt.t) -> 'a -> 'b Lwt.t
 
 val sleep : float -> unit Lwt.t
   (** [sleep d] is a promise that remains in a pending state for [d] seconds
-      and after which it is resolved with value [()]. *)
+      after which it is resolved with value [()]. *)
 
 val yield : unit -> unit Lwt.t [@@deprecated "Use Lwt.pause instead"]
   (** [yield ()] is a promise in a pending state. It resumes itself as soon as
@@ -75,7 +75,11 @@ exception Timeout
 
 val timeout : float -> 'a Lwt.t
   (** [timeout d] is a promise that remains pending for [d] seconds
-      and then is rejected with {!Timeout}. *)
+      and then is rejected with {!Timeout}.
+
+      @raise Timeout
+      The promise [timeout d] is rejected with {!Timeout} unless it is
+      cancelled. *)
 
 val with_timeout : float -> (unit -> 'a Lwt.t) -> 'a Lwt.t
   (** [with_timeout d f] is a short-hand for:
@@ -83,16 +87,16 @@ val with_timeout : float -> (unit -> 'a Lwt.t) -> 'a Lwt.t
       {[
         Lwt.pick [Lwt_unix.timeout d; f ()]
       ]}
-  *)
 
-(** {2 Operation on file-descriptors} *)
+      @raise Timeout 
+      The promise [with_timeout d f] raises {!Timeout} if the promise returned
+      by [f ()] takes more than [d] seconds to resolve. *)
+
+(** {2 Operations on file-descriptors} *)
 
 type file_descr
-  (** The abstract type for {b file descriptor}s. A Lwt {b file
-      descriptor} is a pair of a unix {b file descriptor} (of type
-      [Unix.file_descr]) and a {b state}.
-
-      A {b file descriptor} may be:
+  (** The abstract type for {b file descriptor}s. An Lwt {b file
+      descriptor} can be
 
       - {b opened}, in which case it is fully usable
       - {b closed} or {b aborted}, in which case it is no longer
@@ -110,20 +114,20 @@ type state =
           possible is {!close}, all others will fail. *)
 
 val state : file_descr -> state
-  (** [state fd] returns the state of [fd] *)
+  (** [state fd] returns the {!type:state} of [fd] *)
 
 val unix_file_descr : file_descr -> Unix.file_descr
   (** Returns the underlying unix {b file descriptor}. It always
       succeeds, even if the {b file descriptor}'s state is not
-      [Open]. *)
+      [Opened]. *)
 
 val of_unix_file_descr : ?blocking : bool -> ?set_flags : bool -> Unix.file_descr -> file_descr
-(** Wraps a [Unix] file descriptor [fd] in an [Lwt_unix.file_descr] [fd'].
+(** Wraps a [Unix] file descriptor [fd] in an Lwt {!type:file_descr} [fd'].
 
     [~blocking] controls the {e internal} strategy Lwt uses to perform I/O on
     the underlying [fd]. Regardless of [~blocking], at the API level,
     [Lwt_unix.read], [Lwt_unix.write], etc. on [fd'] {e always} block the Lwt
-    thread, but {e never} block the whole process. However, for performance
+    promise, but {e never} block the whole process. However, for performance
     reasons, it is important that [~blocking] match the actual blocking mode of
     [fd].
 
@@ -188,7 +192,7 @@ val abort : file_descr -> exn -> unit
 val fork : unit -> int
   (** [fork ()] does the same as [Unix.fork]. You must use this
       function instead of [Unix.fork] when you want to use Lwt in the
-      child process.
+      child process, even if you have not started using Lwt before the fork.
 
       Notes:
 
@@ -244,7 +248,7 @@ val wait4 : wait_flag list -> int -> (int * process_status * resource_usage) Lwt
       On windows it will always returns [{ utime = 0.0; stime = 0.0 }]. *)
 
 val wait_count : unit -> int
-  (** Returns the number of threads waiting for a child to
+  (** Returns the number of promises waiting for a child process to
       terminate. *)
 
 val system : string -> process_status Lwt.t
@@ -256,14 +260,13 @@ val system : string -> process_status Lwt.t
 (** {2 Basic file input/output} *)
 
 val stdin : file_descr
-  (** The standard {b file descriptor} for input. This one is usually
-      a terminal is the program is started from a terminal. *)
+  (** The {b file descriptor} for standard input. *)
 
 val stdout : file_descr
-  (** The standard {b file descriptor} for output *)
+  (** The {b file descriptor} for standard output. *)
 
 val stderr : file_descr
-  (** The standard {b file descriptor} for printing error messages *)
+  (** The {b file descriptor} for standard error. *)
 
 type file_perm = Unix.file_perm
 
@@ -297,20 +300,20 @@ val close : file_descr -> unit Lwt.t
 val read : file_descr -> bytes -> int -> int -> int Lwt.t
 (** [read fd buf ofs len] reads up to [len] bytes from [fd], and writes them to
     [buf], starting at offset [ofs]. The function immediately evaluates to an
-    Lwt thread, which waits for the operation to complete. If it completes
-    successfully, the thread indicates the number of bytes actually read, or
+    Lwt promise which waits for the operation to complete. If it completes
+    successfully, the promise resolves to the number of bytes actually read, or
     zero if the end of file has been reached.
 
-    Note that the Lwt thread waits for data (or end of file) even if the
+    Note that the Lwt promise waits for data (or end of file) even if the
     underlying file descriptor is in non-blocking mode. See
     {!of_unix_file_descr} for a discussion of non-blocking I/O and Lwt.
 
     If Lwt is using blocking I/O on [fd], [read] writes data into a temporary
     buffer, then copies it into [buf].
 
-    The thread can fail with any exception that can be raised by [Unix.read],
-    except [Unix.Unix_error Unix.EAGAIN], [Unix.Unix_error Unix.EWOULDBLOCK] or
-    [Unix.Unix_error Unix.EINTR]. *)
+    The promise can be rejected with any exception that can be raised by
+    [Unix.read], except [Unix.Unix_error Unix.EAGAIN],
+    [Unix.Unix_error Unix.EWOULDBLOCK] or [Unix.Unix_error Unix.EINTR]. *)
 
 val pread : file_descr -> bytes -> file_offset:int -> int -> int -> int Lwt.t
 (** [pread fd buf ~file_offset ofs len] on file descriptors allowing seek,
@@ -320,23 +323,23 @@ val pread : file_descr -> bytes -> file_offset:int -> int -> int -> int Lwt.t
     On Unix systems, the file descriptor position is unaffected. On Windows
     it is changed to be just after the last read position.
 
-    The thread can fail with any exception that can be raised by [read] or
-    [lseek]. *)
+    The promise can be rejected with any exception that can be raised by [read]
+    or [lseek]. *)
 
 val write : file_descr -> bytes -> int -> int -> int Lwt.t
 (** [write fd buf ofs len] writes up to [len] bytes to [fd] from [buf], starting
-    at buffer offset [ofs]. The function immediately evaluates to an Lwt thread,
+    at buffer offset [ofs]. The function immediately evaluates to an Lwt promise
     which waits for the operation to complete. If the operation completes
-    successfully, the thread indicates the number of bytes actually written,
+    successfully, the promise resolves to the number of bytes actually written,
     which may be less than [len].
 
-    Note that the Lwt thread waits to write even if the underlying file
+    Note that the Lwt promise waits to write even if the underlying file
     descriptor is in non-blocking mode. See {!of_unix_file_descr} for a
     discussion of non-blocking I/O and Lwt.
 
     If Lwt is using blocking I/O on [fd], [buf] is copied before writing.
 
-    The thread can fail with any exception that can be raised by
+    The promise can be rejected with any exception that can be raised by
     [Unix.single_write], except [Unix.Unix_error Unix.EAGAIN],
     [Unix.Unix_error Unix.EWOULDBLOCK] or [Unix.Unix_error Unix.EINTR]. *)
 
@@ -349,8 +352,8 @@ val pwrite : file_descr -> bytes -> file_offset:int -> int -> int -> int Lwt.t
     On Unix systems, the file descriptor position is unaffected. On Windows
     it is changed to be just after the last written position.
 
-    The thread can fail with any exception that can be raised by [write] or
-    [lseek]. *)
+    The promise can be rejected with any exception that can be raised by [write]
+    or [lseek]. *)
 
 val write_string : file_descr -> string -> int -> int -> int Lwt.t
   (** See {!write}. *)
@@ -413,15 +416,15 @@ end
 
 val readv : file_descr -> IO_vectors.t -> int Lwt.t
 (** [readv fd vs] reads bytes from [fd] into the buffer slices [vs]. If the
-    operation completes successfully, the resulting thread indicates the number
-    of bytes read.
+    operation completes successfully, the resulting promise resolves to the
+    number of bytes read.
 
     Data is always read directly into [Bigarray] slices. If the Unix file
     descriptor underlying [fd] is in non-blocking mode, data is also read
     directly into [bytes] slices. Otherwise, data for [bytes] slices is first
     read into temporary buffers, then copied.
 
-    Note that the returned Lwt thread is blocked until failure or a successful
+    Note that the returned Lwt promise is pending until failure or a successful
     read, even if the underlying file descriptor is in non-blocking mode. See
     {!of_unix_file_descr} for a discussion of non-blocking I/O and Lwt.
 
@@ -439,13 +442,13 @@ val readv : file_descr -> IO_vectors.t -> int Lwt.t
 val writev : file_descr -> IO_vectors.t -> int Lwt.t
 (** [writev fd vs] writes the bytes in the buffer slices [vs] to the file
     descriptor [fd]. If the operation completes successfully, the resulting
-    thread indicates the number of bytes written.
+    promise resolves to the number of bytes written.
 
     If the Unix file descriptor underlying [fd] is in non-blocking mode,
     [writev] does not make a copy the bytes before writing. Otherwise, it copies
     [bytes] slices, but not [Bigarray] slices.
 
-    Note that the returned Lwt thread is blocked until failure or a successful
+    Note that the returned Lwt promise is pending until failure or a successful
     write, even if the underlying descriptor is in non-blocking mode. See
     {!of_unix_file_descr} for a discussion of non-blocking I/O and Lwt.
 
@@ -475,7 +478,7 @@ val writable : file_descr -> bool
       writable. *)
 
 val wait_read : file_descr -> unit Lwt.t
-  (** Waits (without blocking other threads) until there is something
+  (** Waits (without blocking other promises) until there is something
       to read from the file descriptor.
 
       Note that you don't need to use this function if you are
@@ -486,7 +489,7 @@ val wait_read : file_descr -> unit Lwt.t
       existing libraries that are known to be blocking. *)
 
 val wait_write : file_descr -> unit Lwt.t
-  (** Waits (without blocking other threads) until it is possible to
+  (** Waits (without blocking other promises) until it is possible to
       write on the file descriptor.
 
       Note that you don't need to use this function if you are
@@ -911,8 +914,7 @@ val accept_n : ?cloexec:bool ->
                file_descr -> int -> ((file_descr * sockaddr) list * exn option) Lwt.t
   (** [accept_n fd count] accepts up to [count] connections at one time.
 
-      - if no connection is available right now, it returns a sleeping
-      thread
+      - if no connection is available right now, it returns a pending promise
 
       - if more than 1 and less than [count] are available, it returns
       all of them
@@ -1293,7 +1295,7 @@ type async_method =
           entire program. *)
   | Async_detach
       (** System calls are made in another system thread, thus without
-          blocking other Lwt threads. The drawback is that it may
+          blocking other Lwt promises. The drawback is that it may
           degrade performance in some cases.
 
           This is the default. *)
@@ -1399,7 +1401,7 @@ val wrap_syscall : io_event -> file_descr -> (unit -> 'a) -> 'a Lwt.t
       performed immediately without blocking, it is registered for
       later.
 
-      In the latter case, if the thread is canceled, [action] is
+      In the latter case, if the promise is canceled, [action] is
       removed from [set]. *)
 
 val check_descriptor : file_descr -> unit
