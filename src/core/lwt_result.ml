@@ -7,7 +7,7 @@
 
 open Result
 
-type (+'a, +'b) t = ('a, 'b) Result.result Lwt.t
+type (+'a, +'b) t = ('a, 'b) Result.t Lwt.t
 
 let return x = Lwt.return (Ok x)
 let fail e = Lwt.return (Error e)

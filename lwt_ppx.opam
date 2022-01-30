@@ -19,7 +19,7 @@ dev-repo: "git+https://github.com/ocsigen/lwt.git"
 depends: [
   "dune" {>= "1.8.0"}
   "lwt"
-  "ocaml" {>= "4.02.0"}
+  "ocaml" {>= "4.03.0"}
   "ppxlib" {>= "0.16.0"}
 ]
 

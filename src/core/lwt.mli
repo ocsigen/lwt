@@ -1563,7 +1563,7 @@ val return_false : bool t
 
 (** {3 Result type} *)
 
-type +'a result = ('a, exn) Result.result
+type +'a result = ('a, exn) Result.t
 (** Representation of the content of a resolved promise of type
     ['a ]{!Lwt.t}.
 
@@ -1999,12 +1999,12 @@ val return_some : 'a -> ('a option) t
     takes an argument, so it cannot be evaluated at initialization time, at
     which time the argument is not yet available. *)
 
-val return_ok : 'a -> (('a, _) Result.result) t
+val return_ok : 'a -> (('a, _) Result.t) t
 (** Like {!Lwt.return_some}, this function performs no optimization.
 
     @since Lwt 2.6.0 *)
 
-val return_error : 'e -> ((_, 'e) Result.result) t
+val return_error : 'e -> ((_, 'e) Result.t) t
 (** Like {!Lwt.return_some}, this function performs no optimization.
 
     @since Lwt 2.6.0 *)

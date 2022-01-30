@@ -26,7 +26,6 @@ depends: [
   "ocaml" {>= "4.03.0" & "os" != "win32 " | >= "4.06.0"}
   ("ocaml" {>= "4.08.0"} | "ocaml-syntax-shims")
   "ocplib-endian"
-  "result" {os != "win32"} # result is needed as long as Lwt supports OCaml 4.02.
   "seq" # seq is needed as long as Lwt supports OCaml < 4.07.0.
 
   # Until https://github.com/aantron/bisect_ppx/pull/327.
