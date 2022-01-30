@@ -1051,7 +1051,7 @@ type socket_int_option =
     Unix.socket_int_option =
   | SO_SNDBUF
   | SO_RCVBUF
-  | SO_ERROR
+  | SO_ERROR [@ocaml.deprecated "Use Unix.getsockopt_error instead."]
   | SO_TYPE
   | SO_RCVLOWAT
   | SO_SNDLOWAT
