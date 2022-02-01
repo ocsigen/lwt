@@ -31,13 +31,15 @@ val get_exn : ('a, exn) t -> 'a Lwt.t
 
 val map : ('a -> 'b) -> ('a,'e) t -> ('b,'e) t
 
-val map_err : ('e1 -> 'e2) -> ('a,'e1) t -> ('a,'e2) t
+val map_error : ('e1 -> 'e2) -> ('a,'e1) t -> ('a,'e2) t
+(** @since 5.6.0 *)
 
 val bind : ('a,'e) t -> ('a -> ('b,'e) t) -> ('b,'e) t
 
 val bind_lwt : ('a,'e) t -> ('a -> 'b Lwt.t) -> ('b,'e) t
 
-val bind_lwt_err : ('a,'e1) t -> ('e1 -> 'e2 Lwt.t) -> ('a,'e2) t
+val bind_lwt_error : ('a,'e1) t -> ('e1 -> 'e2 Lwt.t) -> ('a,'e2) t
+(** @since 5.6.0 *)
 
 val bind_result : ('a,'e) t -> ('a -> ('b,'e) Result.result) -> ('b,'e) t
 
@@ -108,3 +110,11 @@ module Syntax : sig
 end
 
 include module type of Infix
+
+(** {3 Deprecated} *)
+
+val map_err : ('e1 -> 'e2) -> ('a,'e1) t -> ('a,'e2) t [@@deprecated "Alias to map_error"]
+(** @deprecated Alias to [map_error] since 5.6.0. *)
+
+val bind_lwt_err : ('a,'e1) t -> ('e1 -> 'e2 Lwt.t) -> ('a,'e2) t [@@deprecated "Alias to bind_lwt_error"]
+(** @deprecated Alias to [bind_lwt_error] since 5.6.0. *)

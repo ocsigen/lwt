@@ -12,6 +12,10 @@
   * Lwt.pick and Lwt.choose select preferentially failed promises as per
   documentation (#856, #874, Raman Varabets)
 
+====== Deprecations ======
+
+  * Alias Lwt_result.map_err and Lwt_result.bind_lwt_err to Lwt_result.map_error and Lwt_result.bind_lwt_error for consistency with Stdlib. (#927, Antonin Décimo)
+
 ===== 5.5.0 =====
 
 ====== Deprecations ======

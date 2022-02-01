@@ -32,17 +32,17 @@ let suite =
          Lwt.return (Lwt_result.map ((+) 1) x = x)
       );
 
-    test "map_err"
+    test "map_error"
       (fun () ->
          let x = Lwt_result.return 0 in
-         Lwt.return (Lwt_result.map_err ((+) 1) x = x)
+         Lwt.return (Lwt_result.map_error ((+) 1) x = x)
       );
 
-    test "map_err, error case"
+    test "map_error, error case"
       (fun () ->
          let x = Lwt_result.fail 0 in
          let correct = Lwt_result.fail 1 in
-         Lwt.return (Lwt_result.map_err ((+) 1) x = correct)
+         Lwt.return (Lwt_result.map_error ((+) 1) x = correct)
       );
 
     test "bind"
@@ -104,18 +104,18 @@ let suite =
          Lwt.return (Lwt_result.bind_lwt x f = Lwt_result.fail 0)
       );
 
-    test "bind_lwt_err"
+    test "bind_lwt_error"
       (fun () ->
          let x = Lwt_result.return 0 in
          let f y = Lwt.return (y + 1) in
-         Lwt.return (Lwt_result.bind_lwt_err x f = Lwt_result.return 0)
+         Lwt.return (Lwt_result.bind_lwt_error x f = Lwt_result.return 0)
       );
 
-    test "bind_lwt_err, error case"
+    test "bind_lwt_error, error case"
       (fun () ->
          let x = Lwt_result.fail 0 in
          let f y = Lwt.return (y + 1) in
-         Lwt.return (Lwt_result.bind_lwt_err x f = Lwt_result.fail 1)
+         Lwt.return (Lwt_result.bind_lwt_error x f = Lwt_result.fail 1)
       );
 
     test "bind_result"
