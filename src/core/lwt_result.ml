@@ -14,6 +14,7 @@ let fail e = Lwt.return (Error e)
 
 let lift = Lwt.return
 let ok x = Lwt.map (fun y -> Ok y) x
+let error x = Lwt.map (fun y -> Error y) x
 
 let map f e =
   Lwt.map

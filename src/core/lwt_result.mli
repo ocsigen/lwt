@@ -20,6 +20,9 @@ val lift : ('a, 'b) Result.result -> ('a, 'b) t
 
 val ok : 'a Lwt.t -> ('a, _) t
 
+val error : 'b Lwt.t -> (_, 'b) t
+(** @since 5.6.0  *)
+
 val catch : 'a Lwt.t -> ('a, exn) t
 (** [catch x] behaves like [return y] if [x] evaluates to [y],
     and like [fail e] if [x] raises [e] *)

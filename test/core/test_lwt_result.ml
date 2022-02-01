@@ -66,6 +66,12 @@ let suite =
          Lwt.return (Lwt_result.ok x = Lwt_result.return 0)
       );
 
+    test "error"
+      (fun () ->
+        let x = Lwt.return 0 in
+        Lwt.return (Lwt_result.error x = Lwt_result.fail 0)
+      );
+
     test "catch"
       (fun () ->
          let x = Lwt.return 0 in
