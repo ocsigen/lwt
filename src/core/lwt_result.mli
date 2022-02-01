@@ -49,6 +49,19 @@ val both : ('a,'e) t -> ('b,'e) t -> ('a * 'b,'e) t
     If both [p_1] and [p_2] resolve with [Error _], the promise is resolved with
     the error that occurred first. *)
 
+val iter : ('a -> unit Lwt.t) -> ('a, 'e) t -> unit Lwt.t
+(** [iter f r] is [f v] if [r] is a promise resolved with [Ok v], and
+    {!Lwt.return_unit} otherwise.
+
+    @since Lwt 5.6.0
+*)
+
+val iter_error : ('e -> unit Lwt.t) -> ('a, 'e) t -> unit Lwt.t
+(** [iter_error f r] is [f v] if [r] is a promise resolved with [Error v],
+    and {!Lwt.return_unit} otherwise.
+
+    @since Lwt 5.6.0
+*)
 
 module Infix : sig
   val (>|=) : ('a,'e) t -> ('a -> 'b) -> ('b,'e) t

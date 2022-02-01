@@ -81,9 +81,21 @@ let both a b =
     (function
       | Ok x, Ok y -> Ok (x,y)
       | Error _, Ok _
-      | Ok _,Error _ 
+      | Ok _,Error _
       | Error _, Error _ -> some_assert !s)
     (Lwt.both a b)
+
+let iter f r =
+  Lwt.bind r
+    (function
+      | Ok x -> f x
+      | Error _ -> Lwt.return_unit)
+
+let iter_error f r =
+  Lwt.bind r
+    (function
+      | Error e -> f e
+      | Ok _ -> Lwt.return_unit)
 
 module Infix = struct
   let (>>=) = bind

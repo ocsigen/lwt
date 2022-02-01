@@ -186,6 +186,42 @@ let suite =
          Lwt.bind p (fun x -> Lwt.return (x = Result.Error 1))
       );
 
+    test "iter"
+      (fun () ->
+        let x = Lwt_result.return 1 in
+        let actual = ref 0 in
+        Lwt.bind
+          (Lwt_result.iter (fun y -> actual := y + 1; Lwt.return_unit) x)
+          (fun () -> Lwt.return (!actual = 2))
+      );
+
+    test "iter, error case"
+      (fun () ->
+        let x = Lwt_result.fail 1 in
+        let actual = ref 0 in
+        Lwt.bind
+          (Lwt_result.iter (fun y -> actual := y + 1; Lwt.return_unit) x)
+          (fun () -> Lwt.return (!actual <> 2))
+      );
+
+    test "iter_error"
+      (fun () ->
+        let x = Lwt_result.fail 1 in
+        let actual = ref 0 in
+        Lwt.bind
+          (Lwt_result.iter_error (fun y -> actual := y + 1; Lwt.return_unit) x)
+          (fun () -> Lwt.return (!actual = 2))
+      );
+
+    test "iter_error, success case"
+      (fun () ->
+        let x = Lwt_result.return 1 in
+        let actual = ref 0 in
+        Lwt.bind
+          (Lwt_result.iter_error (fun y -> actual := y + 1; Lwt.return_unit) x)
+          (fun () -> Lwt.return (!actual <> 2))
+      );
+
     test "let*"
       (fun () ->
         let p1, r1 = Lwt.wait () in
