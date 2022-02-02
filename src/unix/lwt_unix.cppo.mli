@@ -575,7 +575,7 @@ val file_exists : string -> bool Lwt.t
       Note that [file_exists] behaves similarly to
       {!Sys.file_exists}:
 
-      - "file" is interpreted as "directory entry" in this context
+      - “file” is interpreted as “directory entry” in this context
 
       - [file_exists name] will return [false] in
         circumstances that would make {!stat} raise a
@@ -639,7 +639,7 @@ module LargeFile : sig
         Note that [file_exists] behaves similarly to
         {!Sys.file_exists}:
 
-        - "file" is interpreted as "directory entry" in this context
+        - “file” is interpreted as “directory entry” in this context
 
         - [file_exists name] will return [false] in
           circumstances that would make {!stat} raise a

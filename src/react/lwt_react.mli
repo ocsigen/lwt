@@ -31,7 +31,7 @@ module E : sig
   val next : 'a event -> 'a Lwt.t
   (** [next e] returns the next occurrence of [e].
 
-      Avoid trying to create an "asynchronous loop" by calling [next e] again in
+      Avoid trying to create an “asynchronous loop” by calling [next e] again in
       a callback attached to the promise returned by [next e]:
 
       - The callback is called within the React update step, so calling [next e]
@@ -40,7 +40,7 @@ module E : sig
       - If you instead arrange for the React update step to end (for example, by
         calling [Lwt.pause ()] within the callback), multiple React update steps
         may occur before the callback calls [next e] again, so some occurrences
-        can be effectively "lost."
+        can be effectively “lost.”
 
       To robustly asynchronously process occurrences of [e] in a loop, use
       [to_stream e], and repeatedly call {!Lwt_stream.next} on the resulting
