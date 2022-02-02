@@ -236,11 +236,7 @@ val junk_while_s : ('a -> bool Lwt.t) -> 'a t -> unit Lwt.t
 
 val junk_old : 'a t -> unit Lwt.t
 (** [junk_old st] removes all elements that are ready to be read
-    without yielding from [st].
-
-    For example, the [read_password] function of [Lwt_read_line]
-    uses it to flush keys previously typed by the user.
-*)
+    without yielding from [st]. *)
 
 val get_available : 'a t -> 'a list
 (** [get_available st] returns all available elements of [l] without
@@ -395,7 +391,11 @@ val hexdump : char t -> string t
     Basically, here is a simple implementation of [hexdump -C]:
 
     {[
-      let () = Lwt_main.run (Lwt_io.write_lines Lwt_io.stdout (Lwt_stream.hexdump (Lwt_io.read_lines Lwt_io.stdin)))
+      let () = Lwt_main.run begin
+          Lwt_io.write_lines
+            Lwt_io.stdout
+            (Lwt_stream.hexdump (Lwt_io.read_lines Lwt_io.stdin))
+        end
     ]}
 *)
 
