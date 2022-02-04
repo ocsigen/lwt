@@ -12,6 +12,13 @@
 module Lwt_sequence = Lwt_sequence
 [@@@ocaml.warning "+3"]
 
+(* TODO: Remove this when the minimum required version of OCaml is >= 4.08 *)
+module Result = struct
+  type (+'a, +'b) t = ('a, 'b) result =
+    | Ok of 'a
+    | Error of 'b
+end
+
 open Lwt.Infix
 
 (* +-----------------------------------------------------------------+
@@ -1899,7 +1906,7 @@ type socket_int_option =
   Unix.socket_int_option =
   | SO_SNDBUF
   | SO_RCVBUF
-  | SO_ERROR
+  | SO_ERROR [@ocaml.deprecated "Use Unix.getsockopt_error instead."]
   | SO_TYPE
   | SO_RCVLOWAT
   | SO_SNDLOWAT

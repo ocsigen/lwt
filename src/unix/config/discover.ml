@@ -64,7 +64,7 @@
 
 module Configurator = Configurator.V1
 let split = Configurator.Flags.extract_blank_separated_words
-let uppercase = String.uppercase [@ocaml.warning "-3"]
+let uppercase = String.uppercase_ascii
 
 
 

@@ -26,7 +26,7 @@ let () = Jbuild_plugin.V1.send @@ {|
  (synopsis "Monadic promises and concurrent I/O")
  (wrapped false)
  |} ^ preprocess ^ {|
- (libraries bytes result seq)
+ (libraries bytes seq)
  (flags (:standard -w +A-29)))
 
 (documentation

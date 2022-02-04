@@ -362,6 +362,13 @@
 module Lwt_sequence = Lwt_sequence
 [@@@ocaml.warning "+3"]
 
+(* TODO: Remove this when the minimum required version of OCaml is >= 4.08 *)
+module Result = struct
+  type (+'a, +'b) t = ('a, 'b) result =
+    | Ok of 'a
+    | Error of 'b
+end
+
 
 
 (* Some sequence-associated storage types
@@ -587,7 +594,7 @@ struct
      later in the module. This is to avoid potential confusion with
      [Pervasives.result]/[Result.result], as the public name would not be
      prefixed with [Lwt.] inside this file. *)
-  type +'a lwt_result = ('a, exn) Result.result
+  type +'a lwt_result = ('a, exn) Result.t
 
   (* This could probably save an allocation by using [Obj.magic]. *)
   let state_of_result = function
@@ -1489,8 +1496,8 @@ sig
   val return_false : bool t
   val return_none : _ option t
   val return_some : 'a -> 'a option t
-  val return_ok : 'a -> ('a, _) Result.result t
-  val return_error : 'e -> (_, 'e) Result.result t
+  val return_ok : 'a -> ('a, _) Result.t t
+  val return_error : 'e -> (_, 'e) Result.t t
   val return_nil : _ list t
 
   val fail_with : string -> _ t

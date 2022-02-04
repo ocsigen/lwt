@@ -1561,9 +1561,49 @@ val return_false : bool t
 
 
 
+(** {3 Trivial promises} *)
+
+val return_some : 'a -> ('a option) t
+(** Counterpart to {!Lwt.return_none}. However, unlike {!Lwt.return_none}, this
+    function performs no {{: #VALreturn_unit} optimization}. This is because it
+    takes an argument, so it cannot be evaluated at initialization time, at
+    which time the argument is not yet available. *)
+
+val return_ok : 'a -> (('a, _) result) t
+(** Like {!Lwt.return_some}, this function performs no optimization.
+
+    @since Lwt 2.6.0 *)
+
+val return_error : 'e -> ((_, 'e) result) t
+(** Like {!Lwt.return_some}, this function performs no optimization.
+
+    @since Lwt 2.6.0 *)
+
+val fail_with : string -> _ t
+(** [Lwt.fail_with s] is an abbreviation for
+
+{[
+Lwt.fail (Stdlib.Failure s)
+]}
+
+    In most cases, it is better to use [failwith s] from the standard library.
+    See {!Lwt.fail} for an explanation. *)
+
+val fail_invalid_arg : string -> _ t
+(** [Lwt.invalid_arg s] is an abbreviation for
+
+{[
+Lwt.fail (Stdlib.Invalid_argument s)
+]}
+
+    In most cases, it is better to use [invalid_arg s] from the standard
+    library. See {!Lwt.fail} for an explanation. *)
+
+
+
 (** {3 Result type} *)
 
-type +'a result = ('a, exn) Result.result
+type nonrec +'a result = ('a, exn) result
 (** Representation of the content of a resolved promise of type
     ['a ]{!Lwt.t}.
 
@@ -1988,46 +2028,6 @@ let g v =
 
     To get a suspended function instead of the eager execution of {!Lwt.wrap},
     use [Lwt.wrap1]. *)
-
-
-
-(** {3 Trivial promises} *)
-
-val return_some : 'a -> ('a option) t
-(** Counterpart to {!Lwt.return_none}. However, unlike {!Lwt.return_none}, this
-    function performs no {{: #VALreturn_unit} optimization}. This is because it
-    takes an argument, so it cannot be evaluated at initialization time, at
-    which time the argument is not yet available. *)
-
-val return_ok : 'a -> (('a, _) Result.result) t
-(** Like {!Lwt.return_some}, this function performs no optimization.
-
-    @since Lwt 2.6.0 *)
-
-val return_error : 'e -> ((_, 'e) Result.result) t
-(** Like {!Lwt.return_some}, this function performs no optimization.
-
-    @since Lwt 2.6.0 *)
-
-val fail_with : string -> _ t
-(** [Lwt.fail_with s] is an abbreviation for
-
-{[
-Lwt.fail (Stdlib.Failure s)
-]}
-
-    In most cases, it is better to use [failwith s] from the standard library.
-    See {!Lwt.fail} for an explanation. *)
-
-val fail_invalid_arg : string -> _ t
-(** [Lwt.invalid_arg s] is an abbreviation for
-
-{[
-Lwt.fail (Stdlib.Invalid_argument s)
-]}
-
-    In most cases, it is better to use [invalid_arg s] from the standard
-    library. See {!Lwt.fail} for an explanation. *)
 
 
 

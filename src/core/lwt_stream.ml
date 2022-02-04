@@ -1,6 +1,12 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
+(* TODO: Remove this when the minimum required version of OCaml is >= 4.08 *)
+module Result = struct
+  type (+'a, +'b) t = ('a, 'b) result =
+    | Ok of 'a
+    | Error of 'b
+end
 
 
 open Lwt.Infix
