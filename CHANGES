@@ -8,6 +8,7 @@
 ====== Additions ======
 
   * In the Lwt_io module, add `?cloexec:bool` optional arguments to functions that create file descriptors (`pipe`). The `?cloexec` argument is simply forwarded to the wrapped Lwt_unix function. (#872, #911, Antonin Décimo)
+  * Add Lwt_result.error, Lwt_result.iter, and Lwt_result.iter_error for consistency with Stdlib. (#927, Antonin Décimo)
 
 ====== Fixes ======
 
@@ -15,6 +16,10 @@
   * Prefer SetHandleInformation to DuplicateHandle in set_close_on_exec for sockets. DuplicateHandle mustn't be used on sockets. (#907, Antonin Décimo)
   * Lwt.pick and Lwt.choose select preferentially failed promises as per
   documentation (#856, #874, Raman Varabets)
+
+====== Deprecations ======
+
+  * Alias Lwt_result.map_err and Lwt_result.bind_lwt_err to Lwt_result.map_error and Lwt_result.bind_lwt_error for consistency with Stdlib. (#927, Antonin Décimo)
 
 ===== 5.5.0 =====
 

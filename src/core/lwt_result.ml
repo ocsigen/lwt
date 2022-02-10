@@ -20,6 +20,7 @@ let fail e = Lwt.return (Error e)
 
 let lift = Lwt.return
 let ok x = Lwt.map (fun y -> Ok y) x
+let error x = Lwt.map (fun y -> Error y) x
 
 let map f e =
   Lwt.map
@@ -28,12 +29,13 @@ let map f e =
       | Ok x -> Ok (f x))
     e
 
-let map_err f e =
+let map_error f e =
   Lwt.map
     (function
       | Error e -> Error (f e)
       | Ok x -> Ok x)
     e
+let map_err f e = map_error f e
 
 let catch e =
   Lwt.catch
@@ -65,11 +67,12 @@ let bind_result e f =
       | Ok x -> f x)
     e
 
-let bind_lwt_err e f =
+let bind_lwt_error e f =
   Lwt.bind e
     (function
       | Error e -> Lwt.bind (f e) fail
       | Ok x -> return x)
+let bind_lwt_err e f = bind_lwt_error e f
 
 let both a b =
   let s = ref None in
@@ -78,7 +81,7 @@ let both a b =
     | None -> s:= Some e
     | Some _ -> ()
   in
-  let (a,b) = map_err set_once a,map_err set_once b in
+  let (a,b) = map_error set_once a,map_error set_once b in
   let some_assert = function
     | None -> assert false
     | Some e -> Error e
@@ -87,9 +90,21 @@ let both a b =
     (function
       | Ok x, Ok y -> Ok (x,y)
       | Error _, Ok _
-      | Ok _,Error _ 
+      | Ok _,Error _
       | Error _, Error _ -> some_assert !s)
     (Lwt.both a b)
+
+let iter f r =
+  Lwt.bind r
+    (function
+      | Ok x -> f x
+      | Error _ -> Lwt.return_unit)
+
+let iter_error f r =
+  Lwt.bind r
+    (function
+      | Error e -> f e
+      | Ok _ -> Lwt.return_unit)
 
 module Infix = struct
   let (>>=) = bind
