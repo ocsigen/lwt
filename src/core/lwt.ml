@@ -531,7 +531,8 @@ struct
 end
 open Main_internal_types
 
-
+type _ EffectHandlers.eff +=
+  | Await : 'a callbacks -> 'a EffectHandlers.eff
 
 module Public_types =
 struct
@@ -571,8 +572,6 @@ struct
     | Error exn -> Rejected exn
 end
 include Public_types
-
-
 
 module Basic_helpers :
 sig
@@ -1008,6 +1007,14 @@ end
 open Pending_callbacks
 
 
+let[@inline] await (p: 'a t) : 'a =
+  let Internal p = Public_types.to_internal_promise p in
+  let p = underlying p in
+  match p.state with
+  | Fulfilled x -> x
+  | Rejected exn -> raise exn
+  | Pending cbs ->
+    EffectHandlers.perform (Await cbs)
 
 module Resolution_loop :
 sig
@@ -1040,6 +1047,8 @@ sig
 
   (* Internal interface exposed to other modules in Lwt *)
   val abandon_wakeups : unit -> unit
+
+  val run_with_effect : (unit -> unit) -> unit
 
   (* Public interface *)
   exception Canceled
@@ -1258,6 +1267,23 @@ struct
     current_callback_nesting_depth := !current_callback_nesting_depth - 1;
     current_storage := storage_snapshot
 
+  let eff_handler : unit EffectHandlers.Deep.effect_handler = {
+    EffectHandlers.Deep.effc=function
+      | Await cbs ->
+        Some (fun k ->
+            add_implicitly_removed_callback cbs
+              (fun x -> match x with
+                 | Fulfilled x -> EffectHandlers.Deep.continue k x
+                 | Rejected exn -> EffectHandlers.Deep.discontinue k exn
+              )
+            )
+      | _ -> None
+  }
+
+  let run_with_effect (f: unit -> unit) : unit =
+    EffectHandlers.Deep.try_with
+      f () eff_handler
+
   let run_in_resolution_loop f =
     let storage_snapshot = enter_resolution_loop () in
     let result = f () in
@@ -1289,8 +1315,9 @@ struct
     if should_defer then
       Queue.push (Deferred (callbacks, result)) deferred_callbacks
     else
+      run_with_effect (fun () ->
       run_in_resolution_loop (fun () ->
-        run_callbacks callbacks result)
+        run_callbacks callbacks result))
 
   let resolve ?allow_deferring ?maximum_callback_nesting_depth p result =
     let Pending callbacks = p.state in
@@ -1305,7 +1332,6 @@ struct
       ?(run_immediately_and_ensure_tail_call = false)
       ~callback:f
       ~if_deferred =
-
     if run_immediately_and_ensure_tail_call then
       f ()
 
@@ -1357,6 +1383,7 @@ struct
      behavior: it runs callbacks directly on the current stack. It should
      therefore be possible to cause a stack overflow using this function. *)
   let wakeup_general api_function_name r result =
+    run_with_effect @@ fun () ->
     let Internal p = to_internal_resolver r in
     let p = underlying p in
 

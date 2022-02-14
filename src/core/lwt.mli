@@ -403,7 +403,7 @@ val wait : unit -> ('a t * 'a u)
     “constructor.” All other functions that evaluate to a promise can be, or
     are, eventually implemented in terms of it. *)
 
-
+val await : 'a t -> 'a
 
 (** {3 Resolving} *)
 
