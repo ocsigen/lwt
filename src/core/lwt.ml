@@ -1025,7 +1025,7 @@ end
 open Pending_callbacks
 
 
-let[@inline] await (p: 'a t) : 'a =
+let await (p: 'a t) : 'a =
   let Internal p = Public_types.to_internal_promise p in
   let p = underlying p in
   match p.state with
