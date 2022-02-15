@@ -37,6 +37,7 @@ depopts: [
   "base-threads"
   "base-unix"
   "conf-libev"
+  "bigarray-compat"
 ]
 
 conflicts: [
