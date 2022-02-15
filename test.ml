@@ -5,13 +5,16 @@ let suspend f =
   let* () = Lwt.pause() in
   f()
 
-let f n =
+let rec sleep_rec n =
+  let before = if n >= 2 then sleep_rec (n-1) else Lwt.return () in
+  let cur = Lwt_unix.sleep (float n) in
   suspend @@ fun () ->
-  let+ () = Lwt_unix.sleep (float n) in
-  Printf.printf "sleep %d done \n%!" n
+  Lwt.await (Lwt.join [before; cur]);
+  Printf.printf "sleep %d done \n%!" n;
+  Lwt.return ()
 
 let main () =
-  let l = List.init 15 f in
+  let l = List.init 10 sleep_rec in
   suspend @@ fun () ->
   List.iter Lwt.await l;
   Lwt.return()
