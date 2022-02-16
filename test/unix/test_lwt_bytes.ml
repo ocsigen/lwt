@@ -774,7 +774,7 @@ let suite = suite "lwt_bytes" [
     end;
 
     test "page_size" begin fun () ->
-      let sizes = [4096; 65536] in
+      let sizes = [4096; 16384; 65536] in
       Lwt.return (List.mem Lwt_bytes.page_size sizes)
     end;
 
