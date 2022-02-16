@@ -369,7 +369,10 @@ sig
       and the length of the slice. *)
 
   type _bigarray =
-    (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+    (char,
+     Bigarray_compat.int8_unsigned_elt,
+     Bigarray_compat.c_layout)
+    Bigarray_compat.Array1.t
   (** Type abbreviation equivalent to {!Lwt_bytes.t}. Do not use this type name
       directly; use {!Lwt_bytes.t} instead. *)
 

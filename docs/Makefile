@@ -2,8 +2,7 @@ BLD=../_build/default/src
 SRC=../src
 
 PKGS=\
-	-package bytes -package result \
-	-package bigarray -package unix \
+	-package bigarray-compat -package unix \
 	-package ocaml-migrate-parsetree -package ppx_tools_versioned \
 	-package react \
 	-package domainslib

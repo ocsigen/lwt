@@ -3,7 +3,7 @@
 
 
 
-open Bigarray
+open Bigarray_compat
 
 type t = (char, int8_unsigned_elt, c_layout) Array1.t
 
@@ -177,7 +177,7 @@ let sendto fd buf pos len flags addr =
 
 let map_file ~fd ?pos ~shared ?(size=(-1)) () =
   Mmap.V1.map_file fd ?pos char c_layout shared [|size|]
-  |> Bigarray.array1_of_genarray
+  |> Bigarray_compat.array1_of_genarray
 
 [@@@ocaml.warning "-3"]
 external mapped : t -> bool = "lwt_unix_mapped" "noalloc"

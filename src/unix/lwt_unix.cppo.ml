@@ -636,7 +636,10 @@ let close ch =
     run_job (close_job ch.fd)
 
 type bigarray =
-  (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+  (char,
+   Bigarray_compat.int8_unsigned_elt,
+   Bigarray_compat.c_layout)
+  Bigarray_compat.Array1.t
 
 let wait_read ch =
   Lwt.catch
@@ -685,7 +688,7 @@ external read_bigarray_job :
   "lwt_unix_bytes_read_job"
 
 let read_bigarray function_name fd buf pos len =
-  if pos < 0 || len < 0 || pos > Bigarray.Array1.dim buf - len then
+  if pos < 0 || len < 0 || pos > Bigarray_compat.Array1.dim buf - len then
     invalid_arg function_name
   else
     blocking fd >>= function
@@ -751,7 +754,7 @@ external write_bigarray_job :
   "lwt_unix_bytes_write_job"
 
 let write_bigarray function_name fd buf pos len =
-  if pos < 0 || len < 0 || pos > Bigarray.Array1.dim buf - len then
+  if pos < 0 || len < 0 || pos > Bigarray_compat.Array1.dim buf - len then
     invalid_arg function_name
   else
     blocking fd >>= function
@@ -844,7 +847,7 @@ struct
     let buffer_length =
       match io_vector.buffer with
       | Bytes s -> Bytes.length s
-      | Bigarray a -> Bigarray.Array1.dim a
+      | Bigarray a -> Bigarray_compat.Array1.dim a
     in
 
     if io_vector.length < 0 ||
