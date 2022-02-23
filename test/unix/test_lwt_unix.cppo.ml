@@ -421,7 +421,7 @@ let readv_tests =
              `Bigarray (1, 4, 1)]
         in
 
-        let read_fd, write_fd = Lwt_unix.pipe () in
+        let read_fd, write_fd = Lwt_unix.pipe ~cloexec:true () in
 
         Lwt_list.for_all_s (fun t -> t ())
           [writer write_fd "foobar";
@@ -435,7 +435,7 @@ let readv_tests =
              `Bigarray (1, 4, 1)]
         in
 
-        let read_fd, write_fd = Lwt_unix.pipe () in
+        let read_fd, write_fd = Lwt_unix.pipe ~cloexec:true () in
         Lwt_unix.set_blocking read_fd true;
 
         Lwt_list.for_all_s (fun t -> t ())
@@ -450,7 +450,7 @@ let readv_tests =
         ]
       in
 
-      let read_fd, write_fd = Lwt_unix.pipe () in
+      let read_fd, write_fd = Lwt_unix.pipe ~cloexec:true () in
       Lwt_unix.set_blocking read_fd true;
 
       Lwt_unix.write_string write_fd "foo" 0 3 >>= fun _ ->
@@ -473,7 +473,7 @@ let readv_tests =
         in
         Lwt_unix.IO_vectors.drop io_vectors 2;
 
-        let read_fd, write_fd = Lwt_unix.pipe () in
+        let read_fd, write_fd = Lwt_unix.pipe ~cloexec:true () in
 
         Lwt_list.for_all_s (fun t -> t ())
           [writer write_fd "foobar";
@@ -500,14 +500,14 @@ let readv_tests =
 
         let expected = String.make limit 'a' in
 
-        let read_fd, write_fd = Lwt_unix.pipe () in
+        let read_fd, write_fd = Lwt_unix.pipe ~cloexec:true () in
 
         Lwt_list.for_all_s (fun t -> t ())
           [writer write_fd (expected ^ "a");
            reader read_fd io_vectors underlying limit (expected ^ "_")]);
 
     test "readv: windows" ~only_if:(fun () -> Sys.win32) begin fun () ->
-      let read_fd, write_fd = Lwt_unix.pipe () in
+      let read_fd, write_fd = Lwt_unix.pipe ~cloexec:true () in
 
       let io_vectors, underlying =
         make_io_vectors [
@@ -590,7 +590,7 @@ let writev_tests =
              `Bigarray ("baz", 0, 3)]
         in
 
-        let read_fd, write_fd = Lwt_unix.pipe () in
+        let read_fd, write_fd = Lwt_unix.pipe ~cloexec:true () in
 
         Lwt_list.for_all_s (fun t -> t ())
           [writer ~blocking:false write_fd io_vectors 9;
@@ -605,7 +605,7 @@ let writev_tests =
              `Bigarray ("baz", 0, 3)]
         in
 
-        let read_fd, write_fd = Lwt_unix.pipe () in
+        let read_fd, write_fd = Lwt_unix.pipe ~cloexec:true () in
         Lwt_unix.set_blocking write_fd true;
 
         Lwt_list.for_all_s (fun t -> t ())
@@ -620,7 +620,7 @@ let writev_tests =
         ]
       in
 
-      let read_fd, write_fd = Lwt_unix.pipe () in
+      let read_fd, write_fd = Lwt_unix.pipe ~cloexec:true () in
       Lwt_unix.set_blocking write_fd true;
 
       let retained = Lwt_unix.retained io_vectors in
@@ -637,7 +637,7 @@ let writev_tests =
         let io_vectors =
           make_io_vectors [`Bytes ("foo", 1, 2); `Bigarray ("bar", 1, 2)] in
 
-        let read_fd, write_fd = Lwt_unix.pipe () in
+        let read_fd, write_fd = Lwt_unix.pipe ~cloexec:true () in
 
         Lwt_list.for_all_s (fun t -> t ())
           [writer write_fd io_vectors 4;
@@ -652,7 +652,7 @@ let writev_tests =
              `Bigarray ("baz", 0, 3)]
         in
 
-        let read_fd, write_fd = Lwt_unix.pipe () in
+        let read_fd, write_fd = Lwt_unix.pipe ~cloexec:true () in
 
         let initially_empty = Lwt_unix.IO_vectors.is_empty io_vectors in
 
@@ -685,7 +685,7 @@ let writev_tests =
              `Bigarray ("bar", 0, 0)]
         in
 
-        let read_fd, write_fd = Lwt_unix.pipe () in
+        let read_fd, write_fd = Lwt_unix.pipe ~cloexec:true () in
 
         let initially_empty = Lwt_unix.IO_vectors.is_empty io_vectors in
 
@@ -705,7 +705,7 @@ let writev_tests =
         let negative_length' = make_io_vectors [`Bigarray ("foo", 0, -1)] in
         let out_of_bounds' = make_io_vectors [`Bigarray ("foo", 1, 3)] in
 
-        let read_fd, write_fd = Lwt_unix.pipe () in
+        let read_fd, write_fd = Lwt_unix.pipe ~cloexec:true () in
 
         let writer io_vectors =
           fun () ->
@@ -753,7 +753,7 @@ let writev_tests =
           loop (limit + 1)
         in
 
-        let read_fd, write_fd = Lwt_unix.pipe () in
+        let read_fd, write_fd = Lwt_unix.pipe ~cloexec:true () in
 
         Lwt_list.for_all_s (fun t -> t ())
           [writer write_fd io_vectors limit;
@@ -764,7 +764,7 @@ let writev_tests =
         let io_vectors = make_io_vectors [`Bytes ("foo", 0, 3)] in
         Lwt_unix.IO_vectors.drop io_vectors (-1);
 
-        let read_fd, write_fd = Lwt_unix.pipe () in
+        let read_fd, write_fd = Lwt_unix.pipe ~cloexec:true () in
 
         Lwt_list.for_all_s (fun t -> t ())
           [writer write_fd io_vectors 3;
@@ -782,7 +782,7 @@ let writev_tests =
         ]
       in
 
-      let read_fd, write_fd = Lwt_unix.pipe () in
+      let read_fd, write_fd = Lwt_unix.pipe ~cloexec:true () in
 
       Lwt_list.for_all_s (fun t -> t ()) [
         writer ~close:false write_fd io_vectors 3;
@@ -796,7 +796,7 @@ let writev_tests =
 let send_recv_msg_tests = [
   test "send_msg, recv_msg" ~only_if:(fun () -> not Sys.win32) begin fun () ->
     let socket_1, socket_2 = Lwt_unix.(socketpair PF_UNIX SOCK_STREAM 0) in
-    let pipe_read, pipe_write = Lwt_unix.pipe () in
+    let pipe_read, pipe_write = Lwt_unix.pipe ~cloexec:true () in
 
     let source_buffer = Bytes.of_string "_foo_bar_" in
     let source_iovecs = Lwt_unix.IO_vectors.create () in
@@ -854,7 +854,7 @@ let send_recv_msg_tests = [
       begin fun () ->
 
     let socket_1, socket_2 = Lwt_unix.(socketpair PF_UNIX SOCK_STREAM 0) in
-    let pipe_read, pipe_write = Lwt_unix.pipe () in
+    let pipe_read, pipe_write = Lwt_unix.pipe ~cloexec:true () in
 
     let source_buffer = Lwt_bytes.of_string "_foo_bar_" in
     let source_iovecs = Lwt_bytes.[
