@@ -21,6 +21,8 @@ depends: [
   "lwt" {>= "3.0.0"}
   "ocaml"
   "react" {>= "1.0.0"}
+
+  "alcotest" {with-test & >= "1.5.0" & "ocaml" >= "4.05"}
 ]
 
 build: [

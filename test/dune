@@ -1,4 +1,7 @@
 (library
  (name lwttester)
  (wrapped false)
- (libraries lwt unix lwt.unix))
+ (libraries lwt unix lwt.unix
+  (select test.ml from
+   (alcotest -> test_alcotest.ml)
+   ( -> test_lwt.ml))))
