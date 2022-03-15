@@ -22,8 +22,8 @@ depends: [
   "cppo" {build & >= "1.1.0"}
   "dune" {>= "1.8.0"}
   "dune-configurator"
-  "mmap" {>= "1.1.0" & "os" != "win32"} # mmap is needed as long as Lwt supports OCaml < 4.06.0.
-  "ocaml" {>= "4.03.0" & "os" != "win32 " | >= "4.06.0"}
+  "mmap" {>= "1.1.0"} # mmap is needed as long as Lwt supports OCaml < 4.06.0.
+  "ocaml" {>= "4.03.0" & os != "win32" | >= "4.06.0"}
   ("ocaml" {>= "4.08.0"} | "ocaml-syntax-shims")
   "ocplib-endian"
   "seq" # seq is needed as long as Lwt supports OCaml < 4.07.0.
