@@ -25,6 +25,7 @@ jobs:
           - 4.11.x
           - 4.12.x
           - 4.13.x
+          - 4.14.x
         libev:
           - true
           - false
@@ -38,7 +39,7 @@ jobs:
             !lwt_domain.opam
         include:
           - os: ubuntu-latest
-            ocaml-compiler: ocaml-variants.4.13.1+options,ocaml-option-flambda,ocaml-option-musl,ocaml-option-static
+            ocaml-compiler: ocaml-variants.4.14.0+options,ocaml-option-flambda,ocaml-option-musl,ocaml-option-static
             libev: false
             ppx: true
             domain: false
@@ -52,7 +53,7 @@ jobs:
             domain: true
             local-packages: "*.opam"
           - os: macos-latest
-            ocaml-compiler: 4.13.x
+            ocaml-compiler: 4.14.x
             libev: true
             ppx: true
             domain: false
@@ -60,7 +61,7 @@ jobs:
               *.opam
               !lwt_domain.opam
           - os: windows-latest
-            ocaml-compiler: 4.13.x
+            ocaml-compiler: 4.14.x
             libev: false
             ppx: true
             domain: false
