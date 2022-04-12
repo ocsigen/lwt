@@ -19,6 +19,7 @@
 #include <caml/memory.h>
 #include <caml/mlvalues.h>
 #include <caml/signals.h>
+#include <caml/version.h>
 
 #include <assert.h>
 #include <errno.h>
