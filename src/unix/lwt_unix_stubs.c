@@ -729,7 +729,7 @@ static int eventfd_notification_recv() {
 static int notification_fds[2];
 
 static int pipe_notification_send() {
-  char buf;
+  char buf = 0;
   return write(notification_fds[1], &buf, 1);
 }
 
