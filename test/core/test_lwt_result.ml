@@ -65,7 +65,22 @@ let suite =
          let actual = Lwt_result.bind x (fun y -> Lwt_result.return (y + 1)) in
          Lwt.return (actual = x)
       );
+      
+    test "bind_error"
+      (fun () ->
+         let x = Lwt_result.return 0 in
+         let actual = Lwt_result.bind_error x (fun y -> Lwt_result.return (y + 1)) in
+         Lwt.return (actual = x)
+      );
 
+    test "bind_error, error case"
+      (fun () ->
+         let x = Lwt_result.fail 0 in
+         let correct = Lwt_result.return 1 in
+         let actual = Lwt_result.bind_error x (fun y -> Lwt_result.return (y + 1)) in
+         Lwt.return (actual = correct)
+      );
+      
     test "ok"
       (fun () ->
          let x = Lwt.return 0 in
