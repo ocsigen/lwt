@@ -53,7 +53,13 @@ let bind e f =
     (function
       | Error e -> Lwt.return (Error e)
       | Ok x -> f x)
-
+      
+let bind_error e f =
+  Lwt.bind e
+    (function
+      | Error e -> f e
+      | Ok x -> Lwt.return (Ok x))
+      
 let bind_lwt e f =
   Lwt.bind e
     (function
