@@ -20,120 +20,6 @@ enum { Iflags, Oflags, Cflags, Lflags };
 
 /* Structure of the terminal_io record. Cf. unix.mli */
 
-static long terminal_io_descr[] = {
-    /* Input modes */
-    Bool, Iflags, IGNBRK, Bool, Iflags, BRKINT, Bool, Iflags, IGNPAR, Bool,
-    Iflags, PARMRK, Bool, Iflags, INPCK, Bool, Iflags, ISTRIP, Bool, Iflags,
-    INLCR, Bool, Iflags, IGNCR, Bool, Iflags, ICRNL, Bool, Iflags, IXON, Bool,
-    Iflags, IXOFF,
-    /* Output modes */
-    Bool, Oflags, OPOST,
-    /* Control modes */
-    Speed, Output, Speed, Input, Enum, Cflags, 5, 4, CSIZE, CS5, CS6, CS7, CS8,
-    Enum, Cflags, 1, 2, CSTOPB, 0, CSTOPB, Bool, Cflags, CREAD, Bool, Cflags,
-    PARENB, Bool, Cflags, PARODD, Bool, Cflags, HUPCL, Bool, Cflags, CLOCAL,
-    /* Local modes */
-    Bool, Lflags, ISIG, Bool, Lflags, ICANON, Bool, Lflags, NOFLSH, Bool,
-    Lflags, ECHO, Bool, Lflags, ECHOE, Bool, Lflags, ECHOK, Bool, Lflags,
-    ECHONL,
-    /* Control characters */
-    Char, VINTR, Char, VQUIT, Char, VERASE, Char, VKILL, Char, VEOF, Char, VEOL,
-    Char, VMIN, Char, VTIME, Char, VSTART, Char, VSTOP, End};
-
-static struct {
-    speed_t speed;
-    int baud;
-} speedtable[] = {{B50, 50},
-                  {B75, 75},
-                  {B110, 110},
-                  {B134, 134},
-                  {B150, 150},
-#ifdef B200
-                  {B200, 200},
-#endif
-                  {B300, 300},
-                  {B600, 600},
-                  {B1200, 1200},
-                  {B1800, 1800},
-                  {B2400, 2400},
-                  {B4800, 4800},
-                  {B9600, 9600},
-                  {B19200, 19200},
-                  {B38400, 38400},
-#ifdef B57600
-                  {B57600, 57600},
-#endif
-#ifdef B115200
-                  {B115200, 115200},
-#endif
-#ifdef B230400
-                  {B230400, 230400},
-#endif
-                  {B0, 0},
-
-                  /* Linux extensions */
-#ifdef B460800
-                  {B460800, 460800},
-#endif
-#ifdef B500000
-                  {B500000, 500000},
-#endif
-#ifdef B576000
-                  {B576000, 576000},
-#endif
-#ifdef B921600
-                  {B921600, 921600},
-#endif
-#ifdef B1000000
-                  {B1000000, 1000000},
-#endif
-#ifdef B1152000
-                  {B1152000, 1152000},
-#endif
-#ifdef B1500000
-                  {B1500000, 1500000},
-#endif
-#ifdef B2000000
-                  {B2000000, 2000000},
-#endif
-#ifdef B2500000
-                  {B2500000, 2500000},
-#endif
-#ifdef B3000000
-                  {B3000000, 3000000},
-#endif
-#ifdef B3500000
-                  {B3500000, 3500000},
-#endif
-#ifdef B4000000
-                  {B4000000, 4000000},
-#endif
-
-                  /* MacOS extensions */
-#ifdef B7200
-                  {B7200, 7200},
-#endif
-#ifdef B14400
-                  {B14400, 14400},
-#endif
-#ifdef B28800
-                  {B28800, 28800},
-#endif
-#ifdef B76800
-                  {B76800, 76800},
-#endif
-
-  /* Cygwin extensions (in addition to the Linux ones) */
-#ifdef B128000
-                  {B128000, 128000},
-#endif
-#ifdef B256000
-                  {B256000, 256000},
-#endif
-};
-
-#define NSPEEDS (sizeof(speedtable) / sizeof(speedtable[0]))
-
 static tcflag_t *choose_field(struct termios *terminal_status, long field)
 {
     switch (field) {
@@ -150,10 +36,144 @@ static tcflag_t *choose_field(struct termios *terminal_status, long field)
     }
 }
 
+struct speed_t {
+    speed_t speed;
+    int baud;
+};
+
+long _speedtable(struct speed_t dst[]) {
+  struct speed_t speedtable[] = {
+	  {B50, 50},
+          {B75, 75},
+          {B110, 110},
+          {B134, 134},
+          {B150, 150},
+#ifdef B200
+          {B200, 200},
+#endif
+          {B300, 300},
+          {B600, 600},
+          {B1200, 1200},
+          {B1800, 1800},
+          {B2400, 2400},
+          {B4800, 4800},
+          {B9600, 9600},
+          {B19200, 19200},
+          {B38400, 38400},
+#ifdef B57600
+          {B57600, 57600},
+#endif
+#ifdef B115200
+          {B115200, 115200},
+#endif
+#ifdef B230400
+          {B230400, 230400},
+#endif
+          {B0, 0},
+
+                  /* Linux extensions */
+#ifdef B460800
+          {B460800, 460800},
+#endif
+#ifdef B500000
+          {B500000, 500000},
+#endif
+#ifdef B576000
+          {B576000, 576000},
+#endif
+#ifdef B921600
+          {B921600, 921600},
+#endif
+#ifdef B1000000
+          {B1000000, 1000000},
+#endif
+#ifdef B1152000
+          {B1152000, 1152000},
+#endif
+#ifdef B1500000
+          {B1500000, 1500000},
+#endif
+#ifdef B2000000
+          {B2000000, 2000000},
+#endif
+#ifdef B2500000
+          {B2500000, 2500000},
+#endif
+#ifdef B3000000
+          {B3000000, 3000000},
+#endif
+#ifdef B3500000
+          {B3500000, 3500000},
+#endif
+#ifdef B4000000
+          {B4000000, 4000000},
+#endif
+
+          /* MacOS extensions */
+#ifdef B7200
+          {B7200, 7200},
+#endif
+#ifdef B14400
+          {B14400, 14400},
+#endif
+#ifdef B28800
+          {B28800, 28800},
+#endif
+#ifdef B76800
+          {B76800, 76800},
+#endif
+
+  /* Cygwin extensions (in addition to the Linux ones) */
+#ifdef B128000
+          {B128000, 128000},
+#endif
+#ifdef B256000
+          {B256000, 256000},
+#endif
+  };
+
+  if (dst != NULL) memcpy(dst, speedtable, sizeof(speedtable));
+  return (sizeof(speedtable) / sizeof(speedtable[0]));
+}
+
+long _terminal_io_descr(long dst[]) {
+  long terminal_io_descr[] = {
+      /* Input modes */
+      Bool, Iflags, IGNBRK, Bool, Iflags, BRKINT, Bool, Iflags, IGNPAR, Bool,
+      Iflags, PARMRK, Bool, Iflags, INPCK, Bool, Iflags, ISTRIP, Bool, Iflags,
+      INLCR, Bool, Iflags, IGNCR, Bool, Iflags, ICRNL, Bool, Iflags, IXON, Bool,
+      Iflags, IXOFF,
+      /* Output modes */
+      Bool, Oflags, OPOST,
+      /* Control modes */
+      Speed, Output, Speed, Input, Enum, Cflags, 5, 4, CSIZE, CS5, CS6, CS7, CS8,
+      Enum, Cflags, 1, 2, CSTOPB, 0, CSTOPB, Bool, Cflags, CREAD, Bool, Cflags,
+      PARENB, Bool, Cflags, PARODD, Bool, Cflags, HUPCL, Bool, Cflags, CLOCAL,
+      /* Local modes */
+      Bool, Lflags, ISIG, Bool, Lflags, ICANON, Bool, Lflags, NOFLSH, Bool,
+      Lflags, ECHO, Bool, Lflags, ECHOE, Bool, Lflags, ECHOK, Bool, Lflags,
+      ECHONL,
+      /* Control characters */
+      Char, VINTR, Char, VQUIT, Char, VERASE, Char, VKILL, Char, VEOF, Char, VEOL,
+      Char, VMIN, Char, VTIME, Char, VSTART, Char, VSTOP, End};
+
+  if (dst != NULL) memcpy(dst, terminal_io_descr, sizeof(terminal_io_descr));
+  return (sizeof(terminal_io_descr) / sizeof(long));
+}
+
+
 void encode_terminal_status(struct termios *terminal_status, volatile value *dst)
 {
     long *pc;
     int i;
+
+    long _NSPEEDS = _speedtable(NULL);
+    struct speed_t speedtable[_NSPEEDS];
+    _speedtable(speedtable);
+
+    long nterminal_io_descr = _terminal_io_descr(NULL);
+    long terminal_io_descr[nterminal_io_descr];
+    _terminal_io_descr(terminal_io_descr);
 
     for (pc = terminal_io_descr; *pc != End; dst++) {
         switch (*pc++) {
@@ -190,7 +210,7 @@ void encode_terminal_status(struct termios *terminal_status, volatile value *dst
                         speed = cfgetispeed(terminal_status);
                         break;
                 }
-                for (i = 0; i < NSPEEDS; i++) {
+                for (i = 0; i < _NSPEEDS; i++) {
                     if (speed == speedtable[i].speed) {
                         *dst = Val_int(speedtable[i].baud);
                         break;
@@ -211,6 +231,14 @@ int decode_terminal_status(struct termios *terminal_status, volatile value *src)
 {
     long *pc;
     int i;
+
+    long _NSPEEDS = _speedtable(NULL);
+    struct speed_t speedtable[_NSPEEDS];
+    _speedtable(speedtable);
+
+    long nterminal_io_descr = _terminal_io_descr(NULL);
+    long terminal_io_descr[nterminal_io_descr];
+    _terminal_io_descr(terminal_io_descr);
 
     for (pc = terminal_io_descr; *pc != End; src++) {
         switch (*pc++) {
@@ -242,7 +270,7 @@ int decode_terminal_status(struct termios *terminal_status, volatile value *src)
                 int which = *pc++;
                 int baud = Int_val(*src);
                 int res = 0;
-                for (i = 0; i < NSPEEDS; i++) {
+                for (i = 0; i < _NSPEEDS; i++) {
                     if (baud == speedtable[i].baud) {
                         switch (which) {
                             case Output:
