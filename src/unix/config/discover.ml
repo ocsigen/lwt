@@ -368,15 +368,19 @@ struct
         Output.{name = feature.macro_name; found}
     end
 
-  let compiles ?(werror = false) ?(link_flags = []) context code =
-    let c_flags = C_library_flags.c_flags () in
+  let compiles ?(werror = false) ?c_flags ?link_flags context code =
+    let c_flags = match c_flags with
+      | None -> C_library_flags.c_flags ()
+      | Some c_flags -> c_flags in
     let c_flags =
       if werror then
         "-Werror"::c_flags
       else
         c_flags
     in
-    let link_flags = link_flags @ (C_library_flags.link_flags ()) in
+    let link_flags = match link_flags with
+      | None -> C_library_flags.link_flags ()
+      | Some link_flags -> link_flags in
     Configurator.c_test context ~c_flags ~link_flags code
     |> fun result -> Some result
 
@@ -469,11 +473,14 @@ struct
            When targeting Android, compiling without -lpthread is the only way
            to link with pthread, and we don't to search for libpthread, because
            if we find it, it is likely the host's libpthread. *)
-        match compiles context code with
-        | Some true -> Some true
-        | no ->
+        match compiles ~c_flags:[] ~link_flags:[] context code,
+              compiles context code with
+        | Some true, Some true -> Some true
+        | Some false, Some true
+        | Some true, Some false -> Some true
+        | _no ->
           if !Arguments.android_target = Some true then
-            no
+            Some false
           else begin
             match compiles context code ~link_flags:["-lpthread"] with
             | Some true ->
@@ -516,6 +523,7 @@ struct
             struct msghdr msg;
             msg.msg_controllen = 0;
             msg.msg_control = 0;
+            unsigned char *data = CMSG_DATA(CMSG_FIRSTHDR(&msg));
             return 0;
         }
       |}
