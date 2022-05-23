@@ -26,12 +26,11 @@ int socket_domain(int fd)
     l = sizeof(addr);
     if (getsockname(fd, &addr.s_gen, &l) == -1) uerror("getsockname", Nothing);
 
-    switch (addr.s_gen.sa_family) {
-        case AF_INET:
+    if (addr.s_gen.sa_family == AF_INET) {
             return PF_INET;
-        case AF_INET6:
+    } else if (addr.s_gen.sa_family == AF_INET6) {
             return PF_INET6;
-        default:
+    } else {
             caml_invalid_argument("Not an Internet socket");
     }
 

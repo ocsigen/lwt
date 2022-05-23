@@ -30,8 +30,7 @@ CAMLprim value lwt_unix_mcast_modify_membership(value fd, value v_action,
     t = socket_domain(fd_sock);
     r = 0;
 
-    switch (t) {
-        case PF_INET: {
+    if (t == PF_INET) {
             struct ip_mreq mreq;
 
             if (caml_string_length(group_addr) != 4 ||
@@ -55,11 +54,10 @@ CAMLprim value lwt_unix_mcast_modify_membership(value fd, value v_action,
 
             r = setsockopt(fd_sock, IPPROTO_IP, optname, (void *)&mreq,
                            sizeof(mreq));
-            break;
         }
-        default:
+    else {
             caml_invalid_argument("lwt_unix_mcast_modify_membership");
-    };
+    }
 
     if (r == -1) uerror("setsockopt", Nothing);
 
