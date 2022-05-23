@@ -12,8 +12,11 @@
 #include <caml/bigarray.h>
 #include <sys/mman.h>
 
-static int advise_table[] = {
-    MADV_NORMAL, MADV_RANDOM, MADV_SEQUENTIAL, MADV_WILLNEED, MADV_DONTNEED,
+CAMLprim value lwt_unix_madvise(value val_buffer, value val_offset,
+                                value val_length, value val_advice)
+{
+    int advise_table[] = {
+       MADV_NORMAL, MADV_RANDOM, MADV_SEQUENTIAL, MADV_WILLNEED, MADV_DONTNEED,
 #if defined(MADV_MERGEABLE)
 	MADV_MERGEABLE,
 #else
@@ -34,11 +37,8 @@ static int advise_table[] = {
 #else
 	0,
 #endif
-};
+    };
 
-CAMLprim value lwt_unix_madvise(value val_buffer, value val_offset,
-                                value val_length, value val_advice)
-{
     int ret =
         madvise((char *)Caml_ba_data_val(val_buffer) + Long_val(val_offset),
                 Long_val(val_length), advise_table[Int_val(val_advice)]);
