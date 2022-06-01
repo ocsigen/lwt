@@ -160,6 +160,8 @@ sig
 
   val ws2_32_lib : Configurator.t -> unit
 
+  val set_c_flags : string list -> unit
+  val set_link_flags : string list -> unit
   val c_flags : unit -> string list
   val link_flags : unit -> string list
   val add_link_flags : string list -> unit
@@ -249,14 +251,19 @@ struct
 
       | None ->
         try
-          let path =
+          let _path =
             List.find
               (fun path -> Sys.file_exists (path // "include" // header))
               (Lazy.force search_paths)
           in
+          (* NOTE: for the cross-compilation sake, we should not arbitrarily
+           * include ([-I]) some paths which can clash some cross-compilation's
+           * definitions with host's definitions. The default case about flags
+           * should always be less than more - and we should put these flags
+           * only we really require them. *)
           extend
-            ["-I" ^ (path // "include")]
-            ["-L" ^ (path // "lib"); "-l" ^ library]
+            [] (* ["-I" ^ (path // "include")] *)
+            [] (* ["-L" ^ (path // "lib"); "-l" ^ library] *)
         with Not_found ->
           ()
 
@@ -267,6 +274,9 @@ struct
         extend unicode ["ws2_32.lib"]
       else
         extend unicode ["-lws2_32"]
+
+  let set_c_flags lst = c_flags := lst
+  let set_link_flags lst = link_flags := lst
 
   let c_flags () =
     !c_flags
@@ -440,6 +450,7 @@ struct
           C_library_flags.add_link_flags ["-lev"];
           Some true
         | _ ->
+          C_library_flags.add_link_flags ["-lev"];
           C_library_flags.detect context ~library:"ev";
           compiles context code
       end
@@ -463,26 +474,48 @@ struct
           }
         |}
         in
-        (* On some platforms, pthread is included in the standard library, but
-           linking with -lpthread fails. So, try to link the test code without
-           any flags first.
+        (* To clarify the semantic of the recognition of [pthread]:
+           1) [pthread] can be _standalone_ (included in the standard library)
+              depending on the C compiler
+             1.1) A restrictive context (such as a cross-compilation context)
+                  requires, at least, [-lpthread] but [-I] and [-L] can
+                  disturb the compilation between the host's [pthread] and the
+                  cross-compiled [pthread]. We test above all and for all this
+                  tricky context with **only one** flag [-lpthread]
+             1.2) On some platforms, if [pthread] is standalone, the linker
+                  fails when we link with [-lpthread]. So we test our code
+                  with **default** flags (such as [-I/usr/include] and
+                  [-L/usr/lib]) and **without** [-pthread]
+           2) On Android, compiling without [-lpthread] is the only way to link
+              with [pthread], and we don't to search for [pthread.a], because
+              if we find it, it is likely the host's [pthread]
+           3) We finally retest our code with [-lpthread] and basic [-L] and
+              [-I] flags (from the host system)
 
-           If that fails and we are not targeting Android, try to link with
-           -lpthread. If *that* fails, search for libpthread in the filesystem.
-
-           When targeting Android, compiling without -lpthread is the only way
-           to link with pthread, and we don't to search for libpthread, because
-           if we find it, it is likely the host's libpthread. *)
-        match compiles ~c_flags:[] ~link_flags:[] context code,
-              compiles context code with
-        | Some true, Some true -> Some true
-        | Some false, Some true
-        | Some true, Some false -> Some true
+           NOTE(dinosaure):
+           - 2) and 1.1) should be merged, we definitely should try to compile
+           the code **without any flags** and see results - by this way, we
+           consider that the _toolchain_ leads us about where is
+           [pthread].
+           - 3) is too ~vague~ and obviously works but it's difficult to really
+           understand which [pthread] we really use.
+           - A question remains about priorities: do we want to prioritize
+           the [dune]'s context or do we prefer a compilation for the host
+           system first?
+           - In anyway, [discover.exe] should be less pervasives (no [ref]
+           about flags) and more strict and reproducible *)
+        match (* 1.2 *) compiles context code,
+              (* 1.1 *) compiles ~c_flags:[] ~link_flags:[ "-lpthread" ] context code with
+        | _, Some true (* prioritize [dune]'s context and cross-compilation *) ->
+          C_library_flags.set_c_flags [] ;
+          C_library_flags.set_link_flags [ "-lpthread" ] ;
+          Some true
+        | Some true, _ -> Some true
         | _no ->
-          if !Arguments.android_target = Some true then
+          if (* 2 *) !Arguments.android_target = Some true then
             Some false
           else begin
-            match compiles context code ~link_flags:["-lpthread"] with
+            match (* 3 *) compiles context code ~link_flags:["-lpthread"] with
             | Some true ->
               C_library_flags.add_link_flags ["-lpthread"];
               Some true
