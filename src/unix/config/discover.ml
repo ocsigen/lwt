@@ -405,58 +405,6 @@ struct
     | _ -> k ()
 
   let () = feature {
-    pretty_name = "libev";
-    macro_name = "HAVE_LIBEV";
-    detect = fun context ->
-      let detect_esy_wants_libev () =
-        match Sys.getenv "cur__target_dir" with
-        | exception Not_found -> None
-        | _ ->
-          match Sys.getenv "LIBEV_CFLAGS", Sys.getenv "LIBEV_LIBS" with
-          | exception Not_found -> Some false
-          | "", "" -> Some false
-          | _ -> Some true
-      in
-
-      let should_look_for_libev =
-        match !Arguments.use_libev with
-        | Some argument ->
-          argument
-        | None ->
-          match detect_esy_wants_libev () with
-          | Some result ->
-            result
-          | None ->
-            (* we're not under esy *)
-            let os = Configurator.ocaml_config_var_exn context "os_type" in
-            os <> "Win32" && !Arguments.android_target <> Some true
-      in
-
-      if not should_look_for_libev then
-        None
-      else begin
-        let code = {|
-          #include <ev.h>
-
-          int main()
-          {
-              ev_default_loop(0);
-              return 0;
-          }
-        |}
-        in
-        match compiles context code ~link_flags:["-lev"] with
-        | Some true ->
-          C_library_flags.add_link_flags ["-lev"];
-          Some true
-        | _ ->
-          C_library_flags.add_link_flags ["-lev"];
-          C_library_flags.detect context ~library:"ev";
-          compiles context code
-      end
-  }
-
-  let () = feature {
     pretty_name = "pthread";
     macro_name = "HAVE_PTHREAD";
     detect = fun context ->
@@ -523,6 +471,58 @@ struct
               C_library_flags.detect context ~library:"pthread";
               compiles context code
           end
+      end
+  }
+
+  let () = feature {
+    pretty_name = "libev";
+    macro_name = "HAVE_LIBEV";
+    detect = fun context ->
+      let detect_esy_wants_libev () =
+        match Sys.getenv "cur__target_dir" with
+        | exception Not_found -> None
+        | _ ->
+          match Sys.getenv "LIBEV_CFLAGS", Sys.getenv "LIBEV_LIBS" with
+          | exception Not_found -> Some false
+          | "", "" -> Some false
+          | _ -> Some true
+      in
+
+      let should_look_for_libev =
+        match !Arguments.use_libev with
+        | Some argument ->
+          argument
+        | None ->
+          match detect_esy_wants_libev () with
+          | Some result ->
+            result
+          | None ->
+            (* we're not under esy *)
+            let os = Configurator.ocaml_config_var_exn context "os_type" in
+            os <> "Win32" && !Arguments.android_target <> Some true
+      in
+
+      if not should_look_for_libev then
+        None
+      else begin
+        let code = {|
+          #include <ev.h>
+
+          int main()
+          {
+              ev_default_loop(0);
+              return 0;
+          }
+        |}
+        in
+        match compiles context code ~link_flags:("-lev" :: C_library_flags.link_flags ()) with
+        | Some true ->
+          C_library_flags.add_link_flags ["-lev"];
+          Some true
+        | _ ->
+          (* C_library_flags.add_link_flags ["-lev"]; *)
+          C_library_flags.detect context ~library:"ev";
+          compiles context code
       end
   }
 
