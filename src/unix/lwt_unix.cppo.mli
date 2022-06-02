@@ -286,9 +286,7 @@ type open_flag =
   | O_RSYNC
   | O_SHARE_DELETE
   | O_CLOEXEC
-#if OCAML_VERSION >= (4, 05, 0)
   | O_KEEPEXEC
-#endif
 
 val openfile : string -> open_flag list -> file_perm -> file_descr Lwt.t
   (** Wrapper for [Unix.openfile]. *)

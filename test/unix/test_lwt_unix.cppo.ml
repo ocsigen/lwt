@@ -122,7 +122,6 @@ let openfile_tests = [
   test "openfile: O_CLOEXEC not given" ~only_if:(fun () -> not Sys.win32)
     (fun () -> test_cloexec ~closed:false []);
 
-#if OCAML_VERSION >= (4, 05, 0)
   test "openfile: O_KEEPEXEC" ~only_if:(fun () -> not Sys.win32)
     (fun () -> test_cloexec ~closed:false [Unix.O_KEEPEXEC]);
 
@@ -131,7 +130,6 @@ let openfile_tests = [
 
   test "openfile: O_KEEPEXEC, O_CLOEXEC" ~only_if:(fun () -> not Sys.win32)
     (fun () -> test_cloexec ~closed:true [Unix.O_KEEPEXEC; Unix.O_CLOEXEC]);
-#endif
 ]
 
 let utimes_tests = [
