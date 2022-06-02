@@ -21,6 +21,7 @@ depends: [
   "lwt" {>= "3.0.0"}
   "ocaml"
   "react" {>= "1.0.0"}
+  "cppo" {build & >= "1.1.0"}
 ]
 
 build: [

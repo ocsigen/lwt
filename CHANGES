@@ -4,7 +4,6 @@
 
   * Lwt is now compatible with OCaml 5.00. Lwt is now incompatible with OCaml 4.02. (#925, #923, Kate Deplaix, Patrick Ferris)
 
-
 ====== Additions ======
 
   * In the Lwt_io module, add `?cloexec:bool` optional arguments to functions that create file descriptors (`pipe`). The `?cloexec` argument is simply forwarded to the wrapped Lwt_unix function. (#872, #911, Antonin Décimo)
@@ -13,6 +12,7 @@
 ====== Misc ======
 
   * On Windows, make Lwt_process.create_process duplicate standard handles given to the child process if they're not inheritable, to mimic the behaviour of Unix.create_process. (#909, Antonin Décimo)
+  * Add missing dependency to `cppo` in lwt-react's opam file. (#946, Rizo I)
 
 ====== Fixes ======
 
