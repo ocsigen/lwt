@@ -102,6 +102,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Hack Git CRLF for ocaml/setup-ocaml issue #529
+        if: ${{ startsWith(matrix.os, 'windows-') }}
+        run: |
+          & "C:\Program Files\Git\bin\git.exe" config --system core.autocrlf input
+
       - name: Use OCaml ${{ matrix.ocaml-compiler }}
         uses: ocaml/setup-ocaml@v2
         with:
