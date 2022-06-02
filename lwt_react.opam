@@ -19,7 +19,7 @@ dev-repo: "git+https://github.com/ocsigen/lwt.git"
 depends: [
   "dune" {>= "1.8.0"}
   "lwt" {>= "3.0.0"}
-  "ocaml"
+  "ocaml" {>= "4.08"}
   "react" {>= "1.0.0"}
   "cppo" {build & >= "1.1.0"}
 ]
