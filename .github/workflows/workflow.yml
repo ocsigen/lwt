@@ -15,10 +15,6 @@ jobs:
         os:
           - ubuntu-latest
         ocaml-compiler:
-          - 4.04.x
-          - 4.05.x
-          - 4.06.x
-          - 4.07.x
           - 4.08.x
           - 4.09.x
           - 4.10.x
@@ -69,7 +65,7 @@ jobs:
               *.opam
               !lwt_domain.opam
           - os: ubuntu-latest
-            ocaml-compiler: 4.03.x
+            ocaml-compiler: 4.08.x
             libev: true
             ppx: false
             domain: false
@@ -78,7 +74,7 @@ jobs:
               !lwt_domain.opam
               !lwt_ppx.opam
           - os: macos-latest
-            ocaml-compiler: 4.03.x
+            ocaml-compiler: 4.08.x
             libev: true
             ppx: false
             domain: false
@@ -87,7 +83,7 @@ jobs:
               !lwt_domain.opam
               !lwt_ppx.opam
           - os: windows-latest
-            ocaml-compiler: 4.06.x
+            ocaml-compiler: 4.08.x
             libev: false
             ppx: false
             domain: false

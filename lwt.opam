@@ -23,8 +23,7 @@ depends: [
   "dune" {>= "1.8.0"}
   "dune-configurator"
   "mmap" {>= "1.1.0"} # mmap is needed as long as Lwt supports OCaml < 4.06.0.
-  "ocaml" {>= "4.03.0" & os != "win32" | >= "4.06.0"}
-  ("ocaml" {>= "4.08.0"} | "ocaml-syntax-shims")
+  "ocaml" {>= "4.08"}
   "ocplib-endian"
   "seq" # seq is needed as long as Lwt supports OCaml < 4.07.0.
 
@@ -37,10 +36,6 @@ depopts: [
   "base-threads"
   "base-unix"
   "conf-libev"
-]
-
-conflicts: [
-  "ocaml-variants" {= "4.02.1+BER"}
 ]
 
 build: [

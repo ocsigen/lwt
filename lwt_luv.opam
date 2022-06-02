@@ -17,7 +17,7 @@ dev-repo: "git+https://github.com/ocsigen/lwt.git"
 depends: [
   "lwt"
   "dune" {>= "1.8.0"}
-  "ocaml" {>= "4.03.0"}
+  "ocaml" {>= "4.08"}
   "luv"
 
   # Until https://github.com/aantron/bisect_ppx/pull/327.
