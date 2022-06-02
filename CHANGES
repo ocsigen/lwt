@@ -8,6 +8,7 @@
 
   * In the Lwt_io module, add `?cloexec:bool` optional arguments to functions that create file descriptors (`pipe`). The `?cloexec` argument is simply forwarded to the wrapped Lwt_unix function. (#872, #911, Antonin Décimo)
   * Add Lwt_result.error, Lwt_result.iter, and Lwt_result.iter_error for consistency with Stdlib. (#927, Antonin Décimo)
+  * Lwt_result.bind_error (#943, Boning Dong)
 
 ====== Misc ======
 

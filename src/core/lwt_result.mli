@@ -39,6 +39,9 @@ val map_error : ('e1 -> 'e2) -> ('a,'e1) t -> ('a,'e2) t
 
 val bind : ('a,'e) t -> ('a -> ('b,'e) t) -> ('b,'e) t
 
+val bind_error : ('a,'e1) t -> ('e1 -> ('a,'e2) t) -> ('a,'e2) t
+(** @since 5.6.0 *)
+
 val bind_lwt : ('a,'e) t -> ('a -> 'b Lwt.t) -> ('b,'e) t
 
 val bind_lwt_error : ('a,'e1) t -> ('e1 -> 'e2 Lwt.t) -> ('a,'e2) t
