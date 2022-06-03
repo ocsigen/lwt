@@ -1607,14 +1607,6 @@ type +'a Lwt.result =
   | Error of exn
 ]}
 
-    or, on OCaml 4.02:
-
-{[
-type +'a Lwt.result =
-  | Result.Ok of 'a
-  | Result.Error of exn
-]}
-
     A resolved promise of type ['a ]{!Lwt.t} is either fulfilled with a value of
     type ['a], or rejected with an exception.
 
@@ -1631,12 +1623,7 @@ type +'a Lwt.result =
 
     The naming conflict between [Lwt.result] and [Stdlib.result] is an
     unfortunate historical accident. [Stdlib.result] did not exist when
-    [Lwt.result] was created.
-
-    The type [Result.result] is equivalent to [Stdlib.result] starting from
-    OCaml 4.03. If you need compatibility with OCaml 4.02, refer to
-    [Stdlib.result] as [Result.result], and prefix the constructor names with
-    [Result], as shown in the second example. *)
+    [Lwt.result] was created. *)
 
 val of_result : 'a result -> 'a t
 (** [Lwt.of_result r] converts an r to a resolved promise.
@@ -1820,22 +1807,21 @@ val wakeup_result : 'a u -> 'a result -> unit
 
 val make_value : 'a -> 'a result
   [@@ocaml.deprecated
-    " Use Result.Ok, which is the same as Ok since OCaml 4.03."]
-(** [Lwt.make_value v] is equivalent to {!Stdlib.Result.Ok} since OCaml 4.03.
-    If you need compatibility with OCaml 4.02, use [Result.Ok] and depend on
-    opam package {{: https://opam.ocaml.org/packages/result/} [result]}.
+    " Use Ok (from Stdlib) instead."]
+(** [Lwt.make_value v] is equivalent to
+    {{: https://ocaml.org/api/Stdlib.html#TYPEresult}
+    [Ok v]}.
 
-    @deprecated Use [Result.Ok] instead *)
+    @deprecated Use [Ok] instead *)
 
 val make_error : exn -> _ result
   [@@ocaml.deprecated
-    " Use Result.Error, which is the same as Error since OCaml 4.03."]
-(** [Lwt.make_error exn] is equivalent to {!Stdlib.Result.Error} since OCaml
-    4.03. If you need compatibility with OCaml 4.02, use [Result.Error] and
-    depend on opam package
-    {{: https://opam.ocaml.org/packages/result/} [result]}.
+    " Use Error (from Stdlib) instead."]
+(** [Lwt.make_error exn] is equivalent to
+    {{: https://ocaml.org/api/Stdlib.html#TYPEresult}
+    [Error exn]}.
 
-    @deprecated Use [Result.Error] instead. *)
+    @deprecated Use [Error] (from Stdlib) instead. *)
 
 val waiter_of_wakener : 'a u -> 'a t
   [@@ocaml.deprecated
