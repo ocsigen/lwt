@@ -24,7 +24,6 @@ depends: [
   "dune-configurator"
   "ocaml" {>= "4.08"}
   "ocplib-endian"
-  "seq" # seq is needed as long as Lwt supports OCaml < 4.07.0.
 
   # Until https://github.com/aantron/bisect_ppx/pull/327.
   # "bisect_ppx" {dev & >= "2.0.0"}
