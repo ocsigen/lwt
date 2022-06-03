@@ -1,10 +1,3 @@
-(* TODO: Remove this when the minimum required version of OCaml is >= 4.08 *)
-module Result = struct
-  type (+'a, +'b) t = ('a, 'b) result =
-    | Ok of 'a
-    | Error of 'b
-end
-
 open Lwt.Infix
 
 module C = Domainslib.Chan
