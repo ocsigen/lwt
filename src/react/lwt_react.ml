@@ -5,7 +5,6 @@
 
 open Lwt.Infix
 
-let opaque_identity x = Sys.opaque_identity x
 type 'a event = 'a React.event
 type 'a signal = 'a React.signal
 
