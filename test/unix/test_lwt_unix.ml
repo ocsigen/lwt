@@ -201,15 +201,13 @@ let readdir_tests =
 
   let equal, subset =
     let module StringSet = Set.Make (String) in
-    (* Necessary before 4.02. *)
-    let of_list l =
-      List.fold_left (fun set n -> StringSet.add n set) StringSet.empty l in
+    (fun filenames filenames' ->
+      StringSet.equal
+       (StringSet.of_list filenames) (StringSet.of_list filenames')),
 
     (fun filenames filenames' ->
-      StringSet.equal (of_list filenames) (of_list filenames')),
-
-    (fun filenames filenames' ->
-      StringSet.subset (of_list filenames) (of_list filenames'))
+      StringSet.subset
+       (StringSet.of_list filenames) (StringSet.of_list filenames'))
   in
 
   let read_all directory =

@@ -848,9 +848,7 @@ struct
     let buffer = Bytes.create (20 + bsize) in
     Bytes.unsafe_blit header 0 buffer 0 20;
     unsafe_read_into_exactly ic buffer 20 bsize >>= fun () ->
-    (* Marshal.from_bytes should be used here, but we want 4.01
-       compat. *)
-    Lwt.return (Marshal.from_string (Bytes.unsafe_to_string buffer) 0)
+    Lwt.return (Marshal.from_bytes buffer 0)
 
   (* +---------------------------------------------------------------+
      | Writing                                                       |
