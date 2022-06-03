@@ -344,15 +344,6 @@
 
 
 
-(* Suppress warning 4, "fragile pattern matching," in this file only, due to
-
-     https://github.com/ocaml/ocaml/issues/7451
-
-   This can be removed if/when Lwt requires a minimum OCaml version 4.05. *)
-[@@@ocaml.warning "-4"]
-
-
-
 (* [Lwt_sequence] is deprecated – we don't want users outside Lwt using it.
    However, it is still used internally by Lwt. So, briefly disable warning 3
    ("deprecated"), and create a local, non-deprecated alias for
