@@ -21,6 +21,7 @@ depends: [
   "lwt" {>= "3.0.0"}
   "ocaml" {>= "4.03"}
   "domainslib" {>= "0.3.2"}
+  "base-domains"
 ]
 
 build: [
