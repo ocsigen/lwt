@@ -21,7 +21,7 @@ type redirection =
   | `FD_move of Unix.file_descr ]
 
 (* +-----------------------------------------------------------------+
-   | OS-depentent command spawning                                   |
+   | OS-dependent command spawning                                   |
    +-----------------------------------------------------------------+ *)
 
 type proc = {

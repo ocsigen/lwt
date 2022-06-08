@@ -14,13 +14,13 @@
 
   * On Windows, make Lwt_process.create_process duplicate standard handles given to the child process if they're not inheritable, to mimic the behaviour of Unix.create_process. (#909, Antonin Décimo)
   * Add missing dependency to `cppo` in lwt-react's opam file. (#946, Rizo I)
+  * Improve documentation (especially internal links). (#928, Antonin Décimo)
 
 ====== Fixes ======
 
   * Fix win32_spawn leaking dev_null fd in the parent process. (#906, Antonin Décimo)
   * Prefer SetHandleInformation to DuplicateHandle in set_close_on_exec for sockets. DuplicateHandle mustn't be used on sockets. (#907, Antonin Décimo)
-  * Lwt.pick and Lwt.choose select preferentially failed promises as per
-  documentation (#856, #874, Raman Varabets)
+  * Lwt.pick and Lwt.choose select preferentially failed promises as per documentation (#856, #874, Raman Varabets)
   * Use the WSA_FLAG_NO_HANDLE_INHERIT on Windows when creating sockets with WSASocket if the cloexec (non-inheritable) parameter is true. Fixes a Windows problem where a child process would inherit a supposedly non-inheritable socket. (#910, Antonin Décimo)
   * Fix macOS/arm64 tests which have a 16k page. (#932, Kate Deplaix)
 
