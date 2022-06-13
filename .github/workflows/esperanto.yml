@@ -1,0 +1,102 @@
+name: Esperanto support
+on: [ push ]
+jobs:
+  test:
+    strategy:
+      matrix:
+        operating-system: [ ubuntu-latest ]
+        ocaml-version: [ "4.13.1", "4.14.0" ]
+        local-packages:
+          - |
+            *.opam
+            !lwt_domain.opam
+    runs-on: ${{ matrix.operating-system }}
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ocaml/setup-ocaml@v2
+      with:
+        ocaml-compiler: ${{ matrix.ocaml-version }}
+        opam-local-packages: ${{ matrix.local-packages }}
+    - name: Fix binfmt and Cosmopolitan
+      run: sudo sh -c "echo ':APE:M::MZqFpD::/bin/sh:' >/proc/sys/fs/binfmt_misc/register"
+    - name: Install Esperanto, Dune & ocamlfind
+      run: opam install esperanto.0.0.3 dune ocamlfind
+    - name: Install opam-monorepo
+      run: opam install opam-monorepo
+    - name: Add opam-monorepo overlays
+      run: opam repo add dune-universe git+https://github.com/dune-universe/opam-overlays.git
+    - name: Example with lwt & esperanto
+      run: |
+        mkdir esperanto-example
+        cd esperanto-example
+        cat >dune-workspace <<EOF
+        (lang dune 2.0)
+        (context (default))
+        (context
+         (default
+          (name esperanto)
+          (toolchain esperanto)
+          (host default)))
+        EOF
+        cat >dune-project <<EOF
+        (lang dune 2.0)
+        EOF
+        cat >cat.ml <<EOF
+        open Lwt.Infix
+
+        let rec full_write fd buf off len =
+          Lwt_unix.write fd buf off len >>= fun len' ->
+          if len - len' > 0
+          then full_write fd buf (off + len') (len - len')
+          else Lwt.return_unit
+
+        let tmp = Bytes.create 0x1000
+
+        let rec cat () =
+          Lwt.catch begin fun () ->
+          Lwt_unix.read Lwt_unix.stdin tmp 0 (Bytes.length tmp) >>= fun len ->
+          match len with
+          | 0 -> Lwt.return_unit
+          | len -> full_write Lwt_unix.stdout tmp 0 len >>= cat
+        end @@ function
+        | End_of_file -> Lwt.return_unit
+        | exn -> raise exn
+
+        let () = Lwt_main.run (cat ())
+        EOF
+        cat >dune <<EOF
+        (executable
+         (name cat)
+         (libraries lwt.unix))
+        EOF
+        cat >cat.opam <<EOF
+        opam-version: "2.0"
+        name:         "cat"
+        maintainer:   [ "Romain Calascibetta <romain.calascibetta@gmail.com>" ]
+        authors:      [ "Romain Calascibetta <romain.calascibetta@gmail.com>" ]
+        homepage:     "https://github.com/dinosaure/esperanto"
+        bug-reports:  "https://github.com/dinosaure/esperanto/issues"
+        dev-repo:     "git+https://github.com/dinosaure/esperanto"
+        doc:          "https://dinosaure.github.io/esperanto/"
+        license:      "MIT"
+        synopsis:     "The cat.com tool produced by esperanto"
+        description:  "The cat.com tool produced by esperanto"
+        
+        build: [
+          [ "dune" "build" "-p" name "-j" jobs ]
+        ]
+        install:  [
+          [ "dune" "install" "-p" name ] {with-test}
+        ]
+        
+        depends: [
+          "ocaml"           {>= "4.12.0"}
+          "dune"            {>= "2.8.0"}
+          "lwt"
+        ]
+        EOF
+        opam monorepo lock --ocaml-version  ${{ matrix.ocaml-version }}
+        opam monorepo pull
+        opam exec -- dune build -x esperanto ./cat.exe
+        objcopy -S -O binary _build/default.esperanto/cat.exe cat.com
+        ./cat.com < cat.ml
