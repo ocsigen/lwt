@@ -5,13 +5,6 @@
 
 open Lwt.Infix
 
-let opaque_identity x =
-  #if OCAML_VERSION < (4, 03, 0)
-    x
-  #else
-    Sys.opaque_identity x
-  #endif
-
 type 'a event = 'a React.event
 type 'a signal = 'a React.signal
 
@@ -27,7 +20,7 @@ module E = struct
   let with_finaliser f event =
     let r = ref () in
     Gc.finalise (finalise f) r;
-    map (fun x -> ignore (opaque_identity r); x) event
+    map (fun x -> ignore (Sys.opaque_identity r); x) event
 
   let next ev =
     let waiter, wakener = Lwt.task () in
@@ -276,11 +269,7 @@ module S = struct
     let r = ref () in
     Gc.finalise (finalise f) r;
     map
-    #if OCAML_VERSION < (4, 03, 0)
-      (fun x -> ignore r; x)
-    #else
       (fun x -> ignore (Sys.opaque_identity r); x)
-    #endif
       signal
 
   let limit ?eq f s =

@@ -344,15 +344,6 @@
 
 
 
-(* Suppress warning 4, "fragile pattern matching," in this file only, due to
-
-     https://github.com/ocaml/ocaml/issues/7451
-
-   This can be removed if/when Lwt requires a minimum OCaml version 4.05. *)
-[@@@ocaml.warning "-4"]
-
-
-
 (* [Lwt_sequence] is deprecated – we don't want users outside Lwt using it.
    However, it is still used internally by Lwt. So, briefly disable warning 3
    ("deprecated"), and create a local, non-deprecated alias for
@@ -361,15 +352,6 @@
 [@@@ocaml.warning "-3"]
 module Lwt_sequence = Lwt_sequence
 [@@@ocaml.warning "+3"]
-
-(* TODO: Remove this when the minimum required version of OCaml is >= 4.08 *)
-module Result = struct
-  type (+'a, +'b) t = ('a, 'b) result =
-    | Ok of 'a
-    | Error of 'b
-end
-
-
 
 (* Some sequence-associated storage types
 

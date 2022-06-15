@@ -122,7 +122,6 @@ let openfile_tests = [
   test "openfile: O_CLOEXEC not given" ~only_if:(fun () -> not Sys.win32)
     (fun () -> test_cloexec ~closed:false []);
 
-#if OCAML_VERSION >= (4, 05, 0)
   test "openfile: O_KEEPEXEC" ~only_if:(fun () -> not Sys.win32)
     (fun () -> test_cloexec ~closed:false [Unix.O_KEEPEXEC]);
 
@@ -131,7 +130,6 @@ let openfile_tests = [
 
   test "openfile: O_KEEPEXEC, O_CLOEXEC" ~only_if:(fun () -> not Sys.win32)
     (fun () -> test_cloexec ~closed:true [Unix.O_KEEPEXEC; Unix.O_CLOEXEC]);
-#endif
 ]
 
 let utimes_tests = [
@@ -203,15 +201,13 @@ let readdir_tests =
 
   let equal, subset =
     let module StringSet = Set.Make (String) in
-    (* Necessary before 4.02. *)
-    let of_list l =
-      List.fold_left (fun set n -> StringSet.add n set) StringSet.empty l in
+    (fun filenames filenames' ->
+      StringSet.equal
+       (StringSet.of_list filenames) (StringSet.of_list filenames')),
 
     (fun filenames filenames' ->
-      StringSet.equal (of_list filenames) (of_list filenames')),
-
-    (fun filenames filenames' ->
-      StringSet.subset (of_list filenames) (of_list filenames'))
+      StringSet.subset
+       (StringSet.of_list filenames) (StringSet.of_list filenames'))
   in
 
   let read_all directory =

@@ -14,10 +14,6 @@
 
 #include "lwt_unix.h"
 
-#if OCAML_VERSION < 40600
-#define Bytes_val(x) String_val(x)
-#endif
-
 struct job_read {
     struct lwt_unix_job job;
     union {

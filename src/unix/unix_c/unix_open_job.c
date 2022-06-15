@@ -64,11 +64,7 @@ static void worker_open(struct job_open *job)
     else if (job->fd & KEEPEXEC)
         cloexec = 0;
     else
-#if OCAML_VERSION_MAJOR >= 4 && OCAML_VERSION_MINOR >= 5
         cloexec = unix_cloexec_default;
-#else
-        cloexec = 0;
-#endif
 
 #if defined(O_CLOEXEC)
     if (cloexec) job->flags |= O_CLOEXEC;
