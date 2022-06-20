@@ -9,6 +9,13 @@ let preprocess =
 let () = Jbuild_plugin.V1.send @@ {|
 
 (rule
+ (targets lwt_process.ml)
+ (deps (:ml lwt_process.cppo.ml))
+ (action
+  (chdir %{project_root}
+   (run %{bin:cppo} -V OCAML:%{ocaml_version} %{ml} -o %{targets}))))
+
+(rule
  (targets lwt_unix.ml)
  (deps (:ml lwt_unix.cppo.ml))
  (action

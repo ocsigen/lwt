@@ -2434,7 +2434,11 @@ let wait () = waitpid [] (-1)
 
 external system_job : string -> int job = "lwt_unix_system_job"
 
+#if OCAML_VERSION >= (5, 0, 0)
+external unix_exit : int -> 'a = "caml_unix_exit"
+#else
 external unix_exit : int -> 'a = "unix_exit"
+#endif
 
 let system cmd =
   if Sys.win32 then

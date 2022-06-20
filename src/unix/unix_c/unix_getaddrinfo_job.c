@@ -51,8 +51,10 @@ static value convert_addrinfo(struct addrinfo *a)
     vcanonname =
         caml_copy_string(a->ai_canonname == NULL ? "" : a->ai_canonname);
     vres = caml_alloc_small(5, 0);
-    Field(vres, 0) = cst_to_constr(a->ai_family, socket_domain_table, 3, 0);
-    Field(vres, 1) = cst_to_constr(a->ai_socktype, socket_type_table, 4, 0);
+    Field(vres, 0) =
+      cst_to_constr(a->ai_family, caml_unix_socket_domain_table, 3, 0);
+    Field(vres, 1) =
+      cst_to_constr(a->ai_socktype, caml_unix_socket_type_table, 4, 0);
     Field(vres, 2) = Val_int(a->ai_protocol);
     Field(vres, 3) = vaddr;
     Field(vres, 4) = vcanonname;
@@ -97,11 +99,11 @@ CAMLprim value lwt_unix_getaddrinfo_job(value node, value service, value hints)
         if (Is_block(v)) switch (Tag_val(v)) {
                 case 0: /* AI_FAMILY of socket_domain */
                     job->hints.ai_family =
-                        socket_domain_table[Int_val(Field(v, 0))];
+                        caml_unix_socket_domain_table[Int_val(Field(v, 0))];
                     break;
                 case 1: /* AI_SOCKTYPE of socket_type */
                     job->hints.ai_socktype =
-                        socket_type_table[Int_val(Field(v, 0))];
+                        caml_unix_socket_type_table[Int_val(Field(v, 0))];
                     break;
                 case 2: /* AI_PROTOCOL of int */
                     job->hints.ai_protocol = Int_val(Field(v, 0));

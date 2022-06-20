@@ -136,7 +136,11 @@ let unix_redirect fd redirection = match redirection with
     Unix.dup2 fd' fd;
     Unix.close fd'
 
+#if OCAML_VERSION >= (5, 0, 0)
+external unix_exit : int -> 'a = "caml_unix_exit"
+#else
 external unix_exit : int -> 'a = "unix_exit"
+#endif
 
 let unix_spawn
     ?cwd
