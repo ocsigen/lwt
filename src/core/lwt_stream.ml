@@ -459,7 +459,7 @@ let rec get_exn_rec s node =
       (fun () -> get_exn_rec s node)
       (fun exn -> Lwt.return (Some (Error exn : _ result)))
       (* Note: the [Error] constructor above is from [Lwt_stream.result], not
-         [Pervasives.result], nor its alias [Lwt.result]. [Lwt_stream.result] is
+         [Stdlib.result], nor its alias [Lwt.result]. [Lwt_stream.result] is
          a deprecated type, defined right above this function.
 
          The type constraint is necessary to avoid a warning about an ambiguous

@@ -347,7 +347,7 @@ let () =
 
     - {!Lwt_unix} for Unix system calls.
     - {!Lwt_bytes} for Unix system calls on bigarrays.
-    - {!Lwt_io} for [Pervasives]-like high-level channels, TCP servers, etc.
+    - {!Lwt_io} for [Stdlib]-like high-level channels, TCP servers, etc.
     - {!Lwt_process} for managing subprocesses.
     - {!Lwt_preemptive} for spawning system threads.
     - Miscellaneous modules {!Lwt_gc}, {!Lwt_engine}, {!Lwt_throttle},

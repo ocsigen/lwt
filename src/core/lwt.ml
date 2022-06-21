@@ -115,7 +115,7 @@
      A resolved promise is either "fulfilled" with a value, or "rejected" with
      an exception. The state of a resolved promise will never change again: a
      resolved promise is immutable. A resolved promise is basically equivalent
-     to an [('a, exn) Pervasives.result]. Resolved promises are produced in two
+     to an [('a, exn) Stdlib.result]. Resolved promises are produced in two
      ways:
 
      - [Lwt.return], [Lwt.fail], and related functions, produce "trivial"
@@ -478,7 +478,7 @@ struct
 
      - The type parameters of ['a resolved_state] guarantee that it is either
        [Fulfilled _] or [Rejected _]. So, it is equivalent to
-       [('a, exn) Pervasives.result], and, indeed, should have an identical
+       [('a, exn) Stdlib.result], and, indeed, should have an identical
        memory representation.
 
      - As per the Overview, there are regular callbacks and cancel callbacks.
@@ -574,7 +574,7 @@ struct
 
   (* Internal name of the public [+'a Lwt.result]. The public name is defined
      later in the module. This is to avoid potential confusion with
-     [Pervasives.result]/[Result.result], as the public name would not be
+     [Stdlib.result]/[Result.result], as the public name would not be
      prefixed with [Lwt.] inside this file. *)
   type +'a lwt_result = ('a, exn) Result.t
 
