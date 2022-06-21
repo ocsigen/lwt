@@ -1427,7 +1427,7 @@ let () =
   (** [p1 <?> p2] is the same as {!Lwt.choose}[ [p1; p2]]. It requires
       [Lwt.Infix] to be opened in scope.
 
-      Unlike with {!Lwt.bind} and {!Lwt.join}, there are no problems with
+      Unlike with {!Lwt.bind} and {!Lwt.map}, there are no problems with
       explicit {!Lwt.choose} syntax, so using this operator is not
       recommended.
 
