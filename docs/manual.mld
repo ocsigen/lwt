@@ -61,10 +61,10 @@
 
 {2 Lwt concepts }
 
-  Let's take a classic function of the [Pervasives] module:
+  Let's take a classic function of the [Stdlib] module:
 
 {[
-# Pervasives.input_char;;
+# Stdlib.input_char;;
 - : in_channel -> char = <fun>
 ]}
 
