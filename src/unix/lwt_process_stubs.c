@@ -3,14 +3,12 @@
 
 
 
-#include <lwt_config.h>
+#include "lwt_config.h"
 
 #if defined(LWT_ON_WINDOWS)
 
 #include <lwt_unix.h>
 
-#define CAML_NAME_SPACE
-#include <caml/version.h>
 #if OCAML_VERSION < 41300
 #define CAML_INTERNALS
 #endif
@@ -22,8 +20,8 @@
 
 static HANDLE get_handle(value opt) {
   value fd;
-  if (Is_block(opt)) {
-    fd = Field(opt, 0);
+  if (Is_some(opt)) {
+    fd = Some_val(opt);
     if (Descr_kind_val(fd) == KIND_SOCKET) {
       win32_maperr(ERROR_INVALID_HANDLE);
       uerror("CreateProcess", Nothing);

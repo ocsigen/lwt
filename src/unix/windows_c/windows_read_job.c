@@ -10,7 +10,6 @@
 #include <caml/memory.h>
 #include <caml/mlvalues.h>
 #include <caml/unixsupport.h>
-#include <caml/version.h>
 
 #include "lwt_unix.h"
 

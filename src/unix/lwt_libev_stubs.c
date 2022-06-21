@@ -10,8 +10,6 @@
 
 #if defined(HAVE_LIBEV)
 
-#define CAML_NAME_SPACE
-
 #include <assert.h>
 
 #include <caml/alloc.h>

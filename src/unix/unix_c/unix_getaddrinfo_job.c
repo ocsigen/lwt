@@ -94,7 +94,7 @@ CAMLprim value lwt_unix_getaddrinfo_job(value node, value service, value hints)
     job->info = NULL;
     memset(&job->hints, 0, sizeof(struct addrinfo));
     job->hints.ai_family = PF_UNSPEC;
-    for (/*nothing*/; Is_block(hints); hints = Field(hints, 1)) {
+    for (/*nothing*/; hints != Val_emptylist; hints = Field(hints, 1)) {
         value v = Field(hints, 0);
         if (Is_block(v)) switch (Tag_val(v)) {
                 case 0: /* AI_FAMILY of socket_domain */

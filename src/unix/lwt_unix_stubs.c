@@ -8,8 +8,6 @@
 #define _GNU_SOURCE
 #define _POSIX_PTHREAD_SEMANTICS
 
-#define CAML_NAME_SPACE
-
 #include <caml/alloc.h>
 #include <caml/bigarray.h>
 #include <caml/callback.h>
@@ -19,7 +17,6 @@
 #include <caml/memory.h>
 #include <caml/mlvalues.h>
 #include <caml/signals.h>
-#include <caml/version.h>
 
 #include <assert.h>
 #include <errno.h>
