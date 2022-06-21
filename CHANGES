@@ -18,6 +18,7 @@
   * Add missing dependency to `cppo` in lwt-react's opam file. (#946, Rizo I)
   * Improve documentation (especially internal links). (#928, Antonin Décimo)
   * Fix documentation of infix choose. (#952, Reynir Björnsson)
+  * Only define OCAML_NAME_SPACE for OCaml<5.0.0. (#929, Antonin Décimo)
 
 ====== Fixes ======
 
