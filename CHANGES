@@ -28,6 +28,7 @@
   * Use the WSA_FLAG_NO_HANDLE_INHERIT on Windows when creating sockets with WSASocket if the cloexec (non-inheritable) parameter is true. Fixes a Windows problem where a child process would inherit a supposedly non-inheritable socket. (#910, Antonin Décimo)
   * Fix macOS/arm64 tests which have a 16k page. (#932, Kate Deplaix)
   * Fix Lwt_unix.closedir incorrectly checking the return value of closedir(3). (#942, Antonin Décimo)
+  * Fix custom_operations struct not fully initialized after OCaml 4.08. (Antonin Décimo, #918)
 
 ====== Deprecations ======
 
