@@ -19,6 +19,7 @@
   * Improve documentation (especially internal links). (#928, Antonin Décimo)
   * Fix documentation of infix choose. (#952, Reynir Björnsson)
   * Only define OCAML_NAME_SPACE for OCaml<5.0.0. (#929, Antonin Décimo)
+  * Replace mentions of Pervasives with Stdlib in the doc. (#954, Antonin Décimo)
 
 ====== Fixes ======
 

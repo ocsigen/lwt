@@ -40,7 +40,7 @@ let () = Lwt_main.run (main ())
       error (i.e., code making such a call is inherently broken).
 
       It is not safe to call [Lwt_main.run] in a function registered with
-      [Pervasives.at_exit], use {!Lwt_main.at_exit} instead. *)
+      [Stdlib.at_exit], use {!Lwt_main.at_exit} instead. *)
 
 val yield : unit -> unit Lwt.t [@@deprecated "Use Lwt.pause instead"]
   (** [yield ()] is a pending promise that is fulfilled after Lwt finishes

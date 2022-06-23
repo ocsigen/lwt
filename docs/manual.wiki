@@ -58,9 +58,9 @@
 
 === Lwt concepts ===
 
-  Let's take a classic function of the {{{Pervasives}}} module:
+  Let's take a classic function of the {{{Stdlib}}} module:
 
-<<code language="ocaml" |# Pervasives.input_char;;
+<<code language="ocaml" |# Stdlib.input_char;;
 - : in_channel -> char = <fun>
 >>
 
@@ -202,7 +202,7 @@ val p : char Lwt.t = <abstr>
   {{{catch f g}}} will call {{{f ()}}}, then wait for it to become
   resolved, and if it was rejected with an exception {{{exn}}}, call
   {{{g exn}}} to handle it. Note that both exceptions raised with
-  {{{Pervasives.raise}}} and {{{Lwt.fail}}} are caught by
+  {{{Stdlib.raise}}} and {{{Lwt.fail}}} are caught by
   {{{catch}}}.
 
 ==== Cancelable promises ====
