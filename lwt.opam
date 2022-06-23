@@ -22,7 +22,7 @@ depends: [
   "cppo" {build & >= "1.1.0"}
   "dune" {>= "1.8.0"}
   "dune-configurator"
-  "ocaml" {>= "4.08"}
+  "ocaml" {>= "4.08" | = "5.0.0~alpha0" }
   "ocplib-endian"
 
   # Until https://github.com/aantron/bisect_ppx/pull/327.
