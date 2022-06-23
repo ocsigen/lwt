@@ -37,9 +37,11 @@ jobs:
           - os: ubuntu-latest
             ocaml-compiler: ocaml-base-compiler.5.0.0~alpha0
             libev: false
-            ppx: true
+            ppx: false
             domain: true
-            local-packages: "*.opam"
+            local-packages: |
+              *.opam
+              !lwt_ppx.opam
           - os: ubuntu-latest
             ocaml-compiler: ocaml-variants.4.14.0+options,ocaml-option-flambda,ocaml-option-musl,ocaml-option-static
             libev: false
