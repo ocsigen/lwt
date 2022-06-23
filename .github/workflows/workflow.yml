@@ -35,7 +35,7 @@ jobs:
             !lwt_domain.opam
         include:
           - os: ubuntu-latest
-            ocaml-compiler: 5.0.0~alpha0
+            ocaml-compiler: ocaml-base-compiler.5.0.0~alpha0
             libev: false
             ppx: true
             domain: true
