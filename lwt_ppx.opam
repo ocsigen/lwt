@@ -21,7 +21,6 @@ depends: [
   "lwt"
   "ocaml" {>= "4.08"}
   "ppxlib" {>= "0.16.0"}
-  "ocaml" {>= "4.08"}
 ]
 
 build: [
