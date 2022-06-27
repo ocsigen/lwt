@@ -36,7 +36,7 @@ let win32_get_fd fd redirection =
   | `Keep ->
     Some fd
   | `Dev_null ->
-    Some (Unix.openfile "nul" [Unix.O_RDWR; Unix.O_CLOEXEC] 0o666)
+    Some (Unix.openfile "nul" [Unix.O_RDWR; Unix.O_KEEPEXEC] 0o666)
   | `Close ->
     None
   | `FD_copy fd' ->
@@ -123,7 +123,7 @@ let unix_redirect fd redirection = match redirection with
     ()
   | `Dev_null ->
     Unix.close fd;
-    let dev_null = Unix.openfile "/dev/null" [Unix.O_RDWR; Unix.O_CLOEXEC] 0o666 in
+    let dev_null = Unix.openfile "/dev/null" [Unix.O_RDWR; Unix.O_KEEPEXEC] 0o666 in
     if fd <> dev_null then begin
       Unix.dup2 dev_null fd;
       Unix.close dev_null
