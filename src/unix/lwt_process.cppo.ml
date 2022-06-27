@@ -123,14 +123,14 @@ let unix_redirect fd redirection = match redirection with
     ()
   | `Dev_null ->
     let dev_null = Unix.openfile "/dev/null" [Unix.O_RDWR; Unix.O_KEEPEXEC] 0o666 in
-    Unix.dup2 dev_null fd;
+    Unix.dup2 ~cloexec:false dev_null fd;
     Unix.close dev_null
   | `Close ->
     Unix.close fd
   | `FD_copy fd' ->
-    Unix.dup2 fd' fd
+    Unix.dup2 ~cloexec:false fd' fd
   | `FD_move fd' ->
-    Unix.dup2 fd' fd;
+    Unix.dup2 ~cloexec:false fd' fd;
     Unix.close fd'
 
 #if OCAML_VERSION >= (5, 0, 0)
