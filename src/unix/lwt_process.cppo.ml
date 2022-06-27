@@ -122,12 +122,9 @@ let unix_redirect fd redirection = match redirection with
   | `Keep ->
     ()
   | `Dev_null ->
-    Unix.close fd;
     let dev_null = Unix.openfile "/dev/null" [Unix.O_RDWR; Unix.O_KEEPEXEC] 0o666 in
-    if fd <> dev_null then begin
-      Unix.dup2 dev_null fd;
-      Unix.close dev_null
-    end
+    Unix.dup2 dev_null fd;
+    Unix.close dev_null
   | `Close ->
     Unix.close fd
   | `FD_copy fd' ->
