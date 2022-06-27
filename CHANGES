@@ -1,5 +1,7 @@
 ===== dev =====
 
+===== 5.6.0 =====
+
 ====== Installability ======
 
   * Lwt is now compatible with OCaml 5.00. Lwt is now incompatible with OCaml 4.02. (#925, #923, Kate Deplaix, Patrick Ferris)
