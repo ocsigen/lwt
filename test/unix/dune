@@ -5,7 +5,8 @@
 
 (executable
  (name dummy)
- (modules dummy))
+ (modules dummy)
+ (libraries unix))
 
 (executable
  (name main)
