@@ -1,5 +1,7 @@
 ===== dev =====
 
+===== 5.6.0 =====
+
 ====== Installability ======
 
   * Lwt is now compatible with OCaml 5.00. Lwt is now incompatible with OCaml 4.02. (#925, #923, Kate Deplaix, Patrick Ferris)
@@ -10,7 +12,8 @@
 
   * In the Lwt_io module, add `?cloexec:bool` optional arguments to functions that create file descriptors (`pipe`). The `?cloexec` argument is simply forwarded to the wrapped Lwt_unix function. (#872, #911, Antonin Décimo)
   * Add Lwt_result.error, Lwt_result.iter, and Lwt_result.iter_error for consistency with Stdlib. (#927, Antonin Décimo)
-  * Lwt_result.bind_error (#943, Boning Dong)
+  * Lwt_result.bind_error. (#943, Boning Dong)
+  * Add ?cloexec parameter to Lwt_io.pipe. (#911, Antonin Décimo)
 
 ====== Misc ======
 
@@ -20,6 +23,9 @@
   * Fix documentation of infix choose. (#952, Reynir Björnsson)
   * Only define OCAML_NAME_SPACE for OCaml<5.0.0. (#929, Antonin Décimo)
   * Replace mentions of Pervasives with Stdlib in the doc. (#954, Antonin Décimo)
+  * Improve deprecation message for auto_yield. (#908, Seb Mondet)
+  * Fix mirage tutorial link. (#936, Tuomas Lukka)
+  * Fix issues in opam file. (#937, Andreas Hauptmann)
 
 ====== Fixes ======
 
@@ -30,6 +36,8 @@
   * Fix macOS/arm64 tests which have a 16k page. (#932, Kate Deplaix)
   * Fix Lwt_unix.closedir incorrectly checking the return value of closedir(3). (#942, Antonin Décimo)
   * Fix custom_operations struct not fully initialized after OCaml 4.08. (Antonin Décimo, #918)
+  * Fix missing include directive. (#940, Antonin Décimo)
+  * Fix missing initialisation in Unix stub. (#941, Antonin Décimo)
 
 ====== Deprecations ======
 
