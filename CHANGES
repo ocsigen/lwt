@@ -1,8 +1,10 @@
 ===== dev =====
 
+===== 5.6.1 =====
+
 ====== Fixes ======
 
-  *  Fix null file descriptor being closed when used as redirection for standard fd of child processes. (#957, Antonin Décimo) 
+  *  Fix null file descriptor being closed when used as redirection for standard fd of child processes. (#957, Antonin Décimo)
 
 ===== 5.6.0 =====
 
