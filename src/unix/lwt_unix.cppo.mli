@@ -1571,7 +1571,7 @@ end
 
 (**/**)
 
-val run : 'a Lwt.t -> 'a
+val run : ?effect_handler:unit Effect.Deep.effect_handler -> 'a Lwt.t -> 'a
   [@@ocaml.deprecated " Use Lwt_main.run."]
   (** @deprecated Use [Lwt_main.run]. *)
 

@@ -24,10 +24,13 @@ let abandon_yielded_and_paused () =
   Lwt_sequence.clear yielded;
   Lwt.abandon_paused ()
 
-let run p =
+let run ?effect_handler p =
   let rec run_loop () =
     (* Fulfill paused promises now. *)
-    Lwt.wakeup_paused ();
+    begin match effect_handler with
+      | None -> Lwt.wakeup_paused ()
+      | Some eh -> Effect.Deep.try_with Lwt.wakeup_paused () eh
+    end;
     match Lwt.poll p with
     | Some x ->
       x
@@ -41,13 +44,23 @@ let run p =
       Lwt_engine.iter should_block_waiting_for_io;
 
       (* Fulfill paused promises again. *)
-      Lwt.wakeup_paused ();
+      begin match effect_handler with
+        | None -> Lwt.wakeup_paused ()
+        | Some eh -> Effect.Deep.try_with Lwt.wakeup_paused () eh
+      end;
 
       (* Fulfill yield promises. *)
       if not (Lwt_sequence.is_empty yielded) then begin
         let tmp = Lwt_sequence.create () in
         Lwt_sequence.transfer_r yielded tmp;
-        Lwt_sequence.iter_l (fun resolver -> Lwt.wakeup resolver ()) tmp
+        begin match effect_handler with
+        | None -> Lwt_sequence.iter_l (fun resolver -> Lwt.wakeup resolver ()) tmp
+        | Some eh ->
+            Effect.Deep.try_with
+              (fun () -> Lwt_sequence.iter_l (fun resolver -> Lwt.wakeup resolver ()) tmp)
+              ()
+              eh
+        end
       end;
 
       (* Call leave hooks. *)
@@ -67,7 +80,7 @@ let finished () =
   run_already_called := `No;
   Mutex.unlock run_already_called_mutex
 
-let run p =
+let run ?effect_handler p =
   (* Fail in case a call to Lwt_main.run is nested under another invocation of
      Lwt_main.run. *)
   Mutex.lock run_already_called_mutex;
@@ -115,7 +128,7 @@ let run p =
   | None -> ()
   end;
 
-  match run p with
+  match run ?effect_handler p with
   | result ->
     finished ();
     result

@@ -7,7 +7,7 @@
 
 (** This module controls the ``main-loop'' of Lwt. *)
 
-val run : 'a Lwt.t -> 'a
+val run : ?effect_handler:unit Effect.Deep.effect_handler -> 'a Lwt.t -> 'a
   (** [Lwt_main.run p] calls the Lwt scheduler, performing I/O until [p]
       resolves. [Lwt_main.run p] returns the value in [p] if [p] is fulfilled.
       If [p] is rejected with an exception instead, [Lwt_main.run p] raises that
@@ -40,7 +40,24 @@ let () = Lwt_main.run (main ())
       error (i.e., code making such a call is inherently broken).
 
       It is not safe to call [Lwt_main.run] in a function registered with
-      [Stdlib.at_exit], use {!Lwt_main.at_exit} instead. *)
+      [Stdlib.at_exit], use {!Lwt_main.at_exit} instead.
+
+      Note that Lwt doesn't mix well with OCaml effects. The main limitations
+      are:
+      - effect handlers installed outside of [Lwt_main.main] cannot use
+      functions that yield (such as [Lwt.pause] and most of [Lwt_unix]) because
+      the effect handler is evaluated outside of the scheduler and thus it never
+      resolves, and
+      - effect handlers installed inside of [Lwt_main.run] can only handle
+      effects that are performed before a yield point is reached because after
+      the yield point the stack has been replaced and thus the effect handler
+      has been removed.
+      See
+      https://gitlab.com/raphael-proust/lwt-effect-try-out/-/blob/develop/src/M01pause.ml
+      for examples.
+
+      To circumvent these limitations, we provide the [effect_handler]
+      parameter. *)
 
 val yield : unit -> unit Lwt.t [@@deprecated "Use Lwt.pause instead"]
   (** [yield ()] is a pending promise that is fulfilled after Lwt finishes
