@@ -15,7 +15,7 @@
 
 (executable
  (name test_lwt_effs)
- (libraries lwttester tester)
+ (libraries lwttester tester lwt_domain)
  (modules test_lwt_effs))
 
 (alias
