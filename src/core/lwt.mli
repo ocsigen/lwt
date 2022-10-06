@@ -458,10 +458,14 @@ val fail : exn -> _ t
     captures a backtrace, while [Lwt.fail] does not. If you call [raise exn] in
     a callback that is expected by Lwt to return a promise, Lwt will
     automatically wrap [exn] in a rejected promise, but the backtrace will have
-    been recorded by the OCaml runtime. Use [Lwt.fail] only when you
-    specifically want to create a rejected promise, to pass to another function,
-    or store in a data structure. *)
+    been recorded by the OCaml runtime.
 
+    For example, [bind]'s second argument is a callback which returns a promise.
+    And so it is recommended to use [raise] in the body of that callback. This
+    applies to the aliases of [bind] as well: [( >>= )] and [( let* )].
+
+    Use [Lwt.fail] only when you specifically want to create a rejected promise,
+    to pass to another function, or store in a data structure. *)
 
 
 (** {3 Callbacks} *)
@@ -574,6 +578,16 @@ let () =
 
 (** {2:2_Rejection Rejection} *)
 
+external reraise : exn -> 'a = "%reraise"
+(** [reraise e] raises the exception [e]. Unlike [raise e], [reraise e]
+    preserves the existing exception backtrace and even adds a "Re-raised at"
+    entry with the call location.
+
+    This function is intended to be used in [Lwt.catch] exception handlers (and
+    the likes.
+
+    It is also used by the ppx extension internally. *)
+
 val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
 (** [Lwt.catch f h] applies [f ()], which returns a promise, and then makes it
     so that [h] (“handler”) will run when that promise is {{!t} {e rejected}}.
@@ -582,10 +596,10 @@ val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
 let () =
   Lwt_main.run begin
     Lwt.catch
-      (fun () -> Lwt.fail Exit)
+      (fun () -> raise Exit)
       (function
       | Exit -> Lwt_io.printl "Got Stdlib.Exit"
-      | exn -> Lwt.fail exn)
+      | exn -> Lwt.reraise exn)
   end
 
 (* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
@@ -598,7 +612,7 @@ let () =
 {[
 let () =
   Lwt_main.run begin
-    try%lwt Lwt.fail Exit
+    try%lwt raise Exit
     with Exit -> Lwt_io.printl "Got Stdlb.Exit"
   end
 
@@ -606,7 +620,7 @@ let () =
 ]}
 
     A particular advantage of the PPX syntax is that it is not necessary to
-    artificially insert a catch-all [exn -> Lwt.fail exn] case. Like in the core
+    artificially insert a catch-all [exn -> reraise exn] case. Like in the core
     language's [try] expression, the catch-all case is implied in [try%lwt].
 
     [Lwt.catch] is a counterpart to {!Lwt.bind} – {!Lwt.bind} is for
@@ -640,33 +654,7 @@ let () =
     - If [h exn] instead returns the promise [p_2], [p_3] is effectively made
       into a reference to [p_2]. This means [p_3] and [p_2] have the same state,
       undergo the same state changes, and performing any operation one is
-      equivalent to performing it on the other.
-
-    {b (2)} {b Warning}: it may be tempting to write this code, which differs
-    from the second example above only in that [try] is used instead of
-    [try%lwt]:
-
-{[
-let () =
-  Lwt_main.run begin
-    try Lwt.fail Exit
-    with Exit -> Lwt_io.printl "Got Stdlib.Exit"
-  end
-
-(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
-]}
-
-    This does {e not} handle the exception and does not print the message.
-    Instead, it terminates the program with an unhandled [Stdlib.Exit].
-
-    This is because the call to {!Lwt.fail} creates a rejected promise. The
-    promise is still an ordinary OCaml value, though, and not a {e raised}
-    exception. So, [try] considers that code to have succeeded, and doesn't run
-    the handler. When that rejected promise reaches {!Lwt_main.run},
-    it is {!Lwt_main.run} that raises the exception.
-
-    Basically, the rule is: if the code inside [try] evaluates to a promise
-    (has type [_ Lwt.t]), replace [try] by [try%lwt]. *)
+      equivalent to performing it on the other. *)
 
 val finalize : (unit -> 'a t) -> (unit -> unit t) -> 'a t
 (** [Lwt.finalize f c] applies [f ()], which returns a promise, and then makes
@@ -754,6 +742,23 @@ val try_bind : (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
     - The cleanup functions [g] and [h] are passed the value [f ()] was
       fulfilled with, and, respectively, the exception [f ()] was rejected
       with.
+
+    As with {!Lwt.catch}, it is recommended to use {!reraise} in the catch-all
+    case of the exception handler:
+
+{[
+let () =
+  Lwt_main.run begin
+    Lwt.try_bind
+      (fun () -> raise Exit)
+      (fun () -> Lwt_io.printl "Got Success")
+      (function
+      | Exit -> Lwt_io.printl "Got Stdlib.Exit"
+      | exn -> Lwt.reraise exn)
+  end
+
+(* ocamlfind opt -linkpkg -thread -package lwt.unix code.ml && ./a.out *)
+]}
 
     The rest is a detailed description of the promises involved.
 
@@ -892,7 +897,7 @@ val async_exception_hook : (exn -> unit) ref
     top level of the program:
 
 {[
-let () = Lwt.async (fun () -> Lwt.fail Exit)
+let () = Lwt.async (fun () -> raise Exit)
 
 (* ocamlfind opt -linkpkg -package lwt code.ml && ./a.out *)
 ]}

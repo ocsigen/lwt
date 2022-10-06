@@ -1677,6 +1677,7 @@ sig
   (* Main interface (public) *)
   val bind : 'a t -> ('a -> 'b t) -> 'b t
   val map : ('a -> 'b) -> 'a t -> 'b t
+  external reraise : exn -> 'a = "%reraise"
   val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
   val finalize : (unit -> 'a t) -> (unit -> unit t) -> 'a t
   val try_bind : (unit -> 'a t) -> ('a -> 'b t) -> (exn -> 'b t) -> 'b t
@@ -2003,6 +2004,8 @@ struct
       let (p'', callback) = create_result_promise_and_callback_if_deferred () in
       add_implicitly_removed_callback p_callbacks callback;
       p''
+
+  external reraise : exn -> 'a = "%reraise"
 
   let catch f h =
     let p = try f () with exn -> fail exn in

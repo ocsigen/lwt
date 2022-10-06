@@ -77,9 +77,8 @@ let gen_binds e_loc l e =
       let new_exp =
           let loc = e_loc in
           [%expr
-            let module Reraise = struct external reraise : exn -> 'a = "%reraise" end in
             Lwt.backtrace_bind
-              (fun exn -> try Reraise.reraise exn with exn -> exn)
+              (fun exn -> try Lwt.reraise exn with exn -> exn)
               [%e name]
               [%e fun_]
           ]
@@ -92,9 +91,8 @@ let lwt_sequence mapper ~exp ~lhs ~rhs ~ext_loc =
   let lhs, rhs = mapper#expression lhs, mapper#expression rhs in
   let loc = exp.pexp_loc in
     [%expr
-      let module Reraise = struct external reraise : exn -> 'a = "%reraise" end in
       Lwt.backtrace_bind
-        (fun exn -> try Reraise.reraise exn with exn -> exn)
+        (fun exn -> try Lwt.reraise exn with exn -> exn)
         [%e lhs]
         (fun [%p pat] -> [%e rhs])
     ]
@@ -222,9 +220,8 @@ let lwt_expression mapper exp attributes ext_loc =
     let new_exp =
       let loc = !default_loc in
         [%expr
-          let module Reraise = struct external reraise : exn -> 'a = "%reraise" end in
           Lwt.backtrace_catch
-            (fun exn -> try Reraise.reraise exn with exn -> exn)
+            (fun exn -> try Lwt.reraise exn with exn -> exn)
             (fun () -> [%e expr])
             [%e pexp_function ~loc cases]
         ]
@@ -308,9 +305,8 @@ class mapper = object (self)
         let new_exp =
           let loc = !default_loc in
             [%expr
-              let module Reraise = struct external reraise : exn -> 'a = "%reraise" end in
               Lwt.backtrace_finalize
-                (fun exn -> try Reraise.reraise exn with exn -> exn)
+                (fun exn -> try Lwt.reraise exn with exn -> exn)
                 (fun () -> [%e exp])
                 (fun () -> [%e finally])
             ]
