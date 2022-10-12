@@ -711,6 +711,11 @@ end
 open Basic_helpers
 
 
+(* Small helper function to avoid catching ocaml-runtime exceptions *)
+let is_not_ocaml_runtime_exception = function
+  | Out_of_memory -> false
+  | Stack_overflow -> false
+  | _ -> true
 
 module Sequence_associated_storage :
 sig
@@ -791,7 +796,7 @@ struct
       let result = f () in
       current_storage := saved_storage;
       result
-    with exn ->
+    with exn when is_not_ocaml_runtime_exception exn ->
       current_storage := saved_storage;
       raise exn
 end
@@ -1129,7 +1134,8 @@ struct
        be reject later, it is not the responsibility of this function to pass
        the exception to [!async_exception_hook]. *)
     try f v
-    with exn -> !async_exception_hook exn
+    with exn when is_not_ocaml_runtime_exception exn ->
+      !async_exception_hook exn
 
 
 
@@ -1826,7 +1832,10 @@ struct
         | Fulfilled v ->
           current_storage := saved_storage;
 
-          let p' = try f v with exn -> fail exn in
+          let p' =
+            try f v with exn
+            when is_not_ocaml_runtime_exception exn -> fail exn
+          in
           let Internal p' = to_internal_promise p' in
           (* Run the user's function [f]. *)
 
@@ -1889,7 +1898,10 @@ struct
         | Fulfilled v ->
           current_storage := saved_storage;
 
-          let p' = try f v with exn -> fail (add_loc exn) in
+          let p' =
+            try f v
+            with exn when is_not_ocaml_runtime_exception exn ->
+              fail (add_loc exn) in
           let Internal p' = to_internal_promise p' in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -1943,7 +1955,10 @@ struct
         | Fulfilled v ->
           current_storage := saved_storage;
 
-          let p''_result = try Fulfilled (f v) with exn -> Rejected exn in
+          let p''_result =
+            try Fulfilled (f v) with exn
+            when is_not_ocaml_runtime_exception exn -> Rejected exn
+          in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
           let p'' = underlying p'' in
@@ -1970,7 +1985,9 @@ struct
         ~run_immediately_and_ensure_tail_call:true
         ~callback:(fun () ->
           to_public_promise
-            {state = try Fulfilled (f v) with exn -> Rejected exn})
+            {state =
+              try Fulfilled (f v)
+              with exn when is_not_ocaml_runtime_exception exn -> Rejected exn})
         ~if_deferred:(fun () ->
           let (p'', callback) =
             create_result_promise_and_callback_if_deferred () in
@@ -1987,7 +2004,10 @@ struct
   external reraise : exn -> 'a = "%reraise"
 
   let catch f h =
-    let p = try f () with exn -> fail exn in
+    let p =
+      try f ()
+      with exn when is_not_ocaml_runtime_exception exn -> fail exn
+    in
     let Internal p = to_internal_promise p in
     let p = underlying p in
 
@@ -2009,7 +2029,10 @@ struct
         | Rejected exn ->
           current_storage := saved_storage;
 
-          let p' = try h exn with exn -> fail exn in
+          let p' =
+            try h exn
+            with exn when is_not_ocaml_runtime_exception exn -> fail exn
+          in
           let Internal p' = to_internal_promise p' in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -2042,7 +2065,10 @@ struct
       p''
 
   let backtrace_catch add_loc f h =
-    let p = try f () with exn -> fail exn in
+    let p =
+      try f ()
+      with exn when is_not_ocaml_runtime_exception exn -> fail exn
+    in
     let Internal p = to_internal_promise p in
     let p = underlying p in
 
@@ -2064,7 +2090,11 @@ struct
         | Rejected exn ->
           current_storage := saved_storage;
 
-          let p' = try h exn with exn -> fail (add_loc exn) in
+          let p' =
+            try h exn
+            with exn when is_not_ocaml_runtime_exception exn ->
+              fail (add_loc exn)
+          in
           let Internal p' = to_internal_promise p' in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -2097,7 +2127,10 @@ struct
       p''
 
   let try_bind f f' h =
-    let p = try f () with exn -> fail exn in
+    let p =
+      try f ()
+      with exn when is_not_ocaml_runtime_exception exn -> fail exn
+    in
     let Internal p = to_internal_promise p in
     let p = underlying p in
 
@@ -2111,7 +2144,10 @@ struct
         | Fulfilled v ->
           current_storage := saved_storage;
 
-          let p' = try f' v with exn -> fail exn in
+          let p' =
+            try f' v
+            with exn when is_not_ocaml_runtime_exception exn -> fail exn
+          in
           let Internal p' = to_internal_promise p' in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -2124,7 +2160,10 @@ struct
         | Rejected exn ->
           current_storage := saved_storage;
 
-          let p' = try h exn with exn -> fail exn in
+          let p' =
+            try h exn
+            with exn when is_not_ocaml_runtime_exception exn -> fail exn
+          in
           let Internal p' = to_internal_promise p' in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -2163,7 +2202,10 @@ struct
       p''
 
   let backtrace_try_bind add_loc f f' h =
-    let p = try f () with exn -> fail exn in
+    let p =
+      try f ()
+      with exn when is_not_ocaml_runtime_exception exn -> fail exn
+    in
     let Internal p = to_internal_promise p in
     let p = underlying p in
 
@@ -2177,7 +2219,11 @@ struct
         | Fulfilled v ->
           current_storage := saved_storage;
 
-          let p' = try f' v with exn -> fail (add_loc exn) in
+          let p' =
+            try f' v
+            with exn when is_not_ocaml_runtime_exception exn ->
+              fail (add_loc exn)
+          in
           let Internal p' = to_internal_promise p' in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -2190,7 +2236,11 @@ struct
         | Rejected exn ->
           current_storage := saved_storage;
 
-          let p' = try h exn with exn -> fail (add_loc exn) in
+          let p' =
+            try h exn
+            with exn when is_not_ocaml_runtime_exception exn ->
+              fail (add_loc exn)
+          in
           let Internal p' = to_internal_promise p' in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -2441,7 +2491,10 @@ struct
   external reraise : exn -> 'a = "%reraise"
 
   let dont_wait f h =
-    let p = try f () with exn -> fail exn in
+    let p =
+      try f ()
+      with exn when is_not_ocaml_runtime_exception exn -> fail exn
+    in
     let Internal p = to_internal_promise p in
 
     match (underlying p).state with
@@ -2461,7 +2514,10 @@ struct
       add_implicitly_removed_callback p_callbacks callback
 
   let async f =
-    let p = try f () with exn -> fail exn in
+    let p =
+      try f ()
+      with exn when is_not_ocaml_runtime_exception exn -> fail exn
+    in
     let Internal p = to_internal_promise p in
 
     match (underlying p).state with
@@ -3062,37 +3118,40 @@ struct
 
 
 
-  let apply f x = try f x with exn -> fail exn
+  let apply f x =
+    try f x with exn when is_not_ocaml_runtime_exception exn -> fail exn
 
-  let wrap f = try return (f ()) with exn -> fail exn
+  let wrap f =
+    try return (f ())
+    with exn when is_not_ocaml_runtime_exception exn -> fail exn
 
   let wrap1 f x1 =
     try return (f x1)
-    with exn -> fail exn
+    with exn when is_not_ocaml_runtime_exception exn -> fail exn
 
   let wrap2 f x1 x2 =
     try return (f x1 x2)
-    with exn -> fail exn
+    with exn when is_not_ocaml_runtime_exception exn -> fail exn
 
   let wrap3 f x1 x2 x3 =
     try return (f x1 x2 x3)
-    with exn -> fail exn
+    with exn when is_not_ocaml_runtime_exception exn -> fail exn
 
   let wrap4 f x1 x2 x3 x4 =
     try return (f x1 x2 x3 x4)
-    with exn -> fail exn
+    with exn when is_not_ocaml_runtime_exception exn -> fail exn
 
   let wrap5 f x1 x2 x3 x4 x5 =
     try return (f x1 x2 x3 x4 x5)
-    with exn -> fail exn
+    with exn when is_not_ocaml_runtime_exception exn -> fail exn
 
   let wrap6 f x1 x2 x3 x4 x5 x6 =
     try return (f x1 x2 x3 x4 x5 x6)
-    with exn -> fail exn
+    with exn when is_not_ocaml_runtime_exception exn -> fail exn
 
   let wrap7 f x1 x2 x3 x4 x5 x6 x7 =
     try return (f x1 x2 x3 x4 x5 x6 x7)
-    with exn -> fail exn
+    with exn when is_not_ocaml_runtime_exception exn -> fail exn
 
 
 

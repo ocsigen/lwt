@@ -2006,6 +2006,8 @@ val ignore_result : _ t -> unit
 val poll : 'a t -> 'a option
 val apply : ('a -> 'b t) -> 'a -> 'b t
 
+val is_not_ocaml_runtime_exception : exn -> bool
+
 val backtrace_bind :
   (exn -> exn) -> 'a t -> ('a -> 'b t) -> 'b t
 val backtrace_catch :

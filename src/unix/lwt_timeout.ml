@@ -72,7 +72,8 @@ let rec loop () =
       (*XXX Should probably report any exception *)
       try
         x.action ()
-      with e -> !handle_exn e
+      with e when Lwt.is_not_ocaml_runtime_exception e ->
+        !handle_exn e
     done;
     curr := (!curr + 1) mod (Array.length !buckets);
     if !count > 0 then loop () else begin stopped := true; Lwt.return_unit end)
