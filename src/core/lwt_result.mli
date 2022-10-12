@@ -23,9 +23,9 @@ val ok : 'a Lwt.t -> ('a, _) t
 val error : 'b Lwt.t -> (_, 'b) t
 (** @since 5.6.0  *)
 
-val catch : 'a Lwt.t -> ('a, exn) t
-(** [catch x] behaves like [return y] if [x] evaluates to [y],
-    and like [fail e] if [x] raises [e] *)
+val catch : (unit -> 'a Lwt.t) -> ('a, exn) t
+(** [catch x] behaves like [return y] if [x ()] evaluates to [y],
+    and like [fail e] if [x ()] raises [e] *)
 
 val get_exn : ('a, exn) t -> 'a Lwt.t
 (** [get_exn] is the opposite of {!catch}: it unwraps the result type,
