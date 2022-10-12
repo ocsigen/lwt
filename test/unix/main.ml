@@ -16,3 +16,9 @@ let () =
     Test_lwt_bytes.suite;
     Test_sleep_and_timeout.suite;
   ]
+
+let () =
+  (* tests that cannot be run inside of the test framework because they manage
+     their own Lwt_main.run *)
+  Test_run_and_runtime_exceptions.test ();
+  ()
