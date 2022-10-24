@@ -371,7 +371,7 @@ let suite = suite "lwt_stream" [
       let b9 = Lwt_stream.is_closed st in
       return (b1 && b2 && b3 && b4 && b5 && b6 && not b7 && not b8 && b9));
 
-  test "closed"
+  test "closed(bind)"
     (fun () ->
       let st = Lwt_stream.from_direct (
         let value = ref (Some 1) in
@@ -387,15 +387,14 @@ let suite = suite "lwt_stream" [
       let b2 = !b = true in
       return (b1 && b2));
 
-  test "on_termination"
+  test "closed(on_termination)"
     (fun () ->
       let st = Lwt_stream.from_direct (
         let value = ref (Some 1) in
         fun () -> let r = !value in value := None; r)
       in
       let b = ref false in
-      (Lwt_stream.on_termination [@ocaml.warning "-3"])
-        st (fun () -> b := true);
+      (Lwt.on_termination (Lwt_stream.closed st) (fun () -> b := true));
       ignore (Lwt_stream.peek st);
       let b1 = !b = false in
       ignore (Lwt_stream.junk st);
@@ -404,13 +403,12 @@ let suite = suite "lwt_stream" [
       let b3 = Lwt_stream.is_closed st in
       Lwt.return (b1 && b2 && b3));
 
-  test "on_termination when closed"
+  test "closed when closed"
     (fun () ->
       let st = Lwt_stream.of_list [] in
       let b = ref false in
       let b1 = Lwt_stream.is_closed st in
-      (Lwt_stream.on_termination [@ocaml.warning "-3"])
-        st (fun () -> b := true);
+      (Lwt.on_termination (Lwt_stream.closed st) (fun () -> b := true));
       Lwt.return (b1 && !b));
 
   test "choose_exhausted"

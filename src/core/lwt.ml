@@ -537,11 +537,6 @@ module Public_types =
 struct
   type +'a t
   type -'a u
-  (* The contravariance of resolvers is, technically, unsound due to the
-     existence of [Lwt.waiter_of_wakener]. That is why that function is
-     deprecated. See
-
-       https://github.com/ocsigen/lwt/issues/458 *)
 
   let to_public_promise : ('a, _, _) promise -> 'a t = Obj.magic
   let to_public_resolver : ('a, _, _) promise -> 'a u = Obj.magic
@@ -570,18 +565,10 @@ struct
      be optimized away even on older versions of OCaml that don't have Flambda
      and don't support [[@@ocaml.unboxed]]. *)
 
-
-
-  (* Internal name of the public [+'a Lwt.result]. The public name is defined
-     later in the module. This is to avoid potential confusion with
-     [Stdlib.result]/[Result.result], as the public name would not be
-     prefixed with [Lwt.] inside this file. *)
-  type +'a lwt_result = ('a, exn) Result.t
-
   (* This could probably save an allocation by using [Obj.magic]. *)
   let state_of_result = function
-    | Result.Ok x -> Fulfilled x
-    | Result.Error exn -> Rejected exn
+    | Ok x -> Fulfilled x
+    | Error exn -> Rejected exn
 end
 include Public_types
 
@@ -1341,11 +1328,11 @@ include Resolution_loop
 
 module Resolving :
 sig
-  val wakeup_later_result : 'a u -> 'a lwt_result -> unit
+  val wakeup_later_result : 'a u -> ('a, exn) result -> unit
   val wakeup_later : 'a u -> 'a -> unit
   val wakeup_later_exn : _ u -> exn -> unit
 
-  val wakeup_result : 'a u -> 'a lwt_result -> unit
+  val wakeup_result : 'a u -> ('a, exn) result -> unit
   val wakeup : 'a u -> 'a -> unit
   val wakeup_exn : _ u -> exn -> unit
 
@@ -1373,8 +1360,8 @@ struct
       ignore p
 
   let wakeup_result r result = wakeup_general "wakeup_result" r result
-  let wakeup r v = wakeup_general "wakeup" r (Result.Ok v)
-  let wakeup_exn r exn = wakeup_general "wakeup_exn" r (Result.Error exn)
+  let wakeup r v = wakeup_general "wakeup" r (Ok v)
+  let wakeup_exn r exn = wakeup_general "wakeup_exn" r (Error exn)
 
   let wakeup_later_general api_function_name r result =
     let Internal p = to_internal_resolver r in
@@ -1397,9 +1384,9 @@ struct
   let wakeup_later_result r result =
     wakeup_later_general "wakeup_later_result" r result
   let wakeup_later r v =
-    wakeup_later_general "wakeup_later" r (Result.Ok v)
+    wakeup_later_general "wakeup_later" r (Ok v)
   let wakeup_later_exn r exn =
-    wakeup_later_general "wakeup_later_exn" r (Result.Error exn)
+    wakeup_later_general "wakeup_later_exn" r (Error exn)
 
 
 
@@ -1471,15 +1458,15 @@ module Trivial_promises :
 sig
   val return : 'a -> 'a t
   val fail : exn -> _ t
-  val of_result : 'a lwt_result -> 'a t
+  val of_result : ('a, exn) result -> 'a t
 
   val return_unit : unit t
   val return_true : bool t
   val return_false : bool t
   val return_none : _ option t
   val return_some : 'a -> 'a option t
-  val return_ok : 'a -> ('a, _) Result.t t
-  val return_error : 'e -> (_, 'e) Result.t t
+  val return_ok : 'a -> ('a, _) result t
+  val return_error : 'e -> (_, 'e) result t
   val return_nil : _ list t
 
   val fail_with : string -> _ t
@@ -1501,8 +1488,8 @@ struct
   let return_nil = return []
   let return_true = return true
   let return_false = return false
-  let return_ok x = return (Result.Ok x)
-  let return_error x = return (Result.Error x)
+  let return_ok x = return (Ok x)
+  let return_error x = return (Error x)
 
   let fail_with msg =
     to_public_promise {state = Rejected (Failure msg)}
@@ -1524,8 +1511,6 @@ sig
   (* Initial pending promises (public) *)
   val wait : unit -> 'a t * 'a u
   val task : unit -> 'a t * 'a u
-
-  val waiter_of_wakener : 'a u -> 'a t
 
   val add_task_r : 'a u Lwt_sequence.t -> 'a t
   val add_task_l : 'a u Lwt_sequence.t -> 'a t
@@ -1563,12 +1548,6 @@ struct
     let p = new_pending ~how_to_cancel:Cancel_this_promise in
     to_public_promise p, to_public_resolver p
 
-
-
-  let waiter_of_wakener r =
-    let Internal r = to_internal_resolver r in
-    let p = r in
-    to_public_promise p
 
 
 
@@ -2637,7 +2616,7 @@ struct
   let count_resolved_promises_in (ps : 'a t list) =
     let rec count_and_gather_rejected total rejected ps =
        match ps with
-       | [] -> Result.Error (total, rejected)
+       | [] -> Error (total, rejected)
        | p :: ps ->
             let Internal q = to_internal_promise p in
             match (underlying q).state with
@@ -2647,7 +2626,7 @@ struct
     in
     let rec count_fulfilled total ps =
        match ps with
-       | [] -> Result.Ok total
+       | [] -> Ok total
        | p :: ps ->
             let Internal q = to_internal_promise p in
             match (underlying q).state with
@@ -2709,7 +2688,7 @@ struct
       invalid_arg
         "Lwt.choose [] would return a promise that is pending forever";
     match count_resolved_promises_in ps with
-    | Result.Ok 0 ->
+    | Ok 0 ->
       let p = new_pending ~how_to_cancel:(propagate_cancel_to_several ps) in
 
       let callback result =
@@ -2723,13 +2702,13 @@ struct
 
       to_public_promise p
 
-    | Result.Ok 1 ->
+    | Ok 1 ->
       nth_resolved ps 0
 
-    | Result.Ok n ->
+    | Ok n ->
       nth_resolved ps (Random.State.int (Lazy.force prng) n)
 
-    | Result.Error (n, ps) ->
+    | Error (n, ps) ->
       nth_resolved ps (Random.State.int (Lazy.force prng) n)
 
   let pick ps =
@@ -3184,14 +3163,3 @@ struct
   let (let+) x f = map f x
   let (and+) = both
 end
-
-
-module Lwt_result_type =
-struct
-  type +'a result = 'a lwt_result
-
-  (* Deprecated. *)
-  let make_value v = Result.Ok v
-  let make_error exn = Result.Error exn
-end
-include Lwt_result_type

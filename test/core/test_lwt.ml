@@ -163,11 +163,6 @@ let initial_promise_tests = suite "initial promises" [
     Lwt.wakeup_result r (Result.Ok "foo");
     state_is (Lwt.Return "foo") p
   end;
-
-  test "waiter_of_wakener" begin fun () ->
-    let p, r = Lwt.wait () in
-    Lwt.return ((Lwt.waiter_of_wakener [@ocaml.warning "-3"]) r == p)
-  end;
 ]
 let suites = suites @ [initial_promise_tests]
 
@@ -4357,23 +4352,6 @@ let lift_tests = suite "apply and wrap" [
   end;
 ]
 let suites = suites @ [lift_tests]
-
-
-
-(* [Lwt.make_value] and [Lwt.make_error] are deprecated, but test them anyway,
-   for good measure. *)
-let make_value_and_error_tests = suite "make_value and make_error" [
-  test "make_value" begin fun () ->
-    Lwt.return ((Lwt.make_value [@ocaml.warning "-3"]) 42 = Result.Ok 42)
-  end;
-
-  test "make_error" begin fun () ->
-    Lwt.return
-      ((Lwt.make_error [@ocaml.warning "-3"]) Exception =
-        Result.Error Exception)
-  end;
-]
-let suites = suites @ [make_value_and_error_tests]
 
 
 

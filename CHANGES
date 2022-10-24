@@ -4,6 +4,18 @@
 
   * Lwt_result.catch now takes a function (unit -> 'a t) rather than a promise ('a t) (#965)
 
+  * Remove the deprecated Lwt.result type (use Stdlib.result instead) (#968)
+
+  * Remove the deprecated Lwt.make_value and Lwt.make_result functions (use Ok and Error instead) (#968)
+
+  * Remove the deprecated and unsafe waiter_of_wakener (keep the waiter around when you create the wakener instead) (#968)
+
+  * Remove the deprecated Lwt_stream.on_termination and Lwt_stream.on_terminate (bind to Lwt_stream.closed instead) (#968)
+
+  * Remove the deprecated Lwt_stream.result type (use Stdlib.result instead) (#968)
+
+  * Remove the deprecated Lwt_stream.map_exn function (use wrap_exn instead) (#968)
+
 ====== Additions ======
 
   * Lwt.reraise an exception raising function which preserves backtraces, recommended for use in Lwt.catch (#963)
