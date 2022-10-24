@@ -1,6 +1,10 @@
 ===== dev =====
 
-===== Build =====
+====== Breaking API changes ======
+
+  * Lwt_result.catch now takes a function (unit -> 'a t) rather than a promise ('a t) (#965)
+
+====== Build ======
 
   * Remove unused dependency in dune file. (#969, Kate Deplaix)
 
