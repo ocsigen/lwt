@@ -4,6 +4,10 @@
 
   * Lwt_result.catch now takes a function (unit -> 'a t) rather than a promise ('a t) (#965)
 
+====== Additions ======
+
+  * Lwt.reraise an exception raising function which preserves backtraces, recommended for use in Lwt.catch (#963)
+
 ====== Build ======
 
   * Remove unused dependency in dune file. (#969, Kate Deplaix)
