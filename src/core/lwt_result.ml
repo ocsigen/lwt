@@ -31,7 +31,7 @@ let map_err f e = map_error f e
 
 let catch e =
   Lwt.catch
-    (fun () -> ok e)
+    (fun () -> ok (e ()))
     fail
 
 let get_exn e =

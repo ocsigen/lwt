@@ -87,13 +87,25 @@ let suite =
 
     test "catch"
       (fun () ->
-         let x = Lwt.return 0 in
+         let x () = Lwt.return 0 in
          Lwt.return (Lwt_result.catch x = Lwt_result.return 0)
       );
 
     test "catch, error case"
       (fun () ->
-         let x = Lwt.fail Dummy_error in
+         let x () = Lwt.fail Dummy_error in
+         Lwt.return (Lwt_result.catch x = Lwt_result.fail Dummy_error)
+      );
+
+    test "catch, bound raise"
+      (fun () ->
+         let x () = Lwt.bind Lwt.return_unit (fun () -> raise Dummy_error) in
+         Lwt.return (Lwt_result.catch x = Lwt_result.fail Dummy_error)
+      );
+
+    test "catch, immediate raise"
+      (fun () ->
+         let x () = raise Dummy_error in
          Lwt.return (Lwt_result.catch x = Lwt_result.fail Dummy_error)
       );
 
