@@ -107,7 +107,7 @@ let run p =
   | result ->
     finished ();
     result
-  | exception exn ->
+  | exception exn when Lwt.is_not_ocaml_runtime_exception exn ->
     finished ();
     raise exn
 
