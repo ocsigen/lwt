@@ -583,8 +583,8 @@ external reraise : exn -> 'a = "%reraise"
     preserves the existing exception backtrace and even adds a "Re-raised at"
     entry with the call location.
 
-    This function is intended to be used in [Lwt.catch] exception handlers (and
-    the likes.
+    This function is intended to be used in the exception handlers of
+    [Lwt.catch] and [Lwt.try_bind].
 
     It is also used by the ppx extension internally. *)
 
