@@ -228,7 +228,7 @@ let job_notification =
        Mutex.unlock jobs_mutex;
        ignore (thunk ()))
 
-let run_in_main_no_wait f =
+let run_in_main_dont_wait f =
   (* Add the job to the queue. *)
   Mutex.lock jobs_mutex;
   Queue.add f jobs;
@@ -253,7 +253,7 @@ let run_in_main f =
     CELL.set cell result;
     Lwt.return_unit
   in
-  run_in_main_no_wait job;
+  run_in_main_dont_wait job;
   (* Wait for the result. *)
   match CELL.get cell with
   | Result.Ok ret -> ret

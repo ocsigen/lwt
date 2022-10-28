@@ -34,8 +34,8 @@ val run_in_main : (unit -> 'a Lwt.t) -> 'a
       retrieve values set this way inside [f ()], but not values set using
       {!Lwt.with_value} outside [f ()]. *)
 
-val run_in_main_no_wait : (unit -> unit Lwt.t) -> unit
-(** [run_in_main_no_wait f] does the same as [run_in_main f] but a bit faster
+val run_in_main_dont_wait : (unit -> unit Lwt.t) -> unit
+(** [run_in_main_dont_wait f] does the same as [run_in_main f] but a bit faster
     and lighter as it does not wait for the result of [f].
 
     @since 5.7.0 *)

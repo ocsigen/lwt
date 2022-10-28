@@ -1063,10 +1063,10 @@ let lwt_preemptive_tests = [
     Lwt_preemptive.detach f () >>= fun x ->
     Lwt.return (x = 42)
   end;
-  test "run_in_main_no_wait" begin fun () ->
+  test "run_in_main_dont_wait" begin fun () ->
     let p, r = Lwt.wait () in
     let f () =
-      Lwt_preemptive.run_in_main_no_wait (fun () ->
+      Lwt_preemptive.run_in_main_dont_wait (fun () ->
         Lwt.pause () >>= fun () ->
         Lwt.pause () >>= fun () ->
         Lwt.wakeup r 42;
