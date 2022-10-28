@@ -586,7 +586,7 @@ external reraise : exn -> 'a = "%reraise"
     This function is intended to be used in the exception handlers of
     [Lwt.catch] and [Lwt.try_bind].
 
-    It is also used by the ppx extension internally. *)
+    It is also used in the code produced by Lwt_ppx. *)
 
 val catch : (unit -> 'a t) -> (exn -> 'a t) -> 'a t
 (** [Lwt.catch f h] applies [f ()], which returns a promise, and then makes it
