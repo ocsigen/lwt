@@ -56,8 +56,8 @@
         is recommended to use this function sparingly. *)
 
   val setup_pool : ?name:string -> int -> pool
-  (** [setup_pool name num_additional_domains] returns a task pool with
-      [num_additional_domains] domains including the current domain.
+  (** [setup_pool name num_domains] returns a task pool with
+      [num_domains] new domains.
 
       It is recommended to use this function to create a pool once before
       calling [Lwt_main.run] and to not call it again afterwards. To resize the

@@ -56,7 +56,7 @@ let lwt_domain_test = [
       (fun _ -> Lwt.return_false)
       (fun exn ->
         Lwt.return (exn = Invalid_argument
-        "Task.setup_pool: num_additional_domains must be at least 0"))
+        "Task.setup_pool: num_domains must be at least 0"))
   end;
   test "detach_exception" begin fun () ->
     let pool = Option.get (Lwt_domain.lookup_pool "pool_1") in

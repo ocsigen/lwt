@@ -5,8 +5,8 @@ module T = Domainslib.Task
 
 type pool = Domainslib.Task.pool
 
-let setup_pool ?name num_additional_domains =
-    T.setup_pool ?name ~num_additional_domains ()
+let setup_pool ?name num_domains =
+    T.setup_pool ?name ~num_domains ()
 
 let teardown_pool = T.teardown_pool
 
