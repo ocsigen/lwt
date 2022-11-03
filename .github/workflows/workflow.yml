@@ -42,12 +42,6 @@ jobs:
             local-packages: |
               *.opam
               !lwt_domain.opam
-          - os: ubuntu-latest
-            ocaml-compiler: ocaml-variants.4.12.0+domains
-            libev: false
-            ppx: true
-            domain: true
-            local-packages: "*.opam"
           - os: macos-latest
             ocaml-compiler: 4.14.x
             libev: true
