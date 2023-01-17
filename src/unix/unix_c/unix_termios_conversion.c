@@ -150,7 +150,7 @@ static tcflag_t *choose_field(struct termios *terminal_status, long field)
     }
 }
 
-void encode_terminal_status(struct termios *terminal_status, value *dst)
+void encode_terminal_status(struct termios *terminal_status, volatile value *dst)
 {
     long *pc;
     int i;
@@ -207,7 +207,7 @@ void encode_terminal_status(struct termios *terminal_status, value *dst)
     }
 }
 
-int decode_terminal_status(struct termios *terminal_status, value *src)
+int decode_terminal_status(struct termios *terminal_status, volatile value *src)
 {
     long *pc;
     int i;
