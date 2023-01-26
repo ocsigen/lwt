@@ -43,7 +43,7 @@ val shell : string -> command
       Unix and ["cmd.exe /c <cmd>"] on Windows). *)
 
 (** All the following functions take an optional argument
-    [timeout]. If specified, after expiration, the process will be
+    [timeout], in seconds. If specified, after expiration, the process will be
     sent a {!Unix.sigkill} signal and channels will be closed. When the channels
     are closed, any pending I/O operations on them (such as
     {!Lwt_io.read_chars}) fail with exception {!Lwt_io.Channel_closed}. *)
