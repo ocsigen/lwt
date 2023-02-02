@@ -730,30 +730,6 @@ let () =
 
 == Other libraries ==
 
-=== Parallelise computations to other cores ===
-
-  If you have some compute-intensive steps within your program, you can execute
-  them on a separate core. You can get performance benefits from the
-  parallelisation. In addition, whilst your compute-intensive function is running
-  on a different core, your normal I/O-bound tasks continue running on the
-  original core.
-
-  The module {{{Lwt_domain}}} from the {{{lwt_domain}}} package provides all the
-  necessary helpers to achieve this. It is based on the {{{Domainslib}}} library
-  and uses similar concepts (such as tasks and pools).
-
-  First, you need to create a task pool:
-
-<<code language="ocaml" |val setup_pool : ?name:string -> int -> pool
->>
-
-  Then you simple detach the function calls to the created pool:
-
-<<code language="ocaml" |val detach : pool -> ('a -> 'b) -> 'a -> 'b Lwt.t
->>
-
-  The returned promise resolves as soon as the function returns.
-
 === Detaching computation to preemptive threads ===
 
   It may happen that you want to run a function which will take time to
