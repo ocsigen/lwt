@@ -22,12 +22,13 @@ jobs:
           - 4.12.x
           - 4.13.x
           - 4.14.x
+          - 5.0.x
         libev:
           - true
           - false
         ppx:
           - true
-            !lwt_domain.opam
+        local-packages: *.opam
         include:
           - os: ubuntu-latest
             ocaml-compiler: ocaml-variants.4.14.0+options,ocaml-option-flambda,ocaml-option-musl,ocaml-option-static
