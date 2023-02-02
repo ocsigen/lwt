@@ -28,23 +28,28 @@ jobs:
           - false
         ppx:
           - true
-        local-packages: *.opam
+        local-packages:
+          - |
+            *.opam
         include:
           - os: ubuntu-latest
             ocaml-compiler: ocaml-variants.4.14.0+options,ocaml-option-flambda,ocaml-option-musl,ocaml-option-static
             libev: false
             ppx: true
-            local-packages: *.opam
+            local-packages: |
+              *.opam
           - os: macos-latest
             ocaml-compiler: 4.14.x
             libev: true
             ppx: true
-            local-packages: *.opam
+            local-packages: |
+              *.opam
           - os: windows-latest
             ocaml-compiler: 4.14.x
             libev: false
             ppx: true
-            local-packages: *.opam
+            local-packages: |
+              *.opam
           - os: ubuntu-latest
             ocaml-compiler: 4.08.x
             libev: true
