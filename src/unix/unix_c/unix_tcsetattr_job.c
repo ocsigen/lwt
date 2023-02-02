@@ -56,7 +56,7 @@ CAMLprim value lwt_unix_tcsetattr_job(value fd, value when, value termios)
     LWT_UNIX_INIT_JOB(job, tcsetattr, 0);
     job->fd = Int_val(fd);
     job->when = when_flag_table[Int_val(when)];
-    memcpy(&job->termios, &Field(termios, 0), NFIELDS * sizeof(value));
+    memcpy(&job->termios, (value *)&Field(termios, 0), NFIELDS * sizeof(value));
     return lwt_unix_alloc_job(&job->job);
 }
 #endif

@@ -24,6 +24,6 @@
 
 #define NFIELDS 38
 
-void encode_terminal_status(struct termios *terminal_status, value *dst);
-int decode_terminal_status(struct termios *terminal_status, value *src);
+void encode_terminal_status(struct termios *terminal_status, volatile value *dst);
+int decode_terminal_status(struct termios *terminal_status, volatile value *src);
 #endif

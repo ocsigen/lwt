@@ -12,6 +12,8 @@
 
   * Remove unused dependency in dune file. (#969, Kate Deplaix)
 
+  * Fix some compilation warnings for C stubs with OCaml 5. (#976, Antonin Décimo)
+
 ===== 5.6.1 =====
 
 ====== Fixes ======
