@@ -258,3 +258,9 @@ let run_in_main f =
   match CELL.get cell with
   | Result.Ok ret -> ret
   | Result.Error exn -> raise exn
+
+(* This version shadows the one above, adding an exception handler *)
+let run_in_main_dont_wait f handler =
+  let f () = Lwt.catch f (fun exc -> handler exc; Lwt.return_unit) in
+  run_in_main_dont_wait f
+
