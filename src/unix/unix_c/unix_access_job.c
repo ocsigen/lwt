@@ -33,21 +33,21 @@
    | Converters                                                      |
    +-----------------------------------------------------------------+ */
 
-/* Table mapping constructors of ocaml type Unix.access_permission to C values. */
-static int access_permission_table[] = {
-  /* Constructor R_OK. */
-  R_OK,
-  /* Constructor W_OK. */
-  W_OK,
-  /* Constructor X_OK. */
-  X_OK,
-  /* Constructor F_OK. */
-  F_OK
-};
-
 /* Convert ocaml values of type Unix.access_permission to a C int. */
 static int int_of_access_permissions(value list)
 {
+  /* Table mapping constructors of ocaml type Unix.access_permission to C values. */
+  int access_permission_table[] = {
+    /* Constructor R_OK. */
+    R_OK,
+    /* Constructor W_OK. */
+    W_OK,
+    /* Constructor X_OK. */
+    X_OK,
+    /* Constructor F_OK. */
+    F_OK
+  };
+
   int result = 0;
   while (list != Val_emptylist) {
     result |= access_permission_table[Int_val(Field(list, 0))];
