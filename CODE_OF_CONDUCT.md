@@ -8,4 +8,5 @@ This project follows the OCaml Code of Conduct
 [enforcement policy](https://github.com/ocaml/code-of-conduct/blob/main/CODE_OF_CONDUCT.md#enforcement).
 To report any violations, please contact:
 
+- Any member of the [code-of-conduct enforcement team](https://github.com/ocaml/code-of-conduct/blob/main/CODE_OF_CONDUCT.md#enforcement)
 - Raphaël Proust `code@bnwr.net`
