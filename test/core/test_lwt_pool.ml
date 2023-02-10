@@ -10,7 +10,7 @@ exception Dummy_error
 let suite = suite "lwt_pool" [
 
   test "basic create-use" begin fun () ->
-    let gen = fun () -> Lwt.return () in
+    let gen = fun () -> Lwt.return_unit in
     let p = Lwt_pool.create 1 gen in
     Lwt.return (Lwt.state (Lwt_pool.use p Lwt.return) = Lwt.Return ())
   end;
@@ -42,7 +42,7 @@ let suite = suite "lwt_pool" [
   test "validation exceptions are propagated to users" begin fun () ->
     let c = Lwt_condition.create () in
     let gen = (fun () -> let l = ref 0 in Lwt.return l) in
-    let v l = if !l = 0 then Lwt.return true else Lwt.fail Dummy_error in
+    let v l = if !l = 0 then Lwt.return_true else Lwt.fail Dummy_error in
     let p = Lwt_pool.create 1 ~validate:v gen in
     let u1 = Lwt_pool.use p (fun l -> l := 1; Lwt_condition.wait c) in
     let u2 = Lwt_pool.use p (fun l -> Lwt.return !l) in
@@ -106,7 +106,7 @@ let suite = suite "lwt_pool" [
   test "waiter are notified on replacement" begin fun () ->
     let c = Lwt_condition.create () in
     let gen = (fun () -> let l = ref 0 in Lwt.return l) in
-    let v l = if !l = 0 then Lwt.return true else Lwt.fail Dummy_error in
+    let v l = if !l = 0 then Lwt.return_true else Lwt.fail Dummy_error in
     let p = Lwt_pool.create 1 ~validate:v gen in
     let u1 = Lwt_pool.use p (fun l -> l := 1; Lwt_condition.wait c) in
     let u2 = Lwt_pool.use p (fun l -> Lwt.return !l) in
@@ -130,7 +130,7 @@ let suite = suite "lwt_pool" [
       else
         Lwt.fail Dummy_error
     in
-    let v l = if !l = 0 then Lwt.return true else Lwt.fail Dummy_error in
+    let v l = if !l = 0 then Lwt.return_true else Lwt.fail Dummy_error in
     let p = Lwt_pool.create 1 ~validate:v gen in
     let u1 = Lwt_pool.use p (fun l -> l := 1; k:= false; Lwt_condition.wait c) in
     let u2 = Lwt_pool.use p (fun l -> Lwt.return !l) in

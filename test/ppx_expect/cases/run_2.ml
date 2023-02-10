@@ -1,2 +1,2 @@
-let%lwt rec () = Lwt.return ()
-and () = Lwt.return ()
+let%lwt rec () = Lwt.return_unit
+and () = Lwt.return_unit

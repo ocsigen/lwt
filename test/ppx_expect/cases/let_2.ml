@@ -1,3 +1,3 @@
 let _ =
-  let%lwt () = Lwt.return () in
+  let%lwt () = Lwt.return_unit in
   ();;

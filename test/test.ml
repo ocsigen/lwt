@@ -345,7 +345,7 @@ let with_async_exception_hook hook f =
   Lwt.async_exception_hook := hook;
   Lwt.finalize f (fun () ->
     Lwt.async_exception_hook := old_hook;
-    Lwt.return ())
+    Lwt.return_unit)
 
 let instrument = function
   | true -> Printf.ksprintf (fun _s -> true)

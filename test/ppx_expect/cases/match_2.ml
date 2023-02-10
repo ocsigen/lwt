@@ -3,4 +3,4 @@ let _ =
     ()
   with
   | () ->
-    Lwt.return ();;
+    Lwt.return_unit;;

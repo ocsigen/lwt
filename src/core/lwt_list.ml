@@ -182,7 +182,7 @@ let rec find_s f l =
       (find_s [@ocaml.tailcall]) f l
 
 let _optionalize f x =
-  f x >>= fun b -> if b then Lwt.return (Some x) else Lwt.return None
+  f x >>= fun b -> if b then Lwt.return (Some x) else Lwt.return_none
 
 let filter_s f l =
   filter_map_s (_optionalize f) l

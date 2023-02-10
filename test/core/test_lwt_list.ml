@@ -44,7 +44,7 @@ let test_exception list_combinator =
     incr number_of_callback_calls;
     match !number_of_callback_calls with
     | 2 -> raise Exception
-    | _ -> Lwt.return ()
+    | _ -> Lwt.return_unit
   in
 
   (* Even though the callback will raise immediately for one of the list
@@ -74,7 +74,7 @@ let test_map f test_list =
         match !c with
         | 5 -> t
         | 8 -> t'
-        | _ -> Lwt.return ()
+        | _ -> Lwt.return_unit
       in
       th >>= (fun () ->
         incr r;
@@ -99,9 +99,9 @@ let test_parallelism map =
   let t, w = Lwt.wait () in
   let g _ =
     Lwt.wakeup_later w ();
-    Lwt.return () in
+    Lwt.return_unit in
   let f x =
-    if x = 0 then t >>= (fun _ -> Lwt.return ())
+    if x = 0 then t >>= (fun _ -> Lwt.return_unit)
     else g x
   in
   let p = map f [0; 1] in
@@ -114,10 +114,10 @@ let test_serialization ?(rev=false) map =
     if x = k then
       Lwt.pause () >>= fun () ->
       assert(not !other_ran);
-      Lwt.return ()
+      Lwt.return_unit
     else begin
       other_ran := true;
-      Lwt.return ()
+      Lwt.return_unit
     end
   in
   let p = map f [0; 1] in
@@ -179,25 +179,25 @@ let suite_primary = suite "lwt_list" [
   test "iter_p" begin fun () ->
     test_iter Lwt_list.iter_p [1; 0; 1];
     test_exception Lwt_list.iter_p;
-    Lwt.return true
+    Lwt.return_true
   end;
 
   test "iter_s" begin fun () ->
     test_iter Lwt_list.iter_s [1; 0; 0];
     test_exception Lwt_list.iter_s;
-    Lwt.return true
+    Lwt.return_true
   end;
 
   test "map_p" begin fun () ->
     test_map Lwt_list.map_p [4; 8; 5];
     test_exception Lwt_list.map_p;
-    Lwt.return true
+    Lwt.return_true
   end;
 
   test "map_s" begin fun () ->
     test_map Lwt_list.map_s [4; 7; 8];
     test_exception Lwt_list.map_s;
-    Lwt.return true
+    Lwt.return_true
   end;
 
   test "fold_left_s" begin fun () ->
@@ -205,7 +205,7 @@ let suite_primary = suite "lwt_list" [
     let f acc v = Lwt.return (v::acc) in
     let t = Lwt_list.fold_left_s f [] l in
     t <=> Lwt.Return (List.rev l);
-    Lwt.return true
+    Lwt.return_true
   end;
 
   test "for_all_s"
@@ -268,10 +268,10 @@ let suite_primary = suite "lwt_list" [
       (fun () ->
         Lwt_list.find_s (fun n ->
           Lwt.return ((n mod 2) = 0)) l >>= fun _result ->
-        Lwt.return false)
+        Lwt.return_false)
       (function
-        | Not_found -> Lwt.return true
-        | _ -> Lwt.return false)
+        | Not_found -> Lwt.return_true
+        | _ -> Lwt.return_false)
   end;
 
   test "rev_map_p"
@@ -289,105 +289,105 @@ let suite_primary = suite "lwt_list" [
   test "iteri_p exception" begin fun () ->
     let i f = Lwt_list.iteri_p (fun _ x -> f x) in
     test_exception i;
-    Lwt.return true
+    Lwt.return_true
   end;
 
   test "iteri_s exception" begin fun () ->
     let i f = Lwt_list.iteri_s (fun _ x -> f x) in
     test_exception i;
-    Lwt.return true
+    Lwt.return_true
   end;
 
   test "map_s exception" begin fun () ->
     test_exception Lwt_list.map_s;
-    Lwt.return true
+    Lwt.return_true
   end;
 
   test "map_p exception" begin fun () ->
     test_exception Lwt_list.map_p;
-    Lwt.return true
+    Lwt.return_true
   end;
 
   test "mapi_s exception" begin fun () ->
     let m f = Lwt_list.mapi_s (fun _ x -> f x) in
     test_exception m;
-    Lwt.return true
+    Lwt.return_true
   end;
 
   test "mapi_p exception" begin fun () ->
     let m f = Lwt_list.mapi_p (fun _ x -> f x) in
     test_exception m;
-    Lwt.return true
+    Lwt.return_true
   end;
 
   test "rev_map_s exception" begin fun () ->
     test_exception Lwt_list.rev_map_s;
-    Lwt.return true
+    Lwt.return_true
   end;
 
   test "rev_map_p exception" begin fun () ->
     test_exception Lwt_list.rev_map_p;
-    Lwt.return true
+    Lwt.return_true
   end;
 
   test "fold_left_s exception" begin fun () ->
     let m f = Lwt_list.fold_left_s (fun _ x -> f x) () in
     test_exception m;
-    Lwt.return true
+    Lwt.return_true
   end;
 
   test "fold_right_s exception" begin fun() ->
     let m f l = Lwt_list.fold_right_s (fun x _ -> f x) l () in
     test_exception m;
-    Lwt.return true
+    Lwt.return_true
   end;
 
   test "for_all_p exception" begin fun () ->
     let m f =
       Lwt_list.for_all_p (fun x -> f x >>= (fun _ -> Lwt.return_true)) in
     test_exception m;
-    Lwt.return true
+    Lwt.return_true
   end;
 
   test "for_all_s exception" begin fun () ->
     let m f =
       Lwt_list.for_all_s (fun x -> f x >>= (fun _ -> Lwt.return_true)) in
     test_exception m;
-    Lwt.return true
+    Lwt.return_true
   end;
 
   test "exists_p exception" begin fun () ->
     let m f =
       Lwt_list.exists_p (fun x -> f x >>= (fun _ -> Lwt.return_false)) in
     test_exception m;
-    Lwt.return true
+    Lwt.return_true
   end;
 
   test "exists_s exception" begin fun () ->
     let m f =
       Lwt_list.exists_s (fun x -> f x >>= (fun _ -> Lwt.return_false)) in
     test_exception m;
-    Lwt.return true
+    Lwt.return_true
   end;
 
   test "find_s exception" begin fun () ->
     let m f = Lwt_list.find_s (fun x -> f x >>= (fun _ -> Lwt.return_false)) in
     test_exception m;
-    Lwt.return true
+    Lwt.return_true
   end;
 
   test "filter_p exception" begin fun () ->
     let m f =
       Lwt_list.filter_p (fun x -> f x >>= (fun _ -> Lwt.return_false)) in
     test_exception m;
-    Lwt.return true;
+    Lwt.return_true;
   end;
 
   test "filter_s exception" begin fun () ->
     let m f =
       Lwt_list.filter_s (fun x -> f x >>= (fun _ -> Lwt.return_false)) in
     test_exception m;
-    Lwt.return true;
+    Lwt.return_true;
   end;
 
   test "filter_map_p exception" begin fun () ->
@@ -395,7 +395,7 @@ let suite_primary = suite "lwt_list" [
       Lwt_list.filter_map_p (fun x -> f x >>= (fun _ -> Lwt.return (Some ())))
     in
     test_exception m;
-    Lwt.return true;
+    Lwt.return_true;
   end;
 
   test "filter_map_s exception" begin fun () ->
@@ -403,21 +403,21 @@ let suite_primary = suite "lwt_list" [
       Lwt_list.filter_map_s (fun x -> f x >>= (fun _ -> Lwt.return (Some ())))
     in
     test_exception m;
-    Lwt.return true;
+    Lwt.return_true;
   end;
 
   test "partition_p exception" begin fun () ->
     let m f =
       Lwt_list.partition_p (fun x -> f x >>= (fun _ -> Lwt.return_false)) in
     test_exception m;
-    Lwt.return true;
+    Lwt.return_true;
   end;
 
   test "partition_s exception" begin fun () ->
     let m f =
       Lwt_list.partition_s (fun x -> f x >>= (fun _ -> Lwt.return_false)) in
     test_exception m;
-    Lwt.return true;
+    Lwt.return_true;
   end;
 
   test "iter_p parallelism" begin fun () ->
@@ -466,13 +466,13 @@ let suite_primary = suite "lwt_list" [
 
   test "fold_left_s serialization" begin fun () ->
     let m f =
-      Lwt_list.fold_left_s (fun _ x -> f x >>= fun _ -> Lwt.return ()) () in
+      Lwt_list.fold_left_s (fun _ x -> f x >>= fun _ -> Lwt.return_unit) () in
     test_serialization m
   end;
 
   test "fold_right_s serialization" begin fun () ->
     let m f l =
-      Lwt_list.fold_right_s (fun x _ -> f x >>= fun _ -> Lwt.return ()) l () in
+      Lwt_list.fold_right_s (fun x _ -> f x >>= fun _ -> Lwt.return_unit) l () in
     test_serialization ~rev:true m
   end;
 
@@ -536,20 +536,20 @@ let suite_primary = suite "lwt_list" [
 
   test "partition_p parallelism" begin fun () ->
     let m f l =
-      Lwt_list.partition_p (fun x -> f x >>= fun _ -> Lwt.return true) l in
+      Lwt_list.partition_p (fun x -> f x >>= fun _ -> Lwt.return_true) l in
     test_parallelism m
   end;
 
   test "partition_s serialization" begin fun () ->
     let m f l =
-      Lwt_list.partition_s (fun x -> f x >>= fun _ -> Lwt.return true) l in
+      Lwt_list.partition_s (fun x -> f x >>= fun _ -> Lwt.return_true) l in
     test_serialization m
   end;
 ]
 
 let test_big_list m =
   let make_list n = Array.to_list @@ Array.init n (fun x -> x) in
-  let f _ = Lwt.return () in
+  let f _ = Lwt.return_unit in
   m f (make_list 10_000_000) >>= (fun _ -> Lwt.return_true)
 
 let suite_intensive = suite "lwt_list big lists"
@@ -602,13 +602,13 @@ let suite_intensive = suite "lwt_list big lists"
 
   test "fold_left_s big list" begin fun () ->
     let m f =
-      Lwt_list.fold_left_s (fun _ x -> f x >>= fun _ -> Lwt.return ()) () in
+      Lwt_list.fold_left_s (fun _ x -> f x >>= fun _ -> Lwt.return_unit) () in
     test_big_list m
   end;
 
   test "fold_right_s big list" begin fun () ->
     let m f l =
-      Lwt_list.fold_right_s (fun x _ -> f x >>= fun _ -> Lwt.return ()) l () in
+      Lwt_list.fold_right_s (fun x _ -> f x >>= fun _ -> Lwt.return_unit) l () in
     test_big_list m
   end;
 
@@ -665,13 +665,13 @@ let suite_intensive = suite "lwt_list big lists"
 
   test "partition_p big list" begin fun () ->
     let m f l =
-      Lwt_list.partition_p (fun x -> f x >>= fun _ -> Lwt.return true) l in
+      Lwt_list.partition_p (fun x -> f x >>= fun _ -> Lwt.return_true) l in
     test_big_list m
   end;
 
   test "partition_s big list" begin fun () ->
     let m f l =
-      Lwt_list.partition_s (fun x -> f x >>= fun _ -> Lwt.return true) l in
+      Lwt_list.partition_s (fun x -> f x >>= fun _ -> Lwt.return_true) l in
     test_big_list m
   end;
 ]

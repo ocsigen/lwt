@@ -83,7 +83,7 @@ module Make (H : Hashtbl.HashedType) : (S with type key = H.t) = struct
                 replacing. *)
              prerr_endline "internal error";
              Printexc.print_backtrace stderr;
-             Lwt.return ())
+             Lwt.return_unit)
       in
       Some t
 

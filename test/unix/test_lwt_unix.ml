@@ -388,7 +388,7 @@ let readv_tests =
     (if close then
       Lwt_unix.close read_fd
     else
-      Lwt.return ()) >>= fun () ->
+      Lwt.return_unit) >>= fun () ->
 
     let actual =
       List.fold_left (fun acc -> function
@@ -515,7 +515,7 @@ let readv_tests =
       Lwt_list.for_all_s (fun t -> t ()) [
         writer write_fd "foobar";
         reader ~close:false read_fd io_vectors underlying 3 "_foo_______";
-        (fun () -> Lwt_unix.IO_vectors.drop io_vectors 3; Lwt.return true);
+        (fun () -> Lwt_unix.IO_vectors.drop io_vectors 3; Lwt.return_true);
         reader read_fd io_vectors underlying 3 "_foo__bar__";
       ]
     end;
@@ -544,7 +544,7 @@ let writev_tests =
     (if close then
       Lwt_unix.close write_fd
     else
-      Lwt.return ()) >>= fun () ->
+      Lwt.return_unit) >>= fun () ->
     let blocking_matches =
       match blocking, is_blocking with
       | Some v, v' when v <> v' ->
@@ -782,7 +782,7 @@ let writev_tests =
 
       Lwt_list.for_all_s (fun t -> t ()) [
         writer ~close:false write_fd io_vectors 3;
-        (fun () -> Lwt_unix.IO_vectors.drop io_vectors 3; Lwt.return true);
+        (fun () -> Lwt_unix.IO_vectors.drop io_vectors 3; Lwt.return_true);
         writer write_fd io_vectors 3;
         reader read_fd "foobar";
       ]
@@ -804,7 +804,7 @@ let send_recv_msg_tests = [
       ~io_vectors:source_iovecs
       ~fds:[Lwt_unix.unix_file_descr pipe_write] >>= fun n ->
     if n <> 6 then
-      Lwt.return false
+      Lwt.return_false
 
     else
       let destination_buffer = Bytes.of_string "_________" in
@@ -823,12 +823,12 @@ let send_recv_msg_tests = [
       in
       match succeeded with
       | None ->
-        Lwt.return false
+        Lwt.return_false
       | Some fd ->
 
         let n = Unix.write fd (Bytes.of_string "baz") 0 3 in
         if n <> 3 then
-          Lwt.return false
+          Lwt.return_false
 
         else
           let buffer = Bytes.create 3 in
@@ -840,10 +840,10 @@ let send_recv_msg_tests = [
             Lwt_unix.close pipe_read >>= fun () ->
             Lwt_unix.close pipe_write >>= fun () ->
             Unix.close fd;
-            Lwt.return true
+            Lwt.return_true
 
           | _ ->
-            Lwt.return false
+            Lwt.return_false
   end;
 
   test "send_msg, recv_msg (Lwt_bytes, old)" ~only_if:(fun () -> not Sys.win32)
@@ -872,7 +872,7 @@ let send_recv_msg_tests = [
       ~io_vectors:source_iovecs
       ~fds:[Lwt_unix.unix_file_descr pipe_write] >>= fun n ->
     if n <> 6 then
-      Lwt.return false
+      Lwt.return_false
 
     else
       let destination_buffer = Lwt_bytes.of_string "_________" in
@@ -899,12 +899,12 @@ let send_recv_msg_tests = [
       in
       match succeeded with
       | None ->
-        Lwt.return false
+        Lwt.return_false
       | Some fd ->
 
         let n = Unix.write fd (Bytes.of_string "baz") 0 3 in
         if n <> 3 then
-          Lwt.return false
+          Lwt.return_false
 
         else
           let buffer = Bytes.create 3 in
@@ -916,10 +916,10 @@ let send_recv_msg_tests = [
             Lwt_unix.close pipe_read >>= fun () ->
             Lwt_unix.close pipe_write >>= fun () ->
             Unix.close fd;
-            Lwt.return true
+            Lwt.return_true
 
           | _ ->
-            Lwt.return false
+            Lwt.return_false
   end;
 ]
 

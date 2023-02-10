@@ -1504,7 +1504,7 @@ let rec delete_recursively directory =
   |> Lwt_stream.iter_s begin fun entry ->
     if entry = Filename.current_dir_name ||
        entry = Filename.parent_dir_name then
-      Lwt.return ()
+      Lwt.return_unit
     else
       let path = Filename.concat directory entry in
       Lwt_unix.lstat path >>= fun {Lwt_unix.st_kind; _} ->

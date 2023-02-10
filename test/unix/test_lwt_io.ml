@@ -87,7 +87,7 @@ let suite = suite "lwt_io" [
       Lwt_io.write oc "bar" >>= fun () ->
       if !sent <> [] then begin
         prerr_endline "auto-flush: !sent not empty";
-        Lwt.return false
+        Lwt.return_false
       end
       else
         Lwt_unix.sleep 0.1 >>= fun () ->
@@ -118,7 +118,7 @@ let suite = suite "lwt_io" [
           Lwt_io.write oc "bar" >>= fun () ->
           if !sent <> [] then begin
             prerr_endline "auto-flush atomic: !sent not empty";
-            Lwt.return false
+            Lwt.return_false
           end
           else
             Lwt_unix.sleep 0.1 >>= fun () ->
@@ -418,10 +418,10 @@ let suite = suite "lwt_io" [
     Lwt.catch
       (fun () ->
         Lwt_io.file_length "." >>= fun _ ->
-        Lwt.return false)
+        Lwt.return_false)
       (function
       | Unix.Unix_error (Unix.EISDIR, "file_length", ".") ->
-        Lwt.return true
+        Lwt.return_true
       | exn -> Lwt.fail exn)
   end;
 

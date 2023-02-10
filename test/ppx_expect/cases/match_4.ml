@@ -1,8 +1,8 @@
 let _ =
   match%lwt
-    Lwt.return ()
+    Lwt.return_unit
   with
   | () ->
-    Lwt.return ()
+    Lwt.return_unit
   | exception End_of_file ->
     Lwt.return 5
