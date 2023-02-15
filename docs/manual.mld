@@ -381,74 +381,62 @@ $ ocamlfind ocamlc -package lwt_ppx -linkpkg -o foo foo.ml
 
 {3 Correspondence table }
 
-{%html:
-<table>
-  <tr>
-    <th>Without <code>Lwt</code></th>
-    <th>With <code>Lwt</code></th>
-  </tr>
-  <tr>
-    <td><pre><code>let pattern_1 = expr_1
+{table
+  {tr
+    {th Without Lwt}
+    {th With Lwt}}
+  {tr
+    {td {[let pattern_1 = expr_1
 and pattern_2 = expr2
 …
 and pattern_n = expr_n in
-expr</code></pre></td>
-    <td><pre><code>let%lwt pattern_1 = expr_1
+expr]}}
+    {td {[let%lwt pattern_1 = expr_1
 and pattern_2 = expr2
 …
 and pattern_n = expr_n in
-expr</code></pre></td>
-  </tr>
-  <tr>
-    <td><pre><code>try expr with
+expr]}}}
+  {tr
+    {td {[try expr with
 | pattern_1 = expr_1
 | pattern_2 = expr2
 …
-| pattern_n = expr_n</code></pre></td>
-    <td><pre><code>try%lwt expr with
+| pattern_n = expr_n]}}
+    {td {[try%lwt expr with
 | pattern_1 = expr_1
 | pattern_2 = expr2
 …
-| pattern_n = expr_n</code></pre></td>
-  </tr>
-  <tr>
-    <td><pre><code>match expr with
+| pattern_n = expr_n]}}}
+  {tr
+    {td {[match expr with
 | pattern_1 = expr_1
 | pattern_2 = expr2
 …
-| pattern_n = expr_n</code></pre></td>
-    <td><pre><code>match%lwt expr with
+| pattern_n = expr_n]}}
+    {td {[match%lwt expr with
 | pattern_1 = expr_1
 | pattern_2 = expr2
 …
-| pattern_n = expr_n</code></pre></td>
-  </tr>
-  <tr>
-    <td><pre><code>for ident = expr_init to expr_final do
+| pattern_n = expr_n]}}}
+  {tr
+    {td {[for ident = expr_init to expr_final do
   expr
-done</code></pre></td>
-    <td><pre><code>for%lwt ident = expr_init to expr_final do
+done]}}
+    {td {[for%lwt ident = expr_init to expr_final do
   expr
-done</code></pre></td>
-  </tr>
-  <tr>
-    <td><pre><code>while expr do expr done</code></pre></td>
-    <td><pre><code>while%lwt expr do expr done</code></pre></td>
-  </tr>
-  <tr>
-    <td><pre><code>if expr then expr else expr</code></pre></td>
-    <td><pre><code>if%lwt expr then expr else expr</code></pre></td>
-  </tr>
-  <tr>
-    <td><pre><code>assert expr</code></pre></td>
-    <td><pre><code>assert%lwt expr</code></pre></td>
-  </tr>
-  <tr>
-    <td><pre><code>raise exn</code></pre></td>
-    <td><pre><code>[%lwt raise exn]</code></pre></td>
-  </tr>
-</table>
-%}
+done]}}}
+  {tr
+    {td {[while expr do expr done]}}
+    {td {[while%lwt expr do expr done]}}}
+  {tr
+    {td {[if expr then expr else expr]}}
+    {td {[if%lwt expr then expr else expr]}}}
+  {tr
+    {td {[assert expr]}}
+    {td {[assert%lwt expr]}}}
+  {tr
+    {td {[raise exn]}}
+    {td {[[%lwt raise exn]]}}}}
 
 {2 Backtrace support }
 
