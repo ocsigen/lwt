@@ -6,7 +6,7 @@ open Lwt
    local module inside the tester function, because that function is run inside
    an outer call to Lwt_main.run, and nested calls to Lwt_main.run are not
    allowed. *)
-let%lwt structure_let_result = Lwt.return true
+let%lwt structure_let_result = Lwt.return_true
 
 let suite = suite "ppx" [
   test "let"
@@ -56,7 +56,7 @@ let suite = suite "ppx" [
 
   test "if"
     (fun () ->
-       let x = Lwt.return true in
+       let x = Lwt.return_true in
        let%lwt a =
          if%lwt x then Lwt.return_true else Lwt.return_false
        in

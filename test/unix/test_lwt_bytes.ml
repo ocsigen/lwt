@@ -87,7 +87,7 @@ let test_mincore buff_len offset n_states =
   let buffer = Lwt_bytes.map_file ~fd ~shared ~size () in
   let states = Array.make n_states false in
   let () = Lwt_bytes.mincore buffer offset states in
-  Lwt.return ()
+  Lwt.return_unit
 
 let test_wait_mincore buff_len offset =
   let test_file = Printf.sprintf "bytes_mincore_write_%i" (file_suffix ()) in
@@ -126,29 +126,29 @@ let suite = suite "lwt_bytes" [
     test "get out of bounds : lower limit" begin fun () ->
       let buff = Lwt_bytes.create 3 in
       match Lwt_bytes.get buff (-1) with
-      | exception Invalid_argument _ -> Lwt.return true
-      | _ -> Lwt.return false
+      | exception Invalid_argument _ -> Lwt.return_true
+      | _ -> Lwt.return_false
     end;
 
     test "get out of bounds : upper limit" begin fun () ->
       let buff = Lwt_bytes.create 3 in
       match Lwt_bytes.get buff 3 with
-      | exception Invalid_argument _ -> Lwt.return true
-      | _ -> Lwt.return false
+      | exception Invalid_argument _ -> Lwt.return_true
+      | _ -> Lwt.return_false
     end;
 
     test "set out of bounds : lower limit" begin fun () ->
       let buff = Lwt_bytes.create 3 in
       match Lwt_bytes.set buff (-1) 'a' with
-      | exception Invalid_argument _ -> Lwt.return true
-      | () -> Lwt.return false
+      | exception Invalid_argument _ -> Lwt.return_true
+      | () -> Lwt.return_false
     end;
 
     test "set out of bounds : upper limit" begin fun () ->
       let buff = Lwt_bytes.create 3 in
       match Lwt_bytes.set buff 3 'a' with
-      | exception Invalid_argument _ -> Lwt.return true
-      | () -> Lwt.return false
+      | exception Invalid_argument _ -> Lwt.return_true
+      | () -> Lwt.return_false
     end;
 
     test "unsafe_get/unsafe_set" begin fun () ->
@@ -211,8 +211,8 @@ let suite = suite "lwt_bytes" [
       let str2 = "abcdef" in
       let buf2 = Lwt_bytes.of_string str2 in
       match Lwt_bytes.blit buf1 (-1) buf2 3 3 with
-      | exception Invalid_argument _ -> Lwt.return true
-      | () -> Lwt.return false
+      | exception Invalid_argument _ -> Lwt.return_true
+      | () -> Lwt.return_false
     end;
 
     test "blit source out of bounds: upper limit" begin fun () ->
@@ -221,8 +221,8 @@ let suite = suite "lwt_bytes" [
       let str2 = "abcdef" in
       let buf2 = Lwt_bytes.of_string str2 in
       match Lwt_bytes.blit buf1 1 buf2 3 3 with
-      | exception Invalid_argument _ -> Lwt.return true
-      | () -> Lwt.return false
+      | exception Invalid_argument _ -> Lwt.return_true
+      | () -> Lwt.return_false
     end;
 
     test "blit destination out of bounds: lower limit" begin fun () ->
@@ -231,8 +231,8 @@ let suite = suite "lwt_bytes" [
       let str2 = "abcdef" in
       let buf2 = Lwt_bytes.of_string str2 in
       match Lwt_bytes.blit buf1 0 buf2 (-1) 3 with
-      | exception Invalid_argument _ -> Lwt.return true
-      | () -> Lwt.return false
+      | exception Invalid_argument _ -> Lwt.return_true
+      | () -> Lwt.return_false
     end;
 
     test "blit destination out of bounds: upper limit" begin fun () ->
@@ -241,8 +241,8 @@ let suite = suite "lwt_bytes" [
       let str2 = "abcdef" in
       let buf2 = Lwt_bytes.of_string str2 in
       match Lwt_bytes.blit buf1 0 buf2 4 3 with
-      | exception Invalid_argument _ -> Lwt.return true
-      | () -> Lwt.return false
+      | exception Invalid_argument _ -> Lwt.return_true
+      | () -> Lwt.return_false
     end;
 
     test "blit length out of bounds: lower limit" begin fun () ->
@@ -251,8 +251,8 @@ let suite = suite "lwt_bytes" [
       let str2 = "abcdef" in
       let buf2 = Lwt_bytes.of_string str2 in
       match Lwt_bytes.blit buf1 0 buf2 3 (-1) with
-      | exception Invalid_argument _ -> Lwt.return true
-      | () -> Lwt.return false
+      | exception Invalid_argument _ -> Lwt.return_true
+      | () -> Lwt.return_false
     end;
 
     test "blit from bytes" begin fun () ->
@@ -781,7 +781,7 @@ let suite = suite "lwt_bytes" [
     test "mincore buffer length = page_size * 2, n_states = 1"
       ~only_if:(fun () -> not Sys.win32) begin fun () ->
       test_mincore (Lwt_bytes.page_size * 2) Lwt_bytes.page_size 1
-      >>= fun () -> Lwt.return true
+      >>= fun () -> Lwt.return_true
     end;
 
     test "mincore buffer length = page_size * 2, n_states = 2"
@@ -789,10 +789,10 @@ let suite = suite "lwt_bytes" [
       Lwt.catch
         (fun () ->
            test_mincore (Lwt_bytes.page_size * 2) Lwt_bytes.page_size 2
-           >>= fun () -> Lwt.return false
+           >>= fun () -> Lwt.return_false
         )
         (function
-          | Invalid_argument _message -> Lwt.return true
+          | Invalid_argument _message -> Lwt.return_true
           | exn -> Lwt.fail exn
         )
     end;
@@ -801,19 +801,19 @@ let suite = suite "lwt_bytes" [
       ~only_if:(fun () -> not Sys.win32) begin fun () ->
       test_mincore (Lwt_bytes.page_size * 2 + 1) Lwt_bytes.page_size 2
       >>= fun () ->
-      Lwt.return true
+      Lwt.return_true
     end;
 
     test "mincore buffer length = page_size , n_states = 0"
       ~only_if:(fun () -> not Sys.win32) begin fun () ->
       test_mincore (Lwt_bytes.page_size * 2 + 1) Lwt_bytes.page_size 0
-      >>= fun () -> Lwt.return true
+      >>= fun () -> Lwt.return_true
     end;
 
     test "wait_mincore correct bounds"
       ~only_if:(fun () -> not Sys.win32) begin fun () ->
       test_wait_mincore (Lwt_bytes.page_size * 2 + 1) Lwt_bytes.page_size
-      >>= fun () -> Lwt.return true
+      >>= fun () -> Lwt.return_true
     end;
 
     test "wait_mincore offset < 0"
@@ -821,10 +821,10 @@ let suite = suite "lwt_bytes" [
       Lwt.catch
         (fun () ->
            test_wait_mincore (Lwt_bytes.page_size * 2 + 1) (-1)
-           >>= fun () -> Lwt.return false
+           >>= fun () -> Lwt.return_false
         )
         (function
-          | Invalid_argument _message -> Lwt.return true
+          | Invalid_argument _message -> Lwt.return_true
           | exn -> Lwt.fail exn
         )
     end;
@@ -835,10 +835,10 @@ let suite = suite "lwt_bytes" [
         (fun () ->
            let buff_len = Lwt_bytes.page_size * 2 + 1 in
            test_wait_mincore buff_len (buff_len + 1)
-           >>= fun () -> Lwt.return false
+           >>= fun () -> Lwt.return_false
         )
         (function
-          | Invalid_argument _message -> Lwt.return true
+          | Invalid_argument _message -> Lwt.return_true
           | exn -> Lwt.fail exn
         )
     end;

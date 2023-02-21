@@ -54,7 +54,7 @@ let suite = suite "Lwt_unix sleep and timeout" [
            Lwt_unix.with_timeout duration f
            >>= fun () ->
            Printf.eprintf "\nno timeout\n";
-           Lwt.return false
+           Lwt.return_false
         )
         (function
           | Lwt_unix.Timeout ->
@@ -67,7 +67,7 @@ let suite = suite "Lwt_unix sleep and timeout" [
 
     test "pause" begin fun () ->
       let bind_callback_ran = ref false in
-      Lwt.async (fun () -> Lwt.return () >|= fun () -> bind_callback_ran := true);
+      Lwt.async (fun () -> Lwt.return_unit >|= fun () -> bind_callback_ran := true);
       let bind_is_immediate = !bind_callback_ran in
       let pause_callback_ran = ref false in
       Lwt.async (fun () -> Lwt.pause () >|= fun () -> pause_callback_ran := true);

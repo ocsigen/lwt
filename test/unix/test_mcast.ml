@@ -53,7 +53,7 @@ let test_mcast name join set_loop =
              fd1 (ADDR_INET (Unix.inet_addr_any, mcast_port))) >>= fun () ->
            let t1 = child mcast_addr join fd1 in
            let t2 = parent mcast_addr mcast_port set_loop fd2 in
-           Lwt.join [t1; t2] >>= fun () -> Lwt.return true
+           Lwt.join [t1; t2] >>= fun () -> Lwt.return_true
         )
         (function
           | Lwt_unix.Timeout ->

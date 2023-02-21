@@ -98,15 +98,15 @@ let suite = suite "Lwt_timeout" [
     Lwt_timeout.create 1 ignore
     |> Lwt_timeout.stop;
 
-    Lwt.return true
+    Lwt.return_true
   end;
 
   test "invalid delay" begin fun () ->
     try
       ignore (Lwt_timeout.create 0 ignore);
-      Lwt.return false
+      Lwt.return_false
     with Invalid_argument _ ->
-      Lwt.return true
+      Lwt.return_true
   end;
 
   test "change" begin fun () ->
@@ -165,9 +165,9 @@ let suite = suite "Lwt_timeout" [
     let timeout = (Lwt_timeout.create 1 ignore) in
     try
       Lwt_timeout.change timeout 0;
-      Lwt.return false
+      Lwt.return_false
     with Invalid_argument _ ->
-      Lwt.return true
+      Lwt.return_true
   end;
 
   test ~sequential:true "exception in action" begin fun () ->

@@ -1,2 +1,2 @@
 let () =
-  Lwt.return () |> ignore
+  Lwt.return_unit |> ignore

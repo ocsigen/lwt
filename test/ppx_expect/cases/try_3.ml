@@ -1,4 +1,4 @@
 let _ =
   try%lwt
-    Lwt.return ()
+    Lwt.return_unit
   with _ -> Lwt.return 5;;

@@ -1,6 +1,6 @@
 let _ =
   match%lwt
-    Lwt.return ()
+    Lwt.return_unit
   with
   | () ->
     5;;

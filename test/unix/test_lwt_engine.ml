@@ -69,10 +69,10 @@ let run_tests = [
     Lwt.pause () >>= fun () ->
 
     try
-      Lwt_main.run (Lwt.return ());
-      Lwt.return false
+      Lwt_main.run (Lwt.return_unit);
+      Lwt.return_false
     with Failure _ ->
-      Lwt.return true
+      Lwt.return_true
   end;
 ]
 
