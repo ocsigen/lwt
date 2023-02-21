@@ -543,9 +543,19 @@ val with_temp_dir :
     arguments to it. Once the temporary directory is created at [path],
     [with_temp_dir f] calls [f path]. When the promise returned by [f path] is
     resolved, [with_temp_dir f] recursively deletes the temporary directory and
-    all its contents.
+    all its contents by calling {!Lwt_io.delete_recursively}.
 
     @since 4.4.0 *)
+
+val delete_recursively : string -> unit Lwt.t
+(** [delete_recursively path] attempts to delete the directory [path]
+    and all its content recursively.
+
+    This is likely VERY slow for directories with many files. That is probably
+    best addressed by switching to blocking calls run inside a worker thread,
+    i.e. with {!Lwt_preemptive}.
+
+    @since 5.7.0 *)
 
 val open_connection :
   ?fd : Lwt_unix.file_descr ->
