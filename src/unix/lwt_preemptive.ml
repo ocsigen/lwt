@@ -228,6 +228,14 @@ let job_notification =
        Mutex.unlock jobs_mutex;
        ignore (thunk ()))
 
+let run_in_main_dont_wait f =
+  (* Add the job to the queue. *)
+  Mutex.lock jobs_mutex;
+  Queue.add f jobs;
+  Mutex.unlock jobs_mutex;
+  (* Notify the main thread. *)
+  Lwt_unix.send_notification job_notification
+
 (* There is a potential performance issue from creating a cell every time this
    function is called. See:
    https://github.com/ocsigen/lwt/issues/218
@@ -245,13 +253,13 @@ let run_in_main f =
     CELL.set cell result;
     Lwt.return_unit
   in
-  (* Add the job to the queue. *)
-  Mutex.lock jobs_mutex;
-  Queue.add job jobs;
-  Mutex.unlock jobs_mutex;
-  (* Notify the main thread. *)
-  Lwt_unix.send_notification job_notification;
+  run_in_main_dont_wait job;
   (* Wait for the result. *)
   match CELL.get cell with
   | Result.Ok ret -> ret
   | Result.Error exn -> raise exn
+
+(* This version shadows the one above, adding an exception handler *)
+let run_in_main_dont_wait f handler =
+  let f () = Lwt.catch f (fun exc -> handler exc; Lwt.return_unit) in
+  run_in_main_dont_wait f

@@ -1063,6 +1063,52 @@ let lwt_preemptive_tests = [
     Lwt_preemptive.detach f () >>= fun x ->
     Lwt.return (x = 42)
   end;
+  test "run_in_main_dont_wait" begin fun () ->
+    let p, r = Lwt.wait () in
+    let f () =
+      Lwt_preemptive.run_in_main_dont_wait
+        (fun () ->
+          Lwt.pause () >>= fun () ->
+          Lwt.pause () >>= fun () ->
+          Lwt.wakeup r 42;
+          Lwt.return ())
+        (fun _ -> assert false)
+    in
+    Lwt_preemptive.detach f () >>= fun () ->
+    p >>= fun x ->
+    Lwt.return (x = 42)
+  end;
+  test "run_in_main_dont_wait_fail" begin fun () ->
+    let p, r = Lwt.wait () in
+    let f () =
+      Lwt_preemptive.run_in_main_dont_wait
+        (fun () ->
+          Lwt.pause () >>= fun () ->
+          Lwt.pause () >>= fun () ->
+          raise Exit)
+        (function Exit -> Lwt.wakeup r 45 | _ -> assert false)
+    in
+    Lwt_preemptive.detach f () >>= fun () ->
+    p >>= fun x ->
+    Lwt.return (x = 45)
+  end;
+  test "run_in_main_with_dont_wait" begin fun () ->
+    let p, r = Lwt.wait () in
+    let f () =
+      Lwt_preemptive.run_in_main (fun () ->
+        Lwt.dont_wait
+          (fun () ->
+            Lwt.pause () >>= fun () ->
+            Lwt.pause () >>= fun () ->
+            Lwt.wakeup r 42;
+            Lwt.return ())
+          (function _ -> Stdlib.exit 2);
+        Lwt.return ())
+    in
+    Lwt_preemptive.detach f () >>= fun () ->
+    p >>= fun x ->
+    Lwt.return (x = 42)
+  end;
 ]
 
 let getlogin_works =

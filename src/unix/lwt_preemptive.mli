@@ -34,6 +34,15 @@ val run_in_main : (unit -> 'a Lwt.t) -> 'a
       retrieve values set this way inside [f ()], but not values set using
       {!Lwt.with_value} outside [f ()]. *)
 
+val run_in_main_dont_wait : (unit -> unit Lwt.t) -> (exn -> unit) -> unit
+(** [run_in_main_dont_wait f h] does the same as [run_in_main f] but a bit faster
+    and lighter as it does not wait for the result of [f].
+
+    If [f]'s promise is rejected (or if it raises), then the function [h] is
+    called with the rejection exception.
+
+    @since 5.7.0 *)
+
 val init : int -> int -> (string -> unit) -> unit
   (** [init min max log] initialises this module. i.e. it launches the
       minimum number of preemptive threads and starts the {b
