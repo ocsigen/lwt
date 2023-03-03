@@ -263,20 +263,6 @@ val closed : 'a t -> unit Lwt.t
 
     @since 2.6.0 *)
 
-val on_termination : 'a t -> (unit -> unit) -> unit
-[@@ocaml.deprecated " Bind on Lwt_stream.closed."]
-(** [on_termination st f] executes [f] when the end of the stream [st]
-    is reached. Note that the stream may still contain elements if
-    {!peek} or similar was used.
-
-    @deprecated Use {!closed}. *)
-
-val on_terminate : 'a t -> (unit -> unit) -> unit
-[@@ocaml.deprecated " Bind on Lwt_stream.closed."]
-(** Same as {!on_termination}.
-
-    @deprecated Use {!closed}. *)
-
 (** {2 Stream transversal} *)
 
 (** Note: all the following functions are destructive.
@@ -360,7 +346,7 @@ val concat : 'a t t -> 'a t
 val flatten : 'a list t -> 'a t
 (** [flatten st = map_list (fun l -> l) st] *)
 
-val wrap_exn : 'a t -> 'a Lwt.result t
+val wrap_exn : 'a t -> ('a, exn) result t
 (** [wrap_exn s] is a stream [s'] such that each time [s] yields a value [v],
     [s'] yields [Result.Ok v], and when the source of [s] raises an exception
     [e], [s'] yields [Result.Error e].
@@ -398,32 +384,3 @@ val hexdump : char t -> string t
         end
     ]}
 *)
-
-(** {2 Deprecated} *)
-
-type 'a result =
-  | Value of 'a
-  | Error of exn
-[@@ocaml.deprecated
-  " This type is being replaced by Lwt.result and the corresponding function
- Lwt_stream.wrap_exn."]
-(** A value or an error.
-
-    @deprecated Replaced by {!wrap_exn}, which uses {!Lwt.result}. *)
-
-[@@@ocaml.warning "-3"]
-val map_exn : 'a t -> 'a result t
-[@@ocaml.deprecated " Use Lwt_stream.wrap_exn"]
-(** [map_exn s] returns a stream that captures all exceptions raised
-    by the source of the stream (the function passed to {!from}).
-
-    Note that for push-streams (as returned by {!create}) all
-    elements of the mapped streams are values.
-
-    If the stream source keeps raising the same exception [e] each time the
-    stream is read, the stream produced by [map_exn] is unbounded. Reading it
-    will produce [Lwt_stream.Error e] indefinitely.
-
-    @deprecated Use {!wrap_exn}. *)
-
-[@@@ocaml.warning "+3"]

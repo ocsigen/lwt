@@ -1600,18 +1600,7 @@ Lwt.fail (Stdlib.Invalid_argument s)
 
 (** {3 Result type} *)
 
-type nonrec +'a result = ('a, exn) result
-(** Representation of the content of a resolved promise of type
-    ['a ]{!Lwt.t}.
-
-    This type is effectively
-
-{[
-type +'a Lwt.result =
-  | Ok of 'a
-  | Error of exn
-]}
-
+(**
     A resolved promise of type ['a ]{!Lwt.t} is either fulfilled with a value of
     type ['a], or rejected with an exception.
 
@@ -1619,18 +1608,10 @@ type +'a Lwt.result =
     fulfilled corresponds to [Ok of 'a], and rejected corresponds to
     [Error of exn].
 
-    It's important to note that this type constructor, [Lwt.result], is
-    different from [Stdlib.result]. It is a specialization of [Stdlib.result] so
-    that the [Error] constructor always carries [exn].
-
     For Lwt programming with [result] where the [Error] constructor can carry
-    arbitrary error types, see module {!Lwt_result}.
+    arbitrary error types, see module {!Lwt_result}. *)
 
-    The naming conflict between [Lwt.result] and [Stdlib.result] is an
-    unfortunate historical accident. [Stdlib.result] did not exist when
-    [Lwt.result] was created. *)
-
-val of_result : 'a result -> 'a t
+val of_result : ('a, exn) result -> 'a t
 (** [Lwt.of_result r] converts an r to a resolved promise.
 
     - If [r] is [Ok v], [Lwt.of_result r] is [Lwt.return v], i.e. a promise
@@ -1638,7 +1619,7 @@ val of_result : 'a result -> 'a t
     - If [r] is [Error exn], [Lwt.of_result r] is [Lwt.fail exn], i.e. a promise
       rejected with [exn]. *)
 
-val wakeup_later_result : 'a u -> 'a result -> unit
+val wakeup_later_result : 'a u -> ('a, exn) result -> unit
 (** [Lwt.wakeup_later_result r result] resolves the pending promise [p]
     associated to resolver [r], according to [result]:
 
@@ -1802,41 +1783,10 @@ val wakeup_exn : _ u -> exn -> unit
 (** [Lwt.wakeup_exn r exn] is like {!Lwt.wakeup_later_exn}[ r exn], but has
     the same problems as {!Lwt.wakeup}. *)
 
-val wakeup_result : 'a u -> 'a result -> unit
+val wakeup_result : 'a u -> ('a, exn) result -> unit
 (** [Lwt.wakeup_result r result] is like {!Lwt.wakeup_later_result}[ r result],
     but has the same problems as {!Lwt.wakeup}. *)
 
-
-
-(** {3 Helpers for resolving} *)
-
-val make_value : 'a -> 'a result
-  [@@ocaml.deprecated
-    " Use Ok (from Stdlib) instead."]
-(** [Lwt.make_value v] is equivalent to
-    {{: https://ocaml.org/api/Stdlib.html#TYPEresult}
-    [Ok v]}.
-
-    @deprecated Use [Ok] instead *)
-
-val make_error : exn -> _ result
-  [@@ocaml.deprecated
-    " Use Error (from Stdlib) instead."]
-(** [Lwt.make_error exn] is equivalent to
-    {{: https://ocaml.org/api/Stdlib.html#TYPEresult}
-    [Error exn]}.
-
-    @deprecated Use [Error] (from Stdlib) instead. *)
-
-val waiter_of_wakener : 'a u -> 'a t
-  [@@ocaml.deprecated
-" This function should be avoided, because it makes subtyping of resolvers
- unsound. See
-  https://github.com/ocsigen/lwt/issues/458"]
-(** [Lwt.waiter_of_wakener r] evaluates to the promise associated with resolver
-    [r].
-
-    @deprecated Keep the reference to the promise instead. *)
 
 
 

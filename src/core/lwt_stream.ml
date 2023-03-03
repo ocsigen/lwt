@@ -79,6 +79,8 @@ type 'a t = {
   source : 'a source;
   (* The source of the stream. *)
   close : unit Lwt.u;
+  (* A wakener for a thread that sleeps until the stream is closed. *)
+  closed : unit Lwt.t;
   (* A waiter for a thread that sleeps until the stream is closed. *)
   mutable node : 'a node;
   (* Pointer to first pending element, or to [last] if there is no
@@ -107,18 +109,15 @@ let clone s =
   {
     source = s.source;
     close = s.close;
+    closed = s.closed;
     node = s.node;
     last = s.last;
   }
 
 let from_source source =
-  let last = new_node () in
-  let _, close = Lwt.wait () in
-  { source = source
-  ; close = close
-  ; node = last
-  ; last = ref last
-  }
+  let node = new_node () in
+  let closed, close = Lwt.wait () in
+  { source ; close ; closed ; node ; last = ref node }
 
 let from f =
   from_source (From { from_create = f; from_thread = Lwt.return_unit })
@@ -126,16 +125,10 @@ let from f =
 let from_direct f =
   from_source (From_direct f)
 
-let closed s =
-  (Lwt.waiter_of_wakener [@ocaml.warning "-3"]) s.close
+let closed s = s.closed
 
 let is_closed s =
   not (Lwt.is_sleeping (closed s))
-
-let on_termination s f =
-  Lwt.async (fun () -> closed s >|= f)
-
-let on_terminate = on_termination
 
 let enqueue' e last =
   let node = !last
@@ -160,11 +153,10 @@ let create_with_reference () =
   (* [push] should not close over [t] so that it can be garbage collected even
    * there are still references to [push]. Unpack all the components of [t]
    * that [push] needs and reference those identifiers instead. *)
-  let close = t.close and last = t.last in
+  let close = t.close and closed = t.closed and last = t.last in
   (* The push function. It does not keep a reference to the stream. *)
   let push x =
-    let waiter_of_wakener = Lwt.waiter_of_wakener [@ocaml.warning "-3"] in
-    if not (Lwt.is_sleeping (waiter_of_wakener close)) then raise Closed;
+    if not (Lwt.is_sleeping closed) then raise Closed;
     (* Push the element at the end of the queue. *)
     enqueue' x last;
     (* Send a signal if at least one thread is waiting for a new
@@ -448,37 +440,11 @@ let rec get_rec s node =
 
 let get s = get_rec s s.node
 
-type 'a result =
-  | Value of 'a
-  | Error of exn
-
 let rec get_exn_rec s node =
   if node == !(s.last) then
     Lwt.try_bind
       (fun () -> feed s)
       (fun () -> get_exn_rec s node)
-      (fun exn -> Lwt.return (Some (Error exn : _ result)))
-      (* Note: the [Error] constructor above is from [Lwt_stream.result], not
-         [Stdlib.result], nor its alias [Lwt.result]. [Lwt_stream.result] is
-         a deprecated type, defined right above this function.
-
-         The type constraint is necessary to avoid a warning about an ambiguous
-         constructor. *)
-  else
-    match node.data with
-    | Some value ->
-      consume s node;
-      Lwt.return (Some (Value value))
-    | None ->
-      Lwt.return_none
-
-let map_exn s = from (fun () -> get_exn_rec s s.node)
-
-let rec get_exn_rec' s node =
-  if node == !(s.last) then
-    Lwt.try_bind
-      (fun () -> feed s)
-      (fun () -> get_exn_rec' s node)
       (fun exn -> Lwt.return (Some (Result.Error exn)))
   else
     match node.data with
@@ -488,7 +454,7 @@ let rec get_exn_rec' s node =
     | None ->
       Lwt.return_none
 
-let wrap_exn s = from (fun () -> get_exn_rec' s s.node)
+let wrap_exn s = from (fun () -> get_exn_rec s s.node)
 
 let rec nget_rec node acc n s =
   if n <= 0 then
