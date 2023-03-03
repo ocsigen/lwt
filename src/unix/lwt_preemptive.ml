@@ -263,4 +263,3 @@ let run_in_main f =
 let run_in_main_dont_wait f handler =
   let f () = Lwt.catch f (fun exc -> handler exc; Lwt.return_unit) in
   run_in_main_dont_wait f
-
