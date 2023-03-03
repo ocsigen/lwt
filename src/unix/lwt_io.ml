@@ -537,7 +537,7 @@ let make :
         perform_io,
         fun pos cmd ->
           try seek pos cmd
-          with e when Lwt.is_not_ocaml_runtime_exception e -> Lwt.fail e
+          with e when Lwt.filter_exception e -> Lwt.fail e
     );
   } and wrapper = {
     state = Idle;

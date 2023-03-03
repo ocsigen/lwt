@@ -182,7 +182,7 @@ let detach f args =
   let task () =
     try
       result := Result.Ok (f args)
-    with exn when Lwt.is_not_ocaml_runtime_exception exn ->
+    with exn when Lwt.filter_exception exn ->
       result := Result.Error exn
   in
   get_worker () >>= fun worker ->

@@ -1999,14 +1999,42 @@ val ignore_result : _ t -> unit
       resolved, completing any associated side effects along the way. In fact,
       the function that does {e that} is ordinary {!Lwt.bind}. *)
 
+(** {4 Runtime exception filters}
+
+    Depending on the kind of programs that you write, you may need to treat
+    exceptions thrown by the OCaml runtime (namely [Out_of_memory] and
+    [Stack_overflow] differently. This is because (a) these exceptions are not
+    reproducible (in that they are thrown at different points of your program
+    depending on the machine that your program runs on) and (b) recovering
+    from these errors may be impossible.
+
+    The helpers below allow you to change the way that Lwt handles the two OCaml
+    runtime exceptions [Out_of_memory] and [Stack_overflow]. *)
+
+(** An [exception_filter] is a value which indicates to Lwt what exceptions to
+    catch and what exceptions to let bubble up all the way out of the main loop
+    immediately. *)
+type exception_filter
+
+(** [catch_all_filter] is the default filter. With it the all the exceptions
+    (including [Out_of_memory] and [Stack_overflow]) are caught and transformed
+    into rejected promises. *)
+val catch_all_filter : exception_filter
+
+(** [catch_not_runtime_filter] is a filter which lets the OCaml runtime
+    exceptions ([Out_of_memory] and [Stack_overflow]) go through all the Lwt
+    abstractions and bubble all the way out of the call to [Lwt_main.run]. *)
+val catch_not_runtime_filter : exception_filter
+
+(** [set_exception_filter] sets the given exception filter globally. *)
+val set_exception_filter : exception_filter -> unit
+
 
 
 (**/**)
 
 val poll : 'a t -> 'a option
 val apply : ('a -> 'b t) -> 'a -> 'b t
-
-val is_not_ocaml_runtime_exception : exn -> bool
 
 val backtrace_bind :
   (exn -> exn) -> 'a t -> ('a -> 'b t) -> 'b t
@@ -2020,3 +2048,5 @@ val backtrace_try_bind :
 val abandon_wakeups : unit -> unit
 
 val debug_state_is : 'a state -> 'a t -> bool t
+
+val filter_exception : exn -> bool

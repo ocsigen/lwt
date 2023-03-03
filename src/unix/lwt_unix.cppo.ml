@@ -184,7 +184,7 @@ let wait_for_jobs () =
 let wrap_result f x =
   try
     Result.Ok (f x)
-  with exn when Lwt.is_not_ocaml_runtime_exception exn ->
+  with exn when Lwt.filter_exception exn ->
     Result.Error exn
 
 let run_job_aux async_method job result =
@@ -244,7 +244,7 @@ external run_job_sync : 'a job -> 'a = "lwt_unix_run_job_sync"
 let self_result job =
   try
     Result.Ok (self_result job)
-  with exn when Lwt.is_not_ocaml_runtime_exception exn ->
+  with exn when Lwt.filter_exception exn ->
     Result.Error exn
 
 let in_retention_test = ref false
@@ -267,7 +267,7 @@ let run_job ?async_method job =
   if async_method = Async_none then
     try
       Lwt.return (run_job_sync job)
-    with exn when Lwt.is_not_ocaml_runtime_exception exn ->
+    with exn when Lwt.filter_exception exn ->
       Lwt.fail exn
   else
     run_job_aux async_method job self_result
@@ -519,7 +519,7 @@ let rec retry_syscall node event ch wakener action =
       Requeued Read
     | Retry_write ->
       Requeued Write
-    | e when Lwt.is_not_ocaml_runtime_exception e ->
+    | e when Lwt.filter_exception e ->
       Exn e
   in
   match res with
@@ -581,7 +581,7 @@ let wrap_syscall event ch action =
     register_action Read ch action
   | Retry_write ->
     register_action Write ch action
-  | e when Lwt.is_not_ocaml_runtime_exception e ->
+  | e when Lwt.filter_exception e ->
     Lwt.fail e
 
 (* +-----------------------------------------------------------------+
@@ -2272,7 +2272,7 @@ let on_signal_full signum handler =
       in
       (try
          set_signal signum notification
-       with exn when Lwt.is_not_ocaml_runtime_exception exn ->
+       with exn when Lwt.filter_exception exn ->
          stop_notification notification;
          raise exn);
       signals := Signal_map.add signum (notification, actions) !signals;
@@ -2376,7 +2376,7 @@ let install_sigchld_handler () =
                  Lwt_sequence.remove node;
                  Lwt.wakeup wakener v
                end
-             with e when Lwt.is_not_ocaml_runtime_exception e ->
+             with e when Lwt.filter_exception e ->
                Lwt_sequence.remove node;
                Lwt.wakeup_exn wakener e
            end wait_children)

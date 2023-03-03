@@ -98,7 +98,7 @@ module E = struct
       Lwt_stream.iter
         (fun v ->
           try push v
-          with exn when Lwt.is_not_ocaml_runtime_exception exn ->
+          with exn when Lwt.filter_exception exn ->
             !Lwt.async_exception_hook exn)
         stream in
     with_finaliser (cancel_thread t) event

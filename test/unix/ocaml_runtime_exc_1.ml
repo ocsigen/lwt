@@ -1,6 +1,9 @@
 (* This file is part of Lwt, released under the MIT license. See LICENSE.md for
    details, or visit https://github.com/ocsigen/lwt/blob/master/LICENSE.md. *)
 
+(* set the exception filter being tested *)
+let () = Lwt.set_exception_filter Lwt.catch_not_runtime_filter
+
 (* OCaml runtime exceptions (out-of-memory, stack-overflow) are fatal in a
    different way than other exceptions and they leave the Lwt main loop in an
    inconsistent state where it cannot be restarted. Indeed, attempting to call

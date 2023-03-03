@@ -710,12 +710,18 @@ struct
 end
 open Basic_helpers
 
-
-(* Small helper function to avoid catching ocaml-runtime exceptions *)
-let is_not_ocaml_runtime_exception = function
+(* Small helpers to avoid catching ocaml-runtime exceptions *)
+type exception_filter = exn -> bool
+let catch_all_filter = fun _ -> true
+let catch_not_runtime_filter = function
   | Out_of_memory -> false
   | Stack_overflow -> false
   | _ -> true
+let exception_filter =
+  (* Default value: the legacy behaviour to avoid breaking programs *)
+  ref catch_all_filter
+let set_exception_filter f = exception_filter := f
+let filter_exception e = !exception_filter e
 
 module Sequence_associated_storage :
 sig
@@ -796,7 +802,7 @@ struct
       let result = f () in
       current_storage := saved_storage;
       result
-    with exn when is_not_ocaml_runtime_exception exn ->
+    with exn when !exception_filter exn ->
       current_storage := saved_storage;
       raise exn
 end
@@ -1134,7 +1140,7 @@ struct
        be reject later, it is not the responsibility of this function to pass
        the exception to [!async_exception_hook]. *)
     try f v
-    with exn when is_not_ocaml_runtime_exception exn ->
+    with exn when !exception_filter exn ->
       !async_exception_hook exn
 
 
@@ -1834,7 +1840,7 @@ struct
 
           let p' =
             try f v with exn
-            when is_not_ocaml_runtime_exception exn -> fail exn
+            when !exception_filter exn -> fail exn
           in
           let Internal p' = to_internal_promise p' in
           (* Run the user's function [f]. *)
@@ -1900,7 +1906,7 @@ struct
 
           let p' =
             try f v
-            with exn when is_not_ocaml_runtime_exception exn ->
+            with exn when !exception_filter exn ->
               fail (add_loc exn) in
           let Internal p' = to_internal_promise p' in
 
@@ -1957,7 +1963,7 @@ struct
 
           let p''_result =
             try Fulfilled (f v) with exn
-            when is_not_ocaml_runtime_exception exn -> Rejected exn
+            when !exception_filter exn -> Rejected exn
           in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -1987,7 +1993,7 @@ struct
           to_public_promise
             {state =
               try Fulfilled (f v)
-              with exn when is_not_ocaml_runtime_exception exn -> Rejected exn})
+              with exn when !exception_filter exn -> Rejected exn})
         ~if_deferred:(fun () ->
           let (p'', callback) =
             create_result_promise_and_callback_if_deferred () in
@@ -2006,7 +2012,7 @@ struct
   let catch f h =
     let p =
       try f ()
-      with exn when is_not_ocaml_runtime_exception exn -> fail exn
+      with exn when !exception_filter exn -> fail exn
     in
     let Internal p = to_internal_promise p in
     let p = underlying p in
@@ -2031,7 +2037,7 @@ struct
 
           let p' =
             try h exn
-            with exn when is_not_ocaml_runtime_exception exn -> fail exn
+            with exn when !exception_filter exn -> fail exn
           in
           let Internal p' = to_internal_promise p' in
 
@@ -2067,7 +2073,7 @@ struct
   let backtrace_catch add_loc f h =
     let p =
       try f ()
-      with exn when is_not_ocaml_runtime_exception exn -> fail exn
+      with exn when !exception_filter exn -> fail exn
     in
     let Internal p = to_internal_promise p in
     let p = underlying p in
@@ -2092,7 +2098,7 @@ struct
 
           let p' =
             try h exn
-            with exn when is_not_ocaml_runtime_exception exn ->
+            with exn when !exception_filter exn ->
               fail (add_loc exn)
           in
           let Internal p' = to_internal_promise p' in
@@ -2129,7 +2135,7 @@ struct
   let try_bind f f' h =
     let p =
       try f ()
-      with exn when is_not_ocaml_runtime_exception exn -> fail exn
+      with exn when !exception_filter exn -> fail exn
     in
     let Internal p = to_internal_promise p in
     let p = underlying p in
@@ -2146,7 +2152,7 @@ struct
 
           let p' =
             try f' v
-            with exn when is_not_ocaml_runtime_exception exn -> fail exn
+            with exn when !exception_filter exn -> fail exn
           in
           let Internal p' = to_internal_promise p' in
 
@@ -2162,7 +2168,7 @@ struct
 
           let p' =
             try h exn
-            with exn when is_not_ocaml_runtime_exception exn -> fail exn
+            with exn when !exception_filter exn -> fail exn
           in
           let Internal p' = to_internal_promise p' in
 
@@ -2204,7 +2210,7 @@ struct
   let backtrace_try_bind add_loc f f' h =
     let p =
       try f ()
-      with exn when is_not_ocaml_runtime_exception exn -> fail exn
+      with exn when !exception_filter exn -> fail exn
     in
     let Internal p = to_internal_promise p in
     let p = underlying p in
@@ -2221,7 +2227,7 @@ struct
 
           let p' =
             try f' v
-            with exn when is_not_ocaml_runtime_exception exn ->
+            with exn when !exception_filter exn ->
               fail (add_loc exn)
           in
           let Internal p' = to_internal_promise p' in
@@ -2238,7 +2244,7 @@ struct
 
           let p' =
             try h exn
-            with exn when is_not_ocaml_runtime_exception exn ->
+            with exn when !exception_filter exn ->
               fail (add_loc exn)
           in
           let Internal p' = to_internal_promise p' in
@@ -2493,7 +2499,7 @@ struct
   let dont_wait f h =
     let p =
       try f ()
-      with exn when is_not_ocaml_runtime_exception exn -> fail exn
+      with exn when !exception_filter exn -> fail exn
     in
     let Internal p = to_internal_promise p in
 
@@ -2516,7 +2522,7 @@ struct
   let async f =
     let p =
       try f ()
-      with exn when is_not_ocaml_runtime_exception exn -> fail exn
+      with exn when !exception_filter exn -> fail exn
     in
     let Internal p = to_internal_promise p in
 
@@ -3119,39 +3125,39 @@ struct
 
 
   let apply f x =
-    try f x with exn when is_not_ocaml_runtime_exception exn -> fail exn
+    try f x with exn when !exception_filter exn -> fail exn
 
   let wrap f =
     try return (f ())
-    with exn when is_not_ocaml_runtime_exception exn -> fail exn
+    with exn when !exception_filter exn -> fail exn
 
   let wrap1 f x1 =
     try return (f x1)
-    with exn when is_not_ocaml_runtime_exception exn -> fail exn
+    with exn when !exception_filter exn -> fail exn
 
   let wrap2 f x1 x2 =
     try return (f x1 x2)
-    with exn when is_not_ocaml_runtime_exception exn -> fail exn
+    with exn when !exception_filter exn -> fail exn
 
   let wrap3 f x1 x2 x3 =
     try return (f x1 x2 x3)
-    with exn when is_not_ocaml_runtime_exception exn -> fail exn
+    with exn when !exception_filter exn -> fail exn
 
   let wrap4 f x1 x2 x3 x4 =
     try return (f x1 x2 x3 x4)
-    with exn when is_not_ocaml_runtime_exception exn -> fail exn
+    with exn when !exception_filter exn -> fail exn
 
   let wrap5 f x1 x2 x3 x4 x5 =
     try return (f x1 x2 x3 x4 x5)
-    with exn when is_not_ocaml_runtime_exception exn -> fail exn
+    with exn when !exception_filter exn -> fail exn
 
   let wrap6 f x1 x2 x3 x4 x5 x6 =
     try return (f x1 x2 x3 x4 x5 x6)
-    with exn when is_not_ocaml_runtime_exception exn -> fail exn
+    with exn when !exception_filter exn -> fail exn
 
   let wrap7 f x1 x2 x3 x4 x5 x6 x7 =
     try return (f x1 x2 x3 x4 x5 x6 x7)
-    with exn when is_not_ocaml_runtime_exception exn -> fail exn
+    with exn when !exception_filter exn -> fail exn
 
 
 
