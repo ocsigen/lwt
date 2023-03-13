@@ -41,16 +41,21 @@ struct speed_t {
     int baud;
 };
 
+/* XXX(dinosaure): esperanto **does not** defines [speed_t] constants. */
+
 long _speedtable(struct speed_t dst[]) {
   struct speed_t speedtable[] = {
+#ifndef __ESPERANTO__
 	  {B50, 50},
           {B75, 75},
           {B110, 110},
           {B134, 134},
           {B150, 150},
+#endif // __ESPERANTO__
 #ifdef B200
           {B200, 200},
 #endif
+#ifndef __ESPERANTO__
           {B300, 300},
           {B600, 600},
           {B1200, 1200},
@@ -60,6 +65,7 @@ long _speedtable(struct speed_t dst[]) {
           {B9600, 9600},
           {B19200, 19200},
           {B38400, 38400},
+#endif // __ESPERANTO__
 #ifdef B57600
           {B57600, 57600},
 #endif
@@ -69,7 +75,9 @@ long _speedtable(struct speed_t dst[]) {
 #ifdef B230400
           {B230400, 230400},
 #endif
+#ifndef __ESPERANTO__
           {B0, 0},
+#endif // __ESPERANTO__
 
                   /* Linux extensions */
 #ifdef B460800
