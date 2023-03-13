@@ -417,7 +417,7 @@ struct
 
           int main()
           {
-              pthread_create(0, 0, 0, 0);
+              pthread_create(1, 1, 1, 1);
               return 0;
           }
         |}
