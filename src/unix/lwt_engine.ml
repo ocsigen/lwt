@@ -147,6 +147,8 @@ struct
   let devpoll = EV_DEVPOLL
   let port = EV_PORT
 
+  let equal = ( = )
+
   let name = function
     | EV_DEFAULT -> "EV_DEFAULT"
     | EV_SELECT -> "EV_SELECT"
@@ -160,6 +162,7 @@ struct
 end
 
 external ev_init : Ev_backend.t -> ev_loop = "lwt_libev_init"
+external ev_backend : ev_loop -> Ev_backend.t = "lwt_libev_backend"
 external ev_stop : ev_loop -> unit = "lwt_libev_stop"
 external ev_loop : ev_loop -> bool -> unit = "lwt_libev_loop"
 external ev_unloop : ev_loop -> unit = "lwt_libev_unloop"
@@ -174,6 +177,8 @@ class libev ?(backend=Ev_backend.default) () = object
 
   val loop = ev_init backend
   method loop = loop
+
+  method backend = ev_backend loop
 
   method private cleanup = ev_stop loop
 

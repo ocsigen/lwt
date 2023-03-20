@@ -127,6 +127,8 @@ sig
   val devpoll : t
   val port : t
 
+  val equal : t -> t -> bool
+
   val pp : Format.formatter -> t -> unit
 end
 
@@ -136,6 +138,9 @@ end
     creation of the class will raise {!Lwt_sys.Not_available}. *)
 class libev : ?backend:Ev_backend.t -> unit -> object
   inherit t
+
+  method backend : Ev_backend.t
+    (** The backend picked by libev. *)
 
   val loop : ev_loop
     (** The libev loop used for this engine. *)
@@ -200,6 +205,7 @@ sig
   class libev_1 : object
     inherit t
     val loop : ev_loop
+    method backend : Ev_backend.t
     method loop : ev_loop
   end
   [@@ocaml.deprecated
@@ -214,6 +220,7 @@ sig
   class libev_2 : ?backend:Ev_backend.t -> unit -> object
     inherit t
     val loop : ev_loop
+    method backend : Ev_backend.t
     method loop : ev_loop
   end
   [@@ocaml.deprecated
