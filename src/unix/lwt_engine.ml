@@ -178,7 +178,7 @@ class libev ?(backend=Ev_backend.default) () = object
   val loop = ev_init backend
   method loop = loop
 
-  method backend = ev_backend loop
+  method backend = lazy (ev_backend loop)
 
   method private cleanup = ev_stop loop
 
