@@ -25,14 +25,14 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           ref: wikidoc
 
       - name: Install OCaml 🐫
-        uses: avsm/setup-ocaml@v1
+        uses: ocaml/setup-ocaml@v2
         with:
-          ocaml-version: 4.11.0
+          ocaml-compiler: 4.11.x
 
       - name: Install HOW 🦔
         run: |
@@ -53,7 +53,7 @@ jobs:
           echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; URL=latest/manual/manual" /></head><body></body></html>' > $HOW_OUT/index.html
 
       - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@4.0.0
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages # The branch the action should deploy to.
           folder: _doc # The folder the action should deploy.
