@@ -2,7 +2,7 @@
 
 name: Update Web site
 
-# Controls when the action will run. 
+# Controls when the action will run.
 on:
   # Triggers the workflow on push or pull request events but only for the wikidoc branch
   push:
@@ -34,12 +34,12 @@ jobs:
         with:
           ocaml-version: 4.11.0
 
-      - name: Install HOW 🦔 
+      - name: Install HOW 🦔
         run: |
           opam pin add -y html_of_wiki https://github.com/ocsigen/html_of_wiki.git
           git clone --depth 1 https://github.com/ocsigen/ocsigen.github.io.git __ocsigen.github.io
           mv __ocsigen.github.io/template how_template
-          
+
       - name: Generate doc ⚙️
         run: |
           export HOW_DOC=docs
