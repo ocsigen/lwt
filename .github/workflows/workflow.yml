@@ -76,7 +76,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Hack Git CRLF for ocaml/setup-ocaml issue #529
         if: ${{ startsWith(matrix.os, 'windows-') }}
