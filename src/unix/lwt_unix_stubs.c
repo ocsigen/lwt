@@ -840,7 +840,11 @@ CAMLprim value lwt_unix_set_signal(value val_signum, value val_notification) {
   }
 #else
   sa.sa_handler = handle_signal;
+#if OCAML_VERSION >= 50000
+  sa.sa_flags = SA_ONSTACK;
+#else
   sa.sa_flags = 0;
+#endif
   sigemptyset(&sa.sa_mask);
   if (sigaction(signum, &sa, NULL) == -1) {
     signal_notifications[signum] = -1;
