@@ -801,6 +801,11 @@ static void handle_signal(int signum) {
   }
 }
 
+CAMLprim value lwt_unix_handle_signal(value val_signum) {
+  handle_signal(caml_convert_signal_number(Int_val(val_signum)));
+  return Val_unit;
+}
+
 #if defined(LWT_ON_WINDOWS)
 /* Handle Ctrl+C on windows. */
 static BOOL WINAPI handle_break(DWORD event) {
@@ -813,7 +818,7 @@ static BOOL WINAPI handle_break(DWORD event) {
 #endif
 
 /* Install a signal handler. */
-CAMLprim value lwt_unix_set_signal(value val_signum, value val_notification) {
+CAMLprim value lwt_unix_set_signal(value val_signum, value val_notification, value val_forwarded) {
 #if !defined(LWT_ON_WINDOWS)
   struct sigaction sa;
 #endif
@@ -824,6 +829,8 @@ CAMLprim value lwt_unix_set_signal(value val_signum, value val_notification) {
     caml_invalid_argument("Lwt_unix.on_signal: unavailable signal");
 
   signal_notifications[signum] = notification;
+
+  if (Bool_val(val_forwarded)) return Val_unit;
 
 #if defined(LWT_ON_WINDOWS)
   if (signum == SIGINT) {
@@ -855,7 +862,7 @@ CAMLprim value lwt_unix_set_signal(value val_signum, value val_notification) {
 }
 
 /* Remove a signal handler. */
-CAMLprim value lwt_unix_remove_signal(value val_signum) {
+CAMLprim value lwt_unix_remove_signal(value val_signum, value val_forwarded) {
 #if !defined(LWT_ON_WINDOWS)
   struct sigaction sa;
 #endif
@@ -863,6 +870,9 @@ CAMLprim value lwt_unix_remove_signal(value val_signum) {
      set_signal. */
   int signum = caml_convert_signal_number(Int_val(val_signum));
   signal_notifications[signum] = -1;
+
+  if (Bool_val(val_forwarded)) return Val_unit;
+
 #if defined(LWT_ON_WINDOWS)
   if (signum == SIGINT)
     SetConsoleCtrlHandler(NULL, FALSE);
