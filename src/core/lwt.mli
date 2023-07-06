@@ -2003,10 +2003,10 @@ val ignore_result : _ t -> unit
 
     Depending on the kind of programs that you write, you may need to treat
     exceptions thrown by the OCaml runtime (namely [Out_of_memory] and
-    [Stack_overflow] differently. This is because (a) these exceptions are not
-    reproducible (in that they are thrown at different points of your program
-    depending on the machine that your program runs on) and (b) recovering
-    from these errors may be impossible.
+    [Stack_overflow]) differently than all the other exceptions. This is because
+    (a) these exceptions are not reproducible (in that they are thrown at
+    different points of your program depending on the machine that your program
+    runs on) and (b) recovering from these errors may be impossible.
 
     The helpers below allow you to change the way that Lwt handles the two OCaml
     runtime exceptions [Out_of_memory] and [Stack_overflow]. *)
@@ -2016,15 +2016,15 @@ val ignore_result : _ t -> unit
     immediately. *)
 type exception_filter
 
-(** [catch_all_filter] is the default filter. With it the all the exceptions
+(** [catch_filter__all] is the default filter. With it the all the exceptions
     (including [Out_of_memory] and [Stack_overflow]) are caught and transformed
     into rejected promises. *)
-val catch_all_filter : exception_filter
+val catch_filter__all : exception_filter
 
-(** [catch_not_runtime_filter] is a filter which lets the OCaml runtime
+(** [catch_filter__all_except_runtime] is a filter which lets the OCaml runtime
     exceptions ([Out_of_memory] and [Stack_overflow]) go through all the Lwt
     abstractions and bubble all the way out of the call to [Lwt_main.run]. *)
-val catch_not_runtime_filter : exception_filter
+val catch_filter__all_except_runtime : exception_filter
 
 (** [set_exception_filter] sets the given exception filter globally. *)
 val set_exception_filter : exception_filter -> unit

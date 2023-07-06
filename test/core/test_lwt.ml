@@ -638,7 +638,7 @@ let catch_tests = suite "catch" [
 
 
   test "catch with ocaml-runtime exception" begin fun () ->
-    Lwt.set_exception_filter Lwt.catch_not_runtime_filter;
+    Lwt.set_exception_filter Lwt.catch_filter__all_except_runtime;
     try
       Lwt.catch
         (fun () -> raise Out_of_memory)
@@ -648,7 +648,7 @@ let catch_tests = suite "catch" [
   end;
 
   test "try_bind with ocaml-runtime exception" begin fun () ->
-    Lwt.set_exception_filter Lwt.catch_not_runtime_filter;
+    Lwt.set_exception_filter Lwt.catch_filter__all_except_runtime;
     try
       Lwt.try_bind
         (fun () -> raise Out_of_memory)
@@ -659,7 +659,7 @@ let catch_tests = suite "catch" [
   end;
 
   test "try_bind(2) with ocaml-runtime exception" begin fun () ->
-    Lwt.set_exception_filter Lwt.catch_not_runtime_filter;
+    Lwt.set_exception_filter Lwt.catch_filter__all_except_runtime;
     try
       let _ =
         Lwt.try_bind

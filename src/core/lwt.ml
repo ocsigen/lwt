@@ -712,14 +712,14 @@ open Basic_helpers
 
 (* Small helpers to avoid catching ocaml-runtime exceptions *)
 type exception_filter = exn -> bool
-let catch_all_filter = fun _ -> true
-let catch_not_runtime_filter = function
+let catch_filter__all = fun _ -> true
+let catch_filter__all_except_runtime = function
   | Out_of_memory -> false
   | Stack_overflow -> false
   | _ -> true
 let exception_filter =
   (* Default value: the legacy behaviour to avoid breaking programs *)
-  ref catch_all_filter
+  ref catch_filter__all
 let set_exception_filter f = exception_filter := f
 let filter_exception e = !exception_filter e
 
