@@ -169,6 +169,7 @@ value lwt_unix_system_byte_order() {
 int lwt_unix_launch_thread(void *(*start)(void *), void *data) {
   pthread_t thread;
   pthread_attr_t attr;
+  sigset_t mask, old_mask;
 
   pthread_attr_init(&attr);
 
@@ -176,8 +177,16 @@ int lwt_unix_launch_thread(void *(*start)(void *), void *data) {
      it when it terminates: */
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
+  /* Block all signals, otherwise ocaml handlers defined with the
+     module Sys may be executed in the new thread, oops... */
+  sigfillset(&mask);
+  pthread_sigmask(SIG_SETMASK, &mask, &old_mask);
+
   int zero_if_created_otherwise_errno =
       pthread_create(&thread, &attr, start, data);
+
+  /* Restore the signal mask for the calling thread. */
+  pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
 
   pthread_attr_destroy(&attr);
 
@@ -978,17 +987,10 @@ void initialize_threading() {
    | Worker loop                                                     |
    +-----------------------------------------------------------------+ */
 
-/* Function executed by threads of the pool. */
+/* Function executed by threads of the pool.
+ * Note: all signals are masked for this thread. */
 static void *worker_loop(void *data) {
   lwt_unix_job job = (lwt_unix_job)data;
-
-#if defined(HAVE_PTHREAD)
-  /* Block all signals, otherwise ocaml handlers defined with the
-     module Sys may be executed in this thread, oops... */
-  sigset_t mask;
-  sigfillset(&mask);
-  pthread_sigmask(SIG_SETMASK, &mask, NULL);
-#endif
 
   /* Execute the initial job if any. */
   if (job != NULL) execute_job(job);
