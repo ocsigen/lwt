@@ -23,6 +23,7 @@ jobs:
           - 4.13.x
           - 4.14.x
           - 5.0.x
+          - 5.1.x
         libev:
           - true
           - false
