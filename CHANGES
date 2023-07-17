@@ -23,11 +23,20 @@
 
   * Lwt_preemptive.run_in_main_dont_wait to run a function in the main preemptive thread but without waiting for the result. (Kate Deplaix, #960)
 
+  * Lwt_unix.handle_signal and Lwt_engine.forwards_signal to allow other IO libraries (such as Eio) to share signal handlers. (Thomas Leonard, #993, #991)
+
 ====== Build ======
 
   * Remove unused dependency in dune file. (#969, Kate Deplaix)
 
   * Fix some compilation warnings for C stubs with OCaml 5. (#976, Antonin Décimo)
+
+====== Fixes ======
+
+  * Use SA_ONSTACK on OCaml5 to avoid SIGSEGV. (Thomas Leonard, #993, #981)
+
+  * Fix race in worker loop. (Thomas Leonard, #993, #994)
+
 
 ===== 5.6.1 =====
 

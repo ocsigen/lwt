@@ -2227,11 +2227,18 @@ let event_notifications = ref (Lwt_engine.on_readable (init_notification ()) han
    | Signals                                                         |
    +-----------------------------------------------------------------+ *)
 
-external set_signal : int -> int -> unit = "lwt_unix_set_signal"
-external remove_signal : int -> unit = "lwt_unix_remove_signal"
+external set_signal : int -> int -> bool -> unit = "lwt_unix_set_signal"
+external remove_signal : int -> bool -> unit = "lwt_unix_remove_signal"
 external init_signals : unit -> unit = "lwt_unix_init_signals"
+external handle_signal : int -> unit = "lwt_unix_handle_signal"
 
 let () = init_signals ()
+
+let set_signal signum notification =
+  set_signal signum notification (Lwt_engine.forwards_signal signum)
+
+let remove_signal signum =
+  remove_signal signum (Lwt_engine.forwards_signal signum)
 
 module Signal_map = Map.Make(struct type t = int let compare a b = a - b end)
 
