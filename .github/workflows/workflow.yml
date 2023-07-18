@@ -93,17 +93,17 @@ jobs:
       - run: opam depext conf-libev --install
         if: ${{ matrix.libev == true }}
 
-      - run: opam install lwt_luv lwt_react lwt --deps-only --with-test
+      - run: opam install lwt_react lwt --deps-only --with-test
 
       - run: opam install lwt_ppx --deps-only --with-test
         if: ${{ matrix.ppx == true }}
 
-      - run: opam exec -- dune build --only-packages lwt_luv,lwt_react,lwt
+      - run: opam exec -- dune build --only-packages lwt_react,lwt
 
       - run: opam exec -- dune build --only-packages lwt_ppx
         if: ${{ matrix.ppx == true }}
 
-      - run: opam exec -- dune runtest --only-packages lwt_luv,lwt_react,lwt
+      - run: opam exec -- dune runtest --only-packages lwt_react,lwt
 
       - run: opam exec -- dune runtest --only-packages lwt_ppx
         if: ${{ matrix.ppx == true }}
