@@ -270,7 +270,7 @@ let rec unfold f u () =
   match f u with
   | None -> return_nil
   | Some (x, u') -> Lwt.return (Cons (x, unfold f u'))
-  | exception exc when Lwt.filter_exception exc -> Lwt.fail exc
+  | exception exc when Lwt.Exception_filter.run exc -> Lwt.fail exc
 
 let rec unfold_lwt f u () =
   let* x = f u in
@@ -305,7 +305,7 @@ let rec of_seq seq () =
   | Seq.Nil -> return_nil
   | Seq.Cons (x, next) ->
     Lwt.return (Cons (x, (of_seq next)))
-  | exception exn when Lwt.filter_exception exn -> Lwt.fail exn
+  | exception exn when Lwt.Exception_filter.run exn -> Lwt.fail exn
 
 let rec of_seq_lwt (seq: 'a Lwt.t Seq.t): 'a t = fun () ->
     match seq () with
@@ -321,4 +321,4 @@ let of_seq_lwt (seq: 'a Lwt.t Seq.t): 'a t = fun () ->
        let+ x = x in
        let next = of_seq_lwt next in
        Cons (x, next)
-    | exception exc when Lwt.filter_exception exc -> Lwt.fail exc
+    | exception exc when Lwt.Exception_filter.run exc -> Lwt.fail exc

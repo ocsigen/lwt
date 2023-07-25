@@ -537,7 +537,7 @@ let make :
         perform_io,
         fun pos cmd ->
           try seek pos cmd
-          with e when Lwt.filter_exception e -> Lwt.fail e
+          with e when Lwt.Exception_filter.run e -> Lwt.fail e
     );
   } and wrapper = {
     state = Idle;

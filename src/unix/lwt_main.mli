@@ -41,10 +41,10 @@ let () = Lwt_main.run (main ())
 
       In addition, note that if you have set the exception filter to let runtime
       exceptions bubble up (via
-      [Lwt.set_exception_filter catch_filter__all_except_runtime]) then Lwt does
-      not attempt to catch exceptions thrown by the OCaml runtime. Specifically,
-      in this case, Lwt lets [Out_of_memory] and [Stack_overflow] exceptions
-      traverse all of its functions and bubble up to the caller of
+      [Lwt.Exception_filter.(set handle_all_except_runtime)])
+      then Lwt does not attempt to catch exceptions thrown by the OCaml runtime.
+      Specifically, in this case, Lwt lets [Out_of_memory] and [Stack_overflow]
+      exceptions traverse all of its functions and bubble up to the caller of
       [Lwt_main.run]. Moreover because these exceptions are left to traverse the
       call stack, they leave the internal data-structures in an inconsistent
       state. For this reason, calling [Lwt_main.run] again after such an

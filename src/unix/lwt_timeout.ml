@@ -72,7 +72,7 @@ let rec loop () =
       (*XXX Should probably report any exception *)
       try
         x.action ()
-      with e when Lwt.filter_exception e ->
+      with e when Lwt.Exception_filter.run e ->
         !handle_exn e
     done;
     curr := (!curr + 1) mod (Array.length !buckets);

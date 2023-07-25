@@ -2011,24 +2011,30 @@ val ignore_result : _ t -> unit
     The helpers below allow you to change the way that Lwt handles the two OCaml
     runtime exceptions [Out_of_memory] and [Stack_overflow]. *)
 
-(** An [exception_filter] is a value which indicates to Lwt what exceptions to
-    catch and what exceptions to let bubble up all the way out of the main loop
-    immediately. *)
-type exception_filter
+module Exception_filter: sig
 
-(** [catch_filter__all] is the default filter. With it the all the exceptions
-    (including [Out_of_memory] and [Stack_overflow]) are caught and transformed
-    into rejected promises. *)
-val catch_filter__all : exception_filter
+  (** An [Exception_filter.t] is a value which indicates to Lwt what exceptions to
+      catch and what exceptions to let bubble up all the way out of the main loop
+      immediately. *)
+  type t
 
-(** [catch_filter__all_except_runtime] is a filter which lets the OCaml runtime
-    exceptions ([Out_of_memory] and [Stack_overflow]) go through all the Lwt
-    abstractions and bubble all the way out of the call to [Lwt_main.run]. *)
-val catch_filter__all_except_runtime : exception_filter
+  (** [handle_all] is the default filter. With it the all the exceptions
+      (including [Out_of_memory] and [Stack_overflow]) can be handled: caught
+      and transformed into rejected promises. *)
+  val handle_all : t
 
-(** [set_exception_filter] sets the given exception filter globally. *)
-val set_exception_filter : exception_filter -> unit
+  (** [handle_all_except_runtime] is a filter which lets the OCaml runtime
+      exceptions ([Out_of_memory] and [Stack_overflow]) go through all the Lwt
+      abstractions and bubble all the way out of the call to [Lwt_main.run]. *)
+  val handle_all_except_runtime : t
 
+  (** [set] sets the given exception filter globally. *)
+  val set : t -> unit
+
+  (**/**)
+  val run : exn -> bool
+
+end
 
 
 (**/**)
@@ -2048,5 +2054,3 @@ val backtrace_try_bind :
 val abandon_wakeups : unit -> unit
 
 val debug_state_is : 'a state -> 'a t -> bool t
-
-val filter_exception : exn -> bool

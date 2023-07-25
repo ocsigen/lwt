@@ -98,7 +98,7 @@ module E = struct
       Lwt_stream.iter
         (fun v ->
           try push v
-          with exn when Lwt.filter_exception exn ->
+          with exn when Lwt.Exception_filter.run exn ->
             !Lwt.async_exception_hook exn)
         stream in
     with_finaliser (cancel_thread t) event
