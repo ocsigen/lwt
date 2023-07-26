@@ -60,7 +60,7 @@ val abandon_yielded_and_paused : unit -> unit [@@deprecated "Use Lwt.abandon_pau
     This is meant for use with {!Lwt_unix.fork}, as a way to “abandon” more
     promise chains that are pending in your process.
 
-    @deprecated Since 5.5.1 [abandon_yielded_and_paused] is deprecated in favour
+    @deprecated Since 5.7 [abandon_yielded_and_paused] is deprecated in favour
     of [Lwt.abandon_paused]. *)
 
 
