@@ -55,8 +55,7 @@ val abandon_yielded_and_paused : unit -> unit [@@deprecated "Use Lwt.abandon_pau
 (** Causes promises created with {!Lwt.pause} and {!Lwt_main.yield} to remain
     forever pending.
 
-    [yield] is now deprecated in favor of the more general {!Lwt.pause}.
-    Once [yield] is phased out, this function will be deprecated as well.
+    (Note that [yield] is deprecated in favor of the more general {!Lwt.pause}.)
 
     This is meant for use with {!Lwt_unix.fork}, as a way to “abandon” more
     promise chains that are pending in your process.
