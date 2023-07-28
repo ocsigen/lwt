@@ -17,7 +17,7 @@ open Lwt.Infix
 let enter_iter_hooks = Lwt_sequence.create ()
 let leave_iter_hooks = Lwt_sequence.create ()
 
-let yield () = Lwt.pause ()
+let yield = Lwt.pause
 
 let abandon_yielded_and_paused () =
   Lwt.abandon_paused ()
