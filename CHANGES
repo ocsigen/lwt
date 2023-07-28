@@ -41,7 +41,7 @@
 
 ====== Misc ======
 
-  * Resolve paused promises only once in main loop. This lets Lwt.pause behave identical to Lwt_unix.yield. (#917, Christopher Zimmermann)
+  * Resolve paused promises only once in main loop. This lets Lwt.pause behave identical to Lwt_unix.yield. (#917, Christopher Zimmermann, Favonia)
 
 
 ===== 5.6.1 =====
