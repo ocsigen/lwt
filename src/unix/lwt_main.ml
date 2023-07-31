@@ -16,18 +16,14 @@ open Lwt.Infix
 
 let enter_iter_hooks = Lwt_sequence.create ()
 let leave_iter_hooks = Lwt_sequence.create ()
-let yielded = Lwt_sequence.create ()
 
-let yield () = (Lwt.add_task_r [@ocaml.warning "-3"]) yielded
+let yield = Lwt.pause
 
 let abandon_yielded_and_paused () =
-  Lwt_sequence.clear yielded;
   Lwt.abandon_paused ()
 
 let run p =
   let rec run_loop () =
-    (* Fulfill paused promises now. *)
-    Lwt.wakeup_paused ();
     match Lwt.poll p with
     | Some x ->
       x
@@ -36,19 +32,11 @@ let run p =
       Lwt_sequence.iter_l (fun f -> f ()) enter_iter_hooks;
 
       (* Do the main loop call. *)
-      let should_block_waiting_for_io =
-        Lwt.paused_count () = 0 && Lwt_sequence.is_empty yielded in
+      let should_block_waiting_for_io = Lwt.paused_count () = 0 in
       Lwt_engine.iter should_block_waiting_for_io;
 
-      (* Fulfill paused promises again. *)
+      (* Fulfill paused promises. *)
       Lwt.wakeup_paused ();
-
-      (* Fulfill yield promises. *)
-      if not (Lwt_sequence.is_empty yielded) then begin
-        let tmp = Lwt_sequence.create () in
-        Lwt_sequence.transfer_r yielded tmp;
-        Lwt_sequence.iter_l (fun resolver -> Lwt.wakeup resolver ()) tmp
-      end;
 
       (* Call leave hooks. *)
       Lwt_sequence.iter_l (fun f -> f ()) leave_iter_hooks;

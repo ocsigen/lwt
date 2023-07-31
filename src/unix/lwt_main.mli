@@ -49,22 +49,19 @@ val yield : unit -> unit Lwt.t [@@deprecated "Use Lwt.pause instead"]
 
       @deprecated Since 5.5.0 [yield] is deprecated in favor of the more general
       {!Lwt.pause} in order to avoid discrepancies in resolution (see below) and
-      stay compatible with other execution environments such as js_of_ocaml.
+      stay compatible with other execution environments such as js_of_ocaml. *)
 
-      Currently, paused promises are resolved more frequently than yielded promises.
-      The difference is unintended but existing applications could depend on it.
-      Unifying the two pools of promises into one in the future would eliminate
-      possible discrepancies and simplify the code. *)
-
-val abandon_yielded_and_paused : unit -> unit
+val abandon_yielded_and_paused : unit -> unit [@@deprecated "Use Lwt.abandon_paused instead"]
 (** Causes promises created with {!Lwt.pause} and {!Lwt_main.yield} to remain
     forever pending.
 
-    [yield] is now deprecated in favor of the more general {!Lwt.pause}.
-    Once [yield] is phased out, this function will be deprecated as well.
+    (Note that [yield] is deprecated in favor of the more general {!Lwt.pause}.)
 
     This is meant for use with {!Lwt_unix.fork}, as a way to “abandon” more
-    promise chains that are pending in your process. *)
+    promise chains that are pending in your process.
+
+    @deprecated Since 5.7 [abandon_yielded_and_paused] is deprecated in favour
+    of [Lwt.abandon_paused]. *)
 
 
 

@@ -39,6 +39,10 @@
 
   * Fix marshall header size in Lwt_io.read_value. (Simmo Saan, #995)
 
+====== Misc ======
+
+  * Resolve paused promises only once in main loop. This lets Lwt.pause behave identical to Lwt_unix.yield. (#917, Christopher Zimmermann, Favonia)
+
 
 ===== 5.6.1 =====
 
