@@ -635,6 +635,42 @@ let catch_tests = suite "catch" [
     Lwt.wakeup_exn r1 Exit;
     p4
   end;
+
+
+  test "catch with ocaml-runtime exception" begin fun () ->
+    Lwt.Exception_filter.(set handle_all_except_runtime);
+    try
+      Lwt.catch
+        (fun () -> raise Out_of_memory)
+        (fun _ -> Lwt.return_false)
+    with
+      | Out_of_memory -> Lwt.return_true
+  end;
+
+  test "try_bind with ocaml-runtime exception" begin fun () ->
+    Lwt.Exception_filter.(set handle_all_except_runtime);
+    try
+      Lwt.try_bind
+        (fun () -> raise Out_of_memory)
+        (fun () -> Lwt.return_false)
+        (fun _ -> Lwt.return_false)
+    with
+      | Out_of_memory -> Lwt.return_true
+  end;
+
+  test "try_bind(2) with ocaml-runtime exception" begin fun () ->
+    Lwt.Exception_filter.(set handle_all_except_runtime);
+    try
+      let _ =
+        Lwt.try_bind
+          (fun () -> Lwt.return_unit)
+          (fun () -> raise Out_of_memory)
+          (fun _ -> Lwt.return_false)
+      in
+      Lwt.return_false
+    with
+      | Out_of_memory -> Lwt.return_true
+  end;
 ]
 let suites = suites @ [catch_tests]
 

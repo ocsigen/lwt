@@ -1999,6 +1999,49 @@ val ignore_result : _ t -> unit
       resolved, completing any associated side effects along the way. In fact,
       the function that does {e that} is ordinary {!Lwt.bind}. *)
 
+(** {4 Runtime exception filters}
+
+    Depending on the kind of programs that you write, you may need to treat
+    exceptions thrown by the OCaml runtime (namely [Out_of_memory] and
+    [Stack_overflow]) differently than all the other exceptions. This is because
+    (a) these exceptions are not reproducible (in that they are thrown at
+    different points of your program depending on the machine that your program
+    runs on) and (b) recovering from these errors may be impossible.
+
+    The helpers below allow you to change the way that Lwt handles the two OCaml
+    runtime exceptions [Out_of_memory] and [Stack_overflow]. *)
+
+module Exception_filter: sig
+
+  (** An [Exception_filter.t] is a value which indicates to Lwt what exceptions to
+      catch and what exceptions to let bubble up all the way out of the main loop
+      immediately. *)
+  type t
+
+  (** [handle_all] is the default filter. With it the all the exceptions
+      (including [Out_of_memory] and [Stack_overflow]) can be handled: caught
+      and transformed into rejected promises. *)
+  val handle_all : t
+
+  (** [handle_all_except_runtime] is a filter which lets the OCaml runtime
+      exceptions ([Out_of_memory] and [Stack_overflow]) go through all the Lwt
+      abstractions and bubble all the way out of the call to [Lwt_main.run].
+
+      Note that if you set this handler, then the runtime exceptions leave the
+      Lwt internal state inconsistent. For this reason, you will not be able to
+      call [Lwt_main.run] again after such an exception has escaped
+      [Lwt_main.run]. *)
+  val handle_all_except_runtime : t
+
+  (** [set] sets the given exception filter globally. You should call this
+      function at most once during the start of your program, before the
+      first call to [Lwt_main.run]. *)
+  val set : t -> unit
+
+  (**/**)
+  val run : exn -> bool
+
+end
 
 
 (**/**)

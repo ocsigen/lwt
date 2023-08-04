@@ -107,7 +107,7 @@ let run p =
   | result ->
     finished ();
     result
-  | exception exn ->
+  | exception exn when Lwt.Exception_filter.run exn ->
     finished ();
     raise exn
 

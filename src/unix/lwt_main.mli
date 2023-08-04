@@ -39,6 +39,17 @@ let () = Lwt_main.run (main ())
       [Lwt_main.run] will raise [Failure]. This should be considered a logic
       error (i.e., code making such a call is inherently broken).
 
+      In addition, note that if you have set the exception filter to let runtime
+      exceptions bubble up (via
+      [Lwt.Exception_filter.(set handle_all_except_runtime)])
+      then Lwt does not attempt to catch exceptions thrown by the OCaml runtime.
+      Specifically, in this case, Lwt lets [Out_of_memory] and [Stack_overflow]
+      exceptions traverse all of its functions and bubble up to the caller of
+      [Lwt_main.run]. Moreover because these exceptions are left to traverse the
+      call stack, they leave the internal data-structures in an inconsistent
+      state. For this reason, calling [Lwt_main.run] again after such an
+      exception will raise [Failure].
+
       It is not safe to call [Lwt_main.run] in a function registered with
       [Stdlib.at_exit], use {!Lwt_main.at_exit} instead. *)
 

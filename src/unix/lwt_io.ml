@@ -533,8 +533,12 @@ let make :
     mode = mode;
     offset = 0L;
     typ =
-      Type_normal
-        (perform_io, fun pos cmd -> try seek pos cmd with e -> Lwt.fail e);
+      Type_normal (
+        perform_io,
+        fun pos cmd ->
+          try seek pos cmd
+          with e when Lwt.Exception_filter.run e -> Lwt.fail e
+    );
   } and wrapper = {
     state = Idle;
     channel = ch;

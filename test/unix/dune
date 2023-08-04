@@ -1,7 +1,17 @@
 (library
  (name tester)
  (libraries lwt lwttester)
- (modules (:standard \ main dummy) ))
+ (modules
+  (:standard
+   \
+   main
+   dummy
+   ocaml_runtime_exc_1
+   ocaml_runtime_exc_2
+   ocaml_runtime_exc_3
+   ocaml_runtime_exc_4
+   ocaml_runtime_exc_5
+   ocaml_runtime_exc_6)))
 
 (executable
  (name dummy)
@@ -12,6 +22,36 @@
  (name main)
  (libraries lwttester tester)
  (modules main))
+
+(executable
+ (name ocaml_runtime_exc_1)
+ (libraries lwt lwt.unix)
+ (modules ocaml_runtime_exc_1))
+
+(executable
+ (name ocaml_runtime_exc_2)
+ (libraries lwt lwt.unix)
+ (modules ocaml_runtime_exc_2))
+
+(executable
+ (name ocaml_runtime_exc_3)
+ (libraries lwt lwt.unix)
+ (modules ocaml_runtime_exc_3))
+
+(executable
+ (name ocaml_runtime_exc_4)
+ (libraries lwt lwt.unix)
+ (modules ocaml_runtime_exc_4))
+
+(executable
+ (name ocaml_runtime_exc_5)
+ (libraries lwt lwt.unix)
+ (modules ocaml_runtime_exc_5))
+
+(executable
+ (name ocaml_runtime_exc_6)
+ (libraries lwt lwt.unix)
+ (modules ocaml_runtime_exc_6))
 
 (alias
  (name runtest)

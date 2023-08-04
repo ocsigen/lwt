@@ -18,6 +18,7 @@
 
 ====== Additions ======
 
+  * Lwt.Exception_filter for enabling/disabling system-exception catching (#964)
   * Lwt.reraise an exception raising function which preserves backtraces, recommended for use in Lwt.catch (#963)
   * Expose Lwt_io.delete_recursively for deleting a directory and its content recursively. (#984, Antonin Décimo)
 
