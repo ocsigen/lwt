@@ -2025,10 +2025,17 @@ module Exception_filter: sig
 
   (** [handle_all_except_runtime] is a filter which lets the OCaml runtime
       exceptions ([Out_of_memory] and [Stack_overflow]) go through all the Lwt
-      abstractions and bubble all the way out of the call to [Lwt_main.run]. *)
+      abstractions and bubble all the way out of the call to [Lwt_main.run].
+
+      Note that if you set this handler, then the runtime exceptions leave the
+      Lwt internal state inconsistent. For this reason, you will not be able to
+      call [Lwt_main.run] again after such an exception has escaped
+      [Lwt_main.run]. *)
   val handle_all_except_runtime : t
 
-  (** [set] sets the given exception filter globally. *)
+  (** [set] sets the given exception filter globally. You should call this
+      function at most once during the start of your program, before the
+      first call to [Lwt_main.run]. *)
   val set : t -> unit
 
   (**/**)
