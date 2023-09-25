@@ -615,7 +615,7 @@ val s' : int Lwt_stream.t = <abstr>
 
   {{{libev}}} is used by default on Linux, because it supports any
   number of file descriptors, while {{{select}}} supports only 1024. {{{libev}}}
-  also much more efficient. On Windows, {{{Unix.select}}} is used because
+  is also much more efficient. On Windows, {{{Unix.select}}} is used because
   {{{libev}}} does not work properly. The user may change the backend in use at
   any time.
 
