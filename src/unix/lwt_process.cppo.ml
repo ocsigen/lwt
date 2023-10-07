@@ -63,26 +63,22 @@ let win32_spawn
     (prog, args) env
   =
   let cmdline = String.concat " " (List.map win32_quote (Array.to_list args)) in
+
+
+let make_process_env env =
+  Array.iter
+    (fun s -> if String.contains s '\000' then raise(Unix.Unix_error(EINVAL, "", s)))
+    env;
+  String.concat "\000" (Array.to_list env) ^ "\000"
+in
+
   let env =
     match env with
     | None ->
       None
-    | Some env ->
-      let len =
-        Array.fold_left (fun len str -> String.length str + len + 1) 1 env in
-      let res = Bytes.create len in
-      let ofs =
-        Array.fold_left
-          (fun ofs str ->
-             let len = String.length str in
-             String.blit str 0 res ofs len;
-             Bytes.set res (ofs + len) '\000';
-             ofs + len + 1)
-          0 env
-      in
-      Bytes.set res ofs '\000';
-      Some (Bytes.unsafe_to_string res)
+    | Some env -> Some (make_process_env env)
   in
+
   let stdin_fd  = win32_get_fd Unix.stdin stdin
   and stdout_fd = win32_get_fd Unix.stdout stdout
   and stderr_fd = win32_get_fd Unix.stderr stderr in

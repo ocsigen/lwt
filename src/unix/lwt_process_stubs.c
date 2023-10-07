@@ -57,6 +57,46 @@ static int ensure_inheritable(HANDLE h /* in */,
   return 1;
 }
 
+
+CAMLexport int lwt_win_multi_byte_to_wide_char(const char *s, int slen,
+                                           wchar_t *out, int outlen)
+{
+  int retcode;
+
+  CAMLassert (s != NULL);
+
+  if (slen == 0)
+    return 0;
+
+  retcode =
+    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, s, slen, out, outlen);
+
+  if (retcode == 0) {
+    win32_maperr(GetLastError());
+    uerror("MultiByteToWideChar", Nothing);
+  }
+
+  return retcode;
+}
+
+wchar_t* win32_setup_env(value env) {
+  int size;
+  wchar_t *wenv;
+  if (env != Val_int(0)) {
+    env = Field(env, 0);
+    size =
+      lwt_win_multi_byte_to_wide_char(String_val(env),
+                                  caml_string_length(env), NULL, 0);
+    wenv = caml_stat_alloc((size + 1)*sizeof(wchar_t));
+    lwt_win_multi_byte_to_wide_char(String_val(env),
+                                caml_string_length(env), wenv, size);
+    wenv[size] = 0;
+    return wenv;
+  } else {
+    return NULL;
+  }
+}
+
 CAMLprim value lwt_process_create_process(value prog, value cmdline, value env,
                                           value cwd, value fds) {
   CAMLparam5(prog, cmdline, env, cwd, fds);
@@ -94,10 +134,11 @@ CAMLprim value lwt_process_create_process(value prog, value cmdline, value env,
   char_os
     *progs = string_option(prog),
     *cmdlines = caml_stat_strdup_to_os(String_val(cmdline)),
-    *envs = string_option(env),
     *cwds = string_option(cwd);
 
 #undef string_option
+
+  wchar_t *envs = win32_setup_env(env);
 
   flags |= CREATE_UNICODE_ENVIRONMENT;
   if (! CreateProcess(progs, cmdlines, NULL, NULL, TRUE, flags,
