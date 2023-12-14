@@ -84,17 +84,17 @@ class type ['a] bounded_push = object
       is already blocked on [push], it raises {!Lwt_stream.Full}. *)
 
   method close : unit
-  (** Closes the stream. Any thread currently blocked on
-      {!Lwt_stream.bounded_push.push} fails with {!Lwt_stream.Closed}. *)
+  (** Closes the stream. Any thread currently blocked on a call to
+      the [push] method fails with {!Lwt_stream.Closed}. *)
 
   method count : int
   (** Number of elements in the stream queue. *)
 
   method blocked : bool
-  (** Is a thread is blocked on {!Lwt_stream.bounded_push.push} ? *)
+  (** Is a thread is blocked on a call to the [push] method? *)
 
   method closed : bool
-  (** Is the stream closed ? *)
+  (** Is the stream closed? *)
 
   method set_reference : 'a. 'a -> unit
   (** Set the reference to an external source. *)
