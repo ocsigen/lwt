@@ -84,8 +84,8 @@ static void worker_lockf(struct job_lockf *job)
 
 #else
 
-static int lock_command_table[] = {F_ULOCK, F_LOCK, F_TLOCK,
-                                   F_TEST,  F_LOCK, F_TLOCK};
+static const int lock_command_table[] =
+  {F_ULOCK, F_LOCK, F_TLOCK, F_TEST,  F_LOCK, F_TLOCK};
 
 static void worker_lockf(struct job_lockf *job)
 {

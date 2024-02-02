@@ -12,7 +12,7 @@
 #include <caml/bigarray.h>
 #include <sys/mman.h>
 
-static int advise_table[] = {
+static const int advise_table[] = {
     MADV_NORMAL, MADV_RANDOM, MADV_SEQUENTIAL, MADV_WILLNEED, MADV_DONTNEED,
 #if defined(MADV_MERGEABLE)
 	MADV_MERGEABLE,

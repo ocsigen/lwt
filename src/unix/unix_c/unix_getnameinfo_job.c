@@ -28,8 +28,8 @@ struct job_getnameinfo {
     int result;
 };
 
-static int getnameinfo_flag_table[] = {NI_NOFQDN, NI_NUMERICHOST, NI_NAMEREQD,
-                                       NI_NUMERICSERV, NI_DGRAM};
+static const int getnameinfo_flag_table[] =
+  {NI_NOFQDN, NI_NUMERICHOST, NI_NAMEREQD, NI_NUMERICSERV, NI_DGRAM};
 
 static void worker_getnameinfo(struct job_getnameinfo *job)
 {

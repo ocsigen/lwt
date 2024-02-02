@@ -35,7 +35,7 @@
    +-----------------------------------------------------------------+ */
 
 /* Table mapping constructors of ocaml type Unix.flow_action to C values. */
-static int flow_action_table[] = {
+static const int flow_action_table[] = {
   /* Constructor TCOOFF. */
   TCOOFF,
   /* Constructor TCOON. */
