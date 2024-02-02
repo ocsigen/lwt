@@ -152,8 +152,6 @@ static tcflag_t *choose_field(struct termios *terminal_status, long field)
 
 void encode_terminal_status(struct termios *terminal_status, volatile value *dst)
 {
-    int i;
-
     for (const long *pc = terminal_io_descr; *pc != End; dst++) {
         switch (*pc++) {
             case Bool: {
@@ -167,7 +165,7 @@ void encode_terminal_status(struct termios *terminal_status, volatile value *dst
                 int ofs = *pc++;
                 int num = *pc++;
                 tcflag_t msk = *pc++;
-                for (i = 0; i < num; i++) {
+                for (int i = 0; i < num; i++) {
                     if ((*src & msk) == pc[i]) {
                         *dst = Val_int(i + ofs);
                         break;
@@ -189,7 +187,7 @@ void encode_terminal_status(struct termios *terminal_status, volatile value *dst
                         speed = cfgetispeed(terminal_status);
                         break;
                 }
-                for (i = 0; i < NSPEEDS; i++) {
+                for (int i = 0; i < NSPEEDS; i++) {
                     if (speed == speedtable[i].speed) {
                         *dst = Val_int(speedtable[i].baud);
                         break;
@@ -208,8 +206,6 @@ void encode_terminal_status(struct termios *terminal_status, volatile value *dst
 
 int decode_terminal_status(struct termios *terminal_status, volatile value *src)
 {
-    int i;
-
     for (const long *pc = terminal_io_descr; *pc != End; src++) {
         switch (*pc++) {
             case Bool: {
@@ -226,7 +222,7 @@ int decode_terminal_status(struct termios *terminal_status, volatile value *src)
                 int ofs = *pc++;
                 int num = *pc++;
                 tcflag_t msk = *pc++;
-                i = Int_val(*src) - ofs;
+                int i = Int_val(*src) - ofs;
                 if (i >= 0 && i < num) {
                     *dst = (*dst & ~msk) | pc[i];
                 } else {
@@ -240,7 +236,7 @@ int decode_terminal_status(struct termios *terminal_status, volatile value *src)
                 int which = *pc++;
                 int baud = Int_val(*src);
                 int res = 0;
-                for (i = 0; i < NSPEEDS; i++) {
+                for (int i = 0; i < NSPEEDS; i++) {
                     if (baud == speedtable[i].baud) {
                         switch (which) {
                             case Output:
