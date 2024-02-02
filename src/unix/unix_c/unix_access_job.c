@@ -34,7 +34,7 @@
    +-----------------------------------------------------------------+ */
 
 /* Table mapping constructors of ocaml type Unix.access_permission to C values. */
-static int access_permission_table[] = {
+static const int access_permission_table[] = {
   /* Constructor R_OK. */
   R_OK,
   /* Constructor W_OK. */

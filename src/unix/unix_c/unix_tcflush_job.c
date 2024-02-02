@@ -35,7 +35,7 @@
    +-----------------------------------------------------------------+ */
 
 /* Table mapping constructors of ocaml type Unix.flush_queue to C values. */
-static int flush_queue_table[] = {
+static const int flush_queue_table[] = {
   /* Constructor TCIFLUSH. */
   TCIFLUSH,
   /* Constructor TCOFLUSH. */

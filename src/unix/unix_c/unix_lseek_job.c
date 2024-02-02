@@ -35,7 +35,7 @@
    +-----------------------------------------------------------------+ */
 
 /* Table mapping constructors of ocaml type Unix.seek_command to C values. */
-static int seek_command_table[] = {
+static const int seek_command_table[] = {
   /* Constructor SEEK_SET. */
   SEEK_SET,
   /* Constructor SEEK_CUR. */

@@ -36,7 +36,7 @@
 #define caml_unix_socket_type_table socket_type_table
 #endif
 
-extern int msg_flag_table[];
+extern const int msg_flag_table[];
 extern int caml_unix_socket_domain_table[];
 extern int caml_unix_socket_type_table[];
 extern void get_sockaddr(value mladdr, union sock_addr_union *addr /*out*/,

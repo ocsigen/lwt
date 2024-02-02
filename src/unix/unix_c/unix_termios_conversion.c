@@ -20,7 +20,7 @@ enum { Iflags, Oflags, Cflags, Lflags };
 
 /* Structure of the terminal_io record. Cf. unix.mli */
 
-static long terminal_io_descr[] = {
+static const long terminal_io_descr[] = {
     /* Input modes */
     Bool, Iflags, IGNBRK, Bool, Iflags, BRKINT, Bool, Iflags, IGNPAR, Bool,
     Iflags, PARMRK, Bool, Iflags, INPCK, Bool, Iflags, ISTRIP, Bool, Iflags,
@@ -40,7 +40,7 @@ static long terminal_io_descr[] = {
     Char, VINTR, Char, VQUIT, Char, VERASE, Char, VKILL, Char, VEOF, Char, VEOL,
     Char, VMIN, Char, VTIME, Char, VSTART, Char, VSTOP, End};
 
-static struct {
+static const struct {
     speed_t speed;
     int baud;
 } speedtable[] = {{B50, 50},
@@ -152,10 +152,9 @@ static tcflag_t *choose_field(struct termios *terminal_status, long field)
 
 void encode_terminal_status(struct termios *terminal_status, volatile value *dst)
 {
-    long *pc;
     int i;
 
-    for (pc = terminal_io_descr; *pc != End; dst++) {
+    for (const long *pc = terminal_io_descr; *pc != End; dst++) {
         switch (*pc++) {
             case Bool: {
                 tcflag_t *src = choose_field(terminal_status, *pc++);
@@ -209,10 +208,9 @@ void encode_terminal_status(struct termios *terminal_status, volatile value *dst
 
 int decode_terminal_status(struct termios *terminal_status, volatile value *src)
 {
-    long *pc;
     int i;
 
-    for (pc = terminal_io_descr; *pc != End; src++) {
+    for (const long *pc = terminal_io_descr; *pc != End; src++) {
         switch (*pc++) {
             case Bool: {
                 tcflag_t *dst = choose_field(terminal_status, *pc++);
