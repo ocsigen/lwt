@@ -172,7 +172,7 @@ let utimes_tests = [
         (function
         | Unix.Unix_error (Unix.ENOENT, "utimes", _) -> Lwt.return_unit
         | Unix.Unix_error (Unix.EUNKNOWNERR _, "utimes", _) -> Lwt.return_unit
-        | e -> Lwt.fail e) [@ocaml.warning "-4"] >>= fun () ->
+        | e -> Lwt.reraise e) [@ocaml.warning "-4"] >>= fun () ->
       Lwt.return_true);
 ]
 
@@ -218,7 +218,7 @@ let readdir_tests =
           Lwt.return (Some filename))
         (function
           | End_of_file -> Lwt.return_none
-          | exn -> Lwt.fail exn)
+          | exn -> Lwt.reraise exn)
       >>= function
         | None -> Lwt.return acc
         | Some filename -> loop (filename::acc)
@@ -305,7 +305,7 @@ let readdir_tests =
             (function
               | Unix.Unix_error (Unix.EBADF, tag', _) when tag' = tag ->
                 Lwt.return_true
-              | exn -> Lwt.fail exn) [@ocaml.warning "-4"]
+              | exn -> Lwt.reraise exn) [@ocaml.warning "-4"]
         in
 
         Lwt_list.for_all_s (fun (tag, t) -> expect_ebadf tag t)
@@ -711,7 +711,7 @@ let writev_tests =
                 Lwt.return_false)
               (function
                 | Invalid_argument _ -> Lwt.return_true
-                | e -> Lwt.fail e)
+                | e -> Lwt.reraise e)
         in
 
         let close write_fd = fun () ->
@@ -963,7 +963,7 @@ let bind_tests =
             | Unix.Unix_error (Unix.EADDRINUSE, "bind", _)
             | Unix.Unix_error (Unix.EISDIR, "bind", _) as exn ->
               if attempts <= 1 then
-                Lwt.fail exn
+                Lwt.reraise exn
               else
                 bind_loop (attempts - 1)
             | Unix.Unix_error (Unix.EPERM, "bind", _) ->
@@ -972,8 +972,8 @@ let bind_tests =
                  test should add a check for WSL by checking for the existence
                  of /proc/version, reading it, and checking its contents for the
                  string "WSL". *)
-              Lwt.fail Skip
-            | e -> Lwt.fail e) [@ocaml.warning "-4"]
+              raise Skip
+            | e -> Lwt.reraise e) [@ocaml.warning "-4"]
       in
 
       Lwt.finalize
@@ -1014,7 +1014,7 @@ let bind_tests =
           Lwt.return_false)
         (function
           | Unix.Unix_error (Unix.EBADF, _, _) -> Lwt.return_true
-          | e -> Lwt.fail e) [@ocaml.warning "-4"]);
+          | e -> Lwt.reraise e) [@ocaml.warning "-4"]);
 
   test "bind: aborted"
     (fun () ->
@@ -1028,7 +1028,7 @@ let bind_tests =
               Lwt.return_false)
             (function
               | Exit -> Lwt.return_true
-              | e -> Lwt.fail e))
+              | e -> Lwt.reraise e))
         (fun () -> Lwt_unix.close socket));
 ]
 
