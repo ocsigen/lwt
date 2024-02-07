@@ -11,7 +11,7 @@ let expect_exit f =
       Lwt.return_false)
     (function
       | Exit -> Lwt.return_true
-      | e -> Lwt.fail e)
+      | e -> Lwt.reraise e)
 
 let suite = suite "lwt_stream" [
   test "from"
@@ -351,7 +351,7 @@ let suite = suite "lwt_stream" [
                     return (Some x)
                 | (Result.Error e)::l ->
                     q := l;
-                    Lwt.fail e)
+                    raise e)
        in
        Lwt_stream.to_list (Lwt_stream.wrap_exn stream) >>= fun l' ->
        return (l = l'));
@@ -418,7 +418,7 @@ let suite = suite "lwt_stream" [
 
   test "exception passing: basic, from"
     (fun () ->
-      let stream = Lwt_stream.from (fun () -> Lwt.fail Exit) in
+      let stream = Lwt_stream.from (fun () -> raise Exit) in
       expect_exit (fun () -> Lwt_stream.get stream));
 
   test "exception passing: basic, from_direct"
@@ -428,12 +428,12 @@ let suite = suite "lwt_stream" [
 
   test "exception passing: to_list"
     (fun () ->
-      let stream = Lwt_stream.from (fun () -> Lwt.fail Exit) in
+      let stream = Lwt_stream.from (fun () -> raise Exit) in
       expect_exit (fun () -> Lwt_stream.to_list stream));
 
   test "exception passing: mapped"
     (fun () ->
-      let stream = Lwt_stream.from (fun () -> Lwt.fail Exit) in
+      let stream = Lwt_stream.from (fun () -> raise Exit) in
       let stream = Lwt_stream.map (fun v -> v) stream in
       expect_exit (fun () -> Lwt_stream.get stream));
 
