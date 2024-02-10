@@ -531,8 +531,8 @@ struct
 end
 open Main_internal_types
 
-type _ EffectHandlers.eff +=
-  | Await : 'a callbacks -> 'a EffectHandlers.eff
+type _ Effect.t +=
+  | Await : 'a callbacks -> 'a Effect.t
 
 module Public_types =
 struct
@@ -1014,7 +1014,7 @@ let await (p: 'a t) : 'a =
   | Fulfilled x -> x
   | Rejected exn -> raise exn
   | Pending cbs ->
-    EffectHandlers.perform (Await cbs)
+    Effect.perform (Await cbs)
 
 module Resolution_loop :
 sig
@@ -1267,21 +1267,21 @@ struct
     current_callback_nesting_depth := !current_callback_nesting_depth - 1;
     current_storage := storage_snapshot
 
-  let eff_handler : unit EffectHandlers.Deep.effect_handler = {
-    EffectHandlers.Deep.effc=function
+  let eff_handler : unit Effect.Deep.effect_handler = {
+    Effect.Deep.effc=function
       | Await cbs ->
         Some (fun k ->
             add_implicitly_removed_callback cbs
               (fun x -> match x with
-                 | Fulfilled x -> EffectHandlers.Deep.continue k x
-                 | Rejected exn -> EffectHandlers.Deep.discontinue k exn
+                 | Fulfilled x -> Effect.Deep.continue k x
+                 | Rejected exn -> Effect.Deep.discontinue k exn
               )
             )
       | _ -> None
   }
 
   let run_with_effect (f: unit -> unit) : unit =
-    EffectHandlers.Deep.try_with
+    Effect.Deep.try_with
       f () eff_handler
 
   let run_in_resolution_loop f =
