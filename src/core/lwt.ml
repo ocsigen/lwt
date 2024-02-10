@@ -385,6 +385,7 @@ struct
 
   [@@@ocaml.warning "+37"]
 
+  type backtrace = Printexc.raw_backtrace
 
 
   (* Promises proper. *)
@@ -395,7 +396,7 @@ struct
 
   and (_, _, _) state =
     | Fulfilled : 'a                  -> ('a, underlying, resolved) state
-    | Rejected  : exn                 -> ( _, underlying, resolved) state
+    | Rejected  : exn * backtrace     -> ( _, underlying, resolved) state
     | Pending   : 'a callbacks        -> ('a, underlying, pending)  state
     | Proxy     : ('a, _, 'c) promise -> ('a, proxy,      'c)       state
 
@@ -569,7 +570,9 @@ struct
   (* This could probably save an allocation by using [Obj.magic]. *)
   let state_of_result = function
     | Ok x -> Fulfilled x
-    | Error exn -> Rejected exn
+    | Error exn ->
+      let bt = Printexc.get_raw_backtrace () in
+      Rejected (exn, bt)
 end
 include Public_types
 
@@ -1012,7 +1015,7 @@ let await (p: 'a t) : 'a =
   let p = underlying p in
   match p.state with
   | Fulfilled x -> x
-  | Rejected exn -> raise exn
+  | Rejected (exn, bt) -> Printexc.raise_with_backtrace exn bt
   | Pending cbs ->
     Effect.perform (Await cbs)
 
@@ -1228,7 +1231,7 @@ struct
     (* Pattern matching is much faster than polymorphic comparison. *)
     let is_canceled =
       match result with
-      | Rejected Canceled -> true
+      | Rejected (Canceled, _) -> true
       | Rejected _ -> false
       | Fulfilled _ -> false
     in
@@ -1274,7 +1277,7 @@ struct
             add_implicitly_removed_callback cbs
               (fun x -> match x with
                  | Fulfilled x -> Effect.Deep.continue k x
-                 | Rejected exn -> Effect.Deep.discontinue k exn
+                 | Rejected (exn, _) -> Effect.Deep.discontinue k exn
               )
             )
       | _ -> None
@@ -1388,7 +1391,7 @@ struct
     let p = underlying p in
 
     match p.state with
-    | Rejected Canceled ->
+    | Rejected (Canceled, _) ->
       ()
     | Fulfilled _ ->
       Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
@@ -1409,7 +1412,7 @@ struct
     let p = underlying p in
 
     match p.state with
-    | Rejected Canceled ->
+    | Rejected (Canceled, _) ->
       ()
     | Fulfilled _ ->
       Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
@@ -1439,7 +1442,8 @@ struct
      behavior: it runs callbacks directly on the current stack. It should
      therefore be possible to cause a stack overflow using this function. *)
   let cancel p =
-    let canceled_result = Rejected Canceled in
+    let bt = Printexc.get_callstack 20 in
+    let canceled_result = Rejected (Canceled, bt) in
 
     (* Walks the promise dependency graph backwards, looking for cancelable
        initial promises, and cancels (only) them.
@@ -1498,7 +1502,7 @@ include Resolving
 module Trivial_promises :
 sig
   val return : 'a -> 'a t
-  val fail : exn -> _ t
+  val fail : ?bt:backtrace -> exn -> _ t
   val of_result : ('a, exn) result -> 'a t
 
   val return_unit : unit t
@@ -1510,8 +1514,8 @@ sig
   val return_error : 'e -> (_, 'e) result t
   val return_nil : _ list t
 
-  val fail_with : string -> _ t
-  val fail_invalid_arg : string -> _ t
+  val fail_with : ?bt:backtrace -> string -> _ t
+  val fail_invalid_arg : ?bt:backtrace -> string -> _ t
 end =
 struct
   let return v =
@@ -1520,8 +1524,8 @@ struct
   let of_result result =
     to_public_promise {state = state_of_result result}
 
-  let fail exn =
-    to_public_promise {state = Rejected exn}
+  let fail ?(bt = Printexc.get_callstack 20) exn =
+    to_public_promise {state = Rejected (exn, bt)}
 
   let return_unit = return ()
   let return_none = return None
@@ -1532,11 +1536,11 @@ struct
   let return_ok x = return (Ok x)
   let return_error x = return (Error x)
 
-  let fail_with msg =
-    to_public_promise {state = Rejected (Failure msg)}
+  let fail_with ?(bt =Printexc.get_callstack 20) msg =
+    to_public_promise {state = Rejected (Failure (msg), bt)}
 
-  let fail_invalid_arg msg =
-    to_public_promise {state = Rejected (Invalid_argument msg)}
+  let fail_invalid_arg ?(bt =Printexc.get_callstack 20) msg =
+    to_public_promise {state = Rejected (Invalid_argument msg, bt)}
 end
 include Trivial_promises
 
@@ -1946,12 +1950,12 @@ struct
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
           ignore p''
 
-        | Rejected exn ->
+        | Rejected (exn, bt) ->
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
           let p'' = underlying p'' in
 
           let State_may_have_changed p'' =
-            resolve ~allow_deferring:false p'' (Rejected (add_loc exn)) in
+            resolve ~allow_deferring:false p'' (Rejected (add_loc exn, bt)) in
           ignore p''
       in
 
@@ -1968,8 +1972,8 @@ struct
             create_result_promise_and_callback_if_deferred () in
           (p'', callback, p.state))
 
-    | Rejected exn ->
-      to_public_promise {state = Rejected (add_loc exn)}
+    | Rejected (exn, bt) ->
+      to_public_promise {state = Rejected (add_loc exn, bt)}
 
     | Pending p_callbacks ->
       let (p'', callback) = create_result_promise_and_callback_if_deferred () in
@@ -1991,8 +1995,10 @@ struct
           current_storage := saved_storage;
 
           let p''_result =
-            try Fulfilled (f v) with exn
-            when Exception_filter.run exn -> Rejected exn
+            try Fulfilled (f v)
+            with exn when Exception_filter.run exn ->
+              let bt = Printexc.get_raw_backtrace () in
+              Rejected (exn, bt)
           in
 
           let State_may_now_be_pending_proxy p'' = may_now_be_proxy p'' in
@@ -2022,7 +2028,9 @@ struct
           to_public_promise
             {state =
               try Fulfilled (f v)
-              with exn when Exception_filter.run exn -> Rejected exn})
+              with exn when Exception_filter.run exn ->
+                let bt = Printexc.get_raw_backtrace () in
+                Rejected (exn, bt)})
         ~if_deferred:(fun () ->
           let (p'', callback) =
             create_result_promise_and_callback_if_deferred () in
@@ -2061,12 +2069,12 @@ struct
             resolve ~allow_deferring:false p'' p_result in
           ignore p''
 
-        | Rejected exn ->
+        | Rejected (exn, bt) ->
           current_storage := saved_storage;
 
           let p' =
             try h exn
-            with exn when Exception_filter.run exn -> fail exn
+            with exn when Exception_filter.run exn -> fail ~bt exn
           in
           let Internal p' = to_internal_promise p' in
 
@@ -2085,7 +2093,7 @@ struct
     | Fulfilled _ ->
       to_public_promise p
 
-    | Rejected exn ->
+    | Rejected (exn, _) ->
       run_callback_or_defer_it
         ~run_immediately_and_ensure_tail_call:true
         ~callback:(fun () -> h exn)
@@ -2122,13 +2130,12 @@ struct
             resolve ~allow_deferring:false p'' p_result in
           ignore p''
 
-        | Rejected exn ->
+        | Rejected (exn, bt) ->
           current_storage := saved_storage;
 
           let p' =
             try h exn
-            with exn when Exception_filter.run exn ->
-              fail (add_loc exn)
+            with exn when Exception_filter.run exn -> fail ~bt (add_loc exn)
           in
           let Internal p' = to_internal_promise p' in
 
@@ -2147,7 +2154,7 @@ struct
     | Fulfilled _ ->
       to_public_promise p
 
-    | Rejected exn ->
+    | Rejected (exn, _bt) ->
       run_callback_or_defer_it
         ~run_immediately_and_ensure_tail_call:true
         ~callback:(fun () -> h (add_loc exn))
@@ -2164,7 +2171,9 @@ struct
   let try_bind f f' h =
     let p =
       try f ()
-      with exn when Exception_filter.run exn -> fail exn
+      with exn when Exception_filter.run exn ->
+        let bt = Printexc.get_raw_backtrace () in
+        fail ~bt exn
     in
     let Internal p = to_internal_promise p in
     let p = underlying p in
@@ -2192,12 +2201,12 @@ struct
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
           ignore p''
 
-        | Rejected exn ->
+        | Rejected (exn, bt) ->
           current_storage := saved_storage;
 
           let p' =
             try h exn
-            with exn when Exception_filter.run exn -> fail exn
+            with exn when Exception_filter.run exn -> fail ~bt exn
           in
           let Internal p' = to_internal_promise p' in
 
@@ -2222,7 +2231,7 @@ struct
             create_result_promise_and_callback_if_deferred () in
           (p'', callback, p.state))
 
-    | Rejected exn ->
+    | Rejected (exn, _bt) ->
       run_callback_or_defer_it
         ~run_immediately_and_ensure_tail_call:true
         ~callback:(fun () -> h exn)
@@ -2268,13 +2277,13 @@ struct
             make_into_proxy ~outer_promise:p'' ~user_provided_promise:p' in
           ignore p''
 
-        | Rejected exn ->
+        | Rejected (exn, bt) ->
           current_storage := saved_storage;
 
           let p' =
             try h exn
             with exn when Exception_filter.run exn ->
-              fail (add_loc exn)
+              fail ~bt (add_loc exn)
           in
           let Internal p' = to_internal_promise p' in
 
@@ -2299,7 +2308,7 @@ struct
             create_result_promise_and_callback_if_deferred () in
           (p'', callback, p.state))
 
-    | Rejected exn ->
+    | Rejected (exn, _bt) ->
       run_callback_or_defer_it
         ~run_immediately_and_ensure_tail_call:true
         ~callback:(fun () -> h (add_loc exn))
@@ -2330,7 +2339,7 @@ struct
     let p = underlying p in
 
     match p.state with
-    | Rejected Canceled ->
+    | Rejected (Canceled, _) ->
       run_callback_or_defer_it
         ~run_immediately_and_ensure_tail_call:true
         ~callback:(fun () -> handle_with_async_exception_hook f ())
@@ -2393,7 +2402,7 @@ struct
         | Fulfilled _ ->
           ()
 
-        | Rejected exn ->
+        | Rejected (exn, _) ->
           current_storage := saved_storage;
           handle_with_async_exception_hook f exn
     in
@@ -2402,7 +2411,7 @@ struct
     | Fulfilled _ ->
       ()
 
-    | Rejected exn ->
+    | Rejected (exn, _bt) ->
       run_callback_or_defer_it
         ~run_immediately_and_ensure_tail_call:true
         ~callback:(fun () -> handle_with_async_exception_hook f exn)
@@ -2460,7 +2469,7 @@ struct
           current_storage := saved_storage;
           handle_with_async_exception_hook f v
 
-        | Rejected exn ->
+        | Rejected (exn, _bt) ->
           current_storage := saved_storage;
           handle_with_async_exception_hook g exn
     in
@@ -2474,7 +2483,7 @@ struct
           let callback = callback_if_deferred () in
           ((), callback, p.state))
 
-    | Rejected exn ->
+    | Rejected (exn, _bt) ->
       run_callback_or_defer_it
         ~run_immediately_and_ensure_tail_call:true
         ~callback:(fun () -> handle_with_async_exception_hook g exn)
@@ -2523,8 +2532,6 @@ sig
   val nchoose_split : 'a t list -> ('a list * 'a t list) t
 end =
 struct
-  external reraise : exn -> 'a = "%reraise"
-
   let dont_wait f h =
     let p =
       try f ()
@@ -2535,7 +2542,7 @@ struct
     match (underlying p).state with
     | Fulfilled _ ->
       ()
-    | Rejected exn ->
+    | Rejected (exn, _) ->
       h exn
 
     | Pending p_callbacks ->
@@ -2543,7 +2550,7 @@ struct
         match result with
         | Fulfilled _ ->
           ()
-        | Rejected exn ->
+        | Rejected (exn, _) ->
           h exn
       in
       add_implicitly_removed_callback p_callbacks callback
@@ -2558,7 +2565,7 @@ struct
     match (underlying p).state with
     | Fulfilled _ ->
       ()
-    | Rejected exn ->
+    | Rejected (exn, _) ->
       !async_exception_hook exn
 
     | Pending p_callbacks ->
@@ -2566,7 +2573,7 @@ struct
         match result with
         | Fulfilled _ ->
           ()
-        | Rejected exn ->
+        | Rejected (exn, _) ->
           !async_exception_hook exn
       in
       add_implicitly_removed_callback p_callbacks callback
@@ -2577,15 +2584,15 @@ struct
     match (underlying p).state with
     | Fulfilled _ ->
       ()
-    | Rejected exn ->
-      reraise exn
+    | Rejected (exn, bt) ->
+      Printexc.raise_with_backtrace exn bt
 
     | Pending p_callbacks ->
       let callback result =
         match result with
         | Fulfilled _ ->
           ()
-        | Rejected exn ->
+        | Rejected (exn, _bt) ->
           !async_exception_hook exn
       in
       add_implicitly_removed_callback p_callbacks callback
@@ -3125,13 +3132,11 @@ struct
     | Fail of exn
     | Sleep
 
-  external reraise : exn -> 'a = "%reraise"
-
   let state p =
     let Internal p = to_internal_promise p in
     match (underlying p).state with
     | Fulfilled v -> Return v
-    | Rejected exn -> Fail exn
+    | Rejected (exn, _) -> Fail exn
     | Pending _ -> Sleep
 
   let debug_state_is expected_state p =
@@ -3147,7 +3152,7 @@ struct
   let poll p =
     let Internal p = to_internal_promise p in
     match (underlying p).state with
-    | Rejected e -> reraise e
+    | Rejected (e, bt) -> Printexc.raise_with_backtrace e bt
     | Fulfilled v -> Some v
     | Pending _ -> None
 

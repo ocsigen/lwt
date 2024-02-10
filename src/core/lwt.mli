@@ -450,7 +450,7 @@ let%lwt line = Lwt_io.(read_line stdin) in
 Lwt.return (line ^ ".")
 ]} *)
 
-val fail : exn -> _ t
+val fail : ?bt:Printexc.raw_backtrace -> exn -> _ t
 (** [Lwt.fail exn] is like {!Lwt.return}, except the new {{!t} promise} that is
     {e already rejected} with [exn].
 
@@ -1576,7 +1576,7 @@ val return_error : 'e -> ((_, 'e) result) t
 
     @since Lwt 2.6.0 *)
 
-val fail_with : string -> _ t
+val fail_with : ?bt:Printexc.raw_backtrace -> string -> _ t
 (** [Lwt.fail_with s] is an abbreviation for
 
 {[
@@ -1586,7 +1586,7 @@ Lwt.fail (Stdlib.Failure s)
     In most cases, it is better to use [failwith s] from the standard library.
     See {!Lwt.fail} for an explanation. *)
 
-val fail_invalid_arg : string -> _ t
+val fail_invalid_arg : ?bt:Printexc.raw_backtrace -> string -> _ t
 (** [Lwt.invalid_arg s] is an abbreviation for
 
 {[
