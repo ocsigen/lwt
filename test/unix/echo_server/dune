@@ -1,0 +1,4 @@
+
+(executables
+  (names echo_server echo_client)
+  (libraries lwt lwt.unix unix))
