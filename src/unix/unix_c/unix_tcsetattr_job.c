@@ -24,7 +24,7 @@ struct job_tcsetattr {
     int error_code;
 };
 
-static int when_flag_table[] = {TCSANOW, TCSADRAIN, TCSAFLUSH};
+static const int when_flag_table[] = {TCSANOW, TCSADRAIN, TCSAFLUSH};
 
 static void worker_tcsetattr(struct job_tcsetattr *job)
 {

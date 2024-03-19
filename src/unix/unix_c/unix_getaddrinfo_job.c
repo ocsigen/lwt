@@ -29,7 +29,7 @@ struct job_getaddrinfo {
     char data[];
 };
 
-static value cst_to_constr(int n, int *tbl, int size, int deflt)
+static value cst_to_constr(int n, const int *tbl, int size, int deflt)
 {
     int i;
     for (i = 0; i < size; i++)
@@ -37,7 +37,7 @@ static value cst_to_constr(int n, int *tbl, int size, int deflt)
     return Val_int(deflt);
 }
 
-static value convert_addrinfo(struct addrinfo *a)
+static value convert_addrinfo(const struct addrinfo *a)
 {
     CAMLparam0();
     CAMLlocal3(vres, vaddr, vcanonname);
