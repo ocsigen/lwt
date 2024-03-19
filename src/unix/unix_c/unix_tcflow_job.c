@@ -31,22 +31,6 @@
 #include <unistd.h>
 
 /* +-----------------------------------------------------------------+
-   | Converters                                                      |
-   +-----------------------------------------------------------------+ */
-
-/* Table mapping constructors of ocaml type Unix.flow_action to C values. */
-static int flow_action_table[] = {
-  /* Constructor TCOOFF. */
-  TCOOFF,
-  /* Constructor TCOON. */
-  TCOON,
-  /* Constructor TCIOFF. */
-  TCIOFF,
-  /* Constructor TCION. */
-  TCION
-};
-
-/* +-----------------------------------------------------------------+
    | Asynchronous job                                                |
    +-----------------------------------------------------------------+ */
 
@@ -94,6 +78,22 @@ static value result_tcflow(struct job_tcflow* job)
 /* The stub creating the job structure. */
 CAMLprim value lwt_unix_tcflow_job(value fd, value action)
 {
+/* +-----------------------------------------------------------------+
+   | Converters                                                      |
+   +-----------------------------------------------------------------+ */
+
+/* Table mapping constructors of ocaml type Unix.flow_action to C values. */
+int flow_action_table[] = {
+  /* Constructor TCOOFF. */
+  TCOOFF,
+  /* Constructor TCOON. */
+  TCOON,
+  /* Constructor TCIOFF. */
+  TCIOFF,
+  /* Constructor TCION. */
+  TCION
+};
+
   /* Allocate a new job. */
   struct job_tcflow* job = lwt_unix_new(struct job_tcflow);
   /* Initializes function fields. */

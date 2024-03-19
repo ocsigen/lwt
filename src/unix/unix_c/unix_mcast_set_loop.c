@@ -22,14 +22,12 @@ CAMLprim value lwt_unix_mcast_set_loop(value fd, value flag)
     f = Bool_val(flag);
     r = 0;
 
-    switch (t) {
-        case PF_INET:
+    if (t == PF_INET) {
             r = setsockopt(Int_val(fd), IPPROTO_IP, IP_MULTICAST_LOOP,
                            (void *)&f, sizeof(f));
-            break;
-        default:
+    } else {
             caml_invalid_argument("lwt_unix_mcast_set_loop");
-    };
+    }
 
     if (r == -1) uerror("setsockopt", Nothing);
 

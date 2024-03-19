@@ -24,14 +24,12 @@ CAMLprim value lwt_unix_mcast_set_ttl(value fd, value ttl)
     v = Int_val(ttl);
     r = 0;
 
-    switch (t) {
-        case PF_INET:
+    if (t == PF_INET) {
             r = setsockopt(fd_sock, IPPROTO_IP, IP_MULTICAST_TTL, (void *)&v,
                            sizeof(v));
-            break;
-        default:
+    } else {
             caml_invalid_argument("lwt_unix_mcast_set_ttl");
-    };
+    }
 
     if (r == -1) uerror("setsockopt", Nothing);
 

@@ -20,7 +20,11 @@
 
 #include "lwt_unix.h"
 
-#if !defined(__ANDROID__)
+/* NOTE: [__ESPERANTO__] is defined by the cross-compiler if we compile into
+ * the [esperanto] context (with [arch-esperanto-none-static-cc]). Otherwise,
+ * nobody should define this macro. The code above can not be compiled with
+ * Esperanto/Cosmopolitan due to missing [_SC*] macros. */
+#if !defined(__ANDROID__) && !defined(__ESPERANTO__)
 
 static value alloc_passwd_entry(struct passwd *entry)
 {

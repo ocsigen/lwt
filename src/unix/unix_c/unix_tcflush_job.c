@@ -31,20 +31,6 @@
 #include <unistd.h>
 
 /* +-----------------------------------------------------------------+
-   | Converters                                                      |
-   +-----------------------------------------------------------------+ */
-
-/* Table mapping constructors of ocaml type Unix.flush_queue to C values. */
-static int flush_queue_table[] = {
-  /* Constructor TCIFLUSH. */
-  TCIFLUSH,
-  /* Constructor TCOFLUSH. */
-  TCOFLUSH,
-  /* Constructor TCIOFLUSH. */
-  TCIOFLUSH
-};
-
-/* +-----------------------------------------------------------------+
    | Asynchronous job                                                |
    +-----------------------------------------------------------------+ */
 
@@ -92,6 +78,20 @@ static value result_tcflush(struct job_tcflush* job)
 /* The stub creating the job structure. */
 CAMLprim value lwt_unix_tcflush_job(value fd, value queue)
 {
+  /* +-----------------------------------------------------------------+
+     | Converters                                                      |
+     +-----------------------------------------------------------------+ */
+
+  /* Table mapping constructors of ocaml type Unix.flush_queue to C values. */
+  int flush_queue_table[] = {
+    /* Constructor TCIFLUSH. */
+    TCIFLUSH,
+    /* Constructor TCOFLUSH. */
+    TCOFLUSH,
+    /* Constructor TCIOFLUSH. */
+    TCIOFLUSH
+  };
+
   /* Allocate a new job. */
   struct job_tcflush* job = lwt_unix_new(struct job_tcflush);
   /* Initializes function fields. */

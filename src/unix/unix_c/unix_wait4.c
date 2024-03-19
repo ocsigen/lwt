@@ -58,12 +58,12 @@ static value alloc_process_status(int status)
     return st;
 }
 
-static int wait_flag_table[] = {WNOHANG, WUNTRACED};
-
 value lwt_unix_wait4(value flags, value pid_req)
 {
     CAMLparam1(flags);
     CAMLlocal2(times, res);
+
+    int wait_flag_table[] = {WNOHANG, WUNTRACED};
 
     int pid, status, cv_flags;
     cv_flags = caml_convert_flag_list(flags, wait_flag_table);
