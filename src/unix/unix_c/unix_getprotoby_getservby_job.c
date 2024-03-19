@@ -9,6 +9,7 @@
 
 #define ARGS(args...) args
 
+#include <errno.h>
 #include <caml/alloc.h>
 #include <caml/fail.h>
 #include <caml/memory.h>

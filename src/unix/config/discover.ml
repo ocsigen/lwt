@@ -652,9 +652,8 @@ struct
 
         int main()
         {
-            struct hostent *he;
-            struct servent *se;
-            he =
+            int x;
+            x =
               gethostbyname_r(
                 (const char*)NULL,
                 (struct hostent*)NULL,
@@ -662,9 +661,9 @@ struct
                 (int)0,
                 (struct hostent**)NULL,
                 (int*)NULL);
-            he =
+            x =
               gethostbyaddr_r(
-                (const char*)NULL,
+                (const void*)NULL,
                 (int)0,
                 (int)0,
                 (struct hostent*)NULL,
@@ -672,7 +671,7 @@ struct
                 (int)0,
                 (struct hostent**)NULL,
                 (int*)NULL);
-            se =
+            x =
               getservbyname_r(
                 (const char*)NULL,
                 (const char*)NULL,
@@ -680,7 +679,7 @@ struct
                 (char*)NULL,
                 (int)0,
                 (struct servent**)NULL);
-            se =
+            x =
               getservbyport_r(
                 (int)0,
                 (const char*)NULL,
@@ -688,20 +687,20 @@ struct
                 (char*)NULL,
                 (int)0,
                 (struct servent**)NULL);
-            pr =
+            x =
               getprotoent_r(
                 (struct protoent*)NULL,
                 (char*)NULL,
                 (int)0,
                 (struct protoent**)NULL);
-            pr =
+            x =
               getprotobyname_r(
                 (const char*)NULL,
                 (struct protoent*)NULL,
                 (char*)NULL,
                 (int)0,
                 (struct protoent**)NULL);
-            pr =
+            x =
               getprotobynumber_r(
                 (int)0,
                 (struct protoent*)NULL,
@@ -793,7 +792,7 @@ struct
 
         int main()
         {
-            int (*mincore_ptr)(const void*, size_t, char*) = mincore;
+            int (*mincore_ptr)(void*, size_t, unsigned char*) = mincore;
             return (int)(mincore_ptr == NULL);
         }
       |}
