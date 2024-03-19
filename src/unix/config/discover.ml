@@ -146,8 +146,6 @@ struct
       ()
 end
 
-
-
 module C_library_flags :
 sig
   val detect :
@@ -322,8 +320,64 @@ struct
       link_flags_file (C_library_flags.link_flags ());
 end
 
-
-
+module OS :
+sig
+  type t =
+    | Android
+    | FreeBSD
+    | IOS
+    | Linux
+    | Mac
+    | Windows
+  val detect : Configurator.t -> t option
+end = struct
+  type t =
+    | Android
+    | FreeBSD
+    | IOS
+    | Linux
+    | Mac
+    | Windows
+  let detect_system_header = {|
+    #if __APPLE__
+      #include <TargetConditionals.h>
+      #if TARGET_OS_IPHONE
+        #define PLATFORM_NAME "ios"
+      #else
+        #define PLATFORM_NAME "mac"
+      #endif
+    #elif __FreeBSD__
+      #define PLATFORM_NAME "freebsd"
+    #elif __linux__
+      #if __ANDROID__
+        #define PLATFORM_NAME "android"
+      #else
+        #define PLATFORM_NAME "linux"
+      #endif
+    #elif WIN32
+      #define PLATFORM_NAME "windows"
+    #endif
+  |}
+  let detect context =
+    let header =
+      let file = Filename.temp_file "discover" "os.h" in
+      let fd = open_out file in
+      output_string fd detect_system_header;
+      close_out fd;
+      file in
+    let platform =
+      Configurator.C_define.import
+        context ~includes:[header]
+        [("PLATFORM_NAME", String)] in
+    match platform with
+    | [(_, String "android")] -> Some Android
+    | [(_, String "freebsd")] -> Some FreeBSD
+    | [(_, String "ios")] -> Some IOS
+    | [(_, String "linux")] -> Some Linux
+    | [(_, String "mac")] -> Some Mac
+    | [(_, String "windows")] -> Some Windows
+    | _ -> None
+end
 module Features :
 sig
   val detect : Configurator.t -> Output.t list
@@ -834,6 +888,11 @@ let () =
     (* Parse arguments from additional sources. *)
     Arguments.parse_environment_variable ();
     Arguments.parse_arguments_file ();
+
+    (* Detect os *)
+    (match (OS.detect context, !Arguments.android_target) with
+    | (Some Android, None) -> Arguments.android_target := Some true
+    | _ -> ());
 
     (* Detect features. *)
     let macros = Features.detect context in
