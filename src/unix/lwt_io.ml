@@ -231,7 +231,7 @@ let perform_io : type mode. mode _channel -> int Lwt.t = fun ch ->
             (function
               | Unix.Unix_error (Unix.EPIPE, _, _) ->
                 Lwt.return 0
-              | exn -> Lwt.fail exn) [@ocaml.warning "-4"]
+              | exn -> Lwt.reraise exn) [@ocaml.warning "-4"]
         else
           perform ch.buffer ptr len
       in
@@ -525,7 +525,7 @@ let make :
     max = (match mode with
       | Input -> 0
       | Output -> size);
-    close = lazy(Lwt.catch close Lwt.fail);
+    close = lazy(Lwt.catch close Lwt.reraise);
     abort_waiter = abort_waiter;
     abort_wakener = abort_wakener;
     main = wrapper;
@@ -537,7 +537,7 @@ let make :
         perform_io,
         fun pos cmd ->
           try seek pos cmd
-          with e when Lwt.Exception_filter.run e -> Lwt.fail e
+          with e when Lwt.Exception_filter.run e -> Lwt.reraise e
     );
   } and wrapper = {
     state = Idle;
@@ -678,7 +678,7 @@ struct
     let ptr = ic.ptr in
     if ptr = ic.max then
       refill ic >>= function
-      | 0 -> Lwt.fail End_of_file
+      | 0 -> raise End_of_file
       | _ -> read_char ic
     else begin
       ic.ptr <- ptr + 1;
@@ -690,7 +690,7 @@ struct
       (fun () -> read_char ic >|= fun ch -> Some ch)
       (function
         | End_of_file -> Lwt.return_none
-        | exn -> Lwt.fail exn)
+        | exn -> Lwt.reraise exn)
 
   let read_line ic =
     let buf = Buffer.create 128 in
@@ -711,7 +711,7 @@ struct
             if cr_read then Buffer.add_char buf '\r';
             Lwt.return(Buffer.contents buf)
           | exn ->
-            Lwt.fail exn)
+            Lwt.reraise exn)
     in
     read_char ic >>= function
     | '\r' -> loop true
@@ -723,7 +723,7 @@ struct
       (fun () -> read_line ic >|= fun ch -> Some ch)
       (function
         | End_of_file -> Lwt.return_none
-        | exn -> Lwt.fail exn)
+        | exn -> Lwt.reraise exn)
 
   let unsafe_read_into' ic blit buf ofs len =
     let avail = ic.max - ic.ptr in
@@ -771,7 +771,7 @@ struct
     let rec loop ic buf ofs len =
       read_into ic buf ofs len >>= function
       | 0 ->
-          Lwt.fail End_of_file
+          raise End_of_file
       | n ->
           let len = len - n in
           if len = 0 then
@@ -985,7 +985,7 @@ struct
     if ic.max - ic.ptr < size then
       refill ic >>= function
       | 0 ->
-        Lwt.fail End_of_file
+        raise End_of_file
       | _ ->
         read_block_unsafe ic size f
     else begin
@@ -1440,7 +1440,7 @@ let open_temp_file ?buffer ?flags ?perm ?temp_dir ?prefix ?(suffix = "") () =
         Lwt.return (fname, chan))
       (function
         | Unix.Unix_error _ when n < 1000 -> attempt (n + 1)
-        | exn -> Lwt.fail exn)
+        | exn -> Lwt.reraise exn)
   in
   attempt 0
 
@@ -1468,7 +1468,7 @@ let create_temp_dir
         Lwt.return name)
       (function
       | Unix.Unix_error (Unix.EEXIST, _, _) when n < 1000 -> attempt (n + 1)
-      | exn -> Lwt.fail exn)
+      | exn -> Lwt.reraise exn)
   in
   attempt 0
 
@@ -1489,10 +1489,10 @@ let win32_unlink fn =
                 (* If everything succeeded but the final removal still failed,
                    restore original permissions *)
                 Lwt_unix.chmod fn st_perm >>= fun () ->
-                Lwt.fail exn)
+                Lwt.reraise exn)
          )
-         (fun _ -> Lwt.fail exn)
-     | exn -> Lwt.fail exn)
+         (fun _ -> Lwt.reraise exn)
+     | exn -> Lwt.reraise exn)
 
 let unlink =
   if Sys.win32 then
@@ -1549,7 +1549,7 @@ let close_socket fd =
          (function
            (* Occurs if the peer closes the connection first. *)
            | Unix.Unix_error (Unix.ENOTCONN, _, _) -> Lwt.return_unit
-           | exn -> Lwt.fail exn) [@ocaml.warning "-4"])
+           | exn -> Lwt.reraise exn) [@ocaml.warning "-4"])
     (fun () ->
        Lwt_unix.close fd)
 
@@ -1574,7 +1574,7 @@ let open_connection ?fd ?in_buffer ?out_buffer sockaddr =
                      ~mode:output (Lwt_bytes.write fd)))
     (fun exn ->
        Lwt_unix.close fd >>= fun () ->
-       Lwt.fail exn)
+       Lwt.reraise exn)
 
 let with_close_connection f (ic, oc) =
   (* If the user already tried to close the socket and got an exception, we
@@ -1639,7 +1639,7 @@ let establish_server_generic
         (function
           | Unix.Unix_error (Unix.ECONNABORTED, _, _) ->
             Lwt.return `Try_again
-          | e -> Lwt.fail e)
+          | e -> Lwt.reraise e)
     in
 
     Lwt.pick [try_to_accept; should_stop] >>= function

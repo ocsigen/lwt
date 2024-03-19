@@ -378,7 +378,7 @@ let read_opt read ic =
     (function
       | Unix.Unix_error (Unix.EPIPE, _, _) | End_of_file ->
         Lwt.return_none
-      | exn -> Lwt.fail exn) [@ocaml.warning "-4"]
+      | exn -> Lwt.reraise exn) [@ocaml.warning "-4"]
 
 let recv_chars pr =
   let ic = pr#stdout in
@@ -512,8 +512,8 @@ let pmap ?timeout ?env ?cwd ?stderr cmd text =
       | Lwt.Canceled as exn ->
         (* Cancel the getter if the sender was canceled. *)
         Lwt.cancel getter;
-        Lwt.fail exn
-      | exn -> Lwt.fail exn)
+        Lwt.reraise exn
+      | exn -> Lwt.reraise exn)
 
 let pmap_chars ?timeout ?env ?cwd ?stderr cmd chars =
   let pr = open_process ?timeout ?env ?cwd ?stderr cmd in
@@ -534,8 +534,8 @@ let pmap_line ?timeout ?env ?cwd ?stderr cmd line =
       | Lwt.Canceled as exn ->
         (* Cancel the getter if the sender was canceled. *)
         Lwt.cancel getter;
-        Lwt.fail exn
-      | exn -> Lwt.fail exn)
+        Lwt.reraise exn
+      | exn -> Lwt.reraise exn)
 
 let pmap_lines ?timeout ?env ?cwd ?stderr cmd lines =
   let pr = open_process ?timeout ?env ?cwd ?stderr cmd in
