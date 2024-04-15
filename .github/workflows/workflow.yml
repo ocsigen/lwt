@@ -90,7 +90,7 @@ jobs:
           opam-local-packages: ${{ matrix.local-packages }}
           allow-prerelease-opam: true
 
-      - run: opam depext conf-libev --install
+      - run: opam install conf-libev
         if: ${{ matrix.libev == true }}
 
       - run: opam install lwt_react lwt --deps-only --with-test
