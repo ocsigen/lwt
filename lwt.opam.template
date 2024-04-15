@@ -1,0 +1,24 @@
+build: [
+  ["dune" "subst"] {pinned}
+  [
+    "dune"
+    "exec"
+    "-p"
+    name
+    "src/unix/config/discover.exe"
+    "--"
+    "--save"
+    "--use-libev" "%{conf-libev:installed}%"
+  ]
+  [
+    "dune"
+    "build"
+    "-p"
+    name
+    "-j"
+    jobs
+    "@install"
+    "@runtest" {with-test}
+    "@doc" {with-doc}
+  ]
+]

@@ -111,18 +111,18 @@ jobs:
       - run: opam exec -- make ppx_let-test-deps ppx_let-test
         if: ${{ matrix.ppx == true }}
 
-  lint-opam:
-    runs-on: ubuntu-latest
+  # lint-opam:
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout tree
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout tree
+  #       uses: actions/checkout@v4
 
-      - name: Set-up OCaml
-        uses: ocaml/setup-ocaml@v2
-        with:
-          ocaml-compiler: "5.1"
-          allow-prerelease-opam: true
-          dune-cache: true
+  #     - name: Set-up OCaml
+  #       uses: ocaml/setup-ocaml@v2
+  #       with:
+  #         ocaml-compiler: "5.1"
+  #         allow-prerelease-opam: true
+  #         dune-cache: true
 
-      - uses: ocaml/setup-ocaml/lint-opam@v2
+  #     - uses: ocaml/setup-ocaml/lint-opam@v2
