@@ -1,4 +1,4 @@
-name: Main workflow
+name: Builds, tests & co
 
 on:
   pull_request:
@@ -8,21 +8,22 @@ on:
     - cron: 0 1 * * MON
 
 jobs:
-  build:
+  build-and-test:
     strategy:
       fail-fast: false
       matrix:
         os:
           - ubuntu-latest
         ocaml-compiler:
-          - 4.08.x
-          - 4.09.x
-          - 4.10.x
-          - 4.11.x
-          - 4.12.x
-          - 4.13.x
-          - 4.14.x
-          - 5.0.x
+          - "4.08"
+          - "4.09"
+          - "4.10"
+          - "4.11"
+          - "4.12"
+          - "4.13"
+          - "4.14"
+          - "5.0"
+          - "5.1"
         libev:
           - true
           - false
@@ -33,7 +34,7 @@ jobs:
             *.opam
         include:
           - os: ubuntu-latest
-            ocaml-compiler: ocaml-variants.4.14.0+options,ocaml-option-flambda,ocaml-option-musl,ocaml-option-static
+            ocaml-compiler: ocaml-variants.4.14.2+options,ocaml-option-flambda,ocaml-option-musl,ocaml-option-static
             libev: false
             ppx: true
             local-packages: |
@@ -75,20 +76,19 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+      - name: Hack Git CRLF for ocaml/setup-ocaml#529 issue
+        run: git config --global core.autocrlf input
+
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Hack Git CRLF for ocaml/setup-ocaml issue #529
-        if: ${{ startsWith(matrix.os, 'windows-') }}
-        run: |
-          & "C:\Program Files\Git\bin\git.exe" config --system core.autocrlf input
-
-      - name: Use OCaml ${{ matrix.ocaml-compiler }}
+      - name: Set-up OCaml
         uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
           opam-depext-flags: --with-test
           opam-local-packages: ${{ matrix.local-packages }}
+          allow-prerelease-opam: true
 
       - run: opam depext conf-libev --install
         if: ${{ matrix.libev == true }}
@@ -110,3 +110,19 @@ jobs:
 
       - run: opam exec -- make ppx_let-test-deps ppx_let-test
         if: ${{ matrix.ppx == true }}
+
+  # lint-opam:
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - name: Checkout tree
+  #       uses: actions/checkout@v4
+
+  #     - name: Set-up OCaml
+  #       uses: ocaml/setup-ocaml@v2
+  #       with:
+  #         ocaml-compiler: "5.1"
+  #         allow-prerelease-opam: true
+  #         dune-cache: true
+
+  #     - uses: ocaml/setup-ocaml/lint-opam@v2
