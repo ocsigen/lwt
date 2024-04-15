@@ -34,7 +34,7 @@ jobs:
             *.opam
         include:
           - os: ubuntu-latest
-            ocaml-compiler: ocaml-variants.4.14.2+options,ocaml-option-flambda,ocaml-option-musl,ocaml-option-static
+            ocaml-compiler: ocaml-variants.5.1.1+options,ocaml-option-flambda,ocaml-option-musl,ocaml-option-static,ocaml-option-no-compression
             libev: false
             ppx: true
             local-packages: |
