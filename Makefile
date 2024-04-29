@@ -76,10 +76,6 @@ ppx_let-test :
 	dune build test/ppx_let/test.exe
 	dune exec test/ppx_let/test.exe
 
-.PHONY : ppx_let-test-deps
-ppx_let-test-deps :
-	opam install --yes --unset-root ppx_let
-
 .PHONY: clean
 clean :
 	dune clean
