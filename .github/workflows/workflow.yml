@@ -52,21 +52,21 @@ jobs:
             local-packages: |
               *.opam
           - os: ubuntu-latest
-            ocaml-compiler: "4.08"
+            ocaml-compiler: "4.14"
             libev: true
             ppx: false
             local-packages: |
               *.opam
               !lwt_ppx.opam
           - os: macos-latest
-            ocaml-compiler: "4.08"
+            ocaml-compiler: "4.14"
             libev: true
             ppx: false
             local-packages: |
               *.opam
               !lwt_ppx.opam
           - os: windows-latest
-            ocaml-compiler: "4.08"
+            ocaml-compiler: "4.14"
             libev: false
             ppx: false
             local-packages: |
