@@ -19,7 +19,7 @@
 
 #include "unix_recv_send_utils.h"
 
-int msg_flag_table[3] = {MSG_OOB, MSG_DONTROUTE, MSG_PEEK};
+const int msg_flag_table[3] = {MSG_OOB, MSG_DONTROUTE, MSG_PEEK};
 
 value wrapper_recv_msg(int fd, int n_iovs, struct iovec *iovs)
 {

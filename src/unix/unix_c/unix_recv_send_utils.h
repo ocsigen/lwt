@@ -36,9 +36,15 @@
 #define caml_unix_socket_type_table socket_type_table
 #endif
 
-extern int msg_flag_table[];
+#if OCAML_VERSION < 50300
 extern int caml_unix_socket_domain_table[];
 extern int caml_unix_socket_type_table[];
+#else
+extern const int caml_unix_socket_domain_table[];
+extern const int caml_unix_socket_type_table[];
+#endif
+
+extern const int msg_flag_table[];
 extern void get_sockaddr(value mladdr, union sock_addr_union *addr /*out*/,
                          socklen_t *addr_len /*out*/);
 value wrapper_recv_msg(int fd, int n_iovs, struct iovec *iovs);
