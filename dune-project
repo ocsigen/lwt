@@ -54,6 +54,7 @@ synchronization primitives. Code can be run in parallel on an opt-in basis.
   (ocaml (>= 4.08))
   (cppo (and :build (>= 1.1.0)))
   (ocamlfind (and :dev (>= 1.7.3-1)))
+  (odoc (and :with-doc (>= 2.3.0)))
   dune-configurator
   ocplib-endian)
  (depopts base-threads base-unix conf-libev))
