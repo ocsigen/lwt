@@ -35,6 +35,7 @@ let pwrite ~stdin pout expected =
 
 let read_all ic buf ofs len =
   let rec loop ic buf ofs len =
+    assert (len >= 0);
     Lwt_unix.read ic buf ofs len >>= function
     | 0 ->
         Lwt.return ofs
