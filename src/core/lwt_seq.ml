@@ -283,22 +283,16 @@ let unfold_lwt f u () =
   | None -> return_nil
   | Some (x, u') -> Lwt.return (Cons (x, unfold_lwt f u'))
 
-let rec of_list = function
-  | [] -> empty
-  | h :: t -> cons h (of_list t)
+let rec of_list l () =
+  Lwt.return (match l with [] -> Nil | h :: t -> Cons (h, of_list t))
 
-let rec to_list seq =
-  seq () >>= function
-  | Nil -> Lwt.return_nil
-  | Cons (x, next) ->
-    let+ l = to_list next in
-    x :: l
-let to_list seq =
-  Lwt.apply seq () >>= function
-  | Nil -> Lwt.return_nil
-  | Cons (x, next) ->
-    let+ l = to_list next in
-    x :: l
+let to_list (seq : 'a t) =
+  let rec aux f seq =
+    Lwt.bind (seq ()) (function
+      | Nil -> Lwt.return (f [])
+      | Cons (h, t) -> aux (fun x -> f (h :: x)) t)
+  in
+  aux (fun x -> x) (Lwt.apply seq)
 
 let rec of_seq seq () =
   match seq () with
