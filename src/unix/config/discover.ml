@@ -792,7 +792,7 @@ struct
 
         int main(void)
         {
-            int (*mincore_ptr)(void*, size_t, unsigned char*) = mincore;
+            int (*mincore_ptr)(const void*, size_t, char*) = mincore;
             return (int)(mincore_ptr == NULL);
         }
       |}
