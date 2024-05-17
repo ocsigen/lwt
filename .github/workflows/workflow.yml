@@ -24,6 +24,7 @@ jobs:
           - "4.14"
           - "5.0"
           - "5.1"
+          - "5.2"
         libev:
           - true
           - false
@@ -34,7 +35,7 @@ jobs:
             *.opam
         include:
           - os: ubuntu-latest
-            ocaml-compiler: ocaml-variants.5.1.1+options,ocaml-option-flambda,ocaml-option-musl,ocaml-option-static,ocaml-option-no-compression
+            ocaml-compiler: ocaml-variants.5.2.0+options,ocaml-option-flambda,ocaml-option-musl,ocaml-option-static,ocaml-option-no-compression
             libev: false
             ppx: true
             local-packages: |
@@ -121,7 +122,7 @@ jobs:
       - name: Set-up OCaml
         uses: ocaml/setup-ocaml@v2
         with:
-          ocaml-compiler: "5.1"
+          ocaml-compiler: "5.2"
           allow-prerelease-opam: true
           dune-cache: true
 
