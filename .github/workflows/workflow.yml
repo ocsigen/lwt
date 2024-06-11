@@ -41,33 +41,33 @@ jobs:
             local-packages: |
               *.opam
           - os: macos-latest
-            ocaml-compiler: "4.14"
+            ocaml-compiler: "5.2"
             libev: true
             ppx: true
             local-packages: |
               *.opam
           - os: windows-latest
-            ocaml-compiler: "4.14"
+            ocaml-compiler: "5.2"
             libev: false
             ppx: true
             local-packages: |
               *.opam
           - os: ubuntu-latest
-            ocaml-compiler: "4.14"
+            ocaml-compiler: "5.2"
             libev: true
             ppx: false
             local-packages: |
               *.opam
               !lwt_ppx.opam
           - os: macos-latest
-            ocaml-compiler: "4.14"
+            ocaml-compiler: "5.2"
             libev: true
             ppx: false
             local-packages: |
               *.opam
               !lwt_ppx.opam
           - os: windows-latest
-            ocaml-compiler: "4.14"
+            ocaml-compiler: "5.2"
             libev: false
             ppx: false
             local-packages: |
@@ -77,17 +77,13 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Hack Git CRLF for ocaml/setup-ocaml#529 issue
-        run: git config --global core.autocrlf input
-
-      - name: Checkout code
+      - name: Checkout tree
         uses: actions/checkout@v4
 
       - name: Set-up OCaml
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3.0.0-alpha
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
-          opam-depext-flags: --with-test
           opam-local-packages: ${{ matrix.local-packages }}
           allow-prerelease-opam: true
 
@@ -120,10 +116,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set-up OCaml
-        uses: ocaml/setup-ocaml@v2
+        uses: ocaml/setup-ocaml@v3.0.0-alpha
         with:
           ocaml-compiler: "5.2"
           allow-prerelease-opam: true
           dune-cache: true
 
-      - uses: ocaml/setup-ocaml/lint-opam@v2
+      - uses: ocaml/setup-ocaml/lint-opam@v3.0.0-alpha
