@@ -16,11 +16,12 @@
 */
 
 /* Caml headers. */
-#include "lwt_unix.h"
+#include "lwt_config.h"
 #include <caml/memory.h>
 #include <caml/alloc.h>
 #include <caml/fail.h>
 #include <caml/signals.h>
+#include "lwt_unix.h"
 
 #if !defined(LWT_ON_WINDOWS) && defined(HAVE_FDATASYNC)
 
