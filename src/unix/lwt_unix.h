@@ -14,6 +14,11 @@
 #include <caml/socketaddr.h>
 #include <string.h>
 
+#if OCAML_VERSION < 50000
+#define caml_convert_flag_list(flags, table) \
+    caml_convert_flag_list((flags), (int *)(table))
+#endif
+
 /* The macro to get the file-descriptor from a value. */
 #if defined(LWT_ON_WINDOWS)
 #define FD_val(value) win_CRT_fd_of_filedescr(value)
