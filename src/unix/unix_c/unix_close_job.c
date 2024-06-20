@@ -16,7 +16,7 @@
 */
 
 /* Caml headers. */
-#include <lwt_unix.h>
+#include "lwt_unix.h"
 #include <caml/memory.h>
 #include <caml/alloc.h>
 #include <caml/fail.h>
