@@ -81,7 +81,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set-up OCaml
-        uses: ocaml/setup-ocaml@v3.0.0-alpha
+        uses: ocaml/setup-ocaml@v3.0.0-beta
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
           opam-local-packages: ${{ matrix.local-packages }}
@@ -116,10 +116,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set-up OCaml
-        uses: ocaml/setup-ocaml@v3.0.0-alpha
+        uses: ocaml/setup-ocaml@v3.0.0-beta
         with:
           ocaml-compiler: "5.2"
           allow-prerelease-opam: true
           dune-cache: true
 
-      - uses: ocaml/setup-ocaml/lint-opam@v3.0.0-alpha
+      - uses: ocaml/setup-ocaml/lint-opam@v3.0.0-beta
