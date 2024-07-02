@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include "lwt_unix.h"
 #include "unix_recv_send_utils.h"
 
 value lwt_unix_recv(value fd, value buf, value ofs, value len, value flags)

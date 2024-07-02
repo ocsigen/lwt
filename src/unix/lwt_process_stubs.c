@@ -7,7 +7,7 @@
 
 #if defined(LWT_ON_WINDOWS)
 
-#include <lwt_unix.h>
+#include "lwt_unix.h"
 
 #if OCAML_VERSION < 41300
 #define CAML_INTERNALS

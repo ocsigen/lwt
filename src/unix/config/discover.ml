@@ -165,7 +165,7 @@ sig
   val add_link_flags : string list -> unit
 end =
 struct
-  let c_flags = ref []
+  let c_flags = ref ["-Wall"; "-fdiagnostics-color=always"]
   let link_flags = ref []
 
   let extend c_flags' link_flags' =
@@ -424,7 +424,7 @@ struct
         let code = {|
           #include <ev.h>
 
-          int main()
+          int main(void)
           {
               ev_default_loop(0);
               return 0;
@@ -452,7 +452,7 @@ struct
         let code = {|
           #include <pthread.h>
 
-          int main()
+          int main(void)
           {
               pthread_create(0, 0, 0, 0);
               return 0;
@@ -494,7 +494,7 @@ struct
       compiles context {|
         #include <sys/eventfd.h>
 
-        int main()
+        int main(void)
         {
             eventfd(0, 0);
             return 0;
@@ -511,7 +511,7 @@ struct
         #include <sys/types.h>
         #include <sys/socket.h>
 
-        int main()
+        int main(void)
         {
             struct msghdr msg;
             msg.msg_controllen = 0;
@@ -531,7 +531,7 @@ struct
         #define _GNU_SOURCE
         #include <sched.h>
 
-        int main()
+        int main(void)
         {
             sched_getcpu();
             return 0;
@@ -549,7 +549,7 @@ struct
         #define _GNU_SOURCE
         #include <sched.h>
 
-        int main()
+        int main(void)
         {
             sched_getaffinity(0, 0, 0);
             return 0;
@@ -562,7 +562,7 @@ struct
     #include <sys/types.h>
     #include <sys/socket.h>
 
-    int main()
+    int main(void)
     {
         struct |} ^ struct_name ^ {| cred;
         socklen_t cred_len = sizeof(cred);
@@ -612,7 +612,7 @@ struct
         #include <sys/types.h>
         #include <unistd.h>
 
-        int main()
+        int main(void)
         {
             uid_t euid;
             gid_t egid;
@@ -630,7 +630,7 @@ struct
       compiles context {|
         #include <unistd.h>
 
-        int main()
+        int main(void)
         {
             int (*fdatasyncp)(int) = fdatasync;
             fdatasyncp(0);
@@ -650,7 +650,7 @@ struct
         #include <netdb.h>
         #include <stddef.h>
 
-        int main()
+        int main(void)
         {
             int x;
             x =
@@ -733,7 +733,7 @@ struct
         #define NON_R_GETHOSTBYNAME 1
         #endif
 
-        int main()
+        int main(void)
         {
         #if defined(NON_R_GETHOSTBYNAME) || defined(NON_R_GETHOSTBYNAME)
         #error "not available"
@@ -750,7 +750,7 @@ struct
     #include <sys/stat.h>
     #include <unistd.h>
 
-    int main() {
+    int main(void) {
         struct stat *buf;
         double a, m, c;
         a = (double)buf->st_a|} ^ projection ^ {|;
@@ -790,9 +790,9 @@ struct
         #include <unistd.h>
         #include <sys/mman.h>
 
-        int main()
+        int main(void)
         {
-            int (*mincore_ptr)(void*, size_t, unsigned char*) = mincore;
+            int (*mincore_ptr)(const void*, size_t, char*) = mincore;
             return (int)(mincore_ptr == NULL);
         }
       |}
@@ -808,7 +808,7 @@ struct
         #include <sys/socket.h>
         #include <stddef.h>
 
-        int main()
+        int main(void)
         {
             accept4(0, NULL, 0, 0);
             return 0;

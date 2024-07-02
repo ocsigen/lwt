@@ -12,6 +12,7 @@
 #include <caml/mlvalues.h>
 #include <caml/signals.h>
 #include <caml/unixsupport.h>
+#include "lwt_unix.h"
 
 #include <sys/types.h>
 #include <sys/time.h>
