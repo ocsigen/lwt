@@ -81,11 +81,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set-up OCaml
-        uses: ocaml/setup-ocaml@v3.0.0-beta1
+        uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
           opam-local-packages: ${{ matrix.local-packages }}
-          allow-prerelease-opam: true
 
       - run: opam install conf-libev
         if: ${{ matrix.libev == true }}
@@ -116,10 +115,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set-up OCaml
-        uses: ocaml/setup-ocaml@v3.0.0-beta1
+        uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: "5.2"
-          allow-prerelease-opam: true
           dune-cache: true
 
-      - uses: ocaml/setup-ocaml/lint-opam@v3.0.0-beta1
+      - uses: ocaml/setup-ocaml/lint-opam@v3
