@@ -23,7 +23,7 @@ let add_wildcard_case cases =
   if not has_wildcard
   then cases
        @ (let loc = Location.none in
-          [case ~lhs:[%pat? exn] ~guard:None ~rhs:[%expr Lwt.fail exn]])
+          [case ~lhs:[%pat? exn] ~guard:None ~rhs:[%expr Lwt.reraise exn]])
   else cases
 
 (** {3 Internal names} *)
@@ -154,11 +154,11 @@ let lwt_expression mapper exp attributes ext_loc =
     Some (mapper#expression { new_exp with pexp_attributes })
 
   (* [assert%lwt $e$] ≡
-     [try Lwt.return (assert $e$) with exn -> Lwt.fail exn] *)
+     [try Lwt.return (assert $e$) with exn -> Lwt.reraise exn] *)
   | Pexp_assert e ->
     let new_exp =
       let loc = !default_loc in
-      [%expr try Lwt.return (assert [%e e]) with exn -> Lwt.fail exn]
+      [%expr try Lwt.return (assert [%e e]) with exn -> Lwt.reraise exn]
     in
     Some (mapper#expression { new_exp with pexp_attributes })
 
