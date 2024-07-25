@@ -49,7 +49,7 @@ let timing_tests = [
       | Lwt_unix.Timeout ->
         Lwt.return (Unix.gettimeofday ())
       | exn ->
-        Lwt.fail exn)
+        Lwt.reraise exn)
 
     >>= fun stop ->
 

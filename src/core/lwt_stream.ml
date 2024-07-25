@@ -279,9 +279,9 @@ class ['a] bounded_push_impl (info : 'a push_bounded) wakener_cell last close = 
              let waiter, wakener = Lwt.task () in
              info.pushb_push_waiter <- waiter;
              info.pushb_push_wakener <- wakener;
-             Lwt.fail exn
+             Lwt.reraise exn
            | _ ->
-             Lwt.fail exn)
+             Lwt.reraise exn)
     end else begin
       (* Push the element at the end of the queue. *)
       enqueue' (Some x) last;
@@ -367,11 +367,18 @@ let feed s =
     else begin
       (* Otherwise request a new element. *)
       let thread =
-        from.from_create () >>= fun x ->
-        (* Push the element to the end of the queue. *)
-        enqueue x s;
-        if x = None then Lwt.wakeup s.close ();
-        Lwt.return_unit
+        (* The function [from_create] can raise an exception (with
+           [raise], rather than returning a failed promise with
+           [Lwt.fail]). In this case, we have to catch the exception
+           and turn it into a safe failed promise. *)
+        Lwt.catch
+          (fun () ->
+            from.from_create () >>= fun x ->
+            (* Push the element to the end of the queue. *)
+            enqueue x s;
+            if x = None then Lwt.wakeup s.close ();
+            Lwt.return_unit)
+          Lwt.reraise
       in
       (* Allow other threads to access this thread. *)
       from.from_thread <- thread;
@@ -1070,7 +1077,7 @@ let parse s f =
     (fun () -> f s)
     (fun exn ->
        s.node <- node;
-       Lwt.fail exn)
+       Lwt.reraise exn)
 
 let hexdump stream =
   let buf = Buffer.create 80 and num = ref 0 in

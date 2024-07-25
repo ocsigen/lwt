@@ -93,7 +93,7 @@ let suite =
 
     test "catch, error case"
       (fun () ->
-         let x () = Lwt.fail Dummy_error in
+         let x () = raise Dummy_error in
          Lwt.return (Lwt_result.catch x = Lwt_result.fail Dummy_error)
       );
 
