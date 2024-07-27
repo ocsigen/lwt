@@ -132,7 +132,7 @@ static const struct {
 #endif
 };
 
-#define NSPEEDS (sizeof(speedtable) / sizeof(speedtable[0]))
+#define NSPEEDS (int)(sizeof(speedtable) / sizeof(speedtable[0]))
 
 static tcflag_t *choose_field(struct termios *terminal_status, long field)
 {
