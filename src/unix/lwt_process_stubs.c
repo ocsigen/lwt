@@ -9,8 +9,11 @@
 
 #include "lwt_unix.h"
 
-#if OCAML_VERSION < 41300
+/* needed for caml_stat_strdup_to_os before ocaml 4.13, and for
+   caml_win32_multi_byte_to_wide_char, at least as of ocaml 5.0 */
 #define CAML_INTERNALS
+#if OCAML_VERSION < 50000
+#define caml_win32_multi_byte_to_wide_char win_multi_byte_to_wide_char
 #endif
 
 #include <caml/alloc.h>
@@ -68,6 +71,7 @@ CAMLprim value lwt_process_create_process(value prog, value cmdline, value env,
   HANDLE hp, fd0, fd1, fd2;
   HANDLE to_close0 = INVALID_HANDLE_VALUE, to_close1 = INVALID_HANDLE_VALUE,
     to_close2 = INVALID_HANDLE_VALUE;
+  int size;
 
   fd0 = get_handle(Field(fds, 0));
   fd1 = get_handle(Field(fds, 1));
@@ -94,10 +98,23 @@ CAMLprim value lwt_process_create_process(value prog, value cmdline, value env,
   char_os
     *progs = string_option(prog),
     *cmdlines = caml_stat_strdup_to_os(String_val(cmdline)),
-    *envs = string_option(env),
     *cwds = string_option(cwd);
 
 #undef string_option
+
+  char_os *envs;
+  if (Is_some(env)) {
+    env = Some_val(env);
+    size =
+      caml_win32_multi_byte_to_wide_char(String_val(env),
+                                         caml_string_length(env), NULL, 0);
+    envs = caml_stat_alloc((size + 1)*sizeof(char_os));
+    caml_win32_multi_byte_to_wide_char(String_val(env),
+                                       caml_string_length(env), envs, size);
+    envs[size] = 0;
+  } else {
+    envs = NULL;
+  }
 
   flags |= CREATE_UNICODE_ENVIRONMENT;
   if (! CreateProcess(progs, cmdlines, NULL, NULL, TRUE, flags,
