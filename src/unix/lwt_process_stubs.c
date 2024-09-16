@@ -15,6 +15,15 @@
 #if OCAML_VERSION < 50000
 #define caml_win32_multi_byte_to_wide_char win_multi_byte_to_wide_char
 #endif
+#if OCAML_VERSION = 52000
+/* see https://github.com/ocsigen/lwt/pull/967#issuecomment-2273495094
+ * TL;DR: some OCaml upstream issue means this extern is not included on the
+ * windows, it's added explicitly here instead. */
+CAMLextern int caml_win32_multi_byte_to_wide_char(const char* s,
+                                                  int slen,
+                                                  wchar_t *out,
+                                                  int outlen);
+#endif
 
 #include <caml/alloc.h>
 #include <caml/fail.h>
