@@ -108,7 +108,7 @@ let validate_and_return p c =
             resolver is waiting. *)
          dispose p c >>= fun () ->
          replace_disposed p;
-         Lwt.fail e)
+         Lwt.reraise e)
 
 (* Acquire a pool member. *)
 let acquire p =

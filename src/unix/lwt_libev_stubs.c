@@ -6,7 +6,6 @@
 /* Stubs for libev */
 
 #include "lwt_config.h"
-#include "lwt_unix.h"
 
 #if defined(HAVE_LIBEV)
 
@@ -20,6 +19,8 @@
 #include <caml/mlvalues.h>
 #include <caml/signals.h>
 #include <ev.h>
+
+#include "lwt_unix.h"
 
 /* +-----------------------------------------------------------------+
    | Backend types                                                   |
@@ -239,6 +240,8 @@ CAMLprim value lwt_libev_timer_stop(value loop, value val_watcher) {
 }
 
 #else
+
+#include "lwt_unix.h"
 
 LWT_NOT_AVAILABLE1(libev_backend)
 LWT_NOT_AVAILABLE1(libev_init)

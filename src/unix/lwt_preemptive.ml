@@ -182,7 +182,7 @@ let detach f args =
   let task () =
     try
       result := Result.Ok (f args)
-    with exn ->
+    with exn when Lwt.Exception_filter.run exn ->
       result := Result.Error exn
   in
   get_worker () >>= fun worker ->

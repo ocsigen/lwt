@@ -12,6 +12,7 @@
 #include <caml/mlvalues.h>
 #include <caml/signals.h>
 #include <caml/unixsupport.h>
+#include "lwt_unix.h"
 
 #include <sys/types.h>
 #include <sys/time.h>
@@ -58,7 +59,7 @@ static value alloc_process_status(int status)
     return st;
 }
 
-static int wait_flag_table[] = {WNOHANG, WUNTRACED};
+static const int wait_flag_table[] = {WNOHANG, WUNTRACED};
 
 value lwt_unix_wait4(value flags, value pid_req)
 {

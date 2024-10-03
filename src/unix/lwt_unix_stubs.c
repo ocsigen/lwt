@@ -169,6 +169,7 @@ value lwt_unix_system_byte_order() {
 int lwt_unix_launch_thread(void *(*start)(void *), void *data) {
   pthread_t thread;
   pthread_attr_t attr;
+  sigset_t mask, old_mask;
 
   pthread_attr_init(&attr);
 
@@ -176,8 +177,16 @@ int lwt_unix_launch_thread(void *(*start)(void *), void *data) {
      it when it terminates: */
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
+  /* Block all signals, otherwise ocaml handlers defined with the
+     module Sys may be executed in the new thread, oops... */
+  sigfillset(&mask);
+  pthread_sigmask(SIG_SETMASK, &mask, &old_mask);
+
   int zero_if_created_otherwise_errno =
       pthread_create(&thread, &attr, start, data);
+
+  /* Restore the signal mask for the calling thread. */
+  pthread_sigmask(SIG_SETMASK, &old_mask, NULL);
 
   pthread_attr_destroy(&attr);
 
@@ -456,10 +465,11 @@ failure:
   uerror("socketpair", Nothing);
 }
 
-static int socket_domain_table[] = {PF_UNIX, PF_INET, PF_INET6};
+static const int socket_domain_table[] =
+  {PF_UNIX, PF_INET, PF_INET6};
 
-static int socket_type_table[] = {SOCK_STREAM, SOCK_DGRAM, SOCK_RAW,
-                                  SOCK_SEQPACKET};
+static const int socket_type_table[] =
+  {SOCK_STREAM, SOCK_DGRAM, SOCK_RAW, SOCK_SEQPACKET};
 
 CAMLprim value lwt_unix_socketpair_stub(value cloexec, value domain, value type,
                                         value protocol) {
@@ -801,6 +811,11 @@ static void handle_signal(int signum) {
   }
 }
 
+CAMLprim value lwt_unix_handle_signal(value val_signum) {
+  handle_signal(caml_convert_signal_number(Int_val(val_signum)));
+  return Val_unit;
+}
+
 #if defined(LWT_ON_WINDOWS)
 /* Handle Ctrl+C on windows. */
 static BOOL WINAPI handle_break(DWORD event) {
@@ -813,7 +828,7 @@ static BOOL WINAPI handle_break(DWORD event) {
 #endif
 
 /* Install a signal handler. */
-CAMLprim value lwt_unix_set_signal(value val_signum, value val_notification) {
+CAMLprim value lwt_unix_set_signal(value val_signum, value val_notification, value val_forwarded) {
 #if !defined(LWT_ON_WINDOWS)
   struct sigaction sa;
 #endif
@@ -824,6 +839,8 @@ CAMLprim value lwt_unix_set_signal(value val_signum, value val_notification) {
     caml_invalid_argument("Lwt_unix.on_signal: unavailable signal");
 
   signal_notifications[signum] = notification;
+
+  if (Bool_val(val_forwarded)) return Val_unit;
 
 #if defined(LWT_ON_WINDOWS)
   if (signum == SIGINT) {
@@ -840,7 +857,11 @@ CAMLprim value lwt_unix_set_signal(value val_signum, value val_notification) {
   }
 #else
   sa.sa_handler = handle_signal;
+#if OCAML_VERSION >= 50000
+  sa.sa_flags = SA_ONSTACK;
+#else
   sa.sa_flags = 0;
+#endif
   sigemptyset(&sa.sa_mask);
   if (sigaction(signum, &sa, NULL) == -1) {
     signal_notifications[signum] = -1;
@@ -851,7 +872,7 @@ CAMLprim value lwt_unix_set_signal(value val_signum, value val_notification) {
 }
 
 /* Remove a signal handler. */
-CAMLprim value lwt_unix_remove_signal(value val_signum) {
+CAMLprim value lwt_unix_remove_signal(value val_signum, value val_forwarded) {
 #if !defined(LWT_ON_WINDOWS)
   struct sigaction sa;
 #endif
@@ -859,6 +880,9 @@ CAMLprim value lwt_unix_remove_signal(value val_signum) {
      set_signal. */
   int signum = caml_convert_signal_number(Int_val(val_signum));
   signal_notifications[signum] = -1;
+
+  if (Bool_val(val_forwarded)) return Val_unit;
+
 #if defined(LWT_ON_WINDOWS)
   if (signum == SIGINT)
     SetConsoleCtrlHandler(NULL, FALSE);
@@ -964,17 +988,10 @@ void initialize_threading() {
    | Worker loop                                                     |
    +-----------------------------------------------------------------+ */
 
-/* Function executed by threads of the pool. */
+/* Function executed by threads of the pool.
+ * Note: all signals are masked for this thread. */
 static void *worker_loop(void *data) {
   lwt_unix_job job = (lwt_unix_job)data;
-
-#if defined(HAVE_PTHREAD)
-  /* Block all signals, otherwise ocaml handlers defined with the
-     module Sys may be executed in this thread, oops... */
-  sigset_t mask;
-  sigfillset(&mask);
-  pthread_sigmask(SIG_SETMASK, &mask, NULL);
-#endif
 
   /* Execute the initial job if any. */
   if (job != NULL) execute_job(job);

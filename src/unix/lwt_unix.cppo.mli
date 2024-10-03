@@ -854,6 +854,14 @@ val reinstall_signal_handler : int -> unit
       signal handler (with [Sys.set_signal]). This is useful in case
       another part of the program install another signal handler. *)
 
+val handle_signal : int -> unit
+  (** [handle_signal signum] acts as if Lwt had received the [signum] signal.
+      This allows another IO library to install the handler, perform its own
+      handling, but still notify Lwt. It is particularly useful for SIGCHLD,
+      where several IO libraries may be spawning sub-processes.
+
+      This function is thread-safe. *)
+
 (** {2 Sockets} *)
 
 type inet_addr = Unix.inet_addr

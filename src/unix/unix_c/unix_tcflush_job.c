@@ -16,11 +16,12 @@
 */
 
 /* Caml headers. */
-#include <lwt_unix.h>
+#include "lwt_config.h"
 #include <caml/memory.h>
 #include <caml/alloc.h>
 #include <caml/fail.h>
 #include <caml/signals.h>
+#include "lwt_unix.h"
 
 #if !defined(LWT_ON_WINDOWS)
 
@@ -35,7 +36,7 @@
    +-----------------------------------------------------------------+ */
 
 /* Table mapping constructors of ocaml type Unix.flush_queue to C values. */
-static int flush_queue_table[] = {
+static const int flush_queue_table[] = {
   /* Constructor TCIFLUSH. */
   TCIFLUSH,
   /* Constructor TCOFLUSH. */

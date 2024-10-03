@@ -1,33 +1,51 @@
-===== dev =====
+===== 5.7.0 =====
 
 ====== Breaking API changes ======
 
-  * Lwt_result.catch now takes a function (unit -> 'a t) rather than a promise ('a t) (#965)
+  * Lwt_result.catch now takes a function (unit -> 'a t) rather than a promise ('a t). (#965)
 
-  * Remove the deprecated Lwt.result type (use Stdlib.result instead) (#968)
+  * Remove the deprecated Lwt.result type (use Stdlib.result instead). (#968)
 
-  * Remove the deprecated Lwt.make_value and Lwt.make_result functions (use Ok and Error instead) (#968)
+  * Remove the deprecated Lwt.make_value and Lwt.make_result functions (use Ok and Error instead). (#968)
 
-  * Remove the deprecated and unsafe waiter_of_wakener (keep the waiter around when you create the wakener instead) (#968)
+  * Remove the deprecated and unsafe waiter_of_wakener (keep the waiter around when you create the wakener instead). (#968)
 
-  * Remove the deprecated Lwt_stream.on_termination and Lwt_stream.on_terminate (bind to Lwt_stream.closed instead) (#968)
+  * Remove the deprecated Lwt_stream.on_termination and Lwt_stream.on_terminate (bind to Lwt_stream.closed instead). (#968)
 
-  * Remove the deprecated Lwt_stream.result type (use Stdlib.result instead) (#968)
+  * Remove the deprecated Lwt_stream.result type (use Stdlib.result instead). (#968)
 
-  * Remove the deprecated Lwt_stream.map_exn function (use wrap_exn instead) (#968)
+  * Remove the deprecated Lwt_stream.map_exn function (use wrap_exn instead). (#968)
 
 ====== Additions ======
 
-  * Lwt.reraise an exception raising function which preserves backtraces, recommended for use in Lwt.catch (#963)
+  * Lwt.Exception_filter for enabling/disabling system-exception catching. (#964)
+
+  * Lwt.reraise an exception raising function which preserves backtraces, recommended for use in Lwt.catch. (#963)
+
   * Expose Lwt_io.delete_recursively for deleting a directory and its content recursively. (#984, Antonin Décimo)
 
   * Lwt_preemptive.run_in_main_dont_wait to run a function in the main preemptive thread but without waiting for the result. (Kate Deplaix, #960)
+
+  * Lwt_unix.handle_signal and Lwt_engine.forwards_signal to allow other IO libraries (such as Eio) to share signal handlers. (Thomas Leonard, #993, #991)
 
 ====== Build ======
 
   * Remove unused dependency in dune file. (#969, Kate Deplaix)
 
   * Fix some compilation warnings for C stubs with OCaml 5. (#976, Antonin Décimo)
+
+====== Fixes ======
+
+  * Use SA_ONSTACK on OCaml5 to avoid SIGSEGV. (Thomas Leonard, #993, #981)
+
+  * Fix race in worker loop. (Thomas Leonard, #993, #994)
+
+  * Fix marshall header size in Lwt_io.read_value. (Simmo Saan, #995)
+
+====== Misc ======
+
+  * Resolve paused promises only once in main loop. This lets Lwt.pause behave identical to Lwt_unix.yield. (#917, Christopher Zimmermann, Favonia)
+
 
 ===== 5.6.1 =====
 

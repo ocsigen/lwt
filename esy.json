@@ -5,12 +5,10 @@
     "dependencies": {
       "ocaml": "~4.9.0",
       "@opam/conf-libev": "*",
-      "@opam/bisect_ppx": "*",
-      "@opam/luv": "*"
+      "@opam/bisect_ppx": "*"
     },
     "resolutions": {
-      "@opam/conf-libev": "esy-packages/libev:package.json#0b5eb66",
-      "@opam/luv": "aantron/luv:luv.opam#df02a9ac6e9e9fc6427e7853d260230fcb96bd2a"
+      "@opam/conf-libev": "esy-packages/libev:package.json#0b5eb66"
     }
   }
 }

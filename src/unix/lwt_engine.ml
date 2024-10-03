@@ -108,6 +108,8 @@ class virtual abstract = object(self)
   method timer_count = Lwt_sequence.length timers
 
   method fork = ()
+
+  method forwards_signal (_signum:int) = false
 end
 
 class type t = object
@@ -438,6 +440,7 @@ let readable_count () = !current#readable_count
 let writable_count () = !current#writable_count
 let timer_count () = !current#timer_count
 let fork () = !current#fork
+let forwards_signal n = !current#forwards_signal n
 
 module Versioned =
 struct

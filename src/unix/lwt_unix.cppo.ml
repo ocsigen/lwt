@@ -123,7 +123,7 @@ let sleep delay =
   Lwt.on_cancel waiter (fun () -> Lwt_engine.stop_event ev);
   waiter
 
-let yield = (Lwt_main.yield [@warning "-3"])
+let yield = Lwt.pause
 
 let auto_yield timeout =
   let limit = ref (Unix.gettimeofday () +. timeout) in
@@ -147,7 +147,7 @@ let auto_pause timeout =
 
 exception Timeout
 
-let timeout d = sleep d >>= fun () -> Lwt.fail Timeout
+let timeout d = sleep d >>= fun () -> raise Timeout
 
 let with_timeout d f = Lwt.pick [timeout d; Lwt.apply f ()]
 
@@ -184,7 +184,7 @@ let wait_for_jobs () =
 let wrap_result f x =
   try
     Result.Ok (f x)
-  with exn ->
+  with exn when Lwt.Exception_filter.run exn ->
     Result.Error exn
 
 let run_job_aux async_method job result =
@@ -244,7 +244,7 @@ external run_job_sync : 'a job -> 'a = "lwt_unix_run_job_sync"
 let self_result job =
   try
     Result.Ok (self_result job)
-  with exn ->
+  with exn when Lwt.Exception_filter.run exn ->
     Result.Error exn
 
 let in_retention_test = ref false
@@ -267,7 +267,7 @@ let run_job ?async_method job =
   if async_method = Async_none then
     try
       Lwt.return (run_job_sync job)
-    with exn ->
+    with exn when Lwt.Exception_filter.run exn ->
       Lwt.fail exn
   else
     run_job_aux async_method job self_result
@@ -519,7 +519,7 @@ let rec retry_syscall node event ch wakener action =
       Requeued Read
     | Retry_write ->
       Requeued Write
-    | e ->
+    | e when Lwt.Exception_filter.run e ->
       Exn e
   in
   match res with
@@ -581,8 +581,8 @@ let wrap_syscall event ch action =
     register_action Read ch action
   | Retry_write ->
     register_action Write ch action
-  | e ->
-    Lwt.fail e
+  | e when Lwt.Exception_filter.run e ->
+    Lwt.reraise e
 
 (* +-----------------------------------------------------------------+
    | Basic file input/output                                         |
@@ -636,7 +636,7 @@ let wait_read ch =
          Lwt.return_unit
        else
          register_action Read ch ignore)
-    Lwt.fail
+    Lwt.reraise
 
 external stub_read : Unix.file_descr -> Bytes.t -> int -> int -> int = "lwt_unix_read"
 external read_job : Unix.file_descr -> Bytes.t -> int -> int -> int job = "lwt_unix_read_job"
@@ -694,7 +694,7 @@ let wait_write ch =
          Lwt.return_unit
        else
          register_action Write ch ignore)
-    Lwt.fail
+    Lwt.reraise
 
 external stub_write : Unix.file_descr -> Bytes.t -> int -> int -> int = "lwt_unix_write"
 external write_job : Unix.file_descr -> Bytes.t -> int -> int -> int job = "lwt_unix_write_job"
@@ -1034,7 +1034,7 @@ let file_exists name =
     (fun e ->
        match e with
        | Unix.Unix_error _ -> Lwt.return_false
-       | _ -> Lwt.fail e) [@ocaml.warning "-4"]
+       | _ -> Lwt.reraise e) [@ocaml.warning "-4"]
 
 external utimes_job : string -> float -> float -> unit job =
   "lwt_unix_utimes_job"
@@ -1140,7 +1140,7 @@ struct
       (fun e ->
          match e with
          | Unix.Unix_error _ -> Lwt.return_false
-         | _ -> Lwt.fail e) [@ocaml.warning "-4"]
+         | _ -> Lwt.reraise e) [@ocaml.warning "-4"]
 
 end
 
@@ -1408,7 +1408,7 @@ let files_of_directory path =
               (fun () -> readdir_n handle chunk_size)
               (fun exn ->
                  closedir handle >>= fun () ->
-                 Lwt.fail exn) >>= fun entries ->
+                 Lwt.reraise exn) >>= fun entries ->
             if Array.length entries < chunk_size then begin
               state := LDS_done;
               closedir handle >>= fun () ->
@@ -1423,7 +1423,7 @@ let files_of_directory path =
               (fun () -> readdir_n handle chunk_size)
               (fun exn ->
                  closedir handle >>= fun () ->
-                 Lwt.fail exn) >>= fun entries ->
+                 Lwt.reraise exn) >>= fun entries ->
             if Array.length entries < chunk_size then begin
               state := LDS_done;
               closedir handle >>= fun () ->
@@ -2227,11 +2227,18 @@ let event_notifications = ref (Lwt_engine.on_readable (init_notification ()) han
    | Signals                                                         |
    +-----------------------------------------------------------------+ *)
 
-external set_signal : int -> int -> unit = "lwt_unix_set_signal"
-external remove_signal : int -> unit = "lwt_unix_remove_signal"
+external set_signal : int -> int -> bool -> unit = "lwt_unix_set_signal"
+external remove_signal : int -> bool -> unit = "lwt_unix_remove_signal"
 external init_signals : unit -> unit = "lwt_unix_init_signals"
+external handle_signal : int -> unit = "lwt_unix_handle_signal"
 
 let () = init_signals ()
+
+let set_signal signum notification =
+  set_signal signum notification (Lwt_engine.forwards_signal signum)
+
+let remove_signal signum =
+  remove_signal signum (Lwt_engine.forwards_signal signum)
 
 module Signal_map = Map.Make(struct type t = int let compare a b = a - b end)
 
@@ -2265,7 +2272,7 @@ let on_signal_full signum handler =
       in
       (try
          set_signal signum notification
-       with exn ->
+       with exn when Lwt.Exception_filter.run exn ->
          stop_notification notification;
          raise exn);
       signals := Signal_map.add signum (notification, actions) !signals;
@@ -2369,7 +2376,7 @@ let install_sigchld_handler () =
                  Lwt_sequence.remove node;
                  Lwt.wakeup wakener v
                end
-             with e ->
+             with e when Lwt.Exception_filter.run e ->
                Lwt_sequence.remove node;
                Lwt.wakeup_exn wakener e
            end wait_children)
@@ -2388,7 +2395,7 @@ let () =
 let _waitpid flags pid =
   Lwt.catch
     (fun () -> Lwt.return (Unix.waitpid flags pid))
-    Lwt.fail
+    Lwt.reraise
 
 let waitpid =
   if Sys.win32 then

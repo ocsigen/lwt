@@ -1,7 +1,17 @@
 (library
  (name tester)
  (libraries lwt lwttester)
- (modules (:standard \ main luv_main dummy) ))
+ (modules
+  (:standard
+   \
+   main
+   dummy
+   ocaml_runtime_exc_1
+   ocaml_runtime_exc_2
+   ocaml_runtime_exc_3
+   ocaml_runtime_exc_4
+   ocaml_runtime_exc_5
+   ocaml_runtime_exc_6)))
 
 (executable
  (name dummy)
@@ -14,20 +24,38 @@
  (modules main))
 
 (executable
- (name luv_main)
- (libraries lwt lwt_luv lwttester tester)
- (modules luv_main))
+ (name ocaml_runtime_exc_1)
+ (libraries lwt lwt.unix)
+ (modules ocaml_runtime_exc_1))
+
+(executable
+ (name ocaml_runtime_exc_2)
+ (libraries lwt lwt.unix)
+ (modules ocaml_runtime_exc_2))
+
+(executable
+ (name ocaml_runtime_exc_3)
+ (libraries lwt lwt.unix)
+ (modules ocaml_runtime_exc_3))
+
+(executable
+ (name ocaml_runtime_exc_4)
+ (libraries lwt lwt.unix)
+ (modules ocaml_runtime_exc_4))
+
+(executable
+ (name ocaml_runtime_exc_5)
+ (libraries lwt lwt.unix)
+ (modules ocaml_runtime_exc_5))
+
+(executable
+ (name ocaml_runtime_exc_6)
+ (libraries lwt lwt.unix)
+ (modules ocaml_runtime_exc_6))
 
 (alias
  (name runtest)
  (package lwt)
  (action (run %{exe:main.exe}))
  (deps bytes_io_data %{exe:dummy.exe})
-)
-
-(alias
- (name runtest_libuv)
- (package lwt)
- (action (run %{exe:luv_main.exe}))
- (deps bytes_io_data)
 )

@@ -16,11 +16,12 @@
 */
 
 /* Caml headers. */
-#include <lwt_unix.h>
+#include "lwt_config.h"
 #include <caml/memory.h>
 #include <caml/alloc.h>
 #include <caml/fail.h>
 #include <caml/signals.h>
+#include "lwt_unix.h"
 
 #if !defined(LWT_ON_WINDOWS)
 
@@ -34,7 +35,7 @@
    +-----------------------------------------------------------------+ */
 
 /* Table mapping constructors of ocaml type Unix.access_permission to C values. */
-static int access_permission_table[] = {
+static const int access_permission_table[] = {
   /* Constructor R_OK. */
   R_OK,
   /* Constructor W_OK. */

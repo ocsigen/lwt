@@ -80,10 +80,10 @@ catch (fun () -> f x)
         prerr_endline msg;
         return ()
     | exn ->
-        Lwt.fail exn)
+        Lwt.reraise exn)
    ]}
 
-   Note that the [exn -> Lwt.fail exn] branch is automatically added
+   Note that the [exn -> Lwt.reraise exn] branch is automatically added
    when needed.
 
    - finalizer:

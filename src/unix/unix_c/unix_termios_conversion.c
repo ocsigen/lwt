@@ -20,7 +20,7 @@ enum { Iflags, Oflags, Cflags, Lflags };
 
 /* Structure of the terminal_io record. Cf. unix.mli */
 
-static long terminal_io_descr[] = {
+static const long terminal_io_descr[] = {
     /* Input modes */
     Bool, Iflags, IGNBRK, Bool, Iflags, BRKINT, Bool, Iflags, IGNPAR, Bool,
     Iflags, PARMRK, Bool, Iflags, INPCK, Bool, Iflags, ISTRIP, Bool, Iflags,
@@ -40,7 +40,7 @@ static long terminal_io_descr[] = {
     Char, VINTR, Char, VQUIT, Char, VERASE, Char, VKILL, Char, VEOF, Char, VEOL,
     Char, VMIN, Char, VTIME, Char, VSTART, Char, VSTOP, End};
 
-static struct {
+static const struct {
     speed_t speed;
     int baud;
 } speedtable[] = {{B50, 50},
@@ -132,7 +132,7 @@ static struct {
 #endif
 };
 
-#define NSPEEDS (sizeof(speedtable) / sizeof(speedtable[0]))
+#define NSPEEDS (int)(sizeof(speedtable) / sizeof(speedtable[0]))
 
 static tcflag_t *choose_field(struct termios *terminal_status, long field)
 {
@@ -152,10 +152,7 @@ static tcflag_t *choose_field(struct termios *terminal_status, long field)
 
 void encode_terminal_status(struct termios *terminal_status, volatile value *dst)
 {
-    long *pc;
-    int i;
-
-    for (pc = terminal_io_descr; *pc != End; dst++) {
+    for (const long *pc = terminal_io_descr; *pc != End; dst++) {
         switch (*pc++) {
             case Bool: {
                 tcflag_t *src = choose_field(terminal_status, *pc++);
@@ -168,7 +165,7 @@ void encode_terminal_status(struct termios *terminal_status, volatile value *dst
                 int ofs = *pc++;
                 int num = *pc++;
                 tcflag_t msk = *pc++;
-                for (i = 0; i < num; i++) {
+                for (int i = 0; i < num; i++) {
                     if ((*src & msk) == pc[i]) {
                         *dst = Val_int(i + ofs);
                         break;
@@ -190,7 +187,7 @@ void encode_terminal_status(struct termios *terminal_status, volatile value *dst
                         speed = cfgetispeed(terminal_status);
                         break;
                 }
-                for (i = 0; i < NSPEEDS; i++) {
+                for (int i = 0; i < NSPEEDS; i++) {
                     if (speed == speedtable[i].speed) {
                         *dst = Val_int(speedtable[i].baud);
                         break;
@@ -209,10 +206,7 @@ void encode_terminal_status(struct termios *terminal_status, volatile value *dst
 
 int decode_terminal_status(struct termios *terminal_status, volatile value *src)
 {
-    long *pc;
-    int i;
-
-    for (pc = terminal_io_descr; *pc != End; src++) {
+    for (const long *pc = terminal_io_descr; *pc != End; src++) {
         switch (*pc++) {
             case Bool: {
                 tcflag_t *dst = choose_field(terminal_status, *pc++);
@@ -228,7 +222,7 @@ int decode_terminal_status(struct termios *terminal_status, volatile value *src)
                 int ofs = *pc++;
                 int num = *pc++;
                 tcflag_t msk = *pc++;
-                i = Int_val(*src) - ofs;
+                int i = Int_val(*src) - ofs;
                 if (i >= 0 && i < num) {
                     *dst = (*dst & ~msk) | pc[i];
                 } else {
@@ -242,7 +236,7 @@ int decode_terminal_status(struct termios *terminal_status, volatile value *src)
                 int which = *pc++;
                 int baud = Int_val(*src);
                 int res = 0;
-                for (i = 0; i < NSPEEDS; i++) {
+                for (int i = 0; i < NSPEEDS; i++) {
                     if (baud == speedtable[i].baud) {
                         switch (which) {
                             case Output:

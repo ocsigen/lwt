@@ -549,6 +549,15 @@ let catch_tests = suite "catch" [
     state_is (Lwt.Return Exception) p
   end;
 
+  test "rejected (raise)" begin fun () ->
+    let p =
+      Lwt.catch
+        (fun () -> raise Exception)
+        (fun exn -> Lwt.return exn)
+    in
+    state_is (Lwt.Return Exception) p
+  end;
+
   (* This is an analog of the "bind quirk," see
 
        https://github.com/ocsigen/lwt/issues/329 *)
@@ -635,6 +644,42 @@ let catch_tests = suite "catch" [
     Lwt.wakeup_exn r1 Exit;
     p4
   end;
+
+
+  test "catch with ocaml-runtime exception" begin fun () ->
+    Lwt.Exception_filter.(set handle_all_except_runtime);
+    try
+      Lwt.catch
+        (fun () -> raise Out_of_memory)
+        (fun _ -> Lwt.return_false)
+    with
+      | Out_of_memory -> Lwt.return_true
+  end;
+
+  test "try_bind with ocaml-runtime exception" begin fun () ->
+    Lwt.Exception_filter.(set handle_all_except_runtime);
+    try
+      Lwt.try_bind
+        (fun () -> raise Out_of_memory)
+        (fun () -> Lwt.return_false)
+        (fun _ -> Lwt.return_false)
+    with
+      | Out_of_memory -> Lwt.return_true
+  end;
+
+  test "try_bind(2) with ocaml-runtime exception" begin fun () ->
+    Lwt.Exception_filter.(set handle_all_except_runtime);
+    try
+      let _ =
+        Lwt.try_bind
+          (fun () -> Lwt.return_unit)
+          (fun () -> raise Out_of_memory)
+          (fun _ -> Lwt.return_false)
+      in
+      Lwt.return_false
+    with
+      | Out_of_memory -> Lwt.return_true
+  end;
 ]
 let suites = suites @ [catch_tests]
 
@@ -660,7 +705,7 @@ let backtrace_catch_tests = suite "backtrace_catch" [
   test "rejected" begin fun () ->
     let p =
       Lwt.backtrace_catch add_loc
-        (fun () -> Lwt.fail Exception)
+        (fun () -> raise Exception)
         (fun exn -> Lwt.return exn)
     in
     state_is (Lwt.Return Exception) p
@@ -753,7 +798,7 @@ let try_bind_tests = suite "try_bind" [
   test "rejected" begin fun () ->
     let p =
       Lwt.try_bind
-        (fun () -> Lwt.fail Exception)
+        (fun () -> raise Exception)
         (fun _ -> Lwt.return Exit)
         (fun exn -> Lwt.return exn)
     in
@@ -774,7 +819,7 @@ let try_bind_tests = suite "try_bind" [
   test "rejected, h raises" begin fun () ->
     try
       ignore @@ Lwt.try_bind
-        (fun () -> Lwt.fail Exit)
+        (fun () -> raise Exit)
         (fun _ -> Lwt.return_unit)
         (fun _ -> raise Exception);
       Lwt.return_false
@@ -925,7 +970,7 @@ let backtrace_try_bind_tests = suite "backtrace_try_bind" [
   test "rejected" begin fun () ->
     let p =
       Lwt.backtrace_try_bind add_loc
-        (fun () -> Lwt.fail Exception)
+        (fun () -> raise Exception)
         (fun _ -> Lwt.return Exit)
         (fun exn -> Lwt.return exn)
     in
@@ -1096,7 +1141,7 @@ let finalize_tests = suite "finalize" [
   test "rejected, f' raises" begin fun () ->
     try
       ignore @@ Lwt.finalize
-        (fun () -> Lwt.fail Exit)
+        (fun () -> raise Exit)
         (fun () -> raise Exception);
       Lwt.return_false
     with Exception ->
@@ -1133,7 +1178,7 @@ let finalize_tests = suite "finalize" [
     let p =
       Lwt.finalize
         (fun () -> p)
-        (fun () -> Lwt.fail Exception)
+        (fun () -> raise Exception)
     in
     Lwt.wakeup r ();
     state_is (Lwt.Fail Exception) p
@@ -1196,7 +1241,7 @@ let finalize_tests = suite "finalize" [
     let p =
       Lwt.finalize
         (fun () -> p)
-        (fun () -> Lwt.fail Exception)
+        (fun () -> raise Exception)
     in
     Lwt.wakeup_exn r Exit;
     state_is (Lwt.Fail Exception) p
@@ -1311,7 +1356,7 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
     let f'_ran = ref false in
     let p =
       Lwt.backtrace_finalize add_loc
-        (fun () -> Lwt.fail Exception)
+        (fun () -> raise Exception)
         (fun () -> f'_ran := true; Lwt.return_unit)
     in
     Lwt.bind (state_is (Lwt.Fail Exception) p) (fun correct ->
@@ -1331,7 +1376,7 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
   test "rejected, f' raises" begin fun () ->
     try
       ignore @@ Lwt.backtrace_finalize add_loc
-        (fun () -> Lwt.fail Exit)
+        (fun () -> raise Exit)
         (fun () -> raise Exception);
       Lwt.return_false
     with Exception ->
@@ -1368,7 +1413,7 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
     let p =
       Lwt.backtrace_finalize add_loc
         (fun () -> p)
-        (fun () -> Lwt.fail Exception)
+        (fun () -> raise Exception)
     in
     Lwt.wakeup r ();
     state_is (Lwt.Fail Exception) p
@@ -1403,7 +1448,7 @@ let backtrace_finalize_tests = suite "backtrace_finalize" [
     let p =
       Lwt.backtrace_finalize add_loc
         (fun () -> p)
-        (fun () -> Lwt.fail Exception)
+        (fun () -> raise Exception)
     in
     Lwt.wakeup_exn r Exit;
     state_is (Lwt.Fail Exception) p
@@ -1767,7 +1812,7 @@ let async_tests = suite "async" [
     let saw = ref None in
     let restore =
       set_async_exception_hook (fun exn -> saw := Some exn) in
-    Lwt.async (fun () -> Lwt.fail Exception);
+    Lwt.async (fun () -> raise Exception);
     later (fun () ->
       restore ();
       !saw = Some Exception)
@@ -1816,7 +1861,7 @@ let dont_wait_tests = suite "dont_wait" [
   test "rejected" begin fun () ->
     let saw = ref None in
     Lwt.dont_wait
-      (fun () -> Lwt.fail Exception)
+      (fun () -> raise Exception)
       (fun exn -> saw := Some exn);
     later (fun () -> !saw = Some Exception)
   end;
@@ -3335,7 +3380,7 @@ let cancel_catch_tests = suite "cancel catch" [
   test "task, pending, canceled, on_cancel, forwarded" begin fun () ->
     let on_cancel_2_ran = ref false in
     let p, _ = Lwt.task () in
-    let p' = Lwt.catch (fun () -> p) Lwt.fail in
+    let p' = Lwt.catch (fun () -> p) Lwt.reraise in
     Lwt.on_cancel p' (fun () -> on_cancel_2_ran := true);
     Lwt.cancel p';
     Lwt.return
@@ -3859,7 +3904,7 @@ let storage_tests = suite "storage" [
     Lwt.with_value key (Some 42) (fun () ->
       let p' =
         Lwt.with_value key (Some 1337) (fun () ->
-          Lwt.try_bind (fun () -> p) f Lwt.fail)
+          Lwt.try_bind (fun () -> p) f Lwt.reraise)
       in
       Lwt.wakeup r ();
       Lwt.return

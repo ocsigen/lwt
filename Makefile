@@ -76,10 +76,6 @@ ppx_let-test :
 	dune build test/ppx_let/test.exe
 	dune exec test/ppx_let/test.exe
 
-.PHONY : ppx_let-test-deps
-ppx_let-test-deps :
-	opam install --yes --unset-root ppx_let
-
 .PHONY: clean
 clean :
 	dune clean
@@ -105,7 +101,6 @@ coverage :
 	rm -rf _build/default/test/ppx_expect
 	find _build -name '*.coverage' | xargs rm -f
 	BISECT_ENABLE=yes dune runtest --force
-	BISECT_ENABLE=yes dune build @runtest_libuv --force
 	bisect-ppx-report html $(EXPECTED_FILES)
 	bisect-ppx-report summary
 	@echo See _coverage/index.html
