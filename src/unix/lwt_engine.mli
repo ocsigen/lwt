@@ -147,7 +147,7 @@ end
 class libev : ?backend:Ev_backend.t -> unit -> object
   inherit t
 
-  method backend : Ev_backend.t Lazy.t
+  method backend : Ev_backend.t
     (** The backend picked by libev. *)
 
   val loop : ev_loop
@@ -213,7 +213,7 @@ sig
   class libev_1 : object
     inherit t
     val loop : ev_loop
-    method backend : Ev_backend.t Lazy.t
+    method backend : Ev_backend.t
     method loop : ev_loop
   end
   [@@ocaml.deprecated
@@ -228,7 +228,7 @@ sig
   class libev_2 : ?backend:Ev_backend.t -> unit -> object
     inherit t
     val loop : ev_loop
-    method backend : Ev_backend.t Lazy.t
+    method backend : Ev_backend.t
     method loop : ev_loop
   end
   [@@ocaml.deprecated
