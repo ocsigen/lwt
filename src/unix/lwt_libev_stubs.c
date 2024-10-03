@@ -92,6 +92,25 @@ CAMLprim value lwt_libev_init(value backend) {
   return result;
 }
 
+CAMLprim value lwt_libev_backend(value loop) {
+  switch (ev_backend(Ev_loop_val(loop))) {
+  case EVBACKEND_SELECT:
+    return Val_int(val_EVBACKEND_SELECT);
+  case EVBACKEND_POLL:
+    return Val_int(val_EVBACKEND_POLL);
+  case EVBACKEND_EPOLL:
+    return Val_int(val_EVBACKEND_EPOLL);
+  case EVBACKEND_KQUEUE:
+    return Val_int(val_EVBACKEND_KQUEUE);
+  case EVBACKEND_DEVPOLL:
+    return Val_int(val_EVBACKEND_DEVPOLL);
+  case EVBACKEND_PORT:
+    return Val_int(val_EVBACKEND_PORT);
+  default:
+    assert(0);
+  }
+}
+
 CAMLprim value lwt_libev_stop(value loop) {
   ev_loop_destroy(Ev_loop_val(loop));
   return Val_unit;
@@ -224,6 +243,7 @@ CAMLprim value lwt_libev_timer_stop(value loop, value val_watcher) {
 
 #include "lwt_unix.h"
 
+LWT_NOT_AVAILABLE1(libev_backend)
 LWT_NOT_AVAILABLE1(libev_init)
 LWT_NOT_AVAILABLE1(libev_stop)
 LWT_NOT_AVAILABLE2(libev_loop)
