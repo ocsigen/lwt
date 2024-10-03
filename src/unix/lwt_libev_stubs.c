@@ -240,6 +240,7 @@ CAMLprim value lwt_libev_timer_stop(value loop, value val_watcher) {
 
 #else
 
+LWT_NOT_AVAILABLE1(libev_backend)
 LWT_NOT_AVAILABLE1(libev_init)
 LWT_NOT_AVAILABLE1(libev_stop)
 LWT_NOT_AVAILABLE2(libev_loop)
