@@ -1,3 +1,27 @@
+===== 5.8.0 =====
+
+====== Improvements ======
+
+  * Make Lwt_seq.of_list lazier, make Lwt_set.to_list tail-rec. (Samer Abdallah, #1019)
+
+  * Convert more Lwt.fail into raise to increase availibility of backtraces. (#1008)
+
+====== Documentation ======
+
+  * Small fixes. (Nils André, #1001, #1006)
+
+  * Convert manual to mld. (#951, Antonin Décimo)
+
+====== Other ======
+
+  * Many improbements to the CI. (Sora Morimoto, Idir Lankri, #986, #1009, #1011, #1013, #1014, #1016, #1020, #1021, #1023, #1024, #1025)
+
+  * Improbements to the packaging. (Sora Morimoto, #1010, #1015)
+
+  * Make C code pass the stricter checks of GCC 14. (Jerry James, #1004)
+
+  * Fix many many C warnings and other fixes. (Antonin Décimo, #1007, #1022)
+
 ===== 5.7.0 =====
 
 ====== Breaking API changes ======
