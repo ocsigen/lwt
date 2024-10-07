@@ -20,7 +20,7 @@ value lwt_unix_send(value fd, value buf, value ofs, value len, value flags)
 {
     int ret;
     ret = send(Int_val(fd), &Byte(String_val(buf), Long_val(ofs)),
-               Long_val(len), caml_convert_flag_list(flags, msg_flag_table));
+               Long_val(len), lwt_convert_flag_list(flags, msg_flag_table));
     if (ret == -1) uerror("send", Nothing);
     return Val_int(ret);
 }
