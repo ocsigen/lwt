@@ -67,7 +67,7 @@ value lwt_unix_wait4(value flags, value pid_req)
     CAMLlocal2(times, res);
 
     int pid, status, cv_flags;
-    cv_flags = caml_convert_flag_list(flags, wait_flag_table);
+    cv_flags = lwt_convert_flag_list(flags, wait_flag_table);
 
     struct rusage ru;
 

@@ -60,7 +60,7 @@ CAMLprim value lwt_unix_getnameinfo_job(value sockaddr, value opts)
 {
     LWT_UNIX_INIT_JOB(job, getnameinfo, 0);
     get_sockaddr(sockaddr, &job->addr, &job->addr_len);
-    job->opts = caml_convert_flag_list(opts, getnameinfo_flag_table);
+    job->opts = lwt_convert_flag_list(opts, getnameinfo_flag_table);
     return lwt_unix_alloc_job(&job->job);
 }
 #endif
