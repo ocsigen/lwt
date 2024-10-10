@@ -23,7 +23,7 @@ value lwt_unix_bytes_send(value fd, value buf, value ofs, value len,
     int ret;
     ret =
         send(Int_val(fd), (char *)Caml_ba_array_val(buf)->data + Long_val(ofs),
-             Long_val(len), caml_convert_flag_list(flags, msg_flag_table));
+             Long_val(len), lwt_convert_flag_list(flags, msg_flag_table));
     if (ret == -1) uerror("send", Nothing);
     return Val_int(ret);
 }

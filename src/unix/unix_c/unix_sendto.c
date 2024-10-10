@@ -25,7 +25,7 @@ value lwt_unix_sendto(value fd, value buf, value ofs, value len, value flags,
     int ret;
     get_sockaddr(dest, &addr, &addr_len);
     ret = sendto(Int_val(fd), &Byte(String_val(buf), Long_val(ofs)),
-                 Long_val(len), caml_convert_flag_list(flags, msg_flag_table),
+                 Long_val(len), lwt_convert_flag_list(flags, msg_flag_table),
                  &addr.s_gen, addr_len);
     if (ret == -1) uerror("send", Nothing);
     return Val_int(ret);

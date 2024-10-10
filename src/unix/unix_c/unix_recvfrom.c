@@ -27,7 +27,7 @@ value lwt_unix_recvfrom(value fd, value buf, value ofs, value len, value flags)
     socklen_t addr_len;
     addr_len = sizeof(addr);
     ret = recvfrom(Int_val(fd), &Byte(String_val(buf), Long_val(ofs)),
-                   Long_val(len), caml_convert_flag_list(flags, msg_flag_table),
+                   Long_val(len), lwt_convert_flag_list(flags, msg_flag_table),
                    &addr.s_gen, &addr_len);
     if (ret == -1) uerror("recvfrom", Nothing);
     address = alloc_sockaddr(&addr, addr_len, -1);

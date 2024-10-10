@@ -14,9 +14,14 @@
 #include <caml/socketaddr.h>
 #include <string.h>
 
+// The following macro is for backwards compatibility.
+// It is given an `lwt_` prefix to avoid name collisions for code which
+// include both this file and alloc.h.
 #if OCAML_VERSION < 50000
-#define caml_convert_flag_list(flags, table) \
+#define lwt_convert_flag_list(flags, table) \
     caml_convert_flag_list((flags), (int *)(table))
+#else
+#define lwt_convert_flag_list caml_convert_flag_list
 #endif
 
 /* The macro to get the file-descriptor from a value. */
