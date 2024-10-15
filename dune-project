@@ -13,6 +13,13 @@
 (documentation "https://ocsigen.org/lwt")
 
 (package
+ (name lwt_retry)
+ (synopsis "Utilities for retrying Lwt computations")
+ (depends
+  (ocaml (>= 4.08))
+  lwt))
+
+(package
  (name lwt_ppx)
  (synopsis "PPX syntax for Lwt, providing something similar to async/await from JavaScript")
  (depends
