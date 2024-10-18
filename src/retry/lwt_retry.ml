@@ -38,8 +38,10 @@ let on_error
   let stop = ref false in
   Lwt_stream.from begin fun () ->
     incr i;
-    let+ result = f () in
-    if !stop then None else
+    if !stop then
+      Lwt.return None
+    else
+      let+ result = f () in
       match result with
       | Error (`Retry _ as retry) -> Some (Error (retry, !i))
       | Error (`Fatal _ as fatal) -> stop := true; Some (Error (fatal, !i))

@@ -36,6 +36,22 @@ let suite = suite "lwt_retry" [
         (* ensure the post condition of an empty stream *)
         Lwt_stream.is_empty strm);
 
+    test "does not run extra attempts"
+      (fun () ->
+         let count = ref 0 in
+         let strm =
+           Retry.on_error (fun () ->
+               incr count;
+               Lwt.return_ok 42)
+         in
+         let* actual = Lwt_stream.next strm in
+         assert (actual = Ok 42);
+         (* Force another attempt on the stream *)
+         let+ _ = Lwt_stream.is_empty strm in
+         (* We should have run 1 and only 1 attempt,
+            or else the execution logic is wrong. *)
+         !count = 1);
+
     test "just retries" (fun () ->
         let strm =
           Retry.on_error (fun () -> Lwt.return_error (`Retry ()))
