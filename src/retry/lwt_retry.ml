@@ -51,10 +51,10 @@ let on_error
 let with_sleep ?(duration=default_sleep_duration) (attempts : _ attempt Lwt_stream.t) : _ attempt Lwt_stream.t =
   attempts
   |> Lwt_stream.map_s begin function
-    | Ok ok -> Lwt.return_ok ok
-    | Error (err, n) ->
+    | Ok _ as ok -> Lwt.return ok
+    | Error (_, n) as err ->
       let* () = Lwt_unix.sleep @@ duration n in
-      Lwt.return_error (err, n)
+      Lwt.return err
   end
 
 let n_times n attempts =
