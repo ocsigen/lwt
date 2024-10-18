@@ -13,6 +13,13 @@
 (documentation "https://ocsigen.org/lwt")
 
 (package
+ (name lwt_retry)
+ (synopsis "Utilities for retrying Lwt computations")
+ (depends
+  (ocaml (>= 4.08))
+  lwt))
+
+(package
  (name lwt_ppx_let)
  (synopsis "Dummy package context for ppx_let tests")
  (description "Internal package used to partition ppx_let tests.")

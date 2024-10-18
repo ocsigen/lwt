@@ -1,0 +1,9 @@
+(executable
+ (name main)
+ (libraries lwttester lwt_retry))
+
+(alias
+ (name runtest)
+ (package lwt_retry)
+ (action
+  (run %{exe:main.exe})))
