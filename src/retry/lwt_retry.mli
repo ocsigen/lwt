@@ -142,6 +142,8 @@ val n_times :
     In particular [n_times 0 attempts] will *try* 1 attempt but *re-try* 0, so
     it is guaranteed to produce some result.
 
+    [n_times] forces up to [n] elements of the on-demand stream of attempts.
+
     Examples
 
     {[
