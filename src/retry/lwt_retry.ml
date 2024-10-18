@@ -58,9 +58,10 @@ let with_sleep ?(duration=default_sleep_duration) (attempts : _ attempt Lwt_stre
   end
 
 let n_times n attempts =
+  if n < 0 then invalid_arg "Lwt_retry.n_times: n must be non-negative";
   (* The first attempt is a try, and re-tries start counting from n + 1 *)
   let retries = n + 1 in
   let+ attempts = Lwt_stream.nget retries attempts in
   match List.rev attempts with
   | last :: _ -> last
-  | _ -> failwith "Lwt_retry.n_times impossible"
+  | _ -> failwith "Lwt_retry.n_times: impossible"

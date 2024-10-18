@@ -132,6 +132,16 @@ let suite = suite "lwt_retry" [
         let+ success = Retry.(operation |> on_error |> n_times 5) in
         success = Ok ());
 
+    test_direct "n_times on negative raises Invalid_argument"  (fun () ->
+        let invalid_negative_retries = -5 in
+        let operation () = Lwt.return_error (`Retry ()) in
+        let attempts = Retry.(operation |> on_error) in
+        try
+          let _ = Retry.(attempts |> n_times invalid_negative_retries) in
+          false (* We failed to raise the invalid argument exception *)
+        with
+          Invalid_argument _ -> true);
+
     (* test that the sleeps actually throttle computations as desired *)
     test "with_sleep really does sleep"  (fun ()  ->
       let duration _ = 0.1 in
