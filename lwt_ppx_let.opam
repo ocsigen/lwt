@@ -11,7 +11,7 @@ homepage: "https://github.com/ocsigen/lwt"
 doc: "https://ocsigen.org/lwt"
 bug-reports: "https://github.com/ocsigen/lwt/issues"
 depends: [
-  "dune" {>= "1.12"}
+  "dune" {>= "2.0"}
   "ocaml" {>= "4.08"}
   "ppx_let" {with-test}
   "lwt"

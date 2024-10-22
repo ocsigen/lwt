@@ -53,8 +53,8 @@
  (libraries lwt lwt.unix)
  (modules ocaml_runtime_exc_6))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package lwt)
  (action (run %{exe:main.exe}))
  (deps bytes_io_data %{exe:dummy.exe})

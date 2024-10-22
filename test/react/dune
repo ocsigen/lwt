@@ -2,7 +2,7 @@
  (name main)
  (libraries lwt_react lwttester))
 
-(alias
- (name runtest)
+(rule
+ (alias runtest)
  (package lwt_react)
  (action (run %{exe:main.exe})))
