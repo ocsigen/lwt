@@ -649,25 +649,27 @@ let rec junk_while_s_rec node f s =
 
 let junk_while_s f s = junk_while_s_rec s.node f s
 
-let rec junk_old_rec node s =
+let rec junk_available_rec node s =
   if node == !(s.last) then
     let thread = feed s in
     match Lwt.state thread with
     | Lwt.Return _ ->
-      junk_old_rec node s
+      junk_available_rec node s
     | Lwt.Fail exn ->
-      Lwt.fail exn
+      raise exn
     | Lwt.Sleep ->
-      Lwt.return_unit
+      ()
   else
     match node.data with
     | Some _ ->
       consume s node;
-      junk_old_rec node.next s
+      junk_available_rec node.next s
     | None ->
-      Lwt.return_unit
+      ()
 
-let junk_old s = junk_old_rec s.node s
+let junk_available s = junk_available_rec s.node s
+
+let junk_old s = Lwt.return (junk_available s)
 
 let rec get_available_rec node acc s =
   if node == !(s.last) then

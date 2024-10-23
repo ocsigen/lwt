@@ -234,8 +234,8 @@ val junk_while_s : ('a -> bool Lwt.t) -> 'a t -> unit Lwt.t
 (** [junk_while f st] removes all elements at the beginning of the
     streams which satisfy [f]. *)
 
-val junk_old : 'a t -> unit Lwt.t
-(** [junk_old st] removes all elements that are ready to be read
+val junk_available : 'a t -> unit
+(** [junk_available st] removes all elements that are ready to be read
     without yielding from [st]. *)
 
 val get_available : 'a t -> 'a list
@@ -262,6 +262,11 @@ val closed : 'a t -> unit Lwt.t
     closed.
 
     @since 2.6.0 *)
+
+(** {3 Deprecated} *)
+
+val junk_old : 'a t -> unit Lwt.t [@@deprecated "Use junk_available instead"]
+(** @deprecated [junk_old st] is [Lwt.return (junk_available st)]. *)
 
 (** {2 Stream transversal} *)
 
