@@ -14,8 +14,10 @@ depends: [
   "dune" {>= "2.0"}
   "ocaml" {>= "4.08"}
   "ppxlib" {>= "0.16.0"}
+  "ppx_let" {with-test}
   "lwt"
 ]
+dev-repo: "git+https://github.com/ocsigen/lwt.git"
 build: [
   ["dune" "subst"] {dev}
   [
@@ -30,4 +32,3 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "git+https://github.com/ocsigen/lwt.git"

@@ -16,6 +16,7 @@ depends: [
   "lwt" {>= "3.0.0"}
   "react" {>= "1.0.0"}
 ]
+dev-repo: "git+https://github.com/ocsigen/lwt.git"
 build: [
   ["dune" "subst"] {dev}
   [
@@ -30,4 +31,3 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "git+https://github.com/ocsigen/lwt.git"

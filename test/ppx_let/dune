@@ -5,5 +5,5 @@
 
 (rule
  (alias runtest)
- (package lwt_ppx_let)
+ (package lwt_ppx) ;; technically not part of lwt_ppx, but we want it tested and the dependency to ppxlib is already there
  (action (run %{exe:test.exe})))

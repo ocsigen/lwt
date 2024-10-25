@@ -13,20 +13,12 @@
 (documentation "https://ocsigen.org/lwt")
 
 (package
- (name lwt_ppx_let)
- (synopsis "Dummy package context for ppx_let tests")
- (description "Internal package used to partition ppx_let tests.")
- (depends
-  (ocaml (>= 4.08))
-  (ppx_let :with-test)
-  lwt))
-
-(package
  (name lwt_ppx)
  (synopsis "PPX syntax for Lwt, providing something similar to async/await from JavaScript")
  (depends
   (ocaml (>= 4.08))
   (ppxlib (>= 0.16.0))
+  (ppx_let :with-test)
   lwt))
 
 (package

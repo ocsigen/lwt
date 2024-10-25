@@ -22,3 +22,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
+available: os-family != "windows" | "ocaml-version" < "5.2"
