@@ -31,7 +31,7 @@ depends: [
 depopts: ["base-threads" "base-unix" "conf-libev"]
 dev-repo: "git+https://github.com/ocsigen/lwt.git"
 build: [
-  ["dune" "subst"] {pinned}
+  ["dune" "subst"] {dev}
   [
     "dune"
     "exec"
@@ -54,3 +54,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
+available: os-family != "windows" | "ocaml-version" < "5.2"
