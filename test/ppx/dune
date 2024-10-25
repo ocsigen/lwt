@@ -1,10 +1,6 @@
-(executable
+(test
  (name main)
+ (package lwt_ppx)
  (libraries lwttester)
  (preprocess (pps lwt_ppx))
  (flags (:standard -warn-error -22)))
-
-(rule
- (alias runtest)
- (package lwt_ppx)
- (action (run %{exe:main.exe})))

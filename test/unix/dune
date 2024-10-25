@@ -18,44 +18,40 @@
  (modules dummy)
  (libraries unix))
 
-(executable
+(test
  (name main)
+ (package lwt)
  (libraries lwttester tester)
- (modules main))
+ (modules main)
+ (deps bytes_io_data %{exe:dummy.exe})
+)
 
-(executable
+(test
  (name ocaml_runtime_exc_1)
  (libraries lwt lwt.unix)
  (modules ocaml_runtime_exc_1))
 
-(executable
+(test
  (name ocaml_runtime_exc_2)
  (libraries lwt lwt.unix)
  (modules ocaml_runtime_exc_2))
 
-(executable
+(test
  (name ocaml_runtime_exc_3)
  (libraries lwt lwt.unix)
  (modules ocaml_runtime_exc_3))
 
-(executable
+(test
  (name ocaml_runtime_exc_4)
  (libraries lwt lwt.unix)
  (modules ocaml_runtime_exc_4))
 
-(executable
+(test
  (name ocaml_runtime_exc_5)
  (libraries lwt lwt.unix)
  (modules ocaml_runtime_exc_5))
 
-(executable
+(test
  (name ocaml_runtime_exc_6)
  (libraries lwt lwt.unix)
  (modules ocaml_runtime_exc_6))
-
-(rule
- (alias runtest)
- (package lwt)
- (action (run %{exe:main.exe}))
- (deps bytes_io_data %{exe:dummy.exe})
-)

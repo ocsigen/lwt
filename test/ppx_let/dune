@@ -1,9 +1,5 @@
-(executable
+(test
  (name test)
+ (package lwt_ppx) ;; technically not part of lwt_ppx, but we want it tested and the dependency to ppxlib is already there
  (preprocess (pps ppx_let))
  (libraries lwt lwt.unix))
-
-(rule
- (alias runtest)
- (package lwt_ppx) ;; technically not part of lwt_ppx, but we want it tested and the dependency to ppxlib is already there
- (action (run %{exe:test.exe})))
