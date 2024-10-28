@@ -15,6 +15,10 @@
 (package
  (name lwt_retry)
  (synopsis "Utilities for retrying Lwt computations")
+ (authors "Shon Feder")
+ (maintainers
+   "Raphaël Proust <code@bnwr.net>"
+   "Shon Feder <shon.feder@gmail.com>")
  (depends
   (ocaml (>= 4.08))
   lwt))

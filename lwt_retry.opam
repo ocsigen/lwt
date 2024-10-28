@@ -4,15 +4,15 @@ synopsis: "Utilities for retrying Lwt computations"
 maintainer: [
   "Raphaël Proust <code@bnwr.net>" "Shon Feder <shon.feder@gmail.com>"
 ]
-authors: ["Jérôme Vouillon" "Jérémie Dimino"]
+authors: ["Shon Feder"]
 license: "MIT"
 homepage: "https://github.com/ocsigen/lwt"
 doc: "https://ocsigen.org/lwt"
 bug-reports: "https://github.com/ocsigen/lwt/issues"
 depends: [
-  "dune" {>= "1.12"}
+  "dune" {>= "2.0"}
   "ocaml" {>= "4.08"}
-  "lwt" {>= "3.0.0"}
+  "lwt"
 ]
 build: [
   ["dune" "subst"] {pinned}
