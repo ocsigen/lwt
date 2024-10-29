@@ -30,8 +30,3 @@ lib/
 
 # Wikidoc output.
 /docs/api/
-
-# Junk from packaging tests.
-*.cm*
-*.o
-a.out
