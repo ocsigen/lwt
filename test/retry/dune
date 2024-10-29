@@ -1,9 +1,4 @@
-(executable
+(test
  (name main)
- (libraries lwttester lwt_retry))
-
-(rule
- (alias runtest)
  (package lwt_retry)
- (action
-  (run %{exe:main.exe})))
+ (libraries lwttester lwt_retry))
