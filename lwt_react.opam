@@ -10,13 +10,13 @@ homepage: "https://github.com/ocsigen/lwt"
 doc: "https://ocsigen.org/lwt"
 bug-reports: "https://github.com/ocsigen/lwt/issues"
 depends: [
-  "dune" {>= "2.0"}
+  "dune" {>= "2.7"}
   "ocaml" {>= "4.08"}
   "cppo" {build & >= "1.1.0"}
   "lwt" {>= "3.0.0"}
   "react" {>= "1.0.0"}
+  "odoc" {with-doc}
 ]
-dev-repo: "git+https://github.com/ocsigen/lwt.git"
 build: [
   ["dune" "subst"] {dev}
   [
@@ -31,3 +31,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
+dev-repo: "git+https://github.com/ocsigen/lwt.git"
