@@ -132,7 +132,6 @@ Release announcements are made in [/r/ocaml][reddit], and on
 [discuss.ocaml.org][discourse]. Watching the repo for "Releases only" is also an
 option.
 
-[irc]:    http://webchat.freenode.net/?channels=#ocaml
 [so]:     http://stackoverflow.com/questions/ask?tags=ocaml,lwt,ocaml-lwt
 [announcements]: https://github.com/ocsigen/lwt/issues/309
 [reddit]: https://www.reddit.com/r/ocaml/
