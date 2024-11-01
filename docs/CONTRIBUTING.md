@@ -81,8 +81,6 @@ eval `opam config env`                     # optional
 make dev-deps
 ```
 
-[opam-depends]: https://github.com/ocsigen/lwt/blob/8bff603ae6d976e69698fa08e8ce08fe9615489d/opam/opam#L35-L44
-
 On most systems, you should also [install libev][installing]:
 
 ```
@@ -158,8 +156,8 @@ Go to the GitHub web interface for your Lwt fork
 button. Follow the instructions, and open the pull request.
 
 This will trigger automatic building and testing of your change on many versions
-of OCaml, and several operating systems, in [Travis][travis-ci] and
-[AppVeyor][appveyor-ci]. You can even a submit a preliminary PR just to trigger
+of OCaml, and several operating systems, in [GitHub Actions][github-actions].
+You can even a submit a preliminary PR just to trigger
 these tests – just say in the description that it's not ready for review!
 
 At about the same time, a (hopefully!) friendly maintainer will review your
@@ -201,8 +199,7 @@ If we do this rewriting, it is usually at the very end, right before merging the
 PR. This is to avoid interfering with reviewers while they are still reviewing
 it.
 
-[travis-ci]: https://travis-ci.org/ocsigen/lwt
-[appveyor-ci]: https://ci.appveyor.com/project/aantron/lwt
+[github-actions]: https://github.com/ocsigen/lwt/actions
 
 
 <br/>
@@ -262,8 +259,7 @@ This list surveys them, roughly in order of importance.
   in the Lwt repo.
 
 - [`src/util/`][util-dir] contains various scripts, such as the
-  [configure script][configure.ml], [Travis][travis] and [AppVeyor][appveyor]
-  scripts, etc.
+  [configure script][configure.ml] scripts, etc.
 
 [core-dir]: https://github.com/ocsigen/lwt/tree/master/src/core
 [lwt.ml]: https://github.com/ocsigen/lwt/blob/master/src/core/lwt.ml
@@ -279,6 +275,3 @@ This list surveys them, roughly in order of importance.
 [react-dir]: https://github.com/ocsigen/lwt/tree/master/src/react
 [Lwt_react]: https://github.com/ocsigen/lwt/blob/master/src/react/lwt_react.mli
 [util-dir]: https://github.com/ocsigen/lwt/tree/master/src/util
-[configure.ml]: https://github.com/ocsigen/lwt/blob/master/src/util/configure.ml
-[travis]: https://github.com/ocsigen/lwt/blob/master/src/util/travis.sh
-[appveyor]: https://github.com/ocsigen/lwt/blob/master/src/util/appveyor-install.sh
