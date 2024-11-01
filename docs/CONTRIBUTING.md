@@ -76,7 +76,7 @@ Now, we need to install Lwt's development dependencies. Before doing that, you
 may want to switch to a special OPAM switch for working on Lwt:
 
 ```
-opam switch 4.06.1-lwt --alias-of 4.06.1   # optional
+opam switch create . 4.08.2 --no-install   # optional
 eval `opam config env`                     # optional
 make dev-deps
 ```
