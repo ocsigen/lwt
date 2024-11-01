@@ -217,7 +217,7 @@ fixing that.
   [documented `Lwt_unix.getcwd`][unix-model] as a model function.
 - Everything else is sparsely documented in comments.
 
-[manual]: https://ocsigen.org/lwt/manual/
+[manual]: https://ocsigen.org/lwt/
 [lwt.ml]: https://github.com/ocsigen/lwt/blob/master/src/core/lwt.ml
 [unix-model]: https://github.com/ocsigen/lwt/blob/99d1ec8b5c159456855eb2f55ddab77207bc92b3/src/unix/unix_c/unix_getcwd_job.c#L36
 
