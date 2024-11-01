@@ -2,7 +2,7 @@
 
 [![version][version]][releases] [![GitHub Actions status][github-actions-img]][github-actions]
 
-[version]:            https://img.shields.io/github/release/ocsigen/lwt
+[version]:            https://img.shields.io/github/v/release/ocsigen/lwt
 [releases]:           https://github.com/ocsigen/lwt/releases
 [github-actions]:     https://github.com/ocsigen/lwt/actions
 [github-actions-img]: https://github.com/ocsigen/lwt/actions/workflows/workflow.yml/badge.svg?branch=master
@@ -115,10 +115,10 @@ rewriting the manual). In the meantime:
 or just "threads." This will be fixed in the new manual. `'a Lwt.t` is a
 promise, and has nothing to do with system or preemptive threads.*
 
-[manual]:   http://ocsigen.org/lwt/
+[manual]:   https://ocsigen.org/lwt/
 [rwo-lwt]:  https://github.com/dkim/rwo-lwt#readme
 [mirage-tutorial]: https://mirage.io/docs/tutorial-lwt
-[counter-server]: http://www.baturin.org/code/lwt-counter-server/
+[counter-server]: https://baturin.org/code/lwt-counter-server/
 
 
 <br/>
@@ -132,11 +132,11 @@ Release announcements are made in [/r/ocaml][reddit], and on
 [discuss.ocaml.org][discourse]. Watching the repo for "Releases only" is also an
 option.
 
-[so]:     http://stackoverflow.com/questions/ask?tags=ocaml,lwt,ocaml-lwt
+[so]:     https://stackoverflow.com/questions/ask?tags=ocaml,lwt,ocaml-lwt
 [reddit]: https://www.reddit.com/r/ocaml/
 [discourse]: https://discuss.ocaml.org/tag/lwt
 [issues]: https://github.com/ocsigen/lwt/issues/new
-[discord]: https://discordapp.com/invite/cCYQbqN
+[discord]: https://discord.com/invite/cCYQbqN
 
 
 <br/>
@@ -174,7 +174,7 @@ JSON parsing and output
 serialization combinators
 - [logs](https://github.com/dbuenzli/logs) —
 logging
-- [lwt-parallel](https://github.com/ivg/parallel) —
+- [lwt-parallel](https://github.com/ivg/lwt-parallel) —
 distributed computing
 - [mwt](https://github.com/hcarty/mwt) — preemptive (system) thread pools
 - [opium](https://github.com/rgrinberg/opium) —

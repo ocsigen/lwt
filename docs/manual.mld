@@ -51,8 +51,8 @@
 
 {ul
   {- {{: https://github.com/dkim/rwo-lwt#readme }Concurrent Programming with Lwt}}
-  {- {{: https://mirage.io/wiki/tutorial-lwt }Mirage Lwt Tutorial}}
-  {- {{: http://www.baturin.org/code/lwt-counter-server/ }Simple Server with Lwt}}}
+  {- {{: https://mirage.io/docs/tutorial-lwt }Mirage Lwt Tutorial}}
+  {- {{: https://baturin.org/code/lwt-counter-server/ }Simple Server with Lwt}}}
 
 {1 The Lwt core library }
 
@@ -695,7 +695,7 @@ val Lwt_main.run : 'a Lwt.t -> 'a
 
   To make sure [Lwt] is compiled with [libev] support,
   tell opam that the library is available on the system by installing the
-  {{: http://opam.ocaml.org/packages/conf-libev/conf-libev.4-11/ }conf-libev}
+  {{: https://opam.ocaml.org/packages/conf-libev/conf-libev.4-11/ }conf-libev}
   package. You may get the actual library with your system package manager:
 
 {ul

@@ -435,7 +435,7 @@ val readv : file_descr -> IO_vectors.t -> int Lwt.t
     Not implemented on Windows. It should be possible to implement, upon
     request, for Windows sockets only.
 
-    See {{:http://man7.org/linux/man-pages/man3/readv.3p.html} [readv(3p)]}.
+    See {{:https://man7.org/linux/man-pages/man3/readv.3p.html} [readv(3p)]}.
 
     @since 2.7.0 *)
 
@@ -464,7 +464,7 @@ val writev : file_descr -> IO_vectors.t -> int Lwt.t
     and write zero bytes. On BSD (including macOS), [writev] will fail with
     [Unix.Unix_error (Unix.EINVAL, "writev", ...)].
 
-    See {{:http://man7.org/linux/man-pages/man3/writev.3p.html}
+    See {{:https://man7.org/linux/man-pages/man3/writev.3p.html}
     [writev(3p)]}.
 
     @since 2.7.0 *)
@@ -586,7 +586,7 @@ val utimes : string -> float -> float -> unit Lwt.t
     to [mtime]. To set both to the current time, call [utimes path 0. 0.].
 
     This function corresponds to {!Unix.utimes}. See also
-    {{:http://man7.org/linux/man-pages/man3/utimes.3p.html} [utimes(3p)]}.
+    {{:https://man7.org/linux/man-pages/man3/utimes.3p.html} [utimes(3p)]}.
 
     @since 2.6.0 *)
 
@@ -893,7 +893,7 @@ val socketpair : ?cloexec:bool ->
 val bind : file_descr -> sockaddr -> unit Lwt.t
 (** Binds an address to the given socket. This is the cooperative analog of
     {!Unix.bind}. See also
-    {{:http://man7.org/linux/man-pages/man3/bind.3p.html} [bind(3p)]}.
+    {{:https://man7.org/linux/man-pages/man3/bind.3p.html} [bind(3p)]}.
 
     @since 3.0.0 *)
 
@@ -922,7 +922,7 @@ val accept_n : ?cloexec:bool ->
       [accept_n] has the advantage of improving performance. If you
       want a more detailed description, you can have a look at:
 
-      {{:http://portal.acm.org/citation.cfm?id=1247435}Acceptable strategies for improving web server performance} *)
+      {{:https://dl.acm.org/doi/10.5555/1247415.1247435}Acceptable strategies for improving web server performance} *)
 
 val connect : file_descr -> sockaddr -> unit Lwt.t
   (** Wrapper for {!Unix.connect} *)
