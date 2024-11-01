@@ -133,9 +133,7 @@ Release announcements are made in [/r/ocaml][reddit], and on
 option.
 
 [so]:     http://stackoverflow.com/questions/ask?tags=ocaml,lwt,ocaml-lwt
-[announcements]: https://github.com/ocsigen/lwt/issues/309
 [reddit]: https://www.reddit.com/r/ocaml/
-[caml-list]: https://sympa.inria.fr/sympa/arc/caml-list
 [discourse]: https://discuss.ocaml.org/tag/lwt
 [issues]: https://github.com/ocsigen/lwt/issues/new
 [discord]: https://discordapp.com/invite/cCYQbqN
@@ -156,7 +154,6 @@ option.
 - Any feedback is welcome, including how to make contributing easier!
 
 [issues-and-prs]: https://github.com/ocsigen/lwt/issues?utf8=%E2%9C%93&q=is%3Aopen
-[all-issues]: https://github.com/ocsigen/lwt/issues
 [contributing-md]: https://github.com/ocsigen/lwt/blob/master/docs/CONTRIBUTING.md#readme
 
 
