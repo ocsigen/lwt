@@ -6,8 +6,6 @@
 [releases]:           https://github.com/ocsigen/lwt/releases
 [github-actions]:     https://github.com/ocsigen/lwt/actions
 [github-actions-img]: https://github.com/ocsigen/lwt/actions/workflows/workflow.yml/badge.svg?branch=master
-[appveyor]:           https://ci.appveyor.com/project/aantron/lwt/branch/master
-[appveyor-img]:       https://img.shields.io/appveyor/ci/aantron/lwt/master.svg?label=appveyor
 
 Lwt is a concurrent programming library for OCaml. It provides a single data
 type: the *promise*, which is a value that will become determined in the future.
