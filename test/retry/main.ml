@@ -144,7 +144,7 @@ let suite = suite "lwt_retry" [
 
     (* test that the sleeps actually throttle computations as desired *)
     test "with_sleep really does sleep"  (fun ()  ->
-      let duration _ = 0.1 in
+      let duration _ = 0.01 in
       let operation () = Lwt.return_error (`Retry ()) in
       (* If [with_sleep] is removed the test fails, as expected *)
       let retries = Retry.(operation |> on_error |> with_sleep ~duration |> n_times 5) in
