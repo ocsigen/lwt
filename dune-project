@@ -21,7 +21,7 @@
    "Shon Feder <shon.feder@gmail.com>")
  (depends
   (ocaml (>= 4.08))
-  lwt))
+  (lwt (>= 5.3.0))))
 
 (package
  (name lwt_ppx)
