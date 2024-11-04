@@ -1,0 +1,4 @@
+(test
+ (name main)
+ (package lwt_retry)
+ (libraries lwttester lwt_retry))

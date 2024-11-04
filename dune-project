@@ -13,6 +13,17 @@
 (documentation "https://ocsigen.org/lwt")
 
 (package
+ (name lwt_retry)
+ (synopsis "Utilities for retrying Lwt computations")
+ (authors "Shon Feder")
+ (maintainers
+   "Raphaël Proust <code@bnwr.net>"
+   "Shon Feder <shon.feder@gmail.com>")
+ (depends
+  (ocaml (>= 4.08))
+  (lwt (>= 5.3.0))))
+
+(package
  (name lwt_ppx)
  (synopsis "PPX syntax for Lwt, providing something similar to async/await from JavaScript")
  (depends
