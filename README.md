@@ -128,12 +128,10 @@ promise, and has nothing to do with system or preemptive threads.*
 Open an [issue][issues], visit [Discord][discord] chat, ask on
 [discuss.ocaml.org][discourse], or on [Stack Overflow][so].
 
-Release announcements are made in [/r/ocaml][reddit], and on
-[discuss.ocaml.org][discourse]. Watching the repo for "Releases only" is also an
-option.
+Release announcements are made on [discuss.ocaml.org][discourse]. Watching the
+repo for "Releases only" is also an option.
 
 [so]:     https://stackoverflow.com/questions/ask?tags=ocaml,lwt,ocaml-lwt
-[reddit]: https://www.reddit.com/r/ocaml/
 [discourse]: https://discuss.ocaml.org/tag/lwt
 [issues]: https://github.com/ocsigen/lwt/issues/new
 [discord]: https://discord.com/invite/cCYQbqN
@@ -179,3 +177,5 @@ distributed computing
 - [mwt](https://github.com/hcarty/mwt) — preemptive (system) thread pools
 - [opium](https://github.com/rgrinberg/opium) —
 web framework
+- [lwt_domain](https://github.com/ocsigen/lwt_domain) — domain parallelism when
+  using Lwt with OCaml 5
