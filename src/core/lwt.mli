@@ -231,9 +231,9 @@ let () =
     pending), or containers for one value (if resolved).
 
     The interesting function is {!Lwt_main.run}. It's a wrapper around
-    {{: http://man7.org/linux/man-pages/man2/select.2.html} [select(2)]},
-    {{: http://man7.org/linux/man-pages/man7/epoll.7.html} [epoll(7)]},
-    {{: https://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2}
+    {{: https://man7.org/linux/man-pages/man2/select.2.html} [select(2)]},
+    {{: https://man7.org/linux/man-pages/man7/epoll.7.html} [epoll(7)]},
+    {{: https://man.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2}
     [kqueue(2)]}, or whatever asynchronous I/O API your system provides. On
     browsers, the work of {!Lwt_main.run} is done by the surrounding JavaScript
     engine, so you don't call {!Lwt_main.run} from inside your program. But the

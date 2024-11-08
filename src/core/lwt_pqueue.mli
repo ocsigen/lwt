@@ -15,15 +15,15 @@
 
     @deprecated This module is an internal implementation detail of Lwt, and may
     be removed from the API at some point in the future. For alternatives, see,
-    for example: {{: https://www.lri.fr/~filliatr/software.en.html#heap} Heaps}
+    for example: {{: https://usr.lmf.cnrs.fr/~jcf/software.en.html#heap} Heaps}
     by Jean-Cristophe Filliatre,
-    {{: http://cedeela.fr/~simon/software/containers/CCHeap.html} containers},
-    {{: http://ocaml-batteries-team.github.io/batteries-included/hdoc2/BatHeap.html}
+    {{: https://simon.cedeela.fr/~simon/software/containers/CCHeap.html} containers},
+    {{: https://ocaml-batteries-team.github.io/batteries-included/hdoc2/BatHeap.html}
     Batteries}, or {{:https://github.com/pqwy/psq} psq}. *)
 
 [@@@ocaml.deprecated
 " This module is an implementation detail of Lwt. See
-   http://ocsigen.org/lwt/dev/api/Lwt_pqueue"]
+   https://ocsigen.org/lwt/latest/api/Lwt_pqueue"]
 
 (** Signature pairing an element type with an ordering function. *)
 module type OrderedType =

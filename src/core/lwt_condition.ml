@@ -1,5 +1,5 @@
 (* OCaml promise library
- * http://www.ocsigen.org/lwt
+ * https://ocsigen.org/lwt
  * Copyright (c) 2009, Metaweb Technologies, Inc.
  * All rights reserved.
  *

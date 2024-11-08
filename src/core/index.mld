@@ -79,12 +79,12 @@ In Lwt,
 
 {1 Additional Docs}
 
-- {{!page-manual} Manual} ({{:http://ocsigen.org/lwt/} Online manual}).
+- {{!page-manual} Manual} ({{:https://ocsigen.org/lwt/} Online manual}).
 - {{:https://github.com/dkim/rwo-lwt#readme} Concurrent Programming with Lwt} is
   a nice source of Lwt examples. They are translations of code from Real World
   OCaml, but are just as useful if you are not reading the book.
-- {{:https://mirage.io/wiki/tutorial-lwt} Mirage Lwt tutorial}.
-- {{:http://www.baturin.org/code/lwt-counter-server/} Example server} written
+- {{:https://mirage.io/docs/tutorial-lwt} Mirage Lwt tutorial}.
+- {{:https://baturin.org/code/lwt-counter-server/} Example server} written
   with Lwt.
 
 

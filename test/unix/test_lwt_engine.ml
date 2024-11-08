@@ -6,28 +6,6 @@
 open Test
 open Lwt.Infix
 
-let selection_tests = [
-  test "libev: default when enabled in build bot"
-    (fun () ->
-      if not Lwt_config._HAVE_LIBEV then Lwt.return_true
-      else
-        (* Check if this is running inside Travis or AppVeyor. *)
-        let in_travis =
-          try ignore (Sys.getenv "TRAVIS_COMMIT"); true
-          with Not_found -> false
-        in
-
-        let in_appveyor =
-          try ignore (Sys.getenv "APPVEYOR_REPO_COMMIT"); true
-          with Not_found -> false
-        in
-
-        if not (in_travis || in_appveyor) then Lwt.return_true
-        else Lwt.return Lwt_config.libev_default);
-]
-
-let tests = selection_tests
-
 let timing_tests = [
   test "libev: timer delays are not too short" begin fun () ->
     let start = Unix.gettimeofday () in
@@ -57,7 +35,7 @@ let timing_tests = [
   end;
 ]
 
-let tests = tests @ timing_tests
+let tests = timing_tests
 
 let run_tests = [
   test "Lwt_main.run: nested call" ~sequential:true begin fun () ->

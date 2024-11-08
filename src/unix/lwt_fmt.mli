@@ -9,7 +9,7 @@
 
 (** This module bridges the gap between {!Stdlib.Format} and {!Lwt}.
     Although it is not required, it is recommended to use this module
-    with the {{:http://erratique.ch/software/fmt} [Fmt]} library.
+    with the {{:https://erratique.ch/software/fmt} [Fmt]} library.
 
     Compared to regular formatting function, the main difference is that
     printing statements will now return promises instead of blocking.

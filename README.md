@@ -2,12 +2,10 @@
 
 [![version][version]][releases] [![GitHub Actions status][github-actions-img]][github-actions]
 
-[version]:            https://img.shields.io/github/release/ocsigen/lwt
+[version]:            https://img.shields.io/github/v/release/ocsigen/lwt
 [releases]:           https://github.com/ocsigen/lwt/releases
 [github-actions]:     https://github.com/ocsigen/lwt/actions
 [github-actions-img]: https://github.com/ocsigen/lwt/actions/workflows/workflow.yml/badge.svg?branch=master
-[appveyor]:           https://ci.appveyor.com/project/aantron/lwt/branch/master
-[appveyor-img]:       https://img.shields.io/appveyor/ci/aantron/lwt/master.svg?label=appveyor
 
 Lwt is a concurrent programming library for OCaml. It provides a single data
 type: the *promise*, which is a value that will become determined in the future.
@@ -117,10 +115,10 @@ rewriting the manual). In the meantime:
 or just "threads." This will be fixed in the new manual. `'a Lwt.t` is a
 promise, and has nothing to do with system or preemptive threads.*
 
-[manual]:   http://ocsigen.org/lwt/
+[manual]:   https://ocsigen.org/lwt/
 [rwo-lwt]:  https://github.com/dkim/rwo-lwt#readme
 [mirage-tutorial]: https://mirage.io/docs/tutorial-lwt
-[counter-server]: http://www.baturin.org/code/lwt-counter-server/
+[counter-server]: https://baturin.org/code/lwt-counter-server/
 
 
 <br/>
@@ -130,18 +128,13 @@ promise, and has nothing to do with system or preemptive threads.*
 Open an [issue][issues], visit [Discord][discord] chat, ask on
 [discuss.ocaml.org][discourse], or on [Stack Overflow][so].
 
-Release announcements are made in [/r/ocaml][reddit], and on
-[discuss.ocaml.org][discourse]. Watching the repo for "Releases only" is also an
-option.
+Release announcements are made on [discuss.ocaml.org][discourse]. Watching the
+repo for "Releases only" is also an option.
 
-[irc]:    http://webchat.freenode.net/?channels=#ocaml
-[so]:     http://stackoverflow.com/questions/ask?tags=ocaml,lwt,ocaml-lwt
-[announcements]: https://github.com/ocsigen/lwt/issues/309
-[reddit]: https://www.reddit.com/r/ocaml/
-[caml-list]: https://sympa.inria.fr/sympa/arc/caml-list
+[so]:     https://stackoverflow.com/questions/ask?tags=ocaml,lwt,ocaml-lwt
 [discourse]: https://discuss.ocaml.org/tag/lwt
 [issues]: https://github.com/ocsigen/lwt/issues/new
-[discord]: https://discordapp.com/invite/cCYQbqN
+[discord]: https://discord.com/invite/cCYQbqN
 
 
 <br/>
@@ -159,7 +152,6 @@ option.
 - Any feedback is welcome, including how to make contributing easier!
 
 [issues-and-prs]: https://github.com/ocsigen/lwt/issues?utf8=%E2%9C%93&q=is%3Aopen
-[all-issues]: https://github.com/ocsigen/lwt/issues
 [contributing-md]: https://github.com/ocsigen/lwt/blob/master/docs/CONTRIBUTING.md#readme
 
 
@@ -180,8 +172,10 @@ JSON parsing and output
 serialization combinators
 - [logs](https://github.com/dbuenzli/logs) —
 logging
-- [lwt-parallel](https://github.com/ivg/parallel) —
+- [lwt-parallel](https://github.com/ivg/lwt-parallel) —
 distributed computing
 - [mwt](https://github.com/hcarty/mwt) — preemptive (system) thread pools
 - [opium](https://github.com/rgrinberg/opium) —
 web framework
+- [lwt_domain](https://github.com/ocsigen/lwt_domain) — domain parallelism when
+  using Lwt with OCaml 5
