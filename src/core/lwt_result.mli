@@ -71,6 +71,14 @@ val iter_error : ('e -> unit Lwt.t) -> ('a, 'e) t -> unit Lwt.t
     @since Lwt 5.6.0
 *)
 
+val collect : ('a, 'b) result Lwt.t list -> ('a list, 'b list) result Lwt.t
+(** [collect r] is a single promise resolved with [Ok u] if all promises
+    in [r] resolve with [Ok v] and a single promise resolved with [Error w] 
+    otherwise.
+
+    @since NEXT_RELEASE
+*)
+
 module Infix : sig
   val (>|=) : ('a,'e) t -> ('a -> 'b) -> ('b,'e) t
   val (>>=) : ('a,'e) t -> ('a -> ('b,'e) t) -> ('b,'e) t
