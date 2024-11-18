@@ -28,51 +28,16 @@ jobs:
         libev:
           - true
           - false
-        ppx:
-          - true
-        local-packages:
-          - |
-            *.opam
         include:
           - os: ubuntu-latest
             ocaml-compiler: ocaml-variants.5.2.0+options,ocaml-option-flambda,ocaml-option-musl,ocaml-option-static,ocaml-option-no-compression
             libev: false
-            ppx: true
-            local-packages: |
-              *.opam
           - os: macos-latest
             ocaml-compiler: "5.2"
-            libev: true
-            ppx: true
-            local-packages: |
-              *.opam
+            libev: false
           - os: windows-latest
             ocaml-compiler: "5.2"
             libev: false
-            ppx: true
-            local-packages: |
-              *.opam
-          - os: ubuntu-latest
-            ocaml-compiler: "5.2"
-            libev: true
-            ppx: false
-            local-packages: |
-              *.opam
-              !lwt_ppx.opam
-          - os: macos-latest
-            ocaml-compiler: "5.2"
-            libev: true
-            ppx: false
-            local-packages: |
-              *.opam
-              !lwt_ppx.opam
-          - os: windows-latest
-            ocaml-compiler: "5.2"
-            libev: false
-            ppx: false
-            local-packages: |
-              *.opam
-              !lwt_ppx.opam
 
     runs-on: ${{ matrix.os }}
 
@@ -84,37 +49,26 @@ jobs:
         uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
-          opam-local-packages: ${{ matrix.local-packages }}
 
       - run: opam install conf-libev
         if: ${{ matrix.libev == true }}
 
-      - run: opam install lwt_react lwt --deps-only --with-test
+      - run: opam install . --deps-only --with-test
 
-      - run: opam install lwt_ppx --deps-only --with-test
-        if: ${{ matrix.ppx == true }}
+      - run: opam exec -- dune build
 
-      - run: opam exec -- dune build --only-packages lwt_react,lwt
+      - run: opam exec -- dune runtest --instrument-with bisect_ppx --force
 
-      - run: opam exec -- dune build --only-packages lwt_ppx
-        if: ${{ matrix.ppx == true }}
-
-      - run: opam exec -- dune runtest --only-packages lwt_react,lwt
-
-      - run: opam exec -- dune runtest --only-packages lwt_ppx
-        if: ${{ matrix.ppx == true }}
+      - run: opam exec -- bisect-ppx-report summary --per-file
 
   lint-opam:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout tree
         uses: actions/checkout@v4
-
       - name: Set-up OCaml
         uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: "5.2"
           dune-cache: true
-
       - uses: ocaml/setup-ocaml/lint-opam@v3

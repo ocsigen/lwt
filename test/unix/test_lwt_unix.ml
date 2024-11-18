@@ -172,7 +172,7 @@ let utimes_tests = [
         (function
         | Unix.Unix_error (Unix.ENOENT, "utimes", _) -> Lwt.return_unit
         | Unix.Unix_error (Unix.EUNKNOWNERR _, "utimes", _) -> Lwt.return_unit
-        | e -> Lwt.reraise e) [@ocaml.warning "-4"] >>= fun () ->
+        | e -> Lwt.reraise e) >>= fun () ->
       Lwt.return_true);
 ]
 
@@ -305,7 +305,7 @@ let readdir_tests =
             (function
               | Unix.Unix_error (Unix.EBADF, tag', _) when tag' = tag ->
                 Lwt.return_true
-              | exn -> Lwt.reraise exn) [@ocaml.warning "-4"]
+              | exn -> Lwt.reraise exn)
         in
 
         Lwt_list.for_all_s (fun (tag, t) -> expect_ebadf tag t)
@@ -973,7 +973,7 @@ let bind_tests =
                  of /proc/version, reading it, and checking its contents for the
                  string "WSL". *)
               raise Skip
-            | e -> Lwt.reraise e) [@ocaml.warning "-4"]
+            | e -> Lwt.reraise e)
       in
 
       Lwt.finalize
@@ -1014,7 +1014,7 @@ let bind_tests =
           Lwt.return_false)
         (function
           | Unix.Unix_error (Unix.EBADF, _, _) -> Lwt.return_true
-          | e -> Lwt.reraise e) [@ocaml.warning "-4"]);
+          | e -> Lwt.reraise e));
 
   test "bind: aborted"
     (fun () ->

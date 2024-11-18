@@ -378,7 +378,7 @@ let read_opt read ic =
     (function
       | Unix.Unix_error (Unix.EPIPE, _, _) | End_of_file ->
         Lwt.return_none
-      | exn -> Lwt.reraise exn) [@ocaml.warning "-4"]
+      | exn -> Lwt.reraise exn)
 
 let recv_chars pr =
   let ic = pr#stdout in
