@@ -1,3 +1,19 @@
+===== 5.9.0 =====
+
+====== Additions ======
+
+  * Lwt_stream.junk_available is a Lwt-free alternative to Lwt_stream.junk_old. (Alain Mebsout, #1036)
+
+  * Lwt_engine.libev#backend indicates which backend was picked by libev. (mefyl, bnguyenvanyen, #985)
+
+====== Documentation ======
+
+  * Many fixes. (Arvid Jakobsson, #1038)
+
+====== Other ======
+
+  * Misc repository maintenance. (Sora Morimoto, Shon Feder, #1037, #1035)
+
 ===== 5.8.0 =====
 
 ====== Improvements ======
