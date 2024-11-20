@@ -8,9 +8,7 @@
    ("deprecated"), and create a local, non-deprecated alias for
    [Lwt_sequence] that can be referred to by the rest of the code in this
    module without triggering any more warnings. *)
-[@@@ocaml.warning "-3"]
 module Lwt_sequence = Lwt_sequence
-[@@@ocaml.warning "+3"]
 
 open Lwt.Infix
 
@@ -231,7 +229,7 @@ let perform_io : type mode. mode _channel -> int Lwt.t = fun ch ->
             (function
               | Unix.Unix_error (Unix.EPIPE, _, _) ->
                 Lwt.return 0
-              | exn -> Lwt.reraise exn) [@ocaml.warning "-4"]
+              | exn -> Lwt.reraise exn)
         else
           perform ch.buffer ptr len
       in
@@ -1549,7 +1547,7 @@ let close_socket fd =
          (function
            (* Occurs if the peer closes the connection first. *)
            | Unix.Unix_error (Unix.ENOTCONN, _, _) -> Lwt.return_unit
-           | exn -> Lwt.reraise exn) [@ocaml.warning "-4"])
+           | exn -> Lwt.reraise exn))
     (fun () ->
        Lwt_unix.close fd)
 
@@ -1661,7 +1659,7 @@ let establish_server_generic
         Unix.unlink path
       | _ ->
         ()
-      end [@ocaml.warning "-4"];
+      end;
 
       Lwt.wakeup_later notify_listening_socket_closed ();
       Lwt.return_unit

@@ -16,9 +16,8 @@ external set : t -> int -> char -> unit = "%caml_ba_set_1"
 external unsafe_get : t -> int -> char = "%caml_ba_unsafe_ref_1"
 external unsafe_set : t -> int -> char -> unit = "%caml_ba_unsafe_set_1"
 
-[@@@ocaml.warning "-3"]
 external unsafe_fill : t -> int -> int -> char -> unit = "lwt_unix_fill_bytes" "noalloc"
-[@@@ocaml.warning "+3"]
+[@@ocaml.warning "-3"]
 
 let fill bytes ofs len ch =
   if ofs < 0 || len < 0 || ofs > length bytes - len then
@@ -179,9 +178,8 @@ let map_file ~fd ?pos ~shared ?(size=(-1)) () =
   Unix.map_file fd ?pos char c_layout shared [|size|]
   |> Bigarray.array1_of_genarray
 
-[@@@ocaml.warning "-3"]
 external mapped : t -> bool = "lwt_unix_mapped" "noalloc"
-[@@@ocaml.warning "+3"]
+[@@ocaml.warning "-3"]
 
 type advice =
   | MADV_NORMAL

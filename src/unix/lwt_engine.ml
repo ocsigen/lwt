@@ -8,9 +8,7 @@
    ("deprecated"), and create a local, non-deprecated alias for
    [Lwt_sequence] that can be referred to by the rest of the code in this
    module without triggering any more warnings. *)
-[@@@ocaml.warning "-3"]
 module Lwt_sequence = Lwt_sequence
-[@@@ocaml.warning "+3"]
 
 (* +-----------------------------------------------------------------+
    | Events                                                          |
@@ -227,7 +225,7 @@ module Sleep_queue =
     type t = sleeper
     let compare {time = t1; _} {time = t2; _} = compare t1 t2
   end)
-  [@@ocaml.warning "-3"]
+  [@ocaml.warning "-3"]
 
 module Fd_map = Map.Make(struct type t = Unix.file_descr let compare = compare end)
 

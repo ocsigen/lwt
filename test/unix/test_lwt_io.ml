@@ -8,9 +8,7 @@
    ("deprecated"), and create a local, non-deprecated alias for
    [Lwt_sequence] that can be referred to by the rest of the code in this
    module without triggering any more warnings. *)
-[@@@ocaml.warning "-3"]
 module Lwt_sequence = Lwt_sequence
-[@@@ocaml.warning "+3"]
 
 open Test
 open Lwt.Infix
@@ -320,7 +318,7 @@ let suite = suite "lwt_io" [
               exceptions_observed := !exceptions_observed + 1;
               Lwt.return_unit
             | exn ->
-              Lwt.reraise exn) [@ocaml.warning "-4"]
+              Lwt.reraise exn)
       in
 
       let fd_r, fd_w = Lwt_unix.pipe () in

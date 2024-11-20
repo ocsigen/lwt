@@ -349,9 +349,7 @@
    ("deprecated"), and create a local, non-deprecated alias for
    [Lwt_sequence] that can be referred to by the rest of the code in this
    module without triggering any more warnings. *)
-[@@@ocaml.warning "-3"]
 module Lwt_sequence = Lwt_sequence
-[@@@ocaml.warning "+3"]
 
 (* Some sequence-associated storage types
 
@@ -830,14 +828,14 @@ struct
     | Regular_callback_list_empty, _ -> l2
     | _, Regular_callback_list_empty -> l1
     | _, _ -> Regular_callback_list_concat (l1, l2)
-    end [@ocaml.warning "-4"]
+    end
 
   let concat_cancel_callbacks l1 l2 =
     begin match l1, l2 with
     | Cancel_callback_list_empty, _ -> l2
     | _, Cancel_callback_list_empty -> l1
     | _, _ -> Cancel_callback_list_concat (l1, l2)
-    end [@ocaml.warning "-4"]
+    end
 
   (* In a callback list, filters out cells of explicitly removable callbacks
      that have been removed. *)

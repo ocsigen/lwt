@@ -8,9 +8,7 @@
    ("deprecated"), and create a local, non-deprecated alias for
    [Lwt_sequence] that can be referred to by the rest of the code in this
    module without triggering any more warnings. *)
-[@@@ocaml.warning "-3"]
 module Lwt_sequence = Lwt_sequence
-[@@@ocaml.warning "+3"]
 
 open Test
 
@@ -2330,7 +2328,7 @@ let choose_tests = suite "choose" [
         | Lwt.Fail Exception -> repeat (n - 1)
         | Lwt.Return "bar" -> false
         | _ -> assert false
-        end [@ocaml.warning "-4"];
+        end
     in
     let count = 100 in
     Lwt.return (repeat count)
@@ -2439,7 +2437,7 @@ let nchoose_split_tests = suite "nchoose_split" [
     begin match Lwt.state p with
     | Lwt.Return (["foo"; "bar"], [_]) -> Lwt.return_true
     | _ -> Lwt.return_false
-    end [@ocaml.warning "-4"]
+    end
   end;
 
   test "fulfilled, rejected" begin fun () ->
@@ -2465,7 +2463,7 @@ let nchoose_split_tests = suite "nchoose_split" [
     begin match Lwt.state p with
     | Lwt.Return (["foo"], [_]) -> Lwt.return_true
     | _ -> Lwt.return_false
-    end [@ocaml.warning "-4"]
+    end
   end;
 
   test "pending, rejected 2" begin fun () ->
@@ -2482,7 +2480,7 @@ let nchoose_split_tests = suite "nchoose_split" [
     begin match Lwt.state p with
     | Lwt.Return ([(); ()], [_]) -> Lwt.return_true
     | _ -> Lwt.return_false
-    end [@ocaml.warning "-4"]
+    end
   end;
 
   test "diamond, rejected" begin fun () ->
@@ -3036,7 +3034,7 @@ let pick_tests = suite "pick" [
             && repeat (n - 1)
         | Lwt.Return "bar" -> false
         | _ -> assert false
-        end [@ocaml.warning "-4"];
+        end
     in
     let count = 100 in
     Lwt.return (repeat count)
