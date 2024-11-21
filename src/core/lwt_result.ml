@@ -104,6 +104,29 @@ let iter_error f r =
       | Error e -> f e
       | Ok _ -> Lwt.return_unit)
 
+let partition_filter_map f l =
+  let rec iter f l1 l2 l =
+    match l with
+    | [] -> (List.rev l1, List.rev l2)
+    | x :: tl -> (
+        match f x with
+        | `Left y -> iter f (y :: l1) l2 tl
+        | `Right y -> iter f l1 (y :: l2) tl
+        | `Drop -> iter f l1 l2 tl)
+  in
+  iter f [] [] l
+
+let split_result results =
+  partition_filter_map
+    (fun x -> match x with Ok o -> `Left o | Error e -> `Right e)
+    results
+
+let collect x =
+  x |> Lwt.all
+  |> Lwt.map (fun r ->
+          let oks, errors = split_result r in
+          match errors with [] -> Ok oks | _ -> Error errors)
+
 module Infix = struct
   let (>>=) = bind
   let (>|=) e f = map f e
