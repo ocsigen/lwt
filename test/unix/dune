@@ -23,8 +23,7 @@
  (package lwt)
  (libraries lwttester tester)
  (modules main)
- (deps bytes_io_data %{exe:dummy.exe})
-)
+ (deps bytes_io_data %{exe:dummy.exe}))
 
 (test
  (name ocaml_runtime_exc_1)

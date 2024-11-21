@@ -21,7 +21,8 @@
    "Shon Feder <shon.feder@gmail.com>")
  (depends
   (ocaml (>= 4.08))
-  (lwt (>= 5.3.0))))
+  (lwt (>= 5.3.0))
+  (bisect_ppx :with-test)))
 
 (package
  (name lwt_ppx)
@@ -30,6 +31,7 @@
   (ocaml (>= 4.08))
   (ppxlib (>= 0.16.0))
   (ppx_let :with-test)
+  (bisect_ppx :with-test)
   lwt))
 
 (package
@@ -39,7 +41,8 @@
   (ocaml (>= 4.08))
   (cppo (and :build (>= 1.1.0)))
   (lwt (>= 3.0.0))
-  (react (>= 1.0.0))))
+  (react (>= 1.0.0))
+  (bisect_ppx :with-test)))
 
 (package
  (name lwt)
@@ -58,6 +61,7 @@ synchronization primitives. Code can be run in parallel on an opt-in basis.
   (cppo (and :build (>= 1.1.0)))
   (ocamlfind (and :dev (>= 1.7.3-1)))
   (odoc (and :with-doc (>= 2.3.0)))
+  (bisect_ppx :with-test)
   dune-configurator
   ocplib-endian)
  (depopts base-threads base-unix conf-libev))

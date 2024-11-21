@@ -68,9 +68,7 @@ EXPECTED_FILES := \
 
 .PHONY: coverage
 coverage :
-	rm -rf _build/default/test/ppx_expect
-	find _build -name '*.coverage' | xargs rm -f
-	BISECT_ENABLE=yes dune runtest --force
+	dune runtest --instrument-with bisect_ppx --force
 	bisect-ppx-report html $(EXPECTED_FILES)
 	bisect-ppx-report summary
 	@echo See _coverage/index.html

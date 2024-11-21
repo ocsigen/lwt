@@ -5,9 +5,7 @@
 
 open Test
 
-[@@@ocaml.warning "-3"]
 module Lwt_sequence = Lwt_sequence
-[@@@ocaml.warning "+3"]
 
 let filled_sequence () =
   let s = Lwt_sequence.create () in

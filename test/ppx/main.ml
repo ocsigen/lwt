@@ -6,7 +6,9 @@ open Lwt
    local module inside the tester function, because that function is run inside
    an outer call to Lwt_main.run, and nested calls to Lwt_main.run are not
    allowed. *)
+[@@@ocaml.warning "-22"]
 let%lwt structure_let_result = Lwt.return_true
+[@@@ocaml.warning "+22"]
 
 let suite = suite "ppx" [
   test "let"
