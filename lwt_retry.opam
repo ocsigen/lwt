@@ -16,7 +16,6 @@ depends: [
   "bisect_ppx" {with-test}
   "odoc" {with-doc}
 ]
-dev-repo: "git+https://github.com/ocsigen/lwt.git"
 build: [
   ["dune" "subst"] {dev}
   [
@@ -31,4 +30,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-
+dev-repo: "git+https://github.com/ocsigen/lwt.git"
