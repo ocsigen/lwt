@@ -1,12 +1,10 @@
-(lang dune 2.7)
+(lang dune 3.17)
 
 (name lwt)
 
 (generate_opam_files true)
 
-(maintainers
- "Raphaël Proust <code@bnwr.net>"
- "Anton Bachin <antonbachin@yahoo.com>")
+(maintainers "Raphaël Proust <code@bnwr.net>" "Anton Bachin <antonbachin@yahoo.com>")
 (authors "Jérôme Vouillon" "Jérémie Dimino")
 (license MIT)
 (source (github ocsigen/lwt))
@@ -16,9 +14,7 @@
  (name lwt_retry)
  (synopsis "Utilities for retrying Lwt computations")
  (authors "Shon Feder")
- (maintainers
-   "Raphaël Proust <code@bnwr.net>"
-   "Shon Feder <shon.feder@gmail.com>")
+ (maintainers "Raphaël Proust <code@bnwr.net>" "Shon Feder <shon.feder@gmail.com>")
  (depends
   (ocaml (>= 4.08))
   (lwt (>= 5.3.0))
