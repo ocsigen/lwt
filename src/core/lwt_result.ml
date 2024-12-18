@@ -104,6 +104,14 @@ let iter_error f r =
       | Error e -> f e
       | Ok _ -> Lwt.return_unit)
 
+let collect x =
+  let rec aux oks errors = function
+    | [] -> if errors = [] then Ok (List.rev oks) else Error (List.rev errors)
+    | Ok o :: t -> aux (o :: oks) errors t
+    | Error e :: t -> aux oks (e :: errors) t
+  in
+  x |> Lwt.all |> Lwt.map (fun r -> aux [] [] r)
+
 module Infix = struct
   let (>>=) = bind
   let (>|=) e f = map f e
