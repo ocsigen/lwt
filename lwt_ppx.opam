@@ -6,6 +6,7 @@ maintainer: [
   "Raphaël Proust <code@bnwr.net>" "Anton Bachin <antonbachin@yahoo.com>"
 ]
 authors: ["Jérôme Vouillon" "Jérémie Dimino"]
+version: "5.8.1"
 license: "MIT"
 homepage: "https://github.com/ocsigen/lwt"
 doc: "https://ocsigen.org/lwt"
