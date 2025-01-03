@@ -16,6 +16,7 @@ maintainer: [
 ]
 authors: ["Jérôme Vouillon" "Jérémie Dimino"]
 license: "MIT"
+version: "5.8.1"
 homepage: "https://github.com/ocsigen/lwt"
 doc: "https://ocsigen.org/lwt"
 bug-reports: "https://github.com/ocsigen/lwt/issues"
