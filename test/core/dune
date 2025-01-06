@@ -3,4 +3,5 @@
  (package lwt)
  (libraries lwttester)
  (preprocess (future_syntax))
- (flags (:standard -w +A-40-42)))
+ (flags
+  (:standard -w +A-40-42)))
