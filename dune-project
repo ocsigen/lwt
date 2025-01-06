@@ -1,4 +1,4 @@
-(lang dune 1.12)
+(lang dune 2.7)
 
 (name lwt)
 
@@ -23,6 +23,7 @@
 
 (package
  (name lwt_ppx)
+ (version 5.8.1)
  (synopsis "PPX syntax for Lwt, providing something similar to async/await from JavaScript")
  (depends
   (ocaml (>= 4.08))
@@ -40,6 +41,7 @@
 
 (package
  (name lwt)
+ (version 5.8.1)
  (synopsis "Promises and event-driven I/O")
  (description "A promise is a value that may become determined in the future.
 

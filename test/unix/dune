@@ -18,10 +18,11 @@
  (modules dummy)
  (libraries unix))
 
-(executable
+(test
  (name main)
  (libraries lwttester tester)
- (modules main))
+ (modules main)
+ (deps %{exe:dummy.exe}))
 
 (executable
  (name ocaml_runtime_exc_1)
@@ -52,10 +53,3 @@
  (name ocaml_runtime_exc_6)
  (libraries lwt lwt.unix)
  (modules ocaml_runtime_exc_6))
-
-(alias
- (name runtest)
- (package lwt)
- (action (run %{exe:main.exe}))
- (deps bytes_io_data %{exe:dummy.exe})
-)
