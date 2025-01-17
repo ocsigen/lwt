@@ -30,8 +30,8 @@ jobs:
           - true
           - false
         include:
-          - os: ubuntu-latest
-            ocaml-compiler: ocaml-variants.5.3.0+options,ocaml-option-flambda,ocaml-option-musl,ocaml-option-static,ocaml-option-no-compression
+          - os: ubuntu-24.04-arm
+            ocaml-compiler: "5.3"
             libev: false
           - os: macos-latest
             ocaml-compiler: "5.3"
