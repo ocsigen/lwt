@@ -22,7 +22,7 @@
  (name main)
  (libraries lwttester tester)
  (modules main)
- (deps %{exe:dummy.exe}))
+ (deps bytes_io_data %{exe:dummy.exe}))
 
 (executable
  (name ocaml_runtime_exc_1)
