@@ -27,7 +27,7 @@
  (synopsis "PPX syntax for Lwt, providing something similar to async/await from JavaScript")
  (depends
   (ocaml (>= 4.08))
-  (ppxlib (>= 0.16.0))
+  (ppxlib (and (>= 0.16.0) (< 0.36)))
   lwt))
 
 (package
