@@ -32,7 +32,7 @@
   (ppxlib (>= 0.16.0))
   (ppx_let :with-test)
   (bisect_ppx :with-test)
-  lwt))
+  (lwt (>= 5.7.0))))
 
 (package
  (name lwt_react)
