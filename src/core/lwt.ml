@@ -1340,6 +1340,16 @@ include Resolution_loop
 
 module Resolving :
 sig
+
+  type deferring =
+    | Immediatelly
+    | Dont_care
+    | Later
+
+  val awaken_result : deferring:deferring -> 'a u -> ('a, exn) result -> unit
+  val awaken : deferring:deferring -> 'a u -> 'a -> unit
+  val awaken_exn : deferring:deferring -> 'a u -> exn -> unit
+
   val wakeup_later_result : 'a u -> ('a, exn) result -> unit
   val wakeup_later : 'a u -> 'a -> unit
   val wakeup_later_exn : _ u -> exn -> unit
@@ -1351,31 +1361,13 @@ sig
   val cancel : 'a t -> unit
 end =
 struct
-  (* Note that this function deviates from the "ideal" callback deferral
-     behavior: it runs callbacks directly on the current stack. It should
-     therefore be possible to cause a stack overflow using this function. *)
-  let wakeup_general api_function_name r result =
-    let Internal p = to_internal_resolver r in
-    let p = underlying p in
 
-    match p.state with
-    | Rejected Canceled ->
-      ()
-    | Fulfilled _ ->
-      Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
-    | Rejected _ ->
-      Printf.ksprintf invalid_arg "Lwt.%s" api_function_name
+  type deferring =
+    | Immediatelly
+    | Dont_care
+    | Later
 
-    | Pending _ ->
-      let result = state_of_result result in
-      let State_may_have_changed p = resolve ~allow_deferring:false p result in
-      ignore p
-
-  let wakeup_result r result = wakeup_general "wakeup_result" r result
-  let wakeup r v = wakeup_general "wakeup" r (Ok v)
-  let wakeup_exn r exn = wakeup_general "wakeup_exn" r (Error exn)
-
-  let wakeup_later_general api_function_name r result =
+  let awaken_general api_function_name deferring r result =
     let Internal p = to_internal_resolver r in
     let p = underlying p in
 
@@ -1390,17 +1382,30 @@ struct
     | Pending _ ->
       let result = state_of_result result in
       let State_may_have_changed p =
-        resolve ~maximum_callback_nesting_depth:1 p result in
+      match deferring with
+        | Immediatelly -> resolve ~allow_deferring:false p result
+        | Dont_care -> resolve ~maximum_callback_nesting_depth:1 p result
+        | Later -> resolve ~maximum_callback_nesting_depth:min_int p result
+      in
       ignore p
 
+  let awaken_result ~deferring r result =
+    awaken_general "awaken_result" deferring r result
+  let awaken ~deferring r v =
+    awaken_general "awaken" deferring r (Ok v)
+  let awaken_exn ~deferring r exn =
+    awaken_general "awaken_exn" deferring r (Error exn)
+
+  let wakeup_result r result = awaken_general "wakeup_result" Immediatelly r result
+  let wakeup r v = awaken_general "wakeup" Immediatelly r (Ok v)
+  let wakeup_exn r exn = awaken_general "wakeup_exn" Immediatelly r (Error exn)
+
   let wakeup_later_result r result =
-    wakeup_later_general "wakeup_later_result" r result
+    awaken_general "wakeup_later_result" Dont_care r result
   let wakeup_later r v =
-    wakeup_later_general "wakeup_later" r (Ok v)
+    awaken_general "wakeup_later" Dont_care r (Ok v)
   let wakeup_later_exn r exn =
-    wakeup_later_general "wakeup_later_exn" r (Error exn)
-
-
+    awaken_general "wakeup_later_exn" Dont_care r (Error exn)
 
   type packed_callbacks =
     | Packed : _ callbacks -> packed_callbacks

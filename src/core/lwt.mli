@@ -407,25 +407,20 @@ val wait : unit -> ('a t * 'a u)
 
 (** {3 Resolving} *)
 
+type deferring =
+  | Immediatelly
+  | Dont_care
+  | Later
+
+val awaken_result : deferring:deferring -> 'a u -> ('a, exn) result -> unit
+val awaken : deferring:deferring -> 'a u -> 'a -> unit
+val awaken_exn : deferring:deferring -> 'a u -> exn -> unit
+
 val wakeup_later : 'a u -> 'a -> unit
-(** [Lwt.wakeup_later r v] {e fulfills}, with value [v], the {e pending}
-    {{!t} promise} associated with {{!u} resolver} [r]. This triggers callbacks
-    attached to the promise.
-
-    If the promise is not pending, [Lwt.wakeup_later] raises
-    {!Stdlib.Invalid_argument}, unless the promise is {{!Lwt.cancel} canceled}.
-    If the promise is canceled, [Lwt.wakeup_later] has no effect.
-
-    If your program has multiple threads, it is important to make sure that
-    [Lwt.wakeup_later] (and any similar function) is only called from the main
-    thread. [Lwt.wakeup_later] can trigger callbacks attached to promises
-    by the program, and these assume they are running in the main thread. If you
-    need to communicate from a worker thread to the main thread running Lwt, see
-    {!Lwt_preemptive} or {!Lwt_unix.send_notification}. *)
+(** [@@ocaml.deprecated "Use awaken ~deferring:Dont_care instead"] *)
 
 val wakeup_later_exn : _ u -> exn -> unit
-(** [Lwt.wakeup_later_exn r exn] is like {!Lwt.wakeup_later}, except, if the
-    associated {{!t} promise} is {e pending}, it is {e rejected} with [exn]. *)
+(** [@@ocaml.deprecated "Use awaken_exn ~deferring:Dont_care instead"] *)
 
 val return : 'a -> 'a t
 (** [Lwt.return v] creates a new {{!t} promise} that is {e already fulfilled}
@@ -1620,15 +1615,7 @@ val of_result : ('a, exn) result -> 'a t
       rejected with [exn]. *)
 
 val wakeup_later_result : 'a u -> ('a, exn) result -> unit
-(** [Lwt.wakeup_later_result r result] resolves the pending promise [p]
-    associated to resolver [r], according to [result]:
-
-    - If [result] is [Ok v], [p] is fulfilled with [v].
-    - If [result] is [Error exn], [p] is rejected with [exn].
-
-    If [p] is not pending, [Lwt.wakeup_later_result] raises
-    [Stdlib.Invalid_argument _], except if [p] is {{!Lwt.cancel} canceled}. If
-    [p] is canceled, [Lwt.wakeup_later_result] has no effect. *)
+(** [@@ocaml.deprecated "Use awaken_result ~deferring:Dont_care instead"] *)
 
 
 
@@ -1762,30 +1749,13 @@ let () =
 (** {3 Immediate resolving} *)
 
 val wakeup : 'a u -> 'a -> unit
-(** [Lwt.wakeup r v] is like {!Lwt.wakeup_later}[ r v], except it guarantees
-    that callbacks associated with [r] will be called immediately, deeper on the
-    current stack.
-
-    In contrast, {!Lwt.wakeup_later} {e may} call callbacks immediately, or may
-    queue them for execution on a shallower stack – though still before the next
-    time Lwt blocks the process on I/O.
-
-    Using this function is discouraged, because calling it in a loop can exhaust
-    the stack. The loop might be difficult to detect or predict, due to combined
-    mutually-recursive calls between multiple modules and libraries.
-
-    Also, trying to use this function to guarantee the timing of callback calls
-    for synchronization purposes is discouraged. This synchronization effect is
-    obscure to readers. It is better to use explicit promises, or {!Lwt_mutex},
-    {!Lwt_condition}, and/or {!Lwt_mvar}. *)
+(** [@@ocaml.deprecated "Use awaken ~deferring:Immediatelly instead"] *)
 
 val wakeup_exn : _ u -> exn -> unit
-(** [Lwt.wakeup_exn r exn] is like {!Lwt.wakeup_later_exn}[ r exn], but has
-    the same problems as {!Lwt.wakeup}. *)
+(** [@@ocaml.deprecated "Use awaken_exn ~deferring:Immediatelly instead"] *)
 
 val wakeup_result : 'a u -> ('a, exn) result -> unit
-(** [Lwt.wakeup_result r result] is like {!Lwt.wakeup_later_result}[ r result],
-    but has the same problems as {!Lwt.wakeup}. *)
+(** [@@ocaml.deprecated "Use awaken_result ~deferring:Immediatelly instead"] *)
 
 
 
