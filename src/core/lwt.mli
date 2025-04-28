@@ -416,7 +416,7 @@ val wait : unit -> ('a t * 'a u)
 
     - [Later]: Resolves the promise later, after the current code reaches a
     pause or some I/O
-    - [Immediatelly]: Resolves the promise immediately, come back to the current
+    - [Immediately]: Resolves the promise immediately, come back to the current
     code afterwards
 
     If you have no preference between those two behaviours, [Dont_care] lets the
@@ -443,7 +443,7 @@ val wait : unit -> ('a t * 'a u)
         (* Using [Later] for [ordering] causes this branch to be taken *)
         print_endline "Current code was prioritised over resolved promise"
       else
-        (* Using [Immediatelly] for [ordering] causes this branch to be taken *)
+        (* Using [Immediately] for [ordering] causes this branch to be taken *)
         print_endline "Resolved promise code was prioritised over current");
       Lwt.return ()
     ;;
@@ -1814,13 +1814,13 @@ let () =
 (** {3 Immediate resolving} *)
 
 val wakeup : 'a u -> 'a -> unit
-(** [@@ocaml.deprecated "Use awaken ~order:Immediatelly instead"] *)
+(** [@@ocaml.deprecated "Use awaken ~order:Immediately instead"] *)
 
 val wakeup_exn : _ u -> exn -> unit
-(** [@@ocaml.deprecated "Use awaken_exn ~order:Immediatelly instead"] *)
+(** [@@ocaml.deprecated "Use awaken_exn ~order:Immediately instead"] *)
 
 val wakeup_result : 'a u -> ('a, exn) result -> unit
-(** [@@ocaml.deprecated "Use awaken_result ~order:Immediatelly instead"] *)
+(** [@@ocaml.deprecated "Use awaken_result ~order:Immediately instead"] *)
 
 
 
