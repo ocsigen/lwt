@@ -1341,14 +1341,14 @@ include Resolution_loop
 module Resolving :
 sig
 
-  type deferring =
-    | Immediatelly
-    | Dont_care
+  type ordering =
     | Later
+    | Dont_care
+    | Immediately
 
-  val awaken_result : deferring:deferring -> 'a u -> ('a, exn) result -> unit
-  val awaken : deferring:deferring -> 'a u -> 'a -> unit
-  val awaken_exn : deferring:deferring -> 'a u -> exn -> unit
+  val awaken_result : order:ordering -> 'a u -> ('a, exn) result -> unit
+  val awaken : order:ordering -> 'a u -> 'a -> unit
+  val awaken_exn : order:ordering -> 'a u -> exn -> unit
 
   val wakeup_later_result : 'a u -> ('a, exn) result -> unit
   val wakeup_later : 'a u -> 'a -> unit
@@ -1362,12 +1362,12 @@ sig
 end =
 struct
 
-  type deferring =
-    | Immediatelly
-    | Dont_care
+  type ordering =
     | Later
+    | Dont_care
+    | Immediately
 
-  let awaken_general api_function_name deferring r result =
+  let awaken_general api_function_name order r result =
     let Internal p = to_internal_resolver r in
     let p = underlying p in
 
@@ -1382,23 +1382,23 @@ struct
     | Pending _ ->
       let result = state_of_result result in
       let State_may_have_changed p =
-      match deferring with
-        | Immediatelly -> resolve ~allow_deferring:false p result
-        | Dont_care -> resolve ~maximum_callback_nesting_depth:1 p result
+      match order with
         | Later -> resolve ~maximum_callback_nesting_depth:min_int p result
+        | Dont_care -> resolve ~maximum_callback_nesting_depth:1 p result
+        | Immediately -> resolve ~allow_deferring:false p result
       in
       ignore p
 
-  let awaken_result ~deferring r result =
-    awaken_general "awaken_result" deferring r result
-  let awaken ~deferring r v =
-    awaken_general "awaken" deferring r (Ok v)
-  let awaken_exn ~deferring r exn =
-    awaken_general "awaken_exn" deferring r (Error exn)
+  let awaken_result ~order r result =
+    awaken_general "awaken_result" order r result
+  let awaken ~order r v =
+    awaken_general "awaken" order r (Ok v)
+  let awaken_exn ~order r exn =
+    awaken_general "awaken_exn" order r (Error exn)
 
-  let wakeup_result r result = awaken_general "wakeup_result" Immediatelly r result
-  let wakeup r v = awaken_general "wakeup" Immediatelly r (Ok v)
-  let wakeup_exn r exn = awaken_general "wakeup_exn" Immediatelly r (Error exn)
+  let wakeup_result r result = awaken_general "wakeup_result" Immediately r result
+  let wakeup r v = awaken_general "wakeup" Immediately r (Ok v)
+  let wakeup_exn r exn = awaken_general "wakeup_exn" Immediately r (Error exn)
 
   let wakeup_later_result r result =
     awaken_general "wakeup_later_result" Dont_care r result

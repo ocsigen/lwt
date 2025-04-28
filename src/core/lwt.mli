@@ -407,20 +407,85 @@ val wait : unit -> ('a t * 'a u)
 
 (** {3 Resolving} *)
 
-type deferring =
-  | Immediatelly
-  | Dont_care
-  | Later
+(** [ordering] indicates a scheduling strategy for fullfilling or rejection of
+    promnises associated to resolvers.
 
-val awaken_result : deferring:deferring -> 'a u -> ('a, exn) result -> unit
-val awaken : deferring:deferring -> 'a u -> 'a -> unit
-val awaken_exn : deferring:deferring -> 'a u -> exn -> unit
+    Specifically, when a promise is resolved via a call to {!awaken} (or
+    {!awaken_exn} or {!awaken_result}), the execution can be ordered in two
+    distinct ways:
+
+    - [Later]: Resolves the promise later, after the current code reaches a
+    pause or some I/O
+    - [Immediatelly]: Resolves the promise immediately, come back to the current
+    code afterwards
+
+    If you have no preference between those two behaviours, [Dont_care] lets the
+    scheduler pick depending on internal state.
+
+    To understand the difference, consider the following setup
+{[
+    let has_happened = ref false ;;
+    let blocker, resolver = wait () ;;
+    let task1 =
+      let* () = blocker in
+      has_happened := true; (* side-effect happens here *)
+      Lwt.return ()
+    ;;
+]}
+
+    Then, if a separate task resolves [blocker] by way of [resolver], two
+    different ordering can happen as examplified by:
+
+{[
+    let task2 =
+      awaken ~order resolver;
+      (if !has_happened then
+        (* Using [Later] for [ordering] causes this branch to be taken *)
+        print_endline "Current code was prioritised over resolved promise"
+      else
+        (* Using [Immediatelly] for [ordering] causes this branch to be taken *)
+        print_endline "Resolved promise code was prioritised over current");
+      Lwt.return ()
+    ;;
+]}
+
+    *)
+type ordering =
+  | Later (** Prioritise code at current location; queue awakening to come back to it later. *)
+  | Dont_care
+  | Immediately (** Prioritise resolving the promise; come back to current code location later. *)
+
+val awaken : order:ordering -> 'a u -> 'a -> unit
+(** [awaken ~order r v] fullfills the pending promise associated to the
+    resolver [r] with value [v].
+
+    The scheduling of the fullfillment happens according to the [order]
+    parameter. See {!type-ordering}.
+
+    If the promise is not pending, [Lwt.awaken] raises
+    {!Stdlib.Invalid_argument}, unless the promise is {{!Lwt.cancel} canceled}.
+    If the promise is canceled, [Lwt.awaken] has no effect.
+
+    If your program has multiple threads, it is important to make sure that
+    [Lwt.wakeup_later] (and any similar function) is only called from the main
+    thread. [Lwt.wakeup_later] can trigger callbacks attached to promises
+    by the program, and these assume they are running in the main thread. If you
+    need to communicate from a worker thread to the main thread running Lwt, see
+    {!Lwt_preemptive} or {!Lwt_unix.send_notification}. *)
+
+val awaken_exn : order:ordering -> 'a u -> exn -> unit
+(** [awaken_exn] is similar to [awaken] but the promise associated to the
+    resolver is rejected (rather than fullfilled). *)
+
+val awaken_result : order:ordering -> 'a u -> ('a, exn) result -> unit
+(** [awaken_result] is similar to either [awaken] or [awaken_exn] depending on
+    if the value is [Ok _] or [Error _]. *)
 
 val wakeup_later : 'a u -> 'a -> unit
-(** [@@ocaml.deprecated "Use awaken ~deferring:Dont_care instead"] *)
+(** [@@ocaml.deprecated "Use awaken ~awakening:Dont_care instead"] *)
 
 val wakeup_later_exn : _ u -> exn -> unit
-(** [@@ocaml.deprecated "Use awaken_exn ~deferring:Dont_care instead"] *)
+(** [@@ocaml.deprecated "Use awaken_exn ~awakening:Dont_care instead"] *)
 
 val return : 'a -> 'a t
 (** [Lwt.return v] creates a new {{!t} promise} that is {e already fulfilled}
@@ -1615,7 +1680,7 @@ val of_result : ('a, exn) result -> 'a t
       rejected with [exn]. *)
 
 val wakeup_later_result : 'a u -> ('a, exn) result -> unit
-(** [@@ocaml.deprecated "Use awaken_result ~deferring:Dont_care instead"] *)
+(** [@@ocaml.deprecated "Use awaken_result ~order:Dont_care instead"] *)
 
 
 
@@ -1749,13 +1814,13 @@ let () =
 (** {3 Immediate resolving} *)
 
 val wakeup : 'a u -> 'a -> unit
-(** [@@ocaml.deprecated "Use awaken ~deferring:Immediatelly instead"] *)
+(** [@@ocaml.deprecated "Use awaken ~order:Immediatelly instead"] *)
 
 val wakeup_exn : _ u -> exn -> unit
-(** [@@ocaml.deprecated "Use awaken_exn ~deferring:Immediatelly instead"] *)
+(** [@@ocaml.deprecated "Use awaken_exn ~order:Immediatelly instead"] *)
 
 val wakeup_result : 'a u -> ('a, exn) result -> unit
-(** [@@ocaml.deprecated "Use awaken_result ~deferring:Immediatelly instead"] *)
+(** [@@ocaml.deprecated "Use awaken_result ~order:Immediatelly instead"] *)
 
 
 
