@@ -157,7 +157,7 @@ let suite = suite "lwt_stream" [
        let acc = acc && state (push#push 5) = Fail Lwt_stream.Full in
        let acc = acc && state (push#push 6) = Fail Lwt_stream.Full in
        let acc = acc && state (Lwt_stream.get stream) = Return (Some 1) in
-       (* Lwt_stream uses wakeup_later so we have to wait a bit. *)
+       (* Lwt_stream uses Dont_care so we have to wait a bit. *)
        Lwt.pause () >>= fun () ->
        let acc = acc && state t = Return () in
        let acc = acc && state (Lwt_stream.get stream) = Return (Some 2) in

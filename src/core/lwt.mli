@@ -414,9 +414,9 @@ val wait : unit -> ('a t * 'a u)
     {!awaken_exn} or {!awaken_result}), the execution can be ordered in two
     distinct ways:
 
-    - [Later]: Resolves the promise later, after the current code reaches a
-    pause or some I/O
-    - [Immediately]: Resolves the promise immediately, come back to the current
+    - [Deferred]: Resolves the promise later, after the current code reaches a
+    pause or some I/O. This is often the behaviour you want. It makes the 
+    - [Nested]: Resolves the promise immediately, come back to the current
     code afterwards
 
     If you have no preference between those two behaviours, [Dont_care] lets the
@@ -443,7 +443,7 @@ val wait : unit -> ('a t * 'a u)
         (* Using [Later] for [ordering] causes this branch to be taken *)
         print_endline "Current code was prioritised over resolved promise"
       else
-        (* Using [Immediately] for [ordering] causes this branch to be taken *)
+        (* Using [Nested] for [ordering] causes this branch to be taken *)
         print_endline "Resolved promise code was prioritised over current");
       Lwt.return ()
     ;;
@@ -451,9 +451,9 @@ val wait : unit -> ('a t * 'a u)
 
     *)
 type ordering =
-  | Later (** Prioritise code at current location; queue awakening to come back to it later. *)
+  | Deferred (** Prioritise code at current location; queue awakening to come back to it later. *)
   | Dont_care
-  | Immediately (** Prioritise resolving the promise; come back to current code location later. *)
+  | Nested (** Prioritise resolving the promise; come back to current code location later. *)
 
 val awaken : order:ordering -> 'a u -> 'a -> unit
 (** [awaken ~order r v] fullfills the pending promise associated to the
@@ -482,10 +482,10 @@ val awaken_result : order:ordering -> 'a u -> ('a, exn) result -> unit
     if the value is [Ok _] or [Error _]. *)
 
 val wakeup_later : 'a u -> 'a -> unit
-(** [@@ocaml.deprecated "Use awaken ~awakening:Dont_care instead"] *)
+(** [@@ocaml.deprecated "Use awaken ~order:Dont_care instead"] *)
 
 val wakeup_later_exn : _ u -> exn -> unit
-(** [@@ocaml.deprecated "Use awaken_exn ~awakening:Dont_care instead"] *)
+(** [@@ocaml.deprecated "Use awaken_exn ~order:Dont_care instead"] *)
 
 val return : 'a -> 'a t
 (** [Lwt.return v] creates a new {{!t} promise} that is {e already fulfilled}
@@ -1814,13 +1814,13 @@ let () =
 (** {3 Immediate resolving} *)
 
 val wakeup : 'a u -> 'a -> unit
-(** [@@ocaml.deprecated "Use awaken ~order:Immediately instead"] *)
+(** [@@ocaml.deprecated "Use awaken ~order:Nested instead"] *)
 
 val wakeup_exn : _ u -> exn -> unit
-(** [@@ocaml.deprecated "Use awaken_exn ~order:Immediately instead"] *)
+(** [@@ocaml.deprecated "Use awaken_exn ~order:Nested instead"] *)
 
 val wakeup_result : 'a u -> ('a, exn) result -> unit
-(** [@@ocaml.deprecated "Use awaken_result ~order:Immediately instead"] *)
+(** [@@ocaml.deprecated "Use awaken_result ~order:Nested instead"] *)
 
 
 

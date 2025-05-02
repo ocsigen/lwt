@@ -62,7 +62,7 @@ let release p c =
   match Lwt_sequence.take_opt_l p.waiters with
   | Some wakener ->
     (* A promise resolver is waiting, give it the pool member. *)
-    Lwt.wakeup_later wakener c
+    Lwt.awaken ~order:Dont_care wakener c
   | None ->
     (* No one is waiting, queue it. *)
     Queue.push c p.list
@@ -84,10 +84,10 @@ let replace_disposed p =
     Lwt.on_any
       (Lwt.apply p.create ())
       (fun c ->
-         Lwt.wakeup_later wakener c)
+         Lwt.awaken ~order:Dont_care wakener c)
       (fun exn ->
          (* Creation failed, notify the waiter of the failure. *)
-         Lwt.wakeup_later_exn wakener exn)
+         Lwt.awaken_exn ~order:Dont_care wakener exn)
 
 (* Verify a member is still valid before using it. *)
 let validate_and_return p c =

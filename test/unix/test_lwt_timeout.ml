@@ -18,7 +18,7 @@ let suite = suite "Lwt_timeout" [
     let timeout =
       Lwt_timeout.create 1 (fun () ->
         let delta = Unix.gettimeofday () -. start_time in
-        Lwt.wakeup_later r delta)
+        Lwt.awaken ~order:Dont_care r delta)
     in
     Lwt_timeout.start timeout;
 
@@ -33,12 +33,12 @@ let suite = suite "Lwt_timeout" [
     let p, r = Lwt.wait () in
 
     Lwt_timeout.create 1 (fun () ->
-      Lwt.wakeup_later r false)
+      Lwt.awaken ~order:Dont_care r false)
     |> ignore;
 
     Lwt.async (fun () ->
       Lwt_unix.sleep 3. >|= fun () ->
-      Lwt.wakeup_later r true);
+      Lwt.awaken ~order:Dont_care r true);
 
     p
   end;
@@ -71,7 +71,7 @@ let suite = suite "Lwt_timeout" [
         if !completions < 2 then
           Lwt_timeout.start !timeout
         else
-          Lwt.wakeup_later r true);
+          Lwt.awaken ~order:Dont_care r true);
     Lwt_timeout.start !timeout;
 
     p
@@ -82,14 +82,14 @@ let suite = suite "Lwt_timeout" [
 
     let timeout =
       Lwt_timeout.create 1 (fun () ->
-        Lwt.wakeup_later r false)
+        Lwt.awaken ~order:Dont_care r false)
     in
     Lwt_timeout.start timeout;
     Lwt_timeout.stop timeout;
 
     Lwt.async (fun () ->
       Lwt_unix.sleep 3. >|= fun () ->
-      Lwt.wakeup_later r true);
+      Lwt.awaken ~order:Dont_care r true);
 
     p
   end;
@@ -117,7 +117,7 @@ let suite = suite "Lwt_timeout" [
     let timeout =
       Lwt_timeout.create 5 (fun () ->
         let delta = Unix.gettimeofday () -. start_time in
-        Lwt.wakeup_later r delta)
+        Lwt.awaken ~order:Dont_care r delta)
     in
     Lwt_timeout.change timeout 1;
     Lwt_timeout.start timeout;
@@ -132,13 +132,13 @@ let suite = suite "Lwt_timeout" [
 
     let timeout =
       Lwt_timeout.create 1 (fun () ->
-        Lwt.wakeup_later r false)
+        Lwt.awaken ~order:Dont_care r false)
     in
     Lwt_timeout.change timeout 1;
 
     Lwt.async (fun () ->
       Lwt_unix.sleep 3. >|= fun () ->
-      Lwt.wakeup_later r true);
+      Lwt.awaken ~order:Dont_care r true);
 
     p
   end;
@@ -151,7 +151,7 @@ let suite = suite "Lwt_timeout" [
     let timeout =
       Lwt_timeout.create 5 (fun () ->
         let delta = Unix.gettimeofday () -. start_time in
-        Lwt.wakeup_later r delta)
+        Lwt.awaken ~order:Dont_care r delta)
     in
     Lwt_timeout.start timeout;
     Lwt_timeout.change timeout 1;
@@ -176,7 +176,7 @@ let suite = suite "Lwt_timeout" [
     Test.with_async_exception_hook
       (fun exn ->
         match exn with
-        | Exit -> Lwt.wakeup_later r true
+        | Exit -> Lwt.awaken ~order:Dont_care r true
         | _ -> raise exn)
       (fun () ->
         Lwt_timeout.create 1 (fun () -> raise Exit)
@@ -190,7 +190,7 @@ let suite = suite "Lwt_timeout" [
 
     Lwt_timeout.set_exn_handler (fun exn ->
       match exn with
-      | Exit -> Lwt.wakeup_later r true
+      | Exit -> Lwt.awaken ~order:Dont_care r true
       | _ -> raise exn);
 
     Lwt_timeout.create 1 (fun () -> raise Exit)
@@ -210,12 +210,12 @@ let suite = suite "Lwt_timeout" [
 
     Lwt_timeout.create 1 (fun () ->
       let delta = Unix.gettimeofday () -. start_time in
-      Lwt.wakeup r1 delta)
+      Lwt.awaken ~order:Nested r1 delta)
     |> Lwt_timeout.start;
 
     Lwt_timeout.create 2 (fun () ->
       let delta = Unix.gettimeofday () -. start_time in
-      Lwt.wakeup r2 delta)
+      Lwt.awaken ~order:Nested r2 delta)
     |> Lwt_timeout.start;
 
     p1 >>= fun delta1 ->
@@ -232,12 +232,12 @@ let suite = suite "Lwt_timeout" [
 
     Lwt_timeout.create 1 (fun () ->
       let delta = Unix.gettimeofday () -. start_time in
-      Lwt.wakeup r1 delta)
+      Lwt.awaken ~order:Nested r1 delta)
     |> Lwt_timeout.start;
 
     Lwt_timeout.create 1 (fun () ->
       let delta = Unix.gettimeofday () -. start_time in
-      Lwt.wakeup r2 delta)
+      Lwt.awaken ~order:Nested r2 delta)
     |> Lwt_timeout.start;
 
     p1 >>= fun delta1 ->
@@ -254,19 +254,19 @@ let suite = suite "Lwt_timeout" [
 
     let timeout1 =
       Lwt_timeout.create 1 (fun () ->
-        Lwt.wakeup r1 false)
+        Lwt.awaken ~order:Nested r1 false)
     in
     Lwt_timeout.start timeout1;
 
     Lwt_timeout.create 2 (fun () ->
       let delta = Unix.gettimeofday () -. start_time in
-      Lwt.wakeup r2 delta)
+      Lwt.awaken ~order:Nested r2 delta)
     |> Lwt_timeout.start;
 
     Lwt_timeout.stop timeout1;
     Lwt.async (fun () ->
       Lwt_unix.sleep 3. >|= fun () ->
-      Lwt.wakeup r1 true);
+      Lwt.awaken ~order:Nested r1 true);
 
     p1 >>= fun timeout1_not_fired ->
     p2 >|= fun delta2 ->

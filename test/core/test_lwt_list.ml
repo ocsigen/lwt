@@ -29,7 +29,7 @@ let test_iter f test_list =
     in
     t' <=> Sleep;
     List.iter2 (fun v r -> assert (v = !r)) test_list l;
-    Lwt.wakeup w ();
+    Lwt.awaken ~order:Nested w ();
     List.iter2 (fun v r -> assert (v = !r)) [1; 1; 1] l;
     t' <=> Lwt.Return ()
   in
@@ -90,7 +90,7 @@ let test_map f test_list =
     t3 <=> Lwt.Sleep;
     Lwt.cancel t';
     t3 <=> Lwt.Fail Lwt.Canceled;
-    Lwt.wakeup w ();
+    Lwt.awaken ~order:Nested w ();
     t2 <=> Lwt.Return test_list;
   in
   ()
@@ -98,7 +98,7 @@ let test_map f test_list =
 let test_parallelism map =
   let t, w = Lwt.wait () in
   let g _ =
-    Lwt.wakeup_later w ();
+    Lwt.awaken ~order:Dont_care w ();
     Lwt.return_unit in
   let f x =
     if x = 0 then t >>= (fun _ -> Lwt.return_unit)

@@ -1342,9 +1342,9 @@ module Resolving :
 sig
 
   type ordering =
-    | Later
+    | Deferred
     | Dont_care
-    | Immediately
+    | Nested
 
   val awaken_result : order:ordering -> 'a u -> ('a, exn) result -> unit
   val awaken : order:ordering -> 'a u -> 'a -> unit
@@ -1363,9 +1363,9 @@ end =
 struct
 
   type ordering =
-    | Later
+    | Deferred
     | Dont_care
-    | Immediately
+    | Nested
 
   let awaken_general api_function_name order r result =
     let Internal p = to_internal_resolver r in
@@ -1383,9 +1383,9 @@ struct
       let result = state_of_result result in
       let State_may_have_changed p =
       match order with
-        | Later -> resolve ~maximum_callback_nesting_depth:min_int p result
+        | Deferred -> resolve ~maximum_callback_nesting_depth:min_int p result
         | Dont_care -> resolve ~maximum_callback_nesting_depth:1 p result
-        | Immediately -> resolve ~allow_deferring:false p result
+        | Nested -> resolve ~allow_deferring:false p result
       in
       ignore p
 
@@ -1396,9 +1396,9 @@ struct
   let awaken_exn ~order r exn =
     awaken_general "awaken_exn" order r (Error exn)
 
-  let wakeup_result r result = awaken_general "wakeup_result" Immediately r result
-  let wakeup r v = awaken_general "wakeup" Immediately r (Ok v)
-  let wakeup_exn r exn = awaken_general "wakeup_exn" Immediately r (Error exn)
+  let wakeup_result r result = awaken_general "wakeup_result" Nested r result
+  let wakeup r v = awaken_general "wakeup" Nested r (Ok v)
+  let wakeup_exn r exn = awaken_general "wakeup_exn" Nested r (Error exn)
 
   let wakeup_later_result r result =
     awaken_general "wakeup_later_result" Dont_care r result

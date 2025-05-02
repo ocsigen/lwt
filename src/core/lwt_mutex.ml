@@ -29,9 +29,9 @@ let unlock m =
     if Lwt_sequence.is_empty m.waiters then
       m.locked <- false
     else
-      (* We do not use [Lwt.wakeup] here to avoid a stack overflow
+      (* We do not use [~order:Dont_care] here to avoid a stack overflow
          when unlocking a lot of threads. *)
-      Lwt.wakeup_later (Lwt_sequence.take_l m.waiters) ()
+      Lwt.awaken ~order:Dont_care (Lwt_sequence.take_l m.waiters) ()
   end
 
 let with_lock m f =

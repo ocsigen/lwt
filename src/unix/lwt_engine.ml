@@ -211,7 +211,7 @@ class libev_deprecated = libev ()
 (* Type of a sleeper for the select engine. *)
 type sleeper = {
   mutable time : float;
-  (* The time at which the sleeper should be wakeup. *)
+  (* The time at which the sleeper should be awoken. *)
 
   mutable stopped : bool;
   (* [true] iff the event has been stopped. *)
@@ -275,7 +275,7 @@ class virtual select_or_poll_based = object
   (* Sleepers added since the last iteration of the main loop:
 
      They are not added immediately to the main sleep queue in order
-     to prevent them from being wakeup immediately.  *)
+     to prevent them from being awoken immediately.  *)
 
   val mutable wait_readable = Fd_map.empty
   (* Sequences of actions waiting for file descriptors to become
