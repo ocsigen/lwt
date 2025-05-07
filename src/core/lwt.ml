@@ -143,7 +143,7 @@
 
      - Sequential composition
 
-       For example, [Lwt.bind]. These promises only are only resolved when the
+       For example, [Lwt.bind]. These promises are only resolved when the
        preceding sequence of promises resolves. The user cannot resolve these
        promises directly (but see the section on cancellation below).
 
