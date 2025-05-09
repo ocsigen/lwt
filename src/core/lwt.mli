@@ -407,14 +407,64 @@ val wait : unit -> ('a t * 'a u)
 
 (** {3 Resolving} *)
 
-val wakeup_later : 'a u -> 'a -> unit
-(** [Lwt.wakeup_later r v] {e fulfills}, with value [v], the {e pending}
-    {{!t} promise} associated with {{!u} resolver} [r]. This triggers callbacks
-    attached to the promise.
+(** [ordering] indicates a scheduling strategy for fullfilling or rejection of
+    promnises associated to resolvers.
 
-    If the promise is not pending, [Lwt.wakeup_later] raises
+    Specifically, when a promise is resolved via a call to {!awaken} (or
+    {!awaken_exn} or {!awaken_result}), the execution can be ordered in two
+    distinct ways:
+
+    - [Deferred]: Resolves the promise later, after the current code reaches a
+    pause or some I/O. This is often the behaviour you want. It makes the 
+    - [Nested]: Resolves the promise immediately, come back to the current
+    code afterwards
+
+    If you have no preference between those two behaviours, [Dont_care] lets the
+    scheduler pick depending on internal state.
+
+    To understand the difference, consider the following setup
+{[
+    let has_happened = ref false ;;
+    let blocker, resolver = wait () ;;
+    let task1 =
+      let* () = blocker in
+      has_happened := true; (* side-effect happens here *)
+      Lwt.return ()
+    ;;
+]}
+
+    Then, if a separate task resolves [blocker] by way of [resolver], two
+    different ordering can happen as examplified by:
+
+{[
+    let task2 =
+      awaken ~order resolver;
+      (if !has_happened then
+        (* Using [Later] for [ordering] causes this branch to be taken *)
+        print_endline "Current code was prioritised over resolved promise"
+      else
+        (* Using [Nested] for [ordering] causes this branch to be taken *)
+        print_endline "Resolved promise code was prioritised over current");
+      Lwt.return ()
+    ;;
+]}
+
+    *)
+type ordering =
+  | Deferred (** Prioritise code at current location; queue awakening to come back to it later. *)
+  | Dont_care
+  | Nested (** Prioritise resolving the promise; come back to current code location later. *)
+
+val awaken : order:ordering -> 'a u -> 'a -> unit
+(** [awaken ~order r v] fullfills the pending promise associated to the
+    resolver [r] with value [v].
+
+    The scheduling of the fullfillment happens according to the [order]
+    parameter. See {!type-ordering}.
+
+    If the promise is not pending, [Lwt.awaken] raises
     {!Stdlib.Invalid_argument}, unless the promise is {{!Lwt.cancel} canceled}.
-    If the promise is canceled, [Lwt.wakeup_later] has no effect.
+    If the promise is canceled, [Lwt.awaken] has no effect.
 
     If your program has multiple threads, it is important to make sure that
     [Lwt.wakeup_later] (and any similar function) is only called from the main
@@ -423,9 +473,19 @@ val wakeup_later : 'a u -> 'a -> unit
     need to communicate from a worker thread to the main thread running Lwt, see
     {!Lwt_preemptive} or {!Lwt_unix.send_notification}. *)
 
+val awaken_exn : order:ordering -> 'a u -> exn -> unit
+(** [awaken_exn] is similar to [awaken] but the promise associated to the
+    resolver is rejected (rather than fullfilled). *)
+
+val awaken_result : order:ordering -> 'a u -> ('a, exn) result -> unit
+(** [awaken_result] is similar to either [awaken] or [awaken_exn] depending on
+    if the value is [Ok _] or [Error _]. *)
+
+val wakeup_later : 'a u -> 'a -> unit
+(** [@@ocaml.deprecated "Use awaken ~order:Dont_care instead"] *)
+
 val wakeup_later_exn : _ u -> exn -> unit
-(** [Lwt.wakeup_later_exn r exn] is like {!Lwt.wakeup_later}, except, if the
-    associated {{!t} promise} is {e pending}, it is {e rejected} with [exn]. *)
+(** [@@ocaml.deprecated "Use awaken_exn ~order:Dont_care instead"] *)
 
 val return : 'a -> 'a t
 (** [Lwt.return v] creates a new {{!t} promise} that is {e already fulfilled}
@@ -1620,15 +1680,7 @@ val of_result : ('a, exn) result -> 'a t
       rejected with [exn]. *)
 
 val wakeup_later_result : 'a u -> ('a, exn) result -> unit
-(** [Lwt.wakeup_later_result r result] resolves the pending promise [p]
-    associated to resolver [r], according to [result]:
-
-    - If [result] is [Ok v], [p] is fulfilled with [v].
-    - If [result] is [Error exn], [p] is rejected with [exn].
-
-    If [p] is not pending, [Lwt.wakeup_later_result] raises
-    [Stdlib.Invalid_argument _], except if [p] is {{!Lwt.cancel} canceled}. If
-    [p] is canceled, [Lwt.wakeup_later_result] has no effect. *)
+(** [@@ocaml.deprecated "Use awaken_result ~order:Dont_care instead"] *)
 
 
 
@@ -1762,30 +1814,13 @@ let () =
 (** {3 Immediate resolving} *)
 
 val wakeup : 'a u -> 'a -> unit
-(** [Lwt.wakeup r v] is like {!Lwt.wakeup_later}[ r v], except it guarantees
-    that callbacks associated with [r] will be called immediately, deeper on the
-    current stack.
-
-    In contrast, {!Lwt.wakeup_later} {e may} call callbacks immediately, or may
-    queue them for execution on a shallower stack – though still before the next
-    time Lwt blocks the process on I/O.
-
-    Using this function is discouraged, because calling it in a loop can exhaust
-    the stack. The loop might be difficult to detect or predict, due to combined
-    mutually-recursive calls between multiple modules and libraries.
-
-    Also, trying to use this function to guarantee the timing of callback calls
-    for synchronization purposes is discouraged. This synchronization effect is
-    obscure to readers. It is better to use explicit promises, or {!Lwt_mutex},
-    {!Lwt_condition}, and/or {!Lwt_mvar}. *)
+(** [@@ocaml.deprecated "Use awaken ~order:Nested instead"] *)
 
 val wakeup_exn : _ u -> exn -> unit
-(** [Lwt.wakeup_exn r exn] is like {!Lwt.wakeup_later_exn}[ r exn], but has
-    the same problems as {!Lwt.wakeup}. *)
+(** [@@ocaml.deprecated "Use awaken_exn ~order:Nested instead"] *)
 
 val wakeup_result : 'a u -> ('a, exn) result -> unit
-(** [Lwt.wakeup_result r result] is like {!Lwt.wakeup_later_result}[ r result],
-    but has the same problems as {!Lwt.wakeup}. *)
+(** [@@ocaml.deprecated "Use awaken_result ~order:Nested instead"] *)
 
 
 
