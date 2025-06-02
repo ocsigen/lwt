@@ -1341,14 +1341,17 @@ include Resolution_loop
 module Resolving :
 sig
 
-  type ordering =
-    | Deferred
-    | Dont_care
-    | Nested
+  val awaken_result : 'a u -> ('a, exn) result -> unit
+  val awaken : 'a u -> 'a -> unit
+  val awaken_exn : 'a u -> exn -> unit
 
-  val awaken_result : order:ordering -> 'a u -> ('a, exn) result -> unit
-  val awaken : order:ordering -> 'a u -> 'a -> unit
-  val awaken_exn : order:ordering -> 'a u -> exn -> unit
+  type _ scheduling =
+    | Self_scheduler_target : unit scheduling (* default, just use plain awaken *)
+    | Self_target : unit scheduling
+    | Target_scheduler_self : unit Lwt.t scheduling
+    | Target_self : unit Lwt.t scheduling
+
+  val explicit_awaken : 'unit scheduling -> 'a u -> ('a, exn) result -> 'unit
 
   val wakeup_later_result : 'a u -> ('a, exn) result -> unit
   val wakeup_later : 'a u -> 'a -> unit
@@ -1361,6 +1364,15 @@ sig
   val cancel : 'a t -> unit
 end =
 struct
+
+  type scheduling =
+    | Self_scheduler_target (* default, just use plain awaken *)
+    | Self_target
+    | Target_scheduler_self
+    | Target_self
+
+  val explicit_awaken : scheduling -> 'a u -> ('a, exn) result -> unit
+
 
   type ordering =
     | Deferred
@@ -1395,6 +1407,10 @@ struct
     awaken_general "awaken" order r (Ok v)
   let awaken_exn ~order r exn =
     awaken_general "awaken_exn" order r (Error exn)
+
+  val awaken_result u r = explicit_awaken Self_scheduler_target u r
+  val awaken u r = explicit_awaken Self_scheduler_target u (Ok r)
+  val awaken_exn u r = explicit_awaken Self_scheduler_target u (Error r)
 
   let wakeup_result r result = awaken_general "wakeup_result" Nested r result
   let wakeup r v = awaken_general "wakeup" Nested r (Ok v)

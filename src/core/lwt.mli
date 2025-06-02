@@ -407,6 +407,21 @@ val wait : unit -> ('a t * 'a u)
 
 (** {3 Resolving} *)
 
+(** [awaken_result wakener res] does nothing immediately.
+
+    The next time the
+    scheduler runs, the promise associated with the [wakener] is resolved with
+    the provided [res]. If [res] is [Ok v] then it is successfully resolved with
+    [v]. If [res] is [Error exc] then it is rejected with [exc]. *)
+val awaken_result : 'a u -> ('a, exn) result -> unit
+
+(** [awaken w v] is [awaken_result w (Ok v)] *)
+val awaken : 'a u -> 'a -> unit
+
+(** [awaken_exn w e] is [awaken_result w (Error e)] *)
+val awaken_exn : 'a u -> exn -> unit
+
+
 (** [ordering] indicates a scheduling strategy for fullfilling or rejection of
     promnises associated to resolvers.
 
