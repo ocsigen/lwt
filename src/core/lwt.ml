@@ -365,6 +365,35 @@ module Storage_map =
 type storage = (unit -> unit) Storage_map.t
 
 
+let callback_exchange = Domain_map.create_protected_map ()
+let notification_map = Domain_map.create_protected_map ()
+let send_callback d cb =
+    Domain_map.update
+      callback_exchange
+      d
+        (function
+          | None ->
+              let cbs = Lwt_sequence.create () in
+              let _ : (unit -> unit) Lwt_sequence.node = Lwt_sequence.add_l cb cbs in
+              Some cbs
+          | Some cbs ->
+              let _ : (unit -> unit) Lwt_sequence.node = Lwt_sequence.add_l cb cbs in
+              Some cbs);
+    begin match Domain_map.find notification_map d with
+      | None ->
+          failwith "ERROR: domain didn't register at startup"
+      | Some n ->
+          n ()
+    end
+let get_sent_callbacks domain_id =
+    match Domain_map.extract callback_exchange domain_id with
+    | None -> Lwt_sequence.create ()
+    | Some cbs -> cbs
+
+let register_notification d n =
+    Domain_map.update notification_map d (function
+    | None -> Some n
+    | Some _ -> failwith "already registered!!")
 
 module Main_internal_types =
 struct
@@ -452,9 +481,9 @@ struct
     | Regular_callback_list_concat of
       'a regular_callback_list * 'a regular_callback_list
     | Regular_callback_list_implicitly_removed_callback of
-      'a regular_callback
+      Domain.id * 'a regular_callback
     | Regular_callback_list_explicitly_removable_callback of
-      'a regular_callback option ref
+      Domain.id * 'a regular_callback option ref
 
   and _ cancel_callback_list =
     | Cancel_callback_list_empty :
@@ -463,9 +492,10 @@ struct
       'a cancel_callback_list * 'a cancel_callback_list ->
         'a cancel_callback_list
     | Cancel_callback_list_callback :
-      storage * cancel_callback ->
+      Domain.id * storage * cancel_callback ->
         _ cancel_callback_list
     | Cancel_callback_list_remove_sequence_node :
+      (* domain id here?? *)
       ('a, _, _) promise Lwt_sequence.node ->
         'a cancel_callback_list
 
@@ -840,10 +870,10 @@ struct
   (* In a callback list, filters out cells of explicitly removable callbacks
      that have been removed. *)
   let rec clean_up_callback_cells = function
-    | Regular_callback_list_explicitly_removable_callback {contents = None} ->
+    | Regular_callback_list_explicitly_removable_callback (_, {contents = None}) ->
       Regular_callback_list_empty
 
-    | Regular_callback_list_explicitly_removable_callback {contents = Some _}
+    | Regular_callback_list_explicitly_removable_callback (_, {contents = Some _})
     | Regular_callback_list_implicitly_removed_callback _
     | Regular_callback_list_empty as callbacks ->
       callbacks
@@ -954,7 +984,7 @@ struct
 
   let add_implicitly_removed_callback callbacks f =
     add_regular_callback_list_node
-      callbacks (Regular_callback_list_implicitly_removed_callback f)
+      callbacks (Regular_callback_list_implicitly_removed_callback (Domain.self (), f))
 
   (* Adds [callback] as removable to each promise in [ps]. The first promise in
      [ps] to trigger [callback] removes [callback] from the other promises; this
@@ -970,7 +1000,7 @@ struct
       f result
     in
 
-    let node = Regular_callback_list_explicitly_removable_callback cell in
+    let node = Regular_callback_list_explicitly_removable_callback (Domain.self (), cell) in
     ps |> List.iter (fun p ->
       let Internal p = to_internal_promise p in
       match (underlying p).state with
@@ -991,7 +1021,7 @@ struct
       clear_explicitly_removable_callback_cell cell ~originally_added_to:ps
 
   let add_cancel_callback callbacks f =
-    let node = Cancel_callback_list_callback (!current_storage, f) in
+    let node = Cancel_callback_list_callback (Domain.self (), !current_storage, f) in
 
     callbacks.cancel_callbacks <-
       match callbacks.cancel_callbacks with
@@ -1166,10 +1196,13 @@ struct
         match fs with
         | Cancel_callback_list_empty ->
           iter_list rest
-        | Cancel_callback_list_callback (storage, f) ->
-          current_storage := storage;
-          handle_with_async_exception_hook f ();
-          iter_list rest
+        | Cancel_callback_list_callback (domain, storage, f) ->
+            if domain = Domain.self () then begin
+              current_storage := storage;
+              handle_with_async_exception_hook f ();
+              iter_list rest
+            end else
+              failwith "TODO: how to send storage across??"
         | Cancel_callback_list_remove_sequence_node node ->
           Lwt_sequence.remove node;
           iter_list rest
@@ -1191,16 +1224,22 @@ struct
         match fs with
         | Regular_callback_list_empty ->
           iter_list rest
-        | Regular_callback_list_implicitly_removed_callback f ->
-          f result;
-          iter_list rest
-        | Regular_callback_list_explicitly_removable_callback
-            {contents = None} ->
-          iter_list rest
-        | Regular_callback_list_explicitly_removable_callback
-            {contents = Some f} ->
-          f result;
-          iter_list rest
+        | Regular_callback_list_implicitly_removed_callback (domain, f) ->
+            begin if domain = Domain.self () then
+              f result
+            else
+              send_callback domain (fun () -> f result)
+            end;
+            iter_list rest
+        | Regular_callback_list_explicitly_removable_callback (_, {contents = None}) ->
+            iter_list rest
+        | Regular_callback_list_explicitly_removable_callback (domain, {contents = Some f}) ->
+            begin if domain = Domain.self () then
+              f result
+            else
+              send_callback domain (fun () -> f result)
+            end;
+            iter_list rest
         | Regular_callback_list_concat (fs, fs') ->
           iter_callback_list fs (fs'::rest)
 
@@ -1320,7 +1359,7 @@ struct
           {
             regular_callbacks =
               Regular_callback_list_implicitly_removed_callback
-                deferred_callback;
+                (Domain.self (), deferred_callback);
             cancel_callbacks = Cancel_callback_list_empty;
             how_to_cancel = Not_cancelable;
             cleanups_deferred = 0
@@ -3161,34 +3200,34 @@ struct
 
 
 
-  let pause_hook = ref ignore
+  let pause_hook = Domain.DLS.new_key (fun () -> ignore)
 
-  let paused = Lwt_sequence.create ()
-  let paused_count = ref 0
+  let paused = Domain.DLS.new_key (fun () -> Lwt_sequence.create ())
+  let paused_count = Domain.DLS.new_key (fun () -> 0)
 
   let pause () =
-    let p = add_task_r paused in
-    incr paused_count;
-    !pause_hook !paused_count;
+    let p = add_task_r (Domain.DLS.get paused) in
+    Domain.DLS.set paused_count (Domain.DLS.get paused_count + 1);
+    (Domain.DLS.get pause_hook) (Domain.DLS.get paused_count);
     p
 
   let wakeup_paused () =
-    if Lwt_sequence.is_empty paused then
-      paused_count := 0
+    if Lwt_sequence.is_empty (Domain.DLS.get paused) then
+      Domain.DLS.set paused_count 0
     else begin
       let tmp = Lwt_sequence.create () in
-      Lwt_sequence.transfer_r paused tmp;
-      paused_count := 0;
+      Lwt_sequence.transfer_r (Domain.DLS.get paused) tmp;
+      Domain.DLS.set paused_count 0;
       Lwt_sequence.iter_l (fun r -> wakeup r ()) tmp
     end
 
-  let register_pause_notifier f = pause_hook := f
+  let register_pause_notifier f = Domain.DLS.set pause_hook f
 
   let abandon_paused () =
-    Lwt_sequence.clear paused;
-    paused_count := 0
+    Lwt_sequence.clear (Domain.DLS.get paused);
+    Domain.DLS.set paused_count 0
 
-  let paused_count () = !paused_count
+  let paused_count () = Domain.DLS.get paused_count
 end
 include Miscellaneous
 
