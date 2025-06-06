@@ -104,7 +104,7 @@ let rec worker_loop worker =
      decreased the maximum: *)
   if !threads_count > !max_threads then worker.reuse <- false;
   (* Tell the main thread that work is done: *)
-  Lwt_unix.send_notification id;
+  Lwt_unix.send_notification (Domain.self ()) id;
   if worker.reuse then worker_loop worker
 
 (* create a new worker: *)
@@ -186,7 +186,7 @@ let detach f args =
   get_worker () >>= fun worker ->
   let waiter, wakener = Lwt.wait () in
   let id =
-    Lwt_unix.make_notification ~once:true
+    Lwt_unix.make_notification ~once:true (Domain.self ())
       (fun () -> Lwt.wakeup_result wakener !result)
   in
   Lwt.finalize
@@ -217,7 +217,7 @@ let jobs = Queue.create ()
 let jobs_mutex = Mutex.create ()
 
 let job_notification =
-  Lwt_unix.make_notification
+  Lwt_unix.make_notification (Domain.self ())
     (fun () ->
        (* Take the first job. The queue is never empty at this
           point. *)
@@ -232,7 +232,7 @@ let run_in_main_dont_wait f =
   Queue.add f jobs;
   Mutex.unlock jobs_mutex;
   (* Notify the main thread. *)
-  Lwt_unix.send_notification job_notification
+  Lwt_unix.send_notification (Domain.self ()) job_notification
 
 (* There is a potential performance issue from creating a cell every time this
    function is called. See:

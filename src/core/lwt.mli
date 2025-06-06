@@ -2061,3 +2061,8 @@ val backtrace_try_bind :
 val abandon_wakeups : unit -> unit
 
 val debug_state_is : 'a state -> 'a t -> bool t
+
+[@@@ocaml.warning "-3"]
+(* this is only for cross-domain scheduler synchronisation *)
+val get_sent_callbacks : Domain.id -> (unit -> unit) Lwt_sequence.t
+val register_notification : Domain.id -> (unit -> unit) -> unit

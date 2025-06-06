@@ -126,29 +126,6 @@ module Leave_iter_hooks :
 module Exit_hooks :
   Hooks with type 'return_value kind = 'return_value Lwt.t
 
-
-
-[@@@ocaml.warning "-3"]
-
-val enter_iter_hooks : (unit -> unit) Lwt_sequence.t
-  [@@ocaml.deprecated
-    " Use module Lwt_main.Enter_iter_hooks."]
-(** @deprecated Use module {!Enter_iter_hooks}. *)
-
-val leave_iter_hooks : (unit -> unit) Lwt_sequence.t
-  [@@ocaml.deprecated
-    " Use module Lwt_main.Leave_iter_hooks."]
-(** @deprecated Use module {!Leave_iter_hooks}. *)
-
-val exit_hooks : (unit -> unit Lwt.t) Lwt_sequence.t
-  [@@ocaml.deprecated
-    " Use module Lwt_main.Exit_hooks."]
-(** @deprecated Use module {!Exit_hooks}. *)
-
-[@@@ocaml.warning "+3"]
-
-
-
 val at_exit : (unit -> unit Lwt.t) -> unit
 (** [Lwt_main.at_exit hook] is the same as
     [ignore (Lwt_main.Exit_hooks.add_first hook)]. *)

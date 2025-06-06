@@ -1,0 +1,3 @@
+(tests
+  (names basic domainworkers)
+  (libraries lwt lwt.unix))

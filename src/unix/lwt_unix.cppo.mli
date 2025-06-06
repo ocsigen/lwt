@@ -1458,20 +1458,12 @@ val cancel_jobs : unit -> unit
 val wait_for_jobs : unit -> unit Lwt.t
   (** Wait for all pending jobs to terminate. *)
 
-val execute_job :
-  ?async_method : async_method ->
-  job : 'a job ->
-  result : ('a job -> 'b) ->
-  free : ('a job -> unit) -> 'b Lwt.t
-  [@@ocaml.deprecated " Use Lwt_unix.run_job."]
-  (** @deprecated Use [run_job]. *)
-
 (** {2 Notifications} *)
 
 (** Lwt internally use a pipe to send notification to the main
     thread. The following functions allow to use this pipe. *)
 
-val make_notification : ?once : bool -> (unit -> unit) -> int
+val make_notification : ?once : bool -> Domain.id -> (unit -> unit) -> int
   (** [make_notification ?once f] registers a new notifier. It returns the
       id of the notifier. Each time a notification with this id is
       received, [f] is called.
@@ -1479,24 +1471,27 @@ val make_notification : ?once : bool -> (unit -> unit) -> int
       if [once] is specified, then the notification is stopped after
       the first time it is received. It defaults to [false]. *)
 
-val send_notification : int -> unit
+val send_notification : Domain.id -> int -> unit
   (** [send_notification id] sends a notification.
 
       This function is thread-safe. *)
 
-val stop_notification : int -> unit
+val stop_notification : Domain.id -> int -> unit
   (** Stop the given notification. Note that you should not reuse the
       id after the notification has been stopped, the result is
       unspecified if you do so. *)
 
-val call_notification : int -> unit
+val call_notification : Domain.id -> int -> unit
   (** Call the handler associated to the given notification. Note that
       if the notification was defined with [once = true] it is removed. *)
 
-val set_notification : int -> (unit -> unit) -> unit
+val set_notification : Domain.id -> int -> (unit -> unit) -> unit
   (** [set_notification id f] replace the function associated to the
       notification by [f]. It raises [Not_found] if the given
       notification is not found. *)
+
+val init_domain : unit -> unit
+  (** call when Domain.spawn! and call on domain0 too *)
 
 (** {2 System threads pool} *)
 
@@ -1578,10 +1573,6 @@ sig
 end
 
 (**/**)
-
-val run : 'a Lwt.t -> 'a
-  [@@ocaml.deprecated " Use Lwt_main.run."]
-  (** @deprecated Use [Lwt_main.run]. *)
 
 val has_wait4 : bool
   [@@ocaml.deprecated " Use Lwt_sys.have `wait4."]
