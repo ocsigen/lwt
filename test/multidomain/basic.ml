@@ -9,6 +9,7 @@ let p_two, w_two = Lwt.wait ()
 let v_two = 2
 
 let d_mult = Domain.spawn (fun () ->
+  Lwt_unix.init_domain ();
   (* domain one: wait for value from domain two then work and then send a value *)
   Lwt_main.run (
     let* () = Lwt_unix.sleep 0.01 in
@@ -21,6 +22,7 @@ let d_mult = Domain.spawn (fun () ->
   )
 )
 let d_sum = Domain.spawn (fun () ->
+  Lwt_unix.init_domain ();
   Lwt_main.run (
     let () =
       (* concurrent thread within domain "two" send a value and then work and

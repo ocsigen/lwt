@@ -23,6 +23,7 @@ let spawn_domain_worker f =
   let recv_task, send_task = Lwt_stream.create () in
   let dw =
     Domain.spawn (fun () ->
+      Lwt_unix.init_domain ();
       Lwt_main.run (
         let* () = Lwt.pause () in
         worker [] recv_task f
@@ -48,6 +49,7 @@ let main () =
   let send_task1, dw1 = spawn_domain_worker simulate_work in
   let send_task2, dw2 = spawn_domain_worker simulate_work in
   let l =
+    Lwt_unix.init_domain ();
     Lwt_main.run (
       let* () = Lwt.pause () in
       let inputs = List.map simulate_input

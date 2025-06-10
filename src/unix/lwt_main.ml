@@ -22,7 +22,6 @@ let abandon_yielded_and_paused () =
 
 let run p =
   let domain_id = Domain.self () in
-  Lwt_unix.init_domain ();
   let n = Lwt_unix.make_notification domain_id (fun () ->
     let cbs = Lwt.get_sent_callbacks domain_id in
     Lwt_sequence.iter_l (fun f -> f ()) cbs
