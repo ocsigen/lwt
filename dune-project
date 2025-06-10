@@ -57,7 +57,7 @@ a single thread by default. This reduces the need for locks or other
 synchronization primitives. Code can be run in parallel on an opt-in basis.
 ")
  (depends
-  (ocaml (>= 4.08))
+  (ocaml (>= 5.3))
   (cppo (and :build (>= 1.1.0)))
   (ocamlfind (and :dev (>= 1.7.3-1)))
   (odoc (and :with-doc (>= 2.3.0)))
