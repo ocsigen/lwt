@@ -6,6 +6,8 @@
 open Test
 open Lwt.Infix
 
+let domain_root_id = Domain.self ()
+
 (* An instance of the tester for the wait/waitpid tests. *)
 let () =
   match Sys.argv with
@@ -1054,19 +1056,19 @@ let dir_tests = [
 ]
 
 let lwt_preemptive_tests = [
-  test "run_in_main" begin fun () ->
+  test "run_in_domain" begin fun () ->
     let f () =
-      Lwt_preemptive.run_in_main (fun () ->
+      Lwt_preemptive.run_in_domain domain_root_id (fun () ->
         Lwt_unix.sleep 0.01 >>= fun () ->
         Lwt.return 42)
     in
     Lwt_preemptive.detach f () >>= fun x ->
     Lwt.return (x = 42)
   end;
-  test "run_in_main_dont_wait" begin fun () ->
+  test "run_in_domain_dont_wait" begin fun () ->
     let p, r = Lwt.wait () in
     let f () =
-      Lwt_preemptive.run_in_main_dont_wait
+      Lwt_preemptive.run_in_domain_dont_wait domain_root_id
         (fun () ->
           Lwt.pause () >>= fun () ->
           Lwt.pause () >>= fun () ->
@@ -1078,10 +1080,10 @@ let lwt_preemptive_tests = [
     p >>= fun x ->
     Lwt.return (x = 42)
   end;
-  test "run_in_main_dont_wait_fail" begin fun () ->
+  test "run_in_domain_dont_wait_fail" begin fun () ->
     let p, r = Lwt.wait () in
     let f () =
-      Lwt_preemptive.run_in_main_dont_wait
+      Lwt_preemptive.run_in_domain_dont_wait domain_root_id
         (fun () ->
           Lwt.pause () >>= fun () ->
           Lwt.pause () >>= fun () ->
@@ -1092,10 +1094,10 @@ let lwt_preemptive_tests = [
     p >>= fun x ->
     Lwt.return (x = 45)
   end;
-  test "run_in_main_with_dont_wait" begin fun () ->
+  test "run_in_domain_with_dont_wait" begin fun () ->
     let p, r = Lwt.wait () in
     let f () =
-      Lwt_preemptive.run_in_main (fun () ->
+      Lwt_preemptive.run_in_domain domain_root_id (fun () ->
         Lwt.dont_wait
           (fun () ->
             Lwt.pause () >>= fun () ->

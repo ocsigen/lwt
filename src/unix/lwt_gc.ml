@@ -21,6 +21,9 @@ let ensure_termination t =
   end
 
 let finaliser f =
+  (* In order for the domain id to be consistent, wherever the real finaliser is
+     called, we pass it in the continuation. *)
+  let domain_id = Domain.self () in
   (* In order not to create a reference to the value in the
      notification callback, we use an initially unset option cell
      which will be filled when the finaliser is called. *)
@@ -28,7 +31,7 @@ let finaliser f =
   let id =
     Lwt_unix.make_notification
       ~once:true
-      (Domain.self ())
+      domain_id
       (fun () ->
          match !opt with
          | None ->
@@ -40,7 +43,7 @@ let finaliser f =
   (* The real finaliser: fill the cell and send a notification. *)
   (fun x ->
      opt := Some x;
-     Lwt_unix.send_notification (Domain.self ()) id)
+     Lwt_unix.send_notification domain_id id)
 
 let finalise f x =
   Gc.finalise (finaliser f) x

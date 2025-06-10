@@ -193,6 +193,7 @@ let wait_for_jobs () =
   Lwt.join (Lwt_sequence.fold_l (fun (w, _) l -> w :: l) jobs [])
 
 let run_job_aux async_method job result =
+  let domain_id = Domain.self () in
   (* Starts the job. *)
   if start_job job async_method then
     (* The job has already terminated, read and return the result
@@ -209,7 +210,7 @@ let run_job_aux async_method job result =
     ignore begin
       (* Create the notification for asynchronous wakeup. *)
       let id =
-        make_notification ~once:true (Domain.self ())
+        make_notification ~once:true domain_id
           (fun () ->
              Lwt_sequence.remove node;
              let result = result job in
@@ -219,7 +220,7 @@ let run_job_aux async_method job result =
          notification. *)
       Lwt.pause () >>= fun () ->
       (* The job has terminated, send the result immediately. *)
-      if check_job job id then call_notification (Domain.self ()) id;
+      if check_job job id then call_notification domain_id id;
       Lwt.return_unit
     end;
     waiter
@@ -2214,11 +2215,6 @@ let tcflow ch act =
 external init_notification : Domain.id -> Unix.file_descr = "lwt_unix_init_notification_stub"
 external send_notification : Domain.id -> int -> unit = "lwt_unix_send_notification_stub"
 external recv_notifications : Domain.id -> int array = "lwt_unix_recv_notifications_stub"
-
-let send_notification did id =
-  send_notification did id
-let recv_notifications did =
-  recv_notifications did
 
 let handle_notifications domain_id (_ : Lwt_engine.event) =
   Array.iter (call_notification domain_id) (recv_notifications domain_id)

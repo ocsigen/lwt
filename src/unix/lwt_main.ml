@@ -26,10 +26,7 @@ let run p =
     let cbs = Lwt.get_sent_callbacks domain_id in
     Lwt_sequence.iter_l (fun f -> f ()) cbs
   ) in
-  (* should it be "send_notification" or "call_notification" *)
-  let () = Lwt.register_notification domain_id (fun () ->
-    Lwt_unix.send_notification domain_id n;
-    ) in
+  let () = Lwt.register_notification domain_id (fun () -> Lwt_unix.send_notification domain_id n) in
   let rec run_loop () =
     match Lwt.poll p with
     | Some x ->
