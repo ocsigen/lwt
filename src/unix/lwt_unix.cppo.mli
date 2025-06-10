@@ -1491,7 +1491,7 @@ val set_notification : Domain.id -> int -> (unit -> unit) -> unit
       notification is not found. *)
 
 val init_domain : unit -> unit
-  (** call when Domain.spawn! and call on domain0 too *)
+  (** call when Domain.spawn! and call on domain0 too, don't call twice for the same domain *)
 
 (** {2 System threads pool} *)
 

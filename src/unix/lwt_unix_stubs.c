@@ -742,11 +742,6 @@ value lwt_unix_init_notification(intnat domain_id) {
 
 #else /* defined(LWT_ON_WINDOWS) */
 
-
-
-
-#if !defined(LWT_ON_WINDOWS)
-
 static void set_close_on_exec(int fd) {
   int flags = fcntl(fd, F_GETFD, 0);
   if (flags == -1 || fcntl(fd, F_SETFD, flags | FD_CLOEXEC) == -1)
@@ -845,8 +840,6 @@ value lwt_unix_init_notification(int domain_id) {
   notification_recv = pipe_notification_recv;
   return Val_int(state->notification_fds[0]);
 }
-
-#endif /* defined(LWT_ON_WINDOWS) */
 
 #endif /* defined(LWT_ON_WINDOWS) */
 

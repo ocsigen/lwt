@@ -417,10 +417,10 @@ end
 
 let current =
   Domain.DLS.new_key (fun () ->
-  if Lwt_config._HAVE_LIBEV && Lwt_config.libev_default then
-    (new libev () :> t)
-  else
-    (new select :> t)
+    if Lwt_config._HAVE_LIBEV && Lwt_config.libev_default then
+      (new libev () :> t)
+    else
+      (new select :> t)
 )
 
 let get () = Domain.DLS.get current

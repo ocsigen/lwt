@@ -365,8 +365,22 @@ module Storage_map =
 type storage = (unit -> unit) Storage_map.t
 
 
+(* callback_exchange is a domain-indexed map for storing callbacks that
+   different domains should execute. This is used when a domain d1 resolves a
+   promise on which a different domain d2 has attached callbacks (implicitely
+   via bind etc. or explicitly via on_success etc.). When this happens, the
+   domain resolving the promise calls its local callbacks and sends the other
+   domains' callbacks into the callback exchange *)
 let callback_exchange = Domain_map.create_protected_map ()
+
+(* notification_map is a domain-indexed map for waking sleeping domains. each
+   (should) domain registers a notification (see Lwt_unix) into the map when it
+   starts its scheduler. other domains can wake the domain up to indicate that
+   callbacks are available to be called *)
 let notification_map = Domain_map.create_protected_map ()
+
+(* send_callback d cb adds the callback cb into the callback_exchange and pings
+   the domain d via the notification_map *)
 let send_callback d cb =
     Domain_map.update
       callback_exchange
@@ -385,11 +399,17 @@ let send_callback d cb =
       | Some n ->
           n ()
     end
+
+(* get_sent_callbacks gets a domain's own callback from the callbasck exchange,
+   this is so that the notification handler installed by main.run can obtain the
+   callbacks that have been sent its way *)
 let get_sent_callbacks domain_id =
     match Domain_map.extract callback_exchange domain_id with
     | None -> Lwt_sequence.create ()
     | Some cbs -> cbs
 
+(* register_notification adds a domain's own notification (see Lwt_unix) into
+   the notification map *)
 let register_notification d n =
     Domain_map.update notification_map d (function
     | None -> Some n

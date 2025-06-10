@@ -1,9 +1,19 @@
-(** Domain-indexed maps with thread-safe operations *)
+(** Domain-indexed maps with thread-safe operations
+
+    Only intended to use internally, not for general release.
+
+    Note that these function use a lock. A single lock.
+    - Probably not optimal
+    - Deadlock if you call one of those functions inside another (e.g., use
+    `init` rather than `find`+`update`
+ *)
 
 (** Thread-safe wrapper for domain maps *)
 type 'a protected_map
 
-(** Create a new protected map with an empty map *)
+(** Create a new protected map with an empty map inside and a dedicated mutex,
+    the map is keyed on domain ids, and operations are synchronised via a mutex.
+    *)
 val create_protected_map : unit -> 'a protected_map
 
 (** Add a key-value binding to the map *)
