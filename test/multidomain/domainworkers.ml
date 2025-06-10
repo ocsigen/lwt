@@ -5,6 +5,7 @@ let rec worker recv_task f send_result =
   match task with
   | None ->
       let () = Printf.printf "worker(%d) received interrupt\n" (Domain.self () :> int); flush_all() in
+      send_result None;
       Lwt.return ()
   | Some data ->
       let () = Printf.printf "worker(%d) received task (%S)\n" (Domain.self () :> int) data; flush_all() in
@@ -38,23 +39,17 @@ let main () =
   let l =
     Lwt_main.run (
       let* () = Lwt.pause () in
-      let* lengths =
-        Lwt_list.mapi_p
-        (fun idx s ->
-          let* () = Lwt.pause () in
-          if idx mod 3 = 0 then begin
-            send_task1 (Some s);
-            Lwt_stream.get recv_result1
-          end else begin
-            send_task2 (Some s);
-            Lwt_stream.get recv_result2
-          end)
+      let () = (* push work *)
+        List.iteri
+        (fun idx s -> if idx mod 3 = 0 then send_task1 (Some s) else send_task2 (Some s))
         [""; "adsf"; "lkjh"; "lkjahsdflkjahdlfkjha"; "0"; ""; ""; ""; ""; ""; "adf"; "ASDSKJLHDAS"; "WPOQIEU"; "DSFALKHJ"; ""; ""; ""; ""; "SD"; "SD"; "SAD; SD;SD"; "ad"; "...."]
       in
       send_task1 None;
       send_task2 None;
-      let lengths = List.filter_map Fun.id lengths in
-      Lwt.return (List.fold_left (+) 0 lengths)
+      let* lengths1 = Lwt_stream.fold (+) recv_result1 0
+      and* lengths2 = Lwt_stream.fold (+) recv_result2 0
+      in
+      Lwt.return (lengths1 + lengths2)
     )
   in
   let () = Domain.join dw1 in
