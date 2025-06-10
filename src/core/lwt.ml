@@ -515,8 +515,7 @@ struct
       Domain.id * storage * cancel_callback ->
         _ cancel_callback_list
     | Cancel_callback_list_remove_sequence_node :
-      (* domain id here?? *)
-      ('a, _, _) promise Lwt_sequence.node ->
+      Domain.id * ('a, _, _) promise Lwt_sequence.node ->
         'a cancel_callback_list
 
   (* Notes:
@@ -782,7 +781,7 @@ sig
   val with_value : 'v key -> 'v option -> (unit -> 'b) -> 'b
 
   (* Internal interface *)
-  val current_storage : storage ref
+  val current_storage : storage Domain.DLS.key
 end =
 struct
   (* The idea behind sequence-associated storage is to preserve some values
@@ -823,11 +822,11 @@ struct
     next_key_id := id + 1;
     {id = id; value = None}
 
-  let current_storage = ref Storage_map.empty
+  let current_storage = Domain.DLS.new_key (fun () -> Storage_map.empty)
 
   let get key =
-    if Storage_map.mem key.id !current_storage then begin
-      let refresh = Storage_map.find key.id !current_storage in
+    if Storage_map.mem key.id (Domain.DLS.get current_storage) then begin
+      let refresh = Storage_map.find key.id (Domain.DLS.get current_storage) in
       refresh ();
       let value = key.value in
       key.value <- None;
@@ -841,19 +840,19 @@ struct
       match value with
       | Some _ ->
         let refresh = fun () -> key.value <- value in
-        Storage_map.add key.id refresh !current_storage
+        Storage_map.add key.id refresh (Domain.DLS.get current_storage)
       | None ->
-        Storage_map.remove key.id !current_storage
+        Storage_map.remove key.id (Domain.DLS.get current_storage)
     in
 
-    let saved_storage = !current_storage in
-    current_storage := new_storage;
+    let saved_storage = (Domain.DLS.get current_storage) in
+    Domain.DLS.set current_storage new_storage;
     try
       let result = f () in
-      current_storage := saved_storage;
+      Domain.DLS.set current_storage saved_storage;
       result
     with exn when Exception_filter.run exn ->
-      current_storage := saved_storage;
+      Domain.DLS.set current_storage saved_storage;
       raise exn
 end
 include Sequence_associated_storage
@@ -1041,7 +1040,7 @@ struct
       clear_explicitly_removable_callback_cell cell ~originally_added_to:ps
 
   let add_cancel_callback callbacks f =
-    let node = Cancel_callback_list_callback (Domain.self (), !current_storage, f) in
+    let node = Cancel_callback_list_callback (Domain.self (), (Domain.DLS.get current_storage), f) in
 
     callbacks.cancel_callbacks <-
       match callbacks.cancel_callbacks with
@@ -1217,14 +1216,22 @@ struct
         | Cancel_callback_list_empty ->
           iter_list rest
         | Cancel_callback_list_callback (domain, storage, f) ->
-            if domain = Domain.self () then begin
-              current_storage := storage;
-              handle_with_async_exception_hook f ();
-              iter_list rest
+            begin if domain = Domain.self () then begin
+              Domain.DLS.set current_storage storage;
+              handle_with_async_exception_hook f ()
             end else
-              failwith "TODO: how to send storage across??"
-        | Cancel_callback_list_remove_sequence_node node ->
-          Lwt_sequence.remove node;
+              send_callback domain (fun () ->
+                Domain.DLS.set current_storage storage;
+                handle_with_async_exception_hook f ()
+              )
+            end;
+            iter_list rest
+        | Cancel_callback_list_remove_sequence_node (domain, node) ->
+          begin if domain = Domain.self () then
+            Lwt_sequence.remove node
+          else
+            send_callback domain (fun () -> Lwt_sequence.remove node)
+          end;
           iter_list rest
         | Cancel_callback_list_concat (fs, fs') ->
           iter_callback_list fs (fs'::rest)
@@ -1302,7 +1309,7 @@ struct
      restored to the snapshot when the resolution loop is exited. *)
   let enter_resolution_loop () =
     current_callback_nesting_depth := !current_callback_nesting_depth + 1;
-    let storage_snapshot = !current_storage in
+    let storage_snapshot = (Domain.DLS.get current_storage) in
     storage_snapshot
 
   let leave_resolution_loop (storage_snapshot : storage) : unit =
@@ -1313,7 +1320,7 @@ struct
       done
     end;
     current_callback_nesting_depth := !current_callback_nesting_depth - 1;
-    current_storage := storage_snapshot
+    Domain.DLS.set current_storage storage_snapshot
 
   let run_in_resolution_loop f =
     let storage_snapshot = enter_resolution_loop () in
@@ -1635,7 +1642,7 @@ struct
 
     let Pending callbacks = p.state in
     callbacks.cancel_callbacks <-
-      Cancel_callback_list_remove_sequence_node node;
+      Cancel_callback_list_remove_sequence_node (Domain.self (), node);
 
     to_public_promise p
 
@@ -1646,7 +1653,7 @@ struct
 
     let Pending callbacks = p.state in
     callbacks.cancel_callbacks <-
-      Cancel_callback_list_remove_sequence_node node;
+      Cancel_callback_list_remove_sequence_node (Domain.self (), node);
 
     to_public_promise p
 
@@ -1890,12 +1897,12 @@ struct
          [p''] will be equivalent to trying to cancel [p'], so the behavior will
          depend on how the user obtained [p']. *)
 
-      let saved_storage = !current_storage in
+      let saved_storage = (Domain.DLS.get current_storage) in
 
       let callback p_result =
         match p_result with
         | Fulfilled v ->
-          current_storage := saved_storage;
+          Domain.DLS.set current_storage saved_storage;
 
           let p' =
             try f v with exn
@@ -1956,12 +1963,12 @@ struct
     let create_result_promise_and_callback_if_deferred () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
-      let saved_storage = !current_storage in
+      let saved_storage = (Domain.DLS.get current_storage) in
 
       let callback p_result =
         match p_result with
         | Fulfilled v ->
-          current_storage := saved_storage;
+          Domain.DLS.set current_storage saved_storage;
 
           let p' =
             try f v
@@ -2013,12 +2020,12 @@ struct
     let create_result_promise_and_callback_if_deferred () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
-      let saved_storage = !current_storage in
+      let saved_storage = (Domain.DLS.get current_storage) in
 
       let callback p_result =
         match p_result with
         | Fulfilled v ->
-          current_storage := saved_storage;
+          Domain.DLS.set current_storage saved_storage;
 
           let p''_result =
             try Fulfilled (f v) with exn
@@ -2079,7 +2086,7 @@ struct
     let create_result_promise_and_callback_if_deferred () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
-      let saved_storage = !current_storage in
+      let saved_storage = (Domain.DLS.get current_storage) in
 
       let callback p_result =
         match p_result with
@@ -2092,7 +2099,7 @@ struct
           ignore p''
 
         | Rejected exn ->
-          current_storage := saved_storage;
+          Domain.DLS.set current_storage saved_storage;
 
           let p' =
             try h exn
@@ -2140,7 +2147,7 @@ struct
     let create_result_promise_and_callback_if_deferred () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
-      let saved_storage = !current_storage in
+      let saved_storage = (Domain.DLS.get current_storage) in
 
       let callback p_result =
         match p_result with
@@ -2153,7 +2160,7 @@ struct
           ignore p''
 
         | Rejected exn ->
-          current_storage := saved_storage;
+          Domain.DLS.set current_storage saved_storage;
 
           let p' =
             try h exn
@@ -2202,12 +2209,12 @@ struct
     let create_result_promise_and_callback_if_deferred () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
-      let saved_storage = !current_storage in
+      let saved_storage = (Domain.DLS.get current_storage) in
 
       let callback p_result =
         match p_result with
         | Fulfilled v ->
-          current_storage := saved_storage;
+          Domain.DLS.set current_storage saved_storage;
 
           let p' =
             try f' v
@@ -2223,7 +2230,7 @@ struct
           ignore p''
 
         | Rejected exn ->
-          current_storage := saved_storage;
+          Domain.DLS.set current_storage saved_storage;
 
           let p' =
             try h exn
@@ -2277,12 +2284,12 @@ struct
     let create_result_promise_and_callback_if_deferred () =
       let p'' = new_pending ~how_to_cancel:(Propagate_cancel_to_one p) in
 
-      let saved_storage = !current_storage in
+      let saved_storage = (Domain.DLS.get current_storage) in
 
       let callback p_result =
         match p_result with
         | Fulfilled v ->
-          current_storage := saved_storage;
+          Domain.DLS.set current_storage saved_storage;
 
           let p' =
             try f' v
@@ -2299,7 +2306,7 @@ struct
           ignore p''
 
         | Rejected exn ->
-          current_storage := saved_storage;
+          Domain.DLS.set current_storage saved_storage;
 
           let p' =
             try h exn
@@ -2383,12 +2390,12 @@ struct
     let p = underlying p in
 
     let callback_if_deferred () =
-      let saved_storage = !current_storage in
+      let saved_storage = (Domain.DLS.get current_storage) in
 
       fun result ->
         match result with
         | Fulfilled v ->
-          current_storage := saved_storage;
+          Domain.DLS.set current_storage saved_storage;
           handle_with_async_exception_hook f v
 
         | Rejected _ ->
@@ -2416,7 +2423,7 @@ struct
     let p = underlying p in
 
     let callback_if_deferred () =
-      let saved_storage = !current_storage in
+      let saved_storage = (Domain.DLS.get current_storage) in
 
       fun result ->
         match result with
@@ -2424,7 +2431,7 @@ struct
           ()
 
         | Rejected exn ->
-          current_storage := saved_storage;
+          Domain.DLS.set current_storage saved_storage;
           handle_with_async_exception_hook f exn
     in
 
@@ -2449,10 +2456,10 @@ struct
     let p = underlying p in
 
     let callback_if_deferred () =
-      let saved_storage = !current_storage in
+      let saved_storage = (Domain.DLS.get current_storage) in
 
       fun _result ->
-        current_storage := saved_storage;
+        Domain.DLS.set current_storage saved_storage;
         handle_with_async_exception_hook f ()
     in
 
@@ -2482,16 +2489,16 @@ struct
     let p = underlying p in
 
     let callback_if_deferred () =
-      let saved_storage = !current_storage in
+      let saved_storage = (Domain.DLS.get current_storage) in
 
       fun result ->
         match result with
         | Fulfilled v ->
-          current_storage := saved_storage;
+          Domain.DLS.set current_storage saved_storage;
           handle_with_async_exception_hook f v
 
         | Rejected exn ->
-          current_storage := saved_storage;
+          Domain.DLS.set current_storage saved_storage;
           handle_with_async_exception_hook g exn
     in
 
