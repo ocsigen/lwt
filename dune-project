@@ -21,25 +21,25 @@
    "Shon Feder <shon.feder@gmail.com>")
  (depends
   (ocaml (>= 4.08))
-  (lwt (>= 5.3.0))))
+  (lwt (>= 5.3))))
 
 (package
  (name lwt_ppx)
  (synopsis "PPX syntax for Lwt, providing something similar to async/await from JavaScript")
  (depends
   (ocaml (>= 4.08))
-  (ppxlib (and (>= 0.16) (< 0.36)))
+  (ppxlib (>= 0.36))
   (ppx_let :with-test)
-  (lwt (>= 5.7.0))))
+  (lwt (>= 5.7))))
 
 (package
  (name lwt_react)
  (synopsis "Helpers for using React with Lwt")
  (depends
   (ocaml (>= 4.08))
-  (cppo (and :build (>= 1.1.0)))
-  (lwt (>= 3.0.0))
-  (react (>= 1.0.0))))
+  (cppo (and :build (>= 1.1)))
+  (lwt (>= 3.0))
+  (react (>= 1.0))))
 
 (package
  (name lwt)
@@ -55,9 +55,9 @@ synchronization primitives. Code can be run in parallel on an opt-in basis.
 ")
  (depends
   (ocaml (>= 4.08))
-  (cppo (and :build (>= 1.1.0)))
+  (cppo (and :build (>= 1.1)))
   (ocamlfind (and :dev (>= 1.7.3-1)))
-  (odoc (and :with-doc (>= 2.3.0)))
+  (odoc (and :with-doc (>= 2.3)))
   dune-configurator
   ocplib-endian)
  (depopts base-threads base-unix conf-libev))
