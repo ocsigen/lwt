@@ -22,11 +22,16 @@ let abandon_yielded_and_paused () =
 
 let run p =
   let domain_id = Domain.self () in
-  let n = Lwt_unix.make_notification domain_id (fun () ->
-    let cbs = Lwt.get_sent_callbacks domain_id in
-    Lwt_sequence.iter_l (fun f -> f ()) cbs
-  ) in
-  let () = Lwt.register_notification domain_id (fun () -> Lwt_unix.send_notification domain_id n) in
+  let () = if Lwt.is_alredy_registered domain_id then
+    ()
+  else begin
+    let n = Lwt_unix.make_notification domain_id (fun () ->
+      let cbs = Lwt.get_sent_callbacks domain_id in
+      Lwt_sequence.iter_l (fun f -> f ()) cbs
+    ) in
+    Lwt.register_notification domain_id (fun () -> Lwt_unix.send_notification domain_id n)
+  end
+  in
   let rec run_loop () =
     match Lwt.poll p with
     | Some x ->

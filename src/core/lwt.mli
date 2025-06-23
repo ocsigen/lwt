@@ -2066,3 +2066,4 @@ val debug_state_is : 'a state -> 'a t -> bool t
 (* this is only for cross-domain scheduler synchronisation *)
 val get_sent_callbacks : Domain.id -> (unit -> unit) Lwt_sequence.t
 val register_notification : Domain.id -> (unit -> unit) -> unit
+val is_alredy_registered : Domain.id -> bool

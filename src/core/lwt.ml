@@ -415,6 +415,11 @@ let register_notification d n =
     | None -> Some n
     | Some _ -> failwith "already registered!!")
 
+let is_alredy_registered d =
+  match Domain_map.find notification_map d with
+  | Some _ -> true
+  | None -> false
+
 module Main_internal_types =
 struct
   (* Phantom types for use with types [promise] and [state]. These are never
