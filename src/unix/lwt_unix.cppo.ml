@@ -2403,9 +2403,12 @@ let install_sigchld_handler () =
    install the SIGCHLD handler, in order to cause any EINTR-unsafe code to
    fail (as it should). *)
 let () =
-  Lwt.async (fun () ->
-    Lwt.pause () >|= fun () ->
-    install_sigchld_handler ())
+  (* TODO: figure out what to do about signals *)
+  (* TODO: this interferes with tests because it leaves a pause hanging? *)
+  if (Domain.self () :> int) = 0 then
+    Lwt.async (fun () ->
+      Lwt.pause () >|= fun () ->
+      install_sigchld_handler ())
 
 let _waitpid flags pid =
   Lwt.catch

@@ -211,8 +211,7 @@ val fork : unit -> int
       - None of the above is necessary if you intend to call [exec]. Indeed, in
         that case, it is not even necessary to use [Lwt_unix.fork]. You can use
         {!Unix.fork}.
-      - To abandon some more promises, see
-        {!Lwt_main.abandon_yielded_and_paused}. *)
+      - To abandon some more promises, see {!Lwt.abandon_paused}. *)
 
 type process_status =
     Unix.process_status =

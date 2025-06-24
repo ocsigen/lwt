@@ -1300,7 +1300,7 @@ struct
 
   let default_maximum_callback_nesting_depth = 42
 
-  let current_callback_nesting_depth = ref 0
+  let current_callback_nesting_depth = Domain.DLS.new_key (fun () -> 0)
 
   type deferred_callbacks =
     Deferred : ('a callbacks * 'a resolved_state) -> deferred_callbacks
@@ -1313,18 +1313,18 @@ struct
      the callbacks that will be run will modify the storage. The storage is
      restored to the snapshot when the resolution loop is exited. *)
   let enter_resolution_loop () =
-    current_callback_nesting_depth := !current_callback_nesting_depth + 1;
+    Domain.DLS.set  current_callback_nesting_depth (Domain.DLS.get current_callback_nesting_depth + 1);
     let storage_snapshot = (Domain.DLS.get current_storage) in
     storage_snapshot
 
   let leave_resolution_loop (storage_snapshot : storage) : unit =
-    if !current_callback_nesting_depth = 1 then begin
+    if Domain.DLS.get current_callback_nesting_depth = 1 then begin
       while not (Queue.is_empty deferred_callbacks) do
         let Deferred (callbacks, result) = Queue.pop deferred_callbacks in
         run_callbacks callbacks result
       done
     end;
-    current_callback_nesting_depth := !current_callback_nesting_depth - 1;
+    Domain.DLS.set current_callback_nesting_depth (Domain.DLS.get current_callback_nesting_depth - 1);
     Domain.DLS.set current_storage storage_snapshot
 
   let run_in_resolution_loop f =
@@ -1340,7 +1340,7 @@ struct
 
      The name should probably be [abaondon_resolution_loop]. *)
   let abandon_wakeups () =
-    if !current_callback_nesting_depth <> 0 then
+    if Domain.DLS.get current_callback_nesting_depth <> 0 then
       leave_resolution_loop Storage_map.empty
 
 
@@ -1352,7 +1352,7 @@ struct
 
     let should_defer =
       allow_deferring
-      && !current_callback_nesting_depth >= maximum_callback_nesting_depth
+      && Domain.DLS.get current_callback_nesting_depth >= maximum_callback_nesting_depth
     in
 
     if should_defer then
@@ -1380,7 +1380,7 @@ struct
 
     else
       let should_defer =
-        !current_callback_nesting_depth
+        Domain.DLS.get current_callback_nesting_depth
           >= default_maximum_callback_nesting_depth
       in
 
