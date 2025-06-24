@@ -17,23 +17,23 @@ open Lwt.Infix
    +-----------------------------------------------------------------+ *)
 
 (* Minimum number of preemptive threads: *)
-let min_threads : int ref = ref 0
+let min_threads : int Atomic.t = Atomic.make 0
 
 (* Maximum number of preemptive threads: *)
-let max_threads : int ref = ref 0
+let max_threads : int Atomic.t = Atomic.make 0
 
 (* Size of the waiting queue: *)
-let max_thread_queued = ref 1000
+let max_thread_queued = Atomic.make 1000
 
 let get_max_number_of_threads_queued _ =
-  !max_thread_queued
+  Atomic.get max_thread_queued
 
 let set_max_number_of_threads_queued n =
   if n < 0 then invalid_arg "Lwt_preemptive.set_max_number_of_threads_queued";
-  max_thread_queued := n
+  Atomic.set max_thread_queued n
 
 (* The total number of preemptive threads currently running: *)
-let threads_count = ref 0
+let threads_count = Atomic.make 0
 
 (* +-----------------------------------------------------------------+
    | Preemptive threads management                                   |
@@ -102,14 +102,14 @@ let rec worker_loop worker =
   task ();
   (* If there is too much threads, exit. This can happen if the user
      decreased the maximum: *)
-  if !threads_count > !max_threads then worker.reuse <- false;
+  if Atomic.get threads_count > Atomic.get max_threads then worker.reuse <- false;
   (* Tell the main thread that work is done: *)
   Lwt_unix.send_notification (Domain.self ()) id;
   if worker.reuse then worker_loop worker
 
 (* create a new worker: *)
 let make_worker () =
-  incr threads_count;
+  Atomic.incr threads_count;
   let worker = {
     task_cell = CELL.make ();
     thread = Thread.self ();
@@ -130,7 +130,7 @@ let add_worker worker =
 let get_worker () =
   if not (Queue.is_empty workers) then
     Lwt.return (Queue.take workers)
-  else if !threads_count < !max_threads then
+  else if Atomic.get threads_count < Atomic.get max_threads then
     Lwt.return (make_worker ())
   else
     (Lwt.add_task_r [@ocaml.warning "-3"]) waiters
@@ -139,33 +139,33 @@ let get_worker () =
    | Initialisation, and dynamic parameters reset                    |
    +-----------------------------------------------------------------+ *)
 
-let get_bounds () = (!min_threads, !max_threads)
+let get_bounds () = (Atomic.get min_threads, Atomic.get max_threads)
 
 let set_bounds (min, max) =
   if min < 0 || max < min then invalid_arg "Lwt_preemptive.set_bounds";
-  let diff = min - !threads_count in
-  min_threads := min;
-  max_threads := max;
+  let diff = min - Atomic.get threads_count in
+  Atomic.set min_threads min;
+  Atomic.set max_threads max;
   (* Launch new workers: *)
   for _i = 1 to diff do
     add_worker (make_worker ())
   done
 
-let initialized = ref false
+let initialized = Atomic.make false
 
 let init min max _errlog =
-  initialized := true;
+  Atomic.set initialized true;
   set_bounds (min, max)
 
 let simple_init () =
-  if not !initialized then begin
-    initialized := true;
+  if not (Atomic.get initialized) then begin
+    Atomic.set initialized true;
     set_bounds (0, 4)
   end
 
-let nbthreads () = !threads_count
+let nbthreads () = Atomic.get threads_count
 let nbthreadsqueued () = Lwt_sequence.fold_l (fun _ x -> x + 1) waiters 0
-let nbthreadsbusy () = !threads_count - Queue.length workers
+let nbthreadsbusy () = Atomic.get threads_count - Queue.length workers
 
 (* +-----------------------------------------------------------------+
    | Detaching                                                       |
@@ -199,7 +199,7 @@ let detach f args =
          (* Put back the worker to the pool: *)
          add_worker worker
        else begin
-         decr threads_count;
+         Atomic.decr threads_count;
          (* Or wait for the thread to terminates, to free its associated
             resources: *)
          Thread.join worker.thread

@@ -770,11 +770,9 @@ module Exception_filter = struct
     | Out_of_memory -> false
     | Stack_overflow -> false
     | _ -> true
-  let v =
-    (* Default value: the legacy behaviour to avoid breaking programs *)
-    ref handle_all
-  let set f = v := f
-  let run e = !v e
+  let v = Atomic.make handle_all_except_runtime
+  let set f = Atomic.set v f
+  let run e = (Atomic.get v) e
 end
 
 module Sequence_associated_storage :
@@ -820,11 +818,10 @@ struct
     mutable value : 'v option;
   }
 
-  let next_key_id = ref 0
+  let next_key_id = Atomic.make 0
 
   let new_key () =
-    let id = !next_key_id in
-    next_key_id := id + 1;
+    let id = Atomic.fetch_and_add next_key_id 1 in
     {id = id; value = None}
 
   let current_storage = Domain.DLS.new_key (fun () -> Storage_map.empty)

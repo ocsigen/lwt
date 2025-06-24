@@ -21,17 +21,17 @@ type async_method =
   | Async_detach
   | Async_switch
 
-let default_async_method_var = ref Async_detach
+let default_async_method_var = Atomic.make Async_detach
 
 let () =
   try
     match Sys.getenv "LWT_ASYNC_METHOD" with
     | "none" ->
-      default_async_method_var := Async_none
+      Atomic.set default_async_method_var Async_none
     | "detach" ->
-      default_async_method_var := Async_detach
+      Atomic.set default_async_method_var Async_detach
     | "switch" ->
-      default_async_method_var := Async_switch
+      Atomic.set default_async_method_var Async_switch
     | str ->
       Printf.eprintf
         "%s: invalid lwt async method: '%s', must be 'none', 'detach' or 'switch'\n%!"
@@ -39,15 +39,15 @@ let () =
   with Not_found ->
     ()
 
-let default_async_method () = !default_async_method_var
-let set_default_async_method am = default_async_method_var := am
+let default_async_method () = Atomic.get default_async_method_var
+let set_default_async_method am = Atomic.set default_async_method_var am
 
 let async_method_key = Lwt.new_key ()
 
 let async_method () =
   match Lwt.get async_method_key with
   | Some am -> am
-  | None -> !default_async_method_var
+  | None -> Atomic.get default_async_method_var
 
 let with_async_none f =
   Lwt.with_value async_method_key (Some Async_none) f
@@ -232,7 +232,7 @@ let choose_async_method = function
   | None ->
     match Lwt.get async_method_key with
     | Some am -> am
-    | None -> !default_async_method_var
+    | None -> Atomic.get default_async_method_var
 
 external self_result : 'a job -> 'a = "lwt_unix_self_result"
 (* returns the result of a job using the [result] field of the C
@@ -2260,6 +2260,7 @@ type signal_handler = {
 
 and signal_handler_id = signal_handler option ref
 
+(* TODO: what to do about signals? *)
 let signals = ref Signal_map.empty
 let signal_count () =
   Signal_map.fold
@@ -2375,6 +2376,7 @@ let do_wait4 flags pid =
 let wait_children = Lwt_sequence.create ()
 let wait_count () = Lwt_sequence.length wait_children
 
+(* TODO: what to do about signals? especially sigchld signal? *)
 let sigchld_handler_installed = ref false
 
 let install_sigchld_handler () =
