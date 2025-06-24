@@ -18,13 +18,13 @@
  (modules dummy)
  (libraries unix))
 
-;;(test
-;; (name main)
-;; (package lwt)
-;; (libraries lwttester tester)
-;; (modules main)
-;; (deps bytes_io_data %{exe:dummy.exe}))
-;;
+(test
+ (name main)
+ (package lwt)
+ (libraries lwttester tester)
+ (modules main)
+ (deps bytes_io_data %{exe:dummy.exe}))
+
 (test
  (name ocaml_runtime_exc_1)
  (libraries lwt lwt.unix)
