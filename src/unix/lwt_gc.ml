@@ -12,17 +12,18 @@ module Lwt_sequence = Lwt_sequence
 
 let ensure_termination t =
   if Lwt.state t = Lwt.Sleep then begin
-    let hook =
-      Lwt_sequence.add_l (fun _ -> t) Lwt_main.exit_hooks [@ocaml.warning "-3"]
-    in
+    let hook = Lwt_main.Exit_hooks.add_first (fun _ -> t) in
     (* Remove the hook when t has terminated *)
     ignore (
       Lwt.finalize
         (fun () -> t)
-        (fun () -> Lwt_sequence.remove hook; Lwt.return_unit))
+        (fun () -> Lwt_main.Exit_hooks.remove hook; Lwt.return_unit))
   end
 
 let finaliser f =
+  (* In order for the domain id to be consistent, wherever the real finaliser is
+     called, we pass it in the continuation. *)
+  let domain_id = Domain.self () in
   (* In order not to create a reference to the value in the
      notification callback, we use an initially unset option cell
      which will be filled when the finaliser is called. *)
@@ -30,6 +31,7 @@ let finaliser f =
   let id =
     Lwt_unix.make_notification
       ~once:true
+      domain_id
       (fun () ->
          match !opt with
          | None ->
@@ -41,7 +43,7 @@ let finaliser f =
   (* The real finaliser: fill the cell and send a notification. *)
   (fun x ->
      opt := Some x;
-     Lwt_unix.send_notification id)
+     Lwt_unix.send_notification domain_id id)
 
 let finalise f x =
   Gc.finalise (finaliser f) x
@@ -68,7 +70,7 @@ let foe_finaliser f called hook =
   finaliser
     (fun x ->
        (* Remove the exit hook, it is not needed anymore. *)
-       Lwt_sequence.remove hook;
+       Lwt_main.Exit_hooks.remove hook;
        (* Call the real finaliser. *)
        if !called then
          Lwt.return_unit
@@ -83,8 +85,5 @@ let finalise_or_exit f x =
   let weak = Weak.create 1 in
   Weak.set weak 0 (Some x);
   let called = ref false in
-  let hook =
-    Lwt_sequence.add_l (foe_exit f called weak) Lwt_main.exit_hooks
-      [@ocaml.warning "-3"]
-  in
+  let hook = Lwt_main.Exit_hooks.add_first (foe_exit f called weak) in
   Gc.finalise (foe_finaliser f called hook) x

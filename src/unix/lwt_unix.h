@@ -95,7 +95,7 @@ void lwt_unix_not_available(char const *feature) Noreturn;
    +-----------------------------------------------------------------+ */
 
 /* Sends a notification for the given id. */
-void lwt_unix_send_notification(intnat id);
+void lwt_unix_send_notification(intnat domain_id, intnat id);
 
 /* +-----------------------------------------------------------------+
    | Threading                                                       |
@@ -196,6 +196,7 @@ struct lwt_unix_job {
 
     /* Id used to notify the main thread in case the job do not
        terminate immediately. */
+    intnat domain_id;
     intnat notification_id;
 
     /* The function to call to do the work.
