@@ -1581,9 +1581,6 @@ val somaxconn : unit -> int
   [@@ocaml.deprecated " This is an internal function."]
   (** @deprecated This is for internal use only. *)
 
-val retained : 'a -> bool ref
-  (** @deprecated Used for testing. *)
-
 val read_bigarray :
   string -> file_descr -> IO_vectors._bigarray -> int -> int -> int Lwt.t
   [@@ocaml.deprecated " This is an internal function."]

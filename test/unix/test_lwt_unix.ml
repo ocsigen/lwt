@@ -453,12 +453,14 @@ let readv_tests =
 
       Lwt_unix.write_string write_fd "foo" 0 3 >>= fun _ ->
 
-      let retained = Lwt_unix.retained io_vectors in
+      let retained = ref true in
+      Gc.finalise (fun _ -> retained := false) io_vectors;
       Lwt_unix.readv read_fd io_vectors >>= fun _ ->
 
       Lwt_unix.close write_fd >>= fun () ->
       Lwt_unix.close read_fd >|= fun () ->
 
+      Gc.full_major ();
       !retained
     end;
 
@@ -621,12 +623,14 @@ let writev_tests =
       let read_fd, write_fd = Lwt_unix.pipe ~cloexec:true () in
       Lwt_unix.set_blocking write_fd true;
 
-      let retained = Lwt_unix.retained io_vectors in
+      let retained = ref true in
+      Gc.finalise (fun _ -> retained := false) io_vectors;
       Lwt_unix.writev write_fd io_vectors >>= fun _ ->
 
       Lwt_unix.close write_fd >>= fun () ->
       Lwt_unix.close read_fd >|= fun () ->
 
+      Gc.full_major ();
       !retained
     end;
 

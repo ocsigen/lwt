@@ -247,22 +247,7 @@ let self_result job =
   with exn when Lwt.Exception_filter.run exn ->
     Result.Error exn
 
-let in_retention_test = ref false
-
-let retained o =
-  let retained = ref true in
-  Gc.finalise (fun _ ->
-    if !in_retention_test then
-      retained := false)
-    o;
-  in_retention_test := true;
-  retained
-
 let run_job ?async_method job =
-  if !in_retention_test then begin
-    Gc.full_major ();
-    in_retention_test := false
-  end;
   let async_method = choose_async_method async_method in
   if async_method = Async_none then
     try
