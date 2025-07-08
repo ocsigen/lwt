@@ -45,6 +45,15 @@
   (bisect_ppx :with-test)))
 
 (package
+ (name lwt_direct)
+ (synopsis "Direct style control flow and `await` for Lwt")
+ (depends
+  (ocaml (>= 5.0))
+  base-unix
+  (lwt (>= 3.0.0))
+  (bisect_ppx :with-test)))
+
+(package
  (name lwt)
  (synopsis "Promises and event-driven I/O")
  (description "A promise is a value that may become determined in the future.
