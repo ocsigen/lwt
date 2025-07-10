@@ -58,7 +58,8 @@ val run_in_the_background :
 
 val yield : unit -> unit
 (** Yield to the event loop.
-    calling [yield] outside of {!run} or {!run_in_the_background} will raise an exception,
+
+    Calling [yield] outside of {!run} or {!run_in_the_background} will raise an exception,
     crash your program, or otherwise cause errors. It is a programming error to do so. *)
 
 val await : 'a Lwt.t -> 'a
@@ -66,5 +67,6 @@ val await : 'a Lwt.t -> 'a
     exception with which [prom] failed if it failed.
     If [prom] is not resolved yet, [await prom] will suspend the
     current task and resume it when [prom] is resolved.
-    calling [await] outside of {!run} or {!run_in_the_background} will raise an exception,
+
+    Calling [await] outside of {!run} or {!run_in_the_background} will raise an exception,
     crash your program, or otherwise cause errors. It is a programming error to do so. *)
