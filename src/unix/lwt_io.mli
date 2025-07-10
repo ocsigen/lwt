@@ -559,6 +559,8 @@ val delete_recursively : string -> unit Lwt.t
 
 val open_connection :
   ?fd : Lwt_unix.file_descr ->
+  ?set_tcp_nodelay:bool ->
+  ?prepare_fd: (Lwt_unix.file_descr -> unit) ->
   ?in_buffer : Lwt_bytes.t -> ?out_buffer : Lwt_bytes.t ->
   Unix.sockaddr -> (input_channel * output_channel) Lwt.t
   (** [open_connection ?fd ?in_buffer ?out_buffer addr] opens a
@@ -569,15 +571,23 @@ val open_connection :
       channels.
 
       @raise Unix.Unix_error on error.
+
+      @param set_tcp_nodelay if true, [TCP_NODELY] is set on the socket FD
+      @param prepare_fd is a custom callback that can be used to modify the socket FD
+      before it is turned into high level channels
   *)
 
 val with_connection :
   ?fd : Lwt_unix.file_descr ->
+  ?set_tcp_nodelay:bool ->
+  ?prepare_fd: (Lwt_unix.file_descr -> unit) ->
   ?in_buffer : Lwt_bytes.t -> ?out_buffer : Lwt_bytes.t ->
   Unix.sockaddr -> (input_channel * output_channel -> 'a Lwt.t) -> 'a Lwt.t
   (** [with_connection ?fd ?in_buffer ?out_buffer addr f] opens a
       connection to the given address and passes the channels to
-      [f] *)
+      [f]
+
+      See {!open_connection} for more details. *)
 
 (**/**)
 

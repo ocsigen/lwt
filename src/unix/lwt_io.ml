@@ -1551,7 +1551,7 @@ let close_socket fd =
     (fun () ->
        Lwt_unix.close fd)
 
-let open_connection ?fd ?in_buffer ?out_buffer sockaddr =
+let open_connection ?fd ?(set_tcp_nodelay=true) ?(prepare_fd=ignore) ?in_buffer ?out_buffer sockaddr =
   let fd =
     match fd with
     | None ->
@@ -1559,6 +1559,10 @@ let open_connection ?fd ?in_buffer ?out_buffer sockaddr =
     | Some fd ->
       fd
   in
+
+  if set_tcp_nodelay then Lwt_unix.setsockopt fd Unix.TCP_NODELAY true;
+  prepare_fd fd;
+
   let close = lazy (close_socket fd) in
   Lwt.catch
     (fun () ->
@@ -1584,8 +1588,8 @@ let with_close_connection f (ic, oc) =
     (fun () -> f (ic, oc))
     (fun () -> close_if_not_closed ic <&> close_if_not_closed oc)
 
-let with_connection ?fd ?in_buffer ?out_buffer sockaddr f =
-  open_connection ?fd ?in_buffer ?out_buffer sockaddr >>= fun channels ->
+let with_connection ?fd ?set_tcp_nodelay ?prepare_fd ?in_buffer ?out_buffer sockaddr f =
+  open_connection ?fd ?set_tcp_nodelay ?prepare_fd ?in_buffer ?out_buffer sockaddr >>= fun channels ->
   with_close_connection f channels
 
 type server = {
