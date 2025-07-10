@@ -611,6 +611,9 @@ val establish_server_with_client_socket :
   ?server_fd:Lwt_unix.file_descr ->
   ?backlog:int ->
   ?no_close:bool ->
+  ?set_tcp_nodelay:bool ->
+  ?prepare_listening_fd:(Lwt_unix.file_descr -> unit) ->
+  ?prepare_client_fd:(Lwt_unix.file_descr -> unit) ->
   Unix.sockaddr ->
   (Lwt_unix.sockaddr -> Lwt_unix.file_descr -> unit Lwt.t) ->
     server Lwt.t
@@ -665,6 +668,9 @@ val establish_server_with_client_address :
   ?buffer_size:int ->
   ?backlog:int ->
   ?no_close:bool ->
+  ?set_tcp_nodelay:bool ->
+  ?prepare_listening_fd:(Lwt_unix.file_descr -> unit) ->
+  ?prepare_client_fd:(Lwt_unix.file_descr -> unit) ->
   Unix.sockaddr ->
   (Lwt_unix.sockaddr -> input_channel * output_channel -> unit Lwt.t) ->
     server Lwt.t
