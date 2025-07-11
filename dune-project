@@ -46,11 +46,11 @@
 
 (package
  (name lwt_direct)
- (synopsis "Direct style control flow and `await` for Lwt")
+ (synopsis "Direct-style control-flow and `await` for Lwt")
  (depends
   (ocaml (>= 5.0))
   base-unix
-  (lwt (>= 3.0.0))
+  (lwt (>= 6))
   (bisect_ppx :with-test)))
 
 (package

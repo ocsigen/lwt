@@ -1,4 +1,3 @@
-
 open Test
 open Lwt_direct
 open Lwt.Syntax
@@ -31,6 +30,18 @@ let main_tests = suite "main" [
       let sum = ref 0 in
       List.iter (fun fut -> sum := !sum + await fut) items;
       !sum = 5050
+  end;
+
+  test "lwt_list.iter_p run" begin fun () ->
+    let items = List.init 101 (fun i -> i) in
+    let+ items = Lwt_list.map_p
+      (fun i -> run (fun () ->
+        for _ = 0 to i mod 5 do yield () done;
+        i
+      ))
+      items
+    in
+    List.fold_left (+) 0 items = 5050
   end;
 
   test "run in background" begin fun () ->

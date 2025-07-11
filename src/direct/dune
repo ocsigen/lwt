@@ -1,9 +1,7 @@
 (library
  (public_name lwt_direct)
- (synopsis "Direct style control flow and `await` for Lwt")
+ (synopsis "Direct-style control-flow and `await` for Lwt")
  (enabled_if (>= %{ocaml_version} "5.0"))
  (libraries lwt lwt.unix)
  (instrumentation
   (backend bisect_ppx)))
-
-

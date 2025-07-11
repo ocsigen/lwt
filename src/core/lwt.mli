@@ -2071,4 +2071,4 @@ module Private : sig
     val empty_storage : storage
     val current_storage : storage ref
   end
-end
+end [@@alert trespassing "for internal use only, keep away"]
