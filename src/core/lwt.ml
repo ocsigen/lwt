@@ -729,9 +729,9 @@ sig
   type 'v key
   val new_key : unit -> _ key
   val get : 'v key -> 'v option
+  val with_value : 'v key -> 'v option -> (unit -> 'b) -> 'b
   val get_from_storage : 'v key -> storage -> 'v option
   val modify_storage : 'v key -> 'v option -> storage -> storage
-  val with_value : 'v key -> 'v option -> (unit -> 'b) -> 'b
   val empty_storage : storage
 
   (* Internal interface *)
@@ -776,19 +776,17 @@ struct
     next_key_id := id + 1;
     {id = id; value = None}
 
+  (* generic storage *)
   let empty_storage = Storage_map.empty
-  let current_storage = ref empty_storage
 
   let get_from_storage key storage =
-    match Storage_map.find key.id storage with
-    | refresh ->
+    match Storage_map.find_opt key.id storage with
+    | Some refresh ->
       refresh ();
       let value = key.value in
       key.value <- None;
       value
-    | exception Not_found -> None
-
-  let get key = get_from_storage key !current_storage
+    | None -> None
 
   let modify_storage key value storage =
     match value with
@@ -797,6 +795,11 @@ struct
       Storage_map.add key.id refresh storage
     | None ->
       Storage_map.remove key.id storage
+
+  (* built-in storage: propagated by bind and such *)
+  let current_storage = ref empty_storage
+
+  let get key = get_from_storage key !current_storage
 
   let with_value key value f =
     let new_storage = modify_storage key value !current_storage in

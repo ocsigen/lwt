@@ -47,7 +47,7 @@ val run : (unit -> 'a) -> 'a Lwt.t
     raised by [f ()]. *)
 
 val run_in_the_background :
-  ?on_uncaught_exn:(exn -> Printexc.raw_backtrace -> unit) ->
+  ?on_uncaught_exn:(exn -> unit) ->
   (unit -> unit) ->
   unit
 (** [run_in_the_background f] is similar to [ignore (run f)].

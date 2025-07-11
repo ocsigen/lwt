@@ -1,32 +1,14 @@
-module ED = Effect.Deep
+(* Direct-style wrapper for Lwt code
 
-module Storage = struct
-  [@@@alert "-trespassing"]
-  module Lwt_storage=  Lwt.Private.Sequence_associated_storage
-  [@@@alert "+trespassing"]
-  type 'a key = 'a Lwt.key
-  let new_key = Lwt.new_key
-  let get = Lwt.get
-  let set k v = Lwt_storage.(current_storage := modify_storage k (Some v) !current_storage)
-  let remove k = Lwt_storage.(current_storage := modify_storage k None !current_storage)
-  let reset_to_empty () = Lwt_storage.(current_storage := empty_storage)
-  let save_current () = !Lwt_storage.current_storage
-  let restore_current saved = Lwt_storage.current_storage := saved
-end
+   The implementation of the direct-style wrapper relies on ocaml5's effect
+   system capturing continuations and adding them as a callback to some lwt
+   promises. *)
 
-type _ Effect.t +=
-  | Await : 'a Lwt.t -> 'a Effect.t
-  | Yield : unit Effect.t
+(* part 1: tasks, getting the scheduler to call them *)
 
-(** Queue of microtasks that are ready *)
 let tasks : (unit -> unit) Queue.t = Queue.create ()
 
 let[@inline] push_task f : unit = Queue.push f tasks
-
-let default_on_uncaught_exn exn bt =
-  Printf.eprintf "lwt_task: uncaught task exception:\n%s\n%s\n%!"
-    (Printexc.to_string exn)
-    (Printexc.raw_backtrace_to_string bt)
 
 let absolute_max_number_of_steps =
   (* TODO 6.0: what's a good number here? should it be customisable? *)
@@ -40,8 +22,9 @@ let run_all_tasks () : unit =
     incr n_processed;
     try t ()
     with exn ->
-      let bt = Printexc.get_raw_backtrace () in
-      default_on_uncaught_exn exn bt
+      (* TODO 6.0: change async_exception handler to accept a backtrace, pass it
+         here and at the other use site. *)
+      !Lwt.async_exception_hook exn
   done;
   (* In the case where there are no promises ready for wakeup, the scheduler's
      engine will pause until some IO completes. There might never be completed
@@ -62,6 +45,12 @@ let setup_hooks =
       ()
     )
 
+(* part 2: effects, performing them *)
+
+type _ Effect.t +=
+  | Await : 'a Lwt.t -> 'a Effect.t
+  | Yield : unit Effect.t
+
 let await (fut : 'a Lwt.t) : 'a =
   match Lwt.state fut with
   | Lwt.Return x -> x
@@ -70,28 +59,47 @@ let await (fut : 'a Lwt.t) : 'a =
 
 let yield () : unit = Effect.perform Yield
 
-(** the main effect handler *)
-let handler : _ ED.effect_handler =
-  let effc : type b. b Effect.t -> ((b, unit) ED.continuation -> 'a) option =
+(* interlude: task-local storage helpers *)
+
+module Storage = struct
+  [@@@alert "-trespassing"]
+  module Lwt_storage=  Lwt.Private.Sequence_associated_storage
+  [@@@alert "+trespassing"]
+  type 'a key = 'a Lwt.key
+  let new_key = Lwt.new_key
+  let get = Lwt.get
+  let set k v = Lwt_storage.(current_storage := modify_storage k (Some v) !current_storage)
+  let remove k = Lwt_storage.(current_storage := modify_storage k None !current_storage)
+  let reset_to_empty () = Lwt_storage.(current_storage := empty_storage)
+  let save_current () = !Lwt_storage.current_storage
+  let restore_current saved = Lwt_storage.current_storage := saved
+end
+
+(* part 3: handling effects *)
+
+let handler : _ Effect.Deep.effect_handler =
+  let effc : type b. b Effect.t -> ((b, unit) Effect.Deep.continuation -> 'a) option =
     function
     | Yield ->
       Some (fun k ->
         let storage = Storage.save_current () in
         push_task (fun () ->
           Storage.restore_current storage;
-          ED.continue k ()))
+          Effect.Deep.continue k ()))
     | Await fut ->
       Some
         (fun k ->
           let storage = Storage.save_current () in
           Lwt.on_any fut
             (fun res -> push_task (fun () ->
-              Storage.restore_current storage; ED.continue k res))
+              Storage.restore_current storage; Effect.Deep.continue k res))
             (fun exn -> push_task (fun () ->
-              Storage.restore_current storage; ED.discontinue k exn)))
+              Storage.restore_current storage; Effect.Deep.discontinue k exn)))
     | _ -> None
   in
   { effc }
+
+(* part 4: putting it all together: running tasks *)
 
 let run_inside_effect_handler_and_resolve_ (type a) (promise : a Lwt.u) f () : unit =
   let run_f_and_set_res () =
@@ -100,7 +108,7 @@ let run_inside_effect_handler_and_resolve_ (type a) (promise : a Lwt.u) f () : u
     | res -> Lwt.wakeup promise res
     | exception exc -> Lwt.wakeup_exn promise exc
   in
-  ED.try_with run_f_and_set_res () handler
+  Effect.Deep.try_with run_f_and_set_res () handler
 
 let run f : _ Lwt.t =
   setup_hooks ();
@@ -108,17 +116,22 @@ let run f : _ Lwt.t =
   push_task (run_inside_effect_handler_and_resolve_ resolve f);
   lwt
 
+(* part 4 (encore): running a task in the background *)
+
 let run_inside_effect_handler_in_the_background_ ~on_uncaught_exn f () : unit =
   let run_f () : unit =
     Storage.reset_to_empty();
     try
        f ()
      with exn ->
-      let bt = Printexc.get_raw_backtrace () in
-      on_uncaught_exn exn bt
+      on_uncaught_exn exn
   in
-  ED.try_with run_f () handler
+  Effect.Deep.try_with run_f () handler
 
-let run_in_the_background ?(on_uncaught_exn=default_on_uncaught_exn) f : unit =
+let run_in_the_background ?on_uncaught_exn f : unit =
+  let on_uncaught_exn = match on_uncaught_exn with
+    | Some handler -> handler
+    | None -> !Lwt.async_exception_hook
+  in
   setup_hooks ();
   push_task (run_inside_effect_handler_in_the_background_ ~on_uncaught_exn f)
