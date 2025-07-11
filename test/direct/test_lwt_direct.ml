@@ -1,0 +1,136 @@
+
+open Test
+open Lwt_direct
+open Lwt.Syntax
+
+let main_tests = suite "main" [
+  test "basic await" begin fun () ->
+    let fut = run @@ fun () ->
+      Lwt_unix.sleep 1e-6 |> await;
+      42
+    in
+    let+ res = fut in
+    res = 42
+  end;
+
+  test "await multiple values" begin fun () ->
+    let fut1 = let+ () = Lwt_unix.sleep 1e-6 in 1 in
+    let fut2 = let+ () = Lwt_unix.sleep 2e-6 in 2 in
+    let fut3 = let+ () = Lwt_unix.sleep 3e-6 in 3 in
+
+    run @@ fun () ->
+      let x1 = fut1 |> await in
+      let x2 = fut2 |> await in
+      let x3 = fut3 |> await in
+      x1 = 1 && x2 = 2 && x3 = 3
+  end;
+
+  test "list.iter await" begin fun () ->
+    let items = List.init 101 (fun i -> Lwt.return i) in
+    run @@ fun () ->
+      let sum = ref 0 in
+      List.iter (fun fut -> sum := !sum + await fut) items;
+      !sum = 5050
+  end;
+
+  test "run in background" begin fun () ->
+    let stream, push = Lwt_stream.create_bounded 2 in
+    run_in_the_background (fun () ->
+      for i = 1 to 10 do
+        push#push i |> await
+      done;
+      push#close);
+    run @@ fun () ->
+      let continue = ref true in
+      let seen = ref [] in
+
+      while !continue do
+        match Lwt_stream.get stream |> await with
+        | None -> continue := false
+        | Some x -> seen := x :: !seen
+      done;
+      List.rev !seen = [1;2;3;4;5;6;7;8;9;10]
+  end;
+
+  test "list.iter await with yield" begin fun () ->
+    let items = List.init 101 (fun i -> Lwt.return i) in
+    run @@ fun () ->
+      let sum = ref 0 in
+      List.iter (fun fut -> yield(); sum := !sum + await fut) items;
+      !sum = 5050
+  end;
+]
+
+let storage_tests = suite "storage" [
+  test "get set" begin fun () ->
+    let k1 = Storage.new_key () in
+    let k2 = Storage.new_key () in
+    run @@ fun () ->
+      assert (Storage.get k1 = None);
+      assert (Storage.get k2 = None);
+      Storage.set k1 42;
+      assert (Storage.get k1 = Some 42);
+      assert (Storage.get k2 = None);
+      Storage.set k2 true;
+      assert (Storage.get k1 = Some 42);
+      assert (Storage.get k2 = Some true);
+      Storage.remove k1;
+      assert (Storage.get k1 = None);
+      assert (Storage.get k2 = Some true);
+      true
+  end;
+
+  test "storage across await" begin fun () ->
+    let k = Storage.new_key () in
+
+    (* run another promise that touches storage *)
+    let run_promise_async () =
+      Lwt.async @@ fun () ->
+        Lwt.with_value k (Some "something else") @@ fun () ->
+          assert (Lwt.get k = Some "something else");
+          Lwt.return_unit
+    in
+
+    let run_promise () : unit Lwt.t =
+      Lwt.with_value k (Some "another one") @@ fun () ->
+        assert (Lwt.get k = Some "another one");
+        Lwt.return_unit
+    in
+
+    let one_task () =
+      run_promise_async();
+      assert (Storage.get k = None);
+      Storage.set k "v1";
+      assert (Storage.get k = Some "v1");
+      run_promise () |> await;
+      assert (Storage.get k = Some "v1");
+      Storage.remove k;
+      assert (Storage.get k = None);
+      yield();
+      assert (Storage.get k = None);
+      run_promise () |> await;
+      assert (Storage.get k = None);
+      run_promise_async();
+      yield();
+      assert (Storage.get k = None);
+      Storage.set k "v2";
+      assert (Storage.get k = Some "v2");
+      run_promise_async();
+      yield();
+      run_promise () |> await;
+      assert (Storage.get k = Some "v2");
+    in
+
+    (* run multiple such tasks *)
+    let tasks = [ run one_task; run one_task; run one_task ] in
+
+    run @@ fun () ->
+      List.iter await tasks;
+      true
+  end;
+]
+
+let suites = [
+  main_tests;
+  storage_tests
+]
