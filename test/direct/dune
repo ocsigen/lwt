@@ -1,6 +1,12 @@
 
-(test
+(executable
  (name main)
- (package lwt_direct)
- (build_if (>= %{ocaml_version} "5.0"))
+ (enabled_if (>= %{ocaml_version} "5.0"))
  (libraries lwt_direct lwt.unix lwttester))
+
+(rule
+ (alias runtest)
+ (package lwt_direct)
+ (enabled_if (>= %{ocaml_version} "5.0"))
+ (action (run ./main.exe)))
+
