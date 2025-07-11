@@ -54,7 +54,7 @@ jobs:
       - run: opam install conf-libev
         if: ${{ matrix.libev == true }}
 
-      - run: opam install . --deps-only --with-test --best-effort
+      - run: opam install --deps-only --with-test ./lwt.opam ./lwt_ppx.opam ./lwt_react.opam ./lwt_retry.opam
 
       - run: opam exec -- dune build
 
