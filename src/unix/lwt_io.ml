@@ -1551,7 +1551,7 @@ let close_socket fd =
     (fun () ->
        Lwt_unix.close fd)
 
-let open_connection ?fd ?(set_tcp_nodelay=true) ?(prepare_fd=ignore) ?in_buffer ?out_buffer sockaddr =
+let open_connection ?fd ?(set_tcp_nodelay=false) ?(prepare_fd=ignore) ?in_buffer ?out_buffer sockaddr =
   let fd =
     match fd with
     | None ->
@@ -1607,7 +1607,7 @@ let shutdown_server_deprecated server =
 let establish_server_generic
     bind_function
     ?fd:preexisting_socket_for_listening
-    ?(set_tcp_nodelay=true)
+    ?(set_tcp_nodelay=false)
     ?(prepare_listening_fd=ignore)
     ?(prepare_client_fd=ignore)
     ?(backlog = Lwt_unix.somaxconn () [@ocaml.warning "-3"])
