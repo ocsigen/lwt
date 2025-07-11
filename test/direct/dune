@@ -2,5 +2,5 @@
 (test
  (name main)
  (package lwt_direct)
- (enabled_if (>= %{ocaml_version} "5.0"))
+ (build_if (>= %{ocaml_version} "5.0"))
  (libraries lwt_direct lwt.unix lwttester))
