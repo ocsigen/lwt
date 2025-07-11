@@ -130,7 +130,50 @@ let storage_tests = suite "storage" [
   end;
 ]
 
+let io_tests = suite "io" [
+  test "read io" begin fun () ->
+    let str = "some\ninteresting\ntext string here!\n" in
+    let ic = Lwt_io.of_bytes ~mode:Input (Lwt_bytes.of_string str) in
+    run @@ fun () ->
+      let lines = ref [] in
+      while
+        try
+          yield ();
+          let line = Lwt_io.read_line ic |> await in
+          lines := line :: !lines;
+          true
+        with End_of_file -> false
+      do ()
+      done;
+      List.rev !lines = ["some"; "interesting"; "text string here!"]      
+  end;
+
+  test "pipe" begin fun () ->
+    let ic, oc = Lwt_io.pipe() in
+    run_in_the_background (fun () ->
+      for i = 1 to 100 do
+        Lwt_io.write_line oc (string_of_int i) |> await;
+        Lwt_io.flush oc |> await
+      done;
+      Lwt_io.close oc |> await;
+    );
+
+    run @@ fun () ->
+      let sum = ref 0 in
+      let continue = ref true in
+      while !continue do
+        match Lwt_io.read_line ic |> await |> String.trim |> int_of_string with
+        | exception End_of_file -> continue := false
+        | i ->
+          sum := !sum + i
+      done;
+      Lwt_io.close ic |> await;
+      !sum = 5050
+  end
+]
+
 let suites = [
   main_tests;
-  storage_tests
+  storage_tests;
+  io_tests;
 ]
