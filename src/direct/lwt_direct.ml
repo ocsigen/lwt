@@ -1,5 +1,18 @@
 module ED = Effect.Deep
 
+module Storage = struct
+  module Lwt_storage=  Lwt.Private.Sequence_associated_storage
+  type 'a key = 'a Lwt.key
+  let new_key = Lwt.new_key
+  let get = Lwt.get
+  let set k v = Lwt_storage.(current_storage := modify_storage k (Some v) !current_storage)
+  let remove k = Lwt_storage.(current_storage := modify_storage k None !current_storage)
+
+  let reset_to_empty () = Lwt_storage.(current_storage := empty_storage)
+  let save_current () = !Lwt_storage.current_storage
+  let restore_current saved = Lwt_storage.current_storage := saved
+end
+
 type _ Effect.t +=
   | Await : 'a Lwt.t -> 'a Effect.t
   | Yield : unit Effect.t
@@ -52,20 +65,28 @@ let handler : _ ED.effect_handler =
   let effc : type b. b Effect.t -> ((b, unit) ED.continuation -> 'a) option =
     function
     | Yield ->
-      Some (fun k -> push_task (fun () -> ED.continue k ()))
+      Some (fun k ->
+        let storage = Storage.save_current () in
+        push_task (fun () ->
+          Storage.restore_current storage;
+          ED.continue k ()))
     | Await fut ->
       Some
         (fun k ->
+          let storage = Storage.save_current () in
           Lwt.on_any fut
-            (fun res -> push_task (fun () -> ED.continue k res))
-            (fun exn -> push_task (fun () -> ED.discontinue k exn)))
+            (fun res -> push_task (fun () ->
+              Storage.restore_current storage; ED.continue k res))
+            (fun exn -> push_task (fun () ->
+              Storage.restore_current storage; ED.discontinue k exn)))
     | _ -> None
   in
   { effc }
 
 let run_inside_effect_handler_and_resolve_ (type a) (promise : a Lwt.u) f () : unit =
-  let res = ref (Error (Failure "not resolved")) in
   let run_f_and_set_res () =
+    let res = ref (Error (Failure "not resolved")) in
+    Storage.reset_to_empty();
     (try
        let r = f () in
        res := Ok r
@@ -82,6 +103,7 @@ let run f : _ Lwt.t =
 
 let run_inside_effect_handler_in_the_background_ ~on_uncaught_exn f () : unit =
   let run_f () : unit =
+    Storage.reset_to_empty();
     try
        f ()
      with exn ->

@@ -70,3 +70,25 @@ val await : 'a Lwt.t -> 'a
 
     Calling [await] outside of {!run} or {!run_in_the_background} will raise an exception,
     crash your program, or otherwise cause errors. It is a programming error to do so. *)
+
+(** Local storage.
+
+    This storage is the same as the one described with {!Lwt.key},
+    except that it is usable from the inside of {!run} or
+    {!run_in_the_background}.
+
+    Each task has its own storage, independent from other tasks or promises. *)
+module Storage : sig
+  type 'a key = 'a Lwt.key
+  val new_key : unit -> 'a key
+  (** Alias to {!Lwt.new_key} *)
+
+  val get : 'a key -> 'a option
+  (** get the value associated with this key in local storage, or [None] *)
+
+  val set : 'a key -> 'a -> unit
+  (** [set k v] sets the key to the value for the rest of the task. *)
+
+  val remove : 'a key -> unit
+  (** Remove the value associated with this key, if any *)
+end
