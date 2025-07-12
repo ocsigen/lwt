@@ -4,6 +4,7 @@ synopsis: "Direct-style control-flow and `await` for Lwt"
 maintainer: [
   "Raphaël Proust <code@bnwr.net>" "Anton Bachin <antonbachin@yahoo.com>"
 ]
+authors: ["Simon Cruanes"]
 license: "MIT"
 homepage: "https://github.com/ocsigen/lwt"
 doc: "https://ocsigen.org/lwt"
@@ -31,4 +32,3 @@ build: [
   ]
 ]
 dev-repo: "git+https://github.com/ocsigen/lwt.git"
-authors: ["Simon Cruanes"]
