@@ -47,14 +47,12 @@ val run : (unit -> 'a) -> 'a Lwt.t
     raised by [f ()]. *)
 
 val run_in_the_background :
-  ?on_uncaught_exn:(exn -> unit) ->
   (unit -> unit) ->
   unit
 (** [run_in_the_background f] is similar to [ignore (run f)].
     The computation [f()] runs in the background in the event loop
     and returns no result.
-    @param on_uncaught_exn if provided, this is called when [f()]
-    raises an exception. *)
+    If [f()] raises an exception, {!Lwt.async_exception_hook} is called. *)
 
 val yield : unit -> unit
 (** Yield to the event loop.

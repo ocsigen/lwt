@@ -118,20 +118,16 @@ let run f : _ Lwt.t =
 
 (* part 4 (encore): running a task in the background *)
 
-let run_inside_effect_handler_in_the_background_ ~on_uncaught_exn f () : unit =
+let run_inside_effect_handler_in_the_background_ f () : unit =
   let run_f () : unit =
     Storage.reset_to_empty();
     try
-       f ()
-     with exn ->
-      on_uncaught_exn exn
+      f ()
+    with exn ->
+      !Lwt.async_exception_hook exn
   in
   Effect.Deep.try_with run_f () handler
 
-let run_in_the_background ?on_uncaught_exn f : unit =
-  let on_uncaught_exn = match on_uncaught_exn with
-    | Some handler -> handler
-    | None -> !Lwt.async_exception_hook
-  in
+let run_in_the_background f : unit =
   setup_hooks ();
-  push_task (run_inside_effect_handler_in_the_background_ ~on_uncaught_exn f)
+  push_task (run_inside_effect_handler_in_the_background_ f)
